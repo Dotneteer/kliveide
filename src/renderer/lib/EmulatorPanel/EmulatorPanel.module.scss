@@ -1,6 +1,19 @@
+@use "xmlui/themes.scss" as t;
+
+$themeVars: ();
+@function createThemeVar($componentVariable) {
+  $themeVars: t.appendThemeVar($themeVars, $componentVariable) !global;
+  @return t.getThemeVar($themeVars, $componentVariable);
+}
+
+$component: "EmulatorPanel";
+$backgroundColor-EmulatorPanel: createThemeVar("backgroundColor-#{$component}");
+$backgroundColor-display-EmulatorPanel: createThemeVar("backgroundColor-display-#{$component}");
+$color-error-EmulatorPanel: createThemeVar("color-error-#{$component}");
+
 .emulatorPanel {
   align-items: center;
-  background: #1a1a1d;
+  background: $backgroundColor-EmulatorPanel;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -15,9 +28,7 @@
 }
 
 .display {
-  background-color: #050507;
-  border: 1px solid #3a3a40;
-  box-shadow: 0 0 0 1px #050507;
+  background-color: $backgroundColor-display-EmulatorPanel;
   flex-shrink: 0;
   position: relative;
 }
@@ -29,8 +40,12 @@
 }
 
 .error {
-  color: #ffb4a8;
+  color: $color-error-EmulatorPanel;
   font: 13px system-ui, sans-serif;
   max-width: 640px;
   padding: 16px;
+}
+
+:export {
+  themeVars: t.json-stringify($themeVars);
 }

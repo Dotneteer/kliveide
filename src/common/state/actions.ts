@@ -72,6 +72,11 @@ export const clearTapeMediaAction: ActionCreator = () => ({
   type: "CLEAR_TAPE_MEDIA"
 });
 
+export const setKeyMappingsAction: ActionCreator = (file?: string, value?: unknown) => ({
+  type: "SET_KEY_MAPPINGS",
+  payload: { file, value }
+});
+
 export const muteSoundAction: ActionCreator = (flag: boolean) => ({
   type: "MUTE_SOUND",
   payload: { flag }

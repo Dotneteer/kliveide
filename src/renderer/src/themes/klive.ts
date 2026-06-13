@@ -14,7 +14,7 @@ const sp48KeyboardFontThemeVars = {
   "fontSize-belowKey-EmuKeyboard": "20px",
   "fontSize-centerKey-EmuKeyboard": "28px",
   "fontSize-shiftKey-EmuKeyboard": "20px",
-  "fontSize-topNumberKey-EmuKeyboard": "20px"
+  "fontSize-topNumberKey-EmuKeyboard": "20px",
 };
 
 export const KliveTheme: ThemeDefinition = {
@@ -44,6 +44,10 @@ export const KliveTheme: ThemeDefinition = {
     "textColor-IdeStatusBar": "#ffffff",
     "backgroundColor-resizer-Splitter": "#007acc",
     "backgroundColor-KeyboardArea": "$color-surface-0",
+    "backgroundColor-EmulatorPanel": "$color-surface-100",
+    "backgroundColor-display-EmulatorPanel": "$color-surface-50",
+    "color-error-EmulatorPanel": "#ffb4a8",
+    "padding-EmuKeyboard": "$space-3",
     "backgroundColor-EmuKeyboard": "#181818",
     "backgroundColor-key-EmuKeyboard": "#707070",
     "backgroundColor-highlightedKey-EmuKeyboard": "#0B486B",
@@ -58,42 +62,6 @@ export const KliveTheme: ThemeDefinition = {
     "backgroundColor-SideBar": "$color-surface-100",
     "backgroundColor-DocumentsPanel": "$color-surface-50",
     "backgroundColor-ToolsArea": "$color-surface-0",
-  },
-  tones: {
-    light: {
-      themeVars: {
-        "backgroundColor-EmuStatusBar": "#61a4d0",
-        "backgroundColor-IdeStatusBar": "#61a4d0",
-        "textColor-EmuStatusBar": "#000000",
-        "textColor-IdeStatusBar": "#000000",
-        "backgroundColor-EmuKeyboard": "#202020",
-        "backgroundColor-key-EmuKeyboard": "#707070",
-        "backgroundColor-highlightedKey-EmuKeyboard": "#ff4500",
-        "color-mainKey-EmuKeyboard": "#e0e0e0",
-        "color-symbolKey-EmuKeyboard": "#c00000",
-        "color-aboveKey-EmuKeyboard": "#00a000",
-        "color-belowKey-EmuKeyboard": "#d02000",
-        "color-highlightKey-EmuKeyboard": "#0048c0",
-        ...sp48KeyboardFontThemeVars
-      }
-    },
-    dark: {
-      themeVars: {
-        "backgroundColor-EmuStatusBar": "#007acc",
-        "backgroundColor-IdeStatusBar": "#007acc",
-        "textColor-EmuStatusBar": "#ffffff",
-        "textColor-IdeStatusBar": "#ffffff",
-        "backgroundColor-EmuKeyboard": "#181818",
-        "backgroundColor-key-EmuKeyboard": "#707070",
-        "backgroundColor-highlightedKey-EmuKeyboard": "#0B486B",
-        "color-mainKey-EmuKeyboard": "#e0e0e0",
-        "color-symbolKey-EmuKeyboard": "#c00000",
-        "color-aboveKey-EmuKeyboard": "#00a000",
-        "color-belowKey-EmuKeyboard": "#d02000",
-        "color-highlightKey-EmuKeyboard": "#0048c0",
-        ...sp48KeyboardFontThemeVars
-      }
-    }
   },
   resources: {},
 };

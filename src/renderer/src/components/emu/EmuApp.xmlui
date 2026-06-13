@@ -12,6 +12,13 @@
     />
     <Toolbar when="{state.value.globalSettings.emuViewOptions.showToolbar ?? true}" />
     <VStack height="*" gap="0">
+      <SplitterSizeGuard
+        settingId="emuViewOptions.keyboardSplitterPosition"
+        value="{initialKeyboardSplitterPosition.indexOf('px') >= 0 || initialKeyboardSplitterPosition.indexOf('%') >= 0 ? initialKeyboardSplitterPosition : initialKeyboardSplitterPosition + 'px'}"
+        minPrimarySize="100px"
+        maxPrimarySize="-100px"
+        fallbackSize="50%"
+      />
       <VSplitter
         when="{state.value.globalSettings.emuViewOptions.keyboardSplitterPosition != undefined}"
         height="100%"

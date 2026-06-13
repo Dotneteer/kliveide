@@ -20,7 +20,8 @@ import {
   clearTapeMediaAction,
   setClockMultiplierAction,
   setSoundLevelAction,
-  setScreenRecordingAvailableAction
+  setScreenRecordingAvailableAction,
+  setKeyMappingsAction
 } from "../common/state/actions";
 import { createWindowStateManager } from "./WindowStateManager";
 import {
@@ -114,6 +115,7 @@ function dispatchMainOwnedState(): void {
   } else {
     mainStore.dispatch(clearTapeMediaAction());
   }
+  mainStore.dispatch(setKeyMappingsAction(state.keyMappingFile, state.keyMappings));
   mainStore.dispatch(dimMenuAction(state.dimMenu ?? false));
   mainStore.dispatch(emuFocusedAction(emuWindow?.isFocused() ?? false));
   mainStore.dispatch(ideFocusedAction(ideWindow?.isFocused() ?? false));

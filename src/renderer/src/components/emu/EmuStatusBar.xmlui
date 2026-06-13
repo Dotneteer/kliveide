@@ -17,15 +17,9 @@
   var.tapeSaving="{tape.mode === 'save' || tape.status === 'saving'}"
   var.tapeEof="{tapeLoaded && tape.status === 'eof'}"
   var.tapeRewound="{tapeLoaded && ((tape.currentBlockIndex ?? 0) === 0) && (tape.status === 'rewound' || !tape.status || tape.status === 'ready')}"
-  var.fastLoad="{state.value.globalSettings.emuOptions.fastLoad ?? true}"
-  var.tapeMode="{tape.mode === 'load' ? 'Load' : tape.mode === 'save' ? 'Save' : 'Passive'}"
-  var.tapePhase="{tape.phase === 'pilot' ? 'Pilot' : tape.phase === 'sync' ? 'Sync' : tape.phase === 'data' ? 'Data' : tape.phase === 'termSync' ? 'Term Sync' : tape.phase === 'pause' ? 'Pause' : tape.phase === 'completed' ? 'Completed' : 'None'}"
-  var.tapeSavePhase="{tape.savePhase === 'pilot' ? 'Pilot' : tape.savePhase === 'sync1' ? 'Sync 1' : tape.savePhase === 'sync2' ? 'Sync 2' : tape.savePhase === 'data' ? 'Data' : tape.savePhase === 'error' ? 'Error' : 'None'}"
-  var.tapeSaveTooltip="{'Saving - phase ' + tapeSavePhase + ' - pilot pulses ' + (tape.savePilotPulseCount ?? 0) + ' - saved blocks ' + (tape.savedBlockCount ?? 0) + ' - saved bytes ' + (tape.savedDataLength ?? 0)}"
-  var.tapeLoadTooltip="{tape.displayName + (tapeBlockText ? ' - block ' + tapeBlockText : '') + ' - mode ' + tapeMode + ' - phase ' + tapePhase + ' - Fast LOAD ' + (fastLoad ? 'On' : 'Off')}"
   var.tapeIcon="{tapeSaving ? 'floppy' : !tapeLoaded ? 'circle-slash' : tapeEof ? 'check' : tapeRewound ? 'reverse-tape' : 'play'}"
-  var.tapeTooltip="{tapeSaving ? tapeSaveTooltip : !tapeLoaded ? 'No Tape' : tapeLoadTooltip}"
-  var.tapeText="{tape.displayName ?? ''}"
+  var.tapeText="{tapeLoaded ? tape.displayName + (tapeBlockText ? ' ' + tapeBlockText : '') : ''}"
+  var.tapeTooltip="{tapeLoaded ? tapeText : 'No tape'}"
 >
   <SharedAppState id="state" />
   <HStack
@@ -36,7 +30,7 @@
     paddingHorizontal="$space-normal"
   >
     <HStack gap="$space-tight" paddingVertical="2px" verticalAlignment="center">
-      <StatusBarIcon name="vm-running" />
+      <StatusBarIcon name="vm-running" tooltip="Frame execution time" />
       <StatusBarText
         value="{lastFrameTime.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3, minimumIntegerDigits: 2 })}"
       />
@@ -47,14 +41,14 @@
     </HStack>
     <Stack width="16px" />
     <HStack gap="4px" verticalAlignment="center" width="auto" height="18px">
-      <StatusBarIcon name="window" />
+      <StatusBarIcon name="window" tooltip="Rendered frames" />
       <StatusBarText
         value="{frameCount.toLocaleString(undefined, { maximumFractionDigits: 0 })}"
       />
     </HStack>
     <Stack width="16px" />
     <HStack gap="4px" verticalAlignment="center">
-      <StatusBarText value="PC:" />
+      <StatusBarIcon name="debug-current" tooltip="Program counter" />
       <StatusBarText
         value="{(pc & 0xffff).toString(16).toUpperCase().padStart(4, '0')}"
       />

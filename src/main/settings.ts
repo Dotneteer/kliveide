@@ -15,12 +15,14 @@ import {
   clearTapeMediaAction,
   setClockMultiplierAction,
   setSoundLevelAction,
-  setScreenRecordingAvailableAction
+  setScreenRecordingAvailableAction,
+  setKeyMappingsAction
 } from "../common/state/actions";
 import type { MediaState } from "../common/state/AppState";
 import type { WindowState } from "./WindowState";
 import { mainStore } from "./main-store";
 import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
+import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 
 export const KLIVE_HOME_FOLDER = "Klive";
 export const SETTINGS_FILE_NAME = "klive2.settings";
@@ -35,6 +37,7 @@ export type AppSettings = {
   theme?: string;
   globalSettings?: Record<string, unknown>;
   media?: MediaState;
+  keyMappingFile?: string;
   emulatorState?: {
     clockMultiplier?: number;
     soundLevel?: number;
@@ -101,6 +104,7 @@ export function applyPersistedSettingsToStore(): void {
   } else {
     mainStore.dispatch(clearTapeMediaAction(), "main");
   }
+  restorePersistedKeyMappings();
   mainStore.dispatch(
     setMachineTypeAction(
       machineSelection.machineId,
@@ -186,6 +190,7 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
     theme: settings.theme ?? "dark",
     globalSettings: normalizeGlobalSettings(settings.globalSettings ?? {}),
     media: selectPersistedMedia(settings.media ?? {}),
+    keyMappingFile: typeof settings.keyMappingFile === "string" ? settings.keyMappingFile : undefined,
     emulatorState: {
       clockMultiplier: normalizeClockMultiplier(settings.emulatorState?.clockMultiplier),
       soundLevel: normalizeSoundLevel(settings.emulatorState?.soundLevel),
@@ -199,7 +204,23 @@ function refreshAppSettingsFromStore(): void {
   appSettings.theme = state.theme;
   appSettings.globalSettings = selectPersistedGlobalSettings(state.globalSettings ?? {});
   appSettings.media = selectPersistedMedia(state.media ?? {});
+  appSettings.keyMappingFile = state.keyMappingFile;
   appSettings.emulatorState = selectPersistedEmulatorState(state.emulatorState ?? {});
+}
+
+function restorePersistedKeyMappings(): void {
+  if (!appSettings.keyMappingFile) {
+    mainStore.dispatch(setKeyMappingsAction(undefined, undefined), "main");
+    return;
+  }
+
+  try {
+    const mappingSource = fs.readFileSync(appSettings.keyMappingFile, "utf8");
+    const mappings = parseKeyMappings(mappingSource);
+    mainStore.dispatch(setKeyMappingsAction(appSettings.keyMappingFile, mappings), "main");
+  } catch {
+    mainStore.dispatch(setKeyMappingsAction(undefined, undefined), "main");
+  }
 }
 
 function selectPersistedGlobalSettings(globalSettings: Record<string, unknown>): Record<string, unknown> {

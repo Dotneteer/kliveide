@@ -1,5 +1,6 @@
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import type { Sp48MachineController } from "../../../emu/sp48/Sp48MachineController";
+import { MachineControllerState } from "../../../common/abstractions/MachineControllerState";
 import { SETTING_EMU_SCANLINE_EFFECT } from "../../../common/settings/setting-const";
 import { useSharedState } from "../../shared-store";
 import {
@@ -35,7 +36,7 @@ export function useEmulatorScreen(
   useEffect(() => {
     currentScanlineEffect.current = scanlineEffect || "off";
     calculateDimensions();
-    displayScreenData();
+    repaintForCurrentState();
   }, [scanlineEffect]);
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export function useEmulatorScreen(
 
     const observer = new ResizeObserver(() => {
       calculateDimensions();
-      displayScreenData();
+      repaintForCurrentState();
     });
     observer.observe(host);
     return () => observer.disconnect();
@@ -162,8 +163,22 @@ export function useEmulatorScreen(
     if (!screenEl || !screenCtx) {
       return;
     }
-    screenCtx.fillStyle = "#303030";
+    screenCtx.fillStyle = getStoppedScreenFillStyle(screenEl);
     screenCtx.fillRect(0, 0, screenEl.width, screenEl.height);
+  }
+
+  function repaintForCurrentState(): void {
+    const machineState = controllerRef.current?.machineState;
+    if (
+      machineState === MachineControllerState.None ||
+      machineState === MachineControllerState.Stopped ||
+      machineState === undefined
+    ) {
+      paintStoppedScreen();
+      return;
+    }
+
+    displayScreenData();
   }
 
   function getTempCanvas(): HTMLCanvasElement | null {
@@ -188,6 +203,18 @@ export function useEmulatorScreen(
     paintStoppedScreen,
     updateScreenDimensions
   };
+}
+
+function getStoppedScreenFillStyle(screenEl: HTMLCanvasElement): string {
+  const displayElement = screenEl.parentElement;
+  if (!displayElement) {
+    return "#303030";
+  }
+
+  const backgroundColor = window.getComputedStyle(displayElement).backgroundColor;
+  return backgroundColor && backgroundColor !== "rgba(0, 0, 0, 0)"
+    ? backgroundColor
+    : "#303030";
 }
 
 function readGlobalSetting(

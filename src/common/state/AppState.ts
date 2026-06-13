@@ -1,4 +1,5 @@
 import type { MachineCommand } from "../abstractions/MachineCommand";
+import type { KeyMappingSet } from "../abstractions/KeyMapping";
 import { MachineControllerState } from "../abstractions/MachineControllerState";
 import { MI_SPECTRUM_48 } from "../machines/constants";
 import type { MachineConfigSet } from "../machines/info-types";
@@ -21,6 +22,8 @@ export type AppState = {
   globalSettings?: Record<string, any>;
   emulatorState?: EmulatorState;
   media?: MediaState;
+  keyMappingFile?: string;
+  keyMappings?: KeyMappingSet;
 };
 
 export type TapeMediaState = {

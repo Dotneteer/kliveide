@@ -13,8 +13,10 @@ export default defineConfig({
     include: [
       "./test/dummy.test.ts",
       "./test/common/emulator-state-reducer.test.ts",
+      "./test/common/key-mapping-state.test.ts",
       "./test/common/media-state.test.ts",
       "./test/main/generated-tape-save.test.ts",
+      "./test/main/keymapping-parser.test.ts",
       "./test/main/recording-stub.test.ts",
       "./test/renderer/audio-renderer.test.ts",
       "./test/renderer/generated-tape-save.test.ts",

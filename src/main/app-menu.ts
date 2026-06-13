@@ -45,6 +45,7 @@ import {
 import {
   clearTapeMediaAction,
   dimMenuAction,
+  setKeyMappingsAction,
   setClockMultiplierAction,
   setSoundLevelAction,
   setTapeMediaAction,
@@ -76,12 +77,14 @@ import {
 import { MEDIA_TAPE } from "../common/structs/project-const";
 import { parseTapeFile } from "../emu/tape/tape-parser";
 import { TAPE_FILE_FOLDER } from "./tape-folders";
+import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
 type MenuContext = "emu" | "ide";
 
 const SYSTEM_MENU_ID = "system_menu";
+const KEY_MAPPING_FOLDER = "keyMappingFolder";
 const CLOCK_MULTIPLIER_VALUES = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64];
 const SOUND_LEVEL_VALUES = [
   { value: 0.0, label: "Mute" },
@@ -578,18 +581,12 @@ function createMachineMenu(): MenuItemConstructorOptions {
       {
         id: "select_key_mapping",
         label: "Select Key Mapping...",
-        click: notImplemented("Select Key Mapping", `
-          await setKeyMappingFile(emuWindow);
-          await saveKliveProject();
-        `)
+        click: selectKeyMappingFile
       },
       {
         id: "reset_key_mapping",
         label: "Reset Key Mapping",
-        click: notImplemented("Reset Key Mapping", `
-          mainStore.dispatch(setKeyMappingsAction(undefined, undefined));
-          await saveKliveProject();
-        `)
+        click: resetKeyMappingFile
       },
       { type: "separator" },
       {
@@ -770,6 +767,58 @@ async function selectTapeFile(): Promise<void> {
   }
 
   await setSelectedTapeFile(dialogResult.filePaths[0]);
+}
+
+async function selectKeyMappingFile(): Promise<void> {
+  const window = currentEmuWindow ?? BrowserWindow.getFocusedWindow();
+  const lastFile = mainStore.getState().keyMappingFile ?? appSettings.keyMappingFile;
+  const defaultPath =
+    appSettings.folders?.[KEY_MAPPING_FOLDER] ||
+    (lastFile ? path.dirname(lastFile) : app.getPath("home"));
+  const dialogOptions: OpenDialogOptions = {
+    title: "Select Key Mapping File",
+    defaultPath,
+    filters: [
+      { name: "Key Mapping Files", extensions: ["keymap"] },
+      { name: "All Files", extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  };
+  const dialogResult = window
+    ? await dialog.showOpenDialog(window, dialogOptions)
+    : await dialog.showOpenDialog(dialogOptions);
+
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) {
+    return;
+  }
+
+  const fileName = dialogResult.filePaths[0];
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    const mappingSource = fs.readFileSync(fileName, "utf8");
+    const mappings = parseKeyMappings(mappingSource);
+    mainStore.dispatch(setKeyMappingsAction(fileName, mappings), "main");
+
+    appSettings.keyMappingFile = fileName;
+    appSettings.folders ??= {};
+    appSettings.folders[KEY_MAPPING_FOLDER] = path.dirname(fileName);
+    saveAppSettings();
+  } catch (err) {
+    await showMessageBox(window, {
+      type: "error",
+      title: "Key mapping file error",
+      message: "Could not read the selected key mapping file.",
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
+  }
+}
+
+async function resetKeyMappingFile(): Promise<void> {
+  mainStore.dispatch(setKeyMappingsAction(undefined, undefined), "main");
+  appSettings.keyMappingFile = undefined;
+  saveAppSettings();
 }
 
 async function setSelectedTapeFile(fileName: string): Promise<void> {
@@ -1190,6 +1239,7 @@ function getMenuRefreshSignature(): string {
     screenRecordingQuality: state.emulatorState?.screenRecordingQuality,
     screenRecordingFormat: state.emulatorState?.screenRecordingFormat,
     media: state.media,
+    keyMappingFile: state.keyMappingFile,
     globalSettings: state.globalSettings
   });
 }

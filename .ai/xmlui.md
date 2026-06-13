@@ -159,8 +159,9 @@ registerComponentApi({
   - `src/renderer/src/components/emu/StatusBarIcon.xmlui`
   - `src/renderer/src/components/emu/StatusBarText.xmlui`
 - Keep those helper UDCs beside the feature component that owns them unless they are reused across multiple feature areas. This keeps XMLUI markup local and avoids unnecessary React wrappers.
-- Keep EMU status bar tape diagnostics compact. The visible tape area shows only the tape icon and file name; block/mode/phase/Fast LOAD details are exposed through the tape icon tooltip so the bar does not lose horizontal space.
-- SAVE diagnostics follow the same compact status-bar pattern. While saving, `EmuStatusBar.xmlui` switches the tape icon to `floppy` and keeps phase, pilot count, saved block count, and saved byte count in the icon tooltip instead of adding more visible text.
+- For status-bar icon UDCs, forward or synthesize a `tooltip`; XMLUI's built-in `Icon` uses the tooltip as its accessible label. Add a harmless `onClick` handler when status icons should show tooltips on click, because XMLUI's `Icon` then becomes focusable and Radix tooltip opens on focus.
+- Keep EMU status bar tape diagnostics compact. The visible tape area shows only the tape icon plus the tape file name and block position, for example `floatspy.tap 2/4`; mode, phase, fast-load, and SAVE diagnostics stay out of the status bar.
+- SAVE follows the same compact status-bar pattern. While saving, `EmuStatusBar.xmlui` may switch the tape icon to `floppy`, but it should not add verbose phase, pilot-count, block-count, or byte-count text to the bar.
 - For UDC props, pass values through `$props`, for example `name="{$props.name}"` or `value="{$props.value}"`.
 - Use XMLUI's built-in `<Icon>` with the local icon registry configured in `src/renderer/src/config.ts`; icons are loaded from the repository `icons` folder by `getLocalIcons()`. Prefer existing Klive icon names such as `vm-running` and `window` over text labels when matching the original app.
 - Prefer theme variables for UDC colors and sizing that should follow tones. The EMU status bar uses `$backgroundColor-EmuStatusBar` and `$textColor-EmuStatusBar`, with light/dark values in `src/renderer/src/themes/klive.ts`.

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { KeyMapping, KeyMappingSet } from "../../../common/abstractions/KeyMapping";
 import { MachineControllerState } from "../../../common/abstractions/MachineControllerState";
 import { MC_MEM_SIZE, MC_SCREEN_FREQ } from "../../../common/machines/constants";
 import {
@@ -25,6 +26,7 @@ import {
   SP48_KEY_EVENT,
   dispatchSp48KeyStatus,
   mapPhysicalKeyToSp48Keys,
+  spectrumKeyMappings,
   type Sp48KeyEventDetail
 } from "../../../emu/sp48/sp48-keyboard";
 import {
@@ -74,6 +76,7 @@ export const EmulatorPanelReact = () => {
   const [error, setError] = useState<string>();
   const sharedState = useSharedState();
   const tapeMediaRef = useRef(sharedState.media?.tape);
+  const keyMappingsRef = useRef(buildEffectiveKeyMappings(sharedState.keyMappings));
   const dispatch = useDispatch();
   const commandSequence = sharedState.emulatorState?.machineCommandSequence ?? 0;
   const lastMachineCommand = sharedState.emulatorState?.lastMachineCommand as Sp48MachineCommand | undefined;
@@ -154,6 +157,10 @@ export const EmulatorPanelReact = () => {
   }, [sharedState.media?.tape]);
 
   useEffect(() => {
+    keyMappingsRef.current = buildEffectiveKeyMappings(sharedState.keyMappings);
+  }, [sharedState.keyMappings]);
+
+  useEffect(() => {
     fastLoadRef.current = fastLoad;
     controllerRef.current?.setTapeFastLoad(fastLoad);
   }, [fastLoad]);
@@ -210,7 +217,7 @@ export const EmulatorPanelReact = () => {
           if (pressedPhysicalKeys.has(event.code)) {
             return;
           }
-          const keys = mapPhysicalKeyToSp48Keys(event.code);
+          const keys = mapPhysicalKeyToSp48Keys(event.code, keyMappingsRef.current);
           if (keys.length === 0) {
             return;
           }
@@ -650,4 +657,14 @@ function stableJson(value: unknown): string {
   }
 
   return JSON.stringify(value);
+}
+
+function buildEffectiveKeyMappings(keyMappings: KeyMappingSet | undefined): KeyMapping {
+  if (!keyMappings) {
+    return spectrumKeyMappings;
+  }
+
+  return keyMappings.merge
+    ? { ...spectrumKeyMappings, ...keyMappings.mapping }
+    : keyMappings.mapping;
 }
