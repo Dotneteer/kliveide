@@ -307,7 +307,7 @@ async function createIdeWindow(): Promise<void> {
   ideWindowStateManager = createWindowStateManager(appSettings.windowStates?.ideWindow, {
     defaultWidth: 640,
     defaultHeight: 480,
-    maximize: false,
+    maximize: true,
     fullScreen: false,
     stateSaver: (state) => {
       appSettings.windowStates ??= {};

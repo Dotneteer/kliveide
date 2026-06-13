@@ -4,6 +4,8 @@
   var.activeDocumentName="main.asm"
   var.activeDocumentIcon="file-code"
   var.activeDocumentKind="code"
+  var.activeDialog=""
+  var.dialogParam=""
   var.showToolbar="{state.globalSettings('ideViewOptions.showToolbar', true)}"
   var.showStatusBar="{state.globalSettings('ideViewOptions.showStatusBar', true)}"
   var.showPrimarySideBar="{state.globalSettings('ideViewOptions.showPrimarySideBar', state.globalSettings('ideViewOptions.showSidebar', true))}"
@@ -39,6 +41,10 @@
             activeDocumentIcon = document.icon;
             activeDocumentKind = document.kind;
           }"
+          onRequestDialog="request => {
+            activeDialog = request.id;
+            dialogParam = request.param ?? '';
+          }"
         />
         <MainWorkbench
           activeDocumentName="{activeDocumentName}"
@@ -54,5 +60,10 @@
       />
     </HStack>
     <IdeStatusBar when="{showStatusBar}" />
+    <IdeModalHost
+      dialogId="{activeDialog}"
+      dialogParam="{dialogParam}"
+      onClose="activeDialog = ''; dialogParam = ''"
+    />
   </VStack>
 </Component>

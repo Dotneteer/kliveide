@@ -25,8 +25,18 @@
       gap="$space-2"
       verticalAlignment="center"
     >
-      <Button label="Open Folder" icon="folder-opened" size="sm" />
-      <Button label="New Project" icon="files" size="sm" />
+      <Button
+        label="Open Folder"
+        icon="folder-opened"
+        size="sm"
+        onClick="emitEvent('requestDialog', { id: 'placeholder-action', param: 'Open Folder will connect to the Electron file picker later.' })"
+      />
+      <Button
+        label="New Project"
+        icon="files"
+        size="sm"
+        onClick="emitEvent('requestDialog', { id: 'new-project', param: 'New Project' })"
+      />
     </HStack>
 
     <VStack when="{hasProject}" width="100%" height="*" gap="$space-2">
@@ -129,16 +139,46 @@
           fontSize="13px"
         />
         <HStack gap="$space-2">
-          <Button label="New File" icon="file-code" size="sm" />
-          <Button label="New Folder" icon="folder" size="sm" />
+          <Button
+            label="New File"
+            icon="file-code"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'placeholder-action', param: 'New File for ' + (selectedDocumentName ?? 'project') })"
+          />
+          <Button
+            label="New Folder"
+            icon="folder"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'placeholder-action', param: 'New Folder for ' + (selectedDocumentName ?? 'project') })"
+          />
         </HStack>
         <HStack gap="$space-2">
-          <Button label="Rename" icon="pencil" size="sm" />
-          <Button label="Delete" icon="close" size="sm" />
+          <Button
+            label="Rename"
+            icon="pencil"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'placeholder-action', param: 'Rename ' + (selectedDocumentName ?? 'selected item') })"
+          />
+          <Button
+            label="Delete"
+            icon="close"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'delete', param: selectedDocumentName })"
+          />
         </HStack>
         <HStack gap="$space-2">
-          <Button label="Exclude" icon="exclude" size="sm" />
-          <Button label="Reveal" icon="preview" size="sm" />
+          <Button
+            label="Exclude"
+            icon="exclude"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'placeholder-action', param: 'Exclude ' + (selectedDocumentName ?? 'selected item') })"
+          />
+          <Button
+            label="Reveal"
+            icon="preview"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'placeholder-action', param: 'Reveal ' + (selectedDocumentName ?? 'selected item') })"
+          />
         </HStack>
         <Button label="Close" icon="check" onClick="explorerContext.close()" />
       </VStack>

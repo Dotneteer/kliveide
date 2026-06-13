@@ -1,0 +1,98 @@
+<Component
+  name="IdeViewHost"
+  var.viewId="{$props.viewId ?? 'memory'}"
+  var.chrome="{$props.chrome ?? 'compact'}"
+  var.placement="{$props.placement ?? 'primarySideBar'}"
+  var.isCompact="{chrome === 'compact'}"
+  var.isDocument="{chrome === 'document'}"
+  var.title="{viewId === 'memory' ? 'Memory' : viewId === 'disassembly' ? 'Disassembly' : viewId === 'output' ? 'Output' : viewId === 'scripting-history' ? 'Scripting History' : 'Unknown View'}"
+  var.icon="{viewId === 'memory' ? 'memory-icon' : viewId === 'disassembly' ? 'disassembly-icon' : viewId === 'output' ? 'output' : viewId === 'scripting-history' ? 'symbol-event' : 'unknown'}"
+  var.textColor="{isCompact ? '$textColor-SideBar' : '$textColor-Editor'}"
+  var.subtleColor="{isCompact ? '$textColor-SideBarSubtle' : '$textColor-EditorSubtle'}"
+  var.previewBackground="{isCompact ? '$backgroundColor-SideBarViewPreview' : '$backgroundColor-DocumentPreview'}"
+  var.previewBorder="{isCompact ? '$borderColor-SideBarPanel' : '$borderColor-EditorGroup'}"
+>
+  <VStack
+    width="100%"
+    height="{isCompact ? undefined : '100%'}"
+    gap="{isCompact ? '$space-2' : '0'}"
+    backgroundColor="{isDocument ? '$backgroundColor-EditorGroup' : undefined}"
+  >
+    <DocumentCommandStrip
+      when="{isDocument}"
+      documentName="{title + ' - ' + placement}"
+    />
+    <VStack
+      height="{isCompact ? undefined : '*'}"
+      padding="{isCompact ? '0' : '$space-4'}"
+      gap="$space-3"
+    >
+      <HStack gap="$space-2" verticalAlignment="center">
+        <Icon
+          name="{icon}"
+          width="{isCompact ? '15px' : '20px'}"
+          height="{isCompact ? '15px' : '20px'}"
+          color="{textColor}"
+        />
+        <Text
+          value="{title}"
+          fontSize="{isCompact ? '13px' : '18px'}"
+          fontWeight="600"
+          color="{textColor}"
+        />
+      </HStack>
+      <Text
+        value="{isCompact ? 'Compact ' + placement + ' view' : 'Full ' + placement + ' view'}"
+        fontSize="12px"
+        color="{subtleColor}"
+      />
+
+      <VStack
+        when="{viewId === 'memory'}"
+        gap="$space-1"
+        padding="{isCompact ? '$space-2' : '$space-3'}"
+        backgroundColor="{previewBackground}"
+        border="1px solid {previewBorder}"
+      >
+        <Text value="#8000  3E 02 D3 FE" fontFamily="$fontFamily-monospace" fontSize="13px" color="{textColor}" />
+        <Text value="#8004  18 FE 00 00" fontFamily="$fontFamily-monospace" fontSize="13px" color="{subtleColor}" />
+        <Text when="{!isCompact}" value="#8008  21 00 40 11 00 58 01 00" fontFamily="$fontFamily-monospace" fontSize="13px" color="{subtleColor}" />
+      </VStack>
+
+      <VStack
+        when="{viewId === 'disassembly'}"
+        gap="$space-1"
+        padding="{isCompact ? '$space-2' : '$space-3'}"
+        backgroundColor="{previewBackground}"
+        border="1px solid {previewBorder}"
+      >
+        <Text value="8000  LD A,02" fontFamily="$fontFamily-monospace" fontSize="13px" color="{textColor}" />
+        <Text value="8002  OUT (FE),A" fontFamily="$fontFamily-monospace" fontSize="13px" color="{subtleColor}" />
+        <Text when="{!isCompact}" value="8004  JR 8004" fontFamily="$fontFamily-monospace" fontSize="13px" color="{subtleColor}" />
+      </VStack>
+
+      <VStack
+        when="{viewId === 'output'}"
+        gap="$space-1"
+        padding="{isCompact ? '$space-2' : '$space-3'}"
+        backgroundColor="{previewBackground}"
+        border="1px solid {previewBorder}"
+      >
+        <Text value="[build] assembling src/main.asm" fontFamily="$fontFamily-monospace" fontSize="13px" color="{textColor}" />
+        <Text value="[build] 0 errors, 0 warnings" fontFamily="$fontFamily-monospace" fontSize="13px" color="{subtleColor}" />
+      </VStack>
+
+      <VStack
+        when="{viewId === 'scripting-history'}"
+        gap="$space-1"
+        padding="{isCompact ? '$space-2' : '$space-3'}"
+        backgroundColor="{previewBackground}"
+        border="1px solid {previewBorder}"
+      >
+        <Text value="klive> help" fontFamily="$fontFamily-monospace" fontSize="13px" color="{textColor}" />
+        <Text value="klive> build" fontFamily="$fontFamily-monospace" fontSize="13px" color="{subtleColor}" />
+        <Text when="{!isCompact}" value="klive> inject --latest" fontFamily="$fontFamily-monospace" fontSize="13px" color="{subtleColor}" />
+      </VStack>
+    </VStack>
+  </VStack>
+</Component>

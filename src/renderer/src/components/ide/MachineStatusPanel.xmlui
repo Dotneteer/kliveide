@@ -1,0 +1,84 @@
+<Component
+  name="MachineStatusPanel"
+  var.emu="{state.value.emulatorState}"
+  var.frameInfo="{emu.sp48FrameInfo}"
+  var.machineState="{emu.machineState ?? 0}"
+  var.machineName="{emu.modelId === 'ntsc' ? 'ZX Spectrum 48K (NTSC)' : emu.modelId === 'pal-16k' ? 'ZX Spectrum 16K' : 'ZX Spectrum 48K'}"
+  var.stateText="{machineState === 1 ? 'Running' : machineState === 2 ? 'Pausing' : machineState === 3 ? 'Paused' : machineState === 4 ? 'Stopping' : machineState === 5 ? 'Stopped' : 'None'}"
+  var.pc="{frameInfo.pc ?? emu.pcValue ?? 0}"
+  var.frameCount="{frameInfo.frames ?? 0}"
+  var.clockMultiplier="{frameInfo.clockMultiplier ?? emu.clockMultiplier ?? 1}"
+  var.baseClock="{frameInfo.baseClockFrequency ?? (emu.modelId === 'ntsc' ? 3527500 : 3500000)}"
+  var.frequency="{baseClock * clockMultiplier}"
+  var.avgFrameTime="{frameInfo.avgFrameTimeInMs ?? 0}"
+>
+  <SharedAppState id="state" />
+  <VStack gap="$space-2" width="100%">
+    <HStack gap="$space-2" verticalAlignment="center">
+      <Icon
+        name="{machineState === 1 ? 'vm-running' : machineState === 3 ? 'pause' : 'vm'}"
+        width="16px"
+        height="16px"
+        color="$textColor-SideBar"
+      />
+      <Text
+        value="{machineName}"
+        fontSize="13px"
+        fontWeight="600"
+        color="$textColor-SideBar"
+      />
+    </HStack>
+    <VStack
+      gap="$space-1"
+      padding="$space-2"
+      backgroundColor="$backgroundColor-SideBarViewPreview"
+      border="1px solid $borderColor-SideBarPanel"
+    >
+      <HStack gap="$space-2" verticalAlignment="center">
+        <Text value="State" fontSize="12px" color="$textColor-SideBarSubtle" />
+        <SpaceFiller />
+        <Text value="{stateText}" fontSize="12px" color="$textColor-SideBar" />
+      </HStack>
+      <HStack gap="$space-2" verticalAlignment="center">
+        <Text value="PC" fontSize="12px" color="$textColor-SideBarSubtle" />
+        <SpaceFiller />
+        <Text
+          value="{(pc & 0xffff).toString(16).toUpperCase().padStart(4, '0')}"
+          fontFamily="$fontFamily-monospace"
+          fontSize="12px"
+          color="$textColor-SideBar"
+        />
+      </HStack>
+      <HStack gap="$space-2" verticalAlignment="center">
+        <Text value="Frames" fontSize="12px" color="$textColor-SideBarSubtle" />
+        <SpaceFiller />
+        <Text
+          value="{frameCount.toLocaleString(undefined, { maximumFractionDigits: 0 })}"
+          fontFamily="$fontFamily-monospace"
+          fontSize="12px"
+          color="$textColor-SideBar"
+        />
+      </HStack>
+      <HStack gap="$space-2" verticalAlignment="center">
+        <Text value="Clock" fontSize="12px" color="$textColor-SideBarSubtle" />
+        <SpaceFiller />
+        <Text
+          value="{(frequency / 1000000).toFixed(3) + ' MHz'}"
+          fontFamily="$fontFamily-monospace"
+          fontSize="12px"
+          color="$textColor-SideBar"
+        />
+      </HStack>
+      <HStack gap="$space-2" verticalAlignment="center">
+        <Text value="Avg frame" fontSize="12px" color="$textColor-SideBarSubtle" />
+        <SpaceFiller />
+        <Text
+          value="{avgFrameTime.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' ms'}"
+          fontFamily="$fontFamily-monospace"
+          fontSize="12px"
+          color="$textColor-SideBar"
+        />
+      </HStack>
+    </VStack>
+  </VStack>
+</Component>
