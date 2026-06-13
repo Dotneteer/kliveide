@@ -7,7 +7,19 @@
   var.lastFrameTime="{frameInfo.lastFrameTimeInMs ?? 0}"
   var.avgFrameTime="{frameInfo.avgFrameTimeInMs ?? 0}"
   var.pc="{frameInfo.pc ?? state.value.emulatorState.pcValue ?? 0}"
-  var.frequency="{frameInfo.baseClockFrequency ?? (modelId === 'ntsc' ? 3527500 : 3500000)}"
+  var.clockMultiplier="{frameInfo.clockMultiplier ?? state.value.emulatorState.clockMultiplier ?? 1}"
+  var.frequency="{(frameInfo.baseClockFrequency ?? (modelId === 'ntsc' ? 3527500 : 3500000)) * clockMultiplier}"
+  var.tape="{state.value.media.tape}"
+  var.tapeBlockCount="{tape.blockCount ?? 0}"
+  var.tapeBlockNo="{tapeBlockCount > 0 ? Math.min((tape.currentBlockIndex ?? 0) + 1, tapeBlockCount) : 0}"
+  var.tapeBlockText="{tapeBlockCount > 0 ? tapeBlockNo + '/' + tapeBlockCount : ''}"
+  var.tapeLoaded="{!!tape.displayName}"
+  var.tapeSaving="{tape.mode === 'save' || tape.status === 'saving'}"
+  var.tapeEof="{tapeLoaded && tape.status === 'eof'}"
+  var.tapeRewound="{tapeLoaded && ((tape.currentBlockIndex ?? 0) === 0) && (tape.status === 'rewound' || !tape.status || tape.status === 'ready')}"
+  var.tapeIcon="{tapeSaving ? 'floppy' : !tapeLoaded ? 'circle-slash' : tapeEof ? 'check' : tapeRewound ? 'reverse-tape' : 'play'}"
+  var.tapeText="{tapeLoaded ? tape.displayName + (tapeBlockText ? ' ' + tapeBlockText : '') : ''}"
+  var.tapeTooltip="{tapeLoaded ? tapeText : 'No tape'}"
 >
   <SharedAppState id="state" />
   <HStack
@@ -18,7 +30,7 @@
     paddingHorizontal="$space-normal"
   >
     <HStack gap="$space-tight" paddingVertical="2px" verticalAlignment="center">
-      <StatusBarIcon name="vm-running" />
+      <StatusBarIcon name="vm-running" tooltip="Frame execution time" />
       <StatusBarText
         value="{lastFrameTime.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3, minimumIntegerDigits: 2 })}"
       />
@@ -29,17 +41,22 @@
     </HStack>
     <Stack width="16px" />
     <HStack gap="4px" verticalAlignment="center" width="auto" height="18px">
-      <StatusBarIcon name="window" />
+      <StatusBarIcon name="window" tooltip="Rendered frames" />
       <StatusBarText
         value="{frameCount.toLocaleString(undefined, { maximumFractionDigits: 0 })}"
       />
     </HStack>
     <Stack width="16px" />
     <HStack gap="4px" verticalAlignment="center">
-      <StatusBarText value="PC:" />
+      <StatusBarIcon name="debug-current" tooltip="Program counter" />
       <StatusBarText
         value="{(pc & 0xffff).toString(16).toUpperCase().padStart(4, '0')}"
       />
+    </HStack>
+    <Stack width="16px" />
+    <HStack gap="4px" verticalAlignment="center">
+      <StatusBarIcon name="{tapeIcon}" tooltip="{tapeTooltip}" />
+      <StatusBarText value="{tapeText}" />
     </HStack>
     <SpaceFiller />
     <HStack gap="4px">

@@ -2,12 +2,11 @@
   layout="desktop"
   name="Klive IDE"
   var.currentTheme="dark"
-  var.isEmu="{window.location.search.indexOf('window=emulator') >= 0}"
   defaultTone="{currentTheme}"
 >
   <SharedAppState
     id="state"
     onDidChange="arg => currentTheme = (arg.theme === 'light' || arg.theme === 'dark') ? arg.theme : currentTheme" />
-  <EmuApp when="{isEmu}" />
-  <IdeApp when="{!isEmu}" />
+  <EmuApp when="{state.isEmulatorWindow()}" />
+  <IdeApp when="{!state.isEmulatorWindow()}" />
 </App>

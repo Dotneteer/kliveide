@@ -24,6 +24,11 @@ uint32_t sp48ReadPort(uint32_t address) {
     }
   }
   uint32_t portValue = ((uint32_t)~status) & 0xffu;
+  if (sp48TapeMode == SP48_TAPE_MODE_LOAD) {
+    const uint32_t tapeEarBit = sp48TapeGetEarBit() != 0u ? 0x40u : 0x00u;
+    return (portValue & 0xbfu) | tapeEarBit;
+  }
+
   uint8_t bit4Sensed = sp48EarBit;
   if (bit4Sensed == 0u) {
     uint32_t chargeTime = sp48EarBitChangedFrom1Tacts - sp48EarBitChangedFrom0Tacts;
@@ -43,14 +48,19 @@ void sp48WritePort(uint32_t address, uint32_t value) {
   }
 
   sp48PortFeValue = (uint8_t)value;
-  sp48BorderColor = (uint8_t)(value & 0x07u);
+  const uint8_t nextBorderColor = (uint8_t)(value & 0x07u);
+  if (nextBorderColor != sp48BorderColor) {
+    renderUlaUntilCurrentTact();
+  }
+  sp48BorderColor = nextBorderColor;
 
   const uint8_t nextMicBit = (value & 0x08u) != 0u ? 1u : 0u;
   const uint8_t nextEarBit = (value & 0x10u) != 0u ? 1u : 0u;
   if (nextEarBit != sp48EarBit || nextMicBit != sp48MicBit) {
-    recordAudioTransition(sp48Tacts, nextEarBit, nextMicBit);
+    recordAudioTransition(sp48Tacts);
   }
   sp48MicBit = nextMicBit;
+  sp48TapeProcessMicBit(sp48MicBit);
   sp48BeeperLevel = (uint8_t)((sp48MicBit != 0u ? 1u : 0u) | (nextEarBit != 0u ? 2u : 0u));
 
   if (sp48EarBit != 0u) {

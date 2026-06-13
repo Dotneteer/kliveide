@@ -38,7 +38,8 @@ export const EmuKeyboardMd: ComponentMetadata = createMetadata({
     [`fontSize-belowKey-${COMP}`]: "20px",
     [`fontSize-centerKey-${COMP}`]: "28px",
     [`fontSize-shiftKey-${COMP}`]: "20px",
-    [`fontSize-topNumberKey-${COMP}`]: "20px"
+    [`fontSize-topNumberKey-${COMP}`]: "20px",
+    [`padding-${COMP}`]: "$space-4"
   }
 });
 

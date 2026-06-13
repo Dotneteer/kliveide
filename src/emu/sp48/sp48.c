@@ -14,8 +14,62 @@
 #define SP48_BASE_CLOCK_FREQUENCY_NTSC 3527500u
 #define SP48_DEFAULT_SAMPLE_RATE 44100u
 #define SP48_AUDIO_SAMPLE_CAPACITY 2048u
-#define SP48_AUDIO_TRANSITION_CAPACITY 4096u
-#define SP48_AUDIO_SAMPLE_SCALE 12000.0
+#define SP48_AUDIO_SAMPLE_SCALE 32767.0
+#define SP48_TAPE_MAX_BLOCKS 512u
+#define SP48_TAPE_DATA_CAPACITY 0x400000u
+#define SP48_TAPE_FILENAME_CAPACITY 260u
+#define SP48_TAPE_SAVE_MAX_BLOCKS 64u
+#define SP48_TAPE_SAVE_DATA_CAPACITY 0x100000u
+#define SP48_TAPE_HEADER_PILOT_COUNT 8063u
+#define SP48_TAPE_DATA_PILOT_COUNT 3223u
+#define SP48_TAPE_MIN_SAVE_PILOT_PULSE_COUNT 3000u
+#define SP48_TAPE_SAVE_PULSE_TOLERANCE 24u
+#define SP48_TAPE_TOO_LONG_SAVE_PAUSE 3500000u
+#define SP48_TAPE_PILOT_PULSE_LENGTH 2168u
+#define SP48_TAPE_SYNC1_PULSE_LENGTH 667u
+#define SP48_TAPE_SYNC2_PULSE_LENGTH 735u
+#define SP48_TAPE_BIT0_PULSE_LENGTH 855u
+#define SP48_TAPE_BIT1_PULSE_LENGTH 1710u
+#define SP48_TAPE_TERM_SYNC_PULSE_LENGTH 947u
+#define SP48_TAPE_LOAD_BYTES_ROUTINE 0x056cu
+#define SP48_TAPE_LOAD_BYTES_INVALID_HEADER_ROUTINE 0x05b6u
+#define SP48_TAPE_LOAD_BYTES_RESUME_ROUTINE 0x05e2u
+#define SP48_TAPE_SAVE_BYTES_ROUTINE 0x04c2u
+#define SP48_DIAGNOSTIC_TAPE_BLOCK_OVERFLOW 0x00000004u
+#define SP48_DIAGNOSTIC_TAPE_DATA_OVERFLOW 0x00000008u
+#define SP48_DIAGNOSTIC_TAPE_UPLOAD_INCOMPLETE 0x00000010u
+#define SP48_DIAGNOSTIC_TAPE_SAVE_DATA_OVERFLOW 0x00000040u
+#define SP48_DIAGNOSTIC_TAPE_SAVE_BLOCK_OVERFLOW 0x00000080u
+#define SP48_DIAGNOSTIC_TAPE_SAVE_MALFORMED_PULSE 0x00000100u
+
+#define SP48_TAPE_MODE_PASSIVE 0u
+#define SP48_TAPE_MODE_LOAD 1u
+#define SP48_TAPE_MODE_SAVE 2u
+
+#define SP48_TAPE_PHASE_NONE 0u
+#define SP48_TAPE_PHASE_PILOT 1u
+#define SP48_TAPE_PHASE_SYNC 2u
+#define SP48_TAPE_PHASE_DATA 3u
+#define SP48_TAPE_PHASE_TERM_SYNC 4u
+#define SP48_TAPE_PHASE_PAUSE 5u
+#define SP48_TAPE_PHASE_COMPLETED 6u
+
+#define SP48_TAPE_SAVE_PHASE_NONE 0u
+#define SP48_TAPE_SAVE_PHASE_PILOT 1u
+#define SP48_TAPE_SAVE_PHASE_SYNC1 2u
+#define SP48_TAPE_SAVE_PHASE_SYNC2 3u
+#define SP48_TAPE_SAVE_PHASE_DATA 4u
+#define SP48_TAPE_SAVE_PHASE_ERROR 5u
+
+#define SP48_TAPE_MIC_PULSE_NONE 0u
+#define SP48_TAPE_MIC_PULSE_TOO_SHORT 1u
+#define SP48_TAPE_MIC_PULSE_TOO_LONG 2u
+#define SP48_TAPE_MIC_PULSE_PILOT 3u
+#define SP48_TAPE_MIC_PULSE_SYNC1 4u
+#define SP48_TAPE_MIC_PULSE_SYNC2 5u
+#define SP48_TAPE_MIC_PULSE_BIT0 6u
+#define SP48_TAPE_MIC_PULSE_BIT1 7u
+#define SP48_TAPE_MIC_PULSE_TERM_SYNC 8u
 
 #define SP48_RENDER_PHASE_NONE 0u
 #define SP48_RENDER_PHASE_BORDER 1u
@@ -50,11 +104,24 @@ typedef struct Sp48AudioSample {
   int16_t right;
 } Sp48AudioSample;
 
-typedef struct Sp48AudioTransition {
-  uint32_t tact;
-  uint8_t earBit;
-  uint8_t micBit;
-} Sp48AudioTransition;
+typedef struct Sp48TapeBlock {
+  uint32_t offset;
+  uint32_t length;
+  uint32_t pauseAfter;
+  uint32_t pilotPulseLength;
+  uint32_t sync1PulseLength;
+  uint32_t sync2PulseLength;
+  uint32_t zeroBitPulseLength;
+  uint32_t oneBitPulseLength;
+  uint32_t endSyncPulseLength;
+  uint8_t lastByteUsedBits;
+  uint32_t pilotPulseCount;
+} Sp48TapeBlock;
+
+typedef struct Sp48SavedTapeBlock {
+  uint32_t offset;
+  uint32_t length;
+} Sp48SavedTapeBlock;
 
 // ----------------------------------------------------------------------------
 // Static machine state
@@ -68,11 +135,18 @@ static uint16_t sp48RenderingAttributeAddress[SP48_TACTS_PER_FRAME_MAX];
 static uint32_t sp48RenderingPixelIndex[SP48_TACTS_PER_FRAME_MAX];
 static uint32_t sp48PixelBuffer[SP48_PIXEL_BUFFER_WORDS_MAX];
 static Sp48AudioSample sp48AudioSamples[SP48_AUDIO_SAMPLE_CAPACITY];
-static Sp48AudioTransition sp48AudioTransitions[SP48_AUDIO_TRANSITION_CAPACITY];
+static Sp48TapeBlock sp48TapeBlocks[SP48_TAPE_MAX_BLOCKS];
+static Sp48SavedTapeBlock sp48SavedTapeBlocks[SP48_TAPE_SAVE_MAX_BLOCKS];
+static uint8_t sp48TapeData[SP48_TAPE_DATA_CAPACITY];
+static uint8_t sp48TapeFileName[SP48_TAPE_FILENAME_CAPACITY];
+static uint8_t sp48TapeSaveData[SP48_TAPE_SAVE_DATA_CAPACITY];
 
 static uint32_t sp48Frames;
 static uint32_t sp48Tacts;
 static uint32_t sp48TactsInFrame = SP48_TACTS_PER_FRAME_PAL;
+static uint32_t sp48ClockMultiplier = 1u;
+static uint32_t sp48TargetClockMultiplier = 1u;
+static uint32_t sp48TactsInCurrentFrame = SP48_TACTS_PER_FRAME_PAL;
 static uint32_t sp48RasterLines;
 static uint32_t sp48ScreenLineTime;
 static uint32_t sp48TimingScreenWidth;
@@ -85,12 +159,12 @@ static uint32_t sp48DisplayTopLine;
 static uint32_t sp48BaseClockFrequency = SP48_BASE_CLOCK_FREQUENCY_PAL;
 static uint32_t sp48AudioSampleRate = SP48_DEFAULT_SAMPLE_RATE;
 static uint32_t sp48AudioSampleCount;
-static uint32_t sp48AudioTransitionCount;
-static uint32_t sp48AudioFrameStartTact;
-static uint8_t sp48AudioFrameStartEarBit;
-static uint8_t sp48AudioFrameStartMicBit;
 static double sp48AudioSampleLength;
 static double sp48AudioNextSampleTact;
+static uint32_t sp48AudioLastLevelChangeTact;
+static double sp48AudioAccumulatedEar;
+static double sp48AudioAccumulatedMic;
+static double sp48AudioAccumulatedTacts;
 static double sp48DcFilterPrevInputLeft;
 static double sp48DcFilterPrevInputRight;
 static double sp48DcFilterPrevOutputLeft;
@@ -108,6 +182,12 @@ static uint32_t sp48RomUploadCount;
 static uint32_t sp48RomChecksum;
 static uint8_t sp48PortFeValue;
 static uint8_t sp48BorderColor;
+static uint32_t sp48BorderFrameStartTact;
+static uint32_t sp48LastRenderedFrameTact;
+static uint8_t sp48PixelByte1;
+static uint8_t sp48PixelByte2;
+static uint8_t sp48AttrByte1;
+static uint8_t sp48AttrByte2;
 static uint8_t sp48EarBit;
 static uint8_t sp48MicBit;
 static uint8_t sp48BeeperLevel;
@@ -117,6 +197,50 @@ static uint16_t sp48LastMemoryAddress;
 static uint8_t sp48LastMemoryValue;
 static uint8_t sp48LastMemoryIsWrite;
 static uint8_t sp48HasMemoryEvent;
+static uint32_t sp48TapeBlockCount;
+static uint32_t sp48TapeDataLength;
+static uint32_t sp48TapeCurrentBlockIndex;
+static uint32_t sp48TapeUploadBlockCount;
+static uint32_t sp48TapeUploadDataLength;
+static uint8_t sp48TapeUploadActive;
+static uint8_t sp48TapeLoaded;
+static uint8_t sp48TapeEof;
+static uint8_t sp48TapeMode;
+static uint8_t sp48TapePlayPhase;
+static uint32_t sp48TapeStartTact;
+static uint32_t sp48TapePilotEndPos;
+static uint32_t sp48TapeSync1EndPos;
+static uint32_t sp48TapeSync2EndPos;
+static uint32_t sp48TapeBitStartPos;
+static uint32_t sp48TapeBitPulseLength;
+static uint32_t sp48TapeDataIndex;
+static uint8_t sp48TapeBitMask;
+static uint32_t sp48TapeTermEndPos;
+static uint32_t sp48TapePauseEndPos;
+static uint8_t sp48TapeEarBit;
+static uint32_t sp48TapeModeChangeCount;
+static uint32_t sp48TapeLastModeChangeTact;
+static uint32_t sp48TapeLastModeChangePc;
+static uint32_t sp48TapeLoadStartCount;
+static uint32_t sp48TapeSaveStartCount;
+static uint8_t sp48TapeFastLoad = 1u;
+static uint8_t sp48TapeSaveMicBit;
+static uint8_t sp48TapeSavePhase;
+static uint8_t sp48TapeSavePreviousDataPulse;
+static uint8_t sp48TapeSaveLastPulse;
+static uint8_t sp48TapeSaveBitOffset;
+static uint8_t sp48TapeSaveDataByte;
+static uint32_t sp48TapeSaveLastMicBitTact;
+static uint32_t sp48TapeSavePilotPulseCount;
+static uint32_t sp48TapeSavedBlockCount;
+static uint32_t sp48TapeSavedDataLength;
+static uint32_t sp48TapeSavedRevision;
+static uint32_t sp48TapeSaveCurrentBlockOffset;
+static uint32_t sp48TapeSaveCurrentBlockLength;
+
+static void setNextAudioSample(void);
+static void renderUlaUntilCurrentTact(void);
+static uint32_t normalizeClockMultiplier(uint32_t value);
 
 #include "sp48-memory.c"
 #include "sp48-ula.c"
@@ -124,6 +248,8 @@ static uint8_t sp48HasMemoryEvent;
 uint32_t sp48ReadPort(uint32_t address);
 uint32_t sp48ReadFloatingBus(void);
 void sp48WritePort(uint32_t address, uint32_t value);
+uint32_t sp48TapeGetEarBit(void);
+void sp48TapeProcessMicBit(uint32_t micBit);
 uint32_t sp48ExecuteInstruction(void);
 
 #define Z80_EXTERNAL_BUS 1
@@ -138,6 +264,7 @@ uint32_t sp48ExecuteInstruction(void);
     const uint32_t z80Sp48Tacts = (uint32_t)(value); \
     cpu.tacts += z80Sp48Tacts; \
     sp48Tacts += z80Sp48Tacts; \
+    setNextAudioSample(); \
   } while (0)
 #define SP48_CPU_APPLY_CONTENTION() \
   do { \
@@ -146,6 +273,7 @@ uint32_t sp48ExecuteInstruction(void);
     sp48Tacts += z80Sp48Delay; \
     sp48TotalContentionDelaySinceStart += z80Sp48Delay; \
     sp48ContentionDelaySincePause += z80Sp48Delay; \
+    setNextAudioSample(); \
   } while (0)
 #define SP48_CPU_DELAY_PORT_ACCESS(address) \
   do { \
@@ -205,9 +333,33 @@ uint32_t sp48ExecuteInstruction(void);
 #include "sp48-keyboard.c"
 #include "sp48-beeper.c"
 #include "sp48-ports.c"
+#include "sp48-tape.c"
 
 // ----------------------------------------------------------------------------
 // Lifecycle and execution
+
+static uint32_t normalizeClockMultiplier(uint32_t value) {
+  switch (value) {
+    case 1u:
+    case 2u:
+    case 4u:
+    case 6u:
+    case 8u:
+    case 10u:
+    case 12u:
+    case 16u:
+    case 20u:
+    case 24u:
+    case 32u:
+    case 40u:
+    case 48u:
+    case 56u:
+    case 64u:
+      return value;
+    default:
+      return 1u;
+  }
+}
 
 void sp48Reset(void) {
   if (sp48ScreenLineTime == 0u) {
@@ -218,6 +370,8 @@ void sp48Reset(void) {
   resetPortFe();
   sp48Frames = 0u;
   sp48Tacts = 0u;
+  sp48ClockMultiplier = 1u;
+  sp48TactsInCurrentFrame = sp48TactsInFrame;
   sp48DiagnosticFlags = 0u;
   sp48TotalContentionDelaySinceStart = 0u;
   sp48ContentionDelaySincePause = 0u;
@@ -227,6 +381,7 @@ void sp48Reset(void) {
   sp48FrameCompleted = 0u;
   sp48InterruptsRaised = 0u;
   sp48InterruptLineActive = 0u;
+  resetTapePlayback();
   resetAudio();
   renderUlaDisplay();
 }
@@ -246,19 +401,24 @@ uint32_t sp48ExecuteFrame(void) {
     sp48FrameCompleted = 0u;
   }
 
-  const uint32_t frameStartTact = sp48Tacts;
-  const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInFrame;
+  if (sp48ClockMultiplier != sp48TargetClockMultiplier) {
+    sp48ClockMultiplier = sp48TargetClockMultiplier;
+    sp48TactsInCurrentFrame = sp48TactsInFrame * sp48ClockMultiplier;
+  }
+
+  const uint32_t frameStartTact = sp48NextFrameStartTact;
+  const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInCurrentFrame;
   beginAudioFrame();
+  beginBorderFrame(frameStartTact);
   sp48CpuFrameSliceInstructions = 0u;
   while (sp48Tacts < frameEndTact) {
     sp48ExecuteInstruction();
     sp48CpuFrameSliceInstructions++;
   }
   sp48FrameCompleted = 1u;
-  sp48NextFrameStartTact += sp48TactsInFrame;
+  sp48NextFrameStartTact += sp48TactsInCurrentFrame;
   sp48Frames++;
-  renderUlaDisplay();
-  renderBeeperAudio(frameStartTact, sp48Tacts);
+  renderUlaUntilCurrentTact();
   return 0u;
 }
 
@@ -269,6 +429,7 @@ void sp48RenderInstantScreen(void) {
 uint32_t sp48ExecuteInstruction(void) {
   sp48HasMemoryEvent = 0u;
   z80ClearBusEvents();
+  updateTapeMode();
   const uint8_t intActive = shouldRaiseInterrupt();
   if (intActive != 0u && sp48InterruptLineActive == 0u) {
     sp48InterruptsRaised++;
@@ -279,7 +440,8 @@ uint32_t sp48ExecuteInstruction(void) {
   z80ExecuteCpuCycle();
   sp48Tacts = z80GetTacts();
   sp48CpuInstructionsExecuted++;
-  sp48FrameCompleted = sp48Tacts >= sp48NextFrameStartTact + sp48TactsInFrame ? 1u : 0u;
+  updateTapeMode();
+  sp48FrameCompleted = sp48Tacts >= sp48NextFrameStartTact + sp48TactsInCurrentFrame ? 1u : 0u;
   return 0u;
 }
 
@@ -296,24 +458,33 @@ void sp48DelayPortAccess(uint32_t address) {
     if (lowBit != 0u) {
       applyContentionDelay();
       sp48Tacts += 1u;
+      setNextAudioSample();
       applyContentionDelay();
       sp48Tacts += 1u;
+      setNextAudioSample();
       applyContentionDelay();
       sp48Tacts += 1u;
+      setNextAudioSample();
       applyContentionDelay();
       sp48Tacts += 1u;
+      setNextAudioSample();
     } else {
       applyContentionDelay();
       sp48Tacts += 1u;
+      setNextAudioSample();
       applyContentionDelay();
       sp48Tacts += 3u;
+      setNextAudioSample();
     }
   } else if (lowBit != 0u) {
     sp48Tacts += 4u;
+    setNextAudioSample();
   } else {
     sp48Tacts += 1u;
+    setNextAudioSample();
     applyContentionDelay();
     sp48Tacts += 3u;
+    setNextAudioSample();
   }
 }
 
@@ -390,6 +561,22 @@ uint32_t sp48GetAudioSampleCapacity(void) {
 
 uint32_t sp48GetTactsInFrame(void) {
   return sp48TactsInFrame;
+}
+
+void sp48SetTargetClockMultiplier(uint32_t value) {
+  sp48TargetClockMultiplier = normalizeClockMultiplier(value);
+}
+
+uint32_t sp48GetClockMultiplier(void) {
+  return sp48ClockMultiplier;
+}
+
+uint32_t sp48GetTargetClockMultiplier(void) {
+  return sp48TargetClockMultiplier;
+}
+
+uint32_t sp48GetTactsInCurrentFrame(void) {
+  return sp48TactsInCurrentFrame;
 }
 
 uint32_t sp48GetBaseClockFrequency(void) {
@@ -542,6 +729,10 @@ void sp48SetCpuIy(uint32_t value) {
 
 uint32_t sp48GetCpuAfAlt(void) {
   return z80GetAfAlt();
+}
+
+void sp48SetCpuAfAlt(uint32_t value) {
+  z80SetAfAlt(value);
 }
 
 uint32_t sp48GetCpuBcAlt(void) {

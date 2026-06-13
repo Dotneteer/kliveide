@@ -67,6 +67,13 @@ export async function readBinaryFile(path: string, resolveIn?: string): Promise<
   return getMainApi().readBinaryFile(path, resolveIn);
 }
 
+export async function saveGeneratedTapeFile(
+  defaultName: string,
+  contents: Uint8Array
+): Promise<{ fileName?: string }> {
+  return getMainApi().saveGeneratedTapeFile(defaultName, contents);
+}
+
 export async function updateSettingValue(id: string, value: unknown): Promise<unknown> {
   return getMainApi().setSettingValue(id, value);
 }
@@ -116,7 +123,7 @@ function getAppPath(): string | undefined {
   return appPath ?? undefined;
 }
 
-function getMainApi(): MainApi {
+export function getMainApi(): MainApi {
   if (!mainApi) {
     throw new Error("Main API is not ready.");
   }

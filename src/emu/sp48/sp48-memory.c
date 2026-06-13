@@ -22,6 +22,9 @@ static void sp48CpuWriteMemory(uint32_t address, uint32_t value) {
   sp48LastMemoryIsWrite = 1u;
   sp48HasMemoryEvent = 1u;
   if (maskedAddress >= 0x4000u) {
+    if (maskedAddress < 0x5b00u) {
+      renderUlaUntilCurrentTact();
+    }
     sp48Memory[maskedAddress] = (uint8_t)value;
   }
 }
@@ -51,6 +54,9 @@ uint32_t sp48ReadMemory(uint32_t address) {
 void sp48WriteMemory(uint32_t address, uint32_t value) {
   const uint32_t maskedAddress = address & 0xffffu;
   if (maskedAddress >= 0x4000u) {
+    if (maskedAddress < 0x5b00u) {
+      renderUlaUntilCurrentTact();
+    }
     sp48Memory[maskedAddress] = (uint8_t)value;
   }
 }

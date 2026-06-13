@@ -6,9 +6,12 @@ import {
   shell,
   type MessageBoxOptions,
   type MessageBoxReturnValue,
-  type MenuItemConstructorOptions
+  type MenuItemConstructorOptions,
+  type OpenDialogOptions
 } from "electron";
+import fs from "node:fs";
 import os from "node:os";
+import path from "node:path";
 import {
   SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
   SETTING_EDITOR_AUTOCOMPLETE,
@@ -27,6 +30,7 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
+  SETTING_EMU_FAST_LOAD,
   SETTING_IDE_CLOSE_EMU,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
@@ -38,11 +42,25 @@ import {
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLS_ON_TOP
 } from "../common/settings/setting-const";
-import { dimMenuAction, setThemeAction } from "../common/state/actions";
+import {
+  clearTapeMediaAction,
+  dimMenuAction,
+  setKeyMappingsAction,
+  setClockMultiplierAction,
+  setSoundLevelAction,
+  setTapeMediaAction,
+  setThemeAction
+} from "../common/state/actions";
 import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
-import type { EmuMachineCommand } from "../common/messaging/EmuApi";
+import type { EmuMachineCommand, EmuRecordingCommand } from "../common/messaging/EmuApi";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
-import { MF_ALLOW_SCAN_LINES } from "../common/machines/constants";
+import type {
+  RecordingFormat,
+  RecordingFps,
+  RecordingQuality,
+  ScreenRecordingState
+} from "../common/state/AppState";
+import { MF_ALLOW_SCAN_LINES, MF_TAPE_SUPPORT } from "../common/machines/constants";
 import {
   getMachineInfo,
   machineRegistry,
@@ -56,12 +74,25 @@ import {
   saveAppSettings,
   setSettingValue
 } from "./settings";
+import { MEDIA_TAPE } from "../common/structs/project-const";
+import { parseTapeFile } from "../emu/tape/tape-parser";
+import { TAPE_FILE_FOLDER } from "./tape-folders";
+import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
 type MenuContext = "emu" | "ide";
 
 const SYSTEM_MENU_ID = "system_menu";
+const KEY_MAPPING_FOLDER = "keyMappingFolder";
+const CLOCK_MULTIPLIER_VALUES = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64];
+const SOUND_LEVEL_VALUES = [
+  { value: 0.0, label: "Mute" },
+  { value: 0.2, label: "Low" },
+  { value: 0.4, label: "Medium" },
+  { value: 0.8, label: "High" },
+  { value: 1.0, label: "Highest" }
+];
 
 let currentEmuWindow: BrowserWindow | null = null;
 let currentIdeWindow: BrowserWindow | null = null;
@@ -408,6 +439,20 @@ function createMachineMenu(): MenuItemConstructorOptions {
   const canStopOrRestart = isRunning || isPaused;
   const canStep = isPaused;
   const machineTypesMenu = createMachineTypesMenu();
+  const machineInfo = getMachineInfo(appState.emulatorState?.machineId);
+  const supportsTape = !!machineInfo?.features?.[MF_TAPE_SUPPORT];
+  const tapeMedia = appState.media?.[MEDIA_TAPE];
+  const hasTape = !!tapeMedia?.displayName;
+  const clockMultiplier = appState.emulatorState?.clockMultiplier ?? 1;
+  const soundLevel = appState.emulatorState?.soundLevel ?? 0.8;
+  const recordingAvailable = appState.emulatorState?.screenRecordingAvailable ?? true;
+  const recordingState = appState.emulatorState?.screenRecordingState ?? "idle";
+  const recordingFps = appState.emulatorState?.screenRecordingFps ?? "native";
+  const recordingQuality = appState.emulatorState?.screenRecordingQuality ?? "good";
+  const recordingFormat = appState.emulatorState?.screenRecordingFormat ?? "mp4";
+  const recordingIdle = recordingState === "idle";
+  const recordingActive = recordingState === "recording" || recordingState === "paused";
+  const recordingPreferenceEnabled = recordingState === "idle" || recordingState === "armed";
 
   return {
     label: "Machine",
@@ -446,6 +491,29 @@ function createMachineMenu(): MenuItemConstructorOptions {
         enabled: canStopOrRestart,
         click: issueMachineCommand("restart")
       },
+      ...(supportsTape
+        ? [
+            { type: "separator" as const },
+            createBooleanSettingsMenu(SETTING_EMU_FAST_LOAD, "emu"),
+            {
+              id: "rewind_tape",
+              label: "Rewind Tape",
+              enabled: hasTape,
+              click: issueMachineCommand("rewind")
+            },
+            {
+              id: "select_tape_file",
+              label: "Select Tape File...",
+              click: selectTapeFile
+            },
+            {
+              id: "eject_tape",
+              label: "Eject Tape",
+              enabled: hasTape,
+              click: ejectTape
+            }
+          ]
+        : []),
       { type: "separator" },
       {
         id: "debug",
@@ -479,29 +547,23 @@ function createMachineMenu(): MenuItemConstructorOptions {
       {
         id: "clock_mult",
         label: "Clock Multiplier",
-        submenu: ["Normal", "2x", "4x", "6x", "8x", "10x", "12x", "16x", "20x", "24x"].map(
-          (label) => ({
-            label,
-            type: "checkbox" as const,
-            click: notImplemented(`Clock Multiplier ${label}`, `
-              mainStore.dispatch(setClockMultiplierAction(v));
-              await logEmuEvent(\`Clock multiplier set to \${v}\`);
-              await saveKliveProject();
-            `)
-          })
-        )
+        submenu: CLOCK_MULTIPLIER_VALUES.map((value) => ({
+          id: `clock_mult_${value}`,
+          label: value === 1 ? "Normal" : `${value}x`,
+          type: "checkbox" as const,
+          checked: clockMultiplier === value,
+          click: () => setClockMultiplier(value)
+        }))
       },
       {
         id: "sound_level",
         label: "Sound Level",
-        submenu: ["Mute", "Low", "Medium", "High", "Highest"].map((label) => ({
+        submenu: SOUND_LEVEL_VALUES.map(({ value, label }) => ({
+          id: `sound_level_${value}`,
           label,
           type: "checkbox" as const,
-          click: notImplemented(`Sound Level ${label}`, `
-            mainStore.dispatch(setSoundLevelAction(v.value));
-            await logEmuEvent(\`Sound level set to \${v.label} (\${v.value})\`);
-            await saveKliveProject();
-          `)
+          checked: soundLevel === value,
+          click: () => setSoundLevel(value)
         }))
       },
       { type: "separator" },
@@ -519,51 +581,92 @@ function createMachineMenu(): MenuItemConstructorOptions {
       {
         id: "select_key_mapping",
         label: "Select Key Mapping...",
-        click: notImplemented("Select Key Mapping", `
-          await setKeyMappingFile(emuWindow);
-          await saveKliveProject();
-        `)
+        click: selectKeyMappingFile
       },
       {
         id: "reset_key_mapping",
         label: "Reset Key Mapping",
-        click: notImplemented("Reset Key Mapping", `
-          mainStore.dispatch(setKeyMappingsAction(undefined, undefined));
-          await saveKliveProject();
-        `)
+        click: resetKeyMappingFile
       },
       { type: "separator" },
       {
         id: "recording_menu",
         label: "Recording",
+        enabled: recordingAvailable,
         submenu: [
           {
             id: "recording_half_fps",
             label: "Half fps",
             type: "checkbox",
-            click: notImplemented("Recording Half fps", `
-              await getEmuApi().issueRecordingCommand(
-                appState?.emulatorState?.screenRecordingFps === "half"
-                  ? "set-fps-native"
-                  : "set-fps-half"
-              );
-            `)
+            checked: recordingFps === "half",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingFps(recordingFps === "half" ? "native" : "half")
           },
           { type: "separator" },
           {
             id: "recording_quality_lossless",
             label: "Highest (lossless) quality",
             type: "checkbox",
-            click: notImplemented("Recording Quality", `
-              await getEmuApi().issueRecordingCommand("set-quality-lossless");
-            `)
+            checked: recordingQuality === "lossless",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingQuality("lossless")
+          },
+          {
+            id: "recording_quality_high",
+            label: "High quality",
+            type: "checkbox",
+            checked: recordingQuality === "high",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingQuality("high")
+          },
+          {
+            id: "recording_quality_good",
+            label: "Good quality",
+            type: "checkbox",
+            checked: recordingQuality === "good",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingQuality("good")
+          },
+          { type: "separator" },
+          {
+            id: "recording_format_mp4",
+            label: "MP4",
+            type: "checkbox",
+            checked: recordingFormat === "mp4",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingFormat("mp4")
+          },
+          {
+            id: "recording_format_webm",
+            label: "WebM",
+            type: "checkbox",
+            checked: recordingFormat === "webm",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingFormat("webm")
+          },
+          {
+            id: "recording_format_mkv",
+            label: "MKV",
+            type: "checkbox",
+            checked: recordingFormat === "mkv",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingFormat("mkv")
+          },
+          { type: "separator" },
+          {
+            id: "recording_pause_resume",
+            label: recordingState === "paused" ? "Resume recording" : "Pause recording",
+            enabled: recordingActive,
+            click: () => setRecordingState(recordingState === "paused" ? "recording" : "paused")
           },
           {
             id: "recording_start_stop",
-            label: "Start recording",
-            click: notImplemented("Start recording", `
-              await getEmuApi().issueRecordingCommand(isRecordingIdle ? "start-recording" : "disarm");
-            `)
+            label: recordingIdle
+              ? "Start recording"
+              : recordingState === "armed"
+                ? "Cancel recording"
+                : "Stop recording",
+            click: () => setRecordingState(recordingIdle ? "armed" : "idle")
           }
         ]
       }
@@ -637,6 +740,186 @@ async function selectMachineType(machineId: string, modelId?: string): Promise<v
 
   if (machine?.features?.[MF_ALLOW_SCAN_LINES] === false) {
     setSettingValue(SETTING_EMU_SCANLINE_EFFECT, "off");
+  }
+}
+
+async function selectTapeFile(): Promise<void> {
+  const window = currentEmuWindow ?? BrowserWindow.getFocusedWindow();
+  const currentTape = mainStore.getState().media?.[MEDIA_TAPE]?.fileName;
+  const defaultPath =
+    appSettings.folders?.[TAPE_FILE_FOLDER] ||
+    (currentTape ? path.dirname(currentTape) : app.getPath("home"));
+  const dialogOptions: OpenDialogOptions = {
+    title: "Select Tape File",
+    defaultPath,
+    filters: [
+      { name: "Tape Files", extensions: ["tap", "tzx"] },
+      { name: "All Files", extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  };
+  const dialogResult = window
+    ? await dialog.showOpenDialog(window, dialogOptions)
+    : await dialog.showOpenDialog(dialogOptions);
+
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) {
+    return;
+  }
+
+  await setSelectedTapeFile(dialogResult.filePaths[0]);
+}
+
+async function selectKeyMappingFile(): Promise<void> {
+  const window = currentEmuWindow ?? BrowserWindow.getFocusedWindow();
+  const lastFile = mainStore.getState().keyMappingFile ?? appSettings.keyMappingFile;
+  const defaultPath =
+    appSettings.folders?.[KEY_MAPPING_FOLDER] ||
+    (lastFile ? path.dirname(lastFile) : app.getPath("home"));
+  const dialogOptions: OpenDialogOptions = {
+    title: "Select Key Mapping File",
+    defaultPath,
+    filters: [
+      { name: "Key Mapping Files", extensions: ["keymap"] },
+      { name: "All Files", extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  };
+  const dialogResult = window
+    ? await dialog.showOpenDialog(window, dialogOptions)
+    : await dialog.showOpenDialog(dialogOptions);
+
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) {
+    return;
+  }
+
+  const fileName = dialogResult.filePaths[0];
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    const mappingSource = fs.readFileSync(fileName, "utf8");
+    const mappings = parseKeyMappings(mappingSource);
+    mainStore.dispatch(setKeyMappingsAction(fileName, mappings), "main");
+
+    appSettings.keyMappingFile = fileName;
+    appSettings.folders ??= {};
+    appSettings.folders[KEY_MAPPING_FOLDER] = path.dirname(fileName);
+    saveAppSettings();
+  } catch (err) {
+    await showMessageBox(window, {
+      type: "error",
+      title: "Key mapping file error",
+      message: "Could not read the selected key mapping file.",
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
+  }
+}
+
+async function resetKeyMappingFile(): Promise<void> {
+  mainStore.dispatch(setKeyMappingsAction(undefined, undefined), "main");
+  appSettings.keyMappingFile = undefined;
+  saveAppSettings();
+}
+
+async function setSelectedTapeFile(fileName: string): Promise<void> {
+  const window = currentEmuWindow ?? BrowserWindow.getFocusedWindow();
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    const contents = new Uint8Array(fs.readFileSync(fileName));
+    const parsed = parseTapeFile(contents);
+    mainStore.dispatch(
+      setTapeMediaAction({
+        fileName,
+        displayName: path.basename(fileName),
+        size: contents.byteLength,
+        blockCount: parsed.blocks.length,
+        currentBlockIndex: parsed.blocks.length > 0 ? 0 : undefined,
+        mode: "passive",
+        phase: "none",
+        status: parsed.blocks.length > 0 ? "rewound" : undefined,
+        sourceFormat: parsed.format,
+        warnings: parsed.warnings
+      }),
+      "main"
+    );
+    appSettings.folders ??= {};
+    appSettings.folders[TAPE_FILE_FOLDER] = path.dirname(fileName);
+    saveAppSettings();
+    await getEmuApi().setTapeFile(fileName, contents);
+  } catch (err) {
+    await showMessageBox(window, {
+      type: "error",
+      title: "Tape file error",
+      message: "Could not read the selected tape file.",
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
+  }
+}
+
+export async function restorePersistedTapeFile(): Promise<void> {
+  const fileName = appSettings.media?.[MEDIA_TAPE]?.fileName;
+  if (!fileName) {
+    return;
+  }
+
+  try {
+    const contents = new Uint8Array(fs.readFileSync(fileName));
+    const parsed = parseTapeFile(contents);
+    mainStore.dispatch(
+      setTapeMediaAction({
+        fileName,
+        displayName: path.basename(fileName),
+        size: contents.byteLength,
+        blockCount: parsed.blocks.length,
+        currentBlockIndex: parsed.blocks.length > 0 ? 0 : undefined,
+        mode: "passive",
+        phase: "none",
+        status: parsed.blocks.length > 0 ? "rewound" : undefined,
+        sourceFormat: parsed.format,
+        warnings: parsed.warnings
+      }),
+      "main"
+    );
+    await getEmuApi().setTapeFile(fileName, contents, false, true);
+  } catch {
+    mainStore.dispatch(clearTapeMediaAction(), "main");
+    appSettings.media = {};
+    saveAppSettings();
+  }
+}
+
+async function ejectTape(): Promise<void> {
+  const window = currentEmuWindow ?? BrowserWindow.getFocusedWindow();
+  const result = await showMessageBox(window, {
+    type: "question",
+    buttons: ["Yes", "No"],
+    defaultId: 1,
+    cancelId: 1,
+    title: "Eject Tape",
+    message: "Are you sure you want to eject the tape?"
+  });
+
+  if (result.response !== 0) {
+    return;
+  }
+
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    mainStore.dispatch(clearTapeMediaAction(), "main");
+    appSettings.media = {};
+    saveAppSettings();
+    await getEmuApi().setTapeFile("", new Uint8Array(0));
+  } catch (err) {
+    await showMessageBox(window, {
+      type: "error",
+      title: "Tape eject failed",
+      message: "Could not eject the tape.",
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
   }
 }
 
@@ -791,6 +1074,90 @@ function issueMachineCommand(command: EmuMachineCommand): () => Promise<void> {
   };
 }
 
+async function setClockMultiplier(value: number): Promise<void> {
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    mainStore.dispatch(setClockMultiplierAction(value), "main");
+    saveAppSettings();
+    await getEmuApi().setClockMultiplier(value);
+  } catch (err) {
+    await showMessageBox(currentEmuWindow ?? BrowserWindow.getFocusedWindow(), {
+      type: "error",
+      title: "Clock multiplier failed",
+      message: `Could not set clock multiplier to ${value}x.`,
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
+  }
+}
+
+async function setSoundLevel(value: number): Promise<void> {
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    mainStore.dispatch(setSoundLevelAction(value), "main");
+    saveAppSettings();
+    await getEmuApi().setSoundLevel(value);
+  } catch (err) {
+    await showMessageBox(currentEmuWindow ?? BrowserWindow.getFocusedWindow(), {
+      type: "error",
+      title: "Sound level failed",
+      message: `Could not set sound level to ${value}.`,
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
+  }
+}
+
+function setRecordingFps(value: RecordingFps): void {
+  void issueRecordingCommand(value === "half" ? "set-fps-half" : "set-fps-native");
+}
+
+function setRecordingQuality(value: RecordingQuality): void {
+  const command: EmuRecordingCommand =
+    value === "lossless"
+      ? "set-quality-lossless"
+      : value === "high"
+        ? "set-quality-high"
+        : "set-quality-good";
+  void issueRecordingCommand(command);
+}
+
+function setRecordingFormat(value: RecordingFormat): void {
+  const command: EmuRecordingCommand =
+    value === "webm" ? "set-format-webm" : value === "mkv" ? "set-format-mkv" : "set-format-mp4";
+  void issueRecordingCommand(command);
+}
+
+function setRecordingState(value: ScreenRecordingState): void {
+  const command: EmuRecordingCommand =
+    value === "idle"
+      ? "disarm"
+      : value === "paused"
+        ? "pause-recording"
+        : value === "recording"
+          ? "resume-recording"
+          : "start-recording";
+  void issueRecordingCommand(command);
+}
+
+async function issueRecordingCommand(command: EmuRecordingCommand): Promise<void> {
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    await getEmuApi().issueRecordingCommand(command);
+  } catch (err) {
+    await showMessageBox(currentEmuWindow ?? BrowserWindow.getFocusedWindow(), {
+      type: "error",
+      title: "Recording command failed",
+      message: `Could not issue recording command: ${command}`,
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
+  }
+}
+
 function notImplemented(label: string, _originalHandler: string): () => Promise<void> {
   // The original handler body is intentionally passed by each caller and kept in
   // source as a nearby comment string until the corresponding shell subsystem exists.
@@ -863,6 +1230,16 @@ function getMenuRefreshSignature(): string {
     machineId: state.emulatorState?.machineId,
     modelId: state.emulatorState?.modelId,
     machineState: state.emulatorState?.machineState,
+    clockMultiplier: state.emulatorState?.clockMultiplier,
+    soundLevel: state.emulatorState?.soundLevel,
+    soundMuted: state.emulatorState?.soundMuted,
+    screenRecordingAvailable: state.emulatorState?.screenRecordingAvailable,
+    screenRecordingState: state.emulatorState?.screenRecordingState,
+    screenRecordingFps: state.emulatorState?.screenRecordingFps,
+    screenRecordingQuality: state.emulatorState?.screenRecordingQuality,
+    screenRecordingFormat: state.emulatorState?.screenRecordingFormat,
+    media: state.media,
+    keyMappingFile: state.keyMappingFile,
     globalSettings: state.globalSettings
   });
 }

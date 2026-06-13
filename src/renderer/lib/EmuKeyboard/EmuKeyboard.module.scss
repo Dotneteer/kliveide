@@ -26,9 +26,10 @@ $fontSize-belowKey-EmuKeyboard: createThemeVar("fontSize-belowKey-#{$component}"
 $fontSize-centerKey-EmuKeyboard: createThemeVar("fontSize-centerKey-#{$component}");
 $fontSize-shiftKey-EmuKeyboard: createThemeVar("fontSize-shiftKey-#{$component}");
 $fontSize-topNumberKey-EmuKeyboard: createThemeVar("fontSize-topNumberKey-#{$component}");
+$padding-EmuKeyboard: createThemeVar("padding-#{$component}");
 
 .keyboard {
-  align-items: flex-start;
+  align-items: center;
   background: $backgroundColor-EmuKeyboard;
   box-sizing: border-box;
   display: flex;
@@ -36,7 +37,7 @@ $fontSize-topNumberKey-EmuKeyboard: createThemeVar("fontSize-topNumberKey-#{$com
   justify-content: center;
   min-height: 0;
   overflow: hidden;
-  padding: 8px 12px;
+  padding: $padding-EmuKeyboard;
   width: 100%;
   font-family: $fontFamily-EmuKeyboard;
 }

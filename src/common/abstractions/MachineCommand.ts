@@ -6,4 +6,5 @@ export type MachineCommand =
   | "debug"
   | "stepInto"
   | "stepOver"
-  | "stepOut";
+  | "stepOut"
+  | "rewind";

@@ -4,6 +4,7 @@ import { appStateFlagsReducer } from "./app-state-flags-reducer";
 import { emulatorStateReducer } from "./emulator-state-reducer";
 import { ActionForwarder, createStore, Reducer } from "./redux-light";
 import { globalSettingsReducer } from "./global-settings-reducer";
+import { mediaStateReducer } from "./media-state-reducer";
 
 /**
  * Implements the reducer for managing the application state
@@ -15,6 +16,7 @@ function appReducer(state: AppState, action: Action): AppState {
   state = appStateFlagsReducer(state, action);
   invokeReducer(state.globalSettings, globalSettingsReducer, (a, n) => (a.globalSettings = n));
   invokeReducer(state.emulatorState, emulatorStateReducer, (a, n) => (a.emulatorState = n));
+  invokeReducer(state.media, mediaStateReducer, (a, n) => (a.media = n));
   return state;
 
   /**

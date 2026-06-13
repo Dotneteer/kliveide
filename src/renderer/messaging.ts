@@ -1,5 +1,5 @@
 import { createEmuApi } from "../common/messaging/EmuApi";
-import type { EmuMachineCommand } from "../common/messaging/EmuApi";
+import type { EmuMachineCommand, EmuRecordingCommand } from "../common/messaging/EmuApi";
 import { EmuToMainMessenger } from "../common/messaging/EmuToMainMessenger";
 import { createIdeApi } from "../common/messaging/IdeApi";
 import { IdeToMainMessenger } from "../common/messaging/IdeToMainMessenger";
@@ -13,11 +13,21 @@ import {
   type ResponseMessage
 } from "../common/messaging/messages-core";
 import {
+  clearTapeMediaAction,
   issueMachineCommandAction,
+  setClockMultiplierAction,
   setGlobalSettingAction,
   setMachineTypeAction,
+  setSoundLevelAction,
+  setTapeMediaAction,
   setThemeAction
 } from "../common/state/actions";
+import {
+  clearQueuedSp48Tape,
+  getActiveSp48Controller,
+  uploadTapeToActiveSp48ControllerOrQueue
+} from "../emu/sp48/sp48-session";
+import { parseTapeFile } from "../emu/tape/tape-parser";
 import {
   dispatchSharedAction,
   getSharedState,
@@ -25,6 +35,7 @@ import {
   setRendererActionForwarder,
   windowKind
 } from "./shared-store";
+import { issueRecordingCommandToActiveManager } from "./lib/recording/recording-session";
 
 const messenger = windowKind === "emu" ? new EmuToMainMessenger() : new IdeToMainMessenger();
 setRendererActionForwarder((message) => messenger.sendMessage(message));
@@ -126,6 +137,77 @@ class EmuMessageProcessor {
     issueDemoMachineCommand(command, "emu");
     rememberStatus(`EmuApi.issueMachineCommand received command=${command}.`);
   }
+
+  async issueRecordingCommand(command: EmuRecordingCommand) {
+    await issueRecordingCommandToActiveManager(command);
+    rememberStatus(`EmuApi.issueRecordingCommand received command=${command}.`);
+  }
+
+  async setClockMultiplier(value: number) {
+    dispatchSharedAction(setClockMultiplierAction(value), "emu");
+    rememberStatus(`EmuApi.setClockMultiplier received value=${value}.`);
+  }
+
+  async setSoundLevel(value: number) {
+    dispatchSharedAction(setSoundLevelAction(value), "emu");
+    rememberStatus(`EmuApi.setSoundLevel received value=${value}.`);
+  }
+
+  async setTapeFile(
+    file: string,
+    contents: Uint8Array,
+    _confirm?: boolean,
+    _suppressError?: boolean
+  ) {
+    if (!file || contents.byteLength === 0) {
+      clearQueuedSp48Tape();
+      getActiveSp48Controller()?.clearTape();
+      dispatchSharedAction(clearTapeMediaAction(), "emu");
+      rememberStatus("EmuApi.setTapeFile ejected tape.");
+      return;
+    }
+
+    let parsed: ReturnType<typeof parseTapeFile>;
+    try {
+      parsed = parseTapeFile(contents);
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      if (!_suppressError) {
+        rememberStatus(`Tape file error: ${error}`);
+      }
+      return;
+    }
+
+    try {
+      uploadTapeToActiveSp48ControllerOrQueue(parsed.blocks, file);
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      if (!_suppressError) {
+        rememberStatus(`Tape upload error: ${error}`);
+      }
+      return;
+    }
+
+    dispatchSharedAction(
+      setTapeMediaAction({
+        fileName: file,
+        displayName: getFileName(file),
+        size: contents.byteLength,
+        blockCount: parsed.blocks.length,
+        currentBlockIndex: parsed.blocks.length > 0 ? 0 : undefined,
+        mode: "passive",
+        phase: "none",
+        status: parsed.blocks.length > 0 ? "rewound" : undefined,
+        sourceFormat: parsed.format,
+        warnings: parsed.warnings
+      }),
+      "emu"
+    );
+    rememberStatus(
+      `EmuApi.setTapeFile parsed ${getFileName(file)} as ${parsed.format.toUpperCase()} ` +
+        `(${parsed.blocks.length} blocks, ${contents.byteLength} bytes).`
+    );
+  }
 }
 
 class IdeMessageProcessor {
@@ -137,10 +219,34 @@ class IdeMessageProcessor {
 
 function rememberStatus(status: string): string {
   latestStatus = status;
-  console.info(`[${windowKind}] ${status}`);
   return status;
 }
 
 function issueDemoMachineCommand(command: EmuMachineCommand, source: "main" | "emu" = "emu"): void {
   dispatchSharedAction(issueMachineCommandAction(command), source);
+  if (command === "rewind") {
+    markTapeRewound(source);
+  }
+}
+
+function getFileName(file: string): string {
+  const normalized = file.replace(/\\/g, "/");
+  return normalized.slice(normalized.lastIndexOf("/") + 1) || file;
+}
+
+function markTapeRewound(source: "main" | "emu"): void {
+  const tape = getSharedState().media?.tape;
+  if (!tape?.displayName) {
+    return;
+  }
+  dispatchSharedAction(
+    setTapeMediaAction({
+      ...tape,
+      currentBlockIndex: 0,
+      mode: "passive",
+      phase: "none",
+      status: "rewound"
+    }),
+    source
+  );
 }

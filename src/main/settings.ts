@@ -10,10 +10,19 @@ import {
   setGlobalSettingAction,
   initGlobalSettingsAction,
   setThemeAction,
-  setMachineTypeAction
+  setMachineTypeAction,
+  setTapeMediaAction,
+  clearTapeMediaAction,
+  setClockMultiplierAction,
+  setSoundLevelAction,
+  setScreenRecordingAvailableAction,
+  setKeyMappingsAction
 } from "../common/state/actions";
+import type { MediaState } from "../common/state/AppState";
 import type { WindowState } from "./WindowState";
 import { mainStore } from "./main-store";
+import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
+import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 
 export const KLIVE_HOME_FOLDER = "Klive";
 export const SETTINGS_FILE_NAME = "klive2.settings";
@@ -24,12 +33,21 @@ export type AppSettings = {
     ideWindow?: WindowState;
     showIdeOnStartup?: boolean;
   };
+  folders?: Record<string, string>;
   theme?: string;
   globalSettings?: Record<string, unknown>;
+  media?: MediaState;
+  keyMappingFile?: string;
+  emulatorState?: {
+    clockMultiplier?: number;
+    soundLevel?: number;
+    savedSoundLevel?: number;
+  };
 };
 
 export let appSettings: AppSettings = {};
 let lastSavedGlobalSettings = "";
+let lastSavedEmulatorState = "";
 let unsubscribeSettingsPersistence: (() => void) | undefined;
 
 export function loadAppSettings(): void {
@@ -57,6 +75,7 @@ export function saveAppSettings(): void {
     fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
     fs.writeFileSync(settingsPath, JSON.stringify(appSettings, null, 2));
     lastSavedGlobalSettings = stableJson(selectPersistedGlobalSettings(appSettings.globalSettings ?? {}));
+    lastSavedEmulatorState = stableJson(selectPersistedEmulatorState(appSettings.emulatorState ?? {}));
   } catch {
     // Settings persistence is best-effort; window closing should never fail on it.
   }
@@ -69,6 +88,24 @@ export function applyPersistedSettingsToStore(): void {
   mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"), "main");
   mainStore.dispatch(initGlobalSettingsAction(globalSettings), "main");
   mainStore.dispatch(
+    setClockMultiplierAction(normalizeClockMultiplier(appSettings.emulatorState?.clockMultiplier)),
+    "main"
+  );
+  mainStore.dispatch(
+    setSoundLevelAction(
+      normalizeSoundLevel(appSettings.emulatorState?.soundLevel),
+      normalizeSavedSoundLevel(appSettings.emulatorState?.savedSoundLevel)
+    ),
+    "main"
+  );
+  mainStore.dispatch(setScreenRecordingAvailableAction(isFFmpegAvailable()), "main");
+  if (appSettings.media?.tape?.fileName) {
+    mainStore.dispatch(setTapeMediaAction(appSettings.media.tape), "main");
+  } else {
+    mainStore.dispatch(clearTapeMediaAction(), "main");
+  }
+  restorePersistedKeyMappings();
+  mainStore.dispatch(
     setMachineTypeAction(
       machineSelection.machineId,
       machineSelection.modelId,
@@ -77,19 +114,28 @@ export function applyPersistedSettingsToStore(): void {
     "main"
   );
   lastSavedGlobalSettings = stableJson(selectPersistedGlobalSettings(globalSettings));
+  lastSavedEmulatorState = stableJson(selectPersistedEmulatorState(appSettings.emulatorState ?? {}));
 }
 
 export function startSettingsPersistence(): void {
   unsubscribeSettingsPersistence?.();
   lastSavedGlobalSettings = stableJson(selectPersistedGlobalSettings(mainStore.getState().globalSettings ?? {}));
+  lastSavedEmulatorState = stableJson(selectPersistedEmulatorState(mainStore.getState().emulatorState ?? {}));
 
   unsubscribeSettingsPersistence = mainStore.subscribe(() => {
-    const nextGlobalSettings = mainStore.getState().globalSettings ?? {};
+    const state = mainStore.getState();
+    const nextGlobalSettings = state.globalSettings ?? {};
     const nextPersistedGlobalSettings = selectPersistedGlobalSettings(nextGlobalSettings);
-    const nextSignature = stableJson(nextPersistedGlobalSettings);
+    const nextGlobalSignature = stableJson(nextPersistedGlobalSettings);
+    const nextPersistedEmulatorState = selectPersistedEmulatorState(state.emulatorState ?? {});
+    const nextEmulatorSignature = stableJson(nextPersistedEmulatorState);
 
-    if (nextSignature !== lastSavedGlobalSettings) {
+    if (
+      nextGlobalSignature !== lastSavedGlobalSettings ||
+      nextEmulatorSignature !== lastSavedEmulatorState
+    ) {
       appSettings.globalSettings = nextPersistedGlobalSettings;
+      appSettings.emulatorState = nextPersistedEmulatorState;
       saveAppSettings();
     }
   });
@@ -142,7 +188,14 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
   return {
     ...settings,
     theme: settings.theme ?? "dark",
-    globalSettings: normalizeGlobalSettings(settings.globalSettings ?? {})
+    globalSettings: normalizeGlobalSettings(settings.globalSettings ?? {}),
+    media: selectPersistedMedia(settings.media ?? {}),
+    keyMappingFile: typeof settings.keyMappingFile === "string" ? settings.keyMappingFile : undefined,
+    emulatorState: {
+      clockMultiplier: normalizeClockMultiplier(settings.emulatorState?.clockMultiplier),
+      soundLevel: normalizeSoundLevel(settings.emulatorState?.soundLevel),
+      savedSoundLevel: normalizeSavedSoundLevel(settings.emulatorState?.savedSoundLevel)
+    }
   };
 }
 
@@ -150,6 +203,24 @@ function refreshAppSettingsFromStore(): void {
   const state = mainStore.getState();
   appSettings.theme = state.theme;
   appSettings.globalSettings = selectPersistedGlobalSettings(state.globalSettings ?? {});
+  appSettings.media = selectPersistedMedia(state.media ?? {});
+  appSettings.keyMappingFile = state.keyMappingFile;
+  appSettings.emulatorState = selectPersistedEmulatorState(state.emulatorState ?? {});
+}
+
+function restorePersistedKeyMappings(): void {
+  if (!appSettings.keyMappingFile) {
+    mainStore.dispatch(setKeyMappingsAction(undefined, undefined), "main");
+    return;
+  }
+
+  try {
+    const mappingSource = fs.readFileSync(appSettings.keyMappingFile, "utf8");
+    const mappings = parseKeyMappings(mappingSource);
+    mainStore.dispatch(setKeyMappingsAction(appSettings.keyMappingFile, mappings), "main");
+  } catch {
+    mainStore.dispatch(setKeyMappingsAction(undefined, undefined), "main");
+  }
 }
 
 function selectPersistedGlobalSettings(globalSettings: Record<string, unknown>): Record<string, unknown> {
@@ -178,6 +249,33 @@ function normalizeGlobalSettings(globalSettings: Record<string, unknown>): Recor
   return normalized;
 }
 
+function selectPersistedMedia(media: MediaState): MediaState {
+  if (!media.tape?.fileName) {
+    return {};
+  }
+
+  return {
+    tape: {
+      fileName: media.tape.fileName,
+      displayName: media.tape.displayName,
+      size: media.tape.size,
+      blockCount: media.tape.blockCount,
+      sourceFormat: media.tape.sourceFormat,
+      currentBlockIndex: 0,
+      status: "rewound",
+      warnings: media.tape.warnings
+    }
+  };
+}
+
+function selectPersistedEmulatorState(emulatorState: AppSettings["emulatorState"]): NonNullable<AppSettings["emulatorState"]> {
+  return {
+    clockMultiplier: normalizeClockMultiplier(emulatorState?.clockMultiplier),
+    soundLevel: normalizeSoundLevel(emulatorState?.soundLevel),
+    savedSoundLevel: normalizeSavedSoundLevel(emulatorState?.savedSoundLevel)
+  };
+}
+
 function getMachineSelectionFromSettings(globalSettings: Record<string, unknown>) {
   const value = get(globalSettings, SETTING_EMU_MACHINE_TYPE);
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -190,6 +288,24 @@ function getMachineSelectionFromSettings(globalSettings: Record<string, unknown>
     config?: Record<string, unknown>;
   };
   return resolveMachineSelection(selection.machineId, selection.modelId, selection.config);
+}
+
+function normalizeClockMultiplier(value: unknown): number {
+  return typeof value === "number" && [1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64].includes(value)
+    ? value
+    : 1;
+}
+
+function normalizeSoundLevel(value: unknown): number {
+  return typeof value === "number" && [0.0, 0.2, 0.4, 0.8, 1.0].includes(value)
+    ? value
+    : 0.8;
+}
+
+function normalizeSavedSoundLevel(value: unknown): number {
+  return typeof value === "number" && [0.2, 0.4, 0.8, 1.0].includes(value)
+    ? value
+    : 0.8;
 }
 
 function validateSettingValue(setting: Setting, value: unknown): void {

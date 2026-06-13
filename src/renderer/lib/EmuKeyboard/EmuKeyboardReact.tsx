@@ -17,9 +17,14 @@ export function EmuKeyboardReact({ machineType = "sp48" }: Props) {
     }
 
     const updateSize = () => {
+      const style = window.getComputedStyle(host);
+      const horizontalPadding =
+        Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight);
+      const verticalPadding =
+        Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
       setSize({
-        width: host.offsetWidth,
-        height: host.offsetHeight
+        width: Math.max(0, host.offsetWidth - horizontalPadding),
+        height: Math.max(0, host.offsetHeight - verticalPadding)
       });
     };
 

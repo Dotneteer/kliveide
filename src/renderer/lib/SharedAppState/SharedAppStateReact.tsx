@@ -9,7 +9,8 @@ import {
   useDispatchSetTheme,
   useReadSettingValue,
   useSharedState,
-  useUpdateSettingValue
+  useUpdateSettingValue,
+  windowKind
 } from "../../shared-store";
 
 type SharedAppStateReactProps = {
@@ -29,12 +30,14 @@ type SharedAppStateApi = {
   getAllSettingValues: () => Promise<Record<string, unknown>>;
   setSettingValue: (key: string, value: unknown) => Promise<unknown>;
   update: (key: string, value: unknown) => AppState;
+  windowKind: () => "emu" | "ide";
+  isEmulatorWindow: () => boolean;
 };
 
 const noopUpdateState = () => {};
 
 function isEmulatorWindow(): boolean {
-  return window.location.search.indexOf("window=emulator") >= 0;
+  return windowKind === "emu";
 }
 
 function readPath(source: unknown, path: string): unknown {
@@ -180,6 +183,12 @@ export const SharedAppStateReact = ({
       },
       setSettingValue(key: string, next: unknown) {
         return updateSettingValue(key, next);
+      },
+      windowKind() {
+        return windowKind;
+      },
+      isEmulatorWindow() {
+        return windowKind === "emu";
       },
       update(key: string, next: unknown) {
         const nextValue = dispatchSetGlobalSetting(key, next);

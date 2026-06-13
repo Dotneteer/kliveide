@@ -4,6 +4,7 @@ import { emulatorPanelComponentRenderer } from "./EmulatorPanel/EmulatorPanel";
 import { helloComponentRenderer } from "./Hello/Hello";
 import { persistedSettingOnReleaseComponentRenderer } from "./PersistedSettingOnRelease/PersistedSettingOnRelease";
 import { sharedAppStateComponentRenderer } from "./SharedAppState/SharedAppState";
+import { splitterSizeGuardComponentRenderer } from "./SplitterSizeGuard/SplitterSizeGuard";
 import { toolbarButtonComponentRenderer } from "./Toolbar/ToolbarButton";
 import { toolbarSeparatorComponentRenderer } from "./Toolbar/ToolbarSeparator";
 import { wasmBitmapDisplayComponentRenderer } from "./WasmBitmapDisplay/WasmBitmapDisplay";
@@ -17,6 +18,7 @@ export default {
     helloComponentRenderer,
     persistedSettingOnReleaseComponentRenderer,
     sharedAppStateComponentRenderer,
+    splitterSizeGuardComponentRenderer,
     toolbarButtonComponentRenderer,
     toolbarSeparatorComponentRenderer,
     wasmBitmapDisplayComponentRenderer,

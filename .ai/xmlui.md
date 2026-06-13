@@ -35,7 +35,7 @@ These notes summarize XMLUI lessons learned while wiring the Klive IDE Electron 
 - XMLUI access is optional by default: `obj.child.value` returns `undefined` if any segment is missing instead of throwing like normal JavaScript.
 - Prefer XMLUI/App-provided helpers such as `delay`, `Log`, `App.fetch`, `Clipboard`, and `navigate` over direct browser globals. XMLUI has sandboxing/diagnostic rules around raw DOM and browser APIs.
 - Avoid the `new` operator in XMLUI markup. XMLUI supports only a restricted constructor allow-list, and relying on constructors in markup can break across framework versions or sandbox settings.
-- For query-string checks in XMLUI markup, prefer simple string operations or move parsing into TypeScript/React code. For example, use `window.location.search.indexOf('window=emulator') >= 0` instead of `new URLSearchParams(...)`.
+- Do not access DOM globals such as `window.location` from XMLUI markup. XMLUI 0.12.30 reports sandbox diagnostics for that. Move query-string parsing into TypeScript/React code and expose a safe API through a custom component. In this app, use `SharedAppState` APIs such as `state.isEmulatorWindow()` in XMLUI.
 
 ## Component Scope
 
@@ -159,6 +159,9 @@ registerComponentApi({
   - `src/renderer/src/components/emu/StatusBarIcon.xmlui`
   - `src/renderer/src/components/emu/StatusBarText.xmlui`
 - Keep those helper UDCs beside the feature component that owns them unless they are reused across multiple feature areas. This keeps XMLUI markup local and avoids unnecessary React wrappers.
+- For status-bar icon UDCs, forward or synthesize a `tooltip`; XMLUI's built-in `Icon` uses the tooltip as its accessible label. Add a harmless `onClick` handler when status icons should show tooltips on click, because XMLUI's `Icon` then becomes focusable and Radix tooltip opens on focus.
+- Keep EMU status bar tape diagnostics compact. The visible tape area shows only the tape icon plus the tape file name and block position, for example `floatspy.tap 2/4`; mode, phase, fast-load, and SAVE diagnostics stay out of the status bar.
+- SAVE follows the same compact status-bar pattern. While saving, `EmuStatusBar.xmlui` may switch the tape icon to `floppy`, but it should not add verbose phase, pilot-count, block-count, or byte-count text to the bar.
 - For UDC props, pass values through `$props`, for example `name="{$props.name}"` or `value="{$props.value}"`.
 - Use XMLUI's built-in `<Icon>` with the local icon registry configured in `src/renderer/src/config.ts`; icons are loaded from the repository `icons` folder by `getLocalIcons()`. Prefer existing Klive icon names such as `vm-running` and `window` over text labels when matching the original app.
 - Prefer theme variables for UDC colors and sizing that should follow tones. The EMU status bar uses `$backgroundColor-EmuStatusBar` and `$textColor-EmuStatusBar`, with light/dark values in `src/renderer/src/themes/klive.ts`.
@@ -183,6 +186,7 @@ registerComponentApi({
 ## Theming And Styling
 
 - XMLUI themes compile to CSS custom properties with the `--xmlui-*` prefix.
+- Theme variables with color contracts should use explicit CSS color values such as hex, rgb, or hsl. XMLUI 0.12.30 may reject named colors such as `orangered` for validated theme variables.
 - Theme variables can reference other variables with `$name`, which resolves to `var(--xmlui-name)`.
 - Component metadata can declare `themeVars` from SCSS with `parseScssVar` and provide `defaultThemeVars`.
 - Theme variable names follow `property[-partOrScreen][-Component][-variant][--state]`.

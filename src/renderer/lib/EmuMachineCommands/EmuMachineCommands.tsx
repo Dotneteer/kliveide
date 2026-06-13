@@ -13,6 +13,10 @@ export const EmuMachineCommandsMd: ComponentMetadata = createMetadata({
     issueMachineCommand: {
       description: "Issues a command to the temporary emulator lifecycle controller.",
       signature: "issueMachineCommand(command: string): AppState"
+    },
+    issueRecordingCommand: {
+      description: "Issues a command to the emulator recording controller.",
+      signature: "issueRecordingCommand(command: string): AppState"
     }
   },
   nonVisual: true

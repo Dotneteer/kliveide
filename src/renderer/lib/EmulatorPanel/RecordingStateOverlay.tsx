@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
+import type { ScreenRecordingState } from "../../../common/state/AppState";
 import { useSharedState } from "../../shared-store";
 import styles from "./RecordingStateOverlay.module.scss";
 
-type RecordingState = "idle" | "armed" | "recording" | "paused";
-
 export const RecordingStateOverlay = () => {
   const sharedState = useSharedState();
-  const recState = (sharedState.emulatorState as { screenRecordingState?: RecordingState } | undefined)
-    ?.screenRecordingState;
+  const recState: ScreenRecordingState | undefined = sharedState.emulatorState?.screenRecordingState;
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {

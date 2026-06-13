@@ -41,6 +41,7 @@ The repository does not install this automatically. On macOS, Homebrew LLVM clan
     - `src/emu/sp48/sp48-keyboard.c`
     - `src/emu/sp48/sp48-beeper.c`
     - `src/emu/sp48/sp48-ports.c`
+    - `src/emu/sp48/sp48-tape.c`
   - Generated artifact: `public/wasm/sp48.wasm`
   - TypeScript adapter: `src/emu/sp48/WasmZxSpectrum48Machine.ts`
   - Controller adapter: `src/emu/sp48/Sp48MachineController.ts`
@@ -181,7 +182,7 @@ The fake SP48 display pattern has been removed. `src/emu/sp48/sp48-ula.c`, inclu
 - the PAL screen shape exposed to the renderer is `352x288`
 - `sp48GetPixelBufferStartOffset()` returns one screen row (`352` for PAL), matching the original panel copy offset
 - the 256x192 display is placed within the buffer at the same border offset as the original screen device
-- border pixels are currently filled from the latest `$FE` border color
+- visible border and display pixels are rendered with the same tact actions as the original `CommonScreenDevice.renderTact(...)`; for performance, the C core catches ULA rendering up to the current tact at visible-state boundaries (screen RAM writes, border color changes, and frame completion) rather than on every tact increment
 
 `sp48RenderInstantScreen()` is exported for UI and tests that need to repaint the screen immediately after memory or border-color writes. The backing pixel buffer is taller than the displayed height by a few guard rows, just like the TypeScript screen device allocation pattern; TypeScript consumers should copy from `getPixelBufferStartOffset()` for `screenWidthInPixels * screenHeightInPixels` pixels.
 
@@ -189,16 +190,17 @@ The fake SP48 display pattern has been removed. `src/emu/sp48/sp48-ula.c`, inclu
 
 The fake SP48 audio pattern has been removed. `src/emu/sp48/sp48-beeper.c` prepares audio samples from the `$FE` EAR/MIC state:
 
-- `$FE` writes record fixed-size, static transition entries with absolute tacts
+- `$FE` writes update EAR/MIC accumulation before changing to the new output level
 - left channel is EAR and right channel is MIC, matching the current reference beeper model
-- each output sample uses transition-weighted averaging over its sample window
-- a DC high-pass filter with `alpha = 0.995` is applied
+- sample emission follows the original `AudioDeviceBase` timing model: every tact increment path calls `setNextAudioSample()`, and one sample is emitted when machine tacts pass `_audioNextSampleTact`
+- each output sample uses transition-weighted averaging since the previous emitted sample
+- a DC high-pass filter with `alpha = 0.995` is applied, matching the reference base audio device
 - output samples currently use the workspace ABI `Sp48AudioSample { int16_t left; int16_t right; }`
-- transition-buffer overflow sets diagnostic flag `0x00000002`
+- audio sample capacity overflow sets diagnostic flag `0x00000001`
 
 Do not introduce dynamic allocation for future audio work. If the sample ABI changes to floats later, update both the C struct and `WasmZxSpectrum48Machine` typed-array view together.
 
-Renderer playback for the emulator panel lives in `src/renderer/lib/EmulatorPanel/AudioRenderer.ts`, `useEmulatorAudio.ts`, and `Sampling.worklet.js`. The panel creates the `AudioContext`, reads its actual `sampleRate`, configures the Wasm machine with that same rate, resumes the context when the machine enters `Running`, suspends it on pause/stop, normalizes the current int16 Wasm samples to WebAudio's `[-1, 1]` range, mixes the diagnostic EAR/MIC channels into the mono Spectrum speaker level (`0.66 * EAR + 0.33 * MIC`), applies `emulatorState.soundLevel`, and posts that same speaker sample to both left and right worklet channels. Do not hardcode 44.1 kHz; many Electron/WebAudio devices run at 48 kHz, and a producer/consumer sample-rate mismatch creates audible periodic gaps.
+Renderer playback for the emulator panel lives in `src/renderer/lib/EmulatorPanel/AudioRenderer.ts`, `useEmulatorAudio.ts`, and `Sampling.worklet.js`. The panel creates the `AudioContext`, reads its actual `sampleRate`, configures the Wasm machine with that same rate, resumes the context when the machine enters `Running`, suspends it on pause/stop, normalizes the current int16 Wasm samples to WebAudio's `[-1, 1]` range, uses the EAR/loudspeaker channel as the audible Spectrum speaker, applies `emulatorState.soundLevel`, and posts that same speaker sample to both left and right worklet channels. The MIC channel remains in the Wasm audio ABI for diagnostics and SAVE capture, but it is not routed to audible speaker output. Do not hardcode 44.1 kHz; many Electron/WebAudio devices run at 48 kHz, and a producer/consumer sample-rate mismatch creates audible periodic gaps.
 
 Keep Wasm audio scheduling aligned with the reference `AudioDeviceBase`: `_audioSampleLength = baseClockFrequency / sampleRate`, `_audioNextSampleTact` is continuous across frames, and `onNewFrame()` clears the current frame's sample list without resetting the next sample tact. A sample is emitted only after machine tacts advance past `_audioNextSampleTact`; do not create zero-width samples at exact frame/sample boundaries. Render the frame's beeper samples through the actual CPU tact after the instruction that crosses the frame boundary, not merely through the nominal frame-end tact, so no overshoot tacts are lost. Frame sample counts therefore vary naturally, for example 48 kHz PAL starts `958, 958, 959, 958...` samples. Do not force `sampleRate / 50` or a fixed `ceil(tactsInFrame * sampleRate / baseClockFrequency)` count every frame. The emulator panel must pace machine frames with a timed machine loop based on `tactsInFrame / baseClockFrequency`, not `requestAnimationFrame`; a 60 Hz repaint loop cannot evenly submit 50 Hz Spectrum audio chunks.
 
@@ -212,6 +214,50 @@ Keep Wasm audio scheduling aligned with the reference `AudioDeviceBase`: `_audio
 - non-fetch phases return `0xff`
 - `sp48ReadPort()` routes even-address `$FE` reads to keyboard/EAR and odd-address reads to the floating bus
 - diagnostic exports include `sp48ReadScreenMemoryOffset(offset)` and `sp48ReadFloatingBus()`
+
+## Current SP48 Tape Upload ABI
+
+`src/emu/tape/tape-parser.ts` keeps TAP/TZX parsing in TypeScript for now and normalizes supported files into `Sp48TapeBlock` objects. The parser currently supports TAP blocks and TZX blocks `$10`, `$11`, `$14`, and `$20`, while safely skipping a small set of metadata-only TZX blocks.
+
+`src/emu/sp48/sp48-tape.c` owns static tape media storage inside `sp48.wasm`:
+
+- `SP48_TAPE_MAX_BLOCKS`: 512
+- `SP48_TAPE_DATA_CAPACITY`: 4 MiB
+- `SP48_TAPE_FILENAME_CAPACITY`: 260 bytes
+
+There is no dynamic allocation. Tape upload uses:
+
+- `sp48TapeClear()`
+- `sp48TapeSetFileNameByte(index, value)`
+- `sp48TapeBeginUpload(blockCount, totalDataLength)`
+- `sp48TapeSetBlock(...)`
+- `sp48TapeWriteData(offset, value)`
+- `sp48TapeFinishUpload()`
+- `sp48TapeRewind()`
+
+Diagnostics and inspection exports include block/data capacities, loaded/eof/upload-active flags, current block index, block metadata getters, `sp48TapeDataPtr()`, and `sp48TapeFileNamePtr()`. `WasmZxSpectrum48Machine.uploadTape(blocks, fileName)` is the preferred TypeScript adapter entry point; avoid hand-writing byte loops elsewhere.
+
+`sp48Reset()` and `sp48HardReset()` preserve uploaded tape bytes and metadata, but reset playback position through `resetTapePlayback()`. `sp48TapeClear()` is the eject path and clears filename, metadata, loaded state, and playback flags.
+
+The current UI connection is in `src/renderer/messaging.ts`: `EmuApi.setTapeFile(...)` parses bytes with `parseTapeFile`, uploads the normalized blocks through the active `Sp48MachineController`, and only then dispatches `SET_TAPE_MEDIA` with filename, size, format, warnings, and block count. Invalid files and upload failures leave the previous media state intact. `src/emu/sp48/sp48-session.ts` exposes the active controller set by `EmulatorPanelReact`; keep this bridge small and renderer-only. The session bridge retains the currently selected parsed tape blocks until eject, so if a machine/model change creates a new SP48 controller, the selected tape is reattached to the new Wasm instance. Re-registering the same controller does not reupload or rewind the tape.
+
+Normal tape load playback is implemented in `sp48-tape.c`. `sp48ExecuteInstruction()` calls `updateTapeMode()` after each instruction; entering ROM PC `$056C` switches to load mode and starts the next tape block. In load mode, `sp48ReadPort()` routes `$FE` bit 6 from `sp48TapeGetEarBit()` and records EAR transitions for beeper audio. Exported diagnostics include tape mode, play phase, current EAR bit, data index, bit mask, and start tact. `EmulatorPanelReact` publishes Wasm tape mode/block progress back to shared media state so the EMU status bar can switch from rewound to loading/EOF indications.
+
+Fast tape load is also implemented in `sp48-tape.c` and is controlled by `sp48TapeSetFastLoad(...)`. When fast load is enabled and the CPU reaches ROM routine `$056C`, C mirrors the reference `TapeDevice.fastLoad()` behavior: moves `AF'` into `AF`, detects VERIFY through `(AF & 0xff01) == 0xff00`, checks the block flag against `A`, copies or verifies `DE` bytes at `IX`, accumulates checksum in `H`, routes errors to `$05B6`, and resumes at `$05E2`. Data writes go through the SP48 memory map, so ROM writes remain protected. The TypeScript adapter exposes `setCpuAfAlt(...)` for tests that set up the ROM load entry state directly.
+
+Tape SAVE capture is implemented in C as static state only. When ROM PC reaches `$04C2`, `sp48-tape.c` enters SAVE mode, watches `$FE` MIC bit transitions from `sp48-ports.c`, classifies pulse widths with reference tolerances (`24` tacts, minimum `3000` pilot pulses, too-long pause `3_500_000` tacts), and captures standard-speed data bytes into a fixed `SP48_TAPE_SAVE_DATA_CAPACITY` buffer plus fixed saved-block metadata. Adapter diagnostics include save phase, last pulse, pilot count, saved block count, saved data length, saved revision, saved block offsets/lengths, and `getTapeSaveData()`. `clearSavedTapeBlocks()` clears the captured saved blocks/data for acknowledgement without leaving SAVE mode or resetting pulse-classifier state.
+
+`WasmZxSpectrum48Machine.getSavedTapeBlock(index)` returns a copied completed SAVE block with its offset and length, so consumers are insulated from later Wasm buffer reuse. `Sp48MachineController.syncSavedTapeBlocks()` is the SAVE pairing layer that mirrors the original `TapeSaver`: a `0x13`-byte block starting with `0x00` is retained as the header, bytes `2..11` are trimmed as the Spectrum filename, and a later block starting with `0xff` is paired with that header as a pending saved tape file. This pairing does not clear or reset normal loaded tape media.
+
+Saved TZX serialization lives in `src/emu/tape/tape-save.ts`, not in C. It writes the original `TapeSaver` shape: TZX header `"ZXTape!\x1a"` version `1.20`, followed by two standard speed `$10` blocks with 1000 ms pauses, one for the retained header and one for the data block. Keep serialization in TypeScript unless there is a measured reason to move it; it avoids expanding the Wasm ABI and keeps C focused on timing-sensitive capture.
+
+`Sp48FrameCompletedEvent.savedTapeFileInfo` is the migrated equivalent of the original `SAVED_TO_TAPE` machine property. `Sp48MachineController` consumes a pending paired SAVE file when publishing a normal or debug frame event, serializes it with `createSavedTapeTzx(...)`, and emits `{ name, contents, blockCount: 2 }` once. Repeated frame events do not re-emit the same saved file unless C captures another data block.
+
+`test/sp48/sp48-rom-boot.test.ts` contains the ROM SAVE smoke test. It injects a tiny RAM program that calls the real 48K ROM `SA-BYTES` routine at `$04C2` for a header block and then a data block, runs the normal `Sp48MachineController` frame loop, and asserts that the emitted `savedTapeFileInfo` is a parseable TZX whose two standard-speed blocks match the expected TAP block bytes. This is the end-to-end proof for C MIC pulse capture through controller event emission.
+
+SAVE error handling is explicit and recoverable. Capacity failures set dedicated diagnostic flags (`SP48_DIAGNOSTIC_TAPE_SAVE_DATA_OVERFLOW` or `SP48_DIAGNOSTIC_TAPE_SAVE_BLOCK_OVERFLOW`), while impossible pulse/classifier transitions set `SP48_DIAGNOSTIC_TAPE_SAVE_MALFORMED_PULSE`. A too-long SAVE pause or ROM error restart returns tape mode to passive. Starting a new SAVE through the ROM `$04C2` hook resets SAVE capture buffers, block counters, phase, pilot count, and revision so a later valid SAVE can complete after an error; diagnostic flags remain cumulative until the normal reset path clears them.
+
+Generated SAVE files are immediately reusable. After the main process writes the generated TZX and persists its saved path, the renderer calls `attachGeneratedTapeFile(...)`, parses the same generated bytes with `parseTapeFile(...)`, and uploads the blocks through `uploadTapeToActiveSp48ControllerOrQueue(...)`. This keeps C static-memory tape upload as the single machine-side attach path.
 
 ## Sass Warning Note
 

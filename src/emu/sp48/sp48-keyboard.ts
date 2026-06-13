@@ -1,3 +1,5 @@
+import type { KeyMapping } from "../../common/abstractions/KeyMapping";
+
 export const SP48_KEY_EVENT = "klive-sp48-key-status";
 
 export type Sp48KeyName =
@@ -91,7 +93,7 @@ export const Sp48KeyCode: Record<Sp48KeyName, number> = {
   B: 39
 };
 
-const physicalKeyMap: Record<string, Sp48KeyName | Sp48KeyName[]> = {
+export const spectrumKeyMappings: KeyMapping = {
   Digit1: "N1",
   Digit2: "N2",
   Digit3: "N3",
@@ -159,14 +161,16 @@ const physicalKeyMap: Record<string, Sp48KeyName | Sp48KeyName[]> = {
   Home: ["CShift", "N1"]
 };
 
-export function mapPhysicalKeyToSp48Keys(code: string): number[] {
-  const mapping = physicalKeyMap[code];
+export function mapPhysicalKeyToSp48Keys(code: string, keyMappings: KeyMapping = spectrumKeyMappings): number[] {
+  const mapping = keyMappings[code];
   if (!mapping) {
     return [];
   }
 
   const names = Array.isArray(mapping) ? mapping : [mapping];
-  return names.map((name) => Sp48KeyCode[name]);
+  return names
+    .map((name) => Sp48KeyCode[name as Sp48KeyName])
+    .filter((key) => key !== undefined);
 }
 
 export function dispatchSp48KeyStatus(key: number, down: boolean, source: Sp48KeyEventDetail["source"]): void {

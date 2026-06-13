@@ -21,6 +21,8 @@ const RenderingPhase = {
 
 const SpectrumColors = {
   Black: 0xff000000,
+  Color1: 0xffaa0000,
+  Color2: 0xff0000aa,
   Blue: 0xff0000aa,
   Magenta: 0xffaa00aa,
   White: 0xffaaaaaa,
@@ -62,8 +64,15 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(machine.screenWidthInPixels).toBe(352);
     expect(machine.screenHeightInPixels).toBe(288);
     expect(machine.tactsInFrame).toBe(69888);
+    expect(machine.tactsInCurrentFrame).toBe(69888);
+    expect(machine.clockMultiplier).toBe(1);
+    expect(machine.targetClockMultiplier).toBe(1);
     expect(machine.baseClockFrequency).toBe(3_500_000);
     expect(machine.getPixelBufferStartOffset()).toBe(352);
+
+    machine.setTargetClockMultiplier(2);
+    expect(machine.targetClockMultiplier).toBe(2);
+    expect(machine.clockMultiplier).toBe(1);
 
     const memoryBuffer = memory.buffer;
     const pixelBuffer = pixels.buffer;
@@ -92,6 +101,24 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(machine.tacts).toBe(69888);
     expect(before).toBe(SpectrumColors.Black);
     expect(after).toBe(SpectrumColors.Black);
+  });
+
+  it("applies the target clock multiplier at the next executed frame", async () => {
+    const machine = await createMachine();
+    machine.reset();
+
+    machine.setTargetClockMultiplier(2);
+    expect(machine.clockMultiplier).toBe(1);
+    expect(machine.tactsInCurrentFrame).toBe(69888);
+
+    machine.executeMachineFrame();
+
+    expect(machine.clockMultiplier).toBe(2);
+    expect(machine.targetClockMultiplier).toBe(2);
+    expect(machine.tactsInCurrentFrame).toBe(139776);
+    expect(machine.frames).toBe(1);
+    expect(machine.tacts).toBeGreaterThanOrEqual(139776);
+    expect(machine.tacts).toBeLessThan(139800);
   });
 
   it("renders Spectrum ULA pixels from screen and attribute memory", async () => {
@@ -246,6 +273,26 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
 
     expect(machine.getPortFeValue()).toBe(0x1b);
     expect(machine.getBorderColor()).toBe(3);
+  });
+
+  it("renders border color changes within a frame", async () => {
+    const machine = await createMachine();
+    const rom = new Uint8Array(0x4000);
+    const program = [
+      0x3e, 0x01, 0xd3, 0xfe,
+      ...new Array(4_000).fill(0x00),
+      0x3e, 0x02, 0xd3, 0xfe,
+      0x76
+    ];
+    rom.set(program);
+
+    machine.uploadRomBytes(rom);
+    machine.hardReset();
+    machine.executeMachineFrame();
+
+    expect(machine.getBorderColor()).toBe(2);
+    expect(machine.getPixelBuffer()[visiblePixelIndex(machine, 0, 0)]).toBe(SpectrumColors.Color1);
+    expect(machine.getPixelBuffer()[visiblePixelIndex(machine, 0, 100)]).toBe(SpectrumColors.Color2);
   });
 
   it("tracks EAR transition tacts for passive port $FE reads", async () => {
