@@ -2,10 +2,14 @@
   <HStack
     verticalAlignment="center"
     backgroundColor="$backgroundColor-IdeStatusBar"
-    height="48px"
+    height="24px"
+    paddingHorizontal="8px"
+    gap="8px"
   >
-    <H2>
-      IDE Status bar
-    </H2>
+    <Icon name="vm-running" color="$textColor-IdeStatusBar" width="14px" height="14px" />
+    <Text value="Turned off" color="$textColor-IdeStatusBar" fontSize="12px" />
+    <Text value="No project" color="$textColor-IdeStatusBar" fontSize="12px" />
+    <SpaceFiller />
+    <Text value="Ln 1, Col 1" color="$textColor-IdeStatusBar" fontSize="12px" />
   </HStack>
 </Component>

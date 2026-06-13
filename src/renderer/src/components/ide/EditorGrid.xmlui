@@ -1,0 +1,29 @@
+<Component name="EditorGrid">
+  <HStack
+    width="100%"
+    height="100%"
+    gap="0"
+    backgroundColor="$backgroundColor-Editor"
+  >
+    <HSplitter
+      width="100%"
+      initialPrimarySize="58%"
+      minPrimarySize="240px"
+      maxPrimarySize="-240px"
+      floating
+    >
+      <EditorGroup
+        title="Group 1"
+        activeDocument="main.asm"
+        secondaryDocument="memory"
+        mode="code"
+      />
+      <EditorGroup
+        title="Group 2"
+        activeDocument="disassembly"
+        secondaryDocument="README.md"
+        mode="debug"
+      />
+    </HSplitter>
+  </HStack>
+</Component>

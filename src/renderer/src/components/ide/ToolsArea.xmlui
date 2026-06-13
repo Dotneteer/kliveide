@@ -1,10 +1,41 @@
 <Component name="ToolsArea">
-   <VStack
-     verticalAlignment="center"
-     backgroundColor="$backgroundColor-ToolsArea"
-     overflowX="hidden"
-     height="100%"
-   >
-     <H2>ToolsArea</H2>
-   </VStack>
+  <VStack
+    backgroundColor="$backgroundColor-ToolsArea"
+    overflowX="hidden"
+    height="100%"
+    gap="0"
+  >
+    <HStack
+      height="34px"
+      verticalAlignment="center"
+      backgroundColor="$backgroundColor-ToolsHeader"
+      borderBottom="1px solid $borderColor-ToolsArea"
+      gap="0"
+    >
+      <HStack height="34px" width="120px" paddingHorizontal="10px" verticalAlignment="center" backgroundColor="$backgroundColor-ToolTab--active">
+        <Text value="Commands" fontSize="12px" fontWeight="600" color="$textColor-ToolTab--active" />
+      </HStack>
+      <HStack height="34px" width="100px" paddingHorizontal="10px" verticalAlignment="center">
+        <Text value="Output" fontSize="12px" fontWeight="600" color="$textColor-ToolTab" />
+      </HStack>
+      <SpaceFiller />
+      <Icon name="layout-panel" tooltip="Move panel" color="$textColor-ToolTab" width="16px" height="16px" />
+      <Stack width="12px" />
+      <Icon name="chevron-up" tooltip="Maximize panel" color="$textColor-ToolTab" width="16px" height="16px" />
+      <Stack width="10px" />
+    </HStack>
+    <VStack padding="$space-3" gap="$space-2" height="*">
+      <Text value="Interactive command terminal placeholder" fontSize="14px" fontWeight="600" color="$textColor-ToolsArea" />
+      <Text value="Klive IDE commands will be exposed here through a prompt/history workflow." fontSize="12px" color="$textColor-ToolsAreaSubtle" />
+      <HStack
+        height="30px"
+        verticalAlignment="center"
+        paddingHorizontal="8px"
+        backgroundColor="$backgroundColor-CommandInput"
+        border="1px solid $borderColor-ToolsArea"
+      >
+        <Text value="klive>" variant="mono" fontSize="13px" color="$textColor-ToolsAreaSubtle" />
+      </HStack>
+    </VStack>
+  </VStack>
 </Component>

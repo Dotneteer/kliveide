@@ -6,12 +6,12 @@
       <ActivityBar />
       <HSplitter
         width="*"
-        initialPrimarySize="200px"
-        minPrimarySize="100px"
-        maxPrimarySize="-100px"
+        initialPrimarySize="260px"
+        minPrimarySize="160px"
+        maxPrimarySize="-420px"
         floating
       >
-        <SideBar />
+        <SideBar kind="primary" />
         <MainWorkbench />
       </HSplitter>
     </HStack>

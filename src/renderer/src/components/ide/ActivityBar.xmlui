@@ -1,12 +1,23 @@
 <Component name="ActivityBar">
-   <VStack
-     verticalAlignment="center"
-     backgroundColor="$backgroundColor-ActivityBar"
-     height="100%"
-     width="48px"
-   >
-     <H2>
-       AB
-     </H2>
-   </VStack>
+  <VStack
+    backgroundColor="$backgroundColor-ActivityBar"
+    height="100%"
+    width="52px"
+    gap="0"
+    paddingTop="6px"
+    horizontalAlignment="center"
+  >
+    <Icon name="files" tooltip="Explorer" color="$textColor-ActivityBar--active" width="24px" height="24px" />
+    <Stack height="12px" />
+    <Icon name="debug-alt" tooltip="Debug" color="$textColor-ActivityBar" width="24px" height="24px" />
+    <Stack height="12px" />
+    <Icon name="output" tooltip="Machine info" color="$textColor-ActivityBar" width="24px" height="24px" />
+    <Stack height="12px" />
+    <Icon name="symbol-event" tooltip="Scripting" color="$textColor-ActivityBar" width="24px" height="24px" />
+    <Stack height="12px" />
+    <Icon name="beaker" tooltip="Testing" color="$textColor-ActivityBar" width="24px" height="24px" />
+    <SpaceFiller />
+    <Icon name="settings-gear" tooltip="Settings" color="$textColor-ActivityBar" width="22px" height="22px" />
+    <Stack height="10px" />
+  </VStack>
 </Component>

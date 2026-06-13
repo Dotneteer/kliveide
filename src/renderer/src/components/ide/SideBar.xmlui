@@ -1,10 +1,51 @@
 <Component name="SideBar">
-   <VStack
-     verticalAlignment="center"
-     backgroundColor="$backgroundColor-SideBar"
-     overflowX="hidden"
-     height="100%"
-   >
-     <H2>SideBarPanel</H2>
-   </VStack>
+  <VStack
+    backgroundColor="$backgroundColor-SideBar"
+    overflowX="hidden"
+    height="100%"
+    gap="0"
+  >
+    <HStack
+      height="34px"
+      paddingHorizontal="10px"
+      verticalAlignment="center"
+      backgroundColor="$backgroundColor-SideBarHeader"
+      borderBottom="1px solid $borderColor-SideBarPanel"
+    >
+      <Text
+        value="{$props.kind === 'secondary' ? 'SECONDARY SIDE BAR' : 'EXPLORER'}"
+        fontSize="12px"
+        fontWeight="600"
+        color="$textColor-SideBarHeader"
+      />
+    </HStack>
+    <VStack gap="0" height="*">
+      <HStack
+        height="26px"
+        paddingHorizontal="8px"
+        verticalAlignment="center"
+        borderBottom="1px solid $borderColor-SideBarPanel"
+      >
+        <Icon name="chevron-right" color="$textColor-SideBarPanelHeader" width="14px" height="14px" />
+        <Text
+          value="{$props.kind === 'secondary' ? 'OUTLINE' : 'KLIVE PROJECT'}"
+          fontSize="12px"
+          fontWeight="600"
+          color="$textColor-SideBarPanelHeader"
+        />
+      </HStack>
+      <VStack padding="$space-3" gap="$space-2" height="*">
+        <Text
+          value="{$props.kind === 'secondary' ? 'Portable view placeholder' : 'Project tree placeholder'}"
+          fontSize="13px"
+          color="$textColor-SideBar"
+        />
+        <Text
+          value="{$props.kind === 'secondary' ? 'Memory, outline, and watch views can live here independently.' : 'Explorer, Debug, Machine info, Scripting, and Testing will switch through the Activity Bar.'}"
+          fontSize="12px"
+          color="$textColor-SideBarSubtle"
+        />
+      </VStack>
+    </VStack>
+  </VStack>
 </Component>
