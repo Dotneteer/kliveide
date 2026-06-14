@@ -40,6 +40,7 @@ export function SideBarPanelItemReact({
   const minPanelSize = stack?.minPanelSize ?? 120;
   const sizeable = stack?.isPanelSizeable(panelId) ?? false;
   const isDragging = stack?.draggingPanelId === panelId;
+  const shouldAnimate = animate && !stack?.isResizing;
   const panelStyle: CSSProperties = expanded
     ? { flexGrow: size, flexBasis: "0px", minHeight: `${minPanelSize}px` }
     : { flexGrow: 0, flexBasis: "26px", minHeight: "26px" };
@@ -81,7 +82,7 @@ export function SideBarPanelItemReact({
   return (
     <div
       ref={elementRef}
-      className={`${styles.panel} ${animate ? styles.animated : ""} ${
+      className={`${styles.panel} ${shouldAnimate ? styles.animated : ""} ${
         expanded ? styles.expanded : styles.collapsed
       }`}
       data-panel-id={panelId}

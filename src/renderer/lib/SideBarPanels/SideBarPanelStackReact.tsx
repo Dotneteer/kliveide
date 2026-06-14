@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { movePanelInstanceAction } from "../../../common/state/actions";
+import { movePanelInstanceAction, setPanelSizeAction } from "../../../common/state/actions";
 import type { PanelPlacement } from "../../../common/state/ide-panel-layout-state";
 import { hasPanelDragPayload, readPanelDragPayload } from "../PanelDragDrop/panelDragDrop";
 import { dispatchSharedAction } from "../../shared-store";
@@ -22,6 +22,8 @@ type DragState = {
   startY: number;
   panelHeight: number;
   nextPanelHeight: number;
+  panelSize: number;
+  nextPanelSize: number;
 };
 
 const rememberedPanelSizes: Record<string, number> = {};
@@ -104,12 +106,14 @@ export function SideBarPanelStackReact({
         nextPanelId: nextPanel.panelId,
         startY: clientY,
         panelHeight,
-        nextPanelHeight
+        nextPanelHeight,
+        panelSize: sizes[panel.panelId] ?? panel.initialSize,
+        nextPanelSize: sizes[nextPanel.panelId] ?? nextPanel.initialSize
       };
       setDraggingPanelId(panel.panelId);
       document.body.style.cursor = "row-resize";
     },
-    []
+    [sizes]
   );
 
   const movePanelToIndex = useCallback(
@@ -132,6 +136,7 @@ export function SideBarPanelStackReact({
   const contextValue = useMemo(
     () => ({
       draggingPanelId,
+      isResizing: draggingPanelId !== null,
       minPanelSize,
       getPanelSize,
       isPanelSizeable,
@@ -177,31 +182,48 @@ export function SideBarPanelStackReact({
     const drag = dragState.current;
     if (!drag) return;
 
-    const total = drag.panelHeight + drag.nextPanelHeight;
+    const pixelTotal = drag.panelHeight + drag.nextPanelHeight;
+    const sizeTotal = drag.panelSize + drag.nextPanelSize;
+    if (!pixelTotal || !sizeTotal) return;
+
     const delta = clientY - drag.startY;
-    let panelHeight = drag.panelHeight + delta;
-    let nextPanelHeight = total - panelHeight;
+    const sizeDelta = (delta * sizeTotal) / pixelTotal;
+    let panelSize = drag.panelSize + sizeDelta;
+    let nextPanelSize = sizeTotal - panelSize;
+    const minSize = (minPanelSize * sizeTotal) / pixelTotal;
 
-    if (panelHeight < minPanelSize) {
-      panelHeight = minPanelSize;
-      nextPanelHeight = total - minPanelSize;
+    if (panelSize < minSize) {
+      panelSize = minSize;
+      nextPanelSize = sizeTotal - minSize;
     }
-    if (nextPanelHeight < minPanelSize) {
-      nextPanelHeight = minPanelSize;
-      panelHeight = total - minPanelSize;
+    if (nextPanelSize < minSize) {
+      nextPanelSize = minSize;
+      panelSize = sizeTotal - minSize;
     }
 
-    rememberedPanelSizes[drag.panelId] = panelHeight;
-    rememberedPanelSizes[drag.nextPanelId] = nextPanelHeight;
+    rememberedPanelSizes[drag.panelId] = panelSize;
+    rememberedPanelSizes[drag.nextPanelId] = nextPanelSize;
 
     setSizes((current) => ({
       ...current,
-      [drag.panelId]: panelHeight,
-      [drag.nextPanelId]: nextPanelHeight
+      [drag.panelId]: panelSize,
+      [drag.nextPanelId]: nextPanelSize
     }));
   }
 
   function endResize(): void {
+    const drag = dragState.current;
+    if (drag) {
+      dispatchSharedAction(
+        setPanelSizeAction(drag.panelId, rememberedPanelSizes[drag.panelId] ?? drag.panelSize)
+      );
+      dispatchSharedAction(
+        setPanelSizeAction(
+          drag.nextPanelId,
+          rememberedPanelSizes[drag.nextPanelId] ?? drag.nextPanelSize
+        )
+      );
+    }
     dragState.current = null;
     setDraggingPanelId(null);
     document.body.style.cursor = "";

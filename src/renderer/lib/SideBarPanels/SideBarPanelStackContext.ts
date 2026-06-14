@@ -9,6 +9,7 @@ export type SideBarPanelRegistration = {
 
 export type SideBarPanelStackContextValue = {
   draggingPanelId: string | null;
+  isResizing: boolean;
   minPanelSize: number;
   getPanelSize: (panelId: string, initialSize: number) => number;
   isPanelSizeable: (panelId: string) => boolean;
