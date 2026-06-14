@@ -47,6 +47,7 @@
       initialPrimarySize="{'-' + (initialToolPanelHeight.indexOf('px') >= 0 || initialToolPanelHeight.indexOf('%') >= 0 ? initialToolPanelHeight : initialToolPanelHeight + 'px')}"
       minPrimarySize="240px"
       maxPrimarySize="-120px"
+      onResize="primarySize => liveToolPanelHeight = primarySize + 'px'"
       floating
     >
       <EditorGrid

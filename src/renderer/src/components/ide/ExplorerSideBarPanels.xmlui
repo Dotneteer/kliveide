@@ -7,7 +7,10 @@
       initialSize="{1000}"
       onToggle="emitEvent('toggleProject')"
     >
-      <ExplorerPanel
+      <PanelRenderer
+        rendererId="explorerProject"
+        placement="primarySideBar"
+        chrome="compact"
         onOpenDocument="document => emitEvent('openDocument', document)"
         onRequestDialog="request => emitEvent('requestDialog', request)"
       />

@@ -1,0 +1,102 @@
+.panel {
+  color: var(--xmlui-textColor-SideBarPanel, currentColor);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--xmlui-fontFamily-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 13px;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+}
+
+.flagBlock {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  min-width: 0;
+}
+
+.flagRegister {
+  color: var(--xmlui-color-warn-500, #ff9800);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.flags {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(8, 18px);
+}
+
+.flagLetter {
+  color: var(--xmlui-color-warn-500, #ff9800);
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+}
+
+.flagValue {
+  color: var(--xmlui-color-primary-500, #29b6f6);
+  line-height: 1;
+  text-align: center;
+}
+
+.flagInactive {
+  opacity: 0.48;
+}
+
+.section {
+  border-top: 1px solid var(--xmlui-borderColor-SideBarPanel, #555555);
+  padding-top: 8px;
+}
+
+.registerGrid {
+  column-gap: 22px;
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) minmax(80px, 1fr);
+  row-gap: 2px;
+}
+
+.registerCell {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 34px minmax(44px, 1fr);
+  min-width: 0;
+}
+
+.label {
+  color: var(--xmlui-color-warn-500, #ff9800);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value {
+  color: var(--xmlui-color-primary-500, #29b6f6);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message {
+  color: var(--xmlui-textColor-SideBarPanel, currentColor);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 0;
+}
+
+.messageTitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.messageDetail {
+  color: var(--xmlui-textColor-SideBarPanelHeader, currentColor);
+  font-size: 12px;
+  line-height: 1.35;
+}

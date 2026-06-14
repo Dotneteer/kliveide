@@ -7,7 +7,7 @@
       initialSize="{260}"
       onToggle="emitEvent('toggleCpu')"
     >
-      <Z80CpuPanel />
+      <PanelRenderer rendererId="z80Cpu" placement="primarySideBar" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
       panelId="callStackPanel"
@@ -16,7 +16,7 @@
       initialSize="{500}"
       onToggle="emitEvent('toggleCallStack')"
     >
-      <CallStackPanel />
+      <PanelRenderer rendererId="callStack" placement="primarySideBar" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
       panelId="ulaPanel"
@@ -25,7 +25,7 @@
       initialSize="{500}"
       onToggle="emitEvent('toggleUla')"
     >
-      <UlaIoPanel />
+      <PanelRenderer rendererId="ulaIo" placement="primarySideBar" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
       panelId="watchPanel"
@@ -34,7 +34,7 @@
       initialSize="{500}"
       onToggle="emitEvent('toggleWatch')"
     >
-      <WatchPanel />
+      <PanelRenderer rendererId="watch" placement="primarySideBar" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
       panelId="breakpointsPanel"
@@ -43,7 +43,7 @@
       initialSize="{500}"
       onToggle="emitEvent('toggleBreakpoints')"
     >
-      <BreakpointsPanel />
+      <PanelRenderer rendererId="breakpoints" placement="primarySideBar" chrome="compact" />
     </SideBarPanelItem>
   </SideBarPanelStack>
 </Component>

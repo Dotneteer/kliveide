@@ -7,7 +7,7 @@
       initialSize="{260}"
       onToggle="emitEvent('toggleSysVars')"
     >
-      <MachineStatusPanel />
+      <PanelRenderer rendererId="machineStatus" placement="primarySideBar" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
       panelId="psgPanel"
@@ -16,7 +16,7 @@
       initialSize="{500}"
       onToggle="emitEvent('togglePsg')"
     >
-      <Text value="AY register placeholder" fontSize="13px" color="$textColor-SideBar" />
+      <PanelRenderer rendererId="psg" placement="primarySideBar" chrome="compact" />
     </SideBarPanelItem>
   </SideBarPanelStack>
 </Component>

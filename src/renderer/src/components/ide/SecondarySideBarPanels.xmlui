@@ -7,7 +7,7 @@
       initialSize="{520}"
       onToggle="emitEvent('toggleOutline')"
     >
-      <IdeViewHost viewId="scripting-history" placement="secondarySideBar" chrome="compact" />
+      <PanelRenderer rendererId="outline" placement="secondarySideBar" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
       panelId="secondary.memory"
@@ -16,7 +16,7 @@
       initialSize="{520}"
       onToggle="emitEvent('toggleMemory')"
     >
-      <IdeViewHost viewId="memory" placement="secondarySideBar" chrome="compact" />
+      <PanelRenderer rendererId="memory" placement="secondarySideBar" chrome="compact" />
     </SideBarPanelItem>
   </SideBarPanelStack>
 </Component>

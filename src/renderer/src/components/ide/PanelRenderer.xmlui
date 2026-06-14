@@ -1,0 +1,68 @@
+<Component name="PanelRenderer">
+  <ExplorerPanel
+    when="{$props.rendererId === 'explorerProject'}"
+    onOpenDocument="document => emitEvent('openDocument', document)"
+    onRequestDialog="request => emitEvent('requestDialog', request)"
+  />
+  <Z80CpuPanel
+    when="{$props.rendererId === 'z80Cpu'}"
+    contributionId="{$props.contributionId ?? 'z80Cpu'}"
+    instanceId="{$props.instanceId ?? 'z80Cpu'}"
+    placement="{$props.placement ?? 'primarySideBar'}"
+    chrome="{$props.chrome ?? 'compact'}"
+  />
+  <CallStackPanel when="{$props.rendererId === 'callStack'}" />
+  <UlaIoPanel when="{$props.rendererId === 'ulaIo'}" />
+  <WatchPanel when="{$props.rendererId === 'watch'}" />
+  <BreakpointsPanel when="{$props.rendererId === 'breakpoints'}" />
+  <MachineStatusPanel when="{$props.rendererId === 'machineStatus'}" />
+  <Text
+    when="{$props.rendererId === 'psg'}"
+    value="AY register placeholder"
+    fontSize="13px"
+    color="$textColor-SideBar"
+  />
+  <IdeViewHost
+    when="{$props.rendererId === 'scriptingHistory'}"
+    viewId="scripting-history"
+    placement="{$props.placement ?? 'primarySideBar'}"
+    chrome="{$props.chrome ?? 'compact'}"
+  />
+  <Text
+    when="{$props.rendererId === 'testingTests'}"
+    value="Test discovery placeholder"
+    fontSize="13px"
+    color="$textColor-SideBar"
+  />
+  <IdeViewHost
+    when="{$props.rendererId === 'outline'}"
+    viewId="scripting-history"
+    placement="{$props.placement ?? 'secondarySideBar'}"
+    chrome="{$props.chrome ?? 'compact'}"
+  />
+  <IdeViewHost
+    when="{$props.rendererId === 'memory'}"
+    viewId="memory"
+    placement="{$props.placement ?? 'secondarySideBar'}"
+    chrome="{$props.chrome ?? 'compact'}"
+  />
+  <Text
+    when="{
+      $props.rendererId !== 'explorerProject' &&
+      $props.rendererId !== 'z80Cpu' &&
+      $props.rendererId !== 'callStack' &&
+      $props.rendererId !== 'ulaIo' &&
+      $props.rendererId !== 'watch' &&
+      $props.rendererId !== 'breakpoints' &&
+      $props.rendererId !== 'machineStatus' &&
+      $props.rendererId !== 'psg' &&
+      $props.rendererId !== 'scriptingHistory' &&
+      $props.rendererId !== 'testingTests' &&
+      $props.rendererId !== 'outline' &&
+      $props.rendererId !== 'memory'
+    }"
+    value="Panel not implemented"
+    fontSize="13px"
+    color="$textColor-SideBar"
+  />
+</Component>

@@ -7,7 +7,7 @@
       initialSize="{500}"
       onToggle="emitEvent('toggleHistory')"
     >
-      <IdeViewHost viewId="scripting-history" placement="primarySideBar" chrome="compact" />
+      <PanelRenderer rendererId="scriptingHistory" placement="primarySideBar" chrome="compact" />
     </SideBarPanelItem>
   </SideBarPanelStack>
 </Component>

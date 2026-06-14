@@ -7,7 +7,7 @@
       initialSize="{1000}"
       onToggle="emitEvent('toggleTests')"
     >
-      <Text value="Test discovery placeholder" fontSize="13px" color="$textColor-SideBar" />
+      <PanelRenderer rendererId="testingTests" placement="primarySideBar" chrome="compact" />
     </SideBarPanelItem>
   </SideBarPanelStack>
 </Component>
