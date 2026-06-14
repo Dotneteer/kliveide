@@ -1,5 +1,15 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import type { PanelPlacement } from "./panel-registry";
+import { createContext, useContext, useMemo } from "react";
+import type { IdePanelLayoutState, PanelPlacement } from "../../../../common/state/ide-panel-layout-state";
+import {
+  createDefaultIdePanelLayoutState
+} from "../../../../common/state/ide-panel-layout-state";
+import {
+  patchPanelViewStateAction,
+  setPanelContributionStateAction,
+  setPanelInstanceStateAction
+} from "../../../../common/state/actions";
+import type { Action } from "../../../../common/state/Action";
+import { useDispatch, useSharedState } from "../../../shared-store";
 
 export type PanelChrome = "sideBar" | "document" | "tool" | "compact";
 
@@ -26,196 +36,112 @@ export type PanelRenderContext = PanelRuntimeValue & {
   setGlobalState: (key: string, value: unknown) => PanelRuntimeValue;
 };
 
-type Listener = () => void;
-
-const instanceStateById = new Map<string, Record<string, unknown>>();
-const contributionStateById = new Map<string, Record<string, unknown>>();
-const listenersByKey = new Map<string, Set<Listener>>();
-let version = 0;
-
 export const PanelRuntimeReactContext = createContext<PanelRenderContext | null>(null);
 
 export function usePanelRuntime(metadata?: PanelRuntimeMetadata): PanelRenderContext {
   const context = useContext(PanelRuntimeReactContext);
   const resolvedMetadata = context ?? metadata;
-  const [runtimeVersion, setRuntimeVersion] = useState(() => getPanelRuntimeVersion());
-
-  useEffect(() => {
-    if (!resolvedMetadata) {
-      return;
-    }
-
-    return subscribePanelRuntime(resolvedMetadata, () => {
-      setRuntimeVersion(getPanelRuntimeVersion());
-    });
-  }, [
-    resolvedMetadata?.contributionId,
-    resolvedMetadata?.instanceId,
-    resolvedMetadata?.placement,
-    resolvedMetadata?.activityId,
-    resolvedMetadata?.groupId,
-    resolvedMetadata?.chrome,
-    resolvedMetadata?.readonly
-  ]);
+  const sharedState = useSharedState();
+  const dispatch = useDispatch();
+  const layout = sharedState.idePanelLayout ?? createDefaultIdePanelLayoutState();
 
   return useMemo(() => {
     if (context) {
       return context;
     }
-    if (!metadata) {
+    if (!resolvedMetadata) {
       throw new Error("Panel runtime is missing");
     }
-    return createPanelRenderContext(metadata);
+    return createPanelRenderContext(resolvedMetadata, layout, dispatch);
   }, [
     context,
-    metadata?.contributionId,
-    metadata?.instanceId,
-    metadata?.placement,
-    metadata?.activityId,
-    metadata?.groupId,
-    metadata?.chrome,
-    metadata?.readonly,
-    runtimeVersion
+    dispatch,
+    layout,
+    resolvedMetadata?.activityId,
+    resolvedMetadata?.chrome,
+    resolvedMetadata?.contributionId,
+    resolvedMetadata?.groupId,
+    resolvedMetadata?.instanceId,
+    resolvedMetadata?.placement,
+    resolvedMetadata?.readonly
   ]);
 }
 
-export function createPanelRenderContext(metadata: PanelRuntimeMetadata): PanelRenderContext {
-  const value = getPanelRuntimeValue(metadata);
+export function createPanelRenderContext(
+  metadata: PanelRuntimeMetadata,
+  layout: IdePanelLayoutState,
+  dispatch: (action: Action) => unknown
+): PanelRenderContext {
+  const value = getPanelRuntimeValue(metadata, layout);
   return {
     ...value,
     getState<T = unknown>(key: string, defaultValue?: T): T {
-      return readPanelState(value.instanceId, key, defaultValue);
+      return readPanelState(layout, value.instanceId, key, defaultValue);
     },
     setState(key: string, nextValue: unknown): PanelRuntimeValue {
-      return setPanelState(metadata, key, nextValue);
+      dispatch(setPanelInstanceStateAction(value.instanceId, key, nextValue));
+      return {
+        ...value,
+        state: {
+          ...value.state,
+          [key]: nextValue
+        }
+      };
     },
     patchState(patch: Record<string, unknown>): PanelRuntimeValue {
-      return patchPanelState(metadata, patch);
+      dispatch(patchPanelViewStateAction(value.instanceId, patch));
+      return {
+        ...value,
+        state: {
+          ...value.state,
+          ...patch
+        }
+      };
     },
     getGlobalState<T = unknown>(key: string, defaultValue?: T): T {
-      return readPanelGlobalState(value.contributionId, key, defaultValue);
+      return readPanelGlobalState(layout, value.contributionId, key, defaultValue);
     },
     setGlobalState(key: string, nextValue: unknown): PanelRuntimeValue {
-      return setPanelGlobalState(metadata, key, nextValue);
+      dispatch(setPanelContributionStateAction(value.contributionId, key, nextValue));
+      return {
+        ...value,
+        globalState: {
+          ...value.globalState,
+          [key]: nextValue
+        }
+      };
     }
   };
 }
 
-export function getPanelRuntimeValue(metadata: PanelRuntimeMetadata): PanelRuntimeValue {
+export function getPanelRuntimeValue(
+  metadata: PanelRuntimeMetadata,
+  layout: IdePanelLayoutState
+): PanelRuntimeValue {
   return {
     ...metadata,
     chrome: metadata.chrome ?? "sideBar",
-    state: getInstanceState(metadata.instanceId),
-    globalState: getContributionState(metadata.contributionId)
+    state: layout.viewStateByInstance[metadata.instanceId] ?? {},
+    globalState: layout.contributionState[metadata.contributionId] ?? {}
   };
 }
 
 export function readPanelState<T = unknown>(
+  layout: IdePanelLayoutState,
   instanceId: string,
   key: string,
   defaultValue?: T
 ): T {
-  const state = instanceStateById.get(instanceId);
-  const value = state?.[key];
+  const value = layout.viewStateByInstance[instanceId]?.[key];
   return (value === undefined ? defaultValue : value) as T;
 }
 
-export function setPanelState(
-  metadata: PanelRuntimeMetadata,
-  key: string,
-  nextValue: unknown
-): PanelRuntimeValue {
-  const current = getInstanceState(metadata.instanceId);
-  instanceStateById.set(metadata.instanceId, { ...current, [key]: nextValue });
-  notifyPanelRuntimeChanged(metadata);
-  return getPanelRuntimeValue(metadata);
-}
-
-export function patchPanelState(
-  metadata: PanelRuntimeMetadata,
-  patch: Record<string, unknown>
-): PanelRuntimeValue {
-  const current = getInstanceState(metadata.instanceId);
-  instanceStateById.set(metadata.instanceId, { ...current, ...patch });
-  notifyPanelRuntimeChanged(metadata);
-  return getPanelRuntimeValue(metadata);
-}
-
 export function readPanelGlobalState<T = unknown>(
+  layout: IdePanelLayoutState,
   contributionId: string,
   key: string,
   defaultValue?: T
 ): T {
-  const state = contributionStateById.get(contributionId);
-  const value = state?.[key];
+  const value = layout.contributionState[contributionId]?.[key];
   return (value === undefined ? defaultValue : value) as T;
-}
-
-export function setPanelGlobalState(
-  metadata: PanelRuntimeMetadata,
-  key: string,
-  nextValue: unknown
-): PanelRuntimeValue {
-  const current = getContributionState(metadata.contributionId);
-  contributionStateById.set(metadata.contributionId, { ...current, [key]: nextValue });
-  notifyPanelRuntimeChanged(metadata);
-  return getPanelRuntimeValue(metadata);
-}
-
-export function subscribePanelRuntime(
-  metadata: Pick<PanelRuntimeMetadata, "instanceId" | "contributionId">,
-  listener: Listener
-): () => void {
-  const keys = [instanceListenerKey(metadata.instanceId), contributionListenerKey(metadata.contributionId)];
-  for (const key of keys) {
-    const listeners = listenersByKey.get(key) ?? new Set<Listener>();
-    listeners.add(listener);
-    listenersByKey.set(key, listeners);
-  }
-
-  return () => {
-    for (const key of keys) {
-      const listeners = listenersByKey.get(key);
-      listeners?.delete(listener);
-      if (listeners?.size === 0) {
-        listenersByKey.delete(key);
-      }
-    }
-  };
-}
-
-export function getPanelRuntimeVersion(): number {
-  return version;
-}
-
-export function resetPanelRuntimeState(): void {
-  instanceStateById.clear();
-  contributionStateById.clear();
-  listenersByKey.clear();
-  version++;
-}
-
-function getInstanceState(instanceId: string): Record<string, unknown> {
-  return instanceStateById.get(instanceId) ?? {};
-}
-
-function getContributionState(contributionId: string): Record<string, unknown> {
-  return contributionStateById.get(contributionId) ?? {};
-}
-
-function notifyPanelRuntimeChanged(metadata: Pick<PanelRuntimeMetadata, "instanceId" | "contributionId">): void {
-  version++;
-  const listeners = new Set<Listener>([
-    ...(listenersByKey.get(instanceListenerKey(metadata.instanceId)) ?? []),
-    ...(listenersByKey.get(contributionListenerKey(metadata.contributionId)) ?? [])
-  ]);
-  listeners.forEach((listener) => listener());
-}
-
-function instanceListenerKey(instanceId: string): string {
-  return `instance:${instanceId}`;
-}
-
-function contributionListenerKey(contributionId: string): string {
-  return `contribution:${contributionId}`;
 }

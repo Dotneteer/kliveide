@@ -4,12 +4,8 @@ import type {
   PanelRuntimeMetadata,
   PanelRuntimeValue
 } from "../../src/components/ide/panel-runtime";
-import {
-  createPanelRenderContext,
-  getPanelRuntimeValue,
-  subscribePanelRuntime
-} from "../../src/components/ide/panel-runtime";
-import type { PanelPlacement } from "../../src/components/ide/panel-registry";
+import { usePanelRuntime } from "../../src/components/ide/panel-runtime";
+import type { PanelPlacement } from "../../../common/state/ide-panel-layout-state";
 
 export type PanelRuntimeReactProps = PanelRuntimeMetadata & {
   registerComponentApi?: (api: PanelRenderContext) => void;
@@ -48,46 +44,34 @@ export function PanelRuntimeReact({
     [activityId, chrome, contributionId, groupId, instanceId, placement, readonly]
   );
 
+  const api = usePanelRuntime(metadata);
+
   const publishValue = useCallback(
-    (options?: { initial?: boolean }) => {
-      const value = getPanelRuntimeValue(metadata);
+    (runtime: PanelRenderContext, options?: { initial?: boolean }) => {
+      const value: PanelRuntimeValue = {
+        contributionId: runtime.contributionId,
+        instanceId: runtime.instanceId,
+        placement: runtime.placement,
+        activityId: runtime.activityId,
+        groupId: runtime.groupId,
+        chrome: runtime.chrome,
+        readonly: runtime.readonly,
+        state: runtime.state,
+        globalState: runtime.globalState
+      };
       updateStateRef.current({ value }, options);
       return value;
     },
-    [metadata]
+    []
   );
 
-  const api = useMemo<PanelRenderContext>(() => {
-    const context = createPanelRenderContext(metadata);
-    return {
-      ...context,
-      setState(key: string, nextValue: unknown) {
-        const value = context.setState(key, nextValue);
-        publishValue();
-        return value;
-      },
-      patchState(patch: Record<string, unknown>) {
-        const value = context.patchState(patch);
-        publishValue();
-        return value;
-      },
-      setGlobalState(key: string, nextValue: unknown) {
-        const value = context.setGlobalState(key, nextValue);
-        publishValue();
-        return value;
-      }
-    };
-  }, [metadata, publishValue]);
-
   useLayoutEffect(() => {
-    publishValue({ initial: true });
-  }, [publishValue]);
+    publishValue(api, { initial: true });
+  }, [api, publishValue]);
 
   useEffect(() => {
     registerComponentApi?.(api);
   }, [api, registerComponentApi]);
-
-  useEffect(() => subscribePanelRuntime(metadata, () => publishValue()), [metadata, publishValue]);
 
   return null;
 }

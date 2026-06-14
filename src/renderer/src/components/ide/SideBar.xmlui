@@ -3,18 +3,6 @@
   var.isSecondary="{$props.kind === 'secondary'}"
   var.activity="{isSecondary ? ($props.activity ?? 'explorer') : (state.value.activeActivity ?? $props.activity ?? 'explorer')}"
   var.title="{isSecondary ? 'SECONDARY SIDE BAR' : activity === 'debug' ? 'DEBUG' : activity === 'machine' ? 'MACHINE INFO' : activity === 'scripting' ? 'SCRIPTING' : activity === 'testing' ? 'TESTING' : 'EXPLORER'}"
-  var.explorerProjectExpanded="{true}"
-  var.debugCpuExpanded="{true}"
-  var.debugCallStackExpanded="{false}"
-  var.debugWatchExpanded="{true}"
-  var.debugBreakpointsExpanded="{true}"
-  var.debugUlaExpanded="{false}"
-  var.machineSysVarsExpanded="{false}"
-  var.machinePsgExpanded="{false}"
-  var.scriptingHistoryExpanded="{true}"
-  var.testingTestsExpanded="{true}"
-  var.secondaryOutlineExpanded="{true}"
-  var.secondaryMemoryExpanded="{true}"
 >
   <SharedAppState id="state" />
   <VStack
@@ -38,49 +26,11 @@
       />
     </HStack>
     <VStack height="*" gap="0">
-      <ExplorerSideBarPanels
-        when="{!isSecondary && activity === 'explorer'}"
-        projectExpanded="{explorerProjectExpanded}"
-        onToggleProject="explorerProjectExpanded = !explorerProjectExpanded"
+      <PanelStackHost
+        placement="{isSecondary ? 'secondarySideBar' : 'primarySideBar'}"
+        activity="{activity}"
         onOpenDocument="document => emitEvent('openDocument', document)"
         onRequestDialog="request => emitEvent('requestDialog', request)"
-      />
-      <DebugSideBarPanels
-        when="{!isSecondary && activity === 'debug'}"
-        cpuExpanded="{debugCpuExpanded}"
-        callStackExpanded="{debugCallStackExpanded}"
-        ulaExpanded="{debugUlaExpanded}"
-        watchExpanded="{debugWatchExpanded}"
-        breakpointsExpanded="{debugBreakpointsExpanded}"
-        onToggleCpu="debugCpuExpanded = !debugCpuExpanded"
-        onToggleCallStack="debugCallStackExpanded = !debugCallStackExpanded"
-        onToggleUla="debugUlaExpanded = !debugUlaExpanded"
-        onToggleWatch="debugWatchExpanded = !debugWatchExpanded"
-        onToggleBreakpoints="debugBreakpointsExpanded = !debugBreakpointsExpanded"
-      />
-      <MachineInfoSideBarPanels
-        when="{!isSecondary && activity === 'machine'}"
-        sysVarsExpanded="{machineSysVarsExpanded}"
-        psgExpanded="{machinePsgExpanded}"
-        onToggleSysVars="machineSysVarsExpanded = !machineSysVarsExpanded"
-        onTogglePsg="machinePsgExpanded = !machinePsgExpanded"
-      />
-      <ScriptingSideBarPanels
-        when="{!isSecondary && activity === 'scripting'}"
-        historyExpanded="{scriptingHistoryExpanded}"
-        onToggleHistory="scriptingHistoryExpanded = !scriptingHistoryExpanded"
-      />
-      <TestingSideBarPanels
-        when="{!isSecondary && activity === 'testing'}"
-        testsExpanded="{testingTestsExpanded}"
-        onToggleTests="testingTestsExpanded = !testingTestsExpanded"
-      />
-      <SecondarySideBarPanels
-        when="{isSecondary}"
-        outlineExpanded="{secondaryOutlineExpanded}"
-        memoryExpanded="{secondaryMemoryExpanded}"
-        onToggleOutline="secondaryOutlineExpanded = !secondaryOutlineExpanded"
-        onToggleMemory="secondaryMemoryExpanded = !secondaryMemoryExpanded"
       />
     </VStack>
   </VStack>

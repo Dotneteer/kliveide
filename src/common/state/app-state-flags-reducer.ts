@@ -26,7 +26,12 @@ export function appStateFlagsReducer (
       return { ...state, ideLoaded: true, ideStateSynched: false };
 
     case "INIT_GLOBAL_SETTINGS":
-      return { ...state, ideStateSynched: true, globalSettings: payload?.value };
+      return {
+        ...state,
+        ideStateSynched: true,
+        globalSettings: payload?.value,
+        idePanelLayout: _.get(payload?.value, "ideViewOptions.panelLayout") ?? state.idePanelLayout
+      };
 
     case "IS_WINDOWS":
       return { ...state, isWindows: payload?.flag };

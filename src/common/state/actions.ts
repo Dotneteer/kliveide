@@ -171,3 +171,44 @@ export const setSideBarPanelExpandedAction: ActionCreator = (id: string, flag: b
   type: "SET_SIDEBAR_PANEL_EXPANDED",
   payload: { id, flag }
 });
+
+export const initIdePanelLayoutAction: ActionCreator = (value: unknown) => ({
+  type: "INIT_IDE_PANEL_LAYOUT",
+  payload: { value }
+});
+
+export const setPanelExpandedAction: ActionCreator = (id: string, flag: boolean) => ({
+  type: "SET_PANEL_EXPANDED",
+  payload: { id, flag }
+});
+
+export const setPanelSizeAction: ActionCreator = (id: string, numValue: number) => ({
+  type: "SET_PANEL_SIZE",
+  payload: { id, numValue }
+});
+
+export const patchPanelViewStateAction: ActionCreator = (
+  id: string,
+  value: Record<string, unknown>
+) => ({
+  type: "PATCH_PANEL_VIEW_STATE",
+  payload: { id, value }
+});
+
+export const setPanelInstanceStateAction: ActionCreator = (
+  id: string,
+  key: string,
+  value: unknown
+) => ({
+  type: "SET_PANEL_INSTANCE_STATE",
+  payload: { id, text: key, value }
+});
+
+export const setPanelContributionStateAction: ActionCreator = (
+  id: string,
+  key: string,
+  value: unknown
+) => ({
+  type: "SET_PANEL_CONTRIBUTION_STATE",
+  payload: { id, text: key, value }
+});

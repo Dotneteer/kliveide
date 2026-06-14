@@ -3,6 +3,10 @@ import type { KeyMappingSet } from "../abstractions/KeyMapping";
 import { MachineControllerState } from "../abstractions/MachineControllerState";
 import { MI_SPECTRUM_48 } from "../machines/constants";
 import type { MachineConfigSet } from "../machines/info-types";
+import {
+  createDefaultIdePanelLayoutState,
+  type IdePanelLayoutState
+} from "./ide-panel-layout-state";
 
 /**
  * Represents the state of the entire application
@@ -21,6 +25,7 @@ export type AppState = {
   theme?: string;
   activeActivity?: string;
   globalSettings?: Record<string, any>;
+  idePanelLayout?: IdePanelLayoutState;
   emulatorState?: EmulatorState;
   media?: MediaState;
   keyMappingFile?: string;
@@ -100,6 +105,7 @@ export const initialAppState: AppState = {
   ideFocused: false,
   dimMenu: false,
   globalSettings: {},
+  idePanelLayout: createDefaultIdePanelLayoutState(),
   media: {},
   emulatorState: {
     machineId: MI_SPECTRUM_48,

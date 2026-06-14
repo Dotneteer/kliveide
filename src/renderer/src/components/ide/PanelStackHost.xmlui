@@ -1,0 +1,141 @@
+<Component
+  name="PanelStackHost"
+  var.layout="{state.value.idePanelLayout}"
+>
+  <SharedAppState id="state" />
+  <SideBarPanelStack minPanelSize="{120}" height="100%">
+    <SideBarPanelItem
+      when="{$props.placement === 'primarySideBar' && $props.activity === 'explorer'}"
+      panelId="explorerProject"
+      title="KLIVE PROJECT"
+      expanded="{layout.instances.explorerProject.expanded ?? true}"
+      initialSize="{layout.instances.explorerProject.size ?? 1000}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'explorerProject', flag: !(layout.instances.explorerProject.expanded ?? true) } })"
+    >
+      <PanelRenderer
+        contributionId="explorerProject"
+        instanceId="explorerProject"
+        rendererId="explorerProject"
+        placement="primarySideBar"
+        chrome="compact"
+        onOpenDocument="document => emitEvent('openDocument', document)"
+        onRequestDialog="request => emitEvent('requestDialog', request)"
+      />
+    </SideBarPanelItem>
+
+    <SideBarPanelItem
+      when="{$props.placement === 'primarySideBar' && $props.activity === 'debug'}"
+      panelId="z80Cpu"
+      title="Z80 CPU"
+      expanded="{layout.instances.z80Cpu.expanded ?? true}"
+      initialSize="{layout.instances.z80Cpu.size ?? 260}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'z80Cpu', flag: !(layout.instances.z80Cpu.expanded ?? true) } })"
+    >
+      <PanelRenderer contributionId="z80Cpu" instanceId="z80Cpu" rendererId="z80Cpu" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      when="{$props.placement === 'primarySideBar' && $props.activity === 'debug'}"
+      panelId="callStack"
+      title="CALL STACK"
+      expanded="{layout.instances.callStack.expanded ?? false}"
+      initialSize="{layout.instances.callStack.size ?? 500}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'callStack', flag: !(layout.instances.callStack.expanded ?? false) } })"
+    >
+      <PanelRenderer contributionId="callStack" instanceId="callStack" rendererId="callStack" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      when="{$props.placement === 'primarySideBar' && $props.activity === 'debug'}"
+      panelId="ulaIo"
+      title="ULA & I/O"
+      expanded="{layout.instances.ulaIo.expanded ?? false}"
+      initialSize="{layout.instances.ulaIo.size ?? 500}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'ulaIo', flag: !(layout.instances.ulaIo.expanded ?? false) } })"
+    >
+      <PanelRenderer contributionId="ulaIo" instanceId="ulaIo" rendererId="ulaIo" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      when="{$props.placement === 'primarySideBar' && $props.activity === 'debug'}"
+      panelId="watch"
+      title="WATCH"
+      expanded="{layout.instances.watch.expanded ?? true}"
+      initialSize="{layout.instances.watch.size ?? 500}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'watch', flag: !(layout.instances.watch.expanded ?? true) } })"
+    >
+      <PanelRenderer contributionId="watch" instanceId="watch" rendererId="watch" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      when="{$props.placement === 'primarySideBar' && $props.activity === 'debug'}"
+      panelId="breakpoints"
+      title="BREAKPOINTS"
+      expanded="{layout.instances.breakpoints.expanded ?? true}"
+      initialSize="{layout.instances.breakpoints.size ?? 500}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'breakpoints', flag: !(layout.instances.breakpoints.expanded ?? true) } })"
+    >
+      <PanelRenderer contributionId="breakpoints" instanceId="breakpoints" rendererId="breakpoints" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+
+    <SideBarPanelItem
+      when="{$props.placement === 'primarySideBar' && $props.activity === 'machine'}"
+      panelId="systemVariables"
+      title="SYSTEM VARIABLES"
+      expanded="{layout.instances.systemVariables.expanded ?? false}"
+      initialSize="{layout.instances.systemVariables.size ?? 260}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'systemVariables', flag: !(layout.instances.systemVariables.expanded ?? false) } })"
+    >
+      <PanelRenderer contributionId="systemVariables" instanceId="systemVariables" rendererId="machineStatus" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      when="{$props.placement === 'primarySideBar' && $props.activity === 'machine'}"
+      panelId="psg"
+      title="PSG (AY-3-8912)"
+      expanded="{layout.instances.psg.expanded ?? false}"
+      initialSize="{layout.instances.psg.size ?? 500}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'psg', flag: !(layout.instances.psg.expanded ?? false) } })"
+    >
+      <PanelRenderer contributionId="psg" instanceId="psg" rendererId="psg" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+
+    <SideBarPanelItem
+      when="{$props.placement === 'primarySideBar' && $props.activity === 'scripting'}"
+      panelId="scriptingHistory"
+      title="SCRIPTING HISTORY"
+      expanded="{layout.instances.scriptingHistory.expanded ?? true}"
+      initialSize="{layout.instances.scriptingHistory.size ?? 500}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'scriptingHistory', flag: !(layout.instances.scriptingHistory.expanded ?? true) } })"
+    >
+      <PanelRenderer contributionId="scriptingHistory" instanceId="scriptingHistory" rendererId="scriptingHistory" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+
+    <SideBarPanelItem
+      when="{$props.placement === 'primarySideBar' && $props.activity === 'testing'}"
+      panelId="testingTests"
+      title="TESTS"
+      expanded="{layout.instances.testingTests.expanded ?? true}"
+      initialSize="{layout.instances.testingTests.size ?? 1000}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'testingTests', flag: !(layout.instances.testingTests.expanded ?? true) } })"
+    >
+      <PanelRenderer contributionId="testingTests" instanceId="testingTests" rendererId="testingTests" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+
+    <SideBarPanelItem
+      when="{$props.placement === 'secondarySideBar'}"
+      panelId="outline"
+      title="OUTLINE"
+      expanded="{layout.instances.outline.expanded ?? true}"
+      initialSize="{layout.instances.outline.size ?? 520}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'outline', flag: !(layout.instances.outline.expanded ?? true) } })"
+    >
+      <PanelRenderer contributionId="outline" instanceId="outline" rendererId="outline" placement="secondarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      when="{$props.placement === 'secondarySideBar'}"
+      panelId="memory"
+      title="MEMORY"
+      expanded="{layout.instances.memory.expanded ?? true}"
+      initialSize="{layout.instances.memory.size ?? 520}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'memory', flag: !(layout.instances.memory.expanded ?? true) } })"
+    >
+      <PanelRenderer contributionId="memory" instanceId="memory" rendererId="memory" placement="secondarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+  </SideBarPanelStack>
+</Component>

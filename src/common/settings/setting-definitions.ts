@@ -1,5 +1,6 @@
 import { set } from "lodash";
 import type { Setting } from "./Setting";
+import { createDefaultIdePanelLayoutState } from "../state/ide-panel-layout-state";
 import {
   SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
   SETTING_EDITOR_AUTOCOMPLETE,
@@ -29,6 +30,7 @@ import {
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_NOTE,
   SETTING_IDE_OPEN_LAST_PROJECT,
+  SETTING_IDE_PANEL_LAYOUT,
   SETTING_IDE_PRIMARY_SIDEBAR_WIDTH,
   SETTING_IDE_SHOW_SIDEBAR,
   SETTING_IDE_SHOW_PRIMARY_SIDEBAR,
@@ -331,6 +333,15 @@ const settingDefinitions: Setting[] = [
     persist: true,
     saveWithIde: true,
     volatile: true
+  },
+  {
+    id: SETTING_IDE_PANEL_LAYOUT,
+    title: "(panel layout)",
+    type: "object",
+    defaultValue: createDefaultIdePanelLayoutState(),
+    persist: true,
+    saveWithIde: true,
+    boundTo: "ide"
   },
   {
     id: SETTING_IDE_OPEN_LAST_PROJECT,

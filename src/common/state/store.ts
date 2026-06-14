@@ -1,7 +1,9 @@
+import { cloneDeep, set } from "lodash";
 import { Action } from "./Action";
 import { AppState, initialAppState } from "./AppState";
 import { appStateFlagsReducer } from "./app-state-flags-reducer";
 import { emulatorStateReducer } from "./emulator-state-reducer";
+import { idePanelLayoutReducer } from "./ide-panel-layout-reducer";
 import { ActionForwarder, createStore, Reducer } from "./redux-light";
 import { globalSettingsReducer } from "./global-settings-reducer";
 import { mediaStateReducer } from "./media-state-reducer";
@@ -15,6 +17,10 @@ import { mediaStateReducer } from "./media-state-reducer";
 function appReducer(state: AppState, action: Action): AppState {
   state = appStateFlagsReducer(state, action);
   invokeReducer(state.globalSettings, globalSettingsReducer, (a, n) => (a.globalSettings = n));
+  invokeReducer(state.idePanelLayout, idePanelLayoutReducer, (a, n) => {
+    a.idePanelLayout = n;
+    a.globalSettings = set(cloneDeep(a.globalSettings ?? {}), "ideViewOptions.panelLayout", n);
+  });
   invokeReducer(state.emulatorState, emulatorStateReducer, (a, n) => (a.emulatorState = n));
   invokeReducer(state.media, mediaStateReducer, (a, n) => (a.media = n));
   return state;

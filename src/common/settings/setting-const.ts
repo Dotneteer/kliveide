@@ -28,6 +28,7 @@ export const SETTING_IDE_SECONDARY_SIDEBAR_WIDTH = "ideViewOptions.secondarySide
 export const SETTING_IDE_TOOLPANEL_HEIGHT = "ideViewOptions.toolPanelHeight";
 export const SETTING_IDE_ACTIVE_TOOL = "ideViewOptions.activeTool";
 export const SETTING_IDE_ACTIVE_OUTPUT_PANE = "ideViewOptions.activeOutputPane";
+export const SETTING_IDE_PANEL_LAYOUT = "ideViewOptions.panelLayout";
 export const SETTING_IDE_OPEN_LAST_PROJECT = "ideBehavior.openLastProject";
 export const SETTING_IDE_CLOSE_EMU = "ideBehavior.closeEmuWithIde";
 export const SETTING_EDITOR_FONT_SIZE = "editorOptions.fontSize";

@@ -1,4 +1,6 @@
-export type PanelPlacement = "primarySideBar" | "secondarySideBar" | "document" | "toolArea";
+import type { PanelPlacement } from "../../../../common/state/ide-panel-layout-state";
+
+export type { PanelPlacement };
 
 export type PanelContribution = {
   id: string;
