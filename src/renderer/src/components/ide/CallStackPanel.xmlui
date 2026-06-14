@@ -1,0 +1,5 @@
+<Component name="CallStackPanel">
+  <HStack height="100%" verticalAlignment="center" horizontalAlignment="center">
+    <Text value="Call stack not available" fontSize="13px" color="#4cd964" />
+  </HStack>
+</Component>

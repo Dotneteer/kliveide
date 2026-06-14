@@ -1,0 +1,16 @@
+<Component name="ExplorerSideBarPanels">
+  <SideBarPanelStack minPanelSize="{120}" height="100%">
+    <SideBarPanelItem
+      panelId="explorerPanel"
+      title="KLIVE PROJECT"
+      expanded="{$props.projectExpanded}"
+      initialSize="{1000}"
+      onToggle="emitEvent('toggleProject')"
+    >
+      <ExplorerPanel
+        onOpenDocument="document => emitEvent('openDocument', document)"
+        onRequestDialog="request => emitEvent('requestDialog', request)"
+      />
+    </SideBarPanelItem>
+  </SideBarPanelStack>
+</Component>

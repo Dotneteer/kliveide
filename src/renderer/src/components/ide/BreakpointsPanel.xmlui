@@ -1,0 +1,5 @@
+<Component name="BreakpointsPanel">
+  <HStack height="100%" verticalAlignment="center" horizontalAlignment="center">
+    <Text value="No breakpoints defined" fontSize="13px" color="#4cd964" />
+  </HStack>
+</Component>

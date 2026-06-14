@@ -1,0 +1,13 @@
+<Component name="TestingSideBarPanels">
+  <SideBarPanelStack minPanelSize="{120}" height="100%">
+    <SideBarPanelItem
+      panelId="testing.tests"
+      title="TESTS"
+      expanded="{$props.testsExpanded}"
+      initialSize="{1000}"
+      onToggle="emitEvent('toggleTests')"
+    >
+      <Text value="Test discovery placeholder" fontSize="13px" color="$textColor-SideBar" />
+    </SideBarPanelItem>
+  </SideBarPanelStack>
+</Component>

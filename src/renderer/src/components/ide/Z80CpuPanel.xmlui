@@ -1,0 +1,33 @@
+<Component name="Z80CpuPanel">
+  <VStack gap="$space-2">
+    <HStack gap="$space-4" verticalAlignment="center">
+      <Text value="F" fontSize="28px" fontWeight="600" color="#ff9800" />
+      <VStack gap="$space-1">
+        <Text value="S  Z  5  H  3  P  N  C" fontSize="13px" color="#ff9800" />
+        <Text value="●  ●  ●  ●  ●  ●  ●  ●" fontSize="13px" color="#29b6f6" />
+      </VStack>
+    </HStack>
+    <Stack height="1px" backgroundColor="$borderColor-SideBarPanel" />
+    <HStack gap="$space-6">
+      <VStack gap="0">
+        <Text value="AF     FFFF" fontSize="13px" color="#29b6f6" />
+        <Text value="BC     0000" fontSize="13px" color="#29b6f6" />
+        <Text value="DE     0000" fontSize="13px" color="#29b6f6" />
+        <Text value="HL     0000" fontSize="13px" color="#29b6f6" />
+        <Text value="IX     0000" fontSize="13px" color="#29b6f6" />
+        <Text value="IY     0000" fontSize="13px" color="#29b6f6" />
+        <Text value="PC     0000" fontSize="13px" color="#29b6f6" />
+        <Text value="SP     FFFF" fontSize="13px" color="#29b6f6" />
+      </VStack>
+      <VStack gap="0">
+        <Text value="AF'    FFFF" fontSize="13px" color="#29b6f6" />
+        <Text value="BC'    FFFF" fontSize="13px" color="#29b6f6" />
+        <Text value="DE'    FFFF" fontSize="13px" color="#29b6f6" />
+        <Text value="HL'    FFFF" fontSize="13px" color="#29b6f6" />
+      </VStack>
+    </HStack>
+    <Stack height="1px" backgroundColor="$borderColor-SideBarPanel" />
+    <Text value="IM     0        SNZ    ○" fontSize="13px" color="#29b6f6" />
+    <Text value="IF1    ○        IF2    ○" fontSize="13px" color="#29b6f6" />
+  </VStack>
+</Component>

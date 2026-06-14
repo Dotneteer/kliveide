@@ -1,0 +1,22 @@
+<Component name="MachineInfoSideBarPanels">
+  <SideBarPanelStack minPanelSize="{120}" height="100%">
+    <SideBarPanelItem
+      panelId="sysVarsPanel"
+      title="SYSTEM VARIABLES"
+      expanded="{$props.sysVarsExpanded}"
+      initialSize="{260}"
+      onToggle="emitEvent('toggleSysVars')"
+    >
+      <MachineStatusPanel />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      panelId="psgPanel"
+      title="PSG (AY-3-8912)"
+      expanded="{$props.psgExpanded}"
+      initialSize="{500}"
+      onToggle="emitEvent('togglePsg')"
+    >
+      <Text value="AY register placeholder" fontSize="13px" color="$textColor-SideBar" />
+    </SideBarPanelItem>
+  </SideBarPanelStack>
+</Component>

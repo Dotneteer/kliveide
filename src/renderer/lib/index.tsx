@@ -4,6 +4,8 @@ import { emulatorPanelComponentRenderer } from "./EmulatorPanel/EmulatorPanel";
 import { helloComponentRenderer } from "./Hello/Hello";
 import { persistedSettingOnReleaseComponentRenderer } from "./PersistedSettingOnRelease/PersistedSettingOnRelease";
 import { sharedAppStateComponentRenderer } from "./SharedAppState/SharedAppState";
+import { sideBarPanelItemComponentRenderer } from "./SideBarPanels/SideBarPanelItem";
+import { sideBarPanelStackComponentRenderer } from "./SideBarPanels/SideBarPanelStack";
 import { splitterSizeGuardComponentRenderer } from "./SplitterSizeGuard/SplitterSizeGuard";
 import { toolbarButtonComponentRenderer } from "./Toolbar/ToolbarButton";
 import { toolbarSeparatorComponentRenderer } from "./Toolbar/ToolbarSeparator";
@@ -18,6 +20,8 @@ export default {
     helloComponentRenderer,
     persistedSettingOnReleaseComponentRenderer,
     sharedAppStateComponentRenderer,
+    sideBarPanelItemComponentRenderer,
+    sideBarPanelStackComponentRenderer,
     splitterSizeGuardComponentRenderer,
     toolbarButtonComponentRenderer,
     toolbarSeparatorComponentRenderer,

@@ -1,0 +1,131 @@
+.stack {
+  background: var(--xmlui-backgroundColor-SideBar, transparent);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.animated {
+  transition:
+    flex-grow 160ms ease,
+    flex-basis 160ms ease,
+    min-height 160ms ease;
+}
+
+.collapsed {
+  flex-shrink: 0;
+}
+
+.expanded {
+  flex-shrink: 1;
+}
+
+.header {
+  align-items: center;
+  background: var(--xmlui-backgroundColor-SideBarPanelHeader, transparent);
+  border: 0;
+  border-bottom: 1px solid var(--xmlui-borderColor-SideBarPanel, #333333);
+  color: var(--xmlui-textColor-SideBarPanelHeader, currentColor);
+  cursor: default;
+  display: flex;
+  flex: 0 0 26px;
+  font: inherit;
+  gap: 4px;
+  height: 26px;
+  min-height: 26px;
+  outline: 0;
+  padding: 0 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.header:hover {
+  background: var(--xmlui-backgroundColor-SideBarHeader, transparent);
+}
+
+.chevron {
+  align-items: center;
+  color: var(--xmlui-textColor-SideBarPanelHeader, currentColor);
+  display: inline-flex;
+  flex: 0 0 14px;
+  font-size: 13px;
+  height: 14px;
+  justify-content: center;
+  line-height: 14px;
+  transition: transform 120ms ease;
+  width: 14px;
+}
+
+.openChevron {
+  transform: rotate(90deg);
+}
+
+.title {
+  color: var(--xmlui-textColor-SideBarPanelHeader, currentColor);
+  flex: 1 1 auto;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.animated .content {
+  transition: opacity 120ms ease;
+}
+
+.contentOpen {
+  opacity: 1;
+}
+
+.contentClosed {
+  opacity: 0;
+}
+
+.contentScroller {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--xmlui-space-2, 8px);
+  min-height: 0;
+  overflow: auto;
+  padding: var(--xmlui-space-3, 12px);
+}
+
+.grip {
+  background: transparent;
+  cursor: default;
+  flex: 0 0 5px;
+  height: 5px;
+  width: 100%;
+}
+
+.sizeable {
+  cursor: row-resize;
+}
+
+.sizeable:hover,
+.dragging {
+  background: var(--xmlui-borderColor-active-Tabs, #007acc);
+}

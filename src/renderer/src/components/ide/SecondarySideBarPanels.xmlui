@@ -1,0 +1,22 @@
+<Component name="SecondarySideBarPanels">
+  <SideBarPanelStack minPanelSize="{120}" height="100%">
+    <SideBarPanelItem
+      panelId="secondary.outline"
+      title="OUTLINE"
+      expanded="{$props.outlineExpanded}"
+      initialSize="{520}"
+      onToggle="emitEvent('toggleOutline')"
+    >
+      <IdeViewHost viewId="scripting-history" placement="secondarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      panelId="secondary.memory"
+      title="MEMORY"
+      expanded="{$props.memoryExpanded}"
+      initialSize="{520}"
+      onToggle="emitEvent('toggleMemory')"
+    >
+      <IdeViewHost viewId="memory" placement="secondarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+  </SideBarPanelStack>
+</Component>

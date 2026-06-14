@@ -1,0 +1,49 @@
+<Component name="DebugSideBarPanels">
+  <SideBarPanelStack minPanelSize="{120}" height="100%">
+    <SideBarPanelItem
+      panelId="z80CpuPanel"
+      title="Z80 CPU"
+      expanded="{$props.cpuExpanded}"
+      initialSize="{260}"
+      onToggle="emitEvent('toggleCpu')"
+    >
+      <Z80CpuPanel />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      panelId="callStackPanel"
+      title="CALL STACK"
+      expanded="{$props.callStackExpanded}"
+      initialSize="{500}"
+      onToggle="emitEvent('toggleCallStack')"
+    >
+      <CallStackPanel />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      panelId="ulaPanel"
+      title="ULA & I/O"
+      expanded="{$props.ulaExpanded}"
+      initialSize="{500}"
+      onToggle="emitEvent('toggleUla')"
+    >
+      <UlaIoPanel />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      panelId="watchPanel"
+      title="WATCH"
+      expanded="{$props.watchExpanded}"
+      initialSize="{500}"
+      onToggle="emitEvent('toggleWatch')"
+    >
+      <WatchPanel />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      panelId="breakpointsPanel"
+      title="BREAKPOINTS"
+      expanded="{$props.breakpointsExpanded}"
+      initialSize="{500}"
+      onToggle="emitEvent('toggleBreakpoints')"
+    >
+      <BreakpointsPanel />
+    </SideBarPanelItem>
+  </SideBarPanelStack>
+</Component>
