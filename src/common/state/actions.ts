@@ -191,10 +191,43 @@ export const movePanelInstanceAction: ActionCreator = (
   id: string,
   placement: string,
   activityId?: string,
-  groupId?: string
+  groupId?: string,
+  orderIndex?: number
 ) => ({
   type: "MOVE_PANEL_INSTANCE",
-  payload: { id, text: placement, nextId: activityId, value: { groupId } }
+  payload: { id, text: placement, nextId: activityId, value: { groupId, orderIndex } }
+});
+
+export const createPanelInstanceAction: ActionCreator = (
+  id: string,
+  contributionId: string,
+  rendererId: string,
+  placement: string,
+  activityId?: string,
+  groupId?: string,
+  orderIndex?: number
+) => ({
+  type: "CREATE_PANEL_INSTANCE",
+  payload: {
+    id,
+    text: contributionId,
+    nextId: rendererId,
+    value: { placement, activityId, groupId, orderIndex }
+  }
+});
+
+export const closePanelInstanceAction: ActionCreator = (id: string) => ({
+  type: "CLOSE_PANEL_INSTANCE",
+  payload: { id }
+});
+
+export const resetPanelLayoutAction: ActionCreator = () => ({
+  type: "RESET_PANEL_LAYOUT"
+});
+
+export const setWorkspaceSettingsAction: ActionCreator = (value: Record<string, any>) => ({
+  type: "SET_WORKSPACE_SETTINGS",
+  payload: { value }
 });
 
 export const patchPanelViewStateAction: ActionCreator = (

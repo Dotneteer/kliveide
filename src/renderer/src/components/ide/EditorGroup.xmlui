@@ -1,63 +1,137 @@
 <Component
   name="EditorGroup"
   var.activeTab="{0}"
+  var.groupId="{$props.groupId ?? 'group1'}"
+  var.layout="{state.value.idePanelLayout}"
 >
-  <VStack
-    width="100%"
-    height="100%"
-    gap="0"
-    backgroundColor="$backgroundColor-EditorGroup"
-    borderRight="1px solid $borderColor-EditorGroup"
-  >
-    <HStack
-      height="28px"
-      paddingHorizontal="$space-2"
-      gap="$space-1"
-      verticalAlignment="center"
-      backgroundColor="$backgroundColor-EditorGroupHeader"
-      borderBottom="1px solid $borderColor-EditorGroup"
-    >
-      <Text value="{$props.title}" fontSize="12px" fontWeight="600" color="$textColor-EditorSubtle" />
-      <SpaceFiller />
-      <Icon name="layout-panel" tooltip="Split right" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitRight')" />
-      <Icon name="layers" tooltip="Split down" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitDown')" />
-      <Icon name="combine" tooltip="Close placeholder split" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('closeGroup')" />
-    </HStack>
-    <Tabs
+  <SharedAppState id="state" />
+  <PanelDropTarget placement="document" groupId="{groupId}">
+    <VStack
       width="100%"
-      height="*"
+      height="100%"
       gap="0"
-      activeTab="{activeTab}"
-      onDidChange="newIndex => activeTab = newIndex"
+      backgroundColor="$backgroundColor-EditorGroup"
+      borderRight="1px solid $borderColor-EditorGroup"
     >
-      <TabItem id="active-document" label="{$props.activeDocument}">
-        <DocumentView
-          name="{$props.activeDocument}"
-          icon="{$props.activeDocumentIcon ?? 'file-code'}"
-          kind="{$props.activeDocumentKind ?? 'code'}"
-        />
-      </TabItem>
-      <TabItem id="memory" label="Memory">
-        <DocumentView
-          name="Memory #8000"
-          icon="memory-icon"
-          kind="memory"
-          groupId="{$props.groupId ?? 'group1'}"
-          panelInstanceId="{$props.memoryPanelInstanceId ?? 'memory.group1'}"
-        />
-      </TabItem>
-      <TabItem id="disassembly" label="Disassembly">
-        <DocumentView name="Disassembly" icon="disassembly-icon" kind="disassembly" />
-      </TabItem>
-      <TabItem id="output" label="Build Output">
-        <DocumentView name="Build Output" icon="output" kind="output" />
-      </TabItem>
-      <TabItem id="image" label="screen.scr">
-        <DocumentView name="screen.scr" icon="sprite" kind="image" />
-      </TabItem>
-      <TabItem id="unknown" label="unknown.bin">
-        <DocumentView name="unknown.bin" icon="unknown" kind="unknown" />
-      </TabItem>
-    </Tabs>
-  </VStack>
+      <HStack
+        height="28px"
+        paddingHorizontal="$space-2"
+        gap="$space-1"
+        verticalAlignment="center"
+        backgroundColor="$backgroundColor-EditorGroupHeader"
+        borderBottom="1px solid $borderColor-EditorGroup"
+      >
+        <Text value="{$props.title}" fontSize="12px" fontWeight="600" color="$textColor-EditorSubtle" />
+        <SpaceFiller />
+        <Icon name="layout-panel" tooltip="Split right" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitRight')" />
+        <Icon name="layers" tooltip="Split down" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitDown')" />
+        <Icon name="combine" tooltip="Close placeholder split" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('closeGroup')" />
+      </HStack>
+      <Tabs
+        width="100%"
+        height="*"
+        gap="0"
+        activeTab="{activeTab}"
+        onDidChange="newIndex => activeTab = newIndex"
+      >
+        <TabItem id="active-document" label="{$props.activeDocument}">
+          <DocumentView
+            name="{$props.activeDocument}"
+            icon="{$props.activeDocumentIcon ?? 'file-code'}"
+            kind="{$props.activeDocumentKind ?? 'code'}"
+          />
+        </TabItem>
+        <TabItem
+          when="{(layout.documentGroups[groupId].instanceIds ?? []).indexOf($props.memoryPanelInstanceId ?? 'memory.group1') >= 0}"
+          id="memory"
+          label="Memory"
+        >
+          <PanelDragSource instanceId="{$props.memoryPanelInstanceId ?? 'memory.group1'}" placement="document" groupId="{groupId}" closeable="{true}">
+            <DocumentView
+              name="Memory #8000"
+              icon="memory-icon"
+              kind="memory"
+              groupId="{groupId}"
+              panelInstanceId="{$props.memoryPanelInstanceId ?? 'memory.group1'}"
+            />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem
+          when="{(layout.documentGroups[groupId].instanceIds ?? []).indexOf('z80Cpu') >= 0}"
+          id="z80Cpu"
+          label="Z80 CPU"
+        >
+          <PanelDragSource instanceId="z80Cpu" placement="document" groupId="{groupId}" closeable="{true}">
+            <PanelRenderer contributionId="z80Cpu" instanceId="z80Cpu" rendererId="z80Cpu" placement="document" groupId="{groupId}" chrome="document" />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem
+          when="{(layout.documentGroups[groupId].instanceIds ?? []).indexOf('z80Cpu.document') >= 0}"
+          id="z80Cpu-document"
+          label="Z80 CPU"
+        >
+          <PanelDragSource instanceId="z80Cpu.document" placement="document" groupId="{groupId}" closeable="{true}">
+            <PanelRenderer contributionId="z80Cpu" instanceId="z80Cpu.document" rendererId="z80Cpu" placement="document" groupId="{groupId}" chrome="document" />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem
+          when="{(layout.documentGroups[groupId].instanceIds ?? []).indexOf('watch') >= 0}"
+          id="watch"
+          label="Watch"
+        >
+          <PanelDragSource instanceId="watch" placement="document" groupId="{groupId}" closeable="{true}">
+            <PanelRenderer contributionId="watch" instanceId="watch" rendererId="watch" placement="document" groupId="{groupId}" chrome="document" />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem
+          when="{(layout.documentGroups[groupId].instanceIds ?? []).indexOf('breakpoints') >= 0}"
+          id="breakpoints"
+          label="Breakpoints"
+        >
+          <PanelDragSource instanceId="breakpoints" placement="document" groupId="{groupId}" closeable="{true}">
+            <PanelRenderer contributionId="breakpoints" instanceId="breakpoints" rendererId="breakpoints" placement="document" groupId="{groupId}" chrome="document" />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem
+          when="{(layout.documentGroups[groupId].instanceIds ?? []).indexOf('scriptingHistory') >= 0}"
+          id="scriptingHistory"
+          label="Scripting History"
+        >
+          <PanelDragSource instanceId="scriptingHistory" placement="document" groupId="{groupId}" closeable="{true}">
+            <PanelRenderer contributionId="scriptingHistory" instanceId="scriptingHistory" rendererId="scriptingHistory" placement="document" groupId="{groupId}" chrome="document" />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem
+          when="{(layout.documentGroups[groupId].instanceIds ?? []).indexOf('commands') >= 0}"
+          id="commands"
+          label="Commands"
+        >
+          <PanelDragSource instanceId="commands" placement="document" groupId="{groupId}" closeable="{true}">
+            <PanelRenderer contributionId="commands" instanceId="commands" rendererId="commands" placement="document" groupId="{groupId}" chrome="document" />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem
+          when="{(layout.documentGroups[groupId].instanceIds ?? []).indexOf('output') >= 0}"
+          id="output-panel"
+          label="Output"
+        >
+          <PanelDragSource instanceId="output" placement="document" groupId="{groupId}" closeable="{true}">
+            <PanelRenderer contributionId="output" instanceId="output" rendererId="output" placement="document" groupId="{groupId}" chrome="document" />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem id="disassembly" label="Disassembly">
+          <DocumentView name="Disassembly" icon="disassembly-icon" kind="disassembly" />
+        </TabItem>
+        <TabItem id="output" label="Build Output">
+          <DocumentView name="Build Output" icon="output" kind="output" />
+        </TabItem>
+        <TabItem id="image" label="screen.scr">
+          <DocumentView name="screen.scr" icon="sprite" kind="image" />
+        </TabItem>
+        <TabItem id="unknown" label="unknown.bin">
+          <DocumentView name="unknown.bin" icon="unknown" kind="unknown" />
+        </TabItem>
+      </Tabs>
+    </VStack>
+  </PanelDropTarget>
 </Component>

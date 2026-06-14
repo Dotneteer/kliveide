@@ -25,6 +25,7 @@ export type AppState = {
   theme?: string;
   activeActivity?: string;
   globalSettings?: Record<string, any>;
+  workspaceSettings?: Record<string, any>;
   idePanelLayout?: IdePanelLayoutState;
   emulatorState?: EmulatorState;
   media?: MediaState;

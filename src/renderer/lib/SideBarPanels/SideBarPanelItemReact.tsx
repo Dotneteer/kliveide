@@ -6,6 +6,11 @@ import {
   type CSSProperties,
   type ReactNode
 } from "react";
+import {
+  hasPanelDragPayload,
+  readPanelDragPayload,
+  writePanelDragPayload
+} from "../PanelDragDrop/panelDragDrop";
 import styles from "./SideBarPanels.module.scss";
 import { SideBarPanelStackContext } from "./SideBarPanelStackContext";
 
@@ -88,11 +93,22 @@ export function SideBarPanelItemReact({
         draggable
         onClick={onToggle}
         onDragStart={(event) => {
-          event.dataTransfer.effectAllowed = "move";
-          event.dataTransfer.setData(
-            "application/x-klive-panel-instance",
-            JSON.stringify({ instanceId: panelId })
-          );
+          writePanelDragPayload(event, {
+            type: "klive/panel-instance",
+            instanceId: panelId
+          });
+        }}
+        onDragOver={(event) => {
+          if (!hasPanelDragPayload(event)) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+        }}
+        onDrop={(event) => {
+          const payload = readPanelDragPayload(event);
+          if (!payload) return;
+          event.preventDefault();
+          event.stopPropagation();
+          stack?.movePanelToIndex(payload.instanceId, panelId);
         }}
         aria-expanded={expanded}
       >

@@ -1,6 +1,6 @@
-import _ from "lodash";
 import { Action } from "./Action";
 import { AppState } from "./AppState";
+import { selectPersistedIdePanelLayout } from "./ide-panel-layout-persistence";
 
 /**
  * This reducer is used to manage the AppState flags and simple properties
@@ -30,7 +30,22 @@ export function appStateFlagsReducer (
         ...state,
         ideStateSynched: true,
         globalSettings: payload?.value,
-        idePanelLayout: _.get(payload?.value, "ideViewOptions.panelLayout") ?? state.idePanelLayout
+        idePanelLayout: selectPersistedIdePanelLayout(
+          payload?.value,
+          state.workspaceSettings,
+          state.idePanelLayout
+        )
+      };
+
+    case "SET_WORKSPACE_SETTINGS":
+      return {
+        ...state,
+        workspaceSettings: payload?.value,
+        idePanelLayout: selectPersistedIdePanelLayout(
+          state.globalSettings,
+          payload?.value,
+          state.idePanelLayout
+        )
       };
 
     case "IS_WINDOWS":

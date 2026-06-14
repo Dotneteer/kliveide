@@ -700,3 +700,18 @@ UI testability: run emulator and IDE windows, then confirm the Debug Z80 CPU pan
 ## Near-Term Recommendation
 
 Start with the Z80 CPU panel proof because it gives the fastest useful UI feedback and proves the IDE-to-emulator data path. Then introduce the registry and `PanelRenderer.xmlui` while keeping the current side-bar UI visible. After the same Z80 panel renders through the registry, replace the hardcoded side-bar UDCs with a generic stack. This keeps the UI testable at every step and avoids another blank side-bar failure.
+
+## Implementation Status
+
+The panel proof-of-concept slices are implemented in the Klive IDE prototype:
+
+- Registered panel contributions live in shared TypeScript metadata.
+- The layout reducer owns panel placement, expansion, size, ordering, document groups, tool tabs, per-instance state, contribution state, create, close, move, and reset.
+- The renderer uses a static `PanelRenderer.xmlui` dispatcher because XMLUI does not yet support safe dynamic component instantiation by name.
+- The primary side bar, secondary side bar, document area, and tool area can host registered panel instances.
+- Drag/drop moves panel instances between supported hosts; side-bar header drops support ordered insertion.
+- Document/tool panel instances have close affordances.
+- Compact status-bar commands reopen the Memory document, Z80 CPU document, Commands tool, and Output tool, and reset the panel layout.
+- Panel layout persists through `ideViewOptions.panelLayout`; workspace settings override global settings when `workspaceSettings` is supplied to shared state.
+
+The only remaining external dependency is durable workspace settings I/O. The shared state and reducer boundary is ready for it through `SET_WORKSPACE_SETTINGS`, but this repository does not yet include a workspace settings load/save service that reads and writes project-specific settings to disk.

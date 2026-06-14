@@ -1,14 +1,7 @@
-import {
-  type DragEvent,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { movePanelInstanceAction } from "../../../common/state/actions";
 import type { PanelPlacement } from "../../../common/state/ide-panel-layout-state";
+import { hasPanelDragPayload, readPanelDragPayload } from "../PanelDragDrop/panelDragDrop";
 import { dispatchSharedAction } from "../../shared-store";
 import styles from "./SideBarPanels.module.scss";
 import {
@@ -119,12 +112,30 @@ export function SideBarPanelStackReact({
     []
   );
 
+  const movePanelToIndex = useCallback(
+    (panelId: string, targetPanelId: string) => {
+      if (!placement || panelId === targetPanelId) return;
+      const orderIndex = registrations.current.findIndex((item) => item.panelId === targetPanelId);
+      dispatchSharedAction(
+        movePanelInstanceAction(
+          panelId,
+          placement,
+          activity,
+          undefined,
+          orderIndex < 0 ? undefined : orderIndex
+        )
+      );
+    },
+    [activity, placement]
+  );
+
   const contextValue = useMemo(
     () => ({
       draggingPanelId,
       minPanelSize,
       getPanelSize,
       isPanelSizeable,
+      movePanelToIndex,
       registerPanel,
       startResize,
       unregisterPanel
@@ -134,6 +145,7 @@ export function SideBarPanelStackReact({
       minPanelSize,
       getPanelSize,
       isPanelSizeable,
+      movePanelToIndex,
       registerPanel,
       startResize,
       unregisterPanel
@@ -150,10 +162,10 @@ export function SideBarPanelStackReact({
         }}
         onDrop={(event) => {
           if (!placement) return;
-          const panelId = readPanelDragPayload(event);
-          if (!panelId) return;
+          const payload = readPanelDragPayload(event);
+          if (!payload) return;
           event.preventDefault();
-          dispatchSharedAction(movePanelInstanceAction(panelId, placement, activity));
+          dispatchSharedAction(movePanelInstanceAction(payload.instanceId, placement, activity));
         }}
       >
         {children}
@@ -193,23 +205,5 @@ export function SideBarPanelStackReact({
     dragState.current = null;
     setDraggingPanelId(null);
     document.body.style.cursor = "";
-  }
-}
-
-function hasPanelDragPayload(event: DragEvent): boolean {
-  return Array.from(event.dataTransfer.types).includes("application/x-klive-panel-instance");
-}
-
-function readPanelDragPayload(event: DragEvent): string | undefined {
-  const json = event.dataTransfer.getData("application/x-klive-panel-instance");
-  if (!json) {
-    return undefined;
-  }
-
-  try {
-    const payload = JSON.parse(json) as { instanceId?: string };
-    return payload.instanceId;
-  } catch {
-    return undefined;
   }
 }

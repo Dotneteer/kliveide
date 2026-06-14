@@ -2,6 +2,8 @@ import { emuKeyboardComponentRenderer } from "./EmuKeyboard/EmuKeyboard";
 import { emuMachineCommandsComponentRenderer } from "./EmuMachineCommands/EmuMachineCommands";
 import { emulatorPanelComponentRenderer } from "./EmulatorPanel/EmulatorPanel";
 import { helloComponentRenderer } from "./Hello/Hello";
+import { panelDragSourceComponentRenderer } from "./PanelDragDrop/PanelDragSource";
+import { panelDropTargetComponentRenderer } from "./PanelDragDrop/PanelDropTarget";
 import { panelRuntimeComponentRenderer } from "./PanelRuntime/PanelRuntime";
 import { persistedSettingOnReleaseComponentRenderer } from "./PersistedSettingOnRelease/PersistedSettingOnRelease";
 import { sharedAppStateComponentRenderer } from "./SharedAppState/SharedAppState";
@@ -20,6 +22,8 @@ export default {
     emuMachineCommandsComponentRenderer,
     emulatorPanelComponentRenderer,
     helloComponentRenderer,
+    panelDragSourceComponentRenderer,
+    panelDropTargetComponentRenderer,
     panelRuntimeComponentRenderer,
     persistedSettingOnReleaseComponentRenderer,
     sharedAppStateComponentRenderer,

@@ -19,6 +19,42 @@
     <Text value="No project" color="$textColor-IdeStatusBar" fontSize="12px" />
     <SpaceFiller />
     <Icon
+      name="memory-icon"
+      tooltip="Open Memory Document"
+      color="$textColor-IdeStatusBar"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatch({ type: 'CREATE_PANEL_INSTANCE', payload: { id: 'memory.group1', text: 'memory', nextId: 'memory', value: { placement: 'document', groupId: 'group1' } } })"
+    />
+    <Icon
+      name="debug-alt"
+      tooltip="Open Z80 CPU Document"
+      color="$textColor-IdeStatusBar"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatch({ type: 'CREATE_PANEL_INSTANCE', payload: { id: 'z80Cpu.document', text: 'z80Cpu', nextId: 'z80Cpu', value: { placement: 'document', groupId: 'group1' } } })"
+    />
+    <Icon
+      name="play"
+      tooltip="Open Commands Tool"
+      color="$textColor-IdeStatusBar"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatch({ type: 'CREATE_PANEL_INSTANCE', payload: { id: 'commands', text: 'commands', nextId: 'commands', value: { placement: 'toolArea' } } })"
+    />
+    <Icon
+      name="output"
+      tooltip="Open Output Tool"
+      color="$textColor-IdeStatusBar"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatch({ type: 'CREATE_PANEL_INSTANCE', payload: { id: 'output', text: 'output', nextId: 'output', value: { placement: 'toolArea' } } })"
+    />
+    <Icon
       name="files"
       tooltip="Toggle Primary Side Bar"
       color="{showPrimarySideBar ? '$textColor-IdeStatusBar' : '$textColor-IdeStatusBar--muted'}"
@@ -62,6 +98,15 @@
       height="14px"
       outline="0"
       onClick="state.dispatchSetGlobalSetting('ideViewOptions.maximizeTools', !maximizeTools)"
+    />
+    <Icon
+      name="combine"
+      tooltip="Reset Panel Layout"
+      color="$textColor-IdeStatusBar"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatch({ type: 'RESET_PANEL_LAYOUT' })"
     />
     <Text value="Ln 1, Col 1" color="$textColor-IdeStatusBar" fontSize="12px" />
   </HStack>

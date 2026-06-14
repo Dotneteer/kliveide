@@ -1,3 +1,5 @@
+import { idePanelContributions } from "./ide-panel-contributions";
+
 export type PanelPlacement = "primarySideBar" | "secondarySideBar" | "document" | "toolArea";
 
 export type PanelInstance = {
@@ -30,65 +32,59 @@ export type IdePanelLayoutState = {
 };
 
 export function createDefaultIdePanelLayoutState(): IdePanelLayoutState {
+  const primarySideBarByActivity: Record<string, string[]> = {};
+  const secondarySideBar: string[] = [];
+  const toolArea: string[] = [];
+  const contributionInstances: PanelInstance[] = [];
+
+  for (const contribution of idePanelContributions) {
+    const defaultPlacement = contribution.defaultPlacement;
+    if (!defaultPlacement) {
+      continue;
+    }
+
+    const order =
+      defaultPlacement === "primarySideBar"
+        ? primarySideBarByActivity[contribution.defaultActivityId ?? "explorer"]?.length ?? 0
+        : defaultPlacement === "secondarySideBar"
+          ? secondarySideBar.length
+          : defaultPlacement === "toolArea"
+            ? toolArea.length
+            : 0;
+
+    contributionInstances.push(
+      panel(
+        contribution.id,
+        contribution.id,
+        contribution.rendererId,
+        defaultPlacement,
+        order,
+        {
+          activityId:
+            defaultPlacement === "primarySideBar"
+              ? (contribution.defaultActivityId ?? "explorer")
+              : undefined,
+          expanded: contribution.initiallyExpanded ?? true,
+          size: contribution.defaultSize
+        }
+      )
+    );
+
+    if (defaultPlacement === "primarySideBar") {
+      const activityId = contribution.defaultActivityId ?? "explorer";
+      primarySideBarByActivity[activityId] = [
+        ...(primarySideBarByActivity[activityId] ?? []),
+        contribution.id
+      ];
+    } else if (defaultPlacement === "secondarySideBar") {
+      secondarySideBar.push(contribution.id);
+    } else if (defaultPlacement === "toolArea") {
+      toolArea.push(contribution.id);
+    }
+  }
+
   const instances = [
-    panel("explorerProject", "explorerProject", "explorerProject", "primarySideBar", 0, {
-      activityId: "explorer",
-      expanded: true,
-      size: 1000
-    }),
-    panel("z80Cpu", "z80Cpu", "z80Cpu", "primarySideBar", 0, {
-      activityId: "debug",
-      expanded: true,
-      size: 260
-    }),
-    panel("callStack", "callStack", "callStack", "primarySideBar", 1, {
-      activityId: "debug",
-      expanded: false,
-      size: 500
-    }),
-    panel("ulaIo", "ulaIo", "ulaIo", "primarySideBar", 2, {
-      activityId: "debug",
-      expanded: false,
-      size: 500
-    }),
-    panel("watch", "watch", "watch", "primarySideBar", 3, {
-      activityId: "debug",
-      expanded: true,
-      size: 500
-    }),
-    panel("breakpoints", "breakpoints", "breakpoints", "primarySideBar", 4, {
-      activityId: "debug",
-      expanded: true,
-      size: 500
-    }),
-    panel("systemVariables", "systemVariables", "machineStatus", "primarySideBar", 0, {
-      activityId: "machine",
-      expanded: false,
-      size: 260
-    }),
-    panel("psg", "psg", "psg", "primarySideBar", 1, {
-      activityId: "machine",
-      expanded: false,
-      size: 500
-    }),
-    panel("scriptingHistory", "scriptingHistory", "scriptingHistory", "primarySideBar", 0, {
-      activityId: "scripting",
-      expanded: true,
-      size: 500
-    }),
-    panel("testingTests", "testingTests", "testingTests", "primarySideBar", 0, {
-      activityId: "testing",
-      expanded: true,
-      size: 1000
-    }),
-    panel("outline", "outline", "outline", "secondarySideBar", 0, {
-      expanded: true,
-      size: 520
-    }),
-    panel("memory", "memory", "memory", "secondarySideBar", 1, {
-      expanded: true,
-      size: 520
-    }),
+    ...contributionInstances,
     panel("memory.group1", "memory", "memory", "document", 1, {
       groupId: "group1",
       expanded: true
@@ -97,25 +93,21 @@ export function createDefaultIdePanelLayoutState(): IdePanelLayoutState {
       groupId: "group2",
       expanded: true
     }),
-    panel("commands", "commands", "commands", "toolArea", 0, {
+    panel("memory.group3", "memory", "memory", "document", 1, {
+      groupId: "group3",
       expanded: true
     }),
-    panel("output", "output", "output", "toolArea", 1, {
+    panel("memory.group4", "memory", "memory", "document", 1, {
+      groupId: "group4",
       expanded: true
     })
   ];
 
   return {
     instances: Object.fromEntries(instances.map((instance) => [instance.instanceId, instance])),
-    primarySideBarByActivity: {
-      explorer: ["explorerProject"],
-      debug: ["z80Cpu", "callStack", "ulaIo", "watch", "breakpoints"],
-      machine: ["systemVariables", "psg"],
-      scripting: ["scriptingHistory"],
-      testing: ["testingTests"]
-    },
-    secondarySideBar: ["outline", "memory"],
-    toolArea: ["commands", "output"],
+    primarySideBarByActivity,
+    secondarySideBar,
+    toolArea,
     documentGroups: {
       group1: {
         activeInstanceId: "memory.group1",
@@ -124,6 +116,14 @@ export function createDefaultIdePanelLayoutState(): IdePanelLayoutState {
       group2: {
         activeInstanceId: "memory.group2",
         instanceIds: ["memory.group2"]
+      },
+      group3: {
+        activeInstanceId: "memory.group3",
+        instanceIds: ["memory.group3"]
+      },
+      group4: {
+        activeInstanceId: "memory.group4",
+        instanceIds: ["memory.group4"]
       }
     },
     viewStateByInstance: {},

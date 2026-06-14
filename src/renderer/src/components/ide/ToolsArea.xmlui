@@ -3,6 +3,7 @@
   var.activeTool="{state.globalSettings('ideViewOptions.activeTool', 'commands')}"
   var.activeTab="{activeTool === 'output' ? 1 : 0}"
   var.activeOutputPane="{state.globalSettings('ideViewOptions.activeOutputPane', 'emu')}"
+  var.layout="{state.value.idePanelLayout}"
 >
   <SharedAppState id="state" />
   <PersistedSettingOnRelease
@@ -13,43 +14,74 @@
     settingId="ideViewOptions.activeOutputPane"
     value="{activeOutputPane}"
   />
-  <VStack
-    backgroundColor="$backgroundColor-ToolsArea"
-    overflowX="hidden"
-    height="100%"
-    gap="0"
-  >
-    <Tabs
-      width="100%"
+  <PanelDropTarget placement="toolArea">
+    <VStack
+      backgroundColor="$backgroundColor-ToolsArea"
+      overflowX="hidden"
       height="100%"
       gap="0"
-      activeTab="{activeTab}"
-      keepMounted="{true}"
-      onDidChange="newIndex => {
-        activeTab = newIndex;
-        activeTool = newIndex === 1 ? 'output' : 'commands';
-      }"
     >
-      <TabItem id="commands" label="Commands">
-        <PanelRenderer
-          contributionId="commands"
-          instanceId="commands"
-          rendererId="commands"
-          placement="toolArea"
-          chrome="tool"
-        />
-      </TabItem>
-      <TabItem id="output" label="Output">
-        <PanelRenderer
-          contributionId="output"
-          instanceId="output"
-          rendererId="output"
-          placement="toolArea"
-          chrome="tool"
-          activeOutputPane="{activeOutputPane}"
-          onOutputPaneChanged="pane => activeOutputPane = pane"
-        />
-      </TabItem>
-    </Tabs>
-  </VStack>
+      <Tabs
+        width="100%"
+        height="100%"
+        gap="0"
+        activeTab="{activeTab}"
+        keepMounted="{true}"
+        onDidChange="newIndex => {
+          activeTab = newIndex;
+          activeTool = newIndex === 1 ? 'output' : 'commands';
+        }"
+      >
+        <TabItem when="{layout.toolArea.indexOf('commands') >= 0}" id="commands" label="Commands">
+          <PanelDragSource instanceId="commands" placement="toolArea" closeable="{true}">
+            <PanelRenderer
+              contributionId="commands"
+              instanceId="commands"
+              rendererId="commands"
+              placement="toolArea"
+              chrome="tool"
+            />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem when="{layout.toolArea.indexOf('output') >= 0}" id="output" label="Output">
+          <PanelDragSource instanceId="output" placement="toolArea" closeable="{true}">
+            <PanelRenderer
+              contributionId="output"
+              instanceId="output"
+              rendererId="output"
+              placement="toolArea"
+              chrome="tool"
+              activeOutputPane="{activeOutputPane}"
+              onOutputPaneChanged="pane => activeOutputPane = pane"
+            />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem when="{layout.toolArea.indexOf('memory') >= 0}" id="memory" label="Memory">
+          <PanelDragSource instanceId="memory" placement="toolArea" closeable="{true}">
+            <PanelRenderer contributionId="memory" instanceId="memory" rendererId="memory" placement="toolArea" chrome="tool" />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem when="{layout.toolArea.indexOf('z80Cpu') >= 0}" id="z80Cpu" label="Z80 CPU">
+          <PanelDragSource instanceId="z80Cpu" placement="toolArea" closeable="{true}">
+            <PanelRenderer contributionId="z80Cpu" instanceId="z80Cpu" rendererId="z80Cpu" placement="toolArea" chrome="tool" />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem when="{layout.toolArea.indexOf('watch') >= 0}" id="watch" label="Watch">
+          <PanelDragSource instanceId="watch" placement="toolArea" closeable="{true}">
+            <PanelRenderer contributionId="watch" instanceId="watch" rendererId="watch" placement="toolArea" chrome="tool" />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem when="{layout.toolArea.indexOf('breakpoints') >= 0}" id="breakpoints" label="Breakpoints">
+          <PanelDragSource instanceId="breakpoints" placement="toolArea" closeable="{true}">
+            <PanelRenderer contributionId="breakpoints" instanceId="breakpoints" rendererId="breakpoints" placement="toolArea" chrome="tool" />
+          </PanelDragSource>
+        </TabItem>
+        <TabItem when="{layout.toolArea.indexOf('scriptingHistory') >= 0}" id="scriptingHistory" label="Scripting History">
+          <PanelDragSource instanceId="scriptingHistory" placement="toolArea" closeable="{true}">
+            <PanelRenderer contributionId="scriptingHistory" instanceId="scriptingHistory" rendererId="scriptingHistory" placement="toolArea" chrome="tool" />
+          </PanelDragSource>
+        </TabItem>
+      </Tabs>
+    </VStack>
+  </PanelDropTarget>
 </Component>

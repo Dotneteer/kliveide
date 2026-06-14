@@ -142,5 +142,25 @@
     >
       <PanelRenderer contributionId="memory" instanceId="memory" rendererId="memory" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
+    <SideBarPanelItem
+      when="{layout.instances.commands.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.commands.activityId === $props.activity)}"
+      panelId="commands"
+      title="COMMANDS"
+      expanded="{layout.instances.commands.expanded ?? true}"
+      initialSize="{layout.instances.commands.size ?? 500}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'commands', flag: !(layout.instances.commands.expanded ?? true) } })"
+    >
+      <PanelRenderer contributionId="commands" instanceId="commands" rendererId="commands" placement="{$props.placement}" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      when="{layout.instances.output.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.output.activityId === $props.activity)}"
+      panelId="output"
+      title="OUTPUT"
+      expanded="{layout.instances.output.expanded ?? true}"
+      initialSize="{layout.instances.output.size ?? 500}"
+      onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'output', flag: !(layout.instances.output.expanded ?? true) } })"
+    >
+      <PanelRenderer contributionId="output" instanceId="output" rendererId="output" placement="{$props.placement}" chrome="compact" />
+    </SideBarPanelItem>
   </SideBarPanelStack>
 </Component>
