@@ -1,4 +1,15 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type DragEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
+import { movePanelInstanceAction } from "../../../common/state/actions";
+import type { PanelPlacement } from "../../../common/state/ide-panel-layout-state";
+import { dispatchSharedAction } from "../../shared-store";
 import styles from "./SideBarPanels.module.scss";
 import {
   SideBarPanelStackContext,
@@ -7,6 +18,8 @@ import {
 
 type Props = {
   minPanelSize?: number;
+  placement?: PanelPlacement;
+  activity?: string;
   children?: ReactNode;
 };
 
@@ -20,7 +33,12 @@ type DragState = {
 
 const rememberedPanelSizes: Record<string, number> = {};
 
-export function SideBarPanelStackReact({ minPanelSize = 120, children }: Props) {
+export function SideBarPanelStackReact({
+  minPanelSize = 120,
+  placement,
+  activity,
+  children
+}: Props) {
   const registrations = useRef<SideBarPanelRegistration[]>([]);
   const dragState = useRef<DragState | null>(null);
   const [sizes, setSizes] = useState<Record<string, number>>({});
@@ -124,7 +142,22 @@ export function SideBarPanelStackReact({ minPanelSize = 120, children }: Props) 
 
   return (
     <SideBarPanelStackContext.Provider value={contextValue}>
-      <div className={styles.stack}>{children}</div>
+      <div
+        className={styles.stack}
+        onDragOver={(event) => {
+          if (!placement || !hasPanelDragPayload(event)) return;
+          event.preventDefault();
+        }}
+        onDrop={(event) => {
+          if (!placement) return;
+          const panelId = readPanelDragPayload(event);
+          if (!panelId) return;
+          event.preventDefault();
+          dispatchSharedAction(movePanelInstanceAction(panelId, placement, activity));
+        }}
+      >
+        {children}
+      </div>
     </SideBarPanelStackContext.Provider>
   );
 
@@ -160,5 +193,23 @@ export function SideBarPanelStackReact({ minPanelSize = 120, children }: Props) 
     dragState.current = null;
     setDraggingPanelId(null);
     document.body.style.cursor = "";
+  }
+}
+
+function hasPanelDragPayload(event: DragEvent): boolean {
+  return Array.from(event.dataTransfer.types).includes("application/x-klive-panel-instance");
+}
+
+function readPanelDragPayload(event: DragEvent): string | undefined {
+  const json = event.dataTransfer.getData("application/x-klive-panel-instance");
+  if (!json) {
+    return undefined;
+  }
+
+  try {
+    const payload = JSON.parse(json) as { instanceId?: string };
+    return payload.instanceId;
+  } catch {
+    return undefined;
   }
 }

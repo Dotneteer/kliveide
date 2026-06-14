@@ -27,6 +27,8 @@
     <EditorGroup
       when="{splitMode === 'single'}"
       title="Group 1"
+      groupId="group1"
+      memoryPanelInstanceId="memory.group1"
       activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
       activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
       activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
@@ -47,6 +49,8 @@
     >
       <EditorGroup
         title="Group 1"
+        groupId="group1"
+        memoryPanelInstanceId="memory.group1"
         activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
         activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
         activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
@@ -58,6 +62,8 @@
       />
       <EditorGroup
         title="Group 2"
+        groupId="group2"
+        memoryPanelInstanceId="memory.group2"
         activeDocument="Disassembly"
         activeDocumentIcon="disassembly-icon"
         activeDocumentKind="disassembly"
@@ -80,6 +86,8 @@
     >
       <EditorGroup
         title="Group 1"
+        groupId="group1"
+        memoryPanelInstanceId="memory.group1"
         activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
         activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
         activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
@@ -91,6 +99,8 @@
       />
       <EditorGroup
         title="Group 2"
+        groupId="group2"
+        memoryPanelInstanceId="memory.group2"
         activeDocument="Build Output"
         activeDocumentIcon="output"
         activeDocumentKind="output"
@@ -121,6 +131,8 @@
       >
         <EditorGroup
           title="Group 1"
+          groupId="group1"
+          memoryPanelInstanceId="memory.group1"
           activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
           activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
           activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
@@ -130,6 +142,8 @@
         />
         <EditorGroup
           title="Group 3"
+          groupId="group3"
+          memoryPanelInstanceId="memory.group3"
           activeDocument="Memory"
           activeDocumentIcon="memory-icon"
           activeDocumentKind="memory"
@@ -148,6 +162,8 @@
       >
         <EditorGroup
           title="Group 2"
+          groupId="group2"
+          memoryPanelInstanceId="memory.group2"
           activeDocument="Disassembly"
           activeDocumentIcon="disassembly-icon"
           activeDocumentKind="disassembly"
@@ -157,6 +173,8 @@
         />
         <EditorGroup
           title="Group 4"
+          groupId="group4"
+          memoryPanelInstanceId="memory.group4"
           activeDocument="screen.scr"
           activeDocumentIcon="sprite"
           activeDocumentKind="image"

@@ -88,6 +88,20 @@ export function createDefaultIdePanelLayoutState(): IdePanelLayoutState {
     panel("memory", "memory", "memory", "secondarySideBar", 1, {
       expanded: true,
       size: 520
+    }),
+    panel("memory.group1", "memory", "memory", "document", 1, {
+      groupId: "group1",
+      expanded: true
+    }),
+    panel("memory.group2", "memory", "memory", "document", 1, {
+      groupId: "group2",
+      expanded: true
+    }),
+    panel("commands", "commands", "commands", "toolArea", 0, {
+      expanded: true
+    }),
+    panel("output", "output", "output", "toolArea", 1, {
+      expanded: true
     })
   ];
 
@@ -101,8 +115,17 @@ export function createDefaultIdePanelLayoutState(): IdePanelLayoutState {
       testing: ["testingTests"]
     },
     secondarySideBar: ["outline", "memory"],
-    toolArea: [],
-    documentGroups: {},
+    toolArea: ["commands", "output"],
+    documentGroups: {
+      group1: {
+        activeInstanceId: "memory.group1",
+        instanceIds: ["memory.group1"]
+      },
+      group2: {
+        activeInstanceId: "memory.group2",
+        instanceIds: ["memory.group2"]
+      }
+    },
     viewStateByInstance: {},
     contributionState: {}
   };

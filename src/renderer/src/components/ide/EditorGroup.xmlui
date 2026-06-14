@@ -38,7 +38,13 @@
         />
       </TabItem>
       <TabItem id="memory" label="Memory">
-        <DocumentView name="Memory #8000" icon="memory-icon" kind="memory" />
+        <DocumentView
+          name="Memory #8000"
+          icon="memory-icon"
+          kind="memory"
+          groupId="{$props.groupId ?? 'group1'}"
+          panelInstanceId="{$props.memoryPanelInstanceId ?? 'memory.group1'}"
+        />
       </TabItem>
       <TabItem id="disassembly" label="Disassembly">
         <DocumentView name="Disassembly" icon="disassembly-icon" kind="disassembly" />

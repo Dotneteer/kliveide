@@ -31,114 +31,24 @@
       }"
     >
       <TabItem id="commands" label="Commands">
-        <VStack width="100%" height="100%" gap="0" backgroundColor="$backgroundColor-ToolsArea">
-          <VStack height="*" padding="$space-3" gap="$space-2" overflowY="auto">
-            <Text value="Interactive Commands" fontSize="14px" fontWeight="600" color="$textColor-ToolsArea" />
-            <Text value="Klive IDE commands will run through this prompt/history workflow." fontSize="12px" color="$textColor-ToolsAreaSubtle" />
-            <VStack
-              gap="$space-1"
-              padding="$space-3"
-              backgroundColor="$backgroundColor-ToolConsole"
-              border="1px solid $borderColor-ToolsArea"
-            >
-              <Text value="klive> help" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-ToolsArea" />
-              <Text value="  build     Compile the active project" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-ToolsAreaSubtle" />
-              <Text value="  inject    Send the latest output to the emulator" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-ToolsAreaSubtle" />
-              <Text value="  run       Start execution from the project entry point" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-ToolsAreaSubtle" />
-              <Text value="klive> build" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-ToolsArea" />
-              <Text value="Command execution placeholder" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-ToolsAreaSubtle" />
-            </VStack>
-          </VStack>
-          <HStack
-            height="38px"
-            verticalAlignment="center"
-            paddingHorizontal="$space-2"
-            gap="$space-2"
-            backgroundColor="$backgroundColor-CommandInput"
-            borderTop="1px solid $borderColor-ToolsArea"
-          >
-            <Text value="klive>" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-ToolsAreaSubtle" />
-            <Text value="type an interactive command" fontSize="13px" color="$textColor-ToolsAreaSubtle" />
-            <SpaceFiller />
-            <Icon name="play" tooltip="Run command placeholder" color="$textColor-ToolTab" width="15px" height="15px" />
-          </HStack>
-        </VStack>
+        <PanelRenderer
+          contributionId="commands"
+          instanceId="commands"
+          rendererId="commands"
+          placement="toolArea"
+          chrome="tool"
+        />
       </TabItem>
       <TabItem id="output" label="Output">
-        <VStack width="100%" height="100%" gap="0" backgroundColor="$backgroundColor-ToolsArea">
-          <HStack
-            height="38px"
-            paddingHorizontal="$space-2"
-            gap="$space-2"
-            verticalAlignment="center"
-            backgroundColor="$backgroundColor-ToolsHeader"
-            borderBottom="1px solid $borderColor-ToolsArea"
-          >
-            <Text value="Pane" fontSize="12px" fontWeight="600" color="$textColor-ToolsAreaSubtle" />
-            <Select
-              width="190px"
-              initialValue="{activeOutputPane}"
-              onDidChange="pane => activeOutputPane = pane"
-            >
-              <Option value="emu" label="Emulator" />
-              <Option value="build" label="Build" />
-              <Option value="script" label="Script Output" />
-            </Select>
-            <SpaceFiller />
-            <Icon name="clear-all" tooltip="Clear output placeholder" color="$textColor-ToolTab" width="15px" height="15px" />
-            <Icon name="copy" tooltip="Copy output placeholder" color="$textColor-ToolTab" width="15px" height="15px" />
-          </HStack>
-          <VStack
-            height="*"
-            padding="$space-3"
-            gap="$space-1"
-            backgroundColor="$backgroundColor-ToolConsole"
-            overflowY="auto"
-          >
-            <Text
-              when="{activeOutputPane === 'emu'}"
-              value="[emu] SP48 PAL started"
-              fontFamily="$fontFamily-monospace"
-              fontSize="13px"
-              color="$textColor-ToolsArea"
-            />
-            <Text
-              when="{activeOutputPane === 'emu'}"
-              value="[emu] Tape fast-load enabled"
-              fontFamily="$fontFamily-monospace"
-              fontSize="13px"
-              color="$textColor-ToolsAreaSubtle"
-            />
-            <Text
-              when="{activeOutputPane === 'build'}"
-              value="[build] assembling src/main.asm"
-              fontFamily="$fontFamily-monospace"
-              fontSize="13px"
-              color="$textColor-ToolsArea"
-            />
-            <Text
-              when="{activeOutputPane === 'build'}"
-              value="[build] generated build/demo.sna"
-              fontFamily="$fontFamily-monospace"
-              fontSize="13px"
-              color="$textColor-ToolsAreaSubtle"
-            />
-            <Text
-              when="{activeOutputPane === 'script'}"
-              value="[script] await emu.reset()"
-              fontFamily="$fontFamily-monospace"
-              fontSize="13px"
-              color="$textColor-ToolsArea"
-            />
-            <Text
-              when="{activeOutputPane === 'script'}"
-              value="[script] completed in 12 ms"
-              fontFamily="$fontFamily-monospace"
-              fontSize="13px"
-              color="$textColor-ToolsAreaSubtle"
-            />
-          </VStack>
-        </VStack>
+        <PanelRenderer
+          contributionId="output"
+          instanceId="output"
+          rendererId="output"
+          placement="toolArea"
+          chrome="tool"
+          activeOutputPane="{activeOutputPane}"
+          onOutputPaneChanged="pane => activeOutputPane = pane"
+        />
       </TabItem>
     </Tabs>
   </VStack>

@@ -49,4 +49,21 @@ describe("IDE panel registry", () => {
       "memory"
     ]);
   });
+
+  it("registers movable document and tool area panel contributions", () => {
+    expect(getPanelContribution("memory")).toMatchObject({
+      allowDocument: true,
+      allowMultipleDocumentInstances: true
+    });
+    expect(getPanelContribution("commands")).toMatchObject({
+      rendererId: "commands",
+      defaultPlacement: "toolArea",
+      allowToolArea: true
+    });
+    expect(getPanelContribution("output")).toMatchObject({
+      rendererId: "output",
+      defaultPlacement: "toolArea",
+      allowToolArea: true
+    });
+  });
 });

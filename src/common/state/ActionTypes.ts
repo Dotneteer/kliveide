@@ -25,6 +25,7 @@ export interface ActionTypes {
   INIT_IDE_PANEL_LAYOUT: null;
   SET_PANEL_EXPANDED: null;
   SET_PANEL_SIZE: null;
+  MOVE_PANEL_INSTANCE: null;
   PATCH_PANEL_VIEW_STATE: null;
   SET_PANEL_INSTANCE_STATE: null;
   SET_PANEL_CONTRIBUTION_STATE: null;

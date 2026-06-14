@@ -3,9 +3,14 @@
   var.layout="{state.value.idePanelLayout}"
 >
   <SharedAppState id="state" />
-  <SideBarPanelStack minPanelSize="{120}" height="100%">
+  <SideBarPanelStack
+    minPanelSize="{120}"
+    placement="{$props.placement}"
+    activity="{$props.activity}"
+    height="100%"
+  >
     <SideBarPanelItem
-      when="{$props.placement === 'primarySideBar' && $props.activity === 'explorer'}"
+      when="{layout.instances.explorerProject.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.explorerProject.activityId === $props.activity)}"
       panelId="explorerProject"
       title="KLIVE PROJECT"
       expanded="{layout.instances.explorerProject.expanded ?? true}"
@@ -16,7 +21,7 @@
         contributionId="explorerProject"
         instanceId="explorerProject"
         rendererId="explorerProject"
-        placement="primarySideBar"
+        placement="{$props.placement}"
         chrome="compact"
         onOpenDocument="document => emitEvent('openDocument', document)"
         onRequestDialog="request => emitEvent('requestDialog', request)"
@@ -24,118 +29,118 @@
     </SideBarPanelItem>
 
     <SideBarPanelItem
-      when="{$props.placement === 'primarySideBar' && $props.activity === 'debug'}"
+      when="{layout.instances.z80Cpu.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.z80Cpu.activityId === $props.activity)}"
       panelId="z80Cpu"
       title="Z80 CPU"
       expanded="{layout.instances.z80Cpu.expanded ?? true}"
       initialSize="{layout.instances.z80Cpu.size ?? 260}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'z80Cpu', flag: !(layout.instances.z80Cpu.expanded ?? true) } })"
     >
-      <PanelRenderer contributionId="z80Cpu" instanceId="z80Cpu" rendererId="z80Cpu" placement="primarySideBar" chrome="compact" />
+      <PanelRenderer contributionId="z80Cpu" instanceId="z80Cpu" rendererId="z80Cpu" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
-      when="{$props.placement === 'primarySideBar' && $props.activity === 'debug'}"
+      when="{layout.instances.callStack.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.callStack.activityId === $props.activity)}"
       panelId="callStack"
       title="CALL STACK"
       expanded="{layout.instances.callStack.expanded ?? false}"
       initialSize="{layout.instances.callStack.size ?? 500}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'callStack', flag: !(layout.instances.callStack.expanded ?? false) } })"
     >
-      <PanelRenderer contributionId="callStack" instanceId="callStack" rendererId="callStack" placement="primarySideBar" chrome="compact" />
+      <PanelRenderer contributionId="callStack" instanceId="callStack" rendererId="callStack" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
-      when="{$props.placement === 'primarySideBar' && $props.activity === 'debug'}"
+      when="{layout.instances.ulaIo.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.ulaIo.activityId === $props.activity)}"
       panelId="ulaIo"
       title="ULA & I/O"
       expanded="{layout.instances.ulaIo.expanded ?? false}"
       initialSize="{layout.instances.ulaIo.size ?? 500}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'ulaIo', flag: !(layout.instances.ulaIo.expanded ?? false) } })"
     >
-      <PanelRenderer contributionId="ulaIo" instanceId="ulaIo" rendererId="ulaIo" placement="primarySideBar" chrome="compact" />
+      <PanelRenderer contributionId="ulaIo" instanceId="ulaIo" rendererId="ulaIo" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
-      when="{$props.placement === 'primarySideBar' && $props.activity === 'debug'}"
+      when="{layout.instances.watch.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.watch.activityId === $props.activity)}"
       panelId="watch"
       title="WATCH"
       expanded="{layout.instances.watch.expanded ?? true}"
       initialSize="{layout.instances.watch.size ?? 500}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'watch', flag: !(layout.instances.watch.expanded ?? true) } })"
     >
-      <PanelRenderer contributionId="watch" instanceId="watch" rendererId="watch" placement="primarySideBar" chrome="compact" />
+      <PanelRenderer contributionId="watch" instanceId="watch" rendererId="watch" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
-      when="{$props.placement === 'primarySideBar' && $props.activity === 'debug'}"
+      when="{layout.instances.breakpoints.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.breakpoints.activityId === $props.activity)}"
       panelId="breakpoints"
       title="BREAKPOINTS"
       expanded="{layout.instances.breakpoints.expanded ?? true}"
       initialSize="{layout.instances.breakpoints.size ?? 500}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'breakpoints', flag: !(layout.instances.breakpoints.expanded ?? true) } })"
     >
-      <PanelRenderer contributionId="breakpoints" instanceId="breakpoints" rendererId="breakpoints" placement="primarySideBar" chrome="compact" />
+      <PanelRenderer contributionId="breakpoints" instanceId="breakpoints" rendererId="breakpoints" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
 
     <SideBarPanelItem
-      when="{$props.placement === 'primarySideBar' && $props.activity === 'machine'}"
+      when="{layout.instances.systemVariables.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.systemVariables.activityId === $props.activity)}"
       panelId="systemVariables"
       title="SYSTEM VARIABLES"
       expanded="{layout.instances.systemVariables.expanded ?? false}"
       initialSize="{layout.instances.systemVariables.size ?? 260}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'systemVariables', flag: !(layout.instances.systemVariables.expanded ?? false) } })"
     >
-      <PanelRenderer contributionId="systemVariables" instanceId="systemVariables" rendererId="machineStatus" placement="primarySideBar" chrome="compact" />
+      <PanelRenderer contributionId="systemVariables" instanceId="systemVariables" rendererId="machineStatus" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
-      when="{$props.placement === 'primarySideBar' && $props.activity === 'machine'}"
+      when="{layout.instances.psg.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.psg.activityId === $props.activity)}"
       panelId="psg"
       title="PSG (AY-3-8912)"
       expanded="{layout.instances.psg.expanded ?? false}"
       initialSize="{layout.instances.psg.size ?? 500}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'psg', flag: !(layout.instances.psg.expanded ?? false) } })"
     >
-      <PanelRenderer contributionId="psg" instanceId="psg" rendererId="psg" placement="primarySideBar" chrome="compact" />
+      <PanelRenderer contributionId="psg" instanceId="psg" rendererId="psg" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
 
     <SideBarPanelItem
-      when="{$props.placement === 'primarySideBar' && $props.activity === 'scripting'}"
+      when="{layout.instances.scriptingHistory.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.scriptingHistory.activityId === $props.activity)}"
       panelId="scriptingHistory"
       title="SCRIPTING HISTORY"
       expanded="{layout.instances.scriptingHistory.expanded ?? true}"
       initialSize="{layout.instances.scriptingHistory.size ?? 500}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'scriptingHistory', flag: !(layout.instances.scriptingHistory.expanded ?? true) } })"
     >
-      <PanelRenderer contributionId="scriptingHistory" instanceId="scriptingHistory" rendererId="scriptingHistory" placement="primarySideBar" chrome="compact" />
+      <PanelRenderer contributionId="scriptingHistory" instanceId="scriptingHistory" rendererId="scriptingHistory" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
 
     <SideBarPanelItem
-      when="{$props.placement === 'primarySideBar' && $props.activity === 'testing'}"
+      when="{layout.instances.testingTests.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.testingTests.activityId === $props.activity)}"
       panelId="testingTests"
       title="TESTS"
       expanded="{layout.instances.testingTests.expanded ?? true}"
       initialSize="{layout.instances.testingTests.size ?? 1000}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'testingTests', flag: !(layout.instances.testingTests.expanded ?? true) } })"
     >
-      <PanelRenderer contributionId="testingTests" instanceId="testingTests" rendererId="testingTests" placement="primarySideBar" chrome="compact" />
+      <PanelRenderer contributionId="testingTests" instanceId="testingTests" rendererId="testingTests" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
 
     <SideBarPanelItem
-      when="{$props.placement === 'secondarySideBar'}"
+      when="{layout.instances.outline.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.outline.activityId === $props.activity)}"
       panelId="outline"
       title="OUTLINE"
       expanded="{layout.instances.outline.expanded ?? true}"
       initialSize="{layout.instances.outline.size ?? 520}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'outline', flag: !(layout.instances.outline.expanded ?? true) } })"
     >
-      <PanelRenderer contributionId="outline" instanceId="outline" rendererId="outline" placement="secondarySideBar" chrome="compact" />
+      <PanelRenderer contributionId="outline" instanceId="outline" rendererId="outline" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
     <SideBarPanelItem
-      when="{$props.placement === 'secondarySideBar'}"
+      when="{layout.instances.memory.placement === $props.placement && ($props.placement === 'secondarySideBar' || layout.instances.memory.activityId === $props.activity)}"
       panelId="memory"
       title="MEMORY"
       expanded="{layout.instances.memory.expanded ?? true}"
       initialSize="{layout.instances.memory.size ?? 520}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'memory', flag: !(layout.instances.memory.expanded ?? true) } })"
     >
-      <PanelRenderer contributionId="memory" instanceId="memory" rendererId="memory" placement="secondarySideBar" chrome="compact" />
+      <PanelRenderer contributionId="memory" instanceId="memory" rendererId="memory" placement="{$props.placement}" chrome="compact" />
     </SideBarPanelItem>
   </SideBarPanelStack>
 </Component>

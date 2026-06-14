@@ -187,6 +187,16 @@ export const setPanelSizeAction: ActionCreator = (id: string, numValue: number) 
   payload: { id, numValue }
 });
 
+export const movePanelInstanceAction: ActionCreator = (
+  id: string,
+  placement: string,
+  activityId?: string,
+  groupId?: string
+) => ({
+  type: "MOVE_PANEL_INSTANCE",
+  payload: { id, text: placement, nextId: activityId, value: { groupId } }
+});
+
 export const patchPanelViewStateAction: ActionCreator = (
   id: string,
   value: Record<string, unknown>

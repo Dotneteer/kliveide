@@ -46,6 +46,12 @@
     placement="{$props.placement ?? 'secondarySideBar'}"
     chrome="{$props.chrome ?? 'compact'}"
   />
+  <CommandsPanel when="{$props.rendererId === 'commands'}" />
+  <OutputPanel
+    when="{$props.rendererId === 'output'}"
+    activeOutputPane="{$props.activeOutputPane ?? 'emu'}"
+    onOutputPaneChanged="pane => emitEvent('outputPaneChanged', pane)"
+  />
   <Text
     when="{
       $props.rendererId !== 'explorerProject' &&
@@ -59,7 +65,9 @@
       $props.rendererId !== 'scriptingHistory' &&
       $props.rendererId !== 'testingTests' &&
       $props.rendererId !== 'outline' &&
-      $props.rendererId !== 'memory'
+      $props.rendererId !== 'memory' &&
+      $props.rendererId !== 'commands' &&
+      $props.rendererId !== 'output'
     }"
     value="Panel not implemented"
     fontSize="13px"

@@ -12,6 +12,15 @@ export const SideBarPanelStackMd: ComponentMetadata = createMetadata({
       description: "Minimum height of an expanded panel while resizing.",
       valueType: "number",
       defaultValue: 120
+    },
+    placement: {
+      description: "Panel placement used as a drag/drop target.",
+      valueType: "string",
+      availableValues: ["primarySideBar", "secondarySideBar", "document", "toolArea"]
+    },
+    activity: {
+      description: "Activity identifier used when dropping into the primary side bar.",
+      valueType: "string"
     }
   },
   events: {}

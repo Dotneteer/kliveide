@@ -4,8 +4,17 @@
   var.title="{kind === 'code' ? 'Code editor placeholder' : kind === 'memory' ? 'Memory view placeholder' : kind === 'disassembly' ? 'Disassembly view placeholder' : kind === 'output' ? 'Output transcript placeholder' : kind === 'image' ? 'Image viewer placeholder' : kind === 'binary' ? 'Binary document placeholder' : kind === 'markdown' ? 'Markdown document placeholder' : 'Unknown document placeholder'}"
   var.icon="{kind === 'code' ? ($props.icon ?? 'file-code') : kind === 'memory' ? 'memory-icon' : kind === 'disassembly' ? 'disassembly-icon' : kind === 'output' ? 'output' : kind === 'image' ? 'sprite' : kind === 'binary' ? ($props.icon ?? 'dump') : kind === 'markdown' ? 'note' : 'unknown'}"
 >
+  <PanelRenderer
+    when="{kind === 'memory'}"
+    contributionId="memory"
+    instanceId="{$props.panelInstanceId ?? 'memory.document'}"
+    rendererId="memory"
+    placement="document"
+    groupId="{$props.groupId}"
+    chrome="document"
+  />
   <IdeViewHost
-    when="{kind === 'memory' || kind === 'disassembly' || kind === 'output'}"
+    when="{kind === 'disassembly' || kind === 'output'}"
     viewId="{kind}"
     placement="document"
     chrome="document"

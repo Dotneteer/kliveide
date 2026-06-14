@@ -82,7 +82,20 @@ export function SideBarPanelItemReact({
       data-panel-id={panelId}
       style={panelStyle}
     >
-      <button className={styles.header} type="button" onClick={onToggle} aria-expanded={expanded}>
+      <button
+        className={styles.header}
+        type="button"
+        draggable
+        onClick={onToggle}
+        onDragStart={(event) => {
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData(
+            "application/x-klive-panel-instance",
+            JSON.stringify({ instanceId: panelId })
+          );
+        }}
+        aria-expanded={expanded}
+      >
         <span className={`${styles.chevron} ${expanded ? styles.openChevron : ""}`} aria-hidden="true">
           &rsaquo;
         </span>

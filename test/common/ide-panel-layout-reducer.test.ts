@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   initGlobalSettingsAction,
+  movePanelInstanceAction,
   patchPanelViewStateAction,
   setPanelContributionStateAction,
   setPanelExpandedAction,
@@ -29,6 +30,41 @@ describe("idePanelLayoutReducer", () => {
       placement: "primarySideBar",
       activityId: "debug",
       expanded: true
+    });
+  });
+
+  it("initializes document group panel instances independently", () => {
+    const state = createDefaultIdePanelLayoutState();
+
+    expect(state.documentGroups.group1.instanceIds).toEqual(["memory.group1"]);
+    expect(state.documentGroups.group2.instanceIds).toEqual(["memory.group2"]);
+    expect(state.instances["memory.group1"]).toMatchObject({
+      contributionId: "memory",
+      rendererId: "memory",
+      placement: "document",
+      groupId: "group1"
+    });
+    expect(state.instances["memory.group2"]).toMatchObject({
+      contributionId: "memory",
+      rendererId: "memory",
+      placement: "document",
+      groupId: "group2"
+    });
+  });
+
+  it("initializes Commands and Output as tool area panel instances", () => {
+    const state = createDefaultIdePanelLayoutState();
+
+    expect(state.toolArea).toEqual(["commands", "output"]);
+    expect(state.instances.commands).toMatchObject({
+      contributionId: "commands",
+      rendererId: "commands",
+      placement: "toolArea"
+    });
+    expect(state.instances.output).toMatchObject({
+      contributionId: "output",
+      rendererId: "output",
+      placement: "toolArea"
     });
   });
 
@@ -82,6 +118,48 @@ describe("idePanelLayoutReducer", () => {
     expect(state.viewStateByInstance.memory).toBeUndefined();
   });
 
+  it("moves a panel instance from primary to secondary side bar", () => {
+    const state = idePanelLayoutReducer(
+      createDefaultIdePanelLayoutState(),
+      movePanelInstanceAction("z80Cpu", "secondarySideBar")
+    );
+
+    expect(state.instances.z80Cpu).toMatchObject({
+      placement: "secondarySideBar",
+      activityId: undefined
+    });
+    expect(state.primarySideBarByActivity.debug).not.toContain("z80Cpu");
+    expect(state.secondarySideBar).toContain("z80Cpu");
+  });
+
+  it("moves a panel instance from secondary side bar to a primary activity", () => {
+    const state = idePanelLayoutReducer(
+      createDefaultIdePanelLayoutState(),
+      movePanelInstanceAction("memory", "primarySideBar", "debug")
+    );
+
+    expect(state.instances.memory).toMatchObject({
+      placement: "primarySideBar",
+      activityId: "debug"
+    });
+    expect(state.secondarySideBar).not.toContain("memory");
+    expect(state.primarySideBarByActivity.debug).toContain("memory");
+  });
+
+  it("moves a panel instance into a document group", () => {
+    const state = idePanelLayoutReducer(
+      createDefaultIdePanelLayoutState(),
+      movePanelInstanceAction("z80Cpu", "document", undefined, "group1")
+    );
+
+    expect(state.instances.z80Cpu).toMatchObject({
+      placement: "document",
+      groupId: "group1"
+    });
+    expect(state.documentGroups.group1.instanceIds).toContain("z80Cpu");
+    expect(state.documentGroups.group1.activeInstanceId).toBe("z80Cpu");
+  });
+
   it("mirrors panel layout changes into persisted global settings", () => {
     const store = createAppStore("test");
 
@@ -91,6 +169,16 @@ describe("idePanelLayoutReducer", () => {
     expect(
       store.getState().globalSettings?.ideViewOptions?.panelLayout?.instances.watch.expanded
     ).toBe(false);
+  });
+
+  it("mirrors moved panel layout into persisted global settings", () => {
+    const store = createAppStore("test");
+
+    store.dispatch(movePanelInstanceAction("z80Cpu", "secondarySideBar"), "ide");
+
+    expect(
+      store.getState().globalSettings?.ideViewOptions?.panelLayout?.instances.z80Cpu.placement
+    ).toBe("secondarySideBar");
   });
 
   it("hydrates panel layout from persisted global settings", () => {

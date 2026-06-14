@@ -155,6 +155,28 @@ export const panelContributions = [
     allowMultipleDocumentInstances: true,
     defaultSize: 520,
     initiallyExpanded: true
+  },
+  {
+    id: "commands",
+    title: "Commands",
+    icon: "play",
+    rendererId: "commands",
+    defaultPlacement: "toolArea",
+    allowDocument: true,
+    allowToolArea: true,
+    defaultSize: 500,
+    initiallyExpanded: true
+  },
+  {
+    id: "output",
+    title: "Output",
+    icon: "output",
+    rendererId: "output",
+    defaultPlacement: "toolArea",
+    allowDocument: true,
+    allowToolArea: true,
+    defaultSize: 500,
+    initiallyExpanded: true
   }
 ] satisfies PanelContribution[];
 
