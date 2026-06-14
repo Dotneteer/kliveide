@@ -1,7 +1,7 @@
 <Component
   name="SideBar"
-  var.activity="{$props.activity ?? 'explorer'}"
   var.isSecondary="{$props.kind === 'secondary'}"
+  var.activity="{isSecondary ? ($props.activity ?? 'explorer') : (state.value.activeActivity ?? $props.activity ?? 'explorer')}"
   var.title="{isSecondary ? 'SECONDARY SIDE BAR' : activity === 'debug' ? 'DEBUG' : activity === 'machine' ? 'MACHINE INFO' : activity === 'scripting' ? 'SCRIPTING' : activity === 'testing' ? 'TESTING' : 'EXPLORER'}"
   var.explorerProjectExpanded="{true}"
   var.debugCpuExpanded="{true}"
@@ -17,6 +17,7 @@
   var.secondaryOutlineExpanded="{true}"
   var.secondaryMemoryExpanded="{true}"
 >
+  <SharedAppState id="state" />
   <VStack
     backgroundColor="$backgroundColor-SideBar"
     overflowX="hidden"
@@ -35,6 +36,20 @@
         fontSize="12px"
         fontWeight="600"
         color="$textColor-SideBarHeader"
+      />
+    </HStack>
+    <HStack
+      when="{!isSecondary}"
+      height="26px"
+      paddingHorizontal="10px"
+      verticalAlignment="center"
+      backgroundColor="$backgroundColor-SideBar"
+      borderBottom="1px solid $borderColor-SideBarPanel"
+    >
+      <Text
+        value="{'Activity: ' + title}"
+        fontSize="12px"
+        color="$textColor-SideBarSubtle"
       />
     </HStack>
     <VStack gap="0" height="*" overflowY="auto">

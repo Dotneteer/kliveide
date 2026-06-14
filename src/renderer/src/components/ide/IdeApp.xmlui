@@ -1,6 +1,5 @@
 <Component
   name="IdeApp"
-  var.activeActivity="explorer"
   var.activeDocumentName="main.asm"
   var.activeDocumentIcon="file-code"
   var.activeDocumentKind="code"
@@ -21,8 +20,10 @@
     <Toolbar when="{showToolbar}" />
     <HStack height="*" gap="0">
       <ActivityBar
-        activeActivity="{activeActivity}"
-        onSelectActivity="activity => activeActivity = activity"
+        onRequestDialog="request => {
+          activeDialog = request.id;
+          dialogParam = request.param ?? '';
+        }"
       />
       <HSplitter
         when="{showPrimarySideBar}"
@@ -35,7 +36,7 @@
       >
         <SideBar
           kind="primary"
-          activity="{activeActivity}"
+          activity="{state.value.activeActivity ?? 'explorer'}"
           onOpenDocument="document => {
             activeDocumentName = document.name;
             activeDocumentIcon = document.icon;

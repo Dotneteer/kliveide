@@ -1,19 +1,36 @@
-<Component name="ActivityButton">
+<Component
+  name="ActivityButton"
+  var.selectsActivity="{!($props.selectActivity === false || $props.selectActivity === 'false')}"
+  var.isActive="{selectsActivity && (state.value.activeActivity ?? 'explorer') === $props.activityId}"
+>
+  <SharedAppState id="state" />
   <HStack
     width="52px"
     height="46px"
-    verticalAlignment="center"
-    horizontalAlignment="center"
-    backgroundColor="{$props.active ? '$backgroundColor-ActivityBar--active' : '$backgroundColor-ActivityBar'}"
-    borderLeft="{$props.active ? '3px solid $borderColor-ActivityBar--active' : '3px solid transparent'}"
+    gap="0"
+    verticalAlignment="stretch"
+    backgroundColor="{isActive ? '$backgroundColor-ActivityBar--active' : '$backgroundColor-ActivityBar'}"
+    onClick="selectsActivity ? state.dispatchSelectActivity($props.activityId) : emitEvent('select', $props.activityId)"
   >
-    <Icon
-      name="{$props.icon}"
-      tooltip="{$props.title}"
-      color="{$props.active ? '$textColor-ActivityBar--active' : '$textColor-ActivityBar'}"
-      width="24px"
-      height="24px"
-      onClick="emitEvent('select', $props.id)"
+    <Stack
+      width="4px"
+      height="100%"
+      backgroundColor="{isActive ? '$borderColor-ActivityBar--active' : 'transparent'}"
     />
+    <HStack
+      width="*"
+      height="100%"
+      verticalAlignment="center"
+      horizontalAlignment="center"
+    >
+      <Icon
+        name="{$props.icon}"
+        tooltip="{$props.title}"
+        color="{isActive ? '$textColor-ActivityBar--active' : '$textColor-ActivityBar'}"
+        width="24px"
+        height="24px"
+        outline="0"
+      />
+    </HStack>
   </HStack>
 </Component>

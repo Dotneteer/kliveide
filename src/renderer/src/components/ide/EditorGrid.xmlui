@@ -18,10 +18,10 @@
     >
       <Text value="Documents" fontSize="12px" fontWeight="600" color="$textColor-EditorSubtle" />
       <SpaceFiller />
-      <Icon name="layout-panel" tooltip="Show split right" color="$textColor-DocumentTab" width="15px" height="15px" onClick="splitMode = 'right'" />
-      <Icon name="layers" tooltip="Show split down" color="$textColor-DocumentTab" width="15px" height="15px" onClick="splitMode = 'down'" />
-      <Icon name="window" tooltip="Show grid splits" color="$textColor-DocumentTab" width="15px" height="15px" onClick="splitMode = 'grid'" />
-      <Icon name="combine" tooltip="Close placeholder splits" color="$textColor-DocumentTab" width="15px" height="15px" onClick="splitMode = 'single'" />
+      <Icon name="layout-panel" tooltip="Show split right" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="splitMode = 'right'" />
+      <Icon name="layers" tooltip="Show split down" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="splitMode = 'down'" />
+      <Icon name="window" tooltip="Show grid splits" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="splitMode = 'grid'" />
+      <Icon name="combine" tooltip="Close placeholder splits" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="splitMode = 'single'" />
     </HStack>
 
     <EditorGroup

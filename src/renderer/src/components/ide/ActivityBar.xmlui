@@ -8,42 +8,38 @@
     horizontalAlignment="center"
   >
     <ActivityButton
-      id="explorer"
+      activityId="explorer"
       icon="files"
       title="Explorer"
-      active="{($props.activeActivity ?? 'explorer') === 'explorer'}"
-      onSelect="activity => emitEvent('selectActivity', activity)"
     />
     <ActivityButton
-      id="debug"
+      activityId="debug"
       icon="debug-alt"
       title="Debug"
-      active="{$props.activeActivity === 'debug'}"
-      onSelect="activity => emitEvent('selectActivity', activity)"
     />
     <ActivityButton
-      id="machine"
+      activityId="machine"
       icon="output"
       title="Machine info"
-      active="{$props.activeActivity === 'machine'}"
-      onSelect="activity => emitEvent('selectActivity', activity)"
     />
     <ActivityButton
-      id="scripting"
+      activityId="scripting"
       icon="symbol-event"
       title="Scripting"
-      active="{$props.activeActivity === 'scripting'}"
-      onSelect="activity => emitEvent('selectActivity', activity)"
     />
     <ActivityButton
-      id="testing"
+      activityId="testing"
       icon="beaker"
       title="Testing"
-      active="{$props.activeActivity === 'testing'}"
-      onSelect="activity => emitEvent('selectActivity', activity)"
     />
     <SpaceFiller />
-    <Icon name="settings-gear" tooltip="Settings" color="$textColor-ActivityBar" width="22px" height="22px" />
+    <ActivityButton
+      activityId="settings"
+      icon="settings-gear"
+      title="Settings"
+      selectActivity="{false}"
+      onSelect="emitEvent('requestDialog', { id: 'placeholder-action', param: 'Not implemented' })"
+    />
     <Stack height="10px" />
   </VStack>
 </Component>

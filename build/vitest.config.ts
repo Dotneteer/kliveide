@@ -12,6 +12,7 @@ export default defineConfig({
     root: resolve(__dirname, ".."),
     include: [
       "./test/dummy.test.ts",
+      "./test/common/app-state-flags.test.ts",
       "./test/common/emulator-state-reducer.test.ts",
       "./test/common/key-mapping-state.test.ts",
       "./test/common/media-state.test.ts",

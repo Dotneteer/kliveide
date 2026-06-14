@@ -19,6 +19,7 @@ export type AppState = {
   ideFocused?: boolean;
   dimMenu?: boolean;
   theme?: string;
+  activeActivity?: string;
   globalSettings?: Record<string, any>;
   emulatorState?: EmulatorState;
   media?: MediaState;
@@ -94,6 +95,7 @@ export const initialAppState: AppState = {
   ideStateSynched: false,
   isWindows: false,
   theme: "dark",
+  activeActivity: "explorer",
   emuFocused: false,
   ideFocused: false,
   dimMenu: false,

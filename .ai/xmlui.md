@@ -164,8 +164,10 @@ registerComponentApi({
 - SAVE follows the same compact status-bar pattern. While saving, `EmuStatusBar.xmlui` may switch the tape icon to `floppy`, but it should not add verbose phase, pilot-count, block-count, or byte-count text to the bar.
 - For UDC props, pass values through `$props`, for example `name="{$props.name}"` or `value="{$props.value}"`.
 - Use XMLUI's built-in `<Icon>` with the local icon registry configured in `src/renderer/src/config.ts`; icons are loaded from the repository `icons` folder by `getLocalIcons()`. Prefer existing Klive icon names such as `vm-running` and `window` over text labels when matching the original app.
-- Prefer theme variables for UDC colors and sizing that should follow tones. The EMU status bar uses `$backgroundColor-EmuStatusBar` and `$textColor-EmuStatusBar`, with light/dark values in `src/renderer/src/themes/klive.ts`.
+- Prefer theme variables for UDC colors and sizing that should follow tones. Use app-level tokens such as `$backgroundColor-EmuStatusBar` and `$textColor-EmuStatusBar` rather than hardcoded colors in markup.
 - When a user has just refactored XMLUI markup, preserve their markup structure. Learn the UDC pattern and update docs or supporting code only when requested.
+- For IDE ActivityBar buttons, keep the visual chrome centralized in `ActivityButton.xmlui`. Use an explicit prop such as `activityId`; do not use XMLUI's special `id` attribute as a user payload. Let selectable activity buttons read and update `SharedAppState` inside the button so their active state cannot get stale through an extra parent prop. For ActivityBar commands that should look like an activity button but must not change the current activity, pass `selectActivity="{false}"` and handle the emitted `select` event in the parent.
+- ActivityBar focus outlines should stay hidden through the shared theme focus variables and `outline="0"` on the inner `Icon`. Active ActivityBar selection uses a left accent rail and active background; the active icon color is intentionally literal white for VS Code-like chrome contrast, while inactive icons use `$textColor-ActivityBar`.
 
 ## Visibility And Lifecycle
 
@@ -188,6 +190,10 @@ registerComponentApi({
 - XMLUI themes compile to CSS custom properties with the `--xmlui-*` prefix.
 - Theme variables with color contracts should use explicit CSS color values such as hex, rgb, or hsl. XMLUI 0.12.30 may reject named colors such as `orangered` for validated theme variables.
 - Theme variables can reference other variables with `$name`, which resolves to `var(--xmlui-name)`.
+- Prefer XMLUI surface tokens for UI chrome colors: `$color-surface-0`, `$color-surface-50`, `$color-surface-100`, and so on. XMLUI maps these aliases differently for light and dark tones; in dark tone the scale is reversed against the `const-color-surface-*` values. A shared value such as `$color-surface-100` should be used when the same semantic surface should be light in light mode and dark in dark mode.
+- Do not create separate `tones.light` and `tones.dark` theme variable blocks just to mirror ordinary surface, border, or text colors. Start with shared theme vars that reference `$color-surface-*`, `$textColor`, `$textColor-primary`, `$textColor-secondary`, or other generated XMLUI tokens. Use tone-specific theme vars only for truly different tone semantics that cannot be represented by the reversed surface scale.
+- Keep literal hex/rgb/hsl values for real brand/accent/status colors, alpha overlays, emulator-specific hardware colors, or base `const-color-*` palette definitions. IDE/editor shell backgrounds, borders, tabs, panels, and subtle text should normally use surface tokens.
+- When defining a custom surface palette in `src/renderer/src/themes/klive.ts`, include the endpoints needed by the aliases being used, especially `const-color-surface-0` and `const-color-surface-1000` if the UI references `$color-surface-0` and dark tone should map to a custom dark endpoint.
 - Component metadata can declare `themeVars` from SCSS with `parseScssVar` and provide `defaultThemeVars`.
 - Theme variable names follow `property[-partOrScreen][-Component][-variant][--state]`.
 - Use `useComponentThemeClass(metadata)` in React implementations when the component consumes metadata-defined theme variables.

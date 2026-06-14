@@ -24,6 +24,7 @@
       color="{showPrimarySideBar ? '$textColor-IdeStatusBar' : '$textColor-IdeStatusBar--muted'}"
       width="14px"
       height="14px"
+      outline="0"
       onClick="state.dispatchSetGlobalSetting('ideViewOptions.showPrimarySideBar', !showPrimarySideBar)"
     />
     <Icon
@@ -32,6 +33,7 @@
       color="{showSecondarySideBar ? '$textColor-IdeStatusBar' : '$textColor-IdeStatusBar--muted'}"
       width="14px"
       height="14px"
+      outline="0"
       onClick="state.dispatchSetGlobalSetting('ideViewOptions.showSecondarySideBar', !showSecondarySideBar)"
     />
     <Icon
@@ -40,6 +42,7 @@
       color="{showTools ? '$textColor-IdeStatusBar' : '$textColor-IdeStatusBar--muted'}"
       width="14px"
       height="14px"
+      outline="0"
       onClick="state.dispatchSetGlobalSetting('ideViewOptions.showTools', !showTools)"
     />
     <Icon
@@ -48,6 +51,7 @@
       color="$textColor-IdeStatusBar"
       width="14px"
       height="14px"
+      outline="0"
       onClick="state.dispatchSetGlobalSetting('ideViewOptions.toolPanelsOnTop', !toolsOnTop)"
     />
     <Icon
@@ -56,6 +60,7 @@
       color="{showTools ? '$textColor-IdeStatusBar' : '$textColor-IdeStatusBar--muted'}"
       width="14px"
       height="14px"
+      outline="0"
       onClick="state.dispatchSetGlobalSetting('ideViewOptions.maximizeTools', !maximizeTools)"
     />
     <Text value="Ln 1, Col 1" color="$textColor-IdeStatusBar" fontSize="12px" />

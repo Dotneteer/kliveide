@@ -19,9 +19,9 @@
     >
       <Text value="{$props.title}" fontSize="12px" fontWeight="600" color="$textColor-EditorSubtle" />
       <SpaceFiller />
-      <Icon name="layout-panel" tooltip="Split right" color="$textColor-DocumentTab" width="15px" height="15px" onClick="emitEvent('splitRight')" />
-      <Icon name="layers" tooltip="Split down" color="$textColor-DocumentTab" width="15px" height="15px" onClick="emitEvent('splitDown')" />
-      <Icon name="combine" tooltip="Close placeholder split" color="$textColor-DocumentTab" width="15px" height="15px" onClick="emitEvent('closeGroup')" />
+      <Icon name="layout-panel" tooltip="Split right" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitRight')" />
+      <Icon name="layers" tooltip="Split down" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitDown')" />
+      <Icon name="combine" tooltip="Close placeholder split" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('closeGroup')" />
     </HStack>
     <Tabs
       width="100%"

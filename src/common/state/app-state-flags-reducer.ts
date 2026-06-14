@@ -34,6 +34,9 @@ export function appStateFlagsReducer (
     case "SET_THEME":
       return { ...state, theme: payload?.id };
 
+    case "SET_ACTIVITY":
+      return { ...state, activeActivity: payload?.id ?? "explorer" };
+
     case "EMU_FOCUSED":
       return { ...state, emuFocused: payload?.flag };
 

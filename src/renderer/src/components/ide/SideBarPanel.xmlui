@@ -13,6 +13,7 @@
         color="$textColor-SideBarPanelHeader"
         width="14px"
         height="14px"
+        outline="0"
         onClick="emitEvent('toggle')"
       />
       <Text

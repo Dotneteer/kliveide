@@ -53,6 +53,7 @@
           color="$textColor-SideBarPanelHeader"
           width="15px"
           height="15px"
+          outline="0"
           onClick="explorerContext.open(selectedDocumentName)"
         />
       </HStack>
