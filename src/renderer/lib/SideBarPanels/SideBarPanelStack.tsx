@@ -1,6 +1,7 @@
-import { createMetadata, wrapComponent } from "xmlui";
+import { createMetadata, parseScssVar, wrapComponent } from "xmlui";
 import type { ComponentMetadata } from "xmlui";
 import { SideBarPanelStackReact } from "./SideBarPanelStackReact";
+import styles from "./SideBarPanels.module.scss";
 
 const COMP = "SideBarPanelStack";
 
@@ -23,7 +24,14 @@ export const SideBarPanelStackMd: ComponentMetadata = createMetadata({
       valueType: "string"
     }
   },
-  events: {}
+  events: {},
+  themeVars: parseScssVar(styles.themeVars),
+  defaultThemeVars: {
+    [`backgroundColor-dropIndicator-${COMP}`]: "$borderColor-active-Tabs",
+    [`boxShadow-dropIndicator-${COMP}`]: "0 0 0 1px $borderColor-active-Tabs",
+    [`height-dropIndicator-${COMP}`]: "3px",
+    [`zIndex-dropIndicator-${COMP}`]: "50"
+  }
 });
 
 export const sideBarPanelStackComponentRenderer = wrapComponent(

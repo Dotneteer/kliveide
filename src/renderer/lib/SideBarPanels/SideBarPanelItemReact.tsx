@@ -7,6 +7,7 @@ import {
   type ReactNode
 } from "react";
 import {
+  clearPanelDragPayload,
   hasPanelDragPayload,
   readPanelDragPayload,
   writePanelDragPayload
@@ -19,6 +20,7 @@ export type SideBarPanelItemReactProps = {
   title: string;
   expanded?: boolean;
   initialSize?: number;
+  order?: number;
   children?: ReactNode;
   onToggle?: () => void;
 };
@@ -28,6 +30,7 @@ export function SideBarPanelItemReact({
   title,
   expanded = false,
   initialSize = 1000,
+  order = 0,
   children,
   onToggle
 }: SideBarPanelItemReactProps) {
@@ -42,8 +45,8 @@ export function SideBarPanelItemReact({
   const isDragging = stack?.draggingPanelId === panelId;
   const shouldAnimate = animate && !stack?.isResizing;
   const panelStyle: CSSProperties = expanded
-    ? { flexGrow: size, flexBasis: "0px", minHeight: `${minPanelSize}px` }
-    : { flexGrow: 0, flexBasis: "26px", minHeight: "26px" };
+    ? { flexGrow: size, flexBasis: "0px", minHeight: `${minPanelSize}px`, order }
+    : { flexGrow: 0, flexBasis: "26px", minHeight: "26px", order };
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setAnimate(true));
@@ -75,9 +78,9 @@ export function SideBarPanelItemReact({
   }, [animate, expanded]);
 
   useEffect(() => {
-    stack?.registerPanel({ panelId, expanded, initialSize, elementRef });
+    stack?.registerPanel({ panelId, expanded, initialSize, order, elementRef });
     return () => stack?.unregisterPanel(panelId);
-  }, [expanded, initialSize, panelId, stack]);
+  }, [expanded, initialSize, order, panelId, stack]);
 
   return (
     <div
@@ -99,17 +102,36 @@ export function SideBarPanelItemReact({
             instanceId: panelId
           });
         }}
+        onDragEnd={() => {
+          clearPanelDragPayload();
+          stack?.clearPanelDropPreview();
+        }}
         onDragOver={(event) => {
           if (!hasPanelDragPayload(event)) return;
           event.preventDefault();
+          event.stopPropagation();
           event.dataTransfer.dropEffect = "move";
+          const payload = readPanelDragPayload(event);
+          if (!payload) return;
+          const bounds = event.currentTarget.getBoundingClientRect();
+          stack?.previewPanelDrop(
+            payload.instanceId,
+            panelId,
+            event.clientY > bounds.top + bounds.height / 2
+          );
         }}
         onDrop={(event) => {
           const payload = readPanelDragPayload(event);
           if (!payload) return;
           event.preventDefault();
           event.stopPropagation();
-          stack?.movePanelToIndex(payload.instanceId, panelId);
+          const bounds = event.currentTarget.getBoundingClientRect();
+          stack?.movePanelToIndex(
+            payload.instanceId,
+            panelId,
+            event.clientY > bounds.top + bounds.height / 2
+          );
+          clearPanelDragPayload();
         }}
         aria-expanded={expanded}
       >

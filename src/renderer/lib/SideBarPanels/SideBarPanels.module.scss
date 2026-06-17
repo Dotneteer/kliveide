@@ -1,3 +1,17 @@
+@use "xmlui/themes.scss" as t;
+
+$themeVars: ();
+@function createThemeVar($componentVariable) {
+  $themeVars: t.appendThemeVar($themeVars, $componentVariable) !global;
+  @return t.getThemeVar($themeVars, $componentVariable);
+}
+
+$component: "SideBarPanelStack";
+$backgroundColor-dropIndicator-SideBarPanelStack: createThemeVar("backgroundColor-dropIndicator-#{$component}");
+$boxShadow-dropIndicator-SideBarPanelStack: createThemeVar("boxShadow-dropIndicator-#{$component}");
+$height-dropIndicator-SideBarPanelStack: createThemeVar("height-dropIndicator-#{$component}");
+$zIndex-dropIndicator-SideBarPanelStack: createThemeVar("zIndex-dropIndicator-#{$component}");
+
 .stack {
   background: var(--xmlui-backgroundColor-SideBar, transparent);
   display: flex;
@@ -5,6 +19,7 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
+  position: relative;
   width: 100%;
 }
 
@@ -128,4 +143,19 @@
 .sizeable:hover,
 .dragging {
   background: var(--xmlui-borderColor-active-Tabs, #007acc);
+}
+
+.dropIndicator {
+  background: $backgroundColor-dropIndicator-SideBarPanelStack;
+  box-shadow: $boxShadow-dropIndicator-SideBarPanelStack;
+  height: $height-dropIndicator-SideBarPanelStack;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  z-index: $zIndex-dropIndicator-SideBarPanelStack;
+}
+
+:export {
+  themeVars: t.json-stringify($themeVars);
 }

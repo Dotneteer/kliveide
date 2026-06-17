@@ -2,7 +2,11 @@ import type { ReactNode } from "react";
 import { movePanelInstanceAction } from "../../../common/state/actions";
 import type { PanelPlacement } from "../../../common/state/ide-panel-layout-state";
 import { dispatchSharedAction } from "../../shared-store";
-import { hasPanelDragPayload, readPanelDragPayload } from "./panelDragDrop";
+import {
+  clearPanelDragPayload,
+  hasPanelDragPayload,
+  readPanelDragPayload
+} from "./panelDragDrop";
 
 type Props = {
   placement: PanelPlacement;
@@ -27,6 +31,7 @@ export function PanelDropTargetReact({ placement, activity, groupId, children }:
         dispatchSharedAction(
           movePanelInstanceAction(payload.instanceId, placement, activity, groupId)
         );
+        clearPanelDragPayload();
       }}
     >
       {children}

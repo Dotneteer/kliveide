@@ -27,6 +27,11 @@ export const SideBarPanelItemMd: ComponentMetadata = createMetadata({
       description: "Initial relative size for expanded panels.",
       valueType: "number",
       defaultValue: 1000
+    },
+    order: {
+      description: "Visual order of the panel within its side bar stack.",
+      valueType: "number",
+      defaultValue: 0
     }
   },
   events: {

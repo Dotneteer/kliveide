@@ -4,6 +4,7 @@ export type SideBarPanelRegistration = {
   panelId: string;
   expanded: boolean;
   initialSize: number;
+  order: number;
   elementRef: RefObject<HTMLDivElement | null>;
 };
 
@@ -13,7 +14,9 @@ export type SideBarPanelStackContextValue = {
   minPanelSize: number;
   getPanelSize: (panelId: string, initialSize: number) => number;
   isPanelSizeable: (panelId: string) => boolean;
-  movePanelToIndex: (panelId: string, targetPanelId: string) => void;
+  clearPanelDropPreview: () => void;
+  movePanelToIndex: (panelId: string, targetPanelId: string, afterTarget?: boolean) => void;
+  previewPanelDrop: (panelId: string, targetPanelId: string, afterTarget?: boolean) => void;
   registerPanel: (registration: SideBarPanelRegistration) => void;
   startResize: (panelId: string, clientY: number) => void;
   unregisterPanel: (panelId: string) => void;

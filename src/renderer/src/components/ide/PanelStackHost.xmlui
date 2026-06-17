@@ -15,6 +15,7 @@
       title="KLIVE PROJECT"
       expanded="{layout.instances.explorerProject.expanded ?? true}"
       initialSize="{layout.instances.explorerProject.size ?? 1000}"
+      order="{layout.instances.explorerProject.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'explorerProject', flag: !(layout.instances.explorerProject.expanded ?? true) } })"
     >
       <PanelRenderer
@@ -34,6 +35,7 @@
       title="Z80 CPU"
       expanded="{layout.instances.z80Cpu.expanded ?? true}"
       initialSize="{layout.instances.z80Cpu.size ?? 260}"
+      order="{layout.instances.z80Cpu.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'z80Cpu', flag: !(layout.instances.z80Cpu.expanded ?? true) } })"
     >
       <PanelRenderer contributionId="z80Cpu" instanceId="z80Cpu" rendererId="z80Cpu" placement="{$props.placement}" chrome="compact" />
@@ -44,6 +46,7 @@
       title="CALL STACK"
       expanded="{layout.instances.callStack.expanded ?? false}"
       initialSize="{layout.instances.callStack.size ?? 500}"
+      order="{layout.instances.callStack.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'callStack', flag: !(layout.instances.callStack.expanded ?? false) } })"
     >
       <PanelRenderer contributionId="callStack" instanceId="callStack" rendererId="callStack" placement="{$props.placement}" chrome="compact" />
@@ -54,6 +57,7 @@
       title="ULA & I/O"
       expanded="{layout.instances.ulaIo.expanded ?? false}"
       initialSize="{layout.instances.ulaIo.size ?? 500}"
+      order="{layout.instances.ulaIo.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'ulaIo', flag: !(layout.instances.ulaIo.expanded ?? false) } })"
     >
       <PanelRenderer contributionId="ulaIo" instanceId="ulaIo" rendererId="ulaIo" placement="{$props.placement}" chrome="compact" />
@@ -64,6 +68,7 @@
       title="WATCH"
       expanded="{layout.instances.watch.expanded ?? true}"
       initialSize="{layout.instances.watch.size ?? 500}"
+      order="{layout.instances.watch.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'watch', flag: !(layout.instances.watch.expanded ?? true) } })"
     >
       <PanelRenderer contributionId="watch" instanceId="watch" rendererId="watch" placement="{$props.placement}" chrome="compact" />
@@ -74,6 +79,7 @@
       title="BREAKPOINTS"
       expanded="{layout.instances.breakpoints.expanded ?? true}"
       initialSize="{layout.instances.breakpoints.size ?? 500}"
+      order="{layout.instances.breakpoints.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'breakpoints', flag: !(layout.instances.breakpoints.expanded ?? true) } })"
     >
       <PanelRenderer contributionId="breakpoints" instanceId="breakpoints" rendererId="breakpoints" placement="{$props.placement}" chrome="compact" />
@@ -85,6 +91,7 @@
       title="SYSTEM VARIABLES"
       expanded="{layout.instances.systemVariables.expanded ?? false}"
       initialSize="{layout.instances.systemVariables.size ?? 260}"
+      order="{layout.instances.systemVariables.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'systemVariables', flag: !(layout.instances.systemVariables.expanded ?? false) } })"
     >
       <PanelRenderer contributionId="systemVariables" instanceId="systemVariables" rendererId="machineStatus" placement="{$props.placement}" chrome="compact" />
@@ -95,6 +102,7 @@
       title="PSG (AY-3-8912)"
       expanded="{layout.instances.psg.expanded ?? false}"
       initialSize="{layout.instances.psg.size ?? 500}"
+      order="{layout.instances.psg.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'psg', flag: !(layout.instances.psg.expanded ?? false) } })"
     >
       <PanelRenderer contributionId="psg" instanceId="psg" rendererId="psg" placement="{$props.placement}" chrome="compact" />
@@ -106,6 +114,7 @@
       title="SCRIPTING HISTORY"
       expanded="{layout.instances.scriptingHistory.expanded ?? true}"
       initialSize="{layout.instances.scriptingHistory.size ?? 500}"
+      order="{layout.instances.scriptingHistory.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'scriptingHistory', flag: !(layout.instances.scriptingHistory.expanded ?? true) } })"
     >
       <PanelRenderer contributionId="scriptingHistory" instanceId="scriptingHistory" rendererId="scriptingHistory" placement="{$props.placement}" chrome="compact" />
@@ -117,6 +126,7 @@
       title="TESTS"
       expanded="{layout.instances.testingTests.expanded ?? true}"
       initialSize="{layout.instances.testingTests.size ?? 1000}"
+      order="{layout.instances.testingTests.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'testingTests', flag: !(layout.instances.testingTests.expanded ?? true) } })"
     >
       <PanelRenderer contributionId="testingTests" instanceId="testingTests" rendererId="testingTests" placement="{$props.placement}" chrome="compact" />
@@ -128,6 +138,7 @@
       title="OUTLINE"
       expanded="{layout.instances.outline.expanded ?? true}"
       initialSize="{layout.instances.outline.size ?? 520}"
+      order="{layout.instances.outline.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'outline', flag: !(layout.instances.outline.expanded ?? true) } })"
     >
       <PanelRenderer contributionId="outline" instanceId="outline" rendererId="outline" placement="{$props.placement}" chrome="compact" />
@@ -138,6 +149,7 @@
       title="MEMORY"
       expanded="{layout.instances.memory.expanded ?? true}"
       initialSize="{layout.instances.memory.size ?? 520}"
+      order="{layout.instances.memory.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'memory', flag: !(layout.instances.memory.expanded ?? true) } })"
     >
       <PanelRenderer contributionId="memory" instanceId="memory" rendererId="memory" placement="{$props.placement}" chrome="compact" />
@@ -148,6 +160,7 @@
       title="COMMANDS"
       expanded="{layout.instances.commands.expanded ?? true}"
       initialSize="{layout.instances.commands.size ?? 500}"
+      order="{layout.instances.commands.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'commands', flag: !(layout.instances.commands.expanded ?? true) } })"
     >
       <PanelRenderer contributionId="commands" instanceId="commands" rendererId="commands" placement="{$props.placement}" chrome="compact" />
@@ -158,6 +171,7 @@
       title="OUTPUT"
       expanded="{layout.instances.output.expanded ?? true}"
       initialSize="{layout.instances.output.size ?? 500}"
+      order="{layout.instances.output.order ?? 0}"
       onToggle="state.dispatch({ type: 'SET_PANEL_EXPANDED', payload: { id: 'output', flag: !(layout.instances.output.expanded ?? true) } })"
     >
       <PanelRenderer contributionId="output" instanceId="output" rendererId="output" placement="{$props.placement}" chrome="compact" />

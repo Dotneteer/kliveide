@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { closePanelInstanceAction } from "../../../common/state/actions";
 import type { PanelPlacement } from "../../../common/state/ide-panel-layout-state";
 import { dispatchSharedAction } from "../../shared-store";
-import { writePanelDragPayload } from "./panelDragDrop";
+import { clearPanelDragPayload, writePanelDragPayload } from "./panelDragDrop";
 
 type Props = {
   instanceId: string;
@@ -30,6 +30,9 @@ export function PanelDragSourceReact({
           sourcePlacement: placement,
           sourceGroupId: groupId
         });
+      }}
+      onDragEnd={() => {
+        clearPanelDragPayload();
       }}
     >
       {closeable && (
