@@ -3,6 +3,11 @@
   var.activeTab="{0}"
   var.groupId="{$props.groupId ?? 'group1'}"
   var.layout="{state.value.idePanelLayout}"
+  var.group="{layout.documentGroups[groupId]}"
+  var.activeDocumentId="{$props.activeDocumentId ?? group.activeDocument.id}"
+  var.splitState="{group.splitInGroupByDocument ? group.splitInGroupByDocument[activeDocumentId] : undefined}"
+  var.isLocked="{group.locked ?? false}"
+  var.isMaximized="{layout.documentLayout.maximizedGroupId === groupId}"
 >
   <SharedAppState id="state" />
   <PanelDropTarget placement="document" groupId="{groupId}">
@@ -23,13 +28,19 @@
         borderBottom="1px solid $borderColor-EditorGroup"
       >
         <Text value="{$props.title}" fontSize="12px" fontWeight="600" color="$textColor-EditorSubtle" />
+        <Icon when="{isLocked}" name="lock" tooltip="Locked Group" color="$textColor-DocumentTab" width="13px" height="13px" outline="0" />
         <SpaceFiller />
+        <Icon name="layout-panel" tooltip="{isMaximized ? 'Restore Editor Group' : 'Maximize Editor Group'}" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="state.dispatch({ type: 'TOGGLE_MAXIMIZE_EDITOR_GROUP' })" />
+        <Icon name="lock" tooltip="{isLocked ? 'Unlock Editor Group' : 'Lock Editor Group'}" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="state.dispatch({ type: 'SET_EDITOR_GROUP_LOCKED', payload: { id: groupId, flag: !isLocked } })" />
+        <Icon name="{splitState ? 'combine' : 'layout-panel'}" tooltip="{splitState ? 'Join Split in Group' : 'Split in Group'}" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="state.dispatch({ type: splitState ? 'JOIN_SPLIT_IN_GROUP' : 'TOGGLE_SPLIT_IN_GROUP', payload: { text: 'horizontal' } })" />
+        <Icon when="{splitState}" name="refresh" tooltip="Toggle Split in Group Layout" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="state.dispatch({ type: 'TOGGLE_SPLIT_IN_GROUP_LAYOUT' })" />
         <Icon name="arrow-small-left" tooltip="Split left" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitLeft')" />
         <Icon name="layout-panel" tooltip="Split right" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitRight')" />
         <Icon name="arrow-circle-up" tooltip="Split up" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitUp')" />
         <Icon name="layers" tooltip="Split down" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitDown')" />
         <Icon name="combine" tooltip="Close placeholder split" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('closeGroup')" />
       </HStack>
+      <EditorPanelTabStrip groupId="{groupId}" />
       <Tabs
         width="100%"
         height="*"
@@ -39,10 +50,35 @@
       >
         <TabItem id="active-document" label="{$props.activeDocument}">
           <DocumentView
+            when="{!splitState}"
             name="{$props.activeDocument}"
             icon="{$props.activeDocumentIcon ?? 'file-code'}"
             kind="{$props.activeDocumentKind ?? 'code'}"
           />
+          <HSplitter when="{splitState && splitState.axis === 'horizontal'}" width="100%" height="100%" initialPrimarySize="50%" minPrimarySize="160px" maxPrimarySize="-160px" floating>
+            <DocumentView
+              name="{$props.activeDocument}"
+              icon="{$props.activeDocumentIcon ?? 'file-code'}"
+              kind="{$props.activeDocumentKind ?? 'code'}"
+            />
+            <DocumentView
+              name="{$props.activeDocument}"
+              icon="{$props.activeDocumentIcon ?? 'file-code'}"
+              kind="{$props.activeDocumentKind ?? 'code'}"
+            />
+          </HSplitter>
+          <VSplitter when="{splitState && splitState.axis === 'vertical'}" width="100%" height="100%" initialPrimarySize="50%" minPrimarySize="120px" maxPrimarySize="-120px" floating>
+            <DocumentView
+              name="{$props.activeDocument}"
+              icon="{$props.activeDocumentIcon ?? 'file-code'}"
+              kind="{$props.activeDocumentKind ?? 'code'}"
+            />
+            <DocumentView
+              name="{$props.activeDocument}"
+              icon="{$props.activeDocumentIcon ?? 'file-code'}"
+              kind="{$props.activeDocumentKind ?? 'code'}"
+            />
+          </VSplitter>
         </TabItem>
         <TabItem
           when="{(layout.documentGroups[groupId].instanceIds ?? []).indexOf($props.memoryPanelInstanceId ?? 'memory.group1') >= 0}"

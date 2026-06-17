@@ -21,6 +21,7 @@ export type EditorGroupState = {
   instanceIds: string[];
   activeDocument?: EditorDocumentState;
   locked?: boolean;
+  splitInGroupByDocument?: Record<string, EditorSplitInGroupState>;
 };
 
 export type EditorDocumentState = {
@@ -28,6 +29,11 @@ export type EditorDocumentState = {
   name: string;
   icon?: string;
   kind?: string;
+};
+
+export type EditorSplitInGroupState = {
+  axis: EditorLayoutAxis;
+  activePane: 0 | 1;
 };
 
 export type EditorLayoutState = {
@@ -316,7 +322,10 @@ function normalizeDocumentGroups(
             ...(isEditorDocumentState(group.activeDocument)
               ? { activeDocument: group.activeDocument }
               : {}),
-            ...(typeof group.locked === "boolean" ? { locked: group.locked } : {})
+            ...(typeof group.locked === "boolean" ? { locked: group.locked } : {}),
+            ...(isRecord(group.splitInGroupByDocument)
+              ? { splitInGroupByDocument: normalizeSplitInGroupState(group.splitInGroupByDocument) }
+              : {})
           }
         ];
       })
@@ -353,6 +362,26 @@ function isEditorDocumentState(value: unknown): value is EditorDocumentState {
     typeof value.name === "string" &&
     (value.icon === undefined || typeof value.icon === "string") &&
     (value.kind === undefined || typeof value.kind === "string")
+  );
+}
+
+function normalizeSplitInGroupState(
+  value: Record<string, unknown>
+): Record<string, EditorSplitInGroupState> {
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([documentId, split]) => typeof documentId === "string" && isRecord(split))
+      .filter((entry): entry is [string, Record<string, unknown>] => {
+        const split = entry[1];
+        return isRecord(split) && (split.axis === "horizontal" || split.axis === "vertical");
+      })
+      .map(([documentId, split]) => [
+        documentId,
+        {
+          axis: split.axis as EditorLayoutAxis,
+          activePane: split.activePane === 1 ? 1 : 0
+        }
+      ])
   );
 }
 

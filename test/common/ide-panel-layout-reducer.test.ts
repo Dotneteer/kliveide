@@ -1,15 +1,25 @@
 import { describe, expect, it } from "vitest";
 import {
+  closeActiveEditorGroupAction,
+  closeEditorsInActiveGroupAction,
   closePanelInstanceAction,
+  copyPanelInstanceToDocumentGroupAction,
   createPanelInstanceAction,
+  focusEditorGroupAction,
+  focusSplitInGroupPaneAction,
   initGlobalSettingsAction,
+  joinSplitInGroupAction,
   moveActiveEditorGroupAction,
   moveActiveEditorToGroupAction,
+  movePanelInstanceToEditorEdgeAction,
   movePanelInstanceAction,
   openDocumentInActiveGroupAction,
   openDocumentToSideAction,
   patchPanelViewStateAction,
   resetPanelLayoutAction,
+  setActiveDocumentPanelInstanceAction,
+  setEditorGroupLayoutPresetAction,
+  setEditorGroupLockedAction,
   setActiveEditorGroupAction,
   setEditorSplitSizeAction,
   setWorkspaceSettingsAction,
@@ -17,7 +27,11 @@ import {
   setPanelExpandedAction,
   setPanelInstanceStateAction,
   setPanelSizeAction,
-  splitEditorGroupAction
+  splitEditorGroupAction,
+  toggleEditorGroupLayoutAction,
+  toggleMaximizeEditorGroupAction,
+  toggleSplitInGroupAction,
+  toggleSplitInGroupLayoutAction
 } from "../../src/common/state/actions";
 import { idePanelLayoutReducer } from "../../src/common/state/ide-panel-layout-reducer";
 import { createDefaultIdePanelLayoutState } from "../../src/common/state/ide-panel-layout-state";
@@ -429,6 +443,286 @@ describe("idePanelLayoutReducer", () => {
     expect(state.documentLayout.activeGroupId).toBe("group5");
   });
 
+  it("focuses the nearest editor group in a direction", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, setActiveEditorGroupAction("group1"));
+    state = idePanelLayoutReducer(state, focusEditorGroupAction("right"));
+
+    expect(state.documentLayout.activeGroupId).toBe("group5");
+  });
+
+  it("clears all editors in the active group without removing the group", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, setActiveEditorGroupAction("group1"));
+    state = idePanelLayoutReducer(state, closeEditorsInActiveGroupAction());
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      children: [
+        { type: "group", groupId: "group1" },
+        { type: "group", groupId: "group5" }
+      ]
+    });
+    expect(state.documentGroups.group1).toMatchObject({
+      activeInstanceId: undefined,
+      instanceIds: [],
+      activeDocument: undefined
+    });
+    expect(state.instances["memory.group1"]).toBeUndefined();
+  });
+
+  it("closes the active editor group and collapses a parent split with one child", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, setActiveEditorGroupAction("group5"));
+    state = idePanelLayoutReducer(state, closeActiveEditorGroupAction());
+
+    expect(state.documentLayout.root).toEqual({ type: "group", groupId: "group1" });
+    expect(state.documentLayout.activeGroupId).toBe("group1");
+    expect(state.documentGroups.group5).toBeUndefined();
+    expect(state.instances["memory.group5"]).toBeUndefined();
+  });
+
+  it("keeps one valid empty editor group when closing the last group", () => {
+    const state = idePanelLayoutReducer(
+      createDefaultIdePanelLayoutState(),
+      closeActiveEditorGroupAction()
+    );
+
+    expect(state.documentLayout.root).toEqual({ type: "group", groupId: "group1" });
+    expect(state.documentLayout.activeGroupId).toBe("group1");
+    expect(state.documentGroups.group1).toMatchObject({
+      activeInstanceId: undefined,
+      instanceIds: [],
+      activeDocument: undefined
+    });
+  });
+
+  it("toggles the top-level editor group layout axis", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, toggleEditorGroupLayoutAction());
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "vertical"
+    });
+  });
+
+  it("sets editor group layout presets", () => {
+    let state = idePanelLayoutReducer(
+      createDefaultIdePanelLayoutState(),
+      setEditorGroupLayoutPresetAction("grid")
+    );
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "vertical",
+      children: [
+        { type: "split", axis: "horizontal" },
+        { type: "split", axis: "horizontal" }
+      ]
+    });
+    expect(Object.keys(state.documentGroups)).toEqual(
+      expect.arrayContaining(["group1", "group2", "group3", "group4"])
+    );
+
+    state = idePanelLayoutReducer(state, setEditorGroupLayoutPresetAction("single"));
+    expect(state.documentLayout.root).toEqual({
+      type: "group",
+      groupId: state.documentLayout.activeGroupId
+    });
+  });
+
+  it("maximizes and restores the active editor group without changing topology", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    const root = state.documentLayout.root;
+    state = idePanelLayoutReducer(state, setActiveEditorGroupAction("group1"));
+    state = idePanelLayoutReducer(state, toggleMaximizeEditorGroupAction());
+
+    expect(state.documentLayout.maximizedGroupId).toBe("group1");
+    expect(state.documentLayout.root).toBe(root);
+
+    state = idePanelLayoutReducer(state, toggleMaximizeEditorGroupAction());
+    expect(state.documentLayout.maximizedGroupId).toBeUndefined();
+    expect(state.documentLayout.root).toBe(root);
+  });
+
+  it("clears maximized group state when closing the maximized group", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, toggleMaximizeEditorGroupAction());
+    state = idePanelLayoutReducer(state, closeActiveEditorGroupAction());
+
+    expect(state.documentLayout.maximizedGroupId).toBeUndefined();
+    expect(state.documentLayout.root).toEqual({ type: "group", groupId: "group1" });
+  });
+
+  it("tracks split-in-group state without changing editor group topology", () => {
+    let state = createDefaultIdePanelLayoutState();
+    const root = state.documentLayout.root;
+
+    state = idePanelLayoutReducer(state, toggleSplitInGroupAction("horizontal"));
+    expect(state.documentGroups.group1.splitInGroupByDocument?.["src-main"]).toEqual({
+      axis: "horizontal",
+      activePane: 0
+    });
+    expect(state.documentLayout.root).toBe(root);
+
+    state = idePanelLayoutReducer(state, toggleSplitInGroupLayoutAction());
+    expect(state.documentGroups.group1.splitInGroupByDocument?.["src-main"].axis).toBe("vertical");
+
+    state = idePanelLayoutReducer(state, focusSplitInGroupPaneAction("other"));
+    expect(state.documentGroups.group1.splitInGroupByDocument?.["src-main"].activePane).toBe(1);
+
+    state = idePanelLayoutReducer(state, joinSplitInGroupAction());
+    expect(state.documentGroups.group1.splitInGroupByDocument?.["src-main"]).toBeUndefined();
+    expect(state.documentLayout.root).toBe(root);
+  });
+
+  it("opens ordinary documents into the nearest unlocked editor group", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, setActiveEditorGroupAction("group1"));
+    state = idePanelLayoutReducer(state, setEditorGroupLockedAction("group1", true));
+    state = idePanelLayoutReducer(
+      state,
+      openDocumentInActiveGroupAction({
+        id: "src-ula",
+        name: "ula.asm",
+        icon: "file-code",
+        kind: "code"
+      })
+    );
+
+    expect(state.documentGroups.group1.activeDocument?.name).toBe("main.asm");
+    expect(state.documentGroups.group5.activeDocument?.name).toBe("ula.asm");
+    expect(state.documentLayout.activeGroupId).toBe("group5");
+  });
+
+  it("explicit document panel moves can still target a locked editor group", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, setEditorGroupLockedAction("group5", true));
+    state = idePanelLayoutReducer(
+      state,
+      movePanelInstanceAction("memory.group1", "document", undefined, "group5", 0)
+    );
+
+    expect(state.documentGroups.group5.locked).toBe(true);
+    expect(state.documentGroups.group5.instanceIds[0]).toBe("memory.group1");
+    expect(state.instances["memory.group1"].groupId).toBe("group5");
+  });
+
+  it("sets three-column and three-row editor group layout presets", () => {
+    let state = idePanelLayoutReducer(
+      createDefaultIdePanelLayoutState(),
+      setEditorGroupLayoutPresetAction("threeColumns")
+    );
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "vertical",
+      children: [
+        {
+          type: "split",
+          axis: "horizontal"
+        },
+        { type: "group", groupId: "group4" }
+      ]
+    });
+
+    state = idePanelLayoutReducer(state, setEditorGroupLayoutPresetAction("threeRows"));
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "vertical",
+      children: [
+        {
+          type: "split",
+          axis: "horizontal"
+        },
+        {
+          type: "split",
+          axis: "horizontal"
+        }
+      ]
+    });
+  });
+
+  it("single editor group preset merges visible document panel instances into the active group", () => {
+    let state = idePanelLayoutReducer(
+      createDefaultIdePanelLayoutState(),
+      setEditorGroupLayoutPresetAction("grid")
+    );
+    state = idePanelLayoutReducer(state, setActiveEditorGroupAction("group1"));
+    state = idePanelLayoutReducer(state, setEditorGroupLayoutPresetAction("single"));
+
+    expect(state.documentLayout.root).toEqual({ type: "group", groupId: "group1" });
+    expect(state.documentGroups.group1.instanceIds).toEqual([
+      "memory.group1",
+      "memory.group2",
+      "memory.group3",
+      "memory.group4"
+    ]);
+    expect(state.instances["memory.group4"].groupId).toBe("group1");
+    expect(state.documentGroups.group2).toBeUndefined();
+  });
+
+  it("sets the active document panel instance in a group", () => {
+    const state = idePanelLayoutReducer(
+      createDefaultIdePanelLayoutState(),
+      setActiveDocumentPanelInstanceAction("group1", "memory.group1")
+    );
+
+    expect(state.documentGroups.group1.activeInstanceId).toBe("memory.group1");
+    expect(state.documentLayout.activeGroupId).toBe("group1");
+  });
+
+  it("moves a document panel tab to a requested group order index", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(
+      state,
+      movePanelInstanceAction("memory.group1", "document", undefined, "group5", 0)
+    );
+
+    expect(state.documentGroups.group1.instanceIds).toEqual([]);
+    expect(state.documentGroups.group5.instanceIds).toEqual(["memory.group1", "memory.group5"]);
+    expect(state.instances["memory.group1"]).toMatchObject({
+      placement: "document",
+      groupId: "group5",
+      order: 0
+    });
+  });
+
+  it("copies a multi-instance document panel tab into a group", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(
+      state,
+      copyPanelInstanceToDocumentGroupAction("memory.group1", "group5", 0)
+    );
+
+    expect(state.documentGroups.group1.instanceIds).toEqual(["memory.group1"]);
+    expect(state.documentGroups.group5.instanceIds[0]).toBe("memory.group5.2");
+    expect(state.instances["memory.group5.2"]).toMatchObject({
+      contributionId: "memory",
+      placement: "document",
+      groupId: "group5"
+    });
+  });
+
+  it("moves a document panel tab to an editor group edge by creating a split group", () => {
+    const state = idePanelLayoutReducer(
+      createDefaultIdePanelLayoutState(),
+      movePanelInstanceToEditorEdgeAction("memory.group1", "group1", "right")
+    );
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "horizontal",
+      children: [
+        { type: "group", groupId: "group1" },
+        { type: "group", groupId: "group5" }
+      ]
+    });
+    expect(state.documentGroups.group1.instanceIds).toEqual([]);
+    expect(state.documentGroups.group5.instanceIds).toEqual(["memory.group1"]);
+  });
+
   it("does not clone document panels whose contribution is single-instance per group", () => {
     let state = idePanelLayoutReducer(
       createDefaultIdePanelLayoutState(),
@@ -539,6 +833,21 @@ describe("idePanelLayoutReducer", () => {
     expect(
       store.getState().globalSettings?.ideViewOptions?.panelLayout?.instances.z80Cpu.placement
     ).toBe("secondarySideBar");
+  });
+
+  it("mirrors editor group layout changes into persisted global settings", () => {
+    const store = createAppStore("test");
+
+    store.dispatch(setEditorGroupLayoutPresetAction("twoColumns"), "main");
+
+    expect(store.getState().idePanelLayout?.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "vertical"
+    });
+    expect(store.getState().globalSettings?.ideViewOptions?.panelLayout?.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "vertical"
+    });
   });
 
   it("mirrors panel layout into workspace settings when workspace settings are active", () => {

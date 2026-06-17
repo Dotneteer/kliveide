@@ -52,6 +52,10 @@ import {
   setTapeMediaAction,
   setThemeAction
 } from "../common/state/actions";
+import {
+  createEditorLayoutMenuDescriptors,
+  type EditorLayoutMenuDescriptor
+} from "../common/menus/editor-layout-menu";
 import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
 import type { EmuMachineCommand, EmuRecordingCommand } from "../common/messaging/EmuApi";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
@@ -346,6 +350,7 @@ function createViewMenu(context: MenuContext): MenuItemConstructorOptions {
       createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLBAR, context),
       createBooleanSettingsMenu(SETTING_EMU_SHOW_STATUS_BAR, context),
       createIdeAppearanceMenu(context),
+      createEditorLayoutMenu(context),
       { type: "separator" },
       createBooleanSettingsMenu(SETTING_EMU_SHOW_KEYBOARD, context),
       createBooleanSettingsMenu(SETTING_EMU_SHOW_INSTANT_SCREEN, context),
@@ -417,6 +422,37 @@ function createViewMenu(context: MenuContext): MenuItemConstructorOptions {
         ]
       }
     ])
+  };
+}
+
+function createEditorLayoutMenu(context: MenuContext): MenuItemConstructorOptions {
+  return {
+    id: "editor_layout",
+    label: "Editor Layout",
+    visible: context === "ide",
+    submenu: createEditorLayoutMenuDescriptors().map(createEditorLayoutMenuItem)
+  };
+}
+
+function createEditorLayoutMenuItem(
+  descriptor: EditorLayoutMenuDescriptor
+): MenuItemConstructorOptions {
+  if (descriptor.type === "separator") {
+    return { type: "separator" };
+  }
+  if (descriptor.type === "submenu") {
+    return {
+      id: descriptor.id,
+      label: descriptor.label,
+      submenu: descriptor.submenu.map(createEditorLayoutMenuItem)
+    };
+  }
+  return {
+    id: descriptor.id,
+    label: descriptor.label,
+    click: () => {
+      mainStore.dispatch(descriptor.action, "main");
+    }
   };
 }
 

@@ -226,6 +226,14 @@ export const setActiveEditorGroupAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
+export const setActiveDocumentPanelInstanceAction: ActionCreator = (
+  groupId: string,
+  instanceId: string
+) => ({
+  type: "SET_ACTIVE_DOCUMENT_PANEL_INSTANCE",
+  payload: { id: groupId, nextId: instanceId }
+});
+
 export const openDocumentInActiveGroupAction: ActionCreator = (value: {
   id: string;
   name: string;
@@ -270,6 +278,77 @@ export const moveActiveEditorGroupAction: ActionCreator = (
 ) => ({
   type: "MOVE_ACTIVE_EDITOR_GROUP",
   payload: { text: direction }
+});
+
+export const focusEditorGroupAction: ActionCreator = (
+  direction: "left" | "right" | "up" | "down"
+) => ({
+  type: "FOCUS_EDITOR_GROUP",
+  payload: { text: direction }
+});
+
+export const closeEditorsInActiveGroupAction: ActionCreator = () => ({
+  type: "CLOSE_EDITORS_IN_ACTIVE_GROUP"
+});
+
+export const closeActiveEditorGroupAction: ActionCreator = () => ({
+  type: "CLOSE_ACTIVE_EDITOR_GROUP"
+});
+
+export const toggleEditorGroupLayoutAction: ActionCreator = () => ({
+  type: "TOGGLE_EDITOR_GROUP_LAYOUT"
+});
+
+export const toggleMaximizeEditorGroupAction: ActionCreator = () => ({
+  type: "TOGGLE_MAXIMIZE_EDITOR_GROUP"
+});
+
+export const setEditorGroupLockedAction: ActionCreator = (id: string, flag: boolean) => ({
+  type: "SET_EDITOR_GROUP_LOCKED",
+  payload: { id, flag }
+});
+
+export const toggleSplitInGroupAction: ActionCreator = (axis: "horizontal" | "vertical") => ({
+  type: "TOGGLE_SPLIT_IN_GROUP",
+  payload: { text: axis }
+});
+
+export const joinSplitInGroupAction: ActionCreator = () => ({
+  type: "JOIN_SPLIT_IN_GROUP"
+});
+
+export const toggleSplitInGroupLayoutAction: ActionCreator = () => ({
+  type: "TOGGLE_SPLIT_IN_GROUP_LAYOUT"
+});
+
+export const focusSplitInGroupPaneAction: ActionCreator = (pane: 0 | 1 | "other") => ({
+  type: "FOCUS_SPLIT_IN_GROUP_PANE",
+  payload: { value: pane }
+});
+
+export const setEditorGroupLayoutPresetAction: ActionCreator = (
+  preset: "single" | "twoColumns" | "threeColumns" | "twoRows" | "threeRows" | "grid"
+) => ({
+  type: "SET_EDITOR_GROUP_LAYOUT_PRESET",
+  payload: { text: preset }
+});
+
+export const movePanelInstanceToEditorEdgeAction: ActionCreator = (
+  id: string,
+  groupId: string,
+  direction: "left" | "right" | "up" | "down"
+) => ({
+  type: "MOVE_PANEL_INSTANCE_TO_EDITOR_EDGE",
+  payload: { id, nextId: groupId, text: direction }
+});
+
+export const copyPanelInstanceToDocumentGroupAction: ActionCreator = (
+  id: string,
+  groupId: string,
+  orderIndex?: number
+) => ({
+  type: "COPY_PANEL_INSTANCE_TO_DOCUMENT_GROUP",
+  payload: { id, nextId: groupId, numValue: orderIndex }
 });
 
 export const resetPanelLayoutAction: ActionCreator = () => ({

@@ -1,0 +1,119 @@
+@use "xmlui/themes.scss" as t;
+
+$themeVars: ();
+@function createThemeVar($componentVariable) {
+  $themeVars: t.appendThemeVar($themeVars, $componentVariable) !global;
+  @return t.getThemeVar($themeVars, $componentVariable);
+}
+
+$component: "EditorPanelTabStrip";
+$backgroundColor-EditorPanelTabStrip: createThemeVar("backgroundColor-#{$component}");
+$backgroundColor-tab-EditorPanelTabStrip: createThemeVar("backgroundColor-tab-#{$component}");
+$backgroundColor-tab-EditorPanelTabStrip--active: createThemeVar("backgroundColor-tab-#{$component}--active");
+$backgroundColor-dropIndicator-EditorPanelTabStrip: createThemeVar("backgroundColor-dropIndicator-#{$component}");
+$borderColor-EditorPanelTabStrip: createThemeVar("borderColor-#{$component}");
+$textColor-tab-EditorPanelTabStrip: createThemeVar("textColor-tab-#{$component}");
+$textColor-tab-EditorPanelTabStrip--active: createThemeVar("textColor-tab-#{$component}--active");
+$height-dropIndicator-EditorPanelTabStrip: createThemeVar("height-dropIndicator-#{$component}");
+$zIndex-dropIndicator-EditorPanelTabStrip: createThemeVar("zIndex-dropIndicator-#{$component}");
+
+.strip {
+  align-items: stretch;
+  background: $backgroundColor-EditorPanelTabStrip;
+  border-bottom: 1px solid $borderColor-EditorPanelTabStrip;
+  display: flex;
+  flex: 0 0 24px;
+  min-height: 24px;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.tab {
+  align-items: center;
+  background: $backgroundColor-tab-EditorPanelTabStrip;
+  border: 0;
+  border-right: 1px solid $borderColor-EditorPanelTabStrip;
+  color: $textColor-tab-EditorPanelTabStrip;
+  cursor: default;
+  display: inline-flex;
+  flex: 0 1 auto;
+  font: inherit;
+  font-size: 12px;
+  gap: 5px;
+  max-width: 180px;
+  min-width: 54px;
+  outline: 0;
+  overflow: hidden;
+  padding: 0 8px;
+  position: relative;
+  white-space: nowrap;
+}
+
+.tabActive {
+  background: $backgroundColor-tab-EditorPanelTabStrip--active;
+  color: $textColor-tab-EditorPanelTabStrip--active;
+}
+
+.tabDragging {
+  opacity: 0.45;
+}
+
+.label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropIndicator {
+  background: $backgroundColor-dropIndicator-EditorPanelTabStrip;
+  bottom: 0;
+  height: $height-dropIndicator-EditorPanelTabStrip;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: $height-dropIndicator-EditorPanelTabStrip;
+  z-index: $zIndex-dropIndicator-EditorPanelTabStrip;
+}
+
+.edgeIndicator {
+  background: $backgroundColor-dropIndicator-EditorPanelTabStrip;
+  pointer-events: none;
+  position: absolute;
+  z-index: $zIndex-dropIndicator-EditorPanelTabStrip;
+}
+
+.edgeLeft,
+.edgeRight {
+  bottom: 0;
+  top: 0;
+  width: $height-dropIndicator-EditorPanelTabStrip;
+}
+
+.edgeTop,
+.edgeBottom {
+  height: $height-dropIndicator-EditorPanelTabStrip;
+  left: 0;
+  right: 0;
+}
+
+.edgeLeft {
+  left: 0;
+}
+
+.edgeRight {
+  right: 0;
+}
+
+.edgeTop {
+  top: 0;
+}
+
+.edgeBottom {
+  bottom: 0;
+}
+
+:export {
+  themeVars: t.json-stringify($themeVars);
+}

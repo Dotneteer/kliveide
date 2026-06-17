@@ -1,6 +1,7 @@
 <Component
   name="EditorGrid"
   var.layout="{state.value.idePanelLayout.documentLayout}"
+  var.renderedNode="{layout.maximizedGroupId ? { type: 'group', groupId: layout.maximizedGroupId } : layout.root}"
 >
   <SharedAppState id="state" />
   <VStack
@@ -60,7 +61,7 @@
     </HStack>
 
     <EditorLayoutNode
-      node="{layout.root}"
+      node="{renderedNode}"
       path=""
     />
   </VStack>
