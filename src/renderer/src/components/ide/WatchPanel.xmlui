@@ -1,0 +1,5 @@
+<Component name="WatchPanel">
+  <HStack height="100%" verticalAlignment="center" horizontalAlignment="center">
+    <Text value="No watch expressions defined" fontSize="13px" color="#4cd964" />
+  </HStack>
+</Component>

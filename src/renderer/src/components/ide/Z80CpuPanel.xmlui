@@ -1,0 +1,15 @@
+<Component name="Z80CpuPanel">
+  <PanelRuntime
+    id="panel"
+    contributionId="{$props.contributionId ?? 'z80Cpu'}"
+    instanceId="{$props.instanceId ?? 'z80Cpu'}"
+    placement="{$props.placement ?? 'primarySideBar'}"
+    chrome="{$props.chrome ?? 'compact'}"
+  />
+  <Z80CpuPanelView
+    contributionId="{panel.value.contributionId}"
+    instanceId="{panel.value.instanceId}"
+    placement="{panel.value.placement}"
+    chrome="{panel.value.chrome}"
+  />
+</Component>

@@ -1,0 +1,13 @@
+<Component name="ScriptingSideBarPanels">
+  <SideBarPanelStack minPanelSize="{120}" height="100%">
+    <SideBarPanelItem
+      panelId="scriptingHistory"
+      title="SCRIPTING HISTORY"
+      expanded="{$props.historyExpanded}"
+      initialSize="{500}"
+      onToggle="emitEvent('toggleHistory')"
+    >
+      <PanelRenderer rendererId="scriptingHistory" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+  </SideBarPanelStack>
+</Component>

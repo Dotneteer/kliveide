@@ -19,6 +19,36 @@ export type EmuRecordingCommand =
   | "pause-recording"
   | "resume-recording";
 
+export type Z80CpuState = {
+  af?: number;
+  bc?: number;
+  de?: number;
+  hl?: number;
+  ix?: number;
+  iy?: number;
+  pc?: number;
+  sp?: number;
+  af_?: number;
+  bc_?: number;
+  de_?: number;
+  hl_?: number;
+  i?: number;
+  r?: number;
+  wz?: number;
+  lastMemoryRead?: number;
+  lastMemoryWrite?: number;
+  lastIoRead?: number;
+  lastIoWrite?: number;
+  im?: number;
+  snoozed?: boolean;
+  iff1?: boolean;
+  iff2?: boolean;
+  interruptBlocked?: boolean;
+  halted?: boolean;
+  tacts?: number;
+  tactsInFrame?: number;
+};
+
 /**
  * This class defines the shape of the Emu process API that can be called from
  * the main and Ide processes. The methods are called through a JavaScript proxy.
@@ -51,6 +81,13 @@ class EmuApiImpl {
    * @param _command Recording command to issue.
    */
   async issueRecordingCommand(_command: EmuRecordingCommand): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets a serializable snapshot of the active Z80 CPU state.
+   */
+  async getCpuState(): Promise<Z80CpuState | null> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

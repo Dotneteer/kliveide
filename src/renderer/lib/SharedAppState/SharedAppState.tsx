@@ -33,6 +33,10 @@ export const SharedAppStateMd: ComponentMetadata = createMetadata({
       description: "Dispatches SET_GLOBAL_SETTING into the shared application store.",
       signature: "dispatchSetGlobalSetting(key: string, value: any): AppState"
     },
+    dispatchSelectActivity: {
+      description: "Dispatches SET_ACTIVITY into the shared application store.",
+      signature: "dispatchSelectActivity(activityId: string): AppState"
+    },
     globalSettings: {
       description: "Reads a global setting from the current shared application state.",
       signature: "globalSettings(key: string, defaultValue?: any): any"

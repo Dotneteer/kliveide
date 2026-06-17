@@ -1,10 +1,37 @@
-<Component name="SideBar">
-   <VStack
-     verticalAlignment="center"
-     backgroundColor="$backgroundColor-SideBar"
-     overflowX="hidden"
-     height="100%"
-   >
-     <H2>SideBarPanel</H2>
-   </VStack>
+<Component
+  name="SideBar"
+  var.isSecondary="{$props.kind === 'secondary'}"
+  var.activity="{isSecondary ? ($props.activity ?? 'explorer') : (state.value.activeActivity ?? $props.activity ?? 'explorer')}"
+  var.title="{isSecondary ? 'SECONDARY SIDE BAR' : activity === 'debug' ? 'DEBUG' : activity === 'machine' ? 'MACHINE INFO' : activity === 'scripting' ? 'SCRIPTING' : activity === 'testing' ? 'TESTING' : 'EXPLORER'}"
+>
+  <SharedAppState id="state" />
+  <VStack
+    backgroundColor="$backgroundColor-SideBar"
+    overflowX="hidden"
+    height="100%"
+    gap="0"
+  >
+    <HStack
+      height="34px"
+      paddingHorizontal="10px"
+      verticalAlignment="center"
+      backgroundColor="$backgroundColor-SideBarHeader"
+      borderBottom="1px solid $borderColor-SideBarPanel"
+    >
+      <Text
+        value="{title}"
+        fontSize="12px"
+        fontWeight="600"
+        color="$textColor-SideBarHeader"
+      />
+    </HStack>
+    <VStack height="*" gap="0">
+      <PanelStackHost
+        placement="{isSecondary ? 'secondarySideBar' : 'primarySideBar'}"
+        activity="{activity}"
+        onOpenDocument="document => emitEvent('openDocument', document)"
+        onRequestDialog="request => emitEvent('requestDialog', request)"
+      />
+    </VStack>
+  </VStack>
 </Component>

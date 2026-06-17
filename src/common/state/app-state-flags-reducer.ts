@@ -1,6 +1,6 @@
-import _ from "lodash";
 import { Action } from "./Action";
 import { AppState } from "./AppState";
+import { selectPersistedIdePanelLayout } from "./ide-panel-layout-persistence";
 
 /**
  * This reducer is used to manage the AppState flags and simple properties
@@ -26,13 +26,36 @@ export function appStateFlagsReducer (
       return { ...state, ideLoaded: true, ideStateSynched: false };
 
     case "INIT_GLOBAL_SETTINGS":
-      return { ...state, ideStateSynched: true, globalSettings: payload?.value };
+      return {
+        ...state,
+        ideStateSynched: true,
+        globalSettings: payload?.value,
+        idePanelLayout: selectPersistedIdePanelLayout(
+          payload?.value,
+          state.workspaceSettings,
+          state.idePanelLayout
+        )
+      };
+
+    case "SET_WORKSPACE_SETTINGS":
+      return {
+        ...state,
+        workspaceSettings: payload?.value,
+        idePanelLayout: selectPersistedIdePanelLayout(
+          state.globalSettings,
+          payload?.value,
+          state.idePanelLayout
+        )
+      };
 
     case "IS_WINDOWS":
       return { ...state, isWindows: payload?.flag };
 
     case "SET_THEME":
       return { ...state, theme: payload?.id };
+
+    case "SET_ACTIVITY":
+      return { ...state, activeActivity: payload?.id ?? "explorer" };
 
     case "EMU_FOCUSED":
       return { ...state, emuFocused: payload?.flag };

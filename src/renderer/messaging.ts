@@ -27,6 +27,7 @@ import {
   getActiveSp48Controller,
   uploadTapeToActiveSp48ControllerOrQueue
 } from "../emu/sp48/sp48-session";
+import { mapSp48ControllerToZ80CpuState } from "../emu/sp48/z80CpuState";
 import { parseTapeFile } from "../emu/tape/tape-parser";
 import {
   dispatchSharedAction,
@@ -78,6 +79,10 @@ window.kliveDemo = {
 
 export function getDemoStatus(): string {
   return latestStatus;
+}
+
+export function getRendererEmuApi() {
+  return emuApi;
 }
 
 function registerMainToRendererChannel(requestChannel: Channel, responseChannel: Channel): void {
@@ -141,6 +146,17 @@ class EmuMessageProcessor {
   async issueRecordingCommand(command: EmuRecordingCommand) {
     await issueRecordingCommandToActiveManager(command);
     rememberStatus(`EmuApi.issueRecordingCommand received command=${command}.`);
+  }
+
+  async getCpuState() {
+    const controller = getActiveSp48Controller();
+    if (!controller) {
+      rememberStatus("EmuApi.getCpuState returned no active SP48 controller.");
+      return null;
+    }
+
+    rememberStatus("EmuApi.getCpuState returned active SP48 CPU snapshot.");
+    return mapSp48ControllerToZ80CpuState(controller);
   }
 
   async setClockMultiplier(value: number) {

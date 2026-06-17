@@ -1,11 +1,113 @@
-<Component name="IdeStatusBar">
+<Component
+  name="IdeStatusBar"
+  var.showPrimarySideBar="{state.globalSettings('ideViewOptions.showPrimarySideBar', state.globalSettings('ideViewOptions.showSidebar', true))}"
+  var.showSecondarySideBar="{state.globalSettings('ideViewOptions.showSecondarySideBar', true)}"
+  var.showTools="{state.globalSettings('ideViewOptions.showTools', true)}"
+  var.toolsOnTop="{state.globalSettings('ideViewOptions.toolPanelsOnTop', false)}"
+  var.maximizeTools="{state.globalSettings('ideViewOptions.maximizeTools', false)}"
+>
+  <SharedAppState id="state" />
   <HStack
     verticalAlignment="center"
     backgroundColor="$backgroundColor-IdeStatusBar"
-    height="48px"
+    height="24px"
+    paddingHorizontal="8px"
+    gap="8px"
   >
-    <H2>
-      IDE Status bar
-    </H2>
+    <Icon name="vm-running" color="$textColor-IdeStatusBar" width="14px" height="14px" />
+    <Text value="Turned off" color="$textColor-IdeStatusBar" fontSize="12px" />
+    <Text value="No project" color="$textColor-IdeStatusBar" fontSize="12px" />
+    <SpaceFiller />
+    <Icon
+      name="memory-icon"
+      tooltip="Open Memory Document"
+      color="$textColor-IdeStatusBar"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatch({ type: 'CREATE_PANEL_INSTANCE', payload: { id: 'memory.group1', text: 'memory', nextId: 'memory', value: { placement: 'document', groupId: 'group1' } } })"
+    />
+    <Icon
+      name="debug-alt"
+      tooltip="Open Z80 CPU Document"
+      color="$textColor-IdeStatusBar"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatch({ type: 'CREATE_PANEL_INSTANCE', payload: { id: 'z80Cpu.document', text: 'z80Cpu', nextId: 'z80Cpu', value: { placement: 'document', groupId: 'group1' } } })"
+    />
+    <Icon
+      name="play"
+      tooltip="Open Commands Tool"
+      color="$textColor-IdeStatusBar"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatch({ type: 'CREATE_PANEL_INSTANCE', payload: { id: 'commands', text: 'commands', nextId: 'commands', value: { placement: 'toolArea' } } })"
+    />
+    <Icon
+      name="output"
+      tooltip="Open Output Tool"
+      color="$textColor-IdeStatusBar"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatch({ type: 'CREATE_PANEL_INSTANCE', payload: { id: 'output', text: 'output', nextId: 'output', value: { placement: 'toolArea' } } })"
+    />
+    <Icon
+      name="files"
+      tooltip="Toggle Primary Side Bar"
+      color="{showPrimarySideBar ? '$textColor-IdeStatusBar' : '$textColor-IdeStatusBar--muted'}"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatchSetGlobalSetting('ideViewOptions.showPrimarySideBar', !showPrimarySideBar)"
+    />
+    <Icon
+      name="layout-panel"
+      tooltip="Toggle Secondary Side Bar"
+      color="{showSecondarySideBar ? '$textColor-IdeStatusBar' : '$textColor-IdeStatusBar--muted'}"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatchSetGlobalSetting('ideViewOptions.showSecondarySideBar', !showSecondarySideBar)"
+    />
+    <Icon
+      name="tools"
+      tooltip="Toggle Tools Area"
+      color="{showTools ? '$textColor-IdeStatusBar' : '$textColor-IdeStatusBar--muted'}"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatchSetGlobalSetting('ideViewOptions.showTools', !showTools)"
+    />
+    <Icon
+      name="{toolsOnTop ? 'arrow-circle-down' : 'arrow-circle-up'}"
+      tooltip="{toolsOnTop ? 'Move Tools Area to Bottom' : 'Move Tools Area to Top'}"
+      color="$textColor-IdeStatusBar"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatchSetGlobalSetting('ideViewOptions.toolPanelsOnTop', !toolsOnTop)"
+    />
+    <Icon
+      name="{maximizeTools ? 'chevron-down' : 'chevron-up'}"
+      tooltip="{maximizeTools ? 'Restore Tools Area' : 'Maximize Tools Area'}"
+      color="{showTools ? '$textColor-IdeStatusBar' : '$textColor-IdeStatusBar--muted'}"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatchSetGlobalSetting('ideViewOptions.maximizeTools', !maximizeTools)"
+    />
+    <Icon
+      name="combine"
+      tooltip="Reset Panel Layout"
+      color="$textColor-IdeStatusBar"
+      width="14px"
+      height="14px"
+      outline="0"
+      onClick="state.dispatch({ type: 'RESET_PANEL_LAYOUT' })"
+    />
+    <Text value="Ln 1, Col 1" color="$textColor-IdeStatusBar" fontSize="12px" />
   </HStack>
 </Component>

@@ -171,3 +171,87 @@ export const setSideBarPanelExpandedAction: ActionCreator = (id: string, flag: b
   type: "SET_SIDEBAR_PANEL_EXPANDED",
   payload: { id, flag }
 });
+
+export const initIdePanelLayoutAction: ActionCreator = (value: unknown) => ({
+  type: "INIT_IDE_PANEL_LAYOUT",
+  payload: { value }
+});
+
+export const setPanelExpandedAction: ActionCreator = (id: string, flag: boolean) => ({
+  type: "SET_PANEL_EXPANDED",
+  payload: { id, flag }
+});
+
+export const setPanelSizeAction: ActionCreator = (id: string, numValue: number) => ({
+  type: "SET_PANEL_SIZE",
+  payload: { id, numValue }
+});
+
+export const movePanelInstanceAction: ActionCreator = (
+  id: string,
+  placement: string,
+  activityId?: string,
+  groupId?: string,
+  orderIndex?: number
+) => ({
+  type: "MOVE_PANEL_INSTANCE",
+  payload: { id, text: placement, nextId: activityId, value: { groupId, orderIndex } }
+});
+
+export const createPanelInstanceAction: ActionCreator = (
+  id: string,
+  contributionId: string,
+  rendererId: string,
+  placement: string,
+  activityId?: string,
+  groupId?: string,
+  orderIndex?: number
+) => ({
+  type: "CREATE_PANEL_INSTANCE",
+  payload: {
+    id,
+    text: contributionId,
+    nextId: rendererId,
+    value: { placement, activityId, groupId, orderIndex }
+  }
+});
+
+export const closePanelInstanceAction: ActionCreator = (id: string) => ({
+  type: "CLOSE_PANEL_INSTANCE",
+  payload: { id }
+});
+
+export const resetPanelLayoutAction: ActionCreator = () => ({
+  type: "RESET_PANEL_LAYOUT"
+});
+
+export const setWorkspaceSettingsAction: ActionCreator = (value: Record<string, any>) => ({
+  type: "SET_WORKSPACE_SETTINGS",
+  payload: { value }
+});
+
+export const patchPanelViewStateAction: ActionCreator = (
+  id: string,
+  value: Record<string, unknown>
+) => ({
+  type: "PATCH_PANEL_VIEW_STATE",
+  payload: { id, value }
+});
+
+export const setPanelInstanceStateAction: ActionCreator = (
+  id: string,
+  key: string,
+  value: unknown
+) => ({
+  type: "SET_PANEL_INSTANCE_STATE",
+  payload: { id, text: key, value }
+});
+
+export const setPanelContributionStateAction: ActionCreator = (
+  id: string,
+  key: string,
+  value: unknown
+) => ({
+  type: "SET_PANEL_CONTRIBUTION_STATE",
+  payload: { id, text: key, value }
+});

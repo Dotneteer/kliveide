@@ -1,0 +1,188 @@
+<Component
+  name="ExplorerPanel"
+  var.hasProject="{true}"
+  var.selectedDocumentId="src-main"
+  var.selectedDocumentName="main.asm"
+  var.projectNodes="{[
+    { id: 'project', parentId: null, name: 'klive-demo', icon: 'folder', iconExpanded: 'folder-opened', iconCollapsed: 'folder', selectable: false, kind: 'folder' },
+    { id: 'src', parentId: 'project', name: 'src', icon: 'folder', iconExpanded: 'folder-opened', iconCollapsed: 'folder', selectable: false, kind: 'folder' },
+    { id: 'src-main', parentId: 'src', name: 'main.asm', icon: 'file-code', kind: 'file', documentKind: 'code' },
+    { id: 'src-ula', parentId: 'src', name: 'ula.asm', icon: 'file-code', kind: 'file', documentKind: 'code', dirty: true },
+    { id: 'src-macros', parentId: 'src', name: 'macros.inc', icon: 'code', kind: 'file', documentKind: 'code', readonly: true },
+    { id: 'roms', parentId: 'project', name: 'roms', icon: 'folder', iconExpanded: 'folder-opened', iconCollapsed: 'folder', selectable: false, kind: 'folder' },
+    { id: 'rom-48', parentId: 'roms', name: 'zx-spectrum-48.rom', icon: 'chip', kind: 'file', documentKind: 'binary', readonly: true },
+    { id: 'build', parentId: 'project', name: 'build', icon: 'folder', iconExpanded: 'folder-opened', iconCollapsed: 'folder', selectable: false, kind: 'folder', buildRoot: true },
+    { id: 'build-sna', parentId: 'build', name: 'demo.sna', icon: 'dump', kind: 'file', documentKind: 'binary' },
+    { id: 'docs', parentId: 'project', name: 'docs', icon: 'folder', iconExpanded: 'folder-opened', iconCollapsed: 'folder', selectable: false, kind: 'folder' },
+    { id: 'readme', parentId: 'docs', name: 'README.md', icon: 'note', kind: 'file', documentKind: 'markdown' },
+    { id: 'excluded', parentId: 'project', name: 'excluded.tap', icon: 'exclude', kind: 'file', documentKind: 'binary', excluded: true }
+  ]}"
+>
+  <VStack width="100%" height="100%" gap="$space-2">
+    <HStack
+      when="{!hasProject}"
+      width="100%"
+      gap="$space-2"
+      verticalAlignment="center"
+    >
+      <Button
+        label="Open Folder"
+        icon="folder-opened"
+        size="sm"
+        onClick="emitEvent('requestDialog', { id: 'placeholder-action', param: 'Open Folder will connect to the Electron file picker later.' })"
+      />
+      <Button
+        label="New Project"
+        icon="files"
+        size="sm"
+        onClick="emitEvent('requestDialog', { id: 'new-project', param: 'New Project' })"
+      />
+    </HStack>
+
+    <VStack when="{hasProject}" width="100%" height="*" gap="$space-2">
+      <HStack width="100%" gap="$space-1" verticalAlignment="center">
+        <Text
+          value="{selectedDocumentName}"
+          fontSize="12px"
+          color="$textColor-SideBarSubtle"
+        />
+        <SpaceFiller />
+        <Icon
+          name="ellipsis"
+          tooltip="Project actions"
+          color="$textColor-SideBarPanelHeader"
+          width="15px"
+          height="15px"
+          outline="0"
+          onClick="explorerContext.open(selectedDocumentName)"
+        />
+      </HStack>
+      <Tree
+        id="projectTree"
+        dataFormat="flat"
+        data="{projectNodes}"
+        defaultExpanded="{['project', 'src', 'roms', 'build', 'docs']}"
+        selectedValue="{selectedDocumentId}"
+        itemHeight="{24}"
+        iconSize="{14}"
+        scrollStyle="whenMouseOver"
+        onSelectionDidChange="event => {
+          if (event.selectedNode && event.selectedNode.kind === 'file') {
+            selectedDocumentId = event.selectedNode.id;
+            selectedDocumentName = event.selectedNode.name;
+            emitEvent('openDocument', {
+              id: event.selectedNode.id,
+              name: event.selectedNode.name,
+              icon: event.selectedNode.icon,
+              kind: event.selectedNode.documentKind ?? 'unknown'
+            });
+          }
+        }"
+        onContextMenu="event => {
+          event.preventDefault();
+          explorerContext.open(selectedDocumentName);
+        }"
+      >
+        <property name="itemTemplate">
+          <HStack
+            height="24px"
+            gap="$space-1"
+            verticalAlignment="center"
+          >
+            <Icon
+              name="{$item.icon}"
+              width="15px"
+              height="15px"
+              color="{$item.excluded ? '$textColor-SideBarSubtle' : '$textColor-SideBar'}"
+            />
+            <Text
+              value="{$item.name}"
+              fontSize="13px"
+              color="{$item.excluded ? '$textColor-SideBarSubtle' : '$textColor-SideBar'}"
+            />
+            <Icon
+              when="{$item.dirty}"
+              name="circle-filled"
+              tooltip="Dirty"
+              width="8px"
+              height="8px"
+              color="$color-warn-500"
+            />
+            <Icon
+              when="{$item.readonly}"
+              name="lock"
+              tooltip="Read-only"
+              width="11px"
+              height="11px"
+              color="$textColor-SideBarSubtle"
+            />
+            <Icon
+              when="{$item.buildRoot}"
+              name="rocket"
+              tooltip="Build root"
+              width="12px"
+              height="12px"
+              color="$textColor-SideBarSubtle"
+            />
+          </HStack>
+        </property>
+      </Tree>
+    </VStack>
+
+    <ModalDialog
+      id="explorerContext"
+      title="Explorer Actions"
+      maxWidth="360px"
+    >
+      <VStack gap="$space-3">
+        <Text
+          value="Context actions for {$param ?? selectedDocumentName}"
+          fontSize="13px"
+        />
+        <HStack gap="$space-2">
+          <Button
+            label="New File"
+            icon="file-code"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'placeholder-action', param: 'New File for ' + (selectedDocumentName ?? 'project') })"
+          />
+          <Button
+            label="New Folder"
+            icon="folder"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'placeholder-action', param: 'New Folder for ' + (selectedDocumentName ?? 'project') })"
+          />
+        </HStack>
+        <HStack gap="$space-2">
+          <Button
+            label="Rename"
+            icon="pencil"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'placeholder-action', param: 'Rename ' + (selectedDocumentName ?? 'selected item') })"
+          />
+          <Button
+            label="Delete"
+            icon="close"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'delete', param: selectedDocumentName })"
+          />
+        </HStack>
+        <HStack gap="$space-2">
+          <Button
+            label="Exclude"
+            icon="exclude"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'placeholder-action', param: 'Exclude ' + (selectedDocumentName ?? 'selected item') })"
+          />
+          <Button
+            label="Reveal"
+            icon="preview"
+            size="sm"
+            onClick="explorerContext.close(); emitEvent('requestDialog', { id: 'placeholder-action', param: 'Reveal ' + (selectedDocumentName ?? 'selected item') })"
+          />
+        </HStack>
+        <Button label="Close" icon="check" onClick="explorerContext.close()" />
+      </VStack>
+    </ModalDialog>
+  </VStack>
+</Component>

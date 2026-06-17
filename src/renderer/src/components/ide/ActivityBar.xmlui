@@ -1,12 +1,45 @@
 <Component name="ActivityBar">
-   <VStack
-     verticalAlignment="center"
-     backgroundColor="$backgroundColor-ActivityBar"
-     height="100%"
-     width="48px"
-   >
-     <H2>
-       AB
-     </H2>
-   </VStack>
+  <VStack
+    backgroundColor="$backgroundColor-ActivityBar"
+    height="100%"
+    width="52px"
+    gap="0"
+    paddingTop="6px"
+    horizontalAlignment="center"
+  >
+    <ActivityButton
+      activityId="explorer"
+      icon="files"
+      title="Explorer"
+    />
+    <ActivityButton
+      activityId="debug"
+      icon="debug-alt"
+      title="Debug"
+    />
+    <ActivityButton
+      activityId="machine"
+      icon="output"
+      title="Machine info"
+    />
+    <ActivityButton
+      activityId="scripting"
+      icon="symbol-event"
+      title="Scripting"
+    />
+    <ActivityButton
+      activityId="testing"
+      icon="beaker"
+      title="Testing"
+    />
+    <SpaceFiller />
+    <ActivityButton
+      activityId="settings"
+      icon="settings-gear"
+      title="Settings"
+      selectActivity="{false}"
+      onSelect="emitEvent('requestDialog', { id: 'placeholder-action', param: 'Not implemented' })"
+    />
+    <Stack height="10px" />
+  </VStack>
 </Component>

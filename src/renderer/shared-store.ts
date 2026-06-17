@@ -2,7 +2,12 @@ import { useCallback, useSyncExternalStore } from "react";
 import type { RequestMessage } from "../common/messaging/messages-core";
 import type { Action } from "../common/state/Action";
 import type { AppState } from "../common/state/AppState";
-import { setAppPathAction, setGlobalSettingAction, setThemeAction } from "../common/state/actions";
+import {
+  selectActivityAction,
+  setAppPathAction,
+  setGlobalSettingAction,
+  setThemeAction
+} from "../common/state/actions";
 import type { Store } from "../common/state/redux-light";
 import type { MessageSource } from "../common/messaging/messages-core";
 import createAppStore from "../common/state/store";
@@ -59,6 +64,10 @@ export function dispatchSetGlobalSetting(id: string, value: unknown): AppState {
   return dispatchSharedAction(setGlobalSettingAction(id, value), windowKind);
 }
 
+export function dispatchSelectActivity(id: string): AppState {
+  return dispatchSharedAction(selectActivityAction(id), windowKind);
+}
+
 export async function readSettingValue(id: string): Promise<unknown> {
   return getMainApi().getSettingValue(id);
 }
@@ -100,6 +109,10 @@ export function useDispatchSetTheme() {
 
 export function useDispatchSetGlobalSetting() {
   return useCallback((id: string, value: unknown) => dispatchSetGlobalSetting(id, value), []);
+}
+
+export function useDispatchSelectActivity() {
+  return useCallback((id: string) => dispatchSelectActivity(id), []);
 }
 
 export function useReadSettingValue() {

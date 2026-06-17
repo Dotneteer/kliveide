@@ -1,5 +1,6 @@
 import { set } from "lodash";
 import type { Setting } from "./Setting";
+import { createDefaultIdePanelLayoutState } from "../state/ide-panel-layout-state";
 import {
   SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
   SETTING_EDITOR_AUTOCOMPLETE,
@@ -29,12 +30,17 @@ import {
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_NOTE,
   SETTING_IDE_OPEN_LAST_PROJECT,
+  SETTING_IDE_PANEL_LAYOUT,
+  SETTING_IDE_PRIMARY_SIDEBAR_WIDTH,
   SETTING_IDE_SHOW_SIDEBAR,
+  SETTING_IDE_SHOW_PRIMARY_SIDEBAR,
+  SETTING_IDE_SHOW_SECONDARY_SIDEBAR,
   SETTING_IDE_SHOW_STATUS_BAR,
   SETTING_IDE_SHOW_TOOLBAR,
   SETTING_IDE_SHOW_TOOLS,
   SETTING_IDE_SIDEBAR_TO_RIGHT,
   SETTING_IDE_SIDEBAR_WIDTH,
+  SETTING_IDE_SECONDARY_SIDEBAR_WIDTH,
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLPANEL_HEIGHT,
   SETTING_IDE_TOOLS_ON_TOP
@@ -205,6 +211,26 @@ const settingDefinitions: Setting[] = [
     boundTo: "ide"
   },
   {
+    id: SETTING_IDE_SHOW_PRIMARY_SIDEBAR,
+    title: "Show the Primary Sidebar",
+    description: "Show or hide the primary sidebar in the IDE view.",
+    type: "boolean",
+    defaultValue: true,
+    persist: true,
+    saveWithIde: true,
+    boundTo: "ide"
+  },
+  {
+    id: SETTING_IDE_SHOW_SECONDARY_SIDEBAR,
+    title: "Show the Secondary Sidebar",
+    description: "Show or hide the secondary sidebar in the IDE view.",
+    type: "boolean",
+    defaultValue: true,
+    persist: true,
+    saveWithIde: true,
+    boundTo: "ide"
+  },
+  {
     id: SETTING_IDE_SIDEBAR_TO_RIGHT,
     title: "Move the Sidebar to the Right",
     description: "Moves the sidebar to the right side of the IDE view.",
@@ -264,6 +290,24 @@ const settingDefinitions: Setting[] = [
     volatile: true
   },
   {
+    id: SETTING_IDE_PRIMARY_SIDEBAR_WIDTH,
+    title: "(Primary sidebar width)",
+    type: "string",
+    defaultValue: "260px",
+    persist: true,
+    saveWithIde: true,
+    volatile: true
+  },
+  {
+    id: SETTING_IDE_SECONDARY_SIDEBAR_WIDTH,
+    title: "(Secondary sidebar width)",
+    type: "string",
+    defaultValue: "240px",
+    persist: true,
+    saveWithIde: true,
+    volatile: true
+  },
+  {
     id: SETTING_IDE_TOOLPANEL_HEIGHT,
     title: "(Toolpanel height)",
     type: "string",
@@ -289,6 +333,15 @@ const settingDefinitions: Setting[] = [
     persist: true,
     saveWithIde: true,
     volatile: true
+  },
+  {
+    id: SETTING_IDE_PANEL_LAYOUT,
+    title: "(panel layout)",
+    type: "object",
+    defaultValue: createDefaultIdePanelLayoutState(),
+    persist: true,
+    saveWithIde: true,
+    boundTo: "ide"
   },
   {
     id: SETTING_IDE_OPEN_LAST_PROJECT,

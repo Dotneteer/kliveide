@@ -1,0 +1,49 @@
+<Component name="DebugSideBarPanels">
+  <SideBarPanelStack minPanelSize="{120}" height="100%">
+    <SideBarPanelItem
+      panelId="z80CpuPanel"
+      title="Z80 CPU"
+      expanded="{$props.cpuExpanded}"
+      initialSize="{260}"
+      onToggle="emitEvent('toggleCpu')"
+    >
+      <PanelRenderer rendererId="z80Cpu" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      panelId="callStackPanel"
+      title="CALL STACK"
+      expanded="{$props.callStackExpanded}"
+      initialSize="{500}"
+      onToggle="emitEvent('toggleCallStack')"
+    >
+      <PanelRenderer rendererId="callStack" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      panelId="ulaPanel"
+      title="ULA & I/O"
+      expanded="{$props.ulaExpanded}"
+      initialSize="{500}"
+      onToggle="emitEvent('toggleUla')"
+    >
+      <PanelRenderer rendererId="ulaIo" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      panelId="watchPanel"
+      title="WATCH"
+      expanded="{$props.watchExpanded}"
+      initialSize="{500}"
+      onToggle="emitEvent('toggleWatch')"
+    >
+      <PanelRenderer rendererId="watch" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+    <SideBarPanelItem
+      panelId="breakpointsPanel"
+      title="BREAKPOINTS"
+      expanded="{$props.breakpointsExpanded}"
+      initialSize="{500}"
+      onToggle="emitEvent('toggleBreakpoints')"
+    >
+      <PanelRenderer rendererId="breakpoints" placement="primarySideBar" chrome="compact" />
+    </SideBarPanelItem>
+  </SideBarPanelStack>
+</Component>

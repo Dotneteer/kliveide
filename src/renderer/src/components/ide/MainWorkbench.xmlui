@@ -1,14 +1,38 @@
-<Component name="MainWorkbench">
-    <HStack height="100%" gap="0">
-      <HSplitter
-        width="*"
-        initialPrimarySize="-200px"
-        minPrimarySize="100px"
-        maxPrimarySize="-100px"
-        floating
-      >
-        <Workbench height="100%" />
-        <SideBar />
-      </HSplitter>
-    </HStack>
+<Component
+  name="MainWorkbench"
+  var.showSecondarySideBar="{state.globalSettings('ideViewOptions.showSecondarySideBar', true)}"
+  var.initialSecondarySideBarWidth="{(state.globalSettings('ideViewOptions.secondarySideBarWidth', '240px') ?? '240px') + ''}"
+  var.liveSecondarySideBarWidth="{initialSecondarySideBarWidth}"
+>
+  <SharedAppState id="state" />
+  <PersistedSettingOnRelease
+    settingId="ideViewOptions.secondarySideBarWidth"
+    value="{liveSecondarySideBarWidth}"
+  />
+  <HStack height="100%" width="100%" gap="0">
+    <HSplitter
+      when="{showSecondarySideBar}"
+      width="*"
+      initialPrimarySize="{'-' + (initialSecondarySideBarWidth.indexOf('px') >= 0 || initialSecondarySideBarWidth.indexOf('%') >= 0 ? initialSecondarySideBarWidth : initialSecondarySideBarWidth + 'px')}"
+      minPrimarySize="360px"
+      maxPrimarySize="-160px"
+      floating
+    >
+      <Workbench
+        height="100%"
+        activeDocumentName="{$props.activeDocumentName}"
+        activeDocumentIcon="{$props.activeDocumentIcon}"
+        activeDocumentKind="{$props.activeDocumentKind}"
+      />
+      <SideBar kind="secondary" />
+    </HSplitter>
+    <Workbench
+      when="{!showSecondarySideBar}"
+      width="100%"
+      height="100%"
+      activeDocumentName="{$props.activeDocumentName}"
+      activeDocumentIcon="{$props.activeDocumentIcon}"
+      activeDocumentKind="{$props.activeDocumentKind}"
+    />
+  </HStack>
 </Component>

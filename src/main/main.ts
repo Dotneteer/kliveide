@@ -21,7 +21,8 @@ import {
   setClockMultiplierAction,
   setSoundLevelAction,
   setScreenRecordingAvailableAction,
-  setKeyMappingsAction
+  setKeyMappingsAction,
+  selectActivityAction
 } from "../common/state/actions";
 import { createWindowStateManager } from "./WindowStateManager";
 import {
@@ -92,6 +93,7 @@ function dispatchMainOwnedState(): void {
   mainStore.dispatch(setAppPathAction(app.isPackaged ? process.resourcesPath : app.getAppPath()));
   mainStore.dispatch(isWindowsAction(process.platform === "win32"));
   mainStore.dispatch(setThemeAction(state.theme ?? "dark"));
+  mainStore.dispatch(selectActivityAction(state.activeActivity ?? "explorer"));
   mainStore.dispatch(initGlobalSettingsAction(state.globalSettings ?? {}));
   if (state.emulatorState?.machineId) {
     mainStore.dispatch(
@@ -307,7 +309,7 @@ async function createIdeWindow(): Promise<void> {
   ideWindowStateManager = createWindowStateManager(appSettings.windowStates?.ideWindow, {
     defaultWidth: 640,
     defaultHeight: 480,
-    maximize: false,
+    maximize: true,
     fullScreen: false,
     stateSaver: (state) => {
       appSettings.windowStates ??= {};
