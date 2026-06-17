@@ -1,6 +1,9 @@
 import { cloneDeep, get, set } from "lodash";
 import type { AppState } from "./AppState";
-import type { IdePanelLayoutState } from "./ide-panel-layout-state";
+import {
+  normalizeIdePanelLayoutState,
+  type IdePanelLayoutState
+} from "./ide-panel-layout-state";
 
 export const IDE_PANEL_LAYOUT_SETTING_PATH = "ideViewOptions.panelLayout";
 
@@ -11,11 +14,13 @@ export function selectPersistedIdePanelLayout(
 ): IdePanelLayoutState | undefined {
   const workspaceLayout = get(workspaceSettings, IDE_PANEL_LAYOUT_SETTING_PATH);
   if (isIdePanelLayoutState(workspaceLayout)) {
-    return workspaceLayout;
+    return normalizeIdePanelLayoutState(workspaceLayout, fallback);
   }
 
   const globalLayout = get(globalSettings, IDE_PANEL_LAYOUT_SETTING_PATH);
-  return isIdePanelLayoutState(globalLayout) ? globalLayout : fallback;
+  return isIdePanelLayoutState(globalLayout)
+    ? normalizeIdePanelLayoutState(globalLayout, fallback)
+    : fallback;
 }
 
 export function persistIdePanelLayoutToSettings(

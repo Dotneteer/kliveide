@@ -1,7 +1,8 @@
 <Component
   name="EditorGrid"
-  var.splitMode="right"
+  var.layout="{state.value.idePanelLayout.documentLayout}"
 >
+  <SharedAppState id="state" />
   <VStack
     width="100%"
     height="100%"
@@ -20,171 +21,50 @@
     >
       <Text value="Documents" fontSize="12px" fontWeight="600" color="$textColor-EditorSubtle" />
       <SpaceFiller />
-      <Icon name="layout-panel" tooltip="Show split right" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="splitMode = 'right'" />
-      <Icon name="layers" tooltip="Show split down" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="splitMode = 'down'" />
-      <Icon name="window" tooltip="Show grid splits" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="splitMode = 'grid'" />
-      <Icon name="combine" tooltip="Close placeholder splits" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="splitMode = 'single'" />
+      <Icon
+        name="arrow-small-left"
+        tooltip="Split Editor Left"
+        color="$textColor-DocumentTab"
+        width="15px"
+        height="15px"
+        outline="0"
+        onClick="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'left' } })"
+      />
+      <Icon
+        name="layout-panel"
+        tooltip="Split Editor Right"
+        color="$textColor-DocumentTab"
+        width="15px"
+        height="15px"
+        outline="0"
+        onClick="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'right' } })"
+      />
+      <Icon
+        name="arrow-circle-up"
+        tooltip="Split Editor Up"
+        color="$textColor-DocumentTab"
+        width="15px"
+        height="15px"
+        outline="0"
+        onClick="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'up' } })"
+      />
+      <Icon
+        name="layers"
+        tooltip="Split Editor Down"
+        color="$textColor-DocumentTab"
+        width="15px"
+        height="15px"
+        outline="0"
+        onClick="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'down' } })"
+      />
     </HStack>
 
-    <EditorGroup
-      when="{splitMode === 'single'}"
-      title="Group 1"
-      groupId="group1"
-      memoryPanelInstanceId="memory.group1"
-      activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
+    <EditorLayoutNode
+      node="{layout.root}"
+      path=""
+      activeDocumentName="{$props.activeDocumentName ?? 'main.asm'}"
       activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
       activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
-      secondaryDocument="memory"
-      mode="code"
-      onSplitRight="splitMode = 'right'"
-      onSplitDown="splitMode = 'down'"
     />
-
-    <HSplitter
-      when="{splitMode === 'right'}"
-      width="100%"
-      height="*"
-      initialPrimarySize="58%"
-      minPrimarySize="240px"
-      maxPrimarySize="-240px"
-      floating
-    >
-      <EditorGroup
-        title="Group 1"
-        groupId="group1"
-        memoryPanelInstanceId="memory.group1"
-        activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
-        activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
-        activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
-        secondaryDocument="memory"
-        mode="code"
-        onSplitRight="splitMode = 'right'"
-        onSplitDown="splitMode = 'down'"
-        onCloseGroup="splitMode = 'single'"
-      />
-      <EditorGroup
-        title="Group 2"
-        groupId="group2"
-        memoryPanelInstanceId="memory.group2"
-        activeDocument="Disassembly"
-        activeDocumentIcon="disassembly-icon"
-        activeDocumentKind="disassembly"
-        secondaryDocument="README.md"
-        mode="debug"
-        onSplitRight="splitMode = 'right'"
-        onSplitDown="splitMode = 'down'"
-        onCloseGroup="splitMode = 'single'"
-      />
-    </HSplitter>
-
-    <VSplitter
-      when="{splitMode === 'down'}"
-      width="100%"
-      height="*"
-      initialPrimarySize="58%"
-      minPrimarySize="180px"
-      maxPrimarySize="-180px"
-      floating
-    >
-      <EditorGroup
-        title="Group 1"
-        groupId="group1"
-        memoryPanelInstanceId="memory.group1"
-        activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
-        activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
-        activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
-        secondaryDocument="memory"
-        mode="code"
-        onSplitRight="splitMode = 'right'"
-        onSplitDown="splitMode = 'down'"
-        onCloseGroup="splitMode = 'single'"
-      />
-      <EditorGroup
-        title="Group 2"
-        groupId="group2"
-        memoryPanelInstanceId="memory.group2"
-        activeDocument="Build Output"
-        activeDocumentIcon="output"
-        activeDocumentKind="output"
-        secondaryDocument="screen.scr"
-        mode="tools"
-        onSplitRight="splitMode = 'right'"
-        onSplitDown="splitMode = 'down'"
-        onCloseGroup="splitMode = 'single'"
-      />
-    </VSplitter>
-
-    <HSplitter
-      when="{splitMode === 'grid'}"
-      width="100%"
-      height="*"
-      initialPrimarySize="50%"
-      minPrimarySize="260px"
-      maxPrimarySize="-260px"
-      floating
-    >
-      <VSplitter
-        width="100%"
-        height="100%"
-        initialPrimarySize="50%"
-        minPrimarySize="160px"
-        maxPrimarySize="-160px"
-        floating
-      >
-        <EditorGroup
-          title="Group 1"
-          groupId="group1"
-          memoryPanelInstanceId="memory.group1"
-          activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
-          activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
-          activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
-          secondaryDocument="memory"
-          mode="code"
-          onCloseGroup="splitMode = 'single'"
-        />
-        <EditorGroup
-          title="Group 3"
-          groupId="group3"
-          memoryPanelInstanceId="memory.group3"
-          activeDocument="Memory"
-          activeDocumentIcon="memory-icon"
-          activeDocumentKind="memory"
-          secondaryDocument="disassembly"
-          mode="debug"
-          onCloseGroup="splitMode = 'single'"
-        />
-      </VSplitter>
-      <VSplitter
-        width="100%"
-        height="100%"
-        initialPrimarySize="50%"
-        minPrimarySize="160px"
-        maxPrimarySize="-160px"
-        floating
-      >
-        <EditorGroup
-          title="Group 2"
-          groupId="group2"
-          memoryPanelInstanceId="memory.group2"
-          activeDocument="Disassembly"
-          activeDocumentIcon="disassembly-icon"
-          activeDocumentKind="disassembly"
-          secondaryDocument="README.md"
-          mode="debug"
-          onCloseGroup="splitMode = 'single'"
-        />
-        <EditorGroup
-          title="Group 4"
-          groupId="group4"
-          memoryPanelInstanceId="memory.group4"
-          activeDocument="screen.scr"
-          activeDocumentIcon="sprite"
-          activeDocumentKind="image"
-          secondaryDocument="unknown.bin"
-          mode="image"
-          onCloseGroup="splitMode = 'single'"
-        />
-      </VSplitter>
-    </HSplitter>
   </VStack>
 </Component>

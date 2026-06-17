@@ -221,6 +221,23 @@ export const closePanelInstanceAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
+export const setActiveEditorGroupAction: ActionCreator = (id: string) => ({
+  type: "SET_ACTIVE_EDITOR_GROUP",
+  payload: { id }
+});
+
+export const splitEditorGroupAction: ActionCreator = (
+  direction: "left" | "right" | "up" | "down"
+) => ({
+  type: "SPLIT_EDITOR_GROUP",
+  payload: { text: direction }
+});
+
+export const setEditorSplitSizeAction: ActionCreator = (path: string, size: number) => ({
+  type: "SET_EDITOR_SPLIT_SIZE",
+  payload: { value: { path, size } }
+});
+
 export const resetPanelLayoutAction: ActionCreator = () => ({
   type: "RESET_PANEL_LAYOUT"
 });

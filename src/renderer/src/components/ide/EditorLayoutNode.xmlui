@@ -1,0 +1,73 @@
+<Component
+  name="EditorLayoutNode"
+  var.node="{$props.node}"
+  var.path="{$props.path ?? ''}"
+>
+  <SharedAppState id="state" />
+
+  <EditorGroup
+    when="{node.type === 'group'}"
+    title="{node.groupId}"
+    groupId="{node.groupId}"
+    memoryPanelInstanceId="{'memory.' + node.groupId}"
+    activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
+    activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
+    activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
+    onSplitLeft="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'left' } })"
+    onSplitRight="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'right' } })"
+    onSplitUp="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'up' } })"
+    onSplitDown="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'down' } })"
+  />
+
+  <HSplitter
+    when="{node.type === 'split' && node.axis === 'horizontal'}"
+    width="100%"
+    height="100%"
+    initialPrimarySize="{node.sizes && node.sizes[0] ? node.sizes[0] + 'px' : '50%'}"
+    minPrimarySize="240px"
+    maxPrimarySize="-240px"
+    floating
+    onResize="size => state.dispatch({ type: 'SET_EDITOR_SPLIT_SIZE', payload: { value: { path: path, size: size } } })"
+  >
+    <EditorLayoutNode
+      node="{node.children[0]}"
+      path="{path ? path + '.0' : '0'}"
+      activeDocumentName="{$props.activeDocumentName ?? 'main.asm'}"
+      activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
+      activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
+    />
+    <EditorLayoutNode
+      node="{node.children[1]}"
+      path="{path ? path + '.1' : '1'}"
+      activeDocumentName="{$props.activeDocumentName ?? 'main.asm'}"
+      activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
+      activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
+    />
+  </HSplitter>
+
+  <VSplitter
+    when="{node.type === 'split' && node.axis === 'vertical'}"
+    width="100%"
+    height="100%"
+    initialPrimarySize="{node.sizes && node.sizes[0] ? node.sizes[0] + 'px' : '50%'}"
+    minPrimarySize="180px"
+    maxPrimarySize="-180px"
+    floating
+    onResize="size => state.dispatch({ type: 'SET_EDITOR_SPLIT_SIZE', payload: { value: { path: path, size: size } } })"
+  >
+    <EditorLayoutNode
+      node="{node.children[0]}"
+      path="{path ? path + '.0' : '0'}"
+      activeDocumentName="{$props.activeDocumentName ?? 'main.asm'}"
+      activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
+      activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
+    />
+    <EditorLayoutNode
+      node="{node.children[1]}"
+      path="{path ? path + '.1' : '1'}"
+      activeDocumentName="{$props.activeDocumentName ?? 'main.asm'}"
+      activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
+      activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
+    />
+  </VSplitter>
+</Component>

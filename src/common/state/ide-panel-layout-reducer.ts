@@ -5,6 +5,10 @@ import {
 } from "./ide-panel-contributions";
 import {
   createDefaultIdePanelLayoutState,
+  normalizeIdePanelLayoutState,
+  type EditorGroupState,
+  type EditorLayoutAxis,
+  type EditorLayoutNode,
   type IdePanelLayoutState,
   type PanelInstance,
   type PanelPlacement
@@ -16,7 +20,7 @@ export function idePanelLayoutReducer(
 ): IdePanelLayoutState {
   switch (type) {
     case "INIT_IDE_PANEL_LAYOUT":
-      return payload?.value ?? state;
+      return normalizeIdePanelLayoutState(payload?.value, state) ?? state;
 
     case "RESET_PANEL_LAYOUT":
       return createDefaultIdePanelLayoutState();
@@ -74,6 +78,22 @@ export function idePanelLayoutReducer(
     case "CLOSE_PANEL_INSTANCE":
       return closePanelInstance(state, payload?.id);
 
+    case "SET_ACTIVE_EDITOR_GROUP":
+      return setActiveEditorGroup(state, payload?.id);
+
+    case "SPLIT_EDITOR_GROUP":
+      return splitEditorGroup(
+        state,
+        payload?.text as "left" | "right" | "up" | "down" | undefined
+      );
+
+    case "SET_EDITOR_SPLIT_SIZE":
+      return setEditorSplitSize(
+        state,
+        (payload?.value as { path?: string; size?: number } | undefined)?.path,
+        (payload?.value as { path?: string; size?: number } | undefined)?.size
+      );
+
     case "PATCH_PANEL_VIEW_STATE": {
       const instanceId = payload?.id;
       if (!instanceId) {
@@ -130,6 +150,270 @@ export function idePanelLayoutReducer(
     default:
       return state;
   }
+}
+
+function setActiveEditorGroup(
+  state: IdePanelLayoutState,
+  groupId: string | undefined
+): IdePanelLayoutState {
+  if (!groupId || !state.documentGroups[groupId] || !editorLayoutContainsGroup(state.documentLayout.root, groupId)) {
+    return state;
+  }
+
+  return {
+    ...state,
+    documentLayout: {
+      ...state.documentLayout,
+      activeGroupId: groupId
+    }
+  };
+}
+
+function splitEditorGroup(
+  state: IdePanelLayoutState,
+  direction: "left" | "right" | "up" | "down" | undefined
+): IdePanelLayoutState {
+  if (direction !== "left" && direction !== "right" && direction !== "up" && direction !== "down") {
+    return state;
+  }
+
+  const sourceGroupId = state.documentLayout.activeGroupId;
+  const sourceGroup = state.documentGroups[sourceGroupId];
+  if (!sourceGroup || !editorLayoutContainsGroup(state.documentLayout.root, sourceGroupId)) {
+    return state;
+  }
+
+  const newGroupId = createNextEditorGroupId(state);
+  const cloned = cloneActiveDocumentInstance(state, sourceGroup, sourceGroupId, newGroupId);
+  const newGroup: EditorGroupState = {
+    activeInstanceId: cloned?.instanceId,
+    instanceIds: cloned ? [cloned.instanceId] : []
+  };
+  const axis: EditorLayoutAxis =
+    direction === "left" || direction === "right" ? "horizontal" : "vertical";
+  const position = direction === "left" || direction === "up" ? "before" : "after";
+  const root = insertEditorGroup(
+    state.documentLayout.root,
+    sourceGroupId,
+    newGroupId,
+    axis,
+    position
+  );
+  if (!root) {
+    return state;
+  }
+
+  return {
+    ...state,
+    instances: cloned
+      ? {
+          ...state.instances,
+          [cloned.instanceId]: cloned
+        }
+      : state.instances,
+    documentGroups: {
+      ...state.documentGroups,
+      [newGroupId]: newGroup
+    },
+    documentLayout: {
+      ...state.documentLayout,
+      root,
+      activeGroupId: newGroupId,
+      nextGroupOrdinal: getNextEditorGroupOrdinal(newGroupId) + 1,
+      maximizedGroupId: undefined
+    }
+  };
+}
+
+function setEditorSplitSize(
+  state: IdePanelLayoutState,
+  path: string | undefined,
+  size: number | undefined
+): IdePanelLayoutState {
+  if (path === undefined || typeof size !== "number" || !Number.isFinite(size) || size < 0) {
+    return state;
+  }
+
+  const root = updateEditorSplitSizeAtPath(state.documentLayout.root, path, size);
+  if (root === state.documentLayout.root) {
+    return state;
+  }
+
+  return {
+    ...state,
+    documentLayout: {
+      ...state.documentLayout,
+      root
+    }
+  };
+}
+
+function cloneActiveDocumentInstance(
+  state: IdePanelLayoutState,
+  sourceGroup: EditorGroupState,
+  sourceGroupId: string,
+  newGroupId: string
+): PanelInstance | undefined {
+  const activeInstanceId = sourceGroup.activeInstanceId ?? sourceGroup.instanceIds[0];
+  if (!activeInstanceId) {
+    return undefined;
+  }
+
+  const sourceInstance = state.instances[activeInstanceId];
+  if (!sourceInstance || sourceInstance.placement !== "document") {
+    return undefined;
+  }
+
+  const contribution = getIdePanelContribution(sourceInstance.contributionId);
+  if (!contribution?.allowDocument || !contribution.allowMultipleDocumentInstances) {
+    return undefined;
+  }
+
+  const instanceId = createDocumentInstanceId(state, sourceInstance.contributionId, newGroupId);
+  return {
+    ...sourceInstance,
+    instanceId,
+    groupId: newGroupId,
+    order: 0,
+    context: sourceInstance.context ? { ...sourceInstance.context } : undefined
+  };
+}
+
+function createDocumentInstanceId(
+  state: IdePanelLayoutState,
+  contributionId: string,
+  groupId: string
+): string {
+  const baseId = `${contributionId}.${groupId}`;
+  if (!state.instances[baseId]) {
+    return baseId;
+  }
+
+  let ordinal = 2;
+  while (state.instances[`${baseId}.${ordinal}`]) {
+    ordinal++;
+  }
+  return `${baseId}.${ordinal}`;
+}
+
+function createNextEditorGroupId(state: IdePanelLayoutState): string {
+  let ordinal = Math.max(2, state.documentLayout.nextGroupOrdinal);
+  while (state.documentGroups[`group${ordinal}`] || editorLayoutContainsGroup(state.documentLayout.root, `group${ordinal}`)) {
+    ordinal++;
+  }
+  return `group${ordinal}`;
+}
+
+function getNextEditorGroupOrdinal(groupId: string): number {
+  const match = /^group(\d+)$/.exec(groupId);
+  return match ? Number(match[1]) : 1;
+}
+
+function insertEditorGroup(
+  node: EditorLayoutNode,
+  sourceGroupId: string,
+  newGroupId: string,
+  axis: EditorLayoutAxis,
+  position: "before" | "after"
+): EditorLayoutNode | undefined {
+  if (node.type === "group") {
+    if (node.groupId !== sourceGroupId) {
+      return undefined;
+    }
+    const sourceNode = node;
+    const newNode: EditorLayoutNode = { type: "group", groupId: newGroupId };
+    return {
+      type: "split",
+      axis,
+      children: position === "before" ? [newNode, sourceNode] : [sourceNode, newNode]
+    };
+  }
+
+  const directIndex = node.children.findIndex(
+    (child) => child.type === "group" && child.groupId === sourceGroupId
+  );
+  if (directIndex >= 0) {
+    const sourceNode = node.children[directIndex];
+    const newNode: EditorLayoutNode = { type: "group", groupId: newGroupId };
+    return {
+      ...node,
+      children: node.children.map((child, index) =>
+        index === directIndex
+          ? {
+              type: "split",
+              axis,
+              children: position === "before" ? [newNode, sourceNode] : [sourceNode, newNode]
+            }
+          : child
+      ),
+      sizes: undefined
+    };
+  }
+
+  let changed = false;
+  const children = node.children.map((child) => {
+    const nextChild = insertEditorGroup(child, sourceGroupId, newGroupId, axis, position);
+    if (!nextChild) {
+      return child;
+    }
+    changed = true;
+    return nextChild;
+  });
+
+  return changed ? { ...node, children, sizes: undefined } : undefined;
+}
+
+function updateEditorSplitSizeAtPath(
+  node: EditorLayoutNode,
+  path: string,
+  size: number
+): EditorLayoutNode {
+  const pathParts = path
+    .split(".")
+    .filter(Boolean)
+    .map((part) => Number(part));
+  if (pathParts.some((part) => !Number.isInteger(part) || part < 0)) {
+    return node;
+  }
+  return updateEditorSplitSizeAtPathParts(node, pathParts, Math.round(size));
+}
+
+function updateEditorSplitSizeAtPathParts(
+  node: EditorLayoutNode,
+  pathParts: number[],
+  size: number
+): EditorLayoutNode {
+  if (!pathParts.length) {
+    return node.type === "split" ? { ...node, sizes: [size] } : node;
+  }
+  if (node.type !== "split") {
+    return node;
+  }
+
+  const [index, ...rest] = pathParts;
+  if (index >= node.children.length) {
+    return node;
+  }
+
+  const child = node.children[index];
+  const nextChild = updateEditorSplitSizeAtPathParts(child, rest, size);
+  if (nextChild === child) {
+    return node;
+  }
+
+  return {
+    ...node,
+    children: node.children.map((current, childIndex) =>
+      childIndex === index ? nextChild : current
+    )
+  };
+}
+
+function editorLayoutContainsGroup(node: EditorLayoutNode, groupId: string): boolean {
+  if (node.type === "group") {
+    return node.groupId === groupId;
+  }
+  return node.children.some((child) => editorLayoutContainsGroup(child, groupId));
 }
 
 function createPanelInstance(

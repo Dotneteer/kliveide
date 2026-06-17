@@ -6,11 +6,14 @@ import {
   movePanelInstanceAction,
   patchPanelViewStateAction,
   resetPanelLayoutAction,
+  setActiveEditorGroupAction,
+  setEditorSplitSizeAction,
   setWorkspaceSettingsAction,
   setPanelContributionStateAction,
   setPanelExpandedAction,
   setPanelInstanceStateAction,
-  setPanelSizeAction
+  setPanelSizeAction,
+  splitEditorGroupAction
 } from "../../src/common/state/actions";
 import { idePanelLayoutReducer } from "../../src/common/state/ide-panel-layout-reducer";
 import { createDefaultIdePanelLayoutState } from "../../src/common/state/ide-panel-layout-state";
@@ -40,6 +43,10 @@ describe("idePanelLayoutReducer", () => {
   it("initializes document group panel instances independently", () => {
     const state = createDefaultIdePanelLayoutState();
 
+    expect(state.documentLayout).toMatchObject({
+      root: { type: "group", groupId: "group1" },
+      activeGroupId: "group1"
+    });
     expect(state.documentGroups.group1.instanceIds).toEqual(["memory.group1"]);
     expect(state.documentGroups.group2.instanceIds).toEqual(["memory.group2"]);
     expect(state.instances["memory.group1"]).toMatchObject({
@@ -192,6 +199,138 @@ describe("idePanelLayoutReducer", () => {
     expect(nextState).toBe(state);
   });
 
+  it("sets the active visible editor group", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+
+    state = idePanelLayoutReducer(state, setActiveEditorGroupAction("group1"));
+
+    expect(state.documentLayout.activeGroupId).toBe("group1");
+  });
+
+  it("ignores active editor group changes to non-visible groups", () => {
+    const state = createDefaultIdePanelLayoutState();
+    const nextState = idePanelLayoutReducer(state, setActiveEditorGroupAction("group2"));
+
+    expect(nextState).toBe(state);
+  });
+
+  it("splits the active editor group to the right", () => {
+    const state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "horizontal",
+      children: [
+        { type: "group", groupId: "group1" },
+        { type: "group", groupId: "group5" }
+      ]
+    });
+    expect(state.documentLayout.activeGroupId).toBe("group5");
+    expect(state.documentGroups.group5.instanceIds).toEqual(["memory.group5"]);
+    expect(state.instances["memory.group5"]).toMatchObject({
+      contributionId: "memory",
+      placement: "document",
+      groupId: "group5",
+      order: 0
+    });
+    expect(state.documentGroups.group1.instanceIds).toEqual(["memory.group1"]);
+  });
+
+  it("splits the active editor group downward", () => {
+    const state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("down"));
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "vertical",
+      children: [
+        { type: "group", groupId: "group1" },
+        { type: "group", groupId: "group5" }
+      ]
+    });
+    expect(state.documentLayout.activeGroupId).toBe("group5");
+  });
+
+  it("splits the active editor group to the left", () => {
+    const state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("left"));
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "horizontal",
+      children: [
+        { type: "group", groupId: "group5" },
+        { type: "group", groupId: "group1" }
+      ]
+    });
+    expect(state.documentLayout.activeGroupId).toBe("group5");
+  });
+
+  it("splits the active editor group upward", () => {
+    const state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("up"));
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "vertical",
+      children: [
+        { type: "group", groupId: "group5" },
+        { type: "group", groupId: "group1" }
+      ]
+    });
+    expect(state.documentLayout.activeGroupId).toBe("group5");
+  });
+
+  it("creates nested binary splits when splitting an existing split group", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, splitEditorGroupAction("down"));
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "horizontal",
+      children: [
+        { type: "group", groupId: "group1" },
+        {
+          type: "split",
+          axis: "vertical",
+          children: [
+            { type: "group", groupId: "group5" },
+            { type: "group", groupId: "group6" }
+          ]
+        }
+      ]
+    });
+    expect(state.documentLayout.activeGroupId).toBe("group6");
+  });
+
+  it("stores split sizes at the requested layout tree path", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, splitEditorGroupAction("down"));
+    state = idePanelLayoutReducer(state, setEditorSplitSizeAction("", 510.4));
+    state = idePanelLayoutReducer(state, setEditorSplitSizeAction("1", 260.6));
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      sizes: [510],
+      children: [
+        { type: "group", groupId: "group1" },
+        {
+          type: "split",
+          sizes: [261]
+        }
+      ]
+    });
+  });
+
+  it("does not clone document panels whose contribution is single-instance per group", () => {
+    let state = idePanelLayoutReducer(
+      createDefaultIdePanelLayoutState(),
+      movePanelInstanceAction("z80Cpu", "document", undefined, "group1")
+    );
+
+    state = idePanelLayoutReducer(state, splitEditorGroupAction("right"));
+
+    expect(state.documentGroups.group5.instanceIds).toEqual([]);
+    expect(state.instances["z80Cpu.group5"]).toBeUndefined();
+  });
+
   it("moves a panel instance into the tool area", () => {
     const state = idePanelLayoutReducer(
       createDefaultIdePanelLayoutState(),
@@ -338,6 +477,61 @@ describe("idePanelLayoutReducer", () => {
     );
 
     expect(store.getState().idePanelLayout?.instances.watch.expanded).toBe(false);
+  });
+
+  it("hydrates old persisted panel layout without document layout as a single visible group", () => {
+    const store = createAppStore("test");
+    const persistedLayout = createDefaultIdePanelLayoutState();
+    const { documentLayout: _documentLayout, ...oldPersistedLayout } = persistedLayout;
+
+    store.dispatch(
+      initGlobalSettingsAction({
+        ideViewOptions: {
+          panelLayout: oldPersistedLayout
+        }
+      }),
+      "main"
+    );
+
+    expect(store.getState().idePanelLayout?.documentLayout).toMatchObject({
+      root: { type: "group", groupId: "group1" },
+      activeGroupId: "group1"
+    });
+  });
+
+  it("normalizes persisted document layout references to existing groups", () => {
+    const store = createAppStore("test");
+    const persistedLayout = createDefaultIdePanelLayoutState();
+    persistedLayout.documentLayout = {
+      root: {
+        type: "split",
+        axis: "horizontal",
+        children: [
+          { type: "group", groupId: "missing" },
+          { type: "group", groupId: "group2" }
+        ],
+        sizes: [300, 400]
+      },
+      activeGroupId: "missing",
+      nextGroupOrdinal: 2,
+      maximizedGroupId: "missing"
+    };
+
+    store.dispatch(
+      initGlobalSettingsAction({
+        ideViewOptions: {
+          panelLayout: persistedLayout
+        }
+      }),
+      "main"
+    );
+
+    expect(store.getState().idePanelLayout?.documentLayout).toEqual({
+      root: { type: "group", groupId: "group2" },
+      activeGroupId: "group2",
+      nextGroupOrdinal: 5,
+      maximizedGroupId: undefined
+    });
   });
 
   it("hydrates panel layout from workspace settings over global settings", () => {

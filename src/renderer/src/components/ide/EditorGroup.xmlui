@@ -12,6 +12,7 @@
       gap="0"
       backgroundColor="$backgroundColor-EditorGroup"
       borderRight="1px solid $borderColor-EditorGroup"
+      onClick="state.dispatch({ type: 'SET_ACTIVE_EDITOR_GROUP', payload: { id: groupId } })"
     >
       <HStack
         height="28px"
@@ -23,7 +24,9 @@
       >
         <Text value="{$props.title}" fontSize="12px" fontWeight="600" color="$textColor-EditorSubtle" />
         <SpaceFiller />
+        <Icon name="arrow-small-left" tooltip="Split left" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitLeft')" />
         <Icon name="layout-panel" tooltip="Split right" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitRight')" />
+        <Icon name="arrow-circle-up" tooltip="Split up" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitUp')" />
         <Icon name="layers" tooltip="Split down" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitDown')" />
         <Icon name="combine" tooltip="Close placeholder split" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('closeGroup')" />
       </HStack>
