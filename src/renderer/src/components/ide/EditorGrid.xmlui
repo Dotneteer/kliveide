@@ -62,9 +62,6 @@
     <EditorLayoutNode
       node="{layout.root}"
       path=""
-      activeDocumentName="{$props.activeDocumentName ?? 'main.asm'}"
-      activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
-      activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
     />
   </VStack>
 </Component>

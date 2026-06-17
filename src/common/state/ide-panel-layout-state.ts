@@ -19,7 +19,15 @@ export type EditorLayoutNode =
 export type EditorGroupState = {
   activeInstanceId?: string;
   instanceIds: string[];
+  activeDocument?: EditorDocumentState;
   locked?: boolean;
+};
+
+export type EditorDocumentState = {
+  id: string;
+  name: string;
+  icon?: string;
+  kind?: string;
 };
 
 export type EditorLayoutState = {
@@ -128,7 +136,13 @@ export function createDefaultIdePanelLayoutState(): IdePanelLayoutState {
   const documentGroups: Record<string, EditorGroupState> = {
     group1: {
       activeInstanceId: "memory.group1",
-      instanceIds: ["memory.group1"]
+      instanceIds: ["memory.group1"],
+      activeDocument: {
+        id: "src-main",
+        name: "main.asm",
+        icon: "file-code",
+        kind: "code"
+      }
     },
     group2: {
       activeInstanceId: "memory.group2",
@@ -299,6 +313,9 @@ function normalizeDocumentGroups(
           {
             activeInstanceId,
             instanceIds,
+            ...(isEditorDocumentState(group.activeDocument)
+              ? { activeDocument: group.activeDocument }
+              : {}),
             ...(typeof group.locked === "boolean" ? { locked: group.locked } : {})
           }
         ];
@@ -327,6 +344,16 @@ function getNextGroupOrdinal(documentGroups: Record<string, EditorGroupState>): 
 
 function isRecord(value: unknown): value is Record<string, any> {
   return !!value && typeof value === "object";
+}
+
+function isEditorDocumentState(value: unknown): value is EditorDocumentState {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.name === "string" &&
+    (value.icon === undefined || typeof value.icon === "string") &&
+    (value.kind === undefined || typeof value.kind === "string")
+  );
 }
 
 function panel(

@@ -20,18 +20,12 @@
       <SideBar kind="secondary" />
       <Workbench
         height="100%"
-        activeDocumentName="{$props.activeDocumentName}"
-        activeDocumentIcon="{$props.activeDocumentIcon}"
-        activeDocumentKind="{$props.activeDocumentKind}"
       />
     </PersistedSizeSplitter>
     <Workbench
       when="{!showSecondarySideBar}"
       width="100%"
       height="100%"
-      activeDocumentName="{$props.activeDocumentName}"
-      activeDocumentIcon="{$props.activeDocumentIcon}"
-      activeDocumentKind="{$props.activeDocumentKind}"
     />
   </HStack>
 </Component>

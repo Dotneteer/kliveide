@@ -1,8 +1,5 @@
 <Component
   name="IdeApp"
-  var.activeDocumentName="main.asm"
-  var.activeDocumentIcon="file-code"
-  var.activeDocumentKind="code"
   var.activeDialog=""
   var.dialogParam=""
   var.showToolbar="{state.value.globalSettings.ideViewOptions.showToolbar ?? true}"
@@ -40,11 +37,7 @@
           when="{showPrimarySideBar}"
           kind="primary"
           activity="{state.value.activeActivity ?? 'explorer'}"
-          onOpenDocument="document => {
-            activeDocumentName = document.name;
-            activeDocumentIcon = document.icon;
-            activeDocumentKind = document.kind;
-          }"
+          onOpenDocument="document => state.dispatch({ type: 'OPEN_DOCUMENT_IN_ACTIVE_GROUP', payload: { value: document } })"
           onRequestDialog="request => {
             activeDialog = request.id;
             dialogParam = request.param ?? '';
@@ -54,9 +47,6 @@
           width="100%"
           height="100%"
           sideBarToRight="{sideBarToRight}"
-          activeDocumentName="{activeDocumentName}"
-          activeDocumentIcon="{activeDocumentIcon}"
-          activeDocumentKind="{activeDocumentKind}"
         />
       </HSplitter>
       <HSplitter
@@ -72,19 +62,12 @@
           width="100%"
           height="100%"
           sideBarToRight="{sideBarToRight}"
-          activeDocumentName="{activeDocumentName}"
-          activeDocumentIcon="{activeDocumentIcon}"
-          activeDocumentKind="{activeDocumentKind}"
         />
         <SideBar
           when="{showPrimarySideBar}"
           kind="primary"
           activity="{state.value.activeActivity ?? 'explorer'}"
-          onOpenDocument="document => {
-            activeDocumentName = document.name;
-            activeDocumentIcon = document.icon;
-            activeDocumentKind = document.kind;
-          }"
+          onOpenDocument="document => state.dispatch({ type: 'OPEN_DOCUMENT_IN_ACTIVE_GROUP', payload: { value: document } })"
           onRequestDialog="request => {
             activeDialog = request.id;
             dialogParam = request.param ?? '';

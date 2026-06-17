@@ -1,5 +1,6 @@
 import { emuKeyboardComponentRenderer } from "./EmuKeyboard/EmuKeyboard";
 import { emuMachineCommandsComponentRenderer } from "./EmuMachineCommands/EmuMachineCommands";
+import { editorSplitSizeOnReleaseComponentRenderer } from "./EditorSplitSizeOnRelease/EditorSplitSizeOnRelease";
 import { emulatorPanelComponentRenderer } from "./EmulatorPanel/EmulatorPanel";
 import { helloComponentRenderer } from "./Hello/Hello";
 import { panelDragSourceComponentRenderer } from "./PanelDragDrop/PanelDragSource";
@@ -21,6 +22,7 @@ export default {
   components: [
     emuKeyboardComponentRenderer,
     emuMachineCommandsComponentRenderer,
+    editorSplitSizeOnReleaseComponentRenderer,
     emulatorPanelComponentRenderer,
     helloComponentRenderer,
     panelDragSourceComponentRenderer,

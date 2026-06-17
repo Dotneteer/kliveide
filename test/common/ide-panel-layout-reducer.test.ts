@@ -3,7 +3,11 @@ import {
   closePanelInstanceAction,
   createPanelInstanceAction,
   initGlobalSettingsAction,
+  moveActiveEditorGroupAction,
+  moveActiveEditorToGroupAction,
   movePanelInstanceAction,
+  openDocumentInActiveGroupAction,
+  openDocumentToSideAction,
   patchPanelViewStateAction,
   resetPanelLayoutAction,
   setActiveEditorGroupAction,
@@ -317,6 +321,112 @@ describe("idePanelLayoutReducer", () => {
         }
       ]
     });
+  });
+
+  it("opens documents into the active editor group", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, setActiveEditorGroupAction("group1"));
+    state = idePanelLayoutReducer(
+      state,
+      openDocumentInActiveGroupAction({
+        id: "src-ula",
+        name: "ula.asm",
+        icon: "file-code",
+        kind: "code"
+      })
+    );
+
+    expect(state.documentGroups.group1.activeDocument).toEqual({
+      id: "src-ula",
+      name: "ula.asm",
+      icon: "file-code",
+      kind: "code"
+    });
+    expect(state.documentLayout.activeGroupId).toBe("group1");
+    expect(state.documentGroups.group5.activeDocument?.name).toBe("main.asm");
+  });
+
+  it("opens documents to the side in a new right editor group", () => {
+    const state = idePanelLayoutReducer(
+      createDefaultIdePanelLayoutState(),
+      openDocumentToSideAction({
+        id: "readme",
+        name: "README.md",
+        icon: "note",
+        kind: "markdown"
+      })
+    );
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "horizontal",
+      children: [
+        { type: "group", groupId: "group1" },
+        { type: "group", groupId: "group5" }
+      ]
+    });
+    expect(state.documentLayout.activeGroupId).toBe("group5");
+    expect(state.documentGroups.group5.activeDocument).toEqual({
+      id: "readme",
+      name: "README.md",
+      icon: "note",
+      kind: "markdown"
+    });
+    expect(state.documentGroups.group1.activeDocument?.name).toBe("main.asm");
+  });
+
+  it("moves the active document to the nearest group on the right", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, setActiveEditorGroupAction("group1"));
+    state = idePanelLayoutReducer(state, moveActiveEditorToGroupAction("right"));
+
+    expect(state.documentLayout.activeGroupId).toBe("group5");
+    expect(state.documentGroups.group1.activeDocument).toBeUndefined();
+    expect(state.documentGroups.group5.activeDocument).toEqual({
+      id: "src-main",
+      name: "main.asm",
+      icon: "file-code",
+      kind: "code"
+    });
+  });
+
+  it("does not move the active document when there is no group in that direction", () => {
+    const state = createDefaultIdePanelLayoutState();
+    const nextState = idePanelLayoutReducer(state, moveActiveEditorToGroupAction("left"));
+
+    expect(nextState).toBe(state);
+  });
+
+  it("moves the active editor group to the right by swapping with the nearest group", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("right"));
+    state = idePanelLayoutReducer(state, setActiveEditorGroupAction("group1"));
+    state = idePanelLayoutReducer(state, moveActiveEditorGroupAction("right"));
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "horizontal",
+      children: [
+        { type: "group", groupId: "group5" },
+        { type: "group", groupId: "group1" }
+      ]
+    });
+    expect(state.documentLayout.activeGroupId).toBe("group1");
+  });
+
+  it("moves the active editor group upward by swapping with the nearest group", () => {
+    let state = idePanelLayoutReducer(createDefaultIdePanelLayoutState(), splitEditorGroupAction("down"));
+    state = idePanelLayoutReducer(state, setActiveEditorGroupAction("group5"));
+    state = idePanelLayoutReducer(state, moveActiveEditorGroupAction("up"));
+
+    expect(state.documentLayout.root).toMatchObject({
+      type: "split",
+      axis: "vertical",
+      children: [
+        { type: "group", groupId: "group5" },
+        { type: "group", groupId: "group1" }
+      ]
+    });
+    expect(state.documentLayout.activeGroupId).toBe("group5");
   });
 
   it("does not clone document panels whose contribution is single-instance per group", () => {

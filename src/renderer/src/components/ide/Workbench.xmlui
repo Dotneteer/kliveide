@@ -11,9 +11,6 @@
       when="{!showTools}"
       width="100%"
       height="100%"
-      activeDocumentName="{$props.activeDocumentName}"
-      activeDocumentIcon="{$props.activeDocumentIcon}"
-      activeDocumentKind="{$props.activeDocumentKind}"
     />
     <ToolsArea when="{showTools && maximizeTools}" width="100%" height="100%" />
     <PersistedSizeSplitter
@@ -31,9 +28,6 @@
       <EditorGrid
         width="100%"
         height="100%"
-        activeDocumentName="{$props.activeDocumentName}"
-        activeDocumentIcon="{$props.activeDocumentIcon}"
-        activeDocumentKind="{$props.activeDocumentKind}"
       />
     </PersistedSizeSplitter>
   </VStack>

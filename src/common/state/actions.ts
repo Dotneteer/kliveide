@@ -226,6 +226,26 @@ export const setActiveEditorGroupAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
+export const openDocumentInActiveGroupAction: ActionCreator = (value: {
+  id: string;
+  name: string;
+  icon?: string;
+  kind?: string;
+}) => ({
+  type: "OPEN_DOCUMENT_IN_ACTIVE_GROUP",
+  payload: { value }
+});
+
+export const openDocumentToSideAction: ActionCreator = (value: {
+  id: string;
+  name: string;
+  icon?: string;
+  kind?: string;
+}) => ({
+  type: "OPEN_DOCUMENT_TO_SIDE",
+  payload: { value }
+});
+
 export const splitEditorGroupAction: ActionCreator = (
   direction: "left" | "right" | "up" | "down"
 ) => ({
@@ -236,6 +256,20 @@ export const splitEditorGroupAction: ActionCreator = (
 export const setEditorSplitSizeAction: ActionCreator = (path: string, size: number) => ({
   type: "SET_EDITOR_SPLIT_SIZE",
   payload: { value: { path, size } }
+});
+
+export const moveActiveEditorToGroupAction: ActionCreator = (
+  direction: "left" | "right" | "up" | "down"
+) => ({
+  type: "MOVE_ACTIVE_EDITOR_TO_GROUP",
+  payload: { text: direction }
+});
+
+export const moveActiveEditorGroupAction: ActionCreator = (
+  direction: "left" | "right" | "up" | "down"
+) => ({
+  type: "MOVE_ACTIVE_EDITOR_GROUP",
+  payload: { text: direction }
 });
 
 export const resetPanelLayoutAction: ActionCreator = () => ({
