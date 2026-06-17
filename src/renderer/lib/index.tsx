@@ -5,6 +5,7 @@ import { helloComponentRenderer } from "./Hello/Hello";
 import { panelDragSourceComponentRenderer } from "./PanelDragDrop/PanelDragSource";
 import { panelDropTargetComponentRenderer } from "./PanelDragDrop/PanelDropTarget";
 import { panelRuntimeComponentRenderer } from "./PanelRuntime/PanelRuntime";
+import { persistedSizeSplitterComponentRenderer } from "./PersistedSizeSplitter/PersistedSizeSplitter";
 import { persistedSettingOnReleaseComponentRenderer } from "./PersistedSettingOnRelease/PersistedSettingOnRelease";
 import { sharedAppStateComponentRenderer } from "./SharedAppState/SharedAppState";
 import { sideBarPanelItemComponentRenderer } from "./SideBarPanels/SideBarPanelItem";
@@ -25,6 +26,7 @@ export default {
     panelDragSourceComponentRenderer,
     panelDropTargetComponentRenderer,
     panelRuntimeComponentRenderer,
+    persistedSizeSplitterComponentRenderer,
     persistedSettingOnReleaseComponentRenderer,
     sharedAppStateComponentRenderer,
     sideBarPanelItemComponentRenderer,

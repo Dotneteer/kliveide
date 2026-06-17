@@ -8,6 +8,7 @@
   var.showToolbar="{state.value.globalSettings.ideViewOptions.showToolbar ?? true}"
   var.showStatusBar="{state.value.globalSettings.ideViewOptions.showStatusBar ?? true}"
   var.showPrimarySideBar="{state.value.globalSettings.ideViewOptions.showPrimarySideBar ?? state.value.globalSettings.ideViewOptions.showSidebar ?? true}"
+  var.sideBarToRight="{state.value.globalSettings.ideViewOptions.sideBarToRight ?? false}"
   var.initialPrimarySideBarWidth="{(state.value.globalSettings.ideViewOptions.primarySideBarWidth ?? state.value.globalSettings.ideViewOptions.sideBarWidth ?? '260px') + ''}"
   var.livePrimarySideBarWidth="{initialPrimarySideBarWidth}"
 >
@@ -18,7 +19,7 @@
       value="{livePrimarySideBarWidth}"
     />
     <Toolbar when="{showToolbar}" />
-    <HStack height="*" gap="0" overflowX="hidden" overflowY="hidden">
+    <HStack height="*" gap="0" overflowX="hidden" overflowY="hidden" reverse="{sideBarToRight}">
       <ActivityBar
         onRequestDialog="request => {
           activeDialog = request.id;
@@ -26,6 +27,7 @@
         }"
       />
       <HSplitter
+        when="{!sideBarToRight}"
         width="*"
         height="100%"
         initialPrimarySize="{initialPrimarySideBarWidth.indexOf('px') >= 0 || initialPrimarySideBarWidth.indexOf('%') >= 0 ? initialPrimarySideBarWidth : initialPrimarySideBarWidth + 'px'}"
@@ -51,9 +53,42 @@
         <MainWorkbench
           width="100%"
           height="100%"
+          sideBarToRight="{sideBarToRight}"
           activeDocumentName="{activeDocumentName}"
           activeDocumentIcon="{activeDocumentIcon}"
           activeDocumentKind="{activeDocumentKind}"
+        />
+      </HSplitter>
+      <HSplitter
+        when="{sideBarToRight}"
+        width="*"
+        height="100%"
+        initialPrimarySize="{'-' + (initialPrimarySideBarWidth.indexOf('px') >= 0 || initialPrimarySideBarWidth.indexOf('%') >= 0 ? initialPrimarySideBarWidth : initialPrimarySideBarWidth + 'px')}"
+        minPrimarySize="420px"
+        maxPrimarySize="-160px"
+        floating
+      >
+        <MainWorkbench
+          width="100%"
+          height="100%"
+          sideBarToRight="{sideBarToRight}"
+          activeDocumentName="{activeDocumentName}"
+          activeDocumentIcon="{activeDocumentIcon}"
+          activeDocumentKind="{activeDocumentKind}"
+        />
+        <SideBar
+          when="{showPrimarySideBar}"
+          kind="primary"
+          activity="{state.value.activeActivity ?? 'explorer'}"
+          onOpenDocument="document => {
+            activeDocumentName = document.name;
+            activeDocumentIcon = document.icon;
+            activeDocumentKind = document.kind;
+          }"
+          onRequestDialog="request => {
+            activeDialog = request.id;
+            dialogParam = request.param ?? '';
+          }"
         />
       </HSplitter>
     </HStack>

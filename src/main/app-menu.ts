@@ -39,6 +39,7 @@ import {
   SETTING_IDE_SHOW_STATUS_BAR,
   SETTING_IDE_SHOW_TOOLBAR,
   SETTING_IDE_SHOW_TOOLS,
+  SETTING_IDE_SIDEBAR_TO_RIGHT,
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLS_ON_TOP
 } from "../common/settings/setting-const";
@@ -421,6 +422,7 @@ function createViewMenu(context: MenuContext): MenuItemConstructorOptions {
 
 function createIdeAppearanceMenu(context: MenuContext): MenuItemConstructorOptions {
   const toolsVisible = !!getSettingValue(SETTING_IDE_SHOW_TOOLS);
+  const sideBarToRight = !!getSettingValue(SETTING_IDE_SIDEBAR_TO_RIGHT);
 
   return {
     id: "view_appearance",
@@ -431,6 +433,13 @@ function createIdeAppearanceMenu(context: MenuContext): MenuItemConstructorOptio
         id: "toggle_primary_side_bar",
         label: "Primary Side Bar"
       }),
+      {
+        id: sideBarToRight ? "move_primary_side_bar_left" : "move_primary_side_bar_right",
+        label: sideBarToRight ? "Move Primary Side Bar Left" : "Move Primary Side Bar Right",
+        click: () => {
+          setSettingValue(SETTING_IDE_SIDEBAR_TO_RIGHT, !sideBarToRight);
+        }
+      },
       createBooleanSettingsMenu(SETTING_IDE_SHOW_SECONDARY_SIDEBAR, context, {
         id: "toggle_secondary_side_bar",
         label: "Secondary Side Bar"

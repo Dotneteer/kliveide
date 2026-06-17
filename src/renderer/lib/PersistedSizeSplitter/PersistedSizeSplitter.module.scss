@@ -1,0 +1,89 @@
+@use "xmlui/themes.scss" as t;
+
+$themeVars: ();
+@function createThemeVar($componentVariable) {
+  $themeVars: t.appendThemeVar($themeVars, $componentVariable) !global;
+  @return t.getThemeVar($themeVars, $componentVariable);
+}
+
+$component: "PersistedSizeSplitter";
+$backgroundColor-resizer-PersistedSizeSplitter: createThemeVar("backgroundColor-resizer-#{$component}");
+$backgroundColor-resizer-PersistedSizeSplitter--active: createThemeVar("backgroundColor-resizer-#{$component}--active");
+$cursor-horizontal-resizer-PersistedSizeSplitter: createThemeVar("cursor-horizontal-resizer-#{$component}");
+$cursor-vertical-resizer-PersistedSizeSplitter: createThemeVar("cursor-vertical-resizer-#{$component}");
+$thickness-resizer-PersistedSizeSplitter: createThemeVar("thickness-resizer-#{$component}");
+
+.root {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.horizontal {
+  flex-direction: row;
+}
+
+.vertical {
+  flex-direction: column;
+}
+
+.pane {
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.horizontal .pane {
+  height: 100%;
+}
+
+.vertical .pane {
+  width: 100%;
+}
+
+.sizedPane {
+  flex: 0 0 var(--klive-persisted-splitter-size);
+}
+
+.horizontal .sizedPane {
+  width: var(--klive-persisted-splitter-size);
+}
+
+.vertical .sizedPane {
+  height: var(--klive-persisted-splitter-size);
+}
+
+.mainPane {
+  flex: 1 1 auto;
+}
+
+.resizer {
+  background-color: $backgroundColor-resizer-PersistedSizeSplitter;
+  flex: 0 0 $thickness-resizer-PersistedSizeSplitter;
+  touch-action: none;
+  user-select: none;
+}
+
+.horizontal .resizer {
+  cursor: $cursor-horizontal-resizer-PersistedSizeSplitter;
+  height: 100%;
+  width: $thickness-resizer-PersistedSizeSplitter;
+}
+
+.vertical .resizer {
+  cursor: $cursor-vertical-resizer-PersistedSizeSplitter;
+  height: $thickness-resizer-PersistedSizeSplitter;
+  width: 100%;
+}
+
+.resizerActive {
+  background-color: $backgroundColor-resizer-PersistedSizeSplitter--active;
+}
+
+:export {
+  themeVars: t.json-stringify($themeVars);
+}

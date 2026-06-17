@@ -4,13 +4,8 @@
   var.toolsOnTop="{state.value.globalSettings.ideViewOptions.toolPanelsOnTop ?? false}"
   var.maximizeTools="{state.value.globalSettings.ideViewOptions.maximizeTools ?? false}"
   var.initialToolPanelHeight="{(state.value.globalSettings.ideViewOptions.toolPanelHeight ?? '190px') + ''}"
-  var.liveToolPanelHeight="{initialToolPanelHeight}"
 >
   <SharedAppState id="state" />
-  <PersistedSettingOnRelease
-    settingId="ideViewOptions.toolPanelHeight"
-    value="{liveToolPanelHeight}"
-  />
   <VStack width="100%" height="100%" gap="0" overflowX="hidden" overflowY="hidden">
     <EditorGrid
       when="{!showTools}"
@@ -21,15 +16,16 @@
       activeDocumentKind="{$props.activeDocumentKind}"
     />
     <ToolsArea when="{showTools && maximizeTools}" width="100%" height="100%" />
-    <VSplitter
-      when="{showTools && toolsOnTop && !maximizeTools}"
+    <PersistedSizeSplitter
+      when="{showTools && !maximizeTools}"
       width="100%"
       height="100%"
-      initialPrimarySize="{initialToolPanelHeight.indexOf('px') >= 0 || initialToolPanelHeight.indexOf('%') >= 0 ? initialToolPanelHeight : initialToolPanelHeight + 'px'}"
-      minPrimarySize="120px"
-      maxPrimarySize="-240px"
-      onResize="primarySize => liveToolPanelHeight = primarySize + 'px'"
-      floating
+      settingId="ideViewOptions.toolPanelHeight"
+      initialSize="{initialToolPanelHeight.indexOf('px') >= 0 || initialToolPanelHeight.indexOf('%') >= 0 ? initialToolPanelHeight : initialToolPanelHeight + 'px'}"
+      axis="vertical"
+      sizedPanePosition="{toolsOnTop ? 'start' : 'end'}"
+      minSizedPaneSize="{120}"
+      minMainPaneSize="{240}"
     >
       <ToolsArea width="100%" height="100%" />
       <EditorGrid
@@ -39,25 +35,6 @@
         activeDocumentIcon="{$props.activeDocumentIcon}"
         activeDocumentKind="{$props.activeDocumentKind}"
       />
-    </VSplitter>
-    <VSplitter
-      when="{showTools && !toolsOnTop && !maximizeTools}"
-      width="100%"
-      height="100%"
-      initialPrimarySize="{'-' + (initialToolPanelHeight.indexOf('px') >= 0 || initialToolPanelHeight.indexOf('%') >= 0 ? initialToolPanelHeight : initialToolPanelHeight + 'px')}"
-      minPrimarySize="240px"
-      maxPrimarySize="-120px"
-      onResize="primarySize => liveToolPanelHeight = primarySize + 'px'"
-      floating
-    >
-      <EditorGrid
-        width="100%"
-        height="100%"
-        activeDocumentName="{$props.activeDocumentName}"
-        activeDocumentIcon="{$props.activeDocumentIcon}"
-        activeDocumentKind="{$props.activeDocumentKind}"
-      />
-      <ToolsArea width="100%" height="100%" />
-    </VSplitter>
+    </PersistedSizeSplitter>
   </VStack>
 </Component>
