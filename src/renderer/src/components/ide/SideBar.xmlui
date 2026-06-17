@@ -7,7 +7,9 @@
   <SharedAppState id="state" />
   <VStack
     backgroundColor="$backgroundColor-SideBar"
+    width="100%"
     overflowX="hidden"
+    overflowY="hidden"
     height="100%"
     gap="0"
   >
@@ -25,7 +27,7 @@
         color="$textColor-SideBarHeader"
       />
     </HStack>
-    <VStack height="*" gap="0">
+    <VStack height="*" gap="0" overflowX="hidden" overflowY="hidden">
       <PanelStackHost
         placement="{isSecondary ? 'secondarySideBar' : 'primarySideBar'}"
         activity="{activity}"

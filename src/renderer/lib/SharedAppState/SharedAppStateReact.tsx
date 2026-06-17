@@ -5,6 +5,7 @@ import {
   getSharedState,
   useReadAllSettingValues,
   useDispatch,
+  useDispatchActivateActivity,
   useDispatchSelectActivity,
   useDispatchSetGlobalSetting,
   useDispatchSetTheme,
@@ -27,6 +28,7 @@ type SharedAppStateApi = {
   dispatchSetTheme: (themeId: string) => AppState;
   dispatchSetGlobalSetting: (key: string, value: unknown) => AppState;
   dispatchSelectActivity: (activityId: string) => AppState;
+  activateActivity: (activityId: string) => AppState;
   globalSettings: (key: string, defaultValue?: unknown) => unknown;
   getSettingValue: (key: string) => Promise<unknown>;
   getAllSettingValues: () => Promise<Record<string, unknown>>;
@@ -93,6 +95,7 @@ export const SharedAppStateReact = ({
   const dispatchSetTheme = useDispatchSetTheme();
   const dispatchSetGlobalSetting = useDispatchSetGlobalSetting();
   const dispatchSelectActivity = useDispatchSelectActivity();
+  const dispatchActivateActivity = useDispatchActivateActivity();
   const readAllSettingValues = useReadAllSettingValues();
   const readSettingValue = useReadSettingValue();
   const updateSettingValue = useUpdateSettingValue();
@@ -179,6 +182,10 @@ export const SharedAppStateReact = ({
         const nextValue = dispatchSelectActivity(activityId);
         return setCurrentValue(nextValue);
       },
+      activateActivity(activityId: string) {
+        const nextValue = dispatchActivateActivity(activityId);
+        return setCurrentValue(nextValue);
+      },
       globalSettings(key: string, defaultValue?: unknown) {
         return readGlobalSetting(valueRef.current, key, defaultValue);
       },
@@ -204,6 +211,7 @@ export const SharedAppStateReact = ({
     }),
     [
       dispatch,
+      dispatchActivateActivity,
       dispatchSelectActivity,
       dispatchSetGlobalSetting,
       dispatchSetTheme,

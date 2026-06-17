@@ -1,10 +1,10 @@
 <Component
   name="IdeStatusBar"
-  var.showPrimarySideBar="{state.globalSettings('ideViewOptions.showPrimarySideBar', state.globalSettings('ideViewOptions.showSidebar', true))}"
-  var.showSecondarySideBar="{state.globalSettings('ideViewOptions.showSecondarySideBar', true)}"
-  var.showTools="{state.globalSettings('ideViewOptions.showTools', true)}"
-  var.toolsOnTop="{state.globalSettings('ideViewOptions.toolPanelsOnTop', false)}"
-  var.maximizeTools="{state.globalSettings('ideViewOptions.maximizeTools', false)}"
+  var.showPrimarySideBar="{state.value.globalSettings.ideViewOptions.showPrimarySideBar ?? state.value.globalSettings.ideViewOptions.showSidebar ?? true}"
+  var.showSecondarySideBar="{state.value.globalSettings.ideViewOptions.showSecondarySideBar ?? true}"
+  var.showTools="{state.value.globalSettings.ideViewOptions.showTools ?? true}"
+  var.toolsOnTop="{state.value.globalSettings.ideViewOptions.toolPanelsOnTop ?? false}"
+  var.maximizeTools="{state.value.globalSettings.ideViewOptions.maximizeTools ?? false}"
 >
   <SharedAppState id="state" />
   <HStack

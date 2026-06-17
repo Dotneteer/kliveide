@@ -5,20 +5,20 @@
   var.activeDocumentKind="code"
   var.activeDialog=""
   var.dialogParam=""
-  var.showToolbar="{state.globalSettings('ideViewOptions.showToolbar', true)}"
-  var.showStatusBar="{state.globalSettings('ideViewOptions.showStatusBar', true)}"
-  var.showPrimarySideBar="{state.globalSettings('ideViewOptions.showPrimarySideBar', state.globalSettings('ideViewOptions.showSidebar', true))}"
-  var.initialPrimarySideBarWidth="{(state.globalSettings('ideViewOptions.primarySideBarWidth', state.globalSettings('ideViewOptions.sideBarWidth', '260px')) ?? '260px') + ''}"
+  var.showToolbar="{state.value.globalSettings.ideViewOptions.showToolbar ?? true}"
+  var.showStatusBar="{state.value.globalSettings.ideViewOptions.showStatusBar ?? true}"
+  var.showPrimarySideBar="{state.value.globalSettings.ideViewOptions.showPrimarySideBar ?? state.value.globalSettings.ideViewOptions.showSidebar ?? true}"
+  var.initialPrimarySideBarWidth="{(state.value.globalSettings.ideViewOptions.primarySideBarWidth ?? state.value.globalSettings.ideViewOptions.sideBarWidth ?? '260px') + ''}"
   var.livePrimarySideBarWidth="{initialPrimarySideBarWidth}"
 >
   <SharedAppState id="state" />
-  <VStack height="100%" gap="0">
+  <VStack height="100%" gap="0" overflowX="hidden" overflowY="hidden">
     <PersistedSettingOnRelease
       settingId="ideViewOptions.primarySideBarWidth"
       value="{livePrimarySideBarWidth}"
     />
     <Toolbar when="{showToolbar}" />
-    <HStack height="*" gap="0">
+    <HStack height="*" gap="0" overflowX="hidden" overflowY="hidden">
       <ActivityBar
         onRequestDialog="request => {
           activeDialog = request.id;
@@ -26,8 +26,8 @@
         }"
       />
       <HSplitter
-        when="{showPrimarySideBar}"
         width="*"
+        height="100%"
         initialPrimarySize="{initialPrimarySideBarWidth.indexOf('px') >= 0 || initialPrimarySideBarWidth.indexOf('%') >= 0 ? initialPrimarySideBarWidth : initialPrimarySideBarWidth + 'px'}"
         minPrimarySize="160px"
         maxPrimarySize="-420px"
@@ -35,6 +35,7 @@
         floating
       >
         <SideBar
+          when="{showPrimarySideBar}"
           kind="primary"
           activity="{state.value.activeActivity ?? 'explorer'}"
           onOpenDocument="document => {
@@ -48,17 +49,13 @@
           }"
         />
         <MainWorkbench
+          width="100%"
+          height="100%"
           activeDocumentName="{activeDocumentName}"
           activeDocumentIcon="{activeDocumentIcon}"
           activeDocumentKind="{activeDocumentKind}"
         />
       </HSplitter>
-      <MainWorkbench
-        when="{!showPrimarySideBar}"
-        activeDocumentName="{activeDocumentName}"
-        activeDocumentIcon="{activeDocumentIcon}"
-        activeDocumentKind="{activeDocumentKind}"
-      />
     </HStack>
     <IdeStatusBar when="{showStatusBar}" />
     <IdeModalHost

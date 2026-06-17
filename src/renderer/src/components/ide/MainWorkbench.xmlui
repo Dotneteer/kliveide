@@ -1,7 +1,7 @@
 <Component
   name="MainWorkbench"
-  var.showSecondarySideBar="{state.globalSettings('ideViewOptions.showSecondarySideBar', true)}"
-  var.initialSecondarySideBarWidth="{(state.globalSettings('ideViewOptions.secondarySideBarWidth', '240px') ?? '240px') + ''}"
+  var.showSecondarySideBar="{state.value.globalSettings.ideViewOptions.showSecondarySideBar ?? true}"
+  var.initialSecondarySideBarWidth="{(state.value.globalSettings.ideViewOptions.secondarySideBarWidth ?? '240px') + ''}"
   var.liveSecondarySideBarWidth="{initialSecondarySideBarWidth}"
 >
   <SharedAppState id="state" />
@@ -9,10 +9,11 @@
     settingId="ideViewOptions.secondarySideBarWidth"
     value="{liveSecondarySideBarWidth}"
   />
-  <HStack height="100%" width="100%" gap="0">
+  <HStack height="100%" width="100%" gap="0" overflowX="hidden" overflowY="hidden">
     <HSplitter
       when="{showSecondarySideBar}"
       width="*"
+      height="100%"
       initialPrimarySize="{'-' + (initialSecondarySideBarWidth.indexOf('px') >= 0 || initialSecondarySideBarWidth.indexOf('%') >= 0 ? initialSecondarySideBarWidth : initialSecondarySideBarWidth + 'px')}"
       minPrimarySize="360px"
       maxPrimarySize="-160px"

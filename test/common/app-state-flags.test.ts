@@ -16,4 +16,13 @@ describe("app state flags", () => {
     expect(selectedState.activeActivity).toBe("debug");
     expect(initialState.activeActivity).toBe("explorer");
   });
+
+  it("keeps the same state object when selecting the current activity", () => {
+    const store = createAppStore("test");
+    const initialState = store.getState();
+
+    store.dispatch(selectActivityAction("explorer"));
+
+    expect(store.getState()).toBe(initialState);
+  });
 });

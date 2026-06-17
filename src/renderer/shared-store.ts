@@ -68,6 +68,29 @@ export function dispatchSelectActivity(id: string): AppState {
   return dispatchSharedAction(selectActivityAction(id), windowKind);
 }
 
+function isPrimarySideBarVisible(state: AppState): boolean {
+  const ideViewOptions = state.globalSettings?.ideViewOptions ?? {};
+  return ideViewOptions.showPrimarySideBar ?? ideViewOptions.showSidebar ?? true;
+}
+
+export function dispatchActivateActivity(id: string): AppState {
+  const currentState = getSharedState();
+  const currentActivity = currentState.activeActivity ?? "explorer";
+  const primarySideBarVisible = isPrimarySideBarVisible(currentState);
+
+  if (currentActivity === id && primarySideBarVisible) {
+    return dispatchSetGlobalSetting("ideViewOptions.showPrimarySideBar", false);
+  }
+
+  if (currentActivity !== id) {
+    dispatchSelectActivity(id);
+  }
+
+  return isPrimarySideBarVisible(getSharedState())
+    ? getSharedState()
+    : dispatchSetGlobalSetting("ideViewOptions.showPrimarySideBar", true);
+}
+
 export async function readSettingValue(id: string): Promise<unknown> {
   return getMainApi().getSettingValue(id);
 }
@@ -113,6 +136,10 @@ export function useDispatchSetGlobalSetting() {
 
 export function useDispatchSelectActivity() {
   return useCallback((id: string) => dispatchSelectActivity(id), []);
+}
+
+export function useDispatchActivateActivity() {
+  return useCallback((id: string) => dispatchActivateActivity(id), []);
 }
 
 export function useReadSettingValue() {

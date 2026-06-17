@@ -34,11 +34,11 @@ import {
   SETTING_IDE_CLOSE_EMU,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
-  SETTING_IDE_SHOW_SIDEBAR,
+  SETTING_IDE_SHOW_PRIMARY_SIDEBAR,
+  SETTING_IDE_SHOW_SECONDARY_SIDEBAR,
   SETTING_IDE_SHOW_STATUS_BAR,
   SETTING_IDE_SHOW_TOOLBAR,
   SETTING_IDE_SHOW_TOOLS,
-  SETTING_IDE_SIDEBAR_TO_RIGHT,
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLS_ON_TOP
 } from "../common/settings/setting-const";
@@ -344,21 +344,11 @@ function createViewMenu(context: MenuContext): MenuItemConstructorOptions {
       createBooleanSettingsMenu(SETTING_EMU_SHOW_TOOLBAR, context),
       createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLBAR, context),
       createBooleanSettingsMenu(SETTING_EMU_SHOW_STATUS_BAR, context),
-      createBooleanSettingsMenu(SETTING_IDE_SHOW_STATUS_BAR, context),
+      createIdeAppearanceMenu(context),
       { type: "separator" },
       createBooleanSettingsMenu(SETTING_EMU_SHOW_KEYBOARD, context),
       createBooleanSettingsMenu(SETTING_EMU_SHOW_INSTANT_SCREEN, context),
       createBooleanSettingsMenu(SETTING_EMU_STAY_ON_TOP, context),
-      createBooleanSettingsMenu(SETTING_IDE_SHOW_SIDEBAR, context),
-      createBooleanSettingsMenu(SETTING_IDE_SIDEBAR_TO_RIGHT, context),
-      { type: "separator" },
-      createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLS, context),
-      createBooleanSettingsMenu(SETTING_IDE_TOOLS_ON_TOP, context, {
-        enabledFn: () => !!getSettingValue(SETTING_IDE_SHOW_TOOLS)
-      }),
-      createBooleanSettingsMenu(SETTING_IDE_MAXIMIZE_TOOLS, context, {
-        enabledFn: () => !!getSettingValue(SETTING_IDE_SHOW_TOOLS)
-      }),
       { type: "separator" },
       createBooleanSettingsMenu(SETTING_IDE_SYNC_BREAKPOINTS, context),
       { type: "separator" },
@@ -426,6 +416,45 @@ function createViewMenu(context: MenuContext): MenuItemConstructorOptions {
         ]
       }
     ])
+  };
+}
+
+function createIdeAppearanceMenu(context: MenuContext): MenuItemConstructorOptions {
+  const toolsVisible = !!getSettingValue(SETTING_IDE_SHOW_TOOLS);
+
+  return {
+    id: "view_appearance",
+    label: "Appearance",
+    visible: context === "ide",
+    submenu: [
+      createBooleanSettingsMenu(SETTING_IDE_SHOW_PRIMARY_SIDEBAR, context, {
+        id: "toggle_primary_side_bar",
+        label: "Primary Side Bar"
+      }),
+      createBooleanSettingsMenu(SETTING_IDE_SHOW_SECONDARY_SIDEBAR, context, {
+        id: "toggle_secondary_side_bar",
+        label: "Secondary Side Bar"
+      }),
+      createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLS, context, {
+        id: "toggle_panel",
+        label: "Panel"
+      }),
+      createBooleanSettingsMenu(SETTING_IDE_SHOW_STATUS_BAR, context, {
+        id: "toggle_status_bar",
+        label: "Status Bar"
+      }),
+      { type: "separator" },
+      createBooleanSettingsMenu(SETTING_IDE_TOOLS_ON_TOP, context, {
+        id: "move_panel_to_top",
+        label: "Move Panel to Top",
+        enabledFn: () => toolsVisible
+      }),
+      createBooleanSettingsMenu(SETTING_IDE_MAXIMIZE_TOOLS, context, {
+        id: "maximize_panel",
+        label: "Maximize Panel",
+        enabledFn: () => toolsVisible
+      })
+    ]
   };
 }
 
@@ -1010,7 +1039,7 @@ function createHelpMenu(context: MenuContext): MenuItemConstructorOptions {
 function createBooleanSettingsMenu(
   settingsId: string,
   context: MenuContext,
-  options?: { enabledFn?: () => boolean; visibleFn?: () => boolean }
+  options?: { enabledFn?: () => boolean; id?: string; label?: string; visibleFn?: () => boolean }
 ): MenuItemConstructorOptions {
   const definition = getSettingDefinition(settingsId);
   if (!definition) {
@@ -1026,8 +1055,8 @@ function createBooleanSettingsMenu(
         : true;
 
   return {
-    id: `Setting_${settingsId}`,
-    label: definition.title,
+    id: options?.id ?? `Setting_${settingsId}`,
+    label: options?.label ?? definition.title,
     type: "checkbox",
     enabled: options?.enabledFn?.() ?? true,
     visible,

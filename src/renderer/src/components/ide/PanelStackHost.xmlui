@@ -7,6 +7,7 @@
     minPanelSize="{120}"
     placement="{$props.placement}"
     activity="{$props.activity}"
+    width="100%"
     height="100%"
   >
     <SideBarPanelItem

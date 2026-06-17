@@ -1,6 +1,8 @@
 <App
   layout="desktop"
   name="Klive IDE"
+  scrollWholePage="{false}"
+  noScrollbarGutters="{true}"
   var.currentTheme="dark"
   defaultTone="{currentTheme}"
 >

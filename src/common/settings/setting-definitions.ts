@@ -212,8 +212,8 @@ const settingDefinitions: Setting[] = [
   },
   {
     id: SETTING_IDE_SHOW_PRIMARY_SIDEBAR,
-    title: "Show the Primary Sidebar",
-    description: "Show or hide the primary sidebar in the IDE view.",
+    title: "Primary Side Bar",
+    description: "Show or hide the primary side bar in the IDE view.",
     type: "boolean",
     defaultValue: true,
     persist: true,
@@ -222,8 +222,8 @@ const settingDefinitions: Setting[] = [
   },
   {
     id: SETTING_IDE_SHOW_SECONDARY_SIDEBAR,
-    title: "Show the Secondary Sidebar",
-    description: "Show or hide the secondary sidebar in the IDE view.",
+    title: "Secondary Side Bar",
+    description: "Show or hide the secondary side bar in the IDE view.",
     type: "boolean",
     defaultValue: true,
     persist: true,

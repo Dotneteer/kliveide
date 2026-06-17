@@ -10,7 +10,7 @@
     gap="0"
     verticalAlignment="stretch"
     backgroundColor="{isActive ? '$backgroundColor-ActivityBar--active' : '$backgroundColor-ActivityBar'}"
-    onClick="selectsActivity ? state.dispatchSelectActivity($props.activityId) : emitEvent('select', $props.activityId)"
+    onClick="selectsActivity ? state.activateActivity($props.activityId) : emitEvent('select', $props.activityId)"
   >
     <Stack
       width="4px"
