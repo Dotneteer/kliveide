@@ -1,160 +1,149 @@
-import { useMemo, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  copyPanelInstanceToDocumentGroupAction,
-  movePanelInstanceAction,
-  movePanelInstanceToEditorEdgeAction,
-  setActiveDocumentPanelInstanceAction
+  closeActiveEditorGroupAction,
+  joinSplitInGroupAction,
+  setActiveEditorGroupAction,
+  setEditorGroupLockedAction,
+  splitEditorGroupAction,
+  toggleMaximizeEditorGroupAction,
+  toggleSplitInGroupAction,
+  toggleSplitInGroupLayoutAction
 } from "../../../common/state/actions";
-import { getIdePanelContribution } from "../../../common/state/ide-panel-contributions";
-import type { PanelInstance } from "../../../common/state/ide-panel-layout-state";
+import type { Action } from "../../../common/state/Action";
 import { dispatchSharedAction, useSharedState } from "../../shared-store";
-import {
-  clearPanelDragPayload,
-  hasPanelDragPayload,
-  readPanelDragPayload,
-  writePanelDragPayload
-} from "../PanelDragDrop/panelDragDrop";
 import styles from "./EditorPanelTabStrip.module.scss";
 
 type Props = {
   groupId: string;
+  menuRequest?: {
+    x?: number;
+    y?: number;
+    stamp?: number;
+  };
 };
 
-type DropPreview =
-  | { kind: "tab"; index: number; x: number }
-  | { kind: "edge"; direction: "left" | "right" | "up" | "down" };
-
-export function EditorPanelTabStripReact({ groupId }: Props) {
+export function EditorPanelTabStripReact({ groupId, menuRequest }: Props) {
   const state = useSharedState();
-  const [draggingInstanceId, setDraggingInstanceId] = useState<string | null>(null);
-  const [dropPreview, setDropPreview] = useState<DropPreview | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const layout = state.idePanelLayout;
   const group = layout?.documentGroups[groupId];
   const activeInstanceId = group?.activeInstanceId;
-  const tabs = useMemo(() => {
-    if (!layout || !group) {
-      return [];
-    }
-    return group.instanceIds
-      .map((instanceId) => layout.instances[instanceId])
-      .filter((instance): instance is PanelInstance => !!instance && instance.placement === "document");
-  }, [group, layout]);
+  const activeDocumentId = group?.activeDocument?.id ?? activeInstanceId;
+  const splitState =
+    activeDocumentId && group?.splitInGroupByDocument
+      ? group.splitInGroupByDocument[activeDocumentId]
+      : undefined;
+  const isLocked = group?.locked ?? false;
+  const isMaximized = layout?.documentLayout.maximizedGroupId === groupId;
 
-  if (!group || tabs.length === 0) {
+  useEffect(() => {
+    if (!menuRequest) {
+      return;
+    }
+    const x = typeof menuRequest.x === "number" ? menuRequest.x : 0;
+    const y = typeof menuRequest.y === "number" ? menuRequest.y : 0;
+    dispatchSharedAction(setActiveEditorGroupAction(groupId));
+    setMenu({ x, y });
+  }, [groupId, menuRequest]);
+
+  useEffect(() => {
+    if (!menu) {
+      return;
+    }
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node | null)) {
+        setMenu(null);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenu(null);
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [menu]);
+
+  if (!group) {
     return null;
   }
 
   return (
-    <div
-      className={styles.strip}
-      onDragOver={(event) => {
-        if (!hasPanelDragPayload(event)) return;
-        event.preventDefault();
-        event.dataTransfer.dropEffect = event.altKey ? "copy" : "move";
-        setDropPreview(getDropPreview(event));
-      }}
-      onDragLeave={(event) => {
-        if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
-          return;
-        }
-        setDropPreview(null);
-      }}
-      onDrop={(event) => {
-        const payload = readPanelDragPayload(event);
-        if (!payload) return;
-        event.preventDefault();
-        const preview = getDropPreview(event);
-        setDropPreview(null);
-        if (preview.kind === "edge") {
-          dispatchSharedAction(
-            movePanelInstanceToEditorEdgeAction(payload.instanceId, groupId, preview.direction)
-          );
-        } else if (event.altKey) {
-          dispatchSharedAction(
-            copyPanelInstanceToDocumentGroupAction(payload.instanceId, groupId, preview.index)
-          );
-        } else {
-          dispatchSharedAction(
-            movePanelInstanceAction(payload.instanceId, "document", undefined, groupId, preview.index)
-          );
-        }
-        clearPanelDragPayload();
-      }}
-    >
-      {tabs.map((tab) => (
-        <button
-          key={tab.instanceId}
-          type="button"
-          draggable
-          className={[
-            styles.tab,
-            activeInstanceId === tab.instanceId ? styles.tabActive : "",
-            draggingInstanceId === tab.instanceId ? styles.tabDragging : ""
-          ].join(" ")}
-          onClick={() => {
-            dispatchSharedAction(setActiveDocumentPanelInstanceAction(groupId, tab.instanceId));
-          }}
-          onDragStart={(event) => {
-            setDraggingInstanceId(tab.instanceId);
-            writePanelDragPayload(event, {
-              type: "klive/panel-instance",
-              instanceId: tab.instanceId,
-              sourcePlacement: "document",
-              sourceGroupId: groupId
-            });
-          }}
-          onDragEnd={() => {
-            setDraggingInstanceId(null);
-            setDropPreview(null);
-            clearPanelDragPayload();
-          }}
+    <>
+      {menu && (
+        <div
+          ref={menuRef}
+          className={styles.menu}
+          style={{ left: `${menu.x}px`, top: `${menu.y}px` }}
+          role="menu"
         >
-          <span className={styles.label}>{getTabTitle(tab)}</span>
-        </button>
-      ))}
-      {dropPreview?.kind === "tab" && (
-        <span className={styles.dropIndicator} style={{ left: `${dropPreview.x}px` }} />
+          <MenuItem
+            label={isMaximized ? "Restore Editor Group" : "Maximize Editor Group"}
+            onSelect={() => runGroupAction(toggleMaximizeEditorGroupAction())}
+          />
+          <MenuItem
+            label={isLocked ? "Unlock Editor Group" : "Lock Editor Group"}
+            onSelect={() => runGroupAction(setEditorGroupLockedAction(groupId, !isLocked))}
+          />
+          <div className={styles.menuSeparator} />
+          <MenuItem
+            label={splitState ? "Join Split in Group" : "Split in Group"}
+            onSelect={() =>
+              runGroupAction(
+                splitState ? joinSplitInGroupAction() : toggleSplitInGroupAction("horizontal")
+              )
+            }
+          />
+          <MenuItem
+            label="Toggle Split in Group Layout"
+            disabled={!splitState}
+            onSelect={() => runGroupAction(toggleSplitInGroupLayoutAction())}
+          />
+          <div className={styles.menuSeparator} />
+          <MenuItem label="Split Editor Right" onSelect={() => runGroupAction(splitEditorGroupAction("right"))} />
+          <MenuItem label="Split Editor Down" onSelect={() => runGroupAction(splitEditorGroupAction("down"))} />
+          <MenuItem label="Split Editor Left" onSelect={() => runGroupAction(splitEditorGroupAction("left"))} />
+          <MenuItem label="Split Editor Up" onSelect={() => runGroupAction(splitEditorGroupAction("up"))} />
+          <div className={styles.menuSeparator} />
+          <MenuItem label="Close Placeholder Split" onSelect={() => runGroupAction(closeActiveEditorGroupAction())} />
+        </div>
       )}
-      {dropPreview?.kind === "edge" && (
-        <span className={`${styles.edgeIndicator} ${edgeClassName(dropPreview.direction)}`} />
-      )}
-    </div>
+    </>
   );
 
-  function getDropPreview(event: DragEvent<HTMLDivElement>): DropPreview {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const edgeSize = Math.max(24, Math.min(rect.width, rect.height) * 0.12);
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    if (x <= edgeSize) return { kind: "edge", direction: "left" };
-    if (x >= rect.width - edgeSize) return { kind: "edge", direction: "right" };
-    if (y <= edgeSize) return { kind: "edge", direction: "up" };
-    if (y >= rect.height - edgeSize) return { kind: "edge", direction: "down" };
-
-    const buttons = Array.from(event.currentTarget.querySelectorAll("button"));
-    const targetIndex = buttons.findIndex((button) => {
-      const buttonRect = button.getBoundingClientRect();
-      return event.clientX < buttonRect.left + buttonRect.width / 2;
-    });
-    const index = targetIndex < 0 ? tabs.length : targetIndex;
-    const indicatorX =
-      index >= tabs.length
-        ? (buttons.at(-1)?.getBoundingClientRect().right ?? rect.left) - rect.left
-        : buttons[index].getBoundingClientRect().left - rect.left;
-    return { kind: "tab", index, x: indicatorX };
+  function runGroupAction(action: Action) {
+    dispatchSharedAction(setActiveEditorGroupAction(groupId));
+    dispatchSharedAction(action);
+    setMenu(null);
   }
 }
 
-function getTabTitle(instance: PanelInstance): string {
-  return getIdePanelContribution(instance.contributionId)?.title ?? instance.contributionId;
-}
-
-function edgeClassName(direction: "left" | "right" | "up" | "down"): string {
-  return direction === "left"
-    ? styles.edgeLeft
-    : direction === "right"
-      ? styles.edgeRight
-      : direction === "up"
-        ? styles.edgeTop
-        : styles.edgeBottom;
+function MenuItem({
+  label,
+  disabled,
+  onSelect
+}: {
+  label: string;
+  disabled?: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={styles.menuItem}
+      disabled={disabled}
+      role="menuitem"
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect();
+      }}
+    >
+      {label}
+    </button>
+  );
 }

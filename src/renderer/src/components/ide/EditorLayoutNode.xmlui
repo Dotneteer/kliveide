@@ -16,21 +16,12 @@
 
   <EditorGroup
     when="{node.type === 'group'}"
-    title="{node.groupId}"
     groupId="{node.groupId}"
     memoryPanelInstanceId="{'memory.' + node.groupId}"
     activeDocumentId="{document.id}"
     activeDocument="{document.name}"
     activeDocumentIcon="{document.icon ?? 'file-code'}"
     activeDocumentKind="{document.kind ?? 'code'}"
-    onSplitLeft="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'left' } })"
-    onSplitRight="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'right' } })"
-    onSplitUp="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'up' } })"
-    onSplitDown="state.dispatch({ type: 'SPLIT_EDITOR_GROUP', payload: { text: 'down' } })"
-    onCloseGroup="
-      state.dispatch({ type: 'SET_ACTIVE_EDITOR_GROUP', payload: { id: node.groupId } });
-      state.dispatch({ type: 'CLOSE_ACTIVE_EDITOR_GROUP' })
-    "
   />
 
   <HSplitter

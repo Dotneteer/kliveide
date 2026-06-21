@@ -6,8 +6,7 @@
   var.group="{layout.documentGroups[groupId]}"
   var.activeDocumentId="{$props.activeDocumentId ?? group.activeDocument.id}"
   var.splitState="{group.splitInGroupByDocument ? group.splitInGroupByDocument[activeDocumentId] : undefined}"
-  var.isLocked="{group.locked ?? false}"
-  var.isMaximized="{layout.documentLayout.maximizedGroupId === groupId}"
+  var.tabMenuRequest="{undefined}"
 >
   <SharedAppState id="state" />
   <PanelDropTarget placement="document" groupId="{groupId}">
@@ -19,34 +18,18 @@
       borderRight="1px solid $borderColor-EditorGroup"
       onClick="state.dispatch({ type: 'SET_ACTIVE_EDITOR_GROUP', payload: { id: groupId } })"
     >
-      <HStack
-        height="28px"
-        paddingHorizontal="$space-2"
-        gap="$space-1"
-        verticalAlignment="center"
-        backgroundColor="$backgroundColor-EditorGroupHeader"
-        borderBottom="1px solid $borderColor-EditorGroup"
-      >
-        <Text value="{$props.title}" fontSize="12px" fontWeight="600" color="$textColor-EditorSubtle" />
-        <Icon when="{isLocked}" name="lock" tooltip="Locked Group" color="$textColor-DocumentTab" width="13px" height="13px" outline="0" />
-        <SpaceFiller />
-        <Icon name="layout-panel" tooltip="{isMaximized ? 'Restore Editor Group' : 'Maximize Editor Group'}" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="state.dispatch({ type: 'TOGGLE_MAXIMIZE_EDITOR_GROUP' })" />
-        <Icon name="lock" tooltip="{isLocked ? 'Unlock Editor Group' : 'Lock Editor Group'}" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="state.dispatch({ type: 'SET_EDITOR_GROUP_LOCKED', payload: { id: groupId, flag: !isLocked } })" />
-        <Icon name="{splitState ? 'combine' : 'layout-panel'}" tooltip="{splitState ? 'Join Split in Group' : 'Split in Group'}" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="state.dispatch({ type: splitState ? 'JOIN_SPLIT_IN_GROUP' : 'TOGGLE_SPLIT_IN_GROUP', payload: { text: 'horizontal' } })" />
-        <Icon when="{splitState}" name="refresh" tooltip="Toggle Split in Group Layout" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="state.dispatch({ type: 'TOGGLE_SPLIT_IN_GROUP_LAYOUT' })" />
-        <Icon name="arrow-small-left" tooltip="Split left" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitLeft')" />
-        <Icon name="layout-panel" tooltip="Split right" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitRight')" />
-        <Icon name="arrow-circle-up" tooltip="Split up" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitUp')" />
-        <Icon name="layers" tooltip="Split down" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('splitDown')" />
-        <Icon name="combine" tooltip="Close placeholder split" color="$textColor-DocumentTab" width="15px" height="15px" outline="0" onClick="emitEvent('closeGroup')" />
-      </HStack>
-      <EditorPanelTabStrip groupId="{groupId}" />
+      <EditorPanelTabStrip groupId="{groupId}" menuRequest="{tabMenuRequest}" />
       <Tabs
         width="100%"
         height="*"
         gap="0"
         activeTab="{activeTab}"
         onDidChange="newIndex => activeTab = newIndex"
+        onContextMenu="event => {
+          event.preventDefault();
+          state.dispatch({ type: 'SET_ACTIVE_EDITOR_GROUP', payload: { id: groupId } });
+          tabMenuRequest = { x: event.clientX, y: event.clientY, stamp: event.timeStamp }
+        }"
       >
         <TabItem id="active-document" label="{$props.activeDocument}">
           <DocumentView

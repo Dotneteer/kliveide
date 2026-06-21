@@ -11,11 +11,17 @@ $backgroundColor-EditorPanelTabStrip: createThemeVar("backgroundColor-#{$compone
 $backgroundColor-tab-EditorPanelTabStrip: createThemeVar("backgroundColor-tab-#{$component}");
 $backgroundColor-tab-EditorPanelTabStrip--active: createThemeVar("backgroundColor-tab-#{$component}--active");
 $backgroundColor-dropIndicator-EditorPanelTabStrip: createThemeVar("backgroundColor-dropIndicator-#{$component}");
+$backgroundColor-menu-EditorPanelTabStrip: createThemeVar("backgroundColor-menu-#{$component}");
+$backgroundColor-menuItem-EditorPanelTabStrip--hover: createThemeVar("backgroundColor-menuItem-#{$component}--hover");
 $borderColor-EditorPanelTabStrip: createThemeVar("borderColor-#{$component}");
+$boxShadow-menu-EditorPanelTabStrip: createThemeVar("boxShadow-menu-#{$component}");
 $textColor-tab-EditorPanelTabStrip: createThemeVar("textColor-tab-#{$component}");
 $textColor-tab-EditorPanelTabStrip--active: createThemeVar("textColor-tab-#{$component}--active");
+$textColor-menuItem-EditorPanelTabStrip: createThemeVar("textColor-menuItem-#{$component}");
+$textColor-menuItem-EditorPanelTabStrip--disabled: createThemeVar("textColor-menuItem-#{$component}--disabled");
 $height-dropIndicator-EditorPanelTabStrip: createThemeVar("height-dropIndicator-#{$component}");
 $zIndex-dropIndicator-EditorPanelTabStrip: createThemeVar("zIndex-dropIndicator-#{$component}");
+$zIndex-menu-EditorPanelTabStrip: createThemeVar("zIndex-menu-#{$component}");
 
 .strip {
   align-items: stretch;
@@ -64,6 +70,81 @@ $zIndex-dropIndicator-EditorPanelTabStrip: createThemeVar("zIndex-dropIndicator-
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.spacer {
+  flex: 1 1 auto;
+  min-width: 8px;
+}
+
+.lockBadge {
+  align-items: center;
+  color: $textColor-tab-EditorPanelTabStrip;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 11px;
+  opacity: 0.78;
+  padding: 0 7px;
+}
+
+.menuButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: $textColor-tab-EditorPanelTabStrip;
+  cursor: default;
+  display: inline-flex;
+  flex: 0 0 28px;
+  font: inherit;
+  font-size: 14px;
+  justify-content: center;
+  line-height: 1;
+  outline: 0;
+  padding: 0;
+}
+
+.menuButton:hover {
+  background: $backgroundColor-menuItem-EditorPanelTabStrip--hover;
+}
+
+.menu {
+  background: $backgroundColor-menu-EditorPanelTabStrip;
+  border: 1px solid $borderColor-EditorPanelTabStrip;
+  box-shadow: $boxShadow-menu-EditorPanelTabStrip;
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  padding: 4px 0;
+  position: fixed;
+  z-index: $zIndex-menu-EditorPanelTabStrip;
+}
+
+.menuItem {
+  background: transparent;
+  border: 0;
+  color: $textColor-menuItem-EditorPanelTabStrip;
+  cursor: default;
+  font: inherit;
+  font-size: 12px;
+  line-height: 24px;
+  outline: 0;
+  padding: 0 20px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.menuItem:not(:disabled):hover {
+  background: $backgroundColor-menuItem-EditorPanelTabStrip--hover;
+}
+
+.menuItem:disabled {
+  color: $textColor-menuItem-EditorPanelTabStrip--disabled;
+}
+
+.menuSeparator {
+  border-top: 1px solid $borderColor-EditorPanelTabStrip;
+  height: 0;
+  margin: 4px 0;
 }
 
 .dropIndicator {

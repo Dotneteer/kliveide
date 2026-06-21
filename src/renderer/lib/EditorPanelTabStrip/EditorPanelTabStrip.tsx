@@ -13,6 +13,10 @@ export const EditorPanelTabStripMd: ComponentMetadata = createMetadata({
       description: "Document group identifier.",
       valueType: "string",
       isRequired: true
+    },
+    menuRequest: {
+      description: "Latest document tab context menu request.",
+      valueType: "any"
     }
   },
   events: {},
@@ -22,11 +26,17 @@ export const EditorPanelTabStripMd: ComponentMetadata = createMetadata({
     [`backgroundColor-tab-${COMP}`]: "$backgroundColor-DocumentTab",
     [`backgroundColor-tab-${COMP}--active`]: "$backgroundColor-DocumentTab--active",
     [`backgroundColor-dropIndicator-${COMP}`]: "$borderColor-active-Tabs",
+    [`backgroundColor-menu-${COMP}`]: "$color-surface-0",
+    [`backgroundColor-menuItem-${COMP}--hover`]: "$color-surface-100",
     [`borderColor-${COMP}`]: "$borderColor-DocumentTab",
+    [`boxShadow-menu-${COMP}`]: "0 8px 24px rgba(0, 0, 0, 0.28)",
     [`textColor-tab-${COMP}`]: "$textColor-DocumentTab",
     [`textColor-tab-${COMP}--active`]: "$textColor-DocumentTab--active",
+    [`textColor-menuItem-${COMP}`]: "$color-surface-950",
+    [`textColor-menuItem-${COMP}--disabled`]: "$color-surface-600",
     [`height-dropIndicator-${COMP}`]: "3px",
-    [`zIndex-dropIndicator-${COMP}`]: "60"
+    [`zIndex-dropIndicator-${COMP}`]: "60",
+    [`zIndex-menu-${COMP}`]: "300"
   }
 });
 
