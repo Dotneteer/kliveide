@@ -583,13 +583,22 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
       this.reportAssemblyError("Z0604", op);
       return;
     }
-    const bitIndex = this.evaluateExprImmediate(op.operand1.expr).value;
-    if (bitIndex < 0 || bitIndex > 7) {
-      this.reportAssemblyError("Z0407", op, null, bitIndex);
-      return;
+    const bitIndexValue = this.evaluateExpr(op.operand1.expr);
+    let bitIndex = 0;
+    const bitIndexNeedsFixup = bitIndexValue.isNonEvaluated;
+    if (!bitIndexNeedsFixup) {
+      if (!bitIndexValue.isValid) {
+        return;
+      }
+      bitIndex = bitIndexValue.value;
+      if (bitIndex < 0 || bitIndex > 7) {
+        this.reportAssemblyError("Z0407", op, null, bitIndex);
+        return;
+      }
     }
     switch (op.operand2.operandType) {
       case OperandType.IndexedIndirect:
+        const indexedOpOffset = this._currentSegment.currentOffset + 3;
         if (op.type !== "BitInstruction") {
           if (!op.operand3) {
             opByte |= 0x06;
@@ -609,19 +618,53 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
           op.operand2.expr,
           opByte + 8 * bitIndex
         );
+        if (bitIndexNeedsFixup) {
+          this.recordFixup(
+            op as unknown as Z80AssemblyLine,
+            FixupType.BitIndex,
+            op.operand1.expr,
+            null,
+            null,
+            indexedOpOffset,
+            opByte
+          );
+        }
         return;
       // Flows to the next label intentionally
       case OperandType.Reg8:
         opByte |= reg8Order[op.operand2.register];
         this.emitByte(0xcb);
         this.emitByte(opByte + 8 * bitIndex);
+        if (bitIndexNeedsFixup) {
+          this.recordFixup(
+            op as unknown as Z80AssemblyLine,
+            FixupType.BitIndex,
+            op.operand1.expr,
+            null,
+            null,
+            this._currentSegment.currentOffset - 1,
+            opByte
+          );
+        }
         return;
       case OperandType.RegIndirect:
         if (op.operand2.register !== "hl") {
           break;
         }
+        opByte |= 0x06;
         this.emitByte(0xcb);
-        this.emitByte((opByte | 0x06) + 8 * bitIndex);
+        this.emitByte(opByte + 8 * bitIndex);
+        if (bitIndexNeedsFixup) {
+          this.recordFixup(
+            op as unknown as Z80AssemblyLine,
+            FixupType.BitIndex,
+            op.operand1.expr,
+            null,
+            null,
+            this._currentSegment.currentOffset - 1,
+            opByte
+          );
+        }
         return;
     }
     this.reportAssemblyError("Z0604", op);

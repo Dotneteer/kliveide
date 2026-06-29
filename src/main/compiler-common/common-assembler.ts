@@ -5139,6 +5139,7 @@ export abstract class CommonAssembler<
    * @param label Optional .equ label
    * @param structBytes Optional structure bytes
    * @param offset Fixup offset, if not the current position
+   * @param data Optional fixup-specific data
    */
   protected recordFixup(
     opLine: AssemblyLine<TInstruction>,
@@ -5146,7 +5147,8 @@ export abstract class CommonAssembler<
     expr: Expression<TInstruction, TToken>,
     label: string | null = null,
     structBytes: Map<number, number> | null = null,
-    offset: number | null = null
+    offset: number | null = null,
+    data: number | null = null
   ): void {
     let fixupOffset = this._currentSegment.currentOffset;
 
@@ -5171,7 +5173,8 @@ export abstract class CommonAssembler<
       offset ?? fixupOffset,
       expr,
       label,
-      structBytes
+      structBytes,
+      data
     );
 
     // --- Record fixups in every local scope up to the root
@@ -5258,13 +5261,14 @@ export abstract class CommonAssembler<
       }
     }
 
-    // --- #2: fix Bit8, Bit16, Bit16Be, Jr, Ent, Xent, NexStackAddr, NexEntryAddr
+    // --- #2: fix Bit8, Bit16, Bit16Be, BitIndex, Jr, Ent, Xent, NexStackAddr, NexEntryAddr
     for (const fixup of scope.fixups.filter(
       (f) =>
         !f.resolved &&
         (f.type === FixupType.Bit8 ||
           f.type === FixupType.Bit16 ||
           f.type === FixupType.Bit16Be ||
+          f.type === FixupType.BitIndex ||
           f.type === FixupType.Jr ||
           f.type === FixupType.Ent ||
           f.type === FixupType.Xent ||
@@ -5289,6 +5293,16 @@ export abstract class CommonAssembler<
           case FixupType.Bit16Be:
             emittedCode[fixup.offset] = evalResult.value.asWord() >> 8;
             emittedCode[fixup.offset + 1] = evalResult.value.asByte();
+            break;
+
+          case FixupType.BitIndex:
+            const bitIndex = evalResult.value.asLong();
+            if (bitIndex < 0 || bitIndex > 7) {
+              this.reportAssemblyError("Z0407", fixup.sourceLine, null, bitIndex);
+              success = false;
+              break;
+            }
+            emittedCode[fixup.offset] = (fixup.data ?? 0) + 8 * bitIndex;
             break;
 
           case FixupType.Jr:

@@ -47,7 +47,8 @@ export class FixupEntry<
     public readonly offset: number,
     public readonly expression: Expression<TInstruction, TToken>,
     public readonly label: string | null = null,
-    public readonly structBytes: Map<number, number> | null = null
+    public readonly structBytes: Map<number, number> | null = null,
+    public readonly data: number | null = null
   ) {
     super();
     // Capture the start address of the current instruction so that "$" in the
