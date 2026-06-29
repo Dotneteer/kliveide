@@ -12,13 +12,24 @@ export default defineConfig({
      * .test.ts  files run in Node (no DOM).
      * .test.tsx files run in jsdom (React components).
      */
-    include: ["./test/**/*.test.ts", "./test/**/*.test.tsx"],
-
-    /**
-     * Apply jsdom only to component test files (.tsx). Pure logic tests
-     * (.ts) continue to run in Node for speed.
-     */
-    environmentMatchGlobs: [["./test/**/*.test.tsx", "jsdom"]],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "node",
+          include: ["./test/**/*.test.ts"],
+          environment: "node"
+        }
+      },
+      {
+        extends: true,
+        test: {
+          name: "jsdom",
+          include: ["./test/**/*.test.tsx"],
+          environment: "jsdom"
+        }
+      }
+    ],
 
     /**
      * A default timeout of 5000ms is sometimes not enough for playwright.
@@ -41,4 +52,3 @@ export default defineConfig({
     }
   }
 });
-

@@ -7,22 +7,19 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import React, { act } from "react";
-import { render } from "@testing-library/react";
+import React from "react";
+import { act, render } from "@testing-library/react";
 import { createMockStore, MockMessenger } from "../react-test-utils";
 import { useSelector, useDispatch, useGlobalSetting } from "@renderer/core/RendererProvider";
 import RendererProvider from "@renderer/core/RendererProvider";
 import ThemeProvider from "@renderer/theming/ThemeProvider";
-import {
-  emuLoadedAction,
-  dimMenuAction,
-  setThemeAction,
-  muteSoundAction
-} from "@state/actions";
+import { emuLoadedAction, dimMenuAction, setThemeAction } from "@state/actions";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+type TestComponentResult = React.ReactElement | null;
 
 function renderInProviders(ui: React.ReactElement) {
   const store = createMockStore();
@@ -53,7 +50,7 @@ describe("useSelector — Phase 8 comprehensive tests", () => {
   it("returns initial value from store", () => {
     let selected: boolean | undefined;
 
-    function Subject() {
+    function Subject(): TestComponentResult {
       selected = useSelector((s) => s.emuLoaded);
       return null;
     }
@@ -65,7 +62,7 @@ describe("useSelector — Phase 8 comprehensive tests", () => {
   it("updates when the selected slice changes", async () => {
     let selected: boolean | undefined;
 
-    function Subject() {
+    function Subject(): TestComponentResult {
       selected = useSelector((s) => s.emuLoaded);
       return null;
     }
@@ -83,7 +80,7 @@ describe("useSelector — Phase 8 comprehensive tests", () => {
   it("does NOT re-render on unrelated dispatch", async () => {
     let renderCount = 0;
 
-    function Subject() {
+    function Subject(): TestComponentResult {
       renderCount++;
       useSelector((s) => s.emuLoaded);
       return null;
@@ -102,7 +99,7 @@ describe("useSelector — Phase 8 comprehensive tests", () => {
   it("suppresses re-render when shallowEqual object slice is unchanged", async () => {
     let renderCount = 0;
 
-    function Subject() {
+    function Subject(): TestComponentResult {
       renderCount++;
       useSelector((s) => ({ loaded: s.emuLoaded, dim: s.dimMenu }));
       return null;
@@ -123,7 +120,7 @@ describe("useSelector — Phase 8 comprehensive tests", () => {
     let renderCount = 0;
     let selected: { loaded: boolean; dim: boolean } | undefined;
 
-    function Subject() {
+    function Subject(): TestComponentResult {
       renderCount++;
       selected = useSelector((s) => ({ loaded: s.emuLoaded, dim: s.dimMenu }));
       return null;
@@ -143,7 +140,7 @@ describe("useSelector — Phase 8 comprehensive tests", () => {
   it("unsubscribes on unmount — no setState after unmount", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    function Subject() {
+    function Subject(): TestComponentResult {
       useSelector((s) => s.emuLoaded);
       return <div>hi</div>;
     }
@@ -164,10 +161,10 @@ describe("useSelector — Phase 8 comprehensive tests", () => {
     consoleSpy.mockRestore();
   });
 
-  it("handles primitive selector (number)", async () => {
+  it("handles primitive selector (number)", () => {
     let selected: number | undefined;
 
-    function Subject() {
+    function Subject(): TestComponentResult {
       selected = useSelector((s) => s.emulatorState?.soundLevel ?? 0);
       return null;
     }
@@ -186,7 +183,7 @@ describe("useDispatch — Phase 8 comprehensive tests", () => {
   it("returns a stable function reference across re-renders", async () => {
     const dispatchers: unknown[] = [];
 
-    function Subject({ count }: { count: number }) {
+    function Subject({ count }: { count: number }): TestComponentResult {
       const dispatch = useDispatch();
       dispatchers.push(dispatch);
       return <span>{count}</span>;
@@ -202,9 +199,9 @@ describe("useDispatch — Phase 8 comprehensive tests", () => {
   });
 
   it("dispatches an action that updates store state", async () => {
-    let dispatch: ReturnType<typeof useDispatch> | null = null;
+    let dispatch: ReturnType<typeof useDispatch> | undefined;
 
-    function Subject() {
+    function Subject(): TestComponentResult {
       dispatch = useDispatch();
       return null;
     }
@@ -212,7 +209,10 @@ describe("useDispatch — Phase 8 comprehensive tests", () => {
     const { store } = renderInProviders(<Subject />);
 
     await act(async () => {
-      dispatch!(emuLoadedAction());
+      if (!dispatch) {
+        throw new Error("Dispatch hook was not initialized");
+      }
+      dispatch(emuLoadedAction());
     });
 
     expect(store.getState().emuLoaded).toBe(true);
@@ -225,9 +225,9 @@ describe("useDispatch — Phase 8 comprehensive tests", () => {
 
 describe("useGlobalSetting — Phase 8 tests", () => {
   it("returns the default value when setting is not yet configured", () => {
-    let value: any;
+    let value: unknown;
 
-    function Subject() {
+    function Subject(): TestComponentResult {
       value = useGlobalSetting("emu.stayOnTop");
       return null;
     }
@@ -238,9 +238,9 @@ describe("useGlobalSetting — Phase 8 tests", () => {
   });
 
   it("returns null for an unknown setting ID", () => {
-    let value: any;
+    let value: unknown;
 
-    function Subject() {
+    function Subject(): TestComponentResult {
       value = useGlobalSetting("nonexistent.setting.xyz");
       return null;
     }

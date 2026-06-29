@@ -81,6 +81,44 @@ describe("Assembler - bit operations", function () {
     await codeRaisesError("bit 8,b", "Z0407");
   });
 
+  it("bit/res/set: accepts bit index expressions", async () => {
+    await testCodeEmit("bit 1+2,b", 0xcb, 0x58);
+    await testCodeEmit("res 6-3,(hl)", 0xcb, 0x9e);
+    await testCodeEmit("set 1*3,a", 0xcb, 0xdf);
+  });
+
+  it("bit/res/set: resolves bit index fixups", async () => {
+    await testCodeEmit(
+      `
+        bit BitIndex,b
+        res BitIndex,(iy+Disp),a
+        set BitIndex,(ix+Disp),h
+      BitIndex .equ 3
+      Disp .equ 6
+      `,
+      0xcb,
+      0x58,
+      0xfd,
+      0xcb,
+      0x06,
+      0x9f,
+      0xdd,
+      0xcb,
+      0x06,
+      0xdc
+    );
+  });
+
+  it("bit: reports invalid bit index fixup", async () => {
+    await codeRaisesError(
+      `
+        bit BitIndex,b
+      BitIndex .equ 8
+      `,
+      "Z0407"
+    );
+  });
+
   it("bit: indexed instructions", async () => {
     await testCodeEmit("bit 0,(ix)", 0xdd, 0xcb, 0x00, 0x46);
     await testCodeEmit("bit 0,(ix+6)", 0xdd, 0xcb, 0x06, 0x46);

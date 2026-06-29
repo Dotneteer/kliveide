@@ -420,7 +420,8 @@ export enum FixupType {
   FieldBit8,
   FieldBit16,
   NexStackAddr,
-  NexEntryAddr
+  NexEntryAddr,
+  BitIndex
 }
 
 /**

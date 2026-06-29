@@ -29,7 +29,9 @@ vi.mock("@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler", () =
     })
   };
   return {
-    Z80Disassembler: vi.fn(() => mockDisassembler)
+    Z80Disassembler: vi.fn(function () {
+      return mockDisassembler;
+    })
   };
 });
 

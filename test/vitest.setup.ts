@@ -1,5 +1,30 @@
-import { vi } from "vitest";
+import { beforeEach, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
+import fs from "fs";
+import os from "os";
+import path from "path";
+
+const testHomeRoot = process.env.KLIVE_TEST_HOME ?? path.join(os.tmpdir(), "kliveide-vitest-home");
+const testRunId = `pid-${process.pid}`;
+const testWorkerId = `worker-${process.env.VITEST_WORKER_ID ?? process.env.VITEST_POOL_ID ?? "0"}`;
+
+setTestHome("setup");
+
+beforeEach((context) => {
+  const testFile = context.task.file.filepath ?? context.task.file.name ?? "unknown";
+  setTestHome(sanitizePathSegment(testFile));
+});
+
+function setTestHome(scope: string): void {
+  const testHome = path.join(testHomeRoot, testRunId, testWorkerId, scope);
+  fs.mkdirSync(testHome, { recursive: true });
+  process.env.HOME = testHome;
+  process.env.USERPROFILE = testHome;
+}
+
+function sanitizePathSegment(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(-160);
+}
 
 // Mock window object for browser-specific code that runs in Node.js environment
 if (typeof window === "undefined") {
@@ -107,4 +132,3 @@ if (typeof window === "undefined") {
     (global as any).self = global;
   }
 }
-

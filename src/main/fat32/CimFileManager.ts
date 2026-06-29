@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import { CimInfo } from "@abstractions/CimInfo";
 import { BinaryWriter } from "@common/utils/BinaryWriter";
 import { BinaryReader } from "@common/utils/BinaryReader";
@@ -41,11 +42,10 @@ export class CimFileManager {
       }
     }
 
-    // ✅ Delete existing file if it exists to ensure clean slate
-    // This prevents the CimFile constructor from loading stale header data
-    if (fs.existsSync(name)) {
-      fs.unlinkSync(name);
-    }
+    // Delete any existing file to ensure a clean slate. Use force to avoid
+    // a check-then-unlink race when tests or tools create the same path.
+    fs.rmSync(name, { force: true });
+    fs.mkdirSync(path.dirname(name), { recursive: true });
 
     const cimFile = new CimFile(
       name,

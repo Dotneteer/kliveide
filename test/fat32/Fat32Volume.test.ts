@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect } from "vitest";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
-import { CimFileManager } from "@main/fat32/CimFileManager";
+import { CimFile, CimFileManager } from "@main/fat32/CimFileManager";
 import { ERROR_FAT_ENTRY_OUT_OF_RANGE, Fat32Volume } from "@main/fat32/Fat32Volume";
 import {
   FAT_NAME_DELETED,
@@ -19,13 +19,14 @@ const TEST_DIR = "testFat32";
 const TEST_FILE = "test.cim";
 const TEST_IMAGE_FILE = "testImage.img";
 const SIZE_IN_MB = 64;
+const createdFiles: CimFile[] = [];
 
 describe("FatVolume", () => {
   it("format works #1", () => {
     // --- Arrange
     const filePath = createTestFile(1);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
 
     // --- Act
@@ -49,7 +50,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const filePath = createTestFile(2);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -62,7 +63,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const filePath = createTestFile(3);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -76,7 +77,7 @@ describe("FatVolume", () => {
     const FILENAME = "testDir";
     const filePath = createTestFile(4);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -131,7 +132,7 @@ describe("FatVolume", () => {
     const FILENAME = "inner1";
     const filePath = createTestFile(5);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -167,7 +168,7 @@ describe("FatVolume", () => {
     const FILENAME = "inner2";
     const filePath = createTestFile(6);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -203,7 +204,7 @@ describe("FatVolume", () => {
     const FILENAME = "inner1";
     const filePath = createTestFile(7);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -241,7 +242,7 @@ describe("FatVolume", () => {
     const FILENAME2 = "inner2";
     const filePath = createTestFile(8);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -280,7 +281,7 @@ describe("FatVolume", () => {
     const FILENAME2 = "longinner2";
     const filePath = createTestFile(9);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -377,7 +378,7 @@ describe("FatVolume", () => {
     const FILENAME = "TEST";
     const filePath = createTestFile(10);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -415,7 +416,7 @@ describe("FatVolume", () => {
     const FILENAME = "inner";
     const filePath = createTestFile(11);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -455,7 +456,7 @@ describe("FatVolume", () => {
     const FILENAME = "longer inner file";
     const filePath = createTestFile(12);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -493,7 +494,7 @@ describe("FatVolume", () => {
     const FILENAME = "testDir";
     const filePath = createTestFile(13);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -522,7 +523,7 @@ describe("FatVolume", () => {
     const FILENAME = "testDir with long file name";
     const filePath = createTestFile(14);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -554,7 +555,7 @@ describe("FatVolume", () => {
     const FILENAME = "inner1";
     const filePath = createTestFile(15);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -586,7 +587,7 @@ describe("FatVolume", () => {
     const FILENAME = "inner1";
     const filePath = createTestFile(16);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -618,7 +619,7 @@ describe("FatVolume", () => {
     const FILENAME = "this is a long file name";
     const filePath = createTestFile(17);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -652,7 +653,7 @@ describe("FatVolume", () => {
     const CONTENT = "Hello, world!";
     const filePath = createTestFile(18);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -697,7 +698,7 @@ describe("FatVolume", () => {
 
     const fileData = testFile.readFileData(0x1_0000);
     expect(fileData.length).toBe(CONTENT.length);
-    const decoder = new TextDecoder('utf-8');
+    const decoder = new TextDecoder("utf-8");
     const str = decoder.decode(fileData);
     expect(str).toBe(CONTENT);
   });
@@ -708,7 +709,7 @@ describe("FatVolume", () => {
     const CONTENT = "Hello, world!";
     const filePath = createTestFile(19);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -776,7 +777,7 @@ describe("FatVolume", () => {
     expect(name1.LDIR_Type).toBe(0x00);
     expect(name1.LDIR_Attr).toBe(0x0f);
     expect(name1.LDIR_FstClusLO).toBe(0x0000);
-    
+
     const sfn = testFile.sfnEntry;
     expect(sfn).not.toBeNull();
     expect(sfn.DIR_Attr).toBe(FS_ATTR_ARCHIVE);
@@ -787,7 +788,7 @@ describe("FatVolume", () => {
 
     const fileData = testFile.readFileData(0x1_0000);
     expect(fileData.length).toBe(CONTENT.length);
-    const decoder = new TextDecoder('utf-8');
+    const decoder = new TextDecoder("utf-8");
     const str = decoder.decode(fileData);
     expect(str).toBe(CONTENT);
   });
@@ -799,7 +800,7 @@ describe("FatVolume", () => {
     const CONTENT = "Hello, world!";
     const filePath = createTestFile(20);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -845,7 +846,7 @@ describe("FatVolume", () => {
 
     const fileData = testFile.readFileData(0x1_0000);
     expect(fileData.length).toBe(CONTENT.length);
-    const decoder = new TextDecoder('utf-8');
+    const decoder = new TextDecoder("utf-8");
     const str = decoder.decode(fileData);
     expect(str).toBe(CONTENT);
   });
@@ -857,7 +858,7 @@ describe("FatVolume", () => {
     const CONTENT = "Hello, world!";
     const filePath = createTestFile(21);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -926,7 +927,7 @@ describe("FatVolume", () => {
     expect(name1.LDIR_Type).toBe(0x00);
     expect(name1.LDIR_Attr).toBe(0x0f);
     expect(name1.LDIR_FstClusLO).toBe(0x0000);
-    
+
     const sfn = testFile.sfnEntry;
     expect(sfn).not.toBeNull();
     expect(sfn.DIR_Attr).toBe(FS_ATTR_ARCHIVE);
@@ -937,7 +938,7 @@ describe("FatVolume", () => {
 
     const fileData = testFile.readFileData(0x1_0000);
     expect(fileData.length).toBe(CONTENT.length);
-    const decoder = new TextDecoder('utf-8');
+    const decoder = new TextDecoder("utf-8");
     const str = decoder.decode(fileData);
     expect(str).toBe(CONTENT);
   });
@@ -949,7 +950,7 @@ describe("FatVolume", () => {
     const CONTENT = "Hello, world!".repeat(1000);
     const filePath = createTestFile(22);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -1018,7 +1019,7 @@ describe("FatVolume", () => {
     expect(name1.LDIR_Type).toBe(0x00);
     expect(name1.LDIR_Attr).toBe(0x0f);
     expect(name1.LDIR_FstClusLO).toBe(0x0000);
-    
+
     const sfn = testFile.sfnEntry;
     expect(sfn).not.toBeNull();
     expect(sfn.DIR_Attr).toBe(FS_ATTR_ARCHIVE);
@@ -1029,7 +1030,7 @@ describe("FatVolume", () => {
 
     const fileData = testFile.readFileData(0x1_0000);
     expect(fileData.length).toBe(CONTENT.length);
-    const decoder = new TextDecoder('utf-8');
+    const decoder = new TextDecoder("utf-8");
     const str = decoder.decode(fileData);
     expect(str).toBe(CONTENT);
   });
@@ -1041,7 +1042,7 @@ describe("FatVolume", () => {
     const CONTENT = "Hello, world!";
     const filePath = createTestFile(23);
     const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const file = createCimFile(cfm, filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
@@ -1059,7 +1060,7 @@ describe("FatVolume", () => {
     expect(testFile).not.toBeNull();
     expect(testFile.attributes).toBe(FS_ATTR_ARCHIVE | FS_ATTR_FILE);
     expect(testFile.nameEntries.length).toBe(1);
-    
+
     const sfn = testFile.sfnEntry;
     expect(sfn).not.toBeNull();
     expect(sfn.DIR_Attr).toBe(FS_ATTR_ARCHIVE);
@@ -1075,6 +1076,18 @@ describe("FatVolume", () => {
     // expect(str).toBe(CONTENT);
   });
 });
+
+afterEach(() => {
+  while (createdFiles.length > 0) {
+    createdFiles.pop()?.close();
+  }
+});
+
+function createCimFile(cfm: CimFileManager, name: string, sizeInMegaByte: number): CimFile {
+  const file = cfm.createFile(name, sizeInMegaByte);
+  createdFiles.push(file);
+  return file;
+}
 
 function createTestFile(id: number): string {
   const homeDir = os.homedir();

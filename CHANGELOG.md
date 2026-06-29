@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.57.1
+
+### Fix
+
+- Klive Z80 Assembler handles the first operand of BIT, SET, and RES properly
+
 ## 0.57.0
 
 ### Features
