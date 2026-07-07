@@ -6,6 +6,151 @@
 
 ---
 
+## Current Workflow Guide
+
+Use `AI_ASSISTED_DISASSEMBLY_GUIDE.md` as the main playbook for continuing the
+manual/AI-assisted annotation work. This notes file should hold durable findings
+that future sessions can reuse: confirmed labels, confirmed data ranges, calling
+conventions, system variables, repeated idioms, and open questions.
+
+### Note Template for Future Passes
+
+```md
+### YYYY-MM-DD - ROM/range
+
+Finding:
+Evidence:
+Impact:
+Confidence: high | medium | low
+Follow-up:
+```
+
+### Durable Findings
+
+- 2026-07-07 ROM0 `$0000-$01D4`: RST `$00` disables interrupts and jumps to
+  `ColdStart`; `INIT_ERR` is the non-returning RAM bit-test failure path. On
+  entry, the failing test flags distinguish a stuck-low bit from a stuck-high
+  bit, and `8-E` gives the faulty bit index shown through the border color.
+- 2026-07-07 ROM0 `ColdStart`: Rechecked early NextReg comments against
+  `_input/next-fpga/nextreg.txt` and `_input/next-fpga/ports.txt`. `nextreg
+  $03,$B0` disables the bootrom and selects +2A/+2B/+3 display timing; `and
+  $44` on nextreg `$06` preserves bit 6 BEEP routing and bit 2 PS/2 mode.
+- 2026-07-07 ROM0 `ColdStart` RAM pass: The `$4000+bank` buffer stores each
+  bank's original last byte so the second pass can remove the `$BB` presence
+  marker from `$FFFF`. For banks `<12`, the ROM intentionally overwrites that
+  saved byte with `$00` because those banks are zero-filled; the second pass
+  should restore `$00`, not stale pre-clear data.
+- 2026-07-07 ROM0 `INIT_ERR-L0342`: `nextreg $8E,$08` selects ROM0 and RAM
+  bank 0 in standard 128K mapping. The startup UDG copy uses ROM3 routine
+  `$1661` to copy `$A8` bytes of UDG definitions ending at ROM3 `$3EAF`, then
+  sets `UDG` and `RAMTOP` below that copied area. `$5CB4` is PRAMT, not VARS.
+- 2026-07-07 ROM0 `INIT_ERR-L0342`: DivMMC setup should decode `$B8=$82` as
+  automap on `$0038` and `$0008`, `$B9=$00` as valid only when ROM3 is present,
+  `$BA=$00` as delayed mapping, and `$BB=$F2` as enabling `$3Dxx`, `$056A`,
+  `$04D7`, instant `$0066`, while disabling `$1FF8-$1FFF`.
+- 2026-07-07 ROM0 `INIT_ERR-L0342`: Peripheral setup uses nextreg `$05`
+  Peripheral 1 (`or $5A` sets both joysticks to MD1), `$08` Peripheral 3,
+  `$06` Peripheral 2 (`and $44` preserves BEEP routing and PS/2 mode), and
+  `$0A` Peripheral 5 (`or $10` enables DivMMC automap).
+- 2026-07-07 ROM0 `$018E-$01CC`: Better labels for the second RAM pass are
+  `RAM_TEST_PASS2`, `TEST_RAM_BANK`, and `RAM_TEST_DONE`.
+- 2026-07-07 ROM0 `$0342-$036B`: The six bytes copied to `DISP_MODE` begin at
+  `$035A`, which intentionally overlaps the high byte of `jp RUN_BOOT_CMDS`.
+  The copied sequence is `$11,$00,$00,$03,$00,$3C`; do not model `$035A` with a
+  normal following label unless the assembler source can represent overlapping
+  code/data.
+- 2026-07-07 ROM0 `$032D-$0348`: `INIT_DISP_SLOT` builds a display-state slot
+  from a 32-byte template, appends the current palette, and invokes the ROM2
+  palette helper for the 96-byte record. `INIT_ALT_SLOT` is a fall-through phase
+  label for the second slot setup, not a separately referenced routine.
+  `SAVE_DISP_STATE` stores current display hardware state into the active slot,
+  while `INIT_SYS_FLAGS` resets ROM0 channel/display flag state.
+- 2026-07-07 ROM0 display-state swap record: `DISP_MODE` is the display/mode marker;
+  `DISP_GMODE` is swapped with `GMODE`; `DISP_L2SOFT` is swapped with `L2SOFT` and port
+  `$123B`; `DISP_CPUSPEED` is swapped with NextReg `$07` CPU speed bits; `DISP_CHARS-DISP_CHARS_H`
+  is swapped with `CHARS`.
+- Shared RAM state findings such as `DISP_MODE-DISP_CHARS_H` should also be collected in
+  `ram-state-notes.md` with evidence from all ROMs that touch the variable.
+- Confirmed shared RAM symbols used by the assembler source live in
+  `next-symbols.asm`; include it from ROM source files before replacing raw
+  addresses with symbolic names.
+- 2026-07-07 ROM0 `StripePtr`: label belongs at `$0DF7`, the 16-byte bit-mask
+  table copied to `$D750`. The original ROM has `$FC` at `$0E00`; make sure this
+  byte is present in assembler-source output.
+- 2026-07-07 ROM0 `$11BE-$121C`: `RUN_BOOT_CMDS` resets SP, marks `DISP_MODE` as
+  unselected with `$FF`, and repeatedly calls `RUN_BOOT_MENU` with startup command
+  selectors 0 and 1. `WAIT_KEY` reads `SCR_CT`, waits for `FLAGS` bit 5 to
+  indicate `LAST_K`, clears that flag, and reaches `HANDLE_MODE_KEY` for key
+  codes below `$10` or exactly `$0E`.
+- 2026-07-07 ROM0 `$0645-$0699`: `RUN_BOOT_MENU` prepares the startup menu script
+  work buffer at `MENU_WORK`, copies the built-in script from `$09EA`, then calls
+  `FIND_MENU_SECT`. `FIND_MENU_SECT` scans `MENU_WORK` for `=<decimal>` section
+  headers and records a matching section body pointer in `MENU_BODY` plus the active
+  section number in `MENU_SECTION`.
+- 2026-07-07 ROM0 startup menu helpers: `MENU_ENTRY_LOOP` calls
+  `SHOW_MENU_SECT` to render the active section, build the `MENU_KEYS` hotkey list
+  and `MENU_PTRS` entry pointer table, then dispatches the selected entry with
+  `DISPATCH_MENU`. The menu script commands decoded so far are `m<n>` for a new
+  section, `i<n>` for an indexed built-in action, `g...` for a boot/game string
+  copied to `BOOT_STR`, and `b` for a `$FF` boot request marker.
+- 2026-07-07 ROM0 startup menu text helpers: `PRINT_MENU_AT`,
+  `PRINT_MENU_NAME`, `PRINT_MENU_ITEM`, `PAD_MENU_FIELD`, `LOWERCASE_AZ`,
+  `PRINT_FF_TEXT`, `SCREEN_TO_ATTR`, `SKIP_MENU_TEXT`, `SKIP_NEWLINES`, and
+  `PARSE_DEC_NUM` form a small reusable parser/renderer toolkit used by the
+  startup menu and nearby display code. `MENU_BEEP`/`PLAY_BEEP_TONE` provide
+  feedback sounds, while `SHOW_CPU_SPEED` prints a speed indicator selected via
+  saved CPU-speed state at `DISP_CPUSPEED`.
+- 2026-07-07 ROM0 `$0068-$007F`: `ALTROM_CALL` is an inline-operand AltROM
+  trampoline. The word after `call ALTROM_CALL` is the target address in
+  AltROM, not normal ROM0 code. `ALTROM_CALL_BC` is the secondary entry when
+  BC already holds the AltROM target. ROM0 writes NextReg `$8C=$80` to enable
+  AltROM for reads; the AltROM copy of `$007B` writes `$8C=$00` before returning
+  to ROM0. Confirmed ROM0 inline targets so far: `$0454`, `$07D8`, `$02E5`,
+  `$1332`, `$13A0`, and `$02FC`.
+- 2026-07-07 ROM0 `$11D4-$11DF`: The apparent instruction bytes after
+  `call ALTROM_CALL` are actually `.defw $1332`, an inline call to AltROM
+  routine `$1332`. The real ROM0 continuation is the `ret` at `$11DF`.
+- `_input/next-fpga/nextreg.txt` and `_input/next-fpga/ports.txt` are essential
+  decoding references for ZX Spectrum Next ROM work. Consult them whenever
+  annotating `nextreg`, `in`, or `out` instructions, MMU mapping, DivMMC
+  behavior, paging, ULA access, DMA, or peripheral setup.
+- Final disassembly output should be Klive Z80 Assembler compatible source, not
+  only a rendered listing. Address/opcode bytes belong in aligned comments.
+- Final labels must start in column 1, must not use colons, and must label the
+  following line rather than sharing a line with the instruction or directive.
+- Instruction/directive source lines should use exactly 4 leading spaces, then a
+  28-character instruction/directive field padded with trailing spaces before
+  the aligned address/opcode comment. The comment should reserve a 16-character
+  address/opcode field, enough for `AAAA xx xx xx xx`.
+- Persistent label names should be at most 16 characters and use only letters,
+  digits, and underscores. Use Klive temporary labels, starting with backtick,
+  for local loops/skips/continuations when possible. Confirm syntax against
+  `docs/pages/z80-assembly/language-structure.mdx`.
+- ROM0 `$0000-$007F`: reset and interrupt vector area contains mixed code and
+  data. Some generated instructions in vector gaps are actually signature,
+  filler, or inline data bytes.
+- ROM0 `$0028-$002F`: `RST $28` stores BC in `TMPBC`, reads an inline target
+  address via the caller return address, and continues through `Rom3Cont`.
+- Next API calls should be cross-checked against `next-api.txt` and
+  `_input/NextZXOS_and_esxDOS_APIs.pdf` before naming public entry points.
+- Spectrum 128 and +3 ROM listings in `_input/` are preferred references for
+  inherited BASIC/editor routines, but names/comments should only be transferred
+  after behavior or byte patterns match.
+
+### Open Questions
+
+- Confirm the complete set of Next-specific system variables in the `$5B00`
+  area, especially the currently unknown entries in `system-vars.txt`.
+- Identify every RAM trampoline used for cross-ROM calls and document the bank
+  assumptions on entry and exit.
+- Decide the exact file naming/layout for generated or maintained
+  assembler-compatible sources, for example separate `*.kz80.asm` files beside
+  the current `*.txt` listings.
+- Add an automated byte-for-byte rebuild check that compiles with the Klive Z80
+  Assembler and compares the emitted bytes with the original ROM files.
+
+---
+
 ## Overview
 
 This folder contains complete disassembly of the ZX Spectrum Next ROM (`enNextZX.rom`) using the project's built-in Z80N disassembler. The approach can be replicated for any ROM file requiring Z80/Z80N disassembly.
