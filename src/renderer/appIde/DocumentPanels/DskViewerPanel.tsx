@@ -42,7 +42,6 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
     floppyInfo = createDiskSurface(fileInfo);
   } catch (err) {
     // --- Intentionally ignored
-    console.log(err);
   }
 
   useEffect(() => {

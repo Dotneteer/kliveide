@@ -1,7 +1,7 @@
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { MainApi } from "@common/messaging/MainApi";
 import { AppState } from "@common/state/AppState";
-import { Store } from "@common/state/redux-light";
+import { Dispatch, Store } from "@common/state/redux-light";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import {
   setCachedAppServices,
@@ -14,8 +14,6 @@ import { MutableRefObject, useEffect, useRef } from "react";
 import { setEmuRecordingManager } from "./MainToEmuProcessor";
 import { registerMainToEmuIpc } from "./MainToEmuIpc";
 import { RecordingManager } from "./recording/RecordingManager";
-
-type Dispatch = (action: any) => void;
 
 type EmuStartupArgs = {
   appServices: AppServices;

@@ -47,7 +47,6 @@ export class ProjectListExcludedItemsCommand extends IdeCommandBase<ListExcluded
       result = excludedItemsFromProject(proj);
     }
 
-    console.log("result", result);
     if (result.length <= 0) {
       writeInfoMessage(context.output, "There are no excluded items.");
     } else {

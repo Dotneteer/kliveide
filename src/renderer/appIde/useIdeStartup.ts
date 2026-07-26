@@ -2,7 +2,7 @@ import { MessengerBase } from "@common/messaging/MessengerBase";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SETTING_IDE_OPEN_LAST_PROJECT } from "@common/settings/setting-const";
 import { AppState } from "@common/state/AppState";
-import { Store } from "@common/state/redux-light";
+import { Dispatch, Store } from "@common/state/redux-light";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
@@ -19,8 +19,6 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { initializeMonaco } from "@renderer/features/editor/monaco/MonacoEditor";
 import { registerIdeCommands } from "./IdeCommands";
 import { registerMainToIdeIpc } from "./MainToIdeIpc";
-
-type Dispatch = (action: any) => void;
 
 type IdeStartupArgs = {
   appPath: string;
@@ -52,7 +50,6 @@ export function useIdeStartup({
   useEffect(() => registerMainToIdeIpc(), []);
 
   useLayoutEffect(() => {
-    console.log("AppPath", appPath);
     initializeMonaco();
 
     setCachedAppServices(appServices);

@@ -147,7 +147,6 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
         if (rst !== 0x08) {
           return;
         }
-        console.log("ROM 2 RST $08 detected");
         this._rstWith2ByteVector = false;
         this._rstWith3ByteVector = true;
         return;

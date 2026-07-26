@@ -1,5 +1,6 @@
 import styles from "./AddressInput.module.scss";
 import { useRef } from "react";
+import type { FormEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import classnames from "classnames";
 
@@ -24,12 +25,13 @@ export const AddressInput = ({
   onAddressSent,
   onGotFocus,
 }: Props) => {
-  const inputRef = useRef<HTMLInputElement>();
+  const inputRef = useRef<HTMLInputElement>(null);
   const spanRef = useTooltipRef();
   const radix = decimalView ? 10 : 16;
 
-  const handleBeforeInput = (e: any) => {
-    const typed = e.data;
+  const handleBeforeInput = (e: FormEvent<HTMLInputElement>) => {
+    const typed = (e.nativeEvent as InputEvent).data;
+    if (!typed) return;
     if (typed < "0" || typed > "9") {
       if (decimalView || ((typed < "A" || typed > "F") && (typed < "a" || typed > "f"))) {
         e.preventDefault();
@@ -37,13 +39,13 @@ export const AddressInput = ({
     }
   };
 
-  const handleKeyDown = (e: any) => {
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      if (inputRef.current.value === "") {
+      if (!inputRef.current || inputRef.current.value === "") {
         return;
       }
       if (onAddressSent) {
-        onAddressSent(parseInt(inputRef.current.value, radix));
+        void onAddressSent(parseInt(inputRef.current.value, radix));
       }
       if (clearOnEnter) {
         inputRef.current.value = "";

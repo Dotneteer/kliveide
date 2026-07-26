@@ -2,7 +2,7 @@ import { EmuApi } from "@common/messaging/EmuApi";
 import { MainApi } from "@common/messaging/MainApi";
 import { AppState } from "@common/state/AppState";
 import { setBuildRootAction } from "@common/state/actions";
-import { Store } from "@common/state/redux-light";
+import { Dispatch, Store } from "@common/state/redux-light";
 import { ITreeNode, ITreeView } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
@@ -10,11 +10,9 @@ import { IIdeCommandService } from "@renderer/abstractions/IIdeCommandService";
 import { TreeNode } from "@renderer/core/tree-node";
 import { compareProjectNode, getFileTypeEntry, getNodeDir } from "@renderer/appIde/project/project-node";
 
-type DispatchAction = (action: any, source?: any) => any;
-
 type RenameExplorerNodeArgs = {
   buildRoots: string[];
-  dispatch: DispatchAction;
+  dispatch: Dispatch;
   emuApi: Pick<EmuApi, "renameBreakpoints">;
   mainApi: Pick<MainApi, "displayMessageBox" | "renameFileEntry" | "saveProject">;
   newName: string;

@@ -58,11 +58,6 @@ export class KliveBuildCommand extends IdeCommandBase {
       return commandError(compileResult.message);
     }
 
-    // --- Compile succeeded, run the onSuccess commands
-    if ((compileResult.result as any)?.onSuccessCommands) {
-      const commands = (compileResult.result as any).onSuccessCommands as string[];
-      console.log("onSuccessCommands", commands);
-    }
     return commandSuccessWith(`Project file successfully compiled.`);
   }
 }
@@ -76,7 +71,6 @@ export class KliveCompileCommand extends IdeCommandBase {
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const compileResult = await compileCode(context);
-    console.log(compileResult.result);
     return compileResult.message
       ? commandError(compileResult.message)
       : commandSuccessWith(`Project file successfully compiled.`);
@@ -1076,7 +1070,6 @@ async function compileCode(
     result = await context.mainApi.compileFile(fullPath, language);
   } catch (err) {
     failedMessage = err.message;
-    console.log("FAIL", failedMessage);
   } finally {
     context.store.dispatch(endCompileAction(result));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);

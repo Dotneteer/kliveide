@@ -91,17 +91,21 @@
     - [Completed] Used physical moves and direct imports; no compatibility barrels were added.
     - [Completed] Kept tests in their current behavior-focused folders during the transition and updated their imports/mocks.
 
-11. Tame `MonacoEditor.tsx` last.
-    - First add tests/mocks around editor API behavior, breakpoint decoration updates, external rename edits, and navigation callbacks.
-    - Extract Monaco worker/bootstrap code, language registration, breakpoint actions, editor API adapter, and persistence effects.
-    - Keep module-level Monaco singletons isolated in one bootstrap module.
-    - Tests: initialization idempotency, API methods, breakpoint toggle, rename edit dispatch, cleanup of DOM listeners.
+11. [Completed] Tame `MonacoEditor.tsx` last.
+    - [Completed] Added focused tests/mocks for Monaco bootstrap idempotency, global navigation/store callbacks, external rename edits, user option application, and debug shortcut binding.
+    - [Completed] Extracted Monaco worker/bootstrap, custom language registration, provider registration, and editor opener wiring to `monacoBootstrap.ts`.
+    - [Completed] Isolated module-level Monaco callback/store state in `monacoGlobals.ts` with scoped cleanup helpers.
+    - [Completed] Extracted cross-file rename edit application to `monacoExternalEdits.ts` and fixed Monaco 1-based column handling.
+    - [Completed] Extracted user option updates to `monacoEditorOptions.ts` and debug shortcut binding to `monacoDebugShortcuts.ts`.
+    - [Completed] Removed Monaco-specific hook lint warnings from `MonacoEditor.tsx`; broader breakpoint rendering remains as the next deep extraction candidate.
+    - [Completed] Tests: initialization idempotency, external rename edit dispatch/reload, scoped global callback cleanup, option adapter, debug shortcut gating.
 
-12. Remove low-value noise and type weak spots.
-    - Replace renderer `console.log` diagnostics with a debug logger or remove them.
-    - Replace local `any` in UI event handlers and component props with React/event/domain types.
-    - Fix typos while touching nearby code only.
-    - Tests: no separate tests unless behavior changes; rely on lint/build.
+12. [Completed] Remove low-value noise and type weak spots.
+    - [Completed] Removed renderer `console.log` diagnostics while leaving real `console.error` failure reporting in place.
+    - [Completed] Replaced local `any` in reusable input event handlers with React event types and native `InputEvent` access.
+    - [Completed] Tightened startup/explorer dispatch aliases, icon SVG props, and Monaco bridge/store adapter types where the change stayed local.
+    - [Completed] Fixed nearby comment/constant typos without renaming persisted sprite view-state fields.
+    - [Completed] Tests: relied on focused regression tests, `npm run build:check`, renderer lint, and Electron/Vite build.
 
 ## Suggested Order Of Work
 

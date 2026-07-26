@@ -55,7 +55,6 @@ export default function NextBankDropdown({
   const setNewValue = (value: number) => {
     const newValue = value < 0 ? value.toString(10) : toHexa2(value);
     setSelectedValue(newValue);
-    console.log("Selected value: ", newValue);
     onChanged?.(value);
   };
 
@@ -94,7 +93,6 @@ export default function NextBankDropdown({
     <Select.Root
       value={selectedValue}
       onValueChange={(v) => {
-        console.log("nv", v);
         setNewValue(v.startsWith("-") ? parseInt(v, 10) : parseInt(v, 16));
       }}
     >

@@ -121,13 +121,11 @@ export const SpriteEditor = ({ context }: Props) => {
       return;
     }
     const edit = editStack[editStackIndex];
-    console.log(editStackIndex, editStack.length, editStack, edit);
     if (edit.type === "SpriteListChange") {
       context.fileInfo.sprites = edit.oldSpriteList.slice(0);
       setSelectedSpriteIndex(edit.oldSpriteIndex);
       setSpriteMap(context.fileInfo.sprites[edit.oldSpriteIndex]);
     } else {
-      console.log(editStackIndex, editStack.length);
       updateSpriteMap(edit.oldSpriteMap);
     }
     setEditStackIndex(editStackIndex - 1);
@@ -139,7 +137,6 @@ export const SpriteEditor = ({ context }: Props) => {
       return;
     }
     const edit = editStack[editStackIndex + 1];
-    console.log(editStackIndex, editStack.length, editStack, edit);
     if (edit.type === "SpriteListChange") {
       context.fileInfo.sprites = edit.newSpriteList.slice(0);
       setSelectedSpriteIndex(edit.newSpriteIndex);
@@ -582,7 +579,6 @@ export const SpriteEditor = ({ context }: Props) => {
                 updateSpriteMap(newSpriteMap);
               }}
               onSpriteOperation={(oldSpriteMap, newSpriteMap) => {
-                console.log("Sprite operation", oldSpriteMap, newSpriteMap);
                 pushEdit({
                   type: "SpriteChange",
                   oldSpriteMap,

@@ -1,46 +1,11 @@
-import Editor, { loader } from "@monaco-editor/react";
+import Editor from "@monaco-editor/react";
 import * as monacoEditor from "monaco-editor";
-
-// Import Monaco language workers for built-in language support
-import 'monaco-editor/esm/vs/language/json/monaco.contribution';
-import 'monaco-editor/esm/vs/language/css/monaco.contribution';
-import 'monaco-editor/esm/vs/language/html/monaco.contribution';
-import 'monaco-editor/esm/vs/language/typescript/monaco.contribution';
-import 'monaco-editor/esm/vs/basic-languages/_.contribution';
-
-// Import and configure Monaco workers
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
-
-// Configure worker creation
-(self as any).MonacoEnvironment = {
-  getWorker(_: any, label: string) {
-    if (label === 'json') {
-      return new jsonWorker();
-    }
-    if (label === 'css' || label === 'scss' || label === 'less') {
-      return new cssWorker();
-    }
-    if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return new htmlWorker();
-    }
-    if (label === 'typescript' || label === 'javascript') {
-      return new tsWorker();
-    }
-    return new editorWorker();
-  },
-};
-
 import AutoSizer from "../../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { useEffect, useRef, useState } from "react";
 import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
-import { loadCustomTokenColors } from "@renderer/appIde/project/customTokenLoader";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "@renderer/appIde/utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
@@ -77,122 +42,26 @@ import { AppState } from "@common/state/AppState";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { languageIntelSingleton } from "@renderer/appIde/services/LanguageIntelService";
-import { registerZ80Providers, notifySemanticTokensChanged, type RenameEdit } from "@renderer/appIde/services/z80-providers";
+import { notifySemanticTokensChanged, type RenameEdit } from "@renderer/appIde/services/z80-providers";
+import { initializeMonaco, isMonacoInitialized } from "./monacoBootstrap";
+import {
+  setMonacoExternalEditHandler,
+  setMonacoNavigationHandler,
+  setMonacoProviderStore
+} from "./monacoGlobals";
+import { applyExternalRenameEdits } from "./monacoExternalEdits";
+import { applyMonacoUserOptions } from "./monacoEditorOptions";
+import { registerMonacoDebugShortcuts } from "./monacoDebugShortcuts";
 
-let monacoInitialized = false;
+export { initializeMonaco } from "./monacoBootstrap";
 
 let MAX_BP_UNDO_STACK = 64;
-
-// --- Module-level callback set by the active MonacoEditor component so that
-// --- the globally-registered Monaco editor opener can navigate cross-file.
-let _navigateToFile: ((filePath: string, line: number) => void) | null = null;
-
-// --- Module-level callback set by the active MonacoEditor component so that
-// --- the rename provider can apply edits to files other than the current one.
-let _applyExternalEdits: ((edits: RenameEdit[]) => void) | null = null;
-
-// --- Module-level store reference so that providers can read current state.
-let _store: Store<any> | null = null;
 
 // --- We use these shortcuts in this file for Monaco types
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
 type EditorDecorationsCollection = monacoEditor.editor.IEditorDecorationsCollection;
 type MarkdownString = monacoEditor.IMarkdownString;
 
-// --- We need to invoke this function while initializing the app. This is required to
-// --- render the Monaco editor with the supported language syntax highlighting.
-export async function initializeMonaco() {
-  // --- Guard against being called multiple times (e.g. from useLayoutEffect re-runs).
-  // --- Set the flag immediately (before any await) to prevent concurrent calls from
-  // --- passing the guard while the first call is still awaiting.
-  if (monacoInitialized) return;
-  monacoInitialized = true;
-
-  // --- Use the ESM version of monaco-editor which is bundled by Vite
-  // --- This avoids the AMD loader issues in production builds
-  loader.config({ monaco: monacoEditor });
-
-  // --- Load custom token colors from settings folder before initializing Monaco
-  await loadCustomTokenColors(customLanguagesRegistry);
-
-  // --- Wait for monaco to initialize
-  const monaco = await loader.init();
-
-  customLanguagesRegistry.forEach((entry) => ensureLanguage(monaco, entry.id));
-
-  function ensureLanguage(monaco: any, language: string) {
-    if (!monaco.languages.getLanguages().some(({ id }) => id === language)) {
-      // --- Do we support that custom language?
-      const languageInfo = customLanguagesRegistry.find((l) => l.id === language);
-      if (languageInfo) {
-        // --- Yes, register the new language
-        monaco.languages.register({ id: languageInfo.id });
-
-        // --- Register a tokens provider for the language
-        monaco.languages.setMonarchTokensProvider(languageInfo.id, languageInfo.languageDef);
-
-        // --- Set the editing configuration for the language
-        monaco.languages.setLanguageConfiguration(languageInfo.id, languageInfo.options);
-
-        // --- Define light theme for the language
-        if (languageInfo.lightTheme) {
-          monaco.editor.defineTheme(`${languageInfo.id}-light`, {
-            base: "vs",
-            inherit: true,
-            rules: languageInfo.lightTheme.rules,
-            encodedTokensColors: languageInfo.lightTheme.encodedTokensColors,
-            colors: languageInfo.lightTheme.colors
-          });
-        }
-        // --- Define dark theme for the language
-        if (languageInfo.darkTheme) {
-          monaco.editor.defineTheme(`${languageInfo.id}-dark`, {
-            base: "vs-dark",
-            inherit: true,
-            rules: languageInfo.darkTheme.rules,
-            encodedTokensColors: languageInfo.darkTheme.encodedTokensColors,
-            colors: languageInfo.darkTheme.colors
-          });
-        }
-        if (languageInfo.depensOn) {
-          for (const dependOn of languageInfo.depensOn) {
-            ensureLanguage(monaco, dependOn);
-          }
-        }
-      }
-    }
-  }
-
-  // --- Register Z80 language intelligence providers (once, after languages are set up)
-  registerZ80Providers(
-    monaco,
-    () => languageIntelSingleton,
-    () => 0,
-    (edits) => { if (_applyExternalEdits) _applyExternalEdits(edits); },
-    () => _store?.getState()?.project?.folderPath ?? undefined,
-    (filePath: string, line: number) => { if (_navigateToFile) _navigateToFile(filePath, line); }
-  );
-
-  // --- Register an opener so that cross-file Go-to-Definition / Find References
-  // --- navigates through Klive's own document system instead of trying to open
-  // --- a second Monaco editor instance.
-  monacoEditor.editor.registerEditorOpener({
-    openCodeEditor(_source: any, resource: any, selectionOrPosition: any): boolean {
-      if (!_navigateToFile) return false;
-      const filePath: string = resource.fsPath ?? resource.path ?? resource.toString();
-      let line = 1;
-      if (selectionOrPosition) {
-        if (typeof selectionOrPosition.startLineNumber === "number") {
-          line = selectionOrPosition.startLineNumber;
-        } else if (typeof selectionOrPosition.lineNumber === "number") {
-          line = selectionOrPosition.lineNumber;
-        }
-      }
-      _navigateToFile(filePath, line);
-      return true;
-    }
-  });
-}
 
 // --- This type represents the API that we can access from outside
 export type EditorApi = DocumentApi & {
@@ -285,7 +154,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   // --- Recognize if something changed in the current document hub
   const hubVersion = useDocumentHubServiceVersion();
 
-  // --- Use these state variables to manage breakpoinst and their changes
+  // --- Use these state variables to manage breakpoints and their changes
   const breakpointsVersion = useSelector((s) => s.emulatorState.breakpointsVersion);
   const breakpoints = useRef<BreakpointInfo[]>([]);
   const compilation = useSelector((s) => s.compilation);
@@ -297,6 +166,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   const hoverDecorations = useRef<EditorDecorationsCollection>(null);
   const execPointDecoration = useRef<EditorDecorationsCollection>(null);
   const errorWarningDecorations = useRef<EditorDecorationsCollection>(null);
+  const refreshEditorBreakpoints = useRef<() => Promise<void>>(async () => undefined);
 
   // --- Debounce timer for background compilation (1200ms)
   const compileDebounce = useRef<ReturnType<typeof setTimeout>>(null);
@@ -342,184 +212,51 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   // --- Wire the module-level cross-file navigation callback to this component's
   // --- ideCommandsService so that registerEditorOpener can open files in Klive.
   useEffect(() => {
-    _navigateToFile = (filePath: string, line: number) => {
+    return setMonacoNavigationHandler((filePath: string, line: number) => {
       ideCommandsService.executeCommand(`nav "${filePath}" ${line}`);
-    };
+    });
   }, [ideCommandsService]);
 
   // --- Wire the module-level store reference so that providers can read current state.
   useEffect(() => {
-    _store = store;
+    return setMonacoProviderStore(store);
   }, [store]);
 
   // --- Wire the module-level cross-file rename callback so that the rename
   // --- provider can apply edits to files other than the currently open one.
   useEffect(() => {
-    _applyExternalEdits = (edits: RenameEdit[]) => {
-      // Group edits by file path (process each file once, apply edits bottom-up)
-      const byFile = new Map<string, RenameEdit[]>();
-      for (const e of edits) {
-        let list = byFile.get(e.filePath);
-        if (!list) {
-          list = [];
-          byFile.set(e.filePath, list);
-        }
-        list.push(e);
-      }
-
-      for (const [filePath, fileEdits] of byFile) {
-        // Apply edits bottom-up so line/column offsets stay valid
-        const sorted = [...fileEdits].sort((a, b) =>
-          b.line !== a.line ? b.line - a.line : b.startColumn - a.startColumn
-        );
-
-        mainApi.readTextFile(filePath).then(async (content) => {
-          const lines = content.split("\n");
-          for (const edit of sorted) {
-            const lineIdx = edit.line - 1;
-            if (lineIdx >= 0 && lineIdx < lines.length) {
-              const line = lines[lineIdx];
-              lines[lineIdx] =
-                line.substring(0, edit.startColumn) +
-                edit.newText +
-                line.substring(edit.endColumn);
-            }
-          }
-          const newContent = lines.join("\n");
-
-          // Save via ProjectService so _fileCache is updated
-          await projectService.saveFileContent(filePath, newContent);
-
-          // Reload any open editors showing this file
-          for (const hub of projectService.getDocumentHubServiceInstances()) {
-            for (const doc of hub.getOpenDocuments()) {
-              if (doc.id === filePath || doc.path === filePath) {
-                await hub.reloadDocument(doc.id);
-              }
-            }
-          }
-        });
-      }
-    };
+    return setMonacoExternalEditHandler((edits: RenameEdit[]) => {
+      void applyExternalRenameEdits(mainApi, projectService, edits);
+    });
   }, [mainApi, projectService]);
-
-  // --- Sets the Auto complete editor option
-  const updateAutoComplete = () => {
-    if (editor.current) {
-      editor.current.updateOptions({
-        quickSuggestions: enableAutoComplete,
-        suggestOnTriggerCharacters: enableAutoComplete
-      });
-    }
-  };
-
-  // --- Sets the InsertSpaces editor option
-  const updateInsertSpaces = () => {
-    if (editor.current) {
-      editor.current.updateOptions({
-        insertSpaces
-      });
-    }
-  };
-
-  // --- Sets the RenderWhitespaces editor option
-  const updateRenderWhitespaces = () => {
-    if (editor.current) {
-      editor.current.updateOptions({
-        renderWhitespace: renderWhitespaces
-      });
-    }
-  };
-
-  // --- Sets the tab size of the editor
-  const updateTabSize = () => {
-    if (editor.current) {
-      editor.current.updateOptions({
-        tabSize
-      });
-    }
-  };
-
-  // --- Set the detect indentation flag
-  const updateDetectIndentation = () => {
-    if (editor.current) {
-      editor.current.updateOptions({
-        detectIndentation
-      });
-    }
-  };
-
-  // --- Set the highlight flag
-  const updateSelectionHighlight = () => {
-    if (editor.current) {
-      editor.current.updateOptions({
-        selectionHighlight: enableSelectionHighlight
-      });
-    }
-  };
-
-  // --- Set the occurrences highlight flag
-  const updateOccurrencesHighlight = () => {
-    if (editor.current) {
-      editor.current.updateOptions({
-        occurrencesHighlight: enableOccurrencesHighlight
-      });
-    }
-  };
-
-  // --- Set the quick suggestion delay
-  const updateQuickSuggestionDelay = () => {
-    if (editor.current) {
-      editor.current.updateOptions({
-        quickSuggestionsDelay: quickSuggestionDelay
-      });
-    }
-  };
 
   // --- Update editor file language changes
   useEffect(() => {
     setLanguageInfo(customLanguagesRegistry.find((l) => l.id === document.language));
   }, [document.language]);
 
-  // --- Update Autocomplete changes
+  // --- Update user-controlled Monaco options when settings change.
   useEffect(() => {
-    updateAutoComplete();
-  }, [enableAutoComplete]);
-
-  // --- Update InsertSpaces changes
-  useEffect(() => {
-    updateInsertSpaces();
-  }, [insertSpaces]);
-
-  // --- Update RenderWhitespaces changes
-  useEffect(() => {
-    updateRenderWhitespaces();
-  }, [renderWhitespaces]);
-
-  // --- Update TabSize changes
-  useEffect(() => {
-    updateTabSize();
-  }, [tabSize]);
-
-  // --- Update DetectIndentation changes
-  useEffect(() => {
-    updateDetectIndentation();
-  }, [detectIndentation]);
-
-  // --- Update selection highlight changes
-  useEffect(() => {
-    updateSelectionHighlight();
-  }, [enableSelectionHighlight]);
-
-  // --- Update the occurrences highlight changes
-  useEffect(() => {
-    updateOccurrencesHighlight();
-  }, [enableOccurrencesHighlight]);
-
-  // --- Update the quick suggestion delay changes
-  useEffect(() => {
-    updateQuickSuggestionDelay();
-  }, [quickSuggestionDelay]);
+    applyMonacoUserOptions(editor.current, {
+      enableAutoComplete,
+      insertSpaces,
+      renderWhitespaces,
+      tabSize,
+      detectIndentation,
+      enableSelectionHighlight,
+      enableOccurrencesHighlight,
+      quickSuggestionDelay
+    });
+  }, [
+    enableAutoComplete,
+    insertSpaces,
+    renderWhitespaces,
+    tabSize,
+    detectIndentation,
+    enableSelectionHighlight,
+    enableOccurrencesHighlight,
+    quickSuggestionDelay
+  ]);
 
   // --- Respond to theme changes
   useEffect(() => {
@@ -547,58 +284,18 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     }
   }, [document.isReadOnly, document.isLocked, isProjectDebugging]);
 
-  useEffect(() => {
-    (async () => {
-      const settings = (await mainApi.getUserSettings())?.shortcuts ?? {};
-      if (settings.stepInto) {
-        bindKey(settings.stepInto, async () => {
-          if (isPaused()) {
-            await emuApi.issueMachineCommand("stepInto");
-          }
-        });
-      }
-      if (settings.stepOver) {
-        bindKey(settings.stepOver, async () => {
-          if (isPaused()) {
-            await emuApi.issueMachineCommand("stepOver");
-          }
-        });
-      }
-      if (settings.stepOut) {
-        bindKey(settings.stepOut, async () => {
-          if (isPaused()) {
-            await emuApi.issueMachineCommand("stepOut");
-          }
-        });
-      }
-
-      function bindKey(shortcut: string, action: () => Promise<void>) {
-        const mappingKey = keysToRebind.find((key) => key.shortCut === shortcut);
-        if (mappingKey) {
-          editor.current?.addCommand(mappingKey.key, async () => {
-            await action();
-          });
-        }
-      }
-    })();
-
-    function isPaused() {
-      const state = store.getState();
-      return (
-        !state?.compilation?.inProgress &&
-        state?.emulatorState?.machineState === MachineControllerState.Paused
-      );
+  // --- Keep the refresh callback current without making the trigger effect
+  // --- depend on the large local breakpoint helper identities.
+  refreshEditorBreakpoints.current = async () => {
+    if (editor.current) {
+      const bps = await refreshBreakpoints();
+      await refreshCurrentBreakpoint(bps);
     }
-  }, [editor.current]);
+  };
 
   // --- Refresh breakpoints when they may change
   useEffect(() => {
-    if (editor.current) {
-      (async () => {
-        const bps = await refreshBreakpoints();
-        await refreshCurrentBreakpoint(bps);
-      })();
-    }
+    void refreshEditorBreakpoints.current();
   }, [breakpointsVersion, compilation, execState, hubVersion]);
 
   useEffect(() => {
@@ -743,7 +440,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       pendingCompile.current = false;
       startBackgroundCompile(store, mainApi, allowBackgroundCompile);
     }
-  }, [backgroundResult, document.node?.projectPath, allowBackgroundCompile]);
+  }, [backgroundResult, document.node?.projectPath, allowBackgroundCompile, mainApi, store]);
 
   useEffect(() => {
     if (store && mainApi) {
@@ -920,7 +617,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       }
     };
 
-    // --- Pass back the API so that the document ub service can use it
+    // --- Pass back the API so that the document hub service can use it
     apiLoaded?.(editorApi);
 
     const viewState = projectService
@@ -930,14 +627,19 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       ed.restoreViewState(viewState);
     }
 
-    // --- Set the editor's options
-    updateAutoComplete();
-    updateInsertSpaces();
-    updateRenderWhitespaces();
-    updateTabSize();
-    updateDetectIndentation();
-    updateSelectionHighlight();
-    updateOccurrencesHighlight();
+    // --- Set the editor's user-controlled options
+    applyMonacoUserOptions(ed, {
+      enableAutoComplete,
+      insertSpaces,
+      renderWhitespaces,
+      tabSize,
+      detectIndentation,
+      enableSelectionHighlight,
+      enableOccurrencesHighlight,
+      quickSuggestionDelay
+    });
+
+    void registerMonacoDebugShortcuts(ed, mainApi, emuApi, store, keysToRebind);
 
     // --- Focus the editor
     ed.focus();
@@ -957,7 +659,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     // --- Start background compilation
     startBackgroundCompile(store, mainApi, allowBackgroundCompile);
 
-    // --- Show breakpoinst and other decorations when initially displaying the editor
+    // --- Show breakpoints and other decorations when initially displaying the editor
     (async () => {
       const bps = await refreshBreakpoints();
       await refreshCurrentBreakpoint(bps);
@@ -1041,7 +743,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       if (languageInfo?.supportsBreakpoints) {
         // --- Keep track of breakpoint changes
         if (e.changes.length > 0) {
-          // --- Special case: after chnaging to readonly, the editor signs
+          // --- Special case: after changing to readonly, the editor signals
           // --- that the entire text has been changed.
           const currentText = editor.current.getModel().getValue();
           if (currentText !== e.changes?.[0].text) {
@@ -1126,7 +828,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   };
 
   // --- render the editor when monaco has been initialized
-  return monacoInitialized ? (
+  return isMonacoInitialized() ? (
     <AutoSizer>
       {({ width, height }) => (
         <Editor
@@ -1159,7 +861,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
    * @param compilation Current compilations
    */
   async function refreshBreakpoints(): Promise<BreakpointInfo[]> {
-    // --- Filter for source code breakpoint belonging to this resoure
+    // --- Filter for source code breakpoints belonging to this resource
     const state = store.getState();
     const bps = (breakpoints.current = await getBreakpoints(messenger));
 

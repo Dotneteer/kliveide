@@ -12,3 +12,5 @@ This folder stores durable notes for future AI-assisted work in this repository.
 - For document header and explorer refactors, read `react-document-explorer-refactor.md`.
 - For emulator panel side-effect refactors, read `react-emulator-panel-refactor.md`.
 - For renderer feature-folder moves, read `react-feature-folder-moves.md`.
+- For Monaco editor refactors, read `react-monaco-editor-refactor.md`.
+- For renderer noise/type cleanup, read `react-cleanup-pass.md`.

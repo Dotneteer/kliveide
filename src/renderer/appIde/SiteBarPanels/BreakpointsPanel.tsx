@@ -215,7 +215,6 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
       className={classnames({ [styles.navigable]: navigable })}
       onClick={async () => {
         const command = `nav "${breakpoint.resource}" ${breakpoint.line}`;
-        console.log(command);
         await ideCommandsService.executeCommand(command);
       }}
     >
@@ -233,4 +232,3 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
     </span>
   );
 };
-

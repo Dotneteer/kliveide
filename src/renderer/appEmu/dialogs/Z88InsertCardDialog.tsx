@@ -88,7 +88,6 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
           const emulatorState = store.getState().emulatorState;
           const machineConfig = emulatorState.config ?? {};
           const newConfig = { ...machineConfig, [MC_Z88_SLOT0]: slotState };
-          console.log(newConfig);
           const machineId = emulatorState?.machineId;
           const modelId = emulatorState?.modelId;
 
