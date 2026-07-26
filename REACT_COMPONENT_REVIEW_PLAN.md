@@ -55,12 +55,14 @@
    - `Modal`, `ContextMenu`, `Tooltip`, `ClickAwayListener`: verify document/window listeners always clean up.
    - Tests: pointer/mouse interactions, keyboard dismissal, outside click, and listener cleanup.
 
-7. Split app shells from app initialization.
+7. [Completed] Split app shells from app initialization.
    - In `IdeApp.tsx` and `EmuApp.tsx`, extract `useIdeStartup`, `useEmuStartup`, dialog registry, command registration, and persisted splitter settings.
    - Convert conditional dialog rendering in IDE to the same registry pattern already used by EMU.
    - Tests: initial actions dispatch once, dialogs render from registry, last-project loading waits for synced settings.
 
-8. Refactor document header and explorer in thin slices.
+8. [In Progress] Refactor document header and explorer in thin slices.
+   - [Completed] `DocumentsHeader.tsx`: extracted tab rendering to `DocumentTabs`, stabilized tab visibility/workspace persistence effects, and covered workspace save payloads.
+   - [Completed] `ExplorerPanel.tsx`: stabilized project-folder refresh callbacks and stopped handling `explorerViewVersion` through the cached refresh path.
    - `DocumentsHeader.tsx`: extract tab list, command bar, workspace persistence hook, and build-root command bar.
    - `ExplorerPanel.tsx`: extract tree loading/cache hook, context menu component, project item row, and file operations.
    - Remove duplicated tree refresh effects where `explorerViewVersion` is handled twice.

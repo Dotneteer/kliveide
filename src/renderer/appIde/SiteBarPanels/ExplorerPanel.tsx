@@ -1,7 +1,7 @@
 import styles from "./ExplorerPanel.module.scss";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { TreeNode } from "@renderer/core/tree-node";
-import { MouseEvent, useEffect, useRef, useState } from "react";
+import { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 import {
   buildProjectTree, compareProjectNode, getFileTypeEntry, getNodeDir
 } from "../project/project-node";
@@ -94,14 +94,15 @@ export const ExplorerPanel = () => {
   const vlApi = useRef<VListHandle>();
 
   // --- State used for tree refresh
-  const [lastExpanded, setLastExpanded] = useState<string[]>(null);
+  const lastExpandedRef = useRef<string[]>(null);
   const explorerViewVersion = useSelector((s) => s.ideView?.explorerViewVersion);
 
   // --- This function refreshes the Explorer tree
-  const refreshTree = () => {
+  const refreshTree = useCallback(() => {
+    if (!tree) return;
     tree.buildIndex();
     setVisibleNodes(tree.getVisibleNodes());
-  };
+  }, [tree]);
 
   // --- Let's use this context menu when clicking a project tree node
   const [contextMenuState, contextMenuApi] = useContextMenuState();
@@ -389,7 +390,8 @@ export const ExplorerPanel = () => {
           node.isExpanded = !node.isExpanded;
           tree.buildIndex();
           setVisibleNodes(tree.getVisibleNodes());
-          setLastExpanded(getExpandedItems(tree.rootNode));
+          const expandedItems = getExpandedItems(tree.rootNode);
+          lastExpandedRef.current = expandedItems;
 
           if (!node.data.isFolder) {
             await ideCommandsService.executeCommand(`nav "${node.data.fullPath}"`);
@@ -449,7 +451,7 @@ export const ExplorerPanel = () => {
     );
   };
 
-  const refreshProjectFolder = async (useCache: boolean) => {
+  const refreshProjectFolder = useCallback(async (useCache: boolean) => {
     // --- No open folder
     if (!folderPath) {
       setSelected(-1);
@@ -471,15 +473,18 @@ export const ExplorerPanel = () => {
     const contents = await mainApi.getDirectoryContent(folderPath);
 
     // --- Build the folder tree
-    const projectTree = buildProjectTree(contents, store, lastExpanded);
+    const projectTree = buildProjectTree(contents, store, lastExpandedRef.current);
     setTree(projectTree);
     setVisibleNodes(projectTree.getVisibleNodes());
     projectService.setProjectTree(projectTree);
     folderCache.set(folderPath, projectTree);
-  };
+  }, [folderPath, mainApi, projectService, store]);
+
+  const refreshProjectFolderRef = useRef(refreshProjectFolder);
+  refreshProjectFolderRef.current = refreshProjectFolder;
 
   // --- Reload all open documents in all document hubs
-  const reloadAllOpenDocuments = async () => {
+  const reloadAllOpenDocuments = useCallback(async () => {
     const documentHubs = projectService.getDocumentHubServiceInstances();
     for (const hub of documentHubs) {
       const openDocs = hub.getOpenDocuments();
@@ -496,7 +501,7 @@ export const ExplorerPanel = () => {
         }
       }
     }
-  };
+  }, [projectService]);
 
   // --- Set up the project service to handle project events
   useEffect(() => {
@@ -542,14 +547,14 @@ export const ExplorerPanel = () => {
   // --- Get the current project tree when the project path changes
   useEffect(() => {
     (async () => {
-      refreshProjectFolder(true);
+      await refreshProjectFolder(true);
     })();
-  }, [folderPath, excludedItems, explorerViewVersion]);
+  }, [excludedItems, folderPath, refreshProjectFolder]);
 
   // --- Get the current project tree when file system changes
   useEffect(() => {
     (async () => {
-      refreshProjectFolder(false);
+      await refreshProjectFolderRef.current(false);
     })();
   }, [explorerViewVersion]);
 
@@ -611,4 +616,3 @@ function getExpandedItems(root: ITreeNode<ProjectNode>): string[] {
     }
   }
 }
-

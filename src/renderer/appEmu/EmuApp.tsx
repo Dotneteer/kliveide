@@ -7,49 +7,18 @@ import {
   useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
-import { displayDialogAction, emuLoadedAction, setAudioSampleRateAction } from "@state/actions";
-import { useRef, useEffect, ReactElement } from "react";
+import { displayDialogAction } from "@state/actions";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
 import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
 import { RecordingContext } from "./recording/RecordingContext";
-import { RecordingManager } from "./recording/RecordingManager";
-import { setEmuRecordingManager } from "./MainToEmuProcessor";
 import { useMainApi } from "@renderer/core/MainApi";
-import {
-  CREATE_DISK_DIALOG,
-  FIRST_STARTUP_DIALOG_EMU,
-  Z88_CHANGE_RAM_DIALOG,
-  Z88_EXPORT_CARD_DIALOG,
-  Z88_INSERT_CARD_DIALOG,
-  Z88_REMOVE_CARD_DIALOG
-} from "@common/messaging/dialog-ids";
-import { FirstStartDialog } from "@renderer/appIde/dialogs/FirstStartDialog";
-import { CreateDiskDialog } from "./dialogs/CreateDiskDialog";
-import { Z88RemoveCardDialog } from "./dialogs/Z88RemoveCardDialog";
-import { Z88InsertCardDialog } from "./dialogs/Z88InsertCardDialog";
-import { Z88ExportCardDialog } from "./dialogs/Z88ExportCardDialog";
-import { Z88ChangeRamDialog } from "./dialogs/Z88ChangeRamDialog";
-import {
-  setCachedAppServices,
-  setCachedMessenger,
-  setCachedStore
-} from "@renderer/CachedServices";
-import { setIsWindows } from "@renderer/os-utils";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR
 } from "@common/settings/setting-const";
-import { registerMainToEmuIpc } from "./MainToEmuIpc";
-
-const dialogRegistry: Record<number, (data: any, onClose: () => void) => ReactElement> = {
-  [FIRST_STARTUP_DIALOG_EMU]: (_, onClose) => <FirstStartDialog onClose={onClose} />,
-  [Z88_REMOVE_CARD_DIALOG]: (data, onClose) => <Z88RemoveCardDialog slot={data} onClose={onClose} />,
-  [Z88_INSERT_CARD_DIALOG]: (data, onClose) => <Z88InsertCardDialog slot={data} onClose={onClose} />,
-  [Z88_EXPORT_CARD_DIALOG]: (data, onClose) => <Z88ExportCardDialog slot={data} onClose={onClose} />,
-  [Z88_CHANGE_RAM_DIALOG]: (_, onClose) => <Z88ChangeRamDialog onClose={onClose} />,
-  [CREATE_DISK_DIALOG]: (_, onClose) => <CreateDiskDialog onClose={onClose} />
-};
+import { EmuDialogHost } from "./EmuDialogHost";
+import { useEmuRecordingManager, useEmuStartup } from "./useEmuStartup";
 
 const EmuApp = () => {
   // --- Used services
@@ -58,12 +27,7 @@ const EmuApp = () => {
   const { store, messenger } = useRendererContext();
   const mainApi = useMainApi();
 
-  // --- Screen recording manager (created once; ref shared via context)
-  const recordingManagerRef = useRef<RecordingManager | null>(null);
-  if (!recordingManagerRef.current) {
-    recordingManagerRef.current = new RecordingManager(mainApi, dispatch);
-    setEmuRecordingManager(recordingManagerRef.current);
-  }
+  const recordingManagerRef = useEmuRecordingManager(mainApi, dispatch);
 
   // --- Visual state
   const showToolbar = useGlobalSetting(SETTING_EMU_SHOW_TOOLBAR);
@@ -74,43 +38,7 @@ const EmuApp = () => {
   const dialogId = useSelector((s) => s.ideView?.dialogToDisplay);
   const dialogData = useSelector((s) => s.ideView?.dialogData);
 
-  // --- Use the current instance of the app services
-  const mounted = useRef(false);
-
-  useEffect(() => registerMainToEmuIpc(), []);
-
-  useEffect(() => {
-    setCachedAppServices(appServices);
-    setCachedMessenger(messenger);
-    setCachedStore(store);
-
-    // --- Whenever each of these props are known, we can state the UI is loaded
-    if (!appServices || !store || !messenger || mounted.current) return;
-
-    // --- Run the app initialiation sequence
-    mounted.current = true;
-    dispatch(emuLoadedAction());
-    
-    // --- Remove the loading screen
-    window.postMessage({ payload: "removeLoading" }, "*");
-
-    // --- Set the audio sample rate to use
-    const audioCtx = new AudioContext();
-    try {
-      const sampleRate = audioCtx.sampleRate;
-      dispatch(setAudioSampleRateAction(sampleRate));
-    } finally {
-      // The specification doesn't go into a lot of detail about things like how many
-      // audio contexts a user agent should support, or minimum or maximum latency
-      // requirements (if any), so these details can vary from browser to browser.
-      // More details: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/AudioContext
-      audioCtx.close().catch(console.error);
-    }
-  }, [appServices, store, messenger]);
-
-  useEffect(() => {
-    setIsWindows(isWindows);
-  }, [isWindows]);
+  useEmuStartup({ appServices, dispatch, isWindows, messenger, store });
 
   return (
     <RecordingContext.Provider value={recordingManagerRef}>
@@ -119,8 +47,11 @@ const EmuApp = () => {
       <EmulatorArea />
       <EmuStatusBar show={showStatusBar} />
       <BackDrop visible={dimmed} />
-
-      {dialogRegistry[dialogId]?.(dialogData, () => store.dispatch(displayDialogAction()))}
+      <EmuDialogHost
+        dialogData={dialogData}
+        dialogId={dialogId}
+        onClose={() => store.dispatch(displayDialogAction())}
+      />
     </FullPanel>
     </RecordingContext.Provider>
   );

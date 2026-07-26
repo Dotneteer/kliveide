@@ -1,8 +1,9 @@
 import { TabButton, TabButtonSeparator, TabButtonSpace } from "@controls/TabButton";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
-import { CloseMode, DocumentTab } from "./DocumentTab";
+import { CloseMode } from "./DocumentTab";
+import { DocumentTabs } from "./DocumentTabs";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import styles from "./DocumentsHeader.module.scss";
 import {
@@ -50,11 +51,11 @@ export const DocumentsHeader = () => {
     if (!documentHubService) return;
     setOpenDocs(documentHubService.getOpenDocuments());
     setActiveDocIndex(documentHubService.getActiveDocumentIndex());
-  }, [hubVersion]);
+  }, [documentHubService, hubVersion]);
 
   useEffect(() => {
     setDirtyStates(openDocs?.map((d) => d.editVersionCount !== d.savedVersionCount));
-  }, [editorVersion]);
+  }, [editorVersion, openDocs]);
 
   // --- Update the UI when the build root changes
   useEffect(() => {
@@ -62,7 +63,27 @@ export const DocumentsHeader = () => {
       setSelectedIsBuildRoot(buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0);
     }
     setEditorInfo(getFileTypeEntry(openDocs?.[activeDocIndex]?.node?.name, store));
-  }, [openDocs, buildRoots, activeDocIndex, hubVersion]);
+  }, [activeDocIndex, buildRoots, hubVersion, openDocs, store]);
+
+  // --- Ensures that the active document tab is visible in its full size
+  const ensureTabVisible = useCallback(() => {
+    const tabDim = tabDims.current[activeDocIndex];
+    if (!tabDim) return;
+    const parent = tabDim.parentElement;
+    if (!parent || !svApi.current) return;
+
+    // --- There is an active document
+    const tabLeftPos = tabDim.offsetLeft - parent.offsetLeft;
+    const tabRightPos = tabLeftPos + tabDim.offsetWidth;
+    const scrollPos = svApi.current.getScrollLeft();
+    if (tabLeftPos < scrollPos) {
+      // --- Left tab edge is hidden, scroll to the left to display the tab
+      svApi.current.scrollToHorizontal(tabLeftPos);
+    } else if (tabRightPos > scrollPos + parent.offsetWidth) {
+      // --- Right tab edge is hidden, scroll to the left to display the tab
+      svApi.current.scrollToHorizontal(tabLeftPos - parent.offsetWidth + tabDim.offsetWidth);
+    }
+  }, [activeDocIndex]);
 
   // --- Make sure that the index is visible
   useEffect(() => {
@@ -88,7 +109,7 @@ export const DocumentsHeader = () => {
     (async () => {
       await mainApi.saveProject();
     })();
-  }, [activeDocIndex, openDocs]);
+  }, [activeDocIndex, ensureTabVisible, mainApi, openDocs, store]);
 
   // --- Refresh the changed project document
   useEffect(() => {
@@ -106,7 +127,7 @@ export const DocumentsHeader = () => {
       documentHubService.setDocumentViewState(projectDoc.id, viewState);
       setTimeout(() => dispatch(incProjectViewStateVersionAction()), 1000);
     })();
-  }, [projectVersion]);
+  }, [dispatch, documentHubService, projectVersion, store]);
 
   // --- Respond to project service notifications
   useEffect(() => {
@@ -128,35 +149,15 @@ export const DocumentsHeader = () => {
     };
   }, [documentHubService, projectService]);
 
-  // --- Ensures that the active document tab is visible in its full size
-  const ensureTabVisible = () => {
-    const tabDim = tabDims.current[activeDocIndex];
-    if (!tabDim) return;
-    const parent = tabDim.parentElement;
-    if (!parent || !svApi.current) return;
-
-    // --- There is an active document
-    const tabLeftPos = tabDim.offsetLeft - parent.offsetLeft;
-    const tabRightPos = tabLeftPos + tabDim.offsetWidth;
-    const scrollPos = svApi.current.getScrollLeft();
-    if (tabLeftPos < scrollPos) {
-      // --- Left tab edge is hidden, scroll to the left to display the tab
-      svApi.current.scrollToHorizontal(tabLeftPos);
-    } else if (tabRightPos > scrollPos + parent.offsetWidth) {
-      // --- Right tab edge is hidden, scroll to the left to display the tab
-      svApi.current.scrollToHorizontal(tabLeftPos - parent.offsetWidth + tabDim.offsetWidth);
-    }
-  };
-
   // --- Stores the tab element reference, as later we'll need its dimensions to
   // --- ensure it is entirelly visible
-  const tabDisplayed = (idx: number, el: HTMLDivElement) => {
+  const tabDisplayed = useCallback((idx: number, el: HTMLDivElement) => {
     const oldTabElement = tabDims.current[idx];
     tabDims.current[idx] = el;
     if (!oldTabElement) {
       ensureTabVisible();
     }
-  };
+  }, [ensureTabVisible]);
 
   // --- Responds to the event when a document tab has been clicked; it makes the clicked
   // --- document the active one
@@ -203,36 +204,18 @@ export const DocumentsHeader = () => {
         thinScrollBar={true}
         apiLoaded={(api) => (svApi.current = api)}
       >
-        <div className={styles.tabWrapper}>
-          {(openDocs ?? []).map((d, idx) => {
-            // --- Take care of unique names
-            const docName = openDocs.find(
-              (doc) => doc.name === d.name && doc.id !== d.id && doc.path
-            )
-              ? d.path
-              : d.name;
-            return (
-              <DocumentTab
-                key={d.id}
-                name={docName}
-                path={d.path}
-                isActive={idx === activeDocIndex}
-                isTemporary={d.isTemporary}
-                isReadOnly={d.isReadOnly}
-                isLocked={isProjectDebugging && d.isLocked}
-                awaiting={awaiting}
-                hasChanges={dirtyStates?.[idx]}
-                tabsCount={tabsCount}
-                iconName={d.iconName}
-                iconFill={d.iconFill}
-                tabDisplayed={(el) => tabDisplayed(idx, el)}
-                tabClicked={() => tabClicked(d.id)}
-                tabDoubleClicked={() => tabDoubleClicked(d)}
-                tabCloseClicked={(mode: CloseMode) => tabCloseClicked(mode, d.id)}
-              />
-            );
-          })}
-        </div>
+        <DocumentTabs
+          activeDocIndex={activeDocIndex}
+          awaiting={awaiting}
+          dirtyStates={dirtyStates}
+          isProjectDebugging={isProjectDebugging}
+          openDocs={openDocs ?? []}
+          onTabClicked={tabClicked}
+          onTabCloseClicked={tabCloseClicked}
+          onTabDisplayed={tabDisplayed}
+          onTabDoubleClicked={tabDoubleClicked}
+          tabsCount={tabsCount}
+        />
         <div className={styles.closingTab} />
       </ScrollViewer>
       <div className={styles.commandBar}>
@@ -280,7 +263,7 @@ const BuildRootCommandBar = () => {
     if (startedHere && !compiling) {
       setStartedHere(false);
     }
-  }, [compiling]);
+  }, [compiling, startedHere]);
   return (
     <>
       <TabButtonSeparator />

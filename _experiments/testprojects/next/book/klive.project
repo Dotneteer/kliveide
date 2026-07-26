@@ -87,10 +87,10 @@
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
+      "activeDocumentId": "$memory"
     },
     "Disassembly": {
-      "topAddress": 39807,
+      "topAddress": 41956,
       "isFullView": true,
       "currentSegment": 0,
       "decimalView": false,
