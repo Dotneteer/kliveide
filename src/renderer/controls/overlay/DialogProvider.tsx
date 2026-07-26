@@ -13,7 +13,7 @@ import { Modal } from "../Modal";
 
 export type DialogControls<TResult = unknown> = {
   id: string;
-  close: (result: TResult) => void;
+  close: (result?: TResult) => void;
   cancel: () => void;
   reject: (error?: unknown) => void;
 };

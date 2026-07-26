@@ -18,9 +18,14 @@ import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 type Props = {
   onClose: () => void;
+  onApply?: (result: ExcludedProjectItemsDialogResult) => void;
 };
 
-export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
+export type ExcludedProjectItemsDialogResult = {
+  excludedItemIds: string[];
+};
+
+export const ExcludedProjectItemsDialog = ({ onClose, onApply }: Props) => {
   const { messenger, store } = useRendererContext();
 
   const [globalExcludes, setGlobalExcludes] = useState([]);
@@ -49,8 +54,10 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
       primaryEnabled={true}
       initialFocus="none"
       onPrimaryClicked={async () => {
-        disp(setExcludedProjectItemsAction(excludedItems.map((t) => t.id)));
+        const excludedItemIds = excludedItems.map((t) => t.id);
+        disp(setExcludedProjectItemsAction(excludedItemIds));
         await saveProject(messenger);
+        onApply?.({ excludedItemIds });
         return false;
       }}
       onClose={() => {

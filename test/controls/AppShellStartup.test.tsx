@@ -200,7 +200,16 @@ describe("app shell dialog hosts", () => {
     );
 
     for (const dialogId of expectedIdeIds) {
-      expect(isValidElement(ideDialogRegistry[dialogId](vi.fn()))).toBe(true);
+      expect(
+        isValidElement(
+          ideDialogRegistry[dialogId]({
+            id: `ide-${dialogId}`,
+            close: vi.fn(),
+            cancel: vi.fn(),
+            reject: vi.fn()
+          })
+        )
+      ).toBe(true);
     }
     for (const dialogId of expectedEmuIds) {
       expect(isValidElement(emuDialogRegistry[dialogId](3, vi.fn()))).toBe(true);
@@ -241,7 +250,7 @@ describe("app shell dialog hosts", () => {
     );
     fireEvent.click(await screen.findByText("new project close"));
 
-    expect(onClose).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 
   it("renders EMU dialogs from the registry with dialog data", async () => {

@@ -1,23 +1,52 @@
 import { ReactElement, useEffect, useRef } from "react";
-import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
+import {
+  DialogControls,
+  useDialogs
+} from "@renderer/controls/overlay/DialogProvider";
 import {
   EXPORT_CODE_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG,
   FIRST_STARTUP_DIALOG_IDE,
   NEW_PROJECT_DIALOG
 } from "@messaging/dialog-ids";
-import { NewProjectDialog } from "./dialogs/NewProjectDialog";
-import { ExportCodeDialog } from "./dialogs/ExportCodeDialog";
-import { ExcludedProjectItemsDialog } from "./dialogs/ExcludedProjectItemsDialog";
-import { FirstStartDialog } from "./dialogs/FirstStartDialog";
+import {
+  NewProjectDialog,
+  NewProjectDialogResult
+} from "./dialogs/NewProjectDialog";
+import {
+  ExportCodeDialog,
+  ExportCodeDialogResult
+} from "./dialogs/ExportCodeDialog";
+import {
+  ExcludedProjectItemsDialog,
+  ExcludedProjectItemsDialogResult
+} from "./dialogs/ExcludedProjectItemsDialog";
+import {
+  FirstStartDialog,
+  FirstStartDialogResult
+} from "./dialogs/FirstStartDialog";
 
-type IdeDialogRenderer = (onClose: () => void) => ReactElement;
+type IdeDialogResult =
+  | NewProjectDialogResult
+  | ExportCodeDialogResult
+  | ExcludedProjectItemsDialogResult
+  | FirstStartDialogResult;
+
+type IdeDialogRenderer = (controls: DialogControls<IdeDialogResult>) => ReactElement;
 
 export const ideDialogRegistry: Record<number, IdeDialogRenderer> = {
-  [NEW_PROJECT_DIALOG]: (onClose) => <NewProjectDialog onCreate={async () => {}} onClose={onClose} />,
-  [EXPORT_CODE_DIALOG]: (onClose) => <ExportCodeDialog onExport={async () => {}} onClose={onClose} />,
-  [EXCLUDED_PROJECT_ITEMS_DIALOG]: (onClose) => <ExcludedProjectItemsDialog onClose={onClose} />,
-  [FIRST_STARTUP_DIALOG_IDE]: (onClose) => <FirstStartDialog onClose={onClose} />
+  [NEW_PROJECT_DIALOG]: (controls) => (
+    <NewProjectDialog onCreate={(result) => controls.close(result)} onClose={controls.cancel} />
+  ),
+  [EXPORT_CODE_DIALOG]: (controls) => (
+    <ExportCodeDialog onExport={(result) => controls.close(result)} onClose={controls.cancel} />
+  ),
+  [EXCLUDED_PROJECT_ITEMS_DIALOG]: (controls) => (
+    <ExcludedProjectItemsDialog onApply={(result) => controls.close(result)} onClose={controls.cancel} />
+  ),
+  [FIRST_STARTUP_DIALOG_IDE]: (controls) => (
+    <FirstStartDialog onResolve={(result) => controls.close(result)} onClose={controls.cancel} />
+  )
 };
 
 type IdeDialogHostProps = {
@@ -37,14 +66,10 @@ export function IdeDialogHost({ dialogId, onClose }: IdeDialogHostProps): ReactE
     if (!dialogRenderer) return;
 
     const legacyDialogId = `ide-dialog-${dialogId}`;
-    void dialogs.openLegacy<void>(
-      (controls) =>
-        dialogRenderer(() => {
-          controls.cancel();
-          onCloseRef.current();
-        }),
+    void dialogs.openLegacy<IdeDialogResult>(
+      (controls) => dialogRenderer(controls),
       { id: legacyDialogId }
-    );
+    ).finally(() => onCloseRef.current());
 
     return () => dialogs.closeById(legacyDialogId);
   }, [dialogId, dialogs]);

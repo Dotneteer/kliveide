@@ -24,10 +24,18 @@ const machineIds = getAllMachineModels().map((m) => ({
 
 type Props = {
   onClose: () => void;
-  onCreate: (machineId: string, projectName: string, folder?: string) => Promise<void>;
+  onCreate?: (result: NewProjectDialogResult) => Promise<void> | void;
 };
 
-export const NewProjectDialog = ({ onClose }: Props) => {
+export type NewProjectDialogResult = {
+  machineId: string;
+  modelId?: string;
+  templateId: string;
+  projectName: string;
+  projectFolder: string;
+};
+
+export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const mainApi = useMainApi();
   const { validationService, projectService, ideCommandsService } = useAppServices();
   const { store } = useRendererContext();
@@ -103,6 +111,13 @@ export const NewProjectDialog = ({ onClose }: Props) => {
           if (buildRoots.length > 0) {
             ideCommandsService.executeCommand(`nav "${buildRoots[0]}"`);
           }
+          await onCreate?.({
+            machineId: machine,
+            modelId,
+            templateId: template,
+            projectName: name,
+            projectFolder: folder
+          });
         } catch (error) {
           await mainApi.displayMessageBox("error", "New Klive Project Error", error.toString());
           return true;

@@ -71,10 +71,20 @@ const borderIds = [
 
 type Props = {
   onClose: () => void;
-  onExport: () => Promise<void>;
+  onExport?: (result: ExportCodeDialogResult) => Promise<void> | void;
 };
 
-export const ExportCodeDialog = ({ onClose }: Props) => {
+export type ExportCodeDialogResult = {
+  command: string;
+  fullFilename: string;
+  formatId: string;
+  exportName: string;
+  exportFolder: string;
+  programName: string;
+  startAddress: string;
+};
+
+export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   const dispatch = useDispatch();
   const { store } = useRendererContext();
   const exportSettings = store.getState()?.project?.exportSettings ?? {};
@@ -184,6 +194,15 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
             "Exporting code",
             result.finalMessage ?? "Code successfully exported."
           );
+          await onExport?.({
+            command,
+            fullFilename,
+            formatId,
+            exportName,
+            exportFolder,
+            programName,
+            startAddress
+          });
         } else {
           // --- Analyze the message and
           let message = result.finalMessage;

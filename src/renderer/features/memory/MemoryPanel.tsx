@@ -22,9 +22,13 @@ import {
 } from "@common/state/actions";
 import { MEMORY_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
-import { SetMemoryDialog } from "@renderer/appIde/dialogs/SetMemoryDialog";
+import {
+  SetMemoryDialog,
+  SetMemoryDialogResult
+} from "@renderer/appIde/dialogs/SetMemoryDialog";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
+import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 
 type DumpViewMode = "8x1" | "8x2" | "16x1";
 
@@ -62,6 +66,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
+  const dialogs = useDialogs();
   const { ideCommandsService } = useAppServices();
 
   // --- Get the machine information
@@ -142,10 +147,6 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
 
   // --- Track if this is the initial mount to skip saving viewState on first render
   const isInitialMount = useRef(true);
-
-  const [isMemoryDialogOpen, setMemoryDialogOpen] = useState(false);
-  const [addressToEdit, setAddressToEdit] = useState<number>(null);
-  const [addressToEditIsRom, setAddressToEditIsRom] = useState(false);
 
   // --- Track mount/unmount and initialization phase
   const isInitializing = useRef(true);
@@ -522,27 +523,31 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
 
   const editMemoryContent = useCallback((address: number) => {
     const isRom = !!romFlags?.[(address >> 13) & 0x07];
-    setMemoryDialogOpen(true);
-    setAddressToEdit(address);
-    setAddressToEditIsRom(isRom);
-  }, [romFlags]);
+    const currentValue = memory.current[address];
 
-  // --- Rename dialog box to display
-  const setMemoryDialog = isMemoryDialogOpen && (
-    <SetMemoryDialog
-      address={addressToEdit}
-      currentValue={memory.current[addressToEdit]}
-      decimal={decimalView}
-      isRom={addressToEditIsRom}
-      onSetMemory={async (newValue: string, sizeOption: string, bigEndian: boolean) => {
-        const command = `setmem ${addressToEdit} ${newValue.replace(" ", "")} ${sizeOption} ${bigEndian ? "-be" : ""}`;
-        await ideCommandsService.executeCommand(command);
-      }}
-      onClose={() => {
-        setMemoryDialogOpen(false);
-      }}
-    />
-  );
+    void (async () => {
+      const result = await dialogs.openLegacy<SetMemoryDialogResult>(
+        (controls) => (
+          <SetMemoryDialog
+            address={address}
+            currentValue={currentValue}
+            decimal={decimalView}
+            isRom={isRom}
+            onSetMemory={(result) => controls.close(result)}
+            onClose={() => controls.cancel()}
+          />
+        ),
+        { id: "memory-set-dialog" }
+      );
+
+      if (!result) return;
+
+      const command = `setmem ${address} ${result.value.replace(" ", "")} ${result.sizeOption} ${
+        result.bigEndian ? "-be" : ""
+      }`;
+      await ideCommandsService.executeCommand(command);
+    })();
+  }, [decimalView, dialogs, ideCommandsService, romFlags]);
 
   // Don't render at all until isReady
   if (!isReady) {
@@ -561,7 +566,6 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
       fontSize="0.8em"
       style={{ opacity: shouldHideUntilScrolled ? 0 : 1 }}
     >
-      {setMemoryDialog}
       <PanelHeader>
         <OptionsBar />
       </PanelHeader>
