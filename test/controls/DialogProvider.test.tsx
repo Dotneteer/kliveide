@@ -123,6 +123,38 @@ describe("DialogProvider", () => {
     });
   });
 
+  it("opens a legacy renderer without wrapping it in a managed modal", async () => {
+    function Harness() {
+      const dialogs = useDialogs();
+      const [result, setResult] = useState("");
+
+      return (
+        <>
+          <button
+            onClick={async () => {
+              const value = await dialogs.openLegacy<string>((controls) => (
+                <button onClick={() => controls.close("legacy-result")}>Legacy close</button>
+              ));
+              setResult(value ?? "cancelled");
+            }}
+          >
+            Open legacy
+          </button>
+          <div data-testid="result">{result}</div>
+        </>
+      );
+    }
+
+    renderWithProviders(<Harness />);
+    fireEvent.click(screen.getByRole("button", { name: "Open legacy" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Legacy close" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("result")).toHaveTextContent("legacy-result");
+    });
+  });
+
   it("rejects when dialog controls reject", async () => {
     const onRejected = vi.fn();
 

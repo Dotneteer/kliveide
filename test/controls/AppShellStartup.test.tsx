@@ -231,10 +231,15 @@ describe("app shell dialog hosts", () => {
 
     const { NEW_PROJECT_DIALOG } = await import("@messaging/dialog-ids");
     const { IdeDialogHost } = await import("@renderer/appIde/IdeDialogHost");
+    const { DialogProvider } = await import("@renderer/controls/overlay/DialogProvider");
     const onClose = vi.fn();
 
-    render(<IdeDialogHost dialogId={NEW_PROJECT_DIALOG} onClose={onClose} />);
-    fireEvent.click(screen.getByText("new project close"));
+    render(
+      <DialogProvider>
+        <IdeDialogHost dialogId={NEW_PROJECT_DIALOG} onClose={onClose} />
+      </DialogProvider>
+    );
+    fireEvent.click(await screen.findByText("new project close"));
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -273,10 +278,15 @@ describe("app shell dialog hosts", () => {
 
     const { Z88_REMOVE_CARD_DIALOG } = await import("@common/messaging/dialog-ids");
     const { EmuDialogHost } = await import("@renderer/appEmu/EmuDialogHost");
+    const { DialogProvider } = await import("@renderer/controls/overlay/DialogProvider");
     const onClose = vi.fn();
 
-    render(<EmuDialogHost dialogId={Z88_REMOVE_CARD_DIALOG} dialogData={3} onClose={onClose} />);
-    fireEvent.click(screen.getByText("remove 3"));
+    render(
+      <DialogProvider>
+        <EmuDialogHost dialogId={Z88_REMOVE_CARD_DIALOG} dialogData={3} onClose={onClose} />
+      </DialogProvider>
+    );
+    fireEvent.click(await screen.findByText("remove 3"));
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });

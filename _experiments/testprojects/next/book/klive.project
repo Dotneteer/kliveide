@@ -123,9 +123,17 @@
             "line": 0,
             "column": 0
           }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_talktohw/nr.asm",
+          "position": {
+            "line": 0,
+            "column": 0
+          }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/01_z80n/extinstr.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_talktohw/nr.asm"
     },
     "Disassembly": {
       "topAddress": 41956,

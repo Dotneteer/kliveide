@@ -23,6 +23,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 import { ExplorerProjectItem } from "./ExplorerProjectItem";
 import { ExplorerEmptyState } from "./ExplorerEmptyState";
 import { ExplorerContextMenu } from "./ExplorerContextMenu";
@@ -39,17 +40,12 @@ export const ExplorerPanel = () => {
   const { store, messenger } = useRendererContext();
   const mainApi = useMainApi();
   const emuApi = useEmuApi();
+  const dialogs = useDialogs();
 
   const dispatch = useDispatch();
   const appServices = useAppServices();
   const { projectService, ideCommandsService } = appServices;
   const documentHubService = projectService.getActiveDocumentHubService();
-
-  // --- Visibility of dialogs
-  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
-  const [newItemIsFolder, setNewItemIsFolder] = useState(false);
 
   const [isFocused, setIsFocused] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -124,7 +120,7 @@ export const ExplorerPanel = () => {
         refreshTree();
       }}
       onConceal={contextMenuApi.conceal}
-      onDelete={() => setIsDeleteDialogOpen(true)}
+      onDelete={() => openDeleteDialog()}
       onExclude={async () => {
         await ideCommandsService.executeCommand(`p:x "${selectedContextNode.data.projectPath}"`);
       }}
@@ -132,21 +128,15 @@ export const ExplorerPanel = () => {
         selectedContextNode.expandAll();
         refreshTree();
       }}
-      onNewFile={() => {
-        setNewItemIsFolder(false);
-        setIsNewItemDialogOpen(true);
-      }}
-      onNewFolder={() => {
-        setNewItemIsFolder(true);
-        setIsNewItemDialogOpen(true);
-      }}
+      onNewFile={() => openNewItemDialog(false)}
+      onNewFolder={() => openNewItemDialog(true)}
       onRefresh={async () => {
         clearExplorerFolderCache();
         store.dispatch(incExploreViewVersionAction());
         // Reload all open documents after refreshing the folder
         await reloadAllOpenDocuments();
       }}
-      onRename={() => setIsRenameDialogOpen(true)}
+      onRename={() => openRenameDialog()}
       onReveal={() => mainApi.showItemInFolder(selectedContextNode.data.fullPath)}
       onToggleBuildRoot={async () => {
         dispatch(setBuildRootAction([selectedContextNode.data.projectPath], !selectedNodeIsBuildRoot));
@@ -216,7 +206,7 @@ export const ExplorerPanel = () => {
       visibleNodes,
       onDelete: (node) => {
         setSelectedNodeContext(node);
-        setIsDeleteDialogOpen(true);
+        openDeleteDialog(node);
       },
       onLeafActivate: (node) => {
         void activateExplorerNode(node, focusedIndex);
@@ -232,74 +222,90 @@ export const ExplorerPanel = () => {
     }
   };
 
-  // --- Rename dialog box to display
-  const renameDialog = isRenameDialogOpen && (
-    <RenameDialog
-      isFolder={selectedContextNodeIsFolder}
-      oldPath={selectedContextNode?.data?.name}
-      onRename={async (newName: string) => {
-        await renameExplorerNode({
-          buildRoots,
-          dispatch,
-          emuApi,
-          mainApi,
-          newName,
-          projectService,
-          refreshTree,
-          selectedContextNode,
-          setSelectedNode
-        });
-      }}
-      onClose={() => {
-        setIsRenameDialogOpen(false);
-      }}
-    />
-  );
+  const openRenameDialog = (node = selectedContextNode): void => {
+    if (!node) return;
+    const nodeIsFolder = node.data?.isFolder ?? false;
+    const oldPath = node.data?.name;
+    void dialogs.openLegacy<void>(
+      (controls) => (
+        <RenameDialog
+          isFolder={nodeIsFolder}
+          oldPath={oldPath}
+          onRename={async (newName: string) => {
+            await renameExplorerNode({
+              buildRoots,
+              dispatch,
+              emuApi,
+              mainApi,
+              newName,
+              projectService,
+              refreshTree,
+              selectedContextNode: node,
+              setSelectedNode
+            });
+            controls.close();
+          }}
+          onClose={() => controls.cancel()}
+        />
+      ),
+      { id: "explorer-rename-dialog" }
+    );
+  };
 
-  // --- Delete dialog box to display
-  const deleteDialog = isDeleteDialogOpen && (
-    <DeleteDialog
-      isFolder={selectedContextNodeIsFolder}
-      entry={selectedContextNode.data.fullPath}
-      onDelete={async () => {
-        await deleteExplorerNode({
-          mainApi,
-          projectService,
-          refreshTree,
-          selectedContextNode,
-          selectedContextNodeIsFolder
-        });
-      }}
-      onClose={() => {
-        setIsDeleteDialogOpen(false);
-      }}
-    />
-  );
+  const openDeleteDialog = (node = selectedContextNode): void => {
+    if (!node) return;
+    const nodeIsFolder = node.data?.isFolder ?? false;
+    void dialogs.openLegacy<void>(
+      (controls) => (
+        <DeleteDialog
+          isFolder={nodeIsFolder}
+          entry={node.data.fullPath}
+          onDelete={async () => {
+            await deleteExplorerNode({
+              mainApi,
+              projectService,
+              refreshTree,
+              selectedContextNode: node,
+              selectedContextNodeIsFolder: nodeIsFolder
+            });
+            controls.close();
+          }}
+          onClose={() => controls.cancel()}
+        />
+      ),
+      { id: "explorer-delete-dialog" }
+    );
+  };
 
-  // --- New item dialog to display
-  const newItemDialog = isNewItemDialogOpen && (
-    <NewItemDialog
-      isFolder={newItemIsFolder}
-      path={selectedContextNode?.data?.name}
-      itemNames={(selectedContextNode.children ?? []).map((item) => item.data.name)}
-      onAdd={async (newName: string) => {
-        await addExplorerItem({
-          ideCommandsService,
-          mainApi,
-          newItemIsFolder,
-          newName,
-          projectService,
-          refreshTree,
-          selectedContextNode,
-          setSelectedNode,
-          store
-        });
-      }}
-      onClose={() => {
-        setIsNewItemDialogOpen(false);
-      }}
-    />
-  );
+  const openNewItemDialog = (newItemIsFolder: boolean, node = selectedContextNode): void => {
+    if (!node) return;
+    const itemNames = (node.children ?? []).map((item) => item.data.name);
+    void dialogs.openLegacy<void>(
+      (controls) => (
+        <NewItemDialog
+          isFolder={newItemIsFolder}
+          path={node.data?.name}
+          itemNames={itemNames}
+          onAdd={async (newName: string) => {
+            await addExplorerItem({
+              ideCommandsService,
+              mainApi,
+              newItemIsFolder,
+              newName,
+              projectService,
+              refreshTree,
+              selectedContextNode: node,
+              setSelectedNode,
+              store
+            });
+            controls.close();
+          }}
+          onClose={() => controls.cancel()}
+        />
+      ),
+      { id: `explorer-new-${newItemIsFolder ? "folder" : "file"}-dialog` }
+    );
+  };
 
   // --- This function represents a project item component
   const projectItemRenderer = (idx: number) => {
@@ -385,9 +391,6 @@ export const ExplorerPanel = () => {
         onClick={() => {}}
       >
         {contextMenu}
-        {renameDialog}
-        {deleteDialog}
-        {newItemDialog}
 
         <VirtualizedList
           items={visibleNodes}

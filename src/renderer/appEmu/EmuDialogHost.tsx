@@ -1,4 +1,5 @@
-import { ReactElement } from "react";
+import { ReactElement, useEffect, useRef } from "react";
+import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 import {
   CREATE_DISK_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
@@ -36,6 +37,29 @@ export function EmuDialogHost({
   dialogId,
   onClose
 }: EmuDialogHostProps): ReactElement | null {
+  const dialogs = useDialogs();
+  const onCloseRef = useRef(onClose);
+
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (dialogId === undefined) return;
+    const dialogRenderer = emuDialogRegistry[dialogId];
+    if (!dialogRenderer) return;
+
+    const legacyDialogId = `emu-dialog-${dialogId}`;
+    void dialogs.openLegacy<void>(
+      (controls) =>
+        dialogRenderer(dialogData, () => {
+          controls.cancel();
+          onCloseRef.current();
+        }),
+      { id: legacyDialogId }
+    );
+
+    return () => dialogs.closeById(legacyDialogId);
+  }, [dialogData, dialogId, dialogs]);
+
   if (dialogId === undefined) return null;
-  return emuDialogRegistry[dialogId]?.(dialogData, onClose) ?? null;
+  return null;
 }
