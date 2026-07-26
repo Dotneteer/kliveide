@@ -2,10 +2,15 @@ import { BitValue } from "@renderer/controls/valuedisplay/Values";
 import styles from "./Layout.module.scss";
 
 type Props = {
+  /** Bit descriptions shown in per-flag tooltips, indexed from bit 0 to bit 7. */
   flagDescriptions: string[];
+  /** Byte value rendered as eight individual bit indicators. */
   value: number;
 };
 
+/**
+ * Provides an eight-bit flag strip for register and memory state displays.
+ */
 export const FlagRow = ({ value, flagDescriptions }: Props) => (
   <div className={styles.dumpSection}>
     <BitValue value={value & 0x80} tooltip={`Bit 7: ${flagDescriptions?.[7] ?? ""}`} />

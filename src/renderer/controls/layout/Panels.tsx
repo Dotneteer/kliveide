@@ -6,13 +6,26 @@ import styles from "./Layout.module.scss";
 
 export type { LayoutProps, PanelProps } from "./LayoutProps";
 
-export const FullPanel = (props: LayoutProps) => {
+const useHoverableLayoutStyle = (props: LayoutProps) => {
   const [hovered, setHovered] = useState(false);
   const elementStyle = getPanelPropValues(props);
-  let backgroundColor = elementStyle.backgroundColor;
-  if (hovered && props.hoverBackgroundColor) {
-    backgroundColor = processStyleValue(props.hoverBackgroundColor);
-  }
+  const backgroundColor =
+    hovered && props.hoverBackgroundColor
+      ? processStyleValue(props.hoverBackgroundColor)
+      : elementStyle.backgroundColor;
+
+  return {
+    style: { ...elementStyle, backgroundColor },
+    onMouseEnter: () => setHovered(true),
+    onMouseLeave: () => setHovered(false)
+  };
+};
+
+/**
+ * Provides a full-size panel for top-level renderer regions.
+ */
+export const FullPanel = (props: LayoutProps) => {
+  const hoverableStyle = useHoverableLayoutStyle(props);
 
   return (
     <div
@@ -22,22 +35,19 @@ export const FullPanel = (props: LayoutProps) => {
         { [styles.horizontal]: props.orientation === "horizontal" },
         props.classExt
       )}
-      style={{ ...elementStyle, backgroundColor }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      {...hoverableStyle}
     >
       {props.children}
     </div>
   );
 };
 
+/**
+ * Provides the shared flex stack used by vertical and horizontal layout wrappers.
+ */
 const Stack = (props: LayoutProps) => {
-  const [hovered, setHovered] = useState(false);
-  const elementStyle = getPanelPropValues(props);
-  let backgroundColor = elementStyle.backgroundColor;
-  if (hovered && props.hoverBackgroundColor) {
-    backgroundColor = processStyleValue(props.hoverBackgroundColor);
-  }
+  const hoverableStyle = useHoverableLayoutStyle(props);
+
   return (
     <div
       id={props.id}
@@ -45,21 +55,25 @@ const Stack = (props: LayoutProps) => {
         [styles.vstack]: props.orientation === "vertical",
         [styles.hstack]: props.orientation === "horizontal"
       })}
-      style={{ ...elementStyle, backgroundColor }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      {...hoverableStyle}
     >
       {props.children}
     </div>
   );
 };
 
+/**
+ * Provides a vertical flex stack for grouped controls and panels.
+ */
 export const VStack = ({ children, classExt, ...rest }: LayoutProps) => (
   <Stack orientation="vertical" classExt={classExt} {...rest}>
     {children}
   </Stack>
 );
 
+/**
+ * Provides a horizontal flex stack for grouped controls and panels.
+ */
 export const HStack = ({ children, classExt, ...rest }: LayoutProps) => (
   <Stack orientation="horizontal" classExt={classExt} {...rest}>
     {children}

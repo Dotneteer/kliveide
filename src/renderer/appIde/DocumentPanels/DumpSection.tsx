@@ -68,10 +68,10 @@ const DumpSectionComponent = ({
       <LabelSeparator width={8} />
       {showPartitions && partitionLabel && (
         <>
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <Label text={partitionLabel} width={useWidePartitions ? 26 : 18} />
           <Label text=":" width={6} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
         </>
       )}
       <Label

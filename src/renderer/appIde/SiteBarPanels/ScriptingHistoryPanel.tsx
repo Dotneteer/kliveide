@@ -159,9 +159,9 @@ const ScriptItem = ({ script, itemKey, isSelected, onSelect }: ScriptItemProps) 
       })}
       onClick={async () => await onSelect?.()}
     >
-      <LabelSeparator width={4} />
+      <LabelSeparator />
       <Icon iconName={taskIcon} fill={taskIconColor} width={16} height={16} />
-      <LabelSeparator width={4} />
+      <LabelSeparator />
       <Icon iconName={icon} fill={color} width={16} height={16} />
       <div className={styles.itemId}>{script.id}</div>
       <div className={styles.itemText}>{taskName}</div>

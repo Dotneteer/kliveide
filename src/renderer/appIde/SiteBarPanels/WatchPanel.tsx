@@ -147,7 +147,7 @@ const WatchItem = memo(({ watch }: WatchItemProps) => {
 
   return watch ? (
     <div className={styles.watchItem}>
-      <LabelSeparator width={4} />
+      <LabelSeparator />
       <div ref={watchRef} style={{ cursor: "pointer" }} onContextMenu={handleRemove}>
         <Icon iconName={watch.icon} width={16} height={16} fill={watch.fill} />
         <TooltipFactory

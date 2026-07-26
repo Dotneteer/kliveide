@@ -89,7 +89,7 @@ export const SysVarsPanel = () => {
             }), length: ${length}\n${sysVar.description}`;
             return (
               <div className={styles.sysVar}>
-                <LabelSeparator width={4} />
+                <LabelSeparator />
                 <Label text={sysVar.name} width={VAR_WIDTH} tooltip={tooltip} />
                 <div className={styles.sysVarValue}>
                   {type === SysVarType.Byte && (

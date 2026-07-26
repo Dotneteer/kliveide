@@ -459,7 +459,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
         />
         <LabelSeparator width={8} />
         <Text text="View" />
-        <LabelSeparator width={4} />
+        <LabelSeparator />
         <Dropdown
           options={viewModeOptions}
           initialValue={viewMode}
@@ -575,9 +575,9 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
           />
           {!isFullView && (
             <>
-              <LabelSeparator width={4} />
+              <LabelSeparator />
               <Text text="Selected bank" />
-              <LabelSeparator width={4} />
+              <LabelSeparator />
               {!displayBankMatrix && (
                 <Dropdown
                   options={segmentOptions}

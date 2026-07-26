@@ -17,12 +17,6 @@ import {
   FIRST_STARTUP_DIALOG_IDE
 } from "@messaging/dialog-ids";
 import {
-  RequestMessage,
-  NotReadyResponse,
-  ResponseMessage,
-  errorResponse
-} from "@messaging/messages-core";
-import {
   ideLoadedAction,
   setAudioSampleRateAction,
   selectActivityAction,
@@ -66,7 +60,6 @@ import { OpenFolderCommand } from "./commands/OpenFolderCommand";
 import { NewProjectDialog } from "./dialogs/NewProjectDialog";
 import { DocumentArea } from "./DocumentArea/DocumentArea";
 import { initializeMonaco } from "./DocumentPanels/MonacoEditor";
-import { processMainToIdeMessages } from "./MainToIdeProcessor";
 import { useAppServices } from "./services/AppServicesProvider";
 import { SiteBar } from "./SideBar/SideBar";
 import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
@@ -107,8 +100,6 @@ import {
   RunScriptCommand
 } from "./commands/ScriptCommands";
 import {
-  getCachedAppServices,
-  getCachedStore,
   setCachedAppServices,
   setCachedStore
 } from "../CachedServices";
@@ -129,6 +120,7 @@ import { createMainApi } from "@common/messaging/MainApi";
 import { SetZ80RegisterCommand } from "./commands/SetZ80RegisterCommand";
 import { SetMemoryContentCommand } from "./commands/SetMemoryContentCommand";
 import { useMainApi } from "@renderer/core/MainApi";
+import { registerMainToIdeIpc } from "./MainToIdeIpc";
 import {
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
@@ -143,8 +135,6 @@ import {
 } from "@common/settings/setting-const";
 import { ResetSjasmPlusCommand } from "./commands/SjasmPlusCommands";
 import { ResetPasta80Command } from "./commands/Pasta80Commands";
-
-const ipcRenderer = (window as any).electron.ipcRenderer;
 
 const IdeApp = () => {
   // --- Used services
@@ -179,6 +169,8 @@ const IdeApp = () => {
 
   // --- Use the current instance of the app services
   const mounted = useRef(false);
+
+  useEffect(() => registerMainToIdeIpc(), []);
 
   useLayoutEffect(() => {
     console.log("AppPath", appPath);
@@ -331,30 +323,6 @@ const IdeApp = () => {
 };
 
 export default IdeApp;
-
-// --- This channel processes main requests and sends the results back
-ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
-  // --- Do not process messages coming while app services are not cached.
-  if (!getCachedAppServices()) {
-    ipcRenderer.send("MainToIdeResponse", {
-      type: "NotReady"
-    } as NotReadyResponse);
-    return;
-  }
-
-  let response: ResponseMessage;
-  try {
-    response = await processMainToIdeMessages(msg, getCachedStore(), getCachedAppServices());
-  } catch (err) {
-    // --- In case of errors (rejected promises), retrieve an error response
-    response = errorResponse(err.toString());
-  }
-
-  // --- Set the correlation ID to let the caller identify the response
-  response.correlationId = msg.correlationId;
-  response.sourceId = "ide";
-  ipcRenderer.send("MainToIdeResponse", response);
-});
 
 // --- Register the interactive commands
 let commandsRegistered = false;

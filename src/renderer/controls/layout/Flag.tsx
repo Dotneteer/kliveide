@@ -3,14 +3,23 @@ import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import styles from "./Layout.module.scss";
 
 type Props = {
+  /** Flag state rendered as filled, outline, or close indicator. */
   value?: boolean | number;
+  /** Explicit flag cell width. */
   width?: string | number;
+  /** Applies the default left offset used by compact flag rows. */
   adjustLeft?: boolean;
+  /** Centers the icon within the flag cell when true. */
   center?: boolean;
+  /** Optional tooltip shown for the flag cell. */
   tooltip?: string;
+  /** Optional click handler for interactive flag cells. */
   clicked?: () => void;
 };
 
+/**
+ * Provides a compact boolean or bit-state indicator for aligned control rows.
+ */
 export const Flag = ({
   value,
   width,

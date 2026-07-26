@@ -64,7 +64,7 @@ export const NecUpd765Panel = () => {
             }
             return (
               <div className={styles.entry}>
-                <LabelSeparator width={4} />
+                <LabelSeparator />
                 <Icon iconName={icon} width={16} height={16} fill={iconColor} />
                 <LabelSeparator width={8} />
                 <Label text={toHexa4(item.addr)} />

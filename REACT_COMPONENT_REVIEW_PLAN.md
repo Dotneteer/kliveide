@@ -31,13 +31,13 @@
    - Stabilize `AppServicesProvider` service creation with lazy refs/memoized setup.
    - Tests: selector changes when selector props change, unsubscribe on unmount, missing-provider errors.
 
-3. Fix obvious effect cleanup bugs.
+3. [Completed] Fix obvious effect cleanup bugs.
    - `DocumentsHeader.tsx`: return the project event cleanup function; currently it is declared but not returned.
    - Replace `setAwaiting.bind(false)` with `() => setAwaiting(false)`.
    - `EmuApp.tsx`: create one `AudioContext`, read its sample rate, and close that same instance.
    - Tests: event handlers detach on unmount, tab close/click resets awaiting, audio context close is called once.
 
-4. Move module-level IPC registration out of app render files.
+4. [Completed] Move module-level IPC registration out of app render files.
    - Extract `MainToIde` and `MainToEmu` listener registration into renderer lifecycle helpers.
    - Ensure listener removal for hot reload/tests and avoid duplicate listeners.
    - Tests: listener registers once, returns NotReady without cached services, unregisters on cleanup.

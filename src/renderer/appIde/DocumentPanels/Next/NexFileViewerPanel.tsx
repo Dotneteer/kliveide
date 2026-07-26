@@ -47,7 +47,7 @@ const NexFileViewerPanel = ({
           <>
             <ExpandableRow
               heading='Header attributes'
-              expanded={cvs?.headerAttrExpanded ?? true}
+              initialExpanded={cvs?.headerAttrExpanded ?? true}
               onExpanded={exp => change(vs => (vs.headerAttrExpanded = exp))}
             >
               <Row>
@@ -167,7 +167,7 @@ const NexFileViewerPanel = ({
             </ExpandableRow>
             <ExpandableRow
               heading='Bank flags'
-              expanded={cvs?.bankFlagsExpanded ?? false}
+              initialExpanded={cvs?.bankFlagsExpanded ?? false}
               onExpanded={exp => change(vs => (vs.bankFlagsExpanded = exp))}
             >
               <BankFlags startIndex={0} flags={h.bankFlags.slice(0, 8)} />
@@ -188,7 +188,7 @@ const NexFileViewerPanel = ({
             {fi.palette?.length > 0 && (
               <ExpandableRow
                 heading='Palette (Layer2, LoRes or Tilemap screen)'
-                expanded={cvs?.paletteExpanded ?? false}
+                initialExpanded={cvs?.paletteExpanded ?? false}
                 onExpanded={exp =>
                   context.changeViewState(vs => (vs.paletteExpanded = exp))
                 }
@@ -203,7 +203,7 @@ const NexFileViewerPanel = ({
             {fi.layer2LoadingScreen?.length > 0 && (
               <ExpandableRow
                 heading='Layer 2 Loading Screen'
-                expanded={cvs?.layer2LoadingScreenExpanded ?? false}
+                initialExpanded={cvs?.layer2LoadingScreenExpanded ?? false}
                 onExpanded={exp =>
                   change(vs => (vs.layer2LoadingScreenExpanded = exp))
                 }
@@ -218,7 +218,7 @@ const NexFileViewerPanel = ({
             {fi.ulaLoadingScreen?.length > 0 && (
               <ExpandableRow
                 heading='ULA Loading Screen'
-                expanded={cvs?.ulaLoadingScreenExpanded ?? false}
+                initialExpanded={cvs?.ulaLoadingScreenExpanded ?? false}
                 onExpanded={exp =>
                   change(vs => (vs.ulaLoadingScreenExpanded = exp))
                 }
@@ -239,7 +239,7 @@ const NexFileViewerPanel = ({
             {fi.loResLoadingScreen?.length > 0 && (
               <ExpandableRow
                 heading='LoRes Loading Screen'
-                expanded={cvs?.loResLoadingScreenExpanded ?? false}
+                initialExpanded={cvs?.loResLoadingScreenExpanded ?? false}
                 onExpanded={exp =>
                   change(vs => (vs.loResLoadingScreenExpanded = exp))
                 }
@@ -260,7 +260,7 @@ const NexFileViewerPanel = ({
             {fi.timexHiResLoadingScreen?.length > 0 && (
               <ExpandableRow
                 heading='Timex HiRes Loading Screen'
-                expanded={cvs?.timexHiResLoadingScreenExpanded ?? false}
+                initialExpanded={cvs?.timexHiResLoadingScreenExpanded ?? false}
                 onExpanded={exp =>
                   change(vs => (vs.timexHiResLoadingScreenExpanded = exp))
                 }
@@ -281,7 +281,7 @@ const NexFileViewerPanel = ({
             {fi.timexHiColLoadingScreen?.length > 0 && (
               <ExpandableRow
                 heading='Timex HiCol Loading Screen'
-                expanded={cvs?.timexHiColLoadingScreenExpanded ?? false}
+                initialExpanded={cvs?.timexHiColLoadingScreenExpanded ?? false}
                 onExpanded={exp =>
                   change(vs => (vs.timexHiColLoadingScreenExpanded = exp))
                 }
@@ -306,7 +306,7 @@ const NexFileViewerPanel = ({
                   heading={`Bank $${toHexa2(entry[0])} (${entry[0].toString(
                     10
                   )})`}
-                  expanded={cvs?.bankExpanded?.[idx] ?? false}
+                  initialExpanded={cvs?.bankExpanded?.[idx] ?? false}
                   onExpanded={exp =>
                     change(vs => {
                       vs.bankExpanded ??= {};

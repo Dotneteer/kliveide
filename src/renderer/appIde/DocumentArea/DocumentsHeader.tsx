@@ -110,7 +110,7 @@ export const DocumentsHeader = () => {
 
   // --- Respond to project service notifications
   useEffect(() => {
-    if (handlersInitialized.current) return;
+    if (handlersInitialized.current || !projectService) return;
 
     // --- Remove open explorer document when the folder is closed
     const projectClosed = () => {
@@ -118,20 +118,15 @@ export const DocumentsHeader = () => {
     };
 
     // --- Set up project event handlers
-    if (projectService) {
-      handlersInitialized.current = true;
-      projectService.projectClosed.on(projectClosed);
-    }
+    handlersInitialized.current = true;
+    projectService.projectClosed.on(projectClosed);
 
     // --- Remove project event handlers
-    () => {
+    return () => {
       handlersInitialized.current = false;
-      if (projectService) {
-        handlersInitialized.current = true;
-        projectService.projectClosed.off(projectClosed);
-      }
+      projectService.projectClosed.off(projectClosed);
     };
-  }, [projectService]);
+  }, [documentHubService, projectService]);
 
   // --- Ensures that the active document tab is visible in its full size
   const ensureTabVisible = () => {
@@ -171,7 +166,7 @@ export const DocumentsHeader = () => {
     if (!activeDocId || id === activeDocId) return;
 
     setAwaiting(true);
-    await documentHubService.setActiveDocument(id).finally(setAwaiting.bind(false));
+    await documentHubService.setActiveDocument(id).finally(() => setAwaiting(false));
   };
 
   // --- Responds to the event when a document tab was double clicked. Double clicking
@@ -196,7 +191,7 @@ export const DocumentsHeader = () => {
       }
     }
     setAwaiting(true);
-    onTabCloseAsync().finally(setAwaiting.bind(false));
+    onTabCloseAsync().finally(() => setAwaiting(false));
   };
 
   const tabsCount = openDocs?.length ?? 0;

@@ -7,8 +7,7 @@
   "soundMuted": false,
   "savedSoundLevel": 0.8,
   "media": {
-    "sdCard": "/Users/dotneteer/Klive/ks2.cim",
-    "tape": "/Users/dotneteer/source/kliveide-ref/test/testfiles/hello.tzx"
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim"
   },
   "machineSpecific": {},
   "ide": {
@@ -34,13 +33,15 @@
         "resource": "03_memory/legacy.asm",
         "line": 136,
         "exec": true,
-        "ioMask": 65535
+        "ioMask": 65535,
+        "resolvedAddress": 36737
       },
       {
         "resource": "03_memory/legacy.asm",
         "line": 209,
         "exec": true,
-        "ioMask": 65535
+        "ioMask": 65535,
+        "resolvedAddress": 36944
       }
     ]
   },
@@ -86,7 +87,7 @@
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
+      "activeDocumentId": "$memory"
     },
     "Disassembly": {
       "topAddress": 39807,

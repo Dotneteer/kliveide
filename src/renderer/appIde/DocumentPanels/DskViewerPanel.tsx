@@ -290,7 +290,7 @@ const LabeledValue = ({ label, title, value }: LabeledValueProps) => (
     <LabelSeparator width={6} />
     <Label text={label} tooltip={title} />
     <ValueLabel text={value.toString()} />
-    <LabelSeparator width={4} />
+    <LabelSeparator />
   </>
 );
 
@@ -306,7 +306,7 @@ const LabeledFlag = ({ label, title, value }: LabeledFlagProps) => (
     <Label text={label} tooltip={title} />
     <LabelSeparator width={8} />
     <Flag value={value} />
-    <LabelSeparator width={4} />
+    <LabelSeparator />
   </>
 );
 

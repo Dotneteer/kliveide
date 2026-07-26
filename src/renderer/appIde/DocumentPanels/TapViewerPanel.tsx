@@ -46,20 +46,20 @@ const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
     <ScrollViewer allowHorizontal={false}>
       <div className={styles.tapViewerPanel}>
         <div className={styles.header}>
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <Label text="Format:" />
           <ValueLabel text={fileInfo.type?.toUpperCase()} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <ToolbarSeparator small={true} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <Label text="Length:" />
           <ValueLabel text={contents.length.toString()} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <ToolbarSeparator small={true} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <Label text="#of sections:" />
           <ValueLabel text={fileInfo.data.length.toString()} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <ToolbarSeparator small={true} />
         </div>
         <div className={styles.tapViewerWrapper}>

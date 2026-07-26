@@ -539,7 +539,7 @@ export const SpriteEditor = ({ context }: Props) => {
               setFillColorIndex(pencilColorIndex);
             }}
           />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <Text text="Fill color:" />
           <LabelSeparator width={8} />
           <ColorSample color={palette[fillColorIndex]} isTransparency={fillColorIndex === 0xe3} />

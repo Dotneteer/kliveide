@@ -72,7 +72,7 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
         />
         <LabelSeparator width={8} />
         <Text text="View" />
-        <LabelSeparator width={4} />
+        <LabelSeparator />
         <Dropdown
           options={viewModeOptions}
           initialValue={viewMode}

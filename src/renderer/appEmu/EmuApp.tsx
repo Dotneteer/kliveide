@@ -7,16 +7,9 @@ import {
   useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
-import {
-  RequestMessage,
-  NotReadyResponse,
-  errorResponse,
-  ResponseMessage
-} from "@messaging/messages-core";
 import { displayDialogAction, emuLoadedAction, setAudioSampleRateAction } from "@state/actions";
 import { useRef, useEffect, ReactElement } from "react";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
-import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
 import { RecordingContext } from "./recording/RecordingContext";
 import { RecordingManager } from "./recording/RecordingManager";
@@ -37,9 +30,6 @@ import { Z88InsertCardDialog } from "./dialogs/Z88InsertCardDialog";
 import { Z88ExportCardDialog } from "./dialogs/Z88ExportCardDialog";
 import { Z88ChangeRamDialog } from "./dialogs/Z88ChangeRamDialog";
 import {
-  getCachedAppServices,
-  getCachedMessenger,
-  getCachedStore,
   setCachedAppServices,
   setCachedMessenger,
   setCachedStore
@@ -50,8 +40,7 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR
 } from "@common/settings/setting-const";
-
-const ipcRenderer = (window as any).electron.ipcRenderer;
+import { registerMainToEmuIpc } from "./MainToEmuIpc";
 
 const dialogRegistry: Record<number, (data: any, onClose: () => void) => ReactElement> = {
   [FIRST_STARTUP_DIALOG_EMU]: (_, onClose) => <FirstStartDialog onClose={onClose} />,
@@ -87,6 +76,9 @@ const EmuApp = () => {
 
   // --- Use the current instance of the app services
   const mounted = useRef(false);
+
+  useEffect(() => registerMainToEmuIpc(), []);
+
   useEffect(() => {
     setCachedAppServices(appServices);
     setCachedMessenger(messenger);
@@ -105,7 +97,6 @@ const EmuApp = () => {
     // --- Set the audio sample rate to use
     const audioCtx = new AudioContext();
     try {
-      var ctx = new AudioContext();
       const sampleRate = audioCtx.sampleRate;
       dispatch(setAudioSampleRateAction(sampleRate));
     } finally {
@@ -113,7 +104,7 @@ const EmuApp = () => {
       // audio contexts a user agent should support, or minimum or maximum latency
       // requirements (if any), so these details can vary from browser to browser.
       // More details: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/AudioContext
-      ctx?.close().catch(console.error);
+      audioCtx.close().catch(console.error);
     }
   }, [appServices, store, messenger]);
 
@@ -136,32 +127,3 @@ const EmuApp = () => {
 };
 
 export default EmuApp;
-
-// --- This channel processes main requests and sends the results back
-ipcRenderer.on("MainToEmu", async (_ev, msg: RequestMessage) => {
-  // --- Do not process messages coming while app services are not cached.
-  if (!getCachedAppServices()) {
-    ipcRenderer.send("MainToEmuResponse", {
-      type: "NotReady"
-    } as NotReadyResponse);
-    return;
-  }
-
-  let response: ResponseMessage;
-  try {
-    response = await processMainToEmuMessages(
-      msg,
-      getCachedStore(),
-      getCachedMessenger(),
-      getCachedAppServices()
-    );
-  } catch (err) {
-    // --- In case of errors (rejected promises), retrieve an error response
-    response = errorResponse(err.toString());
-  }
-
-  // --- Set the correlation ID to let the caller identify the response
-  response.correlationId = msg.correlationId;
-  response.sourceId = "emu";
-  ipcRenderer.send("MainToEmuResponse", response);
-});

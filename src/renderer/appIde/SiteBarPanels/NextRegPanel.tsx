@@ -50,9 +50,9 @@ export const NextRegPanel = () => {
   return (
     <div className={styles.nextRegPanel}>
       <div className={styles.regItem}>
-        <LabelSeparator width={4} />
+        <LabelSeparator />
         <Label text={`Last Reg Index:`} />
-        <LabelSeparator width={4} />
+        <LabelSeparator />
         <Value text={toHexa2(lastRegIndex ?? 0)} />
       </div>
       <VirtualizedList
@@ -61,7 +61,7 @@ export const NextRegPanel = () => {
           const item = regVals[idx];
           return (
             <div className={styles.regItem}>
-              <LabelSeparator width={4} />
+              <LabelSeparator />
               <Label
                 text={`Reg ${toHexa2(item.id)}:`}
                 width={VAR_WIDTH}

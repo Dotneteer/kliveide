@@ -479,9 +479,9 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           />
           {!isFullView && (
             <>
-              <LabelSeparator width={4} />
+              <LabelSeparator />
               <Text text="Select bank" />
-              <LabelSeparator width={4} />
+              <LabelSeparator />
               {!displayBankMatrix && (
                 <Dropdown
                   options={segmentOptions}
@@ -516,7 +516,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
               )}
               <LabelSeparator width={8} />
               <Text text="Offset" />
-              <LabelSeparator width={4} />
+              <LabelSeparator />
               <Dropdown
                 options={bank16KOptions}
                 initialValue={disassOffset.toString(10)}
@@ -578,7 +578,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                     [styles.even]: idx % 2 == 0
                   })}
                 >
-                  <LabelSeparator width={4} />
+                  <LabelSeparator />
                   <BreakpointIndicator
                     showType={false}
                     partition={
@@ -593,12 +593,12 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   />
                   {bankLabel && showBanks && (
                     <>
-                      <LabelSeparator width={4} />
+                      <LabelSeparator />
                       <Label text={partitionLabel} width={useWidePartitions ? 26 : 18} />
                       <Label text=":" width={6} />
                     </>
                   )}
-                  <LabelSeparator width={4} />
+                  <LabelSeparator />
                   <Label
                     text={decimalView ? toDecimal5(address) : toHexa4(address)}
                     width={decimalView ? 48 : 40}

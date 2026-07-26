@@ -146,7 +146,7 @@ export const BreakpointsPanel = () => {
 
               return (
                 <div className={styles.breakpoint}>
-                  <LabelSeparator width={4} />
+                  <LabelSeparator />
                   <BreakpointIndicator
                     partition={
                       bp?.partition !== undefined ? partitionLabels[bp.partition] ?? "?" : undefined
@@ -163,7 +163,7 @@ export const BreakpointsPanel = () => {
                     ioMask={bp.ioMask}
                     showType
                   />
-                  <LabelSeparator width={4} />
+                  <LabelSeparator />
                   {bp.resolvedAddress !== undefined && (
                     <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={80} />
                   )}

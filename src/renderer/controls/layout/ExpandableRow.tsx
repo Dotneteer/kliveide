@@ -4,19 +4,26 @@ import { Column } from "./Column";
 import styles from "./Layout.module.scss";
 
 type Props = {
+  /** Heading text shown in the expandable row trigger. */
   heading: string;
+  /** Nested content shown when the row is expanded. */
   children?: React.ReactNode;
-  expanded?: boolean;
+  /** Initial expanded state used when the row first mounts. */
+  initialExpanded?: boolean;
+  /** Receives expansion state changes after user toggles the row. */
   onExpanded?: (expanded: boolean) => void;
 };
 
+/**
+ * Provides a collapsible row section for optionally visible nested controls.
+ */
 export const ExpandableRow = ({
   heading,
   children,
-  expanded,
+  initialExpanded,
   onExpanded
 }: Props) => {
-  const [isExpanded, setIsExpanded] = useState(expanded ?? false);
+  const [isExpanded, setIsExpanded] = useState(initialExpanded ?? false);
   return (
     <div className={styles.expandableRow}>
       <div

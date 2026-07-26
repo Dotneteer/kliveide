@@ -2,11 +2,17 @@ import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import styles from "./Layout.module.scss";
 
 type Props = {
+  /** Value text rendered in the aligned cell. */
   text: string;
+  /** Explicit value cell width. */
   width?: string | number;
+  /** Optional tooltip shown for the value cell. */
   tooltip?: string;
 };
 
+/**
+ * Provides fixed-width value text for aligned key-value rows.
+ */
 export const Value = ({ text, width, tooltip }: Props) => {
   const ref = useTooltipRef();
 

@@ -1,3 +1,6 @@
 import styles from "./Layout.module.scss";
 
-export const Separator = () => <hr className={styles.separator} />;
+/**
+ * Provides a horizontal divider between compact layout groups.
+ */
+export const Separator = () => <hr className={styles.separator} aria-hidden="true" />;

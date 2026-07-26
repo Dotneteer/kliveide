@@ -1,11 +1,22 @@
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Column } from "@renderer/controls/layout/Column";
+import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
 import { FullPanel, HStack, VStack } from "@renderer/controls/layout/Panels";
 import { Label } from "@renderer/controls/layout/Label";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Row } from "@renderer/controls/layout/Row";
 import { Value } from "@renderer/controls/layout/Value";
+
+vi.mock("@renderer/controls/Icon", async () => {
+  const React = await import("react");
+
+  return {
+    Icon: ({ iconName }: { iconName?: string }) =>
+      React.createElement("span", { "aria-hidden": true }, iconName)
+  };
+});
 
 describe("layout primitives", () => {
   it("renders stack and panel children from moved layout files", () => {
@@ -70,5 +81,27 @@ describe("layout primitives", () => {
     expect(screen.getByText("PC").parentElement).toHaveStyle({ height: "32px" });
     expect(screen.getByText("PC")).toHaveStyle({ width: "40px" });
     expect(screen.getByText("$8000")).toHaveStyle({ width: "80px" });
+  });
+
+  it("uses a compact default width for label separators", () => {
+    const { container } = render(<LabelSeparator />);
+
+    expect(container.firstElementChild).toHaveStyle({
+      width: "4px"
+    });
+  });
+
+  it("uses initial expanded state for expandable rows", () => {
+    render(
+      <ExpandableRow heading="Details" initialExpanded={true}>
+        <span>Nested content</span>
+      </ExpandableRow>
+    );
+
+    expect(screen.getByText("Nested content")).toBeTruthy();
+
+    fireEvent.click(screen.getByText("Details"));
+
+    expect(screen.queryByText("Nested content")).toBeNull();
   });
 });
