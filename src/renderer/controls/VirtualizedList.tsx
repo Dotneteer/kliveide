@@ -1,20 +1,28 @@
-import { useEffect, useRef } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { Virtualizer, VListHandle } from "virtua";
 import ScrollViewer from "./ScrollViewer";
 
-type Props = {
-  items: any[];
+type Props<T> = {
+  items?: readonly T[] | null;
   overscan?: number;
   startIndex?: number; // Initial scroll position
-  renderItem?: (index: number) => React.ReactNode;
+  renderItem?: (index: number, item: T) => ReactNode;
   apiLoaded?: (api: VListHandle) => void;
   onScroll?: (offset: number) => void;
 };
 
-export const VirtualizedList = ({ items, overscan, startIndex, renderItem, apiLoaded, onScroll }: Props) => {
+export const VirtualizedList = <T,>({
+  items,
+  overscan,
+  startIndex,
+  renderItem,
+  apiLoaded,
+  onScroll
+}: Props<T>) => {
   const ref = useRef<VListHandle>(null);
   const hasScrolledToStart = useRef(false);
   const hasNotifiedApi = useRef(false);
+  const safeItems = items ?? [];
 
   useEffect(() => {
     if (ref.current) {
@@ -23,14 +31,14 @@ export const VirtualizedList = ({ items, overscan, startIndex, renderItem, apiLo
         hasNotifiedApi.current = true;
         apiLoaded?.(ref.current);
       }
-      
+
       // Scroll to initial position on first mount only
       if (!hasScrolledToStart.current && startIndex !== undefined && startIndex > 0) {
         hasScrolledToStart.current = true;
         ref.current?.scrollToIndex(startIndex, { align: "start" });
       }
     }
-  }, [startIndex]);
+  }, [apiLoaded, startIndex]);
 
   return (
     <ScrollViewer>
@@ -38,11 +46,15 @@ export const VirtualizedList = ({ items, overscan, startIndex, renderItem, apiLo
         ref={ref}
         overscan={overscan}
         onScroll={(offset) => onScroll?.(offset)}
-        count={items?.length ?? 0}
+        count={safeItems.length}
       >
         {(i) => {
-          const rendered = renderItem?.(i) as any
-          return rendered || <div key={i} style={{ height: 0 }} />;
+          const rendered = renderItem?.(i, safeItems[i]);
+          return rendered !== undefined && rendered !== null && rendered !== false ? (
+            <>{rendered}</>
+          ) : (
+            <div key={i} aria-hidden="true" style={{ height: 0 }} />
+          );
         }}
       </Virtualizer>
     </ScrollViewer>

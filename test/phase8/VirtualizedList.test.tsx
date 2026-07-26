@@ -121,8 +121,33 @@ describe("VirtualizedList — Phase 8", () => {
     );
 
     expect(renderItem).toHaveBeenCalledTimes(3);
-    expect(renderItem).toHaveBeenCalledWith(0);
-    expect(renderItem).toHaveBeenCalledWith(1);
-    expect(renderItem).toHaveBeenCalledWith(2);
+    expect(renderItem).toHaveBeenCalledWith(0, "x");
+    expect(renderItem).toHaveBeenCalledWith(1, "y");
+    expect(renderItem).toHaveBeenCalledWith(2, "z");
+  });
+
+  it("passes the typed item to renderItem", () => {
+    const items = [{ id: "a" }, { id: "b" }];
+    renderWithProviders(
+      <VirtualizedList
+        items={items}
+        renderItem={(i, item) => <div data-testid={`item-${i}`}>{item.id}</div>}
+      />
+    );
+
+    expect(screen.getByTestId("item-0")).toHaveTextContent("a");
+    expect(screen.getByTestId("item-1")).toHaveTextContent("b");
+  });
+
+  it("renders an aria-hidden zero-height row when renderItem returns null", () => {
+    renderWithProviders(
+      <VirtualizedList
+        items={["empty"]}
+        renderItem={() => null}
+      />
+    );
+
+    const virtualizer = screen.getByTestId("virtualizer");
+    expect(virtualizer.querySelector('[aria-hidden="true"]')).toHaveStyle({ height: "0px" });
   });
 });

@@ -9,8 +9,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import React, { act } from "react";
-import { renderWithProviders } from "../react-test-utils";
+import { renderWithProviders, act } from "../react-test-utils";
 import { Sp48Keyboard } from "@renderer/appEmu/Keyboard/Sp48Keyboard";
 import { KeyboardApi } from "@renderer/appEmu/Keyboard/KeyboardPanel";
 

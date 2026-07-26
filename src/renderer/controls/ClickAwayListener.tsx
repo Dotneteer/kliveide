@@ -5,7 +5,8 @@ import React, {
   useEffect,
   RefCallback,
   MutableRefObject,
-  cloneElement
+  cloneElement,
+  useCallback
 } from "react";
 
 type FocusEvents = "focusin" | "focusout";
@@ -47,16 +48,17 @@ export const ClickAwayListener = ({
    * https://github.com/facebook/react/issues/20074
    */
   useEffect(() => {
-    setTimeout(() => {
+    const mountTimer = setTimeout(() => {
       mountedRef.current = true;
     }, 0);
 
     return () => {
+      clearTimeout(mountTimer);
       mountedRef.current = false;
     };
   }, []);
 
-  const handleBubbledEvents =
+  const handleBubbledEvents = useCallback(
     (type: string) =>
     (event: Events): void => {
       bubbledEventTarget.current = event.target;
@@ -66,13 +68,15 @@ export const ClickAwayListener = ({
       if (handler) {
         handler(event);
       }
-    };
+    },
+    [children]
+  );
 
-  const handleChildRef = (childRef: HTMLElement) => {
+  const handleChildRef = useCallback((childRef: HTMLElement | null) => {
     node.current = childRef;
 
     let { ref } = children as typeof children & {
-      ref: RefCallback<HTMLElement> | MutableRefObject<HTMLElement>;
+      ref: RefCallback<HTMLElement | null> | MutableRefObject<HTMLElement | null>;
     };
 
     if (typeof ref === "function") {
@@ -80,7 +84,7 @@ export const ClickAwayListener = ({
     } else if (ref) {
       ref.current = childRef;
     }
-  };
+  }, [children]);
 
   useEffect(() => {
     const nodeDocument = node.current?.ownerDocument ?? document;

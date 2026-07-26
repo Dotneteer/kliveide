@@ -4,6 +4,7 @@ import { dimMenuAction } from "@state/actions";
 import {
   MouseEventHandler,
   ReactNode,
+  useCallback,
   useEffect,
   useRef,
   useState
@@ -57,6 +58,7 @@ export const Modal = ({
   width,
   fullWidth,
   fullScreen,
+  portalTo,
   title,
   translateY = -200,
   primaryLabel = "Ok",
@@ -76,47 +78,47 @@ export const Modal = ({
   onSecondaryClicked,
   onCancelClicked
 }: ModalProps) => {
-  const root = document.getElementById("appMain") || document.body;
+  const root = portalTo ?? document.getElementById("appMain") ?? document.body;
   const { store, messageSource } = useRendererContext();
   const [button1Enabled, setButton1Enabled] = useState(primaryEnabled);
   const [button2Enabled, setButton2Enabled] = useState(secondaryEnabled);
   const [cancelButtonEnabled, setCancelButtonEnabled] = useState(cancelEnabled);
   const [dialogResult, setDialogResult] = useState<any>();
 
-  const doClose = () => {
+  const doClose = useCallback((result?: any) => {
     store.dispatch(dimMenuAction(false), messageSource);
-    onClose?.();
-  };
+    onClose?.(result);
+  }, [messageSource, onClose, store]);
 
-  const handleKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyboard = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.code === "Escape") {
       doClose();
     }
-  };
+  }, [doClose]);
 
   const [closeStarted, setCloseStarted] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // --- Define button click handlers
-  const primaryClickHandler = async (result?: any) => {
+  const primaryClickHandler = useCallback(async (result?: any) => {
     const close = await onPrimaryClicked?.(result ?? dialogResult);
     if (!close) {
       doClose();
     }
-  };
-  const secondaryClickHandler = async (result?: any) => {
+  }, [dialogResult, doClose, onPrimaryClicked]);
+  const secondaryClickHandler = useCallback(async (result?: any) => {
     const close = await onSecondaryClicked?.(result ?? dialogResult);
     if (!close) {
       doClose();
     }
-  };
-  const cancelClickHandler = async (result?: any) => {
+  }, [dialogResult, doClose, onSecondaryClicked]);
+  const cancelClickHandler = useCallback(async (result?: any) => {
     const close = await onCancelClicked?.(result);
     if (!close) {
       doClose();
     }
-  };
+  }, [doClose, onCancelClicked]);
 
   useEffect(() => {
     setButton1Enabled(primaryEnabled);
@@ -134,13 +136,13 @@ export const Modal = ({
       triggerPrimary: (result?: any) => primaryClickHandler(result),
       triggerSecondary: (result?: any) => secondaryClickHandler(result),
       triggerCancel: (result?: any) => cancelClickHandler(result),
-      triggerClose: (result?: any) => onClose(result)
+      triggerClose: (result?: any) => doClose(result)
     });
-  }, [modalRef.current]);
+  }, [cancelClickHandler, doClose, onApiLoaded, primaryClickHandler, secondaryClickHandler]);
 
   useEffect(() => {
     store.dispatch(dimMenuAction(isOpen), messageSource);
-  }, [isOpen]);
+  }, [isOpen, messageSource, store]);
 
   useEffect(() => {
     if (isOpen) {

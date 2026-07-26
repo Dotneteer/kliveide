@@ -6,8 +6,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import React, { act } from "react";
-import { renderWithProviders, fireEvent } from "../react-test-utils";
+import { renderWithProviders, fireEvent, act } from "../react-test-utils";
 import { SplitPanel } from "@controls/SplitPanel";
 
 // ---------------------------------------------------------------------------
@@ -78,6 +77,28 @@ describe("SplitPanel — basic rendering", () => {
     const splitter = document.querySelector('[class*="splitter"]');
     expect(splitter).toBeNull();
   });
+
+  it("restores the saved primary size when secondary visibility returns", () => {
+    const { getByTestId, rerender } = renderSplit({ initialPrimarySize: 200 });
+    const primaryParent = getByTestId("primary").parentElement as HTMLElement;
+    expect(primaryParent.style.width).toBe("200px");
+
+    rerender(
+      <SplitPanel primaryLocation="left" initialPrimarySize={200} secondaryVisible={false}>
+        <div data-testid="primary">Primary</div>
+        <div data-testid="secondary">Secondary</div>
+      </SplitPanel>
+    );
+    expect(primaryParent.style.width).toBe("100%");
+
+    rerender(
+      <SplitPanel primaryLocation="left" initialPrimarySize={200} secondaryVisible={true}>
+        <div data-testid="primary">Primary</div>
+        <div data-testid="secondary">Secondary</div>
+      </SplitPanel>
+    );
+    expect((getByTestId("primary").parentElement as HTMLElement).style.width).toBe("200px");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -141,6 +162,24 @@ describe("SplitPanel — splitter drag", () => {
 
     expect(onCompleted).toHaveBeenCalledTimes(1);
     expect(typeof onCompleted.mock.calls[0][0]).toBe("string");
+  });
+
+  it("clamps drag movement to the configured minimum size", async () => {
+    const onCompleted = vi.fn();
+    renderSplit({ minSize: 40, onPrimarySizeUpdateCompleted: onCompleted });
+
+    const splitter = document.querySelector('[class*="splitter"]') as HTMLElement;
+    await act(async () => {
+      fireEvent.mouseDown(splitter, { button: 0, clientX: 200, clientY: 0 });
+    });
+    await act(async () => {
+      fireEvent.mouseMove(window, { clientX: -200, clientY: 0 });
+    });
+    await act(async () => {
+      fireEvent.mouseUp(window);
+    });
+
+    expect(onCompleted).toHaveBeenCalledWith("40px");
   });
 
   it("does not start drag on right-click (button !== 0)", async () => {

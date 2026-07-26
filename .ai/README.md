@@ -7,3 +7,4 @@ This folder stores durable notes for future AI-assisted work in this repository.
 - Keep notes concise and oriented toward repeatable future work.
 - For React effect cleanup work, read `react-effect-cleanup.md`.
 - For renderer IPC listener work, read `react-ipc-registration.md`.
+- For shared control listener cleanup work, read `react-shared-control-cleanup.md`.

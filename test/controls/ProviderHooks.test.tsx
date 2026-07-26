@@ -1,5 +1,5 @@
-import React, { act } from "react";
-import { render } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { act, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@renderer/appEmu/MachineService", () => ({
@@ -46,7 +46,7 @@ import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService"
 import { incDocHubServiceVersionAction } from "@common/state/actions";
 import { createMockStore, MockMessenger } from "../react-test-utils";
 
-function renderWithRendererProvider(ui: React.ReactElement) {
+function renderWithRendererProvider(ui: ReactElement) {
   const store = createMockStore();
   const messenger = new MockMessenger();
   return {

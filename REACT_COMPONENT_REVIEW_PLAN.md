@@ -49,7 +49,7 @@
    - Deprecate duplicate `controls/generic` vs `controls/new` imports with a compatibility barrel first.
    - Tests: layout primitives render class/style props, orientation, hover styling, and children consistently.
 
-6. Harden shared controls before consumers.
+6. [Completed] Harden shared controls before consumers.
    - `SplitPanel.tsx`: use `React.Children.toArray`, include callback dependencies, test visibility restore, drag bounds, and cleanup.
    - `VirtualizedList.tsx`: type items generically, include `apiLoaded`/`renderItem` dependencies, and define empty-row behavior.
    - `Modal`, `ContextMenu`, `Tooltip`, `ClickAwayListener`: verify document/window listeners always clean up.
