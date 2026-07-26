@@ -1,7 +1,7 @@
 import { SplitPanel } from "@controls/SplitPanel";
 import { EmulatorPanel } from "./EmulatorPanel";
 import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
-import { KeyboardApi, KeyboardPanel } from "../Keyboard/KeyboardPanel";
+import { KeyboardApi, KeyboardPanel } from "@renderer/appEmu/Keyboard/KeyboardPanel";
 import styles from "./EmulatorArea.module.scss";
 import { useLayoutEffect, useRef } from "react";
 import {

@@ -7,13 +7,13 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { TabButton } from "@renderer/controls/TabButton";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import { setExcludedProjectItemsAction } from "@common/state/actions";
-import { saveProject } from "../utils/save-project";
+import { saveProject } from "@renderer/appIde/utils/save-project";
 import {
   ExcludedItemInfo,
   getExcludedProjectItemsFromGlobalSettings,
   excludedItemsFromProject
 } from "../utils/excluded-items-utils";
-import { getNodeFile } from "../project/project-node";
+import { getNodeFile } from "@renderer/appIde/project/project-node";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 type Props = {

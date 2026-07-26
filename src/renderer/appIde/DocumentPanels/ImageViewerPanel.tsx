@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { PanelHeader } from "./helpers/PanelHeader";

@@ -7,7 +7,7 @@ import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { getFileTypeEntry, getNodeFile } from "../project/project-node";
+import { getFileTypeEntry, getNodeFile } from "@renderer/appIde/project/project-node";
 
 /**
  * This class provides the default implementation of the document service

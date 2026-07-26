@@ -5,7 +5,7 @@ import { Store } from "@common/state/redux-light";
 import { ITreeNode, ITreeView } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
-import { buildProjectTree } from "../project/project-node";
+import { buildProjectTree } from "@renderer/appIde/project/project-node";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";

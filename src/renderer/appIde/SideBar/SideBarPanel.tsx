@@ -4,7 +4,7 @@ import { useDispatch } from "@renderer/core/RendererProvider";
 import { setSideBarPanelExpandedAction } from "@state/actions";
 import { Icon } from "@controls/Icon";
 import classnames from "classnames";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { SideBarPanelInfo } from "../../abstractions/SideBarPanelInfo";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
 

@@ -10,7 +10,7 @@ import {
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { CSSProperties, useEffect, useRef, useState } from "react";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { toHexa2 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
 import {
@@ -21,10 +21,10 @@ import {
   SpectrumColor
 } from "./BasicLine";
 import styles from "./BasicPanel.module.scss";
-import { useDocumentHubService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import classnames from "classnames";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VirtualizerHandle } from "virtua";

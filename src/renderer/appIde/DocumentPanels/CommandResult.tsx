@@ -7,8 +7,8 @@ import { useDispatch } from "@renderer/core/RendererProvider";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { useRef } from "react";
 import { CommandResultData } from "../../abstractions/CommandResultData";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
-import { useDocumentHubService } from "../services/DocumentServiceProvider";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
 
 type CommandResultViewState = {

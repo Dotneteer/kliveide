@@ -4,7 +4,7 @@ import {
   TabButtonSeparator,
   TabButtonSpace
 } from "@renderer/controls/TabButton";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { ContextMenuInfo } from "@renderer/abstractions/ContextMenuIfo";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";

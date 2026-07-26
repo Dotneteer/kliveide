@@ -11,11 +11,11 @@ import { FrameCompletedArgs, IMachineController } from "../../abstractions/IMach
 import { reportMessagingError } from "@renderer/reportError";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
-import { machineEmuToolRegistry } from "../tool-registry";
+import { machineEmuToolRegistry } from "@renderer/appEmu/tool-registry";
 import { setClockMultiplierAction } from "@common/state/actions";
 import { useMainApi } from "@renderer/core/MainApi";
 import { SETTING_EMU_FAST_LOAD, SETTING_EMU_SHOW_INSTANT_SCREEN } from "@common/settings/setting-const";
-import { useRecordingManager } from "../recording/RecordingContext";
+import { useRecordingManager } from "@renderer/appEmu/recording/RecordingContext";
 import { useEmulatorScreen } from "./useEmulatorScreen";
 import { useEmulatorAudio } from "./useEmulatorAudio";
 import { useEmulatorKeyboard } from "./useEmulatorKeyboard";

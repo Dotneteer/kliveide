@@ -11,7 +11,7 @@ import { activityRegistry } from "@renderer/registry";
 import { displayDialogAction, incProjectFileVersionAction } from "@state/actions";
 import { useEffect, useState } from "react";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
-import { DocumentArea } from "./DocumentArea/DocumentArea";
+import { DocumentArea } from "@renderer/features/documents/DocumentArea";
 import { useAppServices } from "./services/AppServicesProvider";
 import { SiteBar } from "./SideBar/SideBar";
 import { IdeStatusBar } from "./StatusBar/IdeStatusBar";

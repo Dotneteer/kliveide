@@ -80,17 +80,16 @@
    - [Completed] Stabilized `useMachineController` event registration through latest-callback wrappers.
    - [Completed] Tests: machine state transitions update overlay/audio/recording, instant screen setting behavior, keyboard listeners detach.
 
-10. Create feature folders for complex document panels.
-    - Suggested shape:
-      - `src/renderer/features/editor/monaco`
-      - `src/renderer/features/explorer`
-      - `src/renderer/features/documents`
-      - `src/renderer/features/emulator`
-      - `src/renderer/features/memory`
-      - `src/renderer/features/sprite-editor`
-    - Keep domain services under `appIde/services` until the component moves are stable.
-    - Use barrel exports sparingly; prefer direct imports inside a feature.
-    - Tests move with behavior clusters under matching `test/renderer/...` or keep current folders with clear names during transition.
+10. [Completed] Create feature folders for complex document panels.
+    - [Completed] Moved document area files to `src/renderer/features/documents`.
+    - [Completed] Moved explorer panel files to `src/renderer/features/explorer`.
+    - [Completed] Moved emulator area files to `src/renderer/features/emulator`.
+    - [Completed] Moved Monaco editor files to `src/renderer/features/editor/monaco`.
+    - [Completed] Moved memory panel files to `src/renderer/features/memory`.
+    - [Completed] Moved sprite editor files to `src/renderer/features/sprite-editor`.
+    - [Completed] Kept domain services under `appIde/services` until a separate service migration is intended.
+    - [Completed] Used physical moves and direct imports; no compatibility barrels were added.
+    - [Completed] Kept tests in their current behavior-focused folders during the transition and updated their imports/mocks.
 
 11. Tame `MonacoEditor.tsx` last.
     - First add tests/mocks around editor API behavior, breakpoint decoration updates, external rename edits, and navigation callbacks.

@@ -7,7 +7,7 @@ import { BUILD_FILE } from "@common/structs/project-const";
 import { incBuildFileVersionAction, workspaceLoadedAction } from "@common/state/actions";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { delay } from "@renderer/utils/timing";
-import { DOCS_WORKSPACE } from "./DocumentArea/useDocumentWorkspacePersistence";
+import { DOCS_WORKSPACE } from "@renderer/features/documents/useDocumentWorkspacePersistence";
 import { CODE_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
 import {

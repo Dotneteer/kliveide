@@ -1,4 +1,4 @@
-import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { toHexa2, toHexa4 } from "../../services/ide-commands";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";

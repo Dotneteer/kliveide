@@ -8,7 +8,7 @@ import { SideBarPanelState } from "@state/AppState";
 import { setSideBarPanelSizeAction, setSideBarPanelsStateAction } from "@state/actions";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { noop } from "@renderer/utils/stablerefs";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 // --- Minimum size of panels in pixels
 const MIN_PANEL_SIZE = 60;

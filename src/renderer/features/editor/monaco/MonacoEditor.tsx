@@ -34,15 +34,15 @@ import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
   },
 };
 
-import AutoSizer from "../../../lib/react-virtualized-auto-sizer";
+import AutoSizer from "../../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { useEffect, useRef, useState } from "react";
 import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
-import { loadCustomTokenColors } from "../project/customTokenLoader";
+import { loadCustomTokenColors } from "@renderer/appIde/project/customTokenLoader";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
+import { addBreakpoint, getBreakpoints, removeBreakpoint } from "@renderer/appIde/utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import {
@@ -52,7 +52,7 @@ import {
   setCursorPositionAction
 } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
-import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
+import { useDocumentHubServiceVersion } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { getIsWindows } from "@renderer/os-utils";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -74,10 +74,10 @@ import {
 } from "@common/settings/setting-const";
 import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
-import { getFileTypeEntry } from "../project/project-node";
-import { isDebuggableCompilerOutput } from "../utils/compiler-utils";
-import { languageIntelSingleton } from "../services/LanguageIntelService";
-import { registerZ80Providers, notifySemanticTokensChanged, type RenameEdit } from "../services/z80-providers";
+import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
+import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import { languageIntelSingleton } from "@renderer/appIde/services/LanguageIntelService";
+import { registerZ80Providers, notifySemanticTokensChanged, type RenameEdit } from "@renderer/appIde/services/z80-providers";
 
 let monacoInitialized = false;
 

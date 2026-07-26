@@ -3,7 +3,7 @@ import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Secondary } from "@renderer/controls/layout/Secondary";
 import { Value } from "@renderer/controls/layout/Value";
 import { useEffect, useRef, useState } from "react";
-import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import {

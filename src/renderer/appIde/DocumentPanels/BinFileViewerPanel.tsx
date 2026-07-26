@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { DumpSection } from "./DumpSection";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { FullPanel, HStack } from "@renderer/controls/layout/Panels";

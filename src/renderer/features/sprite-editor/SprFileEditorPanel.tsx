@@ -1,8 +1,8 @@
-import { DocumentProps } from "../../../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import {
   GenericFileEditorContext,
   GenericFileEditorPanel
-} from "../../helpers/GenericFileEditorPanel";
+} from "@renderer/appIde/DocumentPanels/helpers/GenericFileEditorPanel";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { createElement } from "react";
 import { SprFileContents, SprFileViewState } from "./sprite-common";

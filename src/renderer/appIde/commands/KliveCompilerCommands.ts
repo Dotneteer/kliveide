@@ -36,7 +36,7 @@ import {
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction, writeErrorMessageWithLinks } from "@common/utils/output-utils";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
-import { isInjectableCompilerOutput } from "../utils/compiler-utils";
+import { isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
 

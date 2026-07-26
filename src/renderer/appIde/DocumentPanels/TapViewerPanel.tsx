@@ -1,7 +1,7 @@
 import { Label } from "@renderer/controls/layout/Label";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Secondary } from "@renderer/controls/layout/Secondary";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import styles from "./TapViewerPanel.module.scss";
 import { readTapeFile } from "@renderer/utils/tape-utils";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
@@ -15,7 +15,7 @@ import { TzxTextDescriptionBlock } from "@emu/machines/tape/TzxTextDescriptionBl
 import {
   useDocumentHubService,
   useDocumentHubServiceVersion
-} from "../services/DocumentServiceProvider";
+} from "@renderer/appIde/services/DocumentServiceProvider";
 import { DataSection } from "@renderer/controls/DataSection";
 import { toHexa2 } from "../services/ide-commands";
 import ScrollViewer from "@renderer/controls/ScrollViewer";

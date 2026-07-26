@@ -17,7 +17,7 @@ import { CpuState } from "@common/messaging/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import classnames from "classnames";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { MemorySection } from "../disassemblers/common-types";
 import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySectionType } from "@abstractions/MemorySection";

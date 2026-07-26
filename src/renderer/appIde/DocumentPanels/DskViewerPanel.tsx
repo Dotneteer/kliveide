@@ -2,14 +2,14 @@ import { Flag } from "@renderer/controls/layout/Flag";
 import { Label } from "@renderer/controls/layout/Label";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Secondary } from "@renderer/controls/layout/Secondary";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import styles from "./DskViewerPanel.module.scss";
 import classnames from "classnames";
 import { useEffect, useState } from "react";
 import {
   useDocumentHubService,
   useDocumentHubServiceVersion
-} from "../services/DocumentServiceProvider";
+} from "@renderer/appIde/services/DocumentServiceProvider";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { DataSection } from "@renderer/controls/DataSection";
 import { StaticMemoryView } from "./StaticMemoryView";

@@ -66,7 +66,7 @@ describe("effect cleanup fixes", () => {
     mockDocumentsHeaderDependencies(projectClosed, documentHubService);
 
     const { DocumentsHeader } = await import(
-      "@renderer/appIde/DocumentArea/DocumentsHeader"
+      "@renderer/features/documents/DocumentsHeader"
     );
 
     const { unmount } = render(<DocumentsHeader />);
@@ -91,7 +91,7 @@ describe("effect cleanup fixes", () => {
     mockDocumentsHeaderDependencies({ on: vi.fn(), off: vi.fn() }, documentHubService);
 
     const { DocumentsHeader } = await import(
-      "@renderer/appIde/DocumentArea/DocumentsHeader"
+      "@renderer/features/documents/DocumentsHeader"
     );
 
     render(<DocumentsHeader />);
@@ -154,7 +154,7 @@ describe("effect cleanup fixes", () => {
     vi.doMock("@controls/Toolbar", () => ({
       Toolbar: () => null
     }));
-    vi.doMock("@renderer/appEmu/EmulatorArea/EmulatorArea", () => ({
+    vi.doMock("@renderer/features/emulator/EmulatorArea", () => ({
       EmulatorArea: () => <div data-testid="emulator-area" />
     }));
     vi.doMock("@renderer/appEmu/StatusBar/EmuStatusBar", () => ({
@@ -262,7 +262,7 @@ function mockDocumentsHeaderDependencies(
       return <div>{children}</div>;
     }
   }));
-  vi.doMock("@renderer/appIde/DocumentArea/DocumentTab", () => {
+  vi.doMock("@renderer/features/documents/DocumentTab", () => {
     enum CloseMode {
       All,
       Others,

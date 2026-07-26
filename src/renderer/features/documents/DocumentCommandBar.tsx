@@ -3,7 +3,7 @@ import { PANE_ID_BUILD } from "@common/integration/constants";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";
 
 type DocumentCommandBarProps = {

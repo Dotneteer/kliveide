@@ -4,7 +4,7 @@ import { TooltipFactory } from "@controls/Tooltip";
 import classnames from "classnames";
 import { toHexa4, toHexa6Dash, toHexa2, toDecimal5, toDecimal7, toDecimal3, toBin8 } from "../services/ide-commands";
 import styles from "./DumpSection.module.scss";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
 import { useEffect, memo, useLayoutEffect, useRef, useState, useMemo, useCallback } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";

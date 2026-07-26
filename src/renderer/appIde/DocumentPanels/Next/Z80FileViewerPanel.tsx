@@ -1,5 +1,5 @@
 import { Row } from "@renderer/controls/layout/Row";
-import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";

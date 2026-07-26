@@ -97,7 +97,7 @@ describe("useEmulatorKeyboard", () => {
     };
 
     const { useEmulatorKeyboard } = await import(
-      "@renderer/appEmu/EmulatorArea/useEmulatorKeyboard"
+      "@renderer/features/emulator/useEmulatorKeyboard"
     );
     const { result, rerender, unmount } = renderHook(() =>
       useEmulatorKeyboard(controllerRef as any, keyStatusSet)
@@ -206,7 +206,7 @@ describe("EmulatorPanel", () => {
     vi.doMock("@renderer/appEmu/recording/RecordingContext", () => ({
       useRecordingManager: () => recordingManager
     }));
-    vi.doMock("@renderer/appEmu/EmulatorArea/useEmulatorScreen", () => ({
+    vi.doMock("@renderer/features/emulator/useEmulatorScreen", () => ({
       useEmulatorScreen: () => ({
         canvasHeight: 192,
         canvasWidth: 256,
@@ -218,13 +218,13 @@ describe("EmulatorPanel", () => {
         yRatio: { current: 3 }
       })
     }));
-    vi.doMock("@renderer/appEmu/EmulatorArea/useEmulatorAudio", () => ({
+    vi.doMock("@renderer/features/emulator/useEmulatorAudio", () => ({
       useEmulatorAudio: () => ({ beeperRenderer, initAudio })
     }));
-    vi.doMock("@renderer/appEmu/EmulatorArea/useEmulatorKeyboard", () => ({
+    vi.doMock("@renderer/features/emulator/useEmulatorKeyboard", () => ({
       useEmulatorKeyboard: () => ({ setKeyData })
     }));
-    vi.doMock("@renderer/appEmu/EmulatorArea/EmulatorOverlay", () => ({
+    vi.doMock("@renderer/features/emulator/EmulatorOverlay", () => ({
       EmulatorOverlay: ({ overlay, showOverlay }: { overlay?: string; showOverlay: boolean }) =>
         showOverlay ? <div>{overlay}</div> : null
     }));
@@ -232,7 +232,7 @@ describe("EmulatorPanel", () => {
       machineEmuToolRegistry: []
     }));
 
-    const { EmulatorPanel } = await import("@renderer/appEmu/EmulatorArea/EmulatorPanel");
+    const { EmulatorPanel } = await import("@renderer/features/emulator/EmulatorPanel");
 
     render(<EmulatorPanel />);
 

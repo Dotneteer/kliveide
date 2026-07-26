@@ -3,7 +3,7 @@ import { Column } from "@renderer/controls/layout/Column";
 import {
   MiniMemoryDump,
   openStaticMemoryDump
-} from "@renderer/appIde/DocumentPanels/Memory/StaticMemoryDump";
+} from "@renderer/features/memory/StaticMemoryDump";
 import { HeaderRow } from "@renderer/controls/layout/Row";
 import { SmallIconButton } from "../IconButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";

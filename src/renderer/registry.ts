@@ -43,7 +43,7 @@ import { asmZxbLanguageProvider } from "./appIde/project/asmZxbLanguageProvider"
 import { zxBasLanguageProvider } from "./appIde/project/zxBasLanguageProvider";
 import { BreakpointsPanel } from "./appIde/SiteBarPanels/BreakpointsPanel";
 import { Z80CpuPanel } from "./appIde/SiteBarPanels/Z80CpuPanel";
-import { ExplorerPanel } from "./appIde/SiteBarPanels/ExplorerPanel";
+import { ExplorerPanel } from "@renderer/features/explorer/ExplorerPanel";
 import { SysVarsPanel } from "./appIde/SiteBarPanels/SysVarsPanel";
 import { UlaPanel } from "./appIde/SiteBarPanels/UlaPanel";
 import {
@@ -79,11 +79,11 @@ import { createSlrFileViewerPanel } from "./appIde/DocumentPanels/Next/SlrFileVi
 import { createSl2FileViewerPanel } from "./appIde/DocumentPanels/Next/Sl2FileViewerPanel";
 import { createPalFileEditorPanel } from "./appIde/DocumentPanels/Next/PalFileEditorPanel";
 import { createNxiFileEditorPanel } from "./appIde/DocumentPanels/Next/NxiFileEditorPanel";
-import { createSprFileEditorPanel } from "./appIde/DocumentPanels/Next/SpriteEditorPanel/SprFileEditorPanel";
+import { createSprFileEditorPanel } from "@renderer/features/sprite-editor/SprFileEditorPanel";
 import { createVidFileViewerPanel } from "./appIde/DocumentPanels/Next/VidFileViewerPanel";
 import { createBinFileViewerPanel } from "./appIde/DocumentPanels/BinFileViewerPanel";
 import { createImageViewerPanel } from "./appIde/DocumentPanels/ImageViewerPanel";
-import { createStaticMemoryDump } from "./appIde/DocumentPanels/Memory/StaticMemoryDump";
+import { createStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import { ksxLanguageProvider } from "./appIde/project/ksxLanguageProvider";
 import {
   PANE_ID_BUILD,
@@ -91,10 +91,10 @@ import {
   PANE_ID_SCRIPTIMG
 } from "@common/integration/constants";
 import { ScriptingHistoryPanel } from "./appIde/SiteBarPanels/ScriptingHistoryPanel";
-import { getScriptingContextMenuIfo, scriptingCommandBarRenderer } from "./appIde/DocumentArea/ScriptingCommandBar";
+import { getScriptingContextMenuIfo, scriptingCommandBarRenderer } from "@renderer/features/documents/ScriptingCommandBar";
 import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPanel";
 import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
-import { createMemoryPanel } from "./appIde/DocumentPanels/Memory/MemoryPanel";
+import { createMemoryPanel } from "@renderer/features/memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
 import { NextRegPanel } from "./appIde/SiteBarPanels/NextRegPanel";
 import { MemMappingPanel } from "./appIde/SiteBarPanels/MemMappingPanel";

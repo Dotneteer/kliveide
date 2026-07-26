@@ -1,6 +1,6 @@
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CloseMode } from "./DocumentTab";
 import { DocumentCommandBar } from "./DocumentCommandBar";
 import { DocumentTabs } from "./DocumentTabs";
@@ -9,11 +9,11 @@ import styles from "./DocumentsHeader.module.scss";
 import {
   useDocumentHubService,
   useDocumentHubServiceVersion
-} from "../services/DocumentServiceProvider";
+} from "@renderer/appIde/services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { incProjectViewStateVersionAction } from "@common/state/actions";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
-import { getFileTypeEntry } from "../project/project-node";
+import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 import { useMainApi } from "@renderer/core/MainApi";
 import {

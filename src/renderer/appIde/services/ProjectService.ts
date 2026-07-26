@@ -1,7 +1,7 @@
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { IProjectService } from "../../abstractions/IProjectService";
-import { compareProjectNode, getFileTypeEntry, getNodeDir, getNodeFile, registerDetectedTextFile, clearDetectedTextFiles, registerDetectedBinaryFile, clearDetectedBinaryFiles } from "../project/project-node";
+import { compareProjectNode, getFileTypeEntry, getNodeDir, getNodeFile, registerDetectedTextFile, clearDetectedTextFiles, registerDetectedBinaryFile, clearDetectedBinaryFiles } from "@renderer/appIde/project/project-node";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";

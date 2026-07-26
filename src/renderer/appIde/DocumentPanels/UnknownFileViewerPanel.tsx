@@ -1,4 +1,4 @@
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import styles from "./UnknownFileViewerPanel.module.scss";
 import { Label } from "@renderer/controls/layout/Label";
 

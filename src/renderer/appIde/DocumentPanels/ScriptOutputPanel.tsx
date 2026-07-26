@@ -1,9 +1,9 @@
 import styles from "./ScriptOutputPanel.module.scss";
 import { useRef, useState, useEffect } from "react";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
-import { useDocumentHubService } from "../services/DocumentServiceProvider";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { Text } from "@renderer/controls/layout/Text";

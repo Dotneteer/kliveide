@@ -16,7 +16,7 @@ import {
   setToolsAction
 } from "@state/actions";
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { initializeMonaco } from "./DocumentPanels/MonacoEditor";
+import { initializeMonaco } from "@renderer/features/editor/monaco/MonacoEditor";
 import { registerIdeCommands } from "./IdeCommands";
 import { registerMainToIdeIpc } from "./MainToIdeIpc";
 

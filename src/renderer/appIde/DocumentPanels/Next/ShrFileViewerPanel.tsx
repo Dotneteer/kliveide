@@ -1,6 +1,6 @@
 import styles from "./ShrFileViewerPanel.module.scss";
 import { Label } from "@renderer/controls/layout/Label";
-import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 
 const ShrFileViewerPanel = ({}: DocumentProps) => {
   return (

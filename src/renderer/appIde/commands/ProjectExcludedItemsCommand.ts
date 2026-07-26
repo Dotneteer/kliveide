@@ -18,10 +18,10 @@ import {
   setBuildRootAction,
   setExcludedProjectItemsAction
 } from "@common/state/actions";
-import { saveProject } from "../utils/save-project";
+import { saveProject } from "@renderer/appIde/utils/save-project";
 import { pathStartsWith } from "@common/utils/path-utils";
 import { getIsWindows } from "@renderer/os-utils";
-import { isAbsolutePath } from "../project/project-node";
+import { isAbsolutePath } from "@renderer/appIde/project/project-node";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
 type ListExcludedItemArgs = {

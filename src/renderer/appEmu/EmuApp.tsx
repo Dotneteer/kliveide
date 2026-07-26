@@ -8,7 +8,7 @@ import {
   useSelector
 } from "@renderer/core/RendererProvider";
 import { displayDialogAction } from "@state/actions";
-import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
+import { EmulatorArea } from "@renderer/features/emulator/EmulatorArea";
 import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
 import { RecordingContext } from "./recording/RecordingContext";
 import { useMainApi } from "@renderer/core/MainApi";

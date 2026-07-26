@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DocumentsContainer } from "./DocumentsContainer";
 import { DocumentsHeader } from "./DocumentsHeader";
 import {
   DocumentHubServiceProvider,
   useDocumentHubServiceVersion
-} from "../services/DocumentServiceProvider";
+} from "@renderer/appIde/services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import styles from "./DocumentArea.module.scss";
 import { useSelector } from "@renderer/core/RendererProvider";

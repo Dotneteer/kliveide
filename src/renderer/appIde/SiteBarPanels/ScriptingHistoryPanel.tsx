@@ -6,7 +6,7 @@ import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Icon } from "@renderer/controls/Icon";
 import classnames from "classnames";
 import { useSelector } from "@renderer/core/RendererProvider";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { TabButton } from "@renderer/controls/TabButton";
 import { isScriptCompleted, scriptDocumentId } from "@common/utils/script-utils";
 import { Text } from "@renderer/controls/layout/Text";

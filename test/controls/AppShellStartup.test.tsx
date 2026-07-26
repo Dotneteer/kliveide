@@ -27,7 +27,7 @@ describe("app shell startup hooks", () => {
     vi.spyOn(window, "postMessage").mockImplementation(() => {});
     vi.doMock("@renderer/appIde/MainToIdeIpc", () => ({ registerMainToIdeIpc }));
     vi.doMock("@renderer/appIde/IdeCommands", () => ({ registerIdeCommands }));
-    vi.doMock("@renderer/appIde/DocumentPanels/MonacoEditor", () => ({ initializeMonaco }));
+    vi.doMock("@renderer/features/editor/monaco/MonacoEditor", () => ({ initializeMonaco }));
     vi.doMock("@renderer/CachedServices", () => ({ setCachedAppServices, setCachedStore }));
     vi.doMock("@renderer/os-utils", () => ({ setIsWindows }));
 
@@ -87,7 +87,7 @@ describe("app shell startup hooks", () => {
     }));
     vi.doMock("@renderer/appIde/MainToIdeIpc", () => ({ registerMainToIdeIpc: vi.fn(() => vi.fn()) }));
     vi.doMock("@renderer/appIde/IdeCommands", () => ({ registerIdeCommands: vi.fn() }));
-    vi.doMock("@renderer/appIde/DocumentPanels/MonacoEditor", () => ({ initializeMonaco: vi.fn() }));
+    vi.doMock("@renderer/features/editor/monaco/MonacoEditor", () => ({ initializeMonaco: vi.fn() }));
     vi.doMock("@renderer/CachedServices", () => ({
       setCachedAppServices: vi.fn(),
       setCachedStore: vi.fn()

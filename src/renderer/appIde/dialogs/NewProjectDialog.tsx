@@ -3,7 +3,7 @@ import { ModalApi, Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
 import { useEffect, useRef, useState } from "react";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { getAllMachineModels } from "@common/machines/machine-registry";
 import { split } from "lodash";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";

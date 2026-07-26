@@ -12,7 +12,7 @@ import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 const LABEL_WIDTH = 120;
 

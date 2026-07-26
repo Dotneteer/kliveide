@@ -1,8 +1,8 @@
 import styles from "./StaticMemoryDump.module.scss";
-import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { STATIC_MEMORY_DUMP_VIEWER } from "@common/state/common-ids";
-import { GenericViewerPanel } from "../helpers/GenericViewerPanel";
+import { GenericViewerPanel } from "@renderer/appIde/DocumentPanels/helpers/GenericViewerPanel";
 import { Row } from "@renderer/controls/layout/Row";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";

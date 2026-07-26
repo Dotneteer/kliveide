@@ -1,12 +1,12 @@
 import styles from "./ExplorerPanel.module.scss";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { MouseEvent, useRef, useState } from "react";
-import { getFileTypeEntry } from "../project/project-node";
-import { useAppServices } from "../services/AppServicesProvider";
+import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useContextMenuState } from "@controls/ContextMenu";
-import { RenameDialog } from "../dialogs/RenameDialog";
-import { DeleteDialog } from "../dialogs/DeleteDialog";
-import { NewItemDialog } from "../dialogs/NewItemDialog";
+import { RenameDialog } from "@renderer/appIde/dialogs/RenameDialog";
+import { DeleteDialog } from "@renderer/appIde/dialogs/DeleteDialog";
+import { NewItemDialog } from "@renderer/appIde/dialogs/NewItemDialog";
 import {
   displayDialogAction,
   incExploreViewVersionAction,
@@ -15,7 +15,7 @@ import {
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import { EXCLUDED_PROJECT_ITEMS_DIALOG, NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
-import { saveProject } from "../utils/save-project";
+import { saveProject } from "@renderer/appIde/utils/save-project";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { ITreeNode } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";

@@ -10,12 +10,12 @@ afterEach(() => {
 
 describe("DocumentTabs", () => {
   it("uses the document path when duplicate tab names would be ambiguous", async () => {
-    vi.doMock("@renderer/appIde/DocumentArea/DocumentTab", () => ({
+    vi.doMock("@renderer/features/documents/DocumentTab", () => ({
       CloseMode: { All: 0, Others: 1, This: 2 },
       DocumentTab: ({ name }: { name: string }) => <div>{name}</div>
     }));
 
-    const { DocumentTabs } = await import("@renderer/appIde/DocumentArea/DocumentTabs");
+    const { DocumentTabs } = await import("@renderer/features/documents/DocumentTabs");
 
     render(
       <DocumentTabs
@@ -42,7 +42,7 @@ describe("DocumentTabs", () => {
 describe("DocumentsHeader", () => {
   it("creates a project-scoped workspace payload from open documents", async () => {
     const { createDocumentWorkspace } = await import(
-      "@renderer/appIde/DocumentArea/useDocumentWorkspacePersistence"
+      "@renderer/features/documents/useDocumentWorkspacePersistence"
     );
 
     expect(
@@ -139,7 +139,7 @@ describe("DocumentsHeader", () => {
         return <div>{children}</div>;
       }
     }));
-    vi.doMock("@renderer/appIde/DocumentArea/DocumentTab", () => ({
+    vi.doMock("@renderer/features/documents/DocumentTab", () => ({
       CloseMode: { All: 0, Others: 1, This: 2 },
       DocumentTab: ({ name }: { name: string }) => <div>{name}</div>
     }));
@@ -150,7 +150,7 @@ describe("DocumentsHeader", () => {
     }));
 
     const { DOCS_WORKSPACE, DocumentsHeader } = await import(
-      "@renderer/appIde/DocumentArea/DocumentsHeader"
+      "@renderer/features/documents/DocumentsHeader"
     );
 
     render(<DocumentsHeader />);
@@ -216,7 +216,7 @@ describe("DocumentCommandBar", () => {
     }));
 
     const { DocumentCommandBar } = await import(
-      "@renderer/appIde/DocumentArea/DocumentCommandBar"
+      "@renderer/features/documents/DocumentCommandBar"
     );
     const onMoveActiveLeft = vi.fn();
     const onMoveActiveRight = vi.fn();
@@ -283,7 +283,7 @@ describe("DocumentCommandBar", () => {
 
     const { PANE_ID_BUILD } = await import("@common/integration/constants");
     const { DocumentCommandBar } = await import(
-      "@renderer/appIde/DocumentArea/DocumentCommandBar"
+      "@renderer/features/documents/DocumentCommandBar"
     );
 
     render(
@@ -319,7 +319,7 @@ describe("ExplorerProjectItem", () => {
     }));
 
     const { ExplorerProjectItem } = await import(
-      "@renderer/appIde/SiteBarPanels/ExplorerProjectItem"
+      "@renderer/features/explorer/ExplorerProjectItem"
     );
     const onActivate = vi.fn();
     const onExcludedItemsClick = vi.fn();
@@ -354,7 +354,7 @@ describe("ExplorerEmptyState", () => {
     const onCreateProject = vi.fn();
     const onOpenFolder = vi.fn(() => Promise.resolve());
     const { ExplorerEmptyState } = await import(
-      "@renderer/appIde/SiteBarPanels/ExplorerEmptyState"
+      "@renderer/features/explorer/ExplorerEmptyState"
     );
 
     render(
@@ -374,7 +374,7 @@ describe("ExplorerEmptyState", () => {
 
   it("disables empty-state actions while menus are dimmed", async () => {
     const { ExplorerEmptyState } = await import(
-      "@renderer/appIde/SiteBarPanels/ExplorerEmptyState"
+      "@renderer/features/explorer/ExplorerEmptyState"
     );
 
     render(
@@ -411,7 +411,7 @@ describe("ExplorerContextMenu", () => {
     const onNewFile = vi.fn();
     const onRefresh = vi.fn(() => Promise.resolve());
     const { ExplorerContextMenu } = await import(
-      "@renderer/appIde/SiteBarPanels/ExplorerContextMenu"
+      "@renderer/features/explorer/ExplorerContextMenu"
     );
 
     render(
@@ -459,7 +459,7 @@ describe("useExplorerTree", () => {
     vi.doMock("@renderer/appIde/project/project-node", () => ({ buildProjectTree }));
 
     const { clearExplorerFolderCache, useExplorerTree } = await import(
-      "@renderer/appIde/SiteBarPanels/useExplorerTree"
+      "@renderer/features/explorer/useExplorerTree"
     );
     clearExplorerFolderCache();
 
@@ -514,7 +514,7 @@ describe("explorer file operations", () => {
     }));
     const { TreeNode } = await import("@renderer/core/tree-node");
     const { renameExplorerNode } = await import(
-      "@renderer/appIde/SiteBarPanels/explorerFileOperations"
+      "@renderer/features/explorer/explorerFileOperations"
     );
     const selectedContextNode = new TreeNode({
       isFolder: false,
@@ -579,7 +579,7 @@ describe("explorer file operations", () => {
     }));
     const { TreeNode } = await import("@renderer/core/tree-node");
     const { deleteExplorerNode } = await import(
-      "@renderer/appIde/SiteBarPanels/explorerFileOperations"
+      "@renderer/features/explorer/explorerFileOperations"
     );
     const parent = new TreeNode({ isFolder: true, name: "src", fullPath: "/project/src" });
     const child = new TreeNode({
@@ -619,7 +619,7 @@ describe("explorer file operations", () => {
     }));
     const { TreeNode } = await import("@renderer/core/tree-node");
     const { addExplorerItem } = await import(
-      "@renderer/appIde/SiteBarPanels/explorerFileOperations"
+      "@renderer/features/explorer/explorerFileOperations"
     );
     const selectedContextNode = new TreeNode({
       isFolder: true,

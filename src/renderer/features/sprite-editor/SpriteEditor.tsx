@@ -1,6 +1,6 @@
 import styles from "./SpriteEditor.module.scss";
 import { Value } from "@renderer/controls/layout/Value";
-import { GenericFileEditorContext } from "../../helpers/GenericFileEditorPanel";
+import { GenericFileEditorContext } from "@renderer/appIde/DocumentPanels/helpers/GenericFileEditorPanel";
 import { SprFileContents, SprFileViewState, SpriteTools } from "./sprite-common";
 import {
   getCssStringForPaletteCode, getLuminanceForPaletteCode, getRgbPartsForPaletteCode

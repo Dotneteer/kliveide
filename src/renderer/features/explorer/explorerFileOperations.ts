@@ -8,7 +8,7 @@ import { ProjectNode } from "@abstractions/ProjectNode";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { IIdeCommandService } from "@renderer/abstractions/IIdeCommandService";
 import { TreeNode } from "@renderer/core/tree-node";
-import { compareProjectNode, getFileTypeEntry, getNodeDir } from "../project/project-node";
+import { compareProjectNode, getFileTypeEntry, getNodeDir } from "@renderer/appIde/project/project-node";
 
 type DispatchAction = (action: any, source?: any) => any;
 
