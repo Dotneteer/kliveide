@@ -27,17 +27,6 @@ const FOCUSABLE_SELECTOR = [
   "[tabindex]:not([tabindex='-1'])"
 ].join(",");
 
-export interface ModalApi {
-  enablePrimaryButton: (flag: boolean) => void;
-  enableSecondaryButton: (flag: boolean) => void;
-  enableCancel: (flag: boolean) => void;
-  setDialogResult: (result?: any) => void;
-  triggerPrimary: (result?: any) => void;
-  triggerSecondary: (result?: any) => void;
-  triggerCancel: (result?: any) => void;
-  triggerClose: () => void;
-}
-
 export type ModalProps = {
   children?: ReactNode;
   portalTo?: HTMLElement;
@@ -61,11 +50,10 @@ export type ModalProps = {
   cancelEnabled?: boolean;
   cancelVisible?: boolean;
   initialFocus?: "none" | "primary" | "secondary" | "cancel";
-  onApiLoaded?: (api: ModalApi) => void;
   onClose: (result?: any) => any;
-  onPrimaryClicked?: (result?: any) => Promise<boolean>;
-  onSecondaryClicked?: (result?: any) => Promise<boolean>;
-  onCancelClicked?: (result?: any) => Promise<boolean>;
+  onPrimaryClicked?: () => Promise<boolean>;
+  onSecondaryClicked?: () => Promise<boolean>;
+  onCancelClicked?: () => Promise<boolean>;
 };
 
 export const Modal = ({
@@ -91,7 +79,6 @@ export const Modal = ({
   cancelEnabled = true,
   cancelVisible = true,
   initialFocus = "primary",
-  onApiLoaded,
   onClose,
   onPrimaryClicked,
   onSecondaryClicked,
@@ -101,10 +88,6 @@ export const Modal = ({
   const root = portalTo ?? overlayRoot ?? getOverlayRoot();
   const titleId = useId();
   const { store, messageSource } = useRendererContext();
-  const [button1Enabled, setButton1Enabled] = useState(primaryEnabled);
-  const [button2Enabled, setButton2Enabled] = useState(secondaryEnabled);
-  const [cancelButtonEnabled, setCancelButtonEnabled] = useState(cancelEnabled);
-  const [dialogResult, setDialogResult] = useState<any>();
   const modalId = useId();
   const closeOnEscapeRef = useRef(closeOnEscape);
   const doCloseRef = useRef<(result?: any) => void>();
@@ -125,44 +108,24 @@ export const Modal = ({
   doCloseRef.current = doClose;
 
   // --- Define button click handlers
-  const primaryClickHandler = useCallback(async (result?: any) => {
-    const close = await onPrimaryClicked?.(result ?? dialogResult);
+  const primaryClickHandler = useCallback(async () => {
+    const close = await onPrimaryClicked?.();
     if (!close) {
       doClose();
     }
-  }, [dialogResult, doClose, onPrimaryClicked]);
-  const secondaryClickHandler = useCallback(async (result?: any) => {
-    const close = await onSecondaryClicked?.(result ?? dialogResult);
+  }, [doClose, onPrimaryClicked]);
+  const secondaryClickHandler = useCallback(async () => {
+    const close = await onSecondaryClicked?.();
     if (!close) {
       doClose();
     }
-  }, [dialogResult, doClose, onSecondaryClicked]);
-  const cancelClickHandler = useCallback(async (result?: any) => {
-    const close = await onCancelClicked?.(result);
+  }, [doClose, onSecondaryClicked]);
+  const cancelClickHandler = useCallback(async () => {
+    const close = await onCancelClicked?.();
     if (!close) {
       doClose();
     }
   }, [doClose, onCancelClicked]);
-
-  useEffect(() => {
-    setButton1Enabled(primaryEnabled);
-    setButton2Enabled(secondaryEnabled);
-    setCancelButtonEnabled(cancelEnabled);
-  },
-  [primaryEnabled, secondaryEnabled, cancelEnabled]);
-
-  useEffect(() => {
-    onApiLoaded?.({
-      enablePrimaryButton: (flag: boolean) => setButton1Enabled(flag),
-      enableSecondaryButton: (flag: boolean) => setButton2Enabled(flag),
-      enableCancel: (flag: boolean) => setCancelButtonEnabled(flag),
-      setDialogResult: (result?: any) => setDialogResult(result),
-      triggerPrimary: (result?: any) => primaryClickHandler(result),
-      triggerSecondary: (result?: any) => secondaryClickHandler(result),
-      triggerCancel: (result?: any) => cancelClickHandler(result),
-      triggerClose: (result?: any) => doClose(result)
-    });
-  }, [cancelClickHandler, doClose, onApiLoaded, primaryClickHandler, secondaryClickHandler]);
 
   useEffect(() => {
     store.dispatch(dimMenuAction(isOpen), messageSource);
@@ -336,7 +299,7 @@ export const Modal = ({
                       visible={primaryVisible}
                       focusOnInit={primaryEnabled && initialFocus === "primary"}
                       isDanger={primaryDanger}
-                      disabled={!button1Enabled}
+                      disabled={!primaryEnabled}
                       spaceLeft={8}
                       clicked={async () => await primaryClickHandler()}
                     />
@@ -348,7 +311,7 @@ export const Modal = ({
                       focusOnInit={
                         secondaryEnabled && initialFocus === "secondary"
                       }
-                      disabled={!button2Enabled}
+                      disabled={!secondaryEnabled}
                       spaceLeft={8}
                       clicked={async () => await secondaryClickHandler()}
                     />
@@ -357,9 +320,9 @@ export const Modal = ({
                     <Button
                       text={cancelLabel}
                       visible={cancelVisible}
-                      disabled={!cancelButtonEnabled}
+                      disabled={!cancelEnabled}
                       focusOnInit={
-                        cancelButtonEnabled && initialFocus === "cancel"
+                        cancelEnabled && initialFocus === "cancel"
                       }
                       clicked={async () => await cancelClickHandler()}
                     />

@@ -19,9 +19,15 @@ const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
 type Props = {
   slot: number;
   onClose: () => void;
+  onInsert?: (result: Z88InsertCardDialogResult) => void;
 };
 
-export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
+export type Z88InsertCardDialogResult = {
+  slot: number;
+  slotState: CardSlotState;
+};
+
+export const Z88InsertCardDialog = ({ slot, onClose, onInsert }: Props) => {
   const { store } = useRendererContext();
   const mainApi = useMainApi();
   const { machineService } = useAppServices();
@@ -94,6 +100,7 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
           // --- Change the configuration
           await machineService.setMachineType(machineId, modelId, newConfig);
         }
+        onInsert?.({ slot, slotState });
         return false;
       }}
       onClose={() => {

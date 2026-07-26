@@ -1,5 +1,8 @@
 import { ReactElement, useEffect, useRef } from "react";
-import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
+import {
+  DialogControls,
+  useDialogs
+} from "@renderer/controls/overlay/DialogProvider";
 import {
   CREATE_DISK_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
@@ -8,22 +11,75 @@ import {
   Z88_INSERT_CARD_DIALOG,
   Z88_REMOVE_CARD_DIALOG
 } from "@common/messaging/dialog-ids";
-import { FirstStartDialog } from "@renderer/appIde/dialogs/FirstStartDialog";
-import { CreateDiskDialog } from "./dialogs/CreateDiskDialog";
-import { Z88RemoveCardDialog } from "./dialogs/Z88RemoveCardDialog";
-import { Z88InsertCardDialog } from "./dialogs/Z88InsertCardDialog";
-import { Z88ExportCardDialog } from "./dialogs/Z88ExportCardDialog";
-import { Z88ChangeRamDialog } from "./dialogs/Z88ChangeRamDialog";
+import {
+  FirstStartDialog,
+  FirstStartDialogResult
+} from "@renderer/appIde/dialogs/FirstStartDialog";
+import {
+  CreateDiskDialog,
+  CreateDiskDialogResult
+} from "./dialogs/CreateDiskDialog";
+import {
+  Z88RemoveCardDialog,
+  Z88RemoveCardDialogResult
+} from "./dialogs/Z88RemoveCardDialog";
+import {
+  Z88InsertCardDialog,
+  Z88InsertCardDialogResult
+} from "./dialogs/Z88InsertCardDialog";
+import {
+  Z88ExportCardDialog,
+  Z88ExportCardDialogResult
+} from "./dialogs/Z88ExportCardDialog";
+import {
+  Z88ChangeRamDialog,
+  Z88ChangeRamDialogResult
+} from "./dialogs/Z88ChangeRamDialog";
 
-type EmuDialogRenderer = (data: any, onClose: () => void) => ReactElement;
+type EmuDialogResult =
+  | FirstStartDialogResult
+  | CreateDiskDialogResult
+  | Z88RemoveCardDialogResult
+  | Z88InsertCardDialogResult
+  | Z88ExportCardDialogResult
+  | Z88ChangeRamDialogResult;
+
+type EmuDialogRenderer = (
+  data: any,
+  controls: DialogControls<EmuDialogResult>
+) => ReactElement;
 
 export const emuDialogRegistry: Record<number, EmuDialogRenderer> = {
-  [FIRST_STARTUP_DIALOG_EMU]: (_, onClose) => <FirstStartDialog onClose={onClose} />,
-  [Z88_REMOVE_CARD_DIALOG]: (data, onClose) => <Z88RemoveCardDialog slot={data} onClose={onClose} />,
-  [Z88_INSERT_CARD_DIALOG]: (data, onClose) => <Z88InsertCardDialog slot={data} onClose={onClose} />,
-  [Z88_EXPORT_CARD_DIALOG]: (data, onClose) => <Z88ExportCardDialog slot={data} onClose={onClose} />,
-  [Z88_CHANGE_RAM_DIALOG]: (_, onClose) => <Z88ChangeRamDialog onClose={onClose} />,
-  [CREATE_DISK_DIALOG]: (_, onClose) => <CreateDiskDialog onClose={onClose} />
+  [FIRST_STARTUP_DIALOG_EMU]: (_, controls) => (
+    <FirstStartDialog onResolve={(result) => controls.close(result)} onClose={controls.cancel} />
+  ),
+  [Z88_REMOVE_CARD_DIALOG]: (data, controls) => (
+    <Z88RemoveCardDialog
+      slot={data}
+      onRemove={(result) => controls.close(result)}
+      onClose={controls.cancel}
+    />
+  ),
+  [Z88_INSERT_CARD_DIALOG]: (data, controls) => (
+    <Z88InsertCardDialog
+      slot={data}
+      onInsert={(result) => controls.close(result)}
+      onClose={controls.cancel}
+    />
+  ),
+  [Z88_EXPORT_CARD_DIALOG]: (data, controls) => (
+    <Z88ExportCardDialog
+      slot={data}
+      onExport={(result) => controls.close(result)}
+      onClose={controls.cancel}
+    />
+  ),
+  [Z88_CHANGE_RAM_DIALOG]: (_, controls) => (
+    <Z88ChangeRamDialog onChange={(result) => controls.close(result)} onClose={controls.cancel} />
+  ),
+  [CREATE_DISK_DIALOG]: (_, controls) => (
+    <CreateDiskDialog onCreate={(result) => controls.close(result)} onClose={controls.cancel} />
+  )
 };
 
 type EmuDialogHostProps = {
@@ -48,14 +104,10 @@ export function EmuDialogHost({
     if (!dialogRenderer) return;
 
     const legacyDialogId = `emu-dialog-${dialogId}`;
-    void dialogs.openLegacy<void>(
-      (controls) =>
-        dialogRenderer(dialogData, () => {
-          controls.cancel();
-          onCloseRef.current();
-        }),
+    void dialogs.openLegacy<EmuDialogResult>(
+      (controls) => dialogRenderer(dialogData, controls),
       { id: legacyDialogId }
-    );
+    ).finally(() => onCloseRef.current());
 
     return () => dialogs.closeById(legacyDialogId);
   }, [dialogData, dialogId, dialogs]);

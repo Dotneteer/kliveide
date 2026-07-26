@@ -33,13 +33,15 @@
         "resource": "03_memory/legacy.asm",
         "line": 136,
         "exec": true,
-        "ioMask": 65535
+        "ioMask": 65535,
+        "resolvedAddress": 36737
       },
       {
         "resource": "03_memory/legacy.asm",
         "line": 209,
         "exec": true,
-        "ioMask": 65535
+        "ioMask": 65535,
+        "resolvedAddress": 36944
       }
     ]
   },
@@ -133,7 +135,7 @@
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_talktohw/nr.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
     },
     "Disassembly": {
       "topAddress": 41956,

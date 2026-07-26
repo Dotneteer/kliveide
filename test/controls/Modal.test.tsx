@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { useState } from "react";
 import { renderWithProviders, screen, fireEvent, waitFor, act } from "../react-test-utils";
-import { Modal, ModalApi } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 import { dimMenuAction } from "@state/actions";
 
 // ---------------------------------------------------------------------------
@@ -10,11 +10,9 @@ import { dimMenuAction } from "@state/actions";
 // ---------------------------------------------------------------------------
 
 /**
- * Renders a Modal and captures the ModalApi via onApiLoaded.
- * Returns both the RTL result and the captured api reference.
+ * Renders a Modal with the standard provider wrapper.
  */
 function renderModal(overrides: Partial<Parameters<typeof Modal>[0]> = {}) {
-  let api: ModalApi | undefined;
   const onClose = vi.fn();
   const { children = <div data-testid="modal-body">body content</div>, ...modalProps } = overrides;
 
@@ -23,118 +21,14 @@ function renderModal(overrides: Partial<Parameters<typeof Modal>[0]> = {}) {
       isOpen={true}
       title="Test Modal"
       onClose={onClose}
-      onApiLoaded={(a) => { api = a; }}
       {...modalProps}
     >
       {children}
     </Modal>
   );
 
-  return { ...result, api: api!, onClose };
+  return { ...result, onClose };
 }
-
-// ---------------------------------------------------------------------------
-// Step 1.1 — triggerSecondary and triggerCancel call the correct handlers
-// ---------------------------------------------------------------------------
-
-describe("Modal — Step 1.1: triggerSecondary / triggerCancel dispatch correct handlers", () => {
-  it("triggerPrimary calls onPrimaryClicked", async () => {
-    const onPrimaryClicked = vi.fn().mockResolvedValue(false);
-    const { api } = renderModal({ onPrimaryClicked });
-
-    api.triggerPrimary();
-
-    await waitFor(() => expect(onPrimaryClicked).toHaveBeenCalledTimes(1));
-  });
-
-  it("triggerSecondary calls onSecondaryClicked, NOT onPrimaryClicked", async () => {
-    const onPrimaryClicked = vi.fn().mockResolvedValue(false);
-    const onSecondaryClicked = vi.fn().mockResolvedValue(false);
-    const { api } = renderModal({ onPrimaryClicked, onSecondaryClicked });
-
-    api.triggerSecondary();
-
-    await waitFor(() => expect(onSecondaryClicked).toHaveBeenCalledTimes(1));
-    expect(onPrimaryClicked).not.toHaveBeenCalled();
-  });
-
-  it("triggerCancel calls onCancelClicked, NOT onPrimaryClicked", async () => {
-    const onPrimaryClicked = vi.fn().mockResolvedValue(false);
-    const onCancelClicked = vi.fn().mockResolvedValue(false);
-    const { api } = renderModal({ onPrimaryClicked, onCancelClicked });
-
-    api.triggerCancel();
-
-    await waitFor(() => expect(onCancelClicked).toHaveBeenCalledTimes(1));
-    expect(onPrimaryClicked).not.toHaveBeenCalled();
-  });
-
-  it("triggerSecondary passes the result argument to onSecondaryClicked", async () => {
-    const onSecondaryClicked = vi.fn().mockResolvedValue(false);
-    const { api } = renderModal({ onSecondaryClicked });
-
-    api.triggerSecondary("my-result");
-
-    await waitFor(() =>
-      expect(onSecondaryClicked).toHaveBeenCalledWith("my-result")
-    );
-  });
-
-  it("triggerCancel passes the result argument to onCancelClicked", async () => {
-    const onCancelClicked = vi.fn().mockResolvedValue(false);
-    const { api } = renderModal({ onCancelClicked });
-
-    api.triggerCancel("cancel-result");
-
-    await waitFor(() =>
-      expect(onCancelClicked).toHaveBeenCalledWith("cancel-result")
-    );
-  });
-
-  it("triggerClose calls onClose directly", async () => {
-    const onClose = vi.fn();
-    const { api } = renderModal({ onClose });
-
-    api.triggerClose();
-
-    expect(onClose).toHaveBeenCalled();
-  });
-
-  it("API triggers use the latest handlers after rerender", async () => {
-    let api: ModalApi | undefined;
-    const firstPrimary = vi.fn().mockResolvedValue(false);
-    const latestPrimary = vi.fn().mockResolvedValue(false);
-
-    const { rerender } = renderWithProviders(
-      <Modal
-        isOpen={true}
-        title="T"
-        onClose={vi.fn()}
-        onApiLoaded={(loadedApi) => { api = loadedApi; }}
-        onPrimaryClicked={firstPrimary}
-      >
-        <div />
-      </Modal>
-    );
-
-    rerender(
-      <Modal
-        isOpen={true}
-        title="T"
-        onClose={vi.fn()}
-        onApiLoaded={(loadedApi) => { api = loadedApi; }}
-        onPrimaryClicked={latestPrimary}
-      >
-        <div />
-      </Modal>
-    );
-
-    api!.triggerPrimary("latest");
-
-    await waitFor(() => expect(latestPrimary).toHaveBeenCalledWith("latest"));
-    expect(firstPrimary).not.toHaveBeenCalled();
-  });
-});
 
 // ---------------------------------------------------------------------------
 // Step 1.2 — dimMenuAction is dispatched only when isOpen changes

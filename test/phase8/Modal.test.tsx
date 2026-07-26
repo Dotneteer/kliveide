@@ -1,21 +1,20 @@
 /**
  * Phase 8 — Step 8.1: Modal component tests
  *
- * Tests: open/close lifecycle, primary/secondary/cancel triggers, button
- * enable/disable, keyboard escape, dim menu dispatch, dialog result.
+ * Tests: open/close lifecycle, button enable/disable, keyboard escape,
+ * dim menu dispatch, and outside-click close.
  */
 
 import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { renderWithProviders, screen, fireEvent, waitFor, act } from "../react-test-utils";
-import { Modal, ModalApi } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function renderModal(overrides: Partial<Parameters<typeof Modal>[0]> = {}) {
-  let api: ModalApi | undefined;
   const onClose = vi.fn();
 
   const result = renderWithProviders(
@@ -23,14 +22,13 @@ function renderModal(overrides: Partial<Parameters<typeof Modal>[0]> = {}) {
       isOpen={true}
       title="Test Modal"
       onClose={onClose}
-      onApiLoaded={(a) => { api = a; }}
       {...overrides}
     >
       <div data-testid="modal-body">body content</div>
     </Modal>
   );
 
-  return { ...result, api: api!, onClose };
+  return { ...result, onClose };
 }
 
 // ---------------------------------------------------------------------------
@@ -105,51 +103,6 @@ describe("Modal — keyboard escape", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Button triggers via API
-// ---------------------------------------------------------------------------
-
-describe("Modal — API triggers", () => {
-  it("triggerPrimary calls onPrimaryClicked", async () => {
-    const onPrimaryClicked = vi.fn().mockResolvedValue(false);
-    const { api } = renderModal({ onPrimaryClicked });
-
-    api.triggerPrimary("result-1");
-    await waitFor(() => expect(onPrimaryClicked).toHaveBeenCalledWith("result-1"));
-  });
-
-  it("triggerSecondary calls onSecondaryClicked", async () => {
-    const onSecondaryClicked = vi.fn().mockResolvedValue(false);
-    const { api } = renderModal({ onSecondaryClicked });
-
-    api.triggerSecondary("result-2");
-    await waitFor(() => expect(onSecondaryClicked).toHaveBeenCalledWith("result-2"));
-  });
-
-  it("triggerCancel calls onCancelClicked", async () => {
-    const onCancelClicked = vi.fn().mockResolvedValue(false);
-    const { api } = renderModal({ onCancelClicked });
-
-    api.triggerCancel("result-c");
-    await waitFor(() => expect(onCancelClicked).toHaveBeenCalledWith("result-c"));
-  });
-
-  it("triggerClose calls onClose", () => {
-    const { api, onClose } = renderModal();
-    api.triggerClose();
-    expect(onClose).toHaveBeenCalled();
-  });
-
-  it("triggerPrimary passes its argument to onPrimaryClicked", async () => {
-    const onPrimaryClicked = vi.fn().mockResolvedValue(false);
-    const { api } = renderModal({ onPrimaryClicked });
-
-    api.triggerPrimary("stored-result");
-
-    await waitFor(() => expect(onPrimaryClicked).toHaveBeenCalledWith("stored-result"));
-  });
-});
-
-// ---------------------------------------------------------------------------
 // Button enable/disable
 // ---------------------------------------------------------------------------
 
@@ -163,28 +116,6 @@ describe("Modal — button enable/disable", () => {
   it("cancel button respects cancelEnabled prop", () => {
     renderModal({ cancelEnabled: false });
     const cancelBtn = screen.getByRole("button", { name: /cancel/i });
-    expect(cancelBtn).toBeDisabled();
-  });
-
-  it("enablePrimaryButton via API updates button state", async () => {
-    const { api } = renderModal({ primaryEnabled: true });
-    const okBtn = screen.getByRole("button", { name: /ok/i });
-    expect(okBtn).not.toBeDisabled();
-
-    await act(async () => {
-      api.enablePrimaryButton(false);
-    });
-    expect(okBtn).toBeDisabled();
-  });
-
-  it("enableCancel via API updates cancel button state", async () => {
-    const { api } = renderModal({ cancelEnabled: true });
-    const cancelBtn = screen.getByRole("button", { name: /cancel/i });
-    expect(cancelBtn).not.toBeDisabled();
-
-    await act(async () => {
-      api.enableCancel(false);
-    });
     expect(cancelBtn).toBeDisabled();
   });
 

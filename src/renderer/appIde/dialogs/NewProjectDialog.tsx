@@ -1,7 +1,7 @@
 import styles from "./NewProjectDialog.module.scss";
-import { ModalApi, Modal } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { getAllMachineModels } from "@common/machines/machine-registry";
@@ -39,7 +39,6 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const mainApi = useMainApi();
   const { validationService, projectService, ideCommandsService } = useAppServices();
   const { store } = useRendererContext();
-  const modalApi = useRef<ModalApi>(null);
   const [machineId, setMachineId] = useState<string>(INITIAL_MACHINE_IDE);
   const [modelId, setmodelId] = useState<string>(undefined);
   const [projectFolder, setProjectFolder] = useState("");
@@ -72,8 +71,43 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
     setFolderIsValid(fValid);
     const nValid = validationService.isValidFilename(projectName);
     setProjectIsValid(nValid);
-    modalApi.current.enablePrimaryButton(fValid && nValid);
   }, [projectFolder, projectName]);
+
+  const createProject = async (): Promise<boolean> => {
+    // --- Create the project
+    try {
+      const responsePath = await mainApi.createKliveProject(
+        machineId,
+        projectName,
+        projectFolder,
+        modelId,
+        templateId
+      );
+      // --- Open the newly created project
+      await mainApi.openFolder(responsePath);
+      await ensureProjectLoaded(projectService);
+      await ensureWorkspaceLoaded(store);
+
+      // --- Navigate to the project root
+      const buildRoots = store.getState().project?.buildRoots;
+      if (buildRoots.length > 0) {
+        ideCommandsService.executeCommand(`nav "${buildRoots[0]}"`);
+      }
+      await onCreate?.({
+        machineId,
+        modelId,
+        templateId,
+        projectName,
+        projectFolder
+      });
+    } catch (error) {
+      await mainApi.displayMessageBox("error", "New Klive Project Error", error.toString());
+      return true;
+    }
+
+    // --- Dialog can be closed
+    return false;
+  };
 
   return (
     <Modal
@@ -82,50 +116,10 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       fullScreen={false}
       width={500}
       translateY={0}
-      onApiLoaded={(api) => (modalApi.current = api)}
       primaryLabel="Create"
       primaryEnabled={folderIsValid && projectIsValid}
       initialFocus="none"
-      onPrimaryClicked={async (result) => {
-        const machine = result ? result[0] : machineId;
-        const template = result ? result[1] : templateId;
-        const name = result ? result[2] : projectName;
-        const folder = result ? result[3] : projectFolder;
-
-        // --- Create the project
-        try {
-          const responsePath = await mainApi.createKliveProject(
-            machine,
-            name,
-            folder,
-            modelId,
-            template
-          );
-          // --- Open the newly created project
-          await mainApi.openFolder(responsePath);
-          await ensureProjectLoaded(projectService);
-          await ensureWorkspaceLoaded(store);
-
-          // --- Navigate to the project root
-          const buildRoots = store.getState().project?.buildRoots;
-          if (buildRoots.length > 0) {
-            ideCommandsService.executeCommand(`nav "${buildRoots[0]}"`);
-          }
-          await onCreate?.({
-            machineId: machine,
-            modelId,
-            templateId: template,
-            projectName: name,
-            projectFolder: folder
-          });
-        } catch (error) {
-          await mainApi.displayMessageBox("error", "New Klive Project Error", error.toString());
-          return true;
-        }
-
-        // --- Dialog can be closed
-        return false;
-      }}
+      onPrimaryClicked={createProject}
       onClose={() => {
         onClose();
       }}
@@ -183,17 +177,15 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
           value={projectName}
           isValid={projectIsValid}
           focusOnInit={true}
-          keyPressed={(e) => {
+          keyPressed={async (e) => {
             if (e.code === "Enter") {
               if (folderIsValid && projectIsValid) {
                 e.preventDefault();
                 e.stopPropagation();
-                modalApi.current.triggerPrimary([
-                  machineId,
-                  templateId,
-                  projectName,
-                  projectFolder
-                ]);
+                const keepOpen = await createProject();
+                if (!keepOpen) {
+                  onClose();
+                }
               }
             }
           }}

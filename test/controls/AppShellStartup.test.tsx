@@ -212,7 +212,16 @@ describe("app shell dialog hosts", () => {
       ).toBe(true);
     }
     for (const dialogId of expectedEmuIds) {
-      expect(isValidElement(emuDialogRegistry[dialogId](3, vi.fn()))).toBe(true);
+      expect(
+        isValidElement(
+          emuDialogRegistry[dialogId](3, {
+            id: `emu-${dialogId}`,
+            close: vi.fn(),
+            cancel: vi.fn(),
+            reject: vi.fn()
+          })
+        )
+      ).toBe(true);
     }
   });
 
@@ -260,8 +269,14 @@ describe("app shell dialog hosts", () => {
       )
     }));
     vi.doMock("@renderer/appEmu/dialogs/Z88RemoveCardDialog", () => ({
-      Z88RemoveCardDialog: ({ slot, onClose }: { slot: number; onClose: () => void }) => (
-        <button onClick={onClose}>remove {slot}</button>
+      Z88RemoveCardDialog: ({
+        slot,
+        onRemove
+      }: {
+        slot: number;
+        onRemove: (result: { slot: number }) => void;
+      }) => (
+        <button onClick={() => onRemove({ slot })}>remove {slot}</button>
       )
     }));
     vi.doMock("@renderer/appEmu/dialogs/Z88InsertCardDialog", () => ({
@@ -297,7 +312,7 @@ describe("app shell dialog hosts", () => {
     );
     fireEvent.click(await screen.findByText("remove 3"));
 
-    expect(onClose).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 });
 

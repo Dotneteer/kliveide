@@ -1,7 +1,7 @@
 import styles from "./ExportCodeDialog.module.scss";
-import { ModalApi, Modal } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { getNodeExtension, getNodeName } from "@renderer/appIde/project/project-node";
@@ -90,7 +90,6 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   const exportSettings = store.getState()?.project?.exportSettings ?? {};
   const mainApi = useMainApi();
   const { outputPaneService, ideCommandsService, validationService } = useAppServices();
-  const modalApi = useRef<ModalApi>(null);
   const [formatId, setFormatId] = useState(exportSettings.formatId ?? "tzx");
   const [exportFolder, setExportFolder] = useState(exportSettings?.exportFolder ?? "");
   const [folderIsValid, setFolderIsValid] = useState(true);
@@ -116,7 +115,6 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
     setStartAddressIsValid(addressValid);
     const scrValid = validationService.isValidPath(screenFilename);
     setScreenFileIsValid(scrValid);
-    modalApi.current.enablePrimaryButton(fValid && nValid && addressValid && scrValid);
   }, [exportFolder, exportName, startAddress, screenFilename]);
 
   // --- Save the dialog data whenever it changes
@@ -156,6 +154,61 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
     singleBlock
   ]);
 
+  const canExport = folderIsValid && exportIsValid && startAddressIsValid && screenFileIsValid;
+
+  const exportCode = async (): Promise<boolean> => {
+    // --- Dialog can be closed
+    let filename = exportName;
+    let exportExt = getNodeExtension(exportName);
+    if (!exportExt || exportExt === ".") {
+      filename += `.${formatId}`;
+    }
+    const fullFilename = (exportFolder ? `${exportFolder}/${filename}` : filename).replaceAll(
+      "\\",
+      "/"
+    );
+    const name = programName ? programName : getNodeName(exportName);
+    const command = `expc "${fullFilename}" -n ${name} -f ${formatId}${
+      startBlock ? " -as" : ""
+    }${addPause ? " -p" : ""}${
+      borderId !== "none" ? ` -b ${borderId}` : ""
+    }${singleBlock ? " -sb" : ""}${
+      startAddress ? ` -addr ${startAddress}` : ""
+    }${addClear ? " -c" : ""}${screenFilename ? ` -scr "${screenFilename.replaceAll("\\", "/")}"` : ""}`;
+    const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+    const result = await ideCommandsService.executeCommand(command, buildPane);
+    if (result.success) {
+      await mainApi.displayMessageBox(
+        "info",
+        "Exporting code",
+        result.finalMessage ?? "Code successfully exported."
+      );
+      await onExport?.({
+        command,
+        fullFilename,
+        formatId,
+        exportName,
+        exportFolder,
+        programName,
+        startAddress
+      });
+    } else {
+      // --- Analyze the message and
+      let message = result.finalMessage;
+      if (message.includes("-addr")) {
+        message = "Code start address must be between 16384 and 65535.";
+      } else {
+        // --- Other messages
+      }
+      await mainApi.displayMessageBox(
+        "error",
+        "Exporting code",
+        message ?? result.finalMessage ?? "Code export failed"
+      );
+    }
+    return !result.success;
+  };
+
   return (
     <Modal
       title="Export Code"
@@ -163,62 +216,10 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
       fullScreen={false}
       width={500}
       translateY={0}
-      onApiLoaded={(api) => (modalApi.current = api)}
       primaryLabel="Export"
-      primaryEnabled={true}
+      primaryEnabled={canExport}
       initialFocus="none"
-      onPrimaryClicked={async () => {
-        // --- Dialog can be closed
-        let filename = exportName;
-        let exportExt = getNodeExtension(exportName);
-        if (!exportExt || exportExt === ".") {
-          filename += `.${formatId}`;
-        }
-        const fullFilename = (exportFolder ? `${exportFolder}/${filename}` : filename).replaceAll(
-          "\\",
-          "/"
-        );
-        const name = programName ? programName : getNodeName(exportName);
-        const command = `expc "${fullFilename}" -n ${name} -f ${formatId}${
-          startBlock ? " -as" : ""
-        }${addPause ? " -p" : ""}${
-          borderId !== "none" ? ` -b ${borderId}` : ""
-        }${singleBlock ? " -sb" : ""}${
-          startAddress ? ` -addr ${startAddress}` : ""
-        }${addClear ? " -c" : ""}${screenFilename ? ` -scr "${screenFilename.replaceAll("\\", "/")}"` : ""}`;
-        const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-        const result = await ideCommandsService.executeCommand(command, buildPane);
-        if (result.success) {
-          await mainApi.displayMessageBox(
-            "info",
-            "Exporting code",
-            result.finalMessage ?? "Code successfully exported."
-          );
-          await onExport?.({
-            command,
-            fullFilename,
-            formatId,
-            exportName,
-            exportFolder,
-            programName,
-            startAddress
-          });
-        } else {
-          // --- Analyze the message and
-          let message = result.finalMessage;
-          if (message.includes("-addr")) {
-            message = "Code start address must be between 16384 and 65535.";
-          } else {
-            // --- Other messages
-          }
-          await mainApi.displayMessageBox(
-            "error",
-            "Exporting code",
-            message ?? result.finalMessage ?? "Code export failed"
-          );
-        }
-        return !result.success;
-      }}
+      onPrimaryClicked={exportCode}
       onClose={() => {
         onClose();
       }}
