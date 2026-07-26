@@ -2,17 +2,30 @@ import { useRendererContext } from "@renderer/core/RendererProvider";
 import classnames from "classnames";
 import { dimMenuAction } from "@state/actions";
 import {
+  KeyboardEvent,
   MouseEventHandler,
   ReactNode,
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState
 } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "./Button";
 import { Icon } from "./Icon";
+import { getModalStackSize, isTopModal, registerModal } from "./overlay/modalStack";
+import { getOverlayRoot, useOverlayRoot } from "./overlay/useOverlayRoot";
 import styles from "./Modal.module.scss";
+
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])"
+].join(",");
 
 export interface ModalApi {
   enablePrimaryButton: (flag: boolean) => void;
@@ -28,6 +41,9 @@ export interface ModalApi {
 export type ModalProps = {
   children?: ReactNode;
   portalTo?: HTMLElement;
+  dialogRole?: "dialog" | "alertdialog";
+  closeOnEscape?: boolean;
+  closeOnOutsideClick?: boolean;
   width?: number;
   fullWidth?: boolean;
   fullScreen?: boolean;
@@ -59,6 +75,9 @@ export const Modal = ({
   fullWidth,
   fullScreen,
   portalTo,
+  dialogRole,
+  closeOnEscape = true,
+  closeOnOutsideClick = true,
   title,
   translateY = -200,
   primaryLabel = "Ok",
@@ -78,27 +97,32 @@ export const Modal = ({
   onSecondaryClicked,
   onCancelClicked
 }: ModalProps) => {
-  const root = portalTo ?? document.getElementById("appMain") ?? document.body;
+  const overlayRoot = useOverlayRoot();
+  const root = portalTo ?? overlayRoot ?? getOverlayRoot();
+  const titleId = useId();
   const { store, messageSource } = useRendererContext();
   const [button1Enabled, setButton1Enabled] = useState(primaryEnabled);
   const [button2Enabled, setButton2Enabled] = useState(secondaryEnabled);
   const [cancelButtonEnabled, setCancelButtonEnabled] = useState(cancelEnabled);
   const [dialogResult, setDialogResult] = useState<any>();
+  const modalId = useId();
+  const closeOnEscapeRef = useRef(closeOnEscape);
+  const doCloseRef = useRef<(result?: any) => void>();
+  const restoreFocusElementRef = useRef<HTMLElement | null>(null);
 
   const doClose = useCallback((result?: any) => {
-    store.dispatch(dimMenuAction(false), messageSource);
+    if (getModalStackSize() <= 1) {
+      store.dispatch(dimMenuAction(false), messageSource);
+    }
     onClose?.(result);
   }, [messageSource, onClose, store]);
-
-  const handleKeyboard = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.code === "Escape") {
-      doClose();
-    }
-  }, [doClose]);
 
   const [closeStarted, setCloseStarted] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  closeOnEscapeRef.current = closeOnEscape;
+  doCloseRef.current = doClose;
 
   // --- Define button click handlers
   const primaryClickHandler = useCallback(async (result?: any) => {
@@ -145,16 +169,94 @@ export const Modal = ({
   }, [isOpen, messageSource, store]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+
+    restoreFocusElementRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const unregister = registerModal({
+      id: modalId,
+      handleEscape: () => {
+        if (closeOnEscapeRef.current) {
+          doCloseRef.current?.();
+        }
+      }
+    });
+
+    return () => {
+      unregister();
+      const elementToRestore = restoreFocusElementRef.current;
+      restoreFocusElementRef.current = null;
+      if (elementToRestore && document.contains(elementToRestore)) {
+        elementToRestore.focus();
+      }
+    };
+  }, [isOpen, modalId]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleDocumentKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.code !== "Escape" || !isTopModal(modalId)) return;
+      const topModal = isTopModal(modalId);
+      if (topModal && closeOnEscapeRef.current) {
+        event.preventDefault();
+        event.stopPropagation();
+        doCloseRef.current?.();
+      }
+    };
+
+    document.addEventListener("keydown", handleDocumentKeyDown, true);
+    return () => document.removeEventListener("keydown", handleDocumentKeyDown, true);
+  }, [isOpen, modalId]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handle = setTimeout(() => {
+      if (!isTopModal(modalId)) return;
+      focusInitialElement(containerRef.current, initialFocus);
+    });
+
+    return () => clearTimeout(handle);
+  }, [initialFocus, isOpen, modalId]);
+
+  const handleDialogKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Tab" || !isTopModal(modalId)) return;
+
+    const focusableElements = getFocusableElements(containerRef.current);
+    if (!focusableElements.length) {
+      event.preventDefault();
       containerRef.current?.focus();
+      return;
     }
-  }, [isOpen]);
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    const activeElement = document.activeElement;
+
+    if (event.shiftKey) {
+      if (activeElement === firstElement || !containerRef.current?.contains(activeElement)) {
+        event.preventDefault();
+        lastElement.focus();
+      }
+    } else if (activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  }, [modalId]);
 
   const onMouseDownHandler: MouseEventHandler<HTMLDivElement> = e => {
-    setCloseStarted(!!(modalRef?.current && modalRef?.current === e.target));
+    setCloseStarted(
+      closeOnOutsideClick && !!(modalRef?.current && modalRef?.current === e.target)
+    );
   };
 
   const onMouseUpHandler: MouseEventHandler<HTMLDivElement> = e => {
+    if (!closeOnOutsideClick) {
+      setCloseStarted(false);
+      return;
+    }
     if (modalRef?.current && modalRef?.current !== e.target) {
       return;
     }
@@ -181,10 +283,10 @@ export const Modal = ({
           >
             <div
               onClick={e => e.stopPropagation()}
-              role='dialog'
-              aria-labelledby='dialogTitle'
-              aria-describedby='dialogDesc'
-              onKeyUp={handleKeyboard}
+              role={dialogRole ?? (primaryDanger ? "alertdialog" : "dialog")}
+              aria-modal='true'
+              aria-labelledby={title ? titleId : undefined}
+              onKeyDown={handleDialogKeyDown}
               tabIndex={-1}
               ref={containerRef}
               className={classnames(styles.dialog, {
@@ -200,7 +302,7 @@ export const Modal = ({
                   position: "relative"
                 }}
               >
-                <header className={styles.dialogTitle}>{title}</header>
+                <header id={titleId} className={styles.dialogTitle}>{title}</header>
               </div>
 
               <div
@@ -213,7 +315,7 @@ export const Modal = ({
                 <button
                   type='button'
                   className={styles.closeButton}
-                  onClick={doClose}
+                  onClick={() => doClose()}
                 >
                   <Icon
                     iconName='close'
@@ -228,34 +330,40 @@ export const Modal = ({
 
               <div>
                 <footer className={styles.dialogFooter}>
-                  <Button
-                    text={primaryLabel}
-                    visible={primaryVisible}
-                    focusOnInit={primaryEnabled && initialFocus === "primary"}
-                    isDanger={primaryDanger}
-                    disabled={!button1Enabled}
-                    spaceLeft={8}
-                    clicked={async () => await primaryClickHandler()}
-                  />
-                  <Button
-                    text={secondaryLabel}
-                    visible={secondaryVisible}
-                    focusOnInit={
-                      secondaryEnabled && initialFocus === "secondary"
-                    }
-                    disabled={!button2Enabled}
-                    spaceLeft={8}
-                    clicked={async () => await secondaryClickHandler()}
-                  />
-                  <Button
-                    text={cancelLabel}
-                    visible={cancelVisible}
-                    disabled={!cancelButtonEnabled}
-                    focusOnInit={
-                      cancelButtonEnabled && initialFocus === "cancel"
-                    }
-                    clicked={async () => await cancelClickHandler()}
-                  />
+                  <span data-modal-action="primary">
+                    <Button
+                      text={primaryLabel}
+                      visible={primaryVisible}
+                      focusOnInit={primaryEnabled && initialFocus === "primary"}
+                      isDanger={primaryDanger}
+                      disabled={!button1Enabled}
+                      spaceLeft={8}
+                      clicked={async () => await primaryClickHandler()}
+                    />
+                  </span>
+                  <span data-modal-action="secondary">
+                    <Button
+                      text={secondaryLabel}
+                      visible={secondaryVisible}
+                      focusOnInit={
+                        secondaryEnabled && initialFocus === "secondary"
+                      }
+                      disabled={!button2Enabled}
+                      spaceLeft={8}
+                      clicked={async () => await secondaryClickHandler()}
+                    />
+                  </span>
+                  <span data-modal-action="cancel">
+                    <Button
+                      text={cancelLabel}
+                      visible={cancelVisible}
+                      disabled={!cancelButtonEnabled}
+                      focusOnInit={
+                        cancelButtonEnabled && initialFocus === "cancel"
+                      }
+                      clicked={async () => await cancelClickHandler()}
+                    />
+                  </span>
                 </footer>
               </div>
             </div>
@@ -265,3 +373,33 @@ export const Modal = ({
     </>
   );
 };
+
+function focusInitialElement(
+  container: HTMLElement | null,
+  initialFocus: ModalProps["initialFocus"]
+): void {
+  if (!container) return;
+
+  const requestedTarget =
+    initialFocus && initialFocus !== "none"
+      ? container.querySelector<HTMLElement>(
+          `[data-modal-action="${initialFocus}"] ${FOCUSABLE_SELECTOR}`
+        )
+      : null;
+  const firstFocusable = getFocusableElements(container).find(
+    (element) => !element.classList.contains(styles.closeButton)
+  );
+
+  (requestedTarget ?? firstFocusable ?? container).focus();
+}
+
+function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
+  if (!container) return [];
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) =>
+      !element.hasAttribute("disabled") &&
+      !element.getAttribute("aria-hidden") &&
+      !element.hidden &&
+      element.tabIndex !== -1
+  );
+}

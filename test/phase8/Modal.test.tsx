@@ -95,10 +95,9 @@ describe("Modal — open/close lifecycle", () => {
 describe("Modal — keyboard escape", () => {
   it("calls onClose when Escape is pressed", async () => {
     const { onClose } = renderModal();
-    const dialog = screen.getByRole("dialog");
 
     await act(async () => {
-      fireEvent.keyUp(dialog, { code: "Escape" });
+      fireEvent.keyDown(document, { code: "Escape" });
     });
 
     expect(onClose).toHaveBeenCalled();
