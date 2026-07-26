@@ -6,7 +6,7 @@ import {
   commandSuccess,
   writeSuccessMessage
 } from "../services/ide-commands";
-import { EditorApi } from "../DocumentPanels/MonacoEditor";
+import { EditorApi } from "@renderer/features/editor/monaco/MonacoEditor";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
 type NavigateToDocumentCommandArgs = {

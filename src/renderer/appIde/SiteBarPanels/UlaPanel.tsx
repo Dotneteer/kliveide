@@ -1,4 +1,5 @@
-import { Label, Separator } from "@controls/generic";
+import { Label } from "@renderer/controls/layout/Label";
+import { Separator } from "@renderer/controls/layout/Separator";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";

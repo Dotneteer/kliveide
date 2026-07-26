@@ -1,5 +1,6 @@
 import classnames from "classnames";
 import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { IconButton } from "./IconButton";
 import styles from "./TextInput.module.scss";
 
@@ -31,6 +32,12 @@ export const TextInput = ({
   buttonClicked
 }: Props) => {
   const [inputValue, setInputValue] = useState(value);
+  const handleBeforeInput = (e: FormEvent<HTMLInputElement>) => {
+    const typed = (e.nativeEvent as InputEvent).data;
+    if (typed && numberOnly && (typed < "0" || typed > "9")) {
+      e.preventDefault();
+    }
+  };
 
   // --- Ensure the input gets the focus if requested
   const ref = useRef<HTMLInputElement>(null);
@@ -54,12 +61,7 @@ export const TextInput = ({
           value={inputValue}
           maxLength={maxLength}
           spellCheck={false}
-          onBeforeInput={(e: any) => {
-            const typed = e.data;
-            if (numberOnly && (typed < "0" || typed > "9")) {
-              e.preventDefault();
-            }
-          }}
+          onBeforeInput={handleBeforeInput}
           onKeyDown={e => keyPressed?.(e)}
           onChange={e => {
             const newValue = e.target.value;
@@ -80,7 +82,7 @@ export const TextInput = ({
               const newValue = await buttonClicked?.(inputValue);
               if (newValue) {
                 setInputValue(newValue);
-                ref.current.focus();
+                ref.current?.focus();
               }
             }}
           />

@@ -97,6 +97,41 @@ describe("Modal — Step 1.1: triggerSecondary / triggerCancel dispatch correct 
 
     expect(onClose).toHaveBeenCalled();
   });
+
+  it("API triggers use the latest handlers after rerender", async () => {
+    let api: ModalApi | undefined;
+    const firstPrimary = vi.fn().mockResolvedValue(false);
+    const latestPrimary = vi.fn().mockResolvedValue(false);
+
+    const { rerender } = renderWithProviders(
+      <Modal
+        isOpen={true}
+        title="T"
+        onClose={vi.fn()}
+        onApiLoaded={(loadedApi) => { api = loadedApi; }}
+        onPrimaryClicked={firstPrimary}
+      >
+        <div />
+      </Modal>
+    );
+
+    rerender(
+      <Modal
+        isOpen={true}
+        title="T"
+        onClose={vi.fn()}
+        onApiLoaded={(loadedApi) => { api = loadedApi; }}
+        onPrimaryClicked={latestPrimary}
+      >
+        <div />
+      </Modal>
+    );
+
+    api!.triggerPrimary("latest");
+
+    await waitFor(() => expect(latestPrimary).toHaveBeenCalledWith("latest"));
+    expect(firstPrimary).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------

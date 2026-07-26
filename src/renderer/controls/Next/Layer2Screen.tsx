@@ -1,8 +1,8 @@
 import styles from "./Layer2Screen.module.scss";
 import { SmallIconButton } from "../IconButton";
-import { openStaticMemoryDump } from "@renderer/appIde/DocumentPanels/Memory/StaticMemoryDump";
+import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { HeaderRow } from "../generic/Row";
+import { HeaderRow } from "@renderer/controls/layout/Row";
 import { ScreenCanvas } from "./ScreenCanvas";
 
 type Props = {

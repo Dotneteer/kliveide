@@ -3,7 +3,7 @@ import { TextInput } from "@controls/TextInput";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { useRef, useState } from "react";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import Dropdown from "@renderer/controls/Dropdown";
 import { Checkbox } from "@renderer/controls/Checkbox";
 

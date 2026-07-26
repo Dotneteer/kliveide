@@ -1,4 +1,7 @@
-import { Label, LabelSeparator, Secondary, Value } from "@controls/generic";
+import { Label } from "@renderer/controls/layout/Label";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Secondary } from "@renderer/controls/layout/Secondary";
+import { Value } from "@renderer/controls/layout/Value";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { toHexa4 } from "../services/ide-commands";
@@ -49,11 +52,11 @@ export const CallStackPanel = () => {
             return (
               <div key={idx} className={styles.item}>
                 <Secondary text={`${idx ? idx : "Top"}:`} width={32} />
-                <LabelSeparator width={4} />
+                <LabelSeparator />
                 <Label text={toHexa4((spValue + idx * 2) & 0xffff)} />
-                <LabelSeparator width={4} />
+                <LabelSeparator />
                 <Icon iconName="arrow-small-right" width={16} height={16} />
-                <LabelSeparator width={4} />
+                <LabelSeparator />
                 <Value text={toHexa4(frames[idx])} />
               </div>
             );

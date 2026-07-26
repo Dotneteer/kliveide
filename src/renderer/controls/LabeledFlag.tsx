@@ -1,5 +1,6 @@
 import styles from "./LabeledFlag.module.scss";
-import { Flag, Label } from "./generic";
+import { Flag } from "@renderer/controls/layout/Flag";
+import { Label } from "@renderer/controls/layout/Label";
 
 const LAB_WIDTH = 48;
 const FLAG_WIDTH = 16;

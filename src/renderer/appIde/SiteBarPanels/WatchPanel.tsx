@@ -1,6 +1,8 @@
 import type { WatchInfo } from "@common/state/AppState";
 
-import { LabelSeparator, Label, Value } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Label } from "@renderer/controls/layout/Label";
+import { Value } from "@renderer/controls/layout/Value";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useState, useEffect, useCallback, memo } from "react";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
@@ -10,7 +12,7 @@ import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 const LABEL_WIDTH = 120;
 
@@ -145,7 +147,7 @@ const WatchItem = memo(({ watch }: WatchItemProps) => {
 
   return watch ? (
     <div className={styles.watchItem}>
-      <LabelSeparator width={4} />
+      <LabelSeparator />
       <div ref={watchRef} style={{ cursor: "pointer" }} onContextMenu={handleRemove}>
         <Icon iconName={watch.icon} width={16} height={16} fill={watch.fill} />
         <TooltipFactory

@@ -1,5 +1,5 @@
 import classnames from "classnames";
-import { MouseEvent, ReactNode, useEffect, useState } from "react";
+import { MouseEvent as ReactMouseEvent, ReactNode, useEffect, useState } from "react";
 import { usePopper } from "react-popper";
 import localStyles from "./ContextMenu.module.scss";
 import { createPortal } from "react-dom";
@@ -24,7 +24,7 @@ export const ContextMenu = ({
   placement = "bottom-start",
   onClickOutside
 }: Props) => {
-  const [popperElement, setPopperElement] = useState(null);
+  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
   const { styles, attributes } = usePopper(state.contextRef, popperElement, {
     placement: placement as any,
     strategy: "absolute",
@@ -40,18 +40,26 @@ export const ContextMenu = ({
   const rootElement = document.getElementById("themeRoot");
 
   useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
+    const handleOutsideClick = (event: globalThis.MouseEvent) => {
       if (popperElement && !popperElement.contains(event.target as Node)) {
         onClickOutside?.();
       }
     };
 
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.code === "Escape") {
+        onClickOutside?.();
+      }
+    };
+
     if (state.contextVisible) {
-      document.addEventListener("mousedown", handleOutsideClick as any);
+      document.addEventListener("mousedown", handleOutsideClick);
+      document.addEventListener("keydown", handleEscape);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick as any);
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [state.contextVisible, popperElement, onClickOutside]);
 
@@ -105,7 +113,7 @@ export const ContextMenuSeparator = () => {
 };
 
 export interface IContextMenuApi {
-  show(e: MouseEvent): void;
+  show(e: ReactMouseEvent): void;
   conceal(): void;
 }
 
@@ -131,10 +139,10 @@ export const useContextMenuState = (): [ContextMenuState, IContextMenuApi] => {
         });
       },
       conceal: () => {
-        setState({
-          ...state,
+        setState((prev) => ({
+          ...prev,
           contextVisible: false
-        });
+        }));
       }
     }
   ];

@@ -3,7 +3,7 @@ import { DumpSection } from "./DumpSection";
 import styles from "./StaticMemoryView.module.scss";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
 import { useEffect, useState } from "react";
-import { Label } from "@controls/generic";
+import { Label } from "@renderer/controls/layout/Label";
 
 type MemoryViewProps = {
   memory: Uint8Array;

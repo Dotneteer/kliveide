@@ -5,7 +5,7 @@ import styles from "./BankDropdown.module.scss";
 
 import classnames from "classnames";
 import { Icon } from "../Icon";
-import { HStack } from "./Panels";
+import { HStack } from "@renderer/controls/layout/Panels";
 import { useThemeRoot } from "@renderer/core/useThemeRoot";
 import { toDecimal3, toHexa2 } from "@renderer/appIde/services/ide-commands";
 

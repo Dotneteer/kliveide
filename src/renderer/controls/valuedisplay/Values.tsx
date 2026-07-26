@@ -5,8 +5,8 @@ import styles from "./Values.module.scss";
 import { useMemo, memo } from "react";
 import classnames from "classnames";
 import { Col } from "./Layout";
-import { FlagRow } from "../generic/FlagRow";
-import { Label } from "../generic/Label";
+import { FlagRow } from "@renderer/controls/layout/FlagRow";
+import { Label } from "@renderer/controls/layout/Label";
 
 type Props = {
   label: string;
@@ -280,4 +280,3 @@ export const FlagFieldRow = ({ label, tooltip, value, flagDescriptions }: FlagFi
     </Col>
   );
 };
-

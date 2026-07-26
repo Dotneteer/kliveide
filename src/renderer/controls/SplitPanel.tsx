@@ -1,7 +1,7 @@
 import styles from "./SplitPanel.module.scss";
 
 import { useResizeObserver } from "../core/useResizeObserver";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import classnames from "classnames";
 
@@ -44,8 +44,9 @@ export const SplitPanel = ({
   const primaryContainer = useRef<HTMLDivElement>(null);
 
   // --- Get the panels
-  const primaryPanel = children?.[0];
-  const secondaryPanel = children?.[1];
+  const panels = React.Children.toArray(children);
+  const primaryPanel = panels[0];
+  const secondaryPanel = panels[1];
 
   const [primarySize, setPrimarySize] = useState<string | number>(
     secondaryVisible ? resolveSize(initialPrimarySize) : "100%"
@@ -79,6 +80,8 @@ export const SplitPanel = ({
   // --- Respond to panel visibility changes
   useLayoutEffect(() => {
     if (initialLayout.current) {
+      if (!mainContainer.current) return;
+
       // --- Calculate the saved primary size from the initial props
       const containerSize = horizontal
         ? mainContainer.current.clientWidth
@@ -114,7 +117,7 @@ export const SplitPanel = ({
 
     prevPrimaryVisible.current = primaryVisible;
     prevSecondaryVisible.current = secondaryVisible;
-  }, [primaryVisible, secondaryVisible]);
+  }, [horizontal, initialPrimarySize, initialSecondarySize, primaryVisible, secondaryVisible]);
 
   // --- Respond to container size changes
   useResizeObserver(mainContainer, () => {
@@ -205,7 +208,7 @@ export const SplitPanel = ({
   // --- Save the primary size
   useEffect(() => {
     onUpdatePrimarySize?.(typeof primarySize === "number" ? `${primarySize}px` : primarySize);
-  }, [primarySize]);
+  }, [onUpdatePrimarySize, primarySize]);
 
   return (
     <div className={[styles.splitPanel, containerClass].join(" ")} ref={mainContainer}>
@@ -223,7 +226,7 @@ export const SplitPanel = ({
           position={splitterPosition}
           splitterSize={splitterSize}
           minRange={minSize}
-          maxRange={splitterRange - minSize}
+          maxRange={Math.max(minSize, splitterRange - minSize)}
           onSplitterMoved={(newPos) => {
             setPrimarySize(newPos);
           }}
@@ -265,12 +268,32 @@ const Splitter = ({
   const [pointed, setPointed] = useState(false);
   const gripPosition = useRef(0);
   const lastPrimarySize = useRef(0);
+  const dragHandlers = useRef<{
+    move: (ev: MouseEvent) => void;
+    end: () => void;
+  } | null>(null);
+
+  const removeDragListeners = useCallback(() => {
+    if (!dragHandlers.current) return;
+    window.removeEventListener("mousemove", dragHandlers.current.move);
+    window.removeEventListener("mouseup", dragHandlers.current.end);
+    dragHandlers.current = null;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      removeDragListeners();
+      document.body.style.cursor = "default";
+    };
+  }, [removeDragListeners]);
 
   const startMove = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     e.preventDefault();
+    removeDragListeners();
     setIsMoving(true);
     gripPosition.current = horizontal ? e.clientX : e.clientY;
+    lastPrimarySize.current = position - anchorPos;
     document.body.style.cursor = horizontal ? "col-resize" : "row-resize";
 
     // Create listener instances once per drag so add/remove use the same reference
@@ -287,11 +310,14 @@ const Splitter = ({
       setIsMoving(false);
       setPointed(false);
       document.body.style.cursor = "default";
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleEndMove);
+      removeDragListeners();
       onMoveCompleted?.(lastPrimarySize.current);
     };
 
+    dragHandlers.current = {
+      move: handleMove,
+      end: handleEndMove
+    };
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleEndMove);
   };

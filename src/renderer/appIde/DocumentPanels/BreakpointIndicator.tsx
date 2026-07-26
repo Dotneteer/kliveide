@@ -3,7 +3,7 @@ import { Icon } from "@controls/Icon";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { toHexa4 } from "../services/ide-commands";
 import styles from "./BreakpointIndicator.module.scss";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { Checkbox } from "@renderer/controls/Checkbox";
 
 type Props = {

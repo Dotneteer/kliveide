@@ -1,11 +1,11 @@
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
-import { HeaderRow } from "@renderer/controls/generic/Row";
-import { openStaticMemoryDump } from "../Memory/StaticMemoryDump";
+import { HeaderRow } from "@renderer/controls/layout/Row";
+import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
-import { Panel } from "@renderer/controls/generic/Panel";
-import { Column } from "@renderer/controls/generic/Column";
+import { Panel } from "@renderer/controls/layout/Panel";
+import { Column } from "@renderer/controls/layout/Column";
 import { createElement } from "react";
 
 type ScrFileViewState = {

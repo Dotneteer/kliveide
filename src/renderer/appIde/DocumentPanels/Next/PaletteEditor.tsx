@@ -1,21 +1,21 @@
 import styles from "./PaletteEditor.module.scss";
-import { Row } from "@renderer/controls/generic/Row";
+import { Row } from "@renderer/controls/layout/Row";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { useEffect, useState } from "react";
-import { LabeledText } from "@renderer/controls/generic/LabeledText";
+import { LabeledText } from "@renderer/controls/layout/LabeledText";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import {
   getCssStringForPaletteCode,
   getLuminanceForPaletteCode
 } from "@emu/machines/zxNext/palette";
-import { Label } from "@renderer/controls/generic/Label";
+import { Label } from "@renderer/controls/layout/Label";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
 import classnames from "classnames";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { KeyHandler } from "@renderer/controls/generic/KeyHandler";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
-import { Column } from "@renderer/controls/generic/Column";
-import { Panel } from "@renderer/controls/generic/Panel";
+import { Column } from "@renderer/controls/layout/Column";
+import { Panel } from "@renderer/controls/layout/Panel";
 
 type Props = {
   palette: number[];

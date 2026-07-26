@@ -535,7 +535,6 @@ class EmuMessageProcessor {
    * @param projectDebug True to use project debug mode.
    */
   runCodeCommand(codeToInject: CodeToInject, additionalInfo: any, debug: boolean, projectDebug: boolean) {
-    console.log("Running code command", additionalInfo);
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();

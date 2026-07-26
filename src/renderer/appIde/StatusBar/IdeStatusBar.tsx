@@ -5,7 +5,7 @@ import { Icon } from "@controls/Icon";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import classnames from "classnames";
 import styles from "./IdeStatusBar.module.scss";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CODE_EDITOR } from "@common/state/common-ids";
 
 type IdeStatusBarProps = {

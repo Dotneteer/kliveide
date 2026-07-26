@@ -1,4 +1,4 @@
-import { Separator } from "@controls/generic";
+import { Separator } from "@renderer/controls/layout/Separator";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";

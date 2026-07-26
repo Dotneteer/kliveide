@@ -1,6 +1,6 @@
 import styles from "./ShcFileViewerPanel.module.scss";
-import { Label } from "@controls/generic";
-import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
+import { Label } from "@renderer/controls/layout/Label";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 
 const ShcFileViewerPanel = ({}: DocumentProps) => {
   return (

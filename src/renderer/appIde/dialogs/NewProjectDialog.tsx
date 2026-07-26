@@ -3,7 +3,7 @@ import { ModalApi, Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
 import { useEffect, useRef, useState } from "react";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { getAllMachineModels } from "@common/machines/machine-registry";
 import { split } from "lodash";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
@@ -15,7 +15,7 @@ import { ensureProjectLoaded, ensureWorkspaceLoaded } from "../IdeEventsHandler"
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const INITIAL_MACHINE_IDE = "sp48";
 const INITIAL_MODEL_ID = "pal";
-const INITAIL_TEMPLATE_ID = "default";
+const INITIAL_TEMPLATE_ID = "default";
 
 const machineIds = getAllMachineModels().map((m) => ({
   value: `${m.machineId}${m.modelId ? ":" + m.modelId : ""}`,
@@ -39,7 +39,7 @@ export const NewProjectDialog = ({ onClose }: Props) => {
   const [folderIsValid, setFolderIsValid] = useState(true);
   const [projectIsValid, setProjectIsValid] = useState(true);
   const [templateDirs, setTemplateDirs] = useState<{ value: string; label: string }[]>([]);
-  const [templateId, setTemplateId] = useState<string>(INITAIL_TEMPLATE_ID);
+  const [templateId, setTemplateId] = useState<string>(INITIAL_TEMPLATE_ID);
 
   // --- Refresh the template list according to the current machine id
   const refreshTemplateList = async () => {
@@ -65,7 +65,6 @@ export const NewProjectDialog = ({ onClose }: Props) => {
     const nValid = validationService.isValidFilename(projectName);
     setProjectIsValid(nValid);
     modalApi.current.enablePrimaryButton(fValid && nValid);
-    console.log("Validation", fValid, nValid);
   }, [projectFolder, projectName]);
 
   return (
@@ -86,7 +85,6 @@ export const NewProjectDialog = ({ onClose }: Props) => {
         const folder = result ? result[3] : projectFolder;
 
         // --- Create the project
-        console.log("project", machineId, modelId, templateId, name, folder);
         try {
           const responsePath = await mainApi.createKliveProject(
             machine,
@@ -103,7 +101,6 @@ export const NewProjectDialog = ({ onClose }: Props) => {
           // --- Navigate to the project root
           const buildRoots = store.getState().project?.buildRoots;
           if (buildRoots.length > 0) {
-            console.log("Navigate to the project root", buildRoots[0]);
             ideCommandsService.executeCommand(`nav "${buildRoots[0]}"`);
           }
         } catch (error) {
@@ -129,7 +126,6 @@ export const NewProjectDialog = ({ onClose }: Props) => {
               const [machineId, modelId] = split(option, ":");
               setMachineId(machineId);
               setmodelId(modelId);
-              console.log("machine", machineId, modelId);
             }}
           />
         </div>
@@ -177,7 +173,6 @@ export const NewProjectDialog = ({ onClose }: Props) => {
               if (folderIsValid && projectIsValid) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("tp", templateId, projectName, projectFolder);
                 modalApi.current.triggerPrimary([
                   machineId,
                   templateId,

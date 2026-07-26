@@ -1,9 +1,10 @@
-import { LabelSeparator, Label } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Label } from "@renderer/controls/layout/Label";
 import { TooltipFactory } from "@controls/Tooltip";
 import classnames from "classnames";
 import { toHexa4, toHexa6Dash, toHexa2, toDecimal5, toDecimal7, toDecimal3, toBin8 } from "../services/ide-commands";
 import styles from "./DumpSection.module.scss";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
 import { useEffect, memo, useLayoutEffect, useRef, useState, useMemo, useCallback } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
@@ -67,10 +68,10 @@ const DumpSectionComponent = ({
       <LabelSeparator width={8} />
       {showPartitions && partitionLabel && (
         <>
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <Label text={partitionLabel} width={useWidePartitions ? 26 : 18} />
           <Label text=":" width={6} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
         </>
       )}
       <Label

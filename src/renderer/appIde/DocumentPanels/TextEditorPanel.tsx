@@ -1,5 +1,5 @@
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
-import { MonacoEditor } from "./MonacoEditor";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
+import { MonacoEditor } from "@renderer/features/editor/monaco/MonacoEditor";
 
 export const createTextEditorPanel = ({ document, contents, apiLoaded }: DocumentProps) => {
   return (

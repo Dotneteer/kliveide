@@ -1,5 +1,7 @@
-import { Label, LabelSeparator, Secondary } from "@controls/generic";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { Label } from "@renderer/controls/layout/Label";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Secondary } from "@renderer/controls/layout/Secondary";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import styles from "./TapViewerPanel.module.scss";
 import { readTapeFile } from "@renderer/utils/tape-utils";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
@@ -13,7 +15,7 @@ import { TzxTextDescriptionBlock } from "@emu/machines/tape/TzxTextDescriptionBl
 import {
   useDocumentHubService,
   useDocumentHubServiceVersion
-} from "../services/DocumentServiceProvider";
+} from "@renderer/appIde/services/DocumentServiceProvider";
 import { DataSection } from "@renderer/controls/DataSection";
 import { toHexa2 } from "../services/ide-commands";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
@@ -44,20 +46,20 @@ const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
     <ScrollViewer allowHorizontal={false}>
       <div className={styles.tapViewerPanel}>
         <div className={styles.header}>
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <Label text="Format:" />
           <ValueLabel text={fileInfo.type?.toUpperCase()} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <ToolbarSeparator small={true} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <Label text="Length:" />
           <ValueLabel text={contents.length.toString()} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <ToolbarSeparator small={true} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <Label text="#of sections:" />
           <ValueLabel text={fileInfo.data.length.toString()} />
-          <LabelSeparator width={4} />
+          <LabelSeparator />
           <ToolbarSeparator small={true} />
         </div>
         <div className={styles.tapViewerWrapper}>

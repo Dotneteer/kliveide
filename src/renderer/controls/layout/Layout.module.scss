@@ -1,0 +1,153 @@
+@use "@styles/core.scss" as *;
+
+.fullPanel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  &.horizontal {
+    flex-direction: row;
+  }
+}
+
+.vstack {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  color: var(--color-text);
+}
+
+.hstack {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  color: var(--color-text);
+}
+
+.panel {
+  @include fill-parent-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 0;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0;
+}
+
+.headerRow {
+  background-color: var();
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 100%;
+  padding: 0.2em 0;
+}
+
+.label {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-label);
+  margin-left: 0.4em;
+  margin-right: 0.4em;
+}
+
+.text {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-command-icon);
+  margin-left: 0.4em;
+  margin-right: 0.4em;
+  font-family: var(--main-font-family);
+
+  &.error {
+    color: var(--console-ansi-bright-red);
+  }
+
+  &.warning {
+    color: var(--console-ansi-yellow);
+  }
+
+  &.success {
+    color: var(--console-ansi-bright-green);
+  }
+}
+
+.value {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-value);
+  margin-right: 0.8em;
+}
+
+.flag {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  padding: 0 0.4em 0 0.2em;
+}
+
+.secondary {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-secondary-label);
+}
+
+.separator {
+  height: 1px;
+  background-color: var(--color-toolbar-separator);
+  border: none;
+  padding: 0;
+}
+
+.dumpSection {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.expandableRow {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
+  flex-shrink: 0;
+
+  & .expandableRowHeading {
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    align-items: center;
+    margin: 0.2em 0;
+    padding: 0.2em 0;
+    background-color: var(--bgcolor-expandable);
+    cursor: pointer;
+
+    & .headingText {
+      color: var(--color-secondary-label);
+      padding: 0.2em 0.4em;
+      text-overflow: ellipsis;
+    }
+
+    & .expandable {
+      cursor: pointer;
+    }
+  }
+}

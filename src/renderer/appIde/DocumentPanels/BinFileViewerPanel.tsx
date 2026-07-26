@@ -1,15 +1,15 @@
 import { useMemo, useRef, useState } from "react";
-import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { DumpSection } from "./DumpSection";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
-import { FullPanel, HStack } from "@renderer/controls/new/Panels";
+import { FullPanel, HStack } from "@renderer/controls/layout/Panels";
 import { PanelHeader } from "./helpers/PanelHeader";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
-import { LabelSeparator } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { VListHandle } from "virtua";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
-import { Text } from "@renderer/controls/generic/Text";
+import { Text } from "@renderer/controls/layout/Text";
 import styles from "./BinFileViewerPanel.module.scss";
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
@@ -72,7 +72,7 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
         />
         <LabelSeparator width={8} />
         <Text text="View" />
-        <LabelSeparator width={4} />
+        <LabelSeparator />
         <Dropdown
           options={viewModeOptions}
           initialValue={viewMode}

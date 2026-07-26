@@ -4,8 +4,8 @@ import { TextInput } from "@controls/TextInput";
 import { useEffect, useRef, useState } from "react";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { getNodeExtension, getNodeName } from "../project/project-node";
-import { useAppServices } from "../services/AppServicesProvider";
+import { getNodeExtension, getNodeName } from "@renderer/appIde/project/project-node";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { useMainApi } from "@renderer/core/MainApi";
 import Dropdown from "@renderer/controls/Dropdown";
@@ -177,7 +177,6 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           startAddress ? ` -addr ${startAddress}` : ""
         }${addClear ? " -c" : ""}${screenFilename ? ` -scr "${screenFilename.replaceAll("\\", "/")}"` : ""}`;
         const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-        console.log("export command:", command);
         const result = await ideCommandsService.executeCommand(command, buildPane);
         if (result.success) {
           await mainApi.displayMessageBox(

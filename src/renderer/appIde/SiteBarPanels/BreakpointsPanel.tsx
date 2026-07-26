@@ -1,6 +1,9 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
-import { LabelSeparator, Label, Value, Secondary } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Label } from "@renderer/controls/layout/Label";
+import { Value } from "@renderer/controls/layout/Value";
+import { Secondary } from "@renderer/controls/layout/Secondary";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useState, useRef, useEffect } from "react";
@@ -14,7 +17,7 @@ import { CpuState } from "@common/messaging/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import classnames from "classnames";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { MemorySection } from "../disassemblers/common-types";
 import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySectionType } from "@abstractions/MemorySection";
@@ -143,7 +146,7 @@ export const BreakpointsPanel = () => {
 
               return (
                 <div className={styles.breakpoint}>
-                  <LabelSeparator width={4} />
+                  <LabelSeparator />
                   <BreakpointIndicator
                     partition={
                       bp?.partition !== undefined ? partitionLabels[bp.partition] ?? "?" : undefined
@@ -160,7 +163,7 @@ export const BreakpointsPanel = () => {
                     ioMask={bp.ioMask}
                     showType
                   />
-                  <LabelSeparator width={4} />
+                  <LabelSeparator />
                   {bp.resolvedAddress !== undefined && (
                     <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={80} />
                   )}
@@ -212,7 +215,6 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
       className={classnames({ [styles.navigable]: navigable })}
       onClick={async () => {
         const command = `nav "${breakpoint.resource}" ${breakpoint.line}`;
-        console.log(command);
         await ideCommandsService.executeCommand(command);
       }}
     >
@@ -230,4 +232,3 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
     </span>
   );
 };
-

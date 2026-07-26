@@ -1,4 +1,4 @@
-import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { toHexa2, toHexa4 } from "../../services/ide-commands";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
@@ -6,11 +6,11 @@ import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
 import { Layer2Screen } from "@renderer/controls/Next/Layer2Screen";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
 import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
-import { Row } from "@renderer/controls/generic/Row";
-import { Label } from "@renderer/controls/generic/Label";
-import { LabeledText } from "@renderer/controls/generic/LabeledText";
-import { LabeledFlag } from "@renderer/controls/generic/LabeledFlag";
-import { ExpandableRow } from "@renderer/controls/generic/ExpandableRow";
+import { Row } from "@renderer/controls/layout/Row";
+import { Label } from "@renderer/controls/layout/Label";
+import { LabeledText } from "@renderer/controls/layout/LabeledText";
+import { LabeledFlag } from "@renderer/controls/layout/LabeledFlag";
+import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
 import { createElement } from "react";
 
 type NexFileViewState = {
@@ -47,7 +47,7 @@ const NexFileViewerPanel = ({
           <>
             <ExpandableRow
               heading='Header attributes'
-              expanded={cvs?.headerAttrExpanded ?? true}
+              initialExpanded={cvs?.headerAttrExpanded ?? true}
               onExpanded={exp => change(vs => (vs.headerAttrExpanded = exp))}
             >
               <Row>
@@ -167,7 +167,7 @@ const NexFileViewerPanel = ({
             </ExpandableRow>
             <ExpandableRow
               heading='Bank flags'
-              expanded={cvs?.bankFlagsExpanded ?? false}
+              initialExpanded={cvs?.bankFlagsExpanded ?? false}
               onExpanded={exp => change(vs => (vs.bankFlagsExpanded = exp))}
             >
               <BankFlags startIndex={0} flags={h.bankFlags.slice(0, 8)} />
@@ -188,7 +188,7 @@ const NexFileViewerPanel = ({
             {fi.palette?.length > 0 && (
               <ExpandableRow
                 heading='Palette (Layer2, LoRes or Tilemap screen)'
-                expanded={cvs?.paletteExpanded ?? false}
+                initialExpanded={cvs?.paletteExpanded ?? false}
                 onExpanded={exp =>
                   context.changeViewState(vs => (vs.paletteExpanded = exp))
                 }
@@ -196,14 +196,13 @@ const NexFileViewerPanel = ({
                 <NextPaletteViewer
                   palette={context.fileInfo?.palette}
                   allowSelection={true}
-                  onSelection={idx => console.log(idx)}
                 />
               </ExpandableRow>
             )}
             {fi.layer2LoadingScreen?.length > 0 && (
               <ExpandableRow
                 heading='Layer 2 Loading Screen'
-                expanded={cvs?.layer2LoadingScreenExpanded ?? false}
+                initialExpanded={cvs?.layer2LoadingScreenExpanded ?? false}
                 onExpanded={exp =>
                   change(vs => (vs.layer2LoadingScreenExpanded = exp))
                 }
@@ -218,7 +217,7 @@ const NexFileViewerPanel = ({
             {fi.ulaLoadingScreen?.length > 0 && (
               <ExpandableRow
                 heading='ULA Loading Screen'
-                expanded={cvs?.ulaLoadingScreenExpanded ?? false}
+                initialExpanded={cvs?.ulaLoadingScreenExpanded ?? false}
                 onExpanded={exp =>
                   change(vs => (vs.ulaLoadingScreenExpanded = exp))
                 }
@@ -239,7 +238,7 @@ const NexFileViewerPanel = ({
             {fi.loResLoadingScreen?.length > 0 && (
               <ExpandableRow
                 heading='LoRes Loading Screen'
-                expanded={cvs?.loResLoadingScreenExpanded ?? false}
+                initialExpanded={cvs?.loResLoadingScreenExpanded ?? false}
                 onExpanded={exp =>
                   change(vs => (vs.loResLoadingScreenExpanded = exp))
                 }
@@ -260,7 +259,7 @@ const NexFileViewerPanel = ({
             {fi.timexHiResLoadingScreen?.length > 0 && (
               <ExpandableRow
                 heading='Timex HiRes Loading Screen'
-                expanded={cvs?.timexHiResLoadingScreenExpanded ?? false}
+                initialExpanded={cvs?.timexHiResLoadingScreenExpanded ?? false}
                 onExpanded={exp =>
                   change(vs => (vs.timexHiResLoadingScreenExpanded = exp))
                 }
@@ -281,7 +280,7 @@ const NexFileViewerPanel = ({
             {fi.timexHiColLoadingScreen?.length > 0 && (
               <ExpandableRow
                 heading='Timex HiCol Loading Screen'
-                expanded={cvs?.timexHiColLoadingScreenExpanded ?? false}
+                initialExpanded={cvs?.timexHiColLoadingScreenExpanded ?? false}
                 onExpanded={exp =>
                   change(vs => (vs.timexHiColLoadingScreenExpanded = exp))
                 }
@@ -306,7 +305,7 @@ const NexFileViewerPanel = ({
                   heading={`Bank $${toHexa2(entry[0])} (${entry[0].toString(
                     10
                   )})`}
-                  expanded={cvs?.bankExpanded?.[idx] ?? false}
+                  initialExpanded={cvs?.bankExpanded?.[idx] ?? false}
                   onExpanded={exp =>
                     change(vs => {
                       vs.bankExpanded ??= {};

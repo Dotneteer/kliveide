@@ -1,5 +1,6 @@
 import styles from "./LabeledValue.module.scss";
-import { Label, Value } from "./generic";
+import { Label } from "@renderer/controls/layout/Label";
+import { Value } from "@renderer/controls/layout/Value";
 
 const LAB_WIDTH = 48;
 const VAL_WIDTH = 48;
