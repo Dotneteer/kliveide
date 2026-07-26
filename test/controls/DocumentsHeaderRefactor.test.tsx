@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 
 afterEach(() => {
@@ -307,6 +315,108 @@ describe("DocumentCommandBar", () => {
 });
 
 describe("ExplorerProjectItem", () => {
+  it("renders collapsed and expanded folder icons", async () => {
+    vi.doMock("@controls/Icon", () => ({
+      Icon: ({ iconName }: { iconName: string }) => <span data-testid={`icon-${iconName}`} />
+    }));
+    vi.doMock("@controls/SpaceFiller", () => ({
+      SpaceFiller: () => null
+    }));
+    vi.doMock("@renderer/controls/layout/LabelSeparator", () => ({
+      LabelSeparator: () => null
+    }));
+
+    const { ExplorerProjectItem } = await import(
+      "@renderer/features/explorer/ExplorerProjectItem"
+    );
+    const collapsedNode = createTreeNode({ isFolder: true, name: "src" });
+    const expandedNode = { ...createTreeNode({ isFolder: true, name: "assets" }), isExpanded: true };
+    const rootNode = { ...createTreeNode({ isFolder: true, name: "project" }), isExpanded: true };
+
+    const props = {
+      canShowExcludedItems: false,
+      focused: false,
+      isBuildRoot: false,
+      isKliveProject: false,
+      isRoot: false,
+      isSelected: false,
+      tabIndex: 0,
+      onActivate: vi.fn(),
+      onContextMenu: vi.fn(),
+      onDoubleClick: vi.fn(),
+      onExcludedItemsClick: vi.fn(),
+      onFocus: vi.fn(),
+      onSelect: vi.fn()
+    };
+
+    const { rerender } = render(
+      <ExplorerProjectItem {...props} node={collapsedNode as any} />
+    );
+
+    expect(screen.getByTestId("icon-chevron-right")).toBeInTheDocument();
+    expect(screen.getByTestId("icon-folder")).toBeInTheDocument();
+
+    rerender(<ExplorerProjectItem {...props} node={expandedNode as any} />);
+
+    expect(screen.getByTestId("icon-chevron-down")).toBeInTheDocument();
+    expect(screen.getByTestId("icon-folder-opened")).toBeInTheDocument();
+
+    rerender(
+      <ExplorerProjectItem
+        {...props}
+        isKliveProject={true}
+        isRoot={true}
+        node={rootNode as any}
+      />
+    );
+
+    expect(screen.getByTestId("icon-chevron-down")).toBeInTheDocument();
+    expect(screen.getByTestId("icon-home")).toBeInTheDocument();
+    expect(screen.queryByTestId("icon-folder")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("icon-folder-opened")).not.toBeInTheDocument();
+  });
+
+  it("reserves the expand icon column for file nodes", async () => {
+    vi.doMock("@controls/Icon", () => ({
+      Icon: ({ iconName }: { iconName: string }) => <span data-testid={`icon-${iconName}`} />
+    }));
+    vi.doMock("@controls/SpaceFiller", () => ({
+      SpaceFiller: () => null
+    }));
+    vi.doMock("@renderer/controls/layout/LabelSeparator", () => ({
+      LabelSeparator: () => null
+    }));
+
+    const { ExplorerProjectItem } = await import(
+      "@renderer/features/explorer/ExplorerProjectItem"
+    );
+
+    render(
+      <ExplorerProjectItem
+        canShowExcludedItems={false}
+        focused={false}
+        isBuildRoot={false}
+        isKliveProject={false}
+        isRoot={false}
+        isSelected={false}
+        node={createTreeNode({ isFolder: false, name: "main.asm" }) as any}
+        tabIndex={0}
+        onActivate={vi.fn()}
+        onContextMenu={vi.fn()}
+        onDoubleClick={vi.fn()}
+        onExcludedItemsClick={vi.fn()}
+        onFocus={vi.fn()}
+        onSelect={vi.fn()}
+      />
+    );
+
+    const fileIcon = screen.getByTestId("icon-file-code");
+
+    expect(fileIcon.parentElement?.childElementCount).toBe(2);
+    expect(screen.queryByTestId("icon-chevron-right")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("icon-chevron-down")).not.toBeInTheDocument();
+  });
+
   it("stops excluded-items clicks from activating the row", async () => {
     vi.doMock("@controls/Icon", () => ({
       Icon: ({ iconName }: { iconName: string }) => <span data-testid={`icon-${iconName}`} />
@@ -338,6 +448,7 @@ describe("ExplorerProjectItem", () => {
         onContextMenu={vi.fn()}
         onDoubleClick={vi.fn()}
         onExcludedItemsClick={onExcludedItemsClick}
+        onFocus={vi.fn()}
         onSelect={vi.fn()}
       />
     );
@@ -451,6 +562,145 @@ describe("ExplorerContextMenu", () => {
   });
 });
 
+describe("explorer keyboard support", () => {
+  it("moves focus with ArrowDown and ArrowUp without changing selection", async () => {
+    const { handleExplorerKeyboardCommand } = await import(
+      "@renderer/features/explorer/explorerKeyboard"
+    );
+    const nodes = [
+      createTreeNode({ name: "project" }),
+      createTreeNode({ name: "src" }),
+      createTreeNode({ name: "main.asm" })
+    ];
+    const onFocusChange = vi.fn();
+    const onSelectionChange = vi.fn();
+
+    expect(
+      handleExplorerKeyboardCommand({
+        focusedIndex: -1,
+        key: "ArrowDown",
+        visibleNodes: nodes as any,
+        onDelete: vi.fn(),
+        onFocusChange,
+        onRememberExpandedItems: vi.fn(),
+        onSelectionChange,
+        onTreeChanged: vi.fn()
+      })
+    ).toBe(true);
+    expect(onFocusChange).toHaveBeenCalledWith(0);
+    expect(onSelectionChange).not.toHaveBeenCalled();
+
+    handleExplorerKeyboardCommand({
+      focusedIndex: 0,
+      key: "ArrowUp",
+      visibleNodes: nodes as any,
+      onDelete: vi.fn(),
+      onFocusChange,
+      onRememberExpandedItems: vi.fn(),
+      onSelectionChange,
+      onTreeChanged: vi.fn()
+    });
+
+    expect(onFocusChange).toHaveBeenLastCalledWith(0);
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
+
+  it("toggles folders without selecting them and selects leaf files with Space", async () => {
+    const { handleExplorerKeyboardCommand } = await import(
+      "@renderer/features/explorer/explorerKeyboard"
+    );
+    const folder = createTreeNode({ isFolder: true, name: "src" });
+    const file = createTreeNode({ isFolder: false, name: "main.asm" });
+    const onLeafActivate = vi.fn();
+    const onRememberExpandedItems = vi.fn();
+    const onSelectionChange = vi.fn();
+    const onTreeChanged = vi.fn();
+
+    expect(
+      handleExplorerKeyboardCommand({
+        focusedIndex: 0,
+        key: " ",
+        visibleNodes: [folder, file] as any,
+        onDelete: vi.fn(),
+        onFocusChange: vi.fn(),
+        onLeafActivate,
+        onRememberExpandedItems,
+        onSelectionChange,
+        onTreeChanged
+      })
+    ).toBe(true);
+
+    expect(folder.isExpanded).toBe(true);
+    expect(onTreeChanged).toHaveBeenCalledTimes(1);
+    expect(onRememberExpandedItems).toHaveBeenCalledTimes(1);
+    expect(onSelectionChange).not.toHaveBeenCalled();
+
+    handleExplorerKeyboardCommand({
+      focusedIndex: 1,
+      key: " ",
+      visibleNodes: [folder, file] as any,
+      onDelete: vi.fn(),
+      onFocusChange: vi.fn(),
+      onLeafActivate,
+      onRememberExpandedItems,
+      onSelectionChange,
+      onTreeChanged
+    });
+
+    expect(file.isExpanded).toBe(false);
+    expect(onTreeChanged).toHaveBeenCalledTimes(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(1);
+    expect(onLeafActivate).toHaveBeenCalledWith(file);
+  });
+
+  it("opens the delete flow only for nodes that can use the Delete context action", async () => {
+    const { handleExplorerKeyboardCommand } = await import(
+      "@renderer/features/explorer/explorerKeyboard"
+    );
+    const root = createTreeNode({ isFolder: true, name: "project" });
+    const file = {
+      ...createTreeNode({ isFolder: false, name: "main.asm" }),
+      parentNode: root
+    };
+    const projectFile = {
+      ...createTreeNode({ isFolder: false, name: "klive.project" }),
+      level: 1,
+      parentNode: root
+    };
+    const onDelete = vi.fn();
+    const baseArgs = {
+      key: "Delete",
+      onDelete,
+      onFocusChange: vi.fn(),
+      onRememberExpandedItems: vi.fn(),
+      onSelectionChange: vi.fn(),
+      onTreeChanged: vi.fn()
+    };
+
+    expect(
+      handleExplorerKeyboardCommand({
+        ...baseArgs,
+        focusedIndex: 1,
+        visibleNodes: [root, file, projectFile] as any
+      })
+    ).toBe(true);
+    expect(onDelete).toHaveBeenCalledWith(file);
+
+    handleExplorerKeyboardCommand({
+      ...baseArgs,
+      focusedIndex: 0,
+      visibleNodes: [root, file, projectFile] as any
+    });
+    handleExplorerKeyboardCommand({
+      ...baseArgs,
+      focusedIndex: 2,
+      visibleNodes: [root, file, projectFile] as any
+    });
+
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("useExplorerTree", () => {
   it("loads the project folder once on mount and refreshes without cache after explorer changes", async () => {
     const visibleNodes = [createTreeNode({ isFolder: true, name: "project" })];
@@ -503,6 +753,63 @@ describe("useExplorerTree", () => {
     expect(projectService.itemDeleted.off).toHaveBeenCalledTimes(1);
     expect(projectService.itemRenamed.off).toHaveBeenCalledTimes(1);
   });
+
+  it("clears the selected index when the selected node is no longer visible", async () => {
+    const root = createTreeNode({ isFolder: true, name: "project" });
+    const folder = createTreeNode({ isFolder: true, name: "src" });
+    const firstChild = createTreeNode({ isFolder: false, name: "one.asm" });
+    const secondChild = createTreeNode({ isFolder: false, name: "two.asm" });
+    const selectedChild = createTreeNode({ isFolder: false, name: "three.asm" });
+    const nextVisibleSibling = createTreeNode({ isFolder: false, name: "after.asm" });
+    let visibleNodes = [root, folder, firstChild, secondChild, selectedChild, nextVisibleSibling];
+    const tree = createTreeView(visibleNodes);
+    tree.getVisibleNodes = vi.fn(() => visibleNodes);
+    const buildProjectTree = vi.fn(() => tree);
+    vi.doMock("@renderer/appIde/project/project-node", () => ({ buildProjectTree }));
+
+    const { clearExplorerFolderCache, useExplorerTree } = await import(
+      "@renderer/features/explorer/useExplorerTree"
+    );
+    clearExplorerFolderCache();
+
+    const mainApi = {
+      getDirectoryContent: vi.fn(() => Promise.resolve({ name: "project", children: [] }))
+    };
+    const projectService = {
+      getDocumentById: vi.fn(),
+      itemDeleted: createEvent(),
+      itemRenamed: createEvent(),
+      projectClosed: createEvent(),
+      setProjectTree: vi.fn()
+    };
+
+    const { result } = renderHook(() =>
+      useExplorerTree({
+        explorerViewVersion: 1,
+        folderPath: "/project",
+        mainApi: mainApi as any,
+        projectService: projectService as any,
+        store: {} as any
+      })
+    );
+
+    await waitFor(() => expect(result.current.visibleNodes).toHaveLength(6));
+
+    act(() => {
+      result.current.setSelected(4);
+    });
+
+    expect(result.current.selected).toBe(4);
+
+    visibleNodes = [root, folder, nextVisibleSibling];
+
+    act(() => {
+      result.current.refreshTree();
+    });
+
+    expect(result.current.visibleNodes).toHaveLength(3);
+    expect(result.current.selected).toBe(-1);
+  });
 });
 
 describe("explorer file operations", () => {
@@ -535,8 +842,7 @@ describe("explorer file operations", () => {
     const emuApi = {
       renameBreakpoints: vi.fn(() => Promise.resolve())
     };
-    const setSelected = vi.fn();
-    const tree = { findIndex: vi.fn(() => 7) };
+    const setSelectedNode = vi.fn();
     const refreshTree = vi.fn();
 
     await renameExplorerNode({
@@ -548,8 +854,7 @@ describe("explorer file operations", () => {
       projectService,
       refreshTree,
       selectedContextNode: selectedContextNode as any,
-      setSelected,
-      tree: tree as any
+      setSelectedNode
     });
 
     expect(projectService.performAllDelayedSavesNow).toHaveBeenCalledTimes(1);
@@ -568,7 +873,7 @@ describe("explorer file operations", () => {
     });
     expect(mainApi.saveProject).toHaveBeenCalledTimes(1);
     expect(refreshTree).toHaveBeenCalledTimes(1);
-    expect(setSelected).toHaveBeenCalledWith(7);
+    expect(setSelectedNode).toHaveBeenCalledWith(selectedContextNode);
   });
 
   it("deletes files from disk and removes their tree node", async () => {
@@ -633,10 +938,9 @@ describe("explorer file operations", () => {
     };
     const projectService = { signItemAdded: vi.fn() };
     const ideCommandsService = { executeCommand: vi.fn(() => Promise.resolve()) };
-    const setSelected = vi.fn();
+    const setSelectedNode = vi.fn();
     const refreshTree = vi.fn();
     const scheduled: (() => Promise<void>)[] = [];
-    const tree = { findIndex: vi.fn(() => 2) };
 
     const newNode = await addExplorerItem({
       ideCommandsService,
@@ -647,9 +951,8 @@ describe("explorer file operations", () => {
       refreshTree,
       scheduleNavigation: (action) => scheduled.push(action),
       selectedContextNode: selectedContextNode as any,
-      setSelected,
+      setSelectedNode,
       store: {} as any,
-      tree: tree as any
     });
 
     expect(mainApi.addNewFileEntry).toHaveBeenCalledWith("new.asm", false, "/project/src");
@@ -657,7 +960,7 @@ describe("explorer file operations", () => {
     expect(newNode.data.editor).toBe("code");
     expect(refreshTree).toHaveBeenCalledTimes(1);
     expect(projectService.signItemAdded).toHaveBeenCalledWith(newNode);
-    expect(setSelected).toHaveBeenCalledWith(2);
+    expect(setSelectedNode).toHaveBeenCalledWith(newNode);
 
     await scheduled[0]();
     expect(ideCommandsService.executeCommand).toHaveBeenCalledWith(

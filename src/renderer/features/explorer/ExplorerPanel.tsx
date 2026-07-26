@@ -1,6 +1,6 @@
 import styles from "./ExplorerPanel.module.scss";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
-import { MouseEvent, useRef, useState } from "react";
+import { type KeyboardEvent, type MouseEvent, useEffect, useRef, useState } from "react";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useContextMenuState } from "@controls/ContextMenu";
@@ -32,6 +32,7 @@ import {
   deleteExplorerNode,
   renameExplorerNode
 } from "./explorerFileOperations";
+import { handleExplorerKeyboardCommand } from "./explorerKeyboard";
 
 export const ExplorerPanel = () => {
   // --- Services used in this component
@@ -51,6 +52,7 @@ export const ExplorerPanel = () => {
   const [newItemIsFolder, setNewItemIsFolder] = useState(false);
 
   const [isFocused, setIsFocused] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
 
   // --- Information about a project (Is any project open? Is it a Klive project?)
   const folderPath = useSelector((s) => s.project?.folderPath);
@@ -78,6 +80,8 @@ export const ExplorerPanel = () => {
   const dimmed = useSelector((s) => s.dimMenu);
 
   // --- APIs used to manage the tree view
+  const explorerPanelRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const vlApi = useRef<VListHandle>();
 
   const explorerViewVersion = useSelector((s) => s.ideView?.explorerViewVersion);
@@ -86,6 +90,7 @@ export const ExplorerPanel = () => {
     rememberExpandedItems,
     selected,
     setSelected,
+    setSelectedNode,
     tree,
     visibleNodes
   } = useExplorerTree({
@@ -96,6 +101,14 @@ export const ExplorerPanel = () => {
     projectService,
     store
   });
+
+  useEffect(() => {
+    setFocusedIndex((current) => {
+      if (!visibleNodes.length) return -1;
+      if (current >= 0 && current < visibleNodes.length) return current;
+      return selected >= 0 && selected < visibleNodes.length ? selected : 0;
+    });
+  }, [selected, visibleNodes.length]);
 
   // --- Let's use this context menu when clicking a project tree node
   const [contextMenuState, contextMenuApi] = useContextMenuState();
@@ -149,6 +162,76 @@ export const ExplorerPanel = () => {
     />
   );
 
+  const setSelectedNodeContext = (node: ITreeNode<ProjectNode>): void => {
+    setSelectedContextNode(node);
+    setContextInfo(getFileTypeEntry(node?.data?.fullPath, store));
+  };
+
+  const focusExplorerPanel = (): void => {
+    // File activation can focus the editor; return focus so tree navigation can continue.
+    explorerPanelRef.current?.focus();
+    setTimeout(() => explorerPanelRef.current?.focus(), 0);
+  };
+
+  const focusExplorerItem = (index: number): void => {
+    if (index < 0) {
+      focusExplorerPanel();
+      return;
+    }
+
+    setFocusedIndex(index);
+    vlApi.current?.scrollToIndex(index, { align: "nearest" });
+    focusExplorerItemElement(index);
+    setTimeout(() => focusExplorerItemElement(index), 0);
+  };
+
+  const focusExplorerItemElement = (index: number): void => {
+    const item = itemRefs.current.get(index);
+    if (item) {
+      item.focus();
+    } else {
+      explorerPanelRef.current?.focus();
+    }
+  };
+
+  const activateExplorerNode = async (
+    node: ITreeNode<ProjectNode>,
+    restoreFocusIndex = focusedIndex
+  ): Promise<void> => {
+    if (node.data.isFolder) {
+      node.isExpanded = !node.isExpanded;
+      refreshTree();
+      rememberExpandedItems();
+      return;
+    }
+
+    await ideCommandsService.executeCommand(`nav "${node.data.fullPath}"`);
+    focusExplorerItem(restoreFocusIndex);
+  };
+
+  const handleTreeKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    const handled = handleExplorerKeyboardCommand({
+      focusedIndex,
+      key: event.key,
+      visibleNodes,
+      onDelete: (node) => {
+        setSelectedNodeContext(node);
+        setIsDeleteDialogOpen(true);
+      },
+      onLeafActivate: (node) => {
+        void activateExplorerNode(node, focusedIndex);
+      },
+      onRememberExpandedItems: rememberExpandedItems,
+      onFocusChange: focusExplorerItem,
+      onSelectionChange: setSelected,
+      onTreeChanged: refreshTree
+    });
+
+    if (handled) {
+      event.preventDefault();
+    }
+  };
+
   // --- Rename dialog box to display
   const renameDialog = isRenameDialogOpen && (
     <RenameDialog
@@ -164,8 +247,7 @@ export const ExplorerPanel = () => {
           projectService,
           refreshTree,
           selectedContextNode,
-          setSelected,
-          tree
+          setSelectedNode
         });
       }}
       onClose={() => {
@@ -209,9 +291,8 @@ export const ExplorerPanel = () => {
           projectService,
           refreshTree,
           selectedContextNode,
-          setSelected,
-          store,
-          tree
+          setSelectedNode,
+          store
         });
       }}
       onClose={() => {
@@ -233,27 +314,29 @@ export const ExplorerPanel = () => {
       <ExplorerProjectItem
         canShowExcludedItems={hasExcludedItems}
         focused={isFocused}
+        itemRef={(element) => {
+          if (element) {
+            itemRefs.current.set(idx, element);
+          } else {
+            itemRefs.current.delete(idx);
+          }
+        }}
         isBuildRoot={buildRoots.indexOf(node.data.projectPath) >= 0}
         isKliveProject={isKliveProject}
         isRoot={isRoot}
         isSelected={isSelected}
         node={node}
-        tabIndex={idx}
+        tabIndex={idx === focusedIndex ? 0 : -1}
         onContextMenu={(e: MouseEvent, node) => {
-          setSelectedContextNode(node);
-          setContextInfo(getFileTypeEntry(node?.data?.fullPath, store));
+          setSelectedNodeContext(node);
           contextMenuApi.show(e);
         }}
-        onSelect={() => setSelected(idx)}
-        onActivate={async () => {
-          node.isExpanded = !node.isExpanded;
-          refreshTree();
-          rememberExpandedItems();
-
-          if (!node.data.isFolder) {
-            await ideCommandsService.executeCommand(`nav "${node.data.fullPath}"`);
-          }
+        onSelect={() => {
+          setFocusedIndex(idx);
+          setSelected(idx);
         }}
+        onFocus={() => setFocusedIndex(idx)}
+        onActivate={() => activateExplorerNode(node, idx)}
         onDoubleClick={async () => {
           if (node.data.isFolder) return;
           if (documentHubService.isOpen(node.data.fullPath)) {
@@ -262,6 +345,7 @@ export const ExplorerPanel = () => {
           } else {
             await ideCommandsService.executeCommand(`nav "${node.data.fullPath}"`);
           }
+          focusExplorerItem(idx);
         }}
         onExcludedItemsClick={() => dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG))}
       />
@@ -292,10 +376,12 @@ export const ExplorerPanel = () => {
   return folderPath ? (
     visibleNodes && visibleNodes.length > 0 ? (
       <div
+        ref={explorerPanelRef}
         className={styles.explorerPanel}
         tabIndex={0}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
+        onKeyDown={handleTreeKeyDown}
         onClick={() => {}}
       >
         {contextMenu}
@@ -314,7 +400,9 @@ export const ExplorerPanel = () => {
     <ExplorerEmptyState
       dimmed={dimmed}
       onCreateProject={() => dispatch(displayDialogAction(NEW_PROJECT_DIALOG))}
-      onOpenFolder={async () => await mainApi.openFolder()}
+      onOpenFolder={async () => {
+        await mainApi.openFolder();
+      }}
     />
   );
 };

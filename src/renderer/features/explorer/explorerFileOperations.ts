@@ -3,7 +3,7 @@ import { MainApi } from "@common/messaging/MainApi";
 import { AppState } from "@common/state/AppState";
 import { setBuildRootAction } from "@common/state/actions";
 import { Dispatch, Store } from "@common/state/redux-light";
-import { ITreeNode, ITreeView } from "@abstractions/ITreeNode";
+import { ITreeNode } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { IIdeCommandService } from "@renderer/abstractions/IIdeCommandService";
@@ -19,8 +19,7 @@ type RenameExplorerNodeArgs = {
   projectService: Pick<IProjectService, "performAllDelayedSavesNow" | "renameDocument">;
   refreshTree: () => void;
   selectedContextNode: ITreeNode<ProjectNode>;
-  setSelected: (index: number) => void;
-  tree: ITreeView<ProjectNode>;
+  setSelectedNode: (node: ITreeNode<ProjectNode> | null) => void;
 };
 
 type DeleteExplorerNodeArgs = {
@@ -40,9 +39,8 @@ type AddExplorerItemArgs = {
   refreshTree: () => void;
   scheduleNavigation?: (action: () => Promise<void>, delay: number) => void;
   selectedContextNode: ITreeNode<ProjectNode>;
-  setSelected: (index: number) => void;
+  setSelectedNode: (node: ITreeNode<ProjectNode> | null) => void;
   store: Store<AppState>;
-  tree: ITreeView<ProjectNode>;
 };
 
 export async function renameExplorerNode({
@@ -54,8 +52,7 @@ export async function renameExplorerNode({
   projectService,
   refreshTree,
   selectedContextNode,
-  setSelected,
-  tree
+  setSelectedNode
 }: RenameExplorerNodeArgs): Promise<void> {
   const newFullName = `${getNodeDir(selectedContextNode.data.fullPath)}/${newName}`;
   await projectService.performAllDelayedSavesNow();
@@ -78,10 +75,7 @@ export async function renameExplorerNode({
     }
 
     refreshTree();
-    const newIndex = tree.findIndex(selectedContextNode);
-    if (newIndex >= 0) {
-      setSelected(newIndex);
-    }
+    setSelectedNode(selectedContextNode);
   } catch (err) {
     await mainApi.displayMessageBox("error", "Rename Error", err.toString());
   }
@@ -113,9 +107,8 @@ export async function addExplorerItem({
     setTimeout(action, delay);
   },
   selectedContextNode,
-  setSelected,
-  store,
-  tree
+  setSelectedNode,
+  store
 }: AddExplorerItemArgs): Promise<ITreeNode<ProjectNode> | undefined> {
   selectedContextNode.isExpanded = true;
 
@@ -139,10 +132,7 @@ export async function addExplorerItem({
 
     refreshTree();
     projectService.signItemAdded(newNode);
-    const newIndex = tree.findIndex(newNode);
-    if (newIndex >= 0) {
-      setSelected(newIndex);
-    }
+    setSelectedNode(newNode);
 
     scheduleNavigation(async () => {
       if (!newNode.data.isFolder) {

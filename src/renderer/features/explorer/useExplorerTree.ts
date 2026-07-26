@@ -29,8 +29,9 @@ export function useExplorerTree({
 }: UseExplorerTreeArgs) {
   const [tree, setTree] = useState<ITreeView<ProjectNode>>(null);
   const [visibleNodes, setVisibleNodes] = useState<ITreeNode<ProjectNode>[]>([]);
-  const [selected, setSelected] = useState(-1);
+  const [selectedNode, setSelectedNode] = useState<ITreeNode<ProjectNode> | null>(null);
   const lastExpandedRef = useRef<string[]>(null);
+  const selected = selectedNode ? visibleNodes.indexOf(selectedNode) : -1;
 
   const refreshTree = useCallback(() => {
     if (!tree) return;
@@ -46,7 +47,7 @@ export function useExplorerTree({
 
   const refreshProjectFolder = useCallback(async (useCache: boolean) => {
     if (!folderPath) {
-      setSelected(-1);
+      setSelectedNode(null);
       return;
     }
 
@@ -128,11 +129,17 @@ export function useExplorerTree({
     refreshTree,
     rememberExpandedItems,
     selected,
+    selectedNode,
     setSelected,
+    setSelectedNode,
     setVisibleNodes,
     tree,
     visibleNodes
   };
+
+  function setSelected(index: number): void {
+    setSelectedNode(index >= 0 ? visibleNodes[index] ?? null : null);
+  }
 }
 
 export function clearExplorerFolderCache(): void {
