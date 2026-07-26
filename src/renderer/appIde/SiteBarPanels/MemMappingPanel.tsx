@@ -1,4 +1,7 @@
-import { Flag, Label, LabelSeparator, Value } from "@controls/generic";
+import { Flag } from "@renderer/controls/layout/Flag";
+import { Label } from "@renderer/controls/layout/Label";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Value } from "@renderer/controls/layout/Value";
 import { useState } from "react";
 import { toHexa2, toHexa6 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";

@@ -6,7 +6,7 @@ import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { useAppServices } from "../services/AppServicesProvider";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
-import { Text } from "@renderer/controls/generic/Text";
+import { Text } from "@renderer/controls/layout/Text";
 import {
   useDispatch,
   useRendererContext,

@@ -17,11 +17,9 @@ export const LabeledText = ({
   value,
   tooltip,
   valueTooltip
-}: Props) => {
-  return (
-    <>
-      <Label text={label} width={labelWidth} tooltip={tooltip} />
-      <Value text={value} width={valueWidth} tooltip={valueTooltip} />
-    </>
-  );
-};
+}: Props) => (
+  <>
+    <Label text={label} width={labelWidth} tooltip={tooltip} />
+    <Value text={value} width={valueWidth} tooltip={valueTooltip} />
+  </>
+);

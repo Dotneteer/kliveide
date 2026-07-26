@@ -25,7 +25,7 @@ import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import classnames from "classnames";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useAppServices } from "../services/AppServicesProvider";
-import { FullPanel } from "@renderer/controls/new/Panels";
+import { FullPanel } from "@renderer/controls/layout/Panels";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VirtualizerHandle } from "virtua";
 import { PanelHeader } from "./helpers/PanelHeader";

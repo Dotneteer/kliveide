@@ -1,4 +1,6 @@
-import { Label, LabelSeparator, Secondary } from "@controls/generic";
+import { Label } from "@renderer/controls/layout/Label";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Secondary } from "@renderer/controls/layout/Secondary";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import styles from "./TapViewerPanel.module.scss";
 import { readTapeFile } from "@renderer/utils/tape-utils";

@@ -3,13 +3,10 @@ import { useDispatch, useRendererContext, useSelector } from "@renderer/core/Ren
 import { TreeNode } from "@renderer/core/tree-node";
 import { MouseEvent, useEffect, useRef, useState } from "react";
 import {
-  buildProjectTree,
-  compareProjectNode,
-  getFileTypeEntry,
-  getNodeDir
+  buildProjectTree, compareProjectNode, getFileTypeEntry, getNodeDir
 } from "../project/project-node";
 import { Icon } from "@controls/Icon";
-import { LabelSeparator } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import classnames from "classnames";
 import { useAppServices } from "../services/AppServicesProvider";
 import { Button } from "@controls/Button";
@@ -38,7 +35,7 @@ import { ProjectNode } from "@abstractions/ProjectNode";
 import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
-import { VStack } from "@renderer/controls/new/Panels";
+import { VStack } from "@renderer/controls/layout/Panels";
 import { useEmuApi } from "@renderer/core/EmuApi";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();

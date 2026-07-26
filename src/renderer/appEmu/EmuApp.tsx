@@ -45,7 +45,7 @@ import {
   setCachedStore
 } from "@renderer/CachedServices";
 import { setIsWindows } from "@renderer/os-utils";
-import { FullPanel } from "@renderer/controls/new/Panels";
+import { FullPanel } from "@renderer/controls/layout/Panels";
 import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR

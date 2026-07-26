@@ -2,14 +2,14 @@ import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 import styles from "./ScriptingHistoryPanel.module.scss";
 import { useEffect, useState } from "react";
-import { LabelSeparator } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Icon } from "@renderer/controls/Icon";
 import classnames from "classnames";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { TabButton } from "@renderer/controls/TabButton";
 import { isScriptCompleted, scriptDocumentId } from "@common/utils/script-utils";
-import { Text } from "@renderer/controls/generic/Text";
+import { Text } from "@renderer/controls/layout/Text";
 import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 

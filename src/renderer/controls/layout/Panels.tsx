@@ -1,10 +1,12 @@
-import styles from "./Panels.module.scss";
 import classnames from "classnames";
-import { getPanelPropValues, processStyleValue } from "@renderer/theming/theme-utils";
-import { PanelProps } from "./PanelProps";
 import { useState } from "react";
+import { getPanelPropValues, processStyleValue } from "@renderer/theming/theme-utils";
+import type { LayoutProps } from "./LayoutProps";
+import styles from "./Layout.module.scss";
 
-export const FullPanel = (props: PanelProps) => {
+export type { LayoutProps, PanelProps } from "./LayoutProps";
+
+export const FullPanel = (props: LayoutProps) => {
   const [hovered, setHovered] = useState(false);
   const elementStyle = getPanelPropValues(props);
   let backgroundColor = elementStyle.backgroundColor;
@@ -20,7 +22,7 @@ export const FullPanel = (props: PanelProps) => {
         { [styles.horizontal]: props.orientation === "horizontal" },
         props.classExt
       )}
-      style={{...elementStyle, backgroundColor}}
+      style={{ ...elementStyle, backgroundColor }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -29,7 +31,7 @@ export const FullPanel = (props: PanelProps) => {
   );
 };
 
-const Stack = (props: PanelProps) => {
+const Stack = (props: LayoutProps) => {
   const [hovered, setHovered] = useState(false);
   const elementStyle = getPanelPropValues(props);
   let backgroundColor = elementStyle.backgroundColor;
@@ -43,7 +45,7 @@ const Stack = (props: PanelProps) => {
         [styles.vstack]: props.orientation === "vertical",
         [styles.hstack]: props.orientation === "horizontal"
       })}
-      style={{...elementStyle, backgroundColor}}
+      style={{ ...elementStyle, backgroundColor }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -52,18 +54,14 @@ const Stack = (props: PanelProps) => {
   );
 };
 
-export const VStack = ({ children, classExt, ...rest }: PanelProps) => {
-  return (
-    <Stack orientation="vertical" classExt={classExt} {...rest}>
-      {children}
-    </Stack>
-  );
-};
+export const VStack = ({ children, classExt, ...rest }: LayoutProps) => (
+  <Stack orientation="vertical" classExt={classExt} {...rest}>
+    {children}
+  </Stack>
+);
 
-export const HStack = ({ children, classExt, ...rest }: PanelProps) => {
-  return (
-    <Stack orientation="horizontal" classExt={classExt} {...rest}>
-      {children}
-    </Stack>
-  );
-};
+export const HStack = ({ children, classExt, ...rest }: LayoutProps) => (
+  <Stack orientation="horizontal" classExt={classExt} {...rest}>
+    {children}
+  </Stack>
+);

@@ -5,7 +5,7 @@ import { Action } from "@state/Action";
 import { AppState } from "@state/AppState";
 import { Dispatch, Store } from "@state/redux-light";
 import { get } from "lodash";
-import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useMemo, useReducer, useRef } from "react";
 
 // ---------------------------------------------------------------------------
 // Shallow equality helper — avoids spurious re-renders in useSelector
@@ -31,34 +31,38 @@ type RendererAppContext = {
 
 // This object provides the React context of the application state store, which we pass the root component, and thus
 // all nested components may use it.
-const RendererContext = createContext<RendererAppContext>(undefined);
+const RendererContext = createContext<RendererAppContext | undefined>(undefined);
 
 /**
  * This React hook makes the current renderer context available within any component logic using the hook.
  */
 export function useRendererContext(): RendererAppContext {
-  return useContext(RendererContext);
+  const context = useContext(RendererContext);
+  if (!context) {
+    throw new Error("useRendererContext must be used within a RendererProvider.");
+  }
+  return context;
 }
 
 /**
  * This React hook makes the current state store information available within any component logic using the hook.
  */
 export function useStore(): Store<AppState> {
-  return useContext(RendererContext)?.store;
+  return useRendererContext().store;
 }
 
 /**
  * This React hook makes the current state store information available within any component logic using the hook.
  */
 export function useMessenger(): MessengerBase {
-  return useContext(RendererContext)?.messenger;
+  return useRendererContext().messenger;
 }
 
 /**
  * This React hook makes the current message source information available within any component logic using the hook.
  */
 export function useMessageSource(): MessageSource {
-  return useContext(RendererContext)?.messageSource;
+  return useRendererContext().messageSource;
 }
 
 /**
@@ -77,26 +81,37 @@ export function useDispatch(): Dispatch<Action> {
  */
 export function useSelector<Selected>(stateMapper: (state: AppState) => Selected): Selected {
   const store = useStore();
-  const [state, setState] = useState<Selected>(() => {
-    const s = store.getState();
-    return s ? stateMapper(s) : undefined;
-  });
-  const prevRef = useRef(state);
+  const [, forceRender] = useReducer((version: number) => version + 1, 0);
+  const mapperRef = useRef(stateMapper);
+  const selectedRef = useRef<Selected | undefined>(undefined);
+  const hasSelectedValueRef = useRef(false);
+
+  mapperRef.current = stateMapper;
+
+  const selected = stateMapper(store.getState());
+  if (!hasSelectedValueRef.current || !shallowEqual(selectedRef.current, selected)) {
+    selectedRef.current = selected;
+    hasSelectedValueRef.current = true;
+  }
 
   useEffect(() => {
-    const unsubscribe = store.subscribe(() => {
+    const updateSelectedValue = () => {
       const storeState = store.getState();
       if (!storeState) return;
-      const nextState = stateMapper(storeState);
-      if (!shallowEqual(prevRef.current, nextState)) {
-        prevRef.current = nextState;
-        setState(nextState);
+      const nextState = mapperRef.current(storeState);
+      if (!shallowEqual(selectedRef.current, nextState)) {
+        selectedRef.current = nextState;
+        hasSelectedValueRef.current = true;
+        forceRender();
       }
-    });
+    };
+
+    updateSelectedValue();
+    const unsubscribe = store.subscribe(updateSelectedValue);
     return () => unsubscribe();
   }, [store]);
 
-  return state;
+  return selectedRef.current as Selected;
 }
 
 export function getGlobalSetting(store: Store<AppState>, settingId: string): any {
@@ -111,37 +126,11 @@ export function getGlobalSetting(store: Store<AppState>, settingId: string): any
  * This React hook makes the a mapped state value available within any component logic using the hook.
  */
 export function useGlobalSetting(settingId: string): any {
-  const store = useStore();
   const settingsDef = KliveGlobalSettings[settingId];
-  if (!settingsDef) {
-    return null;
-  }
-
-  const storeState = get(
-    store.getState()?.globalSettings ?? {},
-    settingId,
-    settingsDef.defaultValue
-  );
-  const [state, setState] = useState(storeState);
-
-  const prevSettingRef = useRef(storeState);
-
-  useEffect(() => {
-    const unsubscribe = store.subscribe(() => {
-      const nextState = get(
-        store.getState()?.globalSettings ?? {},
-        settingId,
-        settingsDef.defaultValue
-      );
-      if (!shallowEqual(prevSettingRef.current, nextState)) {
-        prevSettingRef.current = nextState;
-        setState(nextState);
-      }
-    });
-    return () => unsubscribe();
-  }, [store]);
-
-  return state;
+  return useSelector((state) => {
+    if (!settingsDef) return null;
+    return get(state?.globalSettings ?? {}, settingId, settingsDef.defaultValue);
+  });
 }
 
 // --- RendererContext properties

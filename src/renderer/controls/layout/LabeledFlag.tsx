@@ -17,11 +17,9 @@ export const LabeledFlag = ({
   valueWidth,
   tooltip,
   valueTooltip
-}: Props) => {
-  return (
-    <>
-      <Label text={label} width={labelWidth} tooltip={tooltip} />
-      <Flag value={value} tooltip={valueTooltip} width={valueWidth} />
-    </>
-  );
-};
+}: Props) => (
+  <>
+    <Label text={label} width={labelWidth} tooltip={tooltip} />
+    <Flag value={value} tooltip={valueTooltip} width={valueWidth} />
+  </>
+);

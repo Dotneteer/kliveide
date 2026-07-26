@@ -1,6 +1,7 @@
 import styles from "./CommandResult.module.scss";
+import { Label } from "@renderer/controls/layout/Label";
 import { SmallIconButton } from "@controls/IconButton";
-import { LabelSeparator, Label } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
 import { useDispatch } from "@renderer/core/RendererProvider";
 import { setIdeStatusMessageAction } from "@state/actions";

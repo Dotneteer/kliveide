@@ -3,13 +3,13 @@ import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer"
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { STATIC_MEMORY_DUMP_VIEWER } from "@common/state/common-ids";
 import { GenericViewerPanel } from "../helpers/GenericViewerPanel";
-import { Row } from "@renderer/controls/generic/Row";
+import { Row } from "@renderer/controls/layout/Row";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { LabeledText } from "@renderer/controls/generic/LabeledText";
+import { LabeledText } from "@renderer/controls/layout/LabeledText";
 import { createElement, useEffect, useRef, useState } from "react";
 import classnames from "classnames";
-import { LabelSeparator } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { DumpSection } from "./DumpSection";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";

@@ -6,11 +6,21 @@ import { describe, it, expect, vi } from "vitest";
 import React, { useRef, act } from "react";
 import { render } from "@testing-library/react";
 import { renderWithProviders, createMockStore } from "../react-test-utils";
-import { useSelector, useDispatch } from "@renderer/core/RendererProvider";
+import {
+  useGlobalSetting,
+  useSelector,
+  useDispatch
+} from "@renderer/core/RendererProvider";
 import RendererProvider from "@renderer/core/RendererProvider";
 import ThemeProvider from "@renderer/theming/ThemeProvider";
 import { MockMessenger } from "../react-test-utils";
-import { emuLoadedAction, dimMenuAction, setThemeAction } from "@state/actions";
+import {
+  emuLoadedAction,
+  dimMenuAction,
+  setThemeAction,
+  setGlobalSettingAction
+} from "@state/actions";
+import { SETTING_IDE_SHOW_TOOLBAR } from "@common/settings/setting-const";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -114,6 +124,96 @@ describe("useSelector — Step 2.1: shallowEqual gating", () => {
     });
 
     expect(renderCount).toBe(countBefore);
+  });
+
+  it("uses the latest selector when selector props change", async () => {
+    function Subject({ field }: { field: "emuLoaded" | "dimMenu" }) {
+      const selected = useSelector(s => s[field]);
+      return <span>{String(selected)}</span>;
+    }
+
+    const store = createMockStore();
+    store.dispatch(dimMenuAction(true), "ide");
+
+    const messenger = new MockMessenger();
+    const { rerender, getByText } = render(
+      <RendererProvider store={store} messenger={messenger} messageSource="ide">
+        <ThemeProvider>
+          <Subject field="emuLoaded" />
+        </ThemeProvider>
+      </RendererProvider>
+    );
+
+    expect(getByText("false")).toBeTruthy();
+
+    rerender(
+      <RendererProvider store={store} messenger={messenger} messageSource="ide">
+        <ThemeProvider>
+          <Subject field="dimMenu" />
+        </ThemeProvider>
+      </RendererProvider>
+    );
+
+    expect(getByText("true")).toBeTruthy();
+  });
+
+  it("unsubscribes from the store on unmount", () => {
+    function Subject() {
+      useSelector(s => s.emuLoaded);
+      return null;
+    }
+
+    const store = createMockStore();
+    const originalSubscribe = store.subscribe.bind(store);
+    const unsubscribeSpy = vi.fn();
+    const subscribeSpy = vi.spyOn(store, "subscribe").mockImplementation(listener => {
+      const unsubscribe = originalSubscribe(listener);
+      return () => {
+        unsubscribeSpy();
+        unsubscribe();
+      };
+    });
+
+    const messenger = new MockMessenger();
+    const { unmount } = render(
+      <RendererProvider store={store} messenger={messenger} messageSource="ide">
+        <Subject />
+      </RendererProvider>
+    );
+    unmount();
+
+    expect(subscribeSpy).toHaveBeenCalledTimes(1);
+    expect(unsubscribeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws a clear error when used outside RendererProvider", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    function Subject() {
+      useSelector(s => s.emuLoaded);
+      return null;
+    }
+
+    expect(() => render(<Subject />)).toThrow(/RendererProvider/);
+    consoleError.mockRestore();
+  });
+});
+
+describe("useGlobalSetting — Step 2.1: selector-backed settings", () => {
+  it("returns defaults and updates when settings change", async () => {
+    function Subject() {
+      const showToolbar = useGlobalSetting(SETTING_IDE_SHOW_TOOLBAR);
+      return <span>{String(showToolbar)}</span>;
+    }
+
+    const { store, getByText } = renderInProviders(<Subject />);
+    expect(getByText("true")).toBeTruthy();
+
+    await act(async () => {
+      store.dispatch(setGlobalSettingAction(SETTING_IDE_SHOW_TOOLBAR, false), "ide");
+    });
+
+    expect(getByText("false")).toBeTruthy();
   });
 });
 

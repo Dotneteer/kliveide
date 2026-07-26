@@ -1,32 +1,25 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext } from "react";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
-import { useStore } from "@renderer/core/RendererProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 
-const DocumentHubServiceContext = createContext<IDocumentHubService>(undefined);
+const DocumentHubServiceContext = createContext<IDocumentHubService | undefined>(undefined);
 
 export function useDocumentHubService (): IDocumentHubService {
-  return useContext(DocumentHubServiceContext)!;
+  const service = useContext(DocumentHubServiceContext);
+  if (!service) {
+    throw new Error("useDocumentHubService must be used within a DocumentHubServiceProvider.");
+  }
+  return service;
 }
 
 export function useDocumentHubServiceVersion(hub?: IDocumentHubService): number {
-  hub ??= useContext(DocumentHubServiceContext)!;
-  const store = useStore();
-  const storeState = store.getState();
-  const [state, setState] = useState(storeState?.ideView?.documentHubState?.[hub?.hubId]);
-
-  useEffect(() => {
-    const unsubscribe = store.subscribe(() => {
-      const storeState = store.getState();
-      if (!storeState) return;
-
-      const newVersion = storeState.ideView?.documentHubState?.[hub?.hubId];
-      setState(newVersion);
-    });
-
-    return () => unsubscribe();
-  }, [store]);
-
-  return state;
+  const contextHub = useContext(DocumentHubServiceContext);
+  const resolvedHub = hub ?? contextHub;
+  const version = useSelector((state) => state.ideView?.documentHubState?.[resolvedHub?.hubId]);
+  if (!resolvedHub) {
+    throw new Error("useDocumentHubServiceVersion must be used within a DocumentHubServiceProvider or receive a hub.");
+  }
+  return version;
 }
 
 type Props = {

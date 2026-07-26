@@ -1,26 +1,20 @@
-import styles from "./GeneralControls.module.scss";
-import { TooltipFactory, useTooltipRef } from "../Tooltip";
-import classnames from "classnames";
+import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
+import styles from "./Layout.module.scss";
 
 type Props = {
   text: string;
   width?: string | number;
   center?: boolean;
   tooltip?: string;
-  variant?: string;
 };
 
-export const Text = ({ text, width, center, tooltip, variant }: Props) => {
+export const Label = ({ text, width, center, tooltip }: Props) => {
   const ref = useTooltipRef();
 
   return (
     <div
       ref={ref}
-      className={classnames(styles.text, {
-        [styles.error]: variant === "error",
-        [styles.warning]: variant === "warning",
-        [styles.success]: variant === "success",
-      })}
+      className={styles.label}
       style={{
         width,
         justifyContent: center ? "center" : undefined
@@ -30,7 +24,7 @@ export const Text = ({ text, width, center, tooltip, variant }: Props) => {
       {tooltip && (
         <TooltipFactory
           refElement={ref.current}
-          placement='right'
+          placement="right"
           offsetX={0}
           offsetY={0}
           showDelay={100}

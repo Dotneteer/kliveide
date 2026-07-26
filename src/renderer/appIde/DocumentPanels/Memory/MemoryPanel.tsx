@@ -8,14 +8,14 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { DumpSection } from "../DumpSection";
-import { LabelSeparator } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
-import { FullPanel, HStack } from "@renderer/controls/new/Panels";
+import { FullPanel, HStack } from "@renderer/controls/layout/Panels";
 import { PanelHeader } from "../helpers/PanelHeader";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
-import { Text } from "@renderer/controls/generic/Text";
+import { Text } from "@renderer/controls/layout/Text";
 import BankDropdown from "@renderer/controls/new/BankDropdown";
 import {
   incProjectFileVersionAction /*, setWorkspaceSettingsAction */

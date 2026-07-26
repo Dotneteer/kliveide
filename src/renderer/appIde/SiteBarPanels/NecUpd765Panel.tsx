@@ -1,6 +1,9 @@
 import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 
-import { LabelSeparator, Label, Secondary, Value } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Label } from "@renderer/controls/layout/Label";
+import { Secondary } from "@renderer/controls/layout/Secondary";
+import { Value } from "@renderer/controls/layout/Value";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";

@@ -1,5 +1,5 @@
 import classnames from "classnames";
-import styles from "./GeneralControls.module.scss";
+import styles from "./Layout.module.scss";
 
 type Props = {
   xclass?: string;
@@ -7,7 +7,6 @@ type Props = {
   height?: string | number;
 };
 
-// --- Represents a row in a panel
 export const Row = ({ children, xclass, height }: Props) => (
   <div className={classnames(styles.row, xclass)} style={{ height }}>
     {children}

@@ -1,20 +1,18 @@
 import styles from "./DisassemblyPanel.module.scss";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Secondary } from "@renderer/controls/layout/Secondary";
+import { Value } from "@renderer/controls/layout/Value";
 import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import {
-  CT_CUSTOM_DISASSEMBLER,
-  CT_DISASSEMBLER,
-  MF_BANK,
-  MF_ROM,
-  MI_Z88,
-  MI_ZXNEXT
+  CT_CUSTOM_DISASSEMBLER, CT_DISASSEMBLER, MF_BANK, MF_ROM, MI_Z88, MI_ZXNEXT
 } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { AddressInput } from "@renderer/controls/AddressInput";
-import { Label, LabelSeparator, Secondary, Value } from "@controls/generic";
+import { Label } from "@renderer/controls/layout/Label";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import {
   incProjectFileVersionAction,
@@ -32,9 +30,9 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
-import { FullPanel } from "@renderer/controls/new/Panels";
+import { FullPanel } from "@renderer/controls/layout/Panels";
 import { PanelHeader } from "./helpers/PanelHeader";
-import { Text } from "@renderer/controls/generic/Text";
+import { Text } from "@renderer/controls/layout/Text";
 import BankDropdown from "@renderer/controls/new/BankDropdown";
 import { DISASSEMBLY_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";

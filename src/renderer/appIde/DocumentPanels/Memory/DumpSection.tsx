@@ -1,4 +1,5 @@
-import { LabelSeparator, Label } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Label } from "@renderer/controls/layout/Label";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import classnames from "classnames";
 import { memo, useEffect, useState } from "react";

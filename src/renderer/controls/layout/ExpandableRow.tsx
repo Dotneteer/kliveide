@@ -1,7 +1,7 @@
-import styles from "./GeneralControls.module.scss";
 import { useState } from "react";
-import { Icon } from "../Icon";
+import { Icon } from "@renderer/controls/Icon";
 import { Column } from "./Column";
+import styles from "./Layout.module.scss";
 
 type Props = {
   heading: string;
@@ -31,7 +31,7 @@ export const ExpandableRow = ({
           iconName={isExpanded ? "chevron-down" : "chevron-right"}
           width={16}
           height={16}
-          fill='--color-command-icon'
+          fill="--color-command-icon"
         />
       </div>
       {isExpanded && <Column>{children}</Column>}

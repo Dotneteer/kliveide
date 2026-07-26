@@ -1,6 +1,8 @@
 import type { WatchInfo } from "@common/state/AppState";
 
-import { LabelSeparator, Label, Value } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Label } from "@renderer/controls/layout/Label";
+import { Value } from "@renderer/controls/layout/Value";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useState, useEffect, useCallback, memo } from "react";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";

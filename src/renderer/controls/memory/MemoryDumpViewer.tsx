@@ -1,14 +1,15 @@
 import styles from "./MemoryDumpViewer.module.scss";
-import { Column } from "../generic/Column";
+import { Column } from "@renderer/controls/layout/Column";
 import {
   MiniMemoryDump,
   openStaticMemoryDump
 } from "@renderer/appIde/DocumentPanels/Memory/StaticMemoryDump";
-import { HeaderRow } from "../generic/Row";
+import { HeaderRow } from "@renderer/controls/layout/Row";
 import { SmallIconButton } from "../IconButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { Label, LabelSeparator } from "../generic";
+import { Label } from "@renderer/controls/layout/Label";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 
 type Props = {
   documentSource: string;

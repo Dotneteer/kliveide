@@ -1,4 +1,4 @@
-import styles from "./GeneralControls.module.scss";
+import styles from "./Layout.module.scss";
 
 type Props = {
   text: string;

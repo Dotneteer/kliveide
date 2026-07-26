@@ -1,6 +1,6 @@
-import styles from "./GeneralControls.module.scss";
-import { TooltipFactory, useTooltipRef } from "../Tooltip";
-import { Icon } from "../Icon";
+import { Icon } from "@renderer/controls/Icon";
+import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
+import styles from "./Layout.module.scss";
 
 type Props = {
   value?: boolean | number;
@@ -44,12 +44,12 @@ export const Flag = ({
         }
         width={16}
         height={16}
-        fill='--color-value'
+        fill="--color-value"
       />
       {tooltip && (
         <TooltipFactory
           refElement={ref.current}
-          placement='bottom'
+          placement="bottom"
           offsetX={0}
           offsetY={16}
           showDelay={100}

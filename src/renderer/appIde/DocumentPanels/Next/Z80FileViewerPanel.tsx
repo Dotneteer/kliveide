@@ -1,11 +1,11 @@
-import { Row } from "@renderer/controls/generic/Row";
+import { Row } from "@renderer/controls/layout/Row";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
 import { BinaryReader } from "@common/utils/BinaryReader";
-import { ExpandableRow } from "@renderer/controls/generic/ExpandableRow";
-import { LabeledText } from "@renderer/controls/generic/LabeledText";
+import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
+import { LabeledText } from "@renderer/controls/layout/LabeledText";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { LabeledFlag } from "@renderer/controls/generic/LabeledFlag";
+import { LabeledFlag } from "@renderer/controls/layout/LabeledFlag";
 import { decompressZ80DataBlock } from "@renderer/appIde/utils/compression/z80-file-compression";
 import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
 import { createElement } from "react";

@@ -6,11 +6,11 @@ import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
 import { Layer2Screen } from "@renderer/controls/Next/Layer2Screen";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
 import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
-import { Row } from "@renderer/controls/generic/Row";
-import { Label } from "@renderer/controls/generic/Label";
-import { LabeledText } from "@renderer/controls/generic/LabeledText";
-import { LabeledFlag } from "@renderer/controls/generic/LabeledFlag";
-import { ExpandableRow } from "@renderer/controls/generic/ExpandableRow";
+import { Row } from "@renderer/controls/layout/Row";
+import { Label } from "@renderer/controls/layout/Label";
+import { LabeledText } from "@renderer/controls/layout/LabeledText";
+import { LabeledFlag } from "@renderer/controls/layout/LabeledFlag";
+import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
 import { createElement } from "react";
 
 type NexFileViewState = {

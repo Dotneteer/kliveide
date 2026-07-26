@@ -1,10 +1,9 @@
-import styles from "./GeneralControls.module.scss";
-import { TooltipFactory, useTooltipRef } from "../Tooltip";
+import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
+import styles from "./Layout.module.scss";
 
 type Props = {
   text: string;
   width?: string | number;
-  center?: boolean;
   tooltip?: string;
 };
 
@@ -17,7 +16,7 @@ export const Value = ({ text, width, tooltip }: Props) => {
       {tooltip && (
         <TooltipFactory
           refElement={ref.current}
-          placement='right'
+          placement="right"
           offsetX={-8}
           offsetY={24}
           showDelay={100}

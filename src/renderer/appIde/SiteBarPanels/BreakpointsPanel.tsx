@@ -1,6 +1,9 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
-import { LabelSeparator, Label, Value, Secondary } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Label } from "@renderer/controls/layout/Label";
+import { Value } from "@renderer/controls/layout/Value";
+import { Secondary } from "@renderer/controls/layout/Secondary";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useState, useRef, useEffect } from "react";

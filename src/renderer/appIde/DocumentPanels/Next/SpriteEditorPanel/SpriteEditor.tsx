@@ -1,20 +1,19 @@
 import styles from "./SpriteEditor.module.scss";
+import { Value } from "@renderer/controls/layout/Value";
 import { GenericFileEditorContext } from "../../helpers/GenericFileEditorPanel";
 import { SprFileContents, SprFileViewState, SpriteTools } from "./sprite-common";
 import {
-  getCssStringForPaletteCode,
-  getLuminanceForPaletteCode,
-  getRgbPartsForPaletteCode
+  getCssStringForPaletteCode, getLuminanceForPaletteCode, getRgbPartsForPaletteCode
 } from "@emu/machines/zxNext/palette";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { LabelSeparator, Value } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
-import { Text } from "@renderer/controls/generic/Text";
+import { Text } from "@renderer/controls/layout/Text";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
-import { Column } from "@renderer/controls/generic/Column";
-import { Panel } from "@renderer/controls/generic/Panel";
-import { Row } from "@renderer/controls/generic/Row";
+import { Column } from "@renderer/controls/layout/Column";
+import { Panel } from "@renderer/controls/layout/Panel";
+import { Row } from "@renderer/controls/layout/Row";
 import { SpriteEditorGrid } from "./SpriteEditorGrid";
 import { SpriteImage } from "./SpriteImage";
 import { memo, useEffect, useRef, useState } from "react";

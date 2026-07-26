@@ -2,7 +2,7 @@ import { MutableRefObject } from "react";
 import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { HStack } from "./new/Panels";
+import { HStack } from "@renderer/controls/layout/Panels";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
 import { ExecutionControls } from "./ExecutionControls";

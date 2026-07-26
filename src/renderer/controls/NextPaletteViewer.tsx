@@ -8,8 +8,8 @@ import {
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import { useCallback, useEffect, useState, memo } from "react";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
-import { Row } from "./generic/Row";
-import { Column } from "./generic/Column";
+import { Row } from "@renderer/controls/layout/Row";
+import { Column } from "@renderer/controls/layout/Column";
 import { KeyHandler } from "./generic/KeyHandler";
 import classnames from "classnames";
 

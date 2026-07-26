@@ -1,7 +1,7 @@
-import { CSSProperties } from "react";
+import { CSSProperties, ReactNode } from "react";
 
-export type PanelProps = {
-  children?: React.ReactNode;
+export type LayoutProps = {
+  children?: ReactNode;
   id?: string;
   orientation?: "vertical" | "horizontal";
   padding?: string;
@@ -21,3 +21,4 @@ export type PanelProps = {
   classExt?: string;
 };
 
+export type PanelProps = LayoutProps;

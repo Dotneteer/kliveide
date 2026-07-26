@@ -1,28 +1,28 @@
-import styles from "./GeneralControls.module.scss";
-import { useInitialize } from "@renderer/core/useInitializeAsync";
 import classnames from "classnames";
 import { useRef } from "react";
-import ScrollViewer, { ScrollViewerApi } from "../ScrollViewer";
+import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
+import { useInitialize } from "@renderer/core/useInitializeAsync";
+import styles from "./Layout.module.scss";
 
-type PanelProps = {
+type Props = {
   xclass?: string;
   children?: React.ReactNode;
   initialScrollPosition?: number;
   onScrolled?: (pos: number) => void;
 };
 
-// --- Represents a scrollable panel
 export const Panel = ({
   children,
   xclass,
   initialScrollPosition,
   onScrolled
-}: PanelProps) => {
+}: Props) => {
   const scrollApi = useRef<ScrollViewerApi>(null);
 
   useInitialize(() => {
-    if (scrollApi.current && initialScrollPosition !== undefined)
+    if (scrollApi.current && initialScrollPosition !== undefined) {
       scrollApi.current.scrollToVertical(initialScrollPosition);
+    }
   });
 
   return (

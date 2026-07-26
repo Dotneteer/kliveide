@@ -1,6 +1,10 @@
 import type { SysVar } from "@abstractions/SysVar";
 
-import { FlagRow, Label, LabelSeparator, Secondary, Value } from "@controls/generic";
+import { FlagRow } from "@renderer/controls/layout/FlagRow";
+import { Label } from "@renderer/controls/layout/Label";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Secondary } from "@renderer/controls/layout/Secondary";
+import { Value } from "@renderer/controls/layout/Value";
 import { useState } from "react";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
