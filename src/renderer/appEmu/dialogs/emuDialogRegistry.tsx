@@ -1,8 +1,5 @@
-import { ReactElement, useEffect, useRef } from "react";
-import {
-  DialogControls,
-  useDialogs
-} from "@renderer/controls/overlay/DialogProvider";
+import { ReactElement } from "react";
+import { DialogControls } from "@renderer/controls/overlay/DialogProvider";
 import {
   CREATE_DISK_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
@@ -18,25 +15,25 @@ import {
 import {
   CreateDiskDialog,
   CreateDiskDialogResult
-} from "./dialogs/CreateDiskDialog";
+} from "./CreateDiskDialog";
 import {
   Z88RemoveCardDialog,
   Z88RemoveCardDialogResult
-} from "./dialogs/Z88RemoveCardDialog";
+} from "./Z88RemoveCardDialog";
 import {
   Z88InsertCardDialog,
   Z88InsertCardDialogResult
-} from "./dialogs/Z88InsertCardDialog";
+} from "./Z88InsertCardDialog";
 import {
   Z88ExportCardDialog,
   Z88ExportCardDialogResult
-} from "./dialogs/Z88ExportCardDialog";
+} from "./Z88ExportCardDialog";
 import {
   Z88ChangeRamDialog,
   Z88ChangeRamDialogResult
-} from "./dialogs/Z88ChangeRamDialog";
+} from "./Z88ChangeRamDialog";
 
-type EmuDialogResult =
+export type EmuDialogResult =
   | FirstStartDialogResult
   | CreateDiskDialogResult
   | Z88RemoveCardDialogResult
@@ -44,7 +41,7 @@ type EmuDialogResult =
   | Z88ExportCardDialogResult
   | Z88ChangeRamDialogResult;
 
-type EmuDialogRenderer = (
+export type EmuDialogRenderer = (
   data: any,
   controls: DialogControls<EmuDialogResult>
 ) => ReactElement;
@@ -81,37 +78,3 @@ export const emuDialogRegistry: Record<number, EmuDialogRenderer> = {
     <CreateDiskDialog onCreate={(result) => controls.close(result)} onClose={controls.cancel} />
   )
 };
-
-type EmuDialogHostProps = {
-  dialogData?: any;
-  dialogId?: number;
-  onClose: () => void;
-};
-
-export function EmuDialogHost({
-  dialogData,
-  dialogId,
-  onClose
-}: EmuDialogHostProps): ReactElement | null {
-  const dialogs = useDialogs();
-  const onCloseRef = useRef(onClose);
-
-  onCloseRef.current = onClose;
-
-  useEffect(() => {
-    if (dialogId === undefined) return;
-    const dialogRenderer = emuDialogRegistry[dialogId];
-    if (!dialogRenderer) return;
-
-    const legacyDialogId = `emu-dialog-${dialogId}`;
-    void dialogs.openLegacy<EmuDialogResult>(
-      (controls) => dialogRenderer(dialogData, controls),
-      { id: legacyDialogId }
-    ).finally(() => onCloseRef.current());
-
-    return () => dialogs.closeById(legacyDialogId);
-  }, [dialogData, dialogId, dialogs]);
-
-  if (dialogId === undefined) return null;
-  return null;
-}

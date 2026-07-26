@@ -7,7 +7,7 @@ import type { AppState } from "@state/AppState";
 import { MF_TAPE_SUPPORT, MC_DISK_SUPPORT, MC_SP48_ROM_FILE } from "@common/machines/constants";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
-import { setVolatileDocStateAction, setMediaAction, displayDialogAction, incMenuVersionAction } from "@state/actions";
+import { setVolatileDocStateAction, setMediaAction, incMenuVersionAction } from "@state/actions";
 import { BASIC_PANEL_ID } from "@state/common-ids";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
@@ -76,7 +76,7 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
       id: "create_disk_file",
       label: "Create Disk File...",
       click: async () => {
-        mainStore.dispatch(displayDialogAction(CREATE_DISK_DIALOG));
+        await getEmuApi().displayDialog(CREATE_DISK_DIALOG);
       }
     },
     { type: "separator" }

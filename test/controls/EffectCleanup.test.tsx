@@ -17,9 +17,7 @@ const rendererState = {
     isProjectDebugging: false
   },
   ideView: {
-    editorVersion: 1,
-    dialogToDisplay: undefined,
-    dialogData: undefined
+    editorVersion: 1
   },
   globalSettings: {},
   dimMenu: false,

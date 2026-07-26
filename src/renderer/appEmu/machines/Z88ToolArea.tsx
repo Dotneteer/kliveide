@@ -10,13 +10,9 @@ import {
   MC_Z88_SLOT3,
   MC_Z88_USE_DEFAULT_ROM
 } from "@common/machines/constants";
-import {
-  useRendererContext,
-  useSelector
-} from "@renderer/core/RendererProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 import { SpaceFiller } from "@renderer/controls/SpaceFiller";
 import {
-  displayDialogAction,
   setMachineConfigAction
 } from "@common/state/actions";
 import {
@@ -33,6 +29,11 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { Z88CardsState } from "../dialogs/Z88CardsDialog";
 import { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
 import { CardIds } from "@emu/machines/z88/memory/CardIds";
+import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
+import {
+  emuDialogRegistry,
+  EmuDialogResult
+} from "../dialogs/emuDialogRegistry";
 
 const epromTypeFallback = [
   { size: 32, type: CardIds.EPROMUV32 },
@@ -163,6 +164,7 @@ export const cardTypes: CardTypeData[] = [
 export const Z88ToolArea = () => {
   const config = useSelector(s => s.emulatorState.config);
   const { machineService } = useAppServices();
+  const dialogs = useDialogs();
   const machine = machineService.getMachineController().machine as IZ88Machine;
   const currentRomSize =
     machine?.getMachineProperty(MC_Z88_INTROM) ?? "(unknown)";
@@ -211,6 +213,16 @@ export const Z88ToolArea = () => {
   const slot1 = slotDetails(config?.[MC_Z88_SLOT1] as CardSlotState);
   const slot2 = slotDetails(config?.[MC_Z88_SLOT2] as CardSlotState);
   const slot3 = slotDetails(config?.[MC_Z88_SLOT3] as CardSlotState);
+
+  const openEmuDialog = (dialogId: number, dialogData?: any): void => {
+    const dialogRenderer = emuDialogRegistry[dialogId];
+    if (!dialogRenderer) return;
+    void dialogs.openLegacy<EmuDialogResult>(
+      (controls) => dialogRenderer(dialogData, controls),
+      { id: `emu-dialog-${dialogId}` }
+    );
+  };
+
   return (
     <div className={styles.machineTools}>
       <Slot0Display
@@ -219,24 +231,28 @@ export const Z88ToolArea = () => {
         typeRom={slot0?.type}
         isPristine={slot0?.isPristine}
         useDefaultRom={!!useDefaultRom}
+        openDialog={openEmuDialog}
       />
       <SlotDisplay
         slot={1}
         size={slot1?.size}
         type={slot1?.type}
         isPristine={slot1?.isPristine}
+        openDialog={openEmuDialog}
       />
       <SlotDisplay
         slot={2}
         size={slot2?.size}
         type={slot2?.type}
         isPristine={slot2?.isPristine}
+        openDialog={openEmuDialog}
       />
       <SlotDisplay
         slot={3}
         size={slot3?.size}
         type={slot3?.type}
         isPristine={slot3?.isPristine}
+        openDialog={openEmuDialog}
       />
     </div>
   );
@@ -247,10 +263,10 @@ type SlotDisplayProps = {
   size?: string;
   type?: string;
   isPristine?: boolean;
+  openDialog: (dialogId: number, dialogData?: any) => void;
 };
 
-const SlotDisplay = ({ slot, size, type, isPristine }: SlotDisplayProps) => {
-  const { store } = useRendererContext();
+const SlotDisplay = ({ slot, size, type, isPristine, openDialog }: SlotDisplayProps) => {
   const { machineService } = useAppServices();
   const machine = machineService.getMachineController().machine as IZ88Machine;
   const isEmpty = !type;
@@ -265,7 +281,7 @@ const SlotDisplay = ({ slot, size, type, isPristine }: SlotDisplayProps) => {
           <div
             className={styles.button}
             onClick={() => {
-              store.dispatch(displayDialogAction(Z88_EXPORT_CARD_DIALOG, slot));
+              openDialog(Z88_EXPORT_CARD_DIALOG, slot);
             }}
           >
             <Icon iconName={"@export"} width={14} height={14} />
@@ -276,9 +292,9 @@ const SlotDisplay = ({ slot, size, type, isPristine }: SlotDisplayProps) => {
           onClick={async () => {
             machine.signalFlapOpened();
             if (isEmpty) {
-              store.dispatch(displayDialogAction(Z88_INSERT_CARD_DIALOG, slot));
+              openDialog(Z88_INSERT_CARD_DIALOG, slot);
             } else {
-              store.dispatch(displayDialogAction(Z88_REMOVE_CARD_DIALOG, slot));
+              openDialog(Z88_REMOVE_CARD_DIALOG, slot);
             }
           }}
         >
@@ -302,6 +318,7 @@ type Slot0DisplayProps = {
   typeRom: string;
   isPristine?: boolean;
   useDefaultRom?: boolean;
+  openDialog: (dialogId: number, dialogData?: any) => void;
 };
 
 const Slot0Display = ({
@@ -309,9 +326,9 @@ const Slot0Display = ({
   sizeRam,
   typeRom,
   isPristine,
-  useDefaultRom
+  useDefaultRom,
+  openDialog
 }: Slot0DisplayProps) => {
-  const { store } = useRendererContext();
   const isEmpty = !typeRom || typeRom === "-";
   return (
     <div className={classnames(styles.slotHandler, styles.slot0)}>
@@ -322,7 +339,7 @@ const Slot0Display = ({
         <div
           className={styles.button}
           onClick={() => {
-            store.dispatch(displayDialogAction(Z88_CHANGE_RAM_DIALOG));
+            openDialog(Z88_CHANGE_RAM_DIALOG);
           }}
         >
           <Icon iconName='@replace' width={14} height={14} />
@@ -336,7 +353,7 @@ const Slot0Display = ({
         <div
           className={styles.button}
           onClick={() => {
-            store.dispatch(displayDialogAction(Z88_REMOVE_CARD_DIALOG, 0));
+            openDialog(Z88_REMOVE_CARD_DIALOG, 0);
           }}
         >
           {!isEmpty && !useDefaultRom && <Icon iconName='@eject' width={14} height={14} />}
@@ -344,7 +361,7 @@ const Slot0Display = ({
         <div
           className={styles.button}
           onClick={() => {
-            store.dispatch(displayDialogAction(Z88_INSERT_CARD_DIALOG, 0));
+            openDialog(Z88_INSERT_CARD_DIALOG, 0);
           }}
         >
           <Icon

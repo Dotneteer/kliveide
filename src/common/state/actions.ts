@@ -200,11 +200,6 @@ export const closeFolderAction: ActionCreator = () => ({
   type: "CLOSE_FOLDER"
 });
 
-export const displayDialogAction: ActionCreator = (index?: number, value?: any) => ({
-  type: "DISPLAY_DIALOG",
-  payload: { index, value }
-});
-
 export const setBuildRootAction: ActionCreator = (files: string[], flag: boolean) => ({
   type: "SET_BUILD_ROOT",
   payload: { files, flag }

@@ -8,7 +8,6 @@ import { RenameDialog } from "@renderer/appIde/dialogs/RenameDialog";
 import { DeleteDialog } from "@renderer/appIde/dialogs/DeleteDialog";
 import { NewItemDialog } from "@renderer/appIde/dialogs/NewItemDialog";
 import {
-  displayDialogAction,
   incExploreViewVersionAction,
   setBuildRootAction
 } from "@state/actions";
@@ -24,6 +23,10 @@ import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
+import {
+  ideDialogRegistry,
+  IdeDialogResult
+} from "@renderer/appIde/dialogs/ideDialogRegistry";
 import { ExplorerProjectItem } from "./ExplorerProjectItem";
 import { ExplorerEmptyState } from "./ExplorerEmptyState";
 import { ExplorerContextMenu } from "./ExplorerContextMenu";
@@ -307,6 +310,15 @@ export const ExplorerPanel = () => {
     );
   };
 
+  const openIdeDialog = (dialogId: number): void => {
+    const dialogRenderer = ideDialogRegistry[dialogId];
+    if (!dialogRenderer) return;
+    void dialogs.openLegacy<IdeDialogResult>(
+      (controls) => dialogRenderer(controls),
+      { id: `ide-dialog-${dialogId}` }
+    );
+  };
+
   // --- This function represents a project item component
   const projectItemRenderer = (idx: number) => {
     const node = tree.getViewNodeByIndex(idx);
@@ -353,7 +365,7 @@ export const ExplorerPanel = () => {
           }
           focusExplorerItem(idx);
         }}
-        onExcludedItemsClick={() => dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG))}
+        onExcludedItemsClick={() => openIdeDialog(EXCLUDED_PROJECT_ITEMS_DIALOG)}
       />
     );
   };
@@ -402,7 +414,7 @@ export const ExplorerPanel = () => {
   ) : (
     <ExplorerEmptyState
       dimmed={dimmed}
-      onCreateProject={() => dispatch(displayDialogAction(NEW_PROJECT_DIALOG))}
+      onCreateProject={() => openIdeDialog(NEW_PROJECT_DIALOG)}
       onOpenFolder={async () => {
         await mainApi.openFolder();
       }}

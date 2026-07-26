@@ -335,3 +335,14 @@ Start with three compatibility PRs before changing any dialog caller:
 3. Modal accessibility and focus baseline behind the current `Modal` props.
 
 These PRs fix the most user-visible modal flaws while keeping every existing dialog caller working. The result-based dialog service and per-dialog migrations should begin only after those foundations are covered by tests.
+
+## Completion Status
+
+Completed on 2026-07-26.
+
+- Renderer dialogs now share `OverlayProvider` and `DialogProvider`.
+- `Modal` owns portal, accessibility, focus, topmost Escape, and focus-restore behavior without the legacy mutable `ModalApi`.
+- IDE, EMU, Explorer, and Memory dialog callers open dialogs through the dialog service or renderer dialog request bridge.
+- Redux dialog state was removed: no `displayDialogAction`, `dialogToDisplay`, `dialogData`, `IdeDialogHost`, or `EmuDialogHost` remain.
+- Main-process menus and public `display-dialog` command now route through renderer API/bridge calls.
+- Step 15 verification passed with focused jsdom suites, renderer lint, type check, and Electron/Vite build.

@@ -5,7 +5,6 @@ import { MutableRefObject, useCallback, useEffect, useRef } from "react";
 import { IMachineController } from "../../abstractions/IMachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useSelector } from "@renderer/core/RendererProvider";
-import { EMU_DIALOG_BASE } from "@common/messaging/dialog-ids";
 
 export function useEmulatorKeyboard(
   controllerRef: MutableRefObject<IMachineController>,
@@ -18,7 +17,7 @@ export function useEmulatorKeyboard(
   const defaultKeyMappings = useRef<KeyMapping>();
   const currentKeyMappings = useRef<KeyMapping>();
   const keyCodeSet = useRef<KeyCodeSet>();
-  const currentDialogId = useRef(0);
+  const modalOpen = useRef(false);
 
   // Keep keyMappings ref in sync
   useEffect(() => {
@@ -26,11 +25,11 @@ export function useEmulatorKeyboard(
     applyKeyMappings();
   }, [keyMappings]);
 
-  // Keep dialogToDisplay ref in sync
-  const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
+  // Keep modal-open state in sync so emulator key events do not leak behind dialogs.
+  const dimMenu = useSelector((s) => s.dimMenu ?? false);
   useEffect(() => {
-    currentDialogId.current = dialogToDisplay ?? 0;
-  }, [dialogToDisplay]);
+    modalOpen.current = dimMenu;
+  }, [dimMenu]);
 
   function applyKeyMappings(): void {
     const km = keyMappingsRef.current;
@@ -76,13 +75,12 @@ export function useEmulatorKeyboard(
   const handleKey = useCallback((
     e: KeyboardEvent,
     mapping: KeyMapping,
-    dialogId: number,
     isDown: boolean
   ): void => {
     if (
       !e ||
       controllerRef.current?.state !== MachineControllerState.Running ||
-      dialogId > EMU_DIALOG_BASE
+      modalOpen.current
     )
       return;
     if ((e.code === "ShiftLeft" || e.code === "ShiftRight") && e.shiftKey === false && !isDown) {
@@ -99,11 +97,11 @@ export function useEmulatorKeyboard(
   }, [controllerRef, handleMappedKey]);
 
   const _handleKeyDown = useCallback((e: KeyboardEvent) => {
-    handleKey(e, currentKeyMappings.current, currentDialogId.current, true);
+    handleKey(e, currentKeyMappings.current, true);
   }, [handleKey]);
 
   const _handleKeyUp = useCallback((e: KeyboardEvent) => {
-    handleKey(e, currentKeyMappings.current, currentDialogId.current, false);
+    handleKey(e, currentKeyMappings.current, false);
   }, [handleKey]);
 
   useEffect(() => {

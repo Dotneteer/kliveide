@@ -43,6 +43,15 @@ class EmuApiImpl {
   }
 
   /**
+   * Displays a registered EMU dialog.
+   * @param _dialogId Numeric dialog ID.
+   * @param _dialogData Optional dialog payload.
+   */
+  async displayDialog(_dialogId: number, _dialogData?: any): Promise<unknown | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Sets the tape file for the emulator.
    * @param _file The tape file name.
    * @param _contents The tape file contents as Uint8Array.

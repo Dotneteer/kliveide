@@ -24,6 +24,7 @@ import { IOutputPaneService } from "@renderer/abstractions/IOutputPaneService";
 import { IScriptService } from "@renderer/abstractions/IScriptService";
 import { IIdeCommandService } from "@renderer/abstractions/IIdeCommandService";
 import { BufferOperation, OutputSpecification } from "./ToolArea/abstractions";
+import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
 
 /**
  * Handles IDE-related IPC messages and operations invoked from other processes.
@@ -135,6 +136,14 @@ class IdeMessageProcessor {
     } else {
       this.projectService.getActiveDocumentHubService().closeDocument(BASIC_PANEL_ID);
     }
+  }
+
+  /**
+   * Displays a registered IDE dialog.
+   */
+  async displayDialog(dialogId: number, dialogData?: any) {
+    if (typeof dialogId !== "number") return;
+    return await openRendererDialog("ide", dialogId, dialogData);
   }
 
   /**

@@ -171,11 +171,11 @@ describe("app shell startup hooks", () => {
   });
 });
 
-describe("app shell dialog hosts", () => {
+describe("app shell dialog registries and bridges", () => {
   it("keeps every numeric IDE and EMU dialog ID registered", async () => {
     const dialogIds = await import("@common/messaging/dialog-ids");
-    const { ideDialogRegistry } = await import("@renderer/appIde/IdeDialogHost");
-    const { emuDialogRegistry } = await import("@renderer/appEmu/EmuDialogHost");
+    const { ideDialogRegistry } = await import("@renderer/appIde/dialogs/ideDialogRegistry");
+    const { emuDialogRegistry } = await import("@renderer/appEmu/dialogs/emuDialogRegistry");
 
     const expectedIdeIds = [
       dialogIds.NEW_PROJECT_DIALOG,
@@ -225,7 +225,7 @@ describe("app shell dialog hosts", () => {
     }
   });
 
-  it("renders IDE dialogs from the registry and dispatches close", async () => {
+  it("opens IDE dialogs through the renderer bridge", async () => {
     vi.doMock("@renderer/appIde/dialogs/NewProjectDialog", () => ({
       NewProjectDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>new project close</button>
@@ -248,21 +248,28 @@ describe("app shell dialog hosts", () => {
     }));
 
     const { NEW_PROJECT_DIALOG } = await import("@messaging/dialog-ids");
-    const { IdeDialogHost } = await import("@renderer/appIde/IdeDialogHost");
+    const { IdeDialogBridge } = await import("@renderer/appIde/IdeDialogBridge");
+    const { openRendererDialog } = await import(
+      "@renderer/controls/overlay/dialogRequestBridge"
+    );
     const { DialogProvider } = await import("@renderer/controls/overlay/DialogProvider");
-    const onClose = vi.fn();
+
+    function Harness() {
+      return <button onClick={() => void openRendererDialog("ide", NEW_PROJECT_DIALOG)}>open</button>;
+    }
 
     render(
       <DialogProvider>
-        <IdeDialogHost dialogId={NEW_PROJECT_DIALOG} onClose={onClose} />
+        <IdeDialogBridge />
+        <Harness />
       </DialogProvider>
     );
+    fireEvent.click(screen.getByText("open"));
     fireEvent.click(await screen.findByText("new project close"));
-
-    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByText("new project close")).not.toBeInTheDocument());
   });
 
-  it("renders EMU dialogs from the registry with dialog data", async () => {
+  it("opens EMU dialogs through the renderer bridge with dialog data", async () => {
     vi.doMock("@renderer/appIde/dialogs/FirstStartDialog", () => ({
       FirstStartDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>first close</button>
@@ -301,18 +308,29 @@ describe("app shell dialog hosts", () => {
     }));
 
     const { Z88_REMOVE_CARD_DIALOG } = await import("@common/messaging/dialog-ids");
-    const { EmuDialogHost } = await import("@renderer/appEmu/EmuDialogHost");
+    const { EmuDialogBridge } = await import("@renderer/appEmu/EmuDialogBridge");
+    const { openRendererDialog } = await import(
+      "@renderer/controls/overlay/dialogRequestBridge"
+    );
     const { DialogProvider } = await import("@renderer/controls/overlay/DialogProvider");
-    const onClose = vi.fn();
+
+    function Harness() {
+      return (
+        <button onClick={() => void openRendererDialog("emu", Z88_REMOVE_CARD_DIALOG, 3)}>
+          open
+        </button>
+      );
+    }
 
     render(
       <DialogProvider>
-        <EmuDialogHost dialogId={Z88_REMOVE_CARD_DIALOG} dialogData={3} onClose={onClose} />
+        <EmuDialogBridge />
+        <Harness />
       </DialogProvider>
     );
+    fireEvent.click(screen.getByText("open"));
     fireEvent.click(await screen.findByText("remove 3"));
-
-    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByText("remove 3")).not.toBeInTheDocument());
   });
 });
 

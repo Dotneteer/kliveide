@@ -55,6 +55,15 @@ abstract class IdeApiImpl {
   }
 
   /**
+   * Displays a registered IDE dialog.
+   * @param _dialogId Numeric dialog ID.
+   * @param _dialogData Optional dialog payload.
+   */
+  async displayDialog(_dialogId: number, _dialogData?: any): Promise<unknown | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Executes a command in the IDE.
    * @param _commandText The command text to execute.
    * @param _scriptId Optional script ID for script context.

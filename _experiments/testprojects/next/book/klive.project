@@ -74,8 +74,8 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 98,
-            "column": 26
+            "line": 83,
+            "column": 25
           }
         },
         {
@@ -90,8 +90,8 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/legacy.asm",
           "position": {
-            "line": 0,
-            "column": 0
+            "line": 13,
+            "column": 23
           }
         },
         {
@@ -129,6 +129,46 @@
         {
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_talktohw/nr.asm",
+          "position": {
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/compare.asm",
+          "position": {
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/io.asm",
+          "position": {
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
+          "position": {
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/build.ksx",
+          "position": {
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/klive.project",
           "position": {
             "line": 0,
             "column": 0
