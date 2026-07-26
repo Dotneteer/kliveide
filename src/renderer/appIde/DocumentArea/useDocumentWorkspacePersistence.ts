@@ -1,0 +1,79 @@
+import { setWorkspaceSettingsAction } from "@common/state/actions";
+import { AppState } from "@common/state/AppState";
+import { MainApi } from "@common/messaging/MainApi";
+import { Store } from "@common/state/redux-light";
+import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
+import { useEffect } from "react";
+
+export const DOCS_WORKSPACE = "docsWorkspace";
+
+export type SavedDocumentInfo = {
+  type: string;
+  id: string;
+  position?: {
+    line: number;
+    column?: number;
+  };
+};
+
+export type DocumentWorkspace = {
+  documents: SavedDocumentInfo[];
+  activeDocumentId?: string;
+};
+
+type UseDocumentWorkspacePersistenceArgs = {
+  activeDocIndex: number;
+  ensureTabVisible: () => void;
+  mainApi: MainApi;
+  openDocs?: ProjectDocumentState[] | null;
+  store: Store<AppState>;
+};
+
+/**
+ * Persists the document tab workspace for the currently open project folder.
+ */
+export function useDocumentWorkspacePersistence({
+  activeDocIndex,
+  ensureTabVisible,
+  mainApi,
+  openDocs,
+  store
+}: UseDocumentWorkspacePersistenceArgs): void {
+  useEffect(() => {
+    const folderPath = store.getState().project?.folderPath;
+    if (!folderPath) return;
+
+    ensureTabVisible();
+    store.dispatch(
+      setWorkspaceSettingsAction(
+        DOCS_WORKSPACE,
+        createDocumentWorkspace(openDocs, activeDocIndex, folderPath)
+      ),
+      "ide"
+    );
+    (async () => {
+      await mainApi.saveProject();
+    })();
+  }, [activeDocIndex, ensureTabVisible, mainApi, openDocs, store]);
+}
+
+export function createDocumentWorkspace(
+  openDocs: ProjectDocumentState[] | null | undefined = [],
+  activeDocIndex: number,
+  folderPath: string
+): DocumentWorkspace {
+  const documents = openDocs ?? [];
+  return {
+    documents: documents
+      .filter((d) => d.id.startsWith(folderPath))
+      .map((d) => ({
+        type: d.type,
+        id: d.id,
+        position: {
+          line: d.editPosition?.line ?? 0,
+          column: d.editPosition?.column ?? 0
+        }
+      })),
+    activeDocumentId: documents[activeDocIndex]?.id
+  };
+}

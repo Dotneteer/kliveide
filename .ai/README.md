@@ -10,3 +10,4 @@ This folder stores durable notes for future AI-assisted work in this repository.
 - For shared control listener cleanup work, read `react-shared-control-cleanup.md`.
 - For app shell extraction work, read `react-app-shell-extraction.md`.
 - For document header and explorer refactors, read `react-document-explorer-refactor.md`.
+- For emulator panel side-effect refactors, read `react-emulator-panel-refactor.md`.

@@ -1,4 +1,4 @@
-import { MutableRefObject, useEffect, useRef, useState } from "react";
+import { MutableRefObject, useCallback, useEffect, useRef, useState } from "react";
 import { IMachineController } from "../../abstractions/IMachineController";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { useGlobalSetting } from "@renderer/core/RendererProvider";
@@ -37,12 +37,7 @@ export function useEmulatorScreen(
     currentScanlineEffect.current = (scanlineEffect || "off") as ScanlineIntensity;
   }, [scanlineEffect]);
 
-  useResizeObserver(hostElement, () => {
-    calculateDimensions();
-    displayScreenData();
-  });
-
-  function configureScreen(): void {
+  const configureScreen = useCallback((): void => {
     const dataLen = (shadowCanvasWidth.current ?? 0) * (shadowCanvasHeight.current ?? 0) * 4;
     imageBuffer.current = new ArrayBuffer(dataLen);
     imageBuffer8.current = new Uint8Array(imageBuffer.current);
@@ -50,9 +45,9 @@ export function useEmulatorScreen(
     screenCtxRef.current = null;
     screenImageDataRef.current = null;
     tempCanvasRef.current = null;
-  }
+  }, []);
 
-  function calculateDimensions(): void {
+  const calculateDimensions = useCallback((): void => {
     if (!hostElement?.current || !screenElement?.current) return;
     hostRectangle.current = hostElement.current.getBoundingClientRect();
     screenRectangle.current = screenElement.current.getBoundingClientRect();
@@ -67,9 +62,9 @@ export function useEmulatorScreen(
     const ratio = Math.min(widthRatio, heightRatio);
     setCanvasWidth(width * ratio * xRatio.current);
     setCanvasHeight(height * ratio * yRatio.current);
-  }
+  }, [hostElement]);
 
-  function updateScreenDimensions(): void {
+  const updateScreenDimensions = useCallback((): void => {
     const ctrl = controllerRef.current;
     shadowCanvasWidth.current = ctrl?.machine?.screenWidthInPixels;
     shadowCanvasHeight.current = ctrl?.machine?.screenHeightInPixels;
@@ -83,9 +78,55 @@ export function useEmulatorScreen(
     }
     configureScreen();
     calculateDimensions();
-  }
+  }, [calculateDimensions, configureScreen, controllerRef]);
 
-  function displayScreenData(): void {
+  const renderWithoutScanlines = useCallback((
+    ctx: CanvasRenderingContext2D,
+    canvas: HTMLCanvasElement,
+    imageData: ImageData,
+    tempCanvas: HTMLCanvasElement
+  ): void => {
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx) return;
+    tempCtx.putImageData(imageData, 0, 0);
+    ctx.globalCompositeOperation = "copy";
+    ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = "source-over";
+  }, []);
+
+  const renderWithScanlines = useCallback((
+    ctx: CanvasRenderingContext2D,
+    canvas: HTMLCanvasElement,
+    imageData: ImageData,
+    tempCanvas: HTMLCanvasElement,
+    scanlineIntensity: ScanlineIntensity
+  ): void => {
+    applyScanlineEffectToCanvas(
+      ctx,
+      canvas,
+      imageData,
+      shadowCanvasWidth.current,
+      shadowCanvasHeight.current,
+      scanlineIntensity,
+      tempCanvas
+    );
+  }, []);
+
+  const getTempCanvas = useCallback((): HTMLCanvasElement | null => {
+    if (
+      !tempCanvasRef.current ||
+      tempCanvasRef.current.width !== shadowCanvasWidth.current ||
+      tempCanvasRef.current.height !== shadowCanvasHeight.current
+    ) {
+      const canvas = document.createElement("canvas");
+      canvas.width = shadowCanvasWidth.current;
+      canvas.height = shadowCanvasHeight.current;
+      tempCanvasRef.current = canvas;
+    }
+    return tempCanvasRef.current;
+  }, []);
+
+  const displayScreenData = useCallback((): void => {
     if (!pixelData.current) return;
     const screenEl = screenElement.current;
     if (!screenEl) return;
@@ -130,53 +171,12 @@ export function useEmulatorScreen(
     } else {
       renderWithScanlines(screenCtx, screenEl, screenImageData, tempCanvas, scanlineIntensity);
     }
-  }
+  }, [controllerRef, getTempCanvas, renderWithScanlines, renderWithoutScanlines]);
 
-  function renderWithoutScanlines(
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    imageData: ImageData,
-    tempCanvas: HTMLCanvasElement
-  ): void {
-    const tempCtx = tempCanvas.getContext("2d");
-    if (!tempCtx) return;
-    tempCtx.putImageData(imageData, 0, 0);
-    ctx.globalCompositeOperation = "copy";
-    ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
-    ctx.globalCompositeOperation = "source-over";
-  }
-
-  function renderWithScanlines(
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    imageData: ImageData,
-    tempCanvas: HTMLCanvasElement,
-    scanlineIntensity: ScanlineIntensity
-  ): void {
-    applyScanlineEffectToCanvas(
-      ctx,
-      canvas,
-      imageData,
-      shadowCanvasWidth.current,
-      shadowCanvasHeight.current,
-      scanlineIntensity,
-      tempCanvas
-    );
-  }
-
-  function getTempCanvas(): HTMLCanvasElement | null {
-    if (
-      !tempCanvasRef.current ||
-      tempCanvasRef.current.width !== shadowCanvasWidth.current ||
-      tempCanvasRef.current.height !== shadowCanvasHeight.current
-    ) {
-      const canvas = document.createElement("canvas");
-      canvas.width = shadowCanvasWidth.current;
-      canvas.height = shadowCanvasHeight.current;
-      tempCanvasRef.current = canvas;
-    }
-    return tempCanvasRef.current;
-  }
+  useResizeObserver(hostElement, useCallback(() => {
+    calculateDimensions();
+    displayScreenData();
+  }, [calculateDimensions, displayScreenData]));
 
   return {
     screenElement,

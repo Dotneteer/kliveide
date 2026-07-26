@@ -60,19 +60,25 @@
    - Convert conditional dialog rendering in IDE to the same registry pattern already used by EMU.
    - Tests: initial actions dispatch once, dialogs render from registry, last-project loading waits for synced settings.
 
-8. [In Progress] Refactor document header and explorer in thin slices.
+8. [Completed] Refactor document header and explorer in thin slices.
    - [Completed] `DocumentsHeader.tsx`: extracted tab rendering to `DocumentTabs`, stabilized tab visibility/workspace persistence effects, and covered workspace save payloads.
+   - [Completed] `DocumentsHeader.tsx`: extracted document command rendering and build-root actions to `DocumentCommandBar`.
+   - [Completed] `DocumentsHeader.tsx`: extracted workspace persistence to `useDocumentWorkspacePersistence` and covered the pure workspace payload builder.
    - [Completed] `ExplorerPanel.tsx`: stabilized project-folder refresh callbacks and stopped handling `explorerViewVersion` through the cached refresh path.
-   - `DocumentsHeader.tsx`: extract tab list, command bar, workspace persistence hook, and build-root command bar.
-   - `ExplorerPanel.tsx`: extract tree loading/cache hook, context menu component, project item row, and file operations.
-   - Remove duplicated tree refresh effects where `explorerViewVersion` is handled twice.
-   - Tests: active tab visibility, workspace save payload, context menu availability, folder refresh, add/rename/delete flows with mocked APIs.
+   - [Completed] `ExplorerPanel.tsx`: extracted project row rendering to `ExplorerProjectItem`.
+   - [Completed] `ExplorerPanel.tsx`: extracted no-folder rendering to `ExplorerEmptyState` with action and disabled-state tests.
+   - [Completed] `ExplorerPanel.tsx`: extracted context-menu rendering to `ExplorerContextMenu` while keeping file operations in the panel callbacks.
+   - [Completed] `ExplorerPanel.tsx`: extracted tree loading/cache behavior to `useExplorerTree` and skipped the initial uncached explorer-version refresh.
+   - [Completed] `ExplorerPanel.tsx`: extracted add/rename/delete workflows to `explorerFileOperations`.
+   - [Completed] Removed duplicated tree refresh effects where `explorerViewVersion` was handled twice.
+   - [Completed] Tests: active tab visibility, workspace save payload, context menu availability, folder refresh, add/rename/delete flows with mocked APIs.
 
-9. Refactor emulator panel around side-effect hooks.
-   - Review `EmulatorPanel.tsx`, `useEmulatorScreen`, `useEmulatorAudio`, and `useEmulatorKeyboard` together.
-   - Make controller callbacks stable and avoid stale `controller`, `audioSampleRate`, and recording refs.
-   - Keep render output small: host, display, overlay, canvas, machine tools.
-   - Tests: machine state transitions update overlay/audio/recording, instant screen setting behavior, keyboard listeners detach.
+9. [Completed] Refactor emulator panel around side-effect hooks.
+   - [Completed] Reviewed `EmulatorPanel.tsx`, `useEmulatorScreen`, `useEmulatorAudio`, and `useEmulatorKeyboard` together.
+   - [Completed] Made controller callbacks stable and avoided stale `controller`, `audioSampleRate`, and recording refs.
+   - [Completed] Kept render output small: host, display, overlay, canvas, machine tools.
+   - [Completed] Stabilized `useMachineController` event registration through latest-callback wrappers.
+   - [Completed] Tests: machine state transitions update overlay/audio/recording, instant screen setting behavior, keyboard listeners detach.
 
 10. Create feature folders for complex document panels.
     - Suggested shape:

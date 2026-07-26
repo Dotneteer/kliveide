@@ -50,55 +50,7 @@ export function useEmulatorKeyboard(
     applyKeyMappings();
   }, []);
 
-  const _handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      handleKey(e, currentKeyMappings.current, currentDialogId.current, true);
-    },
-    []
-  );
-
-  const _handleKeyUp = useCallback(
-    (e: KeyboardEvent) => {
-      handleKey(e, currentKeyMappings.current, currentDialogId.current, false);
-    },
-    []
-  );
-
-  useEffect(() => {
-    window.addEventListener("keydown", _handleKeyDown);
-    window.addEventListener("keyup", _handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", _handleKeyDown);
-      window.removeEventListener("keyup", _handleKeyUp);
-    };
-  }, [_handleKeyDown, _handleKeyUp]);
-
-  function handleKey(
-    e: KeyboardEvent,
-    mapping: KeyMapping,
-    dialogId: number,
-    isDown: boolean
-  ): void {
-    if (
-      !e ||
-      controllerRef.current?.state !== MachineControllerState.Running ||
-      dialogId > EMU_DIALOG_BASE
-    )
-      return;
-    if ((e.code === "ShiftLeft" || e.code === "ShiftRight") && e.shiftKey === false && !isDown) {
-      handleMappedKey("ShiftLeft", mapping, false);
-      handleMappedKey("ShiftRight", mapping, false);
-    } else {
-      handleMappedKey(e.code, mapping, isDown);
-    }
-    if (isDown) {
-      pressedKeys.current[e.code.toString()] = true;
-    } else {
-      delete pressedKeys.current[e.code.toString()];
-    }
-  }
-
-  function handleMappedKey(code: string, keyMapping: KeyMapping, isDown: boolean): void {
+  const handleMappedKey = useCallback((code: string, keyMapping: KeyMapping, isDown: boolean): void => {
     const mapping = keyMapping?.[code];
     if (!mapping) return;
     const machine = controllerRef.current?.machine;
@@ -119,7 +71,49 @@ export function useEmulatorKeyboard(
         keyStatusSet?.(keyCodeSet.current[mapping[2]], isDown);
       }
     }
-  }
+  }, [controllerRef, keyStatusSet]);
+
+  const handleKey = useCallback((
+    e: KeyboardEvent,
+    mapping: KeyMapping,
+    dialogId: number,
+    isDown: boolean
+  ): void => {
+    if (
+      !e ||
+      controllerRef.current?.state !== MachineControllerState.Running ||
+      dialogId > EMU_DIALOG_BASE
+    )
+      return;
+    if ((e.code === "ShiftLeft" || e.code === "ShiftRight") && e.shiftKey === false && !isDown) {
+      handleMappedKey("ShiftLeft", mapping, false);
+      handleMappedKey("ShiftRight", mapping, false);
+    } else {
+      handleMappedKey(e.code, mapping, isDown);
+    }
+    if (isDown) {
+      pressedKeys.current[e.code.toString()] = true;
+    } else {
+      delete pressedKeys.current[e.code.toString()];
+    }
+  }, [controllerRef, handleMappedKey]);
+
+  const _handleKeyDown = useCallback((e: KeyboardEvent) => {
+    handleKey(e, currentKeyMappings.current, currentDialogId.current, true);
+  }, [handleKey]);
+
+  const _handleKeyUp = useCallback((e: KeyboardEvent) => {
+    handleKey(e, currentKeyMappings.current, currentDialogId.current, false);
+  }, [handleKey]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", _handleKeyDown);
+    window.addEventListener("keyup", _handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", _handleKeyDown);
+      window.removeEventListener("keyup", _handleKeyUp);
+    };
+  }, [_handleKeyDown, _handleKeyUp]);
 
   return { setKeyData };
 }

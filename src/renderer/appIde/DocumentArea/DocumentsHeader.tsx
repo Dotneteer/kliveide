@@ -1,8 +1,8 @@
-import { TabButton, TabButtonSeparator, TabButtonSpace } from "@controls/TabButton";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CloseMode } from "./DocumentTab";
+import { DocumentCommandBar } from "./DocumentCommandBar";
 import { DocumentTabs } from "./DocumentTabs";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import styles from "./DocumentsHeader.module.scss";
@@ -11,15 +11,17 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import {
-  incProjectViewStateVersionAction,
-  setWorkspaceSettingsAction
-} from "@common/state/actions";
-import { PANE_ID_BUILD } from "@common/integration/constants";
+import { incProjectViewStateVersionAction } from "@common/state/actions";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { getFileTypeEntry } from "../project/project-node";
 import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 import { useMainApi } from "@renderer/core/MainApi";
+import {
+  DOCS_WORKSPACE,
+  DocumentWorkspace,
+  SavedDocumentInfo,
+  useDocumentWorkspacePersistence
+} from "./useDocumentWorkspacePersistence";
 
 /**
  * This component represents the header of a document hub
@@ -85,31 +87,13 @@ export const DocumentsHeader = () => {
     }
   }, [activeDocIndex]);
 
-  // --- Make sure that the index is visible
-  useEffect(() => {
-    const folderPath = store.getState().project?.folderPath;
-    if (!folderPath) return;
-
-    ensureTabVisible();
-    // --- Save document information to the project
-    const workspace: DocumentWorkspace = {
-      documents: openDocs
-        ?.filter((d) => d.id.startsWith(folderPath))
-        ?.map((d) => ({
-          type: d.type,
-          id: d.id,
-          position: {
-            line: d.editPosition?.line ?? 0,
-            column: d.editPosition?.column ?? 0
-          }
-        })),
-      activeDocumentId: openDocs?.[activeDocIndex]?.id
-    };
-    store.dispatch(setWorkspaceSettingsAction(DOCS_WORKSPACE, workspace), "ide");
-    (async () => {
-      await mainApi.saveProject();
-    })();
-  }, [activeDocIndex, ensureTabVisible, mainApi, openDocs, store]);
+  useDocumentWorkspacePersistence({
+    activeDocIndex,
+    ensureTabVisible,
+    mainApi,
+    openDocs,
+    store
+  });
 
   // --- Refresh the changed project document
   useEffect(() => {
@@ -218,141 +202,19 @@ export const DocumentsHeader = () => {
         />
         <div className={styles.closingTab} />
       </ScrollViewer>
-      <div className={styles.commandBar}>
-        {editorInfo && editorInfo.documentTabRenderer?.(openDocs?.[activeDocIndex]?.node?.fullPath)}
-        {selectedIsBuildRoot && <BuildRootCommandBar />}
-        <TabButtonSeparator />
-        <TabButton
-          iconName="arrow-small-left"
-          title={"Move the active\ntab to left"}
-          disabled={activeDocIndex === 0}
-          useSpace={true}
-          clicked={() => documentHubService.moveActiveToLeft()}
-        />
-        <TabButton
-          iconName="arrow-small-right"
-          title={"Move the active\ntab to right"}
-          disabled={activeDocIndex === (openDocs?.length ?? 0) - 1}
-          useSpace={true}
-          clicked={() => documentHubService.moveActiveToRight()}
-        />
-        <TabButton
-          iconName="close"
-          useSpace={true}
-          clicked={async () => await documentHubService.closeAllDocuments()}
-        />
-        <TabButtonSeparator />
-        <TabButton
-          iconName="close"
-          useSpace={true}
-          clicked={async () => await documentHubService.closeAllDocuments()}
-        />
-      </div>
+      <DocumentCommandBar
+        activeDocIndex={activeDocIndex}
+        activeFullPath={openDocs?.[activeDocIndex]?.node?.fullPath}
+        editorInfo={editorInfo}
+        openDocsLength={openDocs?.length ?? 0}
+        selectedIsBuildRoot={selectedIsBuildRoot}
+        onCloseAll={async () => await documentHubService.closeAllDocuments()}
+        onMoveActiveLeft={() => documentHubService.moveActiveToLeft()}
+        onMoveActiveRight={() => documentHubService.moveActiveToRight()}
+      />
     </div>
   ) : null;
 };
 
-// --- Encapsulates the command bar to use with the build root document
-const BuildRootCommandBar = () => {
-  const { outputPaneService, ideCommandsService } = useAppServices();
-  const compiling = useSelector((s) => s.compilation?.inProgress ?? false);
-  const [startedHere, setStartedHere] = useState(false);
-  const [scriptId, setScriptId] = useState<number>();
-
-  useEffect(() => {
-    if (startedHere && !compiling) {
-      setStartedHere(false);
-    }
-  }, [compiling, startedHere]);
-  return (
-    <>
-      <TabButtonSeparator />
-      <TabButton
-        iconName="combine"
-        title="Compile code"
-        disabled={compiling}
-        clicked={async () => {
-          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          const result = await ideCommandsService.executeCommand(
-            "run-build-function buildCode",
-            buildPane
-          );
-          setScriptId(result?.value);
-          await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
-        }}
-      />
-      <TabButtonSpace />
-      <TabButton
-        iconName="inject"
-        title={"Inject code into\nthe virtual machine"}
-        disabled={compiling}
-        clicked={async () => {
-          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          const result = await ideCommandsService.executeCommand(
-            "run-build-function injectCode",
-            buildPane
-          );
-          setScriptId(result?.value);
-          await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
-        }}
-      />
-      <TabButtonSpace />
-      <TabButton
-        iconName="play"
-        title={"Inject code and start\nthe virtual machine"}
-        disabled={compiling}
-        clicked={async () => {
-          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          const result = await ideCommandsService.executeCommand(
-            "run-build-function runCode",
-            buildPane
-          );
-          setScriptId(result?.value);
-          await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
-        }}
-      />
-      <TabButtonSpace />
-      <TabButton
-        iconName="debug"
-        title={"Inject code and start\ndebugging"}
-        disabled={compiling}
-        clicked={async () => {
-          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          const result = await ideCommandsService.executeCommand(
-            "run-build-function debugCode",
-            buildPane
-          );
-          setScriptId(result?.value);
-          await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
-        }}
-      />
-      <TabButtonSeparator />
-      <TabButton
-        iconName="pop-out"
-        title={"Show script output"}
-        disabled={compiling || !scriptId}
-        clicked={async () => {
-          if (scriptId > 0) {
-            await ideCommandsService.executeCommand(`script-output ${scriptId}`);
-          }
-        }}
-      />
-    </>
-  );
-};
-
-export const DOCS_WORKSPACE = "docsWorkspace";
-
-export type SavedDocumentInfo = {
-  type: string;
-  id: string;
-  position?: {
-    line: number;
-    column?: number;
-  };
-};
-
-export type DocumentWorkspace = {
-  documents: SavedDocumentInfo[];
-  activeDocumentId: string;
-};
+export type { DocumentWorkspace, SavedDocumentInfo };
+export { DOCS_WORKSPACE };
