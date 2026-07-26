@@ -6,7 +6,8 @@ Guidance for AI assistants working in this workspace.
 
 - This is `klive-ide`, an Electron shell application with React renderers.
 - Renderer code lives mainly under `src/renderer`.
-- React modernization work is tracked in `REACT_COMPONENT_REVIEW_PLAN.md`.
+- Future and archived implementation plans live in `.plans/`.
+- React modernization work is tracked in `.plans/REACT_COMPONENT_REVIEW_PLAN.md`.
 - Additional AI-oriented notes live in `.ai/`; read them before related work.
 
 ## Working Rules
@@ -27,7 +28,7 @@ Guidance for AI assistants working in this workspace.
 
 ## Notes For React Refactors
 
-- Start each component set with the checklists in `REACT_COMPONENT_REVIEW_PLAN.md`.
+- Start each component set with the checklists in `.plans/REACT_COMPONENT_REVIEW_PLAN.md`.
 - Fix conditional hook calls before tuning dependency arrays.
 - Prefer extracting hooks/components over broad rewrites.
 - When moving files, update consumers to the new direct path and delete the old file if it only re-exported the moved symbol.

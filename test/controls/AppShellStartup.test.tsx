@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
+import { isValidElement } from "react";
 
 afterEach(() => {
   cleanup();
@@ -171,6 +172,41 @@ describe("app shell startup hooks", () => {
 });
 
 describe("app shell dialog hosts", () => {
+  it("keeps every numeric IDE and EMU dialog ID registered", async () => {
+    const dialogIds = await import("@common/messaging/dialog-ids");
+    const { ideDialogRegistry } = await import("@renderer/appIde/IdeDialogHost");
+    const { emuDialogRegistry } = await import("@renderer/appEmu/EmuDialogHost");
+
+    const expectedIdeIds = [
+      dialogIds.NEW_PROJECT_DIALOG,
+      dialogIds.EXPORT_CODE_DIALOG,
+      dialogIds.EXCLUDED_PROJECT_ITEMS_DIALOG,
+      dialogIds.FIRST_STARTUP_DIALOG_IDE
+    ];
+    const expectedEmuIds = [
+      dialogIds.FIRST_STARTUP_DIALOG_EMU,
+      dialogIds.CREATE_DISK_DIALOG,
+      dialogIds.Z88_REMOVE_CARD_DIALOG,
+      dialogIds.Z88_INSERT_CARD_DIALOG,
+      dialogIds.Z88_EXPORT_CARD_DIALOG,
+      dialogIds.Z88_CHANGE_RAM_DIALOG
+    ];
+
+    expect(Object.keys(ideDialogRegistry).map(Number).sort((a, b) => a - b)).toEqual(
+      expectedIdeIds
+    );
+    expect(Object.keys(emuDialogRegistry).map(Number).sort((a, b) => a - b)).toEqual(
+      expectedEmuIds
+    );
+
+    for (const dialogId of expectedIdeIds) {
+      expect(isValidElement(ideDialogRegistry[dialogId](vi.fn()))).toBe(true);
+    }
+    for (const dialogId of expectedEmuIds) {
+      expect(isValidElement(emuDialogRegistry[dialogId](3, vi.fn()))).toBe(true);
+    }
+  });
+
   it("renders IDE dialogs from the registry and dispatches close", async () => {
     vi.doMock("@renderer/appIde/dialogs/NewProjectDialog", () => ({
       NewProjectDialog: ({ onClose }: { onClose: () => void }) => (

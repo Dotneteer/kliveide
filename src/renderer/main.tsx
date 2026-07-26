@@ -12,6 +12,7 @@ import { EmuToMainMessenger } from "@messaging/EmuToMainMessenger";
 import { IdeToMainMessenger } from "@messaging/IdeToMainMessenger";
 import createAppStore from "@state/store";
 import { MessageSource } from "@messaging/messages-core";
+import { OverlayProvider } from "./controls/overlay/OverlayProvider";
 
 // --- Create the application messenger and the store according to the discriminator parameter
 const isEmu = location.search.startsWith("?emu");
@@ -39,7 +40,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <RendererProvider store={store} messenger={messenger} messageSource={messageSource}>
       <ThemeProvider>
-        <AppServicesProvider>{isEmu ? <EmuApp /> : <IdeApp />}</AppServicesProvider>
+        <OverlayProvider>
+          <AppServicesProvider>{isEmu ? <EmuApp /> : <IdeApp />}</AppServicesProvider>
+        </OverlayProvider>
       </ThemeProvider>
     </RendererProvider>
   </React.StrictMode>

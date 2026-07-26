@@ -10,9 +10,9 @@ import React from "react";
 import { renderWithProviders, screen, fireEvent, act } from "../react-test-utils";
 import Dropdown, { DropdownOption } from "@controls/Dropdown";
 
-// Mock useThemeRoot — Dropdown portals to the theme root element
-vi.mock("@renderer/core/useThemeRoot", () => ({
-  useThemeRoot: () => document.body
+// Mock useOverlayRoot — Dropdown portals under the shared overlay root.
+vi.mock("@renderer/controls/overlay/useOverlayRoot", () => ({
+  useOverlayRoot: () => document.body
 }));
 
 // ---------------------------------------------------------------------------

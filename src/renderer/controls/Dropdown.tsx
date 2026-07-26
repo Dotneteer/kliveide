@@ -1,7 +1,7 @@
 import styles from "./Dropdown.module.scss";
 import * as Select from "@radix-ui/react-select";
 import { Icon } from "./Icon";
-import { useThemeRoot } from "@renderer/core/useThemeRoot";
+import { useOverlayRoot } from "./overlay/useOverlayRoot";
 
 export type DropdownOption = {
   value: string;
@@ -27,7 +27,7 @@ export default function Dropdown({
   onChanged,
   onOpenChange,
 }: Props) {
-  const rootElement = useThemeRoot();
+  const rootElement = useOverlayRoot();
 
   return (
     <Select.Root value={initialValue} onValueChange={(v) => onChanged?.(v)} onOpenChange={onOpenChange}>
