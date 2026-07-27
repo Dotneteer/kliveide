@@ -7,13 +7,14 @@ import { Row } from "@renderer/controls/layout/Row";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { LabeledText } from "@renderer/controls/layout/LabeledText";
-import { createElement, useEffect, useRef, useState } from "react";
+import { createElement, useEffect, useMemo, useRef } from "react";
 import classnames from "classnames";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
-import { DumpSection } from "./DumpSection";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
+import { createRowAddresses } from "./memoryViewModel";
+import { MemoryDumpSection } from "./MemoryDumpSection";
 
 type MemoryDumpViewState = {
   twoColumns?: boolean;
@@ -38,6 +39,7 @@ const StaticMemoryDump = ({
         <Row>
           <AddressInput
             label="Go to address:"
+            decimalView={false}
             onAddressSent={async (address) => {
               context.changeViewState((vs) => (vs.topAddress = address));
               context.update(address);
@@ -52,17 +54,8 @@ const StaticMemoryDump = ({
       );
     },
     renderer: (context) => {
-      const [items, setItems] = useState<number[]>([]);
       const vlApi = useRef<VListHandle>();
-
-      // --- Process the contents when it changes
-      useEffect(() => {
-        const newItems: number[] = [];
-        for (let i = 0; i < contents.length; i += 16) {
-          newItems.push(i);
-        }
-        setItems(newItems);
-      }, [contents]);
+      const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
 
       useInitializeAsync(async () => {
         if (viewState?.scrollPosition) {
@@ -88,7 +81,7 @@ const StaticMemoryDump = ({
             context.changeViewState((vs) => (vs.scrollPosition = topPos));
           }}
           apiLoaded={(api) => (vlApi.current = api)}
-          renderItem={(idx) => {
+          renderItem={(idx, item) => {
             return (
               <div
                 className={classnames(styles.item, {
@@ -96,8 +89,20 @@ const StaticMemoryDump = ({
                 })}
               >
                 <Row>
-                  <DumpSection memory={contents} address={16 * idx} />
-                  <DumpSection memory={contents} address={16 * idx + 8} />
+                  <MemoryDumpSection
+                    address={item}
+                    bytes={Array.from(contents.slice(item, item + 8))}
+                    decimalView={false}
+                    charDump={true}
+                    lastJumpAddress={-1}
+                  />
+                  <MemoryDumpSection
+                    address={item + 8}
+                    bytes={Array.from(contents.slice(item + 8, item + 16))}
+                    decimalView={false}
+                    charDump={true}
+                    lastJumpAddress={-1}
+                  />
                 </Row>
               </div>
             );
@@ -143,16 +148,11 @@ type MiniDumpProps = {
 };
 
 export const MiniMemoryDump = ({ contents, length = 64 }: MiniDumpProps) => {
-  const [items, setItems] = useState<number[]>([]);
-
-  // --- Process the contents when it changes
-  useEffect(() => {
-    const newItems: number[] = [];
-    for (let i = 0; i < length; i += 16) {
-      newItems.push(i);
-    }
-    setItems(newItems);
-  }, [contents]);
+  const displayLength = Math.min(length, contents.length);
+  const items = useMemo(
+    () => createRowAddresses(displayLength, 16),
+    [displayLength]
+  );
 
   return items?.length ? (
     <>
@@ -166,8 +166,22 @@ export const MiniMemoryDump = ({ contents, length = 64 }: MiniDumpProps) => {
             })}
           >
             <Row>
-              <DumpSection memory={contents} address={item} />
-              <DumpSection memory={contents} address={item + 8} />
+              <MemoryDumpSection
+                address={item}
+                bytes={Array.from(contents.slice(item, item + 8))}
+                decimalView={false}
+                charDump={true}
+                lastJumpAddress={-1}
+              />
+              {item + 8 < displayLength && (
+                <MemoryDumpSection
+                  address={item + 8}
+                  bytes={Array.from(contents.slice(item + 8, item + 16))}
+                  decimalView={false}
+                  charDump={true}
+                  lastJumpAddress={-1}
+                />
+              )}
             </Row>
           </div>
         );

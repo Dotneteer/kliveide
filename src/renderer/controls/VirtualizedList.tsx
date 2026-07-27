@@ -1,23 +1,45 @@
-import { ReactNode, useEffect, useRef } from "react";
+import { CSSProperties, forwardRef, ReactNode, useEffect, useRef } from "react";
 import { Virtualizer, VListHandle } from "virtua";
 import ScrollViewer from "./ScrollViewer";
 
+type VirtualItemProps = {
+  children: ReactNode;
+  index: number;
+  style: CSSProperties;
+};
+
 type Props<T> = {
   items?: readonly T[] | null;
+  itemSize?: number;
   overscan?: number;
+  revealUnmeasuredItems?: boolean;
   startIndex?: number; // Initial scroll position
   renderItem?: (index: number, item: T) => ReactNode;
   apiLoaded?: (api: VListHandle) => void;
   onScroll?: (offset: number) => void;
+  onScrollEnd?: () => void;
 };
+
+const RevealedVirtualItem = forwardRef<HTMLDivElement, VirtualItemProps>(
+  ({ children, style }, ref) => (
+    <div ref={ref} style={{ ...style, visibility: "visible" }}>
+      {children}
+    </div>
+  )
+);
+
+RevealedVirtualItem.displayName = "RevealedVirtualItem";
 
 export const VirtualizedList = <T,>({
   items,
+  itemSize,
   overscan,
+  revealUnmeasuredItems,
   startIndex,
   renderItem,
   apiLoaded,
-  onScroll
+  onScroll,
+  onScrollEnd
 }: Props<T>) => {
   const ref = useRef<VListHandle>(null);
   const hasScrolledToStart = useRef(false);
@@ -44,8 +66,11 @@ export const VirtualizedList = <T,>({
     <ScrollViewer>
       <Virtualizer
         ref={ref}
+        itemSize={itemSize}
+        item={revealUnmeasuredItems ? RevealedVirtualItem : undefined}
         overscan={overscan}
         onScroll={(offset) => onScroll?.(offset)}
+        onScrollEnd={onScrollEnd}
         count={safeItems.length}
       >
         {(i) => {

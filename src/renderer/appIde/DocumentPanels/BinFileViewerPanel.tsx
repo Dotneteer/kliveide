@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
-import { DumpSection } from "./DumpSection";
+import { MemoryDumpSection } from "@renderer/features/memory/MemoryDumpSection";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { FullPanel, HStack } from "@renderer/controls/layout/Panels";
 import { PanelHeader } from "./helpers/PanelHeader";
@@ -115,24 +115,22 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
               backgroundColor={idx % 2 === 0 ? "--bgcolor-disass-even-row" : "transparent"}
               hoverBackgroundColor="--bgcolor-disass-hover"
             >
-              <DumpSection
+              <MemoryDumpSection
                 address={rows[idx]}
-                memory={data}
+                bytes={data.slice(rows[idx], rows[idx] + byteCount)}
                 decimalView={decimalView}
                 charDump={charDump}
                 lastJumpAddress={lastJumpAddress}
                 addressDigits={addressDigits}
-                byteCount={byteCount}
               />
               {showTwoColumns && rows[idx] + 0x08 < data.length && (
-                <DumpSection
+                <MemoryDumpSection
                   address={rows[idx] + 0x08}
-                  memory={data}
+                  bytes={data.slice(rows[idx] + 0x08, rows[idx] + 0x08 + byteCount)}
                   decimalView={decimalView}
                   charDump={charDump}
                   lastJumpAddress={lastJumpAddress}
                   addressDigits={addressDigits}
-                  byteCount={byteCount}
                 />
               )}
             </HStack>

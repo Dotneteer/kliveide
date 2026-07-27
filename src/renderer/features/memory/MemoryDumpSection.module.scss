@@ -3,10 +3,33 @@
   flex-direction: row;
   align-items: center;
   padding: 2px 0;
+}
 
-  &.fit {
-    width: fit-content;
-  }
+.partitionPrefix {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.8ch;
+  margin-left: 0.8ch;
+  margin-right: 1.2ch;
+  color: var(--color-label);
+}
+
+.partitionLabel {
+  display: inline-flex;
+  justify-content: flex-start;
+}
+
+.partitionColon {
+  display: inline-flex;
+}
+
+.addressLabel {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  margin-right: 1.2ch;
+  color: var(--color-label);
 }
 
 @keyframes borderColorChange {
@@ -30,40 +53,6 @@
   }
 }
 
-.value {
-  display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-  color: var(--color-value);
-  justify-content: center;
-  width: 20px;
-  border: 1px solid transparent;
-
-  &.decimal {
-    width: 30px;
-  }
-
-  &.lastJump {
-    animation: borderColorChange 3s alternate;
-    animation-delay: 400ms;
-  }
-
-  &:hover {
-    background: #606060;
-    opacity: 0.9;
-  }
-
-  &.pointed {
-    background: var(--bgcolor-memory-pointed);
-    color: var(--color-memory-pointed);
-  }
-
-  &.pcPointed {
-    background: var(--bgcolor-memory-pc-pointed);
-    color: var(--color-memory-pointed);
-  }
-}
-
 .hexValues {
   position: relative;
   display: flex;
@@ -76,21 +65,6 @@
   width: fit-content;
   border: 1px solid transparent;
   z-index: 1;
-
-  &.lastJump {
-    animation: borderColorChange 3s alternate;
-    animation-delay: 400ms;
-  }
-
-  &.pointed {
-    background: var(--bgcolor-memory-pointed);
-    color: var(--color-memory-pointed);
-  }
-
-  &.pcPointed {
-    background: var(--bgcolor-memory-pc-pointed);
-    color: var(--color-memory-pointed);
-  }
 }
 
 .byteHoverOverlay {
@@ -100,7 +74,7 @@
   border: 1px solid var(--bgcolor-memory-pointed);
   background: var(--bgcolor-memory-hover);
   color: var(--color-memory-pointed);
-  padding-left: 2px;;
+  padding-left: 2px;
   pointer-events: none;
 }
 
