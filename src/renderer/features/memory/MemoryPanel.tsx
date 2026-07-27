@@ -36,6 +36,7 @@ import { useMemoryRefresh } from "./useMemoryRefresh";
 import { MemoryToolbar } from "./MemoryToolbar";
 import { MemoryBankToolbar } from "./MemoryBankToolbar";
 import { MemoryDumpSection } from "./MemoryDumpSection";
+import { createVisibleMemoryRenderRecorder } from "./memoryPerformance";
 
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
@@ -78,6 +79,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const vlApi = useRef<VListHandle>(null);
   const [scrollVersion, setScrollVersion] = useState(1);
   const [lastJumpAddress, setLastJumpAddress] = useState<number>(-1);
+  const renderMetrics = useMemo(() => createVisibleMemoryRenderRecorder(), []);
 
   // Derived layout values from viewMode
   const bytesPerRow = getBytesPerRow(viewMode);
@@ -220,6 +222,10 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
   useEmuStateListener(emuApi, handleEmuStateChange);
 
+  useEffect(() => {
+    renderMetrics.flush(memoryRefresh.memoryVersion, viewMode);
+  });
+
   const handleRefreshPauseChanged = useCallback((paused: boolean) => {
     allowRefresh.current = !paused;
   }, []);
@@ -278,9 +284,6 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
   // For non-zero topIndex, hide the component until scroll completes to prevent flicker
   const shouldHideUntilScrolled = topIndex > 0 && !hasScrolled;
-
-  if (shouldHideUntilScrolled) {
-  }
 
   return (
     <FullPanel
@@ -348,6 +351,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             }
           }}
           renderItem={(idx) => {
+            renderMetrics.recordRow(showTwoColumns ? 2 : 1);
             const partitionLabel = isFullView
               ? memoryRefresh.mem64kLabels[memoryItems[idx] >> 13]
               : machineSetup.partitionLabels?.[currentSegment];

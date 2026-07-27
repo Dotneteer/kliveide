@@ -7,6 +7,7 @@ import {
   buildPointedRegisterHints,
   resolveMemoryPartition
 } from "./memoryViewModel";
+import { measureMemoryRefresh } from "./memoryPerformance";
 
 type MemoryRefreshParams = {
   allowRefresh: MutableRefObject<boolean>;
@@ -66,7 +67,10 @@ export function useMemoryRefresh({
           }
 
           const partition = resolveMemoryPartition(cachedRefreshState.current);
-          const response = await emuApi.getMemoryContents(partition);
+          const response = await measureMemoryRefresh(
+            partition,
+            () => emuApi.getMemoryContents(partition)
+          );
 
           setMemory(new Uint8Array(response.memory));
           setMemoryVersion((version) => version + 1);

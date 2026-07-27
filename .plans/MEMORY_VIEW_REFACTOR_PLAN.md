@@ -42,13 +42,13 @@ Keep services under `appIde/services` unless a separate service migration is int
 
 ## Refactor Steps
 
-1. Add characterization tests for pure memory helpers.
+1. [Completed] Add characterization tests for pure memory helpers.
    - Extract `resolveViewMode`, bytes-per-row calculation, row-address generation, top-index conversion across view modes, bank option creation, partition selection, and pointed-register mapping into `memoryViewModel.ts`.
    - Preserve legacy `twoColumns` migration behavior.
    - Tests: `test/controls/MemoryViewModel.test.ts`.
    - Verification: `npm test -- --project node test/controls/MemoryViewModel.test.ts`.
 
-2. Add renderer harness tests around current panel behavior.
+2. [Completed] Add renderer harness tests around current panel behavior.
    - Mock `VirtualizedList` to render a small visible window.
    - Mock `useEmuApi`, `useMainApi`, `useAppServices`, `useDocumentHubService`, and `useEmuStateListener`.
    - Cover initial 64K render, banked render, view mode changes, go-to address, set-memory dialog command, and refresh after paused/stopped emulator state.
@@ -117,12 +117,12 @@ Keep services under `appIde/services` unless a separate service migration is int
     - Reuse the consolidated dump-section primitive in read-only mode.
     - Tests: static dump row count, go-to address scroll request, mini dump length changes.
 
-13. Add performance guardrails.
+13. [Completed] Add performance guardrails.
     - Add a focused render-count test with mocked rows for byte-only refresh and toolbar changes.
     - Add an optional development-only measurement helper around refresh latency and visible row render count.
     - Keep thresholds loose enough for jsdom but strict enough to catch whole-list rerenders.
 
-14. Final cleanup and verification.
+14. [Completed] Final cleanup and verification.
     - Remove dead styles and unused props such as dump-section classes that no longer render.
     - Run `rg "console\\.log" src/renderer -n` and keep renderer cleanup rules.
     - Run focused memory tests, `npm run lint:renderer`, `npm run build:check`, and Electron/Vite build.

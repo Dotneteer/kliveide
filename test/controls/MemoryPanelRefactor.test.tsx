@@ -22,6 +22,11 @@ type DumpSectionProps = {
   showPartitions?: boolean;
 };
 
+type DumpRenderEntry = {
+  address: number;
+  byteCount: number;
+};
+
 const createMemoryResponse = (memory: Uint8Array, partitionLabels = ["ROM0", "BANK0"]) => ({
   memory,
   pc: 0x6000,
@@ -97,6 +102,7 @@ async function renderMemoryPanel({
     scrollToIndex: vi.fn(),
     scrollTo: vi.fn()
   };
+  const dumpRenderLog: DumpRenderEntry[] = [];
   let emuStateCallback: ((state: MachineControllerState) => Promise<void>) | undefined;
 
   vi.doMock("@renderer/core/RendererProvider", () => ({
@@ -164,22 +170,25 @@ async function renderMemoryPanel({
       lastJumpAddress,
       partitionLabel,
       showPartitions
-    }: DumpSectionProps) => (
-      <button
-        data-testid={`dump-${address}`}
-        data-byte-count={bytes.length}
-        data-char-dump={String(charDump)}
-        data-decimal-view={String(decimalView)}
-        data-last-jump={lastJumpAddress}
-        data-partition={showPartitions ? partitionLabel ?? "" : ""}
-        onContextMenu={(event) => {
-          event.preventDefault();
-          editClicked?.(address);
-        }}
-      >
-        {address}:{bytes[0]}
-      </button>
-    )
+    }: DumpSectionProps) => {
+      dumpRenderLog.push({ address, byteCount: bytes.length });
+      return (
+        <button
+          data-testid={`dump-${address}`}
+          data-byte-count={bytes.length}
+          data-char-dump={String(charDump)}
+          data-decimal-view={String(decimalView)}
+          data-last-jump={lastJumpAddress}
+          data-partition={showPartitions ? partitionLabel ?? "" : ""}
+          onContextMenu={(event) => {
+            event.preventDefault();
+            editClicked?.(address);
+          }}
+        >
+          {address}:{bytes[0]}
+        </button>
+      );
+    }
   }));
   vi.doMock("@renderer/controls/LabeledSwitch", () => ({
     LabeledSwitch: ({
@@ -265,6 +274,7 @@ async function renderMemoryPanel({
     ...result,
     dispatch,
     documentHubService,
+    dumpRenderLog,
     emuStateCallback,
     executeCommand,
     getMemoryContents,
@@ -350,5 +360,32 @@ describe("MemoryPanel refactor characterization", () => {
     await waitFor(() => {
       expect(screen.getByTestId("dump-0")).toHaveTextContent("0:77");
     });
+  });
+
+  it("keeps byte-only refresh rendering bounded to the visible row window", async () => {
+    const { dumpRenderLog, emuStateCallback, memory } = await renderMemoryPanel();
+
+    dumpRenderLog.length = 0;
+    memory[0] = 88;
+    await emuStateCallback?.(MachineControllerState.Paused);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dump-0")).toHaveTextContent("0:88");
+    });
+
+    const renderedAddresses = new Set(dumpRenderLog.map((entry) => entry.address));
+    expect(renderedAddresses).toEqual(new Set([0, 8, 16, 24]));
+    expect(dumpRenderLog.length).toBeLessThanOrEqual(8);
+  });
+
+  it("does not re-render visible rows when toolbar dropdown focus only pauses refresh", async () => {
+    const { dumpRenderLog } = await renderMemoryPanel();
+
+    dumpRenderLog.length = 0;
+    const viewModeDropdown = screen.getByLabelText("dropdown-90");
+    fireEvent.focus(viewModeDropdown);
+    fireEvent.blur(viewModeDropdown);
+
+    expect(dumpRenderLog).toHaveLength(0);
   });
 });
