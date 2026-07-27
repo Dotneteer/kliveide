@@ -38,6 +38,7 @@ const StaticMemoryDump = ({
         <Row>
           <AddressInput
             label="Go to address:"
+            decimalView={false}
             onAddressSent={async (address) => {
               context.changeViewState((vs) => (vs.topAddress = address));
               context.update(address);

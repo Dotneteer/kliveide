@@ -33,15 +33,13 @@
         "resource": "03_memory/legacy.asm",
         "line": 136,
         "exec": true,
-        "ioMask": 65535,
-        "resolvedAddress": 36737
+        "ioMask": 65535
       },
       {
         "resource": "03_memory/legacy.asm",
         "line": 209,
         "exec": true,
-        "ioMask": 65535,
-        "resolvedAddress": 36944
+        "ioMask": 65535
       }
     ]
   },
@@ -76,126 +74,6 @@
           "position": {
             "line": 83,
             "column": 25
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/08_ula/ula.asm",
-          "position": {
-            "line": 4,
-            "column": 27
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/legacy.asm",
-          "position": {
-            "line": 13,
-            "column": 23
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/04_interrupts/int.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/interrupt.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/01_z80n/extinstr.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_talktohw/nr.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/compare.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/io.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/build.ksx",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/klive.project",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/memcpy.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/05_ctc/ctcint.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/05_ctc/ctc.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/mmu.asm",
-          "position": {
-            "line": 0,
-            "column": 0
           }
         }
       ],
