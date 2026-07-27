@@ -98,19 +98,19 @@ Keep services under `appIde/services` unless a separate service migration is int
    - Remove memo comparators that inspect a mutable shared array.
    - Tests: changed byte re-renders only the affected section; unchanged row props do not re-render.
 
-10. Remove per-row DOM text measurement.
+10. [Completed] Remove per-row DOM text measurement.
     - Prefer CSS `ch` units and fixed monospace geometry for byte hit-testing and overlays.
     - If exact measurement is still required, cache one measurement per display format/font instead of doing it per mounted `HexValues`.
     - Tests: hover index and context-menu address calculation in hex and decimal modes.
     - Manual check: hover highlight aligns in `8x1`, `8x2`, and `16x1`.
 
-11. Localize character-set and tooltip cache.
+11. [Completed] Localize character-set and tooltip cache.
     - Add a `useMemoryCharacterInfo()` hook or pure `buildByteTooltipCache(charset)` helper.
     - Default safely when the active machine has no charset yet.
     - Remove module-level `characterSet` mutation from both dump-section implementations.
     - Tests: machine charset switch updates char dump/tooltip; missing charset does not throw.
 
-12. Clean up static memory dumps.
+12. [Completed] Clean up static memory dumps.
     - Make `StaticMemoryDump` and `MiniMemoryDump` derive row addresses with `useMemo`.
     - Include `length` in dependencies.
     - Use the `item` argument from `VirtualizedList.renderItem` instead of recomputing `16 * idx`.
