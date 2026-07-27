@@ -78,7 +78,7 @@ describe("useMachineController", () => {
 describe("useEmulatorKeyboard", () => {
   it("uses the latest key mapping and unregisters window listeners", async () => {
     const state = {
-      ideView: { dialogToDisplay: 0 },
+      dimMenu: false,
       keyMappings: undefined as any
     };
     vi.doMock("@renderer/core/RendererProvider", () => ({

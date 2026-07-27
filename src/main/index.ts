@@ -38,7 +38,6 @@ import {
   setClockMultiplierAction,
   setSoundLevelAction,
   setThemeAction,
-  displayDialogAction,
   startScreenDisplayedAction,
   setKeyMappingsAction,
   setMachineSpecificAction,
@@ -350,7 +349,7 @@ async function createAppWindows() {
       if (!appSettings.startScreenDisplayed) {
         await new Promise((r) => setTimeout(r, 400));
         if (!appSettings.startScreenDisplayed) {
-          mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
+          await getEmuApi().displayDialog(FIRST_STARTUP_DIALOG_EMU);
         }
       }
 

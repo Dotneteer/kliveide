@@ -1,11 +1,11 @@
 import styles from "./CreateDiskDialog.module.scss";
-import { ModalApi, Modal } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import Dropdown from "@renderer/controls/Dropdown";
 import { TextInput } from "@renderer/controls/TextInput";
 import { useMainApi } from "@renderer/core/MainApi";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const NEW_DISK_FOLDER_ID = "newDiskFolder";
 
@@ -18,10 +18,17 @@ const diskTypesIds = [
 
 type Props = {
   onClose: () => void;
+  onCreate?: (result: CreateDiskDialogResult) => void;
 };
 
-export const CreateDiskDialog = ({ onClose }: Props) => {
-  const modalApi = useRef<ModalApi>(null);
+export type CreateDiskDialogResult = {
+  diskType: string;
+  folder: string;
+  filename: string;
+  path: string;
+};
+
+export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
   const mainApi = useMainApi();
   const { validationService } = useAppServices();
 
@@ -36,8 +43,24 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
     setFolderIsValid(fValid);
     const nValid = validationService.isValidFilename(filename);
     setFileIsValid(nValid);
-    modalApi.current.enablePrimaryButton(fValid && nValid);
   }, [diskFileFolder, filename]);
+
+  const createDisk = async (): Promise<boolean> => {
+    // --- Create the project
+    try {
+      const path = await mainApi.createDiskFile(diskFileFolder, filename, diskType);
+      await mainApi.displayMessageBox(
+        "info",
+        "Disk created",
+        `Disk file successfully created: ${path}`
+      );
+      onCreate?.({ diskType, folder: diskFileFolder, filename, path });
+      return false;
+    } catch (err) {
+      await mainApi.displayMessageBox("error", "Create Disk File Error", err.toString());
+      return true;
+    }
+  };
 
   return (
     <Modal
@@ -46,27 +69,10 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
       fullScreen={false}
       translateY={0}
       width={500}
-      onApiLoaded={(api) => (modalApi.current = api)}
       primaryLabel="Create"
-      primaryEnabled={true}
+      primaryEnabled={folderIsValid && fileIsValid}
       initialFocus="none"
-      onPrimaryClicked={async (result) => {
-        const name = result ? result[0] : filename;
-        const folder = result ? result[1] : diskFileFolder;
-        // --- Create the project
-        try {
-          const path = await mainApi.createDiskFile(folder, name, diskType);
-          await mainApi.displayMessageBox(
-            "info",
-            "Disk created",
-            `Disk file successfully created: ${path}`
-          );
-          return false;
-        } catch (err) {
-          await mainApi.displayMessageBox("error", "Create Disk File Error", err.toString());
-          return true;
-        }
-      }}
+      onPrimaryClicked={createDisk}
       onClose={() => {
         onClose();
       }}
@@ -109,12 +115,15 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
           value={filename}
           isValid={fileIsValid}
           focusOnInit={true}
-          keyPressed={(e) => {
+          keyPressed={async (e) => {
             if (e.code === "Enter") {
               if (folderIsValid && fileIsValid) {
                 e.preventDefault();
                 e.stopPropagation();
-                modalApi.current.triggerPrimary([filename, diskFileFolder]);
+                const keepOpen = await createDisk();
+                if (!keepOpen) {
+                  onClose();
+                }
               }
             }
           }}

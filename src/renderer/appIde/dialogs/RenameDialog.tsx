@@ -1,8 +1,8 @@
 import styles from "./RenameDialog.module.scss";
-import { ModalApi, Modal } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
 
@@ -19,11 +19,15 @@ export const RenameDialog = ({
   onClose,
   onRename
 }: Props) => {
-  const modalApi = useRef<ModalApi>(null);
   const [newPath, setNewPath] = useState(oldPath);
 
   const validate = (fn: string) => fn !== oldPath && VALID_FILENAME.test(fn);
   const isValid = validate(newPath);
+  const submitRename = async (): Promise<boolean> => {
+    if (!validate(newPath)) return true;
+    await onRename?.(newPath);
+    return false;
+  };
 
   return (
     <Modal
@@ -31,14 +35,10 @@ export const RenameDialog = ({
       isOpen={true}
       fullScreen={false}
       width={500}
-      onApiLoaded={api => (modalApi.current = api)}
       primaryLabel='Rename'
       primaryEnabled={isValid}
       initialFocus='none'
-      onPrimaryClicked={async result => {
-        await onRename?.(result ?? newPath);
-        return false;
-      }}
+      onPrimaryClicked={submitRename}
       onClose={() => {
         onClose();
       }}
@@ -51,16 +51,20 @@ export const RenameDialog = ({
           value={oldPath}
           isValid={isValid}
           focusOnInit={true}
-          keyPressed={e => {
+          keyPressed={async e => {
             if (e.code === "Enter") {
               if (validate(newPath)) {
-                modalApi.current.triggerPrimary(newPath);
+                e.preventDefault();
+                e.stopPropagation();
+                const keepOpen = await submitRename();
+                if (!keepOpen) {
+                  onClose();
+                }
               }
             }
           }}
           valueChanged={val => {
             setNewPath(val);
-            modalApi.current.enablePrimaryButton(validate(val));
             return false;
           }}
         />

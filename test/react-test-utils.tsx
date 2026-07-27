@@ -18,6 +18,8 @@ import { MessengerBase } from "@messaging/MessengerBase";
 import { Channel, RequestMessage } from "@messaging/messages-core";
 import RendererProvider from "@renderer/core/RendererProvider";
 import ThemeProvider from "@renderer/theming/ThemeProvider";
+import { OverlayProvider } from "@renderer/controls/overlay/OverlayProvider";
+import { DialogProvider } from "@renderer/controls/overlay/DialogProvider";
 
 // ─── Mock Messenger ──────────────────────────────────────────────────────────
 
@@ -71,7 +73,11 @@ function AllProviders({ store, messenger, children }: ProvidersProps) {
       messenger={messenger ?? new MockMessenger()}
       messageSource="ide"
     >
-      <ThemeProvider>{children}</ThemeProvider>
+      <ThemeProvider>
+        <OverlayProvider>
+          <DialogProvider>{children}</DialogProvider>
+        </OverlayProvider>
+      </ThemeProvider>
     </RendererProvider>
   );
 }

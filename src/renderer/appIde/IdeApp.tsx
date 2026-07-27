@@ -8,7 +8,7 @@ import {
   useSelector
 } from "@renderer/core/RendererProvider";
 import { activityRegistry } from "@renderer/registry";
-import { displayDialogAction, incProjectFileVersionAction } from "@state/actions";
+import { incProjectFileVersionAction } from "@state/actions";
 import { useEffect, useState } from "react";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
 import { DocumentArea } from "@renderer/features/documents/DocumentArea";
@@ -19,7 +19,7 @@ import { ToolArea } from "./ToolArea/ToolArea";
 import { IdeEventsHandler } from "./IdeEventsHandler";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { useMainApi } from "@renderer/core/MainApi";
-import { IdeDialogHost } from "./IdeDialogHost";
+import { IdeDialogBridge } from "./IdeDialogBridge";
 import {
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_SHOW_SIDEBAR,
@@ -51,7 +51,6 @@ const IdeApp = () => {
   const sidebarToRight = useGlobalSetting(SETTING_IDE_SIDEBAR_TO_RIGHT);
   const showToolPanels = useGlobalSetting(SETTING_IDE_SHOW_TOOLS);
   const maximizeToolPanels = useGlobalSetting(SETTING_IDE_MAXIMIZE_TOOLS);
-  const dialogId = useSelector((s) => s.ideView?.dialogToDisplay);
   const kliveProjectLoaded = useSelector((s) => s.project?.isKliveProject ?? false);
   const sideBarWidth = useGlobalSetting(SETTING_IDE_SIDEBAR_WIDTH);
   const toolPanelHeight = useGlobalSetting(SETTING_IDE_TOOLPANEL_HEIGHT);
@@ -70,6 +69,7 @@ const IdeApp = () => {
   return (
     <FullPanel id="appMain">
       <IdeEventsHandler />
+      <IdeDialogBridge />
       {showToolbar && <Toolbar ide={true} kliveProjectLoaded={kliveProjectLoaded} />}
       <FullPanel orientation="horizontal">
         <ActivityBar activities={activityRegistry} order={sidebarToRight ? 3 : 0} />
@@ -106,7 +106,6 @@ const IdeApp = () => {
       </FullPanel>
       <IdeStatusBar show={showStatusBar} />
       <BackDrop visible={dimmed} />
-      <IdeDialogHost dialogId={dialogId} onClose={() => store.dispatch(displayDialogAction())} />
     </FullPanel>
   );
 };

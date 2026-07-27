@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import React, { useState } from "react";
 import { renderWithProviders, screen, fireEvent, act, waitFor } from "../react-test-utils";
 import { ClickAwayListener } from "@controls/ClickAwayListener";
-import { ContextMenu } from "@controls/ContextMenu";
+import { ContextMenu, ContextMenuItem } from "@controls/ContextMenu";
 import { Tooltip } from "@controls/Tooltip";
 
 vi.mock("react-popper", () => ({
@@ -95,6 +95,22 @@ describe("Shared controls — listener cleanup", () => {
     expect(removeSpy.mock.calls.find(([type]) => type === "keydown")?.[1]).toBe(
       addSpy.mock.calls.find(([type]) => type === "keydown")?.[1]
     );
+  });
+
+  it("ContextMenuItem waits for click instead of opening dialogs during mousedown selection", () => {
+    const clicked = vi.fn();
+
+    renderWithProviders(<ContextMenuItem text="Delete" clicked={clicked} />);
+
+    const item = screen.getByText("Delete");
+    const mouseDown = fireEvent.mouseDown(item, { button: 0 });
+
+    expect(mouseDown).toBe(false);
+    expect(clicked).not.toHaveBeenCalled();
+
+    fireEvent.click(item);
+
+    expect(clicked).toHaveBeenCalledTimes(1);
   });
 
   it("Tooltip removes target listeners and clears pending show timers on unmount", () => {

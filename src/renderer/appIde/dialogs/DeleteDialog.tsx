@@ -1,7 +1,6 @@
 import styles from "./DeleteDialog.module.scss";
-import { ModalApi, Modal } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { useRef } from "react";
 
 type Props = {
   isFolder?: boolean;
@@ -11,15 +10,12 @@ type Props = {
 };
 
 export const DeleteDialog = ({ isFolder, entry, onClose, onDelete }: Props) => {
-  const modalApi = useRef<ModalApi>(null);
-
   return (
     <Modal
       title={isFolder ? "Delete folder" : "Delete file"}
       isOpen={true}
       fullScreen={false}
       width={500}
-      onApiLoaded={api => (modalApi.current = api)}
       primaryLabel='Delete'
       primaryDanger={true}
       initialFocus='cancel'
@@ -32,7 +28,7 @@ export const DeleteDialog = ({ isFolder, entry, onClose, onDelete }: Props) => {
       }}
     >
       <DialogRow>
-        <div>
+        <div className={styles.message}>
           Are you sure you want to delete{" "}
           <span className={styles.hilite}>{entry}</span>?
         </div>

@@ -7,7 +7,6 @@ import {
   useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
-import { displayDialogAction } from "@state/actions";
 import { EmulatorArea } from "@renderer/features/emulator/EmulatorArea";
 import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
 import { RecordingContext } from "./recording/RecordingContext";
@@ -17,7 +16,7 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR
 } from "@common/settings/setting-const";
-import { EmuDialogHost } from "./EmuDialogHost";
+import { EmuDialogBridge } from "./EmuDialogBridge";
 import { useEmuRecordingManager, useEmuStartup } from "./useEmuStartup";
 
 const EmuApp = () => {
@@ -35,23 +34,17 @@ const EmuApp = () => {
   const kliveProjectLoaded = useSelector((s) => s.project?.isKliveProject ?? false);
   const dimmed = useSelector((s) => s.dimMenu ?? false);
   const isWindows = useSelector((s) => s.isWindows ?? false);
-  const dialogId = useSelector((s) => s.ideView?.dialogToDisplay);
-  const dialogData = useSelector((s) => s.ideView?.dialogData);
 
   useEmuStartup({ appServices, dispatch, isWindows, messenger, store });
 
   return (
     <RecordingContext.Provider value={recordingManagerRef}>
     <FullPanel id="appMain" data-testid="emu-app">
+      <EmuDialogBridge />
       {showToolbar && <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} recordingManagerRef={recordingManagerRef} />}
       <EmulatorArea />
       <EmuStatusBar show={showStatusBar} />
       <BackDrop visible={dimmed} />
-      <EmuDialogHost
-        dialogData={dialogData}
-        dialogId={dialogId}
-        onClose={() => store.dispatch(displayDialogAction())}
-      />
     </FullPanel>
     </RecordingContext.Provider>
   );

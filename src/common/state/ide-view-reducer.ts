@@ -78,13 +78,6 @@ export function ideViewReducer (
         toolCommandSeqNo: (state.toolCommandSeqNo ?? 0) + 1
       };
 
-    case "DISPLAY_DIALOG":
-      return {
-        ...state,
-        dialogToDisplay: payload?.index,
-        dialogData: payload?.value
-      };
-
     case "INC_DOC_HUB_SERVICE_VERSION": {
       const versions = { ...state.documentHubState };
       versions[payload!.index!] = (versions[payload!.index!] ?? 0) + 1;

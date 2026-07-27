@@ -1,8 +1,8 @@
 import styles from "./NewItemDialog.module.scss";
-import { ModalApi, Modal } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
 
@@ -21,13 +21,17 @@ export const NewItemDialog = ({
   onClose,
   onAdd
 }: Props) => {
-  const modalApi = useRef<ModalApi>(null);
   const [newItem, setNewItem] = useState("");
   const subject = isFolder ? "folder" : "file";
 
   const validate = (fn: string) =>
     !itemNames.some(item => fn === item) && VALID_FILENAME.test(fn);
   const isValid = validate(newItem);
+  const submitNewItem = async (): Promise<boolean> => {
+    if (!validate(newItem)) return true;
+    await onAdd?.(newItem);
+    return false;
+  };
 
   return (
     <Modal
@@ -35,14 +39,10 @@ export const NewItemDialog = ({
       isOpen={true}
       fullScreen={false}
       width={500}
-      onApiLoaded={api => (modalApi.current = api)}
       primaryLabel='Add'
       primaryEnabled={isValid}
       initialFocus='none'
-      onPrimaryClicked={async result => {
-        await onAdd?.(result ?? newItem);
-        return false;
-      }}
+      onPrimaryClicked={submitNewItem}
       onClose={() => {
         onClose();
       }}
@@ -56,16 +56,20 @@ export const NewItemDialog = ({
           value={""}
           isValid={isValid}
           focusOnInit={true}
-          keyPressed={e => {
+          keyPressed={async e => {
             if (e.code === "Enter") {
               if (validate(newItem)) {
-                modalApi.current.triggerPrimary(newItem);
+                e.preventDefault();
+                e.stopPropagation();
+                const keepOpen = await submitNewItem();
+                if (!keepOpen) {
+                  onClose();
+                }
               }
             }
           }}
           valueChanged={val => {
             setNewItem(val);
-            modalApi.current.enablePrimaryButton(validate(val));
             return false;
           }}
         />

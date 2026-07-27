@@ -6,7 +6,7 @@ import styles from "./BankDropdown.module.scss";
 import classnames from "classnames";
 import { Icon } from "../Icon";
 import { HStack } from "@renderer/controls/layout/Panels";
-import { useThemeRoot } from "@renderer/core/useThemeRoot";
+import { useOverlayRoot } from "@renderer/controls/overlay/useOverlayRoot";
 import { toDecimal3, toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 type KeyBehavior = {
@@ -36,7 +36,7 @@ export default function BankDropdown({
   showNextItems,
   onChanged
 }: Props) {
-  const rootElement = useThemeRoot();
+  const rootElement = useOverlayRoot();
 
   const hexValues = Array.from({ length: banks }, (_, i) => i);
 

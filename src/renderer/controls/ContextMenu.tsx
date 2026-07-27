@@ -3,6 +3,7 @@ import { MouseEvent as ReactMouseEvent, ReactNode, useEffect, useState } from "r
 import { usePopper } from "react-popper";
 import localStyles from "./ContextMenu.module.scss";
 import { createPortal } from "react-dom";
+import { getOverlayRoot } from "./overlay/useOverlayRoot";
 
 export type ContextMenuState = {
   contextVisible: boolean;
@@ -37,7 +38,7 @@ export const ContextMenu = ({
       }
     ]
   });
-  const rootElement = document.getElementById("themeRoot");
+  const rootElement = getOverlayRoot();
 
   useEffect(() => {
     const handleOutsideClick = (event: globalThis.MouseEvent) => {
@@ -77,7 +78,7 @@ export const ContextMenu = ({
           >
             {children}
           </div>,
-          rootElement || document.body
+          rootElement
         )}
     </>
   );
@@ -98,9 +99,12 @@ export const ContextMenuItem = ({ dangerous, text, disabled, clicked }: ContextM
         [localStyles.disabled]: disabled
       })}
       onMouseDown={(e) => {
-        if (!disabled) {
-          if (e.button === 0) clicked?.();
+        if (e.button === 0) {
+          e.preventDefault();
         }
+      }}
+      onClick={() => {
+        if (!disabled) clicked?.();
       }}
     >
       {text}

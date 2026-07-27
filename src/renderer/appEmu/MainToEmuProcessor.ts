@@ -38,6 +38,7 @@ import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { IMemorySection } from "@abstractions/MemorySection";
 import type { RecordingManager } from "./recording/RecordingManager";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -110,6 +111,14 @@ class EmuMessageProcessor {
       case "custom":
         return controller.customCommand(customCommand);
     }
+  }
+
+  /**
+   * Displays a registered EMU dialog.
+   */
+  async displayDialog(dialogId: number, dialogData?: any): Promise<unknown | undefined> {
+    if (typeof dialogId !== "number") return undefined;
+    return await openRendererDialog("emu", dialogId, dialogData);
   }
 
   /**

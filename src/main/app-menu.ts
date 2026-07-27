@@ -18,7 +18,6 @@ import {
   setClockMultiplierAction,
   setSoundLevelAction,
   closeFolderAction,
-  displayDialogAction,
   dimMenuAction,
   setVolatileDocStateAction,
   setKeyMappingsAction
@@ -223,9 +222,9 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       {
         id: NEW_PROJECT,
         label: "New project...",
-        click: () => {
+        click: async () => {
           ensureIdeWindow();
-          mainStore.dispatch(displayDialogAction(NEW_PROJECT_DIALOG));
+          await getIdeApi().displayDialog(NEW_PROJECT_DIALOG);
         }
       },
       {
@@ -259,8 +258,9 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
               id: EXCLUDED_PROJECT_ITEMS,
               label: "\nManage Excluded Items",
               enabled: true,
-              click: () => {
-                mainStore.dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
+              click: async () => {
+                ensureIdeWindow();
+                await getIdeApi().displayDialog(EXCLUDED_PROJECT_ITEMS_DIALOG);
               }
             }
           ] as MenuItemConstructorOptions[])),
@@ -1079,11 +1079,11 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       {
         id: HELP_SHOW_WELCOME,
         label: "Welcome screen",
-        click: () => {
+        click: async () => {
           if (isIdeWindowFocused()) {
-            mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_IDE));
+            await getIdeApi().displayDialog(FIRST_STARTUP_DIALOG_IDE);
           } else {
-            mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
+            await getEmuApi().displayDialog(FIRST_STARTUP_DIALOG_EMU);
           }
         }
       },

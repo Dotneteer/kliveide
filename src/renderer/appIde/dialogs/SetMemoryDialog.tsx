@@ -1,7 +1,7 @@
-import { ModalApi, Modal } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import Dropdown from "@renderer/controls/Dropdown";
@@ -20,7 +20,13 @@ type Props = {
   decimal: boolean;
   isRom?: boolean;
   onClose: () => void;
-  onSetMemory: (value: string, option: string, bigEndian: boolean) => Promise<void>;
+  onSetMemory: (result: SetMemoryDialogResult) => Promise<void> | void;
+};
+
+export type SetMemoryDialogResult = {
+  value: string;
+  sizeOption: string;
+  bigEndian: boolean;
 };
 
 export const SetMemoryDialog = ({
@@ -32,7 +38,6 @@ export const SetMemoryDialog = ({
   onSetMemory
 }: Props) => {
   const { ideCommandsService } = useAppServices();
-  const modalApi = useRef<ModalApi>(null);
   const [memValue, setMemValue] = useState(
     decimal ? currentValue.toString(10) : "$" + toHexa2(currentValue)
   );
@@ -46,24 +51,26 @@ export const SetMemoryDialog = ({
     return getNum.success;
   };
 
+  const submitMemoryValue = async (): Promise<boolean> => {
+    if (!(await validate(memValue))) {
+      return true;
+    }
+    await onSetMemory?.({ value: memValue, sizeOption, bigEndian });
+    return false;
+  };
+
   return (
     <Modal
       title="Set Memory Content"
       isOpen={true}
       fullScreen={false}
       width={300}
-      onApiLoaded={(api) => (modalApi.current = api)}
       primaryLabel="Set"
       primaryVisible={!isRom}
       primaryEnabled={!isRom && valueValid}
       cancelLabel={isRom ? "Close" : "Cancel"}
       initialFocus={isRom ? "cancel" : "none"}
-      onPrimaryClicked={async (result) => {
-        if (!result) {
-          await onSetMemory?.(memValue, sizeOption, bigEndian);
-        }
-        return false;
-      }}
+      onPrimaryClicked={submitMemoryValue}
       onClose={() => {
         onClose();
       }}
@@ -84,16 +91,15 @@ export const SetMemoryDialog = ({
               focusOnInit={true}
               keyPressed={async (e) => {
                 if (e.code === "Enter") {
-                  if (await validate(memValue)) {
-                    await onSetMemory?.(memValue, sizeOption, bigEndian);
-                    modalApi.current.triggerPrimary(-1);
+                  const keepOpen = await submitMemoryValue();
+                  if (!keepOpen) {
+                    onClose();
                   }
                 }
               }}
               valueChanged={(val) => {
-                validate(val);
                 setMemValue(val);
-                modalApi.current.enablePrimaryButton(valueValid);
+                void validate(val);
                 return false;
               }}
             />

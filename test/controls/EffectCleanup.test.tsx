@@ -17,9 +17,7 @@ const rendererState = {
     isProjectDebugging: false
   },
   ideView: {
-    editorVersion: 1,
-    dialogToDisplay: undefined,
-    dialogData: undefined
+    editorVersion: 1
   },
   globalSettings: {},
   dimMenu: false,
@@ -172,8 +170,13 @@ describe("effect cleanup fixes", () => {
     }));
 
     const { default: EmuApp } = await import("@renderer/appEmu/EmuApp");
+    const { DialogProvider } = await import("@renderer/controls/overlay/DialogProvider");
 
-    render(<EmuApp />);
+    render(
+      <DialogProvider>
+        <EmuApp />
+      </DialogProvider>
+    );
 
     await waitFor(() => expect(dispatch).toHaveBeenCalled());
 

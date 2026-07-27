@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePopper } from "react-popper";
 import styles from "./Tooltip.module.scss";
-import { useTheme } from "@renderer/theming/ThemeProvider";
+import { useOverlayRoot } from "./overlay/useOverlayRoot";
 
 // =====================================================================================================================
 // Tooltip React component definition
@@ -37,7 +37,7 @@ export const Tooltip = ({
   offsetY = 8,
   isShown = false
 }: Props) => {
-  const { root } = useTheme();
+  const root = useOverlayRoot();
   const handle = useRef<ReturnType<typeof setTimeout>>();
   const [visible, setVisible] = useState(isShown);
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
@@ -120,7 +120,7 @@ export const Tooltip = ({
           >
             {children}
           </div>,
-          root
+          root ?? document.body
         )}
     </>
   );
