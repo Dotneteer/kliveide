@@ -37,7 +37,10 @@ function mockIdeCommands(
 describe("MemoryDumpSection", () => {
   it("builds tooltip cache entries from the provided character set", async () => {
     mockIdeCommands();
-    const { buildByteTooltipCache } = await import("@renderer/features/memory/MemoryDumpSection");
+    const {
+      buildByteTooltipCache,
+      getMemoryCharacterInfo
+    } = await import("@renderer/features/memory/MemoryDumpSection");
 
     const cache = buildByteTooltipCache({
       0x41: { v: "A", t: "letter A" },
@@ -48,6 +51,10 @@ describe("MemoryDumpSection", () => {
     expect(cache[0x41]).toContain("A letter A");
     expect(cache[0x80]).toContain("(graphics)");
     expect(cache[0x00]).toContain("$00");
+
+    const charset = { 0x41: { v: "A", t: "letter A" } };
+    expect(getMemoryCharacterInfo(charset as never)).toBe(getMemoryCharacterInfo(charset as never));
+    expect(getMemoryCharacterInfo()).toBe(getMemoryCharacterInfo());
   });
 
   it("maps pointer offsets to byte indexes using rendered text geometry", async () => {
@@ -82,6 +89,47 @@ describe("MemoryDumpSection", () => {
     expect(getByText("41")).toBeTruthy();
     expect(getByText("A")).toBeTruthy();
     expect(appendChild).not.toHaveBeenCalled();
+  });
+
+  it("renders the bank prefix and address as compact cells", async () => {
+    mockIdeCommands();
+    const { MemoryDumpSection } = await import("@renderer/features/memory/MemoryDumpSection");
+
+    const { getByText } = render(
+      <MemoryDumpSection
+        showPartitions={true}
+        partitionLabel="R0"
+        address={0}
+        bytes={[0x41]}
+        decimalView={false}
+        charDump={false}
+        lastJumpAddress={-1}
+      />
+    );
+
+    expect(getByText("R0").className).toContain("partitionLabel");
+    expect(getByText(":").className).toContain("partitionColon");
+    expect(getByText("0000").className).toContain("addressLabel");
+  });
+
+  it("renders decimal bank labels without inheriting generic label margins", async () => {
+    mockIdeCommands();
+    const { MemoryDumpSection } = await import("@renderer/features/memory/MemoryDumpSection");
+
+    const { getByText } = render(
+      <MemoryDumpSection
+        showPartitions={true}
+        partitionLabel="0A"
+        address={10}
+        bytes={[0x41]}
+        decimalView={true}
+        charDump={false}
+        lastJumpAddress={-1}
+      />
+    );
+
+    expect(getByText("010").className).toContain("partitionLabel");
+    expect(getByText("00010").className).toContain("addressLabel");
   });
 
   it("uses text geometry for context-menu edit addresses", async () => {

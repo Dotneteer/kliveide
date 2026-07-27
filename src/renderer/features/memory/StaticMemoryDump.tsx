@@ -91,14 +91,14 @@ const StaticMemoryDump = ({
                 <Row>
                   <MemoryDumpSection
                     address={item}
-                    bytes={contents.slice(item, item + 8)}
+                    bytes={Array.from(contents.slice(item, item + 8))}
                     decimalView={false}
                     charDump={true}
                     lastJumpAddress={-1}
                   />
                   <MemoryDumpSection
                     address={item + 8}
-                    bytes={contents.slice(item + 8, item + 16)}
+                    bytes={Array.from(contents.slice(item + 8, item + 16))}
                     decimalView={false}
                     charDump={true}
                     lastJumpAddress={-1}
@@ -168,7 +168,7 @@ export const MiniMemoryDump = ({ contents, length = 64 }: MiniDumpProps) => {
             <Row>
               <MemoryDumpSection
                 address={item}
-                bytes={contents.slice(item, item + 8)}
+                bytes={Array.from(contents.slice(item, item + 8))}
                 decimalView={false}
                 charDump={true}
                 lastJumpAddress={-1}
@@ -176,7 +176,7 @@ export const MiniMemoryDump = ({ contents, length = 64 }: MiniDumpProps) => {
               {item + 8 < displayLength && (
                 <MemoryDumpSection
                   address={item + 8}
-                  bytes={contents.slice(item + 8, item + 16)}
+                  bytes={Array.from(contents.slice(item + 8, item + 16))}
                   decimalView={false}
                   charDump={true}
                   lastJumpAddress={-1}

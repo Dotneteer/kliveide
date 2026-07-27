@@ -35,8 +35,10 @@ import { useMemoryMachineSetup } from "./useMemoryMachineSetup";
 import { useMemoryRefresh } from "./useMemoryRefresh";
 import { MemoryToolbar } from "./MemoryToolbar";
 import { MemoryBankToolbar } from "./MemoryBankToolbar";
-import { MemoryDumpSection } from "./MemoryDumpSection";
+import { getMemoryCharacterInfo, MemoryDumpSectionView } from "./MemoryDumpSection";
 import { createVisibleMemoryRenderRecorder } from "./memoryPerformance";
+
+const MEMORY_ROW_ITEM_SIZE = 20;
 
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
@@ -45,7 +47,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
   const dialogs = useDialogs();
-  const { ideCommandsService } = useAppServices();
+  const { ideCommandsService, machineService } = useAppServices();
+  const memoryCharacterInfo = getMemoryCharacterInfo(machineService.getMachineInfo()?.machine?.charSet);
 
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -80,6 +83,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const [scrollVersion, setScrollVersion] = useState(1);
   const [lastJumpAddress, setLastJumpAddress] = useState<number>(-1);
   const renderMetrics = useMemo(() => createVisibleMemoryRenderRecorder(), []);
+  const pendingScrollTopIndex = useRef(topIndex);
 
   // Derived layout values from viewMode
   const bytesPerRow = getBytesPerRow(viewMode);
@@ -110,6 +114,10 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     hasScrolledToInitialPosition.current = false;
     setHasScrolled(false);
   }, []);
+
+  useEffect(() => {
+    pendingScrollTopIndex.current = topIndex;
+  }, [topIndex]);
 
   useEffect(() => {
     if (machineSetup.isInitializing || machineSetup.setupVersion === 0) return;
@@ -322,16 +330,19 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       <FullPanel>
         <VirtualizedList
           items={memoryItems}
+          itemSize={MEMORY_ROW_ITEM_SIZE}
           overscan={25}
+          revealUnmeasuredItems
           startIndex={topIndex}
           onScroll={() => {
-            // User scroll tracking disabled - we only track programmatic scrolls
-            // This simplifies the state machine and prevents feedback loops
             if (!vlApi.current || memoryItems.length === 0) return;
-            const newTopIndex = vlApi.current.findStartIndex();
-            if (newTopIndex !== topIndex) {
-              setTopIndex(newTopIndex);
-            }
+            pendingScrollTopIndex.current = vlApi.current.findStartIndex();
+          }}
+          onScrollEnd={() => {
+            const newTopIndex = pendingScrollTopIndex.current;
+            setTopIndex((currentTopIndex) =>
+              newTopIndex === currentTopIndex ? currentTopIndex : newTopIndex
+            );
           }}
           apiLoaded={(api) => {
             vlApi.current = api;
@@ -360,19 +371,21 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             const section2Address = memoryItems[idx] + 0x08;
             const section1IsRom = !!machineSetup.romFlags?.[(section1Address >> 13) & 0x07];
             const section2IsRom = !!machineSetup.romFlags?.[(section2Address >> 13) & 0x07];
-            const section1Bytes = memoryRefresh.memory.slice(section1Address, section1Address + byteCount);
-            const section2Bytes = memoryRefresh.memory.slice(section2Address, section2Address + byteCount);
+            const section1Bytes = memoryRefresh.memory.subarray(section1Address, section1Address + byteCount);
+            const section2Bytes = memoryRefresh.memory.subarray(section2Address, section2Address + byteCount);
 
             return (
               <HStack
                 backgroundColor={idx % 2 === 0 ? "--bgcolor-disass-even-row" : "transparent"}
                 hoverBackgroundColor="--bgcolor-disass-hover"
+                height={`${MEMORY_ROW_ITEM_SIZE}px`}
               >
-                <MemoryDumpSection
+                <MemoryDumpSectionView
                   showPartitions={bankLabel}
                   partitionLabel={partitionLabel}
                   address={section1Address}
                   bytes={section1Bytes}
+                  characterInfo={memoryCharacterInfo}
                   charDump={charDump}
                   pointedInfo={memoryRefresh.pointedRegs}
                   decimalView={decimalView}
@@ -381,11 +394,12 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                   editClicked={editMemoryContent}
                 />
                 {showTwoColumns && (
-                  <MemoryDumpSection
+                  <MemoryDumpSectionView
                     showPartitions={bankLabel}
                     partitionLabel={partitionLabel}
                     address={section2Address}
                     bytes={section2Bytes}
+                    characterInfo={memoryCharacterInfo}
                     pointedInfo={memoryRefresh.pointedRegs}
                     charDump={charDump}
                     decimalView={decimalView}

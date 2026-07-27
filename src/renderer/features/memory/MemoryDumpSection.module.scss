@@ -5,6 +5,33 @@
   padding: 2px 0;
 }
 
+.partitionPrefix {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.8ch;
+  margin-left: 0.8ch;
+  margin-right: 1.2ch;
+  color: var(--color-label);
+}
+
+.partitionLabel {
+  display: inline-flex;
+  justify-content: flex-start;
+}
+
+.partitionColon {
+  display: inline-flex;
+}
+
+.addressLabel {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  margin-right: 1.2ch;
+  color: var(--color-label);
+}
+
 @keyframes borderColorChange {
   0% {
     border-color: var(--border-color-dropdown-menu);

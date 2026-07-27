@@ -1,5 +1,4 @@
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
-import { Label } from "@renderer/controls/layout/Label";
 import { TooltipFactory } from "@controls/Tooltip";
 import classnames from "classnames";
 import { toHexa4, toHexa6Dash, toHexa2, toDecimal5, toDecimal7, toDecimal3, toBin8 } from "@renderer/appIde/services/ide-commands";
@@ -9,7 +8,7 @@ import { CharDescriptor } from "@common/machines/info-types";
 import { memo, useRef, useState, useMemo, useCallback } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 
-type MemoryDumpSectionProps = {
+export type MemoryDumpSectionProps = {
   showPartitions?: boolean;
   partitionLabel?: string;
   address: number;
@@ -24,10 +23,17 @@ type MemoryDumpSectionProps = {
   addressDigits?: 4 | 6;
 };
 
-type MemoryCharacterInfo = {
+export type MemoryCharacterInfo = {
   characterSet: Record<number, CharDescriptor>;
   tooltipCache: readonly string[];
 };
+
+const EMPTY_CHARACTER_SET = EMPTY_OBJECT as Record<number, CharDescriptor>;
+const EMPTY_CHARACTER_INFO: MemoryCharacterInfo = {
+  characterSet: EMPTY_CHARACTER_SET,
+  tooltipCache: buildByteTooltipCache(EMPTY_CHARACTER_SET)
+};
+const characterInfoCache = new WeakMap<Record<number, CharDescriptor>, MemoryCharacterInfo>();
 
 type MemoryDumpSectionViewProps = MemoryDumpSectionProps & {
   characterInfo: MemoryCharacterInfo;
@@ -65,25 +71,30 @@ const MemoryDumpSectionViewComponent = ({
     }
   }
 
+  const addressText = decimalView
+    ? (addressDigits === 6 ? toDecimal7(address) : toDecimal5(address))
+    : (addressDigits === 6 ? toHexa6Dash(address) : toHexa4(address));
+  const addressWidth = decimalView
+    ? (addressDigits === 6 ? 64 : 48)
+    : (addressDigits === 6 ? 72 : 40);
+
   return (
     <div className={classnames(styles.dumpSection)}>
       <LabelSeparator width={8} />
       {showPartitions && partitionLabel && (
-        <>
-          <LabelSeparator />
-          <Label text={partitionLabel} width={useWidePartitions ? 26 : 18} />
-          <Label text=":" width={6} />
-          <LabelSeparator />
-        </>
+        <div className={styles.partitionPrefix}>
+          <span
+            className={styles.partitionLabel}
+            style={{ width: useWidePartitions ? "3ch" : "2ch" }}
+          >
+            {partitionLabel}
+          </span>
+          <span className={styles.partitionColon}>:</span>
+        </div>
       )}
-      <Label
-        text={decimalView
-          ? (addressDigits === 6 ? toDecimal7(address) : toDecimal5(address))
-          : (addressDigits === 6 ? toHexa6Dash(address) : toHexa4(address))}
-        width={decimalView
-          ? (addressDigits === 6 ? 64 : 48)
-          : (addressDigits === 6 ? 72 : 40)}
-      />
+      <div className={styles.addressLabel} style={{ width: addressWidth }}>
+        {addressText}
+      </div>
       <HexValues
         address={address}
         bytes={bytes}
@@ -110,7 +121,7 @@ const MemoryDumpSectionViewComponent = ({
 
 // --- Memoize MemoryDumpSectionView to avoid re-rendering when the displayed byte values (and
 // other display-impacting props) have not changed.
-const MemoryDumpSectionView = memo(MemoryDumpSectionViewComponent, (prev, next) => {
+export const MemoryDumpSectionView = memo(MemoryDumpSectionViewComponent, (prev, next) => {
   // Address itself affects the address label and which bytes are shown
   if (prev.address !== next.address) return false;
 
@@ -371,9 +382,25 @@ const HexValues = memo(HexValuesComponent, (prev, next) => {
 });
 
 function useMemoryCharacterInfo(charset?: Record<number, CharDescriptor>) {
-  const characterSet = charset ?? (EMPTY_OBJECT as Record<number, CharDescriptor>);
-  const tooltipCache = useMemo(() => buildByteTooltipCache(characterSet), [characterSet]);
-  return useMemo(() => ({ characterSet, tooltipCache }), [characterSet, tooltipCache]);
+  return getMemoryCharacterInfo(charset);
+}
+
+export function getMemoryCharacterInfo(charset?: Record<number, CharDescriptor>): MemoryCharacterInfo {
+  if (!charset) {
+    return EMPTY_CHARACTER_INFO;
+  }
+
+  const cached = characterInfoCache.get(charset);
+  if (cached) {
+    return cached;
+  }
+
+  const characterInfo = {
+    characterSet: charset,
+    tooltipCache: buildByteTooltipCache(charset)
+  };
+  characterInfoCache.set(charset, characterInfo);
+  return characterInfo;
 }
 
 export function buildByteTooltipCache(charset: Record<number, CharDescriptor>): string[] {

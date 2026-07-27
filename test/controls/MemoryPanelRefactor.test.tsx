@@ -103,6 +103,8 @@ async function renderMemoryPanel({
     scrollTo: vi.fn()
   };
   const dumpRenderLog: DumpRenderEntry[] = [];
+  let virtualOnScroll: (() => void) | undefined;
+  let virtualOnScrollEnd: (() => void) | undefined;
   let emuStateCallback: ((state: MachineControllerState) => Promise<void>) | undefined;
 
   vi.doMock("@renderer/core/RendererProvider", () => ({
@@ -120,7 +122,16 @@ async function renderMemoryPanel({
   }));
   vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
     useAppServices: () => ({
-      ideCommandsService: { executeCommand }
+      ideCommandsService: { executeCommand },
+      machineService: {
+        getMachineInfo: () => ({
+          machine: {
+            charSet: {
+              0x00: { v: "." }
+            }
+          }
+        })
+      }
     })
   }));
   vi.doMock("@renderer/appIde/useStateRefresh", () => ({
@@ -138,19 +149,34 @@ async function renderMemoryPanel({
     VirtualizedList: ({
       apiLoaded,
       items = [],
+      itemSize,
+      onScroll,
+      onScrollEnd,
+      revealUnmeasuredItems,
       renderItem,
       startIndex
     }: {
       apiLoaded?: (api: typeof virtualApi) => void;
       items?: number[];
+      itemSize?: number;
+      onScroll?: () => void;
+      onScrollEnd?: () => void;
+      revealUnmeasuredItems?: boolean;
       renderItem: (index: number, item: number) => ReactNode;
       startIndex?: number;
     }) => {
+      virtualOnScroll = onScroll;
+      virtualOnScrollEnd = onScrollEnd;
       React.useEffect(() => {
         apiLoaded?.(virtualApi);
       }, [apiLoaded]);
       return (
-        <div data-testid="memory-list" data-start-index={startIndex}>
+        <div
+          data-testid="memory-list"
+          data-item-size={itemSize}
+          data-reveal-unmeasured={String(revealUnmeasuredItems)}
+          data-start-index={startIndex}
+        >
           {items.slice(0, 2).map((item, index) => (
             <div data-testid={`virtual-row-${index}`} key={item}>
               {renderItem(index, item)}
@@ -161,7 +187,39 @@ async function renderMemoryPanel({
     }
   }));
   vi.doMock("@renderer/features/memory/MemoryDumpSection", () => ({
+    getMemoryCharacterInfo: (charset: unknown) => ({
+      characterSet: charset,
+      tooltipCache: []
+    }),
     MemoryDumpSection: ({
+      address,
+      bytes,
+      charDump,
+      decimalView,
+      editClicked,
+      lastJumpAddress,
+      partitionLabel,
+      showPartitions
+    }: DumpSectionProps) => {
+      dumpRenderLog.push({ address, byteCount: bytes.length });
+      return (
+        <button
+          data-testid={`dump-${address}`}
+          data-byte-count={bytes.length}
+          data-char-dump={String(charDump)}
+          data-decimal-view={String(decimalView)}
+          data-last-jump={lastJumpAddress}
+          data-partition={showPartitions ? partitionLabel ?? "" : ""}
+          onContextMenu={(event) => {
+            event.preventDefault();
+            editClicked?.(address);
+          }}
+        >
+          {address}:{bytes[0]}
+        </button>
+      );
+    },
+    MemoryDumpSectionView: ({
       address,
       bytes,
       charDump,
@@ -281,6 +339,8 @@ async function renderMemoryPanel({
     memory,
     openDialog,
     saveProject,
+    triggerVirtualScroll: () => virtualOnScroll?.(),
+    triggerVirtualScrollEnd: () => virtualOnScrollEnd?.(),
     virtualApi
   };
 }
@@ -302,6 +362,8 @@ describe("MemoryPanel refactor characterization", () => {
     expect(screen.getByTestId("dump-0")).toHaveAttribute("data-byte-count", "8");
     expect(screen.getByTestId("dump-8")).toHaveAttribute("data-byte-count", "8");
     expect(screen.getByTestId("dump-0")).toHaveAttribute("data-char-dump", "true");
+    expect(screen.getByTestId("memory-list")).toHaveAttribute("data-item-size", "20");
+    expect(screen.getByTestId("memory-list")).toHaveAttribute("data-reveal-unmeasured", "true");
   });
 
   it("updates rendered row sections when the view mode changes", async () => {
@@ -387,5 +449,19 @@ describe("MemoryPanel refactor characterization", () => {
     fireEvent.blur(viewModeDropdown);
 
     expect(dumpRenderLog).toHaveLength(0);
+  });
+
+  it("defers top-index state commits until virtual scrolling ends", async () => {
+    const { dumpRenderLog, triggerVirtualScroll, triggerVirtualScrollEnd, virtualApi } = await renderMemoryPanel();
+    virtualApi.findStartIndex.mockReturnValue(12);
+
+    dumpRenderLog.length = 0;
+    triggerVirtualScroll();
+    expect(dumpRenderLog).toHaveLength(0);
+
+    triggerVirtualScrollEnd();
+    await waitFor(() => {
+      expect(dumpRenderLog.length).toBeGreaterThan(0);
+    });
   });
 });
