@@ -41,7 +41,9 @@ import { createVisibleMemoryRenderRecorder } from "./memoryPerformance";
 const MEMORY_ROW_ITEM_SIZE = 20;
 
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
-  // --- Get the services used in this component
+  // Services stay at the panel boundary. Visible memory rows use a service-free
+  // row component below, so fast virtualized scrolling does not mount context
+  // consumers for every first-seen row.
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const emuApi = useEmuApi();
@@ -50,13 +52,17 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const { ideCommandsService, machineService } = useAppServices();
   const memoryCharacterInfo = getMemoryCharacterInfo(machineService.getMachineInfo()?.machine?.charSet);
 
-  // --- Get the machine information
+  // Machine setup is intentionally separate from memory refresh. Setup answers
+  // "which banks/partitions exist?", while refresh answers "what bytes and
+  // pointed registers should the current view show?"
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const machineId = useSelector((s) => s.emulatorState.machineId);
   const machineSetup = useMemoryMachineSetup(machineId, emuApi);
   const allowRefresh = useRef(true);
 
-  // --- View state variables
+  // View state is loaded once from the document/workspace and persisted by a
+  // dedicated hook. Keeping persistence out of event handlers prevents scroll
+  // and toolbar interactions from saving project state directly.
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
   const workspace = useSelector((s) => s.workspaceSettings?.[MEMORY_EDITOR]);
 
@@ -83,14 +89,19 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const [scrollVersion, setScrollVersion] = useState(1);
   const [lastJumpAddress, setLastJumpAddress] = useState<number>(-1);
   const renderMetrics = useMemo(() => createVisibleMemoryRenderRecorder(), []);
+  // Native scroll events can fire faster than React should rerender this panel.
+  // Track the latest visible row in a ref and commit it once scrolling settles.
   const pendingScrollTopIndex = useRef(topIndex);
 
-  // Derived layout values from viewMode
+  // These layout values define both virtual row addressing and how many bytes a
+  // section renders, so they are derived from one canonical view mode value.
   const bytesPerRow = getBytesPerRow(viewMode);
   const showTwoColumns = usesTwoColumns(viewMode);
   const byteCount = getByteCount(viewMode);
 
-  // --- We need to use a reference to autorefresh, as we pass this info to another trhead
+  // Refresh callbacks are shared with emulator listeners. This ref gives those
+  // callbacks the latest view mode/segment without rebuilding listener plumbing
+  // on every toolbar change.
   const cachedRefreshState = useRef<CachedRefreshState>({
     isFullView,
     decimalView,
@@ -332,6 +343,9 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           items={memoryItems}
           itemSize={MEMORY_ROW_ITEM_SIZE}
           overscan={25}
+          // Memory rows have a known fixed height. Revealing unmeasured rows
+          // avoids the first-drag blanking behavior that virtua uses for
+          // variable-height lists until ResizeObserver reports measurements.
           revealUnmeasuredItems
           startIndex={topIndex}
           onScroll={() => {
@@ -371,6 +385,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             const section2Address = memoryItems[idx] + 0x08;
             const section1IsRom = !!machineSetup.romFlags?.[(section1Address >> 13) & 0x07];
             const section2IsRom = !!machineSetup.romFlags?.[(section2Address >> 13) & 0x07];
+            // Use views into the immutable refresh snapshot instead of copying
+            // bytes while virtua creates rows during fast scrollbar drags.
             const section1Bytes = memoryRefresh.memory.subarray(section1Address, section1Address + byteCount);
             const section2Bytes = memoryRefresh.memory.subarray(section2Address, section2Address + byteCount);
 
