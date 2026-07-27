@@ -1,21 +1,13 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
-import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
-import { MI_Z88, MI_ZXNEXT } from "@common/machines/constants";
-import { AddressInput } from "@renderer/controls/AddressInput";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { DumpSection } from "@renderer/appIde/DocumentPanels/DumpSection";
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import { FullPanel, HStack } from "@renderer/controls/layout/Panels";
 import { PanelHeader } from "@renderer/appIde/DocumentPanels/helpers/PanelHeader";
-import Dropdown from "@renderer/controls/Dropdown";
-import { Text } from "@renderer/controls/layout/Text";
-import BankDropdown from "@renderer/controls/new/BankDropdown";
 import {
   incProjectFileVersionAction /*, setWorkspaceSettingsAction */
 } from "@common/state/actions";
@@ -31,18 +23,19 @@ import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 import {
   CachedRefreshState,
   DumpViewMode,
-  buildPointedRegisterHints,
   convertTopIndexForViewMode,
   createRowAddresses,
   getByteCount,
   getBytesPerRow,
-  resolveMemoryPartition,
   resolveViewMode,
-  usesTwoColumns,
-  viewModeOptions
+  usesTwoColumns
 } from "./memoryViewModel";
 import { useLoadedMemoryViewState, useMemoryViewStatePersistence } from "./useMemoryViewState";
 import { useMemoryMachineSetup } from "./useMemoryMachineSetup";
+import { useMemoryRefresh } from "./useMemoryRefresh";
+import { MemoryToolbar } from "./MemoryToolbar";
+import { MemoryBankToolbar } from "./MemoryBankToolbar";
+import { MemoryDumpSection } from "./MemoryDumpSection";
 
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
@@ -82,22 +75,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   );
   const [isReady, setIsReady] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
-
-  // --- State of the memory view
-  const refreshInProgress = useRef(false);
-  const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
-
-  // Initialize both memoryItems state and cachedItems ref together
-  const initialMemoryItems = useMemo(() => {
-    const initialViewMode = resolveViewMode(loadedViewState?.viewMode, loadedViewState?.twoColumns ?? workspace?.twoColumns ?? true);
-    return createRowAddresses(0x1_0000, getBytesPerRow(initialViewMode));
-  }, []); // Empty deps = compute once
-
-  const [memoryItems, setMemoryItems] = useState<number[]>(initialMemoryItems);
-  const cachedItems = useRef<number[]>(initialMemoryItems);
   const vlApi = useRef<VListHandle>(null);
-  const [mem64kLabels, setMem64kLabels] = useState<string[]>([]);
-  const pointedRegs = useRef<Record<number, string>>({});
   const [scrollVersion, setScrollVersion] = useState(1);
   const [lastJumpAddress, setLastJumpAddress] = useState<number>(-1);
 
@@ -112,6 +90,16 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     decimalView,
     currentSegment
   });
+  const memoryRefresh = useMemoryRefresh({
+    allowRefresh,
+    cachedRefreshState,
+    emuApi,
+    machineState
+  });
+  const memoryItems = useMemo(
+    () => createRowAddresses(memoryRefresh.memoryLength, bytesPerRow),
+    [memoryRefresh.memoryLength, bytesPerRow]
+  );
 
   const hasScrolledToInitialPosition = useRef(false);
 
@@ -132,51 +120,6 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       return next;
     });
   }, [machineSetup.defaultSegment, machineSetup.isInitializing, machineSetup.setupVersion]);
-
-  // --- Creates the addresses to represent dump sections
-  const createDumpSections = useCallback((length: number, rowBytes: number) => {
-    const memItems = createRowAddresses(length, rowBytes);
-
-    // Only update state if the array actually changed (different length or params)
-    if (cachedItems.current.length !== memItems.length) {
-      cachedItems.current = memItems;
-      setMemoryItems(memItems);
-    } else {
-    }
-  }, []);
-
-  // --- This function refreshes the memory
-  const refreshMemoryView = useCallback(async () => {
-    if (refreshInProgress.current) return;
-    if (!allowRefresh.current) return;
-    refreshInProgress.current = true;
-    try {
-      // --- Obtain the memory contents
-      // --- Use partitions when multiple ROMs or Banks available
-      const partition = resolveMemoryPartition(cachedRefreshState.current);
-
-      // --- Get memory information
-      const response = await emuApi.getMemoryContents(partition);
-      memory.current = response.memory;
-
-      // Only update partition labels if they actually changed
-      setMem64kLabels((prevLabels) => {
-        if (JSON.stringify(prevLabels) === JSON.stringify(response.partitionLabels)) {
-          return prevLabels; // Return same reference to prevent re-render
-        }
-        return response.partitionLabels;
-      });
-
-      // --- Calculate tooltips for pointed addresses
-      pointedRegs.current = buildPointedRegisterHints(response, machineState);
-      createDumpSections(memory.current.length, bytesPerRow);
-    } finally {
-      refreshInProgress.current = false;
-      // Don't increment scrollVersion here - it causes unnecessary re-renders
-      // The scroll effect will handle scrolling when topIndex changes
-    }
-
-  }, [emuApi, machineState, createDumpSections, bytesPerRow]);
 
   useMemoryViewStatePersistence({
     bankLabel,
@@ -209,7 +152,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       if (currentSegment === null) {
         setCurrentSegment(nextSegment);
       }
-      await refreshMemoryView();
+      await memoryRefresh.refreshMemoryView();
       if (!cancelled) {
         setIsReady(true);
       }
@@ -245,24 +188,25 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       switch (machineState) {
         case MachineControllerState.Paused:
         case MachineControllerState.Stopped:
-          refreshMemoryView();
+          await memoryRefresh.refreshMemoryView();
       }
     })();
-  }, [machineState]);
+  }, [machineState, memoryRefresh.refreshMemoryView]);
 
   useEffect(() => {
     // Skip refresh during initialization - manual initialization effect handles the first refresh
     if (machineSetup.isInitializing) {
       return;
     }
-    refreshMemoryView();
-  }, [currentSegment, isFullView, decimalView, emuViewVersion, machineSetup.isInitializing]);
-
-  // --- Change the length of the current dump section according to the view mode
-  useEffect(
-    () => createDumpSections(isFullView ? 0x1_0000 : 0x4000, bytesPerRow),
-    [isFullView, viewMode]
-  );
+    memoryRefresh.refreshMemoryView();
+  }, [
+    currentSegment,
+    isFullView,
+    decimalView,
+    emuViewVersion,
+    machineSetup.isInitializing,
+    memoryRefresh.refreshMemoryView
+  ]);
 
   // --- Take care of refreshing the screen
   const handleEmuStateChange = useCallback(() => {
@@ -271,78 +215,40 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       return Promise.resolve();
     }
     setScrollVersion((prev) => prev + 1);
-    return refreshMemoryView();
-  }, [refreshMemoryView]);
+    return memoryRefresh.refreshMemoryView();
+  }, [memoryRefresh.refreshMemoryView]);
 
   useEmuStateListener(emuApi, handleEmuStateChange);
 
-  const OptionsBar = () => {
-    return (
-      <>
-        <LabeledSwitch
-          value={decimalView}
-          label="Decimal"
-          title="Use decimal numbers?"
-          clicked={(v) => setDecimalView(v)}
-        />
-        <LabelSeparator width={8} />
-        <Text text="View" />
-        <LabelSeparator />
-        <Dropdown
-          options={viewModeOptions}
-          initialValue={viewMode}
-          width={90}
-          onOpenChange={(open) => { allowRefresh.current = !open; }}
-          onChanged={(val) => {
-            const newMode = val as DumpViewMode;
-            const newBytesPerRow = getBytesPerRow(newMode);
-            setTopIndex(convertTopIndexForViewMode(topIndex, viewMode, newMode));
-            setViewMode(newMode);
-            createDumpSections(memory.current.length, newBytesPerRow);
-            setScrollVersion(scrollVersion + 1);
-          }}
-        />
-        <LabelSeparator width={8} />
-        <LabeledSwitch
-          value={charDump}
-          label="Chars"
-          title="Show characters dump?"
-          clicked={setCharDump}
-        />
-        {machineSetup.banksView && (
-          <>
-            <LabelSeparator width={8} />
-            <LabeledSwitch
-              value={bankLabel}
-              label="Bank"
-              title="Display bank label information?"
-              clicked={setBankLabel}
-            />
-          </>
-        )}
-        <LabelSeparator width={8} />
-        <AddressInput
-          label="Go To"
-          clearOnEnter={true}
-          decimalView={decimalView}
-          onGotFocus={() => {
-            allowRefresh.current = false;
-          }}
-          onAddressSent={async (address) => {
-            const newTopIndex = Math.floor(address / bytesPerRow);
-            setLastJumpAddress(address);
-            setTopIndex(newTopIndex);
-            setScrollVersion(scrollVersion + 1);
-            allowRefresh.current = true;
-          }}
-        />
-      </>
-    );
-  };
+  const handleRefreshPauseChanged = useCallback((paused: boolean) => {
+    allowRefresh.current = !paused;
+  }, []);
+
+  const handleViewModeChanged = useCallback((newMode: DumpViewMode) => {
+    setTopIndex(convertTopIndexForViewMode(topIndex, viewMode, newMode));
+    setViewMode(newMode);
+    setScrollVersion((version) => version + 1);
+  }, [topIndex, viewMode]);
+
+  const handleGoToAddress = useCallback((address: number) => {
+    const newTopIndex = Math.floor(address / bytesPerRow);
+    setLastJumpAddress(address);
+    setTopIndex(newTopIndex);
+    setScrollVersion((version) => version + 1);
+  }, [bytesPerRow]);
+
+  const handleSegmentChanged = useCallback((segment: number) => {
+    setCurrentSegment(segment);
+    setTopIndex(0);
+    setLastJumpAddress(0);
+    setTimeout(() => {
+      setLastJumpAddress(-1);
+    }, 3000);
+  }, []);
 
   const editMemoryContent = useCallback((address: number) => {
     const isRom = !!machineSetup.romFlags?.[(address >> 13) & 0x07];
-    const currentValue = memory.current[address];
+    const currentValue = memoryRefresh.memory[address];
 
     void (async () => {
       const result = await dialogs.open<SetMemoryDialogResult>((controls) => (
@@ -363,7 +269,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       }`;
       await ideCommandsService.executeCommand(command);
     })();
-  }, [decimalView, dialogs, ideCommandsService, machineSetup.romFlags]);
+  }, [decimalView, dialogs, ideCommandsService, machineSetup.romFlags, memoryRefresh.memory]);
 
   // Don't render at all until isReady
   if (!isReady) {
@@ -383,70 +289,31 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       style={{ opacity: shouldHideUntilScrolled ? 0 : 1 }}
     >
       <PanelHeader>
-        <OptionsBar />
+        <MemoryToolbar
+          bankLabel={bankLabel}
+          banksView={machineSetup.banksView}
+          charDump={charDump}
+          decimalView={decimalView}
+          viewMode={viewMode}
+          onBankLabelChanged={setBankLabel}
+          onCharDumpChanged={setCharDump}
+          onDecimalViewChanged={setDecimalView}
+          onGoToAddress={handleGoToAddress}
+          onRefreshPauseChanged={handleRefreshPauseChanged}
+          onViewModeChanged={handleViewModeChanged}
+        />
       </PanelHeader>
       {machineSetup.banksView && (
         <PanelHeader>
-          <LabeledSwitch
-            value={isFullView}
-            label="64K View"
-            title="Show the full 64K memory"
-            clicked={(v) => setIsFullView(v)}
+          <MemoryBankToolbar
+            currentSegment={currentSegment}
+            decimalView={decimalView}
+            isFullView={isFullView}
+            machineId={machineId}
+            machineSetup={machineSetup}
+            onFullViewChanged={setIsFullView}
+            onSegmentChanged={handleSegmentChanged}
           />
-          {!isFullView && (
-            <>
-              <LabelSeparator />
-              <Text text="Selected bank" />
-              <LabelSeparator />
-              {!machineSetup.displayBankMatrix && (
-                <Dropdown
-                  options={machineSetup.segmentOptions}
-                  initialValue={currentSegment?.toString()}
-                  width={80}
-                  onChanged={async (opt) => {
-                    setCurrentSegment(parseInt(opt));
-                    setTopIndex(0);
-                    setLastJumpAddress(0);
-                    // --- Delay 3s
-                    await new Promise((resolve) => setTimeout(resolve, 3000));
-                    setLastJumpAddress(-1);
-                  }}
-                />
-              )}
-              {machineSetup.displayBankMatrix && machineId === MI_Z88 && (
-                <BankDropdown
-                  initialValue={currentSegment ?? 0}
-                  width={48}
-                  decimalView={decimalView}
-                  onChanged={async (opt) => {
-                    setCurrentSegment(opt);
-                    setTopIndex(0);
-                    setLastJumpAddress(0);
-                    // --- Delay 3s
-                    await new Promise((resolve) => setTimeout(resolve, 3000));
-                    setLastJumpAddress(-1);
-                  }}
-                />
-              )}
-              {machineSetup.displayBankMatrix && machineId === MI_ZXNEXT && (
-                <BankDropdown
-                  banks={224}
-                  showNextItems
-                  initialValue={currentSegment ?? 0}
-                  width={80}
-                  decimalView={decimalView}
-                  onChanged={async (opt) => {
-                    setCurrentSegment(opt);
-                    setTopIndex(0);
-                    setLastJumpAddress(0);
-                    // --- Delay 3s
-                    await new Promise((resolve) => setTimeout(resolve, 3000));
-                    setLastJumpAddress(-1);
-                  }}
-                />
-              )}
-            </>
-          )}
         </PanelHeader>
       )}
       <FullPanel>
@@ -457,7 +324,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           onScroll={() => {
             // User scroll tracking disabled - we only track programmatic scrolls
             // This simplifies the state machine and prevents feedback loops
-            if (!vlApi.current || cachedItems.current.length === 0) return;
+            if (!vlApi.current || memoryItems.length === 0) return;
             const newTopIndex = vlApi.current.findStartIndex();
             if (newTopIndex !== topIndex) {
               setTopIndex(newTopIndex);
@@ -482,45 +349,45 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           }}
           renderItem={(idx) => {
             const partitionLabel = isFullView
-              ? mem64kLabels[memoryItems[idx] >> 13]
+              ? memoryRefresh.mem64kLabels[memoryItems[idx] >> 13]
               : machineSetup.partitionLabels?.[currentSegment];
 
             const section1Address = memoryItems[idx];
             const section2Address = memoryItems[idx] + 0x08;
             const section1IsRom = !!machineSetup.romFlags?.[(section1Address >> 13) & 0x07];
             const section2IsRom = !!machineSetup.romFlags?.[(section2Address >> 13) & 0x07];
+            const section1Bytes = memoryRefresh.memory.slice(section1Address, section1Address + byteCount);
+            const section2Bytes = memoryRefresh.memory.slice(section2Address, section2Address + byteCount);
 
             return (
               <HStack
                 backgroundColor={idx % 2 === 0 ? "--bgcolor-disass-even-row" : "transparent"}
                 hoverBackgroundColor="--bgcolor-disass-hover"
               >
-                <DumpSection
+                <MemoryDumpSection
                   showPartitions={bankLabel}
                   partitionLabel={partitionLabel}
                   address={section1Address}
-                  memory={memory.current}
+                  bytes={section1Bytes}
                   charDump={charDump}
-                  pointedInfo={pointedRegs.current}
+                  pointedInfo={memoryRefresh.pointedRegs}
                   decimalView={decimalView}
                   lastJumpAddress={lastJumpAddress}
                   isRom={section1IsRom}
                   editClicked={editMemoryContent}
-                  byteCount={byteCount}
                 />
                 {showTwoColumns && (
-                  <DumpSection
+                  <MemoryDumpSection
                     showPartitions={bankLabel}
                     partitionLabel={partitionLabel}
                     address={section2Address}
-                    memory={memory.current}
-                    pointedInfo={pointedRegs.current}
+                    bytes={section2Bytes}
+                    pointedInfo={memoryRefresh.pointedRegs}
                     charDump={charDump}
                     decimalView={decimalView}
                     lastJumpAddress={lastJumpAddress}
                     isRom={section2IsRom}
                     editClicked={editMemoryContent}
-                    byteCount={byteCount}
                   />
                 )}
               </HStack>

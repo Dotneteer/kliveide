@@ -67,32 +67,32 @@ Keep services under `appIde/services` unless a separate service migration is int
    - Stop overwriting a valid persisted/current segment unless the machine actually requires a different default.
    - Tests: ROM-only, RAM-bank-only, Z88/ZX Next matrix, stale request ignored.
 
-5. Extract refresh orchestration and make refreshes coalesced.
+5. [Completed] Extract refresh orchestration and make refreshes coalesced.
    - Add `useMemoryRefresh` that owns memory snapshot state, labels, pointed registers, and refresh status.
    - Move partition calculation into a pure helper.
    - If a refresh request arrives during an active refresh, record a pending request and run one trailing refresh afterward.
    - Expose a `memoryVersion` or immutable row snapshot so visible rows update when bytes change.
    - Tests: correct partition argument, pointed registers only while paused/stopped, byte-only refresh causes a row update, concurrent refreshes coalesce.
 
-6. Simplify row-address data.
+6. [Completed] Simplify row-address data.
    - Replace `memoryItems` state with `useMemo(() => createRowAddresses(memoryLength, bytesPerRow), [memoryLength, bytesPerRow])`.
    - Remove `cachedItems` unless profiling shows it is needed.
    - Tests: 64K/16K row counts for `8x1`, `8x2`, and `16x1`; switching view mode preserves approximate address.
 
-7. Extract toolbar components.
+7. [Completed] Extract toolbar components.
    - Move the primary controls to `MemoryToolbar`.
    - Move bank/full-view controls to `MemoryBankToolbar`.
    - Pass explicit values and callbacks; keep `allowRefresh` handling in a small controller hook or callbacks from the parent.
    - Use functional `setScrollVersion((v) => v + 1)` where a version bump remains necessary.
    - Tests: toggles call the right callbacks, dropdown open pauses refresh, address entry calculates the correct row.
 
-8. Replace the live dump-section import with a feature-owned component.
+8. [Completed] Replace the live dump-section import with a feature-owned component.
    - Move `src/renderer/appIde/DocumentPanels/DumpSection.tsx` to `src/renderer/features/memory/MemoryDumpSection.tsx`, or extract shared internals there and update direct imports.
    - Keep static/binary viewers on a compatibility-free direct import path, per feature-folder guidance.
    - After the move, scan alias and relative imports.
    - Verification: `npm run build:check` and `npx electron-vite build --config build/electron.vite.config.ts`.
 
-9. Make dump-section rendering byte-snapshot based.
+9. [Completed] Make dump-section rendering byte-snapshot based.
    - Pass `bytes: readonly number[]` or a small `MemoryRowSection` object instead of the whole mutable `Uint8Array`.
    - Memoize rows by address, display options, pointed hints, ROM flag, jump highlight, and row bytes.
    - Remove memo comparators that inspect a mutable shared array.

@@ -2,18 +2,18 @@ import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Label } from "@renderer/controls/layout/Label";
 import { TooltipFactory } from "@controls/Tooltip";
 import classnames from "classnames";
-import { toHexa4, toHexa6Dash, toHexa2, toDecimal5, toDecimal7, toDecimal3, toBin8 } from "../services/ide-commands";
-import styles from "./DumpSection.module.scss";
+import { toHexa4, toHexa6Dash, toHexa2, toDecimal5, toDecimal7, toDecimal3, toBin8 } from "@renderer/appIde/services/ide-commands";
+import styles from "./MemoryDumpSection.module.scss";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
 import { useEffect, memo, useLayoutEffect, useRef, useState, useMemo, useCallback } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 
-type DumpProps = {
+type MemoryDumpSectionProps = {
   showPartitions?: boolean;
   partitionLabel?: string;
   address: number;
-  memory: Uint8Array;
+  bytes: readonly number[];
   decimalView: boolean;
   charDump: boolean;
   pointedInfo?: Record<number, string>;
@@ -22,26 +22,21 @@ type DumpProps = {
   editClicked?: (address: number) => void;
   /** Number of hex digits used for the address label. Defaults to 4. */
   addressDigits?: 4 | 6;
-  /** Number of bytes to display per dump section. Defaults to 8. */
-  byteCount?: 8 | 16;
 };
 
-const DumpSectionComponent = ({
+const MemoryDumpSectionComponent = ({
   showPartitions,
   partitionLabel,
   address,
-  memory,
+  bytes,
   decimalView,
   charDump,
   pointedInfo,
   lastJumpAddress,
   isRom,
   editClicked,
-  addressDigits = 4,
-  byteCount = 8
-}: DumpProps) => {
-  if (!memory) return null;
-
+  addressDigits = 4
+}: MemoryDumpSectionProps) => {
   const { machineService } = useAppServices();
   const machineCharSet = machineService.getMachineInfo()?.machine?.charSet;
   if (characterSet === EMPTY_OBJECT) {
@@ -84,25 +79,24 @@ const DumpSectionComponent = ({
       />
       <HexValues
         address={address}
-        memory={memory}
+        bytes={bytes}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
         lastJumpAddress={lastJumpAddress}
         isRom={isRom}
         editClicked={editClicked}
-        byteCount={byteCount}
         hoveredByteIndex={hoveredByteIndex}
         onHoverChange={setHoveredByteIndex}
       />
       <LabelSeparator width={8} />
-      {charDump && <CharDump address={address} memory={memory} byteCount={byteCount} hoveredByteIndex={hoveredByteIndex} />}
+      {charDump && <CharDump bytes={bytes} hoveredByteIndex={hoveredByteIndex} />}
     </div>
   );
 };
 
-// --- Memoize DumpSection to avoid re-rendering when the displayed byte values (and
+// --- Memoize MemoryDumpSection to avoid re-rendering when the displayed byte values (and
 // other display-impacting props) have not changed.
-export const DumpSection = memo(DumpSectionComponent, (prev, next) => {
+export const MemoryDumpSection = memo(MemoryDumpSectionComponent, (prev, next) => {
   // Address itself affects the address label and which bytes are shown
   if (prev.address !== next.address) return false;
 
@@ -111,7 +105,7 @@ export const DumpSection = memo(DumpSectionComponent, (prev, next) => {
   if (prev.charDump !== next.charDump) return false;
   if (prev.showPartitions !== next.showPartitions) return false;
   if (prev.partitionLabel !== next.partitionLabel) return false;
-  if (prev.byteCount !== next.byteCount) return false;
+  if (prev.bytes.length !== next.bytes.length) return false;
 
   // Highlighting/styling and edit behavior
   if (prev.lastJumpAddress !== next.lastJumpAddress) return false;
@@ -120,10 +114,9 @@ export const DumpSection = memo(DumpSectionComponent, (prev, next) => {
   if (prev.addressDigits !== next.addressDigits) return false;
 
   // Compare the byte values actually rendered
-  const count = prev.byteCount ?? 8;
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < prev.bytes.length; i++) {
     const addr = prev.address + i;
-    if (prev.memory[addr] !== next.memory[addr]) return false;
+    if (prev.bytes[i] !== next.bytes[i]) return false;
 
     // Also ensure pointed info affecting tooltip/styling hasn't changed for these addresses
     const prevPoint = prev.pointedInfo?.[addr];
@@ -137,18 +130,15 @@ export const DumpSection = memo(DumpSectionComponent, (prev, next) => {
 
 // Character dump component - memoized
 type CharDumpProps = {
-  address: number;
-  memory: Uint8Array;
-  byteCount?: 8 | 16;
+  bytes: readonly number[];
   hoveredByteIndex?: number | null;
 };
 
-const CharDumpComponent = ({ address, memory, byteCount = 8, hoveredByteIndex }: CharDumpProps) => {
+const CharDumpComponent = ({ bytes, hoveredByteIndex }: CharDumpProps) => {
   return (
     <>
       <div className={styles.charValues}>
-        {Array.from({ length: byteCount }, (_, i) => {
-          const value = memory[address + i];
+        {bytes.map((value, i) => {
           if (value === undefined) return <span key={i} className={styles.charPlaceholder}>&nbsp;</span>;
           const valueInfo = characterSet[(value ?? 0x20) & 0xff];
           const ch = valueInfo.v ?? ".";
@@ -169,38 +159,33 @@ const CharDumpComponent = ({ address, memory, byteCount = 8, hoveredByteIndex }:
 };
 
 const CharDump = memo(CharDumpComponent, (prev, next) => {
-  if (prev.address !== next.address) return false;
-  if (prev.byteCount !== next.byteCount) return false;
   if (prev.hoveredByteIndex !== next.hoveredByteIndex) return false;
-  // Check if the bytes have changed
-  const count = prev.byteCount ?? 8;
-  for (let i = 0; i < count; i++) {
-    if (prev.memory[prev.address + i] !== next.memory[next.address + i]) return false;
+  if (prev.bytes.length !== next.bytes.length) return false;
+  for (let i = 0; i < prev.bytes.length; i++) {
+    if (prev.bytes[i] !== next.bytes[i]) return false;
   }
   return true;
 });
 
 type HexValuesProps = {
   address: number;
-  memory: Uint8Array;
+  bytes: readonly number[];
   decimalView?: boolean;
   pointedInfo?: Record<number, string>;
   lastJumpAddress?: number;
   isRom?: boolean;
   editClicked?: (address: number) => void;
-  byteCount?: 8 | 16;
   hoveredByteIndex?: number | null;
   onHoverChange?: (index: number | null) => void;
 };
 
 const HexValuesComponent = ({
   address,
-  memory,
+  bytes,
   decimalView,
   pointedInfo,
   lastJumpAddress,
   editClicked,
-  byteCount = 8,
   hoveredByteIndex,
   onHoverChange
 }: HexValuesProps) => {
@@ -210,8 +195,8 @@ const HexValuesComponent = ({
   // Build the space-separated hex string for all bytes - memoized
   const { hexParts, hexString } = useMemo(() => {
     const parts: string[] = [];
-    for (let i = 0; i < byteCount; i++) {
-      const value = memory[address + i];
+    for (let i = 0; i < bytes.length; i++) {
+      const value = bytes[i];
       if (value !== undefined) {
         parts.push(decimalView ? toDecimal3(value) : toHexa2(value));
       }
@@ -220,7 +205,7 @@ const HexValuesComponent = ({
       hexParts: parts,
       hexString: parts.join(" ")
     };
-  }, [address, memory, decimalView, byteCount]);
+  }, [bytes, decimalView]);
 
   // Calculate character width from the container after render (monospace font)
   useLayoutEffect(() => {
@@ -314,16 +299,16 @@ const HexValuesComponent = ({
     if (foundIndex !== null) {
       editClicked(address + foundIndex);
     }
-  }, [editClicked, charWidth, decimalView, hexParts, address, byteCount]);
+  }, [editClicked, charWidth, decimalView, hexParts, address]);
 
   // Tooltip content - memoized
   const tooltipContent = useMemo(() => {
-    if (hoveredByteIndex === null || memory[address + hoveredByteIndex] === undefined) {
+    if (hoveredByteIndex === null || bytes[hoveredByteIndex] === undefined) {
       return null;
     }
     return `Value at $${toHexa4(address + hoveredByteIndex)} (${address + hoveredByteIndex}):` +
-      `\n${tooltipCache[memory[address + hoveredByteIndex]]}`;
-  }, [hoveredByteIndex, address, memory]);
+      `\n${tooltipCache[bytes[hoveredByteIndex]]}`;
+  }, [hoveredByteIndex, address, bytes]);
 
   const pointedHint = hoveredByteIndex !== null ? pointedInfo?.[address + hoveredByteIndex] : undefined;
 
@@ -338,13 +323,13 @@ const HexValuesComponent = ({
 
   // Determine lastJump byte index - memoized
   const lastJumpByteIndex = useMemo(() => {
-    for (let i = 0; i < byteCount; i++) {
+    for (let i = 0; i < bytes.length; i++) {
       if (lastJumpAddress === address + i) {
         return i;
       }
     }
     return null;
-  }, [lastJumpAddress, address, byteCount]);
+  }, [lastJumpAddress, address, bytes.length]);
 
   // Calculate overlay position for lastJump byte - memoized
   const lastJumpOverlayStyle = useMemo(() => {
@@ -403,18 +388,17 @@ const HexValues = memo(HexValuesComponent, (prev, next) => {
   if (prev.decimalView !== next.decimalView) return false;
   if (prev.lastJumpAddress !== next.lastJumpAddress) return false;
   if (prev.editClicked !== next.editClicked) return false;
-  if (prev.byteCount !== next.byteCount) return false;
   if (prev.hoveredByteIndex !== next.hoveredByteIndex) return false;
   if (prev.onHoverChange !== next.onHoverChange) return false;
+  if (prev.bytes.length !== next.bytes.length) return false;
 
   // Check if the bytes have changed
-  const count = prev.byteCount ?? 8;
-  for (let i = 0; i < count; i++) {
-    if (prev.memory[prev.address + i] !== next.memory[next.address + i]) return false;
+  for (let i = 0; i < prev.bytes.length; i++) {
+    if (prev.bytes[i] !== next.bytes[i]) return false;
   }
 
   // Check if pointedInfo has changed for any of the bytes
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < prev.bytes.length; i++) {
     const addr = prev.address + i;
     if (prev.pointedInfo?.[addr] !== next.pointedInfo?.[addr]) return false;
   }

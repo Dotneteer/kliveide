@@ -13,12 +13,11 @@ type MemoryPanelHarnessOptions = {
 
 type DumpSectionProps = {
   address: number;
-  byteCount?: 8 | 16;
+  bytes: readonly number[];
   charDump?: boolean;
   decimalView?: boolean;
   editClicked?: (address: number) => void;
   lastJumpAddress?: number;
-  memory: Uint8Array;
   partitionLabel?: string;
   showPartitions?: boolean;
 };
@@ -155,21 +154,20 @@ async function renderMemoryPanel({
       );
     }
   }));
-  vi.doMock("@renderer/appIde/DocumentPanels/DumpSection", () => ({
-    DumpSection: ({
+  vi.doMock("@renderer/features/memory/MemoryDumpSection", () => ({
+    MemoryDumpSection: ({
       address,
-      byteCount,
+      bytes,
       charDump,
       decimalView,
       editClicked,
       lastJumpAddress,
-      memory,
       partitionLabel,
       showPartitions
     }: DumpSectionProps) => (
       <button
         data-testid={`dump-${address}`}
-        data-byte-count={byteCount}
+        data-byte-count={bytes.length}
         data-char-dump={String(charDump)}
         data-decimal-view={String(decimalView)}
         data-last-jump={lastJumpAddress}
@@ -179,7 +177,7 @@ async function renderMemoryPanel({
           editClicked?.(address);
         }}
       >
-        {address}:{memory[address]}
+        {address}:{bytes[0]}
       </button>
     )
   }));
@@ -270,6 +268,7 @@ async function renderMemoryPanel({
     emuStateCallback,
     executeCommand,
     getMemoryContents,
+    memory,
     openDialog,
     saveProject,
     virtualApi
@@ -338,6 +337,18 @@ describe("MemoryPanel refactor characterization", () => {
     await waitFor(() => {
       expect(openDialog).toHaveBeenCalledTimes(1);
       expect(executeCommand).toHaveBeenCalledWith(expect.stringMatching(/^setmem 0 \$34 -b8\s*$/));
+    });
+  });
+
+  it("re-renders visible rows after a byte-only emulator refresh", async () => {
+    const { emuStateCallback, memory } = await renderMemoryPanel();
+    expect(screen.getByTestId("dump-0")).toHaveTextContent("0:0");
+
+    memory[0] = 77;
+    await emuStateCallback?.(MachineControllerState.Paused);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dump-0")).toHaveTextContent("0:77");
     });
   });
 });
