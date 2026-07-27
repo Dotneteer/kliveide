@@ -12,10 +12,7 @@ export function IdeDialogBridge(): ReactElement | null {
       if (!dialogRenderer) {
         throw new Error(`Unknown IDE dialog ID: ${dialogId}`);
       }
-      return dialogs.openLegacy<IdeDialogResult>(
-        (controls) => dialogRenderer(controls),
-        { id: `ide-dialog-${dialogId}` }
-      );
+      return dialogs.open<IdeDialogResult>((controls) => dialogRenderer(controls));
     });
   }, [dialogs]);
 

@@ -141,8 +141,11 @@ describe("ExplorerPanel dialog migration", () => {
       )
     }));
     vi.doMock("@renderer/appIde/dialogs/DeleteDialog", () => ({
-      DeleteDialog: ({ onDelete }: { onDelete: () => Promise<void> }) => (
-        <button onClick={() => void onDelete()}>confirm delete</button>
+      DeleteDialog: ({ entry, onDelete }: { entry: string; onDelete: () => Promise<void> }) => (
+        <div>
+          <span>delete entry {entry}</span>
+          <button onClick={() => void onDelete()}>confirm delete</button>
+        </div>
       )
     }));
     vi.doMock("@renderer/appIde/dialogs/NewItemDialog", () => ({
@@ -186,6 +189,8 @@ describe("ExplorerPanel dialog migration", () => {
     });
 
     fireEvent.click(screen.getByText("delete action"));
+    expect(await screen.findByText("delete entry main.asm")).toBeInTheDocument();
+    expect(screen.queryByText("delete entry /project/main.asm")).not.toBeInTheDocument();
     fireEvent.click(await screen.findByText("confirm delete"));
     await waitFor(() => {
       expect(deleteExplorerNode).toHaveBeenCalledWith(

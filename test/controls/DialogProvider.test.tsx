@@ -54,6 +54,36 @@ describe("DialogProvider", () => {
     });
   });
 
+  it("opens a managed dialog without requiring options", async () => {
+    function Harness() {
+      const dialogs = useDialogs();
+      const [result, setResult] = useState("");
+
+      return (
+        <>
+          <button
+            onClick={async () => {
+              const value = await dialogs.open(SampleDialog, { label: "no-options" });
+              setResult(value ?? "cancelled");
+            }}
+          >
+            Open
+          </button>
+          <div data-testid="result">{result}</div>
+        </>
+      );
+    }
+
+    renderWithProviders(<Harness />);
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Resolve dialog" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("result")).toHaveTextContent("no-options");
+    });
+  });
+
   it("cancelTop resolves the top dialog with undefined", async () => {
     function Harness() {
       const dialogs = useDialogs();
@@ -123,7 +153,7 @@ describe("DialogProvider", () => {
     });
   });
 
-  it("opens a legacy renderer without wrapping it in a managed modal", async () => {
+  it("opens a custom renderer without wrapping it in a managed modal", async () => {
     function Harness() {
       const dialogs = useDialogs();
       const [result, setResult] = useState("");
@@ -132,13 +162,13 @@ describe("DialogProvider", () => {
         <>
           <button
             onClick={async () => {
-              const value = await dialogs.openLegacy<string>((controls) => (
-                <button onClick={() => controls.close("legacy-result")}>Legacy close</button>
+              const value = await dialogs.open<string>((controls) => (
+                <button onClick={() => controls.close("custom-result")}>Custom close</button>
               ));
               setResult(value ?? "cancelled");
             }}
           >
-            Open legacy
+            Open custom
           </button>
           <div data-testid="result">{result}</div>
         </>
@@ -146,12 +176,12 @@ describe("DialogProvider", () => {
     }
 
     renderWithProviders(<Harness />);
-    fireEvent.click(screen.getByRole("button", { name: "Open legacy" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open custom" }));
 
-    fireEvent.click(await screen.findByRole("button", { name: "Legacy close" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Custom close" }));
 
     await waitFor(() => {
-      expect(screen.getByTestId("result")).toHaveTextContent("legacy-result");
+      expect(screen.getByTestId("result")).toHaveTextContent("custom-result");
     });
   });
 

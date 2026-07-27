@@ -104,14 +104,6 @@
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/05_ctc/ctcint.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/interrupt.asm",
           "position": {
             "line": 0,
@@ -173,9 +165,41 @@
             "line": 0,
             "column": 0
           }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/memcpy.asm",
+          "position": {
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/05_ctc/ctcint.asm",
+          "position": {
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/05_ctc/ctc.asm",
+          "position": {
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/mmu.asm",
+          "position": {
+            "line": 0,
+            "column": 0
+          }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
+      "activeDocumentId": "$memory"
     },
     "Disassembly": {
       "topAddress": 41956,

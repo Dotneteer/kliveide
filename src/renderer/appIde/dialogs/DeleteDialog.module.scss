@@ -1,3 +1,10 @@
+.message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
 .hilite {
   color: var(--color-text-hilite);
+  overflow-wrap: anywhere;
 }

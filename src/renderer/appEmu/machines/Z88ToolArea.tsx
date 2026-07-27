@@ -217,10 +217,7 @@ export const Z88ToolArea = () => {
   const openEmuDialog = (dialogId: number, dialogData?: any): void => {
     const dialogRenderer = emuDialogRegistry[dialogId];
     if (!dialogRenderer) return;
-    void dialogs.openLegacy<EmuDialogResult>(
-      (controls) => dialogRenderer(dialogData, controls),
-      { id: `emu-dialog-${dialogId}` }
-    );
+    void dialogs.open<EmuDialogResult>((controls) => dialogRenderer(dialogData, controls));
   };
 
   return (

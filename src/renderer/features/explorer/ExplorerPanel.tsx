@@ -229,11 +229,10 @@ export const ExplorerPanel = () => {
     if (!node) return;
     const nodeIsFolder = node.data?.isFolder ?? false;
     const oldPath = node.data?.name;
-    void dialogs.openLegacy<void>(
-      (controls) => (
-        <RenameDialog
-          isFolder={nodeIsFolder}
-          oldPath={oldPath}
+    void dialogs.open<void>((controls) => (
+      <RenameDialog
+        isFolder={nodeIsFolder}
+        oldPath={oldPath}
           onRename={async (newName: string) => {
             await renameExplorerNode({
               buildRoots,
@@ -247,22 +246,19 @@ export const ExplorerPanel = () => {
               setSelectedNode
             });
             controls.close();
-          }}
-          onClose={() => controls.cancel()}
-        />
-      ),
-      { id: "explorer-rename-dialog" }
-    );
+        }}
+        onClose={() => controls.cancel()}
+      />
+    ));
   };
 
   const openDeleteDialog = (node = selectedContextNode): void => {
     if (!node) return;
     const nodeIsFolder = node.data?.isFolder ?? false;
-    void dialogs.openLegacy<void>(
-      (controls) => (
-        <DeleteDialog
-          isFolder={nodeIsFolder}
-          entry={node.data.fullPath}
+    void dialogs.open<void>((controls) => (
+      <DeleteDialog
+        isFolder={nodeIsFolder}
+        entry={node.data.projectPath}
           onDelete={async () => {
             await deleteExplorerNode({
               mainApi,
@@ -272,22 +268,19 @@ export const ExplorerPanel = () => {
               selectedContextNodeIsFolder: nodeIsFolder
             });
             controls.close();
-          }}
-          onClose={() => controls.cancel()}
-        />
-      ),
-      { id: "explorer-delete-dialog" }
-    );
+        }}
+        onClose={() => controls.cancel()}
+      />
+    ));
   };
 
   const openNewItemDialog = (newItemIsFolder: boolean, node = selectedContextNode): void => {
     if (!node) return;
     const itemNames = (node.children ?? []).map((item) => item.data.name);
-    void dialogs.openLegacy<void>(
-      (controls) => (
-        <NewItemDialog
-          isFolder={newItemIsFolder}
-          path={node.data?.name}
+    void dialogs.open<void>((controls) => (
+      <NewItemDialog
+        isFolder={newItemIsFolder}
+        path={node.data?.name}
           itemNames={itemNames}
           onAdd={async (newName: string) => {
             await addExplorerItem({
@@ -302,21 +295,16 @@ export const ExplorerPanel = () => {
               store
             });
             controls.close();
-          }}
-          onClose={() => controls.cancel()}
-        />
-      ),
-      { id: `explorer-new-${newItemIsFolder ? "folder" : "file"}-dialog` }
-    );
+        }}
+        onClose={() => controls.cancel()}
+      />
+    ));
   };
 
   const openIdeDialog = (dialogId: number): void => {
     const dialogRenderer = ideDialogRegistry[dialogId];
     if (!dialogRenderer) return;
-    void dialogs.openLegacy<IdeDialogResult>(
-      (controls) => dialogRenderer(controls),
-      { id: `ide-dialog-${dialogId}` }
-    );
+    void dialogs.open<IdeDialogResult>((controls) => dialogRenderer(controls));
   };
 
   // --- This function represents a project item component

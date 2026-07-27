@@ -12,10 +12,7 @@ export function EmuDialogBridge(): ReactElement | null {
       if (!dialogRenderer) {
         throw new Error(`Unknown EMU dialog ID: ${dialogId}`);
       }
-      return dialogs.openLegacy<EmuDialogResult>(
-        (controls) => dialogRenderer(dialogData, controls),
-        { id: `emu-dialog-${dialogId}` }
-      );
+      return dialogs.open<EmuDialogResult>((controls) => dialogRenderer(dialogData, controls));
     });
   }, [dialogs]);
 

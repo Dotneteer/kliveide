@@ -28,7 +28,7 @@ export const DeleteDialog = ({ isFolder, entry, onClose, onDelete }: Props) => {
       }}
     >
       <DialogRow>
-        <div>
+        <div className={styles.message}>
           Are you sure you want to delete{" "}
           <span className={styles.hilite}>{entry}</span>?
         </div>

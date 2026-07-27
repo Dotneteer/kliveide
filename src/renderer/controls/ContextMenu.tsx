@@ -99,9 +99,12 @@ export const ContextMenuItem = ({ dangerous, text, disabled, clicked }: ContextM
         [localStyles.disabled]: disabled
       })}
       onMouseDown={(e) => {
-        if (!disabled) {
-          if (e.button === 0) clicked?.();
+        if (e.button === 0) {
+          e.preventDefault();
         }
+      }}
+      onClick={() => {
+        if (!disabled) clicked?.();
       }}
     >
       {text}

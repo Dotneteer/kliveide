@@ -526,19 +526,16 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
     const currentValue = memory.current[address];
 
     void (async () => {
-      const result = await dialogs.openLegacy<SetMemoryDialogResult>(
-        (controls) => (
-          <SetMemoryDialog
-            address={address}
-            currentValue={currentValue}
-            decimal={decimalView}
-            isRom={isRom}
-            onSetMemory={(result) => controls.close(result)}
-            onClose={() => controls.cancel()}
-          />
-        ),
-        { id: "memory-set-dialog" }
-      );
+      const result = await dialogs.open<SetMemoryDialogResult>((controls) => (
+        <SetMemoryDialog
+          address={address}
+          currentValue={currentValue}
+          decimal={decimalView}
+          isRom={isRom}
+          onSetMemory={(result) => controls.close(result)}
+          onClose={() => controls.cancel()}
+        />
+      ));
 
       if (!result) return;
 

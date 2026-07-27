@@ -26,6 +26,10 @@ export type DialogComponent<TResult, TProps> = ComponentType<
   TProps & DialogComponentProps<TResult>
 >;
 
+export type DialogRender<TResult = unknown> = (
+  controls: DialogControls<TResult>
+) => ReactNode;
+
 export type DialogOptions = {
   id?: string;
   title?: string;
@@ -39,14 +43,14 @@ export type DialogOptions = {
 };
 
 export type DialogService = {
+  open<TResult>(
+    render: DialogRender<TResult>,
+    options?: Pick<DialogOptions, "id">
+  ): Promise<TResult | undefined>;
   open<TResult, TProps>(
     component: DialogComponent<TResult, TProps>,
     props: TProps,
     options?: DialogOptions
-  ): Promise<TResult | undefined>;
-  openLegacy<TResult>(
-    render: (controls: DialogControls<TResult>) => ReactNode,
-    options?: Pick<DialogOptions, "id">
   ): Promise<TResult | undefined>;
   closeTop: (result?: unknown) => void;
   cancelTop: () => void;
@@ -67,12 +71,29 @@ type ManagedDialogEntry<TResult = unknown, TProps = Record<string, never>> =
     options: DialogOptions;
   };
 
-type LegacyDialogEntry<TResult = unknown> = BaseDialogEntry<TResult> & {
-  kind: "legacy";
-  render: (controls: DialogControls<TResult>) => ReactNode;
+type CustomDialogEntry<TResult = unknown> = BaseDialogEntry<TResult> & {
+  kind: "custom";
+  render: DialogRender<TResult>;
 };
 
-type DialogEntry = ManagedDialogEntry | LegacyDialogEntry;
+type DialogEntry = ManagedDialogEntry | CustomDialogEntry;
+
+const dialogOptionKeys = new Set<keyof DialogOptions>([
+  "id",
+  "title",
+  "width",
+  "fullWidth",
+  "fullScreen",
+  "closeOnEscape",
+  "closeOnOutsideClick",
+  "dialogRole",
+  "translateY"
+]);
+
+function isDialogOptionsShape(value: unknown): value is DialogOptions {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  return Object.keys(value).every((key) => dialogOptionKeys.has(key as keyof DialogOptions));
+}
 
 const DialogContext = createContext<DialogService | undefined>(undefined);
 
@@ -125,52 +146,40 @@ export function DialogProvider({ children }: DialogProviderProps) {
 
   const open = useCallback(
     <TResult, TProps,>(
-      component: DialogComponent<TResult, TProps>,
-      props: TProps,
-      options: DialogOptions = {}
+      componentOrRender: DialogComponent<TResult, TProps> | DialogRender<TResult>,
+      propsOrOptions?: TProps | Pick<DialogOptions, "id">,
+      options?: DialogOptions
     ): Promise<TResult | undefined> => {
-      const id = options.id ?? `dialog-${nextDialogId.current++}`;
+      const customDialog =
+        options === undefined &&
+        (propsOrOptions === undefined || isDialogOptionsShape(propsOrOptions));
+      const dialogOptions = customDialog
+        ? ((propsOrOptions ?? {}) as Pick<DialogOptions, "id">)
+        : (options ?? {});
+      const id = dialogOptions.id ?? `dialog-${nextDialogId.current++}`;
 
       return new Promise<TResult | undefined>((resolve, reject) => {
         setDialogs((current) => {
+          const dialog: DialogEntry = customDialog
+            ? {
+                id,
+                kind: "custom",
+                render: componentOrRender as DialogRender<TResult>,
+                resolve,
+                reject
+              }
+            : {
+                id,
+                kind: "managed",
+                component: componentOrRender as DialogComponent<TResult, TProps>,
+                props: propsOrOptions as TProps,
+                options: { ...dialogOptions, id },
+                resolve,
+                reject
+              };
           const nextDialogs = [
             ...current,
-            {
-              id,
-              kind: "managed",
-              component,
-              props,
-              options: { ...options, id },
-              resolve,
-              reject
-            } as DialogEntry
-          ];
-          dialogsRef.current = nextDialogs;
-          return nextDialogs;
-        });
-      });
-    },
-    []
-  );
-
-  const openLegacy = useCallback(
-    <TResult,>(
-      render: (controls: DialogControls<TResult>) => ReactNode,
-      options: Pick<DialogOptions, "id"> = {}
-    ): Promise<TResult | undefined> => {
-      const id = options.id ?? `dialog-${nextDialogId.current++}`;
-
-      return new Promise<TResult | undefined>((resolve, reject) => {
-        setDialogs((current) => {
-          const nextDialogs = [
-            ...current,
-            {
-              id,
-              kind: "legacy",
-              render,
-              resolve,
-              reject
-            } as DialogEntry
+            dialog
           ];
           dialogsRef.current = nextDialogs;
           return nextDialogs;
@@ -192,12 +201,11 @@ export function DialogProvider({ children }: DialogProviderProps) {
   const service = useMemo<DialogService>(
     () => ({
       open,
-      openLegacy,
       closeTop,
       cancelTop,
       closeById
     }),
-    [cancelTop, closeById, closeTop, open, openLegacy]
+    [cancelTop, closeById, closeTop, open]
   );
 
   return (
@@ -242,7 +250,7 @@ function ManagedDialog({ dialog, onClose, onCancel, onReject }: ManagedDialogPro
     [dialog.id, onCancel, onClose, onReject]
   );
 
-  if (dialog.kind === "legacy") {
+  if (dialog.kind === "custom") {
     return <>{dialog.render(controls)}</>;
   }
 

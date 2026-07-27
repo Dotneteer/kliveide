@@ -7,6 +7,7 @@ Guidance for AI assistants working in this workspace.
 - This is `klive-ide`, an Electron shell application with React renderers.
 - Renderer code lives mainly under `src/renderer`.
 - Future and archived implementation plans live in `.plans/`.
+- Human- and AI-readable implementation pattern docs live in `.docs/`; read the relevant docs before changing established patterns.
 - React modernization work is tracked in `.plans/REACT_COMPONENT_REVIEW_PLAN.md`.
 - Additional AI-oriented notes live in `.ai/`; read them before related work.
 
