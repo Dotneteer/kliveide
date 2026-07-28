@@ -198,7 +198,13 @@ export const ExplorerPanel = () => {
       return;
     }
 
-    await ideCommandsService.executeCommand(`nav "${node.data.fullPath}"`);
+    const openDocument = documentHubService.getDocument(node.data.fullPath);
+    if (openDocument) {
+      await documentHubService.setActiveDocument(openDocument.id);
+    } else {
+      const newDocument = await projectService.getDocumentForProjectNode(node.data);
+      await documentHubService.openDocument(newDocument, undefined, true);
+    }
     focusExplorerItem(restoreFocusIndex);
   };
 

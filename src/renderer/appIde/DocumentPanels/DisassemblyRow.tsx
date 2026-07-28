@@ -120,15 +120,23 @@ export const DisassemblyRow = memo(function DisassemblyRow({
         current={viewModel.execPoint}
         disabled={viewModelParams.breakpoint?.disabled ?? false}
       />
-      {viewModel.showBankLabel && (
-        <>
-          <LabelSeparator />
-          <Label text={viewModel.partitionLabel} width={viewModel.useWidePartitions ? 26 : 18} />
-          <Label text=":" width={6} />
-        </>
+      {viewModel.showBankLabel && viewModel.partitionLabel && (
+        <div className={styles.partitionPrefix}>
+          <span
+            className={styles.partitionLabel}
+            style={{ width: viewModel.useWidePartitions ? "3ch" : "2ch" }}
+          >
+            {viewModel.partitionLabel}
+          </span>
+          <span className={styles.partitionColon}>:</span>
+        </div>
       )}
-      <LabelSeparator />
-      <Label text={viewModel.addressText} width={viewModelParams.decimalView ? 48 : 40} />
+      <div
+        className={styles.addressLabel}
+        style={{ width: viewModelParams.decimalView ? 48 : 40 }}
+      >
+        {viewModel.addressText}
+      </div>
       <Secondary text={viewModel.opCodes} width={viewModelParams.decimalView ? 140 : 100} />
       <Label text={viewModel.labelText} width={60} />
       <div className={styles.tstates}>{viewModel.tstates}</div>

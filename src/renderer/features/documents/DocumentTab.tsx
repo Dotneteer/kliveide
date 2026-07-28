@@ -1,6 +1,6 @@
 import { Icon } from "../../controls/Icon";
 import { TabButton } from "@controls/TabButton";
-import { useLayoutEffect, useRef, useState } from "react";
+import { type MouseEvent, useLayoutEffect, useRef, useState } from "react";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 
 import styles from "./DocumentTab.module.scss";
@@ -13,6 +13,8 @@ import {
 } from "@renderer/controls/ContextMenu";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
+
+let lastDocumentTabPointerPosition: { clientX: number; clientY: number } | undefined;
 
 export enum CloseMode {
   All,
@@ -75,7 +77,27 @@ export const DocumentTab = ({
     if (ref.current) {
       tabDisplayed?.(ref.current);
     }
-  }, [ref.current, ref.current?.offsetLeft]);
+  });
+
+  useLayoutEffect(() => {
+    const element = ref.current;
+    const pointerPosition = lastDocumentTabPointerPosition;
+    if (!element || !pointerPosition) return;
+
+    const hoveredElement = document.elementFromPoint(
+      pointerPosition.clientX,
+      pointerPosition.clientY
+    );
+    const isPointerOverTab = !!hoveredElement && element.contains(hoveredElement);
+    setPointed((current) => current === isPointerOverTab ? current : isPointerOverTab);
+  }, [awaiting, isActive, name, path, tabsCount]);
+
+  const rememberPointerPosition = (e: MouseEvent<HTMLDivElement>): void => {
+    lastDocumentTabPointerPosition = {
+      clientX: e.clientX,
+      clientY: e.clientY
+    };
+  };
 
   const [contextMenuState, contextMenuApi] = useContextMenuState();
   const contextMenu = (
@@ -120,7 +142,12 @@ export const DocumentTab = ({
         [styles.active]: isActive,
         [styles.awaiting]: awaiting
       })}
-      onMouseEnter={() => setPointed(true)}
+      onMouseEnter={(e) => {
+        rememberPointerPosition(e);
+        setPointed(true);
+      }}
+      onMouseMove={rememberPointerPosition}
+      onMouseDown={rememberPointerPosition}
       onMouseLeave={() => setPointed(false)}
       onClick={(e) => {
         if (e.button === 0) tabClicked?.();

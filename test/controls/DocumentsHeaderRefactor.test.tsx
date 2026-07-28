@@ -47,6 +47,67 @@ describe("DocumentTabs", () => {
   });
 });
 
+describe("DocumentTab", () => {
+  it("reveals the close button when an inactive tab moves under the pointer", async () => {
+    vi.doUnmock("@renderer/features/documents/DocumentTab");
+    vi.doMock("@controls/TabButton", () => ({
+      TabButton: ({ hide, iconName }: { hide?: boolean; iconName: string }) => (
+        <span data-testid="tab-close-state">{hide ? "hidden" : iconName}</span>
+      )
+    }));
+    vi.doMock("@controls/Tooltip", () => ({
+      TooltipFactory: () => null,
+      useTooltipRef: () => ({ current: null })
+    }));
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      useRendererContext: () => ({
+        store: { getState: () => ({ isWindows: false }) }
+      })
+    }));
+    vi.doMock("@renderer/core/MainApi", () => ({
+      useMainApi: () => ({ showItemInFolder: vi.fn() })
+    }));
+    vi.doMock("@renderer/theming/ThemeProvider", () => ({
+      useTheme: () => ({
+        getIcon: () => ({ width: 16, height: 16, path: "" }),
+        getImage: () => ({ type: "png", data: "" }),
+        getThemeProperty: () => "",
+        theme: { tone: "dark" }
+      })
+    }));
+
+    const { DocumentTab } = await import("@renderer/features/documents/DocumentTab");
+
+    const { rerender } = render(<DocumentTab key="first" name="first.asm" />);
+
+    expect(screen.getByTestId("tab-close-state")).toHaveTextContent("hidden");
+
+    fireEvent.mouseMove(screen.getByText("first.asm").closest("div"), {
+      clientX: 24,
+      clientY: 10
+    });
+
+    const originalElementFromPoint = document.elementFromPoint;
+    Object.defineProperty(document, "elementFromPoint", {
+      configurable: true,
+      value: vi.fn(() => screen.getByText("second.asm").closest("div"))
+    });
+
+    try {
+      rerender(<DocumentTab key="second" name="second.asm" />);
+
+      await waitFor(() =>
+        expect(screen.getByTestId("tab-close-state")).toHaveTextContent("close")
+      );
+    } finally {
+      Object.defineProperty(document, "elementFromPoint", {
+        configurable: true,
+        value: originalElementFromPoint
+      });
+    }
+  });
+});
+
 describe("DocumentsHeader", () => {
   it("creates a project-scoped workspace payload from open documents", async () => {
     const { createDocumentWorkspace } = await import(
