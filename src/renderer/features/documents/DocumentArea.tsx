@@ -7,9 +7,14 @@ import {
   useDocumentHubServiceVersion
 } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
+import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import styles from "./DocumentArea.module.scss";
 import { useSelector } from "@renderer/core/RendererProvider";
 
+/**
+ * Hosts the active document hub, derives the active document snapshot, and mounts
+ * the renderer for that document under the hub provider.
+ */
 export const DocumentArea = () => {
   const { projectService } = useAppServices();
   const documentHubService = projectService.getActiveDocumentHubService();
@@ -24,6 +29,7 @@ export const DocumentArea = () => {
     const doc = documentHubService?.getActiveDocument();
     if (doc) {
       const lockedDocs = projectService.getLockedFiles();
+      // The hub owns document instances; keep the lock flag synchronized on that shared object.
       doc.isLocked = lockedDocs.includes(doc.id);
     }
     // Only update if doc ID actually changed to prevent unnecessary re-renders
@@ -36,14 +42,14 @@ export const DocumentArea = () => {
     const viewState = documentHubService?.getDocumentViewState(doc?.id);
     setViewState(viewState);
     setData(doc?.contents);
-  }, [hubVersion, projectViewStateVersion]);
+  }, [documentHubService, hubVersion, projectService, projectViewStateVersion]);
 
   const activeDocId = activeDoc?.id;
   const activeDocEditPosition = activeDoc?.editPosition;
 
   // --- Memoize apiLoaded callback to prevent unnecessary re-renders
   const handleApiLoaded = useCallback(
-    (api) => {
+    (api: DocumentApi) => {
       if (activeDocId) {
         documentHubService?.setDocumentApi(activeDocId, api);
         const position = activeDocEditPosition;

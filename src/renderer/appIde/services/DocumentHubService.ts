@@ -8,6 +8,7 @@ import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { getFileTypeEntry, getNodeFile } from "@renderer/appIde/project/project-node";
+import { documentPanelRegistry } from "@renderer/registry";
 
 /**
  * This class provides the default implementation of the document service
@@ -95,7 +96,7 @@ class DocumentHubService implements IDocumentHubService {
    * Opens the specified document
    * @param document Document to open
    * @param viewState Optional viewstate assigned to the document
-   * @param temporary Open it as temporary documents? (Default: true)
+   * @param temporary Open it as a temporary document? (Default: true)
    */
   async openDocument(
     document: ProjectDocumentState,
@@ -113,7 +114,7 @@ class DocumentHubService implements IDocumentHubService {
    * Opens the specified document as a tab without activating/rendering its contents.
    * @param document Document to open
    * @param viewState Optional viewstate assigned to the document
-   * @param temporary Open it as temporary document?
+   * @param temporary Open it as a temporary document?
    */
   async openDocumentTab(
     document: ProjectDocumentState,
@@ -171,7 +172,7 @@ class DocumentHubService implements IDocumentHubService {
   }
 
   /**
-   * Gets the project file is open
+   * Gets the open project file document, if any.
    */
   async getOpenProjectFileDocument(): Promise<ProjectDocumentState | undefined> {
     const state = this.store.getState();
@@ -332,7 +333,7 @@ class DocumentHubService implements IDocumentHubService {
   }
 
   /**
-   * Moves the active tab to left
+   * Moves the active tab to the left
    */
   moveActiveToLeft(): void {
     const index = this._activeDocIndex;
@@ -345,11 +346,11 @@ class DocumentHubService implements IDocumentHubService {
   }
 
   /**
-   * Moves the active tab to right
+   * Moves the active tab to the right
    */
   moveActiveToRight(): void {
     const index = this._activeDocIndex;
-    if (index >= this._openDocs.length) return;
+    if (index < 0 || index >= this._openDocs.length - 1) return;
     const tmp = this._openDocs[index + 1];
     this._openDocs[index + 1] = this._openDocs[index];
     this._openDocs[index] = tmp;
@@ -393,7 +394,7 @@ class DocumentHubService implements IDocumentHubService {
   /**
    * Saves the specified document state
    * @param id Document ID
-   * @param vieState State to save
+   * @param viewState State to save
    */
   setDocumentViewState(id: string, viewState: any): void {
     this._documentViewState.set(id, viewState);
@@ -467,6 +468,7 @@ class DocumentHubService implements IDocumentHubService {
   ): boolean {
     const docIndex = this._openDocs.findIndex((d) => d.id === document.id);
     let wasAdded = false;
+    this.assignDocumentRendererMetadata(document);
     if (docIndex >= 0) {
       // --- A similar document exists with the same ID
       const existingDoc = this._openDocs[docIndex];
@@ -502,6 +504,13 @@ class DocumentHubService implements IDocumentHubService {
 
     this.projectService.openInDocumentHub(document.id, this);
     return wasAdded;
+  }
+
+  private assignDocumentRendererMetadata(document: ProjectDocumentState): void {
+    const docRenderer = documentPanelRegistry.find((dp) => dp.id === document.type);
+    if (!docRenderer) return;
+    document.iconName ||= docRenderer.icon;
+    document.iconFill ||= docRenderer.iconFill;
   }
 
   // --- Increment the document hub service version number to sign a state change

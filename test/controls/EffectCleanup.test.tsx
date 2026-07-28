@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   vi.resetModules();
 });
 
@@ -75,6 +76,32 @@ describe("effect cleanup fixes", () => {
 
     expect(projectClosed.off).toHaveBeenCalledTimes(1);
     expect(projectClosed.off).toHaveBeenCalledWith(projectClosed.on.mock.calls[0][0]);
+  });
+
+  it("clears scheduled DocumentsHeader tab visibility work on unmount", async () => {
+    const requestAnimationFrame = vi.fn(() => 123);
+    const cancelAnimationFrame = vi.fn();
+    const clearTimeout = vi.spyOn(globalThis, "clearTimeout");
+    const documentHubService = createDocumentHubServiceMock();
+
+    vi.stubGlobal("requestAnimationFrame", requestAnimationFrame);
+    vi.stubGlobal("cancelAnimationFrame", cancelAnimationFrame);
+    mockRendererProvider();
+    mockDocumentsHeaderDependencies({ on: vi.fn(), off: vi.fn() }, documentHubService);
+
+    const { DocumentsHeader } = await import(
+      "@renderer/features/documents/DocumentsHeader"
+    );
+
+    const { unmount } = render(<DocumentsHeader />);
+
+    await waitFor(() => expect(requestAnimationFrame).toHaveBeenCalledTimes(1));
+
+    const clearTimeoutCallsBeforeUnmount = clearTimeout.mock.calls.length;
+    unmount();
+
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(123);
+    expect(clearTimeout).toHaveBeenCalledTimes(clearTimeoutCallsBeforeUnmount + 3);
   });
 
   it("clears awaiting state after tab activation and close operations settle", async () => {

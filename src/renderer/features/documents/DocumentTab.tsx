@@ -13,7 +13,9 @@ import {
 } from "@renderer/controls/ContextMenu";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
+import type { MainApi } from "@common/messaging/MainApi";
 
+// Preserves the hover affordance when tab order or labels change under a stationary pointer.
 let lastDocumentTabPointerPosition: { clientX: number; clientY: number } | undefined;
 
 export enum CloseMode {
@@ -47,7 +49,8 @@ type Props = {
 };
 
 /**
- * Represents a single tab in the documents' header
+ * Renders a single document tab, including close affordances, status badges,
+ * tooltips, context menu actions, and drag/drop event bridges.
  */
 export const DocumentTab = ({
   name,
@@ -112,40 +115,15 @@ export const DocumentTab = ({
   };
 
   const [contextMenuState, contextMenuApi] = useContextMenuState();
-  const contextMenu = (
-    <ContextMenu state={contextMenuState} onClickOutside={contextMenuApi.conceal}>
-      <ContextMenuItem
-        text="Close"
-        clicked={() => {
-          contextMenuApi.conceal();
-          tabCloseClicked?.(CloseMode.This);
-        }}
-      />
-      <ContextMenuItem
-        text="Close Others"
-        disabled={tabsCount < 2}
-        clicked={() => {
-          contextMenuApi.conceal();
-          tabCloseClicked?.(CloseMode.Others);
-        }}
-      />
-      <ContextMenuItem
-        text="Close All"
-        clicked={() => {
-          contextMenuApi.conceal();
-          tabCloseClicked?.(CloseMode.All);
-        }}
-      />
-      <ContextMenuSeparator />
-      <ContextMenuItem
-        text={`Reveal in ${isWindows ? "File Explorer" : "Finder"}`}
-        clicked={() => {
-          contextMenuApi.conceal();
-          mainApi.showItemInFolder(path);
-        }}
-      />
-    </ContextMenu>
-  );
+  const contextMenu = renderDocumentTabContextMenu({
+    contextMenuApi,
+    contextMenuState,
+    isWindows,
+    mainApi,
+    path,
+    tabCloseClicked,
+    tabsCount
+  });
 
   return (
     <div
@@ -197,35 +175,8 @@ export const DocumentTab = ({
           />
         )}
       </span>
-      {isReadOnly && (
-        <div className={styles.readOnlyIcon} ref={readOnlyRef}>
-          <Icon
-            iconName="shield"
-            width={16}
-            height={16}
-            fill={"--color-readonly-icon-" + (isActive ? "active" : "inactive")}
-          />
-          <TooltipFactory
-            refElement={readOnlyRef.current}
-            placement="right"
-            offsetX={-16}
-            offsetY={28}
-            content="This file is read-only"
-          />
-        </div>
-      )}
-      {isLocked && (
-        <div className={styles.lockedIcon} ref={lockedRef}>
-          <Icon iconName="lock" width={16} height={16} fill="--console-ansi-bright-red" />
-          <TooltipFactory
-            refElement={lockedRef.current}
-            placement="right"
-            offsetX={-16}
-            offsetY={28}
-            content="This file is locked while the project is running"
-          />
-        </div>
-      )}
+      {isReadOnly && renderReadOnlyBadge(readOnlyRef, isActive)}
+      {isLocked && renderLockedBadge(lockedRef)}
 
       {contextMenu}
 
@@ -238,3 +189,94 @@ export const DocumentTab = ({
     </div>
   );
 };
+
+function renderDocumentTabContextMenu({
+  contextMenuApi,
+  contextMenuState,
+  isWindows,
+  mainApi,
+  path,
+  tabCloseClicked,
+  tabsCount
+}: {
+  contextMenuApi: ReturnType<typeof useContextMenuState>[1];
+  contextMenuState: ReturnType<typeof useContextMenuState>[0];
+  isWindows: boolean;
+  mainApi: MainApi;
+  path?: string;
+  tabCloseClicked?: (mode: CloseMode) => void;
+  tabsCount?: number;
+}) {
+  return (
+    <ContextMenu state={contextMenuState} onClickOutside={contextMenuApi.conceal}>
+      <ContextMenuItem
+        text="Close"
+        clicked={() => {
+          contextMenuApi.conceal();
+          tabCloseClicked?.(CloseMode.This);
+        }}
+      />
+      <ContextMenuItem
+        text="Close Others"
+        disabled={tabsCount < 2}
+        clicked={() => {
+          contextMenuApi.conceal();
+          tabCloseClicked?.(CloseMode.Others);
+        }}
+      />
+      <ContextMenuItem
+        text="Close All"
+        clicked={() => {
+          contextMenuApi.conceal();
+          tabCloseClicked?.(CloseMode.All);
+        }}
+      />
+      <ContextMenuSeparator />
+      <ContextMenuItem
+        text={`Reveal in ${isWindows ? "File Explorer" : "Finder"}`}
+        clicked={() => {
+          contextMenuApi.conceal();
+          mainApi.showItemInFolder(path);
+        }}
+      />
+    </ContextMenu>
+  );
+}
+
+function renderReadOnlyBadge(
+  readOnlyRef: ReturnType<typeof useTooltipRef>,
+  isActive: boolean
+) {
+  return (
+    <div className={styles.readOnlyIcon} ref={readOnlyRef}>
+      <Icon
+        iconName="shield"
+        width={16}
+        height={16}
+        fill={"--color-readonly-icon-" + (isActive ? "active" : "inactive")}
+      />
+      <TooltipFactory
+        refElement={readOnlyRef.current}
+        placement="right"
+        offsetX={-16}
+        offsetY={28}
+        content="This file is read-only"
+      />
+    </div>
+  );
+}
+
+function renderLockedBadge(lockedRef: ReturnType<typeof useTooltipRef>) {
+  return (
+    <div className={styles.lockedIcon} ref={lockedRef}>
+      <Icon iconName="lock" width={16} height={16} fill="--console-ansi-bright-red" />
+      <TooltipFactory
+        refElement={lockedRef.current}
+        placement="right"
+        offsetX={-16}
+        offsetY={28}
+        content="This file is locked while the project is running"
+      />
+    </div>
+  );
+}

@@ -390,6 +390,96 @@ describe("DocumentsHeader", () => {
     );
     expect(saveProject).toHaveBeenCalled();
   });
+
+  it("renders the active tab directly from the current hub state", async () => {
+    let activeDocIndex = 0;
+    let hubVersion = 1;
+    const activeTabLog: string[] = [];
+    const store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(() => ({
+        project: {
+          folderPath: "/project",
+          buildRoots: [],
+          workspaceLoaded: true
+        },
+        emulatorState: {
+          isProjectDebugging: false
+        },
+        ideView: {
+          editorVersion: 1
+        }
+      }))
+    };
+    const documents = [
+      createDocument("/project/src/a.asm", "a.asm"),
+      createDocument("/project/src/b.asm", "b.asm")
+    ];
+    const documentHubService = {
+      closeAllDocuments: vi.fn(() => Promise.resolve()),
+      closeAllExplorerDocuments: vi.fn(),
+      getActiveDocumentIndex: vi.fn(() => activeDocIndex),
+      getDocumentViewState: vi.fn(() => ({})),
+      getOpenDocuments: vi.fn(() => documents),
+      getOpenProjectFileDocument: vi.fn(() => Promise.resolve(undefined)),
+      moveDocument: vi.fn(),
+      setActiveDocument: vi.fn(() => Promise.resolve()),
+      setDocumentViewState: vi.fn(),
+      setPermanent: vi.fn()
+    };
+
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      useDispatch: () => vi.fn(),
+      useRendererContext: () => ({ store }),
+      useSelector: (selector: (state: unknown) => unknown) => selector(store.getState())
+    }));
+    vi.doMock("@renderer/core/MainApi", () => ({
+      useMainApi: () => ({ saveProject: vi.fn(() => Promise.resolve()) })
+    }));
+    vi.doMock("@appIde/services/AppServicesProvider", () => ({
+      useAppServices: () => ({
+        projectService: { projectClosed: { on: vi.fn(), off: vi.fn() } },
+        outputPaneService: { getOutputPaneBuffer: vi.fn() },
+        ideCommandsService: { executeCommand: vi.fn() }
+      })
+    }));
+    vi.doMock("@renderer/appIde/services/DocumentServiceProvider", () => ({
+      useDocumentHubService: () => documentHubService,
+      useDocumentHubServiceVersion: () => hubVersion
+    }));
+    vi.doMock("@renderer/appIde/project/project-node", () => ({
+      getFileTypeEntry: () => undefined
+    }));
+    vi.doMock("@renderer/controls/ScrollViewer", () => ({
+      default: ({ children }: { children?: ReactNode }) => <div>{children}</div>
+    }));
+    vi.doMock("@renderer/features/documents/DocumentTab", () => ({
+      CloseMode: { All: 0, Others: 1, This: 2 },
+      DocumentTab: ({ isActive, name }: { isActive?: boolean; name: string }) => {
+        if (isActive) {
+          activeTabLog.push(name);
+        }
+        return <div>{name}</div>;
+      }
+    }));
+    vi.doMock("@controls/TabButton", () => ({
+      TabButton: () => null,
+      TabButtonSeparator: () => null,
+      TabButtonSpace: () => null
+    }));
+
+    const { DocumentsHeader } = await import("@renderer/features/documents/DocumentsHeader");
+    const { rerender } = render(<DocumentsHeader />);
+
+    expect(activeTabLog.at(-1)).toBe("a.asm");
+
+    activeTabLog.length = 0;
+    activeDocIndex = 1;
+    hubVersion++;
+    rerender(<DocumentsHeader />);
+
+    expect(activeTabLog).toEqual(["b.asm"]);
+  });
 });
 
 describe("DocumentCommandBar", () => {

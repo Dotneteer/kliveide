@@ -11,7 +11,7 @@ export interface IDocumentHubService {
   readonly hubId: number;
 
   /**
-   * Sign that the document hub chanded and should be refreshed
+   * Signals that the document hub changed and should be refreshed
    */
   signHubStateChanged (): void;
 
@@ -40,7 +40,7 @@ export interface IDocumentHubService {
    * Opens the specified document
    * @param document Document to open
    * @param data Arbitrary data assigned to the document
-   * @param temporary Open it as temporary documents? (Default: true)
+   * @param temporary Open it as a temporary document? (Default: true)
    */
   openDocument(
     document: ProjectDocumentState,
@@ -52,7 +52,7 @@ export interface IDocumentHubService {
    * Opens the specified document as a tab without activating/rendering its contents.
    * @param document Document to open
    * @param data Arbitrary data assigned to the document
-   * @param temporary Open it as temporary document?
+   * @param temporary Open it as a temporary document?
    */
   openDocumentTab(
     document: ProjectDocumentState,
@@ -62,7 +62,7 @@ export interface IDocumentHubService {
 
   /**
    * Sets the specified document as permanent
-   * @param id 
+   * @param id Document ID
    */  
   setPermanent(id: string): void;
 
@@ -121,12 +121,12 @@ export interface IDocumentHubService {
   closeAllExplorerDocuments(): Promise<void>;
 
   /**
-   * Moves the active tab to left
+   * Moves the active tab to the left
    */
   moveActiveToLeft(): void;
 
   /**
-   * Moves the active tab to right
+   * Moves the active tab to the right
    */
   moveActiveToRight(): void;
 

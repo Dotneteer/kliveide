@@ -12,7 +12,6 @@ import {
 } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { incProjectViewStateVersionAction } from "@common/state/actions";
-import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 import { useMainApi } from "@renderer/core/MainApi";
@@ -24,7 +23,8 @@ import {
 } from "./useDocumentWorkspacePersistence";
 
 /**
- * This component represents the header of a document hub
+ * Renders the document tab strip and document command bar, bridges tab actions to
+ * the hub service, and keeps the active tab visible and persisted in workspace state.
  */
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
@@ -32,41 +32,28 @@ export const DocumentsHeader = () => {
   const { store } = useRendererContext();
   const { projectService } = useAppServices();
   const documentHubService = useDocumentHubService();
-  const hubVersion = useDocumentHubServiceVersion();
+  useDocumentHubServiceVersion();
   const handlersInitialized = useRef(false);
   const projectVersion = useSelector((s) => s.project?.projectFileVersion);
   const isProjectDebugging = useSelector((s) => s.emulatorState?.isProjectDebugging ?? false);
-  const [openDocs, setOpenDocs] = useState<ProjectDocumentState[]>(null);
-  const [activeDocIndex, setActiveDocIndex] = useState<number>(null);
-  const [selectedIsBuildRoot, setSelectedIsBuildRoot] = useState(false);
-  const [editorInfo, setEditorInfo] = useState<FileTypeEditor>();
   const [awaiting, setAwaiting] = useState(false);
   const buildRoots = useSelector((s) => s.project?.buildRoots ?? EMPTY_ARRAY);
-  const editorVersion = useSelector((s) => s.ideView?.editorVersion);
+  // Subscribe so dirty flags refresh when editor changes update service-owned document objects.
+  useSelector((s) => s.ideView?.editorVersion);
   const workspaceLoaded = useSelector((s) => s.project?.workspaceLoaded ?? false);
-  const [dirtyStates, setDirtyStates] = useState<boolean[]>();
 
   const svApi = useRef<ScrollViewerApi>();
   const tabDims = useRef<HTMLDivElement[]>([]);
 
-  // --- Prepare the open documents to display
-  useEffect(() => {
-    if (!documentHubService) return;
-    setOpenDocs(documentHubService.getOpenDocuments());
-    setActiveDocIndex(documentHubService.getActiveDocumentIndex());
-  }, [documentHubService, hubVersion]);
-
-  useEffect(() => {
-    setDirtyStates(openDocs?.map((d) => d.editVersionCount !== d.savedVersionCount));
-  }, [editorVersion, openDocs]);
-
-  // --- Update the UI when the build root changes
-  useEffect(() => {
-    if (openDocs) {
-      setSelectedIsBuildRoot(buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0);
-    }
-    setEditorInfo(getFileTypeEntry(openDocs?.[activeDocIndex]?.node?.name, store));
-  }, [activeDocIndex, buildRoots, hubVersion, openDocs, store]);
+  const openDocs = documentHubService.getOpenDocuments();
+  const activeDocIndex = documentHubService.getActiveDocumentIndex();
+  const activeDoc = openDocs?.[activeDocIndex];
+  const activeNode = activeDoc?.node;
+  const dirtyStates = openDocs?.map((d) => d.editVersionCount !== d.savedVersionCount);
+  const selectedIsBuildRoot = activeNode?.projectPath
+    ? buildRoots.indexOf(activeNode.projectPath) >= 0
+    : false;
+  const editorInfo = getFileTypeEntry(activeNode?.name, store);
 
   // --- Ensures that the active document tab is visible in its full size
   const ensureTabVisible = useCallback(() => {
@@ -88,13 +75,11 @@ export const DocumentsHeader = () => {
     }
   }, [activeDocIndex]);
 
-  const scheduleEnsureTabVisible = useCallback(() => {
-    ensureTabVisible();
-    requestAnimationFrame(() => ensureTabVisible());
-    setTimeout(() => ensureTabVisible(), 0);
-    setTimeout(() => ensureTabVisible(), 50);
-    setTimeout(() => ensureTabVisible(), 150);
-  }, [ensureTabVisible]);
+  const scheduleEnsureTabVisible = useScheduledTabVisibility(ensureTabVisible);
+  const scrollViewerApiLoaded = useCallback((api: ScrollViewerApi) => {
+    svApi.current = api;
+    scheduleEnsureTabVisible();
+  }, [scheduleEnsureTabVisible]);
 
   useDocumentWorkspacePersistence({
     activeDocIndex,
@@ -196,10 +181,7 @@ export const DocumentsHeader = () => {
         allowHorizontal={true}
         allowVertical={false}
         thinScrollBar={true}
-        apiLoaded={(api) => {
-          svApi.current = api;
-          scheduleEnsureTabVisible();
-        }}
+        apiLoaded={scrollViewerApiLoaded}
       >
         <DocumentTabs
           activeDocIndex={activeDocIndex}
@@ -219,7 +201,7 @@ export const DocumentsHeader = () => {
         <div className={styles.closingTab} />
       </ScrollViewer>
       <DocumentCommandBar
-        activeFullPath={openDocs?.[activeDocIndex]?.node?.fullPath}
+        activeFullPath={activeNode?.fullPath}
         editorInfo={editorInfo}
         selectedIsBuildRoot={selectedIsBuildRoot}
         onCloseAll={async () => await documentHubService.closeAllDocuments()}
@@ -230,3 +212,30 @@ export const DocumentsHeader = () => {
 
 export type { DocumentWorkspace, SavedDocumentInfo };
 export { DOCS_WORKSPACE };
+
+function useScheduledTabVisibility(ensureTabVisible: () => void): () => void {
+  const animationFrameRef = useRef<number>();
+  const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearScheduledVisibility = useCallback(() => {
+    if (animationFrameRef.current !== undefined) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = undefined;
+    }
+    timeoutRefs.current.forEach((timeoutId) => clearTimeout(timeoutId));
+    timeoutRefs.current = [];
+  }, []);
+
+  useEffect(() => clearScheduledVisibility, [clearScheduledVisibility]);
+
+  return useCallback(() => {
+    clearScheduledVisibility();
+    ensureTabVisible();
+    animationFrameRef.current = requestAnimationFrame(() => ensureTabVisible());
+    timeoutRefs.current.push(
+      setTimeout(() => ensureTabVisible(), 0),
+      setTimeout(() => ensureTabVisible(), 50),
+      setTimeout(() => ensureTabVisible(), 150)
+    );
+  }, [clearScheduledVisibility, ensureTabVisible]);
+}

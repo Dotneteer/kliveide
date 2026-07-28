@@ -13,6 +13,10 @@ type DocumentCommandBarProps = {
   onCloseAll: () => void;
 };
 
+/**
+ * Renders commands that belong beside the document tabs, combining active-editor
+ * actions, build-root actions, and document-level close controls.
+ */
 export function DocumentCommandBar({
   activeFullPath,
   editorInfo,
@@ -34,6 +38,10 @@ export function DocumentCommandBar({
   );
 }
 
+/**
+ * Exposes build-root commands for the active document while compilation state
+ * controls availability and the latest script output target.
+ */
 function BuildRootCommandBar() {
   const { outputPaneService, ideCommandsService } = useAppServices();
   const compiling = useSelector((s) => s.compilation?.inProgress ?? false);

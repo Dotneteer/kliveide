@@ -31,7 +31,8 @@ type UseDocumentWorkspacePersistenceArgs = {
 };
 
 /**
- * Persists the document tab workspace for the currently open project folder.
+ * Persists the document tab workspace for the current project folder, saving only
+ * project-scoped documents while remembering the active tab and edit positions.
  */
 export function useDocumentWorkspacePersistence({
   activeDocIndex,

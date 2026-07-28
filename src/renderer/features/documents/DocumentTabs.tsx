@@ -1,7 +1,7 @@
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { CloseMode, DocumentTab } from "./DocumentTab";
 import styles from "./DocumentsHeader.module.scss";
-import { type DragEvent, useState } from "react";
+import { type DragEvent, useMemo, useState } from "react";
 
 type TabDropPlacement = "before" | "after";
 
@@ -19,6 +19,10 @@ type DocumentTabsProps = {
   tabsCount: number;
 };
 
+/**
+ * Maps open document state to draggable tab items and reports tab reorder requests
+ * without owning document hub state itself.
+ */
 export function DocumentTabs({
   activeDocIndex,
   awaiting,
@@ -37,6 +41,7 @@ export function DocumentTabs({
     id: string;
     placement: TabDropPlacement;
   }>();
+  const duplicateNames = useMemo(() => getDuplicateDocumentNames(openDocs), [openDocs]);
 
   const getDropPlacement = (event: DragEvent<HTMLDivElement>): TabDropPlacement => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -46,11 +51,7 @@ export function DocumentTabs({
   return (
     <div className={styles.tabWrapper}>
       {openDocs.map((document, idx) => {
-        const docName = openDocs.find(
-          (doc) => doc.name === document.name && doc.id !== document.id && doc.path
-        )
-          ? document.path
-          : document.name;
+        const docName = getDocumentTabName(document, duplicateNames);
         return (
           <DocumentTab
             key={document.id}
@@ -106,4 +107,25 @@ export function DocumentTabs({
       })}
     </div>
   );
+}
+
+function getDuplicateDocumentNames(openDocs: ProjectDocumentState[]): Set<string> {
+  const nameCounts = new Map<string, number>();
+  openDocs.forEach((document) => {
+    nameCounts.set(document.name, (nameCounts.get(document.name) ?? 0) + 1);
+  });
+  return new Set(
+    [...nameCounts]
+      .filter(([, count]) => count > 1)
+      .map(([name]) => name)
+  );
+}
+
+function getDocumentTabName(
+  document: ProjectDocumentState,
+  duplicateNames: Set<string>
+): string {
+  return duplicateNames.has(document.name) && document.path
+    ? document.path
+    : document.name;
 }
