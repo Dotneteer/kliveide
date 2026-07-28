@@ -5,10 +5,11 @@
  * scroll events propagate, API is exposed via apiLoaded.
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 import React from "react";
 import { renderWithProviders, screen } from "../react-test-utils";
 import ScrollViewer, { ScrollViewerApi } from "@controls/ScrollViewer";
+import { fireEvent } from "@testing-library/react";
 
 // ResizeObserver stub
 (globalThis as any).ResizeObserver ??= class {
@@ -18,11 +19,31 @@ import ScrollViewer, { ScrollViewerApi } from "@controls/ScrollViewer";
 };
 
 // OverlayScrollbars may not work in jsdom — stub if needed
+const scrollViewerMockState = vi.hoisted(() => {
+  const scrollOffsetElement = {
+    clientWidth: 100,
+    scrollLeft: 0,
+    scrollTop: 0,
+    scrollTo: vi.fn(({ left, top }: { left?: number; top?: number }) => {
+      if (left !== undefined) scrollOffsetElement.scrollLeft = left;
+      if (top !== undefined) scrollOffsetElement.scrollTop = top;
+    })
+  };
+  return { scrollOffsetElement };
+});
+
 vi.mock("overlayscrollbars-react", () => ({
   OverlayScrollbarsComponent: React.forwardRef(function MockOS(
     { children, onScroll, className, ...props }: any,
     ref: any
   ) {
+    React.useImperativeHandle(ref, () => ({
+      osInstance: () => ({
+        elements: () => ({
+          scrollOffsetElement: scrollViewerMockState.scrollOffsetElement
+        })
+      })
+    }));
     return (
       <div data-testid="overlay-scrollbar" className={className} {...props}>
         {children}
@@ -36,6 +57,12 @@ vi.mock("overlayscrollbars-react", () => ({
 // ---------------------------------------------------------------------------
 
 describe("ScrollViewer — Phase 8", () => {
+  beforeEach(() => {
+    scrollViewerMockState.scrollOffsetElement.scrollLeft = 0;
+    scrollViewerMockState.scrollOffsetElement.scrollTop = 0;
+    scrollViewerMockState.scrollOffsetElement.scrollTo.mockClear();
+  });
+
   it("renders children inside the scroll container", () => {
     renderWithProviders(
       <ScrollViewer>
@@ -91,5 +118,19 @@ describe("ScrollViewer — Phase 8", () => {
       </ScrollViewer>
     );
     expect(container).toBeInTheDocument();
+  });
+
+  it("turns wheel input into horizontal scrolling when vertical scrolling is disabled", () => {
+    renderWithProviders(
+      <ScrollViewer allowHorizontal={true} allowVertical={false}>
+        <div data-testid="wide-child">Wide</div>
+      </ScrollViewer>
+    );
+
+    scrollViewerMockState.scrollOffsetElement.scrollTop = 12;
+    fireEvent.wheel(screen.getByTestId("overlay-scrollbar"), { deltaY: 40 });
+
+    expect(scrollViewerMockState.scrollOffsetElement.scrollLeft).toBe(40);
+    expect(scrollViewerMockState.scrollOffsetElement.scrollTop).toBe(0);
   });
 });
