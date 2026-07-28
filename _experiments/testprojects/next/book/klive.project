@@ -33,15 +33,13 @@
         "resource": "03_memory/legacy.asm",
         "line": 136,
         "exec": true,
-        "ioMask": 65535,
-        "resolvedAddress": 36737
+        "ioMask": 65535
       },
       {
         "resource": "03_memory/legacy.asm",
         "line": 209,
         "exec": true,
-        "ioMask": 65535,
-        "resolvedAddress": 36944
+        "ioMask": 65535
       }
     ]
   },

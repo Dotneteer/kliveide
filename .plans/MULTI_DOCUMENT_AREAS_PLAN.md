@@ -151,11 +151,11 @@ Acceptance:
 Tests:
 
 - Extend Monaco editor mocks to assert view state is saved/restored against the provider hub, not `projectService.getActiveDocumentHubService()`.
-- `npm test -- --project jsdom test/controls/MonacoEditorRefactor.test.ts`
+- `npm test -- --project node test/controls/MonacoEditorRefactor.test.ts`
 - `npm run lint:renderer`
 - `npm run build:check`
 
-### 4. Add A Document Area Layout Reducer
+### 4. [Completed] Add A Document Area Layout Reducer
 
 Create pure helpers for area layout changes before wiring UI.
 
@@ -181,10 +181,10 @@ Acceptance:
 Tests:
 
 - New focused reducer/helper test file.
-- `npm test -- --project jsdom test/controls/DocumentAreaLayout.test.ts`
+- `npm test -- --project node test/controls/DocumentAreaLayout.test.ts`
 - `npm run build:check`
 
-### 5. Render Multiple Areas With Existing SplitPanel
+### 5. [Completed] Render Multiple Areas With Existing SplitPanel
 
 Introduce a `DocumentAreaGrid` that renders the layout tree recursively.
 
@@ -212,8 +212,9 @@ Acceptance:
 Tests:
 
 - `DocumentAreaGrid` renders one and two leaves.
-- The right hub receives commands from the focused pane.
+- A supplied right-side hub is passed to its rendered pane.
 - `npm test -- --project jsdom test/controls/DocumentAreaGrid.test.tsx`
+- `npm test -- --project jsdom test/controls/DocumentArea.test.tsx`
 - `npm run lint:renderer`
 - `npm run build:check`
 
