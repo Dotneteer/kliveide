@@ -4,6 +4,7 @@ import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { useDocumentAreaGridApi } from "./DocumentAreaGridContext";
 import styles from "./DocumentsHeader.module.scss";
 
 type DocumentCommandBarProps = {
@@ -23,10 +24,29 @@ export function DocumentCommandBar({
   selectedIsBuildRoot,
   onCloseAll
 }: DocumentCommandBarProps) {
+  const documentAreaGridApi = useDocumentAreaGridApi();
+
   return (
     <div className={styles.commandBar}>
       {editorInfo && editorInfo.documentTabRenderer?.(activeFullPath)}
       {selectedIsBuildRoot && <BuildRootCommandBar />}
+      {documentAreaGridApi && (
+        <>
+          <TabButton
+            iconName="layout-panel"
+            rotate={90}
+            title="Split editor right"
+            clicked={async () => await documentAreaGridApi.splitActiveArea("horizontal")}
+          />
+          <TabButtonSpace />
+          <TabButton
+            iconName="layout-panel"
+            title="Split editor down"
+            clicked={async () => await documentAreaGridApi.splitActiveArea("vertical")}
+          />
+          <TabButtonSpace />
+        </>
+      )}
       <TabButtonSeparator />
       <TabButton
         iconName="close"

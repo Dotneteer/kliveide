@@ -70,78 +70,22 @@
       "documents": [
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/05_ctc/ctc.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/05_ctc/ctcint.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/mmu.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/interrupt.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/memcpy.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/00_intro/print.asm",
           "position": {
-            "line": 0,
-            "column": 0
+            "line": 1,
+            "column": 1
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/compare.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/timing.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/04_interrupts/int.asm",
           "position": {
             "line": 0,
             "column": 0
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/04_interrupts/int.asm"
     },
     "Disassembly": {
       "topAddress": 0,

@@ -111,6 +111,13 @@ export interface IDocumentHubService {
   closeDocument(id: string): Promise<void>;
 
   /**
+   * Detaches the specified document view without saving or disposing its shared document.
+   * Used when moving an open document from one document area to another.
+   * @param id Document to detach
+   */
+  detachDocument(id: string): ProjectDocumentState | undefined;
+
+  /**
    * Closes all open documents
    */
   closeAllDocuments(...exceptIds: string[]): Promise<void>;

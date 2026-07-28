@@ -542,6 +542,79 @@ describe("DocumentCommandBar", () => {
     expect(onCloseAll).toHaveBeenCalledTimes(1);
   });
 
+  it("renders split commands when document area grid API is available", async () => {
+    vi.doMock("@controls/TabButton", () => ({
+      TabButton: ({
+        clicked,
+        disabled,
+        iconName,
+        rotate,
+        title
+      }: {
+        clicked?: () => void;
+        disabled?: boolean;
+        iconName: string;
+        rotate?: number;
+        title?: string;
+      }) => (
+        <button
+          type="button"
+          data-rotate={rotate ?? 0}
+          data-title={title}
+          disabled={disabled}
+          onClick={clicked}
+        >
+          {iconName}:{title}
+        </button>
+      ),
+      TabButtonSeparator: () => <span data-testid="tab-button-separator" />,
+      TabButtonSpace: () => null
+    }));
+    vi.doMock("@appIde/services/AppServicesProvider", () => ({
+      useAppServices: () => ({
+        outputPaneService: { getOutputPaneBuffer: vi.fn() },
+        ideCommandsService: { executeCommand: vi.fn() }
+      })
+    }));
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      useSelector: (selector: (state: unknown) => unknown) =>
+        selector({ compilation: { inProgress: false } })
+    }));
+
+    const { DocumentCommandBar } = await import(
+      "@renderer/features/documents/DocumentCommandBar"
+    );
+    const { DocumentAreaGridApiProvider } = await import(
+      "@renderer/features/documents/DocumentAreaGridContext"
+    );
+    const splitActiveArea = vi.fn(() => Promise.resolve());
+
+    render(
+      <DocumentAreaGridApiProvider
+        api={{
+          splitActiveArea,
+          moveActiveDocumentToNextArea: vi.fn(),
+          moveActiveDocumentToPreviousArea: vi.fn(),
+          moveDocumentToArea: vi.fn()
+        }}
+      >
+        <DocumentCommandBar selectedIsBuildRoot={false} onCloseAll={vi.fn()} />
+      </DocumentAreaGridApiProvider>
+    );
+
+    const splitRight = screen.getByText("layout-panel:Split editor right");
+    const splitDown = screen.getByText("layout-panel:Split editor down");
+
+    expect(splitRight).toHaveAttribute("data-rotate", "90");
+    expect(splitDown).toHaveAttribute("data-rotate", "0");
+
+    fireEvent.click(splitRight);
+    fireEvent.click(splitDown);
+
+    await waitFor(() => expect(splitActiveArea).toHaveBeenCalledWith("horizontal"));
+    expect(splitActiveArea).toHaveBeenCalledWith("vertical");
+  });
+
   it("runs build-root commands through the IDE command service", async () => {
     const buildPane = {};
     const executeCommand = vi.fn(async (command: string) =>

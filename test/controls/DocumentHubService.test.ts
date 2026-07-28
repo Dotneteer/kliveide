@@ -150,6 +150,44 @@ describe("DocumentHubService", () => {
     expect(hub.getOpenDocuments()).toEqual([]);
     expect(projectService.closeDocumentHubService).toHaveBeenCalledWith(hub);
   });
+
+  it("detaches a document without invoking disposal hooks", async () => {
+    const store = createStoreMock();
+    const document = createDocument("doc-a", "Doc A");
+    const projectService = createProjectServiceMock([document]);
+    const hub = createDocumentHubService(1, store as never, projectService as never);
+    const api = createDocumentApi();
+
+    await hub.openDocumentTab(document);
+    hub.setDocumentApi(document.id, api);
+    hub.setDocumentViewState(document.id, { line: 10 });
+
+    const detached = hub.detachDocument(document.id);
+
+    expect(detached).toBe(document);
+    expect(api.beforeDocumentDisposal).not.toHaveBeenCalled();
+    expect(hub.getOpenDocuments()).toEqual([]);
+    expect(hub.getDocumentApi(document.id)).toBeUndefined();
+    expect(hub.getDocumentViewState(document.id)).toBeUndefined();
+    expect(projectService.closeDocumentHubService).toHaveBeenCalledWith(hub);
+  });
+
+  it("keeps a shared document cached when moving it between hubs", async () => {
+    const store = createStoreMock();
+    const document = createDocument("doc-a", "Doc A");
+    const projectService = createProjectServiceMock([document]);
+    const firstHub = createDocumentHubService(1, store as never, projectService as never);
+    const secondHub = createDocumentHubService(2, store as never, projectService as never);
+
+    await firstHub.openDocumentTab(document);
+    await secondHub.openDocumentTab(document, firstHub.getDocumentViewState(document.id), false);
+
+    firstHub.detachDocument(document.id);
+
+    expect(projectService.getDocumentById(document.id)).toBe(document);
+    expect(document.usedIn).toEqual([secondHub]);
+    expect(secondHub.getDocument(document.id)).toBe(document);
+  });
 });
 
 function createStoreMock() {

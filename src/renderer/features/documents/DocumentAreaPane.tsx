@@ -14,13 +14,14 @@ import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService"
 
 type DocumentAreaPaneProps = {
   hub: IDocumentHubService;
+  onActivated?: () => void;
 };
 
 /**
  * Hosts one document hub, derives its active document snapshot, and mounts the
  * renderer for that document under the hub provider.
  */
-export const DocumentAreaPane = ({ hub }: DocumentAreaPaneProps) => {
+export const DocumentAreaPane = ({ hub, onActivated }: DocumentAreaPaneProps) => {
   const { projectService } = useAppServices();
   const hubVersion = useDocumentHubServiceVersion(hub);
   const projectViewStateVersion = useSelector((s) => s.project?.projectViewStateVersion);
@@ -32,7 +33,8 @@ export const DocumentAreaPane = ({ hub }: DocumentAreaPaneProps) => {
     if (projectService.getActiveDocumentHubService() !== hub) {
       projectService.setActiveDocumentHubService(hub);
     }
-  }, [hub, projectService]);
+    onActivated?.();
+  }, [hub, onActivated, projectService]);
 
   // --- Manage saving and restoring state when the active index changes
   useEffect(() => {

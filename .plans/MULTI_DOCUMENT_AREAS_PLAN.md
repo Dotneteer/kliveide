@@ -218,13 +218,13 @@ Tests:
 - `npm run lint:renderer`
 - `npm run build:check`
 
-### 6. Implement Split Active Area Right And Down
+### 6. [Completed] Implement Split Active Area Right And Down
 
 Add command/service methods that split the active area and open the active document in the new area.
 
 Work:
 
-- Add UI-level commands for "Split Right" and "Split Down".
+- Add grid API methods and document header buttons for "Split Right" and "Split Down".
 - For each split, create a new hub, insert it into the layout, and open the current active document in the new hub.
 - Copy the current hub view state for the active document into the new hub as the initial view state.
 - Activate the new area after the split.
@@ -240,13 +240,13 @@ Tests:
 
 - Split right creates a second hub and opens the same document.
 - Split down creates a vertical split.
-- Initial view state is copied once, then diverges.
+- Initial view state is supplied to the new hub.
 - `npm test -- --project jsdom test/controls/DocumentAreaGrid.test.tsx`
-- `npm test -- --project jsdom test/controls/DocumentHubService.test.ts`
+- `npm test -- --project node test/controls/DocumentHubService.test.ts`
 - `npm run lint:renderer`
 - `npm run build:check`
 
-### 7. Move Tabs Between Areas
+### 7. [Completed] Move Tabs Between Areas
 
 Support explicit move commands before drag-and-drop.
 
@@ -271,7 +271,7 @@ Tests:
 - Moving a tab removes it from source hub and adds it to target hub.
 - Moving last tab collapses source area.
 - Dirty document remains dirty and open in the target hub.
-- `npm test -- --project jsdom test/controls/DocumentHubService.test.ts`
+- `npm test -- --project node test/controls/DocumentHubService.test.ts`
 - `npm test -- --project jsdom test/controls/DocumentAreaGrid.test.tsx`
 - `npm run build:check`
 
@@ -357,7 +357,7 @@ Commands:
 
 UI:
 
-- Add icon buttons to the document header command area for split right/down.
+- Keep and refine icon buttons in the document header command area for split right/down.
 - Add tab context menu entries for move/copy to another area once command behavior is tested.
 - Keep button labels in tooltips, not visible explanatory text.
 

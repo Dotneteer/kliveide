@@ -261,6 +261,34 @@ class DocumentHubService implements IDocumentHubService {
     return this.closeDocuments(id);
   }
 
+  /**
+   * Detaches the specified document view without invoking disposal/save hooks.
+   */
+  detachDocument(id: string): ProjectDocumentState | undefined {
+    const docIndex = this._openDocs.findIndex((doc) => doc.id === id);
+    if (docIndex < 0) return undefined;
+
+    const activeDoc = this._openDocs[this._activeDocIndex];
+    const [detachedDoc] = this._openDocs.splice(docIndex, 1);
+
+    // --- Release the view-local API and state, but keep shared document contents alone.
+    this._documentApi.delete(detachedDoc.id);
+    this._documentViewState.delete(detachedDoc.id);
+    this.projectService.closeInDocumentHub(detachedDoc.id, this);
+
+    this._activeDocIndex = this._openDocs.indexOf(activeDoc);
+    if (this._activeDocIndex < 0 && this._openDocs.length > 0) {
+      this._activeDocIndex = docIndex > 0 ? docIndex - 1 : docIndex;
+    }
+
+    this.signHubStateChanged();
+    if (this._openDocs.length <= 0) {
+      this.projectService.closeDocumentHubService(this);
+    }
+
+    return detachedDoc;
+  }
+
   private async closeDocuments(...ids: string[]) {
     const indices = ids
       .map((id) => this._openDocs.findIndex((doc) => doc.id === id))
