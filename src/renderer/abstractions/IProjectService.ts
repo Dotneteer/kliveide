@@ -176,6 +176,12 @@ export type IProjectService = {
   getDocumentForProjectNode(node: ProjectNode): Promise<ProjectDocumentState>;
 
   /**
+   * Gets a lightweight document shell for the specified project node without reading file contents.
+   * @param node Project node to get
+   */
+  getDocumentShellForProjectNode(node: ProjectNode): ProjectDocumentState;
+
+  /**
    * Gets a volatile document according to the specified info
    * @param docInfo
    */

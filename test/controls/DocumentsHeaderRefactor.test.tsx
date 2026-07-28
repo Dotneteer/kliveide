@@ -135,6 +135,52 @@ describe("DocumentsHeader", () => {
     });
   });
 
+  it("scrolls the active tab into view when workspace loading completes", async () => {
+    const { useDocumentWorkspacePersistence } = await import(
+      "@renderer/features/documents/useDocumentWorkspacePersistence"
+    );
+    let workspaceLoaded = false;
+    const ensureTabVisible = vi.fn();
+    const saveProject = vi.fn(() => Promise.resolve());
+    const store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(() => ({
+        project: {
+          folderPath: "/project"
+        }
+      }))
+    };
+    const openDocs = [
+      createDocument("/project/src/a.asm", "a.asm"),
+      createDocument("/project/src/b.asm", "b.asm")
+    ];
+
+    const { rerender } = renderHook(
+      () =>
+        useDocumentWorkspacePersistence({
+          activeDocIndex: 1,
+          ensureTabVisible,
+          mainApi: { saveProject } as never,
+          openDocs: openDocs as never,
+          store: store as never,
+          workspaceLoaded
+        })
+    );
+
+    expect(ensureTabVisible).not.toHaveBeenCalled();
+    expect(store.dispatch).not.toHaveBeenCalled();
+
+    workspaceLoaded = true;
+    rerender();
+
+    await waitFor(() => expect(ensureTabVisible).toHaveBeenCalledTimes(1));
+    expect(store.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "SET_WORKSPACE_SETTINGS" }),
+      "ide"
+    );
+    expect(saveProject).toHaveBeenCalledTimes(1);
+  });
+
   it("persists workspace document metadata and saves the project", async () => {
     const saveProject = vi.fn(() => Promise.resolve());
     const store = {
@@ -142,7 +188,8 @@ describe("DocumentsHeader", () => {
       getState: vi.fn(() => ({
         project: {
           folderPath: "/project",
-          buildRoots: []
+          buildRoots: [],
+          workspaceLoaded: true
         },
         emulatorState: {
           isProjectDebugging: false

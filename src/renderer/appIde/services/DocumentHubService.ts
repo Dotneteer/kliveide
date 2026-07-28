@@ -102,43 +102,28 @@ class DocumentHubService implements IDocumentHubService {
     viewState?: any,
     temporary = true
   ): Promise<void> {
-    const docIndex = this._openDocs.findIndex((d) => d.id === document.id);
-    if (docIndex >= 0) {
-      // --- A similar document exists with the same ID
-      const existingDoc = this._openDocs[docIndex];
-      if (existingDoc !== document) {
-        throw new Error(`Duplicated document with ID '${document.id}'`);
-      }
-    } else {
-      if (temporary) {
-        // --- Check for temporary documents
-        document.isTemporary = true;
-        const tempIndex = this._openDocs.findIndex((d) => d.isTemporary);
-        if (tempIndex >= 0) {
-          // --- Change the former temp document to this one
-          this._openDocs[tempIndex] = document;
-          this.signHubStateChanged();
-        } else {
-          // --- Add as the last document
-          this._openDocs.push(document);
-        }
-      } else {
-        // --- Add as the last document
-        document.isTemporary = false;
-        this._openDocs.push(document);
-      }
-    }
-
-    // --- Save (or remove) the document data
-    if (viewState) {
-      this._documentViewState.set(document.id, viewState);
-    } else {
-      this._documentViewState.delete(document.id);
-    }
-
-    // --- Now, activate the newly opened document
-    this.projectService.openInDocumentHub(document.id, this);
+    const wasAdded = this.addDocument(document, viewState, temporary);
     await this.setActiveDocument(document.id);
+    if (wasAdded) {
+      this.signHubStateChanged();
+    }
+  }
+
+  /**
+   * Opens the specified document as a tab without activating/rendering its contents.
+   * @param document Document to open
+   * @param viewState Optional viewstate assigned to the document
+   * @param temporary Open it as temporary document?
+   */
+  async openDocumentTab(
+    document: ProjectDocumentState,
+    viewState?: any,
+    temporary = false
+  ): Promise<void> {
+    const wasAdded = this.addDocument(document, viewState, temporary);
+    if (wasAdded) {
+      this.signHubStateChanged();
+    }
   }
 
   /**
@@ -212,7 +197,16 @@ class DocumentHubService implements IDocumentHubService {
     if (docIndex < 0) {
       throw new Error(`Unknown document: ${id}`);
     }
+    const document = this._openDocs[docIndex];
+    let documentWasLoaded = false;
+    if (document.path && document.node && document.contents === undefined) {
+      await this.projectService.getDocumentForProjectNode(document.node);
+      documentWasLoaded = true;
+    }
     if (this._activeDocIndex === docIndex) {
+      if (documentWasLoaded) {
+        this.signHubStateChanged();
+      }
       // --- No change
       return;
     }
@@ -439,6 +433,50 @@ class DocumentHubService implements IDocumentHubService {
         .filter((api) => !!api?.beforeDocumentDisposal)
         .map((api) => api?.beforeDocumentDisposal(false))
     );
+  }
+
+  private addDocument(
+    document: ProjectDocumentState,
+    viewState: any,
+    temporary: boolean
+  ): boolean {
+    const docIndex = this._openDocs.findIndex((d) => d.id === document.id);
+    let wasAdded = false;
+    if (docIndex >= 0) {
+      // --- A similar document exists with the same ID
+      const existingDoc = this._openDocs[docIndex];
+      if (existingDoc !== document) {
+        throw new Error(`Duplicated document with ID '${document.id}'`);
+      }
+    } else {
+      if (temporary) {
+        // --- Check for temporary documents
+        document.isTemporary = true;
+        const tempIndex = this._openDocs.findIndex((d) => d.isTemporary);
+        if (tempIndex >= 0) {
+          // --- Change the former temp document to this one
+          this._openDocs[tempIndex] = document;
+        } else {
+          // --- Add as the last document
+          this._openDocs.push(document);
+        }
+      } else {
+        // --- Add as the last document
+        document.isTemporary = false;
+        this._openDocs.push(document);
+      }
+      wasAdded = true;
+    }
+
+    // --- Save (or remove) the document data
+    if (viewState) {
+      this._documentViewState.set(document.id, viewState);
+    } else {
+      this._documentViewState.delete(document.id);
+    }
+
+    this.projectService.openInDocumentHub(document.id, this);
+    return wasAdded;
   }
 
   // --- Increment the document hub service version number to sign a state change

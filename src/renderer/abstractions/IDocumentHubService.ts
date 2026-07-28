@@ -49,6 +49,18 @@ export interface IDocumentHubService {
   ): Promise<void>;
 
   /**
+   * Opens the specified document as a tab without activating/rendering its contents.
+   * @param document Document to open
+   * @param data Arbitrary data assigned to the document
+   * @param temporary Open it as temporary document?
+   */
+  openDocumentTab(
+    document: ProjectDocumentState,
+    data?: any,
+    temporary?: boolean
+  ): Promise<void>;
+
+  /**
    * Sets the specified document as permanent
    * @param id 
    */  

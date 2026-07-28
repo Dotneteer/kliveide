@@ -96,8 +96,8 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/mmu.asm",
           "position": {
-            "line": 0,
-            "column": 0
+            "line": 1,
+            "column": 16
           }
         },
         {

@@ -43,6 +43,7 @@ export const DocumentsHeader = () => {
   const [awaiting, setAwaiting] = useState(false);
   const buildRoots = useSelector((s) => s.project?.buildRoots ?? EMPTY_ARRAY);
   const editorVersion = useSelector((s) => s.ideView?.editorVersion);
+  const workspaceLoaded = useSelector((s) => s.project?.workspaceLoaded ?? false);
   const [dirtyStates, setDirtyStates] = useState<boolean[]>();
 
   const svApi = useRef<ScrollViewerApi>();
@@ -71,28 +72,37 @@ export const DocumentsHeader = () => {
   const ensureTabVisible = useCallback(() => {
     const tabDim = tabDims.current[activeDocIndex];
     if (!tabDim) return;
-    const parent = tabDim.parentElement;
-    if (!parent || !svApi.current) return;
+    if (!svApi.current) return;
 
     // --- There is an active document
-    const tabLeftPos = tabDim.offsetLeft - parent.offsetLeft;
+    const tabLeftPos = tabDim.offsetLeft;
     const tabRightPos = tabLeftPos + tabDim.offsetWidth;
     const scrollPos = svApi.current.getScrollLeft();
+    const clientWidth = svApi.current.getClientWidth();
     if (tabLeftPos < scrollPos) {
       // --- Left tab edge is hidden, scroll to the left to display the tab
       svApi.current.scrollToHorizontal(tabLeftPos);
-    } else if (tabRightPos > scrollPos + parent.offsetWidth) {
+    } else if (tabRightPos > scrollPos + clientWidth) {
       // --- Right tab edge is hidden, scroll to the left to display the tab
-      svApi.current.scrollToHorizontal(tabLeftPos - parent.offsetWidth + tabDim.offsetWidth);
+      svApi.current.scrollToHorizontal(tabLeftPos - clientWidth + tabDim.offsetWidth);
     }
   }, [activeDocIndex]);
 
+  const scheduleEnsureTabVisible = useCallback(() => {
+    ensureTabVisible();
+    requestAnimationFrame(() => ensureTabVisible());
+    setTimeout(() => ensureTabVisible(), 0);
+    setTimeout(() => ensureTabVisible(), 50);
+    setTimeout(() => ensureTabVisible(), 150);
+  }, [ensureTabVisible]);
+
   useDocumentWorkspacePersistence({
     activeDocIndex,
-    ensureTabVisible,
+    ensureTabVisible: scheduleEnsureTabVisible,
     mainApi,
     openDocs,
-    store
+    store,
+    workspaceLoaded
   });
 
   // --- Refresh the changed project document
@@ -139,9 +149,9 @@ export const DocumentsHeader = () => {
     const oldTabElement = tabDims.current[idx];
     tabDims.current[idx] = el;
     if (!oldTabElement) {
-      ensureTabVisible();
+      scheduleEnsureTabVisible();
     }
-  }, [ensureTabVisible]);
+  }, [scheduleEnsureTabVisible]);
 
   // --- Responds to the event when a document tab has been clicked; it makes the clicked
   // --- document the active one
@@ -186,7 +196,10 @@ export const DocumentsHeader = () => {
         allowHorizontal={true}
         allowVertical={false}
         thinScrollBar={true}
-        apiLoaded={(api) => (svApi.current = api)}
+        apiLoaded={(api) => {
+          svApi.current = api;
+          scheduleEnsureTabVisible();
+        }}
       >
         <DocumentTabs
           activeDocIndex={activeDocIndex}

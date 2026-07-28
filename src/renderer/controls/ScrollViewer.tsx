@@ -8,6 +8,7 @@ import classnames from "classnames";
 export type ScrollViewerApi = {
   getScrollTop: () => number;
   getScrollLeft: () => number;
+  getClientWidth: () => number;
   scrollToVertical: (pos: number) => void;
   scrollToHorizontal: (pos: number) => void;
 };
@@ -52,19 +53,42 @@ const ScrollViewer: React.FC<Props> = ({
   );
 
   useEffect(() => {
-    if (osRef.current?.osInstance?.()) {
+    let cancelled = false;
+    let retryHandle: ReturnType<typeof setTimeout> | undefined;
+    let retryCount = 0;
+
+    const publishApi = (): boolean => {
+      if (cancelled || !osRef.current?.osInstance?.()) return false;
       const api: ScrollViewerApi = {
         getScrollTop: () => osRef.current?.osInstance()?.elements()?.scrollOffsetElement.scrollTop,
         getScrollLeft: () =>
           osRef.current?.osInstance()?.elements()?.scrollOffsetElement.scrollLeft,
+        getClientWidth: () =>
+          osRef.current?.osInstance()?.elements()?.scrollOffsetElement.clientWidth,
         scrollToVertical: (pos: number) =>
           osRef.current?.osInstance()?.elements().scrollOffsetElement.scrollTo({ top: pos }),
         scrollToHorizontal: (pos: number) =>
           osRef.current?.osInstance()?.elements().scrollOffsetElement.scrollTo({ left: pos })
       };
       apiLoaded?.(api);
-    }
-  }, []);
+      return true;
+    };
+
+    const retryPublishApi = () => {
+      if (publishApi() || retryCount >= 20) return;
+      retryCount++;
+      retryHandle = setTimeout(retryPublishApi, 25);
+    };
+
+    retryPublishApi();
+
+    return () => {
+      cancelled = true;
+      if (retryHandle) {
+        clearTimeout(retryHandle);
+      }
+    };
+  }, [apiLoaded]);
 
   const handleScroll = () => {
     const element = osRef.current?.osInstance().elements();

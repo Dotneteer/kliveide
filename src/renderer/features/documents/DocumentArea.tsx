@@ -38,14 +38,28 @@ export const DocumentArea = () => {
     setData(doc?.contents);
   }, [hubVersion, projectViewStateVersion]);
 
+  const activeDocId = activeDoc?.id;
+  const activeDocEditPosition = activeDoc?.editPosition;
+
   // --- Memoize apiLoaded callback to prevent unnecessary re-renders
   const handleApiLoaded = useCallback(
     (api) => {
-      if (activeDoc) {
-        documentHubService?.setDocumentApi(activeDoc.id, api);
+      if (activeDocId) {
+        documentHubService?.setDocumentApi(activeDocId, api);
+        const position = activeDocEditPosition;
+        if (
+          position &&
+          typeof (api as { setPosition?: (line: number, column: number) => void })?.setPosition ===
+            "function"
+        ) {
+          (api as { setPosition: (line: number, column: number) => void }).setPosition(
+            position.line,
+            position.column
+          );
+        }
       }
     },
-    [documentHubService, activeDoc?.id]
+    [activeDocEditPosition, activeDocId, documentHubService]
   );
 
   return (

@@ -27,6 +27,7 @@ type UseDocumentWorkspacePersistenceArgs = {
   mainApi: MainApi;
   openDocs?: ProjectDocumentState[] | null;
   store: Store<AppState>;
+  workspaceLoaded: boolean;
 };
 
 /**
@@ -37,11 +38,13 @@ export function useDocumentWorkspacePersistence({
   ensureTabVisible,
   mainApi,
   openDocs,
-  store
+  store,
+  workspaceLoaded
 }: UseDocumentWorkspacePersistenceArgs): void {
   useEffect(() => {
-    const folderPath = store.getState().project?.folderPath;
-    if (!folderPath) return;
+    const project = store.getState().project;
+    const folderPath = project?.folderPath;
+    if (!folderPath || !workspaceLoaded) return;
 
     ensureTabVisible();
     store.dispatch(
@@ -54,7 +57,7 @@ export function useDocumentWorkspacePersistence({
     (async () => {
       await mainApi.saveProject();
     })();
-  }, [activeDocIndex, ensureTabVisible, mainApi, openDocs, store]);
+  }, [activeDocIndex, ensureTabVisible, mainApi, openDocs, store, workspaceLoaded]);
 }
 
 export function createDocumentWorkspace(
