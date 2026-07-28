@@ -10,23 +10,33 @@ import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentStat
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import styles from "./DocumentArea.module.scss";
 import { useSelector } from "@renderer/core/RendererProvider";
+import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
+
+type DocumentAreaPaneProps = {
+  hub: IDocumentHubService;
+};
 
 /**
- * Hosts the active document hub, derives the active document snapshot, and mounts
- * the renderer for that document under the hub provider.
+ * Hosts one document hub, derives its active document snapshot, and mounts the
+ * renderer for that document under the hub provider.
  */
-export const DocumentArea = () => {
+export const DocumentAreaPane = ({ hub }: DocumentAreaPaneProps) => {
   const { projectService } = useAppServices();
-  const documentHubService = projectService.getActiveDocumentHubService();
-  const hubVersion = useDocumentHubServiceVersion(documentHubService);
+  const hubVersion = useDocumentHubServiceVersion(hub);
   const projectViewStateVersion = useSelector((s) => s.project?.projectViewStateVersion);
   const [activeDoc, setActiveDoc] = useState<ProjectDocumentState>(null);
   const [viewState, setViewState] = useState<any>(null);
   const [data, setData] = useState<string | Uint8Array>(null);
 
+  const activateHub = useCallback(() => {
+    if (projectService.getActiveDocumentHubService() !== hub) {
+      projectService.setActiveDocumentHubService(hub);
+    }
+  }, [hub, projectService]);
+
   // --- Manage saving and restoring state when the active index changes
   useEffect(() => {
-    const doc = documentHubService?.getActiveDocument();
+    const doc = hub.getActiveDocument();
     if (doc) {
       const lockedDocs = projectService.getLockedFiles();
       // The hub owns document instances; keep the lock flag synchronized on that shared object.
@@ -39,10 +49,10 @@ export const DocumentArea = () => {
       }
       return doc;
     });
-    const viewState = documentHubService?.getDocumentViewState(doc?.id);
+    const viewState = hub.getDocumentViewState(doc?.id);
     setViewState(viewState);
     setData(doc?.contents);
-  }, [documentHubService, hubVersion, projectService, projectViewStateVersion]);
+  }, [hub, hubVersion, projectService, projectViewStateVersion]);
 
   const activeDocId = activeDoc?.id;
   const activeDocEditPosition = activeDoc?.editPosition;
@@ -51,7 +61,7 @@ export const DocumentArea = () => {
   const handleApiLoaded = useCallback(
     (api: DocumentApi) => {
       if (activeDocId) {
-        documentHubService?.setDocumentApi(activeDocId, api);
+        hub.setDocumentApi(activeDocId, api);
         const position = activeDocEditPosition;
         if (
           position &&
@@ -65,12 +75,17 @@ export const DocumentArea = () => {
         }
       }
     },
-    [activeDocEditPosition, activeDocId, documentHubService]
+    [activeDocEditPosition, activeDocId, hub]
   );
 
   return (
-    <DocumentHubServiceProvider value={documentHubService}>
-      <div className={styles.documentArea} tabIndex={-1}>
+    <DocumentHubServiceProvider value={hub}>
+      <div
+        className={styles.documentArea}
+        tabIndex={-1}
+        onFocusCapture={activateHub}
+        onPointerDownCapture={activateHub}
+      >
         <DocumentsHeader />
         {activeDoc && (
           <DocumentsContainer
@@ -84,4 +99,14 @@ export const DocumentArea = () => {
       </div>
     </DocumentHubServiceProvider>
   );
+};
+
+/**
+ * Renders the currently active document hub. The multi-area grid will render
+ * `DocumentAreaPane` directly for each leaf.
+ */
+export const DocumentArea = () => {
+  const { projectService } = useAppServices();
+  const documentHubService = projectService.getActiveDocumentHubService();
+  return documentHubService ? <DocumentAreaPane hub={documentHubService} /> : null;
 };

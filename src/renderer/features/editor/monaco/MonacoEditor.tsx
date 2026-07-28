@@ -17,7 +17,10 @@ import {
   setCursorPositionAction
 } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
-import { useDocumentHubServiceVersion } from "@renderer/appIde/services/DocumentServiceProvider";
+import {
+  useDocumentHubService,
+  useDocumentHubServiceVersion
+} from "@renderer/appIde/services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { getIsWindows } from "@renderer/os-utils";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -152,6 +155,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   const emuApi = useEmuApi();
 
   // --- Recognize if something changed in the current document hub
+  const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
 
   // --- Use these state variables to manage breakpoints and their changes
@@ -542,7 +546,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     const saveViewState = () => {
       if (mounted.current) {
         const viewState = ed.saveViewState();
-        projectService.getActiveDocumentHubService().setDocumentViewState(document.id, viewState);
+        documentHubService.setDocumentViewState(document.id, viewState);
       }
     };
 
@@ -557,9 +561,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       ed.onDidScrollChange(saveViewState),
       ed.onDidBlurEditorWidget(saveViewState),
       ed.onDidChangeCursorPosition((e) => {
-        projectService
-          .getActiveDocumentHubService()
-          .saveActiveDocumentPosition(e.position.lineNumber, e.position.column);
+        documentHubService.saveActiveDocumentPosition(e.position.lineNumber, e.position.column);
         store.dispatch(incEditorVersionAction());
         store.dispatch(setCursorPositionAction(e.position.lineNumber, e.position.column));
       })
@@ -620,9 +622,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     // --- Pass back the API so that the document hub service can use it
     apiLoaded?.(editorApi);
 
-    const viewState = projectService
-      .getActiveDocumentHubService()
-      .getDocumentViewState(document.id);
+    const viewState = documentHubService.getDocumentViewState(document.id);
     if (viewState) {
       ed.restoreViewState(viewState);
     }
