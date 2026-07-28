@@ -1,4 +1,3 @@
-import { PANE_ID_SCRIPTIMG } from "@common/integration/constants";
 import {
   TabButton,
   TabButtonSeparator,
@@ -8,17 +7,23 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { ContextMenuInfo } from "@renderer/abstractions/ContextMenuIfo";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
-import { isScriptCompleted } from "@common/utils/script-utils";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
+import {
+  findRunningScript,
+  runScript,
+  showScriptOutput,
+  stopScript
+} from "./scriptingCommandHelpers";
 
 type Props = {
   path: string;
 };
 
 /**
- * Represents the command bar for files that support scripting.
+ * Exposes run, stop, and output commands for script-capable document tabs while
+ * reflecting the current script state from the shared script service.
  */
 const ScriptingCommandBar = ({ path }: Props) => {
   const { ideCommandsService, scriptService } = useAppServices();
@@ -27,16 +32,12 @@ const ScriptingCommandBar = ({ path }: Props) => {
   const [scriptEverStarted, setScriptEverStarted] = useState(false);
 
   useEffect(() => {
-    const scripts = scriptsInfo.slice().reverse();
-    const script = scripts.find(
-      s => s.scriptFileName === path && !isScriptCompleted(s.status)
-    );
-    setScriptRunning(!!script);
+    setScriptRunning(!!findRunningScript(scriptsInfo, path));
     const scriptId = scriptService.getLatestScriptId(path);
     if (scriptId > 0) {
       setScriptEverStarted(true);
     }
-  }, [scriptsInfo, path]);
+  }, [path, scriptService, scriptsInfo]);
 
   return (
     <>
@@ -46,24 +47,8 @@ const ScriptingCommandBar = ({ path }: Props) => {
           iconName='play'
           title='Run this script file'
           clicked={async () => {
-            await ideCommandsService.executeCommand(
-              `outp ${PANE_ID_SCRIPTIMG}`
-            );
-            const runResult = await ideCommandsService.executeCommand(
-              `script-run "${path}"`
-            );
+            await runScript(ideCommandsService, scriptService, path);
             setScriptEverStarted(true);
-
-            // --- Delay 100ms to wait for the script to start
-            if (runResult.success) {
-              await new Promise(resolve => setTimeout(resolve, 100));
-              const scriptId = scriptService.getLatestScriptId(path);
-              if (scriptId > 0) {
-                await ideCommandsService.executeCommand(
-                  `script-output ${scriptId}`
-                );
-              }
-            }
           }}
         />
       )}
@@ -71,12 +56,7 @@ const ScriptingCommandBar = ({ path }: Props) => {
         <TabButton
           iconName='stop'
           title='Stop this script file'
-          clicked={async () => {
-            await ideCommandsService.executeCommand(
-              `outp ${PANE_ID_SCRIPTIMG}`
-            );
-            await ideCommandsService.executeCommand(`script-cancel "${path}"`);
-          }}
+          clicked={async () => await stopScript(ideCommandsService, path)}
         />
       )}
       <TabButtonSpace />
@@ -84,14 +64,7 @@ const ScriptingCommandBar = ({ path }: Props) => {
         iconName='note'
         title='Show script output'
         disabled={!scriptEverStarted}
-        clicked={async () => {
-          const scriptId = scriptService.getLatestScriptId(path);
-          if (scriptId > 0) {
-            await ideCommandsService.executeCommand(
-              `script-output ${scriptId}`
-            );
-          }
-        }}
+        clicked={async () => await showScriptOutput(ideCommandsService, scriptService, path)}
       />
     </>
   );
@@ -100,63 +73,30 @@ const ScriptingCommandBar = ({ path }: Props) => {
 export function getScriptingContextMenuIfo (
   services: AppServices
 ): ContextMenuInfo[] {
-  const { ideCommandsService } = services;
+  const { ideCommandsService, scriptService } = services;
   return [
     {
       text: "Run script",
       disabled: (store: Store<AppState>, item: string) => {
-        const script = store
-          .getState()
-          .scripts.find(
-            s => s.scriptFileName === item && !isScriptCompleted(s.status)
-          );
-        return !!script;
+        return !!findRunningScript(store.getState().scripts, item);
       },
-      clicked: async (item: string) => {
-        await ideCommandsService.executeCommand(`outp ${PANE_ID_SCRIPTIMG}`);
-        const runResult = await ideCommandsService.executeCommand(
-          `script-run "${item}"`
-        );
-
-        if (runResult.success) {
-          // --- Delay 100ms to wait for the script to start
-          await new Promise(resolve => setTimeout(resolve, 100));
-          const scriptId = services.scriptService.getLatestScriptId(item);
-          if (scriptId > 0) {
-            await ideCommandsService.executeCommand(
-              `script-output ${scriptId}`
-            );
-          }
-        }
-      }
+      clicked: async (item: string) => await runScript(ideCommandsService, scriptService, item)
     },
     {
       text: "Stop script",
       disabled: (store: Store<AppState>, item: string) => {
-        const script = store
-          .getState()
-          .scripts.find(
-            s => s.scriptFileName === item && !isScriptCompleted(s.status)
-          );
-        return !script;
+        return !findRunningScript(store.getState().scripts, item);
       },
-      clicked: async (item: string) => {
-        await ideCommandsService.executeCommand(`outp ${PANE_ID_SCRIPTIMG}`);
-        await ideCommandsService.executeCommand(`script-cancel "${item}"`);
-      }
+      clicked: async (item: string) => await stopScript(ideCommandsService, item)
     },
     {
       text: "Show script output",
       disabled: (_, item: string) => {
-        const scriptId = services.scriptService.getLatestScriptId(item);
+        const scriptId = scriptService.getLatestScriptId(item);
         return scriptId < 0;
       },
-      clicked: async (item: string) => {
-        const scriptId = services.scriptService.getLatestScriptId(item);
-        if (scriptId > 0) {
-          await ideCommandsService.executeCommand(`script-output ${scriptId}`);
-        }
-      }
+      clicked: async (item: string) =>
+        await showScriptOutput(ideCommandsService, scriptService, item)
     }
   ];
 }

@@ -1,5 +1,5 @@
 import { documentPanelRegistry } from "@renderer/registry";
-import { memo, useRef } from "react";
+import { memo } from "react";
 import styles from "./DocumentsContainer.module.scss";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -14,23 +14,18 @@ export type DocumentProps<T = any> = {
   apiLoaded?: (api: DocumentApi) => void;
 };
 
-let containerInstanceCounter = 0;
-
+/**
+ * Selects the registered renderer for the active document and mounts it with the
+ * document contents, view state, and renderer API callback.
+ */
 const DocumentsContainerComponent = ({
   document,
   contents,
   viewState,
   apiLoaded
 }: DocumentProps) => {
-  const instanceId = useRef(++containerInstanceCounter);
-
   // --- Get the document's renderer from the registry
   const docRenderer = documentPanelRegistry.find((dp) => dp.id === document?.type);
-
-  if (docRenderer && document) {
-    document.iconName ||= docRenderer.icon;
-    document.iconFill ||= docRenderer.iconFill;
-  }
 
   // Render the component directly instead of using createElement
   // This ensures React properly tracks component identity

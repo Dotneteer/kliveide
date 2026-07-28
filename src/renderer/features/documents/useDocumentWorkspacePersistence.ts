@@ -27,21 +27,25 @@ type UseDocumentWorkspacePersistenceArgs = {
   mainApi: MainApi;
   openDocs?: ProjectDocumentState[] | null;
   store: Store<AppState>;
+  workspaceLoaded: boolean;
 };
 
 /**
- * Persists the document tab workspace for the currently open project folder.
+ * Persists the document tab workspace for the current project folder, saving only
+ * project-scoped documents while remembering the active tab and edit positions.
  */
 export function useDocumentWorkspacePersistence({
   activeDocIndex,
   ensureTabVisible,
   mainApi,
   openDocs,
-  store
+  store,
+  workspaceLoaded
 }: UseDocumentWorkspacePersistenceArgs): void {
   useEffect(() => {
-    const folderPath = store.getState().project?.folderPath;
-    if (!folderPath) return;
+    const project = store.getState().project;
+    const folderPath = project?.folderPath;
+    if (!folderPath || !workspaceLoaded) return;
 
     ensureTabVisible();
     store.dispatch(
@@ -54,7 +58,7 @@ export function useDocumentWorkspacePersistence({
     (async () => {
       await mainApi.saveProject();
     })();
-  }, [activeDocIndex, ensureTabVisible, mainApi, openDocs, store]);
+  }, [activeDocIndex, ensureTabVisible, mainApi, openDocs, store, workspaceLoaded]);
 }
 
 export function createDocumentWorkspace(

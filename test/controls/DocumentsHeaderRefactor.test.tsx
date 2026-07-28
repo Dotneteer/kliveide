@@ -8,7 +8,7 @@ import {
   screen,
   waitFor
 } from "@testing-library/react";
-import type { ReactNode } from "react";
+import type { DragEventHandler, ReactNode } from "react";
 
 afterEach(() => {
   cleanup();
@@ -38,12 +38,163 @@ describe("DocumentTabs", () => {
         onTabCloseClicked={vi.fn()}
         onTabDisplayed={vi.fn()}
         onTabDoubleClicked={vi.fn()}
+        onTabMoved={vi.fn()}
         tabsCount={2}
       />
     );
 
     expect(screen.getByText("folder-a/main.asm")).toBeInTheDocument();
     expect(screen.getByText("folder-b/main.asm")).toBeInTheDocument();
+  });
+
+  it("moves a dragged tab after the tab it is dropped on", async () => {
+    vi.doMock("@renderer/features/documents/DocumentTab", () => ({
+      CloseMode: { All: 0, Others: 1, This: 2 },
+      DocumentTab: ({
+        dragOverPlacement,
+        name,
+        tabDragOver,
+        tabDragStart,
+        tabDrop
+      }: {
+        dragOverPlacement?: "before" | "after";
+        name: string;
+        tabDragOver?: DragEventHandler<HTMLDivElement>;
+        tabDragStart?: DragEventHandler<HTMLDivElement>;
+        tabDrop?: DragEventHandler<HTMLDivElement>;
+      }) => (
+        <div
+          data-placement={dragOverPlacement ?? ""}
+          data-testid={`tab-${name}`}
+          draggable
+          onDragOver={tabDragOver}
+          onDragStart={tabDragStart}
+          onDrop={tabDrop}
+        >
+          {name}
+        </div>
+      )
+    }));
+
+    const { DocumentTabs } = await import("@renderer/features/documents/DocumentTabs");
+    const onTabMoved = vi.fn();
+
+    render(
+      <DocumentTabs
+        activeDocIndex={0}
+        awaiting={false}
+        isProjectDebugging={false}
+        openDocs={[
+          createDocument("/project/src/a.asm", "a.asm"),
+          createDocument("/project/src/b.asm", "b.asm")
+        ]}
+        onTabClicked={vi.fn()}
+        onTabCloseClicked={vi.fn()}
+        onTabDisplayed={vi.fn()}
+        onTabDoubleClicked={vi.fn()}
+        onTabMoved={onTabMoved}
+        tabsCount={2}
+      />
+    );
+
+    const source = screen.getByTestId("tab-a.asm");
+    const dataTransfer = createDataTransfer();
+
+    fireEvent.dragStart(source, { dataTransfer });
+
+    const target = screen.getByTestId("tab-b.asm");
+    Object.defineProperty(target, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        bottom: 20,
+        height: 20,
+        left: -100,
+        right: 0,
+        top: 0,
+        width: 100,
+        x: -100,
+        y: 0,
+        toJSON: () => ({})
+      })
+    });
+
+    const dragOverEvent = new Event("dragover", { bubbles: true, cancelable: true });
+    Object.defineProperty(dragOverEvent, "clientX", { value: 75 });
+    Object.defineProperty(dragOverEvent, "dataTransfer", { value: dataTransfer });
+    fireEvent(target, dragOverEvent);
+    expect(target).toHaveAttribute("data-placement", "after");
+
+    const dropEvent = new Event("drop", { bubbles: true, cancelable: true });
+    Object.defineProperty(dropEvent, "clientX", { value: 75 });
+    Object.defineProperty(dropEvent, "dataTransfer", { value: dataTransfer });
+    fireEvent(target, dropEvent);
+
+    expect(onTabMoved).toHaveBeenCalledWith(
+      "/project/src/a.asm",
+      "/project/src/b.asm",
+      true
+    );
+  });
+});
+
+describe("DocumentTab", () => {
+  it("reveals the close button when an inactive tab moves under the pointer", async () => {
+    vi.doUnmock("@renderer/features/documents/DocumentTab");
+    vi.doMock("@controls/TabButton", () => ({
+      TabButton: ({ hide, iconName }: { hide?: boolean; iconName: string }) => (
+        <span data-testid="tab-close-state">{hide ? "hidden" : iconName}</span>
+      )
+    }));
+    vi.doMock("@controls/Tooltip", () => ({
+      TooltipFactory: () => null,
+      useTooltipRef: () => ({ current: null })
+    }));
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      useRendererContext: () => ({
+        store: { getState: () => ({ isWindows: false }) }
+      })
+    }));
+    vi.doMock("@renderer/core/MainApi", () => ({
+      useMainApi: () => ({ showItemInFolder: vi.fn() })
+    }));
+    vi.doMock("@renderer/theming/ThemeProvider", () => ({
+      useTheme: () => ({
+        getIcon: () => ({ width: 16, height: 16, path: "" }),
+        getImage: () => ({ type: "png", data: "" }),
+        getThemeProperty: () => "",
+        theme: { tone: "dark" }
+      })
+    }));
+
+    const { DocumentTab } = await import("@renderer/features/documents/DocumentTab");
+
+    const { rerender } = render(<DocumentTab key="first" name="first.asm" />);
+
+    expect(screen.getByTestId("tab-close-state")).toHaveTextContent("hidden");
+
+    fireEvent.mouseMove(screen.getByText("first.asm").closest("div"), {
+      clientX: 24,
+      clientY: 10
+    });
+
+    const originalElementFromPoint = document.elementFromPoint;
+    Object.defineProperty(document, "elementFromPoint", {
+      configurable: true,
+      value: vi.fn(() => screen.getByText("second.asm").closest("div"))
+    });
+
+    try {
+      rerender(<DocumentTab key="second" name="second.asm" />);
+
+      await waitFor(() =>
+        expect(screen.getByTestId("tab-close-state")).toHaveTextContent("close")
+      );
+    } finally {
+      Object.defineProperty(document, "elementFromPoint", {
+        configurable: true,
+        value: originalElementFromPoint
+      });
+    }
   });
 });
 
@@ -74,6 +225,52 @@ describe("DocumentsHeader", () => {
     });
   });
 
+  it("scrolls the active tab into view when workspace loading completes", async () => {
+    const { useDocumentWorkspacePersistence } = await import(
+      "@renderer/features/documents/useDocumentWorkspacePersistence"
+    );
+    let workspaceLoaded = false;
+    const ensureTabVisible = vi.fn();
+    const saveProject = vi.fn(() => Promise.resolve());
+    const store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(() => ({
+        project: {
+          folderPath: "/project"
+        }
+      }))
+    };
+    const openDocs = [
+      createDocument("/project/src/a.asm", "a.asm"),
+      createDocument("/project/src/b.asm", "b.asm")
+    ];
+
+    const { rerender } = renderHook(
+      () =>
+        useDocumentWorkspacePersistence({
+          activeDocIndex: 1,
+          ensureTabVisible,
+          mainApi: { saveProject } as never,
+          openDocs: openDocs as never,
+          store: store as never,
+          workspaceLoaded
+        })
+    );
+
+    expect(ensureTabVisible).not.toHaveBeenCalled();
+    expect(store.dispatch).not.toHaveBeenCalled();
+
+    workspaceLoaded = true;
+    rerender();
+
+    await waitFor(() => expect(ensureTabVisible).toHaveBeenCalledTimes(1));
+    expect(store.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "SET_WORKSPACE_SETTINGS" }),
+      "ide"
+    );
+    expect(saveProject).toHaveBeenCalledTimes(1);
+  });
+
   it("persists workspace document metadata and saves the project", async () => {
     const saveProject = vi.fn(() => Promise.resolve());
     const store = {
@@ -81,7 +278,8 @@ describe("DocumentsHeader", () => {
       getState: vi.fn(() => ({
         project: {
           folderPath: "/project",
-          buildRoots: []
+          buildRoots: [],
+          workspaceLoaded: true
         },
         emulatorState: {
           isProjectDebugging: false
@@ -103,6 +301,7 @@ describe("DocumentsHeader", () => {
       getOpenProjectFileDocument: vi.fn(() => Promise.resolve(undefined)),
       moveActiveToLeft: vi.fn(),
       moveActiveToRight: vi.fn(),
+      moveDocument: vi.fn(),
       setDocumentViewState: vi.fn()
     };
     const projectClosed = {
@@ -191,25 +390,117 @@ describe("DocumentsHeader", () => {
     );
     expect(saveProject).toHaveBeenCalled();
   });
+
+  it("renders the active tab directly from the current hub state", async () => {
+    let activeDocIndex = 0;
+    let hubVersion = 1;
+    const activeTabLog: string[] = [];
+    const store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(() => ({
+        project: {
+          folderPath: "/project",
+          buildRoots: [],
+          workspaceLoaded: true
+        },
+        emulatorState: {
+          isProjectDebugging: false
+        },
+        ideView: {
+          editorVersion: 1
+        }
+      }))
+    };
+    const documents = [
+      createDocument("/project/src/a.asm", "a.asm"),
+      createDocument("/project/src/b.asm", "b.asm")
+    ];
+    const documentHubService = {
+      closeAllDocuments: vi.fn(() => Promise.resolve()),
+      closeAllExplorerDocuments: vi.fn(),
+      getActiveDocumentIndex: vi.fn(() => activeDocIndex),
+      getDocumentViewState: vi.fn(() => ({})),
+      getOpenDocuments: vi.fn(() => documents),
+      getOpenProjectFileDocument: vi.fn(() => Promise.resolve(undefined)),
+      moveDocument: vi.fn(),
+      setActiveDocument: vi.fn(() => Promise.resolve()),
+      setDocumentViewState: vi.fn(),
+      setPermanent: vi.fn()
+    };
+
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      useDispatch: () => vi.fn(),
+      useRendererContext: () => ({ store }),
+      useSelector: (selector: (state: unknown) => unknown) => selector(store.getState())
+    }));
+    vi.doMock("@renderer/core/MainApi", () => ({
+      useMainApi: () => ({ saveProject: vi.fn(() => Promise.resolve()) })
+    }));
+    vi.doMock("@appIde/services/AppServicesProvider", () => ({
+      useAppServices: () => ({
+        projectService: { projectClosed: { on: vi.fn(), off: vi.fn() } },
+        outputPaneService: { getOutputPaneBuffer: vi.fn() },
+        ideCommandsService: { executeCommand: vi.fn() }
+      })
+    }));
+    vi.doMock("@renderer/appIde/services/DocumentServiceProvider", () => ({
+      useDocumentHubService: () => documentHubService,
+      useDocumentHubServiceVersion: () => hubVersion
+    }));
+    vi.doMock("@renderer/appIde/project/project-node", () => ({
+      getFileTypeEntry: () => undefined
+    }));
+    vi.doMock("@renderer/controls/ScrollViewer", () => ({
+      default: ({ children }: { children?: ReactNode }) => <div>{children}</div>
+    }));
+    vi.doMock("@renderer/features/documents/DocumentTab", () => ({
+      CloseMode: { All: 0, Others: 1, This: 2 },
+      DocumentTab: ({ isActive, name }: { isActive?: boolean; name: string }) => {
+        if (isActive) {
+          activeTabLog.push(name);
+        }
+        return <div>{name}</div>;
+      }
+    }));
+    vi.doMock("@controls/TabButton", () => ({
+      TabButton: () => null,
+      TabButtonSeparator: () => null,
+      TabButtonSpace: () => null
+    }));
+
+    const { DocumentsHeader } = await import("@renderer/features/documents/DocumentsHeader");
+    const { rerender } = render(<DocumentsHeader />);
+
+    expect(activeTabLog.at(-1)).toBe("a.asm");
+
+    activeTabLog.length = 0;
+    activeDocIndex = 1;
+    hubVersion++;
+    rerender(<DocumentsHeader />);
+
+    expect(activeTabLog).toEqual(["b.asm"]);
+  });
 });
 
 describe("DocumentCommandBar", () => {
-  it("renders editor actions and dispatches tab movement commands", async () => {
+  it("renders editor actions and a single close-all command", async () => {
     vi.doMock("@controls/TabButton", () => ({
       TabButton: ({
         clicked,
         disabled,
-        iconName
+        iconName,
+        title
       }: {
         clicked?: () => void;
         disabled?: boolean;
         iconName: string;
+        title?: string;
       }) => (
-        <button type="button" disabled={disabled} onClick={clicked}>
+        <button type="button" data-title={title} disabled={disabled} onClick={clicked}>
           {iconName}
         </button>
       ),
-      TabButtonSeparator: () => null,
+      TabButtonSeparator: () => <span data-testid="tab-button-separator" />,
       TabButtonSpace: () => null
     }));
     vi.doMock("@appIde/services/AppServicesProvider", () => ({
@@ -226,33 +517,28 @@ describe("DocumentCommandBar", () => {
     const { DocumentCommandBar } = await import(
       "@renderer/features/documents/DocumentCommandBar"
     );
-    const onMoveActiveLeft = vi.fn();
-    const onMoveActiveRight = vi.fn();
     const onCloseAll = vi.fn();
 
     render(
       <DocumentCommandBar
-        activeDocIndex={1}
         activeFullPath="/project/main.asm"
         editorInfo={{
           documentTabRenderer: (path) => <span>editor action {path}</span>
         } as any}
-        openDocsLength={3}
         selectedIsBuildRoot={false}
         onCloseAll={onCloseAll}
-        onMoveActiveLeft={onMoveActiveLeft}
-        onMoveActiveRight={onMoveActiveRight}
       />
     );
 
     expect(screen.getByText("editor action /project/main.asm")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("arrow-small-left"));
-    fireEvent.click(screen.getByText("arrow-small-right"));
-    fireEvent.click(screen.getAllByText("close")[0]);
+    const closeButtons = screen.getAllByText("close");
+    expect(closeButtons).toHaveLength(1);
+    expect(closeButtons[0]).toHaveAttribute("data-title", "Close all tabs");
+    expect(screen.getAllByTestId("tab-button-separator")).toHaveLength(1);
 
-    expect(onMoveActiveLeft).toHaveBeenCalledTimes(1);
-    expect(onMoveActiveRight).toHaveBeenCalledTimes(1);
+    fireEvent.click(closeButtons[0]);
+
     expect(onCloseAll).toHaveBeenCalledTimes(1);
   });
 
@@ -296,12 +582,8 @@ describe("DocumentCommandBar", () => {
 
     render(
       <DocumentCommandBar
-        activeDocIndex={0}
-        openDocsLength={1}
         selectedIsBuildRoot={true}
         onCloseAll={vi.fn()}
-        onMoveActiveLeft={vi.fn()}
-        onMoveActiveRight={vi.fn()}
       />
     );
 
@@ -988,6 +1270,16 @@ function createDocument(id: string, name: string, editPosition = { line: 0, colu
     path: id,
     savedVersionCount: 0,
     type: "code"
+  };
+}
+
+function createDataTransfer() {
+  const data = new Map<string, string>();
+  return {
+    dropEffect: "",
+    effectAllowed: "",
+    getData: vi.fn((type: string) => data.get(type) ?? ""),
+    setData: vi.fn((type: string, value: string) => data.set(type, value))
   };
 }
 

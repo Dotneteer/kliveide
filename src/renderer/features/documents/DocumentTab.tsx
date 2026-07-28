@@ -1,6 +1,6 @@
 import { Icon } from "../../controls/Icon";
 import { TabButton } from "@controls/TabButton";
-import { useLayoutEffect, useRef, useState } from "react";
+import { type DragEvent, type MouseEvent, useLayoutEffect, useRef, useState } from "react";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 
 import styles from "./DocumentTab.module.scss";
@@ -13,6 +13,10 @@ import {
 } from "@renderer/controls/ContextMenu";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
+import type { MainApi } from "@common/messaging/MainApi";
+
+// Preserves the hover affordance when tab order or labels change under a stationary pointer.
+let lastDocumentTabPointerPosition: { clientX: number; clientY: number } | undefined;
 
 export enum CloseMode {
   All,
@@ -31,15 +35,22 @@ type Props = {
   isTemporary?: boolean;
   awaiting?: boolean;
   hasChanges?: boolean;
+  dragOverPlacement?: "before" | "after";
   tabsCount?: number;
   tabDisplayed?: (el: HTMLDivElement) => void;
   tabClicked?: () => void;
   tabDoubleClicked?: () => void;
   tabCloseClicked?: (mode: CloseMode) => void;
+  tabDragEnd?: () => void;
+  tabDragLeave?: () => void;
+  tabDragOver?: (event: DragEvent<HTMLDivElement>) => void;
+  tabDragStart?: (event: DragEvent<HTMLDivElement>) => void;
+  tabDrop?: (event: DragEvent<HTMLDivElement>) => void;
 };
 
 /**
- * Represents a single tab in the documents' header
+ * Renders a single document tab, including close affordances, status badges,
+ * tooltips, context menu actions, and drag/drop event bridges.
  */
 export const DocumentTab = ({
   name,
@@ -52,11 +63,17 @@ export const DocumentTab = ({
   isActive = false,
   awaiting = false,
   hasChanges = false,
+  dragOverPlacement,
   tabsCount,
   tabDisplayed,
   tabClicked,
   tabDoubleClicked,
-  tabCloseClicked
+  tabCloseClicked,
+  tabDragEnd,
+  tabDragLeave,
+  tabDragOver,
+  tabDragStart,
+  tabDrop
 }: Props) => {
   // --- Services used in this component
   const { store } = useRendererContext();
@@ -75,10 +92,122 @@ export const DocumentTab = ({
     if (ref.current) {
       tabDisplayed?.(ref.current);
     }
-  }, [ref.current, ref.current?.offsetLeft]);
+  });
+
+  useLayoutEffect(() => {
+    const element = ref.current;
+    const pointerPosition = lastDocumentTabPointerPosition;
+    if (!element || !pointerPosition) return;
+
+    const hoveredElement = document.elementFromPoint(
+      pointerPosition.clientX,
+      pointerPosition.clientY
+    );
+    const isPointerOverTab = !!hoveredElement && element.contains(hoveredElement);
+    setPointed((current) => current === isPointerOverTab ? current : isPointerOverTab);
+  }, [awaiting, isActive, name, path, tabsCount]);
+
+  const rememberPointerPosition = (e: MouseEvent<HTMLDivElement>): void => {
+    lastDocumentTabPointerPosition = {
+      clientX: e.clientX,
+      clientY: e.clientY
+    };
+  };
 
   const [contextMenuState, contextMenuApi] = useContextMenuState();
-  const contextMenu = (
+  const contextMenu = renderDocumentTabContextMenu({
+    contextMenuApi,
+    contextMenuState,
+    isWindows,
+    mainApi,
+    path,
+    tabCloseClicked,
+    tabsCount
+  });
+
+  return (
+    <div
+      ref={ref}
+      className={classnames(styles.documentTab, {
+        [styles.active]: isActive,
+        [styles.awaiting]: awaiting,
+        [styles.dragBefore]: dragOverPlacement === "before",
+        [styles.dragAfter]: dragOverPlacement === "after"
+      })}
+      draggable={!awaiting}
+      onDragEnd={tabDragEnd}
+      onDragLeave={tabDragLeave}
+      onDragOver={tabDragOver}
+      onDragStart={tabDragStart}
+      onDrop={tabDrop}
+      onMouseEnter={(e) => {
+        rememberPointerPosition(e);
+        setPointed(true);
+      }}
+      onMouseMove={rememberPointerPosition}
+      onMouseDown={rememberPointerPosition}
+      onMouseLeave={() => setPointed(false)}
+      onClick={(e) => {
+        if (e.button === 0) tabClicked?.();
+      }}
+      onAuxClick={(e) => {
+        if (e.button === 1) tabCloseClicked?.(CloseMode.This);
+      }}
+      onDoubleClick={() => tabDoubleClicked?.()}
+      onContextMenu={contextMenuApi.show}
+    >
+      <Icon iconName={iconName} width={16} height={16} fill={iconFill} />
+      <span
+        ref={nameRef}
+        className={classnames(styles.titleText, {
+          [styles.activeTitle]: isActive,
+          [styles.temporaryTitle]: isTemporary
+        })}
+      >
+        <bdi>{name}</bdi>
+        {path && (
+          <TooltipFactory
+            refElement={nameRef.current}
+            placement="right"
+            offsetX={-28}
+            offsetY={28}
+            content={path}
+          />
+        )}
+      </span>
+      {isReadOnly && renderReadOnlyBadge(readOnlyRef, isActive)}
+      {isLocked && renderLockedBadge(lockedRef)}
+
+      {contextMenu}
+
+      <TabButton
+        iconName={hasChanges ? "circle-filled" : "close"}
+        hide={!pointed && !isActive}
+        fill={"--color-tabbutton-fill-" + (isActive ? "active" : "inactive")}
+        clicked={() => tabCloseClicked?.(CloseMode.This)}
+      />
+    </div>
+  );
+};
+
+function renderDocumentTabContextMenu({
+  contextMenuApi,
+  contextMenuState,
+  isWindows,
+  mainApi,
+  path,
+  tabCloseClicked,
+  tabsCount
+}: {
+  contextMenuApi: ReturnType<typeof useContextMenuState>[1];
+  contextMenuState: ReturnType<typeof useContextMenuState>[0];
+  isWindows: boolean;
+  mainApi: MainApi;
+  path?: string;
+  tabCloseClicked?: (mode: CloseMode) => void;
+  tabsCount?: number;
+}) {
+  return (
     <ContextMenu state={contextMenuState} onClickOutside={contextMenuApi.conceal}>
       <ContextMenuItem
         text="Close"
@@ -112,82 +241,42 @@ export const DocumentTab = ({
       />
     </ContextMenu>
   );
+}
 
+function renderReadOnlyBadge(
+  readOnlyRef: ReturnType<typeof useTooltipRef>,
+  isActive: boolean
+) {
   return (
-    <div
-      ref={ref}
-      className={classnames(styles.documentTab, {
-        [styles.active]: isActive,
-        [styles.awaiting]: awaiting
-      })}
-      onMouseEnter={() => setPointed(true)}
-      onMouseLeave={() => setPointed(false)}
-      onClick={(e) => {
-        if (e.button === 0) tabClicked?.();
-      }}
-      onAuxClick={(e) => {
-        if (e.button === 1) tabCloseClicked?.(CloseMode.This);
-      }}
-      onDoubleClick={() => tabDoubleClicked?.()}
-      onContextMenu={contextMenuApi.show}
-    >
-      <Icon iconName={iconName} width={16} height={16} fill={iconFill} />
-      <span
-        ref={nameRef}
-        className={classnames(styles.titleText, {
-          [styles.activeTitle]: isActive,
-          [styles.temporaryTitle]: isTemporary
-        })}
-      >
-        <bdi>{name}</bdi>
-        {path && (
-          <TooltipFactory
-            refElement={nameRef.current}
-            placement="right"
-            offsetX={-28}
-            offsetY={28}
-            content={path}
-          />
-        )}
-      </span>
-      {isReadOnly && (
-        <div className={styles.readOnlyIcon} ref={readOnlyRef}>
-          <Icon
-            iconName="shield"
-            width={16}
-            height={16}
-            fill={"--color-readonly-icon-" + (isActive ? "active" : "inactive")}
-          />
-          <TooltipFactory
-            refElement={readOnlyRef.current}
-            placement="right"
-            offsetX={-16}
-            offsetY={28}
-            content="This file is read-only"
-          />
-        </div>
-      )}
-      {isLocked && (
-        <div className={styles.lockedIcon} ref={lockedRef}>
-          <Icon iconName="lock" width={16} height={16} fill="--console-ansi-bright-red" />
-          <TooltipFactory
-            refElement={lockedRef.current}
-            placement="right"
-            offsetX={-16}
-            offsetY={28}
-            content="This file is locked while the project is running"
-          />
-        </div>
-      )}
-
-      {contextMenu}
-
-      <TabButton
-        iconName={hasChanges ? "circle-filled" : "close"}
-        hide={!pointed && !isActive}
-        fill={"--color-tabbutton-fill-" + (isActive ? "active" : "inactive")}
-        clicked={() => tabCloseClicked?.(CloseMode.This)}
+    <div className={styles.readOnlyIcon} ref={readOnlyRef}>
+      <Icon
+        iconName="shield"
+        width={16}
+        height={16}
+        fill={"--color-readonly-icon-" + (isActive ? "active" : "inactive")}
+      />
+      <TooltipFactory
+        refElement={readOnlyRef.current}
+        placement="right"
+        offsetX={-16}
+        offsetY={28}
+        content="This file is read-only"
       />
     </div>
   );
-};
+}
+
+function renderLockedBadge(lockedRef: ReturnType<typeof useTooltipRef>) {
+  return (
+    <div className={styles.lockedIcon} ref={lockedRef}>
+      <Icon iconName="lock" width={16} height={16} fill="--console-ansi-bright-red" />
+      <TooltipFactory
+        refElement={lockedRef.current}
+        placement="right"
+        offsetX={-16}
+        offsetY={28}
+        content="This file is locked while the project is running"
+      />
+    </div>
+  );
+}

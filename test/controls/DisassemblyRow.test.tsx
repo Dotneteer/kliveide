@@ -1,9 +1,17 @@
-import { describe, expect, it, vi } from "vitest";
-import { deriveDisassemblyRowViewModel } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  deriveDisassemblyRowViewModel,
+  DisassemblyRow
+} from "@renderer/appIde/DocumentPanels/DisassemblyRow";
 
 vi.mock("@renderer/appIde/DocumentPanels/BreakpointIndicator", () => ({
   BreakpointIndicator: () => null
 }));
+
+afterEach(() => {
+  cleanup();
+});
 
 describe("deriveDisassemblyRowViewModel", () => {
   it("formats hex row values and breakpoint metadata", () => {
@@ -71,5 +79,31 @@ describe("deriveDisassemblyRowViewModel", () => {
         useWidePartitions: true
       })
     );
+  });
+
+  it("renders bank prefix and address as compact cells", () => {
+    const { getByText } = render(
+      <DisassemblyRow
+        bankLabel={true}
+        currentSegment={0}
+        decimalView={false}
+        index={0}
+        isFullView={true}
+        item={{
+          address: 0x6000,
+          instruction: "NOP",
+          opCodes: [0x00]
+        }}
+        mem64kLabels={["", "", "", "R0"]}
+        partitionLabels={{ 0: "R0" }}
+        pausedPc={0x0000}
+        rowHeight={18}
+        showBanks={true}
+      />
+    );
+
+    expect(getByText("R0").className).toContain("partitionLabel");
+    expect(getByText(":").className).toContain("partitionColon");
+    expect(getByText("6000").className).toContain("addressLabel");
   });
 });

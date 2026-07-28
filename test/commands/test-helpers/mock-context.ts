@@ -120,15 +120,18 @@ export function createMockProjectService() {
       getDocument: vi.fn(),
       setActiveDocument: vi.fn().mockResolvedValue(undefined),
       openDocument: vi.fn().mockResolvedValue(undefined),
+      openDocumentTab: vi.fn().mockResolvedValue(undefined),
       closeDocument: vi.fn().mockResolvedValue(undefined),
       closeAllDocuments: vi.fn().mockResolvedValue(undefined),
       isOpen: vi.fn().mockReturnValue(false),
       waitOpen: vi.fn().mockResolvedValue({ id: "test-doc" }),
       getDocumentApi: vi.fn(),
-      getOpenDocuments: vi.fn().mockReturnValue([])
+      getOpenDocuments: vi.fn().mockReturnValue([]),
+      moveDocument: vi.fn()
     }),
     getBreakpointAddressInfo: vi.fn(),
     getDocumentForProjectNode: vi.fn().mockResolvedValue({ id: "test-doc" }),
+    getDocumentShellForProjectNode: vi.fn().mockReturnValue({ id: "test-doc" }),
     createDocumentHubService: vi.fn()
   } as any;
 }

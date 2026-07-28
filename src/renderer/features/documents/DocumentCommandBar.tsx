@@ -7,25 +7,21 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";
 
 type DocumentCommandBarProps = {
-  activeDocIndex: number;
   activeFullPath?: string;
   editorInfo?: FileTypeEditor;
-  openDocsLength: number;
   selectedIsBuildRoot: boolean;
   onCloseAll: () => void;
-  onMoveActiveLeft: () => void;
-  onMoveActiveRight: () => void;
 };
 
+/**
+ * Renders commands that belong beside the document tabs, combining active-editor
+ * actions, build-root actions, and document-level close controls.
+ */
 export function DocumentCommandBar({
-  activeDocIndex,
   activeFullPath,
   editorInfo,
-  openDocsLength,
   selectedIsBuildRoot,
-  onCloseAll,
-  onMoveActiveLeft,
-  onMoveActiveRight
+  onCloseAll
 }: DocumentCommandBarProps) {
   return (
     <div className={styles.commandBar}>
@@ -33,26 +29,19 @@ export function DocumentCommandBar({
       {selectedIsBuildRoot && <BuildRootCommandBar />}
       <TabButtonSeparator />
       <TabButton
-        iconName="arrow-small-left"
-        title={"Move the active\ntab to left"}
-        disabled={activeDocIndex === 0}
+        iconName="close"
+        title="Close all tabs"
         useSpace={true}
-        clicked={onMoveActiveLeft}
+        clicked={onCloseAll}
       />
-      <TabButton
-        iconName="arrow-small-right"
-        title={"Move the active\ntab to right"}
-        disabled={activeDocIndex === openDocsLength - 1}
-        useSpace={true}
-        clicked={onMoveActiveRight}
-      />
-      <TabButton iconName="close" useSpace={true} clicked={onCloseAll} />
-      <TabButtonSeparator />
-      <TabButton iconName="close" useSpace={true} clicked={onCloseAll} />
     </div>
   );
 }
 
+/**
+ * Exposes build-root commands for the active document while compilation state
+ * controls availability and the latest script output target.
+ */
 function BuildRootCommandBar() {
   const { outputPaneService, ideCommandsService } = useAppServices();
   const compiling = useSelector((s) => s.compilation?.inProgress ?? false);

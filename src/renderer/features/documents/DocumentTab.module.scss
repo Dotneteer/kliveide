@@ -3,6 +3,7 @@
 .documentTab {
   @include fix-height-panel(36px);
   width: auto;
+  position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -12,6 +13,25 @@
   background: var(--bgcolor-doc-inactiveTab);
   max-width: 360px;
   cursor: pointer;
+}
+
+.dragBefore::before,
+.dragAfter::after {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  content: "";
+  background: var(--color-doc-activeText);
+  border-radius: 1px;
+}
+
+.dragBefore::before {
+  left: 1px;
+}
+
+.dragAfter::after {
+  right: 1px;
 }
 
 .active {
