@@ -211,19 +211,18 @@ export const DocumentsHeader = () => {
           onTabCloseClicked={tabCloseClicked}
           onTabDisplayed={tabDisplayed}
           onTabDoubleClicked={tabDoubleClicked}
+          onTabMoved={(sourceId, targetId, after) =>
+            documentHubService.moveDocument(sourceId, targetId, after)
+          }
           tabsCount={tabsCount}
         />
         <div className={styles.closingTab} />
       </ScrollViewer>
       <DocumentCommandBar
-        activeDocIndex={activeDocIndex}
         activeFullPath={openDocs?.[activeDocIndex]?.node?.fullPath}
         editorInfo={editorInfo}
-        openDocsLength={openDocs?.length ?? 0}
         selectedIsBuildRoot={selectedIsBuildRoot}
         onCloseAll={async () => await documentHubService.closeAllDocuments()}
-        onMoveActiveLeft={() => documentHubService.moveActiveToLeft()}
-        onMoveActiveRight={() => documentHubService.moveActiveToRight()}
       />
     </div>
   ) : null;

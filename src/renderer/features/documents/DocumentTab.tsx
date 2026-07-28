@@ -1,6 +1,6 @@
 import { Icon } from "../../controls/Icon";
 import { TabButton } from "@controls/TabButton";
-import { type MouseEvent, useLayoutEffect, useRef, useState } from "react";
+import { type DragEvent, type MouseEvent, useLayoutEffect, useRef, useState } from "react";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 
 import styles from "./DocumentTab.module.scss";
@@ -33,11 +33,17 @@ type Props = {
   isTemporary?: boolean;
   awaiting?: boolean;
   hasChanges?: boolean;
+  dragOverPlacement?: "before" | "after";
   tabsCount?: number;
   tabDisplayed?: (el: HTMLDivElement) => void;
   tabClicked?: () => void;
   tabDoubleClicked?: () => void;
   tabCloseClicked?: (mode: CloseMode) => void;
+  tabDragEnd?: () => void;
+  tabDragLeave?: () => void;
+  tabDragOver?: (event: DragEvent<HTMLDivElement>) => void;
+  tabDragStart?: (event: DragEvent<HTMLDivElement>) => void;
+  tabDrop?: (event: DragEvent<HTMLDivElement>) => void;
 };
 
 /**
@@ -54,11 +60,17 @@ export const DocumentTab = ({
   isActive = false,
   awaiting = false,
   hasChanges = false,
+  dragOverPlacement,
   tabsCount,
   tabDisplayed,
   tabClicked,
   tabDoubleClicked,
-  tabCloseClicked
+  tabCloseClicked,
+  tabDragEnd,
+  tabDragLeave,
+  tabDragOver,
+  tabDragStart,
+  tabDrop
 }: Props) => {
   // --- Services used in this component
   const { store } = useRendererContext();
@@ -140,8 +152,16 @@ export const DocumentTab = ({
       ref={ref}
       className={classnames(styles.documentTab, {
         [styles.active]: isActive,
-        [styles.awaiting]: awaiting
+        [styles.awaiting]: awaiting,
+        [styles.dragBefore]: dragOverPlacement === "before",
+        [styles.dragAfter]: dragOverPlacement === "after"
       })}
+      draggable={!awaiting}
+      onDragEnd={tabDragEnd}
+      onDragLeave={tabDragLeave}
+      onDragOver={tabDragOver}
+      onDragStart={tabDragStart}
+      onDrop={tabDrop}
       onMouseEnter={(e) => {
         rememberPointerPosition(e);
         setPointed(true);

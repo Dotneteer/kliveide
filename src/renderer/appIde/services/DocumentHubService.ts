@@ -358,6 +358,31 @@ class DocumentHubService implements IDocumentHubService {
   }
 
   /**
+   * Moves a document tab before or after another document tab.
+   */
+  moveDocument(sourceId: string, targetId: string, after = false): void {
+    const sourceIndex = this._openDocs.findIndex((d) => d.id === sourceId);
+    const targetIndex = this._openDocs.findIndex((d) => d.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return;
+
+    let insertIndex = targetIndex;
+    if (sourceIndex < targetIndex) {
+      insertIndex--;
+    }
+    if (after) {
+      insertIndex++;
+    }
+    insertIndex = Math.max(0, Math.min(insertIndex, this._openDocs.length));
+    if (insertIndex === sourceIndex) return;
+
+    const activeDoc = this._openDocs[this._activeDocIndex];
+    const [document] = this._openDocs.splice(sourceIndex, 1);
+    this._openDocs.splice(insertIndex, 0, document);
+    this._activeDocIndex = this._openDocs.indexOf(activeDoc);
+    this.signHubStateChanged();
+  }
+
+  /**
    * Gets the state of the specified document
    * @param id Document ID
    */

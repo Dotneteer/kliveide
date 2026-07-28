@@ -131,6 +131,11 @@ export interface IDocumentHubService {
   moveActiveToRight(): void;
 
   /**
+   * Moves a document tab before or after another document tab.
+   */
+  moveDocument(sourceId: string, targetId: string, after?: boolean): void;
+
+  /**
    * Gets the state of the specified document
    * @param id Document ID
    */

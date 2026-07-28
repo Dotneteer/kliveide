@@ -205,6 +205,7 @@ function createDocumentHubServiceMock(overrides: Record<string, unknown> = {}) {
     closeDocument: vi.fn(() => Promise.resolve()),
     moveActiveToLeft: vi.fn(),
     moveActiveToRight: vi.fn(),
+    moveDocument: vi.fn(),
     ...overrides
   };
 }

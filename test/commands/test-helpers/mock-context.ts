@@ -126,7 +126,8 @@ export function createMockProjectService() {
       isOpen: vi.fn().mockReturnValue(false),
       waitOpen: vi.fn().mockResolvedValue({ id: "test-doc" }),
       getDocumentApi: vi.fn(),
-      getOpenDocuments: vi.fn().mockReturnValue([])
+      getOpenDocuments: vi.fn().mockReturnValue([]),
+      moveDocument: vi.fn()
     }),
     getBreakpointAddressInfo: vi.fn(),
     getDocumentForProjectNode: vi.fn().mockResolvedValue({ id: "test-doc" }),

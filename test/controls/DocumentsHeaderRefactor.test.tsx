@@ -8,7 +8,7 @@ import {
   screen,
   waitFor
 } from "@testing-library/react";
-import type { ReactNode } from "react";
+import type { DragEventHandler, ReactNode } from "react";
 
 afterEach(() => {
   cleanup();
@@ -38,12 +38,102 @@ describe("DocumentTabs", () => {
         onTabCloseClicked={vi.fn()}
         onTabDisplayed={vi.fn()}
         onTabDoubleClicked={vi.fn()}
+        onTabMoved={vi.fn()}
         tabsCount={2}
       />
     );
 
     expect(screen.getByText("folder-a/main.asm")).toBeInTheDocument();
     expect(screen.getByText("folder-b/main.asm")).toBeInTheDocument();
+  });
+
+  it("moves a dragged tab after the tab it is dropped on", async () => {
+    vi.doMock("@renderer/features/documents/DocumentTab", () => ({
+      CloseMode: { All: 0, Others: 1, This: 2 },
+      DocumentTab: ({
+        dragOverPlacement,
+        name,
+        tabDragOver,
+        tabDragStart,
+        tabDrop
+      }: {
+        dragOverPlacement?: "before" | "after";
+        name: string;
+        tabDragOver?: DragEventHandler<HTMLDivElement>;
+        tabDragStart?: DragEventHandler<HTMLDivElement>;
+        tabDrop?: DragEventHandler<HTMLDivElement>;
+      }) => (
+        <div
+          data-placement={dragOverPlacement ?? ""}
+          data-testid={`tab-${name}`}
+          draggable
+          onDragOver={tabDragOver}
+          onDragStart={tabDragStart}
+          onDrop={tabDrop}
+        >
+          {name}
+        </div>
+      )
+    }));
+
+    const { DocumentTabs } = await import("@renderer/features/documents/DocumentTabs");
+    const onTabMoved = vi.fn();
+
+    render(
+      <DocumentTabs
+        activeDocIndex={0}
+        awaiting={false}
+        isProjectDebugging={false}
+        openDocs={[
+          createDocument("/project/src/a.asm", "a.asm"),
+          createDocument("/project/src/b.asm", "b.asm")
+        ]}
+        onTabClicked={vi.fn()}
+        onTabCloseClicked={vi.fn()}
+        onTabDisplayed={vi.fn()}
+        onTabDoubleClicked={vi.fn()}
+        onTabMoved={onTabMoved}
+        tabsCount={2}
+      />
+    );
+
+    const source = screen.getByTestId("tab-a.asm");
+    const dataTransfer = createDataTransfer();
+
+    fireEvent.dragStart(source, { dataTransfer });
+
+    const target = screen.getByTestId("tab-b.asm");
+    Object.defineProperty(target, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        bottom: 20,
+        height: 20,
+        left: -100,
+        right: 0,
+        top: 0,
+        width: 100,
+        x: -100,
+        y: 0,
+        toJSON: () => ({})
+      })
+    });
+
+    const dragOverEvent = new Event("dragover", { bubbles: true, cancelable: true });
+    Object.defineProperty(dragOverEvent, "clientX", { value: 75 });
+    Object.defineProperty(dragOverEvent, "dataTransfer", { value: dataTransfer });
+    fireEvent(target, dragOverEvent);
+    expect(target).toHaveAttribute("data-placement", "after");
+
+    const dropEvent = new Event("drop", { bubbles: true, cancelable: true });
+    Object.defineProperty(dropEvent, "clientX", { value: 75 });
+    Object.defineProperty(dropEvent, "dataTransfer", { value: dataTransfer });
+    fireEvent(target, dropEvent);
+
+    expect(onTabMoved).toHaveBeenCalledWith(
+      "/project/src/a.asm",
+      "/project/src/b.asm",
+      true
+    );
   });
 });
 
@@ -211,6 +301,7 @@ describe("DocumentsHeader", () => {
       getOpenProjectFileDocument: vi.fn(() => Promise.resolve(undefined)),
       moveActiveToLeft: vi.fn(),
       moveActiveToRight: vi.fn(),
+      moveDocument: vi.fn(),
       setDocumentViewState: vi.fn()
     };
     const projectClosed = {
@@ -302,22 +393,24 @@ describe("DocumentsHeader", () => {
 });
 
 describe("DocumentCommandBar", () => {
-  it("renders editor actions and dispatches tab movement commands", async () => {
+  it("renders editor actions and a single close-all command", async () => {
     vi.doMock("@controls/TabButton", () => ({
       TabButton: ({
         clicked,
         disabled,
-        iconName
+        iconName,
+        title
       }: {
         clicked?: () => void;
         disabled?: boolean;
         iconName: string;
+        title?: string;
       }) => (
-        <button type="button" disabled={disabled} onClick={clicked}>
+        <button type="button" data-title={title} disabled={disabled} onClick={clicked}>
           {iconName}
         </button>
       ),
-      TabButtonSeparator: () => null,
+      TabButtonSeparator: () => <span data-testid="tab-button-separator" />,
       TabButtonSpace: () => null
     }));
     vi.doMock("@appIde/services/AppServicesProvider", () => ({
@@ -334,33 +427,28 @@ describe("DocumentCommandBar", () => {
     const { DocumentCommandBar } = await import(
       "@renderer/features/documents/DocumentCommandBar"
     );
-    const onMoveActiveLeft = vi.fn();
-    const onMoveActiveRight = vi.fn();
     const onCloseAll = vi.fn();
 
     render(
       <DocumentCommandBar
-        activeDocIndex={1}
         activeFullPath="/project/main.asm"
         editorInfo={{
           documentTabRenderer: (path) => <span>editor action {path}</span>
         } as any}
-        openDocsLength={3}
         selectedIsBuildRoot={false}
         onCloseAll={onCloseAll}
-        onMoveActiveLeft={onMoveActiveLeft}
-        onMoveActiveRight={onMoveActiveRight}
       />
     );
 
     expect(screen.getByText("editor action /project/main.asm")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("arrow-small-left"));
-    fireEvent.click(screen.getByText("arrow-small-right"));
-    fireEvent.click(screen.getAllByText("close")[0]);
+    const closeButtons = screen.getAllByText("close");
+    expect(closeButtons).toHaveLength(1);
+    expect(closeButtons[0]).toHaveAttribute("data-title", "Close all tabs");
+    expect(screen.getAllByTestId("tab-button-separator")).toHaveLength(1);
 
-    expect(onMoveActiveLeft).toHaveBeenCalledTimes(1);
-    expect(onMoveActiveRight).toHaveBeenCalledTimes(1);
+    fireEvent.click(closeButtons[0]);
+
     expect(onCloseAll).toHaveBeenCalledTimes(1);
   });
 
@@ -404,12 +492,8 @@ describe("DocumentCommandBar", () => {
 
     render(
       <DocumentCommandBar
-        activeDocIndex={0}
-        openDocsLength={1}
         selectedIsBuildRoot={true}
         onCloseAll={vi.fn()}
-        onMoveActiveLeft={vi.fn()}
-        onMoveActiveRight={vi.fn()}
       />
     );
 
@@ -1096,6 +1180,16 @@ function createDocument(id: string, name: string, editPosition = { line: 0, colu
     path: id,
     savedVersionCount: 0,
     type: "code"
+  };
+}
+
+function createDataTransfer() {
+  const data = new Map<string, string>();
+  return {
+    dropEffect: "",
+    effectAllowed: "",
+    getData: vi.fn((type: string) => data.get(type) ?? ""),
+    setData: vi.fn((type: string, value: string) => data.set(type, value))
   };
 }
 

@@ -1,6 +1,9 @@
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { CloseMode, DocumentTab } from "./DocumentTab";
 import styles from "./DocumentsHeader.module.scss";
+import { type DragEvent, useState } from "react";
+
+type TabDropPlacement = "before" | "after";
 
 type DocumentTabsProps = {
   activeDocIndex: number;
@@ -12,6 +15,7 @@ type DocumentTabsProps = {
   onTabCloseClicked: (mode: CloseMode, id: string) => void;
   onTabDisplayed: (idx: number, el: HTMLDivElement) => void;
   onTabDoubleClicked: (document: ProjectDocumentState) => void;
+  onTabMoved: (sourceId: string, targetId: string, after: boolean) => void;
   tabsCount: number;
 };
 
@@ -25,8 +29,20 @@ export function DocumentTabs({
   onTabCloseClicked,
   onTabDisplayed,
   onTabDoubleClicked,
+  onTabMoved,
   tabsCount
 }: DocumentTabsProps) {
+  const [draggedTabId, setDraggedTabId] = useState<string>();
+  const [dragOver, setDragOver] = useState<{
+    id: string;
+    placement: TabDropPlacement;
+  }>();
+
+  const getDropPlacement = (event: DragEvent<HTMLDivElement>): TabDropPlacement => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return event.clientX > rect.left + rect.width / 2 ? "after" : "before";
+  };
+
   return (
     <div className={styles.tabWrapper}>
       {openDocs.map((document, idx) => {
@@ -46,6 +62,7 @@ export function DocumentTabs({
             isLocked={isProjectDebugging && document.isLocked}
             awaiting={awaiting}
             hasChanges={dirtyStates?.[idx]}
+            dragOverPlacement={dragOver?.id === document.id ? dragOver.placement : undefined}
             tabsCount={tabsCount}
             iconName={document.iconName}
             iconFill={document.iconFill}
@@ -53,6 +70,37 @@ export function DocumentTabs({
             tabClicked={() => onTabClicked(document.id)}
             tabDoubleClicked={() => onTabDoubleClicked(document)}
             tabCloseClicked={(mode: CloseMode) => onTabCloseClicked(mode, document.id)}
+            tabDragEnd={() => {
+              setDraggedTabId(undefined);
+              setDragOver(undefined);
+            }}
+            tabDragLeave={() => {
+              setDragOver((current) => current?.id === document.id ? undefined : current);
+            }}
+            tabDragOver={(event) => {
+              const sourceId = draggedTabId ?? event.dataTransfer.getData("text/plain");
+              if (!sourceId || sourceId === document.id) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+              setDragOver({
+                id: document.id,
+                placement: getDropPlacement(event)
+              });
+            }}
+            tabDragStart={(event) => {
+              setDraggedTabId(document.id);
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", document.id);
+            }}
+            tabDrop={(event) => {
+              const sourceId = draggedTabId ?? event.dataTransfer.getData("text/plain");
+              if (!sourceId || sourceId === document.id) return;
+              event.preventDefault();
+              const placement = getDropPlacement(event);
+              setDraggedTabId(undefined);
+              setDragOver(undefined);
+              onTabMoved(sourceId, document.id, placement === "after");
+            }}
           />
         );
       })}
