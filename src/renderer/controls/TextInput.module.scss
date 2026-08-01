@@ -1,8 +1,15 @@
 .inputContainer {
   display: flex;
+  flex-direction: column;
   width: 100%;
   flex-shrink: 1;
   flex-grow: 1;
+}
+
+.inputRow {
+  display: flex;
+  min-width: 0;
+  width: 100%;
 }
 
 .input {
@@ -33,6 +40,7 @@
   flex-shrink: 1;
   flex-grow: 1;
   justify-content: stretch;
+  min-width: 0;
 }
 
 .iconWrapper {
@@ -41,4 +49,35 @@
   flex-shrink: 0;
   flex-grow: 0;
   align-items: center;
+}
+
+.browseButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: var(--color-command-icon);
+  cursor: pointer;
+  display: flex;
+  height: 32px;
+  justify-content: center;
+  padding: 4px;
+  width: 32px;
+
+  &:hover {
+    background: var(--bgcolor-item-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-button-focused);
+    outline-offset: 1px;
+  }
+}
+
+.error {
+  color: var(--console-ansi-bright-red);
+  font-size: 0.875rem;
+  line-height: 1.25;
+  margin-top: 0;
+  width: 100%;
 }

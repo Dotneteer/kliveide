@@ -1,13 +1,21 @@
 .contextMenu {
   background-color: var(--bgcolor-context-menu);
   color: var(--color-context-item);
-  padding: 8px 0;
-  border-radius: 2px;
+  padding: 5px 4px;
+  border: 1px solid var(--border-context-menu);
+  border-radius: var(--radius-context-menu);
+  box-shadow: var(--shadow-context-menu);
+  font-size: 0.8em;
   z-index: 1000;
 
   .menuItem {
-    height: 20px;
-    padding: 2px 12px;
+    box-sizing: border-box;
+    height: 22px;
+    margin: 1px 0;
+    padding: 3px 10px;
+    line-height: 16px;
+    border-radius: 4px;
+    transition: background-color 100ms ease, color 100ms ease;
     user-select: none;
     cursor: pointer;
 
@@ -16,7 +24,6 @@
     }
 
     &.disabled {
-      background-color: var(--bgcolor-context-item-disabled);
       color: var(--color-context-item-disabled);
       cursor: default;
     }
@@ -25,10 +32,15 @@
       background-color: var(--bgcolor-context-item-pointed);
       color: var(--color-context-item-pointed);
     }
+
+    &.dangerous:not(.disabled):hover {
+      background-color: var(--bgcolor-context-item-dangerous-pointed);
+      color: var(--color-context-item-dangerous);
+    }
   }
 
   .separator {
     border-top: 1px solid var(--color-context-separator);
-    margin: 4px 4px;
+    margin: 5px 6px;
   }
 }

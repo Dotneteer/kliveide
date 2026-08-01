@@ -6,6 +6,7 @@ import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import Dropdown from "@renderer/controls/Dropdown";
 import { Checkbox } from "@renderer/controls/Checkbox";
+import { DialogForm } from "@renderer/controls/DialogForm";
 
 const sizeOptions = [
   { value: "-b8", label: "1 byte" },
@@ -41,22 +42,22 @@ export const SetMemoryDialog = ({
   const [memValue, setMemValue] = useState(
     decimal ? currentValue.toString(10) : "$" + toHexa2(currentValue)
   );
-  const [valueValid, setValueValid] = useState(true);
+  const [submitError, setSubmitError] = useState<string>();
   const [sizeOption, setSizeOption] = useState("-b8");
   const [bigEndian, setBigEndian] = useState(false);
 
   const validate = async (value: string) => {
     const getNum = await ideCommandsService.executeCommand(`num ${value.replace(" ", "")}`);
-    setValueValid(getNum.success);
     return getNum.success;
   };
 
   const submitMemoryValue = async (): Promise<boolean> => {
     if (!(await validate(memValue))) {
-      return true;
+      setSubmitError("Enter a valid numeric value.");
+      return false;
     }
     await onSetMemory?.({ value: memValue, sizeOption, bigEndian });
-    return false;
+    return true;
   };
 
   return (
@@ -65,12 +66,10 @@ export const SetMemoryDialog = ({
       isOpen={true}
       fullScreen={false}
       width={300}
-      primaryLabel="Set"
-      primaryVisible={!isRom}
-      primaryEnabled={!isRom && valueValid}
+      footerVisible={isRom}
       cancelLabel={isRom ? "Close" : "Cancel"}
+      cancelVisible={isRom}
       initialFocus={isRom ? "cancel" : "none"}
-      onPrimaryClicked={submitMemoryValue}
       onClose={() => {
         onClose();
       }}
@@ -83,24 +82,22 @@ export const SetMemoryDialog = ({
         </DialogRow>
       )}
       {!isRom && (
-        <>
+        <DialogForm
+          submitLabel="Set"
+          submitDisabled={false}
+          onSubmit={async () => {
+            if (await submitMemoryValue()) onClose();
+          }}
+          onCancel={onClose}
+        >
           <DialogRow rows={true} label={`Memory content at $${toHexa4(address)} (${address}): *`}>
             <TextInput
               value={memValue}
-              isValid={valueValid}
-              focusOnInit={true}
-              keyPressed={async (e) => {
-                if (e.code === "Enter") {
-                  const keepOpen = await submitMemoryValue();
-                  if (!keepOpen) {
-                    onClose();
-                  }
-                }
-              }}
-              valueChanged={(val) => {
+              error={submitError}
+              autoFocus={true}
+              onChange={(val) => {
                 setMemValue(val);
-                void validate(val);
-                return false;
+                setSubmitError(undefined);
               }}
             />
           </DialogRow>
@@ -128,7 +125,7 @@ export const SetMemoryDialog = ({
               }}
             />
           </DialogRow>
-        </>
+        </DialogForm>
       )}
     </Modal>
   );

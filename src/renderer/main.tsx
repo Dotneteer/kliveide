@@ -42,9 +42,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <RendererProvider store={store} messenger={messenger} messageSource={messageSource}>
       <ThemeProvider>
         <OverlayProvider>
-          <DialogProvider>
-            <AppServicesProvider>{isEmu ? <EmuApp /> : <IdeApp />}</AppServicesProvider>
-          </DialogProvider>
+          <AppServicesProvider>
+            <DialogProvider>{isEmu ? <EmuApp /> : <IdeApp />}</DialogProvider>
+          </AppServicesProvider>
         </OverlayProvider>
       </ThemeProvider>
     </RendererProvider>

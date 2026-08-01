@@ -38,6 +38,11 @@ import {
   useAppServices
 } from "@renderer/appIde/services/AppServicesProvider";
 import {
+  DialogComponentProps,
+  DialogProvider,
+  useDialogs
+} from "@renderer/controls/overlay/DialogProvider";
+import {
   DocumentHubServiceProvider,
   useDocumentHubService,
   useDocumentHubServiceVersion
@@ -99,6 +104,33 @@ describe("AppServicesProvider — Step 2: service context", () => {
     );
 
     expect(seenServices[0]).toBe(seenServices[1]);
+  });
+
+  it("makes app services available to managed dialogs", async () => {
+    function ServiceDialog({ controls }: DialogComponentProps) {
+      const services = useAppServices();
+      return (
+        <button onClick={() => controls.close()}>
+          {services.validationService ? "services available" : "services missing"}
+        </button>
+      );
+    }
+
+    function Subject() {
+      const dialogs = useDialogs();
+      return <button onClick={() => void dialogs.open(ServiceDialog, {})}>open dialog</button>;
+    }
+
+    const { findByRole, getByRole } = renderWithRendererProvider(
+      <AppServicesProvider>
+        <DialogProvider>
+          <Subject />
+        </DialogProvider>
+      </AppServicesProvider>
+    );
+
+    getByRole("button", { name: "open dialog" }).click();
+    expect(await findByRole("button", { name: "services available" })).toBeTruthy();
   });
 });
 

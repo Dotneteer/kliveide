@@ -1,31 +1,20 @@
 import styles from "./DeleteDialog.module.scss";
-import { Modal } from "@controls/Modal";
 import { DialogRow } from "@renderer/controls/DialogRow";
+import { DialogForm } from "@renderer/controls/DialogForm";
+import type { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 
-type Props = {
+type Props = DialogComponentProps<true> & {
   isFolder?: boolean;
   entry: string;
-  onClose: () => void;
-  onDelete: () => Promise<void>;
 };
 
-export const DeleteDialog = ({ isFolder, entry, onClose, onDelete }: Props) => {
+export const DeleteDialog = ({ entry, controls }: Props) => {
   return (
-    <Modal
-      title={isFolder ? "Delete folder" : "Delete file"}
-      isOpen={true}
-      fullScreen={false}
-      width={500}
-      primaryLabel='Delete'
-      primaryDanger={true}
-      initialFocus='cancel'
-      onPrimaryClicked={async () => {
-        await onDelete?.();
-        return false;
-      }}
-      onClose={() => {
-        onClose();
-      }}
+    <DialogForm
+      submitLabel="Delete"
+      submitDanger
+      onSubmit={() => controls.close(true)}
+      onCancel={controls.cancel}
     >
       <DialogRow>
         <div className={styles.message}>
@@ -33,6 +22,6 @@ export const DeleteDialog = ({ isFolder, entry, onClose, onDelete }: Props) => {
           <span className={styles.hilite}>{entry}</span>?
         </div>
       </DialogRow>
-    </Modal>
+    </DialogForm>
   );
 };

@@ -1,37 +1,38 @@
 import classnames from "classnames";
-import { useEffect, useRef, useState } from "react";
-import type { FormEvent } from "react";
-import { IconButton } from "./IconButton";
+import { useId, useRef } from "react";
+import type { FormEvent, KeyboardEventHandler } from "react";
+import { Icon } from "./Icon";
 import styles from "./TextInput.module.scss";
 
 type Props = {
-  value?: string;
-  isValid?: boolean;
+  value: string;
+  error?: string;
   width?: number | string;
   maxLength?: number;
-  focusOnInit?: boolean;
+  autoFocus?: boolean;
   buttonIcon?: string;
   buttonTitle?: string;
   numberOnly?: boolean;
-  keyPressed?: (e: React.KeyboardEvent) => void;
-  valueChanged?: (newValue: string) => boolean | undefined;
-  buttonClicked?: (value: string) => Promise<string>;
+  onKeyDown?: KeyboardEventHandler<HTMLInputElement>;
+  onChange: (newValue: string) => void;
+  browse?: () => Promise<string | undefined>;
 };
 
 export const TextInput = ({
   value,
-  isValid,
+  error,
   width,
   maxLength,
-  focusOnInit,
+  autoFocus,
   buttonIcon,
   buttonTitle,
   numberOnly,
-  keyPressed,
-  valueChanged,
-  buttonClicked
+  onKeyDown,
+  onChange,
+  browse
 }: Props) => {
-  const [inputValue, setInputValue] = useState(value);
+  const errorId = useId();
+  const ref = useRef<HTMLInputElement>(null);
   const handleBeforeInput = (e: FormEvent<HTMLInputElement>) => {
     const typed = (e.nativeEvent as InputEvent).data;
     if (typed && numberOnly && (typed < "0" || typed > "9")) {
@@ -39,55 +40,45 @@ export const TextInput = ({
     }
   };
 
-  // --- Ensure the input gets the focus if requested
-  const ref = useRef<HTMLInputElement>(null);
-  const focusSet = useRef(false);
-  useEffect(() => {
-    if (ref.current && focusOnInit && !focusSet.current) {
-      setTimeout(() => {
-        focusSet.current = true;
-        ref.current?.focus();
-      });
-    }
-  }, []);
-
   return (
     <div className={styles.inputContainer}>
-      <div className={styles.fullWidth}>
-        <input
-          ref={ref}
-          className={classnames(styles.input, { [styles.invalid]: !isValid })}
-          style={{width}}
-          value={inputValue}
-          maxLength={maxLength}
-          spellCheck={false}
-          onBeforeInput={handleBeforeInput}
-          onKeyDown={e => keyPressed?.(e)}
-          onChange={e => {
-            const newValue = e.target.value;
-            if (!valueChanged?.(newValue)) {
-              setInputValue(e.target.value);
-            }
-          }}
-        />
-      </div>
-      {buttonIcon && (
-        <div className={styles.iconWrapper}>
-          <IconButton
-            iconName={buttonIcon}
-            iconSize={24}
-            title={buttonTitle}
-            fill='--color-command-icon'
-            clicked={async () => {
-              const newValue = await buttonClicked?.(inputValue);
-              if (newValue) {
-                setInputValue(newValue);
-                ref.current?.focus();
-              }
-            }}
+      <div className={styles.inputRow}>
+        <div className={styles.fullWidth}>
+          <input
+            ref={ref}
+            className={classnames(styles.input, { [styles.invalid]: Boolean(error) })}
+            style={{width}}
+            value={value}
+            maxLength={maxLength}
+            autoFocus={autoFocus}
+            spellCheck={false}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
+            onBeforeInput={handleBeforeInput}
+            onKeyDown={onKeyDown}
+            onChange={e => onChange(e.target.value)}
           />
         </div>
-      )}
+        {buttonIcon && (
+          <div className={styles.iconWrapper}>
+            <button
+              type='button'
+              className={styles.browseButton}
+              aria-label={buttonTitle}
+              onClick={async () => {
+                const newValue = await browse?.();
+                if (newValue !== undefined) {
+                  onChange(newValue);
+                  ref.current?.focus();
+                }
+              }}
+            >
+              <Icon iconName={buttonIcon} height={20} width={20} fill='--color-command-icon' />
+            </button>
+          </div>
+        )}
+      </div>
+      {error && <div id={errorId} className={styles.error} role='alert'>{error}</div>}
     </div>
   );
 };

@@ -1,12 +1,12 @@
 import styles from "./ExplorerPanel.module.scss";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
-import { type KeyboardEvent, type MouseEvent, useEffect, useRef, useState } from "react";
+import { type ComponentProps, type KeyboardEvent, type MouseEvent, useEffect, useRef, useState } from "react";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useContextMenuState } from "@controls/ContextMenu";
-import { RenameDialog } from "@renderer/appIde/dialogs/RenameDialog";
+import { RenameDialog, RenameDialogResult } from "@renderer/appIde/dialogs/RenameDialog";
 import { DeleteDialog } from "@renderer/appIde/dialogs/DeleteDialog";
-import { NewItemDialog } from "@renderer/appIde/dialogs/NewItemDialog";
+import { NewItemDialog, NewItemDialogResult } from "@renderer/appIde/dialogs/NewItemDialog";
 import {
   incExploreViewVersionAction,
   setBuildRootAction
@@ -235,76 +235,77 @@ export const ExplorerPanel = () => {
     if (!node) return;
     const nodeIsFolder = node.data?.isFolder ?? false;
     const oldPath = node.data?.name;
-    void dialogs.open<void>((controls) => (
-      <RenameDialog
-        isFolder={nodeIsFolder}
-        oldPath={oldPath}
-          onRename={async (newName: string) => {
-            await renameExplorerNode({
-              buildRoots,
-              dispatch,
-              emuApi,
-              mainApi,
-              newName,
-              projectService,
-              refreshTree,
-              selectedContextNode: node,
-              setSelectedNode
-            });
-            controls.close();
-        }}
-        onClose={() => controls.cancel()}
-      />
-    ));
+    void (async () => {
+      const result = await dialogs.open<RenameDialogResult, Omit<ComponentProps<typeof RenameDialog>, "controls">>(
+        RenameDialog,
+        {
+          isFolder: nodeIsFolder,
+          oldPath
+        },
+        { title: nodeIsFolder ? "Rename folder" : "Rename file", width: 500 }
+      );
+      if (!result) return;
+      await renameExplorerNode({
+        buildRoots,
+        dispatch,
+        emuApi,
+        mainApi,
+        newName: result.name,
+        projectService,
+        refreshTree,
+        selectedContextNode: node,
+        setSelectedNode
+      });
+    })();
   };
 
   const openDeleteDialog = (node = selectedContextNode): void => {
     if (!node) return;
     const nodeIsFolder = node.data?.isFolder ?? false;
-    void dialogs.open<void>((controls) => (
-      <DeleteDialog
-        isFolder={nodeIsFolder}
-        entry={node.data.projectPath}
-          onDelete={async () => {
-            await deleteExplorerNode({
-              mainApi,
-              projectService,
-              refreshTree,
-              selectedContextNode: node,
-              selectedContextNodeIsFolder: nodeIsFolder
-            });
-            controls.close();
-        }}
-        onClose={() => controls.cancel()}
-      />
-    ));
+    void (async () => {
+      const confirmed = await dialogs.open<true, Omit<ComponentProps<typeof DeleteDialog>, "controls">>(
+        DeleteDialog,
+        { isFolder: nodeIsFolder, entry: node.data.projectPath },
+        {
+          title: nodeIsFolder ? "Delete folder" : "Delete file",
+          width: 500,
+          dialogRole: "alertdialog",
+          closeOnOutsideClick: false
+        }
+      );
+      if (!confirmed) return;
+      await deleteExplorerNode({
+        mainApi,
+        projectService,
+        refreshTree,
+        selectedContextNode: node,
+        selectedContextNodeIsFolder: nodeIsFolder
+      });
+    })();
   };
 
   const openNewItemDialog = (newItemIsFolder: boolean, node = selectedContextNode): void => {
     if (!node) return;
     const itemNames = (node.children ?? []).map((item) => item.data.name);
-    void dialogs.open<void>((controls) => (
-      <NewItemDialog
-        isFolder={newItemIsFolder}
-        path={node.data?.name}
-          itemNames={itemNames}
-          onAdd={async (newName: string) => {
-            await addExplorerItem({
-              ideCommandsService,
-              mainApi,
-              newItemIsFolder,
-              newName,
-              projectService,
-              refreshTree,
-              selectedContextNode: node,
-              setSelectedNode,
-              store
-            });
-            controls.close();
-        }}
-        onClose={() => controls.cancel()}
-      />
-    ));
+    void (async () => {
+      const result = await dialogs.open<NewItemDialogResult, Omit<ComponentProps<typeof NewItemDialog>, "controls">>(
+        NewItemDialog,
+        { isFolder: newItemIsFolder, path: node.data?.name, itemNames },
+        { title: `Add new ${newItemIsFolder ? "folder" : "file"}`, width: 500 }
+      );
+      if (!result) return;
+      await addExplorerItem({
+        ideCommandsService,
+        mainApi,
+        newItemIsFolder,
+        newName: result.name,
+        projectService,
+        refreshTree,
+        selectedContextNode: node,
+        setSelectedNode,
+        store
+      });
+    })();
   };
 
   const openIdeDialog = (dialogId: number): void => {

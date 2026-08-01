@@ -1,5 +1,5 @@
 {
-  "kliveVersion": "0.57.1",
+  "kliveVersion": "0.58.0",
   "machineType": "zxnext",
   "modelId": "pal",
   "clockMultiplier": 1,
@@ -62,7 +62,7 @@
     "startBlock": true,
     "addClear": true,
     "addPause": false,
-    "singleBlock": false,
+    "singleBlock": true,
     "startAddress": ""
   },
   "workspaceSettings": {
@@ -78,24 +78,84 @@
           "areaId": "document-area-1",
           "documents": [
             {
-              "type": "Memory",
-              "id": "$memory",
+              "type": "CodeEditor",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/00_intro/print.asm",
               "position": {
                 "line": 0,
                 "column": 0
               },
               "viewState": {
-                "topIndex": 2048,
-                "isFullView": true,
-                "currentSegment": -1,
-                "decimalView": false,
-                "viewMode": "8x1",
-                "charDump": true,
-                "bankLabel": true
+                "cursorState": [
+                  {
+                    "inSelectionMode": false,
+                    "selectionStart": {
+                      "lineNumber": 1,
+                      "column": 1
+                    },
+                    "position": {
+                      "lineNumber": 1,
+                      "column": 1
+                    }
+                  }
+                ],
+                "viewState": {
+                  "scrollLeft": 0,
+                  "firstPosition": {
+                    "lineNumber": 1,
+                    "column": 1
+                  },
+                  "firstPositionDeltaTop": 0
+                },
+                "contributionsState": {
+                  "editor.contrib.folding": {
+                    "lineCount": 65,
+                    "foldedImports": false
+                  },
+                  "editor.contrib.wordHighlighter": false
+                }
+              }
+            },
+            {
+              "type": "CodeEditor",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_talktohw/io.asm",
+              "position": {
+                "line": 9,
+                "column": 6
+              },
+              "viewState": {
+                "cursorState": [
+                  {
+                    "inSelectionMode": false,
+                    "selectionStart": {
+                      "lineNumber": 9,
+                      "column": 6
+                    },
+                    "position": {
+                      "lineNumber": 9,
+                      "column": 6
+                    }
+                  }
+                ],
+                "viewState": {
+                  "scrollLeft": 0,
+                  "firstPosition": {
+                    "lineNumber": 1,
+                    "column": 1
+                  },
+                  "firstPositionDeltaTop": 0
+                },
+                "contributionsState": {
+                  "editor.contrib.folding": {
+                    "lineCount": 71,
+                    "provider": "syntax",
+                    "foldedImports": false
+                  },
+                  "editor.contrib.wordHighlighter": false
+                }
               }
             }
           ],
-          "activeDocumentId": "$memory"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_talktohw/io.asm"
         }
       ]
     }

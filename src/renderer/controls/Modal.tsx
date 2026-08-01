@@ -49,6 +49,7 @@ export type ModalProps = {
   cancelLabel?: string;
   cancelEnabled?: boolean;
   cancelVisible?: boolean;
+  footerVisible?: boolean;
   initialFocus?: "none" | "primary" | "secondary" | "cancel";
   onClose: (result?: any) => any;
   onPrimaryClicked?: () => Promise<boolean>;
@@ -67,7 +68,7 @@ export const Modal = ({
   closeOnEscape = true,
   closeOnOutsideClick = true,
   title,
-  translateY = -200,
+  translateY = 0,
   primaryLabel = "Ok",
   primaryEnabled = true,
   primaryVisible = true,
@@ -78,6 +79,7 @@ export const Modal = ({
   cancelLabel = "Cancel",
   cancelEnabled = true,
   cancelVisible = true,
+  footerVisible,
   initialFocus = "primary",
   onClose,
   onPrimaryClicked,
@@ -101,6 +103,7 @@ export const Modal = ({
   }, [messageSource, onClose, store]);
 
   const [closeStarted, setCloseStarted] = useState<boolean>(false);
+  const showFooter = footerVisible ?? (primaryVisible || secondaryVisible || cancelVisible);
   const containerRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -155,6 +158,18 @@ export const Modal = ({
       }
     };
   }, [isOpen, modalId]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleFormCancel = (event: Event) => {
+      event.preventDefault();
+      doCloseRef.current?.();
+    };
+    container.addEventListener("klive-dialog-cancel", handleFormCancel);
+    return () => container.removeEventListener("klive-dialog-cancel", handleFormCancel);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -291,7 +306,7 @@ export const Modal = ({
 
               <div className={styles.dialogBody}>{children}</div>
 
-              <div>
+              {showFooter && <div>
                 <footer className={styles.dialogFooter}>
                   <span data-modal-action="primary">
                     <Button
@@ -300,7 +315,6 @@ export const Modal = ({
                       focusOnInit={primaryEnabled && initialFocus === "primary"}
                       isDanger={primaryDanger}
                       disabled={!primaryEnabled}
-                      spaceLeft={8}
                       clicked={async () => await primaryClickHandler()}
                     />
                   </span>
@@ -312,7 +326,6 @@ export const Modal = ({
                         secondaryEnabled && initialFocus === "secondary"
                       }
                       disabled={!secondaryEnabled}
-                      spaceLeft={8}
                       clicked={async () => await secondaryClickHandler()}
                     />
                   </span>
@@ -328,7 +341,7 @@ export const Modal = ({
                     />
                   </span>
                 </footer>
-              </div>
+              </div>}
             </div>
           </div>,
           root

@@ -1,0 +1,25 @@
+.form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.footer {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 8px;
+  margin: 20px -20px -20px;
+  padding: 12px 20px;
+  border-top: var(--border-modal-section);
+  background: var(--bgcolor-modal-footer);
+  border-bottom-left-radius: var(--radius-modal);
+  border-bottom-right-radius: var(--radius-modal);
+}

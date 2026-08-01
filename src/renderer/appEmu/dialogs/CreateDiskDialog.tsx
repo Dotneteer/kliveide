@@ -4,8 +4,10 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import Dropdown from "@renderer/controls/Dropdown";
 import { TextInput } from "@renderer/controls/TextInput";
+import { DialogForm } from "@renderer/controls/DialogForm";
 import { useMainApi } from "@renderer/core/MainApi";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { requiredFilename, requiredPath } from "@renderer/appIde/dialogs/dialogValidators";
 
 const NEW_DISK_FOLDER_ID = "newDiskFolder";
 
@@ -35,15 +37,8 @@ export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
   const [diskType, setDiskType] = useState<string>("ss");
   const [diskFileFolder, setDiskFileFolder] = useState("");
   const [filename, setFilename] = useState("");
-  const [folderIsValid, setFolderIsValid] = useState(true);
-  const [fileIsValid, setFileIsValid] = useState(true);
-
-  useEffect(() => {
-    const fValid = validationService.isValidPath(diskFileFolder);
-    setFolderIsValid(fValid);
-    const nValid = validationService.isValidFilename(filename);
-    setFileIsValid(nValid);
-  }, [diskFileFolder, filename]);
+  const folderError = requiredPath(validationService, diskFileFolder);
+  const fileError = requiredFilename(validationService, filename);
 
   const createDisk = async (): Promise<boolean> => {
     // --- Create the project
@@ -69,14 +64,19 @@ export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
       fullScreen={false}
       translateY={0}
       width={500}
-      primaryLabel="Create"
-      primaryEnabled={folderIsValid && fileIsValid}
-      initialFocus="none"
-      onPrimaryClicked={createDisk}
+      footerVisible={false}
       onClose={() => {
         onClose();
       }}
     >
+      <DialogForm
+        submitLabel="Create"
+        submitDisabled={Boolean(folderError || fileError)}
+        onSubmit={async () => {
+          if (!(await createDisk())) onClose();
+        }}
+        onCancel={onClose}
+      >
       <DialogRow rows={true} label="Disk type">
         <div className={styles.dropdownWrapper}>
           <Dropdown
@@ -93,46 +93,22 @@ export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
       <DialogRow label="Disk file folder:">
         <TextInput
           value={diskFileFolder}
-          isValid={folderIsValid}
-          focusOnInit={true}
+          error={folderError}
+          autoFocus={true}
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
-          buttonClicked={async () => {
-            const folder = await mainApi.showOpenFolderDialog(NEW_DISK_FOLDER_ID);
-            if (folder) {
-              setDiskFileFolder(folder);
-            }
-            return folder;
-          }}
-          valueChanged={(val) => {
-            setDiskFileFolder(val);
-            return false;
-          }}
+          browse={() => mainApi.showOpenFolderDialog(NEW_DISK_FOLDER_ID)}
+          onChange={setDiskFileFolder}
         />
       </DialogRow>
       <DialogRow label="Project name:">
         <TextInput
           value={filename}
-          isValid={fileIsValid}
-          focusOnInit={true}
-          keyPressed={async (e) => {
-            if (e.code === "Enter") {
-              if (folderIsValid && fileIsValid) {
-                e.preventDefault();
-                e.stopPropagation();
-                const keepOpen = await createDisk();
-                if (!keepOpen) {
-                  onClose();
-                }
-              }
-            }
-          }}
-          valueChanged={(val) => {
-            setFilename(val);
-            return false;
-          }}
+          error={fileError}
+          onChange={setFilename}
         />
       </DialogRow>
+      </DialogForm>
     </Modal>
   );
 };

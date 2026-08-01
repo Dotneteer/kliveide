@@ -48,7 +48,7 @@ describe("SetMemoryDialog", () => {
     expect(appServicesMock.executeCommand).toHaveBeenCalledWith("num $12");
   });
 
-  it("keeps the primary action disabled after async validation rejects a value", async () => {
+  it("keeps the dialog open and displays an error when submit validation rejects a value", async () => {
     appServicesMock.executeCommand.mockImplementation((command: string) =>
       Promise.resolve({ success: command !== "num nope" })
     );
@@ -64,9 +64,10 @@ describe("SetMemoryDialog", () => {
     );
 
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "nope" } });
+    fireEvent.click(screen.getByRole("button", { name: "Set" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Set" })).toBeDisabled();
+      expect(screen.getByRole("alert")).toHaveTextContent("Enter a valid numeric value.");
     });
     expect(appServicesMock.executeCommand).toHaveBeenCalledWith("num nope");
   });

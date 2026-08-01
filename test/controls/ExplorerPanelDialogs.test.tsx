@@ -57,6 +57,9 @@ describe("ExplorerPanel dialog migration", () => {
     vi.doMock("@renderer/core/EmuApi", () => ({
       useEmuApi: () => ({})
     }));
+    vi.doMock("@renderer/controls/Modal", () => ({
+      Modal: ({ children }: { children: ReactNode }) => <>{children}</>
+    }));
     vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
       useAppServices: () => ({
         ideCommandsService: { executeCommand },
@@ -136,27 +139,27 @@ describe("ExplorerPanel dialog migration", () => {
       )
     }));
     vi.doMock("@renderer/appIde/dialogs/RenameDialog", () => ({
-      RenameDialog: ({ onRename }: { onRename: (name: string) => Promise<void> }) => (
-        <button onClick={() => void onRename("renamed.asm")}>confirm rename</button>
+      RenameDialog: ({ controls }: { controls: { close: (result: { name: string }) => void } }) => (
+        <button onClick={() => controls.close({ name: "renamed.asm" })}>confirm rename</button>
       )
     }));
     vi.doMock("@renderer/appIde/dialogs/DeleteDialog", () => ({
-      DeleteDialog: ({ entry, onDelete }: { entry: string; onDelete: () => Promise<void> }) => (
+      DeleteDialog: ({ entry, controls }: { entry: string; controls: { close: (result: true) => void } }) => (
         <div>
           <span>delete entry {entry}</span>
-          <button onClick={() => void onDelete()}>confirm delete</button>
+          <button onClick={() => controls.close(true)}>confirm delete</button>
         </div>
       )
     }));
     vi.doMock("@renderer/appIde/dialogs/NewItemDialog", () => ({
       NewItemDialog: ({
         isFolder,
-        onAdd
+        controls
       }: {
         isFolder?: boolean;
-        onAdd: (name: string) => Promise<void>;
+        controls: { close: (result: { name: string }) => void };
       }) => (
-        <button onClick={() => void onAdd(isFolder ? "new-folder" : "new-file.asm")}>
+        <button onClick={() => controls.close({ name: isFolder ? "new-folder" : "new-file.asm" })}>
           confirm new {isFolder ? "folder" : "file"}
         </button>
       )

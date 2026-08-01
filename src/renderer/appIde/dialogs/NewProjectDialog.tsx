@@ -11,6 +11,8 @@ import { useMainApi } from "@renderer/core/MainApi";
 import Dropdown from "@renderer/controls/Dropdown";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { ensureProjectLoaded, ensureWorkspaceLoaded } from "../IdeEventsHandler";
+import { DialogForm } from "@renderer/controls/DialogForm";
+import { requiredFilename, requiredPath } from "./dialogValidators";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const INITIAL_MACHINE_IDE = "sp48";
@@ -43,8 +45,6 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const [modelId, setmodelId] = useState<string>(undefined);
   const [projectFolder, setProjectFolder] = useState("");
   const [projectName, setProjectName] = useState("");
-  const [folderIsValid, setFolderIsValid] = useState(true);
-  const [projectIsValid, setProjectIsValid] = useState(true);
   const [templateDirs, setTemplateDirs] = useState<{ value: string; label: string }[]>([]);
   const [templateId, setTemplateId] = useState<string>(INITIAL_TEMPLATE_ID);
 
@@ -65,13 +65,8 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
     })();
   }, [machineId]);
 
-  // --- Validate the folder and project name
-  useEffect(() => {
-    const fValid = validationService.isValidPath(projectFolder);
-    setFolderIsValid(fValid);
-    const nValid = validationService.isValidFilename(projectName);
-    setProjectIsValid(nValid);
-  }, [projectFolder, projectName]);
+  const folderError = requiredPath(validationService, projectFolder);
+  const projectError = requiredFilename(validationService, projectName);
 
   const createProject = async (): Promise<boolean> => {
     // --- Create the project
@@ -116,14 +111,19 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       fullScreen={false}
       width={500}
       translateY={0}
-      primaryLabel="Create"
-      primaryEnabled={folderIsValid && projectIsValid}
-      initialFocus="none"
-      onPrimaryClicked={createProject}
+      footerVisible={false}
       onClose={() => {
         onClose();
       }}
     >
+      <DialogForm
+        submitLabel="Create"
+        submitDisabled={Boolean(folderError || projectError)}
+        onSubmit={async () => {
+          if (!(await createProject())) onClose();
+        }}
+        onCancel={onClose}
+      >
       <DialogRow label="Machine type: *">
         <div className={styles.dropdownWrapper}>
           <Dropdown
@@ -155,46 +155,22 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       <DialogRow label="Project folder:">
         <TextInput
           value={projectFolder}
-          isValid={folderIsValid}
-          focusOnInit={true}
+          error={folderError}
+          autoFocus={true}
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
-          buttonClicked={async () => {
-            const folder = await mainApi.showOpenFolderDialog(NEW_PROJECT_FOLDER_ID);
-            if (folder) {
-              setProjectFolder(folder);
-            }
-            return folder;
-          }}
-          valueChanged={(val) => {
-            setProjectFolder(val);
-            return false;
-          }}
+          browse={() => mainApi.showOpenFolderDialog(NEW_PROJECT_FOLDER_ID)}
+          onChange={setProjectFolder}
         />
       </DialogRow>
       <DialogRow label="Project name:">
         <TextInput
           value={projectName}
-          isValid={projectIsValid}
-          focusOnInit={true}
-          keyPressed={async (e) => {
-            if (e.code === "Enter") {
-              if (folderIsValid && projectIsValid) {
-                e.preventDefault();
-                e.stopPropagation();
-                const keepOpen = await createProject();
-                if (!keepOpen) {
-                  onClose();
-                }
-              }
-            }
-          }}
-          valueChanged={(val) => {
-            setProjectName(val);
-            return false;
-          }}
+          error={projectError}
+          onChange={setProjectName}
         />
       </DialogRow>
+      </DialogForm>
     </Modal>
   );
 };
