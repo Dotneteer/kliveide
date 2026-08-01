@@ -5,6 +5,8 @@ export type LayoutProps = {
   children?: ReactNode;
   /** DOM id forwarded to the outer container. */
   id?: string;
+  /** Optional application readiness state exposed for end-to-end automation. */
+  dataAppReady?: "true" | "false";
   /** Stack direction used by full panels and stack wrappers. */
   orientation?: "vertical" | "horizontal";
   /** Padding applied on all sides. */

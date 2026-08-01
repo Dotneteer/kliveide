@@ -382,6 +382,36 @@ npm install
 npm run dev
 ```
 
+### Testing
+
+```bash
+# Unit and component tests only
+npm run test:unit
+
+# All tests: unit/component tests followed by Playwright E2E tests
+npm run test
+
+# Start Klive with a generated isolated settings file for manual E2E debugging
+npm run e2e:app
+
+# Run E2E tests with a visible Electron window
+npm run test:e2e -- --headed
+```
+
+To run Klive with settings prepared for one particular E2E case, pass an absolute
+path. Klive reads and writes that file instead of `~/Klive/klive.settings`:
+
+```bash
+npm run e2e:app -- --settings-file /absolute/path/to/klive.settings
+```
+
+The initial Electron E2E setup uses the bundled Electron runtime, so it does not
+need a Playwright browser download.
+
+On Linux, run Electron E2E tests under an X server (for example,
+`xvfb-run -a npm run test:e2e`). When an E2E test fails, inspect its trace with
+`npx playwright show-trace test-results/<test-name>/trace.zip`.
+
 ---
 
 ## 🔧 Technology

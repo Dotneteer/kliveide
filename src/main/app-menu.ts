@@ -1,4 +1,5 @@
 import {
+  ABOUT_DIALOG,
   app,
   BrowserWindow,
   dialog,
@@ -32,6 +33,7 @@ import {
   FIRST_STARTUP_DIALOG_EMU,
   FIRST_STARTUP_DIALOG_IDE
 } from "@messaging/dialog-ids";
+import { createAboutDialogData } from "@messaging/about-dialog";
 import { MEMORY_PANEL_ID, DISASSEMBLY_PANEL_ID } from "@state/common-ids";
 import { logEmuEvent, setMachineType } from "./registeredMachines";
 import { createSettingsReader } from "@common/utils/SettingsReader";
@@ -1057,16 +1059,15 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         id: HELP_ABOUT,
         label: "About",
         click: async () => {
-          const result = await dialog.showMessageBox(ideFocus ? ideWindow : emuWindow, {
-            message: "About Klive IDE",
-            detail:
-              `${KLIVE_GITHUB_PAGES}\n\nVersion: ${app.getVersion()}\n` +
-              `Electron version: ${process.versions.electron}\n` +
-              `OS version: ${os.version()}`,
-            buttons: ["Close", "Visit website"]
-          });
-          if (result.response) {
-            shell.openExternal(KLIVE_GITHUB_PAGES);
+          const about = createAboutDialogData(
+            app.getVersion(),
+            process.versions.electron,
+            os.version()
+          );
+          if (ideFocus) {
+            await getIdeApi().displayDialog(ABOUT_DIALOG, about);
+          } else {
+            await getEmuApi().displayDialog(ABOUT_DIALOG, about);
           }
         }
       },

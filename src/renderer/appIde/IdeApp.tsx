@@ -67,7 +67,7 @@ const IdeApp = () => {
   }, [sideBarWidth, toolPanelHeight]);
 
   return (
-    <FullPanel id="appMain">
+    <FullPanel id="appMain" dataAppReady={ideLoaded ? "true" : "false"}>
       <IdeEventsHandler />
       <IdeDialogBridge />
       {showToolbar && <Toolbar ide={true} kliveProjectLoaded={kliveProjectLoaded} />}

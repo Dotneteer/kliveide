@@ -32,6 +32,8 @@ yarn.lock
 dist-electron
 .next
 out
+test-results
+playwright-report
 docs-out
 tsconfig.tsbuildinfo
 tsconfig.web.tsbuildinfo

@@ -68,6 +68,7 @@ import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
 import { appSettings, getSettingValue, loadAppSettings, saveAppSettings } from "./settings-utils";
 import { KLIVE_HOME_FOLDER } from "./settings";
+import { KLIVE_APP_VERSION } from "./app-version";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -91,8 +92,13 @@ app.commandLine.appendSwitch('enable-zero-copy');
 // --- Set application name for Windows 10+ notifications
 if (__WIN32__) app.setAppUserModelId(app.getName());
 
-// --- Make sure, only one instance is running
-if (!app.requestSingleInstanceLock()) {
+// --- Electron otherwise reports its runtime version when launched from the built entry point.
+app.setVersion(KLIVE_APP_VERSION);
+
+// --- E2E tests deliberately launch an isolated app instance alongside a developer's Klive process.
+// --- Production and manual launches retain the normal single-instance protection.
+const isE2eRun = process.env.KLIVE_E2E === "1";
+if (!isE2eRun && !app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
 }
