@@ -54,6 +54,23 @@ function mockRendererProvider(dispatch = vi.fn()) {
 }
 
 describe("effect cleanup fixes", () => {
+  it("hides the document header when its hub has no open documents", async () => {
+    const documentHubService = createDocumentHubServiceMock({
+      getOpenDocuments: vi.fn(() => [])
+    });
+
+    mockRendererProvider();
+    mockDocumentsHeaderDependencies({ on: vi.fn(), off: vi.fn() }, documentHubService);
+
+    const { DocumentsHeader } = await import(
+      "@renderer/features/documents/DocumentsHeader"
+    );
+
+    const { container } = render(<DocumentsHeader />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it("unsubscribes DocumentsHeader from projectClosed on unmount", async () => {
     const projectClosed = {
       on: vi.fn(),

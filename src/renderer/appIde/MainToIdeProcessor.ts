@@ -8,7 +8,6 @@ import {
 import { AppState } from "@state/AppState";
 import {
   BASIC_PANEL_ID,
-  BASIC_EDITOR,
   MEMORY_PANEL_ID,
   DISASSEMBLY_PANEL_ID
 } from "@state/common-ids";
@@ -16,6 +15,8 @@ import { Store } from "@state/redux-light";
 import { dimMenuAction } from "@common/state/actions";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { PANE_ID_BUILD } from "@common/integration/constants";
+import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
+import type { SpecialDocumentId } from "@renderer/features/documents/specialDocuments";
 import { ProjectStructure, ProjectTreeNode } from "@main/ksx-runner/ProjectStructure";
 import { CompositeOutputBuffer } from "./ToolArea/CompositeOutputBuffer";
 import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
@@ -89,53 +90,53 @@ class IdeMessageProcessor {
    * Shows or hides the memory panel.
    * @param show True to show, false to hide.
    */
-  showMemory(show: boolean) {
+  async showMemory(show: boolean) {
     // Input validation
     if (typeof show !== "boolean") return;
     // --- Input validated
-    if (show) {
-      this.ideCommandsService.executeCommand("show-memory");
-    } else {
-      this.projectService.getActiveDocumentHubService().closeDocument(MEMORY_PANEL_ID);
-    }
+    await this.ideCommandsService.executeCommand(show ? "show-memory" : "hide-memory");
   }
 
   /**
    * Shows or hides the disassembly panel.
    * @param show True to show, false to hide.
    */
-  showDisassembly(show: boolean) {
+  async showDisassembly(show: boolean) {
     // Input validation
     if (typeof show !== "boolean") return;
     // --- Input validated
-    if (show) {
-      this.ideCommandsService.executeCommand("show-disass");
-    } else {
-      this.projectService.getActiveDocumentHubService().closeDocument(DISASSEMBLY_PANEL_ID);
-    }
+    await this.ideCommandsService.executeCommand(show ? "show-disass" : "hide-disass");
   }
 
   /**
    * Shows or hides the BASIC listing panel.
    * @param show True to show, false to hide.
    */
-  showBasic(show: boolean) {
+  async showBasic(show: boolean) {
     // Input validation
     if (typeof show !== "boolean") return;
     // --- Input validated
-    if (show) {
-      this.projectService.getActiveDocumentHubService().openDocument(
-        {
-          id: BASIC_PANEL_ID,
-          name: "BASIC Listing",
-          type: BASIC_EDITOR
-        },
-        undefined,
-        false
-      );
-    } else {
-      this.projectService.getActiveDocumentHubService().closeDocument(BASIC_PANEL_ID);
+    await this.setSpecialDocumentVisibility(BASIC_PANEL_ID, show);
+  }
+
+  private async setSpecialDocumentVisibility(
+    documentId: SpecialDocumentId,
+    show: boolean
+  ): Promise<void> {
+    const documentHubService = this.projectService.getActiveDocumentHubService();
+    if (!documentHubService) return;
+
+    if (!show) {
+      await documentHubService.closeDocument(documentId);
+      return;
     }
+
+    if (documentHubService.isOpen(documentId)) {
+      await documentHubService.setActiveDocument(documentId);
+      return;
+    }
+
+    await documentHubService.openDocument(createSpecialDocument(documentId), undefined, false);
   }
 
   /**

@@ -7,6 +7,7 @@ import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { Panel } from "@renderer/controls/layout/Panel";
 import { Column } from "@renderer/controls/layout/Column";
 import { createElement } from "react";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 
 type ScrFileViewState = {
   scrollPosition?: number;
@@ -17,6 +18,8 @@ const ScrFileViewerPanel = ({
   contents,
   viewState
 }: DocumentProps<ScrFileViewState>) => {
+  const documentHubService = useDocumentHubService();
+
   return createElement(
     GenericFileViewerPanel<ScrFileContents, ScrFileViewState>,
     {
@@ -25,7 +28,6 @@ const ScrFileViewerPanel = ({
       viewState,
       fileLoader: loadScrFileContents,
       validRenderer: context => {
-        const projectService = context.appServices.projectService;
         const documentSource = document.node.projectPath;
 
         // --- Create the Layer2 screen from the data provided
@@ -74,7 +76,7 @@ const ScrFileViewerPanel = ({
                   title='Display screen data dump'
                   clicked={async () => {
                     await openStaticMemoryDump(
-                      projectService.getActiveDocumentHubService(),
+                      documentHubService,
                       `scrData${documentSource}`,
                       `${documentSource} - Dump`,
                       contents

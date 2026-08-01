@@ -24,19 +24,17 @@ const outputItems = [
 type HarnessOptions = {
   machineState?: MachineControllerState;
   viewState?: Record<string, unknown>;
-  workspace?: Record<string, unknown>;
 };
 
 async function renderDisassemblyPanel({
   machineState = MachineControllerState.Paused,
-  viewState = {},
-  workspace = {}
+  viewState = {}
 }: HarnessOptions = {}) {
   vi.resetModules();
 
   const dispatch = vi.fn();
   const saveProject = vi.fn(() => Promise.resolve());
-  const saveActiveDocumentState = vi.fn();
+  const setDocumentViewState = vi.fn();
   const getMemoryContents = vi.fn(() =>
     Promise.resolve({
       memory: new Uint8Array(0x1_0000),
@@ -75,22 +73,11 @@ async function renderDisassemblyPanel({
       machineId: "sp128",
       machineState
     },
-    workspaceSettings: {
-      Disassembly: {
-        autoRefresh: true,
-        bankLabel: true,
-        decimalView: false,
-        isFullView: true,
-        ram: true,
-        screen: false,
-        topAddress: 0,
-        ...workspace
-      }
-    }
+    workspaceSettings: {}
   };
   const documentHubService = {
     getDocumentViewState: vi.fn(() => viewState),
-    saveActiveDocumentState
+    setDocumentViewState
   };
   const emuApi = {
     getDisassemblySections: vi.fn(() => Promise.resolve([])),
@@ -293,7 +280,7 @@ async function renderDisassemblyPanel({
     emuApi,
     emuStateCallback,
     getMemoryContents,
-    saveActiveDocumentState,
+    setDocumentViewState,
     saveProject,
     triggerVirtualScroll: () => virtualOnScroll?.(),
     triggerVirtualScrollEnd: () => virtualOnScrollEnd?.(),
@@ -349,26 +336,27 @@ describe("DisassemblyPanel refactor characterization", () => {
 
   it("defers top-address persistence until virtual scrolling ends", async () => {
     const {
-      saveActiveDocumentState,
+      setDocumentViewState,
       saveProject,
       triggerVirtualScroll,
       triggerVirtualScrollEnd,
       virtualApi
     } = await renderDisassemblyPanel();
     virtualApi.findStartIndex.mockReturnValue(1);
-    saveActiveDocumentState.mockClear();
+    setDocumentViewState.mockClear();
     saveProject.mockClear();
 
     triggerVirtualScroll();
     await Promise.resolve();
 
-    expect(saveActiveDocumentState).not.toHaveBeenCalled();
+    expect(setDocumentViewState).not.toHaveBeenCalled();
     expect(saveProject).not.toHaveBeenCalled();
 
     triggerVirtualScrollEnd();
 
     await waitFor(() => {
-      expect(saveActiveDocumentState).toHaveBeenCalledWith(
+      expect(setDocumentViewState).toHaveBeenCalledWith(
+        "disass-doc",
         expect.objectContaining({ topAddress: 0x6002 })
       );
     });

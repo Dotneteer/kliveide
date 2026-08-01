@@ -4,56 +4,28 @@ import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { useDocumentAreaGridApi } from "./DocumentAreaGridContext";
 import styles from "./DocumentsHeader.module.scss";
 
 type DocumentCommandBarProps = {
   activeFullPath?: string;
   editorInfo?: FileTypeEditor;
   selectedIsBuildRoot: boolean;
-  onCloseAll: () => void;
 };
 
 /**
- * Renders commands that belong beside the document tabs, combining active-editor
- * actions, build-root actions, and document-level close controls.
+ * Renders active-editor and build-root commands beside the document tabs.
  */
 export function DocumentCommandBar({
   activeFullPath,
   editorInfo,
-  selectedIsBuildRoot,
-  onCloseAll
+  selectedIsBuildRoot
 }: DocumentCommandBarProps) {
-  const documentAreaGridApi = useDocumentAreaGridApi();
+  if (!editorInfo && !selectedIsBuildRoot) return null;
 
   return (
     <div className={styles.commandBar}>
       {editorInfo && editorInfo.documentTabRenderer?.(activeFullPath)}
       {selectedIsBuildRoot && <BuildRootCommandBar />}
-      {documentAreaGridApi && (
-        <>
-          <TabButton
-            iconName="layout-panel"
-            rotate={90}
-            title="Split editor right"
-            clicked={async () => await documentAreaGridApi.splitActiveArea("horizontal")}
-          />
-          <TabButtonSpace />
-          <TabButton
-            iconName="layout-panel"
-            title="Split editor down"
-            clicked={async () => await documentAreaGridApi.splitActiveArea("vertical")}
-          />
-          <TabButtonSpace />
-        </>
-      )}
-      <TabButtonSeparator />
-      <TabButton
-        iconName="close"
-        title="Close all tabs"
-        useSpace={true}
-        clicked={onCloseAll}
-      />
     </div>
   );
 }

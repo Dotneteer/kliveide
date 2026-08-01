@@ -3,6 +3,7 @@ import {
   createSingleAreaLayout,
   findAreaIds,
   removeArea,
+  setSplitSize,
   splitArea,
   type DocumentAreaLayout
 } from "@renderer/features/documents/documentAreaLayout";
@@ -96,6 +97,106 @@ describe("documentAreaLayout", () => {
           areaId: "area-3"
         }
       }
+    });
+  });
+
+  it("balances uncustomized horizontal areas when adding a third area", () => {
+    const initialLayout = splitArea(
+      createSingleAreaLayout("area-1"),
+      "area-1",
+      "area-2",
+      "horizontal"
+    );
+
+    expect(splitArea(initialLayout, "area-1", "area-3", "horizontal")).toEqual({
+      type: "split",
+      direction: "horizontal",
+      size: "33.333333%",
+      first: createSingleAreaLayout("area-1"),
+      second: {
+        type: "split",
+        direction: "horizontal",
+        size: "50%",
+        first: createSingleAreaLayout("area-3"),
+        second: createSingleAreaLayout("area-2")
+      }
+    });
+  });
+
+  it("balances uncustomized vertical areas when adding a third area", () => {
+    const initialLayout = splitArea(
+      createSingleAreaLayout("area-1"),
+      "area-1",
+      "area-2",
+      "vertical"
+    );
+
+    expect(splitArea(initialLayout, "area-2", "area-3", "vertical")).toEqual({
+      type: "split",
+      direction: "vertical",
+      size: "33.333333%",
+      first: createSingleAreaLayout("area-1"),
+      second: {
+        type: "split",
+        direction: "vertical",
+        size: "50%",
+        first: createSingleAreaLayout("area-2"),
+        second: createSingleAreaLayout("area-3")
+      }
+    });
+  });
+
+  it("preserves a customized sibling size when splitting an area", () => {
+    const initialLayout = setSplitSize(
+      splitArea(
+        createSingleAreaLayout("area-1"),
+        "area-1",
+        "area-2",
+        "horizontal"
+      ),
+      [],
+      "80%"
+    );
+
+    expect(splitArea(initialLayout, "area-1", "area-3", "horizontal")).toEqual({
+      type: "split",
+      direction: "horizontal",
+      size: "80%",
+      isSizeCustomized: true,
+      first: {
+        type: "split",
+        direction: "horizontal",
+        first: createSingleAreaLayout("area-1"),
+        second: createSingleAreaLayout("area-3")
+      },
+      second: createSingleAreaLayout("area-2")
+    });
+  });
+
+  it("preserves a customized vertical sibling size when splitting an area", () => {
+    const initialLayout = setSplitSize(
+      splitArea(
+        createSingleAreaLayout("area-1"),
+        "area-1",
+        "area-2",
+        "vertical"
+      ),
+      [],
+      "80%"
+    );
+
+    expect(splitArea(initialLayout, "area-1", "area-3", "vertical")).toEqual({
+      type: "split",
+      direction: "vertical",
+      size: "80%",
+      isSizeCustomized: true,
+      first: {
+        type: "split",
+        direction: "vertical",
+        first: createSingleAreaLayout("area-1"),
+        second: createSingleAreaLayout("area-3")
+      },
+      second: createSingleAreaLayout("area-2")
     });
   });
 

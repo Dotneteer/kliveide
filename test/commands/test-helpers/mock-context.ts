@@ -113,22 +113,24 @@ export function createMockIdeCommandsService() {
  * Creates a mock ProjectService for testing
  */
 export function createMockProjectService() {
+  const activeDocumentHubService = {
+    getDocument: vi.fn(),
+    setActiveDocument: vi.fn().mockResolvedValue(undefined),
+    openDocument: vi.fn().mockResolvedValue(undefined),
+    openDocumentTab: vi.fn().mockResolvedValue(undefined),
+    closeDocument: vi.fn().mockResolvedValue(undefined),
+    closeAllDocuments: vi.fn().mockResolvedValue(undefined),
+    isOpen: vi.fn().mockReturnValue(false),
+    waitOpen: vi.fn().mockResolvedValue({ id: "test-doc" }),
+    getDocumentApi: vi.fn(),
+    getOpenDocuments: vi.fn().mockReturnValue([]),
+    moveDocument: vi.fn()
+  };
   return {
     getNodeForFile: vi.fn(),
     performAllDelayedSavesNow: vi.fn().mockResolvedValue(undefined),
-    getActiveDocumentHubService: vi.fn().mockReturnValue({
-      getDocument: vi.fn(),
-      setActiveDocument: vi.fn().mockResolvedValue(undefined),
-      openDocument: vi.fn().mockResolvedValue(undefined),
-      openDocumentTab: vi.fn().mockResolvedValue(undefined),
-      closeDocument: vi.fn().mockResolvedValue(undefined),
-      closeAllDocuments: vi.fn().mockResolvedValue(undefined),
-      isOpen: vi.fn().mockReturnValue(false),
-      waitOpen: vi.fn().mockResolvedValue({ id: "test-doc" }),
-      getDocumentApi: vi.fn(),
-      getOpenDocuments: vi.fn().mockReturnValue([]),
-      moveDocument: vi.fn()
-    }),
+    getActiveDocumentHubService: vi.fn().mockReturnValue(activeDocumentHubService),
+    getDocumentHubServiceInstances: vi.fn().mockReturnValue([activeDocumentHubService]),
     getBreakpointAddressInfo: vi.fn(),
     getDocumentForProjectNode: vi.fn().mockResolvedValue({ id: "test-doc" }),
     getDocumentShellForProjectNode: vi.fn().mockReturnValue({ id: "test-doc" }),

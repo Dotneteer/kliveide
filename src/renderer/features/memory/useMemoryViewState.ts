@@ -20,8 +20,9 @@ export type MemoryViewStateValues = {
 
 type PersistenceParams = MemoryViewStateValues & {
   cachedRefreshState: MutableRefObject<CachedRefreshState>;
+  documentId: string;
   dispatch: (action: unknown) => void;
-  documentHubService: Pick<IDocumentHubService, "saveActiveDocumentState">;
+  documentHubService: Pick<IDocumentHubService, "setDocumentViewState">;
   incProjectFileVersion: () => unknown;
   isInitializing: boolean;
   mainApi: {
@@ -65,6 +66,7 @@ export function useLoadedMemoryViewState(
 
 export function useMemoryViewStatePersistence({
   cachedRefreshState,
+  documentId,
   dispatch,
   documentHubService,
   incProjectFileVersion,
@@ -105,12 +107,13 @@ export function useMemoryViewStatePersistence({
       clearTimeout(saveViewStateTimeout.current);
     }
     saveViewStateTimeout.current = setTimeout(async () => {
-      documentHubService.saveActiveDocumentState(mergedState);
+      documentHubService.setDocumentViewState(documentId, mergedState);
       await mainApi.saveProject();
       dispatch(incProjectFileVersion());
     }, 100);
   }, [
     dispatch,
+    documentId,
     documentHubService,
     incProjectFileVersion,
     isInitializing,

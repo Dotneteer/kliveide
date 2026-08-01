@@ -19,9 +19,12 @@ type Props = {
 
 export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props) => {
   const mainApi = useMainApi();
-  const volatileDocs = useSelector((s) => s.ideView.volatileDocs);
   const syncSourceBps = useGlobalSetting(SETTING_IDE_SYNC_BREAKPOINTS);
-  const { ideCommandsService } = useAppServices();
+  const { ideCommandsService, projectService } = useAppServices();
+  useSelector((s) => s.ideView?.documentHubState);
+  const activeDocumentHub = projectService.getActiveDocumentHubService();
+  const isMemoryOpen = activeDocumentHub?.isOpen(MEMORY_PANEL_ID) ?? false;
+  const isDisassemblyOpen = activeDocumentHub?.isOpen(DISASSEMBLY_PANEL_ID) ?? false;
 
   return (
     <HStack
@@ -50,9 +53,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
             iconName="memory-icon"
             fill="--color-toolbarbutton-orange"
             title="Show Memory Panel"
-            selected={volatileDocs?.[MEMORY_PANEL_ID]}
+            selected={isMemoryOpen}
             clicked={async () => {
-              if (volatileDocs?.[MEMORY_PANEL_ID]) {
+              if (isMemoryOpen) {
                 await ideCommandsService.executeCommand("hide-memory");
               } else {
                 await ideCommandsService.executeCommand("show-memory");
@@ -63,9 +66,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
             iconName="disassembly-icon"
             fill="--color-toolbarbutton-orange"
             title="Show Disassembly Panel"
-            selected={volatileDocs?.[DISASSEMBLY_PANEL_ID]}
+            selected={isDisassemblyOpen}
             clicked={async () => {
-              if (volatileDocs?.[DISASSEMBLY_PANEL_ID]) {
+              if (isDisassemblyOpen) {
                 await ideCommandsService.executeCommand("hide-disass");
               } else {
                 await ideCommandsService.executeCommand("show-disass");

@@ -35,7 +35,7 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
     const mergedState: CommandResultViewState = {
       topPosition: topPosition.current
     };
-    documentHubService.saveActiveDocumentState(mergedState);
+    documentHubService.setDocumentViewState(document.id, mergedState);
   };
 
   return (

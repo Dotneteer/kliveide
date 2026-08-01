@@ -457,7 +457,6 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     // --- Restore the view state to display the editor is it has been left
     mounted.current = false;
     editor.current = ed;
-    ed.setValue(value);
 
     // --- We need to add these commands to the editor to be able to use the shortcuts.
     // --- Otherwise, the v0.46.0 Monaco editor will not work properly with Electron v0.35.1.

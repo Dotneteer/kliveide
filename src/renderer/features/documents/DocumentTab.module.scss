@@ -18,12 +18,11 @@
 .dragBefore::before,
 .dragAfter::after {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
+  top: 0;
+  bottom: 0;
   width: 2px;
   content: "";
   background: var(--color-doc-activeText);
-  border-radius: 1px;
 }
 
 .dragBefore::before {
@@ -59,6 +58,7 @@
 
 .activeTitle {
   color: var(--color-doc-activeText);
+  font-weight: 700;
 }
 
 .temporaryTitle {

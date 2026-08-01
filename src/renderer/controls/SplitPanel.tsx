@@ -18,9 +18,11 @@ type Props = {
   initialSecondarySize?: number | string;
   minSize?: number;
   secondaryVisible?: boolean;
+  showSplitterBorder?: boolean;
   splitterThickness?: number;
   onUpdatePrimarySize?: (newSize: string) => void;
   onPrimarySizeUpdateCompleted?: (newSize: string) => void;
+  onPrimarySizeRatioUpdateCompleted?: (ratio: number) => void;
 };
 
 /**
@@ -35,9 +37,11 @@ export const SplitPanel = ({
   initialSecondarySize,
   minSize = 20,
   secondaryVisible = true,
+  showSplitterBorder = false,
   splitterThickness = 4,
   onUpdatePrimarySize,
-  onPrimarySizeUpdateCompleted
+  onPrimarySizeUpdateCompleted,
+  onPrimarySizeRatioUpdateCompleted
 }: Props) => {
   // --- Referencies we need to handling the splitter within the panel
   const mainContainer = useRef<HTMLDivElement>(null);
@@ -225,6 +229,7 @@ export const SplitPanel = ({
           anchorPos={anchorPosition}
           position={splitterPosition}
           splitterSize={splitterSize}
+          showBorder={showSplitterBorder}
           minRange={minSize}
           maxRange={Math.max(minSize, splitterRange - minSize)}
           onSplitterMoved={(newPos) => {
@@ -232,6 +237,9 @@ export const SplitPanel = ({
           }}
           onMoveCompleted={(newPos) => {
             onPrimarySizeUpdateCompleted?.(`${newPos}px`);
+            if (splitterRange > 0) {
+              onPrimarySizeRatioUpdateCompleted?.(newPos / splitterRange);
+            }
           }}
         />
       )}
@@ -245,6 +253,7 @@ type SplitterProps = {
   anchorPos: number;
   position: number;
   splitterSize: number;
+  showBorder?: boolean;
   minRange: number;
   maxRange: number;
   onSplitterMoved?: (newPos: number) => void;
@@ -257,6 +266,7 @@ const Splitter = ({
   position,
   anchorPos,
   splitterSize,
+  showBorder = false,
   minRange,
   maxRange,
   onSplitterMoved,
@@ -325,7 +335,10 @@ const Splitter = ({
   return (
     <div
       className={classnames(styles.splitter, {
-        [styles.pointed]: (pointed || isMoving) && !uiService.dragging
+        [styles.pointed]: (pointed || isMoving) && !uiService.dragging,
+        [styles.withBorder]: showBorder,
+        [styles.verticalBorder]: showBorder && horizontal,
+        [styles.horizontalBorder]: showBorder && !horizontal
       })}
       style={{
         [horizontal ? "width" : "height"]: `${thickness}px`,

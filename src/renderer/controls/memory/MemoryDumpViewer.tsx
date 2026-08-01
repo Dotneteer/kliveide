@@ -6,7 +6,7 @@ import {
 } from "@renderer/features/memory/StaticMemoryDump";
 import { HeaderRow } from "@renderer/controls/layout/Row";
 import { SmallIconButton } from "../IconButton";
-import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { Label } from "@renderer/controls/layout/Label";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
@@ -28,7 +28,7 @@ export const MemoryDumpViewer = ({
   idFactory,
   titleFactory
 }: Props) => {
-  const { projectService } = useAppServices();
+  const documentHubService = useDocumentHubService();
   return (
     <Column xclass={styles.headerRow}>
       <HeaderRow xclass={styles.headerRow}>
@@ -39,7 +39,7 @@ export const MemoryDumpViewer = ({
           clicked={async () => {
             if (!documentSource) return;
             await openStaticMemoryDump(
-              projectService.getActiveDocumentHubService(),
+              documentHubService,
               idFactory(documentSource, bank), // `bankDump${documentSource}:${bank}`,
               titleFactory(documentSource, bank), // `${documentSource} - Bank: ${bank}`,
               contents

@@ -35,7 +35,15 @@ import {
   InjectCodeCommand,
   RunCodeCommand
 } from "./commands/CompilerCommand";
-import { NavigateToDocumentCommand } from "./commands/DocumentCommands";
+import {
+  CloseEditorAreaCommand,
+  CloseEditorsInOtherAreasCommand,
+  MoveEditorToNextAreaCommand,
+  MoveEditorToPreviousAreaCommand,
+  NavigateToDocumentCommand,
+  SplitEditorDownCommand,
+  SplitEditorRightCommand
+} from "./commands/DocumentCommands";
 import {
   HideDisassemblyCommand,
   HideMemoryCommand,
@@ -94,6 +102,12 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new StepOutMachineCommand());
 
   cmdSrv.registerCommand(new NavigateToDocumentCommand());
+  cmdSrv.registerCommand(new SplitEditorRightCommand());
+  cmdSrv.registerCommand(new SplitEditorDownCommand());
+  cmdSrv.registerCommand(new MoveEditorToNextAreaCommand());
+  cmdSrv.registerCommand(new MoveEditorToPreviousAreaCommand());
+  cmdSrv.registerCommand(new CloseEditorAreaCommand());
+  cmdSrv.registerCommand(new CloseEditorsInOtherAreasCommand());
 
   cmdSrv.registerCommand(new SelectOutputPaneCommand());
   cmdSrv.registerCommand(new ShowMemoryCommand());

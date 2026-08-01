@@ -9,31 +9,57 @@ import {
 } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
-import { useSelector } from "@renderer/core/RendererProvider";
+import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { useMainApi } from "@renderer/core/MainApi";
+import { setWorkspaceSettingsAction } from "@common/state/actions";
 import { SplitPanel } from "@renderer/controls/SplitPanel";
-import { DocumentAreaGridApiProvider } from "./DocumentAreaGridContext";
+import {
+  ActiveDocumentAreaIdProvider,
+  DocumentAreaGridApiProvider,
+  DocumentAreaIdProvider
+} from "./DocumentAreaGridContext";
 import { DocumentAreaPane } from "./DocumentAreaPane";
 import {
   createSingleAreaLayout,
   findAreaIds,
   removeArea,
   splitArea,
+  setSplitSize,
   type DocumentAreaId,
   type DocumentAreaLayout,
+  type DocumentAreaSplitPath,
   type DocumentAreaSplitDirection
 } from "./documentAreaLayout";
+import {
+  createDocumentAreaWorkspace,
+  DOCS_WORKSPACE,
+  getMultiAreaDocumentWorkspace
+} from "./useDocumentWorkspacePersistence";
+import { setDocumentAreaCommandTarget } from "./documentAreaCommandTarget";
+import { getLegacySpecialDocumentWorkspaceSettingIds } from "./specialDocuments";
 
 export const DEFAULT_DOCUMENT_AREA_ID = "document-area-1";
 
 export type DocumentAreaGridApi = {
+  closeActiveArea(): Promise<void>;
+  closeOtherAreas(): Promise<void>;
+  getActiveAreaState(): DocumentAreaState;
   splitActiveArea(direction: DocumentAreaSplitDirection): Promise<void>;
-  moveActiveDocumentToNextArea(): Promise<void>;
-  moveActiveDocumentToPreviousArea(): Promise<void>;
+  moveActiveDocumentToNextArea(documentId?: string): Promise<void>;
+  moveActiveDocumentToPreviousArea(documentId?: string): Promise<void>;
   moveDocumentToArea(
     sourceAreaId: DocumentAreaId,
     targetAreaId: DocumentAreaId,
-    documentId: string
+    documentId: string,
+    targetDocumentId?: string,
+    after?: boolean
   ): Promise<void>;
+};
+
+export type DocumentAreaState = {
+  hasActiveDocument: boolean;
+  hasNextArea: boolean;
+  hasPreviousArea: boolean;
 };
 
 type DocumentAreaGridProps = {
@@ -52,8 +78,13 @@ export const DocumentAreaGrid = ({
   initialLayout
 }: DocumentAreaGridProps) => {
   const { projectService } = useAppServices();
+  const mainApi = useMainApi();
+  const { store } = useRendererContext();
   const documentHubState = useSelector((s) => s.ideView?.documentHubState);
+  const workspaceLoaded = useSelector((s) => s.project?.workspaceLoaded ?? false);
   const nextAreaId = useRef(1);
+  const workspaceRestored = useRef(false);
+  const skipNextWorkspaceSave = useRef(false);
   const [layout, setLayout] = useState<DocumentAreaLayout>(
     () => initialLayout ?? createSingleAreaLayout(DEFAULT_DOCUMENT_AREA_ID)
   );
@@ -67,6 +98,38 @@ export const DocumentAreaGrid = ({
   useEffect(() => {
     nextAreaId.current = getNextAreaCounter(findAreaIds(layout));
   }, [layout]);
+
+  useEffect(() => {
+    if (!workspaceLoaded || workspaceRestored.current) return;
+
+    const workspace = getMultiAreaDocumentWorkspace(
+      store.getState().workspaceSettings?.[DOCS_WORKSPACE]
+    );
+    if (!workspace || workspace.areas.length <= 1) {
+      workspaceRestored.current = true;
+      return;
+    }
+
+    const hubs = projectService.getDocumentHubServiceInstances();
+    const restoredHubs = new Map<DocumentAreaId, IDocumentHubService>();
+    workspace.areas.forEach((area, index) => {
+      const hub = hubs[index];
+      if (hub) {
+        restoredHubs.set(area.areaId, hub);
+      }
+    });
+
+    if (restoredHubs.size <= 0) {
+      workspaceRestored.current = true;
+      return;
+    }
+
+    setLayout(workspace.layout);
+    setHubsByAreaId(restoredHubs);
+    setActiveAreaId(workspace.activeAreaId ?? workspace.areas[0].areaId);
+    workspaceRestored.current = true;
+    skipNextWorkspaceSave.current = true;
+  }, [projectService, store, workspaceLoaded]);
 
   useEffect(() => {
     const registeredHubs = new Set(projectService.getDocumentHubServiceInstances());
@@ -97,7 +160,13 @@ export const DocumentAreaGrid = ({
   }, [activeAreaId, documentHubState, hubsByAreaId, layout, projectService]);
 
   const moveDocumentToArea = useCallback(
-    async (sourceAreaId: DocumentAreaId, targetAreaId: DocumentAreaId, documentId: string) => {
+    async (
+      sourceAreaId: DocumentAreaId,
+      targetAreaId: DocumentAreaId,
+      documentId: string,
+      targetDocumentId?: string,
+      after = false
+    ) => {
       if (sourceAreaId === targetAreaId) return;
       const sourceHub = hubsByAreaId.get(sourceAreaId);
       const targetHub = hubsByAreaId.get(targetAreaId);
@@ -106,6 +175,9 @@ export const DocumentAreaGrid = ({
 
       const viewState = sourceHub.getDocumentViewState(document.id);
       await targetHub.openDocument(document, viewState, document.isTemporary ?? false);
+      if (targetDocumentId) {
+        targetHub.moveDocument(document.id, targetDocumentId, after);
+      }
       sourceHub.detachDocument(document.id);
 
       setActiveAreaId(targetAreaId);
@@ -123,19 +195,62 @@ export const DocumentAreaGrid = ({
     [hubsByAreaId, projectService]
   );
 
-  const moveActiveDocument = useCallback(
-    async (offset: -1 | 1) => {
+  const moveDocumentToSiblingArea = useCallback(
+    async (offset: -1 | 1, documentId?: string) => {
       const areaIds = findAreaIds(layout);
       const sourceIndex = areaIds.indexOf(activeAreaId);
       const targetAreaId = areaIds[sourceIndex + offset];
       const sourceHub = hubsByAreaId.get(activeAreaId);
-      const activeDocument = sourceHub?.getActiveDocument();
-      if (!targetAreaId || !activeDocument) return;
+      const document = documentId ? sourceHub?.getDocument(documentId) : sourceHub?.getActiveDocument();
+      if (!targetAreaId || !document) return;
 
-      await moveDocumentToArea(activeAreaId, targetAreaId, activeDocument.id);
+      await moveDocumentToArea(activeAreaId, targetAreaId, document.id);
     },
     [activeAreaId, hubsByAreaId, layout, moveDocumentToArea]
   );
+
+  const closeActiveArea = useCallback(async () => {
+    const activeHub = hubsByAreaId.get(activeAreaId);
+    if (!activeHub) return;
+
+    await activeHub.closeAllDocuments();
+    const areaIds = findAreaIds(layout);
+    if (areaIds.length <= 1) return;
+
+    setLayout((currentLayout) => removeArea(currentLayout, activeAreaId));
+    setHubsByAreaId((currentHubs) => {
+      const nextHubs = new Map(currentHubs);
+      nextHubs.delete(activeAreaId);
+      return nextHubs;
+    });
+
+    const remainingAreaId = areaIds.find((areaId) => areaId !== activeAreaId);
+    const remainingHub = remainingAreaId ? hubsByAreaId.get(remainingAreaId) : undefined;
+    if (remainingAreaId) {
+      setActiveAreaId(remainingAreaId);
+    }
+    if (remainingHub) {
+      projectService.setActiveDocumentHubService(remainingHub);
+    }
+  }, [activeAreaId, hubsByAreaId, layout, projectService]);
+
+  const closeOtherAreas = useCallback(async () => {
+    const activeHub = hubsByAreaId.get(activeAreaId);
+    if (!activeHub) return;
+
+    const areaIds = findAreaIds(layout);
+    await Promise.all(
+      areaIds
+        .filter((areaId) => areaId !== activeAreaId)
+        .map((areaId) => hubsByAreaId.get(areaId))
+        .filter((hub): hub is IDocumentHubService => !!hub)
+        .map((hub) => hub.closeAllDocuments())
+    );
+
+    setLayout(createSingleAreaLayout(activeAreaId));
+    setHubsByAreaId(new Map([[activeAreaId, activeHub]]));
+    projectService.setActiveDocumentHubService(activeHub);
+  }, [activeAreaId, hubsByAreaId, layout, projectService]);
 
   const splitActiveArea = useCallback(
     async (direction: DocumentAreaSplitDirection) => {
@@ -169,21 +284,93 @@ export const DocumentAreaGrid = ({
 
   const api = useMemo<DocumentAreaGridApi>(
     () => ({
+      closeActiveArea,
+      closeOtherAreas,
+      getActiveAreaState: () => {
+        const areaIds = findAreaIds(layout);
+        const activeAreaIndex = areaIds.indexOf(activeAreaId);
+        return {
+          hasActiveDocument: !!hubsByAreaId.get(activeAreaId)?.getActiveDocument(),
+          hasNextArea: activeAreaIndex >= 0 && activeAreaIndex < areaIds.length - 1,
+          hasPreviousArea: activeAreaIndex > 0
+        };
+      },
       splitActiveArea,
-      moveActiveDocumentToNextArea: () => moveActiveDocument(1),
-      moveActiveDocumentToPreviousArea: () => moveActiveDocument(-1),
+      moveActiveDocumentToNextArea: (documentId?: string) =>
+        moveDocumentToSiblingArea(1, documentId),
+      moveActiveDocumentToPreviousArea: (documentId?: string) =>
+        moveDocumentToSiblingArea(-1, documentId),
       moveDocumentToArea
     }),
-    [moveActiveDocument, moveDocumentToArea, splitActiveArea]
+    [
+      closeActiveArea,
+      closeOtherAreas,
+      activeAreaId,
+      hubsByAreaId,
+      layout,
+      moveDocumentToArea,
+      moveDocumentToSiblingArea,
+      splitActiveArea
+    ]
   );
 
   useEffect(() => {
     apiLoaded?.(api);
   }, [api, apiLoaded]);
 
+  useEffect(() => setDocumentAreaCommandTarget(api), [api]);
+
+  useEffect(() => {
+    const project = store.getState().project;
+    const folderPath = project?.folderPath;
+    if (!folderPath || !workspaceLoaded) return;
+    if (!workspaceRestored.current) return;
+    if (skipNextWorkspaceSave.current) {
+      skipNextWorkspaceSave.current = false;
+      return;
+    }
+
+    const documentWorkspace = createDocumentAreaWorkspace(
+      layout,
+      hubsByAreaId,
+      activeAreaId,
+      folderPath
+    );
+    for (const settingId of getLegacySpecialDocumentWorkspaceSettingIds()) {
+      if (store.getState().workspaceSettings?.[settingId] !== undefined) {
+        store.dispatch(setWorkspaceSettingsAction(settingId, undefined), "ide");
+      }
+    }
+
+    store.dispatch(
+      setWorkspaceSettingsAction(
+        DOCS_WORKSPACE,
+        documentWorkspace
+      ),
+      "ide"
+    );
+    (async () => {
+      await mainApi.saveProject();
+    })();
+  }, [
+    activeAreaId,
+    documentHubState,
+    hubsByAreaId,
+    layout,
+    mainApi,
+    store,
+    workspaceLoaded
+  ]);
+
   return (
     <DocumentAreaGridApiProvider api={api}>
-      {renderDocumentAreaLayout(layout, hubsByAreaId, setActiveAreaId)}
+      <ActiveDocumentAreaIdProvider activeAreaId={activeAreaId}>
+        {renderDocumentAreaLayout(layout, hubsByAreaId, setActiveAreaId, (path, ratio) => {
+          setLayout((currentLayout) =>
+            setSplitSize(currentLayout, path, formatSplitSize(ratio))
+          );
+        })}
+      </ActiveDocumentAreaIdProvider>
     </DocumentAreaGridApiProvider>
   );
 };
@@ -191,16 +378,19 @@ export const DocumentAreaGrid = ({
 function renderDocumentAreaLayout(
   layout: DocumentAreaLayout,
   hubsByAreaId: Map<DocumentAreaId, IDocumentHubService>,
-  setActiveAreaId: (areaId: DocumentAreaId) => void
+  setActiveAreaId: (areaId: DocumentAreaId) => void,
+  onSplitSizeChanged: (path: DocumentAreaSplitPath, ratio: number) => void,
+  path: DocumentAreaSplitPath = []
 ): ReactNode {
   if (layout.type === "leaf") {
     const hub = hubsByAreaId.get(layout.areaId);
     return hub ? (
-      <DocumentAreaPane
-        key={layout.areaId}
-        hub={hub}
-        onActivated={() => setActiveAreaId(layout.areaId)}
-      />
+      <DocumentAreaIdProvider key={layout.areaId} areaId={layout.areaId}>
+        <DocumentAreaPane
+          hub={hub}
+          onActivated={() => setActiveAreaId(layout.areaId)}
+        />
+      </DocumentAreaIdProvider>
     ) : null;
   }
 
@@ -209,11 +399,23 @@ function renderDocumentAreaLayout(
       primaryLocation={layout.direction === "horizontal" ? "left" : "top"}
       initialPrimarySize={layout.size ?? "50%"}
       minSize={120}
+      showSplitterBorder={true}
+      onPrimarySizeRatioUpdateCompleted={(ratio) => onSplitSizeChanged(path, ratio)}
     >
-      {renderDocumentAreaLayout(layout.first, hubsByAreaId, setActiveAreaId)}
-      {renderDocumentAreaLayout(layout.second, hubsByAreaId, setActiveAreaId)}
+      {renderDocumentAreaLayout(layout.first, hubsByAreaId, setActiveAreaId, onSplitSizeChanged, [
+        ...path,
+        "first"
+      ])}
+      {renderDocumentAreaLayout(layout.second, hubsByAreaId, setActiveAreaId, onSplitSizeChanged, [
+        ...path,
+        "second"
+      ])}
     </SplitPanel>
   );
+}
+
+function formatSplitSize(ratio: number): string {
+  return `${Number((ratio * 100).toFixed(6))}%`;
 }
 
 function createInitialHubMap(

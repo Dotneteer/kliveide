@@ -275,7 +275,7 @@ Tests:
 - `npm test -- --project jsdom test/controls/DocumentAreaGrid.test.tsx`
 - `npm run build:check`
 
-### 8. Add Cross-Area Tab Drag And Drop
+### 8. [Completed] Add Cross-Area Tab Drag And Drop
 
 Extend `DocumentTabs` events so a tab can be dropped onto another tab strip.
 
@@ -308,7 +308,13 @@ Tests:
 - `npm run lint:renderer`
 - `npm run build:check`
 
-### 9. Persist And Restore Area Layout
+Notes:
+
+- Tabs now carry document ID plus source area ID in drag data.
+- Same-strip reordering still uses the original hub reorder path.
+- Cross-area drops move the source document through the grid coordinator, including empty-area drops.
+
+### 9. [Completed] Persist And Restore Area Layout
 
 Replace single-area persistence with versioned multi-area persistence, while keeping migration from existing workspaces.
 
@@ -339,10 +345,17 @@ Tests:
 - Restore two areas with overlapping document IDs.
 - Restore skips missing project nodes.
 - `npm test -- --project jsdom test/controls/DocumentsHeaderRefactor.test.tsx`
-- `npm test -- --project jsdom test/controls/DocumentAreaWorkspace.test.ts`
+- `npm test -- --project jsdom test/controls/DocumentAreaGrid.test.tsx`
+- `npm test -- --project jsdom test/controls/IdeEventsHandlerRestore.test.tsx`
 - `npm run build:check`
 
-### 10. Add Command Surface And Header Controls
+Notes:
+
+- Workspace payloads now use version `2` with layout, active area, per-area documents, active document IDs, and hub-local view state where available.
+- Existing single-area `docsWorkspace` payloads are migrated into one document area at restore time.
+- Restore stages tabs in all saved areas, skips missing project nodes, and activates the saved active hub/document.
+
+### 10. [Completed] Add Command Surface And Header Controls
 
 Expose the feature in a small, discoverable UI.
 
@@ -371,12 +384,18 @@ Tests:
 
 - Command tests mock active area state and verify service calls.
 - Header control tests verify disabled/enabled states.
-- `npm test -- --project jsdom test/commands/DocumentCommands.test.ts`
+- `npm test -- --project node test/commands/DocumentCommands.test.ts`
 - `npm test -- --project jsdom test/controls/DocumentsHeaderRefactor.test.tsx`
 - `npm run lint:renderer`
 - `npm run build:check`
 
-### 11. Polish Focus, Status, And Edge Cases
+Notes:
+
+- Document-area commands are registered with the IDE command service through a small grid command-target bridge.
+- The tab context menu now exposes move-to-previous/next-area actions when neighboring areas exist.
+- The grid supports closing the active area and closing all other areas.
+
+### 11. [Completed] Polish Focus, Status, And Edge Cases
 
 Close the gaps that show up only once the flow is usable.
 
@@ -402,8 +421,15 @@ Tests:
 - External reload still walks `getDocumentHubServiceInstances`.
 - `npm test -- --project jsdom test/controls/EffectCleanup.test.tsx`
 - `npm test -- --project jsdom test/controls/ExplorerPanelDialogs.test.tsx`
+- `npm test -- --project jsdom test/controls/IdeStatusBar.test.tsx`
 - `npm run lint:renderer`
 - `npm run build:check`
+
+Notes:
+
+- The status bar subscribes to document hub state changes and reads the active document from the active hub.
+- The close-folder command now closes documents in every document hub.
+- Existing external reload behavior already walks all document hub instances.
 
 ## Suggested Delivery Order
 

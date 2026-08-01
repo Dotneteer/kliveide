@@ -9,9 +9,8 @@ import { VListHandle } from "virtua";
 import { FullPanel, HStack } from "@renderer/controls/layout/Panels";
 import { PanelHeader } from "@renderer/appIde/DocumentPanels/helpers/PanelHeader";
 import {
-  incProjectFileVersionAction /*, setWorkspaceSettingsAction */
+  incProjectFileVersionAction
 } from "@common/state/actions";
-import { MEMORY_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
   SetMemoryDialog,
@@ -60,11 +59,10 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const machineSetup = useMemoryMachineSetup(machineId, emuApi);
   const allowRefresh = useRef(true);
 
-  // View state is loaded once from the document/workspace and persisted by a
+  // View state is loaded once from the document and persisted by a
   // dedicated hook. Keeping persistence out of event handlers prevents scroll
   // and toolbar interactions from saving project state directly.
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
-  const workspace = useSelector((s) => s.workspaceSettings?.[MEMORY_EDITOR]);
 
   const loadedViewState = useLoadedMemoryViewState(documentHubService, document);
 
@@ -74,15 +72,11 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     () => loadedViewState?.currentSegment ?? null
   );
   const [bankLabel, setBankLabel] = useState(() => loadedViewState?.bankLabel ?? true);
-  const [decimalView, setDecimalView] = useState(
-    () => loadedViewState?.decimalView ?? workspace?.decimalView ?? false
-  );
+  const [decimalView, setDecimalView] = useState(() => loadedViewState?.decimalView ?? false);
   const [viewMode, setViewMode] = useState<DumpViewMode>(
-    () => resolveViewMode(loadedViewState?.viewMode, loadedViewState?.twoColumns ?? workspace?.twoColumns ?? true)
+    () => resolveViewMode(loadedViewState?.viewMode, loadedViewState?.twoColumns ?? true)
   );
-  const [charDump, setCharDump] = useState(
-    () => loadedViewState?.charDump ?? workspace?.charDump ?? true
-  );
+  const [charDump, setCharDump] = useState(() => loadedViewState?.charDump ?? true);
   const [isReady, setIsReady] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const vlApi = useRef<VListHandle>(null);
@@ -148,6 +142,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     charDump,
     currentSegment,
     decimalView,
+    documentId: document.id,
     dispatch,
     documentHubService,
     incProjectFileVersion: incProjectFileVersionAction,

@@ -11,8 +11,7 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import {
   incProjectFileVersionAction,
-  setIdeStatusMessageAction,
-  setWorkspaceSettingsAction
+  setIdeStatusMessageAction
 } from "@common/state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEmuStateListener } from "../useStateRefresh";
@@ -20,7 +19,6 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import { FullPanel } from "@renderer/controls/layout/Panels";
-import { DISASSEMBLY_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
   type CachedRefreshState,
@@ -60,31 +58,30 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
 
   // --- View state variables
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
-  const workspace = useSelector((s) => s.workspaceSettings?.[DISASSEMBLY_EDITOR]);
   const [topAddress, setTopAddress] = useState<number>(
-    loadedViewState?.topAddress ?? workspace?.topAddress ?? 0
+    loadedViewState?.topAddress ?? 0
   );
   const [isFullView, setIsFullView] = useState(
-    loadedViewState?.isFullView ?? workspace?.isFullView ?? true
+    loadedViewState?.isFullView ?? true
   );
   const [autoRefresh, setAutoRefresh] = useState(
-    loadedViewState?.autoRefresh ?? workspace?.autoRefresh ?? true
+    loadedViewState?.autoRefresh ?? true
   );
   const [currentSegment, setCurrentSegment] = useState<number>(
-    loadedViewState?.currentSegment ?? workspace?.currentSegment ?? 0
+    loadedViewState?.currentSegment ?? 0
   );
   const [bankLabel, setBankLabel] = useState(
-    loadedViewState?.bankLabel ?? workspace?.bankLabel ?? true
+    loadedViewState?.bankLabel ?? true
   );
 
   // --- Display options
   const [decimalView, setDecimalView] = useState(
-    loadedViewState?.decimalView ?? workspace?.decimalView ?? false
+    loadedViewState?.decimalView ?? false
   );
-  const [ram, setRam] = useState(loadedViewState?.ram ?? workspace?.ram ?? true);
-  const [screen, setScreen] = useState(loadedViewState?.screen ?? workspace?.screen ?? false);
+  const [ram, setRam] = useState(loadedViewState?.ram ?? true);
+  const [screen, setScreen] = useState(loadedViewState?.screen ?? false);
   const [disassOffset, setDisassOffset] = useState(
-    loadedViewState?.disassOffset ?? workspace?.disassOffset ?? 0
+    loadedViewState?.disassOffset ?? 0
   );
 
   const disassemblerFactory = machineInfo?.toolInfo?.[CT_DISASSEMBLER] as
@@ -137,6 +134,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     currentSegment,
     decimalView,
     disassOffset,
+    documentId: document.id,
     dispatch,
     documentHubService,
     incProjectFileVersion: incProjectFileVersionAction,
@@ -144,7 +142,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     mainApi,
     ram,
     screen,
-    setWorkspaceSettings: setWorkspaceSettingsAction,
     topAddress
   });
 

@@ -60,7 +60,7 @@ async function renderMemoryPanel({
   const dispatch = vi.fn();
   const executeCommand = vi.fn(() => Promise.resolve({ success: true }));
   const saveProject = vi.fn(() => Promise.resolve());
-  const saveActiveDocumentState = vi.fn();
+  const setDocumentViewState = vi.fn();
   const openDialog = vi.fn(() =>
     Promise.resolve({ value: "$34", sizeOption: "-b8", bigEndian: false })
   );
@@ -82,7 +82,7 @@ async function renderMemoryPanel({
   const documentHubService = {
     getActiveDocument: vi.fn(() => activeDocument),
     getDocumentViewState: vi.fn(() => viewState),
-    saveActiveDocumentState
+    setDocumentViewState
   };
   const memory = new Uint8Array(0x1_0000);
   for (let i = 0; i < memory.length; i++) {

@@ -4,6 +4,8 @@ import { TEXT_EDITOR } from "@state/common-ids";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
+import { MEMORY_PANEL_ID } from "@state/common-ids";
+import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
 
 describe("DocumentHubService", () => {
   it("reorders documents and preserves the active document", async () => {
@@ -120,6 +122,36 @@ describe("DocumentHubService", () => {
     expect(secondHub.getDocumentViewState("doc-a")).toEqual({ line: 30 });
   });
 
+  it("signals a hub change when document view state changes", async () => {
+    const store = createStoreMock();
+    const document = createDocument("doc-a", "Doc A");
+    const projectService = createProjectServiceMock([document]);
+    const hub = createDocumentHubService(1, store as never, projectService as never);
+
+    await hub.openDocumentTab(document);
+    store.dispatch.mockClear();
+    hub.setDocumentViewState(document.id, { line: 10 });
+
+    expect(store.dispatch).toHaveBeenCalledTimes(1);
+    expect(hub.getDocumentViewState(document.id)).toEqual({ line: 10 });
+  });
+
+  it("does not merge the view state of a split special document", async () => {
+    const store = createStoreMock();
+    const document = createSpecialDocument(MEMORY_PANEL_ID);
+    const projectService = createProjectServiceMock([document]);
+    const firstHub = createDocumentHubService(1, store as never, projectService as never);
+    const secondHub = createDocumentHubService(2, store as never, projectService as never);
+
+    await firstHub.openDocumentTab(document, { topIndex: 8 });
+    await secondHub.openDocumentTab(document, firstHub.getDocumentViewState(document.id));
+    firstHub.setDocumentViewState(document.id, { topIndex: 20, viewMode: "8x2" });
+    secondHub.setDocumentViewState(document.id, { topIndex: 60, viewMode: "16x1" });
+
+    expect(firstHub.getDocumentViewState(document.id)).toEqual({ topIndex: 20, viewMode: "8x2" });
+    expect(secondHub.getDocumentViewState(document.id)).toEqual({ topIndex: 60, viewMode: "16x1" });
+  });
+
   it("keeps document APIs independent for each hub", async () => {
     const store = createStoreMock();
     const document = createDocument("doc-a", "Doc A");
@@ -149,6 +181,35 @@ describe("DocumentHubService", () => {
 
     expect(hub.getOpenDocuments()).toEqual([]);
     expect(projectService.closeDocumentHubService).toHaveBeenCalledWith(hub);
+  });
+
+  it("coalesces overlapping close requests for the last tab", async () => {
+    const store = createStoreMock();
+    const document = createDocument("doc-a", "Doc A");
+    const projectService = createProjectServiceMock([document]);
+    const hub = createDocumentHubService(1, store as never, projectService as never);
+    let finishDisposal: (() => void) | undefined;
+    const api = {
+      beforeDocumentDisposal: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            finishDisposal = resolve;
+          })
+      )
+    };
+
+    await hub.openDocumentTab(document);
+    hub.setDocumentApi(document.id, api);
+
+    const firstClose = hub.closeDocument(document.id);
+    const secondClose = hub.closeDocument(document.id);
+
+    expect(api.beforeDocumentDisposal).toHaveBeenCalledTimes(1);
+
+    finishDisposal?.();
+    await Promise.all([firstClose, secondClose]);
+
+    expect(projectService.closeDocumentHubService).toHaveBeenCalledTimes(1);
   });
 
   it("detaches a document without invoking disposal hooks", async () => {
