@@ -25,6 +25,21 @@ describe("memory view-state handling", () => {
     expect(loadMemoryPanelViewState(documentHubService)).toEqual({ topIndex: 20 });
   });
 
+  it("loads each split Memory view from its own document hub", () => {
+    const leftHub = {
+      getActiveDocument: vi.fn(),
+      getDocumentViewState: vi.fn(() => ({ topIndex: 12, viewMode: "8x2" }))
+    };
+    const rightHub = {
+      getActiveDocument: vi.fn(),
+      getDocumentViewState: vi.fn(() => ({ topIndex: 48, viewMode: "16x1" }))
+    };
+    const document = { id: "$memory" } as never;
+
+    expect(loadMemoryPanelViewState(leftHub, document)).toEqual({ topIndex: 12, viewMode: "8x2" });
+    expect(loadMemoryPanelViewState(rightHub, document)).toEqual({ topIndex: 48, viewMode: "16x1" });
+  });
+
   it("builds the persisted memory view-state payload", () => {
     expect(buildMemoryPanelViewState({
       bankLabel: true,
@@ -61,8 +76,9 @@ describe("memory view-state handling", () => {
         charDump: true,
         currentSegment,
         decimalView: true,
+        documentId: "$memory",
         dispatch: vi.fn(),
-        documentHubService: { saveActiveDocumentState: vi.fn() },
+        documentHubService: { setDocumentViewState: vi.fn() },
         incProjectFileVersion: vi.fn(),
         isFullView: false,
         isInitializing: true,
@@ -94,7 +110,7 @@ describe("memory view-state handling", () => {
       }
     } satisfies { current: CachedRefreshState };
     const dispatch = vi.fn();
-    const saveActiveDocumentState = vi.fn();
+    const setDocumentViewState = vi.fn();
     const saveProject = vi.fn(() => Promise.resolve());
     const incProjectFileVersion = vi.fn(() => ({ type: "INC_PROJECT_FILE_VERSION" }));
 
@@ -105,8 +121,9 @@ describe("memory view-state handling", () => {
         charDump: true,
         currentSegment: 0,
         decimalView: false,
+        documentId: "$memory",
         dispatch,
-        documentHubService: { saveActiveDocumentState },
+        documentHubService: { setDocumentViewState },
         incProjectFileVersion,
         isFullView: true,
         isInitializing: false,
@@ -126,9 +143,79 @@ describe("memory view-state handling", () => {
       await Promise.resolve();
     });
 
-    expect(saveActiveDocumentState).toHaveBeenCalledTimes(1);
-    expect(saveActiveDocumentState).toHaveBeenCalledWith(expect.objectContaining({ topIndex: 2 }));
+    expect(setDocumentViewState).toHaveBeenCalledTimes(1);
+    expect(setDocumentViewState).toHaveBeenCalledWith(
+      "$memory",
+      expect.objectContaining({ topIndex: 2 })
+    );
     expect(saveProject).toHaveBeenCalledTimes(1);
     expect(dispatch).toHaveBeenCalledWith({ type: "INC_PROJECT_FILE_VERSION" });
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "SET_WORKSPACE_SETTINGS" })
+    );
+  });
+
+  it("persists split views to their own hub and document ID", async () => {
+    vi.useFakeTimers();
+    const leftHub = { setDocumentViewState: vi.fn() };
+    const rightHub = { setDocumentViewState: vi.fn() };
+    const cachedRefreshState = {
+      current: { currentSegment: 0, decimalView: false, isFullView: true }
+    } satisfies { current: CachedRefreshState };
+
+    const Subject = ({
+      documentHubService,
+      documentId,
+      topIndex
+    }: {
+      documentHubService: typeof leftHub;
+      documentId: string;
+      topIndex: number;
+    }) => {
+      useMemoryViewStatePersistence({
+        bankLabel: true,
+        cachedRefreshState,
+        charDump: true,
+        currentSegment: 0,
+        decimalView: false,
+        documentId,
+        dispatch: vi.fn(),
+        documentHubService,
+        incProjectFileVersion: vi.fn(),
+        isFullView: true,
+        isInitializing: false,
+        mainApi: { saveProject: vi.fn() },
+        topIndex,
+        viewMode: "8x2"
+      });
+      return null;
+    };
+
+    const { rerender } = render(
+      <>
+        <Subject documentHubService={leftHub} documentId="$memory" topIndex={0} />
+        <Subject documentHubService={rightHub} documentId="$memory" topIndex={0} />
+      </>
+    );
+    rerender(
+      <>
+        <Subject documentHubService={leftHub} documentId="$memory" topIndex={12} />
+        <Subject documentHubService={rightHub} documentId="$memory" topIndex={48} />
+      </>
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    expect(leftHub.setDocumentViewState).toHaveBeenCalledWith(
+      "$memory",
+      expect.objectContaining({ topIndex: 12 })
+    );
+    expect(rightHub.setDocumentViewState).toHaveBeenCalledWith(
+      "$memory",
+      expect.objectContaining({ topIndex: 48 })
+    );
   });
 });

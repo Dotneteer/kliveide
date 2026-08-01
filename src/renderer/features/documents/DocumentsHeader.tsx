@@ -4,6 +4,11 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CloseMode } from "./DocumentTab";
 import { DocumentCommandBar } from "./DocumentCommandBar";
 import { DocumentTabs } from "./DocumentTabs";
+import {
+  useActiveDocumentAreaId,
+  useDocumentAreaGridApi,
+  useDocumentAreaId
+} from "./DocumentAreaGridContext";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import styles from "./DocumentsHeader.module.scss";
 import {
@@ -14,12 +19,10 @@ import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentStat
 import { incProjectViewStateVersionAction } from "@common/state/actions";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
-import { useMainApi } from "@renderer/core/MainApi";
 import {
   DOCS_WORKSPACE,
   DocumentWorkspace,
-  SavedDocumentInfo,
-  useDocumentWorkspacePersistence
+  SavedDocumentInfo
 } from "./useDocumentWorkspacePersistence";
 
 /**
@@ -28,10 +31,13 @@ import {
  */
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
-  const mainApi = useMainApi();
   const { store } = useRendererContext();
   const { projectService } = useAppServices();
   const documentHubService = useDocumentHubService();
+  const documentAreaGridApi = useDocumentAreaGridApi();
+  const documentAreaId = useDocumentAreaId();
+  const activeDocumentAreaId = useActiveDocumentAreaId();
+  const documentAreaState = documentAreaGridApi?.getActiveAreaState();
   useDocumentHubServiceVersion();
   const handlersInitialized = useRef(false);
   const projectVersion = useSelector((s) => s.project?.projectFileVersion);
@@ -40,10 +46,10 @@ export const DocumentsHeader = () => {
   const buildRoots = useSelector((s) => s.project?.buildRoots ?? EMPTY_ARRAY);
   // Subscribe so dirty flags refresh when editor changes update service-owned document objects.
   useSelector((s) => s.ideView?.editorVersion);
-  const workspaceLoaded = useSelector((s) => s.project?.workspaceLoaded ?? false);
 
   const svApi = useRef<ScrollViewerApi>();
   const tabDims = useRef<HTMLDivElement[]>([]);
+  const tabVisibilityEffectInitialized = useRef(false);
 
   const openDocs = documentHubService.getOpenDocuments();
   const activeDocIndex = documentHubService.getActiveDocumentIndex();
@@ -81,14 +87,13 @@ export const DocumentsHeader = () => {
     scheduleEnsureTabVisible();
   }, [scheduleEnsureTabVisible]);
 
-  useDocumentWorkspacePersistence({
-    activeDocIndex,
-    ensureTabVisible: scheduleEnsureTabVisible,
-    mainApi,
-    openDocs,
-    store,
-    workspaceLoaded
-  });
+  useEffect(() => {
+    if (!tabVisibilityEffectInitialized.current) {
+      tabVisibilityEffectInitialized.current = true;
+      return;
+    }
+    scheduleEnsureTabVisible();
+  }, [activeDocIndex, openDocs, scheduleEnsureTabVisible]);
 
   // --- Refresh the changed project document
   useEffect(() => {
@@ -174,8 +179,45 @@ export const DocumentsHeader = () => {
     onTabCloseAsync().finally(() => setAwaiting(false));
   };
 
+  const tabMoved = async (
+    sourceId: string,
+    targetId: string,
+    after: boolean,
+    sourceAreaId?: string
+  ) => {
+    if (
+      sourceAreaId &&
+      documentAreaId &&
+      sourceAreaId !== documentAreaId &&
+      documentAreaGridApi
+    ) {
+      await documentAreaGridApi.moveDocumentToArea(
+        sourceAreaId,
+        documentAreaId,
+        sourceId,
+        targetId,
+        after
+      );
+      return;
+    }
+
+    documentHubService.moveDocument(sourceId, targetId, after);
+  };
+
+  const moveTab = (documentId: string, offset: -1 | 1) => {
+    const sourceIndex = openDocs?.findIndex((document) => document.id === documentId) ?? -1;
+    const targetDocument = openDocs?.[sourceIndex + offset];
+    if (sourceIndex < 0 || !targetDocument) return;
+
+    documentHubService.moveDocument(documentId, targetDocument.id, offset > 0);
+  };
+
   const tabsCount = openDocs?.length ?? 0;
-  return tabsCount > 0 ? (
+  if (tabsCount <= 0) {
+    return null;
+  }
+
+  return (
     <div className={styles.documentsHeader}>
       <ScrollViewer
         allowHorizontal={true}
@@ -185,6 +227,8 @@ export const DocumentsHeader = () => {
       >
         <DocumentTabs
           activeDocIndex={activeDocIndex}
+          areaId={documentAreaId}
+          isInActiveArea={!activeDocumentAreaId || documentAreaId === activeDocumentAreaId}
           awaiting={awaiting}
           dirtyStates={dirtyStates}
           isProjectDebugging={isProjectDebugging}
@@ -193,21 +237,44 @@ export const DocumentsHeader = () => {
           onTabCloseClicked={tabCloseClicked}
           onTabDisplayed={tabDisplayed}
           onTabDoubleClicked={tabDoubleClicked}
-          onTabMoved={(sourceId, targetId, after) =>
-            documentHubService.moveDocument(sourceId, targetId, after)
+          onTabMoveLeft={(documentId) => moveTab(documentId, -1)}
+          onTabMoveRight={(documentId) => moveTab(documentId, 1)}
+          onTabMoveToNextArea={
+            documentAreaGridApi && documentAreaId && documentAreaState?.hasNextArea
+              ? async (documentId) =>
+                  await documentAreaGridApi.moveActiveDocumentToNextArea(documentId)
+              : undefined
           }
+          onTabMoveToPreviousArea={
+            documentAreaGridApi && documentAreaId && documentAreaState?.hasPreviousArea
+              ? async (documentId) =>
+                  await documentAreaGridApi.moveActiveDocumentToPreviousArea(documentId)
+              : undefined
+          }
+          onSplitRight={
+            documentAreaGridApi && documentAreaId
+              ? async () => await documentAreaGridApi.splitActiveArea("horizontal")
+              : undefined
+          }
+          onSplitDown={
+            documentAreaGridApi && documentAreaId
+              ? async () => await documentAreaGridApi.splitActiveArea("vertical")
+              : undefined
+          }
+          onTabMoved={tabMoved}
           tabsCount={tabsCount}
         />
         <div className={styles.closingTab} />
       </ScrollViewer>
-      <DocumentCommandBar
-        activeFullPath={activeNode?.fullPath}
-        editorInfo={editorInfo}
-        selectedIsBuildRoot={selectedIsBuildRoot}
-        onCloseAll={async () => await documentHubService.closeAllDocuments()}
-      />
+      {tabsCount > 0 && (
+        <DocumentCommandBar
+          activeFullPath={activeNode?.fullPath}
+          editorInfo={editorInfo}
+          selectedIsBuildRoot={selectedIsBuildRoot}
+        />
+      )}
     </div>
-  ) : null;
+  );
 };
 
 export type { DocumentWorkspace, SavedDocumentInfo };

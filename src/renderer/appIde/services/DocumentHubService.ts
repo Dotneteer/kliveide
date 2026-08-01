@@ -19,6 +19,8 @@ class DocumentHubService implements IDocumentHubService {
 
   private _openDocs: ProjectDocumentState[] = [];
   private _activeDocIndex = -1;
+  private _closingDocumentIds = new Set<string>();
+  private _hubClosureRequested = false;
 
   onProjectClosed = () => {
     this._documentViewState.clear();
@@ -261,48 +263,81 @@ class DocumentHubService implements IDocumentHubService {
     return this.closeDocuments(id);
   }
 
-  private async closeDocuments(...ids: string[]) {
-    const indices = ids
-      .map((id) => this._openDocs.findIndex((doc) => doc.id === id))
-      .filter((i) => i >= 0);
+  /**
+   * Detaches the specified document view without invoking disposal/save hooks.
+   */
+  detachDocument(id: string): ProjectDocumentState | undefined {
+    const docIndex = this._openDocs.findIndex((doc) => doc.id === id);
+    if (docIndex < 0) return undefined;
 
-    if (indices.length <= 0) return;
-
-    const closedDocs = indices.map((i) => this._openDocs[i]);
-    await this.ensureDocumentSaved(...closedDocs.map((doc) => doc.id));
-
-    // --- This is needed when evaluating active document below.
     const activeDoc = this._openDocs[this._activeDocIndex];
+    const [detachedDoc] = this._openDocs.splice(docIndex, 1);
 
-    this._openDocs = this._openDocs.filter((doc) => !closedDocs.includes(doc));
-    for (const doc of closedDocs) {
-      // --- If volatile, sign its closed
-      if (!doc.path) {
-        this.store.dispatch(setVolatileDocStateAction(doc.id, false), "ide");
-      }
+    // --- Release the view-local API and state, but keep shared document contents alone.
+    this._documentApi.delete(detachedDoc.id);
+    this._documentViewState.delete(detachedDoc.id);
+    this.projectService.closeInDocumentHub(detachedDoc.id, this);
 
-      // --- Release the document API
-      this._documentApi.delete(doc.id);
-
-      // --- Release the document view data
-      this._documentViewState.delete(doc.id);
-
-      // --- Notify the project service about closing the document
-      this.projectService.closeInDocumentHub(doc.id, this);
-    }
-
-    // --- Activate another document
     this._activeDocIndex = this._openDocs.indexOf(activeDoc);
     if (this._activeDocIndex < 0 && this._openDocs.length > 0) {
-      const docIndex = indices.sort()[0];
       this._activeDocIndex = docIndex > 0 ? docIndex - 1 : docIndex;
     }
 
     this.signHubStateChanged();
+    this.requestHubClosureIfEmpty();
 
-    // --- Close the document hub service
-    if (this._openDocs.length <= 0) {
-      this.projectService.closeDocumentHubService(this);
+    return detachedDoc;
+  }
+
+  private async closeDocuments(...ids: string[]) {
+    const documentIds = [...new Set(ids)].filter(
+      (id) => !this._closingDocumentIds.has(id) && !!this.getDocument(id)
+    );
+    if (documentIds.length <= 0) return;
+
+    documentIds.forEach((id) => this._closingDocumentIds.add(id));
+    try {
+      const indices = documentIds
+        .map((id) => this._openDocs.findIndex((doc) => doc.id === id))
+        .filter((i) => i >= 0);
+
+      if (indices.length <= 0) return;
+
+      const closedDocs = indices.map((i) => this._openDocs[i]);
+      await this.ensureDocumentSaved(...closedDocs.map((doc) => doc.id));
+
+      // --- This is needed when evaluating active document below.
+      const activeDoc = this._openDocs[this._activeDocIndex];
+
+      this._openDocs = this._openDocs.filter((doc) => !closedDocs.includes(doc));
+      for (const doc of closedDocs) {
+        // --- If volatile, sign its closed
+        if (!doc.path) {
+          this.store.dispatch(setVolatileDocStateAction(doc.id, false), "ide");
+        }
+
+        // --- Release the document API
+        this._documentApi.delete(doc.id);
+
+        // --- Release the document view data
+        this._documentViewState.delete(doc.id);
+
+        // --- Notify the project service about closing the document
+        this.projectService.closeInDocumentHub(doc.id, this);
+      }
+
+      // --- Activate another document
+      this._activeDocIndex = this._openDocs.indexOf(activeDoc);
+      if (this._activeDocIndex < 0 && this._openDocs.length > 0) {
+        const docIndex = indices.sort()[0];
+        this._activeDocIndex = docIndex > 0 ? docIndex - 1 : docIndex;
+      }
+
+      this.signHubStateChanged();
+
+      this.requestHubClosureIfEmpty();
+    } finally {
+      documentIds.forEach((id) => this._closingDocumentIds.delete(id));
     }
   }
 
@@ -398,6 +433,7 @@ class DocumentHubService implements IDocumentHubService {
    */
   setDocumentViewState(id: string, viewState: any): void {
     this._documentViewState.set(id, viewState);
+    this.signHubStateChanged();
   }
 
   /**
@@ -466,6 +502,7 @@ class DocumentHubService implements IDocumentHubService {
     viewState: any,
     temporary: boolean
   ): boolean {
+    this._hubClosureRequested = false;
     const docIndex = this._openDocs.findIndex((d) => d.id === document.id);
     let wasAdded = false;
     this.assignDocumentRendererMetadata(document);
@@ -511,6 +548,13 @@ class DocumentHubService implements IDocumentHubService {
     if (!docRenderer) return;
     document.iconName ||= docRenderer.icon;
     document.iconFill ||= docRenderer.iconFill;
+  }
+
+  private requestHubClosureIfEmpty(): void {
+    if (this._openDocs.length > 0 || this._hubClosureRequested) return;
+
+    this._hubClosureRequested = true;
+    this.projectService.closeDocumentHubService(this);
   }
 
   // --- Increment the document hub service version number to sign a state change

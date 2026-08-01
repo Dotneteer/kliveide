@@ -10,30 +10,22 @@ type DocumentCommandBarProps = {
   activeFullPath?: string;
   editorInfo?: FileTypeEditor;
   selectedIsBuildRoot: boolean;
-  onCloseAll: () => void;
 };
 
 /**
- * Renders commands that belong beside the document tabs, combining active-editor
- * actions, build-root actions, and document-level close controls.
+ * Renders active-editor and build-root commands beside the document tabs.
  */
 export function DocumentCommandBar({
   activeFullPath,
   editorInfo,
-  selectedIsBuildRoot,
-  onCloseAll
+  selectedIsBuildRoot
 }: DocumentCommandBarProps) {
+  if (!editorInfo && !selectedIsBuildRoot) return null;
+
   return (
     <div className={styles.commandBar}>
       {editorInfo && editorInfo.documentTabRenderer?.(activeFullPath)}
       {selectedIsBuildRoot && <BuildRootCommandBar />}
-      <TabButtonSeparator />
-      <TabButton
-        iconName="close"
-        title="Close all tabs"
-        useSpace={true}
-        clicked={onCloseAll}
-      />
     </div>
   );
 }

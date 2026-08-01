@@ -1,9 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
-  NavigateToDocumentCommand
+  CloseEditorAreaCommand,
+  CloseEditorsInOtherAreasCommand,
+  MoveEditorToNextAreaCommand,
+  MoveEditorToPreviousAreaCommand,
+  NavigateToDocumentCommand,
+  SplitEditorDownCommand,
+  SplitEditorRightCommand
 } from "@renderer/appIde/commands/DocumentCommands";
 import { createMockContext } from "./test-helpers/mock-context";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
+import { setDocumentAreaCommandTarget } from "@renderer/features/documents/documentAreaCommandTarget";
 
 // Type assertion helper for mock context
 type MockIdeCommandContext = IdeCommandContext & {
@@ -340,3 +347,86 @@ describe("NavigateToDocumentCommand", () => {
     });
   });
 });
+
+describe("Document area commands", () => {
+  it("split commands call the active document area target", async () => {
+    const splitActiveArea = vi.fn(() => Promise.resolve());
+    const cleanup = setDocumentAreaCommandTarget(createDocumentAreaTarget({ splitActiveArea }));
+
+    try {
+      expect(await new SplitEditorRightCommand().execute()).toEqual({ success: true });
+      expect(await new SplitEditorDownCommand().execute()).toEqual({ success: true });
+
+      expect(splitActiveArea).toHaveBeenCalledWith("horizontal");
+      expect(splitActiveArea).toHaveBeenCalledWith("vertical");
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("move commands call the active document area target", async () => {
+    const moveActiveDocumentToNextArea = vi.fn(() => Promise.resolve());
+    const moveActiveDocumentToPreviousArea = vi.fn(() => Promise.resolve());
+    const cleanup = setDocumentAreaCommandTarget(
+      createDocumentAreaTarget({
+        moveActiveDocumentToNextArea,
+        moveActiveDocumentToPreviousArea
+      })
+    );
+
+    try {
+      expect(await new MoveEditorToNextAreaCommand().execute()).toEqual({ success: true });
+      expect(await new MoveEditorToPreviousAreaCommand().execute()).toEqual({ success: true });
+
+      expect(moveActiveDocumentToNextArea).toHaveBeenCalledTimes(1);
+      expect(moveActiveDocumentToPreviousArea).toHaveBeenCalledTimes(1);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("close commands call the active document area target", async () => {
+    const closeActiveArea = vi.fn(() => Promise.resolve());
+    const closeOtherAreas = vi.fn(() => Promise.resolve());
+    const cleanup = setDocumentAreaCommandTarget(
+      createDocumentAreaTarget({
+        closeActiveArea,
+        closeOtherAreas
+      })
+    );
+
+    try {
+      expect(await new CloseEditorAreaCommand().execute()).toEqual({ success: true });
+      expect(await new CloseEditorsInOtherAreasCommand().execute()).toEqual({ success: true });
+
+      expect(closeActiveArea).toHaveBeenCalledTimes(1);
+      expect(closeOtherAreas).toHaveBeenCalledTimes(1);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("returns an error when no document area target is available", async () => {
+    const result = await new SplitEditorRightCommand().execute();
+
+    expect(result.success).toBe(false);
+    expect(result.finalMessage).toContain("No document area");
+  });
+});
+
+function createDocumentAreaTarget(overrides: Record<string, unknown>) {
+  return {
+    closeActiveArea: vi.fn(() => Promise.resolve()),
+    closeOtherAreas: vi.fn(() => Promise.resolve()),
+    getActiveAreaState: vi.fn(() => ({
+      hasActiveDocument: true,
+      hasNextArea: true,
+      hasPreviousArea: true
+    })),
+    splitActiveArea: vi.fn(() => Promise.resolve()),
+    moveActiveDocumentToNextArea: vi.fn(() => Promise.resolve()),
+    moveActiveDocumentToPreviousArea: vi.fn(() => Promise.resolve()),
+    moveDocumentToArea: vi.fn(() => Promise.resolve()),
+    ...overrides
+  };
+}

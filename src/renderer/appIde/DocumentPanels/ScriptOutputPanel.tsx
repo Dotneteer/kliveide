@@ -91,7 +91,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
       topPosition: topPosition.current,
       locked: scrollLocked
     };
-    documentHubService.saveActiveDocumentState(mergedState);
+    documentHubService.setDocumentViewState(document.id, mergedState);
   };
 
   let variant = "";

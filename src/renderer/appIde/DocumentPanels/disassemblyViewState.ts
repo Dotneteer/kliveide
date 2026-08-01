@@ -1,4 +1,3 @@
-import { DISASSEMBLY_EDITOR } from "@common/state/common-ids";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import type { MutableRefObject } from "react";
@@ -39,13 +38,13 @@ export type DisassemblyViewStateValues = {
 
 type PersistenceParams = DisassemblyViewStateValues & {
   cachedRefreshState: MutableRefObject<CachedRefreshState>;
+  documentId: string;
   dispatch: (action: unknown) => void;
-  documentHubService: Pick<IDocumentHubService, "saveActiveDocumentState">;
+  documentHubService: Pick<IDocumentHubService, "setDocumentViewState">;
   incProjectFileVersion: () => unknown;
   mainApi: {
     saveProject: () => Promise<unknown>;
   };
-  setWorkspaceSettings: (id: string, value: unknown) => unknown;
 };
 
 export function loadDisassemblyPanelViewState(
@@ -82,11 +81,11 @@ export function useLoadedDisassemblyViewState(
 
 export function useDisassemblyViewStatePersistence({
   cachedRefreshState,
+  documentId,
   dispatch,
   documentHubService,
   incProjectFileVersion,
   mainApi,
-  setWorkspaceSettings,
   ...values
 }: PersistenceParams): void {
   const isInitialMount = useRef(true);
@@ -131,17 +130,16 @@ export function useDisassemblyViewStatePersistence({
     }
 
     saveViewStateTimeout.current = setTimeout(async () => {
-      documentHubService.saveActiveDocumentState(mergedState);
-      dispatch(setWorkspaceSettings(DISASSEMBLY_EDITOR, mergedState));
+      documentHubService.setDocumentViewState(documentId, mergedState);
       await mainApi.saveProject();
       dispatch(incProjectFileVersion());
     }, 100);
   }, [
     dispatch,
+    documentId,
     documentHubService,
     incProjectFileVersion,
     mainApi,
-    setWorkspaceSettings,
     values.topAddress,
     values.isFullView,
     values.autoRefresh,

@@ -205,6 +205,11 @@ describe("CloseFolderCommand", () => {
       const mockCloseAllDocuments = vi.fn();
       const mockProjectService = {
         performAllDelayedSavesNow: vi.fn().mockResolvedValue(undefined),
+        getDocumentHubServiceInstances: vi.fn().mockReturnValue([
+          {
+            closeAllDocuments: mockCloseAllDocuments
+          }
+        ]),
         getActiveDocumentHubService: vi.fn().mockReturnValue({
           closeAllDocuments: mockCloseAllDocuments
         })
@@ -217,6 +222,7 @@ describe("CloseFolderCommand", () => {
 
       // Assert
       expect(result.success).toBe(true);
+      expect(mockCloseAllDocuments).toHaveBeenCalledTimes(1);
     });
 
     it("should erase all breakpoints when folder is closed", async () => {
@@ -228,6 +234,11 @@ describe("CloseFolderCommand", () => {
       });
       const mockProjectService = {
         performAllDelayedSavesNow: vi.fn().mockResolvedValue(undefined),
+        getDocumentHubServiceInstances: vi.fn().mockReturnValue([
+          {
+            closeAllDocuments: vi.fn()
+          }
+        ]),
         getActiveDocumentHubService: vi.fn().mockReturnValue({
           closeAllDocuments: vi.fn()
         })
@@ -249,8 +260,18 @@ describe("CloseFolderCommand", () => {
         project: { folderPath: "/test/project" },
         dimMenu: false
       });
+      const closeFirstHub = vi.fn();
+      const closeSecondHub = vi.fn();
       const mockProjectService = {
         performAllDelayedSavesNow: vi.fn().mockResolvedValue(undefined),
+        getDocumentHubServiceInstances: vi.fn().mockReturnValue([
+          {
+            closeAllDocuments: closeFirstHub
+          },
+          {
+            closeAllDocuments: closeSecondHub
+          }
+        ]),
         getActiveDocumentHubService: vi.fn().mockReturnValue({
           closeAllDocuments: vi.fn()
         })
@@ -263,6 +284,8 @@ describe("CloseFolderCommand", () => {
 
       // Assert
       expect(context.store.dispatch).toHaveBeenCalled();
+      expect(closeFirstHub).toHaveBeenCalledTimes(1);
+      expect(closeSecondHub).toHaveBeenCalledTimes(1);
     });
   });
 });

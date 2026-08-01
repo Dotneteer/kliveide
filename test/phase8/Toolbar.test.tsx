@@ -54,7 +54,9 @@ vi.mock("@appIde/services/AppServicesProvider", () => ({
   useAppServices: () => ({
     uiService: { dragging: false },
     outputPaneService: { getOutputPaneBuffer: () => ({ clear: vi.fn() }) },
-    ideCommandsService: { executeCommand: mockExecuteCommand }
+    ideCommandsService: { executeCommand: mockExecuteCommand },
+    // The toolbar can render before a document hub exists.
+    projectService: { getActiveDocumentHubService: () => undefined }
   })
 }));
 

@@ -30,6 +30,7 @@ type Props = {
   iconName?: string;
   iconFill?: string;
   isActive?: boolean;
+  isInActiveArea?: boolean;
   isReadOnly?: boolean;
   isLocked?: boolean;
   isTemporary?: boolean;
@@ -37,12 +38,22 @@ type Props = {
   hasChanges?: boolean;
   dragOverPlacement?: "before" | "after";
   tabsCount?: number;
+  canMoveLeft?: boolean;
+  canMoveRight?: boolean;
+  canMoveToNextArea?: boolean;
+  canMoveToPreviousArea?: boolean;
   tabDisplayed?: (el: HTMLDivElement) => void;
   tabClicked?: () => void;
   tabDoubleClicked?: () => void;
   tabCloseClicked?: (mode: CloseMode) => void;
+  tabMoveLeft?: () => void;
+  tabMoveRight?: () => void;
+  tabMoveToNextArea?: () => void;
+  tabMoveToPreviousArea?: () => void;
+  tabSplitRight?: () => void;
+  tabSplitDown?: () => void;
   tabDragEnd?: () => void;
-  tabDragLeave?: () => void;
+  tabDragLeave?: (event: DragEvent<HTMLDivElement>) => void;
   tabDragOver?: (event: DragEvent<HTMLDivElement>) => void;
   tabDragStart?: (event: DragEvent<HTMLDivElement>) => void;
   tabDrop?: (event: DragEvent<HTMLDivElement>) => void;
@@ -61,14 +72,25 @@ export const DocumentTab = ({
   iconName = "file-code",
   iconFill = "--color-doc-icon",
   isActive = false,
+  isInActiveArea = true,
   awaiting = false,
   hasChanges = false,
   dragOverPlacement,
   tabsCount,
+  canMoveLeft = false,
+  canMoveRight = false,
+  canMoveToNextArea = false,
+  canMoveToPreviousArea = false,
   tabDisplayed,
   tabClicked,
   tabDoubleClicked,
   tabCloseClicked,
+  tabMoveLeft,
+  tabMoveRight,
+  tabMoveToNextArea,
+  tabMoveToPreviousArea,
+  tabSplitRight,
+  tabSplitDown,
   tabDragEnd,
   tabDragLeave,
   tabDragOver,
@@ -114,6 +136,12 @@ export const DocumentTab = ({
     };
   };
 
+  const dismissTooltips = () => {
+    [nameRef.current, readOnlyRef.current, lockedRef.current].forEach((element) => {
+      element?.dispatchEvent(new MouseEvent("mouseleave"));
+    });
+  };
+
   const [contextMenuState, contextMenuApi] = useContextMenuState();
   const contextMenu = renderDocumentTabContextMenu({
     contextMenuApi,
@@ -121,7 +149,17 @@ export const DocumentTab = ({
     isWindows,
     mainApi,
     path,
+    canMoveLeft,
+    canMoveRight,
+    canMoveToNextArea,
+    canMoveToPreviousArea,
     tabCloseClicked,
+    tabMoveLeft,
+    tabMoveRight,
+    tabMoveToNextArea,
+    tabMoveToPreviousArea,
+    tabSplitRight,
+    tabSplitDown,
     tabsCount
   });
 
@@ -138,7 +176,11 @@ export const DocumentTab = ({
       onDragEnd={tabDragEnd}
       onDragLeave={tabDragLeave}
       onDragOver={tabDragOver}
-      onDragStart={tabDragStart}
+      onDragStart={(event) => {
+        setPointed(false);
+        dismissTooltips();
+        tabDragStart?.(event);
+      }}
       onDrop={tabDrop}
       onMouseEnter={(e) => {
         rememberPointerPosition(e);
@@ -160,7 +202,7 @@ export const DocumentTab = ({
       <span
         ref={nameRef}
         className={classnames(styles.titleText, {
-          [styles.activeTitle]: isActive,
+          [styles.activeTitle]: isActive && isInActiveArea,
           [styles.temporaryTitle]: isTemporary
         })}
       >
@@ -196,7 +238,17 @@ function renderDocumentTabContextMenu({
   isWindows,
   mainApi,
   path,
+  canMoveLeft,
+  canMoveRight,
+  canMoveToNextArea,
+  canMoveToPreviousArea,
   tabCloseClicked,
+  tabMoveLeft,
+  tabMoveRight,
+  tabMoveToNextArea,
+  tabMoveToPreviousArea,
+  tabSplitRight,
+  tabSplitDown,
   tabsCount
 }: {
   contextMenuApi: ReturnType<typeof useContextMenuState>[1];
@@ -204,7 +256,17 @@ function renderDocumentTabContextMenu({
   isWindows: boolean;
   mainApi: MainApi;
   path?: string;
+  canMoveLeft?: boolean;
+  canMoveRight?: boolean;
+  canMoveToNextArea?: boolean;
+  canMoveToPreviousArea?: boolean;
   tabCloseClicked?: (mode: CloseMode) => void;
+  tabMoveLeft?: () => void;
+  tabMoveRight?: () => void;
+  tabMoveToNextArea?: () => void;
+  tabMoveToPreviousArea?: () => void;
+  tabSplitRight?: () => void;
+  tabSplitDown?: () => void;
   tabsCount?: number;
 }) {
   return (
@@ -229,6 +291,57 @@ function renderDocumentTabContextMenu({
         clicked={() => {
           contextMenuApi.conceal();
           tabCloseClicked?.(CloseMode.All);
+        }}
+      />
+      <ContextMenuSeparator />
+      <ContextMenuItem
+        text="Move Left"
+        disabled={!canMoveLeft}
+        clicked={() => {
+          contextMenuApi.conceal();
+          tabMoveLeft?.();
+        }}
+      />
+      <ContextMenuItem
+        text="Move Right"
+        disabled={!canMoveRight}
+        clicked={() => {
+          contextMenuApi.conceal();
+          tabMoveRight?.();
+        }}
+      />
+      <ContextMenuSeparator />
+      <ContextMenuItem
+        text="Move To Previous Editor Area"
+        disabled={!canMoveToPreviousArea}
+        clicked={() => {
+          contextMenuApi.conceal();
+          tabMoveToPreviousArea?.();
+        }}
+      />
+      <ContextMenuItem
+        text="Move To Next Editor Area"
+        disabled={!canMoveToNextArea}
+        clicked={() => {
+          contextMenuApi.conceal();
+          tabMoveToNextArea?.();
+        }}
+      />
+      <ContextMenuSeparator />
+      <ContextMenuItem
+        text="Split Editor Right"
+        disabled={!tabSplitRight}
+        clicked={() => {
+          contextMenuApi.conceal();
+          tabSplitRight?.();
+        }}
+      />
+      <ContextMenuItem
+        text="Split Editor Down"
+        disabled={!tabSplitDown}
+        clicked={() => {
+          contextMenuApi.conceal();
+          tabSplitDown?.();
         }}
       />
       <ContextMenuSeparator />

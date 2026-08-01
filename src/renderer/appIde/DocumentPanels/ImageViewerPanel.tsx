@@ -101,7 +101,7 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
       isInitialMount.current = false;
       return;
     }
-    documentHubService.saveActiveDocumentState({ zoomIndex, fitMode });
+    documentHubService.setDocumentViewState(document.id, { zoomIndex, fitMode });
   }, [zoomIndex, fitMode]);
 
   // Create an object URL for the binary image data and revoke it on cleanup

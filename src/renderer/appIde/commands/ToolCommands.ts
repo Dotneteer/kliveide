@@ -9,16 +9,12 @@ import {
 } from "@renderer/appIde/services/ide-commands";
 import { outputPaneRegistry } from "@renderer/registry";
 import {
-  setVolatileDocStateAction,
-} from "@state/actions";
-import {
-  MEMORY_EDITOR,
   MEMORY_PANEL_ID,
-  DISASSEMBLY_PANEL_ID,
-  DISASSEMBLY_EDITOR
+  DISASSEMBLY_PANEL_ID
 } from "@common/state/common-ids";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { SETTING_IDE_ACTIVE_OUTPUT_PANE, SETTING_IDE_ACTIVE_TOOL, SETTING_IDE_SHOW_TOOLS } from "@common/settings/setting-const";
+import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
 
 type SelectOutputArgs = {
   paneId: string;
@@ -58,20 +54,13 @@ export class ShowMemoryCommand extends IdeCommandBase {
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
     if (documentHubService.isOpen(MEMORY_PANEL_ID)) {
-      documentHubService.setActiveDocument(MEMORY_PANEL_ID);
+      await documentHubService.setActiveDocument(MEMORY_PANEL_ID);
     } else {
       await documentHubService.openDocument(
-        {
-          id: MEMORY_PANEL_ID,
-          name: "Machine Memory",
-          type: MEMORY_EDITOR,
-          iconName: "memory-icon",
-          iconFill: "--console-ansi-bright-cyan"
-        },
+        createSpecialDocument(MEMORY_PANEL_ID),
         undefined,
         false
       );
-      context.store.dispatch(setVolatileDocStateAction(MEMORY_PANEL_ID, true), "ide");
     }
     return commandSuccess;
   }
@@ -86,7 +75,6 @@ export class HideMemoryCommand extends IdeCommandBase {
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
     await documentHubService.closeDocument(MEMORY_PANEL_ID);
-    context.store.dispatch(setVolatileDocStateAction(MEMORY_PANEL_ID, false), "ide");
     return commandSuccess;
   }
 }
@@ -101,20 +89,13 @@ export class ShowDisassemblyCommand extends IdeCommandBase {
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
     if (documentHubService.isOpen(DISASSEMBLY_PANEL_ID)) {
-      documentHubService.setActiveDocument(DISASSEMBLY_PANEL_ID);
+      await documentHubService.setActiveDocument(DISASSEMBLY_PANEL_ID);
     } else {
       await documentHubService.openDocument(
-        {
-          id: DISASSEMBLY_PANEL_ID,
-          name: "Disassembly",
-          type: DISASSEMBLY_EDITOR,
-          iconName: "disassembly-icon",
-          iconFill: "--console-ansi-bright-cyan"
-        },
+        createSpecialDocument(DISASSEMBLY_PANEL_ID),
         undefined,
         false
       );
-      context.store.dispatch(setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, true), "ide");
     }
     return commandSuccess;
   }
@@ -129,7 +110,6 @@ export class HideDisassemblyCommand extends IdeCommandBase {
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
     await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
-    context.store.dispatch(setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, false), "ide");
     return commandSuccess;
   }
 }

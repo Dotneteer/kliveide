@@ -4,7 +4,7 @@
 ; Write the value of a NextReg #1
 ;==========================================================
 Write
-    Display.PrintTitle(@Title_WNextReg)
+    Display.Pri/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_talktohw/io.asm$0ntTitle(@Title_WNextReg)
     Display.PrintText(@PrintStep1_Str)
     ;
     ; Write Nextreg value (User storage)

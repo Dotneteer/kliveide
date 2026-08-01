@@ -21,6 +21,7 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   const compilation = useSelector((s) => s.compilation);
   const cursorLine = useSelector((s) => s.ideView?.cursorLine);
   const cursorColumn = useSelector((s) => s.ideView?.cursorColumn);
+  useSelector((s) => s.ideView?.documentHubState);
 
   const machineState = useMemo(() => {
     switch (execState) {

@@ -24,6 +24,25 @@ describe("disassembly view-state handling", () => {
     ).toEqual({ topAddress: 0x6000 });
   });
 
+  it("loads each split Disassembly view from its own document hub", () => {
+    const leftHub = {
+      getDocumentViewState: vi.fn(() => ({ topAddress: 0x6000, currentSegment: 1 }))
+    };
+    const rightHub = {
+      getDocumentViewState: vi.fn(() => ({ topAddress: 0x8000, currentSegment: 4 }))
+    };
+    const document = { id: "$disassembly" } as never;
+
+    expect(loadDisassemblyPanelViewState(leftHub, document)).toEqual({
+      topAddress: 0x6000,
+      currentSegment: 1
+    });
+    expect(loadDisassemblyPanelViewState(rightHub, document)).toEqual({
+      topAddress: 0x8000,
+      currentSegment: 4
+    });
+  });
+
   it("builds the persisted disassembly view-state payload", () => {
     expect(
       buildDisassemblyPanelViewState({
@@ -63,12 +82,8 @@ describe("disassembly view-state handling", () => {
       }
     } satisfies { current: CachedRefreshState };
     const dispatch = vi.fn();
-    const saveActiveDocumentState = vi.fn();
+    const setDocumentViewState = vi.fn();
     const saveProject = vi.fn(() => Promise.resolve());
-    const setWorkspaceSettings = vi.fn((_id: string, value: unknown) => ({
-      type: "SET_WORKSPACE_SETTINGS",
-      value
-    }));
     const incProjectFileVersion = vi.fn(() => ({ type: "INC_PROJECT_FILE_VERSION" }));
 
     const Subject = ({ topAddress }: { topAddress: number }) => {
@@ -79,14 +94,14 @@ describe("disassembly view-state handling", () => {
         currentSegment: -1,
         decimalView: true,
         disassOffset: 0x2000,
+        documentId: "$disassembly",
         dispatch,
-        documentHubService: { saveActiveDocumentState },
+        documentHubService: { setDocumentViewState },
         incProjectFileVersion,
         isFullView: false,
         mainApi: { saveProject },
         ram: false,
         screen: true,
-        setWorkspaceSettings,
         topAddress
       });
       return null;
@@ -110,16 +125,16 @@ describe("disassembly view-state handling", () => {
       await Promise.resolve();
     });
 
-    expect(saveActiveDocumentState).toHaveBeenCalledTimes(1);
-    expect(saveActiveDocumentState).toHaveBeenCalledWith(
+    expect(setDocumentViewState).toHaveBeenCalledTimes(1);
+    expect(setDocumentViewState).toHaveBeenCalledWith(
+      "$disassembly",
       expect.objectContaining({ topAddress: 0x6002 })
     );
-    expect(setWorkspaceSettings).toHaveBeenCalledTimes(1);
     expect(saveProject).toHaveBeenCalledTimes(1);
-    expect(dispatch).toHaveBeenCalledWith(
+    expect(dispatch).toHaveBeenCalledWith({ type: "INC_PROJECT_FILE_VERSION" });
+    expect(dispatch).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: "SET_WORKSPACE_SETTINGS" })
     );
-    expect(dispatch).toHaveBeenCalledWith({ type: "INC_PROJECT_FILE_VERSION" });
   });
 
   it("cancels delayed saves on unmount", () => {
@@ -134,7 +149,7 @@ describe("disassembly view-state handling", () => {
         screen: false
       }
     } satisfies { current: CachedRefreshState };
-    const saveActiveDocumentState = vi.fn();
+    const setDocumentViewState = vi.fn();
 
     const Subject = ({ topAddress }: { topAddress: number }) => {
       useDisassemblyViewStatePersistence({
@@ -144,14 +159,14 @@ describe("disassembly view-state handling", () => {
         currentSegment: 0,
         decimalView: false,
         disassOffset: 0,
+        documentId: "$disassembly",
         dispatch: vi.fn(),
-        documentHubService: { saveActiveDocumentState },
+        documentHubService: { setDocumentViewState },
         incProjectFileVersion: vi.fn(),
         isFullView: true,
         mainApi: { saveProject: vi.fn() },
         ram: true,
         screen: false,
-        setWorkspaceSettings: vi.fn(),
         topAddress
       });
       return null;
@@ -163,6 +178,78 @@ describe("disassembly view-state handling", () => {
 
     vi.advanceTimersByTime(100);
 
-    expect(saveActiveDocumentState).not.toHaveBeenCalled();
+    expect(setDocumentViewState).not.toHaveBeenCalled();
+  });
+
+  it("persists split views to their own hub and document ID", async () => {
+    vi.useFakeTimers();
+    const leftHub = { setDocumentViewState: vi.fn() };
+    const rightHub = { setDocumentViewState: vi.fn() };
+    const cachedRefreshState = {
+      current: {
+        autoRefresh: true,
+        currentSegment: 0,
+        decimalView: false,
+        isFullView: true,
+        ram: true,
+        screen: false
+      }
+    } satisfies { current: CachedRefreshState };
+
+    const Subject = ({
+      documentHubService,
+      documentId,
+      topAddress
+    }: {
+      documentHubService: typeof leftHub;
+      documentId: string;
+      topAddress: number;
+    }) => {
+      useDisassemblyViewStatePersistence({
+        autoRefresh: true,
+        bankLabel: true,
+        cachedRefreshState,
+        currentSegment: 0,
+        decimalView: false,
+        disassOffset: 0,
+        documentId,
+        dispatch: vi.fn(),
+        documentHubService,
+        incProjectFileVersion: vi.fn(),
+        isFullView: true,
+        mainApi: { saveProject: vi.fn() },
+        ram: true,
+        screen: false,
+        topAddress
+      });
+      return null;
+    };
+
+    const { rerender } = render(
+      <>
+        <Subject documentHubService={leftHub} documentId="$disassembly" topAddress={0} />
+        <Subject documentHubService={rightHub} documentId="$disassembly" topAddress={0} />
+      </>
+    );
+    rerender(
+      <>
+        <Subject documentHubService={leftHub} documentId="$disassembly" topAddress={0x6000} />
+        <Subject documentHubService={rightHub} documentId="$disassembly" topAddress={0x8000} />
+      </>
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    expect(leftHub.setDocumentViewState).toHaveBeenCalledWith(
+      "$disassembly",
+      expect.objectContaining({ topAddress: 0x6000 })
+    );
+    expect(rightHub.setDocumentViewState).toHaveBeenCalledWith(
+      "$disassembly",
+      expect.objectContaining({ topAddress: 0x8000 })
+    );
   });
 });
