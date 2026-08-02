@@ -972,7 +972,11 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
 
       // --- Generate NEX file data
-      const nexData = await NexFileWriter.fromAssemblerOutput(compiledOutput as any, projectRoot);
+      const nexData = await NexFileWriter.fromAssemblerOutput(
+        compiledOutput as any,
+        projectRoot,
+        async (filename) => await context.mainApi.readBinaryFile(filename)
+      );
 
       // --- Save the NEX file
       const filePath = await context.mainApi.saveBinaryFile(

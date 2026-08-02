@@ -1,4 +1,8 @@
 #include "sp48_core.h"
+#include "../../../z80/wasm/z80_abi.h"
+#include "../../../z80/wasm/z80_cpu.h"
+#include "../../../z80/wasm/z80_state.h"
+#include "../../../z80/wasm/z80_test_bus.h"
 
 /*
  * The first vertical slice of the C core. Keep the ABI free of libc, pointers,
@@ -41,9 +45,13 @@ unsigned int sp48_layout_value(unsigned int id) {
     case 11: return SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET;
     case 12: return SP48_INPUT_KEYBOARD_ROWS_OFFSET;
     case 13: return SP48_INPUT_RUN_MODE_OFFSET;
-    case 14: return SP48_RESULT_TERMINATION_OFFSET;
-    case 15: return SP48_RESULT_EVENT_COUNT_OFFSET;
-    case 16: return SP48_RESULT_DIRTY_RANGE_COUNT_OFFSET;
+    case 14: return SP48_INPUT_TERMINATION_POINT_OFFSET;
+    case 15: return SP48_INPUT_TERMINATION_POINT_ENABLED_OFFSET;
+    case 16: return SP48_RESULT_TERMINATION_OFFSET;
+    case 17: return SP48_RESULT_EVENT_COUNT_OFFSET;
+    case 18: return SP48_RESULT_DIRTY_RANGE_COUNT_OFFSET;
+    case 19: return SP48_RESULT_INSTRUCTION_COUNT_OFFSET;
+    case 20: return SP48_RESULT_CPU_STATUS_OFFSET;
     default: return 0;
   }
 }
@@ -51,6 +59,10 @@ unsigned int sp48_layout_value(unsigned int id) {
 static void put_u16(unsigned char *target, unsigned int offset, unsigned int value) {
   target[offset] = (unsigned char)value;
   target[offset + 1u] = (unsigned char)(value >> 8);
+}
+
+static unsigned int get_u16(const unsigned char *source, unsigned int offset) {
+  return (unsigned int)source[offset] | ((unsigned int)source[offset + 1u] << 8);
 }
 
 static unsigned int get_u32(const unsigned char *source, unsigned int offset) {
@@ -65,6 +77,11 @@ static void put_u32(unsigned char *target, unsigned int offset, unsigned int val
   target[offset + 1u] = (unsigned char)(value >> 8);
   target[offset + 2u] = (unsigned char)(value >> 16);
   target[offset + 3u] = (unsigned char)(value >> 24);
+}
+
+static void copy_bytes(unsigned char *target, const unsigned char *source, unsigned int length) {
+  unsigned int index;
+  for (index = 0; index < length; index++) target[index] = source[index];
 }
 
 static void record_dirty_range(unsigned int address, unsigned int length) {
@@ -108,11 +125,15 @@ void sp48_set_16k_model(unsigned int enabled) {
 }
 
 void sp48_import_state(void) {
+  copy_bytes(z80_state_block, machine_state_block + SP48_MACHINE_STATE_CPU_STATE_OFFSET, 64u);
+  z80_state_import();
   ula_port = machine_state_block[SP48_MACHINE_STATE_ULA_PORT_OFFSET];
   is_16k_model = machine_state_block[SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET] != 0;
 }
 
 void sp48_export_state(void) {
+  z80_state_export();
+  copy_bytes(machine_state_block + SP48_MACHINE_STATE_CPU_STATE_OFFSET, z80_state_block, 64u);
   machine_state_block[SP48_MACHINE_STATE_ULA_PORT_OFFSET] = ula_port;
   machine_state_block[SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET] = is_16k_model;
 }
@@ -130,6 +151,8 @@ void sp48_create(void) { sp48_reset(); }
 void sp48_reset(void) {
   unsigned int address;
   ula_port = 0;
+  z80_bus_mode = Z80_BUS_SP48;
+  z80_reset();
   sp48_clear_dirty_ranges();
   for (address = 0x4000; address < SP48_MEMORY_SIZE; address++) {
     memory[address] = is_16k_model && address >= 0x8000 ? 0xff : 0;
@@ -169,4 +192,72 @@ void sp48_write_port(unsigned int address, unsigned int value) {
     ula_port = (unsigned char)value;
     sp48_export_state();
   }
+}
+
+uint8_t sp48_bus_read_memory(uint16_t address, unsigned int operation) {
+  (void)operation;
+  return memory[address];
+}
+
+void sp48_bus_write_memory(uint16_t address, uint8_t value) {
+  sp48_write_memory(address, value);
+}
+
+uint8_t sp48_bus_read_port(uint16_t address) {
+  return (uint8_t)sp48_read_port(address);
+}
+
+void sp48_bus_write_port(uint16_t address, uint8_t value) {
+  sp48_write_port(address, value);
+}
+
+unsigned int sp48_execute_instructions(
+  unsigned int max_instructions,
+  unsigned int stop_tact,
+  unsigned int mode
+) {
+  unsigned int instructions = 0;
+  unsigned int cpu_status = Z80_EXECUTION_COMPLETED;
+  unsigned int start_frames;
+  unsigned int termination = 0;
+  unsigned int termination_point = get_u16(input_block, SP48_INPUT_TERMINATION_POINT_OFFSET);
+  unsigned int termination_point_enabled =
+    input_block[SP48_INPUT_TERMINATION_POINT_ENABLED_OFFSET] != 0;
+
+  sp48_import_state();
+  z80_bus_mode = Z80_BUS_SP48;
+  start_frames = state.frames;
+  put_u32(result_block, SP48_RESULT_TERMINATION_OFFSET, termination);
+  put_u32(result_block, SP48_RESULT_INSTRUCTION_COUNT_OFFSET, 0);
+  put_u32(result_block, SP48_RESULT_CPU_STATUS_OFFSET, Z80_EXECUTION_COMPLETED);
+
+  while (instructions < max_instructions) {
+    do {
+      cpu_status = z80_cpu_execute_instruction();
+    } while (cpu_status == Z80_EXECUTION_PREFIX_PENDING);
+    instructions++;
+
+    if (cpu_status != Z80_EXECUTION_COMPLETED) {
+      termination = 1u;
+      break;
+    }
+    if (mode == 2u && termination_point_enabled && state.pc == termination_point) {
+      termination = 2u;
+      break;
+    }
+    if (state.frames != start_frames) {
+      termination = 0u;
+      break;
+    }
+    if (stop_tact != 0u && state.frame_tacts >= stop_tact) {
+      termination = 0u;
+      break;
+    }
+  }
+
+  put_u32(result_block, SP48_RESULT_TERMINATION_OFFSET, termination);
+  put_u32(result_block, SP48_RESULT_INSTRUCTION_COUNT_OFFSET, instructions);
+  put_u32(result_block, SP48_RESULT_CPU_STATUS_OFFSET, cpu_status);
+  sp48_export_state();
+  return termination;
 }

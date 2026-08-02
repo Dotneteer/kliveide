@@ -8,7 +8,7 @@
 #define SP48_LAYOUT_VERSION 1
 #endif
 #ifndef SP48_MACHINE_STATE_BLOCK_SIZE
-#define SP48_MACHINE_STATE_BLOCK_SIZE 64
+#define SP48_MACHINE_STATE_BLOCK_SIZE 80
 #endif
 #ifndef SP48_INPUT_BLOCK_SIZE
 #define SP48_INPUT_BLOCK_SIZE 64
@@ -35,16 +35,22 @@
 #define SP48_MACHINE_STATE_FRAME_TACTS_OFFSET 32
 #endif
 #ifndef SP48_MACHINE_STATE_ULA_PORT_OFFSET
-#define SP48_MACHINE_STATE_ULA_PORT_OFFSET 36
+#define SP48_MACHINE_STATE_ULA_PORT_OFFSET 64
 #endif
 #ifndef SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET
-#define SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET 37
+#define SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET 65
 #endif
 #ifndef SP48_INPUT_KEYBOARD_ROWS_OFFSET
 #define SP48_INPUT_KEYBOARD_ROWS_OFFSET 0
 #endif
 #ifndef SP48_INPUT_RUN_MODE_OFFSET
 #define SP48_INPUT_RUN_MODE_OFFSET 16
+#endif
+#ifndef SP48_INPUT_TERMINATION_POINT_OFFSET
+#define SP48_INPUT_TERMINATION_POINT_OFFSET 20
+#endif
+#ifndef SP48_INPUT_TERMINATION_POINT_ENABLED_OFFSET
+#define SP48_INPUT_TERMINATION_POINT_ENABLED_OFFSET 22
 #endif
 #ifndef SP48_RESULT_TERMINATION_OFFSET
 #define SP48_RESULT_TERMINATION_OFFSET 0
@@ -54,6 +60,12 @@
 #endif
 #ifndef SP48_RESULT_DIRTY_RANGE_COUNT_OFFSET
 #define SP48_RESULT_DIRTY_RANGE_COUNT_OFFSET 8
+#endif
+#ifndef SP48_RESULT_INSTRUCTION_COUNT_OFFSET
+#define SP48_RESULT_INSTRUCTION_COUNT_OFFSET 12
+#endif
+#ifndef SP48_RESULT_CPU_STATUS_OFFSET
+#define SP48_RESULT_CPU_STATUS_OFFSET 16
 #endif
 
 /* Versioned, integer-only ABI: JavaScript invokes these exports directly. */
@@ -81,5 +93,10 @@ void sp48_write_memory(unsigned int address, unsigned int value);
 void sp48_patch_memory(unsigned int address, unsigned int value);
 unsigned int sp48_read_port(unsigned int address);
 void sp48_write_port(unsigned int address, unsigned int value);
+unsigned int sp48_execute_instructions(
+  unsigned int max_instructions,
+  unsigned int stop_tact,
+  unsigned int mode
+);
 
 #endif

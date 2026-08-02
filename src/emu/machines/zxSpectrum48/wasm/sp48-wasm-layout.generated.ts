@@ -5,7 +5,7 @@ export const SP48_WASM_ABI_VERSION = 1 as const;
 export const SP48_WASM_LAYOUT = {
   "abiVersion": 1,
   "layoutVersion": 1,
-  "machineStateBlockSize": 64,
+  "machineStateBlockSize": 80,
   "inputBlockSize": 64,
   "resultBlockSize": 64,
   "eventBufferSize": 4096,
@@ -14,13 +14,17 @@ export const SP48_WASM_LAYOUT = {
   "dirtyRangeRecordSize": 4,
   "machineStateCpuStateOffset": 0,
   "machineStateFrameTactsOffset": 32,
-  "machineStateUlaPortOffset": 36,
-  "machineStateIs16KModelOffset": 37,
+  "machineStateUlaPortOffset": 64,
+  "machineStateIs16KModelOffset": 65,
   "inputKeyboardRowsOffset": 0,
   "inputRunModeOffset": 16,
+  "inputTerminationPointOffset": 20,
+  "inputTerminationPointEnabledOffset": 22,
   "resultTerminationOffset": 0,
   "resultEventCountOffset": 4,
-  "resultDirtyRangeCountOffset": 8
+  "resultDirtyRangeCountOffset": 8,
+  "resultInstructionCountOffset": 12,
+  "resultCpuStatusOffset": 16
 } as const;
 export const SP48_WASM_LAYOUT_VALUE_ID = {
   "layoutVersion": 0,
@@ -37,9 +41,13 @@ export const SP48_WASM_LAYOUT_VALUE_ID = {
   "machineStateIs16KModelOffset": 11,
   "inputKeyboardRowsOffset": 12,
   "inputRunModeOffset": 13,
-  "resultTerminationOffset": 14,
-  "resultEventCountOffset": 15,
-  "resultDirtyRangeCountOffset": 16
+  "inputTerminationPointOffset": 14,
+  "inputTerminationPointEnabledOffset": 15,
+  "resultTerminationOffset": 16,
+  "resultEventCountOffset": 17,
+  "resultDirtyRangeCountOffset": 18,
+  "resultInstructionCountOffset": 19,
+  "resultCpuStatusOffset": 20
 } as const;
 
 export type Sp48WasmLayoutValueKey = keyof typeof SP48_WASM_LAYOUT_VALUE_ID;

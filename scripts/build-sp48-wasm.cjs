@@ -14,7 +14,7 @@ const packagedResourceDirectory = "wasm/zxSpectrum48";
 const layoutValues = {
   abiVersion: 1,
   layoutVersion: 1,
-  machineStateBlockSize: 64,
+  machineStateBlockSize: 80,
   inputBlockSize: 64,
   resultBlockSize: 64,
   eventBufferSize: 4096,
@@ -23,13 +23,17 @@ const layoutValues = {
   dirtyRangeRecordSize: 4,
   machineStateCpuStateOffset: 0,
   machineStateFrameTactsOffset: 32,
-  machineStateUlaPortOffset: 36,
-  machineStateIs16KModelOffset: 37,
+  machineStateUlaPortOffset: 64,
+  machineStateIs16KModelOffset: 65,
   inputKeyboardRowsOffset: 0,
   inputRunModeOffset: 16,
+  inputTerminationPointOffset: 20,
+  inputTerminationPointEnabledOffset: 22,
   resultTerminationOffset: 0,
   resultEventCountOffset: 4,
-  resultDirtyRangeCountOffset: 8
+  resultDirtyRangeCountOffset: 8,
+  resultInstructionCountOffset: 12,
+  resultCpuStatusOffset: 16
 };
 
 const layoutValueIds = {
@@ -47,9 +51,13 @@ const layoutValueIds = {
   machineStateIs16KModelOffset: 11,
   inputKeyboardRowsOffset: 12,
   inputRunModeOffset: 13,
-  resultTerminationOffset: 14,
-  resultEventCountOffset: 15,
-  resultDirtyRangeCountOffset: 16
+  inputTerminationPointOffset: 14,
+  inputTerminationPointEnabledOffset: 15,
+  resultTerminationOffset: 16,
+  resultEventCountOffset: 17,
+  resultDirtyRangeCountOffset: 18,
+  resultInstructionCountOffset: 19,
+  resultCpuStatusOffset: 20
 };
 
 const productionExports = [
@@ -71,6 +79,7 @@ const productionExports = [
   "sp48_import_snapshot",
   "sp48_export_snapshot",
   "sp48_patch_memory",
+  "sp48_execute_instructions",
   "sp48_create",
   "sp48_reset",
   "sp48_load_rom_byte",
@@ -141,9 +150,13 @@ function buildSp48Wasm({ compiler = process.env.SP48_WASM_CC || "clang", run = s
     `-DSP48_MACHINE_STATE_IS_16K_MODEL_OFFSET=${layoutValues.machineStateIs16KModelOffset}`,
     `-DSP48_INPUT_KEYBOARD_ROWS_OFFSET=${layoutValues.inputKeyboardRowsOffset}`,
     `-DSP48_INPUT_RUN_MODE_OFFSET=${layoutValues.inputRunModeOffset}`,
+    `-DSP48_INPUT_TERMINATION_POINT_OFFSET=${layoutValues.inputTerminationPointOffset}`,
+    `-DSP48_INPUT_TERMINATION_POINT_ENABLED_OFFSET=${layoutValues.inputTerminationPointEnabledOffset}`,
     `-DSP48_RESULT_TERMINATION_OFFSET=${layoutValues.resultTerminationOffset}`,
     `-DSP48_RESULT_EVENT_COUNT_OFFSET=${layoutValues.resultEventCountOffset}`,
     `-DSP48_RESULT_DIRTY_RANGE_COUNT_OFFSET=${layoutValues.resultDirtyRangeCountOffset}`,
+    `-DSP48_RESULT_INSTRUCTION_COUNT_OFFSET=${layoutValues.resultInstructionCountOffset}`,
+    `-DSP48_RESULT_CPU_STATUS_OFFSET=${layoutValues.resultCpuStatusOffset}`,
     "-Wl,--no-entry",
     "-Wl,--export-memory",
     "-Wl,--initial-memory=262144",

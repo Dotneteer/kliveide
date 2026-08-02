@@ -14,6 +14,7 @@ unsigned int io_log_count;
 unsigned int tbblue_log_count;
 unsigned int io_input_count;
 unsigned int io_input_index;
+unsigned int z80_bus_mode;
 uint8_t z80_state_block[64];
 
 unsigned int z80_abi_version(void) { return 1; }
@@ -200,4 +201,5 @@ void z80_test_bus_reset(void) {
   tbblue_log_count = 0;
   io_input_count = 0;
   io_input_index = 0;
+  z80_bus_mode = Z80_BUS_TEST;
 }

@@ -1,11 +1,15 @@
 #ifndef KLIVE_Z80_ABI_H
 #define KLIVE_Z80_ABI_H
 
+#include <stdint.h>
+
 enum Z80ExecutionResult {
   Z80_EXECUTION_COMPLETED = 0,
   Z80_EXECUTION_NOT_IMPLEMENTED = 1,
   Z80_EXECUTION_PREFIX_PENDING = 2
 };
+
+extern uint8_t z80_state_block[64];
 
 unsigned int z80_abi_version(void);
 void z80_reset(void);

@@ -17,6 +17,10 @@ void *memcpy(void *destination, const void *source, unsigned long count) {
 static void initializeParityTable(void);
 static uint8_t readRegister(unsigned int registerCode);
 static void writeRegister(unsigned int registerCode, uint8_t value);
+uint8_t sp48_bus_read_memory(uint16_t address, unsigned int operation);
+void sp48_bus_write_memory(uint16_t address, uint8_t value);
+uint8_t sp48_bus_read_port(uint16_t address);
+void sp48_bus_write_port(uint16_t address, uint8_t value);
 
 static void tactPlusN(unsigned int tacts) {
   state.tacts += tacts;
@@ -32,8 +36,10 @@ static void refreshMemory(void) {
 }
 
 static uint8_t readMemory(uint16_t address, unsigned int operation) {
-  uint8_t value = test_memory[address];
-  if (memory_log_count < Z80_TEST_LOG_CAPACITY) {
+  uint8_t value = z80_bus_mode == Z80_BUS_SP48
+    ? sp48_bus_read_memory(address, operation)
+    : test_memory[address];
+  if (z80_bus_mode == Z80_BUS_TEST && memory_log_count < Z80_TEST_LOG_CAPACITY) {
     memory_log[memory_log_count].address = address;
     memory_log[memory_log_count].value = value;
     memory_log[memory_log_count].operation = (uint8_t)operation;
@@ -44,8 +50,9 @@ static uint8_t readMemory(uint16_t address, unsigned int operation) {
 }
 
 static void writeMemory(uint16_t address, uint8_t value) {
-  test_memory[address] = value;
-  if (memory_log_count < Z80_TEST_LOG_CAPACITY) {
+  if (z80_bus_mode == Z80_BUS_SP48) sp48_bus_write_memory(address, value);
+  else test_memory[address] = value;
+  if (z80_bus_mode == Z80_BUS_TEST && memory_log_count < Z80_TEST_LOG_CAPACITY) {
     memory_log[memory_log_count].address = address;
     memory_log[memory_log_count].value = value;
     memory_log[memory_log_count].operation = 1;
@@ -55,8 +62,10 @@ static void writeMemory(uint16_t address, uint8_t value) {
 }
 
 static uint8_t readPort(uint16_t address) {
-  uint8_t value = io_input_index < io_input_count ? io_input[io_input_index++] : 0;
-  if (io_log_count < Z80_TEST_LOG_CAPACITY) {
+  uint8_t value = z80_bus_mode == Z80_BUS_SP48
+    ? sp48_bus_read_port(address)
+    : (io_input_index < io_input_count ? io_input[io_input_index++] : 0);
+  if (z80_bus_mode == Z80_BUS_TEST && io_log_count < Z80_TEST_LOG_CAPACITY) {
     io_log[io_log_count].address = address;
     io_log[io_log_count].value = value;
     io_log[io_log_count].operation = 0;
@@ -67,7 +76,8 @@ static uint8_t readPort(uint16_t address) {
 }
 
 static void writePort(uint16_t address, uint8_t value) {
-  if (io_log_count < Z80_TEST_LOG_CAPACITY) {
+  if (z80_bus_mode == Z80_BUS_SP48) sp48_bus_write_port(address, value);
+  if (z80_bus_mode == Z80_BUS_TEST && io_log_count < Z80_TEST_LOG_CAPACITY) {
     io_log[io_log_count].address = address;
     io_log[io_log_count].value = value;
     io_log[io_log_count].operation = 1;

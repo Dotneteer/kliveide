@@ -121,11 +121,11 @@ the row complete in this plan.
 
 | Step | Work | Focused test gate |
 | --- | --- | --- |
-| P2.1 | Replace the standalone Z80 test bus with a 48K machine bus implementation for memory reads/writes and port reads/writes. Keep the test bus only for `test/z80`. | Existing Z80 WASM tests still pass; new 48K bus tests verify memory and FE port dispatch. |
-| P2.2 | Add `sp48_execute_instructions(max_instructions, stop_tact, mode)` for bounded debug-style execution. | Run short instruction programs through TypeScript 48K and WASM 48K, comparing CPU state, memory, tacts, and termination reason. |
-| P2.3 | Implement HALT, INT scheduling, frame-end detection, and termination modes at the machine level. | Tests cover normal frame completion, HALT progression, interrupt acceptance, and execution-point stop behavior. |
-| P2.4 | Connect `ZxSpectrum48WasmMachine.executeMachineFrame()` to the bounded C export for debug modes, while keeping normal mode delegated until P3. | Existing debugger stepping/unit tests pass with `sp48Implementation: "wasm"` where applicable. |
-| P2.5 | Add seeded differential instruction replay at the 48K machine level. | New replay tests compare TypeScript and WASM over deterministic programs with memory, I/O, interrupts, and stop conditions. |
+| P2.1 | **Completed.** Added a selectable C Z80 bus mode so the same CPU core can run against the existing test bus or the Spectrum 48K machine bus. The 48K bus dispatches memory reads/writes and FE port reads/writes without JavaScript callbacks. | Existing Z80 WASM tests still pass; `test/zxSpectrum/sp48-wasm-cpu-integration.test.ts` verifies memory and FE port dispatch. |
+| P2.2 | **Completed.** Added `sp48_execute_instructions(max_instructions, stop_tact, mode)` for bounded debug-style execution, with instruction count and CPU status in the result block. | Short instruction programs run through TypeScript 48K and WASM 48K, comparing CPU state, memory, tacts, and termination reason. |
+| P2.3 | **Completed.** Implemented machine-level HALT progression, INT acceptance, frame-end detection, and execution-point termination in the bounded WASM path. | `test/zxSpectrum/sp48-wasm-cpu-integration.test.ts` covers frame completion, HALT progression, interrupt acceptance, and execution-point stop behavior. |
+| P2.4 | **Completed.** Connected `ZxSpectrum48WasmMachine.executeMachineFrame()` to the bounded C export for debug-style/termination-point runs. Normal frame execution remains delegated until P3. | Adapter tests exercise `StepInto`, `UntilExecutionPoint`, and bounded normal termination while the full suite remains green. |
+| P2.5 | **Completed.** Added seeded 48K machine-level differential replay for deterministic programs. | Seeded replay compares TypeScript and WASM CPU state, FE output state, and touched RAM windows. |
 
 ### Phase P3 — normal frame kernel
 
