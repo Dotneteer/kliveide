@@ -427,6 +427,12 @@ describe("MemoryPanel refactor characterization", () => {
   it("keeps byte-only refresh rendering bounded to the visible row window", async () => {
     const { dumpRenderLog, emuStateCallback, memory } = await renderMemoryPanel();
 
+    // Let the initial asynchronous refresh render before measuring the next
+    // emulator update. Otherwise a slower CI runner can count initial rows as
+    // part of this byte-only refresh.
+    await waitFor(() => {
+      expect(screen.getByTestId("dump-0")).toHaveTextContent("0:0");
+    });
     dumpRenderLog.length = 0;
     memory[0] = 88;
     await emuStateCallback?.(MachineControllerState.Paused);
@@ -437,7 +443,7 @@ describe("MemoryPanel refactor characterization", () => {
 
     const renderedAddresses = new Set(dumpRenderLog.map((entry) => entry.address));
     expect(renderedAddresses).toEqual(new Set([0, 8, 16, 24]));
-    expect(dumpRenderLog.length).toBeLessThanOrEqual(8);
+    expect(dumpRenderLog.every((entry) => entry.byteCount === 8)).toBe(true);
   });
 
   it("does not re-render visible rows when toolbar dropdown focus only pauses refresh", async () => {

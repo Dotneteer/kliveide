@@ -66,7 +66,7 @@ Main
     // call Z80NDemo.DoSetae
     
     // --- 02: Talk to HW Demos
-    // call IoDemo.Read
+    call IoDemo.Read
     // call IoDemo.Write
     // call NextRegDemo.Write
 
