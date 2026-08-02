@@ -181,7 +181,8 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.NEW_PROJECT_DIALOG,
       dialogIds.EXPORT_CODE_DIALOG,
       dialogIds.EXCLUDED_PROJECT_ITEMS_DIALOG,
-      dialogIds.FIRST_STARTUP_DIALOG_IDE
+      dialogIds.FIRST_STARTUP_DIALOG_IDE,
+      dialogIds.ABOUT_DIALOG
     ];
     const expectedEmuIds = [
       dialogIds.FIRST_STARTUP_DIALOG_EMU,
@@ -189,20 +190,21 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.Z88_REMOVE_CARD_DIALOG,
       dialogIds.Z88_INSERT_CARD_DIALOG,
       dialogIds.Z88_EXPORT_CARD_DIALOG,
-      dialogIds.Z88_CHANGE_RAM_DIALOG
+      dialogIds.Z88_CHANGE_RAM_DIALOG,
+      dialogIds.ABOUT_DIALOG
     ];
 
     expect(Object.keys(ideDialogRegistry).map(Number).sort((a, b) => a - b)).toEqual(
-      expectedIdeIds
+      expectedIdeIds.sort((a, b) => a - b)
     );
     expect(Object.keys(emuDialogRegistry).map(Number).sort((a, b) => a - b)).toEqual(
-      expectedEmuIds
+      expectedEmuIds.sort((a, b) => a - b)
     );
 
     for (const dialogId of expectedIdeIds) {
       expect(
         isValidElement(
-          ideDialogRegistry[dialogId]({
+          ideDialogRegistry[dialogId](undefined, {
             id: `ide-${dialogId}`,
             close: vi.fn(),
             cancel: vi.fn(),

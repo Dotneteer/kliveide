@@ -1,6 +1,7 @@
 import { ReactElement } from "react";
 import { DialogControls } from "@renderer/controls/overlay/DialogProvider";
 import {
+  ABOUT_DIALOG,
   CREATE_DISK_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
   Z88_CHANGE_RAM_DIALOG,
@@ -8,6 +9,8 @@ import {
   Z88_INSERT_CARD_DIALOG,
   Z88_REMOVE_CARD_DIALOG
 } from "@common/messaging/dialog-ids";
+import type { AboutDialogData } from "@common/messaging/about-dialog";
+import { AboutDialog, AboutDialogResult } from "@renderer/appIde/dialogs/AboutDialog";
 import {
   FirstStartDialog,
   FirstStartDialogResult
@@ -39,7 +42,8 @@ export type EmuDialogResult =
   | Z88RemoveCardDialogResult
   | Z88InsertCardDialogResult
   | Z88ExportCardDialogResult
-  | Z88ChangeRamDialogResult;
+  | Z88ChangeRamDialogResult
+  | AboutDialogResult;
 
 export type EmuDialogRenderer = (
   data: any,
@@ -76,5 +80,11 @@ export const emuDialogRegistry: Record<number, EmuDialogRenderer> = {
   ),
   [CREATE_DISK_DIALOG]: (_, controls) => (
     <CreateDiskDialog onCreate={(result) => controls.close(result)} onClose={controls.cancel} />
+  ),
+  [ABOUT_DIALOG]: (data, controls) => (
+    <AboutDialog
+      about={data as AboutDialogData}
+      onClose={(result) => controls.close(result)}
+    />
   )
 };

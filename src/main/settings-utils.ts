@@ -1,4 +1,3 @@
-import path from "path";
 import fs from "fs";
 import { Setting } from "@abstractions/Setting";
 import { mainStore } from "@main/main-store";
@@ -6,7 +5,8 @@ import { get } from "lodash";
 import { KliveGlobalSettings } from "../common/settings/setting-definitions";
 import { getRecentProjects, saveKliveProject, setRecentProjects } from "./projects";
 import { app } from "electron";
-import { AppSettings, KLIVE_HOME_FOLDER, SETTINGS_FILE_NAME } from "./settings";
+import { AppSettings } from "./settings";
+import { ensureSettingsFileDirectory, resolveSettingsFilePath } from "./settings-path";
 
 /**
  * Get the specified seeting definition.
@@ -96,13 +96,11 @@ export function setSettingValue(id: string, value: any): void {
 }
 
 export let appSettings: AppSettings = {};
+export let settingsFileLoaded = false;
 
 export function saveAppSettings(): void {
   const filename = getSettingsFilePath();
-  const filePath = path.dirname(filename);
-  if (!fs.existsSync(filePath)) {
-    fs.mkdirSync(filePath);
-  }
+  ensureSettingsFileDirectory(filename);
 
   // --- Do not refresh state after the final save
   // --- Get settings from the current state
@@ -130,9 +128,12 @@ export function saveAppSettings(): void {
 }
 
 export function loadAppSettings(): void {
+  const settingsFilePath = getSettingsFilePath();
+  settingsFileLoaded = false;
   try {
-    const contents = fs.readFileSync(getSettingsFilePath(), "utf8");
+    const contents = fs.readFileSync(settingsFilePath, "utf8");
     appSettings = JSON.parse(contents) as AppSettings;
+    settingsFileLoaded = true;
 
     // --- Apply settings to the current main-only state
     setRecentProjects(appSettings.recentProjects ?? []);
@@ -141,6 +142,6 @@ export function loadAppSettings(): void {
   }
 }
 
-function getSettingsFilePath(): string {
-  return path.join(app.getPath("home"), KLIVE_HOME_FOLDER, SETTINGS_FILE_NAME);
+export function getSettingsFilePath(): string {
+  return resolveSettingsFilePath(app.getPath("home"));
 }

@@ -32,6 +32,7 @@ const EmuApp = () => {
   const showToolbar = useGlobalSetting(SETTING_EMU_SHOW_TOOLBAR);
   const showStatusBar = useGlobalSetting(SETTING_EMU_SHOW_STATUS_BAR);
   const kliveProjectLoaded = useSelector((s) => s.project?.isKliveProject ?? false);
+  const emuLoaded = useSelector((s) => s.emuLoaded ?? false);
   const dimmed = useSelector((s) => s.dimMenu ?? false);
   const isWindows = useSelector((s) => s.isWindows ?? false);
 
@@ -39,7 +40,7 @@ const EmuApp = () => {
 
   return (
     <RecordingContext.Provider value={recordingManagerRef}>
-    <FullPanel id="appMain" data-testid="emu-app">
+    <FullPanel id="appMain" data-testid="emu-app" dataAppReady={emuLoaded ? "true" : "false"}>
       <EmuDialogBridge />
       {showToolbar && <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} recordingManagerRef={recordingManagerRef} />}
       <EmulatorArea />

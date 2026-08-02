@@ -30,6 +30,7 @@ export const FullPanel = (props: LayoutProps) => {
   return (
     <div
       id={props.id}
+      data-app-ready={props.dataAppReady}
       className={classnames(
         styles.fullPanel,
         { [styles.horizontal]: props.orientation === "horizontal" },
