@@ -18,5 +18,6 @@ export type Sp48WasmBuild = {
 
 export const source: string;
 export const z80Source: string;
+export const z80CpuSource: string;
 export const output: string;
 export function buildSp48Wasm(options?: BuildSp48WasmOptions): Sp48WasmBuild;

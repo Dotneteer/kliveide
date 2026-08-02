@@ -5,6 +5,7 @@ const { spawnSync } = require("node:child_process");
 const root = resolve(__dirname, "..");
 const source = resolve(root, "src/emu/machines/zxSpectrum48/wasm/sp48_core.c");
 const z80Source = resolve(root, "src/emu/z80/wasm/z80_abi.c");
+const z80CpuSource = resolve(root, "src/emu/z80/wasm/z80_cpu.c");
 const output = resolve(root, "src/emu/machines/zxSpectrum48/wasm/dist/zx-spectrum48.wasm");
 
 function buildSp48Wasm({ compiler = process.env.SP48_WASM_CC || "clang", run = spawnSync } = {}) {
@@ -64,6 +65,7 @@ function buildSp48Wasm({ compiler = process.env.SP48_WASM_CC || "clang", run = s
     "-Wl,--export=z80_test_bus_reset",
     source,
     z80Source,
+    z80CpuSource,
     "-o",
     output
   ];
@@ -75,4 +77,4 @@ function buildSp48Wasm({ compiler = process.env.SP48_WASM_CC || "clang", run = s
 
 if (require.main === module) buildSp48Wasm();
 
-module.exports = { buildSp48Wasm, source, z80Source, output };
+module.exports = { buildSp48Wasm, source, z80Source, z80CpuSource, output };

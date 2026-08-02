@@ -136,6 +136,11 @@ src/emu/z80/wasm/
   z80_test_bus.c           # test-only deterministic memory/I/O/event bus
 ```
 
+`z80_abi.c` is deliberately not in that list of CPU implementation units: it
+contains exported ABI wrappers only. It may validate arguments and translate
+packed ABI data, but it must not own CPU state, decode tables, instruction
+functions, tact accounting, or memory/port execution logic.
+
 C uses fixed-width unsigned types (`uint8_t`, `uint16_t`, `uint32_t`) and an
 internal register-pair union, for example `union { uint16_t w; struct { uint8_t
 lo, hi; } b; }`. WebAssembly is little-endian, so `b.hi` is the Z80 high byte;
@@ -146,8 +151,61 @@ struct with compiler-dependent padding.
 The C decoder should be structured around operand/addressing-mode and ALU
 helpers (8-bit register selector, 16-bit pair selector, indexed effective
 address, flag builders, fetch/read/write primitives), with compact decode
-metadata where it helps. It must not reproduce the TypeScript class hierarchy,
-DataView layout, or one JavaScript function per opcode merely in C syntax.
+metadata where it helps. It must not reproduce the TypeScript class hierarchy
+or DataView layout.
+
+### C opcode implementation conventions
+
+The execution model intentionally mirrors the readable structure of
+`Z80Cpu.executeCpuCycle()`: one central `execute_cpu_cycle` routine handles
+signals, HALT, opcode fetch, and prefix selection; prefix-specific 256-entry
+operation tables select C function pointers. This is an implementation-shape
+requirement, not a claim that C must copy TypeScript internals.
+
+- Give operation functions meaningful instruction names, such as `ld_bc_nn`,
+  `add_hl_de`, and `ld_a_indirect_bc`; never use opcode-only names such as
+  `op_1a`.
+- Precede every operation with an opcode/mnemonic comment (`// 0x1A: LD A,(DE)`).
+- Write operation bodies over multiple logical lines, with named temporary
+  values and visible tact, register, flag, and memory effects. Do not compress
+  a whole instruction into one line.
+- Keep reusable mechanics in helpers (`fetch_word`, `add16`, `inc8`, and so
+  on), but retain a separately named table entry for each opcode unless several
+  entries genuinely have identical Z80 semantics.
+- Use `void` operation functions. The central dispatcher converts a successful
+  function-pointer call into the ABI completion result; it alone reports the
+  illegal-operation result for the named illegal table entry. Prefix flow also
+  belongs only to `execute_cpu_cycle`, matching the TypeScript control flow.
+
+### TypeScript-to-C naming compatibility
+
+Where C has an equivalent concept, retain the original `Z80Cpu.ts` name in C
+camelCase rather than introducing a translation layer of synonyms. In
+particular, `executeCpuCycle`, `tactPlusN`, `refreshMemory`, `readMemory`,
+`writeMemory`, `readPort`, `writePort`, `fetchCodeByte`, `processNmi`, and
+`processInt` use those names in the CPU source. Instruction functions likewise
+use their original names (`ldBcNN`, `ldBciA`, `addHlDe`, `ldADei`, and so on).
+The only intentional C naming differences are type names and exported ABI
+symbols, which remain `Z80State` and `z80_*` respectively.
+
+#### Z5 CPU/ABI source-boundary correction — completed 2026-08-02
+
+Before S20, split the current prototype as follows:
+
+1. **Completed.** Create `z80_cpu.h` as the internal CPU contract, exposing `Z80State`,
+   `reset`, `executeCpuCycle`, and the narrowly scoped helper entry points
+   required by ABI test wrappers.
+2. **Completed.** Move CPU state, `executeCpuCycle`, all prefix tables, instruction functions,
+   tact/refresh logic, interrupt handling, and CPU primitives into `z80_cpu.c`.
+3. Deferred: retain the deterministic RAM/I/O/log implementation in the ABI
+   test wrapper until its production/test artifact split; the CPU accesses it
+   only through the separate compilation-unit boundary.
+   `z80_cpu.c` calls its named `readMemory`/`writeMemory`/port functions.
+4. **Completed for the current prototype.** Reduce `z80_abi.c` to exported wrappers around the CPU and test-bus
+   contracts. It contains no opcode table or instruction implementation.
+5. **Completed.** Compile each C unit separately in the fake WASM build. The existing ABI,
+   primitive, and literal S00/S10 clone tests are the no-regression gate; add a
+   build assertion that `z80_abi.c` no longer includes the CPU implementation.
 
 ### Z0 ABI ownership and lifetime
 
@@ -224,15 +282,17 @@ TypeScript.
 
 #### Foundation and execution semantics
 
-**Progress:** Z0 through Z3 and S00 completed on 2026-08-02. The module now has a
+**Progress:** Z0 through Z4 and S00–S10 completed on 2026-08-02. The module now has a
 versioned Z80 ABI, C-native register pairs, explicit state accessors, reset
 semantics, 64K test RAM, fixed-capacity test-bus log storage, a fetch/execution
 shell, native interrupt acceptance, and the shared C primitives required for
 opcode migration. The shell supports NOP, prefix transitions, refresh-register
 semantics, base tact accounting, HALT dummy M1 cycles, RESET/NMI/INT handling,
 and IM 0/1/2 vectors; unsupported opcodes return an explicit result. S00 adds
-the first literal WASM test-page clone and its `00–0F` instruction family. It
-is intentionally not yet connected to the production CPU.
+literal WASM test-page clones and their `00–1F` instruction families. Its
+central execution cycle now follows the TypeScript model: signal/HALT/fetch and
+prefix flow in one routine, with operation tables selecting C function pointers.
+It is intentionally not yet connected to the production CPU.
 
 | Step | C/WASM work | Immediate existing-test gate |
 | --- | --- | --- |
@@ -240,6 +300,7 @@ is intentionally not yet connected to the production CPU.
 | Z1 | **Completed.** Implement fetch, PC increment/wrap, R refresh behavior, prefix state, instruction-completion reporting, cycle/tact accounting, and HALT dummy M1 behavior. | WASM ABI execution-shell coverage plus `z80.test.ts` reference checks. The full memory-operation and HALT opcode files activate when their corresponding opcode semantics migrate. |
 | Z2 | **Completed.** Implement RESET, NMI, INT, IM 0/1/2, EI backlog, and `LD A,I`/`LD A,R` interrupt-quirk support. RETN/RETI opcode decoding remains in the ED migration step; its IFF state is already represented. | WASM interrupt ABI coverage plus `interrupts.test.ts` reference checks. The real LD A,I/R and RETN/RETI opcode cases activate with ED `40–7F`. |
 | Z3 | **Completed.** Implement shared C primitives before opcode pages: fetch byte/word, memory/port read/write logging, stack push/pop, signed displacement, 8-bit add/sub flag builders, parity lookup, and condition evaluation. 16-bit arithmetic and SZ53-specialized tables will be completed alongside their first consumers. | New primitive tests plus `memoryOp.test.ts` reference checks. |
+| Z4 | **Completed.** Align the C execution structure with `Z80Cpu.executeCpuCycle()`: `execute_cpu_cycle` owns signal, HALT, M1 fetch, and prefix transitions; standard, CB, ED, indexed, and indexed-bit operation tables dispatch to C function pointers. Every unimplemented entry explicitly resolves to the illegal-operation result. | Existing S00/S10 WASM clones, ABI, and primitive tests continue to pass. |
 
 #### Standard Z80 instruction pages
 
@@ -250,7 +311,7 @@ named existing test file in the WASM project.
 | Step | Opcode range / family | Immediate gate |
 | --- | --- | --- |
 | S00 | **Completed.** `00–0F`: NOP, 16-bit loads/inc/dec, 8-bit inc/dec/load, rotate A. `LD HL,nn` and `LD A,n` are minimal setup dependencies required by the literal clone; their full pages remain pending. | `standard-ops-00.test.ts` → `standard-ops-00.wasm.test.ts` |
-| S10 | `10–1F`: DJNZ/JR and conditional JR, DE operations, rotate A | `standard-ops-10.test.ts` |
+| S10 | **Completed.** `10–1F`: DJNZ, JR, DE loads/inc/dec, RLA/RRA, and ADD HL,DE. `SCF` is a minimal setup dependency required by the literal clone; its full page remains pending. | `standard-ops-10.test.ts` → `standard-ops-10.wasm.test.ts` |
 | S20 | `20–2F`: conditional JR, HL operations, DAA/CPL | `standard-ops-20.test.ts` |
 | S30 | `30–3F`: conditional JR, SP operations, SCF/CCF | `standard-ops-30.test.ts` |
 | S40 | `40–4F`: register-to-register loads and HALT boundary | `standard-ops-40.test.ts` |

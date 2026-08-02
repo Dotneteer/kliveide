@@ -61,6 +61,7 @@ class Z80WasmTestCpu {
   set pc (value: number) { this.writeWord(word.pc, value); }
   get a (): number { return this.readByte(byte.a); }
   get f (): number { return this.readByte(byte.f); }
+  set f (value: number) { this.writeByte(byte.f, value); }
   get b (): number { return this.readByte(byte.b); }
   get c (): number { return this.readByte(byte.c); }
   get d (): number { return this.readByte(byte.d); }
