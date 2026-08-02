@@ -1,6 +1,6 @@
 import type { MachineUiRendererInfo } from "./info-types";
 
-import { ZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48Machine";
+import { createZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48MachineFactory";
 import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_48,
@@ -18,7 +18,7 @@ import { C64Machine } from "@emu/machines/c64/C64Machine";
 export const machineRendererRegistry: MachineUiRendererInfo[] = [
   {
     machineId: MI_SPECTRUM_48,
-    factory: (_, model, config) => new ZxSpectrum48Machine(model, config)
+    factory: (_, model, config) => createZxSpectrum48Machine(model, config)
   },
   {
     machineId: MI_SPECTRUM_128,
