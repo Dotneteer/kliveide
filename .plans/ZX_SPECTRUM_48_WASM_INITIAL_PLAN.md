@@ -131,21 +131,21 @@ the row complete in this plan.
 
 | Step | Work | Focused test gate |
 | --- | --- | --- |
-| P3.1 | Implement `sp48_execute_frame()` that runs from current state to frame completion without JavaScript callbacks. | A no-I/O instruction-loop fixture completes one frame with matching frame counters and termination mode. |
-| P3.2 | Copy keyboard rows from TypeScript into the WASM input block before frame execution; implement FE keyboard reads in C. | Keyboard matrix tests compare FE reads for no keys, single key, multi-key rows, and contention with EAR bit defaults. |
-| P3.3 | Implement FE output state in C: border color, EAR/MIC latch state, and last written value. | Port-output tests compare TypeScript and WASM state after representative `OUT (FE),A` programs. |
-| P3.4 | Switch normal `ZxSpectrum48WasmMachine.executeMachineFrame()` to `sp48_execute_frame()`. | Factory/machine-frame tests prove the WASM backend no longer delegates normal frame execution to TypeScript. |
-| P3.5 | Add a fixed-ROM smoke benchmark fixture that runs a deterministic frame on both backends and checks state parity before measuring time. | Benchmark test is correctness-first and records timing only as diagnostic output. |
+| P3.1 | **Completed.** Implemented `sp48_execute_frame()` that runs from current state to frame completion without JavaScript callbacks. | Normal-frame fixtures complete a tiny deterministic frame with matching counters and termination mode. |
+| P3.2 | **Completed.** Copied keyboard rows from TypeScript into the WASM input block before execution and implemented FE keyboard reads in C. | Keyboard matrix tests compare no-key, single-row, and multi-row reads with the current EAR default/latch semantics. |
+| P3.3 | **Completed.** Implemented FE output state in C: border color, EAR latch, MIC latch, and last written FE value. | Port-output tests compare TypeScript and WASM state after representative `OUT (FE),A` programs. |
+| P3.4 | **Completed.** Switched normal `ZxSpectrum48WasmMachine.executeMachineFrame()` to `sp48_execute_frame()`. | Machine-frame tests prove the normal WASM backend path does not delegate to TypeScript CPU cycles. |
+| P3.5 | **Completed.** Added a fixed-ROM smoke benchmark fixture that runs a deterministic frame on both backends and checks parity before recording timing. | The benchmark smoke test is correctness-first and records timing only as diagnostic output. |
 
 ### Phase P4 — contention, floating bus, and ULA timing
 
 | Step | Work | Focused test gate |
 | --- | --- | --- |
-| P4.1 | Port 48K memory-contention timing for contended RAM and ULA fetch phases. | Focused timing tests compare tact deltas for contended/uncontended memory access cases. |
-| P4.2 | Implement floating-bus reads in C using the current tact and screen fetch schedule. | Existing or new floating-bus tests compare values across representative tacts and screen addresses. |
-| P4.3 | Generate a border-change trace buffer from C for FE writes and frame timing. | Border tests compare event order, tact, color, and frame-boundary behavior. |
-| P4.4 | Decide and implement the screen-output strategy: TypeScript renders from WASM RAM plus border trace, or C fills a frame pixel buffer. Prefer the smallest change that preserves current rendering semantics. | Golden/snapshot screen tests compare a deterministic screen memory pattern and border program. |
-| P4.5 | Validate no normal-frame path invokes TypeScript per tact or per instruction. | Add an adapter-level spy/test that fails if normal WASM execution calls TypeScript CPU/frame-runner methods. |
+| P4.1 | **Completed.** Ported 48K memory and I/O contention timing through a statically allocated per-tact contention table copied from the existing TypeScript screen schedule. | Focused timing tests compare TypeScript and WASM tact deltas for contended and uncontended memory access cases. |
+| P4.2 | **Completed.** Implemented floating-bus reads in C using a statically allocated per-tact screen-fetch address table and the Spectrum 48K `currentFrameTact - 5` sampling convention. | Floating-bus tests compare TypeScript and WASM reads at representative pixel and attribute fetch tacts. |
+| P4.3 | **Completed.** Generated a bounded border-change trace buffer from C for FE writes and frame timing. | Border tests verify event order, frame tact, FE value, border color, EAR latch, and MIC latch. |
+| P4.4 | **Completed.** Chose the smallest screen-output strategy: TypeScript continues rendering through the existing screen renderer, reading pixels from WASM RAM and border state/trace from the adapter. | Screen-rendering tests compare deterministic TypeScript and WASM pixel buffers from the same memory pattern. |
+| P4.5 | **Completed.** Validated that normal WASM frame execution does not invoke TypeScript CPU cycles, per-tact timing, or memory access hooks. | Adapter guard tests fail if normal WASM execution delegates to TypeScript CPU/tact/memory methods. |
 
 ### Phase P5 — beeper/audio
 

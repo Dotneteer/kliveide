@@ -4,6 +4,7 @@ import type { Sp48WasmLoaderOptions, Sp48WasmRuntime } from "./wasm/Sp48WasmLoad
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MC_MEM_SIZE } from "@common/machines/constants";
+import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 import { loadSp48Wasm } from "./wasm/Sp48WasmLoader";
 import { ZxSpectrum48Machine } from "./ZxSpectrum48Machine";
 import { SP48_WASM_LAYOUT } from "./wasm/sp48-wasm-layout.generated";
@@ -16,6 +17,14 @@ export type Sp48WasmDirtyRange = {
 export type Sp48WasmSnapshot = {
   memory: Uint8Array;
   machineState: Uint8Array;
+};
+
+export type Sp48WasmBorderTrace = {
+  tact: number;
+  value: number;
+  color: number;
+  ear: boolean;
+  mic: boolean;
 };
 
 const CPU_STATE = {
@@ -83,6 +92,7 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     this.wasmRuntime = await loadSp48Wasm(this.wasmLoaderOptions);
     this.wasmRuntime.exports.sp48_set_16k_model(this.modelInfo?.config?.[MC_MEM_SIZE] === 16 ? 1 : 0);
     await super.setup();
+    this.syncTimingTablesToWasm(this.wasmRuntime);
     this.syncCpuToWasm();
   }
 
@@ -91,21 +101,36 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     if (this.wasmRuntime != null) {
       this.wasmRuntime.exports.sp48_set_16k_model(this.modelInfo?.config?.[MC_MEM_SIZE] === 16 ? 1 : 0);
       this.wasmRuntime.exports.sp48_reset();
+      this.syncTimingTablesToWasm(this.wasmRuntime);
       this.syncCpuFromWasm();
     }
   }
 
   override executeMachineFrame(): FrameTerminationMode {
-    if (
-      this.wasmRuntime == null ||
-      (this.executionContext.debugStepMode === DebugStepMode.NoDebug &&
-        this.executionContext.frameTerminationMode === FrameTerminationMode.Normal)
-    ) {
+    if (this.wasmRuntime == null) {
       return super.executeMachineFrame();
     }
 
     const runtime = this.requireWasmRuntime();
+    if (
+      this.executionContext.debugStepMode === DebugStepMode.NoDebug &&
+      this.executionContext.frameTerminationMode === FrameTerminationMode.Normal
+    ) {
+      if (this.frameCompleted) {
+        this.onInitNewFrame(false);
+        this.frameCompleted = false;
+        this.emulateKeystroke();
+      }
+      this.syncInputToWasm(runtime);
+      this.syncCpuToWasm();
+      const termination = runtime.exports.sp48_execute_frame() as FrameTerminationMode;
+      this.syncCpuFromWasm();
+      this.executionContext.lastTerminationReason = termination;
+      return termination;
+    }
+
     this.syncCpuToWasm();
+    this.syncInputToWasm(runtime);
     this.configureWasmTerminationInput(runtime);
 
     const maxInstructions =
@@ -145,6 +170,24 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     this.wasmRuntime.exports.sp48_write_memory(address & 0xffff, value & 0xff);
   }
 
+  override doReadPort(address: number): number {
+    if (this.wasmRuntime == null) {
+      return super.doReadPort(address);
+    }
+    this.syncInputToWasm(this.wasmRuntime);
+    this.syncCpuToWasm();
+    return this.wasmRuntime.exports.sp48_read_port(address & 0xffff) & 0xff;
+  }
+
+  override doWritePort(address: number, value: number): void {
+    if (this.wasmRuntime == null) {
+      super.doWritePort(address, value);
+      return;
+    }
+    this.wasmRuntime.exports.sp48_write_port(address & 0xffff, value & 0xff);
+    this.syncMachineOutputFromWasm(this.wasmRuntime);
+  }
+
   override uploadRomBytes(data: Uint8Array): void {
     super.uploadRomBytes(data);
     if (this.wasmRuntime == null) return;
@@ -163,6 +206,32 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
 
   clearWasmDirtyRanges(): void {
     this.wasmRuntime?.exports.sp48_clear_dirty_ranges();
+  }
+
+  clearWasmBorderTrace(): void {
+    this.wasmRuntime?.exports.sp48_clear_border_trace();
+  }
+
+  getWasmBorderTrace(): Sp48WasmBorderTrace[] {
+    const runtime = this.wasmRuntime;
+    if (runtime == null) return [];
+    const count = runtime.exports.sp48_border_trace_count();
+    const events: Sp48WasmBorderTrace[] = [];
+    for (let index = 0; index < count; index++) {
+      const offset = index * SP48_WASM_LAYOUT.borderTraceRecordSize;
+      events.push({
+        tact: new DataView(
+          runtime.eventBuffer.buffer,
+          runtime.eventBuffer.byteOffset + offset,
+          SP48_WASM_LAYOUT.borderTraceRecordSize
+        ).getUint32(0, true),
+        value: runtime.eventBuffer[offset + 4],
+        color: runtime.eventBuffer[offset + 5],
+        ear: runtime.eventBuffer[offset + 6] !== 0,
+        mic: runtime.eventBuffer[offset + 7] !== 0
+      });
+    }
+    return events;
   }
 
   getWasmDirtyRanges(): Sp48WasmDirtyRange[] {
@@ -217,6 +286,39 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
         true
       );
       input.setUint8(SP48_WASM_LAYOUT.inputTerminationPointEnabledOffset, 1);
+    }
+  }
+
+  private syncInputToWasm(runtime: Sp48WasmRuntime): void {
+    for (let line = 0; line < 8; line++) {
+      runtime.input.setUint8(
+        SP48_WASM_LAYOUT.inputKeyboardRowsOffset + line,
+        this.keyboardDevice.getKeyLineValue(line) & 0x1f
+      );
+    }
+  }
+
+  private syncTimingTablesToWasm(runtime: Sp48WasmRuntime): void {
+    const table = this.screenDevice.renderingTactTable;
+    runtime.contentionTable.fill(0);
+    for (let tact = 0; tact < runtime.floatingBusTable.byteLength / 2; tact++) {
+      runtime.floatingBusTable.setUint16(tact * 2, SP48_WASM_LAYOUT.floatingBusNone, true);
+    }
+    for (let tact = 0; tact < table.length && tact < SP48_WASM_LAYOUT.timingTableCapacity; tact++) {
+      runtime.contentionTable[tact] = this.getContentionValue(tact) & 0xff;
+      const renderingTact = table[tact];
+      switch (renderingTact?.phase) {
+        case RenderingPhase.BorderFetchPixel:
+        case RenderingPhase.DisplayB1FetchB2:
+        case RenderingPhase.DisplayB2FetchB1:
+          runtime.floatingBusTable.setUint16(tact * 2, 0x4000 + (renderingTact.pixelAddress & 0x3fff), true);
+          break;
+        case RenderingPhase.BorderFetchAttr:
+        case RenderingPhase.DisplayB1FetchA2:
+        case RenderingPhase.DisplayB2FetchA1:
+          runtime.floatingBusTable.setUint16(tact * 2, 0x4000 + (renderingTact.attributeAddress & 0x3fff), true);
+          break;
+      }
     }
   }
 
@@ -293,5 +395,12 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     this.afterLdAIR = state.getUint8(CPU_STATE.afterLdAIR) !== 0;
     this.frameCompleted = this.frames !== previousFrames;
     this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.syncMachineOutputFromWasm(runtime);
+  }
+
+  private syncMachineOutputFromWasm(runtime: Sp48WasmRuntime): void {
+    this.screenDevice.borderColor = runtime.machineState.getUint8(
+      SP48_WASM_LAYOUT.machineStateBorderColorOffset
+    ) & 0x07;
   }
 }

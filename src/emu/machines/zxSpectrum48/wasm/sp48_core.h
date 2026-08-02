@@ -28,6 +28,15 @@
 #ifndef SP48_DIRTY_RANGE_RECORD_SIZE
 #define SP48_DIRTY_RANGE_RECORD_SIZE 4
 #endif
+#ifndef SP48_TIMING_TABLE_CAPACITY
+#define SP48_TIMING_TABLE_CAPACITY 69888
+#endif
+#ifndef SP48_FLOATING_BUS_NONE
+#define SP48_FLOATING_BUS_NONE 65535
+#endif
+#ifndef SP48_BORDER_TRACE_RECORD_SIZE
+#define SP48_BORDER_TRACE_RECORD_SIZE 8
+#endif
 #ifndef SP48_MACHINE_STATE_CPU_STATE_OFFSET
 #define SP48_MACHINE_STATE_CPU_STATE_OFFSET 0
 #endif
@@ -39,6 +48,15 @@
 #endif
 #ifndef SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET
 #define SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET 65
+#endif
+#ifndef SP48_MACHINE_STATE_BORDER_COLOR_OFFSET
+#define SP48_MACHINE_STATE_BORDER_COLOR_OFFSET 66
+#endif
+#ifndef SP48_MACHINE_STATE_EAR_LATCH_OFFSET
+#define SP48_MACHINE_STATE_EAR_LATCH_OFFSET 67
+#endif
+#ifndef SP48_MACHINE_STATE_MIC_LATCH_OFFSET
+#define SP48_MACHINE_STATE_MIC_LATCH_OFFSET 68
 #endif
 #ifndef SP48_INPUT_KEYBOARD_ROWS_OFFSET
 #define SP48_INPUT_KEYBOARD_ROWS_OFFSET 0
@@ -67,6 +85,9 @@
 #ifndef SP48_RESULT_CPU_STATUS_OFFSET
 #define SP48_RESULT_CPU_STATUS_OFFSET 16
 #endif
+#ifndef SP48_RESULT_BORDER_TRACE_COUNT_OFFSET
+#define SP48_RESULT_BORDER_TRACE_COUNT_OFFSET 20
+#endif
 
 /* Versioned, integer-only ABI: JavaScript invokes these exports directly. */
 unsigned int sp48_abi_version(void);
@@ -78,8 +99,13 @@ unsigned int sp48_event_buffer_ptr(void);
 unsigned int sp48_memory_ptr(void);
 unsigned int sp48_memory_size(void);
 unsigned int sp48_dirty_ranges_ptr(void);
+unsigned int sp48_contention_table_ptr(void);
+unsigned int sp48_floating_bus_table_ptr(void);
+unsigned int sp48_timing_table_capacity(void);
 unsigned int sp48_dirty_range_count(void);
 void sp48_clear_dirty_ranges(void);
+unsigned int sp48_border_trace_count(void);
+void sp48_clear_border_trace(void);
 void sp48_set_16k_model(unsigned int enabled);
 void sp48_import_state(void);
 void sp48_export_state(void);
@@ -98,5 +124,6 @@ unsigned int sp48_execute_instructions(
   unsigned int stop_tact,
   unsigned int mode
 );
+unsigned int sp48_execute_frame(void);
 
 #endif

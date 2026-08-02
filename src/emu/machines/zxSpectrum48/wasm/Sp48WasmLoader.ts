@@ -19,8 +19,13 @@ export type Sp48WasmExports = WebAssembly.Exports & {
   sp48_memory_ptr: Sp48WasmExportFunction;
   sp48_memory_size: Sp48WasmExportFunction;
   sp48_dirty_ranges_ptr: Sp48WasmExportFunction;
+  sp48_contention_table_ptr: Sp48WasmExportFunction;
+  sp48_floating_bus_table_ptr: Sp48WasmExportFunction;
+  sp48_timing_table_capacity: Sp48WasmExportFunction;
   sp48_dirty_range_count: Sp48WasmExportFunction;
   sp48_clear_dirty_ranges: Sp48WasmExportFunction;
+  sp48_border_trace_count: Sp48WasmExportFunction;
+  sp48_clear_border_trace: Sp48WasmExportFunction;
   sp48_set_16k_model: Sp48WasmExportFunction;
   sp48_import_state: Sp48WasmExportFunction;
   sp48_export_state: Sp48WasmExportFunction;
@@ -34,6 +39,7 @@ export type Sp48WasmExports = WebAssembly.Exports & {
   sp48_patch_memory: Sp48WasmExportFunction;
   sp48_read_port: Sp48WasmExportFunction;
   sp48_write_port: Sp48WasmExportFunction;
+  sp48_execute_frame: Sp48WasmExportFunction;
 };
 
 export type Sp48WasmInstance = {
@@ -62,6 +68,8 @@ export type Sp48WasmRuntime = {
   readonly result: DataView;
   readonly eventBuffer: Uint8Array;
   readonly dirtyRanges: DataView;
+  readonly contentionTable: Uint8Array;
+  readonly floatingBusTable: DataView;
 };
 
 let cachedModule: WebAssembly.Module | undefined;
@@ -117,6 +125,9 @@ export function createSp48WasmViews(exports: Sp48WasmExports) {
   const resultStart = exports.sp48_result_block_ptr();
   const eventBufferStart = exports.sp48_event_buffer_ptr();
   const dirtyRangesStart = exports.sp48_dirty_ranges_ptr();
+  const contentionTableStart = exports.sp48_contention_table_ptr();
+  const floatingBusTableStart = exports.sp48_floating_bus_table_ptr();
+  const timingTableCapacity = exports.sp48_timing_table_capacity();
 
   return {
     memory: new Uint8Array(memoryBuffer, memoryStart, memorySize),
@@ -128,7 +139,9 @@ export function createSp48WasmViews(exports: Sp48WasmExports) {
       memoryBuffer,
       dirtyRangesStart,
       SP48_WASM_LAYOUT.dirtyRangeCapacity * SP48_WASM_LAYOUT.dirtyRangeRecordSize
-    )
+    ),
+    contentionTable: new Uint8Array(memoryBuffer, contentionTableStart, timingTableCapacity),
+    floatingBusTable: new DataView(memoryBuffer, floatingBusTableStart, timingTableCapacity * 2)
   };
 }
 

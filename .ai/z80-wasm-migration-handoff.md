@@ -25,6 +25,15 @@ changing Spectrum WASM work. This note records the post-CPU-phase state on
   bus, bounded instruction execution is exported, the WASM adapter uses it for
   debug-style/termination-point execution, and tests cover HALT, INT, frame-end,
   execution-point, FE-port, and seeded replay parity.
+- Phase P3 is complete: normal no-debug Spectrum 48K WASM execution now calls
+  `sp48_execute_frame()`, keyboard rows are copied into the input block, FE
+  keyboard reads and FE output latch/border state live in C, and fixed-ROM
+  frame smoke parity is covered before timing diagnostics are emitted.
+- Phase P4 is complete: C execution applies 48K contention from a static
+  per-tact table, odd-port floating-bus reads use a static per-tact screen
+  fetch-address table, FE writes populate a bounded border trace in the event
+  buffer, and the adapter keeps using the existing TypeScript screen renderer
+  against WASM RAM rather than adding a C pixel buffer.
 - The C/WASM emulator implementation must remain static-allocation only. The
   Phase P1 audit found no `malloc`, `calloc`, `realloc`, `free`, or
   `aligned_alloc` calls under the Spectrum 48K WASM and Z80 WASM source trees.
@@ -129,9 +138,41 @@ skipped files, and 119 skipped tests. The prior renderer `nex-file-writer.ts`
 Node-module warnings and the duplicate `case "sax"` assembler warning were
 removed; only the generic chunk-size warning remains during the Vite build.
 
+After Phase P3, the focused gates plus full suite passed:
+
+```sh
+npm run build:sp48-wasm
+npx vitest run --config build/vitest.config.ts --project node test/zxSpectrum/sp48-wasm-cpu-integration.test.ts test/zxSpectrum/sp48-wasm-memory.test.ts test/zxSpectrum/sp48-wasm-abi-manifest.test.ts test/zxSpectrum/sp48-wasm-loader.test.ts test/zxSpectrum/ZxSpectrum48WasmMachineSetup.test.ts test/z80/z80-wasm-abi.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80/*.wasm.test.ts test/z80/*wasm-differential.test.ts
+rg -n "\b(malloc|calloc|realloc|free|aligned_alloc)\s*\(" src/emu/machines/zxSpectrum48/wasm src/emu/z80/wasm
+npm run build:check
+npx electron-vite build --config build/electron.vite.config.ts
+npm run test
+```
+
+The full suite after P3 reported 562 passed files, 19,957 passed tests, 14
+skipped files, and 119 skipped tests. One full-suite run hit a transient
+unrelated audio performance threshold (`54.45ms < 50ms`); the focused audio
+test passed immediately afterward and the repeated full suite passed.
+
+After Phase P4, the focused gates plus full suite passed:
+
+```sh
+npm run build:sp48-wasm
+npx vitest run --config build/vitest.config.ts --project node test/zxSpectrum/sp48-wasm-cpu-integration.test.ts test/zxSpectrum/sp48-wasm-memory.test.ts test/zxSpectrum/sp48-wasm-abi-manifest.test.ts test/zxSpectrum/sp48-wasm-loader.test.ts test/zxSpectrum/ZxSpectrum48WasmMachineSetup.test.ts test/z80/z80-wasm-abi.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80/*.wasm.test.ts test/z80/*wasm-differential.test.ts
+rg -n "\b(malloc|calloc|realloc|free|aligned_alloc)\s*\(" src/emu/machines/zxSpectrum48/wasm src/emu/z80/wasm
+npm run build:check
+npx electron-vite build --config build/electron.vite.config.ts
+npm run test
+```
+
+The full suite after P4 reported 562 passed files, 19,961 passed tests, 14
+skipped files, and 119 skipped tests.
+
 ## Next useful work
 
-Start with Phase P3 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`: normal
-frame kernel.
+Start with Phase P5 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`:
+beeper/audio.
 
 Do not continue by adding more Z80 opcode-migration rows. That phase is done.

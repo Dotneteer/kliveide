@@ -82,7 +82,7 @@ describe("ZX Spectrum 48K WASM loader", () => {
 function fakeInstance(overrides: Partial<Sp48WasmExports> = {}): Promise<Sp48WasmInstance> {
   return Promise.resolve({
     exports: {
-      memory: new WebAssembly.Memory({ initial: 2 }),
+      memory: new WebAssembly.Memory({ initial: 8 }),
       sp48_abi_version: () => SP48_WASM_ABI_VERSION,
       sp48_layout_value: layoutValue,
       sp48_machine_state_block_ptr: () => 0x0000,
@@ -92,8 +92,13 @@ function fakeInstance(overrides: Partial<Sp48WasmExports> = {}): Promise<Sp48Was
       sp48_memory_ptr: () => 0x2000,
       sp48_memory_size: () => SP48_WASM_LAYOUT.memorySize,
       sp48_dirty_ranges_ptr: () => 0x1000,
+      sp48_contention_table_ptr: () => 0x12000,
+      sp48_floating_bus_table_ptr: () => 0x24000,
+      sp48_timing_table_capacity: () => SP48_WASM_LAYOUT.timingTableCapacity,
       sp48_dirty_range_count: () => 0,
       sp48_clear_dirty_ranges: () => 0,
+      sp48_border_trace_count: () => 0,
+      sp48_clear_border_trace: () => 0,
       sp48_set_16k_model: () => 0,
       sp48_import_state: () => 0,
       sp48_export_state: () => 0,
@@ -107,6 +112,7 @@ function fakeInstance(overrides: Partial<Sp48WasmExports> = {}): Promise<Sp48Was
       sp48_patch_memory: () => 0,
       sp48_read_port: () => 0,
       sp48_write_port: () => 0,
+      sp48_execute_frame: () => 0,
       ...overrides
     } as Sp48WasmExports
   });
