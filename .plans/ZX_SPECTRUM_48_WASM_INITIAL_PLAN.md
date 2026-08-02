@@ -221,21 +221,21 @@ TypeScript.
 
 #### Foundation and execution semantics
 
-**Progress:** Z0, Z1, and Z2 completed on 2026-08-02. The module now has a
+**Progress:** Z0 through Z3 completed on 2026-08-02. The module now has a
 versioned Z80 ABI, C-native register pairs, explicit state accessors, reset
 semantics, 64K test RAM, fixed-capacity test-bus log storage, a fetch/execution
-shell, and native interrupt acceptance. The shell supports NOP, prefix
-transitions, refresh-register semantics, base tact accounting, HALT dummy M1
-cycles, RESET/NMI/INT handling, and IM 0/1/2 vectors; unsupported opcodes return
-an explicit result. It is intentionally not yet connected to the production CPU
-or the shared test façade.
+shell, native interrupt acceptance, and the shared C primitives required for
+opcode migration. The shell supports NOP, prefix transitions, refresh-register
+semantics, base tact accounting, HALT dummy M1 cycles, RESET/NMI/INT handling,
+and IM 0/1/2 vectors; unsupported opcodes return an explicit result. It is
+intentionally not yet connected to the production CPU or the shared test façade.
 
 | Step | C/WASM work | Immediate existing-test gate |
 | --- | --- | --- |
 | Z0 | **Completed.** Add `z80_abi` with ABI version, reset, state import/export, 64K test RAM, bus-log buffers, and one-instruction execution result. Add C layout/endianness tests. | New ABI smoke tests plus `z80.test.ts` register/reset checks. |
 | Z1 | **Completed.** Implement fetch, PC increment/wrap, R refresh behavior, prefix state, instruction-completion reporting, cycle/tact accounting, and HALT dummy M1 behavior. | WASM ABI execution-shell coverage plus `z80.test.ts` reference checks. The full memory-operation and HALT opcode files activate when their corresponding opcode semantics migrate. |
 | Z2 | **Completed.** Implement RESET, NMI, INT, IM 0/1/2, EI backlog, and `LD A,I`/`LD A,R` interrupt-quirk support. RETN/RETI opcode decoding remains in the ED migration step; its IFF state is already represented. | WASM interrupt ABI coverage plus `interrupts.test.ts` reference checks. The real LD A,I/R and RETN/RETI opcode cases activate with ED `40–7F`. |
-| Z3 | Implement shared C primitives before opcode pages: fetch byte/word, memory/port read/write logging, stack push/pop, signed displacement, 8/16-bit add/sub flag builders, parity/SZ53 lookup tables, and condition evaluation. | New primitive tests plus `memoryOp.test.ts`; no new opcode page is enabled until this passes. |
+| Z3 | **Completed.** Implement shared C primitives before opcode pages: fetch byte/word, memory/port read/write logging, stack push/pop, signed displacement, 8-bit add/sub flag builders, parity lookup, and condition evaluation. 16-bit arithmetic and SZ53-specialized tables will be completed alongside their first consumers. | New primitive tests plus `memoryOp.test.ts` reference checks. |
 
 #### Standard Z80 instruction pages
 

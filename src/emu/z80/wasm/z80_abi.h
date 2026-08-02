@@ -25,6 +25,22 @@ unsigned int z80_test_memory_log_capacity(void);
 unsigned int z80_test_io_log_capacity(void);
 unsigned int z80_test_tbblue_log_capacity(void);
 unsigned int z80_test_memory_log_count(void);
+unsigned int z80_test_memory_log_ptr(void);
+unsigned int z80_test_io_log_count(void);
+unsigned int z80_test_io_log_ptr(void);
+unsigned int z80_test_io_input_ptr(void);
+void z80_test_io_input_count_set(unsigned int count);
+unsigned int z80_test_fetch_byte(void);
+unsigned int z80_test_fetch_word(void);
+void z80_test_push_word(unsigned int value);
+unsigned int z80_test_pop_word(void);
+unsigned int z80_test_sign_extend(unsigned int value);
+unsigned int z80_test_condition(unsigned int condition);
+unsigned int z80_test_parity(unsigned int value);
+unsigned int z80_test_add8(unsigned int value, unsigned int with_carry);
+unsigned int z80_test_sub8(unsigned int value, unsigned int with_carry);
+unsigned int z80_test_port_read(unsigned int address);
+void z80_test_port_write(unsigned int address, unsigned int value);
 void z80_test_bus_reset(void);
 
 #endif

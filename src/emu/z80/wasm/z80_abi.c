@@ -15,7 +15,11 @@ static uint8_t test_memory[Z80_TEST_MEMORY_SIZE];
 static Z80TestBusLogEntry memory_log[Z80_TEST_LOG_CAPACITY];
 static Z80TestBusLogEntry io_log[Z80_TEST_LOG_CAPACITY];
 static Z80TestBusLogEntry tbblue_log[Z80_TEST_LOG_CAPACITY];
+static uint8_t io_input[Z80_TEST_LOG_CAPACITY];
 static unsigned int memory_log_count;
+static unsigned int io_log_count;
+static unsigned int io_input_count;
+static unsigned int io_input_index;
 
 unsigned int z80_abi_version(void) { return 1; }
 
@@ -226,12 +230,96 @@ static void write_memory(uint16_t address, uint8_t value) {
   advance_tacts(3);
 }
 
+static uint8_t read_port(uint16_t address) {
+  uint8_t value = io_input_index < io_input_count ? io_input[io_input_index++] : 0;
+  if (io_log_count < Z80_TEST_LOG_CAPACITY) {
+    io_log[io_log_count].address = address;
+    io_log[io_log_count].value = value;
+    io_log[io_log_count].operation = 0;
+    io_log_count++;
+  }
+  advance_tacts(4);
+  return value;
+}
+
+static void write_port(uint16_t address, uint8_t value) {
+  if (io_log_count < Z80_TEST_LOG_CAPACITY) {
+    io_log[io_log_count].address = address;
+    io_log[io_log_count].value = value;
+    io_log[io_log_count].operation = 1;
+    io_log_count++;
+  }
+  advance_tacts(4);
+}
+
 static void push_pc(void) {
   state.sp--;
   advance_tacts(1);
   write_memory(state.sp, state.pc >> 8);
   state.sp--;
   write_memory(state.sp, state.pc & 0xff);
+}
+
+static uint16_t fetch_word(void) {
+  uint16_t low = read_memory(state.pc++, 0);
+  uint16_t high = read_memory(state.pc++, 0);
+  return (uint16_t)(low | (high << 8));
+}
+
+static unsigned int condition_is_true(unsigned int condition) {
+  uint8_t flags = state.af.bytes.lo;
+  switch (condition & 7u) {
+    case 0: return (flags & 0x40u) == 0; /* NZ */
+    case 1: return (flags & 0x40u) != 0; /* Z */
+    case 2: return (flags & 0x01u) == 0; /* NC */
+    case 3: return (flags & 0x01u) != 0; /* C */
+    case 4: return (flags & 0x04u) == 0; /* PO */
+    case 5: return (flags & 0x04u) != 0; /* PE */
+    case 6: return (flags & 0x80u) == 0; /* P */
+    default: return (flags & 0x80u) != 0; /* M */
+  }
+}
+
+static uint8_t parity_table[256];
+static unsigned int parity_table_initialized;
+
+static void initialize_parity_table(void) {
+  unsigned int value;
+  if (parity_table_initialized) return;
+  for (value = 0; value < 256; value++) {
+    unsigned int bits = value;
+    unsigned int parity = 0;
+    while (bits != 0) {
+      parity ^= bits & 1u;
+      bits >>= 1;
+    }
+    parity_table[value] = parity == 0 ? 0x04 : 0;
+  }
+  parity_table_initialized = 1;
+}
+
+static uint8_t add8(uint8_t left, uint8_t right, unsigned int carry) {
+  uint16_t sum = (uint16_t)left + right + carry;
+  uint8_t result = (uint8_t)sum;
+  uint8_t flags = result & 0xa8u;
+  if (result == 0) flags |= 0x40u;
+  if (((left & 0x0fu) + (right & 0x0fu) + carry) > 0x0fu) flags |= 0x10u;
+  if ((~(left ^ right) & (left ^ result) & 0x80u) != 0) flags |= 0x04u;
+  if (sum > 0xffu) flags |= 0x01u;
+  state.af.bytes.lo = flags;
+  return result;
+}
+
+static uint8_t sub8(uint8_t left, uint8_t right, unsigned int carry) {
+  unsigned int right_with_carry = (unsigned int)right + carry;
+  uint8_t result = (uint8_t)((unsigned int)left - right_with_carry);
+  uint8_t flags = (uint8_t)(0x02u | (result & 0xa8u));
+  if (result == 0) flags |= 0x40u;
+  if (((left ^ right ^ result) & 0x10u) != 0) flags |= 0x10u;
+  if (((left ^ right) & (left ^ result) & 0x80u) != 0) flags |= 0x04u;
+  if ((unsigned int)left < right_with_carry) flags |= 0x01u;
+  state.af.bytes.lo = flags;
+  return result;
 }
 
 static void leave_halt(void) {
@@ -361,6 +449,66 @@ unsigned int z80_test_tbblue_log_capacity(void) { return Z80_TEST_LOG_CAPACITY; 
 
 unsigned int z80_test_memory_log_count(void) { return memory_log_count; }
 
+unsigned int z80_test_memory_log_ptr(void) { return (unsigned int)(uintptr_t)memory_log; }
+
+unsigned int z80_test_io_log_count(void) { return io_log_count; }
+
+unsigned int z80_test_io_log_ptr(void) { return (unsigned int)(uintptr_t)io_log; }
+
+unsigned int z80_test_io_input_ptr(void) { return (unsigned int)(uintptr_t)io_input; }
+
+void z80_test_io_input_count_set(unsigned int count) {
+  io_input_count = count > Z80_TEST_LOG_CAPACITY ? Z80_TEST_LOG_CAPACITY : count;
+  io_input_index = 0;
+}
+
+unsigned int z80_test_fetch_byte(void) { return read_memory(state.pc++, 0); }
+
+unsigned int z80_test_fetch_word(void) { return fetch_word(); }
+
+void z80_test_push_word(unsigned int value) {
+  state.sp--;
+  advance_tacts(1);
+  write_memory(state.sp, (uint8_t)(value >> 8));
+  state.sp--;
+  write_memory(state.sp, (uint8_t)value);
+}
+
+unsigned int z80_test_pop_word(void) {
+  uint16_t low = read_memory(state.sp++, 0);
+  uint16_t high = read_memory(state.sp++, 0);
+  return low | (high << 8);
+}
+
+unsigned int z80_test_sign_extend(unsigned int value) {
+  return (unsigned int)(int32_t)(int8_t)value;
+}
+
+unsigned int z80_test_condition(unsigned int condition) { return condition_is_true(condition); }
+
+unsigned int z80_test_parity(unsigned int value) {
+  initialize_parity_table();
+  return parity_table[(uint8_t)value];
+}
+
+unsigned int z80_test_add8(unsigned int value, unsigned int with_carry) {
+  unsigned int carry = with_carry && (state.af.bytes.lo & 0x01u) != 0;
+  state.af.bytes.hi = add8(state.af.bytes.hi, (uint8_t)value, carry);
+  return state.af.bytes.hi;
+}
+
+unsigned int z80_test_sub8(unsigned int value, unsigned int with_carry) {
+  unsigned int carry = with_carry && (state.af.bytes.lo & 0x01u) != 0;
+  state.af.bytes.hi = sub8(state.af.bytes.hi, (uint8_t)value, carry);
+  return state.af.bytes.hi;
+}
+
+unsigned int z80_test_port_read(unsigned int address) { return read_port((uint16_t)address); }
+
+void z80_test_port_write(unsigned int address, unsigned int value) {
+  write_port((uint16_t)address, (uint8_t)value);
+}
+
 void z80_test_bus_reset(void) {
   unsigned int index;
   for (index = 0; index < Z80_TEST_MEMORY_SIZE; index++) test_memory[index] = 0;
@@ -368,6 +516,10 @@ void z80_test_bus_reset(void) {
     memory_log[index].operation = 0;
     io_log[index].operation = 0;
     tbblue_log[index].operation = 0;
+    io_input[index] = 0;
   }
   memory_log_count = 0;
+  io_log_count = 0;
+  io_input_count = 0;
+  io_input_index = 0;
 }
