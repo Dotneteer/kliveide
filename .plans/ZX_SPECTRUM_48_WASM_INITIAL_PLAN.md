@@ -312,11 +312,11 @@ named existing test file in the WASM project.
 | --- | --- | --- |
 | S00 | **Completed.** `00–0F`: NOP, 16-bit loads/inc/dec, 8-bit inc/dec/load, rotate A. `LD HL,nn` and `LD A,n` are minimal setup dependencies required by the literal clone; their full pages remain pending. | `standard-ops-00.test.ts` → `standard-ops-00.wasm.test.ts` |
 | S10 | **Completed.** `10–1F`: DJNZ, JR, DE loads/inc/dec, RLA/RRA, and ADD HL,DE. `SCF` is a minimal setup dependency required by the literal clone; its full page remains pending. | `standard-ops-10.test.ts` → `standard-ops-10.wasm.test.ts` |
-| S20 | `20–2F`: conditional JR, HL operations, DAA/CPL | `standard-ops-20.test.ts` |
-| S30 | `30–3F`: conditional JR, SP operations, SCF/CCF | `standard-ops-30.test.ts` |
-| S40 | `40–4F`: register-to-register loads and HALT boundary | `standard-ops-40.test.ts` |
-| S50 | `50–5F`: register-to-register loads | `standard-ops-50.test.ts` |
-| S60 | `60–6F`: register-to-register loads and `(HL)` transfers | `standard-ops-60.test.ts` |
+| S20 | **Completed.** `20–2F`: conditional JR, HL loads/transfers/inc/dec, DAA, and CPL. `DEC A` is a setup dependency for the unchanged conditional-JR cases. | `standard-ops-20.test.ts` → `standard-ops-20.wasm.test.ts` |
+| S30 | **Completed.** `30–3F`: conditional JR, SP operations, `(HL)` increment/decrement/load, SCF/CCF, and A memory transfers. | `standard-ops-30.test.ts` → `standard-ops-30.wasm.test.ts` |
+| S40 | **Completed.** `40–4F` register-to-register loads and `(HL)` sources. | `standard-ops-40.test.ts` → `standard-ops-40.wasm.test.ts` |
+| S50 | **Completed.** `50–5F` register-to-register loads and `(HL)` sources. | `standard-ops-50.test.ts` → `standard-ops-50.wasm.test.ts` |
+| S60 | **Completed.** `60–6F` register-to-register loads and `(HL)` sources. These encodings share `ldRegisterToRegister`, a selector-based operation because their Z80 semantics are identical. | `standard-ops-60.test.ts` → `standard-ops-60.wasm.test.ts` |
 | S70 | `70–7F`: `(HL)` stores/loads and HALT | `standard-ops-70.test.ts` |
 | S80 | `80–8F`: ADD/ADC A,r/(HL) | `standard-ops-80.test.ts` |
 | S90 | `90–9F`: SUB/SBC A,r/(HL) | `standard-ops-90.test.ts` |

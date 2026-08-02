@@ -60,14 +60,21 @@ class Z80WasmTestCpu {
   get pc (): number { return this.readWord(word.pc); }
   set pc (value: number) { this.writeWord(word.pc, value); }
   get a (): number { return this.readByte(byte.a); }
+  set a (value: number) { this.writeByte(byte.a, value); }
   get f (): number { return this.readByte(byte.f); }
   set f (value: number) { this.writeByte(byte.f, value); }
   get b (): number { return this.readByte(byte.b); }
+  set b (value: number) { this.writeByte(byte.b, value); }
   get c (): number { return this.readByte(byte.c); }
+  set c (value: number) { this.writeByte(byte.c, value); }
   get d (): number { return this.readByte(byte.d); }
+  set d (value: number) { this.writeByte(byte.d, value); }
   get e (): number { return this.readByte(byte.e); }
+  set e (value: number) { this.writeByte(byte.e, value); }
   get h (): number { return this.readByte(byte.h); }
+  set h (value: number) { this.writeByte(byte.h, value); }
   get l (): number { return this.readByte(byte.l); }
+  set l (value: number) { this.writeByte(byte.l, value); }
   get tacts (): number { return this.call("z80_state_read_counter", counter.tacts); }
   get prefix (): number { return this.call("z80_state_read_control", control.prefix); }
   get halted (): boolean { return this.call("z80_state_read_control", control.halted) !== 0; }

@@ -383,6 +383,99 @@ static void ld_a_n(void) {
   state.af.bytes.hi = readMemory(state.pc++, 0);
 }
 
+// 0x20: JR NZ,d
+static void jrnz(void) { uint8_t d = readMemory(state.pc++, 0); if ((state.af.bytes.lo & 0x40u) == 0) { tactPlusN(5); state.pc = (uint16_t)(state.pc + (int8_t)d); state.wz.word = state.pc; } }
+// 0x22: LD (nn),HL
+static void ldNNiHl(void) { uint16_t a = fetchCodeWord(); writeMemory(a, state.hl.bytes.lo); state.wz.word = (uint16_t)(a + 1u); writeMemory(state.wz.word, state.hl.bytes.hi); }
+// 0x23: INC HL
+static void incHl(void) { state.hl.word++; tactPlusN(2); }
+// 0x24: INC H
+static void incH(void) { state.hl.bytes.hi = inc8(state.hl.bytes.hi); }
+// 0x25: DEC H
+static void decH(void) { state.hl.bytes.hi = dec8(state.hl.bytes.hi); }
+// 0x26: LD H,n
+static void ldHN(void) { state.hl.bytes.hi = readMemory(state.pc++, 0); }
+// 0x27: DAA
+static void daa(void) {
+  uint8_t f = state.af.bytes.lo;
+  uint8_t adjust = 0;
+  unsigned int carry = f & 1u;
+
+  if ((f & 0x10u) != 0 || (state.af.bytes.hi & 0x0fu) > 9u) adjust = 0x06u;
+  if (carry || state.af.bytes.hi > 0x99u) adjust |= 0x60u;
+  if (state.af.bytes.hi > 0x99u) carry = 1;
+  if ((f & 0x02u) != 0) state.af.bytes.hi = sub8(state.af.bytes.hi, adjust, 0);
+  else state.af.bytes.hi = add8(state.af.bytes.hi, adjust, 0);
+  initializeParityTable();
+  state.af.bytes.lo = (uint8_t)((state.af.bytes.lo & ~0x05u) | carry | parity_table[state.af.bytes.hi]);
+}
+// 0x28: JR Z,d
+static void jrz(void) { uint8_t d = readMemory(state.pc++, 0); if ((state.af.bytes.lo & 0x40u) != 0) { tactPlusN(5); state.pc = (uint16_t)(state.pc + (int8_t)d); state.wz.word = state.pc; } }
+// 0x29: ADD HL,HL
+static void addHlHl(void) { state.hl.word = add16(state.hl.word, state.hl.word); tactPlusN(7); }
+// 0x2A: LD HL,(nn)
+static void ldHlNNi(void) { uint16_t a = fetchCodeWord(); state.hl.bytes.lo = readMemory(a, 0); state.wz.word = (uint16_t)(a + 1u); state.hl.bytes.hi = readMemory(state.wz.word, 0); }
+// 0x2B: DEC HL
+static void decHl(void) { state.hl.word--; tactPlusN(2); }
+// 0x2C: INC L
+static void incL(void) { state.hl.bytes.lo = inc8(state.hl.bytes.lo); }
+// 0x2D: DEC L
+static void decL(void) { state.hl.bytes.lo = dec8(state.hl.bytes.lo); }
+// 0x2E: LD L,n
+static void ldLN(void) { state.hl.bytes.lo = readMemory(state.pc++, 0); }
+// 0x2F: CPL
+static void cpl(void) { state.af.bytes.hi = (uint8_t)~state.af.bytes.hi; state.af.bytes.lo = (uint8_t)((state.af.bytes.lo & 0xc5u) | 0x12u | (state.af.bytes.hi & 0x28u)); }
+// Setup dependency: 0x3D DEC A
+static void decA(void) { state.af.bytes.hi = dec8(state.af.bytes.hi); }
+static void jrnc(void) { uint8_t d = readMemory(state.pc++, 0); if ((state.af.bytes.lo & 1u) == 0) { tactPlusN(5); state.pc = (uint16_t)(state.pc + (int8_t)d); state.wz.word = state.pc; } }
+static void ldSpNN(void) { state.sp = fetchCodeWord(); }
+static void ldNNiA(void) { uint16_t a = fetchCodeWord(); state.wz.word = (uint16_t)(a + 1u); state.wz.bytes.hi = state.af.bytes.hi; writeMemory(a, state.af.bytes.hi); }
+static void incSp(void) { state.sp++; tactPlusN(2); }
+static void incHli(void) { uint8_t v = readMemory(state.hl.word, 0); tactPlusN(1); v = inc8(v); writeMemory(state.hl.word, v); }
+static void decHli(void) { uint8_t v = readMemory(state.hl.word, 0); tactPlusN(1); v = dec8(v); writeMemory(state.hl.word, v); }
+static void ldHliN(void) { writeMemory(state.hl.word, readMemory(state.pc++, 0)); }
+static void jrc(void) { uint8_t d = readMemory(state.pc++, 0); if ((state.af.bytes.lo & 1u) != 0) { tactPlusN(5); state.pc = (uint16_t)(state.pc + (int8_t)d); state.wz.word = state.pc; } }
+static void addHlSp(void) { state.hl.word = add16(state.hl.word, state.sp); tactPlusN(7); }
+static void ldANNi(void) { state.wz.word = fetchCodeWord(); state.af.bytes.hi = readMemory(state.wz.word, 0); state.wz.word++; }
+static void decSp(void) { state.sp--; tactPlusN(2); }
+static void incA(void) { state.af.bytes.hi = inc8(state.af.bytes.hi); }
+static void ccf(void) { uint8_t c = state.af.bytes.lo & 1u; state.af.bytes.lo = (uint8_t)((state.af.bytes.lo & 0xc4u) | (state.af.bytes.hi & 0x28u) | (c ? 0x10u : 1u)); }
+
+static uint8_t readRegister(unsigned int registerCode) {
+  switch (registerCode) {
+    case 0: return state.bc.bytes.hi;
+    case 1: return state.bc.bytes.lo;
+    case 2: return state.de.bytes.hi;
+    case 3: return state.de.bytes.lo;
+    case 4: return state.hl.bytes.hi;
+    case 5: return state.hl.bytes.lo;
+    case 6: return readMemory(state.hl.word, 0);
+    default: return state.af.bytes.hi;
+  }
+}
+
+static void writeRegister(unsigned int registerCode, uint8_t value) {
+  switch (registerCode) {
+    case 0: state.bc.bytes.hi = value; break;
+    case 1: state.bc.bytes.lo = value; break;
+    case 2: state.de.bytes.hi = value; break;
+    case 3: state.de.bytes.lo = value; break;
+    case 4: state.hl.bytes.hi = value; break;
+    case 5: state.hl.bytes.lo = value; break;
+    case 6: writeMemory(state.hl.word, value); break;
+    default: state.af.bytes.hi = value; break;
+  }
+}
+
+// 0x40-0x6F: LD r,r' / LD r,(HL). Individual encodings share identical
+// selector semantics; HALT (0x76) is deliberately owned by S70.
+static void ldRegisterToRegister(void) {
+  unsigned int destination = (state.op_code >> 3) & 7u;
+  unsigned int source = state.op_code & 7u;
+
+  writeRegister(destination, readRegister(source));
+}
+
 static Z80Operation standard_ops[256];
 static Z80Operation bit_ops[256];
 static Z80Operation extended_ops[256];
@@ -432,9 +525,30 @@ static void initialize_operation_tables(void) {
   standard_ops[0x1d] = decE;
   standard_ops[0x1e] = ldEN;
   standard_ops[0x1f] = rra;
+  standard_ops[0x20] = jrnz;
+  standard_ops[0x22] = ldNNiHl;
+  standard_ops[0x23] = incHl;
+  standard_ops[0x24] = incH;
+  standard_ops[0x25] = decH;
+  standard_ops[0x26] = ldHN;
+  standard_ops[0x27] = daa;
+  standard_ops[0x28] = jrz;
+  standard_ops[0x29] = addHlHl;
+  standard_ops[0x2a] = ldHlNNi;
+  standard_ops[0x2b] = decHl;
+  standard_ops[0x2c] = incL;
+  standard_ops[0x2d] = decL;
+  standard_ops[0x2e] = ldLN;
+  standard_ops[0x2f] = cpl;
   standard_ops[0x21] = ldHlNN;
   standard_ops[0x37] = scf;
   standard_ops[0x3e] = ld_a_n;
+  standard_ops[0x3d] = decA;
+  standard_ops[0x30] = jrnc; standard_ops[0x31] = ldSpNN; standard_ops[0x32] = ldNNiA; standard_ops[0x33] = incSp;
+  standard_ops[0x34] = incHli; standard_ops[0x35] = decHli; standard_ops[0x36] = ldHliN;
+  standard_ops[0x38] = jrc; standard_ops[0x39] = addHlSp; standard_ops[0x3a] = ldANNi; standard_ops[0x3b] = decSp;
+  standard_ops[0x3c] = incA; standard_ops[0x3f] = ccf;
+  for (opcode = 0x40; opcode <= 0x6f; opcode++) standard_ops[opcode] = ldRegisterToRegister;
   operation_tables_initialized = 1;
 }
 
@@ -605,9 +719,3 @@ unsigned int z80_test_sub8(unsigned int value, unsigned int with_carry) {
 }
 unsigned int z80_test_port_read(unsigned int address) { return readPort((uint16_t)address); }
 void z80_test_port_write(unsigned int address, unsigned int value) { writePort((uint16_t)address, (uint8_t)value); }
-// CPU execution implementation; compiled separately from z80_abi.c.
-#include "z80_abi.h"
-#include "z80_state.h"
-#include "z80_test_bus.h"
-
-Z80State state;
