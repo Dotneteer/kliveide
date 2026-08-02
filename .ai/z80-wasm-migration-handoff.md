@@ -1,159 +1,91 @@
 # Z80 WASM Migration Handoff
 
 Read `../AGENTS.md` and `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md` before
-changing this work. This note records the state after completing the full CPU
-phase plan through A0 on 2026-08-02.
+changing Spectrum WASM work. This note records the post-CPU-phase state on
+2026-08-02.
 
-## Current completion state
+## Current state
 
-- The original TypeScript Z80 remains the production implementation.
-- The C/WASM CPU prototype is test-only and is not connected to the Spectrum
-  48K frame runner.
-- Z0–Z5, all unprefixed standard pages S00–SF0, CB pages C0–C3, ED pages
-  E0–E2, indexed DD/FD + DDCB/FDCB pages I0–I6, and Z80N ED pages N0–N4
-  are complete.
-- A0 transitional ABI cleanup is complete.
-- All table rows in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md` are complete.
-- Z80N support is currently test-only. It is controlled by the WASM CPU
-  `z80n_mode` flag, uses `cpu_tact_scale` for 28 MHz frame-tact scaling, and
-  records NEXTREG writes in the test-bus TBBlue log.
+- The C/WASM Z80 and Z80N CPU core is implemented and covered by the cloned
+  WASM opcode-page tests, differential stress tests, `npm run build:check`, and
+  the full unit suite.
+- The CPU core is still test/integration infrastructure. It is not yet wired
+  into the production Spectrum 48K frame runner.
+- `ZxSpectrum48WasmMachine` remains the compatibility adapter selected by
+  `sp48Implementation: "wasm"`; its `setup()` now loads and validates the WASM
+  artifact, but full production frame execution still needs the Spectrum 48K
+  WASM integration plan.
+- Phase P0 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md` is complete:
+  production/test export manifests, generated layout constants, async loader,
+  setup validation, and artifact packaging/resource declarations are in place.
+- The source-of-truth forward plan is now
+  `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`. It intentionally removed the
+  historical opcode-by-opcode checklist because it no longer helps future 48K
+  integration work.
 
-The source-of-truth plan is the initial plan above. Keep it updated as steps
-are completed; it is intentionally a living initial plan.
+## ABI and implementation facts to preserve
 
-## Architecture that must be preserved
+- CPU implementation code lives in `src/emu/z80/wasm/z80_cpu.c`.
+- ABI wrappers and test-bus storage live in `src/emu/z80/wasm/z80_abi.c`.
+- Shared state and field definitions live in `src/emu/z80/wasm/z80_state.h`.
+- `z80_abi.c` must remain an ABI wrapper layer; do not move instruction decode
+  tables or opcode bodies back into it.
+- The exported Z80 state contract uses the packed state block:
+  `z80_state_block_ptr`, `z80_state_block_size`, `z80_state_export`, and
+  `z80_state_import`.
+- Removed transitional exports such as `z80_state_read_*`,
+  `z80_state_write_*`, `z80_state_size`, `z80_register_layout_probe`, and
+  primitive helper probes should stay removed unless a new manifest-approved
+  production/test contract requires them.
+- Z80N mode is controlled by the C state flag `z80n_mode`; 28 MHz frame-tact
+  scaling uses `cpu_tact_scale`; NEXTREG writes are represented in the test-bus
+  TBBlue log.
 
-- `src/emu/machines/MachineController.ts` stays TypeScript. Its synchronous
-  `machine.executeMachineFrame()` call is the eventual backend switch point.
-- The future WASM implementation owns the hot CPU/frame kernel. TypeScript
-  retains controller lifecycle, debugger policy, UI, file access, and host
-  integration.
-- CPU C code lives in `src/emu/z80/wasm/z80_cpu.c`; ABI wrappers and test-bus
-  storage live in `z80_abi.c`. Do not move instruction code or opcode tables
-  back into the ABI file.
-- The CPU uses one central `executeCpuCycle` routine plus prefix-specific
-  256-entry function-pointer tables. Opcode functions return `void`; only the
-  central dispatcher converts illegal-table lookup into an execution result.
-- Follow the names and readable structure of `src/emu/z80/Z80Cpu.ts` wherever
-  C has an equivalent. Use original camelCase instruction/helper names, opcode
-  and mnemonic comments, named temporaries, and multi-line bodies. Do not use
-  opaque names such as `op_08` or compress an operation into one line.
-- C register pairs use the internal `Z80Register16` union. Do not expose C
-  struct layout as a production ABI; use explicit ABI accessors or later a
-  packed, versioned state block.
+## Test harness facts
 
-## Test strategy and current harness
+- `test/z80/wasm-test-z80.ts` is the test-only WASM façade used by cloned Z80
+  opcode tests.
+- The current test bus uses deterministic linear-memory buffers:
+  64K test RAM, preloaded I/O input bytes, memory/I/O logs, and TBBlue logs.
+- The production 48K backend must replace this test bus with a machine bus and
+  compact state/event buffers. Normal running must not cross the JS/WASM
+  boundary per instruction, per tact, per memory access, or per port access.
+- `test/z80/z80-wasm-abi.test.ts` asserts the approved WASM export manifest.
+- `test/zxSpectrum/sp48-wasm-abi-manifest.test.ts` asserts the Spectrum 48K
+  production/test manifest and generated layout constants against the built
+  WASM artifact.
+- `test/zxSpectrum/sp48-wasm-loader.test.ts` covers loader success, missing
+  artifacts, incompatible ABI/layout, and module-cache reuse.
 
-For a migrated page, copy the matching original test page to
-`test/z80/<page>.wasm.test.ts`, changing only the import of `RunMode` and
-`Z80TestMachine` to `./wasm-test-z80`. The test cases themselves must remain
-literal copies.
-
-`test/z80/wasm-test-z80.ts` is the test-only WASM facade. It currently exposes
-the API required by S00–SF0, including register and alternate-register
-setters, interrupt flip-flops, RAM, I/O input sequences, I/O logs, run modes,
-and assertion helpers. The I/O event record in WASM memory is little-endian:
-`uint16_t address`, `uint8_t value`, `uint8_t operation` (`1` is output).
-
-The current C test bus is deterministic and in linear memory:
-
-- 64K `test_memory`.
-- Preloaded `io_input` bytes.
-- fixed-capacity memory, I/O, and TBBlue log arrays.
-
-It is intentionally test-only. Normal production frame execution must later
-use batch/state/event buffers and must not cross the TypeScript/WASM boundary
-once per instruction, tact, memory access, or port access.
-
-## Important files
-
-- `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md` — full architecture and staged plan.
-- `src/emu/z80/Z80Cpu.ts` — semantic/naming/timing reference.
-- `src/emu/z80/wasm/z80_cpu.c` — current C CPU implementation.
-- `src/emu/z80/wasm/z80_abi.c` / `.h` — stable export wrappers and test bus.
-- `src/emu/z80/wasm/z80_state.h` — CPU state, flags, and ABI field constants.
-- `src/emu/z80/wasm/z80_test_bus.h` — shared test-bus declarations.
-- `scripts/build-sp48-wasm.cjs` — compiles `z80_abi.c` and `z80_cpu.c` as
-  separate translation units and exports the current test ABI.
-- `test/z80/z80-wasm-abi.test.ts` — ABI/build and CPU-shell tests.
-- `test/z80/wasm-test-z80.ts` — test facade.
-- `test/z80/next-ops.wasm.test.ts` — literal WASM clone of the TypeScript
-  Z80N operation tests.
-- `test/z80/z80n-wasm-differential.test.ts` — additional Z80/Z80N WASM-vs-TS
-  stress coverage.
-
-## Verification baseline
-
-At the S00–SF0 handoff, the following passed:
-
-```sh
-npm run test
-npm run build:check
-```
-
-The full suite result was 19,031 passed and 14 skipped. Expected-error output
-from unrelated React provider tests may be printed during the suite, but Vitest
-must still finish with zero failed tests.
-
-After completing E0–E2 and I0–I3, the focused gates added/passed are:
-
-```sh
-npx vitest run --config build/vitest.config.ts --project node test/z80/ext-op-a0.wasm.test.ts test/z80/ext-op-b0.wasm.test.ts
-npx vitest run --config build/vitest.config.ts --project node test/z80/ix-ops-00.wasm.test.ts test/z80/iy-ops-00.wasm.test.ts test/z80/ix-ops-10.wasm.test.ts test/z80/iy-ops-10.wasm.test.ts test/z80/ix-ops-20.wasm.test.ts test/z80/iy-ops-20.wasm.test.ts test/z80/ix-ops-30.wasm.test.ts test/z80/iy-ops-30.wasm.test.ts
-npx vitest run --config build/vitest.config.ts --project node test/z80/ix-ops-40.wasm.test.ts test/z80/iy-ops-40.wasm.test.ts test/z80/ix-ops-50.wasm.test.ts test/z80/iy-ops-50.wasm.test.ts test/z80/ix-ops-60.wasm.test.ts test/z80/iy-ops-60.wasm.test.ts test/z80/ix-ops-70.wasm.test.ts test/z80/iy-ops-70.wasm.test.ts test/z80/ix-ops-80.wasm.test.ts test/z80/iy-ops-80.wasm.test.ts test/z80/ix-ops-90.wasm.test.ts test/z80/iy-ops-90.wasm.test.ts test/z80/ix-ops-a0.wasm.test.ts test/z80/iy-ops-a0.wasm.test.ts test/z80/ix-ops-b0.wasm.test.ts test/z80/iy-ops-b0.wasm.test.ts
-npx vitest run --config build/vitest.config.ts --project node test/z80/ed-indexed-wasm-differential.test.ts
-```
-
-After completing I4–I6, the focused gates added/passed are:
-
-```sh
-npx vitest run --config build/vitest.config.ts --project node test/z80/ix-ops-c0.wasm.test.ts test/z80/iy-ops-c0.wasm.test.ts test/z80/ix-ops-d0.wasm.test.ts test/z80/iy-ops-d0.wasm.test.ts test/z80/ix-ops-e0.wasm.test.ts test/z80/iy-ops-e0.wasm.test.ts test/z80/ix-ops-f0.wasm.test.ts test/z80/iy-ops-f0.wasm.test.ts
-npx vitest run --config build/vitest.config.ts --project node test/z80/ix-bit-ops-00.wasm.test.ts test/z80/iy-bit-ops-00.wasm.test.ts test/z80/ix-bit-ops-10.wasm.test.ts test/z80/iy-bit-ops-10.wasm.test.ts test/z80/ix-bit-ops-20.wasm.test.ts test/z80/iy-bit-ops-20.wasm.test.ts test/z80/ix-bit-ops-30.wasm.test.ts test/z80/iy-bit-ops-30.wasm.test.ts test/z80/ix-bit-ops-bit.wasm.test.ts test/z80/iy-bit-ops.bit.wasm.test.ts
-npx vitest run --config build/vitest.config.ts --project node test/z80/ix-ops-c0.test.ts test/z80/iy-ops-c0.test.ts test/z80/ix-ops-d0.test.ts test/z80/iy-ops-d0.test.ts test/z80/ix-ops-e0.test.ts test/z80/iy-ops-e0.test.ts test/z80/ix-ops-f0.test.ts test/z80/iy-ops-f0.test.ts test/z80/ix-bit-ops-00.test.ts test/z80/iy-bit-ops-00.test.ts test/z80/ix-bit-ops-10.test.ts test/z80/iy-bit-ops-10.test.ts test/z80/ix-bit-ops-20.test.ts test/z80/iy-bit-ops-20.test.ts test/z80/ix-bit-ops-30.test.ts test/z80/iy-bit-ops-30.test.ts test/z80/ix-bit-ops-bit.test.ts test/z80/iy-bit-ops.bit.test.ts
-npx vitest run --config build/vitest.config.ts --project node test/z80/ed-indexed-wasm-differential.test.ts
-```
-
-After completing N0–N4, the focused gates added/passed are:
-
-```sh
-npx vitest run --config build/vitest.config.ts --project node test/z80/next-ops.wasm.test.ts
-npx vitest run --config build/vitest.config.ts --project node test/z80/next-ops.test.ts test/z80/next-ops.wasm.test.ts test/z80/z80n-wasm-differential.test.ts
-```
-
-After completing A0, `test/z80/z80-wasm-abi.test.ts` asserts the approved WASM
-export manifest. The test facade uses the packed state block exported by
-`z80_state_block_ptr`/`z80_state_block_size`; the old per-register state
-accessors, layout probe, and primitive helper exports are intentionally gone.
-The focused and full gates passed:
+## Last verified gates
 
 ```sh
 npx vitest run --config build/vitest.config.ts --project node test/z80/z80-wasm-abi.test.ts test/z80/standard-ops-00.wasm.test.ts test/z80/next-ops.wasm.test.ts test/z80/z80n-wasm-differential.test.ts
 npx vitest run --config build/vitest.config.ts --project node test/z80/*.wasm.test.ts test/z80/*wasm-differential.test.ts
 npm run build:check
 npm run test
+git diff --check
 ```
 
-Use the relevant original TypeScript page and its WASM clone as focused gates
-while implementing an opcode page, then run `npm run build:check`. Before
-marking a step complete, run the full `npm run test` suite. Do not claim a
-step is complete without reporting the test command and result.
+The full suite at the end of A0 reported 557 passed files, 19,929 passed tests,
+14 skipped files, and 119 skipped tests.
 
-## Collaboration protocol requested by the user
+After Phase P0, the focused gates plus full suite passed:
 
-The user explicitly authorized completing E1, E2, I0–I3, and then I4–I6 in
-multi-step passes and asked not to return until the required quality gates
-pass. Continue to report only tested completion; do not claim a step is done
-before its focused and full gates have actually run.
+```sh
+npx vitest run --config build/vitest.config.ts --project node test/zxSpectrum/sp48-wasm-build.test.ts test/zxSpectrum/sp48-wasm-abi-manifest.test.ts test/zxSpectrum/sp48-wasm-loader.test.ts test/zxSpectrum/ZxSpectrum48WasmMachineSetup.test.ts test/z80/z80-wasm-abi.test.ts
+npm run build:sp48-wasm
+npm run build:check
+npx electron-vite build --config build/electron.vite.config.ts
+npm run test
+```
 
-## Next step
+The full suite after P0 reported 560 passed files, 19,940 passed tests, 14
+skipped files, and 119 skipped tests.
 
-All rows in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md` are complete. Future
-work should start from the implementation-sequence rollout items below the CPU
-phase if the project chooses to wire this into the production Spectrum 48K
-frame path. Retain the current DD/FD prefix flow: repeated DD/FD prefixes stay
-pending without the final indexed `+1` tact, executable DD/FD opcodes receive
-that final tact in `executeCpuCycle`, and DDCB/FDCB treats the byte after CB as
-displacement before fetching the actual indexed-bit opcode. Retain the current
-Z80N separation too: base ED tables keep unsupported Next opcodes as
-NOP-compatible operations, while the Z80N ED table installs the Next-specific
-handlers.
+## Next useful work
+
+Start with Phase P1 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`: 48K
+memory, reset, and snapshot parity.
+
+Do not continue by adding more Z80 opcode-migration rows. That phase is done.

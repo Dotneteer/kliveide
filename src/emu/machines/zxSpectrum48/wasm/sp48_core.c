@@ -7,6 +7,10 @@
  */
 static unsigned char memory[0x10000];
 static unsigned char ula_port;
+static unsigned char machine_state_block[SP48_MACHINE_STATE_BLOCK_SIZE];
+static unsigned char input_block[SP48_INPUT_BLOCK_SIZE];
+static unsigned char result_block[SP48_RESULT_BLOCK_SIZE];
+static unsigned char event_buffer[SP48_EVENT_BUFFER_SIZE];
 
 /* clang may lower simple loops to memset even with -nostdlib. */
 void *memset(void *destination, int value, unsigned long length) {
@@ -16,7 +20,33 @@ void *memset(void *destination, int value, unsigned long length) {
   return destination;
 }
 
-unsigned int sp48_abi_version(void) { return 1; }
+unsigned int sp48_abi_version(void) { return SP48_ABI_VERSION; }
+
+unsigned int sp48_layout_value(unsigned int id) {
+  switch (id) {
+    case 0: return SP48_LAYOUT_VERSION;
+    case 1: return SP48_MACHINE_STATE_BLOCK_SIZE;
+    case 2: return SP48_INPUT_BLOCK_SIZE;
+    case 3: return SP48_RESULT_BLOCK_SIZE;
+    case 4: return SP48_EVENT_BUFFER_SIZE;
+    case 5: return SP48_MACHINE_STATE_CPU_STATE_OFFSET;
+    case 6: return SP48_MACHINE_STATE_FRAME_TACTS_OFFSET;
+    case 7: return SP48_MACHINE_STATE_ULA_PORT_OFFSET;
+    case 8: return SP48_INPUT_KEYBOARD_ROWS_OFFSET;
+    case 9: return SP48_INPUT_RUN_MODE_OFFSET;
+    case 10: return SP48_RESULT_TERMINATION_OFFSET;
+    case 11: return SP48_RESULT_EVENT_COUNT_OFFSET;
+    default: return 0;
+  }
+}
+
+unsigned int sp48_machine_state_block_ptr(void) { return (unsigned int)machine_state_block; }
+
+unsigned int sp48_input_block_ptr(void) { return (unsigned int)input_block; }
+
+unsigned int sp48_result_block_ptr(void) { return (unsigned int)result_block; }
+
+unsigned int sp48_event_buffer_ptr(void) { return (unsigned int)event_buffer; }
 
 void sp48_create(void) { sp48_reset(); }
 

@@ -1,4 +1,15 @@
-import { buildSp48Wasm, output, source, z80Source } from "../../scripts/build-sp48-wasm.cjs";
+import packageJson from "../../package.json";
+import {
+  buildSp48Wasm,
+  output,
+  outputRelative,
+  packagedResourceDirectory,
+  productionExports,
+  source,
+  testExports,
+  wasmDistDirectoryRelative,
+  z80Source
+} from "../../scripts/build-sp48-wasm.cjs";
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum 48K WASM build", () => {
@@ -17,9 +28,30 @@ describe("ZX Spectrum 48K WASM build", () => {
     expect(calls[0].args).toContain(source);
     expect(calls[0].args).toContain(z80Source);
     expect(calls[0].args).toContain(output);
-    expect(calls[0].args).toContain("-Wl,--export=sp48_read_memory");
-    expect(calls[0].args).toContain("-Wl,--export=sp48_write_port");
-    expect(calls[0].args).toContain("-Wl,--export=z80_execute_instruction");
+    for (const exportName of testExports.filter(name => name !== "memory")) {
+      expect(calls[0].args).toContain(`-Wl,--export=${exportName}`);
+    }
     expect(result.output).toBe(output);
+  });
+
+  it("keeps separate production and test ABI manifests", () => {
+    expect(productionExports).toContain("sp48_abi_version");
+    expect(productionExports).toContain("sp48_layout_value");
+    expect(productionExports).toContain("sp48_machine_state_block_ptr");
+    expect(productionExports).not.toContain("z80_test_memory_ptr");
+    expect(testExports).toEqual(expect.arrayContaining(productionExports));
+    expect(testExports).toContain("z80_execute_instruction");
+    expect(testExports).toContain("z80_test_memory_ptr");
+  });
+
+  it("declares a package resource location for the WASM artifact", () => {
+    expect(outputRelative).toBe("src/emu/machines/zxSpectrum48/wasm/dist/zx-spectrum48.wasm");
+    expect(packageJson.build.extraResources).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        from: wasmDistDirectoryRelative,
+        to: packagedResourceDirectory,
+        filter: ["**/*.wasm"]
+      })
+    ]));
   });
 });

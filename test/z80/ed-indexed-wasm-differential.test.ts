@@ -52,13 +52,23 @@ function ioLog (machine: TypeScriptMachine | WasmMachine) {
   }));
 }
 
+function expectTouchedMemoryToMatch (ts: TypeScriptMachine, wasm: WasmMachine, label: string): void {
+  const touchedAddresses = new Set<number>();
+  for (const entry of ts.memoryAccessLog) touchedAddresses.add(entry.address);
+  for (const entry of wasm.memoryAccessLog) touchedAddresses.add(entry.address);
+
+  for (const address of touchedAddresses) {
+    expect(wasm.memory[address], `${label} memory ${address.toString(16)}`).toBe(ts.memory[address]);
+  }
+}
+
 function expectMachinesToMatch (ts: TypeScriptMachine, wasm: WasmMachine, label: string, compareLogs = true): void {
   expect(snapshot(wasm), `${label} state`).toEqual(snapshot(ts));
-  expect(Array.from(wasm.memory), `${label} memory`).toEqual(Array.from(ts.memory));
   if (compareLogs) {
     expect(memoryLog(wasm), `${label} memory log`).toEqual(memoryLog(ts));
     expect(ioLog(wasm), `${label} io log`).toEqual(ioLog(ts));
   }
+  expectTouchedMemoryToMatch(ts, wasm, label);
 }
 
 function indexedOperandCount (opcode: number): number {

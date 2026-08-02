@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { buildSp48Wasm, output } from "../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm, output, testExports } from "../../scripts/build-sp48-wasm.cjs";
 import { describe, expect, it } from "vitest";
 
 const word = {
@@ -35,39 +35,6 @@ const stateOffset = {
   counters: 28,
   controls: 44
 } as const;
-
-const approvedExports = [
-  "memory",
-  "sp48_abi_version",
-  "sp48_create",
-  "sp48_reset",
-  "sp48_load_rom_byte",
-  "sp48_read_memory",
-  "sp48_write_memory",
-  "sp48_read_port",
-  "sp48_write_port",
-  "z80_abi_version",
-  "z80_reset",
-  "z80_state_block_ptr",
-  "z80_state_block_size",
-  "z80_state_export",
-  "z80_state_import",
-  "z80_execute_instruction",
-  "z80_test_memory_ptr",
-  "z80_test_memory_size",
-  "z80_test_memory_log_capacity",
-  "z80_test_io_log_capacity",
-  "z80_test_tbblue_log_capacity",
-  "z80_test_memory_log_count",
-  "z80_test_memory_log_ptr",
-  "z80_test_io_log_count",
-  "z80_test_io_log_ptr",
-  "z80_test_tbblue_log_count",
-  "z80_test_tbblue_log_ptr",
-  "z80_test_io_input_ptr",
-  "z80_test_io_input_count_set",
-  "z80_test_bus_reset"
-].sort();
 
 function wordAt (state: DataView, field: number): number {
   return state.getUint16(stateOffset.words + field * 2, true);
@@ -108,7 +75,7 @@ describe("Z80 WASM ABI", () => {
     const state = new DataView(memory.buffer, wasm.z80_state_block_ptr(), wasm.z80_state_block_size());
 
     expect(existsSync(output)).toBe(true);
-    expect(Object.keys(instance.exports).sort()).toEqual(approvedExports);
+    expect(Object.keys(instance.exports).sort()).toEqual([...testExports].sort());
     expect(wasm.z80_abi_version()).toBe(1);
     expect(wasm.z80_state_block_size()).toBe(64);
 

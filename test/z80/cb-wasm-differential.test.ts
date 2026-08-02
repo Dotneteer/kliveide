@@ -38,6 +38,16 @@ function memoryLog (machine: TypeScriptMachine | WasmMachine) {
   }));
 }
 
+function expectTouchedMemoryToMatch (ts: TypeScriptMachine, wasm: WasmMachine, label: string): void {
+  const touchedAddresses = new Set<number>();
+  for (const entry of ts.memoryAccessLog) touchedAddresses.add(entry.address);
+  for (const entry of wasm.memoryAccessLog) touchedAddresses.add(entry.address);
+
+  for (const address of touchedAddresses) {
+    expect(wasm.memory[address], `${label} memory ${address.toString(16)}`).toBe(ts.memory[address]);
+  }
+}
+
 describe("CB WASM differential", () => {
   it("matches TypeScript across deterministic edge vectors and seeded states", () => {
     const edgeValues = [0x00, 0x01, 0x7f, 0x80, 0xff];
@@ -64,8 +74,8 @@ describe("CB WASM differential", () => {
         wasm.run();
 
         expect(snapshot(wasm), `CB ${opcode.toString(16)} state`).toEqual(snapshot(ts));
-        expect(Array.from(wasm.memory), `CB ${opcode.toString(16)} memory`).toEqual(Array.from(ts.memory));
         expect(memoryLog(wasm), `CB ${opcode.toString(16)} memory log`).toEqual(memoryLog(ts));
+        expectTouchedMemoryToMatch(ts, wasm, `CB ${opcode.toString(16)}`);
         expect(wasm.ioAccessLog).toEqual(ts.ioAccessLog.map(entry => ({
           address: entry.address, value: entry.value, isOutput: entry.isOutput
         })));

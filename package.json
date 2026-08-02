@@ -190,6 +190,13 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "src/emu/machines/zxSpectrum48/wasm/dist",
+        "to": "wasm/zxSpectrum48",
+        "filter": [
+          "**/*.wasm"
+        ]
       }
     ]
   }

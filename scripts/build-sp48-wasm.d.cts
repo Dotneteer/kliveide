@@ -16,8 +16,17 @@ export type Sp48WasmBuild = {
   output: string;
 };
 
+export const layoutOutput: string;
+export const layoutValueIds: Record<string, number>;
+export const layoutValues: Record<string, number>;
 export const source: string;
 export const z80Source: string;
 export const z80CpuSource: string;
 export const output: string;
+export const outputRelative: string;
+export const packagedResourceDirectory: string;
+export const productionExports: string[];
+export const testExports: string[];
+export const wasmDistDirectory: string;
+export const wasmDistDirectoryRelative: string;
 export function buildSp48Wasm(options?: BuildSp48WasmOptions): Sp48WasmBuild;
