@@ -42,6 +42,7 @@ export type Sp48WasmExports = WebAssembly.Exports & {
   sp48_import_snapshot: Sp48WasmExportFunction;
   sp48_export_snapshot: Sp48WasmExportFunction;
   sp48_execute_instructions: Sp48WasmExportFunction;
+  sp48_create: Sp48WasmExportFunction;
   sp48_reset: Sp48WasmExportFunction;
   sp48_load_rom_byte: Sp48WasmExportFunction;
   sp48_read_memory: Sp48WasmExportFunction;

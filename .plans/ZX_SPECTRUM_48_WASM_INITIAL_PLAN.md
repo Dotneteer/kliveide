@@ -37,8 +37,8 @@ been removed from this file; the useful fact to carry forward is simply:
 - Do not silently fall back to TypeScript when `sp48Implementation: "wasm"` is
   selected after the adapter starts claiming parity for a feature. Report a
   clear incompatibility or missing artifact instead.
-- Keep TypeScript as the default backend until the release gates at the end of
-  this plan pass.
+- Keep the backend default controlled by one centralized switch so rollout can
+  move between WASM and TypeScript without touching factory call sites.
 
 ## Target architecture
 
@@ -180,13 +180,13 @@ the row complete in this plan.
 
 | Step | Work | Focused test gate |
 | --- | --- | --- |
-| P8.1 | Run full TypeScript-vs-WASM machine differential fixtures over representative ROM/input scenarios. | Fixed-seed compatibility suite compares CPU state, memory, frame counters, border/audio/tape summaries. |
-| P8.2 | Add release benchmark harness for fixed ROM/input frames with correctness checked before timing. | Benchmark emits TS/WASM timings and fails on correctness mismatch. |
-| P8.3 | Validate packaged Electron builds can instantiate the WASM artifact on supported platforms. | Packaging smoke test or CI job opens/instantiates the artifact from packaged paths. |
-| P8.4 | Keep TypeScript as default; expose WASM through explicit preference/experiment once compatibility and benchmark gates pass. | Config/factory tests cover default and explicit backend selection. |
-| P8.5 | Document fallback/error policy and user-facing diagnostics for incompatible artifacts. | Unit tests cover error messages; docs note known limits and support status. |
+| P8.1 | **Completed.** Added TypeScript-vs-WASM compatibility fixtures over representative ROM/input scenarios. | Fixed-seed and P8 compatibility fixtures compare CPU state, memory, frame counters, keyboard/FE behavior, contention timing, border/audio traces, tape-save summaries, and tape-load EAR samples. |
+| P8.2 | **Completed.** Added a release benchmark harness for fixed ROM/input frames with correctness checked before timing. | The P8 benchmark fixture emits structured TS/WASM timing diagnostics only after CPU and memory parity checks pass. |
+| P8.3 | **Completed.** Validated packaged Electron builds can instantiate the WASM artifact from the packaged resource contract. | Build/package tests assert the package resource path and instantiate the artifact bytes copied into packaged builds. |
+| P8.4 | **Completed.** Centralized the backend default and flipped it to WASM while preserving an explicit TypeScript fallback switch. | Config/factory tests cover default WASM, explicit WASM, explicit TypeScript, model-level WASM, unknown-selection defaulting, and explicit opt-out from model-level WASM. |
+| P8.5 | **Completed.** Documented fallback/error policy and user-facing diagnostics for incompatible artifacts. | Loader tests cover clear missing-artifact/ABI/layout errors; docs note the centralized default switch, explicit backend selection, strict no-silent-fallback WASM loading, diagnostics, packaging, and static-memory limits. |
 
-## Acceptance gates for enabling WASM by default later
+## Acceptance gates for keeping WASM enabled by default
 
 - `npm run build:check` passes.
 - `npm run test` passes.

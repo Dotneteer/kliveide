@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import { buildSp48Wasm, output, productionExports, testExports } from "../../scripts/build-sp48-wasm.cjs";
 import { SP48_WASM_ABI_VERSION, SP48_WASM_LAYOUT, SP48_WASM_LAYOUT_VALUE_ID } from "@emu/machines/zxSpectrum48/wasm/sp48-wasm-layout.generated";
@@ -12,6 +13,17 @@ describe("ZX Spectrum 48K WASM ABI manifest", () => {
 
     expect(actualExports).toEqual([...testExports].sort());
     expect(actualExports).toEqual(expect.arrayContaining(productionExports));
+  });
+
+  it("declares every production export in the TypeScript loader contract", () => {
+    const loaderSource = readFileSync(
+      resolve(process.cwd(), "src/emu/machines/zxSpectrum48/wasm/Sp48WasmLoader.ts"),
+      "utf8"
+    );
+
+    for (const exportName of productionExports) {
+      expect(loaderSource, exportName).toContain(`${exportName}:`);
+    }
   });
 
   it("matches generated TypeScript layout constants", async () => {

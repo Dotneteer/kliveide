@@ -10,6 +10,7 @@ const output = resolve(root, "src/emu/machines/zxSpectrum48/wasm/dist/zx-spectru
 const layoutOutput = resolve(root, "src/emu/machines/zxSpectrum48/wasm/sp48-wasm-layout.generated.ts");
 const wasmDistDirectory = resolve(root, "src/emu/machines/zxSpectrum48/wasm/dist");
 const packagedResourceDirectory = "wasm/zxSpectrum48";
+const packagedArtifactRelative = `${packagedResourceDirectory}/zx-spectrum48.wasm`;
 
 const layoutValues = {
   abiVersion: 1,
@@ -273,6 +274,7 @@ module.exports = {
   layoutValueIds,
   layoutValues,
   output,
+  packagedArtifactRelative,
   packagedResourceDirectory,
   productionExports,
   source,

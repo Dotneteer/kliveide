@@ -520,7 +520,62 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     });
   });
 
-  it("runs a correctness-first fixed-ROM frame smoke before recording timing", async () => {
+  it("runs a P8 compatibility fixture across ROM, input, timing, border, audio, and tape summaries", async () => {
+    const rom = testRom([
+      0x3e, 0xfd,             // LD A,$FD: select keyboard row 1 for IN A,($FE)
+      0xdb, 0xfe,             // IN A,($FE)
+      0x32, 0x00, 0x40,       // LD ($4000),A
+      0x3e, 0x18,             // LD A,$18: EAR+MIC high, border 0
+      0xd3, 0xfe,             // OUT ($FE),A
+      0x3e, 0x03,             // LD A,$03: EAR+MIC low, border 3
+      0xd3, 0xfe,             // OUT ($FE),A
+      0x00, 0x00, 0x00
+    ]);
+    const ts = await createTsMachine(rom);
+    const wasm = await createWasmMachine(rom);
+    ts.keyboardDevice.setKeyStatus(SpectrumKeyCode.A, true);
+    wasm.keyboardDevice.setKeyStatus(SpectrumKeyCode.A, true);
+    fillContention(ts, 1);
+    fillContention(wasm, 1);
+    wasm.wasmRuntime!.contentionTable.fill(1);
+    ts.setTactsInFrame(128);
+    wasm.setTactsInFrame(128);
+    wasm.tapeDevice.tapeMode = TapeMode.Save;
+
+    const tsTermination = ts.executeMachineFrame();
+    const wasmTermination = wasm.executeMachineFrame();
+
+    expect(wasmTermination).toBe(tsTermination);
+    expectCpuSubset(wasm, ts);
+    expect(Array.from(wasm.get64KFlatMemory().subarray(0x4000, 0x4008))).toEqual(
+      Array.from(ts.get64KFlatMemory().subarray(0x4000, 0x4008))
+    );
+    expect(wasm.screenDevice.borderColor).toBe(ts.screenDevice.borderColor);
+    expect(wasm.getWasmBorderTrace().map(({ tact, value, color }) => ({ tact, value, color }))).toEqual(
+      ts.beeperTransitions.map(({ tact, value }) => ({ tact, value, color: value & 0x07 }))
+    );
+    expect(wasm.getWasmAudioTrace()).toEqual(ts.beeperTransitions);
+    expect(wasm.getWasmTapeSaveTrace()).toEqual([
+      { tact: ts.beeperTransitions[0].tact, value: 0x18, mic: true, ear: true },
+      { tact: ts.beeperTransitions[1].tact, value: 0x03, mic: false, ear: false }
+    ]);
+
+    for (const tact of [0, 4, 8, 16, 24, 32]) {
+      const tapeTs = await createTsMachine(testRom([]));
+      const tapeWasm = await createWasmMachine(testRom([]));
+      prepareTapeLoad(tapeTs, tinyTapeBlock([0xff, 0x5a, 0xa5]));
+      prepareTapeLoad(tapeWasm, tinyTapeBlock([0xff, 0x5a, 0xa5]));
+      tapeTs.setTactsInFrame(64);
+      tapeWasm.setTactsInFrame(64);
+      setFrameTactForTapeRead(tapeTs, tact);
+      setFrameTactForTapeRead(tapeWasm, tact);
+      expect(tapeWasm.doReadPort(0x00fe) & 0x40, `Tape EAR at tact ${tact}`).toBe(
+        tapeTs.doReadPort(0x00fe) & 0x40
+      );
+    }
+  });
+
+  it("runs a correctness-first P8 release benchmark before recording timings", async () => {
     const { rom } = seededProgram(0x48_48, 64);
     const ts = await createTsMachine(rom);
     const wasm = await createWasmMachine(rom);
@@ -539,8 +594,14 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     expect(Array.from(wasm.get64KFlatMemory().subarray(0x4000, 0x4020))).toEqual(
       Array.from(ts.get64KFlatMemory().subarray(0x4000, 0x4020))
     );
+    const benchmark = {
+      frames: 1,
+      frameTacts: wasm.tactsInFrame,
+      typeScriptMs: Number(tsElapsed.toFixed(3)),
+      wasmMs: Number(wasmElapsed.toFixed(3))
+    };
     console.info(
-      `ZX Spectrum 48K WASM fixed-frame smoke: TypeScript ${tsElapsed.toFixed(3)}ms, WASM ${wasmElapsed.toFixed(3)}ms`
+      `ZX Spectrum 48K WASM P8 release benchmark: ${JSON.stringify(benchmark)}`
     );
   });
 });

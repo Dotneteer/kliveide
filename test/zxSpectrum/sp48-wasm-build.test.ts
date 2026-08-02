@@ -1,8 +1,11 @@
+import { readFileSync } from "node:fs";
+
 import packageJson from "../../package.json";
 import {
   buildSp48Wasm,
   output,
   outputRelative,
+  packagedArtifactRelative,
   packagedResourceDirectory,
   productionExports,
   source,
@@ -46,6 +49,7 @@ describe("ZX Spectrum 48K WASM build", () => {
 
   it("declares a package resource location for the WASM artifact", () => {
     expect(outputRelative).toBe("src/emu/machines/zxSpectrum48/wasm/dist/zx-spectrum48.wasm");
+    expect(packagedArtifactRelative).toBe("wasm/zxSpectrum48/zx-spectrum48.wasm");
     expect(packageJson.build.extraResources).toEqual(expect.arrayContaining([
       expect.objectContaining({
         from: wasmDistDirectoryRelative,
@@ -53,5 +57,16 @@ describe("ZX Spectrum 48K WASM build", () => {
         filter: ["**/*.wasm"]
       })
     ]));
+  });
+
+  it("instantiates the same artifact bytes that are copied into packaged Electron builds", async () => {
+    buildSp48Wasm();
+
+    const { instance } = await WebAssembly.instantiate(readFileSync(output));
+    const exports = instance.exports as Record<string, unknown>;
+
+    expect(exports.memory).toBeInstanceOf(WebAssembly.Memory);
+    expect(typeof exports.sp48_abi_version).toBe("function");
+    expect(packagedArtifactRelative.endsWith("/zx-spectrum48.wasm")).toBe(true);
   });
 });

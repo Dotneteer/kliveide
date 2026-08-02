@@ -269,9 +269,66 @@ npm run test
 The full suite after P7 reported 562 passed files, 19,974 passed tests, 14
 skipped files, and 119 skipped tests.
 
+Phase P8 is now implemented:
+
+- Added a P8 TypeScript-vs-WASM compatibility fixture that covers a fixed ROM,
+  keyboard FE input, contention timing, border trace summaries, audio
+  transitions, tape-save MIC summaries, and tape-load EAR sampling.
+- Added a correctness-first P8 benchmark fixture. It compares termination, CPU
+  state, and memory before emitting structured TypeScript/WASM frame timings.
+- Added package rollout assertions for
+  `wasm/zxSpectrum48/zx-spectrum48.wasm` and a smoke test that instantiates the
+  artifact bytes copied by Electron packaging.
+- Added a manifest gate that every production SP48 export is declared by the
+  TypeScript loader contract. This caught and fixed the missing
+  `sp48_create` declaration.
+- Strengthened backend-selection tests: default selection is centralized,
+  explicit config selects either backend, unknown values use the centralized
+  default, and explicit TypeScript config opts out of a model-level WASM
+  experiment.
+- Updated `src/emu/machines/zxSpectrum48/wasm/README.md` and the implementation
+  selector comments with the current rollout/error policy: centralized default
+  backend switch, no silent fallback once WASM is selected, diagnostics via
+  `getWasmDiagnostics()`, packaged artifact location, and static-memory-only
+  C/WASM constraints.
+- The dynamic-allocation audit remains clean.
+
+Focused P8 gates passed:
+
+```sh
+npm run build:sp48-wasm
+npx vitest run --config build/vitest.config.ts --project node test/zxSpectrum/sp48-wasm-cpu-integration.test.ts test/zxSpectrum/sp48-wasm-build.test.ts test/zxSpectrum/ZxSpectrum48MachineFactory.test.ts test/zxSpectrum/sp48-wasm-abi-manifest.test.ts test/zxSpectrum/sp48-wasm-loader.test.ts test/zxSpectrum/sp48-wasm-memory.test.ts test/zxSpectrum/ZxSpectrum48WasmMachineSetup.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80
+rg -n "\b(malloc|calloc|realloc|free|aligned_alloc)\s*\(" src/emu/machines/zxSpectrum48/wasm src/emu/z80/wasm
+```
+
+Full P8 gates passed:
+
+```sh
+npm run build:check
+npx electron-vite build --config build/electron.vite.config.ts
+npm run test
+git diff --check
+```
+
+The full suite after P8 reported 562 passed files, 19,979 passed tests, 14
+skipped files, and 119 skipped tests. The Electron/Vite build emitted only the
+existing generic chunk-size warning.
+
+The 48K backend rollout switch has now been flipped to WASM by default:
+
+- `DEFAULT_SP48_IMPLEMENTATION` in
+  `src/emu/machines/zxSpectrum48/ZxSpectrum48Implementation.ts` is the
+  centralized one-line switch and is set to `"wasm"`.
+- Explicit `sp48Implementation: "typescript"` still switches a machine back to
+  the TypeScript backend for manual fallback and compatibility comparison.
+- Unknown implementation values use the centralized default.
+
 ## Next useful work
 
-Start with Phase P8 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`:
-compatibility, packaging, and rollout.
+The initial ZX Spectrum 48K WASM completion plan is implemented, and the 48K
+factory now uses WASM by default. Future work should move to rollout decisions,
+real-world compatibility reports, and whether any discovered compatibility issue
+should temporarily move `DEFAULT_SP48_IMPLEMENTATION` back to `"typescript"`.
 
 Do not continue by adding more Z80 opcode-migration rows. That phase is done.

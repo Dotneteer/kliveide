@@ -24,6 +24,7 @@ export const z80Source: string;
 export const z80CpuSource: string;
 export const output: string;
 export const outputRelative: string;
+export const packagedArtifactRelative: string;
 export const packagedResourceDirectory: string;
 export const productionExports: string[];
 export const testExports: string[];
