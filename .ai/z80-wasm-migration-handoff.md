@@ -1,17 +1,19 @@
 # Z80 WASM Migration Handoff
 
 Read `../AGENTS.md` and `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md` before
-changing this work. This note records the state at the completion of all
-unprefixed Z80 instruction pages (S00–SF0), on 2026-08-02.
+changing this work. This note records the state after completing the DD/FD and
+DDCB/FDCB indexed migration rows I0–I6 on 2026-08-02.
 
 ## Current completion state
 
 - The original TypeScript Z80 remains the production implementation.
 - The C/WASM CPU prototype is test-only and is not connected to the Spectrum
   48K frame runner.
-- Z0–Z5, all unprefixed standard pages S00–SF0, and CB pages C0–C3 are complete.
-- The next planned family is E0: ED opcodes `40–7F`.
-- ED, IX/IY, DDCB/FDCB, and Z80N migrations have not started.
+- Z0–Z5, all unprefixed standard pages S00–SF0, CB pages C0–C3, ED pages
+  E0–E2, and indexed DD/FD + DDCB/FDCB pages I0–I6 are complete.
+- The next planned family is the next uncompleted row after I6 in
+  `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`.
+- Z80N migrations have not started.
 
 The source-of-truth plan is the initial plan above. Keep it updated as steps
 are completed; it is intentionally a living initial plan.
@@ -76,7 +78,7 @@ once per instruction, tact, memory access, or port access.
 
 ## Verification baseline
 
-At this handoff, the following passed:
+At the S00–SF0 handoff, the following passed:
 
 ```sh
 npm run test
@@ -87,6 +89,24 @@ The full suite result was 19,031 passed and 14 skipped. Expected-error output
 from unrelated React provider tests may be printed during the suite, but Vitest
 must still finish with zero failed tests.
 
+After completing E0–E2 and I0–I3, the focused gates added/passed are:
+
+```sh
+npx vitest run --config build/vitest.config.ts --project node test/z80/ext-op-a0.wasm.test.ts test/z80/ext-op-b0.wasm.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80/ix-ops-00.wasm.test.ts test/z80/iy-ops-00.wasm.test.ts test/z80/ix-ops-10.wasm.test.ts test/z80/iy-ops-10.wasm.test.ts test/z80/ix-ops-20.wasm.test.ts test/z80/iy-ops-20.wasm.test.ts test/z80/ix-ops-30.wasm.test.ts test/z80/iy-ops-30.wasm.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80/ix-ops-40.wasm.test.ts test/z80/iy-ops-40.wasm.test.ts test/z80/ix-ops-50.wasm.test.ts test/z80/iy-ops-50.wasm.test.ts test/z80/ix-ops-60.wasm.test.ts test/z80/iy-ops-60.wasm.test.ts test/z80/ix-ops-70.wasm.test.ts test/z80/iy-ops-70.wasm.test.ts test/z80/ix-ops-80.wasm.test.ts test/z80/iy-ops-80.wasm.test.ts test/z80/ix-ops-90.wasm.test.ts test/z80/iy-ops-90.wasm.test.ts test/z80/ix-ops-a0.wasm.test.ts test/z80/iy-ops-a0.wasm.test.ts test/z80/ix-ops-b0.wasm.test.ts test/z80/iy-ops-b0.wasm.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80/ed-indexed-wasm-differential.test.ts
+```
+
+After completing I4–I6, the focused gates added/passed are:
+
+```sh
+npx vitest run --config build/vitest.config.ts --project node test/z80/ix-ops-c0.wasm.test.ts test/z80/iy-ops-c0.wasm.test.ts test/z80/ix-ops-d0.wasm.test.ts test/z80/iy-ops-d0.wasm.test.ts test/z80/ix-ops-e0.wasm.test.ts test/z80/iy-ops-e0.wasm.test.ts test/z80/ix-ops-f0.wasm.test.ts test/z80/iy-ops-f0.wasm.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80/ix-bit-ops-00.wasm.test.ts test/z80/iy-bit-ops-00.wasm.test.ts test/z80/ix-bit-ops-10.wasm.test.ts test/z80/iy-bit-ops-10.wasm.test.ts test/z80/ix-bit-ops-20.wasm.test.ts test/z80/iy-bit-ops-20.wasm.test.ts test/z80/ix-bit-ops-30.wasm.test.ts test/z80/iy-bit-ops-30.wasm.test.ts test/z80/ix-bit-ops-bit.wasm.test.ts test/z80/iy-bit-ops.bit.wasm.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80/ix-ops-c0.test.ts test/z80/iy-ops-c0.test.ts test/z80/ix-ops-d0.test.ts test/z80/iy-ops-d0.test.ts test/z80/ix-ops-e0.test.ts test/z80/iy-ops-e0.test.ts test/z80/ix-ops-f0.test.ts test/z80/iy-ops-f0.test.ts test/z80/ix-bit-ops-00.test.ts test/z80/iy-bit-ops-00.test.ts test/z80/ix-bit-ops-10.test.ts test/z80/iy-bit-ops-10.test.ts test/z80/ix-bit-ops-20.test.ts test/z80/iy-bit-ops-20.test.ts test/z80/ix-bit-ops-30.test.ts test/z80/iy-bit-ops-30.test.ts test/z80/ix-bit-ops-bit.test.ts test/z80/iy-bit-ops.bit.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80/ed-indexed-wasm-differential.test.ts
+```
+
 Use the relevant original TypeScript page and its WASM clone as focused gates
 while implementing an opcode page, then run `npm run build:check`. Before
 marking a step complete, run the full `npm run test` suite. Do not claim a
@@ -94,20 +114,16 @@ step is complete without reporting the test command and result.
 
 ## Collaboration protocol requested by the user
 
-Unless the user explicitly authorizes several steps, implement exactly one
-planned step, run its focused and full gates, update the plan, then describe
-the next step and ask for approval. “Go on” means implement the next approved
-step, not merely describe it. The user is especially sensitive to statements
-that work is complete when tests have not actually been run.
+The user explicitly authorized completing E1, E2, I0–I3, and then I4–I6 in
+multi-step passes and asked not to return until the required quality gates
+pass. Continue to report only tested completion; do not claim a step is done
+before its focused and full gates have actually run.
 
-## Next step: E0 (ED `40–7F`)
+## Next step
 
-CB entries now use native table dispatch for rotate/shift, BIT, RES, and SET.
-The literal clones are `bit-ops-00/10/20/30/bit/res/set.wasm.test.ts`.
-`cb-wasm-differential.test.ts` compares all 256 CB opcodes over edge values
-and seeded states, including full exposed state, RAM, and ordered memory/I/O
-logs. For `BIT b,(HL)`, undocumented flag bits 3/5 intentionally come from
-the WZ high byte, matching `Z80Cpu.bit8W`.
-
-Start E0 with the plan's ED `40–7F` row. Retain CB prefix flow in
-`executeCpuCycle`; individual ED operations must remain table entries.
+All planned IX/IY rows I0–I6 are complete. Continue with the next uncompleted
+row in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`. Retain the current DD/FD
+prefix flow: repeated DD/FD prefixes stay pending without the final indexed
+`+1` tact, executable DD/FD opcodes receive that final tact in
+`executeCpuCycle`, and DDCB/FDCB treats the byte after CB as displacement
+before fetching the actual indexed-bit opcode.

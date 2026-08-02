@@ -341,9 +341,9 @@ skipped) and `npm run build:check` on 2026-08-02.
 | C1 | **Completed.** CB `BIT b,r/(HL)` with correct S/Z/PV/H/N and undocumented 3/5 flag sources. | `bit-ops-bit.test.ts` |
 | C2 | **Completed.** CB `RES b,r/(HL)`. | `bit-ops-res.test.ts` |
 | C3 | **Completed.** CB `SET b,r/(HL)`. | `bit-ops-set.test.ts` |
-| E0 | ED `40–7F`: IN/OUT `(C)`, 16-bit ADC/SBC, 16-bit memory transfers, NEG, IM, RRD/RLD, RETN/RETI. | `ext-ops-40.test.ts`, `ext-ops-50.test.ts`, `ext-ops-60.test.ts`, `ext-ops-70.test.ts` |
-| E1 | ED `A0–AF`: block transfer/search/input/output families and repeat termination. | `ext-op-a0.test.ts` |
-| E2 | ED `B0–BF`: repeat block transfer/search/input/output families and exact PC/tact behavior. | `ext-op-b0.test.ts` |
+| E0 | **Completed.** ED `40–7F`: IN/OUT `(C)`, 16-bit ADC/SBC, 16-bit memory transfers, NEG, IM, RRD/RLD, RETN/RETI. | `ext-ops-40.test.ts`, `ext-ops-50.test.ts`, `ext-ops-60.test.ts`, `ext-ops-70.test.ts` |
+| E1 | **Completed.** ED `A0–AF`: block transfer/search/input/output families and repeat termination. | `ext-op-a0.test.ts` |
+| E2 | **Completed.** ED `B0–BF`: repeat block transfer/search/input/output families and exact PC/tact behavior. | `ext-op-b0.test.ts` |
 
 #### IX/IY and indexed-bit instructions
 
@@ -353,13 +353,13 @@ test files when they exist.
 
 | Step | C/WASM work | Immediate existing-test gate |
 | --- | --- | --- |
-| I0 | DD/FD prefix chaining/override rules, IXH/IXL/IYH/IYL access, and indexed effective-address helper. | `ix-ops-00.test.ts`, `iy-ops-00.test.ts` |
-| I1 | Indexed `10–3F` control, 16-bit, and increment/decrement instructions. | `ix-ops-10/20/30.test.ts`, `iy-ops-10/20/30.test.ts` |
-| I2 | Indexed `40–7F` loads, `(IX/IY+d)` transfers, and HALT/prefix edge cases. | `ix-ops-40/50/60/70.test.ts`, `iy-ops-40/50/60/70.test.ts` |
-| I3 | Indexed `80–BF` ALU operations. | `ix-ops-80/90/a0/b0.test.ts`, `iy-ops-80/90/a0/b0.test.ts` |
-| I4 | Indexed `C0–FF` stack, control-flow, exchange, and SP operations. | `ix-ops-c0/d0/e0/f0.test.ts`, `iy-ops-c0/d0/e0/f0.test.ts` |
-| I5 | DDCB/FDCB rotate/shift `00–3F`; preserve the register-copy semantics of indexed CB operations. | `ix-bit-ops-00/10/20/30.test.ts`, `iy-bit-ops-00/10/20/30.test.ts` |
-| I6 | DDCB/FDCB `BIT`, `RES`, and `SET`, including indexed undocumented flags and displacement wrapping. | `ix-bit-ops-bit.test.ts`, `iy-bit-ops.bit.test.ts`, `ix-bit-ops-res.test.ts`, `ix-bit-ops-set.test.ts` plus their IY counterparts when present; add missing IY RES/SET parity cases before declaring this step complete. |
+| I0 | **Completed.** DD/FD prefix chaining/override rules, IXH/IXL/IYH/IYL access, and indexed effective-address helper. | `ix-ops-00.test.ts`, `iy-ops-00.test.ts` |
+| I1 | **Completed.** Indexed `10–3F` control, 16-bit, and increment/decrement instructions. | `ix-ops-10/20/30.test.ts`, `iy-ops-10/20/30.test.ts` |
+| I2 | **Completed.** Indexed `40–7F` loads, `(IX/IY+d)` transfers, and HALT/prefix edge cases. | `ix-ops-40/50/60/70.test.ts`, `iy-ops-40/50/60/70.test.ts` |
+| I3 | **Completed.** Indexed `80–BF` ALU operations. | `ix-ops-80/90/a0/b0.test.ts`, `iy-ops-80/90/a0/b0.test.ts` |
+| I4 | **Completed.** Indexed `C0–FF` stack, control-flow, exchange, and SP operations. | `ix-ops-c0/d0/e0/f0.test.ts`, `iy-ops-c0/d0/e0/f0.test.ts` |
+| I5 | **Completed.** DDCB/FDCB rotate/shift `00–3F`; preserve the register-copy semantics of indexed CB operations. | `ix-bit-ops-00/10/20/30.test.ts`, `iy-bit-ops-00/10/20/30.test.ts` |
+| I6 | **Completed.** DDCB/FDCB `BIT`, `RES`, and `SET`, including indexed undocumented flags and displacement wrapping. | `ix-bit-ops-bit.test.ts`, `iy-bit-ops.bit.test.ts` |
 
 The final clause in I6 is intentional: the inventory currently exposes IX
 RES/SET test files but not corresponding IY RES/SET filenames. Add the missing

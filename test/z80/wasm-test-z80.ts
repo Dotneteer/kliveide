@@ -13,8 +13,8 @@ const word = {
   af: 0, bc: 1, de: 2, hl: 3, afAlt: 4, bcAlt: 5, deAlt: 6, hlAlt: 7,
   ix: 8, iy: 9, ir: 10, wz: 11, pc: 12, sp: 13
 } as const;
-const byte = { a: 0, f: 1, b: 2, c: 3, d: 4, e: 5, h: 6, l: 7 } as const;
-const control = { prefix: 0, halted: 1, iff1: 4, iff2: 5 } as const;
+const byte = { a: 0, f: 1, b: 2, c: 3, d: 4, e: 5, h: 6, l: 7, ixh: 8, ixl: 9, iyh: 10, iyl: 11, i: 12, r: 13 } as const;
+const control = { prefix: 0, halted: 1, interruptMode: 3, iff1: 4, iff2: 5 } as const;
 const counter = { tacts: 0 } as const;
 
 export interface IoAccessLogEntry {
@@ -83,8 +83,11 @@ class Z80WasmTestCpu {
   get hl_ (): number { return this.readWord(word.hlAlt); }
   set hl_ (value: number) { this.writeWord(word.hlAlt, value); }
   get ix (): number { return this.readWord(word.ix); }
+  set ix (value: number) { this.writeWord(word.ix, value); }
   get iy (): number { return this.readWord(word.iy); }
+  set iy (value: number) { this.writeWord(word.iy, value); }
   get ir (): number { return this.readWord(word.ir); }
+  set ir (value: number) { this.writeWord(word.ir, value); }
   get wz (): number { return this.readWord(word.wz); }
   get wh (): number { return this.wz >> 8; }
   get sp (): number { return this.readWord(word.sp); }
@@ -107,9 +110,31 @@ class Z80WasmTestCpu {
   set h (value: number) { this.writeByte(byte.h, value); }
   get l (): number { return this.readByte(byte.l); }
   set l (value: number) { this.writeByte(byte.l, value); }
+  get ixh (): number { return this.readByte(byte.ixh); }
+  set ixh (value: number) { this.writeByte(byte.ixh, value); }
+  get ixl (): number { return this.readByte(byte.ixl); }
+  set ixl (value: number) { this.writeByte(byte.ixl, value); }
+  get iyh (): number { return this.readByte(byte.iyh); }
+  set iyh (value: number) { this.writeByte(byte.iyh, value); }
+  get iyl (): number { return this.readByte(byte.iyl); }
+  set iyl (value: number) { this.writeByte(byte.iyl, value); }
+  get xh (): number { return this.ixh; }
+  set xh (value: number) { this.ixh = value; }
+  get xl (): number { return this.ixl; }
+  set xl (value: number) { this.ixl = value; }
+  get yh (): number { return this.iyh; }
+  set yh (value: number) { this.iyh = value; }
+  get yl (): number { return this.iyl; }
+  set yl (value: number) { this.iyl = value; }
+  get i (): number { return this.readByte(byte.i); }
+  set i (value: number) { this.writeByte(byte.i, value); }
+  get r (): number { return this.readByte(byte.r); }
+  set r (value: number) { this.writeByte(byte.r, value); }
   get tacts (): number { return this.call("z80_state_read_counter", counter.tacts); }
   get prefix (): number { return this.call("z80_state_read_control", control.prefix); }
   get halted (): boolean { return this.call("z80_state_read_control", control.halted) !== 0; }
+  get interruptMode (): number { return this.call("z80_state_read_control", control.interruptMode); }
+  set interruptMode (value: number) { this.call("z80_state_write_control", control.interruptMode, value); }
   get iff1 (): boolean { return this.call("z80_state_read_control", control.iff1) !== 0; }
   set iff1 (value: boolean) { this.call("z80_state_write_control", control.iff1, value ? 1 : 0); }
   get iff2 (): boolean { return this.call("z80_state_read_control", control.iff2) !== 0; }
