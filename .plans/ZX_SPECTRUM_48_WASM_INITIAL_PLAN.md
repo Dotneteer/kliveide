@@ -160,11 +160,11 @@ the row complete in this plan.
 
 | Step | Work | Focused test gate |
 | --- | --- | --- |
-| P6.1 | Define the tape input contract: precomputed pulse/event buffer copied from TypeScript, or C-readable pulse window generated before execution. | ABI/layout test covers tape input block shape and version. |
-| P6.2 | Implement EAR sampling from the tape input contract during C execution. | Load-tone fixtures compare sampled EAR values at representative tacts. |
-| P6.3 | Implement MIC/tape-save event capture for FE writes. | Save-event tests compare TypeScript and WASM event timing for simple output programs. |
-| P6.4 | Integrate tape mode updates at frame or bounded-instruction boundaries, not per instruction in normal mode. | Machine-frame tests cover play/stop transitions and fast-load disabled/enabled boundaries. |
-| P6.5 | Run a small TAP/TZX loading smoke fixture through both backends. | Differential tape smoke test compares loaded memory block and termination status. |
+| P6.1 | **Completed.** Defined a static tape input/output contract: a per-frame EAR table copied from TypeScript plus a bounded MIC/tape-save trace region. | ABI/layout tests cover tape table capacity, input offsets, trace shape, and status bits. |
+| P6.2 | **Completed.** Implemented C-side EAR sampling from the precomputed tape input table while tape mode is LOAD. | Load-tone fixtures compare TypeScript and WASM sampled EAR values at representative tacts. |
+| P6.3 | **Completed.** Implemented bounded MIC/tape-save event capture for FE writes while tape mode is SAVE. | Save-event tests compare tact, FE value, MIC, and EAR values for simple output programs. |
+| P6.4 | **Completed.** Integrated tape mode updates at WASM execution boundaries and kept fast-load policy in TypeScript. | Machine-frame tests cover fast-load-disabled LOAD mode and boundary behavior. |
+| P6.5 | **Completed.** Added a tiny tape data-block loading smoke through TypeScript and WASM boundary handling. | Differential smoke compares loaded memory and final tape mode. |
 
 ### Phase P7 — debugger and IDE integration
 

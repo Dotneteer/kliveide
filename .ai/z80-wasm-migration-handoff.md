@@ -202,9 +202,41 @@ npm run test
 The full suite after P5 reported 562 passed files, 19,965 passed tests, 14
 skipped files, and 119 skipped tests.
 
+Phase P6 is now implemented:
+
+- The 48K C core has a static per-frame tape EAR table and samples it for
+  port `$FE` reads while the input tape mode is LOAD.
+- The static event buffer now has fixed slices for border trace, audio trace,
+  and MIC/tape-save trace. Tape-save trace records are 8 bytes: frame tact
+  `u32`, FE value, MIC latch, EAR latch, and one reserved byte.
+- Tape-save overflow is explicit through `sp48_event_status()` and
+  `eventStatusTapeSaveOverflowMask`.
+- `ZxSpectrum48WasmMachine` copies TypeScript tape mode/default EAR state into
+  WASM, precomputes the EAR table from the existing `TapeDevice`, exposes
+  `getWasmTapeSaveTrace()`/`clearWasmTapeSaveTrace()`, and replays MIC
+  transitions back through `TapeDevice.processMicBit(...)`.
+- Tape mode and fast-load policy remain TypeScript-owned and are evaluated at
+  WASM execution boundaries.
+- The fixed WASM memory reservation is now 768 KiB to hold the additional
+  static tape table. No dynamic allocation was introduced.
+
+Focused P6 gates passed:
+
+```sh
+npm run build:sp48-wasm
+npx vitest run --config build/vitest.config.ts --project node test/zxSpectrum/sp48-wasm-cpu-integration.test.ts test/zxSpectrum/sp48-wasm-memory.test.ts test/zxSpectrum/sp48-wasm-abi-manifest.test.ts test/zxSpectrum/sp48-wasm-loader.test.ts test/zxSpectrum/ZxSpectrum48WasmMachineSetup.test.ts
+rg -n "\b(malloc|calloc|realloc|free|aligned_alloc)\s*\(" src/emu/machines/zxSpectrum48/wasm src/emu/z80/wasm
+npm run build:check
+npx electron-vite build --config build/electron.vite.config.ts
+npm run test
+```
+
+The full suite after P6 reported 562 passed files, 19,970 passed tests, 14
+skipped files, and 119 skipped tests.
+
 ## Next useful work
 
-Start with Phase P6 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`:
-tape integration.
+Start with Phase P7 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`:
+debugger and IDE integration.
 
 Do not continue by adding more Z80 opcode-migration rows. That phase is done.

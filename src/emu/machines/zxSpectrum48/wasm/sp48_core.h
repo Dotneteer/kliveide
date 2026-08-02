@@ -55,6 +55,21 @@
 #ifndef SP48_EVENT_STATUS_AUDIO_OVERFLOW_MASK
 #define SP48_EVENT_STATUS_AUDIO_OVERFLOW_MASK 1
 #endif
+#ifndef SP48_TAPE_SAVE_TRACE_RECORD_SIZE
+#define SP48_TAPE_SAVE_TRACE_RECORD_SIZE 8
+#endif
+#ifndef SP48_TAPE_SAVE_TRACE_CAPACITY
+#define SP48_TAPE_SAVE_TRACE_CAPACITY 256
+#endif
+#ifndef SP48_TAPE_SAVE_TRACE_OFFSET
+#define SP48_TAPE_SAVE_TRACE_OFFSET 4096
+#endif
+#ifndef SP48_TAPE_EAR_TABLE_CAPACITY
+#define SP48_TAPE_EAR_TABLE_CAPACITY 69888
+#endif
+#ifndef SP48_EVENT_STATUS_TAPE_SAVE_OVERFLOW_MASK
+#define SP48_EVENT_STATUS_TAPE_SAVE_OVERFLOW_MASK 2
+#endif
 #ifndef SP48_MACHINE_STATE_CPU_STATE_OFFSET
 #define SP48_MACHINE_STATE_CPU_STATE_OFFSET 0
 #endif
@@ -81,6 +96,12 @@
 #endif
 #ifndef SP48_INPUT_RUN_MODE_OFFSET
 #define SP48_INPUT_RUN_MODE_OFFSET 16
+#endif
+#ifndef SP48_INPUT_TAPE_MODE_OFFSET
+#define SP48_INPUT_TAPE_MODE_OFFSET 17
+#endif
+#ifndef SP48_INPUT_TAPE_EAR_DEFAULT_OFFSET
+#define SP48_INPUT_TAPE_EAR_DEFAULT_OFFSET 18
 #endif
 #ifndef SP48_INPUT_TERMINATION_POINT_OFFSET
 #define SP48_INPUT_TERMINATION_POINT_OFFSET 20
@@ -112,6 +133,9 @@
 #ifndef SP48_RESULT_EVENT_STATUS_OFFSET
 #define SP48_RESULT_EVENT_STATUS_OFFSET 28
 #endif
+#ifndef SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET
+#define SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET 32
+#endif
 
 /* Versioned, integer-only ABI: JavaScript invokes these exports directly. */
 unsigned int sp48_abi_version(void);
@@ -125,6 +149,7 @@ unsigned int sp48_memory_size(void);
 unsigned int sp48_dirty_ranges_ptr(void);
 unsigned int sp48_contention_table_ptr(void);
 unsigned int sp48_floating_bus_table_ptr(void);
+unsigned int sp48_tape_ear_table_ptr(void);
 unsigned int sp48_timing_table_capacity(void);
 unsigned int sp48_dirty_range_count(void);
 void sp48_clear_dirty_ranges(void);
@@ -133,6 +158,8 @@ void sp48_clear_border_trace(void);
 unsigned int sp48_audio_trace_count(void);
 void sp48_clear_audio_trace(void);
 unsigned int sp48_event_status(void);
+unsigned int sp48_tape_save_trace_count(void);
+void sp48_clear_tape_save_trace(void);
 void sp48_set_16k_model(unsigned int enabled);
 void sp48_import_state(void);
 void sp48_export_state(void);

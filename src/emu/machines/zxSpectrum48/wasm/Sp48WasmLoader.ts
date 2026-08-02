@@ -21,6 +21,7 @@ export type Sp48WasmExports = WebAssembly.Exports & {
   sp48_dirty_ranges_ptr: Sp48WasmExportFunction;
   sp48_contention_table_ptr: Sp48WasmExportFunction;
   sp48_floating_bus_table_ptr: Sp48WasmExportFunction;
+  sp48_tape_ear_table_ptr: Sp48WasmExportFunction;
   sp48_timing_table_capacity: Sp48WasmExportFunction;
   sp48_dirty_range_count: Sp48WasmExportFunction;
   sp48_clear_dirty_ranges: Sp48WasmExportFunction;
@@ -29,6 +30,8 @@ export type Sp48WasmExports = WebAssembly.Exports & {
   sp48_audio_trace_count: Sp48WasmExportFunction;
   sp48_clear_audio_trace: Sp48WasmExportFunction;
   sp48_event_status: Sp48WasmExportFunction;
+  sp48_tape_save_trace_count: Sp48WasmExportFunction;
+  sp48_clear_tape_save_trace: Sp48WasmExportFunction;
   sp48_set_16k_model: Sp48WasmExportFunction;
   sp48_import_state: Sp48WasmExportFunction;
   sp48_export_state: Sp48WasmExportFunction;
@@ -73,6 +76,7 @@ export type Sp48WasmRuntime = {
   readonly dirtyRanges: DataView;
   readonly contentionTable: Uint8Array;
   readonly floatingBusTable: DataView;
+  readonly tapeEarTable: Uint8Array;
 };
 
 let cachedModule: WebAssembly.Module | undefined;
@@ -130,6 +134,7 @@ export function createSp48WasmViews(exports: Sp48WasmExports) {
   const dirtyRangesStart = exports.sp48_dirty_ranges_ptr();
   const contentionTableStart = exports.sp48_contention_table_ptr();
   const floatingBusTableStart = exports.sp48_floating_bus_table_ptr();
+  const tapeEarTableStart = exports.sp48_tape_ear_table_ptr();
   const timingTableCapacity = exports.sp48_timing_table_capacity();
 
   return {
@@ -144,7 +149,8 @@ export function createSp48WasmViews(exports: Sp48WasmExports) {
       SP48_WASM_LAYOUT.dirtyRangeCapacity * SP48_WASM_LAYOUT.dirtyRangeRecordSize
     ),
     contentionTable: new Uint8Array(memoryBuffer, contentionTableStart, timingTableCapacity),
-    floatingBusTable: new DataView(memoryBuffer, floatingBusTableStart, timingTableCapacity * 2)
+    floatingBusTable: new DataView(memoryBuffer, floatingBusTableStart, timingTableCapacity * 2),
+    tapeEarTable: new Uint8Array(memoryBuffer, tapeEarTableStart, SP48_WASM_LAYOUT.tapeEarTableCapacity)
   };
 }
 

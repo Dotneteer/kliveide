@@ -3,6 +3,7 @@ import type { Sp48WasmLoaderOptions, Sp48WasmRuntime } from "./wasm/Sp48WasmLoad
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
+import { TapeMode } from "@emu/abstractions/TapeMode";
 import { MC_MEM_SIZE } from "@common/machines/constants";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 import { SpectrumBeeperDevice, type BeeperTransition } from "../BeeperDevice";
@@ -30,6 +31,13 @@ export type Sp48WasmBorderTrace = {
 
 export type Sp48WasmAudioTrace = BeeperTransition & {
   value: number;
+};
+
+export type Sp48WasmTapeSaveTrace = {
+  tact: number;
+  value: number;
+  mic: boolean;
+  ear: boolean;
 };
 
 const CPU_STATE = {
@@ -126,6 +134,7 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
         this.frameCompleted = false;
         this.emulateKeystroke();
       }
+      this.tapeDevice.updateTapeMode();
       this.syncInputToWasm(runtime);
       this.syncCpuToWasm();
       const frameStartTact = this.tacts;
@@ -133,10 +142,13 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
       const termination = runtime.exports.sp48_execute_frame() as FrameTerminationMode;
       this.syncCpuFromWasm();
       this.replayWasmAudioTrace(runtime, frameStartTact, frameStartOffset, this.tacts);
+      this.replayWasmTapeSaveTrace(runtime, frameStartTact, frameStartOffset);
+      this.tapeDevice.updateTapeMode();
       this.executionContext.lastTerminationReason = termination;
       return termination;
     }
 
+    this.tapeDevice.updateTapeMode();
     this.syncCpuToWasm();
     this.syncInputToWasm(runtime);
     this.configureWasmTerminationInput(runtime);
@@ -152,6 +164,8 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     ) as FrameTerminationMode;
     this.syncCpuFromWasm();
     this.replayWasmAudioTrace(runtime, frameStartTact, frameStartOffset, this.tacts);
+    this.replayWasmTapeSaveTrace(runtime, frameStartTact, frameStartOffset);
+    this.tapeDevice.updateTapeMode();
 
     const result =
       this.executionContext.debugStepMode === DebugStepMode.StepInto
@@ -227,6 +241,10 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     this.wasmRuntime?.exports.sp48_clear_audio_trace();
   }
 
+  clearWasmTapeSaveTrace(): void {
+    this.wasmRuntime?.exports.sp48_clear_tape_save_trace();
+  }
+
   getWasmEventStatus(): number {
     return this.wasmRuntime?.exports.sp48_event_status() ?? 0;
   }
@@ -271,6 +289,29 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
         value: runtime.eventBuffer[offset + 4],
         ear: runtime.eventBuffer[offset + 5] !== 0,
         mic: runtime.eventBuffer[offset + 6] !== 0
+      });
+    }
+    return events;
+  }
+
+  getWasmTapeSaveTrace(): Sp48WasmTapeSaveTrace[] {
+    const runtime = this.wasmRuntime;
+    if (runtime == null) return [];
+    const count = runtime.exports.sp48_tape_save_trace_count();
+    const events: Sp48WasmTapeSaveTrace[] = [];
+    for (let index = 0; index < count; index++) {
+      const offset =
+        SP48_WASM_LAYOUT.tapeSaveTraceOffset +
+        index * SP48_WASM_LAYOUT.tapeSaveTraceRecordSize;
+      events.push({
+        tact: new DataView(
+          runtime.eventBuffer.buffer,
+          runtime.eventBuffer.byteOffset + offset,
+          SP48_WASM_LAYOUT.tapeSaveTraceRecordSize
+        ).getUint32(0, true),
+        value: runtime.eventBuffer[offset + 4],
+        mic: runtime.eventBuffer[offset + 5] !== 0,
+        ear: runtime.eventBuffer[offset + 6] !== 0
       });
     }
     return events;
@@ -338,6 +379,34 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
         this.keyboardDevice.getKeyLineValue(line) & 0x1f
       );
     }
+    runtime.input.setUint8(SP48_WASM_LAYOUT.inputTapeModeOffset, this.tapeDevice.tapeMode);
+    runtime.input.setUint8(SP48_WASM_LAYOUT.inputTapeEarDefaultOffset, 1);
+    this.syncTapeEarTableToWasm(runtime);
+  }
+
+  private syncTapeEarTableToWasm(runtime: Sp48WasmRuntime): void {
+    runtime.tapeEarTable.fill(1);
+    if (this.tapeDevice.tapeMode !== TapeMode.Load) return;
+
+    const savedTacts = this.tacts;
+    const savedFrameTacts = this.frameTacts;
+    const savedCurrentFrameTact = this.currentFrameTact;
+    const frameStartTact = this.tacts - this.frameTacts;
+    const length = Math.min(
+      runtime.tapeEarTable.length,
+      this.tactsInCurrentFrame || this.tactsInFrame
+    );
+
+    for (let tact = 0; tact < length; tact++) {
+      this.setTacts(frameStartTact + tact);
+      this.frameTacts = tact;
+      this.currentFrameTact = tact;
+      runtime.tapeEarTable[tact] = this.tapeDevice.getTapeEarBit() ? 1 : 0;
+    }
+
+    this.setTacts(savedTacts);
+    this.frameTacts = savedFrameTacts;
+    this.currentFrameTact = savedCurrentFrameTact;
   }
 
   private syncTimingTablesToWasm(runtime: Sp48WasmRuntime): void {
@@ -471,5 +540,38 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
       runtime.machineState.getUint8(SP48_WASM_LAYOUT.machineStateEarLatchOffset) !== 0,
       runtime.machineState.getUint8(SP48_WASM_LAYOUT.machineStateMicLatchOffset) !== 0
     );
+  }
+
+  private replayWasmTapeSaveTrace(
+    _runtime: Sp48WasmRuntime,
+    frameStartTact: number,
+    frameStartOffset: number
+  ): void {
+    if (this.tapeDevice.tapeMode !== TapeMode.Save) return;
+    const savedTact = this.tacts;
+    const savedFrameTacts = this.frameTacts;
+    const savedCurrentFrameTact = this.currentFrameTact;
+    const frameTacts = this.tactsInCurrentFrame || this.tactsInFrame;
+    let previousAbsoluteTact = frameStartTact;
+
+    for (const transition of this.getWasmTapeSaveTrace()) {
+      const relativeTact =
+        frameTacts <= 0
+          ? transition.tact
+          : (transition.tact - frameStartOffset + frameTacts) % frameTacts;
+      let absoluteTact = frameStartTact + relativeTact;
+      while (absoluteTact < previousAbsoluteTact) {
+        absoluteTact += frameTacts;
+      }
+      this.setTacts(absoluteTact);
+      this.frameTacts = frameTacts <= 0 ? transition.tact : transition.tact % frameTacts;
+      this.currentFrameTact = this.frameTacts;
+      this.tapeDevice.processMicBit(transition.mic);
+      previousAbsoluteTact = absoluteTact;
+    }
+
+    this.setTacts(savedTact);
+    this.frameTacts = savedFrameTacts;
+    this.currentFrameTact = savedCurrentFrameTact;
   }
 }

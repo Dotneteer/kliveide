@@ -5,9 +5,13 @@ import { readFileSync } from "node:fs";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
+import { TapeMode } from "@emu/abstractions/TapeMode";
+import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { ZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48Machine";
 import { ZxSpectrum48WasmMachine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmMachine";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
+import { FAST_LOAD } from "@emu/machines/machine-props";
+import { MEDIA_TAPE } from "@common/structs/project-const";
 import { resetSp48WasmModuleCache } from "@emu/machines/zxSpectrum48/wasm/Sp48WasmLoader";
 import { SP48_WASM_LAYOUT } from "@emu/machines/zxSpectrum48/wasm/sp48-wasm-layout.generated";
 import { buildSp48Wasm, output } from "../../scripts/build-sp48-wasm.cjs";
@@ -279,6 +283,78 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     );
   });
 
+  it("matches TypeScript EAR sampling from the precomputed WASM tape input table", async () => {
+    for (const tact of [0, 3, 4, 7, 8, 15, 16, 20]) {
+      const ts = await createTsMachine(testRom([]));
+      const wasm = await createWasmMachine(testRom([]));
+      const block = tinyTapeBlock([0xff, 0x00]);
+      prepareTapeLoad(ts, block);
+      prepareTapeLoad(wasm, tinyTapeBlock([0xff, 0x00]));
+      ts.setTactsInFrame(64);
+      wasm.setTactsInFrame(64);
+      setFrameTactForTapeRead(ts, tact);
+      setFrameTactForTapeRead(wasm, tact);
+
+      expect(wasm.doReadPort(0x00fe) & 0x40).toBe(ts.doReadPort(0x00fe) & 0x40);
+    }
+  });
+
+  it("records MIC/tape-save trace events from FE writes while tape save mode is active", async () => {
+    const wasm = await createWasmMachine(testRom([0x3e, 0x08, 0xd3, 0xfe, 0x3e, 0x00, 0xd3, 0xfe]));
+    wasm.tapeDevice.tapeMode = TapeMode.Save;
+    wasm.setTactsInFrame(64);
+
+    wasm.executeMachineFrame();
+
+    expect(wasm.getWasmTapeSaveTrace()).toEqual([
+      { tact: 18, value: 0x08, mic: true, ear: false },
+      { tact: 36, value: 0x00, mic: false, ear: false }
+    ]);
+  });
+
+  it("reports tape-save trace overflow without writing beyond the bounded static trace", async () => {
+    const wasm = await createWasmMachine(testRom(alternatingMicWrites(SP48_WASM_LAYOUT.tapeSaveTraceCapacity + 8)));
+    wasm.tapeDevice.tapeMode = TapeMode.Save;
+    wasm.setTactsInFrame(20_000);
+
+    wasm.executeMachineFrame();
+
+    expect(wasm.getWasmTapeSaveTrace()).toHaveLength(SP48_WASM_LAYOUT.tapeSaveTraceCapacity);
+    expect(wasm.getWasmEventStatus() & SP48_WASM_LAYOUT.eventStatusTapeSaveOverflowMask).toBe(
+      SP48_WASM_LAYOUT.eventStatusTapeSaveOverflowMask
+    );
+  });
+
+  it("updates tape mode at WASM frame boundaries and honors fast-load disabled", async () => {
+    const wasm = await createWasmMachine(testRom([]));
+    wasm.setMachineProperty(FAST_LOAD, false);
+    wasm.setMachineProperty(MEDIA_TAPE, [tinyTapeBlock([0xff, 0x11, 0xee])]);
+    wasm.pc = 0x056c;
+    wasm.setTactsInFrame(16);
+
+    wasm.executeMachineFrame();
+
+    expect(wasm.tapeDevice.tapeMode).toBe(TapeMode.Load);
+  });
+
+  it("fast-loads a small tape data block through the WASM boundary path with TypeScript parity", async () => {
+    const bytes = [0xff, 0x42, 0x24];
+    const ts = await createTsMachine(testRom([]));
+    const wasm = await createWasmMachine(testRom([]));
+    prepareFastLoadRegisters(ts);
+    prepareFastLoadRegisters(wasm);
+    ts.setMachineProperty(MEDIA_TAPE, [tinyTapeBlock(bytes)]);
+    wasm.setMachineProperty(MEDIA_TAPE, [tinyTapeBlock(bytes)]);
+
+    ts.tapeDevice.updateTapeMode();
+    wasm.executeMachineFrame();
+
+    expect(Array.from(wasm.get64KFlatMemory().subarray(0x8000, 0x8002))).toEqual(
+      Array.from(ts.get64KFlatMemory().subarray(0x8000, 0x8002))
+    );
+    expect(wasm.tapeDevice.tapeMode).toBe(ts.tapeDevice.tapeMode);
+  });
+
   it("renders screens from WASM RAM through the existing TypeScript screen renderer", async () => {
     const ts = await createTsMachine(testRom([]));
     const wasm = await createWasmMachine(testRom([]));
@@ -473,6 +549,12 @@ function setFrameTactForFloatingRead(machine: ZxSpectrum48Machine, floatingBusFe
   machine.currentFrameTact = machine.frameTacts;
 }
 
+function setFrameTactForTapeRead(machine: ZxSpectrum48Machine, tact: number): void {
+  machine.setTacts(tact);
+  machine.frameTacts = tact;
+  machine.currentFrameTact = tact;
+}
+
 function testRom(bytes: number[]): Uint8Array {
   const rom = new Uint8Array(0x4000);
   rom.set(bytes);
@@ -530,4 +612,41 @@ function alternatingFeWrites(count: number): number[] {
     bytes.push(0x3e, index % 2 === 0 ? 0x10 : 0x00, 0xd3, 0xfe);
   }
   return bytes;
+}
+
+function alternatingMicWrites(count: number): number[] {
+  const bytes: number[] = [];
+  for (let index = 0; index < count; index++) {
+    bytes.push(0x3e, index % 2 === 0 ? 0x08 : 0x00, 0xd3, 0xfe);
+  }
+  return bytes;
+}
+
+function tinyTapeBlock(payloadWithoutChecksum: number[]): TapeDataBlock {
+  const block = new TapeDataBlock();
+  const checksum = payloadWithoutChecksum.reduce((acc, value) => acc ^ value, 0);
+  block.data = new Uint8Array([...payloadWithoutChecksum, checksum]);
+  block.pilotPulseLength = 4;
+  block.pilotPulseCount = 4;
+  block.sync1PulseLength = 2;
+  block.sync2PulseLength = 2;
+  block.zeroBitPulseLength = 4;
+  block.oneBitPulseLength = 8;
+  block.endSyncPulseLength = 2;
+  block.pauseAfter = 1;
+  return block;
+}
+
+function prepareTapeLoad(machine: ZxSpectrum48Machine, block: TapeDataBlock): void {
+  machine.setMachineProperty(MEDIA_TAPE, [block]);
+  machine.tapeDevice.tapeMode = TapeMode.Load;
+  machine.tapeDevice.nextTapeBlock();
+}
+
+function prepareFastLoadRegisters(machine: ZxSpectrum48Machine): void {
+  machine.pc = 0x056c;
+  machine.af_ = 0xff00;
+  machine.ix = 0x8000;
+  machine.de = 2;
+  machine.setTactsInFrame(64);
 }
