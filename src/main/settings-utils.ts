@@ -96,6 +96,7 @@ export function setSettingValue(id: string, value: any): void {
 }
 
 export let appSettings: AppSettings = {};
+export let settingsFileLoaded = false;
 
 export function saveAppSettings(): void {
   const filename = getSettingsFilePath();
@@ -128,9 +129,11 @@ export function saveAppSettings(): void {
 
 export function loadAppSettings(): void {
   const settingsFilePath = getSettingsFilePath();
+  settingsFileLoaded = false;
   try {
     const contents = fs.readFileSync(settingsFilePath, "utf8");
     appSettings = JSON.parse(contents) as AppSettings;
+    settingsFileLoaded = true;
 
     // --- Apply settings to the current main-only state
     setRecentProjects(appSettings.recentProjects ?? []);

@@ -36,7 +36,7 @@
     "build:linux:arm64": "npm run build && electron-builder build --linux --arm64",
     "test:unit": "vitest run --config build/vitest.config.ts",
     "test:e2e": "npm run build:e2e && playwright test --config playwright.config.ts",
-    "test": "npm run test:unit && npm run test:e2e",
+    "test": "npm run test:unit",
     "doc:dev": "cd docs && next dev",
     "doc:build": "(rm -f _experiments/testprojects/next-examples.zip && cd _experiments/testprojects/next && zip -r ../next-examples.zip book && cp ../next-examples.zip ../../../docs/public/) && (cd docs && next build)",
     "bootstrap:ci": "npm ci"

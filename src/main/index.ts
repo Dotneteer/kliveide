@@ -52,7 +52,6 @@ import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
 import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
 import { createSettingsReader } from "@utils/SettingsReader";
-import { FIRST_STARTUP_DIALOG_EMU } from "@messaging/dialog-ids";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 
 import { setupMenu } from "./app-menu";
@@ -66,7 +65,13 @@ import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
-import { appSettings, getSettingValue, loadAppSettings, saveAppSettings } from "./settings-utils";
+import {
+  appSettings,
+  getSettingValue,
+  loadAppSettings,
+  saveAppSettings,
+  settingsFileLoaded
+} from "./settings-utils";
 import { KLIVE_HOME_FOLDER } from "./settings";
 import { KLIVE_APP_VERSION } from "./app-version";
 
@@ -104,6 +109,7 @@ if (!isE2eRun && !app.requestSingleInstanceLock()) {
 }
 
 loadAppSettings();
+const shouldShowFirstStartupDialog = !settingsFileLoaded || !appSettings.startScreenDisplayed;
 
 // --- Store initial user settings
 mainStore.dispatch(saveUserSettingAction(appSettings.userSettings));
@@ -352,13 +358,6 @@ async function createAppWindows() {
         }
       }
 
-      if (!appSettings.startScreenDisplayed) {
-        await new Promise((r) => setTimeout(r, 400));
-        if (!appSettings.startScreenDisplayed) {
-          await getEmuApi().displayDialog(FIRST_STARTUP_DIALOG_EMU);
-        }
-      }
-
       setupMenu(emuWindow, ideWindow);
     }
 
@@ -387,17 +386,18 @@ async function createAppWindows() {
   // --- initialize the Monaco editor as soon as the IDE app starts.
   const devAppPath = `&apppath=${encodeURIComponent(app.getAppPath())}`;
   const prodAppPath = `&apppath=${encodeURIComponent(process.resourcesPath)}`;
+  const firstStartupDialogQuery = shouldShowFirstStartupDialog ? "&firststart=1" : "";
 
   // --- HMR for renderer base on electron-vite cli.
   // --- Load the remote URL for development or the local html file for production.
   const devUrl = process.env["ELECTRON_RENDERER_URL"];
   const prodUrl = join(__dirname, "../renderer/index.html");
   if (is.dev && devUrl) {
-    emuWindow.loadURL(devUrl + EMU_QP + devAppPath);
+    emuWindow.loadURL(devUrl + EMU_QP + devAppPath + firstStartupDialogQuery);
     ideWindow.loadURL(devUrl + IDE_QP + devAppPath);
   } else {
     emuWindow.loadFile(prodUrl, {
-      search: EMU_QP + prodAppPath
+      search: EMU_QP + prodAppPath + firstStartupDialogQuery
     });
     ideWindow.loadFile(prodUrl, {
       search: IDE_QP + prodAppPath

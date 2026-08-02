@@ -26,16 +26,20 @@ export type KliveApp = {
 type KliveFixtures = {
   kliveApp: KliveApp;
   kliveSettings: Partial<AppSettings>;
+  kliveSettingsFile: "present" | "missing";
+  kliveStartup: "show-ide" | "default";
 };
 
 export const test = base.extend<KliveFixtures>({
   kliveSettings: [{}, { option: true }],
-  kliveApp: async ({ kliveSettings }, use) => {
-    const settingsFile = createE2eSettingsFile(kliveSettings);
+  kliveSettingsFile: ["present", { option: true }],
+  kliveStartup: ["show-ide", { option: true }],
+  kliveApp: async ({ kliveSettings, kliveSettingsFile, kliveStartup }, use) => {
+    const settingsFile = createE2eSettingsFile(kliveSettings, kliveSettingsFile === "present");
     let app: KliveApp | undefined;
 
     try {
-      app = await launchKlive(settingsFile);
+      app = await launchKlive(settingsFile, kliveStartup);
       await use(app);
     } finally {
       await app?.close();
@@ -46,13 +50,16 @@ export const test = base.extend<KliveFixtures>({
 
 export { expect } from "@playwright/test";
 
-async function launchKlive(settingsFile: E2eSettingsFile): Promise<KliveApp> {
+async function launchKlive(
+  settingsFile: E2eSettingsFile,
+  startup: KliveFixtures["kliveStartup"]
+): Promise<KliveApp> {
   if (!fs.existsSync(appEntryPath)) {
     throw new Error(`Klive's Electron bundle is missing at ${appEntryPath}. Run npm run build:e2e first.`);
   }
 
   const electronApp = await electron.launch({
-    args: [appEntryPath, "--showide"],
+    args: [appEntryPath, ...(startup === "show-ide" ? ["--showide"] : [])],
     env: settingsFile.environment
   });
 
@@ -68,7 +75,7 @@ async function launchKlive(settingsFile: E2eSettingsFile): Promise<KliveApp> {
 
     let closePromise: Promise<void> | undefined;
     const close = async () => {
-      closePromise ??= electronApp.close();
+      closePromise ??= closeElectronApp(electronApp);
       await closePromise;
     };
 
@@ -119,6 +126,17 @@ async function launchKlive(settingsFile: E2eSettingsFile): Promise<KliveApp> {
   } catch (error) {
     await electronApp.close();
     throw error;
+  }
+}
+
+async function closeElectronApp(electronApp: ElectronApplication): Promise<void> {
+  const closedGracefully = await Promise.race([
+    electronApp.close().then(() => true),
+    new Promise<false>((resolve) => setTimeout(() => resolve(false), 5_000))
+  ]);
+
+  if (!closedGracefully) {
+    electronApp.process().kill("SIGKILL");
   }
 }
 

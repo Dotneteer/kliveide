@@ -388,7 +388,7 @@ npm run dev
 # Unit and component tests only
 npm run test:unit
 
-# All tests: unit/component tests followed by Playwright E2E tests
+# Unit and component tests (the default test command)
 npm run test
 
 # Start Klive with a generated isolated settings file for manual E2E debugging

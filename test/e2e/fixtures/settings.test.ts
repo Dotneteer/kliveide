@@ -20,4 +20,12 @@ describe("E2E settings fixture", () => {
       globalSettings: { emuOptions: { stayOnTop: false } }
     });
   });
+
+  it("can reserve an isolated path without creating a settings file", () => {
+    const settingsFile = createE2eSettingsFile({}, false);
+    settingsFiles.push(settingsFile);
+
+    expect(fs.existsSync(settingsFile.settingsFilePath)).toBe(false);
+    expect(settingsFile.environment[KLIVE_SETTINGS_FILE_ENV]).toBe(settingsFile.settingsFilePath);
+  });
 });
