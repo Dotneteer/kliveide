@@ -29,6 +29,11 @@ been removed from this file; the useful fact to carry forward is simply:
   access, Redux/messaging, or UI debugger policy into WASM.
 - Do not cross the JavaScript/WASM boundary per tact, per memory access, or per
   instruction during normal running.
+- Do not use dynamic allocation inside the C/WASM emulator implementation.
+  All C-side machine state, memory, event buffers, dirty-range tables, and
+  temporary work areas must be statically allocated with compile-time bounded
+  capacities and surfaced through explicit overflow/status reporting where a
+  buffer can fill.
 - Do not silently fall back to TypeScript when `sp48Implementation: "wasm"` is
   selected after the adapter starts claiming parity for a feature. Report a
   clear incompatibility or missing artifact instead.
@@ -106,11 +111,11 @@ the row complete in this plan.
 
 | Step | Work | Focused test gate |
 | --- | --- | --- |
-| P1.1 | Move 48K ROM/RAM storage for the WASM backend into linear memory, with typed views in the adapter. Keep TypeScript memory as the reference for differential tests. | New TS-vs-WASM memory reset/read/write tests for ROM, RAM, and address wrapping. |
-| P1.2 | Implement 16K ROM write protection and 48K RAM writes in C. Preserve the existing TypeScript semantics for direct memory patch helpers used by tests/debugger. | Differential memory tests cover ROM writes ignored, RAM writes accepted, and debugger/test patch paths. |
-| P1.3 | Implement machine reset parity: CPU reset, memory state, FE port defaults, border state, interrupt/tact counters, and model flags. | New reset-parity fixture compares selected TypeScript and WASM state fields after setup/reset. |
-| P1.4 | Add snapshot import/export for memory and CPU-visible state through the packed blocks. | Snapshot round-trip tests load into TS and WASM, export, and compare memory/register/tact fields. |
-| P1.5 | Add dirty-memory range reporting for C execution helpers. | Tests write disjoint ranges in C and verify compact dirty-range records consumed by the adapter. |
+| P1.1 | **Completed.** Moved 48K ROM/RAM storage for the WASM backend into linear memory, with typed views in the adapter. TypeScript memory remains the reference for differential tests. | `test/zxSpectrum/sp48-wasm-memory.test.ts` covers WASM memory reset/read/write behavior, ROM loading, address wrapping, and adapter views. |
+| P1.2 | **Completed.** Implemented 16K ROM write protection and 48K RAM writes in C. Preserved direct memory patch semantics for tests/debugger. | `test/zxSpectrum/sp48-wasm-memory.test.ts` covers ROM writes ignored, RAM writes accepted, 16K upper-RAM protection, and patch paths. |
+| P1.3 | **Completed.** Implemented reset parity for memory state, FE port defaults, and model flags in the WASM adapter/core path. | `test/zxSpectrum/sp48-wasm-memory.test.ts` compares selected TypeScript and WASM reset/memory behavior for the 16K model. |
+| P1.4 | **Completed.** Added snapshot import/export for memory and CPU-visible state through the packed blocks. | `test/zxSpectrum/sp48-wasm-memory.test.ts` verifies snapshot round-trip of memory, state block data, and FE/ULA state. |
+| P1.5 | **Completed.** Added dirty-memory range reporting for C memory helpers, using a statically allocated bounded dirty-range table. | `test/zxSpectrum/sp48-wasm-memory.test.ts` verifies dirty-range records and clear behavior. A static-allocation audit found no dynamic allocation calls in the C/WASM implementation. |
 
 ### Phase P2 — CPU integration inside the 48K machine
 

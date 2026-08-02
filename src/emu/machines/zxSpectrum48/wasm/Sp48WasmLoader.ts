@@ -12,6 +12,25 @@ export type Sp48WasmExports = WebAssembly.Exports & {
   memory: WebAssembly.Memory;
   sp48_abi_version: Sp48WasmExportFunction;
   sp48_layout_value: Sp48WasmExportFunction;
+  sp48_machine_state_block_ptr: Sp48WasmExportFunction;
+  sp48_input_block_ptr: Sp48WasmExportFunction;
+  sp48_result_block_ptr: Sp48WasmExportFunction;
+  sp48_event_buffer_ptr: Sp48WasmExportFunction;
+  sp48_memory_ptr: Sp48WasmExportFunction;
+  sp48_memory_size: Sp48WasmExportFunction;
+  sp48_dirty_ranges_ptr: Sp48WasmExportFunction;
+  sp48_dirty_range_count: Sp48WasmExportFunction;
+  sp48_clear_dirty_ranges: Sp48WasmExportFunction;
+  sp48_set_16k_model: Sp48WasmExportFunction;
+  sp48_import_state: Sp48WasmExportFunction;
+  sp48_export_state: Sp48WasmExportFunction;
+  sp48_import_snapshot: Sp48WasmExportFunction;
+  sp48_export_snapshot: Sp48WasmExportFunction;
+  sp48_reset: Sp48WasmExportFunction;
+  sp48_load_rom_byte: Sp48WasmExportFunction;
+  sp48_read_memory: Sp48WasmExportFunction;
+  sp48_write_memory: Sp48WasmExportFunction;
+  sp48_patch_memory: Sp48WasmExportFunction;
 };
 
 export type Sp48WasmInstance = {
@@ -34,6 +53,12 @@ export type Sp48WasmRuntime = {
   readonly module: WebAssembly.Module;
   readonly instance: Sp48WasmInstance;
   readonly exports: Sp48WasmExports;
+  readonly memory: Uint8Array;
+  readonly machineState: DataView;
+  readonly input: DataView;
+  readonly result: DataView;
+  readonly eventBuffer: Uint8Array;
+  readonly dirtyRanges: DataView;
 };
 
 let cachedModule: WebAssembly.Module | undefined;
@@ -52,7 +77,13 @@ export async function loadSp48Wasm(options: Sp48WasmLoaderOptions = {}): Promise
   const wasmExports = instance.exports;
 
   validateSp48WasmExports(wasmExports, artifactName);
-  return { artifactName, module, instance, exports: wasmExports };
+  return {
+    artifactName,
+    module,
+    instance,
+    exports: wasmExports,
+    ...createSp48WasmViews(wasmExports)
+  };
 }
 
 export function validateSp48WasmExports(exports: Sp48WasmExports, artifactName = SP48_WASM_ARTIFACT_NAME): void {
@@ -72,6 +103,30 @@ export function validateSp48WasmExports(exports: Sp48WasmExports, artifactName =
       );
     }
   }
+}
+
+export function createSp48WasmViews(exports: Sp48WasmExports) {
+  const memoryBuffer = exports.memory.buffer;
+  const memoryStart = exports.sp48_memory_ptr();
+  const memorySize = exports.sp48_memory_size();
+  const machineStateStart = exports.sp48_machine_state_block_ptr();
+  const inputStart = exports.sp48_input_block_ptr();
+  const resultStart = exports.sp48_result_block_ptr();
+  const eventBufferStart = exports.sp48_event_buffer_ptr();
+  const dirtyRangesStart = exports.sp48_dirty_ranges_ptr();
+
+  return {
+    memory: new Uint8Array(memoryBuffer, memoryStart, memorySize),
+    machineState: new DataView(memoryBuffer, machineStateStart, SP48_WASM_LAYOUT.machineStateBlockSize),
+    input: new DataView(memoryBuffer, inputStart, SP48_WASM_LAYOUT.inputBlockSize),
+    result: new DataView(memoryBuffer, resultStart, SP48_WASM_LAYOUT.resultBlockSize),
+    eventBuffer: new Uint8Array(memoryBuffer, eventBufferStart, SP48_WASM_LAYOUT.eventBufferSize),
+    dirtyRanges: new DataView(
+      memoryBuffer,
+      dirtyRangesStart,
+      SP48_WASM_LAYOUT.dirtyRangeCapacity * SP48_WASM_LAYOUT.dirtyRangeRecordSize
+    )
+  };
 }
 
 async function getCompiledModule(artifactName: string, options: Sp48WasmLoaderOptions): Promise<WebAssembly.Module> {

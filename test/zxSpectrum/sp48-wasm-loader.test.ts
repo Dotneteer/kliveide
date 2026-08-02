@@ -82,9 +82,28 @@ describe("ZX Spectrum 48K WASM loader", () => {
 function fakeInstance(overrides: Partial<Sp48WasmExports> = {}): Promise<Sp48WasmInstance> {
   return Promise.resolve({
     exports: {
-      memory: new WebAssembly.Memory({ initial: 1 }),
+      memory: new WebAssembly.Memory({ initial: 2 }),
       sp48_abi_version: () => SP48_WASM_ABI_VERSION,
       sp48_layout_value: layoutValue,
+      sp48_machine_state_block_ptr: () => 0x0000,
+      sp48_input_block_ptr: () => 0x0040,
+      sp48_result_block_ptr: () => 0x0080,
+      sp48_event_buffer_ptr: () => 0x00c0,
+      sp48_memory_ptr: () => 0x2000,
+      sp48_memory_size: () => SP48_WASM_LAYOUT.memorySize,
+      sp48_dirty_ranges_ptr: () => 0x1000,
+      sp48_dirty_range_count: () => 0,
+      sp48_clear_dirty_ranges: () => 0,
+      sp48_set_16k_model: () => 0,
+      sp48_import_state: () => 0,
+      sp48_export_state: () => 0,
+      sp48_import_snapshot: () => 0,
+      sp48_export_snapshot: () => 0,
+      sp48_reset: () => 0,
+      sp48_load_rom_byte: () => 0,
+      sp48_read_memory: () => 0,
+      sp48_write_memory: () => 0,
+      sp48_patch_memory: () => 0,
       ...overrides
     } as Sp48WasmExports
   });

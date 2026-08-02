@@ -18,6 +18,12 @@ changing Spectrum WASM work. This note records the post-CPU-phase state on
 - Phase P0 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md` is complete:
   production/test export manifests, generated layout constants, async loader,
   setup validation, and artifact packaging/resource declarations are in place.
+- Phase P1 is complete: WASM-owned 64K memory, adapter typed views, ROM/RAM
+  write rules, 16K model memory protection, reset memory parity, snapshot
+  import/export, and dirty-memory range reporting are in place.
+- The C/WASM emulator implementation must remain static-allocation only. The
+  Phase P1 audit found no `malloc`, `calloc`, `realloc`, `free`, or
+  `aligned_alloc` calls under the Spectrum 48K WASM and Z80 WASM source trees.
 - The source-of-truth forward plan is now
   `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`. It intentionally removed the
   historical opcode-by-opcode checklist because it no longer helps future 48K
@@ -83,9 +89,24 @@ npm run test
 The full suite after P0 reported 560 passed files, 19,940 passed tests, 14
 skipped files, and 119 skipped tests.
 
+After Phase P1, the focused gates plus full suite passed:
+
+```sh
+npm run build:sp48-wasm
+npx vitest run --config build/vitest.config.ts --project node test/zxSpectrum/sp48-wasm-memory.test.ts test/zxSpectrum/sp48-wasm-abi-manifest.test.ts test/zxSpectrum/sp48-wasm-loader.test.ts test/zxSpectrum/ZxSpectrum48WasmMachineSetup.test.ts test/z80/z80-wasm-abi.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/zxSpectrum/*.test.ts test/z80/z80-wasm-abi.test.ts
+rg -n "\b(malloc|calloc|realloc|free|aligned_alloc)\s*\(" src/emu/machines/zxSpectrum48/wasm src/emu/z80/wasm
+npm run build:check
+npx electron-vite build --config build/electron.vite.config.ts
+npm run test
+```
+
+The full suite after P1 reported 561 passed files, 19,946 passed tests, 14
+skipped files, and 119 skipped tests.
+
 ## Next useful work
 
-Start with Phase P1 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`: 48K
-memory, reset, and snapshot parity.
+Start with Phase P2 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`: CPU
+integration inside the 48K machine.
 
 Do not continue by adding more Z80 opcode-migration rows. That phase is done.
