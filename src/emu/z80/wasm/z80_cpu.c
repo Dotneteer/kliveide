@@ -20,7 +20,7 @@ static void writeRegister(unsigned int registerCode, uint8_t value);
 
 static void tactPlusN(unsigned int tacts) {
   state.tacts += tacts;
-  state.frame_tacts += tacts;
+  state.frame_tacts += tacts * (state.z80n_mode ? state.cpu_tact_scale : 1u);
   if (state.frame_tacts >= state.tacts_in_frame) {
     state.frames++;
     state.frame_tacts -= state.tacts_in_frame;
@@ -74,6 +74,15 @@ static void writePort(uint16_t address, uint8_t value) {
     io_log_count++;
   }
   tactPlusN(4);
+}
+
+static void tbblueOut(uint8_t address, uint8_t value) {
+  if (tbblue_log_count < Z80_TEST_LOG_CAPACITY) {
+    tbblue_log[tbblue_log_count].address = address;
+    tbblue_log[tbblue_log_count].value = value;
+    tbblue_log[tbblue_log_count].operation = 1;
+    tbblue_log_count++;
+  }
 }
 
 static void push_pc(void) {
@@ -582,6 +591,171 @@ static void lddr(void) { blockTransfer(1, 1); }
 static void cpdr(void) { blockCompare(1, 1); }
 static void indr(void) { blockInput(1, 1); }
 static void otdr(void) { blockOutput(1, 1); }
+
+static uint8_t mirrorByte(uint8_t value) {
+  uint8_t result = 0;
+  unsigned int index;
+
+  for (index = 0; index < 8; index++) {
+    result = (uint8_t)((result << 1) | (value & 1u));
+    value >>= 1;
+  }
+  return result;
+}
+
+static void swapnib(void) {
+  state.af.bytes.hi = (uint8_t)((state.af.bytes.hi << 4) | (state.af.bytes.hi >> 4));
+}
+
+static void mirrorA(void) {
+  state.af.bytes.hi = mirrorByte(state.af.bytes.hi);
+}
+
+static void testN(void) {
+  uint8_t value = readMemory(state.pc++, 0);
+
+  state.af.bytes.lo = (uint8_t)(0x10u | sz53pv(state.af.bytes.hi & value));
+}
+
+static void bsla(void) {
+  unsigned int shift = state.bc.bytes.hi & 0x1fu;
+
+  if (shift == 0) return;
+  state.de.word = shift >= 0x10u ? 0 : (uint16_t)(state.de.word << shift);
+}
+
+static void bsra(void) {
+  unsigned int shift = state.bc.bytes.hi & 0x1fu;
+  unsigned int negative = state.de.word & 0x8000u;
+
+  if (shift == 0) return;
+  if (shift >= 15u) state.de.word = negative ? 0xffffu : 0;
+  else state.de.word = (uint16_t)((state.de.word >> shift) | (negative ? (0xffffu << (15u - shift)) : 0));
+}
+
+static void bsrl(void) {
+  unsigned int shift = state.bc.bytes.hi & 0x1fu;
+
+  if (shift == 0) return;
+  state.de.word = shift >= 0x10u ? 0 : (uint16_t)(state.de.word >> shift);
+}
+
+static void bsrf(void) {
+  unsigned int shift = state.bc.bytes.hi & 0x1fu;
+
+  if (shift == 0) return;
+  state.de.word = shift >= 0x10u ? 0xffffu : (uint16_t)((state.de.word >> shift) | (0xffffu << (16u - shift)));
+}
+
+static void brlc(void) {
+  unsigned int rolls = state.bc.bytes.hi & 0x0fu;
+
+  if (rolls != 0) state.de.word = (uint16_t)((state.de.word << rolls) | (state.de.word >> (16u - rolls)));
+}
+
+static void mulDE(void) {
+  state.de.word = (uint16_t)((unsigned int)state.de.bytes.hi * state.de.bytes.lo);
+}
+
+static void addHLA(void) { state.hl.word = (uint16_t)(state.hl.word + state.af.bytes.hi); }
+static void addDEA(void) { state.de.word = (uint16_t)(state.de.word + state.af.bytes.hi); }
+static void addBCA(void) { state.bc.word = (uint16_t)(state.bc.word + state.af.bytes.hi); }
+static void addHLNN(void) { state.hl.word = (uint16_t)(state.hl.word + fetchCodeWord()); tactPlusN(2); }
+static void addDENN(void) { state.de.word = (uint16_t)(state.de.word + fetchCodeWord()); tactPlusN(2); }
+static void addBCNN(void) { state.bc.word = (uint16_t)(state.bc.word + fetchCodeWord()); tactPlusN(2); }
+
+static void pushNN(void) {
+  state.sp--;
+  writeMemory(state.sp, readMemory(state.pc++, 0));
+  state.sp--;
+  writeMemory(state.sp, readMemory(state.pc++, 0));
+  tactPlusN(3);
+}
+
+static void outinb(void) {
+  uint8_t value;
+
+  tactPlusN(1);
+  value = readMemory(state.hl.word, 0);
+  writePort(state.bc.word, value);
+  state.hl.word++;
+}
+
+static void nextregn(void) {
+  uint8_t reg = readMemory(state.pc++, 0);
+  uint8_t value = readMemory(state.pc++, 0);
+
+  tbblueOut(reg, value);
+  tactPlusN(6);
+}
+
+static void nextrega(void) {
+  uint8_t reg = readMemory(state.pc++, 0);
+
+  tbblueOut(reg, state.af.bytes.hi);
+  tactPlusN(3);
+}
+
+static void pixeldn(void) {
+  uint16_t hl = state.hl.word;
+
+  if ((hl & 0x0700u) != 0x0700u) state.hl.bytes.hi++;
+  else if ((hl & 0xe0u) != 0xe0u) state.hl.word = (uint16_t)((hl & 0xf8ffu) + 0x20u);
+  else state.hl.word = (uint16_t)((hl & 0xf81fu) + 0x0800u);
+}
+
+static void pixelad(void) {
+  state.hl.word = (uint16_t)(0x4000u + ((state.de.bytes.hi & 0xc0u) << 5) +
+    ((state.de.bytes.hi & 0x07u) << 8) + ((state.de.bytes.hi & 0x38u) << 2) +
+    (state.de.bytes.lo >> 3));
+}
+
+static void setae(void) {
+  state.af.bytes.hi = (uint8_t)(0x80u >> (state.de.bytes.lo & 7u));
+}
+
+static void jpc(void) {
+  state.pc = state.wz.word = (uint16_t)((state.pc & 0xc000u) | (readPort(state.bc.word) << 6));
+  tactPlusN(1);
+}
+
+static void nextBlockTransfer(unsigned int decrement, unsigned int repeat, unsigned int pixel) {
+  uint16_t source = pixel ? (uint16_t)((state.hl.word & ~0x07u) | (state.de.bytes.lo & 7u)) : state.hl.word;
+  uint8_t value;
+
+  if (pixel && (state.bc.bytes.hi != 0 || state.bc.bytes.lo != 1)) state.wz.word = state.pc;
+  value = readMemory(source, 0);
+  if (value != state.af.bytes.hi) writeMemory(state.de.word, value);
+  else tactPlusN(3);
+  tactPlusN(2);
+  state.bc.word--;
+  if (repeat && state.bc.word != 0) {
+    tactPlusN(5);
+    state.pc = (uint16_t)(state.pc - 2u);
+  }
+  state.de.word++;
+  if (!pixel) {
+    if (decrement) state.hl.word--;
+    else state.hl.word++;
+  }
+}
+
+static void ldix(void) { nextBlockTransfer(0, 0, 0); }
+static void lddx(void) { nextBlockTransfer(1, 0, 0); }
+static void ldirx(void) { nextBlockTransfer(0, 1, 0); }
+static void ldpirx(void) { nextBlockTransfer(0, 1, 1); }
+static void lddrx(void) { nextBlockTransfer(1, 1, 0); }
+
+static void ldws(void) {
+  uint8_t value = readMemory(state.hl.word, 0);
+
+  writeMemory(state.de.word, value);
+  state.hl.bytes.lo++;
+  state.af.bytes.lo = (uint8_t)((state.af.bytes.lo & 1u) | sz53((uint8_t)(state.de.bytes.hi + 1u)) |
+    ((state.de.bytes.hi & 0x0fu) == 0x0fu ? 0x10u : 0) |
+    (state.de.bytes.hi == 0x7fu ? 0x04u : 0));
+  state.de.bytes.hi++;
+}
 
 // 0x00: NOP
 static void nop(void) {
@@ -1315,6 +1489,7 @@ static void indexedBitSet(void) {
 static Z80Operation standard_ops[256];
 static Z80Operation bit_ops[256];
 static Z80Operation extended_ops[256];
+static Z80Operation z80n_extended_ops[256];
 static Z80Operation indexed_ops[256];
 static Z80Operation indexed_bit_ops[256];
 static unsigned int operation_tables_initialized;
@@ -1332,6 +1507,7 @@ static void initialize_operation_tables(void) {
     standard_ops[opcode] = illegal_operation;
     bit_ops[opcode] = illegal_operation;
     extended_ops[opcode] = illegal_operation;
+    z80n_extended_ops[opcode] = illegal_operation;
     indexed_ops[opcode] = illegal_operation;
     indexed_bit_ops[opcode] = illegal_operation;
   }
@@ -1445,6 +1621,20 @@ static void initialize_operation_tables(void) {
   extended_ops[0xa8] = ldd; extended_ops[0xa9] = cpd; extended_ops[0xaa] = ind; extended_ops[0xab] = outd;
   extended_ops[0xb0] = ldir; extended_ops[0xb1] = cpir; extended_ops[0xb2] = inir; extended_ops[0xb3] = otir;
   extended_ops[0xb8] = lddr; extended_ops[0xb9] = cpdr; extended_ops[0xba] = indr; extended_ops[0xbb] = otdr;
+  for (opcode = 0; opcode < 256; opcode++) z80n_extended_ops[opcode] = extended_ops[opcode];
+  z80n_extended_ops[0x23] = swapnib; z80n_extended_ops[0x24] = mirrorA; z80n_extended_ops[0x27] = testN;
+  z80n_extended_ops[0x28] = bsla; z80n_extended_ops[0x29] = bsra; z80n_extended_ops[0x2a] = bsrl; z80n_extended_ops[0x2b] = bsrf; z80n_extended_ops[0x2c] = brlc;
+  z80n_extended_ops[0x30] = mulDE; z80n_extended_ops[0x31] = addHLA; z80n_extended_ops[0x32] = addDEA; z80n_extended_ops[0x33] = addBCA;
+  z80n_extended_ops[0x34] = addHLNN; z80n_extended_ops[0x35] = addDENN; z80n_extended_ops[0x36] = addBCNN;
+  z80n_extended_ops[0x8a] = pushNN; z80n_extended_ops[0x90] = outinb; z80n_extended_ops[0x91] = nextregn; z80n_extended_ops[0x92] = nextrega;
+  z80n_extended_ops[0x93] = pixeldn; z80n_extended_ops[0x94] = pixelad; z80n_extended_ops[0x95] = setae; z80n_extended_ops[0x98] = jpc;
+  z80n_extended_ops[0xa4] = ldix; z80n_extended_ops[0xa5] = ldws; z80n_extended_ops[0xac] = lddx;
+  z80n_extended_ops[0xb4] = ldirx; z80n_extended_ops[0xb7] = ldpirx; z80n_extended_ops[0xbc] = lddrx;
+  extended_ops[0x23] = nop; extended_ops[0x24] = nop; extended_ops[0x27] = nop;
+  extended_ops[0x28] = nop; extended_ops[0x29] = nop; extended_ops[0x2a] = nop; extended_ops[0x2b] = nop; extended_ops[0x2c] = nop;
+  extended_ops[0x30] = nop; extended_ops[0x31] = nop; extended_ops[0x32] = nop; extended_ops[0x33] = nop; extended_ops[0x34] = nop; extended_ops[0x35] = nop; extended_ops[0x36] = nop;
+  extended_ops[0x8a] = nop; extended_ops[0x90] = nop; extended_ops[0x91] = nop; extended_ops[0x92] = nop; extended_ops[0x93] = nop; extended_ops[0x94] = nop; extended_ops[0x95] = nop; extended_ops[0x98] = nop;
+  extended_ops[0xa4] = nop; extended_ops[0xa5] = nop; extended_ops[0xac] = nop; extended_ops[0xb4] = nop; extended_ops[0xb7] = nop; extended_ops[0xbc] = nop;
   copyIndexedStandardRange(0x00, 0x08);
   copyIndexedStandardRange(0x0a, 0x18);
   copyIndexedStandardRange(0x1a, 0x20);
@@ -1580,7 +1770,7 @@ static unsigned int executeCpuCycle(void) {
   if (state.prefix == 1) {
     state.prefix = 0;
     tactPlusN(1);
-    return execute_operation(extended_ops[opcode]);
+    return execute_operation((state.z80n_mode ? z80n_extended_ops : extended_ops)[opcode]);
   }
 
   if (state.prefix == 2) {
@@ -1630,36 +1820,6 @@ static unsigned int executeCpuCycle(void) {
   return Z80_EXECUTION_NOT_IMPLEMENTED;
 }
 
-unsigned int z80_execute_instruction(void) {
+unsigned int z80_cpu_execute_instruction(void) {
   return executeCpuCycle();
 }
-
-unsigned int z80_test_fetch_byte(void) { return readMemory(state.pc++, 0); }
-unsigned int z80_test_fetch_word(void) { return fetchCodeWord(); }
-void z80_test_push_word(unsigned int value) {
-  state.sp--;
-  tactPlusN(1);
-  writeMemory(state.sp, (uint8_t)(value >> 8));
-  state.sp--;
-  writeMemory(state.sp, (uint8_t)value);
-}
-unsigned int z80_test_pop_word(void) {
-  uint16_t low = readMemory(state.sp++, 0);
-  uint16_t high = readMemory(state.sp++, 0);
-  return low | (high << 8);
-}
-unsigned int z80_test_sign_extend(unsigned int value) { return (unsigned int)(int32_t)(int8_t)value; }
-unsigned int z80_test_condition(unsigned int condition) { return conditionIsTrue(condition); }
-unsigned int z80_test_parity(unsigned int value) { initializeParityTable(); return parity_table[(uint8_t)value]; }
-unsigned int z80_test_add8(unsigned int value, unsigned int with_carry) {
-  unsigned int carry = with_carry && (state.af.bytes.lo & 0x01u) != 0;
-  state.af.bytes.hi = add8(state.af.bytes.hi, (uint8_t)value, carry);
-  return state.af.bytes.hi;
-}
-unsigned int z80_test_sub8(unsigned int value, unsigned int with_carry) {
-  unsigned int carry = with_carry && (state.af.bytes.lo & 0x01u) != 0;
-  state.af.bytes.hi = sub8(state.af.bytes.hi, (uint8_t)value, carry);
-  return state.af.bytes.hi;
-}
-unsigned int z80_test_port_read(unsigned int address) { return readPort((uint16_t)address); }
-void z80_test_port_write(unsigned int address, unsigned int value) { writePort((uint16_t)address, (uint8_t)value); }

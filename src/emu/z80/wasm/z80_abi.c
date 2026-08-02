@@ -11,12 +11,45 @@ Z80TestBusLogEntry tbblue_log[Z80_TEST_LOG_CAPACITY];
 uint8_t io_input[Z80_TEST_LOG_CAPACITY];
 unsigned int memory_log_count;
 unsigned int io_log_count;
+unsigned int tbblue_log_count;
 unsigned int io_input_count;
 unsigned int io_input_index;
+uint8_t z80_state_block[64];
 
 unsigned int z80_abi_version(void) { return 1; }
 
-unsigned int z80_state_size(void) { return (unsigned int)sizeof(Z80State); }
+static void put_u16(unsigned int offset, uint16_t value) {
+  z80_state_block[offset] = (uint8_t)value;
+  z80_state_block[offset + 1u] = (uint8_t)(value >> 8);
+}
+
+static uint16_t get_u16(unsigned int offset) {
+  return (uint16_t)(z80_state_block[offset] | ((uint16_t)z80_state_block[offset + 1u] << 8));
+}
+
+static void put_u32(unsigned int offset, uint32_t value) {
+  z80_state_block[offset] = (uint8_t)value;
+  z80_state_block[offset + 1u] = (uint8_t)(value >> 8);
+  z80_state_block[offset + 2u] = (uint8_t)(value >> 16);
+  z80_state_block[offset + 3u] = (uint8_t)(value >> 24);
+}
+
+static uint32_t get_u32(unsigned int offset) {
+  return (uint32_t)z80_state_block[offset]
+    | ((uint32_t)z80_state_block[offset + 1u] << 8)
+    | ((uint32_t)z80_state_block[offset + 2u] << 16)
+    | ((uint32_t)z80_state_block[offset + 3u] << 24);
+}
+
+static void set_flag(uint8_t flag, uint8_t enabled) {
+  if (enabled) state.flags |= flag;
+  else state.flags &= (uint8_t)~flag;
+}
+
+static void set_signal(uint8_t signal, uint8_t enabled) {
+  if (enabled) state.signals |= signal;
+  else state.signals &= (uint8_t)~signal;
+}
 
 void z80_reset(void) {
   state.af.word = 0xffff;
@@ -32,165 +65,96 @@ void z80_reset(void) {
   state.ei_backlog = 0;
   state.op_code = 0;
   state.interrupt_vector = 0xff;
+  state.z80n_mode = 0;
+  state.cpu_tact_scale = 1;
   state.tacts = 0;
   state.frame_tacts = 0;
   state.frames = 0;
   state.tacts_in_frame = 1000000u;
   memory_log_count = 0;
+  z80_state_export();
 }
 
-unsigned int z80_state_read_word(unsigned int field) {
-  switch (field) {
-    case Z80_WORD_AF: return state.af.word;
-    case Z80_WORD_BC: return state.bc.word;
-    case Z80_WORD_DE: return state.de.word;
-    case Z80_WORD_HL: return state.hl.word;
-    case Z80_WORD_AF_ALT: return state.af_alt.word;
-    case Z80_WORD_BC_ALT: return state.bc_alt.word;
-    case Z80_WORD_DE_ALT: return state.de_alt.word;
-    case Z80_WORD_HL_ALT: return state.hl_alt.word;
-    case Z80_WORD_IX: return state.ix.word;
-    case Z80_WORD_IY: return state.iy.word;
-    case Z80_WORD_IR: return state.ir.word;
-    case Z80_WORD_WZ: return state.wz.word;
-    case Z80_WORD_PC: return state.pc;
-    case Z80_WORD_SP: return state.sp;
-    default: return 0;
-  }
+unsigned int z80_state_block_ptr(void) { return (unsigned int)(uintptr_t)z80_state_block; }
+
+unsigned int z80_state_block_size(void) { return sizeof z80_state_block; }
+
+void z80_state_export(void) {
+  put_u16(0u, state.af.word);
+  put_u16(2u, state.bc.word);
+  put_u16(4u, state.de.word);
+  put_u16(6u, state.hl.word);
+  put_u16(8u, state.af_alt.word);
+  put_u16(10u, state.bc_alt.word);
+  put_u16(12u, state.de_alt.word);
+  put_u16(14u, state.hl_alt.word);
+  put_u16(16u, state.ix.word);
+  put_u16(18u, state.iy.word);
+  put_u16(20u, state.ir.word);
+  put_u16(22u, state.wz.word);
+  put_u16(24u, state.pc);
+  put_u16(26u, state.sp);
+  put_u32(28u, state.tacts);
+  put_u32(32u, state.frame_tacts);
+  put_u32(36u, state.frames);
+  put_u32(40u, state.tacts_in_frame);
+  z80_state_block[44u] = state.prefix;
+  z80_state_block[45u] = (state.flags & Z80_STATE_HALTED) != 0;
+  z80_state_block[46u] = state.op_code;
+  z80_state_block[47u] = state.interrupt_mode;
+  z80_state_block[48u] = (state.flags & Z80_STATE_IFF1) != 0;
+  z80_state_block[49u] = (state.flags & Z80_STATE_IFF2) != 0;
+  z80_state_block[50u] = (state.signals & Z80_SIGNAL_INT) != 0;
+  z80_state_block[51u] = (state.signals & Z80_SIGNAL_NMI) != 0;
+  z80_state_block[52u] = (state.signals & Z80_SIGNAL_RST) != 0;
+  z80_state_block[53u] = state.ei_backlog;
+  z80_state_block[54u] = (state.flags & Z80_STATE_AFTER_LD_AIR) != 0;
+  z80_state_block[55u] = state.interrupt_vector;
+  z80_state_block[56u] = state.z80n_mode;
+  z80_state_block[57u] = state.cpu_tact_scale;
 }
 
-void z80_state_write_word(unsigned int field, unsigned int value) {
-  uint16_t word = (uint16_t)value;
-  switch (field) {
-    case Z80_WORD_AF: state.af.word = word; break;
-    case Z80_WORD_BC: state.bc.word = word; break;
-    case Z80_WORD_DE: state.de.word = word; break;
-    case Z80_WORD_HL: state.hl.word = word; break;
-    case Z80_WORD_AF_ALT: state.af_alt.word = word; break;
-    case Z80_WORD_BC_ALT: state.bc_alt.word = word; break;
-    case Z80_WORD_DE_ALT: state.de_alt.word = word; break;
-    case Z80_WORD_HL_ALT: state.hl_alt.word = word; break;
-    case Z80_WORD_IX: state.ix.word = word; break;
-    case Z80_WORD_IY: state.iy.word = word; break;
-    case Z80_WORD_IR: state.ir.word = word; break;
-    case Z80_WORD_WZ: state.wz.word = word; break;
-    case Z80_WORD_PC: state.pc = word; break;
-    case Z80_WORD_SP: state.sp = word; break;
-    default: break;
-  }
+void z80_state_import(void) {
+  state.af.word = get_u16(0u);
+  state.bc.word = get_u16(2u);
+  state.de.word = get_u16(4u);
+  state.hl.word = get_u16(6u);
+  state.af_alt.word = get_u16(8u);
+  state.bc_alt.word = get_u16(10u);
+  state.de_alt.word = get_u16(12u);
+  state.hl_alt.word = get_u16(14u);
+  state.ix.word = get_u16(16u);
+  state.iy.word = get_u16(18u);
+  state.ir.word = get_u16(20u);
+  state.wz.word = get_u16(22u);
+  state.pc = get_u16(24u);
+  state.sp = get_u16(26u);
+  state.tacts = get_u32(28u);
+  state.frame_tacts = get_u32(32u);
+  state.frames = get_u32(36u);
+  state.tacts_in_frame = get_u32(40u) == 0 ? 1000000u : get_u32(40u);
+  state.prefix = z80_state_block[44u];
+  set_flag(Z80_STATE_HALTED, z80_state_block[45u] != 0);
+  state.op_code = z80_state_block[46u];
+  state.interrupt_mode = z80_state_block[47u];
+  set_flag(Z80_STATE_IFF1, z80_state_block[48u] != 0);
+  set_flag(Z80_STATE_IFF2, z80_state_block[49u] != 0);
+  set_signal(Z80_SIGNAL_INT, z80_state_block[50u] != 0);
+  set_signal(Z80_SIGNAL_NMI, z80_state_block[51u] != 0);
+  set_signal(Z80_SIGNAL_RST, z80_state_block[52u] != 0);
+  state.ei_backlog = z80_state_block[53u];
+  set_flag(Z80_STATE_AFTER_LD_AIR, z80_state_block[54u] != 0);
+  state.interrupt_vector = z80_state_block[55u];
+  state.z80n_mode = z80_state_block[56u] != 0;
+  state.cpu_tact_scale = z80_state_block[57u] == 0 ? 1 : z80_state_block[57u];
 }
 
-unsigned int z80_state_read_byte(unsigned int field) {
-  switch (field) {
-    case Z80_BYTE_A: return state.af.bytes.hi;
-    case Z80_BYTE_F: return state.af.bytes.lo;
-    case Z80_BYTE_B: return state.bc.bytes.hi;
-    case Z80_BYTE_C: return state.bc.bytes.lo;
-    case Z80_BYTE_D: return state.de.bytes.hi;
-    case Z80_BYTE_E: return state.de.bytes.lo;
-    case Z80_BYTE_H: return state.hl.bytes.hi;
-    case Z80_BYTE_L: return state.hl.bytes.lo;
-    case Z80_BYTE_IXH: return state.ix.bytes.hi;
-    case Z80_BYTE_IXL: return state.ix.bytes.lo;
-    case Z80_BYTE_IYH: return state.iy.bytes.hi;
-    case Z80_BYTE_IYL: return state.iy.bytes.lo;
-    case Z80_BYTE_I: return state.ir.bytes.hi;
-    case Z80_BYTE_R: return state.ir.bytes.lo;
-    default: return 0;
-  }
-}
-
-void z80_state_write_byte(unsigned int field, unsigned int value) {
-  uint8_t byte = (uint8_t)value;
-  switch (field) {
-    case Z80_BYTE_A: state.af.bytes.hi = byte; break;
-    case Z80_BYTE_F: state.af.bytes.lo = byte; break;
-    case Z80_BYTE_B: state.bc.bytes.hi = byte; break;
-    case Z80_BYTE_C: state.bc.bytes.lo = byte; break;
-    case Z80_BYTE_D: state.de.bytes.hi = byte; break;
-    case Z80_BYTE_E: state.de.bytes.lo = byte; break;
-    case Z80_BYTE_H: state.hl.bytes.hi = byte; break;
-    case Z80_BYTE_L: state.hl.bytes.lo = byte; break;
-    case Z80_BYTE_IXH: state.ix.bytes.hi = byte; break;
-    case Z80_BYTE_IXL: state.ix.bytes.lo = byte; break;
-    case Z80_BYTE_IYH: state.iy.bytes.hi = byte; break;
-    case Z80_BYTE_IYL: state.iy.bytes.lo = byte; break;
-    case Z80_BYTE_I: state.ir.bytes.hi = byte; break;
-    case Z80_BYTE_R: state.ir.bytes.lo = byte; break;
-    default: break;
-  }
-}
-
-unsigned int z80_state_read_control(unsigned int field) {
-  switch (field) {
-    case Z80_CONTROL_PREFIX: return state.prefix;
-    case Z80_CONTROL_HALTED: return (state.flags & Z80_STATE_HALTED) != 0;
-    case Z80_CONTROL_OPCODE: return state.op_code;
-    case Z80_CONTROL_INTERRUPT_MODE: return state.interrupt_mode;
-    case Z80_CONTROL_IFF1: return (state.flags & Z80_STATE_IFF1) != 0;
-    case Z80_CONTROL_IFF2: return (state.flags & Z80_STATE_IFF2) != 0;
-    case Z80_CONTROL_SIGNAL_INT: return (state.signals & Z80_SIGNAL_INT) != 0;
-    case Z80_CONTROL_SIGNAL_NMI: return (state.signals & Z80_SIGNAL_NMI) != 0;
-    case Z80_CONTROL_SIGNAL_RST: return (state.signals & Z80_SIGNAL_RST) != 0;
-    case Z80_CONTROL_EI_BACKLOG: return state.ei_backlog;
-    case Z80_CONTROL_AFTER_LD_AIR: return (state.flags & Z80_STATE_AFTER_LD_AIR) != 0;
-    case Z80_CONTROL_INTERRUPT_VECTOR: return state.interrupt_vector;
-    default: return 0;
-  }
-}
-
-void z80_state_write_control(unsigned int field, unsigned int value) {
-  switch (field) {
-    case Z80_CONTROL_PREFIX: state.prefix = (uint8_t)value; break;
-    case Z80_CONTROL_HALTED:
-      if (value) state.flags |= Z80_STATE_HALTED;
-      else state.flags &= (uint8_t)~Z80_STATE_HALTED;
-      break;
-    case Z80_CONTROL_OPCODE: state.op_code = (uint8_t)value; break;
-    case Z80_CONTROL_INTERRUPT_MODE: state.interrupt_mode = (uint8_t)value; break;
-    case Z80_CONTROL_IFF1:
-      if (value) state.flags |= Z80_STATE_IFF1;
-      else state.flags &= (uint8_t)~Z80_STATE_IFF1;
-      break;
-    case Z80_CONTROL_IFF2:
-      if (value) state.flags |= Z80_STATE_IFF2;
-      else state.flags &= (uint8_t)~Z80_STATE_IFF2;
-      break;
-    case Z80_CONTROL_SIGNAL_INT:
-      if (value) state.signals |= Z80_SIGNAL_INT;
-      else state.signals &= (uint8_t)~Z80_SIGNAL_INT;
-      break;
-    case Z80_CONTROL_SIGNAL_NMI:
-      if (value) state.signals |= Z80_SIGNAL_NMI;
-      else state.signals &= (uint8_t)~Z80_SIGNAL_NMI;
-      break;
-    case Z80_CONTROL_SIGNAL_RST:
-      if (value) state.signals |= Z80_SIGNAL_RST;
-      else state.signals &= (uint8_t)~Z80_SIGNAL_RST;
-      break;
-    case Z80_CONTROL_EI_BACKLOG: state.ei_backlog = (uint8_t)value; break;
-    case Z80_CONTROL_AFTER_LD_AIR:
-      if (value) state.flags |= Z80_STATE_AFTER_LD_AIR;
-      else state.flags &= (uint8_t)~Z80_STATE_AFTER_LD_AIR;
-      break;
-    case Z80_CONTROL_INTERRUPT_VECTOR: state.interrupt_vector = (uint8_t)value; break;
-    default: break;
-  }
-}
-
-unsigned int z80_state_read_counter(unsigned int field) {
-  switch (field) {
-    case Z80_COUNTER_TACTS: return state.tacts;
-    case Z80_COUNTER_FRAME_TACTS: return state.frame_tacts;
-    case Z80_COUNTER_FRAMES: return state.frames;
-    default: return 0;
-  }
-}
-
-unsigned int z80_register_layout_probe(void) {
-  Z80Register16 probe;
-  probe.word = 0x1234;
-  return ((unsigned int)probe.bytes.hi << 8) | probe.bytes.lo;
+unsigned int z80_execute_instruction(void) {
+  unsigned int result;
+  z80_state_import();
+  result = z80_cpu_execute_instruction();
+  z80_state_export();
+  return result;
 }
 
 unsigned int z80_test_memory_ptr(void) { return (unsigned int)(uintptr_t)test_memory; }
@@ -211,24 +175,16 @@ unsigned int z80_test_io_log_count(void) { return io_log_count; }
 
 unsigned int z80_test_io_log_ptr(void) { return (unsigned int)(uintptr_t)io_log; }
 
+unsigned int z80_test_tbblue_log_count(void) { return tbblue_log_count; }
+
+unsigned int z80_test_tbblue_log_ptr(void) { return (unsigned int)(uintptr_t)tbblue_log; }
+
 unsigned int z80_test_io_input_ptr(void) { return (unsigned int)(uintptr_t)io_input; }
 
 void z80_test_io_input_count_set(unsigned int count) {
   io_input_count = count > Z80_TEST_LOG_CAPACITY ? Z80_TEST_LOG_CAPACITY : count;
   io_input_index = 0;
 }
-
-void z80_test_begin_instruction(void) {
-  state.pc = 0;
-  state.prefix = 0;
-  state.flags &= (uint8_t)~Z80_STATE_HALTED;
-  state.tacts = 0;
-  state.frame_tacts = 0;
-  state.frames = 0;
-  memory_log_count = 0;
-  io_log_count = 0;
-}
-
 
 void z80_test_bus_reset(void) {
   unsigned int index;
@@ -241,6 +197,7 @@ void z80_test_bus_reset(void) {
   }
   memory_log_count = 0;
   io_log_count = 0;
+  tbblue_log_count = 0;
   io_input_count = 0;
   io_input_index = 0;
 }

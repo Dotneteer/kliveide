@@ -1,8 +1,8 @@
 # Z80 WASM Migration Handoff
 
 Read `../AGENTS.md` and `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md` before
-changing this work. This note records the state after completing the DD/FD and
-DDCB/FDCB indexed migration rows I0–I6 on 2026-08-02.
+changing this work. This note records the state after completing the full CPU
+phase plan through A0 on 2026-08-02.
 
 ## Current completion state
 
@@ -10,10 +10,13 @@ DDCB/FDCB indexed migration rows I0–I6 on 2026-08-02.
 - The C/WASM CPU prototype is test-only and is not connected to the Spectrum
   48K frame runner.
 - Z0–Z5, all unprefixed standard pages S00–SF0, CB pages C0–C3, ED pages
-  E0–E2, and indexed DD/FD + DDCB/FDCB pages I0–I6 are complete.
-- The next planned family is the next uncompleted row after I6 in
-  `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`.
-- Z80N migrations have not started.
+  E0–E2, indexed DD/FD + DDCB/FDCB pages I0–I6, and Z80N ED pages N0–N4
+  are complete.
+- A0 transitional ABI cleanup is complete.
+- All table rows in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md` are complete.
+- Z80N support is currently test-only. It is controlled by the WASM CPU
+  `z80n_mode` flag, uses `cpu_tact_scale` for 28 MHz frame-tact scaling, and
+  records NEXTREG writes in the test-bus TBBlue log.
 
 The source-of-truth plan is the initial plan above. Keep it updated as steps
 are completed; it is intentionally a living initial plan.
@@ -73,8 +76,11 @@ once per instruction, tact, memory access, or port access.
 - `scripts/build-sp48-wasm.cjs` — compiles `z80_abi.c` and `z80_cpu.c` as
   separate translation units and exports the current test ABI.
 - `test/z80/z80-wasm-abi.test.ts` — ABI/build and CPU-shell tests.
-- `test/z80/z80-wasm-primitives.test.ts` — C primitive tests.
 - `test/z80/wasm-test-z80.ts` — test facade.
+- `test/z80/next-ops.wasm.test.ts` — literal WASM clone of the TypeScript
+  Z80N operation tests.
+- `test/z80/z80n-wasm-differential.test.ts` — additional Z80/Z80N WASM-vs-TS
+  stress coverage.
 
 ## Verification baseline
 
@@ -107,6 +113,26 @@ npx vitest run --config build/vitest.config.ts --project node test/z80/ix-ops-c0
 npx vitest run --config build/vitest.config.ts --project node test/z80/ed-indexed-wasm-differential.test.ts
 ```
 
+After completing N0–N4, the focused gates added/passed are:
+
+```sh
+npx vitest run --config build/vitest.config.ts --project node test/z80/next-ops.wasm.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80/next-ops.test.ts test/z80/next-ops.wasm.test.ts test/z80/z80n-wasm-differential.test.ts
+```
+
+After completing A0, `test/z80/z80-wasm-abi.test.ts` asserts the approved WASM
+export manifest. The test facade uses the packed state block exported by
+`z80_state_block_ptr`/`z80_state_block_size`; the old per-register state
+accessors, layout probe, and primitive helper exports are intentionally gone.
+The focused and full gates passed:
+
+```sh
+npx vitest run --config build/vitest.config.ts --project node test/z80/z80-wasm-abi.test.ts test/z80/standard-ops-00.wasm.test.ts test/z80/next-ops.wasm.test.ts test/z80/z80n-wasm-differential.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80/*.wasm.test.ts test/z80/*wasm-differential.test.ts
+npm run build:check
+npm run test
+```
+
 Use the relevant original TypeScript page and its WASM clone as focused gates
 while implementing an opcode page, then run `npm run build:check`. Before
 marking a step complete, run the full `npm run test` suite. Do not claim a
@@ -121,9 +147,13 @@ before its focused and full gates have actually run.
 
 ## Next step
 
-All planned IX/IY rows I0–I6 are complete. Continue with the next uncompleted
-row in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`. Retain the current DD/FD
-prefix flow: repeated DD/FD prefixes stay pending without the final indexed
-`+1` tact, executable DD/FD opcodes receive that final tact in
-`executeCpuCycle`, and DDCB/FDCB treats the byte after CB as displacement
-before fetching the actual indexed-bit opcode.
+All rows in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md` are complete. Future
+work should start from the implementation-sequence rollout items below the CPU
+phase if the project chooses to wire this into the production Spectrum 48K
+frame path. Retain the current DD/FD prefix flow: repeated DD/FD prefixes stay
+pending without the final indexed `+1` tact, executable DD/FD opcodes receive
+that final tact in `executeCpuCycle`, and DDCB/FDCB treats the byte after CB as
+displacement before fetching the actual indexed-bit opcode. Retain the current
+Z80N separation too: base ED tables keep unsupported Next opcodes as
+NOP-compatible operations, while the Z80N ED table installs the Next-specific
+handlers.

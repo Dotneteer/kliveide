@@ -203,8 +203,8 @@ Before S20, split the current prototype as follows:
    `z80_cpu.c` calls its named `readMemory`/`writeMemory`/port functions.
 4. **Completed for the current prototype.** Reduce `z80_abi.c` to exported wrappers around the CPU and test-bus
    contracts. It contains no opcode table or instruction implementation.
-5. **Completed.** Compile each C unit separately in the fake WASM build. The existing ABI,
-   primitive, and literal S00/S10 clone tests are the no-regression gate; add a
+5. **Completed.** Compile each C unit separately in the fake WASM build. The existing ABI
+   manifest and literal S00/S10 clone tests are the no-regression gate; add a
    build assertion that `z80_abi.c` no longer includes the CPU implementation.
 
 ### Z0 ABI ownership and lifetime
@@ -216,14 +216,14 @@ belong to the eventual production frame API:
 | --- | --- | --- |
 | `z80_abi_version`, `z80_reset` | Production WASM adapter during setup/reset | Stable production ABI. |
 | `z80_execute_instruction` | WASM CPU façade, debugger/step path; Z1 implements its fetch/decode behavior | Stable production ABI, later complemented by a frame/batch entry point. |
-| `z80_state_read_*`, `z80_state_write_*`, `z80_state_size` | `Z80WasmTestCpu` and the early debugger-facing façade | Transitional diagnostic/test ABI. Normal frame execution must use one packed state/result view rather than per-register calls. |
+| `z80_state_block_ptr`, `z80_state_block_size`, `z80_state_export`, `z80_state_import` | `Z80WasmTestCpu` and the early debugger-facing façade | Stable packed state/result view for stepping and tests. It replaced the transitional per-register accessors in A0. |
 | `z80_test_memory_*`, `z80_test_*_log_capacity`, `z80_test_bus_reset` | Test-only WASM module and `wasm-test-z80.ts` | Test-only; omitted or hidden from the packaged production artifact once the production bus ABI exists. |
-| `z80_register_layout_probe` | ABI unit test | Test-only; remove after the C toolchain/layout test is established. |
+| `z80_register_layout_probe`, `z80_state_read_*`, `z80_state_write_*`, `z80_state_size`, primitive helper exports | None after A0 | Removed from the linker export list and guarded by the ABI manifest test. |
 
-Thus none of the register accessors or test-bus functions are speculative hot
-path calls. They exist to make the current Z0 state observable and to support
-the promised reuse of the existing Z80 tests. The production normal-run path
-will call a bounded execution export and read bulk views only.
+Thus none of the test-bus functions are speculative hot path calls. They exist
+to make the current Z0 state observable and to support the promised reuse of
+the existing Z80 tests. The production normal-run path will call a bounded
+execution export and read bulk views only.
 
 ### Clone each existing opcode page for the WASM implementation
 
@@ -373,17 +373,17 @@ state/decoder; do not fork the base implementation.
 
 | Step | C/WASM work | Immediate existing-test gate |
 | --- | --- | --- |
-| N0 | Add Z80N mode, 28 MHz frame-tact scaling (`cpuTactScale`), and the test-bus TBBlue output-event buffer. Confirm base Z80 instructions are unchanged in Z80N mode. | Full migrated Z80 suite in Z80N mode where applicable, then `next-ops.test.ts` timing/TBBlue setup cases. |
-| N1 | ED `23–36`: SWAPNIB, MIRROR, TEST, bit shifts/rotates, MUL, and 16-bit adds. | Corresponding sections of `next-ops.test.ts` |
-| N2 | ED `8A`, `90–95`, `98`: PUSH nn, OUTINB, NEXTREG forms, PIXELDN/PIXELAD/SETAE, JP (C). | Corresponding sections of `next-ops.test.ts`, including TBBlue access-log assertions |
-| N3 | ED `A4–BC`: LDIX/LDWS/LDDX/LDIRX/LDPIRX/LDDRX and their repeat/timing behavior. | Remaining `next-ops.test.ts` cases |
-| N4 | Differential stress: interleave Z80 and Z80N ED sequences, prefix sequences, interrupts, I/O input streams, and TBBlue writes with seeded replay artifacts. | Entire `test/z80` suite in both Z80 and Z80N WASM projects |
+| N0 | **Completed.** Add Z80N mode, 28 MHz frame-tact scaling (`cpuTactScale`), and the test-bus TBBlue output-event buffer. Confirm base Z80 instructions are unchanged in Z80N mode. | Full migrated Z80 suite in Z80N mode where applicable, then `next-ops.test.ts` timing/TBBlue setup cases. |
+| N1 | **Completed.** ED `23–36`: SWAPNIB, MIRROR, TEST, bit shifts/rotates, MUL, and 16-bit adds. | Corresponding sections of `next-ops.test.ts` |
+| N2 | **Completed.** ED `8A`, `90–95`, `98`: PUSH nn, OUTINB, NEXTREG forms, PIXELDN/PIXELAD/SETAE, JP (C). | Corresponding sections of `next-ops.test.ts`, including TBBlue access-log assertions |
+| N3 | **Completed.** ED `A4–BC`: LDIX/LDWS/LDDX/LDIRX/LDPIRX/LDDRX and their repeat/timing behavior. | Remaining `next-ops.test.ts` cases |
+| N4 | **Completed.** Differential stress: interleave Z80 and Z80N ED sequences, prefix sequences, interrupts, I/O input streams, and TBBlue writes with seeded replay artifacts. | Entire `test/z80` suite in both Z80 and Z80N WASM projects |
 
 #### ABI cleanup and contract hardening
 
 | Step | Work | Completion gate |
 | --- | --- | --- |
-| A0 | **Transitional ABI cleanup.** Inventory every `z80_*` export, its caller, and whether it belongs to the production CPU/frame contract, the WASM-only test harness, or temporary bring-up support. Replace production per-register access with the packed state/result view and bounded execution entry point. Move test-only RAM/log helpers to a test build or non-production module. Remove unused bring-up exports, including `z80_register_layout_probe`, obsolete primitive test exports, and any state accessor or single-instruction export with no debugger/test consumer. Update the build export list and TypeScript declarations in the same change. | A generated/asserted export manifest contains only the approved production ABI (and, in the test artifact, the explicitly approved test ABI). Production adapter, cloned WASM pages, debugger stepping, and full Z80/Z80N differential suites pass. No removed export is referenced by TypeScript, C, or packaged artifacts. |
+| A0 | **Completed.** Transitional ABI cleanup. Inventoried every `z80_*` export, replaced per-register state access with the packed state block, removed `z80_register_layout_probe`, `z80_state_read_*`, `z80_state_write_*`, `z80_state_size`, and obsolete primitive helper exports, and updated the build export list and TypeScript harness in the same change. Test-only RAM/I/O/TBBlue helpers remain explicit test ABI until the production/test artifact split. | `z80-wasm-abi.test.ts` asserts the approved export manifest. Cloned WASM pages, debugger-style one-instruction stepping, full Z80/Z80N differential coverage, `npm run build:check`, and `npm run test` pass. No removed export is referenced by TypeScript, C, or packaged artifacts. |
 
 ### Completion criteria for the CPU phase
 

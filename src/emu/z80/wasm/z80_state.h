@@ -39,6 +39,8 @@ typedef struct {
   uint8_t ei_backlog;
   uint8_t op_code;
   uint8_t interrupt_vector;
+  uint8_t z80n_mode;
+  uint8_t cpu_tact_scale;
 } Z80State;
 
 enum Z80WordField {
@@ -87,7 +89,9 @@ enum Z80ControlField {
   Z80_CONTROL_SIGNAL_RST,
   Z80_CONTROL_EI_BACKLOG,
   Z80_CONTROL_AFTER_LD_AIR,
-  Z80_CONTROL_INTERRUPT_VECTOR
+  Z80_CONTROL_INTERRUPT_VECTOR,
+  Z80_CONTROL_Z80N_MODE,
+  Z80_CONTROL_CPU_TACT_SCALE
 };
 
 enum Z80CounterField {

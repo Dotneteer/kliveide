@@ -19,6 +19,7 @@ extern Z80TestBusLogEntry tbblue_log[Z80_TEST_LOG_CAPACITY];
 extern uint8_t io_input[Z80_TEST_LOG_CAPACITY];
 extern unsigned int memory_log_count;
 extern unsigned int io_log_count;
+extern unsigned int tbblue_log_count;
 extern unsigned int io_input_count;
 extern unsigned int io_input_index;
 

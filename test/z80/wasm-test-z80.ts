@@ -14,8 +14,26 @@ const word = {
   ix: 8, iy: 9, ir: 10, wz: 11, pc: 12, sp: 13
 } as const;
 const byte = { a: 0, f: 1, b: 2, c: 3, d: 4, e: 5, h: 6, l: 7, ixh: 8, ixl: 9, iyh: 10, iyl: 11, i: 12, r: 13 } as const;
-const control = { prefix: 0, halted: 1, interruptMode: 3, iff1: 4, iff2: 5 } as const;
-const counter = { tacts: 0 } as const;
+const byteWordMap = [
+  [word.af, true], [word.af, false],
+  [word.bc, true], [word.bc, false],
+  [word.de, true], [word.de, false],
+  [word.hl, true], [word.hl, false],
+  [word.ix, true], [word.ix, false],
+  [word.iy, true], [word.iy, false],
+  [word.ir, true], [word.ir, false]
+] as const;
+const control = {
+  prefix: 0, halted: 1, interruptMode: 3, iff1: 4, iff2: 5,
+  signalInt: 6, signalNmi: 7, signalRst: 8, z80nMode: 12, cpuTactScale: 13
+} as const;
+const counter = { tacts: 0, frameTacts: 1, frames: 2 } as const;
+const stateOffset = {
+  words: 0,
+  counters: 28,
+  tactsInFrame: 40,
+  controls: 44
+} as const;
 
 export interface IoAccessLogEntry {
   address: number;
@@ -44,16 +62,31 @@ class Z80WasmTestCpu {
   readonly stepOutStack: number[] = [];
   codeByteAt?: (address: number) => number;
 
-  constructor (private readonly wasm: WasmExports) {}
+  constructor (
+    private readonly wasm: WasmExports,
+    private readonly state: DataView
+  ) {}
 
   private call (name: string, ...args: number[]): number {
     return (this.wasm[name] as CallableFunction)(...args) as number;
   }
 
-  private readWord (field: number): number { return this.call("z80_state_read_word", field); }
-  private writeWord (field: number, value: number): void { this.call("z80_state_write_word", field, value); }
-  private readByte (field: number): number { return this.call("z80_state_read_byte", field); }
-  private writeByte (field: number, value: number): void { this.call("z80_state_write_byte", field, value); }
+  private readWord (field: number): number { return this.state.getUint16(stateOffset.words + field * 2, true); }
+  private writeWord (field: number, value: number): void { this.state.setUint16(stateOffset.words + field * 2, value, true); }
+  private readByte (field: number): number {
+    const [wordField, highByte] = byteWordMap[field];
+    const wordValue = this.readWord(wordField);
+    return highByte ? wordValue >> 8 : wordValue & 0xff;
+  }
+  private writeByte (field: number, value: number): void {
+    const [wordField, highByte] = byteWordMap[field];
+    const wordValue = this.readWord(wordField);
+    const byteValue = value & 0xff;
+    this.writeWord(wordField, highByte ? (byteValue << 8) | (wordValue & 0xff) : (wordValue & 0xff00) | byteValue);
+  }
+  private readControl (field: number): number { return this.state.getUint8(stateOffset.controls + field); }
+  private writeControl (field: number, value: number): void { this.state.setUint8(stateOffset.controls + field, value & 0xff); }
+  private readCounter (field: number): number { return this.state.getUint32(stateOffset.counters + field * 4, true); }
 
   reset (): void { this.call("z80_reset"); }
   executeCpuCycle (): number {
@@ -130,15 +163,27 @@ class Z80WasmTestCpu {
   set i (value: number) { this.writeByte(byte.i, value); }
   get r (): number { return this.readByte(byte.r); }
   set r (value: number) { this.writeByte(byte.r, value); }
-  get tacts (): number { return this.call("z80_state_read_counter", counter.tacts); }
-  get prefix (): number { return this.call("z80_state_read_control", control.prefix); }
-  get halted (): boolean { return this.call("z80_state_read_control", control.halted) !== 0; }
-  get interruptMode (): number { return this.call("z80_state_read_control", control.interruptMode); }
-  set interruptMode (value: number) { this.call("z80_state_write_control", control.interruptMode, value); }
-  get iff1 (): boolean { return this.call("z80_state_read_control", control.iff1) !== 0; }
-  set iff1 (value: boolean) { this.call("z80_state_write_control", control.iff1, value ? 1 : 0); }
-  get iff2 (): boolean { return this.call("z80_state_read_control", control.iff2) !== 0; }
-  set iff2 (value: boolean) { this.call("z80_state_write_control", control.iff2, value ? 1 : 0); }
+  get tacts (): number { return this.readCounter(counter.tacts); }
+  get frameTacts (): number { return this.readCounter(counter.frameTacts); }
+  get frames (): number { return this.readCounter(counter.frames); }
+  get prefix (): number { return this.readControl(control.prefix); }
+  get halted (): boolean { return this.readControl(control.halted) !== 0; }
+  get interruptMode (): number { return this.readControl(control.interruptMode); }
+  set interruptMode (value: number) { this.writeControl(control.interruptMode, value); }
+  get iff1 (): boolean { return this.readControl(control.iff1) !== 0; }
+  set iff1 (value: boolean) { this.writeControl(control.iff1, value ? 1 : 0); }
+  get iff2 (): boolean { return this.readControl(control.iff2) !== 0; }
+  set iff2 (value: boolean) { this.writeControl(control.iff2, value ? 1 : 0); }
+  get sigINT (): boolean { return this.readControl(control.signalInt) !== 0; }
+  set sigINT (value: boolean) { this.writeControl(control.signalInt, value ? 1 : 0); }
+  get sigNMI (): boolean { return this.readControl(control.signalNmi) !== 0; }
+  set sigNMI (value: boolean) { this.writeControl(control.signalNmi, value ? 1 : 0); }
+  get sigRESET (): boolean { return this.readControl(control.signalRst) !== 0; }
+  set sigRESET (value: boolean) { this.writeControl(control.signalRst, value ? 1 : 0); }
+  get cpuTactScale (): number { return this.readControl(control.cpuTactScale); }
+  set cpuTactScale (value: number) { this.writeControl(control.cpuTactScale, value); }
+  get z80nMode (): boolean { return this.readControl(control.z80nMode) !== 0; }
+  set z80nMode (value: boolean) { this.writeControl(control.z80nMode, value ? 1 : 0); }
   isSFlagSet (): boolean { return (this.f & 0x80) !== 0; }
   isZFlagSet (): boolean { return (this.f & 0x40) !== 0; }
   isHFlagSet (): boolean { return (this.f & 0x10) !== 0; }
@@ -162,10 +207,15 @@ export class Z80TestMachine {
   private readonly wasm: WasmExports;
   private readonly ioInput: Uint8Array;
 
-  constructor (public readonly runMode: RunMode = RunMode.Normal) {
+  constructor (
+    public readonly runMode: RunMode = RunMode.Normal,
+    public readonly allowExtendedInstructions = false
+  ) {
     const wasm = createWasm();
     this.wasm = wasm;
-    this.cpu = new Z80WasmTestCpu(wasm);
+    const stateStart = (wasm.z80_state_block_ptr as CallableFunction)() as number;
+    const stateSize = (wasm.z80_state_block_size as CallableFunction)() as number;
+    this.cpu = new Z80WasmTestCpu(wasm, new DataView((wasm.memory as WebAssembly.Memory).buffer, stateStart, stateSize));
     const memoryStart = (wasm.z80_test_memory_ptr as CallableFunction)() as number;
     this.memory = new Uint8Array((wasm.memory as WebAssembly.Memory).buffer, memoryStart, 0x10000);
     const ioInputStart = (wasm.z80_test_io_input_ptr as CallableFunction)() as number;
@@ -207,6 +257,23 @@ export class Z80TestMachine {
     return entries;
   }
 
+  get tbBlueAccessLog (): IoAccessLogEntry[] {
+    const count = (this.wasm.z80_test_tbblue_log_count as CallableFunction)() as number;
+    const start = (this.wasm.z80_test_tbblue_log_ptr as CallableFunction)() as number;
+    const view = new DataView((this.wasm.memory as WebAssembly.Memory).buffer, start, count * 4);
+    const entries: IoAccessLogEntry[] = [];
+
+    for (let index = 0; index < count; index++) {
+      const offset = index * 4;
+      entries.push({
+        address: view.getUint16(offset, true),
+        value: view.getUint8(offset + 2),
+        isOutput: view.getUint8(offset + 3) !== 0
+      });
+    }
+    return entries;
+  }
+
   initCode (programCode?: number[], codeAddress = 0, startAddress = 0): void {
     (this.wasm.z80_test_bus_reset as CallableFunction)();
     this.memory.fill(0);
@@ -215,6 +282,8 @@ export class Z80TestMachine {
       this.codeEndsAt = codeAddress + programCode.length;
     }
     this.cpu.reset();
+    this.cpu.z80nMode = this.allowExtendedInstructions;
+    this.cpu.cpuTactScale = this.allowExtendedInstructions ? 8 : 1;
     this.cpu.pc = startAddress;
   }
 
