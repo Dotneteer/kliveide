@@ -1,4 +1,4 @@
-import { buildSp48Wasm, output, source } from "../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm, output, source, z80Source } from "../../scripts/build-sp48-wasm.cjs";
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum 48K WASM build", () => {
@@ -15,9 +15,11 @@ describe("ZX Spectrum 48K WASM build", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0].compiler).toBe("fake-c-compiler");
     expect(calls[0].args).toContain(source);
+    expect(calls[0].args).toContain(z80Source);
     expect(calls[0].args).toContain(output);
     expect(calls[0].args).toContain("-Wl,--export=sp48_read_memory");
     expect(calls[0].args).toContain("-Wl,--export=sp48_write_port");
+    expect(calls[0].args).toContain("-Wl,--export=z80_execute_instruction");
     expect(result.output).toBe(output);
   });
 });

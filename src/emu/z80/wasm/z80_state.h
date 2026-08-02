@@ -1,0 +1,76 @@
+#ifndef KLIVE_Z80_STATE_H
+#define KLIVE_Z80_STATE_H
+
+#include <stdint.h>
+
+/* WebAssembly is little-endian. This union is an internal C representation;
+ * the exported ABI uses field identifiers rather than exposing struct layout. */
+typedef union {
+  uint16_t word;
+  struct {
+    uint8_t lo;
+    uint8_t hi;
+  } bytes;
+} Z80Register16;
+
+typedef struct {
+  Z80Register16 af;
+  Z80Register16 bc;
+  Z80Register16 de;
+  Z80Register16 hl;
+  Z80Register16 af_alt;
+  Z80Register16 bc_alt;
+  Z80Register16 de_alt;
+  Z80Register16 hl_alt;
+  Z80Register16 ix;
+  Z80Register16 iy;
+  Z80Register16 ir;
+  Z80Register16 wz;
+  uint16_t pc;
+  uint16_t sp;
+  uint32_t tacts;
+  uint32_t frame_tacts;
+  uint32_t frames;
+  uint32_t tacts_in_frame;
+  uint8_t prefix;
+  uint8_t interrupt_mode;
+  uint8_t signals;
+  uint8_t flags;
+  uint8_t ei_backlog;
+} Z80State;
+
+enum Z80WordField {
+  Z80_WORD_AF = 0,
+  Z80_WORD_BC,
+  Z80_WORD_DE,
+  Z80_WORD_HL,
+  Z80_WORD_AF_ALT,
+  Z80_WORD_BC_ALT,
+  Z80_WORD_DE_ALT,
+  Z80_WORD_HL_ALT,
+  Z80_WORD_IX,
+  Z80_WORD_IY,
+  Z80_WORD_IR,
+  Z80_WORD_WZ,
+  Z80_WORD_PC,
+  Z80_WORD_SP
+};
+
+enum Z80ByteField {
+  Z80_BYTE_A = 0,
+  Z80_BYTE_F,
+  Z80_BYTE_B,
+  Z80_BYTE_C,
+  Z80_BYTE_D,
+  Z80_BYTE_E,
+  Z80_BYTE_H,
+  Z80_BYTE_L,
+  Z80_BYTE_IXH,
+  Z80_BYTE_IXL,
+  Z80_BYTE_IYH,
+  Z80_BYTE_IYL,
+  Z80_BYTE_I,
+  Z80_BYTE_R
+};
+
+#endif

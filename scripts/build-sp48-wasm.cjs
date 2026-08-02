@@ -4,12 +4,14 @@ const { spawnSync } = require("node:child_process");
 
 const root = resolve(__dirname, "..");
 const source = resolve(root, "src/emu/machines/zxSpectrum48/wasm/sp48_core.c");
+const z80Source = resolve(root, "src/emu/z80/wasm/z80_abi.c");
 const output = resolve(root, "src/emu/machines/zxSpectrum48/wasm/dist/zx-spectrum48.wasm");
 
 function buildSp48Wasm({ compiler = process.env.SP48_WASM_CC || "clang", run = spawnSync } = {}) {
   mkdirSync(dirname(output), { recursive: true });
   const args = [
     "--target=wasm32",
+    "-std=c11",
     "-O3",
     "-nostdlib",
     "-Wl,--no-entry",
@@ -24,7 +26,23 @@ function buildSp48Wasm({ compiler = process.env.SP48_WASM_CC || "clang", run = s
     "-Wl,--export=sp48_write_memory",
     "-Wl,--export=sp48_read_port",
     "-Wl,--export=sp48_write_port",
+    "-Wl,--export=z80_abi_version",
+    "-Wl,--export=z80_state_size",
+    "-Wl,--export=z80_reset",
+    "-Wl,--export=z80_state_read_word",
+    "-Wl,--export=z80_state_write_word",
+    "-Wl,--export=z80_state_read_byte",
+    "-Wl,--export=z80_state_write_byte",
+    "-Wl,--export=z80_execute_instruction",
+    "-Wl,--export=z80_register_layout_probe",
+    "-Wl,--export=z80_test_memory_ptr",
+    "-Wl,--export=z80_test_memory_size",
+    "-Wl,--export=z80_test_memory_log_capacity",
+    "-Wl,--export=z80_test_io_log_capacity",
+    "-Wl,--export=z80_test_tbblue_log_capacity",
+    "-Wl,--export=z80_test_bus_reset",
     source,
+    z80Source,
     "-o",
     output
   ];
@@ -36,4 +54,4 @@ function buildSp48Wasm({ compiler = process.env.SP48_WASM_CC || "clang", run = s
 
 if (require.main === module) buildSp48Wasm();
 
-module.exports = { buildSp48Wasm, source, output };
+module.exports = { buildSp48Wasm, source, z80Source, output };

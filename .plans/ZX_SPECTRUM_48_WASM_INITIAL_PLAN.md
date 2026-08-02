@@ -149,6 +149,24 @@ address, flag builders, fetch/read/write primitives), with compact decode
 metadata where it helps. It must not reproduce the TypeScript class hierarchy,
 DataView layout, or one JavaScript function per opcode merely in C syntax.
 
+### Z0 ABI ownership and lifetime
+
+The Z0 exports are intentionally small building blocks, but they do not all
+belong to the eventual production frame API:
+
+| Export group | Explicit consumer | Lifetime |
+| --- | --- | --- |
+| `z80_abi_version`, `z80_reset` | Production WASM adapter during setup/reset | Stable production ABI. |
+| `z80_execute_instruction` | WASM CPU façade, debugger/step path; Z1 implements its fetch/decode behavior | Stable production ABI, later complemented by a frame/batch entry point. |
+| `z80_state_read_*`, `z80_state_write_*`, `z80_state_size` | `Z80WasmTestCpu` and the early debugger-facing façade | Transitional diagnostic/test ABI. Normal frame execution must use one packed state/result view rather than per-register calls. |
+| `z80_test_memory_*`, `z80_test_*_log_capacity`, `z80_test_bus_reset` | Test-only WASM module and the backend-neutral `Z80TestMachine` | Test-only; omitted or hidden from the packaged production artifact once the production bus ABI exists. |
+| `z80_register_layout_probe` | ABI unit test | Test-only; remove after the C toolchain/layout test is established. |
+
+Thus none of the register accessors or test-bus functions are speculative hot
+path calls. They exist to make the current Z0 state observable and to support
+the promised reuse of the existing Z80 tests. The production normal-run path
+will call a bounded execution export and read bulk views only.
+
 ### Reuse the existing tests without duplicating their cases
 
 `test/z80/test-z80.ts` is the compatibility seam. Evolve it into a
@@ -203,9 +221,15 @@ TypeScript.
 
 #### Foundation and execution semantics
 
+**Progress:** Z0 completed on 2026-08-02. The module now has a versioned Z80
+ABI, C-native register pairs, explicit state accessors, reset semantics, 64K
+test RAM, fixed-capacity test-bus log storage, and an explicit
+`NOT_IMPLEMENTED` instruction result. It is intentionally not yet connected to
+the production CPU or the shared test façade.
+
 | Step | C/WASM work | Immediate existing-test gate |
 | --- | --- | --- |
-| Z0 | Add `z80_abi` with ABI version, reset, state import/export, 64K test RAM, bus-log buffers, and one-instruction execution result. Add C layout/endianness tests. | New façade smoke tests plus `z80.test.ts` register/reset checks. |
+| Z0 | **Completed.** Add `z80_abi` with ABI version, reset, state import/export, 64K test RAM, bus-log buffers, and one-instruction execution result. Add C layout/endianness tests. | New ABI smoke tests plus `z80.test.ts` register/reset checks. |
 | Z1 | Implement fetch, PC increment/wrap, R refresh behavior, prefix state, instruction-completion reporting, cycle/tact accounting, and HALT dummy M1 behavior. | `z80.test.ts`, `memoryOp.test.ts`, and the HALT-focused cases in `standard-ops-70.test.ts`. |
 | Z2 | Implement RESET, NMI, INT, IM 0/1/2, EI backlog, RETN/RETI state, `LD A,I`/`LD A,R` interrupt quirk, and signal priority. | `interrupts.test.ts` and the relevant ED cases in `ext-ops-40.test.ts` / `ext-ops-50.test.ts`. |
 | Z3 | Implement shared C primitives before opcode pages: fetch byte/word, memory/port read/write logging, stack push/pop, signed displacement, 8/16-bit add/sub flag builders, parity/SZ53 lookup tables, and condition evaluation. | New primitive tests plus `memoryOp.test.ts`; no new opcode page is enabled until this passes. |
