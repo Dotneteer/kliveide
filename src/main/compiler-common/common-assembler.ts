@@ -404,10 +404,9 @@ export abstract class CommonAssembler<
       this.reportParserError(sourceItem, error);
     }
 
-    // --- Exit if there are any errors
-    if (parser.hasErrors) {
-      return { success: false };
-    }
+    // Keep processing the parser's recovered lines after syntax errors. The
+    // compilation will remain unsuccessful (and no binary will be emitted),
+    // but later declarations must still be available to editor intelligence.
 
     // --- Now, process directives and the .model pragma
     let currentLineIndex = 0;
@@ -429,7 +428,7 @@ export abstract class CommonAssembler<
           case "IncludeDirective": {
             // --- Parse the included file
             const includedLines = await this.applyIncludeDirective(typedLine, sourceItem);
-            if (includedLines.success && includedLines.parsedLines) {
+            if (includedLines.parsedLines) {
               // --- Add the parse result of the include file to the result
               parsedLines.push(...includedLines.parsedLines);
             }
@@ -3388,6 +3387,11 @@ export abstract class CommonAssembler<
           argValue = new ExpressionValue(`(${op.register})`);
           break;
         case OperandType.Expression:
+          // Forward references are not evaluated yet, but they are still
+          // source-level usages and must be visible to editor references.
+          if (!this.readyToEvaluate(op.expr) && op.expr.type === "Symbol") {
+            this.recordSymbolReference(op.expr.identifier.name, op.expr.identifier);
+          }
           argValue = this.evaluateExpr(op.expr);
           if (argValue.isNonEvaluated) {
             argValue = new ExpressionValue(op.expr.sourceText);

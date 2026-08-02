@@ -25,7 +25,7 @@ export function extractLanguageIntelData(output: KliveCompilerOutput): LanguageI
       : [];
 
   // --- symbolReferences are on CompilerOutput (our new field)
-  const symbolReferences: SymbolReferenceInfo[] =
+  const rawSymbolReferences: SymbolReferenceInfo[] =
     "symbolReferences" in output && Array.isArray((output as any).symbolReferences)
       ? (output as any).symbolReferences
       : [];
@@ -34,6 +34,22 @@ export function extractLanguageIntelData(output: KliveCompilerOutput): LanguageI
   if ("symbols" in output) {
     visitModule(output as any, "", symbolDefinitions, outline);
   }
+
+  // Module-local references use their short @Name spelling in source, while
+  // their definitions are exported to language intelligence as
+  // Module.@Name. Canonicalize unambiguous references after the entire module
+  // tree has been collected, so forward references resolve too.
+  const symbolReferences = rawSymbolReferences.map((reference) => {
+    if (!reference.symbolName.startsWith("@")) return reference;
+    const suffix = `.${reference.symbolName.toLowerCase()}`;
+    const candidates = symbolDefinitions.filter((definition) =>
+      definition.fileIndex === reference.fileIndex &&
+      definition.name.toLowerCase().endsWith(suffix)
+    );
+    return candidates.length === 1
+      ? { ...reference, symbolName: candidates[0].name.toLowerCase() }
+      : reference;
+  });
 
   // --- Build per-line address and byte information from listFileItems + segments
   const lineInfo: LineIntelInfo[] = [];
