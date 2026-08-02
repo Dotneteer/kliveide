@@ -26,6 +26,9 @@ export type Sp48WasmExports = WebAssembly.Exports & {
   sp48_clear_dirty_ranges: Sp48WasmExportFunction;
   sp48_border_trace_count: Sp48WasmExportFunction;
   sp48_clear_border_trace: Sp48WasmExportFunction;
+  sp48_audio_trace_count: Sp48WasmExportFunction;
+  sp48_clear_audio_trace: Sp48WasmExportFunction;
+  sp48_event_status: Sp48WasmExportFunction;
   sp48_set_16k_model: Sp48WasmExportFunction;
   sp48_import_state: Sp48WasmExportFunction;
   sp48_export_state: Sp48WasmExportFunction;

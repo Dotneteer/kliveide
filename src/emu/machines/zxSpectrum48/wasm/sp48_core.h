@@ -37,6 +37,24 @@
 #ifndef SP48_BORDER_TRACE_RECORD_SIZE
 #define SP48_BORDER_TRACE_RECORD_SIZE 8
 #endif
+#ifndef SP48_BORDER_TRACE_CAPACITY
+#define SP48_BORDER_TRACE_CAPACITY 256
+#endif
+#ifndef SP48_BORDER_TRACE_OFFSET
+#define SP48_BORDER_TRACE_OFFSET 0
+#endif
+#ifndef SP48_AUDIO_TRACE_RECORD_SIZE
+#define SP48_AUDIO_TRACE_RECORD_SIZE 8
+#endif
+#ifndef SP48_AUDIO_TRACE_CAPACITY
+#define SP48_AUDIO_TRACE_CAPACITY 256
+#endif
+#ifndef SP48_AUDIO_TRACE_OFFSET
+#define SP48_AUDIO_TRACE_OFFSET 2048
+#endif
+#ifndef SP48_EVENT_STATUS_AUDIO_OVERFLOW_MASK
+#define SP48_EVENT_STATUS_AUDIO_OVERFLOW_MASK 1
+#endif
 #ifndef SP48_MACHINE_STATE_CPU_STATE_OFFSET
 #define SP48_MACHINE_STATE_CPU_STATE_OFFSET 0
 #endif
@@ -88,6 +106,12 @@
 #ifndef SP48_RESULT_BORDER_TRACE_COUNT_OFFSET
 #define SP48_RESULT_BORDER_TRACE_COUNT_OFFSET 20
 #endif
+#ifndef SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET
+#define SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET 24
+#endif
+#ifndef SP48_RESULT_EVENT_STATUS_OFFSET
+#define SP48_RESULT_EVENT_STATUS_OFFSET 28
+#endif
 
 /* Versioned, integer-only ABI: JavaScript invokes these exports directly. */
 unsigned int sp48_abi_version(void);
@@ -106,6 +130,9 @@ unsigned int sp48_dirty_range_count(void);
 void sp48_clear_dirty_ranges(void);
 unsigned int sp48_border_trace_count(void);
 void sp48_clear_border_trace(void);
+unsigned int sp48_audio_trace_count(void);
+void sp48_clear_audio_trace(void);
+unsigned int sp48_event_status(void);
 void sp48_set_16k_model(unsigned int enabled);
 void sp48_import_state(void);
 void sp48_export_state(void);

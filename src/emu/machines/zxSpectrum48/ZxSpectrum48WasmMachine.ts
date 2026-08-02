@@ -5,6 +5,7 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MC_MEM_SIZE } from "@common/machines/constants";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
+import { SpectrumBeeperDevice, type BeeperTransition } from "../BeeperDevice";
 import { loadSp48Wasm } from "./wasm/Sp48WasmLoader";
 import { ZxSpectrum48Machine } from "./ZxSpectrum48Machine";
 import { SP48_WASM_LAYOUT } from "./wasm/sp48-wasm-layout.generated";
@@ -25,6 +26,10 @@ export type Sp48WasmBorderTrace = {
   color: number;
   ear: boolean;
   mic: boolean;
+};
+
+export type Sp48WasmAudioTrace = BeeperTransition & {
+  value: number;
 };
 
 const CPU_STATE = {
@@ -123,8 +128,11 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
       }
       this.syncInputToWasm(runtime);
       this.syncCpuToWasm();
+      const frameStartTact = this.tacts;
+      const frameStartOffset = this.frameTacts;
       const termination = runtime.exports.sp48_execute_frame() as FrameTerminationMode;
       this.syncCpuFromWasm();
+      this.replayWasmAudioTrace(runtime, frameStartTact, frameStartOffset, this.tacts);
       this.executionContext.lastTerminationReason = termination;
       return termination;
     }
@@ -132,6 +140,8 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     this.syncCpuToWasm();
     this.syncInputToWasm(runtime);
     this.configureWasmTerminationInput(runtime);
+    const frameStartTact = this.tacts;
+    const frameStartOffset = this.frameTacts;
 
     const maxInstructions =
       this.executionContext.debugStepMode === DebugStepMode.StepInto ? 1 : 100_000;
@@ -141,6 +151,7 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
       this.executionContext.frameTerminationMode
     ) as FrameTerminationMode;
     this.syncCpuFromWasm();
+    this.replayWasmAudioTrace(runtime, frameStartTact, frameStartOffset, this.tacts);
 
     const result =
       this.executionContext.debugStepMode === DebugStepMode.StepInto
@@ -185,7 +196,7 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
       return;
     }
     this.wasmRuntime.exports.sp48_write_port(address & 0xffff, value & 0xff);
-    this.syncMachineOutputFromWasm(this.wasmRuntime);
+    this.syncMachineOutputFromWasm(this.wasmRuntime, true);
   }
 
   override uploadRomBytes(data: Uint8Array): void {
@@ -212,6 +223,14 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     this.wasmRuntime?.exports.sp48_clear_border_trace();
   }
 
+  clearWasmAudioTrace(): void {
+    this.wasmRuntime?.exports.sp48_clear_audio_trace();
+  }
+
+  getWasmEventStatus(): number {
+    return this.wasmRuntime?.exports.sp48_event_status() ?? 0;
+  }
+
   getWasmBorderTrace(): Sp48WasmBorderTrace[] {
     const runtime = this.wasmRuntime;
     if (runtime == null) return [];
@@ -229,6 +248,29 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
         color: runtime.eventBuffer[offset + 5],
         ear: runtime.eventBuffer[offset + 6] !== 0,
         mic: runtime.eventBuffer[offset + 7] !== 0
+      });
+    }
+    return events;
+  }
+
+  getWasmAudioTrace(): Sp48WasmAudioTrace[] {
+    const runtime = this.wasmRuntime;
+    if (runtime == null) return [];
+    const count = runtime.exports.sp48_audio_trace_count();
+    const events: Sp48WasmAudioTrace[] = [];
+    for (let index = 0; index < count; index++) {
+      const offset =
+        SP48_WASM_LAYOUT.audioTraceOffset +
+        index * SP48_WASM_LAYOUT.audioTraceRecordSize;
+      events.push({
+        tact: new DataView(
+          runtime.eventBuffer.buffer,
+          runtime.eventBuffer.byteOffset + offset,
+          SP48_WASM_LAYOUT.audioTraceRecordSize
+        ).getUint32(0, true),
+        value: runtime.eventBuffer[offset + 4],
+        ear: runtime.eventBuffer[offset + 5] !== 0,
+        mic: runtime.eventBuffer[offset + 6] !== 0
       });
     }
     return events;
@@ -398,9 +440,36 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     this.syncMachineOutputFromWasm(runtime);
   }
 
-  private syncMachineOutputFromWasm(runtime: Sp48WasmRuntime): void {
+  private syncMachineOutputFromWasm(runtime: Sp48WasmRuntime, syncBeeper = false): void {
     this.screenDevice.borderColor = runtime.machineState.getUint8(
       SP48_WASM_LAYOUT.machineStateBorderColorOffset
     ) & 0x07;
+    if (syncBeeper) {
+      this.beeperDevice.setOutputLevel(
+        runtime.machineState.getUint8(SP48_WASM_LAYOUT.machineStateEarLatchOffset) !== 0,
+        runtime.machineState.getUint8(SP48_WASM_LAYOUT.machineStateMicLatchOffset) !== 0
+      );
+    }
+  }
+
+  private replayWasmAudioTrace(
+    runtime: Sp48WasmRuntime,
+    frameStartTact: number,
+    frameStartOffset: number,
+    frameEndTact: number
+  ): void {
+    if (!(this.beeperDevice instanceof SpectrumBeeperDevice)) return;
+    const transitions = this.getWasmAudioTrace();
+    this.beeperDevice.renderTransitionTrace(
+      transitions,
+      frameStartTact,
+      frameStartOffset,
+      this.tactsInCurrentFrame || this.tactsInFrame,
+      frameEndTact
+    );
+    this.beeperDevice.setOutputLevel(
+      runtime.machineState.getUint8(SP48_WASM_LAYOUT.machineStateEarLatchOffset) !== 0,
+      runtime.machineState.getUint8(SP48_WASM_LAYOUT.machineStateMicLatchOffset) !== 0
+    );
   }
 }

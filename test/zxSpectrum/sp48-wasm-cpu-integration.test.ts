@@ -14,6 +14,10 @@ import { buildSp48Wasm, output } from "../../scripts/build-sp48-wasm.cjs";
 import { afterEach, describe, expect, it } from "vitest";
 
 class TestTypeScript48Machine extends ZxSpectrum48Machine {
+  readonly beeperTransitions: Array<{ tact: number; value: number; ear: boolean; mic: boolean }> = [];
+  private lastEar = false;
+  private lastMic = false;
+
   constructor(
     private readonly rom: Uint8Array,
     modelInfo?: MachineModel,
@@ -24,6 +28,22 @@ class TestTypeScript48Machine extends ZxSpectrum48Machine {
 
   protected override async loadRomFromResource(): Promise<Uint8Array> {
     return this.rom;
+  }
+
+  protected override writePort0xFE(value: number): void {
+    super.writePort0xFE(value);
+    const ear = (value & 0x10) !== 0;
+    const mic = (value & 0x08) !== 0;
+    if (ear !== this.lastEar || mic !== this.lastMic) {
+      this.beeperTransitions.push({
+        tact: this.frameTacts,
+        value: value & 0xff,
+        ear,
+        mic
+      });
+      this.lastEar = ear;
+      this.lastMic = mic;
+    }
   }
 }
 
@@ -201,6 +221,62 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
       { tact: 4, value: 0x15, color: 0x05, ear: true, mic: false }
     ]);
     expect(wasm.wasmRuntime!.result.getUint32(SP48_WASM_LAYOUT.resultBorderTraceCountOffset, true)).toBe(2);
+  });
+
+  it("records tact-ordered EAR/MIC audio transitions from C during normal frame execution", async () => {
+    const wasm = await createWasmMachine(testRom([0x3e, 0x10, 0xd3, 0xfe, 0x3e, 0x08, 0xd3, 0xfe]));
+    wasm.setTactsInFrame(64);
+
+    wasm.executeMachineFrame();
+
+    expect(wasm.getWasmAudioTrace()).toEqual([
+      { tact: 18, value: 0x10, ear: true, mic: false },
+      { tact: 36, value: 0x08, ear: false, mic: true }
+    ]);
+    expect(wasm.wasmRuntime!.result.getUint32(SP48_WASM_LAYOUT.resultAudioTraceCountOffset, true)).toBe(2);
+    expect(wasm.getWasmEventStatus()).toBe(0);
+  });
+
+  it("feeds WASM audio transitions through the existing beeper sample plumbing", async () => {
+    const wasm = await createWasmMachine(testRom([0x3e, 0x10, 0xd3, 0xfe, 0x00, 0x00, 0x3e, 0x00, 0xd3, 0xfe]));
+    wasm.beeperDevice.setAudioSampleRate(44_100);
+    wasm.setTactsInFrame(256);
+
+    wasm.executeMachineFrame();
+
+    const samples = wasm.getAudioSamples();
+    expect(samples.length).toBeGreaterThan(0);
+    expect(samples.some(sample => sample.left > 0)).toBe(true);
+    expect(samples.every(sample => sample.right === 0)).toBe(true);
+  });
+
+  it("matches TypeScript and WASM beeper transitions for square-wave and silence programs", async () => {
+    const squareProgram = testRom([0x3e, 0x10, 0xd3, 0xfe, 0x00, 0x3e, 0x00, 0xd3, 0xfe, 0x00]);
+    const silenceProgram = testRom([0x00, 0x00, 0x00, 0x00, 0x00]);
+
+    for (const rom of [squareProgram, silenceProgram]) {
+      const ts = await createTsMachine(rom);
+      const wasm = await createWasmMachine(rom);
+      ts.setTactsInFrame(96);
+      wasm.setTactsInFrame(96);
+
+      ts.executeMachineFrame();
+      wasm.executeMachineFrame();
+
+      expect(wasm.getWasmAudioTrace()).toEqual(ts.beeperTransitions);
+    }
+  });
+
+  it("reports audio-event buffer overflow without writing beyond the bounded static trace", async () => {
+    const wasm = await createWasmMachine(testRom(alternatingFeWrites(SP48_WASM_LAYOUT.audioTraceCapacity + 8)));
+    wasm.setTactsInFrame(20_000);
+
+    wasm.executeMachineFrame();
+
+    expect(wasm.getWasmAudioTrace()).toHaveLength(SP48_WASM_LAYOUT.audioTraceCapacity);
+    expect(wasm.getWasmEventStatus() & SP48_WASM_LAYOUT.eventStatusAudioOverflowMask).toBe(
+      SP48_WASM_LAYOUT.eventStatusAudioOverflowMask
+    );
   });
 
   it("renders screens from WASM RAM through the existing TypeScript screen renderer", async () => {
@@ -446,4 +522,12 @@ function seededProgram(seed: number, instructionCount: number): { rom: Uint8Arra
     }
   }
   return { rom: testRom(bytes), instructionCount };
+}
+
+function alternatingFeWrites(count: number): number[] {
+  const bytes: number[] = [];
+  for (let index = 0; index < count; index++) {
+    bytes.push(0x3e, index % 2 === 0 ? 0x10 : 0x00, 0xd3, 0xfe);
+  }
+  return bytes;
 }

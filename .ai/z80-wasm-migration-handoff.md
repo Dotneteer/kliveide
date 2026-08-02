@@ -170,9 +170,41 @@ npm run test
 The full suite after P4 reported 562 passed files, 19,961 passed tests, 14
 skipped files, and 119 skipped tests.
 
+Phase P5 is now implemented:
+
+- The 48K C core stores border and audio traces in fixed slices of the static
+  event buffer: 256 border records and 256 EAR/MIC audio transition records.
+- Audio trace records are 8 bytes: frame tact `u32`, FE value, EAR latch, MIC
+  latch, and one reserved byte.
+- Audio overflow is explicit through `sp48_event_status()` and
+  `eventStatusAudioOverflowMask`; overflowing FE-transition programs keep the
+  trace bounded instead of silently writing past capacity.
+- `ZxSpectrum48WasmMachine` exposes `getWasmAudioTrace()`,
+  `clearWasmAudioTrace()`, and `getWasmEventStatus()`.
+- Normal WASM frame execution replays audio transitions through
+  `SpectrumBeeperDevice.renderTransitionTrace(...)`, so existing IDE audio
+  consumers continue using `getAudioSamples()`.
+- The implementation still uses static WASM memory only; the dynamic-allocation
+  audit remains clean.
+
+Focused P5 gates passed:
+
+```sh
+npm run build:sp48-wasm
+npx vitest run --config build/vitest.config.ts --project node test/zxSpectrum/sp48-wasm-cpu-integration.test.ts test/zxSpectrum/sp48-wasm-memory.test.ts test/zxSpectrum/sp48-wasm-abi-manifest.test.ts test/zxSpectrum/sp48-wasm-loader.test.ts test/zxSpectrum/ZxSpectrum48WasmMachineSetup.test.ts test/audio/BeeperDevice.test.ts test/audio/AudioDeviceBase.test.ts
+npx vitest run --config build/vitest.config.ts --project node test/z80/*.wasm.test.ts test/z80/*wasm-differential.test.ts
+rg -n "\b(malloc|calloc|realloc|free|aligned_alloc)\s*\(" src/emu/machines/zxSpectrum48/wasm src/emu/z80/wasm
+npm run build:check
+npx electron-vite build --config build/electron.vite.config.ts
+npm run test
+```
+
+The full suite after P5 reported 562 passed files, 19,965 passed tests, 14
+skipped files, and 119 skipped tests.
+
 ## Next useful work
 
-Start with Phase P5 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`:
-beeper/audio.
+Start with Phase P6 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`:
+tape integration.
 
 Do not continue by adding more Z80 opcode-migration rows. That phase is done.

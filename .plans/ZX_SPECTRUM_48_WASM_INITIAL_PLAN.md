@@ -151,10 +151,10 @@ the row complete in this plan.
 
 | Step | Work | Focused test gate |
 | --- | --- | --- |
-| P5.1 | Record EAR/MIC transitions in a C event buffer during frame execution. | FE-output audio tests verify tact-ordered transition events. |
-| P5.2 | Adapt the TypeScript audio plumbing to consume WASM transition events or a generated sample buffer. | Existing audio-device tests plus a new deterministic pulse fixture. |
-| P5.3 | Compare TypeScript and WASM beeper output for simple square-wave and silence programs. | Differential audio fixtures compare transition counts/tacts or normalized sample windows. |
-| P5.4 | Include audio-event buffer overflow handling with explicit termination/error status. | Stress test emits many FE writes and verifies bounded behavior is reported, not silently truncated. |
+| P5.1 | **Completed.** Recorded EAR/MIC transitions in a statically bounded C audio trace region during frame and bounded-instruction execution. | FE-output audio tests verify tact-ordered transition events. |
+| P5.2 | **Completed.** Adapted the existing TypeScript beeper plumbing to replay WASM transition traces into the normal `getAudioSamples()` path. | Existing audio-device tests plus a deterministic WASM pulse fixture verify sample generation. |
+| P5.3 | **Completed.** Added TypeScript-vs-WASM beeper transition differential fixtures for square-wave and silence programs. | Differential audio fixtures compare transition counts/tacts and EAR/MIC values. |
+| P5.4 | **Completed.** Added bounded audio-event overflow reporting with an explicit event-status bit. | Stress test emits more FE transitions than the static trace capacity and verifies bounded reporting. |
 
 ### Phase P6 — tape integration
 

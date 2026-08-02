@@ -24,6 +24,8 @@ static unsigned char contention_table[SP48_TIMING_TABLE_CAPACITY];
 static uint16_t floating_bus_table[SP48_TIMING_TABLE_CAPACITY];
 static unsigned int dirty_range_count;
 static unsigned int border_trace_count;
+static unsigned int audio_trace_count;
+static unsigned int event_status;
 
 /* clang may lower simple loops to memset even with -nostdlib. */
 void *memset(void *destination, int value, unsigned long length) {
@@ -48,23 +50,31 @@ unsigned int sp48_layout_value(unsigned int id) {
     case 8: return SP48_TIMING_TABLE_CAPACITY;
     case 9: return SP48_FLOATING_BUS_NONE;
     case 10: return SP48_BORDER_TRACE_RECORD_SIZE;
-    case 11: return SP48_MACHINE_STATE_CPU_STATE_OFFSET;
-    case 12: return SP48_MACHINE_STATE_FRAME_TACTS_OFFSET;
-    case 13: return SP48_MACHINE_STATE_ULA_PORT_OFFSET;
-    case 14: return SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET;
-    case 15: return SP48_MACHINE_STATE_BORDER_COLOR_OFFSET;
-    case 16: return SP48_MACHINE_STATE_EAR_LATCH_OFFSET;
-    case 17: return SP48_MACHINE_STATE_MIC_LATCH_OFFSET;
-    case 18: return SP48_INPUT_KEYBOARD_ROWS_OFFSET;
-    case 19: return SP48_INPUT_RUN_MODE_OFFSET;
-    case 20: return SP48_INPUT_TERMINATION_POINT_OFFSET;
-    case 21: return SP48_INPUT_TERMINATION_POINT_ENABLED_OFFSET;
-    case 22: return SP48_RESULT_TERMINATION_OFFSET;
-    case 23: return SP48_RESULT_EVENT_COUNT_OFFSET;
-    case 24: return SP48_RESULT_DIRTY_RANGE_COUNT_OFFSET;
-    case 25: return SP48_RESULT_INSTRUCTION_COUNT_OFFSET;
-    case 26: return SP48_RESULT_CPU_STATUS_OFFSET;
-    case 27: return SP48_RESULT_BORDER_TRACE_COUNT_OFFSET;
+    case 11: return SP48_BORDER_TRACE_CAPACITY;
+    case 12: return SP48_BORDER_TRACE_OFFSET;
+    case 13: return SP48_AUDIO_TRACE_RECORD_SIZE;
+    case 14: return SP48_AUDIO_TRACE_CAPACITY;
+    case 15: return SP48_AUDIO_TRACE_OFFSET;
+    case 16: return SP48_EVENT_STATUS_AUDIO_OVERFLOW_MASK;
+    case 17: return SP48_MACHINE_STATE_CPU_STATE_OFFSET;
+    case 18: return SP48_MACHINE_STATE_FRAME_TACTS_OFFSET;
+    case 19: return SP48_MACHINE_STATE_ULA_PORT_OFFSET;
+    case 20: return SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET;
+    case 21: return SP48_MACHINE_STATE_BORDER_COLOR_OFFSET;
+    case 22: return SP48_MACHINE_STATE_EAR_LATCH_OFFSET;
+    case 23: return SP48_MACHINE_STATE_MIC_LATCH_OFFSET;
+    case 24: return SP48_INPUT_KEYBOARD_ROWS_OFFSET;
+    case 25: return SP48_INPUT_RUN_MODE_OFFSET;
+    case 26: return SP48_INPUT_TERMINATION_POINT_OFFSET;
+    case 27: return SP48_INPUT_TERMINATION_POINT_ENABLED_OFFSET;
+    case 28: return SP48_RESULT_TERMINATION_OFFSET;
+    case 29: return SP48_RESULT_EVENT_COUNT_OFFSET;
+    case 30: return SP48_RESULT_DIRTY_RANGE_COUNT_OFFSET;
+    case 31: return SP48_RESULT_INSTRUCTION_COUNT_OFFSET;
+    case 32: return SP48_RESULT_CPU_STATUS_OFFSET;
+    case 33: return SP48_RESULT_BORDER_TRACE_COUNT_OFFSET;
+    case 34: return SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET;
+    case 35: return SP48_RESULT_EVENT_STATUS_OFFSET;
     default: return 0;
   }
 }
@@ -185,16 +195,34 @@ static unsigned int read_sp48_floating_bus(unsigned int current_frame_tact) {
 
 static void record_border_trace(unsigned int tact, unsigned int value) {
   unsigned int offset;
-  if (border_trace_count >= SP48_EVENT_BUFFER_SIZE / SP48_BORDER_TRACE_RECORD_SIZE) return;
-  offset = border_trace_count * SP48_BORDER_TRACE_RECORD_SIZE;
+  if (border_trace_count >= SP48_BORDER_TRACE_CAPACITY) return;
+  offset = SP48_BORDER_TRACE_OFFSET + border_trace_count * SP48_BORDER_TRACE_RECORD_SIZE;
   put_u32(event_buffer, offset, tact);
   event_buffer[offset + 4u] = (unsigned char)value;
   event_buffer[offset + 5u] = border_color;
   event_buffer[offset + 6u] = ear_latch;
   event_buffer[offset + 7u] = mic_latch;
   border_trace_count++;
-  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, border_trace_count);
+  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, border_trace_count + audio_trace_count);
   put_u32(result_block, SP48_RESULT_BORDER_TRACE_COUNT_OFFSET, border_trace_count);
+}
+
+static void record_audio_trace(unsigned int tact, unsigned int value) {
+  unsigned int offset;
+  if (audio_trace_count >= SP48_AUDIO_TRACE_CAPACITY) {
+    event_status |= SP48_EVENT_STATUS_AUDIO_OVERFLOW_MASK;
+    put_u32(result_block, SP48_RESULT_EVENT_STATUS_OFFSET, event_status);
+    return;
+  }
+  offset = SP48_AUDIO_TRACE_OFFSET + audio_trace_count * SP48_AUDIO_TRACE_RECORD_SIZE;
+  put_u32(event_buffer, offset, tact);
+  event_buffer[offset + 4u] = (unsigned char)value;
+  event_buffer[offset + 5u] = ear_latch;
+  event_buffer[offset + 6u] = mic_latch;
+  event_buffer[offset + 7u] = 0;
+  audio_trace_count++;
+  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, border_trace_count + audio_trace_count);
+  put_u32(result_block, SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET, audio_trace_count);
 }
 
 static void record_dirty_range(unsigned int address, unsigned int length) {
@@ -231,6 +259,10 @@ unsigned int sp48_dirty_range_count(void) { return dirty_range_count; }
 
 unsigned int sp48_border_trace_count(void) { return border_trace_count; }
 
+unsigned int sp48_audio_trace_count(void) { return audio_trace_count; }
+
+unsigned int sp48_event_status(void) { return event_status; }
+
 void sp48_clear_dirty_ranges(void) {
   unsigned int index;
   dirty_range_count = 0;
@@ -243,8 +275,34 @@ void sp48_clear_dirty_ranges(void) {
 void sp48_clear_border_trace(void) {
   unsigned int index;
   border_trace_count = 0;
+  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, audio_trace_count);
+  put_u32(result_block, SP48_RESULT_BORDER_TRACE_COUNT_OFFSET, 0);
+  for (index = 0; index < SP48_BORDER_TRACE_CAPACITY * SP48_BORDER_TRACE_RECORD_SIZE; index++) {
+    event_buffer[SP48_BORDER_TRACE_OFFSET + index] = 0;
+  }
+}
+
+void sp48_clear_audio_trace(void) {
+  unsigned int index;
+  audio_trace_count = 0;
+  event_status &= (unsigned int)~SP48_EVENT_STATUS_AUDIO_OVERFLOW_MASK;
+  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, border_trace_count);
+  put_u32(result_block, SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET, 0);
+  put_u32(result_block, SP48_RESULT_EVENT_STATUS_OFFSET, event_status);
+  for (index = 0; index < SP48_AUDIO_TRACE_CAPACITY * SP48_AUDIO_TRACE_RECORD_SIZE; index++) {
+    event_buffer[SP48_AUDIO_TRACE_OFFSET + index] = 0;
+  }
+}
+
+static void sp48_clear_event_traces(void) {
+  unsigned int index;
+  border_trace_count = 0;
+  audio_trace_count = 0;
+  event_status = 0;
   put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, 0);
   put_u32(result_block, SP48_RESULT_BORDER_TRACE_COUNT_OFFSET, 0);
+  put_u32(result_block, SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET, 0);
+  put_u32(result_block, SP48_RESULT_EVENT_STATUS_OFFSET, 0);
   for (index = 0; index < SP48_EVENT_BUFFER_SIZE; index++) {
     event_buffer[index] = 0;
   }
@@ -294,7 +352,7 @@ void sp48_reset(void) {
   z80_bus_mode = Z80_BUS_SP48;
   z80_reset();
   sp48_clear_dirty_ranges();
-  sp48_clear_border_trace();
+  sp48_clear_event_traces();
   for (address = 0x4000; address < SP48_MEMORY_SIZE; address++) {
     memory[address] = is_16k_model && address >= 0x8000 ? 0xff : 0;
   }
@@ -340,11 +398,16 @@ unsigned int sp48_read_port(unsigned int address) {
 
 void sp48_write_port(unsigned int address, unsigned int value) {
   if ((address & 1) == 0) {
+    unsigned int old_ear_latch = ear_latch;
+    unsigned int old_mic_latch = mic_latch;
     ula_port = (unsigned char)value;
     border_color = ula_port & 7u;
     mic_latch = (ula_port & 0x08u) != 0;
     ear_latch = (ula_port & 0x10u) != 0;
     record_border_trace(state.frame_tacts, ula_port);
+    if (old_ear_latch != ear_latch || old_mic_latch != mic_latch) {
+      record_audio_trace(state.frame_tacts, ula_port);
+    }
     sp48_export_state();
   }
 }
@@ -391,7 +454,7 @@ unsigned int sp48_execute_instructions(
 
   sp48_import_state();
   z80_bus_mode = Z80_BUS_SP48;
-  sp48_clear_border_trace();
+  sp48_clear_event_traces();
   start_frames = state.frames;
   put_u32(result_block, SP48_RESULT_TERMINATION_OFFSET, termination);
   put_u32(result_block, SP48_RESULT_INSTRUCTION_COUNT_OFFSET, 0);
@@ -432,7 +495,7 @@ unsigned int sp48_execute_frame(void) {
   unsigned int start_frames;
   sp48_import_state();
   z80_bus_mode = Z80_BUS_SP48;
-  sp48_clear_border_trace();
+  sp48_clear_event_traces();
   start_frames = state.frames;
   while (state.frames == start_frames) {
     unsigned int cpu_status;

@@ -6,6 +6,12 @@ import { BEEPER_LEVELS } from "@emu/abstractions/IGenericBeeperDevice";
 
 import { AudioDeviceBase } from "./AudioDeviceBase";
 
+export type BeeperTransition = {
+  tact: number;
+  ear: boolean;
+  mic: boolean;
+};
+
 // --- This class implements the ZX Spectrum beeper device.
 export class SpectrumBeeperDevice
   extends AudioDeviceBase<IZxSpectrumMachine | IZxNextMachine>
@@ -100,6 +106,44 @@ export class SpectrumBeeperDevice
     } else {
       return { left: this._earBit ? 1.0 : 0.0, right: this._micBit ? 1.0 : 0.0 };
     }
+  }
+
+  /**
+   * Replays a tact-ordered EAR/MIC transition trace and renders audio samples
+   * through the same time-weighted beeper model used by the TypeScript backend.
+   * @param transitions Frame-relative transition records
+   * @param frameStartTact Absolute tact at which the C execution slice started
+   * @param frameStartOffset Frame tact at which the C execution slice started
+   * @param frameTacts Number of tacts in a full frame
+   * @param frameEndTact Absolute tact reached after C execution
+   */
+  renderTransitionTrace(
+    transitions: readonly BeeperTransition[],
+    frameStartTact: number,
+    frameStartOffset: number,
+    frameTacts: number,
+    frameEndTact: number
+  ): void {
+    const savedTact = this.machine.tacts;
+    let previousAbsoluteTact = frameStartTact;
+
+    for (const transition of transitions) {
+      const relativeTact =
+        frameTacts <= 0
+          ? transition.tact
+          : (transition.tact - frameStartOffset + frameTacts) % frameTacts;
+      let absoluteTact = frameStartTact + relativeTact;
+      while (absoluteTact < previousAbsoluteTact) {
+        absoluteTact += frameTacts;
+      }
+      this.renderSamplesUntilTact(absoluteTact);
+      this.machine.setTacts(absoluteTact);
+      this.setOutputLevel(transition.ear, transition.mic);
+      previousAbsoluteTact = absoluteTact;
+    }
+
+    this.renderSamplesUntilTact(Math.max(frameEndTact, previousAbsoluteTact));
+    this.machine.setTacts(savedTact);
   }
 
   /**
