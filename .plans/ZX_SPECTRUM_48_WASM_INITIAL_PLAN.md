@@ -221,16 +221,18 @@ TypeScript.
 
 #### Foundation and execution semantics
 
-**Progress:** Z0 completed on 2026-08-02. The module now has a versioned Z80
-ABI, C-native register pairs, explicit state accessors, reset semantics, 64K
-test RAM, fixed-capacity test-bus log storage, and an explicit
-`NOT_IMPLEMENTED` instruction result. It is intentionally not yet connected to
-the production CPU or the shared test façade.
+**Progress:** Z0 and Z1 completed on 2026-08-02. The module now has a versioned
+Z80 ABI, C-native register pairs, explicit state accessors, reset semantics,
+64K test RAM, fixed-capacity test-bus log storage, and a fetch/execution shell.
+The shell supports NOP, prefix transitions, refresh-register semantics, base
+tact accounting, and HALT dummy M1 cycles; unsupported opcodes return an
+explicit result. It is intentionally not yet connected to the production CPU or
+the shared test façade.
 
 | Step | C/WASM work | Immediate existing-test gate |
 | --- | --- | --- |
 | Z0 | **Completed.** Add `z80_abi` with ABI version, reset, state import/export, 64K test RAM, bus-log buffers, and one-instruction execution result. Add C layout/endianness tests. | New ABI smoke tests plus `z80.test.ts` register/reset checks. |
-| Z1 | Implement fetch, PC increment/wrap, R refresh behavior, prefix state, instruction-completion reporting, cycle/tact accounting, and HALT dummy M1 behavior. | `z80.test.ts`, `memoryOp.test.ts`, and the HALT-focused cases in `standard-ops-70.test.ts`. |
+| Z1 | **Completed.** Implement fetch, PC increment/wrap, R refresh behavior, prefix state, instruction-completion reporting, cycle/tact accounting, and HALT dummy M1 behavior. | WASM ABI execution-shell coverage plus `z80.test.ts` reference checks. The full memory-operation and HALT opcode files activate when their corresponding opcode semantics migrate. |
 | Z2 | Implement RESET, NMI, INT, IM 0/1/2, EI backlog, RETN/RETI state, `LD A,I`/`LD A,R` interrupt quirk, and signal priority. | `interrupts.test.ts` and the relevant ED cases in `ext-ops-40.test.ts` / `ext-ops-50.test.ts`. |
 | Z3 | Implement shared C primitives before opcode pages: fetch byte/word, memory/port read/write logging, stack push/pop, signed displacement, 8/16-bit add/sub flag builders, parity/SZ53 lookup tables, and condition evaluation. | New primitive tests plus `memoryOp.test.ts`; no new opcode page is enabled until this passes. |
 

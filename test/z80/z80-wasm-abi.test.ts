@@ -16,6 +16,9 @@ const byte = {
   c: 3
 };
 
+const control = { prefix: 0, halted: 1 };
+const counter = { tacts: 0 };
+
 describe("Z80 WASM ABI", () => {
   it("compiles and exposes the resettable CPU state and test bus", async () => {
     buildSp48Wasm();
@@ -42,6 +45,43 @@ describe("Z80 WASM ABI", () => {
     expect(wasm.z80_test_memory_log_capacity()).toBeGreaterThan(0);
     expect(wasm.z80_test_io_log_capacity()).toBeGreaterThan(0);
     expect(wasm.z80_test_tbblue_log_capacity()).toBeGreaterThan(0);
-    expect(wasm.z80_execute_instruction()).toBe(1);
+    expect(wasm.z80_execute_instruction()).toBe(0);
+  });
+
+  it("executes the fetch shell, prefix state, and HALT timing", async () => {
+    buildSp48Wasm();
+    const { instance } = await WebAssembly.instantiate(readFileSync(output));
+    const wasm = instance.exports as Record<string, WebAssembly.ExportValue>;
+    const call = (name: string, ...args: number[]) => (wasm[name] as CallableFunction)(...args) as number;
+    const memory = new Uint8Array((wasm.memory as WebAssembly.Memory).buffer);
+    const memoryStart = call("z80_test_memory_ptr");
+
+    call("z80_reset");
+    call("z80_test_bus_reset");
+    memory[memoryStart] = 0x00;
+    expect(call("z80_execute_instruction")).toBe(0);
+    expect(call("z80_state_read_word", word.pc)).toBe(1);
+    expect(call("z80_state_read_byte", 13)).toBe(1);
+    expect(call("z80_state_read_counter", counter.tacts)).toBe(4);
+    expect(call("z80_test_memory_log_count")).toBe(1);
+
+    call("z80_reset");
+    memory[memoryStart] = 0xff;
+    expect(call("z80_execute_instruction")).toBe(1);
+
+    call("z80_reset");
+    memory[memoryStart] = 0xdd;
+    memory[memoryStart + 1] = 0xfd;
+    expect(call("z80_execute_instruction")).toBe(2);
+    expect(call("z80_state_read_control", control.prefix)).toBe(3);
+    expect(call("z80_execute_instruction")).toBe(2);
+    expect(call("z80_state_read_control", control.prefix)).toBe(4);
+    expect(call("z80_state_read_byte", 13)).toBe(1);
+
+    call("z80_state_write_control", control.halted, 1);
+    expect(call("z80_execute_instruction")).toBe(0);
+    expect(call("z80_state_read_word", word.pc)).toBe(2);
+    expect(call("z80_state_read_counter", counter.tacts)).toBe(11);
+    expect(call("z80_test_memory_log_count")).toBe(1);
   });
 });

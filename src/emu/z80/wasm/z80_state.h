@@ -37,6 +37,7 @@ typedef struct {
   uint8_t signals;
   uint8_t flags;
   uint8_t ei_backlog;
+  uint8_t op_code;
 } Z80State;
 
 enum Z80WordField {
@@ -72,5 +73,19 @@ enum Z80ByteField {
   Z80_BYTE_I,
   Z80_BYTE_R
 };
+
+enum Z80ControlField {
+  Z80_CONTROL_PREFIX = 0,
+  Z80_CONTROL_HALTED,
+  Z80_CONTROL_OPCODE
+};
+
+enum Z80CounterField {
+  Z80_COUNTER_TACTS = 0,
+  Z80_COUNTER_FRAME_TACTS,
+  Z80_COUNTER_FRAMES
+};
+
+#define Z80_STATE_HALTED 0x01u
 
 #endif

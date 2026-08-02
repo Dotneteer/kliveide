@@ -15,6 +15,7 @@ static uint8_t test_memory[Z80_TEST_MEMORY_SIZE];
 static Z80TestBusLogEntry memory_log[Z80_TEST_LOG_CAPACITY];
 static Z80TestBusLogEntry io_log[Z80_TEST_LOG_CAPACITY];
 static Z80TestBusLogEntry tbblue_log[Z80_TEST_LOG_CAPACITY];
+static unsigned int memory_log_count;
 
 unsigned int z80_abi_version(void) { return 1; }
 
@@ -33,6 +34,7 @@ void z80_reset(void) {
   state.signals = 0;
   state.flags = 0;
   state.ei_backlog = 0;
+  state.op_code = 0;
   state.tacts = 0;
   state.frame_tacts = 0;
   state.frames = 0;
@@ -122,8 +124,106 @@ void z80_state_write_byte(unsigned int field, unsigned int value) {
   }
 }
 
+unsigned int z80_state_read_control(unsigned int field) {
+  switch (field) {
+    case Z80_CONTROL_PREFIX: return state.prefix;
+    case Z80_CONTROL_HALTED: return (state.flags & Z80_STATE_HALTED) != 0;
+    case Z80_CONTROL_OPCODE: return state.op_code;
+    default: return 0;
+  }
+}
+
+void z80_state_write_control(unsigned int field, unsigned int value) {
+  switch (field) {
+    case Z80_CONTROL_PREFIX: state.prefix = (uint8_t)value; break;
+    case Z80_CONTROL_HALTED:
+      if (value) state.flags |= Z80_STATE_HALTED;
+      else state.flags &= (uint8_t)~Z80_STATE_HALTED;
+      break;
+    case Z80_CONTROL_OPCODE: state.op_code = (uint8_t)value; break;
+    default: break;
+  }
+}
+
+unsigned int z80_state_read_counter(unsigned int field) {
+  switch (field) {
+    case Z80_COUNTER_TACTS: return state.tacts;
+    case Z80_COUNTER_FRAME_TACTS: return state.frame_tacts;
+    case Z80_COUNTER_FRAMES: return state.frames;
+    default: return 0;
+  }
+}
+
+static void advance_tacts(unsigned int tacts) {
+  state.tacts += tacts;
+  state.frame_tacts += tacts;
+  if (state.frame_tacts >= state.tacts_in_frame) {
+    state.frames++;
+    state.frame_tacts -= state.tacts_in_frame;
+  }
+}
+
+static void refresh_register(void) {
+  state.ir.bytes.lo = (uint8_t)(((state.ir.bytes.lo + 1u) & 0x7fu) | (state.ir.bytes.lo & 0x80u));
+}
+
+static uint8_t read_opcode(uint16_t address, unsigned int record_access) {
+  uint8_t value = test_memory[address];
+  if (record_access && memory_log_count < Z80_TEST_LOG_CAPACITY) {
+    memory_log[memory_log_count].address = address;
+    memory_log[memory_log_count].value = value;
+    memory_log[memory_log_count].operation = 0;
+    memory_log_count++;
+  }
+  advance_tacts(3);
+  return value;
+}
+
 unsigned int z80_execute_instruction(void) {
-  /* Z1 adds fetch/decode. Do not hide an unimplemented opcode behind a JS fallback. */
+  uint8_t opcode;
+
+  if ((state.flags & Z80_STATE_HALTED) != 0) {
+    /* HALT repeats an M1 timing cycle without an instruction memory access. */
+    advance_tacts(3);
+    refresh_register();
+    advance_tacts(1);
+    return Z80_EXECUTION_COMPLETED;
+  }
+
+  if (state.prefix == 0) memory_log_count = 0;
+  opcode = read_opcode(state.pc, state.prefix == 0);
+  state.pc++;
+  state.op_code = opcode;
+
+  if (state.prefix == 0) {
+    refresh_register();
+    advance_tacts(1);
+    switch (opcode) {
+      case 0x00: return Z80_EXECUTION_COMPLETED; /* NOP */
+      case 0xcb: state.prefix = 2; return Z80_EXECUTION_PREFIX_PENDING;
+      case 0xed: state.prefix = 1; return Z80_EXECUTION_PREFIX_PENDING;
+      case 0xdd: state.prefix = 3; return Z80_EXECUTION_PREFIX_PENDING;
+      case 0xfd: state.prefix = 4; return Z80_EXECUTION_PREFIX_PENDING;
+      default: return Z80_EXECUTION_NOT_IMPLEMENTED;
+    }
+  }
+
+  if (state.prefix == 3 || state.prefix == 4) {
+    if (opcode == 0xdd) {
+      state.prefix = 3;
+      return Z80_EXECUTION_PREFIX_PENDING;
+    }
+    if (opcode == 0xfd) {
+      state.prefix = 4;
+      return Z80_EXECUTION_PREFIX_PENDING;
+    }
+    if (opcode == 0xcb) {
+      state.prefix = state.prefix == 3 ? 5 : 6;
+      return Z80_EXECUTION_PREFIX_PENDING;
+    }
+  }
+
+  state.prefix = 0;
   return Z80_EXECUTION_NOT_IMPLEMENTED;
 }
 
@@ -143,6 +243,8 @@ unsigned int z80_test_io_log_capacity(void) { return Z80_TEST_LOG_CAPACITY; }
 
 unsigned int z80_test_tbblue_log_capacity(void) { return Z80_TEST_LOG_CAPACITY; }
 
+unsigned int z80_test_memory_log_count(void) { return memory_log_count; }
+
 void z80_test_bus_reset(void) {
   unsigned int index;
   for (index = 0; index < Z80_TEST_MEMORY_SIZE; index++) test_memory[index] = 0;
@@ -151,4 +253,5 @@ void z80_test_bus_reset(void) {
     io_log[index].operation = 0;
     tbblue_log[index].operation = 0;
   }
+  memory_log_count = 0;
 }
