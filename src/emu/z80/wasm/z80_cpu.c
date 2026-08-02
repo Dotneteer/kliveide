@@ -476,6 +476,29 @@ static void ldRegisterToRegister(void) {
   writeRegister(destination, readRegister(source));
 }
 
+// 0x76: HALT
+static void halt(void) {
+  state.flags |= Z80_STATE_HALTED;
+  state.pc--;
+}
+
+// 0x80-0x87: ADD A,r
+static void addAR(void) { state.af.bytes.hi = add8(state.af.bytes.hi, readRegister(state.op_code & 7u), 0); }
+// 0x88-0x8F: ADC A,r
+static void adcAR(void) { state.af.bytes.hi = add8(state.af.bytes.hi, readRegister(state.op_code & 7u), state.af.bytes.lo & 1u); }
+// 0x90-0x97: SUB r
+static void subR(void) { state.af.bytes.hi = sub8(state.af.bytes.hi, readRegister(state.op_code & 7u), 0); }
+// 0x98-0x9F: SBC A,r
+static void sbcAR(void) { state.af.bytes.hi = sub8(state.af.bytes.hi, readRegister(state.op_code & 7u), state.af.bytes.lo & 1u); }
+// 0xA0-0xA7: AND r
+static void andR(void) { state.af.bytes.hi &= readRegister(state.op_code & 7u); initializeParityTable(); state.af.bytes.lo = (uint8_t)(0x10u | (state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
+// 0xA8-0xAF: XOR r
+static void xorR(void) { state.af.bytes.hi ^= readRegister(state.op_code & 7u); initializeParityTable(); state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
+// 0xB0-0xB7: OR r
+static void orR(void) { state.af.bytes.hi |= readRegister(state.op_code & 7u); initializeParityTable(); state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
+// 0xB8-0xBF: CP r
+static void cpR(void) { uint8_t a = state.af.bytes.hi; uint8_t value = readRegister(state.op_code & 7u); (void)sub8(a, value, 0); state.af.bytes.hi = a; state.af.bytes.lo = (uint8_t)((state.af.bytes.lo & ~0x28u) | (value & 0x28u)); }
+
 static Z80Operation standard_ops[256];
 static Z80Operation bit_ops[256];
 static Z80Operation extended_ops[256];
@@ -549,6 +572,17 @@ static void initialize_operation_tables(void) {
   standard_ops[0x38] = jrc; standard_ops[0x39] = addHlSp; standard_ops[0x3a] = ldANNi; standard_ops[0x3b] = decSp;
   standard_ops[0x3c] = incA; standard_ops[0x3f] = ccf;
   for (opcode = 0x40; opcode <= 0x6f; opcode++) standard_ops[opcode] = ldRegisterToRegister;
+  for (opcode = 0x70; opcode <= 0x75; opcode++) standard_ops[opcode] = ldRegisterToRegister;
+  standard_ops[0x76] = halt;
+  for (opcode = 0x77; opcode <= 0x7f; opcode++) standard_ops[opcode] = ldRegisterToRegister;
+  for (opcode = 0x80; opcode <= 0x87; opcode++) standard_ops[opcode] = addAR;
+  for (opcode = 0x88; opcode <= 0x8f; opcode++) standard_ops[opcode] = adcAR;
+  for (opcode = 0x90; opcode <= 0x97; opcode++) standard_ops[opcode] = subR;
+  for (opcode = 0x98; opcode <= 0x9f; opcode++) standard_ops[opcode] = sbcAR;
+  for (opcode = 0xa0; opcode <= 0xa7; opcode++) standard_ops[opcode] = andR;
+  for (opcode = 0xa8; opcode <= 0xaf; opcode++) standard_ops[opcode] = xorR;
+  for (opcode = 0xb0; opcode <= 0xb7; opcode++) standard_ops[opcode] = orR;
+  for (opcode = 0xb8; opcode <= 0xbf; opcode++) standard_ops[opcode] = cpR;
   operation_tables_initialized = 1;
 }
 

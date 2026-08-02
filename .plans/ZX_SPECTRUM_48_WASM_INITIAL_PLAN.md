@@ -317,11 +317,11 @@ named existing test file in the WASM project.
 | S40 | **Completed.** `40–4F` register-to-register loads and `(HL)` sources. | `standard-ops-40.test.ts` → `standard-ops-40.wasm.test.ts` |
 | S50 | **Completed.** `50–5F` register-to-register loads and `(HL)` sources. | `standard-ops-50.test.ts` → `standard-ops-50.wasm.test.ts` |
 | S60 | **Completed.** `60–6F` register-to-register loads and `(HL)` sources. These encodings share `ldRegisterToRegister`, a selector-based operation because their Z80 semantics are identical. | `standard-ops-60.test.ts` → `standard-ops-60.wasm.test.ts` |
-| S70 | `70–7F`: `(HL)` stores/loads and HALT | `standard-ops-70.test.ts` |
-| S80 | `80–8F`: ADD/ADC A,r/(HL) | `standard-ops-80.test.ts` |
-| S90 | `90–9F`: SUB/SBC A,r/(HL) | `standard-ops-90.test.ts` |
-| SA0 | `A0–AF`: AND/XOR A,r/(HL) | `standard-ops-a0.test.ts` |
-| SB0 | `B0–BF`: OR/CP A,r/(HL) | `standard-ops-b0.test.ts` |
+| S70 | **Completed.** `70–7F`: `(HL)` stores/loads and HALT. | `standard-ops-70.test.ts` → `standard-ops-70.wasm.test.ts` |
+| S80 | **Completed.** `80–8F`: ADD/ADC A,r/(HL). | `standard-ops-80.test.ts` → `standard-ops-80.wasm.test.ts` |
+| S90 | **Completed.** `90–9F`: SUB/SBC A,r/(HL). | `standard-ops-90.test.ts` → `standard-ops-90.wasm.test.ts` |
+| SA0 | **Completed.** `A0–AF`: AND/XOR A,r/(HL). | `standard-ops-a0.test.ts` → `standard-ops-a0.wasm.test.ts` |
+| SB0 | **Completed.** `B0–BF`: OR/CP A,r/(HL). | `standard-ops-b0.test.ts` → `standard-ops-b0.wasm.test.ts` |
 | SC0 | `C0–CF`: conditional RET/JP/CALL, stack, RST, CB prefix | `standard-ops-c0.test.ts` |
 | SD0 | `D0–DF`: conditional RET/JP/CALL, EXX, IN/OUT immediate | `standard-ops-d0.test.ts` |
 | SE0 | `E0–EF`: conditional RET/JP/CALL, EX (SP),HL, DI | `standard-ops-e0.test.ts` |
