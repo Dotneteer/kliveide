@@ -79,7 +79,8 @@ describe("Z80 WASM ABI", () => {
 
     call("z80_reset");
     memory[memoryStart] = 0xff;
-    expect(call("z80_execute_instruction")).toBe(1);
+    expect(call("z80_execute_instruction")).toBe(0);
+    expect(call("z80_state_read_word", word.pc)).toBe(0x0038);
 
     call("z80_reset");
     memory[memoryStart] = 0xdd;

@@ -14,8 +14,20 @@ const word = {
   ix: 8, iy: 9, ir: 10, wz: 11, pc: 12, sp: 13
 } as const;
 const byte = { a: 0, f: 1, b: 2, c: 3, d: 4, e: 5, h: 6, l: 7 } as const;
-const control = { prefix: 0, halted: 1 } as const;
+const control = { prefix: 0, halted: 1, iff1: 4, iff2: 5 } as const;
 const counter = { tacts: 0 } as const;
+
+export interface IoAccessLogEntry {
+  address: number;
+  value: number;
+  isOutput: boolean;
+}
+
+export interface MemoryAccessLogEntry {
+  address: number;
+  value: number;
+  isWrite: boolean;
+}
 
 type WasmExports = Record<string, WebAssembly.ExportValue>;
 let module: WebAssembly.Module | undefined;
@@ -29,6 +41,9 @@ function createWasm (): WasmExports {
 }
 
 class Z80WasmTestCpu {
+  readonly stepOutStack: number[] = [];
+  codeByteAt?: (address: number) => number;
+
   constructor (private readonly wasm: WasmExports) {}
 
   private call (name: string, ...args: number[]): number {
@@ -41,22 +56,39 @@ class Z80WasmTestCpu {
   private writeByte (field: number, value: number): void { this.call("z80_state_write_byte", field, value); }
 
   reset (): void { this.call("z80_reset"); }
-  executeCpuCycle (): number { return this.call("z80_execute_instruction"); }
+  executeCpuCycle (): number {
+    const startPc = this.pc;
+    const opcode = this.codeByteAt?.(startPc);
+    const result = this.call("z80_execute_instruction");
+    if (opcode != null && (opcode === 0xcd || ((opcode & 0xc7) === 0xc4 && this.pc !== ((startPc + 3) & 0xffff)) || (opcode & 0xc7) === 0xc7)) {
+      this.stepOutStack.push((startPc + ((opcode & 0xc7) === 0xc7 ? 1 : 3)) & 0xffff);
+    }
+    return result;
+  }
 
   get af (): number { return this.readWord(word.af); }
+  set af (value: number) { this.writeWord(word.af, value); }
   get bc (): number { return this.readWord(word.bc); }
+  set bc (value: number) { this.writeWord(word.bc, value); }
   get de (): number { return this.readWord(word.de); }
+  set de (value: number) { this.writeWord(word.de, value); }
   get hl (): number { return this.readWord(word.hl); }
+  set hl (value: number) { this.writeWord(word.hl, value); }
   get af_ (): number { return this.readWord(word.afAlt); }
+  set af_ (value: number) { this.writeWord(word.afAlt, value); }
   get bc_ (): number { return this.readWord(word.bcAlt); }
+  set bc_ (value: number) { this.writeWord(word.bcAlt, value); }
   get de_ (): number { return this.readWord(word.deAlt); }
+  set de_ (value: number) { this.writeWord(word.deAlt, value); }
   get hl_ (): number { return this.readWord(word.hlAlt); }
+  set hl_ (value: number) { this.writeWord(word.hlAlt, value); }
   get ix (): number { return this.readWord(word.ix); }
   get iy (): number { return this.readWord(word.iy); }
   get ir (): number { return this.readWord(word.ir); }
   get wz (): number { return this.readWord(word.wz); }
   get wh (): number { return this.wz >> 8; }
   get sp (): number { return this.readWord(word.sp); }
+  set sp (value: number) { this.writeWord(word.sp, value); }
   get pc (): number { return this.readWord(word.pc); }
   set pc (value: number) { this.writeWord(word.pc, value); }
   get a (): number { return this.readByte(byte.a); }
@@ -78,6 +110,10 @@ class Z80WasmTestCpu {
   get tacts (): number { return this.call("z80_state_read_counter", counter.tacts); }
   get prefix (): number { return this.call("z80_state_read_control", control.prefix); }
   get halted (): boolean { return this.call("z80_state_read_control", control.halted) !== 0; }
+  get iff1 (): boolean { return this.call("z80_state_read_control", control.iff1) !== 0; }
+  set iff1 (value: boolean) { this.call("z80_state_write_control", control.iff1, value ? 1 : 0); }
+  get iff2 (): boolean { return this.call("z80_state_read_control", control.iff2) !== 0; }
+  set iff2 (value: boolean) { this.call("z80_state_write_control", control.iff2, value ? 1 : 0); }
   isSFlagSet (): boolean { return (this.f & 0x80) !== 0; }
   isZFlagSet (): boolean { return (this.f & 0x40) !== 0; }
   isHFlagSet (): boolean { return (this.f & 0x10) !== 0; }
@@ -93,18 +129,61 @@ type Snapshot = Record<"af" | "bc" | "de" | "hl" | "af_" | "bc_" | "de_" | "hl_"
 export class Z80TestMachine {
   readonly cpu: Z80WasmTestCpu;
   readonly memory: Uint8Array;
+  readonly ioInputSequence: number[] = [];
   codeEndsAt = 0;
   registersBeforeRun?: Snapshot;
   memoryBeforeRun = new Uint8Array(0x10000);
 
+  private readonly wasm: WasmExports;
+  private readonly ioInput: Uint8Array;
+
   constructor (public readonly runMode: RunMode = RunMode.Normal) {
     const wasm = createWasm();
+    this.wasm = wasm;
     this.cpu = new Z80WasmTestCpu(wasm);
     const memoryStart = (wasm.z80_test_memory_ptr as CallableFunction)() as number;
     this.memory = new Uint8Array((wasm.memory as WebAssembly.Memory).buffer, memoryStart, 0x10000);
+    const ioInputStart = (wasm.z80_test_io_input_ptr as CallableFunction)() as number;
+    this.ioInput = new Uint8Array((wasm.memory as WebAssembly.Memory).buffer, ioInputStart, 256);
+    this.cpu.codeByteAt = address => this.memory[address];
+  }
+
+  get ioAccessLog (): IoAccessLogEntry[] {
+    const count = (this.wasm.z80_test_io_log_count as CallableFunction)() as number;
+    const start = (this.wasm.z80_test_io_log_ptr as CallableFunction)() as number;
+    const view = new DataView((this.wasm.memory as WebAssembly.Memory).buffer, start, count * 4);
+    const entries: IoAccessLogEntry[] = [];
+
+    for (let index = 0; index < count; index++) {
+      const offset = index * 4;
+      entries.push({
+        address: view.getUint16(offset, true),
+        value: view.getUint8(offset + 2),
+        isOutput: view.getUint8(offset + 3) !== 0
+      });
+    }
+    return entries;
+  }
+
+  get memoryAccessLog (): MemoryAccessLogEntry[] {
+    const count = (this.wasm.z80_test_memory_log_count as CallableFunction)() as number;
+    const start = (this.wasm.z80_test_memory_log_ptr as CallableFunction)() as number;
+    const view = new DataView((this.wasm.memory as WebAssembly.Memory).buffer, start, count * 4);
+    const entries: MemoryAccessLogEntry[] = [];
+
+    for (let index = 0; index < count; index++) {
+      const offset = index * 4;
+      entries.push({
+        address: view.getUint16(offset, true),
+        value: view.getUint8(offset + 2),
+        isWrite: view.getUint8(offset + 3) !== 0
+      });
+    }
+    return entries;
   }
 
   initCode (programCode?: number[], codeAddress = 0, startAddress = 0): void {
+    (this.wasm.z80_test_bus_reset as CallableFunction)();
     this.memory.fill(0);
     if (programCode != null) {
       this.memory.set(programCode, codeAddress);
@@ -115,6 +194,9 @@ export class Z80TestMachine {
   }
 
   run (): void {
+    this.ioInput.fill(0);
+    this.ioInput.set(this.ioInputSequence.slice(0, this.ioInput.length));
+    (this.wasm.z80_test_io_input_count_set as CallableFunction)(this.ioInputSequence.length);
     this.registersBeforeRun = this.snapshot();
     this.memoryBeforeRun = new Uint8Array(this.memory);
     for (;;) {

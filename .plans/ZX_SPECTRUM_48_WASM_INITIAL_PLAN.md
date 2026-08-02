@@ -282,7 +282,7 @@ TypeScript.
 
 #### Foundation and execution semantics
 
-**Progress:** Z0 through Z4 and S00–S10 completed on 2026-08-02. The module now has a
+**Progress:** Z0 through Z5 and S00–SF0 completed on 2026-08-02. The module now has a
 versioned Z80 ABI, C-native register pairs, explicit state accessors, reset
 semantics, 64K test RAM, fixed-capacity test-bus log storage, a fetch/execution
 shell, native interrupt acceptance, and the shared C primitives required for
@@ -322,23 +322,25 @@ named existing test file in the WASM project.
 | S90 | **Completed.** `90–9F`: SUB/SBC A,r/(HL). | `standard-ops-90.test.ts` → `standard-ops-90.wasm.test.ts` |
 | SA0 | **Completed.** `A0–AF`: AND/XOR A,r/(HL). | `standard-ops-a0.test.ts` → `standard-ops-a0.wasm.test.ts` |
 | SB0 | **Completed.** `B0–BF`: OR/CP A,r/(HL). | `standard-ops-b0.test.ts` → `standard-ops-b0.wasm.test.ts` |
-| SC0 | `C0–CF`: conditional RET/JP/CALL, stack, RST, CB prefix | `standard-ops-c0.test.ts` |
-| SD0 | `D0–DF`: conditional RET/JP/CALL, EXX, IN/OUT immediate | `standard-ops-d0.test.ts` |
-| SE0 | `E0–EF`: conditional RET/JP/CALL, EX (SP),HL, DI | `standard-ops-e0.test.ts` |
-| SF0 | `F0–FF`: conditional RET/JP/CALL, LD SP,HL, EI | `standard-ops-f0.test.ts` |
+| SC0 | **Completed.** `C0–CF`: conditional RET/JP/CALL, stack, RST, and CB prefix dispatch. | `standard-ops-c0.test.ts` → `standard-ops-c0.wasm.test.ts` |
+| SD0 | **Completed.** `D0–DF`: conditional RET/JP/CALL, EXX, immediate IN/OUT, and RST. The WASM test machine exposes the original I/O input sequence and access-log contract. | `standard-ops-d0.test.ts` → `standard-ops-d0.wasm.test.ts` |
+| SE0 | **Completed.** `E0–EF`: conditional RET/JP/CALL, `EX (SP),HL`, immediate AND/XOR, `JP (HL)`, `EX DE,HL`, and RST. | `standard-ops-e0.test.ts` → `standard-ops-e0.wasm.test.ts` |
+| SF0 | **Completed.** `F0–FF`: conditional RET/JP/CALL, DI/EI, stack operations, immediate OR/CP, `LD SP,HL`, and RST. | `standard-ops-f0.test.ts` → `standard-ops-f0.wasm.test.ts` |
 
 After every four standard pages, run all sixteen `standard-ops-*.test.ts` files
 on both façades. After SF0, run all standard pages plus `z80.test.ts`,
 `memoryOp.test.ts`, and `interrupts.test.ts` before beginning prefixed families.
+S00–SF0 were verified with `npm run test` (19,031 tests; 14 intentionally
+skipped) and `npm run build:check` on 2026-08-02.
 
 #### CB and ED prefixed Z80 instructions
 
 | Step | C/WASM work | Immediate existing-test gate |
 | --- | --- | --- |
-| C0 | CB rotate/shift groups `00–3F`, including `(HL)` read-modify-write cycles and undocumented flag bits. | `bit-ops-00.test.ts`, `bit-ops-10.test.ts`, `bit-ops-20.test.ts`, `bit-ops-30.test.ts` |
-| C1 | CB `BIT b,r/(HL)` with correct S/Z/PV/H/N and undocumented 3/5 flag sources. | `bit-ops-bit.test.ts` |
-| C2 | CB `RES b,r/(HL)`. | `bit-ops-res.test.ts` |
-| C3 | CB `SET b,r/(HL)`. | `bit-ops-set.test.ts` |
+| C0 | **Completed.** CB rotate/shift groups `00–3F`, including `(HL)` read-modify-write cycles and undocumented flag bits. | `bit-ops-00.test.ts`, `bit-ops-10.test.ts`, `bit-ops-20.test.ts`, `bit-ops-30.test.ts` |
+| C1 | **Completed.** CB `BIT b,r/(HL)` with correct S/Z/PV/H/N and undocumented 3/5 flag sources. | `bit-ops-bit.test.ts` |
+| C2 | **Completed.** CB `RES b,r/(HL)`. | `bit-ops-res.test.ts` |
+| C3 | **Completed.** CB `SET b,r/(HL)`. | `bit-ops-set.test.ts` |
 | E0 | ED `40–7F`: IN/OUT `(C)`, 16-bit ADC/SBC, 16-bit memory transfers, NEG, IM, RRD/RLD, RETN/RETI. | `ext-ops-40.test.ts`, `ext-ops-50.test.ts`, `ext-ops-60.test.ts`, `ext-ops-70.test.ts` |
 | E1 | ED `A0–AF`: block transfer/search/input/output families and repeat termination. | `ext-op-a0.test.ts` |
 | E2 | ED `B0–BF`: repeat block transfer/search/input/output families and exact PC/tact behavior. | `ext-op-b0.test.ts` |

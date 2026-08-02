@@ -14,3 +14,5 @@ This folder stores durable notes for future AI-assisted work in this repository.
 - For renderer feature-folder moves, read `react-feature-folder-moves.md`.
 - For Monaco editor refactors, read `react-monaco-editor-refactor.md`.
 - For renderer noise/type cleanup, read `react-cleanup-pass.md`.
+- For the CPU-first Z80 C/WASM migration, read `z80-wasm-migration-handoff.md`
+  and `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`.

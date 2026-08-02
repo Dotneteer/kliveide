@@ -5,6 +5,10 @@
 
 Z80State state;
 
+static void initializeParityTable(void);
+static uint8_t readRegister(unsigned int registerCode);
+static void writeRegister(unsigned int registerCode, uint8_t value);
+
 static void tactPlusN(unsigned int tacts) {
   state.tacts += tacts;
   state.frame_tacts += tacts;
@@ -153,6 +157,70 @@ static uint8_t dec8(uint8_t value) {
   return result;
 }
 
+static uint8_t sz53pv(uint8_t value) {
+  uint8_t flags = value & 0xa8u;
+
+  initializeParityTable();
+  if (value == 0) flags |= 0x40u;
+  return (uint8_t)(flags | parity_table[value]);
+}
+
+static uint8_t rlc8(uint8_t value) {
+  uint8_t result = (uint8_t)((value << 1) | (value >> 7));
+
+  state.af.bytes.lo = (uint8_t)((value >> 7) | sz53pv(result));
+  return result;
+}
+
+static uint8_t rrc8(uint8_t value) {
+  uint8_t result = (uint8_t)((value >> 1) | (value << 7));
+
+  state.af.bytes.lo = (uint8_t)((value & 1u) | sz53pv(result));
+  return result;
+}
+
+static uint8_t rl8(uint8_t value) {
+  uint8_t result = (uint8_t)((value << 1) | (state.af.bytes.lo & 1u));
+
+  state.af.bytes.lo = (uint8_t)((value >> 7) | sz53pv(result));
+  return result;
+}
+
+static uint8_t rr8(uint8_t value) {
+  uint8_t result = (uint8_t)((value >> 1) | ((state.af.bytes.lo & 1u) << 7));
+
+  state.af.bytes.lo = (uint8_t)((value & 1u) | sz53pv(result));
+  return result;
+}
+
+static uint8_t sla8(uint8_t value) {
+  uint8_t result = (uint8_t)(value << 1);
+
+  state.af.bytes.lo = (uint8_t)((value >> 7) | sz53pv(result));
+  return result;
+}
+
+static uint8_t sra8(uint8_t value) {
+  uint8_t result = (uint8_t)((value >> 1) | (value & 0x80u));
+
+  state.af.bytes.lo = (uint8_t)((value & 1u) | sz53pv(result));
+  return result;
+}
+
+static uint8_t sll8(uint8_t value) {
+  uint8_t result = (uint8_t)((value << 1) | 1u);
+
+  state.af.bytes.lo = (uint8_t)((value >> 7) | sz53pv(result));
+  return result;
+}
+
+static uint8_t srl8(uint8_t value) {
+  uint8_t result = (uint8_t)(value >> 1);
+
+  state.af.bytes.lo = (uint8_t)((value & 1u) | sz53pv(result));
+  return result;
+}
+
 static uint16_t add16(uint16_t left, uint16_t right) {
   uint32_t sum = (uint32_t)left + right;
   uint16_t result = (uint16_t)sum;
@@ -167,6 +235,69 @@ static uint16_t add16(uint16_t left, uint16_t right) {
 typedef void (*Z80Operation)(void);
 
 static void illegal_operation(void) {
+}
+
+static uint8_t executeBitRotateShift(uint8_t value, unsigned int group) {
+  switch (group) {
+    case 0: return rlc8(value);
+    case 1: return rrc8(value);
+    case 2: return rl8(value);
+    case 3: return rr8(value);
+    case 4: return sla8(value);
+    case 5: return sra8(value);
+    case 6: return sll8(value);
+    default: return srl8(value);
+  }
+}
+
+/* CB 0x00-0x3F: RLC/RRC/RL/RR/SLA/SRA/SLL/SRL r/(HL). */
+static void bitRotateShift(void) {
+  unsigned int selector = state.op_code & 7u;
+  unsigned int group = (state.op_code >> 3) & 7u;
+  uint8_t value = readRegister(selector);
+  uint8_t result = executeBitRotateShift(value, group);
+
+  writeRegister(selector, result);
+  tactPlusN(1);
+  if (selector == 6) tactPlusN(1);
+}
+
+/* CB 0x40-0x7F: BIT b,r/(HL). */
+static void bitTest(void) {
+  unsigned int selector = state.op_code & 7u;
+  unsigned int bit = (state.op_code >> 3) & 7u;
+  uint8_t value = readRegister(selector);
+  uint8_t mask = (uint8_t)(1u << bit);
+  uint8_t undocumented_source = selector == 6 ? state.wz.bytes.hi : value;
+  uint8_t flags = (uint8_t)((state.af.bytes.lo & 1u) | 0x10u | (undocumented_source & 0x28u));
+
+  if ((value & mask) == 0) flags |= 0x44u;
+  if (bit == 7 && (value & 0x80u) != 0) flags |= 0x80u;
+  state.af.bytes.lo = flags;
+  tactPlusN(1);
+  if (selector == 6) tactPlusN(1);
+}
+
+/* CB 0x80-0xBF: RES b,r/(HL). */
+static void bitReset(void) {
+  unsigned int selector = state.op_code & 7u;
+  uint8_t mask = (uint8_t)(1u << ((state.op_code >> 3) & 7u));
+  uint8_t result = (uint8_t)(readRegister(selector) & ~mask);
+
+  writeRegister(selector, result);
+  tactPlusN(1);
+  if (selector == 6) tactPlusN(1);
+}
+
+/* CB 0xC0-0xFF: SET b,r/(HL). */
+static void bitSet(void) {
+  unsigned int selector = state.op_code & 7u;
+  uint8_t mask = (uint8_t)(1u << ((state.op_code >> 3) & 7u));
+  uint8_t result = (uint8_t)(readRegister(selector) | mask);
+
+  writeRegister(selector, result);
+  tactPlusN(1);
+  if (selector == 6) tactPlusN(1);
 }
 
 // 0x00: NOP
@@ -499,6 +630,200 @@ static void orR(void) { state.af.bytes.hi |= readRegister(state.op_code & 7u); i
 // 0xB8-0xBF: CP r
 static void cpR(void) { uint8_t a = state.af.bytes.hi; uint8_t value = readRegister(state.op_code & 7u); (void)sub8(a, value, 0); state.af.bytes.hi = a; state.af.bytes.lo = (uint8_t)((state.af.bytes.lo & ~0x28u) | (value & 0x28u)); }
 
+static void ret(void) {
+  state.wz.bytes.lo = readMemory(state.sp++, 0);
+  state.wz.bytes.hi = readMemory(state.sp++, 0);
+  state.pc = state.wz.word;
+}
+
+static void retCC(void) {
+  tactPlusN(1);
+  if (conditionIsTrue((state.op_code >> 3) & 7u)) ret();
+}
+
+static void jpCC(void) {
+  state.wz.word = fetchCodeWord();
+  if (conditionIsTrue((state.op_code >> 3) & 7u)) state.pc = state.wz.word;
+}
+
+static void jp(void) {
+  state.wz.word = fetchCodeWord();
+  state.pc = state.wz.word;
+}
+
+static void call(void) {
+  state.wz.word = fetchCodeWord();
+  push_pc();
+  state.pc = state.wz.word;
+}
+
+static void callCC(void) {
+  state.wz.word = fetchCodeWord();
+  if (conditionIsTrue((state.op_code >> 3) & 7u)) {
+    push_pc();
+    state.pc = state.wz.word;
+  }
+}
+
+static void popQQ(void) {
+  uint16_t value = (uint16_t)(readMemory(state.sp++, 0) | (readMemory(state.sp++, 0) << 8));
+
+  switch ((state.op_code >> 4) & 3u) {
+    case 0: state.bc.word = value; break;
+    case 1: state.de.word = value; break;
+    case 2: state.hl.word = value; break;
+    default: state.af.word = value; break;
+  }
+}
+
+static void pushQQ(void) {
+  uint16_t value;
+
+  tactPlusN(1);
+  switch ((state.op_code >> 4) & 3u) {
+    case 0: value = state.bc.word; break;
+    case 1: value = state.de.word; break;
+    case 2: value = state.hl.word; break;
+    default: value = state.af.word; break;
+  }
+  state.sp--;
+  writeMemory(state.sp, value >> 8);
+  state.sp--;
+  writeMemory(state.sp, value);
+}
+
+static void rst(void) {
+  push_pc();
+  state.pc = state.wz.word = (uint16_t)(state.op_code & 0x38u);
+}
+
+static void addAN(void) {
+  state.af.bytes.hi = add8(state.af.bytes.hi, readMemory(state.pc++, 0), 0);
+}
+
+static void adcAN(void) {
+  state.af.bytes.hi = add8(state.af.bytes.hi, readMemory(state.pc++, 0), state.af.bytes.lo & 1u);
+}
+
+static void subAN(void) {
+  state.af.bytes.hi = sub8(state.af.bytes.hi, readMemory(state.pc++, 0), 0);
+}
+
+static void sbcAN(void) {
+  state.af.bytes.hi = sub8(state.af.bytes.hi, readMemory(state.pc++, 0), state.af.bytes.lo & 1u);
+}
+
+// 0xD3: OUT (n),A
+static void outNA(void) {
+  uint8_t low = readMemory(state.pc++, 0);
+  uint16_t port = (uint16_t)(low | (state.af.bytes.hi << 8));
+
+  state.wz.bytes.hi = state.af.bytes.hi;
+  state.wz.bytes.lo = (uint8_t)(low + 1u);
+  writePort(port, state.af.bytes.hi);
+}
+
+// 0xD9: EXX
+static void exx(void) {
+  uint16_t value = state.bc.word;
+
+  state.bc.word = state.bc_alt.word;
+  state.bc_alt.word = value;
+  value = state.de.word;
+  state.de.word = state.de_alt.word;
+  state.de_alt.word = value;
+  value = state.hl.word;
+  state.hl.word = state.hl_alt.word;
+  state.hl_alt.word = value;
+}
+
+// 0xDB: IN A,(n)
+static void inAN(void) {
+  uint16_t port = (uint16_t)(readMemory(state.pc++, 0) | (state.af.bytes.hi << 8));
+
+  state.af.bytes.hi = readPort(port);
+  state.wz.word = (uint16_t)(port + 1u);
+}
+
+// 0xE3: EX (SP),HL
+static void exSpiHl(void) {
+  uint16_t sp1 = (uint16_t)(state.sp + 1u);
+  uint8_t low = readMemory(state.sp, 0);
+  uint8_t high = readMemory(sp1, 0);
+
+  tactPlusN(1);
+  writeMemory(sp1, state.hl.bytes.hi);
+  writeMemory(state.sp, state.hl.bytes.lo);
+  tactPlusN(2);
+  state.wz.bytes.lo = low;
+  state.wz.bytes.hi = high;
+  state.hl.word = state.wz.word;
+}
+
+// 0xE6: AND A,n
+static void andAN(void) {
+  state.af.bytes.hi &= readMemory(state.pc++, 0);
+  initializeParityTable();
+  state.af.bytes.lo = (uint8_t)(0x10u | (state.af.bytes.hi & 0xa8u) |
+    (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]);
+}
+
+// 0xE9: JP (HL)
+static void jpHl(void) {
+  state.pc = state.hl.word;
+}
+
+// 0xEB: EX DE,HL
+static void exDeHl(void) {
+  uint16_t value = state.de.word;
+
+  state.de.word = state.hl.word;
+  state.hl.word = value;
+}
+
+// 0xEE: XOR A,n
+static void xorAN(void) {
+  state.af.bytes.hi ^= readMemory(state.pc++, 0);
+  initializeParityTable();
+  state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) |
+    (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]);
+}
+
+// 0xF3: DI
+static void di(void) {
+  state.flags &= (uint8_t)~(Z80_STATE_IFF1 | Z80_STATE_IFF2);
+}
+
+// 0xF6: OR A,n
+static void orAN(void) {
+  state.af.bytes.hi |= readMemory(state.pc++, 0);
+  initializeParityTable();
+  state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) |
+    (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]);
+}
+
+// 0xF9: LD SP,HL
+static void ldSpHl(void) {
+  tactPlusN(2);
+  state.sp = state.hl.word;
+}
+
+// 0xFB: EI
+static void ei(void) {
+  state.flags |= Z80_STATE_IFF1 | Z80_STATE_IFF2;
+  state.ei_backlog = 2;
+}
+
+// 0xFE: CP A,n
+static void cpAN(void) {
+  uint8_t accumulator = state.af.bytes.hi;
+  uint8_t value = readMemory(state.pc++, 0);
+
+  (void)sub8(accumulator, value, 0);
+  state.af.bytes.hi = accumulator;
+  state.af.bytes.lo = (uint8_t)((state.af.bytes.lo & ~0x28u) | (value & 0x28u));
+}
+
 static Z80Operation standard_ops[256];
 static Z80Operation bit_ops[256];
 static Z80Operation extended_ops[256];
@@ -583,6 +908,33 @@ static void initialize_operation_tables(void) {
   for (opcode = 0xa8; opcode <= 0xaf; opcode++) standard_ops[opcode] = xorR;
   for (opcode = 0xb0; opcode <= 0xb7; opcode++) standard_ops[opcode] = orR;
   for (opcode = 0xb8; opcode <= 0xbf; opcode++) standard_ops[opcode] = cpR;
+  for (opcode = 0xc0; opcode <= 0xf8; opcode += 8) standard_ops[opcode] = retCC;
+  standard_ops[0xc9] = ret;
+  for (opcode = 0xc2; opcode <= 0xfa; opcode += 8) standard_ops[opcode] = jpCC;
+  standard_ops[0xc3] = jp;
+  for (opcode = 0xc4; opcode <= 0xfc; opcode += 8) standard_ops[opcode] = callCC;
+  standard_ops[0xcd] = call;
+  standard_ops[0xc1] = popQQ; standard_ops[0xd1] = popQQ; standard_ops[0xe1] = popQQ; standard_ops[0xf1] = popQQ;
+  standard_ops[0xc5] = pushQQ; standard_ops[0xd5] = pushQQ; standard_ops[0xe5] = pushQQ; standard_ops[0xf5] = pushQQ;
+  for (opcode = 0xc7; opcode <= 0xff; opcode += 8) standard_ops[opcode] = rst;
+  standard_ops[0xc6] = addAN; standard_ops[0xce] = adcAN; standard_ops[0xd6] = subAN; standard_ops[0xde] = sbcAN;
+  standard_ops[0xd3] = outNA;
+  standard_ops[0xd9] = exx;
+  standard_ops[0xdb] = inAN;
+  standard_ops[0xe3] = exSpiHl;
+  standard_ops[0xe6] = andAN;
+  standard_ops[0xe9] = jpHl;
+  standard_ops[0xeb] = exDeHl;
+  standard_ops[0xee] = xorAN;
+  standard_ops[0xf3] = di;
+  standard_ops[0xf6] = orAN;
+  standard_ops[0xf9] = ldSpHl;
+  standard_ops[0xfb] = ei;
+  standard_ops[0xfe] = cpAN;
+  for (opcode = 0x00; opcode <= 0x3f; opcode++) bit_ops[opcode] = bitRotateShift;
+  for (opcode = 0x40; opcode <= 0x7f; opcode++) bit_ops[opcode] = bitTest;
+  for (opcode = 0x80; opcode <= 0xbf; opcode++) bit_ops[opcode] = bitReset;
+  for (opcode = 0xc0; opcode <= 0xff; opcode++) bit_ops[opcode] = bitSet;
   operation_tables_initialized = 1;
 }
 
