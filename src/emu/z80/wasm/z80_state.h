@@ -38,6 +38,7 @@ typedef struct {
   uint8_t flags;
   uint8_t ei_backlog;
   uint8_t op_code;
+  uint8_t interrupt_vector;
 } Z80State;
 
 enum Z80WordField {
@@ -77,7 +78,16 @@ enum Z80ByteField {
 enum Z80ControlField {
   Z80_CONTROL_PREFIX = 0,
   Z80_CONTROL_HALTED,
-  Z80_CONTROL_OPCODE
+  Z80_CONTROL_OPCODE,
+  Z80_CONTROL_INTERRUPT_MODE,
+  Z80_CONTROL_IFF1,
+  Z80_CONTROL_IFF2,
+  Z80_CONTROL_SIGNAL_INT,
+  Z80_CONTROL_SIGNAL_NMI,
+  Z80_CONTROL_SIGNAL_RST,
+  Z80_CONTROL_EI_BACKLOG,
+  Z80_CONTROL_AFTER_LD_AIR,
+  Z80_CONTROL_INTERRUPT_VECTOR
 };
 
 enum Z80CounterField {
@@ -87,5 +97,11 @@ enum Z80CounterField {
 };
 
 #define Z80_STATE_HALTED 0x01u
+#define Z80_STATE_IFF1 0x02u
+#define Z80_STATE_IFF2 0x04u
+#define Z80_STATE_AFTER_LD_AIR 0x08u
+#define Z80_SIGNAL_INT 0x01u
+#define Z80_SIGNAL_NMI 0x02u
+#define Z80_SIGNAL_RST 0x04u
 
 #endif

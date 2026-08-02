@@ -22,7 +22,6 @@ unsigned int z80_abi_version(void) { return 1; }
 unsigned int z80_state_size(void) { return (unsigned int)sizeof(Z80State); }
 
 void z80_reset(void) {
-  unsigned int index;
   state.af.word = 0xffff;
   state.af_alt.word = 0xffff;
   state.ir.word = 0;
@@ -35,11 +34,12 @@ void z80_reset(void) {
   state.flags = 0;
   state.ei_backlog = 0;
   state.op_code = 0;
+  state.interrupt_vector = 0xff;
   state.tacts = 0;
   state.frame_tacts = 0;
   state.frames = 0;
   state.tacts_in_frame = 1000000u;
-  for (index = 0; index < Z80_TEST_MEMORY_SIZE; index++) test_memory[index] = 0;
+  memory_log_count = 0;
 }
 
 unsigned int z80_state_read_word(unsigned int field) {
@@ -129,6 +129,15 @@ unsigned int z80_state_read_control(unsigned int field) {
     case Z80_CONTROL_PREFIX: return state.prefix;
     case Z80_CONTROL_HALTED: return (state.flags & Z80_STATE_HALTED) != 0;
     case Z80_CONTROL_OPCODE: return state.op_code;
+    case Z80_CONTROL_INTERRUPT_MODE: return state.interrupt_mode;
+    case Z80_CONTROL_IFF1: return (state.flags & Z80_STATE_IFF1) != 0;
+    case Z80_CONTROL_IFF2: return (state.flags & Z80_STATE_IFF2) != 0;
+    case Z80_CONTROL_SIGNAL_INT: return (state.signals & Z80_SIGNAL_INT) != 0;
+    case Z80_CONTROL_SIGNAL_NMI: return (state.signals & Z80_SIGNAL_NMI) != 0;
+    case Z80_CONTROL_SIGNAL_RST: return (state.signals & Z80_SIGNAL_RST) != 0;
+    case Z80_CONTROL_EI_BACKLOG: return state.ei_backlog;
+    case Z80_CONTROL_AFTER_LD_AIR: return (state.flags & Z80_STATE_AFTER_LD_AIR) != 0;
+    case Z80_CONTROL_INTERRUPT_VECTOR: return state.interrupt_vector;
     default: return 0;
   }
 }
@@ -141,6 +150,33 @@ void z80_state_write_control(unsigned int field, unsigned int value) {
       else state.flags &= (uint8_t)~Z80_STATE_HALTED;
       break;
     case Z80_CONTROL_OPCODE: state.op_code = (uint8_t)value; break;
+    case Z80_CONTROL_INTERRUPT_MODE: state.interrupt_mode = (uint8_t)value; break;
+    case Z80_CONTROL_IFF1:
+      if (value) state.flags |= Z80_STATE_IFF1;
+      else state.flags &= (uint8_t)~Z80_STATE_IFF1;
+      break;
+    case Z80_CONTROL_IFF2:
+      if (value) state.flags |= Z80_STATE_IFF2;
+      else state.flags &= (uint8_t)~Z80_STATE_IFF2;
+      break;
+    case Z80_CONTROL_SIGNAL_INT:
+      if (value) state.signals |= Z80_SIGNAL_INT;
+      else state.signals &= (uint8_t)~Z80_SIGNAL_INT;
+      break;
+    case Z80_CONTROL_SIGNAL_NMI:
+      if (value) state.signals |= Z80_SIGNAL_NMI;
+      else state.signals &= (uint8_t)~Z80_SIGNAL_NMI;
+      break;
+    case Z80_CONTROL_SIGNAL_RST:
+      if (value) state.signals |= Z80_SIGNAL_RST;
+      else state.signals &= (uint8_t)~Z80_SIGNAL_RST;
+      break;
+    case Z80_CONTROL_EI_BACKLOG: state.ei_backlog = (uint8_t)value; break;
+    case Z80_CONTROL_AFTER_LD_AIR:
+      if (value) state.flags |= Z80_STATE_AFTER_LD_AIR;
+      else state.flags &= (uint8_t)~Z80_STATE_AFTER_LD_AIR;
+      break;
+    case Z80_CONTROL_INTERRUPT_VECTOR: state.interrupt_vector = (uint8_t)value; break;
     default: break;
   }
 }
@@ -167,20 +203,100 @@ static void refresh_register(void) {
   state.ir.bytes.lo = (uint8_t)(((state.ir.bytes.lo + 1u) & 0x7fu) | (state.ir.bytes.lo & 0x80u));
 }
 
-static uint8_t read_opcode(uint16_t address, unsigned int record_access) {
+static uint8_t read_memory(uint16_t address, unsigned int operation) {
   uint8_t value = test_memory[address];
-  if (record_access && memory_log_count < Z80_TEST_LOG_CAPACITY) {
+  if (memory_log_count < Z80_TEST_LOG_CAPACITY) {
     memory_log[memory_log_count].address = address;
     memory_log[memory_log_count].value = value;
-    memory_log[memory_log_count].operation = 0;
+    memory_log[memory_log_count].operation = (uint8_t)operation;
     memory_log_count++;
   }
   advance_tacts(3);
   return value;
 }
 
+static void write_memory(uint16_t address, uint8_t value) {
+  test_memory[address] = value;
+  if (memory_log_count < Z80_TEST_LOG_CAPACITY) {
+    memory_log[memory_log_count].address = address;
+    memory_log[memory_log_count].value = value;
+    memory_log[memory_log_count].operation = 1;
+    memory_log_count++;
+  }
+  advance_tacts(3);
+}
+
+static void push_pc(void) {
+  state.sp--;
+  advance_tacts(1);
+  write_memory(state.sp, state.pc >> 8);
+  state.sp--;
+  write_memory(state.sp, state.pc & 0xff);
+}
+
+static void leave_halt(void) {
+  if ((state.flags & Z80_STATE_HALTED) != 0) {
+    state.pc++;
+    state.flags &= (uint8_t)~Z80_STATE_HALTED;
+  }
+}
+
+static void apply_ld_air_quirk(void) {
+  if ((state.flags & Z80_STATE_AFTER_LD_AIR) != 0) {
+    state.af.bytes.lo &= (uint8_t)~0x04u;
+    state.flags &= (uint8_t)~Z80_STATE_AFTER_LD_AIR;
+  }
+}
+
+static void process_nmi(void) {
+  advance_tacts(4);
+  leave_halt();
+  if ((state.flags & Z80_STATE_IFF1) != 0) state.flags |= Z80_STATE_IFF2;
+  else state.flags &= (uint8_t)~Z80_STATE_IFF2;
+  state.flags &= (uint8_t)~Z80_STATE_IFF1;
+  apply_ld_air_quirk();
+  push_pc();
+  refresh_register();
+  state.pc = 0x0066;
+  state.wz.word = 0x0066;
+}
+
+static void process_int(void) {
+  uint16_t vector_address;
+  advance_tacts(6);
+  leave_halt();
+  state.flags &= (uint8_t)~(Z80_STATE_IFF1 | Z80_STATE_IFF2);
+  apply_ld_air_quirk();
+  push_pc();
+  refresh_register();
+  if (state.interrupt_mode == 2) {
+    vector_address = (uint16_t)(((uint16_t)state.ir.bytes.hi << 8) | state.interrupt_vector);
+    state.wz.bytes.lo = read_memory(vector_address, 0);
+    state.wz.bytes.hi = read_memory((uint16_t)(vector_address + 1u), 0);
+  } else {
+    state.wz.word = 0x0038;
+  }
+  state.pc = state.wz.word;
+}
+
 unsigned int z80_execute_instruction(void) {
   uint8_t opcode;
+
+  if (state.ei_backlog > 0) state.ei_backlog--;
+  if ((state.signals & Z80_SIGNAL_RST) != 0) {
+    z80_reset();
+    return Z80_EXECUTION_COMPLETED;
+  }
+  if ((state.signals & Z80_SIGNAL_NMI) != 0 && state.prefix == 0) {
+    process_nmi();
+    return Z80_EXECUTION_COMPLETED;
+  }
+  if ((state.signals & Z80_SIGNAL_INT) != 0 && state.prefix == 0 &&
+      (state.flags & Z80_STATE_IFF1) != 0 && state.ei_backlog == 0) {
+    process_int();
+    return Z80_EXECUTION_COMPLETED;
+  }
+  state.flags &= (uint8_t)~Z80_STATE_AFTER_LD_AIR;
 
   if ((state.flags & Z80_STATE_HALTED) != 0) {
     /* HALT repeats an M1 timing cycle without an instruction memory access. */
@@ -191,7 +307,7 @@ unsigned int z80_execute_instruction(void) {
   }
 
   if (state.prefix == 0) memory_log_count = 0;
-  opcode = read_opcode(state.pc, state.prefix == 0);
+  opcode = read_memory(state.pc, 0);
   state.pc++;
   state.op_code = opcode;
 

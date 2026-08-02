@@ -16,7 +16,19 @@ const byte = {
   c: 3
 };
 
-const control = { prefix: 0, halted: 1 };
+const control = {
+  prefix: 0,
+  halted: 1,
+  interruptMode: 3,
+  iff1: 4,
+  iff2: 5,
+  sigInt: 6,
+  sigNmi: 7,
+  sigRst: 8,
+  eiBacklog: 9,
+  afterLdAir: 10,
+  interruptVector: 11
+};
 const counter = { tacts: 0 };
 
 describe("Z80 WASM ABI", () => {
@@ -82,6 +94,76 @@ describe("Z80 WASM ABI", () => {
     expect(call("z80_execute_instruction")).toBe(0);
     expect(call("z80_state_read_word", word.pc)).toBe(2);
     expect(call("z80_state_read_counter", counter.tacts)).toBe(11);
-    expect(call("z80_test_memory_log_count")).toBe(1);
+    expect(call("z80_test_memory_log_count")).toBe(2);
+  });
+
+  it("handles RESET, NMI, and interrupt modes without host callbacks", async () => {
+    buildSp48Wasm();
+    const { instance } = await WebAssembly.instantiate(readFileSync(output));
+    const wasm = instance.exports as Record<string, WebAssembly.ExportValue>;
+    const call = (name: string, ...args: number[]) => (wasm[name] as CallableFunction)(...args) as number;
+    const memory = new Uint8Array((wasm.memory as WebAssembly.Memory).buffer);
+    const memoryStart = call("z80_test_memory_ptr");
+
+    call("z80_reset");
+    call("z80_test_bus_reset");
+    call("z80_state_write_word", word.pc, 0x1234);
+    call("z80_state_write_word", word.sp, 0x8000);
+    call("z80_state_write_word", word.af, 0x0004);
+    call("z80_state_write_control", control.iff1, 1);
+    call("z80_state_write_control", control.afterLdAir, 1);
+    call("z80_state_write_control", control.sigNmi, 1);
+    expect(call("z80_execute_instruction")).toBe(0);
+    expect(call("z80_state_read_word", word.pc)).toBe(0x0066);
+    expect(call("z80_state_read_word", 11)).toBe(0x0066);
+    expect(call("z80_state_read_word", word.sp)).toBe(0x7ffe);
+    expect(memory[memoryStart + 0x7fff]).toBe(0x12);
+    expect(memory[memoryStart + 0x7ffe]).toBe(0x34);
+    expect(call("z80_state_read_control", control.iff1)).toBe(0);
+    expect(call("z80_state_read_control", control.iff2)).toBe(1);
+    expect(call("z80_state_read_byte", byte.f)).toBe(0);
+    expect(call("z80_state_read_counter", counter.tacts)).toBe(11);
+
+    call("z80_reset");
+    call("z80_state_write_word", word.pc, 0x2000);
+    call("z80_state_write_word", word.sp, 0x8000);
+    call("z80_state_write_control", control.interruptMode, 1);
+    call("z80_state_write_control", control.iff1, 1);
+    call("z80_state_write_control", control.sigInt, 1);
+    expect(call("z80_execute_instruction")).toBe(0);
+    expect(call("z80_state_read_word", word.pc)).toBe(0x0038);
+    expect(call("z80_state_read_word", word.sp)).toBe(0x7ffe);
+    expect(call("z80_state_read_counter", counter.tacts)).toBe(13);
+
+    call("z80_reset");
+    call("z80_test_bus_reset");
+    memory[memoryStart + 0x8010] = 0x34;
+    memory[memoryStart + 0x8011] = 0x12;
+    call("z80_state_write_word", word.pc, 0x1000);
+    call("z80_state_write_word", word.sp, 0x9000);
+    call("z80_state_write_byte", 12, 0x80);
+    call("z80_state_write_control", control.interruptMode, 2);
+    call("z80_state_write_control", control.interruptVector, 0x10);
+    call("z80_state_write_control", control.iff1, 1);
+    call("z80_state_write_control", control.sigInt, 1);
+    expect(call("z80_execute_instruction")).toBe(0);
+    expect(call("z80_state_read_word", word.pc)).toBe(0x1234);
+    expect(call("z80_state_read_counter", counter.tacts)).toBe(19);
+
+    call("z80_reset");
+    call("z80_state_write_word", word.pc, 0x4000);
+    call("z80_state_write_control", control.sigRst, 1);
+    expect(call("z80_execute_instruction")).toBe(0);
+    expect(call("z80_state_read_word", word.pc)).toBe(0);
+    expect(call("z80_state_read_control", control.sigRst)).toBe(0);
+
+    call("z80_test_bus_reset");
+    memory[memoryStart] = 0x00;
+    call("z80_state_write_control", control.iff1, 1);
+    call("z80_state_write_control", control.sigInt, 1);
+    call("z80_state_write_control", control.eiBacklog, 2);
+    expect(call("z80_execute_instruction")).toBe(0);
+    expect(call("z80_state_read_control", control.eiBacklog)).toBe(1);
+    expect(call("z80_state_read_word", word.pc)).toBe(1);
   });
 });
