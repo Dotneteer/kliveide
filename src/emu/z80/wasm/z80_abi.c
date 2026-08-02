@@ -322,6 +322,77 @@ static uint8_t sub8(uint8_t left, uint8_t right, unsigned int carry) {
   return result;
 }
 
+static uint8_t inc8(uint8_t value) {
+  uint8_t result = (uint8_t)(value + 1u);
+  uint8_t flags = (state.af.bytes.lo & 0x01u) | (result & 0xa8u);
+  if (result == 0) flags |= 0x40u;
+  if ((value & 0x0fu) == 0x0fu) flags |= 0x10u;
+  if (result == 0x80u) flags |= 0x04u;
+  state.af.bytes.lo = flags;
+  return result;
+}
+
+static uint8_t dec8(uint8_t value) {
+  uint8_t result = (uint8_t)(value - 1u);
+  uint8_t flags = (uint8_t)((state.af.bytes.lo & 0x01u) | 0x02u | (result & 0xa8u));
+  if (result == 0) flags |= 0x40u;
+  if ((value & 0x0fu) == 0) flags |= 0x10u;
+  if (result == 0x7fu) flags |= 0x04u;
+  state.af.bytes.lo = flags;
+  return result;
+}
+
+static uint16_t add16(uint16_t left, uint16_t right) {
+  uint32_t sum = (uint32_t)left + right;
+  uint16_t result = (uint16_t)sum;
+  uint8_t flags = (uint8_t)((state.af.bytes.lo & 0xc4u) | ((result >> 8) & 0x28u));
+  if (((left & 0x0fffu) + (right & 0x0fffu)) > 0x0fffu) flags |= 0x10u;
+  if (sum > 0xffffu) flags |= 0x01u;
+  state.af.bytes.lo = flags;
+  state.wz.word = (uint16_t)(left + 1u);
+  return result;
+}
+
+static unsigned int execute_base_00_0f(uint8_t opcode) {
+  uint8_t value;
+  switch (opcode) {
+    case 0x00: return Z80_EXECUTION_COMPLETED;
+    case 0x01: state.bc.word = fetch_word(); return Z80_EXECUTION_COMPLETED;
+    case 0x02:
+      write_memory(state.bc.word, state.af.bytes.hi);
+      state.wz.bytes.hi = state.af.bytes.hi;
+      return Z80_EXECUTION_COMPLETED;
+    case 0x03: state.bc.word++; advance_tacts(2); return Z80_EXECUTION_COMPLETED;
+    case 0x04: state.bc.bytes.hi = inc8(state.bc.bytes.hi); return Z80_EXECUTION_COMPLETED;
+    case 0x05: state.bc.bytes.hi = dec8(state.bc.bytes.hi); return Z80_EXECUTION_COMPLETED;
+    case 0x06: state.bc.bytes.hi = (uint8_t)read_memory(state.pc++, 0); return Z80_EXECUTION_COMPLETED;
+    case 0x07:
+      value = state.af.bytes.hi;
+      state.af.bytes.hi = (uint8_t)((value << 1) | (value >> 7));
+      state.af.bytes.lo = (uint8_t)((state.af.bytes.lo & 0xc4u) | (state.af.bytes.hi & 0x28u) | (value >> 7));
+      return Z80_EXECUTION_COMPLETED;
+    case 0x08:
+      value = state.af.bytes.hi; state.af.bytes.hi = state.af_alt.bytes.hi; state.af_alt.bytes.hi = value;
+      value = state.af.bytes.lo; state.af.bytes.lo = state.af_alt.bytes.lo; state.af_alt.bytes.lo = value;
+      return Z80_EXECUTION_COMPLETED;
+    case 0x09: state.hl.word = add16(state.hl.word, state.bc.word); advance_tacts(7); return Z80_EXECUTION_COMPLETED;
+    case 0x0a:
+      state.wz.word = (uint16_t)(state.bc.word + 1u);
+      state.af.bytes.hi = read_memory(state.bc.word, 0);
+      return Z80_EXECUTION_COMPLETED;
+    case 0x0b: state.bc.word--; advance_tacts(2); return Z80_EXECUTION_COMPLETED;
+    case 0x0c: state.bc.bytes.lo = inc8(state.bc.bytes.lo); return Z80_EXECUTION_COMPLETED;
+    case 0x0d: state.bc.bytes.lo = dec8(state.bc.bytes.lo); return Z80_EXECUTION_COMPLETED;
+    case 0x0e: state.bc.bytes.lo = (uint8_t)read_memory(state.pc++, 0); return Z80_EXECUTION_COMPLETED;
+    case 0x0f:
+      value = state.af.bytes.hi;
+      state.af.bytes.hi = (uint8_t)((value >> 1) | (value << 7));
+      state.af.bytes.lo = (uint8_t)((state.af.bytes.lo & 0xc4u) | (state.af.bytes.hi & 0x28u) | (value & 1u));
+      return Z80_EXECUTION_COMPLETED;
+    default: return Z80_EXECUTION_NOT_IMPLEMENTED;
+  }
+}
+
 static void leave_halt(void) {
   if ((state.flags & Z80_STATE_HALTED) != 0) {
     state.pc++;
@@ -403,7 +474,15 @@ unsigned int z80_execute_instruction(void) {
     refresh_register();
     advance_tacts(1);
     switch (opcode) {
-      case 0x00: return Z80_EXECUTION_COMPLETED; /* NOP */
+      case 0x00: case 0x01: case 0x02: case 0x03:
+      case 0x04: case 0x05: case 0x06: case 0x07:
+      case 0x08: case 0x09: case 0x0a: case 0x0b:
+      case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+        return execute_base_00_0f(opcode);
+      /* Setup instructions used by the literal S00 test-page clone. Their
+       * own opcode-page acceptance tests will cover their full families. */
+      case 0x21: state.hl.word = fetch_word(); return Z80_EXECUTION_COMPLETED;
+      case 0x3e: state.af.bytes.hi = read_memory(state.pc++, 0); return Z80_EXECUTION_COMPLETED;
       case 0xcb: state.prefix = 2; return Z80_EXECUTION_PREFIX_PENDING;
       case 0xed: state.prefix = 1; return Z80_EXECUTION_PREFIX_PENDING;
       case 0xdd: state.prefix = 3; return Z80_EXECUTION_PREFIX_PENDING;
@@ -460,6 +539,17 @@ unsigned int z80_test_io_input_ptr(void) { return (unsigned int)(uintptr_t)io_in
 void z80_test_io_input_count_set(unsigned int count) {
   io_input_count = count > Z80_TEST_LOG_CAPACITY ? Z80_TEST_LOG_CAPACITY : count;
   io_input_index = 0;
+}
+
+void z80_test_begin_instruction(void) {
+  state.pc = 0;
+  state.prefix = 0;
+  state.flags &= (uint8_t)~Z80_STATE_HALTED;
+  state.tacts = 0;
+  state.frame_tacts = 0;
+  state.frames = 0;
+  memory_log_count = 0;
+  io_log_count = 0;
 }
 
 unsigned int z80_test_fetch_byte(void) { return read_memory(state.pc++, 0); }

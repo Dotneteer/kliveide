@@ -49,6 +49,7 @@ function buildSp48Wasm({ compiler = process.env.SP48_WASM_CC || "clang", run = s
     "-Wl,--export=z80_test_io_log_ptr",
     "-Wl,--export=z80_test_io_input_ptr",
     "-Wl,--export=z80_test_io_input_count_set",
+    "-Wl,--export=z80_test_begin_instruction",
     "-Wl,--export=z80_test_fetch_byte",
     "-Wl,--export=z80_test_fetch_word",
     "-Wl,--export=z80_test_push_word",

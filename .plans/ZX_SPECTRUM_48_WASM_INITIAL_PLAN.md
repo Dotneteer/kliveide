@@ -159,7 +159,7 @@ belong to the eventual production frame API:
 | `z80_abi_version`, `z80_reset` | Production WASM adapter during setup/reset | Stable production ABI. |
 | `z80_execute_instruction` | WASM CPU façade, debugger/step path; Z1 implements its fetch/decode behavior | Stable production ABI, later complemented by a frame/batch entry point. |
 | `z80_state_read_*`, `z80_state_write_*`, `z80_state_size` | `Z80WasmTestCpu` and the early debugger-facing façade | Transitional diagnostic/test ABI. Normal frame execution must use one packed state/result view rather than per-register calls. |
-| `z80_test_memory_*`, `z80_test_*_log_capacity`, `z80_test_bus_reset` | Test-only WASM module and the backend-neutral `Z80TestMachine` | Test-only; omitted or hidden from the packaged production artifact once the production bus ABI exists. |
+| `z80_test_memory_*`, `z80_test_*_log_capacity`, `z80_test_bus_reset` | Test-only WASM module and `wasm-test-z80.ts` | Test-only; omitted or hidden from the packaged production artifact once the production bus ABI exists. |
 | `z80_register_layout_probe` | ABI unit test | Test-only; remove after the C toolchain/layout test is established. |
 
 Thus none of the register accessors or test-bus functions are speculative hot
@@ -167,28 +167,28 @@ path calls. They exist to make the current Z0 state observable and to support
 the promised reuse of the existing Z80 tests. The production normal-run path
 will call a bounded execution export and read bulk views only.
 
-### Reuse the existing tests without duplicating their cases
+### Clone each existing opcode page for the WASM implementation
 
-`test/z80/test-z80.ts` is the compatibility seam. Evolve it into a
-backend-neutral test machine while leaving the existing opcode test files and
-their assertions unchanged:
+The TypeScript reference suite remains untouched. For every migrated opcode
+page, clone its existing test file as `test/z80/<source-name>.wasm.test.ts` and change
+only its `Z80TestMachine`/`RunMode` import to the WASM test harness. The test
+cases themselves—including programs, setup, assertions, and descriptions—are
+kept literally identical. This gives each backend an independently runnable,
+human-readable acceptance page without changing the trusted TypeScript tests:
 
-1. Introduce a small test-only CPU façade that implements the currently used
-   `IZ80Cpu` surface: register get/set, `reset`, `executeCpuCycle`, signals,
-   prefix state, tact values, and operation diagnostics.
-2. Keep the present `Z80TestCpu` / `Z80NTestCpu` as the TypeScript façade.
-   Add `Z80WasmTestCpu` / `Z80NWasmTestCpu`, whose getters/setters read/write
-   the WASM state ABI and whose `executeCpuCycle()` calls the C instruction
-   export.
-3. Add a backend selector used only by the harness. Vitest runs the same
-   `test/z80/**/*.test.ts` files twice: `typescript-z80` (the current default)
-   and `wasm-z80`. No opcode case is copied into a second test file.
-4. The WASM test module uses a test-only in-linear-memory bus: 64K RAM,
+1. Add a dedicated `wasm-test-z80.ts` test-only CPU façade with the subset of
+   the `Z80TestMachine` API used by the cloned page: register access, `reset`,
+   `executeCpuCycle`, prefix/HALT state, tacts, memory, and assertion helpers.
+   The existing `test-z80.ts`, `Z80TestCpu`, and `Z80NTestCpu` are not changed.
+2. Each clone imports `RunMode` and `Z80TestMachine` from `wasm-test-z80.ts`;
+   all remaining lines stay identical to its TypeScript source page. Keep a
+   source-to-clone mapping in this table so reviewers can verify the invariant.
+3. The WASM test module uses a test-only in-linear-memory bus: 64K RAM,
    preloaded I/O input bytes, and fixed-capacity memory/I/O/TBBlue event logs.
    After each instruction, the façade exposes these logs as the existing
    `memoryAccessLog`, `ioAccessLog`, and `tbBlueAccessLog` shapes. This preserves
    assertions in `memoryOp.test.ts` and `next-ops.test.ts` without host callbacks.
-5. Run a differential helper in addition to the existing assertions. For a
+4. Run a differential helper in addition to the cloned assertions. For a
    selected program and initial state it executes both façades and compares full
    register state, memory, tacts/frame fields, prefix/HALT/interrupt state, and
    ordered bus logs. A mismatch reports the opcode bytes and first diverging
@@ -203,10 +203,13 @@ not a production architecture decision.
 
 No step is considered complete until all four checks pass:
 
-1. The new C-focused unit tests for the helper or instruction family pass.
-2. The mapped existing `test/z80` files pass with the WASM façade.
-3. The same mapped files pass with the TypeScript façade, preventing accidental
-   changes to the reference suite.
+1. The shared C-focused ABI and primitive tests affected by the helper or
+   instruction family pass. Do not add a duplicate opcode-range test when the
+   literal WASM clone already covers the same behavior.
+2. The literal WASM clone of the mapped `test/z80` file passes with the WASM
+   façade.
+3. The original TypeScript file passes unchanged, preserving the reference
+   suite.
 4. The differential harness compares the migrated family over deterministic
    edge-value vectors (all flag combinations where applicable, `0x00`, `0x01`,
    `0x7f`, `0x80`, `0xff`, carry boundaries, and wraparound addresses) and
@@ -221,14 +224,15 @@ TypeScript.
 
 #### Foundation and execution semantics
 
-**Progress:** Z0 through Z3 completed on 2026-08-02. The module now has a
+**Progress:** Z0 through Z3 and S00 completed on 2026-08-02. The module now has a
 versioned Z80 ABI, C-native register pairs, explicit state accessors, reset
 semantics, 64K test RAM, fixed-capacity test-bus log storage, a fetch/execution
 shell, native interrupt acceptance, and the shared C primitives required for
 opcode migration. The shell supports NOP, prefix transitions, refresh-register
 semantics, base tact accounting, HALT dummy M1 cycles, RESET/NMI/INT handling,
-and IM 0/1/2 vectors; unsupported opcodes return an explicit result. It is
-intentionally not yet connected to the production CPU or the shared test façade.
+and IM 0/1/2 vectors; unsupported opcodes return an explicit result. S00 adds
+the first literal WASM test-page clone and its `00–0F` instruction family. It
+is intentionally not yet connected to the production CPU.
 
 | Step | C/WASM work | Immediate existing-test gate |
 | --- | --- | --- |
@@ -245,7 +249,7 @@ named existing test file in the WASM project.
 
 | Step | Opcode range / family | Immediate gate |
 | --- | --- | --- |
-| S00 | `00–0F`: NOP, 16-bit loads/inc/dec, 8-bit inc/dec/load, rotate A | `standard-ops-00.test.ts` |
+| S00 | **Completed.** `00–0F`: NOP, 16-bit loads/inc/dec, 8-bit inc/dec/load, rotate A. `LD HL,nn` and `LD A,n` are minimal setup dependencies required by the literal clone; their full pages remain pending. | `standard-ops-00.test.ts` → `standard-ops-00.wasm.test.ts` |
 | S10 | `10–1F`: DJNZ/JR and conditional JR, DE operations, rotate A | `standard-ops-10.test.ts` |
 | S20 | `20–2F`: conditional JR, HL operations, DAA/CPL | `standard-ops-20.test.ts` |
 | S30 | `30–3F`: conditional JR, SP operations, SCF/CCF | `standard-ops-30.test.ts` |
@@ -312,17 +316,24 @@ state/decoder; do not fork the base implementation.
 | N3 | ED `A4–BC`: LDIX/LDWS/LDDX/LDIRX/LDPIRX/LDDRX and their repeat/timing behavior. | Remaining `next-ops.test.ts` cases |
 | N4 | Differential stress: interleave Z80 and Z80N ED sequences, prefix sequences, interrupts, I/O input streams, and TBBlue writes with seeded replay artifacts. | Entire `test/z80` suite in both Z80 and Z80N WASM projects |
 
+#### ABI cleanup and contract hardening
+
+| Step | Work | Completion gate |
+| --- | --- | --- |
+| A0 | **Transitional ABI cleanup.** Inventory every `z80_*` export, its caller, and whether it belongs to the production CPU/frame contract, the WASM-only test harness, or temporary bring-up support. Replace production per-register access with the packed state/result view and bounded execution entry point. Move test-only RAM/log helpers to a test build or non-production module. Remove unused bring-up exports, including `z80_register_layout_probe`, obsolete primitive test exports, and any state accessor or single-instruction export with no debugger/test consumer. Update the build export list and TypeScript declarations in the same change. | A generated/asserted export manifest contains only the approved production ABI (and, in the test artifact, the explicitly approved test ABI). Production adapter, cloned WASM pages, debugger stepping, and full Z80/Z80N differential suites pass. No removed export is referenced by TypeScript, C, or packaged artifacts. |
+
 ### Completion criteria for the CPU phase
 
-- Every existing `test/z80` case runs unchanged against both façades; only the
-  backend-selection/harness infrastructure is new.
+- Every existing `test/z80` case remains unchanged as the TypeScript reference;
+  every migrated page has a WASM clone whose only difference is its harness
+  import.
 - All 256 base, CB, ED, DD/FD, and DDCB/FDCB decode paths are either specified
   and tested or deliberately illegal with matching reference behavior.
 - All implemented Z80N ED overrides in `Z80NCpu.ts` have matching C behavior,
   tact semantics, and TBBlue/I/O event logs.
 - The C implementation has no per-instruction host callback in the production
   frame path; test-bus logging is confined to test builds or bounded event
-  buffers.
+  buffers, and A0 has removed all unused transitional ABI exports.
 - Differential replay fixtures for every discovered mismatch are committed as
   regression tests before the next opcode family is migrated.
 

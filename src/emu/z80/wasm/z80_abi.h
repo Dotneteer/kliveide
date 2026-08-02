@@ -30,6 +30,7 @@ unsigned int z80_test_io_log_count(void);
 unsigned int z80_test_io_log_ptr(void);
 unsigned int z80_test_io_input_ptr(void);
 void z80_test_io_input_count_set(unsigned int count);
+void z80_test_begin_instruction(void);
 unsigned int z80_test_fetch_byte(void);
 unsigned int z80_test_fetch_word(void);
 void z80_test_push_word(unsigned int value);
