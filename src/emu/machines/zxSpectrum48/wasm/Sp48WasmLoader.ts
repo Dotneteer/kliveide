@@ -32,6 +32,10 @@ export type Sp48WasmExports = WebAssembly.Exports & {
   sp48_event_status: Sp48WasmExportFunction;
   sp48_tape_save_trace_count: Sp48WasmExportFunction;
   sp48_clear_tape_save_trace: Sp48WasmExportFunction;
+  sp48_debug_memory_log_count: Sp48WasmExportFunction;
+  sp48_debug_memory_log_ptr: Sp48WasmExportFunction;
+  sp48_debug_io_log_count: Sp48WasmExportFunction;
+  sp48_debug_io_log_ptr: Sp48WasmExportFunction;
   sp48_set_16k_model: Sp48WasmExportFunction;
   sp48_import_state: Sp48WasmExportFunction;
   sp48_export_state: Sp48WasmExportFunction;
@@ -77,6 +81,8 @@ export type Sp48WasmRuntime = {
   readonly contentionTable: Uint8Array;
   readonly floatingBusTable: DataView;
   readonly tapeEarTable: Uint8Array;
+  readonly debugMemoryLog: DataView;
+  readonly debugIoLog: DataView;
 };
 
 let cachedModule: WebAssembly.Module | undefined;
@@ -135,6 +141,8 @@ export function createSp48WasmViews(exports: Sp48WasmExports) {
   const contentionTableStart = exports.sp48_contention_table_ptr();
   const floatingBusTableStart = exports.sp48_floating_bus_table_ptr();
   const tapeEarTableStart = exports.sp48_tape_ear_table_ptr();
+  const debugMemoryLogStart = exports.sp48_debug_memory_log_ptr();
+  const debugIoLogStart = exports.sp48_debug_io_log_ptr();
   const timingTableCapacity = exports.sp48_timing_table_capacity();
 
   return {
@@ -150,7 +158,17 @@ export function createSp48WasmViews(exports: Sp48WasmExports) {
     ),
     contentionTable: new Uint8Array(memoryBuffer, contentionTableStart, timingTableCapacity),
     floatingBusTable: new DataView(memoryBuffer, floatingBusTableStart, timingTableCapacity * 2),
-    tapeEarTable: new Uint8Array(memoryBuffer, tapeEarTableStart, SP48_WASM_LAYOUT.tapeEarTableCapacity)
+    tapeEarTable: new Uint8Array(memoryBuffer, tapeEarTableStart, SP48_WASM_LAYOUT.tapeEarTableCapacity),
+    debugMemoryLog: new DataView(
+      memoryBuffer,
+      debugMemoryLogStart,
+      SP48_WASM_LAYOUT.debugAccessLogCapacity * SP48_WASM_LAYOUT.debugAccessLogRecordSize
+    ),
+    debugIoLog: new DataView(
+      memoryBuffer,
+      debugIoLogStart,
+      SP48_WASM_LAYOUT.debugAccessLogCapacity * SP48_WASM_LAYOUT.debugAccessLogRecordSize
+    )
   };
 }
 

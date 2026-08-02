@@ -70,6 +70,12 @@
 #ifndef SP48_EVENT_STATUS_TAPE_SAVE_OVERFLOW_MASK
 #define SP48_EVENT_STATUS_TAPE_SAVE_OVERFLOW_MASK 2
 #endif
+#ifndef SP48_DEBUG_ACCESS_LOG_CAPACITY
+#define SP48_DEBUG_ACCESS_LOG_CAPACITY 256
+#endif
+#ifndef SP48_DEBUG_ACCESS_LOG_RECORD_SIZE
+#define SP48_DEBUG_ACCESS_LOG_RECORD_SIZE 4
+#endif
 #ifndef SP48_MACHINE_STATE_CPU_STATE_OFFSET
 #define SP48_MACHINE_STATE_CPU_STATE_OFFSET 0
 #endif
@@ -160,6 +166,10 @@ void sp48_clear_audio_trace(void);
 unsigned int sp48_event_status(void);
 unsigned int sp48_tape_save_trace_count(void);
 void sp48_clear_tape_save_trace(void);
+unsigned int sp48_debug_memory_log_count(void);
+unsigned int sp48_debug_memory_log_ptr(void);
+unsigned int sp48_debug_io_log_count(void);
+unsigned int sp48_debug_io_log_ptr(void);
 void sp48_set_16k_model(unsigned int enabled);
 void sp48_import_state(void);
 void sp48_export_state(void);

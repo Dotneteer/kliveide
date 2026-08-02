@@ -40,6 +40,15 @@ export type Sp48WasmTapeSaveTrace = {
   ear: boolean;
 };
 
+export type Sp48WasmDiagnostics = {
+  backend: "wasm";
+  abiVersion: number;
+  artifactName: string;
+  lastTerminationStatus: FrameTerminationMode | null | undefined;
+  lastCpuStatus: number;
+  eventStatus: number;
+};
+
 const CPU_STATE = {
   af: 0,
   bc: 2,
@@ -148,31 +157,7 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
       return termination;
     }
 
-    this.tapeDevice.updateTapeMode();
-    this.syncCpuToWasm();
-    this.syncInputToWasm(runtime);
-    this.configureWasmTerminationInput(runtime);
-    const frameStartTact = this.tacts;
-    const frameStartOffset = this.frameTacts;
-
-    const maxInstructions =
-      this.executionContext.debugStepMode === DebugStepMode.StepInto ? 1 : 100_000;
-    const termination = runtime.exports.sp48_execute_instructions(
-      maxInstructions,
-      this.tactsInCurrentFrame,
-      this.executionContext.frameTerminationMode
-    ) as FrameTerminationMode;
-    this.syncCpuFromWasm();
-    this.replayWasmAudioTrace(runtime, frameStartTact, frameStartOffset, this.tacts);
-    this.replayWasmTapeSaveTrace(runtime, frameStartTact, frameStartOffset);
-    this.tapeDevice.updateTapeMode();
-
-    const result =
-      this.executionContext.debugStepMode === DebugStepMode.StepInto
-        ? FrameTerminationMode.DebugEvent
-        : termination;
-    this.executionContext.lastTerminationReason = result;
-    return result;
+    return this.executeWasmDebugLoop(runtime);
   }
 
   override readScreenMemory(offset: number): number {
@@ -247,6 +232,18 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
 
   getWasmEventStatus(): number {
     return this.wasmRuntime?.exports.sp48_event_status() ?? 0;
+  }
+
+  getWasmDiagnostics(): Sp48WasmDiagnostics {
+    const runtime = this.requireWasmRuntime();
+    return {
+      backend: this.implementation,
+      abiVersion: runtime.exports.sp48_abi_version(),
+      artifactName: runtime.artifactName,
+      lastTerminationStatus: this.executionContext.lastTerminationReason,
+      lastCpuStatus: runtime.result.getUint32(SP48_WASM_LAYOUT.resultCpuStatusOffset, true),
+      eventStatus: runtime.exports.sp48_event_status()
+    };
   }
 
   getWasmBorderTrace(): Sp48WasmBorderTrace[] {
@@ -369,6 +366,190 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
         true
       );
       input.setUint8(SP48_WASM_LAYOUT.inputTerminationPointEnabledOffset, 1);
+    }
+  }
+
+  private executeWasmDebugLoop(runtime: Sp48WasmRuntime): FrameTerminationMode {
+    const debugSupport = this.executionContext.debugSupport;
+    let instructionsExecuted = 0;
+    this.executionContext.lastTerminationReason = undefined;
+
+    if (this.frameCompleted) {
+      this.onInitNewFrame(false);
+      this.frameCompleted = false;
+    }
+
+    if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
+      if (this.shouldStopAtCurrentBreakpoint(instructionsExecuted)) {
+        return this.finishWasmDebugLoop(FrameTerminationMode.DebugEvent, instructionsExecuted);
+      }
+    }
+    if (debugSupport) {
+      debugSupport.lastStartupBreakpoint = undefined;
+    }
+
+    while (!this.frameCompleted) {
+      if (this.frameCompleted) {
+        this.onInitNewFrame(false);
+        this.frameCompleted = false;
+      }
+
+      this.tapeDevice.updateTapeMode();
+      this.syncCpuToWasm();
+      this.syncInputToWasm(runtime);
+      this.configureWasmTerminationInput(runtime);
+      const frameStartTact = this.tacts;
+      const frameStartOffset = this.frameTacts;
+      const termination = runtime.exports.sp48_execute_instructions(
+        1,
+        this.tactsInCurrentFrame,
+        this.executionContext.frameTerminationMode
+      ) as FrameTerminationMode;
+      this.syncCpuFromWasm();
+      this.importWasmAccessLogs(runtime);
+      this.replayWasmAudioTrace(runtime, frameStartTact, frameStartOffset, this.tacts);
+      this.replayWasmTapeSaveTrace(runtime, frameStartTact, frameStartOffset);
+      this.tapeDevice.updateTapeMode();
+      instructionsExecuted++;
+
+      if (termination === FrameTerminationMode.UntilExecutionPoint) {
+        return this.finishWasmDebugLoop(FrameTerminationMode.UntilExecutionPoint, instructionsExecuted);
+      }
+      if (this.hasWasmAccessBreakpoint()) {
+        return this.finishWasmDebugLoop(FrameTerminationMode.DebugEvent, instructionsExecuted);
+      }
+      if (this.testTerminationPoint()) {
+        return this.finishWasmDebugLoop(FrameTerminationMode.UntilExecutionPoint, instructionsExecuted);
+      }
+      if (this.shouldStopAtCurrentBreakpoint(instructionsExecuted)) {
+        return this.finishWasmDebugLoop(FrameTerminationMode.DebugEvent, instructionsExecuted);
+      }
+      if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
+        debugSupport && (debugSupport.imminentBreakpoint = undefined);
+        return this.finishWasmDebugLoop(FrameTerminationMode.DebugEvent, instructionsExecuted);
+      }
+      if (this.getFrameCommand()) {
+        return this.finishWasmDebugLoop(FrameTerminationMode.Normal, instructionsExecuted);
+      }
+    }
+
+    return this.finishWasmDebugLoop(FrameTerminationMode.Normal, instructionsExecuted);
+  }
+
+  private finishWasmDebugLoop(
+    termination: FrameTerminationMode,
+    instructionsExecuted: number
+  ): FrameTerminationMode {
+    this.wasmRuntime?.result.setUint32(
+      SP48_WASM_LAYOUT.resultInstructionCountOffset,
+      instructionsExecuted,
+      true
+    );
+    return (this.executionContext.lastTerminationReason = termination);
+  }
+
+  private shouldStopAtCurrentBreakpoint(instructionsExecuted: number): boolean {
+    const debugSupport = this.executionContext.debugSupport;
+    if (!debugSupport) return false;
+
+    const stopAt = debugSupport.shouldStopAt(this.pc, () => this.getPartition(this.pc));
+    if (
+      stopAt &&
+      (instructionsExecuted > 0 ||
+        debugSupport.lastBreakpoint === undefined ||
+        debugSupport.lastBreakpoint !== this.pc)
+    ) {
+      debugSupport.lastBreakpoint = this.pc;
+      debugSupport.imminentBreakpoint = undefined;
+      return true;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StopAtBreakpoint) {
+      return false;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StepOver) {
+      if (debugSupport.imminentBreakpoint !== undefined) {
+        if (debugSupport.imminentBreakpoint === this.pc) {
+          debugSupport.imminentBreakpoint = undefined;
+          return true;
+        }
+        return false;
+      }
+      const length = this.getCallInstructionLength();
+      if (length > 0) {
+        debugSupport.imminentBreakpoint = (this.pc + length) & 0xffff;
+        return false;
+      }
+      return instructionsExecuted > 0;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StepOut) {
+      if (this.stepOutAddress === this.pc) {
+        debugSupport.imminentBreakpoint = undefined;
+        return true;
+      }
+      return false;
+    }
+
+    return false;
+  }
+
+  private hasWasmAccessBreakpoint(): boolean {
+    const debugSupport = this.executionContext.debugSupport;
+    if (!debugSupport) return false;
+    return (
+      debugSupport.hasMemoryRead(this.lastMemoryReads, this.lastMemoryReadsCount, (addr) => this.getPartition(addr)) ||
+      debugSupport.hasMemoryWrite(this.lastMemoryWrites, this.lastMemoryWritesCount, (addr) => this.getPartition(addr)) ||
+      debugSupport.hasIoRead(this.lastIoReadPort) ||
+      debugSupport.hasIoWrite(this.lastIoWritePort)
+    );
+  }
+
+  private importWasmAccessLogs(runtime: Sp48WasmRuntime): void {
+    this.lastMemoryReadsCount = 0;
+    this.lastMemoryWritesCount = 0;
+    this.lastIoReadPort = undefined;
+    this.lastIoWritePort = undefined;
+
+    const memoryLogCount = Math.min(
+      runtime.exports.sp48_debug_memory_log_count(),
+      SP48_WASM_LAYOUT.debugAccessLogCapacity
+    );
+    for (let index = 0; index < memoryLogCount; index++) {
+      const offset = index * SP48_WASM_LAYOUT.debugAccessLogRecordSize;
+      const address = runtime.debugMemoryLog.getUint16(offset, true);
+      const value = runtime.debugMemoryLog.getUint8(offset + 2);
+      const operation = runtime.debugMemoryLog.getUint8(offset + 3);
+      if (operation === 1) {
+        if (this.lastMemoryWritesCount < this.lastMemoryWrites.length) {
+          this.lastMemoryWrites[this.lastMemoryWritesCount++] = address;
+        }
+        this.lastMemoryWriteValue = value;
+      } else {
+        if (this.lastMemoryReadsCount < this.lastMemoryReads.length) {
+          this.lastMemoryReads[this.lastMemoryReadsCount++] = address;
+        }
+        this.lastMemoryReadValue = value;
+      }
+    }
+
+    const ioLogCount = Math.min(
+      runtime.exports.sp48_debug_io_log_count(),
+      SP48_WASM_LAYOUT.debugAccessLogCapacity
+    );
+    for (let index = 0; index < ioLogCount; index++) {
+      const offset = index * SP48_WASM_LAYOUT.debugAccessLogRecordSize;
+      const address = runtime.debugIoLog.getUint16(offset, true);
+      const value = runtime.debugIoLog.getUint8(offset + 2);
+      const operation = runtime.debugIoLog.getUint8(offset + 3);
+      if (operation === 1) {
+        this.lastIoWritePort = address;
+        this.lastIoWriteValue = value;
+      } else {
+        this.lastIoReadPort = address;
+        this.lastIoReadValue = value;
+      }
     }
   }
 

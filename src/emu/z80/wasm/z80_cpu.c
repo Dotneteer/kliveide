@@ -39,7 +39,7 @@ static uint8_t readMemory(uint16_t address, unsigned int operation) {
   uint8_t value = z80_bus_mode == Z80_BUS_SP48
     ? sp48_bus_read_memory(address, operation)
     : test_memory[address];
-  if (z80_bus_mode == Z80_BUS_TEST && memory_log_count < Z80_TEST_LOG_CAPACITY) {
+  if ((z80_bus_mode == Z80_BUS_TEST || z80_bus_mode == Z80_BUS_SP48) && memory_log_count < Z80_TEST_LOG_CAPACITY) {
     memory_log[memory_log_count].address = address;
     memory_log[memory_log_count].value = value;
     memory_log[memory_log_count].operation = (uint8_t)operation;
@@ -52,7 +52,7 @@ static uint8_t readMemory(uint16_t address, unsigned int operation) {
 static void writeMemory(uint16_t address, uint8_t value) {
   if (z80_bus_mode == Z80_BUS_SP48) sp48_bus_write_memory(address, value);
   else test_memory[address] = value;
-  if (z80_bus_mode == Z80_BUS_TEST && memory_log_count < Z80_TEST_LOG_CAPACITY) {
+  if ((z80_bus_mode == Z80_BUS_TEST || z80_bus_mode == Z80_BUS_SP48) && memory_log_count < Z80_TEST_LOG_CAPACITY) {
     memory_log[memory_log_count].address = address;
     memory_log[memory_log_count].value = value;
     memory_log[memory_log_count].operation = 1;
@@ -65,7 +65,7 @@ static uint8_t readPort(uint16_t address) {
   uint8_t value = z80_bus_mode == Z80_BUS_SP48
     ? sp48_bus_read_port(address)
     : (io_input_index < io_input_count ? io_input[io_input_index++] : 0);
-  if (z80_bus_mode == Z80_BUS_TEST && io_log_count < Z80_TEST_LOG_CAPACITY) {
+  if ((z80_bus_mode == Z80_BUS_TEST || z80_bus_mode == Z80_BUS_SP48) && io_log_count < Z80_TEST_LOG_CAPACITY) {
     io_log[io_log_count].address = address;
     io_log[io_log_count].value = value;
     io_log[io_log_count].operation = 0;
@@ -77,7 +77,7 @@ static uint8_t readPort(uint16_t address) {
 
 static void writePort(uint16_t address, uint8_t value) {
   if (z80_bus_mode == Z80_BUS_SP48) sp48_bus_write_port(address, value);
-  if (z80_bus_mode == Z80_BUS_TEST && io_log_count < Z80_TEST_LOG_CAPACITY) {
+  if ((z80_bus_mode == Z80_BUS_TEST || z80_bus_mode == Z80_BUS_SP48) && io_log_count < Z80_TEST_LOG_CAPACITY) {
     io_log[io_log_count].address = address;
     io_log[io_log_count].value = value;
     io_log[io_log_count].operation = 1;
@@ -1760,7 +1760,10 @@ static unsigned int executeCpuCycle(void) {
     return Z80_EXECUTION_COMPLETED;
   }
 
-  if (state.prefix == 0) memory_log_count = 0;
+  if (state.prefix == 0) {
+    memory_log_count = 0;
+    if (z80_bus_mode == Z80_BUS_SP48) io_log_count = 0;
+  }
   opcode = readMemory(state.pc, 0);
   state.pc++;
   state.op_code = opcode;

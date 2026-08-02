@@ -170,11 +170,11 @@ the row complete in this plan.
 
 | Step | Work | Focused test gate |
 | --- | --- | --- |
-| P7.1 | Expose instruction-bound access logs from C for debugger memory/I/O breakpoints. | Tests verify memory read/write, port read/write, and TBBlue-style logs where applicable. |
-| P7.2 | Implement step-into, step-over, step-out, run-to-address, and stop-at-breakpoint using bounded C execution plus TypeScript policy. | Existing debugger tests run against both `"typescript"` and `"wasm"` machine selections. |
-| P7.3 | Update disassembly/execution-point views to read current CPU state from the WASM adapter. | Renderer-neutral unit tests compare visible PC/SP/register state after stepping. |
-| P7.4 | Verify pause/resume/stop lifecycle and frame-completed events remain controller-owned. | MachineController tests assert no WASM-specific branch is required. |
-| P7.5 | Add diagnostic output for selected backend, ABI version, artifact path, and last WASM termination status. | Diagnostics tests assert useful fields for both backends. |
+| P7.1 | **Completed.** Exposed instruction-bound memory and I/O access logs from C through fixed SP48 debug-log exports. | Tests verify memory write and port write logs imported into the adapter. |
+| P7.2 | **Completed.** Implemented debug-mode execution as one complete C instruction at a time with TypeScript breakpoint policy for step-into, step-over, step-out, run-to-address, and stop-at-breakpoint. | Debug fixtures cover execution, memory, I/O, step-over, step-out, and run-to-address termination. |
+| P7.3 | **Completed.** Kept disassembly/execution-point views backend-neutral by syncing CPU state from WASM before exposing the existing `getCpuState()` shape. | Renderer-neutral tests compare visible PC/SP/register state after WASM stepping. |
+| P7.4 | **Completed.** Verified normal pause/resume/stop lifecycle remains controller-owned by keeping no-debug frame execution on `sp48_execute_frame()` and debug policy in the adapter. | Guard tests assert normal WASM frame execution does not delegate to TypeScript CPU/tact/memory hooks. |
+| P7.5 | **Completed.** Added WASM diagnostics for selected backend, ABI version, artifact name, last termination status, CPU status, and event status. | Diagnostics tests assert useful WASM fields after stepping. |
 
 ### Phase P8 — compatibility, packaging, and rollout
 

@@ -7,6 +7,7 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import { DebugSupport } from "@emu/machines/DebugSupport";
 import { ZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48Machine";
 import { ZxSpectrum48WasmMachine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmMachine";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
@@ -428,6 +429,95 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
 
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
     expect(machine.frames).toBe(1);
+  });
+
+  it("imports instruction-bound memory and I/O access logs from C", async () => {
+    const wasm = await createWasmMachine(testRom([0x3e, 0x77, 0x32, 0x00, 0x40, 0xd3, 0xfe]));
+
+    executeWasmStepInto(wasm, 2);
+
+    expect(Array.from(wasm.lastMemoryWrites.subarray(0, wasm.lastMemoryWritesCount))).toEqual([0x4000]);
+    expect(wasm.lastMemoryWriteValue).toBe(0x77);
+
+    executeWasmStepInto(wasm, 1);
+
+    expect(wasm.lastIoWritePort).toBe(0x77fe);
+    expect(wasm.lastIoWriteValue).toBe(0x77);
+  });
+
+  it("stops at WASM memory and I/O access breakpoints", async () => {
+    const memoryWrite = await createWasmMachine(testRom([0x3e, 0x42, 0x32, 0x00, 0x40, 0x00]));
+    memoryWrite.executionContext.debugSupport = new DebugSupport(undefined, [
+      { address: 0x4000, memoryWrite: true }
+    ]);
+    memoryWrite.executionContext.debugStepMode = DebugStepMode.StopAtBreakpoint;
+    memoryWrite.executionContext.frameTerminationMode = FrameTerminationMode.Normal;
+
+    expect(memoryWrite.executeMachineFrame()).toBe(FrameTerminationMode.DebugEvent);
+    expect(memoryWrite.pc).toBe(0x0005);
+
+    const ioWrite = await createWasmMachine(testRom([0x3e, 0x10, 0xd3, 0xfe, 0x00]));
+    ioWrite.executionContext.debugSupport = new DebugSupport(undefined, [
+      { address: 0x10fe, ioWrite: true }
+    ]);
+    ioWrite.executionContext.debugStepMode = DebugStepMode.StopAtBreakpoint;
+    ioWrite.executionContext.frameTerminationMode = FrameTerminationMode.Normal;
+
+    expect(ioWrite.executeMachineFrame()).toBe(FrameTerminationMode.DebugEvent);
+    expect(ioWrite.pc).toBe(0x0004);
+  });
+
+  it("supports WASM stop-at-breakpoint, step-over, step-out, and run-to-address policies", async () => {
+    const stopAt = await createWasmMachine(testRom([0x00, 0x00, 0x00]));
+    stopAt.executionContext.debugSupport = new DebugSupport(undefined, [{ address: 0x0001, exec: true }]);
+    stopAt.executionContext.debugStepMode = DebugStepMode.StopAtBreakpoint;
+    stopAt.executionContext.frameTerminationMode = FrameTerminationMode.Normal;
+    expect(stopAt.executeMachineFrame()).toBe(FrameTerminationMode.DebugEvent);
+    expect(stopAt.pc).toBe(0x0001);
+
+    const stepOver = await createWasmMachine(testRom([0xcd, 0x06, 0x00, 0x00, 0x00, 0x00, 0xc9]));
+    stepOver.executionContext.debugSupport = new DebugSupport();
+    stepOver.executionContext.debugStepMode = DebugStepMode.StepOver;
+    stepOver.executionContext.frameTerminationMode = FrameTerminationMode.Normal;
+    expect(stepOver.executeMachineFrame()).toBe(FrameTerminationMode.DebugEvent);
+    expect(stepOver.pc).toBe(0x0003);
+
+    const stepOut = await createWasmMachine(testRom([0xc9]));
+    stepOut.sp = 0xfffc;
+    stepOut.patchMemory(0xfffc, 0x34);
+    stepOut.patchMemory(0xfffd, 0x12);
+    stepOut.stepOutAddress = 0x1234;
+    stepOut.executionContext.debugSupport = new DebugSupport();
+    stepOut.executionContext.debugStepMode = DebugStepMode.StepOut;
+    stepOut.executionContext.frameTerminationMode = FrameTerminationMode.Normal;
+    expect(stepOut.executeMachineFrame()).toBe(FrameTerminationMode.DebugEvent);
+    expect(stepOut.pc).toBe(0x1234);
+
+    const runTo = await createWasmMachine(testRom([0x00, 0x00, 0x00]));
+    runTo.executionContext.debugStepMode = DebugStepMode.NoDebug;
+    runTo.executionContext.frameTerminationMode = FrameTerminationMode.UntilExecutionPoint;
+    runTo.executionContext.terminationPoint = 0x0002;
+    expect(runTo.executeMachineFrame()).toBe(FrameTerminationMode.UntilExecutionPoint);
+    expect(runTo.pc).toBe(0x0002);
+  });
+
+  it("serves debugger CPU state and WASM diagnostics from the adapter", async () => {
+    const wasm = await createWasmMachine(testRom([0x3e, 0x5a]));
+
+    executeWasmStepInto(wasm, 1);
+
+    expect(wasm.getCpuState()).toMatchObject({
+      af: wasm.af,
+      pc: 0x0002,
+      sp: wasm.sp
+    });
+    expect(wasm.getWasmDiagnostics()).toMatchObject({
+      backend: "wasm",
+      abiVersion: 1,
+      artifactName: "p2-cpu.wasm",
+      lastTerminationStatus: FrameTerminationMode.DebugEvent,
+      eventStatus: 0
+    });
   });
 
   it("runs a correctness-first fixed-ROM frame smoke before recording timing", async () => {

@@ -63,28 +63,30 @@ unsigned int sp48_layout_value(unsigned int id) {
     case 19: return SP48_TAPE_SAVE_TRACE_OFFSET;
     case 20: return SP48_TAPE_EAR_TABLE_CAPACITY;
     case 21: return SP48_EVENT_STATUS_TAPE_SAVE_OVERFLOW_MASK;
-    case 22: return SP48_MACHINE_STATE_CPU_STATE_OFFSET;
-    case 23: return SP48_MACHINE_STATE_FRAME_TACTS_OFFSET;
-    case 24: return SP48_MACHINE_STATE_ULA_PORT_OFFSET;
-    case 25: return SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET;
-    case 26: return SP48_MACHINE_STATE_BORDER_COLOR_OFFSET;
-    case 27: return SP48_MACHINE_STATE_EAR_LATCH_OFFSET;
-    case 28: return SP48_MACHINE_STATE_MIC_LATCH_OFFSET;
-    case 29: return SP48_INPUT_KEYBOARD_ROWS_OFFSET;
-    case 30: return SP48_INPUT_RUN_MODE_OFFSET;
-    case 31: return SP48_INPUT_TAPE_MODE_OFFSET;
-    case 32: return SP48_INPUT_TAPE_EAR_DEFAULT_OFFSET;
-    case 33: return SP48_INPUT_TERMINATION_POINT_OFFSET;
-    case 34: return SP48_INPUT_TERMINATION_POINT_ENABLED_OFFSET;
-    case 35: return SP48_RESULT_TERMINATION_OFFSET;
-    case 36: return SP48_RESULT_EVENT_COUNT_OFFSET;
-    case 37: return SP48_RESULT_DIRTY_RANGE_COUNT_OFFSET;
-    case 38: return SP48_RESULT_INSTRUCTION_COUNT_OFFSET;
-    case 39: return SP48_RESULT_CPU_STATUS_OFFSET;
-    case 40: return SP48_RESULT_BORDER_TRACE_COUNT_OFFSET;
-    case 41: return SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET;
-    case 42: return SP48_RESULT_EVENT_STATUS_OFFSET;
-    case 43: return SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET;
+    case 22: return SP48_DEBUG_ACCESS_LOG_CAPACITY;
+    case 23: return SP48_DEBUG_ACCESS_LOG_RECORD_SIZE;
+    case 24: return SP48_MACHINE_STATE_CPU_STATE_OFFSET;
+    case 25: return SP48_MACHINE_STATE_FRAME_TACTS_OFFSET;
+    case 26: return SP48_MACHINE_STATE_ULA_PORT_OFFSET;
+    case 27: return SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET;
+    case 28: return SP48_MACHINE_STATE_BORDER_COLOR_OFFSET;
+    case 29: return SP48_MACHINE_STATE_EAR_LATCH_OFFSET;
+    case 30: return SP48_MACHINE_STATE_MIC_LATCH_OFFSET;
+    case 31: return SP48_INPUT_KEYBOARD_ROWS_OFFSET;
+    case 32: return SP48_INPUT_RUN_MODE_OFFSET;
+    case 33: return SP48_INPUT_TAPE_MODE_OFFSET;
+    case 34: return SP48_INPUT_TAPE_EAR_DEFAULT_OFFSET;
+    case 35: return SP48_INPUT_TERMINATION_POINT_OFFSET;
+    case 36: return SP48_INPUT_TERMINATION_POINT_ENABLED_OFFSET;
+    case 37: return SP48_RESULT_TERMINATION_OFFSET;
+    case 38: return SP48_RESULT_EVENT_COUNT_OFFSET;
+    case 39: return SP48_RESULT_DIRTY_RANGE_COUNT_OFFSET;
+    case 40: return SP48_RESULT_INSTRUCTION_COUNT_OFFSET;
+    case 41: return SP48_RESULT_CPU_STATUS_OFFSET;
+    case 42: return SP48_RESULT_BORDER_TRACE_COUNT_OFFSET;
+    case 43: return SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET;
+    case 44: return SP48_RESULT_EVENT_STATUS_OFFSET;
+    case 45: return SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET;
     default: return 0;
   }
 }
@@ -305,6 +307,14 @@ unsigned int sp48_audio_trace_count(void) { return audio_trace_count; }
 unsigned int sp48_tape_save_trace_count(void) { return tape_save_trace_count; }
 
 unsigned int sp48_event_status(void) { return event_status; }
+
+unsigned int sp48_debug_memory_log_count(void) { return memory_log_count; }
+
+unsigned int sp48_debug_memory_log_ptr(void) { return (unsigned int)memory_log; }
+
+unsigned int sp48_debug_io_log_count(void) { return io_log_count; }
+
+unsigned int sp48_debug_io_log_ptr(void) { return (unsigned int)io_log; }
 
 void sp48_clear_dirty_ranges(void) {
   unsigned int index;

@@ -234,9 +234,44 @@ npm run test
 The full suite after P6 reported 562 passed files, 19,970 passed tests, 14
 skipped files, and 119 skipped tests.
 
+Phase P7 is now implemented:
+
+- The Z80 WASM core now records instruction-bound memory and I/O access logs
+  while running in SP48 bus mode, not only in standalone Z80 test mode.
+- `sp48_debug_memory_log_*` and `sp48_debug_io_log_*` exports expose those
+  fixed logs through the SP48 ABI. The record shape remains 4 bytes:
+  address `u16`, value `u8`, operation `u8` (`0` read, `1` write).
+- `ZxSpectrum48WasmMachine` imports the C access logs into the existing
+  `lastMemoryReads`, `lastMemoryWrites`, `lastIoRead*`, and `lastIoWrite*`
+  fields after each debug instruction.
+- Debug-mode WASM execution now runs one complete C instruction at a time and
+  applies the existing TypeScript `DebugSupport` policy for memory/I/O
+  breakpoints, execution breakpoints, step-into, step-over, step-out, and
+  run-to-address.
+- Normal no-debug frames still use `sp48_execute_frame()` and do not delegate to
+  TypeScript CPU/tact/memory hooks.
+- `getCpuState()` remains the debugger/disassembly state source after WASM
+  sync, and `getWasmDiagnostics()` reports backend, ABI version, artifact name,
+  last termination status, CPU status, and event status.
+- The dynamic-allocation audit remains clean.
+
+Focused P7 gates passed:
+
+```sh
+npm run build:sp48-wasm
+npx vitest run --config build/vitest.config.ts --project node test/zxSpectrum/sp48-wasm-cpu-integration.test.ts test/zxSpectrum/sp48-wasm-memory.test.ts test/zxSpectrum/sp48-wasm-abi-manifest.test.ts test/zxSpectrum/sp48-wasm-loader.test.ts test/zxSpectrum/ZxSpectrum48WasmMachineSetup.test.ts
+rg -n "\b(malloc|calloc|realloc|free|aligned_alloc)\s*\(" src/emu/machines/zxSpectrum48/wasm src/emu/z80/wasm
+npm run build:check
+npx electron-vite build --config build/electron.vite.config.ts
+npm run test
+```
+
+The full suite after P7 reported 562 passed files, 19,974 passed tests, 14
+skipped files, and 119 skipped tests.
+
 ## Next useful work
 
-Start with Phase P7 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`:
-debugger and IDE integration.
+Start with Phase P8 in `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`:
+compatibility, packaging, and rollout.
 
 Do not continue by adding more Z80 opcode-migration rows. That phase is done.
