@@ -23,8 +23,8 @@ type Props = {
 export const IconButton = memo(({
   iconName,
   iconSize: size = 24,
-  buttonWidth = 36,
-  buttonHeight = 34,
+  buttonWidth = 30,
+  buttonHeight = 30,
   title,
   fill,
   enable = true,
@@ -57,7 +57,7 @@ export const IconButton = memo(({
         [styles.noPadding]: noPadding
       })}
       style={{
-        width: buttonWidth + (noPadding ? 0 : 4),
+        width: buttonWidth + (noPadding ? 0 : 2),
         height: buttonHeight,
         backgroundColor: hover && enable ? "var(--bgcolor-toolbarbutton-hover)" : "transparent"
       }}

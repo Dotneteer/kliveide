@@ -28,7 +28,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
 
   return (
     <HStack
-      height="38px"
+      height="34px"
       backgroundColor="--bgcolor-toolbar"
       paddingHorizontal="--space-1_5"
       paddingVertical="--space-1"
