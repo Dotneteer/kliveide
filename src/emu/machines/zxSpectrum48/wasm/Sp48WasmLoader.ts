@@ -16,6 +16,11 @@ export type Sp48WasmExports = WebAssembly.Exports & {
   sp48_input_block_ptr: Sp48WasmExportFunction;
   sp48_result_block_ptr: Sp48WasmExportFunction;
   sp48_event_buffer_ptr: Sp48WasmExportFunction;
+  sp48_keyboard_lines_ptr: Sp48WasmExportFunction;
+  sp48_audio_samples_ptr: Sp48WasmExportFunction;
+  sp48_audio_sample_count: Sp48WasmExportFunction;
+  sp48_audio_sample_capacity: Sp48WasmExportFunction;
+  sp48_set_audio_sample_rate: Sp48WasmExportFunction;
   sp48_memory_ptr: Sp48WasmExportFunction;
   sp48_memory_size: Sp48WasmExportFunction;
   sp48_dirty_ranges_ptr: Sp48WasmExportFunction;
@@ -52,6 +57,8 @@ export type Sp48WasmExports = WebAssembly.Exports & {
   sp48_patch_memory: Sp48WasmExportFunction;
   sp48_read_port: Sp48WasmExportFunction;
   sp48_write_port: Sp48WasmExportFunction;
+  sp48_set_key_status: Sp48WasmExportFunction;
+  sp48_get_keyboard_line: Sp48WasmExportFunction;
   sp48_execute_frame: Sp48WasmExportFunction;
 };
 
@@ -81,6 +88,8 @@ export type Sp48WasmRuntime = {
   readonly result: DataView;
   readonly eventBuffer: Uint8Array;
   readonly eventBufferView: DataView;
+  readonly keyboardLines: Uint8Array;
+  readonly audioSamples: Int16Array;
   readonly dirtyRanges: DataView;
   readonly contentionTable: Uint8Array;
   readonly floatingBusTable: DataView;
@@ -141,6 +150,8 @@ export function createSp48WasmViews(exports: Sp48WasmExports) {
   const inputStart = exports.sp48_input_block_ptr();
   const resultStart = exports.sp48_result_block_ptr();
   const eventBufferStart = exports.sp48_event_buffer_ptr();
+  const keyboardLinesStart = exports.sp48_keyboard_lines_ptr();
+  const audioSamplesStart = exports.sp48_audio_samples_ptr();
   const dirtyRangesStart = exports.sp48_dirty_ranges_ptr();
   const contentionTableStart = exports.sp48_contention_table_ptr();
   const floatingBusTableStart = exports.sp48_floating_bus_table_ptr();
@@ -156,6 +167,12 @@ export function createSp48WasmViews(exports: Sp48WasmExports) {
     result: new DataView(memoryBuffer, resultStart, SP48_WASM_LAYOUT.resultBlockSize),
     eventBuffer: new Uint8Array(memoryBuffer, eventBufferStart, SP48_WASM_LAYOUT.eventBufferSize),
     eventBufferView: new DataView(memoryBuffer, eventBufferStart, SP48_WASM_LAYOUT.eventBufferSize),
+    keyboardLines: new Uint8Array(memoryBuffer, keyboardLinesStart, 8),
+    audioSamples: new Int16Array(
+      memoryBuffer,
+      audioSamplesStart,
+      SP48_WASM_LAYOUT.audioSampleCapacity * 2
+    ),
     dirtyRanges: new DataView(
       memoryBuffer,
       dirtyRangesStart,

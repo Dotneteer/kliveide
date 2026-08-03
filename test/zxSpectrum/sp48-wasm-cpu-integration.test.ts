@@ -274,7 +274,7 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     expect(wasm.getWasmEventStatus()).toBe(0);
   });
 
-  it("feeds WASM audio transitions through the existing beeper sample plumbing", async () => {
+  it("feeds WASM-generated audio samples through the existing machine audio API", async () => {
     const wasm = await createWasmMachine(testRom([0x3e, 0x10, 0xd3, 0xfe, 0x00, 0x00, 0x3e, 0x00, 0xd3, 0xfe]));
     wasm.beeperDevice.setAudioSampleRate(44_100);
     wasm.setTactsInFrame(256);
@@ -283,6 +283,10 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
 
     const samples = wasm.getAudioSamples();
     expect(samples.length).toBeGreaterThan(0);
+    expect(samples.length).toBe(wasm.wasmRuntime!.exports.sp48_audio_sample_count());
+    expect(wasm.wasmRuntime!.result.getUint32(SP48_WASM_LAYOUT.resultAudioSampleCountOffset, true)).toBe(
+      samples.length
+    );
     expect(samples.some(sample => sample.left > 0)).toBe(true);
     expect(samples.every(sample => sample.right === 0)).toBe(true);
   });
@@ -301,6 +305,20 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     expect(firstFrameSamples.length).toBeGreaterThan(0);
     expect(wasm.getWasmAudioTrace()).toEqual([]);
     expect(secondFrameSamples.length).toBeGreaterThan(0);
+  });
+
+  it("uses tape-load EAR as the WASM beeper left channel without FE audio transitions", async () => {
+    const wasm = await createWasmMachine(testRom([0x00, 0x18, 0xfd]));
+    prepareTapeLoad(wasm, tinyTapeBlock([0xff, 0x11]));
+    wasm.beeperDevice.setAudioSampleRate(44_100);
+    wasm.setTactsInFrame(256);
+
+    wasm.executeMachineFrame();
+
+    const samples = wasm.getAudioSamples();
+    expect(wasm.getWasmAudioTrace()).toEqual([]);
+    expect(samples.length).toBeGreaterThan(0);
+    expect(samples.some(sample => sample.left !== 0)).toBe(true);
   });
 
   it("matches TypeScript and WASM beeper transitions for square-wave and silence programs", async () => {
@@ -506,7 +524,7 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     expect(wasm.screenDevice.borderColor).toBe(ts.screenDevice.borderColor);
   });
 
-  it("reads FE keyboard rows from the WASM input block", async () => {
+  it("reads FE keyboard rows from the WASM C keyboard matrix", async () => {
     const ts = await createTsMachine(testRom([]));
     const wasm = await createWasmMachine(testRom([]));
 
@@ -519,6 +537,23 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     ts.keyboardDevice.setKeyStatus(SpectrumKeyCode.N1, true);
     wasm.keyboardDevice.setKeyStatus(SpectrumKeyCode.N1, true);
     expect(wasm.doReadPort(0x00fe)).toBe(ts.doReadPort(0x00fe));
+  });
+
+  it("exposes reference-style WASM keyboard key status helpers", async () => {
+    const wasm = await createWasmMachine(testRom([]));
+    const runtime = wasm.wasmRuntime!;
+
+    expect(runtime.exports.sp48_get_keyboard_line(1)).toBe(0);
+
+    runtime.exports.sp48_set_key_status(SpectrumKeyCode.A, 1);
+    expect(runtime.exports.sp48_get_keyboard_line(1)).toBe(0x01);
+    expect(runtime.keyboardLines[1]).toBe(0x01);
+
+    runtime.exports.sp48_set_key_status(SpectrumKeyCode.G, 1);
+    expect(runtime.exports.sp48_get_keyboard_line(1)).toBe(0x11);
+
+    runtime.exports.sp48_set_key_status(SpectrumKeyCode.A, 0);
+    expect(runtime.exports.sp48_get_keyboard_line(1)).toBe(0x10);
   });
 
   it("copies only changed WASM input rows after the first sync", async () => {

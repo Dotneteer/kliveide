@@ -10,6 +10,9 @@
     "../src/lib/**/*",
     "../src/script-packages/**/*"
   ],
+  "exclude": [
+    "../src/emu/machines/zxSpectrum48/wasm/v2/ts-reference/**/*"
+  ],
   "compilerOptions": {
     "composite": true,
     "strictNullChecks": false,

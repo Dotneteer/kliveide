@@ -14,6 +14,9 @@
     "../src/script-packages/**/*",
     "../src/types/**/*.d.ts"
   ],
+  "exclude": [
+    "../src/emu/machines/zxSpectrum48/wasm/v2/ts-reference/**/*"
+  ],
   "compilerOptions": {
     "ignoreDeprecations": "6.0",
     "composite": true,

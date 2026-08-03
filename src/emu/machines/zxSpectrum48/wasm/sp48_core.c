@@ -19,6 +19,8 @@ static unsigned char machine_state_block[SP48_MACHINE_STATE_BLOCK_SIZE];
 static unsigned char input_block[SP48_INPUT_BLOCK_SIZE];
 static unsigned char result_block[SP48_RESULT_BLOCK_SIZE];
 static unsigned char event_buffer[SP48_EVENT_BUFFER_SIZE];
+static int16_t audio_samples[SP48_AUDIO_SAMPLE_CAPACITY * 2u];
+static unsigned char keyboard_lines[8];
 static unsigned char dirty_ranges[SP48_DIRTY_RANGE_CAPACITY * SP48_DIRTY_RANGE_RECORD_SIZE];
 static unsigned char contention_table[SP48_TIMING_TABLE_CAPACITY];
 static uint16_t floating_bus_table[SP48_TIMING_TABLE_CAPACITY];
@@ -26,6 +28,18 @@ static unsigned char tape_ear_table[SP48_TAPE_EAR_TABLE_CAPACITY];
 static unsigned int dirty_range_count;
 static unsigned int border_trace_count;
 static unsigned int audio_trace_count;
+static unsigned int audio_sample_count;
+static unsigned int audio_sample_rate;
+static double audio_sample_length;
+static double audio_next_sample_tact;
+static unsigned int audio_last_level_change_tact;
+static double audio_accumulated_ear;
+static double audio_accumulated_mic;
+static double audio_accumulated_tacts;
+static double audio_dc_filter_prev_input_left;
+static double audio_dc_filter_prev_input_right;
+static double audio_dc_filter_prev_output_left;
+static double audio_dc_filter_prev_output_right;
 static unsigned int tape_save_trace_count;
 static unsigned int event_status;
 static unsigned int resume_frame_after_tape_mode_boundary;
@@ -40,6 +54,7 @@ static unsigned int diagnostics_trace_event_count;
 static unsigned int diagnostics_tape_boundary_yield_count;
 
 static const unsigned int SP48_TAPE_MODE_PASSIVE = 0u;
+static const unsigned int SP48_TAPE_MODE_LOAD = 1u;
 static const unsigned int SP48_TAPE_LOAD_BYTES_ROUTINE = 0x056cu;
 static const unsigned int SP48_TAPE_SAVE_BYTES_ROUTINE = 0x04c2u;
 static const unsigned int SP48_TERMINATION_TAPE_MODE_BOUNDARY = 2u;
@@ -58,6 +73,12 @@ enum Sp48DiagnosticsCounter {
 
 static inline unsigned int sp48_read_port_core(unsigned int address);
 static void sp48_write_port_core(unsigned int address, unsigned int value, unsigned int export_state);
+static void begin_audio_frame(void);
+static void reset_audio(void);
+static void record_audio_transition(unsigned int tact);
+static void set_next_audio_sample(void);
+static inline unsigned int read_tape_ear_at_current_tact(void);
+static void reset_keyboard(void);
 void sp48_bus_delay_memory_read(uint16_t address);
 void sp48_bus_delay_memory_write(uint16_t address);
 void sp48_bus_delay_port_read(uint16_t address);
@@ -125,6 +146,11 @@ unsigned int sp48_layout_value(unsigned int id) {
     case 43: return SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET;
     case 44: return SP48_RESULT_EVENT_STATUS_OFFSET;
     case 45: return SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET;
+    case 46: return SP48_AUDIO_SAMPLE_RECORD_SIZE;
+    case 47: return SP48_AUDIO_SAMPLE_CAPACITY;
+    case 48: return SP48_AUDIO_SAMPLE_SCALE;
+    case 49: return SP48_EVENT_STATUS_AUDIO_SAMPLE_OVERFLOW_MASK;
+    case 50: return SP48_RESULT_AUDIO_SAMPLE_COUNT_OFFSET;
     default: return 0;
   }
 }
@@ -152,6 +178,132 @@ static inline void put_u32(unsigned char *target, unsigned int offset, unsigned 
   target[offset + 3u] = (unsigned char)(value >> 24);
 }
 
+static inline int16_t clamp_audio_word(double value) {
+  if (value > 32767.0) return 32767;
+  if (value < -32768.0) return -32768;
+  return (int16_t)value;
+}
+
+static inline unsigned int effective_audio_ear_bit(void) {
+  return input_block[SP48_INPUT_TAPE_MODE_OFFSET] == SP48_TAPE_MODE_LOAD
+    ? read_tape_ear_at_current_tact()
+    : ear_latch;
+}
+
+static void reset_audio_accumulator(void) {
+  audio_accumulated_ear = 0.0;
+  audio_accumulated_mic = 0.0;
+  audio_accumulated_tacts = 0.0;
+  audio_last_level_change_tact = state.tacts;
+}
+
+static void reset_audio(void) {
+  unsigned int index;
+  audio_sample_count = 0;
+  if (audio_sample_rate == 0u) audio_sample_rate = 44100u;
+  audio_sample_length = 3500000.0 / (double)audio_sample_rate;
+  audio_next_sample_tact = audio_sample_length;
+  audio_dc_filter_prev_input_left = 0.0;
+  audio_dc_filter_prev_input_right = 0.0;
+  audio_dc_filter_prev_output_left = 0.0;
+  audio_dc_filter_prev_output_right = 0.0;
+  reset_audio_accumulator();
+  for (index = 0; index < SP48_AUDIO_SAMPLE_CAPACITY * 2u; index++) {
+    audio_samples[index] = 0;
+  }
+  put_u32(result_block, SP48_RESULT_AUDIO_SAMPLE_COUNT_OFFSET, 0);
+}
+
+static void begin_audio_frame(void) {
+  audio_sample_count = 0;
+  event_status &= (unsigned int)~SP48_EVENT_STATUS_AUDIO_SAMPLE_OVERFLOW_MASK;
+  put_u32(result_block, SP48_RESULT_AUDIO_SAMPLE_COUNT_OFFSET, 0);
+  reset_audio_accumulator();
+}
+
+static void record_audio_transition(unsigned int tact) {
+  unsigned int current_ear = effective_audio_ear_bit();
+  unsigned int current_mic = mic_latch;
+  unsigned int duration = tact - audio_last_level_change_tact;
+  if (duration > 0u) {
+    audio_accumulated_ear += (current_ear != 0u ? 1.0 : 0.0) * (double)duration;
+    audio_accumulated_mic += (current_mic != 0u ? 1.0 : 0.0) * (double)duration;
+    audio_accumulated_tacts += (double)duration;
+  }
+  audio_last_level_change_tact = tact;
+}
+
+static void set_next_audio_sample(void) {
+  unsigned int current_ear;
+  unsigned int current_mic;
+  double raw_left;
+  double raw_right;
+  double out_left;
+  double out_right;
+  if ((double)state.tacts <= audio_next_sample_tact) return;
+  if (audio_sample_count >= SP48_AUDIO_SAMPLE_CAPACITY) {
+    event_status |= SP48_EVENT_STATUS_AUDIO_SAMPLE_OVERFLOW_MASK;
+    put_u32(result_block, SP48_RESULT_EVENT_STATUS_OFFSET, event_status);
+    return;
+  }
+
+  current_ear = effective_audio_ear_bit();
+  current_mic = mic_latch;
+  if (audio_accumulated_tacts > 0.0) {
+    unsigned int final_duration = state.tacts - audio_last_level_change_tact;
+    double total_ear =
+      audio_accumulated_ear + (current_ear != 0u ? 1.0 : 0.0) * (double)final_duration;
+    double total_mic =
+      audio_accumulated_mic + (current_mic != 0u ? 1.0 : 0.0) * (double)final_duration;
+    double total_tacts = audio_accumulated_tacts + (double)final_duration;
+    raw_left = total_tacts > 0.0 ? total_ear / total_tacts : (current_ear != 0u ? 1.0 : 0.0);
+    raw_right = total_tacts > 0.0 ? total_mic / total_tacts : (current_mic != 0u ? 1.0 : 0.0);
+    reset_audio_accumulator();
+  } else {
+    raw_left = current_ear != 0u ? 1.0 : 0.0;
+    raw_right = current_mic != 0u ? 1.0 : 0.0;
+  }
+
+  out_left = raw_left - audio_dc_filter_prev_input_left + 0.995 * audio_dc_filter_prev_output_left;
+  out_right = raw_right - audio_dc_filter_prev_input_right + 0.995 * audio_dc_filter_prev_output_right;
+  audio_dc_filter_prev_input_left = raw_left;
+  audio_dc_filter_prev_input_right = raw_right;
+  audio_dc_filter_prev_output_left = out_left;
+  audio_dc_filter_prev_output_right = out_right;
+  audio_samples[audio_sample_count * 2u] =
+    clamp_audio_word(out_left * (double)SP48_AUDIO_SAMPLE_SCALE);
+  audio_samples[audio_sample_count * 2u + 1u] =
+    clamp_audio_word(out_right * (double)SP48_AUDIO_SAMPLE_SCALE);
+  audio_sample_count++;
+  audio_next_sample_tact += audio_sample_length;
+}
+
+static void reset_keyboard(void) {
+  unsigned int index;
+  for (index = 0; index < 8u; index++) {
+    keyboard_lines[index] = 0u;
+  }
+}
+
+unsigned int sp48_keyboard_lines_ptr(void) { return (unsigned int)keyboard_lines; }
+
+void sp48_set_key_status(unsigned int key, unsigned int down) {
+  unsigned int line;
+  unsigned char mask;
+  if (key >= 40u) return;
+  line = key / 5u;
+  mask = (unsigned char)(1u << (key % 5u));
+  if (down != 0u) {
+    keyboard_lines[line] = (unsigned char)((keyboard_lines[line] | mask) & 0x1fu);
+  } else {
+    keyboard_lines[line] = (unsigned char)(keyboard_lines[line] & (unsigned char)~mask & 0x1fu);
+  }
+}
+
+unsigned int sp48_get_keyboard_line(unsigned int line) {
+  return keyboard_lines[line & 0x07u];
+}
+
 static inline unsigned int normalize_frame_tact(unsigned int tact, unsigned int tacts_in_frame) {
   if (tacts_in_frame == 0u) return tact;
   if (tact < tacts_in_frame) return tact;
@@ -175,6 +327,7 @@ static inline void advance_tacts(unsigned int tacts) {
     }
   }
   state.frame_tacts = frame_tacts;
+  set_next_audio_sample();
 }
 
 static inline unsigned int future_frame_tact(unsigned int offset) {
@@ -256,6 +409,7 @@ static void sync_event_result_counts(void) {
   put_u32(result_block, SP48_RESULT_BORDER_TRACE_COUNT_OFFSET, border_trace_count);
   put_u32(result_block, SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET, audio_trace_count);
   put_u32(result_block, SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET, tape_save_trace_count);
+  put_u32(result_block, SP48_RESULT_AUDIO_SAMPLE_COUNT_OFFSET, audio_sample_count);
   put_u32(result_block, SP48_RESULT_EVENT_STATUS_OFFSET, event_status);
 }
 
@@ -337,6 +491,20 @@ unsigned int sp48_input_block_ptr(void) { return (unsigned int)input_block; }
 unsigned int sp48_result_block_ptr(void) { return (unsigned int)result_block; }
 
 unsigned int sp48_event_buffer_ptr(void) { return (unsigned int)event_buffer; }
+
+unsigned int sp48_audio_samples_ptr(void) { return (unsigned int)audio_samples; }
+
+unsigned int sp48_audio_sample_count(void) { return audio_sample_count; }
+
+unsigned int sp48_audio_sample_capacity(void) { return SP48_AUDIO_SAMPLE_CAPACITY; }
+
+void sp48_set_audio_sample_rate(unsigned int rate) {
+  audio_sample_rate = rate == 0u ? 44100u : rate;
+  audio_sample_length = 3500000.0 / (double)audio_sample_rate;
+  audio_next_sample_tact = audio_sample_length;
+  audio_sample_count = 0;
+  put_u32(result_block, SP48_RESULT_AUDIO_SAMPLE_COUNT_OFFSET, 0);
+}
 
 unsigned int sp48_memory_ptr(void) { return (unsigned int)memory; }
 
@@ -439,7 +607,7 @@ static void sp48_clear_event_traces(void) {
   border_trace_count = 0;
   audio_trace_count = 0;
   tape_save_trace_count = 0;
-  event_status = 0;
+  event_status &= SP48_EVENT_STATUS_AUDIO_SAMPLE_OVERFLOW_MASK;
   resume_frame_after_tape_mode_boundary = 0;
   sync_event_result_counts();
 }
@@ -560,6 +728,8 @@ void sp48_reset(void) {
   fast_sp48_z80_reset();
   sp48_clear_dirty_ranges();
   sp48_clear_event_traces();
+  reset_keyboard();
+  reset_audio();
   for (address = 0x4000; address < SP48_MEMORY_SIZE; address++) {
     memory[address] = is_16k_model && address >= 0x8000 ? 0xff : 0;
   }
@@ -601,7 +771,7 @@ static inline unsigned int sp48_read_port_core(unsigned int address) {
   status = 0;
   for (line = 0; line < 8u; line++) {
     if ((lines & (1u << line)) != 0) {
-      status |= input_block[SP48_INPUT_KEYBOARD_ROWS_OFFSET + line];
+      status |= keyboard_lines[line];
     }
   }
   return (unsigned int)(((~status) & 0xbfu) | ((input_block[SP48_INPUT_TAPE_MODE_OFFSET] == 1u
@@ -614,10 +784,15 @@ static void sp48_write_port_core(unsigned int address, unsigned int value, unsig
     unsigned int old_border_color = border_color;
     unsigned int old_ear_latch = ear_latch;
     unsigned int old_mic_latch = mic_latch;
+    unsigned int new_mic_latch = (value & 0x08u) != 0;
+    unsigned int new_ear_latch = (value & 0x10u) != 0;
+    if (old_ear_latch != new_ear_latch || old_mic_latch != new_mic_latch) {
+      record_audio_transition(state.tacts);
+    }
     ula_port = (unsigned char)value;
     border_color = ula_port & 7u;
-    mic_latch = (ula_port & 0x08u) != 0;
-    ear_latch = (ula_port & 0x10u) != 0;
+    mic_latch = new_mic_latch;
+    ear_latch = new_ear_latch;
     if (old_border_color != border_color) {
       record_border_trace(state.frame_tacts, ula_port);
     }
@@ -720,6 +895,7 @@ unsigned int sp48_execute_instructions(
   sp48_import_state();
   fast_sp48_z80_import_state();
   sp48_clear_event_traces();
+  begin_audio_frame();
   start_frames = state.frames;
   put_u32(result_block, SP48_RESULT_TERMINATION_OFFSET, termination);
   put_u32(result_block, SP48_RESULT_INSTRUCTION_COUNT_OFFSET, 0);
@@ -766,6 +942,7 @@ unsigned int sp48_execute_frame(void) {
     resume_frame_after_tape_mode_boundary = 0;
   } else {
     sp48_clear_event_traces();
+    begin_audio_frame();
   }
   start_frames = state.frames;
   while (state.frames == start_frames) {

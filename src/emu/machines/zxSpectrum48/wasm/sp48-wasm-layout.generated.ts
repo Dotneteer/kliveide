@@ -4,7 +4,7 @@ export const SP48_WASM_ARTIFACT_NAME = "zx-spectrum48.wasm";
 export const SP48_WASM_ABI_VERSION = 1 as const;
 export const SP48_WASM_LAYOUT = {
   "abiVersion": 1,
-  "layoutVersion": 1,
+  "layoutVersion": 2,
   "machineStateBlockSize": 80,
   "inputBlockSize": 64,
   "resultBlockSize": 64,
@@ -21,6 +21,10 @@ export const SP48_WASM_LAYOUT = {
   "audioTraceCapacity": 256,
   "audioTraceOffset": 2048,
   "eventStatusAudioOverflowMask": 1,
+  "audioSampleRecordSize": 4,
+  "audioSampleCapacity": 2048,
+  "audioSampleScale": 32767,
+  "eventStatusAudioSampleOverflowMask": 4,
   "tapeSaveTraceRecordSize": 8,
   "tapeSaveTraceCapacity": 256,
   "tapeSaveTraceOffset": 4096,
@@ -49,7 +53,8 @@ export const SP48_WASM_LAYOUT = {
   "resultBorderTraceCountOffset": 20,
   "resultAudioTraceCountOffset": 24,
   "resultEventStatusOffset": 28,
-  "resultTapeSaveTraceCountOffset": 32
+  "resultTapeSaveTraceCountOffset": 32,
+  "resultAudioSampleCountOffset": 36
 } as const;
 export const SP48_WASM_LAYOUT_VALUE_ID = {
   "layoutVersion": 0,
@@ -97,7 +102,12 @@ export const SP48_WASM_LAYOUT_VALUE_ID = {
   "resultBorderTraceCountOffset": 42,
   "resultAudioTraceCountOffset": 43,
   "resultEventStatusOffset": 44,
-  "resultTapeSaveTraceCountOffset": 45
+  "resultTapeSaveTraceCountOffset": 45,
+  "audioSampleRecordSize": 46,
+  "audioSampleCapacity": 47,
+  "audioSampleScale": 48,
+  "eventStatusAudioSampleOverflowMask": 49,
+  "resultAudioSampleCountOffset": 50
 } as const;
 
 export type Sp48WasmLayoutValueKey = keyof typeof SP48_WASM_LAYOUT_VALUE_ID;

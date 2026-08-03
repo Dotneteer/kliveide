@@ -14,12 +14,14 @@ Build with `npm run build:sp48-wasm`. The compiler defaults to `clang`; set
 from `src/emu/machines/zxSpectrum48/wasm/dist` to
 `wasm/zxSpectrum48/zx-spectrum48.wasm`.
 
-The WASM backend is the default for 48K machines. The default switch is kept in
-one place: `DEFAULT_SP48_IMPLEMENTATION` in
-`ZxSpectrum48Implementation.ts`. Change it to `"typescript"` to swap the rollout
-default back. Explicit machine config can still select either backend with
-`sp48Implementation: "wasm"` or `sp48Implementation: "typescript"`; unknown
-values use the centralized default.
+The WASM v2 backend is the default for 48K machines. The default switch is kept
+in one place: `DEFAULT_SP48_IMPLEMENTATION` in `ZxSpectrum48Implementation.ts`.
+Change it to `"wasm"` or `"typescript"` to swap the rollout default back.
+Explicit machine config can still select a backend with
+`sp48Implementation: "wasm"`, `sp48Implementation: "wasm-v2"`, or
+`sp48Implementation: "typescript"`; unknown values use the centralized default.
+For manual checks in the app, select `ZX Spectrum 48K (WASM v2)`,
+`ZX Spectrum 48K (WASM stable)`, or `ZX Spectrum 48K (TypeScript)`.
 
 When the WASM backend is selected, loading is strict: missing
 artifacts, ABI-version mismatches, and layout mismatches throw clear loader

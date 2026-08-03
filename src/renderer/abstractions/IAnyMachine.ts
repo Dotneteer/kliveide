@@ -131,6 +131,11 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   getPixelBuffer(): Uint32Array;
 
   /**
+   * Gets the rendered pixels as RGBA bytes when the backend can expose them directly.
+   */
+  getPixelBufferBytes?(): Uint8ClampedArray;
+
+  /**
    * This method renders the entire screen frame as the shadow screen
    * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
    * @returns The pixel buffer that represents the previous screen

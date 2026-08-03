@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import packageJson from "../../package.json";
 import {
   buildSp48Wasm,
+  buildAllSp48Wasm,
   fastZ80ReferenceExports,
   fastZ80ReferenceOutput,
   fastZ80ReferenceSource,
@@ -20,6 +21,10 @@ import {
   testExports,
   testOutput,
   testOutputRelative,
+  v2Exports,
+  v2Output,
+  v2OutputRelative,
+  v2Source,
   wasmDistDirectoryRelative,
   z80StateSource
 } from "../../scripts/build-sp48-wasm.cjs";
@@ -114,6 +119,47 @@ describe("ZX Spectrum 48K WASM build", () => {
     expect(result.mode).toBe("fast-z80-test");
   });
 
+  it("can build the isolated v2 SP48 full-machine artifact", () => {
+    const calls: Array<{ compiler: string; args: string[] }> = [];
+    const result = buildSp48Wasm({
+      compiler: "fake-c-compiler",
+      mode: "v2",
+      run: (compiler: string, args: string[]) => {
+        calls.push({ compiler, args });
+        return { status: 0 };
+      }
+    });
+
+    expect(calls[0].args).toContain(v2Source);
+    expect(calls[0].args).toContain(v2Output);
+    expect(calls[0].args).not.toContain(source);
+    expect(calls[0].args).toContain("-Wl,--initial-memory=8388608");
+    for (const exportName of v2Exports.filter(name => name !== "memory")) {
+      expect(calls[0].args).toContain(`-Wl,--export=${exportName}`);
+    }
+    expect(v2Exports).toContain("sp48ExecuteFrame");
+    expect(v2Exports).toContain("sp48PixelBufferPtr");
+    expect(v2Exports).toContain("sp48AudioSamplesPtr");
+    expect(result.output).toBe(v2Output);
+    expect(result.mode).toBe("v2");
+  });
+
+  it("builds production and v2 artifacts from the CLI helper", () => {
+    const calls: Array<{ compiler: string; args: string[] }> = [];
+    const results = buildAllSp48Wasm({
+      compiler: "fake-c-compiler",
+      run: (compiler: string, args: string[]) => {
+        calls.push({ compiler, args });
+        return { status: 0 };
+      }
+    });
+
+    expect(calls).toHaveLength(2);
+    expect(results.map(result => result.mode)).toEqual(["production", "v2"]);
+    expect(calls[0].args).toContain(productionOutput);
+    expect(calls[1].args).toContain(v2Output);
+  });
+
   it("accepts explicit optimization profiles", () => {
     const calls: Array<{ compiler: string; args: string[] }> = [];
     buildSp48Wasm({
@@ -169,6 +215,7 @@ describe("ZX Spectrum 48K WASM build", () => {
     expect(outputRelative).toBe("src/emu/machines/zxSpectrum48/wasm/dist/zx-spectrum48.wasm");
     expect(productionOutputRelative).toBe(outputRelative);
     expect(testOutputRelative).toBe("src/emu/machines/zxSpectrum48/wasm/test-dist/zx-spectrum48-test.wasm");
+    expect(v2OutputRelative).toBe("src/emu/machines/zxSpectrum48/wasm/dist/zx-spectrum48-v2.wasm");
     expect(packagedArtifactRelative).toBe("wasm/zxSpectrum48/zx-spectrum48.wasm");
     expect(packageJson.build.extraResources).toEqual(expect.arrayContaining([
       expect.objectContaining({

@@ -5,7 +5,7 @@
 #define SP48_ABI_VERSION 1
 #endif
 #ifndef SP48_LAYOUT_VERSION
-#define SP48_LAYOUT_VERSION 1
+#define SP48_LAYOUT_VERSION 2
 #endif
 #ifndef SP48_MACHINE_STATE_BLOCK_SIZE
 #define SP48_MACHINE_STATE_BLOCK_SIZE 80
@@ -54,6 +54,18 @@
 #endif
 #ifndef SP48_EVENT_STATUS_AUDIO_OVERFLOW_MASK
 #define SP48_EVENT_STATUS_AUDIO_OVERFLOW_MASK 1
+#endif
+#ifndef SP48_AUDIO_SAMPLE_RECORD_SIZE
+#define SP48_AUDIO_SAMPLE_RECORD_SIZE 4
+#endif
+#ifndef SP48_AUDIO_SAMPLE_CAPACITY
+#define SP48_AUDIO_SAMPLE_CAPACITY 2048
+#endif
+#ifndef SP48_AUDIO_SAMPLE_SCALE
+#define SP48_AUDIO_SAMPLE_SCALE 32767
+#endif
+#ifndef SP48_EVENT_STATUS_AUDIO_SAMPLE_OVERFLOW_MASK
+#define SP48_EVENT_STATUS_AUDIO_SAMPLE_OVERFLOW_MASK 4
 #endif
 #ifndef SP48_TAPE_SAVE_TRACE_RECORD_SIZE
 #define SP48_TAPE_SAVE_TRACE_RECORD_SIZE 8
@@ -142,6 +154,9 @@
 #ifndef SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET
 #define SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET 32
 #endif
+#ifndef SP48_RESULT_AUDIO_SAMPLE_COUNT_OFFSET
+#define SP48_RESULT_AUDIO_SAMPLE_COUNT_OFFSET 36
+#endif
 
 /* Versioned, integer-only ABI: JavaScript invokes these exports directly. */
 unsigned int sp48_abi_version(void);
@@ -150,6 +165,11 @@ unsigned int sp48_machine_state_block_ptr(void);
 unsigned int sp48_input_block_ptr(void);
 unsigned int sp48_result_block_ptr(void);
 unsigned int sp48_event_buffer_ptr(void);
+unsigned int sp48_keyboard_lines_ptr(void);
+unsigned int sp48_audio_samples_ptr(void);
+unsigned int sp48_audio_sample_count(void);
+unsigned int sp48_audio_sample_capacity(void);
+void sp48_set_audio_sample_rate(unsigned int rate);
 unsigned int sp48_memory_ptr(void);
 unsigned int sp48_memory_size(void);
 unsigned int sp48_dirty_ranges_ptr(void);
@@ -185,6 +205,8 @@ void sp48_write_memory(unsigned int address, unsigned int value);
 void sp48_patch_memory(unsigned int address, unsigned int value);
 unsigned int sp48_read_port(unsigned int address);
 void sp48_write_port(unsigned int address, unsigned int value);
+void sp48_set_key_status(unsigned int key, unsigned int down);
+unsigned int sp48_get_keyboard_line(unsigned int line);
 unsigned int sp48_execute_instructions(
   unsigned int max_instructions,
   unsigned int stop_tact,

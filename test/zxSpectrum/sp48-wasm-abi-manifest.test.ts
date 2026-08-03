@@ -10,7 +10,9 @@ import {
   productionExports,
   standaloneZ80TestExports,
   testExports,
-  testOutput
+  testOutput,
+  v2Exports,
+  v2Output
 } from "../../scripts/build-sp48-wasm.cjs";
 import { SP48_WASM_ABI_VERSION, SP48_WASM_LAYOUT, SP48_WASM_LAYOUT_VALUE_ID } from "@emu/machines/zxSpectrum48/wasm/sp48-wasm-layout.generated";
 import { describe, expect, it } from "vitest";
@@ -57,6 +59,18 @@ describe("ZX Spectrum 48K WASM ABI manifest", () => {
     expect(actualExports).toContain("z80_test_memory_ptr");
     expect(actualExports).not.toContain("fast_z80_execute_instruction");
     expect(actualExports).not.toContain("sp48_execute_frame");
+  });
+
+  it("exposes the v2 full-machine ABI only in the v2 artifact", async () => {
+    buildSp48Wasm({ mode: "v2" });
+    const { instance } = await WebAssembly.instantiate(readFileSync(v2Output));
+    const actualExports = Object.keys(instance.exports).sort();
+
+    expect(actualExports).toEqual([...v2Exports].sort());
+    expect(actualExports).toContain("sp48ExecuteFrame");
+    expect(actualExports).toContain("sp48PixelBufferPtr");
+    expect(actualExports).not.toContain("sp48_execute_frame");
+    expect(actualExports).not.toContain("sp48_abi_version");
   });
 
   it("declares every production export in the TypeScript loader contract", () => {
