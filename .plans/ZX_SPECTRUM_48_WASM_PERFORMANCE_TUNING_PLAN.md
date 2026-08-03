@@ -1,5 +1,12 @@
 # ZX Spectrum 48K WASM Backend — Performance Tuning Plan
 
+Superseded as of 2026-08-03 by
+`.plans/ZX_SPECTRUM_48_WASM_FAST_Z80_REPLACEMENT_PLAN.md`. The T0-T9 work in
+this file remains useful history, but the active CPU-performance direction is
+the fast Z80 replacement path. Production SP48 WASM and standalone Z80 WASM
+tests now run on the vendored fast Z80 core; the older hand-written C opcode
+executor has been removed.
+
 ## Goal
 
 The 48K WASM backend is now behaviorally ready to try as the default backend.
@@ -191,8 +198,8 @@ and test artifacts: packaged production keeps only the SP48 ABI in
 directory. The selected production profile remains speed
 oriented (`-O3`) with `-ffreestanding`, `-fno-builtin`, and `-nostdlib`.
 `-Oz` was much smaller but materially slower; LTO saved only 119 bytes on this
-toolchain. CI now runs `npm run check:sp48-wasm-size` with an 85,000-byte
-production ceiling. Benchmark notes are saved in
+toolchain. CI now runs `npm run check:sp48-wasm-size`; after the fast-core
+replacement, the production ceiling is 240,000 bytes. Benchmark notes are saved in
 `.ai/zx-spectrum48-wasm-t7-benchmark.md`.
 
 ## Phase T8 — JS/WASM adapter overhead

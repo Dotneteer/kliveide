@@ -1,6 +1,6 @@
 #include "sp48_core.h"
+#include "../../../z80/wasm/reference/fast_z80_sp48_adapter.h"
 #include "../../../z80/wasm/z80_abi.h"
-#include "../../../z80/wasm/z80_cpu.h"
 #include "../../../z80/wasm/z80_state.h"
 #include "../../../z80/wasm/z80_test_bus.h"
 
@@ -58,6 +58,12 @@ enum Sp48DiagnosticsCounter {
 
 static inline unsigned int sp48_read_port_core(unsigned int address);
 static void sp48_write_port_core(unsigned int address, unsigned int value, unsigned int export_state);
+void sp48_bus_delay_memory_read(uint16_t address);
+void sp48_bus_delay_memory_write(uint16_t address);
+void sp48_bus_delay_port_read(uint16_t address);
+void sp48_bus_delay_port_write(uint16_t address);
+uint8_t sp48_bus_read_port_value(uint16_t address);
+void sp48_bus_write_port_value(uint16_t address, uint8_t value);
 
 /* clang may lower simple loops to memset even with -nostdlib. */
 void *memset(void *destination, int value, unsigned long length) {
@@ -307,7 +313,6 @@ static inline unsigned int read_tape_ear_at_current_tact(void) {
 }
 
 static inline unsigned int should_yield_for_tape_mode_boundary(void) {
-  if (z80_bus_mode != Z80_BUS_SP48) return 0u;
   if (input_block[SP48_INPUT_TAPE_MODE_OFFSET] != SP48_TAPE_MODE_PASSIVE) return 0u;
   return state.pc == SP48_TAPE_LOAD_BYTES_ROUTINE ||
     state.pc == SP48_TAPE_SAVE_BYTES_ROUTINE;
@@ -442,16 +447,6 @@ void sp48_set_16k_model(unsigned int enabled) {
   sp48_export_state();
 }
 
-static inline void set_state_flag(uint8_t flag, unsigned int enabled) {
-  if (enabled) state.flags |= flag;
-  else state.flags &= (uint8_t)~flag;
-}
-
-static inline void set_state_signal(uint8_t signal, unsigned int enabled) {
-  if (enabled) state.signals |= signal;
-  else state.signals &= (uint8_t)~signal;
-}
-
 static void sp48_import_cpu_state_block(void) {
   const unsigned char *source = machine_state_block + SP48_MACHINE_STATE_CPU_STATE_OFFSET;
   unsigned int tacts_in_frame;
@@ -475,16 +470,16 @@ static void sp48_import_cpu_state_block(void) {
   tacts_in_frame = get_u32(source, 40u);
   state.tacts_in_frame = tacts_in_frame == 0 ? 1000000u : tacts_in_frame;
   state.prefix = source[44u];
-  set_state_flag(Z80_STATE_HALTED, source[45u] != 0);
+  state.halted = source[45u] != 0;
   state.op_code = source[46u];
   state.interrupt_mode = source[47u];
-  set_state_flag(Z80_STATE_IFF1, source[48u] != 0);
-  set_state_flag(Z80_STATE_IFF2, source[49u] != 0);
-  set_state_signal(Z80_SIGNAL_INT, source[50u] != 0);
-  set_state_signal(Z80_SIGNAL_NMI, source[51u] != 0);
-  set_state_signal(Z80_SIGNAL_RST, source[52u] != 0);
+  state.iff1 = source[48u] != 0;
+  state.iff2 = source[49u] != 0;
+  state.sig_int = source[50u] != 0;
+  state.sig_nmi = source[51u] != 0;
+  state.sig_rst = source[52u] != 0;
   state.ei_backlog = source[53u];
-  set_state_flag(Z80_STATE_AFTER_LD_AIR, source[54u] != 0);
+  state.after_ld_air = source[54u] != 0;
   state.interrupt_vector = source[55u];
   state.z80n_mode = source[56u] != 0;
   state.cpu_tact_scale = source[57u] == 0 ? 1 : source[57u];
@@ -511,23 +506,22 @@ static void sp48_export_cpu_state_block(void) {
   put_u32(target, 36u, state.frames);
   put_u32(target, 40u, state.tacts_in_frame);
   target[44u] = state.prefix;
-  target[45u] = (state.flags & Z80_STATE_HALTED) != 0;
+  target[45u] = state.halted != 0;
   target[46u] = state.op_code;
   target[47u] = state.interrupt_mode;
-  target[48u] = (state.flags & Z80_STATE_IFF1) != 0;
-  target[49u] = (state.flags & Z80_STATE_IFF2) != 0;
-  target[50u] = (state.signals & Z80_SIGNAL_INT) != 0;
-  target[51u] = (state.signals & Z80_SIGNAL_NMI) != 0;
-  target[52u] = (state.signals & Z80_SIGNAL_RST) != 0;
+  target[48u] = state.iff1 != 0;
+  target[49u] = state.iff2 != 0;
+  target[50u] = state.sig_int != 0;
+  target[51u] = state.sig_nmi != 0;
+  target[52u] = state.sig_rst != 0;
   target[53u] = state.ei_backlog;
-  target[54u] = (state.flags & Z80_STATE_AFTER_LD_AIR) != 0;
+  target[54u] = state.after_ld_air != 0;
   target[55u] = state.interrupt_vector;
   target[56u] = state.z80n_mode;
   target[57u] = state.cpu_tact_scale;
 }
 
 void sp48_import_state(void) {
-  z80_cpu_prepare_tables();
   sp48_import_cpu_state_block();
   ula_port = machine_state_block[SP48_MACHINE_STATE_ULA_PORT_OFFSET];
   is_16k_model = machine_state_block[SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET] != 0;
@@ -561,8 +555,7 @@ void sp48_reset(void) {
   border_color = 0;
   ear_latch = 0;
   mic_latch = 0;
-  z80_bus_mode = Z80_BUS_SP48;
-  z80_reset();
+  fast_sp48_z80_reset();
   sp48_clear_dirty_ranges();
   sp48_clear_event_traces();
   for (address = 0x4000; address < SP48_MEMORY_SIZE; address++) {
@@ -645,32 +638,57 @@ void sp48_write_port(unsigned int address, unsigned int value) {
 
 uint8_t sp48_bus_read_memory(uint16_t address, unsigned int operation) {
   (void)operation;
-  diagnostics_memory_read_count++;
-  apply_memory_contention(address);
+  sp48_bus_delay_memory_read(address);
   return memory[address];
 }
 
 void sp48_bus_write_memory(uint16_t address, uint8_t value) {
-  diagnostics_memory_write_count++;
-  apply_memory_contention(address);
+  sp48_bus_delay_memory_write(address);
   sp48_write_memory(address, value);
 }
 
 uint8_t sp48_bus_read_port(uint16_t address) {
-  diagnostics_port_read_count++;
-  apply_port_contention(address);
-  if ((address & 1u) != 0) return (uint8_t)read_sp48_floating_bus(future_frame_tact(4u));
-  return (uint8_t)sp48_read_port_core(address);
+  sp48_bus_delay_port_read(address);
+  return sp48_bus_read_port_value(address);
 }
 
 void sp48_bus_write_port(uint16_t address, uint8_t value) {
+  sp48_bus_delay_port_write(address);
+  sp48_bus_write_port_value(address, value);
+}
+
+void sp48_bus_delay_memory_read(uint16_t address) {
+  diagnostics_memory_read_count++;
+  apply_memory_contention(address);
+  advance_tacts(3u);
+}
+
+void sp48_bus_delay_memory_write(uint16_t address) {
+  diagnostics_memory_write_count++;
+  apply_memory_contention(address);
+  advance_tacts(3u);
+}
+
+void sp48_bus_delay_port_read(uint16_t address) {
+  diagnostics_port_read_count++;
+  apply_port_contention(address);
+  advance_tacts(4u);
+}
+
+void sp48_bus_delay_port_write(uint16_t address) {
   diagnostics_port_write_count++;
   apply_port_contention(address);
+  advance_tacts(4u);
+}
+
+uint8_t sp48_bus_read_port_value(uint16_t address) {
+  if ((address & 1u) != 0) return (uint8_t)read_sp48_floating_bus(state.frame_tacts);
+  return (uint8_t)sp48_read_port_core(address);
+}
+
+void sp48_bus_write_port_value(uint16_t address, uint8_t value) {
   if ((address & 1u) == 0) {
-    unsigned int saved_tact = state.frame_tacts;
-    state.frame_tacts = future_frame_tact(4u);
     sp48_write_port_core(address, value, 0u);
-    state.frame_tacts = saved_tact;
   }
 }
 
@@ -688,7 +706,7 @@ unsigned int sp48_execute_instructions(
     input_block[SP48_INPUT_TERMINATION_POINT_ENABLED_OFFSET] != 0;
 
   sp48_import_state();
-  z80_bus_mode = Z80_BUS_SP48_DEBUG;
+  fast_sp48_z80_import_state();
   sp48_clear_event_traces();
   start_frames = state.frames;
   put_u32(result_block, SP48_RESULT_TERMINATION_OFFSET, termination);
@@ -697,7 +715,7 @@ unsigned int sp48_execute_instructions(
 
   while (instructions < max_instructions) {
     do {
-      cpu_status = z80_cpu_execute_instruction();
+      cpu_status = fast_sp48_z80_execute_debug_instruction();
     } while (cpu_status == Z80_EXECUTION_PREFIX_PENDING);
     instructions++;
     diagnostics_instruction_count++;
@@ -731,7 +749,7 @@ unsigned int sp48_execute_instructions(
 unsigned int sp48_execute_frame(void) {
   unsigned int start_frames;
   sp48_import_state();
-  z80_bus_mode = Z80_BUS_SP48;
+  fast_sp48_z80_import_state();
   if (resume_frame_after_tape_mode_boundary) {
     resume_frame_after_tape_mode_boundary = 0;
   } else {
@@ -740,11 +758,9 @@ unsigned int sp48_execute_frame(void) {
   start_frames = state.frames;
   while (state.frames == start_frames) {
     unsigned int cpu_status;
-    state.signals = state.frame_tacts < 32u
-      ? (state.signals | Z80_SIGNAL_INT)
-      : (state.signals & (unsigned int)~Z80_SIGNAL_INT);
+    state.sig_int = state.frame_tacts < 32u;
     do {
-      cpu_status = z80_cpu_execute_instruction();
+      cpu_status = fast_sp48_z80_execute_instruction();
     } while (cpu_status == Z80_EXECUTION_PREFIX_PENDING);
     diagnostics_instruction_count++;
     if (cpu_status != Z80_EXECUTION_COMPLETED) {

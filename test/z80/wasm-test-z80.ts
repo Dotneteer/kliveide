@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { buildSp48Wasm, testOutput } from "../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm, fastZ80TestOutput } from "../../scripts/build-sp48-wasm.cjs";
 
 export enum RunMode {
   Normal,
@@ -52,8 +52,8 @@ let module: WebAssembly.Module | undefined;
 
 function createWasm (): WasmExports {
   if (module == null) {
-    buildSp48Wasm({ mode: "test" });
-    module = new WebAssembly.Module(readFileSync(testOutput));
+    buildSp48Wasm({ mode: "fast-z80-test" });
+    module = new WebAssembly.Module(readFileSync(fastZ80TestOutput));
   }
   return new WebAssembly.Instance(module).exports as WasmExports;
 }

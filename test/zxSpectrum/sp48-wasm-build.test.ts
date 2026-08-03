@@ -3,6 +3,11 @@ import { readFileSync } from "node:fs";
 import packageJson from "../../package.json";
 import {
   buildSp48Wasm,
+  fastZ80ReferenceExports,
+  fastZ80ReferenceOutput,
+  fastZ80ReferenceSource,
+  fastZ80Sp48Source,
+  fastZ80TestOutput,
   output,
   outputRelative,
   packagedArtifactRelative,
@@ -11,11 +16,12 @@ import {
   productionOutputRelative,
   productionExports,
   source,
+  standaloneZ80TestExports,
   testExports,
   testOutput,
   testOutputRelative,
   wasmDistDirectoryRelative,
-  z80Source
+  z80StateSource
 } from "../../scripts/build-sp48-wasm.cjs";
 import { DEFAULT_MAX_BYTES, parseMaxBytes } from "../../scripts/check-sp48-wasm-size.cjs";
 import { describe, expect, it } from "vitest";
@@ -34,7 +40,8 @@ describe("ZX Spectrum 48K WASM build", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0].compiler).toBe("fake-c-compiler");
     expect(calls[0].args).toContain(source);
-    expect(calls[0].args).toContain(z80Source);
+    expect(calls[0].args).toContain(z80StateSource);
+    expect(calls[0].args).toContain(fastZ80Sp48Source);
     expect(calls[0].args).toContain(productionOutput);
     for (const exportName of productionExports.filter(name => name !== "memory")) {
       expect(calls[0].args).toContain(`-Wl,--export=${exportName}`);
@@ -65,6 +72,48 @@ describe("ZX Spectrum 48K WASM build", () => {
     expect(result.mode).toBe("test");
   });
 
+  it("can build a non-production fast Z80 reference artifact", () => {
+    const calls: Array<{ compiler: string; args: string[] }> = [];
+    const result = buildSp48Wasm({
+      compiler: "fake-c-compiler",
+      mode: "fast-z80-reference",
+      run: (compiler: string, args: string[]) => {
+        calls.push({ compiler, args });
+        return { status: 0 };
+      }
+    });
+
+    expect(calls[0].args).toContain(fastZ80ReferenceSource);
+    expect(calls[0].args).toContain(fastZ80ReferenceOutput);
+    expect(calls[0].args).not.toContain(source);
+    for (const exportName of fastZ80ReferenceExports.filter(name => name !== "memory")) {
+      expect(calls[0].args).toContain(`-Wl,--export=${exportName}`);
+    }
+    expect(result.output).toBe(fastZ80ReferenceOutput);
+    expect(result.mode).toBe("fast-z80-reference");
+  });
+
+  it("can build a standalone fast Z80 artifact with normal test ABI names", () => {
+    const calls: Array<{ compiler: string; args: string[] }> = [];
+    const result = buildSp48Wasm({
+      compiler: "fake-c-compiler",
+      mode: "fast-z80-test",
+      run: (compiler: string, args: string[]) => {
+        calls.push({ compiler, args });
+        return { status: 0 };
+      }
+    });
+
+    expect(calls[0].args).toContain(fastZ80ReferenceSource);
+    expect(calls[0].args).toContain(fastZ80TestOutput);
+    expect(calls[0].args).not.toContain(source);
+    for (const exportName of standaloneZ80TestExports.filter(name => name !== "memory")) {
+      expect(calls[0].args).toContain(`-Wl,--export=${exportName}`);
+    }
+    expect(result.output).toBe(fastZ80TestOutput);
+    expect(result.mode).toBe("fast-z80-test");
+  });
+
   it("accepts explicit optimization profiles", () => {
     const calls: Array<{ compiler: string; args: string[] }> = [];
     buildSp48Wasm({
@@ -81,7 +130,7 @@ describe("ZX Spectrum 48K WASM build", () => {
   });
 
   it("declares the default production WASM size ceiling", () => {
-    expect(DEFAULT_MAX_BYTES).toBe(85_000);
+    expect(DEFAULT_MAX_BYTES).toBe(240_000);
     expect(parseMaxBytes()).toBe(DEFAULT_MAX_BYTES);
     expect(parseMaxBytes("90000")).toBe(90_000);
     expect(() => parseMaxBytes("not-a-number")).toThrow("Invalid SP48_WASM_MAX_BYTES");
@@ -94,9 +143,26 @@ describe("ZX Spectrum 48K WASM build", () => {
     expect(productionExports).toContain("sp48_diagnostics_reset");
     expect(productionExports).toContain("sp48_diagnostics_value");
     expect(productionExports).not.toContain("z80_test_memory_ptr");
+    expect(productionExports).not.toContain("fast_z80_test_memory_ptr");
     expect(testExports).toEqual(expect.arrayContaining(productionExports));
     expect(testExports).toContain("z80_execute_instruction");
     expect(testExports).toContain("z80_test_memory_ptr");
+    expect(fastZ80ReferenceExports).toContain("fast_z80_execute_instruction");
+    expect(fastZ80ReferenceExports).toContain("fast_z80_test_memory_ptr");
+  });
+
+  it("routes SP48 frame and debug execution through the fast Z80 SP48 adapter", () => {
+    const sp48CoreSource = readFileSync(source, "utf8");
+    const fastZ80Sp48SourceText = readFileSync(fastZ80Sp48Source, "utf8");
+
+    expect(sp48CoreSource).toContain("fast_sp48_z80_execute_instruction()");
+    expect(sp48CoreSource).toContain("fast_sp48_z80_execute_debug_instruction()");
+    expect(sp48CoreSource).not.toContain("z80_cpu_execute_sp48_instruction()");
+    expect(sp48CoreSource).not.toContain("z80_cpu_execute_sp48_debug_instruction()");
+    expect(sp48CoreSource).not.toContain("z80_bus_mode");
+    expect(fastZ80Sp48SourceText).toContain("#include \"fast_z80.c\"");
+    expect(fastZ80Sp48SourceText).toContain("sp48_bus_delay_memory_read");
+    expect(fastZ80Sp48SourceText).toContain("sp48_bus_write_port_value");
   });
 
   it("declares a package resource location for the WASM artifact", () => {

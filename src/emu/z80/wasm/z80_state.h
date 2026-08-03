@@ -34,14 +34,23 @@ typedef struct {
   uint32_t tacts_in_frame;
   uint8_t prefix;
   uint8_t interrupt_mode;
-  uint8_t signals;
-  uint8_t flags;
+  uint8_t halted;
+  uint8_t iff1;
+  uint8_t iff2;
+  uint8_t sig_int;
+  uint8_t sig_nmi;
+  uint8_t sig_rst;
+  uint8_t after_ld_air;
+  uint8_t ret_executed;
+  uint8_t retn_executed;
   uint8_t ei_backlog;
   uint8_t op_code;
   uint8_t interrupt_vector;
   uint8_t z80n_mode;
   uint8_t cpu_tact_scale;
 } Z80State;
+
+extern Z80State state;
 
 enum Z80WordField {
   Z80_WORD_AF = 0,
@@ -99,13 +108,5 @@ enum Z80CounterField {
   Z80_COUNTER_FRAME_TACTS,
   Z80_COUNTER_FRAMES
 };
-
-#define Z80_STATE_HALTED 0x01u
-#define Z80_STATE_IFF1 0x02u
-#define Z80_STATE_IFF2 0x04u
-#define Z80_STATE_AFTER_LD_AIR 0x08u
-#define Z80_SIGNAL_INT 0x01u
-#define Z80_SIGNAL_NMI 0x02u
-#define Z80_SIGNAL_RST 0x04u
 
 #endif

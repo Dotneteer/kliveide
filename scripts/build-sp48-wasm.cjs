@@ -4,11 +4,15 @@ const { spawnSync } = require("node:child_process");
 
 const root = resolve(__dirname, "..");
 const source = resolve(root, "src/emu/machines/zxSpectrum48/wasm/sp48_core.c");
-const z80Source = resolve(root, "src/emu/z80/wasm/z80_abi.c");
-const z80CpuSource = resolve(root, "src/emu/z80/wasm/z80_cpu.c");
+const z80StateSource = resolve(root, "src/emu/z80/wasm/z80_state.c");
+const z80TestBusStorageSource = resolve(root, "src/emu/z80/wasm/z80_test_bus_storage.c");
+const fastZ80ReferenceSource = resolve(root, "src/emu/z80/wasm/reference/fast_z80_test_adapter.c");
+const fastZ80Sp48Source = resolve(root, "src/emu/z80/wasm/reference/fast_z80_sp48_adapter.c");
 const productionOutput = resolve(root, "src/emu/machines/zxSpectrum48/wasm/dist/zx-spectrum48.wasm");
 const staleDistTestOutput = resolve(root, "src/emu/machines/zxSpectrum48/wasm/dist/zx-spectrum48-test.wasm");
 const testOutput = resolve(root, "src/emu/machines/zxSpectrum48/wasm/test-dist/zx-spectrum48-test.wasm");
+const fastZ80ReferenceOutput = resolve(root, "src/emu/machines/zxSpectrum48/wasm/test-dist/zx-spectrum48-fast-z80-reference.wasm");
+const fastZ80TestOutput = resolve(root, "src/emu/machines/zxSpectrum48/wasm/test-dist/zx-spectrum48-fast-z80-test.wasm");
 const output = productionOutput;
 const layoutOutput = resolve(root, "src/emu/machines/zxSpectrum48/wasm/sp48-wasm-layout.generated.ts");
 const wasmDistDirectory = resolve(root, "src/emu/machines/zxSpectrum48/wasm/dist");
@@ -191,14 +195,76 @@ const testExports = [
   "z80_test_bus_reset"
 ];
 
+const fastZ80ReferenceExports = [
+  "memory",
+  "fast_z80_abi_version",
+  "fast_z80_reset",
+  "fast_z80_state_block_ptr",
+  "fast_z80_state_block_size",
+  "fast_z80_state_export",
+  "fast_z80_state_import",
+  "fast_z80_execute_instruction",
+  "fast_z80_test_memory_ptr",
+  "fast_z80_test_memory_size",
+  "fast_z80_test_memory_log_capacity",
+  "fast_z80_test_io_log_capacity",
+  "fast_z80_test_tbblue_log_capacity",
+  "fast_z80_test_memory_log_count",
+  "fast_z80_test_memory_log_ptr",
+  "fast_z80_test_io_log_count",
+  "fast_z80_test_io_log_ptr",
+  "fast_z80_test_tbblue_log_count",
+  "fast_z80_test_tbblue_log_ptr",
+  "fast_z80_test_io_input_ptr",
+  "fast_z80_test_io_input_count_set",
+  "fast_z80_test_bus_reset"
+];
+
+const standaloneZ80TestExports = [
+  "memory",
+  "z80_abi_version",
+  "z80_reset",
+  "z80_state_block_ptr",
+  "z80_state_block_size",
+  "z80_state_export",
+  "z80_state_import",
+  "z80_execute_instruction",
+  "z80_test_memory_ptr",
+  "z80_test_memory_size",
+  "z80_test_memory_log_capacity",
+  "z80_test_io_log_capacity",
+  "z80_test_tbblue_log_capacity",
+  "z80_test_memory_log_count",
+  "z80_test_memory_log_ptr",
+  "z80_test_io_log_count",
+  "z80_test_io_log_ptr",
+  "z80_test_tbblue_log_count",
+  "z80_test_tbblue_log_ptr",
+  "z80_test_io_input_ptr",
+  "z80_test_io_input_count_set",
+  "z80_test_bus_reset"
+];
+
 const buildModes = {
   production: {
     output: productionOutput,
-    exports: productionExports
+    exports: productionExports,
+    sources: [source, z80StateSource, z80TestBusStorageSource, fastZ80Sp48Source]
   },
   test: {
     output: testOutput,
-    exports: testExports
+    exports: testExports,
+    sources: [source, z80StateSource, z80TestBusStorageSource, fastZ80Sp48Source, fastZ80ReferenceSource]
+  },
+  "fast-z80-reference": {
+    output: fastZ80ReferenceOutput,
+    exports: fastZ80ReferenceExports,
+    sources: [fastZ80ReferenceSource]
+  },
+  "fast-z80-test": {
+    output: fastZ80TestOutput,
+    exports: standaloneZ80TestExports,
+    sources: [fastZ80ReferenceSource]
   }
 };
 
@@ -240,6 +306,7 @@ function buildSp48Wasm({
   const optimizationProfile = normalizeOptimization(optimization);
   const selectedExports = buildModes[buildMode].exports;
   const selectedOutput = outputPath ?? buildModes[buildMode].output;
+  const selectedSources = buildModes[buildMode].sources;
   if (buildMode === "production" && existsSync(staleDistTestOutput)) {
     unlinkSync(staleDistTestOutput);
   }
@@ -304,9 +371,7 @@ function buildSp48Wasm({
     "-Wl,--initial-memory=786432",
     "-Wl,--max-memory=786432",
     ...selectedExports.filter(name => name !== "memory").map(name => `-Wl,--export=${name}`),
-    source,
-    z80Source,
-    z80CpuSource,
+    ...selectedSources,
     "-o",
     selectedOutput
   ];
@@ -319,7 +384,8 @@ function buildSp48Wasm({
     mode: buildMode,
     optimization: optimizationProfile,
     exports: selectedExports,
-    source,
+    source: selectedSources[0],
+    sources: selectedSources,
     output: selectedOutput
   };
 }
@@ -329,6 +395,11 @@ if (require.main === module) buildSp48Wasm();
 module.exports = {
   buildSp48Wasm,
   buildModes,
+  fastZ80ReferenceExports,
+  fastZ80ReferenceOutput,
+  fastZ80ReferenceSource,
+  fastZ80Sp48Source,
+  fastZ80TestOutput,
   layoutOutput,
   layoutValueIds,
   layoutValues,
@@ -338,11 +409,12 @@ module.exports = {
   packagedResourceDirectory,
   productionExports,
   source,
+  standaloneZ80TestExports,
   testExports,
   testOutput,
   wasmDistDirectory,
-  z80CpuSource,
-  z80Source,
+  z80StateSource,
+  z80TestBusStorageSource,
   outputRelative: relative(root, output),
   productionOutputRelative: relative(root, productionOutput),
   testOutputRelative: relative(root, testOutput),

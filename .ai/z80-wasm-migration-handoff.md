@@ -1,16 +1,15 @@
 # Z80 WASM Migration Handoff
 
-Read `../AGENTS.md` and `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md` before
-changing Spectrum WASM work. This note records the post-CPU-phase state on
-2026-08-02.
+Read `../AGENTS.md` and `.plans/ZX_SPECTRUM_48_WASM_FAST_Z80_REPLACEMENT_PLAN.md`
+before changing Spectrum WASM CPU work. This note was updated after the fast
+Z80 replacement work on 2026-08-03.
 
 ## Current state
 
-- The C/WASM Z80 and Z80N CPU core is implemented and covered by the cloned
-  WASM opcode-page tests, differential stress tests, `npm run build:check`, and
-  the full unit suite.
-- The CPU core is still test/integration infrastructure. It is not yet wired
-  into the production Spectrum 48K frame runner.
+- The production Spectrum 48K WASM frame runner and debugger execution path now
+  use the vendored fast Z80 C core through the SP48 adapter.
+- The standalone Z80 WASM test ABI also uses the vendored fast Z80 core and is
+  covered by the cloned WASM opcode-page tests and differential stress tests.
 - `ZxSpectrum48WasmMachine` remains the compatibility adapter selected by
   `sp48Implementation: "wasm"`; its `setup()` now loads and validates the WASM
   artifact, but full production frame execution still needs the Spectrum 48K
@@ -37,18 +36,21 @@ changing Spectrum WASM work. This note records the post-CPU-phase state on
 - The C/WASM emulator implementation must remain static-allocation only. The
   Phase P1 audit found no `malloc`, `calloc`, `realloc`, `free`, or
   `aligned_alloc` calls under the Spectrum 48K WASM and Z80 WASM source trees.
-- The source-of-truth forward plan is now
-  `.plans/ZX_SPECTRUM_48_WASM_INITIAL_PLAN.md`. It intentionally removed the
-  historical opcode-by-opcode checklist because it no longer helps future 48K
-  integration work.
+- The source-of-truth CPU performance/replacement plan is now
+  `.plans/ZX_SPECTRUM_48_WASM_FAST_Z80_REPLACEMENT_PLAN.md`. The initial and
+  performance-tuning plans remain historical context.
 
 ## ABI and implementation facts to preserve
 
-- CPU implementation code lives in `src/emu/z80/wasm/z80_cpu.c`.
-- ABI wrappers and test-bus storage live in `src/emu/z80/wasm/z80_abi.c`.
-- Shared state and field definitions live in `src/emu/z80/wasm/z80_state.h`.
-- `z80_abi.c` must remain an ABI wrapper layer; do not move instruction decode
-  tables or opcode bodies back into it.
+- The vendored fast core lives in `src/emu/z80/wasm/reference/fast_z80.c`.
+- Production SP48 integration lives in
+  `src/emu/z80/wasm/reference/fast_z80_sp48_adapter.c`.
+- Standalone Z80 test ABI integration lives in
+  `src/emu/z80/wasm/reference/fast_z80_test_adapter.c`.
+- Shared SP48 CPU state storage and field definitions live in
+  `src/emu/z80/wasm/z80_state.c` and `src/emu/z80/wasm/z80_state.h`.
+- The old hand-written C opcode executor files were removed:
+  `z80_cpu.c`, `z80_cpu.h`, and `z80_abi.c`.
 - The exported Z80 state contract uses the packed state block:
   `z80_state_block_ptr`, `z80_state_block_size`, `z80_state_export`, and
   `z80_state_import`.
@@ -69,9 +71,9 @@ changing Spectrum WASM work. This note records the post-CPU-phase state on
 - The production 48K backend must replace this test bus with a machine bus and
   compact state/event buffers. Normal running must not cross the JS/WASM
   boundary per instruction, per tact, per memory access, or per port access.
-- The Z80 C core now has selectable bus mode. Keep the test bus as the default
-  for `test/z80`; the Spectrum 48K bounded-execution path switches to the 48K
-  static-memory bus before calling the CPU core.
+- The old selectable `z80_bus_mode` path has been removed. The SP48 adapter and
+  standalone test adapter compile separate bus/timing bindings around the fast
+  core.
 - `test/z80/z80-wasm-abi.test.ts` asserts the approved WASM export manifest.
 - `test/zxSpectrum/sp48-wasm-abi-manifest.test.ts` asserts the Spectrum 48K
   production/test manifest and generated layout constants against the built

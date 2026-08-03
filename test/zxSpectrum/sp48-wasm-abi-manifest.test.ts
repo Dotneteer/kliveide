@@ -1,7 +1,17 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { buildSp48Wasm, output, productionExports, testExports, testOutput } from "../../scripts/build-sp48-wasm.cjs";
+import {
+  buildSp48Wasm,
+  fastZ80ReferenceExports,
+  fastZ80ReferenceOutput,
+  fastZ80TestOutput,
+  output,
+  productionExports,
+  standaloneZ80TestExports,
+  testExports,
+  testOutput
+} from "../../scripts/build-sp48-wasm.cjs";
 import { SP48_WASM_ABI_VERSION, SP48_WASM_LAYOUT, SP48_WASM_LAYOUT_VALUE_ID } from "@emu/machines/zxSpectrum48/wasm/sp48-wasm-layout.generated";
 import { describe, expect, it } from "vitest";
 
@@ -23,6 +33,30 @@ describe("ZX Spectrum 48K WASM ABI manifest", () => {
     expect(actualExports).toEqual([...testExports].sort());
     expect(actualExports).toEqual(expect.arrayContaining(productionExports));
     expect(actualExports).toContain("z80_test_memory_ptr");
+  });
+
+  it("exposes the fast Z80 comparison ABI only in the reference artifact", async () => {
+    buildSp48Wasm({ mode: "fast-z80-reference" });
+    const { instance } = await WebAssembly.instantiate(readFileSync(fastZ80ReferenceOutput));
+    const actualExports = Object.keys(instance.exports).sort();
+
+    expect(actualExports).toEqual([...fastZ80ReferenceExports].sort());
+    expect(actualExports).toContain("fast_z80_execute_instruction");
+    expect(actualExports).toContain("fast_z80_test_memory_ptr");
+    expect(actualExports).not.toContain("sp48_execute_frame");
+    expect(actualExports).not.toContain("z80_execute_instruction");
+  });
+
+  it("exposes the standalone fast Z80 test ABI with normal names", async () => {
+    buildSp48Wasm({ mode: "fast-z80-test" });
+    const { instance } = await WebAssembly.instantiate(readFileSync(fastZ80TestOutput));
+    const actualExports = Object.keys(instance.exports).sort();
+
+    expect(actualExports).toEqual([...standaloneZ80TestExports].sort());
+    expect(actualExports).toContain("z80_execute_instruction");
+    expect(actualExports).toContain("z80_test_memory_ptr");
+    expect(actualExports).not.toContain("fast_z80_execute_instruction");
+    expect(actualExports).not.toContain("sp48_execute_frame");
   });
 
   it("declares every production export in the TypeScript loader contract", () => {
