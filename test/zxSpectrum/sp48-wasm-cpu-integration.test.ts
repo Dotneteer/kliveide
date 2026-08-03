@@ -287,6 +287,22 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     expect(samples.every(sample => sample.right === 0)).toBe(true);
   });
 
+  it("renders a fresh WASM beeper frame when the current frame has no audio transitions", async () => {
+    const wasm = await createWasmMachine(testRom([0x3e, 0x10, 0xd3, 0xfe, 0xc3, 0x04, 0x00]));
+    wasm.beeperDevice.setAudioSampleRate(44_100);
+    wasm.setTactsInFrame(256);
+
+    wasm.executeMachineFrame();
+    const firstFrameSamples = wasm.getAudioSamples().slice();
+
+    wasm.executeMachineFrame();
+    const secondFrameSamples = wasm.getAudioSamples();
+
+    expect(firstFrameSamples.length).toBeGreaterThan(0);
+    expect(wasm.getWasmAudioTrace()).toEqual([]);
+    expect(secondFrameSamples.length).toBeGreaterThan(0);
+  });
+
   it("matches TypeScript and WASM beeper transitions for square-wave and silence programs", async () => {
     const squareProgram = testRom([0x3e, 0x10, 0xd3, 0xfe, 0x00, 0x3e, 0x00, 0xd3, 0xfe, 0x00]);
     const silenceProgram = testRom([0x00, 0x00, 0x00, 0x00, 0x00]);

@@ -139,6 +139,30 @@ describe("ZX Spectrum 48K WASM memory/reset/snapshot", () => {
     machine.clearWasmDirtyRanges();
     expect(machine.getWasmDirtyRanges()).toEqual([]);
   });
+
+  it("keeps normal CPU frame writes out of public dirty ranges", async () => {
+    const runtime = await actualRuntime("memory-cpu-dirty-ranges.wasm");
+    const wasm = runtime.exports;
+
+    wasm.sp48_load_rom_byte(0x0000, 0x3e);
+    wasm.sp48_load_rom_byte(0x0001, 0x5a);
+    wasm.sp48_load_rom_byte(0x0002, 0x32);
+    wasm.sp48_load_rom_byte(0x0003, 0x00);
+    wasm.sp48_load_rom_byte(0x0004, 0x40);
+    wasm.sp48_load_rom_byte(0x0005, 0x18);
+    wasm.sp48_load_rom_byte(0x0006, 0xf8);
+    runtime.machineState.setUint32(SP48_WASM_LAYOUT.machineStateCpuStateOffset + 40, 32, true);
+    wasm.sp48_import_state();
+    wasm.sp48_clear_dirty_ranges();
+
+    wasm.sp48_execute_frame();
+
+    expect(runtime.memory[0x4000]).toBe(0x5a);
+    expect(wasm.sp48_dirty_range_count()).toBe(0);
+
+    wasm.sp48_write_memory(0x4001, 0x33);
+    expect(wasm.sp48_dirty_range_count()).toBe(1);
+  });
 });
 
 async function actualRuntime(artifactName: string) {

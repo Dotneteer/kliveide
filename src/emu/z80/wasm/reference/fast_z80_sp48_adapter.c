@@ -11,11 +11,12 @@ static uint8_t sp48_fast_z80_read_port(uint16_t address);
 static void sp48_fast_z80_write_port(uint16_t address, uint8_t value);
 void sp48_patch_memory(unsigned int address, unsigned int value);
 unsigned int sp48_read_memory(unsigned int address);
-void sp48_write_memory(unsigned int address, unsigned int value);
 void sp48_bus_delay_memory_read(uint16_t address);
 void sp48_bus_delay_memory_write(uint16_t address);
 void sp48_bus_delay_port_read(uint16_t address);
 void sp48_bus_delay_port_write(uint16_t address);
+uint8_t sp48_bus_read_memory_value(uint16_t address);
+void sp48_bus_write_memory_value(uint16_t address, uint8_t value);
 uint8_t sp48_bus_read_port_value(uint16_t address);
 void sp48_bus_write_port_value(uint16_t address, uint8_t value);
 
@@ -171,13 +172,13 @@ static void sp48_fast_z80_delay_port_write(uint16_t address) {
 }
 
 static uint8_t sp48_fast_z80_read_memory(uint16_t address) {
-  uint8_t value = (uint8_t)sp48_read_memory(address);
+  uint8_t value = sp48_bus_read_memory_value(address);
   sp48_fast_z80_log_memory(address, value, 0u);
   return value;
 }
 
 static void sp48_fast_z80_write_memory(uint16_t address, uint8_t value) {
-  sp48_write_memory(address, value);
+  sp48_bus_write_memory_value(address, value);
   sp48_fast_z80_log_memory(address, value, 1u);
 }
 

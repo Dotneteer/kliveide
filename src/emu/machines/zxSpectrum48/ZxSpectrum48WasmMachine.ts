@@ -1049,15 +1049,11 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     frameEndTact: number
   ): void {
     if (!(this.beeperDevice instanceof SpectrumBeeperDevice)) return;
-    if (runtime.exports.sp48_audio_trace_count() <= 0) {
+    const traceCount = runtime.exports.sp48_audio_trace_count();
+    const transitions = traceCount > 0 ? this.getWasmAudioTrace() : [];
+    if (traceCount <= 0) {
       this.wasmAdapterSyncStats.skippedTraceReads++;
-      this.beeperDevice.setOutputLevel(
-        runtime.machineState.getUint8(SP48_WASM_LAYOUT.machineStateEarLatchOffset) !== 0,
-        runtime.machineState.getUint8(SP48_WASM_LAYOUT.machineStateMicLatchOffset) !== 0
-      );
-      return;
     }
-    const transitions = this.getWasmAudioTrace();
     this.beeperDevice.renderTransitionTrace(
       transitions,
       frameStartTact,

@@ -64,6 +64,8 @@ void sp48_bus_delay_port_read(uint16_t address);
 void sp48_bus_delay_port_write(uint16_t address);
 uint8_t sp48_bus_read_port_value(uint16_t address);
 void sp48_bus_write_port_value(uint16_t address, uint8_t value);
+uint8_t sp48_bus_read_memory_value(uint16_t address);
+void sp48_bus_write_memory_value(uint16_t address, uint8_t value);
 
 /* clang may lower simple loops to memset even with -nostdlib. */
 void *memset(void *destination, int value, unsigned long length) {
@@ -639,12 +641,12 @@ void sp48_write_port(unsigned int address, unsigned int value) {
 uint8_t sp48_bus_read_memory(uint16_t address, unsigned int operation) {
   (void)operation;
   sp48_bus_delay_memory_read(address);
-  return memory[address];
+  return sp48_bus_read_memory_value(address);
 }
 
 void sp48_bus_write_memory(uint16_t address, uint8_t value) {
   sp48_bus_delay_memory_write(address);
-  sp48_write_memory(address, value);
+  sp48_bus_write_memory_value(address, value);
 }
 
 uint8_t sp48_bus_read_port(uint16_t address) {
@@ -667,6 +669,16 @@ void sp48_bus_delay_memory_write(uint16_t address) {
   diagnostics_memory_write_count++;
   apply_memory_contention(address);
   advance_tacts(3u);
+}
+
+uint8_t sp48_bus_read_memory_value(uint16_t address) {
+  return memory[address];
+}
+
+void sp48_bus_write_memory_value(uint16_t address, uint8_t value) {
+  if (address >= 0x4000u && (!is_16k_model || address < 0x8000u)) {
+    memory[address] = value;
+  }
 }
 
 void sp48_bus_delay_port_read(uint16_t address) {
