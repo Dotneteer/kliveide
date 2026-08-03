@@ -652,6 +652,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48Machine {
 
   private syncFrameCountersFromWasmV2(runtime: Sp48WasmV2Runtime): void {
     const wasm = runtime.exports;
+    this.pc = wasm.sp48GetCpuPc();
     this.tacts = wasm.sp48GetTacts();
     this.frames = wasm.sp48GetFrames();
     this.clockMultiplier = wasm.sp48GetClockMultiplier();

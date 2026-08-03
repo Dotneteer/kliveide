@@ -38,6 +38,8 @@ describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
 
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
     expect(machine.frames).toBe(1);
+    expect(machine.pc).toBe(machine.wasmV2Runtime?.exports.sp48GetCpuPc());
+    expect(machine.pc).not.toBe(0);
     expect(machine.tacts).toBeGreaterThanOrEqual(machine.tactsInFrame);
     expect(machine.frameJustCompleted).toBe(true);
     expect(machine.getPixelBuffer().length).toBeGreaterThan(256 * 192);
