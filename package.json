@@ -27,6 +27,7 @@
     "build": "tsc && electron-vite build --config build/electron.vite.config.ts && electron-builder",
     "build:check": "tsc",
     "build:sp48-wasm": "node scripts/build-sp48-wasm.cjs",
+    "benchmark:sp48-wasm": "node scripts/benchmark-sp48-wasm.cjs",
     "lint:renderer": "eslint src/renderer --ext .ts,.tsx",
     "e2e:app": "node scripts/run-e2e-app.cjs",
     "build:e2e": "electron-vite build --config build/electron.vite.config.ts",

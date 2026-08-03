@@ -47,7 +47,40 @@ export type Sp48WasmDiagnostics = {
   lastTerminationStatus: FrameTerminationMode | null | undefined;
   lastCpuStatus: number;
   eventStatus: number;
+  counters: Sp48WasmDiagnosticsCounters;
 };
+
+export type Sp48WasmDiagnosticsCounters = {
+  instructions: number;
+  memoryReads: number;
+  memoryWrites: number;
+  portReads: number;
+  portWrites: number;
+  contentionDelays: number;
+  floatingBusReads: number;
+  traceEvents: number;
+  tapeBoundaryYields: number;
+};
+
+export type Sp48WasmTapeEarSyncStats = {
+  generations: number;
+  reused: number;
+  filledTacts: number;
+  lastStartOffset: number;
+  lastEndOffset: number;
+};
+
+const WASM_DIAGNOSTICS_COUNTER = {
+  instructions: 0,
+  memoryReads: 1,
+  memoryWrites: 2,
+  portReads: 3,
+  portWrites: 4,
+  contentionDelays: 5,
+  floatingBusReads: 6,
+  traceEvents: 7,
+  tapeBoundaryYields: 8
+} as const;
 
 const CPU_STATE = {
   af: 0,
@@ -84,6 +117,8 @@ const CPU_STATE = {
   cpuTactScale: 57
 } as const;
 
+const WASM_TAPE_MODE_BOUNDARY_TERMINATION = FrameTerminationMode.UntilExecutionPoint;
+
 /**
  * Bootstrap implementation selected for the future C/WebAssembly core.
  *
@@ -97,6 +132,35 @@ const CPU_STATE = {
 export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
   public readonly implementation = "wasm" as const;
   public wasmRuntime?: Sp48WasmRuntime;
+  private wasmTapeEarSyncTapeMode = -1;
+  private wasmTapeEarSyncBlocksVersion = 0;
+  private wasmTapeEarSyncBlockIndex = -2;
+  private wasmTapeEarSyncTapeStartTact = 0;
+  private wasmTapeEarSyncTapeEof = false;
+  private wasmTapeEarSyncFrameStartTact = -1;
+  private wasmTapeEarSyncLength = 0;
+  private wasmTapeEarSyncBlock?: unknown;
+  private wasmTapeEarSyncData?: unknown;
+  private wasmTapeEarSyncPilotPulseLength = 0;
+  private wasmTapeEarSyncPilotPulseCount = 0;
+  private wasmTapeEarSyncSync1PulseLength = 0;
+  private wasmTapeEarSyncSync2PulseLength = 0;
+  private wasmTapeEarSyncZeroBitPulseLength = 0;
+  private wasmTapeEarSyncOneBitPulseLength = 0;
+  private wasmTapeEarSyncEndSyncPulseLength = 0;
+  private wasmTapeEarSyncLastByteUsedBits = 0;
+  private wasmTapeEarSyncPauseAfter = 0;
+  private wasmTapeEarSyncStartOffset = 0;
+  private wasmTapeEarSyncEndOffset = 0;
+  private wasmTapeEarSyncStats: Sp48WasmTapeEarSyncStats = {
+    generations: 0,
+    reused: 0,
+    filledTacts: 0,
+    lastStartOffset: 0,
+    lastEndOffset: 0
+  };
+  private wasmTapeBlocksRef?: unknown;
+  private wasmTapeBlocksVersion = 0;
 
   constructor(
     modelInfo?: MachineModel,
@@ -115,6 +179,7 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     this.wasmRuntime.exports.sp48_set_16k_model(this.modelInfo?.config?.[MC_MEM_SIZE] === 16 ? 1 : 0);
     await super.setup();
     this.syncTimingTablesToWasm(this.wasmRuntime);
+    this.invalidateWasmTapeEarSync();
     this.syncCpuToWasm();
   }
 
@@ -124,6 +189,7 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
       this.wasmRuntime.exports.sp48_set_16k_model(this.modelInfo?.config?.[MC_MEM_SIZE] === 16 ? 1 : 0);
       this.wasmRuntime.exports.sp48_reset();
       this.syncTimingTablesToWasm(this.wasmRuntime);
+      this.invalidateWasmTapeEarSync();
       this.syncCpuFromWasm();
     }
   }
@@ -146,13 +212,20 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
       this.tapeDevice.updateTapeMode();
       this.syncInputToWasm(runtime);
       this.syncCpuToWasm();
+      let termination = FrameTerminationMode.Normal;
       const frameStartTact = this.tacts;
       const frameStartOffset = this.frameTacts;
-      const termination = runtime.exports.sp48_execute_frame() as FrameTerminationMode;
-      this.syncCpuFromWasm();
+      do {
+        termination = runtime.exports.sp48_execute_frame() as FrameTerminationMode;
+        this.syncCpuFromWasm();
+        this.tapeDevice.updateTapeMode();
+        if (termination === WASM_TAPE_MODE_BOUNDARY_TERMINATION && !this.frameCompleted) {
+          this.syncInputToWasm(runtime);
+          this.syncCpuToWasm();
+        }
+      } while (termination === WASM_TAPE_MODE_BOUNDARY_TERMINATION && !this.frameCompleted);
       this.replayWasmAudioTrace(runtime, frameStartTact, frameStartOffset, this.tacts);
       this.replayWasmTapeSaveTrace(runtime, frameStartTact, frameStartOffset);
-      this.tapeDevice.updateTapeMode();
       this.executionContext.lastTerminationReason = termination;
       return termination;
     }
@@ -242,7 +315,41 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
       artifactName: runtime.artifactName,
       lastTerminationStatus: this.executionContext.lastTerminationReason,
       lastCpuStatus: runtime.result.getUint32(SP48_WASM_LAYOUT.resultCpuStatusOffset, true),
-      eventStatus: runtime.exports.sp48_event_status()
+      eventStatus: runtime.exports.sp48_event_status(),
+      counters: this.getWasmDiagnosticsCounters()
+    };
+  }
+
+  resetWasmDiagnosticsCounters(): void {
+    this.wasmRuntime?.exports.sp48_diagnostics_reset();
+  }
+
+  getWasmDiagnosticsCounters(): Sp48WasmDiagnosticsCounters {
+    const runtime = this.requireWasmRuntime();
+    return {
+      instructions: runtime.exports.sp48_diagnostics_value(WASM_DIAGNOSTICS_COUNTER.instructions),
+      memoryReads: runtime.exports.sp48_diagnostics_value(WASM_DIAGNOSTICS_COUNTER.memoryReads),
+      memoryWrites: runtime.exports.sp48_diagnostics_value(WASM_DIAGNOSTICS_COUNTER.memoryWrites),
+      portReads: runtime.exports.sp48_diagnostics_value(WASM_DIAGNOSTICS_COUNTER.portReads),
+      portWrites: runtime.exports.sp48_diagnostics_value(WASM_DIAGNOSTICS_COUNTER.portWrites),
+      contentionDelays: runtime.exports.sp48_diagnostics_value(WASM_DIAGNOSTICS_COUNTER.contentionDelays),
+      floatingBusReads: runtime.exports.sp48_diagnostics_value(WASM_DIAGNOSTICS_COUNTER.floatingBusReads),
+      traceEvents: runtime.exports.sp48_diagnostics_value(WASM_DIAGNOSTICS_COUNTER.traceEvents),
+      tapeBoundaryYields: runtime.exports.sp48_diagnostics_value(WASM_DIAGNOSTICS_COUNTER.tapeBoundaryYields)
+    };
+  }
+
+  getWasmTapeEarSyncStats(): Sp48WasmTapeEarSyncStats {
+    return { ...this.wasmTapeEarSyncStats };
+  }
+
+  resetWasmTapeEarSyncStats(): void {
+    this.wasmTapeEarSyncStats = {
+      generations: 0,
+      reused: 0,
+      filledTacts: 0,
+      lastStartOffset: 0,
+      lastEndOffset: 0
     };
   }
 
@@ -566,28 +673,176 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
   }
 
   private syncTapeEarTableToWasm(runtime: Sp48WasmRuntime): void {
-    runtime.tapeEarTable.fill(1);
-    if (this.tapeDevice.tapeMode !== TapeMode.Load) return;
-
-    const savedTacts = this.tacts;
-    const savedFrameTacts = this.frameTacts;
-    const savedCurrentFrameTact = this.currentFrameTact;
     const frameStartTact = this.tacts - this.frameTacts;
     const length = Math.min(
       runtime.tapeEarTable.length,
       this.tactsInCurrentFrame || this.tactsInFrame
     );
+    const tapeState = this.getWasmTapeEarState(frameStartTact, length);
+    if (this.tapeDevice.tapeMode !== TapeMode.Load || length <= 0) {
+      this.storeWasmTapeEarState(tapeState);
+      this.wasmTapeEarSyncStartOffset = 0;
+      this.wasmTapeEarSyncEndOffset = 0;
+      return;
+    }
 
-    for (let tact = 0; tact < length; tact++) {
+    const startOffset = Math.max(0, Math.min(this.frameTacts, length));
+    if (
+      this.matchesWasmTapeEarState(tapeState) &&
+      this.wasmTapeEarSyncStartOffset <= startOffset &&
+      this.wasmTapeEarSyncEndOffset >= length
+    ) {
+      this.wasmTapeEarSyncStats.reused++;
+      return;
+    }
+
+    const savedTacts = this.tacts;
+    const savedFrameTacts = this.frameTacts;
+    const savedCurrentFrameTact = this.currentFrameTact;
+
+    for (let tact = startOffset; tact < length; tact++) {
       this.setTacts(frameStartTact + tact);
       this.frameTacts = tact;
       this.currentFrameTact = tact;
       runtime.tapeEarTable[tact] = this.tapeDevice.getTapeEarBit() ? 1 : 0;
     }
 
+    this.storeWasmTapeEarState(tapeState);
+    this.wasmTapeEarSyncStartOffset = startOffset;
+    this.wasmTapeEarSyncEndOffset = length;
+    this.wasmTapeEarSyncStats.generations++;
+    this.wasmTapeEarSyncStats.filledTacts += length - startOffset;
+    this.wasmTapeEarSyncStats.lastStartOffset = startOffset;
+    this.wasmTapeEarSyncStats.lastEndOffset = length;
+
     this.setTacts(savedTacts);
     this.frameTacts = savedFrameTacts;
     this.currentFrameTact = savedCurrentFrameTact;
+  }
+
+  private invalidateWasmTapeEarSync(): void {
+    this.wasmTapeEarSyncTapeMode = -1;
+    this.wasmTapeEarSyncStartOffset = 0;
+    this.wasmTapeEarSyncEndOffset = 0;
+  }
+
+  private getWasmTapeEarState(frameStartTact: number, length: number): {
+    tapeMode: number;
+    blocksVersion: number;
+    currentBlockIndex: number;
+    tapeStartTact: number;
+    tapeEof: boolean;
+    frameStartTact: number;
+    length: number;
+    block?: unknown;
+    data?: unknown;
+    pilotPulseLength: number;
+    pilotPulseCount: number;
+    sync1PulseLength: number;
+    sync2PulseLength: number;
+    zeroBitPulseLength: number;
+    oneBitPulseLength: number;
+    endSyncPulseLength: number;
+    lastByteUsedBits: number;
+    pauseAfter: number;
+  } {
+    const tape = this.tapeDevice as unknown as {
+      _blocks?: unknown;
+      _currentBlockIndex?: number;
+      _tapeStartTact?: number;
+      _tapeEof?: boolean;
+    };
+    const blocksVersion = this.getWasmTapeBlocksVersion(tape._blocks);
+    const blocks = Array.isArray(tape._blocks) ? tape._blocks : undefined;
+    const currentBlockIndex = tape._currentBlockIndex ?? -1;
+    const block = blocks?.[currentBlockIndex] as
+      | {
+          data?: { length?: number };
+          pilotPulseLength?: number;
+          pilotPulseCount?: number;
+          sync1PulseLength?: number;
+          sync2PulseLength?: number;
+          zeroBitPulseLength?: number;
+          oneBitPulseLength?: number;
+          endSyncPulseLength?: number;
+          lastByteUsedBits?: number;
+          pauseAfter?: number;
+        }
+      | undefined;
+
+    return {
+      tapeMode: this.tapeDevice.tapeMode,
+      blocksVersion,
+      currentBlockIndex,
+      tapeStartTact: tape._tapeStartTact ?? 0,
+      tapeEof: tape._tapeEof ?? false,
+      frameStartTact,
+      length,
+      block,
+      data: block?.data,
+      pilotPulseLength: block?.pilotPulseLength ?? 0,
+      pilotPulseCount: block?.pilotPulseCount ?? 0,
+      sync1PulseLength: block?.sync1PulseLength ?? 0,
+      sync2PulseLength: block?.sync2PulseLength ?? 0,
+      zeroBitPulseLength: block?.zeroBitPulseLength ?? 0,
+      oneBitPulseLength: block?.oneBitPulseLength ?? 0,
+      endSyncPulseLength: block?.endSyncPulseLength ?? 0,
+      lastByteUsedBits: block?.lastByteUsedBits ?? 0,
+      pauseAfter: block?.pauseAfter ?? 0
+    };
+  }
+
+  private matchesWasmTapeEarState(state: ReturnType<ZxSpectrum48WasmMachine["getWasmTapeEarState"]>): boolean {
+    return (
+      this.wasmTapeEarSyncTapeMode === state.tapeMode &&
+      this.wasmTapeEarSyncBlocksVersion === state.blocksVersion &&
+      this.wasmTapeEarSyncBlockIndex === state.currentBlockIndex &&
+      this.wasmTapeEarSyncTapeStartTact === state.tapeStartTact &&
+      this.wasmTapeEarSyncTapeEof === state.tapeEof &&
+      this.wasmTapeEarSyncFrameStartTact === state.frameStartTact &&
+      this.wasmTapeEarSyncLength === state.length &&
+      this.wasmTapeEarSyncBlock === state.block &&
+      this.wasmTapeEarSyncData === state.data &&
+      this.wasmTapeEarSyncPilotPulseLength === state.pilotPulseLength &&
+      this.wasmTapeEarSyncPilotPulseCount === state.pilotPulseCount &&
+      this.wasmTapeEarSyncSync1PulseLength === state.sync1PulseLength &&
+      this.wasmTapeEarSyncSync2PulseLength === state.sync2PulseLength &&
+      this.wasmTapeEarSyncZeroBitPulseLength === state.zeroBitPulseLength &&
+      this.wasmTapeEarSyncOneBitPulseLength === state.oneBitPulseLength &&
+      this.wasmTapeEarSyncEndSyncPulseLength === state.endSyncPulseLength &&
+      this.wasmTapeEarSyncLastByteUsedBits === state.lastByteUsedBits &&
+      this.wasmTapeEarSyncPauseAfter === state.pauseAfter
+    );
+  }
+
+  private storeWasmTapeEarState(state: ReturnType<ZxSpectrum48WasmMachine["getWasmTapeEarState"]>): void {
+    this.wasmTapeEarSyncTapeMode = state.tapeMode;
+    this.wasmTapeEarSyncBlocksVersion = state.blocksVersion;
+    this.wasmTapeEarSyncBlockIndex = state.currentBlockIndex;
+    this.wasmTapeEarSyncTapeStartTact = state.tapeStartTact;
+    this.wasmTapeEarSyncTapeEof = state.tapeEof;
+    this.wasmTapeEarSyncFrameStartTact = state.frameStartTact;
+    this.wasmTapeEarSyncLength = state.length;
+    this.wasmTapeEarSyncBlock = state.block;
+    this.wasmTapeEarSyncData = state.data;
+    this.wasmTapeEarSyncPilotPulseLength = state.pilotPulseLength;
+    this.wasmTapeEarSyncPilotPulseCount = state.pilotPulseCount;
+    this.wasmTapeEarSyncSync1PulseLength = state.sync1PulseLength;
+    this.wasmTapeEarSyncSync2PulseLength = state.sync2PulseLength;
+    this.wasmTapeEarSyncZeroBitPulseLength = state.zeroBitPulseLength;
+    this.wasmTapeEarSyncOneBitPulseLength = state.oneBitPulseLength;
+    this.wasmTapeEarSyncEndSyncPulseLength = state.endSyncPulseLength;
+    this.wasmTapeEarSyncLastByteUsedBits = state.lastByteUsedBits;
+    this.wasmTapeEarSyncPauseAfter = state.pauseAfter;
+  }
+
+  private getWasmTapeBlocksVersion(blocks: unknown): number {
+    if (this.wasmTapeBlocksRef !== blocks) {
+      this.wasmTapeBlocksRef = blocks;
+      this.wasmTapeBlocksVersion++;
+      this.invalidateWasmTapeEarSync();
+    }
+    return this.wasmTapeBlocksVersion;
   }
 
   private syncTimingTablesToWasm(runtime: Sp48WasmRuntime): void {

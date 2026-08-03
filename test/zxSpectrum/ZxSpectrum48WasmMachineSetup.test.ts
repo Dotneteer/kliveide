@@ -76,6 +76,8 @@ function fakeInstance(overrides: Partial<Sp48WasmExports>): Promise<Sp48WasmInst
       sp48_debug_memory_log_ptr: () => 0x59000,
       sp48_debug_io_log_count: () => 0,
       sp48_debug_io_log_ptr: () => 0x5a000,
+      sp48_diagnostics_reset: () => 0,
+      sp48_diagnostics_value: () => 0,
       sp48_set_16k_model: () => 0,
       sp48_import_state: () => 0,
       sp48_export_state: () => 0,

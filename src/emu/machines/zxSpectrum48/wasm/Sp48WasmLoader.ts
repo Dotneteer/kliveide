@@ -36,6 +36,8 @@ export type Sp48WasmExports = WebAssembly.Exports & {
   sp48_debug_memory_log_ptr: Sp48WasmExportFunction;
   sp48_debug_io_log_count: Sp48WasmExportFunction;
   sp48_debug_io_log_ptr: Sp48WasmExportFunction;
+  sp48_diagnostics_reset: Sp48WasmExportFunction;
+  sp48_diagnostics_value: Sp48WasmExportFunction;
   sp48_set_16k_model: Sp48WasmExportFunction;
   sp48_import_state: Sp48WasmExportFunction;
   sp48_export_state: Sp48WasmExportFunction;

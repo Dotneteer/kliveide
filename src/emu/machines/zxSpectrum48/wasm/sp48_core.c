@@ -28,6 +28,36 @@ static unsigned int border_trace_count;
 static unsigned int audio_trace_count;
 static unsigned int tape_save_trace_count;
 static unsigned int event_status;
+static unsigned int resume_frame_after_tape_mode_boundary;
+static unsigned int diagnostics_instruction_count;
+static unsigned int diagnostics_memory_read_count;
+static unsigned int diagnostics_memory_write_count;
+static unsigned int diagnostics_port_read_count;
+static unsigned int diagnostics_port_write_count;
+static unsigned int diagnostics_contention_delay_count;
+static unsigned int diagnostics_floating_bus_read_count;
+static unsigned int diagnostics_trace_event_count;
+static unsigned int diagnostics_tape_boundary_yield_count;
+
+static const unsigned int SP48_TAPE_MODE_PASSIVE = 0u;
+static const unsigned int SP48_TAPE_LOAD_BYTES_ROUTINE = 0x056cu;
+static const unsigned int SP48_TAPE_SAVE_BYTES_ROUTINE = 0x04c2u;
+static const unsigned int SP48_TERMINATION_TAPE_MODE_BOUNDARY = 2u;
+
+enum Sp48DiagnosticsCounter {
+  SP48_DIAGNOSTICS_INSTRUCTIONS = 0,
+  SP48_DIAGNOSTICS_MEMORY_READS = 1,
+  SP48_DIAGNOSTICS_MEMORY_WRITES = 2,
+  SP48_DIAGNOSTICS_PORT_READS = 3,
+  SP48_DIAGNOSTICS_PORT_WRITES = 4,
+  SP48_DIAGNOSTICS_CONTENTION_DELAYS = 5,
+  SP48_DIAGNOSTICS_FLOATING_BUS_READS = 6,
+  SP48_DIAGNOSTICS_TRACE_EVENTS = 7,
+  SP48_DIAGNOSTICS_TAPE_BOUNDARY_YIELDS = 8
+};
+
+static inline unsigned int sp48_read_port_core(unsigned int address);
+static void sp48_write_port_core(unsigned int address, unsigned int value, unsigned int export_state);
 
 /* clang may lower simple loops to memset even with -nostdlib. */
 void *memset(void *destination, int value, unsigned long length) {
@@ -91,71 +121,75 @@ unsigned int sp48_layout_value(unsigned int id) {
   }
 }
 
-static void put_u16(unsigned char *target, unsigned int offset, unsigned int value) {
+static inline void put_u16(unsigned char *target, unsigned int offset, unsigned int value) {
   target[offset] = (unsigned char)value;
   target[offset + 1u] = (unsigned char)(value >> 8);
 }
 
-static unsigned int get_u16(const unsigned char *source, unsigned int offset) {
+static inline unsigned int get_u16(const unsigned char *source, unsigned int offset) {
   return (unsigned int)source[offset] | ((unsigned int)source[offset + 1u] << 8);
 }
 
-static unsigned int get_u32(const unsigned char *source, unsigned int offset) {
+static inline unsigned int get_u32(const unsigned char *source, unsigned int offset) {
   return (unsigned int)source[offset]
     | ((unsigned int)source[offset + 1u] << 8)
     | ((unsigned int)source[offset + 2u] << 16)
     | ((unsigned int)source[offset + 3u] << 24);
 }
 
-static void put_u32(unsigned char *target, unsigned int offset, unsigned int value) {
+static inline void put_u32(unsigned char *target, unsigned int offset, unsigned int value) {
   target[offset] = (unsigned char)value;
   target[offset + 1u] = (unsigned char)(value >> 8);
   target[offset + 2u] = (unsigned char)(value >> 16);
   target[offset + 3u] = (unsigned char)(value >> 24);
 }
 
-static void copy_bytes(unsigned char *target, const unsigned char *source, unsigned int length) {
-  unsigned int index;
-  for (index = 0; index < length; index++) target[index] = source[index];
+static inline unsigned int normalize_frame_tact(unsigned int tact, unsigned int tacts_in_frame) {
+  if (tacts_in_frame == 0u) return tact;
+  if (tact < tacts_in_frame) return tact;
+  tact -= tacts_in_frame;
+  if (tact < tacts_in_frame) return tact;
+  return tact % tacts_in_frame;
 }
 
-static void advance_tacts(unsigned int tacts) {
+static inline void advance_tacts(unsigned int tacts) {
+  unsigned int frame_tacts;
+  unsigned int tacts_in_frame;
   state.tacts += tacts;
-  state.frame_tacts += tacts;
-  while (state.frame_tacts >= state.tacts_in_frame && state.tacts_in_frame != 0u) {
+  frame_tacts = state.frame_tacts + tacts;
+  tacts_in_frame = state.tacts_in_frame;
+  if (tacts_in_frame != 0u && frame_tacts >= tacts_in_frame) {
+    frame_tacts -= tacts_in_frame;
     state.frames++;
-    state.frame_tacts -= state.tacts_in_frame;
+    if (frame_tacts >= tacts_in_frame) {
+      state.frames += frame_tacts / tacts_in_frame;
+      frame_tacts %= tacts_in_frame;
+    }
   }
+  state.frame_tacts = frame_tacts;
 }
 
-static unsigned int future_frame_tact(unsigned int offset) {
-  unsigned int tact;
-  if (state.tacts_in_frame == 0u) return state.frame_tacts;
-  tact = state.frame_tacts + offset;
-  while (tact >= state.tacts_in_frame) tact -= state.tacts_in_frame;
-  return tact;
+static inline unsigned int future_frame_tact(unsigned int offset) {
+  return normalize_frame_tact(state.frame_tacts + offset, state.tacts_in_frame);
 }
 
-static unsigned int contention_delay_at_current_tact(void) {
-  if (state.frame_tacts >= SP48_TIMING_TABLE_CAPACITY) return 0;
-  return contention_table[state.frame_tacts];
-}
-
-static unsigned int contention_delay_at_tact(unsigned int tact) {
-  if (state.tacts_in_frame != 0u) {
-    while (tact >= state.tacts_in_frame) tact -= state.tacts_in_frame;
-  }
+static inline unsigned int contention_delay_at_current_tact(void) {
+  unsigned int tact = state.frame_tacts;
   if (tact >= SP48_TIMING_TABLE_CAPACITY) return 0;
   return contention_table[tact];
 }
 
-static void apply_contention_delay_at_current_tact(void) {
-  advance_tacts(contention_delay_at_current_tact());
+static inline unsigned int contention_delay_at_tact(unsigned int tact) {
+  tact = normalize_frame_tact(tact, state.tacts_in_frame);
+  if (tact >= SP48_TIMING_TABLE_CAPACITY) return 0;
+  return contention_table[tact];
 }
 
-static void apply_memory_contention(uint16_t address) {
+static inline void apply_memory_contention(uint16_t address) {
   if ((address & 0xc000u) == 0x4000u) {
-    apply_contention_delay_at_current_tact();
+    unsigned int delay = contention_delay_at_current_tact();
+    diagnostics_contention_delay_count += delay;
+    advance_tacts(delay);
   }
 }
 
@@ -188,21 +222,33 @@ static void apply_port_contention(uint16_t address) {
     delay = contention_delay_at_tact(tact);
     added += delay;
   }
+  diagnostics_contention_delay_count += added;
   advance_tacts(added);
 }
 
-static unsigned int read_floating_bus_at(unsigned int tact) {
+static inline unsigned int read_floating_bus_at(unsigned int tact) {
+  unsigned int frame_tacts = state.tacts_in_frame;
   uint16_t address;
-  if (state.tacts_in_frame == 0u) return 0xffu;
-  while (tact >= state.tacts_in_frame) tact -= state.tacts_in_frame;
+  if (frame_tacts == 0u) return 0xffu;
+  tact = normalize_frame_tact(tact, frame_tacts);
   if (tact >= SP48_TIMING_TABLE_CAPACITY) return 0xffu;
   address = floating_bus_table[tact];
   return address == SP48_FLOATING_BUS_NONE ? 0xffu : memory[address];
 }
 
-static unsigned int read_sp48_floating_bus(unsigned int current_frame_tact) {
-  if (state.tacts_in_frame == 0u) return 0xffu;
-  return read_floating_bus_at(current_frame_tact + state.tacts_in_frame - 5u);
+static inline unsigned int read_sp48_floating_bus(unsigned int current_frame_tact) {
+  unsigned int frame_tacts = state.tacts_in_frame;
+  if (frame_tacts == 0u) return 0xffu;
+  diagnostics_floating_bus_read_count++;
+  return read_floating_bus_at(current_frame_tact + frame_tacts - 5u);
+}
+
+static void sync_event_result_counts(void) {
+  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, border_trace_count + audio_trace_count + tape_save_trace_count);
+  put_u32(result_block, SP48_RESULT_BORDER_TRACE_COUNT_OFFSET, border_trace_count);
+  put_u32(result_block, SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET, audio_trace_count);
+  put_u32(result_block, SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET, tape_save_trace_count);
+  put_u32(result_block, SP48_RESULT_EVENT_STATUS_OFFSET, event_status);
 }
 
 static void record_border_trace(unsigned int tact, unsigned int value) {
@@ -215,8 +261,7 @@ static void record_border_trace(unsigned int tact, unsigned int value) {
   event_buffer[offset + 6u] = ear_latch;
   event_buffer[offset + 7u] = mic_latch;
   border_trace_count++;
-  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, border_trace_count + audio_trace_count);
-  put_u32(result_block, SP48_RESULT_BORDER_TRACE_COUNT_OFFSET, border_trace_count);
+  diagnostics_trace_event_count++;
 }
 
 static void record_audio_trace(unsigned int tact, unsigned int value) {
@@ -233,8 +278,7 @@ static void record_audio_trace(unsigned int tact, unsigned int value) {
   event_buffer[offset + 6u] = mic_latch;
   event_buffer[offset + 7u] = 0;
   audio_trace_count++;
-  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, border_trace_count + audio_trace_count + tape_save_trace_count);
-  put_u32(result_block, SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET, audio_trace_count);
+  diagnostics_trace_event_count++;
 }
 
 static void record_tape_save_trace(unsigned int tact, unsigned int value) {
@@ -251,19 +295,22 @@ static void record_tape_save_trace(unsigned int tact, unsigned int value) {
   event_buffer[offset + 6u] = ear_latch;
   event_buffer[offset + 7u] = 0;
   tape_save_trace_count++;
-  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, border_trace_count + audio_trace_count + tape_save_trace_count);
-  put_u32(result_block, SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET, tape_save_trace_count);
+  diagnostics_trace_event_count++;
 }
 
-static unsigned int read_tape_ear_at_current_tact(void) {
-  unsigned int tact = state.frame_tacts;
-  if (state.tacts_in_frame != 0u) {
-    while (tact >= state.tacts_in_frame) tact -= state.tacts_in_frame;
-  }
+static inline unsigned int read_tape_ear_at_current_tact(void) {
+  unsigned int tact = normalize_frame_tact(state.frame_tacts, state.tacts_in_frame);
   if (tact >= SP48_TAPE_EAR_TABLE_CAPACITY) {
     return input_block[SP48_INPUT_TAPE_EAR_DEFAULT_OFFSET] != 0;
   }
   return tape_ear_table[tact] != 0;
+}
+
+static inline unsigned int should_yield_for_tape_mode_boundary(void) {
+  if (z80_bus_mode != Z80_BUS_SP48) return 0u;
+  if (input_block[SP48_INPUT_TAPE_MODE_OFFSET] != SP48_TAPE_MODE_PASSIVE) return 0u;
+  return state.pc == SP48_TAPE_LOAD_BYTES_ROUTINE ||
+    state.pc == SP48_TAPE_SAVE_BYTES_ROUTINE;
 }
 
 static void record_dirty_range(unsigned int address, unsigned int length) {
@@ -316,6 +363,33 @@ unsigned int sp48_debug_io_log_count(void) { return io_log_count; }
 
 unsigned int sp48_debug_io_log_ptr(void) { return (unsigned int)io_log; }
 
+void sp48_diagnostics_reset(void) {
+  diagnostics_instruction_count = 0;
+  diagnostics_memory_read_count = 0;
+  diagnostics_memory_write_count = 0;
+  diagnostics_port_read_count = 0;
+  diagnostics_port_write_count = 0;
+  diagnostics_contention_delay_count = 0;
+  diagnostics_floating_bus_read_count = 0;
+  diagnostics_trace_event_count = 0;
+  diagnostics_tape_boundary_yield_count = 0;
+}
+
+unsigned int sp48_diagnostics_value(unsigned int id) {
+  switch (id) {
+    case SP48_DIAGNOSTICS_INSTRUCTIONS: return diagnostics_instruction_count;
+    case SP48_DIAGNOSTICS_MEMORY_READS: return diagnostics_memory_read_count;
+    case SP48_DIAGNOSTICS_MEMORY_WRITES: return diagnostics_memory_write_count;
+    case SP48_DIAGNOSTICS_PORT_READS: return diagnostics_port_read_count;
+    case SP48_DIAGNOSTICS_PORT_WRITES: return diagnostics_port_write_count;
+    case SP48_DIAGNOSTICS_CONTENTION_DELAYS: return diagnostics_contention_delay_count;
+    case SP48_DIAGNOSTICS_FLOATING_BUS_READS: return diagnostics_floating_bus_read_count;
+    case SP48_DIAGNOSTICS_TRACE_EVENTS: return diagnostics_trace_event_count;
+    case SP48_DIAGNOSTICS_TAPE_BOUNDARY_YIELDS: return diagnostics_tape_boundary_yield_count;
+    default: return 0;
+  }
+}
+
 void sp48_clear_dirty_ranges(void) {
   unsigned int index;
   dirty_range_count = 0;
@@ -328,8 +402,7 @@ void sp48_clear_dirty_ranges(void) {
 void sp48_clear_border_trace(void) {
   unsigned int index;
   border_trace_count = 0;
-  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, audio_trace_count + tape_save_trace_count);
-  put_u32(result_block, SP48_RESULT_BORDER_TRACE_COUNT_OFFSET, 0);
+  sync_event_result_counts();
   for (index = 0; index < SP48_BORDER_TRACE_CAPACITY * SP48_BORDER_TRACE_RECORD_SIZE; index++) {
     event_buffer[SP48_BORDER_TRACE_OFFSET + index] = 0;
   }
@@ -339,9 +412,7 @@ void sp48_clear_audio_trace(void) {
   unsigned int index;
   audio_trace_count = 0;
   event_status &= (unsigned int)~SP48_EVENT_STATUS_AUDIO_OVERFLOW_MASK;
-  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, border_trace_count + tape_save_trace_count);
-  put_u32(result_block, SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET, 0);
-  put_u32(result_block, SP48_RESULT_EVENT_STATUS_OFFSET, event_status);
+  sync_event_result_counts();
   for (index = 0; index < SP48_AUDIO_TRACE_CAPACITY * SP48_AUDIO_TRACE_RECORD_SIZE; index++) {
     event_buffer[SP48_AUDIO_TRACE_OFFSET + index] = 0;
   }
@@ -351,28 +422,19 @@ void sp48_clear_tape_save_trace(void) {
   unsigned int index;
   tape_save_trace_count = 0;
   event_status &= (unsigned int)~SP48_EVENT_STATUS_TAPE_SAVE_OVERFLOW_MASK;
-  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, border_trace_count + audio_trace_count);
-  put_u32(result_block, SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET, 0);
-  put_u32(result_block, SP48_RESULT_EVENT_STATUS_OFFSET, event_status);
+  sync_event_result_counts();
   for (index = 0; index < SP48_TAPE_SAVE_TRACE_CAPACITY * SP48_TAPE_SAVE_TRACE_RECORD_SIZE; index++) {
     event_buffer[SP48_TAPE_SAVE_TRACE_OFFSET + index] = 0;
   }
 }
 
 static void sp48_clear_event_traces(void) {
-  unsigned int index;
   border_trace_count = 0;
   audio_trace_count = 0;
   tape_save_trace_count = 0;
   event_status = 0;
-  put_u32(result_block, SP48_RESULT_EVENT_COUNT_OFFSET, 0);
-  put_u32(result_block, SP48_RESULT_BORDER_TRACE_COUNT_OFFSET, 0);
-  put_u32(result_block, SP48_RESULT_AUDIO_TRACE_COUNT_OFFSET, 0);
-  put_u32(result_block, SP48_RESULT_TAPE_SAVE_TRACE_COUNT_OFFSET, 0);
-  put_u32(result_block, SP48_RESULT_EVENT_STATUS_OFFSET, 0);
-  for (index = 0; index < SP48_EVENT_BUFFER_SIZE; index++) {
-    event_buffer[index] = 0;
-  }
+  resume_frame_after_tape_mode_boundary = 0;
+  sync_event_result_counts();
 }
 
 void sp48_set_16k_model(unsigned int enabled) {
@@ -380,9 +442,93 @@ void sp48_set_16k_model(unsigned int enabled) {
   sp48_export_state();
 }
 
+static inline void set_state_flag(uint8_t flag, unsigned int enabled) {
+  if (enabled) state.flags |= flag;
+  else state.flags &= (uint8_t)~flag;
+}
+
+static inline void set_state_signal(uint8_t signal, unsigned int enabled) {
+  if (enabled) state.signals |= signal;
+  else state.signals &= (uint8_t)~signal;
+}
+
+static void sp48_import_cpu_state_block(void) {
+  const unsigned char *source = machine_state_block + SP48_MACHINE_STATE_CPU_STATE_OFFSET;
+  unsigned int tacts_in_frame;
+  state.af.word = (uint16_t)get_u16(source, 0u);
+  state.bc.word = (uint16_t)get_u16(source, 2u);
+  state.de.word = (uint16_t)get_u16(source, 4u);
+  state.hl.word = (uint16_t)get_u16(source, 6u);
+  state.af_alt.word = (uint16_t)get_u16(source, 8u);
+  state.bc_alt.word = (uint16_t)get_u16(source, 10u);
+  state.de_alt.word = (uint16_t)get_u16(source, 12u);
+  state.hl_alt.word = (uint16_t)get_u16(source, 14u);
+  state.ix.word = (uint16_t)get_u16(source, 16u);
+  state.iy.word = (uint16_t)get_u16(source, 18u);
+  state.ir.word = (uint16_t)get_u16(source, 20u);
+  state.wz.word = (uint16_t)get_u16(source, 22u);
+  state.pc = (uint16_t)get_u16(source, 24u);
+  state.sp = (uint16_t)get_u16(source, 26u);
+  state.tacts = get_u32(source, 28u);
+  state.frame_tacts = get_u32(source, 32u);
+  state.frames = get_u32(source, 36u);
+  tacts_in_frame = get_u32(source, 40u);
+  state.tacts_in_frame = tacts_in_frame == 0 ? 1000000u : tacts_in_frame;
+  state.prefix = source[44u];
+  set_state_flag(Z80_STATE_HALTED, source[45u] != 0);
+  state.op_code = source[46u];
+  state.interrupt_mode = source[47u];
+  set_state_flag(Z80_STATE_IFF1, source[48u] != 0);
+  set_state_flag(Z80_STATE_IFF2, source[49u] != 0);
+  set_state_signal(Z80_SIGNAL_INT, source[50u] != 0);
+  set_state_signal(Z80_SIGNAL_NMI, source[51u] != 0);
+  set_state_signal(Z80_SIGNAL_RST, source[52u] != 0);
+  state.ei_backlog = source[53u];
+  set_state_flag(Z80_STATE_AFTER_LD_AIR, source[54u] != 0);
+  state.interrupt_vector = source[55u];
+  state.z80n_mode = source[56u] != 0;
+  state.cpu_tact_scale = source[57u] == 0 ? 1 : source[57u];
+}
+
+static void sp48_export_cpu_state_block(void) {
+  unsigned char *target = machine_state_block + SP48_MACHINE_STATE_CPU_STATE_OFFSET;
+  put_u16(target, 0u, state.af.word);
+  put_u16(target, 2u, state.bc.word);
+  put_u16(target, 4u, state.de.word);
+  put_u16(target, 6u, state.hl.word);
+  put_u16(target, 8u, state.af_alt.word);
+  put_u16(target, 10u, state.bc_alt.word);
+  put_u16(target, 12u, state.de_alt.word);
+  put_u16(target, 14u, state.hl_alt.word);
+  put_u16(target, 16u, state.ix.word);
+  put_u16(target, 18u, state.iy.word);
+  put_u16(target, 20u, state.ir.word);
+  put_u16(target, 22u, state.wz.word);
+  put_u16(target, 24u, state.pc);
+  put_u16(target, 26u, state.sp);
+  put_u32(target, 28u, state.tacts);
+  put_u32(target, 32u, state.frame_tacts);
+  put_u32(target, 36u, state.frames);
+  put_u32(target, 40u, state.tacts_in_frame);
+  target[44u] = state.prefix;
+  target[45u] = (state.flags & Z80_STATE_HALTED) != 0;
+  target[46u] = state.op_code;
+  target[47u] = state.interrupt_mode;
+  target[48u] = (state.flags & Z80_STATE_IFF1) != 0;
+  target[49u] = (state.flags & Z80_STATE_IFF2) != 0;
+  target[50u] = (state.signals & Z80_SIGNAL_INT) != 0;
+  target[51u] = (state.signals & Z80_SIGNAL_NMI) != 0;
+  target[52u] = (state.signals & Z80_SIGNAL_RST) != 0;
+  target[53u] = state.ei_backlog;
+  target[54u] = (state.flags & Z80_STATE_AFTER_LD_AIR) != 0;
+  target[55u] = state.interrupt_vector;
+  target[56u] = state.z80n_mode;
+  target[57u] = state.cpu_tact_scale;
+}
+
 void sp48_import_state(void) {
-  copy_bytes(z80_state_block, machine_state_block + SP48_MACHINE_STATE_CPU_STATE_OFFSET, 64u);
-  z80_state_import();
+  z80_cpu_prepare_tables();
+  sp48_import_cpu_state_block();
   ula_port = machine_state_block[SP48_MACHINE_STATE_ULA_PORT_OFFSET];
   is_16k_model = machine_state_block[SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET] != 0;
   border_color = machine_state_block[SP48_MACHINE_STATE_BORDER_COLOR_OFFSET] & 7u;
@@ -391,8 +537,7 @@ void sp48_import_state(void) {
 }
 
 void sp48_export_state(void) {
-  z80_state_export();
-  copy_bytes(machine_state_block + SP48_MACHINE_STATE_CPU_STATE_OFFSET, z80_state_block, 64u);
+  sp48_export_cpu_state_block();
   machine_state_block[SP48_MACHINE_STATE_ULA_PORT_OFFSET] = ula_port;
   machine_state_block[SP48_MACHINE_STATE_IS_16K_MODEL_OFFSET] = is_16k_model;
   machine_state_block[SP48_MACHINE_STATE_BORDER_COLOR_OFFSET] = border_color;
@@ -449,6 +594,10 @@ void sp48_patch_memory(unsigned int address, unsigned int value) {
 }
 
 unsigned int sp48_read_port(unsigned int address) {
+  return sp48_read_port_core(address);
+}
+
+static inline unsigned int sp48_read_port_core(unsigned int address) {
   unsigned int lines;
   unsigned int status;
   unsigned int line;
@@ -465,48 +614,62 @@ unsigned int sp48_read_port(unsigned int address) {
     : ear_latch) ? 0x40u : 0u));
 }
 
-void sp48_write_port(unsigned int address, unsigned int value) {
+static void sp48_write_port_core(unsigned int address, unsigned int value, unsigned int export_state) {
   if ((address & 1) == 0) {
+    unsigned int old_border_color = border_color;
     unsigned int old_ear_latch = ear_latch;
     unsigned int old_mic_latch = mic_latch;
     ula_port = (unsigned char)value;
     border_color = ula_port & 7u;
     mic_latch = (ula_port & 0x08u) != 0;
     ear_latch = (ula_port & 0x10u) != 0;
-    record_border_trace(state.frame_tacts, ula_port);
+    if (old_border_color != border_color) {
+      record_border_trace(state.frame_tacts, ula_port);
+    }
     if (old_ear_latch != ear_latch || old_mic_latch != mic_latch) {
       record_audio_trace(state.frame_tacts, ula_port);
     }
     if (input_block[SP48_INPUT_TAPE_MODE_OFFSET] == 2u && old_mic_latch != mic_latch) {
       record_tape_save_trace(state.frame_tacts, ula_port);
     }
-    sp48_export_state();
+    if (export_state) {
+      sync_event_result_counts();
+      sp48_export_state();
+    }
   }
+}
+
+void sp48_write_port(unsigned int address, unsigned int value) {
+  sp48_write_port_core(address, value, 1u);
 }
 
 uint8_t sp48_bus_read_memory(uint16_t address, unsigned int operation) {
   (void)operation;
+  diagnostics_memory_read_count++;
   apply_memory_contention(address);
   return memory[address];
 }
 
 void sp48_bus_write_memory(uint16_t address, uint8_t value) {
+  diagnostics_memory_write_count++;
   apply_memory_contention(address);
   sp48_write_memory(address, value);
 }
 
 uint8_t sp48_bus_read_port(uint16_t address) {
+  diagnostics_port_read_count++;
   apply_port_contention(address);
   if ((address & 1u) != 0) return (uint8_t)read_sp48_floating_bus(future_frame_tact(4u));
-  return (uint8_t)sp48_read_port(address);
+  return (uint8_t)sp48_read_port_core(address);
 }
 
 void sp48_bus_write_port(uint16_t address, uint8_t value) {
+  diagnostics_port_write_count++;
   apply_port_contention(address);
   if ((address & 1u) == 0) {
     unsigned int saved_tact = state.frame_tacts;
     state.frame_tacts = future_frame_tact(4u);
-    sp48_write_port(address, value);
+    sp48_write_port_core(address, value, 0u);
     state.frame_tacts = saved_tact;
   }
 }
@@ -525,7 +688,7 @@ unsigned int sp48_execute_instructions(
     input_block[SP48_INPUT_TERMINATION_POINT_ENABLED_OFFSET] != 0;
 
   sp48_import_state();
-  z80_bus_mode = Z80_BUS_SP48;
+  z80_bus_mode = Z80_BUS_SP48_DEBUG;
   sp48_clear_event_traces();
   start_frames = state.frames;
   put_u32(result_block, SP48_RESULT_TERMINATION_OFFSET, termination);
@@ -537,6 +700,7 @@ unsigned int sp48_execute_instructions(
       cpu_status = z80_cpu_execute_instruction();
     } while (cpu_status == Z80_EXECUTION_PREFIX_PENDING);
     instructions++;
+    diagnostics_instruction_count++;
 
     if (cpu_status != Z80_EXECUTION_COMPLETED) {
       termination = 1u;
@@ -559,6 +723,7 @@ unsigned int sp48_execute_instructions(
   put_u32(result_block, SP48_RESULT_TERMINATION_OFFSET, termination);
   put_u32(result_block, SP48_RESULT_INSTRUCTION_COUNT_OFFSET, instructions);
   put_u32(result_block, SP48_RESULT_CPU_STATUS_OFFSET, cpu_status);
+  sync_event_result_counts();
   sp48_export_state();
   return termination;
 }
@@ -567,7 +732,11 @@ unsigned int sp48_execute_frame(void) {
   unsigned int start_frames;
   sp48_import_state();
   z80_bus_mode = Z80_BUS_SP48;
-  sp48_clear_event_traces();
+  if (resume_frame_after_tape_mode_boundary) {
+    resume_frame_after_tape_mode_boundary = 0;
+  } else {
+    sp48_clear_event_traces();
+  }
   start_frames = state.frames;
   while (state.frames == start_frames) {
     unsigned int cpu_status;
@@ -577,15 +746,27 @@ unsigned int sp48_execute_frame(void) {
     do {
       cpu_status = z80_cpu_execute_instruction();
     } while (cpu_status == Z80_EXECUTION_PREFIX_PENDING);
+    diagnostics_instruction_count++;
     if (cpu_status != Z80_EXECUTION_COMPLETED) {
       put_u32(result_block, SP48_RESULT_TERMINATION_OFFSET, 1u);
       put_u32(result_block, SP48_RESULT_CPU_STATUS_OFFSET, cpu_status);
+      sync_event_result_counts();
       sp48_export_state();
       return 1u;
+    }
+    if (should_yield_for_tape_mode_boundary()) {
+      put_u32(result_block, SP48_RESULT_TERMINATION_OFFSET, SP48_TERMINATION_TAPE_MODE_BOUNDARY);
+      put_u32(result_block, SP48_RESULT_CPU_STATUS_OFFSET, Z80_EXECUTION_COMPLETED);
+      diagnostics_tape_boundary_yield_count++;
+      resume_frame_after_tape_mode_boundary = 1;
+      sync_event_result_counts();
+      sp48_export_state();
+      return SP48_TERMINATION_TAPE_MODE_BOUNDARY;
     }
   }
   put_u32(result_block, SP48_RESULT_TERMINATION_OFFSET, 0u);
   put_u32(result_block, SP48_RESULT_CPU_STATUS_OFFSET, Z80_EXECUTION_COMPLETED);
+  sync_event_result_counts();
   sp48_export_state();
   return 0u;
 }

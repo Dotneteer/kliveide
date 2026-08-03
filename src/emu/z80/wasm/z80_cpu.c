@@ -15,14 +15,15 @@ void *memcpy(void *destination, const void *source, unsigned long count) {
 }
 
 static void initializeParityTable(void);
-static uint8_t readRegister(unsigned int registerCode);
-static void writeRegister(unsigned int registerCode, uint8_t value);
+static void initialize_operation_tables(void);
+static inline uint8_t readRegister(unsigned int registerCode);
+static inline void writeRegister(unsigned int registerCode, uint8_t value);
 uint8_t sp48_bus_read_memory(uint16_t address, unsigned int operation);
 void sp48_bus_write_memory(uint16_t address, uint8_t value);
 uint8_t sp48_bus_read_port(uint16_t address);
 void sp48_bus_write_port(uint16_t address, uint8_t value);
 
-static void tactPlusN(unsigned int tacts) {
+static inline void tactPlusN(unsigned int tacts) {
   state.tacts += tacts;
   state.frame_tacts += tacts * (state.z80n_mode ? state.cpu_tact_scale : 1u);
   if (state.frame_tacts >= state.tacts_in_frame) {
@@ -31,15 +32,22 @@ static void tactPlusN(unsigned int tacts) {
   }
 }
 
-static void refreshMemory(void) {
+static inline void refreshMemory(void) {
   state.ir.bytes.lo = (uint8_t)(((state.ir.bytes.lo + 1u) & 0x7fu) | (state.ir.bytes.lo & 0x80u));
 }
 
-static uint8_t readMemory(uint16_t address, unsigned int operation) {
-  uint8_t value = z80_bus_mode == Z80_BUS_SP48
+static inline uint8_t readMemory(uint16_t address, unsigned int operation) {
+  uint8_t value;
+  if (z80_bus_mode == Z80_BUS_SP48) {
+    value = sp48_bus_read_memory(address, operation);
+    tactPlusN(3);
+    return value;
+  }
+
+  value = z80_bus_mode == Z80_BUS_SP48_DEBUG
     ? sp48_bus_read_memory(address, operation)
     : test_memory[address];
-  if ((z80_bus_mode == Z80_BUS_TEST || z80_bus_mode == Z80_BUS_SP48) && memory_log_count < Z80_TEST_LOG_CAPACITY) {
+  if (memory_log_count < Z80_TEST_LOG_CAPACITY) {
     memory_log[memory_log_count].address = address;
     memory_log[memory_log_count].value = value;
     memory_log[memory_log_count].operation = (uint8_t)operation;
@@ -49,10 +57,16 @@ static uint8_t readMemory(uint16_t address, unsigned int operation) {
   return value;
 }
 
-static void writeMemory(uint16_t address, uint8_t value) {
-  if (z80_bus_mode == Z80_BUS_SP48) sp48_bus_write_memory(address, value);
+static inline void writeMemory(uint16_t address, uint8_t value) {
+  if (z80_bus_mode == Z80_BUS_SP48) {
+    sp48_bus_write_memory(address, value);
+    tactPlusN(3);
+    return;
+  }
+
+  if (z80_bus_mode == Z80_BUS_SP48_DEBUG) sp48_bus_write_memory(address, value);
   else test_memory[address] = value;
-  if ((z80_bus_mode == Z80_BUS_TEST || z80_bus_mode == Z80_BUS_SP48) && memory_log_count < Z80_TEST_LOG_CAPACITY) {
+  if (memory_log_count < Z80_TEST_LOG_CAPACITY) {
     memory_log[memory_log_count].address = address;
     memory_log[memory_log_count].value = value;
     memory_log[memory_log_count].operation = 1;
@@ -61,11 +75,18 @@ static void writeMemory(uint16_t address, uint8_t value) {
   tactPlusN(3);
 }
 
-static uint8_t readPort(uint16_t address) {
-  uint8_t value = z80_bus_mode == Z80_BUS_SP48
+static inline uint8_t readPort(uint16_t address) {
+  uint8_t value;
+  if (z80_bus_mode == Z80_BUS_SP48) {
+    value = sp48_bus_read_port(address);
+    tactPlusN(4);
+    return value;
+  }
+
+  value = z80_bus_mode == Z80_BUS_SP48_DEBUG
     ? sp48_bus_read_port(address)
     : (io_input_index < io_input_count ? io_input[io_input_index++] : 0);
-  if ((z80_bus_mode == Z80_BUS_TEST || z80_bus_mode == Z80_BUS_SP48) && io_log_count < Z80_TEST_LOG_CAPACITY) {
+  if (io_log_count < Z80_TEST_LOG_CAPACITY) {
     io_log[io_log_count].address = address;
     io_log[io_log_count].value = value;
     io_log[io_log_count].operation = 0;
@@ -75,9 +96,15 @@ static uint8_t readPort(uint16_t address) {
   return value;
 }
 
-static void writePort(uint16_t address, uint8_t value) {
-  if (z80_bus_mode == Z80_BUS_SP48) sp48_bus_write_port(address, value);
-  if ((z80_bus_mode == Z80_BUS_TEST || z80_bus_mode == Z80_BUS_SP48) && io_log_count < Z80_TEST_LOG_CAPACITY) {
+static inline void writePort(uint16_t address, uint8_t value) {
+  if (z80_bus_mode == Z80_BUS_SP48) {
+    sp48_bus_write_port(address, value);
+    tactPlusN(4);
+    return;
+  }
+
+  if (z80_bus_mode == Z80_BUS_SP48_DEBUG) sp48_bus_write_port(address, value);
+  if (io_log_count < Z80_TEST_LOG_CAPACITY) {
     io_log[io_log_count].address = address;
     io_log[io_log_count].value = value;
     io_log[io_log_count].operation = 1;
@@ -95,7 +122,7 @@ static void tbblueOut(uint8_t address, uint8_t value) {
   }
 }
 
-static void push_pc(void) {
+static inline void push_pc(void) {
   state.sp--;
   tactPlusN(1);
   writeMemory(state.sp, state.pc >> 8);
@@ -103,13 +130,13 @@ static void push_pc(void) {
   writeMemory(state.sp, state.pc & 0xff);
 }
 
-static uint16_t fetchCodeWord(void) {
+static inline uint16_t fetchCodeWord(void) {
   uint16_t low = readMemory(state.pc++, 0);
   uint16_t high = readMemory(state.pc++, 0);
   return (uint16_t)(low | (high << 8));
 }
 
-static unsigned int conditionIsTrue(unsigned int condition) {
+static inline unsigned int conditionIsTrue(unsigned int condition) {
   uint8_t flags = state.af.bytes.lo;
   switch (condition & 7u) {
     case 0: return (flags & 0x40u) == 0; /* NZ */
@@ -141,7 +168,7 @@ static void initializeParityTable(void) {
   parity_table_initialized = 1;
 }
 
-static uint8_t add8(uint8_t left, uint8_t right, unsigned int carry) {
+static inline uint8_t add8(uint8_t left, uint8_t right, unsigned int carry) {
   uint16_t sum = (uint16_t)left + right + carry;
   uint8_t result = (uint8_t)sum;
   uint8_t flags = result & 0xa8u;
@@ -153,7 +180,7 @@ static uint8_t add8(uint8_t left, uint8_t right, unsigned int carry) {
   return result;
 }
 
-static uint8_t sub8(uint8_t left, uint8_t right, unsigned int carry) {
+static inline uint8_t sub8(uint8_t left, uint8_t right, unsigned int carry) {
   unsigned int right_with_carry = (unsigned int)right + carry;
   uint8_t result = (uint8_t)((unsigned int)left - right_with_carry);
   uint8_t flags = (uint8_t)(0x02u | (result & 0xa8u));
@@ -165,7 +192,7 @@ static uint8_t sub8(uint8_t left, uint8_t right, unsigned int carry) {
   return result;
 }
 
-static uint8_t inc8(uint8_t value) {
+static inline uint8_t inc8(uint8_t value) {
   uint8_t result = (uint8_t)(value + 1u);
   uint8_t flags = (state.af.bytes.lo & 0x01u) | (result & 0xa8u);
   if (result == 0) flags |= 0x40u;
@@ -175,7 +202,7 @@ static uint8_t inc8(uint8_t value) {
   return result;
 }
 
-static uint8_t dec8(uint8_t value) {
+static inline uint8_t dec8(uint8_t value) {
   uint8_t result = (uint8_t)(value - 1u);
   uint8_t flags = (uint8_t)((state.af.bytes.lo & 0x01u) | 0x02u | (result & 0xa8u));
   if (result == 0) flags |= 0x40u;
@@ -185,78 +212,76 @@ static uint8_t dec8(uint8_t value) {
   return result;
 }
 
-static uint8_t sz53pv(uint8_t value) {
+static inline uint8_t sz53pv(uint8_t value) {
   uint8_t flags = value & 0xa8u;
-
-  initializeParityTable();
   if (value == 0) flags |= 0x40u;
   return (uint8_t)(flags | parity_table[value]);
 }
 
-static uint8_t sz53(uint8_t value) {
+static inline uint8_t sz53(uint8_t value) {
   uint8_t flags = value & 0xa8u;
 
   if (value == 0) flags |= 0x40u;
   return flags;
 }
 
-static uint8_t rlc8(uint8_t value) {
+static inline uint8_t rlc8(uint8_t value) {
   uint8_t result = (uint8_t)((value << 1) | (value >> 7));
 
   state.af.bytes.lo = (uint8_t)((value >> 7) | sz53pv(result));
   return result;
 }
 
-static uint8_t rrc8(uint8_t value) {
+static inline uint8_t rrc8(uint8_t value) {
   uint8_t result = (uint8_t)((value >> 1) | (value << 7));
 
   state.af.bytes.lo = (uint8_t)((value & 1u) | sz53pv(result));
   return result;
 }
 
-static uint8_t rl8(uint8_t value) {
+static inline uint8_t rl8(uint8_t value) {
   uint8_t result = (uint8_t)((value << 1) | (state.af.bytes.lo & 1u));
 
   state.af.bytes.lo = (uint8_t)((value >> 7) | sz53pv(result));
   return result;
 }
 
-static uint8_t rr8(uint8_t value) {
+static inline uint8_t rr8(uint8_t value) {
   uint8_t result = (uint8_t)((value >> 1) | ((state.af.bytes.lo & 1u) << 7));
 
   state.af.bytes.lo = (uint8_t)((value & 1u) | sz53pv(result));
   return result;
 }
 
-static uint8_t sla8(uint8_t value) {
+static inline uint8_t sla8(uint8_t value) {
   uint8_t result = (uint8_t)(value << 1);
 
   state.af.bytes.lo = (uint8_t)((value >> 7) | sz53pv(result));
   return result;
 }
 
-static uint8_t sra8(uint8_t value) {
+static inline uint8_t sra8(uint8_t value) {
   uint8_t result = (uint8_t)((value >> 1) | (value & 0x80u));
 
   state.af.bytes.lo = (uint8_t)((value & 1u) | sz53pv(result));
   return result;
 }
 
-static uint8_t sll8(uint8_t value) {
+static inline uint8_t sll8(uint8_t value) {
   uint8_t result = (uint8_t)((value << 1) | 1u);
 
   state.af.bytes.lo = (uint8_t)((value >> 7) | sz53pv(result));
   return result;
 }
 
-static uint8_t srl8(uint8_t value) {
+static inline uint8_t srl8(uint8_t value) {
   uint8_t result = (uint8_t)(value >> 1);
 
   state.af.bytes.lo = (uint8_t)((value & 1u) | sz53pv(result));
   return result;
 }
 
-static uint16_t add16(uint16_t left, uint16_t right) {
+static inline uint16_t add16(uint16_t left, uint16_t right) {
   uint32_t sum = (uint32_t)left + right;
   uint16_t result = (uint16_t)sum;
   uint8_t flags = (uint8_t)((state.af.bytes.lo & 0xc4u) | ((result >> 8) & 0x28u));
@@ -272,7 +297,7 @@ typedef void (*Z80Operation)(void);
 static void illegal_operation(void) {
 }
 
-static uint8_t executeBitRotateShift(uint8_t value, unsigned int group) {
+static inline uint8_t executeBitRotateShift(uint8_t value, unsigned int group) {
   switch (group) {
     case 0: return rlc8(value);
     case 1: return rrc8(value);
@@ -335,7 +360,7 @@ static void bitSet(void) {
   if (selector == 6) tactPlusN(1);
 }
 
-static uint16_t selectRegisterPair(unsigned int selector) {
+static inline uint16_t selectRegisterPair(unsigned int selector) {
   switch (selector & 3u) {
     case 0: return state.bc.word;
     case 1: return state.de.word;
@@ -344,7 +369,7 @@ static uint16_t selectRegisterPair(unsigned int selector) {
   }
 }
 
-static void storeRegisterPair(unsigned int selector, uint16_t value) {
+static inline void storeRegisterPair(unsigned int selector, uint16_t value) {
   switch (selector & 3u) {
     case 0: state.bc.word = value; break;
     case 1: state.de.word = value; break;
@@ -474,7 +499,7 @@ static void rld(void) {
   state.wz.word = (uint16_t)(state.hl.word + 1u);
 }
 
-static uint8_t halfCarrySubFlag(uint8_t left, uint8_t right, uint8_t result) {
+static inline uint8_t halfCarrySubFlag(uint8_t left, uint8_t right, uint8_t result) {
   return ((left ^ right ^ result) & 0x10u) != 0 ? 0x10u : 0;
 }
 
@@ -535,8 +560,6 @@ static void blockCompare(unsigned int decrement, unsigned int repeat) {
 static void blockInput(unsigned int decrement, unsigned int repeat) {
   uint8_t value;
   uint8_t tmp2;
-
-  initializeParityTable();
   tactPlusN(1);
   value = readPort(state.bc.word);
   writeMemory(state.hl.word, value);
@@ -562,8 +585,6 @@ static void blockInput(unsigned int decrement, unsigned int repeat) {
 static void blockOutput(unsigned int decrement, unsigned int repeat) {
   uint8_t value;
   uint8_t tmp2;
-
-  initializeParityTable();
   tactPlusN(1);
   value = readMemory(state.hl.word, 0);
   state.bc.bytes.hi--;
@@ -1004,7 +1025,6 @@ static void daa(void) {
   if (state.af.bytes.hi > 0x99u) carry = 1;
   if ((f & 0x02u) != 0) state.af.bytes.hi = sub8(state.af.bytes.hi, adjust, 0);
   else state.af.bytes.hi = add8(state.af.bytes.hi, adjust, 0);
-  initializeParityTable();
   state.af.bytes.lo = (uint8_t)((state.af.bytes.lo & ~0x05u) | carry | parity_table[state.af.bytes.hi]);
 }
 // 0x28: JR Z,d
@@ -1089,11 +1109,11 @@ static void subR(void) { state.af.bytes.hi = sub8(state.af.bytes.hi, readRegiste
 // 0x98-0x9F: SBC A,r
 static void sbcAR(void) { state.af.bytes.hi = sub8(state.af.bytes.hi, readRegister(state.op_code & 7u), state.af.bytes.lo & 1u); }
 // 0xA0-0xA7: AND r
-static void andR(void) { state.af.bytes.hi &= readRegister(state.op_code & 7u); initializeParityTable(); state.af.bytes.lo = (uint8_t)(0x10u | (state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
+static void andR(void) { state.af.bytes.hi &= readRegister(state.op_code & 7u);  state.af.bytes.lo = (uint8_t)(0x10u | (state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
 // 0xA8-0xAF: XOR r
-static void xorR(void) { state.af.bytes.hi ^= readRegister(state.op_code & 7u); initializeParityTable(); state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
+static void xorR(void) { state.af.bytes.hi ^= readRegister(state.op_code & 7u);  state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
 // 0xB0-0xB7: OR r
-static void orR(void) { state.af.bytes.hi |= readRegister(state.op_code & 7u); initializeParityTable(); state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
+static void orR(void) { state.af.bytes.hi |= readRegister(state.op_code & 7u);  state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
 // 0xB8-0xBF: CP r
 static void cpR(void) { uint8_t a = state.af.bytes.hi; uint8_t value = readRegister(state.op_code & 7u); (void)sub8(a, value, 0); state.af.bytes.hi = a; state.af.bytes.lo = (uint8_t)((state.af.bytes.lo & ~0x28u) | (value & 0x28u)); }
 
@@ -1230,7 +1250,6 @@ static void exSpiHl(void) {
 // 0xE6: AND A,n
 static void andAN(void) {
   state.af.bytes.hi &= readMemory(state.pc++, 0);
-  initializeParityTable();
   state.af.bytes.lo = (uint8_t)(0x10u | (state.af.bytes.hi & 0xa8u) |
     (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]);
 }
@@ -1251,7 +1270,6 @@ static void exDeHl(void) {
 // 0xEE: XOR A,n
 static void xorAN(void) {
   state.af.bytes.hi ^= readMemory(state.pc++, 0);
-  initializeParityTable();
   state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) |
     (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]);
 }
@@ -1264,7 +1282,6 @@ static void di(void) {
 // 0xF6: OR A,n
 static void orAN(void) {
   state.af.bytes.hi |= readMemory(state.pc++, 0);
-  initializeParityTable();
   state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) |
     (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]);
 }
@@ -1293,11 +1310,11 @@ static void cpAN(void) {
 
 static unsigned int active_index_prefix;
 
-static Z80Register16 *activeIndexRegister(void) {
+static inline Z80Register16 *activeIndexRegister(void) {
   return active_index_prefix == 4 ? &state.iy : &state.ix;
 }
 
-static uint8_t readIndexedRegister(unsigned int registerCode) {
+static inline uint8_t readIndexedRegister(unsigned int registerCode) {
   Z80Register16 *index = activeIndexRegister();
 
   switch (registerCode & 7u) {
@@ -1312,7 +1329,7 @@ static uint8_t readIndexedRegister(unsigned int registerCode) {
   }
 }
 
-static void writeIndexedRegister(unsigned int registerCode, uint8_t value) {
+static inline void writeIndexedRegister(unsigned int registerCode, uint8_t value) {
   Z80Register16 *index = activeIndexRegister();
 
   switch (registerCode & 7u) {
@@ -1327,7 +1344,7 @@ static void writeIndexedRegister(unsigned int registerCode, uint8_t value) {
   }
 }
 
-static void fetchIndexedAddress(void) {
+static inline void fetchIndexedAddress(void) {
   uint8_t displacement = readMemory(state.pc, 0);
 
   tactPlusN(5);
@@ -1399,9 +1416,9 @@ static void indexedAddAR(void) { if ((state.op_code & 7u) == 6) fetchIndexedAddr
 static void indexedAdcAR(void) { if ((state.op_code & 7u) == 6) fetchIndexedAddress(); state.af.bytes.hi = add8(state.af.bytes.hi, readIndexedRegister(state.op_code & 7u), state.af.bytes.lo & 1u); }
 static void indexedSubR(void) { if ((state.op_code & 7u) == 6) fetchIndexedAddress(); state.af.bytes.hi = sub8(state.af.bytes.hi, readIndexedRegister(state.op_code & 7u), 0); }
 static void indexedSbcAR(void) { if ((state.op_code & 7u) == 6) fetchIndexedAddress(); state.af.bytes.hi = sub8(state.af.bytes.hi, readIndexedRegister(state.op_code & 7u), state.af.bytes.lo & 1u); }
-static void indexedAndR(void) { if ((state.op_code & 7u) == 6) fetchIndexedAddress(); state.af.bytes.hi &= readIndexedRegister(state.op_code & 7u); initializeParityTable(); state.af.bytes.lo = (uint8_t)(0x10u | (state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
-static void indexedXorR(void) { if ((state.op_code & 7u) == 6) fetchIndexedAddress(); state.af.bytes.hi ^= readIndexedRegister(state.op_code & 7u); initializeParityTable(); state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
-static void indexedOrR(void) { if ((state.op_code & 7u) == 6) fetchIndexedAddress(); state.af.bytes.hi |= readIndexedRegister(state.op_code & 7u); initializeParityTable(); state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
+static void indexedAndR(void) { if ((state.op_code & 7u) == 6) fetchIndexedAddress(); state.af.bytes.hi &= readIndexedRegister(state.op_code & 7u);  state.af.bytes.lo = (uint8_t)(0x10u | (state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
+static void indexedXorR(void) { if ((state.op_code & 7u) == 6) fetchIndexedAddress(); state.af.bytes.hi ^= readIndexedRegister(state.op_code & 7u);  state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
+static void indexedOrR(void) { if ((state.op_code & 7u) == 6) fetchIndexedAddress(); state.af.bytes.hi |= readIndexedRegister(state.op_code & 7u);  state.af.bytes.lo = (uint8_t)((state.af.bytes.hi & 0xa8u) | (state.af.bytes.hi == 0 ? 0x40u : 0) | parity_table[state.af.bytes.hi]); }
 static void indexedCpR(void) {
   uint8_t accumulator = state.af.bytes.hi;
   uint8_t value;
@@ -1678,20 +1695,25 @@ static void initialize_operation_tables(void) {
   operation_tables_initialized = 1;
 }
 
-static unsigned int execute_operation(Z80Operation operation) {
+void z80_cpu_prepare_tables(void) {
+  initializeParityTable();
+  initialize_operation_tables();
+}
+
+static inline unsigned int execute_operation(Z80Operation operation) {
   if (operation == illegal_operation) return Z80_EXECUTION_NOT_IMPLEMENTED;
   operation();
   return Z80_EXECUTION_COMPLETED;
 }
 
-static void leave_halt(void) {
+static inline void leave_halt(void) {
   if ((state.flags & Z80_STATE_HALTED) != 0) {
     state.pc++;
     state.flags &= (uint8_t)~Z80_STATE_HALTED;
   }
 }
 
-static void apply_ld_air_quirk(void) {
+static inline void apply_ld_air_quirk(void) {
   if ((state.flags & Z80_STATE_AFTER_LD_AIR) != 0) {
     state.af.bytes.lo &= (uint8_t)~0x04u;
     state.flags &= (uint8_t)~Z80_STATE_AFTER_LD_AIR;
@@ -1734,8 +1756,6 @@ static void process_int(void) {
 static unsigned int executeCpuCycle(void) {
   uint8_t opcode;
 
-  initialize_operation_tables();
-
   if (state.ei_backlog > 0) state.ei_backlog--;
   if ((state.signals & Z80_SIGNAL_RST) != 0) {
     z80_reset();
@@ -1762,7 +1782,7 @@ static unsigned int executeCpuCycle(void) {
 
   if (state.prefix == 0) {
     memory_log_count = 0;
-    if (z80_bus_mode == Z80_BUS_SP48) io_log_count = 0;
+    if (z80_bus_mode == Z80_BUS_SP48 || z80_bus_mode == Z80_BUS_SP48_DEBUG) io_log_count = 0;
   }
   opcode = readMemory(state.pc, 0);
   state.pc++;

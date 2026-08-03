@@ -53,6 +53,7 @@ static void set_signal(uint8_t signal, uint8_t enabled) {
 }
 
 void z80_reset(void) {
+  z80_cpu_prepare_tables();
   state.af.word = 0xffff;
   state.af_alt.word = 0xffff;
   state.ir.word = 0;

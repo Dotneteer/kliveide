@@ -170,6 +170,8 @@ unsigned int sp48_debug_memory_log_count(void);
 unsigned int sp48_debug_memory_log_ptr(void);
 unsigned int sp48_debug_io_log_count(void);
 unsigned int sp48_debug_io_log_ptr(void);
+void sp48_diagnostics_reset(void);
+unsigned int sp48_diagnostics_value(unsigned int id);
 void sp48_set_16k_model(unsigned int enabled);
 void sp48_import_state(void);
 void sp48_export_state(void);

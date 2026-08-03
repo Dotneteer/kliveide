@@ -25,9 +25,11 @@ code {
 }
 
 .baseRootComponent {
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   position: relative;
   height: inherit;
   font-family: var(--main-font-family);
+  background: var(--bgcolor-toolbar);
 }

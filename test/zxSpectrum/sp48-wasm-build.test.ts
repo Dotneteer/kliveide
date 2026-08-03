@@ -41,6 +41,8 @@ describe("ZX Spectrum 48K WASM build", () => {
     expect(productionExports).toContain("sp48_abi_version");
     expect(productionExports).toContain("sp48_layout_value");
     expect(productionExports).toContain("sp48_machine_state_block_ptr");
+    expect(productionExports).toContain("sp48_diagnostics_reset");
+    expect(productionExports).toContain("sp48_diagnostics_value");
     expect(productionExports).not.toContain("z80_test_memory_ptr");
     expect(testExports).toEqual(expect.arrayContaining(productionExports));
     expect(testExports).toContain("z80_execute_instruction");

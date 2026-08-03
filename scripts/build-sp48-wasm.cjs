@@ -139,6 +139,8 @@ const productionExports = [
   "sp48_debug_memory_log_ptr",
   "sp48_debug_io_log_count",
   "sp48_debug_io_log_ptr",
+  "sp48_diagnostics_reset",
+  "sp48_diagnostics_value",
   "sp48_set_16k_model",
   "sp48_import_state",
   "sp48_export_state",

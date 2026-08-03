@@ -206,7 +206,9 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     setFrameTactForFloatingRead(wasm, pixelFetch.tact);
     ts.doWriteMemory(pixelFetch.address, 0x34);
     wasm.patchMemory(pixelFetch.address, 0x34);
+    wasm.resetWasmDiagnosticsCounters();
     expect(wasm.doReadPort(0xffff)).toBe(ts.doReadPort(0xffff));
+    expect(wasm.getWasmDiagnosticsCounters().floatingBusReads).toBe(1);
 
     setFrameTactForFloatingRead(ts, attrFetch.tact);
     setFrameTactForFloatingRead(wasm, attrFetch.tact);
@@ -226,6 +228,36 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
       { tact: 4, value: 0x15, color: 0x05, ear: true, mic: false }
     ]);
     expect(wasm.wasmRuntime!.result.getUint32(SP48_WASM_LAYOUT.resultBorderTraceCountOffset, true)).toBe(2);
+  });
+
+  it("ignores stale event-buffer records after a normal frame with no new events", async () => {
+    const wasm = await createWasmMachine(testRom([0x3e, 0x02, 0xd3, 0xfe, 0x00, 0x00]));
+    wasm.setTactsInFrame(32);
+
+    wasm.executeMachineFrame();
+    expect(wasm.getWasmBorderTrace()).toHaveLength(1);
+
+    wasm.pc = 4;
+    wasm.frameTacts = 0;
+    wasm.currentFrameTact = 0;
+    wasm.setTactsInFrame(32);
+    wasm.executeMachineFrame();
+
+    expect(wasm.getWasmBorderTrace()).toEqual([]);
+    expect(wasm.wasmRuntime!.result.getUint32(SP48_WASM_LAYOUT.resultEventCountOffset, true)).toBe(0);
+    expect(wasm.wasmRuntime!.result.getUint32(SP48_WASM_LAYOUT.resultBorderTraceCountOffset, true)).toBe(0);
+  });
+
+  it("does not add border trace records when only EAR or MIC changes", async () => {
+    const wasm = await createWasmMachine(testRom([0x3e, 0x10, 0xd3, 0xfe, 0x3e, 0x18, 0xd3, 0xfe]));
+    wasm.tapeDevice.tapeMode = TapeMode.Save;
+    wasm.setTactsInFrame(64);
+
+    wasm.executeMachineFrame();
+
+    expect(wasm.getWasmBorderTrace()).toEqual([]);
+    expect(wasm.getWasmAudioTrace()).toHaveLength(2);
+    expect(wasm.getWasmTapeSaveTrace()).toHaveLength(1);
   });
 
   it("records tact-ordered EAR/MIC audio transitions from C during normal frame execution", async () => {
@@ -300,6 +332,54 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     }
   });
 
+  it("reuses the WASM tape EAR table when the selected tape frame window is unchanged", async () => {
+    const wasm = await createWasmMachine(testRom([]));
+    prepareTapeLoad(wasm, tinyTapeBlock([0xff, 0x00]));
+    wasm.setTactsInFrame(64);
+    setFrameTactForTapeRead(wasm, 0);
+    wasm.resetWasmTapeEarSyncStats();
+
+    wasm.doReadPort(0x00fe);
+    wasm.doReadPort(0x00fe);
+
+    expect(wasm.getWasmTapeEarSyncStats()).toMatchObject({
+      generations: 1,
+      reused: 1,
+      filledTacts: 64,
+      lastStartOffset: 0,
+      lastEndOffset: 64
+    });
+  });
+
+  it("generates only the remaining WASM tape EAR frame segment after a boundary resume", async () => {
+    const ts = await createTsMachine(testRom([]));
+    const wasm = await createWasmMachine(testRom([]));
+    prepareTapeLoad(ts, tinyTapeBlock([0xff, 0x5a, 0xa5]));
+    prepareTapeLoad(wasm, tinyTapeBlock([0xff, 0x5a, 0xa5]));
+    ts.setTactsInFrame(64);
+    wasm.setTactsInFrame(64);
+    setFrameTactForTapeRead(ts, 16);
+    setFrameTactForTapeRead(wasm, 16);
+    wasm.resetWasmTapeEarSyncStats();
+
+    expect(wasm.doReadPort(0x00fe) & 0x40).toBe(ts.doReadPort(0x00fe) & 0x40);
+    expect(wasm.getWasmTapeEarSyncStats()).toMatchObject({
+      generations: 1,
+      reused: 0,
+      filledTacts: 48,
+      lastStartOffset: 16,
+      lastEndOffset: 64
+    });
+
+    setFrameTactForTapeRead(wasm, 24);
+    wasm.doReadPort(0x00fe);
+    expect(wasm.getWasmTapeEarSyncStats()).toMatchObject({
+      generations: 1,
+      reused: 1,
+      filledTacts: 48
+    });
+  });
+
   it("records MIC/tape-save trace events from FE writes while tape save mode is active", async () => {
     const wasm = await createWasmMachine(testRom([0x3e, 0x08, 0xd3, 0xfe, 0x3e, 0x00, 0xd3, 0xfe]));
     wasm.tapeDevice.tapeMode = TapeMode.Save;
@@ -354,6 +434,27 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
       Array.from(ts.get64KFlatMemory().subarray(0x8000, 0x8002))
     );
     expect(wasm.tapeDevice.tapeMode).toBe(ts.tapeDevice.tapeMode);
+  });
+
+  it("recognizes a selected tape when normal WASM execution reaches the ROM LOAD routine", async () => {
+    const bytes = [0xff, 0x42, 0x24];
+    const rom = testRom([0xc3, 0x6c, 0x05]);
+    const ts = await createTsMachine(rom);
+    const wasm = await createWasmMachine(rom);
+    prepareFastLoadStateBeforeLoadRoutine(ts);
+    prepareFastLoadStateBeforeLoadRoutine(wasm);
+    ts.setMachineProperty(MEDIA_TAPE, [tinyTapeBlock(bytes)]);
+    wasm.setMachineProperty(MEDIA_TAPE, [tinyTapeBlock(bytes)]);
+
+    const tsTermination = ts.executeMachineFrame();
+    const wasmTermination = wasm.executeMachineFrame();
+
+    expect(wasmTermination).toBe(tsTermination);
+    expect(Array.from(wasm.get64KFlatMemory().subarray(0x8000, 0x8002))).toEqual(
+      Array.from(ts.get64KFlatMemory().subarray(0x8000, 0x8002))
+    );
+    expect(wasm.tapeDevice.tapeMode).toBe(ts.tapeDevice.tapeMode);
+    expect(wasm.pc).toBe(ts.pc);
   });
 
   it("renders screens from WASM RAM through the existing TypeScript screen renderer", async () => {
@@ -429,6 +530,17 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
 
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
     expect(machine.frames).toBe(1);
+  });
+
+  it("keeps normal frame execution off the debug access-log path", async () => {
+    const machine = await createWasmMachine(testRom([0x3e, 0x77, 0x32, 0x00, 0x40, 0xd3, 0xfe]));
+    machine.setTactsInFrame(32);
+    machine.executionContext.debugStepMode = DebugStepMode.NoDebug;
+    machine.executionContext.frameTerminationMode = FrameTerminationMode.Normal;
+
+    expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
+    expect(machine.wasmRuntime!.exports.sp48_debug_memory_log_count()).toBe(0);
+    expect(machine.wasmRuntime!.exports.sp48_debug_io_log_count()).toBe(0);
   });
 
   it("imports instruction-bound memory and I/O access logs from C", async () => {
@@ -516,7 +628,45 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
       abiVersion: 1,
       artifactName: "p2-cpu.wasm",
       lastTerminationStatus: FrameTerminationMode.DebugEvent,
-      eventStatus: 0
+      eventStatus: 0,
+      counters: expect.objectContaining({
+        instructions: 1,
+        memoryReads: 2,
+        memoryWrites: 0,
+        portReads: 0,
+        portWrites: 0
+      })
+    });
+  });
+
+  it("exposes deterministic WASM performance counters for benchmark scenarios", async () => {
+    const wasm = await createWasmMachine(testRom([0x3e, 0x12, 0x32, 0x00, 0x40, 0xd3, 0xfe]));
+
+    wasm.resetWasmDiagnosticsCounters();
+    executeWasmStepInto(wasm, 3);
+
+    expect(wasm.getWasmDiagnosticsCounters()).toMatchObject({
+      instructions: 3,
+      memoryReads: 7,
+      memoryWrites: 1,
+      portReads: 0,
+      portWrites: 1,
+      floatingBusReads: 0,
+      traceEvents: 2,
+      tapeBoundaryYields: 0
+    });
+
+    wasm.resetWasmDiagnosticsCounters();
+    expect(wasm.getWasmDiagnosticsCounters()).toEqual({
+      instructions: 0,
+      memoryReads: 0,
+      memoryWrites: 0,
+      portReads: 0,
+      portWrites: 0,
+      contentionDelays: 0,
+      floatingBusReads: 0,
+      traceEvents: 0,
+      tapeBoundaryYields: 0
     });
   });
 
@@ -552,7 +702,9 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     );
     expect(wasm.screenDevice.borderColor).toBe(ts.screenDevice.borderColor);
     expect(wasm.getWasmBorderTrace().map(({ tact, value, color }) => ({ tact, value, color }))).toEqual(
-      ts.beeperTransitions.map(({ tact, value }) => ({ tact, value, color: value & 0x07 }))
+      ts.beeperTransitions
+        .map(({ tact, value }) => ({ tact, value, color: value & 0x07 }))
+        .filter(({ color }, index, transitions) => color !== (index === 0 ? 0 : transitions[index - 1].color))
     );
     expect(wasm.getWasmAudioTrace()).toEqual(ts.beeperTransitions);
     expect(wasm.getWasmTapeSaveTrace()).toEqual([
@@ -800,4 +952,12 @@ function prepareFastLoadRegisters(machine: ZxSpectrum48Machine): void {
   machine.ix = 0x8000;
   machine.de = 2;
   machine.setTactsInFrame(64);
+}
+
+function prepareFastLoadStateBeforeLoadRoutine(machine: ZxSpectrum48Machine): void {
+  machine.pc = 0x0000;
+  machine.af_ = 0xff00;
+  machine.ix = 0x8000;
+  machine.de = 2;
+  machine.setTactsInFrame(128);
 }

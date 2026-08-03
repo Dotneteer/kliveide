@@ -12,6 +12,7 @@ export const SP48_IMPLEMENTATION = "sp48Implementation";
 
 /** Default 48K backend used when the model/config does not explicitly select one. */
 export const DEFAULT_SP48_IMPLEMENTATION: ZxSpectrum48Implementation = "wasm";
+//export const DEFAULT_SP48_IMPLEMENTATION: ZxSpectrum48Implementation = "typescript";
 
 export function getZxSpectrum48Implementation(config?: Record<string, unknown>): ZxSpectrum48Implementation {
   const configured = config?.[SP48_IMPLEMENTATION];

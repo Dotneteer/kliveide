@@ -7,6 +7,7 @@
 #define Z80_TEST_LOG_CAPACITY 256u
 #define Z80_BUS_TEST 0u
 #define Z80_BUS_SP48 1u
+#define Z80_BUS_SP48_DEBUG 2u
 
 typedef struct {
   uint16_t address;
