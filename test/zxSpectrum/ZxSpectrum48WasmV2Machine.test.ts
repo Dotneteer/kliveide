@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
-import { buildSp48Wasm, v2Output } from "../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm, productionOutput } from "../../scripts/build-sp48-wasm.cjs";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
@@ -14,7 +14,7 @@ class TestWasmV2Machine extends ZxSpectrum48WasmV2Machine {
   constructor(private readonly rom: Uint8Array) {
     super(undefined, undefined, {
       artifactName: "machine-v2.wasm",
-      readArtifact: async () => readFileSync(v2Output)
+      readArtifact: async () => readFileSync(productionOutput)
     });
   }
 
@@ -25,12 +25,12 @@ class TestWasmV2Machine extends ZxSpectrum48WasmV2Machine {
 
 describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
   it("sets up the v2 runtime and executes a full C-owned frame", async () => {
-    buildSp48Wasm({ mode: "v2" });
+    buildSp48Wasm();
     const machine = new TestWasmV2Machine(testRom([0x00]));
 
     await machine.setup();
 
-    expect(machine.implementation).toBe("wasm-v2");
+    expect(machine.implementation).toBe("wasm");
     expect(machine.wasmV2Runtime?.artifactName).toBe("machine-v2.wasm");
     expect(machine.get64KFlatMemory()[0]).toBe(0x00);
     expect(machine.screenWidthInPixels).toBeGreaterThan(256);
@@ -44,7 +44,8 @@ describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
     expect(machine.getAudioSamples().length).toBeGreaterThan(0);
 
     const diagnostics = machine.getWasmV2Diagnostics();
-    expect(diagnostics.backend).toBe("wasm-v2");
+    expect(diagnostics.backend).toBe("wasm");
+    expect(diagnostics.engine).toBe("v2");
     expect(diagnostics.frames).toBe(1);
     expect(diagnostics.audioSamples).toBe(machine.getAudioSamples().length);
     expect(diagnostics.normalFrames).toBe(1);
@@ -53,7 +54,7 @@ describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
   });
 
   it("routes memory and keyboard through the v2 runtime", async () => {
-    buildSp48Wasm({ mode: "v2" });
+    buildSp48Wasm();
     const machine = new TestWasmV2Machine(testRom([0x00]));
 
     await machine.setup();
@@ -73,7 +74,7 @@ describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
   });
 
   it("syncs clock multiplier changes to v2 only when needed", async () => {
-    buildSp48Wasm({ mode: "v2" });
+    buildSp48Wasm();
     const machine = new TestWasmV2Machine(testRom([0x00]));
 
     await machine.setup();
@@ -90,7 +91,7 @@ describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
   });
 
   it("uses the v2 pixel buffer for instant-screen snapshots", async () => {
-    buildSp48Wasm({ mode: "v2" });
+    buildSp48Wasm();
     const machine = new TestWasmV2Machine(testRom([0x00]));
 
     await machine.setup();
@@ -105,7 +106,7 @@ describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
   });
 
   it("uploads tape media and tape controls into the v2 runtime", async () => {
-    buildSp48Wasm({ mode: "v2" });
+    buildSp48Wasm();
     const machine = new TestWasmV2Machine(testRom([0x00]));
     const headerBlock = tapeBlock([0x00, 0x03, 0x4d, 0x59], { pauseAfter: 500 });
     const dataBlock = tapeBlock([0xff, 0x10, 0x20, 0x30, 0x40], {
@@ -144,7 +145,7 @@ describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
   });
 
   it("executes a single v2 instruction and exposes fresh CPU state in debug step mode", async () => {
-    buildSp48Wasm({ mode: "v2" });
+    buildSp48Wasm();
     const machine = new TestWasmV2Machine(testRom([0x3e, 0x77, 0x32, 0x00, 0x40, 0x00]));
 
     await machine.setup();

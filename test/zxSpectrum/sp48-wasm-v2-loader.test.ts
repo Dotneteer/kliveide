@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { buildSp48Wasm, v2Output } from "../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm, productionOutput } from "../../scripts/build-sp48-wasm.cjs";
 import {
   loadSp48WasmV2,
   resetSp48WasmV2ModuleCache,
@@ -17,10 +17,10 @@ describe("ZX Spectrum 48K WASM v2 loader", () => {
   afterEach(() => resetSp48WasmV2ModuleCache());
 
   it("loads the built v2 artifact and exposes direct typed views", async () => {
-    buildSp48Wasm({ mode: "v2" });
+    buildSp48Wasm();
     const runtime = await loadSp48WasmV2({
       artifactName: "test-built-v2.wasm",
-      readArtifact: async () => readFileSync(v2Output)
+      readArtifact: async () => readFileSync(productionOutput)
     });
 
     expect(runtime.artifactName).toBe("test-built-v2.wasm");

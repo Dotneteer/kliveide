@@ -11,7 +11,6 @@ import {
   MF_BANK,
   MC_DISK_SUPPORT,
   MC_MEM_SIZE,
-  MC_SP48_IMPLEMENTATION,
   MF_ULA,
   MF_BLINK,
   MF_PSG,
@@ -58,30 +57,6 @@ export const machineRegistry: MachineInfo[] = [
         displayName: "ZX Spectrum 48K",
         config: {
           [MC_SCREEN_FREQ]: "pal"
-        }
-      },
-      {
-        modelId: "pal-v2",
-        displayName: "ZX Spectrum 48K (WASM v2)",
-        config: {
-          [MC_SCREEN_FREQ]: "pal",
-          [MC_SP48_IMPLEMENTATION]: "wasm-v2"
-        }
-      },
-      {
-        modelId: "pal-wasm",
-        displayName: "ZX Spectrum 48K (WASM stable)",
-        config: {
-          [MC_SCREEN_FREQ]: "pal",
-          [MC_SP48_IMPLEMENTATION]: "wasm"
-        }
-      },
-      {
-        modelId: "pal-typescript",
-        displayName: "ZX Spectrum 48K (TypeScript)",
-        config: {
-          [MC_SCREEN_FREQ]: "pal",
-          [MC_SP48_IMPLEMENTATION]: "typescript"
         }
       },
       {

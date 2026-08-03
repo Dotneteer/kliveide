@@ -1,4 +1,4 @@
-export const SP48_WASM_V2_ARTIFACT_NAME = "zx-spectrum48-v2.wasm";
+export const SP48_WASM_V2_ARTIFACT_NAME = "zx-spectrum48.wasm";
 export const SP48_WASM_V2_MEMORY_SIZE = 0x10000;
 export const SP48_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 export const SP48_WASM_V2_PIXEL_GUARD_LINES = 4;

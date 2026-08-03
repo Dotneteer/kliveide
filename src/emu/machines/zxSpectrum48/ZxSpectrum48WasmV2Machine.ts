@@ -17,7 +17,8 @@ import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
 import { ZxSpectrum48Machine } from "./ZxSpectrum48Machine";
 
 export type Sp48WasmV2Diagnostics = {
-  backend: "wasm-v2";
+  backend: "wasm";
+  engine: "v2";
   artifactName: string;
   frames: number;
   tacts: number;
@@ -48,7 +49,7 @@ export type Sp48WasmV2Diagnostics = {
  * debugger/tape compatibility surface.
  */
 export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48Machine {
-  public readonly implementation = "wasm-v2" as const;
+  public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Sp48WasmV2Runtime;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
   private readonly wasmV2KeyboardRows = new Uint8Array(8);
@@ -260,7 +261,8 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48Machine {
   getWasmV2Diagnostics(): Sp48WasmV2Diagnostics {
     const runtime = this.requireWasmV2Runtime();
     return {
-      backend: "wasm-v2",
+      backend: "wasm",
+      engine: "v2",
       artifactName: runtime.artifactName,
       frames: runtime.exports.sp48GetFrames(),
       tacts: runtime.exports.sp48GetTacts(),
