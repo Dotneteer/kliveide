@@ -80,6 +80,7 @@ export type Sp48WasmRuntime = {
   readonly input: DataView;
   readonly result: DataView;
   readonly eventBuffer: Uint8Array;
+  readonly eventBufferView: DataView;
   readonly dirtyRanges: DataView;
   readonly contentionTable: Uint8Array;
   readonly floatingBusTable: DataView;
@@ -154,6 +155,7 @@ export function createSp48WasmViews(exports: Sp48WasmExports) {
     input: new DataView(memoryBuffer, inputStart, SP48_WASM_LAYOUT.inputBlockSize),
     result: new DataView(memoryBuffer, resultStart, SP48_WASM_LAYOUT.resultBlockSize),
     eventBuffer: new Uint8Array(memoryBuffer, eventBufferStart, SP48_WASM_LAYOUT.eventBufferSize),
+    eventBufferView: new DataView(memoryBuffer, eventBufferStart, SP48_WASM_LAYOUT.eventBufferSize),
     dirtyRanges: new DataView(
       memoryBuffer,
       dirtyRangesStart,

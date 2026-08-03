@@ -28,6 +28,7 @@
     "build:check": "tsc",
     "build:sp48-wasm": "node scripts/build-sp48-wasm.cjs",
     "benchmark:sp48-wasm": "node scripts/benchmark-sp48-wasm.cjs",
+    "check:sp48-wasm-size": "node scripts/check-sp48-wasm-size.cjs",
     "lint:renderer": "eslint src/renderer --ext .ts,.tsx",
     "e2e:app": "node scripts/run-e2e-app.cjs",
     "build:e2e": "electron-vite build --config build/electron.vite.config.ts",

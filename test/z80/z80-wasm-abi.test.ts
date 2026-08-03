@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { buildSp48Wasm, output, testExports } from "../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm, testOutput, testExports } from "../../scripts/build-sp48-wasm.cjs";
 import { describe, expect, it } from "vitest";
 
 const word = {
@@ -68,13 +68,13 @@ function counterAt (state: DataView, field: number): number {
 
 describe("Z80 WASM ABI", () => {
   it("compiles and exposes the resettable CPU state and test bus", async () => {
-    buildSp48Wasm();
-    const { instance } = await WebAssembly.instantiate(readFileSync(output));
+    buildSp48Wasm({ mode: "test" });
+    const { instance } = await WebAssembly.instantiate(readFileSync(testOutput));
     const wasm = instance.exports as Record<string, CallableFunction>;
     const memory = new Uint8Array((instance.exports.memory as WebAssembly.Memory).buffer);
     const state = new DataView(memory.buffer, wasm.z80_state_block_ptr(), wasm.z80_state_block_size());
 
-    expect(existsSync(output)).toBe(true);
+    expect(existsSync(testOutput)).toBe(true);
     expect(Object.keys(instance.exports).sort()).toEqual([...testExports].sort());
     expect(wasm.z80_abi_version()).toBe(1);
     expect(wasm.z80_state_block_size()).toBe(64);
@@ -100,8 +100,8 @@ describe("Z80 WASM ABI", () => {
   });
 
   it("executes the fetch shell, prefix state, and HALT timing", async () => {
-    buildSp48Wasm();
-    const { instance } = await WebAssembly.instantiate(readFileSync(output));
+    buildSp48Wasm({ mode: "test" });
+    const { instance } = await WebAssembly.instantiate(readFileSync(testOutput));
     const wasm = instance.exports as Record<string, WebAssembly.ExportValue>;
     const call = (name: string, ...args: number[]) => (wasm[name] as CallableFunction)(...args) as number;
     const memory = new Uint8Array((wasm.memory as WebAssembly.Memory).buffer);
@@ -139,8 +139,8 @@ describe("Z80 WASM ABI", () => {
   });
 
   it("handles RESET, NMI, and interrupt modes without host callbacks", async () => {
-    buildSp48Wasm();
-    const { instance } = await WebAssembly.instantiate(readFileSync(output));
+    buildSp48Wasm({ mode: "test" });
+    const { instance } = await WebAssembly.instantiate(readFileSync(testOutput));
     const wasm = instance.exports as Record<string, WebAssembly.ExportValue>;
     const call = (name: string, ...args: number[]) => (wasm[name] as CallableFunction)(...args) as number;
     const memory = new Uint8Array((wasm.memory as WebAssembly.Memory).buffer);

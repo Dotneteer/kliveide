@@ -1,18 +1,28 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { buildSp48Wasm, output, productionExports, testExports } from "../../scripts/build-sp48-wasm.cjs";
+import { buildSp48Wasm, output, productionExports, testExports, testOutput } from "../../scripts/build-sp48-wasm.cjs";
 import { SP48_WASM_ABI_VERSION, SP48_WASM_LAYOUT, SP48_WASM_LAYOUT_VALUE_ID } from "@emu/machines/zxSpectrum48/wasm/sp48-wasm-layout.generated";
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum 48K WASM ABI manifest", () => {
-  it("exposes the approved test ABI and contains the production ABI subset", async () => {
+  it("exposes only the approved production ABI in the packaged artifact", async () => {
     buildSp48Wasm();
     const { instance } = await WebAssembly.instantiate(readFileSync(output));
     const actualExports = Object.keys(instance.exports).sort();
 
+    expect(actualExports).toEqual([...productionExports].sort());
+    expect(actualExports).not.toContain("z80_test_memory_ptr");
+  });
+
+  it("exposes the standalone Z80 test ABI only in the test artifact", async () => {
+    buildSp48Wasm({ mode: "test" });
+    const { instance } = await WebAssembly.instantiate(readFileSync(testOutput));
+    const actualExports = Object.keys(instance.exports).sort();
+
     expect(actualExports).toEqual([...testExports].sort());
     expect(actualExports).toEqual(expect.arrayContaining(productionExports));
+    expect(actualExports).toContain("z80_test_memory_ptr");
   });
 
   it("declares every production export in the TypeScript loader contract", () => {

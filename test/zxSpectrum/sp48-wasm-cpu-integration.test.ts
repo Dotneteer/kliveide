@@ -505,6 +505,58 @@ describe("ZX Spectrum 48K WASM CPU integration", () => {
     expect(wasm.doReadPort(0x00fe)).toBe(ts.doReadPort(0x00fe));
   });
 
+  it("copies only changed WASM input rows after the first sync", async () => {
+    const wasm = await createWasmMachine(testRom([]));
+    wasm.resetWasmAdapterSyncStats();
+
+    wasm.doReadPort(keyLineAddress(1));
+    expect(wasm.getWasmAdapterSyncStats()).toMatchObject({
+      inputSyncs: 1,
+      keyboardRowWrites: 8,
+      tapeModeWrites: 1,
+      tapeEarDefaultWrites: 1
+    });
+
+    wasm.doReadPort(keyLineAddress(1));
+    expect(wasm.getWasmAdapterSyncStats()).toMatchObject({
+      inputSyncs: 2,
+      keyboardRowWrites: 8,
+      tapeModeWrites: 1,
+      tapeEarDefaultWrites: 1
+    });
+
+    wasm.keyboardDevice.setKeyStatus(SpectrumKeyCode.A, true);
+    wasm.doReadPort(keyLineAddress(1));
+    expect(wasm.getWasmAdapterSyncStats()).toMatchObject({
+      inputSyncs: 3,
+      keyboardRowWrites: 9,
+      tapeModeWrites: 1,
+      tapeEarDefaultWrites: 1
+    });
+
+    wasm.tapeDevice.tapeMode = TapeMode.Save;
+    wasm.doReadPort(keyLineAddress(1));
+    expect(wasm.getWasmAdapterSyncStats()).toMatchObject({
+      inputSyncs: 4,
+      keyboardRowWrites: 9,
+      tapeModeWrites: 2,
+      tapeEarDefaultWrites: 1
+    });
+  });
+
+  it("skips WASM event-buffer decoding when trace counts are zero", async () => {
+    const wasm = await createWasmMachine(testRom([]));
+    wasm.resetWasmAdapterSyncStats();
+
+    expect(wasm.getWasmBorderTrace()).toEqual([]);
+    expect(wasm.getWasmAudioTrace()).toEqual([]);
+    expect(wasm.getWasmTapeSaveTrace()).toEqual([]);
+    expect(wasm.getWasmAdapterSyncStats()).toMatchObject({
+      skippedTraceReads: 3,
+      eventBufferViewReads: 0
+    });
+  });
+
   it("exports FE output state after normal WASM frame execution", async () => {
     const ts = await createTsMachine(testRom([0x3e, 0x1b, 0xd3, 0xfe]));
     const wasm = await createWasmMachine(testRom([0x3e, 0x1b, 0xd3, 0xfe]));

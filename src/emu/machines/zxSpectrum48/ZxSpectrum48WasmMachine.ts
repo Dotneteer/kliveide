@@ -70,6 +70,18 @@ export type Sp48WasmTapeEarSyncStats = {
   lastEndOffset: number;
 };
 
+export type Sp48WasmAdapterSyncStats = {
+  inputSyncs: number;
+  keyboardRowWrites: number;
+  tapeModeWrites: number;
+  tapeEarDefaultWrites: number;
+  timingTableSyncs: number;
+  contentionTableWrites: number;
+  floatingBusTableWrites: number;
+  skippedTraceReads: number;
+  eventBufferViewReads: number;
+};
+
 const WASM_DIAGNOSTICS_COUNTER = {
   instructions: 0,
   memoryReads: 1,
@@ -161,6 +173,22 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
   };
   private wasmTapeBlocksRef?: unknown;
   private wasmTapeBlocksVersion = 0;
+  private readonly wasmKeyboardRows = new Uint8Array(8);
+  private wasmKeyboardRowsValid = false;
+  private wasmTapeModeSyncValue = -1;
+  private wasmTapeEarDefaultSyncValue = -1;
+  private wasmTimingTablesDirty = true;
+  private wasmAdapterSyncStats: Sp48WasmAdapterSyncStats = {
+    inputSyncs: 0,
+    keyboardRowWrites: 0,
+    tapeModeWrites: 0,
+    tapeEarDefaultWrites: 0,
+    timingTableSyncs: 0,
+    contentionTableWrites: 0,
+    floatingBusTableWrites: 0,
+    skippedTraceReads: 0,
+    eventBufferViewReads: 0
+  };
 
   constructor(
     modelInfo?: MachineModel,
@@ -178,6 +206,7 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     this.wasmRuntime = await loadSp48Wasm(this.wasmLoaderOptions);
     this.wasmRuntime.exports.sp48_set_16k_model(this.modelInfo?.config?.[MC_MEM_SIZE] === 16 ? 1 : 0);
     await super.setup();
+    this.invalidateWasmAdapterSync();
     this.syncTimingTablesToWasm(this.wasmRuntime);
     this.invalidateWasmTapeEarSync();
     this.syncCpuToWasm();
@@ -188,6 +217,7 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     if (this.wasmRuntime != null) {
       this.wasmRuntime.exports.sp48_set_16k_model(this.modelInfo?.config?.[MC_MEM_SIZE] === 16 ? 1 : 0);
       this.wasmRuntime.exports.sp48_reset();
+      this.invalidateWasmAdapterSync();
       this.syncTimingTablesToWasm(this.wasmRuntime);
       this.invalidateWasmTapeEarSync();
       this.syncCpuFromWasm();
@@ -353,25 +383,46 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     };
   }
 
+  getWasmAdapterSyncStats(): Sp48WasmAdapterSyncStats {
+    return { ...this.wasmAdapterSyncStats };
+  }
+
+  resetWasmAdapterSyncStats(): void {
+    this.wasmAdapterSyncStats = {
+      inputSyncs: 0,
+      keyboardRowWrites: 0,
+      tapeModeWrites: 0,
+      tapeEarDefaultWrites: 0,
+      timingTableSyncs: 0,
+      contentionTableWrites: 0,
+      floatingBusTableWrites: 0,
+      skippedTraceReads: 0,
+      eventBufferViewReads: 0
+    };
+  }
+
   getWasmBorderTrace(): Sp48WasmBorderTrace[] {
     const runtime = this.wasmRuntime;
     if (runtime == null) return [];
     const count = runtime.exports.sp48_border_trace_count();
+    if (count <= 0) {
+      this.wasmAdapterSyncStats.skippedTraceReads++;
+      return [];
+    }
     const events: Sp48WasmBorderTrace[] = [];
+    const eventBuffer = runtime.eventBuffer;
+    const eventBufferView = runtime.eventBufferView;
     for (let index = 0; index < count; index++) {
       const offset = index * SP48_WASM_LAYOUT.borderTraceRecordSize;
       events.push({
-        tact: new DataView(
-          runtime.eventBuffer.buffer,
-          runtime.eventBuffer.byteOffset + offset,
-          SP48_WASM_LAYOUT.borderTraceRecordSize
-        ).getUint32(0, true),
-        value: runtime.eventBuffer[offset + 4],
-        color: runtime.eventBuffer[offset + 5],
-        ear: runtime.eventBuffer[offset + 6] !== 0,
-        mic: runtime.eventBuffer[offset + 7] !== 0
+        tact: eventBufferView.getUint32(offset, true),
+        value: eventBuffer[offset + 4],
+        color: eventBuffer[offset + 5],
+        ear: eventBuffer[offset + 6] !== 0,
+        mic: eventBuffer[offset + 7] !== 0
       });
     }
+    this.wasmAdapterSyncStats.eventBufferViewReads += count;
     return events;
   }
 
@@ -379,22 +430,25 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     const runtime = this.wasmRuntime;
     if (runtime == null) return [];
     const count = runtime.exports.sp48_audio_trace_count();
+    if (count <= 0) {
+      this.wasmAdapterSyncStats.skippedTraceReads++;
+      return [];
+    }
     const events: Sp48WasmAudioTrace[] = [];
+    const eventBuffer = runtime.eventBuffer;
+    const eventBufferView = runtime.eventBufferView;
     for (let index = 0; index < count; index++) {
       const offset =
         SP48_WASM_LAYOUT.audioTraceOffset +
         index * SP48_WASM_LAYOUT.audioTraceRecordSize;
       events.push({
-        tact: new DataView(
-          runtime.eventBuffer.buffer,
-          runtime.eventBuffer.byteOffset + offset,
-          SP48_WASM_LAYOUT.audioTraceRecordSize
-        ).getUint32(0, true),
-        value: runtime.eventBuffer[offset + 4],
-        ear: runtime.eventBuffer[offset + 5] !== 0,
-        mic: runtime.eventBuffer[offset + 6] !== 0
+        tact: eventBufferView.getUint32(offset, true),
+        value: eventBuffer[offset + 4],
+        ear: eventBuffer[offset + 5] !== 0,
+        mic: eventBuffer[offset + 6] !== 0
       });
     }
+    this.wasmAdapterSyncStats.eventBufferViewReads += count;
     return events;
   }
 
@@ -402,22 +456,25 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     const runtime = this.wasmRuntime;
     if (runtime == null) return [];
     const count = runtime.exports.sp48_tape_save_trace_count();
+    if (count <= 0) {
+      this.wasmAdapterSyncStats.skippedTraceReads++;
+      return [];
+    }
     const events: Sp48WasmTapeSaveTrace[] = [];
+    const eventBuffer = runtime.eventBuffer;
+    const eventBufferView = runtime.eventBufferView;
     for (let index = 0; index < count; index++) {
       const offset =
         SP48_WASM_LAYOUT.tapeSaveTraceOffset +
         index * SP48_WASM_LAYOUT.tapeSaveTraceRecordSize;
       events.push({
-        tact: new DataView(
-          runtime.eventBuffer.buffer,
-          runtime.eventBuffer.byteOffset + offset,
-          SP48_WASM_LAYOUT.tapeSaveTraceRecordSize
-        ).getUint32(0, true),
-        value: runtime.eventBuffer[offset + 4],
-        mic: runtime.eventBuffer[offset + 5] !== 0,
-        ear: runtime.eventBuffer[offset + 6] !== 0
+        tact: eventBufferView.getUint32(offset, true),
+        value: eventBuffer[offset + 4],
+        mic: eventBuffer[offset + 5] !== 0,
+        ear: eventBuffer[offset + 6] !== 0
       });
     }
+    this.wasmAdapterSyncStats.eventBufferViewReads += count;
     return events;
   }
 
@@ -661,15 +718,37 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
   }
 
   private syncInputToWasm(runtime: Sp48WasmRuntime): void {
+    this.wasmAdapterSyncStats.inputSyncs++;
     for (let line = 0; line < 8; line++) {
-      runtime.input.setUint8(
-        SP48_WASM_LAYOUT.inputKeyboardRowsOffset + line,
-        this.keyboardDevice.getKeyLineValue(line) & 0x1f
-      );
+      const keyLineValue = this.keyboardDevice.getKeyLineValue(line) & 0x1f;
+      if (!this.wasmKeyboardRowsValid || this.wasmKeyboardRows[line] !== keyLineValue) {
+        this.wasmKeyboardRows[line] = keyLineValue;
+        runtime.input.setUint8(SP48_WASM_LAYOUT.inputKeyboardRowsOffset + line, keyLineValue);
+        this.wasmAdapterSyncStats.keyboardRowWrites++;
+      }
     }
-    runtime.input.setUint8(SP48_WASM_LAYOUT.inputTapeModeOffset, this.tapeDevice.tapeMode);
-    runtime.input.setUint8(SP48_WASM_LAYOUT.inputTapeEarDefaultOffset, 1);
+    this.wasmKeyboardRowsValid = true;
+
+    const tapeMode = this.tapeDevice.tapeMode;
+    if (this.wasmTapeModeSyncValue !== tapeMode) {
+      this.wasmTapeModeSyncValue = tapeMode;
+      runtime.input.setUint8(SP48_WASM_LAYOUT.inputTapeModeOffset, tapeMode);
+      this.wasmAdapterSyncStats.tapeModeWrites++;
+    }
+
+    if (this.wasmTapeEarDefaultSyncValue !== 1) {
+      this.wasmTapeEarDefaultSyncValue = 1;
+      runtime.input.setUint8(SP48_WASM_LAYOUT.inputTapeEarDefaultOffset, 1);
+      this.wasmAdapterSyncStats.tapeEarDefaultWrites++;
+    }
     this.syncTapeEarTableToWasm(runtime);
+  }
+
+  private invalidateWasmAdapterSync(): void {
+    this.wasmKeyboardRowsValid = false;
+    this.wasmTapeModeSyncValue = -1;
+    this.wasmTapeEarDefaultSyncValue = -1;
+    this.wasmTimingTablesDirty = true;
   }
 
   private syncTapeEarTableToWasm(runtime: Sp48WasmRuntime): void {
@@ -846,11 +925,15 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
   }
 
   private syncTimingTablesToWasm(runtime: Sp48WasmRuntime): void {
+    if (!this.wasmTimingTablesDirty) return;
+
     const table = this.screenDevice.renderingTactTable;
     runtime.contentionTable.fill(0);
+    this.wasmAdapterSyncStats.contentionTableWrites += runtime.contentionTable.length;
     for (let tact = 0; tact < runtime.floatingBusTable.byteLength / 2; tact++) {
       runtime.floatingBusTable.setUint16(tact * 2, SP48_WASM_LAYOUT.floatingBusNone, true);
     }
+    this.wasmAdapterSyncStats.floatingBusTableWrites += runtime.floatingBusTable.byteLength / 2;
     for (let tact = 0; tact < table.length && tact < SP48_WASM_LAYOUT.timingTableCapacity; tact++) {
       runtime.contentionTable[tact] = this.getContentionValue(tact) & 0xff;
       const renderingTact = table[tact];
@@ -867,6 +950,8 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
           break;
       }
     }
+    this.wasmTimingTablesDirty = false;
+    this.wasmAdapterSyncStats.timingTableSyncs++;
   }
 
   private syncCpuToWasm(): void {
@@ -964,6 +1049,14 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     frameEndTact: number
   ): void {
     if (!(this.beeperDevice instanceof SpectrumBeeperDevice)) return;
+    if (runtime.exports.sp48_audio_trace_count() <= 0) {
+      this.wasmAdapterSyncStats.skippedTraceReads++;
+      this.beeperDevice.setOutputLevel(
+        runtime.machineState.getUint8(SP48_WASM_LAYOUT.machineStateEarLatchOffset) !== 0,
+        runtime.machineState.getUint8(SP48_WASM_LAYOUT.machineStateMicLatchOffset) !== 0
+      );
+      return;
+    }
     const transitions = this.getWasmAudioTrace();
     this.beeperDevice.renderTransitionTrace(
       transitions,
@@ -984,6 +1077,10 @@ export class ZxSpectrum48WasmMachine extends ZxSpectrum48Machine {
     frameStartOffset: number
   ): void {
     if (this.tapeDevice.tapeMode !== TapeMode.Save) return;
+    if (_runtime.exports.sp48_tape_save_trace_count() <= 0) {
+      this.wasmAdapterSyncStats.skippedTraceReads++;
+      return;
+    }
     const savedTact = this.tacts;
     const savedFrameTacts = this.frameTacts;
     const savedCurrentFrameTact = this.currentFrameTact;

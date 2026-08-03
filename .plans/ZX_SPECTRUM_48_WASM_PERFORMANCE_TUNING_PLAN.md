@@ -184,6 +184,17 @@ later profiling shows dispatch dominates. Benchmark notes are saved in
 | T7.3 | Consider `-fno-builtin`/explicit builtin choices to avoid accidental libc lowering beyond provided `memset`/`memcpy` shims. | Build works under clean toolchain and static-allocation audit remains clean. |
 | T7.4 | Add CI artifact-size tracking for `zx-spectrum48.wasm` so performance work does not accidentally bloat the shipped app. | CI/test script reports size and optional threshold. |
 
+Status: Complete as of 2026-08-03. The build now emits separate production
+and test artifacts: packaged production keeps only the SP48 ABI in
+`zx-spectrum48.wasm`, while standalone Z80 test-bus exports live in
+`test-dist/zx-spectrum48-test.wasm` outside the renderer/package artifact
+directory. The selected production profile remains speed
+oriented (`-O3`) with `-ffreestanding`, `-fno-builtin`, and `-nostdlib`.
+`-Oz` was much smaller but materially slower; LTO saved only 119 bytes on this
+toolchain. CI now runs `npm run check:sp48-wasm-size` with an 85,000-byte
+production ceiling. Benchmark notes are saved in
+`.ai/zx-spectrum48-wasm-t7-benchmark.md`.
+
 ## Phase T8 — JS/WASM adapter overhead
 
 | Step | Work | Quality gate |
@@ -193,6 +204,17 @@ later profiling shows dispatch dominates. Benchmark notes are saved in
 | T8.3 | Cache DataView/Uint8Array slices and offset constants in the adapter where currently recomputed in trace readers. | Trace reader tests pass; microbenchmark records reduced adapter time. |
 | T8.4 | Add a diagnostics-only mode to expose WASM counters without paying for it in normal execution. | Diagnostics tests and benchmark counter tests pass. |
 
+Status: Complete as of 2026-08-03. The adapter now tracks cached keyboard row,
+tape-mode, tape-EAR default, and timing-table sync state, so unchanged input
+bytes are not rewritten on every JS/WASM boundary crossing. Trace readers reuse
+the loader-created event-buffer `DataView` instead of constructing one object per
+event, and replay paths skip event-buffer decoding entirely when WASM reports
+zero audio/tape events. WASM counters remain exposed only through explicit
+diagnostics calls; normal frame/debug execution does not read the counters from
+JavaScript. Focused adapter diagnostics cover first-sync, unchanged-sync, changed
+keyboard row, changed tape mode, and empty trace behavior. Benchmark notes are
+saved in `.ai/zx-spectrum48-wasm-t8-benchmark.md`.
+
 ## Phase T9 — rollout safety after tuning
 
 | Step | Work | Quality gate |
@@ -200,6 +222,16 @@ later profiling shows dispatch dominates. Benchmark notes are saved in
 | T9.1 | After each optimization phase, rerun compatibility fixtures against TypeScript and preserve a simple switch back to TypeScript through `DEFAULT_SP48_IMPLEMENTATION`. | Factory selection tests pass. |
 | T9.2 | Add a small real-media smoke pack: at least one TAP/TZX load, one border/audio demo, one keyboard polling scenario, and one debugger stepping scenario. | Smoke tests or documented manual checklist pass on macOS. |
 | T9.3 | Keep `.ai/` handoff notes updated with benchmark deltas, selected tradeoffs, and rejected optimizations. | Handoff identifies next tuning step and last known gate results. |
+
+Status: Complete as of 2026-08-03. The rollout switch remains centralized in
+`DEFAULT_SP48_IMPLEMENTATION`, with factory tests covering default WASM,
+explicit WASM, explicit TypeScript fallback, model-level selection, unknown
+selection fallback, and explicit opt-out. A dedicated rollout smoke pack now
+loads synthetic but valid TAP and TZX tape bytes through the same parsed
+`TapeDataBlock` shape used by the emulator/IDE media path, then checks
+TypeScript/WASM parity. The smoke pack also covers a border/audio frame,
+keyboard polling, and debugger `StepInto` execution. Handoff notes are saved in
+`.ai/zx-spectrum48-wasm-t9-handoff.md`.
 
 ## Suggested implementation order
 
