@@ -188,19 +188,23 @@ describe("Toolbar — Phase 8", () => {
 // ---------------------------------------------------------------------------
 
 describe("ExecutionControls — Phase 8", () => {
-  it("renders start, pause, stop, restart, and step buttons", async () => {
+  it("renders explicit execution buttons while stopped with inactive actions disabled", async () => {
     await act(async () => {
       renderWithProviders(
         <ExecutionControls ide={false} kliveProjectLoaded={false} />
       );
     });
     expect(screen.getByTitle(/Run Machine/i)).toBeInTheDocument();
-    expect(screen.getByTitle(/Pause|Continue/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/Debug Machine/i)).toBeInTheDocument();
     expect(screen.getByTitle(/Stop/i)).toBeInTheDocument();
     expect(screen.getByTitle(/Restart/i)).toBeInTheDocument();
-    expect(screen.getByTitle(/Step Into/i)).toBeInTheDocument();
-    expect(screen.getByTitle(/Step Over/i)).toBeInTheDocument();
-    expect(screen.getByTitle(/Step Out/i)).toBeInTheDocument();
+    expect(screen.queryByTestId("mock-dropdown")).not.toBeInTheDocument();
+    expect(screen.getByTitle(/Run Machine/i)).not.toBeDisabled();
+    expect(screen.getByTitle(/Debug Machine/i)).not.toBeDisabled();
+    expect(screen.getByTitle(/Pause/i)).toBeDisabled();
+    expect(screen.getByTitle(/Continue \(F5\)/i)).toBeDisabled();
+    expect(screen.getByTitle(/Continue Debugging/i)).toBeDisabled();
+    expect(screen.getByTitle(/Step Into/i)).toBeDisabled();
   });
 
   it("enables start button when machine is stopped", async () => {
@@ -215,6 +219,42 @@ describe("ExecutionControls — Phase 8", () => {
     const startBtn = screen.getByTitle(/Run Machine/i);
     // IconButton uses opacity to indicate disabled — check it's not styled as disabled
     expect(startBtn).toBeInTheDocument();
+  });
+
+  it("calls issueMachineCommand('start') when Run Machine is clicked", async () => {
+    const store = createMockStore();
+
+    await act(async () => {
+      renderWithProviders(
+        <ExecutionControls ide={false} kliveProjectLoaded={false} />,
+        { store }
+      );
+    });
+
+    const runBtn = screen.getByTitle(/Run Machine \(F5\)/i);
+    await act(async () => {
+      runBtn.click();
+    });
+
+    expect(mockIssueMachineCommand).toHaveBeenCalledWith("start");
+  });
+
+  it("calls issueMachineCommand('debug') when Debug Machine is clicked", async () => {
+    const store = createMockStore();
+
+    await act(async () => {
+      renderWithProviders(
+        <ExecutionControls ide={false} kliveProjectLoaded={false} />,
+        { store }
+      );
+    });
+
+    const debugBtn = screen.getByTitle(/Debug Machine \(Ctrl\+F5\)/i);
+    await act(async () => {
+      debugBtn.click();
+    });
+
+    expect(mockIssueMachineCommand).toHaveBeenCalledWith("debug");
   });
 
   it("calls issueMachineCommand('stop') on stop click", async () => {
@@ -253,6 +293,67 @@ describe("ExecutionControls — Phase 8", () => {
     });
 
     expect(mockIssueMachineCommand).toHaveBeenCalledWith("pause");
+  });
+
+  it("renders paused actions enabled and start actions disabled while paused", async () => {
+    const store = createMockStore();
+    store.dispatch(setMachineStateAction(MachineControllerState.Paused), "test");
+
+    await act(async () => {
+      renderWithProviders(
+        <ExecutionControls ide={false} kliveProjectLoaded={false} />,
+        { store }
+      );
+    });
+
+    expect(screen.getByTitle(/Continue \(F5\)/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/Continue Debugging \(Ctrl\+F5\)/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/Step Into/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/Step Over/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/Step Out/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/Continue \(F5\)/i)).not.toBeDisabled();
+    expect(screen.getByTitle(/Continue Debugging \(Ctrl\+F5\)/i)).not.toBeDisabled();
+    expect(screen.getByTitle(/Step Into/i)).not.toBeDisabled();
+    expect(screen.getByTitle(/Run Machine/i)).toBeDisabled();
+    expect(screen.getByTitle(/Debug Machine/i)).toBeDisabled();
+  });
+
+  it("calls issueMachineCommand('start') when Continue is clicked while paused", async () => {
+    const store = createMockStore();
+    store.dispatch(setMachineStateAction(MachineControllerState.Paused), "test");
+
+    await act(async () => {
+      renderWithProviders(
+        <ExecutionControls ide={false} kliveProjectLoaded={false} />,
+        { store }
+      );
+    });
+
+    const continueBtn = screen.getByTitle(/Continue \(F5\)/i);
+    await act(async () => {
+      continueBtn.click();
+    });
+
+    expect(mockIssueMachineCommand).toHaveBeenCalledWith("start");
+  });
+
+  it("calls issueMachineCommand('debug') when Continue Debugging is clicked while paused", async () => {
+    const store = createMockStore();
+    store.dispatch(setMachineStateAction(MachineControllerState.Paused), "test");
+
+    await act(async () => {
+      renderWithProviders(
+        <ExecutionControls ide={false} kliveProjectLoaded={false} />,
+        { store }
+      );
+    });
+
+    const continueDebuggingBtn = screen.getByTitle(/Continue Debugging \(Ctrl\+F5\)/i);
+    await act(async () => {
+      continueDebuggingBtn.click();
+    });
+
+    expect(mockIssueMachineCommand).toHaveBeenCalledWith("debug");
   });
 
   it("calls issueMachineCommand('stepInto') on Step Into click", async () => {
