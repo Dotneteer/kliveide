@@ -265,7 +265,6 @@
                 "contributionsState": {
                   "editor.contrib.folding": {
                     "lineCount": 533,
-                    "provider": "syntax",
                     "foldedImports": false
                   },
                   "editor.contrib.wordHighlighter": false

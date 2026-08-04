@@ -26,6 +26,8 @@
     "dev": "electron-vite dev --config build/electron.vite.config.ts",
     "build": "tsc && electron-vite build --config build/electron.vite.config.ts && electron-builder",
     "build:check": "tsc",
+    "build:sp48-wasm": "node scripts/build-sp48-wasm.cjs",
+    "check:sp48-wasm-size": "node scripts/check-sp48-wasm-size.cjs",
     "lint:renderer": "eslint src/renderer --ext .ts,.tsx",
     "e2e:app": "node scripts/run-e2e-app.cjs",
     "build:e2e": "electron-vite build --config build/electron.vite.config.ts",
@@ -188,6 +190,13 @@
         "to": "images",
         "filter": [
           "**/*"
+        ]
+      },
+      {
+        "from": "src/emu/machines/zxSpectrum48/wasm/dist",
+        "to": "wasm/zxSpectrum48",
+        "filter": [
+          "**/*.wasm"
         ]
       }
     ]

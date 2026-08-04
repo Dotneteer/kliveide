@@ -1,5 +1,4 @@
 import {
-  ABOUT_DIALOG,
   app,
   BrowserWindow,
   dialog,
@@ -28,6 +27,7 @@ import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { openFolder, openFolderByPath, saveKliveProject } from "./projects";
 import {
+  ABOUT_DIALOG,
   NEW_PROJECT_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
@@ -1030,7 +1030,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
 
   let specificHelpMenus: MenuItemConstructorOptions[] = [];
   if (machineMenus && machineMenus.helpItems) {
-    specificIdeMenus = machineMenus.helpItems(
+    specificHelpMenus = machineMenus.helpItems(
       {
         emuWindow,
         ideWindow

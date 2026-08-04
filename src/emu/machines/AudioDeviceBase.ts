@@ -124,6 +124,19 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
   }
 
   /**
+   * Renders audio samples up to the specified absolute CPU tact without requiring
+   * the host machine's per-tact execution hook.
+   * @param targetTact Absolute machine tact to render up to
+   */
+  renderSamplesUntilTact(targetTact: number): void {
+    if (this._audioSampleRate <= 0 || this._audioSampleLength <= 0) return;
+    while (targetTact > this._audioNextSampleTact) {
+      this.machine.setTacts(Math.min(targetTact, Math.floor(this._audioNextSampleTact) + 1));
+      this.setNextAudioSample();
+    }
+  }
+
+  /**
    * Gets the current sound sample (according to the current CPU tact)
    */
   getCurrentSampleValue (): AudioSample {

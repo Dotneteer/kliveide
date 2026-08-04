@@ -31,6 +31,7 @@ export function useEmulatorScreen(
   const currentScanlineEffect = useRef<ScanlineIntensity>("off");
   const screenCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const screenImageDataRef = useRef<ImageData | null>(null);
+  const directScreenImageDataRef = useRef<ImageData | null>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export function useEmulatorScreen(
     pixelData.current = new Uint32Array(imageBuffer.current);
     screenCtxRef.current = null;
     screenImageDataRef.current = null;
+    directScreenImageDataRef.current = null;
     tempCanvasRef.current = null;
   }, []);
 
@@ -153,10 +155,39 @@ export function useEmulatorScreen(
     }
 
     const ctrl = controllerRef.current;
+    const startIndex = ctrl?.machine?.getBufferStartOffset() ?? 0;
+    const visiblePixels = shadowCanvasWidth.current * shadowCanvasHeight.current;
+    const scanlineIntensity = currentScanlineEffect.current;
+    const darkening = getScanlineDarkening(scanlineIntensity);
+    const directScreenBytes = ctrl?.machine?.getPixelBufferBytes?.();
+    if (darkening === 0.0 && directScreenBytes) {
+      const byteStart = startIndex * 4;
+      const byteEnd = byteStart + visiblePixels * 4;
+      imageBuffer8.current = directScreenBytes.subarray(byteStart, byteEnd);
+      let directScreenImageData = directScreenImageDataRef.current;
+      if (
+        !directScreenImageData ||
+        directScreenImageData.data.buffer !== imageBuffer8.current.buffer ||
+        directScreenImageData.data.byteOffset !== imageBuffer8.current.byteOffset ||
+        directScreenImageData.width !== shadowCanvasWidth.current ||
+        directScreenImageData.height !== shadowCanvasHeight.current
+      ) {
+        directScreenImageData = new ImageData(
+          imageBuffer8.current as Uint8ClampedArray,
+          shadowCanvasWidth.current,
+          shadowCanvasHeight.current
+        );
+        directScreenImageDataRef.current = directScreenImageData;
+      }
+      const tempCanvas = getTempCanvas();
+      if (!tempCanvas) return;
+      renderWithoutScanlines(screenCtx, screenEl, directScreenImageData, tempCanvas);
+      return;
+    }
+
     const screenData = ctrl?.machine?.getPixelBuffer();
     if (!screenData) return;
-    const startIndex = ctrl?.machine?.getBufferStartOffset() ?? 0;
-    const endIndex = shadowCanvasWidth.current * shadowCanvasHeight.current + startIndex;
+    const endIndex = visiblePixels + startIndex;
 
     pixelData.current.set(screenData.subarray(startIndex, endIndex));
     screenImageData.data.set(imageBuffer8.current);
@@ -164,8 +195,6 @@ export function useEmulatorScreen(
     const tempCanvas = getTempCanvas();
     if (!tempCanvas) return;
 
-    const scanlineIntensity = currentScanlineEffect.current;
-    const darkening = getScanlineDarkening(scanlineIntensity);
     if (darkening === 0.0) {
       renderWithoutScanlines(screenCtx, screenEl, screenImageData, tempCanvas);
     } else {

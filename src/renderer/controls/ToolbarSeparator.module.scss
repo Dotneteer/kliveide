@@ -2,9 +2,9 @@
 
 .toolbarSeparator {
   display: flex;
-  width: 2px;
-  height: 34px;
-  padding: 4px 2px;
+  width: 1px;
+  height: 30px;
+  padding: 4px 4px;
   flex-shrink: 0;
   flex-grow: 0;
 
@@ -16,7 +16,7 @@
 
 .separator {
   @include fill-parent-flex;
-  border-left: 2px solid var(--color-toolbar-separator);
+  border-left: 1px solid var(--color-toolbar-separator);
   flex-shrink: 0;
   flex-grow: 0;
 }

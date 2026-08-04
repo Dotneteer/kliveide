@@ -8,7 +8,6 @@ Guidance for AI assistants working in this workspace.
 - Renderer code lives mainly under `src/renderer`.
 - Future and archived implementation plans live in `.plans/`.
 - Human- and AI-readable implementation pattern docs live in `.docs/`; read the relevant docs before changing established patterns.
-- React modernization work is tracked in `.plans/REACT_COMPONENT_REVIEW_PLAN.md`.
 - Additional AI-oriented notes live in `.ai/`; read them before related work.
 
 ## Working Rules
@@ -29,7 +28,6 @@ Guidance for AI assistants working in this workspace.
 
 ## Notes For React Refactors
 
-- Start each component set with the checklists in `.plans/REACT_COMPONENT_REVIEW_PLAN.md`.
 - Fix conditional hook calls before tuning dependency arrays.
 - Prefer extracting hooks/components over broad rewrites.
 - When moving files, update consumers to the new direct path and delete the old file if it only re-exported the moved symbol.

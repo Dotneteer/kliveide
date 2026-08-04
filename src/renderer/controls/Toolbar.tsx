@@ -17,6 +17,8 @@ type Props = {
   recordingManagerRef?: MutableRefObject<RecordingManager | null>;
 };
 
+const SECONDARY_ICON_SIZE = 20;
+
 export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props) => {
   const mainApi = useMainApi();
   const syncSourceBps = useGlobalSetting(SETTING_IDE_SYNC_BREAKPOINTS);
@@ -28,7 +30,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
 
   return (
     <HStack
-      height="38px"
+      height="34px"
       backgroundColor="--bgcolor-toolbar"
       paddingHorizontal="--space-1_5"
       paddingVertical="--space-1"
@@ -41,6 +43,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           <ToolbarSeparator />
           <IconButton
             iconName="sync-ignored"
+            iconSize={SECONDARY_ICON_SIZE}
             selected={syncSourceBps}
             fill="--color-toolbarbutton-orange"
             title="Sync the source with the current breakpoint"
@@ -51,6 +54,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           <ToolbarSeparator />
           <IconButton
             iconName="memory-icon"
+            iconSize={SECONDARY_ICON_SIZE}
             fill="--color-toolbarbutton-orange"
             title="Show Memory Panel"
             selected={isMemoryOpen}
@@ -64,6 +68,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           />
           <IconButton
             iconName="disassembly-icon"
+            iconSize={SECONDARY_ICON_SIZE}
             fill="--color-toolbarbutton-orange"
             title="Show Disassembly Panel"
             selected={isDisassemblyOpen}
