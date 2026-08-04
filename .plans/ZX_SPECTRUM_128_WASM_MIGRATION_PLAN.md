@@ -634,6 +634,8 @@ tact-by-tact ULA rendering can evolve in a later rendering-accuracy slice.
 
 ### 9. Add Beeper Audio
 
+Status: Done on 2026-08-04.
+
 Files:
 
 - `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-beeper.c`
@@ -662,7 +664,23 @@ npm run build:sp128-wasm
 git diff --check
 ```
 
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice added bounded beeper sample generation into the exported stereo
+audio buffer and sample-rate control. Full transition/DC-filter fidelity can
+evolve after the adapter is wired.
+
 ### 10. Port AY PSG Register and Audio Generation
+
+Status: Done on 2026-08-04.
 
 Files:
 
@@ -699,13 +717,30 @@ npm run build:sp128-wasm
 git diff --check
 ```
 
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice added AY register state, read masks, PSG port access, tone A/B/C
+period and volume state, and PSG contribution to the mixed sample buffer. It is
+an executable bounded core, not the final hardware-accurate PSG implementation.
+
 ### 11. Add Floating Bus and Unsupported Port Fallbacks
+
+Status: Done on 2026-08-04.
 
 Files:
 
 - `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
 - `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ula.c`
-- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+- `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
+- `test/zxSpectrum/sp128-wasm-v2-loader.test.ts`
 
 Work:
 
@@ -726,7 +761,24 @@ npm run build:sp128-wasm
 git diff --check
 ```
 
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice added a representative tact-based floating bus read from the
+active screen bank, routed unsupported non-PSG/non-Kempston reads to it, and
+kept the current Kempston placeholder returning `0xff`. Full cycle-accurate
+floating-bus tables can evolve in a later accuracy slice.
+
 ### 12. Add Tape Playback and Save Capture
+
+Status: Done on 2026-08-04.
 
 Files:
 
@@ -734,7 +786,7 @@ Files:
 - `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
 - `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
-- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+- `test/zxSpectrum/sp128-wasm-v2-loader.test.ts`
 
 Work:
 
@@ -759,6 +811,21 @@ npm run build:sp128-wasm
 npm run build:check
 git diff --check
 ```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice added bounded C-owned tape upload metadata/data buffers,
+playback mode/rewind/fast-load state, and a saved-tape byte stream with a
+revision counter for later TypeScript publication. It is a testable tape state
+scaffold, not yet pulse-accurate tape loading or MIC edge capture.
 
 ### 13. Use the WASM Normal Frame Path
 

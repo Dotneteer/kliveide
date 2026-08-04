@@ -26,9 +26,11 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & {
   sp128WriteRamBank: Sp128WasmV2ExportFunction;
   sp128ReadRomBank: Sp128WasmV2ExportFunction;
   sp128ReadScreenMemoryOffset: Sp128WasmV2ExportFunction;
+  sp128ReadFloatingBus: Sp128WasmV2ExportFunction;
   sp128SetKeyStatus: Sp128WasmV2ExportFunction;
   sp128ReadPort: Sp128WasmV2ExportFunction;
   sp128WritePort: Sp128WasmV2ExportFunction;
+  sp128SetAudioSampleRate: Sp128WasmV2ExportFunction;
   sp128DelayAddressBusAccess: Sp128WasmV2ExportFunction;
   sp128DelayPortRead: Sp128WasmV2ExportFunction;
   sp128DelayPortWrite: Sp128WasmV2ExportFunction;
@@ -88,6 +90,48 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & {
   sp128GetEarBit: Sp128WasmV2ExportFunction;
   sp128GetMicBit: Sp128WasmV2ExportFunction;
   sp128GetBeeperLevel: Sp128WasmV2ExportFunction;
+  sp128GetAudioSampleRate: Sp128WasmV2ExportFunction;
+  sp128GetPsgRegisterIndex: Sp128WasmV2ExportFunction;
+  sp128SetPsgRegisterIndex: Sp128WasmV2ExportFunction;
+  sp128GetPsgRegisterValue: Sp128WasmV2ExportFunction;
+  sp128WritePsgRegisterValue: Sp128WasmV2ExportFunction;
+  sp128ReadPsgRegisterValue: Sp128WasmV2ExportFunction;
+  sp128GetPsgToneA: Sp128WasmV2ExportFunction;
+  sp128GetPsgVolumeA: Sp128WasmV2ExportFunction;
+  sp128GetPsgCurrentOutput: Sp128WasmV2ExportFunction;
+  sp128TapeDataPtr: Sp128WasmV2ExportFunction;
+  sp128TapeSaveDataPtr: Sp128WasmV2ExportFunction;
+  sp128TapeClear: Sp128WasmV2ExportFunction;
+  sp128TapeBeginUpload: Sp128WasmV2ExportFunction;
+  sp128TapeSetBlock: Sp128WasmV2ExportFunction;
+  sp128TapeWriteData: Sp128WasmV2ExportFunction;
+  sp128TapeFinishUpload: Sp128WasmV2ExportFunction;
+  sp128TapeRewind: Sp128WasmV2ExportFunction;
+  sp128TapeSetMode: Sp128WasmV2ExportFunction;
+  sp128TapeSetFastLoad: Sp128WasmV2ExportFunction;
+  sp128TapeGetFastLoad: Sp128WasmV2ExportFunction;
+  sp128TapeGetMaxBlocks: Sp128WasmV2ExportFunction;
+  sp128TapeGetDataCapacity: Sp128WasmV2ExportFunction;
+  sp128TapeGetSaveDataCapacity: Sp128WasmV2ExportFunction;
+  sp128TapeGetSaveMaxBlocks: Sp128WasmV2ExportFunction;
+  sp128TapeGetBlockCount: Sp128WasmV2ExportFunction;
+  sp128TapeGetDataLength: Sp128WasmV2ExportFunction;
+  sp128TapeGetLoaded: Sp128WasmV2ExportFunction;
+  sp128TapeGetEof: Sp128WasmV2ExportFunction;
+  sp128TapeGetUploadActive: Sp128WasmV2ExportFunction;
+  sp128TapeGetMode: Sp128WasmV2ExportFunction;
+  sp128TapeGetCurrentBlockIndex: Sp128WasmV2ExportFunction;
+  sp128TapeGetCurrentEarBit: Sp128WasmV2ExportFunction;
+  sp128TapeGetBlockOffset: Sp128WasmV2ExportFunction;
+  sp128TapeGetBlockLength: Sp128WasmV2ExportFunction;
+  sp128TapeGetBlockPauseAfter: Sp128WasmV2ExportFunction;
+  sp128TapeGetSavedBlockCount: Sp128WasmV2ExportFunction;
+  sp128TapeGetSavedDataLength: Sp128WasmV2ExportFunction;
+  sp128TapeGetSavedRevision: Sp128WasmV2ExportFunction;
+  sp128TapeGetSavedBlockOffset: Sp128WasmV2ExportFunction;
+  sp128TapeGetSavedBlockLength: Sp128WasmV2ExportFunction;
+  sp128TapeClearSavedBlocks: Sp128WasmV2ExportFunction;
+  sp128TapeAppendSavedByte: Sp128WasmV2ExportFunction;
   sp128GetDiagnosticFlags: Sp128WasmV2ExportFunction;
 };
 
@@ -119,6 +163,8 @@ export type Sp128WasmV2Runtime = {
   readonly pixelBufferBytes: Uint8ClampedArray;
   readonly keyboardLines: Uint8Array;
   readonly audioSamples: Int16Array;
+  readonly tapeData: Uint8Array;
+  readonly tapeSaveData: Uint8Array;
 };
 
 const requiredV2Exports = [
@@ -141,9 +187,11 @@ const requiredV2Exports = [
   "sp128WriteRamBank",
   "sp128ReadRomBank",
   "sp128ReadScreenMemoryOffset",
+  "sp128ReadFloatingBus",
   "sp128SetKeyStatus",
   "sp128ReadPort",
   "sp128WritePort",
+  "sp128SetAudioSampleRate",
   "sp128DelayAddressBusAccess",
   "sp128DelayPortRead",
   "sp128DelayPortWrite",
@@ -203,6 +251,48 @@ const requiredV2Exports = [
   "sp128GetEarBit",
   "sp128GetMicBit",
   "sp128GetBeeperLevel",
+  "sp128GetAudioSampleRate",
+  "sp128GetPsgRegisterIndex",
+  "sp128SetPsgRegisterIndex",
+  "sp128GetPsgRegisterValue",
+  "sp128WritePsgRegisterValue",
+  "sp128ReadPsgRegisterValue",
+  "sp128GetPsgToneA",
+  "sp128GetPsgVolumeA",
+  "sp128GetPsgCurrentOutput",
+  "sp128TapeDataPtr",
+  "sp128TapeSaveDataPtr",
+  "sp128TapeClear",
+  "sp128TapeBeginUpload",
+  "sp128TapeSetBlock",
+  "sp128TapeWriteData",
+  "sp128TapeFinishUpload",
+  "sp128TapeRewind",
+  "sp128TapeSetMode",
+  "sp128TapeSetFastLoad",
+  "sp128TapeGetFastLoad",
+  "sp128TapeGetMaxBlocks",
+  "sp128TapeGetDataCapacity",
+  "sp128TapeGetSaveDataCapacity",
+  "sp128TapeGetSaveMaxBlocks",
+  "sp128TapeGetBlockCount",
+  "sp128TapeGetDataLength",
+  "sp128TapeGetLoaded",
+  "sp128TapeGetEof",
+  "sp128TapeGetUploadActive",
+  "sp128TapeGetMode",
+  "sp128TapeGetCurrentBlockIndex",
+  "sp128TapeGetCurrentEarBit",
+  "sp128TapeGetBlockOffset",
+  "sp128TapeGetBlockLength",
+  "sp128TapeGetBlockPauseAfter",
+  "sp128TapeGetSavedBlockCount",
+  "sp128TapeGetSavedDataLength",
+  "sp128TapeGetSavedRevision",
+  "sp128TapeGetSavedBlockOffset",
+  "sp128TapeGetSavedBlockLength",
+  "sp128TapeClearSavedBlocks",
+  "sp128TapeAppendSavedByte",
   "sp128GetDiagnosticFlags"
 ] as const;
 
@@ -260,6 +350,8 @@ export function createSp128WasmV2Views(
   const screenWidth = exports.sp128GetScreenWidth();
   const screenHeight = exports.sp128GetScreenHeight();
   const audioSampleCapacity = exports.sp128GetAudioSampleCapacity();
+  const tapeDataCapacity = exports.sp128TapeGetDataCapacity();
+  const tapeSaveDataCapacity = exports.sp128TapeGetSaveDataCapacity();
   const pixelWords = screenWidth * screenHeight;
   const pixelBytes = pixelWords * 4;
   const audioWords = audioSampleCapacity * 2;
@@ -270,6 +362,8 @@ export function createSp128WasmV2Views(
   assertViewRange(artifactName, "pixelBuffer", exports.sp128PixelBufferPtr(), pixelBytes, memoryBuffer);
   assertViewRange(artifactName, "keyboardLines", exports.sp128KeyboardLinesPtr(), SP128_WASM_V2_KEYBOARD_LINE_COUNT, memoryBuffer);
   assertViewRange(artifactName, "audioSamples", exports.sp128AudioSamplesPtr(), audioWords * 2, memoryBuffer);
+  assertViewRange(artifactName, "tapeData", exports.sp128TapeDataPtr(), tapeDataCapacity, memoryBuffer);
+  assertViewRange(artifactName, "tapeSaveData", exports.sp128TapeSaveDataPtr(), tapeSaveDataCapacity, memoryBuffer);
 
   return {
     memoryBuffer,
@@ -279,7 +373,9 @@ export function createSp128WasmV2Views(
     pixelBuffer: new Uint32Array(memoryBuffer, exports.sp128PixelBufferPtr(), pixelWords),
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.sp128PixelBufferPtr(), pixelBytes),
     keyboardLines: new Uint8Array(memoryBuffer, exports.sp128KeyboardLinesPtr(), SP128_WASM_V2_KEYBOARD_LINE_COUNT),
-    audioSamples: new Int16Array(memoryBuffer, exports.sp128AudioSamplesPtr(), audioWords)
+    audioSamples: new Int16Array(memoryBuffer, exports.sp128AudioSamplesPtr(), audioWords),
+    tapeData: new Uint8Array(memoryBuffer, exports.sp128TapeDataPtr(), tapeDataCapacity),
+    tapeSaveData: new Uint8Array(memoryBuffer, exports.sp128TapeSaveDataPtr(), tapeSaveDataCapacity)
   };
 }
 

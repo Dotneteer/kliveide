@@ -30,6 +30,8 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     expect(runtime.ram).toHaveLength(SP128_WASM_V2_RAM_SIZE);
     expect(runtime.rom).toHaveLength(SP128_WASM_V2_ROM_SIZE);
     expect(runtime.keyboardLines).toHaveLength(SP128_WASM_V2_KEYBOARD_LINE_COUNT);
+    expect(runtime.tapeData).toHaveLength(runtime.exports.sp128TapeGetDataCapacity());
+    expect(runtime.tapeSaveData).toHaveLength(runtime.exports.sp128TapeGetSaveDataCapacity());
 
     runtime.exports.sp128HardReset();
     expect(runtime.exports.sp128GetFrames()).toBe(0);
@@ -287,6 +289,73 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     expect(runtime.exports.sp128ReadPort(0xfe) & 0x40).toBe(0x40);
   });
 
+  it("generates beeper audio samples for active 0xfe output", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-beeper-audio-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128SetAudioSampleRate(1000);
+    runtime.exports.sp128WritePort(0xfe, 0x18);
+    runtime.exports.sp128ExecuteFrame();
+
+    expect(runtime.exports.sp128GetAudioSampleRate()).toBe(1000);
+    expect(runtime.exports.sp128GetAudioSampleCount()).toBe(20);
+    expect(runtime.audioSamples[0]).not.toBe(0);
+    expect(runtime.audioSamples[1]).not.toBe(0);
+  });
+
+  it("uses AY PSG register masks and PSG ports", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-psg-registers-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128WritePort(0xfffd, 1);
+    runtime.exports.sp128WritePort(0xbffd, 0xff);
+
+    expect(runtime.exports.sp128GetPsgRegisterIndex()).toBe(1);
+    expect(runtime.exports.sp128GetPsgRegisterValue(1)).toBe(0xff);
+    expect(runtime.exports.sp128ReadPsgRegisterValue()).toBe(0x0f);
+    expect(runtime.exports.sp128ReadPort(0xfffd)).toBe(0x0f);
+    expect(runtime.exports.sp128GetPsgToneA()).toBe(0x0f00);
+
+    runtime.exports.sp128SetPsgRegisterIndex(8);
+    runtime.exports.sp128WritePsgRegisterValue(0x1f);
+
+    expect(runtime.exports.sp128GetPsgRegisterValue(8)).toBe(0x1f);
+    expect(runtime.exports.sp128ReadPsgRegisterValue()).toBe(0x1f);
+    expect(runtime.exports.sp128GetPsgVolumeA()).toBe(0x0f);
+  });
+
+  it("mixes PSG output into the exported audio sample buffer", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-psg-audio-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128SetAudioSampleRate(1000);
+    runtime.exports.sp128SetPsgRegisterIndex(0);
+    runtime.exports.sp128WritePsgRegisterValue(1);
+    runtime.exports.sp128SetPsgRegisterIndex(1);
+    runtime.exports.sp128WritePsgRegisterValue(0);
+    runtime.exports.sp128SetPsgRegisterIndex(7);
+    runtime.exports.sp128WritePsgRegisterValue(0xfe);
+    runtime.exports.sp128SetPsgRegisterIndex(8);
+    runtime.exports.sp128WritePsgRegisterValue(0x0f);
+    runtime.exports.sp128ExecuteFrame();
+
+    expect(runtime.exports.sp128GetAudioSampleCount()).toBe(20);
+    expect(runtime.exports.sp128GetPsgCurrentOutput()).toBeGreaterThanOrEqual(0);
+    expect(Array.from(runtime.audioSamples.slice(0, 40)).some(sample => sample !== 0)).toBe(true);
+  });
+
   it("renders border and normal screen memory into the pixel buffer", async () => {
     buildSp128Wasm();
     const runtime = await loadSp128WasmV2({
@@ -333,6 +402,90 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
 
     expect(runtime.exports.sp128GetScreenBank()).toBe(7);
     expect(runtime.pixelBuffer[displayPixel]).toBe(0xff0000ff);
+  });
+
+  it("returns representative floating bus values for unsupported port reads", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-floating-bus-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128WriteRamBank(5, 0x0000, 0x5a);
+    runtime.exports.sp128WriteRamBank(5, 0x1800, 0x2c);
+
+    runtime.exports.sp128SetTacts(48 * 228);
+    expect(runtime.exports.sp128ReadFloatingBus()).toBe(0x5a);
+    expect(runtime.exports.sp128ReadPort(0x123f)).toBe(0x5a);
+
+    runtime.exports.sp128SetTacts(48 * 228 + 1);
+    expect(runtime.exports.sp128ReadFloatingBus()).toBe(0x2c);
+
+    runtime.exports.sp128SetTacts(0);
+    expect(runtime.exports.sp128ReadFloatingBus()).toBe(0xff);
+    expect(runtime.exports.sp128ReadPort(0x001f)).toBe(0xff);
+  });
+
+  it("uploads tape block metadata and exposes playback controls", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-tape-load-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+
+    expect(runtime.exports.sp128TapeBeginUpload(1, 3)).toBe(1);
+    expect(runtime.exports.sp128TapeGetUploadActive()).toBe(1);
+    expect(runtime.exports.sp128TapeSetBlock(0, 0, 3, 1000)).toBe(1);
+    expect(runtime.exports.sp128TapeWriteData(0, 0xaa)).toBe(1);
+    expect(runtime.exports.sp128TapeWriteData(1, 0xbb)).toBe(1);
+    expect(runtime.exports.sp128TapeWriteData(2, 0xcc)).toBe(1);
+    expect(runtime.exports.sp128TapeFinishUpload()).toBe(1);
+
+    expect(runtime.exports.sp128TapeGetLoaded()).toBe(1);
+    expect(runtime.exports.sp128TapeGetEof()).toBe(0);
+    expect(runtime.exports.sp128TapeGetBlockCount()).toBe(1);
+    expect(runtime.exports.sp128TapeGetDataLength()).toBe(3);
+    expect(runtime.exports.sp128TapeGetBlockOffset(0)).toBe(0);
+    expect(runtime.exports.sp128TapeGetBlockLength(0)).toBe(3);
+    expect(runtime.exports.sp128TapeGetBlockPauseAfter(0)).toBe(1000);
+    expect(Array.from(runtime.tapeData.slice(0, 3))).toEqual([0xaa, 0xbb, 0xcc]);
+
+    runtime.exports.sp128TapeSetMode(1);
+    expect(runtime.exports.sp128TapeGetMode()).toBe(1);
+    expect(runtime.exports.sp128TapeGetCurrentEarBit()).toBe(0);
+
+    runtime.exports.sp128TapeSetFastLoad(0);
+    expect(runtime.exports.sp128TapeGetFastLoad()).toBe(0);
+    runtime.exports.sp128TapeRewind();
+    expect(runtime.exports.sp128TapeGetCurrentBlockIndex()).toBe(0);
+    expect(runtime.exports.sp128TapeGetEof()).toBe(0);
+  });
+
+  it("captures a bounded saved tape byte stream with a revision counter", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-tape-save-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128TapeClearSavedBlocks();
+
+    const revisionBeforeSave = runtime.exports.sp128TapeGetSavedRevision();
+    expect(runtime.exports.sp128TapeAppendSavedByte(0x42)).toBe(1);
+    expect(runtime.exports.sp128TapeGetSavedBlockCount()).toBe(1);
+    expect(runtime.exports.sp128TapeGetSavedDataLength()).toBe(1);
+    expect(runtime.exports.sp128TapeGetSavedRevision()).toBe(revisionBeforeSave + 1);
+    expect(runtime.exports.sp128TapeGetSavedBlockOffset(0)).toBe(0);
+    expect(runtime.exports.sp128TapeGetSavedBlockLength(0)).toBe(1);
+    expect(runtime.tapeSaveData[0]).toBe(0x42);
+
+    runtime.exports.sp128TapeClearSavedBlocks();
+    expect(runtime.exports.sp128TapeGetSavedBlockCount()).toBe(0);
+    expect(runtime.exports.sp128TapeGetSavedDataLength()).toBe(0);
   });
 
   it("uses the v2 artifact name by default", async () => {
@@ -400,6 +553,8 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       sp128PixelBufferPtr: () => 0x38000,
       sp128AudioSamplesPtr: () => 0xb0000,
       sp128KeyboardLinesPtr: () => 0xb4000,
+      sp128TapeDataPtr: () => 0xb5000,
+      sp128TapeSaveDataPtr: () => 0xb5100,
       sp128Reset: () => 0,
       sp128HardReset: () => 0,
       sp128ExecuteFrame: () => 0,
@@ -412,9 +567,11 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       sp128WriteRamBank: () => 0,
       sp128ReadRomBank: () => 0,
       sp128ReadScreenMemoryOffset: () => 0,
+      sp128ReadFloatingBus: () => 0xff,
       sp128SetKeyStatus: () => 0,
       sp128ReadPort: () => 0xff,
       sp128WritePort: () => 0,
+      sp128SetAudioSampleRate: () => 0,
       sp128DelayAddressBusAccess: () => 0,
       sp128DelayPortRead: () => 0,
       sp128DelayPortWrite: () => 0,
@@ -474,6 +631,46 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       sp128GetEarBit: () => 0,
       sp128GetMicBit: () => 0,
       sp128GetBeeperLevel: () => 0,
+      sp128GetAudioSampleRate: () => 44100,
+      sp128GetPsgRegisterIndex: () => 0,
+      sp128SetPsgRegisterIndex: () => 0,
+      sp128GetPsgRegisterValue: () => 0,
+      sp128WritePsgRegisterValue: () => 0,
+      sp128ReadPsgRegisterValue: () => 0,
+      sp128GetPsgToneA: () => 0,
+      sp128GetPsgVolumeA: () => 0,
+      sp128GetPsgCurrentOutput: () => 0,
+      sp128TapeClear: () => 0,
+      sp128TapeBeginUpload: () => 1,
+      sp128TapeSetBlock: () => 1,
+      sp128TapeWriteData: () => 1,
+      sp128TapeFinishUpload: () => 1,
+      sp128TapeRewind: () => 0,
+      sp128TapeSetMode: () => 0,
+      sp128TapeSetFastLoad: () => 0,
+      sp128TapeGetFastLoad: () => 1,
+      sp128TapeGetMaxBlocks: () => 512,
+      sp128TapeGetDataCapacity: () => 256,
+      sp128TapeGetSaveDataCapacity: () => 128,
+      sp128TapeGetSaveMaxBlocks: () => 64,
+      sp128TapeGetBlockCount: () => 0,
+      sp128TapeGetDataLength: () => 0,
+      sp128TapeGetLoaded: () => 0,
+      sp128TapeGetEof: () => 1,
+      sp128TapeGetUploadActive: () => 0,
+      sp128TapeGetMode: () => 0,
+      sp128TapeGetCurrentBlockIndex: () => 0,
+      sp128TapeGetCurrentEarBit: () => 1,
+      sp128TapeGetBlockOffset: () => 0,
+      sp128TapeGetBlockLength: () => 0,
+      sp128TapeGetBlockPauseAfter: () => 0,
+      sp128TapeGetSavedBlockCount: () => 0,
+      sp128TapeGetSavedDataLength: () => 0,
+      sp128TapeGetSavedRevision: () => 0,
+      sp128TapeGetSavedBlockOffset: () => 0,
+      sp128TapeGetSavedBlockLength: () => 0,
+      sp128TapeClearSavedBlocks: () => 0,
+      sp128TapeAppendSavedByte: () => 1,
       sp128GetDiagnosticFlags: () => 0,
       ...overrides
     } as Sp128WasmV2Exports

@@ -32,7 +32,7 @@ describe("ZX Spectrum 128K WASM build", () => {
     expect(calls[0].compiler).toBe("fake-c-compiler");
     expect(calls[0].args).toContain(source);
     expect(calls[0].args).toContain(productionOutput);
-    expect(calls[0].args).toContain("-Wl,--initial-memory=1048576");
+    expect(calls[0].args).toContain("-Wl,--initial-memory=8388608");
     for (const exportName of productionExports.filter(name => name !== "memory")) {
       expect(calls[0].args).toContain(`-Wl,--export=${exportName}`);
     }
