@@ -361,6 +361,29 @@ static uint32_t normalizeClockMultiplier(uint32_t value) {
   }
 }
 
+static void beginMachineFrame(void) {
+  sp48FrameCompleted = 0u;
+
+  if (sp48ClockMultiplier != sp48TargetClockMultiplier) {
+    sp48ClockMultiplier = sp48TargetClockMultiplier;
+    sp48TactsInCurrentFrame = sp48TactsInFrame * sp48ClockMultiplier;
+  }
+
+  beginAudioFrame();
+  beginBorderFrame(sp48NextFrameStartTact);
+  sp48CpuFrameSliceInstructions = 0u;
+}
+
+static void completeMachineFrame(void) {
+  if (sp48FrameCompleted == 0u) {
+    return;
+  }
+
+  renderUlaUntilCurrentTact();
+  sp48NextFrameStartTact += sp48TactsInCurrentFrame;
+  sp48Frames++;
+}
+
 void sp48Reset(void) {
   if (sp48ScreenLineTime == 0u) {
     initializeTimingTables(&sp48PalConfig);
@@ -397,28 +420,12 @@ void sp48HardReset(uint32_t is16k, uint32_t isNtsc) {
 }
 
 uint32_t sp48ExecuteFrame(void) {
-  if (sp48FrameCompleted != 0u) {
-    sp48FrameCompleted = 0u;
-  }
+  beginMachineFrame();
 
-  if (sp48ClockMultiplier != sp48TargetClockMultiplier) {
-    sp48ClockMultiplier = sp48TargetClockMultiplier;
-    sp48TactsInCurrentFrame = sp48TactsInFrame * sp48ClockMultiplier;
-  }
-
-  const uint32_t frameStartTact = sp48NextFrameStartTact;
   const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInCurrentFrame;
-  beginAudioFrame();
-  beginBorderFrame(frameStartTact);
-  sp48CpuFrameSliceInstructions = 0u;
   while (sp48Tacts < frameEndTact) {
     sp48ExecuteInstruction();
-    sp48CpuFrameSliceInstructions++;
   }
-  sp48FrameCompleted = 1u;
-  sp48NextFrameStartTact += sp48TactsInCurrentFrame;
-  sp48Frames++;
-  renderUlaUntilCurrentTact();
   return 0u;
 }
 
@@ -427,6 +434,10 @@ void sp48RenderInstantScreen(void) {
 }
 
 uint32_t sp48ExecuteInstruction(void) {
+  if (sp48FrameCompleted != 0u) {
+    beginMachineFrame();
+  }
+
   sp48HasMemoryEvent = 0u;
   z80ClearBusEvents();
   updateTapeMode();
@@ -440,8 +451,10 @@ uint32_t sp48ExecuteInstruction(void) {
   z80ExecuteCpuCycle();
   sp48Tacts = z80GetTacts();
   sp48CpuInstructionsExecuted++;
+  sp48CpuFrameSliceInstructions++;
   updateTapeMode();
   sp48FrameCompleted = sp48Tacts >= sp48NextFrameStartTact + sp48TactsInCurrentFrame ? 1u : 0u;
+  completeMachineFrame();
   return 0u;
 }
 

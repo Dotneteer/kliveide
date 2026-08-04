@@ -15,6 +15,8 @@ type Props = {
   kliveProjectLoaded: boolean;
 };
 
+const SECONDARY_ICON_SIZE = 20;
+
 type StartAction = "run" | "debug";
 
 type StartOption = {
@@ -195,8 +197,10 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         enable={canContinue}
         clicked={handleContinueDebugging}
       />
+      <ToolbarSeparator />
       <IconButton
         iconName="stop"
+        iconSize={SECONDARY_ICON_SIZE}
         fill="--color-toolbarbutton-red"
         title="Stop (F4)"
         enable={canStopOrRestart}
@@ -204,6 +208,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       />
       <IconButton
         iconName="restart"
+        iconSize={SECONDARY_ICON_SIZE}
         fill="--color-toolbarbutton-green"
         title="Restart (Shift+F4)"
         enable={canStopOrRestart}
@@ -212,6 +217,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       <ToolbarSeparator />
       <IconButton
         iconName="step-into"
+        iconSize={SECONDARY_ICON_SIZE}
         fill="--color-toolbarbutton-blue"
         title={`Step Into (${stepIntoKey})`}
         enable={canStep}
@@ -219,6 +225,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       />
       <IconButton
         iconName="step-over"
+        iconSize={SECONDARY_ICON_SIZE}
         fill="--color-toolbarbutton-blue"
         title={`Step Over (${stepOverKey})`}
         enable={canStep}
@@ -226,6 +233,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       />
       <IconButton
         iconName="step-out"
+        iconSize={SECONDARY_ICON_SIZE}
         fill="--color-toolbarbutton-blue"
         title={`Step Out (${stepOutKey})`}
         enable={canStep}

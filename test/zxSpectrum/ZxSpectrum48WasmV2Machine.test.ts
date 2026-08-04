@@ -169,6 +169,21 @@ describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
     expect(cpuState.lastMemoryWriteValue).toBe(0x77);
     expect(machine.doReadMemory(0x4000)).toBe(0x77);
   });
+
+  it("publishes completed frames and rendered output from the v2 debug loop", async () => {
+    buildSp48Wasm();
+    const machine = new TestWasmV2Machine(testRom([0x00]));
+
+    await machine.setup();
+    machine.executionContext.frameTerminationMode = FrameTerminationMode.UntilExecutionPoint;
+
+    expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
+    expect(machine.frameJustCompleted).toBe(true);
+    expect(machine.frames).toBe(1);
+    expect(machine.wasmV2Runtime?.exports.sp48GetFrameCompleted()).toBe(1);
+    expect(machine.getAudioSamples().length).toBeGreaterThan(0);
+    expect(machine.getPixelBuffer().some((pixel) => pixel !== 0)).toBe(true);
+  });
 });
 
 function testRom(bytes: number[]): Uint8Array {

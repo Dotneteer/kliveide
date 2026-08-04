@@ -127,6 +127,7 @@ function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp4
       sp48HardReset: () => 0,
       sp48ExecuteFrame: () => 0,
       sp48ExecuteInstruction: () => 0,
+      sp48GetFrameCompleted: () => 0,
       sp48RenderInstantScreen: () => 0,
       sp48UploadRomByte: () => 0,
       sp48ReadMemory: () => 0,

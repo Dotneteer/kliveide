@@ -18,6 +18,7 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & {
   sp48HardReset: Sp48WasmV2ExportFunction;
   sp48ExecuteFrame: Sp48WasmV2ExportFunction;
   sp48ExecuteInstruction: Sp48WasmV2ExportFunction;
+  sp48GetFrameCompleted: Sp48WasmV2ExportFunction;
   sp48RenderInstantScreen: Sp48WasmV2ExportFunction;
   sp48UploadRomByte: Sp48WasmV2ExportFunction;
   sp48ReadMemory: Sp48WasmV2ExportFunction;
@@ -158,6 +159,7 @@ const requiredV2Exports = [
   "sp48HardReset",
   "sp48ExecuteFrame",
   "sp48ExecuteInstruction",
+  "sp48GetFrameCompleted",
   "sp48RenderInstantScreen",
   "sp48UploadRomByte",
   "sp48ReadMemory",
