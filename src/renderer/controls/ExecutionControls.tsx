@@ -2,6 +2,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
+import { ToolbarSplitButton, type ToolbarSplitButtonOption } from "./ToolbarSplitButton";
 import { useCallback, useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { PANE_ID_BUILD } from "@common/integration/constants";
@@ -18,6 +19,7 @@ type Props = {
 const SECONDARY_ICON_SIZE = 20;
 
 type StartAction = "run" | "debug";
+type ResumeAction = "continue" | "debug";
 
 type StartOption = {
   value: Extract<MachineCommand, "start" | "debug">;
@@ -87,6 +89,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
   const startOptions = ide ? ideStartOptions : emuStartOptions;
   const runOption = startOptions.run;
   const debugOption = startOptions.debug;
+  const [startAction, setStartAction] = useState<StartAction>("run");
+  const [resumeAction, setResumeAction] = useState<ResumeAction>("continue");
 
   const [stepIntoKey, setStepIntoKey] = useState<string>(null);
   const [stepOverKey, setStepOverKey] = useState<string>(null);
@@ -105,24 +109,19 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
     }
   }, [mayInjectCode, outputPaneService, ideCommandsService, emuApi]);
 
-  const handleRun = useCallback(async () => {
-    await handleStart(runOption);
-  }, [handleStart, runOption]);
-
-  const handleDebug = useCallback(async () => {
-    await handleStart(debugOption);
-  }, [handleStart, debugOption]);
+  const handleStartAction = useCallback(async (action: StartAction) => {
+    setStartAction(action);
+    setResumeAction(action === "run" ? "continue" : "debug");
+    await handleStart(startOptions[action]);
+  }, [handleStart, startOptions]);
 
   const handlePause = useCallback(async () => {
     await emuApi.issueMachineCommand("pause");
   }, [emuApi]);
 
-  const handleContinue = useCallback(async () => {
-    await emuApi.issueMachineCommand("start");
-  }, [emuApi]);
-
-  const handleContinueDebugging = useCallback(async () => {
-    await emuApi.issueMachineCommand("debug");
+  const handleResumeAction = useCallback(async (action: ResumeAction) => {
+    setResumeAction(action);
+    await emuApi.issueMachineCommand(action === "continue" ? "start" : "debug");
   }, [emuApi]);
 
   const handleStop = useCallback(async () => {
@@ -139,14 +138,17 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
   }, [ide, kliveProjectLoaded, ideApi, isDebugging, emuApi]);
 
   const handleStepInto = useCallback(async () => {
+    setResumeAction("debug");
     await emuApi.issueMachineCommand("stepInto");
   }, [emuApi]);
 
   const handleStepOver = useCallback(async () => {
+    setResumeAction("debug");
     await emuApi.issueMachineCommand("stepOver");
   }, [emuApi]);
 
   const handleStepOut = useCallback(async () => {
+    setResumeAction("debug");
     await emuApi.issueMachineCommand("stepOut");
   }, [emuApi]);
 
@@ -160,21 +162,44 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
     })();
   }, [mainApi, isWindows]);
 
+  const startSplitOptions: ToolbarSplitButtonOption<StartAction>[] = [
+    {
+      value: "run",
+      label: runOption.label,
+      iconName: runOption.iconName,
+      fill: "--color-toolbarbutton-green"
+    },
+    {
+      value: "debug",
+      label: debugOption.label,
+      iconName: debugOption.iconName,
+      fill: "--color-toolbarbutton-blue"
+    }
+  ];
+
+  const resumeSplitOptions: ToolbarSplitButtonOption<ResumeAction>[] = [
+    {
+      value: "continue",
+      label: runOption.labelCont,
+      iconName: "debug-continue",
+      fill: "--color-toolbarbutton-green"
+    },
+    {
+      value: "debug",
+      label: debugOption.labelCont,
+      iconName: "debug-continue-with-bug",
+      fill: "--color-toolbarbutton-blue"
+    }
+  ];
+
   return (
     <>
-      <IconButton
-        iconName={runOption.iconName}
-        fill="--color-toolbarbutton-green"
-        title={runOption.label}
+      <ToolbarSplitButton
+        options={startSplitOptions}
+        selectedValue={startAction}
         enable={canStart}
-        clicked={handleRun}
-      />
-      <IconButton
-        iconName={debugOption.iconName}
-        fill="--color-toolbarbutton-blue"
-        title={debugOption.label}
-        enable={canStart}
-        clicked={handleDebug}
+        dropdownTitle="Choose start mode"
+        onAction={handleStartAction}
       />
       <IconButton
         iconName="pause"
@@ -183,19 +208,12 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         enable={canPause}
         clicked={handlePause}
       />
-      <IconButton
-        iconName="debug-continue"
-        fill="--color-toolbarbutton-green"
-        title={runOption.labelCont}
+      <ToolbarSplitButton
+        options={resumeSplitOptions}
+        selectedValue={resumeAction}
         enable={canContinue}
-        clicked={handleContinue}
-      />
-      <IconButton
-        iconName="debug-continue-with-bug"
-        fill="--color-toolbarbutton-blue"
-        title={debugOption.labelCont}
-        enable={canContinue}
-        clicked={handleContinueDebugging}
+        dropdownTitle="Choose resume mode"
+        onAction={handleResumeAction}
       />
       <ToolbarSeparator />
       <IconButton

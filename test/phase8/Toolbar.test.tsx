@@ -195,15 +195,15 @@ describe("ExecutionControls — Phase 8", () => {
       );
     });
     expect(screen.getByTitle(/Run Machine/i)).toBeInTheDocument();
-    expect(screen.getByTitle(/Debug Machine/i)).toBeInTheDocument();
+    expect(screen.getByTitle("Choose start mode")).toBeInTheDocument();
     expect(screen.getByTitle(/Stop/i)).toBeInTheDocument();
     expect(screen.getByTitle(/Restart/i)).toBeInTheDocument();
     expect(screen.queryByTestId("mock-dropdown")).not.toBeInTheDocument();
     expect(screen.getByTitle(/Run Machine/i)).not.toBeDisabled();
-    expect(screen.getByTitle(/Debug Machine/i)).not.toBeDisabled();
+    expect(screen.getByTitle("Choose start mode")).not.toBeDisabled();
     expect(screen.getByTitle(/Pause/i)).toBeDisabled();
     expect(screen.getByTitle(/Continue \(F5\)/i)).toBeDisabled();
-    expect(screen.getByTitle(/Continue Debugging/i)).toBeDisabled();
+    expect(screen.getByTitle("Choose resume mode")).toBeDisabled();
     expect(screen.getByTitle(/Step Into/i)).toBeDisabled();
   });
 
@@ -239,7 +239,7 @@ describe("ExecutionControls — Phase 8", () => {
     expect(mockIssueMachineCommand).toHaveBeenCalledWith("start");
   });
 
-  it("calls issueMachineCommand('debug') when Debug Machine is clicked", async () => {
+  it("calls issueMachineCommand('debug') and remembers resume debugging when Debug Machine is selected", async () => {
     const store = createMockStore();
 
     await act(async () => {
@@ -249,12 +249,19 @@ describe("ExecutionControls — Phase 8", () => {
       );
     });
 
-    const debugBtn = screen.getByTitle(/Debug Machine \(Ctrl\+F5\)/i);
+    const startModeBtn = screen.getByTitle("Choose start mode");
     await act(async () => {
-      debugBtn.click();
+      startModeBtn.click();
+    });
+
+    const debugItem = screen.getByText(/Debug Machine \(Ctrl\+F5\)/i);
+    await act(async () => {
+      debugItem.click();
     });
 
     expect(mockIssueMachineCommand).toHaveBeenCalledWith("debug");
+    expect(screen.getByTitle(/Debug Machine \(Ctrl\+F5\)/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/Continue Debugging \(Ctrl\+F5\)/i)).toBeInTheDocument();
   });
 
   it("calls issueMachineCommand('stop') on stop click", async () => {
@@ -307,15 +314,15 @@ describe("ExecutionControls — Phase 8", () => {
     });
 
     expect(screen.getByTitle(/Continue \(F5\)/i)).toBeInTheDocument();
-    expect(screen.getByTitle(/Continue Debugging \(Ctrl\+F5\)/i)).toBeInTheDocument();
+    expect(screen.getByTitle("Choose resume mode")).toBeInTheDocument();
     expect(screen.getByTitle(/Step Into/i)).toBeInTheDocument();
     expect(screen.getByTitle(/Step Over/i)).toBeInTheDocument();
     expect(screen.getByTitle(/Step Out/i)).toBeInTheDocument();
     expect(screen.getByTitle(/Continue \(F5\)/i)).not.toBeDisabled();
-    expect(screen.getByTitle(/Continue Debugging \(Ctrl\+F5\)/i)).not.toBeDisabled();
+    expect(screen.getByTitle("Choose resume mode")).not.toBeDisabled();
     expect(screen.getByTitle(/Step Into/i)).not.toBeDisabled();
     expect(screen.getByTitle(/Run Machine/i)).toBeDisabled();
-    expect(screen.getByTitle(/Debug Machine/i)).toBeDisabled();
+    expect(screen.getByTitle("Choose start mode")).toBeDisabled();
   });
 
   it("calls issueMachineCommand('start') when Continue is clicked while paused", async () => {
@@ -337,7 +344,7 @@ describe("ExecutionControls — Phase 8", () => {
     expect(mockIssueMachineCommand).toHaveBeenCalledWith("start");
   });
 
-  it("calls issueMachineCommand('debug') when Continue Debugging is clicked while paused", async () => {
+  it("calls issueMachineCommand('debug') when Continue Debugging is selected while paused", async () => {
     const store = createMockStore();
     store.dispatch(setMachineStateAction(MachineControllerState.Paused), "test");
 
@@ -348,15 +355,22 @@ describe("ExecutionControls — Phase 8", () => {
       );
     });
 
-    const continueDebuggingBtn = screen.getByTitle(/Continue Debugging \(Ctrl\+F5\)/i);
+    const resumeModeBtn = screen.getByTitle("Choose resume mode");
     await act(async () => {
-      continueDebuggingBtn.click();
+      resumeModeBtn.click();
+    });
+
+    const continueDebuggingItem = screen.getByText(/Continue Debugging \(Ctrl\+F5\)/i);
+    await act(async () => {
+      continueDebuggingItem.click();
     });
 
     expect(mockIssueMachineCommand).toHaveBeenCalledWith("debug");
+    expect(screen.getByTitle(/Continue Debugging \(Ctrl\+F5\)/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/Run Machine \(F5\)/i)).toBeDisabled();
   });
 
-  it("calls issueMachineCommand('stepInto') on Step Into click", async () => {
+  it("calls issueMachineCommand('stepInto') on Step Into click and switches resume to debugging", async () => {
     const store = createMockStore();
     store.dispatch(setMachineStateAction(MachineControllerState.Paused), "test");
 
@@ -373,6 +387,7 @@ describe("ExecutionControls — Phase 8", () => {
     });
 
     expect(mockIssueMachineCommand).toHaveBeenCalledWith("stepInto");
+    expect(screen.getByTitle(/Continue Debugging \(Ctrl\+F5\)/i)).toBeInTheDocument();
   });
 });
 
