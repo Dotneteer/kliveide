@@ -26,8 +26,14 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & {
   sp128WriteRamBank: Sp128WasmV2ExportFunction;
   sp128ReadRomBank: Sp128WasmV2ExportFunction;
   sp128ReadScreenMemoryOffset: Sp128WasmV2ExportFunction;
+  sp128SetKeyStatus: Sp128WasmV2ExportFunction;
   sp128ReadPort: Sp128WasmV2ExportFunction;
   sp128WritePort: Sp128WasmV2ExportFunction;
+  sp128DelayAddressBusAccess: Sp128WasmV2ExportFunction;
+  sp128DelayPortRead: Sp128WasmV2ExportFunction;
+  sp128DelayPortWrite: Sp128WasmV2ExportFunction;
+  sp128ResetContentionCounters: Sp128WasmV2ExportFunction;
+  sp128SetContentionValue: Sp128WasmV2ExportFunction;
   sp128GetMemorySize: Sp128WasmV2ExportFunction;
   sp128GetRamSize: Sp128WasmV2ExportFunction;
   sp128GetRomSize: Sp128WasmV2ExportFunction;
@@ -39,12 +45,49 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & {
   sp128GetTactsInFrame: Sp128WasmV2ExportFunction;
   sp128GetFrames: Sp128WasmV2ExportFunction;
   sp128GetTacts: Sp128WasmV2ExportFunction;
+  sp128SetTacts: Sp128WasmV2ExportFunction;
   sp128GetSelectedRom: Sp128WasmV2ExportFunction;
   sp128GetSelectedBank: Sp128WasmV2ExportFunction;
   sp128GetPagingEnabled: Sp128WasmV2ExportFunction;
   sp128GetUseShadowScreen: Sp128WasmV2ExportFunction;
   sp128GetScreenBank: Sp128WasmV2ExportFunction;
   sp128GetCurrentPartition: Sp128WasmV2ExportFunction;
+  sp128GetContentionValue: Sp128WasmV2ExportFunction;
+  sp128GetTotalContentionDelaySinceStart: Sp128WasmV2ExportFunction;
+  sp128GetContentionDelaySincePause: Sp128WasmV2ExportFunction;
+  sp128GetCpuInstructionsExecuted: Sp128WasmV2ExportFunction;
+  sp128GetCpuFrameSliceInstructions: Sp128WasmV2ExportFunction;
+  sp128GetCpuTacts: Sp128WasmV2ExportFunction;
+  sp128GetCpuAf: Sp128WasmV2ExportFunction;
+  sp128SetCpuAf: Sp128WasmV2ExportFunction;
+  sp128GetCpuBc: Sp128WasmV2ExportFunction;
+  sp128SetCpuBc: Sp128WasmV2ExportFunction;
+  sp128GetCpuDe: Sp128WasmV2ExportFunction;
+  sp128SetCpuDe: Sp128WasmV2ExportFunction;
+  sp128GetCpuHl: Sp128WasmV2ExportFunction;
+  sp128SetCpuHl: Sp128WasmV2ExportFunction;
+  sp128GetCpuIx: Sp128WasmV2ExportFunction;
+  sp128SetCpuIx: Sp128WasmV2ExportFunction;
+  sp128GetCpuIy: Sp128WasmV2ExportFunction;
+  sp128SetCpuIy: Sp128WasmV2ExportFunction;
+  sp128GetCpuPc: Sp128WasmV2ExportFunction;
+  sp128SetCpuPc: Sp128WasmV2ExportFunction;
+  sp128GetCpuSp: Sp128WasmV2ExportFunction;
+  sp128SetCpuSp: Sp128WasmV2ExportFunction;
+  sp128GetCpuHalted: Sp128WasmV2ExportFunction;
+  sp128GetCpuPrefix: Sp128WasmV2ExportFunction;
+  sp128GetLastMemoryAddress: Sp128WasmV2ExportFunction;
+  sp128GetLastMemoryValue: Sp128WasmV2ExportFunction;
+  sp128GetLastMemoryIsWrite: Sp128WasmV2ExportFunction;
+  sp128GetLastPortAddress: Sp128WasmV2ExportFunction;
+  sp128GetLastPortValue: Sp128WasmV2ExportFunction;
+  sp128GetLastPortIsWrite: Sp128WasmV2ExportFunction;
+  sp128GetKeyboardLine: Sp128WasmV2ExportFunction;
+  sp128GetPortFeValue: Sp128WasmV2ExportFunction;
+  sp128GetBorderColor: Sp128WasmV2ExportFunction;
+  sp128GetEarBit: Sp128WasmV2ExportFunction;
+  sp128GetMicBit: Sp128WasmV2ExportFunction;
+  sp128GetBeeperLevel: Sp128WasmV2ExportFunction;
   sp128GetDiagnosticFlags: Sp128WasmV2ExportFunction;
 };
 
@@ -98,8 +141,14 @@ const requiredV2Exports = [
   "sp128WriteRamBank",
   "sp128ReadRomBank",
   "sp128ReadScreenMemoryOffset",
+  "sp128SetKeyStatus",
   "sp128ReadPort",
   "sp128WritePort",
+  "sp128DelayAddressBusAccess",
+  "sp128DelayPortRead",
+  "sp128DelayPortWrite",
+  "sp128ResetContentionCounters",
+  "sp128SetContentionValue",
   "sp128GetMemorySize",
   "sp128GetRamSize",
   "sp128GetRomSize",
@@ -111,12 +160,49 @@ const requiredV2Exports = [
   "sp128GetTactsInFrame",
   "sp128GetFrames",
   "sp128GetTacts",
+  "sp128SetTacts",
   "sp128GetSelectedRom",
   "sp128GetSelectedBank",
   "sp128GetPagingEnabled",
   "sp128GetUseShadowScreen",
   "sp128GetScreenBank",
   "sp128GetCurrentPartition",
+  "sp128GetContentionValue",
+  "sp128GetTotalContentionDelaySinceStart",
+  "sp128GetContentionDelaySincePause",
+  "sp128GetCpuInstructionsExecuted",
+  "sp128GetCpuFrameSliceInstructions",
+  "sp128GetCpuTacts",
+  "sp128GetCpuAf",
+  "sp128SetCpuAf",
+  "sp128GetCpuBc",
+  "sp128SetCpuBc",
+  "sp128GetCpuDe",
+  "sp128SetCpuDe",
+  "sp128GetCpuHl",
+  "sp128SetCpuHl",
+  "sp128GetCpuIx",
+  "sp128SetCpuIx",
+  "sp128GetCpuIy",
+  "sp128SetCpuIy",
+  "sp128GetCpuPc",
+  "sp128SetCpuPc",
+  "sp128GetCpuSp",
+  "sp128SetCpuSp",
+  "sp128GetCpuHalted",
+  "sp128GetCpuPrefix",
+  "sp128GetLastMemoryAddress",
+  "sp128GetLastMemoryValue",
+  "sp128GetLastMemoryIsWrite",
+  "sp128GetLastPortAddress",
+  "sp128GetLastPortValue",
+  "sp128GetLastPortIsWrite",
+  "sp128GetKeyboardLine",
+  "sp128GetPortFeValue",
+  "sp128GetBorderColor",
+  "sp128GetEarBit",
+  "sp128GetMicBit",
+  "sp128GetBeeperLevel",
   "sp128GetDiagnosticFlags"
 ] as const;
 

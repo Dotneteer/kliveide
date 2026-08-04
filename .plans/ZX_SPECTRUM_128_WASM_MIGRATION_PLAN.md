@@ -436,6 +436,8 @@ tests. The adapter will consume these exports in a later slice.
 
 ### 5. Integrate the Z80 Core for Instruction Execution
 
+Status: Done on 2026-08-04.
+
 Files:
 
 - `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
@@ -467,7 +469,24 @@ npm run build:check
 git diff --check
 ```
 
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice validated the shared C Z80 core through compiled C/WASM loader
+tests. It added register exports, one-instruction execution, and last memory and
+port bus access exports. The full TypeScript WASM adapter consumption remains a
+later slice.
+
 ### 6. Add 128K Timing and Contention
+
+Status: Done on 2026-08-04.
 
 Files:
 
@@ -501,7 +520,23 @@ npm run build:sp128-wasm
 git diff --check
 ```
 
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice validated programmable contention values and the 128K odd-bank
+contention rule through compiled C/WASM loader tests. Shared TypeScript
+`ula-contention.test.ts` integration remains for the later adapter slice.
+
 ### 7. Add Keyboard and `0xfe` Port Behavior
+
+Status: Done on 2026-08-04.
 
 Files:
 
@@ -532,7 +567,23 @@ npm run build:sp128-wasm
 git diff --check
 ```
 
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice validated keyboard matrix updates and `0xfe` port reads/writes
+through compiled C/WASM loader tests. Adapter-level change-based keyboard sync
+remains for the later adapter slice.
+
 ### 8. Add ULA Rendering and Shadow Screen Rendering
+
+Status: Done on 2026-08-04.
 
 Files:
 
@@ -566,6 +617,20 @@ npm run build:sp128-wasm
 npm run build:check
 git diff --check
 ```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice added deterministic instant-screen rendering with border fill,
+Spectrum pixel/attribute decoding, and bank 5/bank 7 screen selection. Full
+tact-by-tact ULA rendering can evolve in a later rendering-accuracy slice.
 
 ### 9. Add Beeper Audio
 

@@ -78,8 +78,8 @@ describe("ZX Spectrum 128K WASM build", () => {
     })).toThrow("Expected: production");
   });
 
-  it("declares the default skeleton WASM size ceiling", () => {
-    expect(DEFAULT_MAX_BYTES).toBe(40_000);
+  it("declares the default executable-backend WASM size ceiling", () => {
+    expect(DEFAULT_MAX_BYTES).toBe(320_000);
     expect(parseMaxBytes()).toBe(DEFAULT_MAX_BYTES);
     expect(parseMaxBytes("90000")).toBe(90_000);
     expect(() => parseMaxBytes("not-a-number")).toThrow("Invalid SP128_WASM_MAX_BYTES");
