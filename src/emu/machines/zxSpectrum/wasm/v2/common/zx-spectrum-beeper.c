@@ -1,6 +1,18 @@
 // ----------------------------------------------------------------------------
 // Beeper audio
 
+#ifndef SP48_AUDIO_EXTRA_LEFT
+#define SP48_AUDIO_EXTRA_LEFT() 0.0
+#endif
+
+#ifndef SP48_AUDIO_EXTRA_RIGHT
+#define SP48_AUDIO_EXTRA_RIGHT() 0.0
+#endif
+
+#ifndef SP48_AUDIO_BEFORE_SAMPLE
+#define SP48_AUDIO_BEFORE_SAMPLE() ((void)0)
+#endif
+
 static inline int16_t clampAudioWord(double value) {
   if (value > 32767.0) {
     return 32767;
@@ -69,6 +81,8 @@ static void setNextAudioSample(void) {
   double rawLeft;
   double rawRight;
 
+  SP48_AUDIO_BEFORE_SAMPLE();
+
   if (sp48AudioAccumulatedTacts > 0.0) {
     const uint32_t finalDuration = sp48Tacts - sp48AudioLastLevelChangeTact;
     const double totalEar =
@@ -91,8 +105,10 @@ static void setNextAudioSample(void) {
   sp48DcFilterPrevInputRight = rawRight;
   sp48DcFilterPrevOutputLeft = outLeft;
   sp48DcFilterPrevOutputRight = outRight;
-  sp48AudioSamples[sp48AudioSampleCount].left = clampAudioWord(outLeft * SP48_AUDIO_SAMPLE_SCALE);
-  sp48AudioSamples[sp48AudioSampleCount].right = clampAudioWord(outRight * SP48_AUDIO_SAMPLE_SCALE);
+  sp48AudioSamples[sp48AudioSampleCount].left =
+    clampAudioWord((outLeft + SP48_AUDIO_EXTRA_LEFT()) * SP48_AUDIO_SAMPLE_SCALE);
+  sp48AudioSamples[sp48AudioSampleCount].right =
+    clampAudioWord((outRight + SP48_AUDIO_EXTRA_RIGHT()) * SP48_AUDIO_SAMPLE_SCALE);
   sp48AudioSampleCount++;
   sp48AudioNextSampleTact += sp48AudioSampleLength * (double)sp48ClockMultiplier;
 }

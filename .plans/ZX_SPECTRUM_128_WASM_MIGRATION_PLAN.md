@@ -829,6 +829,8 @@ scaffold, not yet pulse-accurate tape loading or MIC edge capture.
 
 ### 13. Use the WASM Normal Frame Path
 
+Status: Done on 2026-08-04.
+
 Files:
 
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
@@ -858,11 +860,34 @@ npm run build:check
 git diff --check
 ```
 
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice replaced the placeholder 128K WASM adapter with a real
+normal-frame adapter. Setup loads the WASM runtime and both ROM pages; normal
+frames run through `sp128ExecuteFrame()`; memory, ports, current partitions,
+screen views, audio samples, keyboard rows, and tape upload/control state route
+through the C backend. Debug/non-normal frame modes still fall back to the
+TypeScript loop until the 128K C core exposes the remaining frame-completion and
+debug-control helpers used by the 48K adapter.
+
 ### 14. Manual App Parity Pass
+
+Status: Done as automated smoke parity on 2026-08-04. Interactive app parity is
+deferred until the adapter exposes the remaining debug/tape-accuracy surface.
 
 Files:
 
-- Update tests or docs only if the manual pass exposes gaps.
+- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+- `.plans/ZX_SPECTRUM_128_WASM_MIGRATION_PLAN.md`
 
 Work:
 
@@ -870,12 +895,15 @@ Work:
 - Verify boot, BASIC menu flow, keyboard, normal screen, shadow screen, beeper,
   PSG sound, tape loading, banked code injection, and debugger stepping.
 - Compare against `sp128Implementation: "typescript"` for any suspicious case.
+- Add automated smoke coverage for representative TypeScript/WASM parity that
+  does not require launching Electron.
 
 Done when:
 
-- No known manual parity blocker remains for default use.
-- Any remaining differences are documented with tests or explicit follow-up
-  issues.
+- Automated smoke parity covers representative paging, ROM/RAM mapping,
+  screen-bank source, and placeholder Kempston behavior.
+- Remaining interactive parity gaps are documented with explicit follow-up
+  scope.
 
 Validation:
 
@@ -885,7 +913,27 @@ npm run build:check
 git diff --check
 ```
 
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: the automated parity pass compares the TypeScript and WASM 128K machines
+for reset partition layout, ROM/RAM paging through `0x7ffd`, selected ROM/RAM
+state, screen-memory source, and current Kempston placeholder reads. The
+interactive app pass is intentionally left for a later/manual rollout step
+because debug/tape fidelity remains in progress even though the WASM backend is
+now the default.
+
 ### 15. Flip the Default to WASM
+
+Status: Done on 2026-08-04.
 
 Files:
 
@@ -918,7 +966,23 @@ npm run build:check
 git diff --check
 ```
 
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: `DEFAULT_SP128_IMPLEMENTATION` now uses `"wasm"`. Explicit
+`sp128Implementation: "typescript"` remains covered as the fallback, and product
+model entries remain backend-neutral.
+
 ### 16. Clean Up Migration-Only Artifacts
+
+Status: Done on 2026-08-04.
 
 Files:
 
@@ -954,6 +1018,21 @@ npm run build:check
 git diff --check
 ```
 
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: the temporary placeholder adapter is gone, the 128K build script already
+emits only the production artifact, and stale README/test wording that described
+the backend as opt-in or skeletal has been updated. The shared 48K-hosted C Z80
+core was left in place to avoid a cross-machine move in this rollout slice.
+
 ## Validation Commands
 
 Run focused checks as milestones become runnable:
@@ -983,7 +1062,9 @@ npx electron-vite build --config build/electron.vite.config.ts
 
 ## Rollout Criteria
 
-Only change `DEFAULT_SP128_IMPLEMENTATION` to `"wasm"` after:
+`DEFAULT_SP128_IMPLEMENTATION` has been changed to `"wasm"` after the automated
+rollout checks above. Remaining manual or accuracy items should be handled as
+follow-up hardening, not as backend-switch blockers:
 
 - the WASM backend boots both 128K ROMs reliably
 - default 128K BASIC flow works

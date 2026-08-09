@@ -1,8 +1,9 @@
 # WASM V2 Machine Migration Guide
 
 This note captures the practical lessons from replacing the ZX Spectrum 48K
-hybrid WASM backend with a full-machine WASM V2 backend. Use it when migrating
-another machine or model to WASM.
+hybrid WASM backend with a full-machine WASM V2 backend, then migrating the ZX
+Spectrum 128K backend onto the same shared-device C/WASM model. Use it when
+migrating another machine or model to WASM.
 
 ## Start Here
 
@@ -13,8 +14,14 @@ Read these files before changing code:
 - `src/emu/machines/zxSpectrum48/ZxSpectrum48MachineFactory.ts`
 - `src/emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine.ts`
 - `src/emu/machines/zxSpectrum48/wasm/Sp48WasmV2Loader.ts`
+- `src/emu/machines/zxSpectrum/wasm/v2/common/`
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
+- `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
 - `scripts/build-sp48-wasm.cjs`
+- `scripts/build-sp128-wasm.cjs`
 - `.plans/ZX_SPECTRUM_48_WASM_V2_MIGRATION_PLAN.md`
+- `.plans/ZX_SPECTRUM_128_WASM_MIGRATION_PLAN.md`
 
 The old hybrid SP48 WASM path, old layout ABI, standalone Z80 WASM harness, and
 comparison-only model picker entries were intentionally removed. Do not restore
@@ -33,6 +40,146 @@ The normal frame path should be:
 
 Avoid designs that cross the JS/WASM boundary per tact, per instruction, per
 memory access, per port access, or per rendered scanline during normal running.
+
+## ZX Spectrum Model Composition
+
+When migrating another ZX Spectrum model, follow the same composition model as
+the TypeScript machines.
+
+The shared Spectrum devices should be one physical C implementation reused by
+all compatible Spectrum models:
+
+- ULA/video timing and rendering
+- keyboard matrix and keyboard port reads
+- beeper/audio output
+- tape playback and save capture
+- shared Spectrum port helpers where behavior is genuinely common
+
+The shared C sources currently live under
+`src/emu/machines/zxSpectrum/wasm/v2/common/`. Do not copy these files into each
+model folder and then edit the copies. Per-model C files should compose these
+shared devices with model-specific configuration, just as TypeScript machines
+compose shared devices.
+
+Create model-specific C only for behavior that is actually different:
+
+- memory size and paging
+- contended memory page rules
+- model-specific port decoding
+- PSG/AY devices
+- model-specific floating bus offset or displayed screen bank behavior
+- model-specific ROM defaults and reset wiring
+
+For example, ZX Spectrum 48K and 128K both use the same shared ULA, keyboard,
+beeper, and tape implementations. The 128K backend adds bank paging, PSG, 128K
+contention rules, and the 128K floating bus behavior.
+
+## Frame Lifecycle Invariants
+
+Use the working `sp48.c` lifecycle as the template for new Spectrum WASM
+machines. Do not invent a new frame loop until tests prove it is equivalent.
+
+The C machine should have the same basic shape:
+
+- `beginMachineFrame()` captures the current frame length and clears the
+  frame-completed flag.
+- `executeFrame()` runs instructions until the next frame boundary is crossed.
+- `completeMachineFrame()` renders/finishes the frame and advances the frame
+  origin exactly once.
+- `executeInstruction()` also detects frame completion when debugging steps cross
+  a frame boundary.
+- instruction overshoot is preserved across the frame boundary.
+- `setTacts()` sets the absolute machine and Z80 tact counters only; it must not
+  realign the next frame origin.
+
+Do not clamp the machine tact counter to the exact end of the frame. That loses
+instruction overshoot and can shift every current-frame tact calculation after a
+boundary.
+
+The TypeScript adapter should sync frame counters from the C backend, including
+the active frame length and current-frame tact. Avoid recomputing these values
+from static constants in the adapter when the C machine already owns frame
+timing.
+
+## Screen Timing And Dimensions
+
+Expose visible screen dimensions from the shared ULA timing configuration, not
+from maximum backing-buffer capacity constants.
+
+The ZX Spectrum 128K migration exposed this trap: the backing buffer could hold
+296 lines, but the rendered 128K timing configuration exposed 287 visible lines
+(`borderTopLines + displayLines + borderBottomLines - 1`). Returning the backing
+capacity produced dark, unpainted bottom lines in the rendered screen and was a
+signal that the adapter was not using the same timing contract as TypeScript.
+
+For Spectrum models, screen width/height exports should initialize timing tables
+on demand and then return the timing-derived visible dimensions used by the ULA.
+
+## Floating Bus And Contention
+
+Treat floating bus as model-specific even when most ULA code is shared.
+
+Known Spectrum differences from the 48K and 128K migrations:
+
+- ZX Spectrum 48K samples the floating bus using `currentFrameTact - 5`.
+- ZX Spectrum 128K samples the floating bus using `currentFrameTact - 3`.
+- 128K floating bus reads screen bytes from the currently displayed screen bank,
+  normally bank 5 or bank 7 depending on paging state.
+- 128K contended I/O includes the `0x4000-0x7fff` page and the
+  `0xc000-0xffff` page only when the currently paged RAM bank is odd.
+- Port `0x00ff` has its low address bit set, so it is not itself a contended
+  low-bit-clear ULA port.
+
+If a floating bus utility fails on a new model while the 48K WASM backend passes
+the same utility, suspect model glue first:
+
+- current-frame tact calculation
+- frame lifecycle and instruction overshoot
+- visible screen timing values
+- displayed screen bank selection
+- model-specific floating bus sample offset
+- model-specific memory and I/O contention rules
+
+Do not start by rewriting the Z80 core when another WASM machine using that core
+passes the same CPU-level utility.
+
+## Oracle Tests For Spectrum Migrations
+
+Use the TypeScript machine as the oracle while migrating the WASM backend. Static
+table parity is necessary, but it is not enough.
+
+Add timing-table comparisons for a representative frame:
+
+- TypeScript `screenDevice.renderingTactTable[tact].phase`
+- TypeScript `pixelAddress`
+- TypeScript `attributeAddress`
+- TypeScript `pixelBufferIndex`
+- matching WASM exports such as `machineGetRenderingPhase(tact)`,
+  `machineGetRenderingPixelAddress(tact)`,
+  `machineGetRenderingAttributeAddress(tact)`, and
+  `machineGetRenderingPixelIndex(tact)`
+
+Add contention comparisons:
+
+- TypeScript `machine.getContentionValue(tact)`
+- matching WASM `machineGetContentionValue(tact)`
+- separate checks for memory contention and I/O contention when the model has
+  model-specific paging rules
+
+Add a floatspy-style floating bus test:
+
+- seed the displayed screen memory with byte pattern `offset & 0xff`
+- compare TypeScript `floatingBusDevice.readFloatingBus()` with the WASM
+  floating bus export across active display tacts
+- test exact port `0x00ff`; RAMSOFT floatspy displays this port and catches real
+  regressions
+- run a CPU-level repeated `ED 78` (`IN A,(C)`) loop with `BC = 0x00ff`, not
+  only direct helper calls
+
+The CPU-level repeated `IN A,(C)` loop was the missing test that reproduced the
+128K floatspy failure most faithfully. It catches mistakes in the interaction
+between frame timing, port handling, contention, Z80 tact advancement, and the
+floating bus.
 
 ## What Belongs In WASM
 
@@ -230,6 +377,8 @@ npm run check:sp48-wasm-size
 ## Common Failure Modes
 
 - A "WASM" backend is slow because only the CPU is in WASM.
+- New Spectrum models duplicate common C devices instead of composing the shared
+  ULA, keyboard, beeper, and tape implementations.
 - TypeScript still renders the screen from memory after C already rendered it.
 - The adapter copies full pixel/audio/memory buffers every frame.
 - The adapter syncs full CPU registers every frame in normal mode.
@@ -239,6 +388,15 @@ npm run check:sp48-wasm-size
 - Build scripts keep producing stale experimental artifacts that packaging copies.
 - Tests continue to protect removed migration infrastructure instead of the
   current production contract.
+- `setTacts()` realigns the frame origin instead of only setting absolute tacts.
+- The frame loop snaps tacts to the exact frame end and loses instruction
+  overshoot.
+- Screen dimension exports return backing-buffer capacity instead of visible ULA
+  dimensions.
+- A new model reuses the 48K floating bus sample offset even though its
+  TypeScript floating bus device uses a different offset.
+- Timing-table tests pass, but no CPU-level repeated `IN A,(C)` test validates
+  the real floating bus path used by diagnostic software.
 
 When performance disappoints, inspect the normal frame path first. Count JS/WASM
 crossings and large copies before changing CPU code.

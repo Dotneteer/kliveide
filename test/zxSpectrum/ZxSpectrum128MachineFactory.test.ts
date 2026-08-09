@@ -9,10 +9,10 @@ import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128M
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
 
 describe("ZX Spectrum 128K implementation selection", () => {
-  it("keeps the TypeScript implementation as the rollout default", () => {
-    expect(DEFAULT_SP128_IMPLEMENTATION).toBe("typescript");
+  it("uses the WASM implementation as the rollout default", () => {
+    expect(DEFAULT_SP128_IMPLEMENTATION).toBe("wasm");
     expect(createZxSpectrum128Machine()).toBeInstanceOf(ZxSpectrum128Machine);
-    expect(createZxSpectrum128Machine()).not.toBeInstanceOf(ZxSpectrum128WasmV2Machine);
+    expect(createZxSpectrum128Machine()).toBeInstanceOf(ZxSpectrum128WasmV2Machine);
   });
 
   it("selects the TypeScript implementation when requested", () => {
@@ -22,7 +22,7 @@ describe("ZX Spectrum 128K implementation selection", () => {
     expect(machine).not.toBeInstanceOf(ZxSpectrum128WasmV2Machine);
   });
 
-  it("can opt into the WASM implementation", () => {
+  it("selects the WASM implementation when requested", () => {
     const machine = createZxSpectrum128Machine(undefined, { [SP128_IMPLEMENTATION]: "wasm" });
 
     expect(machine).toBeInstanceOf(ZxSpectrum128WasmV2Machine);
@@ -35,7 +35,7 @@ describe("ZX Spectrum 128K implementation selection", () => {
     } as any);
 
     expect(machine).toBeInstanceOf(ZxSpectrum128Machine);
-    expect(machine).not.toBeInstanceOf(ZxSpectrum128WasmV2Machine);
+    expect(machine).toBeInstanceOf(ZxSpectrum128WasmV2Machine);
   });
 
   it("keeps the machine registry product-oriented", () => {

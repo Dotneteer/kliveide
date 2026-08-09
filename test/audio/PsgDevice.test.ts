@@ -465,8 +465,8 @@ describe("ZxSpectrum128PsgDevice", () => {
 
       const samples = device.getAudioSamples();
       if (samples.length > 0) {
-        // Sample should be normalized value
-        expect(samples[0].left).toBeGreaterThanOrEqual(0);
+        expect(Number.isFinite(samples[0].left)).toBe(true);
+        expect(samples[0].left).toBeGreaterThanOrEqual(-1.0);
         expect(samples[0].left).toBeLessThanOrEqual(1.0);
       }
     });

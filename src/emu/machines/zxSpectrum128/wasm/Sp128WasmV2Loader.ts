@@ -45,9 +45,16 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & {
   sp128GetAudioSampleCount: Sp128WasmV2ExportFunction;
   sp128GetAudioSampleCapacity: Sp128WasmV2ExportFunction;
   sp128GetTactsInFrame: Sp128WasmV2ExportFunction;
+  sp128SetTargetClockMultiplier: Sp128WasmV2ExportFunction;
+  sp128GetClockMultiplier: Sp128WasmV2ExportFunction;
+  sp128GetTargetClockMultiplier: Sp128WasmV2ExportFunction;
+  sp128GetTactsInCurrentFrame: Sp128WasmV2ExportFunction;
   sp128GetFrames: Sp128WasmV2ExportFunction;
   sp128GetTacts: Sp128WasmV2ExportFunction;
+  sp128GetCurrentFrameTact: Sp128WasmV2ExportFunction;
   sp128SetTacts: Sp128WasmV2ExportFunction;
+  sp128GetNextFrameStartTact: Sp128WasmV2ExportFunction;
+  sp128GetFrameCompleted: Sp128WasmV2ExportFunction;
   sp128GetSelectedRom: Sp128WasmV2ExportFunction;
   sp128GetSelectedBank: Sp128WasmV2ExportFunction;
   sp128GetPagingEnabled: Sp128WasmV2ExportFunction;
@@ -55,13 +62,21 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & {
   sp128GetScreenBank: Sp128WasmV2ExportFunction;
   sp128GetCurrentPartition: Sp128WasmV2ExportFunction;
   sp128GetContentionValue: Sp128WasmV2ExportFunction;
+  sp128GetRenderingPhase: Sp128WasmV2ExportFunction;
+  sp128GetRenderingPixelAddress: Sp128WasmV2ExportFunction;
+  sp128GetRenderingAttributeAddress: Sp128WasmV2ExportFunction;
+  sp128GetRenderingPixelIndex: Sp128WasmV2ExportFunction;
   sp128GetTotalContentionDelaySinceStart: Sp128WasmV2ExportFunction;
   sp128GetContentionDelaySincePause: Sp128WasmV2ExportFunction;
   sp128GetCpuInstructionsExecuted: Sp128WasmV2ExportFunction;
   sp128GetCpuFrameSliceInstructions: Sp128WasmV2ExportFunction;
+  sp128GetInterruptsRaised: Sp128WasmV2ExportFunction;
+  sp128GetInterruptLineActive: Sp128WasmV2ExportFunction;
   sp128GetCpuTacts: Sp128WasmV2ExportFunction;
   sp128GetCpuAf: Sp128WasmV2ExportFunction;
   sp128SetCpuAf: Sp128WasmV2ExportFunction;
+  sp128GetCpuAfAlt: Sp128WasmV2ExportFunction;
+  sp128SetCpuAfAlt: Sp128WasmV2ExportFunction;
   sp128GetCpuBc: Sp128WasmV2ExportFunction;
   sp128SetCpuBc: Sp128WasmV2ExportFunction;
   sp128GetCpuDe: Sp128WasmV2ExportFunction;
@@ -206,9 +221,16 @@ const requiredV2Exports = [
   "sp128GetAudioSampleCount",
   "sp128GetAudioSampleCapacity",
   "sp128GetTactsInFrame",
+  "sp128SetTargetClockMultiplier",
+  "sp128GetClockMultiplier",
+  "sp128GetTargetClockMultiplier",
+  "sp128GetTactsInCurrentFrame",
   "sp128GetFrames",
   "sp128GetTacts",
+  "sp128GetCurrentFrameTact",
   "sp128SetTacts",
+  "sp128GetNextFrameStartTact",
+  "sp128GetFrameCompleted",
   "sp128GetSelectedRom",
   "sp128GetSelectedBank",
   "sp128GetPagingEnabled",
@@ -216,13 +238,21 @@ const requiredV2Exports = [
   "sp128GetScreenBank",
   "sp128GetCurrentPartition",
   "sp128GetContentionValue",
+  "sp128GetRenderingPhase",
+  "sp128GetRenderingPixelAddress",
+  "sp128GetRenderingAttributeAddress",
+  "sp128GetRenderingPixelIndex",
   "sp128GetTotalContentionDelaySinceStart",
   "sp128GetContentionDelaySincePause",
   "sp128GetCpuInstructionsExecuted",
   "sp128GetCpuFrameSliceInstructions",
+  "sp128GetInterruptsRaised",
+  "sp128GetInterruptLineActive",
   "sp128GetCpuTacts",
   "sp128GetCpuAf",
   "sp128SetCpuAf",
+  "sp128GetCpuAfAlt",
+  "sp128SetCpuAfAlt",
   "sp128GetCpuBc",
   "sp128SetCpuBc",
   "sp128GetCpuDe",
@@ -296,12 +326,8 @@ const requiredV2Exports = [
   "sp128GetDiagnosticFlags"
 ] as const;
 
-let cachedV2Module: WebAssembly.Module | undefined;
-let cachedV2ArtifactName: string | undefined;
-
 export function resetSp128WasmV2ModuleCache(): void {
-  cachedV2Module = undefined;
-  cachedV2ArtifactName = undefined;
+  // --- Intentionally empty. During the 128K WASM rollout, always load the current artifact.
 }
 
 export async function loadSp128WasmV2(options: Sp128WasmV2LoaderOptions = {}): Promise<Sp128WasmV2Runtime> {
@@ -383,18 +409,10 @@ async function getCompiledV2Module(
   artifactName: string,
   options: Sp128WasmV2LoaderOptions
 ): Promise<WebAssembly.Module> {
-  if (cachedV2Module != null && cachedV2ArtifactName === artifactName) {
-    return cachedV2Module;
-  }
-
   const readArtifact = options.readArtifact ?? (() => defaultReadV2Artifact(artifactName));
   const compile = options.compile ?? WebAssembly.compile;
   const bytes = await readArtifact();
-  const module = await compile(bytes);
-
-  cachedV2Module = module;
-  cachedV2ArtifactName = artifactName;
-  return module;
+  return compile(bytes);
 }
 
 async function defaultReadV2Artifact(artifactName: string): Promise<ArrayBuffer> {

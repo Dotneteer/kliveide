@@ -16,6 +16,8 @@ import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
 import { ZxSpectrum48Machine } from "./ZxSpectrum48Machine";
 
+const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
+
 export type Sp48WasmV2Diagnostics = {
   backend: "wasm";
   engine: "v2";
@@ -242,8 +244,8 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48Machine {
     this.wasmV2AudioSamples.length = 0;
     for (let i = 0; i < sampleCount; i++) {
       this.wasmV2AudioSamples.push({
-        left: words[i * 2],
-        right: words[i * 2 + 1]
+        left: words[i * 2] / WASM_AUDIO_SAMPLE_SCALE,
+        right: words[i * 2 + 1] / WASM_AUDIO_SAMPLE_SCALE
       });
     }
     return this.wasmV2AudioSamples;

@@ -243,7 +243,7 @@ static void renderUlaUntilCurrentTact(void);
 static uint32_t normalizeClockMultiplier(uint32_t value);
 
 #include "sp48-memory.c"
-#include "sp48-ula.c"
+#include "../../../../zxSpectrum/wasm/v2/common/zx-spectrum-ula.c"
 
 uint32_t sp48ReadPort(uint32_t address);
 uint32_t sp48ReadFloatingBus(void);
@@ -330,10 +330,10 @@ uint32_t sp48ExecuteInstruction(void);
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
 
-#include "sp48-keyboard.c"
-#include "sp48-beeper.c"
-#include "sp48-ports.c"
-#include "sp48-tape.c"
+#include "../../../../zxSpectrum/wasm/v2/common/zx-spectrum-keyboard.c"
+#include "../../../../zxSpectrum/wasm/v2/common/zx-spectrum-beeper.c"
+#include "../../../../zxSpectrum/wasm/v2/common/zx-spectrum-ports.c"
+#include "../../../../zxSpectrum/wasm/v2/common/zx-spectrum-tape.c"
 
 // ----------------------------------------------------------------------------
 // Lifecycle and execution

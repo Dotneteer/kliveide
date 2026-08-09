@@ -44,6 +44,11 @@ describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
     expect(machine.frameJustCompleted).toBe(true);
     expect(machine.getPixelBuffer().length).toBeGreaterThan(256 * 192);
     expect(machine.getAudioSamples().length).toBeGreaterThan(0);
+    expect(
+      machine.getAudioSamples().every(sample =>
+        Math.abs(sample.left) <= 1.0 && Math.abs(sample.right) <= 1.0
+      )
+    ).toBe(true);
 
     const diagnostics = machine.getWasmV2Diagnostics();
     expect(diagnostics.backend).toBe("wasm");

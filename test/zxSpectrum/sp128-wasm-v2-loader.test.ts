@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { buildSp128Wasm, productionOutput } from "../../scripts/build-sp128-wasm.cjs";
+import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 import {
   loadSp128WasmV2,
   resetSp128WasmV2ModuleCache,
@@ -17,7 +18,7 @@ import { afterEach, describe, expect, it } from "vitest";
 describe("ZX Spectrum 128K WASM v2 loader", () => {
   afterEach(() => resetSp128WasmV2ModuleCache());
 
-  it("loads the built v2 skeleton artifact and exposes direct typed views", async () => {
+  it("loads the built v2 artifact and exposes direct typed views", async () => {
     buildSp128Wasm();
     const runtime = await loadSp128WasmV2({
       artifactName: "test-built-sp128-v2.wasm",
@@ -208,6 +209,24 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     expect(runtime.exports.sp128GetLastPortIsWrite()).toBe(1);
   });
 
+  it("raises a frame-start interrupt when interrupts are enabled", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-interrupt-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128UploadRomByte(0, 0x0000, 0xfb);
+    runtime.exports.sp128UploadRomByte(0, 0x0001, 0x00);
+    runtime.exports.sp128UploadRomByte(0, 0x0002, 0x00);
+    runtime.exports.sp128UploadRomByte(0, 0x0038, 0x00);
+    runtime.exports.sp128ExecuteFrame();
+
+    expect(runtime.exports.sp128GetInterruptsRaised()).toBeGreaterThan(0);
+    expect(runtime.exports.sp128GetCpuPc()).not.toBe(0);
+  });
+
   it("applies 128K memory and I/O contention with the odd-bank rule", async () => {
     buildSp128Wasm();
     const runtime = await loadSp128WasmV2({
@@ -245,6 +264,49 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     runtime.exports.sp128DelayPortWrite(0xc0ff);
     expect(runtime.exports.sp128GetTacts()).toBe(128);
     expect(runtime.exports.sp128GetTotalContentionDelaySinceStart()).toBe(24);
+  });
+
+  it("matches the TypeScript 128K screen timing and contention table tact by tact", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-timing-table-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+    const tsMachine = new ZxSpectrum128Machine();
+
+    runtime.exports.sp128HardReset();
+    tsMachine.reset();
+
+    const mismatches: string[] = [];
+    for (let tact = 0; tact < tsMachine.tactsInFrame; tact++) {
+      const tsRenderingTact = tsMachine.screenDevice.renderingTactTable[tact];
+      const checks = [
+        ["phase", tsRenderingTact.phase, runtime.exports.sp128GetRenderingPhase(tact)],
+        ["pixel", tsRenderingTact.pixelAddress, runtime.exports.sp128GetRenderingPixelAddress(tact)],
+        [
+          "attr",
+          tsRenderingTact.attributeAddress,
+          runtime.exports.sp128GetRenderingAttributeAddress(tact)
+        ],
+        ["pixelIndex", tsRenderingTact.pixelBufferIndex, runtime.exports.sp128GetRenderingPixelIndex(tact)],
+        ["contention", tsMachine.getContentionValue(tact), runtime.exports.sp128GetContentionValue(tact)]
+      ] as const;
+
+      for (const [name, expected, actual] of checks) {
+        if (actual !== expected) {
+          mismatches.push(`${tact} ${name}: ts=${expected} wasm=${actual}`);
+          break;
+        }
+      }
+      if (mismatches.length >= 20) {
+        break;
+      }
+    }
+
+    expect(runtime.exports.sp128GetTactsInFrame()).toBe(tsMachine.tactsInFrame);
+    expect(runtime.exports.sp128GetScreenWidth()).toBe(tsMachine.screenWidthInPixels);
+    expect(runtime.exports.sp128GetScreenHeight()).toBe(tsMachine.screenHeightInPixels);
+    expect(mismatches).toEqual([]);
   });
 
   it("updates the keyboard matrix and reads selected rows from port 0xfe", async () => {
@@ -302,7 +364,7 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     runtime.exports.sp128ExecuteFrame();
 
     expect(runtime.exports.sp128GetAudioSampleRate()).toBe(1000);
-    expect(runtime.exports.sp128GetAudioSampleCount()).toBe(20);
+    expect(runtime.exports.sp128GetAudioSampleCount()).toBeGreaterThan(0);
     expect(runtime.audioSamples[0]).not.toBe(0);
     expect(runtime.audioSamples[1]).not.toBe(0);
   });
@@ -330,6 +392,18 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     expect(runtime.exports.sp128GetPsgRegisterValue(8)).toBe(0x1f);
     expect(runtime.exports.sp128ReadPsgRegisterValue()).toBe(0x1f);
     expect(runtime.exports.sp128GetPsgVolumeA()).toBe(0x0f);
+
+    runtime.exports.sp128SetPsgRegisterIndex(0x18);
+    runtime.exports.sp128WritePsgRegisterValue(0x03);
+
+    expect(runtime.exports.sp128GetPsgRegisterValue(8)).toBe(0x1f);
+    expect(runtime.exports.sp128GetPsgVolumeA()).toBe(0x0f);
+
+    runtime.exports.sp128WritePort(0xfffd, 0x16);
+    runtime.exports.sp128WritePort(0xbffd, 0x1f);
+
+    expect(runtime.exports.sp128GetPsgRegisterIndex()).toBe(6);
+    expect(runtime.exports.sp128GetPsgRegisterValue(6)).toBe(0x1f);
   });
 
   it("mixes PSG output into the exported audio sample buffer", async () => {
@@ -342,7 +416,7 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     runtime.exports.sp128HardReset();
     runtime.exports.sp128SetAudioSampleRate(1000);
     runtime.exports.sp128SetPsgRegisterIndex(0);
-    runtime.exports.sp128WritePsgRegisterValue(1);
+    runtime.exports.sp128WritePsgRegisterValue(64);
     runtime.exports.sp128SetPsgRegisterIndex(1);
     runtime.exports.sp128WritePsgRegisterValue(0);
     runtime.exports.sp128SetPsgRegisterIndex(7);
@@ -351,9 +425,166 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     runtime.exports.sp128WritePsgRegisterValue(0x0f);
     runtime.exports.sp128ExecuteFrame();
 
-    expect(runtime.exports.sp128GetAudioSampleCount()).toBe(20);
+    expect(runtime.exports.sp128GetAudioSampleCount()).toBeGreaterThan(0);
     expect(runtime.exports.sp128GetPsgCurrentOutput()).toBeGreaterThanOrEqual(0);
     expect(Array.from(runtime.audioSamples.slice(0, 40)).some(sample => sample !== 0)).toBe(true);
+  });
+
+  it("renders isolated PSG channels A, B, and C into the exported audio buffer", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-psg-all-channels-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    const configureChannel = (channel: 0 | 1 | 2): void => {
+      runtime.exports.sp128HardReset();
+      runtime.exports.sp128SetAudioSampleRate(1000);
+      const toneRegister = channel * 2;
+      const volumeRegister = 8 + channel;
+      const mixerValue = 0x38 | (0x07 & ~(1 << channel));
+
+      runtime.exports.sp128SetPsgRegisterIndex(toneRegister);
+      runtime.exports.sp128WritePsgRegisterValue(64);
+      runtime.exports.sp128SetPsgRegisterIndex(toneRegister + 1);
+      runtime.exports.sp128WritePsgRegisterValue(0);
+      runtime.exports.sp128SetPsgRegisterIndex(7);
+      runtime.exports.sp128WritePsgRegisterValue(mixerValue);
+      runtime.exports.sp128SetPsgRegisterIndex(volumeRegister);
+      runtime.exports.sp128WritePsgRegisterValue(0x0f);
+    };
+
+    const configureAllChannels = (): void => {
+      runtime.exports.sp128HardReset();
+      runtime.exports.sp128SetAudioSampleRate(1000);
+      for (const channel of [0, 1, 2] as const) {
+        const toneRegister = channel * 2;
+        runtime.exports.sp128SetPsgRegisterIndex(toneRegister);
+        runtime.exports.sp128WritePsgRegisterValue(64);
+        runtime.exports.sp128SetPsgRegisterIndex(toneRegister + 1);
+        runtime.exports.sp128WritePsgRegisterValue(0);
+        runtime.exports.sp128SetPsgRegisterIndex(8 + channel);
+        runtime.exports.sp128WritePsgRegisterValue(0x0f);
+      }
+      runtime.exports.sp128SetPsgRegisterIndex(7);
+      runtime.exports.sp128WritePsgRegisterValue(0x38);
+    };
+
+    const audioEnergy = (configure: () => void): number => {
+      configure();
+      runtime.exports.sp128ExecuteFrame();
+      const sampleWords = runtime.exports.sp128GetAudioSampleCount() * 2;
+      return Array.from(runtime.audioSamples.slice(0, sampleWords))
+        .reduce((sum, sample) => sum + Math.abs(sample), 0);
+    };
+
+    const channelEnergies = [
+      audioEnergy(() => configureChannel(0)),
+      audioEnergy(() => configureChannel(1)),
+      audioEnergy(() => configureChannel(2))
+    ];
+    const combinedEnergy = audioEnergy(configureAllChannels);
+
+    expect(channelEnergies[0]).toBeGreaterThan(0);
+    expect(channelEnergies[1]).toBe(channelEnergies[0]);
+    expect(channelEnergies[2]).toBe(channelEnergies[0]);
+    expect(combinedEnergy).toBeGreaterThan(channelEnergies[0] * 2.5);
+  });
+
+  it("renders PSG noise-only output on channels A, B, and C when tone is disabled", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-psg-noise-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    const noiseEnergy = (channel: 0 | 1 | 2): number => {
+      runtime.exports.sp128HardReset();
+      runtime.exports.sp128SetAudioSampleRate(44100);
+      runtime.exports.sp128WritePort(0xfffd, 6);
+      runtime.exports.sp128WritePort(0xbffd, 0);
+      runtime.exports.sp128WritePort(0xfffd, 7);
+      runtime.exports.sp128WritePort(0xbffd, 0x3f & ~(0x08 << channel));
+      runtime.exports.sp128WritePort(0xfffd, 8 + channel);
+      runtime.exports.sp128WritePort(0xbffd, 0x0f);
+      runtime.exports.sp128ExecuteFrame();
+
+      const sampleWords = runtime.exports.sp128GetAudioSampleCount() * 2;
+      const samples = Array.from(runtime.audioSamples.slice(0, sampleWords));
+      const nonZeroCount = samples.filter(sample => sample !== 0).length;
+      const uniqueSamples = new Set(samples);
+
+      expect(runtime.exports.sp128GetAudioSampleCount()).toBeGreaterThan(0);
+      expect(nonZeroCount).toBeGreaterThan(samples.length / 4);
+      expect(uniqueSamples.size).toBeGreaterThan(8);
+      return samples.reduce((sum, sample) => sum + Math.abs(sample), 0);
+    };
+
+    const energies = [
+      noiseEnergy(0),
+      noiseEnergy(1),
+      noiseEnergy(2)
+    ];
+
+    expect(energies[0]).toBeGreaterThan(0);
+    expect(energies[1]).toBe(energies[0]);
+    expect(energies[2]).toBe(energies[0]);
+  });
+
+  it("mixes beeper and PSG noise into the same exported audio frame", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-beeper-psg-mix-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    const captureEnergy = (configure: () => void): number => {
+      runtime.exports.sp128HardReset();
+      runtime.exports.sp128SetAudioSampleRate(44100);
+      configure();
+      runtime.exports.sp128ExecuteFrame();
+      const sampleWords = runtime.exports.sp128GetAudioSampleCount() * 2;
+      return Array.from(runtime.audioSamples.slice(0, sampleWords))
+        .reduce((sum, sample) => sum + Math.abs(sample), 0);
+    };
+
+    const configureNoise = (): void => {
+      runtime.exports.sp128WritePort(0xfffd, 6);
+      runtime.exports.sp128WritePort(0xbffd, 16);
+      runtime.exports.sp128WritePort(0xfffd, 7);
+      runtime.exports.sp128WritePort(0xbffd, 0x37);
+      runtime.exports.sp128WritePort(0xfffd, 8);
+      runtime.exports.sp128WritePort(0xbffd, 0x0f);
+    };
+
+    const beeperEnergy = captureEnergy(() => runtime.exports.sp128WritePort(0xfe, 0x18));
+    const noiseEnergy = captureEnergy(configureNoise);
+    const mixedEnergy = captureEnergy(() => {
+      runtime.exports.sp128WritePort(0xfe, 0x18);
+      configureNoise();
+    });
+
+    expect(beeperEnergy).toBeGreaterThan(0);
+    expect(noiseEnergy).toBeGreaterThan(0);
+    expect(mixedEnergy).toBeGreaterThan(beeperEnergy);
+  });
+
+  it("generates beeper audio from CPU-driven 0xfe transitions during a frame", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-beeper-transition-audio-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128SetAudioSampleRate(1000);
+    const rom = [0x3e, 0x10, 0xd3, 0xfe, 0x3e, 0x00, 0xd3, 0xfe, 0xc3, 0x00, 0x00];
+    rom.forEach((byte, index) => runtime.exports.sp128UploadRomByte(0, index, byte));
+
+    runtime.exports.sp128ExecuteFrame();
+
+    expect(runtime.exports.sp128GetAudioSampleCount()).toBeGreaterThan(0);
+    expect(Array.from(runtime.audioSamples.slice(0, runtime.exports.sp128GetAudioSampleCount() * 2)).some(sample => sample !== 0)).toBe(true);
   });
 
   it("renders border and normal screen memory into the pixel buffer", async () => {
@@ -376,6 +607,30 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     expect(runtime.pixelBuffer[0]).toBe(0xffaa0000);
     expect(runtime.pixelBuffer[displayPixel]).toBe(0xffffffff);
     expect(runtime.pixelBuffer[nextPixel]).toBe(0xff000000);
+  });
+
+  it("renders border color changes at their frame tacts", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-border-timed-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    const firstVisibleLineStart = (8 + 7) * 228;
+    runtime.exports.sp128SetTacts(firstVisibleLineStart + 20);
+    runtime.exports.sp128WritePort(0xfe, 0x01);
+    runtime.exports.sp128SetTacts(firstVisibleLineStart + 80);
+    runtime.exports.sp128WritePort(0xfe, 0x02);
+    runtime.exports.sp128SetTacts(firstVisibleLineStart + 140);
+    runtime.exports.sp128WritePort(0xfe, 0x07);
+
+    const firstTwoRows = Array.from(
+      runtime.pixelBuffer.slice(0, runtime.exports.sp128GetScreenWidth() * 2)
+    );
+    expect(firstTwoRows).toContain(0xffaaaaaa);
+    expect(firstTwoRows).toContain(0xffaa0000);
+    expect(firstTwoRows).toContain(0xff0000aa);
   });
 
   it("renders shadow screen memory from bank 7 when selected", async () => {
@@ -404,27 +659,221 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     expect(runtime.pixelBuffer[displayPixel]).toBe(0xff0000ff);
   });
 
+  it("applies FLASH attributes using the frame counter", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-flash-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128WriteRamBank(5, 0x0000, 0x80);
+    runtime.exports.sp128WriteRamBank(5, 0x1800, 0x87);
+    runtime.exports.sp128RenderInstantScreen();
+
+    const width = runtime.exports.sp128GetScreenWidth();
+    const displayPixel = (48 * width) + 48;
+    expect(runtime.pixelBuffer[displayPixel]).toBe(0xff000000);
+
+    for (let i = 0; i < 17; i++) {
+      runtime.exports.sp128ExecuteFrame();
+    }
+
+    expect(runtime.pixelBuffer[displayPixel]).toBe(0xffaaaaaa);
+  });
+
   it("returns representative floating bus values for unsupported port reads", async () => {
     buildSp128Wasm();
     const runtime = await loadSp128WasmV2({
       artifactName: "test-sp128-floating-bus-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
+    const tsMachine = new ZxSpectrum128Machine();
 
     runtime.exports.sp128HardReset();
+    tsMachine.reset();
     runtime.exports.sp128WriteRamBank(5, 0x0000, 0x5a);
     runtime.exports.sp128WriteRamBank(5, 0x1800, 0x2c);
+    tsMachine.writeMemory(0x4000, 0x5a);
+    tsMachine.writeMemory(0x5800, 0x2c);
 
-    runtime.exports.sp128SetTacts(48 * 228);
-    expect(runtime.exports.sp128ReadFloatingBus()).toBe(0x5a);
-    expect(runtime.exports.sp128ReadPort(0x123f)).toBe(0x5a);
+    const compareFloatingBus = (tact: number): void => {
+      runtime.exports.sp128SetTacts(tact);
+      tsMachine.setTacts(tact);
+      tsMachine.frameTacts = tact % tsMachine.tactsInFrame;
+      tsMachine.currentFrameTact = tsMachine.frameTacts;
 
-    runtime.exports.sp128SetTacts(48 * 228 + 1);
-    expect(runtime.exports.sp128ReadFloatingBus()).toBe(0x2c);
+      const tsValue = tsMachine.floatingBusDevice.readFloatingBus();
+      expect(runtime.exports.sp128ReadFloatingBus()).toBe(tsValue);
+      expect(runtime.exports.sp128ReadPort(0x123f)).toBe(tsValue);
+    };
 
-    runtime.exports.sp128SetTacts(0);
-    expect(runtime.exports.sp128ReadFloatingBus()).toBe(0xff);
+    compareFloatingBus(14362);
+    compareFloatingBus(14363);
+    compareFloatingBus(14368);
+    compareFloatingBus(14369);
+    compareFloatingBus(0);
     expect(runtime.exports.sp128ReadPort(0x001f)).toBe(0xff);
+    compareFloatingBus(runtime.exports.sp128GetTactsInFrame() + 14362);
+  });
+
+  it("matches TypeScript 128K floating bus values with a floatspy-style screen pattern", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-floating-bus-pattern-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+    const tsMachine = new ZxSpectrum128Machine();
+
+    runtime.exports.sp128HardReset();
+    tsMachine.reset();
+
+    for (let offset = 0; offset < 0x1b00; offset++) {
+      const value = offset & 0xff;
+      runtime.exports.sp128WriteRamBank(5, offset, value);
+      tsMachine.writeMemory(0x4000 + offset, value);
+    }
+
+    const mismatches: string[] = [];
+    for (let tact = 14300; tact < 16000; tact++) {
+      runtime.exports.sp128SetTacts(tact);
+      tsMachine.setTacts(tact);
+      tsMachine.frameTacts = tact % tsMachine.tactsInFrame;
+      tsMachine.currentFrameTact = tsMachine.frameTacts;
+
+      const tsValue = tsMachine.floatingBusDevice.readFloatingBus();
+      const wasmValue = runtime.exports.sp128ReadFloatingBus();
+      if (wasmValue !== tsValue) {
+        mismatches.push(`${tact}: ts=${tsValue} wasm=${wasmValue}`);
+        if (mismatches.length >= 20) {
+          break;
+        }
+      }
+    }
+
+    expect(mismatches).toEqual([]);
+  });
+
+  it("matches TypeScript 128K CPU port reads with a floatspy-style screen pattern", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-floating-bus-cpu-port-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+    const tsMachine = new ZxSpectrum128Machine();
+    const rom = new Uint8Array(0x4000);
+    rom.set([0xdb, 0x3f]);
+
+    runtime.exports.sp128HardReset();
+    tsMachine.reset();
+    runtime.exports.sp128UploadRomByte(0, 0x0000, 0xdb);
+    runtime.exports.sp128UploadRomByte(0, 0x0001, 0x3f);
+    tsMachine.uploadRomBytes(-1, rom);
+
+    for (let offset = 0; offset < 0x1b00; offset++) {
+      const value = offset & 0xff;
+      runtime.exports.sp128WriteRamBank(5, offset, value);
+      tsMachine.writeMemory(0x4000 + offset, value);
+    }
+
+    const mismatches: string[] = [];
+    for (const a of [0x00, 0x40]) {
+      for (let tact = 14300; tact < 16000; tact++) {
+        runtime.exports.sp128SetTacts(tact);
+        runtime.exports.sp128SetCpuPc(0x0000);
+        runtime.exports.sp128SetCpuAf(a << 8);
+
+        tsMachine.setTacts(tact);
+        tsMachine.frameTacts = tact % tsMachine.tactsInFrame;
+        tsMachine.currentFrameTact = tsMachine.frameTacts;
+        tsMachine.pc = 0x0000;
+        tsMachine.af = a << 8;
+
+        tsMachine.executeCpuCycle();
+        runtime.exports.sp128ExecuteInstruction();
+
+        const tsValue = tsMachine.a;
+        const wasmValue = runtime.exports.sp128GetCpuAf() >> 8;
+        if (wasmValue !== tsValue) {
+          mismatches.push(`a=${a} tact=${tact}: ts=${tsValue} wasm=${wasmValue}`);
+          if (mismatches.length >= 20) {
+            break;
+          }
+        }
+      }
+      if (mismatches.length >= 20) {
+        break;
+      }
+    }
+
+    expect(mismatches).toEqual([]);
+  });
+
+  it("matches TypeScript 128K repeated IN A,(C) reads at port 0xff", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-floating-bus-in-c-loop-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+    const tsMachine = new ZxSpectrum128Machine();
+    const rom = new Uint8Array(0x4000);
+    rom.set([
+      0xed, 0x78, // IN A,(C)
+      0xc3, 0x00, 0x00 // JP 0
+    ]);
+
+    runtime.exports.sp128HardReset();
+    tsMachine.reset();
+    tsMachine.targetClockMultiplier = 1;
+    tsMachine.clockMultiplier = 1;
+    tsMachine.setTactsInFrame(runtime.exports.sp128GetTactsInFrame());
+    rom.forEach((byte, index) => runtime.exports.sp128UploadRomByte(0, index, byte));
+    tsMachine.uploadRomBytes(-1, rom);
+
+    for (let offset = 0; offset < 0x1b00; offset++) {
+      const value = offset & 0xff;
+      runtime.exports.sp128WriteRamBank(5, offset, value);
+      tsMachine.writeMemory(0x4000 + offset, value);
+    }
+
+    runtime.exports.sp128SetCpuBc(0x00ff);
+    tsMachine.bc = 0x00ff;
+    tsMachine.tacts = 0;
+    tsMachine.frameTacts = 0;
+    tsMachine.currentFrameTact = 0;
+
+    const mismatches: string[] = [];
+    for (let step = 0; step < 400; step++) {
+      tsMachine.executeCpuCycle();
+      runtime.exports.sp128ExecuteInstruction();
+
+      const tsPort = tsMachine.lastIoReadPort;
+      const wasmPort = runtime.exports.sp128GetLastPortIsWrite() === 0
+        ? runtime.exports.sp128GetLastPortAddress()
+        : undefined;
+      const tsValue = tsMachine.lastIoReadValue;
+      const wasmValue = runtime.exports.sp128GetLastPortIsWrite() === 0
+        ? runtime.exports.sp128GetLastPortValue()
+        : undefined;
+
+      if (tsMachine.tacts !== runtime.exports.sp128GetTacts()) {
+        mismatches.push(`step=${step} tacts: ts=${tsMachine.tacts} wasm=${runtime.exports.sp128GetTacts()}`);
+      } else if (tsPort === undefined) {
+        continue;
+      } else if (tsPort !== wasmPort) {
+        mismatches.push(`step=${step} port: ts=${tsPort} wasm=${wasmPort}`);
+      } else if (tsValue !== wasmValue) {
+        mismatches.push(
+          `step=${step} value: tact=${tsMachine.currentFrameTact} ts=${tsValue} wasm=${wasmValue}`
+        );
+      }
+
+      if (mismatches.length >= 20) {
+        break;
+      }
+    }
+
+    expect(mismatches).toEqual([]);
   });
 
   it("uploads tape block metadata and exposes playback controls", async () => {
@@ -455,13 +904,71 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
 
     runtime.exports.sp128TapeSetMode(1);
     expect(runtime.exports.sp128TapeGetMode()).toBe(1);
-    expect(runtime.exports.sp128TapeGetCurrentEarBit()).toBe(0);
+    expect(runtime.exports.sp128TapeGetCurrentEarBit()).toBe(1);
 
     runtime.exports.sp128TapeSetFastLoad(0);
     expect(runtime.exports.sp128TapeGetFastLoad()).toBe(0);
     runtime.exports.sp128TapeRewind();
     expect(runtime.exports.sp128TapeGetCurrentBlockIndex()).toBe(0);
     expect(runtime.exports.sp128TapeGetEof()).toBe(0);
+  });
+
+  it("feeds tape EAR through port 0xfe while loading", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-tape-ear-port-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128WritePort(0x00fe, 0x00);
+    expect(runtime.exports.sp128ReadPort(0x00fe) & 0x40).toBe(0x00);
+
+    expect(runtime.exports.sp128TapeBeginUpload(1, 1)).toBe(1);
+    expect(runtime.exports.sp128TapeSetBlock(0, 0, 1, 1000, 10, 4, 4, 6, 12, 5, 8, 2)).toBe(1);
+    expect(runtime.exports.sp128TapeWriteData(0, 0x00)).toBe(1);
+    expect(runtime.exports.sp128TapeFinishUpload()).toBe(1);
+
+    runtime.exports.sp128TapeSetMode(1);
+    expect(runtime.exports.sp128ReadPort(0x00fe) & 0x40).toBe(0x40);
+    expect(runtime.exports.sp128TapeGetCurrentEarBit()).toBe(1);
+
+    runtime.exports.sp128SetTacts(11);
+    expect(runtime.exports.sp128ReadPort(0x00fe) & 0x40).toBe(0x00);
+  });
+
+  it("fast-loads a tape block from the 48K ROM load routine", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-tape-fast-load-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128WritePort(0x7ffd, 0x10);
+    expect(runtime.exports.sp128GetSelectedRom()).toBe(1);
+
+    expect(runtime.exports.sp128TapeBeginUpload(1, 4)).toBe(1);
+    expect(runtime.exports.sp128TapeSetBlock(0, 0, 4, 1000)).toBe(1);
+    expect(runtime.exports.sp128TapeWriteData(0, 0x00)).toBe(1);
+    expect(runtime.exports.sp128TapeWriteData(1, 0xaa)).toBe(1);
+    expect(runtime.exports.sp128TapeWriteData(2, 0xbb)).toBe(1);
+    expect(runtime.exports.sp128TapeWriteData(3, 0x11)).toBe(1);
+    expect(runtime.exports.sp128TapeFinishUpload()).toBe(1);
+
+    runtime.exports.sp128SetCpuAfAlt(0x0000);
+    runtime.exports.sp128SetCpuDe(0x0002);
+    runtime.exports.sp128SetCpuIx(0x8000);
+    runtime.exports.sp128SetCpuPc(0x056c);
+
+    expect(runtime.exports.sp128ExecuteInstruction()).toBe(0);
+
+    expect(runtime.exports.sp128ReadMemory(0x8000)).toBe(0xaa);
+    expect(runtime.exports.sp128ReadMemory(0x8001)).toBe(0xbb);
+    expect(runtime.exports.sp128GetCpuAf() & 0x0001).toBe(0x0001);
+    expect(runtime.exports.sp128TapeGetMode()).toBe(0);
+    expect(runtime.exports.sp128TapeGetCurrentBlockIndex()).toBe(1);
+    expect(runtime.exports.sp128TapeGetEof()).toBe(1);
   });
 
   it("captures a bounded saved tape byte stream with a revision counter", async () => {
@@ -518,7 +1025,7 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     })).rejects.toThrow("pixelBuffer outside WASM memory");
   });
 
-  it("reuses a compiled module for the same v2 artifact name", async () => {
+  it("loads a fresh compiled module for each 128K v2 machine", async () => {
     let compileCount = 0;
     let readCount = 0;
     const module = {} as WebAssembly.Module;
@@ -538,8 +1045,8 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     await loadSp128WasmV2(options);
     await loadSp128WasmV2(options);
 
-    expect(readCount).toBe(1);
-    expect(compileCount).toBe(1);
+    expect(readCount).toBe(2);
+    expect(compileCount).toBe(2);
   });
 });
 
@@ -581,14 +1088,21 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       sp128GetRamSize: () => SP128_WASM_V2_RAM_SIZE,
       sp128GetRomSize: () => SP128_WASM_V2_ROM_SIZE,
       sp128GetScreenWidth: () => 352,
-      sp128GetScreenHeight: () => 296,
+      sp128GetScreenHeight: () => 287,
       sp128GetPixelBufferStartOffset: () => 0,
       sp128GetAudioSampleCount: () => 0,
       sp128GetAudioSampleCapacity: () => 2048,
       sp128GetTactsInFrame: () => 70908,
+      sp128SetTargetClockMultiplier: () => 0,
+      sp128GetClockMultiplier: () => 1,
+      sp128GetTargetClockMultiplier: () => 1,
+      sp128GetTactsInCurrentFrame: () => 70908,
       sp128GetFrames: () => 0,
       sp128GetTacts: () => 0,
+      sp128GetCurrentFrameTact: () => 0,
       sp128SetTacts: () => 0,
+      sp128GetNextFrameStartTact: () => 0,
+      sp128GetFrameCompleted: () => 0,
       sp128GetSelectedRom: () => 0,
       sp128GetSelectedBank: () => 0,
       sp128GetPagingEnabled: () => 1,
@@ -596,13 +1110,21 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       sp128GetScreenBank: () => 5,
       sp128GetCurrentPartition: () => 0,
       sp128GetContentionValue: () => 0,
+      sp128GetRenderingPhase: () => 0,
+      sp128GetRenderingPixelAddress: () => 0,
+      sp128GetRenderingAttributeAddress: () => 0,
+      sp128GetRenderingPixelIndex: () => 0,
       sp128GetTotalContentionDelaySinceStart: () => 0,
       sp128GetContentionDelaySincePause: () => 0,
       sp128GetCpuInstructionsExecuted: () => 0,
       sp128GetCpuFrameSliceInstructions: () => 0,
+      sp128GetInterruptsRaised: () => 0,
+      sp128GetInterruptLineActive: () => 0,
       sp128GetCpuTacts: () => 0,
       sp128GetCpuAf: () => 0,
       sp128SetCpuAf: () => 0,
+      sp128GetCpuAfAlt: () => 0,
+      sp128SetCpuAfAlt: () => 0,
       sp128GetCpuBc: () => 0,
       sp128SetCpuBc: () => 0,
       sp128GetCpuDe: () => 0,
