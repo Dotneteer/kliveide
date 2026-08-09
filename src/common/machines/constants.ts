@@ -22,6 +22,7 @@ export const MC_Z88_SLOT3 = "slot3";
 export const MC_Z88_KEYBOARD = "keyboard";
 export const MC_SP48_ROM_FILE = "sp48RomFile";
 export const MC_SP48_IMPLEMENTATION = "sp48Implementation";
+export const MC_SP128_IMPLEMENTATION = "sp128Implementation";
 
 // Available machine config keys
 export const MF_TAPE_SUPPORT = "tapeSupport";

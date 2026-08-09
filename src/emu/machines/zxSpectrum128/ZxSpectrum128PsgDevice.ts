@@ -8,6 +8,7 @@ import { PsgChip } from "./PsgChip";
 
 // ---The number of ULA tacts that represent a single PSG clock tick
 const PSG_CLOCK_STEP = 16;
+const PSG_128_ROUTE_GAIN = 0.25;
 
 export class ZxSpectrum128PsgDevice
   extends AudioDeviceBase<IZxSpectrumMachine>
@@ -85,12 +86,11 @@ export class ZxSpectrum128PsgDevice
    * Gets the current sound sample (according to the current CPU tact)
    */
   getCurrentSampleValue (): AudioSample {
-    let value =
+    const value =
       this._psg.orphanSamples > 0
-        ? this._psg.orphanSum / this._psg.orphanSamples / 65535 / 3
+        ? (this._psg.orphanAudioSum / this._psg.orphanSamples) * PSG_128_ROUTE_GAIN
         : 0.0;
-    this._psg.orphanSum = 0;
-    this._psg.orphanSamples = 0;
+    this._psg.clearOrphanSamples();
     return { left: value, right: value };
   }
 

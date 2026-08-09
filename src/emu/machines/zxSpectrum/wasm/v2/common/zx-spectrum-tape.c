@@ -504,8 +504,9 @@ uint32_t sp48TapeGetFastLoad(void) {
 }
 
 static void updateTapeMode(void) {
+  const uint32_t pc = z80GetPc();
   if (sp48TapeMode == SP48_TAPE_MODE_PASSIVE) {
-    if (z80GetPc() == SP48_TAPE_LOAD_BYTES_ROUTINE) {
+    if (pc == SP48_TAPE_LOAD_BYTES_ROUTINE) {
       setTapeModeInternal(SP48_TAPE_MODE_LOAD);
       sp48TapeLoadStartCount++;
       nextTapeBlock();
@@ -513,7 +514,7 @@ static void updateTapeMode(void) {
         fastLoadCurrentTapeBlock();
         setTapeModeInternal(SP48_TAPE_MODE_PASSIVE);
       }
-    } else if (z80GetPc() == SP48_TAPE_SAVE_BYTES_ROUTINE) {
+    } else if (pc == SP48_TAPE_SAVE_BYTES_ROUTINE) {
       setTapeModeInternal(SP48_TAPE_MODE_SAVE);
       sp48TapeSaveStartCount++;
       beginTapeSaveCapture();
@@ -523,14 +524,14 @@ static void updateTapeMode(void) {
 
   if (sp48TapeMode == SP48_TAPE_MODE_LOAD) {
     (void)sp48TapeGetEarBitInternal();
-    if (sp48TapeEof != 0u || z80GetPc() == 0x0008u) {
+    if (sp48TapeEof != 0u || pc == 0x0008u) {
       setTapeModeInternal(SP48_TAPE_MODE_PASSIVE);
     }
     return;
   }
 
   if (sp48TapeMode == SP48_TAPE_MODE_SAVE) {
-    if (z80GetPc() == 0x0008u ||
+    if (pc == 0x0008u ||
         sp48Tacts - sp48TapeSaveLastMicBitTact > SP48_TAPE_TOO_LONG_SAVE_PAUSE) {
       setTapeModeInternal(SP48_TAPE_MODE_PASSIVE);
     }

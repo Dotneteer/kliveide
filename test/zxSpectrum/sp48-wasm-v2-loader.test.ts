@@ -40,10 +40,16 @@ describe("ZX Spectrum 48K WASM v2 loader", () => {
     expect(runtime.memory[0]).toBe(0x00);
 
     runtime.exports.sp48SetKeyStatus(0, 1);
+    runtime.exports.sp48SetKeyStatus(6, 1);
     expect(runtime.keyboardLines[0]).toBe(0x01);
+    expect(runtime.keyboardLines[1]).toBe(0x02);
     expect(runtime.exports.sp48GetKeyboardLine(0)).toBe(0x01);
+    expect(runtime.exports.sp48GetKeyboardLine(1)).toBe(0x02);
+    expect(runtime.exports.sp48ReadPort(0xfefe)).toBe(0xbe);
+    expect(runtime.exports.sp48ReadPort(0xfdfe)).toBe(0xbd);
     runtime.exports.sp48SetKeyStatus(0, 0);
     expect(runtime.keyboardLines[0]).toBe(0x00);
+    expect(runtime.exports.sp48ReadPort(0xfefe)).toBe(0xbf);
 
     expect(runtime.exports.sp48ExecuteFrame()).toBe(0);
     expect(runtime.exports.sp48GetFrames()).toBe(1);
@@ -55,6 +61,45 @@ describe("ZX Spectrum 48K WASM v2 loader", () => {
     expect(runtime.pixelBuffer).toHaveLength(pixelWords);
     expect(runtime.pixelBufferBytes).toHaveLength(pixelWords * 4);
     expect(runtime.audioSamples).toHaveLength(runtime.exports.sp48GetAudioSampleCapacity() * 2);
+  });
+
+  it("suppresses last bus event capture during normal frame execution", async () => {
+    buildSp48Wasm();
+    const runtime = await loadSp48WasmV2({
+      artifactName: "test-sp48-normal-frame-bus-events-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp48HardReset(0, 0);
+    runtime.exports.sp48UploadRomByte(0x0000, 0x3e);
+    runtime.exports.sp48UploadRomByte(0x0001, 0x47);
+    runtime.exports.sp48UploadRomByte(0x0002, 0xd3);
+    runtime.exports.sp48UploadRomByte(0x0003, 0xfe);
+
+    expect(runtime.exports.sp48ExecuteFrame()).toBe(0);
+
+    expect(runtime.exports.sp48GetLastMemoryAddress()).toBe(0);
+    expect(runtime.exports.sp48GetLastMemoryValue()).toBe(0);
+    expect(runtime.exports.sp48GetLastMemoryIsWrite()).toBe(0);
+    expect(runtime.exports.sp48GetLastPortAddress()).toBe(0);
+    expect(runtime.exports.sp48GetLastPortValue()).toBe(0);
+    expect(runtime.exports.sp48GetLastPortIsWrite()).toBe(0);
+
+    runtime.exports.sp48HardReset(0, 0);
+    runtime.exports.sp48UploadRomByte(0x0000, 0x3e);
+    runtime.exports.sp48UploadRomByte(0x0001, 0x47);
+    runtime.exports.sp48UploadRomByte(0x0002, 0xd3);
+    runtime.exports.sp48UploadRomByte(0x0003, 0xfe);
+
+    expect(runtime.exports.sp48ExecuteInstruction()).toBe(0);
+    expect(runtime.exports.sp48GetLastMemoryAddress()).toBe(1);
+    expect(runtime.exports.sp48GetLastMemoryValue()).toBe(0x47);
+    expect(runtime.exports.sp48GetLastMemoryIsWrite()).toBe(0);
+
+    expect(runtime.exports.sp48ExecuteInstruction()).toBe(0);
+    expect(runtime.exports.sp48GetLastPortAddress()).toBe(0x47fe);
+    expect(runtime.exports.sp48GetLastPortValue()).toBe(0x47);
+    expect(runtime.exports.sp48GetLastPortIsWrite()).toBe(1);
   });
 
   it("uses the v2 artifact name by default", async () => {

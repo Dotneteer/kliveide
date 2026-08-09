@@ -21,6 +21,10 @@
 #define PREFIX_DDCB 5
 #define PREFIX_FDCB 6
 
+#ifndef Z80_CAPTURE_BUS_EVENTS
+#define Z80_CAPTURE_BUS_EVENTS() 1
+#endif
+
 // -----------------------------------------------------------------------------
 // Types
 // -----------------------------------------------------------------------------
@@ -84,6 +88,9 @@ typedef struct Z80State {
 // -----------------------------------------------------------------------------
 
 static Z80State cpu;
+static uint8_t z80Sz53Flags[256];
+static uint8_t z80Sz53PvFlags[256];
+static uint8_t z80FlagTablesInitialized;
 #ifndef Z80_EXTERNAL_BUS
 static uint8_t memory[0x10000];
 #endif
@@ -238,16 +245,20 @@ static inline uint8_t readPort(uint16_t address) {
   delayPortRead(address);
 #ifdef Z80_READ_PORT
   uint8_t value = Z80_READ_PORT(address);
-  cpu.lastPortAddress = address;
-  cpu.lastPortValue = value;
-  cpu.lastPortIsWrite = 0;
-  cpu.hasPortEvent = 1;
+  if (Z80_CAPTURE_BUS_EVENTS()) {
+    cpu.lastPortAddress = address;
+    cpu.lastPortValue = value;
+    cpu.lastPortIsWrite = 0;
+    cpu.hasPortEvent = 1;
+  }
   return value;
 #else
-  cpu.lastPortAddress = address;
-  cpu.lastPortValue = cpu.portReadValue;
-  cpu.lastPortIsWrite = 0;
-  cpu.hasPortEvent = 1;
+  if (Z80_CAPTURE_BUS_EVENTS()) {
+    cpu.lastPortAddress = address;
+    cpu.lastPortValue = cpu.portReadValue;
+    cpu.lastPortIsWrite = 0;
+    cpu.hasPortEvent = 1;
+  }
   return cpu.portReadValue;
 #endif
 }
@@ -257,10 +268,12 @@ static inline void writePort(uint16_t address, uint8_t value) {
 #ifdef Z80_WRITE_PORT
   Z80_WRITE_PORT(address, value);
 #endif
-  cpu.lastPortAddress = address;
-  cpu.lastPortValue = value;
-  cpu.lastPortIsWrite = 1;
-  cpu.hasPortEvent = 1;
+  if (Z80_CAPTURE_BUS_EVENTS()) {
+    cpu.lastPortAddress = address;
+    cpu.lastPortValue = value;
+    cpu.lastPortIsWrite = 1;
+    cpu.hasPortEvent = 1;
+  }
 }
 
 static inline void tbBlueOut(uint8_t address, uint8_t value) {
@@ -291,17 +304,28 @@ static inline uint8_t parityFlag(uint8_t value) {
   return ((0x6996 >> value) & 1) ? 0 : FLAG_PV;
 }
 
+static void initializeFlagTables(void) {
+  if (z80FlagTablesInitialized != 0) {
+    return;
+  }
+
+  for (uint32_t value = 0; value < 256u; value++) {
+    uint8_t flags = (uint8_t)value & (FLAG_S | FLAG_R5 | FLAG_R3);
+    if (value == 0u) {
+      flags |= FLAG_Z;
+    }
+    z80Sz53Flags[value] = flags;
+    z80Sz53PvFlags[value] = flags | parityFlag((uint8_t)value);
+  }
+  z80FlagTablesInitialized = 1;
+}
+
 static inline uint8_t sz53PvFlags(uint8_t value) {
-  uint8_t flags = value & (FLAG_S | FLAG_R5 | FLAG_R3);
-  if (value == 0) flags |= FLAG_Z;
-  flags |= parityFlag(value);
-  return flags;
+  return z80Sz53PvFlags[value];
 }
 
 static inline uint8_t sz53Flags(uint8_t value) {
-  uint8_t flags = value & (FLAG_S | FLAG_R5 | FLAG_R3);
-  if (value == 0) flags |= FLAG_Z;
-  return flags;
+  return z80Sz53Flags[value];
 }
 
 static inline uint8_t inc8(uint8_t value) {
@@ -643,6 +667,7 @@ static inline void processInt(void) {
 // -----------------------------------------------------------------------------
 
 void z80Reset(void) {
+  initializeFlagTables();
   AF = 0xffff;
   BC = 0x0000;
   DE = 0x0000;

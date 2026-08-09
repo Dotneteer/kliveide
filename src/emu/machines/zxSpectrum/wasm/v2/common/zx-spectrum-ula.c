@@ -52,16 +52,30 @@ static inline uint8_t flashFlag(void) {
   return ((sp48Frames / 16u) & 0x01u) == 0u ? 1u : 0u;
 }
 
-static inline uint32_t getUlaPixelColor(uint8_t pixelSet, uint8_t attr) {
-  uint8_t bright = (attr & 0x40u) >> 3u;
-  uint8_t ink = (uint8_t)((attr & 0x07u) | bright);
-  uint8_t paper = (uint8_t)(((attr >> 3u) & 0x07u) | bright);
-  if ((attr & 0x80u) != 0u && flashFlag() != 0u) {
-    uint8_t temp = ink;
-    ink = paper;
-    paper = temp;
+static void initializeAttrColorTables(void) {
+  if (sp48AttrColorsInitialized != 0u) {
+    return;
   }
-  return sp48SpectrumColors[pixelSet != 0u ? ink : paper];
+
+  for (uint32_t flash = 0u; flash < 2u; flash++) {
+    for (uint32_t attr = 0u; attr < 256u; attr++) {
+      const uint8_t bright = (uint8_t)((attr & 0x40u) >> 3u);
+      uint8_t ink = (uint8_t)((attr & 0x07u) | bright);
+      uint8_t paper = (uint8_t)(((attr >> 3u) & 0x07u) | bright);
+      if ((attr & 0x80u) != 0u && flash != 0u) {
+        const uint8_t temp = ink;
+        ink = paper;
+        paper = temp;
+      }
+      sp48AttrColors[flash][attr][0] = sp48SpectrumColors[paper];
+      sp48AttrColors[flash][attr][1] = sp48SpectrumColors[ink];
+    }
+  }
+  sp48AttrColorsInitialized = 1u;
+}
+
+static inline uint32_t getUlaPixelColor(uint8_t pixelSet, uint8_t attr) {
+  return sp48AttrColors[flashFlag()][attr][pixelSet != 0u ? 1u : 0u];
 }
 
 static inline uint32_t currentFrameTact(void) {
@@ -72,7 +86,7 @@ static inline uint32_t currentFrameTact(void) {
   const uint32_t elapsedTacts =
     sp48Tacts >= sp48NextFrameStartTact ? sp48Tacts - sp48NextFrameStartTact : 0u;
   const uint32_t multiplier = sp48ClockMultiplier == 0u ? 1u : sp48ClockMultiplier;
-  uint32_t tact = elapsedTacts / multiplier;
+  uint32_t tact = multiplier == 1u ? elapsedTacts : elapsedTacts / multiplier;
   if (tact >= sp48TactsInFrame) {
     tact = sp48TactsInFrame - 1u;
   }
@@ -125,6 +139,7 @@ static void setRenderingTact(
 }
 
 static void initializeTimingTables(const Sp48ScreenConfig *config) {
+  initializeAttrColorTables();
   clearTimingTables();
 
   sp48FirstDisplayLine =
@@ -292,8 +307,9 @@ static inline void renderByte1PixelsAt(uint32_t index) {
   if (index + 1u >= pixelBufferWordCount()) {
     return;
   }
-  sp48PixelBuffer[index] = getUlaPixelColor(sp48PixelByte1 & 0x80u, sp48AttrByte1);
-  sp48PixelBuffer[index + 1u] = getUlaPixelColor(sp48PixelByte1 & 0x40u, sp48AttrByte1);
+  const uint32_t (*attrColors)[2] = sp48AttrColors[flashFlag()];
+  sp48PixelBuffer[index] = attrColors[sp48AttrByte1][(sp48PixelByte1 & 0x80u) != 0u ? 1u : 0u];
+  sp48PixelBuffer[index + 1u] = attrColors[sp48AttrByte1][(sp48PixelByte1 & 0x40u) != 0u ? 1u : 0u];
   sp48PixelByte1 = (uint8_t)(sp48PixelByte1 << 2u);
 }
 
@@ -301,8 +317,9 @@ static inline void renderByte2PixelsAt(uint32_t index) {
   if (index + 1u >= pixelBufferWordCount()) {
     return;
   }
-  sp48PixelBuffer[index] = getUlaPixelColor(sp48PixelByte2 & 0x80u, sp48AttrByte2);
-  sp48PixelBuffer[index + 1u] = getUlaPixelColor(sp48PixelByte2 & 0x40u, sp48AttrByte2);
+  const uint32_t (*attrColors)[2] = sp48AttrColors[flashFlag()];
+  sp48PixelBuffer[index] = attrColors[sp48AttrByte2][(sp48PixelByte2 & 0x80u) != 0u ? 1u : 0u];
+  sp48PixelBuffer[index + 1u] = attrColors[sp48AttrByte2][(sp48PixelByte2 & 0x40u) != 0u ? 1u : 0u];
   sp48PixelByte2 = (uint8_t)(sp48PixelByte2 << 2u);
 }
 

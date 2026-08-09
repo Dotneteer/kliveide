@@ -1,837 +1,613 @@
 import type { PsgChipState } from "@emu/abstractions/PsgChipState";
 
+type ChipType = "AY" | "YM";
+
+type ToneState = {
+  period: number;
+  volume: number;
+  count: number;
+  dutyCycle: number;
+  output: number;
+};
+
+type EnvelopeState = {
+  period: number;
+  count: number;
+  step: number;
+  volume: number;
+  hold: number;
+  alternate: number;
+  attack: number;
+  holding: number;
+};
+
+type AyYmParam = {
+  rUp: number;
+  rDown: number;
+  resistors: readonly number[];
+};
+
+const AY_AFINE = 0x00;
+const AY_ACOARSE = 0x01;
+const AY_BFINE = 0x02;
+const AY_BCOARSE = 0x03;
+const AY_CFINE = 0x04;
+const AY_CCOARSE = 0x05;
+const AY_NOISEPER = 0x06;
+const AY_ENABLE = 0x07;
+const AY_AVOL = 0x08;
+const AY_BVOL = 0x09;
+const AY_CVOL = 0x0a;
+const AY_EAFINE = 0x0b;
+const AY_EACOARSE = 0x0c;
+const AY_EASHAPE = 0x0d;
+
+const AY_READ_MASKS: readonly number[] = [
+  0xff, 0x0f, 0xff, 0x0f, 0xff, 0x0f, 0x1f, 0xff,
+  0x1f, 0x1f, 0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff
+];
+
+const AY_DIAGNOSTIC_VOLUME_TABLE: readonly number[] = [
+  0, 771, 1028, 1542, 2570, 3855, 5397, 8738,
+  10280, 16705, 23387, 29298, 37008, 46517, 55255, 65535
+];
+
+const YM_DIAGNOSTIC_VOLUME_TABLE: readonly number[] = [
+  0, 257, 257, 514, 514, 771, 771, 1028,
+  1542, 1799, 2313, 2570, 3084, 3598, 4369, 4883,
+  5911, 6939, 8224, 9509, 11308, 13621, 15934, 18247,
+  21588, 26214, 30583, 34952, 41377, 49344, 57568, 65535
+];
+
+const AY_PARAM: AyYmParam = {
+  rUp: 800000,
+  rDown: 8000000,
+  resistors: [
+    15950, 15350, 15090, 14760, 14275, 13620, 12890, 11370,
+    10600, 8590, 7190, 5985, 4820, 3945, 3017, 2345
+  ]
+};
+
+const YM_PARAM: AyYmParam = {
+  rUp: 630,
+  rDown: 801,
+  resistors: [
+    73770, 37586, 27458, 21451, 15864, 12371, 8922, 6796,
+    4763, 3521, 2403, 1737, 1123, 762, 438, 251
+  ]
+};
+
+const YM_ENV_PARAM: AyYmParam = {
+  rUp: 630,
+  rDown: 801,
+  resistors: [
+    103350, 73770, 52657, 37586, 32125, 27458, 24269, 21451,
+    18447, 15864, 14009, 12371, 10506, 8922, 7787, 6796,
+    5689, 4763, 4095, 3521, 2909, 2403, 2043, 1737,
+    1397, 1123, 925, 762, 578, 438, 332, 251
+  ]
+};
+
+function buildSingleTable(param: AyYmParam, zeroIsOff: boolean): number[] {
+  const temp: number[] = [];
+  let min = 10.0;
+  let max = 0.0;
+
+  for (let i = 0; i < param.resistors.length; i++) {
+    let rt = 1.0 / param.rDown + 1.0 / 1000.0;
+    let rw = 1.0 / param.resistors[i];
+    rt += 1.0 / param.resistors[i];
+
+    if (!(zeroIsOff && i === 0)) {
+      rw += 1.0 / param.rUp;
+      rt += 1.0 / param.rUp;
+    }
+
+    temp[i] = rw / rt;
+    min = Math.min(min, temp[i]);
+    max = Math.max(max, temp[i]);
+  }
+
+  return temp.map(value => (((value - min) / (max - min)) - 0.25) * 0.5);
+}
+
+function resetTone(): ToneState {
+  return { period: 0, volume: 0, count: 0, dutyCycle: 0, output: 0 };
+}
+
+function resetEnvelope(): EnvelopeState {
+  return {
+    period: 0,
+    count: 0,
+    step: 0,
+    volume: 0,
+    hold: 0,
+    alternate: 0,
+    attack: 0,
+    holding: 0
+  };
+}
+
 /**
- * PSG Chip (AY-3-8912) - Programmable Sound Generator
+ * MAME-shaped AY-3-8910/YM2149 PSG core.
  *
- * This class implements a complete AY-3-8912 PSG chip, used in:
- * - ZX Spectrum 128K (single PSG)
- * - ZX Spectrum Next (via TurboSound - 3x PSG chips)
- *
- * ## Features
- * - 3 programmable tone channels (A, B, C)
- * - Programmable noise generator
- * - Envelope generator with 16 shapes
- * - 16 16-bit registers for full control
- * - Per-channel volume control (0-15 or envelope-driven)
- * - Master volume via 16-level volume table
- *
- * ## Registers (0-15)
- * - 0-1: Channel A tone frequency (12-bit)
- * - 2-3: Channel B tone frequency (12-bit)
- * - 4-5: Channel C tone frequency (12-bit)
- * - 6: Noise frequency (5-bit)
- * - 7: Enable flags (noise/tone per channel)
- * - 8-10: Channel A-C volume control
- * - 11-12: Envelope frequency (16-bit)
- * - 13: Envelope shape/style
- * - 14-15: I/O port control (not used in ZX Spectrum)
- *
- * ## Output
- * - Per-channel tone output (high/low square wave)
- * - Combined through OR logic with noise
- * - Multiplied by per-channel volume
- * - Output range: -32768 to +32767 (16-bit signed AC signal)
- *   - Silent/disabled: 0
- *   - Active tone HIGH: +amplitude
- *   - Active tone LOW: -amplitude
- *
- * ## Usage
- * 1. Set register index via setRegisterIndex(reg)
- * 2. Write value via setRegisterValue(value)
- * 3. Call clock() to advance sound generation
- * 4. Read channel output via getChannelA/B/C()
- *
- * ## Multi-Chip Systems
- * When used in TurboSound (3 chips), each chip has:
- * - Independent tone/noise generators
- * - Selectable stereo panning (muted, left, right, stereo)
- * - Optional mono mode (all channels mixed to mono)
- * - Global stereo mode selection (ABC vs ACB)
- *
- * See AUDIO_ARCHITECTURE.md for complete system details.
- * See PORT_MAPPINGS.md for PSG port I/O details.
+ * The class keeps Klive's historical public fields for callers such as
+ * TurboSound, but the sound-generation path follows MAME's ay8910_device:
+ * register write side effects, 17-bit noise LFSR, envelope state machine,
+ * and per-channel resistor tables.
  */
 export class PsgChip {
-  // --- Chip ID (for multi-chip systems like Turbo Sound Next)
-  // --- 0 = chip 0 (default)
-  // --- 1 = chip 1
-  // --- 2 = chip 2
   readonly chipId: number;
+  readonly chipType: ChipType;
 
-  // --- Chip type: AY = AY-3-8910 (Spectrum 128K), YM = YM2149 (ZX Next)
-  readonly chipType: 'AY' | 'YM';
-
-  // --- AY-3-8910 register read masks: unused bits read as 0 on real hardware.
-  // --- YM2149 returns all bits unmasked.
-  // --- Source: MAME ay8910.cpp mask[0x10] table.
-  private static readonly AY_READ_MASKS: readonly number[] = [
-    0xff, 0x0f, 0xff, 0x0f, 0xff, 0x0f, 0x1f, 0xff,
-    0x1f, 0x1f, 0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff
-  ];
-
-  // --- AY-3-8910 volume table (FPGA ym2149.vhd hardware-measured from real chip, normalized to 0-65535)
-  private static readonly AY_VOLUME_TABLE: readonly number[] = [
-    0, 771, 1028, 1542, 2570, 3855, 5397, 8738,
-    10280, 16705, 23387, 29298, 37008, 46517, 55255, 65535
-  ];
-
-  // --- YM2149 volume table (FPGA ym2149.vhd hardware-measured, 32 entries, normalized to 0-65535)
-  private static readonly YM_VOLUME_TABLE: readonly number[] = [
-    0, 257, 257, 514, 514, 771, 771, 1028,
-    1542, 1799, 2313, 2570, 3084, 3598, 4369, 4883,
-    5911, 6939, 8224, 9509, 11308, 13621, 15934, 18247,
-    21588, 26214, 30583, 34952, 41377, 49344, 57568, 65535
-  ];
-
-  // --- The last register index set
-  private _psgRegisterIndex = 0;
-
-  // --- The last values of the PSG registers set
   private readonly _regValues = new Uint8Array(16);
+  private readonly _tone: ToneState[] = [resetTone(), resetTone(), resetTone()];
+  private readonly _envelope: EnvelopeState = resetEnvelope();
+  private readonly _volumeTable: readonly number[];
+  private readonly _envTable: readonly number[];
+  private readonly _diagnosticVolumeTable: readonly number[];
+  private readonly _envStepMask: number;
+  private readonly _envStepMultiplier: number;
+  private readonly _coarseMask: number;
+  private _psgRegisterIndex = 0;
+  private _active = true;
+  private _noiseCounter = 0;
+  private _noisePrescale = 0;
+  private _rng = 1;
+  private _volEnabled = [0, 0, 0];
+  private _envelopePosition = 0;
 
-  // --- Stores the envelopes volume forms
-  private readonly _psgEnvelopes = new Uint8Array(0x800);
-
-  // --- Active volume table (selected at construction time based on chipType)
-  private readonly _psgVolumeTable: readonly number[];
-
-  // --- Channel A
-  private _toneA: number; // 12-bit
-  private _toneAEnabled: boolean;
-  private _noiseAEnabled: boolean;
-  private _volA: number; // 8-bit
-  private _envA: boolean;
-  private _cntA: number; // 12-bit
-  private _bitA: boolean;
-
-  // --- Channel B
-  private _toneB: number; // 12-bit
-  private _toneBEnabled: boolean;
-  private _noiseBEnabled: boolean;
-  private _volB: number; // 8-bit
-  private _envB: boolean;
-  private _cntB: number; // 12-bit
-  private _bitB: boolean;
-
-  // --- Channel C
-  private _toneC: number; // 12-bit
-  private _toneCEnabled: boolean;
-  private _noiseCEnabled: boolean;
-  private _volC: number; // 8-bit
-  private _envC: boolean;
-  private _cntC: number; // 12-bit
-  private _bitC: boolean;
-
-  // --- Noise
-  private _noiseSeed: number;
-  private _noiseFreq: number;
-  private _cntNoise: number;
-  private _noisePrescale: boolean;
-  private _bitNoise: boolean;
-
-  // --- Envelope data
-  private _envFreq: number;
-  private _envStyle: number; // 8-bit
-  private _cntEnv: number;
-  private _posEnv: number;
-
-  /**
-   * Sum of orphan samples (total across all channels)
-   */
   orphanSum = 0;
-
-  /**
-   * Sum of orphan samples for channel A
-   */
   orphanSumA = 0;
-
-  /**
-   * Sum of orphan samples for channel B
-   */
   orphanSumB = 0;
-
-  /**
-   * Sum of orphan samples for channel C
-   */
   orphanSumC = 0;
-
-  /**
-   * Number of orphan samples
-   */
+  orphanAudioSum = 0;
+  orphanAudioSumA = 0;
+  orphanAudioSumB = 0;
+  orphanAudioSumC = 0;
   orphanSamples = 0;
 
-  /**
-   * Current output value for channel A (latest generated value)
-   */
   currentOutputA = 0;
-
-  /**
-   * Current output value for channel B (latest generated value)
-   */
   currentOutputB = 0;
-
-  /**
-   * Current output value for channel C (latest generated value)
-   */
   currentOutputC = 0;
+  currentAudioOutputA = 0;
+  currentAudioOutputB = 0;
+  currentAudioOutputC = 0;
 
-  /**
-   * Reset the device when creating it
-   * @param chipId Chip identifier (0-3, used in TurboSound multi-chip systems)
-   * @param chipType Chip variant: 'AY' = AY-3-8910 (Spectrum 128K), 'YM' = YM2149 (ZX Next)
-   */
-  constructor (chipId: number = 0, chipType: 'AY' | 'YM' = 'AY') {
-    this.chipId = chipId & 0x03; // Limit to 0-3
+  constructor(chipId: number = 0, chipType: ChipType = "AY") {
+    this.chipId = chipId & 0x03;
     this.chipType = chipType;
-    this._psgVolumeTable = chipType === 'YM'
-      ? PsgChip.YM_VOLUME_TABLE
-      : PsgChip.AY_VOLUME_TABLE;
+    this._envStepMask = chipType === "AY" ? 0x0f : 0x1f;
+    this._envStepMultiplier = chipType === "AY" ? 2 : 1;
+    this._coarseMask = chipType === "AY" ? 0x0f : 0xff;
+    this._volumeTable = chipType === "AY"
+      ? buildSingleTable(AY_PARAM, true)
+      : buildSingleTable(YM_PARAM, false);
+    this._envTable = chipType === "AY"
+      ? buildSingleTable(AY_PARAM, false)
+      : buildSingleTable(YM_ENV_PARAM, false);
+    this._diagnosticVolumeTable = chipType === "AY"
+      ? AY_DIAGNOSTIC_VOLUME_TABLE
+      : YM_DIAGNOSTIC_VOLUME_TABLE;
     this.reset();
   }
 
-  /**
-   * Resets the device to its initial state
-   */
-  reset (): void {
-    this.initSoundRegisters();
-    this.initEnvelopData();
-  }
-
-  /**
-   * Set the initial values of all sound registers and their internal representation
-   */
-  private initSoundRegisters (): void {
-    // --- Set all previous register values to zero
-    for (let i = 0; i < this._regValues.length; i++) {
-      this._regValues[i] = 0;
+  reset(): void {
+    this._psgRegisterIndex = 0;
+    this._active = true;
+    this._regValues.fill(0);
+    this._regValues[AY_ENABLE] = 0xff;
+    for (let i = 0; i < 3; i++) {
+      this._tone[i] = resetTone();
+      this._volEnabled[i] = 0;
     }
-    
-    // --- Initialize mixer register to 0xFF (all channels disabled), matching FPGA ym2149.vhd reset
-    this._regValues[7] = 0xff;
-
-    // --- Channel A setup
-    this._toneA = 0;
-    this._toneAEnabled = false;
-    this._noiseAEnabled = false;
-    this._volA = 0;
-    this._envA = false;
-    this._cntA = 0;
-    this._bitA = false;
-
-    // --- Channel B setup
-    this._toneB = 0;
-    this._toneBEnabled = false;
-    this._noiseBEnabled = false;
-    this._volB = 0;
-    this._envB = false;
-    this._cntB = 0;
-    this._bitB = false;
-
-    // --- Channel C setup
-    this._toneC = 0;
-    this._toneCEnabled = false;
-    this._noiseCEnabled = false;
-    this._volC = 0;
-    this._envC = false;
-    this._cntC = 0;
-    this._bitC = false;
-
-    // --- Noise channel setup
-    this._noiseSeed = 1;         // Hardware-correct initial seed (MAME-verified)
-    this._noiseFreq = 0;
-    this._cntNoise = 0;
-    this._noisePrescale = false;  // Hardware ÷2 prescaler starts low
-    this._bitNoise = (this._noiseSeed & 1) !== 0;  // Initial noise output = HIGH
-
-    // --- Other registers
-    this._envFreq = 0;
-    this._envStyle = 0;
-    this._cntEnv = 0;
-    this._posEnv = 0;
-
-    this.orphanSamples = 0;
-    this.orphanSum = 0;
-    this.orphanSumA = 0;
-    this.orphanSumB = 0;
-    this.orphanSumC = 0;
+    Object.assign(this._envelope, resetEnvelope());
+    this._noiseCounter = 0;
+    this._noisePrescale = 0;
+    this._rng = 1;
+    this._envelopePosition = 0;
+    this.clearOrphanSamples();
+    this.currentOutputA = 0;
+    this.currentOutputB = 0;
+    this.currentOutputC = 0;
+    this.currentAudioOutputA = 0;
+    this.currentAudioOutputB = 0;
+    this.currentAudioOutputC = 0;
   }
 
-  /**
-   * Initialize the PSG envelope tables.
-   *
-   * AY-3-8910: 16 envelope steps (vol 0-15). Each step lasts ×2 the period register
-   *   value, preserving the same total envelope duration as YM. Volume index: vol & 0x0f.
-   * YM2149:    32 envelope steps (vol 0-31). Each step lasts ×1 the period register
-   *   value. Volume index: (vol & 0x1f) >> 1 (maps 32 sub-steps to 16-entry table).
-   */
-  private initEnvelopData (): void {
-    // Step boundary: 16 for AY (hardware-verified), 32 for YM
-    const stepMax = this.chipType === 'AY' ? 16 : 32;
-    const initVol = this.chipType === 'AY' ? stepMax : stepMax; // identical expression; kept for clarity
-
-    let samplePtr = 0;
-
-    for (let env = 0; env < 16; env++) {
-      let hold = false;
-      let dir = (env & 0x04) !== 0 ? 1 : -1;
-      let vol = (env & 0x04) !== 0 ? -1 : stepMax;
-
-      for (let pos = 0; pos < 128; pos++) {
-        if (!hold) {
-          vol += dir;
-          if (vol < 0 || vol >= stepMax) {
-            if ((env & 0x08) !== 0) {
-              if ((env & 0x02) !== 0) {
-                dir = -dir;
-              }
-              vol = dir > 0 ? 0 : stepMax - 1;
-              if ((env & 0x01) !== 0) {
-                hold = true;
-                vol = dir > 0 ? stepMax - 1 : 0;
-              }
-            } else {
-              vol = 0;
-              hold = true;
-            }
-          }
-        }
-        this._psgEnvelopes[samplePtr++] = vol & 0xff;
-      }
-    }
-  }
-
-  /**
-   * Gets the current PSG state
-   */
-  getPsgData (): PsgChipState {
+  getPsgData(): PsgChipState {
     return {
       psgRegisterIndex: this._psgRegisterIndex,
       regValues: this._regValues,
-      toneA: this._toneA,
-      toneAEnabled: this._toneAEnabled,
-      noiseAEnabled: this._noiseAEnabled,
-      volA: this._volA,
-      envA: this._envA,
-      cntA: this._cntA,
-      bitA: this._bitA,
-      toneB: this._toneB,
-      toneBEnabled: this._toneBEnabled,
-      noiseBEnabled: this._noiseBEnabled,
-      volB: this._volB,
-      envB: this._envB,
-      cntB: this._cntB,
-      bitB: this._bitB,
-      toneC: this._toneC,
-      toneCEnabled: this._toneCEnabled,
-      noiseCEnabled: this._noiseCEnabled,
-      volC: this._volC,
-      envC: this._envC,
-      cntC: this._cntC,
-      bitC: this._bitC,
-      noiseSeed: this._noiseSeed,
-      noiseFreq: this._noiseFreq,
-      cntNoise: this._cntNoise,
-      noisePrescale: this._noisePrescale,
-      bitNoise: this._bitNoise,
-      envFreq: this._envFreq,
-      envStyle: this._envStyle,
-      cntEnv: this._cntEnv,
-      posEnv: this._posEnv
+      toneA: this._tone[0].period,
+      toneAEnabled: this.toneEnabled(0),
+      noiseAEnabled: this.noiseEnabled(0),
+      volA: this.toneVolume(this._tone[0]),
+      envA: this.toneEnvelope(this._tone[0]) !== 0,
+      cntA: this._tone[0].count,
+      bitA: this._tone[0].output !== 0,
+      toneB: this._tone[1].period,
+      toneBEnabled: this.toneEnabled(1),
+      noiseBEnabled: this.noiseEnabled(1),
+      volB: this.toneVolume(this._tone[1]),
+      envB: this.toneEnvelope(this._tone[1]) !== 0,
+      cntB: this._tone[1].count,
+      bitB: this._tone[1].output !== 0,
+      toneC: this._tone[2].period,
+      toneCEnabled: this.toneEnabled(2),
+      noiseCEnabled: this.noiseEnabled(2),
+      volC: this.toneVolume(this._tone[2]),
+      envC: this.toneEnvelope(this._tone[2]) !== 0,
+      cntC: this._tone[2].count,
+      bitC: this._tone[2].output !== 0,
+      noiseSeed: this._rng,
+      noiseFreq: this.noisePeriod(),
+      cntNoise: this._noiseCounter,
+      noisePrescale: this._noisePrescale !== 0,
+      bitNoise: this.noiseOutput() !== 0,
+      envFreq: this._envelope.period,
+      envStyle: this._regValues[AY_EASHAPE],
+      cntEnv: this._envelope.count,
+      posEnv: this._envelopePosition
     };
   }
 
-  /**
-   * Gets the state of the PSG chip for persistence
-   */
   getState(): any {
     return {
-      psgRegisterIndex: this._psgRegisterIndex,
+      ...this.getPsgData(),
       regValues: new Uint8Array(this._regValues),
-      toneA: this._toneA,
-      toneAEnabled: this._toneAEnabled,
-      noiseAEnabled: this._noiseAEnabled,
-      volA: this._volA,
-      envA: this._envA,
-      cntA: this._cntA,
-      bitA: this._bitA,
-      toneB: this._toneB,
-      toneBEnabled: this._toneBEnabled,
-      noiseBEnabled: this._noiseBEnabled,
-      volB: this._volB,
-      envB: this._envB,
-      cntB: this._cntB,
-      bitB: this._bitB,
-      toneC: this._toneC,
-      toneCEnabled: this._toneCEnabled,
-      noiseCEnabled: this._noiseCEnabled,
-      volC: this._volC,
-      envC: this._envC,
-      cntC: this._cntC,
-      bitC: this._bitC,
-      noiseSeed: this._noiseSeed,
-      noiseFreq: this._noiseFreq,
-      cntNoise: this._cntNoise,
-      noisePrescale: this._noisePrescale,
-      bitNoise: this._bitNoise,
-      envFreq: this._envFreq,
-      envStyle: this._envStyle,
-      cntEnv: this._cntEnv,
-      posEnv: this._posEnv
+      orphanSum: this.orphanSum,
+      orphanSumA: this.orphanSumA,
+      orphanSumB: this.orphanSumB,
+      orphanSumC: this.orphanSumC,
+      orphanAudioSum: this.orphanAudioSum,
+      orphanAudioSumA: this.orphanAudioSumA,
+      orphanAudioSumB: this.orphanAudioSumB,
+      orphanAudioSumC: this.orphanAudioSumC,
+      orphanSamples: this.orphanSamples,
+      chipType: this.chipType,
+      envStep: this._envelope.step,
+      envVolume: this._envelope.volume,
+      envAttack: this._envelope.attack,
+      envHold: this._envelope.hold,
+      envAlternate: this._envelope.alternate,
+      envHolding: this._envelope.holding
     };
   }
 
-  /**
-   * Sets the state of the PSG chip from persisted data
-   */
   setState(state: any): void {
     if (!state) return;
-
+    this.reset();
     this._psgRegisterIndex = state.psgRegisterIndex ?? 0;
     if (state.regValues) {
-      for (let i = 0; i < Math.min(state.regValues.length, this._regValues.length); i++) {
-        this._regValues[i] = state.regValues[i];
+      for (let i = 0; i < Math.min(16, state.regValues.length); i++) {
+        this.writeRegister(i, state.regValues[i]);
       }
     }
-    this._toneA = state.toneA ?? 0;
-    this._toneAEnabled = state.toneAEnabled ?? false;
-    this._noiseAEnabled = state.noiseAEnabled ?? false;
-    this._volA = state.volA ?? 0;
-    this._envA = state.envA ?? false;
-    this._cntA = state.cntA ?? 0;
-    this._bitA = state.bitA ?? false;
-    this._toneB = state.toneB ?? 0;
-    this._toneBEnabled = state.toneBEnabled ?? false;
-    this._noiseBEnabled = state.noiseBEnabled ?? false;
-    this._volB = state.volB ?? 0;
-    this._envB = state.envB ?? false;
-    this._cntB = state.cntB ?? 0;
-    this._bitB = state.bitB ?? false;
-    this._toneC = state.toneC ?? 0;
-    this._toneCEnabled = state.toneCEnabled ?? false;
-    this._noiseCEnabled = state.noiseCEnabled ?? false;
-    this._volC = state.volC ?? 0;
-    this._envC = state.envC ?? false;
-    this._cntC = state.cntC ?? 0;
-    this._bitC = state.bitC ?? false;
-    this._noiseSeed = state.noiseSeed ?? 1;
-    this._noiseFreq = state.noiseFreq ?? 0;
-    this._cntNoise = state.cntNoise ?? 0;
-    this._noisePrescale = state.noisePrescale ?? false;
-    this._bitNoise = state.bitNoise ?? true;
-    this._envFreq = state.envFreq ?? 0;
-    this._envStyle = state.envStyle ?? 0;
-    this._cntEnv = state.cntEnv ?? 0;
-    this._posEnv = state.posEnv ?? 0;
-    
-    // --- Restore orphan sample state (transient, but may be used for serialization)
-    if (state.orphanSum !== undefined) {
-      this.orphanSum = state.orphanSum;
-      this.orphanSumA = state.orphanSumA ?? 0;
-      this.orphanSumB = state.orphanSumB ?? 0;
-      this.orphanSumC = state.orphanSumC ?? 0;
-      this.orphanSamples = state.orphanSamples ?? 0;
+    this._tone[0].count = state.cntA ?? this._tone[0].count;
+    this._tone[0].output = state.bitA ? 1 : 0;
+    this._tone[1].count = state.cntB ?? this._tone[1].count;
+    this._tone[1].output = state.bitB ? 1 : 0;
+    this._tone[2].count = state.cntC ?? this._tone[2].count;
+    this._tone[2].output = state.bitC ? 1 : 0;
+    this._rng = state.noiseSeed ?? this._rng;
+    this._noiseCounter = state.cntNoise ?? this._noiseCounter;
+    this._noisePrescale = state.noisePrescale ? 1 : 0;
+    this._envelope.count = state.cntEnv ?? this._envelope.count;
+    if (typeof state.posEnv === "number") {
+      this._envelopePosition = state.posEnv;
     }
+    if (state.chipType === this.chipType && typeof state.envStep === "number") {
+      this._envelope.step = state.envStep;
+      this._envelope.volume = state.envVolume ?? (this._envelope.step ^ this._envelope.attack);
+      this._envelope.attack = state.envAttack ?? this._envelope.attack;
+      this._envelope.hold = state.envHold ?? this._envelope.hold;
+      this._envelope.alternate = state.envAlternate ?? this._envelope.alternate;
+      this._envelope.holding = state.envHolding ?? this._envelope.holding;
+    }
+    this.orphanSum = state.orphanSum ?? 0;
+    this.orphanSumA = state.orphanSumA ?? 0;
+    this.orphanSumB = state.orphanSumB ?? 0;
+    this.orphanSumC = state.orphanSumC ?? 0;
+    this.orphanAudioSum = state.orphanAudioSum ?? 0;
+    this.orphanAudioSumA = state.orphanAudioSumA ?? 0;
+    this.orphanAudioSumB = state.orphanAudioSumB ?? 0;
+    this.orphanAudioSumC = state.orphanAudioSumC ?? 0;
+    this.orphanSamples = state.orphanSamples ?? 0;
   }
 
-  /**
-   * Set the PSG register index
-   * @param index PSG register index (0-15)
-   */
-  setPsgRegisterIndex (index: number): void {
-    this._psgRegisterIndex = index & 0x1f; // 5-bit address (FPGA ym2149.vhd)
+  setPsgRegisterIndex(index: number): void {
+    this._psgRegisterIndex = index & 0x1f;
+    this._active = this.chipType === "YM" || ((index >> 4) === 0);
   }
 
-  /**
-   * Gets the current register index
-   */
-  get psgRegisterIndex (): number {
+  get psgRegisterIndex(): number {
     return this._psgRegisterIndex;
   }
 
-  /**
-   * Reads the value of the register addressed by the register index last set
-   */
-  readPsgRegisterValue (): number {
-    // FPGA ym2149.vhd: addr(4)='1' and YM mode → return 0xFF
-    if ((this._psgRegisterIndex & 0x10) !== 0 && this.chipType === 'YM') {
+  readPsgRegisterValue(): number {
+    if (!this._active && this.chipType === "YM") {
       return 0xff;
     }
-    const regIdx = this._psgRegisterIndex & 0x0f;
-    const raw = this._regValues[regIdx];
-    return this.chipType === 'AY'
-      ? raw & PsgChip.AY_READ_MASKS[regIdx]
-      : raw;
+    const index = this._psgRegisterIndex & 0x0f;
+    const value = this._regValues[index];
+    return this.chipType === "AY" ? value & AY_READ_MASKS[index] : value;
   }
 
-  /**
-   * Writes the value of the register addressed by the register index last set
-   * @param v Parameter value
-   */
-  writePsgRegisterValue (v: number): void {
-    // FPGA ym2149.vhd: writes gated by addr(4)='0'
-    if ((this._psgRegisterIndex & 0x10) !== 0) return;
-
-    // --- Normalize to a byte
-    v = v & 0xff;
-
-    // --- Write the native register values
-    this._regValues[this._psgRegisterIndex] = v;
-
-    switch (this._psgRegisterIndex) {
-      case 0:
-        // --- Tone A (lower 8 bits)
-        this._toneA = (this._toneA & 0x0f00) | v;
-        return;
-
-      case 1:
-        // --- Tone A (upper 4 bits)
-        this._toneA = (this._toneA & 0x00ff) | ((v & 0x0f) << 8);
-        return;
-
-      case 2:
-        // --- Tone B (lower 8 bits)
-        this._toneB = (this._toneB & 0x0f00) | v;
-        return;
-
-      case 3:
-        // --- Tone B (upper 4 bits)
-        this._toneB = (this._toneB & 0x00ff) | ((v & 0x0f) << 8);
-        return;
-
-      case 4:
-        // --- Tone C (lower 8 bits)
-        this._toneC = (this._toneC & 0x0f00) | v;
-        return;
-
-      case 5:
-        // --- Tone C (upper 4 bits)
-        this._toneC = (this._toneC & 0x00ff) | ((v & 0x0f) << 8);
-        return;
-
-      case 6:
-        // --- Noise frequency
-        this._noiseFreq = v & 0x1f;
-        return;
-
-      case 7:
-        // --- Mixer flags
-        this._toneAEnabled = (v & 0x01) === 0;
-        this._toneBEnabled = (v & 0x02) === 0;
-        this._toneCEnabled = (v & 0x04) === 0;
-        this._noiseAEnabled = (v & 0x08) === 0;
-        this._noiseBEnabled = (v & 0x10) === 0;
-        this._noiseCEnabled = (v & 0x20) === 0;
-        return;
-
-      case 8:
-        // --- Volume A
-        this._volA = v & 0x0f;
-        this._envA = (v & 0x10) !== 0;
-        return;
-
-      case 9:
-        // --- Volume B
-        this._volB = v & 0x0f;
-        this._envB = (v & 0x10) !== 0;
-        return;
-
-      case 10:
-        // --- Volume C
-        this._volC = v & 0x0f;
-        this._envC = (v & 0x10) !== 0;
-        return;
-
-      case 11:
-        // --- Envelope fequency (lower 8 bit)
-        this._envFreq = (this._envFreq & 0xff00) | v;
-        return;
-
-      case 12:
-        // --- Envelope frequency (upper 8 bits)
-        this._envFreq = (this._envFreq & 0x00ff) | (v << 8);
-        return;
-
-      case 13:
-        // --- Check envelope shape
-        this._envStyle = v & 0x0f;
-        this._cntEnv = 0;
-        this._posEnv = 0;
-        return;
+  writePsgRegisterValue(value: number): void {
+    if (!this._active) {
+      return;
     }
+    this.writeRegister(this._psgRegisterIndex & 0x0f, value & 0xff);
   }
 
-  /**
-   * Generates the current PSG output value
-   */
-  generateOutputValue (): void {
-    let vol = 0;
-
-    // --- Increment TONE A counter
-    // Period 0 is treated as period 1 (highest frequency), matching MAME hardware behaviour.
-    {
-      const periodA = this._toneA || 1;
-      this._cntA++;
-      if (this._cntA >= periodA) {
-        this._cntA = 0;
-        this._bitA = !this._bitA;
+  generateOutputValue(): void {
+    for (let channel = 0; channel < 3; channel++) {
+      const tone = this._tone[channel];
+      const period = Math.max(1, tone.period);
+      tone.count += this.chipType === "YM" ? 1 : 1;
+      while (tone.count >= period) {
+        tone.dutyCycle = (tone.dutyCycle - 1) & 0x1f;
+        tone.output = tone.dutyCycle & 0x01;
+        tone.count -= period;
       }
     }
 
-    // --- Increment TONE B counter
-    {
-      const periodB = this._toneB || 1;
-      this._cntB++;
-      if (this._cntB >= periodB) {
-        this._cntB = 0;
-        this._bitB = !this._bitB;
+    this._noiseCounter++;
+    if (this._noiseCounter >= this.noisePeriod()) {
+      this._noiseCounter = 0;
+      this._noisePrescale ^= 1;
+      if (this._noisePrescale === 0) {
+        this.noiseRngTick();
       }
     }
 
-    // --- Increment TONE C counter
-    {
-      const periodC = this._toneC || 1;
-      this._cntC++;
-      if (this._cntC >= periodC) {
-        this._cntC = 0;
-        this._bitC = !this._bitC;
-      }
+    for (let channel = 0; channel < 3; channel++) {
+      const tone = this._tone[channel];
+      this._volEnabled[channel] =
+        (tone.output | this.toneDisabled(channel)) &
+        (this.noiseOutput() | this.noiseDisabled(channel));
     }
 
-    // --- Calculate noise sample using hardware-verified 17-bit LFSR with ÷2 prescaler.
-    // The LFSR is verified on real AY-3-8910 and YM2149 chips (MAME ay8910.cpp):
-    // bit0 XOR bit3 feeds back into bit16. The prescaler halves the effective noise rate.
-    // Period=0 behaves as max-speed advance (same as period=1), matching MAME.
-    {
-      const noisePeriod = this._noiseFreq || 1;
-      this._cntNoise++;
-      if (this._cntNoise >= noisePeriod) {
-        this._cntNoise = 0;
-        this._noisePrescale = !this._noisePrescale;
-        if (!this._noisePrescale) {
-          // Tick LFSR only on every second period expiry
-          const feedback = (this._noiseSeed & 1) ^ ((this._noiseSeed >> 3) & 1);
-          this._noiseSeed = ((this._noiseSeed >> 1) | (feedback << 16)) & 0x1ffff;
-          this._bitNoise = (this._noiseSeed & 1) !== 0;
+    if (this._envelope.holding === 0) {
+      const period = Math.max(1, this._envelope.period * this._envStepMultiplier);
+      this._envelope.count++;
+      if (this._envelope.count >= period) {
+        this._envelope.count = 0;
+        this._envelopePosition++;
+        this._envelope.step--;
+        if (this._envelope.step < 0) {
+          if (this._envelope.hold) {
+            if (this._envelope.alternate) {
+              this._envelope.attack ^= this._envStepMask;
+            }
+            this._envelope.holding = 1;
+            this._envelope.step = 0;
+          } else {
+            if (this._envelope.alternate && (this._envelope.step & (this._envStepMask + 1))) {
+              this._envelope.attack ^= this._envStepMask;
+            }
+            this._envelope.step &= this._envStepMask;
+          }
         }
       }
     }
+    this._envelope.volume = this._envelope.step ^ this._envelope.attack;
 
-    // --- Calculate envelope position.
-    // AY-3-8910: 16-step envelope with ×2 period multiplier (hardware-verified, MAME ay8910.cpp).
-    // YM2149:    32-step envelope with ×1 period multiplier.
-    // Both produce the same total envelope duration for a given frequency register value.
-    const envPeriod = this.chipType === 'AY' ? this._envFreq * 2 : this._envFreq;
-    // Period=0 advances envelope at max speed (MAME: "period 0 is half as period 1")
-    {
-      const effectiveEnvPeriod = envPeriod || 1;
-      this._cntEnv++;
-      if (this._cntEnv >= effectiveEnvPeriod) {
-        this._cntEnv = 0;
-        this._posEnv++;
-        if (this._posEnv > 0x7f) {
-          this._posEnv = 0x40;
-        }
-      }
-    }
-
-    // --- Calculate channel volumes using hardware-accurate mixer logic.
-    // Hardware formula: vol_enabled = (tone_output | tone_disable) & (noise_output | noise_disable)
-    // A disabled channel input acts as bypass (always HIGH = 1), enabling DC-level output.
-    // Both disabled + non-zero volume = constant DC amplitude (used for digi-drum volume modulation).
-    let volA = 0;
-    let volB = 0;
-    let volC = 0;
-
-    // FPGA ym2149.vhd volume indexing:
-    // AY mode: 16-entry table, indexed by A(4 downto 1) = upper 4 bits of 5-bit value.
-    // YM mode: 32-entry table, indexed by full 5-bit value.
-    // Fixed volume: FPGA uses "00000" for vol=0, reg(8)(3:0)&"1" (= vol*2+1) for vol=1..15.
-    const isYM = this.chipType === 'YM';
-
-    // --- Channel A
-    {
-      let idxA: number;
-      if (this._envA) {
-        const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-        idxA = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
-      } else {
-        idxA = isYM
-          ? (this._volA === 0 ? 0 : this._volA * 2 + 1)
-          : this._volA;
-      }
-      const amplitudeA = this._psgVolumeTable[idxA];
-      const toneBitA = this._toneAEnabled ? (this._bitA ? 1 : 0) : 1;
-      const noiseBitA = this._noiseAEnabled ? (this._bitNoise ? 1 : 0) : 1;
-      volA = (toneBitA & noiseBitA) ? amplitudeA : 0;
-      vol += volA;
-    }
-
-    // --- Channel B
-    {
-      let idxB: number;
-      if (this._envB) {
-        const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-        idxB = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
-      } else {
-        idxB = isYM
-          ? (this._volB === 0 ? 0 : this._volB * 2 + 1)
-          : this._volB;
-      }
-      const amplitudeB = this._psgVolumeTable[idxB];
-      const toneBitB = this._toneBEnabled ? (this._bitB ? 1 : 0) : 1;
-      const noiseBitB = this._noiseBEnabled ? (this._bitNoise ? 1 : 0) : 1;
-      volB = (toneBitB & noiseBitB) ? amplitudeB : 0;
-      vol += volB;
-    }
-
-    // --- Channel C
-    {
-      let idxC: number;
-      if (this._envC) {
-        const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-        idxC = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
-      } else {
-        idxC = isYM
-          ? (this._volC === 0 ? 0 : this._volC * 2 + 1)
-          : this._volC;
-      }
-      const amplitudeC = this._psgVolumeTable[idxC];
-      const toneBitC = this._toneCEnabled ? (this._bitC ? 1 : 0) : 1;
-      const noiseBitC = this._noiseCEnabled ? (this._bitNoise ? 1 : 0) : 1;
-      volC = (toneBitC & noiseBitC) ? amplitudeC : 0;
-      vol += volC;
-    }
-
-    // --- Store current output values (UNSIGNED - matching hardware)
-    this.currentOutputA = volA;
-    this.currentOutputB = volB;
-    this.currentOutputC = volC;
-
-    // --- Store for orphan sample tracking
-    this.orphanSumA += volA;
-    this.orphanSumB += volB;
-    this.orphanSumC += volC;
-    this.orphanSum += vol;
-    this.orphanSamples += 1;
+    this.updateOutputs();
+    this.orphanSamples++;
+    this.orphanSumA += this.currentOutputA;
+    this.orphanSumB += this.currentOutputB;
+    this.orphanSumC += this.currentOutputC;
+    this.orphanSum += this.currentOutputA + this.currentOutputB + this.currentOutputC;
+    this.orphanAudioSumA += this.currentAudioOutputA;
+    this.orphanAudioSumB += this.currentAudioOutputB;
+    this.orphanAudioSumC += this.currentAudioOutputC;
+    this.orphanAudioSum += this.currentAudioOutputA + this.currentAudioOutputB + this.currentAudioOutputC;
   }
 
-  /**
-   * Gets the current output level for channel A (unsigned 0-65535).
-   * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
-   */
-  getChannelAVolume (): number {
-    const isYM = this.chipType === 'YM';
-    let idx: number;
-    if (this._envA) {
-      const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      idx = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
-    } else {
-      idx = isYM
-        ? (this._volA === 0 ? 0 : this._volA * 2 + 1)
-        : this._volA;
-    }
-    const amplitude = this._psgVolumeTable[idx];
-    const toneBit = this._toneAEnabled ? (this._bitA ? 1 : 0) : 1;
-    const noiseBit = this._noiseAEnabled ? (this._bitNoise ? 1 : 0) : 1;
-    return (toneBit & noiseBit) ? amplitude : 0;
+  getChannelAVolume(): number {
+    return this.currentOutputA;
   }
 
-  /**
-   * Gets the current output level for channel B (unsigned 0-65535).
-   * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
-   */
-  getChannelBVolume (): number {
-    const isYM = this.chipType === 'YM';
-    let idx: number;
-    if (this._envB) {
-      const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      idx = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
-    } else {
-      idx = isYM
-        ? (this._volB === 0 ? 0 : this._volB * 2 + 1)
-        : this._volB;
-    }
-    const amplitude = this._psgVolumeTable[idx];
-    const toneBit = this._toneBEnabled ? (this._bitB ? 1 : 0) : 1;
-    const noiseBit = this._noiseBEnabled ? (this._bitNoise ? 1 : 0) : 1;
-    return (toneBit & noiseBit) ? amplitude : 0;
+  getChannelBVolume(): number {
+    return this.currentOutputB;
   }
 
-  /**
-   * Gets the current output level for channel C (unsigned 0-65535).
-   * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
-   */
-  getChannelCVolume (): number {
-    const isYM = this.chipType === 'YM';
-    let idx: number;
-    if (this._envC) {
-      const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      idx = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
-    } else {
-      idx = isYM
-        ? (this._volC === 0 ? 0 : this._volC * 2 + 1)
-        : this._volC;
-    }
-    const amplitude = this._psgVolumeTable[idx];
-    const toneBit = this._toneCEnabled ? (this._bitC ? 1 : 0) : 1;
-    const noiseBit = this._noiseCEnabled ? (this._bitNoise ? 1 : 0) : 1;
-    return (toneBit & noiseBit) ? amplitude : 0;
+  getChannelCVolume(): number {
+    return this.currentOutputC;
   }
 
-  /**
-   * Gets debug information about the PSG chip for inspection
-   */
   getDebugInfo(): any {
+    const state = this.getPsgData();
     return {
       chipId: this.chipId,
       registerIndex: this._psgRegisterIndex,
       registers: Array.from(this._regValues),
       channels: {
         a: {
-          tone: this._toneA,
-          toneEnabled: this._toneAEnabled,
-          volume: this._volA,
-          envelope: this._envA,
-          noiseEnabled: this._noiseAEnabled,
-          counter: this._cntA,
-          bit: this._bitA,
-          output: this.getChannelAVolume()
+          tone: state.toneA,
+          toneEnabled: state.toneAEnabled,
+          volume: state.volA,
+          envelope: state.envA,
+          noiseEnabled: state.noiseAEnabled,
+          counter: state.cntA,
+          bit: state.bitA,
+          output: this.currentOutputA
         },
         b: {
-          tone: this._toneB,
-          toneEnabled: this._toneBEnabled,
-          volume: this._volB,
-          envelope: this._envB,
-          noiseEnabled: this._noiseBEnabled,
-          counter: this._cntB,
-          bit: this._bitB,
-          output: this.getChannelBVolume()
+          tone: state.toneB,
+          toneEnabled: state.toneBEnabled,
+          volume: state.volB,
+          envelope: state.envB,
+          noiseEnabled: state.noiseBEnabled,
+          counter: state.cntB,
+          bit: state.bitB,
+          output: this.currentOutputB
         },
         c: {
-          tone: this._toneC,
-          toneEnabled: this._toneCEnabled,
-          volume: this._volC,
-          envelope: this._envC,
-          noiseEnabled: this._noiseCEnabled,
-          counter: this._cntC,
-          bit: this._bitC,
-          output: this.getChannelCVolume()
+          tone: state.toneC,
+          toneEnabled: state.toneCEnabled,
+          volume: state.volC,
+          envelope: state.envC,
+          noiseEnabled: state.noiseCEnabled,
+          counter: state.cntC,
+          bit: state.bitC,
+          output: this.currentOutputC
         }
       },
       noise: {
-        frequency: this._noiseFreq,
-        seed: this._noiseSeed,
-        counter: this._cntNoise,
-        bit: this._bitNoise
+        frequency: state.noiseFreq,
+        seed: state.noiseSeed,
+        counter: state.cntNoise,
+        bit: state.bitNoise
       },
       chipType: this.chipType,
       envelope: {
-        frequency: this._envFreq,
-        style: this._envStyle,
-        counter: this._cntEnv,
-        position: this._posEnv
+        frequency: state.envFreq,
+        style: state.envStyle,
+        counter: state.cntEnv,
+        position: state.posEnv
       }
     };
   }
-}
 
+  clearOrphanSamples(): void {
+    this.orphanSum = 0;
+    this.orphanSumA = 0;
+    this.orphanSumB = 0;
+    this.orphanSumC = 0;
+    this.orphanAudioSum = 0;
+    this.orphanAudioSumA = 0;
+    this.orphanAudioSumB = 0;
+    this.orphanAudioSumC = 0;
+    this.orphanSamples = 0;
+  }
+
+  private writeRegister(index: number, value: number): void {
+    const registerIndex = index & 0x0f;
+    this._regValues[registerIndex] = value & 0xff;
+
+    switch (registerIndex) {
+      case AY_AFINE:
+      case AY_ACOARSE:
+        this.setTonePeriod(0);
+        break;
+      case AY_BFINE:
+      case AY_BCOARSE:
+        this.setTonePeriod(1);
+        break;
+      case AY_CFINE:
+      case AY_CCOARSE:
+        this.setTonePeriod(2);
+        break;
+      case AY_AVOL:
+        this._tone[0].volume = value & 0xff;
+        break;
+      case AY_BVOL:
+        this._tone[1].volume = value & 0xff;
+        break;
+      case AY_CVOL:
+        this._tone[2].volume = value & 0xff;
+        break;
+      case AY_EAFINE:
+      case AY_EACOARSE:
+        this._envelope.period = this._regValues[AY_EAFINE] | (this._regValues[AY_EACOARSE] << 8);
+        break;
+      case AY_EASHAPE:
+        this.setEnvelopeShape(value & 0x0f);
+        break;
+    }
+  }
+
+  private setTonePeriod(channel: number): void {
+    const fine = this._regValues[channel * 2];
+    const coarse = this._regValues[channel * 2 + 1] & this._coarseMask;
+    this._tone[channel].period = fine | (coarse << 8);
+  }
+
+  private setEnvelopeShape(shape: number): void {
+    this._envelope.attack = (shape & 0x04) ? this._envStepMask : 0;
+    if ((shape & 0x08) === 0) {
+      this._envelope.hold = 1;
+      this._envelope.alternate = this._envelope.attack;
+    } else {
+      this._envelope.hold = shape & 0x01;
+      this._envelope.alternate = shape & 0x02;
+    }
+    this._envelope.step = this._envStepMask;
+    this._envelope.holding = 0;
+    this._envelope.volume = this._envelope.step ^ this._envelope.attack;
+    this._envelopePosition = 0;
+  }
+
+  private noiseRngTick(): void {
+    const feedback = (this._rng & 0x01) ^ ((this._rng >> 3) & 0x01);
+    this._rng = ((this._rng >>> 1) | (feedback << 16)) & 0x1ffff;
+  }
+
+  private toneDisabled(channel: number): number {
+    return (this._regValues[AY_ENABLE] >> channel) & 0x01;
+  }
+
+  private noiseDisabled(channel: number): number {
+    return (this._regValues[AY_ENABLE] >> (channel + 3)) & 0x01;
+  }
+
+  private toneEnabled(channel: number): boolean {
+    return this.toneDisabled(channel) === 0;
+  }
+
+  private noiseEnabled(channel: number): boolean {
+    return this.noiseDisabled(channel) === 0;
+  }
+
+  private toneVolume(tone: ToneState): number {
+    return tone.volume & 0x0f;
+  }
+
+  private toneEnvelope(tone: ToneState): number {
+    return (tone.volume >> 4) & 0x01;
+  }
+
+  private noisePeriod(): number {
+    const period = this._regValues[AY_NOISEPER] & (this.chipType === "AY" ? 0x1f : 0xff);
+    return period === 0 ? 1 : period;
+  }
+
+  private noiseOutput(): number {
+    return this._rng & 0x01;
+  }
+
+  private updateOutputs(): void {
+    const diagnosticOutputs = [0, 0, 0];
+    const audioOutputs = [0, 0, 0];
+
+    for (let channel = 0; channel < 3; channel++) {
+      const tone = this._tone[channel];
+      let volumeIndex: number;
+      let diagnosticIndex: number;
+      if (this.toneEnvelope(tone) !== 0) {
+        volumeIndex = this._volEnabled[channel] ? this._envelope.volume : 0;
+        diagnosticIndex = volumeIndex;
+        audioOutputs[channel] = this._envTable[volumeIndex & this._envStepMask];
+      } else {
+        volumeIndex = this._volEnabled[channel] ? this.toneVolume(tone) : 0;
+        diagnosticIndex =
+          this.chipType === "YM" && volumeIndex !== 0
+            ? volumeIndex * 2 + 1
+            : volumeIndex;
+        audioOutputs[channel] = this._volumeTable[volumeIndex & (this._volumeTable.length - 1)];
+      }
+      diagnosticOutputs[channel] =
+        this._diagnosticVolumeTable[diagnosticIndex & (this._diagnosticVolumeTable.length - 1)];
+    }
+
+    this.currentOutputA = diagnosticOutputs[0];
+    this.currentOutputB = diagnosticOutputs[1];
+    this.currentOutputC = diagnosticOutputs[2];
+    this.currentAudioOutputA = audioOutputs[0];
+    this.currentAudioOutputB = audioOutputs[1];
+    this.currentAudioOutputC = audioOutputs[2];
+  }
+}

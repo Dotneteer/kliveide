@@ -225,81 +225,813 @@ Add a 128K switch that mirrors the 48K switch:
 - Start with a measured WASM size limit after the first production build. Record
   the chosen limit and reason in `check-sp128-wasm-size.cjs`.
 
-## Migration Milestones
+## Small Testable Work Items
 
-1. Scaffold switch and factory while keeping default `"typescript"`.
-2. Scaffold 128K WASM source tree, loader, build script, size check, and README
-   files.
-3. Port static memory, ROM upload, paging state, memory read/write, partition
-   exports, reset, and hard reset.
-4. Port timing, contention, frame counters, interrupt state, and one-instruction
-   execution using the existing C Z80 core.
-5. Port ULA rendering with bank 5/bank 7 screen selection and direct pixel
-   buffer exports.
-6. Port `0xfe`, `0x7ffd`, PSG, and floating-bus port behavior.
-7. Port beeper, AY PSG generation, audio mixing, and audio sample buffer
-   exports.
-8. Port tape playback/save capture and property mirroring.
-9. Build `ZxSpectrum128WasmV2Machine` as a thin adapter selected by config.
-10. Add focused tests and run side-by-side behavior checks against the
-    TypeScript machine.
-11. Manually run the app with `sp128Implementation: "wasm"` and verify boot,
-    keyboard, BASIC menu flow, screen, sound, tape loading, banked code
-    injection, and debugger stepping.
-12. Flip `DEFAULT_SP128_IMPLEMENTATION` to `"wasm"` only after parity criteria
-    pass.
-13. Remove any temporary migration-only helpers and update documentation.
+Build the migration as narrow slices. Each slice should compile on its own,
+include focused tests, and leave the default 128K implementation unchanged until
+the rollout slice.
 
-## Focused Tests
+### 1. Add the 128K Implementation Switch
 
-Add or update tests for:
+Status: Done on 2026-08-04.
 
-- factory selection:
-  - default uses TypeScript until rollout
-  - explicit `"typescript"` uses `ZxSpectrum128Machine`
-  - explicit `"wasm"` uses `ZxSpectrum128WasmV2Machine`
-  - unknown values fall back to the default
-- loader:
-  - required export validation
-  - typed view bounds
-  - module cache behavior
-  - production artifact name
-- build:
-  - production artifact exists
-  - required exports are present
-  - package resource path is configured
-  - size check passes
-- memory/paging:
-  - reset partition map
-  - ROM selection
-  - RAM bank selection
-  - paging lock
-  - shadow screen selection
-  - direct bank writes for code injection
-- ports:
-  - `0xfe` keyboard/border/beeper compatibility
-  - `0x7ffd` paging writes
-  - PSG register index/value/read
-  - floating bus fallback
-- timing:
-  - representative 128K contention cases
-  - frame length and frame counter updates
-- screen:
-  - normal and shadow screen reads
-  - direct pixel byte view
-  - instant screen render
-- audio:
-  - non-empty beeper samples
-  - non-empty PSG samples after register writes
-  - mixed output buffer shape
-- media:
-  - tape upload/control mirroring
-  - rewind and fast-load flags
-  - save publication revision
-- debug:
-  - one-instruction stepping
-  - fresh CPU state after debug steps
-  - last memory and port access state
+Files:
+
+- `src/common/machines/constants.ts`
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128Implementation.ts`
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128MachineFactory.ts`
+- `src/common/machines/machine-renderer-registry.ts`
+- `test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts`
+
+Work:
+
+- Add `MC_SP128_IMPLEMENTATION = "sp128Implementation"`.
+- Add a two-value switch: `"typescript"` and `"wasm"`.
+- Keep `DEFAULT_SP128_IMPLEMENTATION = "typescript"` for this slice.
+- Route `sp128` through `createZxSpectrum128Machine(model, config)`.
+- Use a temporary placeholder `ZxSpectrum128WasmV2Machine` class only if needed
+  to make explicit `"wasm"` selection testable before the real adapter exists.
+
+Done when:
+
+- Default selection creates the TypeScript machine.
+- Explicit `"typescript"` creates the TypeScript machine.
+- Explicit `"wasm"` creates the WASM adapter or placeholder.
+- Unknown values fall back to the default.
+- No backend-specific model picker entries are added.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts
+npm run build:check
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:check
+git diff --check
+```
+
+### 2. Add Build, Packaging, and Loader Skeleton
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `package.json`
+- `scripts/build-sp128-wasm.cjs`
+- `scripts/build-sp128-wasm.d.cts`
+- `scripts/check-sp128-wasm-size.cjs`
+- `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
+- `src/emu/machines/zxSpectrum128/wasm/README.md`
+- `src/emu/machines/zxSpectrum128/wasm/v2/README.md`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
+- `test/zxSpectrum/sp128-wasm-v2-loader.test.ts`
+- `test/zxSpectrum/sp128-wasm-build.test.ts`
+
+Work:
+
+- Add the production artifact name `zx-spectrum128.wasm`.
+- Add a minimal C translation unit with static memory, pointer exports, reset,
+  and diagnostic shape exports.
+- Add loader validation for required exports and typed view bounds.
+- Add package resource copy from `zxSpectrum128/wasm/dist` to
+  `wasm/zxSpectrum128`.
+- Add a size check with an initial measured limit and a note explaining the
+  value.
+
+Done when:
+
+- `npm run build:sp128-wasm` produces only the production artifact.
+- The loader validates required exports and rejects missing exports.
+- The loader creates typed views within WASM memory bounds.
+- The build test can instantiate the production artifact.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/sp128-wasm-v2-loader.test.ts
+npm test -- --project jsdom test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+### 3. Port Static 128K Memory and Paging State
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-memory.c`
+- `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
+- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+
+Work:
+
+- Allocate two ROM banks and eight RAM banks in C.
+- Implement reset mapping: ROM 0, RAM 5, RAM 2, RAM 0.
+- Add ROM upload exports for both ROMs.
+- Add paged memory read/write exports.
+- Add partition read/write or partition pointer exports.
+- Add selected ROM, selected RAM bank, paging enabled, shadow screen, and
+  current partition exports.
+- Wire adapter methods for memory inspection and banked code injection helpers.
+
+Done when:
+
+- Reset partition labels and selected banks match TypeScript.
+- ROM writes are blocked through normal memory writes.
+- RAM writes affect the currently paged bank.
+- Banked writes can update a non-paged RAM bank.
+- `get64KFlatMemory()` or its adapter equivalent reflects the current mapping.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp128-wasm
+npm run build:check
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice validated the C/WASM memory ABI through
+`sp128-wasm-v2-loader.test.ts`. The full `ZxSpectrum128WasmV2Machine` adapter
+surface remains a later slice.
+
+### 4. Implement `0x7ffd` Paging Port
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-memory.c`
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
+- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+
+Work:
+
+- Implement writes where `(address & 0xc002) === 0x4000`.
+- Support RAM bank bits 0-2.
+- Support shadow screen bit 3.
+- Support ROM select bit 4.
+- Support paging lock bit 5.
+- Expose state changes to the adapter.
+
+Done when:
+
+- RAM bank switching changes `0xc000-0xffff`.
+- ROM switching changes `0x0000-0x3fff`.
+- Shadow screen selection changes the screen source bank.
+- Once paging is locked, further paging writes have no effect.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp128-wasm
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice validated `0x7ffd` behavior through the compiled C/WASM loader
+tests. The adapter will consume these exports in a later slice.
+
+### 5. Integrate the Z80 Core for Instruction Execution
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-memory.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
+- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+
+Work:
+
+- Include the existing C Z80 core.
+- Wire Z80 memory and port callbacks to 128K C functions.
+- Export CPU register getters/setters needed by the adapter.
+- Export `sp128ExecuteInstruction()`.
+- Track last memory and port bus access for debugger integration.
+
+Done when:
+
+- A simple instruction at RAM can execute and update PC/registers.
+- Debug stepping syncs fresh CPU state.
+- Last memory and port access exports update after instruction execution.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp128-wasm
+npm run build:check
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice validated the shared C Z80 core through compiled C/WASM loader
+tests. It added register exports, one-instruction execution, and last memory and
+port bus access exports. The full TypeScript WASM adapter consumption remains a
+later slice.
+
+### 6. Add 128K Timing and Contention
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-memory.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `test/zxSpectrum/ula-contention.test.ts`
+- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+
+Work:
+
+- Build timing tables from `CommonScreenDevice.ZxSpectrum128ScreenConfiguration`.
+- Apply memory contention for `0x4000-0x7fff`.
+- Apply memory contention for `0xc000-0xffff` only when the selected bank is
+  odd.
+- Apply the 128K contended I/O rules used by TypeScript.
+- Export contention counters and timing shape helpers.
+
+Done when:
+
+- Representative memory contention cases match TypeScript.
+- Representative I/O contention cases match TypeScript.
+- Frame tact counters advance consistently.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ula-contention.test.ts
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp128-wasm
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice validated programmable contention values and the 128K odd-bank
+contention rule through compiled C/WASM loader tests. Shared TypeScript
+`ula-contention.test.ts` integration remains for the later adapter slice.
+
+### 7. Add Keyboard and `0xfe` Port Behavior
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-keyboard.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
+- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+
+Work:
+
+- Add keyboard row buffer exports and `sp128SetKeyStatus()`.
+- Implement `0xfe` reads from the keyboard matrix.
+- Implement `0xfe` writes for border, ear, mic, and beeper state.
+- Keep normal-frame keyboard sync change-based, matching the 48K adapter.
+
+Done when:
+
+- Key matrix reads match TypeScript for selected rows.
+- Border state changes are observable.
+- Ear/mic/beeper state changes are observable.
+- Unchanged keyboard rows are not rewritten every frame.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp128-wasm
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice validated keyboard matrix updates and `0xfe` port reads/writes
+through compiled C/WASM loader tests. Adapter-level change-based keyboard sync
+remains for the later adapter slice.
+
+### 8. Add ULA Rendering and Shadow Screen Rendering
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ula.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-memory.c`
+- `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
+- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+
+Work:
+
+- Port the 48K ULA renderer structure.
+- Read screen data from RAM bank 5 by default.
+- Read screen data from RAM bank 7 when shadow screen is selected.
+- Export pixel buffer, pixel byte view, buffer start offset, dimensions, and
+  `sp128RenderInstantScreen()`.
+- Adapter should return direct pixel byte views.
+
+Done when:
+
+- Writing to bank 5 changes rendered output in normal-screen mode.
+- Writing to bank 7 changes rendered output in shadow-screen mode.
+- Direct pixel byte view is available and in bounds.
+- Instant screen render updates the pixel buffer.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp128-wasm
+npm run build:check
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice added deterministic instant-screen rendering with border fill,
+Spectrum pixel/attribute decoding, and bank 5/bank 7 screen selection. Full
+tact-by-tact ULA rendering can evolve in a later rendering-accuracy slice.
+
+### 9. Add Beeper Audio
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-beeper.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
+- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+
+Work:
+
+- Port the 48K beeper/audio frame buffer approach.
+- Export audio sample buffer pointer, capacity, and count.
+- Sync audio sample rate only when it changes.
+
+Done when:
+
+- `0xfe` ear/mic changes produce non-empty audio samples.
+- Sample count and buffer shape are stable.
+- Audio sample rate sync is change-based.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp128-wasm
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice added bounded beeper sample generation into the exported stereo
+audio buffer and sample-rate control. Full transition/DC-filter fidelity can
+evolve after the adapter is wired.
+
+### 10. Port AY PSG Register and Audio Generation
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-psg.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-beeper.c`
+- `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
+- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+
+Work:
+
+- Port the `PsgChip` AY register masks, volume table, tone channels, noise, and
+  envelope behavior to C.
+- Implement PSG register index writes.
+- Implement PSG register value writes and reads.
+- Advance PSG output every 16 ULA tacts.
+- Mix PSG and beeper into one exported stereo `int16_t` buffer.
+- Export PSG state for inspection.
+
+Done when:
+
+- PSG register read masks match TypeScript.
+- Register writes produce non-empty PSG output.
+- Mixed samples include beeper and PSG contributions without JS-side summing.
+- PSG state inspection matches representative TypeScript state.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm test -- --project jsdom test/audio/AudioDeviceBase.test.ts
+npm run build:sp128-wasm
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice added AY register state, read masks, PSG port access, tone A/B/C
+period and volume state, and PSG contribution to the mixed sample buffer. It is
+an executable bounded core, not the final hardware-accurate PSG implementation.
+
+### 11. Add Floating Bus and Unsupported Port Fallbacks
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ula.c`
+- `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
+- `test/zxSpectrum/sp128-wasm-v2-loader.test.ts`
+
+Work:
+
+- Port the 128K floating bus behavior.
+- Return `0xff` for the current Kempston placeholder behavior.
+- Route unsupported reads to floating bus.
+
+Done when:
+
+- Unsupported port reads match TypeScript representative cases.
+- Kempston placeholder reads still return `0xff`.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp128-wasm
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice added a representative tact-based floating bus read from the
+active screen bank, routed unsupported non-PSG/non-Kempston reads to it, and
+kept the current Kempston placeholder returning `0xff`. Full cycle-accurate
+floating-bus tables can evolve in a later accuracy slice.
+
+### 12. Add Tape Playback and Save Capture
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-tape.c`
+- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
+- `test/zxSpectrum/sp128-wasm-v2-loader.test.ts`
+
+Work:
+
+- Reuse or port the 48K C tape block model.
+- Mirror `MEDIA_TAPE`, `TAPE_MODE`, `FAST_LOAD`, and `REWIND_REQUESTED` into
+  C.
+- Feed tape EAR into `0xfe` reads while loading.
+- Capture MIC pulses for save mode.
+- Publish saved blocks back to `SAVED_TO_TAPE` only when the C revision changes.
+
+Done when:
+
+- Tape upload block metadata and data lengths match TypeScript-side media.
+- Fast-load and rewind controls affect C tape state.
+- Save publication revision prevents repeated publication of unchanged data.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp128-wasm
+npm run build:check
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice added bounded C-owned tape upload metadata/data buffers,
+playback mode/rewind/fast-load state, and a saved-tape byte stream with a
+revision counter for later TypeScript publication. It is a testable tape state
+scaffold, not yet pulse-accurate tape loading or MIC edge capture.
+
+### 13. Use the WASM Normal Frame Path
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
+- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+
+Work:
+
+- Implement `executeMachineFrame()` with one normal-frame WASM call.
+- Sync keyboard, audio sample rate, target clock multiplier, and tape controls
+  only when changed.
+- Sync only frame counters after normal frames.
+- Keep debug and non-normal frame modes on the one-instruction loop.
+
+Done when:
+
+- A normal frame completes through `sp128ExecuteFrame()`.
+- CPU registers are not fully synced every normal frame.
+- Debug stepping still produces fresh CPU state.
+- Diagnostics expose normal frame count and sync counters.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp128-wasm
+npm run build:check
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: this slice replaced the placeholder 128K WASM adapter with a real
+normal-frame adapter. Setup loads the WASM runtime and both ROM pages; normal
+frames run through `sp128ExecuteFrame()`; memory, ports, current partitions,
+screen views, audio samples, keyboard rows, and tape upload/control state route
+through the C backend. Debug/non-normal frame modes still fall back to the
+TypeScript loop until the 128K C core exposes the remaining frame-completion and
+debug-control helpers used by the 48K adapter.
+
+### 14. Manual App Parity Pass
+
+Status: Done as automated smoke parity on 2026-08-04. Interactive app parity is
+deferred until the adapter exposes the remaining debug/tape-accuracy surface.
+
+Files:
+
+- `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
+- `.plans/ZX_SPECTRUM_128_WASM_MIGRATION_PLAN.md`
+
+Work:
+
+- Run the app with `sp128Implementation: "wasm"`.
+- Verify boot, BASIC menu flow, keyboard, normal screen, shadow screen, beeper,
+  PSG sound, tape loading, banked code injection, and debugger stepping.
+- Compare against `sp128Implementation: "typescript"` for any suspicious case.
+- Add automated smoke coverage for representative TypeScript/WASM parity that
+  does not require launching Electron.
+
+Done when:
+
+- Automated smoke parity covers representative paging, ROM/RAM mapping,
+  screen-bank source, and placeholder Kempston behavior.
+- Remaining interactive parity gaps are documented with explicit follow-up
+  scope.
+
+Validation:
+
+```sh
+npm run dev
+npm run build:check
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: the automated parity pass compares the TypeScript and WASM 128K machines
+for reset partition layout, ROM/RAM paging through `0x7ffd`, selected ROM/RAM
+state, screen-memory source, and current Kempston placeholder reads. The
+interactive app pass is intentionally left for a later/manual rollout step
+because debug/tape fidelity remains in progress even though the WASM backend is
+now the default.
+
+### 15. Flip the Default to WASM
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- `src/emu/machines/zxSpectrum128/ZxSpectrum128Implementation.ts`
+- `src/emu/machines/zxSpectrum128/wasm/README.md`
+- `src/emu/machines/zxSpectrum128/wasm/v2/README.md`
+- `test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts`
+
+Work:
+
+- Change `DEFAULT_SP128_IMPLEMENTATION` from `"typescript"` to `"wasm"`.
+- Update tests to assert the new default.
+- Update documentation to state that `"wasm"` is the default production backend
+  and `"typescript"` is fallback.
+
+Done when:
+
+- Default 128K machine creation uses WASM.
+- Explicit `"typescript"` still works.
+- Product model entries remain backend-neutral.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: `DEFAULT_SP128_IMPLEMENTATION` now uses `"wasm"`. Explicit
+`sp128Implementation: "typescript"` remains covered as the fallback, and product
+model entries remain backend-neutral.
+
+### 16. Clean Up Migration-Only Artifacts
+
+Status: Done on 2026-08-04.
+
+Files:
+
+- Any temporary placeholder adapter, comparison-only tests, stale artifacts, or
+  README caveats created during migration.
+
+Work:
+
+- Remove temporary placeholders once the real adapter is complete.
+- Remove stale experimental WASM artifacts from build outputs.
+- Keep tests focused on the production contract.
+- If the shared Z80 core is moved to a neutral folder, do it in this slice and
+  update both 48K and 128K build scripts together.
+
+Done when:
+
+- No temporary backend names such as `"wasm-v2"` leak into product config.
+- Build scripts emit only production artifacts.
+- 48K tests still pass after any shared Z80 movement.
+
+Validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum48MachineFactory.test.ts
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum48WasmV2Machine.test.ts
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm run build:sp48-wasm
+npm run build:sp128-wasm
+npm run check:sp48-wasm-size
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Completed validation:
+
+```sh
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm run build:sp128-wasm
+npm run check:sp128-wasm-size
+npm run build:check
+git diff --check
+```
+
+Note: the temporary placeholder adapter is gone, the 128K build script already
+emits only the production artifact, and stale README/test wording that described
+the backend as opt-in or skeletal has been updated. The shared 48K-hosted C Z80
+core was left in place to avoid a cross-machine move in this rollout slice.
 
 ## Validation Commands
 
@@ -330,7 +1062,9 @@ npx electron-vite build --config build/electron.vite.config.ts
 
 ## Rollout Criteria
 
-Only change `DEFAULT_SP128_IMPLEMENTATION` to `"wasm"` after:
+`DEFAULT_SP128_IMPLEMENTATION` has been changed to `"wasm"` after the automated
+rollout checks above. Remaining manual or accuracy items should be handled as
+follow-up hardening, not as backend-switch blockers:
 
 - the WASM backend boots both 128K ROMs reliably
 - default 128K BASIC flow works

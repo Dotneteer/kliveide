@@ -16,6 +16,8 @@ import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
 import { ZxSpectrum48Machine } from "./ZxSpectrum48Machine";
 
+const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
+
 export type Sp48WasmV2Diagnostics = {
   backend: "wasm";
   engine: "v2";
@@ -242,8 +244,8 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48Machine {
     this.wasmV2AudioSamples.length = 0;
     for (let i = 0; i < sampleCount; i++) {
       this.wasmV2AudioSamples.push({
-        left: words[i * 2],
-        right: words[i * 2 + 1]
+        left: words[i * 2] / WASM_AUDIO_SAMPLE_SCALE,
+        right: words[i * 2 + 1] / WASM_AUDIO_SAMPLE_SCALE
       });
     }
     return this.wasmV2AudioSamples;
@@ -447,7 +449,14 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48Machine {
       if (this.wasmV2KeyboardRowsValid && this.wasmV2KeyboardRows[line] === lineValue) {
         continue;
       }
-      runtime.keyboardLines[line] = lineValue;
+      const oldLineValue = this.wasmV2KeyboardRowsValid ? this.wasmV2KeyboardRows[line] : 0;
+      const changedBits = oldLineValue ^ lineValue;
+      for (let bit = 0; bit < 5; bit++) {
+        const mask = 1 << bit;
+        if ((changedBits & mask) !== 0) {
+          runtime.exports.sp48SetKeyStatus(line * 5 + bit, (lineValue & mask) !== 0 ? 1 : 0);
+        }
+      }
       this.wasmV2KeyboardRows[line] = lineValue;
       this.wasmV2KeyboardLineWrites++;
     }

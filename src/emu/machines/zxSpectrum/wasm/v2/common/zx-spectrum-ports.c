@@ -16,13 +16,8 @@ uint32_t sp48ReadPort(uint32_t address) {
     return sp48ReadFloatingBus();
   }
 
-  uint8_t status = 0u;
   const uint32_t selectedLines = (~(address >> 8u)) & 0xffu;
-  for (uint32_t line = 0u; line < 8u; line++) {
-    if ((selectedLines & (1u << line)) != 0u) {
-      status |= sp48KeyboardLines[line];
-    }
-  }
+  const uint8_t status = sp48KeyboardSelectedLineValue[selectedLines];
   uint32_t portValue = ((uint32_t)~status) & 0xffu;
   if (sp48TapeMode == SP48_TAPE_MODE_LOAD) {
     const uint32_t tapeEarBit = sp48TapeGetEarBit() != 0u ? 0x40u : 0x00u;
