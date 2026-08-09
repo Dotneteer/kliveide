@@ -72,6 +72,7 @@ describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
     machine.keyboardDevice.setKeyStatus(0, true);
     machine.executeMachineFrame();
     expect(machine.wasmV2Runtime?.keyboardLines[0]).toBe(0x01);
+    expect(machine.wasmV2Runtime?.exports.sp48ReadPort(0xfefe)).toBe(0xbe);
     const diagnosticsAfterFirstFrame = machine.getWasmV2Diagnostics();
 
     machine.executeMachineFrame();

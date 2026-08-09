@@ -32,6 +32,8 @@ describe("ZX Spectrum 128K WASM build", () => {
     expect(calls[0].compiler).toBe("fake-c-compiler");
     expect(calls[0].args).toContain(source);
     expect(calls[0].args).toContain(productionOutput);
+    expect(calls[0].args).toContain("-O3");
+    expect(calls[0].args).toContain("-Wl,--strip-all");
     expect(calls[0].args).toContain("-Wl,--initial-memory=8388608");
     for (const exportName of productionExports.filter(name => name !== "memory")) {
       expect(calls[0].args).toContain(`-Wl,--export=${exportName}`);
@@ -68,6 +70,7 @@ describe("ZX Spectrum 128K WASM build", () => {
 
     expect(calls[0].args).toContain("-Oz");
     expect(calls[0].args).not.toContain("-O3");
+    expect(calls[0].args).not.toContain("-Wl,--strip-all");
   });
 
   it("rejects removed non-production build modes", () => {

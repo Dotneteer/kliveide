@@ -11,7 +11,7 @@ const packagedResourceDirectory = "wasm/zxSpectrum128";
 const packagedArtifactRelative = `${packagedResourceDirectory}/zx-spectrum128.wasm`;
 
 const optimizationProfiles = {
-  speed: ["-O3"],
+  speed: ["-O3", "-Wl,--strip-all"],
   size: ["-Oz"],
   lto: ["-O3", "-flto"]
 };

@@ -27,6 +27,12 @@ static inline uint8_t effectiveAudioEarBit(void) {
   return sp48TapeMode == SP48_TAPE_MODE_LOAD ? sp48TapeEarBit : sp48EarBit;
 }
 
+static inline void updateNextAudioSampleTactFloor(void) {
+  sp48AudioNextSampleTactFloor = sp48AudioNextSampleTact >= 4294967295.0
+    ? 0xffffffffu
+    : (uint32_t)sp48AudioNextSampleTact;
+}
+
 static void resetAudioAccumulator(void) {
   sp48AudioAccumulatedEar = 0.0;
   sp48AudioAccumulatedMic = 0.0;
@@ -38,6 +44,7 @@ static void resetAudio(void) {
   sp48AudioSampleCount = 0u;
   sp48AudioSampleLength = (double)sp48BaseClockFrequency / (double)sp48AudioSampleRate;
   sp48AudioNextSampleTact = sp48AudioSampleLength * (double)sp48ClockMultiplier;
+  updateNextAudioSampleTactFloor();
   sp48DcFilterPrevInputLeft = 0.0;
   sp48DcFilterPrevInputRight = 0.0;
   sp48DcFilterPrevOutputLeft = 0.0;
@@ -68,6 +75,9 @@ static void recordAudioTransition(uint32_t tact) {
 }
 
 static void setNextAudioSample(void) {
+  if (sp48Tacts <= sp48AudioNextSampleTactFloor) {
+    return;
+  }
   if ((double)sp48Tacts <= sp48AudioNextSampleTact) {
     return;
   }
@@ -111,11 +121,13 @@ static void setNextAudioSample(void) {
     clampAudioWord((outRight + SP48_AUDIO_EXTRA_RIGHT()) * SP48_AUDIO_SAMPLE_SCALE);
   sp48AudioSampleCount++;
   sp48AudioNextSampleTact += sp48AudioSampleLength * (double)sp48ClockMultiplier;
+  updateNextAudioSampleTactFloor();
 }
 
 void sp48SetAudioSampleRate(uint32_t rate) {
   sp48AudioSampleRate = rate == 0u ? SP48_DEFAULT_SAMPLE_RATE : rate;
   sp48AudioSampleLength = (double)sp48BaseClockFrequency / (double)sp48AudioSampleRate;
   sp48AudioNextSampleTact = sp48AudioSampleLength * (double)sp48ClockMultiplier;
+  updateNextAudioSampleTactFloor();
   sp48AudioSampleCount = 0u;
 }

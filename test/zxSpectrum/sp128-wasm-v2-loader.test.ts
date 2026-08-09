@@ -209,6 +209,29 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     expect(runtime.exports.sp128GetLastPortIsWrite()).toBe(1);
   });
 
+  it("suppresses last bus event capture during normal frame execution", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-normal-frame-bus-events-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128UploadRomByte(0, 0x0000, 0x3e);
+    runtime.exports.sp128UploadRomByte(0, 0x0001, 0x47);
+    runtime.exports.sp128UploadRomByte(0, 0x0002, 0xd3);
+    runtime.exports.sp128UploadRomByte(0, 0x0003, 0xfd);
+
+    expect(runtime.exports.sp128ExecuteFrame()).toBe(0);
+
+    expect(runtime.exports.sp128GetLastMemoryAddress()).toBe(0);
+    expect(runtime.exports.sp128GetLastMemoryValue()).toBe(0);
+    expect(runtime.exports.sp128GetLastMemoryIsWrite()).toBe(0);
+    expect(runtime.exports.sp128GetLastPortAddress()).toBe(0);
+    expect(runtime.exports.sp128GetLastPortValue()).toBe(0);
+    expect(runtime.exports.sp128GetLastPortIsWrite()).toBe(0);
+  });
+
   it("raises a frame-start interrupt when interrupts are enabled", async () => {
     buildSp128Wasm();
     const runtime = await loadSp128WasmV2({

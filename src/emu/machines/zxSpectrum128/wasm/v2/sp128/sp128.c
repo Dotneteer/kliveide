@@ -127,12 +127,18 @@ static uint8_t sp128Ram[SP128_RAM_SIZE];
 static uint8_t sp128Rom[SP128_ROM_SIZE];
 static uint8_t sp128Memory[SP128_MEMORY_SIZE];
 static uint8_t sp128KeyboardLines[SP128_KEYBOARD_LINE_COUNT];
+static uint8_t sp128KeyboardSelectedLineValue[256];
+static uint8_t *sp128MemorySlotBase[4];
+static uint8_t sp128MemorySlotWritable[4];
+static uint8_t sp128MemorySlotMapInitialized;
 static uint8_t sp128Contention[SP128_TACTS_PER_FRAME];
 static uint8_t sp128RenderingPhase[SP128_TACTS_PER_FRAME];
 static uint16_t sp128RenderingPixelAddress[SP128_TACTS_PER_FRAME];
 static uint16_t sp128RenderingAttributeAddress[SP128_TACTS_PER_FRAME];
 static uint32_t sp128RenderingPixelIndex[SP128_TACTS_PER_FRAME];
 static uint32_t sp128PixelBuffer[SP128_PIXEL_BUFFER_WORDS];
+static uint32_t sp128AttrColors[2][256][2];
+static uint8_t sp128AttrColorsInitialized;
 static Sp128AudioSample sp128AudioSamples[SP128_AUDIO_SAMPLE_CAPACITY];
 static Sp128TapeBlock sp128TapeBlocks[SP128_TAPE_MAX_BLOCKS];
 static Sp128TapeBlock sp128SavedTapeBlocks[SP128_TAPE_SAVE_MAX_BLOCKS];
@@ -160,6 +166,7 @@ static uint32_t sp128AudioSampleRate = SP128_DEFAULT_SAMPLE_RATE;
 static uint32_t sp128AudioSampleCount;
 static double sp128AudioSampleLength;
 static double sp128AudioNextSampleTact;
+static uint32_t sp128AudioNextSampleTactFloor;
 static uint32_t sp128AudioLastLevelChangeTact;
 static double sp128AudioAccumulatedEar;
 static double sp128AudioAccumulatedMic;
@@ -235,6 +242,7 @@ static uint16_t sp128LastMemoryAddress;
 static uint8_t sp128LastMemoryValue;
 static uint8_t sp128LastMemoryIsWrite;
 static uint8_t sp128HasMemoryEvent;
+static uint8_t sp128CaptureBusEvents = 1u;
 
 uint32_t sp128ReadPort(uint32_t address);
 void sp128WritePort(uint32_t address, uint32_t value);
@@ -307,6 +315,8 @@ static const Sp128ScreenConfig sp128UlaConfig = {
 #define sp48RenderingPixelAddress sp128RenderingPixelAddress
 #define sp48RenderingAttributeAddress sp128RenderingAttributeAddress
 #define sp48RenderingPixelIndex sp128RenderingPixelIndex
+#define sp48AttrColors sp128AttrColors
+#define sp48AttrColorsInitialized sp128AttrColorsInitialized
 #define sp48TotalContentionDelaySinceStart sp128TotalContentionDelaySinceStart
 #define sp48ContentionDelaySincePause sp128ContentionDelaySincePause
 #define sp48BorderFrameStartTact sp128BorderFrameStartTact
@@ -323,6 +333,7 @@ static const Sp128ScreenConfig sp128UlaConfig = {
 #define pixelBufferStartOffset sp128UlaPixelBufferStartOffset
 #define getBorderPixel sp128UlaGetBorderPixel
 #define flashFlag sp128UlaFlashFlag
+#define initializeAttrColorTables sp128UlaInitializeAttrColorTables
 #define getUlaPixelColor sp128UlaGetPixelColor
 #define currentFrameTact sp128UlaCurrentFrameTact
 #define calcPixelAddress sp128UlaCalcPixelAddress
@@ -366,6 +377,7 @@ static const Sp128ScreenConfig sp128UlaConfig = {
 #undef calcPixelAddress
 #undef currentFrameTact
 #undef getUlaPixelColor
+#undef initializeAttrColorTables
 #undef flashFlag
 #undef getBorderPixel
 #undef pixelBufferStartOffset
@@ -383,6 +395,8 @@ static const Sp128ScreenConfig sp128UlaConfig = {
 #undef sp48ContentionDelaySincePause
 #undef sp48TotalContentionDelaySinceStart
 #undef sp48RenderingPixelIndex
+#undef sp48AttrColorsInitialized
+#undef sp48AttrColors
 #undef sp48RenderingAttributeAddress
 #undef sp48RenderingPixelAddress
 #undef sp48RenderingPhase
@@ -407,6 +421,7 @@ static const Sp128ScreenConfig sp128UlaConfig = {
 #undef Sp48ScreenConfig
 
 #define sp48KeyboardLines sp128KeyboardLines
+#define sp48KeyboardSelectedLineValue sp128KeyboardSelectedLineValue
 #define resetKeyboard sp128CommonResetKeyboard
 #define sp48SetKeyStatus sp128CommonSetKeyStatus
 #define sp48GetKeyboardLine sp128CommonGetKeyboardLine
@@ -414,6 +429,7 @@ static const Sp128ScreenConfig sp128UlaConfig = {
 #undef sp48GetKeyboardLine
 #undef sp48SetKeyStatus
 #undef resetKeyboard
+#undef sp48KeyboardSelectedLineValue
 #undef sp48KeyboardLines
 
 static uint32_t screenMemoryOffset(uint32_t y, uint32_t byteX) {
@@ -447,6 +463,7 @@ static uint32_t screenBankOffset(void) {
 #define sp48AudioSampleRate sp128AudioSampleRate
 #define sp48BaseClockFrequency SP128_BASE_CLOCK_FREQUENCY
 #define sp48AudioNextSampleTact sp128AudioNextSampleTact
+#define sp48AudioNextSampleTactFloor sp128AudioNextSampleTactFloor
 #define sp48ClockMultiplier sp128ClockMultiplier
 #define sp48DcFilterPrevInputLeft sp128DcFilterPrevInputLeft
 #define sp48DcFilterPrevInputRight sp128DcFilterPrevInputRight
@@ -478,6 +495,7 @@ static uint32_t screenBankOffset(void) {
 #undef sp48DcFilterPrevInputRight
 #undef sp48DcFilterPrevInputLeft
 #undef sp48ClockMultiplier
+#undef sp48AudioNextSampleTactFloor
 #undef sp48AudioNextSampleTact
 #undef sp48BaseClockFrequency
 #undef sp48AudioSampleRate
@@ -560,49 +578,78 @@ static void resetTapePlayback(void) {
   sp128TapeEarBit = 1u;
 }
 
-static void rebuildFlatMemory(void) {
+static void rebuildMemorySlotMap(void) {
+  sp128MemorySlotBase[0] = &sp128Rom[romBankOffset(sp128SelectedRom)];
+  sp128MemorySlotBase[1] = &sp128Ram[ramBankOffset(5u)];
+  sp128MemorySlotBase[2] = &sp128Ram[ramBankOffset(2u)];
+  sp128MemorySlotBase[3] = &sp128Ram[ramBankOffset(sp128SelectedBank)];
+  sp128MemorySlotWritable[0] = 0u;
+  sp128MemorySlotWritable[1] = 1u;
+  sp128MemorySlotWritable[2] = 1u;
+  sp128MemorySlotWritable[3] = 1u;
+  sp128MemorySlotMapInitialized = 1u;
+}
+
+static void rebuildFlatRomSlot(void) {
   for (uint32_t i = 0u; i < 0x4000u; i++) {
-    sp128Memory[i] = sp128Rom[romBankOffset(sp128SelectedRom) + i];
-    sp128Memory[0x4000u + i] = sp128Ram[ramBankOffset(5u) + i];
-    sp128Memory[0x8000u + i] = sp128Ram[ramBankOffset(2u) + i];
-    sp128Memory[0xc000u + i] = sp128Ram[ramBankOffset(sp128SelectedBank) + i];
+    sp128Memory[i] = sp128MemorySlotBase[0][i];
+  }
+}
+
+static void rebuildFlatTopRamSlot(void) {
+  for (uint32_t i = 0u; i < 0x4000u; i++) {
+    sp128Memory[0xc000u + i] = sp128MemorySlotBase[3][i];
+  }
+}
+
+static void rebuildFlatMemory(void) {
+  rebuildMemorySlotMap();
+  for (uint32_t i = 0u; i < 0x4000u; i++) {
+    sp128Memory[i] = sp128MemorySlotBase[0][i];
+    sp128Memory[0x4000u + i] = sp128MemorySlotBase[1][i];
+    sp128Memory[0x8000u + i] = sp128MemorySlotBase[2][i];
+    sp128Memory[0xc000u + i] = sp128MemorySlotBase[3][i];
   }
 }
 
 static uint8_t readMappedMemory(uint32_t address) {
+  if (sp128MemorySlotMapInitialized == 0u) {
+    rebuildMemorySlotMap();
+  }
   const uint32_t maskedAddress = address & 0xffffu;
-  if (maskedAddress < 0x4000u) {
-    return sp128Rom[romBankOffset(sp128SelectedRom) + maskedAddress];
-  }
-  if (maskedAddress < 0x8000u) {
-    return sp128Ram[ramBankOffset(5u) + (maskedAddress - 0x4000u)];
-  }
-  if (maskedAddress < 0xc000u) {
-    return sp128Ram[ramBankOffset(2u) + (maskedAddress - 0x8000u)];
-  }
-  return sp128Ram[ramBankOffset(sp128SelectedBank) + (maskedAddress - 0xc000u)];
+  return sp128MemorySlotBase[maskedAddress >> 14u][maskedAddress & 0x3fffu];
 }
 
 static void writeMappedMemory(uint32_t address, uint32_t value, uint32_t recordEvent) {
+  if (sp128MemorySlotMapInitialized == 0u) {
+    rebuildMemorySlotMap();
+  }
   const uint32_t maskedAddress = address & 0xffffu;
   const uint8_t byteValue = (uint8_t)value;
-  if (recordEvent != 0u) {
+  if (recordEvent != 0u && sp128CaptureBusEvents != 0u) {
     sp128LastMemoryAddress = (uint16_t)maskedAddress;
     sp128LastMemoryValue = byteValue;
     sp128LastMemoryIsWrite = 1u;
     sp128HasMemoryEvent = 1u;
   }
-  if (maskedAddress < 0x4000u) {
+  const uint32_t slot = maskedAddress >> 14u;
+  if (sp128MemorySlotWritable[slot] == 0u) {
     return;
   }
-  if (maskedAddress < 0x8000u) {
-    sp128Ram[ramBankOffset(5u) + (maskedAddress - 0x4000u)] = byteValue;
-  } else if (maskedAddress < 0xc000u) {
-    sp128Ram[ramBankOffset(2u) + (maskedAddress - 0x8000u)] = byteValue;
-  } else {
-    sp128Ram[ramBankOffset(sp128SelectedBank) + (maskedAddress - 0xc000u)] = byteValue;
-  }
+  sp128MemorySlotBase[slot][maskedAddress & 0x3fffu] = byteValue;
   sp128Memory[maskedAddress] = byteValue;
+}
+
+static void updateVisibleRamBankMirrorByte(uint32_t bank, uint32_t offset, uint8_t value) {
+  if (bank == 5u) {
+    sp128Memory[0x4000u + offset] = value;
+  }
+  if (bank == 2u) {
+    sp128Memory[0x8000u + offset] = value;
+  }
+  if (bank == sp128SelectedBank) {
+    sp128Memory[0xc000u + offset] = value;
+  }
 }
 
 static uint32_t currentFrameTact(void) {
@@ -613,7 +660,7 @@ static uint32_t currentFrameTact(void) {
   const uint32_t elapsedTacts =
     sp128Tacts >= sp128NextFrameStartTact ? sp128Tacts - sp128NextFrameStartTact : 0u;
   const uint32_t multiplier = sp128ClockMultiplier == 0u ? 1u : sp128ClockMultiplier;
-  uint32_t tact = elapsedTacts / multiplier;
+  uint32_t tact = multiplier == 1u ? elapsedTacts : elapsedTacts / multiplier;
   if (tact >= sp128TactsInFrame) {
     tact = sp128TactsInFrame - 1u;
   }
@@ -636,10 +683,12 @@ static uint8_t shouldRaiseInterrupt(void) {
 static uint8_t sp128CpuReadMemory(uint32_t address) {
   const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
   const uint8_t value = readMappedMemory(maskedAddress);
-  sp128LastMemoryAddress = maskedAddress;
-  sp128LastMemoryValue = value;
-  sp128LastMemoryIsWrite = 0u;
-  sp128HasMemoryEvent = 1u;
+  if (sp128CaptureBusEvents != 0u) {
+    sp128LastMemoryAddress = maskedAddress;
+    sp128LastMemoryValue = value;
+    sp128LastMemoryIsWrite = 0u;
+    sp128HasMemoryEvent = 1u;
+  }
   return value;
 }
 
@@ -658,6 +707,7 @@ static void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
 #define Z80_POKE_MEMORY(address, value) sp128CpuPokeMemory((uint32_t)(address), (uint32_t)(value))
 #define Z80_READ_PORT(address) ((uint8_t)sp128ReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) sp128WritePort((uint32_t)(address), (uint32_t)(value))
+#define Z80_CAPTURE_BUS_EVENTS() sp128CaptureBusEvents
 #define Z80_TACT_PLUS_N(value) tactPlusN128((uint32_t)(value))
 #define Z80_DELAY_MEMORY_READ(address) sp128DelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_MEMORY_WRITE(address) sp128DelayMemoryAccess((uint32_t)(address))
@@ -671,6 +721,7 @@ static void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
 #undef Z80_POKE_MEMORY
 #undef Z80_READ_PORT
 #undef Z80_WRITE_PORT
+#undef Z80_CAPTURE_BUS_EVENTS
 #undef Z80_TACT_PLUS_N
 #undef Z80_DELAY_MEMORY_READ
 #undef Z80_DELAY_MEMORY_WRITE
@@ -1005,11 +1056,15 @@ void sp128HardReset(void) {
 
 uint32_t sp128ExecuteFrame(void) {
   beginMachineFrame();
+  sp128CaptureBusEvents = 0u;
+  sp128HasMemoryEvent = 0u;
+  z80ClearBusEvents();
 
   const uint32_t frameEndTact = sp128NextFrameStartTact + sp128TactsInCurrentFrame;
   while (sp128Tacts < frameEndTact) {
     sp128ExecuteInstruction();
   }
+  sp128CaptureBusEvents = 1u;
   return 0u;
 }
 
@@ -1018,8 +1073,10 @@ uint32_t sp128ExecuteInstruction(void) {
     beginMachineFrame();
   }
 
-  sp128HasMemoryEvent = 0u;
-  z80ClearBusEvents();
+  if (sp128CaptureBusEvents != 0u) {
+    sp128HasMemoryEvent = 0u;
+    z80ClearBusEvents();
+  }
   updateTapeMode();
   const uint8_t intActive = shouldRaiseInterrupt();
   if (intActive != 0u && sp128InterruptLineActive == 0u) {
@@ -1071,8 +1128,9 @@ void sp128WriteRamBank(uint32_t bank, uint32_t offset, uint32_t value) {
   if (bank >= 8u || offset >= 0x4000u) {
     return;
   }
-  sp128Ram[ramBankOffset(bank) + offset] = (uint8_t)value;
-  rebuildFlatMemory();
+  const uint8_t byteValue = (uint8_t)value;
+  sp128Ram[ramBankOffset(bank) + offset] = byteValue;
+  updateVisibleRamBankMirrorByte(bank, offset, byteValue);
 }
 
 uint32_t sp128ReadRomBank(uint32_t bank, uint32_t offset) {
@@ -1112,13 +1170,8 @@ void sp128SetKeyStatus(uint32_t key, uint32_t down) {
 
 uint32_t sp128ReadPort(uint32_t address) {
   if ((address & 0x0001u) == 0u) {
-    uint8_t status = 0u;
     const uint32_t selectedLines = (~(address >> 8u)) & 0xffu;
-    for (uint32_t line = 0u; line < SP128_KEYBOARD_LINE_COUNT; line++) {
-      if ((selectedLines & (1u << line)) != 0u) {
-        status |= sp128KeyboardLines[line];
-      }
-    }
+    const uint8_t status = sp128KeyboardSelectedLineValue[selectedLines];
     const uint32_t keyboardValue = ((uint32_t)~status) & 0xffu;
     const uint8_t earBit = sp128TapeMode == SP128_TAPE_MODE_LOAD ? sp128CommonTapeGetEarBit() : sp128EarBit;
     const uint32_t earValue = earBit != 0u ? 0x40u : 0x00u;
@@ -1167,11 +1220,19 @@ void sp128WritePort(uint32_t address, uint32_t value) {
   if (sp128PagingEnabled == 0u) {
     return;
   }
+  const uint8_t oldSelectedBank = sp128SelectedBank;
+  const uint8_t oldSelectedRom = sp128SelectedRom;
   sp128SelectedBank = (uint8_t)(value & 0x07u);
   sp128UseShadowScreen = (value & 0x08u) != 0u ? 1u : 0u;
   sp128SelectedRom = (value & 0x10u) != 0u ? 1u : 0u;
   sp128PagingEnabled = (value & 0x20u) != 0u ? 0u : 1u;
-  rebuildFlatMemory();
+  rebuildMemorySlotMap();
+  if (sp128SelectedRom != oldSelectedRom) {
+    rebuildFlatRomSlot();
+  }
+  if (sp128SelectedBank != oldSelectedBank) {
+    rebuildFlatTopRamSlot();
+  }
 }
 
 void sp128DelayAddressBusAccess(uint32_t address) {

@@ -409,3 +409,58 @@ For Z80 core changes, run the Z80 CPU tests as well.
 - Benchmark results are committed or documented with enough detail to compare
   future changes.
 
+## Execution Summary - 2026-08-09
+
+Implemented phases 1 through 11:
+
+- Added `scripts/benchmark-spectrum-wasm.cjs` and `npm run benchmark:spectrum-wasm`.
+- Updated the default speed build profile to `-O3 -Wl,--strip-all`.
+- Gated normal-frame bus diagnostics while preserving instruction-level debugger events.
+- Added the audio next-sample integer guard and `clockMultiplier == 1` tact fast path.
+- Added Z80 `sz53` / `sz53pv` flag tables.
+- Added ULA attribute color lookup tables.
+- Added keyboard selected-line lookup tables and fixed the JS adapter sync path to use
+  WASM key setters so cached port reads stay coherent.
+- Added SP128 memory slot metadata, direct visible-bank mirror updates, and partial
+  ROM/top-RAM mirror rebuilds on paging changes.
+- Tuned SP128 PSG sample generation by removing helper calls from the per-sample loop.
+- Reduced shared tape polling work by reading the Z80 PC once per `updateTapeMode`.
+
+Final artifact sizes:
+
+- SP48: `226,259` bytes, below the `240,000` byte ceiling.
+- SP128: `137,084` bytes, below the `320,000` byte ceiling.
+
+Final benchmark command:
+
+```sh
+npm run benchmark:spectrum-wasm -- --frames 120 --warmup 20 --runs 7
+```
+
+Selected final median timings:
+
+- SP48 `nop-loop`: `0.45 ms/frame`.
+- SP48 `cpu-loop`: `0.39 ms/frame`.
+- SP48 `keyboard-read-loop`: `0.37 ms/frame`.
+- SP48 `tape-load-port-read`: `0.38 ms/frame`.
+- SP128 `nop-loop`: `0.52 ms/frame`.
+- SP128 `cpu-loop`: `0.46 ms/frame`.
+- SP128 `keyboard-read-loop`: `0.40 ms/frame`.
+- SP128 `paging-loop`: `0.42 ms/frame`.
+- SP128 `psg-write-loop`: `0.47 ms/frame`.
+- SP128 `psg-audio-loop`: `0.52 ms/frame`.
+
+Final validation passed:
+
+```sh
+npm run build:sp48-wasm
+npm run build:sp128-wasm
+npm run check:sp48-wasm-size
+npm run check:sp128-wasm-size
+npm run build:check
+npm test -- --project jsdom test/zxSpectrum/sp48-wasm-build.test.ts test/zxSpectrum/sp128-wasm-build.test.ts
+npm test -- --project jsdom test/zxSpectrum/sp48-wasm-v2-loader.test.ts test/zxSpectrum/sp128-wasm-v2-loader.test.ts
+npm test -- --project jsdom test/zxSpectrum/ZxSpectrum48WasmV2Machine.test.ts test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts
+npm test -- --project jsdom test/z80
+git diff --check
+```

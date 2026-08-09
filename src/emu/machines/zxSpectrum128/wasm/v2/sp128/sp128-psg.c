@@ -228,22 +228,6 @@ static void sp128PsgNoiseRngTick(void) {
   sp128PsgNoiseRng = (sp128PsgNoiseRng >> 1u) | (feedback << 16u);
 }
 
-static uint8_t sp128PsgToneDisabled(uint32_t channel) {
-  return (sp128PsgRegisters[SP128_AY_ENABLE] & (1u << channel)) != 0u ? 1u : 0u;
-}
-
-static uint8_t sp128PsgNoiseDisabled(uint32_t channel) {
-  return (sp128PsgRegisters[SP128_AY_ENABLE] & (1u << (channel + 3u))) != 0u ? 1u : 0u;
-}
-
-static uint8_t sp128PsgToneVolume(Sp128PsgTone *tone) {
-  return tone->volume & 0x0fu;
-}
-
-static uint8_t sp128PsgToneEnvelope(Sp128PsgTone *tone) {
-  return (tone->volume >> 4u) & 0x01u;
-}
-
 static void sp128PsgGenerateStreamSample(void) {
   for (uint32_t channel = 0u; channel < 3u; channel++) {
     Sp128PsgTone *tone = &sp128PsgTone[channel];
@@ -257,7 +241,8 @@ static void sp128PsgGenerateStreamSample(void) {
   }
 
   sp128PsgNoiseCounter++;
-  if ((uint32_t)sp128PsgNoiseCounter >= (sp128PsgRegisters[SP128_AY_NOISEPER] & 0x1fu)) {
+  const uint8_t noisePeriod = sp128PsgRegisters[SP128_AY_NOISEPER] & 0x1fu;
+  if ((uint32_t)sp128PsgNoiseCounter >= noisePeriod) {
     sp128PsgNoiseCounter = 0;
     sp128PsgNoisePrescale ^= 1u;
     if (sp128PsgNoisePrescale == 0u) {
@@ -265,10 +250,13 @@ static void sp128PsgGenerateStreamSample(void) {
     }
   }
 
+  const uint8_t enable = sp128PsgRegisters[SP128_AY_ENABLE];
   for (uint32_t channel = 0u; channel < 3u; channel++) {
     Sp128PsgTone *tone = &sp128PsgTone[channel];
-    const uint8_t toneOutput = tone->output | sp128PsgToneDisabled(channel);
-    const uint8_t noiseOutput = (sp128PsgNoiseRng & 0x01u) | sp128PsgNoiseDisabled(channel);
+    const uint8_t toneDisabled = (enable & (1u << channel)) != 0u ? 1u : 0u;
+    const uint8_t noiseDisabled = (enable & (1u << (channel + 3u))) != 0u ? 1u : 0u;
+    const uint8_t toneOutput = tone->output | toneDisabled;
+    const uint8_t noiseOutput = (sp128PsgNoiseRng & 0x01u) | noiseDisabled;
     sp128PsgVolEnabled[channel] = (uint8_t)(toneOutput & noiseOutput);
   }
 
@@ -300,12 +288,13 @@ static void sp128PsgGenerateStreamSample(void) {
   double routedOutput = 0.0;
   for (uint32_t channel = 0u; channel < 3u; channel++) {
     Sp128PsgTone *tone = &sp128PsgTone[channel];
+    const uint8_t toneVolume = tone->volume;
     uint8_t volumeIndex;
-    if (sp128PsgToneEnvelope(tone) != 0u) {
+    if (((toneVolume >> 4u) & 0x01u) != 0u) {
       volumeIndex = sp128PsgVolEnabled[channel] != 0u ? sp128PsgEnvelope.volume : 0u;
       sp128PsgStreamOutput[channel] = sp128PsgEnvelopeTable[volumeIndex & 0x0fu];
     } else {
-      volumeIndex = sp128PsgVolEnabled[channel] != 0u ? sp128PsgToneVolume(tone) : 0u;
+      volumeIndex = sp128PsgVolEnabled[channel] != 0u ? toneVolume : 0u;
       sp128PsgStreamOutput[channel] = sp128PsgVolumeTable[volumeIndex & 0x0fu];
     }
     diagnosticOutput += sp128AyVolumeTable[volumeIndex & 0x0fu];

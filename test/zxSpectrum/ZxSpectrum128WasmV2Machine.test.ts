@@ -127,6 +127,7 @@ describe("ZX Spectrum 128K WASM v2 machine adapter", () => {
     expect(diagnostics.interruptsRaised).toBeGreaterThan(0);
     expect(machine.pc).not.toBe(0);
     expect(machine.wasmV2Runtime?.keyboardLines[0]).toBe(0x01);
+    expect(machine.wasmV2Runtime?.exports.sp128ReadPort(0xfefe)).toBe(0xbe);
   });
 
   it("returns normalized floating audio samples for PSG noise", async () => {
@@ -159,6 +160,7 @@ describe("ZX Spectrum 128K WASM v2 machine adapter", () => {
     machine.executeMachineFrame();
 
     expect(machine.wasmV2Runtime?.keyboardLines[0]).toBe(0x01);
+    expect(machine.wasmV2Runtime?.exports.sp128ReadPort(0xfefe)).toBe(0xbe);
     const diagnosticsAfterFirstFrame = machine.getWasmV2Diagnostics();
 
     machine.executeMachineFrame();

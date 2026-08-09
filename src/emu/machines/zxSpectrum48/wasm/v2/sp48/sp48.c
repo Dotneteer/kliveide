@@ -128,12 +128,15 @@ typedef struct Sp48SavedTapeBlock {
 
 static uint8_t sp48Memory[SP48_MEMORY_SIZE];
 static uint8_t sp48KeyboardLines[8];
+static uint8_t sp48KeyboardSelectedLineValue[256];
 static uint8_t sp48Contention[SP48_TACTS_PER_FRAME_MAX];
 static uint8_t sp48RenderingPhase[SP48_TACTS_PER_FRAME_MAX];
 static uint16_t sp48RenderingPixelAddress[SP48_TACTS_PER_FRAME_MAX];
 static uint16_t sp48RenderingAttributeAddress[SP48_TACTS_PER_FRAME_MAX];
 static uint32_t sp48RenderingPixelIndex[SP48_TACTS_PER_FRAME_MAX];
 static uint32_t sp48PixelBuffer[SP48_PIXEL_BUFFER_WORDS_MAX];
+static uint32_t sp48AttrColors[2][256][2];
+static uint8_t sp48AttrColorsInitialized;
 static Sp48AudioSample sp48AudioSamples[SP48_AUDIO_SAMPLE_CAPACITY];
 static Sp48TapeBlock sp48TapeBlocks[SP48_TAPE_MAX_BLOCKS];
 static Sp48SavedTapeBlock sp48SavedTapeBlocks[SP48_TAPE_SAVE_MAX_BLOCKS];
@@ -161,6 +164,7 @@ static uint32_t sp48AudioSampleRate = SP48_DEFAULT_SAMPLE_RATE;
 static uint32_t sp48AudioSampleCount;
 static double sp48AudioSampleLength;
 static double sp48AudioNextSampleTact;
+static uint32_t sp48AudioNextSampleTactFloor;
 static uint32_t sp48AudioLastLevelChangeTact;
 static double sp48AudioAccumulatedEar;
 static double sp48AudioAccumulatedMic;
@@ -197,6 +201,7 @@ static uint16_t sp48LastMemoryAddress;
 static uint8_t sp48LastMemoryValue;
 static uint8_t sp48LastMemoryIsWrite;
 static uint8_t sp48HasMemoryEvent;
+static uint8_t sp48CaptureBusEvents = 1u;
 static uint32_t sp48TapeBlockCount;
 static uint32_t sp48TapeDataLength;
 static uint32_t sp48TapeCurrentBlockIndex;
@@ -259,6 +264,7 @@ uint32_t sp48ExecuteInstruction(void);
 #define Z80_POKE_MEMORY(address, value) sp48Memory[((uint32_t)(address)) & 0xffffu] = (uint8_t)(value)
 #define Z80_READ_PORT(address) ((uint8_t)sp48ReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) sp48WritePort((uint32_t)(address), (uint32_t)(value))
+#define Z80_CAPTURE_BUS_EVENTS() sp48CaptureBusEvents
 #define Z80_TACT_PLUS_N(value) \
   do { \
     const uint32_t z80Sp48Tacts = (uint32_t)(value); \
@@ -322,6 +328,7 @@ uint32_t sp48ExecuteInstruction(void);
 #undef Z80_POKE_MEMORY
 #undef Z80_READ_PORT
 #undef Z80_WRITE_PORT
+#undef Z80_CAPTURE_BUS_EVENTS
 #undef Z80_TACT_PLUS_N
 #undef SP48_CPU_APPLY_CONTENTION
 #undef SP48_CPU_DELAY_PORT_ACCESS
@@ -421,11 +428,15 @@ void sp48HardReset(uint32_t is16k, uint32_t isNtsc) {
 
 uint32_t sp48ExecuteFrame(void) {
   beginMachineFrame();
+  sp48CaptureBusEvents = 0u;
+  sp48HasMemoryEvent = 0u;
+  z80ClearBusEvents();
 
   const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInCurrentFrame;
   while (sp48Tacts < frameEndTact) {
     sp48ExecuteInstruction();
   }
+  sp48CaptureBusEvents = 1u;
   return 0u;
 }
 
@@ -438,8 +449,10 @@ uint32_t sp48ExecuteInstruction(void) {
     beginMachineFrame();
   }
 
-  sp48HasMemoryEvent = 0u;
-  z80ClearBusEvents();
+  if (sp48CaptureBusEvents != 0u) {
+    sp48HasMemoryEvent = 0u;
+    z80ClearBusEvents();
+  }
   updateTapeMode();
   const uint8_t intActive = shouldRaiseInterrupt();
   if (intActive != 0u && sp48InterruptLineActive == 0u) {

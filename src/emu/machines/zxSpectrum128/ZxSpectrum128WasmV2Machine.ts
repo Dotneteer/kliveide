@@ -482,7 +482,14 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128Machine {
       if (this.wasmV2KeyboardRowsValid && this.wasmV2KeyboardRows[line] === lineValue) {
         continue;
       }
-      runtime.keyboardLines[line] = lineValue;
+      const oldLineValue = this.wasmV2KeyboardRowsValid ? this.wasmV2KeyboardRows[line] : 0;
+      const changedBits = oldLineValue ^ lineValue;
+      for (let bit = 0; bit < 5; bit++) {
+        const mask = 1 << bit;
+        if ((changedBits & mask) !== 0) {
+          runtime.exports.sp128SetKeyStatus(line * 5 + bit, (lineValue & mask) !== 0 ? 1 : 0);
+        }
+      }
       this.wasmV2KeyboardRows[line] = lineValue;
       this.wasmV2KeyboardLineWrites++;
     }
