@@ -355,7 +355,7 @@ static const Sp128ScreenConfig sp128UlaConfig = {
 #define sp48ReadFloatingBus sp128UlaReadFloatingBus
 #define readScreenMemoryOffset sp128ReadScreenMemoryOffset
 #define setNextAudioSample sp128CommonSetNextAudioSample
-#include "../../../../zxSpectrum/wasm/v2/common/zx-spectrum-ula.c"
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-ula.c"
 #undef setNextAudioSample
 #undef readScreenMemoryOffset
 #undef sp48ReadFloatingBus
@@ -425,7 +425,7 @@ static const Sp128ScreenConfig sp128UlaConfig = {
 #define resetKeyboard sp128CommonResetKeyboard
 #define sp48SetKeyStatus sp128CommonSetKeyStatus
 #define sp48GetKeyboardLine sp128CommonGetKeyboardLine
-#include "../../../../zxSpectrum/wasm/v2/common/zx-spectrum-keyboard.c"
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-keyboard.c"
 #undef sp48GetKeyboardLine
 #undef sp48SetKeyStatus
 #undef resetKeyboard
@@ -479,7 +479,7 @@ static uint32_t screenBankOffset(void) {
 #define recordAudioTransition sp128CommonRecordAudioTransition
 #define setNextAudioSample sp128CommonSetNextAudioSample
 #define sp48SetAudioSampleRate sp128CommonSetAudioSampleRate
-#include "../../../../zxSpectrum/wasm/v2/common/zx-spectrum-beeper.c"
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-beeper.c"
 #undef sp48SetAudioSampleRate
 #undef setNextAudioSample
 #undef recordAudioTransition
@@ -713,7 +713,7 @@ static void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
 #define Z80_DELAY_MEMORY_WRITE(address) sp128DelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_READ(address) sp128DelayPortAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_WRITE(address) sp128DelayPortAccess((uint32_t)(address))
-#include "../../../../zxSpectrum48/wasm/v2/z80/z80.c"
+#include "../../../zxSpectrum48/wasm/z80/z80.c"
 #undef Z80_EXTERNAL_BUS
 #undef Z80_MEMORY_PTR
 #undef Z80_READ_MEMORY
@@ -867,7 +867,7 @@ static void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
 #define sp48TapeGetMaxBlocks sp128CommonTapeGetMaxBlocks
 #define sp48TapeGetDataCapacity sp128CommonTapeGetDataCapacity
 #define sp48TapeDataPtr sp128CommonTapeDataPtr
-#include "../../../../zxSpectrum/wasm/v2/common/zx-spectrum-tape.c"
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-tape.c"
 #undef sp48TapeDataPtr
 #undef sp48TapeGetDataCapacity
 #undef sp48TapeGetMaxBlocks

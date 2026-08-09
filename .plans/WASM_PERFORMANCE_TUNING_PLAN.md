@@ -5,10 +5,10 @@
 The ZX Spectrum WASM backends are full-machine C cores built as freestanding
 `wasm32` modules:
 
-- ZX Spectrum 48K: `src/emu/machines/zxSpectrum48/wasm/v2/sp48/sp48.c`
-- ZX Spectrum 128K: `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
-- Shared devices: `src/emu/machines/zxSpectrum/wasm/v2/common/`
-- Shared Z80 core: `src/emu/machines/zxSpectrum48/wasm/v2/z80/z80.c`
+- ZX Spectrum 48K: `src/emu/machines/zxSpectrum48/wasm/sp48/sp48.c`
+- ZX Spectrum 128K: `src/emu/machines/zxSpectrum128/wasm/sp128/sp128.c`
+- Shared devices: `src/emu/machines/zxSpectrum/wasm/common/`
+- Shared Z80 core: `src/emu/machines/zxSpectrum48/wasm/z80/z80.c`
 - Build scripts:
   - `scripts/build-sp48-wasm.cjs`
   - `scripts/build-sp128-wasm.cjs`

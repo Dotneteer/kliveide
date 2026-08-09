@@ -12,8 +12,8 @@ for fallback and comparison during rollout.
 ## Current State
 
 - The 48K machine already uses the full-machine WASM V2 architecture:
-  - C source: `src/emu/machines/zxSpectrum48/wasm/v2/sp48/`
-  - shared C Z80 core: `src/emu/machines/zxSpectrum48/wasm/v2/z80/z80.c`
+  - C source: `src/emu/machines/zxSpectrum48/wasm/sp48/`
+  - shared C Z80 core: `src/emu/machines/zxSpectrum48/wasm/z80/z80.c`
   - loader: `src/emu/machines/zxSpectrum48/wasm/Sp48WasmV2Loader.ts`
   - adapter: `src/emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine.ts`
   - factory switch: `src/emu/machines/zxSpectrum48/ZxSpectrum48MachineFactory.ts`
@@ -65,15 +65,15 @@ per scanline, or per PSG tick during normal running.
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
 - `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
 - `src/emu/machines/zxSpectrum128/wasm/README.md`
-- `src/emu/machines/zxSpectrum128/wasm/v2/README.md`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-memory.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ula.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-beeper.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-psg.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-tape.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-keyboard.c`
+- `src/emu/machines/zxSpectrum128/wasm/README.md`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-memory.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ula.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-beeper.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-psg.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-tape.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-keyboard.c`
 - `scripts/build-sp128-wasm.cjs`
 - `scripts/build-sp128-wasm.d.cts`
 - `scripts/check-sp128-wasm-size.cjs`
@@ -82,7 +82,7 @@ per scanline, or per PSG tick during normal running.
 - `test/zxSpectrum/sp128-wasm-v2-loader.test.ts`
 - `test/zxSpectrum/sp128-wasm-build.test.ts`
 
-Reuse the existing `zxSpectrum48/wasm/v2/z80/z80.c` core initially. If sharing
+Reuse the existing `zxSpectrum48/wasm/z80/z80.c` core initially. If sharing
 that path from the 128K folder makes includes awkward, move it to a neutral
 location only as a focused follow-up and update the 48K build/tests at the same
 time.
@@ -288,8 +288,8 @@ Files:
 - `scripts/check-sp128-wasm-size.cjs`
 - `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
 - `src/emu/machines/zxSpectrum128/wasm/README.md`
-- `src/emu/machines/zxSpectrum128/wasm/v2/README.md`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
+- `src/emu/machines/zxSpectrum128/wasm/README.md`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128.c`
 - `test/zxSpectrum/sp128-wasm-v2-loader.test.ts`
 - `test/zxSpectrum/sp128-wasm-build.test.ts`
 
@@ -338,8 +338,8 @@ Status: Done on 2026-08-04.
 
 Files:
 
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-memory.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-memory.c`
 - `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
 - `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
@@ -392,8 +392,8 @@ Status: Done on 2026-08-04.
 
 Files:
 
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-memory.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-memory.c`
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
 - `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
 
@@ -440,9 +440,9 @@ Status: Done on 2026-08-04.
 
 Files:
 
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-memory.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-memory.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ports.c`
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
 - `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
 
@@ -490,9 +490,9 @@ Status: Done on 2026-08-04.
 
 Files:
 
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-memory.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-memory.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ports.c`
 - `test/zxSpectrum/ula-contention.test.ts`
 - `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
 
@@ -540,8 +540,8 @@ Status: Done on 2026-08-04.
 
 Files:
 
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-keyboard.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-keyboard.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ports.c`
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
 - `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
 
@@ -587,8 +587,8 @@ Status: Done on 2026-08-04.
 
 Files:
 
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ula.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-memory.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ula.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-memory.c`
 - `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
 - `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
@@ -638,8 +638,8 @@ Status: Done on 2026-08-04.
 
 Files:
 
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-beeper.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-beeper.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ports.c`
 - `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
 - `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
@@ -684,9 +684,9 @@ Status: Done on 2026-08-04.
 
 Files:
 
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-psg.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-beeper.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-psg.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-beeper.c`
 - `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
 - `test/zxSpectrum/ZxSpectrum128WasmV2Machine.test.ts`
@@ -737,8 +737,8 @@ Status: Done on 2026-08-04.
 
 Files:
 
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ula.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ula.c`
 - `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
 - `test/zxSpectrum/sp128-wasm-v2-loader.test.ts`
 
@@ -782,8 +782,8 @@ Status: Done on 2026-08-04.
 
 Files:
 
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-tape.c`
-- `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-ports.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-tape.c`
+- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ports.c`
 - `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine.ts`
 - `test/zxSpectrum/sp128-wasm-v2-loader.test.ts`
@@ -939,7 +939,7 @@ Files:
 
 - `src/emu/machines/zxSpectrum128/ZxSpectrum128Implementation.ts`
 - `src/emu/machines/zxSpectrum128/wasm/README.md`
-- `src/emu/machines/zxSpectrum128/wasm/v2/README.md`
+- `src/emu/machines/zxSpectrum128/wasm/README.md`
 - `test/zxSpectrum/ZxSpectrum128MachineFactory.test.ts`
 
 Work:
