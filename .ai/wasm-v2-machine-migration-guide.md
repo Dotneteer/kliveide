@@ -374,6 +374,58 @@ npm run build:sp48-wasm
 npm run check:sp48-wasm-size
 ```
 
+## PSG/AY Audio Lessons
+
+Do not use the old TypeScript PSG implementation as the reference for new PSG
+work. It was useful as a compatibility surface, but both the TypeScript and the
+initial WASM PSG paths had audible flaws. Use MAME's AY/YM implementation as the
+algorithmic reference for tone, noise, envelope, and mixer behavior.
+
+Keep the PSG chip core separate from the machine file:
+
+- TypeScript: `src/emu/machines/zxSpectrum128/PsgChip.ts`
+- WASM C: model-specific PSG code such as
+  `src/emu/machines/zxSpectrum128/wasm/v2/sp128/sp128-psg.c`
+- the machine/device file should handle port routing, clock cadence, sample-rate
+  integration, and final beeper+PSG mixing
+
+Important details that prevented regressions:
+
+- ZX Spectrum 128K uses an AY-compatible chip clocked once per 16 ULA tacts.
+- Register 7 should reset to `0xff`, so tone and noise channels start disabled.
+- AY register reads use the AY read masks; YM reads keep the full byte behavior.
+- Noise uses MAME's 17-bit LFSR with bit 0 XOR bit 3 feedback into bit 16 and a
+  divide-by-two prescaler.
+- Tone period `0`, noise period `0`, and envelope period `0` must still advance
+  at the fastest useful rate instead of freezing.
+- Envelope generation needs the MAME internal down-counter/step state, but the
+  existing Klive public `posEnv` field is a forward diagnostic counter. Preserve
+  both concepts when replacing the implementation.
+- Save-state snapshots must clone the PSG register array. Returning the live
+  `Uint8Array` lets later reset/write operations mutate the saved state.
+- Keep rendered audio output separate from legacy diagnostic output. The UI and
+  TurboSound tests may expect unsigned table values such as `0..65535`, while
+  the 128K audio path should consume the signed/centered mixer output derived
+  from the MAME resistor tables.
+- For YM compatibility, fixed public volume levels historically map through the
+  32-entry diagnostic table as `0` for volume `0`, otherwise `volume * 2 + 1`.
+  Do not break this when replacing the audio algorithm.
+- Mix the beeper and PSG with headroom. In the WASM path, add the PSG
+  contribution after the beeper's DC/high-pass handling and clamp only at the
+  final `int16_t` sample.
+
+Useful regression tests:
+
+- noise-only PSG output must produce non-silent samples
+- all three PSG channels must contribute to the mixed sample
+- beeper and PSG together must not clip under normal test levels
+- high-nibble PSG register-select writes must still select the low 4-bit
+  register number
+- PSG state save/restore must preserve register values independently of later
+  chip reset
+- run the whole `test/audio` folder after a PSG rewrite, because ZX Spectrum 128K
+  and ZX Next TurboSound share the same `PsgChip`
+
 ## Common Failure Modes
 
 - A "WASM" backend is slow because only the CPU is in WASM.
