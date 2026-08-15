@@ -713,7 +713,7 @@ static void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
 #define Z80_DELAY_MEMORY_WRITE(address) sp128DelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_READ(address) sp128DelayPortAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_WRITE(address) sp128DelayPortAccess((uint32_t)(address))
-#include "../../../zxSpectrum48/wasm/z80/z80.c"
+#include "../../../../z80/wasm/z80.c"
 #undef Z80_EXTERNAL_BUS
 #undef Z80_MEMORY_PTR
 #undef Z80_READ_MEMORY

@@ -13,7 +13,7 @@ for fallback and comparison during rollout.
 
 - The 48K machine already uses the full-machine WASM V2 architecture:
   - C source: `src/emu/machines/zxSpectrum48/wasm/sp48/`
-  - shared C Z80 core: `src/emu/machines/zxSpectrum48/wasm/z80/z80.c`
+  - shared C Z80 core: `src/emu/z80/wasm/z80.c`
   - loader: `src/emu/machines/zxSpectrum48/wasm/Sp48WasmV2Loader.ts`
   - adapter: `src/emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine.ts`
   - factory switch: `src/emu/machines/zxSpectrum48/ZxSpectrum48MachineFactory.ts`
@@ -82,7 +82,7 @@ per scanline, or per PSG tick during normal running.
 - `test/zxSpectrum/sp128-wasm-v2-loader.test.ts`
 - `test/zxSpectrum/sp128-wasm-build.test.ts`
 
-Reuse the existing `zxSpectrum48/wasm/z80/z80.c` core initially. If sharing
+Reuse the existing `src/emu/z80/wasm/z80.c` core initially. If sharing
 that path from the 128K folder makes includes awkward, move it to a neutral
 location only as a focused follow-up and update the 48K build/tests at the same
 time.
@@ -1087,6 +1087,5 @@ follow-up hardening, not as backend-switch blockers:
 - The current TypeScript 128K constructor does not take model/config arguments.
   The factory can still accept them for symmetry, but confirm whether any 128K
   model config needs to be honored before rollout.
-- If the shared C Z80 core remains under the 48K folder, document that it is
-  intentionally shared. If that feels too confusing during implementation, move
-  it once and update both machines together.
+- The shared C Z80 core now lives in `src/emu/z80/wasm/z80.c` and is included
+  by both WASM machine cores.

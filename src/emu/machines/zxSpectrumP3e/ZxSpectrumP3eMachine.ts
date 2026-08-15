@@ -1,7 +1,7 @@
 import type { SysVar } from "@abstractions/SysVar";
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import type { MachineModel } from "@common/machines/info-types";
+import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
@@ -76,10 +76,10 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Initialize the machine
    */
-  constructor(model: MachineModel) {
+  constructor(model?: MachineModel, config?: MachineConfigSet) {
     try {
-      super();
-      switch (model?.config?.[MC_DISK_SUPPORT]) {
+      super(config ?? model?.config ?? {});
+      switch (this.config?.[MC_DISK_SUPPORT]) {
         case 1:
           this.hasFloppy = true;
           this.hasDriveB = false;

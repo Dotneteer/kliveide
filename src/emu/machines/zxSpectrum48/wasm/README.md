@@ -7,8 +7,9 @@ folder. It builds to `dist/zx-spectrum48.wasm` and is loaded by
 ## Layout
 
 - `sp48/`: the SP48 C machine implementation.
-- `z80/`: the shared C Z80 core used by `sp48/sp48.c`.
 - `dist/`: generated production WASM artifact.
+
+The backend reuses the shared C Z80 core from `src/emu/z80/wasm/z80.c`.
 
 The runtime switch has only two supported values:
 

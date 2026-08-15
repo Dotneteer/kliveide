@@ -9,7 +9,7 @@ loaded by `Sp128WasmV2Loader.ts`.
 - `sp128/`: the 128K C machine implementation, including the AY PSG core.
 - `dist/`: generated production WASM artifact.
 
-The backend reuses the shared C Z80 core from the 48K WASM tree.
+The backend reuses the shared C Z80 core from `src/emu/z80/wasm/z80.c`.
 
 The runtime switch has two supported values:
 

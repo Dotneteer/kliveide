@@ -319,7 +319,7 @@ uint32_t sp48ExecuteInstruction(void);
 #define Z80_DELAY_MEMORY_WRITE(address) Z80_DELAY_MEMORY_READ(address)
 #define Z80_DELAY_PORT_READ(address) SP48_CPU_DELAY_PORT_ACCESS(address)
 #define Z80_DELAY_PORT_WRITE(address) SP48_CPU_DELAY_PORT_ACCESS(address)
-#include "../z80/z80.c"
+#include "../../../../z80/wasm/z80.c"
 
 #undef Z80_EXTERNAL_BUS
 #undef Z80_MEMORY_PTR
