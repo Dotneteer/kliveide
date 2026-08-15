@@ -25,6 +25,10 @@ type ContentionCase = {
   createOracleMachine: () => Promise<OracleMachine>;
 };
 
+const DELAY = 6;
+const START_TACT = 100;
+const CONTENTION_RANGE = 200;
+
 describe("ZX Spectrum WASM contention parity", () => {
   for (const testCase of contentionCases()) {
     it(`${testCase.name} generated contention table matches representative TypeScript tacts`, async () => {
@@ -88,6 +92,137 @@ describe("ZX Spectrum WASM contention parity", () => {
     wasmMachine.writeTestPort(0x7ffd, 0x03);
     oracleMachine.writeTestPort(0x7ffd, 0x03);
     expectDelayForAddress(wasmMachine, oracleMachine, tact, 0xc000, "spp3e");
+  });
+
+  describe("CPU-level contention slices", () => {
+    it("128K D1 applies I/O contention for 0xc000 odd-bank and 0x4000 ports", async () => {
+      const wasmMachine = await createTestSp128WasmMachine(testRom([]), testRom([]));
+      const oracleMachine = await createOracleSp128Machine(testRom([]), testRom([]));
+
+      await expectOutInstructionContention({
+        wasmMachine,
+        oracleMachine,
+        prefix: "sp128",
+        selectedBank: 3,
+        accumulator: 0xc0,
+        operand: 0xff,
+        expectedDelay: 4 * DELAY
+      });
+      await expectOutInstructionContention({
+        wasmMachine,
+        oracleMachine,
+        prefix: "sp128",
+        selectedBank: 0,
+        accumulator: 0xc0,
+        operand: 0xff,
+        expectedDelay: 0
+      });
+      await expectOutInstructionContention({
+        wasmMachine,
+        oracleMachine,
+        prefix: "sp128",
+        selectedBank: 0,
+        accumulator: 0x40,
+        operand: 0xff,
+        expectedDelay: 4 * DELAY
+      });
+    });
+
+    it("+3E D1 applies I/O contention for 0xc000 ports only when bank 4-7 is selected", async () => {
+      const roms = [testRom([]), testRom([]), testRom([]), testRom([])];
+      const wasmMachine = await createTestSpp3eWasmMachine(roms);
+      const oracleMachine = await createOracleSpp3eMachine(roms);
+
+      await expectOutInstructionContention({
+        wasmMachine,
+        oracleMachine,
+        prefix: "spp3e",
+        selectedBank: 5,
+        accumulator: 0xc0,
+        operand: 0xff,
+        expectedDelay: 4 * DELAY
+      });
+      await expectOutInstructionContention({
+        wasmMachine,
+        oracleMachine,
+        prefix: "spp3e",
+        selectedBank: 2,
+        accumulator: 0xc0,
+        operand: 0xff,
+        expectedDelay: 0
+      });
+    });
+
+    for (const testCase of cpuContentionCases()) {
+      it(`${testCase.name} D2 applies HALT contention at 0x4000 but not 0x8000`, async () => {
+        const wasmMachine = await testCase.createWasmMachine();
+        const oracleMachine = await testCase.createOracleMachine();
+
+        expectInstructionContention({
+          wasmMachine,
+          oracleMachine,
+          prefix: testCase.prefix,
+          code: [0x76],
+          startAddress: 0x4000,
+          expectedDelay: DELAY
+        });
+        expect(wasmMachine.getTestCpuRegisters().halted).toBe(true);
+
+        const wasmMachine2 = await testCase.createWasmMachine();
+        const oracleMachine2 = await testCase.createOracleMachine();
+        expectInstructionContention({
+          wasmMachine: wasmMachine2,
+          oracleMachine: oracleMachine2,
+          prefix: testCase.prefix,
+          code: [0x76],
+          startAddress: 0x8000,
+          expectedDelay: 0
+        });
+        expect(wasmMachine2.getTestCpuRegisters().halted).toBe(true);
+      });
+
+      it(`${testCase.name} D5 records only real I/O contention delays`, async () => {
+        const wasmMachine = await testCase.createWasmMachine();
+        const oracleMachine = await testCase.createOracleMachine();
+
+        expectOutInstructionContention({
+          wasmMachine,
+          oracleMachine,
+          prefix: testCase.prefix,
+          selectedBank: testCase.nonContendedTopBank,
+          accumulator: 0x80,
+          operand: 0xff,
+          expectedDelay: 0
+        });
+        expectOutInstructionContention({
+          wasmMachine,
+          oracleMachine,
+          prefix: testCase.prefix,
+          selectedBank: testCase.contendedTopBank,
+          accumulator: testCase.contendedPortHighByte,
+          operand: 0xff,
+          expectedDelay: 4 * DELAY
+        });
+        expectOutInstructionContention({
+          wasmMachine,
+          oracleMachine,
+          prefix: testCase.prefix,
+          selectedBank: testCase.nonContendedTopBank,
+          accumulator: 0x80,
+          operand: 0xfe,
+          expectedDelay: DELAY
+        });
+        expectOutInstructionContention({
+          wasmMachine,
+          oracleMachine,
+          prefix: testCase.prefix,
+          selectedBank: testCase.contendedTopBank,
+          accumulator: testCase.contendedPortHighByte,
+          operand: 0xfe,
+          expectedDelay: 2 * DELAY
+        });
+      });
+    }
   });
 });
 
@@ -162,4 +297,108 @@ function delayWasmAddressBusAccess(
   }
   (fn as (address: number) => void)(address & 0xffff);
   machine.getCpuState();
+}
+
+function cpuContentionCases(): Array<{
+  name: string;
+  prefix: "sp128" | "spp3e";
+  createWasmMachine: () => Promise<TestSp128WasmMachine | TestSpp3eWasmMachine>;
+  createOracleMachine: () => Promise<TestOracleSp128Machine | TestOracleSpp3eMachine>;
+  contendedTopBank: number;
+  nonContendedTopBank: number;
+  contendedPortHighByte: number;
+}> {
+  return [
+    {
+      name: "ZX Spectrum 128K",
+      prefix: "sp128",
+      createWasmMachine: () => createTestSp128WasmMachine(testRom([]), testRom([])),
+      createOracleMachine: () => createOracleSp128Machine(testRom([]), testRom([])),
+      contendedTopBank: 3,
+      nonContendedTopBank: 0,
+      contendedPortHighByte: 0x40
+    },
+    {
+      name: "ZX Spectrum +3E",
+      prefix: "spp3e",
+      createWasmMachine: () => createTestSpp3eWasmMachine([testRom([]), testRom([]), testRom([]), testRom([])]),
+      createOracleMachine: () => createOracleSpp3eMachine([testRom([]), testRom([]), testRom([]), testRom([])]),
+      contendedTopBank: 5,
+      nonContendedTopBank: 2,
+      contendedPortHighByte: 0xc0
+    }
+  ];
+}
+
+function expectOutInstructionContention(args: {
+  wasmMachine: TestSp128WasmMachine | TestSpp3eWasmMachine;
+  oracleMachine: TestOracleSp128Machine | TestOracleSpp3eMachine;
+  prefix: "sp128" | "spp3e";
+  selectedBank: number;
+  accumulator: number;
+  operand: number;
+  expectedDelay: number;
+}): void {
+  args.wasmMachine.writeTestPort(0x7ffd, args.selectedBank);
+  args.oracleMachine.writeTestPort(0x7ffd, args.selectedBank);
+  expectInstructionContention({
+    wasmMachine: args.wasmMachine,
+    oracleMachine: args.oracleMachine,
+    prefix: args.prefix,
+    code: [0xd3, args.operand],
+    startAddress: 0x8000,
+    registers: { af: args.accumulator << 8 },
+    expectedDelay: args.expectedDelay
+  });
+}
+
+function expectInstructionContention(args: {
+  wasmMachine: TestSp128WasmMachine | TestSpp3eWasmMachine;
+  oracleMachine: TestOracleSp128Machine | TestOracleSpp3eMachine;
+  prefix: "sp128" | "spp3e";
+  code: number[];
+  startAddress: number;
+  registers?: { af?: number };
+  expectedDelay: number;
+}): void {
+  args.wasmMachine.initCode(args.code, args.startAddress);
+  args.oracleMachine.initCode(args.code, args.startAddress);
+  prepCpuContention(args.wasmMachine, args.oracleMachine);
+  args.wasmMachine.setTestCpuRegisters({
+    pc: args.startAddress,
+    sp: 0xffff,
+    af: args.registers?.af ?? 0
+  });
+  args.oracleMachine.setTestCpuRegisters({
+    pc: args.startAddress,
+    sp: 0xffff,
+    af: args.registers?.af ?? 0,
+    ir: 0
+  });
+
+  const wasmBefore = args.wasmMachine.getTestCpuRegisters().tacts;
+  const oracleBefore = args.oracleMachine.getTestCpuRegisters().tacts;
+
+  args.wasmMachine.executeOne();
+  args.oracleMachine.executeOne();
+
+  const wasmTactsUsed = args.wasmMachine.getTestCpuRegisters().tacts - wasmBefore;
+  const oracleTactsUsed = args.oracleMachine.getTestCpuRegisters().tacts - oracleBefore;
+  expect(wasmTactsUsed, args.prefix).toBe(oracleTactsUsed);
+  expect(args.wasmMachine.getContentionDelayTotalForTest(), args.prefix).toBe(
+    args.oracleMachine.getContentionDelayTotalForTest()
+  );
+  expect(args.wasmMachine.getContentionDelayTotalForTest(), args.prefix).toBe(args.expectedDelay);
+}
+
+function prepCpuContention(
+  wasmMachine: TestSp128WasmMachine | TestSpp3eWasmMachine,
+  oracleMachine: TestOracleSp128Machine | TestOracleSpp3eMachine
+): void {
+  wasmMachine.setContentionRange(START_TACT, CONTENTION_RANGE, DELAY);
+  oracleMachine.setContentionRange(START_TACT, CONTENTION_RANGE, DELAY);
+  wasmMachine.setAbsoluteTacts(START_TACT);
+  oracleMachine.setFrameTact(START_TACT);
+  wasmMachine.resetContentionCounters();
+  oracleMachine.resetContentionCounters();
 }

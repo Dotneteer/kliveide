@@ -726,6 +726,27 @@ Acceptance:
   `START_TACT = 100`, and a wide contention override range.
 - Compare tacts used and total contention delay with the TypeScript oracle.
 
+Implementation notes:
+
+- Extended `test/wasm/zxSpectrum/wasm-contention.test.ts` with
+  CPU-executed contention slices for the currently exposed deterministic WASM
+  control surface.
+- Added `DELAY = 6`, `START_TACT = 100`, and `CONTENTION_RANGE`-style wide
+  override coverage using the existing test-helper contention range setter.
+- Migrated 128K and +3E D1, D2, and D5 cases:
+  - odd-port I/O contention for selected top-bank ranges;
+  - HALT contention at `0x4000` and no HALT contention at `0x8000`;
+  - I/O contention delay totals for non-contended odd, contended odd,
+    non-contended even ULA, and contended even ULA ports.
+- No existing production WASM files were changed.
+- Carry-forward limitations without production export changes:
+  - 48K CPU-level forced-contention tests need a deterministic
+    `sp48SetContentionValue`-equivalent export before they can use the same
+    `START_TACT` override pattern as 128K/+3E.
+  - D3 M1 refresh contention requires CPU IR setter/control exports. The
+    shared helper intentionally reports `SetCpuIr` as unavailable rather than
+    modifying the WASM implementation.
+
 ### Step 17 - Screen Rendering Timing Parity
 
 Add `test/wasm/zxSpectrum/wasm-screen-floating-bus.test.ts`.
@@ -751,6 +772,37 @@ Acceptance:
 
 - Include black/white ink-paper examples and one border color write per model.
 
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-screen-floating-bus.test.ts`.
+- Covered 48K, 128K, and +3E screen dimensions and public pixel/byte buffer
+  views without changing the adapters.
+- Compared representative rendering timing-table entries against the
+  TypeScript oracle:
+  - rendering phase;
+  - pixel address;
+  - attribute address;
+  - pixel-buffer index.
+- Added normal/fixed screen rendering checks for every model:
+  - border color write through port `0xfe`;
+  - screen byte `0x80` with attribute `0x47`;
+  - rendered black/white pixels in the WASM pixel buffer;
+  - matching TypeScript/WASM screen-memory bytes through `readScreenMemory`.
+- Added 128K and +3E shadow-screen checks:
+  - bank 5 renders normally;
+  - bank 7 renders when the shadow-screen bit is selected;
+  - the selected screen-bank export and TypeScript paging state agree.
+- Added a +3E special-paging rendering probe to verify screen rendering remains
+  aligned while all-RAM special paging mode is active.
+- No existing production WASM files were changed.
+- Carry-forward limitations without production or adapter changes:
+  - the WASM adapters currently expose `tactsInDisplayLine` as
+    `screenWidthInPixels / 2`, while the TypeScript oracle exposes the full
+    display-line tact count;
+  - 48K direct floating-bus export coverage remains unavailable from the WASM
+    adapter, so the Step 14 unsupported odd-port mismatch remains recorded for
+    Step 18/future infrastructure work.
+
 ### Step 18 - Floating Bus Parity
 
 Extend `test/wasm/zxSpectrum/wasm-screen-floating-bus.test.ts`.
@@ -773,6 +825,30 @@ Migrate and broaden current floating-bus checks:
 Acceptance:
 
 - Include port `0x00ff`; it caught a real 128K regression before.
+
+Implementation notes:
+
+- Extended `test/wasm/zxSpectrum/wasm-screen-floating-bus.test.ts` with the
+  broader Step 18 floating-bus coverage.
+- Added 128K floatspy-style screen-pattern checks:
+  - seeded visible screen memory with `offset & 0xff`;
+  - compared TypeScript and WASM direct floating-bus values from tact `14300`
+    through `15999`.
+- Added 128K displayed-bank coverage:
+  - bank 5 pattern;
+  - bank 7 transformed pattern;
+  - shadow-screen bit selects the expected floating-bus source.
+- Added 128K CPU-level repeated `IN A,(C)` coverage at `BC = 0x00ff`:
+  - ROM loop uses literal `ED 78` followed by `JP 0`;
+  - compares TypeScript and WASM tacts, read port, and read value for 400
+    instruction steps.
+- Extended +3E floating-bus checks with the paging-disabled eligible-port
+  fallback.
+- No existing production WASM files were changed.
+- Carry-forward limitation:
+  - 48K floating-bus direct parity still needs a WASM adapter/export surface
+    comparable to 128K before the same direct and CPU-loop checks can be
+    migrated without touching production files.
 
 ### Step 19 - Beeper Audio Parity
 
@@ -798,6 +874,31 @@ Acceptance:
 - Compare stable invariants such as sample count, sign/range, and transition
   existence. Avoid brittle exact floating-point waveform equality unless both
   sides use the same integer sample representation.
+
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-beeper-audio.test.ts`.
+- Covered 48K, 128K, and +3E with the shared WASM machine wrappers.
+- Added active `0xfe` output tests:
+  - set audio sample rate through the machine property;
+  - write EAR/MIC beeper output through port `0xfe`;
+  - execute a frame;
+  - assert sample count, capacity bounds, non-zero raw energy, and normalized
+    adapter samples.
+- Added frame-boundary tests to ensure consecutive frames each publish a fresh
+  non-empty audio collection.
+- Added sample-rate and clock-multiplier invariants:
+  - higher sample rate yields more samples;
+  - doubled clock multiplier does not reduce sample production.
+- Added CPU-driven rapid `0xfe` toggle tests using the standard tiny ROM:
+  - `LD A,0x10`;
+  - `OUT (0xfe),A`;
+  - `LD A,0x00`;
+  - `OUT (0xfe),A`;
+  - `JP 0`;
+  - asserts non-zero raw samples, more than one raw value, and normalized
+    adapter samples.
+- No existing production WASM files were changed.
 
 ### Step 20 - PSG Register And Tone Parity
 
@@ -829,6 +930,34 @@ Acceptance:
 - Do not run PSG tests for 48K except asserting PSG is absent or ports fall
   back to the 48K contract.
 
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-psg-audio.test.ts`.
+- Covered 48K PSG absence/fallback:
+  - no `sp48GetPsgRegisterIndex` export;
+  - PSG ports fall back to the 48K open/floating-port contract.
+- Covered 128K and +3E PSG register/index behavior:
+  - reset selected index;
+  - register read masks for coarse tone, noise period, volume, and envelope
+    shape registers;
+  - direct register value storage;
+  - selected-register readback.
+- Covered 128K and +3E PSG port decoding:
+  - index writes through `0xfffd`;
+  - data writes through `0xbffd`;
+  - selected-register reads through `0xfffd`.
+- Covered tone, mixer, and volume state:
+  - tone A low/high period writes;
+  - mixer disables/enables channels as expected through the TypeScript oracle;
+  - volume register masking.
+- Added +3E-only B/C tone and volume debug-state checks because +3E exposes
+  those getters today and 128K does not.
+- No existing production WASM files were changed.
+- Carry-forward limitation:
+  - TypeScript resets PSG register 7 to `0xff`, while current 128K/+3E WASM
+    reset state exposes register 7 as `0x00`. The new tests make this mismatch
+    explicit instead of changing production WASM code.
+
 ### Step 21 - PSG Envelope, Noise, And Stereo Parity
 
 Extend `test/wasm/zxSpectrum/wasm-psg-audio.test.ts`.
@@ -854,6 +983,37 @@ Acceptance:
 - Prefer comparing exported PSG debug/register state plus normalized audio
   invariants. Add exact sample comparisons only after the WASM and TypeScript
   algorithms are intentionally identical.
+
+Implementation notes:
+
+- Extended `test/wasm/zxSpectrum/wasm-psg-audio.test.ts` with Step 21 audio
+  invariant coverage for 128K and +3E.
+- Added tone audio checks:
+  - configured channel A tone;
+  - compared active mixer output with muted mixer output;
+  - asserted non-zero energy and normalized adapter samples.
+- Added noise-only output checks:
+  - configured noise period and mixer;
+  - asserted non-zero energy, many non-zero samples, and varied raw sample
+    values.
+- Added envelope-shaped output checks:
+  - configured envelope period and shape;
+  - used envelope volume on channel A;
+  - asserted PSG output and normalized adapter samples.
+- Added beeper-plus-PSG mixed output checks:
+  - beeper-only energy;
+  - PSG-only energy;
+  - mixed energy;
+  - normalized mixed samples.
+- Added mid-frame PSG register-change coverage:
+  - changes channel A volume after advancing tacts into the frame;
+  - verifies earlier and later sample slices both contain output and differ in
+    energy.
+- No existing production WASM files were changed.
+- Carry-forward limitation:
+  - exact LFSR/envelope internal state parity is still not migrated because the
+    current WASM adapters expose only selected PSG register/audio debug state,
+    not the full TypeScript `PsgChipState`.
 
 ### Step 22 - Tape Load/Save Parity
 
