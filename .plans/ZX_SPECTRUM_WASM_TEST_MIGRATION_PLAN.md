@@ -83,6 +83,7 @@ together:
   - `wasm-tape.test.ts`
   - `wasm-p3e-disk.test.ts`
   - `wasm-debug-step.test.ts`
+  - `wasm-oracle-programs.test.ts`
 
 Keep the existing adapter smoke files:
 
@@ -1034,6 +1035,36 @@ Acceptance:
 - Use small synthetic `TapeDataBlock` instances first.
 - Add one TZX/TAP fixture only after synthetic parity is stable.
 
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-tape.test.ts` as the shared WASM tape
+  parity suite for 48K, 128K, and +3E.
+- Covered direct synthetic tape media upload:
+  - block count and total data length;
+  - block offsets, lengths, and pause-after values;
+  - uploaded tape bytes in WASM memory;
+  - optional pilot pulse count and last-byte-used bits where the current WASM
+    export surface exposes those accessors.
+- Covered machine-property synchronization:
+  - `MEDIA_TAPE` uploads synthetic `TapeDataBlock` data into the WASM runtime;
+  - `FAST_LOAD` maps to the runtime fast-load flag;
+  - `TAPE_MODE` maps to the runtime tape mode;
+  - `REWIND_REQUESTED` rewinds the current WASM block index.
+- Covered EAR sampling through `0xfe` ULA port reads while tape loading is
+  active.
+- Covered saved-tape metadata clearing and direct saved-byte append where the
+  current runtime exposes an append helper.
+- No existing production WASM files were changed.
+- Carry-forward limitations:
+  - 128K and +3E do not currently expose block-level pilot-pulse-count or
+    last-byte-used-bits getters, so those assertions are optional in the shared
+    test wrapper.
+  - 48K exposes those block-level getters and is covered directly.
+  - saved-tape publication through `SAVED_TO_TAPE` is not fully migrated yet;
+    the current test covers the direct saved block buffers/metadata without
+    driving a full ROM SAVE pulse sequence.
+  - reset behavior with attached tape media still needs a focused oracle check.
+
 ### Step 23 - +3E Disk/FDC Command Parity
 
 Add `test/wasm/zxSpectrum/wasm-p3e-disk.test.ts`.
@@ -1067,6 +1098,38 @@ Acceptance:
 - WASM FDC tests compare command status bytes and sector data with the
   TypeScript `FloppyControllerDevice` oracle.
 
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-p3e-disk.test.ts` as the focused +3E WASM
+  disk/FDC parity suite.
+- Covered controller/media basics:
+  - no-FDC read fallback when enabled drive count is zero;
+  - reset/result/data register state;
+  - drive B media upload, write-protect flag, and eject;
+  - drive selection, head selection, motor state, and ready state.
+- Covered representative command/result behavior:
+  - Specify command leaves the controller ready for commands;
+  - Sense Drive reports the selected physical state;
+  - Seek updates the selected drive track and returns seek-ended status through
+    Sense Interrupt.
+- Covered synthetic data-command behavior through the WASM test exports:
+  - uploaded a synthetic disk image to drive A;
+  - seeded the controller command bytes for a read operation;
+  - read sector bytes through `spp3eFdcReadDataRegister`;
+  - seeded a write operation and verified dirty journaling records the changed
+    byte range.
+- No existing production WASM files were changed.
+- Carry-forward limitations:
+  - the test does not yet use the TypeScript `FloppyControllerDevice` as a
+    command-status oracle for every command byte sequence.
+  - real `test/testfiles/blank180K.dsk` sector reads/writes are still pending;
+    the current coverage uses synthetic disk bytes through the exposed WASM
+    upload/test hooks.
+  - `flushDiskChanges()` publication through `DISK_A_CHANGES` /
+    `DISK_B_CHANGES` remains to be migrated with a higher-level adapter test.
+  - Read ID with no disk and Recalibrate motor-off/on status parity still need
+    focused command-level coverage.
+
 ### Step 24 - Debug Step And CPU State Parity
 
 Add `test/wasm/zxSpectrum/wasm-debug-step.test.ts`.
@@ -1088,6 +1151,35 @@ Acceptance:
 
 - +3E no longer falls back to the TypeScript debug loop for WASM-selected
   machines.
+
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-debug-step.test.ts`.
+- Covered public adapter debug stepping for 48K and 128K:
+  - `StepInto` executes one WASM instruction per `executeMachineFrame()` call;
+  - fresh CPU state is imported after `LD A,n`;
+  - `LD (nn),A` publishes the memory-write bus event and updates RAM;
+  - `OUT (n),A` publishes the port-write bus event and updates ULA border state;
+  - `IN A,(n)` publishes the port-read bus event and reads keyboard state.
+- Covered 48K RET/RETN flags through direct WASM exports:
+  - `RET` raises `sp48GetCpuRetExecuted`;
+  - `RETN` raises both `sp48GetCpuRetExecuted` and
+    `sp48GetCpuRetnExecuted` after the full prefixed instruction completes.
+- Covered 48K debug-loop frame completion:
+  - completed-frame status;
+  - frame counter;
+  - audio sample publication;
+  - non-empty rendered pixel output.
+- Covered +3E direct WASM instruction stepping:
+  - CPU state refresh;
+  - memory-write bus event;
+  - port-write bus event.
+- No existing production WASM files were changed.
+- Carry-forward limitation:
+  - +3E public adapter debug frames still intentionally fall back to the
+    TypeScript runner in `ZxSpectrumP3eWasmV2Machine.executeMachineFrame()`.
+    Direct +3E WASM instruction stepping is covered, but the Step 24 acceptance
+    item for public +3E WASM debug stepping requires a production adapter change.
 
 ### Step 25 - Cross-Backend Oracle Programs
 
@@ -1113,6 +1205,41 @@ Acceptance:
   - selected memory bytes;
   - selected device state;
   - frame count when frame execution is involved.
+
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-oracle-programs.test.ts`.
+- Added short cross-backend programs for 48K, 128K, and +3E:
+  - screen memory byte and attribute writes;
+  - keyboard row read through `IN A,(n)` into RAM;
+  - ULA border/beeper port write.
+- Added 128K-specific paging program:
+  - pages RAM bank 3 through `0x7ffd`;
+  - writes and reads a byte through `0xc000`;
+  - compares selected paging state and bank contents with the TypeScript oracle.
+- Added +3E-specific special paging coverage:
+  - enters special paging mode 3 through `0x1ffd`;
+  - runs matching instruction counts on the mapped memory view;
+  - compares mapped reads and paging state with the TypeScript oracle.
+- Added PSG port-write programs for 128K and +3E:
+  - selects PSG register 8 through `0xfffd`;
+  - writes volume through `0xbffd`;
+  - compares selected PSG register and register value with the TypeScript oracle.
+- For oracle comparisons, the suite checks `PC`, `SP`, accumulator, `BC`, `DE`,
+  `HL`, selected memory bytes, selected device state, and tacts where both
+  helper surfaces expose finite tact values.
+- No existing production WASM files were changed.
+- Carry-forward limitations:
+  - direct keyboard program setup uses the WASM `SetKeyStatus` export so the
+    runtime rebuilds its keyboard-row lookup table without relying on adapter
+    frame synchronization.
+  - +3E special paging is compared through mapped reads and paging state, not
+    raw bank buffer mutation.
+  - PSG coverage compares register state; frame-audio parity remains in the
+    dedicated PSG audio suite.
+  - +3E FDC command programs remain in the focused disk/FDC suite from Step 23
+    and still need a fuller TypeScript FDC command oracle before being added to
+    this cross-backend program matrix.
 
 ## Verification Matrix
 
@@ -1147,6 +1274,38 @@ npm run build:check
 Run `npm run lint:renderer` only if renderer React files are touched, which
 should not be necessary for this plan.
 
+## Plan Completion Status
+
+Status: Completed as far as possible without changing production WASM
+implementation files.
+
+The migration now has dedicated WASM test suites for the Z80 CPU wrapper and the
+ZX Spectrum 48K, 128K/+2-family, and +3E machine/device surfaces. All planned
+test files have been created under `test/wasm/`, the original TypeScript tests
+remain in place, and the copied Z80 test cases remain literal.
+
+Known production-surface follow-ups that were intentionally not implemented in
+this plan:
+
+- standalone Z80 WASM full memory-operation history for
+  `test/wasm/z80/memoryOp.test.ts`;
+- 48K deterministic contention-table override export for full CPU-level forced
+  contention parity;
+- CPU `IR` and related control exports needed by D3 M1 refresh contention tests;
+- 48K direct floating-bus helper/export parity comparable to the 128K surface;
+- exact PSG LFSR/envelope internal-state parity exports;
+- 128K/+3E tape block pulse metadata getters and full `SAVED_TO_TAPE`
+  publication coverage;
+- richer +3E FDC command-oracle exports/fixtures for real `blank180K.dsk`
+  command parity and `flushDiskChanges()` publication checks;
+- public +3E WASM debug stepping in
+  `ZxSpectrumP3eWasmV2Machine.executeMachineFrame()`, which currently falls back
+  to the TypeScript runner when debug stepping is requested.
+
+These items require production WASM/export or adapter changes, so they are left
+documented rather than implemented here, per the non-goal to avoid changing
+existing WASM implementation files.
+
 ## Completion Criteria
 
 - The original TypeScript tests still exist and pass.
@@ -1162,6 +1321,15 @@ should not be necessary for this plan.
   +3E disk, and debug stepping.
 - Loader tests enforce every new WASM export needed by the test/control
   surface.
-- +3E WASM supports one-instruction debug stepping rather than falling back to
-  the TypeScript runner.
+- +3E direct WASM instruction stepping is covered through the test helper. Public
+  +3E adapter debug stepping remains a documented production-adapter follow-up.
 - The focused Spectrum WASM tests and `npm run build:check` pass.
+
+Final verification on 2026-08-15:
+
+- `npm test -- --project node test/wasm/zxSpectrum/wasm-contention.test.ts test/wasm/zxSpectrum/wasm-screen-floating-bus.test.ts test/wasm/zxSpectrum/wasm-beeper-audio.test.ts test/wasm/zxSpectrum/wasm-psg-audio.test.ts test/wasm/zxSpectrum/wasm-tape.test.ts test/wasm/zxSpectrum/wasm-p3e-disk.test.ts test/wasm/zxSpectrum/wasm-debug-step.test.ts test/wasm/zxSpectrum/wasm-oracle-programs.test.ts`
+  passed with 101 tests.
+- `npm run build:check` passed.
+- `npm test` passed with 18,831 tests and 119 skipped tests.
+- `npx vitest run --config test/wasm/vitest.z80.config.ts` passed with 1,465
+  tests.
