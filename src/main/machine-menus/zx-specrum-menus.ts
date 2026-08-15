@@ -21,6 +21,12 @@ import { appSettings } from "@main/settings-utils";
 import { getModelConfig } from "@common/machines/machine-registry";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
+const DISK_FILE_FOLDER = "diskFileFolder";
+
+type DiskMediaState = {
+  diskFile?: string;
+  writeProtected?: boolean;
+};
 
 /**
  * Renders tape commands
@@ -97,8 +103,9 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
 
   function createDiskMenu(index: number, suffix: string): void {
     const state = appState?.media?.[index ? MEDIA_DISK_B : MEDIA_DISK_A] ?? {};
+    const hasDisk = !!state?.diskFile;
     floppySubMenu.push({ type: "separator" });
-    if (state?.diskFile) {
+    if (hasDisk) {
       floppySubMenu.push({
         id: `eject_disk_${suffix}`,
         label: `Eject Disk from Drive ${suffix.toUpperCase()}`,
@@ -106,22 +113,27 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
           await ejectDiskFile(index, suffix);
         }
       });
-      floppySubMenu.push({
-        id: `protect_disk_${suffix}`,
-        type: "checkbox",
-        checked: !!state.writeProtected,
-        label: `Write Protected Disk in Drive ${suffix.toUpperCase()}`,
-        click: async () => {
-          mainStore.dispatch(
-            setMediaAction(index ? MEDIA_DISK_B : MEDIA_DISK_A, {
-              ...state,
-              writeProtected: !state.writeProtected
-            })
-          );
-          await setDiskWriteProtection(index, suffix, !state.writeProtected);
-        }
-      });
     }
+    floppySubMenu.push({
+      id: `protect_disk_${suffix}`,
+      type: "checkbox",
+      checked: !!state.writeProtected,
+      enabled: hasDisk,
+      label: `Write Protect Drive ${suffix.toUpperCase()}`,
+      click: async () => {
+        if (!hasDisk) return;
+        const writeProtected = !state.writeProtected;
+        mainStore.dispatch(
+          setMediaAction(index ? MEDIA_DISK_B : MEDIA_DISK_A, {
+            ...state,
+            writeProtected
+          })
+        );
+        mainStore.dispatch(incMenuVersionAction());
+        await setDiskWriteProtection(index, suffix, writeProtected);
+        await saveKliveProject();
+      }
+    });
     floppySubMenu.push({
       id: `insert_disk_${suffix}`,
       label: state?.diskFile
@@ -240,8 +252,7 @@ async function setDiskFile(
   index: number,
   suffix: string
 ): Promise<void> {
-  const DISK_FILE_FOLDER = "diskFileFolder";
-  const lastFile = mainStore.getState()?.media?.[index ? MEDIA_DISK_B : MEDIA_DISK_A];
+  const lastFile = getDiskMediaState(index).diskFile;
   const defaultPath =
     appSettings?.folders?.[DISK_FILE_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
@@ -258,15 +269,26 @@ async function setDiskFile(
 
   // --- Read the file
   const filename = dialogResult.filePaths[0];
+  await setSelectedDiskFile(index, filename, true, suffix);
+}
+
+export async function setSelectedDiskFile(
+  index: number,
+  filename: string,
+  writeProtected = true,
+  suffix = index ? "b" : "a"
+): Promise<void> {
+  const mediaId = index ? MEDIA_DISK_B : MEDIA_DISK_A;
   const diskFileFolder = path.dirname(filename);
 
-  // --- Store the last selected tape file
+  // --- Store the last selected disk file
   mainStore.dispatch(
-    setMediaAction(index ? MEDIA_DISK_B : MEDIA_DISK_A, {
+    setMediaAction(mediaId, {
       diskFile: filename,
-      writeProtected: true
+      writeProtected
     })
   );
+  mainStore.dispatch(incMenuVersionAction());
 
   // --- Save the folder into settings
   appSettings.folders ??= {};
@@ -274,13 +296,16 @@ async function setDiskFile(
 
   try {
     const contents = fs.readFileSync(filename);
+    await getEmuApi().setDiskWriteProtection(index, writeProtected);
     await getEmuApi().setDiskFile(index, filename, new Uint8Array(contents));
     await logEmuEvent(`Disk file in drive ${suffix.toUpperCase()} set to ${filename}`);
   } catch (err) {
     dialog.showErrorBox(
       "Error while reading disk file",
-      `Reading file ${filename} resulted in error: ${err.message}`
+      `Reading file ${filename} resulted in error: ${err.message}\n\n` +
+        "The faulty disk file will be ejected after closing this dialog."
     );
+    await ejectDiskFile(index, suffix);
   }
 }
 
@@ -292,6 +317,7 @@ async function setDiskFile(
  */
 async function ejectDiskFile(index: number, suffix: string): Promise<void> {
   mainStore.dispatch(setMediaAction(index ? MEDIA_DISK_B : MEDIA_DISK_A, {}));
+  mainStore.dispatch(incMenuVersionAction());
   try {
     await getEmuApi().setDiskFile(index);
     await logEmuEvent(`Disk ejected from drive ${suffix.toUpperCase()}`);
@@ -316,6 +342,11 @@ async function setDiskWriteProtection(
   } catch (err) {
     // --- Intentionally ignored
   }
+}
+
+function getDiskMediaState(index: number): DiskMediaState {
+  const media = mainStore.getState()?.media?.[index ? MEDIA_DISK_B : MEDIA_DISK_A];
+  return typeof media === "object" && media ? media : {};
 }
 
 const ROM_FILE_FOLDER = "sp48RomFileFolder";

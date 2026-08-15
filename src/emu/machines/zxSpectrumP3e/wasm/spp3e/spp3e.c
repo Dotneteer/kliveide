@@ -160,6 +160,9 @@ typedef struct Spp3eDiskDrive {
   uint8_t currentCylinder;
   uint8_t maxCylinders;
   uint8_t headLoaded;
+  uint8_t sectorsPerTrack;
+  uint8_t firstSectorId;
+  uint16_t sectorLength;
   uint32_t diskLength;
   uint32_t revision;
 } Spp3eDiskDrive;
@@ -302,7 +305,7 @@ static uint8_t spp3eFdcCommandResultLength;
 static uint8_t spp3eFdcIntReq;
 static uint8_t spp3eFdcPresentCylinder[4];
 static uint8_t spp3eFdcSenseIntResult[2];
-static uint8_t spp3eFdcSectorOffset;
+static uint32_t spp3eFdcSectorOffset;
 static uint8_t spp3eFdcStepRate = 16u;
 static uint8_t spp3eFdcHeadUnloadTime = 240u;
 static uint8_t spp3eFdcHeadLoadTime = 254u;
@@ -322,6 +325,9 @@ static uint8_t spp3eDiskUploadActive;
 static uint8_t spp3eDiskUploadWriteProtected;
 static uint8_t spp3eDiskUploadTracks;
 static uint8_t spp3eDiskUploadSides;
+static uint8_t spp3eDiskUploadSectorsPerTrack;
+static uint8_t spp3eDiskUploadFirstSectorId;
+static uint16_t spp3eDiskUploadSectorLength;
 static uint8_t spp3eLastContendedValue = 0xffu;
 static uint8_t spp3eLastUlaReadValue = 0xffu;
 static uint32_t spp3eAttrColors[2][256][2];
@@ -1176,6 +1182,9 @@ static void spp3eDiskResetDrive(uint32_t driveIndex) {
   drive->currentCylinder = 0u;
   drive->maxCylinders = SPP3E_DISK_DEFAULT_MAX_CYLINDERS;
   drive->headLoaded = 0u;
+  drive->sectorsPerTrack = 32u;
+  drive->firstSectorId = 1u;
+  drive->sectorLength = 0u;
   drive->diskLength = 0u;
   drive->revision = 0u;
   spp3eClearBytes(spp3eDiskData[driveIndex], SPP3E_DISK_DATA_CAPACITY);
@@ -1213,7 +1222,7 @@ static void spp3eFdcUpdateSr3(void) {
   if (drive->hasTwoHeads != 0u) spp3eFdcSr3 |= SPP3E_FDC_SR3_TS;
   if (drive->track0Mark != 0u) spp3eFdcSr3 |= SPP3E_FDC_SR3_T0;
   if (drive->ready != 0u) spp3eFdcSr3 |= SPP3E_FDC_SR3_RD;
-  if (drive->writeProtected != 0u) spp3eFdcSr3 |= SPP3E_FDC_SR3_WP;
+  if (drive->hasDiskLoaded == 0u || drive->writeProtected != 0u) spp3eFdcSr3 |= SPP3E_FDC_SR3_WP;
 }
 
 static void spp3eFdcIdentifyCommand(uint32_t value) {
@@ -1296,12 +1305,20 @@ static void spp3eFdcSelectFromHdUs(uint32_t value) {
 }
 
 static uint32_t spp3eFdcSectorByteOffset(void) {
+  const Spp3eDiskDrive *drive = spp3eGetDiskDrive(spp3eFdcCurrentDrive);
   const uint32_t cylinder = spp3eFdcDataRegister[1];
   const uint32_t head = spp3eFdcDataRegister[2] & 0x01u;
-  const uint32_t sector = spp3eFdcDataRegister[3] == 0u ? 0u : (uint32_t)spp3eFdcDataRegister[3] - 1u;
+  const uint32_t sectorId = spp3eFdcDataRegister[3];
   const uint32_t lengthCode = spp3eFdcDataRegister[4] & 0x07u;
-  const uint32_t sectorLength = 128u << lengthCode;
-  return (((cylinder * 2u) + head) * 32u + sector) * sectorLength;
+  const uint32_t sectorLength = drive->sectorLength != 0u ? drive->sectorLength : 128u << lengthCode;
+  const uint32_t sideCount = drive->hasTwoHeads != 0u ? 2u : 1u;
+  const uint32_t firstSectorId = drive->firstSectorId;
+  const uint32_t sectorsPerTrack = drive->sectorsPerTrack == 0u ? 32u : drive->sectorsPerTrack;
+  if (head >= sideCount || sectorId < firstSectorId || sectorId >= firstSectorId + sectorsPerTrack) {
+    return SPP3E_DISK_DATA_CAPACITY;
+  }
+  const uint32_t sector = sectorId - firstSectorId;
+  return (((cylinder * sideCount) + head) * sectorsPerTrack + sector) * sectorLength;
 }
 
 static uint32_t spp3eFdcSectorLength(void) {
@@ -1330,14 +1347,26 @@ static void spp3eFdcJournalDirtyRange(uint32_t drive, uint32_t offset, uint32_t 
   spp3eFdcDirtyOffset = offset;
   spp3eFdcDirtyLength = length;
   spp3eFdcDirtyRevision++;
-  spp3eDiskChanges[drive][0] = (uint8_t)(offset & 0xffu);
-  spp3eDiskChanges[drive][1] = (uint8_t)((offset >> 8u) & 0xffu);
-  spp3eDiskChanges[drive][2] = (uint8_t)((offset >> 16u) & 0xffu);
-  spp3eDiskChanges[drive][3] = (uint8_t)((offset >> 24u) & 0xffu);
-  spp3eDiskChanges[drive][4] = (uint8_t)(length & 0xffu);
-  spp3eDiskChanges[drive][5] = (uint8_t)((length >> 8u) & 0xffu);
-  spp3eDiskChanges[drive][6] = (uint8_t)((length >> 16u) & 0xffu);
-  spp3eDiskChanges[drive][7] = (uint8_t)((length >> 24u) & 0xffu);
+  uint32_t entryOffset = SPP3E_DISK_CHANGE_CAPACITY - 8u;
+  for (uint32_t candidate = 0u; candidate + 8u <= SPP3E_DISK_CHANGE_CAPACITY; candidate += 8u) {
+    const uint32_t entryLength =
+      (uint32_t)spp3eDiskChanges[drive][candidate + 4u] |
+      ((uint32_t)spp3eDiskChanges[drive][candidate + 5u] << 8u) |
+      ((uint32_t)spp3eDiskChanges[drive][candidate + 6u] << 16u) |
+      ((uint32_t)spp3eDiskChanges[drive][candidate + 7u] << 24u);
+    if (entryLength == 0u) {
+      entryOffset = candidate;
+      break;
+    }
+  }
+  spp3eDiskChanges[drive][entryOffset] = (uint8_t)(offset & 0xffu);
+  spp3eDiskChanges[drive][entryOffset + 1u] = (uint8_t)((offset >> 8u) & 0xffu);
+  spp3eDiskChanges[drive][entryOffset + 2u] = (uint8_t)((offset >> 16u) & 0xffu);
+  spp3eDiskChanges[drive][entryOffset + 3u] = (uint8_t)((offset >> 24u) & 0xffu);
+  spp3eDiskChanges[drive][entryOffset + 4u] = (uint8_t)(length & 0xffu);
+  spp3eDiskChanges[drive][entryOffset + 5u] = (uint8_t)((length >> 8u) & 0xffu);
+  spp3eDiskChanges[drive][entryOffset + 6u] = (uint8_t)((length >> 16u) & 0xffu);
+  spp3eDiskChanges[drive][entryOffset + 7u] = (uint8_t)((length >> 24u) & 0xffu);
 }
 
 static void spp3eFdcExecuteCommand(void) {
@@ -1366,7 +1395,10 @@ static void spp3eFdcExecuteCommand(void) {
       spp3eFdcCompleteCommand();
       break;
     case SPP3E_FDC_CMD_SENSE_DRIVE:
-      spp3eFdcResultRegister[0] = spp3eFdcSr3;
+      spp3eFdcResultRegister[0] =
+        ((spp3eFdcDataRegister[0] & 0x01u) != 0u && spp3eFdcEnabledDriveCount < 2u)
+          ? 0u
+          : spp3eFdcSr3;
       spp3eFdcCompleteCommand();
       break;
     case SPP3E_FDC_CMD_SENSE_INT:
@@ -1404,8 +1436,12 @@ static void spp3eFdcExecuteCommand(void) {
     case SPP3E_FDC_CMD_READ_ID:
       spp3eFdcDataRegister[1] = drive->currentCylinder;
       spp3eFdcDataRegister[2] = drive->currentHead;
-      spp3eFdcDataRegister[3] = 1u;
-      spp3eFdcDataRegister[4] = 2u;
+      spp3eFdcDataRegister[3] = drive->firstSectorId;
+      spp3eFdcDataRegister[4] =
+        drive->sectorLength >= 1024u ? 3u :
+        drive->sectorLength >= 512u ? 2u :
+        drive->sectorLength >= 256u ? 1u :
+        0u;
       spp3eFdcBuildRwResult(0u, drive->ready != 0u ? 0u : SPP3E_FDC_SR1_ND, 0u);
       spp3eFdcCompleteCommand();
       break;
@@ -1960,7 +1996,16 @@ void spp3eFdcSelectDrive(uint32_t drive, uint32_t head) {
   spp3eFdcSelectDriveInternal(drive, head);
   spp3eFdcUpdateSr3();
 }
-uint32_t spp3eDiskBeginUpload(uint32_t drive, uint32_t length, uint32_t writeProtected, uint32_t tracks, uint32_t sides) {
+uint32_t spp3eDiskBeginUpload(
+  uint32_t drive,
+  uint32_t length,
+  uint32_t writeProtected,
+  uint32_t tracks,
+  uint32_t sides,
+  uint32_t sectorsPerTrack,
+  uint32_t firstSectorId,
+  uint32_t sectorLength
+) {
   if (drive >= SPP3E_DISK_DRIVE_COUNT || drive >= spp3eFdcEnabledDriveCount || length > SPP3E_DISK_DATA_CAPACITY) {
     return 0u;
   }
@@ -1969,6 +2014,9 @@ uint32_t spp3eDiskBeginUpload(uint32_t drive, uint32_t length, uint32_t writePro
   spp3eDiskUploadWriteProtected = writeProtected != 0u ? 1u : 0u;
   spp3eDiskUploadTracks = tracks == 0u ? SPP3E_DISK_DEFAULT_MAX_CYLINDERS : (uint8_t)tracks;
   spp3eDiskUploadSides = sides > 1u ? 2u : 1u;
+  spp3eDiskUploadSectorsPerTrack = sectorsPerTrack == 0u ? 32u : (uint8_t)sectorsPerTrack;
+  spp3eDiskUploadFirstSectorId = firstSectorId == 0u ? 1u : (uint8_t)firstSectorId;
+  spp3eDiskUploadSectorLength = sectorLength == 0u ? 0u : (uint16_t)sectorLength;
   spp3eDiskUploadActive = 1u;
   spp3eClearBytes(spp3eDiskData[drive], SPP3E_DISK_DATA_CAPACITY);
   return 1u;
@@ -1995,6 +2043,9 @@ uint32_t spp3eDiskFinishUpload(uint32_t drive) {
   diskDrive->writeProtected = spp3eDiskUploadWriteProtected;
   diskDrive->hasTwoHeads = spp3eDiskUploadSides > 1u ? 1u : 0u;
   diskDrive->maxCylinders = spp3eDiskUploadTracks;
+  diskDrive->sectorsPerTrack = spp3eDiskUploadSectorsPerTrack;
+  diskDrive->firstSectorId = spp3eDiskUploadFirstSectorId;
+  diskDrive->sectorLength = spp3eDiskUploadSectorLength;
   diskDrive->currentCylinder = 0u;
   diskDrive->track0Mark = 1u;
   diskDrive->currentHead = diskDrive->hasTwoHeads != 0u ? diskDrive->currentHead : 0u;

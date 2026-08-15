@@ -1,12 +1,24 @@
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
+import type { CpuState } from "@common/messaging/EmuApi";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
+import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { SpP3eWasmV2LoaderOptions, SpP3eWasmV2Runtime } from "./wasm/SpP3eWasmV2Loader";
 import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { TapeMode } from "@emu/abstractions/TapeMode";
-import { AUDIO_SAMPLE_RATE, DISK_A_WP, DISK_B_WP, FAST_LOAD, REWIND_REQUESTED, SAVED_TO_TAPE, TAPE_MODE } from "../machine-props";
+import {
+  AUDIO_SAMPLE_RATE,
+  DISK_A_CHANGES,
+  DISK_A_WP,
+  DISK_B_CHANGES,
+  DISK_B_WP,
+  FAST_LOAD,
+  REWIND_REQUESTED,
+  SAVED_TO_TAPE,
+  TAPE_MODE
+} from "../machine-props";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { BinaryWriter } from "@utils/BinaryWriter";
@@ -17,6 +29,15 @@ import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
 import { ZxSpectrumP3EMachine } from "./ZxSpectrumP3eMachine";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
+
+type WasmDiskPayload = {
+  data: Uint8Array;
+  tracks: number;
+  sides: number;
+  sectorsPerTrack: number;
+  firstSectorId: number;
+  sectorLength: number;
+};
 
 export type SpP3eWasmV2Diagnostics = {
   backend: "wasm";
@@ -55,6 +76,8 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
   private wasmV2AudioRateWrites = 0;
   private wasmV2TapeUploadCount = 0;
   private wasmV2SavedTapeRevision = 0;
+  private wasmV2DiskChangeRevision = 0;
+  private readonly wasmV2DiskPayloads: (WasmDiskPayload | undefined)[] = [];
 
   constructor(
     public readonly requestedModelInfo?: MachineModel,
@@ -70,6 +93,7 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
     await super.setup();
     this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
     this.syncTapeStateToWasmV2(this.wasmV2Runtime);
+    this.syncDiskStateToWasmV2(this.wasmV2Runtime);
     this.syncFrameCountersFromWasmV2(this.wasmV2Runtime);
   }
 
@@ -79,6 +103,7 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
       this.hardResetWasmV2(this.wasmV2Runtime);
       this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
       this.syncTapeStateToWasmV2(this.wasmV2Runtime);
+      this.syncDiskStateToWasmV2(this.wasmV2Runtime);
       this.syncFrameCountersFromWasmV2(this.wasmV2Runtime);
     }
   }
@@ -90,7 +115,7 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
       this.invalidateWasmV2Sync();
       this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
       this.syncTapeStateToWasmV2(this.wasmV2Runtime);
-      this.syncDiskConfigToWasmV2(this.wasmV2Runtime);
+      this.syncDiskStateToWasmV2(this.wasmV2Runtime);
       this.syncFrameCountersFromWasmV2(this.wasmV2Runtime);
     }
   }
@@ -115,9 +140,18 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
     this.wasmV2NormalFrames++;
     this.syncFrameCountersFromWasmV2(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
+    this.flushDiskChanges();
     this.frameCompleted = true;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
+  }
+
+  flushDiskChanges(): void {
+    const runtime = this.wasmV2Runtime;
+    if (runtime != null) {
+      this.publishDiskChangesFromWasmV2(runtime);
+    }
+    this.floppyDevice?.flushDiskChanges();
   }
 
   override setMachineProperty(key: string, value?: any): void {
@@ -208,6 +242,14 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
     return this.wasmV2AudioSamples;
   }
 
+  override getCpuState(): CpuState {
+    const runtime = this.wasmV2Runtime;
+    if (runtime != null) {
+      this.syncCpuFromWasmV2(runtime);
+    }
+    return super.getCpuState();
+  }
+
   getWasmV2Diagnostics(): SpP3eWasmV2Diagnostics {
     const runtime = this.requireWasmV2Runtime();
     return {
@@ -239,8 +281,10 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
     this.wasmV2NormalFrames = 0;
     this.invalidateWasmV2Sync();
     this.wasmV2SavedTapeRevision = 0;
+    this.wasmV2DiskChangeRevision = runtime.exports.spp3eFdcGetDirtyRevision();
     this.setTactsInFrame(runtime.exports.spp3eGetTactsInFrame());
     this.syncDiskConfigToWasmV2(runtime);
+    this.syncDiskStateToWasmV2(runtime);
   }
 
   private syncAudioSampleRateToWasmV2(runtime: SpP3eWasmV2Runtime): void {
@@ -424,6 +468,22 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
     runtime.exports.spp3eSetFdcEnabledDriveCount(Math.max(0, Math.min(2, driveCount)));
   }
 
+  private syncDiskStateToWasmV2(runtime: SpP3eWasmV2Runtime): void {
+    this.syncDiskConfigToWasmV2(runtime);
+    this.syncDiskMediaToWasmV2(
+      runtime,
+      0,
+      this.getMachineProperty(MEDIA_DISK_A),
+      !!this.getMachineProperty(DISK_A_WP)
+    );
+    this.syncDiskMediaToWasmV2(
+      runtime,
+      1,
+      this.getMachineProperty(MEDIA_DISK_B),
+      !!this.getMachineProperty(DISK_B_WP)
+    );
+  }
+
   private syncDiskPropertyToWasmV2(runtime: SpP3eWasmV2Runtime, key: string, value?: any): void {
     if (key === MEDIA_DISK_A) {
       this.syncDiskMediaToWasmV2(runtime, 0, value, !!this.getMachineProperty(DISK_A_WP));
@@ -444,30 +504,204 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
   ): void {
     if (!(value instanceof Uint8Array)) {
       runtime.exports.spp3eDiskEject(drive);
+      this.wasmV2DiskPayloads[drive] = undefined;
       return;
     }
-    const { tracks, sides } = this.getDiskGeometry(value);
-    if (runtime.exports.spp3eDiskBeginUpload(drive, value.length, writeProtected ? 1 : 0, tracks, sides) === 0) {
+    const payload = this.createWasmDiskPayload(value);
+    if (
+      runtime.exports.spp3eDiskBeginUpload(
+        drive,
+        payload.data.length,
+        writeProtected ? 1 : 0,
+        payload.tracks,
+        payload.sides,
+        payload.sectorsPerTrack,
+        payload.firstSectorId,
+        payload.sectorLength
+      ) === 0
+    ) {
+      this.wasmV2DiskPayloads[drive] = undefined;
       return;
     }
-    for (let i = 0; i < value.length; i++) {
-      runtime.exports.spp3eDiskWriteData(drive, i, value[i]);
+    for (let i = 0; i < payload.data.length; i++) {
+      runtime.exports.spp3eDiskWriteData(drive, i, payload.data[i]);
     }
     runtime.exports.spp3eDiskFinishUpload(drive);
+    this.wasmV2DiskPayloads[drive] = payload;
   }
 
-  private getDiskGeometry(contents: Uint8Array): { tracks: number; sides: number } {
+  private publishDiskChangesFromWasmV2(runtime: SpP3eWasmV2Runtime): void {
+    const revision = runtime.exports.spp3eFdcGetDirtyRevision();
+    if (revision === this.wasmV2DiskChangeRevision) {
+      return;
+    }
+
+    this.mergePendingDiskChanges(
+      DISK_A_CHANGES,
+      this.collectWasmDiskChanges(runtime, 0, runtime.diskChanges)
+    );
+    this.mergePendingDiskChanges(
+      DISK_B_CHANGES,
+      this.collectWasmDiskChanges(runtime, 1, runtime.diskBChanges)
+    );
+    runtime.diskChanges.fill(0);
+    runtime.diskBChanges.fill(0);
+    this.wasmV2DiskChangeRevision = revision;
+  }
+
+  private collectWasmDiskChanges(
+    runtime: SpP3eWasmV2Runtime,
+    drive: number,
+    journal: Uint8Array
+  ): SectorChanges | undefined {
+    const payload = this.wasmV2DiskPayloads[drive];
+    if (payload == null || payload.sectorLength === 0) {
+      return undefined;
+    }
+
+    const diskData = drive === 0 ? runtime.diskData : runtime.diskBData;
+    const changes: SectorChanges = new Map();
+    for (let entryOffset = 0; entryOffset + 8 <= journal.length; entryOffset += 8) {
+      const length = this.readUint32Le(journal, entryOffset + 4);
+      if (length === 0) {
+        break;
+      }
+      const offset = this.readUint32Le(journal, entryOffset);
+      this.collectWasmDiskRangeChanges(changes, diskData, payload, offset, length);
+    }
+
+    return changes.size > 0 ? changes : undefined;
+  }
+
+  private collectWasmDiskRangeChanges(
+    changes: SectorChanges,
+    diskData: Uint8Array,
+    payload: WasmDiskPayload,
+    offset: number,
+    length: number
+  ): void {
+    const sectorLength = payload.sectorLength;
+    const firstSector = Math.floor(offset / sectorLength);
+    const lastSector = Math.floor((offset + length - 1) / sectorLength);
+    for (let sectorOrdinal = firstSector; sectorOrdinal <= lastSector; sectorOrdinal++) {
+      const sectorIndex = sectorOrdinal % payload.sectorsPerTrack;
+      const trackOrdinal = Math.floor(sectorOrdinal / payload.sectorsPerTrack);
+      const trackIndex = trackOrdinal;
+      const sectorId = payload.firstSectorId + sectorIndex;
+      const sectorOffset = sectorOrdinal * sectorLength;
+      if (sectorOffset + sectorLength > diskData.length) {
+        continue;
+      }
+      changes.set(
+        trackIndex * 100 + sectorId,
+        new Uint8Array(diskData.subarray(sectorOffset, sectorOffset + sectorLength))
+      );
+    }
+  }
+
+  private mergePendingDiskChanges(property: string, changes: SectorChanges | undefined): void {
+    if (!changes || changes.size === 0) {
+      return;
+    }
+    const pendingChanges = this.getMachineProperty(property) as SectorChanges;
+    if (pendingChanges) {
+      changes.forEach((sectorData, sectorKey) => pendingChanges.set(sectorKey, sectorData));
+    } else {
+      super.setMachineProperty(property, changes);
+    }
+  }
+
+  private readUint32Le(buffer: Uint8Array, offset: number): number {
+    return (
+      buffer[offset] |
+      (buffer[offset + 1] << 8) |
+      (buffer[offset + 2] << 16) |
+      (buffer[offset + 3] << 24)
+    ) >>> 0;
+  }
+
+  private createWasmDiskPayload(contents: Uint8Array): WasmDiskPayload {
     try {
       const disk = readDiskData(contents);
-      return { tracks: disk.numTracks, sides: disk.numSides };
+      const sectors = disk.tracks.flatMap((track) => track.sectors);
+      if (sectors.length === 0) {
+        throw new Error("Disk has no sectors.");
+      }
+
+      const sides = Math.max(1, Math.min(2, disk.numSides));
+      const sectorsPerTrack = Math.max(...disk.tracks.map((track) => track.sectorCount));
+      const firstSectorId = Math.min(...sectors.map((sector) => sector.R));
+      const sectorLength = Math.max(
+        ...sectors.map((sector) => Math.max(0x80 << (sector.N & 0x07), sector.actualLength))
+      );
+      const data = new Uint8Array(disk.numTracks * sides * sectorsPerTrack * sectorLength);
+      data.fill(0xe5);
+
+      for (const track of disk.tracks) {
+        for (const sector of track.sectors) {
+          const sectorIndex = sector.R - firstSectorId;
+          const side = sector.H & 0x01;
+          if (sectorIndex < 0 || sectorIndex >= sectorsPerTrack || side >= sides) {
+            continue;
+          }
+          const offset =
+            (((sector.C * sides + side) * sectorsPerTrack + sectorIndex) * sectorLength);
+          data.set(sector.sectorData.subarray(0, sectorLength), offset);
+        }
+      }
+
+      return { data, tracks: disk.numTracks, sides, sectorsPerTrack, firstSectorId, sectorLength };
     } catch {
-      return { tracks: 42, sides: 2 };
+      return {
+        data: contents,
+        tracks: 42,
+        sides: 2,
+        sectorsPerTrack: 32,
+        firstSectorId: 1,
+        sectorLength: 0
+      };
     }
+  }
+
+  private syncCpuFromWasmV2(runtime: SpP3eWasmV2Runtime): void {
+    const wasm = runtime.exports;
+    this.af = wasm.spp3eGetCpuAf();
+    this.af_ = wasm.spp3eGetCpuAfAlt();
+    this.bc = wasm.spp3eGetCpuBc();
+    this.de = wasm.spp3eGetCpuDe();
+    this.hl = wasm.spp3eGetCpuHl();
+    this.ix = wasm.spp3eGetCpuIx();
+    this.iy = wasm.spp3eGetCpuIy();
+    this.pc = wasm.spp3eGetCpuPc();
+    this.sp = wasm.spp3eGetCpuSp();
+    this.tacts = wasm.spp3eGetTacts();
+    this.frames = wasm.spp3eGetFrames();
+    this.frameTacts = wasm.spp3eGetCurrentFrameTact();
+    this.currentFrameTact = this.frameTacts;
+    this.halted = wasm.spp3eGetCpuHalted() !== 0;
+    this.opCode = wasm.spp3eGetCpuPrefix();
+    this.syncPagingStateFromWasmV2(runtime);
   }
 
   private syncFrameCountersFromWasmV2(runtime: SpP3eWasmV2Runtime): void {
-    this.frames = runtime.exports.spp3eGetFrames();
-    this.tacts = runtime.exports.spp3eGetTacts();
+    const wasm = runtime.exports;
+    this.pc = wasm.spp3eGetCpuPc();
+    this.frames = wasm.spp3eGetFrames();
+    this.tacts = wasm.spp3eGetTacts();
+    this.frameTacts = wasm.spp3eGetCurrentFrameTact();
+    this.currentFrameTact = this.frameTacts;
+    this.syncPagingStateFromWasmV2(runtime);
+  }
+
+  private syncPagingStateFromWasmV2(runtime: SpP3eWasmV2Runtime): void {
+    const wasm = runtime.exports;
+    this.selectedRom = wasm.spp3eGetSelectedRom();
+    this.selectedBank = wasm.spp3eGetSelectedBank();
+    this.pagingEnabled = wasm.spp3eGetPagingEnabled() !== 0;
+    this.useShadowScreen = wasm.spp3eGetUseShadowScreen() !== 0;
+    this.inSpecialPagingMode = wasm.spp3eGetInSpecialPagingMode() !== 0;
+    this.specialConfigMode = wasm.spp3eGetSpecialConfigMode();
+    this.diskMotorOn = wasm.spp3eGetDiskMotorOn() !== 0;
   }
 
   private invalidateWasmV2Sync(): void {

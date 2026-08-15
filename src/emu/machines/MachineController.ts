@@ -14,6 +14,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { MachineInfo } from "@common/machines/info-types";
+import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 
 import { toHexa4 } from "@appIde/services/ide-commands";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
@@ -168,6 +169,7 @@ export class MachineController implements IMachineController {
       throw new Error("The machine is not running");
     }
     await this.finishExecutionLoop(MachineControllerState.Pausing, MachineControllerState.Paused);
+    this.emitPendingMediaChanges();
     await this.sendOutput(
       `Machine paused (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
@@ -186,6 +188,7 @@ export class MachineController implements IMachineController {
       beforeState !== MachineControllerState.Stopped &&
       beforeState !== MachineControllerState.None
     ) {
+      this.emitPendingMediaChanges();
       await this.sendOutput(
         `Machine stopped (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
         "red"
@@ -523,17 +526,10 @@ export class MachineController implements IMachineController {
             this.machine.setMachineProperty(SAVED_TO_TAPE);
           }
 
-          // --- Check for disk A changes
-          diskAChanges = this.machine.getMachineProperty(DISK_A_CHANGES) as SectorChanges;
-          if (diskAChanges) {
-            this.machine.setMachineProperty(DISK_A_CHANGES);
-          }
-
-          // --- Check for disk B changes
-          diskBChanges = this.machine.getMachineProperty(DISK_B_CHANGES) as SectorChanges;
-          if (diskBChanges) {
-            this.machine.setMachineProperty(DISK_B_CHANGES);
-          }
+          // --- Check for disk changes
+          const diskChanges = this.collectPendingMediaChanges();
+          diskAChanges = diskChanges.diskAChanges;
+          diskBChanges = diskChanges.diskBChanges;
         }
 
         // --- Refresh the UI, if required so
@@ -644,6 +640,50 @@ export class MachineController implements IMachineController {
       this._machineTask = undefined;
     }
     this.state = afterState;
+  }
+
+  /**
+   * Emits any pending media changes that would otherwise wait for the next full frame.
+   */
+  private emitPendingMediaChanges(): void {
+    const diskChanges = this.collectPendingMediaChanges();
+    if (diskChanges.diskAChanges || diskChanges.diskBChanges) {
+      this.frameCompleted.fire({
+        fullFrame: false,
+        ...diskChanges,
+        clockMultiplier: this.machine.clockMultiplier
+      });
+    }
+  }
+
+  /**
+   * Collects pending media changes and clears the machine properties holding them.
+   */
+  private collectPendingMediaChanges(): Pick<
+    FrameCompletedArgs,
+    "diskAChanges" | "diskBChanges"
+  > {
+    const machineWithMediaFlush = this.machine as IAnyMachine & {
+      flushDiskChanges?: () => void;
+      floppyDevice?: Pick<IFloppyControllerDevice, "flushDiskChanges">;
+    };
+    if (machineWithMediaFlush.flushDiskChanges) {
+      machineWithMediaFlush.flushDiskChanges();
+    } else {
+      machineWithMediaFlush.floppyDevice?.flushDiskChanges();
+    }
+
+    const diskAChanges = this.machine.getMachineProperty(DISK_A_CHANGES) as SectorChanges;
+    if (diskAChanges) {
+      this.machine.setMachineProperty(DISK_A_CHANGES);
+    }
+
+    const diskBChanges = this.machine.getMachineProperty(DISK_B_CHANGES) as SectorChanges;
+    if (diskBChanges) {
+      this.machine.setMachineProperty(DISK_B_CHANGES);
+    }
+
+    return { diskAChanges, diskBChanges };
   }
 
   /**

@@ -52,7 +52,7 @@ import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
 import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
 import { createSettingsReader } from "@utils/SettingsReader";
-import { MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 
 import { setupMenu } from "./app-menu";
 import { __WIN32__ } from "./electron-utils";
@@ -61,7 +61,7 @@ import { mainStore } from "./main-store";
 import { createWindowStateManager } from "./WindowStateManager";
 import { setMachineType } from "./registeredMachines";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
-import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
+import { setSelectedDiskFile, setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
@@ -344,7 +344,16 @@ async function createAppWindows() {
       mainStore.dispatch(setModelTypeAction(modelId));
 
       if (appSettings.media?.[MEDIA_TAPE]) {
-        setSelectedTapeFile(appSettings.media[MEDIA_TAPE]);
+        await setSelectedTapeFile(appSettings.media[MEDIA_TAPE]);
+      }
+
+      const diskAState = appSettings.media?.[MEDIA_DISK_A];
+      if (diskAState?.diskFile) {
+        await setSelectedDiskFile(0, diskAState.diskFile, diskAState.writeProtected ?? true);
+      }
+      const diskBState = appSettings.media?.[MEDIA_DISK_B];
+      if (diskBState?.diskFile) {
+        await setSelectedDiskFile(1, diskBState.diskFile, diskBState.writeProtected ?? true);
       }
 
       // --- Set key mappings

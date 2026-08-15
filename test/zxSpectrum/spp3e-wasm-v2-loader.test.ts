@@ -911,6 +911,25 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     expect(runtime.exports.spp3eFdcGetOperationPhase()).toBe(0);
   });
 
+  it("matches TypeScript FDC Sense Drive results for absent and empty drive B", async () => {
+    buildSpP3eWasm();
+    const runtime = await loadSpP3eWasmV2({
+      artifactName: "test-spp3e-fdc-sense-drive-count-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.spp3eHardReset();
+    runtime.exports.spp3eSetFdcEnabledDriveCount(1);
+    runtime.exports.spp3eWritePort(0x3ffd, 0x04);
+    runtime.exports.spp3eWritePort(0x3ffd, 0x01);
+    expect(runtime.exports.spp3eReadPort(0x3ffd)).toBe(0x00);
+
+    runtime.exports.spp3eSetFdcEnabledDriveCount(2);
+    runtime.exports.spp3eWritePort(0x3ffd, 0x04);
+    runtime.exports.spp3eWritePort(0x3ffd, 0x01);
+    expect(runtime.exports.spp3eReadPort(0x3ffd)).toBe(0x59);
+  });
+
   it("transfers FDC read/write data and journals dirty disk ranges", async () => {
     buildSpP3eWasm();
     const runtime = await loadSpP3eWasmV2({

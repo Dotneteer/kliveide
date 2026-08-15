@@ -28,9 +28,18 @@ import { PagedMemory } from "../memory/PagedMemory";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
-import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128SysVars";
 import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48SysVars";
+
+export function mergeZxSpectrumP3eConfig(
+  model?: MachineModel,
+  config?: MachineConfigSet
+): MachineConfigSet {
+  return {
+    ...(model?.config ?? {}),
+    ...(config ?? {})
+  };
+}
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -78,7 +87,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    */
   constructor(model?: MachineModel, config?: MachineConfigSet) {
     try {
-      super(config ?? model?.config ?? {});
+      super(mergeZxSpectrumP3eConfig(model, config));
       switch (this.config?.[MC_DISK_SUPPORT]) {
         case 1:
           this.hasFloppy = true;
@@ -224,10 +233,6 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
 
     // --- Empty the queue of emulated keystrokes
     this.emulatedKeyStrokes.length = 0;
-
-    // --- Reset media
-    this.setMachineProperty(MEDIA_DISK_A);
-    this.setMachineProperty(MEDIA_DISK_B);
   }
 
   /**

@@ -12,6 +12,7 @@ import {
   OperationPhase
 } from "@emu/machines/disk/FloppyControllerDevice";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
+import { DISK_A_CHANGES } from "@emu/machines/machine-props";
 
 describe("FloppyControllerDevice", () => {
   it("constructor works", () => {
@@ -647,6 +648,45 @@ describe("FloppyControllerDevice", () => {
     expect(fdt.driveA.surface).toBeDefined();
     expect(fdt.driveA.writeProtected).toBe(false);
     expect(fdt.driveA.track0Mark).toBe(true);
+  });
+
+  it("keeps attached disk media after controller reset", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+    const diskData = readTestFile("blank180K.dsk");
+
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
+    updm.emulateFrameCompletion(60);
+
+    expect(fdt.driveA.hasDiskLoaded).toBe(true);
+    expect(fdt.driveA.ready).toBe(true);
+
+    fd.reset();
+
+    expect(updm.getMachineProperty(MEDIA_DISK_A)).toBe(diskData);
+    expect(fdt.driveA.hasDiskLoaded).toBe(true);
+    expect(fdt.driveA.contents).toBe(diskData);
+    expect(fdt.driveA.surface).toBeDefined();
+    expect(fdt.driveA.motorOn).toBe(false);
+    expect(fdt.driveA.ready).toBe(false);
+  });
+
+  it("flushDiskChanges publishes dirty sectors without waiting for another frame", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+    const diskData = readTestFile("blank180K.dsk");
+
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
+    fdt.driveA.dirtySectors.add(1);
+
+    fd.flushDiskChanges();
+
+    const changes = updm.getMachineProperty(DISK_A_CHANGES);
+    expect(changes.size).toBe(1);
+    expect(changes.get(1)).toEqual(fdt.driveA.surface.tracks[0].sectors[0].sectordata.view());
+    expect(fdt.driveA.dirtySectors.size).toBe(0);
   });
 
   it("Load disk and select #1", () => {

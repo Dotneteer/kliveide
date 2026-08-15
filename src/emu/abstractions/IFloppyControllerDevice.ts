@@ -45,4 +45,7 @@ export interface IFloppyControllerDevice extends IGenericDevice<IZ80Machine> {
 
   // --- Carry out chores when a machine frame has been completed
   onFrameCompleted(): void;
+
+  // --- Publishes pending disk sector changes to the machine properties
+  flushDiskChanges(): void;
 }

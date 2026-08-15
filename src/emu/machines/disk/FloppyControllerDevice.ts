@@ -1,7 +1,7 @@
 import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
-import type { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
+import type { IFloppyDiskDrive, SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { IFloppyControllerDeviceTest } from "./IFloppyContorllerDeviceTest";
 
 import { PortOperationType } from "@abstractions/FloppyLogEntry";
@@ -223,21 +223,21 @@ export class FloppyControllerDevice
 
     // --- Reset diagnostic members
     this.frames = 0;
+
+    // --- Keep already attached disk media across controller resets
+    this.reloadMediaFromProperties(false);
   }
 
   // --- Respond to floppy file changes
   onMachinePropertiesChanged(args: { propertyName: string; newValue?: any }): void {
     switch (args.propertyName) {
       case MEDIA_DISK_A:
-        const newDiskA = args.newValue;
-        if (!newDiskA) {
-          this.driveA.ejectDisk();
-        } else {
-          if (newDiskA instanceof Uint8Array) {
-            this.driveA.loadDisk(newDiskA, !!this.machine.getMachineProperty(DISK_A_WP));
-            this.driveA.turnOnMotor();
-          }
-        }
+        this.reloadDriveMedia(
+          this.driveA,
+          args.newValue,
+          !!this.machine.getMachineProperty(DISK_A_WP),
+          true
+        );
         break;
 
       case DISK_A_WP:
@@ -245,15 +245,12 @@ export class FloppyControllerDevice
         break;
 
       case MEDIA_DISK_B:
-        const newDiskB = args.newValue;
-        if (!newDiskB) {
-          this.driveB.ejectDisk();
-        } else {
-          if (newDiskB instanceof Uint8Array) {
-            this.driveB.loadDisk(newDiskB, !!this.machine.getMachineProperty(DISK_B_WP));
-            this.driveB.turnOnMotor();
-          }
-        }
+        this.reloadDriveMedia(
+          this.driveB,
+          args.newValue,
+          !!this.machine.getMachineProperty(DISK_B_WP),
+          true
+        );
         break;
 
       case DISK_B_WP:
@@ -629,19 +626,67 @@ export class FloppyControllerDevice
   // --- Carry out chores when a machine frame has been completed
   onFrameCompleted(): void {
     this.driveA?.onFrameCompleted();
-    const driveAChanges = this.driveA?.getChangedSectors();
-    if (driveAChanges && driveAChanges.size > 0) {
-      this.machine.setMachineProperty(DISK_A_CHANGES, driveAChanges);
-    }
     this.driveB?.onFrameCompleted();
-    const driveBChanges = this.driveB?.getChangedSectors();
-    if (driveBChanges && driveBChanges.size > 0) {
-      this.machine.setMachineProperty(DISK_B_CHANGES, driveBChanges);
-    }
+    this.flushDiskChanges();
+  }
+
+  // --- Publishes pending disk sector changes to the machine properties
+  flushDiskChanges(): void {
+    this.publishDriveChanges(this.driveA, DISK_A_CHANGES);
+    this.publishDriveChanges(this.driveB, DISK_B_CHANGES);
   }
 
   // ==========================================================================
   // Helpers
+
+  // --- Reloads disk media already attached to the machine properties
+  private reloadMediaFromProperties(spinUp: boolean): void {
+    this.reloadDriveMedia(
+      this.driveA,
+      this.machine.getMachineProperty(MEDIA_DISK_A),
+      !!this.machine.getMachineProperty(DISK_A_WP),
+      spinUp
+    );
+    this.reloadDriveMedia(
+      this.driveB,
+      this.machine.getMachineProperty(MEDIA_DISK_B),
+      !!this.machine.getMachineProperty(DISK_B_WP),
+      spinUp
+    );
+  }
+
+  // --- Publishes pending changes for the specified drive
+  private publishDriveChanges(drive: IFloppyDiskDrive | undefined, property: string): void {
+    const changes = drive?.getChangedSectors();
+    if (changes && changes.size > 0) {
+      const pendingChanges = this.machine.getMachineProperty(property) as SectorChanges;
+      if (pendingChanges) {
+        changes.forEach((sectorData, sectorKey) => pendingChanges.set(sectorKey, sectorData));
+      } else {
+        this.machine.setMachineProperty(property, changes);
+      }
+    }
+  }
+
+  // --- Reloads a single drive from a disk media property value
+  private reloadDriveMedia(
+    drive: IFloppyDiskDrive,
+    media: unknown,
+    writeProtected: boolean,
+    spinUp: boolean
+  ): void {
+    if (!media) {
+      drive.ejectDisk();
+      return;
+    }
+    if (media instanceof Uint8Array) {
+      drive.loadDisk(media, writeProtected);
+      if (spinUp) {
+        drive.turnOnMotor();
+      }
+    }
+  }
+
   // --- Adds a new item to the operation log
   private log(entry: FloppyLogEntry): void {
     if (entry.opType === PortOperationType.ReadMsr) return;
