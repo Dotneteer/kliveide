@@ -377,6 +377,48 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     expect(runtime.exports.spp3eGetTotalContentionDelaySinceStart()).toBe(0);
   });
 
+  it("exposes v2 test/control exports as callable loader exports", async () => {
+    buildSpP3eWasm();
+    const runtime = await loadSpP3eWasmV2({
+      artifactName: "test-spp3e-control-exports-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.spp3eHardReset();
+    runtime.exports.spp3eSetContentionValue(100, 6);
+    runtime.exports.spp3eSetTacts(100);
+    runtime.exports.spp3eResetContentionCounters();
+    runtime.exports.spp3eDelayAddressBusAccess(0x4000);
+    runtime.exports.spp3eDelayPortRead(0xc0ff);
+    runtime.exports.spp3eDelayPortWrite(0xc0ff);
+    runtime.exports.spp3eSetCpuAf(0x1234);
+    runtime.exports.spp3eSetCpuBc(0x2345);
+    runtime.exports.spp3eSetCpuDe(0x3456);
+    runtime.exports.spp3eSetCpuHl(0x4567);
+    runtime.exports.spp3eSetCpuIx(0x5678);
+    runtime.exports.spp3eSetCpuIy(0x6789);
+    runtime.exports.spp3eSetCpuPc(0x0100);
+    runtime.exports.spp3eSetCpuSp(0xff00);
+    runtime.exports.spp3eFdcResetController();
+    runtime.exports.spp3eFdcSelectDrive(0, 1);
+
+    expect(runtime.exports.spp3eGetContentionValue(100)).toBe(6);
+    expect(runtime.exports.spp3eGetCurrentFrameTact()).toBeGreaterThanOrEqual(106);
+    expect(runtime.exports.spp3eGetTotalContentionDelaySinceStart()).toBeGreaterThanOrEqual(6);
+    expect(runtime.exports.spp3eGetContentionDelaySincePause()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.spp3eGetCpuAf()).toBe(0x1234);
+    expect(runtime.exports.spp3eGetCpuBc()).toBe(0x2345);
+    expect(runtime.exports.spp3eGetCpuDe()).toBe(0x3456);
+    expect(runtime.exports.spp3eGetCpuHl()).toBe(0x4567);
+    expect(runtime.exports.spp3eGetCpuIx()).toBe(0x5678);
+    expect(runtime.exports.spp3eGetCpuIy()).toBe(0x6789);
+    expect(runtime.exports.spp3eGetCpuPc()).toBe(0x0100);
+    expect(runtime.exports.spp3eGetCpuSp()).toBe(0xff00);
+    expect(runtime.exports.spp3eGetCpuTacts()).toBe(runtime.exports.spp3eGetTacts());
+    expect(runtime.exports.spp3eFdcGetCurrentDrive()).toBe(0);
+    expect(runtime.exports.spp3eFdcGetOperationPhase()).toBeGreaterThanOrEqual(0);
+  });
+
   it("matches the TypeScript +3E screen timing and contention table tact by tact", async () => {
     buildSpP3eWasm();
     const runtime = await loadSpP3eWasmV2({

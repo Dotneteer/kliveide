@@ -28,6 +28,12 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & {
   sp48SetKeyStatus: Sp48WasmV2ExportFunction;
   sp48GetKeyboardLine: Sp48WasmV2ExportFunction;
   sp48SetAudioSampleRate: Sp48WasmV2ExportFunction;
+  sp48DelayAddressBusAccess: Sp48WasmV2ExportFunction;
+  sp48DelayPortAccess: Sp48WasmV2ExportFunction;
+  sp48DelayPortRead: Sp48WasmV2ExportFunction;
+  sp48DelayPortWrite: Sp48WasmV2ExportFunction;
+  sp48ResetContentionCounters: Sp48WasmV2ExportFunction;
+  sp48GetBaseClockFrequency: Sp48WasmV2ExportFunction;
   sp48GetScreenWidth: Sp48WasmV2ExportFunction;
   sp48GetScreenHeight: Sp48WasmV2ExportFunction;
   sp48GetPixelBufferStartOffset: Sp48WasmV2ExportFunction;
@@ -41,6 +47,27 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & {
   sp48GetTactsInCurrentFrame: Sp48WasmV2ExportFunction;
   sp48GetFrames: Sp48WasmV2ExportFunction;
   sp48GetTacts: Sp48WasmV2ExportFunction;
+  sp48GetCurrentFrameTact: Sp48WasmV2ExportFunction;
+  sp48GetRasterLines: Sp48WasmV2ExportFunction;
+  sp48GetScreenLineTime: Sp48WasmV2ExportFunction;
+  sp48GetTimingScreenWidth: Sp48WasmV2ExportFunction;
+  sp48GetTimingScreenLines: Sp48WasmV2ExportFunction;
+  sp48GetFirstDisplayLine: Sp48WasmV2ExportFunction;
+  sp48GetFirstVisibleLine: Sp48WasmV2ExportFunction;
+  sp48GetFirstVisibleBorderTact: Sp48WasmV2ExportFunction;
+  sp48GetContentionValue: Sp48WasmV2ExportFunction;
+  sp48GetRenderingPhase: Sp48WasmV2ExportFunction;
+  sp48GetRenderingPixelAddress: Sp48WasmV2ExportFunction;
+  sp48GetRenderingAttributeAddress: Sp48WasmV2ExportFunction;
+  sp48GetRenderingPixelIndex: Sp48WasmV2ExportFunction;
+  sp48GetTotalContentionDelaySinceStart: Sp48WasmV2ExportFunction;
+  sp48GetContentionDelaySincePause: Sp48WasmV2ExportFunction;
+  sp48GetNextFrameStartTact: Sp48WasmV2ExportFunction;
+  sp48GetInterruptsRaised: Sp48WasmV2ExportFunction;
+  sp48GetInterruptLineActive: Sp48WasmV2ExportFunction;
+  sp48GetCpuInstructionsExecuted: Sp48WasmV2ExportFunction;
+  sp48GetCpuFrameSliceInstructions: Sp48WasmV2ExportFunction;
+  sp48GetCpuTacts: Sp48WasmV2ExportFunction;
   sp48GetCpuAf: Sp48WasmV2ExportFunction;
   sp48SetCpuAf: Sp48WasmV2ExportFunction;
   sp48GetCpuBc: Sp48WasmV2ExportFunction;
@@ -78,6 +105,14 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & {
   sp48GetLastPortAddress: Sp48WasmV2ExportFunction;
   sp48GetLastPortValue: Sp48WasmV2ExportFunction;
   sp48GetLastPortIsWrite: Sp48WasmV2ExportFunction;
+  sp48GetPortFeValue: Sp48WasmV2ExportFunction;
+  sp48GetBorderColor: Sp48WasmV2ExportFunction;
+  sp48GetEarBit: Sp48WasmV2ExportFunction;
+  sp48GetMicBit: Sp48WasmV2ExportFunction;
+  sp48GetBeeperLevel: Sp48WasmV2ExportFunction;
+  sp48GetEarBitChangedFrom0Tacts: Sp48WasmV2ExportFunction;
+  sp48GetEarBitChangedFrom1Tacts: Sp48WasmV2ExportFunction;
+  sp48GetDiagnosticFlags: Sp48WasmV2ExportFunction;
   sp48GetRomSize: Sp48WasmV2ExportFunction;
   sp48TapeClear: Sp48WasmV2ExportFunction;
   sp48TapeSetFileNameByte: Sp48WasmV2ExportFunction;
@@ -169,6 +204,12 @@ const requiredV2Exports = [
   "sp48SetKeyStatus",
   "sp48GetKeyboardLine",
   "sp48SetAudioSampleRate",
+  "sp48DelayAddressBusAccess",
+  "sp48DelayPortAccess",
+  "sp48DelayPortRead",
+  "sp48DelayPortWrite",
+  "sp48ResetContentionCounters",
+  "sp48GetBaseClockFrequency",
   "sp48GetScreenWidth",
   "sp48GetScreenHeight",
   "sp48GetPixelBufferStartOffset",
@@ -182,6 +223,27 @@ const requiredV2Exports = [
   "sp48GetTactsInCurrentFrame",
   "sp48GetFrames",
   "sp48GetTacts",
+  "sp48GetCurrentFrameTact",
+  "sp48GetRasterLines",
+  "sp48GetScreenLineTime",
+  "sp48GetTimingScreenWidth",
+  "sp48GetTimingScreenLines",
+  "sp48GetFirstDisplayLine",
+  "sp48GetFirstVisibleLine",
+  "sp48GetFirstVisibleBorderTact",
+  "sp48GetContentionValue",
+  "sp48GetRenderingPhase",
+  "sp48GetRenderingPixelAddress",
+  "sp48GetRenderingAttributeAddress",
+  "sp48GetRenderingPixelIndex",
+  "sp48GetTotalContentionDelaySinceStart",
+  "sp48GetContentionDelaySincePause",
+  "sp48GetNextFrameStartTact",
+  "sp48GetInterruptsRaised",
+  "sp48GetInterruptLineActive",
+  "sp48GetCpuInstructionsExecuted",
+  "sp48GetCpuFrameSliceInstructions",
+  "sp48GetCpuTacts",
   "sp48GetCpuAf",
   "sp48SetCpuAf",
   "sp48GetCpuBc",
@@ -219,6 +281,14 @@ const requiredV2Exports = [
   "sp48GetLastPortAddress",
   "sp48GetLastPortValue",
   "sp48GetLastPortIsWrite",
+  "sp48GetPortFeValue",
+  "sp48GetBorderColor",
+  "sp48GetEarBit",
+  "sp48GetMicBit",
+  "sp48GetBeeperLevel",
+  "sp48GetEarBitChangedFrom0Tacts",
+  "sp48GetEarBitChangedFrom1Tacts",
+  "sp48GetDiagnosticFlags",
   "sp48GetRomSize",
   "sp48TapeClear",
   "sp48TapeSetFileNameByte",
