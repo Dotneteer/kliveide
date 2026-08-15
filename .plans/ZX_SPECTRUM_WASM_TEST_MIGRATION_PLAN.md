@@ -520,6 +520,8 @@ Implementation notes:
 
 ### Step 11 - 128K And +2 Paging Parity
 
+Status: Completed on 2026-08-15.
+
 Extend `test/wasm/zxSpectrum/wasm-memory-paging.test.ts`.
 
 Migrate 128K paging behavior:
@@ -538,7 +540,20 @@ Acceptance:
 - Each assertion compares WASM with `ZxSpectrum128Machine` unless a literal
   partition layout is the clearer contract.
 
+Implementation notes:
+
+- Extended `test/wasm/zxSpectrum/wasm-memory-paging.test.ts` with the 128K
+  and +2-style paging subset.
+- Covered reset partitions, `0x7ffd` RAM bank selection, ROM page selection,
+  shadow screen selection, paging lock behavior, independent ROM/RAM
+  `getMemoryPartition()` reads, selected-bank writes, and top-slot bank
+  isolation.
+- The +2 behavior remains represented by the 128K WASM backend path because the
+  current helper matrix has no distinct +2 WASM adapter surface.
+
 ### Step 12 - +3E Special Paging Parity
+
+Status: Completed on 2026-08-15.
 
 Extend `test/wasm/zxSpectrum/wasm-memory-paging.test.ts` for +2E/+3E.
 
@@ -559,7 +574,25 @@ Acceptance:
 - Run this step for `nofdd`, `fdd1`, and `fdd2` model configs where disk count
   should not affect memory paging.
 
+Implementation notes:
+
+- Extended `test/wasm/zxSpectrum/wasm-memory-paging.test.ts` with +3E special
+  paging checks for disk-support configurations `0`, `1`, and `2`.
+- Covered reset partitions, normal `0x7ffd` paging, the four `0x1ffd` special
+  paging layouts, ROM high-bit selection from special config, and the current
+  WASM behavior that keeps `0x1ffd` writable after the `0x7ffd` paging lock.
+- Added a small helper refinement in `test/wasm/zxSpectrum/wasm-test-helpers.ts`
+  so +3E paging snapshots synchronize before reading test state.
+- The +3E production adapter does not currently override the full
+  `doReadMemory()`/`doWriteMemory()`/`doWritePort()`/partition surface for WASM
+  the way the 48K and 128K adapters do. These tests therefore use the explicit
+  WASM helper controls for +3E paging operations and read current partitions
+  from WASM runtime exports, while still comparing normal paging reads with the
+  TypeScript oracle where both surfaces expose the same contract.
+
 ### Step 13 - Partition Label Parsing
+
+Status: Completed on 2026-08-15.
 
 Add partition-label checks to `test/wasm/zxSpectrum/wasm-memory-paging.test.ts`
 or a small `test/wasm/zxSpectrum/wasm-partition-labels.test.ts`.
@@ -575,7 +608,17 @@ Acceptance:
 - The TypeScript partition parsing test remains unchanged.
 - WASM adapter inheritance or overrides expose the same parsing contract.
 
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-partition-labels.test.ts`.
+- Covered 48K undefined labels, 128K `R0`/`R1` and `B0` through `B7`, and
+  +2E/+3E `R0` through `R3` plus `B0` through `B7`.
+- Each WASM assertion is compared with the matching TypeScript oracle machine.
+- `test/memory/partition-parsing.test.ts` was left unchanged.
+
 ### Step 14 - Keyboard And ULA Port Parity
+
+Status: Completed for the first keyboard/ULA port slice on 2026-08-15.
 
 Add `test/wasm/zxSpectrum/wasm-ports-keyboard.test.ts`.
 
@@ -596,7 +639,28 @@ Acceptance:
 - Use at least one row-selection read per keyboard row across the matrix.
 - Include even and odd port address examples.
 
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-ports-keyboard.test.ts`.
+- Covered all eight keyboard row-selection ports on 48K, 128K, and +3E with
+  press/release comparisons against TypeScript oracle machines.
+- Covered unchanged/changed keyboard upload count behavior where diagnostics
+  expose it today: 48K and 128K.
+- Covered `0xfe` border, EAR, MIC, and beeper-level state for 48K, 128K, and
+  +3E.
+- Added a WASM tape-EAR-to-`0xfe` read routing check for 128K and +3E. Full
+  tape waveform parity remains in the later tape migration step.
+- Covered representative odd-port fallback behavior for 128K and +3E.
+- During implementation, a direct 48K unsupported odd-port floating-bus probe
+  returned `0x00` from the current WASM adapter while the TypeScript oracle
+  returned `0xff`. Because detailed floating-bus timing belongs to Step 17 and
+  the 48K adapter does not currently expose a full floating-bus test surface,
+  this was recorded for Step 17 rather than changing production WASM files in
+  this step.
+
 ### Step 15 - Contention Table Parity
+
+Status: Completed on 2026-08-15.
 
 Add `test/wasm/zxSpectrum/wasm-contention.test.ts`.
 
@@ -615,6 +679,22 @@ Acceptance:
 
 - This step does not yet need CPU instruction execution; it only proves the
   generated tables and model-specific address rules.
+
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-contention.test.ts`.
+- Compared representative generated contention-table values against the
+  TypeScript oracle for 48K, 128K, and +3E, including active-display non-zero
+  contention and zero-contention tacts.
+- Added address-rule probes without executing CPU instructions:
+  - 48K delays `0x4000-0x7fff` and not `0x8000`;
+  - 128K delays `0x4000` and delays `0xc000` only when an odd top RAM bank is
+    selected;
+  - +3E delays `0xc000` when RAM bank `4-7` is selected and not when bank `3`
+    is selected.
+- Used explicit WASM delay exports for 48K and +3E where the production
+  adapters do not expose the matching WASM-backed delay method today; 128K uses
+  the adapter override.
 
 ### Step 16 - CPU-Level Contention Tests
 
@@ -649,6 +729,12 @@ Acceptance:
 ### Step 17 - Screen Rendering Timing Parity
 
 Add `test/wasm/zxSpectrum/wasm-screen-floating-bus.test.ts`.
+
+Carry-forward note from Step 14:
+
+- Include the 48K unsupported odd-port floating-bus mismatch observed during
+  Step 14: current WASM adapter `doReadPort(0xffff)` returned `0x00` for the
+  probed setup while the TypeScript oracle returned `0xff`.
 
 Migrate screen timing contracts:
 

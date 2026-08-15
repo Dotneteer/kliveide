@@ -384,6 +384,7 @@ export class TestSpp3eWasmMachine extends ZxSpectrumP3eWasmV2Machine {
   }
 
   getTestPagingState (): TestPagingState {
+    this.getCpuState();
     const wasm = this.wasmV2Runtime!.exports;
     return {
       selectedRomPage: wasm.spp3eGetSelectedRom(),
