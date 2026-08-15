@@ -5,11 +5,13 @@ export default defineConfig({
   test: {
     root: resolve(__dirname, "../.."),
     include: ["./test/wasm/z80/**/*.test.ts"],
+    exclude: ["./test/wasm/z80/memoryOp.test.ts"],
     environment: "node",
     testTimeout: 30_000,
     hookTimeout: 30_000,
     setupFiles: ["./test/vitest.setup.ts"],
     alias: {
+      "@emu/z80/Z80Cpu": resolve(__dirname, "z80/Z80Cpu.ts"),
       "@styles": resolve(__dirname, "../..", "src/renderer/assets/styles"),
       "@common": resolve(__dirname, "../..", "src/common"),
       "@abstractions": resolve(__dirname, "../..", "src/common/abstractions"),

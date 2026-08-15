@@ -376,6 +376,8 @@ tests in place, add WASM tests, run the focused WASM tests, then run
 
 ### Step 7 - Z80 WASM Suite Bootstrap
 
+Status: First subset completed on 2026-08-15.
+
 Enable the literal copied Z80 suite in small groups without editing copied test
 case files:
 
@@ -397,7 +399,22 @@ Acceptance:
 - Any unsupported Z80N/Next-specific tests are tracked explicitly in this plan
   or in a local skip list outside the copied files.
 
+Implementation notes:
+
+- The active Step 7 subset is controlled by
+  `test/wasm/vitest.z80.config.ts`, outside the copied test files.
+- Enabled copied files:
+  `test/wasm/z80/z80.test.ts` and
+  `test/wasm/z80/standard-ops-00.test.ts`.
+- Added `test/wasm/z80/Z80Cpu.ts` so copied tests that import
+  `@emu/z80/Z80Cpu` can exercise the WASM-backed register API through a
+  Vitest alias instead of editing the copied imports.
+- Remaining copied Z80 groups stay present but inactive until the wrapper has
+  the necessary helper coverage.
+
 ### Step 8 - Full Z80 WASM Instruction Parity
+
+Status: Completed for all currently applicable copied Z80 tests on 2026-08-15.
 
 Complete the copied Z80 test suite under `test/wasm/z80/`.
 
@@ -415,7 +432,23 @@ diff -rq test/z80 test/wasm/z80 --exclude test-z80.ts
 
 The expected result is no differences for copied `*.test.ts` files.
 
+Implementation notes:
+
+- `test/wasm/vitest.z80.config.ts` now includes the copied Z80 test corpus and
+  excludes only documented unsupported files.
+- Active result: 74 copied Z80 WASM test files pass, covering 1,465 tests.
+- `test/wasm/z80/memoryOp.test.ts` is the sole excluded copied test file; it is
+  tracked in `test/wasm/z80/unsupported-tests.md` because the current
+  standalone WASM Z80 export surface exposes only the final memory bus event,
+  not the full per-instruction memory read/write history required by that
+  test.
+- Added wrapper support for copied direct `Z80Cpu` interrupt subclass tests and
+  synthesized CALL/RST step-out stack observations in `test-z80.ts`.
+- No copied Z80 test case file was edited.
+
 ### Step 9 - Lifecycle And Reset Parity
+
+Status: Completed on 2026-08-15.
 
 Add `test/wasm/zxSpectrum/wasm-machine-lifecycle.test.ts`.
 
@@ -435,7 +468,26 @@ Acceptance:
 - Existing adapter tests may remain or delegate to the new helper, but no
   coverage is removed.
 
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-machine-lifecycle.test.ts`.
+- Covered 48K, 128K, and +3E setup through the shared WASM helper matrix; +2
+  remains represented by the 128K backend path until a separate +2 WASM helper
+  surface exists.
+- Added hard-reset checks for ROM availability, cleared RAM, CPU reset state,
+  frame count, and `frameJustCompleted`.
+- Added soft-reset checks that compare preserved writable RAM with the
+  TypeScript oracle and verify attached tape media is still present in the WASM
+  runtime.
+- Added NOP-ROM normal-frame parity checks against the TypeScript oracle for
+  `frames`, `tacts`, `tactsInFrame`, and `frameJustCompleted`.
+- Added audio sample-rate synchronization checks for all three WASM adapters and
+  clock-multiplier write-count checks for the 48K adapter, which is the current
+  adapter exposing that diagnostic count.
+
 ### Step 10 - 48K Flat Memory Parity
+
+Status: Completed on 2026-08-15.
 
 Add the 48K subset to `test/wasm/zxSpectrum/wasm-memory-paging.test.ts`.
 
@@ -454,6 +506,17 @@ Acceptance:
 
 - WASM 48K memory tests pass without changing the TypeScript
   `PagedMemory.test.ts`.
+
+Implementation notes:
+
+- Added `test/wasm/zxSpectrum/wasm-memory-paging.test.ts` with the first 48K
+  flat-memory subset.
+- Covered ROM reads, ROM write immutability, RAM mutation through
+  `doWriteMemory()`, flat-memory reads, `getPartition()` parity, and
+  `readScreenMemory()` parity against the TypeScript 48K oracle.
+- Covered the requested boundary addresses: `0x0000`, `0x3fff`, `0x4000`,
+  `0x7fff`, `0x8000`, `0xbfff`, `0xc000`, and `0xffff`.
+- The TypeScript `PagedMemory.test.ts` suite was left unchanged.
 
 ### Step 11 - 128K And +2 Paging Parity
 

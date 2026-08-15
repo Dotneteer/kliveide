@@ -11,13 +11,16 @@ while running against a test-only standalone build of the WASM CPU
 implementation.
 
 These literal tests are intentionally excluded from the default Vitest node
-project while they are migrated in small batches. Run opt-in copied Z80 WASM
-tests with:
+project. The opt-in WASM Z80 config runs the full copied corpus except files
+listed in `unsupported-tests.md`.
+
+Run the active copied Z80 WASM suite with:
 
 ```sh
-npx vitest run --config test/wasm/vitest.z80.config.ts test/wasm/z80/standard-ops-00.test.ts
+npx vitest run --config test/wasm/vitest.z80.config.ts
 ```
 
 Current wrapper limitations come from the existing WASM CPU export surface:
-memory-operation history is not populated, and Step-Out stack observations for
-CALL/RET instructions are not yet synthesized by the wrapper.
+full memory-operation history is not exported. Direct `@emu/z80/Z80Cpu`
+imports are resolved by the WASM Z80 Vitest config to
+`test/wasm/z80/Z80Cpu.ts`; copied test files must not be edited for that.

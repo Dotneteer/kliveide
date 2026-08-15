@@ -212,12 +212,15 @@ class Z80WasmTestCpu {
     this.lastMemoryReadsCount = 0;
     this.lastMemoryWritesCount = 0;
     this.exports.z80ClearBusEvents();
+    const pcBefore = this.pc;
+    const opCodeBefore = this.peekMemory(pcBefore);
     const inputValue =
       this.machine.ioReadCount >= this.machine.ioInputSequence.length
         ? 0x00
         : this.machine.ioInputSequence[this.machine.ioReadCount];
     this.exports.z80SetPortReadValue(inputValue);
     this.exports.z80ExecuteCpuCycle();
+    this.captureStepOutEvent(pcBefore, opCodeBefore);
     this.captureMemoryEvent();
     this.capturePortEvent();
     this.captureTbBlueEvent();
@@ -609,6 +612,17 @@ class Z80WasmTestCpu {
     } else {
       this.lastMemoryReads.push(address, value);
       this.lastMemoryReadsCount++;
+    }
+  }
+
+  private captureStepOutEvent (pcBefore: number, opCodeBefore: number): void {
+    if ((opCodeBefore & 0xc7) === 0xc7) {
+      this.stepOutStack.push(toWord(pcBefore + 1));
+      return;
+    }
+
+    if ((opCodeBefore === 0xcd || (opCodeBefore & 0xc7) === 0xc4) && this.pc !== toWord(pcBefore + 3)) {
+      this.stepOutStack.push(toWord(pcBefore + 3));
     }
   }
 
