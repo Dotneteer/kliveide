@@ -2,7 +2,9 @@
 
 Created: 2026-08-16
 
-Status: Steps 1-6 done; WASM artifact, loader, and adapter skeleton in place
+Status: Steps 1-10 done; WASM artifact, loader, adapter skeleton, Z80N CPU
+baseline, core memory/MMU reset layout, and 128K/+3/Next memory-port paging in
+place
 
 ## Goal
 
@@ -480,7 +482,10 @@ Completion notes:
 - Added Electron package resource copy from
   `src/emu/machines/zxNext/wasm/dist` to `wasm/zxNext`.
 - Built `src/emu/machines/zxNext/wasm/dist/zx-spectrum-next.wasm`.
-- Current skeleton artifact size: 2,169 bytes, below the 80,000 byte Step 4
+- Initial skeleton artifact size was 2,169 bytes, below the original 80,000
+  byte Step 4 ceiling.
+- Step 8 links the shared Z80N core into the same production artifact; the
+  current artifact size is 117,934 bytes under the 360,000 byte Z80N-baseline
   ceiling.
 - Validation:
   - `npm test -- --project jsdom test/zxnext/zxnext-wasm-build.test.ts`
@@ -605,7 +610,7 @@ Completion notes:
 
 ### Step 7 - Shared Next WASM Test Helper
 
-Status: Not started
+Status: Done on 2026-08-16.
 
 Create a dedicated helper for small, cheap-model-friendly test slices.
 
@@ -634,9 +639,23 @@ Definition of done:
 
 - New WASM tests can use helpers without duplicating loader setup.
 
+Completion notes:
+
+- Added `test/wasm/zxNext/wasm-next-test-helpers.ts`.
+- Provides:
+  - `buildZxNextWasmArtifact()`;
+  - deterministic ROM set helpers;
+  - `createTestZxNextWasmMachine()`;
+  - `createOracleZxNextMachine()`;
+  - code initialization and single-instruction helpers;
+  - memory, port, NextReg, CPU register, pixel/audio assertion helpers.
+- Added `test/wasm/zxNext/wasm-next-test-helpers.test.ts`.
+- Validation:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts`
+
 ### Step 8 - Z80N CPU Baseline
 
-Status: Not started
+Status: Done on 2026-08-16.
 
 Wire the existing Z80N-capable C/WASM CPU core into the ZX Spectrum Next
 full-machine backend and prove it can execute simple Next ROM code.
@@ -694,9 +713,36 @@ Definition of done:
 - WASM and TypeScript agree on PC, tacts, registers, memory effects, and port
   effects for the migrated CPU subset.
 
+Completion notes:
+
+- Reused `src/emu/z80/wasm/z80.c` from the production Next C module.
+- Enabled Z80N mode during `zxnextReset()` and `zxnextHardReset()`.
+- Added a full-instruction wrapper `zxnextExecuteInstruction()` that advances
+  through prefix cycles until the Z80 core prefix state clears.
+- Wired CPU memory callbacks to the current 64K flat memory view.
+- Wired CPU port callbacks to the initial Next WASM port latch and bus-event
+  diagnostics.
+- Wired Z80N TBBlue `NEXTREG` bus events into the WASM `nextRegs` byte array.
+- Exported CPU register/tact getters and setters for tests and adapter sync.
+- Updated the loader to require the CPU exports.
+- Updated `ZxNextWasmV2Machine.getCpuState()` to sync WASM-owned CPU registers,
+  tacts, and last bus events into the public IDE-facing CPU state surface.
+- Added `test/wasm/zxNext/wasm-next-cpu.test.ts`.
+- Base Z80 instructions are compared against the TypeScript ZX Next oracle.
+  Next-only Z80N ED opcodes are currently asserted against the reused C core's
+  established semantics and machine-level side effects because the TypeScript
+  CPU oracle does not expose the same Z80N ED-op subset.
+- Current artifact size after linking the Z80N core: 117,934 bytes.
+- Validation:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-cpu.test.ts`
+  - `npx vitest run --config test/wasm/vitest.z80.config.ts test/wasm/z80/next-ops.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`
+  - `npm run check:zxnext-wasm-size`
+  - `npm run build:check`
+
 ### Step 9 - Core Memory And Reset Layout
 
-Status: Not started
+Status: Done on 2026-08-16
 
 Move the configurable Next memory map into C, prepared for the 4 MB ZX Spectrum
 Next KS3 edition.
@@ -751,9 +797,41 @@ Definition of done:
 - The WASM memory ABI can represent the planned 4 MB KS3 edition without a
   breaking loader or adapter redesign.
 
+Completion notes:
+
+- Added a C-owned physical memory layout with Next ROM, DivMMC ROM, Multiface
+  ROM, Alternate ROM, DivMMC RAM, main Next RAM, and a sentinel page after the
+  configured active memory region.
+- Kept the SRAM typed view at 4 MB capacity while making active main RAM pages
+  configurable for 512 KB, 1 MB, 1.5 MB, 2 MB, and the future 4 MB KS3 shape.
+- Defined the WASM page-count contract as 32, 96, 160, 224, and 480 active 8K
+  main RAM pages respectively, matching TypeScript for current sizes and
+  reserving 4 MB behavior in WASM.
+- Added MMU register/page metadata in C and reset the default layout to
+  `ff ff 0a 0b 04 05 00 01`.
+- Changed CPU memory callbacks to use the mapped WASM memory path instead of
+  directly reading/writing the flat 64K projection.
+- Added exports for configured memory size, active memory size, sentinel
+  location, physical reads/writes, SRAM page reads/writes, MMU registers, page
+  offsets, and current partition inspection.
+- Updated `ZxNextWasmV2Machine` so public `doReadMemory`, `doWriteMemory`,
+  `get64KFlatMemory`, `getMemoryPartition`, `getCurrentPartitions`,
+  `getPartition`, and `readScreenMemory` observe WASM-owned memory state after
+  setup.
+- Added optional model-config memory sizing through `MC_MEM_SIZE`; a model
+  using `4096` configures the WASM backend for 4 MB without changing the
+  TypeScript default.
+- Added `test/wasm/zxNext/wasm-next-memory-mmu.test.ts`.
+- Current artifact size after the memory/MMU baseline: 217,244 bytes.
+- Validation:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-memory-mmu.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size`
+
 ### Step 10 - 128K/+3/Next MMU Ports
 
-Status: Not started
+Status: Done on 2026-08-16
 
 Implement memory ports and MMU register effects required for boot.
 
@@ -780,6 +858,38 @@ Definition of done:
 
 - Banked code injection and IDE memory mapping can read coherent WASM-owned
   state.
+
+Completion notes:
+
+- Implemented WASM-side writes for `0x7ffd`, `0xdffd`, `0x1ffd`, and `0xeff7`
+  using the same port masks as `NextIoPortManager`.
+- Added C-owned paging state for paging lock, shadow screen selection,
+  all-RAM mode, special config, selected ROM bits, selected RAM bank bits, and
+  the Pentagon `0xeff7` bank-0 override.
+- Implemented normal-mode, all-RAM, restore-from-all-RAM, paging-lock, and
+  `0xeff7` slot-0/1 mapping behavior.
+- Implemented direct MMU NextReg side effects for `0x50..0x57`, including
+  CPU-driven Z80N `NEXTREG` instructions.
+- Matched the TypeScript priority-decode behavior where MMU values `224..255`
+  map through system-region decode on any slot, not only slots 0 and 1.
+- Added inspection exports for port latch values, selected ROM/RAM,
+  selected-bank parts, paging/all-RAM flags, special config, and shadow-screen
+  state.
+- Updated `ZxNextWasmV2Machine.doWritePort()` to keep TypeScript-owned
+  not-yet-migrated side effects alive while updating WASM-owned memory mapping.
+- Updated `ZxNextWasmV2Machine.tbblueOut()` and selected ROM/RAM getters to use
+  WASM-owned state once the runtime is available.
+- Extended `test/wasm/zxNext/wasm-next-memory-mmu.test.ts` with TypeScript
+  oracle comparisons for `0x7ffd`, `0xdffd`, `0x1ffd`, `0xeff7`, paging lock,
+  all-RAM mappings/restoration, MMU NextRegs, and CPU `NEXTREG` MMU side
+  effects.
+- Current artifact size after port/MMU paging: 218,617 bytes.
+- Validation:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-memory-mmu.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/zxnext/MemoryDevice.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size`
 
 ### Step 11 - NextReg Core And Port Enable Gates
 

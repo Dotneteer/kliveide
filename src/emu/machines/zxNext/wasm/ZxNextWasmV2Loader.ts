@@ -21,12 +21,57 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextDiagnosticBufferPtr: ZxNextWasmV2ExportFunction;
   zxnextHardReset: ZxNextWasmV2ExportFunction;
   zxnextReset: ZxNextWasmV2ExportFunction;
+  zxnextExecuteInstruction: ZxNextWasmV2ExportFunction;
   zxnextUploadRomByte: ZxNextWasmV2ExportFunction;
   zxnextReadRomByte: ZxNextWasmV2ExportFunction;
+  zxnextReadMemory: ZxNextWasmV2ExportFunction;
+  zxnextWriteMemory: ZxNextWasmV2ExportFunction;
+  zxnextReadPort: ZxNextWasmV2ExportFunction;
+  zxnextWritePort: ZxNextWasmV2ExportFunction;
+  zxnextSetPortReadValue: ZxNextWasmV2ExportFunction;
+  zxnextReadNextReg: ZxNextWasmV2ExportFunction;
+  zxnextWriteNextReg: ZxNextWasmV2ExportFunction;
   zxnextGetFlatMemorySize: ZxNextWasmV2ExportFunction;
   zxnextGetSramSize: ZxNextWasmV2ExportFunction;
   zxnextGetSramCapacity: ZxNextWasmV2ExportFunction;
   zxnextGetRomSize: ZxNextWasmV2ExportFunction;
+  zxnextGetNextRomOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcRomOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetMultifaceMemOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetAltRomOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcRamOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetNextRamOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetConfiguredMemorySizeKb: ZxNextWasmV2ExportFunction;
+  zxnextGetMainRamPageCount: ZxNextWasmV2ExportFunction;
+  zxnextGetMaxMainRamPageCount: ZxNextWasmV2ExportFunction;
+  zxnextGetActiveMainRamSize: ZxNextWasmV2ExportFunction;
+  zxnextGetActiveMemorySize: ZxNextWasmV2ExportFunction;
+  zxnextGetSentinelOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetSentinelSize: ZxNextWasmV2ExportFunction;
+  zxnextConfigureMemorySize: ZxNextWasmV2ExportFunction;
+  zxnextGetMmuReg: ZxNextWasmV2ExportFunction;
+  zxnextSetMmuReg: ZxNextWasmV2ExportFunction;
+  zxnextGetPageReadOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetPageWriteOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetPageBank16k: ZxNextWasmV2ExportFunction;
+  zxnextGetPageBank8k: ZxNextWasmV2ExportFunction;
+  zxnextGetCurrentPartition: ZxNextWasmV2ExportFunction;
+  zxnextGetPort7ffdValue: ZxNextWasmV2ExportFunction;
+  zxnextGetPortDffdValue: ZxNextWasmV2ExportFunction;
+  zxnextGetPort1ffdValue: ZxNextWasmV2ExportFunction;
+  zxnextGetPortEff7Value: ZxNextWasmV2ExportFunction;
+  zxnextGetSelectedRomPage: ZxNextWasmV2ExportFunction;
+  zxnextGetSelectedRamBank: ZxNextWasmV2ExportFunction;
+  zxnextGetSelectedBankLsb: ZxNextWasmV2ExportFunction;
+  zxnextGetSelectedBankMsb: ZxNextWasmV2ExportFunction;
+  zxnextGetPagingEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetAllRamMode: ZxNextWasmV2ExportFunction;
+  zxnextGetSpecialConfig: ZxNextWasmV2ExportFunction;
+  zxnextGetUseShadowScreen: ZxNextWasmV2ExportFunction;
+  zxnextReadPhysical: ZxNextWasmV2ExportFunction;
+  zxnextWritePhysical: ZxNextWasmV2ExportFunction;
+  zxnextReadSramPage: ZxNextWasmV2ExportFunction;
+  zxnextWriteSramPage: ZxNextWasmV2ExportFunction;
   zxnextGetKeyboardRowCount: ZxNextWasmV2ExportFunction;
   zxnextGetNextRegCount: ZxNextWasmV2ExportFunction;
   zxnextGetScreenWidth: ZxNextWasmV2ExportFunction;
@@ -37,12 +82,60 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetDiagnosticBufferSize: ZxNextWasmV2ExportFunction;
   zxnextGetFrames: ZxNextWasmV2ExportFunction;
   zxnextGetTacts: ZxNextWasmV2ExportFunction;
+  zxnextSetTacts: ZxNextWasmV2ExportFunction;
   zxnextGetHardResetCount: ZxNextWasmV2ExportFunction;
   zxnextGetResetCount: ZxNextWasmV2ExportFunction;
   zxnextGetRomUploadCount: ZxNextWasmV2ExportFunction;
   zxnextGetUploadedRomMask: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuInstructionsExecuted: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuAf: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuAf: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuAfAlt: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuAfAlt: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuBc: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuBc: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuBcAlt: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuBcAlt: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuDe: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuDe: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuDeAlt: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuDeAlt: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuHl: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuHl: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuHlAlt: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuHlAlt: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuIx: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuIx: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuIy: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuIy: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuIr: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuIr: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuWz: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuWz: ZxNextWasmV2ExportFunction;
   zxnextGetCpuPc: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuPc: ZxNextWasmV2ExportFunction;
   zxnextGetCpuSp: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuSp: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuHalted: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuPrefix: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuIff1: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuIff1: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuIff2: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuIff2: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuInterruptMode: ZxNextWasmV2ExportFunction;
+  zxnextSetCpuInterruptMode: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuTacts: ZxNextWasmV2ExportFunction;
+  zxnextGetZ80NMode: ZxNextWasmV2ExportFunction;
+  zxnextGetLastMemoryAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetLastMemoryValue: ZxNextWasmV2ExportFunction;
+  zxnextGetLastMemoryIsWrite: ZxNextWasmV2ExportFunction;
+  zxnextGetLastPortAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetLastPortValue: ZxNextWasmV2ExportFunction;
+  zxnextGetLastPortIsWrite: ZxNextWasmV2ExportFunction;
+  zxnextGetLastTbBlueAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetLastTbBlueValue: ZxNextWasmV2ExportFunction;
+  zxnextGetLastTbBlueIsWrite: ZxNextWasmV2ExportFunction;
+  zxnextClearBusEvents: ZxNextWasmV2ExportFunction;
   zxnextGetDiagnosticFlags: ZxNextWasmV2ExportFunction;
 };
 
@@ -94,12 +187,57 @@ const requiredV2Exports = [
   "zxnextDiagnosticBufferPtr",
   "zxnextHardReset",
   "zxnextReset",
+  "zxnextExecuteInstruction",
   "zxnextUploadRomByte",
   "zxnextReadRomByte",
+  "zxnextReadMemory",
+  "zxnextWriteMemory",
+  "zxnextReadPort",
+  "zxnextWritePort",
+  "zxnextSetPortReadValue",
+  "zxnextReadNextReg",
+  "zxnextWriteNextReg",
   "zxnextGetFlatMemorySize",
   "zxnextGetSramSize",
   "zxnextGetSramCapacity",
   "zxnextGetRomSize",
+  "zxnextGetNextRomOffset",
+  "zxnextGetDivMmcRomOffset",
+  "zxnextGetMultifaceMemOffset",
+  "zxnextGetAltRomOffset",
+  "zxnextGetDivMmcRamOffset",
+  "zxnextGetNextRamOffset",
+  "zxnextGetConfiguredMemorySizeKb",
+  "zxnextGetMainRamPageCount",
+  "zxnextGetMaxMainRamPageCount",
+  "zxnextGetActiveMainRamSize",
+  "zxnextGetActiveMemorySize",
+  "zxnextGetSentinelOffset",
+  "zxnextGetSentinelSize",
+  "zxnextConfigureMemorySize",
+  "zxnextGetMmuReg",
+  "zxnextSetMmuReg",
+  "zxnextGetPageReadOffset",
+  "zxnextGetPageWriteOffset",
+  "zxnextGetPageBank16k",
+  "zxnextGetPageBank8k",
+  "zxnextGetCurrentPartition",
+  "zxnextGetPort7ffdValue",
+  "zxnextGetPortDffdValue",
+  "zxnextGetPort1ffdValue",
+  "zxnextGetPortEff7Value",
+  "zxnextGetSelectedRomPage",
+  "zxnextGetSelectedRamBank",
+  "zxnextGetSelectedBankLsb",
+  "zxnextGetSelectedBankMsb",
+  "zxnextGetPagingEnabled",
+  "zxnextGetAllRamMode",
+  "zxnextGetSpecialConfig",
+  "zxnextGetUseShadowScreen",
+  "zxnextReadPhysical",
+  "zxnextWritePhysical",
+  "zxnextReadSramPage",
+  "zxnextWriteSramPage",
   "zxnextGetKeyboardRowCount",
   "zxnextGetNextRegCount",
   "zxnextGetScreenWidth",
@@ -110,12 +248,60 @@ const requiredV2Exports = [
   "zxnextGetDiagnosticBufferSize",
   "zxnextGetFrames",
   "zxnextGetTacts",
+  "zxnextSetTacts",
   "zxnextGetHardResetCount",
   "zxnextGetResetCount",
   "zxnextGetRomUploadCount",
   "zxnextGetUploadedRomMask",
+  "zxnextGetCpuInstructionsExecuted",
+  "zxnextGetCpuAf",
+  "zxnextSetCpuAf",
+  "zxnextGetCpuAfAlt",
+  "zxnextSetCpuAfAlt",
+  "zxnextGetCpuBc",
+  "zxnextSetCpuBc",
+  "zxnextGetCpuBcAlt",
+  "zxnextSetCpuBcAlt",
+  "zxnextGetCpuDe",
+  "zxnextSetCpuDe",
+  "zxnextGetCpuDeAlt",
+  "zxnextSetCpuDeAlt",
+  "zxnextGetCpuHl",
+  "zxnextSetCpuHl",
+  "zxnextGetCpuHlAlt",
+  "zxnextSetCpuHlAlt",
+  "zxnextGetCpuIx",
+  "zxnextSetCpuIx",
+  "zxnextGetCpuIy",
+  "zxnextSetCpuIy",
+  "zxnextGetCpuIr",
+  "zxnextSetCpuIr",
+  "zxnextGetCpuWz",
+  "zxnextSetCpuWz",
   "zxnextGetCpuPc",
+  "zxnextSetCpuPc",
   "zxnextGetCpuSp",
+  "zxnextSetCpuSp",
+  "zxnextGetCpuHalted",
+  "zxnextGetCpuPrefix",
+  "zxnextGetCpuIff1",
+  "zxnextSetCpuIff1",
+  "zxnextGetCpuIff2",
+  "zxnextSetCpuIff2",
+  "zxnextGetCpuInterruptMode",
+  "zxnextSetCpuInterruptMode",
+  "zxnextGetCpuTacts",
+  "zxnextGetZ80NMode",
+  "zxnextGetLastMemoryAddress",
+  "zxnextGetLastMemoryValue",
+  "zxnextGetLastMemoryIsWrite",
+  "zxnextGetLastPortAddress",
+  "zxnextGetLastPortValue",
+  "zxnextGetLastPortIsWrite",
+  "zxnextGetLastTbBlueAddress",
+  "zxnextGetLastTbBlueValue",
+  "zxnextGetLastTbBlueIsWrite",
+  "zxnextClearBusEvents",
   "zxnextGetDiagnosticFlags"
 ] as const;
 

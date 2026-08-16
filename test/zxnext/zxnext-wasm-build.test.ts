@@ -67,8 +67,8 @@ describe("ZX Spectrum Next WASM build", () => {
     ).toThrow("Expected: production");
   });
 
-  it("declares the skeleton WASM size ceiling", () => {
-    expect(DEFAULT_MAX_BYTES).toBe(80_000);
+  it("declares the Z80N baseline WASM size ceiling", () => {
+    expect(DEFAULT_MAX_BYTES).toBe(360_000);
     expect(parseMaxBytes()).toBe(DEFAULT_MAX_BYTES);
     expect(parseMaxBytes("90000")).toBe(90_000);
     expect(() => parseMaxBytes("not-a-number")).toThrow("Invalid ZXNEXT_WASM_MAX_BYTES");

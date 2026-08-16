@@ -1,9 +1,9 @@
 const { statSync } = require("node:fs");
 const { buildZxNextWasm, output } = require("./build-zxnext-wasm.cjs");
 
-// Skeleton backend ceiling. Later CPU/device slices should raise this only with
-// a measured artifact size and a short explanation in the migration plan.
-const DEFAULT_MAX_BYTES = 80_000;
+// Z80N baseline ceiling. Raise this only with measured artifact sizes and a
+// short explanation in the migration plan.
+const DEFAULT_MAX_BYTES = 360_000;
 
 function parseMaxBytes(value = process.env.ZXNEXT_WASM_MAX_BYTES) {
   if (value == null || value === "") return DEFAULT_MAX_BYTES;
