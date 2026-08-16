@@ -18,8 +18,8 @@ type DebugMachine = TestSp48WasmMachine | TestSp128WasmMachine | TestSpp3eWasmMa
 
 type PublicDebugCase = {
   name: string;
-  prefix: "sp48" | "sp128";
-  createMachine: (rom: Uint8Array) => Promise<TestSp48WasmMachine | TestSp128WasmMachine>;
+  prefix: Prefix;
+  createMachine: (rom: Uint8Array) => Promise<DebugMachine>;
 };
 
 describe("ZX Spectrum WASM debug step parity", () => {
@@ -139,6 +139,37 @@ describe("ZX Spectrum WASM debug step parity", () => {
     expect(callWasmExport(machine, "spp3eGetLastPortValue")()).toBe(0x44);
     expect(callWasmExport(machine, "spp3eGetLastPortIsWrite")()).toBe(1);
   });
+
+  it("+3E public register setters update the WASM CPU before debugging resumes", async () => {
+    const machine = await createTestSpp3eWasmMachine([
+      testRom([0x00, 0x00, 0x00, 0x00, 0x3e, 0x66]),
+      testRom([]),
+      testRom([]),
+      testRom([])
+    ]);
+
+    machine.pc = 0x0004;
+    machine.af = 0x1200;
+    machine.bc_ = 0x3456;
+    machine.ir = 0x789a;
+    machine.wz = 0xbcde;
+
+    expect(callWasmExport(machine, "spp3eGetCpuPc")()).toBe(0x0004);
+    expect(callWasmExport(machine, "spp3eGetCpuAf")()).toBe(0x1200);
+    expect(callWasmExport(machine, "spp3eGetCpuBcAlt")()).toBe(0x3456);
+    expect(callWasmExport(machine, "spp3eGetCpuIr")()).toBe(0x789a);
+    expect(callWasmExport(machine, "spp3eGetCpuWz")()).toBe(0xbcde);
+
+    machine.executionContext.debugStepMode = DebugStepMode.StepInto;
+    machine.executionContext.frameTerminationMode = FrameTerminationMode.Normal;
+
+    expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.DebugEvent);
+    expect(machine.getCpuState()).toMatchObject({
+      pc: 0x0006,
+      bc_: 0x3456
+    });
+    expect(machine.getCpuState().af >> 8).toBe(0x66);
+  });
 });
 
 function publicDebugCases(): PublicDebugCase[] {
@@ -152,6 +183,11 @@ function publicDebugCases(): PublicDebugCase[] {
       name: "ZX Spectrum 128K",
       prefix: "sp128",
       createMachine: rom => createTestSp128WasmMachine(rom, testRom([]))
+    },
+    {
+      name: "ZX Spectrum +3E",
+      prefix: "spp3e",
+      createMachine: rom => createTestSpp3eWasmMachine([rom, testRom([]), testRom([]), testRom([])])
     }
   ];
 }

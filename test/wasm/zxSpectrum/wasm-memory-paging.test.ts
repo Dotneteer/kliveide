@@ -211,6 +211,32 @@ describe("ZX Spectrum WASM memory and paging parity", () => {
         });
       });
 
+      it(`exposes CPU-written normal memory through public APIs with ${diskSupport} disk drive(s)`, async () => {
+        const roms = [
+          testRom([
+            0x3e, 0x5a,             // LD A,5a
+            0x32, 0x00, 0x40,       // LD (4000),A
+            0x3e, 0x6b,             // LD A,6b
+            0x32, 0x10, 0xc0        // LD (c010),A
+          ]),
+          testRom([]),
+          testRom([]),
+          testRom([])
+        ];
+        const wasmMachine = await createTestSpp3eWasmMachine(roms, { diskSupport });
+        const oracleMachine = await createOracleSpp3eMachine(roms, { diskSupport });
+
+        for (let i = 0; i < 4; i++) {
+          wasmMachine.executeOne();
+          oracleMachine.executeOne();
+        }
+
+        expectP3ePublicMemoryApiParity(wasmMachine, oracleMachine, [
+          { address: 0x4000, partition: 5, offset: 0x0000 },
+          { address: 0xc010, partition: 0, offset: 0x0010 }
+        ]);
+      });
+
       it(`matches TypeScript 0x7ffd normal paging with ${diskSupport} disk drive(s)`, async () => {
         const roms = p3eRoms();
         const wasmMachine = await createTestSpp3eWasmMachine(roms, { diskSupport });
@@ -270,6 +296,29 @@ describe("ZX Spectrum WASM memory and paging parity", () => {
             layout.partitions.filter((_, index) => index % 2 === 0).map(bank => 0x80 + bank)
           );
         }
+      });
+
+      it(`exposes special-paged WASM memory through public APIs with ${diskSupport} disk drive(s)`, async () => {
+        const roms = p3eRoms();
+        const wasmMachine = await createTestSpp3eWasmMachine(roms, { diskSupport });
+        const oracleMachine = await createOracleSpp3eMachine(roms, { diskSupport });
+
+        wasmMachine.writeTestPort(0x1ffd, 0x0f);
+        oracleMachine.doWritePort(0x1ffd, 0x0f);
+
+        const writes = [
+          { address: 0x0023, value: 0x94, partition: 4, offset: 0x0023 },
+          { address: 0x4020, value: 0x97, partition: 7, offset: 0x0020 },
+          { address: 0x8021, value: 0x96, partition: 6, offset: 0x0021 },
+          { address: 0xc022, value: 0x93, partition: 3, offset: 0x0022 }
+        ];
+
+        for (const write of writes) {
+          wasmMachine.writeTestMemory(write.address, write.value);
+          oracleMachine.doWriteMemory(write.address, write.value);
+        }
+
+        expectP3ePublicMemoryApiParity(wasmMachine, oracleMachine, writes);
       });
 
       it(`keeps special paging writable after the 0x7ffd paging lock with ${diskSupport} disk drive(s)`, async () => {
@@ -368,4 +417,31 @@ function p3eWasmMemoryReads(
   addresses: number[]
 ): number[] {
   return addresses.map(address => machine.readTestMemory(address));
+}
+
+function expectP3ePublicMemoryApiParity(
+  wasmMachine: Awaited<ReturnType<typeof createTestSpp3eWasmMachine>>,
+  oracleMachine: Awaited<ReturnType<typeof createOracleSpp3eMachine>>,
+  expectedMappings: Array<{ address: number; partition: number; offset: number }>
+): void {
+  expect(wasmMachine.getCurrentPartitions()).toEqual(oracleMachine.getCurrentPartitions());
+  expect(wasmMachine.getSelectedRamBank()).toBe(oracleMachine.getSelectedRamBank());
+  expect(wasmMachine.getSelectedRomPage()).toBe(oracleMachine.getSelectedRomPage());
+
+  for (const { address, partition, offset } of expectedMappings) {
+    const label = `public memory ${address.toString(16)}`;
+    expect(wasmMachine.getPartition(address), `${label} partition`).toBe(
+      oracleMachine.getPartition(address)
+    );
+    expect(wasmMachine.getPartition(address), `${label} expected partition`).toBe(partition);
+    expect(wasmMachine.get64KFlatMemory()[address], `${label} flat`).toBe(
+      oracleMachine.get64KFlatMemory()[address]
+    );
+    expect(wasmMachine.doReadMemory(address), `${label} read`).toBe(
+      oracleMachine.doReadMemory(address)
+    );
+    expect(wasmMachine.getMemoryPartition(partition)[offset], `${label} partition byte`).toBe(
+      oracleMachine.getMemoryPartition(partition)[offset]
+    );
+  }
 }

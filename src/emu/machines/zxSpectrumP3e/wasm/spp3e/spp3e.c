@@ -1820,6 +1820,7 @@ void spp3eRenderInstantScreen(void) {
 }
 
 uint32_t spp3eReadFloatingBus(void) {
+  spp3eUlaRenderUntilCurrentTact();
   const uint32_t currentTactIndex =
     (spp3eUlaCurrentFrameTact() + spp3eTactsInFrame - 3u) % spp3eTactsInFrame;
   const uint8_t phase = spp3eRenderingPhase[currentTactIndex];
@@ -2206,6 +2207,7 @@ uint32_t spp3eGetTactsInFrame(void) { return spp3eTactsInFrame; }
 uint32_t spp3eGetFrames(void) { return spp3eFrames; }
 uint32_t spp3eGetTacts(void) { return spp3eTacts; }
 uint32_t spp3eGetCurrentFrameTact(void) { return spp3eUlaCurrentFrameTact(); }
+uint32_t spp3eGetFrameCompleted(void) { return spp3eFrameCompleted; }
 void spp3eSetTacts(uint32_t value) {
   spp3eTacts = value;
   z80SetTacts(value);
@@ -2255,6 +2257,12 @@ uint32_t spp3eGetCpuAf(void) { return z80GetAf(); }
 void spp3eSetCpuAf(uint32_t value) { z80SetAf(value); }
 uint32_t spp3eGetCpuAfAlt(void) { return z80GetAfAlt(); }
 void spp3eSetCpuAfAlt(uint32_t value) { z80SetAfAlt(value); }
+uint32_t spp3eGetCpuBcAlt(void) { return z80GetBcAlt(); }
+void spp3eSetCpuBcAlt(uint32_t value) { z80SetBcAlt(value); }
+uint32_t spp3eGetCpuDeAlt(void) { return z80GetDeAlt(); }
+void spp3eSetCpuDeAlt(uint32_t value) { z80SetDeAlt(value); }
+uint32_t spp3eGetCpuHlAlt(void) { return z80GetHlAlt(); }
+void spp3eSetCpuHlAlt(uint32_t value) { z80SetHlAlt(value); }
 uint32_t spp3eGetCpuBc(void) { return z80GetBc(); }
 void spp3eSetCpuBc(uint32_t value) { z80SetBc(value); }
 uint32_t spp3eGetCpuDe(void) { return z80GetDe(); }
@@ -2265,12 +2273,22 @@ uint32_t spp3eGetCpuIx(void) { return z80GetIx(); }
 void spp3eSetCpuIx(uint32_t value) { z80SetIx(value); }
 uint32_t spp3eGetCpuIy(void) { return z80GetIy(); }
 void spp3eSetCpuIy(uint32_t value) { z80SetIy(value); }
+uint32_t spp3eGetCpuIr(void) { return z80GetIr(); }
+void spp3eSetCpuIr(uint32_t value) { z80SetIr(value); }
+uint32_t spp3eGetCpuWz(void) { return z80GetWz(); }
+void spp3eSetCpuWz(uint32_t value) { z80SetWz(value); }
 uint32_t spp3eGetCpuPc(void) { return z80GetPc(); }
 void spp3eSetCpuPc(uint32_t value) { z80SetPc(value); }
 uint32_t spp3eGetCpuSp(void) { return z80GetSp(); }
 void spp3eSetCpuSp(uint32_t value) { z80SetSp(value); }
 uint32_t spp3eGetCpuHalted(void) { return z80GetHalted(); }
 uint32_t spp3eGetCpuPrefix(void) { return z80GetPrefix(); }
+uint32_t spp3eGetCpuIff1(void) { return z80GetIff1(); }
+void spp3eSetCpuIff1(uint32_t value) { z80SetIff1(value); }
+uint32_t spp3eGetCpuIff2(void) { return z80GetIff2(); }
+void spp3eSetCpuIff2(uint32_t value) { z80SetIff2(value); }
+uint32_t spp3eGetCpuInterruptMode(void) { return z80GetInterruptMode(); }
+void spp3eSetCpuInterruptMode(uint32_t value) { z80SetInterruptMode(value); }
 uint32_t spp3eGetLastMemoryAddress(void) { return spp3eHasMemoryEvent != 0u ? spp3eLastMemoryAddress : 0u; }
 uint32_t spp3eGetLastMemoryValue(void) { return spp3eHasMemoryEvent != 0u ? spp3eLastMemoryValue : 0u; }
 uint32_t spp3eGetLastMemoryIsWrite(void) { return spp3eHasMemoryEvent != 0u ? spp3eLastMemoryIsWrite : 0u; }

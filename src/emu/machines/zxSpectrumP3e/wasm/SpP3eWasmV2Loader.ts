@@ -142,6 +142,7 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & {
   spp3eGetFrames: SpP3eWasmV2ExportFunction;
   spp3eGetTacts: SpP3eWasmV2ExportFunction;
   spp3eGetCurrentFrameTact: SpP3eWasmV2ExportFunction;
+  spp3eGetFrameCompleted: SpP3eWasmV2ExportFunction;
   spp3eSetTacts: SpP3eWasmV2ExportFunction;
   spp3eGetSelectedRom: SpP3eWasmV2ExportFunction;
   spp3eGetSelectedBank: SpP3eWasmV2ExportFunction;
@@ -174,6 +175,12 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & {
   spp3eSetCpuAf: SpP3eWasmV2ExportFunction;
   spp3eGetCpuAfAlt: SpP3eWasmV2ExportFunction;
   spp3eSetCpuAfAlt: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuBcAlt: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuBcAlt: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuDeAlt: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuDeAlt: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuHlAlt: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuHlAlt: SpP3eWasmV2ExportFunction;
   spp3eGetCpuBc: SpP3eWasmV2ExportFunction;
   spp3eSetCpuBc: SpP3eWasmV2ExportFunction;
   spp3eGetCpuDe: SpP3eWasmV2ExportFunction;
@@ -184,12 +191,22 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & {
   spp3eSetCpuIx: SpP3eWasmV2ExportFunction;
   spp3eGetCpuIy: SpP3eWasmV2ExportFunction;
   spp3eSetCpuIy: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuIr: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuIr: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuWz: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuWz: SpP3eWasmV2ExportFunction;
   spp3eGetCpuPc: SpP3eWasmV2ExportFunction;
   spp3eSetCpuPc: SpP3eWasmV2ExportFunction;
   spp3eGetCpuSp: SpP3eWasmV2ExportFunction;
   spp3eSetCpuSp: SpP3eWasmV2ExportFunction;
   spp3eGetCpuHalted: SpP3eWasmV2ExportFunction;
   spp3eGetCpuPrefix: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuIff1: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuIff1: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuIff2: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuIff2: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuInterruptMode: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuInterruptMode: SpP3eWasmV2ExportFunction;
   spp3eGetLastMemoryAddress: SpP3eWasmV2ExportFunction;
   spp3eGetLastMemoryValue: SpP3eWasmV2ExportFunction;
   spp3eGetLastMemoryIsWrite: SpP3eWasmV2ExportFunction;
@@ -380,6 +397,7 @@ const requiredV2Exports = [
   "spp3eGetFrames",
   "spp3eGetTacts",
   "spp3eGetCurrentFrameTact",
+  "spp3eGetFrameCompleted",
   "spp3eSetTacts",
   "spp3eGetSelectedRom",
   "spp3eGetSelectedBank",
@@ -412,6 +430,12 @@ const requiredV2Exports = [
   "spp3eSetCpuAf",
   "spp3eGetCpuAfAlt",
   "spp3eSetCpuAfAlt",
+  "spp3eGetCpuBcAlt",
+  "spp3eSetCpuBcAlt",
+  "spp3eGetCpuDeAlt",
+  "spp3eSetCpuDeAlt",
+  "spp3eGetCpuHlAlt",
+  "spp3eSetCpuHlAlt",
   "spp3eGetCpuBc",
   "spp3eSetCpuBc",
   "spp3eGetCpuDe",
@@ -422,12 +446,22 @@ const requiredV2Exports = [
   "spp3eSetCpuIx",
   "spp3eGetCpuIy",
   "spp3eSetCpuIy",
+  "spp3eGetCpuIr",
+  "spp3eSetCpuIr",
+  "spp3eGetCpuWz",
+  "spp3eSetCpuWz",
   "spp3eGetCpuPc",
   "spp3eSetCpuPc",
   "spp3eGetCpuSp",
   "spp3eSetCpuSp",
   "spp3eGetCpuHalted",
   "spp3eGetCpuPrefix",
+  "spp3eGetCpuIff1",
+  "spp3eSetCpuIff1",
+  "spp3eGetCpuIff2",
+  "spp3eSetCpuIff2",
+  "spp3eGetCpuInterruptMode",
+  "spp3eSetCpuInterruptMode",
   "spp3eGetLastMemoryAddress",
   "spp3eGetLastMemoryValue",
   "spp3eGetLastMemoryIsWrite",

@@ -318,6 +318,56 @@ For ZX Spectrum 48K, the V2 adapter mirrors:
 For other machines, keep the same pattern: app properties stay stable, but the
 normal emulation path reads media state from C-owned buffers.
 
+### Disk/FDC Persistence Lessons
+
+For disk-backed machines, distinguish three separate copies of media state:
+
+- the app-owned media entry in the renderer `mediaStore`;
+- the machine property such as `MEDIA_DISK_A` or `MEDIA_DISK_B`;
+- the C/WASM disk buffer used by the hot FDC path.
+
+All three must remain coherent. If a saved file appears only after restarting
+Klive, the backing `.dsk` file was written successfully but the renderer's
+attached in-memory disk image is stale. A machine restart can then re-upload the
+old `mediaStore` contents into WASM and hide the saved file until the whole app
+reloads the disk from the file system.
+
+Use the existing TypeScript disk persistence contract as the shared ABI:
+
+- disk writes publish `DISK_A_CHANGES` or `DISK_B_CHANGES`;
+- the payload is a `SectorChanges` map;
+- map keys use `trackIndex * 100 + sectorId`, where `trackIndex` indexes the
+  parsed DSK track list and `sectorId` is the sector's logical `R` value;
+- values are complete sector byte arrays;
+- the main process applies those sectors to the backing DSK file using
+  `readDiskData()` and each sector's `sectorDataPosition`.
+
+The WASM adapter should convert C-owned dirty disk state into that same
+`SectorChanges` shape. Keep DSK/EDSK parsing in TypeScript unless there is a
+measured reason to move it: parse the attached disk in the adapter, upload a
+bounded normalized sector buffer and geometry into WASM, then use that stored
+geometry to translate dirty byte ranges back into sector changes.
+
+Do not rely only on frame completion to publish disk writes. Stopping, pausing,
+or restarting a machine can happen before another full frame completes, and
+reset paths can clear drive/WASM state. Provide an explicit `flushDiskChanges()`
+hook and have the machine controller call it at lifecycle boundaries before
+reset/restart. WASM machines should expose a machine-level flush hook; TypeScript
+device-based machines can expose the same hook from the floppy controller.
+
+When the renderer receives disk sector changes, patch the attached in-memory DSK
+bytes synchronously before awaiting the async main-process file write. This keeps
+the next in-app machine restart coherent with the running machine even if the
+file save response has not returned yet. Do not reinsert/re-upload the disk while
+the machine is running just to update this copy; mutate the attached byte buffer
+in place.
+
+The C dirty journal must not be a single overwritten `{ offset, length }` slot.
++3DOS can write several sectors before the adapter drains the journal. Use a
+bounded append-only list of dirty ranges, drain it in the adapter on frame
+completion and lifecycle flush, then clear the journal after the ranges have
+been converted to `SectorChanges`.
+
 ## Migration Order
 
 Use small, manually checkable steps:
@@ -435,6 +485,12 @@ Useful regression tests:
 - The adapter copies full pixel/audio/memory buffers every frame.
 - The adapter syncs full CPU registers every frame in normal mode.
 - Tape/audio/video event traces are replayed in TypeScript every frame.
+- Disk writes reach the backing DSK file, but the renderer `mediaStore` still
+  holds stale disk bytes, so an in-app machine restart reloads old contents.
+- Dirty disk ranges are published only on frame completion, so stop/restart can
+  reset drive state before pending sectors are saved.
+- A WASM FDC records only the last dirty sector/range, losing earlier writes
+  before the TypeScript adapter drains them.
 - Debug-only logs are imported during normal running.
 - Model picker entries expose backend experiments as product models.
 - Build scripts keep producing stale experimental artifacts that packaging copies.
