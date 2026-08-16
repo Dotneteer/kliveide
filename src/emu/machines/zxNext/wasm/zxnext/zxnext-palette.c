@@ -17,6 +17,22 @@ static uint32_t paletteBgraFromRgb333(uint32_t rgb333) {
     paletteLevel((rgb333 >> 6u) & 0x07u);
 }
 
+static uint32_t zxnextPackLayerPixel(uint32_t rgb333, uint32_t priority) {
+  return ZXNEXT_LAYER_PIXEL_VALID |
+    (priority != 0u ? ZXNEXT_LAYER_PIXEL_PRIORITY : 0u) |
+    (rgb333 & ZXNEXT_LAYER_PIXEL_RGB_MASK);
+}
+
+static uint32_t zxnextLayerPixelBgra(uint32_t pixelInfo) {
+  if ((pixelInfo & ZXNEXT_LAYER_PIXEL_VALID) == 0u) return 0u;
+  return paletteBgraFromRgb333(pixelInfo & ZXNEXT_LAYER_PIXEL_RGB_MASK);
+}
+
+static uint32_t zxnextUlaPaletteRgb333(uint32_t index) {
+  const uint32_t palette = paletteSecondUla != 0u ? 4u : 0u;
+  return paletteEntries[palette][index & 0xffu] & 0x1ffu;
+}
+
 static uint16_t *currentPaletteEntries(void) {
   return paletteEntries[paletteSelected & 0x07u];
 }
@@ -126,14 +142,23 @@ static uint32_t paletteWriteNextReg(uint32_t reg, uint32_t value) {
 }
 
 uint32_t zxnextUlaPaletteBgra(uint32_t index) {
-  const uint32_t palette = paletteSecondUla != 0u ? 4u : 0u;
-  return paletteBgraFromRgb333(paletteEntries[palette][index & 0xffu] & 0x1ffu);
+  return paletteBgraFromRgb333(zxnextUlaPaletteRgb333(index));
+}
+
+static uint32_t spritePaletteRgb333(uint32_t index) {
+  const uint32_t palette = paletteSecondSprite != 0u ? 6u : 2u;
+  return paletteEntries[palette][index & 0xffu] & 0x1ffu;
+}
+
+static uint32_t spritePaletteBgra(uint32_t index) {
+  return paletteBgraFromRgb333(spritePaletteRgb333(index));
 }
 
 uint32_t zxnextGetPaletteIndex(void) { return paletteIndex; }
 uint32_t zxnextGetPaletteControl(void) { return paletteReadNextReg(0x43u); }
 uint32_t zxnextGetPaletteSelected(void) { return paletteSelected; }
 uint32_t zxnextGetPaletteSecondUla(void) { return paletteSecondUla; }
+uint32_t zxnextGetPaletteSecondSprite(void) { return paletteSecondSprite; }
 uint32_t zxnextGetPaletteEnableUlaNextMode(void) { return paletteEnableUlaNextMode; }
 uint32_t zxnextGetPaletteSecondWrite(void) { return paletteSecondWrite; }
 uint32_t zxnextGetPaletteStoredValue(void) { return paletteStoredValue; }

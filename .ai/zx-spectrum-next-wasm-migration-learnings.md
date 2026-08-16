@@ -727,3 +727,89 @@ Use this shape:
   affected WASM screen/palette/memory tests, the 15-file Next WASM suite,
   `npm run build:check`, `npm run check:zxnext-wasm-size` (223,985 bytes
   against 360,000), and `git diff --check` passed.
+
+## 2026-08-16 - Step 23 - Tilemap Rendering
+
+- Symptom: Tilemap registers and pixels were still TypeScript-owned, while the
+  WASM instant renderer could only compose ULA/LoRes/Layer 2.
+- Fix: Added `zxnext-tilemap.c` with tilemap control/default-attribute/base
+  registers, scroll, clip, transparency, second-palette select, bank-7 VRAM
+  base masking, graphics/text tile pixel decoding, and tilemap-versus-ULA
+  priority handling in the instant compositor.
+- Shared-register lesson: NR `$1c` is a multi-owner clip-control register.
+  Device handlers should update their bit and allow dispatch to continue when
+  other migrated devices may need the same write.
+- Addressing lesson: Tilemap VRAM base addition is high-byte based, and bank 7
+  masks the base offset to five bits while bank 5 keeps six bits. Keep a small
+  exported address helper in WASM tests because this is easy to regress.
+- Test lesson: The TypeScript tilemap render path depends on `onNewFrame()`
+  and config sampling; public `renderInstantScreen()` is not a clean oracle for
+  focused tilemap pixels. For migrated WASM tilemap fixtures, assert exact
+  palette-derived pixels and keep TypeScript tilemap-focused suites green as
+  supporting coverage.
+- Boundary lesson: This slice covers selected 40x32/80x32 tilemap fixtures and
+  ULA priority. Stencil blending and complete cross-layer ordering with sprites
+  remain for later composed-video slices.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-tilemap.test.ts`,
+  adjacent WASM video/NextReg suites, the 16-file Next WASM suite,
+  `npm test -- --project jsdom test/zxnext/TilemapDevice-compositing.test.ts test/zxnext/TilemapDevice-d1d2.test.ts`,
+  `npm run build:check`, `npm run check:zxnext-wasm-size` (228,032 bytes
+  against 360,000), and `git diff --check` passed.
+
+## 2026-08-16 - Step 24 - Sprite Rendering
+
+- Symptom: Sprite ports, NextRegs, pattern RAM, and pixels were still
+  TypeScript-owned, so WASM screen composition could not draw or inspect sprite
+  state without falling back to unsupported-port diagnostics.
+- Fix: Added `zxnext-sprites.c` for sprite slot/status ports, mirror protocol,
+  direct and sequential attributes, 8-bit/4-bit pattern transform variants,
+  clip windows, dimensions, sprite palette lookup, priority, collision status,
+  and representative non-relative sprite pixels in `zxnext-screen.c`.
+- Adapter lesson: Owning a port in C is not enough. Add it to
+  `isWasmV2OwnedPort()` as soon as reads become authoritative, otherwise
+  `doReadPort()` can still return TypeScript state and hide the WASM latch.
+- Shared-register lesson: NR `$15` is now shared by LoRes and sprites, and NR
+  `$1c` is shared by clip owners. Device write handlers should update their
+  bits and return unhandled when another migrated device also owns the
+  register.
+- Palette lesson: The current C palette table uses palette bank `2`/`6` for
+  sprite first/second palettes; focused WASM fixtures should select NR `$43`
+  value `0x20` for the first sprite palette until full palette-index parity is
+  revisited.
+- Boundary lesson: This slice intentionally covers deterministic non-relative
+  sprite pixels. Relative sprite-chain resolution, line-buffer timing/overtime,
+  and complete cross-layer priority matrix belong with Step 25 composition
+  parity.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-sprites.test.ts`,
+  adjacent WASM video suites, the 17-file/98-test Next WASM suite,
+  `npm run build:check`, `npm run check:zxnext-wasm-size` (233,754 bytes
+  against 360,000), and `git diff --check` passed.
+
+## 2026-08-16 - Step 25 - Full Screen Composition Parity
+
+- Symptom: The WASM instant renderer still used a fixed overlay order
+  (tilemap, then Layer 2, then sprites), ignoring NR `$15` layer-priority
+  modes and Layer 2 palette priority bits.
+- Fix: Added packed layer-pixel metadata for valid/priority/RGB333, ported the
+  `composeSinglePixel` priority switch for modes `SLU`, `LSU`, `SUL`, `LUS`,
+  `USL`, `ULS`, and blend modes 6/7, and exposed `layerPriority` plus
+  `fallbackColor` diagnostics.
+- Pixel-metadata lesson: Do not use `0` as the transparency sentinel once
+  composition leaves BGRA space. Opaque black is a valid RGB333 value, so use a
+  separate valid bit in packed layer outputs.
+- Fixture lesson: NR `$70` low nibble is Layer 2 palette offset, not a 256-mode
+  selector. Leaving it at `0x01` silently shifts palette index `$42` to `$52`.
+- Shared-state lesson: Keep old BGRA helpers as wrappers around packed pixel
+  helpers. That preserves earlier focused tests while allowing the final
+  compositor to see priority metadata.
+- Boundary lesson: This step ports instant-renderer composition parity. It does
+  not yet make sprite rendering cycle/overtime accurate, expand sprites into
+  the full border area, or implement every NR `$68` stencil/ULA-control edge.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-screen-composition.test.ts`,
+  adjacent WASM video suites, the 18-file/101-test Next WASM suite,
+  `npm test -- --project jsdom test/zxnext/NextComposedScreenDevice.test.ts test/zxnext/Layer2Fixes.test.ts test/zxnext/UlaRendering.test.ts`,
+  `npm run build:check`, `npm run check:zxnext-wasm-size` (234,532 bytes
+  against 360,000), and `git diff --check` passed.

@@ -188,6 +188,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetPaletteControl: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteSelected: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteSecondUla: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteSecondSprite: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteEnableUlaNextMode: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteSecondWrite: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteStoredValue: ZxNextWasmV2ExportFunction;
@@ -217,6 +218,8 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetLayer2MappingReadsEnabled: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2MappingWritesEnabled: ZxNextWasmV2ExportFunction;
   zxnextGetGlobalTransparencyColor: ZxNextWasmV2ExportFunction;
+  zxnextGetLayerPriority: ZxNextWasmV2ExportFunction;
+  zxnextGetFallbackColor: ZxNextWasmV2ExportFunction;
   zxnextGetLoResEnabled: ZxNextWasmV2ExportFunction;
   zxnextGetLoResRadastanMode: ZxNextWasmV2ExportFunction;
   zxnextGetLoResRadastanTimexXor: ZxNextWasmV2ExportFunction;
@@ -224,6 +227,54 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetLoResScrollX: ZxNextWasmV2ExportFunction;
   zxnextGetLoResScrollY: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2MappedOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemap80x32Resolution: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapEliminateAttributes: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapTextMode: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemap512TileMode: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapForceOnTopOfUla: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapTransparencyIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapClipIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapClipWindowX1: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapClipWindowX2: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapClipWindowY1: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapClipWindowY2: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapScrollX: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapScrollY: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapUseBank7: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapBank5Msb: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapTileDefUseBank7: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapTileDefBank5Msb: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapPaletteOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapXMirror: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapYMirror: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapRotate: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapUlaOver: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapDefaultAttr: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteSecondTilemap: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapVramOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteMirrorTie: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteMirrorQ: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteMirrorIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteMirrorInc: ZxNextWasmV2ExportFunction;
+  zxnextGetSprite0OnTop: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteClippingEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetSpritesEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetSpritesOverBorderEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteClipIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteClipWindowX1: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteClipWindowX2: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteClipWindowY1: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteClipWindowY2: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteTransparencyIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpritePatternIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpritePatternSubIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteSubIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteLastVisibleSpriteIndex: ZxNextWasmV2ExportFunction;
+  zxnextReadSpritePattern8: ZxNextWasmV2ExportFunction;
+  zxnextReadSpritePattern4: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteAttribute: ZxNextWasmV2ExportFunction;
   zxnextSetTacts: ZxNextWasmV2ExportFunction;
   zxnextGetHardResetCount: ZxNextWasmV2ExportFunction;
   zxnextGetResetCount: ZxNextWasmV2ExportFunction;
@@ -502,6 +553,7 @@ const requiredV2Exports = [
   "zxnextGetPaletteControl",
   "zxnextGetPaletteSelected",
   "zxnextGetPaletteSecondUla",
+  "zxnextGetPaletteSecondSprite",
   "zxnextGetPaletteEnableUlaNextMode",
   "zxnextGetPaletteSecondWrite",
   "zxnextGetPaletteStoredValue",
@@ -531,6 +583,8 @@ const requiredV2Exports = [
   "zxnextGetLayer2MappingReadsEnabled",
   "zxnextGetLayer2MappingWritesEnabled",
   "zxnextGetGlobalTransparencyColor",
+  "zxnextGetLayerPriority",
+  "zxnextGetFallbackColor",
   "zxnextGetLoResEnabled",
   "zxnextGetLoResRadastanMode",
   "zxnextGetLoResRadastanTimexXor",
@@ -538,6 +592,54 @@ const requiredV2Exports = [
   "zxnextGetLoResScrollX",
   "zxnextGetLoResScrollY",
   "zxnextGetLayer2MappedOffset",
+  "zxnextGetTilemapEnabled",
+  "zxnextGetTilemap80x32Resolution",
+  "zxnextGetTilemapEliminateAttributes",
+  "zxnextGetTilemapTextMode",
+  "zxnextGetTilemap512TileMode",
+  "zxnextGetTilemapForceOnTopOfUla",
+  "zxnextGetTilemapTransparencyIndex",
+  "zxnextGetTilemapClipIndex",
+  "zxnextGetTilemapClipWindowX1",
+  "zxnextGetTilemapClipWindowX2",
+  "zxnextGetTilemapClipWindowY1",
+  "zxnextGetTilemapClipWindowY2",
+  "zxnextGetTilemapScrollX",
+  "zxnextGetTilemapScrollY",
+  "zxnextGetTilemapUseBank7",
+  "zxnextGetTilemapBank5Msb",
+  "zxnextGetTilemapTileDefUseBank7",
+  "zxnextGetTilemapTileDefBank5Msb",
+  "zxnextGetTilemapPaletteOffset",
+  "zxnextGetTilemapXMirror",
+  "zxnextGetTilemapYMirror",
+  "zxnextGetTilemapRotate",
+  "zxnextGetTilemapUlaOver",
+  "zxnextGetTilemapDefaultAttr",
+  "zxnextGetPaletteSecondTilemap",
+  "zxnextGetTilemapVramOffset",
+  "zxnextGetSpriteMirrorTie",
+  "zxnextGetSpriteMirrorQ",
+  "zxnextGetSpriteMirrorIndex",
+  "zxnextGetSpriteMirrorInc",
+  "zxnextGetSprite0OnTop",
+  "zxnextGetSpriteClippingEnabled",
+  "zxnextGetSpritesEnabled",
+  "zxnextGetSpritesOverBorderEnabled",
+  "zxnextGetSpriteClipIndex",
+  "zxnextGetSpriteClipWindowX1",
+  "zxnextGetSpriteClipWindowX2",
+  "zxnextGetSpriteClipWindowY1",
+  "zxnextGetSpriteClipWindowY2",
+  "zxnextGetSpriteTransparencyIndex",
+  "zxnextGetSpritePatternIndex",
+  "zxnextGetSpritePatternSubIndex",
+  "zxnextGetSpriteIndex",
+  "zxnextGetSpriteSubIndex",
+  "zxnextGetSpriteLastVisibleSpriteIndex",
+  "zxnextReadSpritePattern8",
+  "zxnextReadSpritePattern4",
+  "zxnextGetSpriteAttribute",
   "zxnextSetTacts",
   "zxnextGetHardResetCount",
   "zxnextGetResetCount",

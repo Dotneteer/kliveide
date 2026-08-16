@@ -2428,7 +2428,7 @@ Completed notes:
 
 ### Step 23 - Tilemap Rendering
 
-Status: Not started
+Status: Completed on 2026-08-16
 
 Implement tilemap device state and rendering.
 
@@ -2474,17 +2474,47 @@ Definition of done:
 - Tilemap control, rendering, and compositing match TypeScript for selected
   fixtures.
 
+Completed notes:
+
+- Added `zxnext-tilemap.c` for tilemap state, NextRegs `$1b`, `$2f`, `$30`,
+  `$31`, `$4c`, `$6b`, `$6c`, `$6e`, and `$6f`.
+- Integrated shared `$1c` clip-index reset dispatch so Layer 2 and tilemap can
+  both observe the same write.
+- Added direct tilemap VRAM addressing with bank-7 five-bit map-base masking,
+  40x32 and 80x32 graphics/text pixel decoding, palette selection, clipping,
+  transparency, and per-tile ULA priority/force-on-top composition.
+- Added adapter diagnostics/exports for tilemap state and a VRAM-address helper.
+- Added `test/wasm/zxNext/wasm-next-tilemap.test.ts`.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-tilemap.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-tilemap.test.ts test/wasm/zxNext/wasm-next-layer2-lores.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-palette-ulaplus.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts test/wasm/zxNext/wasm-next-contention-speed.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-divmmc.test.ts test/wasm/zxNext/wasm-next-ide-inspection.test.ts test/wasm/zxNext/wasm-next-interrupts.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-layer2-lores.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-palette-ulaplus.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-storage.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-tilemap.test.ts`
+  - `npm test -- --project jsdom test/zxnext/TilemapDevice-compositing.test.ts test/zxnext/TilemapDevice-d1d2.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size` (228,032 bytes against 360,000)
+  - `git diff --check`
+
 ### Step 24 - Sprite Rendering
 
-Status: Not started
+Status: Completed on 2026-08-16 for sprite registers, pattern memory,
+attributes, clipping, dimensions, priority, collision/status, and
+representative non-relative sprite pixels. Relative sprite-chain resolution and
+cycle/overtime-accurate sprite buffering remain a Step 25 composition-parity
+boundary.
 
 Implement sprite state and rendering.
 
 Implementation:
 
-- Port sprite slot, status, attributes, pattern RAM, anchor behavior, clipping,
-  dimensions, priority, and collision/status flags.
-- Integrate sprites into the composed screen pipeline.
+- Added `zxnext-sprites.c` for sprite slot/status ports, NextRegs, direct and
+  sequential attributes, 8-bit/4-bit pattern RAM variants, clip windows,
+  dimensions, palette selection, priority, and collision/status readback.
+- Integrated representative sprite pixels into the instant composed-screen
+  pipeline after existing ULA/tilemap/Layer 2 overlays.
+- Taught the WASM adapter that sprite ports `$303b`, `$57`, and `$5b` are
+  runtime-owned so reads/writes no longer fall through unsupported-port
+  diagnostics or TypeScript status state.
 
 Source TypeScript:
 
@@ -2509,8 +2539,8 @@ Guardrail:
 
 Tests:
 
-- Add `test/wasm/zxNext/wasm-next-sprites.test.ts`.
-- Migrate focused groups from:
+- Added `test/wasm/zxNext/wasm-next-sprites.test.ts`.
+- Migrated focused coverage from:
   - `test/zxnext/SpriteDevice.test.ts`;
   - `test/zxnext/SpriteDevice-anchor.test.ts`;
   - `test/zxnext/SpriteDevice-clip.test.ts`;
@@ -2522,6 +2552,11 @@ Tests:
   - `test/zxnext/SpriteDevice-status.test.ts`.
 - Run:
   - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-sprites.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-sprites.test.ts test/wasm/zxNext/wasm-next-tilemap.test.ts test/wasm/zxNext/wasm-next-layer2-lores.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size` (233,754 bytes against 360,000)
+  - `git diff --check`
 
 Definition of done:
 
@@ -2530,16 +2565,26 @@ Definition of done:
 
 ### Step 25 - Full Screen Composition Parity
 
-Status: Not started
+Status: Completed on 2026-08-16 for the instant-renderer composition priority
+matrix across ULA/LoRes+tilemap, Layer 2, sprites, Layer 2 priority bit,
+fallback color, and blend modes 6/7. Cycle-accurate sprite line buffering,
+complete border composition, and stencil/ULA-control edge cases remain later
+video-polish boundaries.
 
 Bring ULA, Layer 2, LoRes, Tilemap, Sprites, palettes, clips, and priority
 together.
 
 Implementation:
 
-- Port the final composition pipeline from `NextComposedScreenDevice`.
-- Preserve 50/60 Hz timing and interrupt pulses while rendering all layers.
-- Avoid copying full buffers between JS and WASM each frame.
+- Added packed layer-pixel metadata in WASM so the compositor can distinguish
+  opaque black from transparency and preserve the Layer 2 priority bit.
+- Ported the `NextComposedScreenDevice.composeSinglePixel` priority switch for
+  NR `$15` modes `SLU`, `LSU`, `SUL`, `LUS`, `USL`, `ULS`, plus blend modes
+  `6` and `7`.
+- Routed ULA/LoRes plus tilemap, Layer 2, and sprite outputs through the final
+  composition helper instead of a fixed overlay order.
+- Added fallback-color state from NR `$4a` and exposed `layerPriority` and
+  `fallbackColor` through WASM diagnostics.
 
 Source TypeScript:
 
@@ -2564,10 +2609,18 @@ Guardrail:
 
 Tests:
 
-- Add `test/wasm/zxNext/wasm-next-screen-composition.test.ts`.
-- Migrate representative integrated fixtures from
+- Added `test/wasm/zxNext/wasm-next-screen-composition.test.ts`.
+- Migrated representative integrated fixtures from
   `test/zxnext/NextComposedScreenDevice.test.ts`.
 - Compare full pixel samples, not necessarily every pixel for every case.
+- Run:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-screen-composition.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-screen-composition.test.ts test/wasm/zxNext/wasm-next-sprites.test.ts test/wasm/zxNext/wasm-next-tilemap.test.ts test/wasm/zxNext/wasm-next-layer2-lores.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext`
+  - `npm test -- --project jsdom test/zxnext/NextComposedScreenDevice.test.ts test/zxnext/Layer2Fixes.test.ts test/zxnext/UlaRendering.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size` (234,532 bytes against 360,000)
+  - `git diff --check`
 - Run:
   - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-screen-composition.test.ts`
 

@@ -3,7 +3,7 @@
 static uint32_t ownerStepForUnsupportedPort(uint16_t port) {
   if (port == 0x00e3u) return 16u;
   if (port == 0x00ffu || port == 0xbf3bu || port == 0xff3bu) return 21u;
-  if (port == 0x303bu || port == 0x0057u || port == 0x005bu || port == 0x005du) return 24u;
+  if (port == 0x005du) return 24u;
   if (port == 0x006bu || port == 0x006fu) return 27u;
   if ((port & 0xfffbu) == 0x183bu) return 29u;
   if (port == 0x001fu || port == 0x0037u) return 31u;
@@ -55,6 +55,8 @@ uint32_t zxnextReadPort(uint32_t address) {
     value = isPortGroupEnabled(1, 7) != 0u ? (uint8_t)zxnextReadLayer2Port123b() : 0xffu;
   } else if (maskedAddress == 0x00e3u) {
     value = isPortGroupEnabled(1, 0) != 0u ? (uint8_t)zxnextReadDivMmcPortE3() : 0xffu;
+  } else if (maskedAddress == 0x303bu) {
+    value = isPortGroupEnabled(1, 6) != 0u ? (uint8_t)zxnextReadSpritePort303b() : 0xffu;
   } else if (maskedAddress == 0x00ebu) {
     value = isPortGroupEnabled(1, 3) != 0u ? (uint8_t)zxnextReadSpiDataPort() : 0xffu;
   } else {
@@ -122,6 +124,18 @@ void zxnextWritePort(uint32_t address, uint32_t value) {
   }
   if (maskedAddress == 0x00ebu) {
     if (isPortGroupEnabled(1, 3) != 0u) zxnextWriteSpiDataPort(byteValue);
+    return;
+  }
+  if (maskedAddress == 0x303bu) {
+    if (isPortGroupEnabled(1, 6) != 0u) zxnextWriteSpritePort303b(byteValue);
+    return;
+  }
+  if (maskedAddress == 0x0057u) {
+    if (isPortGroupEnabled(1, 6) != 0u) zxnextWriteSpriteAttributePort(byteValue);
+    return;
+  }
+  if (maskedAddress == 0x005bu) {
+    if (isPortGroupEnabled(1, 6) != 0u) zxnextWriteSpritePatternPort(byteValue);
     return;
   }
   if ((maskedAddress & 0xc003u) == 0x4001u) {

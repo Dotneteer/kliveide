@@ -51,6 +51,98 @@ static uint32_t screenBankBase(void) {
   return ZXNEXT_NEXT_RAM_OFFSET + (useShadowScreen != 0u ? 7u : 5u) * 0x4000u;
 }
 
+static uint32_t fallbackRgb333(void) {
+  const uint32_t blueLsb = (fallbackColor & 0x02u) | (fallbackColor & 0x01u);
+  return ((uint32_t)fallbackColor << 1u) | blueLsb;
+}
+
+static uint32_t blendRgb333Wasm(uint32_t a, uint32_t b, uint32_t mixer) {
+  const uint32_t ra = (a >> 6u) & 0x07u;
+  const uint32_t ga = (a >> 3u) & 0x07u;
+  const uint32_t ba = a & 0x07u;
+  const uint32_t rb = (b >> 6u) & 0x07u;
+  const uint32_t gb = (b >> 3u) & 0x07u;
+  const uint32_t bb = b & 0x07u;
+  uint32_t r;
+  uint32_t g;
+  uint32_t bl;
+  if (mixer == 0u) {
+    r = ra + rb;
+    g = ga + gb;
+    bl = ba + bb;
+    if (r > 7u) r = 7u;
+    if (g > 7u) g = 7u;
+    if (bl > 7u) bl = 7u;
+  } else {
+    r = ra + rb;
+    g = ga + gb;
+    bl = ba + bb;
+    r = r <= 5u ? 0u : r - 5u;
+    g = g <= 5u ? 0u : g - 5u;
+    bl = bl <= 5u ? 0u : bl - 5u;
+    if (r > 7u) r = 7u;
+    if (g > 7u) g = 7u;
+    if (bl > 7u) bl = 7u;
+  }
+  return (r << 6u) | (g << 3u) | bl;
+}
+
+static uint32_t composeLayerPixelBgra(uint32_t ulaInfo, uint32_t layer2Info, uint32_t spriteInfo) {
+  const uint32_t hasUla = (ulaInfo & ZXNEXT_LAYER_PIXEL_VALID) != 0u;
+  const uint32_t hasLayer2 = (layer2Info & ZXNEXT_LAYER_PIXEL_VALID) != 0u;
+  const uint32_t hasSprite = (spriteInfo & ZXNEXT_LAYER_PIXEL_VALID) != 0u;
+  const uint32_t layer2PriorityBit = (layer2Info & ZXNEXT_LAYER_PIXEL_PRIORITY) != 0u;
+  uint32_t selectedInfo = 0u;
+
+  if (hasLayer2 != 0u && layer2PriorityBit != 0u && layerPriority < 6u) {
+    selectedInfo = layer2Info;
+  } else if (layerPriority >= 6u) {
+    if (layer2PriorityBit != 0u && hasLayer2 != 0u) {
+      const uint32_t rgb = hasUla != 0u
+        ? blendRgb333Wasm(ulaInfo & ZXNEXT_LAYER_PIXEL_RGB_MASK, layer2Info & ZXNEXT_LAYER_PIXEL_RGB_MASK, layerPriority & 1u)
+        : (layer2Info & ZXNEXT_LAYER_PIXEL_RGB_MASK);
+      selectedInfo = zxnextPackLayerPixel(rgb, 0u);
+    } else if (hasSprite != 0u) {
+      selectedInfo = spriteInfo;
+    } else if (hasUla != 0u && hasLayer2 != 0u) {
+      selectedInfo = zxnextPackLayerPixel(
+        blendRgb333Wasm(ulaInfo & ZXNEXT_LAYER_PIXEL_RGB_MASK, layer2Info & ZXNEXT_LAYER_PIXEL_RGB_MASK, layerPriority & 1u),
+        0u
+      );
+    } else if (hasLayer2 != 0u) {
+      selectedInfo = layer2Info;
+    } else if (hasUla != 0u) {
+      selectedInfo = ulaInfo;
+    }
+  } else {
+    switch (layerPriority) {
+      case 0u:
+        selectedInfo = hasSprite != 0u ? spriteInfo : (hasLayer2 != 0u ? layer2Info : ulaInfo);
+        break;
+      case 1u:
+        selectedInfo = hasLayer2 != 0u ? layer2Info : (hasSprite != 0u ? spriteInfo : ulaInfo);
+        break;
+      case 2u:
+        selectedInfo = hasSprite != 0u ? spriteInfo : (hasUla != 0u ? ulaInfo : layer2Info);
+        break;
+      case 3u:
+        selectedInfo = hasLayer2 != 0u ? layer2Info : (hasUla != 0u ? ulaInfo : spriteInfo);
+        break;
+      case 4u:
+        selectedInfo = hasUla != 0u ? ulaInfo : (hasSprite != 0u ? spriteInfo : layer2Info);
+        break;
+      default:
+        selectedInfo = hasUla != 0u ? ulaInfo : (hasLayer2 != 0u ? layer2Info : spriteInfo);
+        break;
+    }
+  }
+
+  if ((selectedInfo & ZXNEXT_LAYER_PIXEL_VALID) == 0u) {
+    selectedInfo = zxnextPackLayerPixel(fallbackRgb333(), 0u);
+  }
+  return zxnextLayerPixelBgra(selectedInfo);
+}
+
 static uint32_t isDisplayAreaForConfig(uint32_t is60Hz, uint32_t vc, uint32_t hc) {
   const uint32_t displayYStart = is60Hz != 0u ? ZXNEXT_60HZ_DISPLAY_Y_START : ZXNEXT_50HZ_DISPLAY_Y_START;
   const uint32_t displayYEnd = is60Hz != 0u ? 0xe7u : 0xffu;
@@ -236,9 +328,11 @@ uint32_t zxnextRenderInstantScreen(void) {
     if ((flags & SCR_DISPLAY_AREA) != 0u) {
       const uint32_t displayHc = (uint32_t)hcTable[tact] - ZXNEXT_50HZ_DISPLAY_X_START;
       const uint32_t displayVc = (uint32_t)vcTable[tact] - displayYStart;
+      uint32_t ulaInfo1;
+      uint32_t ulaInfo2;
       if (loResEnabled != 0u) {
-        pixel1 = zxnextGetLoResPixelBgra(displayHc, displayVc, 0u);
-        pixel2 = zxnextGetLoResPixelBgra(displayHc, displayVc, 1u);
+        ulaInfo1 = zxnextGetLoResPixelInfo(displayHc, displayVc, 0u);
+        ulaInfo2 = zxnextGetLoResPixelInfo(displayHc, displayVc, 1u);
       } else {
         const uint32_t byteX = displayHc >> 3u;
         const uint32_t bit = displayHc & 0x07u;
@@ -248,13 +342,19 @@ uint32_t zxnextRenderInstantScreen(void) {
         const uint32_t ink = bright + (attrByte & 0x07u);
         const uint32_t paper = 16u + bright + ((attrByte >> 3u) & 0x07u);
         const uint32_t paletteIndex = (pixelByte & (0x80u >> bit)) != 0u ? ink : paper;
-        pixel1 = zxnextUlaPaletteBgra(paletteIndex);
-        pixel2 = pixel1;
+        ulaInfo1 = zxnextPackLayerPixel(zxnextUlaPaletteRgb333(paletteIndex), 0u);
+        ulaInfo2 = ulaInfo1;
       }
-      const uint32_t layer2Pixel1 = zxnextGetLayer2PixelBgra(displayHc, displayVc, 0u);
-      const uint32_t layer2Pixel2 = zxnextGetLayer2PixelBgra(displayHc, displayVc, 1u);
-      if (layer2Pixel1 != 0u) pixel1 = layer2Pixel1;
-      if (layer2Pixel2 != 0u) pixel2 = layer2Pixel2;
+      const uint32_t ulaTilemapInfo1 = zxnextGetTilemapPixelInfo(displayHc, displayVc, 0u, ulaInfo1);
+      const uint32_t ulaTilemapInfo2 = zxnextGetTilemapPixelInfo(displayHc, displayVc, 1u, ulaInfo2);
+      if ((ulaTilemapInfo1 & ZXNEXT_LAYER_PIXEL_VALID) != 0u) ulaInfo1 = ulaTilemapInfo1;
+      if ((ulaTilemapInfo2 & ZXNEXT_LAYER_PIXEL_VALID) != 0u) ulaInfo2 = ulaTilemapInfo2;
+      const uint32_t layer2Info1 = zxnextGetLayer2PixelInfo(displayHc, displayVc, 0u);
+      const uint32_t layer2Info2 = zxnextGetLayer2PixelInfo(displayHc, displayVc, 1u);
+      const uint32_t spriteInfo1 = zxnextGetSpritePixelInfo(displayHc, displayVc, 0u);
+      const uint32_t spriteInfo2 = zxnextGetSpritePixelInfo(displayHc, displayVc, 1u);
+      pixel1 = composeLayerPixelBgra(ulaInfo1, layer2Info1, spriteInfo1);
+      pixel2 = composeLayerPixelBgra(ulaInfo2, layer2Info2, spriteInfo2);
     }
     pixelBuffer[(uint32_t)bitmapOffset] = pixel1;
     pixelBuffer[(uint32_t)bitmapOffset + 1u] = pixel2;

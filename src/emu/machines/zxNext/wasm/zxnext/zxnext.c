@@ -150,6 +150,8 @@ static uint8_t layer2Bank = 0u;
 static uint8_t layer2BankOffset = 0u;
 static uint8_t layer2EnableMappingForReads = 0u;
 static uint8_t layer2EnableMappingForWrites = 0u;
+static uint8_t layerPriority = 0u;
+static uint8_t fallbackColor = 0u;
 static uint8_t globalTransparencyColor = 0xe3u;
 static uint8_t loResEnabled = 0u;
 static uint8_t loResRadastanMode = 0u;
@@ -157,6 +159,30 @@ static uint8_t loResRadastanTimexXor = 0u;
 static uint8_t loResPaletteOffset = 0u;
 static uint8_t loResScrollX = 0u;
 static uint8_t loResScrollY = 0u;
+static uint8_t tilemapEnabled = 0u;
+static uint8_t tilemap80x32Resolution = 0u;
+static uint8_t tilemapEliminateAttributes = 0u;
+static uint8_t tilemapTextMode = 0u;
+static uint8_t tilemap512TileMode = 0u;
+static uint8_t tilemapForceOnTopOfUla = 0u;
+static uint8_t tilemapTransparencyIndex = 0x0fu;
+static uint8_t tilemapClipIndex = 0u;
+static uint8_t tilemapClipWindowX1 = 0u;
+static uint8_t tilemapClipWindowX2 = 159u;
+static uint8_t tilemapClipWindowY1 = 0u;
+static uint8_t tilemapClipWindowY2 = 255u;
+static uint16_t tilemapScrollX = 0u;
+static uint8_t tilemapScrollY = 0u;
+static uint8_t tilemapUseBank7 = 0u;
+static uint8_t tilemapBank5Msb = 0u;
+static uint8_t tilemapTileDefUseBank7 = 0u;
+static uint8_t tilemapTileDefBank5Msb = 0u;
+static uint8_t tilemapPaletteOffset = 0u;
+static uint8_t tilemapXMirror = 0u;
+static uint8_t tilemapYMirror = 0u;
+static uint8_t tilemapRotate = 0u;
+static uint8_t tilemapUlaOver = 0u;
+static uint8_t tilemapDefaultAttr = 0u;
 static uint8_t internalPortEnables[4] = { 0xffu, 0xffu, 0xffu, 0x0fu };
 static uint8_t busPortEnables[4] = { 0xffu, 0xffu, 0xffu, 0x8fu };
 static uint32_t configuredMemorySizeKb = ZXNEXT_DEFAULT_MEMORY_SIZE_KB;
@@ -232,6 +258,8 @@ static uint32_t cpuTactScale(void);
 #include "zxnext-interrupt.c"
 #include "zxnext-palette.c"
 #include "zxnext-layer2.c"
+#include "zxnext-tilemap.c"
+#include "zxnext-sprites.c"
 #include "zxnext-nextreg.c"
 #include "zxnext-divmmc.c"
 #include "zxnext-sdcard.c"
@@ -248,6 +276,8 @@ static void clearRuntimeState(void) {
   resetInterruptState();
   resetPaletteState();
   resetLayer2State();
+  resetTilemapState();
+  resetSpriteState();
   resetScreenState();
   for (uint32_t i = 0; i < ZXNEXT_AUDIO_SAMPLE_CAPACITY * 2u; i++) audioSamples[i] = 0;
   for (uint32_t i = 0; i < ZXNEXT_SD_COMMAND_BUFFER_SIZE; i++) sdCommandBuffer[i] = 0;

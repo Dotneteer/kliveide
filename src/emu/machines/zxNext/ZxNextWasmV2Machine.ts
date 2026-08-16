@@ -61,6 +61,7 @@ export type ZxNextWasmV2Diagnostics = {
   paletteControl: number;
   paletteSelected: number;
   paletteSecondUla: boolean;
+  paletteSecondSprite: boolean;
   paletteEnableUlaNextMode: boolean;
   paletteSecondWrite: boolean;
   paletteStoredValue: number;
@@ -87,12 +88,58 @@ export type ZxNextWasmV2Diagnostics = {
   layer2MappingReadsEnabled: boolean;
   layer2MappingWritesEnabled: boolean;
   globalTransparencyColor: number;
+  layerPriority: number;
+  fallbackColor: number;
   loResEnabled: boolean;
   loResRadastanMode: boolean;
   loResRadastanTimexXor: boolean;
   loResPaletteOffset: number;
   loResScrollX: number;
   loResScrollY: number;
+  tilemapEnabled: boolean;
+  tilemap80x32Resolution: boolean;
+  tilemapEliminateAttributes: boolean;
+  tilemapTextMode: boolean;
+  tilemap512TileMode: boolean;
+  tilemapForceOnTopOfUla: boolean;
+  tilemapTransparencyIndex: number;
+  tilemapClipIndex: number;
+  tilemapClipWindowX1: number;
+  tilemapClipWindowX2: number;
+  tilemapClipWindowY1: number;
+  tilemapClipWindowY2: number;
+  tilemapScrollX: number;
+  tilemapScrollY: number;
+  tilemapUseBank7: boolean;
+  tilemapBank5Msb: number;
+  tilemapTileDefUseBank7: boolean;
+  tilemapTileDefBank5Msb: number;
+  tilemapPaletteOffset: number;
+  tilemapXMirror: boolean;
+  tilemapYMirror: boolean;
+  tilemapRotate: boolean;
+  tilemapUlaOver: boolean;
+  tilemapDefaultAttr: number;
+  paletteSecondTilemap: boolean;
+  spriteMirrorTie: boolean;
+  spriteMirrorQ: number;
+  spriteMirrorIndex: number;
+  spriteMirrorInc: boolean;
+  sprite0OnTop: boolean;
+  spriteClippingEnabled: boolean;
+  spritesEnabled: boolean;
+  spritesOverBorderEnabled: boolean;
+  spriteClipIndex: number;
+  spriteClipWindowX1: number;
+  spriteClipWindowX2: number;
+  spriteClipWindowY1: number;
+  spriteClipWindowY2: number;
+  spriteTransparencyIndex: number;
+  spritePatternIndex: number;
+  spritePatternSubIndex: number;
+  spriteIndex: number;
+  spriteSubIndex: number;
+  spriteLastVisibleSpriteIndex: number;
   z80nMode: boolean;
   cpuPc: number;
   cpuSp: number;
@@ -249,6 +296,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       paletteControl: runtime.exports.zxnextGetPaletteControl(),
       paletteSelected: runtime.exports.zxnextGetPaletteSelected(),
       paletteSecondUla: runtime.exports.zxnextGetPaletteSecondUla() !== 0,
+      paletteSecondSprite: runtime.exports.zxnextGetPaletteSecondSprite() !== 0,
       paletteEnableUlaNextMode: runtime.exports.zxnextGetPaletteEnableUlaNextMode() !== 0,
       paletteSecondWrite: runtime.exports.zxnextGetPaletteSecondWrite() !== 0,
       paletteStoredValue: runtime.exports.zxnextGetPaletteStoredValue(),
@@ -275,12 +323,58 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       layer2MappingReadsEnabled: runtime.exports.zxnextGetLayer2MappingReadsEnabled() !== 0,
       layer2MappingWritesEnabled: runtime.exports.zxnextGetLayer2MappingWritesEnabled() !== 0,
       globalTransparencyColor: runtime.exports.zxnextGetGlobalTransparencyColor(),
+      layerPriority: runtime.exports.zxnextGetLayerPriority(),
+      fallbackColor: runtime.exports.zxnextGetFallbackColor(),
       loResEnabled: runtime.exports.zxnextGetLoResEnabled() !== 0,
       loResRadastanMode: runtime.exports.zxnextGetLoResRadastanMode() !== 0,
       loResRadastanTimexXor: runtime.exports.zxnextGetLoResRadastanTimexXor() !== 0,
       loResPaletteOffset: runtime.exports.zxnextGetLoResPaletteOffset(),
       loResScrollX: runtime.exports.zxnextGetLoResScrollX(),
       loResScrollY: runtime.exports.zxnextGetLoResScrollY(),
+      tilemapEnabled: runtime.exports.zxnextGetTilemapEnabled() !== 0,
+      tilemap80x32Resolution: runtime.exports.zxnextGetTilemap80x32Resolution() !== 0,
+      tilemapEliminateAttributes: runtime.exports.zxnextGetTilemapEliminateAttributes() !== 0,
+      tilemapTextMode: runtime.exports.zxnextGetTilemapTextMode() !== 0,
+      tilemap512TileMode: runtime.exports.zxnextGetTilemap512TileMode() !== 0,
+      tilemapForceOnTopOfUla: runtime.exports.zxnextGetTilemapForceOnTopOfUla() !== 0,
+      tilemapTransparencyIndex: runtime.exports.zxnextGetTilemapTransparencyIndex(),
+      tilemapClipIndex: runtime.exports.zxnextGetTilemapClipIndex(),
+      tilemapClipWindowX1: runtime.exports.zxnextGetTilemapClipWindowX1(),
+      tilemapClipWindowX2: runtime.exports.zxnextGetTilemapClipWindowX2(),
+      tilemapClipWindowY1: runtime.exports.zxnextGetTilemapClipWindowY1(),
+      tilemapClipWindowY2: runtime.exports.zxnextGetTilemapClipWindowY2(),
+      tilemapScrollX: runtime.exports.zxnextGetTilemapScrollX(),
+      tilemapScrollY: runtime.exports.zxnextGetTilemapScrollY(),
+      tilemapUseBank7: runtime.exports.zxnextGetTilemapUseBank7() !== 0,
+      tilemapBank5Msb: runtime.exports.zxnextGetTilemapBank5Msb(),
+      tilemapTileDefUseBank7: runtime.exports.zxnextGetTilemapTileDefUseBank7() !== 0,
+      tilemapTileDefBank5Msb: runtime.exports.zxnextGetTilemapTileDefBank5Msb(),
+      tilemapPaletteOffset: runtime.exports.zxnextGetTilemapPaletteOffset(),
+      tilemapXMirror: runtime.exports.zxnextGetTilemapXMirror() !== 0,
+      tilemapYMirror: runtime.exports.zxnextGetTilemapYMirror() !== 0,
+      tilemapRotate: runtime.exports.zxnextGetTilemapRotate() !== 0,
+      tilemapUlaOver: runtime.exports.zxnextGetTilemapUlaOver() !== 0,
+      tilemapDefaultAttr: runtime.exports.zxnextGetTilemapDefaultAttr(),
+      paletteSecondTilemap: runtime.exports.zxnextGetPaletteSecondTilemap() !== 0,
+      spriteMirrorTie: runtime.exports.zxnextGetSpriteMirrorTie() !== 0,
+      spriteMirrorQ: runtime.exports.zxnextGetSpriteMirrorQ(),
+      spriteMirrorIndex: runtime.exports.zxnextGetSpriteMirrorIndex(),
+      spriteMirrorInc: runtime.exports.zxnextGetSpriteMirrorInc() !== 0,
+      sprite0OnTop: runtime.exports.zxnextGetSprite0OnTop() !== 0,
+      spriteClippingEnabled: runtime.exports.zxnextGetSpriteClippingEnabled() !== 0,
+      spritesEnabled: runtime.exports.zxnextGetSpritesEnabled() !== 0,
+      spritesOverBorderEnabled: runtime.exports.zxnextGetSpritesOverBorderEnabled() !== 0,
+      spriteClipIndex: runtime.exports.zxnextGetSpriteClipIndex(),
+      spriteClipWindowX1: runtime.exports.zxnextGetSpriteClipWindowX1(),
+      spriteClipWindowX2: runtime.exports.zxnextGetSpriteClipWindowX2(),
+      spriteClipWindowY1: runtime.exports.zxnextGetSpriteClipWindowY1(),
+      spriteClipWindowY2: runtime.exports.zxnextGetSpriteClipWindowY2(),
+      spriteTransparencyIndex: runtime.exports.zxnextGetSpriteTransparencyIndex(),
+      spritePatternIndex: runtime.exports.zxnextGetSpritePatternIndex(),
+      spritePatternSubIndex: runtime.exports.zxnextGetSpritePatternSubIndex(),
+      spriteIndex: runtime.exports.zxnextGetSpriteIndex(),
+      spriteSubIndex: runtime.exports.zxnextGetSpriteSubIndex(),
+      spriteLastVisibleSpriteIndex: runtime.exports.zxnextGetSpriteLastVisibleSpriteIndex(),
       z80nMode: runtime.exports.zxnextGetZ80NMode() !== 0,
       cpuPc: runtime.exports.zxnextGetCpuPc(),
       cpuSp: runtime.exports.zxnextGetCpuSp(),
@@ -850,11 +944,17 @@ function isWasmV2OwnedPort(address: number): boolean {
     isWasmV2SpiPort(address) ||
     isWasmV2TimexUlaPlusPort(address) ||
     isWasmV2Layer2Port(address) ||
+    isWasmV2SpritePort(address) ||
     (address & 0xffff) === 0x00e3;
 }
 
 function isWasmV2Layer2Port(address: number): boolean {
   return (address & 0xffff) === 0x123b;
+}
+
+function isWasmV2SpritePort(address: number): boolean {
+  const port = address & 0xffff;
+  return port === 0x303b || (port & 0x00ff) === 0x0057 || (port & 0x00ff) === 0x005b;
 }
 
 function isWasmV2SdFrameCommand(command: unknown): boolean {

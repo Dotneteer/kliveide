@@ -120,6 +120,10 @@ uint32_t zxnextReadNextReg(uint32_t reg) {
   if (paletteValue != 0xffffffffu) return paletteValue;
   const uint32_t layer2Value = layer2ReadNextReg(maskedReg);
   if (layer2Value != 0xffffffffu) return layer2Value;
+  const uint32_t tilemapValue = tilemapReadNextReg(maskedReg);
+  if (tilemapValue != 0xffffffffu) return tilemapValue;
+  const uint32_t spritesValue = spritesReadNextReg(maskedReg);
+  if (spritesValue != 0xffffffffu) return spritesValue;
   if (maskedReg >= 0x50u && maskedReg <= 0x57u) return mmuRegs[maskedReg - 0x50u];
   if (maskedReg == 0x07u) return (cpuProgrammedSpeed & 0x03u) | (cpuEffectiveSpeed << 4u);
   if (maskedReg == 0x69u) {
@@ -147,7 +151,10 @@ static void writeNextRegInternal(uint32_t reg, uint32_t value) {
   nextRegs[maskedReg] = byteValue;
   if (interruptWriteNextReg(maskedReg, byteValue) != 0u) return;
   if (paletteWriteNextReg(maskedReg, byteValue) != 0u) return;
-  if (layer2WriteNextReg(maskedReg, byteValue) != 0u) return;
+  const uint32_t layer2Handled = layer2WriteNextReg(maskedReg, byteValue);
+  const uint32_t tilemapHandled = tilemapWriteNextReg(maskedReg, byteValue);
+  const uint32_t spritesHandled = spritesWriteNextReg(maskedReg, byteValue);
+  if (layer2Handled != 0u || tilemapHandled != 0u || spritesHandled != 0u) return;
   if (maskedReg >= 0x50u && maskedReg <= 0x57u) {
     mmuRegs[maskedReg - 0x50u] = byteValue;
     updateMemoryConfig(0);
@@ -214,11 +221,15 @@ void zxnextNextRegHardReset(void) {
   resetMmuLayout();
   resetNextRegs(1);
   resetLayer2State();
+  resetTilemapState();
+  resetSpriteState();
   updateScreenTimingFromNextRegs();
 }
 void zxnextNextRegReset(void) {
   resetMmuLayout();
   resetNextRegs(0);
   resetLayer2State();
+  resetTilemapState();
+  resetSpriteState();
   updateScreenTimingFromNextRegs();
 }

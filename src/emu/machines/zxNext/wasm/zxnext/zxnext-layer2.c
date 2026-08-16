@@ -37,6 +37,8 @@ static void resetLayer2State(void) {
   layer2BankOffset = 0u;
   layer2EnableMappingForReads = 0u;
   layer2EnableMappingForWrites = 0u;
+  layerPriority = 0u;
+  fallbackColor = 0u;
   globalTransparencyColor = 0xe3u;
   loResEnabled = 0u;
   loResRadastanMode = 0u;
@@ -54,8 +56,8 @@ static uint32_t layer2ReadNextReg(uint32_t reg) {
       return layer2ShadowRamBank;
     case 0x14u:
       return globalTransparencyColor;
-    case 0x15u:
-      return (nextRegs[0x15u] & 0x7fu) | (loResEnabled != 0u ? 0x80u : 0x00u);
+    case 0x4au:
+      return fallbackColor;
     case 0x16u:
       return layer2ScrollX & 0xffu;
     case 0x17u:
@@ -104,7 +106,8 @@ static uint32_t layer2WriteNextReg(uint32_t reg, uint32_t value) {
       return 1u;
     case 0x15u:
       loResEnabled = (byteValue & 0x80u) != 0u;
-      return 1u;
+      layerPriority = (byteValue >> 2u) & 0x07u;
+      return 0u;
     case 0x16u:
       layer2ScrollX = (layer2ScrollX & 0x100u) | byteValue;
       return 1u;
@@ -120,9 +123,12 @@ static uint32_t layer2WriteNextReg(uint32_t reg, uint32_t value) {
       }
       layer2ClipIndex = (uint8_t)((layer2ClipIndex + 1u) & 0x03u);
       return 1u;
+    case 0x4au:
+      fallbackColor = byteValue;
+      return 1u;
     case 0x1cu:
       if ((byteValue & 0x01u) != 0u) layer2ClipIndex = 0u;
-      return 1u;
+      return 0u;
     case 0x32u:
       loResScrollX = byteValue;
       return 1u;
@@ -198,7 +204,13 @@ static void zxnextWriteLayer2Port123b(uint32_t value) {
   }
 }
 
-static uint32_t zxnextGetLayer2PixelBgra(uint32_t displayHc, uint32_t displayVc, uint32_t phase) {
+static uint32_t layer2PackedPalettePixel(uint32_t paletteIndex) {
+  const uint32_t palette = paletteSecondLayer2 != 0u ? 5u : 1u;
+  const uint32_t entry = paletteEntries[palette][paletteIndex & 0xffu];
+  return zxnextPackLayerPixel(entry & 0x1ffu, entry & 0x200u);
+}
+
+static uint32_t zxnextGetLayer2PixelInfo(uint32_t displayHc, uint32_t displayVc, uint32_t phase) {
   if (layer2Enabled == 0u) return 0u;
   const uint32_t bank16k = layer2UseShadowBank != 0u ? layer2ShadowRamBank : layer2ActiveRamBank;
   const uint32_t bankBase = ZXNEXT_NEXT_RAM_OFFSET + bank16k * 0x4000u;
@@ -221,7 +233,7 @@ static uint32_t zxnextGetLayer2PixelBgra(uint32_t displayHc, uint32_t displayVc,
         (rawPixel & 0x0fu);
     }
     if ((paletteIndex & 0xffu) == globalTransparencyColor) return 0u;
-    return layer2PaletteBgra(paletteIndex);
+    return layer2PackedPalettePixel(paletteIndex);
   }
 
   if (displayVc > layer2ClipWindowY2 || displayVc < layer2ClipWindowY1) return 0u;
@@ -233,10 +245,14 @@ static uint32_t zxnextGetLayer2PixelBgra(uint32_t displayHc, uint32_t displayVc,
     ((((rawPixel >> 4u) + (layer2PaletteOffset & 0x0fu)) & 0x0fu) << 4u) |
     (rawPixel & 0x0fu);
   if ((paletteIndex & 0xffu) == globalTransparencyColor) return 0u;
-  return layer2PaletteBgra(paletteIndex);
+  return layer2PackedPalettePixel(paletteIndex);
 }
 
-static uint32_t zxnextGetLoResPixelBgra(uint32_t displayHc, uint32_t displayVc, uint32_t phase) {
+static uint32_t zxnextGetLayer2PixelBgra(uint32_t displayHc, uint32_t displayVc, uint32_t phase) {
+  return zxnextLayerPixelBgra(zxnextGetLayer2PixelInfo(displayHc, displayVc, phase));
+}
+
+static uint32_t zxnextGetLoResPixelInfo(uint32_t displayHc, uint32_t displayVc, uint32_t phase) {
   if (loResEnabled == 0u || displayHc >= 256u || displayVc >= 192u) return 0u;
   const uint32_t bankBase = ZXNEXT_NEXT_RAM_OFFSET + 5u * 0x4000u;
   if (loResRadastanMode != 0u) {
@@ -249,7 +265,8 @@ static uint32_t zxnextGetLoResPixelBgra(uint32_t displayHc, uint32_t displayVc, 
     const uint32_t paletteIndex = ulaPlusEnabled != 0u && paletteEnableUlaNextMode == 0u
       ? 0xc0u | ((uint32_t)(loResPaletteOffset & 0x03u) << 4u) | nibble
       : ((uint32_t)(loResPaletteOffset & 0x0fu) << 4u) | nibble;
-    return ulaPlusPaletteBgra(paletteIndex);
+    const uint32_t palette = paletteSecondUla != 0u ? 4u : 0u;
+    return zxnextPackLayerPixel(paletteEntries[palette][paletteIndex & 0xffu] & 0x1ffu, 0u);
   }
 
   const uint32_t logicalX = ((displayHc >> 1u) + loResScrollX) & 0x7fu;
@@ -257,7 +274,12 @@ static uint32_t zxnextGetLoResPixelBgra(uint32_t displayHc, uint32_t displayVc, 
   uint32_t offset = (logicalY << 7u) | logicalX;
   if (logicalY >= 48u) offset += 0x0800u;
   const uint8_t paletteIndex = (uint8_t)readPhysical(bankBase + offset);
-  return ulaPlusPaletteBgra(paletteIndex);
+  const uint32_t palette = paletteSecondUla != 0u ? 4u : 0u;
+  return zxnextPackLayerPixel(paletteEntries[palette][paletteIndex] & 0x1ffu, 0u);
+}
+
+static uint32_t zxnextGetLoResPixelBgra(uint32_t displayHc, uint32_t displayVc, uint32_t phase) {
+  return zxnextLayerPixelBgra(zxnextGetLoResPixelInfo(displayHc, displayVc, phase));
 }
 
 uint32_t zxnextGetLayer2Enabled(void) { return layer2Enabled; }
@@ -278,6 +300,8 @@ uint32_t zxnextGetLayer2BankOffset(void) { return layer2BankOffset; }
 uint32_t zxnextGetLayer2MappingReadsEnabled(void) { return layer2EnableMappingForReads; }
 uint32_t zxnextGetLayer2MappingWritesEnabled(void) { return layer2EnableMappingForWrites; }
 uint32_t zxnextGetGlobalTransparencyColor(void) { return globalTransparencyColor; }
+uint32_t zxnextGetLayerPriority(void) { return layerPriority; }
+uint32_t zxnextGetFallbackColor(void) { return fallbackColor; }
 uint32_t zxnextGetLoResEnabled(void) { return loResEnabled; }
 uint32_t zxnextGetLoResRadastanMode(void) { return loResRadastanMode; }
 uint32_t zxnextGetLoResRadastanTimexXor(void) { return loResRadastanTimexXor; }

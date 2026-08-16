@@ -43,6 +43,9 @@
 #define ZXNEXT_DAISY_PRIORITY_ULA 11u
 #define ZXNEXT_DAISY_PRIORITY_UART0_TX 12u
 #define ZXNEXT_DAISY_PRIORITY_UART1_TX 13u
+#define ZXNEXT_LAYER_PIXEL_VALID 0x80000000u
+#define ZXNEXT_LAYER_PIXEL_PRIORITY 0x40000000u
+#define ZXNEXT_LAYER_PIXEL_RGB_MASK 0x000001ffu
 
 uint32_t zxnextReadPort(uint32_t address);
 void zxnextWritePort(uint32_t address, uint32_t value);
@@ -70,6 +73,10 @@ uint32_t zxnextDaisyAcknowledge(void);
 void zxnextDaisyReti(void);
 uint32_t zxnextUlaPaletteBgra(uint32_t index);
 
+static uint32_t zxnextPackLayerPixel(uint32_t rgb333, uint32_t priority);
+static uint32_t zxnextLayerPixelBgra(uint32_t pixelInfo);
+static uint32_t zxnextUlaPaletteRgb333(uint32_t index);
+static uint32_t spritePaletteRgb333(uint32_t index);
 static uint32_t activeMemorySize(void);
 static void clearMutablePhysicalMemory(void);
 static void resetMmuLayout(void);
@@ -100,13 +107,41 @@ static uint32_t interruptReadNextReg(uint32_t reg);
 static uint32_t interruptWriteNextReg(uint32_t reg, uint32_t value);
 static uint32_t paletteReadNextReg(uint32_t reg);
 static uint32_t paletteWriteNextReg(uint32_t reg, uint32_t value);
+static uint32_t spritePaletteBgra(uint32_t index);
 static void resetLayer2State(void);
 static uint32_t layer2ReadNextReg(uint32_t reg);
 static uint32_t layer2WriteNextReg(uint32_t reg, uint32_t value);
 static uint32_t layer2MappedOffset(uint32_t address, uint32_t isWrite);
 static uint32_t zxnextReadLayer2Port123b(void);
 static void zxnextWriteLayer2Port123b(uint32_t value);
+static uint32_t zxnextGetLayer2PixelInfo(uint32_t displayHc, uint32_t displayVc, uint32_t phase);
 static uint32_t zxnextGetLayer2PixelBgra(uint32_t displayHc, uint32_t displayVc, uint32_t phase);
+static uint32_t zxnextGetLoResPixelInfo(uint32_t displayHc, uint32_t displayVc, uint32_t phase);
 static uint32_t zxnextGetLoResPixelBgra(uint32_t displayHc, uint32_t displayVc, uint32_t phase);
+static void resetTilemapState(void);
+static uint32_t tilemapReadNextReg(uint32_t reg);
+static uint32_t tilemapWriteNextReg(uint32_t reg, uint32_t value);
+static uint32_t zxnextGetTilemapPixelBgra(
+  uint32_t displayHc,
+  uint32_t displayVc,
+  uint32_t phase,
+  uint32_t ulaPixel,
+  uint32_t ulaOpaque
+);
+static uint32_t zxnextGetTilemapPixelInfo(
+  uint32_t displayHc,
+  uint32_t displayVc,
+  uint32_t phase,
+  uint32_t ulaPixelInfo
+);
+static void resetSpriteState(void);
+static uint32_t spritesReadNextReg(uint32_t reg);
+static uint32_t spritesWriteNextReg(uint32_t reg, uint32_t value);
+static uint32_t zxnextReadSpritePort303b(void);
+static void zxnextWriteSpritePort303b(uint32_t value);
+static void zxnextWriteSpritePatternPort(uint32_t value);
+static void zxnextWriteSpriteAttributePort(uint32_t value);
+static uint32_t zxnextGetSpritePixelInfo(uint32_t displayHc, uint32_t displayVc, uint32_t phase);
+static uint32_t zxnextGetSpritePixelBgra(uint32_t displayHc, uint32_t displayVc, uint32_t phase);
 
 #endif
