@@ -24,7 +24,6 @@ export const MC_SP48_ROM_FILE = "sp48RomFile";
 export const MC_SP48_IMPLEMENTATION = "sp48Implementation";
 export const MC_SP128_IMPLEMENTATION = "sp128Implementation";
 export const MC_SPP3E_IMPLEMENTATION = "spp3eImplementation";
-export const MC_ZXNEXT_IMPLEMENTATION = "zxnextImplementation";
 
 // Available machine config keys
 export const MF_TAPE_SUPPORT = "tapeSupport";
