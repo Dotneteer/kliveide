@@ -5,6 +5,7 @@ import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import { expect } from "vitest";
 import { buildZxNextWasm, productionOutput as zxNextWasmOutput } from "../../../scripts/build-zxnext-wasm.cjs";
+import { OpCodePrefix } from "@emu/abstractions/OpCodePrefix";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
@@ -144,7 +145,9 @@ export class TestOracleZxNextMachine extends ZxNextMachine {
 
   executeOne(): void {
     this.beforeOpcodeFetch();
-    this.executeCpuCycle();
+    do {
+      this.executeCpuCycle();
+    } while (this.prefix !== OpCodePrefix.None);
     this.afterOpcodeFetch();
   }
 

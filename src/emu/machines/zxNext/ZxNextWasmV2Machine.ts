@@ -39,6 +39,41 @@ export type ZxNextWasmV2Diagnostics = {
   resets: number;
   romUploads: number;
   uploadedRomMask: number;
+  wasmReadMemoryCalls: number;
+  wasmWriteMemoryCalls: number;
+  wasmReadPortCalls: number;
+  wasmWritePortCalls: number;
+  wasmExecuteFrameCalls: number;
+  wasmExecuteInstructionCalls: number;
+  wasmKeyboardSyncWrites: number;
+  wasmExtendedKeyboardSyncWrites: number;
+  wasmJoystickSyncWrites: number;
+  wasmMouseSyncWrites: number;
+  wasmI2cCmosSyncWrites: number;
+  wasmNextRegReadCalls: number;
+  wasmNextRegWriteCalls: number;
+  wasmRomReplayBytes: number;
+  wasmCpuRegisterSyncs: number;
+  wasmAudioFrameSampleCalls: number;
+  wasmAudioSampleCopies: number;
+  wasmSdFrameCommandSyncs: number;
+  wasmSdFrameCommandsPublished: number;
+  wasmPixelBufferSnapshotCopies: number;
+  wasmPixelBufferRestoreCopies: number;
+  wasmFullBufferCopyBytes: number;
+  wasmMemoryPartitionCopyCalls: number;
+  wasmMemoryPartitionCopyBytes: number;
+  wasmLastFrameReadMemoryCrossings: number;
+  wasmLastFrameWriteMemoryCrossings: number;
+  wasmLastFrameReadPortCrossings: number;
+  wasmLastFrameWritePortCrossings: number;
+  wasmLastFrameKeyboardSyncWrites: number;
+  wasmLastFrameExtendedKeyboardSyncWrites: number;
+  wasmLastFrameJoystickSyncWrites: number;
+  wasmLastFrameMouseSyncWrites: number;
+  wasmLastFrameSdFrameCommandSyncs: number;
+  wasmLastFrameCpuRegisterSyncs: number;
+  wasmLastFrameAudioFrameSampleCalls: number;
   cpuInstructionsExecuted: number;
   frameCallCount: number;
   lastFrameInstructionsExecuted: number;
@@ -350,7 +385,7 @@ export type ZxNextWasmV2Diagnostics = {
 };
 
 /**
- * Minimal full-machine WASM v2 adapter skeleton for the ZX Spectrum Next.
+ * Full-machine WASM v2 adapter for the ZX Spectrum Next.
  */
 export class ZxNextWasmV2Machine extends ZxNextMachine {
   public readonly implementation = "wasm" as const;
@@ -367,6 +402,42 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private wasmV2MouseStateValid = false;
   private wasmV2NextRegBridgeAttached = false;
   private wasmV2SdCardInfoLoaded = false;
+  private wasmV2PreserveTypeScriptBusAccess = false;
+  private wasmReadMemoryCalls = 0;
+  private wasmWriteMemoryCalls = 0;
+  private wasmReadPortCalls = 0;
+  private wasmWritePortCalls = 0;
+  private wasmExecuteFrameCalls = 0;
+  private wasmExecuteInstructionCalls = 0;
+  private wasmKeyboardSyncWrites = 0;
+  private wasmExtendedKeyboardSyncWrites = 0;
+  private wasmJoystickSyncWrites = 0;
+  private wasmMouseSyncWrites = 0;
+  private wasmI2cCmosSyncWrites = 0;
+  private wasmNextRegReadCalls = 0;
+  private wasmNextRegWriteCalls = 0;
+  private wasmRomReplayBytes = 0;
+  private wasmCpuRegisterSyncs = 0;
+  private wasmAudioFrameSampleCalls = 0;
+  private wasmAudioSampleCopies = 0;
+  private wasmSdFrameCommandSyncs = 0;
+  private wasmSdFrameCommandsPublished = 0;
+  private wasmPixelBufferSnapshotCopies = 0;
+  private wasmPixelBufferRestoreCopies = 0;
+  private wasmFullBufferCopyBytes = 0;
+  private wasmMemoryPartitionCopyCalls = 0;
+  private wasmMemoryPartitionCopyBytes = 0;
+  private wasmLastFrameReadMemoryCrossings = 0;
+  private wasmLastFrameWriteMemoryCrossings = 0;
+  private wasmLastFrameReadPortCrossings = 0;
+  private wasmLastFrameWritePortCrossings = 0;
+  private wasmLastFrameKeyboardSyncWrites = 0;
+  private wasmLastFrameExtendedKeyboardSyncWrites = 0;
+  private wasmLastFrameJoystickSyncWrites = 0;
+  private wasmLastFrameMouseSyncWrites = 0;
+  private wasmLastFrameSdFrameCommandSyncs = 0;
+  private wasmLastFrameCpuRegisterSyncs = 0;
+  private wasmLastFrameAudioFrameSampleCalls = 0;
 
   constructor(
     public readonly requestedModelInfo?: MachineModel,
@@ -426,6 +497,41 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       resets: runtime.exports.zxnextGetResetCount(),
       romUploads: runtime.exports.zxnextGetRomUploadCount(),
       uploadedRomMask: runtime.exports.zxnextGetUploadedRomMask(),
+      wasmReadMemoryCalls: this.wasmReadMemoryCalls,
+      wasmWriteMemoryCalls: this.wasmWriteMemoryCalls,
+      wasmReadPortCalls: this.wasmReadPortCalls,
+      wasmWritePortCalls: this.wasmWritePortCalls,
+      wasmExecuteFrameCalls: this.wasmExecuteFrameCalls,
+      wasmExecuteInstructionCalls: this.wasmExecuteInstructionCalls,
+      wasmKeyboardSyncWrites: this.wasmKeyboardSyncWrites,
+      wasmExtendedKeyboardSyncWrites: this.wasmExtendedKeyboardSyncWrites,
+      wasmJoystickSyncWrites: this.wasmJoystickSyncWrites,
+      wasmMouseSyncWrites: this.wasmMouseSyncWrites,
+      wasmI2cCmosSyncWrites: this.wasmI2cCmosSyncWrites,
+      wasmNextRegReadCalls: this.wasmNextRegReadCalls,
+      wasmNextRegWriteCalls: this.wasmNextRegWriteCalls,
+      wasmRomReplayBytes: this.wasmRomReplayBytes,
+      wasmCpuRegisterSyncs: this.wasmCpuRegisterSyncs,
+      wasmAudioFrameSampleCalls: this.wasmAudioFrameSampleCalls,
+      wasmAudioSampleCopies: this.wasmAudioSampleCopies,
+      wasmSdFrameCommandSyncs: this.wasmSdFrameCommandSyncs,
+      wasmSdFrameCommandsPublished: this.wasmSdFrameCommandsPublished,
+      wasmPixelBufferSnapshotCopies: this.wasmPixelBufferSnapshotCopies,
+      wasmPixelBufferRestoreCopies: this.wasmPixelBufferRestoreCopies,
+      wasmFullBufferCopyBytes: this.wasmFullBufferCopyBytes,
+      wasmMemoryPartitionCopyCalls: this.wasmMemoryPartitionCopyCalls,
+      wasmMemoryPartitionCopyBytes: this.wasmMemoryPartitionCopyBytes,
+      wasmLastFrameReadMemoryCrossings: this.wasmLastFrameReadMemoryCrossings,
+      wasmLastFrameWriteMemoryCrossings: this.wasmLastFrameWriteMemoryCrossings,
+      wasmLastFrameReadPortCrossings: this.wasmLastFrameReadPortCrossings,
+      wasmLastFrameWritePortCrossings: this.wasmLastFrameWritePortCrossings,
+      wasmLastFrameKeyboardSyncWrites: this.wasmLastFrameKeyboardSyncWrites,
+      wasmLastFrameExtendedKeyboardSyncWrites: this.wasmLastFrameExtendedKeyboardSyncWrites,
+      wasmLastFrameJoystickSyncWrites: this.wasmLastFrameJoystickSyncWrites,
+      wasmLastFrameMouseSyncWrites: this.wasmLastFrameMouseSyncWrites,
+      wasmLastFrameSdFrameCommandSyncs: this.wasmLastFrameSdFrameCommandSyncs,
+      wasmLastFrameCpuRegisterSyncs: this.wasmLastFrameCpuRegisterSyncs,
+      wasmLastFrameAudioFrameSampleCalls: this.wasmLastFrameAudioFrameSampleCalls,
       cpuInstructionsExecuted: runtime.exports.zxnextGetCpuInstructionsExecuted(),
       frameCallCount: runtime.exports.zxnextGetFrameCallCount(),
       lastFrameInstructionsExecuted: runtime.exports.zxnextGetLastFrameInstructionsExecuted(),
@@ -764,8 +870,12 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     const runtime = this.requireWasmV2Runtime();
     const pixels = runtime.pixelBuffer;
     const snapshot = new Uint32Array(pixels);
+    this.wasmPixelBufferSnapshotCopies++;
+    this.wasmFullBufferCopyBytes += pixels.byteLength;
     if (savedPixelBuffer != null) {
       pixels.set(savedPixelBuffer.subarray(0, pixels.length));
+      this.wasmPixelBufferRestoreCopies++;
+      this.wasmFullBufferCopyBytes += pixels.byteLength;
     } else {
       runtime.exports.zxnextRenderInstantScreen();
     }
@@ -780,6 +890,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     const runtime = this.wasmV2Runtime;
     if (runtime == null) return super.getAudioSamples();
     runtime.exports.zxnextGenerateAudioFrameSamples();
+    this.wasmAudioFrameSampleCalls++;
     const words = runtime.audioSamples;
     const sampleCount = runtime.exports.zxnextGetAudioSampleCount();
     this.wasmV2AudioSamples.length = 0;
@@ -789,6 +900,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
         right: words[i * 2 + 1] / WASM_AUDIO_SAMPLE_SCALE
       });
     }
+    this.wasmAudioSampleCopies += sampleCount;
     return this.wasmV2AudioSamples;
   }
 
@@ -846,6 +958,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     const runtime = this.wasmV2Runtime;
     if (runtime == null) return super.doReadMemory(address);
     const value = runtime.exports.zxnextReadMemory(address & 0xffff);
+    this.wasmReadMemoryCalls++;
     this.importWasmV2BusAccess(runtime);
     return value;
   }
@@ -857,6 +970,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       return;
     }
     runtime.exports.zxnextWriteMemory(address & 0xffff, value & 0xff);
+    this.wasmWriteMemoryCalls++;
     this.importWasmV2BusAccess(runtime);
   }
 
@@ -868,38 +982,53 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     }
     if (isTypeScriptOwnedFdcPort(address)) {
       super.doWritePort(address, value);
+      this.lastIoWritePort = address & 0xffff;
+      this.lastIoWriteValue = value & 0xff;
+      this.wasmV2PreserveTypeScriptBusAccess = true;
       return;
     }
     if (isWasmV2SpiPort(address)) {
       runtime.exports.zxnextWritePort(address & 0xffff, value & 0xff);
+      this.wasmWritePortCalls++;
       this.syncSdFrameCommandFromWasmV2(runtime);
       this.importWasmV2BusAccess(runtime);
       return;
     }
     super.doWritePort(address, value);
     runtime.exports.zxnextWritePort(address & 0xffff, value & 0xff);
+    this.wasmWritePortCalls++;
     this.importWasmV2BusAccess(runtime);
   }
 
   override doReadPort(address: number): number {
     const runtime = this.wasmV2Runtime;
-    if (runtime == null || !isWasmV2OwnedPort(address)) return super.doReadPort(address);
+    if (runtime == null) return super.doReadPort(address);
+    if (!isWasmV2OwnedPort(address)) {
+      const value = super.doReadPort(address);
+      this.lastIoReadPort = address & 0xffff;
+      this.lastIoReadValue = value & 0xff;
+      this.wasmV2PreserveTypeScriptBusAccess = true;
+      return value;
+    }
     if (isWasmV2UlaPort(address)) this.syncKeyboardToWasmV2(runtime);
     if (isWasmV2NextRegPort(address)) this.syncExtendedKeyboardToWasmV2(runtime);
     if (isWasmV2GameInputPort(address)) this.syncGameInputToWasmV2(runtime);
     const value = runtime.exports.zxnextReadPort(address & 0xffff);
+    this.wasmReadPortCalls++;
     this.importWasmV2BusAccess(runtime);
     return value;
   }
 
   override executeMachineFrame(): FrameTerminationMode {
     const runtime = this.requireWasmV2Runtime();
+    const frameStart = this.captureWasmV2BoundaryCounters();
     this.syncKeyboardToWasmV2(runtime);
     this.syncExtendedKeyboardToWasmV2(runtime);
     this.syncGameInputToWasmV2(runtime);
 
     if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
       runtime.exports.zxnextExecuteInstruction();
+      this.wasmExecuteInstructionCalls++;
       this.syncFrameCountersFromWasmV2(runtime, false);
       this.syncCpuFromWasmV2(runtime);
       this.importWasmV2BusAccess(runtime);
@@ -907,10 +1036,12 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     }
 
     runtime.exports.zxnextExecuteFrame();
+    this.wasmExecuteFrameCalls++;
     this.syncSdFrameCommandFromWasmV2(runtime);
     this.syncFrameCountersFromWasmV2(runtime, true);
     this.floppyDevice.onFrameCompleted();
     this.importWasmV2BusAccess(runtime);
+    this.recordWasmV2LastFrameCrossings(frameStart);
     return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
   }
 
@@ -996,7 +1127,9 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     const runtime = this.wasmV2Runtime;
     if (runtime != null) {
       this.syncCpuFromWasmV2(runtime);
-      this.importWasmV2BusAccess(runtime);
+      if (!this.wasmV2PreserveTypeScriptBusAccess) {
+        this.importWasmV2BusAccess(runtime);
+      }
     }
     return super.getCpuState();
   }
@@ -1007,6 +1140,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
         if (runtime.exports.zxnextUploadRomByte(kind, offset, bytes[offset]) === 0) {
           throw new Error(`ZX Spectrum Next WASM v2 ROM upload failed for kind ${kind} at ${offset}.`);
         }
+        this.wasmRomReplayBytes++;
       }
     }
   }
@@ -1021,6 +1155,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     const cmos = this.i2cDevice.cmos;
     for (let index = 0; index < cmos.length; index++) {
       runtime.exports.zxnextSetI2cCmosByte(index, cmos[index]);
+      this.wasmI2cCmosSyncWrites++;
     }
   }
 
@@ -1041,13 +1176,16 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     device.setNextRegisterIndex = (reg: number): void => {
       originalSetIndex(reg);
       runtime.exports.zxnextSetNextRegIndex(reg & 0xff);
+      this.wasmNextRegWriteCalls++;
     };
     device.getNextRegisterIndex = (): number => {
+      this.wasmNextRegReadCalls++;
       return runtime.exports.zxnextGetNextRegIndex();
     };
     device.setNextRegisterValue = (value: number): void => {
       originalSetValue(value);
       runtime.exports.zxnextWriteNextRegData(value & 0xff);
+      this.wasmNextRegWriteCalls++;
     };
     device.getNextRegisterValue = (): number => {
       const index = runtime.exports.zxnextGetNextRegIndex();
@@ -1055,17 +1193,20 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       originalGetValue();
       if (isWasmV2ExtendedKeyboardReg(index)) this.syncExtendedKeyboardToWasmV2(runtime);
       if (isWasmV2InputNextReg(index)) this.syncGameInputToWasmV2(runtime);
+      this.wasmNextRegReadCalls++;
       return runtime.exports.zxnextReadNextRegData();
     };
     device.directGetRegValue = (reg: number): number => {
       originalDirectGet(reg);
       if (isWasmV2ExtendedKeyboardReg(reg)) this.syncExtendedKeyboardToWasmV2(runtime);
       if (isWasmV2InputNextReg(reg)) this.syncGameInputToWasmV2(runtime);
+      this.wasmNextRegReadCalls++;
       return runtime.exports.zxnextReadNextReg(reg & 0xff);
     };
     device.directSetRegValue = (reg: number, value: number): void => {
       originalDirectSet(reg, value);
       runtime.exports.zxnextWriteNextReg(reg & 0xff, value & 0xff);
+      this.wasmNextRegWriteCalls++;
     };
     device.hardReset = (): void => {
       originalHardReset();
@@ -1076,12 +1217,14 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       runtime.exports.zxnextNextRegReset();
     };
     device.isPortGroupEnabled = (regIndex: number, bit: number): boolean => {
+      this.wasmNextRegReadCalls++;
       return runtime.exports.zxnextIsPortGroupEnabled(regIndex & 0x03, bit & 0x07) !== 0;
     };
     device.getNextRegDeviceState = (): NextRegDeviceState => {
       this.syncExtendedKeyboardToWasmV2(runtime);
       this.syncGameInputToWasmV2(runtime);
       const state = originalGetState();
+      this.wasmNextRegReadCalls += state.regs.length + 1;
       return {
         lastRegisterIndex: runtime.exports.zxnextGetNextRegIndex(),
         regs: state.regs.map((reg) => ({
@@ -1101,6 +1244,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     for (let i = 0; i < length; i++) {
       result[i] = wasm.zxnextReadPhysical(offset + i);
     }
+    this.wasmMemoryPartitionCopyCalls++;
+    this.wasmMemoryPartitionCopyBytes += length;
     return result;
   }
 
@@ -1122,6 +1267,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       if (this.wasmV2KeyboardRowsValid && this.wasmV2KeyboardRows[line] === rowValue) continue;
       this.wasmV2KeyboardRows[line] = rowValue;
       wasm.zxnextSetKeyboardRow(line, rowValue);
+      this.wasmKeyboardSyncWrites++;
     }
     this.wasmV2KeyboardRowsValid = true;
   }
@@ -1138,6 +1284,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       if (this.wasmV2ExtendedKeyRegsValid && this.wasmV2ExtendedKeyRegs[index] === values[index]) continue;
       this.wasmV2ExtendedKeyRegs[index] = values[index];
       wasm.zxnextSetExtendedKeyReg(index, values[index]);
+      this.wasmExtendedKeyboardSyncWrites++;
     }
     this.wasmV2ExtendedKeyRegsValid = true;
   }
@@ -1154,6 +1301,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       this.wasmV2JoystickState[0] = joystickLeft;
       this.wasmV2JoystickState[1] = joystickRight;
       wasm.zxnextSetJoystickState(joystickLeft, joystickRight);
+      this.wasmJoystickSyncWrites++;
       this.wasmV2JoystickStateValid = true;
     }
 
@@ -1185,6 +1333,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
         mouseValues[6],
         mouseValues[7]
       );
+      this.wasmMouseSyncWrites++;
       this.wasmV2MouseStateValid = true;
     }
   }
@@ -1200,6 +1349,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
   private syncSdFrameCommandFromWasmV2(runtime: ZxNextWasmV2Runtime): void {
     const wasm = runtime.exports;
+    this.wasmSdFrameCommandSyncs++;
     const pendingCommand = wasm.zxnextGetSdPendingCommand();
     if (pendingCommand === 0 || this.getFrameCommand() != null) return;
     const card = wasm.zxnextGetSdPendingCard();
@@ -1209,6 +1359,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
         command: card === 1 ? "sd-read-card1" : "sd-read",
         sector
       });
+      this.wasmSdFrameCommandsPublished++;
       return;
     }
     if (pendingCommand === 2) {
@@ -1218,6 +1369,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
         sector,
         data
       });
+      this.wasmSdFrameCommandsPublished++;
     }
   }
 
@@ -1253,6 +1405,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   private syncCpuFromWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    this.wasmCpuRegisterSyncs++;
     const wasm = runtime.exports;
     this.af = wasm.zxnextGetCpuAf();
     this.bc = wasm.zxnextGetCpuBc();
@@ -1294,8 +1447,54 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       this.lastIoReadPort = wasm.zxnextGetLastPortAddress();
       this.lastIoReadValue = wasm.zxnextGetLastPortValue();
     }
+    this.wasmV2PreserveTypeScriptBusAccess = false;
+  }
+
+  private captureWasmV2BoundaryCounters(): ZxNextWasmV2BoundaryCounters {
+    return {
+      readMemoryCalls: this.wasmReadMemoryCalls,
+      writeMemoryCalls: this.wasmWriteMemoryCalls,
+      readPortCalls: this.wasmReadPortCalls,
+      writePortCalls: this.wasmWritePortCalls,
+      keyboardSyncWrites: this.wasmKeyboardSyncWrites,
+      extendedKeyboardSyncWrites: this.wasmExtendedKeyboardSyncWrites,
+      joystickSyncWrites: this.wasmJoystickSyncWrites,
+      mouseSyncWrites: this.wasmMouseSyncWrites,
+      sdFrameCommandSyncs: this.wasmSdFrameCommandSyncs,
+      cpuRegisterSyncs: this.wasmCpuRegisterSyncs,
+      audioFrameSampleCalls: this.wasmAudioFrameSampleCalls
+    };
+  }
+
+  private recordWasmV2LastFrameCrossings(start: ZxNextWasmV2BoundaryCounters): void {
+    this.wasmLastFrameReadMemoryCrossings = this.wasmReadMemoryCalls - start.readMemoryCalls;
+    this.wasmLastFrameWriteMemoryCrossings = this.wasmWriteMemoryCalls - start.writeMemoryCalls;
+    this.wasmLastFrameReadPortCrossings = this.wasmReadPortCalls - start.readPortCalls;
+    this.wasmLastFrameWritePortCrossings = this.wasmWritePortCalls - start.writePortCalls;
+    this.wasmLastFrameKeyboardSyncWrites = this.wasmKeyboardSyncWrites - start.keyboardSyncWrites;
+    this.wasmLastFrameExtendedKeyboardSyncWrites =
+      this.wasmExtendedKeyboardSyncWrites - start.extendedKeyboardSyncWrites;
+    this.wasmLastFrameJoystickSyncWrites = this.wasmJoystickSyncWrites - start.joystickSyncWrites;
+    this.wasmLastFrameMouseSyncWrites = this.wasmMouseSyncWrites - start.mouseSyncWrites;
+    this.wasmLastFrameSdFrameCommandSyncs = this.wasmSdFrameCommandSyncs - start.sdFrameCommandSyncs;
+    this.wasmLastFrameCpuRegisterSyncs = this.wasmCpuRegisterSyncs - start.cpuRegisterSyncs;
+    this.wasmLastFrameAudioFrameSampleCalls = this.wasmAudioFrameSampleCalls - start.audioFrameSampleCalls;
   }
 }
+
+type ZxNextWasmV2BoundaryCounters = {
+  readMemoryCalls: number;
+  writeMemoryCalls: number;
+  readPortCalls: number;
+  writePortCalls: number;
+  keyboardSyncWrites: number;
+  extendedKeyboardSyncWrites: number;
+  joystickSyncWrites: number;
+  mouseSyncWrites: number;
+  sdFrameCommandSyncs: number;
+  cpuRegisterSyncs: number;
+  audioFrameSampleCalls: number;
+};
 
 function isWasmV2NextRegPort(address: number): boolean {
   const port = address & 0xffff;

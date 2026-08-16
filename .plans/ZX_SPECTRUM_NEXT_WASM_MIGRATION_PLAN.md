@@ -472,8 +472,8 @@ Implementation:
 - Add `ZxNextImplementation.ts` with:
   - `type ZxNextImplementation = "typescript" | "wasm"`;
   - `ZXNEXT_IMPLEMENTATION`;
-  - `DEFAULT_ZXNEXT_IMPLEMENTATION = "typescript"` until the boot/storage/ULA
-    milestone passes;
+  - initially `DEFAULT_ZXNEXT_IMPLEMENTATION = "typescript"` until the
+    boot/storage/ULA milestone passes (changed to `"wasm"` in Step 37);
   - `getZxNextImplementation(config?: Record<string, unknown>)`.
 - Add `createZxNextMachine(model?, config?, messenger?)`.
 - Route the renderer registry through the factory.
@@ -482,7 +482,7 @@ Implementation:
 Tests:
 
 - Add `test/zxnext/ZxNextMachineFactory.test.ts`.
-- Cover default TypeScript, explicit TypeScript, explicit WASM placeholder, and
+- Cover the rollout default, explicit TypeScript, explicit WASM, and
   unknown value fallback.
 - Run:
   - `npm test -- --project jsdom test/zxnext/ZxNextMachineFactory.test.ts`
@@ -3160,7 +3160,7 @@ Completion notes:
 
 ### Step 34 - Debug, IDE, And Public Adapter Surface
 
-Status: Not started
+Status: Completed (2026-08-16)
 
 Complete the public adapter surface for all remaining devices. Step 18A proves
 the early IDE baseline; this step closes parity after the rest of the machine is
@@ -3225,9 +3225,32 @@ Definition of done:
 - IDE/debugger-facing APIs report WASM-owned state when the WASM backend is
   selected.
 
+Outcome:
+
+- Added adapter-side JS/WASM crossing diagnostics for memory, ports, frame
+  execution, debug instruction stepping, input syncs, I2C CMOS syncs, NextReg
+  bridge calls, and ROM replay bytes.
+- Preserved TypeScript-owned bus inspection for delegated public port paths,
+  notably the +3 FDC `$2ffd/$3ffd` ports, so `getCpuState().lastIo*` is not
+  overwritten by stale WASM bus state after those public accesses.
+- Extended `wasm-next-ide-inspection.test.ts` across newly migrated public
+  surfaces: Next palette/ULA+, ULA/audio samples, CTC, UART, I2C, joystick,
+  mouse, expansion, Multiface/NMI, debug stepping, normal frame execution, and
+  delegated FDC inspection.
+- Extended `test/zxnext/ZxNextWasmV2Machine.test.ts` with adapter crossing
+  counters and delegated FDC last-I/O preservation. The plan's
+  `wasm-next-oracle-programs.test.ts` target is not present in this checkout.
+- Validation:
+  - `npm test -- --project jsdom test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-oracle-programs.test.ts test/wasm/zxNext/wasm-next-ide-inspection.test.ts`;
+  - `npm test -- --project jsdom test/wasm/zxNext` (26 files, 153 tests);
+  - `npm run build:check`;
+  - `node scripts/build-zxnext-wasm.cjs`;
+  - `npm run check:zxnext-wasm-size` (267,221 bytes against 360,000);
+  - `git diff --check`.
+
 ### Step 35 - Oracle Program Matrix
 
-Status: Not started
+Status: Completed (2026-08-16)
 
 Add small end-to-end CPU programs that exercise multiple devices together.
 
@@ -3276,9 +3299,34 @@ Definition of done:
 
 - Cross-device regressions are covered by short, readable programs.
 
+Outcome:
+
+- Added `test/wasm/zxNext/wasm-next-oracle-programs.test.ts` with short
+  cross-device programs covering:
+  - CPU-programmed bank switch, RAM write/read, and NextReg readback;
+  - keyboard port read plus ULA border and screen memory writes;
+  - exact-port NextReg, PSG, and DAC setup;
+  - CPU-driven SD SPI CMD0 initialization response parity;
+  - deterministic memory-to-memory DMA setup and transfer;
+  - CPU-programmed HW IM2 interrupt priority acknowledgement.
+- Updated the TypeScript oracle test helper so prefixed Z80 instructions execute
+  as whole instructions, matching the WASM helper and allowing ED-prefixed
+  oracle programs to stay synchronized.
+- Ran WASM program snippets through the public debug-step path so adapter-owned
+  pre-instruction syncs, such as keyboard state upload, are included in the
+  regression surface.
+- Validation:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-oracle-programs.test.ts`;
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-oracle-programs.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-ide-inspection.test.ts`;
+  - `npm test -- --project jsdom test/wasm/zxNext` (27 files, 159 tests);
+  - `npm run build:check`;
+  - `node scripts/build-zxnext-wasm.cjs`;
+  - `npm run check:zxnext-wasm-size` (267,221 bytes against 360,000);
+  - `git diff --check`.
+
 ### Step 36 - Performance And Boundary Audit
 
-Status: Not started
+Status: Completed (2026-08-16)
 
 Verify the migration did not accidentally become a hybrid backend.
 
@@ -3327,9 +3375,37 @@ Definition of done:
 - Normal frame execution performs one WASM frame call plus bounded changed-input
   sync and no per-tact JS/WASM traffic.
 
+Outcome:
+
+- Extended `ZxNextWasmV2Machine` diagnostics with adapter-side counters for
+  CPU register syncs, audio frame/sample copies, SD frame-command syncs, full
+  pixel-buffer snapshot/restore copies, memory partition copy bytes, and the
+  last normal-frame memory/port crossing deltas.
+- Normal frame execution now records bounded per-frame input/storage/register
+  deltas around the single `zxnextExecuteFrame` call, leaving debug step-in
+  execution out of the normal-frame boundary snapshot.
+- Added a diagnostics assertion in `ZxNextWasmV2Machine.test.ts` proving a
+  normal frame performs one WASM frame call, no instruction calls, no per-tact
+  memory/port crossings, no CPU/audio syncs, and only bounded changed-input
+  plus one SD frame-command sync.
+- Added `scripts/benchmark-zxnext-wasm.cjs` and
+  `npm run benchmark:zxnext-wasm` with representative NOP, screen-write,
+  border, NEXTREG, PSG/DAC, and SPI frame scenarios.
+- Validation:
+  - `npm test -- --project jsdom test/zxnext/ZxNextWasmV2Machine.test.ts`;
+  - `npm run benchmark:zxnext-wasm -- --frames 120 --warmup 20 --runs 5`
+    (median ms/frame: NOP 1.25, screen write 1.18, border 1.19, NEXTREG
+    stress 387.23, PSG/DAC 1.24, SPI 1.24);
+  - `npm test -- --project jsdom test/wasm/zxNext` (27 files, 159 tests);
+  - `npm run build:check`;
+  - `node scripts/build-zxnext-wasm.cjs`;
+  - `npm run check:zxnext-wasm-size` (267,221 bytes against 360,000);
+  - `git diff --check`.
+
 ### Step 37 - Rollout Default
 
-Status: Not started
+Status: Completed (2026-08-16; automated gate passed, manual visual/audio
+smoke not directly observable from this tool session)
 
 Switch the default only after parity and manual boot/storage smoke pass.
 
@@ -3384,9 +3460,36 @@ Definition of done:
 
 - `"wasm"` is the default and `"typescript"` remains a working fallback.
 
+Outcome:
+
+- Changed `DEFAULT_ZXNEXT_IMPLEMENTATION` to `"wasm"`.
+- Kept explicit `"typescript"` config support and added tests proving the
+  TypeScript fallback still routes through `ZxNextMachine`.
+- Kept the machine/model picker product-oriented: the registry still exposes
+  "ZX Spectrum Next" without separate implementation-specific model names.
+- Added `src/emu/machines/zxNext/wasm/README.md` with the production backend
+  contract, build/size/benchmark commands, and normal-frame boundary rule.
+- Cleaned current rollout-era wording in the WASM loader and adapter tests.
+- Automated validation:
+  - `npm test -- --project jsdom test/zxnext/ZxNextMachineFactory.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/zxnext-wasm-build.test.ts test/wasm/zxNext`
+    (31 files, 183 tests);
+  - `npm run build:check`;
+  - `npm run lint:renderer` (completed with the existing 63 warning renderer
+    hook baseline and no errors);
+  - `npm run build:zxnext-wasm`;
+  - `npm run check:zxnext-wasm-size` (267,221 bytes against 360,000);
+  - `npx electron-vite build --config build/electron.vite.config.ts`;
+  - `npm run test:e2e` (7 app startup/window/settings tests).
+- Manual smoke note: this Codex tool session could not directly observe the
+  desktop screen/audio path for the human checklist items (start menu, storage
+  file listing, keyboard typing, audio clipping, restart stale-state check).
+  The automated boot/storage/audio/restart parity suites and app-launch e2e
+  checks above passed, but a human desktop smoke should still be performed
+  before packaging a release build.
+
 ### Step 38 - Cleanup Obsolete Migration Scaffolding
 
-Status: Not started
+Status: Completed (2026-08-16)
 
 Remove only scaffolding that is no longer needed.
 
@@ -3425,6 +3528,23 @@ Definition of done:
 
 - The codebase contains only production WASM paths, TypeScript fallback paths,
   and durable tests.
+
+Outcome:
+
+- Audited current ZX Next WASM source, tests, scripts, and docs for stale
+  `skeleton`, `placeholder`, `rollout`, migration-only, temporary, and
+  experimental scaffolding references.
+- Removed the production stale "skeleton" adapter comment. Other hits were
+  historical plan/learnings entries, unrelated existing screen docs, benchmark
+  temporary-build options shared with Spectrum scripts, or durable tests.
+- No deletion-only cleanup was needed: the tree contains the production WASM
+  path, explicit TypeScript fallback path, generated production artifact, and
+  durable parity/contract tests.
+- Validation:
+  - `npm test -- --project jsdom test/zxnext test/wasm/zxNext` (104 files,
+    5,392 tests);
+  - `npm run build:check`;
+  - `git diff --check`.
 
 ## Milestone Gates
 

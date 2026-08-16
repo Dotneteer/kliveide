@@ -1068,7 +1068,7 @@ const requiredV2Exports = [
 ] as const;
 
 export function resetZxNextWasmV2ModuleCache(): void {
-  // --- Intentionally empty. During the Next WASM rollout, always load the current artifact.
+  // --- Intentionally empty. The Next backend always loads the current artifact.
 }
 
 export async function loadZxNextWasmV2(

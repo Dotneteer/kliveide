@@ -35,6 +35,7 @@
     "build:zxnext-wasm": "node scripts/build-zxnext-wasm.cjs",
     "check:zxnext-wasm-size": "node scripts/check-zxnext-wasm-size.cjs",
     "benchmark:spectrum-wasm": "node scripts/benchmark-spectrum-wasm.cjs",
+    "benchmark:zxnext-wasm": "node scripts/benchmark-zxnext-wasm.cjs",
     "lint:renderer": "eslint src/renderer --ext .ts,.tsx",
     "e2e:app": "node scripts/run-e2e-app.cjs",
     "build:e2e": "electron-vite build --config build/electron.vite.config.ts",

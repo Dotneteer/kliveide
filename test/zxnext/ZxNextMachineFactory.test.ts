@@ -12,10 +12,10 @@ import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 describe("ZX Spectrum Next implementation selection", () => {
-  it("keeps the TypeScript implementation as the rollout default", () => {
-    expect(DEFAULT_ZXNEXT_IMPLEMENTATION).toBe("typescript");
-    expect(getZxNextImplementation()).toBe("typescript");
-    expect(createZxNextMachine()).toBeInstanceOf(ZxNextMachine);
+  it("uses the WASM implementation as the rollout default", () => {
+    expect(DEFAULT_ZXNEXT_IMPLEMENTATION).toBe("wasm");
+    expect(getZxNextImplementation()).toBe("wasm");
+    expect(createZxNextMachine()).toBeInstanceOf(ZxNextWasmV2Machine);
   });
 
   it("selects the TypeScript implementation when requested", () => {
@@ -25,7 +25,7 @@ describe("ZX Spectrum Next implementation selection", () => {
     expect(machine).toBeInstanceOf(ZxNextMachine);
   });
 
-  it("selects the WASM skeleton when requested", () => {
+  it("selects the WASM implementation when requested", () => {
     const machine = createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "wasm" });
 
     expect(getZxNextImplementation({ [ZXNEXT_IMPLEMENTATION]: "wasm" })).toBe("wasm");
@@ -40,7 +40,7 @@ describe("ZX Spectrum Next implementation selection", () => {
     expect(getZxNextImplementation({ [ZXNEXT_IMPLEMENTATION]: "native" } as any)).toBe(
       DEFAULT_ZXNEXT_IMPLEMENTATION
     );
-    expect(machine).toBeInstanceOf(ZxNextMachine);
+    expect(machine).toBeInstanceOf(ZxNextWasmV2Machine);
   });
 
   it("uses explicit config before model config", () => {

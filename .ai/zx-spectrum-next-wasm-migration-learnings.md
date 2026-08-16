@@ -1038,3 +1038,111 @@ Use this shape:
   the 26-file/152-test Next WASM suite, `npm run build:check`,
   `node scripts/build-zxnext-wasm.cjs`, `npm run check:zxnext-wasm-size`
   (267,221 bytes against 360,000), and `git diff --check` passed.
+
+## 2026-08-16 - Step 34 - Debug, IDE, And Public Adapter Surface
+
+- Adapter lesson: `getCpuState()` must not blindly import the latest WASM bus
+  event after a delegated TypeScript-owned public port access. FDC reads/writes
+  use the TypeScript port manager, so the WASM adapter now preserves those
+  public `lastIo*` values until the next real WASM bus import.
+- Inspection lesson: Public `doReadPort()`/`doWritePort()` calls do not receive
+  the CPU core's normal last-I/O bookkeeping when they delegate to TypeScript.
+  The adapter must fill `lastIoReadPort`/`lastIoReadValue` and
+  `lastIoWritePort`/`lastIoWriteValue` itself for delegated inspection paths.
+- Diagnostics lesson: JS/WASM crossing counts are best kept in the TypeScript
+  adapter, not exported from C, because many crossings are bridge/sync calls
+  rather than machine-state mutations. Count memory, port, frame, debug-step,
+  input-sync, I2C CMOS, NextReg bridge, and ROM replay crossings separately.
+- Palette lesson: Next palette data writes through NR `$41` auto-increment
+  NR `$40`. Tests that inspect the written palette entry should reset `$40` to
+  the target index before reading `$41`, and should not treat
+  `paletteStoredValue` as a generic one-byte palette-data mirror.
+- Tests: the Step 34 focused suite, the 26-file/153-test Next WASM suite,
+  `npm run build:check`, `node scripts/build-zxnext-wasm.cjs`,
+  `npm run check:zxnext-wasm-size` (267,221 bytes against 360,000), and
+  `git diff --check` passed.
+
+## 2026-08-16 - Step 35 - Oracle Program Matrix
+
+- Oracle-helper lesson: The TypeScript oracle test helper must execute prefixed
+  Z80 instructions as a whole instruction, not just the prefix fetch cycle.
+  Without the loop, ED-prefixed snippets drift by one operation against the WASM
+  helper.
+- Adapter-path lesson: CPU snippets that depend on app-owned state, such as the
+  keyboard matrix, should run WASM instructions through the public debug-step
+  adapter path. Raw `zxnextExecuteInstruction()` intentionally bypasses
+  adapter-owned pre-step syncs.
+- Program-count lesson: The matrix helpers count Z80 instructions, not emitted
+  bytes or helper calls. A helper like `outC(port, value)` emits three
+  instructions: `LD BC,nn`, `LD A,n`, and `OUT (C),A`.
+- Scope lesson: SD and DMA can still be deterministic program-matrix cases even
+  when final side effects require public device calls (`doReadPort()` for SPI
+  response bytes, `zxnextRunDma()` for the bus-master transfer). Keep the CPU
+  snippet responsible for setup and assert the resulting observable state.
+- Tests: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-oracle-programs.test.ts`,
+  the Step 35 focused helper/CPU/IDE suite, the 27-file/159-test Next WASM
+  suite, `npm run build:check`, `node scripts/build-zxnext-wasm.cjs`,
+  `npm run check:zxnext-wasm-size` (267,221 bytes against 360,000), and
+  `git diff --check` passed.
+
+## 2026-08-16 - Step 36 - Performance And Boundary Audit
+
+- Boundary-diagnostics lesson: Normal-frame diagnostics should record deltas
+  around `executeMachineFrame()`, not just cumulative adapter totals. The
+  cumulative counters are useful for broad telemetry, but the last-frame deltas
+  prove the active frame path is not secretly bouncing through TypeScript per
+  tact, per memory access, or per port access.
+- Adapter-counting lesson: Copy counters belong in the TypeScript adapter
+  because full pixel-buffer snapshots/restores, memory partition reads, and
+  audio sample copies are JavaScript typed-array operations even when their
+  source state lives in WASM.
+- Audio lesson: Frame execution and audio extraction need separate counters.
+  A normal frame can stay wholly inside WASM, while `getAudioSamples()` remains
+  an explicit post-frame adapter copy that should not be confused with frame
+  execution traffic.
+- Benchmark lesson: Raw WASM frame benchmarks are useful for regression checks,
+  but tight NEXTREG-write loops are a pathological stress case. Keep them in
+  the benchmark to expose the cost, but compare them separately from ordinary
+  frame scenarios such as NOP, screen writes, border writes, PSG/DAC, and SPI.
+- Tests: `npm test -- --project jsdom test/zxnext/ZxNextWasmV2Machine.test.ts`,
+  `npm run benchmark:zxnext-wasm -- --frames 120 --warmup 20 --runs 5`,
+  the 27-file/159-test Next WASM suite, `npm run build:check`,
+  `node scripts/build-zxnext-wasm.cjs`, `npm run check:zxnext-wasm-size`
+  (267,221 bytes against 360,000), and `git diff --check` passed.
+
+## 2026-08-16 - Step 37 - Rollout Default
+
+- Rollout lesson: Keep the implementation switch centralized even after WASM
+  becomes the default. The default can move to `"wasm"` while explicit
+  `"typescript"` remains the fallback for debugging and comparison.
+- Product-model lesson: The model picker should stay implementation-neutral.
+  Tests should assert that "ZX Spectrum Next" stays the user-facing model, not
+  separate WASM/TypeScript pseudo-models.
+- Documentation lesson: The WASM folder needs a small production contract note
+  after rollout, especially the build, size, benchmark, and normal-frame
+  boundary commands.
+- Smoke lesson: App-launch e2e can prove the packaged renderer/main startup
+  path, but it is not the same as the human visual/audio smoke. Record that
+  limitation explicitly instead of marking unseen display/audio checks as
+  manually verified.
+- Tests: the Step 37 focused rollout suite, `npm run build:check`,
+  `npm run lint:renderer` (existing 63 warning baseline, no errors),
+  `npm run build:zxnext-wasm`, `npm run check:zxnext-wasm-size`
+  (267,221 bytes against 360,000),
+  `npx electron-vite build --config build/electron.vite.config.ts`, and
+  `npm run test:e2e` passed.
+
+## 2026-08-16 - Step 38 - Cleanup Obsolete Migration Scaffolding
+
+- Cleanup lesson: Do not delete tests simply because they were introduced
+  during migration. If they protect production contracts, they are durable
+  parity tests and should remain.
+- Audit lesson: Treat historical plan/learnings references to "skeleton" or
+  "placeholder" as timeline records, not active scaffolding. Clean stale
+  wording only in current source/tests/docs.
+- Artifact lesson: The production WASM artifact under `wasm/dist` is not stale
+  scaffolding after rollout; it is the packaged runtime resource and remains
+  covered by build/import-analysis/size checks.
+- Tests: `npm test -- --project jsdom test/zxnext test/wasm/zxNext`
+  (104 files, 5,392 tests), `npm run build:check`, and `git diff --check`
+  passed.

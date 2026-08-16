@@ -43,7 +43,7 @@ describe("ZX Spectrum Next WASM v2 machine adapter", () => {
     expect(machine.memoryDevice.memory[0x01_8000]).toBe(0x40);
   });
 
-  it("reports skeleton diagnostics and reset state", async () => {
+  it("reports runtime diagnostics and reset state", async () => {
     buildZxNextWasm();
     const machine = createTestMachine();
 
@@ -61,6 +61,91 @@ describe("ZX Spectrum Next WASM v2 machine adapter", () => {
     expect(diagnostics.romSize).toBe(0x20000);
     expect(diagnostics.uploadedRomMask).toBe(0x0f);
     expect(diagnostics.romUploads).toBe(totalRomBytes());
+    expect(diagnostics).toMatchObject({
+      wasmReadMemoryCalls: 0,
+      wasmWriteMemoryCalls: 0,
+      wasmReadPortCalls: 0,
+      wasmWritePortCalls: 0,
+      wasmExecuteFrameCalls: 0,
+      wasmExecuteInstructionCalls: 0,
+      wasmKeyboardSyncWrites: 0,
+      wasmExtendedKeyboardSyncWrites: 0,
+      wasmJoystickSyncWrites: 0,
+      wasmMouseSyncWrites: 0,
+      wasmI2cCmosSyncWrites: 0x40,
+      wasmNextRegReadCalls: 0,
+      wasmNextRegWriteCalls: 0,
+      wasmRomReplayBytes: totalRomBytes(),
+      wasmCpuRegisterSyncs: 0,
+      wasmAudioFrameSampleCalls: 0,
+      wasmAudioSampleCopies: 0,
+      wasmSdFrameCommandSyncs: 0,
+      wasmSdFrameCommandsPublished: 0,
+      wasmFullBufferCopyBytes: 0,
+      wasmMemoryPartitionCopyCalls: 0
+    });
+  });
+
+  it("keeps normal frame execution inside WASM with bounded adapter syncs", async () => {
+    buildZxNextWasm();
+    const machine = createTestMachine();
+
+    await machine.setup();
+    machine.keyboardDevice.setKeyStatus(0, true);
+    machine.joystickDevice.setLeftState(0x1f);
+    machine.mouseDevice.addDelta(3, 4);
+
+    machine.executeMachineFrame();
+    const diagnostics = machine.getWasmV2Diagnostics();
+
+    expect(diagnostics.wasmExecuteFrameCalls).toBe(1);
+    expect(diagnostics.wasmExecuteInstructionCalls).toBe(0);
+    expect(diagnostics.frameCallCount).toBe(1);
+    expect(diagnostics.wasmLastFrameReadMemoryCrossings).toBe(0);
+    expect(diagnostics.wasmLastFrameWriteMemoryCrossings).toBe(0);
+    expect(diagnostics.wasmLastFrameReadPortCrossings).toBe(0);
+    expect(diagnostics.wasmLastFrameWritePortCrossings).toBe(0);
+    expect(diagnostics.wasmLastFrameCpuRegisterSyncs).toBe(0);
+    expect(diagnostics.wasmLastFrameAudioFrameSampleCalls).toBe(0);
+    expect(diagnostics.wasmLastFrameSdFrameCommandSyncs).toBe(1);
+    expect(diagnostics.wasmLastFrameKeyboardSyncWrites).toBeGreaterThan(0);
+    expect(diagnostics.wasmLastFrameKeyboardSyncWrites).toBeLessThanOrEqual(8);
+    expect(diagnostics.wasmLastFrameExtendedKeyboardSyncWrites).toBeLessThanOrEqual(3);
+    expect(diagnostics.wasmLastFrameJoystickSyncWrites).toBeLessThanOrEqual(1);
+    expect(diagnostics.wasmLastFrameMouseSyncWrites).toBeLessThanOrEqual(1);
+    expect(diagnostics.unsupportedPortReadCount).toBe(0);
+    expect(diagnostics.unsupportedPortWriteCount).toBe(0);
+  });
+
+  it("tracks public adapter crossings and preserves delegated FDC bus inspection", async () => {
+    buildZxNextWasm();
+    const machine = createTestMachine();
+
+    await machine.setup();
+    machine.doWriteMemory(0x8000, 0x5a);
+    expect(machine.doReadMemory(0x8000)).toBe(0x5a);
+    machine.doWritePort(0x00fe, 0x03);
+    expect(machine.doReadPort(0x00fe)).toBeGreaterThanOrEqual(0);
+    machine.nextRegDevice.directSetRegValue(0x52, 0x12);
+    expect(machine.nextRegDevice.directGetRegValue(0x52)).toBe(0x12);
+
+    machine.doWritePort(0x3ffd, 0x03);
+    expect(machine.getCpuState()).toMatchObject({
+      lastIoWritePort: 0x3ffd,
+      lastIoWriteValue: 0x03
+    });
+    machine.doReadPort(0x2ffd);
+    expect(machine.getCpuState().lastIoReadPort).toBe(0x2ffd);
+
+    const diagnostics = machine.getWasmV2Diagnostics();
+    expect(diagnostics.wasmReadMemoryCalls).toBe(1);
+    expect(diagnostics.wasmWriteMemoryCalls).toBe(1);
+    expect(diagnostics.wasmReadPortCalls).toBe(1);
+    expect(diagnostics.wasmWritePortCalls).toBe(1);
+    expect(diagnostics.wasmNextRegReadCalls).toBeGreaterThan(0);
+    expect(diagnostics.wasmNextRegWriteCalls).toBeGreaterThan(0);
+    expect(diagnostics.unsupportedPortReadCount).toBe(0);
+    expect(diagnostics.unsupportedPortWriteCount).toBe(0);
   });
 
   it("replays uploaded ROM bytes after reset and hard reset", async () => {
@@ -80,11 +165,13 @@ describe("ZX Spectrum Next WASM v2 machine adapter", () => {
     expect(machine.getWasmV2Diagnostics().hardResets).toBeGreaterThanOrEqual(2);
   });
 
-  it("creates the WASM skeleton only for explicit WASM factory selection", () => {
-    expect(createZxNextMachine()).toBeInstanceOf(ZxNextMachine);
-    expect(createZxNextMachine()).not.toBeInstanceOf(ZxNextWasmV2Machine);
+  it("uses WASM by default and keeps an explicit TypeScript fallback", () => {
+    expect(createZxNextMachine()).toBeInstanceOf(ZxNextWasmV2Machine);
     expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "wasm" })).toBeInstanceOf(
       ZxNextWasmV2Machine
+    );
+    expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "typescript" })).toBeInstanceOf(
+      ZxNextMachine
     );
   });
 });
