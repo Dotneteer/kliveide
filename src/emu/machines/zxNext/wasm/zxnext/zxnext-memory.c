@@ -148,7 +148,12 @@ static void rebuildFlatMemory(void) {
   for (uint32_t page = 0; page < ZXNEXT_PAGE_COUNT; page++) {
     const uint32_t base = page * ZXNEXT_PAGE_SIZE;
     for (uint32_t offset = 0; offset < ZXNEXT_PAGE_SIZE; offset++) {
-      flatMemory[base + offset] = (uint8_t)readPhysical(pageReadOffset[page] + offset);
+      const uint32_t address = base + offset;
+      const uint32_t divMmcOffset = divMmcReadOffset(address);
+      const uint32_t readOffset = divMmcOffset != ZXNEXT_INVALID_PAGE_OFFSET
+        ? divMmcOffset + (address & 0x1fffu)
+        : pageReadOffset[page] + offset;
+      flatMemory[address] = (uint8_t)readPhysical(readOffset);
     }
   }
 }
@@ -187,6 +192,10 @@ static void resetMmuLayout(void) {
 
 uint32_t zxnextReadMemory(uint32_t address) {
   const uint32_t maskedAddress = address & 0xffffu;
+  const uint32_t divMmcOffset = divMmcReadOffset(maskedAddress);
+  if (divMmcOffset != ZXNEXT_INVALID_PAGE_OFFSET) {
+    return readPhysical(divMmcOffset + (maskedAddress & 0x1fffu));
+  }
   const uint32_t page = maskedAddress >> 13u;
   const uint32_t offset = maskedAddress & 0x1fffu;
   return readPhysical(pageReadOffset[page] + offset);
@@ -194,6 +203,7 @@ uint32_t zxnextReadMemory(uint32_t address) {
 
 void zxnextWriteMemory(uint32_t address, uint32_t value) {
   const uint32_t maskedAddress = address & 0xffffu;
+  if (divMmcHandleWrite(maskedAddress, value) != 0u) return;
   const uint32_t page = maskedAddress >> 13u;
   const uint32_t offset = maskedAddress & 0x1fffu;
   const uint32_t physicalOffset = pageWriteOffset[page];

@@ -4,6 +4,8 @@ import type { ZxNextWasmV2LoaderOptions, ZxNextWasmV2Runtime } from "./wasm/ZxNe
 import type { NextRegDeviceState } from "./NextRegDevice";
 
 import { MC_MEM_SIZE } from "@common/machines/constants";
+import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
+import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
 import {
   OFFS_ALT_ROM_0,
@@ -34,6 +36,11 @@ export type ZxNextWasmV2Diagnostics = {
   romUploads: number;
   uploadedRomMask: number;
   cpuInstructionsExecuted: number;
+  frameCallCount: number;
+  lastFrameInstructionsExecuted: number;
+  frameTacts: number;
+  currentFrameTact: number;
+  cpuTactsPerFrame: number;
   z80nMode: boolean;
   cpuPc: number;
   cpuSp: number;
@@ -65,6 +72,24 @@ export type ZxNextWasmV2Diagnostics = {
   screenIs60Hz: boolean;
   screenRenderCount: number;
   screenBank: number;
+  divMmcEnabled: boolean;
+  divMmcConmem: boolean;
+  divMmcMapram: boolean;
+  divMmcBank: number;
+  divMmcPortE3: number;
+  divMmcEnableAutomap: boolean;
+  divMmcAutoMapActive: boolean;
+  divMmcRstTrapEnabledMask: number;
+  divMmcRstTrapOnlyWithRom3Mask: number;
+  divMmcRstTrapInstantMask: number;
+  divMmcEntry1: number;
+  diagnosticFlags: number;
+  unsupportedPortReadCount: number;
+  unsupportedPortWriteCount: number;
+  firstUnsupportedPortAddress: number;
+  firstUnsupportedPortValue: number;
+  firstUnsupportedPortIsWrite: boolean;
+  firstUnsupportedPortOwnerStep: number;
 };
 
 /**
@@ -136,6 +161,11 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       romUploads: runtime.exports.zxnextGetRomUploadCount(),
       uploadedRomMask: runtime.exports.zxnextGetUploadedRomMask(),
       cpuInstructionsExecuted: runtime.exports.zxnextGetCpuInstructionsExecuted(),
+      frameCallCount: runtime.exports.zxnextGetFrameCallCount(),
+      lastFrameInstructionsExecuted: runtime.exports.zxnextGetLastFrameInstructionsExecuted(),
+      frameTacts: runtime.exports.zxnextGetFrameTacts(),
+      currentFrameTact: runtime.exports.zxnextGetCurrentFrameTact(),
+      cpuTactsPerFrame: runtime.exports.zxnextGetCpuTactsPerFrame(),
       z80nMode: runtime.exports.zxnextGetZ80NMode() !== 0,
       cpuPc: runtime.exports.zxnextGetCpuPc(),
       cpuSp: runtime.exports.zxnextGetCpuSp(),
@@ -166,7 +196,25 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       screenIntEndTact: runtime.exports.zxnextGetScreenIntEndTact(),
       screenIs60Hz: runtime.exports.zxnextGetScreenIs60Hz() !== 0,
       screenRenderCount: runtime.exports.zxnextGetScreenRenderCount(),
-      screenBank: runtime.exports.zxnextGetScreenBank()
+      screenBank: runtime.exports.zxnextGetScreenBank(),
+      divMmcEnabled: runtime.exports.zxnextGetDivMmcEnabled() !== 0,
+      divMmcConmem: runtime.exports.zxnextGetDivMmcConmem() !== 0,
+      divMmcMapram: runtime.exports.zxnextGetDivMmcMapram() !== 0,
+      divMmcBank: runtime.exports.zxnextGetDivMmcBank(),
+      divMmcPortE3: runtime.exports.zxnextGetDivMmcPortE3Value(),
+      divMmcEnableAutomap: runtime.exports.zxnextGetDivMmcEnableAutomap() !== 0,
+      divMmcAutoMapActive: runtime.exports.zxnextGetDivMmcAutoMapActive() !== 0,
+      divMmcRstTrapEnabledMask: runtime.exports.zxnextGetDivMmcRstTrapEnabledMask(),
+      divMmcRstTrapOnlyWithRom3Mask: runtime.exports.zxnextGetDivMmcRstTrapOnlyWithRom3Mask(),
+      divMmcRstTrapInstantMask: runtime.exports.zxnextGetDivMmcRstTrapInstantMask(),
+      divMmcEntry1: runtime.exports.zxnextGetDivMmcEntry1(),
+      diagnosticFlags: runtime.exports.zxnextGetDiagnosticFlags(),
+      unsupportedPortReadCount: runtime.exports.zxnextGetUnsupportedPortReadCount(),
+      unsupportedPortWriteCount: runtime.exports.zxnextGetUnsupportedPortWriteCount(),
+      firstUnsupportedPortAddress: runtime.exports.zxnextGetFirstUnsupportedPortAddress(),
+      firstUnsupportedPortValue: runtime.exports.zxnextGetFirstUnsupportedPortValue(),
+      firstUnsupportedPortIsWrite: runtime.exports.zxnextGetFirstUnsupportedPortIsWrite() !== 0,
+      firstUnsupportedPortOwnerStep: runtime.exports.zxnextGetFirstUnsupportedPortOwnerStep()
     };
   }
 
@@ -293,6 +341,25 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     const value = runtime.exports.zxnextReadPort(address & 0xffff);
     this.importWasmV2BusAccess(runtime);
     return value;
+  }
+
+  override executeMachineFrame(): FrameTerminationMode {
+    const runtime = this.requireWasmV2Runtime();
+    this.syncKeyboardToWasmV2(runtime);
+    this.syncExtendedKeyboardToWasmV2(runtime);
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
+      runtime.exports.zxnextExecuteInstruction();
+      this.syncFrameCountersFromWasmV2(runtime, false);
+      this.syncCpuFromWasmV2(runtime);
+      this.importWasmV2BusAccess(runtime);
+      return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
+    }
+
+    runtime.exports.zxnextExecuteFrame();
+    this.syncFrameCountersFromWasmV2(runtime, true);
+    this.importWasmV2BusAccess(runtime);
+    return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
   }
 
   override tbblueOut(address: number, value: number): void {
@@ -435,6 +502,15 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.wasmV2ExtendedKeyRegsValid = true;
   }
 
+  private syncFrameCountersFromWasmV2(runtime: ZxNextWasmV2Runtime, completedFrame: boolean): void {
+    const wasm = runtime.exports;
+    this.frames = wasm.zxnextGetFrames();
+    this.tacts = wasm.zxnextGetTacts();
+    this.frameTacts = wasm.zxnextGetFrameTacts();
+    this.currentFrameTact = wasm.zxnextGetCurrentFrameTact();
+    this.frameCompleted = completedFrame;
+  }
+
   private requireWasmV2Runtime(): ZxNextWasmV2Runtime {
     if (this.wasmV2Runtime == null) {
       throw new Error("ZX Spectrum Next WASM v2 runtime has not been loaded.");
@@ -502,5 +578,5 @@ function isWasmV2UlaPort(address: number): boolean {
 }
 
 function isWasmV2OwnedPort(address: number): boolean {
-  return isWasmV2UlaPort(address) || isWasmV2NextRegPort(address);
+  return isWasmV2UlaPort(address) || isWasmV2NextRegPort(address) || (address & 0xffff) === 0x00e3;
 }

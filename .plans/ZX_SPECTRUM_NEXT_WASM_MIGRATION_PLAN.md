@@ -2,11 +2,14 @@
 
 Created: 2026-08-16
 
-Status: Steps 1-8 and Step 13A done. Steps 9-13 have useful WASM baselines
-whose audited gaps are now either fixed or explicitly deferred to later owning
-steps, so Step 14 may start. The current baselines cover core memory/MMU reset
-layout, 128K/+3/Next memory-port paging, NextReg core/gating, keyboard matrix
-sync, ULA `0xfe` behavior, and standard ULA instant screen rendering.
+Status: Steps 1-8, Step 13A, and Steps 14-16 done. Steps 9-13 have useful WASM
+baselines whose audited gaps are now either fixed or explicitly deferred to
+later owning steps. The current baselines cover core memory/MMU reset layout,
+128K/+3/Next memory-port paging, NextReg core/gating, keyboard matrix sync, ULA
+`0xfe` behavior, standard ULA instant screen rendering, minimal WASM-owned
+normal frame execution, early storage-less boot/ULA smoke with unsupported-port
+diagnostics, and WASM-owned DivMMC control/memory-overlay behavior needed
+before SD-card SPI.
 
 ## Goal
 
@@ -1405,7 +1408,7 @@ Completion validation:
 
 ### Step 14 - Minimal Frame Execution
 
-Status: Not started
+Status: Done on 2026-08-16
 
 Execute normal frames fully inside WASM for CPU, memory, ports, keyboard, and
 standard ULA screen.
@@ -1456,9 +1459,47 @@ Definition of done:
 - The normal frame path no longer uses TypeScript CPU/memory/port/rendering for
   this early subset.
 
+Completion notes:
+
+- Added `zxnextExecuteFrame()` to the C backend.
+- Added WASM-owned frame state:
+  - total completed frames;
+  - current frame residual in 28 MHz ticks;
+  - current frame tact in the screen timing domain;
+  - CPU tacts per frame derived from the active 50/60 Hz standard ULA timing;
+  - frame-call count;
+  - instructions executed in the last frame.
+- The normal frame path now:
+  - syncs changed keyboard rows and extended keyboard NextRegs before the frame;
+  - crosses JS/WASM once through `zxnextExecuteFrame()`;
+  - executes CPU instructions inside WASM until the frame completes;
+  - preserves instruction overshoot into the next frame;
+  - renders the standard ULA screen in WASM at frame end;
+  - syncs only frame counters and bus diagnostics back to the adapter.
+- `ZxNextWasmV2Machine.executeMachineFrame()` now bypasses the TypeScript
+  `MachineFrameRunner` for the WASM backend.
+- Debug StepInto uses C-owned `zxnextExecuteInstruction()` and then imports CPU
+  registers for public debugger state.
+- Normal running deliberately does not sync the full CPU register set; explicit
+  `getCpuState()` still pulls registers from WASM for IDE inspection.
+- Timing scope note: Step 14 uses the 3.5 MHz CPU-tact baseline derived from
+  the standard ULA rendering table. CPU speed, contention, and exact
+  multi-speed timing remain Step 19.
+- Deferred: full interrupt/NMI timing remains Step 20; per-tact Stage-1 ULA
+  prefetch/floating-bus behavior remains Step 14/19 follow-up work as recorded
+  in Step 13A; storage boot remains Steps 15-18.
+- Added `test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts`.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts`
+  - `npm test -- --project jsdom test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size`
+  - `git diff --check`
+
 ### Step 15 - Early Boot Smoke Without Storage
 
-Status: Not started
+Status: Done on 2026-08-16
 
 Boot far enough to prove ROM execution and ULA rendering are alive, even if
 storage still returns inert values.
@@ -1503,9 +1544,64 @@ Definition of done:
 - The WASM machine can execute ROM frames and produce a visible standard ULA
   pixel buffer without crashing on missing devices.
 
+Completion checklist:
+
+- Audited TypeScript source files:
+  - `src/emu/machines/zxNext/ZxNextMachine.ts`;
+  - `src/emu/machines/zxNext/io-ports/NextIoPortManager.ts`;
+  - `src/emu/machines/zxNext/bootsequence.txt`;
+  - `src/emu/machines/zxNext/debug.txt`.
+- Changed destination files:
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.h`;
+  - `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+  - `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+  - `scripts/build-zxnext-wasm.cjs`;
+  - `test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts`.
+- Migrated and tested behavior:
+  - unsupported WASM port reads/writes are counted during normal frame
+    execution, including first unsupported address, value, read/write flag, and
+    owning later step;
+  - unsupported port diagnostics are exposed through raw WASM exports, the
+    diagnostic buffer, and `ZxNextWasmV2Machine.getWasmV2Diagnostics()`;
+  - port `0x123b` returns the same inert read value as the TypeScript oracle
+    while being recorded as Layer 2 Step 22 work;
+  - a deterministic ROM fixture can execute a WASM frame, write standard ULA
+    screen bytes, render visible pixels, and record unsupported boot-time port
+    reads/writes without TypeScript frame execution.
+- Intentionally deferred behavior:
+  - DivMMC automap and memory overlays remain Step 16, owned by
+    `zxnext-divmmc.c`, `zxnext-memory.c`, `zxnext-nextreg.c`, and
+    `zxnext-ports.c`;
+  - SD-card SPI protocol and sector frame-command bridging remain Step 17,
+    owned by `zxnext-sdcard.c`, `zxnext-ports.c`, and
+    `ZxNextWasmV2Machine.ts`;
+  - the real storage boot milestone remains Step 18;
+  - Layer 2 port behavior behind `0x123b` remains Step 22, owned by
+    `zxnext-layer2.c`, `zxnext-screen.c`, `zxnext-memory.c`, and
+    `zxnext-ports.c`;
+  - unclassified port-manager diagnostics are retained for Step 34 IDE/debug
+    inspection.
+
+Completion notes:
+
+- Added unsupported-port diagnostics to the WASM port slice instead of silently
+  falling back to `0xff`.
+- Used owner-step classification so early boot smoke failures identify the
+  later migration slice that must own the missing device behavior.
+- Added `test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts`.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts`
+  - `npm test -- --project jsdom test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size` (228,082 bytes against 360,000)
+  - `git diff --check`
+
 ### Step 16 - DivMMC Automap And Memory Side Effects
 
-Status: Not started
+Status: Done on 2026-08-16
 
 Implement the DivMMC behavior required by NextZXOS boot and storage access.
 
@@ -1558,6 +1654,77 @@ Definition of done:
 
 - DivMMC ROM/RAM mapping during boot is WASM-owned and public memory APIs remain
   coherent.
+
+Completion checklist:
+
+- Audited TypeScript source files:
+  - `src/emu/machines/zxNext/DivMmcDevice.ts`;
+  - `src/emu/machines/zxNext/storage/DivMmcDevice.ts`;
+  - `src/emu/machines/zxNext/storage/IDivMmcDevice.ts`;
+  - `src/emu/machines/zxNext/MemoryDevice.ts`;
+  - `src/emu/machines/zxNext/NextRegDevice.ts`;
+  - `src/emu/machines/zxNext/ZxNextMachine.ts`;
+  - `src/emu/machines/zxNext/io-ports/NextIoPortManager.ts`;
+  - `test/zxnext/DivMmcDevice-fpga.test.ts`;
+  - `test/zxnext/DivMmcDevice-regression.test.ts`;
+  - `test/zxnext/DivMmmc.test.ts`.
+- Changed destination files:
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-divmmc.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-memory.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.h`;
+  - `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+  - `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+  - `scripts/build-zxnext-wasm.cjs`;
+  - `test/wasm/zxNext/wasm-next-divmmc.test.ts`.
+- Migrated and tested behavior:
+  - C-owned DivMMC enable state, `0xe3` CONMEM/MAPRAM/bank state, sticky
+    MAPRAM behavior, and port-enable gating;
+  - lower-16K DivMMC ROM/RAM read overlays and DivMMC RAM write/protection
+    behavior for CONMEM and automap-active states;
+  - NextReg `0x09`, `0x0a`, `0x83`, and `0xb8..0xbb` DivMMC side effects;
+  - delayed RST automap activation and RETN automap clearing during C-owned
+    instruction execution;
+  - public `doReadPort`, `doWritePort`, `doReadMemory`, `doWriteMemory`,
+    `get64KFlatMemory`, and `getWasmV2Diagnostics()` assertions, plus raw WASM
+    physical-memory checks.
+- Intentionally deferred behavior:
+  - SD-card SPI byte protocol and sector frame-command bridging remain Step
+    17, owned by `zxnext-sdcard.c`, `zxnext-ports.c`, and
+    `ZxNextWasmV2Machine.ts`;
+  - the real storage-backed boot milestone remains Step 18;
+  - DivMMC NMI button acceptance, stackless NMI integration, Multiface
+    suppression of DivMMC RETN, and expansion-bus NMI interactions remain Step
+    20 and Step 30, owned by `zxnext-interrupt.c`, `zxnext-divmmc.c`,
+    `zxnext-multiface.c`, and `zxnext-expansion.c`;
+  - ROMCS replacement from DivMMC banks 14/15 remains Step 30 with expansion bus
+    ROMCS ownership;
+  - full IDE/debug diagnostic panels for DivMMC state remain Step 34 after the
+    storage path is complete.
+
+Completion notes:
+
+- Added `zxnext-divmmc.c` as the owning C slice for DivMMC control state and
+  automap state.
+- Updated the normal C instruction wrapper to call DivMMC before/after
+  opcode-fetch hooks once per whole instruction, keeping normal frames inside
+  WASM.
+- Updated `zxnext-memory.c` so DivMMC overlays are consumed by the C-owned
+  mapped read/write path and reflected in the 64K flat typed view.
+- Updated `zxnext-ports.c` so port `0xe3` is handled rather than counted as an
+  unsupported boot-time port.
+- Updated the loader, build exports, and adapter diagnostics with DivMMC state.
+- Added `test/wasm/zxNext/wasm-next-divmmc.test.ts`.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-divmmc.test.ts`
+  - `npm test -- --project jsdom test/zxnext/DivMmmc.test.ts test/zxnext/DivMmcDevice-fpga.test.ts test/zxnext/DivMmcDevice-regression.test.ts`
+  - `npm test -- --project jsdom test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts test/wasm/zxNext/wasm-next-divmmc.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size` (169,407 bytes against 360,000)
+  - `git diff --check`
 
 ### Step 17 - SD Card SPI State Machine
 

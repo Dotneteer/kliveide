@@ -28,11 +28,15 @@ static uint32_t ulaBit4ChangedFrom1Tacts = 0;
 
 static uint32_t frames = 0;
 static uint32_t tacts = 0;
+static uint32_t frameTacts = 0;
+static uint32_t currentFrameTact = 0;
 static uint32_t hardResetCount = 0;
 static uint32_t resetCount = 0;
 static uint32_t romUploadCount = 0;
 static uint32_t uploadedRomMask = 0;
 static uint32_t cpuInstructionsExecuted = 0;
+static uint32_t frameCallCount = 0;
+static uint32_t lastFrameInstructionsExecuted = 0;
 static uint16_t cpuPc = 0;
 static uint16_t cpuSp = 0xffffu;
 static uint16_t lastMemoryAddress = 0;
@@ -44,6 +48,12 @@ static uint8_t lastPortValue = 0xffu;
 static uint8_t lastPortIsWrite = 0;
 static uint8_t hasPortEvent = 0;
 static uint8_t portReadValue = 0xffu;
+static uint32_t unsupportedPortReadCount = 0;
+static uint32_t unsupportedPortWriteCount = 0;
+static uint16_t firstUnsupportedPortAddress = 0;
+static uint8_t firstUnsupportedPortValue = 0xffu;
+static uint8_t firstUnsupportedPortIsWrite = 0;
+static uint8_t firstUnsupportedPortOwnerStep = 0;
 static uint8_t lastTbBlueAddress = 0;
 static uint8_t lastTbBlueValue = 0;
 static uint8_t hasTbBlueEvent = 0;
@@ -66,6 +76,21 @@ static uint8_t internalPortEnables[4] = { 0xffu, 0xffu, 0xffu, 0x0fu };
 static uint8_t busPortEnables[4] = { 0xffu, 0xffu, 0xffu, 0x8fu };
 static uint32_t configuredMemorySizeKb = ZXNEXT_DEFAULT_MEMORY_SIZE_KB;
 static uint32_t activeMainRamPages = ZXNEXT_DEFAULT_MAIN_RAM_PAGES;
+static uint8_t divMmcEnabled = 1u;
+static uint8_t divMmcConmem = 0u;
+static uint8_t divMmcMapram = 0u;
+static uint8_t divMmcBank = 0u;
+static uint8_t divMmcLastE3Value = 0u;
+static uint8_t divMmcEnableAutomap = 0u;
+static uint8_t divMmcRequestAutomapOn = 0u;
+static uint8_t divMmcRequestAutomapOff = 0u;
+static uint8_t divMmcAutoMapActive = 0u;
+static uint8_t divMmcNmiButtonPressed = 0u;
+static uint8_t divMmcResetMapramFlag = 0u;
+static uint8_t divMmcRstTrapEnabled = 0u;
+static uint8_t divMmcRstTrapOnlyWithRom3 = 0xffu;
+static uint8_t divMmcRstTrapInstant = 0u;
+static uint8_t divMmcEntry1 = 0u;
 
 static uint8_t zxnextCpuReadMemory(uint32_t address);
 static void zxnextCpuWriteMemory(uint32_t address, uint32_t value);
@@ -73,6 +98,9 @@ static void zxnextCpuPokeMemory(uint32_t address, uint32_t value);
 static void tactPlusNNext(uint32_t value);
 static void importZ80BusEvents(void);
 static void clearRuntimeState(void);
+static uint32_t executeWholeInstruction(void);
+static uint32_t cpuTactsPerFrame(void);
+static void advanceFrameTacts(uint32_t delta);
 
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() flatMemory
@@ -96,12 +124,14 @@ static void clearRuntimeState(void);
 
 #include "zxnext-memory.c"
 #include "zxnext-nextreg.c"
+#include "zxnext-divmmc.c"
 #include "zxnext-keyboard.c"
 #include "zxnext-ula.c"
 #include "zxnext-screen.c"
 #include "zxnext-ports.c"
 
 static void clearRuntimeState(void) {
+  resetDivMmcState();
   resetKeyboardState();
   resetUlaState();
   resetScreenState();
@@ -111,7 +141,11 @@ static void clearRuntimeState(void) {
   for (uint32_t i = 0; i < ZXNEXT_DIAGNOSTIC_BUFFER_SIZE; i++) diagnosticBuffer[i] = 0;
   frames = 0;
   tacts = 0;
+  frameTacts = 0;
+  currentFrameTact = 0;
   cpuInstructionsExecuted = 0;
+  frameCallCount = 0;
+  lastFrameInstructionsExecuted = 0;
   cpuPc = 0;
   cpuSp = 0xffffu;
   hasMemoryEvent = 0;
@@ -122,6 +156,12 @@ static void clearRuntimeState(void) {
   lastPortAddress = 0;
   lastPortValue = 0xffu;
   lastPortIsWrite = 0;
+  unsupportedPortReadCount = 0;
+  unsupportedPortWriteCount = 0;
+  firstUnsupportedPortAddress = 0;
+  firstUnsupportedPortValue = 0xffu;
+  firstUnsupportedPortIsWrite = 0;
+  firstUnsupportedPortOwnerStep = 0;
   hasTbBlueEvent = 0;
   lastTbBlueAddress = 0;
   lastTbBlueValue = 0;
@@ -186,16 +226,42 @@ void zxnextReset(void) {
 uint32_t zxnextExecuteInstruction(void) {
   hasMemoryEvent = 0;
   z80ClearBusEvents();
-  z80SetTacts(tacts);
-  do {
-    z80ExecuteCpuCycle();
-  } while (z80GetPrefix() != 0u);
-  tacts = z80GetTacts();
-  cpuPc = (uint16_t)z80GetPc();
-  cpuSp = (uint16_t)z80GetSp();
-  cpuInstructionsExecuted++;
-  importZ80BusEvents();
+  const uint32_t delta = executeWholeInstruction();
+  advanceFrameTacts(delta);
+  if (frameTacts >= cpuTactsPerFrame()) {
+    while (frameTacts >= cpuTactsPerFrame()) {
+      frameTacts -= cpuTactsPerFrame();
+      frames++;
+    }
+    currentFrameTact = frameTacts * 2u;
+    zxnextRenderInstantScreen();
+  }
   return 0;
+}
+
+uint32_t zxnextExecuteFrame(void) {
+  frameCallCount++;
+  lastFrameInstructionsExecuted = 0;
+  hasMemoryEvent = 0u;
+  hasPortEvent = 0u;
+  hasTbBlueEvent = 0u;
+  z80ClearBusEvents();
+  const uint32_t target = cpuTactsPerFrame();
+  uint32_t guard = 0u;
+  do {
+    const uint32_t delta = executeWholeInstruction();
+    advanceFrameTacts(delta);
+    lastFrameInstructionsExecuted++;
+    guard++;
+  } while (frameTacts < target && guard < 0x200000u);
+
+  while (frameTacts >= target) {
+    frameTacts -= target;
+    frames++;
+  }
+  currentFrameTact = frameTacts * 2u;
+  zxnextRenderInstantScreen();
+  return 0u;
 }
 
 uint32_t zxnextUploadRomByte(uint32_t kind, uint32_t offset, uint32_t value) {
@@ -232,6 +298,11 @@ uint32_t zxnextGetSdResponseBufferSize(void) { return ZXNEXT_SD_RESPONSE_BUFFER_
 uint32_t zxnextGetDiagnosticBufferSize(void) { return ZXNEXT_DIAGNOSTIC_BUFFER_SIZE; }
 uint32_t zxnextGetFrames(void) { return frames; }
 uint32_t zxnextGetTacts(void) { return tacts; }
+uint32_t zxnextGetFrameTacts(void) { return frameTacts * 8u; }
+uint32_t zxnextGetCurrentFrameTact(void) { return currentFrameTact; }
+uint32_t zxnextGetCpuTactsPerFrame(void) { return cpuTactsPerFrame(); }
+uint32_t zxnextGetFrameCallCount(void) { return frameCallCount; }
+uint32_t zxnextGetLastFrameInstructionsExecuted(void) { return lastFrameInstructionsExecuted; }
 void zxnextSetTacts(uint32_t value) {
   tacts = value;
   z80SetTacts(value);
@@ -291,6 +362,12 @@ uint32_t zxnextGetLastMemoryIsWrite(void) { return hasMemoryEvent != 0u ? lastMe
 uint32_t zxnextGetLastPortAddress(void) { return hasPortEvent != 0u ? lastPortAddress : 0u; }
 uint32_t zxnextGetLastPortValue(void) { return hasPortEvent != 0u ? lastPortValue : 0u; }
 uint32_t zxnextGetLastPortIsWrite(void) { return hasPortEvent != 0u ? lastPortIsWrite : 0u; }
+uint32_t zxnextGetUnsupportedPortReadCount(void) { return unsupportedPortReadCount; }
+uint32_t zxnextGetUnsupportedPortWriteCount(void) { return unsupportedPortWriteCount; }
+uint32_t zxnextGetFirstUnsupportedPortAddress(void) { return firstUnsupportedPortAddress; }
+uint32_t zxnextGetFirstUnsupportedPortValue(void) { return firstUnsupportedPortValue; }
+uint32_t zxnextGetFirstUnsupportedPortIsWrite(void) { return firstUnsupportedPortIsWrite; }
+uint32_t zxnextGetFirstUnsupportedPortOwnerStep(void) { return firstUnsupportedPortOwnerStep; }
 uint32_t zxnextGetLastTbBlueAddress(void) { return hasTbBlueEvent != 0u ? lastTbBlueAddress : 0u; }
 uint32_t zxnextGetLastTbBlueValue(void) { return hasTbBlueEvent != 0u ? lastTbBlueValue : 0u; }
 uint32_t zxnextGetLastTbBlueIsWrite(void) { return hasTbBlueEvent; }
@@ -300,7 +377,9 @@ void zxnextClearBusEvents(void) {
   hasTbBlueEvent = 0u;
   z80ClearBusEvents();
 }
-uint32_t zxnextGetDiagnosticFlags(void) { return 0; }
+uint32_t zxnextGetDiagnosticFlags(void) {
+  return (unsupportedPortReadCount != 0u || unsupportedPortWriteCount != 0u) ? 0x01u : 0u;
+}
 
 static uint8_t zxnextCpuReadMemory(uint32_t address) {
   const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
@@ -338,6 +417,33 @@ static void zxnextCpuPokeMemory(uint32_t address, uint32_t value) {
 static void tactPlusNNext(uint32_t value) {
   cpu.tacts += value;
   tacts += value;
+}
+
+static uint32_t executeWholeInstruction(void) {
+  const uint32_t startTacts = tacts;
+  const uint32_t startPc = z80GetPc();
+  zxnextDivMmcBeforeOpcodeFetch(startPc);
+  z80SetTacts(tacts);
+  do {
+    z80ExecuteCpuCycle();
+  } while (z80GetPrefix() != 0u);
+  tacts = z80GetTacts();
+  cpuPc = (uint16_t)z80GetPc();
+  cpuSp = (uint16_t)z80GetSp();
+  cpuInstructionsExecuted++;
+  importZ80BusEvents();
+  zxnextDivMmcAfterOpcodeFetch(z80GetRetnExecuted());
+  return tacts - startTacts;
+}
+
+static uint32_t cpuTactsPerFrame(void) {
+  updateScreenTimingFromNextRegs();
+  return screenRenderingTacts >> 1u;
+}
+
+static void advanceFrameTacts(uint32_t delta) {
+  frameTacts += delta;
+  currentFrameTact = frameTacts * 2u;
 }
 
 static void importZ80BusEvents(void) {

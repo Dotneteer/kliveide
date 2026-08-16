@@ -1,5 +1,43 @@
 #include "zxnext.h"
 
+static uint32_t ownerStepForUnsupportedPort(uint16_t port) {
+  if (port == 0x00e3u) return 16u;
+  if (port == 0x123bu) return 22u;
+  if (port == 0x00ffu || port == 0xbf3bu || port == 0xff3bu) return 21u;
+  if (port == 0x303bu || port == 0x0057u || port == 0x005bu || port == 0x005du) return 24u;
+  if (port == 0x006bu || port == 0x006fu) return 27u;
+  if ((port & 0xfffbu) == 0x183bu) return 29u;
+  if (port == 0x001fu || port == 0x0037u) return 31u;
+  if (port == 0xfbdfu || port == 0xffdfu || port == 0xfadfu) return 32u;
+  return 34u;
+}
+
+static uint8_t fallbackReadValueForUnsupportedPort(uint16_t port) {
+  if (port == 0x123bu) return 0x00u;
+  return portReadValue;
+}
+
+static void recordUnsupportedPort(uint16_t port, uint8_t value, uint8_t isWrite) {
+  if (isWrite != 0u) {
+    unsupportedPortWriteCount++;
+  } else {
+    unsupportedPortReadCount++;
+  }
+  if (firstUnsupportedPortOwnerStep == 0u) {
+    firstUnsupportedPortAddress = port;
+    firstUnsupportedPortValue = value;
+    firstUnsupportedPortIsWrite = isWrite;
+    firstUnsupportedPortOwnerStep = (uint8_t)ownerStepForUnsupportedPort(port);
+  }
+  diagnosticBuffer[0] = zxnextGetDiagnosticFlags();
+  diagnosticBuffer[1] = unsupportedPortReadCount;
+  diagnosticBuffer[2] = unsupportedPortWriteCount;
+  diagnosticBuffer[3] = firstUnsupportedPortAddress;
+  diagnosticBuffer[4] = firstUnsupportedPortValue;
+  diagnosticBuffer[5] = firstUnsupportedPortIsWrite;
+  diagnosticBuffer[6] = firstUnsupportedPortOwnerStep;
+}
+
 uint32_t zxnextReadPort(uint32_t address) {
   const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
   uint8_t value = portReadValue;
@@ -9,6 +47,11 @@ uint32_t zxnextReadPort(uint32_t address) {
     value = nextRegIndex;
   } else if (maskedAddress == 0x253bu) {
     value = (uint8_t)zxnextReadNextReg(nextRegIndex);
+  } else if (maskedAddress == 0x00e3u) {
+    value = isPortGroupEnabled(1, 0) != 0u ? (uint8_t)zxnextReadDivMmcPortE3() : 0xffu;
+  } else {
+    value = fallbackReadValueForUnsupportedPort(maskedAddress);
+    recordUnsupportedPort(maskedAddress, value, 0u);
   }
   if (captureBusEvents != 0u) {
     lastPortAddress = maskedAddress;
@@ -38,6 +81,10 @@ void zxnextWritePort(uint32_t address, uint32_t value) {
   }
   if (maskedAddress == 0x253bu) {
     writeNextRegInternal(nextRegIndex, byteValue);
+    return;
+  }
+  if (maskedAddress == 0x00e3u) {
+    if (isPortGroupEnabled(1, 0) != 0u) zxnextWriteDivMmcPortE3(byteValue);
     return;
   }
   if ((maskedAddress & 0xc003u) == 0x4001u) {
@@ -78,6 +125,7 @@ void zxnextWritePort(uint32_t address, uint32_t value) {
     updateMemoryConfig(1);
     return;
   }
+  recordUnsupportedPort(maskedAddress, byteValue, 1u);
 }
 
 void zxnextSetPortReadValue(uint32_t value) {

@@ -95,6 +95,7 @@ static void resetNextRegs(uint32_t hard) {
   setNextRegDefault(0xb9, 0x01);
   setNextRegDefault(0xba, 0x00);
   setNextRegDefault(0xbb, 0xcd);
+  syncDivMmcStateFromNextRegs();
 }
 
 static uint32_t isPortGroupEnabled(uint32_t regIndex, uint32_t bit) {
@@ -139,6 +140,7 @@ static void writeNextRegInternal(uint32_t reg, uint32_t value) {
   }
   if (maskedReg >= 0x82u && maskedReg <= 0x85u) {
     internalPortEnables[maskedReg - 0x82u] = byteValue;
+    if (maskedReg == 0x83u) zxnextSetDivMmcEnabled(byteValue & 0x01u);
     return;
   }
   if (maskedReg >= 0x86u && maskedReg <= 0x89u) {
@@ -156,8 +158,26 @@ static void writeNextRegInternal(uint32_t reg, uint32_t value) {
   if (maskedReg == 0x05u) {
     updateScreenTimingFromNextRegs();
   }
+  if (maskedReg == 0x09u) {
+    divMmcResetMapramFlag = (byteValue & 0x08u) != 0u;
+  }
+  if (maskedReg == 0x0au) {
+    zxnextSetDivMmcEnableAutomap(byteValue & 0x10u);
+  }
   if (maskedReg == 0x69u) {
     useShadowScreen = (byteValue & 0x40u) != 0u;
+  }
+  if (maskedReg == 0xb8u) {
+    divMmcRstTrapEnabled = byteValue;
+  }
+  if (maskedReg == 0xb9u) {
+    divMmcRstTrapOnlyWithRom3 = (uint8_t)(~byteValue);
+  }
+  if (maskedReg == 0xbau) {
+    divMmcRstTrapInstant = byteValue;
+  }
+  if (maskedReg == 0xbbu) {
+    divMmcEntry1 = byteValue;
   }
 }
 

@@ -464,3 +464,81 @@ Use this shape:
 - Follow-up: Step 14 can start only because the remaining Step 9-13 omissions
   are explicitly assigned to later device steps in the plan. Do not hide those
   deferred items in frame execution.
+
+## 2026-08-16 - Step 14 - Minimal WASM Frame Execution
+
+- Symptom: Before Step 14, the WASM backend could execute single instructions
+  and render an instant screen, but normal frame execution still belonged to
+  the inherited TypeScript frame runner.
+- Fix: Added `zxnextExecuteFrame()` and frame diagnostics to the C backend, and
+  overrode `ZxNextWasmV2Machine.executeMachineFrame()` so normal WASM frames do
+  not call the TypeScript `MachineFrameRunner`.
+- Adapter pattern: Normal frame execution syncs changed keyboard/extended-key
+  input before the frame, calls WASM once, then imports only frame counters and
+  bus diagnostics. Full CPU register import still happens on explicit
+  `getCpuState()` or debug StepInto.
+- Timing lesson: The current C frame loop uses a 3.5 MHz CPU-tact baseline
+  derived from the active standard ULA screen timing. CPU speed, contention, and
+  exact multi-speed frame timing must stay in Step 19 rather than being hidden
+  in Step 14.
+- Rendering lesson: Step 14 renders the standard ULA screen at frame end from
+  WASM. This is enough for the early frame path, but per-tact Stage-1
+  prefetch/floating-bus parity remains deferred as recorded in Step 13A.
+- Test lesson: Prove no normal-frame full-register sync by checking that raw
+  WASM PC advances after a frame while the public adapter PC updates only after
+  `getCpuState()`.
+- Tests: `npm test -- --project jsdom test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts` and the broader 10-file Next WASM suite passed.
+- Follow-up: Step 15 should use the new frame diagnostics to count
+  unimplemented boot-time ports and prove ROM execution can reach a visible,
+  non-crashing early boot state without storage.
+
+## 2026-08-16 - Step 15 - Early Boot Smoke Without Storage
+
+- Symptom: The minimal WASM frame runner could execute frames, but missing
+  boot-time devices were still silent `0xff` fallbacks, making it hard to know
+  which later migration slice blocked progress.
+- Root cause: `zxnext-ports.c` had a generic fallback path with no diagnostic
+  counters or owner-step classification.
+- Fix: Added unsupported-port read/write counters, first-hit address/value/type
+  diagnostics, owner-step classification, diagnostic-buffer entries, and public
+  adapter diagnostics through `getWasmV2Diagnostics()`.
+- Parity lesson: Port `0x123b` must return the TypeScript Layer 2 inert read
+  value `0x00`, not the generic open-bus `0xff`, even while actual Layer 2
+  behavior remains deferred to Step 22.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts`,
+  the broader 11-file Next WASM suite, `npm run build:check`,
+  `npm run check:zxnext-wasm-size`, and `git diff --check` passed. The
+  production artifact is 228,082 bytes against the 360,000 byte ceiling.
+- Follow-up: Step 16 should use these diagnostics while adding DivMMC automap
+  memory effects; Step 18 can extend the same boot-smoke file for the
+  storage-backed milestone.
+
+## 2026-08-16 - Step 16 - DivMMC Automap And Memory Side Effects
+
+- Symptom: After Step 15, port `0xe3` was still reported as an unsupported
+  boot-time port and the WASM memory path could not page DivMMC ROM/RAM into
+  the lower 16K.
+- Root cause: DivMMC state lived only in the TypeScript `DivMmcDevice` and
+  `MemoryDevice` complex slot readers/writers; the C memory map only understood
+  normal MMU pages.
+- Fix: Added `zxnext-divmmc.c` for DivMMC enable state, `0xe3`, CONMEM,
+  MAPRAM, bank selection, RST automap masks, delayed automap requests, and RETN
+  clearing. `zxnext-memory.c` now consumes DivMMC overlays for reads, writes,
+  and the flat 64K typed view.
+- Adapter pattern: Once a port becomes WASM-owned, remove it from unsupported
+  diagnostics and expose state through public `ZxNextWasmV2Machine`
+  diagnostics; Step 16 added DivMMC diagnostics instead of relying only on raw
+  exports.
+- Parity lesson: MAPRAM is sticky unless NextReg `0x09` bit 3 allows reset;
+  CONMEM and automap share the same lower-16K overlay rules, but RETN clears
+  automap without clearing manual CONMEM.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-divmmc.test.ts`,
+  the existing TypeScript DivMMC suites, and the broader 12-file Next WASM
+  suite passed. `npm run build:check`, `npm run check:zxnext-wasm-size`, and
+  `git diff --check` also passed; the production artifact is 169,407 bytes
+  against the 360,000 byte ceiling.
+- Follow-up: Step 17 should move SPI SD-card protocol state into WASM while
+  keeping sector persistence in TypeScript; NMI button/stackless-NMI/Multiface
+  interactions remain with Step 20 and Step 30.

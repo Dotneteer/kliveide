@@ -22,6 +22,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextHardReset: ZxNextWasmV2ExportFunction;
   zxnextReset: ZxNextWasmV2ExportFunction;
   zxnextExecuteInstruction: ZxNextWasmV2ExportFunction;
+  zxnextExecuteFrame: ZxNextWasmV2ExportFunction;
   zxnextUploadRomByte: ZxNextWasmV2ExportFunction;
   zxnextReadRomByte: ZxNextWasmV2ExportFunction;
   zxnextReadMemory: ZxNextWasmV2ExportFunction;
@@ -95,6 +96,19 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetAllRamMode: ZxNextWasmV2ExportFunction;
   zxnextGetSpecialConfig: ZxNextWasmV2ExportFunction;
   zxnextGetUseShadowScreen: ZxNextWasmV2ExportFunction;
+  zxnextReadDivMmcPortE3: ZxNextWasmV2ExportFunction;
+  zxnextWriteDivMmcPortE3: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcConmem: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcMapram: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcBank: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcPortE3Value: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcEnableAutomap: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcAutoMapActive: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcRstTrapEnabledMask: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcRstTrapOnlyWithRom3Mask: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcRstTrapInstantMask: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcEntry1: ZxNextWasmV2ExportFunction;
   zxnextGetNextRegIndex: ZxNextWasmV2ExportFunction;
   zxnextSetNextRegIndex: ZxNextWasmV2ExportFunction;
   zxnextReadNextRegData: ZxNextWasmV2ExportFunction;
@@ -122,6 +136,11 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetDiagnosticBufferSize: ZxNextWasmV2ExportFunction;
   zxnextGetFrames: ZxNextWasmV2ExportFunction;
   zxnextGetTacts: ZxNextWasmV2ExportFunction;
+  zxnextGetFrameTacts: ZxNextWasmV2ExportFunction;
+  zxnextGetCurrentFrameTact: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuTactsPerFrame: ZxNextWasmV2ExportFunction;
+  zxnextGetFrameCallCount: ZxNextWasmV2ExportFunction;
+  zxnextGetLastFrameInstructionsExecuted: ZxNextWasmV2ExportFunction;
   zxnextSetTacts: ZxNextWasmV2ExportFunction;
   zxnextGetHardResetCount: ZxNextWasmV2ExportFunction;
   zxnextGetResetCount: ZxNextWasmV2ExportFunction;
@@ -172,6 +191,12 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetLastPortAddress: ZxNextWasmV2ExportFunction;
   zxnextGetLastPortValue: ZxNextWasmV2ExportFunction;
   zxnextGetLastPortIsWrite: ZxNextWasmV2ExportFunction;
+  zxnextGetUnsupportedPortReadCount: ZxNextWasmV2ExportFunction;
+  zxnextGetUnsupportedPortWriteCount: ZxNextWasmV2ExportFunction;
+  zxnextGetFirstUnsupportedPortAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetFirstUnsupportedPortValue: ZxNextWasmV2ExportFunction;
+  zxnextGetFirstUnsupportedPortIsWrite: ZxNextWasmV2ExportFunction;
+  zxnextGetFirstUnsupportedPortOwnerStep: ZxNextWasmV2ExportFunction;
   zxnextGetLastTbBlueAddress: ZxNextWasmV2ExportFunction;
   zxnextGetLastTbBlueValue: ZxNextWasmV2ExportFunction;
   zxnextGetLastTbBlueIsWrite: ZxNextWasmV2ExportFunction;
@@ -228,6 +253,7 @@ const requiredV2Exports = [
   "zxnextHardReset",
   "zxnextReset",
   "zxnextExecuteInstruction",
+  "zxnextExecuteFrame",
   "zxnextUploadRomByte",
   "zxnextReadRomByte",
   "zxnextReadMemory",
@@ -301,6 +327,19 @@ const requiredV2Exports = [
   "zxnextGetAllRamMode",
   "zxnextGetSpecialConfig",
   "zxnextGetUseShadowScreen",
+  "zxnextReadDivMmcPortE3",
+  "zxnextWriteDivMmcPortE3",
+  "zxnextGetDivMmcEnabled",
+  "zxnextGetDivMmcConmem",
+  "zxnextGetDivMmcMapram",
+  "zxnextGetDivMmcBank",
+  "zxnextGetDivMmcPortE3Value",
+  "zxnextGetDivMmcEnableAutomap",
+  "zxnextGetDivMmcAutoMapActive",
+  "zxnextGetDivMmcRstTrapEnabledMask",
+  "zxnextGetDivMmcRstTrapOnlyWithRom3Mask",
+  "zxnextGetDivMmcRstTrapInstantMask",
+  "zxnextGetDivMmcEntry1",
   "zxnextGetNextRegIndex",
   "zxnextSetNextRegIndex",
   "zxnextReadNextRegData",
@@ -328,6 +367,11 @@ const requiredV2Exports = [
   "zxnextGetDiagnosticBufferSize",
   "zxnextGetFrames",
   "zxnextGetTacts",
+  "zxnextGetFrameTacts",
+  "zxnextGetCurrentFrameTact",
+  "zxnextGetCpuTactsPerFrame",
+  "zxnextGetFrameCallCount",
+  "zxnextGetLastFrameInstructionsExecuted",
   "zxnextSetTacts",
   "zxnextGetHardResetCount",
   "zxnextGetResetCount",
@@ -378,6 +422,12 @@ const requiredV2Exports = [
   "zxnextGetLastPortAddress",
   "zxnextGetLastPortValue",
   "zxnextGetLastPortIsWrite",
+  "zxnextGetUnsupportedPortReadCount",
+  "zxnextGetUnsupportedPortWriteCount",
+  "zxnextGetFirstUnsupportedPortAddress",
+  "zxnextGetFirstUnsupportedPortValue",
+  "zxnextGetFirstUnsupportedPortIsWrite",
+  "zxnextGetFirstUnsupportedPortOwnerStep",
   "zxnextGetLastTbBlueAddress",
   "zxnextGetLastTbBlueValue",
   "zxnextGetLastTbBlueIsWrite",
