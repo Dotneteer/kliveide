@@ -26,9 +26,36 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextReadRomByte: ZxNextWasmV2ExportFunction;
   zxnextReadMemory: ZxNextWasmV2ExportFunction;
   zxnextWriteMemory: ZxNextWasmV2ExportFunction;
+  zxnextReadScreenMemoryOffset: ZxNextWasmV2ExportFunction;
   zxnextReadPort: ZxNextWasmV2ExportFunction;
   zxnextWritePort: ZxNextWasmV2ExportFunction;
   zxnextSetPortReadValue: ZxNextWasmV2ExportFunction;
+  zxnextSetKeyboardRow: ZxNextWasmV2ExportFunction;
+  zxnextGetKeyboardRow: ZxNextWasmV2ExportFunction;
+  zxnextGetKeyboardRowWrites: ZxNextWasmV2ExportFunction;
+  zxnextSetExtendedKeyReg: ZxNextWasmV2ExportFunction;
+  zxnextGetExtendedKeyReg: ZxNextWasmV2ExportFunction;
+  zxnextReadUlaPort: ZxNextWasmV2ExportFunction;
+  zxnextWriteUlaPort: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaBorderColor: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaEarBit: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaMicBit: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaBeeperEar: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaBeeperMic: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaBit4ChangedFrom0Tacts: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaBit4ChangedFrom1Tacts: ZxNextWasmV2ExportFunction;
+  zxnextRenderInstantScreen: ZxNextWasmV2ExportFunction;
+  zxnextGetPixelBufferStartOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetScreenRenderingTacts: ZxNextWasmV2ExportFunction;
+  zxnextGetScreenIntStartTact: ZxNextWasmV2ExportFunction;
+  zxnextGetScreenIntEndTact: ZxNextWasmV2ExportFunction;
+  zxnextGetScreenIs60Hz: ZxNextWasmV2ExportFunction;
+  zxnextGetScreenRenderCount: ZxNextWasmV2ExportFunction;
+  zxnextGetScreenBank: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaRenderingFlags: ZxNextWasmV2ExportFunction;
+  zxnextGetRenderingHc: ZxNextWasmV2ExportFunction;
+  zxnextGetRenderingVc: ZxNextWasmV2ExportFunction;
+  zxnextGetRenderingPixelIndex: ZxNextWasmV2ExportFunction;
   zxnextReadNextReg: ZxNextWasmV2ExportFunction;
   zxnextWriteNextReg: ZxNextWasmV2ExportFunction;
   zxnextGetFlatMemorySize: ZxNextWasmV2ExportFunction;
@@ -68,6 +95,19 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetAllRamMode: ZxNextWasmV2ExportFunction;
   zxnextGetSpecialConfig: ZxNextWasmV2ExportFunction;
   zxnextGetUseShadowScreen: ZxNextWasmV2ExportFunction;
+  zxnextGetNextRegIndex: ZxNextWasmV2ExportFunction;
+  zxnextSetNextRegIndex: ZxNextWasmV2ExportFunction;
+  zxnextReadNextRegData: ZxNextWasmV2ExportFunction;
+  zxnextWriteNextRegData: ZxNextWasmV2ExportFunction;
+  zxnextGetNextRegLastReadValue: ZxNextWasmV2ExportFunction;
+  zxnextGetNextRegLastWrite: ZxNextWasmV2ExportFunction;
+  zxnextGetNextRegHasLastWrite: ZxNextWasmV2ExportFunction;
+  zxnextGetNextRegConfigMode: ZxNextWasmV2ExportFunction;
+  zxnextIsPortGroupEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetInternalPortEnable: ZxNextWasmV2ExportFunction;
+  zxnextGetBusPortEnable: ZxNextWasmV2ExportFunction;
+  zxnextNextRegHardReset: ZxNextWasmV2ExportFunction;
+  zxnextNextRegReset: ZxNextWasmV2ExportFunction;
   zxnextReadPhysical: ZxNextWasmV2ExportFunction;
   zxnextWritePhysical: ZxNextWasmV2ExportFunction;
   zxnextReadSramPage: ZxNextWasmV2ExportFunction;
@@ -192,9 +232,36 @@ const requiredV2Exports = [
   "zxnextReadRomByte",
   "zxnextReadMemory",
   "zxnextWriteMemory",
+  "zxnextReadScreenMemoryOffset",
   "zxnextReadPort",
   "zxnextWritePort",
   "zxnextSetPortReadValue",
+  "zxnextSetKeyboardRow",
+  "zxnextGetKeyboardRow",
+  "zxnextGetKeyboardRowWrites",
+  "zxnextSetExtendedKeyReg",
+  "zxnextGetExtendedKeyReg",
+  "zxnextReadUlaPort",
+  "zxnextWriteUlaPort",
+  "zxnextGetUlaBorderColor",
+  "zxnextGetUlaEarBit",
+  "zxnextGetUlaMicBit",
+  "zxnextGetUlaBeeperEar",
+  "zxnextGetUlaBeeperMic",
+  "zxnextGetUlaBit4ChangedFrom0Tacts",
+  "zxnextGetUlaBit4ChangedFrom1Tacts",
+  "zxnextRenderInstantScreen",
+  "zxnextGetPixelBufferStartOffset",
+  "zxnextGetScreenRenderingTacts",
+  "zxnextGetScreenIntStartTact",
+  "zxnextGetScreenIntEndTact",
+  "zxnextGetScreenIs60Hz",
+  "zxnextGetScreenRenderCount",
+  "zxnextGetScreenBank",
+  "zxnextGetUlaRenderingFlags",
+  "zxnextGetRenderingHc",
+  "zxnextGetRenderingVc",
+  "zxnextGetRenderingPixelIndex",
   "zxnextReadNextReg",
   "zxnextWriteNextReg",
   "zxnextGetFlatMemorySize",
@@ -234,6 +301,19 @@ const requiredV2Exports = [
   "zxnextGetAllRamMode",
   "zxnextGetSpecialConfig",
   "zxnextGetUseShadowScreen",
+  "zxnextGetNextRegIndex",
+  "zxnextSetNextRegIndex",
+  "zxnextReadNextRegData",
+  "zxnextWriteNextRegData",
+  "zxnextGetNextRegLastReadValue",
+  "zxnextGetNextRegLastWrite",
+  "zxnextGetNextRegHasLastWrite",
+  "zxnextGetNextRegConfigMode",
+  "zxnextIsPortGroupEnabled",
+  "zxnextGetInternalPortEnable",
+  "zxnextGetBusPortEnable",
+  "zxnextNextRegHardReset",
+  "zxnextNextRegReset",
   "zxnextReadPhysical",
   "zxnextWritePhysical",
   "zxnextReadSramPage",

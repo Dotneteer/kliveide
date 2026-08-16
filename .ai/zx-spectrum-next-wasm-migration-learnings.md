@@ -294,3 +294,173 @@ Use this shape:
   (`0x243b`/`0x253b`) and port-enable gates into WASM; Step 10 only wires the
   direct MMU register side effects and keeps the broader NextReg device
   TypeScript-owned.
+
+## 2026-08-16 - Step 11 - NextReg Core And Port Gates
+
+- Symptom: Step 10 could mutate MMU registers directly, but public NextReg
+  index/data ports and the IDE-facing `nextRegDevice` state still came from the
+  TypeScript device.
+- Root cause: `NextRegDevice` owns both descriptor metadata and a large amount
+  of register side-effect policy; moving everything at once would pull many
+  unrelated devices into the current slice.
+- Fix: Added a scoped WASM NextReg core with index/data ports `0x243b` and
+  `0x253b`, boot-relevant reset defaults, config-mode tracking, last-write
+  tracking, internal port enables `0x82..0x85`, expansion-bus port enables
+  `0x86..0x89`, and IO propagate storage.
+- Fix: Updated WASM memory-port writes so `0x7ffd`, `0xdffd`, `0x1ffd`, and
+  `0xeff7` honor the migrated enable gates and expansion-bus AND masking.
+- Adapter pattern: Keep descriptor metadata on the existing TypeScript
+  `nextRegDevice`, but patch the instance methods after WASM setup so value
+  reads, direct reads/writes, register-index state, last-write state, reset
+  helpers, and `isPortGroupEnabled()` observe WASM-owned state.
+- Parity lesson: `NR 0x85` bit 7 is reset-mode state, not an ordinary port
+  enable, but TypeScript `isPortGroupEnabled(3, 7)` falls through to `true`.
+  WASM should preserve that public behavior for parity.
+- Parity lesson: Full machine setup can leave some read functions with values
+  different from a direct `NextRegDevice.hardReset()` call. The Step 11
+  hard-reset default test explicitly calls `nextRegDevice.hardReset()` on both
+  machines before comparing reset defaults.
+- Tests: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-nextreg-ports.test.ts`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/zxnext/NextRegDevice.test.ts test/zxnext/PortEnableGating.test.ts`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`,
+  `npm run build:check`, and `npm run check:zxnext-wasm-size` passed.
+- Size: The production Next artifact is now 223,577 bytes against the 360,000
+  byte ceiling.
+- Follow-up: Later device slices should move the individual NextReg
+  side-effect owners, such as ULA, audio, sprites, palette, expansion-bus
+  ROMCS, DivMMC, and interrupts, out of the bridge gradually. The bridge keeps
+  the IDE panel coherent while that migration happens.
+
+## 2026-08-16 - Architecture Correction - Split ZX Next C Slices
+
+- Symptom: After Steps 9-11, `zxnext.c` had grown into a monolithic file with
+  memory/MMU, port decode, and NextReg logic.
+- Root cause: The early slices optimized for behavior and parity, but did not
+  follow the migration plan's `Proposed Files` section closely enough.
+- Fix: Split the Step 9-11 logic before starting Step 12:
+  - `zxnext.h` holds shared constants and cross-slice declarations.
+  - `zxnext-memory.c` holds physical memory, MMU, sentinel, memory sizing, and
+    partition inspection.
+  - `zxnext-ports.c` holds Next memory-port and NextReg port decode.
+  - `zxnext-nextreg.c` holds NextReg storage, reset defaults, index/data
+    helpers, config mode, and port-enable gates.
+  - `zxnext.c` is back to composition/glue: shared state, Z80 integration,
+    reset/frame entry points, ROM upload, CPU exports, and diagnostics.
+- Style: This follows the existing Spectrum WASM pattern where the primary
+  machine C file includes device `.c` slices. That keeps shared static state
+  simple while still giving each device area a clear file boundary.
+- Tests: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/zxnext/MemoryDevice.test.ts test/zxnext/NextRegDevice.test.ts test/zxnext/PortEnableGating.test.ts`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`,
+  `npm run build:check`, `npm run check:zxnext-wasm-size`, and
+  `git diff --check` passed.
+- Size: The production Next artifact is 223,575 bytes after the split, still
+  against the 360,000 byte ceiling.
+
+## 2026-08-16 - Step 12 - ULA Port And Keyboard Matrix
+
+- Fix: Added separate `zxnext-keyboard.c` and `zxnext-ula.c` slices rather than
+  growing `zxnext.c`. `zxnext-ports.c` only routes low-bit-zero ports into the
+  ULA slice.
+- Parity lesson: The shared Spectrum keyboard stores pressed keys as 1 bits in
+  each row, while ULA port reads return active-low values. WASM should sync the
+  pressed-bit row bytes and invert them only at the ULA read boundary.
+- Adapter pattern: Keep key queues and hotkey policy TypeScript-owned, but sync
+  only changed matrix rows to WASM before public `doReadPort()` calls that hit
+  ULA-owned ports.
+- Parity lesson: The Next ULA bit 6 behavior is issue-mode sensitive. EAR
+  contributes in both modes; MIC contributes only when NextReg `0x08` enables
+  issue 2 keyboard behavior.
+- Test lesson: Once ULA port decoding is present, even ports are not safe dummy
+  ports for generic CPU port-callback tests. Use a non-owned odd port when the
+  test is about the callback mechanism rather than ULA hardware behavior.
+- Tests: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-keyboard-ula.test.ts`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`,
+  `npm test -- --project jsdom test/zxnext/NextRegDevice.test.ts test/zxnext/PortEnableGating.test.ts`,
+  `npm run build:check`, `npm run check:zxnext-wasm-size`, and
+  `git diff --check` passed.
+- Size: The production Next artifact is now 224,808 bytes against the 360,000
+  byte ceiling.
+
+## 2026-08-16 - Step 13 - Standard ULA Screen Timing And Rendering
+
+- Fix: Added `zxnext-screen.c` for screen timing, selected screen-bank reads,
+  and standard ULA instant rendering. Keep later Layer 2, sprites, tilemap, and
+  palette-device behavior in their own planned slices.
+- Correction: The first Step 13 pass painted basic standard ULA pixels through a
+  row loop, but missed the ULA standard rendering tact table. The corrected
+  implementation now builds per-tact ULA flags, HC, VC, and bitmap-offset tables
+  for both timing modes, and `zxnextRenderInstantScreen()` iterates those tables.
+- Rendering lesson: ZX Spectrum Next standard ULA rendering uses the 720x288
+  renderer buffer. The 256 logical ULA pixels are doubled horizontally into the
+  512-pixel display area, starting at x=96. In 50 Hz mode the display starts at
+  y=48; in 60 Hz mode it starts at y=24.
+- Parity lesson: Standard ULA paper colors use palette indices 16-31, not the
+  same 0-15 range as ink. Border colors use the standard paper path
+  `16 + borderColor` while ULANext/ULA+ palette paths remain later work.
+- Memory lesson: `readScreenMemory()` must read from selected screen bank 5 or
+  shadow bank 7, independent of the currently mapped 64K window. In WASM this
+  belongs in the screen slice and should use physical SRAM offsets.
+- Timing lesson: Step 13 should expose 50/60 Hz frame tact counts and INT pulse
+  windows from `TimingConfig.ts`, but CPU-driven frame execution and render
+  scheduling stay in Step 14.
+- Test lesson: Screen tests should probe the timing/rendering table directly,
+  not only final pixels. Final pixels can be correct while the renderer misses
+  the architectural table that later frame, floating-bus, contention, and debug
+  features need.
+- Adapter pattern: Override `getPixelBuffer()`, `getPixelBufferBytes()`,
+  `screenWidthInPixels`, `screenHeightInPixels`, `renderInstantScreen()`, and
+  `getBufferStartOffset()` together. This is the IDE-visible renderer contract.
+- Tests: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-screen-ula.test.ts`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`,
+  `npm test -- --project jsdom test/zxnext/NextComposedScreenDevice.test.ts test/zxnext/UlaRendering.test.ts test/zxnext/NextRegDevice.test.ts`,
+  `npm run build:check`, `npm run check:zxnext-wasm-size`, and
+  `git diff --check` passed.
+- Size: The production Next artifact is now 228,096 bytes against the 360,000
+  byte ceiling.
+
+## 2026-08-16 - Plan Audit - Steps 9-13 Guardrail Failure
+
+- Symptom: Steps 9-13 were recorded as completed even though several TypeScript
+  source contracts were only partially migrated or not explicitly deferred.
+- Root cause: I treated focused WASM tests and useful baselines as completion
+  proof, instead of auditing every source TypeScript behavior, every public
+  adapter API, and every IDE-visible surface implied by the step descriptions.
+- Specific miss: The first Step 13 pass painted basic ULA pixels but omitted
+  the ULA standard rendering tact table. That was corrected, but it exposed why
+  final-pixel tests alone are not enough for architecture parity.
+- Specific miss: `ZxNextWasmV2Machine.getBufferStartOffset()` currently returns
+  the WASM pixel-buffer pointer, while the renderer contract expects a pixel
+  buffer start index. The TypeScript ZX Next implementation returns `0`; this
+  must be fixed and tested in Step 13A before Step 14.
+- Fix to process: The plan now marks Steps 9-13 as partial baselines, adds
+  blocking Step 13A, and requires a source-contract checklist before Step 14.
+- New rule: A step can be marked done only after the plan names audited source
+  files, destination files, migrated behaviors, raw WASM tests, public
+  `ZxNextWasmV2Machine` API parity tests, and every intentionally deferred
+  behavior with its later owning step.
+- Follow-up: Future remaining steps now include explicit source TypeScript
+  files, destination files, and step-local guardrails. Keep those sections
+  updated before implementation if ownership boundaries change.
+
+## 2026-08-16 - Step 13A - Steps 9-13 Parity Correction
+
+- Symptom: Several Step 9-13 contracts were either missing public adapter tests
+  or missing implementation despite the baseline being useful.
+- Fix: `ZxNextWasmV2Machine.getBufferStartOffset()` now returns renderer start
+  index `0`; the raw pixel-buffer pointer remains only a WASM typed-view detail.
+- Fix: `NextReg 0x69` bit 6 now aliases WASM `useShadowScreen`, so both
+  `readScreenMemory()` and standard ULA rendering select bank 7 through the
+  same public NextReg path as TypeScript.
+- Fix: ULA analog EAR behavior now records bit-4 rise/fall tacts and applies
+  the TypeScript capacitor-style decay rule on `0xfe` reads.
+- Fix: Extended keyboard read-only NextRegs `0xB0..0xB2` now sync from
+  `NextKeyboardDevice` into WASM before public NextReg reads and index/data
+  port reads.
+- Test lesson: Any renderer-facing adapter contract should be asserted through
+  `ZxNextWasmV2Machine`, not by comparing to raw WASM pointer exports.
+- Test lesson: Step 9 KS3 readiness needs public adapter assertions, not just
+  raw memory-size exports; the highest 4 MB page and invalid partition are now
+  covered through `getMemoryPartition()`.
+- Follow-up: Step 14 can start only because the remaining Step 9-13 omissions
+  are explicitly assigned to later device steps in the plan. Do not hide those
+  deferred items in frame execution.

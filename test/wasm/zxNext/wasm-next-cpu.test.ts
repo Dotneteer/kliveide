@@ -95,13 +95,13 @@ describe("ZX Spectrum Next WASM Z80N CPU baseline", () => {
 
   it("executes JP (C) through the port read callback", async () => {
     const { wasmMachine } = await createPair([0xed, 0x98]);
-    wasmMachine.setTestCpuRegisters({ bc: 0x1234, pc: 0x8000 });
+    wasmMachine.setTestCpuRegisters({ bc: 0x1235, pc: 0x8000 });
     wasmMachine.setPortReadValue(0x21);
 
     executeOneInstruction(wasmMachine);
 
     expect(wasmMachine.getTestCpuRegisters().pc).toBe(0x8840);
-    expect(wasmMachine.wasmV2Runtime?.exports.zxnextGetLastPortAddress()).toBe(0x1234);
+    expect(wasmMachine.wasmV2Runtime?.exports.zxnextGetLastPortAddress()).toBe(0x1235);
     expect(wasmMachine.wasmV2Runtime?.exports.zxnextGetLastPortIsWrite()).toBe(0);
   });
 

@@ -154,6 +154,11 @@ describe("ZX Spectrum Next WASM v2 memory/MMU baseline", () => {
     expect(wasm.zxnextGetMainRamPageCount()).toBe(480);
     expect(wasm.zxnextGetSentinelOffset()).toBe(0x400000);
     expect(machine.getWasmV2Diagnostics().mainRamPages).toBe(480);
+
+    wasm.zxnextWriteSramPage(479, 0x1fff, 0xa6);
+    expect(machine.getMemoryPartition(479)[0x1fff]).toBe(0xa6);
+    expect(machine.getMemoryPartition(480)[0]).toBe(INVALID_PAGE_VALUE);
+    expect(machine.getCurrentPartitions()).toEqual(DEFAULT_PARTITIONS);
   });
 
   it("rejects invalid memory sizes without mutating the current configuration", async () => {

@@ -1,6 +1,7 @@
 import type { MachineModel } from "@common/machines/info-types";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { ZxNextWasmV2LoaderOptions, ZxNextWasmV2Runtime } from "./wasm/ZxNextWasmV2Loader";
+import type { NextRegDeviceState } from "./NextRegDevice";
 
 import { MC_MEM_SIZE } from "@common/machines/constants";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
@@ -52,6 +53,18 @@ export type ZxNextWasmV2Diagnostics = {
   specialConfig: number;
   useShadowScreen: boolean;
   pagingEnabled: boolean;
+  keyboardRowWrites: number;
+  ulaBorderColor: number;
+  ulaEarBit: boolean;
+  ulaMicBit: boolean;
+  ulaBeeperEar: boolean;
+  ulaBeeperMic: boolean;
+  screenRenderingTacts: number;
+  screenIntStartTact: number;
+  screenIntEndTact: number;
+  screenIs60Hz: boolean;
+  screenRenderCount: number;
+  screenBank: number;
 };
 
 /**
@@ -61,6 +74,11 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: ZxNextWasmV2Runtime;
   private readonly wasmV2RomBytes = new Map<number, Uint8Array>();
+  private readonly wasmV2KeyboardRows = new Uint8Array(8);
+  private readonly wasmV2ExtendedKeyRegs = new Uint8Array(3);
+  private wasmV2KeyboardRowsValid = false;
+  private wasmV2ExtendedKeyRegsValid = false;
+  private wasmV2NextRegBridgeAttached = false;
 
   constructor(
     public readonly requestedModelInfo?: MachineModel,
@@ -82,13 +100,16 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
     this.configureWasmV2MemorySize(runtime);
     runtime.exports.zxnextHardReset();
+    this.invalidateWasmV2InputSync();
     this.replayRomBytesToWasmV2(runtime);
+    this.attachWasmV2NextRegBridge(runtime);
   }
 
   override hardReset(): void {
     super.hardReset();
     if (this.wasmV2Runtime != null) {
       this.wasmV2Runtime.exports.zxnextHardReset();
+      this.invalidateWasmV2InputSync();
       this.replayRomBytesToWasmV2(this.wasmV2Runtime);
     }
   }
@@ -97,6 +118,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     super.reset();
     if (this.wasmV2Runtime != null) {
       this.wasmV2Runtime.exports.zxnextReset();
+      this.invalidateWasmV2InputSync();
       this.replayRomBytesToWasmV2(this.wasmV2Runtime);
     }
   }
@@ -132,14 +154,59 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       allRamMode: runtime.exports.zxnextGetAllRamMode() !== 0,
       specialConfig: runtime.exports.zxnextGetSpecialConfig(),
       useShadowScreen: runtime.exports.zxnextGetUseShadowScreen() !== 0,
-      pagingEnabled: runtime.exports.zxnextGetPagingEnabled() !== 0
+      pagingEnabled: runtime.exports.zxnextGetPagingEnabled() !== 0,
+      keyboardRowWrites: runtime.exports.zxnextGetKeyboardRowWrites(),
+      ulaBorderColor: runtime.exports.zxnextGetUlaBorderColor(),
+      ulaEarBit: runtime.exports.zxnextGetUlaEarBit() !== 0,
+      ulaMicBit: runtime.exports.zxnextGetUlaMicBit() !== 0,
+      ulaBeeperEar: runtime.exports.zxnextGetUlaBeeperEar() !== 0,
+      ulaBeeperMic: runtime.exports.zxnextGetUlaBeeperMic() !== 0,
+      screenRenderingTacts: runtime.exports.zxnextGetScreenRenderingTacts(),
+      screenIntStartTact: runtime.exports.zxnextGetScreenIntStartTact(),
+      screenIntEndTact: runtime.exports.zxnextGetScreenIntEndTact(),
+      screenIs60Hz: runtime.exports.zxnextGetScreenIs60Hz() !== 0,
+      screenRenderCount: runtime.exports.zxnextGetScreenRenderCount(),
+      screenBank: runtime.exports.zxnextGetScreenBank()
     };
   }
 
   override readScreenMemory(offset: number): number {
     const runtime = this.wasmV2Runtime;
     if (runtime == null) return super.readScreenMemory(offset);
-    return runtime.exports.zxnextReadMemory(0x4000 + (offset & 0x3fff));
+    return runtime.exports.zxnextReadScreenMemoryOffset(offset & 0x3fff);
+  }
+
+  override get screenWidthInPixels(): number {
+    return this.wasmV2Runtime?.exports.zxnextGetScreenWidth() ?? super.screenWidthInPixels;
+  }
+
+  override get screenHeightInPixels(): number {
+    return this.wasmV2Runtime?.exports.zxnextGetScreenHeight() ?? super.screenHeightInPixels;
+  }
+
+  override getPixelBuffer(): Uint32Array {
+    return this.wasmV2Runtime?.pixelBuffer ?? super.getPixelBuffer();
+  }
+
+  override getPixelBufferBytes(): Uint8ClampedArray {
+    const runtime = this.requireWasmV2Runtime();
+    return runtime.pixelBufferBytes;
+  }
+
+  override renderInstantScreen(savedPixelBuffer?: Uint32Array): Uint32Array {
+    const runtime = this.requireWasmV2Runtime();
+    const pixels = runtime.pixelBuffer;
+    const snapshot = new Uint32Array(pixels);
+    if (savedPixelBuffer != null) {
+      pixels.set(savedPixelBuffer.subarray(0, pixels.length));
+    } else {
+      runtime.exports.zxnextRenderInstantScreen();
+    }
+    return snapshot;
+  }
+
+  override getBufferStartOffset(): number {
+    return this.wasmV2Runtime == null ? super.getBufferStartOffset() : 0;
   }
 
   override get64KFlatMemory(): Uint8Array {
@@ -218,11 +285,18 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.importWasmV2BusAccess(runtime);
   }
 
+  override doReadPort(address: number): number {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null || !isWasmV2OwnedPort(address)) return super.doReadPort(address);
+    if (isWasmV2UlaPort(address)) this.syncKeyboardToWasmV2(runtime);
+    if (isWasmV2NextRegPort(address)) this.syncExtendedKeyboardToWasmV2(runtime);
+    const value = runtime.exports.zxnextReadPort(address & 0xffff);
+    this.importWasmV2BusAccess(runtime);
+    return value;
+  }
+
   override tbblueOut(address: number, value: number): void {
     super.tbblueOut(address, value);
-    const runtime = this.wasmV2Runtime;
-    if (runtime == null) return;
-    runtime.exports.zxnextWriteNextReg(address & 0xff, value & 0xff);
   }
 
   override getCpuState(): any {
@@ -250,6 +324,74 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     runtime.exports.zxnextConfigureMemorySize(configured);
   }
 
+  private attachWasmV2NextRegBridge(runtime: ZxNextWasmV2Runtime): void {
+    if (this.wasmV2NextRegBridgeAttached) return;
+    this.wasmV2NextRegBridgeAttached = true;
+    const device = this.nextRegDevice;
+    const originalSetIndex = device.setNextRegisterIndex.bind(device);
+    const originalGetIndex = device.getNextRegisterIndex.bind(device);
+    const originalSetValue = device.setNextRegisterValue.bind(device);
+    const originalGetValue = device.getNextRegisterValue.bind(device);
+    const originalDirectGet = device.directGetRegValue.bind(device);
+    const originalDirectSet = device.directSetRegValue.bind(device);
+    const originalHardReset = device.hardReset.bind(device);
+    const originalReset = device.reset.bind(device);
+    const originalGetState = device.getNextRegDeviceState.bind(device);
+
+    device.setNextRegisterIndex = (reg: number): void => {
+      originalSetIndex(reg);
+      runtime.exports.zxnextSetNextRegIndex(reg & 0xff);
+    };
+    device.getNextRegisterIndex = (): number => {
+      return runtime.exports.zxnextGetNextRegIndex();
+    };
+    device.setNextRegisterValue = (value: number): void => {
+      originalSetValue(value);
+      runtime.exports.zxnextWriteNextRegData(value & 0xff);
+    };
+    device.getNextRegisterValue = (): number => {
+      const index = runtime.exports.zxnextGetNextRegIndex();
+      originalGetIndex();
+      originalGetValue();
+      if (isWasmV2ExtendedKeyboardReg(index)) this.syncExtendedKeyboardToWasmV2(runtime);
+      return runtime.exports.zxnextReadNextRegData();
+    };
+    device.directGetRegValue = (reg: number): number => {
+      originalDirectGet(reg);
+      if (isWasmV2ExtendedKeyboardReg(reg)) this.syncExtendedKeyboardToWasmV2(runtime);
+      return runtime.exports.zxnextReadNextReg(reg & 0xff);
+    };
+    device.directSetRegValue = (reg: number, value: number): void => {
+      originalDirectSet(reg, value);
+      runtime.exports.zxnextWriteNextReg(reg & 0xff, value & 0xff);
+    };
+    device.hardReset = (): void => {
+      originalHardReset();
+      runtime.exports.zxnextNextRegHardReset();
+    };
+    device.reset = (): void => {
+      originalReset();
+      runtime.exports.zxnextNextRegReset();
+    };
+    device.isPortGroupEnabled = (regIndex: number, bit: number): boolean => {
+      return runtime.exports.zxnextIsPortGroupEnabled(regIndex & 0x03, bit & 0x07) !== 0;
+    };
+    device.getNextRegDeviceState = (): NextRegDeviceState => {
+      this.syncExtendedKeyboardToWasmV2(runtime);
+      const state = originalGetState();
+      return {
+        lastRegisterIndex: runtime.exports.zxnextGetNextRegIndex(),
+        regs: state.regs.map((reg) => ({
+          id: reg.id,
+          lastWrite: runtime.exports.zxnextGetNextRegHasLastWrite(reg.id) !== 0
+            ? runtime.exports.zxnextGetNextRegLastWrite(reg.id)
+            : undefined,
+          value: reg.value == null ? undefined : runtime.exports.zxnextReadNextReg(reg.id)
+        }))
+      };
+    };
+  }
+
   private readWasmV2PhysicalSlice(runtime: ZxNextWasmV2Runtime, offset: number, length: number): Uint8Array {
     const result = new Uint8Array(length);
     const wasm = runtime.exports;
@@ -257,6 +399,40 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       result[i] = wasm.zxnextReadPhysical(offset + i);
     }
     return result;
+  }
+
+  private invalidateWasmV2InputSync(): void {
+    this.wasmV2KeyboardRowsValid = false;
+    this.wasmV2ExtendedKeyRegsValid = false;
+    this.wasmV2KeyboardRows.fill(0);
+    this.wasmV2ExtendedKeyRegs.fill(0);
+  }
+
+  private syncKeyboardToWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    const wasm = runtime.exports;
+    for (let line = 0; line < this.wasmV2KeyboardRows.length; line++) {
+      const rowValue = this.keyboardDevice.getKeyLineValue(line) & 0x1f;
+      if (this.wasmV2KeyboardRowsValid && this.wasmV2KeyboardRows[line] === rowValue) continue;
+      this.wasmV2KeyboardRows[line] = rowValue;
+      wasm.zxnextSetKeyboardRow(line, rowValue);
+    }
+    this.wasmV2KeyboardRowsValid = true;
+  }
+
+  private syncExtendedKeyboardToWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    const wasm = runtime.exports;
+    const keyboard = this.keyboardDevice;
+    const values = [
+      keyboard.nextRegB0Value & 0xff,
+      keyboard.nextRegB1Value & 0xff,
+      keyboard.nextRegB2Value & 0xff
+    ];
+    for (let index = 0; index < values.length; index++) {
+      if (this.wasmV2ExtendedKeyRegsValid && this.wasmV2ExtendedKeyRegs[index] === values[index]) continue;
+      this.wasmV2ExtendedKeyRegs[index] = values[index];
+      wasm.zxnextSetExtendedKeyReg(index, values[index]);
+    }
+    this.wasmV2ExtendedKeyRegsValid = true;
   }
 
   private requireWasmV2Runtime(): ZxNextWasmV2Runtime {
@@ -309,4 +485,22 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       this.lastIoReadValue = wasm.zxnextGetLastPortValue();
     }
   }
+}
+
+function isWasmV2NextRegPort(address: number): boolean {
+  const port = address & 0xffff;
+  return port === 0x243b || port === 0x253b;
+}
+
+function isWasmV2ExtendedKeyboardReg(reg: number): boolean {
+  const maskedReg = reg & 0xff;
+  return maskedReg >= 0xb0 && maskedReg <= 0xb2;
+}
+
+function isWasmV2UlaPort(address: number): boolean {
+  return (address & 0x0001) === 0x0000;
+}
+
+function isWasmV2OwnedPort(address: number): boolean {
+  return isWasmV2UlaPort(address) || isWasmV2NextRegPort(address);
 }

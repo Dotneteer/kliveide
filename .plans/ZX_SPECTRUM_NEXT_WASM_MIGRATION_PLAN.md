@@ -2,9 +2,11 @@
 
 Created: 2026-08-16
 
-Status: Steps 1-10 done; WASM artifact, loader, adapter skeleton, Z80N CPU
-baseline, core memory/MMU reset layout, and 128K/+3/Next memory-port paging in
-place
+Status: Steps 1-8 and Step 13A done. Steps 9-13 have useful WASM baselines
+whose audited gaps are now either fixed or explicitly deferred to later owning
+steps, so Step 14 may start. The current baselines cover core memory/MMU reset
+layout, 128K/+3/Next memory-port paging, NextReg core/gating, keyboard matrix
+sync, ULA `0xfe` behavior, and standard ULA instant screen rendering.
 
 ## Goal
 
@@ -42,6 +44,31 @@ Future implementation work should update this file after every completed slice:
   `.ai/zx-spectrum-next-wasm-migration-learnings.md`.
 
 Do not mark a step done without at least the focused tests listed for that step.
+
+Do not mark a step `Done` merely because a narrow smoke test or shortcut works.
+Before marking a migration step done, add a completion checklist that names:
+
+- every TypeScript source file audited for that step;
+- every destination C/WASM or adapter file changed for that step;
+- every source behavior migrated with a raw WASM test and a public-machine API
+  parity test;
+- every source behavior intentionally deferred, with the later step that owns
+  it.
+
+If any expected source behavior is neither migrated nor explicitly deferred, the
+step status must remain `Partial` and a correction step must be added before
+continuing.
+
+When a step migrates C/WASM device behavior, implement that behavior in the
+device slice named in `Proposed Files`. Keep `zxnext.c` limited to shared state,
+includes, reset/frame entry points, ROM upload, CPU exports, and generic
+diagnostics. Keep `zxnext-ports.c` limited to port decoding and routing into the
+owning device slices.
+
+Every step must include a step-local guardrail. The guardrail must state which
+destination slice owns the behavior, which TypeScript file is the oracle, and
+which public adapter API proves the IDE sees WASM-owned state. Future work must
+update that guardrail before implementation if the ownership boundary changes.
 
 ## Required Reading
 
@@ -241,10 +268,15 @@ logic, but they do not prove the IDE sees the same state.
 - `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`
 - `src/emu/machines/zxNext/wasm/zxnext/zxnext-ula.c`
 - `src/emu/machines/zxNext/wasm/zxnext/zxnext-screen.c`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-speed.c`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-layer2.c`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-lores.c`
 - `src/emu/machines/zxNext/wasm/zxnext/zxnext-palette.c`
 - `src/emu/machines/zxNext/wasm/zxnext/zxnext-keyboard.c`
 - `src/emu/machines/zxNext/wasm/zxnext/zxnext-sdcard.c`
 - `src/emu/machines/zxNext/wasm/zxnext/zxnext-divmmc.c`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-multiface.c`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-expansion.c`
 - `src/emu/machines/zxNext/wasm/zxnext/zxnext-interrupt.c`
 - `src/emu/machines/zxNext/wasm/zxnext/zxnext-audio.c`
 - `src/emu/machines/zxNext/wasm/zxnext/zxnext-psg.c`
@@ -283,6 +315,28 @@ Reuse shared C/WASM code only when behavior is genuinely shared. Good reuse
 candidates are Z80 base operations, Spectrum ULA/keyboard/beeper helpers, PSG
 core ideas, and +3 FDC lessons. Next-specific MMU, NextRegs, composed video,
 SD-card SPI, DMA, Copper, CTC, and Z80N behavior should live in `zxnext`.
+
+Architecture correction on 2026-08-16:
+
+- Steps 9-11 originally placed too much implementation into `zxnext.c`.
+- This was corrected before Step 12 by splitting the C code according to this
+  section:
+  - `zxnext.c` is now the composition/glue file with shared state, Z80
+    integration, reset/frame entry points, ROM upload, CPU exports, and generic
+    diagnostics.
+  - `zxnext-memory.c` owns physical memory, MMU, partitions, sentinel handling,
+    memory sizing, and memory inspection exports.
+  - `zxnext-ports.c` owns Next memory-port and NextReg port decoding.
+  - `zxnext-nextreg.c` owns NextReg storage, reset defaults, index/data helpers,
+    config mode, and port-enable gates.
+  - `zxnext.h` owns shared constants and cross-slice prototypes.
+- The project follows the existing Spectrum WASM include style: device `.c`
+  slices are included by `zxnext.c`, rather than compiled as separate object
+  files, so they can share bounded static state without linker-level plumbing.
+- Future migration steps must treat this as a guardrail: when adding ULA,
+  keyboard, screen, storage, audio, or peripheral behavior, add the logic to the
+  matching planned slice and update `zxnext.c` only for includes or tiny shared
+  state declarations.
 
 ## Test Migration Strategy
 
@@ -742,7 +796,7 @@ Completion notes:
 
 ### Step 9 - Core Memory And Reset Layout
 
-Status: Done on 2026-08-16
+Status: Partial baseline completed on 2026-08-16; parity gaps audited in Step 13A
 
 Move the configurable Next memory map into C, prepared for the 4 MB ZX Spectrum
 Next KS3 edition.
@@ -831,7 +885,7 @@ Completion notes:
 
 ### Step 10 - 128K/+3/Next MMU Ports
 
-Status: Done on 2026-08-16
+Status: Partial baseline completed on 2026-08-16; parity gaps audited in Step 13A
 
 Implement memory ports and MMU register effects required for boot.
 
@@ -893,7 +947,7 @@ Completion notes:
 
 ### Step 11 - NextReg Core And Port Enable Gates
 
-Status: Not started
+Status: Partial baseline completed on 2026-08-16; parity gaps audited in Step 13A
 
 Move NextReg storage and side effects needed by boot into WASM.
 
@@ -921,9 +975,38 @@ Definition of done:
 
 - NextReg panel state reads WASM-owned values through public machine APIs.
 
+Completion notes:
+
+- Implemented WASM NextReg index/data ports `0x243b` and `0x253b`.
+- Added boot-relevant NextReg hard/soft reset defaults, including MMU
+  registers, common video/palette/storage defaults, expansion-bus defaults, and
+  internal port-enable defaults.
+- Added WASM state for NextReg index, last read value, last write values,
+  config mode, internal port enables `0x82..0x85`, expansion-bus port enables
+  `0x86..0x89`, and IO propagate register `0x8a`.
+- Implemented effective port-enable checks with expansion-bus AND masking when
+  `NR 0x80` enables the bus.
+- Updated WASM memory-port writes so `0x7ffd`, `0xdffd`, `0x1ffd`, and
+  `0xeff7` obey the migrated gates.
+- Bridged the existing TypeScript `nextRegDevice` instance in
+  `ZxNextWasmV2Machine`: descriptor metadata remains TypeScript-owned, while
+  value reads, last-register index, last-write state, direct reads/writes,
+  hard/soft reset helpers, and `isPortGroupEnabled()` observe WASM-owned state
+  once the runtime is loaded.
+- Added a narrow adapter `doReadPort()` override for the NextReg index/data
+  ports.
+- Added `test/wasm/zxNext/wasm-next-nextreg-ports.test.ts`.
+- Current artifact size after NextReg core/gating: 223,577 bytes.
+- Validation:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-nextreg-ports.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/zxnext/NextRegDevice.test.ts test/zxnext/PortEnableGating.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size`
+
 ### Step 12 - ULA Port And Keyboard Matrix
 
-Status: Not started
+Status: Partial baseline completed on 2026-08-16; parity gaps audited in Step 13A
 
 Implement enough input and ULA port behavior to interact with the boot menu.
 
@@ -954,9 +1037,35 @@ Definition of done:
 - Keyboard state affects WASM port reads before frame execution and before
   direct `doReadPort()` calls.
 
+Completion notes:
+
+- Added `zxnext-keyboard.c` for pressed-bit keyboard row storage, active-low row
+  reads, changed-row export updates, and row-write diagnostics.
+- Added `zxnext-ula.c` for ULA `0xfe` reads/writes, including border color,
+  EAR/MIC latch state, issue 2/3 bit 6 behavior, and beeper latch diagnostics.
+- Updated `zxnext-ports.c` to route all low-bit-zero ports to ULA behavior
+  before generic fallback reads.
+- Updated `ZxNextWasmV2Machine` so public `doReadPort()` syncs only changed
+  keyboard rows before WASM-owned ULA reads, while hotkey and key queue policy
+  remains TypeScript-owned.
+- Extended WASM loader/build exports and diagnostics with keyboard row and ULA
+  state needed by tests and IDE-facing inspection.
+- Added `test/wasm/zxNext/wasm-next-keyboard-ula.test.ts`.
+- Adjusted the Z80N CPU callback test to use a non-ULA odd dummy port now that
+  even ports are hardware-owned.
+- Current artifact size after keyboard/ULA: 224,808 bytes.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-keyboard-ula.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`
+  - `npm test -- --project jsdom test/zxnext/NextRegDevice.test.ts test/zxnext/PortEnableGating.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size`
+  - `git diff --check`
+
 ### Step 13 - Standard ULA Screen Timing And Rendering
 
-Status: Not started
+Status: Partial baseline completed on 2026-08-16; parity gaps audited in Step 13A
 
 Implement the standard ULA screen path before Layer 2, sprites, or tilemap.
 
@@ -987,6 +1096,313 @@ Definition of done:
 - A WASM frame can display the standard ULA screen through the renderer fast
   pixel path.
 
+Completion notes:
+
+- Added `zxnext-screen.c` as the dedicated screen slice for Step 13.
+- Implemented 720x288 pixel-buffer instant rendering for the standard ULA
+  layer, including default ULA palette mapping, border fill, active display
+  placement, doubled horizontal pixels, pixel-byte and attribute decoding, and
+  screen-bank selection.
+- Added WASM-side ULA standard rendering tact tables for both 50 Hz and 60 Hz:
+  per-tact HC, VC, bitmap offset, and ULA rendering flags. The instant renderer
+  now iterates this table instead of using an ad hoc row loop.
+- Added screen timing state and probes for the Next +3 50 Hz and 60 Hz timing
+  configurations from `TimingConfig.ts`, including frame tact count and INT
+  pulse start/end.
+- Wired NextReg `0x05` bit 2 into WASM screen timing so public
+  `nextRegDevice` writes update both TypeScript oracle state and WASM state.
+- Added WASM screen-memory reads from the selected screen bank, so
+  `readScreenMemory()` no longer depends on the currently mapped `0x4000`
+  window.
+- Updated the adapter to expose WASM-owned `screenWidthInPixels`,
+  `screenHeightInPixels`, `getPixelBuffer()`, `getPixelBufferBytes()`,
+  `renderInstantScreen()`, and `getBufferStartOffset()`.
+- Added `test/wasm/zxNext/wasm-next-screen-ula.test.ts`.
+- Scope note: Step 13 implements instant standard ULA rendering. CPU-driven
+  frame execution and per-frame render scheduling remain Step 14.
+- Correction note: The first Step 13 pass rendered correct basic pixels but did
+  not implement the ULA standard rendering tact table. This was corrected before
+  moving to Step 14, and `wasm-next-screen-ula.test.ts` now probes the table
+  directly.
+- Current artifact size after standard ULA screen rendering: 228,096 bytes.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-screen-ula.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`
+  - `npm test -- --project jsdom test/zxnext/NextComposedScreenDevice.test.ts test/zxnext/UlaRendering.test.ts test/zxnext/NextRegDevice.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size`
+  - `git diff --check`
+
+### Step 13A - Audit And Fix Steps 9-13 Parity Gaps
+
+Status: Done on 2026-08-16; Step 14 may start after the validations below stay
+green
+
+Do not continue to Step 14 until this step is complete. This step exists
+because Steps 9-13 were marked too optimistically: they established useful
+baselines, but did not migrate every TypeScript contract implied by their
+original descriptions.
+
+Audit method:
+
+- For each TypeScript source listed below, create a checklist of public fields,
+  public methods, port handlers, NextReg side effects, reset side effects, and
+  IDE-visible adapter APIs touched by Steps 9-13.
+- Mark each item as:
+  - `Migrated and tested`;
+  - `Implemented but missing public API parity test`;
+  - `Missing and must fix in Step 13A`;
+  - `Intentionally deferred`, with the owning later step.
+- Add the checklist to this plan before marking Step 13A done.
+
+Source TypeScript files to audit:
+
+- Memory and reset:
+  - `src/emu/machines/zxNext/MemoryDevice.ts`;
+  - `src/emu/machines/zxNext/ZxNextMachine.ts`;
+  - `src/emu/machines/zxNext/Z80NMachineBase.ts`.
+- Ports and NextRegs:
+  - `src/emu/machines/zxNext/io-ports/NextIoPortManager.ts`;
+  - `src/emu/machines/zxNext/NextRegDevice.ts`;
+  - all currently used port handlers under
+    `src/emu/machines/zxNext/io-ports/` whose ports overlap Steps 9-13.
+- ULA port and keyboard:
+  - `src/emu/machines/zxNext/UlaDevice.ts`;
+  - `src/emu/machines/zxNext/NextKeyboardDevice.ts`;
+  - `src/emu/machines/zxSpectrum/SpectrumKeyboardDevice.ts`.
+- Standard ULA screen:
+  - `src/emu/machines/zxNext/screen/TimingConfig.ts`;
+  - `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`;
+  - `src/emu/machines/zxNext/screen/screen_rendering.md`;
+  - `src/emu/machines/zxNext/PaletteDevice.ts` only for default standard ULA
+    palette behavior; full palette mutation remains Step 21.
+- Adapter/IDE surface:
+  - `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+  - `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+  - `src/renderer/abstractions/IAnyMachine.ts`;
+  - `src/renderer/features/emulator/useEmulatorScreen.ts`.
+
+Destination files for fixes:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-memory.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-keyboard.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ula.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-screen.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext.h`;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+- `scripts/build-zxnext-wasm.cjs`;
+- tests under `test/wasm/zxNext/`.
+
+Known missing or questionable items from the first audit pass:
+
+Current audit result: Steps 9-13 are not parity-complete. Do not treat any of
+the baseline completion notes above as sufficient proof of full migration until
+the items below have either been fixed and tested or explicitly deferred with an
+owning later step.
+
+- Step 9 memory/reset:
+  - Missing explicit audit/test that WASM reset and hard reset match
+    `MemoryDevice.reset()` and full-machine setup for every state Step 9
+    claimed to own.
+  - Missing explicit public-API 4 MB KS3 adapter coverage for highest valid
+    page, sentinel page, `getMemoryPartition()`, and invalid partitions.
+  - Missing explicit deferred list for TypeScript memory features that are not
+    Step 9-owned, including DivMMC automap mapping, Multiface mapping, config
+    ROM/RAM mapping, Layer 2 mapping, ROMCS replacement, and fast-path flag
+    updates. These must be documented as Step 16, Step 22, or Step 30 owners
+    rather than being silently omitted.
+- Step 10 memory ports:
+  - Need source-contract parity for all read/write side effects of
+    `0x7ffd`, `0xdffd`, `0x1ffd`, and `0xeff7`, including public latch getters
+    and any readable port behavior TypeScript exposes.
+  - Missing `NextReg 0x69` ULA shadow-display alias behavior. TypeScript can
+    set `memoryDevice.useShadowScreen` through `NextRegDevice`; WASM currently
+    covers the `0x7ffd` path only.
+  - Need explicit tests proving shadow-screen selection affects both
+    `readScreenMemory()` and rendering through public APIs after every migrated
+    path, not only direct `0x7ffd` writes.
+- Step 11 NextReg core:
+  - The current WASM core is a boot-relevant subset, not a full
+    `NextRegDevice` migration. The plan must say this plainly and list every
+    deferred register range with its owner step.
+  - Missing or partial side effects for many registers in `NextRegDevice.ts`
+    that Steps 9-13 already touch indirectly: `0x03`, `0x04`, `0x05`,
+    `0x06`, `0x07`, `0x09`, `0x11`, `0x42`, `0x43`, `0x4a`, `0x4b`,
+    `0x68`, `0x69`, and screen clip/video-line registers.
+  - The adapter bridge currently calls original TypeScript methods for some
+    reads before returning WASM values. Audit whether those calls mutate
+    TypeScript-owned state or hide missing WASM side effects.
+- Step 12 ULA port and keyboard:
+  - Missing TypeScript ULA analog EAR behavior from `UlaDevice.readPort0xfe()`,
+    including tact-based capacitor-style decay after bit 4 transitions.
+  - Missing parity tests for ULA read behavior across tact deltas, not only
+    static EAR/MIC latch values.
+  - Missing WASM-owned extended keyboard NextReg values `0xB0..0xB2`, or an
+    explicit statement that they stay TypeScript-owned until a later input
+    step.
+  - Missing public parity tests for hotkey/key-queue preservation and extended
+    Next keyboard flags.
+  - Beeper latch is present, but audio sample generation and timing must be
+    explicitly deferred to Step 26.
+- Step 13 standard ULA screen:
+  - Corrected after review: ULA standard rendering tact tables now exist.
+    Keep them under Step 13A verification so they cannot regress.
+  - Missing exact Stage-1 standard ULA fetch/shift-register pipeline parity:
+    the current renderer iterates the tact table but still reads current
+    pixel/attribute bytes per visible pixel rather than reproducing the
+    TypeScript prefetch/shift-register path used for floating-bus and later
+    contention/debug behavior.
+  - Missing scroll X/Y, ULA clip window, ULA disable output, global
+    transparency/fallback handling, flash attribute timing, ULANext default
+    format rendering, ULA+ rendering, Timex hi-res/hi-color, LoRes replacement,
+    and palette mutation. Assign each explicitly to Step 13A, Step 21, or
+    Step 22.
+  - `getBufferStartOffset()` currently returns the WASM pixel-buffer pointer,
+    but the renderer contract expects a pixel-buffer start index. For ZX
+    Spectrum Next the TypeScript implementation returns `0`; fix this before
+    Step 14.
+  - Need public API tests for `getBufferStartOffset()` against the renderer
+    contract, not only raw WASM pointer validation.
+
+Implementation tasks:
+
+- Add the audit checklist described above to this plan.
+- Fix all items marked `Missing and must fix in Step 13A`.
+- For every item deferred to later steps, add the later step number and the
+  destination file that will own it.
+- Add tests that fail on the known mistakes:
+  - `getBufferStartOffset()` returns a renderer pixel index, not a pointer;
+  - `NextReg 0x69` shadow-screen alias affects memory and rendering;
+  - ULA analog EAR timing matches TypeScript for representative tact deltas;
+  - Step 13 renderer exposes and uses the ULA standard rendering tact table;
+  - public adapter APIs, not only raw exports, observe WASM-owned state.
+
+Tests:
+
+- Extend `test/wasm/zxNext/wasm-next-memory-mmu.test.ts`.
+- Extend `test/wasm/zxNext/wasm-next-nextreg-ports.test.ts`.
+- Extend `test/wasm/zxNext/wasm-next-keyboard-ula.test.ts`.
+- Extend `test/wasm/zxNext/wasm-next-screen-ula.test.ts`.
+- Add `test/wasm/zxNext/wasm-next-steps-9-13-audit.test.ts` if the audit
+  coverage does not fit cleanly into the existing files.
+- Run:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts`
+  - `npm test -- --project jsdom test/zxnext/MemoryDevice.test.ts test/zxnext/NextRegDevice.test.ts test/zxnext/NextComposedScreenDevice.test.ts test/zxnext/UlaRendering.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size`
+  - `git diff --check`
+
+Definition of done:
+
+- Steps 9-13 have an explicit source-contract checklist in this plan.
+- Every Step 9-13 behavior is either migrated and tested through raw exports
+  plus public APIs, or explicitly deferred to a later numbered step.
+- No Step 9-13 status says `Done` without a complete checklist and deferred
+  list.
+- Step 14 remains blocked until this step is done.
+
+Guardrail:
+
+- Do not implement Step 14 while any Step 13A audit item remains undecided.
+- Do not mark Step 13A done if the only proof is raw WASM exports; each fix must
+  have at least one public `ZxNextWasmV2Machine` API assertion.
+
+#### Step 13A Source-Contract Checklist
+
+Audited source TypeScript files:
+
+- `src/emu/machines/zxNext/MemoryDevice.ts`;
+- `src/emu/machines/zxNext/ZxNextMachine.ts`;
+- `src/emu/machines/zxNext/Z80NMachineBase.ts`;
+- `src/emu/machines/zxNext/io-ports/NextIoPortManager.ts`;
+- `src/emu/machines/zxNext/NextRegDevice.ts`;
+- `src/emu/machines/zxNext/UlaDevice.ts`;
+- `src/emu/machines/zxNext/NextKeyboardDevice.ts`;
+- `src/emu/machines/zxSpectrum/SpectrumKeyboardDevice.ts`;
+- `src/emu/machines/zxNext/screen/TimingConfig.ts`;
+- `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`;
+- `src/emu/machines/zxNext/screen/screen_rendering.md`;
+- `src/emu/machines/zxNext/PaletteDevice.ts` for default standard ULA palette
+  behavior only;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+- `src/renderer/abstractions/IAnyMachine.ts`;
+- `src/renderer/features/emulator/useEmulatorScreen.ts`.
+
+Destination files changed in Step 13A:
+
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-keyboard.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ula.c`;
+- `scripts/build-zxnext-wasm.cjs`;
+- `test/wasm/zxNext/wasm-next-memory-mmu.test.ts`;
+- `test/wasm/zxNext/wasm-next-keyboard-ula.test.ts`;
+- `test/wasm/zxNext/wasm-next-screen-ula.test.ts`.
+
+Migrated and tested in Step 13A:
+
+- Step 9: 4 MB KS3 public adapter coverage now includes highest valid page,
+  sentinel-backed invalid partition, `getMemoryPartition()`, diagnostics, and
+  current partition assertions in `wasm-next-memory-mmu.test.ts`.
+- Step 10/13: `NextReg 0x69` bit 6 now aliases ULA shadow display selection in
+  WASM and affects `readScreenMemory()` plus public `renderInstantScreen()`.
+- Step 11/12: extended keyboard read-only NextRegs `0xB0..0xB2` now sync from
+  `NextKeyboardDevice` into WASM before public NextReg reads and index/data
+  port reads.
+- Step 12: ULA analog EAR timing now follows `UlaDevice.readPort0xfe()` using
+  bit-4 rise/fall tacts and capacitor-style decay.
+- Step 13: `ZxNextWasmV2Machine.getBufferStartOffset()` now returns the
+  renderer pixel-buffer start index `0`, while the raw WASM pointer remains a
+  loader/view detail.
+- Step 13: ULA standard rendering tact-table probes remain covered so future
+  frame work cannot silently replace the table with a row-loop shortcut.
+
+Explicitly deferred after audit:
+
+- DivMMC automap, MAPRAM, CONMEM, DivMMC RAM/ROM overlays, and DivMMC NMI
+  mapping are Step 16, owned by `zxnext-divmmc.c`,
+  `zxnext-memory.c`, `zxnext-nextreg.c`, and `zxnext-ports.c`.
+- SD-card SPI protocol and sector frame-command bridging are Step 17, owned by
+  `zxnext-sdcard.c`, `zxnext-ports.c`, and `ZxNextWasmV2Machine.ts`.
+- Multiface, expansion-bus ROMCS replacement, expansion NMI, and related memory
+  overlays are Step 30, owned by `zxnext-multiface.c`,
+  `zxnext-expansion.c`, `zxnext-memory.c`, `zxnext-interrupt.c`, and
+  `zxnext-ports.c`.
+- Layer 2 memory windows, LoRes, ULA scroll X/Y, ULA clip windows, ULA disable
+  output, global transparency/fallback, ULANext default format rendering,
+  Timex hi-res/hi-color, ULA+, and palette mutation are Steps 21 and 22, owned
+  by `zxnext-palette.c`, `zxnext-screen.c`, `zxnext-layer2.c`, and
+  `zxnext-lores.c`.
+- Exact Stage-1 standard ULA prefetch/shift-register and floating-bus parity is
+  deferred to Step 14/19 where CPU-driven frame timing, contention, and bus
+  diagnostics are introduced. The existing Step 13 table remains the required
+  foundation.
+- Beeper/audio sample generation, audio timing, PSG, DAC, and mixer behavior
+  are Step 26, owned by `zxnext-audio.c`, `zxnext-psg.c`, and `zxnext-dac.c`.
+- Remaining full `NextRegDevice` side-effect ranges outside Steps 9-13 stay
+  with their owning device steps: speed/contention in Step 19, interrupts/NMI in
+  Step 20, palette/video in Steps 21-25, audio in Step 26, DMA/Copper/CTC in
+  Steps 27-29, peripherals in Steps 31-33, and complete IDE diagnostics in Step
+  34.
+
+Completion validation:
+
+- `npm run build:zxnext-wasm`
+- `npm test -- --project jsdom test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts`
+- `npm test -- --project jsdom test/zxnext/MemoryDevice.test.ts test/zxnext/NextRegDevice.test.ts test/zxnext/PortEnableGating.test.ts test/zxnext/NextComposedScreenDevice.test.ts test/zxnext/UlaRendering.test.ts`
+- `npm test -- --project jsdom test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts`
+- `npm run build:check`
+- `npm run check:zxnext-wasm-size`
+- `git diff --check`
+
 ### Step 14 - Minimal Frame Execution
 
 Status: Not started
@@ -1002,6 +1418,29 @@ Implementation:
 - Avoid full register sync in normal running.
 - Keep TypeScript debug policy but use C-owned single-instruction stepping when
   debug mode requests it.
+
+Source TypeScript:
+
+- `src/emu/machines/zxNext/ZxNextMachine.ts`;
+- `src/emu/machines/zxNext/Z80NMachineBase.ts`;
+- `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`;
+- `src/emu/machines/zxNext/InterruptDevice.ts` for the early ULA interrupt
+  surface only.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-screen.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-interrupt.c` if interrupt pulse
+  state needs a slice before Step 20;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`.
+
+Guardrail:
+
+- Do not call TypeScript `executeMachineFrame()` or per-tact TypeScript
+  rendering from the WASM normal frame path.
+- Do not mark done until diagnostics prove one frame call crosses JS/WASM once
+  plus bounded changed-input sync.
 
 Tests:
 
@@ -1031,6 +1470,25 @@ Implementation:
   values.
 - Add diagnostics for first unimplemented port/device hit to guide next steps.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/ZxNextMachine.ts`;
+- `src/emu/machines/zxNext/io-ports/NextIoPortManager.ts`;
+- `src/emu/machines/zxNext/bootsequence.txt`;
+- `src/emu/machines/zxNext/debug.txt`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- `test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts`.
+
+Guardrail:
+
+- Every unsupported boot-time port must be logged with a source owner and later
+  migration step. Do not silently return `0xff` without a diagnostic counter.
+
 Tests:
 
 - Add a boot smoke in `wasm-next-boot-storage-ula.test.ts`.
@@ -1059,6 +1517,30 @@ Implementation:
 - Implement DivMMC NMI hold pieces that affect memory mapping.
 - Keep app-level NMI button policy in TypeScript if needed, but C must own hot
   memory-map effects.
+
+Source TypeScript:
+
+- `src/emu/machines/zxNext/storage/DivMmcDevice.ts`;
+- `src/emu/machines/zxNext/storage/IDivMmcDevice.ts`;
+- `src/emu/machines/zxNext/DivMmcDevice.ts` if still referenced by legacy
+  code paths;
+- `src/emu/machines/zxNext/MemoryDevice.ts`;
+- `src/emu/machines/zxNext/NextRegDevice.ts`;
+- `src/emu/machines/zxNext/ZxNextMachine.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-divmmc.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-memory.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`.
+
+Guardrail:
+
+- Do not implement DivMMC as a TypeScript callback on every memory access. The
+  active memory-map decision must be C-owned and covered by public memory API
+  tests.
 
 Tests:
 
@@ -1095,6 +1577,26 @@ Implementation:
 - Adapter feeds read/write responses back into WASM.
 - Preserve response timing race protections.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/SdCardDevice.ts`;
+- `src/emu/machines/zxNext/ZxNextMachine.ts` frame-command handling;
+- `src/emu/machines/zxNext/io-ports/NextIoPortManager.ts`;
+- `src/emu/machines/zxNext/mmc.txt`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-sdcard.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`.
+
+Guardrail:
+
+- Keep sector persistence and project/file-provider policy in TypeScript, but
+  keep command parsing, response state, and SPI byte behavior in WASM. Do not
+  cross JS/WASM for every SPI bit/byte during normal frame execution.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-storage.test.ts`.
@@ -1126,6 +1628,25 @@ Implementation:
   - unimplemented port hits;
   - non-blank pixel count.
 - Keep unimplemented devices inert but parity-compatible.
+
+Source TypeScript:
+
+- `src/emu/machines/zxNext/ZxNextMachine.ts`;
+- `src/emu/machines/zxNext/MemoryDevice.ts`;
+- `src/emu/machines/zxNext/storage/DivMmcDevice.ts`;
+- `src/emu/machines/zxNext/SdCardDevice.ts`;
+- `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`.
+
+Destination files:
+
+- integration of existing WASM slices from Steps 9-17;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- `test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts`.
+
+Guardrail:
+
+- This is a milestone test, not a place to add large new device logic. If boot
+  requires new behavior, add it to the owning device step or Step 13A first.
 
 Tests:
 
@@ -1171,6 +1692,28 @@ Implementation:
 - Keep high-level debugger policy in TypeScript, but ensure every displayed
   value comes from WASM-owned state while the WASM backend is selected.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/ZxNextMachine.ts`;
+- `src/emu/machines/zxNext/Z80NMachineBase.ts`;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- `src/renderer/abstractions/IAnyMachine.ts`;
+- `src/renderer/features/emulator/useEmulatorScreen.ts`;
+- IDE panels or services that read machine internals, discovered with `rg`
+  before implementation.
+
+Destination files:
+
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+- relevant C slices for structured diagnostic snapshots;
+- `test/wasm/zxNext/wasm-next-ide-inspection.test.ts`.
+
+Guardrail:
+
+- Every IDE-visible value must have a public API parity assertion. Do not rely
+  on raw exports as proof that the renderer/debugger panels see the right data.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-ide-inspection.test.ts`.
@@ -1207,6 +1750,27 @@ Implementation:
 - Implement RAM/port contention disable flags and 128K-style contended ranges.
 - Preserve write-delay behavior currently modeled by TypeScript.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/CpuSpeedDevice.ts`;
+- `src/emu/machines/zxNext/MemoryDevice.ts`;
+- `src/emu/machines/zxNext/NextRegDevice.ts`;
+- `src/emu/machines/zxNext/Z80NMachineBase.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-memory.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`;
+- add `src/emu/machines/zxNext/wasm/zxnext/zxnext-speed.c` if speed logic
+  grows beyond tiny shared helpers.
+
+Guardrail:
+
+- Do not hide speed/contended timing behind arbitrary tact constants. Every
+  timing constant must point back to a TypeScript source or documented hardware
+  timing note, and tacts must be compared through public CPU/frame APIs.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-contention-speed.test.ts`.
@@ -1236,6 +1800,31 @@ Implementation:
 - Port DMA/CTC interrupt inputs as those devices come online.
 - Port stackless NMI, Multiface NMI, DivMMC NMI, expansion-bus NMI, hold/end
   states, and RETN side effects.
+
+Source TypeScript:
+
+- `src/emu/machines/zxNext/InterruptDevice.ts`;
+- `src/emu/machines/zxNext/ZxNextMachine.ts`;
+- `src/emu/machines/zxNext/MultifaceDevice.ts`;
+- `src/emu/machines/zxNext/ExpansionBusDevice.ts`;
+- `src/emu/machines/zxNext/storage/DivMmcDevice.ts`;
+- `src/emu/machines/zxNext/DmaDevice.ts`;
+- `src/emu/machines/zxNext/CtcDevice.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-interrupt.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-divmmc.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-multiface.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-expansion.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-dma.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ctc.c`.
+
+Guardrail:
+
+- Interrupt/NMI causes must be represented as structured WASM state, not as
+  scattered booleans in unrelated slices. Public RETN/NMI/debug-step tests must
+  prove the adapter imports the WASM state.
 
 Tests:
 
@@ -1269,6 +1858,27 @@ Implementation:
 - Port ULA+ register/data ports.
 - Apply palette changes in the ULA renderer.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/PaletteDevice.ts`;
+- `src/emu/machines/zxNext/palette.ts`;
+- `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`;
+- `src/emu/machines/zxNext/io-ports/UlaPlusDataPortHandler.ts`;
+- `src/emu/machines/zxNext/NextRegDevice.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-palette.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-screen.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`.
+
+Guardrail:
+
+- Do not keep using the hard-coded default ULA palette after this step. Palette
+  reads/writes must affect rendering through WASM-owned palette arrays and
+  public pixel-buffer tests.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-palette-ulaplus.test.ts`.
@@ -1297,6 +1907,30 @@ Implementation:
 - Port LoRes behavior used by current tests.
 - Compose Layer 2 with ULA according to current priority rules.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`;
+- `src/emu/machines/zxNext/MemoryDevice.ts`;
+- `src/emu/machines/zxNext/PaletteDevice.ts`;
+- `src/emu/machines/zxNext/NextRegDevice.ts`;
+- `src/emu/machines/zxNext/screen/screen_rendering.md`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-screen.c`;
+- add `src/emu/machines/zxNext/wasm/zxnext/zxnext-layer2.c` if Layer 2 state
+  would make `zxnext-screen.c` too large;
+- add `src/emu/machines/zxNext/wasm/zxnext/zxnext-lores.c` if LoRes state
+  would make `zxnext-screen.c` too large;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-memory.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-palette.c`.
+
+Guardrail:
+
+- Split Layer 2/LoRes state out of `zxnext-screen.c` if the file stops being a
+  composition/timing owner. Every mapped-memory mode must have public memory
+  and pixel tests.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-layer2-lores.test.ts`.
@@ -1324,6 +1958,26 @@ Implementation:
   interactions used by current TypeScript rendering.
 - Integrate tilemap into composed screen rendering.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/TilemapDevice.ts`;
+- `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`;
+- `src/emu/machines/zxNext/tilemap-plan.md`;
+- `src/emu/machines/zxNext/PaletteDevice.ts`;
+- `src/emu/machines/zxNext/NextRegDevice.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-tilemap.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-screen.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-palette.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`.
+
+Guardrail:
+
+- Tilemap register/state ownership belongs in `zxnext-tilemap.c`; only final
+  layer composition belongs in `zxnext-screen.c`.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-tilemap.test.ts`.
@@ -1350,6 +2004,27 @@ Implementation:
 - Port sprite slot, status, attributes, pattern RAM, anchor behavior, clipping,
   dimensions, priority, and collision/status flags.
 - Integrate sprites into the composed screen pipeline.
+
+Source TypeScript:
+
+- `src/emu/machines/zxNext/SpriteDevice.ts`;
+- `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`;
+- `src/emu/machines/zxNext/screen/sprites.md`;
+- `src/emu/machines/zxNext/PaletteDevice.ts`;
+- `src/emu/machines/zxNext/NextRegDevice.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-sprites.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-screen.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-palette.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`.
+
+Guardrail:
+
+- Sprite slot, pattern RAM, and status state must not live in
+  `zxnext-screen.c`. Screen composition may consume sprite output, but
+  `zxnext-sprites.c` owns the device.
 
 Tests:
 
@@ -1385,6 +2060,27 @@ Implementation:
 - Preserve 50/60 Hz timing and interrupt pulses while rendering all layers.
 - Avoid copying full buffers between JS and WASM each frame.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`;
+- `src/emu/machines/zxNext/screen/screen_rendering.md`;
+- `src/emu/machines/zxNext/PaletteDevice.ts`;
+- `src/emu/machines/zxNext/TilemapDevice.ts`;
+- `src/emu/machines/zxNext/SpriteDevice.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-screen.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-palette.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-tilemap.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-sprites.c`.
+
+Guardrail:
+
+- This step is integration/composition only. If a layer device still lacks
+  state parity, return to that layer's owning step instead of hiding it in the
+  composition pipeline.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-screen-composition.test.ts`.
@@ -1412,6 +2108,35 @@ Implementation:
 - Port DAC channels and NextReg/port mappings.
 - Port audio mixer, mono/stereo routing, scaling, clipping, and state.
 - Expose raw `int16_t` stereo samples and normalized adapter samples.
+
+Source TypeScript:
+
+- `src/emu/machines/BeeperDevice.ts` and the current beeper usage from
+  `src/emu/machines/zxNext/UlaDevice.ts`;
+- `src/emu/machines/zxNext/TurboSoundDevice.ts`;
+- `src/emu/machines/zxNext/DacDevice.ts`;
+- `src/emu/machines/zxNext/DacNextRegDevice.ts`;
+- `src/emu/machines/zxNext/DacPortDevice.ts`;
+- `src/emu/machines/zxNext/AudioControlDevice.ts`;
+- `src/emu/machines/zxNext/AudioMixerDevice.ts`;
+- `src/emu/machines/zxNext/NextSoundDevice.ts`;
+- `src/emu/machines/zxNext/io-ports/AyRegPortHandler.ts`;
+- `src/emu/machines/zxNext/io-ports/AyDatPortHandler.ts`;
+- `src/emu/machines/zxNext/io-ports/DacPortHandler.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-audio.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-psg.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-dac.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`.
+
+Guardrail:
+
+- Audio device state belongs in audio/PSG/DAC slices, not in ULA or port glue.
+  Public `getAudioSamples()` must read normalized samples derived from the WASM
+  int16 buffer.
 
 Tests:
 
@@ -1450,6 +2175,26 @@ Implementation:
 - Integrate DMA with C-owned memory and port manager.
 - Integrate DMA interrupt signal with `InterruptDevice`.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/DmaDevice.ts`;
+- `src/emu/machines/zxNext/io-ports/Z80DmaPortHandler.ts`;
+- `src/emu/machines/zxNext/io-ports/ZxnDmaPortHandler.ts`;
+- `src/emu/machines/zxNext/MemoryDevice.ts`;
+- `src/emu/machines/zxNext/InterruptDevice.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-dma.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-memory.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-interrupt.c`.
+
+Guardrail:
+
+- DMA must use C-owned memory and port functions. Do not route each DMA byte
+  through TypeScript callbacks.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-dma.test.ts`.
@@ -1482,6 +2227,24 @@ Implementation:
 - Execute Copper ticks during screen rendering in WASM.
 - Apply Copper writes to WASM-owned NextRegs and rendering state.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/CopperDevice.ts`;
+- `src/emu/machines/zxNext/NextRegDevice.ts`;
+- `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-copper.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-screen.c`.
+
+Guardrail:
+
+- Copper writes must go through the same WASM NextReg write path as CPU and
+  port writes. Do not special-case direct field mutations that bypass register
+  side effects.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-copper.test.ts`.
@@ -1506,6 +2269,23 @@ Implementation:
   and lazy sync on port reads/writes.
 - Connect CTC interrupt outputs to the WASM interrupt device.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/CtcDevice.ts`;
+- `src/emu/machines/zxNext/io-ports/CtcPortHandler.ts`;
+- `src/emu/machines/zxNext/InterruptDevice.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ctc.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-interrupt.c`.
+
+Guardrail:
+
+- Lazy sync semantics from TypeScript must be represented explicitly in WASM
+  state and tests. Do not replace CTC with simple fixed read values.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-ctc.test.ts`.
@@ -1529,6 +2309,28 @@ Implementation:
   entry.
 - Port expansion bus registers, ROMCS replacement flags, propagation flags, and
   NMI debounce/causes.
+
+Source TypeScript:
+
+- `src/emu/machines/zxNext/MultifaceDevice.ts`;
+- `src/emu/machines/zxNext/ExpansionBusDevice.ts`;
+- `src/emu/machines/zxNext/MemoryDevice.ts`;
+- `src/emu/machines/zxNext/ZxNextMachine.ts`;
+- `src/emu/machines/zxNext/io-ports/MultifacePortHandler.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-multiface.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-expansion.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-memory.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-interrupt.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`.
+
+Guardrail:
+
+- ROMCS and NMI cause state must be owned by the memory/interrupt-affecting
+  device slices. Do not leave TypeScript memory selection active when WASM owns
+  memory reads.
 
 Tests:
 
@@ -1558,6 +2360,26 @@ Implementation:
 - Port Kempston joystick 1, joystick 1 alias, joystick 2, and MD selection.
 - Port Kempston mouse X/Y/wheel/buttons and enable gates.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/JoystickDevice.ts`;
+- `src/emu/machines/zxNext/MouseDevice.ts`;
+- `src/emu/machines/zxNext/io-ports/KempstonHandler.ts`;
+- `src/emu/machines/zxNext/NextRegDevice.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-input.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`.
+
+Guardrail:
+
+- Input state may be app-owned, but port decode and mode selection must be
+  WASM-owned once migrated. Sync changed state only, following the keyboard
+  pattern.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-input.test.ts`.
@@ -1582,6 +2404,29 @@ Implementation:
 - Port UART channels, FIFOs, Tx/Rx/select/frame ports, status, and per-frame
   auto-drain.
 - Port I2C SCL/SDA behavior and DS1307-style per-frame clock advance.
+
+Source TypeScript:
+
+- `src/emu/machines/zxNext/UartDevice.ts`;
+- `src/emu/machines/zxNext/I2cDevice.ts`;
+- `src/emu/machines/zxNext/io-ports/UartTxPortHandler.ts`;
+- `src/emu/machines/zxNext/io-ports/UartRxPortHandler.ts`;
+- `src/emu/machines/zxNext/io-ports/UartSelectPortHandler.ts`;
+- `src/emu/machines/zxNext/io-ports/UartFramePortHandler.ts`;
+- `src/emu/machines/zxNext/io-ports/I2cSclPortHandler.ts`;
+- `src/emu/machines/zxNext/io-ports/I2cSdaPortHandler.ts`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-uart.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-i2c.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`.
+
+Guardrail:
+
+- RTC/current-time policy must be explicit. If real host time remains
+  TypeScript-owned, WASM must receive bounded sync events rather than calling
+  out during every I2C transition.
 
 Tests:
 
@@ -1610,6 +2455,25 @@ Implementation:
   TypeScript but make public port behavior and motor/status state parity tests
   explicit.
 - Preserve current `DISK_*_CHANGES` persistence semantics if writes are moved.
+
+Source TypeScript:
+
+- `src/emu/machines/zxNext/io-ports/SpectrumP3FdcStatusPortHandler.ts`;
+- `src/emu/machines/zxNext/io-ports/SpectrumP3FdcControlPortHandler.ts`;
+- current floppy controller implementation used by the Next machine;
+- disk persistence code used by existing `DISK_*_CHANGES` properties.
+
+Destination files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-floppy.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`.
+
+Guardrail:
+
+- This step must first decide ownership. Do not half-port FDC state: either
+  document TypeScript ownership with parity tests, or move the hot port/status
+  state into `zxnext-floppy.c`.
 
 Tests:
 
@@ -1656,6 +2520,29 @@ Implementation:
 - Sync last bus events after debug steps.
 - Add diagnostics for JS/WASM crossing counts.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/ZxNextMachine.ts`;
+- `src/emu/machines/zxNext/Z80NMachineBase.ts`;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- `src/renderer/abstractions/IAnyMachine.ts`;
+- IDE/debugger renderer files discovered with:
+  `rg "getCpuState|readScreenMemory|getPixelBuffer|getMemoryPartition|directGetRegValue|lastIo" src/renderer src/emu`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+- relevant device slices for diagnostic snapshot exports;
+- `test/wasm/zxNext/wasm-next-ide-inspection.test.ts`.
+
+Guardrail:
+
+- No IDE-visible value may come from stale TypeScript device state after its
+  owning device has moved to WASM. Each public surface needs an assertion
+  through the adapter, not just a raw export.
+
 Tests:
 
 - Add public adapter parity tests to `ZxNextWasmV2Machine.test.ts` and
@@ -1690,6 +2577,26 @@ Implementation:
   - interrupt acknowledgement.
 - Run each against TypeScript and WASM where TypeScript determinism allows.
 
+Source TypeScript:
+
+- The source files for every device exercised by each program;
+- `src/emu/machines/zxNext/ZxNextMachine.ts`;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- existing `test/wasm/zxNext/wasm-next-*.test.ts` helpers.
+
+Destination files:
+
+- `test/wasm/zxNext/wasm-next-oracle-programs.test.ts`;
+- `test/wasm/zxNext/wasm-next-test-helpers.ts`;
+- device slices only when a test exposes a real migration gap assigned to a
+  previous owning step.
+
+Guardrail:
+
+- Oracle programs are regression tests, not a place to add hidden emulator
+  behavior. If a program fails because a device is incomplete, return to the
+  owning step and update its checklist.
+
 Tests:
 
 - Add `test/wasm/zxNext/wasm-next-oracle-programs.test.ts`.
@@ -1720,6 +2627,26 @@ Implementation:
 - Add a benchmark script or extend the Spectrum WASM benchmark pattern for
   Next.
 
+Source TypeScript:
+
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- migrated Spectrum WASM diagnostics/benchmark patterns;
+- build scripts under `scripts/`.
+
+Destination files:
+
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext.h`;
+- `scripts/benchmark-zxnext-wasm.cjs` if created;
+- `test/zxnext/ZxNextWasmV2Machine.test.ts`.
+
+Guardrail:
+
+- Performance diagnostics must count JS/WASM crossings during normal frames.
+  Do not accept a frame path that works by doing per-tact or per-port
+  TypeScript calls.
+
 Tests:
 
 - Add a diagnostics assertion to `ZxNextWasmV2Machine.test.ts`.
@@ -1745,6 +2672,27 @@ Implementation:
 - Keep explicit `"typescript"` fallback.
 - Ensure model picker remains implementation-neutral.
 - Update README/wasm folder notes.
+
+Source TypeScript:
+
+- `src/emu/machines/zxNext/ZxNextImplementation.ts`;
+- `src/emu/machines/zxNext/ZxNextMachineFactory.ts`;
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+- WASM README/docs under `src/emu/machines/zxNext/wasm/` if present;
+- project docs that mention ZX Spectrum Next implementation defaults.
+
+Destination files:
+
+- `src/emu/machines/zxNext/ZxNextImplementation.ts`;
+- `src/emu/machines/zxNext/ZxNextMachineFactory.ts`;
+- `src/emu/machines/zxNext/wasm/README.md`;
+- `.plans/ZX_SPECTRUM_NEXT_WASM_MIGRATION_PLAN.md`.
+
+Guardrail:
+
+- Do not switch the default until Step 13A, boot/storage milestone, IDE
+  inspection, performance audit, and manual smoke are all complete and recorded
+  with exact dates/commands.
 
 Tests:
 
@@ -1781,6 +2729,23 @@ Implementation:
 - Remove stale experimental build artifacts.
 - Keep test helpers that protect production contracts.
 - Do not remove TypeScript implementation or TypeScript tests.
+
+Source TypeScript:
+
+- Migration-specific WASM scaffolding files discovered with `git grep` and
+  plan references;
+- TypeScript implementation and tests only for reference, not deletion.
+
+Destination files:
+
+- obsolete migration scaffolding identified in the cleanup audit;
+- `.plans/ZX_SPECTRUM_NEXT_WASM_MIGRATION_PLAN.md`;
+- `.ai/zx-spectrum-next-wasm-migration-learnings.md`.
+
+Guardrail:
+
+- Cleanup must be deletion-only or documentation-only unless a test fails.
+  Never delete the TypeScript implementation or original TypeScript tests.
 
 Tests:
 
