@@ -91,6 +91,25 @@ static uint8_t divMmcRstTrapEnabled = 0u;
 static uint8_t divMmcRstTrapOnlyWithRom3 = 0xffu;
 static uint8_t divMmcRstTrapInstant = 0u;
 static uint8_t divMmcEntry1 = 0u;
+static uint8_t sdSelectedCard = 0u;
+static uint8_t sdCommandIndex[2] = { 0u, 0u };
+static uint8_t sdLastCommand[2] = { 0u, 0u };
+static uint8_t sdCommandParams[2][4];
+static uint8_t sdAcmd[2] = { 0u, 0u };
+static uint32_t sdTotalSectors[2] = { 0u, 0u };
+static uint8_t sdResponse[2][ZXNEXT_SD_RESPONSE_BUFFER_SIZE];
+static uint32_t sdResponseLength[2] = { 0u, 0u };
+static uint32_t sdResponseIndex[2] = { 0u, 0u };
+static uint8_t sdResponseReady[2] = { 0u, 0u };
+static uint8_t sdState[2] = { 0u, 0u };
+static uint8_t sdBlockToWrite[ZXNEXT_SD_COMMAND_BUFFER_SIZE];
+static uint32_t sdDataIndex[2] = { 0u, 0u };
+static uint32_t sdPendingCommand = 0u;
+static uint32_t sdPendingSector = 0u;
+static uint32_t sdPendingCard = 0u;
+static uint32_t sdCommandCount = 0u;
+static uint32_t sdReadRequestCount = 0u;
+static uint32_t sdWriteRequestCount = 0u;
 
 static uint8_t zxnextCpuReadMemory(uint32_t address);
 static void zxnextCpuWriteMemory(uint32_t address, uint32_t value);
@@ -125,6 +144,7 @@ static void advanceFrameTacts(uint32_t delta);
 #include "zxnext-memory.c"
 #include "zxnext-nextreg.c"
 #include "zxnext-divmmc.c"
+#include "zxnext-sdcard.c"
 #include "zxnext-keyboard.c"
 #include "zxnext-ula.c"
 #include "zxnext-screen.c"
@@ -132,6 +152,7 @@ static void advanceFrameTacts(uint32_t delta);
 
 static void clearRuntimeState(void) {
   resetDivMmcState();
+  resetSdCardState();
   resetKeyboardState();
   resetUlaState();
   resetScreenState();

@@ -32,8 +32,8 @@
 #define ZXNEXT_ULA_LOGICAL_WIDTH 256u
 #define ZXNEXT_ULA_LOGICAL_HEIGHT 192u
 #define ZXNEXT_AUDIO_SAMPLE_CAPACITY 4096u
-#define ZXNEXT_SD_COMMAND_BUFFER_SIZE 32u
-#define ZXNEXT_SD_RESPONSE_BUFFER_SIZE 512u
+#define ZXNEXT_SD_COMMAND_BUFFER_SIZE 520u
+#define ZXNEXT_SD_RESPONSE_BUFFER_SIZE 520u
 #define ZXNEXT_DIAGNOSTIC_BUFFER_SIZE 64u
 
 uint32_t zxnextReadPort(uint32_t address);
@@ -47,10 +47,14 @@ uint32_t zxnextReadDivMmcPortE3(void);
 void zxnextWriteDivMmcPortE3(uint32_t value);
 void zxnextSetDivMmcEnabled(uint32_t enabled);
 void zxnextSetDivMmcEnableAutomap(uint32_t enabled);
+uint32_t zxnextReadSpiDataPort(void);
+void zxnextWriteSpiDataPort(uint32_t value);
+void zxnextWriteSpiCsPort(uint32_t value);
 uint32_t zxnextReadUlaPort(uint32_t address);
 void zxnextWriteUlaPort(uint32_t value);
 uint32_t zxnextRenderInstantScreen(void);
 uint32_t zxnextReadScreenMemoryOffset(uint32_t offset);
+uint32_t zxnextGetScreenNonBlankPixelCount(void);
 uint32_t zxnextGetDiagnosticFlags(void);
 
 static uint32_t activeMemorySize(void);
@@ -70,6 +74,7 @@ static uint32_t divMmcReadOffset(uint32_t address);
 static uint32_t divMmcHandleWrite(uint32_t address, uint32_t value);
 static void zxnextDivMmcBeforeOpcodeFetch(uint32_t pc);
 static void zxnextDivMmcAfterOpcodeFetch(uint32_t retnExecuted);
+static void resetSdCardState(void);
 static void resetKeyboardState(void);
 static uint32_t readKeyboardRows(uint32_t address);
 static void resetUlaState(void);

@@ -32,6 +32,7 @@ static uint32_t screenRenderingTacts = ZXNEXT_50HZ_TOTAL_HC * ZXNEXT_50HZ_TOTAL_
 static uint32_t screenIntStartTact = ZXNEXT_50HZ_INT_START;
 static uint32_t screenIntEndTact = ZXNEXT_50HZ_INT_END;
 static uint32_t screenRenderCount = 0;
+static uint32_t screenNonBlankPixelCount = 0;
 static uint8_t screenTablesInitialized = 0;
 static uint16_t ulaTactToHc50Hz[ZXNEXT_50HZ_TACTS];
 static uint16_t ulaTactToVc50Hz[ZXNEXT_50HZ_TACTS];
@@ -212,6 +213,7 @@ static void resetScreenState(void) {
   initializeScreenRenderingTables();
   for (uint32_t i = 0; i < ZXNEXT_SCREEN_WIDTH * ZXNEXT_SCREEN_HEIGHT; i++) pixelBuffer[i] = 0x00000000u;
   screenRenderCount = 0;
+  screenNonBlankPixelCount = 0;
   updateScreenTimingFromNextRegs();
 }
 
@@ -237,6 +239,7 @@ uint32_t zxnextRenderInstantScreen(void) {
   updateScreenTimingFromNextRegs();
   const uint32_t borderPixel = defaultUlaPaletteBgra(16u + (ulaBorderColor & 0x07u));
   for (uint32_t i = 0; i < ZXNEXT_SCREEN_WIDTH * ZXNEXT_SCREEN_HEIGHT; i++) pixelBuffer[i] = 0x00000000u;
+  screenNonBlankPixelCount = 0;
 
   uint8_t *flagTable = activeUlaRenderingFlags();
   uint16_t *hcTable = activeUlaHcTable();
@@ -265,6 +268,7 @@ uint32_t zxnextRenderInstantScreen(void) {
     }
     pixelBuffer[(uint32_t)bitmapOffset] = pixel;
     pixelBuffer[(uint32_t)bitmapOffset + 1u] = pixel;
+    if (pixel != 0u) screenNonBlankPixelCount += 2u;
   }
 
   screenRenderCount++;
@@ -277,6 +281,7 @@ uint32_t zxnextGetScreenIntStartTact(void) { return screenIntStartTact; }
 uint32_t zxnextGetScreenIntEndTact(void) { return screenIntEndTact; }
 uint32_t zxnextGetScreenIs60Hz(void) { return screenIs60Hz; }
 uint32_t zxnextGetScreenRenderCount(void) { return screenRenderCount; }
+uint32_t zxnextGetScreenNonBlankPixelCount(void) { return screenNonBlankPixelCount; }
 uint32_t zxnextGetScreenBank(void) { return useShadowScreen != 0u ? 7u : 5u; }
 uint32_t zxnextGetUlaRenderingFlags(uint32_t tact) {
   initializeScreenRenderingTables();

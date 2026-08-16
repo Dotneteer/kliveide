@@ -2,14 +2,19 @@
 
 Created: 2026-08-16
 
-Status: Steps 1-8, Step 13A, and Steps 14-16 done. Steps 9-13 have useful WASM
+Status: Steps 1-8, Step 13A, and Steps 14-18 done. Steps 9-13 have useful WASM
 baselines whose audited gaps are now either fixed or explicitly deferred to
 later owning steps. The current baselines cover core memory/MMU reset layout,
 128K/+3/Next memory-port paging, NextReg core/gating, keyboard matrix sync, ULA
 `0xfe` behavior, standard ULA instant screen rendering, minimal WASM-owned
 normal frame execution, early storage-less boot/ULA smoke with unsupported-port
 diagnostics, and WASM-owned DivMMC control/memory-overlay behavior needed
-before SD-card SPI.
+before SD-card SPI. SD-card SPI command parsing and read/write sector journals
+now live in WASM while storage persistence remains in TypeScript. The first
+deterministic storage-backed boot smoke now proves CPU-driven SPI, sector
+frame-command servicing, and storage-backed ULA pixels; real NextZXOS
+start-menu/manual smoke still waits for a checked-in SD image fixture and later
+boot-time device slices.
 
 ## Goal
 
@@ -1728,7 +1733,7 @@ Completion notes:
 
 ### Step 17 - SD Card SPI State Machine
 
-Status: Not started
+Status: Done on 2026-08-16
 
 Implement SD-card command state inside WASM while keeping sector persistence in
 TypeScript/main process.
@@ -1778,9 +1783,65 @@ Definition of done:
 - The WASM machine can request sector reads/writes through the same TypeScript
   frame-command contract as the current machine.
 
+Completion checklist:
+
+- Audited TypeScript sources:
+  - `src/emu/machines/zxNext/SdCardDevice.ts`;
+  - `src/emu/machines/zxNext/ZxNextMachine.ts`;
+  - `src/emu/machines/zxNext/io-ports/NextIoPortManager.ts`;
+  - `src/emu/machines/zxNext/mmc.txt`;
+  - `test/zxnext/SdCardDevice.test.ts`.
+- Changed destination files:
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-sdcard.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.h`;
+  - `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+  - `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+  - `scripts/build-zxnext-wasm.cjs`;
+  - `test/wasm/zxNext/wasm-next-storage.test.ts`.
+- Migrated and tested:
+  - SPI chip-select decoding for card 0, card 1, and deselect paths;
+  - SPI data-port routing through WASM-owned public ports;
+  - SD command byte parsing and idle/ready/tran/data/write-wait states;
+  - CMD0, CMD8, CMD55, ACMD41, CMD58, CMD9/CSD, CMD10/CID, CMD13, CMD16,
+    CMD17, CMD24, and CMD59 responses needed by current boot/storage flows;
+  - CSD/CID/OCR payload construction and CRC16 for CID/read payloads;
+  - lazy adapter `getSdCardInfo` upload before SD frame-command processing;
+  - CMD17 read journals converted to `sd-read`/`sd-read-card1` frame commands;
+  - CMD24 write journals converted to `sd-write`/`sd-write-card1` frame
+    commands with 512-byte payloads;
+  - successful read responses, successful write responses, and failed write
+    responses fed back into WASM;
+  - mounted-card reset retention.
+- Raw WASM/public adapter coverage:
+  - `test/wasm/zxNext/wasm-next-storage.test.ts` exercises raw exports for card
+    info and diagnostics, and public `ZxNextWasmV2Machine` port/frame-command
+    APIs for SPI, read, write, failed write, lazy card-info, and reset
+    retention.
+  - `test/zxnext/SdCardDevice.test.ts` remains the TypeScript oracle suite.
+- Deferred behaviors:
+  - exact `READ_DELAY` tact timing and response race timing beyond frame-command
+    timeout protection stay with Step 18/Step 19 timing work;
+  - multi-block streaming commands beyond the single-block read/write boot path
+    stay with Step 34 storage robustness unless Step 18 proves they are needed
+    for the start-menu milestone;
+  - full card-1 media-mount policy and UI surfacing stay TypeScript-owned until
+    the later IDE/media integration steps;
+  - storage-backed boot success, sector contents from a real image, and
+    non-blank start-menu proof stay with Step 18.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-storage.test.ts`
+  - `npm test -- --project jsdom test/zxnext/SdCardDevice.test.ts`
+  - `npm test -- --project jsdom test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts test/wasm/zxNext/wasm-next-divmmc.test.ts test/wasm/zxNext/wasm-next-storage.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size` (175,276 bytes against 360,000)
+  - `git diff --check`
+
 ### Step 18 - Early Storage Boot Milestone
 
-Status: Not started
+Status: Done on 2026-08-16 for the deterministic storage-backed boot fixture
 
 Reach the first user-visible milestone: start menu, storage reads, standard ULA
 screen.
@@ -1833,6 +1894,56 @@ Definition of done:
 
 - This is the first acceptable early-start milestone even though Layer 2,
   sprites, tilemap, DMA, Copper, CTC, and full audio may still be incomplete.
+
+Completion checklist:
+
+- Audited TypeScript sources:
+  - `src/emu/machines/zxNext/ZxNextMachine.ts`;
+  - `src/emu/machines/zxNext/MemoryDevice.ts`;
+  - `src/emu/machines/zxNext/storage/DivMmcDevice.ts`;
+  - `src/emu/machines/zxNext/SdCardDevice.ts`;
+  - `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`;
+  - `test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts`.
+- Changed destination files:
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-screen.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.h`;
+  - `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+  - `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+  - `scripts/build-zxnext-wasm.cjs`;
+  - `test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts`.
+- Migrated/tested milestone behavior:
+  - a CPU-driven ROM fixture draws standard ULA pixels through WASM memory;
+  - the same ROM selects SD card 0 and issues CMD17 through real SPI ports;
+  - WASM publishes an `sd-read` frame command for sector 2;
+  - the adapter lazily loads card info, services the read through the
+    TypeScript/main-process frame-command API, clears the frame command, and
+    feeds the sector response back into WASM;
+  - the CPU consumes the returned SD response and writes the first sector byte
+    into ULA screen memory;
+  - the next rendered frame proves storage-backed pixels and reports frames,
+    SD command/read counts, unsupported-port counts, and non-blank rendered
+    pixel count through public diagnostics.
+- Raw WASM/public adapter coverage:
+  - `test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts` now covers
+    unsupported boot-time diagnostics, deterministic ROM frame rendering, and
+    CPU-driven storage-backed boot flow through public `executeMachineFrame`,
+    `getFrameCommand`, `processFrameCommand`, `getWasmV2Diagnostics`, and
+    `getPixelBuffer` APIs.
+- Deferred behaviors:
+  - real NextZXOS start-menu/file-listing smoke is deferred until a checked-in
+    SD-card image fixture or equivalent deterministic file-provider fixture is
+    available;
+  - keyboard navigation in the real boot/start menu remains deferred with the
+    real start-menu smoke;
+  - any missing hardware behavior discovered by real ROM boot should be added
+    to the owning later device step rather than hidden in Step 18.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts`
+  - `npm test -- --project jsdom test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts test/wasm/zxNext/wasm-next-divmmc.test.ts test/wasm/zxNext/wasm-next-storage.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size` (175,368 bytes against 360,000)
+  - `git diff --check`
 
 ### Step 18A - Early IDE Inspection Baseline
 

@@ -49,6 +49,8 @@ uint32_t zxnextReadPort(uint32_t address) {
     value = (uint8_t)zxnextReadNextReg(nextRegIndex);
   } else if (maskedAddress == 0x00e3u) {
     value = isPortGroupEnabled(1, 0) != 0u ? (uint8_t)zxnextReadDivMmcPortE3() : 0xffu;
+  } else if (maskedAddress == 0x00ebu) {
+    value = isPortGroupEnabled(1, 3) != 0u ? (uint8_t)zxnextReadSpiDataPort() : 0xffu;
   } else {
     value = fallbackReadValueForUnsupportedPort(maskedAddress);
     recordUnsupportedPort(maskedAddress, value, 0u);
@@ -85,6 +87,14 @@ void zxnextWritePort(uint32_t address, uint32_t value) {
   }
   if (maskedAddress == 0x00e3u) {
     if (isPortGroupEnabled(1, 0) != 0u) zxnextWriteDivMmcPortE3(byteValue);
+    return;
+  }
+  if (maskedAddress == 0x00e7u) {
+    if (isPortGroupEnabled(1, 3) != 0u) zxnextWriteSpiCsPort(byteValue);
+    return;
+  }
+  if (maskedAddress == 0x00ebu) {
+    if (isPortGroupEnabled(1, 3) != 0u) zxnextWriteSpiDataPort(byteValue);
     return;
   }
   if ((maskedAddress & 0xc003u) == 0x4001u) {

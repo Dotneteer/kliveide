@@ -52,6 +52,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetScreenIntEndTact: ZxNextWasmV2ExportFunction;
   zxnextGetScreenIs60Hz: ZxNextWasmV2ExportFunction;
   zxnextGetScreenRenderCount: ZxNextWasmV2ExportFunction;
+  zxnextGetScreenNonBlankPixelCount: ZxNextWasmV2ExportFunction;
   zxnextGetScreenBank: ZxNextWasmV2ExportFunction;
   zxnextGetUlaRenderingFlags: ZxNextWasmV2ExportFunction;
   zxnextGetRenderingHc: ZxNextWasmV2ExportFunction;
@@ -98,6 +99,9 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetUseShadowScreen: ZxNextWasmV2ExportFunction;
   zxnextReadDivMmcPortE3: ZxNextWasmV2ExportFunction;
   zxnextWriteDivMmcPortE3: ZxNextWasmV2ExportFunction;
+  zxnextReadSpiDataPort: ZxNextWasmV2ExportFunction;
+  zxnextWriteSpiDataPort: ZxNextWasmV2ExportFunction;
+  zxnextWriteSpiCsPort: ZxNextWasmV2ExportFunction;
   zxnextGetDivMmcEnabled: ZxNextWasmV2ExportFunction;
   zxnextGetDivMmcConmem: ZxNextWasmV2ExportFunction;
   zxnextGetDivMmcMapram: ZxNextWasmV2ExportFunction;
@@ -109,6 +113,21 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetDivMmcRstTrapOnlyWithRom3Mask: ZxNextWasmV2ExportFunction;
   zxnextGetDivMmcRstTrapInstantMask: ZxNextWasmV2ExportFunction;
   zxnextGetDivMmcEntry1: ZxNextWasmV2ExportFunction;
+  zxnextSetSdCardInfo: ZxNextWasmV2ExportFunction;
+  zxnextSetSdReadResponseByte: ZxNextWasmV2ExportFunction;
+  zxnextCommitSdReadResponse: ZxNextWasmV2ExportFunction;
+  zxnextSetSdWriteResponse: ZxNextWasmV2ExportFunction;
+  zxnextClearSdPendingCommand: ZxNextWasmV2ExportFunction;
+  zxnextGetSdSelectedCard: ZxNextWasmV2ExportFunction;
+  zxnextGetSdPendingCommand: ZxNextWasmV2ExportFunction;
+  zxnextGetSdPendingSector: ZxNextWasmV2ExportFunction;
+  zxnextGetSdPendingCard: ZxNextWasmV2ExportFunction;
+  zxnextGetSdCommandCount: ZxNextWasmV2ExportFunction;
+  zxnextGetSdReadRequestCount: ZxNextWasmV2ExportFunction;
+  zxnextGetSdWriteRequestCount: ZxNextWasmV2ExportFunction;
+  zxnextGetSdResponseReady: ZxNextWasmV2ExportFunction;
+  zxnextGetSdResponseLength: ZxNextWasmV2ExportFunction;
+  zxnextGetSdResponseIndex: ZxNextWasmV2ExportFunction;
   zxnextGetNextRegIndex: ZxNextWasmV2ExportFunction;
   zxnextSetNextRegIndex: ZxNextWasmV2ExportFunction;
   zxnextReadNextRegData: ZxNextWasmV2ExportFunction;
@@ -283,6 +302,7 @@ const requiredV2Exports = [
   "zxnextGetScreenIntEndTact",
   "zxnextGetScreenIs60Hz",
   "zxnextGetScreenRenderCount",
+  "zxnextGetScreenNonBlankPixelCount",
   "zxnextGetScreenBank",
   "zxnextGetUlaRenderingFlags",
   "zxnextGetRenderingHc",
@@ -329,6 +349,9 @@ const requiredV2Exports = [
   "zxnextGetUseShadowScreen",
   "zxnextReadDivMmcPortE3",
   "zxnextWriteDivMmcPortE3",
+  "zxnextReadSpiDataPort",
+  "zxnextWriteSpiDataPort",
+  "zxnextWriteSpiCsPort",
   "zxnextGetDivMmcEnabled",
   "zxnextGetDivMmcConmem",
   "zxnextGetDivMmcMapram",
@@ -340,6 +363,21 @@ const requiredV2Exports = [
   "zxnextGetDivMmcRstTrapOnlyWithRom3Mask",
   "zxnextGetDivMmcRstTrapInstantMask",
   "zxnextGetDivMmcEntry1",
+  "zxnextSetSdCardInfo",
+  "zxnextSetSdReadResponseByte",
+  "zxnextCommitSdReadResponse",
+  "zxnextSetSdWriteResponse",
+  "zxnextClearSdPendingCommand",
+  "zxnextGetSdSelectedCard",
+  "zxnextGetSdPendingCommand",
+  "zxnextGetSdPendingSector",
+  "zxnextGetSdPendingCard",
+  "zxnextGetSdCommandCount",
+  "zxnextGetSdReadRequestCount",
+  "zxnextGetSdWriteRequestCount",
+  "zxnextGetSdResponseReady",
+  "zxnextGetSdResponseLength",
+  "zxnextGetSdResponseIndex",
   "zxnextGetNextRegIndex",
   "zxnextSetNextRegIndex",
   "zxnextReadNextRegData",

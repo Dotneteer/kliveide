@@ -542,3 +542,67 @@ Use this shape:
 - Follow-up: Step 17 should move SPI SD-card protocol state into WASM while
   keeping sector persistence in TypeScript; NMI button/stackless-NMI/Multiface
   interactions remain with Step 20 and Step 30.
+
+## 2026-08-16 - Step 17 - SD Card SPI State Machine
+
+- Symptom: After DivMMC moved into WASM, SPI ports `0xe7`/`0xeb` still belonged
+  to the TypeScript `SdCardDevice`, so the WASM boot path could not issue
+  sector read/write requests through the normal frame-command contract.
+- Root cause: The C backend had no SD command parser, per-card response state,
+  mounted-card size, or journal bridge for app-owned storage persistence.
+- Fix: Added `zxnext-sdcard.c` for chip-select decoding, command parsing,
+  mounted-card state, CSD/CID/OCR responses, CMD17 read journals, CMD24 write
+  journals, CRC16 payload responses, and success/failure write responses.
+- Adapter pattern: `ZxNextWasmV2Machine` owns SPI ports directly when WASM is
+  active, converts pending WASM journals to existing `sd-read`/`sd-write` frame
+  commands, lazily uploads `getSdCardInfo`, and feeds IPC read/write responses
+  back into WASM.
+- Test lesson: SD tests need both byte-level oracle comparisons and public
+  frame-command assertions; raw response bytes alone do not prove the IDE can
+  persist sectors.
+- Boundary lesson: Sector bytes and media policy stay in TypeScript/main
+  process. SPI command state and response bytes stay in WASM. Do not add
+  per-byte JS crossings after a journal is formed.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-storage.test.ts`,
+  `npm test -- --project jsdom test/zxnext/SdCardDevice.test.ts`, the broader
+  13-file Next WASM suite, `npm run build:check`,
+  `npm run check:zxnext-wasm-size`, and `git diff --check` passed. The
+  production artifact is 175,276 bytes against the 360,000 byte ceiling.
+- Follow-up: Step 18 should prove the storage-backed boot milestone with real
+  sector data and visible standard ULA output. Exact SD read-delay timing and
+  multi-block streaming remain deferred until the timing/storage robustness
+  steps unless Step 18 shows the boot path requires them sooner.
+
+## 2026-08-16 - Step 18 - Deterministic Storage-Backed Boot Smoke
+
+- Symptom: Steps 14-17 proved frame execution, ULA rendering, DivMMC, and SD
+  SPI separately, but no single boot-style flow proved that CPU-executed ROM
+  code could request a sector, receive it through the adapter, and render data
+  derived from that sector.
+- Root cause: There was no checked-in SD-card image fixture for a real
+  NextZXOS start-menu smoke, and the previous boot smoke did not exercise the
+  SD frame-command path.
+- Fix: Extended `wasm-next-boot-storage-ula.test.ts` with a deterministic ROM
+  fixture that draws ULA pixels, selects SD card 0, issues CMD17 through real
+  SPI ports, waits for the adapter-fed response, and writes the first returned
+  sector byte into screen memory.
+- Diagnostic pattern: Step 18 added `screenNonBlankPixelCount` as a WASM
+  diagnostic export so milestone tests can report frames, SD command/read
+  counts, unsupported-port counts, and rendered-pixel visibility from the same
+  public adapter snapshot.
+- Test lesson: CPU-driven storage tests should use `OUT (C),A`/`IN A,(C)` for
+  `0xe7` and `0xeb`; immediate `OUT (n),A` changes the high byte of the port
+  address because the Z80 uses `A:n`.
+- Boundary lesson: Keep this milestone as an integration proof. If a real ROM
+  boot later exposes missing devices, add those behaviors to their owning
+  device steps instead of making Step 18 a dumping ground.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts`,
+  the broader 13-file Next WASM suite, `npm run build:check`,
+  `npm run check:zxnext-wasm-size`, and `git diff --check` passed. The
+  production artifact is 175,368 bytes against the 360,000 byte ceiling.
+- Follow-up: Step 18A should audit IDE-facing inspection APIs now that a
+  deterministic early boot path exists. Real NextZXOS start-menu/manual smoke
+  still needs a checked-in SD image fixture or equivalent deterministic storage
+  provider.

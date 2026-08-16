@@ -4,6 +4,7 @@ import type { ZxNextWasmV2LoaderOptions, ZxNextWasmV2Runtime } from "./wasm/ZxNe
 import type { NextRegDeviceState } from "./NextRegDevice";
 
 import { MC_MEM_SIZE } from "@common/machines/constants";
+import { createMainApi } from "@common/messaging/MainApi";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
@@ -71,6 +72,7 @@ export type ZxNextWasmV2Diagnostics = {
   screenIntEndTact: number;
   screenIs60Hz: boolean;
   screenRenderCount: number;
+  screenNonBlankPixelCount: number;
   screenBank: number;
   divMmcEnabled: boolean;
   divMmcConmem: boolean;
@@ -83,6 +85,16 @@ export type ZxNextWasmV2Diagnostics = {
   divMmcRstTrapOnlyWithRom3Mask: number;
   divMmcRstTrapInstantMask: number;
   divMmcEntry1: number;
+  sdSelectedCard: number;
+  sdPendingCommand: number;
+  sdPendingSector: number;
+  sdPendingCard: number;
+  sdCommandCount: number;
+  sdReadRequestCount: number;
+  sdWriteRequestCount: number;
+  sdResponseReady: boolean;
+  sdResponseLength: number;
+  sdResponseIndex: number;
   diagnosticFlags: number;
   unsupportedPortReadCount: number;
   unsupportedPortWriteCount: number;
@@ -104,6 +116,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private wasmV2KeyboardRowsValid = false;
   private wasmV2ExtendedKeyRegsValid = false;
   private wasmV2NextRegBridgeAttached = false;
+  private wasmV2SdCardInfoLoaded = false;
 
   constructor(
     public readonly requestedModelInfo?: MachineModel,
@@ -196,6 +209,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       screenIntEndTact: runtime.exports.zxnextGetScreenIntEndTact(),
       screenIs60Hz: runtime.exports.zxnextGetScreenIs60Hz() !== 0,
       screenRenderCount: runtime.exports.zxnextGetScreenRenderCount(),
+      screenNonBlankPixelCount: runtime.exports.zxnextGetScreenNonBlankPixelCount(),
       screenBank: runtime.exports.zxnextGetScreenBank(),
       divMmcEnabled: runtime.exports.zxnextGetDivMmcEnabled() !== 0,
       divMmcConmem: runtime.exports.zxnextGetDivMmcConmem() !== 0,
@@ -208,6 +222,16 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       divMmcRstTrapOnlyWithRom3Mask: runtime.exports.zxnextGetDivMmcRstTrapOnlyWithRom3Mask(),
       divMmcRstTrapInstantMask: runtime.exports.zxnextGetDivMmcRstTrapInstantMask(),
       divMmcEntry1: runtime.exports.zxnextGetDivMmcEntry1(),
+      sdSelectedCard: runtime.exports.zxnextGetSdSelectedCard(),
+      sdPendingCommand: runtime.exports.zxnextGetSdPendingCommand(),
+      sdPendingSector: runtime.exports.zxnextGetSdPendingSector(),
+      sdPendingCard: runtime.exports.zxnextGetSdPendingCard(),
+      sdCommandCount: runtime.exports.zxnextGetSdCommandCount(),
+      sdReadRequestCount: runtime.exports.zxnextGetSdReadRequestCount(),
+      sdWriteRequestCount: runtime.exports.zxnextGetSdWriteRequestCount(),
+      sdResponseReady: runtime.exports.zxnextGetSdResponseReady(runtime.exports.zxnextGetSdSelectedCard()) !== 0,
+      sdResponseLength: runtime.exports.zxnextGetSdResponseLength(runtime.exports.zxnextGetSdSelectedCard()),
+      sdResponseIndex: runtime.exports.zxnextGetSdResponseIndex(runtime.exports.zxnextGetSdSelectedCard()),
       diagnosticFlags: runtime.exports.zxnextGetDiagnosticFlags(),
       unsupportedPortReadCount: runtime.exports.zxnextGetUnsupportedPortReadCount(),
       unsupportedPortWriteCount: runtime.exports.zxnextGetUnsupportedPortWriteCount(),
@@ -326,9 +350,18 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   override doWritePort(address: number, value: number): void {
-    super.doWritePort(address, value);
     const runtime = this.wasmV2Runtime;
-    if (runtime == null) return;
+    if (runtime == null) {
+      super.doWritePort(address, value);
+      return;
+    }
+    if (isWasmV2SpiPort(address)) {
+      runtime.exports.zxnextWritePort(address & 0xffff, value & 0xff);
+      this.syncSdFrameCommandFromWasmV2(runtime);
+      this.importWasmV2BusAccess(runtime);
+      return;
+    }
+    super.doWritePort(address, value);
     runtime.exports.zxnextWritePort(address & 0xffff, value & 0xff);
     this.importWasmV2BusAccess(runtime);
   }
@@ -357,9 +390,61 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     }
 
     runtime.exports.zxnextExecuteFrame();
+    this.syncSdFrameCommandFromWasmV2(runtime);
     this.syncFrameCountersFromWasmV2(runtime, true);
     this.importWasmV2BusAccess(runtime);
     return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
+  }
+
+  override async processFrameCommand(messenger: MessengerBase): Promise<void> {
+    const runtime = this.wasmV2Runtime;
+    const frameCommand = this.getFrameCommand();
+    if (runtime == null || frameCommand == null || !isWasmV2SdFrameCommand(frameCommand.command)) {
+      await super.processFrameCommand(messenger);
+      return;
+    }
+
+    const api = createMainApi(messenger);
+    await this.ensureWasmV2SdCardInfo(runtime, api);
+    try {
+      switch (frameCommand.command) {
+        case "sd-read":
+        case "sd-read-card1": {
+          const sectorData = await this.withWasmV2IpcTimeout(
+            api.readSdCardSector(frameCommand.sector),
+            frameCommand.command
+          );
+          const bytes = sectorData instanceof Uint8Array
+            ? sectorData
+            : Array.isArray(sectorData)
+              ? new Uint8Array(sectorData)
+              : new Uint8Array(sectorData as any);
+          for (let i = 0; i < bytes.length && i < 512; i++) {
+            runtime.exports.zxnextSetSdReadResponseByte(i, bytes[i]);
+          }
+          runtime.exports.zxnextCommitSdReadResponse(frameCommand.command === "sd-read-card1" ? 1 : 0);
+          break;
+        }
+        case "sd-write":
+        case "sd-write-card1": {
+          const result = await this.withWasmV2IpcTimeout(
+            api.writeSdCardSector(frameCommand.sector, frameCommand.data),
+            frameCommand.command
+          );
+          runtime.exports.zxnextSetSdWriteResponse(
+            frameCommand.command === "sd-write-card1" ? 1 : 0,
+            result?.persistenceConfirmed ? 1 : 0
+          );
+          break;
+        }
+      }
+    } catch {
+      if (frameCommand.command === "sd-write" || frameCommand.command === "sd-write-card1") {
+        runtime.exports.zxnextSetSdWriteResponse(frameCommand.command === "sd-write-card1" ? 1 : 0, 0);
+      }
+    } finally {
+      runtime.exports.zxnextClearSdPendingCommand();
+    }
   }
 
   override tbblueOut(address: number, value: number): void {
@@ -511,6 +596,53 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.frameCompleted = completedFrame;
   }
 
+  private syncSdFrameCommandFromWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    const wasm = runtime.exports;
+    const pendingCommand = wasm.zxnextGetSdPendingCommand();
+    if (pendingCommand === 0 || this.getFrameCommand() != null) return;
+    const card = wasm.zxnextGetSdPendingCard();
+    const sector = wasm.zxnextGetSdPendingSector();
+    if (pendingCommand === 1) {
+      this.setFrameCommand({
+        command: card === 1 ? "sd-read-card1" : "sd-read",
+        sector
+      });
+      return;
+    }
+    if (pendingCommand === 2) {
+      const data = runtime.sdCommandBuffer.slice(6, 6 + 512);
+      this.setFrameCommand({
+        command: card === 1 ? "sd-write-card1" : "sd-write",
+        sector,
+        data
+      });
+    }
+  }
+
+  private async ensureWasmV2SdCardInfo(
+    runtime: ZxNextWasmV2Runtime,
+    api: ReturnType<typeof createMainApi>
+  ): Promise<void> {
+    if (this.wasmV2SdCardInfoLoaded) return;
+    try {
+      const info = await this.withWasmV2IpcTimeout(api.getSdCardInfo(), "getSdCardInfo");
+      runtime.exports.zxnextSetSdCardInfo(0, info.totalSectors);
+      this.wasmV2SdCardInfoLoaded = true;
+    } catch (err) {
+      console.warn("WASM SD card info fetch failed, using default CSD", err);
+    }
+  }
+
+  private withWasmV2IpcTimeout<T>(promise: Promise<T>, operationName: string): Promise<T> {
+    const timeoutMs = 5000;
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(`IPC timeout: ${operationName} did not complete within ${timeoutMs}ms`)), timeoutMs)
+      )
+    ]);
+  }
+
   private requireWasmV2Runtime(): ZxNextWasmV2Runtime {
     if (this.wasmV2Runtime == null) {
       throw new Error("ZX Spectrum Next WASM v2 runtime has not been loaded.");
@@ -577,6 +709,15 @@ function isWasmV2UlaPort(address: number): boolean {
   return (address & 0x0001) === 0x0000;
 }
 
+function isWasmV2SpiPort(address: number): boolean {
+  const port = address & 0xffff;
+  return port === 0x00e7 || port === 0x00eb;
+}
+
 function isWasmV2OwnedPort(address: number): boolean {
-  return isWasmV2UlaPort(address) || isWasmV2NextRegPort(address) || (address & 0xffff) === 0x00e3;
+  return isWasmV2UlaPort(address) || isWasmV2NextRegPort(address) || isWasmV2SpiPort(address) || (address & 0xffff) === 0x00e3;
+}
+
+function isWasmV2SdFrameCommand(command: unknown): boolean {
+  return command === "sd-read" || command === "sd-write" || command === "sd-read-card1" || command === "sd-write-card1";
 }
