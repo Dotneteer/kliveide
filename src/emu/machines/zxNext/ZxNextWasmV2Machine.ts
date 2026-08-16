@@ -1,8 +1,10 @@
 import type { MachineModel } from "@common/machines/info-types";
+import type { CpuState, NextMemoryMapping } from "@common/messaging/EmuApi";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { ZxNextWasmV2LoaderOptions, ZxNextWasmV2Runtime } from "./wasm/ZxNextWasmV2Loader";
 import type { NextRegDeviceState } from "./NextRegDevice";
+import type { MemoryPageInfo } from "./MemoryDevice";
 
 import { MC_MEM_SIZE } from "@common/machines/constants";
 import { createMainApi } from "@common/messaging/MainApi";
@@ -942,6 +944,12 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     return Array.from({ length: 8 }, (_, index) => wasm.zxnextGetCurrentPartition(index));
   }
 
+  override getCurrentPartitionLabels(): string[] {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null) return super.getCurrentPartitionLabels();
+    return Array.from({ length: 8 }, (_, index) => this.getWasmV2PartitionLabelForPage(runtime, index));
+  }
+
   override getPartition(address: number): number | undefined {
     return this.getCurrentPartitions()[(address >>> 13) & 0x07];
   }
@@ -952,6 +960,28 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
   override getSelectedRamBank(): number {
     return this.wasmV2Runtime?.exports.zxnextGetSelectedRamBank() ?? super.getSelectedRamBank();
+  }
+
+  getNextMemoryMapping(): NextMemoryMapping {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null) {
+      return this.memoryDevice.getMemoryMappings() as NextMemoryMapping;
+    }
+    const wasm = runtime.exports;
+    return {
+      allRamsBanks: this.getWasmV2AllRamMappings(runtime),
+      selectedRom: wasm.zxnextGetSelectedRomPage(),
+      selectedBank: wasm.zxnextGetSelectedRamBank(),
+      port7ffd: wasm.zxnextGetPort7ffdValue(),
+      port1ffd: wasm.zxnextGetPort1ffdValue(),
+      portDffd: wasm.zxnextGetPortDffdValue(),
+      portEff7: wasm.zxnextGetPortEff7Value(),
+      portLayer2: 0x00,
+      portTimex: wasm.zxnextGetTimexPortValue(),
+      divMmc: wasm.zxnextGetDivMmcPortE3Value(),
+      divMmcIn: wasm.zxnextGetDivMmcConmem() !== 0 || wasm.zxnextGetDivMmcAutoMapActive() !== 0,
+      pageInfo: Array.from({ length: 8 }, (_, index) => this.getWasmV2MemoryPageInfo(runtime, index))
+    };
   }
 
   override doReadMemory(address: number): number {
@@ -1000,6 +1030,118 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.importWasmV2BusAccess(runtime);
   }
 
+  override setTacts(value: number): void {
+    super.setTacts(value);
+    if (this.wasmV2Runtime != null) {
+      this.wasmV2Runtime.exports.zxnextSetTacts(value >>> 0);
+      this.syncFrameCountersFromWasmV2(this.wasmV2Runtime, this.frameCompleted);
+    }
+  }
+
+  setCpuRegisterValue(register: string, value: number): boolean {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null) return false;
+
+    const wasm = runtime.exports;
+    const reg = register.toUpperCase();
+    const value8 = value & 0xff;
+    const value16 = value & 0xffff;
+    const setHigh = (current: number) => ((value8 << 8) | (current & 0x00ff)) & 0xffff;
+    const setLow = (current: number) => ((current & 0xff00) | value8) & 0xffff;
+
+    switch (reg) {
+      case "A":
+        wasm.zxnextSetCpuAf(setHigh(wasm.zxnextGetCpuAf()));
+        break;
+      case "F":
+        wasm.zxnextSetCpuAf(setLow(wasm.zxnextGetCpuAf()));
+        break;
+      case "B":
+        wasm.zxnextSetCpuBc(setHigh(wasm.zxnextGetCpuBc()));
+        break;
+      case "C":
+        wasm.zxnextSetCpuBc(setLow(wasm.zxnextGetCpuBc()));
+        break;
+      case "D":
+        wasm.zxnextSetCpuDe(setHigh(wasm.zxnextGetCpuDe()));
+        break;
+      case "E":
+        wasm.zxnextSetCpuDe(setLow(wasm.zxnextGetCpuDe()));
+        break;
+      case "H":
+        wasm.zxnextSetCpuHl(setHigh(wasm.zxnextGetCpuHl()));
+        break;
+      case "L":
+        wasm.zxnextSetCpuHl(setLow(wasm.zxnextGetCpuHl()));
+        break;
+      case "AF":
+        wasm.zxnextSetCpuAf(value16);
+        break;
+      case "BC":
+        wasm.zxnextSetCpuBc(value16);
+        break;
+      case "DE":
+        wasm.zxnextSetCpuDe(value16);
+        break;
+      case "HL":
+        wasm.zxnextSetCpuHl(value16);
+        break;
+      case "AF'":
+        wasm.zxnextSetCpuAfAlt(value16);
+        break;
+      case "BC'":
+        wasm.zxnextSetCpuBcAlt(value16);
+        break;
+      case "DE'":
+        wasm.zxnextSetCpuDeAlt(value16);
+        break;
+      case "HL'":
+        wasm.zxnextSetCpuHlAlt(value16);
+        break;
+      case "IX":
+        wasm.zxnextSetCpuIx(value16);
+        break;
+      case "XL":
+        wasm.zxnextSetCpuIx(setLow(wasm.zxnextGetCpuIx()));
+        break;
+      case "XH":
+        wasm.zxnextSetCpuIx(setHigh(wasm.zxnextGetCpuIx()));
+        break;
+      case "IY":
+        wasm.zxnextSetCpuIy(value16);
+        break;
+      case "YL":
+        wasm.zxnextSetCpuIy(setLow(wasm.zxnextGetCpuIy()));
+        break;
+      case "YH":
+        wasm.zxnextSetCpuIy(setHigh(wasm.zxnextGetCpuIy()));
+        break;
+      case "SP":
+        wasm.zxnextSetCpuSp(value16);
+        break;
+      case "PC":
+        wasm.zxnextSetCpuPc(value16);
+        break;
+      case "I":
+        wasm.zxnextSetCpuIr(setHigh(wasm.zxnextGetCpuIr()));
+        break;
+      case "R":
+        wasm.zxnextSetCpuIr(setLow(wasm.zxnextGetCpuIr()));
+        break;
+      case "IR":
+        wasm.zxnextSetCpuIr(value16);
+        break;
+      case "WZ":
+        wasm.zxnextSetCpuWz(value16);
+        break;
+      default:
+        return false;
+    }
+
+    this.syncCpuFromWasmV2(runtime);
+    return true;
+  }
+
   override doReadPort(address: number): number {
     const runtime = this.wasmV2Runtime;
     if (runtime == null) return super.doReadPort(address);
@@ -1021,19 +1163,18 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
   override executeMachineFrame(): FrameTerminationMode {
     const runtime = this.requireWasmV2Runtime();
+
+    if (
+      this.executionContext.debugStepMode !== DebugStepMode.NoDebug ||
+      this.executionContext.frameTerminationMode !== FrameTerminationMode.Normal
+    ) {
+      return this.executeWasmV2DebugLoop(runtime);
+    }
+
     const frameStart = this.captureWasmV2BoundaryCounters();
     this.syncKeyboardToWasmV2(runtime);
     this.syncExtendedKeyboardToWasmV2(runtime);
     this.syncGameInputToWasmV2(runtime);
-
-    if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
-      runtime.exports.zxnextExecuteInstruction();
-      this.wasmExecuteInstructionCalls++;
-      this.syncFrameCountersFromWasmV2(runtime, false);
-      this.syncCpuFromWasmV2(runtime);
-      this.importWasmV2BusAccess(runtime);
-      return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
-    }
 
     runtime.exports.zxnextExecuteFrame();
     this.wasmExecuteFrameCalls++;
@@ -1043,6 +1184,65 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.importWasmV2BusAccess(runtime);
     this.recordWasmV2LastFrameCrossings(frameStart);
     return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
+  }
+
+  private executeWasmV2DebugLoop(runtime: ZxNextWasmV2Runtime): FrameTerminationMode {
+    const debugSupport = this.executionContext.debugSupport;
+    let instructionsExecuted = 0;
+    this.executionContext.lastTerminationReason = undefined;
+
+    this.syncCpuFromWasmV2(runtime);
+    if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
+      if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+    }
+    if (debugSupport) {
+      debugSupport.lastStartupBreakpoint = undefined;
+    }
+
+    do {
+      this.emulateKeystroke();
+      this.syncKeyboardToWasmV2(runtime);
+      this.syncExtendedKeyboardToWasmV2(runtime);
+      this.syncGameInputToWasmV2(runtime);
+
+      const startFrame = runtime.exports.zxnextGetFrames();
+      runtime.exports.zxnextExecuteInstruction();
+      this.wasmExecuteInstructionCalls++;
+      instructionsExecuted++;
+      const completedFrame = runtime.exports.zxnextGetFrames() !== startFrame;
+      this.syncFrameCountersFromWasmV2(runtime, completedFrame);
+      this.syncCpuFromWasmV2(runtime);
+      this.importWasmV2BusAccess(runtime);
+      this.syncSdFrameCommandFromWasmV2(runtime);
+
+      if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
+        if (this.testTerminationPoint()) {
+          return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
+        }
+      }
+      if (this.hasWasmV2AccessBreakpoint()) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+      if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+      if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
+        debugSupport && (debugSupport.imminentBreakpoint = undefined);
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+      if (this.getFrameCommand()) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+      }
+    } while (!this.frameCompleted);
+
+    return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+  }
+
+  private finishWasmV2DebugLoop(termination: FrameTerminationMode): FrameTerminationMode {
+    this.executionContext.lastTerminationReason = termination;
+    return termination;
   }
 
   override async processFrameCommand(messenger: MessengerBase): Promise<void> {
@@ -1123,7 +1323,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     return runtime.exports.zxnextDaisyUpdateIrqState() !== 0;
   }
 
-  override getCpuState(): any {
+  override getCpuState(): CpuState {
     const runtime = this.wasmV2Runtime;
     if (runtime != null) {
       this.syncCpuFromWasmV2(runtime);
@@ -1340,11 +1540,64 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
   private syncFrameCountersFromWasmV2(runtime: ZxNextWasmV2Runtime, completedFrame: boolean): void {
     const wasm = runtime.exports;
+    this.pc = wasm.zxnextGetCpuPc();
     this.frames = wasm.zxnextGetFrames();
     this.tacts = wasm.zxnextGetTacts();
     this.frameTacts = wasm.zxnextGetFrameTacts();
     this.currentFrameTact = wasm.zxnextGetCurrentFrameTact();
     this.frameCompleted = completedFrame;
+  }
+
+  private getWasmV2AllRamMappings(runtime: ZxNextWasmV2Runtime): number[] | undefined {
+    const wasm = runtime.exports;
+    if (wasm.zxnextGetAllRamMode() === 0) return undefined;
+    switch (wasm.zxnextGetSpecialConfig() & 0x03) {
+      case 0:
+        return [0, 1, 2, 3];
+      case 1:
+        return [4, 5, 6, 7];
+      case 2:
+        return [4, 5, 6, 3];
+      default:
+        return [4, 7, 6, 3];
+    }
+  }
+
+  private getWasmV2MemoryPageInfo(runtime: ZxNextWasmV2Runtime, index: number): MemoryPageInfo {
+    const wasm = runtime.exports;
+    const writeOffset = wasm.zxnextGetPageWriteOffset(index);
+    return {
+      readOffset: wasm.zxnextGetPageReadOffset(index),
+      writeOffset: writeOffset < 0 ? null : writeOffset,
+      bank16k: wasm.zxnextGetPageBank16k(index),
+      bank8k: wasm.zxnextGetPageBank8k(index)
+    };
+  }
+
+  private getWasmV2PartitionLabelForPage(runtime: ZxNextWasmV2Runtime, pageIndex: number): string {
+    const wasm = runtime.exports;
+    const bank16k = wasm.zxnextGetPageBank16k(pageIndex);
+    if (bank16k >= 0 && bank16k < 0xe0) {
+      return bank16k.toString(16).padStart(2, "0").toUpperCase();
+    }
+
+    const readOffset = wasm.zxnextGetPageReadOffset(pageIndex);
+    if (readOffset >= OFFS_NEXT_ROM && readOffset < OFFS_DIVMMC_ROM) {
+      return `R${(readOffset - OFFS_NEXT_ROM) >>> 14}`;
+    }
+    if (readOffset >= OFFS_ALT_ROM_0 && readOffset < OFFS_ALT_ROM_1) {
+      return "A0";
+    }
+    if (readOffset >= OFFS_ALT_ROM_1 && readOffset < OFFS_DIVMMC_RAM) {
+      return "A1";
+    }
+    if (readOffset >= OFFS_DIVMMC_ROM && readOffset < OFFS_MULTIFACE_MEM) {
+      return "DM";
+    }
+    if (pageIndex !== 0 && readOffset >= OFFS_DIVMMC_RAM && readOffset < OFFS_NEXT_RAM) {
+      return `D${(readOffset - OFFS_DIVMMC_RAM) >>> 13}`;
+    }
+    return "UN";
   }
 
   private syncSdFrameCommandFromWasmV2(runtime: ZxNextWasmV2Runtime): void {
@@ -1427,14 +1680,77 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.iff2 = wasm.zxnextGetCpuIff2() !== 0;
     this.interruptMode = wasm.zxnextGetCpuInterruptMode();
     this.opCode = wasm.zxnextGetCpuPrefix();
+    this.retExecuted = wasm.zxnextGetCpuRetExecuted() !== 0 || wasm.zxnextGetCpuRetnExecuted() !== 0;
+  }
+
+  private shouldStopAtWasmV2Breakpoint(instructionsExecuted: number): boolean {
+    const debugSupport = this.executionContext.debugSupport;
+    if (!debugSupport) return false;
+
+    const stopAt = debugSupport.shouldStopAt(this.pc, () => this.getPartition(this.pc));
+    if (
+      stopAt &&
+      (instructionsExecuted > 0 ||
+        debugSupport.lastBreakpoint === undefined ||
+        debugSupport.lastBreakpoint !== this.pc)
+    ) {
+      debugSupport.lastBreakpoint = this.pc;
+      debugSupport.imminentBreakpoint = undefined;
+      return true;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StopAtBreakpoint) {
+      return false;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StepOver) {
+      if (debugSupport.imminentBreakpoint !== undefined) {
+        if (debugSupport.imminentBreakpoint === this.pc) {
+          debugSupport.imminentBreakpoint = undefined;
+          return true;
+        }
+        return false;
+      }
+      const length = this.getCallInstructionLength();
+      if (length > 0) {
+        debugSupport.imminentBreakpoint = (this.pc + length) & 0xffff;
+        return false;
+      }
+      return instructionsExecuted > 0;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StepOut) {
+      if (this.stepOutAddress === this.pc || this.retExecuted) {
+        debugSupport.imminentBreakpoint = undefined;
+        return true;
+      }
+      return false;
+    }
+
+    return false;
+  }
+
+  private hasWasmV2AccessBreakpoint(): boolean {
+    const debugSupport = this.executionContext.debugSupport;
+    if (!debugSupport) return false;
+    return (
+      debugSupport.hasMemoryRead(this.lastMemoryReads, this.lastMemoryReadsCount, (addr) => this.getPartition(addr)) ||
+      debugSupport.hasMemoryWrite(this.lastMemoryWrites, this.lastMemoryWritesCount, (addr) => this.getPartition(addr)) ||
+      debugSupport.hasIoRead(this.lastIoReadPort) ||
+      debugSupport.hasIoWrite(this.lastIoWritePort)
+    );
   }
 
   private importWasmV2BusAccess(runtime: ZxNextWasmV2Runtime): void {
     const wasm = runtime.exports;
     this.lastMemoryReadsCount = 0;
+    this.lastMemoryWritesCount = 0;
+    this.lastIoReadPort = undefined;
+    this.lastIoWritePort = undefined;
     if (wasm.zxnextGetLastMemoryIsWrite() !== 0) {
       this.lastMemoryWrites[0] = wasm.zxnextGetLastMemoryAddress();
       this.lastMemoryWriteValue = wasm.zxnextGetLastMemoryValue();
+      this.lastMemoryWritesCount = 1;
     } else {
       this.lastMemoryReads[0] = wasm.zxnextGetLastMemoryAddress();
       this.lastMemoryReadValue = wasm.zxnextGetLastMemoryValue();
@@ -1444,8 +1760,12 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       this.lastIoWritePort = wasm.zxnextGetLastPortAddress();
       this.lastIoWriteValue = wasm.zxnextGetLastPortValue();
     } else {
-      this.lastIoReadPort = wasm.zxnextGetLastPortAddress();
-      this.lastIoReadValue = wasm.zxnextGetLastPortValue();
+      const portAddress = wasm.zxnextGetLastPortAddress();
+      const portValue = wasm.zxnextGetLastPortValue();
+      if (portAddress !== 0 || portValue !== 0) {
+        this.lastIoReadPort = portAddress;
+        this.lastIoReadValue = portValue;
+      }
     }
     this.wasmV2PreserveTypeScriptBusAccess = false;
   }

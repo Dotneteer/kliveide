@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
+import { DebugSupport } from "@emu/machines/DebugSupport";
 import { OFFS_NEXT_RAM } from "@emu/machines/zxNext/MemoryDevice";
 import {
   createTestZxNextRomSet,
@@ -40,7 +41,7 @@ describe("ZX Spectrum Next WASM v2 machine lifecycle", () => {
     });
 
     expect(wasm.zxnextGetCpuPc()).toBeGreaterThan(0);
-    expect(machine.pc).toBe(0);
+    expect(machine.pc).toBe(wasm.zxnextGetCpuPc());
     expect(machine.getCpuState().pc).toBe(wasm.zxnextGetCpuPc());
   });
 
@@ -109,6 +110,81 @@ describe("ZX Spectrum Next WASM v2 machine lifecycle", () => {
     expect(cpuState.pc).toBe(0x8002);
     expect(cpuState.af >> 8).toBe(0x42);
     expect(machine.wasmV2Runtime!.exports.zxnextGetCpuInstructionsExecuted()).toBe(1);
+  });
+
+  it("stops StepOut when the WASM CPU executes RET", async () => {
+    const machine = await createTestZxNextWasmMachine();
+    const debugSupport = new DebugSupport();
+
+    initCodeBytes(machine, [0xc9], 0x8000);
+    machine.writeTestMemory(0xfffe, 0x34);
+    machine.writeTestMemory(0xffff, 0x12);
+    machine.executionContext.debugSupport = debugSupport;
+    machine.executionContext.debugStepMode = DebugStepMode.StepOut;
+    machine.executionContext.frameTerminationMode = FrameTerminationMode.DebugEvent;
+    machine.stepOutAddress = -1;
+
+    const mode = machine.executeMachineFrame();
+
+    expect(mode).toBe(FrameTerminationMode.DebugEvent);
+    expect(machine.getCpuState().pc).toBe(0x1234);
+    expect(machine.retExecuted).toBe(true);
+  });
+
+  it("stops at execution breakpoints while running in debug mode", async () => {
+    const machine = await createTestZxNextWasmMachine(createTestZxNextRomSet({
+      next: testRom([0x00, 0x00, 0x00], 0x10000)
+    }));
+    const debugSupport = new DebugSupport();
+
+    debugSupport.addBreakpoint({ address: 0x0001, exec: true });
+    machine.executionContext.debugSupport = debugSupport;
+    machine.executionContext.debugStepMode = DebugStepMode.StopAtBreakpoint;
+    machine.executionContext.frameTerminationMode = FrameTerminationMode.DebugEvent;
+
+    const mode = machine.executeMachineFrame();
+
+    expect(mode).toBe(FrameTerminationMode.DebugEvent);
+    expect(machine.executionContext.lastTerminationReason).toBe(FrameTerminationMode.DebugEvent);
+    expect(machine.getCpuState().pc).toBe(0x0001);
+    expect(debugSupport.lastBreakpoint).toBe(0x0001);
+    expect(machine.getWasmV2Diagnostics()).toMatchObject({
+      wasmExecuteFrameCalls: 0,
+      wasmExecuteInstructionCalls: 1
+    });
+  });
+
+  it("syncs tact and CPU register mutations into WASM", async () => {
+    const machine = await createTestZxNextWasmMachine();
+    const wasm = machine.wasmV2Runtime!.exports;
+
+    machine.setTacts(0x1234);
+    expect(machine.tacts).toBe(0x1234);
+    expect(wasm.zxnextGetTacts()).toBe(0x1234);
+
+    expect(machine.setCpuRegisterValue("PC", 0x8123)).toBe(true);
+    expect(wasm.zxnextGetCpuPc()).toBe(0x8123);
+    expect(machine.getCpuState().pc).toBe(0x8123);
+
+    expect(machine.setCpuRegisterValue("A", 0x5a)).toBe(true);
+    expect(wasm.zxnextGetCpuAf() >> 8).toBe(0x5a);
+    expect(machine.getCpuState().af >> 8).toBe(0x5a);
+  });
+
+  it("reports memory mapping and partition labels from WASM-owned MMU state", async () => {
+    const machine = await createTestZxNextWasmMachine();
+
+    machine.wasmV2Runtime!.exports.zxnextWriteNextReg(0x52, 0x12);
+
+    const mapping = machine.getNextMemoryMapping();
+    expect(machine.getCurrentPartitions()[2]).toBe(0x09);
+    expect(machine.getCurrentPartitionLabels()[2]).toBe("09");
+    expect(mapping.pageInfo[2]).toMatchObject({
+      bank16k: 0x09,
+      bank8k: 0x12,
+      readOffset: OFFS_NEXT_RAM + 0x12 * 0x2000,
+      writeOffset: OFFS_NEXT_RAM + 0x12 * 0x2000
+    });
   });
 });
 

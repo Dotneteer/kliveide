@@ -509,6 +509,8 @@ const productionExports = [
   "zxnextGetCpuInterruptMode",
   "zxnextSetCpuInterruptMode",
   "zxnextGetCpuTacts",
+  "zxnextGetCpuRetExecuted",
+  "zxnextGetCpuRetnExecuted",
   "zxnextGetZ80NMode",
   "zxnextGetLastMemoryAddress",
   "zxnextGetLastMemoryValue",

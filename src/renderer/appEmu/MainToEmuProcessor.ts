@@ -33,7 +33,7 @@ import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
-import { CpuState, CpuStateChunk, VicState } from "@common/messaging/EmuApi";
+import { CpuState, CpuStateChunk, NextMemoryMapping, VicState } from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { IMemorySection } from "@abstractions/MemorySection";
 import type { RecordingManager } from "./recording/RecordingManager";
@@ -481,29 +481,29 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    const m = controller.machine as any;
     let memory: Uint8Array;
     if (partition === undefined) {
       memory = (controller.machine as IZxSpectrumMachine).get64KFlatMemory();
     } else {
       memory = (controller.machine as IZxSpectrumMachine).getMemoryPartition(partition);
     }
+    const cpuState = controller.machine.getCpuState() as any;
     return {
       memory,
-      pc: m.pc,
-      af: m.af,
-      bc: m.bc,
-      de: m.de,
-      hl: m.hl,
-      af_: m.af_,
-      bc_: m.bc_,
-      de_: m.de_,
-      hl_: m.hl_,
-      sp: m.sp,
-      ix: m.ix,
-      iy: m.iy,
-      ir: m.ir,
-      wz: m.wz,
+      pc: cpuState.pc,
+      af: cpuState.af,
+      bc: cpuState.bc,
+      de: cpuState.de,
+      hl: cpuState.hl,
+      af_: cpuState.af_,
+      bc_: cpuState.bc_,
+      de_: cpuState.de_,
+      hl_: cpuState.hl_,
+      sp: cpuState.sp,
+      ix: cpuState.ix,
+      iy: cpuState.iy,
+      ir: cpuState.ir,
+      wz: cpuState.wz,
       partitionLabels: controller.machine.getCurrentPartitionLabels(),
       selectedRom: controller.machine.getSelectedRomPage?.(),
       selectedBank: controller.machine.getSelectedRamBank?.(),
@@ -687,8 +687,10 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    const machine = controller.machine as IZxNextMachine;
-    return machine.memoryDevice.getMemoryMappings();
+    const machine = controller.machine as IZxNextMachine & {
+      getNextMemoryMapping?: () => NextMemoryMapping;
+    };
+    return machine.getNextMemoryMapping?.() ?? machine.memoryDevice.getMemoryMappings();
   }
 
   /**
@@ -776,6 +778,9 @@ class EmuMessageProcessor {
       noController();
     }
     const machine = controller.machine as any;
+    if (machine.setCpuRegisterValue?.(register, value)) {
+      return;
+    }
     switch (register.toUpperCase()) {
       case "A":
         machine.a = value;
@@ -939,10 +944,11 @@ class EmuMessageProcessor {
       noController();
     }
     const machine = controller.machine;
+    const cpuState = machine.getCpuState();
     return {
       state: controller.state,
-      pcValue: machine.pc,
-      tacts: machine.tacts
+      pcValue: cpuState.pc,
+      tacts: cpuState.tacts
     };
   }
 

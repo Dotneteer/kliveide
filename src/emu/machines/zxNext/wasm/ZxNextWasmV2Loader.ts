@@ -500,6 +500,8 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetCpuInterruptMode: ZxNextWasmV2ExportFunction;
   zxnextSetCpuInterruptMode: ZxNextWasmV2ExportFunction;
   zxnextGetCpuTacts: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuRetExecuted: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuRetnExecuted: ZxNextWasmV2ExportFunction;
   zxnextGetZ80NMode: ZxNextWasmV2ExportFunction;
   zxnextGetLastMemoryAddress: ZxNextWasmV2ExportFunction;
   zxnextGetLastMemoryValue: ZxNextWasmV2ExportFunction;
@@ -1047,6 +1049,8 @@ const requiredV2Exports = [
   "zxnextGetCpuInterruptMode",
   "zxnextSetCpuInterruptMode",
   "zxnextGetCpuTacts",
+  "zxnextGetCpuRetExecuted",
+  "zxnextGetCpuRetnExecuted",
   "zxnextGetZ80NMode",
   "zxnextGetLastMemoryAddress",
   "zxnextGetLastMemoryValue",

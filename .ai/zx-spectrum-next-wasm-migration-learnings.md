@@ -1146,3 +1146,28 @@ Use this shape:
 - Tests: `npm test -- --project jsdom test/zxnext test/wasm/zxNext`
   (104 files, 5,392 tests), `npm run build:check`, and `git diff --check`
   passed.
+
+## 2026-08-16 - Post-Rollout Bugfix - Debug Breakpoints
+
+- Debug-loop lesson: A full-frame WASM export is correct only for no-debug
+  running. When `debugStepMode` is `StopAtBreakpoint`, `StepInto`, `StepOver`,
+  or `StepOut`, the adapter must use the one-instruction WASM export, sync the
+  CPU/bus state after each instruction, and let TypeScript `DebugSupport`
+  decide breakpoint termination.
+- Regression lesson: The smallest startup-debug repro is a NOP ROM at `$0000`
+  with an execution breakpoint at `$0001`. One debug frame call should stop at
+  PC `$0001`, return `FrameTerminationMode.DebugEvent`, and record one
+  instruction call with no whole-frame call.
+
+## 2026-08-16 - Post-Rollout Bugfix - Tooling State Integration
+
+- Integration lesson: Renderer tooling must consume machine-level APIs that are
+  WASM-backed (`getCpuState()`, `getCurrentPartitionLabels()`,
+  `getNextMemoryMapping()`, register setters), not direct TypeScript CPU or
+  memory-device fields that can lag after full-machine migration.
+- Debugging lesson: StepOut needs the same RET/RETN synchronization contract as
+  the 48K WASM adapter. Export the C core RET flags and sync `retExecuted`
+  after each debug instruction.
+- Disassembly lesson: Normal WASM frames should sync at least PC and frame
+  counters, matching the 48K adapter, so follow-PC disassembly and status
+  updates do not wait for an explicit full CPU-state query.

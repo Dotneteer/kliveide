@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   createOracleZxNextMachine,
+  createTestZxNextRomSet,
   createTestZxNextWasmMachine,
   executeOneInstruction,
-  initCodeBytes
+  initCodeBytes,
+  testRom
 } from "./wasm-next-test-helpers";
 
 describe("ZX Spectrum Next WASM v2 contention and CPU speed", () => {
@@ -51,6 +53,28 @@ describe("ZX Spectrum Next WASM v2 contention and CPU speed", () => {
 
       expect(wasmMachine.getCpuState().tacts).toBe(oracleMachine.getCpuState().tacts);
       expect(wasmMachine.getCpuState().af).toBe(oracleMachine.getCpuState().af);
+    }
+  });
+
+  it("uses 28 MHz frame timing across CPU speeds", async () => {
+    for (const speed of [0, 1, 2, 3]) {
+      const machine = await createTestZxNextWasmMachine(createTestZxNextRomSet({
+        next: testRom([0x00], 0x10000)
+      }));
+
+      machine.nextRegDevice.directSetRegValue(0x07, speed);
+      machine.setTacts(0);
+      machine.executeMachineFrame();
+      const diagnostics = machine.getWasmV2Diagnostics();
+      const tactScale = 8 >> speed;
+      const expectedCpuTactsPerFrame = (diagnostics.screenRenderingTacts * 4) / tactScale;
+
+      expect(diagnostics.cpuTactsPerFrame).toBe(expectedCpuTactsPerFrame);
+      expect(machine.tacts).toBeGreaterThanOrEqual(expectedCpuTactsPerFrame);
+      expect(machine.tacts).toBeLessThan(expectedCpuTactsPerFrame + 16);
+      expect(machine.frameTacts).toBeLessThan(16 * tactScale);
+      expect(machine.currentFrameTact).toBe(machine.frameTacts >>> 2);
+      expect(diagnostics.lastFrameInstructionsExecuted).toBeLessThan(0x200000);
     }
   });
 

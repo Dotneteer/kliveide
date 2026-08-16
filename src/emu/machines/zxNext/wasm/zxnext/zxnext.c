@@ -366,7 +366,11 @@ static void importZ80BusEvents(void);
 static void clearRuntimeState(void);
 static uint32_t executeWholeInstruction(void);
 static uint32_t cpuTactsPerFrame(void);
+static uint32_t frameTactsInFrame(void);
 static void advanceFrameTacts(uint32_t delta);
+static void advanceDmaFrameTacts(uint32_t ticks);
+static uint32_t finishCompletedFrames(void);
+static void runDmaUntilCpuCanRun(void);
 static void setCpuProgrammedSpeed(uint32_t value);
 static uint32_t cpuTactScale(void);
 
@@ -528,17 +532,8 @@ void zxnextReset(void) {
 uint32_t zxnextExecuteInstruction(void) {
   hasMemoryEvent = 0;
   z80ClearBusEvents();
-  const uint32_t delta = executeWholeInstruction();
-  advanceFrameTacts(delta);
-  if (frameTacts >= cpuTactsPerFrame()) {
-    while (frameTacts >= cpuTactsPerFrame()) {
-      zxnextCtcOnNewFrame(cpuTactsPerFrame() * 8u);
-      zxnextUartOnNewFrame();
-      zxnextI2cOnNewFrame();
-      frameTacts -= cpuTactsPerFrame();
-      frames++;
-    }
-    currentFrameTact = frameTacts * 2u;
+  executeWholeInstruction();
+  if (finishCompletedFrames() != 0u) {
     zxnextRenderInstantScreen();
   }
   return 0;
@@ -551,23 +546,13 @@ uint32_t zxnextExecuteFrame(void) {
   hasPortEvent = 0u;
   hasTbBlueEvent = 0u;
   z80ClearBusEvents();
-  const uint32_t target = cpuTactsPerFrame();
-  uint32_t guard = 0u;
+  const uint32_t target = frameTactsInFrame();
   do {
-    const uint32_t delta = executeWholeInstruction();
-    advanceFrameTacts(delta);
+    executeWholeInstruction();
     lastFrameInstructionsExecuted++;
-    guard++;
-  } while (frameTacts < target && guard < 0x200000u);
+  } while (frameTacts < target);
 
-  while (frameTacts >= target) {
-    zxnextCtcOnNewFrame(target * 8u);
-    zxnextUartOnNewFrame();
-    zxnextI2cOnNewFrame();
-    frameTacts -= target;
-    frames++;
-  }
-  currentFrameTact = frameTacts * 2u;
+  finishCompletedFrames();
   zxnextRenderInstantScreen();
   return 0u;
 }
@@ -606,7 +591,7 @@ uint32_t zxnextGetSdResponseBufferSize(void) { return ZXNEXT_SD_RESPONSE_BUFFER_
 uint32_t zxnextGetDiagnosticBufferSize(void) { return ZXNEXT_DIAGNOSTIC_BUFFER_SIZE; }
 uint32_t zxnextGetFrames(void) { return frames; }
 uint32_t zxnextGetTacts(void) { return tacts; }
-uint32_t zxnextGetFrameTacts(void) { return frameTacts * 8u; }
+uint32_t zxnextGetFrameTacts(void) { return frameTacts; }
 uint32_t zxnextGetCurrentFrameTact(void) { return currentFrameTact; }
 uint32_t zxnextGetCpuTactsPerFrame(void) { return cpuTactsPerFrame(); }
 uint32_t zxnextGetFrameCallCount(void) { return frameCallCount; }
@@ -668,6 +653,8 @@ void zxnextSetCpuIff2(uint32_t value) { z80SetIff2(value); }
 uint32_t zxnextGetCpuInterruptMode(void) { return z80GetInterruptMode(); }
 void zxnextSetCpuInterruptMode(uint32_t value) { z80SetInterruptMode(value); }
 uint32_t zxnextGetCpuTacts(void) { return z80GetTacts(); }
+uint32_t zxnextGetCpuRetExecuted(void) { return z80GetRetExecuted(); }
+uint32_t zxnextGetCpuRetnExecuted(void) { return z80GetRetnExecuted(); }
 uint32_t zxnextGetZ80NMode(void) { return z80GetZ80NMode(); }
 uint32_t zxnextGetLastMemoryAddress(void) { return hasMemoryEvent != 0u ? lastMemoryAddress : 0u; }
 uint32_t zxnextGetLastMemoryValue(void) { return hasMemoryEvent != 0u ? lastMemoryValue : 0u; }
@@ -735,9 +722,11 @@ static void zxnextCpuPokeMemory(uint32_t address, uint32_t value) {
 static void tactPlusNNext(uint32_t value) {
   cpu.tacts += value;
   tacts += value;
+  advanceFrameTacts(value);
 }
 
 static uint32_t executeWholeInstruction(void) {
+  runDmaUntilCpuCanRun();
   const uint32_t startTacts = tacts;
   const uint32_t startPc = z80GetPc();
   zxnextDivMmcBeforeOpcodeFetch(startPc);
@@ -759,8 +748,12 @@ static uint32_t executeWholeInstruction(void) {
 }
 
 static uint32_t cpuTactsPerFrame(void) {
+  return frameTactsInFrame() / cpuTactScale();
+}
+
+static uint32_t frameTactsInFrame(void) {
   updateScreenTimingFromNextRegs();
-  return screenRenderingTacts >> 1u;
+  return screenRenderingTacts * 4u;
 }
 
 static void setCpuProgrammedSpeed(uint32_t value) {
@@ -773,8 +766,48 @@ static uint32_t cpuTactScale(void) {
 }
 
 static void advanceFrameTacts(uint32_t delta) {
-  frameTacts += delta;
-  currentFrameTact = frameTacts * 2u;
+  frameTacts += delta * cpuTactScale();
+  currentFrameTact = frameTacts >> 2u;
+}
+
+static void advanceDmaFrameTacts(uint32_t ticks) {
+  const uint32_t scale = cpuTactScale();
+  tacts += (ticks + scale - 1u) / scale;
+  frameTacts += ticks;
+  currentFrameTact = frameTacts >> 2u;
+}
+
+static uint32_t finishCompletedFrames(void) {
+  const uint32_t target = frameTactsInFrame();
+  uint32_t completed = 0u;
+  while (frameTacts >= target) {
+    zxnextCtcOnNewFrame(target);
+    zxnextUartOnNewFrame();
+    zxnextI2cOnNewFrame();
+    frameTacts -= target;
+    frames++;
+    completed = 1u;
+  }
+  currentFrameTact = frameTacts >> 2u;
+  return completed;
+}
+
+static void runDmaUntilCpuCanRun(void) {
+  const uint32_t maxDmaSteps = 0x20000u;
+  for (uint32_t step = 0; step < maxDmaSteps; step++) {
+    if (dmaBusState == DMA_BUS_REQUESTED) {
+      zxnextAcknowledgeDmaBus();
+    }
+
+    const uint32_t dmaTicks = zxnextStepDma();
+    if (dmaTicks != 0u) {
+      advanceDmaFrameTacts(dmaTicks);
+    }
+
+    if (dmaBusState == DMA_BUS_IDLE) {
+      break;
+    }
+  }
 }
 
 static void importZ80BusEvents(void) {
