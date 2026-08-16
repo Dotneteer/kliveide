@@ -193,6 +193,8 @@ static uint32_t interruptWriteNextReg(uint32_t reg, uint32_t value) {
       interruptBusResetRequested = (byteValue & 0x80u) != 0u;
       interruptMfNmiByNextReg = (byteValue & 0x08u) != 0u;
       interruptDivMmcNmiByNextReg = (byteValue & 0x04u) != 0u;
+      if (interruptMfNmiByNextReg != 0u) zxnextRequestMfNmi();
+      if (interruptDivMmcNmiByNextReg != 0u) zxnextRequestDivMmcNmi();
       if ((byteValue & 0x10u) == 0u) interruptMfNmiByIoTrap = 0u;
       return 1u;
     case 0x22u:

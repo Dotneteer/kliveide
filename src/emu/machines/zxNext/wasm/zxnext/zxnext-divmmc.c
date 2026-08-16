@@ -9,6 +9,7 @@ static void resetDivMmcState(void) {
   divMmcConmem = 0u;
   divMmcMapram = 0u;
   divMmcBank = 0u;
+  divMmcMultifaceType = 0u;
   divMmcLastE3Value = 0u;
   divMmcEnableAutomap = 0u;
   divMmcRequestAutomapOn = 0u;

@@ -935,3 +935,106 @@ Use this shape:
   the 22-file/129-test Next WASM suite, `npm run build:check`,
   `npm run check:zxnext-wasm-size` (253,796 bytes against 360,000), and
   `git diff --check` passed.
+
+## 2026-08-16 - Step 30 - Multiface And Expansion Bus
+
+- Symptom: Multiface ports/memory and expansion-bus ROMCS/NMI state were still
+  TypeScript-owned, so WASM memory reads could not model slot-0 overlays that
+  preempt normal ROM, DivMMC, or external bus data.
+- Fix: Added `zxnext-multiface.c` and `zxnext-expansion.c`, wired them into the
+  memory, NextReg, interrupt, port, CPU-speed, loader/export, and adapter
+  diagnostic paths, and added focused WASM coverage for migrated
+  Multiface/expansion cases.
+- Memory-priority lesson: Slot-0 reads must check Multiface first, then DivMMC,
+  then expansion ROMCS replacement/external-bus data, then Layer 2/normal MMU.
+  Multiface page 0 is read-only ROM; page 1 is writable RAM stored in the
+  Multiface ROM buffer range.
+- Port-overlap lesson: Multiface low-byte ports overlap with other devices,
+  especially `$1f`. The C port router should only intercept the currently
+  selected Multiface enable/disable low byte; otherwise DAC and later joystick
+  ports lose their existing behavior.
+- NMI lesson: Software MF/DivMMC NMI requests from NR `$02` feed the C NMI
+  cause machine, and accepted causes drive `z80SetSigNmi()` at opcode-fetch
+  boundaries. Expansion-bus NMI is consumed only when enabled and memory cycles
+  are not disabled; Multiface keeps priority over expansion bus.
+- Expansion-bus lesson: NR `$80` enabling also forces the current effective CPU
+  speed to 3.5 MHz while preserving the programmed speed, so speed diagnostics
+  need both fields.
+- Tests: `node scripts/build-zxnext-wasm.cjs`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-multiface-expansion.test.ts`,
+  the 23-file/135-test Next WASM suite, `npm run build:check`,
+  `npm run check:zxnext-wasm-size` (257,884 bytes against 360,000), and
+  `git diff --check` passed.
+
+## 2026-08-16 - Step 31 - Joystick And Mouse
+
+- Symptom: Kempston joystick/mouse decode still lived in the TypeScript
+  `KempstonHandler`, while WASM-owned port dispatch had already reached the
+  overlapping Multiface and DAC ports.
+- Fix: Added `zxnext-input.c`, WASM exports for changed joystick/mouse state,
+  `$05` joystick mode sync, `$0A` mouse swap/DPI sync, `$0B` joystick I/O mode
+  sync, and adapter-side changed-state sync before input port reads, frames, and
+  input NextReg reads.
+- Port-priority lesson: Mouse ports use `(port & 0x0fff)` and must be decoded
+  before Multiface low-byte ports. Joystick `$1f` and `$df/$37` must be decoded
+  after the currently selected Multiface enable/disable ports so Step 30 keeps
+  ownership of active Multiface transitions without stealing joystick reads.
+- Sync lesson: Joystick and mouse physical state remain app-owned, but WASM owns
+  port decode and mode/gate selection. The adapter should push state only when
+  the cached values change, following the keyboard-row pattern.
+- NextReg lesson: Direct app-owned mouse changes can affect NR `$0A` reads, so
+  the NextReg bridge must sync input state before reading `$0A/$0B`.
+- Tests: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-input.test.ts`,
+  the 24-file/141-test Next WASM suite, `npm run build:check`,
+  `node scripts/build-zxnext-wasm.cjs`, `npm run check:zxnext-wasm-size`
+  (260,689 bytes against 360,000), and `git diff --check` passed.
+
+## 2026-08-16 - Step 32 - UART And I2C
+
+- Symptom: UART and I2C/RTC ports were still TypeScript-owned, so WASM port
+  routing returned unsupported fallback values for `$103b/$113b` and
+  `$133b/$143b/$153b/$163b`.
+- Fix: Added `zxnext-uart.c` and `zxnext-i2c.c`, wired them into WASM port
+  dispatch, exports, diagnostics, frame completion, and NR `$83` gate checks,
+  and added focused peripheral coverage.
+- UART lesson: The selected UART matters for every port operation. Select-port
+  writes update prescaler MSB on the old selected channel before switching, and
+  frame bit 7 clears only the selected channel while storing bits 6:0.
+- I2C lesson: The bit-bang state machine depends on SCL falling edges to drive
+  ACK/read-data bits and SCL rising edges to sample master bits. Tests should
+  use the same START/STOP/writeBit/readBit shape as the TypeScript suite rather
+  than direct state pokes.
+- RTC policy lesson: Host time remains TypeScript-owned. WASM receives a bounded
+  64-byte CMOS snapshot during setup/reset and then owns subsequent DS1307 I2C
+  transitions and frame-based clock advancement.
+- Port lesson: I2C ports belong before Layer 2 in the Next port table; UART
+  ports belong after Layer 2 and before CTC. Both are exact 16-bit port matches
+  and return `0xff` when their NR `$83` gate is closed.
+- Tests: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-peripherals.test.ts`,
+  the 25-file/147-test Next WASM suite, `npm run build:check`,
+  `node scripts/build-zxnext-wasm.cjs`, `npm run check:zxnext-wasm-size`
+  (267,221 bytes against 360,000), and `git diff --check` passed.
+
+## 2026-08-16 - Step 33 - +3 Floppy/FDC Hook
+
+- Ownership decision: Keep Next +3 FDC TypeScript-owned for now. The current
+  `FloppyControllerDevice` already owns disk parsing, command execution, motor
+  timing, media state, and `DISK_*_CHANGES` persistence, and the migration plan
+  did not identify FDC as a hot path worth uploading into WASM in this step.
+- Adapter lesson: `$2ffd/$3ffd` should be explicit TypeScript-owned ports in
+  `ZxNextWasmV2Machine`. Reads already fell through to the TypeScript port
+  manager because these ports are not WASM-owned; writes also need to stop at
+  `super.doWritePort()` so WASM unsupported-port diagnostics do not record FDC
+  command bytes.
+- Split-port lesson: `$1ffd` remains mixed ownership. WASM owns the paging bits
+  and public memory latch diagnostics; TypeScript owns bit 3 motor side effects.
+  Tests should assert that split instead of expecting the motor bit in
+  `zxnextGetPort1ffdValue()`.
+- Frame-loop lesson: With the WASM frame loop overriding the base TypeScript
+  frame lifecycle, TypeScript-owned floppy state still needs an explicit
+  `floppyDevice.onFrameCompleted()` after `zxnextExecuteFrame()` so motor speed
+  and disk-change publication keep advancing.
+- Tests: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-floppy.test.ts`,
+  the 26-file/152-test Next WASM suite, `npm run build:check`,
+  `node scripts/build-zxnext-wasm.cjs`, `npm run check:zxnext-wasm-size`
+  (267,221 bytes against 360,000), and `git diff --check` passed.

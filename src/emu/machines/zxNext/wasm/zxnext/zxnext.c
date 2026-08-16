@@ -262,6 +262,7 @@ static uint8_t divMmcEnabled = 1u;
 static uint8_t divMmcConmem = 0u;
 static uint8_t divMmcMapram = 0u;
 static uint8_t divMmcBank = 0u;
+static uint8_t divMmcMultifaceType = 0u;
 static uint8_t divMmcLastE3Value = 0u;
 static uint8_t divMmcEnableAutomap = 0u;
 static uint8_t divMmcRequestAutomapOn = 0u;
@@ -292,6 +293,70 @@ static uint32_t sdPendingCard = 0u;
 static uint32_t sdCommandCount = 0u;
 static uint32_t sdReadRequestCount = 0u;
 static uint32_t sdWriteRequestCount = 0u;
+static uint8_t expansionRomcsSignal = 0u;
+static uint8_t expansionExternalBusData = 0xffu;
+static uint8_t expansionNmiPending = 0u;
+static uint8_t expansionIntPending = 0u;
+static uint8_t multifaceNmiActive = 0u;
+static uint8_t multifaceMfEnabled = 0u;
+static uint8_t multifaceInvisible = 1u;
+static uint8_t nmiState = ZXNEXT_NMI_STATE_IDLE;
+static uint8_t nmiSourceMf = 0u;
+static uint8_t nmiSourceDivMmc = 0u;
+static uint8_t nmiSourceExpBus = 0u;
+static uint8_t pendingMfNmi = 0u;
+static uint8_t pendingDivMmcNmi = 0u;
+static uint8_t sigNmi = 0u;
+static uint8_t joystick1Mode = 0u;
+static uint8_t joystick2Mode = 0u;
+static uint8_t joystickIoModeEnabled = 0u;
+static uint8_t joystickIoMode = 0u;
+static uint8_t joystickIoModeParam = 1u;
+static uint8_t joystickLeftState = 0u;
+static uint8_t joystickRightState = 0u;
+static uint32_t joystickStateWriteCount = 0u;
+static uint8_t mouseXPos = 0u;
+static uint8_t mouseYPos = 0u;
+static uint8_t mouseWheelZ = 0u;
+static uint8_t mouseButtonLeft = 0u;
+static uint8_t mouseButtonRight = 0u;
+static uint8_t mouseButtonMiddle = 0u;
+static uint8_t mouseSwapButtons = 0u;
+static uint8_t mouseDpi = 1u;
+static uint32_t mouseStateWriteCount = 0u;
+static uint8_t uartSelected = 0u;
+static uint16_t uartPrescalerLsb[2];
+static uint8_t uartPrescalerMsb[2];
+static uint8_t uartFrameRegister[2];
+static uint8_t uartBreakCondition[2];
+static uint8_t uartFramingError[2];
+static uint8_t uartRxOverflow[2];
+static uint16_t uartRxFifo[2][ZXNEXT_UART_RX_FIFO_SIZE];
+static uint8_t uartTxFifo[2][ZXNEXT_UART_TX_FIFO_SIZE];
+static uint16_t uartRxReadPtr[2];
+static uint16_t uartRxWritePtr[2];
+static uint16_t uartRxCount[2];
+static uint8_t uartTxReadPtr[2];
+static uint8_t uartTxWritePtr[2];
+static uint8_t uartTxCount[2];
+static uint32_t uartTxWriteCount = 0u;
+static uint32_t uartRxInjectCount = 0u;
+static uint8_t i2cSclOut = 1u;
+static uint8_t i2cSdaOut = 1u;
+static uint8_t i2cSdaSlave = 1u;
+static uint8_t i2cPrevScl = 1u;
+static uint8_t i2cPrevSda = 1u;
+static uint8_t i2cState = 0u;
+static uint8_t i2cShiftReg = 0u;
+static uint8_t i2cBitCount = 0u;
+static uint8_t i2cIsRead = 0u;
+static uint8_t i2cAddressed = 0u;
+static uint8_t i2cCmos[64];
+static uint8_t i2cRegPointer = 0u;
+static uint8_t i2cFirstWrite = 1u;
+static uint32_t i2cFrameCounter = 0u;
+static uint32_t i2cFramesPerSecond = 50u;
+static uint32_t i2cClockAdvanceCount = 0u;
 
 static uint8_t zxnextCpuReadMemory(uint32_t address);
 static void zxnextCpuWriteMemory(uint32_t address, uint32_t value);
@@ -327,6 +392,11 @@ static uint32_t cpuTactScale(void);
 
 #include "zxnext-memory.c"
 #include "zxnext-interrupt.c"
+#include "zxnext-expansion.c"
+#include "zxnext-multiface.c"
+#include "zxnext-input.c"
+#include "zxnext-uart.c"
+#include "zxnext-i2c.c"
 #include "zxnext-palette.c"
 #include "zxnext-layer2.c"
 #include "zxnext-tilemap.c"
@@ -347,6 +417,12 @@ static uint32_t cpuTactScale(void);
 
 static void clearRuntimeState(void) {
   resetDivMmcState();
+  resetExpansionState();
+  resetMultifaceState();
+  resetInputState();
+  resetUartState();
+  resetI2cState();
+  resetNmiState();
   resetSdCardState();
   resetKeyboardState();
   resetUlaState();
@@ -457,6 +533,8 @@ uint32_t zxnextExecuteInstruction(void) {
   if (frameTacts >= cpuTactsPerFrame()) {
     while (frameTacts >= cpuTactsPerFrame()) {
       zxnextCtcOnNewFrame(cpuTactsPerFrame() * 8u);
+      zxnextUartOnNewFrame();
+      zxnextI2cOnNewFrame();
       frameTacts -= cpuTactsPerFrame();
       frames++;
     }
@@ -484,6 +562,8 @@ uint32_t zxnextExecuteFrame(void) {
 
   while (frameTacts >= target) {
     zxnextCtcOnNewFrame(target * 8u);
+    zxnextUartOnNewFrame();
+    zxnextI2cOnNewFrame();
     frameTacts -= target;
     frames++;
   }
@@ -661,6 +741,8 @@ static uint32_t executeWholeInstruction(void) {
   const uint32_t startTacts = tacts;
   const uint32_t startPc = z80GetPc();
   zxnextDivMmcBeforeOpcodeFetch(startPc);
+  zxnextNmiBeforeOpcodeFetch(startPc);
+  z80SetSigNmi(sigNmi);
   z80SetTacts(tacts);
   do {
     z80ExecuteCpuCycle();
@@ -670,7 +752,9 @@ static uint32_t executeWholeInstruction(void) {
   cpuSp = (uint16_t)z80GetSp();
   cpuInstructionsExecuted++;
   importZ80BusEvents();
-  zxnextDivMmcAfterOpcodeFetch(z80GetRetnExecuted());
+  const uint32_t retnExecuted = z80GetRetnExecuted();
+  if (retnExecuted != 0u) multifaceHandleRetn();
+  zxnextDivMmcAfterOpcodeFetch(retnExecuted);
   return tacts - startTacts;
 }
 
@@ -681,7 +765,7 @@ static uint32_t cpuTactsPerFrame(void) {
 
 static void setCpuProgrammedSpeed(uint32_t value) {
   cpuProgrammedSpeed = (uint8_t)(value & 0x03u);
-  cpuEffectiveSpeed = cpuProgrammedSpeed;
+  cpuEffectiveSpeed = expansionBusEnabled() != 0u ? 0u : cpuProgrammedSpeed;
 }
 
 static uint32_t cpuTactScale(void) {

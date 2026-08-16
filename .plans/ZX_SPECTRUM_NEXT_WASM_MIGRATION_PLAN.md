@@ -2,7 +2,7 @@
 
 Created: 2026-08-16
 
-Status: Steps 1-8, Step 13A, and Steps 14-21 done. Steps 9-13 have useful WASM
+Status: Steps 1-8, Step 13A, and Steps 14-30 done. Steps 9-13 have useful WASM
 baselines whose audited gaps are now either fixed or explicitly deferred to
 later owning steps. The current baselines cover core memory/MMU reset layout,
 128K/+3/Next memory-port paging, NextReg core/gating, keyboard matrix sync, ULA
@@ -18,8 +18,8 @@ boot-time device slices. The early IDE inspection baseline now proves public
 register, memory, port, NextReg, screen, and code-injection reads come from
 WASM-owned state, CPU speed NR `$07` plus the current 28 MHz read wait-state
 rule match TypeScript for the migrated timing cases, and WASM now owns the
-first interrupt/IM2 daisy-chain state plus Next palette, Timex, and ULA+ port
-state needed by the current standard ULA renderer.
+first interrupt/IM2 daisy-chain state, Next palette/Timex/ULA+ state, audio,
+DMA, Copper, CTC, and the Multiface/expansion-bus memory and NMI overlays.
 
 ## Goal
 
@@ -2883,7 +2883,7 @@ Definition of done:
 
 ### Step 30 - Multiface And Expansion Bus
 
-Status: Not started
+Status: Completed on 2026-08-16
 
 Port external memory/port/NMI devices that alter hot machine state.
 
@@ -2932,9 +2932,30 @@ Definition of done:
 - Multiface/expansion bus memory, ports, and NMI behavior match TypeScript for
   migrated cases.
 
+Completion notes:
+
+- Added `zxnext-multiface.c` and `zxnext-expansion.c`.
+- WASM now owns:
+  - Multiface type, enable/disable ports, active/invisible state, NMI entry,
+    RETN cleanup, and slot-0 memory overlay;
+  - expansion-bus NR `$80`, `$81`, `$8A`, ROMCS signal/replacement, external
+    bus data, IO propagation, interrupt pending flags, and NMI cause latching;
+  - memory priority for Multiface over DivMMC over expansion ROMCS/normal MMU;
+  - CPU speed forcing while the expansion bus is enabled.
+- Added exports, loader validation, adapter diagnostics, and public-port routing
+  for the migrated Multiface/expansion state.
+- Added `test/wasm/zxNext/wasm-next-multiface-expansion.test.ts`.
+- Validation:
+  - `node scripts/build-zxnext-wasm.cjs`;
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-multiface-expansion.test.ts`;
+  - `npm test -- --project jsdom test/wasm/zxNext`;
+  - `npm run build:check`;
+  - `npm run check:zxnext-wasm-size` (257,884 bytes against 360,000);
+  - `git diff --check`.
+
 ### Step 31 - Joystick And Mouse
 
-Status: Not started
+Status: Completed on 2026-08-16
 
 Port game input devices.
 
@@ -2977,9 +2998,28 @@ Definition of done:
 
 - Input ports and port-enable gates match TypeScript.
 
+Completion notes:
+
+- Added `zxnext-input.c` with WASM-owned joystick/mouse mode state, changed-state
+  sync exports, Kempston joystick 1/2/alias reads, MD button masking, Kempston
+  mouse accumulator/button reads, and `$05`/`$0A`/`$0B` NextReg side effects.
+- Routed mouse ports before Multiface low-byte ports and joystick ports after
+  Multiface selected enable/disable ports, preserving the `$1f` overlap from
+  Step 30.
+- Added adapter sync for app-owned joystick/mouse state before input port reads,
+  frame execution, and input NextReg reads.
+- Added `test/wasm/zxNext/wasm-next-input.test.ts`.
+- Validation:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-input.test.ts`;
+  - `npm test -- --project jsdom test/wasm/zxNext`;
+  - `npm run build:check`;
+  - `node scripts/build-zxnext-wasm.cjs`;
+  - `npm run check:zxnext-wasm-size` (260,689 bytes against 360,000);
+  - `git diff --check`.
+
 ### Step 32 - UART And I2C
 
-Status: Not started
+Status: Completed on 2026-08-16
 
 Port serial and I2C/RTC behavior.
 
@@ -3025,9 +3065,31 @@ Definition of done:
 
 - UART and I2C ports match TypeScript for migrated scenarios.
 
+Completion notes:
+
+- Added `zxnext-uart.c` with two UART channels, RX/TX circular FIFOs,
+  selected-channel port decode, prescaler and frame registers, status-byte
+  composition, external RX/TX hooks, and per-frame TX drain.
+- Added `zxnext-i2c.c` with SCL/SDA open-drain line behavior, START/STOP
+  detection, DS1307 address/data ACK handling, CMOS pointer auto-increment, and
+  DS1307 clock advancement.
+- Routed I2C ports `$103b/$113b` and UART ports `$133b/$143b/$153b/$163b`
+  through WASM-owned port dispatch and NR `$83` gates.
+- Kept RTC host-time policy explicit: TypeScript initializes real host time and
+  the adapter syncs a bounded CMOS snapshot into WASM on setup/reset; WASM owns
+  subsequent I2C transitions and frame ticking.
+- Added `test/wasm/zxNext/wasm-next-peripherals.test.ts`.
+- Validation:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-peripherals.test.ts`;
+  - `npm test -- --project jsdom test/wasm/zxNext`;
+  - `npm run build:check`;
+  - `node scripts/build-zxnext-wasm.cjs`;
+  - `npm run check:zxnext-wasm-size` (267,221 bytes against 360,000);
+  - `git diff --check`.
+
 ### Step 33 - +3 Floppy/FDC Hook
 
-Status: Not started
+Status: Completed on 2026-08-16
 
 Decide whether the Next FDC path remains TypeScript-owned or moves into WASM.
 
@@ -3074,6 +3136,27 @@ Definition of done:
 
 - The plan records whether FDC is WASM-owned or TypeScript-owned, and tests
   cover the chosen public contract.
+
+Completion notes:
+
+- Ownership decision: Next +3 FDC remains TypeScript-owned for this migration
+  step. The existing `FloppyControllerDevice` owns disk parsing, command
+  execution, motor state, drive media, and `DISK_*_CHANGES` persistence.
+- Updated `ZxNextWasmV2Machine` so `$2ffd/$3ffd` FDC status/data writes stay on
+  the TypeScript side and do not enter WASM unsupported-port diagnostics.
+- Kept `$1ffd` mixed: WASM owns paging-relevant bits, while TypeScript owns bit
+  3 motor side effects.
+- Added a completed-frame TypeScript floppy tick after `zxnextExecuteFrame()`
+  so motor timing and disk-change publication remain active with the WASM frame
+  loop.
+- Added `test/wasm/zxNext/wasm-next-floppy.test.ts`.
+- Validation:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-floppy.test.ts`;
+  - `npm test -- --project jsdom test/wasm/zxNext`;
+  - `npm run build:check`;
+  - `node scripts/build-zxnext-wasm.cjs`;
+  - `npm run check:zxnext-wasm-size` (267,221 bytes against 360,000);
+  - `git diff --check`.
 
 ### Step 34 - Debug, IDE, And Public Adapter Surface
 

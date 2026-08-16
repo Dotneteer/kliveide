@@ -19,6 +19,15 @@ static uint32_t readPhysical(uint32_t offset) {
 }
 
 void zxnextWritePhysical(uint32_t offset, uint32_t value) {
+  if (
+    offset >= ZXNEXT_MULTIFACE_ROM_OFFSET + ZXNEXT_PAGE_SIZE &&
+    offset < ZXNEXT_MULTIFACE_ROM_OFFSET + 2u * ZXNEXT_PAGE_SIZE &&
+    offset < ZXNEXT_ROM_SIZE
+  ) {
+    rom[offset] = (uint8_t)(value & 0xffu);
+    rebuildFlatMemory();
+    return;
+  }
   if (offset >= ZXNEXT_DIVMMC_RAM_OFFSET && offset < activeMemorySize() && offset < ZXNEXT_SRAM_CAPACITY) {
     sram[offset] = (uint8_t)(value & 0xffu);
     updateFlatMemoryForPhysicalOffset(offset);
@@ -149,11 +158,26 @@ static void rebuildFlatMemory(void) {
     const uint32_t base = page * ZXNEXT_PAGE_SIZE;
     for (uint32_t offset = 0; offset < ZXNEXT_PAGE_SIZE; offset++) {
       const uint32_t address = base + offset;
+      const uint32_t multifaceOffset = multifaceReadOffset(address);
+      if (multifaceOffset != ZXNEXT_INVALID_PAGE_OFFSET) {
+        flatMemory[address] = (uint8_t)readPhysical(multifaceOffset);
+        continue;
+      }
       const uint32_t divMmcOffset = divMmcReadOffset(address);
-      const uint32_t readOffset = divMmcOffset != ZXNEXT_INVALID_PAGE_OFFSET
-        ? divMmcOffset + (address & 0x1fffu)
-        : pageReadOffset[page] + offset;
-      flatMemory[address] = (uint8_t)readPhysical(readOffset);
+      if (divMmcOffset != ZXNEXT_INVALID_PAGE_OFFSET) {
+        flatMemory[address] = (uint8_t)readPhysical(divMmcOffset + (address & 0x1fffu));
+        continue;
+      }
+      const uint32_t expansionOffset = expansionReadOffset(address);
+      if (expansionOffset != ZXNEXT_INVALID_PAGE_OFFSET) {
+        flatMemory[address] = (uint8_t)readPhysical(expansionOffset);
+        continue;
+      }
+      if (address < 0x4000u && expansionIsRomcsClaimed() != 0u) {
+        flatMemory[address] = expansionExternalBusData;
+        continue;
+      }
+      flatMemory[address] = (uint8_t)readPhysical(pageReadOffset[page] + offset);
     }
   }
 }
@@ -192,9 +216,20 @@ static void resetMmuLayout(void) {
 
 uint32_t zxnextReadMemory(uint32_t address) {
   const uint32_t maskedAddress = address & 0xffffu;
+  const uint32_t multifaceOffset = multifaceReadOffset(maskedAddress);
+  if (multifaceOffset != ZXNEXT_INVALID_PAGE_OFFSET) {
+    return readPhysical(multifaceOffset);
+  }
   const uint32_t divMmcOffset = divMmcReadOffset(maskedAddress);
   if (divMmcOffset != ZXNEXT_INVALID_PAGE_OFFSET) {
     return readPhysical(divMmcOffset + (maskedAddress & 0x1fffu));
+  }
+  const uint32_t expansionOffset = expansionReadOffset(maskedAddress);
+  if (expansionOffset != ZXNEXT_INVALID_PAGE_OFFSET) {
+    return readPhysical(expansionOffset);
+  }
+  if (maskedAddress < 0x4000u && expansionIsRomcsClaimed() != 0u) {
+    return expansionExternalBusData;
   }
   const uint32_t layer2Offset = layer2MappedOffset(maskedAddress, 0u);
   if (layer2Offset != ZXNEXT_INVALID_PAGE_OFFSET) {
@@ -207,6 +242,7 @@ uint32_t zxnextReadMemory(uint32_t address) {
 
 void zxnextWriteMemory(uint32_t address, uint32_t value) {
   const uint32_t maskedAddress = address & 0xffffu;
+  if (multifaceHandleWrite(maskedAddress, value) != 0u) return;
   if (divMmcHandleWrite(maskedAddress, value) != 0u) return;
   const uint32_t layer2Offset = layer2MappedOffset(maskedAddress, 1u);
   if (layer2Offset != ZXNEXT_INVALID_PAGE_OFFSET) {

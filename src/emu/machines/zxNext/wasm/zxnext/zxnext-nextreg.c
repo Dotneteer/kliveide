@@ -101,6 +101,9 @@ static void resetNextRegs(uint32_t hard) {
   setNextRegDefault(0xba, 0x00);
   setNextRegDefault(0xbb, 0xcd);
   syncDivMmcStateFromNextRegs();
+  syncInputStateFromNextRegs();
+  setCpuProgrammedSpeed(cpuProgrammedSpeed);
+  rebuildFlatMemory();
 }
 
 static uint32_t isPortGroupEnabled(uint32_t regIndex, uint32_t bit) {
@@ -128,6 +131,10 @@ uint32_t zxnextReadNextReg(uint32_t reg) {
   if (audioValue != 0xffffffffu) return audioValue;
   const uint32_t copperValue = copperReadNextReg(maskedReg);
   if (copperValue != 0xffffffffu) return copperValue;
+  const uint32_t expansionValue = expansionReadNextReg(maskedReg);
+  if (expansionValue != 0xffffffffu) return expansionValue;
+  const uint32_t inputValue = inputReadNextReg(maskedReg);
+  if (inputValue != 0xffffffffu) return inputValue;
   if (maskedReg >= 0x50u && maskedReg <= 0x57u) return mmuRegs[maskedReg - 0x50u];
   if (maskedReg == 0x07u) return (cpuProgrammedSpeed & 0x03u) | (cpuEffectiveSpeed << 4u);
   if (maskedReg == 0x69u) {
@@ -160,12 +167,14 @@ static void writeNextRegInternal(uint32_t reg, uint32_t value) {
   const uint32_t spritesHandled = spritesWriteNextReg(maskedReg, byteValue);
   const uint32_t audioHandled = audioWriteNextReg(maskedReg, byteValue);
   const uint32_t copperHandled = copperWriteNextReg(maskedReg, byteValue);
+  const uint32_t expansionHandled = expansionWriteNextReg(maskedReg, byteValue);
   if (
     layer2Handled != 0u ||
     tilemapHandled != 0u ||
     spritesHandled != 0u ||
     audioHandled != 0u ||
-    copperHandled != 0u
+    copperHandled != 0u ||
+    expansionHandled != 0u
   ) return;
   if (maskedReg >= 0x50u && maskedReg <= 0x57u) {
     mmuRegs[maskedReg - 0x50u] = byteValue;
@@ -173,8 +182,12 @@ static void writeNextRegInternal(uint32_t reg, uint32_t value) {
     return;
   }
   if (maskedReg >= 0x82u && maskedReg <= 0x85u) {
+    const uint8_t oldValue = internalPortEnables[maskedReg - 0x82u];
     internalPortEnables[maskedReg - 0x82u] = byteValue;
-    if (maskedReg == 0x83u) zxnextSetDivMmcEnabled(byteValue & 0x01u);
+    if (maskedReg == 0x83u) {
+      zxnextSetDivMmcEnabled(byteValue & 0x01u);
+      if ((oldValue & 0x02u) != 0u && (byteValue & 0x02u) == 0u) resetMultifaceState();
+    }
     return;
   }
   if (maskedReg >= 0x86u && maskedReg <= 0x89u) {
@@ -191,6 +204,7 @@ static void writeNextRegInternal(uint32_t reg, uint32_t value) {
   }
   if (maskedReg == 0x05u) {
     updateScreenTimingFromNextRegs();
+    syncPeripheral1FromNextReg(byteValue);
   }
   if (maskedReg == 0x07u) {
     setCpuProgrammedSpeed(byteValue);
@@ -199,7 +213,11 @@ static void writeNextRegInternal(uint32_t reg, uint32_t value) {
     divMmcResetMapramFlag = (byteValue & 0x08u) != 0u;
   }
   if (maskedReg == 0x0au) {
-    zxnextSetDivMmcEnableAutomap(byteValue & 0x10u);
+    syncPeripheral5FromNextReg(byteValue);
+    syncPeripheral5InputFromNextReg(byteValue);
+  }
+  if (maskedReg == 0x0bu) {
+    syncJoystickIoFromNextReg(byteValue);
   }
   if (maskedReg == 0x69u) {
     useShadowScreen = (byteValue & 0x40u) != 0u;

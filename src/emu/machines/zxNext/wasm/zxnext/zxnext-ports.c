@@ -3,16 +3,27 @@
 static uint32_t ownerStepForUnsupportedPort(uint16_t port) {
   if (port == 0x00e3u) return 16u;
   if (port == 0x00ffu || port == 0xbf3bu || port == 0xff3bu) return 21u;
+  if (port == 0x103bu || port == 0x113bu || port == 0x133bu || port == 0x143bu || port == 0x153bu || port == 0x163bu) return 32u;
   if (port == 0x005du) return 24u;
   if (port == 0x006bu || port == 0x006fu) return 27u;
   if ((port & 0xf8ffu) == 0x183bu) return 29u;
-  if (port == 0x001fu || port == 0x0037u) return 31u;
-  if (port == 0xfbdfu || port == 0xffdfu || port == 0xfadfu) return 32u;
+  if (port == 0x001fu || port == 0x0037u || port == 0xfbdfu || port == 0xffdfu || port == 0xfadfu) return 31u;
   return 34u;
 }
 
 static uint8_t fallbackReadValueForUnsupportedPort(uint16_t port) {
   return portReadValue;
+}
+
+static uint32_t isMultifacePortAddress(uint16_t port) {
+  const uint16_t lowByte = port & 0x00ffu;
+  return lowByte == 0x001fu || lowByte == 0x003fu || lowByte == 0x009fu || lowByte == 0x00bfu;
+}
+
+static uint32_t multifaceHandlesPortAddress(uint16_t port) {
+  const uint16_t lowByte = port & 0x00ffu;
+  return multifaceEnabled() != 0u &&
+    (lowByte == multifaceEnablePortAddress() || lowByte == multifaceDisablePortAddress());
 }
 
 static void recordUnsupportedPort(uint16_t port, uint8_t value, uint8_t isWrite) {
@@ -55,6 +66,10 @@ uint32_t zxnextReadPort(uint32_t address) {
     value = isPortGroupEnabled(1, 7) != 0u ? (uint8_t)zxnextReadLayer2Port123b() : 0xffu;
   } else if (maskedAddress == 0x00e3u) {
     value = isPortGroupEnabled(1, 0) != 0u ? (uint8_t)zxnextReadDivMmcPortE3() : 0xffu;
+  } else if (maskedAddress == 0x103bu || maskedAddress == 0x113bu) {
+    value = (uint8_t)zxnextReadI2cPort(maskedAddress);
+  } else if (maskedAddress == 0x133bu || maskedAddress == 0x143bu || maskedAddress == 0x153bu || maskedAddress == 0x163bu) {
+    value = (uint8_t)zxnextReadUartPort(maskedAddress);
   } else if (maskedAddress == 0x303bu) {
     value = isPortGroupEnabled(1, 6) != 0u ? (uint8_t)zxnextReadSpritePort303b() : 0xffu;
   } else if (maskedAddress == 0x00ebu) {
@@ -66,12 +81,25 @@ uint32_t zxnextReadPort(uint32_t address) {
   } else if ((maskedAddress & 0xf8ffu) == 0x183bu) {
     value = (uint8_t)zxnextReadCtcPort(maskedAddress);
   } else {
-    const uint32_t ayValue = zxnextReadAyPort(maskedAddress);
-    if (ayValue != 0xffffffffu) {
-      value = (uint8_t)(ayValue & 0xffu);
+    const uint32_t mouseValue = zxnextReadMousePort(maskedAddress);
+    if (mouseValue != 0xffffffffu) {
+      value = (uint8_t)(mouseValue & 0xffu);
+    } else if (multifaceHandlesPortAddress(maskedAddress) != 0u) {
+      const uint32_t mfValue = zxnextReadMultifacePort(maskedAddress);
+      value = mfValue <= 0xffu ? (uint8_t)mfValue : 0xffu;
     } else {
-      value = fallbackReadValueForUnsupportedPort(maskedAddress);
-      recordUnsupportedPort(maskedAddress, value, 0u);
+      const uint32_t joystickValue = zxnextReadJoystickPort(maskedAddress);
+      if (joystickValue != 0xffffffffu) {
+        value = (uint8_t)(joystickValue & 0xffu);
+      } else {
+        const uint32_t ayValue = zxnextReadAyPort(maskedAddress);
+        if (ayValue != 0xffffffffu) {
+          value = (uint8_t)(ayValue & 0xffu);
+        } else {
+          value = fallbackReadValueForUnsupportedPort(maskedAddress);
+          recordUnsupportedPort(maskedAddress, value, 0u);
+        }
+      }
     }
   }
   if (captureBusEvents != 0u) {
@@ -137,6 +165,12 @@ void zxnextWritePort(uint32_t address, uint32_t value) {
     if (isPortGroupEnabled(1, 3) != 0u) zxnextWriteSpiDataPort(byteValue);
     return;
   }
+  if (zxnextWriteI2cPort(maskedAddress, byteValue) != 0u) {
+    return;
+  }
+  if (zxnextWriteUartPort(maskedAddress, byteValue) != 0u) {
+    return;
+  }
   if (maskedAddress == 0x303bu) {
     if (isPortGroupEnabled(1, 6) != 0u) zxnextWriteSpritePort303b(byteValue);
     return;
@@ -150,6 +184,10 @@ void zxnextWritePort(uint32_t address, uint32_t value) {
     return;
   }
   if (zxnextWriteAyPort(maskedAddress, byteValue) != 0u) {
+    return;
+  }
+  if (multifaceHandlesPortAddress(maskedAddress) != 0u) {
+    zxnextWriteMultifacePort(maskedAddress, byteValue);
     return;
   }
   if (zxnextWriteDacPort(maskedAddress, byteValue) != 0u) {

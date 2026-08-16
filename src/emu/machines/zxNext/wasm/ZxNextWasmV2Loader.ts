@@ -34,6 +34,58 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextSetKeyboardRow: ZxNextWasmV2ExportFunction;
   zxnextGetKeyboardRow: ZxNextWasmV2ExportFunction;
   zxnextGetKeyboardRowWrites: ZxNextWasmV2ExportFunction;
+  zxnextSetJoystickState: ZxNextWasmV2ExportFunction;
+  zxnextSetMouseState: ZxNextWasmV2ExportFunction;
+  zxnextAddMouseDelta: ZxNextWasmV2ExportFunction;
+  zxnextAddMouseWheelDelta: ZxNextWasmV2ExportFunction;
+  zxnextSetMouseButtons: ZxNextWasmV2ExportFunction;
+  zxnextGetJoystick1Mode: ZxNextWasmV2ExportFunction;
+  zxnextGetJoystick2Mode: ZxNextWasmV2ExportFunction;
+  zxnextGetJoystickIoModeEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetJoystickIoMode: ZxNextWasmV2ExportFunction;
+  zxnextGetJoystickIoModeParam: ZxNextWasmV2ExportFunction;
+  zxnextGetJoystickLeftState: ZxNextWasmV2ExportFunction;
+  zxnextGetJoystickRightState: ZxNextWasmV2ExportFunction;
+  zxnextGetJoystickStateWriteCount: ZxNextWasmV2ExportFunction;
+  zxnextGetMouseX: ZxNextWasmV2ExportFunction;
+  zxnextGetMouseY: ZxNextWasmV2ExportFunction;
+  zxnextGetMouseWheel: ZxNextWasmV2ExportFunction;
+  zxnextGetMouseButtonLeft: ZxNextWasmV2ExportFunction;
+  zxnextGetMouseButtonRight: ZxNextWasmV2ExportFunction;
+  zxnextGetMouseButtonMiddle: ZxNextWasmV2ExportFunction;
+  zxnextGetMouseSwapButtons: ZxNextWasmV2ExportFunction;
+  zxnextGetMouseDpi: ZxNextWasmV2ExportFunction;
+  zxnextGetMouseStateWriteCount: ZxNextWasmV2ExportFunction;
+  zxnextPushUartRxByte: ZxNextWasmV2ExportFunction;
+  zxnextPopUartTxByte: ZxNextWasmV2ExportFunction;
+  zxnextUartOnNewFrame: ZxNextWasmV2ExportFunction;
+  zxnextSetUartBreakCondition: ZxNextWasmV2ExportFunction;
+  zxnextSetUartFramingError: ZxNextWasmV2ExportFunction;
+  zxnextGetUartSelected: ZxNextWasmV2ExportFunction;
+  zxnextGetUartPrescaler: ZxNextWasmV2ExportFunction;
+  zxnextGetUartPrescalerLsb: ZxNextWasmV2ExportFunction;
+  zxnextGetUartPrescalerMsb: ZxNextWasmV2ExportFunction;
+  zxnextGetUartFrameRegister: ZxNextWasmV2ExportFunction;
+  zxnextGetUartRxCount: ZxNextWasmV2ExportFunction;
+  zxnextGetUartTxCount: ZxNextWasmV2ExportFunction;
+  zxnextGetUartBreakCondition: ZxNextWasmV2ExportFunction;
+  zxnextGetUartFramingError: ZxNextWasmV2ExportFunction;
+  zxnextGetUartRxOverflow: ZxNextWasmV2ExportFunction;
+  zxnextGetUartTxWriteCount: ZxNextWasmV2ExportFunction;
+  zxnextGetUartRxInjectCount: ZxNextWasmV2ExportFunction;
+  zxnextSetI2cCmosByte: ZxNextWasmV2ExportFunction;
+  zxnextGetI2cCmosByte: ZxNextWasmV2ExportFunction;
+  zxnextSetI2cFrameRate: ZxNextWasmV2ExportFunction;
+  zxnextAdvanceI2cClock: ZxNextWasmV2ExportFunction;
+  zxnextI2cOnNewFrame: ZxNextWasmV2ExportFunction;
+  zxnextGetI2cSclOut: ZxNextWasmV2ExportFunction;
+  zxnextGetI2cSdaOut: ZxNextWasmV2ExportFunction;
+  zxnextGetI2cSdaLine: ZxNextWasmV2ExportFunction;
+  zxnextGetI2cState: ZxNextWasmV2ExportFunction;
+  zxnextGetI2cRegPointer: ZxNextWasmV2ExportFunction;
+  zxnextGetI2cFrameCounter: ZxNextWasmV2ExportFunction;
+  zxnextGetI2cFramesPerSecond: ZxNextWasmV2ExportFunction;
+  zxnextGetI2cClockAdvanceCount: ZxNextWasmV2ExportFunction;
   zxnextSetExtendedKeyReg: ZxNextWasmV2ExportFunction;
   zxnextGetExtendedKeyReg: ZxNextWasmV2ExportFunction;
   zxnextReadUlaPort: ZxNextWasmV2ExportFunction;
@@ -198,6 +250,51 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetDivMmcRstTrapOnlyWithRom3Mask: ZxNextWasmV2ExportFunction;
   zxnextGetDivMmcRstTrapInstantMask: ZxNextWasmV2ExportFunction;
   zxnextGetDivMmcEntry1: ZxNextWasmV2ExportFunction;
+  zxnextShouldPropagateIo: ZxNextWasmV2ExportFunction;
+  zxnextSetExpansionRomcsSignal: ZxNextWasmV2ExportFunction;
+  zxnextSetExpansionExternalBusData: ZxNextWasmV2ExportFunction;
+  zxnextSetExpansionNmiPending: ZxNextWasmV2ExportFunction;
+  zxnextSetExpansionIntPending: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionRomcsReplacement: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionDisableIoCycles: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionDisableMemCycles: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionSoftResetPersistence: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionRomcsSignal: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionRomcsClaimed: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionExternalBusData: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionNmiPending: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionNmiAsserted: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionIntPending: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionIntActive: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionUlaOverrideEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionNmiDebounceDisabled: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionClockAlwaysOn: ZxNextWasmV2ExportFunction;
+  zxnextGetExpansionIoPropagate: ZxNextWasmV2ExportFunction;
+  zxnextGetMultifaceType: ZxNextWasmV2ExportFunction;
+  zxnextSetMultifaceType: ZxNextWasmV2ExportFunction;
+  zxnextGetMultifaceEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetMultifaceNmiActive: ZxNextWasmV2ExportFunction;
+  zxnextGetMultifaceMfEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetMultifaceInvisible: ZxNextWasmV2ExportFunction;
+  zxnextGetMultifaceIsActive: ZxNextWasmV2ExportFunction;
+  zxnextGetMultifaceNmiHold: ZxNextWasmV2ExportFunction;
+  zxnextGetMultifaceEnablePortAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetMultifaceDisablePortAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetMultifaceMfPortEn: ZxNextWasmV2ExportFunction;
+  zxnextPressMultifaceNmiButton: ZxNextWasmV2ExportFunction;
+  zxnextMultifaceOnFetch0066: ZxNextWasmV2ExportFunction;
+  zxnextMultifaceHandleRetn: ZxNextWasmV2ExportFunction;
+  zxnextRequestMfNmi: ZxNextWasmV2ExportFunction;
+  zxnextRequestDivMmcNmi: ZxNextWasmV2ExportFunction;
+  zxnextNmiBeforeOpcodeFetch: ZxNextWasmV2ExportFunction;
+  zxnextGetNmiState: ZxNextWasmV2ExportFunction;
+  zxnextGetNmiSourceMf: ZxNextWasmV2ExportFunction;
+  zxnextGetNmiSourceDivMmc: ZxNextWasmV2ExportFunction;
+  zxnextGetNmiSourceExpBus: ZxNextWasmV2ExportFunction;
+  zxnextGetPendingMfNmi: ZxNextWasmV2ExportFunction;
+  zxnextGetPendingDivMmcNmi: ZxNextWasmV2ExportFunction;
+  zxnextGetSigNmi: ZxNextWasmV2ExportFunction;
   zxnextSetSdCardInfo: ZxNextWasmV2ExportFunction;
   zxnextSetSdReadResponseByte: ZxNextWasmV2ExportFunction;
   zxnextCommitSdReadResponse: ZxNextWasmV2ExportFunction;
@@ -484,6 +581,58 @@ const requiredV2Exports = [
   "zxnextSetKeyboardRow",
   "zxnextGetKeyboardRow",
   "zxnextGetKeyboardRowWrites",
+  "zxnextSetJoystickState",
+  "zxnextSetMouseState",
+  "zxnextAddMouseDelta",
+  "zxnextAddMouseWheelDelta",
+  "zxnextSetMouseButtons",
+  "zxnextGetJoystick1Mode",
+  "zxnextGetJoystick2Mode",
+  "zxnextGetJoystickIoModeEnabled",
+  "zxnextGetJoystickIoMode",
+  "zxnextGetJoystickIoModeParam",
+  "zxnextGetJoystickLeftState",
+  "zxnextGetJoystickRightState",
+  "zxnextGetJoystickStateWriteCount",
+  "zxnextGetMouseX",
+  "zxnextGetMouseY",
+  "zxnextGetMouseWheel",
+  "zxnextGetMouseButtonLeft",
+  "zxnextGetMouseButtonRight",
+  "zxnextGetMouseButtonMiddle",
+  "zxnextGetMouseSwapButtons",
+  "zxnextGetMouseDpi",
+  "zxnextGetMouseStateWriteCount",
+  "zxnextPushUartRxByte",
+  "zxnextPopUartTxByte",
+  "zxnextUartOnNewFrame",
+  "zxnextSetUartBreakCondition",
+  "zxnextSetUartFramingError",
+  "zxnextGetUartSelected",
+  "zxnextGetUartPrescaler",
+  "zxnextGetUartPrescalerLsb",
+  "zxnextGetUartPrescalerMsb",
+  "zxnextGetUartFrameRegister",
+  "zxnextGetUartRxCount",
+  "zxnextGetUartTxCount",
+  "zxnextGetUartBreakCondition",
+  "zxnextGetUartFramingError",
+  "zxnextGetUartRxOverflow",
+  "zxnextGetUartTxWriteCount",
+  "zxnextGetUartRxInjectCount",
+  "zxnextSetI2cCmosByte",
+  "zxnextGetI2cCmosByte",
+  "zxnextSetI2cFrameRate",
+  "zxnextAdvanceI2cClock",
+  "zxnextI2cOnNewFrame",
+  "zxnextGetI2cSclOut",
+  "zxnextGetI2cSdaOut",
+  "zxnextGetI2cSdaLine",
+  "zxnextGetI2cState",
+  "zxnextGetI2cRegPointer",
+  "zxnextGetI2cFrameCounter",
+  "zxnextGetI2cFramesPerSecond",
+  "zxnextGetI2cClockAdvanceCount",
   "zxnextSetExtendedKeyReg",
   "zxnextGetExtendedKeyReg",
   "zxnextReadUlaPort",
@@ -648,6 +797,51 @@ const requiredV2Exports = [
   "zxnextGetDivMmcRstTrapOnlyWithRom3Mask",
   "zxnextGetDivMmcRstTrapInstantMask",
   "zxnextGetDivMmcEntry1",
+  "zxnextShouldPropagateIo",
+  "zxnextSetExpansionRomcsSignal",
+  "zxnextSetExpansionExternalBusData",
+  "zxnextSetExpansionNmiPending",
+  "zxnextSetExpansionIntPending",
+  "zxnextGetExpansionEnabled",
+  "zxnextGetExpansionRomcsReplacement",
+  "zxnextGetExpansionDisableIoCycles",
+  "zxnextGetExpansionDisableMemCycles",
+  "zxnextGetExpansionSoftResetPersistence",
+  "zxnextGetExpansionRomcsSignal",
+  "zxnextGetExpansionRomcsClaimed",
+  "zxnextGetExpansionExternalBusData",
+  "zxnextGetExpansionNmiPending",
+  "zxnextGetExpansionNmiAsserted",
+  "zxnextGetExpansionIntPending",
+  "zxnextGetExpansionIntActive",
+  "zxnextGetExpansionUlaOverrideEnabled",
+  "zxnextGetExpansionNmiDebounceDisabled",
+  "zxnextGetExpansionClockAlwaysOn",
+  "zxnextGetExpansionIoPropagate",
+  "zxnextGetMultifaceType",
+  "zxnextSetMultifaceType",
+  "zxnextGetMultifaceEnabled",
+  "zxnextGetMultifaceNmiActive",
+  "zxnextGetMultifaceMfEnabled",
+  "zxnextGetMultifaceInvisible",
+  "zxnextGetMultifaceIsActive",
+  "zxnextGetMultifaceNmiHold",
+  "zxnextGetMultifaceEnablePortAddress",
+  "zxnextGetMultifaceDisablePortAddress",
+  "zxnextGetMultifaceMfPortEn",
+  "zxnextPressMultifaceNmiButton",
+  "zxnextMultifaceOnFetch0066",
+  "zxnextMultifaceHandleRetn",
+  "zxnextRequestMfNmi",
+  "zxnextRequestDivMmcNmi",
+  "zxnextNmiBeforeOpcodeFetch",
+  "zxnextGetNmiState",
+  "zxnextGetNmiSourceMf",
+  "zxnextGetNmiSourceDivMmc",
+  "zxnextGetNmiSourceExpBus",
+  "zxnextGetPendingMfNmi",
+  "zxnextGetPendingDivMmcNmi",
+  "zxnextGetSigNmi",
   "zxnextSetSdCardInfo",
   "zxnextSetSdReadResponseByte",
   "zxnextCommitSdReadResponse",

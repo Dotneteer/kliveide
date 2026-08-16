@@ -163,6 +163,48 @@ export type ZxNextWasmV2Diagnostics = {
   useShadowScreen: boolean;
   pagingEnabled: boolean;
   keyboardRowWrites: number;
+  joystick1Mode: number;
+  joystick2Mode: number;
+  joystickIoModeEnabled: boolean;
+  joystickIoMode: number;
+  joystickIoModeParam: boolean;
+  joystickLeftState: number;
+  joystickRightState: number;
+  joystickStateWriteCount: number;
+  mouseX: number;
+  mouseY: number;
+  mouseWheel: number;
+  mouseButtonLeft: boolean;
+  mouseButtonRight: boolean;
+  mouseButtonMiddle: boolean;
+  mouseSwapButtons: boolean;
+  mouseDpi: number;
+  mouseStateWriteCount: number;
+  uartSelected: number;
+  uart0Prescaler: number;
+  uart1Prescaler: number;
+  uart0FrameRegister: number;
+  uart1FrameRegister: number;
+  uart0RxCount: number;
+  uart1RxCount: number;
+  uart0TxCount: number;
+  uart1TxCount: number;
+  uart0BreakCondition: boolean;
+  uart1BreakCondition: boolean;
+  uart0FramingError: boolean;
+  uart1FramingError: boolean;
+  uart0RxOverflow: boolean;
+  uart1RxOverflow: boolean;
+  uartTxWriteCount: number;
+  uartRxInjectCount: number;
+  i2cSclOut: boolean;
+  i2cSdaOut: boolean;
+  i2cSdaLine: boolean;
+  i2cState: number;
+  i2cRegPointer: number;
+  i2cFrameCounter: number;
+  i2cFramesPerSecond: number;
+  i2cClockAdvanceCount: number;
   ulaBorderColor: number;
   ulaEarBit: boolean;
   ulaMicBit: boolean;
@@ -255,6 +297,39 @@ export type ZxNextWasmV2Diagnostics = {
   divMmcRstTrapOnlyWithRom3Mask: number;
   divMmcRstTrapInstantMask: number;
   divMmcEntry1: number;
+  expansionEnabled: boolean;
+  expansionRomcsReplacement: boolean;
+  expansionDisableIoCycles: boolean;
+  expansionDisableMemCycles: boolean;
+  expansionSoftResetPersistence: number;
+  expansionRomcsSignal: boolean;
+  expansionRomcsClaimed: boolean;
+  expansionExternalBusData: number;
+  expansionNmiPending: boolean;
+  expansionNmiAsserted: boolean;
+  expansionIntPending: boolean;
+  expansionIntActive: boolean;
+  expansionUlaOverrideEnabled: boolean;
+  expansionNmiDebounceDisabled: boolean;
+  expansionClockAlwaysOn: boolean;
+  expansionIoPropagate: number;
+  multifaceType: number;
+  multifaceEnabled: boolean;
+  multifaceNmiActive: boolean;
+  multifaceMfEnabled: boolean;
+  multifaceInvisible: boolean;
+  multifaceIsActive: boolean;
+  multifaceNmiHold: boolean;
+  multifaceEnablePortAddress: number;
+  multifaceDisablePortAddress: number;
+  multifaceMfPortEn: boolean;
+  nmiState: number;
+  nmiSourceMf: boolean;
+  nmiSourceDivMmc: boolean;
+  nmiSourceExpBus: boolean;
+  pendingMfNmi: boolean;
+  pendingDivMmcNmi: boolean;
+  sigNmi: boolean;
   sdSelectedCard: number;
   sdPendingCommand: number;
   sdPendingSector: number;
@@ -284,8 +359,12 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private readonly wasmV2AudioSamples: AudioSample[] = [];
   private readonly wasmV2KeyboardRows = new Uint8Array(8);
   private readonly wasmV2ExtendedKeyRegs = new Uint8Array(3);
+  private readonly wasmV2JoystickState = new Uint8Array(2);
+  private readonly wasmV2MouseState = new Uint8Array(8);
   private wasmV2KeyboardRowsValid = false;
   private wasmV2ExtendedKeyRegsValid = false;
+  private wasmV2JoystickStateValid = false;
+  private wasmV2MouseStateValid = false;
   private wasmV2NextRegBridgeAttached = false;
   private wasmV2SdCardInfoLoaded = false;
 
@@ -310,6 +389,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.configureWasmV2MemorySize(runtime);
     runtime.exports.zxnextHardReset();
     this.invalidateWasmV2InputSync();
+    this.syncI2cCmosToWasmV2(runtime);
     this.replayRomBytesToWasmV2(runtime);
     this.attachWasmV2NextRegBridge(runtime);
   }
@@ -319,6 +399,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     if (this.wasmV2Runtime != null) {
       this.wasmV2Runtime.exports.zxnextHardReset();
       this.invalidateWasmV2InputSync();
+      this.syncI2cCmosToWasmV2(this.wasmV2Runtime);
       this.replayRomBytesToWasmV2(this.wasmV2Runtime);
     }
   }
@@ -328,6 +409,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     if (this.wasmV2Runtime != null) {
       this.wasmV2Runtime.exports.zxnextReset();
       this.invalidateWasmV2InputSync();
+      this.syncI2cCmosToWasmV2(this.wasmV2Runtime);
       this.replayRomBytesToWasmV2(this.wasmV2Runtime);
     }
   }
@@ -468,6 +550,48 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       useShadowScreen: runtime.exports.zxnextGetUseShadowScreen() !== 0,
       pagingEnabled: runtime.exports.zxnextGetPagingEnabled() !== 0,
       keyboardRowWrites: runtime.exports.zxnextGetKeyboardRowWrites(),
+      joystick1Mode: runtime.exports.zxnextGetJoystick1Mode(),
+      joystick2Mode: runtime.exports.zxnextGetJoystick2Mode(),
+      joystickIoModeEnabled: runtime.exports.zxnextGetJoystickIoModeEnabled() !== 0,
+      joystickIoMode: runtime.exports.zxnextGetJoystickIoMode(),
+      joystickIoModeParam: runtime.exports.zxnextGetJoystickIoModeParam() !== 0,
+      joystickLeftState: runtime.exports.zxnextGetJoystickLeftState(),
+      joystickRightState: runtime.exports.zxnextGetJoystickRightState(),
+      joystickStateWriteCount: runtime.exports.zxnextGetJoystickStateWriteCount(),
+      mouseX: runtime.exports.zxnextGetMouseX(),
+      mouseY: runtime.exports.zxnextGetMouseY(),
+      mouseWheel: runtime.exports.zxnextGetMouseWheel(),
+      mouseButtonLeft: runtime.exports.zxnextGetMouseButtonLeft() !== 0,
+      mouseButtonRight: runtime.exports.zxnextGetMouseButtonRight() !== 0,
+      mouseButtonMiddle: runtime.exports.zxnextGetMouseButtonMiddle() !== 0,
+      mouseSwapButtons: runtime.exports.zxnextGetMouseSwapButtons() !== 0,
+      mouseDpi: runtime.exports.zxnextGetMouseDpi(),
+      mouseStateWriteCount: runtime.exports.zxnextGetMouseStateWriteCount(),
+      uartSelected: runtime.exports.zxnextGetUartSelected(),
+      uart0Prescaler: runtime.exports.zxnextGetUartPrescaler(0),
+      uart1Prescaler: runtime.exports.zxnextGetUartPrescaler(1),
+      uart0FrameRegister: runtime.exports.zxnextGetUartFrameRegister(0),
+      uart1FrameRegister: runtime.exports.zxnextGetUartFrameRegister(1),
+      uart0RxCount: runtime.exports.zxnextGetUartRxCount(0),
+      uart1RxCount: runtime.exports.zxnextGetUartRxCount(1),
+      uart0TxCount: runtime.exports.zxnextGetUartTxCount(0),
+      uart1TxCount: runtime.exports.zxnextGetUartTxCount(1),
+      uart0BreakCondition: runtime.exports.zxnextGetUartBreakCondition(0) !== 0,
+      uart1BreakCondition: runtime.exports.zxnextGetUartBreakCondition(1) !== 0,
+      uart0FramingError: runtime.exports.zxnextGetUartFramingError(0) !== 0,
+      uart1FramingError: runtime.exports.zxnextGetUartFramingError(1) !== 0,
+      uart0RxOverflow: runtime.exports.zxnextGetUartRxOverflow(0) !== 0,
+      uart1RxOverflow: runtime.exports.zxnextGetUartRxOverflow(1) !== 0,
+      uartTxWriteCount: runtime.exports.zxnextGetUartTxWriteCount(),
+      uartRxInjectCount: runtime.exports.zxnextGetUartRxInjectCount(),
+      i2cSclOut: runtime.exports.zxnextGetI2cSclOut() !== 0,
+      i2cSdaOut: runtime.exports.zxnextGetI2cSdaOut() !== 0,
+      i2cSdaLine: runtime.exports.zxnextGetI2cSdaLine() !== 0,
+      i2cState: runtime.exports.zxnextGetI2cState(),
+      i2cRegPointer: runtime.exports.zxnextGetI2cRegPointer(),
+      i2cFrameCounter: runtime.exports.zxnextGetI2cFrameCounter(),
+      i2cFramesPerSecond: runtime.exports.zxnextGetI2cFramesPerSecond(),
+      i2cClockAdvanceCount: runtime.exports.zxnextGetI2cClockAdvanceCount(),
       ulaBorderColor: runtime.exports.zxnextGetUlaBorderColor(),
       ulaEarBit: runtime.exports.zxnextGetUlaEarBit() !== 0,
       ulaMicBit: runtime.exports.zxnextGetUlaMicBit() !== 0,
@@ -560,6 +684,39 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       divMmcRstTrapOnlyWithRom3Mask: runtime.exports.zxnextGetDivMmcRstTrapOnlyWithRom3Mask(),
       divMmcRstTrapInstantMask: runtime.exports.zxnextGetDivMmcRstTrapInstantMask(),
       divMmcEntry1: runtime.exports.zxnextGetDivMmcEntry1(),
+      expansionEnabled: runtime.exports.zxnextGetExpansionEnabled() !== 0,
+      expansionRomcsReplacement: runtime.exports.zxnextGetExpansionRomcsReplacement() !== 0,
+      expansionDisableIoCycles: runtime.exports.zxnextGetExpansionDisableIoCycles() !== 0,
+      expansionDisableMemCycles: runtime.exports.zxnextGetExpansionDisableMemCycles() !== 0,
+      expansionSoftResetPersistence: runtime.exports.zxnextGetExpansionSoftResetPersistence(),
+      expansionRomcsSignal: runtime.exports.zxnextGetExpansionRomcsSignal() !== 0,
+      expansionRomcsClaimed: runtime.exports.zxnextGetExpansionRomcsClaimed() !== 0,
+      expansionExternalBusData: runtime.exports.zxnextGetExpansionExternalBusData(),
+      expansionNmiPending: runtime.exports.zxnextGetExpansionNmiPending() !== 0,
+      expansionNmiAsserted: runtime.exports.zxnextGetExpansionNmiAsserted() !== 0,
+      expansionIntPending: runtime.exports.zxnextGetExpansionIntPending() !== 0,
+      expansionIntActive: runtime.exports.zxnextGetExpansionIntActive() !== 0,
+      expansionUlaOverrideEnabled: runtime.exports.zxnextGetExpansionUlaOverrideEnabled() !== 0,
+      expansionNmiDebounceDisabled: runtime.exports.zxnextGetExpansionNmiDebounceDisabled() !== 0,
+      expansionClockAlwaysOn: runtime.exports.zxnextGetExpansionClockAlwaysOn() !== 0,
+      expansionIoPropagate: runtime.exports.zxnextGetExpansionIoPropagate(),
+      multifaceType: runtime.exports.zxnextGetMultifaceType(),
+      multifaceEnabled: runtime.exports.zxnextGetMultifaceEnabled() !== 0,
+      multifaceNmiActive: runtime.exports.zxnextGetMultifaceNmiActive() !== 0,
+      multifaceMfEnabled: runtime.exports.zxnextGetMultifaceMfEnabled() !== 0,
+      multifaceInvisible: runtime.exports.zxnextGetMultifaceInvisible() !== 0,
+      multifaceIsActive: runtime.exports.zxnextGetMultifaceIsActive() !== 0,
+      multifaceNmiHold: runtime.exports.zxnextGetMultifaceNmiHold() !== 0,
+      multifaceEnablePortAddress: runtime.exports.zxnextGetMultifaceEnablePortAddress(),
+      multifaceDisablePortAddress: runtime.exports.zxnextGetMultifaceDisablePortAddress(),
+      multifaceMfPortEn: runtime.exports.zxnextGetMultifaceMfPortEn() !== 0,
+      nmiState: runtime.exports.zxnextGetNmiState(),
+      nmiSourceMf: runtime.exports.zxnextGetNmiSourceMf() !== 0,
+      nmiSourceDivMmc: runtime.exports.zxnextGetNmiSourceDivMmc() !== 0,
+      nmiSourceExpBus: runtime.exports.zxnextGetNmiSourceExpBus() !== 0,
+      pendingMfNmi: runtime.exports.zxnextGetPendingMfNmi() !== 0,
+      pendingDivMmcNmi: runtime.exports.zxnextGetPendingDivMmcNmi() !== 0,
+      sigNmi: runtime.exports.zxnextGetSigNmi() !== 0,
       sdSelectedCard: runtime.exports.zxnextGetSdSelectedCard(),
       sdPendingCommand: runtime.exports.zxnextGetSdPendingCommand(),
       sdPendingSector: runtime.exports.zxnextGetSdPendingSector(),
@@ -709,6 +866,10 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       super.doWritePort(address, value);
       return;
     }
+    if (isTypeScriptOwnedFdcPort(address)) {
+      super.doWritePort(address, value);
+      return;
+    }
     if (isWasmV2SpiPort(address)) {
       runtime.exports.zxnextWritePort(address & 0xffff, value & 0xff);
       this.syncSdFrameCommandFromWasmV2(runtime);
@@ -725,6 +886,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     if (runtime == null || !isWasmV2OwnedPort(address)) return super.doReadPort(address);
     if (isWasmV2UlaPort(address)) this.syncKeyboardToWasmV2(runtime);
     if (isWasmV2NextRegPort(address)) this.syncExtendedKeyboardToWasmV2(runtime);
+    if (isWasmV2GameInputPort(address)) this.syncGameInputToWasmV2(runtime);
     const value = runtime.exports.zxnextReadPort(address & 0xffff);
     this.importWasmV2BusAccess(runtime);
     return value;
@@ -734,6 +896,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     const runtime = this.requireWasmV2Runtime();
     this.syncKeyboardToWasmV2(runtime);
     this.syncExtendedKeyboardToWasmV2(runtime);
+    this.syncGameInputToWasmV2(runtime);
 
     if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
       runtime.exports.zxnextExecuteInstruction();
@@ -746,6 +909,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     runtime.exports.zxnextExecuteFrame();
     this.syncSdFrameCommandFromWasmV2(runtime);
     this.syncFrameCountersFromWasmV2(runtime, true);
+    this.floppyDevice.onFrameCompleted();
     this.importWasmV2BusAccess(runtime);
     return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
   }
@@ -853,6 +1017,13 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     runtime.exports.zxnextConfigureMemorySize(configured);
   }
 
+  private syncI2cCmosToWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    const cmos = this.i2cDevice.cmos;
+    for (let index = 0; index < cmos.length; index++) {
+      runtime.exports.zxnextSetI2cCmosByte(index, cmos[index]);
+    }
+  }
+
   private attachWasmV2NextRegBridge(runtime: ZxNextWasmV2Runtime): void {
     if (this.wasmV2NextRegBridgeAttached) return;
     this.wasmV2NextRegBridgeAttached = true;
@@ -883,11 +1054,13 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       originalGetIndex();
       originalGetValue();
       if (isWasmV2ExtendedKeyboardReg(index)) this.syncExtendedKeyboardToWasmV2(runtime);
+      if (isWasmV2InputNextReg(index)) this.syncGameInputToWasmV2(runtime);
       return runtime.exports.zxnextReadNextRegData();
     };
     device.directGetRegValue = (reg: number): number => {
       originalDirectGet(reg);
       if (isWasmV2ExtendedKeyboardReg(reg)) this.syncExtendedKeyboardToWasmV2(runtime);
+      if (isWasmV2InputNextReg(reg)) this.syncGameInputToWasmV2(runtime);
       return runtime.exports.zxnextReadNextReg(reg & 0xff);
     };
     device.directSetRegValue = (reg: number, value: number): void => {
@@ -907,6 +1080,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     };
     device.getNextRegDeviceState = (): NextRegDeviceState => {
       this.syncExtendedKeyboardToWasmV2(runtime);
+      this.syncGameInputToWasmV2(runtime);
       const state = originalGetState();
       return {
         lastRegisterIndex: runtime.exports.zxnextGetNextRegIndex(),
@@ -933,8 +1107,12 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private invalidateWasmV2InputSync(): void {
     this.wasmV2KeyboardRowsValid = false;
     this.wasmV2ExtendedKeyRegsValid = false;
+    this.wasmV2JoystickStateValid = false;
+    this.wasmV2MouseStateValid = false;
     this.wasmV2KeyboardRows.fill(0);
     this.wasmV2ExtendedKeyRegs.fill(0);
+    this.wasmV2JoystickState.fill(0);
+    this.wasmV2MouseState.fill(0);
   }
 
   private syncKeyboardToWasmV2(runtime: ZxNextWasmV2Runtime): void {
@@ -962,6 +1140,53 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       wasm.zxnextSetExtendedKeyReg(index, values[index]);
     }
     this.wasmV2ExtendedKeyRegsValid = true;
+  }
+
+  private syncGameInputToWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    const wasm = runtime.exports;
+    const joystickLeft = this.joystickDevice.leftState & 0xff;
+    const joystickRight = this.joystickDevice.rightState & 0xff;
+    if (
+      !this.wasmV2JoystickStateValid ||
+      this.wasmV2JoystickState[0] !== joystickLeft ||
+      this.wasmV2JoystickState[1] !== joystickRight
+    ) {
+      this.wasmV2JoystickState[0] = joystickLeft;
+      this.wasmV2JoystickState[1] = joystickRight;
+      wasm.zxnextSetJoystickState(joystickLeft, joystickRight);
+      this.wasmV2JoystickStateValid = true;
+    }
+
+    const mouse = this.mouseDevice;
+    const mouseValues = [
+      mouse.xPos & 0xff,
+      mouse.yPos & 0xff,
+      mouse.wheelZ & 0x0f,
+      mouse.buttonLeft ? 1 : 0,
+      mouse.buttonRight ? 1 : 0,
+      mouse.buttonMiddle ? 1 : 0,
+      mouse.swapButtons ? 1 : 0,
+      mouse.dpi & 0x03
+    ];
+    let mouseChanged = !this.wasmV2MouseStateValid;
+    for (let i = 0; i < mouseValues.length; i++) {
+      if (this.wasmV2MouseState[i] === mouseValues[i]) continue;
+      this.wasmV2MouseState[i] = mouseValues[i];
+      mouseChanged = true;
+    }
+    if (mouseChanged) {
+      wasm.zxnextSetMouseState(
+        mouseValues[0],
+        mouseValues[1],
+        mouseValues[2],
+        mouseValues[3],
+        mouseValues[4],
+        mouseValues[5],
+        mouseValues[6],
+        mouseValues[7]
+      );
+      this.wasmV2MouseStateValid = true;
+    }
   }
 
   private syncFrameCountersFromWasmV2(runtime: ZxNextWasmV2Runtime, completedFrame: boolean): void {
@@ -1082,6 +1307,11 @@ function isWasmV2ExtendedKeyboardReg(reg: number): boolean {
   return maskedReg >= 0xb0 && maskedReg <= 0xb2;
 }
 
+function isWasmV2InputNextReg(reg: number): boolean {
+  const maskedReg = reg & 0xff;
+  return maskedReg === 0x0a || maskedReg === 0x0b;
+}
+
 function isWasmV2UlaPort(address: number): boolean {
   return (address & 0x0001) === 0x0000;
 }
@@ -1105,6 +1335,9 @@ function isWasmV2OwnedPort(address: number): boolean {
     isWasmV2AyPort(address) ||
     isWasmV2DmaPort(address) ||
     isWasmV2CtcPort(address) ||
+    isWasmV2MultifacePort(address) ||
+    isWasmV2GameInputPort(address) ||
+    isWasmV2PeripheralPort(address) ||
     isWasmV2SpritePort(address) ||
     (address & 0xffff) === 0x00e3;
 }
@@ -1130,6 +1363,37 @@ function isWasmV2DmaPort(address: number): boolean {
 
 function isWasmV2CtcPort(address: number): boolean {
   return (address & 0xf8ff) === 0x183b;
+}
+
+function isWasmV2MultifacePort(address: number): boolean {
+  const lowByte = address & 0x00ff;
+  return lowByte === 0x1f || lowByte === 0x3f || lowByte === 0x9f || lowByte === 0xbf;
+}
+
+function isWasmV2GameInputPort(address: number): boolean {
+  const lowByte = address & 0x00ff;
+  const lower12 = address & 0x0fff;
+  return lowByte === 0x1f ||
+    lowByte === 0x37 ||
+    lowByte === 0xdf ||
+    lower12 === 0x0bdf ||
+    lower12 === 0x0fdf ||
+    lower12 === 0x0adf;
+}
+
+function isWasmV2PeripheralPort(address: number): boolean {
+  const port = address & 0xffff;
+  return port === 0x103b ||
+    port === 0x113b ||
+    port === 0x133b ||
+    port === 0x143b ||
+    port === 0x153b ||
+    port === 0x163b;
+}
+
+function isTypeScriptOwnedFdcPort(address: number): boolean {
+  const port = address & 0xffff;
+  return port === 0x2ffd || port === 0x3ffd;
 }
 
 function isWasmV2SdFrameCommand(command: unknown): boolean {
