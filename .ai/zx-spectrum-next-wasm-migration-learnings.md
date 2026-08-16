@@ -606,3 +606,124 @@ Use this shape:
   deterministic early boot path exists. Real NextZXOS start-menu/manual smoke
   still needs a checked-in SD image fixture or equivalent deterministic storage
   provider.
+
+## 2026-08-16 - Step 18A - Early IDE Inspection Baseline
+
+- Symptom: Existing slice tests covered individual WASM exports and several
+  public APIs, but no single test proved the IDE-facing inspection surface read
+  coherent WASM-owned state after CPU, memory, ports, NextRegs, and ULA had
+  moved.
+- Fix: Added `wasm-next-ide-inspection.test.ts` to exercise public
+  `getCpuState`, memory reads/writes, flat memory, partition helpers,
+  disassembly-style byte reads, port bus diagnostics, NextReg ports, screen
+  buffers, and normal mapped-memory code injection.
+- Adapter fix: Public reads of known WASM diagnostic fallback ports now route
+  through WASM. Layer 2 port `0x123b` must update last-I/O state and
+  unsupported-port diagnostics instead of returning through stale TypeScript
+  internals.
+- Boundary lesson: Banked `injectCodeToRun` is still deferred because the
+  inherited TypeScript implementation has a banked-segment `TODO`; do not
+  claim banked injection parity until that source behavior exists or a
+  WASM-specific implementation is added.
+- Tests: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-ide-inspection.test.ts`
+  and `npm test -- --project jsdom test/wasm/zxNext/wasm-next-ide-inspection.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`
+  passed.
+- Follow-up: Later device steps should add their IDE panel state to this style
+  of public adapter baseline as soon as each device becomes WASM-owned.
+
+## 2026-08-16 - Step 19 - CPU Speed And 28 MHz Read Wait State
+
+- Symptom: The WASM backend stored NextReg `$07` as a raw byte, so reads did
+  not report `(effective speed << 4) | programmed speed`, and CPU instruction
+  timing ignored the TypeScript 28 MHz read wait-state rule.
+- Fix: Added WASM CPU speed state for programmed/effective speed, clock
+  multiplier, CPU tact scale, and a contention-delay diagnostic. NR `$07` now
+  has TypeScript-compatible read/write semantics and soft reset preserves
+  speed while hard reset clears it.
+- Timing fix: `zxnextCpuReadMemory` now adds one T-state at effective speed 3
+  except when the mapped 8K page is bank-7 page `0x0e`, matching
+  `ZxNextMachine.delayMemoryRead`.
+- Test lesson: Compare timing through public `getCpuState().tacts` after real
+  CPU instructions. Direct raw timing helpers would miss opcode-fetch reads and
+  would not prove the adapter imports visible CPU state.
+- Boundary lesson: Expansion-bus forced 3.5 MHz speed is deferred until the
+  expansion bus is WASM-owned. Full 128K-style port contention and NR `$08`
+  contention-disable gates remain a later extension beyond the current
+  memory-read wait-state parity.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-contention-speed.test.ts`,
+  `npm test -- --project jsdom test/zxnext/MemoryDevice.test.ts test/zxnext/NextRegDevice.test.ts`,
+  the 15-file Next WASM suite, `npm run build:check`,
+  `npm run check:zxnext-wasm-size` (208,562 bytes against 360,000), and
+  `git diff --check` passed.
+
+## 2026-08-16 - Step 20 - Interrupt NextRegs And HW IM2 Daisy State
+
+- Symptom: The WASM backend still returned raw bytes for interrupt NextRegs and
+  public interrupt checks could only observe TypeScript-owned
+  `InterruptDevice` state.
+- Root cause: Interrupt status, enables, DMA masks, and daisy `InService`
+  state had not been represented as structured WASM state.
+- Fix: Added `zxnext-interrupt.c` with NR `$02`, `$20`, `$22`, `$23`,
+  `$c0`, `$c2`, `$c3`, `$c4`, `$c5`, `$c6`, `$c8`, `$c9`, `$ca`, `$cc`,
+  `$cd`, and `$ce` semantics, pulse-capture helpers, status setters for
+  migrated CTC/UART inputs, daisy peek/ack/reti helpers, and adapter
+  diagnostics.
+- Adapter lesson: `getInterruptVector()` must peek and
+  `onInterruptAcknowledged()` must acknowledge. Combining them in WASM would
+  clear the request too early compared with `ZxNextMachine`.
+- Boundary lesson: Full NMI entry/hold/end, stackless RETN fixups, Multiface,
+  DivMMC NMI, expansion-bus NMI, and live DMA/CTC generation remain with their
+  owning device slices.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-interrupts.test.ts`,
+  TypeScript interrupt/daisy/palette/composed-screen oracle suites, the
+  17-file Next WASM suite, `npm run build:check`, and
+  `npm run check:zxnext-wasm-size` (218,684 bytes against 360,000) passed.
+
+## 2026-08-16 - Step 21 - Palette, Timex, And ULA+ Port State
+
+- Symptom: Standard ULA rendering used a hard-coded default palette, and the
+  WASM backend treated Timex and ULA+ ports as unsupported diagnostics.
+- Root cause: Palette arrays, NR `$40`/`$41`/`$43`/`$44` latches, and classic
+  enhanced-video port state had not been migrated from `PaletteDevice` and
+  `NextIoPortManager`.
+- Fix: Added `zxnext-palette.c` with first/second palette arrays for ULA,
+  Layer 2, sprites, and tilemap; ported NR `$28`, `$40`, `$41`, `$43`, `$44`;
+  changed the ULA renderer to read WASM palette entries; and added Timex
+  `$00ff` plus ULA+ `$bf3b`/`$ff3b` port state.
+- Test lesson: A palette register readback test is not enough. Keep a public
+  pixel-buffer assertion that changes a ULA palette entry and proves
+  `renderInstantScreen()` uses the migrated palette array.
+- Boundary lesson: Timex Hi-Res/Hi-Color and full ULA+ pixel-selection
+  composition remain with later composed video steps; this slice owns their
+  current port/palette state.
+- Tests: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-palette-ulaplus.test.ts`,
+  affected WASM adapter/screen tests, TypeScript palette/composed-screen
+  oracle suites, the 17-file Next WASM suite, `npm run build:check`, and
+  `npm run check:zxnext-wasm-size` (218,684 bytes against 360,000) passed.
+
+## 2026-08-16 - Step 22 - Layer 2 And LoRes Rendering
+
+- Symptom: `0x123b` and Layer 2/LoRes NextRegs were still fallback bytes, so
+  WASM could not exercise Layer 2 RAM windows or composed Layer 2/LoRes pixels.
+- Fix: Added `zxnext-layer2.c` for Layer 2/LoRes state, owned `0x123b`, Layer
+  2 RAM window mapping after DivMMC precedence, Layer 2/LoRes NextRegs, and
+  instant-renderer helpers for 256x192, 320x256, 640x256, standard LoRes, and
+  Radastan LoRes fixed fixtures.
+- Addressing lesson: Layer 2 CPU window mapping and direct Layer 2 rendering
+  SRAM layout are different paths. Use the `0x123b` mapping only for CPU
+  window tests; render fixtures should write the direct bank-8 Layer 2 SRAM
+  layout used by `NextComposedScreenDevice`.
+- Test lesson: Older fallback tests that used Step 22-owned ports/registers
+  must be updated when ownership moves. `0x123b` no longer increments
+  unsupported-port diagnostics, and NextReg `$13` now masks to a Layer 2 shadow
+  RAM bank value.
+- Boundary lesson: This slice implements the transparent Layer 2 overlay needed
+  by fixed fixtures. The full priority matrix across sprites, tilemap, ULA,
+  Layer 2, and clipping remains for later composed-video slices.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-layer2-lores.test.ts`,
+  affected WASM screen/palette/memory tests, the 15-file Next WASM suite,
+  `npm run build:check`, `npm run check:zxnext-wasm-size` (223,985 bytes
+  against 360,000), and `git diff --check` passed.

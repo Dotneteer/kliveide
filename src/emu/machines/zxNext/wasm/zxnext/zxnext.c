@@ -72,6 +72,91 @@ static uint8_t nextRegIndex = 0;
 static uint8_t nextRegLastReadValue = 0xffu;
 static uint8_t nextRegConfigMode = 0;
 static uint8_t nr02ResetType = 0x04u;
+static uint8_t cpuProgrammedSpeed = 0u;
+static uint8_t cpuEffectiveSpeed = 0u;
+static uint32_t cpuContentionDelaySinceStart = 0u;
+static uint8_t interruptIntSignalActive = 0u;
+static uint8_t interruptUlaDisabled = 0u;
+static uint8_t interruptLineEnabled = 0u;
+static uint8_t interruptExpBusEnabled = 0u;
+static uint16_t interruptLine = 0u;
+static uint8_t interruptIm2TopBits = 0u;
+static uint8_t interruptStacklessNmiEnabled = 0u;
+static uint8_t interruptHwIm2Mode = 0u;
+static uint16_t interruptNmiReturnAddress = 0u;
+static uint8_t interruptUart0TxEmpty = 0u;
+static uint8_t interruptUart0RxNearFull = 0u;
+static uint8_t interruptUart0RxAvailable = 0u;
+static uint8_t interruptUart1TxEmpty = 0u;
+static uint8_t interruptUart1RxNearFull = 0u;
+static uint8_t interruptUart1RxAvailable = 0u;
+static uint8_t interruptLineStatus = 0u;
+static uint8_t interruptUlaStatus = 0u;
+static uint8_t interruptUart0TxEmptyStatus = 0u;
+static uint8_t interruptUart0RxNearFullStatus = 0u;
+static uint8_t interruptUart0RxAvailableStatus = 0u;
+static uint8_t interruptUart1TxEmptyStatus = 0u;
+static uint8_t interruptUart1RxNearFullStatus = 0u;
+static uint8_t interruptUart1RxAvailableStatus = 0u;
+static uint8_t interruptEnableNmiToDma = 0u;
+static uint8_t interruptEnableLineToDma = 0u;
+static uint8_t interruptEnableUlaToDma = 0u;
+static uint8_t interruptEnableUart0TxEmptyToDma = 0u;
+static uint8_t interruptEnableUart0RxNearFullToDma = 0u;
+static uint8_t interruptEnableUart0RxAvailableToDma = 0u;
+static uint8_t interruptEnableUart1TxEmptyToDma = 0u;
+static uint8_t interruptEnableUart1RxNearFullToDma = 0u;
+static uint8_t interruptEnableUart1RxAvailableToDma = 0u;
+static uint8_t interruptCtcEnabled[8];
+static uint8_t interruptCtcStatus[8];
+static uint8_t interruptEnableCtcToDma[8];
+static uint8_t interruptDaisyInService[ZXNEXT_DAISY_DEVICE_COUNT];
+static uint8_t interruptBusResetRequested = 0u;
+static uint8_t interruptMfNmiByIoTrap = 0u;
+static uint8_t interruptMfNmiByNextReg = 0u;
+static uint8_t interruptDivMmcNmiByNextReg = 0u;
+static uint8_t interruptLastWasHardReset = 0u;
+static uint8_t interruptLastWasSoftReset = 0u;
+static uint8_t paletteIndex = 0u;
+static uint8_t paletteDisableAutoInc = 0u;
+static uint8_t paletteSelected = 0u;
+static uint8_t paletteSecondSprite = 0u;
+static uint8_t paletteSecondLayer2 = 0u;
+static uint8_t paletteSecondUla = 0u;
+static uint8_t paletteSecondTilemap = 0u;
+static uint8_t paletteEnableUlaNextMode = 0u;
+static uint8_t paletteSecondWrite = 0u;
+static uint8_t paletteStoredValue = 0u;
+static uint16_t paletteEntries[8][256];
+static uint8_t timexPortValue = 0u;
+static uint8_t timexPortBits = 0u;
+static uint8_t ulaPlusMode = 0u;
+static uint8_t ulaPlusPaletteIndex = 0u;
+static uint8_t ulaPlusEnabled = 0u;
+static uint8_t layer2Enabled = 0u;
+static uint8_t layer2Resolution = 0u;
+static uint8_t layer2PaletteOffset = 0u;
+static uint16_t layer2ScrollX = 0u;
+static uint8_t layer2ScrollY = 0u;
+static uint8_t layer2ClipWindowX1 = 0u;
+static uint8_t layer2ClipWindowX2 = 255u;
+static uint8_t layer2ClipWindowY1 = 0u;
+static uint8_t layer2ClipWindowY2 = 191u;
+static uint8_t layer2ClipIndex = 0u;
+static uint8_t layer2ActiveRamBank = 8u;
+static uint8_t layer2ShadowRamBank = 11u;
+static uint8_t layer2UseShadowBank = 0u;
+static uint8_t layer2Bank = 0u;
+static uint8_t layer2BankOffset = 0u;
+static uint8_t layer2EnableMappingForReads = 0u;
+static uint8_t layer2EnableMappingForWrites = 0u;
+static uint8_t globalTransparencyColor = 0xe3u;
+static uint8_t loResEnabled = 0u;
+static uint8_t loResRadastanMode = 0u;
+static uint8_t loResRadastanTimexXor = 0u;
+static uint8_t loResPaletteOffset = 0u;
+static uint8_t loResScrollX = 0u;
+static uint8_t loResScrollY = 0u;
 static uint8_t internalPortEnables[4] = { 0xffu, 0xffu, 0xffu, 0x0fu };
 static uint8_t busPortEnables[4] = { 0xffu, 0xffu, 0xffu, 0x8fu };
 static uint32_t configuredMemorySizeKb = ZXNEXT_DEFAULT_MEMORY_SIZE_KB;
@@ -120,6 +205,8 @@ static void clearRuntimeState(void);
 static uint32_t executeWholeInstruction(void);
 static uint32_t cpuTactsPerFrame(void);
 static void advanceFrameTacts(uint32_t delta);
+static void setCpuProgrammedSpeed(uint32_t value);
+static uint32_t cpuTactScale(void);
 
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() flatMemory
@@ -142,6 +229,9 @@ static void advanceFrameTacts(uint32_t delta);
 #undef Z80_TACT_PLUS_N
 
 #include "zxnext-memory.c"
+#include "zxnext-interrupt.c"
+#include "zxnext-palette.c"
+#include "zxnext-layer2.c"
 #include "zxnext-nextreg.c"
 #include "zxnext-divmmc.c"
 #include "zxnext-sdcard.c"
@@ -155,6 +245,9 @@ static void clearRuntimeState(void) {
   resetSdCardState();
   resetKeyboardState();
   resetUlaState();
+  resetInterruptState();
+  resetPaletteState();
+  resetLayer2State();
   resetScreenState();
   for (uint32_t i = 0; i < ZXNEXT_AUDIO_SAMPLE_CAPACITY * 2u; i++) audioSamples[i] = 0;
   for (uint32_t i = 0; i < ZXNEXT_SD_COMMAND_BUFFER_SIZE; i++) sdCommandBuffer[i] = 0;
@@ -167,6 +260,7 @@ static void clearRuntimeState(void) {
   cpuInstructionsExecuted = 0;
   frameCallCount = 0;
   lastFrameInstructionsExecuted = 0;
+  cpuContentionDelaySinceStart = 0;
   cpuPc = 0;
   cpuSp = 0xffffu;
   hasMemoryEvent = 0;
@@ -324,6 +418,11 @@ uint32_t zxnextGetCurrentFrameTact(void) { return currentFrameTact; }
 uint32_t zxnextGetCpuTactsPerFrame(void) { return cpuTactsPerFrame(); }
 uint32_t zxnextGetFrameCallCount(void) { return frameCallCount; }
 uint32_t zxnextGetLastFrameInstructionsExecuted(void) { return lastFrameInstructionsExecuted; }
+uint32_t zxnextGetCpuProgrammedSpeed(void) { return cpuProgrammedSpeed; }
+uint32_t zxnextGetCpuEffectiveSpeed(void) { return cpuEffectiveSpeed; }
+uint32_t zxnextGetCpuEffectiveClockMultiplier(void) { return 1u << cpuEffectiveSpeed; }
+uint32_t zxnextGetCpuTactScale(void) { return cpuTactScale(); }
+uint32_t zxnextGetCpuContentionDelaySinceStart(void) { return cpuContentionDelaySinceStart; }
 void zxnextSetTacts(uint32_t value) {
   tacts = value;
   z80SetTacts(value);
@@ -405,6 +504,11 @@ uint32_t zxnextGetDiagnosticFlags(void) {
 static uint8_t zxnextCpuReadMemory(uint32_t address) {
   const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
   const uint8_t value = (uint8_t)zxnextReadMemory(maskedAddress);
+  const uint32_t page = maskedAddress >> 13u;
+  if (cpuEffectiveSpeed == 3u && pageBank8k[page] != 0x0eu) {
+    tactPlusNNext(1u);
+    cpuContentionDelaySinceStart++;
+  }
   if (captureBusEvents != 0u) {
     lastMemoryAddress = maskedAddress;
     lastMemoryValue = value;
@@ -460,6 +564,15 @@ static uint32_t executeWholeInstruction(void) {
 static uint32_t cpuTactsPerFrame(void) {
   updateScreenTimingFromNextRegs();
   return screenRenderingTacts >> 1u;
+}
+
+static void setCpuProgrammedSpeed(uint32_t value) {
+  cpuProgrammedSpeed = (uint8_t)(value & 0x03u);
+  cpuEffectiveSpeed = cpuProgrammedSpeed;
+}
+
+static uint32_t cpuTactScale(void) {
+  return 8u >> cpuEffectiveSpeed;
 }
 
 static void advanceFrameTacts(uint32_t delta) {

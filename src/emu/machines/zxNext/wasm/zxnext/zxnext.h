@@ -35,6 +35,14 @@
 #define ZXNEXT_SD_COMMAND_BUFFER_SIZE 520u
 #define ZXNEXT_SD_RESPONSE_BUFFER_SIZE 520u
 #define ZXNEXT_DIAGNOSTIC_BUFFER_SIZE 64u
+#define ZXNEXT_DAISY_DEVICE_COUNT 14u
+#define ZXNEXT_DAISY_PRIORITY_LINE 0u
+#define ZXNEXT_DAISY_PRIORITY_UART0_RX 1u
+#define ZXNEXT_DAISY_PRIORITY_UART1_RX 2u
+#define ZXNEXT_DAISY_PRIORITY_CTC_BASE 3u
+#define ZXNEXT_DAISY_PRIORITY_ULA 11u
+#define ZXNEXT_DAISY_PRIORITY_UART0_TX 12u
+#define ZXNEXT_DAISY_PRIORITY_UART1_TX 13u
 
 uint32_t zxnextReadPort(uint32_t address);
 void zxnextWritePort(uint32_t address, uint32_t value);
@@ -56,6 +64,11 @@ uint32_t zxnextRenderInstantScreen(void);
 uint32_t zxnextReadScreenMemoryOffset(uint32_t offset);
 uint32_t zxnextGetScreenNonBlankPixelCount(void);
 uint32_t zxnextGetDiagnosticFlags(void);
+uint32_t zxnextDaisyUpdateIrqState(void);
+uint32_t zxnextDaisyPeekInterruptVector(void);
+uint32_t zxnextDaisyAcknowledge(void);
+void zxnextDaisyReti(void);
+uint32_t zxnextUlaPaletteBgra(uint32_t index);
 
 static uint32_t activeMemorySize(void);
 static void clearMutablePhysicalMemory(void);
@@ -81,5 +94,19 @@ static void resetUlaState(void);
 static void resetScreenState(void);
 static void updateScreenTimingFromNextRegs(void);
 static void initializeScreenRenderingTables(void);
+static void resetInterruptState(void);
+static void resetPaletteState(void);
+static uint32_t interruptReadNextReg(uint32_t reg);
+static uint32_t interruptWriteNextReg(uint32_t reg, uint32_t value);
+static uint32_t paletteReadNextReg(uint32_t reg);
+static uint32_t paletteWriteNextReg(uint32_t reg, uint32_t value);
+static void resetLayer2State(void);
+static uint32_t layer2ReadNextReg(uint32_t reg);
+static uint32_t layer2WriteNextReg(uint32_t reg, uint32_t value);
+static uint32_t layer2MappedOffset(uint32_t address, uint32_t isWrite);
+static uint32_t zxnextReadLayer2Port123b(void);
+static void zxnextWriteLayer2Port123b(uint32_t value);
+static uint32_t zxnextGetLayer2PixelBgra(uint32_t displayHc, uint32_t displayVc, uint32_t phase);
+static uint32_t zxnextGetLoResPixelBgra(uint32_t displayHc, uint32_t displayVc, uint32_t phase);
 
 #endif

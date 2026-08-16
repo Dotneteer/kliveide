@@ -2,7 +2,7 @@
 
 Created: 2026-08-16
 
-Status: Steps 1-8, Step 13A, and Steps 14-18 done. Steps 9-13 have useful WASM
+Status: Steps 1-8, Step 13A, and Steps 14-21 done. Steps 9-13 have useful WASM
 baselines whose audited gaps are now either fixed or explicitly deferred to
 later owning steps. The current baselines cover core memory/MMU reset layout,
 128K/+3/Next memory-port paging, NextReg core/gating, keyboard matrix sync, ULA
@@ -14,7 +14,12 @@ now live in WASM while storage persistence remains in TypeScript. The first
 deterministic storage-backed boot smoke now proves CPU-driven SPI, sector
 frame-command servicing, and storage-backed ULA pixels; real NextZXOS
 start-menu/manual smoke still waits for a checked-in SD image fixture and later
-boot-time device slices.
+boot-time device slices. The early IDE inspection baseline now proves public
+register, memory, port, NextReg, screen, and code-injection reads come from
+WASM-owned state, CPU speed NR `$07` plus the current 28 MHz read wait-state
+rule match TypeScript for the migrated timing cases, and WASM now owns the
+first interrupt/IM2 daisy-chain state plus Next palette, Timex, and ULA+ port
+state needed by the current standard ULA renderer.
 
 ## Goal
 
@@ -1947,7 +1952,7 @@ Completion checklist:
 
 ### Step 18A - Early IDE Inspection Baseline
 
-Status: Not started
+Status: Done on 2026-08-16
 
 Before migrating the heavier Next devices, prove that the WASM machine supports
 the IDE's core internal-inspection features through the same public machine APIs
@@ -2015,9 +2020,52 @@ Definition of done:
 - Any intentionally TypeScript-owned inspection surface is documented with a
   parity test that proves the mixed ownership is coherent.
 
+Completion checklist:
+
+- Audited TypeScript/renderer sources:
+  - `src/emu/machines/zxNext/ZxNextMachine.ts`;
+  - `src/emu/machines/zxNext/Z80NMachineBase.ts`;
+  - `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+  - `src/renderer/abstractions/IAnyMachine.ts`;
+  - `src/renderer/features/emulator/useEmulatorScreen.ts`;
+  - `src/emu/machines/MachineFrameRunner.ts`;
+  - `src/emu/z80/Z80Cpu.ts`.
+- Changed destination files:
+  - `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+  - `test/wasm/zxNext/wasm-next-ide-inspection.test.ts`.
+- Migrated/tested:
+  - public `getCpuState()` before and after instruction execution;
+  - public memory reads/writes, flat 64K view, mapped page slices, partition
+    lookup, partition parsing, and partition labels;
+  - disassembly-style byte reads from mapped RAM;
+  - public port read/write state, including last I/O diagnostics;
+  - public NextReg index/data port access and live `nextRegDevice` reads;
+  - screen dimensions, screen memory reads, pixel buffer, and non-blank
+    rendering diagnostics;
+  - normal mapped-memory `injectCodeToRun`.
+- Raw WASM/public adapter coverage:
+  - `test/wasm/zxNext/wasm-next-ide-inspection.test.ts` uses public
+    `ZxNextWasmV2Machine` APIs and a TypeScript oracle for parity where the
+    TypeScript public surface already exposes the value.
+- Deferred behaviors:
+  - banked `injectCodeToRun` remains deferred because the inherited
+    `ZxNextMachine.injectCodeToRun` implementation still has a `TODO` for
+    banked segments;
+  - richer IDE panels for later devices remain with the owning device steps.
+- Adapter correction:
+  - known WASM diagnostic fallback reads, currently Layer 2 port `0x123b`, now
+    route through WASM so public last-I/O state and unsupported-port
+    diagnostics do not stay stale.
+- Validation:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-ide-inspection.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-ide-inspection.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`
+  - broader Next WASM suite listed under Step 19 validation
+  - `npm run build:check`
+  - `git diff --check`
+
 ### Step 19 - Contention And CPU Speed Parity
 
-Status: Not started
+Status: Done on 2026-08-16 for CPU speed NR `$07` and the current 28 MHz memory-read wait-state rule
 
 Implement Next contention and speed behavior.
 
@@ -2064,9 +2112,56 @@ Definition of done:
 - CPU speed changes and contention gates match TypeScript under public port and
   NextReg operations.
 
+Completion checklist:
+
+- Audited TypeScript sources:
+  - `src/emu/machines/zxNext/CpuSpeedDevice.ts`;
+  - `src/emu/machines/zxNext/MemoryDevice.ts`;
+  - `src/emu/machines/zxNext/NextRegDevice.ts`;
+  - `src/emu/machines/zxNext/Z80NMachineBase.ts`;
+  - `src/emu/machines/zxNext/ZxNextMachine.ts`;
+  - `test/zxnext/MemoryDevice.test.ts`;
+  - `test/zxnext/NextRegDevice.test.ts`.
+- Changed destination files:
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`;
+  - `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+  - `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+  - `scripts/build-zxnext-wasm.cjs`;
+  - `test/wasm/zxNext/wasm-next-contention-speed.test.ts`.
+- Migrated/tested:
+  - CPU speed programmed/effective values through NR `$07`;
+  - effective clock multiplier and CPU tact scale diagnostics;
+  - hard reset clears speed to 3.5 MHz and soft reset preserves speed;
+  - CPU-read 28 MHz extra wait state for non-bank-7 reads;
+  - bank-7 page `0x0e` exception at 28 MHz;
+  - public CPU tacts compared against the TypeScript oracle for speed
+    `0..3`.
+- Raw WASM/public adapter coverage:
+  - `test/wasm/zxNext/wasm-next-contention-speed.test.ts` uses public
+    NextReg/device APIs, public `getCpuState()` tacts, and public diagnostics.
+- Deferred behaviors:
+  - expansion-bus forced 3.5 MHz effective speed remains with the expansion-bus
+    migration step because the expansion bus is not WASM-owned yet;
+  - full 128K-style port-contention timing and NR `$08` contention-disable
+    gates remain deferred until the port/contention implementation is extended
+    beyond the current tested memory-read wait-state rule;
+  - write-delay accounting remains TypeScript-only until a migrated test
+    requires a WASM diagnostic equivalent.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-contention-speed.test.ts`
+  - `npm test -- --project jsdom test/zxnext/MemoryDevice.test.ts test/zxnext/NextRegDevice.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-ide-inspection.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts`
+  - `npm test -- --project jsdom test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts test/wasm/zxNext/wasm-next-divmmc.test.ts test/wasm/zxNext/wasm-next-storage.test.ts test/wasm/zxNext/wasm-next-ide-inspection.test.ts test/wasm/zxNext/wasm-next-contention-speed.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size` (208,562 bytes against 360,000)
+  - `git diff --check`
+
 ### Step 20 - Interrupts And NMI State Machine
 
-Status: Not started
+Status: Done on 2026-08-16 for NextReg-backed interrupt state, pulse capture,
+DMA/status masks, and HW IM2 daisy-chain behavior
 
 Move interrupt/NMI hot state into WASM.
 
@@ -2123,9 +2218,49 @@ Definition of done:
 - Public `shouldRaiseInterrupt`, NMI entry, interrupt vector, acknowledgement,
   and RETN behavior match TypeScript for migrated cases.
 
+Completion checklist:
+
+- Audited TypeScript sources:
+  - `src/emu/machines/zxNext/InterruptDevice.ts`;
+  - `src/emu/machines/zxNext/ZxNextMachine.ts`;
+  - `src/emu/machines/zxNext/NextRegDevice.ts`;
+  - `test/zxnext/InterruptDevice.test.ts`;
+  - `test/zxnext/DaisyChain.test.ts`;
+  - `test/zxnext/NextInterrupts.test.ts`.
+- Changed destination files:
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-interrupt.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.h`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`;
+  - `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+  - `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+  - `scripts/build-zxnext-wasm.cjs`;
+  - `test/wasm/zxNext/wasm-next-interrupts.test.ts`.
+- Migrated/tested:
+  - NR `$02`, `$20`, `$22`, `$23`, `$c0`, `$c2`, `$c3`, `$c4`, `$c5`, `$c6`,
+    `$c8`, `$c9`, `$ca`, `$cc`, `$cd`, and `$ce` interrupt state;
+  - ULA and line interrupt pulse capture;
+  - CTC and UART interrupt status masks used by status/DMA registers;
+  - HW IM2 daisy `Requesting`/`InService` walk, peek vector, acknowledge, and
+    RETI-style service clear;
+  - public `shouldRaiseInterrupt()` routed to WASM daisy state in HW IM2 mode;
+  - diagnostics for line value, IM2 flags, CTC masks, daisy mask, and DMA
+    request state.
+- Deferred behaviors:
+  - full CPU NMI entry/hold/end, stackless NMI RETN fixups, Multiface NMI,
+    DivMMC NMI, and expansion-bus NMI remain deferred until those device
+    ownership slices migrate;
+  - DMA/CTC live device interrupt generation remains deferred beyond the
+    migrated status-mask inputs.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-interrupts.test.ts`
+  - broader validation listed under Step 21 validation
+
 ### Step 21 - Palette And ULA+/Timex Modes
 
-Status: Not started
+Status: Done on 2026-08-16 for Next palette registers, standard ULA palette
+rendering, Timex port state, and ULA+ port state
 
 Implement the palette and classic enhanced video pieces before Next layers.
 
@@ -2172,9 +2307,56 @@ Definition of done:
 - Palette reads/writes and ULA+/Timex rendering agree with TypeScript for
   migrated fixtures.
 
+Completion checklist:
+
+- Audited TypeScript sources:
+  - `src/emu/machines/zxNext/PaletteDevice.ts`;
+  - `src/emu/machines/zxNext/palette.ts`;
+  - `src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts`;
+  - `src/emu/machines/zxNext/io-ports/UlaPlusDataPortHandler.ts`;
+  - `src/emu/machines/zxNext/io-ports/NextIoPortManager.ts`;
+  - `src/emu/machines/zxNext/NextRegDevice.ts`;
+  - `test/zxnext/PaletteDevice.test.ts`;
+  - `test/zxnext/PaletteDeviceFpgaFixes.test.ts`;
+  - `test/zxnext/NextComposedScreenDevice.test.ts`.
+- Changed destination files:
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-palette.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-screen.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.c`;
+  - `src/emu/machines/zxNext/wasm/zxnext/zxnext.h`;
+  - `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts`;
+  - `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`;
+  - `scripts/build-zxnext-wasm.cjs`;
+  - `test/wasm/zxNext/wasm-next-palette-ulaplus.test.ts`.
+- Migrated/tested:
+  - palette arrays for ULA, Layer 2, sprite, and tilemap first/second palettes;
+  - NR `$28`, `$40`, `$41`, `$43`, and `$44` read/write behavior;
+  - 8-bit and 9-bit palette writes, auto-increment, second-write latch, and
+    priority-bit storage;
+  - standard ULA rendering through WASM palette arrays instead of the former
+    hard-coded default palette;
+  - Timex port `$00ff` value/bits and ULA interrupt-disable side effect;
+  - ULA+ mode/index port `$bf3b` and data/control port `$ff3b` with the current
+    port-enable gate.
+- Deferred behaviors:
+  - full Timex Hi-Res/Hi-Color pixel rendering remains with the later composed
+    video slices;
+  - full ULA+ pixel-selection composition is deferred beyond this port/palette
+    state slice.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-palette-ulaplus.test.ts`
+  - `npm test -- --project jsdom test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-ide-inspection.test.ts`
+  - `npm test -- --project jsdom test/zxnext/InterruptDevice.test.ts test/zxnext/DaisyChain.test.ts test/zxnext/PaletteDevice.test.ts test/zxnext/PaletteDeviceFpgaFixes.test.ts test/zxnext/NextComposedScreenDevice.test.ts`
+  - `npm test -- --project jsdom test/zxnext/zxnext-wasm-build.test.ts test/zxnext/zxnext-wasm-v2-loader.test.ts test/zxnext/ZxNextWasmV2Machine.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts test/wasm/zxNext/wasm-next-divmmc.test.ts test/wasm/zxNext/wasm-next-storage.test.ts test/wasm/zxNext/wasm-next-ide-inspection.test.ts test/wasm/zxNext/wasm-next-contention-speed.test.ts test/wasm/zxNext/wasm-next-interrupts.test.ts test/wasm/zxNext/wasm-next-palette-ulaplus.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size` (218,684 bytes against 360,000)
+
 ### Step 22 - Layer 2 And LoRes Rendering
 
-Status: Not started
+Status: Completed on 2026-08-16
 
 Implement Layer 2 and LoRes rendering after standard ULA is stable.
 
@@ -2222,6 +2404,27 @@ Tests:
 Definition of done:
 
 - Layer 2/LoRes pixels match TypeScript oracle for fixed fixtures.
+
+Completed notes:
+
+- Added `zxnext-layer2.c` for Layer 2/LoRes state, NextRegs `$12`, `$13`,
+  `$14`, `$15`, `$16`, `$17`, `$18`, `$1c`, `$32`, `$33`, `$69`, `$6a`,
+  `$70`, and `$71`, plus owned port `0x123b`.
+- Threaded Layer 2 CPU read/write windows into `zxnext-memory.c` after DivMMC
+  precedence and before normal MMU pages.
+- Extended instant screen rendering with LoRes replacement pixels and
+  transparent Layer 2 overlay for 256x192, 320x256, and 640x256 fixed
+  fixtures.
+- Added adapter diagnostics/exports for Layer 2 and LoRes state, and updated
+  older fallback tests now that `0x123b` and Layer 2 NextRegs are owned.
+- Validation:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-layer2-lores.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-palette-ulaplus.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-boot-storage-ula.test.ts test/wasm/zxNext/wasm-next-contention-speed.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-divmmc.test.ts test/wasm/zxNext/wasm-next-ide-inspection.test.ts test/wasm/zxNext/wasm-next-interrupts.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-layer2-lores.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-nextreg-ports.test.ts test/wasm/zxNext/wasm-next-palette-ulaplus.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-storage.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size` (223,985 bytes against 360,000)
+  - `git diff --check`
 
 ### Step 23 - Tilemap Rendering
 

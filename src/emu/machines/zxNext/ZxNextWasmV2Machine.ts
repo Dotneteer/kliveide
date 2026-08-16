@@ -42,6 +42,57 @@ export type ZxNextWasmV2Diagnostics = {
   frameTacts: number;
   currentFrameTact: number;
   cpuTactsPerFrame: number;
+  cpuProgrammedSpeed: number;
+  cpuEffectiveSpeed: number;
+  cpuEffectiveClockMultiplier: number;
+  cpuTactScale: number;
+  cpuContentionDelaySinceStart: number;
+  interruptLineValue: number;
+  interruptIm2TopBits: number;
+  interruptStacklessNmiEnabled: boolean;
+  interruptHwIm2Mode: boolean;
+  interruptNmiReturnAddress: number;
+  interruptCtcEnabledMask: number;
+  interruptCtcStatusMask: number;
+  interruptCtcDmaEnableMask: number;
+  interruptDaisyInServiceMask: number;
+  interruptDmaRequestActive: boolean;
+  paletteIndex: number;
+  paletteControl: number;
+  paletteSelected: number;
+  paletteSecondUla: boolean;
+  paletteEnableUlaNextMode: boolean;
+  paletteSecondWrite: boolean;
+  paletteStoredValue: number;
+  timexPortValue: number;
+  timexPortBits: number;
+  ulaPlusMode: number;
+  ulaPlusPaletteIndex: number;
+  ulaPlusEnabled: boolean;
+  layer2Enabled: boolean;
+  layer2Resolution: number;
+  layer2PaletteOffset: number;
+  layer2ScrollX: number;
+  layer2ScrollY: number;
+  layer2ClipWindowX1: number;
+  layer2ClipWindowX2: number;
+  layer2ClipWindowY1: number;
+  layer2ClipWindowY2: number;
+  layer2ClipIndex: number;
+  layer2ActiveRamBank: number;
+  layer2ShadowRamBank: number;
+  layer2UseShadowBank: boolean;
+  layer2Bank: number;
+  layer2BankOffset: number;
+  layer2MappingReadsEnabled: boolean;
+  layer2MappingWritesEnabled: boolean;
+  globalTransparencyColor: number;
+  loResEnabled: boolean;
+  loResRadastanMode: boolean;
+  loResRadastanTimexXor: boolean;
+  loResPaletteOffset: number;
+  loResScrollX: number;
+  loResScrollY: number;
   z80nMode: boolean;
   cpuPc: number;
   cpuSp: number;
@@ -179,6 +230,57 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       frameTacts: runtime.exports.zxnextGetFrameTacts(),
       currentFrameTact: runtime.exports.zxnextGetCurrentFrameTact(),
       cpuTactsPerFrame: runtime.exports.zxnextGetCpuTactsPerFrame(),
+      cpuProgrammedSpeed: runtime.exports.zxnextGetCpuProgrammedSpeed(),
+      cpuEffectiveSpeed: runtime.exports.zxnextGetCpuEffectiveSpeed(),
+      cpuEffectiveClockMultiplier: runtime.exports.zxnextGetCpuEffectiveClockMultiplier(),
+      cpuTactScale: runtime.exports.zxnextGetCpuTactScale(),
+      cpuContentionDelaySinceStart: runtime.exports.zxnextGetCpuContentionDelaySinceStart(),
+      interruptLineValue: runtime.exports.zxnextGetInterruptLineValue(),
+      interruptIm2TopBits: runtime.exports.zxnextGetInterruptIm2TopBits(),
+      interruptStacklessNmiEnabled: runtime.exports.zxnextGetInterruptStacklessNmiEnabled() !== 0,
+      interruptHwIm2Mode: runtime.exports.zxnextGetInterruptHwIm2Mode() !== 0,
+      interruptNmiReturnAddress: runtime.exports.zxnextGetInterruptNmiReturnAddress(),
+      interruptCtcEnabledMask: runtime.exports.zxnextGetInterruptCtcEnabledMask(),
+      interruptCtcStatusMask: runtime.exports.zxnextGetInterruptCtcStatusMask(),
+      interruptCtcDmaEnableMask: runtime.exports.zxnextGetInterruptCtcDmaEnableMask(),
+      interruptDaisyInServiceMask: runtime.exports.zxnextGetDaisyInServiceMask(),
+      interruptDmaRequestActive: runtime.exports.zxnextGetDmaInterruptRequestActive() !== 0,
+      paletteIndex: runtime.exports.zxnextGetPaletteIndex(),
+      paletteControl: runtime.exports.zxnextGetPaletteControl(),
+      paletteSelected: runtime.exports.zxnextGetPaletteSelected(),
+      paletteSecondUla: runtime.exports.zxnextGetPaletteSecondUla() !== 0,
+      paletteEnableUlaNextMode: runtime.exports.zxnextGetPaletteEnableUlaNextMode() !== 0,
+      paletteSecondWrite: runtime.exports.zxnextGetPaletteSecondWrite() !== 0,
+      paletteStoredValue: runtime.exports.zxnextGetPaletteStoredValue(),
+      timexPortValue: runtime.exports.zxnextGetTimexPortValue(),
+      timexPortBits: runtime.exports.zxnextGetTimexPortBits(),
+      ulaPlusMode: runtime.exports.zxnextGetUlaPlusMode(),
+      ulaPlusPaletteIndex: runtime.exports.zxnextGetUlaPlusPaletteIndex(),
+      ulaPlusEnabled: runtime.exports.zxnextGetUlaPlusEnabled() !== 0,
+      layer2Enabled: runtime.exports.zxnextGetLayer2Enabled() !== 0,
+      layer2Resolution: runtime.exports.zxnextGetLayer2Resolution(),
+      layer2PaletteOffset: runtime.exports.zxnextGetLayer2PaletteOffset(),
+      layer2ScrollX: runtime.exports.zxnextGetLayer2ScrollX(),
+      layer2ScrollY: runtime.exports.zxnextGetLayer2ScrollY(),
+      layer2ClipWindowX1: runtime.exports.zxnextGetLayer2ClipWindowX1(),
+      layer2ClipWindowX2: runtime.exports.zxnextGetLayer2ClipWindowX2(),
+      layer2ClipWindowY1: runtime.exports.zxnextGetLayer2ClipWindowY1(),
+      layer2ClipWindowY2: runtime.exports.zxnextGetLayer2ClipWindowY2(),
+      layer2ClipIndex: runtime.exports.zxnextGetLayer2ClipIndex(),
+      layer2ActiveRamBank: runtime.exports.zxnextGetLayer2ActiveRamBank(),
+      layer2ShadowRamBank: runtime.exports.zxnextGetLayer2ShadowRamBank(),
+      layer2UseShadowBank: runtime.exports.zxnextGetLayer2UseShadowBank() !== 0,
+      layer2Bank: runtime.exports.zxnextGetLayer2Bank(),
+      layer2BankOffset: runtime.exports.zxnextGetLayer2BankOffset(),
+      layer2MappingReadsEnabled: runtime.exports.zxnextGetLayer2MappingReadsEnabled() !== 0,
+      layer2MappingWritesEnabled: runtime.exports.zxnextGetLayer2MappingWritesEnabled() !== 0,
+      globalTransparencyColor: runtime.exports.zxnextGetGlobalTransparencyColor(),
+      loResEnabled: runtime.exports.zxnextGetLoResEnabled() !== 0,
+      loResRadastanMode: runtime.exports.zxnextGetLoResRadastanMode() !== 0,
+      loResRadastanTimexXor: runtime.exports.zxnextGetLoResRadastanTimexXor() !== 0,
+      loResPaletteOffset: runtime.exports.zxnextGetLoResPaletteOffset(),
+      loResScrollX: runtime.exports.zxnextGetLoResScrollX(),
+      loResScrollY: runtime.exports.zxnextGetLoResScrollY(),
       z80nMode: runtime.exports.zxnextGetZ80NMode() !== 0,
       cpuPc: runtime.exports.zxnextGetCpuPc(),
       cpuSp: runtime.exports.zxnextGetCpuSp(),
@@ -451,6 +553,29 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     super.tbblueOut(address, value);
   }
 
+  protected override getInterruptVector(): number {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null || runtime.exports.zxnextGetInterruptHwIm2Mode() === 0) return super.getInterruptVector();
+    return runtime.exports.zxnextDaisyPeekInterruptVector();
+  }
+
+  override onInterruptAcknowledged(): void {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null || runtime.exports.zxnextGetInterruptHwIm2Mode() === 0) {
+      super.onInterruptAcknowledged();
+      return;
+    }
+    runtime.exports.zxnextDaisyAcknowledge();
+  }
+
+  override shouldRaiseInterrupt(): boolean {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null || runtime.exports.zxnextGetInterruptHwIm2Mode() === 0) {
+      return super.shouldRaiseInterrupt();
+    }
+    return runtime.exports.zxnextDaisyUpdateIrqState() !== 0;
+  }
+
   override getCpuState(): any {
     const runtime = this.wasmV2Runtime;
     if (runtime != null) {
@@ -714,8 +839,22 @@ function isWasmV2SpiPort(address: number): boolean {
   return port === 0x00e7 || port === 0x00eb;
 }
 
+function isWasmV2TimexUlaPlusPort(address: number): boolean {
+  const port = address & 0xffff;
+  return port === 0x00ff || port === 0xbf3b || port === 0xff3b;
+}
+
 function isWasmV2OwnedPort(address: number): boolean {
-  return isWasmV2UlaPort(address) || isWasmV2NextRegPort(address) || isWasmV2SpiPort(address) || (address & 0xffff) === 0x00e3;
+  return isWasmV2UlaPort(address) ||
+    isWasmV2NextRegPort(address) ||
+    isWasmV2SpiPort(address) ||
+    isWasmV2TimexUlaPlusPort(address) ||
+    isWasmV2Layer2Port(address) ||
+    (address & 0xffff) === 0x00e3;
+}
+
+function isWasmV2Layer2Port(address: number): boolean {
+  return (address & 0xffff) === 0x123b;
 }
 
 function isWasmV2SdFrameCommand(command: unknown): boolean {

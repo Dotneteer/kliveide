@@ -17,7 +17,7 @@ const BANK_5_BASE = OFFS_NEXT_RAM + 5 * 0x4000;
 const LAYER2_PORT = 0x123b;
 
 describe("ZX Spectrum Next WASM v2 early boot/storage/ULA smoke", () => {
-  it("returns the TypeScript fallback value and records the owner step for unsupported ports", async () => {
+  it("owns the Layer 2 port without recording an unsupported diagnostic", async () => {
     const [wasmMachine, oracleMachine] = await Promise.all([
       createTestZxNextWasmMachine(),
       createOracleZxNextMachine()
@@ -27,16 +27,17 @@ describe("ZX Spectrum Next WASM v2 early boot/storage/ULA smoke", () => {
     expect(wasm.zxnextReadPort(LAYER2_PORT)).toBe(oracleMachine.doReadPort(LAYER2_PORT));
 
     const diagnostics = wasmMachine.getWasmV2Diagnostics();
-    expect(diagnostics.unsupportedPortReadCount).toBe(1);
+    expect(diagnostics.unsupportedPortReadCount).toBe(0);
     expect(diagnostics.unsupportedPortWriteCount).toBe(0);
-    expect(diagnostics.firstUnsupportedPortAddress).toBe(LAYER2_PORT);
-    expect(diagnostics.firstUnsupportedPortValue).toBe(0x00);
+    expect(diagnostics.firstUnsupportedPortAddress).toBe(0x0000);
+    expect(diagnostics.firstUnsupportedPortValue).toBe(0xff);
     expect(diagnostics.firstUnsupportedPortIsWrite).toBe(false);
-    expect(diagnostics.firstUnsupportedPortOwnerStep).toBe(22);
-    expect(diagnostics.diagnosticFlags & 0x01).toBe(0x01);
+    expect(diagnostics.firstUnsupportedPortOwnerStep).toBe(0);
+    expect(diagnostics.layer2Enabled).toBe(false);
+    expect(diagnostics.diagnosticFlags & 0x01).toBe(0x00);
   });
 
-  it("executes ROM frames, renders visible ULA pixels, and logs unsupported boot-time ports", async () => {
+  it("executes ROM frames, renders visible ULA pixels, and exercises the owned Layer 2 port", async () => {
     const machine = await createTestZxNextWasmMachine(createTestZxNextRomSet({
       next: testRom([
         0x31, 0xff, 0xff,       // LD SP,0xffff
@@ -59,10 +60,11 @@ describe("ZX Spectrum Next WASM v2 early boot/storage/ULA smoke", () => {
     expect(diagnostics.cpuPc).not.toBe(0);
     expect(diagnostics.screenRenderCount).toBe(1);
     expect(machine.getPixelBuffer()[displayPixel]).toBe(defaultUlaBgra(15));
-    expect(diagnostics.unsupportedPortReadCount).toBeGreaterThan(0);
-    expect(diagnostics.unsupportedPortWriteCount).toBeGreaterThan(0);
-    expect(diagnostics.firstUnsupportedPortAddress).toBe(LAYER2_PORT);
-    expect(diagnostics.firstUnsupportedPortOwnerStep).toBe(22);
+    expect(diagnostics.unsupportedPortReadCount).toBe(0);
+    expect(diagnostics.unsupportedPortWriteCount).toBe(0);
+    expect(diagnostics.firstUnsupportedPortAddress).toBe(0x0000);
+    expect(diagnostics.firstUnsupportedPortOwnerStep).toBe(0);
+    expect(diagnostics.layer2Enabled).toBe(false);
     expect(machine.wasmV2Runtime!.diagnosticBuffer[1]).toBe(diagnostics.unsupportedPortReadCount);
     expect(machine.wasmV2Runtime!.diagnosticBuffer[2]).toBe(diagnostics.unsupportedPortWriteCount);
   });

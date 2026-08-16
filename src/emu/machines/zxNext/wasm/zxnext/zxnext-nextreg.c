@@ -14,6 +14,9 @@ static void resetNextRegs(uint32_t hard) {
       nextRegHasLastWrite[i] = 0;
     }
     nr02ResetType = 0x04u;
+    interruptLastWasHardReset = 1u;
+    interruptLastWasSoftReset = 0u;
+    setCpuProgrammedSpeed(0u);
     setNextRegDefault(0x02, 0x02);
     setNextRegDefault(0x03, 0x03);
     setNextRegDefault(0x04, 0x03);
@@ -50,6 +53,8 @@ static void resetNextRegs(uint32_t hard) {
   } else {
     const uint32_t rt = nr02ResetType;
     nr02ResetType = (uint8_t)(((rt >> 1u) & 0x02u) | (((rt & 0x03u) != 0u) ? 0x01u : 0x00u));
+    interruptLastWasHardReset = 0u;
+    interruptLastWasSoftReset = 1u;
     setNextRegDefault(0x02, nr02ResetType != 0u ? 0x01u : 0x00u);
     setNextRegDefault(0x05, (nextRegs[0x05] & 0x05u) | 0x40u);
     setNextRegDefault(0x06, nextRegs[0x06] | 0xa0u);
@@ -109,7 +114,14 @@ static uint32_t isPortGroupEnabled(uint32_t regIndex, uint32_t bit) {
 
 uint32_t zxnextReadNextReg(uint32_t reg) {
   const uint32_t maskedReg = reg & 0xffu;
+  const uint32_t interruptValue = interruptReadNextReg(maskedReg);
+  if (interruptValue != 0xffffffffu) return interruptValue;
+  const uint32_t paletteValue = paletteReadNextReg(maskedReg);
+  if (paletteValue != 0xffffffffu) return paletteValue;
+  const uint32_t layer2Value = layer2ReadNextReg(maskedReg);
+  if (layer2Value != 0xffffffffu) return layer2Value;
   if (maskedReg >= 0x50u && maskedReg <= 0x57u) return mmuRegs[maskedReg - 0x50u];
+  if (maskedReg == 0x07u) return (cpuProgrammedSpeed & 0x03u) | (cpuEffectiveSpeed << 4u);
   if (maskedReg == 0x69u) {
     const uint32_t shadowBit = useShadowScreen != 0u ? 0x40u : 0x00u;
     return (nextRegs[0x69u] & 0xbfu) | shadowBit;
@@ -133,6 +145,9 @@ static void writeNextRegInternal(uint32_t reg, uint32_t value) {
   if (maskedReg == 0x85u || maskedReg == 0x89u) byteValue &= 0x8fu;
   if (maskedReg == 0x8au) byteValue &= 0x3fu;
   nextRegs[maskedReg] = byteValue;
+  if (interruptWriteNextReg(maskedReg, byteValue) != 0u) return;
+  if (paletteWriteNextReg(maskedReg, byteValue) != 0u) return;
+  if (layer2WriteNextReg(maskedReg, byteValue) != 0u) return;
   if (maskedReg >= 0x50u && maskedReg <= 0x57u) {
     mmuRegs[maskedReg - 0x50u] = byteValue;
     updateMemoryConfig(0);
@@ -157,6 +172,9 @@ static void writeNextRegInternal(uint32_t reg, uint32_t value) {
   }
   if (maskedReg == 0x05u) {
     updateScreenTimingFromNextRegs();
+  }
+  if (maskedReg == 0x07u) {
+    setCpuProgrammedSpeed(byteValue);
   }
   if (maskedReg == 0x09u) {
     divMmcResetMapramFlag = (byteValue & 0x08u) != 0u;
@@ -195,10 +213,12 @@ uint32_t zxnextGetBusPortEnable(uint32_t regIndex) { return regIndex < 4u ? busP
 void zxnextNextRegHardReset(void) {
   resetMmuLayout();
   resetNextRegs(1);
+  resetLayer2State();
   updateScreenTimingFromNextRegs();
 }
 void zxnextNextRegReset(void) {
   resetMmuLayout();
   resetNextRegs(0);
+  resetLayer2State();
   updateScreenTimingFromNextRegs();
 }

@@ -160,6 +160,70 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetCpuTactsPerFrame: ZxNextWasmV2ExportFunction;
   zxnextGetFrameCallCount: ZxNextWasmV2ExportFunction;
   zxnextGetLastFrameInstructionsExecuted: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuProgrammedSpeed: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuEffectiveSpeed: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuEffectiveClockMultiplier: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuTactScale: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuContentionDelaySinceStart: ZxNextWasmV2ExportFunction;
+  zxnextCaptureUlaInterruptPulse: ZxNextWasmV2ExportFunction;
+  zxnextCaptureLineInterruptPulse: ZxNextWasmV2ExportFunction;
+  zxnextSetCtcInterruptStatus: ZxNextWasmV2ExportFunction;
+  zxnextSetUartInterruptStatus: ZxNextWasmV2ExportFunction;
+  zxnextSetDaisyInService: ZxNextWasmV2ExportFunction;
+  zxnextDaisyUpdateIrqState: ZxNextWasmV2ExportFunction;
+  zxnextDaisyPeekInterruptVector: ZxNextWasmV2ExportFunction;
+  zxnextDaisyAcknowledge: ZxNextWasmV2ExportFunction;
+  zxnextDaisyReti: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaInterruptRequestActive: ZxNextWasmV2ExportFunction;
+  zxnextGetInterruptLineValue: ZxNextWasmV2ExportFunction;
+  zxnextGetInterruptIm2TopBits: ZxNextWasmV2ExportFunction;
+  zxnextGetInterruptStacklessNmiEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetInterruptHwIm2Mode: ZxNextWasmV2ExportFunction;
+  zxnextGetInterruptNmiReturnAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetInterruptCtcEnabledMask: ZxNextWasmV2ExportFunction;
+  zxnextGetInterruptCtcStatusMask: ZxNextWasmV2ExportFunction;
+  zxnextGetInterruptCtcDmaEnableMask: ZxNextWasmV2ExportFunction;
+  zxnextGetDaisyInServiceMask: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteControl: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteSelected: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteSecondUla: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteEnableUlaNextMode: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteSecondWrite: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteStoredValue: ZxNextWasmV2ExportFunction;
+  zxnextReadPaletteEntry: ZxNextWasmV2ExportFunction;
+  zxnextReadUlaPlusData: ZxNextWasmV2ExportFunction;
+  zxnextWriteUlaPlusData: ZxNextWasmV2ExportFunction;
+  zxnextGetTimexPortValue: ZxNextWasmV2ExportFunction;
+  zxnextGetTimexPortBits: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaPlusMode: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaPlusPaletteIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaPlusEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2Enabled: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2Resolution: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2PaletteOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ScrollX: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ScrollY: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ClipWindowX1: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ClipWindowX2: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ClipWindowY1: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ClipWindowY2: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ClipIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ActiveRamBank: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ShadowRamBank: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2UseShadowBank: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2Bank: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2BankOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2MappingReadsEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2MappingWritesEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetGlobalTransparencyColor: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResRadastanMode: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResRadastanTimexXor: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResPaletteOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResScrollX: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResScrollY: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2MappedOffset: ZxNextWasmV2ExportFunction;
   zxnextSetTacts: ZxNextWasmV2ExportFunction;
   zxnextGetHardResetCount: ZxNextWasmV2ExportFunction;
   zxnextGetResetCount: ZxNextWasmV2ExportFunction;
@@ -410,6 +474,70 @@ const requiredV2Exports = [
   "zxnextGetCpuTactsPerFrame",
   "zxnextGetFrameCallCount",
   "zxnextGetLastFrameInstructionsExecuted",
+  "zxnextGetCpuProgrammedSpeed",
+  "zxnextGetCpuEffectiveSpeed",
+  "zxnextGetCpuEffectiveClockMultiplier",
+  "zxnextGetCpuTactScale",
+  "zxnextGetCpuContentionDelaySinceStart",
+  "zxnextCaptureUlaInterruptPulse",
+  "zxnextCaptureLineInterruptPulse",
+  "zxnextSetCtcInterruptStatus",
+  "zxnextSetUartInterruptStatus",
+  "zxnextSetDaisyInService",
+  "zxnextDaisyUpdateIrqState",
+  "zxnextDaisyPeekInterruptVector",
+  "zxnextDaisyAcknowledge",
+  "zxnextDaisyReti",
+  "zxnextGetDmaInterruptRequestActive",
+  "zxnextGetInterruptLineValue",
+  "zxnextGetInterruptIm2TopBits",
+  "zxnextGetInterruptStacklessNmiEnabled",
+  "zxnextGetInterruptHwIm2Mode",
+  "zxnextGetInterruptNmiReturnAddress",
+  "zxnextGetInterruptCtcEnabledMask",
+  "zxnextGetInterruptCtcStatusMask",
+  "zxnextGetInterruptCtcDmaEnableMask",
+  "zxnextGetDaisyInServiceMask",
+  "zxnextGetPaletteIndex",
+  "zxnextGetPaletteControl",
+  "zxnextGetPaletteSelected",
+  "zxnextGetPaletteSecondUla",
+  "zxnextGetPaletteEnableUlaNextMode",
+  "zxnextGetPaletteSecondWrite",
+  "zxnextGetPaletteStoredValue",
+  "zxnextReadPaletteEntry",
+  "zxnextReadUlaPlusData",
+  "zxnextWriteUlaPlusData",
+  "zxnextGetTimexPortValue",
+  "zxnextGetTimexPortBits",
+  "zxnextGetUlaPlusMode",
+  "zxnextGetUlaPlusPaletteIndex",
+  "zxnextGetUlaPlusEnabled",
+  "zxnextGetLayer2Enabled",
+  "zxnextGetLayer2Resolution",
+  "zxnextGetLayer2PaletteOffset",
+  "zxnextGetLayer2ScrollX",
+  "zxnextGetLayer2ScrollY",
+  "zxnextGetLayer2ClipWindowX1",
+  "zxnextGetLayer2ClipWindowX2",
+  "zxnextGetLayer2ClipWindowY1",
+  "zxnextGetLayer2ClipWindowY2",
+  "zxnextGetLayer2ClipIndex",
+  "zxnextGetLayer2ActiveRamBank",
+  "zxnextGetLayer2ShadowRamBank",
+  "zxnextGetLayer2UseShadowBank",
+  "zxnextGetLayer2Bank",
+  "zxnextGetLayer2BankOffset",
+  "zxnextGetLayer2MappingReadsEnabled",
+  "zxnextGetLayer2MappingWritesEnabled",
+  "zxnextGetGlobalTransparencyColor",
+  "zxnextGetLoResEnabled",
+  "zxnextGetLoResRadastanMode",
+  "zxnextGetLoResRadastanTimexXor",
+  "zxnextGetLoResPaletteOffset",
+  "zxnextGetLoResScrollX",
+  "zxnextGetLoResScrollY",
+  "zxnextGetLayer2MappedOffset",
   "zxnextSetTacts",
   "zxnextGetHardResetCount",
   "zxnextGetResetCount",

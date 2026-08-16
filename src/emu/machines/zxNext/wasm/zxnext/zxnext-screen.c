@@ -43,27 +43,6 @@ static int32_t ulaTactToBitmapOffset60Hz[ZXNEXT_60HZ_TACTS];
 static uint8_t ulaRenderingFlags50Hz[ZXNEXT_50HZ_TACTS];
 static uint8_t ulaRenderingFlags60Hz[ZXNEXT_60HZ_TACTS];
 
-static const uint16_t defaultUlaColors[16] = {
-  0x000u, 0x005u, 0x140u, 0x145u, 0x028u, 0x02du, 0x168u, 0x16du,
-  0x000u, 0x007u, 0x1c0u, 0x1cfu, 0x038u, 0x03fu, 0x1f8u, 0x1ffu
-};
-
-static uint32_t ulaLevel(uint32_t value) {
-  static const uint8_t levels[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
-  return levels[value & 0x07u];
-}
-
-static uint32_t bgraFromRgb333(uint32_t rgb333) {
-  return 0xff000000u |
-    (ulaLevel(rgb333 & 0x07u) << 16u) |
-    (ulaLevel((rgb333 >> 3u) & 0x07u) << 8u) |
-    ulaLevel((rgb333 >> 6u) & 0x07u);
-}
-
-static uint32_t defaultUlaPaletteBgra(uint32_t index) {
-  return bgraFromRgb333(defaultUlaColors[index & 0x0fu]);
-}
-
 static uint32_t screenMemoryOffset(uint32_t y, uint32_t byteX) {
   return ((y & 0xc0u) << 5u) + ((y & 0x07u) << 8u) + ((y & 0x38u) << 2u) + byteX;
 }
@@ -237,7 +216,7 @@ uint32_t zxnextReadScreenMemoryOffset(uint32_t offset) {
 uint32_t zxnextRenderInstantScreen(void) {
   initializeScreenRenderingTables();
   updateScreenTimingFromNextRegs();
-  const uint32_t borderPixel = defaultUlaPaletteBgra(16u + (ulaBorderColor & 0x07u));
+  const uint32_t borderPixel = zxnextUlaPaletteBgra(16u + (ulaBorderColor & 0x07u));
   for (uint32_t i = 0; i < ZXNEXT_SCREEN_WIDTH * ZXNEXT_SCREEN_HEIGHT; i++) pixelBuffer[i] = 0x00000000u;
   screenNonBlankPixelCount = 0;
 
@@ -252,23 +231,35 @@ uint32_t zxnextRenderInstantScreen(void) {
     const int32_t bitmapOffset = bitmapOffsetTable[tact];
     if (flags == 0u || bitmapOffset < 0) continue;
 
-    uint32_t pixel = borderPixel;
+    uint32_t pixel1 = borderPixel;
+    uint32_t pixel2 = borderPixel;
     if ((flags & SCR_DISPLAY_AREA) != 0u) {
       const uint32_t displayHc = (uint32_t)hcTable[tact] - ZXNEXT_50HZ_DISPLAY_X_START;
       const uint32_t displayVc = (uint32_t)vcTable[tact] - displayYStart;
-      const uint32_t byteX = displayHc >> 3u;
-      const uint32_t bit = displayHc & 0x07u;
-      const uint8_t pixelByte = (uint8_t)zxnextReadScreenMemoryOffset(screenMemoryOffset(displayVc, byteX));
-      const uint8_t attrByte = (uint8_t)zxnextReadScreenMemoryOffset(0x1800u + (displayVc >> 3u) * 32u + byteX);
-      const uint32_t bright = (attrByte & 0x40u) != 0u ? 8u : 0u;
-      const uint32_t ink = bright + (attrByte & 0x07u);
-      const uint32_t paper = 16u + bright + ((attrByte >> 3u) & 0x07u);
-      const uint32_t paletteIndex = (pixelByte & (0x80u >> bit)) != 0u ? ink : paper;
-      pixel = defaultUlaPaletteBgra(paletteIndex);
+      if (loResEnabled != 0u) {
+        pixel1 = zxnextGetLoResPixelBgra(displayHc, displayVc, 0u);
+        pixel2 = zxnextGetLoResPixelBgra(displayHc, displayVc, 1u);
+      } else {
+        const uint32_t byteX = displayHc >> 3u;
+        const uint32_t bit = displayHc & 0x07u;
+        const uint8_t pixelByte = (uint8_t)zxnextReadScreenMemoryOffset(screenMemoryOffset(displayVc, byteX));
+        const uint8_t attrByte = (uint8_t)zxnextReadScreenMemoryOffset(0x1800u + (displayVc >> 3u) * 32u + byteX);
+        const uint32_t bright = (attrByte & 0x40u) != 0u ? 8u : 0u;
+        const uint32_t ink = bright + (attrByte & 0x07u);
+        const uint32_t paper = 16u + bright + ((attrByte >> 3u) & 0x07u);
+        const uint32_t paletteIndex = (pixelByte & (0x80u >> bit)) != 0u ? ink : paper;
+        pixel1 = zxnextUlaPaletteBgra(paletteIndex);
+        pixel2 = pixel1;
+      }
+      const uint32_t layer2Pixel1 = zxnextGetLayer2PixelBgra(displayHc, displayVc, 0u);
+      const uint32_t layer2Pixel2 = zxnextGetLayer2PixelBgra(displayHc, displayVc, 1u);
+      if (layer2Pixel1 != 0u) pixel1 = layer2Pixel1;
+      if (layer2Pixel2 != 0u) pixel2 = layer2Pixel2;
     }
-    pixelBuffer[(uint32_t)bitmapOffset] = pixel;
-    pixelBuffer[(uint32_t)bitmapOffset + 1u] = pixel;
-    if (pixel != 0u) screenNonBlankPixelCount += 2u;
+    pixelBuffer[(uint32_t)bitmapOffset] = pixel1;
+    pixelBuffer[(uint32_t)bitmapOffset + 1u] = pixel2;
+    if (pixel1 != 0u) screenNonBlankPixelCount++;
+    if (pixel2 != 0u) screenNonBlankPixelCount++;
   }
 
   screenRenderCount++;

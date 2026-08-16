@@ -196,6 +196,10 @@ uint32_t zxnextReadMemory(uint32_t address) {
   if (divMmcOffset != ZXNEXT_INVALID_PAGE_OFFSET) {
     return readPhysical(divMmcOffset + (maskedAddress & 0x1fffu));
   }
+  const uint32_t layer2Offset = layer2MappedOffset(maskedAddress, 0u);
+  if (layer2Offset != ZXNEXT_INVALID_PAGE_OFFSET) {
+    return readPhysical(layer2Offset);
+  }
   const uint32_t page = maskedAddress >> 13u;
   const uint32_t offset = maskedAddress & 0x1fffu;
   return readPhysical(pageReadOffset[page] + offset);
@@ -204,6 +208,12 @@ uint32_t zxnextReadMemory(uint32_t address) {
 void zxnextWriteMemory(uint32_t address, uint32_t value) {
   const uint32_t maskedAddress = address & 0xffffu;
   if (divMmcHandleWrite(maskedAddress, value) != 0u) return;
+  const uint32_t layer2Offset = layer2MappedOffset(maskedAddress, 1u);
+  if (layer2Offset != ZXNEXT_INVALID_PAGE_OFFSET) {
+    zxnextWritePhysical(layer2Offset, value);
+    flatMemory[maskedAddress] = (uint8_t)(value & 0xffu);
+    return;
+  }
   const uint32_t page = maskedAddress >> 13u;
   const uint32_t offset = maskedAddress & 0x1fffu;
   const uint32_t physicalOffset = pageWriteOffset[page];

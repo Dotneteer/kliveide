@@ -61,12 +61,12 @@ describe("ZX Spectrum Next WASM Z80N CPU baseline", () => {
   });
 
   it("executes NEXTREG N,N and mirrors the TBBlue event into NextReg state", async () => {
-    const { wasmMachine } = await createPair([0xed, 0x91, 0x13, 0xac]);
+    const { wasmMachine } = await createPair([0xed, 0x91, 0x1d, 0xac]);
 
     executeOneInstruction(wasmMachine);
 
-    expect(wasmMachine.readNextReg(0x13)).toBe(0xac);
-    expect(wasmMachine.wasmV2Runtime?.exports.zxnextGetLastTbBlueAddress()).toBe(0x13);
+    expect(wasmMachine.readNextReg(0x1d)).toBe(0xac);
+    expect(wasmMachine.wasmV2Runtime?.exports.zxnextGetLastTbBlueAddress()).toBe(0x1d);
     expect(wasmMachine.wasmV2Runtime?.exports.zxnextGetLastTbBlueValue()).toBe(0xac);
     expect(wasmMachine.wasmV2Runtime?.exports.zxnextGetLastTbBlueIsWrite()).toBe(1);
   });

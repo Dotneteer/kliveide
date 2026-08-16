@@ -2,7 +2,6 @@
 
 static uint32_t ownerStepForUnsupportedPort(uint16_t port) {
   if (port == 0x00e3u) return 16u;
-  if (port == 0x123bu) return 22u;
   if (port == 0x00ffu || port == 0xbf3bu || port == 0xff3bu) return 21u;
   if (port == 0x303bu || port == 0x0057u || port == 0x005bu || port == 0x005du) return 24u;
   if (port == 0x006bu || port == 0x006fu) return 27u;
@@ -13,7 +12,6 @@ static uint32_t ownerStepForUnsupportedPort(uint16_t port) {
 }
 
 static uint8_t fallbackReadValueForUnsupportedPort(uint16_t port) {
-  if (port == 0x123bu) return 0x00u;
   return portReadValue;
 }
 
@@ -47,6 +45,14 @@ uint32_t zxnextReadPort(uint32_t address) {
     value = nextRegIndex;
   } else if (maskedAddress == 0x253bu) {
     value = (uint8_t)zxnextReadNextReg(nextRegIndex);
+  } else if (maskedAddress == 0x00ffu) {
+    value = isPortGroupEnabled(0, 0) != 0u ? timexPortValue : 0xffu;
+  } else if (maskedAddress == 0xbf3bu) {
+    value = 0xffu;
+  } else if (maskedAddress == 0xff3bu) {
+    value = isPortGroupEnabled(3, 0) != 0u ? (uint8_t)zxnextReadUlaPlusData() : 0xffu;
+  } else if (maskedAddress == 0x123bu) {
+    value = isPortGroupEnabled(1, 7) != 0u ? (uint8_t)zxnextReadLayer2Port123b() : 0xffu;
   } else if (maskedAddress == 0x00e3u) {
     value = isPortGroupEnabled(1, 0) != 0u ? (uint8_t)zxnextReadDivMmcPortE3() : 0xffu;
   } else if (maskedAddress == 0x00ebu) {
@@ -83,6 +89,27 @@ void zxnextWritePort(uint32_t address, uint32_t value) {
   }
   if (maskedAddress == 0x253bu) {
     writeNextRegInternal(nextRegIndex, byteValue);
+    return;
+  }
+  if (maskedAddress == 0x00ffu) {
+    if (isPortGroupEnabled(0, 0) != 0u) {
+      timexPortValue = byteValue;
+      timexPortBits = byteValue & 0x3fu;
+      interruptUlaDisabled = (byteValue & 0x40u) != 0u;
+    }
+    return;
+  }
+  if (maskedAddress == 0xbf3bu) {
+    ulaPlusMode = (byteValue >> 6u) & 0x03u;
+    if (ulaPlusMode == 0u) ulaPlusPaletteIndex = byteValue & 0x3fu;
+    return;
+  }
+  if (maskedAddress == 0xff3bu) {
+    if (isPortGroupEnabled(3, 0) != 0u) zxnextWriteUlaPlusData(byteValue);
+    return;
+  }
+  if (maskedAddress == 0x123bu) {
+    if (isPortGroupEnabled(1, 7) != 0u) zxnextWriteLayer2Port123b(byteValue);
     return;
   }
   if (maskedAddress == 0x00e3u) {
