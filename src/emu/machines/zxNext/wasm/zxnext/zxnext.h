@@ -35,6 +35,8 @@
 #define ZXNEXT_SD_COMMAND_BUFFER_SIZE 520u
 #define ZXNEXT_SD_RESPONSE_BUFFER_SIZE 520u
 #define ZXNEXT_DIAGNOSTIC_BUFFER_SIZE 64u
+#define ZXNEXT_COPPER_MEMORY_SIZE 0x800u
+#define ZXNEXT_CTC_CHANNEL_COUNT 8u
 #define ZXNEXT_DAISY_DEVICE_COUNT 14u
 #define ZXNEXT_DAISY_PRIORITY_LINE 0u
 #define ZXNEXT_DAISY_PRIORITY_UART0_RX 1u
@@ -63,6 +65,9 @@ void zxnextWriteSpiDataPort(uint32_t value);
 void zxnextWriteSpiCsPort(uint32_t value);
 uint32_t zxnextReadUlaPort(uint32_t address);
 void zxnextWriteUlaPort(uint32_t value);
+uint32_t zxnextGenerateAudioSamples(uint32_t requestedCount);
+uint32_t zxnextGenerateAudioFrameSamples(void);
+uint32_t zxnextGetAudioSampleCount(void);
 uint32_t zxnextRenderInstantScreen(void);
 uint32_t zxnextReadScreenMemoryOffset(uint32_t offset);
 uint32_t zxnextGetScreenNonBlankPixelCount(void);
@@ -87,6 +92,54 @@ static void writeNextRegInternal(uint32_t reg, uint32_t value);
 static void resetNextRegs(uint32_t hard);
 static uint32_t isPortGroupEnabled(uint32_t regIndex, uint32_t bit);
 static uint32_t readPhysical(uint32_t offset);
+static void resetAudioState(void);
+static uint32_t audioReadNextReg(uint32_t reg);
+static uint32_t audioWriteNextReg(uint32_t reg, uint32_t value);
+static void resetPsgState(void);
+static uint32_t zxnextReadAyPort(uint32_t address);
+static uint32_t zxnextWriteAyPort(uint32_t address, uint32_t value);
+static uint32_t zxnextPsgMixerLeft(void);
+static uint32_t zxnextPsgMixerRight(void);
+static uint32_t zxnextWriteDacPort(uint32_t address, uint32_t value);
+static void resetDmaState(void);
+uint32_t zxnextReadDmaPort(uint32_t mode);
+void zxnextWriteDmaPort(uint32_t mode, uint32_t value);
+uint32_t zxnextStepDma(void);
+uint32_t zxnextRunDma(uint32_t maxSteps);
+void zxnextAcknowledgeDmaBus(void);
+static void resetCopperState(void);
+static uint32_t copperReadNextReg(uint32_t reg);
+static uint32_t copperWriteNextReg(uint32_t reg, uint32_t value);
+void zxnextCopperExecuteTick(uint32_t vc, uint32_t hc);
+uint32_t zxnextReadCopperMemory(uint32_t offset);
+uint32_t zxnextGetCopperStartMode(void);
+uint32_t zxnextGetCopperInstructionAddress(void);
+uint32_t zxnextGetCopperStoredByte(void);
+uint32_t zxnextGetCopperListAddr(void);
+uint32_t zxnextGetCopperListData(void);
+uint32_t zxnextGetCopperDout(void);
+uint32_t zxnextGetCopperVerticalLineOffset(void);
+uint32_t zxnextGetCopperTickCount(void);
+uint32_t zxnextGetCopperWriteCount(void);
+static void resetCtcState(void);
+static void ctcWriteIntEnable(uint32_t mask);
+uint32_t zxnextReadCtcPort(uint32_t address);
+void zxnextWriteCtcPort(uint32_t address, uint32_t value);
+void zxnextCtcClockTick(void);
+void zxnextCtcAdvanceToSysClock(uint32_t currentSysClock);
+void zxnextCtcOnNewFrame(uint32_t tactsInFrame);
+uint32_t zxnextGetCtcChannelState(uint32_t channel);
+uint32_t zxnextGetCtcControlReg(uint32_t channel);
+uint32_t zxnextGetCtcTimeConstant(uint32_t channel);
+uint32_t zxnextGetCtcPrescalerCount(uint32_t channel);
+uint32_t zxnextGetCtcCount(uint32_t channel);
+uint32_t zxnextGetCtcCountZeroD(uint32_t channel);
+uint32_t zxnextGetCtcIowrD(uint32_t channel);
+uint32_t zxnextGetCtcClkTrgD(uint32_t channel);
+uint32_t zxnextGetCtcZcTo(uint32_t channel);
+uint32_t zxnextGetCtcExpectingTimeConstant(uint32_t channel);
+uint32_t zxnextGetCtcIm2VectorWrite(void);
+uint32_t zxnextGetCtcLastSyncClock(void);
 static void resetDivMmcState(void);
 static void syncDivMmcStateFromNextRegs(void);
 static uint32_t divMmcIsActive(void);

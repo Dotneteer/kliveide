@@ -319,6 +319,7 @@ uint32_t zxnextRenderInstantScreen(void) {
   const uint32_t displayYStart = screenIs60Hz != 0u ? ZXNEXT_60HZ_DISPLAY_Y_START : ZXNEXT_50HZ_DISPLAY_Y_START;
 
   for (uint32_t tact = 0; tact < screenRenderingTacts; tact++) {
+    zxnextCopperExecuteTick(vcTable[tact], hcTable[tact]);
     const uint8_t flags = flagTable[tact];
     const int32_t bitmapOffset = bitmapOffsetTable[tact];
     if (flags == 0u || bitmapOffset < 0) continue;

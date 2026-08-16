@@ -1,5 +1,6 @@
 import type { MachineModel } from "@common/machines/info-types";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { ZxNextWasmV2LoaderOptions, ZxNextWasmV2Runtime } from "./wasm/ZxNextWasmV2Loader";
 import type { NextRegDeviceState } from "./NextRegDevice";
 
@@ -25,6 +26,8 @@ const ZXNEXT_ROM_RESOURCES = [
   { kind: 2, filename: "roms/enNextMf.rom", offset: OFFS_MULTIFACE_MEM },
   { kind: 3, filename: "roms/enAltZX.rom", offset: OFFS_ALT_ROM_0 }
 ] as const;
+
+const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
 export type ZxNextWasmV2Diagnostics = {
   backend: "wasm";
@@ -165,6 +168,75 @@ export type ZxNextWasmV2Diagnostics = {
   ulaMicBit: boolean;
   ulaBeeperEar: boolean;
   ulaBeeperMic: boolean;
+  audioSamples: number;
+  dacA: number;
+  dacB: number;
+  dacC: number;
+  dacD: number;
+  dacLeftLevel: number;
+  dacRightLevel: number;
+  audioBeepOnlyToInternalSpeaker: boolean;
+  audioPsgMode: number;
+  audioAyStereoMode: boolean;
+  audioEnableInternalSpeaker: boolean;
+  audioEnable8BitDacs: boolean;
+  audioSilenceHdmiAudio: boolean;
+  audioEnableTurbosound: boolean;
+  audioAy0MonoEnabled: boolean;
+  audioAy1MonoEnabled: boolean;
+  audioAy2MonoEnabled: boolean;
+  psgSelectedChip: number;
+  psgSelectedRegister: number;
+  psgChip0Panning: number;
+  psgChip1Panning: number;
+  psgChip2Panning: number;
+  psgMixerLeft: number;
+  psgMixerRight: number;
+  dmaMode: number;
+  dmaSeq: number;
+  dmaState: number;
+  dmaBusState: number;
+  dmaBusRequested: boolean;
+  dmaBusAcknowledged: boolean;
+  dmaEnabled: boolean;
+  dmaStatus: number;
+  dmaPortAStart: number;
+  dmaPortBStart: number;
+  dmaBlockLength: number;
+  dmaAddressA: number;
+  dmaAddressB: number;
+  dmaByteCounter: number;
+  dmaTransferCount: number;
+  dmaBlockCompletionCount: number;
+  dmaLastStepTicks: number;
+  dmaTransferDataByte: number;
+  dmaDirectionAtoB: boolean;
+  dmaPortAIsIo: boolean;
+  dmaPortBIsIo: boolean;
+  dmaPortAAddressMode: number;
+  dmaPortBAddressMode: number;
+  dmaTransferMode: number;
+  dmaAutoRestart: boolean;
+  dmaPortBPrescaler: number;
+  dmaForceReady: boolean;
+  dmaInterruptPending: boolean;
+  dmaVector: number;
+  copperStartMode: number;
+  copperInstructionAddress: number;
+  copperStoredByte: number;
+  copperListAddr: number;
+  copperListData: number;
+  copperDout: boolean;
+  copperVerticalLineOffset: number;
+  copperTickCount: number;
+  copperWriteCount: number;
+  ctcIm2VectorWrite: boolean;
+  ctcLastSyncClock: number;
+  ctcChannel0State: number;
+  ctcChannel0ControlReg: number;
+  ctcChannel0TimeConstant: number;
+  ctcChannel0Count: number;
+  ctcChannel0ZcTo: boolean;
   screenRenderingTacts: number;
   screenIntStartTact: number;
   screenIntEndTact: number;
@@ -209,6 +281,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: ZxNextWasmV2Runtime;
   private readonly wasmV2RomBytes = new Map<number, Uint8Array>();
+  private readonly wasmV2AudioSamples: AudioSample[] = [];
   private readonly wasmV2KeyboardRows = new Uint8Array(8);
   private readonly wasmV2ExtendedKeyRegs = new Uint8Array(3);
   private wasmV2KeyboardRowsValid = false;
@@ -400,6 +473,75 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       ulaMicBit: runtime.exports.zxnextGetUlaMicBit() !== 0,
       ulaBeeperEar: runtime.exports.zxnextGetUlaBeeperEar() !== 0,
       ulaBeeperMic: runtime.exports.zxnextGetUlaBeeperMic() !== 0,
+      audioSamples: runtime.exports.zxnextGetAudioSampleCount(),
+      dacA: runtime.exports.zxnextGetDacChannel(0),
+      dacB: runtime.exports.zxnextGetDacChannel(1),
+      dacC: runtime.exports.zxnextGetDacChannel(2),
+      dacD: runtime.exports.zxnextGetDacChannel(3),
+      dacLeftLevel: runtime.exports.zxnextGetDacLeftLevel(),
+      dacRightLevel: runtime.exports.zxnextGetDacRightLevel(),
+      audioBeepOnlyToInternalSpeaker: runtime.exports.zxnextGetAudioBeepOnlyToInternalSpeaker() !== 0,
+      audioPsgMode: runtime.exports.zxnextGetAudioPsgMode(),
+      audioAyStereoMode: runtime.exports.zxnextGetAudioAyStereoMode() !== 0,
+      audioEnableInternalSpeaker: runtime.exports.zxnextGetAudioEnableInternalSpeaker() !== 0,
+      audioEnable8BitDacs: runtime.exports.zxnextGetAudioEnable8BitDacs() !== 0,
+      audioSilenceHdmiAudio: runtime.exports.zxnextGetAudioSilenceHdmiAudio() !== 0,
+      audioEnableTurbosound: runtime.exports.zxnextGetAudioEnableTurbosound() !== 0,
+      audioAy0MonoEnabled: runtime.exports.zxnextGetAudioAyMonoEnable(0) !== 0,
+      audioAy1MonoEnabled: runtime.exports.zxnextGetAudioAyMonoEnable(1) !== 0,
+      audioAy2MonoEnabled: runtime.exports.zxnextGetAudioAyMonoEnable(2) !== 0,
+      psgSelectedChip: runtime.exports.zxnextGetPsgSelectedChip(),
+      psgSelectedRegister: runtime.exports.zxnextGetPsgSelectedRegister(),
+      psgChip0Panning: runtime.exports.zxnextGetPsgPanning(0),
+      psgChip1Panning: runtime.exports.zxnextGetPsgPanning(1),
+      psgChip2Panning: runtime.exports.zxnextGetPsgPanning(2),
+      psgMixerLeft: runtime.exports.zxnextGetPsgMixerLeft(),
+      psgMixerRight: runtime.exports.zxnextGetPsgMixerRight(),
+      dmaMode: runtime.exports.zxnextGetDmaMode(),
+      dmaSeq: runtime.exports.zxnextGetDmaSeq(),
+      dmaState: runtime.exports.zxnextGetDmaState(),
+      dmaBusState: runtime.exports.zxnextGetDmaBusState(),
+      dmaBusRequested: runtime.exports.zxnextGetDmaBusRequested() !== 0,
+      dmaBusAcknowledged: runtime.exports.zxnextGetDmaBusAcknowledged() !== 0,
+      dmaEnabled: runtime.exports.zxnextGetDmaEnabled() !== 0,
+      dmaStatus: runtime.exports.zxnextGetDmaStatus(),
+      dmaPortAStart: runtime.exports.zxnextGetDmaPortAStart(),
+      dmaPortBStart: runtime.exports.zxnextGetDmaPortBStart(),
+      dmaBlockLength: runtime.exports.zxnextGetDmaBlockLength(),
+      dmaAddressA: runtime.exports.zxnextGetDmaAddressA(),
+      dmaAddressB: runtime.exports.zxnextGetDmaAddressB(),
+      dmaByteCounter: runtime.exports.zxnextGetDmaByteCounter(),
+      dmaTransferCount: runtime.exports.zxnextGetDmaTransferCount(),
+      dmaBlockCompletionCount: runtime.exports.zxnextGetDmaBlockCompletionCount(),
+      dmaLastStepTicks: runtime.exports.zxnextGetDmaLastStepTicks(),
+      dmaTransferDataByte: runtime.exports.zxnextGetDmaTransferDataByte(),
+      dmaDirectionAtoB: runtime.exports.zxnextGetDmaDirectionAtoB() !== 0,
+      dmaPortAIsIo: runtime.exports.zxnextGetDmaPortAIsIo() !== 0,
+      dmaPortBIsIo: runtime.exports.zxnextGetDmaPortBIsIo() !== 0,
+      dmaPortAAddressMode: runtime.exports.zxnextGetDmaPortAAddressMode(),
+      dmaPortBAddressMode: runtime.exports.zxnextGetDmaPortBAddressMode(),
+      dmaTransferMode: runtime.exports.zxnextGetDmaTransferMode(),
+      dmaAutoRestart: runtime.exports.zxnextGetDmaAutoRestart() !== 0,
+      dmaPortBPrescaler: runtime.exports.zxnextGetDmaPortBPrescaler(),
+      dmaForceReady: runtime.exports.zxnextGetDmaForceReady() !== 0,
+      dmaInterruptPending: runtime.exports.zxnextGetDmaInterruptPending() !== 0,
+      dmaVector: runtime.exports.zxnextGetDmaVector(),
+      copperStartMode: runtime.exports.zxnextGetCopperStartMode(),
+      copperInstructionAddress: runtime.exports.zxnextGetCopperInstructionAddress(),
+      copperStoredByte: runtime.exports.zxnextGetCopperStoredByte(),
+      copperListAddr: runtime.exports.zxnextGetCopperListAddr(),
+      copperListData: runtime.exports.zxnextGetCopperListData(),
+      copperDout: runtime.exports.zxnextGetCopperDout() !== 0,
+      copperVerticalLineOffset: runtime.exports.zxnextGetCopperVerticalLineOffset(),
+      copperTickCount: runtime.exports.zxnextGetCopperTickCount(),
+      copperWriteCount: runtime.exports.zxnextGetCopperWriteCount(),
+      ctcIm2VectorWrite: runtime.exports.zxnextGetCtcIm2VectorWrite() !== 0,
+      ctcLastSyncClock: runtime.exports.zxnextGetCtcLastSyncClock(),
+      ctcChannel0State: runtime.exports.zxnextGetCtcChannelState(0),
+      ctcChannel0ControlReg: runtime.exports.zxnextGetCtcControlReg(0),
+      ctcChannel0TimeConstant: runtime.exports.zxnextGetCtcTimeConstant(0),
+      ctcChannel0Count: runtime.exports.zxnextGetCtcCount(0),
+      ctcChannel0ZcTo: runtime.exports.zxnextGetCtcZcTo(0) !== 0,
       screenRenderingTacts: runtime.exports.zxnextGetScreenRenderingTacts(),
       screenIntStartTact: runtime.exports.zxnextGetScreenIntStartTact(),
       screenIntEndTact: runtime.exports.zxnextGetScreenIntEndTact(),
@@ -475,6 +617,22 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
   override getBufferStartOffset(): number {
     return this.wasmV2Runtime == null ? super.getBufferStartOffset() : 0;
+  }
+
+  override getAudioSamples(): AudioSample[] {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null) return super.getAudioSamples();
+    runtime.exports.zxnextGenerateAudioFrameSamples();
+    const words = runtime.audioSamples;
+    const sampleCount = runtime.exports.zxnextGetAudioSampleCount();
+    this.wasmV2AudioSamples.length = 0;
+    for (let i = 0; i < sampleCount; i++) {
+      this.wasmV2AudioSamples.push({
+        left: words[i * 2] / WASM_AUDIO_SAMPLE_SCALE,
+        right: words[i * 2 + 1] / WASM_AUDIO_SAMPLE_SCALE
+      });
+    }
+    return this.wasmV2AudioSamples;
   }
 
   override get64KFlatMemory(): Uint8Array {
@@ -944,6 +1102,9 @@ function isWasmV2OwnedPort(address: number): boolean {
     isWasmV2SpiPort(address) ||
     isWasmV2TimexUlaPlusPort(address) ||
     isWasmV2Layer2Port(address) ||
+    isWasmV2AyPort(address) ||
+    isWasmV2DmaPort(address) ||
+    isWasmV2CtcPort(address) ||
     isWasmV2SpritePort(address) ||
     (address & 0xffff) === 0x00e3;
 }
@@ -955,6 +1116,20 @@ function isWasmV2Layer2Port(address: number): boolean {
 function isWasmV2SpritePort(address: number): boolean {
   const port = address & 0xffff;
   return port === 0x303b || (port & 0x00ff) === 0x0057 || (port & 0x00ff) === 0x005b;
+}
+
+function isWasmV2AyPort(address: number): boolean {
+  const port = address & 0xffff;
+  return port === 0xfffd || port === 0xbffd || port === 0xbff5;
+}
+
+function isWasmV2DmaPort(address: number): boolean {
+  const port = address & 0x00ff;
+  return port === 0x0b || port === 0x6b;
+}
+
+function isWasmV2CtcPort(address: number): boolean {
+  return (address & 0xf8ff) === 0x183b;
 }
 
 function isWasmV2SdFrameCommand(command: unknown): boolean {

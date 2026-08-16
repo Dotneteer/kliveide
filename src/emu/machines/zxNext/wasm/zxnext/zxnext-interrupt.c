@@ -222,6 +222,7 @@ static uint32_t interruptWriteNextReg(uint32_t reg, uint32_t value) {
       return 1u;
     case 0xc5u:
       for (uint32_t i = 0; i < 8u; i++) interruptCtcEnabled[i] = (byteValue & (1u << i)) != 0u;
+      ctcWriteIntEnable(byteValue);
       return 1u;
     case 0xc6u:
       interruptUart1TxEmpty = (byteValue & 0x40u) != 0u;

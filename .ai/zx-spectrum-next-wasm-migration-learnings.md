@@ -813,3 +813,125 @@ Use this shape:
   `npm test -- --project jsdom test/zxnext/NextComposedScreenDevice.test.ts test/zxnext/Layer2Fixes.test.ts test/zxnext/UlaRendering.test.ts`,
   `npm run build:check`, `npm run check:zxnext-wasm-size` (234,532 bytes
   against 360,000), and `git diff --check` passed.
+
+## 2026-08-16 - Step 26 - Beeper, TurboSound, PSG, DAC, And Mixer
+
+- Symptom: The Next WASM runtime exposed an audio sample buffer but never
+  produced samples, so `ZxNextWasmV2Machine.getAudioSamples()` still inherited
+  the TypeScript mixer path.
+- Fix: Added `zxnext-audio.c`, `zxnext-dac.c`, and `zxnext-psg.c`. WASM now
+  owns representative frame audio generation, DAC NextRegs and port aliases,
+  audio-control flags, AY register/data/info ports, TurboSound chip selection
+  and panning, PSG current-state stereo levels, and int16 sample export.
+- Adapter lesson: Follow the existing 48K/+3E WASM pattern: keep a reusable
+  `AudioSample[]` cache in the machine adapter, read `zxnextGetAudioSampleCount`,
+  and normalize `int16_t` words with `/ 32768`.
+- Port-enable lesson: DAC and AY gates live in internal port-enable group index
+  `2`, which is NextReg `$84`; NextReg `$85` is group index `3` and still masks
+  to `$8f`. Disabled-but-known ports should be handled as no-ops, not reported
+  as unsupported.
+- Mixer lesson: Mirror the TypeScript mixer in integer C: EAR and MIC are
+  AC-coupled signed levels scaled by `12`, DAC output is centered at `(0x80 +
+  0x80) << 2`, PSG output is divided by `24` and centered from the stereo peak,
+  then the sum is multiplied by `5.5` and clipped to int16.
+- Boundary lesson: This step covers deterministic current-state PSG/TurboSound
+  routing and representative sample output. Cycle-accurate YM waveform,
+  envelope/noise progression, PSG tact accumulation, and exact per-frame sample
+  timing should be handled as a later refinement, ideally by lifting more of the
+  mature 128K/+3E PSG core.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-audio.test.ts`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-audio.test.ts test/audio`,
+  the 19-file/108-test Next WASM suite, `npm run build:check`,
+  `npm run check:zxnext-wasm-size` (239,952 bytes against 360,000), and
+  `git diff --check` passed.
+
+## 2026-08-16 - Step 27 - DMA
+
+- Symptom: `$6B`/`$0B` DMA ports were still reported as unsupported by the
+  WASM runtime, and no C-owned DMA could move bytes through the WASM MMU or port
+  manager.
+- Fix: Added `zxnext-dma.c` with representative MAME-style base-byte dispatch,
+  follow-byte queues, raw WR register storage, ZXN/legacy mode selection,
+  status/read-mask sequencing, bus request/acknowledge state, memory and simple
+  port transfers, auto-restart, and DMA diagnostics.
+- Port lesson: `$6B` ZXN DMA is gated by internal port-enable group `0`, bit
+  `5`; `$0B` legacy Z80 DMA is gated by group `3`, bit `1`. Hook these in
+  `zxnext-ports.c` before the unsupported fallback, but keep the match to low
+  byte only because the TypeScript port manager uses an 8-bit port mask here.
+- Memory lesson: DMA can use `zxnextReadMemory()` and `zxnextWriteMemory()` for
+  migrated tests. That automatically respects the current C MMU, Layer 2 mapped
+  windows, and DivMMC write interception without TypeScript callbacks.
+- State-machine lesson: Expose both `zxnextStepDma()` and `zxnextRunDma()`.
+  The first keeps bus arbitration visible for tests, while the second gives a
+  deterministic block-transfer helper without forcing the incomplete timing
+  model into every CPU frame.
+- Boundary lesson: This slice covers representative block transfers and status
+  behavior. Cycle-accurate specnext DMA timing, search/match edge cases,
+  interrupt-line arbitration, DMA break-in from interrupt sources, and full
+  audio-paced DMA should be refined against the larger `DmaDevice*.test.ts`
+  suite later.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-dma.test.ts`,
+  the 20-file/115-test Next WASM suite, `npm run build:check`,
+  `npm run check:zxnext-wasm-size` (246,186 bytes against 360,000), and
+  `git diff --check` passed.
+
+## 2026-08-16 - Step 28 - Copper
+
+- Symptom: Copper program memory and raster execution still lived in
+  TypeScript, so WASM rendering could not apply raster-positioned NextReg
+  writes during its own screen pass.
+- Fix: Added `zxnext-copper.c` with C-owned 2 KB Copper memory, NextReg
+  `$60..$64` behavior, delayed MOVE output, WAIT stalling, mode-3 adjusted-line
+  restart, render-loop ticking, and Copper diagnostics/exports.
+- Register-routing lesson: Copper MOVE output must call `writeNextRegInternal()`
+  rather than mutating device fields directly. That keeps writes to registers
+  like `$14` flowing through the same palette/video side-effect path as CPU and
+  port writes.
+- Timing-table lesson: The WASM screen renderer already has per-tact HC/VC
+  tables, so Copper can tick at the top of the instant-render loop before
+  pixel composition samples register-dependent state.
+- Fixture lesson: A zero-filled Copper program is not a stable idle program;
+  it is a stream of NOPs that wraps back to slot 0. For frame-level tests,
+  place a WAIT with `hc6=63` after the focused MOVE so execution stalls for the
+  rest of a 456-HC frame.
+- Boundary lesson: This slice covers deterministic NextReg loading and
+  instant-render raster effects. Exact contention/cycle coupling with CPU
+  execution and deeper oracle parity against the full `CopperDevice.test.ts`
+  suite remain later refinements.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-copper.test.ts`,
+  the 21-file/123-test Next WASM suite, `npm run build:check`,
+  `npm run check:zxnext-wasm-size` (247,821 bytes against 360,000), and
+  `git diff --check` passed.
+
+## 2026-08-16 - Step 29 - CTC
+
+- Symptom: CTC ports `0x183b..0x1f3b` were still marked Step 29 unsupported,
+  and the WASM runtime had no lazy-synced timer/counter state feeding CTC
+  interrupt status.
+- Fix: Added `zxnext-ctc.c` with channel control words, time-constant staging,
+  prescalers, counters, ZC/TO pulses, single-clock stepping, batched
+  `advanceToSysClock()`, IM2-vector write detection, port gating, and interrupt
+  status integration.
+- Lazy-sync lesson: Port reads/writes need an explicit `ctcLastSyncClock`.
+  After the two write-cycle clocks used to emulate the FPGA `iowr` edge, the
+  sync clock can be ahead of the current frame clock; guard `advanceToSysClock`
+  with `current <= last` rather than unsigned subtraction.
+- Clock-domain lesson: The current WASM frame counter is CPU-tact based, while
+  TypeScript CTC sync uses the 28 MHz system-clock domain. For now, port sync
+  uses `frameTacts * 8`, and tests also exercise explicit system-clock
+  advancement.
+- Port lesson: CTC matching is `(port & 0xf8ff) == 0x183b`, with channel in
+  address bits `A10..A8`; the older unsupported-owner matcher was too narrow
+  for channels `1..7`.
+- Boundary lesson: The TypeScript device implements channels `0..3` and treats
+  channels `4..7` as hardwired zero on ports. The WASM state arrays are sized
+  for eight interrupt bits, but the migrated port behavior intentionally
+  preserves the current TypeScript-visible four-channel CTC.
+- Tests: `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-ctc.test.ts`,
+  the 22-file/129-test Next WASM suite, `npm run build:check`,
+  `npm run check:zxnext-wasm-size` (253,796 bytes against 360,000), and
+  `git diff --check` passed.

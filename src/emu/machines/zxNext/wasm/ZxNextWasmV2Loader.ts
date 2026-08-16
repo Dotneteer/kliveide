@@ -45,6 +45,91 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetUlaBeeperMic: ZxNextWasmV2ExportFunction;
   zxnextGetUlaBit4ChangedFrom0Tacts: ZxNextWasmV2ExportFunction;
   zxnextGetUlaBit4ChangedFrom1Tacts: ZxNextWasmV2ExportFunction;
+  zxnextGenerateAudioSamples: ZxNextWasmV2ExportFunction;
+  zxnextGenerateAudioFrameSamples: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioSampleCount: ZxNextWasmV2ExportFunction;
+  zxnextGetDacChannel: ZxNextWasmV2ExportFunction;
+  zxnextGetDacLeftLevel: ZxNextWasmV2ExportFunction;
+  zxnextGetDacRightLevel: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioBeepOnlyToInternalSpeaker: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioPsgMode: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioAyStereoMode: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioEnableInternalSpeaker: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioEnable8BitDacs: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioSilenceHdmiAudio: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioEnableTurbosound: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioAyMonoEnable: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgSelectedChip: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgSelectedRegister: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgRegister: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgPanning: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgMixerLeft: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgMixerRight: ZxNextWasmV2ExportFunction;
+  zxnextReadDmaPort: ZxNextWasmV2ExportFunction;
+  zxnextWriteDmaPort: ZxNextWasmV2ExportFunction;
+  zxnextStepDma: ZxNextWasmV2ExportFunction;
+  zxnextRunDma: ZxNextWasmV2ExportFunction;
+  zxnextAcknowledgeDmaBus: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaMode: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaSeq: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaState: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaBusState: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaBusRequested: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaBusAcknowledged: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaRawReg: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaNumFollow: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaReadSeq: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaStatus: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaPortAStart: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaPortBStart: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaBlockLength: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaAddressA: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaAddressB: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaByteCounter: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaTransferCount: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaBlockCompletionCount: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaLastStepTicks: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaTransferDataByte: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaDirectionAtoB: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaPortAIsIo: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaPortBIsIo: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaPortAAddressMode: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaPortBAddressMode: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaTransferMode: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaAutoRestart: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaPortBPrescaler: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaForceReady: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaInterruptPending: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaVector: ZxNextWasmV2ExportFunction;
+  zxnextCopperExecuteTick: ZxNextWasmV2ExportFunction;
+  zxnextReadCopperMemory: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperStartMode: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperInstructionAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperStoredByte: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperListAddr: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperListData: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperDout: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperVerticalLineOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperTickCount: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperWriteCount: ZxNextWasmV2ExportFunction;
+  zxnextReadCtcPort: ZxNextWasmV2ExportFunction;
+  zxnextWriteCtcPort: ZxNextWasmV2ExportFunction;
+  zxnextCtcClockTick: ZxNextWasmV2ExportFunction;
+  zxnextCtcAdvanceToSysClock: ZxNextWasmV2ExportFunction;
+  zxnextCtcOnNewFrame: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcChannelState: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcControlReg: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcTimeConstant: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcPrescalerCount: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcCount: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcCountZeroD: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcIowrD: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcClkTrgD: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcZcTo: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcExpectingTimeConstant: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcIm2VectorWrite: ZxNextWasmV2ExportFunction;
+  zxnextGetCtcLastSyncClock: ZxNextWasmV2ExportFunction;
   zxnextRenderInstantScreen: ZxNextWasmV2ExportFunction;
   zxnextGetPixelBufferStartOffset: ZxNextWasmV2ExportFunction;
   zxnextGetScreenRenderingTacts: ZxNextWasmV2ExportFunction;
@@ -410,6 +495,91 @@ const requiredV2Exports = [
   "zxnextGetUlaBeeperMic",
   "zxnextGetUlaBit4ChangedFrom0Tacts",
   "zxnextGetUlaBit4ChangedFrom1Tacts",
+  "zxnextGenerateAudioSamples",
+  "zxnextGenerateAudioFrameSamples",
+  "zxnextGetAudioSampleCount",
+  "zxnextGetDacChannel",
+  "zxnextGetDacLeftLevel",
+  "zxnextGetDacRightLevel",
+  "zxnextGetAudioBeepOnlyToInternalSpeaker",
+  "zxnextGetAudioPsgMode",
+  "zxnextGetAudioAyStereoMode",
+  "zxnextGetAudioEnableInternalSpeaker",
+  "zxnextGetAudioEnable8BitDacs",
+  "zxnextGetAudioSilenceHdmiAudio",
+  "zxnextGetAudioEnableTurbosound",
+  "zxnextGetAudioAyMonoEnable",
+  "zxnextGetPsgSelectedChip",
+  "zxnextGetPsgSelectedRegister",
+  "zxnextGetPsgRegister",
+  "zxnextGetPsgPanning",
+  "zxnextGetPsgMixerLeft",
+  "zxnextGetPsgMixerRight",
+  "zxnextReadDmaPort",
+  "zxnextWriteDmaPort",
+  "zxnextStepDma",
+  "zxnextRunDma",
+  "zxnextAcknowledgeDmaBus",
+  "zxnextGetDmaMode",
+  "zxnextGetDmaSeq",
+  "zxnextGetDmaState",
+  "zxnextGetDmaBusState",
+  "zxnextGetDmaBusRequested",
+  "zxnextGetDmaBusAcknowledged",
+  "zxnextGetDmaEnabled",
+  "zxnextGetDmaRawReg",
+  "zxnextGetDmaNumFollow",
+  "zxnextGetDmaReadSeq",
+  "zxnextGetDmaStatus",
+  "zxnextGetDmaPortAStart",
+  "zxnextGetDmaPortBStart",
+  "zxnextGetDmaBlockLength",
+  "zxnextGetDmaAddressA",
+  "zxnextGetDmaAddressB",
+  "zxnextGetDmaByteCounter",
+  "zxnextGetDmaTransferCount",
+  "zxnextGetDmaBlockCompletionCount",
+  "zxnextGetDmaLastStepTicks",
+  "zxnextGetDmaTransferDataByte",
+  "zxnextGetDmaDirectionAtoB",
+  "zxnextGetDmaPortAIsIo",
+  "zxnextGetDmaPortBIsIo",
+  "zxnextGetDmaPortAAddressMode",
+  "zxnextGetDmaPortBAddressMode",
+  "zxnextGetDmaTransferMode",
+  "zxnextGetDmaAutoRestart",
+  "zxnextGetDmaPortBPrescaler",
+  "zxnextGetDmaForceReady",
+  "zxnextGetDmaInterruptPending",
+  "zxnextGetDmaVector",
+  "zxnextCopperExecuteTick",
+  "zxnextReadCopperMemory",
+  "zxnextGetCopperStartMode",
+  "zxnextGetCopperInstructionAddress",
+  "zxnextGetCopperStoredByte",
+  "zxnextGetCopperListAddr",
+  "zxnextGetCopperListData",
+  "zxnextGetCopperDout",
+  "zxnextGetCopperVerticalLineOffset",
+  "zxnextGetCopperTickCount",
+  "zxnextGetCopperWriteCount",
+  "zxnextReadCtcPort",
+  "zxnextWriteCtcPort",
+  "zxnextCtcClockTick",
+  "zxnextCtcAdvanceToSysClock",
+  "zxnextCtcOnNewFrame",
+  "zxnextGetCtcChannelState",
+  "zxnextGetCtcControlReg",
+  "zxnextGetCtcTimeConstant",
+  "zxnextGetCtcPrescalerCount",
+  "zxnextGetCtcCount",
+  "zxnextGetCtcCountZeroD",
+  "zxnextGetCtcIowrD",
+  "zxnextGetCtcClkTrgD",
+  "zxnextGetCtcZcTo",
+  "zxnextGetCtcExpectingTimeConstant",
+  "zxnextGetCtcIm2VectorWrite",
+  "zxnextGetCtcLastSyncClock",
   "zxnextRenderInstantScreen",
   "zxnextGetPixelBufferStartOffset",
   "zxnextGetScreenRenderingTacts",

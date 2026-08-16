@@ -124,6 +124,10 @@ uint32_t zxnextReadNextReg(uint32_t reg) {
   if (tilemapValue != 0xffffffffu) return tilemapValue;
   const uint32_t spritesValue = spritesReadNextReg(maskedReg);
   if (spritesValue != 0xffffffffu) return spritesValue;
+  const uint32_t audioValue = audioReadNextReg(maskedReg);
+  if (audioValue != 0xffffffffu) return audioValue;
+  const uint32_t copperValue = copperReadNextReg(maskedReg);
+  if (copperValue != 0xffffffffu) return copperValue;
   if (maskedReg >= 0x50u && maskedReg <= 0x57u) return mmuRegs[maskedReg - 0x50u];
   if (maskedReg == 0x07u) return (cpuProgrammedSpeed & 0x03u) | (cpuEffectiveSpeed << 4u);
   if (maskedReg == 0x69u) {
@@ -154,7 +158,15 @@ static void writeNextRegInternal(uint32_t reg, uint32_t value) {
   const uint32_t layer2Handled = layer2WriteNextReg(maskedReg, byteValue);
   const uint32_t tilemapHandled = tilemapWriteNextReg(maskedReg, byteValue);
   const uint32_t spritesHandled = spritesWriteNextReg(maskedReg, byteValue);
-  if (layer2Handled != 0u || tilemapHandled != 0u || spritesHandled != 0u) return;
+  const uint32_t audioHandled = audioWriteNextReg(maskedReg, byteValue);
+  const uint32_t copperHandled = copperWriteNextReg(maskedReg, byteValue);
+  if (
+    layer2Handled != 0u ||
+    tilemapHandled != 0u ||
+    spritesHandled != 0u ||
+    audioHandled != 0u ||
+    copperHandled != 0u
+  ) return;
   if (maskedReg >= 0x50u && maskedReg <= 0x57u) {
     mmuRegs[maskedReg - 0x50u] = byteValue;
     updateMemoryConfig(0);
@@ -223,6 +235,9 @@ void zxnextNextRegHardReset(void) {
   resetLayer2State();
   resetTilemapState();
   resetSpriteState();
+  resetAudioState();
+  resetCopperState();
+  resetCtcState();
   updateScreenTimingFromNextRegs();
 }
 void zxnextNextRegReset(void) {
@@ -231,5 +246,8 @@ void zxnextNextRegReset(void) {
   resetLayer2State();
   resetTilemapState();
   resetSpriteState();
+  resetAudioState();
+  resetCopperState();
+  resetCtcState();
   updateScreenTimingFromNextRegs();
 }

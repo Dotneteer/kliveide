@@ -5,7 +5,7 @@ static uint32_t ownerStepForUnsupportedPort(uint16_t port) {
   if (port == 0x00ffu || port == 0xbf3bu || port == 0xff3bu) return 21u;
   if (port == 0x005du) return 24u;
   if (port == 0x006bu || port == 0x006fu) return 27u;
-  if ((port & 0xfffbu) == 0x183bu) return 29u;
+  if ((port & 0xf8ffu) == 0x183bu) return 29u;
   if (port == 0x001fu || port == 0x0037u) return 31u;
   if (port == 0xfbdfu || port == 0xffdfu || port == 0xfadfu) return 32u;
   return 34u;
@@ -59,9 +59,20 @@ uint32_t zxnextReadPort(uint32_t address) {
     value = isPortGroupEnabled(1, 6) != 0u ? (uint8_t)zxnextReadSpritePort303b() : 0xffu;
   } else if (maskedAddress == 0x00ebu) {
     value = isPortGroupEnabled(1, 3) != 0u ? (uint8_t)zxnextReadSpiDataPort() : 0xffu;
+  } else if ((maskedAddress & 0x00ffu) == 0x000bu) {
+    value = isPortGroupEnabled(3, 1) != 0u ? (uint8_t)zxnextReadDmaPort(1u) : 0xffu;
+  } else if ((maskedAddress & 0x00ffu) == 0x006bu) {
+    value = isPortGroupEnabled(0, 5) != 0u ? (uint8_t)zxnextReadDmaPort(0u) : 0xffu;
+  } else if ((maskedAddress & 0xf8ffu) == 0x183bu) {
+    value = (uint8_t)zxnextReadCtcPort(maskedAddress);
   } else {
-    value = fallbackReadValueForUnsupportedPort(maskedAddress);
-    recordUnsupportedPort(maskedAddress, value, 0u);
+    const uint32_t ayValue = zxnextReadAyPort(maskedAddress);
+    if (ayValue != 0xffffffffu) {
+      value = (uint8_t)(ayValue & 0xffu);
+    } else {
+      value = fallbackReadValueForUnsupportedPort(maskedAddress);
+      recordUnsupportedPort(maskedAddress, value, 0u);
+    }
   }
   if (captureBusEvents != 0u) {
     lastPortAddress = maskedAddress;
@@ -136,6 +147,24 @@ void zxnextWritePort(uint32_t address, uint32_t value) {
   }
   if (maskedAddress == 0x005bu) {
     if (isPortGroupEnabled(1, 6) != 0u) zxnextWriteSpritePatternPort(byteValue);
+    return;
+  }
+  if (zxnextWriteAyPort(maskedAddress, byteValue) != 0u) {
+    return;
+  }
+  if (zxnextWriteDacPort(maskedAddress, byteValue) != 0u) {
+    return;
+  }
+  if ((maskedAddress & 0x00ffu) == 0x000bu) {
+    if (isPortGroupEnabled(3, 1) != 0u) zxnextWriteDmaPort(1u, byteValue);
+    return;
+  }
+  if ((maskedAddress & 0x00ffu) == 0x006bu) {
+    if (isPortGroupEnabled(0, 5) != 0u) zxnextWriteDmaPort(0u, byteValue);
+    return;
+  }
+  if ((maskedAddress & 0xf8ffu) == 0x183bu) {
+    zxnextWriteCtcPort(maskedAddress, byteValue);
     return;
   }
   if ((maskedAddress & 0xc003u) == 0x4001u) {

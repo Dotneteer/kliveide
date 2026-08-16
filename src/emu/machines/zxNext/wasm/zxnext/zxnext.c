@@ -25,6 +25,77 @@ static uint8_t ulaBeeperEar = 0;
 static uint8_t ulaBeeperMic = 0;
 static uint32_t ulaBit4ChangedFrom0Tacts = 0;
 static uint32_t ulaBit4ChangedFrom1Tacts = 0;
+static uint8_t dacChannels[4] = { 0x80u, 0x80u, 0x80u, 0x80u };
+static uint32_t audioSampleCount = 0u;
+static uint8_t audioBeepOnlyToInternalSpeaker = 0u;
+static uint8_t audioPsgMode = 0u;
+static uint8_t audioAyStereoMode = 0u;
+static uint8_t audioEnableInternalSpeaker = 1u;
+static uint8_t audioEnable8BitDacs = 1u;
+static uint8_t audioSilenceHdmiAudio = 0u;
+static uint8_t audioEnableTurbosound = 1u;
+static uint8_t audioAyMonoEnable[3] = { 0u, 0u, 0u };
+static uint8_t psgRegisters[3][16];
+static uint8_t psgRegisterIndex[3] = { 0u, 0u, 0u };
+static uint8_t psgSelectedChip = 0u;
+static uint8_t psgPanning[3] = { 0x03u, 0x03u, 0x03u };
+static uint8_t dmaRegs[50];
+static uint8_t dmaFollow[5];
+static uint8_t dmaNumFollow = 0u;
+static uint8_t dmaCurFollow = 0u;
+static uint8_t dmaReadSeq = 0u;
+static uint8_t dmaStatus = 0u;
+static uint8_t dmaMode = 0u;
+static uint8_t dmaSeq = 0u;
+static uint8_t dmaBusState = 0u;
+static uint8_t dmaEnabled = 0u;
+static uint8_t dmaDirectionAtoB = 1u;
+static uint8_t dmaPortAIsIo = 0u;
+static uint8_t dmaPortBIsIo = 0u;
+static uint8_t dmaPortAAddressMode = 1u;
+static uint8_t dmaPortBAddressMode = 1u;
+static uint8_t dmaPortATiming = 0u;
+static uint8_t dmaPortBTiming = 0u;
+static uint8_t dmaPortBPrescaler = 0u;
+static uint8_t dmaTransferMode = 1u;
+static uint8_t dmaAutoRestart = 0u;
+static uint8_t dmaTransferData = 0u;
+static uint8_t dmaForceReady = 0u;
+static uint8_t dmaInterruptPending = 0u;
+static uint8_t dmaInterruptUnderService = 0u;
+static uint8_t dmaVector = 0u;
+static uint8_t dmaResetPointer = 0u;
+static uint8_t copperMemory[ZXNEXT_COPPER_MEMORY_SIZE];
+static uint8_t copperStartMode = 0u;
+static uint16_t copperInstructionAddress = 0u;
+static uint8_t copperStoredByte = 0u;
+static uint16_t copperListAddr = 0u;
+static uint16_t copperListData = 0u;
+static uint8_t copperDout = 0u;
+static uint8_t copperVerticalLineOffset = 0u;
+static uint32_t copperTickCount = 0u;
+static uint32_t copperWriteCount = 0u;
+static uint8_t ctcState[ZXNEXT_CTC_CHANNEL_COUNT];
+static uint8_t ctcControlReg[ZXNEXT_CTC_CHANNEL_COUNT];
+static uint8_t ctcTimeConstantReg[ZXNEXT_CTC_CHANNEL_COUNT];
+static uint8_t ctcPrescalerCount[ZXNEXT_CTC_CHANNEL_COUNT];
+static uint8_t ctcCount[ZXNEXT_CTC_CHANNEL_COUNT];
+static uint8_t ctcCountZeroD[ZXNEXT_CTC_CHANNEL_COUNT];
+static uint8_t ctcIowrD[ZXNEXT_CTC_CHANNEL_COUNT];
+static uint8_t ctcClkTrgD[ZXNEXT_CTC_CHANNEL_COUNT];
+static uint8_t ctcZcTo[ZXNEXT_CTC_CHANNEL_COUNT];
+static uint8_t ctcIm2VectorWrite = 0u;
+static uint32_t ctcLastSyncClock = 0u;
+static uint16_t dmaPortAStart = 0u;
+static uint16_t dmaPortBStart = 0u;
+static uint16_t dmaBlockLength = 0u;
+static uint16_t dmaAddressA = 0u;
+static uint16_t dmaAddressB = 0u;
+static uint16_t dmaCount = 0u;
+static uint16_t dmaByteCounter = 0u;
+static uint32_t dmaTransferCount = 0u;
+static uint32_t dmaBlockCompletionCount = 0u;
+static uint32_t dmaLastStepTicks = 0u;
 
 static uint32_t frames = 0;
 static uint32_t tacts = 0;
@@ -266,6 +337,12 @@ static uint32_t cpuTactScale(void);
 #include "zxnext-keyboard.c"
 #include "zxnext-ula.c"
 #include "zxnext-screen.c"
+#include "zxnext-copper.c"
+#include "zxnext-ctc.c"
+#include "zxnext-psg.c"
+#include "zxnext-audio.c"
+#include "zxnext-dac.c"
+#include "zxnext-dma.c"
 #include "zxnext-ports.c"
 
 static void clearRuntimeState(void) {
@@ -278,8 +355,12 @@ static void clearRuntimeState(void) {
   resetLayer2State();
   resetTilemapState();
   resetSpriteState();
+  resetPsgState();
+  resetAudioState();
+  resetDmaState();
   resetScreenState();
-  for (uint32_t i = 0; i < ZXNEXT_AUDIO_SAMPLE_CAPACITY * 2u; i++) audioSamples[i] = 0;
+  resetCopperState();
+  resetCtcState();
   for (uint32_t i = 0; i < ZXNEXT_SD_COMMAND_BUFFER_SIZE; i++) sdCommandBuffer[i] = 0;
   for (uint32_t i = 0; i < ZXNEXT_SD_RESPONSE_BUFFER_SIZE; i++) sdResponseBuffer[i] = 0;
   for (uint32_t i = 0; i < ZXNEXT_DIAGNOSTIC_BUFFER_SIZE; i++) diagnosticBuffer[i] = 0;
@@ -375,6 +456,7 @@ uint32_t zxnextExecuteInstruction(void) {
   advanceFrameTacts(delta);
   if (frameTacts >= cpuTactsPerFrame()) {
     while (frameTacts >= cpuTactsPerFrame()) {
+      zxnextCtcOnNewFrame(cpuTactsPerFrame() * 8u);
       frameTacts -= cpuTactsPerFrame();
       frames++;
     }
@@ -401,6 +483,7 @@ uint32_t zxnextExecuteFrame(void) {
   } while (frameTacts < target && guard < 0x200000u);
 
   while (frameTacts >= target) {
+    zxnextCtcOnNewFrame(target * 8u);
     frameTacts -= target;
     frames++;
   }

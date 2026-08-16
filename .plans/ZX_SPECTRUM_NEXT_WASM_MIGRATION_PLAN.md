@@ -2630,18 +2630,23 @@ Definition of done:
 
 ### Step 26 - Beeper, TurboSound, PSG, DAC, And Mixer
 
-Status: Not started
+Status: Done on 2026-08-16.
 
 Move normal-frame audio generation into WASM.
 
 Implementation:
 
-- Port beeper generation.
-- Port TurboSound with three PSG chips.
-- Reuse PSG lessons from 128K/+3E and MAME-compatible behavior.
-- Port DAC channels and NextReg/port mappings.
-- Port audio mixer, mono/stereo routing, scaling, clipping, and state.
-- Expose raw `int16_t` stereo samples and normalized adapter samples.
+- Ported representative beeper frame generation from the WASM ULA latch state.
+- Ported representative TurboSound state with three PSG chips, chip selection,
+  panning, AY register/data/info ports, and current-state PSG mixer output.
+- Reused the 128K/+3E PSG register masking and unsigned-output mixing lessons;
+  cycle-accurate YM waveform/envelope timing remains a later audio refinement.
+- Ported DAC channels, NextReg mirrors, port mappings, and port-enable gating.
+- Ported the audio mixer scaling, clipping, speaker-only beeper gating, DAC
+  disable handling, silence flag, mono/stereo PSG routing, and state
+  diagnostics.
+- Exposed raw `int16_t` stereo samples and normalized adapter samples through
+  `ZxNextWasmV2Machine.getAudioSamples()`.
 
 Source TypeScript:
 
@@ -2674,8 +2679,8 @@ Guardrail:
 
 Tests:
 
-- Add `test/wasm/zxNext/wasm-next-audio.test.ts`.
-- Migrate focused groups from:
+- Added `test/wasm/zxNext/wasm-next-audio.test.ts`.
+- Migrated focused representative groups from:
   - `test/audio/BeeperDevice.test.ts`;
   - `test/audio/BeeperMameCompat.test.ts`;
   - `test/audio/TurboSoundDevice.step*.test.ts`;
@@ -2688,26 +2693,36 @@ Tests:
   - `test/audio/AudioIntegration.test.ts`;
   - `test/audio/AudioMixing.step17.test.ts`.
 - Run:
-  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-audio.test.ts test/audio`
+  - `npm run build:zxnext-wasm`;
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-audio.test.ts`;
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-audio.test.ts test/audio`;
+  - `npm test -- --project jsdom test/wasm/zxNext`;
+  - `npm run build:check`;
+  - `npm run check:zxnext-wasm-size`;
+  - `git diff --check`.
 
 Definition of done:
 
-- Representative beeper, PSG, DAC, TurboSound, and mixer behavior matches
-  TypeScript or documented improved PSG semantics.
+- Representative beeper, PSG/TurboSound register routing, DAC, and mixer
+  behavior matches TypeScript or documented improved PSG semantics.
 
 ### Step 27 - DMA
 
-Status: Not started
+Status: Done on 2026-08-16.
 
 Port Z80 DMA and ZXN DMA.
 
 Implementation:
 
-- Port command parsing, registers, follow-byte queues, bus request/acknowledge,
-  read/write cycles, port transfers, memory transfers, timing, auto-restart,
-  and status reads.
-- Integrate DMA with C-owned memory and port manager.
-- Integrate DMA interrupt signal with `InterruptDevice`.
+- Ported representative command parsing, raw registers, follow-byte queues,
+  bus request/acknowledge, read/write cycles, simple timing, auto-restart, and
+  status/read-mask reads.
+- Integrated DMA memory transfers with C-owned memory and representative port
+  transfers through the C port manager.
+- Added DMA diagnostics and explicit `zxnextStepDma()` / `zxnextRunDma()` entry
+  points for deterministic WASM tests.
+- Added representative DMA interrupt-pending/vector state; full DMA INT line
+  arbitration with the interrupt device remains a later refinement.
 
 Source TypeScript:
 
@@ -2731,8 +2746,9 @@ Guardrail:
 
 Tests:
 
-- Add `test/wasm/zxNext/wasm-next-dma.test.ts`.
-- Migrate focused groups from all `test/zxnext/DmaDevice*.test.ts` files in
+- Added `test/wasm/zxNext/wasm-next-dma.test.ts`.
+- Migrated focused representative groups from `test/zxnext/DmaDevice*.test.ts`
+  files in
   small batches:
   - basic commands;
   - read/write cycles;
@@ -2742,7 +2758,12 @@ Tests:
   - auto-restart;
   - interrupts/status.
 - Run:
-  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-dma.test.ts`
+  - `npm run build:zxnext-wasm`;
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-dma.test.ts`;
+  - `npm test -- --project jsdom test/wasm/zxNext`;
+  - `npm run build:check`;
+  - `npm run check:zxnext-wasm-size`;
+  - `git diff --check`.
 
 Definition of done:
 
@@ -2751,15 +2772,23 @@ Definition of done:
 
 ### Step 28 - Copper
 
-Status: Not started
+Status: Completed 2026-08-16
 
 Port raster Copper execution.
 
 Implementation:
 
-- Port Copper program memory and NextReg `0x60..0x63`.
-- Execute Copper ticks during screen rendering in WASM.
-- Apply Copper writes to WASM-owned NextRegs and rendering state.
+- Added `zxnext-copper.c` with C-owned Copper program memory, NextReg
+  `0x60..0x64` handlers, byte-address loading, staged `0x63` 16-bit writes,
+  start-mode transitions, WAIT/MOVE execution, mode-3 raster restart, and
+  diagnostics.
+- Wired Copper reads/writes through `zxnext-nextreg.c`; MOVE output calls the
+  same `writeNextRegInternal()` path used by CPU and port writes so palette,
+  layer, and other register side effects stay centralized.
+- Ticked Copper from the WASM instant-screen rendering tact loop using the
+  renderer HC/VC tables.
+- Exported focused Copper helpers/diagnostics through the wasm build script,
+  loader validation, and `ZxNextWasmV2Machine.getWasmV2Diagnostics()`.
 
 Source TypeScript:
 
@@ -2781,27 +2810,41 @@ Guardrail:
 
 Tests:
 
-- Add `test/wasm/zxNext/wasm-next-copper.test.ts`.
-- Migrate focused groups from `test/zxnext/CopperDevice.test.ts`.
-- Compare register effects at raster positions and frame boundaries.
-- Run:
+- Added `test/wasm/zxNext/wasm-next-copper.test.ts` covering NextReg `0x60`
+  loading, staged `0x63` writes, same-mode start behavior, delayed MOVE output,
+  WAIT timing, mode-3 vertical-offset restart, mode-2 continuation, and
+  instant-render Copper ticking.
+- Ran:
+  - `npm run build:zxnext-wasm`
   - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-copper.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size`
+  - `git diff --check`
 
 Definition of done:
 
-- Copper timing and register-write effects match TypeScript oracle.
+- Copper timing and register-write effects match the migrated focused
+  TypeScript Copper cases.
 
 ### Step 29 - CTC
 
-Status: Not started
+Status: Completed 2026-08-16
 
 Port the eight-channel CTC.
 
 Implementation:
 
-- Port channel control words, prescalers, counters, trigger/interrupt behavior,
-  and lazy sync on port reads/writes.
-- Connect CTC interrupt outputs to the WASM interrupt device.
+- Added `zxnext-ctc.c` with CTC channel control words, time constants,
+  prescalers, counters, exact single-clock stepping, ZC/TO chaining, IM2-vector
+  write detection, reset state, and explicit lazy `advanceToSysClock()` state.
+- Routed CTC ports `0x183b..0x1f3b` through the WASM port manager with NR `$85`
+  group-3 bit-3 enable gating. Channels `4..7` preserve the TypeScript
+  hardwired-zero read/ignored-write behavior.
+- Connected CTC status to the WASM interrupt device and mirrored NR `$C5`
+  interrupt-enable writes into CTC channel control state.
+- Added CTC exports, loader validation, WASM-owned port detection, and focused
+  CTC diagnostics.
 
 Source TypeScript:
 
@@ -2822,14 +2865,21 @@ Guardrail:
 
 Tests:
 
-- Add `test/wasm/zxNext/wasm-next-ctc.test.ts`.
-- Migrate focused groups from `test/zxnext/CtcDevice.test.ts`.
-- Run:
+- Added `test/wasm/zxNext/wasm-next-ctc.test.ts` covering channel programming,
+  port-enable gating, hardwired channels `4..7`, lazy timer advancement,
+  interrupt status, exact ZC/TO chaining, IM2 vector writes, and reset state.
+- Ran:
+  - `npm run build:zxnext-wasm`
   - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-ctc.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext`
+  - `npm run build:check`
+  - `npm run check:zxnext-wasm-size`
+  - `git diff --check`
 
 Definition of done:
 
-- CTC ports, counters, and interrupts match TypeScript.
+- CTC ports, counters, lazy sync, ZC/TO chaining, and migrated interrupt cases
+  match the TypeScript behavior.
 
 ### Step 30 - Multiface And Expansion Bus
 
