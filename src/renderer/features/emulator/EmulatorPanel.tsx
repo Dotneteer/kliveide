@@ -19,6 +19,9 @@ import { useRecordingManager } from "@renderer/appEmu/recording/RecordingContext
 import { useEmulatorScreen } from "./useEmulatorScreen";
 import { useEmulatorAudio } from "./useEmulatorAudio";
 import { useEmulatorKeyboard } from "./useEmulatorKeyboard";
+import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
+import { applySectorChangesToDiskContents } from "@emu/machines/disk/disk-changes";
+import { mediaStore } from "@emu/machines/media/media-info";
 
 type Props = {
   keyStatusSet?: (code: number, down: boolean) => void;
@@ -73,6 +76,20 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Sends disk changes to the main process
   const saveDiskChanges = useCallback(async (diskIndex: number, changes: SectorChanges): Promise<void> => {
+    const mediaId = diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A;
+    try {
+      const mediaContents = mediaStore.getMedia(mediaId)?.mediaContents;
+      if (mediaContents instanceof Uint8Array) {
+        applySectorChangesToDiskContents(mediaContents, changes);
+      }
+      const machineContents = controllerRef.current?.machine?.getMachineProperty(mediaId);
+      if (machineContents instanceof Uint8Array && machineContents !== mediaContents) {
+        applySectorChangesToDiskContents(machineContents, changes);
+      }
+    } catch (err) {
+      reportMessagingError(`Updating attached disk media failed: ${err.toString()}.`);
+    }
+
     try {
       await mainApi.saveDiskChanges(diskIndex, changes);
     } catch (err) {

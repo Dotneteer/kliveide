@@ -63,6 +63,54 @@ describe("ZX Spectrum 48K WASM v2 loader", () => {
     expect(runtime.audioSamples).toHaveLength(runtime.exports.sp48GetAudioSampleCapacity() * 2);
   });
 
+  it("exposes v2 test/control exports as callable loader exports", async () => {
+    buildSp48Wasm();
+    const runtime = await loadSp48WasmV2({
+      artifactName: "test-sp48-control-exports-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp48HardReset(0, 0);
+    runtime.exports.sp48SetTacts(14362);
+    runtime.exports.sp48ResetContentionCounters();
+    runtime.exports.sp48DelayAddressBusAccess(0x4000);
+    runtime.exports.sp48DelayPortAccess(0xfefe);
+    runtime.exports.sp48DelayPortRead(0xfefe);
+    runtime.exports.sp48DelayPortWrite(0xfefe);
+    runtime.exports.sp48WritePort(0xfe, 0x1d);
+
+    expect(runtime.exports.sp48GetBaseClockFrequency()).toBe(3500000);
+    expect(runtime.exports.sp48GetCurrentFrameTact()).toBeGreaterThanOrEqual(14362);
+    expect(runtime.exports.sp48GetRasterLines()).toBe(312);
+    expect(runtime.exports.sp48GetScreenLineTime()).toBe(224);
+    expect(runtime.exports.sp48GetTimingScreenWidth()).toBe(352);
+    expect(runtime.exports.sp48GetTimingScreenLines()).toBe(288);
+    expect(runtime.exports.sp48GetFirstDisplayLine()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetFirstVisibleLine()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetFirstVisibleBorderTact()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetContentionValue(14362)).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetRenderingPhase(14362)).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetRenderingPixelAddress(14362)).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetRenderingAttributeAddress(14362)).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetRenderingPixelIndex(14362)).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetTotalContentionDelaySinceStart()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetContentionDelaySincePause()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetNextFrameStartTact()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetInterruptsRaised()).toBe(0);
+    expect(runtime.exports.sp48GetInterruptLineActive()).toBe(0);
+    expect(runtime.exports.sp48GetCpuInstructionsExecuted()).toBe(0);
+    expect(runtime.exports.sp48GetCpuFrameSliceInstructions()).toBe(0);
+    expect(runtime.exports.sp48GetCpuTacts()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetPortFeValue()).toBe(0x1d);
+    expect(runtime.exports.sp48GetBorderColor()).toBe(5);
+    expect(runtime.exports.sp48GetEarBit()).toBe(1);
+    expect(runtime.exports.sp48GetMicBit()).toBe(1);
+    expect(runtime.exports.sp48GetBeeperLevel()).toBeGreaterThan(0);
+    expect(runtime.exports.sp48GetEarBitChangedFrom0Tacts()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetEarBitChangedFrom1Tacts()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp48GetDiagnosticFlags()).toBeGreaterThanOrEqual(0);
+  });
+
   it("suppresses last bus event capture during normal frame execution", async () => {
     buildSp48Wasm();
     const runtime = await loadSp48WasmV2({
@@ -182,6 +230,12 @@ function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp4
       sp48SetKeyStatus: () => 0,
       sp48GetKeyboardLine: () => 0,
       sp48SetAudioSampleRate: () => 0,
+      sp48DelayAddressBusAccess: () => 0,
+      sp48DelayPortAccess: () => 0,
+      sp48DelayPortRead: () => 0,
+      sp48DelayPortWrite: () => 0,
+      sp48ResetContentionCounters: () => 0,
+      sp48GetBaseClockFrequency: () => 3500000,
       sp48GetScreenWidth: () => 256,
       sp48GetScreenHeight: () => 192,
       sp48GetPixelBufferStartOffset: () => 256,
@@ -195,6 +249,27 @@ function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp4
       sp48GetTactsInCurrentFrame: () => 69888,
       sp48GetFrames: () => 0,
       sp48GetTacts: () => 0,
+      sp48GetCurrentFrameTact: () => 0,
+      sp48GetRasterLines: () => 312,
+      sp48GetScreenLineTime: () => 224,
+      sp48GetTimingScreenWidth: () => 352,
+      sp48GetTimingScreenLines: () => 288,
+      sp48GetFirstDisplayLine: () => 0,
+      sp48GetFirstVisibleLine: () => 0,
+      sp48GetFirstVisibleBorderTact: () => 0,
+      sp48GetContentionValue: () => 0,
+      sp48GetRenderingPhase: () => 0,
+      sp48GetRenderingPixelAddress: () => 0,
+      sp48GetRenderingAttributeAddress: () => 0,
+      sp48GetRenderingPixelIndex: () => 0,
+      sp48GetTotalContentionDelaySinceStart: () => 0,
+      sp48GetContentionDelaySincePause: () => 0,
+      sp48GetNextFrameStartTact: () => 69888,
+      sp48GetInterruptsRaised: () => 0,
+      sp48GetInterruptLineActive: () => 0,
+      sp48GetCpuInstructionsExecuted: () => 0,
+      sp48GetCpuFrameSliceInstructions: () => 0,
+      sp48GetCpuTacts: () => 0,
       sp48GetCpuAf: () => 0,
       sp48SetCpuAf: () => 0,
       sp48GetCpuBc: () => 0,
@@ -232,6 +307,14 @@ function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp4
       sp48GetLastPortAddress: () => 0,
       sp48GetLastPortValue: () => 0,
       sp48GetLastPortIsWrite: () => 0,
+      sp48GetPortFeValue: () => 0xbf,
+      sp48GetBorderColor: () => 7,
+      sp48GetEarBit: () => 0,
+      sp48GetMicBit: () => 0,
+      sp48GetBeeperLevel: () => 0,
+      sp48GetEarBitChangedFrom0Tacts: () => 0,
+      sp48GetEarBitChangedFrom1Tacts: () => 0,
+      sp48GetDiagnosticFlags: () => 0,
       sp48GetRomSize: () => 0x4000,
       sp48TapeClear: () => 0,
       sp48TapeSetFileNameByte: () => 0,

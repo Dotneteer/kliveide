@@ -289,6 +289,46 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     expect(runtime.exports.sp128GetTotalContentionDelaySinceStart()).toBe(24);
   });
 
+  it("exposes v2 test/control exports as callable loader exports", async () => {
+    buildSp128Wasm();
+    const runtime = await loadSp128WasmV2({
+      artifactName: "test-sp128-control-exports-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+
+    runtime.exports.sp128HardReset();
+    runtime.exports.sp128SetContentionValue(100, 6);
+    runtime.exports.sp128SetTacts(100);
+    runtime.exports.sp128ResetContentionCounters();
+    runtime.exports.sp128DelayAddressBusAccess(0x4000);
+    runtime.exports.sp128DelayPortRead(0xc0ff);
+    runtime.exports.sp128DelayPortWrite(0xc0ff);
+    runtime.exports.sp128SetCpuAf(0x1234);
+    runtime.exports.sp128SetCpuBc(0x2345);
+    runtime.exports.sp128SetCpuDe(0x3456);
+    runtime.exports.sp128SetCpuHl(0x4567);
+    runtime.exports.sp128SetCpuIx(0x5678);
+    runtime.exports.sp128SetCpuIy(0x6789);
+    runtime.exports.sp128SetCpuPc(0x0100);
+    runtime.exports.sp128SetCpuSp(0xff00);
+
+    expect(runtime.exports.sp128GetContentionValue(100)).toBe(6);
+    expect(runtime.exports.sp128GetCurrentFrameTact()).toBeGreaterThanOrEqual(106);
+    expect(runtime.exports.sp128GetTotalContentionDelaySinceStart()).toBeGreaterThanOrEqual(6);
+    expect(runtime.exports.sp128GetContentionDelaySincePause()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp128GetCpuAf()).toBe(0x1234);
+    expect(runtime.exports.sp128GetCpuBc()).toBe(0x2345);
+    expect(runtime.exports.sp128GetCpuDe()).toBe(0x3456);
+    expect(runtime.exports.sp128GetCpuHl()).toBe(0x4567);
+    expect(runtime.exports.sp128GetCpuIx()).toBe(0x5678);
+    expect(runtime.exports.sp128GetCpuIy()).toBe(0x6789);
+    expect(runtime.exports.sp128GetCpuPc()).toBe(0x0100);
+    expect(runtime.exports.sp128GetCpuSp()).toBe(0xff00);
+    expect(runtime.exports.sp128GetCpuTacts()).toBe(runtime.exports.sp128GetTacts());
+    expect(runtime.exports.sp128GetNextFrameStartTact()).toBeGreaterThanOrEqual(0);
+    expect(runtime.exports.sp128GetDiagnosticFlags()).toBeGreaterThanOrEqual(0);
+  });
+
   it("matches the TypeScript 128K screen timing and contention table tact by tact", async () => {
     buildSp128Wasm();
     const runtime = await loadSp128WasmV2({

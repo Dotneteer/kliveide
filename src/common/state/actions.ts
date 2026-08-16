@@ -307,7 +307,7 @@ export const emuSetKeyboardLayoutAction: ActionCreator = (id: string) => ({
 });
 
 export const incMenuVersionAction: ActionCreator = () => ({
-  type: "START_SCREEN_DISPLAYED"
+  type: "INC_MENU_VERSION"
 });
 
 export const setMachineSpecificAction: ActionCreator = (value: any) => ({

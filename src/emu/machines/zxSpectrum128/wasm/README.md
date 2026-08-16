@@ -1,8 +1,15 @@
 # ZX Spectrum 128K WASM Core
 
-The ZX Spectrum 128K WASM implementation is a V2 full-machine backend. The
-production artifact name is `zx-spectrum128.wasm`, built from `wasm/v2` and
+The ZX Spectrum 128K WASM implementation is a full-machine backend. The
+production artifact name is `zx-spectrum128.wasm`, built from this folder and
 loaded by `Sp128WasmV2Loader.ts`.
+
+## Layout
+
+- `sp128/`: the 128K C machine implementation, including the AY PSG core.
+- `dist/`: generated production WASM artifact.
+
+The backend reuses the shared C Z80 core from `src/emu/z80/wasm/z80.c`.
 
 The runtime switch has two supported values:
 

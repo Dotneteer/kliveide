@@ -30,6 +30,8 @@
     "check:sp48-wasm-size": "node scripts/check-sp48-wasm-size.cjs",
     "build:sp128-wasm": "node scripts/build-sp128-wasm.cjs",
     "check:sp128-wasm-size": "node scripts/check-sp128-wasm-size.cjs",
+    "build:spp3e-wasm": "node scripts/build-spp3e-wasm.cjs",
+    "check:spp3e-wasm-size": "node scripts/check-spp3e-wasm-size.cjs",
     "benchmark:spectrum-wasm": "node scripts/benchmark-spectrum-wasm.cjs",
     "lint:renderer": "eslint src/renderer --ext .ts,.tsx",
     "e2e:app": "node scripts/run-e2e-app.cjs",
@@ -205,6 +207,13 @@
       {
         "from": "src/emu/machines/zxSpectrum128/wasm/dist",
         "to": "wasm/zxSpectrum128",
+        "filter": [
+          "**/*.wasm"
+        ]
+      },
+      {
+        "from": "src/emu/machines/zxSpectrumP3e/wasm/dist",
+        "to": "wasm/zxSpectrumP3e",
         "filter": [
           "**/*.wasm"
         ]

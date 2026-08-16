@@ -3,7 +3,7 @@ const { dirname, relative, resolve } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const root = resolve(__dirname, "..");
-const source = resolve(root, "src/emu/machines/zxSpectrum48/wasm/v2/sp48/sp48.c");
+const source = resolve(root, "src/emu/machines/zxSpectrum48/wasm/sp48/sp48.c");
 const productionOutput = resolve(root, "src/emu/machines/zxSpectrum48/wasm/dist/zx-spectrum48.wasm");
 const output = productionOutput;
 const wasmDistDirectory = resolve(root, "src/emu/machines/zxSpectrum48/wasm/dist");
