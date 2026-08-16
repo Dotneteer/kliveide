@@ -3,6 +3,7 @@ import type { MachineUiRendererInfo } from "./info-types";
 import { createZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48MachineFactory";
 import { createZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128MachineFactory";
 import { createZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachineFactory";
+import { createZxNextMachine } from "@emu/machines/zxNext/ZxNextMachineFactory";
 import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_48,
@@ -12,7 +13,6 @@ import {
   MI_C64
 } from "./constants";
 import { Z88Machine } from "@emu/machines/z88/Z88Machine";
-import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { C64Machine } from "@emu/machines/c64/C64Machine";
 
 export const machineRendererRegistry: MachineUiRendererInfo[] = [
@@ -30,7 +30,7 @@ export const machineRendererRegistry: MachineUiRendererInfo[] = [
   },
   {
     machineId: MI_ZXNEXT,
-    factory: (_, model, _c, messenger) => new ZxNextMachine(model, messenger)
+    factory: (_, model, config, messenger) => createZxNextMachine(model, config, messenger)
   },
   {
     machineId: MI_Z88,
