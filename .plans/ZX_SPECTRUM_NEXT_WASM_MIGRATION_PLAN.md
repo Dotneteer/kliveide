@@ -146,7 +146,7 @@ Completion notes:
 
 ### Step 2 - IDE Integration Scaffold
 
-Status: Not started
+Status: Done
 
 Create an explicitly selectable but incomplete WASM integration scaffold. This
 step exists to prove the IDE/emulator contract first: register view, memory
@@ -226,6 +226,18 @@ Deviation guardrail:
 - Validation: `npm test -- --project jsdom test/zxnext/ZxNextMachineFactory.test.ts test/wasm/zxNext/wasm-next-build.test.ts test/wasm/zxNext/wasm-next-loader.test.ts test/wasm/zxNext/wasm-next-ide-scaffold.test.ts`,
   `npm run build:zxnext-wasm`, `npm run check:zxnext-wasm-size`,
   `npm run build:check`, and `git diff --check`.
+
+Completion notes:
+
+- Added explicit `zxnextImplementation` selection while keeping TypeScript as
+  the default backend.
+- Added the incomplete ZX Spectrum Next WASM v2 scaffold, loader, build script,
+  size gate, package resource entry, and README.
+- Added focused tests for factory selection, build exports/artifact validity,
+  loader view sizing, and deterministic IDE-facing scaffold surfaces.
+- Diagnostics report `implementationIncomplete: true` and list registers,
+  memory, disassembly, ULA, screen, frame, and debug as scaffolded surfaces.
+- Validation passed with the commands listed above.
 
 ### Step 3 - Scaffold Frame, Status Bar, And Debug Tools
 
