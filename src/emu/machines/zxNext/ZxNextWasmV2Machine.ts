@@ -398,7 +398,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       this.executionContext.debugStepMode !== DebugStepMode.NoDebug ||
       this.executionContext.frameTerminationMode !== FrameTerminationMode.Normal
     ) {
-      return this.executeWasmV2DebugStep();
+      return this.executeWasmV2DebugLoop(runtime);
     }
 
     this.emulateKeystroke();
@@ -416,10 +416,131 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     runtime.exports.zxnextExecuteInstruction();
     this.wasmV2DebugSteps++;
     this.syncCpuFromWasmV2(runtime);
+    this.importWasmV2BusAccess(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
     this.wasmV2LastScaffoldStopReason = "scaffoldDebugStep";
     this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent;
     return FrameTerminationMode.DebugEvent;
+  }
+
+  private executeWasmV2DebugLoop(runtime: ZxNextWasmV2Runtime): FrameTerminationMode {
+    const debugSupport = this.executionContext.debugSupport;
+    let instructionsExecuted = 0;
+    this.executionContext.lastTerminationReason = undefined;
+
+    this.syncCpuFromWasmV2(runtime);
+    if (this.frameCompleted) {
+      this.onInitNewFrame(false);
+      this.frameCompleted = false;
+      this.emulateKeystroke();
+    }
+
+    if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
+      if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+    }
+    if (debugSupport) {
+      debugSupport.lastStartupBreakpoint = undefined;
+    }
+
+    while (!this.frameCompleted) {
+      this.emulateKeystroke();
+      runtime.exports.zxnextExecuteInstruction();
+      instructionsExecuted++;
+      this.wasmV2DebugSteps++;
+      this.syncCpuFromWasmV2(runtime);
+      this.importWasmV2BusAccess(runtime);
+      this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
+      this.wasmV2LastScaffoldStopReason = "scaffoldDebugStep";
+
+      if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
+        const point = this.executionContext.terminationPoint;
+        if (point != null && this.pc === (point & 0xffff)) {
+          return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
+        }
+      }
+      if (this.hasWasmV2AccessBreakpoint()) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+      if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+      if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
+        if (debugSupport) {
+          debugSupport.imminentBreakpoint = undefined;
+        }
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+      if (this.getFrameCommand()) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+      }
+    }
+
+    return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+  }
+
+  private finishWasmV2DebugLoop(termination: FrameTerminationMode): FrameTerminationMode {
+    this.executionContext.lastTerminationReason = termination;
+    return termination;
+  }
+
+  private shouldStopAtWasmV2Breakpoint(instructionsExecuted: number): boolean {
+    const debugSupport = this.executionContext.debugSupport;
+    if (!debugSupport) return false;
+
+    const stopAt = debugSupport.shouldStopAt(this.pc, () => this.getPartition(this.pc));
+    if (
+      stopAt &&
+      (instructionsExecuted > 0 ||
+        debugSupport.lastBreakpoint === undefined ||
+        debugSupport.lastBreakpoint !== this.pc)
+    ) {
+      debugSupport.lastBreakpoint = this.pc;
+      debugSupport.imminentBreakpoint = undefined;
+      return true;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StopAtBreakpoint) {
+      return false;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StepOver) {
+      if (debugSupport.imminentBreakpoint !== undefined) {
+        if (debugSupport.imminentBreakpoint === this.pc) {
+          debugSupport.imminentBreakpoint = undefined;
+          return true;
+        }
+        return false;
+      }
+      const length = this.getCallInstructionLength();
+      if (length > 0) {
+        debugSupport.imminentBreakpoint = (this.pc + length) & 0xffff;
+        return false;
+      }
+      return instructionsExecuted > 0;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StepOut) {
+      if (this.stepOutAddress === this.pc || this.retExecuted) {
+        debugSupport.imminentBreakpoint = undefined;
+        return true;
+      }
+      return false;
+    }
+
+    return false;
+  }
+
+  private hasWasmV2AccessBreakpoint(): boolean {
+    const debugSupport = this.executionContext.debugSupport;
+    if (!debugSupport) return false;
+    return (
+      debugSupport.hasMemoryRead(this.lastMemoryReads, this.lastMemoryReadsCount, (addr) => this.getPartition(addr)) ||
+      debugSupport.hasMemoryWrite(this.lastMemoryWrites, this.lastMemoryWritesCount, (addr) => this.getPartition(addr)) ||
+      debugSupport.hasIoRead(this.lastIoReadPort) ||
+      debugSupport.hasIoWrite(this.lastIoWritePort)
+    );
   }
 
   override readScreenMemory(offset: number): number {

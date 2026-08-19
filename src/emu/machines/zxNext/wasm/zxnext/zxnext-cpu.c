@@ -44,9 +44,15 @@ static void zxnextCpuWriteMemory(uint16_t address, uint8_t value) {
 }
 
 static void zxnextCpuStepTacts(uint32_t instructionTacts) {
+  uint32_t previousFrameTact = currentFrameTact;
   tacts += instructionTacts;
-  currentFrameTact = (tacts * 2u) % ZXNEXT_TACTS_IN_FRAME;
-  frameCompleted = 0;
+  currentFrameTact = (previousFrameTact + instructionTacts * 2u) % ZXNEXT_TACTS_IN_FRAME;
+  if (currentFrameTact < previousFrameTact) {
+    frames++;
+    frameCompleted = 1;
+  } else {
+    frameCompleted = 0;
+  }
 }
 
 static void zxnextCpuRefreshMemory(void) {

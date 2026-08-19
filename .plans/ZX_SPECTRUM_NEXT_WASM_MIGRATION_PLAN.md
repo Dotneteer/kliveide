@@ -430,7 +430,7 @@ Completion notes:
 
 ### Step 6 - Debug Breakpoint Parity
 
-Status: Not started
+Status: Done
 
 Prove that breakpoints pause at the same address in TypeScript and WASM test
 execution. `$0001` is a required explicit case.
@@ -467,6 +467,19 @@ Deviation guardrail:
 - A frame/instruction safety guard may exist only as a failing diagnostic
   assertion, never as successful breakpoint behavior.
 - Validation: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-debug-step.test.ts`.
+
+Completion notes:
+
+- Added a real ZX Next WASM debug loop that supports execution breakpoint
+  stops, StepInto, StepOver, access-breakpoint checks, and completed-frame
+  stepping without using a one-instruction scaffold stop as breakpoint behavior.
+- Added parity tests for execution breakpoints, including the required `$0001`
+  case, comparing TypeScript and WASM PC, stop reason, executed instruction
+  count, tacts/current frame tact, register view, and disassembly preview.
+- Updated the debug-tools scaffold test to install an explicit breakpoint and
+  follow the new WASM debug-loop semantics.
+- Validation passed with the Step 6 command plus related CPU/debug scaffold
+  tests, `npm run build:check`, and `git diff --check`.
 
 ### Step 7 - Memory Map And Partition Parity
 
