@@ -7,6 +7,8 @@
 #define ZXNEXT_PIXEL_COUNT (ZXNEXT_SCREEN_WIDTH * ZXNEXT_SCREEN_HEIGHT)
 #define ZXNEXT_KEYBOARD_LINE_COUNT 8
 #define ZXNEXT_NEXT_REG_COUNT 256
+#define ZXNEXT_RENDERING_TACTS_IN_FRAME (456 * 311)
+#define ZXNEXT_TACTS_IN_FRAME (ZXNEXT_RENDERING_TACTS_IN_FRAME * 4)
 
 #define ZXNEXT_DIAGNOSTIC_IMPLEMENTATION_INCOMPLETE 1
 
@@ -51,6 +53,9 @@ static uint8_t borderColor;
 static uint8_t earBit;
 static uint8_t micBit;
 
+#include "zxnext-frame.c"
+#include "zxnext-debug.c"
+
 uint32_t zxnextMemoryPtr(void) { return (uint32_t)(uintptr_t)zxnextMemory; }
 uint32_t zxnextPixelBufferPtr(void) { return (uint32_t)(uintptr_t)zxnextPixelBuffer; }
 uint32_t zxnextKeyboardLinesPtr(void) { return (uint32_t)(uintptr_t)zxnextKeyboardLines; }
@@ -85,10 +90,8 @@ void zxnextReset(void) {
   cpuInterruptMode = 0;
   cpuHalted = 0;
   cpuPrefix = 0;
-  frames = 0;
-  tacts = 0;
-  currentFrameTact = 0;
-  frameCompleted = 0;
+  zxnextFrameResetScaffold();
+  zxnextDebugResetScaffold();
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryIsWrite = 0;
@@ -108,17 +111,15 @@ void zxnextHardReset(void) {
 }
 
 uint32_t zxnextExecuteFrame(void) {
-  frameCompleted = 1;
-  return 0;
+  return zxnextFrameExecuteScaffold();
 }
 
 uint32_t zxnextExecuteInstruction(void) {
-  frameCompleted = 0;
-  return 0;
+  return zxnextDebugExecuteScaffoldStep();
 }
 
 uint32_t zxnextRenderInstantScreen(void) {
-  return ZXNEXT_PIXEL_COUNT;
+  return zxnextFrameRenderScaffold();
 }
 
 uint32_t zxnextReadMemory(uint32_t address) {
@@ -198,7 +199,7 @@ uint32_t zxnextGetPixelBufferStartOffset(void) { return 0; }
 uint32_t zxnextGetFrames(void) { return frames; }
 uint32_t zxnextGetTacts(void) { return tacts; }
 uint32_t zxnextGetCurrentFrameTact(void) { return currentFrameTact; }
-uint32_t zxnextGetTactsInFrame(void) { return 70908; }
+uint32_t zxnextGetTactsInFrame(void) { return ZXNEXT_TACTS_IN_FRAME; }
 uint32_t zxnextGetFrameCompleted(void) { return frameCompleted; }
 
 void zxnextSetTacts(uint32_t value) {

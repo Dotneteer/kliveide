@@ -5,6 +5,7 @@ import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { NextRegDescriptor, NextRegDeviceState, RegValueState } from "./NextRegDevice";
 import type { ZxNextWasmV2LoaderOptions, ZxNextWasmV2Runtime } from "./wasm/ZxNextWasmV2Loader";
 
+import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
@@ -18,6 +19,11 @@ export type ZxNextWasmV2ScaffoldSurface =
   | "screen"
   | "frame"
   | "debug";
+
+export type ZxNextWasmV2ScaffoldStopReason =
+  | "scaffoldReset"
+  | "scaffoldFrameComplete"
+  | "scaffoldDebugStep";
 
 export const ZXNEXT_WASM_V2_SCAFFOLD_SURFACES: ZxNextWasmV2ScaffoldSurface[] = [
   "registers",
@@ -41,8 +47,12 @@ export type ZxNextWasmV2Diagnostics = {
   screenHeight: number;
   frames: number;
   tacts: number;
+  tactsInFrame: number;
+  currentFrameTact: number;
+  frameCompleted: boolean;
   normalFrames: number;
   debugSteps: number;
+  lastScaffoldStopReason: ZxNextWasmV2ScaffoldStopReason;
   diagnosticFlags: number;
 };
 
@@ -72,6 +82,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
   private wasmV2NormalFrames = 0;
   private wasmV2DebugSteps = 0;
+  private wasmV2LastScaffoldStopReason: ZxNextWasmV2ScaffoldStopReason = "scaffoldReset";
   private readonly nextRegDescriptors = this.createNextRegDescriptors();
 
   constructor(
@@ -370,6 +381,9 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     super.reset();
     if (this.wasmV2Runtime != null) {
       this.wasmV2Runtime.exports.zxnextReset();
+      this.wasmV2NormalFrames = 0;
+      this.wasmV2DebugSteps = 0;
+      this.wasmV2LastScaffoldStopReason = "scaffoldReset";
       this.syncCpuFromWasmV2(this.wasmV2Runtime);
     }
   }
@@ -380,10 +394,19 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       return super.executeMachineFrame();
     }
 
+    if (
+      this.executionContext.debugStepMode !== DebugStepMode.NoDebug ||
+      this.executionContext.frameTerminationMode !== FrameTerminationMode.Normal
+    ) {
+      return this.executeWasmV2DebugStep();
+    }
+
+    this.emulateKeystroke();
     runtime.exports.zxnextExecuteFrame();
     this.wasmV2NormalFrames++;
     this.syncCpuFromWasmV2(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
+    this.wasmV2LastScaffoldStopReason = "scaffoldFrameComplete";
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -393,6 +416,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     runtime.exports.zxnextExecuteInstruction();
     this.wasmV2DebugSteps++;
     this.syncCpuFromWasmV2(runtime);
+    this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
+    this.wasmV2LastScaffoldStopReason = "scaffoldDebugStep";
     this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent;
     return FrameTerminationMode.DebugEvent;
   }
@@ -579,8 +604,12 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       screenHeight: runtime.exports.zxnextGetScreenHeight(),
       frames: runtime.exports.zxnextGetFrames(),
       tacts: runtime.exports.zxnextGetTacts(),
+      tactsInFrame: runtime.exports.zxnextGetTactsInFrame(),
+      currentFrameTact: runtime.exports.zxnextGetCurrentFrameTact(),
+      frameCompleted: runtime.exports.zxnextGetFrameCompleted() !== 0,
       normalFrames: this.wasmV2NormalFrames,
       debugSteps: this.wasmV2DebugSteps,
+      lastScaffoldStopReason: this.wasmV2LastScaffoldStopReason,
       diagnosticFlags: runtime.exports.zxnextGetDiagnosticFlags()
     };
   }
@@ -589,6 +618,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     runtime.exports.zxnextHardReset();
     this.wasmV2NormalFrames = 0;
     this.wasmV2DebugSteps = 0;
+    this.wasmV2LastScaffoldStopReason = "scaffoldReset";
   }
 
   private installNextRegScaffold(): void {
@@ -677,6 +707,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.frames = wasm.zxnextGetFrames();
     this.frameTacts = wasm.zxnextGetCurrentFrameTact();
     this.currentFrameTact = this.frameTacts;
+    this.tactsInCurrentFrame = wasm.zxnextGetTactsInFrame();
+    this.frameCompleted = wasm.zxnextGetFrameCompleted() !== 0;
     this.halted = wasm.zxnextGetCpuHalted() !== 0;
     this.opCode = wasm.zxnextGetCpuPrefix();
     this.iff1 = wasm.zxnextGetCpuIff1() !== 0;

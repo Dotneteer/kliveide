@@ -2,7 +2,7 @@
 
 Created: 2026-08-16
 
-Status: Not started
+Status: In progress
 
 ## Goal
 
@@ -241,7 +241,7 @@ Completion notes:
 
 ### Step 3 - Scaffold Frame, Status Bar, And Debug Tools
 
-Status: Not started
+Status: Done
 
 Make the incomplete WASM machine usable in the IDE run/debug loop. Machine
 frames must execute as scaffold frames, update frame counters and status bar
@@ -301,6 +301,20 @@ Deviation guardrail:
   `scaffoldFrameComplete`. A CPU/device stop reason is forbidden here.
 - Validation: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-frame-scaffold.test.ts test/wasm/zxNext/wasm-next-debug-tools-scaffold.test.ts test/wasm/zxNext/wasm-next-status-bar-scaffold.test.ts`,
   `npm run build:check`, and `git diff --check`.
+
+Completion notes:
+
+- Added dedicated C frame/debug scaffold files and wired the Next WASM scaffold
+  to increment frame counters, tacts, frame-completed state, and debug-step
+  counters deterministically.
+- Routed adapter debug modes through scaffold debug steps and normal execution
+  through scaffold frame completion.
+- Added diagnostics for `lastScaffoldStopReason`, including
+  `scaffoldFrameComplete` for full scaffold frames.
+- Added focused tests for scaffold frames, controller debug command plumbing,
+  memory/disassembly/breakpoint-list APIs, `FrameStats`, and status-bar-readable
+  PC/frame data.
+- Validation passed with the commands listed above.
 
 ### Step 4 - Oracle Harness After IDE Scaffold
 
