@@ -55,6 +55,7 @@ static uint8_t micBit;
 
 #include "zxnext-frame.c"
 #include "zxnext-debug.c"
+#include "zxnext-memory.c"
 #include "zxnext-cpu.c"
 
 uint32_t zxnextMemoryPtr(void) { return (uint32_t)(uintptr_t)zxnextMemory; }
@@ -69,6 +70,7 @@ static void clearScaffoldBuffers(void) {
   for (uint32_t i = 0; i < ZXNEXT_NEXT_REG_COUNT; i++) zxnextNextRegs[i] = 0;
   zxnextNextRegs[0x00] = 0x32;
   zxnextNextRegs[0x01] = 0x20;
+  zxnextMemoryResetMapping();
 }
 
 void zxnextReset(void) {
@@ -125,23 +127,15 @@ uint32_t zxnextRenderInstantScreen(void) {
 }
 
 uint32_t zxnextReadMemory(uint32_t address) {
-  uint32_t normalized = address & 0xffffu;
-  lastMemoryAddress = (uint16_t)normalized;
-  lastMemoryValue = zxnextMemory[normalized];
-  lastMemoryIsWrite = 0;
-  return lastMemoryValue;
+  return zxnextMemoryReadMapped(address);
 }
 
 void zxnextWriteMemory(uint32_t address, uint32_t value) {
-  uint32_t normalized = address & 0xffffu;
-  zxnextMemory[normalized] = (uint8_t)value;
-  lastMemoryAddress = (uint16_t)normalized;
-  lastMemoryValue = (uint8_t)value;
-  lastMemoryIsWrite = 1;
+  zxnextMemoryWriteMapped(address, value);
 }
 
 uint32_t zxnextReadScreenMemoryOffset(uint32_t offset) {
-  return zxnextMemory[0x4000u + (offset & 0x3fffu)];
+  return zxnextMemoryReadScreenOffset(offset);
 }
 
 void zxnextSetKeyStatus(uint32_t key, uint32_t isDown) {
@@ -182,7 +176,7 @@ void zxnextWritePort(uint32_t address, uint32_t value) {
   if ((normalized & 0xffffu) == 0x243bu) {
     nextRegIndex = byteValue;
   } else if ((normalized & 0xffffu) == 0x253bu) {
-    zxnextNextRegs[nextRegIndex] = byteValue;
+    zxnextMemorySetNextRegister(nextRegIndex, byteValue);
   } else if ((normalized & 0x0001u) == 0) {
     portFeValue = byteValue;
     borderColor = byteValue & 0x07u;
@@ -255,10 +249,10 @@ uint32_t zxnextGetLastPortIsWrite(void) { return lastPortIsWrite; }
 
 void zxnextSetNextRegisterIndex(uint32_t reg) { nextRegIndex = (uint8_t)reg; }
 uint32_t zxnextGetNextRegisterIndex(void) { return nextRegIndex; }
-void zxnextSetNextRegisterValue(uint32_t value) { zxnextNextRegs[nextRegIndex] = (uint8_t)value; }
+void zxnextSetNextRegisterValue(uint32_t value) { zxnextMemorySetNextRegister(nextRegIndex, value); }
 uint32_t zxnextGetNextRegisterValue(void) { return zxnextNextRegs[nextRegIndex]; }
 uint32_t zxnextGetNextRegisterDirect(uint32_t reg) { return zxnextNextRegs[reg & 0xffu]; }
-void zxnextSetNextRegisterDirect(uint32_t reg, uint32_t value) { zxnextNextRegs[reg & 0xffu] = (uint8_t)value; }
+void zxnextSetNextRegisterDirect(uint32_t reg, uint32_t value) { zxnextMemorySetNextRegister(reg, value); }
 
 uint32_t zxnextGetPortFeValue(void) { return portFeValue; }
 uint32_t zxnextGetBorderColor(void) { return borderColor; }

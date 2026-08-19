@@ -483,7 +483,7 @@ Completion notes:
 
 ### Step 7 - Memory Map And Partition Parity
 
-Status: Not started
+Status: Done
 
 Migrate and test Next memory mapping before boot attempts.
 
@@ -522,6 +522,21 @@ Deviation guardrail:
   ROM, SRAM, DivMMC, Multiface, alternate ROM, Layer 2, all-RAM, and sentinel
   mappings.
 - Validation: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-partition-labels.test.ts`.
+
+Completion notes:
+
+- Added a dedicated ZX Next WASM memory mapping slice with MMU register reset,
+  mapped read/write paths, ROM immutability, RAM remapping, alternate ROM
+  labels, and all-RAM mode handling.
+- Updated the WASM facade so flat-memory snapshots, memory partitions, current
+  partitions, selected ROM/RAM state, partition labels, and breakpoint partition
+  resolution are derived from the mapped WASM state instead of hardcoded reset
+  data.
+- Added TypeScript-vs-WASM parity tests for reset mapping, MMU NextReg remaps,
+  system-region fallback, all-RAM writes, partition labels, and public debugger
+  memory/disassembly read paths.
+- Validation passed with the Step 7 command plus related CPU/debug/scaffold
+  tests, `npm run build:check`, and `git diff --check`.
 
 ### Step 8 - NextReg And Port Core Parity
 

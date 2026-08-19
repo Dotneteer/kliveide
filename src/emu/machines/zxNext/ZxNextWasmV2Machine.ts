@@ -56,8 +56,12 @@ export type ZxNextWasmV2Diagnostics = {
   diagnosticFlags: number;
 };
 
-const ZXNEXT_WASM_PARTITIONS = [-1, -1, 10, 11, 4, 5, 0, 1];
-const ZXNEXT_WASM_PARTITION_LABELS = ["R0", "R0", "0A", "0B", "04", "05", "00", "01"];
+const ZXNEXT_WASM_OFFS_NEXT_ROM = 0x000000;
+const ZXNEXT_WASM_OFFS_DIVMMC_ROM = 0x010000;
+const ZXNEXT_WASM_OFFS_ALT_ROM_0 = 0x018000;
+const ZXNEXT_WASM_OFFS_ALT_ROM_1 = 0x01c000;
+const ZXNEXT_WASM_OFFS_DIVMMC_RAM = 0x020000;
+const ZXNEXT_WASM_OFFS_NEXT_RAM = 0x040000;
 
 /**
  * Explicit ZX Spectrum Next WASM v2 adapter.
@@ -548,36 +552,60 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   override get64KFlatMemory(): Uint8Array {
-    return this.requireWasmV2Runtime().flatMemory;
+    const flat = new Uint8Array(0x10000);
+    for (let address = 0; address < flat.length; address++) {
+      flat[address] = this.requireWasmV2Runtime().exports.zxnextReadMemory(address);
+    }
+    return flat;
   }
 
   override getMemoryPartition(index: number): Uint8Array {
     const runtime = this.requireWasmV2Runtime();
-    if (index < 0) {
-      return runtime.memory.subarray(0, 0x4000);
+    let length = 0x2000;
+    let offset = 0;
+    if (index >= -4 && index <= -1) {
+      length = 0x4000;
+      offset = ZXNEXT_WASM_OFFS_NEXT_ROM + 0x4000 * (-index - 1);
+    } else if (index === -5) {
+      length = 0x4000;
+      offset = ZXNEXT_WASM_OFFS_ALT_ROM_0;
+    } else if (index === -6) {
+      length = 0x4000;
+      offset = ZXNEXT_WASM_OFFS_ALT_ROM_1;
+    } else if (index === -7) {
+      offset = ZXNEXT_WASM_OFFS_DIVMMC_ROM;
+    } else if (index >= -23 && index <= -8) {
+      offset = ZXNEXT_WASM_OFFS_DIVMMC_RAM + 0x2000 * (-index - 8);
+    } else if (index >= 0 && index < 224) {
+      offset = ZXNEXT_WASM_OFFS_NEXT_RAM + 0x2000 * index;
     }
-    const offset = 0x040000 + ((index & 0xdf) << 14);
-    return runtime.memory.subarray(offset, offset + 0x4000);
+    return runtime.memory.subarray(offset, offset + length);
   }
 
   override getCurrentPartitions(): number[] {
-    return ZXNEXT_WASM_PARTITIONS.slice();
+    const nextRegs = this.requireWasmV2Runtime().nextRegs;
+    return Array.from({ length: 8 }, (_, pageIndex) => {
+      const bank8 = nextRegs[0x50 + pageIndex];
+      return bank8 < 224 ? bank8 >> 1 : 0xff;
+    });
   }
 
   override getSelectedRomPage(): number {
-    return 0;
+    const nextReg8e = this.requireWasmV2Runtime().nextRegs[0x8e];
+    return (nextReg8e & 0x04) !== 0 ? 0 : (nextReg8e & 0x03);
   }
 
   override getSelectedRamBank(): number {
-    return 0;
+    const nextReg8e = this.requireWasmV2Runtime().nextRegs[0x8e];
+    return ((nextReg8e & 0x80) >> 7) | ((nextReg8e >> 4) & 0x07);
   }
 
   override getCurrentPartitionLabels(): string[] {
-    return ZXNEXT_WASM_PARTITION_LABELS.slice();
+    return Array.from({ length: 8 }, (_, pageIndex) => this.getWasmV2PartitionLabelForPage(pageIndex));
   }
 
   override getPartition(address: number): number | undefined {
-    return ZXNEXT_WASM_PARTITIONS[(address >>> 13) & 0x07];
+    return this.parseWasmV2PartitionLabel(this.getWasmV2PartitionLabelForPage((address >>> 13) & 0x07));
   }
 
   override getRomFlags(): boolean[] {
@@ -762,8 +790,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private installMemoryMappingScaffold(): void {
     this.memoryDevice.getMemoryMappings = () => ({
       allRamBanks: undefined,
-      selectedRom: 0,
-      selectedBank: 0,
+      selectedRom: this.getSelectedRomPage(),
+      selectedBank: this.getSelectedRamBank(),
       port7ffd: 0,
       port1ffd: 0,
       portDffd: 0,
@@ -772,13 +800,62 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       portTimex: 0,
       divMmc: 0,
       divMmcIn: false,
-      pageInfo: ZXNEXT_WASM_PARTITIONS.map((partition, pageIndex) => ({
+      pageInfo: this.getCurrentPartitionLabels().map((label, pageIndex) => ({
         readOffset: pageIndex * 0x2000,
-        writeOffset: partition < 0 ? null : pageIndex * 0x2000,
-        bank16k: partition < 0 ? 0xff : partition,
-        bank8k: partition < 0 ? 0xff : partition
+        writeOffset: label.startsWith("R") || label.startsWith("A") || label === "DM" || label === "UN"
+          ? null
+          : pageIndex * 0x2000,
+        bank16k: this.parseWasmV2PartitionLabel(label) ?? 0xff,
+        bank8k: this.requireWasmV2Runtime().nextRegs[0x50 + pageIndex]
       }))
     });
+  }
+
+  private getWasmV2PartitionLabelForPage(pageIndex: number): string {
+    const runtime = this.requireWasmV2Runtime();
+    const bank8 = runtime.nextRegs[0x50 + (pageIndex & 0x07)];
+    if (bank8 < 224) {
+      return (bank8 >> 1).toString(16).padStart(2, "0").toUpperCase();
+    }
+
+    const nextReg8c = runtime.nextRegs[0x8c];
+    if ((nextReg8c & 0x80) !== 0 && (nextReg8c & 0x40) === 0) {
+      if ((nextReg8c & 0x20) !== 0) return "A1";
+      if ((nextReg8c & 0x10) !== 0) return "A0";
+      return this.getSelectedRomPage() & 0x01 ? "A1" : "A0";
+    }
+
+    return `R${this.getSelectedRomPage()}`;
+  }
+
+  private parseWasmV2PartitionLabel(label: string): number | undefined {
+    const normalized = label.toUpperCase();
+    switch (normalized) {
+      case "UN":
+        return undefined;
+      case "R0":
+        return -1;
+      case "R1":
+        return -2;
+      case "R2":
+        return -3;
+      case "R3":
+        return -4;
+      case "A0":
+        return -5;
+      case "A1":
+        return -6;
+      case "DM":
+        return -7;
+      default:
+        if (normalized.startsWith("D")) {
+          return -8 - parseInt(normalized.substring(1), 16);
+        }
+        if (normalized.match(/^[0-9A-F]{1,2}$/)) {
+          return parseInt(normalized, 16);
+        }
+        return undefined;
+    }
   }
 
   private createNextRegDescriptors(): NextRegDescriptor[] {

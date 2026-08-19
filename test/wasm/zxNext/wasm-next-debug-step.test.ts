@@ -147,7 +147,15 @@ function writeLoadedByte(machine: BreakpointMachine, address: number, value: num
     }
     return;
   }
-  machine.doWriteMemory(address, value);
+  const partition = machine.getPartition(address);
+  if (partition != null) {
+    const pageIndex = address >>> 13;
+    const memoryPartition = partition < 0 ? partition : partition * 2 + (pageIndex & 0x01);
+    const partitionBytes = machine.getMemoryPartition(memoryPartition);
+    partitionBytes[address & (partition < 0 ? 0x3fff : 0x1fff)] = value;
+  } else {
+    machine.doWriteMemory(address, value);
+  }
 }
 
 function executeUntilBreakpoint(

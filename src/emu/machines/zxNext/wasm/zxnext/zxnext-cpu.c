@@ -7,17 +7,13 @@ static void zxnextCpuReset(void) {
 }
 
 static uint8_t zxnextCpuReadOpcode(void) {
-  uint16_t address = cpuPc;
-  uint8_t value = zxnextMemory[address];
-  lastMemoryAddress = address;
-  lastMemoryValue = value;
-  lastMemoryIsWrite = 0;
+  uint8_t value = (uint8_t)zxnextMemoryReadMapped(cpuPc);
   cpuPc = (uint16_t)(cpuPc + 1);
   return value;
 }
 
 static uint8_t zxnextCpuFetchByte(void) {
-  uint8_t value = zxnextMemory[cpuPc];
+  uint8_t value = (uint8_t)zxnextMemoryPeekMapped(cpuPc);
   cpuPc = (uint16_t)(cpuPc + 1);
   return value;
 }
@@ -29,18 +25,11 @@ static uint16_t zxnextCpuFetchWord(void) {
 }
 
 static uint8_t zxnextCpuReadMemory(uint16_t address) {
-  uint8_t value = zxnextMemory[address];
-  lastMemoryAddress = address;
-  lastMemoryValue = value;
-  lastMemoryIsWrite = 0;
-  return value;
+  return (uint8_t)zxnextMemoryReadMapped(address);
 }
 
 static void zxnextCpuWriteMemory(uint16_t address, uint8_t value) {
-  zxnextMemory[address] = value;
-  lastMemoryAddress = address;
-  lastMemoryValue = value;
-  lastMemoryIsWrite = 1;
+  zxnextMemoryWriteMapped(address, value);
 }
 
 static void zxnextCpuStepTacts(uint32_t instructionTacts) {
