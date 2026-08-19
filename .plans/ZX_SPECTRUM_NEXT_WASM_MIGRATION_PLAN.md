@@ -318,7 +318,7 @@ Completion notes:
 
 ### Step 4 - Oracle Harness After IDE Scaffold
 
-Status: Not started
+Status: Done
 
 Create a test helper that can run the TypeScript Next machine as the oracle and
 the scaffolded WASM machine behind one comparison API. From this step forward,
@@ -363,6 +363,19 @@ Deviation guardrail:
   TypeScript-vs-WASM oracle assertion for that surface.
 - Validation: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-scaffold-diagnostics.test.ts`,
   `npm run build:check`, and `git diff --check`.
+
+Completion notes:
+
+- Added shared Step 4 oracle snapshot types for CPU/registers, PC/SP,
+  interrupt state, tacts/frame counters, mapped memory reads, port side
+  effects, NextReg values, debug stop reasons, and disassembly reads.
+- Added helper APIs that create a TypeScript Next oracle and explicit WASM
+  scaffold machine, capture the TypeScript oracle snapshot first, then capture
+  the WASM snapshot through the same comparison API.
+- Added scaffold diagnostic guards so every current scaffold surface must keep
+  TypeScript oracle coverage until a later parity assertion deliberately
+  replaces that diagnostic.
+- Validation passed with the commands listed above.
 
 ### Step 5 - CPU Single-Step Parity
 
