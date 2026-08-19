@@ -26,6 +26,7 @@ export type ZxNextOracleCpuSnapshot = {
   iff2: boolean;
   interruptMode: number;
   halted: boolean;
+  prefix: number;
   tacts: number;
   frameTacts: number;
   currentFrameTact: number;

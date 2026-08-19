@@ -155,6 +155,7 @@ function captureMachineSnapshot(
       iff2: cpu.iff2,
       interruptMode: cpu.interruptMode,
       halted: cpu.halted,
+      prefix: machine.prefix,
       tacts: cpu.tacts,
       frameTacts: machine.frameTacts,
       currentFrameTact: machine.currentFrameTact,

@@ -55,6 +55,7 @@ static uint8_t micBit;
 
 #include "zxnext-frame.c"
 #include "zxnext-debug.c"
+#include "zxnext-cpu.c"
 
 uint32_t zxnextMemoryPtr(void) { return (uint32_t)(uintptr_t)zxnextMemory; }
 uint32_t zxnextPixelBufferPtr(void) { return (uint32_t)(uintptr_t)zxnextPixelBuffer; }
@@ -92,6 +93,7 @@ void zxnextReset(void) {
   cpuPrefix = 0;
   zxnextFrameResetScaffold();
   zxnextDebugResetScaffold();
+  zxnextCpuReset();
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryIsWrite = 0;
@@ -115,7 +117,7 @@ uint32_t zxnextExecuteFrame(void) {
 }
 
 uint32_t zxnextExecuteInstruction(void) {
-  return zxnextDebugExecuteScaffoldStep();
+  return zxnextCpuExecuteInstruction();
 }
 
 uint32_t zxnextRenderInstantScreen(void) {

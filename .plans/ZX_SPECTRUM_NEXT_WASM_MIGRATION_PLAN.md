@@ -379,7 +379,7 @@ Completion notes:
 
 ### Step 5 - CPU Single-Step Parity
 
-Status: Not started
+Status: Done
 
 Move only deterministic CPU single-step execution into WASM test scope. Compare
 each step with the TypeScript Z80N oracle before any frame loop work.
@@ -416,6 +416,17 @@ Deviation guardrail:
 - A WASM instruction may not be accepted because it matches another Spectrum
   model unless it also matches `Z80NMachineBase`.
 - Validation: `npm test -- --project jsdom test/wasm/zxNext/wasm-next-cpu.test.ts`.
+
+Completion notes:
+
+- Added a dedicated ZX Next WASM CPU slice for deterministic single-step
+  execution of the parity-covered base opcodes before frame-loop migration.
+- Added TypeScript-vs-WASM single-step tests that drive both machines through
+  debug stepping and compare PC/SP, registers/flags, WZ, prefix, HALT, IM/IFF,
+  tacts/current frame tact, sampled memory side effects, and stop reasons.
+- Extended oracle CPU snapshots with prefix coverage.
+- Validation passed with the Step 5 command plus the prior scaffold oracle
+  tests, `npm run build:check`, and `git diff --check`.
 
 ### Step 6 - Debug Breakpoint Parity
 
