@@ -150,6 +150,8 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
 
   executedInstructions++;
   cpuPrefix = 0;
+  zxnextDivMmcBeforeOpcodeFetch(cpuPc);
+  uint8_t retnSeen = 0;
   uint8_t opcode = zxnextCpuReadOpcode();
   zxnextCpuRefreshMemory();
 
@@ -215,6 +217,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
       uint8_t extendedOpcode = zxnextCpuFetchByte();
       zxnextCpuRefreshMemory();
       if (zxnextCpuIsRetnOpcode(extendedOpcode) || extendedOpcode == 0x4du) {
+        retnSeen = zxnextCpuIsRetnOpcode(extendedOpcode);
         cpuPc = zxnextCpuPopWord();
         cpuIff1 = cpuIff2;
         cpuWz = cpuPc;
@@ -231,5 +234,6 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
       break;
   }
 
+  zxnextDivMmcAfterOpcodeFetch(retnSeen, 0);
   return executedInstructions;
 }

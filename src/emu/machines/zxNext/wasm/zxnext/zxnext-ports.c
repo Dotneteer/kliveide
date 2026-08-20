@@ -2,6 +2,8 @@
 #include "zxnext-nextreg.h"
 #include "zxnext-memory.h"
 #include "zxnext-ula.h"
+#include "zxnext-divmmc.h"
+#include "zxnext-sd.h"
 
 static uint8_t zxnextPortsGroupEnabled(uint32_t regIndex, uint32_t bit) {
   uint32_t reg = 0x82u + (regIndex & 0x03u);
@@ -25,6 +27,10 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     lastPortValue = zxnextNextRegGetIndex();
   } else if ((normalized & 0xffffu) == 0x253bu) {
     lastPortValue = zxnextNextRegGetValue();
+  } else if ((normalized & 0x00ffu) == 0x00e3u) {
+    lastPortValue = zxnextPortsGroupEnabled(1, 4) ? zxnextDivMmcGetPortE3() : 0xffu;
+  } else if ((normalized & 0x00ffu) == 0x00ebu) {
+    lastPortValue = zxnextPortsGroupEnabled(1, 3) ? zxnextSdReadMmcData() : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ffu) {
     lastPortValue = zxnextPortsGroupEnabled(0, 0) ? portTimexValue : 0xffu;
   } else if ((normalized & 0x0001u) == 0) {
@@ -52,6 +58,12 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     if (zxnextPortsGroupEnabled(0, 2)) zxnextMemorySetPortDffd(byteValue);
   } else if ((normalized & 0xf003u) == 0x1001u) {
     if (zxnextPortsGroupEnabled(0, 3)) zxnextMemorySetPort1ffd(byteValue);
+  } else if ((normalized & 0x00ffu) == 0x00e3u) {
+    if (zxnextPortsGroupEnabled(1, 4)) zxnextDivMmcSetPortE3(byteValue);
+  } else if ((normalized & 0x00ffu) == 0x00e7u) {
+    if (zxnextPortsGroupEnabled(1, 3)) zxnextSdSpiCsWrite(byteValue);
+  } else if ((normalized & 0x00ffu) == 0x00ebu) {
+    if (zxnextPortsGroupEnabled(1, 3)) zxnextSdWriteMmcData(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00ffu) {
     if (zxnextPortsGroupEnabled(0, 0)) portTimexValue = byteValue;
   } else if ((normalized & 0x0001u) == 0) {

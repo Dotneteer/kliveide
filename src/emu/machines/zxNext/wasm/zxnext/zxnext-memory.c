@@ -1,4 +1,5 @@
 #include "zxnext-memory.h"
+#include "zxnext-divmmc.h"
 
 #define ZXNEXT_OFFS_NEXT_ROM 0x000000u
 #define ZXNEXT_OFFS_ALT_ROM_0 0x018000u
@@ -128,6 +129,23 @@ static void zxnextMemoryUpdateMapping(void) {
 
   for (uint32_t page = 0; page < 8; page++) {
     zxnextMemorySetRamPageByMmu(page);
+  }
+
+  if (zxnextDivMmcIsMappingActive()) {
+    zxnextMemorySetPageInfo(
+      0,
+      zxnextDivMmcGetReadOffset(0),
+      zxnextDivMmcGetWriteOffset(0),
+      0xffu,
+      0xffu
+    );
+    zxnextMemorySetPageInfo(
+      1,
+      zxnextDivMmcGetReadOffset(1),
+      zxnextDivMmcGetWriteOffset(1),
+      0xffu,
+      0xffu
+    );
   }
 }
 

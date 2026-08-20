@@ -57,6 +57,8 @@ static uint8_t micBit;
 #include "zxnext-frame.c"
 #include "zxnext-debug.c"
 #include "zxnext-memory.c"
+#include "zxnext-divmmc.c"
+#include "zxnext-sd.c"
 #include "zxnext-diagnostics.c"
 #include "zxnext-nmi.c"
 #include "zxnext-interrupts.c"
@@ -76,6 +78,8 @@ static void clearScaffoldBuffers(void) {
   for (uint32_t i = 0; i < ZXNEXT_MEMORY_SIZE; i++) zxnextMemory[i] = 0;
   for (uint32_t i = 0; i < ZXNEXT_PIXEL_COUNT; i++) zxnextPixelBuffer[i] = 0x00000000u;
   zxnextKeyboardReset();
+  zxnextDivMmcReset();
+  zxnextSdReset();
   zxnextNextRegHardReset();
 }
 
@@ -105,6 +109,8 @@ void zxnextReset(void) {
   zxnextNmiReset();
   zxnextInterruptsReset();
   zxnextTapeReset();
+  zxnextDivMmcReset();
+  zxnextSdReset();
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryIsWrite = 0;
@@ -257,6 +263,37 @@ void zxnextSetNextRegisterValue(uint32_t value) { zxnextNextRegSetValue(value); 
 uint32_t zxnextGetNextRegisterValue(void) { return zxnextNextRegGetValue(); }
 uint32_t zxnextGetNextRegisterDirect(uint32_t reg) { return zxnextNextRegGetDirect(reg); }
 void zxnextSetNextRegisterDirect(uint32_t reg, uint32_t value) { zxnextNextRegSetDirect(reg, value); }
+
+void zxnextDivMmcBeforeFetch(uint32_t pc) { zxnextDivMmcBeforeOpcodeFetch(pc); }
+void zxnextDivMmcAfterFetch(uint32_t retnSeen, uint32_t suppressRetn) { zxnextDivMmcAfterOpcodeFetch(retnSeen, suppressRetn); }
+void zxnextDivMmcArmNmi(void) { zxnextDivMmcArmNmiButton(); }
+uint32_t zxnextGetDivMmcPortE3Value(void) { return zxnextDivMmcGetPortE3(); }
+uint32_t zxnextGetDivMmcEnabled(void) { return zxnextDivMmcGetEnabled(); }
+uint32_t zxnextGetDivMmcEnableAutomap(void) { return zxnextDivMmcGetEnableAutomap(); }
+uint32_t zxnextGetDivMmcConmem(void) { return zxnextDivMmcGetConmem(); }
+uint32_t zxnextGetDivMmcMapram(void) { return zxnextDivMmcGetMapram(); }
+uint32_t zxnextGetDivMmcBank(void) { return zxnextDivMmcGetBank(); }
+uint32_t zxnextGetDivMmcAutoMapActive(void) { return zxnextDivMmcGetAutoMapActive(); }
+uint32_t zxnextGetDivMmcRequestAutomapOn(void) { return zxnextDivMmcGetRequestAutomapOn(); }
+uint32_t zxnextGetDivMmcRequestAutomapOff(void) { return zxnextDivMmcGetRequestAutomapOff(); }
+uint32_t zxnextGetDivMmcNmiHold(void) { return zxnextDivMmcGetNmiHold(); }
+
+void zxnextSetSdCardInfo(uint32_t card, uint32_t totalSectors) { zxnextSdSetCardInfo(card, totalSectors); }
+uint32_t zxnextGetSdSelectedCard(void) { return zxnextSdGetSelectedCard(); }
+uint32_t zxnextGetSdPortE7Value(void) { return zxnextSdGetPortE7Value(); }
+uint32_t zxnextGetSdState(uint32_t card) { return zxnextSdGetState(card); }
+uint32_t zxnextGetSdCommandIndex(uint32_t card) { return zxnextSdGetCommandIndex(card); }
+uint32_t zxnextGetSdLastCommand(uint32_t card) { return zxnextSdGetLastCommand(card); }
+uint32_t zxnextGetSdResponseReady(uint32_t card) { return zxnextSdGetResponseReady(card); }
+uint32_t zxnextGetSdResponseIndex(uint32_t card) { return zxnextSdGetResponseIndex(card); }
+uint32_t zxnextGetSdHostCommand(void) { return zxnextSdGetHostCommand(); }
+uint32_t zxnextGetSdHostSector(void) { return zxnextSdGetHostSector(); }
+uint32_t zxnextGetSdHostCard(void) { return zxnextSdGetHostCard(); }
+uint32_t zxnextGetSdWriteBufferPtr(void) { return zxnextSdWriteBufferPtr(); }
+uint32_t zxnextGetSdWriteBufferLength(void) { return zxnextSdGetWriteBufferLength(); }
+void zxnextClearSdHostCommand(void) { zxnextSdClearHostCommand(); }
+void zxnextSetSdReadResponse(uint32_t card, uint32_t dataPtr, uint32_t length) { zxnextSdSetReadResponse(card, dataPtr, length); }
+void zxnextSetSdWriteResponse(uint32_t card, uint32_t success) { zxnextSdSetWriteResponse(card, success); }
 
 uint32_t zxnextGetPortFeValue(void) { return portFeValue; }
 uint32_t zxnextGetBorderColor(void) { return borderColor; }

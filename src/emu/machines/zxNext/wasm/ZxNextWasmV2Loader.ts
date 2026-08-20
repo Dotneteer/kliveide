@@ -124,6 +124,35 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextAdvanceUlaFrameState: ZxNextWasmV2ExportFunction;
   zxnextGetUlaScanlineForTact: ZxNextWasmV2ExportFunction;
   zxnextGetUlaColumnForTact: ZxNextWasmV2ExportFunction;
+  zxnextDivMmcBeforeFetch: ZxNextWasmV2ExportFunction;
+  zxnextDivMmcAfterFetch: ZxNextWasmV2ExportFunction;
+  zxnextDivMmcArmNmi: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcPortE3Value: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcEnableAutomap: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcConmem: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcMapram: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcBank: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcAutoMapActive: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcRequestAutomapOn: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcRequestAutomapOff: ZxNextWasmV2ExportFunction;
+  zxnextGetDivMmcNmiHold: ZxNextWasmV2ExportFunction;
+  zxnextSetSdCardInfo: ZxNextWasmV2ExportFunction;
+  zxnextGetSdSelectedCard: ZxNextWasmV2ExportFunction;
+  zxnextGetSdPortE7Value: ZxNextWasmV2ExportFunction;
+  zxnextGetSdState: ZxNextWasmV2ExportFunction;
+  zxnextGetSdCommandIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSdLastCommand: ZxNextWasmV2ExportFunction;
+  zxnextGetSdResponseReady: ZxNextWasmV2ExportFunction;
+  zxnextGetSdResponseIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSdHostCommand: ZxNextWasmV2ExportFunction;
+  zxnextGetSdHostSector: ZxNextWasmV2ExportFunction;
+  zxnextGetSdHostCard: ZxNextWasmV2ExportFunction;
+  zxnextGetSdWriteBufferPtr: ZxNextWasmV2ExportFunction;
+  zxnextGetSdWriteBufferLength: ZxNextWasmV2ExportFunction;
+  zxnextClearSdHostCommand: ZxNextWasmV2ExportFunction;
+  zxnextSetSdReadResponse: ZxNextWasmV2ExportFunction;
+  zxnextSetSdWriteResponse: ZxNextWasmV2ExportFunction;
 };
 
 export type ZxNextWasmV2Instance = {
@@ -268,7 +297,36 @@ const requiredV2Exports = [
   "zxnextGetUlaFlashFlag",
   "zxnextAdvanceUlaFrameState",
   "zxnextGetUlaScanlineForTact",
-  "zxnextGetUlaColumnForTact"
+  "zxnextGetUlaColumnForTact",
+  "zxnextDivMmcBeforeFetch",
+  "zxnextDivMmcAfterFetch",
+  "zxnextDivMmcArmNmi",
+  "zxnextGetDivMmcPortE3Value",
+  "zxnextGetDivMmcEnabled",
+  "zxnextGetDivMmcEnableAutomap",
+  "zxnextGetDivMmcConmem",
+  "zxnextGetDivMmcMapram",
+  "zxnextGetDivMmcBank",
+  "zxnextGetDivMmcAutoMapActive",
+  "zxnextGetDivMmcRequestAutomapOn",
+  "zxnextGetDivMmcRequestAutomapOff",
+  "zxnextGetDivMmcNmiHold",
+  "zxnextSetSdCardInfo",
+  "zxnextGetSdSelectedCard",
+  "zxnextGetSdPortE7Value",
+  "zxnextGetSdState",
+  "zxnextGetSdCommandIndex",
+  "zxnextGetSdLastCommand",
+  "zxnextGetSdResponseReady",
+  "zxnextGetSdResponseIndex",
+  "zxnextGetSdHostCommand",
+  "zxnextGetSdHostSector",
+  "zxnextGetSdHostCard",
+  "zxnextGetSdWriteBufferPtr",
+  "zxnextGetSdWriteBufferLength",
+  "zxnextClearSdHostCommand",
+  "zxnextSetSdReadResponse",
+  "zxnextSetSdWriteResponse"
 ] as const;
 
 export function resetZxNextWasmV2ModuleCache(): void {

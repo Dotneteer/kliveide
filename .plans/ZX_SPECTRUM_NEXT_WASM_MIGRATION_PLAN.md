@@ -874,7 +874,7 @@ Completed notes:
 
 ### Step 14 - DivMMC And SD SPI
 
-Status: Not started
+Status: Completed
 
 Migrate DivMMC automap and SD SPI state while keeping backing media and file I/O
 in TypeScript.
@@ -915,6 +915,19 @@ Deviation guardrail:
   response readiness against TypeScript.
 - SD image file I/O remains TypeScript-owned; WASM may expose command buffers
   but must not own host files.
+
+Completed notes:
+
+- Added WASM DivMMC control/automap state with port `0xE3`, NextReg `0x09`,
+  `0x0A`, `0x83`, and `0xB8`-`0xBB` decoding, before/after opcode-fetch
+  entry points, NMI hold state, and lower-16K memory-map overrides.
+- Added WASM SD SPI state for card select, command parsing, immediate SD
+  responses, read/write host command buffers, response readiness, and card 0/1
+  handoff metadata.
+- Kept SD media/file I/O in TypeScript via `ZxNextWasmV2Machine` frame-command
+  bridging and response injection into WASM-owned SPI state.
+- Added oracle tests for DivMMC control and automap transitions, SD SPI command
+  state, and storage command handoff/response readiness.
 
 ### Step 15 - NextZXOS Start Menu Milestone
 

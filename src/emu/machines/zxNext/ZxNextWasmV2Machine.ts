@@ -9,6 +9,7 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { TapeMode } from "@emu/abstractions/TapeMode";
+import { createMainApi } from "@common/messaging/MainApi";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
 import { ZxNextMachine } from "./ZxNextMachine";
 
@@ -27,6 +28,12 @@ export type ZxNextWasmV2ScaffoldStopReason =
   | "wasmFrameComplete";
 
 export const ZXNEXT_WASM_V2_SCAFFOLD_SURFACES: ZxNextWasmV2ScaffoldSurface[] = [];
+
+const ZXNEXT_SD_HOST_COMMAND_READ = 1;
+const ZXNEXT_SD_HOST_COMMAND_WRITE = 2;
+const ZXNEXT_SD_HOST_COMMAND_READ_CARD1 = 3;
+const ZXNEXT_SD_HOST_COMMAND_WRITE_CARD1 = 4;
+const ZXNEXT_SD_BYTES_PER_SECTOR = 512;
 
 export type ZxNextWasmV2Diagnostics = {
   backend: "wasm";
@@ -459,6 +466,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     runtime.exports.zxnextExecuteFrame();
     this.wasmV2NormalFrames++;
     this.syncCpuFromWasmV2(runtime);
+    this.syncWasmV2StorageFrameCommand(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
     this.wasmV2LastScaffoldStopReason = "wasmFrameComplete";
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
@@ -478,6 +486,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.wasmV2DebugSteps++;
     this.syncCpuFromWasmV2(runtime);
     this.importWasmV2BusAccess(runtime);
+    this.syncWasmV2StorageFrameCommand(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
   }
 
@@ -517,6 +526,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       this.wasmV2DebugSteps++;
       this.syncCpuFromWasmV2(runtime);
       this.importWasmV2BusAccess(runtime);
+      this.syncWasmV2StorageFrameCommand(runtime);
       this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
       this.wasmV2LastScaffoldStopReason = "scaffoldDebugStep";
 
@@ -693,6 +703,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     const runtime = this.requireWasmV2Runtime();
     const value = runtime.exports.zxnextReadPort(address & 0xffff);
     this.importWasmV2BusAccess(runtime);
+    this.syncWasmV2StorageFrameCommand(runtime);
     return value;
   }
 
@@ -700,6 +711,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     const runtime = this.requireWasmV2Runtime();
     runtime.exports.zxnextWritePort(address & 0xffff, value & 0xff);
     this.importWasmV2BusAccess(runtime);
+    this.syncWasmV2StorageFrameCommand(runtime);
   }
 
   override tbblueOut(address: number, value: number): void {
@@ -719,6 +731,54 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       this.wasmV2Runtime.exports.zxnextSetTacts(value >>> 0);
       this.syncCpuFromWasmV2(this.wasmV2Runtime);
     }
+  }
+
+  override async processFrameCommand(messenger: MessengerBase): Promise<void> {
+    const frameCommand = this.getFrameCommand();
+    if (frameCommand == null) return;
+
+    switch (frameCommand.command) {
+      case "sd-read":
+      case "sd-read-card1":
+        await this.processWasmV2SdReadFrameCommand(messenger, frameCommand);
+        return;
+      case "sd-write":
+      case "sd-write-card1":
+        await this.processWasmV2SdWriteFrameCommand(messenger, frameCommand);
+        return;
+      default:
+        await super.processFrameCommand(messenger);
+    }
+  }
+
+  private async processWasmV2SdReadFrameCommand(
+    messenger: MessengerBase,
+    frameCommand: { command: "sd-read" | "sd-read-card1"; sector: number }
+  ): Promise<void> {
+    const runtime = this.requireWasmV2Runtime();
+    const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
+    const data = sectorData instanceof Uint8Array ? sectorData : new Uint8Array(sectorData);
+    const ptr = runtime.exports.zxnextGetSdWriteBufferPtr();
+    new Uint8Array(runtime.memoryBuffer).set(data.slice(0, ZXNEXT_SD_BYTES_PER_SECTOR), ptr);
+    runtime.exports.zxnextSetSdReadResponse(
+      frameCommand.command === "sd-read-card1" ? 1 : 0,
+      ptr,
+      Math.min(data.length, ZXNEXT_SD_BYTES_PER_SECTOR)
+    );
+    runtime.exports.zxnextClearSdHostCommand();
+  }
+
+  private async processWasmV2SdWriteFrameCommand(
+    messenger: MessengerBase,
+    frameCommand: { command: "sd-write" | "sd-write-card1"; sector: number; data: Uint8Array }
+  ): Promise<void> {
+    const runtime = this.requireWasmV2Runtime();
+    const result = await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
+    runtime.exports.zxnextSetSdWriteResponse(
+      frameCommand.command === "sd-write-card1" ? 1 : 0,
+      result?.persistenceConfirmed ? 1 : 0
+    );
+    runtime.exports.zxnextClearSdHostCommand();
   }
 
   override get screenWidthInPixels(): number {
@@ -828,6 +888,47 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.wasmV2NormalFrames = 0;
     this.wasmV2DebugSteps = 0;
     this.wasmV2LastScaffoldStopReason = "scaffoldReset";
+  }
+
+  private syncWasmV2StorageFrameCommand(runtime: ZxNextWasmV2Runtime): void {
+    if (this.getFrameCommand() != null) return;
+
+    const hostCommand = runtime.exports.zxnextGetSdHostCommand();
+    if (hostCommand === 0) return;
+
+    const sector = runtime.exports.zxnextGetSdHostSector();
+    switch (hostCommand) {
+      case ZXNEXT_SD_HOST_COMMAND_READ:
+        this.setFrameCommand({ command: "sd-read", sector });
+        break;
+      case ZXNEXT_SD_HOST_COMMAND_READ_CARD1:
+        this.setFrameCommand({ command: "sd-read-card1", sector });
+        break;
+      case ZXNEXT_SD_HOST_COMMAND_WRITE: {
+        const ptr = runtime.exports.zxnextGetSdWriteBufferPtr();
+        const length = runtime.exports.zxnextGetSdWriteBufferLength();
+        const memory = new Uint8Array(runtime.memoryBuffer);
+        this.setFrameCommand({
+          command: "sd-write",
+          sector,
+          data: memory.slice(ptr, ptr + length)
+        });
+        break;
+      }
+      case ZXNEXT_SD_HOST_COMMAND_WRITE_CARD1: {
+        const ptr = runtime.exports.zxnextGetSdWriteBufferPtr();
+        const length = runtime.exports.zxnextGetSdWriteBufferLength();
+        const memory = new Uint8Array(runtime.memoryBuffer);
+        this.setFrameCommand({
+          command: "sd-write-card1",
+          sector,
+          data: memory.slice(ptr, ptr + length)
+        });
+        break;
+      }
+      default:
+        break;
+    }
   }
 
   private installNextRegScaffold(): void {

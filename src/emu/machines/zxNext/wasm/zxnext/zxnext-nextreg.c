@@ -1,6 +1,7 @@
 #include "zxnext-nextreg.h"
 #include "zxnext-memory.h"
 #include "zxnext-interrupts.h"
+#include "zxnext-divmmc.h"
 
 static void zxnextNextRegHardReset(void) {
   for (uint32_t i = 0; i < ZXNEXT_NEXT_REG_COUNT; i++) zxnextNextRegs[i] = 0;
@@ -8,6 +9,7 @@ static void zxnextNextRegHardReset(void) {
   zxnextNextRegs[0x01] = 0x32;
   zxnextNextRegs[0x08] = 0x1a;
   zxnextNextRegs[0x0e] = 0x00;
+  zxnextNextRegs[0x0a] = 0x01;
   zxnextNextRegs[0x12] = 0x08;
   zxnextNextRegs[0x13] = 0x0b;
   zxnextNextRegs[0x14] = 0xe3;
@@ -35,6 +37,17 @@ static void zxnextNextRegHardReset(void) {
   zxnextNextRegs[0x84] = 0xff;
   zxnextNextRegs[0x85] = 0x0f;
   zxnextNextRegs[0x8c] = 0x00;
+  zxnextNextRegs[0xb8] = 0x83;
+  zxnextNextRegs[0xb9] = 0x01;
+  zxnextNextRegs[0xba] = 0x00;
+  zxnextNextRegs[0xbb] = 0xcd;
+  zxnextDivMmcSetNextReg09(zxnextNextRegs[0x09]);
+  zxnextDivMmcSetNextReg0A(zxnextNextRegs[0x0a]);
+  zxnextDivMmcSetNextReg83(zxnextNextRegs[0x83]);
+  zxnextDivMmcSetNextRegB8(zxnextNextRegs[0xb8]);
+  zxnextDivMmcSetNextRegB9(zxnextNextRegs[0xb9]);
+  zxnextDivMmcSetNextRegBA(zxnextNextRegs[0xba]);
+  zxnextDivMmcSetNextRegBB(zxnextNextRegs[0xbb]);
   zxnextMemoryResetMapping();
 }
 
@@ -55,15 +68,38 @@ static uint32_t zxnextNextRegGetValue(void) {
 }
 
 static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
+  uint32_t normalized = reg & 0xffu;
   if (zxnextInterruptsHandlesNextRegister(reg)) {
     zxnextInterruptsSetNextRegister(reg, value);
     zxnextNextRegs[reg & 0xffu] = (uint8_t)zxnextInterruptsGetNextRegister(reg);
     return;
+  }
+  if (normalized == 0x09u) {
+    zxnextDivMmcSetNextReg09(value);
+  } else if (normalized == 0x0au) {
+    zxnextDivMmcSetNextReg0A(value);
+  } else if (normalized == 0x83u) {
+    zxnextDivMmcSetNextReg83(value);
+  } else if (normalized == 0xb8u) {
+    zxnextDivMmcSetNextRegB8(value);
+  } else if (normalized == 0xb9u) {
+    zxnextDivMmcSetNextRegB9(value);
+  } else if (normalized == 0xbau) {
+    zxnextDivMmcSetNextRegBA(value);
+  } else if (normalized == 0xbbu) {
+    zxnextDivMmcSetNextRegBB(value);
   }
   zxnextMemorySetNextRegister(reg, value);
 }
 
 static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
   if (zxnextInterruptsHandlesNextRegister(reg)) return zxnextInterruptsGetNextRegister(reg);
+  switch (reg & 0xffu) {
+    case 0xb8u: return zxnextDivMmcGetNextRegB8();
+    case 0xb9u: return zxnextDivMmcGetNextRegB9();
+    case 0xbau: return zxnextDivMmcGetNextRegBA();
+    case 0xbbu: return zxnextDivMmcGetNextRegBB();
+    default: break;
+  }
   return zxnextNextRegs[reg & 0xffu];
 }
