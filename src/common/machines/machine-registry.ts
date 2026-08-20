@@ -27,7 +27,8 @@ import {
   MF_M6510,
   CT_DISASSEMBLER,
   MF_VIC,
-  MF_ALLOW_SCAN_LINES
+  MF_ALLOW_SCAN_LINES,
+  MC_ZXNEXT_IMPLEMENTATION
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { ZxNextChars, ZxSpectrumChars } from "./char-codes";
@@ -166,6 +167,22 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ALLOW_CLOCK_MULTIPLIER]: false,
       [MF_ALLOW_SCAN_LINES]: false
     },
+    models: [
+      {
+        modelId: "standard",
+        displayName: "ZX Spectrum Next",
+        config: {
+          [MC_ZXNEXT_IMPLEMENTATION]: "typescript"
+        }
+      },
+      {
+        modelId: "preview",
+        displayName: "ZX Spectrum Next Preview",
+        config: {
+          [MC_ZXNEXT_IMPLEMENTATION]: "wasm"
+        }
+      }
+    ],
     mediaIds: [MEDIA_TAPE],
     toolInfo: {
       [CT_DISASSEMBLER]: (

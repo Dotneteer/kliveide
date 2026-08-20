@@ -43,7 +43,11 @@ describe("ZX Spectrum Next implementation selection", () => {
     const models = machine?.models ?? [];
 
     expect(machine?.displayName).toBe("ZX Spectrum Next");
-    expect(models.map(model => model.displayName)).not.toContain("ZX Spectrum Next WASM");
+    expect(models.map(model => model.displayName)).toEqual([
+      "ZX Spectrum Next",
+      "ZX Spectrum Next Preview"
+    ]);
     expect(models.map(model => model.displayName)).not.toContain("ZX Spectrum Next TypeScript");
+    expect(models.map(model => model.displayName)).not.toContain("ZX Spectrum Next WASM");
   });
 });

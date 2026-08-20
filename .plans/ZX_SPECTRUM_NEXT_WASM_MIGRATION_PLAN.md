@@ -1236,7 +1236,29 @@ Deviation guardrail:
 
 ### Step 19 - Performance And Boundary Audit
 
-Status: Not started
+Status: Done
+
+Completion note (2026-08-20): added `scripts/benchmark-zxnext-wasm.cjs`
+and `npm run benchmark:zxnext-wasm`. The benchmark reports artifact size,
+frame timing, frames/tacts advanced, audio samples, and frame stop reason
+distribution; successful frame runs fail if any safety-guard stop reason is
+reported. Added `test/wasm/zxNext/wasm-next-performance-boundary.test.ts` to
+audit TypeScript/WASM frame timing shape, exported memory view bounds and stable
+backing buffers, package artifact size, and benchmark metric summaries.
+
+Measured smoke benchmark (2026-08-20):
+`npm run benchmark:zxnext-wasm -- --frames 2 --runs 1 --warmup 1`
+reported a 55,362-byte artifact, 0.14 ms/frame median, 7,037.07 fps median,
+2 frames advanced, 141,816 tacts advanced, and stop reasons
+`{"wasmFrameComplete":2}`.
+
+Validation (2026-08-20): passed
+`npm test -- --project jsdom test/wasm/zxNext/wasm-next-performance-boundary.test.ts`,
+`npm run benchmark:zxnext-wasm -- --frames 2 --runs 1 --warmup 1`,
+`npm run check:zxnext-wasm-size`,
+`npm run build:check`,
+`npm test -- --project jsdom test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-frame-runner.test.ts test/wasm/zxNext/wasm-next-loader.test.ts`,
+and full `npm run test`.
 
 Benchmark only after correctness milestones pass. Compare TypeScript and WASM
 frame timings, exported memory bounds, typed view stability, package size, and
@@ -1273,7 +1295,23 @@ Deviation guardrail:
 
 ### Step 20 - Rollout
 
-Status: Not started
+Status: Done
+
+Completion note (2026-08-20): added a product-facing ZX Spectrum Next Preview
+model that selects the explicit WASM backend while keeping the normal ZX
+Spectrum Next model and unknown config fallback on TypeScript. Added
+`test:zxnext-wasm-acceptance` to package the rollout acceptance suite, and
+added `test/wasm/zxNext/wasm-next-rollout.test.ts` to cover default behavior,
+explicit TypeScript selection, explicit WASM selection, unknown value fallback,
+renderer registry routing, product-oriented model list, package resource copy,
+and acceptance-suite declaration.
+
+Validation (2026-08-20): passed
+`npm test -- --project jsdom test/zxnext/ZxNextMachineFactory.test.ts test/wasm/zxNext/wasm-next-rollout.test.ts`,
+`npm run test:zxnext-wasm-acceptance`,
+`npm run build:zxnext-wasm`,
+`npm run check:zxnext-wasm-size`,
+`npm run build:check`, and full `npm run test`.
 
 Add product-facing implementation selection only after the full public adapter,
 debugger, memory map, disassembly, registers, boot, screen, audio, storage, and
@@ -1325,3 +1363,240 @@ Deviation guardrail:
   debugger condition, not because a safety guard was hit.
 - TypeScript remains available as oracle and fallback until rollout.
 - Existing TypeScript Next tests still pass throughout migration.
+
+## Production Default Migration
+
+The first twenty steps make a selectable ZX Spectrum Next WASM preview available
+and keep TypeScript as the normal backend. They do **not** yet mean the TypeScript
+Next implementation can be replaced as the default. The steps below are the
+remaining work required before changing the normal `ZX Spectrum Next` model from
+TypeScript to WASM.
+
+### Step 21 - Full NextZXOS Boot And App-Level Smoke
+
+Status: Not started
+
+Extend the current start-menu milestone into a real production boot gate. The
+WASM backend must boot the shipped NextZXOS ROM through the start menu and at
+least one post-menu app-level interaction without reset loops, blank/gray
+screens, or scaffold-only stop reasons.
+
+Required coverage:
+
+- Boot from reset through the existing start-menu milestone.
+- Continue past the milestone into the normal menu/event loop for a bounded
+  number of frames.
+- Verify the rendered screen dimensions, nonblank pixels, stable frame counter,
+  and no full-pane gray fallback.
+- Verify keyboard input can move through the menu path selected by the test.
+- Verify no frame stopped because of a safety guard or scaffold fallback.
+- Run the same boot trace against TypeScript as oracle where deterministic state
+  is available.
+
+Target files:
+
+- `test/wasm/zxNext/wasm-next-full-boot.test.ts`
+- `test/wasm/zxNext/wasm-next-visual-smoke.test.ts`
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`
+
+Done when:
+
+- The WASM preview can repeatedly boot to and render the menu in automated tests.
+- The screen-buffer tests fail on the light-gray full-pane regression.
+- The plan records passing focused boot/visual commands and full `npm run test`.
+
+### Step 22 - Complete Remaining Device Semantics
+
+Status: Not started
+
+Replace compact parity slices with full behavior for devices that are still only
+partially proven. Step 18 introduced WASM-owned state and representative oracle
+tests; this step must close the behavioral gaps that matter for normal use.
+
+Required coverage:
+
+- DMA transfers cover memory-to-memory, memory-to-I/O, I/O-to-memory, direction,
+  address update modes, continuous/burst/byte modes, read masks, interrupts, and
+  timing-visible counters.
+- Floppy controller covers command/result phases, Specify, SenseDrive,
+  SenseInterrupt, Read/Write sector command flow, drive selection, motor state,
+  status registers, and TypeScript-owned media handoff.
+- CTC, UART, I2C, joystick, mouse, expansion, and multiface behavior cover the
+  full public TypeScript test set, not only representative reset/port slices.
+- Host-owned media, wall-clock policy, and UI state remain TypeScript-owned
+  unless a later step explicitly migrates them with a new boundary contract.
+
+Target files:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-dma.c`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-floppy.c`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ctc.c`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-uart.c`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-i2c.c`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-input.c`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-expansion.c`
+- `test/wasm/zxNext/wasm-next-device-completeness.test.ts`
+
+Done when:
+
+- Each listed TypeScript device test suite has a matching WASM oracle suite or
+  an explicitly documented TypeScript-owned boundary.
+- Full Next machine tests pass with `zxnextImplementation: "wasm"` for all cases
+  that are not explicitly TypeScript-owned.
+
+### Step 23 - Remove Incomplete Diagnostics
+
+Status: Not started
+
+The WASM backend cannot become the default while it still reports
+`implementationIncomplete: true`. This step turns the preview diagnostics into
+production diagnostics only after Steps 21 and 22 pass.
+
+Required coverage:
+
+- `ZxNextWasmV2Diagnostics.implementationIncomplete` becomes `false` or is
+  removed/replaced with a production-ready capability field.
+- `ZXNEXT_WASM_V2_SCAFFOLD_SURFACES` remains empty and tests fail if any migrated
+  production surface is reintroduced as scaffolded.
+- Stop reason names describe real emulator/debugger states, not scaffold states.
+- The acceptance suite verifies production diagnostics from a real factory-created
+  WASM machine.
+
+Target files:
+
+- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`
+- `test/wasm/zxNext/wasm-next-production-diagnostics.test.ts`
+- `test/wasm/zxNext/wasm-next-rollout.test.ts`
+
+Done when:
+
+- No default-candidate WASM machine reports incomplete/scaffold diagnostics.
+- `npm run test:zxnext-wasm-acceptance`, `npm run build:check`, and full
+  `npm run test` pass.
+
+### Step 24 - Run The Full Next Test Matrix Against WASM
+
+Status: Not started
+
+Create a reusable test matrix that runs the existing TypeScript ZX Spectrum Next
+behavior tests against the WASM backend where possible. This is the main proof
+that the TypeScript implementation can become fallback/oracle instead of the
+primary runtime.
+
+Required coverage:
+
+- Factory-created WASM machine runs the public Next behavior tests that currently
+  use `createTestNextMachine`.
+- Tests that cannot run against WASM must be classified as one of:
+  TypeScript-owned host boundary, UI-only behavior, unsupported legacy path, or
+  known bug with an issue/plan entry.
+- The matrix must include debugger, memory, NextReg, ports, screen, audio,
+  storage, DMA, floppy, input, expansion, NMI/interrupt, and boot tests.
+- Failures must be fixed or documented before Step 25 can start.
+
+Target files:
+
+- `test/zxnext/TestNextMachine.ts`
+- `test/wasm/zxNext/wasm-next-full-matrix.test.ts`
+- `package.json`
+
+Done when:
+
+- A command such as `npm run test:zxnext-wasm-matrix` exists and passes.
+- The plan records every excluded TypeScript test with a reason.
+- Full `npm run test` still passes.
+
+### Step 25 - Production Performance Gate
+
+Status: Not started
+
+Run a realistic performance pass after the full matrix is green. The current
+Step 19 benchmark is a smoke benchmark; this step must measure enough normal
+emulation workload to decide whether WASM is production-suitable.
+
+Required coverage:
+
+- Benchmark NextZXOS idle/menu frames, screen-heavy frames, audio-heavy frames,
+  storage command frames, and debugger stepping.
+- Report TypeScript and WASM timings side by side.
+- Report stop reason distribution for each scenario.
+- Fail if successful frames stop through a safety guard.
+- Define and record an acceptable performance threshold for default rollout.
+
+Target files:
+
+- `scripts/benchmark-zxnext-wasm.cjs`
+- `test/wasm/zxNext/wasm-next-production-performance.test.ts`
+- `package.json`
+
+Done when:
+
+- `npm run benchmark:zxnext-wasm` emits TypeScript-vs-WASM comparison results.
+- The benchmark meets the recorded threshold on the development machine.
+- Size and memory bounds remain within guard limits.
+
+### Step 26 - Flip The Default To WASM
+
+Status: Not started
+
+Only after Steps 21-25 are complete, change the normal ZX Spectrum Next model and
+factory default to WASM. Keep TypeScript selectable as an explicit fallback and
+oracle.
+
+Required changes:
+
+- Change `DEFAULT_ZXNEXT_IMPLEMENTATION` from `"typescript"` to `"wasm"`.
+- Change the normal `ZX Spectrum Next` model config to
+  `{ zxnextImplementation: "wasm" }`.
+- Keep a product-facing fallback model or advanced config path for
+  `{ zxnextImplementation: "typescript" }`.
+- Update factory, renderer registry, and rollout tests to prove the default is
+  WASM and TypeScript fallback still works.
+- Update docs/README text that currently describes WASM as preview/incomplete.
+
+Target files:
+
+- `src/emu/machines/zxNext/ZxNextImplementation.ts`
+- `src/common/machines/machine-registry.ts`
+- `src/emu/machines/zxNext/ZxNextMachineFactory.ts`
+- `src/common/machines/machine-renderer-registry.ts`
+- `src/emu/machines/zxNext/wasm/README.md`
+- `test/zxnext/ZxNextMachineFactory.test.ts`
+- `test/wasm/zxNext/wasm-next-rollout.test.ts`
+
+Done when:
+
+- Creating a normal ZX Spectrum Next through the factory/renderer registry yields
+  `ZxNextWasmV2Machine`.
+- Explicit TypeScript selection still yields `ZxNextMachine`.
+- `npm run test:zxnext-wasm-acceptance`, `npm run test:zxnext-wasm-matrix`,
+  `npm run build:zxnext-wasm`, `npm run check:zxnext-wasm-size`,
+  `npm run build:check`, and full `npm run test` pass.
+
+### Step 27 - TypeScript Backend Maintenance Mode
+
+Status: Not started
+
+After the default flips, keep the TypeScript backend available but stop treating
+it as the primary implementation. This step defines how it remains useful as an
+oracle without blocking WASM-first development.
+
+Required coverage:
+
+- Document TypeScript as fallback/oracle in the factory and developer docs.
+- Keep TypeScript test coverage for oracle behavior.
+- Update new-feature guidance so WASM is implemented first or alongside
+  TypeScript unless the feature is explicitly host-owned.
+- Add a guard that prevents removing TypeScript fallback without a separate
+  deprecation plan.
+
+Target files:
+
+- `.plans/ZX_SPECTRUM_NEXT_WASM_MIGRATION_PLAN.md`
+- `src/emu/machines/zxNext/wasm/README.md`
+- `test/zxnext/ZxNextMachineFactory.test.ts`
+
+Done when:
+
+- The project has a documented WASM-primary policy and a documented TypeScript
+  fallback/oracle policy.
