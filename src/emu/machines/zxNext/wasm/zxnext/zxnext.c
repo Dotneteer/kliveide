@@ -49,6 +49,7 @@ static uint8_t lastPortValue;
 static uint8_t lastPortIsWrite;
 static uint8_t nextRegIndex;
 static uint8_t portFeValue;
+static uint8_t portTimexValue;
 static uint8_t borderColor;
 static uint8_t earBit;
 static uint8_t micBit;
@@ -56,6 +57,10 @@ static uint8_t micBit;
 #include "zxnext-frame.c"
 #include "zxnext-debug.c"
 #include "zxnext-memory.c"
+#include "zxnext-nmi.c"
+#include "zxnext-interrupts.c"
+#include "zxnext-nextreg.c"
+#include "zxnext-ports.c"
 #include "zxnext-cpu.c"
 
 uint32_t zxnextMemoryPtr(void) { return (uint32_t)(uintptr_t)zxnextMemory; }
@@ -67,10 +72,7 @@ static void clearScaffoldBuffers(void) {
   for (uint32_t i = 0; i < ZXNEXT_MEMORY_SIZE; i++) zxnextMemory[i] = 0;
   for (uint32_t i = 0; i < ZXNEXT_PIXEL_COUNT; i++) zxnextPixelBuffer[i] = 0xff000000u;
   for (uint32_t i = 0; i < ZXNEXT_KEYBOARD_LINE_COUNT; i++) zxnextKeyboardLines[i] = 0;
-  for (uint32_t i = 0; i < ZXNEXT_NEXT_REG_COUNT; i++) zxnextNextRegs[i] = 0;
-  zxnextNextRegs[0x00] = 0x32;
-  zxnextNextRegs[0x01] = 0x20;
-  zxnextMemoryResetMapping();
+  zxnextNextRegHardReset();
 }
 
 void zxnextReset(void) {
@@ -96,22 +98,17 @@ void zxnextReset(void) {
   zxnextFrameResetScaffold();
   zxnextDebugResetScaffold();
   zxnextCpuReset();
+  zxnextNmiReset();
+  zxnextInterruptsReset();
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryIsWrite = 0;
-  lastPortAddress = 0;
-  lastPortValue = 0;
-  lastPortIsWrite = 0;
-  nextRegIndex = 0;
-  portFeValue = 0xff;
-  borderColor = 0;
-  earBit = 0;
-  micBit = 0;
+  zxnextPortsReset();
 }
 
 void zxnextHardReset(void) {
-  clearScaffoldBuffers();
   zxnextReset();
+  clearScaffoldBuffers();
 }
 
 uint32_t zxnextExecuteFrame(void) {
@@ -138,6 +135,30 @@ uint32_t zxnextReadScreenMemoryOffset(uint32_t offset) {
   return zxnextMemoryReadScreenOffset(offset);
 }
 
+uint32_t zxnextGetMemoryPageReadOffset(uint32_t page) {
+  return zxnextMemoryGetPageReadOffset(page);
+}
+
+uint32_t zxnextGetMemoryPageWriteOffset(uint32_t page) {
+  return zxnextMemoryGetPageWriteOffset(page);
+}
+
+uint32_t zxnextGetMemoryPageBank16(uint32_t page) {
+  return zxnextMemoryGetPageBank16(page);
+}
+
+uint32_t zxnextGetMemoryPageBank8(uint32_t page) {
+  return zxnextMemoryGetPageBank8(page);
+}
+
+uint32_t zxnextGetMemorySelectedRomPage(void) {
+  return zxnextMemoryGetSelectedRomPage();
+}
+
+uint32_t zxnextGetMemorySelectedRamBank(void) {
+  return zxnextMemoryGetSelectedRamBank();
+}
+
 void zxnextSetKeyStatus(uint32_t key, uint32_t isDown) {
   uint32_t line = key / 5u;
   uint32_t bit = key % 5u;
@@ -154,35 +175,11 @@ uint32_t zxnextGetKeyboardLine(uint32_t line) {
 }
 
 uint32_t zxnextReadPort(uint32_t address) {
-  uint16_t normalized = (uint16_t)address;
-  lastPortAddress = normalized;
-  lastPortIsWrite = 0;
-  if ((normalized & 0xffffu) == 0x253bu) {
-    lastPortValue = zxnextNextRegs[nextRegIndex];
-  } else if ((normalized & 0x0001u) == 0) {
-    lastPortValue = portFeValue;
-  } else {
-    lastPortValue = 0xff;
-  }
-  return lastPortValue;
+  return zxnextPortsRead(address);
 }
 
 void zxnextWritePort(uint32_t address, uint32_t value) {
-  uint16_t normalized = (uint16_t)address;
-  uint8_t byteValue = (uint8_t)value;
-  lastPortAddress = normalized;
-  lastPortValue = byteValue;
-  lastPortIsWrite = 1;
-  if ((normalized & 0xffffu) == 0x243bu) {
-    nextRegIndex = byteValue;
-  } else if ((normalized & 0xffffu) == 0x253bu) {
-    zxnextMemorySetNextRegister(nextRegIndex, byteValue);
-  } else if ((normalized & 0x0001u) == 0) {
-    portFeValue = byteValue;
-    borderColor = byteValue & 0x07u;
-    micBit = (byteValue & 0x08u) != 0;
-    earBit = (byteValue & 0x10u) != 0;
-  }
+  zxnextPortsWrite(address, value);
 }
 
 uint32_t zxnextGetMemorySize(void) { return ZXNEXT_MEMORY_SIZE; }
@@ -197,6 +194,19 @@ uint32_t zxnextGetTacts(void) { return tacts; }
 uint32_t zxnextGetCurrentFrameTact(void) { return currentFrameTact; }
 uint32_t zxnextGetTactsInFrame(void) { return ZXNEXT_TACTS_IN_FRAME; }
 uint32_t zxnextGetFrameCompleted(void) { return frameCompleted; }
+
+void zxnextSetSignalNmi(uint32_t active) { zxnextNmiSetSignal(active); }
+uint32_t zxnextGetSignalNmi(void) { return zxnextNmiGetSignal(); }
+void zxnextSetNmiCause(uint32_t cause) { zxnextNmiSetCause(cause); }
+uint32_t zxnextGetNmiCause(void) { return zxnextNmiGetCause(); }
+uint32_t zxnextGetNmiReturnAddress(void) { return zxnextNmiGetReturnAddress(); }
+uint32_t zxnextGetStacklessNmiProcessed(void) { return zxnextNmiGetStacklessProcessed(); }
+void zxnextSetSignalInt(uint32_t active) { zxnextInterruptsSetSignalInt(active); }
+uint32_t zxnextGetSignalInt(void) { return zxnextInterruptsGetSignalInt(); }
+uint32_t zxnextGetLastInterruptVector(void) { return zxnextInterruptsGetLastVector(); }
+void zxnextSetDaisyStatus(uint32_t index, uint32_t active) { zxnextInterruptsSetDaisyStatus(index, active); }
+void zxnextSetDaisyEnabled(uint32_t index, uint32_t active) { zxnextInterruptsSetDaisyEnabled(index, active); }
+uint32_t zxnextGetDaisyInService(uint32_t index) { return zxnextInterruptsGetDaisyInService(index); }
 
 void zxnextSetTacts(uint32_t value) {
   tacts = value;
@@ -247,12 +257,12 @@ uint32_t zxnextGetLastPortAddress(void) { return lastPortAddress; }
 uint32_t zxnextGetLastPortValue(void) { return lastPortValue; }
 uint32_t zxnextGetLastPortIsWrite(void) { return lastPortIsWrite; }
 
-void zxnextSetNextRegisterIndex(uint32_t reg) { nextRegIndex = (uint8_t)reg; }
-uint32_t zxnextGetNextRegisterIndex(void) { return nextRegIndex; }
-void zxnextSetNextRegisterValue(uint32_t value) { zxnextMemorySetNextRegister(nextRegIndex, value); }
-uint32_t zxnextGetNextRegisterValue(void) { return zxnextNextRegs[nextRegIndex]; }
-uint32_t zxnextGetNextRegisterDirect(uint32_t reg) { return zxnextNextRegs[reg & 0xffu]; }
-void zxnextSetNextRegisterDirect(uint32_t reg, uint32_t value) { zxnextMemorySetNextRegister(reg, value); }
+void zxnextSetNextRegisterIndex(uint32_t reg) { zxnextNextRegSetIndex(reg); }
+uint32_t zxnextGetNextRegisterIndex(void) { return zxnextNextRegGetIndex(); }
+void zxnextSetNextRegisterValue(uint32_t value) { zxnextNextRegSetValue(value); }
+uint32_t zxnextGetNextRegisterValue(void) { return zxnextNextRegGetValue(); }
+uint32_t zxnextGetNextRegisterDirect(uint32_t reg) { return zxnextNextRegGetDirect(reg); }
+void zxnextSetNextRegisterDirect(uint32_t reg, uint32_t value) { zxnextNextRegSetDirect(reg, value); }
 
 uint32_t zxnextGetPortFeValue(void) { return portFeValue; }
 uint32_t zxnextGetBorderColor(void) { return borderColor; }

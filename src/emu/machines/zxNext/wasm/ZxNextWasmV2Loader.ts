@@ -24,6 +24,12 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextReadMemory: ZxNextWasmV2ExportFunction;
   zxnextWriteMemory: ZxNextWasmV2ExportFunction;
   zxnextReadScreenMemoryOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetMemoryPageReadOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetMemoryPageWriteOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetMemoryPageBank16: ZxNextWasmV2ExportFunction;
+  zxnextGetMemoryPageBank8: ZxNextWasmV2ExportFunction;
+  zxnextGetMemorySelectedRomPage: ZxNextWasmV2ExportFunction;
+  zxnextGetMemorySelectedRamBank: ZxNextWasmV2ExportFunction;
   zxnextSetKeyStatus: ZxNextWasmV2ExportFunction;
   zxnextGetKeyboardLine: ZxNextWasmV2ExportFunction;
   zxnextReadPort: ZxNextWasmV2ExportFunction;
@@ -40,6 +46,18 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetCurrentFrameTact: ZxNextWasmV2ExportFunction;
   zxnextGetTactsInFrame: ZxNextWasmV2ExportFunction;
   zxnextGetFrameCompleted: ZxNextWasmV2ExportFunction;
+  zxnextSetSignalNmi: ZxNextWasmV2ExportFunction;
+  zxnextGetSignalNmi: ZxNextWasmV2ExportFunction;
+  zxnextSetNmiCause: ZxNextWasmV2ExportFunction;
+  zxnextGetNmiCause: ZxNextWasmV2ExportFunction;
+  zxnextGetNmiReturnAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetStacklessNmiProcessed: ZxNextWasmV2ExportFunction;
+  zxnextSetSignalInt: ZxNextWasmV2ExportFunction;
+  zxnextGetSignalInt: ZxNextWasmV2ExportFunction;
+  zxnextGetLastInterruptVector: ZxNextWasmV2ExportFunction;
+  zxnextSetDaisyStatus: ZxNextWasmV2ExportFunction;
+  zxnextSetDaisyEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetDaisyInService: ZxNextWasmV2ExportFunction;
   zxnextSetTacts: ZxNextWasmV2ExportFunction;
   zxnextGetCpuAf: ZxNextWasmV2ExportFunction;
   zxnextSetCpuAf: ZxNextWasmV2ExportFunction;
@@ -140,6 +158,12 @@ const requiredV2Exports = [
   "zxnextReadMemory",
   "zxnextWriteMemory",
   "zxnextReadScreenMemoryOffset",
+  "zxnextGetMemoryPageReadOffset",
+  "zxnextGetMemoryPageWriteOffset",
+  "zxnextGetMemoryPageBank16",
+  "zxnextGetMemoryPageBank8",
+  "zxnextGetMemorySelectedRomPage",
+  "zxnextGetMemorySelectedRamBank",
   "zxnextSetKeyStatus",
   "zxnextGetKeyboardLine",
   "zxnextReadPort",
@@ -156,6 +180,18 @@ const requiredV2Exports = [
   "zxnextGetCurrentFrameTact",
   "zxnextGetTactsInFrame",
   "zxnextGetFrameCompleted",
+  "zxnextSetSignalNmi",
+  "zxnextGetSignalNmi",
+  "zxnextSetNmiCause",
+  "zxnextGetNmiCause",
+  "zxnextGetNmiReturnAddress",
+  "zxnextGetStacklessNmiProcessed",
+  "zxnextSetSignalInt",
+  "zxnextGetSignalInt",
+  "zxnextGetLastInterruptVector",
+  "zxnextSetDaisyStatus",
+  "zxnextSetDaisyEnabled",
+  "zxnextGetDaisyInService",
   "zxnextSetTacts",
   "zxnextGetCpuAf",
   "zxnextSetCpuAf",

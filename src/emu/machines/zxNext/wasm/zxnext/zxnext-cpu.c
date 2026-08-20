@@ -24,6 +24,24 @@ static uint16_t zxnextCpuFetchWord(void) {
   return (uint16_t)((high << 8) | low);
 }
 
+static uint8_t zxnextCpuReadMemory(uint16_t address);
+static void zxnextCpuWriteMemory(uint16_t address, uint8_t value);
+
+static void zxnextCpuPushWord(uint16_t value) {
+  cpuSp = (uint16_t)(cpuSp - 1u);
+  zxnextCpuWriteMemory(cpuSp, (uint8_t)(value >> 8));
+  cpuSp = (uint16_t)(cpuSp - 1u);
+  zxnextCpuWriteMemory(cpuSp, (uint8_t)(value & 0xffu));
+}
+
+static uint16_t zxnextCpuPopWord(void) {
+  uint8_t low = zxnextCpuReadMemory(cpuSp);
+  cpuSp = (uint16_t)(cpuSp + 1u);
+  uint8_t high = zxnextCpuReadMemory(cpuSp);
+  cpuSp = (uint16_t)(cpuSp + 1u);
+  return (uint16_t)((high << 8) | low);
+}
+
 static uint8_t zxnextCpuReadMemory(uint16_t address) {
   return (uint8_t)zxnextMemoryReadMapped(address);
 }
@@ -57,6 +75,63 @@ static uint16_t zxnextCpuSetLowByte(uint16_t value, uint8_t low) {
   return (uint16_t)((value & 0xff00u) | low);
 }
 
+static uint32_t zxnextCpuProcessNmi(void) {
+  executedInstructions++;
+  zxnextCpuStepTacts(4);
+  if (cpuHalted) {
+    cpuPc = (uint16_t)(cpuPc + 1u);
+    cpuHalted = 0;
+  }
+  cpuIff2 = cpuIff1;
+  cpuIff1 = 0;
+  if (zxnextNmiGetStacklessEnabled()) {
+    cpuSp = (uint16_t)(cpuSp - 2u);
+    zxnextNmiSetReturnAddress(cpuPc);
+  } else {
+    zxnextCpuPushWord(cpuPc);
+    cpuWz = 0x0066u;
+  }
+  zxnextCpuRefreshMemory();
+  cpuPc = 0x0066u;
+  zxnextNmiMarkAccepted();
+  return executedInstructions;
+}
+
+static uint32_t zxnextCpuProcessInt(void) {
+  executedInstructions++;
+  zxnextCpuStepTacts(6);
+  if (cpuHalted) {
+    cpuPc = (uint16_t)(cpuPc + 1u);
+    cpuHalted = 0;
+  }
+  uint8_t vector = (uint8_t)zxnextInterruptsAcknowledge();
+  cpuIff1 = 0;
+  cpuIff2 = 0;
+  zxnextCpuPushWord(cpuPc);
+  zxnextCpuRefreshMemory();
+  if (cpuInterruptMode == 2) {
+    uint16_t tableAddress = (uint16_t)((cpuIr & 0xff00u) | vector);
+    uint8_t low = zxnextCpuReadMemory(tableAddress);
+    uint8_t high = zxnextCpuReadMemory((uint16_t)(tableAddress + 1u));
+    cpuWz = (uint16_t)((high << 8) | low);
+  } else {
+    cpuWz = 0x0038u;
+  }
+  cpuPc = cpuWz;
+  return executedInstructions;
+}
+
+static uint8_t zxnextCpuIsRetnOpcode(uint8_t opcode) {
+  return
+    opcode == 0x45u ||
+    opcode == 0x55u ||
+    opcode == 0x5du ||
+    opcode == 0x65u ||
+    opcode == 0x6du ||
+    opcode == 0x75u ||
+    opcode == 0x7du;
+}
+
 static void zxnextCpuLoad8Immediate(uint16_t *pair, uint8_t highByte) {
   uint8_t value = zxnextCpuFetchByte();
   *pair = highByte ? zxnextCpuSetHighByte(*pair, value) : zxnextCpuSetLowByte(*pair, value);
@@ -69,6 +144,9 @@ static void zxnextCpuLoad16Immediate(uint16_t *pair) {
 }
 
 static uint32_t zxnextCpuExecuteInstruction(void) {
+  if (zxnextNmiGetSignal()) return zxnextCpuProcessNmi();
+  if (zxnextInterruptsShouldAcceptInt() && cpuIff1) return zxnextCpuProcessInt();
+
   executedInstructions++;
   cpuPrefix = 0;
   uint8_t opcode = zxnextCpuReadOpcode();
@@ -132,6 +210,21 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
       cpuPc = cpuWz;
       zxnextCpuStepTacts(10);
       break;
+    case 0xed: {
+      uint8_t extendedOpcode = zxnextCpuFetchByte();
+      zxnextCpuRefreshMemory();
+      if (zxnextCpuIsRetnOpcode(extendedOpcode) || extendedOpcode == 0x4du) {
+        cpuPc = zxnextCpuPopWord();
+        cpuIff1 = cpuIff2;
+        cpuWz = cpuPc;
+        if (extendedOpcode == 0x4du) zxnextInterruptsReti();
+        zxnextNmiAfterRetn();
+        zxnextCpuStepTacts(14);
+      } else {
+        zxnextCpuStepTacts(8);
+      }
+      break;
+    }
     default:
       zxnextCpuStepTacts(4);
       break;

@@ -15,6 +15,7 @@ static uint8_t selectedRomLsb;
 static uint8_t selectedRomMsb;
 static uint8_t selectedBankLsb;
 static uint8_t selectedBankMsb;
+static uint8_t pagingEnabled;
 static uint8_t allRamMode;
 static uint8_t specialConfig;
 static uint8_t enableAltRom;
@@ -84,32 +85,42 @@ static void zxnextMemorySetRamSlotAndMmu(uint32_t slotNo, uint32_t bank16) {
   zxnextMemorySetRamPageByMmu(page + 1u);
 }
 
+static void zxnextMemorySetAllRamSlot(uint32_t slotNo, uint32_t bank16) {
+  uint32_t page = (slotNo & 0x03u) * 2u;
+  uint32_t bank8 = bank16 * 2u;
+  uint32_t offset = ZXNEXT_OFFS_NEXT_RAM + bank8 * 0x2000u;
+  zxnextMemorySetPageInfo(page, offset, offset, (uint16_t)bank16, (uint16_t)bank8);
+  bank8++;
+  offset = ZXNEXT_OFFS_NEXT_RAM + bank8 * 0x2000u;
+  zxnextMemorySetPageInfo(page + 1u, offset, offset, (uint16_t)bank16, (uint16_t)bank8);
+}
+
 static void zxnextMemoryUpdateMapping(void) {
   if (allRamMode) {
     switch (specialConfig & 0x03u) {
       case 0:
-        zxnextMemorySetRamSlotAndMmu(0, 0);
-        zxnextMemorySetRamSlotAndMmu(1, 1);
-        zxnextMemorySetRamSlotAndMmu(2, 2);
-        zxnextMemorySetRamSlotAndMmu(3, 3);
+        zxnextMemorySetAllRamSlot(0, 0);
+        zxnextMemorySetAllRamSlot(1, 1);
+        zxnextMemorySetAllRamSlot(2, 2);
+        zxnextMemorySetAllRamSlot(3, 3);
         break;
       case 1:
-        zxnextMemorySetRamSlotAndMmu(0, 0);
-        zxnextMemorySetRamSlotAndMmu(1, 1);
-        zxnextMemorySetRamSlotAndMmu(2, 2);
-        zxnextMemorySetRamSlotAndMmu(3, 7);
+        zxnextMemorySetAllRamSlot(0, 4);
+        zxnextMemorySetAllRamSlot(1, 5);
+        zxnextMemorySetAllRamSlot(2, 6);
+        zxnextMemorySetAllRamSlot(3, 7);
         break;
       case 2:
-        zxnextMemorySetRamSlotAndMmu(0, 4);
-        zxnextMemorySetRamSlotAndMmu(1, 5);
-        zxnextMemorySetRamSlotAndMmu(2, 6);
-        zxnextMemorySetRamSlotAndMmu(3, 3);
+        zxnextMemorySetAllRamSlot(0, 4);
+        zxnextMemorySetAllRamSlot(1, 5);
+        zxnextMemorySetAllRamSlot(2, 6);
+        zxnextMemorySetAllRamSlot(3, 3);
         break;
       default:
-        zxnextMemorySetRamSlotAndMmu(0, 4);
-        zxnextMemorySetRamSlotAndMmu(1, 7);
-        zxnextMemorySetRamSlotAndMmu(2, 6);
-        zxnextMemorySetRamSlotAndMmu(3, 3);
+        zxnextMemorySetAllRamSlot(0, 4);
+        zxnextMemorySetAllRamSlot(1, 7);
+        zxnextMemorySetAllRamSlot(2, 6);
+        zxnextMemorySetAllRamSlot(3, 3);
         break;
     }
     return;
@@ -120,11 +131,21 @@ static void zxnextMemoryUpdateMapping(void) {
   }
 }
 
+static void zxnextMemoryUpdateNextReg8E(void) {
+  zxnextNextRegs[0x8e] =
+    (uint8_t)(((selectedBankMsb & 0x01u) << 7) |
+      ((selectedBankLsb & 0x07u) << 4) |
+      0x08u |
+      (allRamMode ? 0x04u : 0x00u) |
+      (allRamMode ? (specialConfig & 0x03u) : (selectedRomMsb | selectedRomLsb)));
+}
+
 static void zxnextMemoryResetMapping(void) {
   selectedRomLsb = 0;
   selectedRomMsb = 0;
   selectedBankLsb = 0;
   selectedBankMsb = 0;
+  pagingEnabled = 1;
   allRamMode = 0;
   specialConfig = 0;
   enableAltRom = 0;
@@ -139,6 +160,7 @@ static void zxnextMemoryResetMapping(void) {
   zxnextNextRegs[0x55] = 0x05;
   zxnextNextRegs[0x56] = 0x00;
   zxnextNextRegs[0x57] = 0x01;
+  zxnextMemoryUpdateNextReg8E();
   zxnextMemoryUpdateMapping();
 }
 
@@ -180,6 +202,30 @@ static uint32_t zxnextMemoryReadScreenOffset(uint32_t offset) {
   return zxnextMemoryReadMapped(0x4000u + (offset & 0x3fffu));
 }
 
+static uint32_t zxnextMemoryGetPageReadOffset(uint32_t page) {
+  return pageReadOffset[page & 0x07u];
+}
+
+static uint32_t zxnextMemoryGetPageWriteOffset(uint32_t page) {
+  return pageWriteOffset[page & 0x07u];
+}
+
+static uint32_t zxnextMemoryGetPageBank16(uint32_t page) {
+  return pageBank16[page & 0x07u];
+}
+
+static uint32_t zxnextMemoryGetPageBank8(uint32_t page) {
+  return pageBank8[page & 0x07u];
+}
+
+static uint32_t zxnextMemoryGetSelectedRomPage(void) {
+  return selectedRomMsb | selectedRomLsb;
+}
+
+static uint32_t zxnextMemoryGetSelectedRamBank(void) {
+  return selectedBankMsb | selectedBankLsb;
+}
+
 static void zxnextMemorySetNextRegister(uint32_t reg, uint32_t value) {
   uint8_t normalizedReg = (uint8_t)reg;
   uint8_t byteValue = (uint8_t)value;
@@ -206,6 +252,56 @@ static void zxnextMemorySetNextRegister(uint32_t reg, uint32_t value) {
       selectedRomMsb = byteValue & 0x02u;
       selectedRomLsb = byteValue & 0x01u;
     }
+    zxnextMemoryUpdateNextReg8E();
     zxnextMemoryUpdateMapping();
   }
+}
+
+static void zxnextMemorySetPort7ffd(uint32_t value) {
+  uint8_t byteValue = (uint8_t)value;
+  if (!pagingEnabled) return;
+
+  selectedBankLsb = byteValue & 0x07u;
+  zxnextNextRegs[0x56] = (selectedBankMsb << 4) | (selectedBankLsb << 1);
+  zxnextNextRegs[0x57] = zxnextNextRegs[0x56] + 1u;
+  selectedRomLsb = (byteValue >> 4) & 0x01u;
+  pagingEnabled = (byteValue & 0x20u) == 0;
+  zxnextMemoryUpdateNextReg8E();
+  zxnextMemoryUpdateMapping();
+}
+
+static uint32_t zxnextMemoryGetPort7ffd(void) {
+  return
+    selectedBankLsb |
+    (selectedRomLsb << 4) |
+    (pagingEnabled ? 0x00u : 0x20u);
+}
+
+static void zxnextMemorySetPortDffd(uint32_t value) {
+  if (!pagingEnabled) return;
+
+  selectedBankMsb = (uint8_t)value & 0x0fu;
+  zxnextNextRegs[0x56] = (selectedBankMsb << 4) | (selectedBankLsb << 1);
+  zxnextNextRegs[0x57] = zxnextNextRegs[0x56] + 1u;
+  zxnextMemoryUpdateNextReg8E();
+  zxnextMemoryUpdateMapping();
+}
+
+static uint32_t zxnextMemoryGetPortDffd(void) {
+  return selectedBankMsb;
+}
+
+static void zxnextMemorySetPort1ffd(uint32_t value) {
+  uint8_t byteValue = (uint8_t)value;
+  if (!pagingEnabled) return;
+
+  allRamMode = (byteValue & 0x01u) != 0;
+  specialConfig = (byteValue >> 1) & 0x03u;
+  selectedRomMsb = specialConfig & 0x02u;
+  zxnextMemoryUpdateNextReg8E();
+  zxnextMemoryUpdateMapping();
+}
+
+static uint32_t zxnextMemoryGetPort1ffd(void) {
+  return (allRamMode ? 0x01u : 0x00u) | (specialConfig << 1);
 }

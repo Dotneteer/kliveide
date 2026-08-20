@@ -367,6 +367,33 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.wasmV2Runtime?.exports.zxnextSetCpuSp(super.sp);
   }
 
+  override get iff1(): boolean {
+    return super.iff1;
+  }
+
+  override set iff1(value: boolean) {
+    super.iff1 = value;
+    this.wasmV2Runtime?.exports.zxnextSetCpuIff1(value ? 1 : 0);
+  }
+
+  override get iff2(): boolean {
+    return super.iff2;
+  }
+
+  override set iff2(value: boolean) {
+    super.iff2 = value;
+    this.wasmV2Runtime?.exports.zxnextSetCpuIff2(value ? 1 : 0);
+  }
+
+  override get interruptMode(): number {
+    return super.interruptMode;
+  }
+
+  override set interruptMode(value: number) {
+    super.interruptMode = value;
+    this.wasmV2Runtime?.exports.zxnextSetCpuInterruptMode(value & 0x03);
+  }
+
   override async setup(): Promise<void> {
     this.wasmV2Runtime = await loadZxNextWasmV2(this.wasmV2LoaderOptions);
     this.hardResetWasmV2(this.wasmV2Runtime);
@@ -417,14 +444,18 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
   executeWasmV2DebugStep(): FrameTerminationMode {
     const runtime = this.requireWasmV2Runtime();
+    this.executeWasmV2Instruction(runtime);
+    this.wasmV2LastScaffoldStopReason = "scaffoldDebugStep";
+    this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent;
+    return FrameTerminationMode.DebugEvent;
+  }
+
+  executeWasmV2Instruction(runtime = this.requireWasmV2Runtime()): void {
     runtime.exports.zxnextExecuteInstruction();
     this.wasmV2DebugSteps++;
     this.syncCpuFromWasmV2(runtime);
     this.importWasmV2BusAccess(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
-    this.wasmV2LastScaffoldStopReason = "scaffoldDebugStep";
-    this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent;
-    return FrameTerminationMode.DebugEvent;
   }
 
   private executeWasmV2DebugLoop(runtime: ZxNextWasmV2Runtime): FrameTerminationMode {
@@ -583,21 +614,19 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   override getCurrentPartitions(): number[] {
-    const nextRegs = this.requireWasmV2Runtime().nextRegs;
+    const wasm = this.requireWasmV2Runtime().exports;
     return Array.from({ length: 8 }, (_, pageIndex) => {
-      const bank8 = nextRegs[0x50 + pageIndex];
-      return bank8 < 224 ? bank8 >> 1 : 0xff;
+      const bank16 = wasm.zxnextGetMemoryPageBank16(pageIndex);
+      return bank16 < 0xff ? bank16 : 0xff;
     });
   }
 
   override getSelectedRomPage(): number {
-    const nextReg8e = this.requireWasmV2Runtime().nextRegs[0x8e];
-    return (nextReg8e & 0x04) !== 0 ? 0 : (nextReg8e & 0x03);
+    return this.requireWasmV2Runtime().exports.zxnextGetMemorySelectedRomPage();
   }
 
   override getSelectedRamBank(): number {
-    const nextReg8e = this.requireWasmV2Runtime().nextRegs[0x8e];
-    return ((nextReg8e & 0x80) >> 7) | ((nextReg8e >> 4) & 0x07);
+    return this.requireWasmV2Runtime().exports.zxnextGetMemorySelectedRamBank();
   }
 
   override getCurrentPartitionLabels(): string[] {
@@ -812,20 +841,26 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   private getWasmV2PartitionLabelForPage(pageIndex: number): string {
-    const runtime = this.requireWasmV2Runtime();
-    const bank8 = runtime.nextRegs[0x50 + (pageIndex & 0x07)];
-    if (bank8 < 224) {
-      return (bank8 >> 1).toString(16).padStart(2, "0").toUpperCase();
-    }
+    const wasm = this.requireWasmV2Runtime().exports;
+    const bank8 = wasm.zxnextGetMemoryPageBank8(pageIndex);
+    if (bank8 < 224) return (bank8 >> 1).toString(16).padStart(2, "0").toUpperCase();
 
-    const nextReg8c = runtime.nextRegs[0x8c];
-    if ((nextReg8c & 0x80) !== 0 && (nextReg8c & 0x40) === 0) {
-      if ((nextReg8c & 0x20) !== 0) return "A1";
-      if ((nextReg8c & 0x10) !== 0) return "A0";
-      return this.getSelectedRomPage() & 0x01 ? "A1" : "A0";
+    const readOffset = wasm.zxnextGetMemoryPageReadOffset(pageIndex);
+    if (readOffset >= ZXNEXT_WASM_OFFS_NEXT_RAM) return "UN";
+    if (readOffset >= ZXNEXT_WASM_OFFS_DIVMMC_RAM) {
+      return `D${((readOffset - ZXNEXT_WASM_OFFS_DIVMMC_RAM) >> 13).toString(16).toUpperCase()}`;
     }
-
-    return `R${this.getSelectedRomPage()}`;
+    if (readOffset >= ZXNEXT_WASM_OFFS_ALT_ROM_1 && readOffset < ZXNEXT_WASM_OFFS_ALT_ROM_1 + 0x4000) {
+      return "A1";
+    }
+    if (readOffset >= ZXNEXT_WASM_OFFS_ALT_ROM_0 && readOffset < ZXNEXT_WASM_OFFS_ALT_ROM_0 + 0x4000) {
+      return "A0";
+    }
+    if (readOffset >= ZXNEXT_WASM_OFFS_DIVMMC_ROM && readOffset < ZXNEXT_WASM_OFFS_DIVMMC_ROM + 0x2000) {
+      return "DM";
+    }
+    if (readOffset < ZXNEXT_WASM_OFFS_NEXT_ROM + 0x10000) return `R${readOffset >> 14}`;
+    return "UN";
   }
 
   private parseWasmV2PartitionLabel(label: string): number | undefined {

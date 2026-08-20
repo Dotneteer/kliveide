@@ -540,7 +540,7 @@ Completion notes:
 
 ### Step 8 - NextReg And Port Core Parity
 
-Status: Not started
+Status: Completed
 
 Migrate NextReg core and port decoding with oracle tests for each port-side
 effect. No real CPU/device frame execution until the port matrix is stable.
@@ -582,9 +582,23 @@ Deviation guardrail:
 - Open/floating bus behavior must be asserted separately; defaulting to `0xff`
   is not acceptable without matching TypeScript.
 
+Completed in this step:
+
+- Added WASM NextReg and port-core modules for reset defaults, NextReg
+  select/data ports, ULA `$fe`, Timex/floating `$ff`, and gated memory paging
+  ports `$7ffd`, `$dffd`, and `$1ffd`.
+- Added WASM memory page-map inspector exports so facade partition labels and
+  selected ROM/RAM state come from live mapping state rather than inferred MMU
+  register bytes.
+- Added oracle tests for reset defaults, NextReg side effects, memory-affecting
+  NextRegs, paging ports, NR `$82` port gating, ULA read/write state, and
+  Timex/floating read behavior.
+- Validation passed with the Step 8 command, related CPU/debug/memory/scaffold
+  tests, `npm run build:check`, and `git diff --check`.
+
 ### Step 9 - Interrupt, NMI, And RETN Parity
 
-Status: Not started
+Status: Completed
 
 Migrate interrupt and NMI semantics used by debug execution and boot code.
 
@@ -627,6 +641,21 @@ Deviation guardrail:
   RETN/RETI side effects, NMI cause, and PC/SP stack effects against the
   TypeScript machine.
 - Boot smoke tests remain forbidden until these assertions pass.
+
+Completed in this step:
+
+- Added WASM interrupt and NMI modules for signal state, NextReg-backed
+  interrupt controls, hardware IM2 vector selection, daisy in-service state,
+  NMI cause tracking, stackless NMI return address handling, and RETN/RETI
+  cleanup.
+- Added CPU pre-fetch INT/NMI acceptance and ED RETN/RETI handling to the
+  ZX Next WASM stepper.
+- Added oracle tests covering IM1 INT stack effects, hardware IM2 vector and
+  RETI in-service cleanup, normal NMI stack effects, and stackless NMI RETN
+  return restoration.
+- Validation passed with the Step 9 command, related ZX Next WASM regression
+  tests, scaffold guard tests, `npm run build:check`, full `npm run test`, and
+  `git diff --check`.
 
 ### Step 10 - Replace Scaffold Public Adapter Semantics
 
