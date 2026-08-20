@@ -57,6 +57,7 @@ static uint8_t micBit;
 #include "zxnext-frame.c"
 #include "zxnext-debug.c"
 #include "zxnext-memory.c"
+#include "zxnext-diagnostics.c"
 #include "zxnext-nmi.c"
 #include "zxnext-interrupts.c"
 #include "zxnext-nextreg.c"
@@ -269,4 +270,8 @@ uint32_t zxnextGetBorderColor(void) { return borderColor; }
 uint32_t zxnextGetEarBit(void) { return earBit; }
 uint32_t zxnextGetMicBit(void) { return micBit; }
 uint32_t zxnextGetBeeperLevel(void) { return earBit; }
-uint32_t zxnextGetDiagnosticFlags(void) { return ZXNEXT_DIAGNOSTIC_IMPLEMENTATION_INCOMPLETE; }
+uint32_t zxnextGetDiagnosticFlags(void) { return zxnextDiagnosticsGetFlags(); }
+uint32_t zxnextReadPhysicalMemory(uint32_t offset) { return zxnextDiagnosticsReadPhysical(offset); }
+uint32_t zxnextChecksumPhysicalMemory(uint32_t offset, uint32_t length) {
+  return zxnextDiagnosticsChecksumPhysical(offset, length);
+}

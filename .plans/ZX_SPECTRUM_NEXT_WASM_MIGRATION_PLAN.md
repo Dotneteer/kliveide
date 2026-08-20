@@ -764,7 +764,7 @@ Completed notes:
 
 ### Step 12 - Early Boot Smoke Without Storage
 
-Status: Not started
+Status: Completed
 
 Boot only far enough to validate reset vectors, ROM contents, paging, and
 debugger visibility. Do not treat visual output as proof of correctness.
@@ -800,6 +800,16 @@ Deviation guardrail:
   pages, ROM byte reads, NextRegs, interrupt state, and stop reason at sampled
   instruction boundaries.
 - A reset loop is a failing parity result, not a performance issue.
+
+Completed notes:
+
+- Added WASM physical-memory diagnostics for ROM byte and checksum validation.
+- Added explicit ZX Next WASM ROM upload support and an early boot trace helper
+  that samples reset plus the first two ROM instruction boundaries.
+- Added `wasm-next-early-boot.test.ts` to compare TypeScript and WASM PC, SP,
+  tacts, MMU pages, ROM byte reads, NextRegs, interrupt state, and debug stop
+  reasons before storage is involved, with reset-loop detection as a parity
+  failure.
 
 ### Step 13 - ULA, Keyboard, Tape, And Standard Screen
 

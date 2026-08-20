@@ -113,6 +113,8 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetMicBit: ZxNextWasmV2ExportFunction;
   zxnextGetBeeperLevel: ZxNextWasmV2ExportFunction;
   zxnextGetDiagnosticFlags: ZxNextWasmV2ExportFunction;
+  zxnextReadPhysicalMemory: ZxNextWasmV2ExportFunction;
+  zxnextChecksumPhysicalMemory: ZxNextWasmV2ExportFunction;
 };
 
 export type ZxNextWasmV2Instance = {
@@ -246,7 +248,9 @@ const requiredV2Exports = [
   "zxnextGetEarBit",
   "zxnextGetMicBit",
   "zxnextGetBeeperLevel",
-  "zxnextGetDiagnosticFlags"
+  "zxnextGetDiagnosticFlags",
+  "zxnextReadPhysicalMemory",
+  "zxnextChecksumPhysicalMemory"
 ] as const;
 
 export function resetZxNextWasmV2ModuleCache(): void {

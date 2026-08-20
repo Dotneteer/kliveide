@@ -118,7 +118,9 @@ const productionExports = [
   "zxnextGetEarBit",
   "zxnextGetMicBit",
   "zxnextGetBeeperLevel",
-  "zxnextGetDiagnosticFlags"
+  "zxnextGetDiagnosticFlags",
+  "zxnextReadPhysicalMemory",
+  "zxnextChecksumPhysicalMemory"
 ];
 
 const buildModes = {

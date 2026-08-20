@@ -50,10 +50,18 @@ export type ZxNextWasmV2Diagnostics = {
 
 const ZXNEXT_WASM_OFFS_NEXT_ROM = 0x000000;
 const ZXNEXT_WASM_OFFS_DIVMMC_ROM = 0x010000;
+const ZXNEXT_WASM_OFFS_MULTIFACE_MEM = 0x014000;
 const ZXNEXT_WASM_OFFS_ALT_ROM_0 = 0x018000;
 const ZXNEXT_WASM_OFFS_ALT_ROM_1 = 0x01c000;
 const ZXNEXT_WASM_OFFS_DIVMMC_RAM = 0x020000;
 const ZXNEXT_WASM_OFFS_NEXT_RAM = 0x040000;
+
+export type ZxNextWasmV2RomImages = {
+  nextRom: Uint8Array;
+  divMmcRom: Uint8Array;
+  multifaceRom: Uint8Array;
+  altRom: Uint8Array;
+};
 
 /**
  * Explicit ZX Spectrum Next WASM v2 adapter.
@@ -448,6 +456,14 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.syncCpuFromWasmV2(runtime);
     this.importWasmV2BusAccess(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
+  }
+
+  uploadWasmV2RomImages(roms: ZxNextWasmV2RomImages): void {
+    const runtime = this.requireWasmV2Runtime();
+    runtime.memory.set(roms.nextRom, ZXNEXT_WASM_OFFS_NEXT_ROM);
+    runtime.memory.set(roms.divMmcRom, ZXNEXT_WASM_OFFS_DIVMMC_ROM);
+    runtime.memory.set(roms.multifaceRom, ZXNEXT_WASM_OFFS_MULTIFACE_MEM);
+    runtime.memory.set(roms.altRom, ZXNEXT_WASM_OFFS_ALT_ROM_0);
   }
 
   private executeWasmV2DebugLoop(runtime: ZxNextWasmV2Runtime): FrameTerminationMode {

@@ -151,6 +151,8 @@ function createViewExports(
     zxnextGetEarBit: fn,
     zxnextGetMicBit: fn,
     zxnextGetBeeperLevel: fn,
-    zxnextGetDiagnosticFlags: fn
+    zxnextGetDiagnosticFlags: fn,
+    zxnextReadPhysicalMemory: fn,
+    zxnextChecksumPhysicalMemory: fn
   } as ZxNextWasmV2Exports;
 }
