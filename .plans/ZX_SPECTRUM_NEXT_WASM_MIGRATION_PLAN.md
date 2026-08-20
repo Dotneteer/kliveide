@@ -710,7 +710,7 @@ Completed notes:
 
 ### Step 11 - Replace Scaffold Frame Runner
 
-Status: Not started
+Status: Completed
 
 Replace the Step 3 scaffold frame loop with real CPU/device frame execution only
 after debug, memory, port, and interrupt parity are already green. The frame
@@ -750,6 +750,17 @@ Deviation guardrail:
   `scaffoldFrameComplete` stop reason.
 - No arbitrary instruction-count guard may be used as normal frame completion.
   A guard may exist only as a failing diagnostic path.
+
+Completed notes:
+
+- Replaced the ZX Next WASM Step 3 frame scaffold with a CPU-driven C frame
+  loop that runs until the rendering-frame tact target completes.
+- The TypeScript adapter now treats queued frame commands as instruction-loop
+  pause conditions before entering the full-frame WASM path.
+- Added `wasm-next-frame-runner.test.ts` coverage for full-frame tact/frame
+  parity, termination mode, execution-point stop, breakpoint stop, debug stop,
+  frame-command stop, last rendered tact, and rejection of the old
+  `scaffoldFrameComplete` stop reason.
 
 ### Step 12 - Early Boot Smoke Without Storage
 

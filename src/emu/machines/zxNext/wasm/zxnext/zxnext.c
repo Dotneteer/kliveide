@@ -95,7 +95,7 @@ void zxnextReset(void) {
   cpuInterruptMode = 0;
   cpuHalted = 0;
   cpuPrefix = 0;
-  zxnextFrameResetScaffold();
+  zxnextFrameReset();
   zxnextDebugResetScaffold();
   zxnextCpuReset();
   zxnextNmiReset();
@@ -112,7 +112,7 @@ void zxnextHardReset(void) {
 }
 
 uint32_t zxnextExecuteFrame(void) {
-  return zxnextFrameExecuteScaffold();
+  return zxnextFrameExecute();
 }
 
 uint32_t zxnextExecuteInstruction(void) {

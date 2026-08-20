@@ -39,7 +39,7 @@ describe("ZX Spectrum Next WASM v2 debug tools scaffold", () => {
     await waitForCompletedFrames(controller, 1);
     await controller.pause();
     expect(controller.state).toBe(MachineControllerState.Paused);
-    expect(machine.getWasmV2Diagnostics().lastScaffoldStopReason).toBe("scaffoldFrameComplete");
+    expect(machine.getWasmV2Diagnostics().lastScaffoldStopReason).toBe("wasmFrameComplete");
 
     await controller.stepInto();
     await waitForControllerState(controller, MachineControllerState.Paused);

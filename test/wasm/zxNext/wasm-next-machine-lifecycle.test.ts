@@ -62,15 +62,15 @@ describe("ZX Spectrum Next WASM machine lifecycle", () => {
     });
   });
 
-  it("normal frame execution still reports the remaining frame scaffold", async () => {
+  it("normal frame execution reports the WASM frame runner", async () => {
     const machine = await createTestZxNextWasmMachine();
 
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
       implementationIncomplete: true,
-      scaffoldSurfaces: ["frame"],
+      scaffoldSurfaces: [],
       normalFrames: 1,
-      lastScaffoldStopReason: "scaffoldFrameComplete"
+      lastScaffoldStopReason: "wasmFrameComplete"
     });
   });
 });

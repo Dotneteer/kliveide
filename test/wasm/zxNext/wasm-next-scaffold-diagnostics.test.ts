@@ -22,11 +22,11 @@ describe("ZX Spectrum Next WASM scaffold diagnostics oracle guard", () => {
       expectScaffoldDiagnosticsHaveOracleCoverage(
         {
           implementationIncomplete: true,
-          scaffoldSurfaces: ["frame", "debug"]
+          scaffoldSurfaces: ["debug"]
         },
         {
           ...comparison.oracle,
-          coveredSurfaces: ["frame"]
+          coveredSurfaces: []
         }
       )
     ).toThrow(/debug.*no TypeScript oracle snapshot coverage/);
@@ -35,7 +35,7 @@ describe("ZX Spectrum Next WASM scaffold diagnostics oracle guard", () => {
   it("fails loudly when scaffold diagnostics change without updating the guard", async () => {
     expect(() =>
       expectCurrentScaffoldDiagnosticsAreStillGuarded({
-        scaffoldSurfaces: ["frame", "debug"]
+        scaffoldSurfaces: ["debug"]
       })
     ).toThrow(/diagnostics changed without updating oracle coverage/);
   });

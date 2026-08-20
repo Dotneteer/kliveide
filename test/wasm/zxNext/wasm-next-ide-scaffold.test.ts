@@ -17,7 +17,7 @@ import { buildZxNextWasm, productionOutput } from "../../../scripts/build-zxnext
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum Next WASM v2 IDE scaffold", () => {
-  it("exposes WASM-backed IDE surfaces while the frame runner remains incomplete", async () => {
+  it("exposes WASM-backed IDE surfaces", async () => {
     buildZxNextWasm();
     const machine = new ZxNextWasmV2Machine(
       undefined,
@@ -48,6 +48,7 @@ describe("ZX Spectrum Next WASM v2 IDE scaffold", () => {
     expect(diagnostics.scaffoldSurfaces).not.toContain("ULA");
     expect(diagnostics.scaffoldSurfaces).not.toContain("screen");
     expect(diagnostics.scaffoldSurfaces).not.toContain("debug");
+    expect(diagnostics.scaffoldSurfaces).not.toContain("frame");
 
     const oracle = new ZxNextMachine();
     expect(machine.screenWidthInPixels).toBe(oracle.screenWidthInPixels);

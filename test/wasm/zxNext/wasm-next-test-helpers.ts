@@ -25,9 +25,7 @@ import {
   ZxNextWasmV2Machine
 } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
-export const ZXNEXT_ORACLE_SCAFFOLD_SURFACES: ZxNextWasmV2ScaffoldSurface[] = [
-  "frame"
-];
+export const ZXNEXT_ORACLE_SCAFFOLD_SURFACES: ZxNextWasmV2ScaffoldSurface[] = [];
 
 const MEMORY_SAMPLE_ADDRESSES = [0x0000, 0x4000, 0x8000, 0xc000];
 const NEXT_REG_SAMPLE_IDS = [0x00, 0x01, 0x12, 0x15];

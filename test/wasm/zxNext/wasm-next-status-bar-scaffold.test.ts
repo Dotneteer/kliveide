@@ -12,7 +12,7 @@ import { buildZxNextWasm, productionOutput } from "../../../scripts/build-zxnext
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum Next WASM v2 status bar scaffold", () => {
-  it("updates FrameStats and status-bar-readable PC data from scaffold frames", async () => {
+  it("updates FrameStats and status-bar-readable PC data from WASM frames", async () => {
     const machine = await createTestZxNextWasmMachine();
     const store = createAppStore("test-zxnext-status");
     const controller = new MachineController(store, new ResolvingMessenger(), machine);
@@ -39,10 +39,10 @@ describe("ZX Spectrum Next WASM v2 status bar scaffold", () => {
     expect(statusSnapshots.length).toBeGreaterThanOrEqual(2);
     expect(statusSnapshots[statusSnapshots.length - 1]).toMatchObject({
       frameCount: expect.any(Number),
-      pc: "0000"
+      pc: expect.stringMatching(/^[0-9A-F]{4}$/)
     });
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
-      lastScaffoldStopReason: "scaffoldFrameComplete",
+      lastScaffoldStopReason: "wasmFrameComplete",
       frameCompleted: true
     });
 
@@ -69,7 +69,7 @@ async function waitForMachineFrames(machine: ZxNextWasmV2Machine, frameCount: nu
   const deadline = Date.now() + 1500;
   while (machine.frames < frameCount) {
     if (Date.now() > deadline) {
-      throw new Error(`Timed out waiting for ${frameCount} scaffold frames.`);
+      throw new Error(`Timed out waiting for ${frameCount} WASM frames.`);
     }
     await new Promise(resolve => setTimeout(resolve, 5));
   }

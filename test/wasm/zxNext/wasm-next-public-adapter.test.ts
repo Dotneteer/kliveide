@@ -31,7 +31,7 @@ describe("ZX Spectrum Next WASM public adapter", () => {
     const diagnostics = machine.getWasmV2Diagnostics();
 
     expect(diagnostics.implementationIncomplete).toBe(true);
-    expect(diagnostics.scaffoldSurfaces).toEqual(["frame"]);
+    expect(diagnostics.scaffoldSurfaces).toEqual([]);
     for (const surface of MIGRATED_SURFACES) {
       expect(diagnostics.scaffoldSurfaces).not.toContain(surface);
     }

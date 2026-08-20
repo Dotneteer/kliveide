@@ -22,12 +22,10 @@ export type ZxNextWasmV2ScaffoldSurface =
 
 export type ZxNextWasmV2ScaffoldStopReason =
   | "scaffoldReset"
-  | "scaffoldFrameComplete"
-  | "scaffoldDebugStep";
+  | "scaffoldDebugStep"
+  | "wasmFrameComplete";
 
-export const ZXNEXT_WASM_V2_SCAFFOLD_SURFACES: ZxNextWasmV2ScaffoldSurface[] = [
-  "frame"
-];
+export const ZXNEXT_WASM_V2_SCAFFOLD_SURFACES: ZxNextWasmV2ScaffoldSurface[] = [];
 
 export type ZxNextWasmV2Diagnostics = {
   backend: "wasm";
@@ -60,8 +58,8 @@ const ZXNEXT_WASM_OFFS_NEXT_RAM = 0x040000;
 /**
  * Explicit ZX Spectrum Next WASM v2 adapter.
  *
- * This is a deterministic adapter for IDE integration while the frame runner
- * remains scaffolded until full Next frame execution moves into C/WASM.
+ * This is a deterministic adapter for IDE integration while later migration
+ * steps continue moving full Next subsystems into C/WASM.
  */
 export class ZxNextWasmV2Machine extends ZxNextMachine {
   public readonly implementation = "wasm" as const;
@@ -420,7 +418,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
     if (
       this.executionContext.debugStepMode !== DebugStepMode.NoDebug ||
-      this.executionContext.frameTerminationMode !== FrameTerminationMode.Normal
+      this.executionContext.frameTerminationMode !== FrameTerminationMode.Normal ||
+      this.getFrameCommand()
     ) {
       return this.executeWasmV2DebugLoop(runtime);
     }
@@ -430,7 +429,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.wasmV2NormalFrames++;
     this.syncCpuFromWasmV2(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
-    this.wasmV2LastScaffoldStopReason = "scaffoldFrameComplete";
+    this.wasmV2LastScaffoldStopReason = "wasmFrameComplete";
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
