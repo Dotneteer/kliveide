@@ -430,6 +430,18 @@ static void spp3eRebuildFlatMemory(void) {
   }
 }
 
+static inline uint8_t spp3eIsVisibleScreenBankOffset(uint32_t bank, uint32_t offset) {
+  const uint32_t visibleBank = spp3eUseShadowScreen != 0u ? 7u : 5u;
+  return bank == visibleBank && offset < 0x1b00u;
+}
+
+static inline uint8_t spp3eIsVisibleScreenSlotOffset(uint32_t slot, uint32_t offset) {
+  if (spp3eMemorySlotWritable[slot] == 0u) {
+    return 0u;
+  }
+  return spp3eIsVisibleScreenBankOffset((uint32_t)spp3eMemorySlotPartition[slot], offset);
+}
+
 static void spp3eUpdateVisibleRamBankMirrorByte(uint32_t bank, uint32_t offset, uint8_t value) {
   for (uint32_t slot = 0u; slot < 4u; slot++) {
     if (spp3eMemorySlotWritable[slot] != 0u && spp3eMemorySlotPartition[slot] == (int32_t)bank) {
@@ -1843,6 +1855,9 @@ void spp3eWriteMemory(uint32_t address, uint32_t value) {
   }
   const uint32_t offset = maskedAddress & 0x3fffu;
   const uint8_t byteValue = (uint8_t)value;
+  if (spp3eIsVisibleScreenSlotOffset(slot, offset) != 0u) {
+    spp3eUlaRenderUntilCurrentTact();
+  }
   spp3eMemorySlotBase[slot][offset] = byteValue;
   spp3eMemory[maskedAddress] = byteValue;
   if (spp3eIsContendedMemoryAddress(maskedAddress) != 0u) {
@@ -1862,6 +1877,9 @@ void spp3eWriteRamBank(uint32_t bank, uint32_t offset, uint32_t value) {
     return;
   }
   const uint8_t byteValue = (uint8_t)value;
+  if (spp3eIsVisibleScreenBankOffset(bank, offset) != 0u) {
+    spp3eUlaRenderUntilCurrentTact();
+  }
   spp3eRam[spp3eRamBankOffset(bank) + offset] = byteValue;
   spp3eUpdateVisibleRamBankMirrorByte(bank, offset, byteValue);
 }
@@ -1904,17 +1922,11 @@ uint32_t spp3eReadPort(uint32_t address) {
     const uint32_t selectedLines = (~(address >> 8u)) & 0xffu;
     const uint8_t status = spp3eKeyboardSelectedLineValue[selectedLines];
     uint32_t portValue = ((uint32_t)~status) & 0xffu;
-    uint8_t bit4Sensed = spp3eEarBit;
-    if (bit4Sensed == 0u) {
-      uint32_t chargeTime = spp3eEarBitChangedFrom1Tacts - spp3eEarBitChangedFrom0Tacts;
-      if (chargeTime > 0u) {
-        chargeTime = chargeTime > 700u ? 2800u : 4u * chargeTime;
-        bit4Sensed = spp3eTacts - spp3eEarBitChangedFrom1Tacts < chargeTime ? 1u : 0u;
-      }
+    if (spp3eTapeMode == SPP3E_TAPE_MODE_LOAD) {
+      const uint32_t bit6Value = spp3eCommonTapeGetEarBit() != 0u ? 0x40u : 0x00u;
+      return (portValue & 0xbfu) | bit6Value;
     }
-    const uint8_t earValue = spp3eTapeMode == SPP3E_TAPE_MODE_LOAD ? spp3eCommonTapeGetEarBit() : bit4Sensed;
-    const uint32_t bit6Value = earValue != 0u ? 0x40u : 0x00u;
-    return (portValue & 0xbfu) | bit6Value;
+    return portValue & 0xbfu;
   }
 
   if ((address & 0xc002u) == 0xc000u) {
@@ -1978,8 +1990,12 @@ void spp3eWritePort(uint32_t address, uint32_t value) {
     if (spp3ePagingEnabled == 0u) {
       return;
     }
+    const uint8_t nextUseShadowScreen = (value & 0x08u) != 0u ? 1u : 0u;
+    if (nextUseShadowScreen != spp3eUseShadowScreen) {
+      spp3eUlaRenderUntilCurrentTact();
+    }
     spp3eSelectedBank = (uint8_t)(value & 0x07u);
-    spp3eUseShadowScreen = (value & 0x08u) != 0u ? 1u : 0u;
+    spp3eUseShadowScreen = nextUseShadowScreen;
     spp3eSelectedRom = (uint8_t)(((value >> 4u) & 0x01u) | (spp3eSpecialConfigMode & 0x02u));
     spp3ePagingEnabled = (value & 0x20u) != 0u ? 0u : 1u;
     spp3eRebuildFlatMemory();

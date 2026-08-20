@@ -358,6 +358,58 @@ describe("ZX Spectrum WASM screen rendering and floating bus parity", () => {
     expect(wasmMachine.getPixelBuffer()[pixelIndex]).toBe(oracleMachine.getPixelBuffer()[pixelIndex]);
   });
 
+  it("+3E keeps already-rendered pixels stable before visible screen RAM writes", async () => {
+    const wasmMachine = await createTestSpp3eWasmMachine([testRom([]), testRom([]), testRom([]), testRom([])]);
+    const oracleMachine = await createOracleSpp3eMachine([testRom([]), testRom([]), testRom([]), testRom([])]);
+    const pixelFetchTact = findTactByPhase(wasmMachine, "spp3e", 2);
+    const attrFetchTact = findTactByPhaseAfter(wasmMachine, "spp3e", 3, pixelFetchTact);
+    const displayTact = findTactByPhaseAfter(wasmMachine, "spp3e", 4, attrFetchTact);
+    const pixelAddress = callWasmExport(wasmMachine, "spp3eGetRenderingPixelAddress")(pixelFetchTact);
+    const attrAddress = callWasmExport(wasmMachine, "spp3eGetRenderingAttributeAddress")(attrFetchTact);
+    const pixelIndex = callWasmExport(wasmMachine, "spp3eGetRenderingPixelIndex")(displayTact);
+
+    wasmMachine.writeTestMemory(0x4000 + pixelAddress, 0xff);
+    wasmMachine.writeTestMemory(0x4000 + attrAddress, 0x47);
+    oracleMachine.writeTestMemory(0x4000 + pixelAddress, 0xff);
+    oracleMachine.writeTestMemory(0x4000 + attrAddress, 0x47);
+    setBothTacts(wasmMachine, oracleMachine, displayTact);
+    renderOracleUntil(oracleMachine, displayTact);
+
+    wasmMachine.doWriteMemory(0x4000 + pixelAddress, 0x00);
+    oracleMachine.doWriteMemory(0x4000 + pixelAddress, 0x00);
+
+    expect(wasmMachine.getPixelBuffer()[pixelIndex]).toBe(WHITE);
+    expect(wasmMachine.getPixelBuffer()[pixelIndex]).toBe(oracleMachine.getPixelBuffer()[pixelIndex]);
+  });
+
+  it("+3E keeps already-rendered pixels stable before shadow-screen switches", async () => {
+    const wasmMachine = await createTestSpp3eWasmMachine([testRom([]), testRom([]), testRom([]), testRom([])]);
+    const oracleMachine = await createOracleSpp3eMachine([testRom([]), testRom([]), testRom([]), testRom([])]);
+    const pixelFetchTact = findTactByPhase(wasmMachine, "spp3e", 2);
+    const attrFetchTact = findTactByPhaseAfter(wasmMachine, "spp3e", 3, pixelFetchTact);
+    const displayTact = findTactByPhaseAfter(wasmMachine, "spp3e", 4, attrFetchTact);
+    const pixelAddress = callWasmExport(wasmMachine, "spp3eGetRenderingPixelAddress")(pixelFetchTact);
+    const attrAddress = callWasmExport(wasmMachine, "spp3eGetRenderingAttributeAddress")(attrFetchTact);
+    const pixelIndex = callWasmExport(wasmMachine, "spp3eGetRenderingPixelIndex")(displayTact);
+
+    writeRamBank(wasmMachine, "spp3e", 5, pixelAddress, 0xff);
+    writeRamBank(wasmMachine, "spp3e", 5, attrAddress, 0x47);
+    writeRamBank(wasmMachine, "spp3e", 7, pixelAddress, 0xff);
+    writeRamBank(wasmMachine, "spp3e", 7, attrAddress, 0x42);
+    writeOracleBankedScreenByte(oracleMachine, 5, pixelAddress, 0xff);
+    writeOracleBankedScreenByte(oracleMachine, 5, attrAddress, 0x47);
+    writeOracleBankedScreenByte(oracleMachine, 7, pixelAddress, 0xff);
+    writeOracleBankedScreenByte(oracleMachine, 7, attrAddress, 0x42);
+    setBothTacts(wasmMachine, oracleMachine, displayTact);
+    renderOracleUntil(oracleMachine, displayTact);
+
+    wasmMachine.writeTestPort(0x7ffd, 0x08);
+    oracleMachine.writeTestPort(0x7ffd, 0x08);
+
+    expect(wasmMachine.getPixelBuffer()[pixelIndex]).toBe(WHITE);
+    expect(wasmMachine.getPixelBuffer()[pixelIndex]).toBe(oracleMachine.getPixelBuffer()[pixelIndex]);
+  });
+
   it("+3E applies the exposed +2/+3 floating-bus rules for eligible ports", async () => {
     const roms = [testRom([]), testRom([]), testRom([]), testRom([])];
     const wasmMachine = await createTestSpp3eWasmMachine(roms);

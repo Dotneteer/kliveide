@@ -504,7 +504,7 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     expect(runtime.exports.spp3eGetEarBit()).toBe(1);
     expect(runtime.exports.spp3eGetMicBit()).toBe(1);
     expect(runtime.exports.spp3eGetBeeperLevel()).toBe(3);
-    expect(runtime.exports.spp3eReadPort(0xfffe)).toBe(0xff);
+    expect(runtime.exports.spp3eReadPort(0xfffe)).toBe(0xbf);
   });
 
   it("renders mid-frame 0xfe border color changes incrementally", async () => {
