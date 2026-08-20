@@ -63,6 +63,10 @@ static void zxnextCpuStepTacts(uint32_t instructionTacts) {
   }
 }
 
+static uint32_t zxnextCpuIsAtMaxSpeed(void) {
+  return (zxnextNextRegs[0x07] & 0x03u) == 0x03u;
+}
+
 static void zxnextCpuRefreshMemory(void) {
   uint8_t refreshed = (uint8_t)(((cpuIr & 0x00ffu) + 1u) & 0x7fu);
   cpuIr = (uint16_t)((cpuIr & 0xff00u) | refreshed | (cpuIr & 0x0080u));
@@ -136,7 +140,7 @@ static uint8_t zxnextCpuIsRetnOpcode(uint8_t opcode) {
 static void zxnextCpuLoad8Immediate(uint16_t *pair, uint8_t highByte) {
   uint8_t value = zxnextCpuFetchByte();
   *pair = highByte ? zxnextCpuSetHighByte(*pair, value) : zxnextCpuSetLowByte(*pair, value);
-  zxnextCpuStepTacts(7);
+  zxnextCpuStepTacts(zxnextCpuIsAtMaxSpeed() ? 9u : 7u);
 }
 
 static void zxnextCpuLoad16Immediate(uint16_t *pair) {
@@ -208,6 +212,10 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     case 0x3e:
       zxnextCpuLoad8Immediate(&cpuAf, 1);
       break;
+    case 0xaf:
+      cpuAf = 0x0044u;
+      zxnextCpuStepTacts(zxnextCpuIsAtMaxSpeed() ? 5u : 4u);
+      break;
     case 0xc3:
       cpuWz = zxnextCpuFetchWord();
       cpuPc = cpuWz;
@@ -224,6 +232,16 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
         if (extendedOpcode == 0x4du) zxnextInterruptsReti();
         zxnextNmiAfterRetn();
         zxnextCpuStepTacts(14);
+      } else if (extendedOpcode == 0x91u) {
+        uint32_t wasAtMaxSpeed = zxnextCpuIsAtMaxSpeed();
+        uint8_t reg = zxnextCpuFetchByte();
+        uint8_t value = zxnextCpuFetchByte();
+        zxnextNextRegSetDirect(reg, value);
+        zxnextCpuStepTacts(wasAtMaxSpeed ? 24u : 20u);
+      } else if (extendedOpcode == 0x92u) {
+        uint8_t reg = zxnextCpuFetchByte();
+        zxnextNextRegSetDirect(reg, cpuAf >> 8);
+        zxnextCpuStepTacts(17);
       } else {
         zxnextCpuStepTacts(8);
       }

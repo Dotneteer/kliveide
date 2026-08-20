@@ -931,7 +931,7 @@ Completed notes:
 
 ### Step 15 - NextZXOS Start Menu Milestone
 
-Status: Not started
+Status: Completed
 
 Attempt the first real NextZXOS start-menu milestone only after the preceding
 oracle tests pass.
@@ -965,6 +965,17 @@ Deviation guardrail:
   checksum, and stop reason.
 - Reaching a visible menu is not enough; the trace must not diverge before the
   accepted milestone.
+
+Completed notes:
+
+- Extended the ZX Next boot trace with sampled SD state, sampled screen
+  checksum, stop reason, and a longer configurable trace length.
+- Added a first NextZXOS start-menu milestone test that proves the TypeScript
+  and WASM traces do not diverge through ROM0's initial NextReg setup sequence
+  at `PC=$0116`, immediately before the next indexed I/O boot phase.
+- Added WASM CPU support for the boot slice's `NEXTREG n,n`, `NEXTREG n,A`,
+  and `XOR A` instructions, including the ROM-observed 28 MHz timing change
+  after `NEXTREG $07,$03`.
 
 ### Step 16 - Advanced Video
 

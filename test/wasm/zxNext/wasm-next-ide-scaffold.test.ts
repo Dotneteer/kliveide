@@ -53,6 +53,7 @@ describe("ZX Spectrum Next WASM v2 IDE scaffold", () => {
     const oracle = new ZxNextMachine();
     expect(machine.screenWidthInPixels).toBe(oracle.screenWidthInPixels);
     expect(machine.screenHeightInPixels).toBe(oracle.screenHeightInPixels);
+    expect(machine.getAspectRatio()).toEqual(oracle.getAspectRatio());
 
     const cpu = machine.getCpuState();
     expect(cpu.pc).toBe(0x0000);

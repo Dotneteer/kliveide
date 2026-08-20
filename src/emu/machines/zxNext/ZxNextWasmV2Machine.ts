@@ -790,7 +790,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   override getAspectRatio(): [number, number] {
-    return [5, 4];
+    return [0.5, 1];
   }
 
   override getPixelBuffer(): Uint32Array {

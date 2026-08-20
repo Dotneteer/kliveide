@@ -7,6 +7,7 @@ static void zxnextNextRegHardReset(void) {
   for (uint32_t i = 0; i < ZXNEXT_NEXT_REG_COUNT; i++) zxnextNextRegs[i] = 0;
   zxnextNextRegs[0x00] = 0x08;
   zxnextNextRegs[0x01] = 0x32;
+  zxnextNextRegs[0x03] = 0x03;
   zxnextNextRegs[0x08] = 0x1a;
   zxnextNextRegs[0x0e] = 0x00;
   zxnextNextRegs[0x0a] = 0x01;

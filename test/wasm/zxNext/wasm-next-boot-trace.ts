@@ -17,7 +17,10 @@ import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
 
 const BOOT_STEP_COUNT = 2;
 const ROM_SAMPLE_ADDRESSES = [0x0000, 0x0001, 0x0002, 0x0003, 0x00ef, 0x00f0];
-const NEXT_REG_SAMPLE_IDS = [0x00, 0x01, 0x8c, 0x8e, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57];
+const NEXT_REG_SAMPLE_IDS = [
+  0x00, 0x01, 0x03, 0x07, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x8a, 0x8c, 0x8e, 0x8f,
+  0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0xc0
+];
 
 type BootTraceMachine = TestZxNextMachine | ZxNextWasmV2Machine;
 
@@ -46,6 +49,17 @@ export type ZxNextBootTraceSnapshot = {
     sigInt: boolean;
     sigNmi: boolean;
   };
+  sdState: {
+    selectedCard: number;
+    card0State: number;
+    card1State: number;
+    hostCommand: number;
+    hostSector: number;
+    responseReady0: boolean;
+    responseReady1: boolean;
+  };
+  screenChecksum: number;
+  stopReason: string;
 };
 
 export type ZxNextBootTraceResult = {
@@ -61,6 +75,10 @@ export type ZxNextBootTraceResult = {
 };
 
 export async function createEarlyBootTrace(): Promise<ZxNextBootTraceResult> {
+  return createBootTrace(BOOT_STEP_COUNT);
+}
+
+export async function createBootTrace(stepCount = BOOT_STEP_COUNT): Promise<ZxNextBootTraceResult> {
   const roms = readZxNextBootRomImages();
   const { oracle, wasm } = await createZxNextOracleHarness();
   wasm.uploadWasmV2RomImages(roms);
@@ -68,8 +86,8 @@ export async function createEarlyBootTrace(): Promise<ZxNextBootTraceResult> {
   initializeBootTraceMachine(oracle);
   initializeBootTraceMachine(wasm);
 
-  const oracleTrace = collectBootTrace(oracle);
-  const wasmTrace = collectBootTrace(wasm);
+  const oracleTrace = collectBootTrace(oracle, stepCount);
+  const wasmTrace = collectBootTrace(wasm, stepCount);
 
   return {
     oracle: oracleTrace,
@@ -116,9 +134,9 @@ function initializeBootTraceMachine(machine: BootTraceMachine): void {
   machine.executionContext.lastTerminationReason = undefined;
 }
 
-function collectBootTrace(machine: BootTraceMachine): ZxNextBootTraceSnapshot[] {
+function collectBootTrace(machine: BootTraceMachine, stepCount: number): ZxNextBootTraceSnapshot[] {
   const snapshots = [captureBootSnapshot(machine, "reset")];
-  for (let step = 1; step <= BOOT_STEP_COUNT; step++) {
+  for (let step = 1; step <= stepCount; step++) {
     const termination = machine.executeMachineFrame();
     snapshots.push(captureBootSnapshot(machine, `step-${step}`, termination));
   }
@@ -143,7 +161,10 @@ function captureBootSnapshot(
       ROM_SAMPLE_ADDRESSES.map(address => [hex(address), machine.doReadMemory(address)])
     ),
     nextRegs: Object.fromEntries(
-      NEXT_REG_SAMPLE_IDS.map(reg => [hex(reg, 2), machine.nextRegDevice.getNextRegDeviceState().regs.find(item => item.id === reg)?.value ?? 0])
+      NEXT_REG_SAMPLE_IDS.map(reg => {
+        const state = machine.nextRegDevice.getNextRegDeviceState().regs.find(item => item.id === reg);
+        return [hex(reg, 2), state?.lastWrite ?? state?.value ?? 0];
+      })
     ),
     interruptState: {
       iff1: cpu.iff1,
@@ -151,7 +172,10 @@ function captureBootSnapshot(
       interruptMode: cpu.interruptMode,
       sigInt: cpu.sigINT,
       sigNmi: machine.sigNMI
-    }
+    },
+    sdState: captureSdState(machine),
+    screenChecksum: captureScreenChecksum(machine),
+    stopReason: describeStopReason(machine, termination)
   };
 }
 
@@ -186,4 +210,67 @@ function hex(value: number, digits = 4): string {
 function normalizeWasmOffset(offset: number): number | null {
   const normalized = offset >>> 0;
   return normalized === 0xffffffff ? null : normalized;
+}
+
+function captureSdState(machine: BootTraceMachine): ZxNextBootTraceSnapshot["sdState"] {
+  if (machine instanceof ZxNextWasmV2Machine) {
+    const wasm = machine.wasmV2Runtime!.exports;
+    return {
+      selectedCard: wasm.zxnextGetSdSelectedCard(),
+      card0State: wasm.zxnextGetSdState(0),
+      card1State: wasm.zxnextGetSdState(1),
+      hostCommand: wasm.zxnextGetSdHostCommand(),
+      hostSector: wasm.zxnextGetSdHostSector(),
+      responseReady0: wasm.zxnextGetSdResponseReady(0) !== 0,
+      responseReady1: wasm.zxnextGetSdResponseReady(1) !== 0
+    };
+  }
+
+  const sdCardDevice = machine.sdCardDevice as any;
+  return {
+    selectedCard: sdCardDevice.selectedCard,
+    card0State: sdCardDevice._state,
+    card1State: sdCardDevice._state1,
+    hostCommand: storageCommandId(machine.getFrameCommand()?.command),
+    hostSector: machine.getFrameCommand()?.sector ?? 0,
+    responseReady0: sdCardDevice._responseReady,
+    responseReady1: sdCardDevice._responseReady1
+  };
+}
+
+function storageCommandId(command: string | undefined): number {
+  switch (command) {
+    case "sd-read": return 1;
+    case "sd-write": return 2;
+    case "sd-read-card1": return 3;
+    case "sd-write-card1": return 4;
+    default: return 0;
+  }
+}
+
+function checksumWords(words: Uint32Array): number {
+  let checksum = 2166136261;
+  for (const word of words) {
+    checksum ^= word & 0xff;
+    checksum = Math.imul(checksum, 16777619) >>> 0;
+    checksum ^= (word >>> 8) & 0xff;
+    checksum = Math.imul(checksum, 16777619) >>> 0;
+    checksum ^= (word >>> 16) & 0xff;
+    checksum = Math.imul(checksum, 16777619) >>> 0;
+    checksum ^= (word >>> 24) & 0xff;
+    checksum = Math.imul(checksum, 16777619) >>> 0;
+  }
+  return checksum >>> 0;
+}
+
+function captureScreenChecksum(machine: BootTraceMachine): number {
+  machine.renderInstantScreen();
+  return checksumWords(machine.getPixelBuffer().subarray(0, 64));
+}
+
+function describeStopReason(machine: BootTraceMachine, termination?: FrameTerminationMode): string {
+  const frameCommand = machine.getFrameCommand();
+  if (frameCommand != null) return `frame-command:${frameCommand.command}`;
+  if (termination != null) return FrameTerminationMode[termination] ?? String(termination);
+  return "sample";
 }
