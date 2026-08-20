@@ -1374,7 +1374,7 @@ TypeScript to WASM.
 
 ### Step 21 - Full NextZXOS Boot And App-Level Smoke
 
-Status: Not started
+Status: Done on 2026-08-20.
 
 Extend the current start-menu milestone into a real production boot gate. The
 WASM backend must boot the shipped NextZXOS ROM through the start menu and at
@@ -1397,7 +1397,26 @@ Target files:
 
 - `test/wasm/zxNext/wasm-next-full-boot.test.ts`
 - `test/wasm/zxNext/wasm-next-visual-smoke.test.ts`
-- `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-ula.c`
+
+Completed:
+
+- Added standard 256x192 ULA bitmap/attribute rendering inside the WASM
+  720x288 output buffer, while preserving the reset border color expected by
+  existing TypeScript oracle snapshots.
+- Added a full boot smoke test that checks deterministic boot parity through
+  the existing NextZXOS milestone, then continues WASM execution for bounded
+  normal frames with keyboard input routed through the WASM keyboard matrix.
+- Added a visual smoke test that verifies output dimensions, nonuniform pixels,
+  a real centered screen area, and a regression failure for the full light-gray
+  fallback pane.
+- Verified:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-full-boot.test.ts test/wasm/zxNext/wasm-next-visual-smoke.test.ts test/wasm/zxNext/wasm-next-start-menu.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts`
+  - `npm run build:zxnext-wasm`
+  - `npm run check:zxnext-wasm-size` (`actualBytes`: 56003, `maxBytes`: 120000)
+  - `npm run build:check`
+  - `git diff --check`
+  - `npm run test` (555 files passed, 18,946 tests passed)
 
 Done when:
 
