@@ -2,6 +2,8 @@
 #include "zxnext-memory.h"
 #include "zxnext-interrupts.h"
 #include "zxnext-divmmc.h"
+#include "zxnext-input.h"
+#include "zxnext-expansion.h"
 
 static void zxnextNextRegHardReset(void) {
   for (uint32_t i = 0; i < ZXNEXT_NEXT_REG_COUNT; i++) zxnextNextRegs[i] = 0;
@@ -49,6 +51,8 @@ static void zxnextNextRegHardReset(void) {
   zxnextDivMmcSetNextRegB9(zxnextNextRegs[0xb9]);
   zxnextDivMmcSetNextRegBA(zxnextNextRegs[0xba]);
   zxnextDivMmcSetNextRegBB(zxnextNextRegs[0xbb]);
+  zxnextMouseSetNextReg0A(zxnextNextRegs[0x0a]);
+  zxnextExpansionHardReset();
   zxnextMemoryResetMapping();
 }
 
@@ -79,6 +83,7 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
     zxnextDivMmcSetNextReg09(value);
   } else if (normalized == 0x0au) {
     zxnextDivMmcSetNextReg0A(value);
+    zxnextMouseSetNextReg0A(value);
   } else if (normalized == 0x83u) {
     zxnextDivMmcSetNextReg83(value);
   } else if (normalized == 0xb8u) {
@@ -105,6 +110,7 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   zxnextTilemapSetNextReg(normalized, value);
   zxnextSpritesSetNextReg(normalized, value);
   zxnextCopperSetNextReg(normalized, value);
+  if (zxnextExpansionHandlesNextReg(normalized)) zxnextExpansionSetNextReg(normalized, value);
   zxnextMemorySetNextRegister(reg, value);
 }
 
@@ -115,6 +121,14 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
     case 0xb9u: return zxnextDivMmcGetNextRegB9();
     case 0xbau: return zxnextDivMmcGetNextRegBA();
     case 0xbbu: return zxnextDivMmcGetNextRegBB();
+    case 0x80u:
+    case 0x81u:
+    case 0x86u:
+    case 0x87u:
+    case 0x88u:
+    case 0x89u:
+    case 0x8au:
+      return zxnextExpansionGetNextReg(reg);
     case 0x2cu:
     case 0x2du:
     case 0x2eu:

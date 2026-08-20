@@ -1067,7 +1067,7 @@ Completion notes:
 
 ### Step 17 - Audio
 
-Status: In progress
+Status: Done
 
 Migrate beeper, PSG/TurboSound, DAC, mixer routing, and sample buffer exposure.
 
@@ -1152,7 +1152,21 @@ Completion notes:
 
 ### Step 18 - DMA, CTC, UART, I2C, Joystick, Mouse, Expansion, And Floppy
 
-Status: Not started
+Status: Done
+
+Deviation note (2026-08-20): the listed target module files also require updates
+to the single-translation-unit include list, public export list, loader export
+types, and port/NextReg dispatchers (`zxnext.c`, `zxnext-ports.c`,
+`zxnext-nextreg.c`, `scripts/build-zxnext-wasm.cjs`,
+`ZxNextWasmV2Loader.ts`) so the migrated device state is reachable from tests
+and the normal artifact.
+
+Validation (2026-08-20): added focused TypeScript-vs-WASM oracle tests for DMA,
+CTC, UART/I2C, joystick/mouse input, expansion/multiface-adjacent state, and
+floppy reset/command shell behavior. Passed:
+`npm test -- --project jsdom test/wasm/zxNext/wasm-next-dma.test.ts test/wasm/zxNext/wasm-next-ctc.test.ts test/wasm/zxNext/wasm-next-uart-i2c.test.ts test/wasm/zxNext/wasm-next-input.test.ts test/wasm/zxNext/wasm-next-expansion-multiface.test.ts test/wasm/zxNext/wasm-next-floppy.test.ts`,
+`npm run build:zxnext-wasm`, `npm run check:zxnext-wasm-size`,
+`npm run build:check`, `npm run test`, and `git diff --check`.
 
 Migrate remaining devices with sibling tests copied from the TypeScript Next
 coverage and oracle assertions where public behavior spans multiple devices.

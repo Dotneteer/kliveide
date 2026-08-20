@@ -74,6 +74,13 @@ static uint8_t micBit;
 #include "zxnext-dac.c"
 #include "zxnext-psg.c"
 #include "zxnext-audio-mixer.c"
+#include "zxnext-ctc.c"
+#include "zxnext-uart.c"
+#include "zxnext-i2c.c"
+#include "zxnext-input.c"
+#include "zxnext-expansion.c"
+#include "zxnext-dma.c"
+#include "zxnext-floppy.c"
 #include "zxnext-nextreg.c"
 #include "zxnext-ports.c"
 #include "zxnext-cpu.c"
@@ -98,6 +105,13 @@ static void clearScaffoldBuffers(void) {
   zxnextDacReset();
   zxnextPsgReset();
   zxnextAudioMixerReset();
+  zxnextCtcReset();
+  zxnextUartReset();
+  zxnextI2cReset();
+  zxnextInputReset();
+  zxnextExpansionHardReset();
+  zxnextDmaReset();
+  zxnextFloppyReset();
   zxnextNextRegHardReset();
 }
 
@@ -138,6 +152,13 @@ void zxnextReset(void) {
   zxnextDacReset();
   zxnextPsgReset();
   zxnextAudioMixerReset();
+  zxnextCtcReset();
+  zxnextUartReset();
+  zxnextI2cReset();
+  zxnextInputReset();
+  zxnextExpansionReset();
+  zxnextDmaReset();
+  zxnextFloppyReset();
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryIsWrite = 0;

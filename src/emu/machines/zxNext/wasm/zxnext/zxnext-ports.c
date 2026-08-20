@@ -7,6 +7,10 @@
 #include "zxnext-dac.h"
 #include "zxnext-psg.h"
 #include "zxnext-beeper.h"
+#include "zxnext-uart.h"
+#include "zxnext-i2c.h"
+#include "zxnext-input.h"
+#include "zxnext-dma.h"
 
 static uint8_t zxnextPortsGroupEnabled(uint32_t regIndex, uint32_t bit) {
   uint32_t reg = 0x82u + (regIndex & 0x03u);
@@ -30,6 +34,27 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     lastPortValue = zxnextNextRegGetIndex();
   } else if ((normalized & 0xffffu) == 0x253bu) {
     lastPortValue = zxnextNextRegGetValue();
+  } else if ((normalized & 0xffffu) == 0x133bu ||
+             (normalized & 0xffffu) == 0x143bu ||
+             (normalized & 0xffffu) == 0x153bu ||
+             (normalized & 0xffffu) == 0x163bu) {
+    lastPortValue = zxnextUartReadPort(normalized);
+  } else if ((normalized & 0xffffu) == 0x103bu) {
+    lastPortValue = zxnextI2cReadSclPort();
+  } else if ((normalized & 0xffffu) == 0x113bu) {
+    lastPortValue = zxnextI2cReadSdaPort();
+  } else if ((normalized & 0x00ffu) == 0x006bu) {
+    zxnextDmaSetMode(0);
+    lastPortValue = zxnextDmaReadStatusByte();
+  } else if ((normalized & 0x00ffu) == 0x000bu) {
+    zxnextDmaSetMode(1);
+    lastPortValue = zxnextDmaReadStatusByte();
+  } else if ((normalized & 0xffffu) == 0xfbdfu ||
+             (normalized & 0xffffu) == 0xffdfu ||
+             (normalized & 0xffffu) == 0xfadfu ||
+             (normalized & 0x00ffu) == 0x001fu ||
+             (normalized & 0x00ffu) == 0x0037u) {
+    lastPortValue = zxnextInputReadPort(normalized);
   } else if ((normalized & 0x00ffu) == 0x00e3u) {
     lastPortValue = zxnextPortsGroupEnabled(1, 4) ? zxnextDivMmcGetPortE3() : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ebu) {
@@ -56,6 +81,21 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     zxnextNextRegSetIndex(byteValue);
   } else if ((normalized & 0xffffu) == 0x253bu) {
     zxnextNextRegSetValue(byteValue);
+  } else if ((normalized & 0xffffu) == 0x133bu ||
+             (normalized & 0xffffu) == 0x143bu ||
+             (normalized & 0xffffu) == 0x153bu ||
+             (normalized & 0xffffu) == 0x163bu) {
+    zxnextUartWritePort(normalized, byteValue);
+  } else if ((normalized & 0xffffu) == 0x103bu) {
+    zxnextI2cWriteSclPort(byteValue);
+  } else if ((normalized & 0xffffu) == 0x113bu) {
+    zxnextI2cWriteSdaPort(byteValue);
+  } else if ((normalized & 0x00ffu) == 0x006bu) {
+    zxnextDmaSetMode(0);
+    zxnextDmaWritePort(byteValue);
+  } else if ((normalized & 0x00ffu) == 0x000bu) {
+    zxnextDmaSetMode(1);
+    zxnextDmaWritePort(byteValue);
   } else if ((normalized & 0xc003u) == 0x4001u) {
     if (zxnextPortsGroupEnabled(0, 1)) zxnextMemorySetPort7ffd(byteValue);
   } else if ((normalized & 0xf003u) == 0xd001u) {
