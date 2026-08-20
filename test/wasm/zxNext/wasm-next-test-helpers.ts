@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { resolve } from "node:path";
 
 import type {
   ZxNextOracleComparison,
@@ -37,7 +38,7 @@ export type ZxNextOracleHarness = {
 };
 
 export async function buildZxNextWasmArtifact(force = false): Promise<void> {
-  if (!force && zxNextWasmBuilt) return;
+  if (!force && zxNextWasmBuilt && !isZxNextWasmSourceNewerThanArtifact()) return;
   buildZxNextWasm();
   zxNextWasmBuilt = true;
 }
@@ -55,6 +56,16 @@ export async function createTestZxNextWasmMachine(): Promise<ZxNextWasmV2Machine
   );
   await machine.setup();
   return machine;
+}
+
+function isZxNextWasmSourceNewerThanArtifact(): boolean {
+  if (!existsSync(productionOutput)) return true;
+  const artifactTime = statSync(productionOutput).mtimeMs;
+  const sourceRoot = resolve(__dirname, "../../../src/emu/machines/zxNext/wasm/zxnext");
+  return readdirSync(sourceRoot).some(entry => {
+    if (!entry.endsWith(".c") && !entry.endsWith(".h")) return false;
+    return statSync(resolve(sourceRoot, entry)).mtimeMs > artifactTime;
+  });
 }
 
 export async function createOracleZxNextMachine(): Promise<TestZxNextMachine> {

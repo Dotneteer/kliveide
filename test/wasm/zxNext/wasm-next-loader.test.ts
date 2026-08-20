@@ -153,6 +153,15 @@ function createViewExports(
     zxnextGetBeeperLevel: fn,
     zxnextGetDiagnosticFlags: fn,
     zxnextReadPhysicalMemory: fn,
-    zxnextChecksumPhysicalMemory: fn
+    zxnextChecksumPhysicalMemory: fn,
+    zxnextSetTapeMode: fn,
+    zxnextGetTapeMode: fn,
+    zxnextGetTapeEarBit: fn,
+    zxnextProcessTapeMicBit: fn,
+    zxnextGetUlaFlashCounter: fn,
+    zxnextGetUlaFlashFlag: fn,
+    zxnextAdvanceUlaFrameState: fn,
+    zxnextGetUlaScanlineForTact: fn,
+    zxnextGetUlaColumnForTact: fn
   } as ZxNextWasmV2Exports;
 }

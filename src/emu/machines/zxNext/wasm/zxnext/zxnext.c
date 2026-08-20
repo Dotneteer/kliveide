@@ -60,6 +60,9 @@ static uint8_t micBit;
 #include "zxnext-diagnostics.c"
 #include "zxnext-nmi.c"
 #include "zxnext-interrupts.c"
+#include "zxnext-keyboard.c"
+#include "zxnext-tape.c"
+#include "zxnext-ula.c"
 #include "zxnext-nextreg.c"
 #include "zxnext-ports.c"
 #include "zxnext-cpu.c"
@@ -71,8 +74,8 @@ uint32_t zxnextNextRegsPtr(void) { return (uint32_t)(uintptr_t)zxnextNextRegs; }
 
 static void clearScaffoldBuffers(void) {
   for (uint32_t i = 0; i < ZXNEXT_MEMORY_SIZE; i++) zxnextMemory[i] = 0;
-  for (uint32_t i = 0; i < ZXNEXT_PIXEL_COUNT; i++) zxnextPixelBuffer[i] = 0xff000000u;
-  for (uint32_t i = 0; i < ZXNEXT_KEYBOARD_LINE_COUNT; i++) zxnextKeyboardLines[i] = 0;
+  for (uint32_t i = 0; i < ZXNEXT_PIXEL_COUNT; i++) zxnextPixelBuffer[i] = 0x00000000u;
+  zxnextKeyboardReset();
   zxnextNextRegHardReset();
 }
 
@@ -101,6 +104,7 @@ void zxnextReset(void) {
   zxnextCpuReset();
   zxnextNmiReset();
   zxnextInterruptsReset();
+  zxnextTapeReset();
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryIsWrite = 0;
@@ -121,7 +125,7 @@ uint32_t zxnextExecuteInstruction(void) {
 }
 
 uint32_t zxnextRenderInstantScreen(void) {
-  return zxnextFrameRenderScaffold();
+  return zxnextUlaRenderInstantScreen();
 }
 
 uint32_t zxnextReadMemory(uint32_t address) {
@@ -160,20 +164,9 @@ uint32_t zxnextGetMemorySelectedRamBank(void) {
   return zxnextMemoryGetSelectedRamBank();
 }
 
-void zxnextSetKeyStatus(uint32_t key, uint32_t isDown) {
-  uint32_t line = key / 5u;
-  uint32_t bit = key % 5u;
-  if (line >= ZXNEXT_KEYBOARD_LINE_COUNT) return;
-  if (isDown != 0) {
-    zxnextKeyboardLines[line] |= (uint8_t)(1u << bit);
-  } else {
-    zxnextKeyboardLines[line] &= (uint8_t)~(1u << bit);
-  }
-}
+void zxnextSetKeyStatus(uint32_t key, uint32_t isDown) { zxnextKeyboardSetKeyStatus(key, isDown); }
 
-uint32_t zxnextGetKeyboardLine(uint32_t line) {
-  return line < ZXNEXT_KEYBOARD_LINE_COUNT ? zxnextKeyboardLines[line] : 0;
-}
+uint32_t zxnextGetKeyboardLine(uint32_t line) { return zxnextKeyboardGetLine(line); }
 
 uint32_t zxnextReadPort(uint32_t address) {
   return zxnextPortsRead(address);
@@ -275,3 +268,12 @@ uint32_t zxnextReadPhysicalMemory(uint32_t offset) { return zxnextDiagnosticsRea
 uint32_t zxnextChecksumPhysicalMemory(uint32_t offset, uint32_t length) {
   return zxnextDiagnosticsChecksumPhysical(offset, length);
 }
+void zxnextSetTapeMode(uint32_t mode) { zxnextTapeSetMode(mode); }
+uint32_t zxnextGetTapeMode(void) { return zxnextTapeGetMode(); }
+uint32_t zxnextGetTapeEarBit(void) { return zxnextTapeGetEarBit(); }
+void zxnextProcessTapeMicBit(uint32_t value) { zxnextTapeProcessMicBit(value); }
+uint32_t zxnextGetUlaFlashCounter(void) { return zxnextUlaGetFlashCounter(); }
+uint32_t zxnextGetUlaFlashFlag(void) { return zxnextUlaGetFlashFlag(); }
+void zxnextAdvanceUlaFrameState(void) { zxnextUlaOnFrameCompleted(); }
+uint32_t zxnextGetUlaScanlineForTact(uint32_t tact) { return zxnextUlaGetScanlineForTact(tact); }
+uint32_t zxnextGetUlaColumnForTact(uint32_t tact) { return zxnextUlaGetColumnForTact(tact); }

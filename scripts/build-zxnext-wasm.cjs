@@ -120,7 +120,16 @@ const productionExports = [
   "zxnextGetBeeperLevel",
   "zxnextGetDiagnosticFlags",
   "zxnextReadPhysicalMemory",
-  "zxnextChecksumPhysicalMemory"
+  "zxnextChecksumPhysicalMemory",
+  "zxnextSetTapeMode",
+  "zxnextGetTapeMode",
+  "zxnextGetTapeEarBit",
+  "zxnextProcessTapeMicBit",
+  "zxnextGetUlaFlashCounter",
+  "zxnextGetUlaFlashFlag",
+  "zxnextAdvanceUlaFrameState",
+  "zxnextGetUlaScanlineForTact",
+  "zxnextGetUlaColumnForTact"
 ];
 
 const buildModes = {

@@ -115,6 +115,15 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetDiagnosticFlags: ZxNextWasmV2ExportFunction;
   zxnextReadPhysicalMemory: ZxNextWasmV2ExportFunction;
   zxnextChecksumPhysicalMemory: ZxNextWasmV2ExportFunction;
+  zxnextSetTapeMode: ZxNextWasmV2ExportFunction;
+  zxnextGetTapeMode: ZxNextWasmV2ExportFunction;
+  zxnextGetTapeEarBit: ZxNextWasmV2ExportFunction;
+  zxnextProcessTapeMicBit: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaFlashCounter: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaFlashFlag: ZxNextWasmV2ExportFunction;
+  zxnextAdvanceUlaFrameState: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaScanlineForTact: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaColumnForTact: ZxNextWasmV2ExportFunction;
 };
 
 export type ZxNextWasmV2Instance = {
@@ -250,7 +259,16 @@ const requiredV2Exports = [
   "zxnextGetBeeperLevel",
   "zxnextGetDiagnosticFlags",
   "zxnextReadPhysicalMemory",
-  "zxnextChecksumPhysicalMemory"
+  "zxnextChecksumPhysicalMemory",
+  "zxnextSetTapeMode",
+  "zxnextGetTapeMode",
+  "zxnextGetTapeEarBit",
+  "zxnextProcessTapeMicBit",
+  "zxnextGetUlaFlashCounter",
+  "zxnextGetUlaFlashFlag",
+  "zxnextAdvanceUlaFrameState",
+  "zxnextGetUlaScanlineForTact",
+  "zxnextGetUlaColumnForTact"
 ] as const;
 
 export function resetZxNextWasmV2ModuleCache(): void {

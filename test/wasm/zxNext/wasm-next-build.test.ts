@@ -27,7 +27,10 @@ describe("ZX Spectrum Next WASM scaffold build", () => {
       "zxnextSetCpuPc",
       "zxnextGetDiagnosticFlags",
       "zxnextReadPhysicalMemory",
-      "zxnextChecksumPhysicalMemory"
+      "zxnextChecksumPhysicalMemory",
+      "zxnextGetTapeMode",
+      "zxnextGetUlaFlashFlag",
+      "zxnextGetUlaScanlineForTact"
     ]));
     expect(outputRelative).toBe("src/emu/machines/zxNext/wasm/dist/zx-spectrum-next.wasm");
   });

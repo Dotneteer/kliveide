@@ -15,7 +15,3 @@ static uint32_t zxnextFrameExecute(void) {
   }
   return 0;
 }
-
-static uint32_t zxnextFrameRenderScaffold(void) {
-  return ZXNEXT_PIXEL_COUNT;
-}

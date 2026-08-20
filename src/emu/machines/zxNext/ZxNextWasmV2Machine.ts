@@ -8,6 +8,7 @@ import type { ZxNextWasmV2LoaderOptions, ZxNextWasmV2Runtime } from "./wasm/ZxNe
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
+import { TapeMode } from "@emu/abstractions/TapeMode";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
 import { ZxNextMachine } from "./ZxNextMachine";
 
@@ -77,7 +78,11 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     readonly borderColor: number;
   };
   public readonly tapeDevice: {
-    readonly micBit: boolean;
+    tapeMode: TapeMode;
+    updateTapeMode: () => void;
+    getTapeEarBit: () => boolean;
+    micBit: boolean;
+    processMicBit: (micBit: boolean) => void;
   };
   public readonly floatingBusDevice: {
     readFloatingBus: () => number;
@@ -103,8 +108,26 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       }
     };
     this.tapeDevice = {
+      get tapeMode() {
+        return (wasmSelf.wasmV2Runtime?.exports.zxnextGetTapeMode() ?? TapeMode.Passive) as TapeMode;
+      },
+      set tapeMode(value: TapeMode) {
+        wasmSelf.wasmV2Runtime?.exports.zxnextSetTapeMode(value);
+      },
+      updateTapeMode() {
+        // Full ROM tape routine detection remains in TypeScript until storage/tape block migration.
+      },
+      getTapeEarBit() {
+        return wasmSelf.wasmV2Runtime?.exports.zxnextGetTapeEarBit() !== 0;
+      },
       get micBit() {
         return wasmSelf.wasmV2Runtime?.exports.zxnextGetMicBit() !== 0;
+      },
+      set micBit(value: boolean) {
+        wasmSelf.wasmV2Runtime?.exports.zxnextProcessTapeMicBit(value ? 1 : 0);
+      },
+      processMicBit(micBit: boolean) {
+        wasmSelf.wasmV2Runtime?.exports.zxnextProcessTapeMicBit(micBit ? 1 : 0);
       }
     };
     this.floatingBusDevice = {

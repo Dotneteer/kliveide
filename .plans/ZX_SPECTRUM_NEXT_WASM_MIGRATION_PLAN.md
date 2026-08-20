@@ -813,7 +813,7 @@ Completed notes:
 
 ### Step 13 - ULA, Keyboard, Tape, And Standard Screen
 
-Status: Not started
+Status: Completed
 
 Migrate keyboard matrix, tape EAR/MIC interaction, ULA port behavior, border,
 floating bus, and standard ULA rendering.
@@ -859,6 +859,18 @@ Deviation guardrail:
   value, flash state, pixel buffer bytes, and sampled scanline timing.
 - Spectrum common WASM ULA/keyboard/tape code may be reused only where these
   comparisons prove Next behavior is identical.
+
+Completed notes:
+
+- Split ZX Next WASM keyboard, tape, and ULA/screen behavior into owned C
+  modules and routed port `$FE`, keyboard rows, tape MIC/EAR state, blank ULA
+  rendering, flash state, and scanline timing diagnostics through them.
+- Added adapter tape-device plumbing and WASM exports for tape state, ULA flash
+  state, and sampled scanline/column timing.
+- Added `wasm-next-keyboard-ula.test.ts`, `wasm-next-tape.test.ts`, and
+  `wasm-next-screen-ula.test.ts` parity coverage for keyboard rows, issue 2/3
+  behavior, ULA reads/writes, EAR/MIC/tape mode, border color, floating bus,
+  flash state, pixel buffer bytes, and sampled scanline timing.
 
 ### Step 14 - DivMMC And SD SPI
 

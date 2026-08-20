@@ -57,6 +57,7 @@ static void zxnextCpuStepTacts(uint32_t instructionTacts) {
   if (currentFrameTact < previousFrameTact) {
     frames++;
     frameCompleted = 1;
+    zxnextUlaOnFrameCompleted();
   } else {
     frameCompleted = 0;
   }

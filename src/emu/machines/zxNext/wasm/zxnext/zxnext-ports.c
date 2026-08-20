@@ -1,6 +1,7 @@
 #include "zxnext-ports.h"
 #include "zxnext-nextreg.h"
 #include "zxnext-memory.h"
+#include "zxnext-ula.h"
 
 static uint8_t zxnextPortsGroupEnabled(uint32_t regIndex, uint32_t bit) {
   uint32_t reg = 0x82u + (regIndex & 0x03u);
@@ -12,27 +13,7 @@ static void zxnextPortsReset(void) {
   lastPortValue = 0;
   lastPortIsWrite = 0;
   nextRegIndex = 0;
-  portFeValue = 0xff;
-  portTimexValue = 0;
-  borderColor = 0;
-  earBit = 0;
-  micBit = 0;
-}
-
-static uint8_t zxnextPortsReadFe(uint16_t address) {
-  uint8_t portValue = 0xff;
-  uint8_t selector = (uint8_t)(address >> 8);
-  for (uint32_t line = 0; line < ZXNEXT_KEYBOARD_LINE_COUNT; line++) {
-    if ((selector & (1u << line)) == 0) {
-      portValue &= (uint8_t)~zxnextKeyboardLines[line];
-    }
-  }
-  if (earBit || (micBit && (zxnextNextRegs[0x08] & 0x01u) != 0)) {
-    portValue |= 0x40u;
-  } else {
-    portValue &= (uint8_t)~0x40u;
-  }
-  return portValue;
+  zxnextUlaReset();
 }
 
 static uint32_t zxnextPortsRead(uint32_t address) {
@@ -47,7 +28,7 @@ static uint32_t zxnextPortsRead(uint32_t address) {
   } else if ((normalized & 0x00ffu) == 0x00ffu) {
     lastPortValue = zxnextPortsGroupEnabled(0, 0) ? portTimexValue : 0xffu;
   } else if ((normalized & 0x0001u) == 0) {
-    lastPortValue = zxnextPortsReadFe(normalized);
+    lastPortValue = zxnextUlaReadPortFe(normalized);
   } else {
     lastPortValue = 0xff;
   }
@@ -74,9 +55,6 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   } else if ((normalized & 0x00ffu) == 0x00ffu) {
     if (zxnextPortsGroupEnabled(0, 0)) portTimexValue = byteValue;
   } else if ((normalized & 0x0001u) == 0) {
-    portFeValue = byteValue;
-    borderColor = byteValue & 0x07u;
-    micBit = (byteValue & 0x08u) != 0;
-    earBit = (byteValue & 0x10u) != 0;
+    zxnextUlaWritePortFe(byteValue);
   }
 }
