@@ -275,6 +275,89 @@ describe("ZX Spectrum WASM screen rendering and floating bus parity", () => {
     expect(mismatches).toEqual([]);
   });
 
+  it("128K renders CPU-driven border changes from contended RAM like TypeScript", async () => {
+    const wasmMachine = await createTestSp128WasmMachine(testRom([]), testRom([]));
+    const oracleMachine = await createOracleSp128Machine(testRom([]), testRom([]));
+    const code = [
+      0x3e, 0x02,
+      0xd3, 0xfe,
+      0x3e, 0x01,
+      0xd3, 0xfe
+    ];
+
+    wasmMachine.initCode(code, 0x4000);
+    oracleMachine.initCode(code, 0x4000);
+    wasmMachine.writeTestPort(0x00fe, 0x01);
+    oracleMachine.writeTestPort(0x00fe, 0x01);
+    renderBoth(wasmMachine, oracleMachine);
+    setBothTacts(wasmMachine, oracleMachine, 14362);
+
+    for (let i = 0; i < 4; i++) {
+      oracleMachine.executeOne();
+      wasmMachine.executeOne();
+      expect(callWasmExport(wasmMachine, "sp128GetTacts")(), `tacts after instruction ${i}`).toBe(
+        oracleMachine.tacts
+      );
+      expect(callWasmExport(wasmMachine, "sp128GetBorderColor")(), `border after instruction ${i}`).toBe(
+        oracleMachine.screenDevice.borderColor
+      );
+    }
+
+    expect(wasmMachine.getPixelBuffer()).toContain(RED);
+  });
+
+  it("128K keeps already-rendered pixels stable before visible screen RAM writes", async () => {
+    const wasmMachine = await createTestSp128WasmMachine(testRom([]), testRom([]));
+    const oracleMachine = await createOracleSp128Machine(testRom([]), testRom([]));
+    const pixelFetchTact = findTactByPhase(wasmMachine, "sp128", 2);
+    const attrFetchTact = findTactByPhaseAfter(wasmMachine, "sp128", 3, pixelFetchTact);
+    const displayTact = findTactByPhaseAfter(wasmMachine, "sp128", 4, attrFetchTact);
+    const pixelAddress = callWasmExport(wasmMachine, "sp128GetRenderingPixelAddress")(pixelFetchTact);
+    const attrAddress = callWasmExport(wasmMachine, "sp128GetRenderingAttributeAddress")(attrFetchTact);
+    const pixelIndex = callWasmExport(wasmMachine, "sp128GetRenderingPixelIndex")(displayTact);
+
+    wasmMachine.writeTestMemory(0x4000 + pixelAddress, 0xff);
+    wasmMachine.writeTestMemory(0x4000 + attrAddress, 0x47);
+    oracleMachine.writeTestMemory(0x4000 + pixelAddress, 0xff);
+    oracleMachine.writeTestMemory(0x4000 + attrAddress, 0x47);
+    setBothTacts(wasmMachine, oracleMachine, displayTact);
+    renderOracleUntil(oracleMachine, displayTact);
+
+    wasmMachine.doWriteMemory(0x4000 + pixelAddress, 0x00);
+    oracleMachine.doWriteMemory(0x4000 + pixelAddress, 0x00);
+
+    expect(wasmMachine.getPixelBuffer()[pixelIndex]).toBe(WHITE);
+    expect(wasmMachine.getPixelBuffer()[pixelIndex]).toBe(oracleMachine.getPixelBuffer()[pixelIndex]);
+  });
+
+  it("128K keeps already-rendered pixels stable before shadow-screen switches", async () => {
+    const wasmMachine = await createTestSp128WasmMachine(testRom([]), testRom([]));
+    const oracleMachine = await createOracleSp128Machine(testRom([]), testRom([]));
+    const pixelFetchTact = findTactByPhase(wasmMachine, "sp128", 2);
+    const attrFetchTact = findTactByPhaseAfter(wasmMachine, "sp128", 3, pixelFetchTact);
+    const displayTact = findTactByPhaseAfter(wasmMachine, "sp128", 4, attrFetchTact);
+    const pixelAddress = callWasmExport(wasmMachine, "sp128GetRenderingPixelAddress")(pixelFetchTact);
+    const attrAddress = callWasmExport(wasmMachine, "sp128GetRenderingAttributeAddress")(attrFetchTact);
+    const pixelIndex = callWasmExport(wasmMachine, "sp128GetRenderingPixelIndex")(displayTact);
+
+    writeRamBank(wasmMachine, "sp128", 5, pixelAddress, 0xff);
+    writeRamBank(wasmMachine, "sp128", 5, attrAddress, 0x47);
+    writeRamBank(wasmMachine, "sp128", 7, pixelAddress, 0xff);
+    writeRamBank(wasmMachine, "sp128", 7, attrAddress, 0x42);
+    writeOracleBankedScreenByte(oracleMachine, 5, pixelAddress, 0xff);
+    writeOracleBankedScreenByte(oracleMachine, 5, attrAddress, 0x47);
+    writeOracleBankedScreenByte(oracleMachine, 7, pixelAddress, 0xff);
+    writeOracleBankedScreenByte(oracleMachine, 7, attrAddress, 0x42);
+    setBothTacts(wasmMachine, oracleMachine, displayTact);
+    renderOracleUntil(oracleMachine, displayTact);
+
+    wasmMachine.writeTestPort(0x7ffd, 0x08);
+    oracleMachine.writeTestPort(0x7ffd, 0x08);
+
+    expect(wasmMachine.getPixelBuffer()[pixelIndex]).toBe(WHITE);
+    expect(wasmMachine.getPixelBuffer()[pixelIndex]).toBe(oracleMachine.getPixelBuffer()[pixelIndex]);
+  });
+
   it("+3E applies the exposed +2/+3 floating-bus rules for eligible ports", async () => {
     const roms = [testRom([]), testRom([]), testRom([]), testRom([])];
     const wasmMachine = await createTestSpp3eWasmMachine(roms);

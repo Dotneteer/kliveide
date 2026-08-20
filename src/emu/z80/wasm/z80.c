@@ -25,6 +25,14 @@
 #define Z80_CAPTURE_BUS_EVENTS() 1
 #endif
 
+#ifndef Z80_DELAY_ADDRESS_BUS_ACCESS
+#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) ((void)(address))
+#endif
+
+#ifndef Z80_ALWAYS_INLINE
+#define Z80_ALWAYS_INLINE static inline __attribute__((always_inline))
+#endif
+
 // -----------------------------------------------------------------------------
 // Types
 // -----------------------------------------------------------------------------
@@ -125,11 +133,11 @@ static inline uint8_t hi(uint16_t value) { return (uint8_t)(value >> 8); }
 static inline uint8_t lo(uint16_t value) { return (uint8_t)value; }
 static inline uint16_t pair(uint8_t high, uint8_t low) { return ((uint16_t)high << 8) | low; }
 
-static inline RegisterPair *activeIndexPair(void) {
+Z80_ALWAYS_INLINE RegisterPair *activeIndexPair(void) {
   return cpu.prefix == PREFIX_FD || cpu.prefix == PREFIX_FDCB ? &cpu.iy : &cpu.ix;
 }
 
-static inline void tactPlusN(uint32_t value) {
+Z80_ALWAYS_INLINE void tactPlusN(uint32_t value) {
 #ifdef Z80_TACT_PLUS_N
   Z80_TACT_PLUS_N(value);
 #else
@@ -137,46 +145,60 @@ static inline void tactPlusN(uint32_t value) {
 #endif
 }
 
-static inline void tactPlus1WithAddress(uint16_t address) {
-  (void)address;
+Z80_ALWAYS_INLINE void tactPlus1WithAddress(uint16_t address) {
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
   tactPlusN(1);
 }
 
-static inline void tactPlus2WithAddress(uint16_t address) {
-  (void)address;
+Z80_ALWAYS_INLINE void tactPlus2WithAddress(uint16_t address) {
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
   tactPlusN(1);
-  tactPlusN(1);
-}
-
-static inline void tactPlus4WithAddress(uint16_t address) {
-  (void)address;
-  tactPlusN(1);
-  tactPlusN(1);
-  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
   tactPlusN(1);
 }
 
-static inline void tactPlus5WithAddress(uint16_t address) {
-  (void)address;
+Z80_ALWAYS_INLINE void tactPlus4WithAddress(uint16_t address) {
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
   tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
   tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
   tactPlusN(1);
-  tactPlusN(1);
-  tactPlusN(1);
-}
-
-static inline void tactPlus7WithAddress(uint16_t address) {
-  (void)address;
-  tactPlusN(1);
-  tactPlusN(1);
-  tactPlusN(1);
-  tactPlusN(1);
-  tactPlusN(1);
-  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
   tactPlusN(1);
 }
 
-static inline void delayMemoryRead(uint16_t address) {
+Z80_ALWAYS_INLINE void tactPlus5WithAddress(uint16_t address) {
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+}
+
+Z80_ALWAYS_INLINE void tactPlus7WithAddress(uint16_t address) {
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+  Z80_DELAY_ADDRESS_BUS_ACCESS(address);
+  tactPlusN(1);
+}
+
+Z80_ALWAYS_INLINE void delayMemoryRead(uint16_t address) {
 #ifdef Z80_DELAY_MEMORY_READ
   Z80_DELAY_MEMORY_READ(address);
 #else
@@ -185,7 +207,7 @@ static inline void delayMemoryRead(uint16_t address) {
 #endif
 }
 
-static inline void delayMemoryWrite(uint16_t address) {
+Z80_ALWAYS_INLINE void delayMemoryWrite(uint16_t address) {
 #ifdef Z80_DELAY_MEMORY_WRITE
   Z80_DELAY_MEMORY_WRITE(address);
 #else
@@ -194,7 +216,7 @@ static inline void delayMemoryWrite(uint16_t address) {
 #endif
 }
 
-static inline void delayPortRead(uint16_t address) {
+Z80_ALWAYS_INLINE void delayPortRead(uint16_t address) {
 #ifdef Z80_DELAY_PORT_READ
   Z80_DELAY_PORT_READ(address);
 #else
@@ -203,7 +225,7 @@ static inline void delayPortRead(uint16_t address) {
 #endif
 }
 
-static inline void delayPortWrite(uint16_t address) {
+Z80_ALWAYS_INLINE void delayPortWrite(uint16_t address) {
 #ifdef Z80_DELAY_PORT_WRITE
   Z80_DELAY_PORT_WRITE(address);
 #else
@@ -212,18 +234,18 @@ static inline void delayPortWrite(uint16_t address) {
 #endif
 }
 
-static inline void refreshMemory(void) {
+Z80_ALWAYS_INLINE void refreshMemory(void) {
   cpu.ir.bytes.low = ((cpu.ir.bytes.low + 1) & 0x7f) | (cpu.ir.bytes.low & 0x80);
 }
 
-static inline void removeFromHaltedState(void) {
+Z80_ALWAYS_INLINE void removeFromHaltedState(void) {
   if (cpu.halted) {
     cpu.pc = (uint16_t)(cpu.pc + 1);
     cpu.halted = 0;
   }
 }
 
-static inline uint8_t readMemory(uint16_t address) {
+Z80_ALWAYS_INLINE uint8_t readMemory(uint16_t address) {
   delayMemoryRead(address);
 #ifdef Z80_READ_MEMORY
   return Z80_READ_MEMORY(address);
@@ -232,7 +254,7 @@ static inline uint8_t readMemory(uint16_t address) {
 #endif
 }
 
-static inline void writeMemory(uint16_t address, uint8_t value) {
+Z80_ALWAYS_INLINE void writeMemory(uint16_t address, uint8_t value) {
   delayMemoryWrite(address);
 #ifdef Z80_WRITE_MEMORY
   Z80_WRITE_MEMORY(address, value);
@@ -241,7 +263,7 @@ static inline void writeMemory(uint16_t address, uint8_t value) {
 #endif
 }
 
-static inline uint8_t readPort(uint16_t address) {
+Z80_ALWAYS_INLINE uint8_t readPort(uint16_t address) {
   delayPortRead(address);
 #ifdef Z80_READ_PORT
   uint8_t value = Z80_READ_PORT(address);
@@ -263,7 +285,7 @@ static inline uint8_t readPort(uint16_t address) {
 #endif
 }
 
-static inline void writePort(uint16_t address, uint8_t value) {
+Z80_ALWAYS_INLINE void writePort(uint16_t address, uint8_t value) {
   delayPortWrite(address);
 #ifdef Z80_WRITE_PORT
   Z80_WRITE_PORT(address, value);
@@ -285,19 +307,19 @@ static inline void tbBlueOut(uint8_t address, uint8_t value) {
   cpu.hasTbBlueEvent = 1;
 }
 
-static inline uint8_t fetchCodeByte(void) {
+Z80_ALWAYS_INLINE uint8_t fetchCodeByte(void) {
   uint8_t value = readMemory(cpu.pc);
   cpu.pc = (uint16_t)(cpu.pc + 1);
   return value;
 }
 
-static inline uint16_t readU16Le(void) {
+Z80_ALWAYS_INLINE uint16_t readU16Le(void) {
   uint8_t low = fetchCodeByte();
   uint8_t high = fetchCodeByte();
   return pair(high, low);
 }
 
-static inline int16_t sbyte(uint8_t value) {
+Z80_ALWAYS_INLINE int16_t sbyte(uint8_t value) {
   return (int8_t)value;
 }
 

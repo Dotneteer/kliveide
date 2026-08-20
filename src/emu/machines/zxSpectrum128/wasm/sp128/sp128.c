@@ -46,6 +46,7 @@
 #define SP128_TAPE_MODE_PASSIVE 0u
 #define SP128_TAPE_MODE_LOAD 1u
 #define SP128_TAPE_MODE_SAVE 2u
+#define SP128_ALWAYS_INLINE static inline __attribute__((always_inline))
 
 #define SP48_SCREEN_BUFFER_WIDTH_MAX SP128_SCREEN_WIDTH
 #define SP48_SCREEN_BUFFER_LINES_MAX SP128_SCREEN_HEIGHT
@@ -190,7 +191,11 @@ static uint8_t sp128AttrByte2;
 static uint8_t sp128EarBit;
 static uint8_t sp128MicBit;
 static uint8_t sp128BeeperLevel;
+static uint32_t sp128EarBitChangedFrom0Tacts;
+static uint32_t sp128EarBitChangedFrom1Tacts;
 static uint32_t sp128DiagnosticFlags;
+static uint32_t sp128RomUploadCount;
+static uint32_t sp128RomChecksum;
 static uint32_t sp128TapeBlockCount;
 static uint32_t sp128TapeDataLength;
 static uint32_t sp128TapeCurrentBlockIndex;
@@ -250,11 +255,16 @@ void sp128RenderInstantScreen(void);
 uint32_t sp128ExecuteInstruction(void);
 uint32_t sp128ReadScreenMemoryOffset(uint32_t offset);
 static void sp128CommonSetNextAudioSample(void);
+static void sp128UlaRenderUntilCurrentTact(void);
 static void renderBorderUntilCurrentTact(void);
 static uint8_t sp128CpuReadMemory(uint32_t address);
 static void sp128CpuWriteMemory(uint32_t address, uint32_t value);
 static void sp128CpuPokeMemory(uint32_t address, uint32_t value);
 static void updateTapeMode(void);
+static uint32_t sp128ReadNonFePort(uint32_t address);
+static void sp128WriteNonFePort(uint32_t address, uint32_t value);
+static uint32_t sp128CommonTapeGetEarBit(void);
+static void sp128CommonTapeProcessMicBit(uint32_t micBit);
 static void tactPlusN128(uint32_t value);
 static void applyContentionDelay(void);
 static void sp128DelayMemoryAccess(uint32_t address);
@@ -440,7 +450,7 @@ static uint32_t screenBankOffset(void) {
   return ramBankOffset(sp128UseShadowScreen != 0u ? 7u : 5u);
 }
 
-#include "sp128-psg.c"
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-psg.c"
 
 #define SP48_DEFAULT_SAMPLE_RATE SP128_DEFAULT_SAMPLE_RATE
 #define SP48_AUDIO_SAMPLE_CAPACITY SP128_AUDIO_SAMPLE_CAPACITY
@@ -517,6 +527,48 @@ static uint32_t screenBankOffset(void) {
 #undef SP48_AUDIO_SAMPLE_SCALE
 #undef SP48_AUDIO_SAMPLE_CAPACITY
 #undef SP48_DEFAULT_SAMPLE_RATE
+
+#define SP48_TAPE_MODE_LOAD SP128_TAPE_MODE_LOAD
+#define SP48_PORT_READ_NON_FE(address) sp128ReadNonFePort((uint32_t)(address))
+#define SP48_PORT_WRITE_NON_FE(address, value) sp128WriteNonFePort((uint32_t)(address), (uint32_t)(value))
+#define sp48PortFeValue sp128PortFeValue
+#define sp48BorderColor sp128BorderColor
+#define sp48EarBit sp128EarBit
+#define sp48MicBit sp128MicBit
+#define sp48BeeperLevel sp128BeeperLevel
+#define sp48EarBitChangedFrom0Tacts sp128EarBitChangedFrom0Tacts
+#define sp48EarBitChangedFrom1Tacts sp128EarBitChangedFrom1Tacts
+#define sp48KeyboardSelectedLineValue sp128KeyboardSelectedLineValue
+#define sp48TapeMode sp128TapeMode
+#define sp48Tacts sp128Tacts
+#define resetPortFe sp128CommonResetPortFe
+#define sp48ReadPort sp128ReadPort
+#define sp48WritePort sp128WritePort
+#define sp48TapeGetEarBit sp128CommonTapeGetEarBit
+#define sp48TapeProcessMicBit sp128CommonTapeProcessMicBit
+#define renderUlaUntilCurrentTact sp128UlaRenderUntilCurrentTact
+#define recordAudioTransition sp128CommonRecordAudioTransition
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-ports.c"
+#undef recordAudioTransition
+#undef renderUlaUntilCurrentTact
+#undef sp48TapeProcessMicBit
+#undef sp48TapeGetEarBit
+#undef sp48WritePort
+#undef sp48ReadPort
+#undef resetPortFe
+#undef sp48Tacts
+#undef sp48TapeMode
+#undef sp48KeyboardSelectedLineValue
+#undef sp48EarBitChangedFrom1Tacts
+#undef sp48EarBitChangedFrom0Tacts
+#undef sp48BeeperLevel
+#undef sp48MicBit
+#undef sp48EarBit
+#undef sp48BorderColor
+#undef sp48PortFeValue
+#undef SP48_PORT_WRITE_NON_FE
+#undef SP48_PORT_READ_NON_FE
+#undef SP48_TAPE_MODE_LOAD
 
 static void clearTapeBlocks(void) {
   for (uint32_t i = 0u; i < SP128_TAPE_MAX_BLOCKS; i++) {
@@ -612,7 +664,17 @@ static void rebuildFlatMemory(void) {
   }
 }
 
-static uint8_t readMappedMemory(uint32_t address) {
+SP128_ALWAYS_INLINE uint8_t isVisibleScreenBankOffset(uint32_t bank, uint32_t offset) {
+  const uint32_t visibleBank = sp128UseShadowScreen != 0u ? 7u : 5u;
+  return bank == visibleBank && offset < 0x1b00u;
+}
+
+SP128_ALWAYS_INLINE uint8_t isVisibleScreenSlotOffset(uint32_t slot, uint32_t offset) {
+  const uint32_t visibleBank = sp128UseShadowScreen != 0u ? 7u : 5u;
+  return offset < 0x1b00u && sp128MemorySlotBase[slot] == &sp128Ram[ramBankOffset(visibleBank)];
+}
+
+SP128_ALWAYS_INLINE uint8_t readMappedMemory(uint32_t address) {
   if (sp128MemorySlotMapInitialized == 0u) {
     rebuildMemorySlotMap();
   }
@@ -620,7 +682,7 @@ static uint8_t readMappedMemory(uint32_t address) {
   return sp128MemorySlotBase[maskedAddress >> 14u][maskedAddress & 0x3fffu];
 }
 
-static void writeMappedMemory(uint32_t address, uint32_t value, uint32_t recordEvent) {
+SP128_ALWAYS_INLINE void writeMappedMemory(uint32_t address, uint32_t value, uint32_t recordEvent) {
   if (sp128MemorySlotMapInitialized == 0u) {
     rebuildMemorySlotMap();
   }
@@ -636,11 +698,15 @@ static void writeMappedMemory(uint32_t address, uint32_t value, uint32_t recordE
   if (sp128MemorySlotWritable[slot] == 0u) {
     return;
   }
-  sp128MemorySlotBase[slot][maskedAddress & 0x3fffu] = byteValue;
+  const uint32_t offset = maskedAddress & 0x3fffu;
+  if (isVisibleScreenSlotOffset(slot, offset) != 0u) {
+    sp128UlaRenderUntilCurrentTact();
+  }
+  sp128MemorySlotBase[slot][offset] = byteValue;
   sp128Memory[maskedAddress] = byteValue;
 }
 
-static void updateVisibleRamBankMirrorByte(uint32_t bank, uint32_t offset, uint8_t value) {
+SP128_ALWAYS_INLINE void updateVisibleRamBankMirrorByte(uint32_t bank, uint32_t offset, uint8_t value) {
   if (bank == 5u) {
     sp128Memory[0x4000u + offset] = value;
   }
@@ -652,7 +718,7 @@ static void updateVisibleRamBankMirrorByte(uint32_t bank, uint32_t offset, uint8
   }
 }
 
-static uint32_t currentFrameTact(void) {
+SP128_ALWAYS_INLINE uint32_t currentFrameTact(void) {
   if (sp128TactsInFrame == 0u) {
     return 0u;
   }
@@ -667,20 +733,20 @@ static uint32_t currentFrameTact(void) {
   return tact;
 }
 
-static uint8_t isContendedMemoryAddress(uint32_t address) {
+SP128_ALWAYS_INLINE uint8_t isContendedMemoryAddress(uint32_t address) {
   const uint32_t page = address & 0xc000u;
   return page == 0x4000u || (page == 0xc000u && (sp128SelectedBank & 0x01u) != 0u);
 }
 
-static uint8_t isContendedIoAddress(uint32_t address) {
+SP128_ALWAYS_INLINE uint8_t isContendedIoAddress(uint32_t address) {
   return isContendedMemoryAddress(address);
 }
 
-static uint8_t shouldRaiseInterrupt(void) {
+SP128_ALWAYS_INLINE uint8_t shouldRaiseInterrupt(void) {
   return currentFrameTact() < 32u ? 1u : 0u;
 }
 
-static uint8_t sp128CpuReadMemory(uint32_t address) {
+SP128_ALWAYS_INLINE uint8_t sp128CpuReadMemory(uint32_t address) {
   const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
   const uint8_t value = readMappedMemory(maskedAddress);
   if (sp128CaptureBusEvents != 0u) {
@@ -692,13 +758,71 @@ static uint8_t sp128CpuReadMemory(uint32_t address) {
   return value;
 }
 
-static void sp128CpuWriteMemory(uint32_t address, uint32_t value) {
+SP128_ALWAYS_INLINE void sp128CpuWriteMemory(uint32_t address, uint32_t value) {
   writeMappedMemory(address, value, 1u);
 }
 
-static void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
+SP128_ALWAYS_INLINE void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
   writeMappedMemory(address, value, 0u);
 }
+
+#define SP128_CPU_TACT_PLUS_N(value) \
+  do { \
+    const uint32_t z80Sp128Tacts = (uint32_t)(value); \
+    cpu.tacts += z80Sp128Tacts; \
+    sp128Tacts += z80Sp128Tacts; \
+    sp128CommonSetNextAudioSample(); \
+  } while (0)
+#define SP128_CPU_APPLY_CONTENTION() \
+  do { \
+    const uint32_t z80Sp128Delay = sp128Contention[currentFrameTact()]; \
+    cpu.tacts += z80Sp128Delay; \
+    sp128Tacts += z80Sp128Delay; \
+    sp128TotalContentionDelaySinceStart += z80Sp128Delay; \
+    sp128ContentionDelaySincePause += z80Sp128Delay; \
+    sp128CommonSetNextAudioSample(); \
+  } while (0)
+#define SP128_CPU_DELAY_MEMORY_ACCESS(address) \
+  do { \
+    if (isContendedMemoryAddress((uint32_t)(address)) != 0u) { \
+      SP128_CPU_APPLY_CONTENTION(); \
+    } \
+    SP128_CPU_TACT_PLUS_N(3u); \
+  } while (0)
+#define SP128_CPU_DELAY_ADDRESS_BUS_ACCESS(address) \
+  do { \
+    if (isContendedMemoryAddress((uint32_t)(address)) != 0u) { \
+      SP128_CPU_APPLY_CONTENTION(); \
+    } \
+  } while (0)
+#define SP128_CPU_DELAY_PORT_ACCESS(address) \
+  do { \
+    const uint32_t z80Sp128PortAddress = (uint32_t)(address); \
+    const uint8_t z80Sp128LowBit = (z80Sp128PortAddress & 0x0001u) != 0u ? 1u : 0u; \
+    if (isContendedIoAddress(z80Sp128PortAddress) != 0u) { \
+      if (z80Sp128LowBit != 0u) { \
+        SP128_CPU_APPLY_CONTENTION(); \
+        SP128_CPU_TACT_PLUS_N(1u); \
+        SP128_CPU_APPLY_CONTENTION(); \
+        SP128_CPU_TACT_PLUS_N(1u); \
+        SP128_CPU_APPLY_CONTENTION(); \
+        SP128_CPU_TACT_PLUS_N(1u); \
+        SP128_CPU_APPLY_CONTENTION(); \
+        SP128_CPU_TACT_PLUS_N(1u); \
+      } else { \
+        SP128_CPU_APPLY_CONTENTION(); \
+        SP128_CPU_TACT_PLUS_N(1u); \
+        SP128_CPU_APPLY_CONTENTION(); \
+        SP128_CPU_TACT_PLUS_N(3u); \
+      } \
+    } else if (z80Sp128LowBit != 0u) { \
+      SP128_CPU_TACT_PLUS_N(4u); \
+    } else { \
+      SP128_CPU_TACT_PLUS_N(1u); \
+      SP128_CPU_APPLY_CONTENTION(); \
+      SP128_CPU_TACT_PLUS_N(3u); \
+    } \
+  } while (0)
 
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() sp128Memory
@@ -708,11 +832,12 @@ static void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
 #define Z80_READ_PORT(address) ((uint8_t)sp128ReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) sp128WritePort((uint32_t)(address), (uint32_t)(value))
 #define Z80_CAPTURE_BUS_EVENTS() sp128CaptureBusEvents
-#define Z80_TACT_PLUS_N(value) tactPlusN128((uint32_t)(value))
-#define Z80_DELAY_MEMORY_READ(address) sp128DelayMemoryAccess((uint32_t)(address))
-#define Z80_DELAY_MEMORY_WRITE(address) sp128DelayMemoryAccess((uint32_t)(address))
-#define Z80_DELAY_PORT_READ(address) sp128DelayPortAccess((uint32_t)(address))
-#define Z80_DELAY_PORT_WRITE(address) sp128DelayPortAccess((uint32_t)(address))
+#define Z80_TACT_PLUS_N(value) SP128_CPU_TACT_PLUS_N(value)
+#define Z80_DELAY_MEMORY_READ(address) SP128_CPU_DELAY_MEMORY_ACCESS(address)
+#define Z80_DELAY_MEMORY_WRITE(address) SP128_CPU_DELAY_MEMORY_ACCESS(address)
+#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) SP128_CPU_DELAY_ADDRESS_BUS_ACCESS(address)
+#define Z80_DELAY_PORT_READ(address) SP128_CPU_DELAY_PORT_ACCESS(address)
+#define Z80_DELAY_PORT_WRITE(address) SP128_CPU_DELAY_PORT_ACCESS(address)
 #include "../../../../z80/wasm/z80.c"
 #undef Z80_EXTERNAL_BUS
 #undef Z80_MEMORY_PTR
@@ -725,8 +850,14 @@ static void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
 #undef Z80_TACT_PLUS_N
 #undef Z80_DELAY_MEMORY_READ
 #undef Z80_DELAY_MEMORY_WRITE
+#undef Z80_DELAY_ADDRESS_BUS_ACCESS
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
+#undef SP128_CPU_TACT_PLUS_N
+#undef SP128_CPU_APPLY_CONTENTION
+#undef SP128_CPU_DELAY_MEMORY_ACCESS
+#undef SP128_CPU_DELAY_ADDRESS_BUS_ACCESS
+#undef SP128_CPU_DELAY_PORT_ACCESS
 
 #define SP48_TAPE_MAX_BLOCKS SP128_TAPE_MAX_BLOCKS
 #define SP48_TAPE_DATA_CAPACITY SP128_TAPE_DATA_CAPACITY
@@ -1024,13 +1155,9 @@ void sp128Reset(void) {
   sp128SelectedBank = 0u;
   sp128PagingEnabled = 1u;
   sp128UseShadowScreen = 0u;
-  sp128PortFeValue = 0u;
-  sp128BorderColor = 7u;
+  sp128CommonResetPortFe();
   sp128BorderFrameStartTact = 0u;
   sp128LastRenderedFrameTact = 0u;
-  sp128EarBit = 0u;
-  sp128MicBit = 0u;
-  sp128BeeperLevel = 0u;
   sp128DiagnosticFlags = 0u;
   resetPsg();
   sp128TapeClear();
@@ -1102,6 +1229,13 @@ void sp128RenderInstantScreen(void) {
 
 void sp128UploadRomByte(uint32_t rom, uint32_t offset, uint32_t value) {
   if (rom < 2u && offset < 0x4000u) {
+    if (rom == 0u && offset == 0u) {
+      sp128RomUploadCount = 0u;
+      sp128RomChecksum = 0u;
+    }
+    sp128RomUploadCount++;
+    sp128RomChecksum =
+      ((sp128RomChecksum << 5u) | (sp128RomChecksum >> 27u)) ^ ((uint8_t)value + offset + (rom << 14u));
     sp128Rom[romBankOffset(rom) + offset] = (uint8_t)value;
     if (rom == sp128SelectedRom) {
       sp128Memory[offset] = (uint8_t)value;
@@ -1129,6 +1263,9 @@ void sp128WriteRamBank(uint32_t bank, uint32_t offset, uint32_t value) {
     return;
   }
   const uint8_t byteValue = (uint8_t)value;
+  if (isVisibleScreenBankOffset(bank, offset) != 0u) {
+    sp128UlaRenderUntilCurrentTact();
+  }
   sp128Ram[ramBankOffset(bank) + offset] = byteValue;
   updateVisibleRamBankMirrorByte(bank, offset, byteValue);
 }
@@ -1168,15 +1305,7 @@ void sp128SetKeyStatus(uint32_t key, uint32_t down) {
   sp128CommonSetKeyStatus(key, down);
 }
 
-uint32_t sp128ReadPort(uint32_t address) {
-  if ((address & 0x0001u) == 0u) {
-    const uint32_t selectedLines = (~(address >> 8u)) & 0xffu;
-    const uint8_t status = sp128KeyboardSelectedLineValue[selectedLines];
-    const uint32_t keyboardValue = ((uint32_t)~status) & 0xffu;
-    const uint8_t earBit = sp128TapeMode == SP128_TAPE_MODE_LOAD ? sp128CommonTapeGetEarBit() : sp128EarBit;
-    const uint32_t earValue = earBit != 0u ? 0x40u : 0x00u;
-    return (keyboardValue & 0xbfu) | earValue;
-  }
+static uint32_t sp128ReadNonFePort(uint32_t address) {
   if ((address & 0xc002u) == 0xc000u) {
     return sp128PsgDataRead();
   }
@@ -1186,26 +1315,7 @@ uint32_t sp128ReadPort(uint32_t address) {
   return sp128ReadFloatingBus();
 }
 
-void sp128WritePort(uint32_t address, uint32_t value) {
-  if ((address & 0x0001u) == 0u) {
-    sp128PortFeValue = (uint8_t)value;
-    const uint8_t nextBorderColor = (uint8_t)(value & 0x07u);
-    if (nextBorderColor != sp128BorderColor) {
-      sp128UlaRenderUntilCurrentTact();
-    }
-    sp128BorderColor = nextBorderColor;
-    const uint8_t nextMicBit = (value & 0x08u) != 0u ? 1u : 0u;
-    const uint8_t nextEarBit = (value & 0x10u) != 0u ? 1u : 0u;
-    if (nextEarBit != sp128EarBit || nextMicBit != sp128MicBit) {
-      sp128CommonRecordAudioTransition(sp128Tacts);
-    }
-    sp128MicBit = nextMicBit;
-    sp128CommonTapeProcessMicBit(sp128MicBit);
-    sp128EarBit = nextEarBit;
-    sp128BeeperLevel = (uint8_t)((sp128MicBit != 0u ? 1u : 0u) | (sp128EarBit != 0u ? 2u : 0u));
-    return;
-  }
-
+static void sp128WriteNonFePort(uint32_t address, uint32_t value) {
   if ((address & 0xc002u) != 0x4000u) {
     if ((address & 0xc002u) == 0xc000u) {
       sp128PsgAddressWrite(value & 0x0fu);
@@ -1222,8 +1332,12 @@ void sp128WritePort(uint32_t address, uint32_t value) {
   }
   const uint8_t oldSelectedBank = sp128SelectedBank;
   const uint8_t oldSelectedRom = sp128SelectedRom;
+  const uint8_t nextUseShadowScreen = (value & 0x08u) != 0u ? 1u : 0u;
+  if (nextUseShadowScreen != sp128UseShadowScreen) {
+    sp128UlaRenderUntilCurrentTact();
+  }
   sp128SelectedBank = (uint8_t)(value & 0x07u);
-  sp128UseShadowScreen = (value & 0x08u) != 0u ? 1u : 0u;
+  sp128UseShadowScreen = nextUseShadowScreen;
   sp128SelectedRom = (value & 0x10u) != 0u ? 1u : 0u;
   sp128PagingEnabled = (value & 0x20u) != 0u ? 0u : 1u;
   rebuildMemorySlotMap();
@@ -1403,6 +1517,22 @@ uint8_t *sp128TapeSaveDataPtr(void) {
   return sp128TapeSaveData;
 }
 
+uint8_t *sp128TapeFileNamePtr(void) {
+  return sp128TapeFileName;
+}
+
+void sp128TapeSetFileNameByte(uint32_t index, uint32_t value) {
+  sp128CommonTapeSetFileNameByte(index, value);
+}
+
+uint32_t sp128TapeClassifySavePulse(uint32_t length) {
+  return sp128CommonTapeClassifySavePulse(length);
+}
+
+uint32_t sp128TapeGetEarBit(void) {
+  return sp128CommonTapeGetEarBit();
+}
+
 uint32_t sp128TapeGetFastLoad(void) {
   return sp128CommonTapeGetFastLoad();
 }
@@ -1413,6 +1543,10 @@ uint32_t sp128TapeGetMaxBlocks(void) {
 
 uint32_t sp128TapeGetDataCapacity(void) {
   return SP128_TAPE_DATA_CAPACITY;
+}
+
+uint32_t sp128TapeGetFileNameCapacity(void) {
+  return SP128_TAPE_FILENAME_CAPACITY;
 }
 
 uint32_t sp128TapeGetSaveDataCapacity(void) {
@@ -1455,6 +1589,62 @@ uint32_t sp128TapeGetCurrentEarBit(void) {
   return sp128TapeEarBit;
 }
 
+uint32_t sp128TapeGetPlayPhase(void) {
+  return sp128TapePlayPhase;
+}
+
+uint32_t sp128TapeGetCurrentDataIndex(void) {
+  return sp128TapeDataIndex;
+}
+
+uint32_t sp128TapeGetCurrentBitMask(void) {
+  return sp128TapeBitMask;
+}
+
+uint32_t sp128TapeGetStartTact(void) {
+  return sp128TapeStartTact;
+}
+
+uint32_t sp128TapeGetModeChangeCount(void) {
+  return sp128TapeModeChangeCount;
+}
+
+uint32_t sp128TapeGetLastModeChangeTact(void) {
+  return sp128TapeLastModeChangeTact;
+}
+
+uint32_t sp128TapeGetLastModeChangePc(void) {
+  return sp128TapeLastModeChangePc;
+}
+
+uint32_t sp128TapeGetLoadStartCount(void) {
+  return sp128TapeLoadStartCount;
+}
+
+uint32_t sp128TapeGetSaveStartCount(void) {
+  return sp128TapeSaveStartCount;
+}
+
+uint32_t sp128TapeGetSavePhase(void) {
+  return sp128TapeSavePhase;
+}
+
+uint32_t sp128TapeGetSaveLastPulse(void) {
+  return sp128TapeSaveLastPulse;
+}
+
+uint32_t sp128TapeGetSaveMicBit(void) {
+  return sp128TapeSaveMicBit;
+}
+
+uint32_t sp128TapeGetSaveLastMicBitTact(void) {
+  return sp128TapeSaveLastMicBitTact;
+}
+
+uint32_t sp128TapeGetSavePilotPulseCount(void) {
+  return sp128TapeSavePilotPulseCount;
+}
+
 uint32_t sp128TapeGetBlockOffset(uint32_t index) {
   return index < sp128TapeBlockCount ? sp128TapeBlocks[index].offset : 0u;
 }
@@ -1465,6 +1655,38 @@ uint32_t sp128TapeGetBlockLength(uint32_t index) {
 
 uint32_t sp128TapeGetBlockPauseAfter(uint32_t index) {
   return index < sp128TapeBlockCount ? sp128TapeBlocks[index].pauseAfter : 0u;
+}
+
+uint32_t sp128TapeGetBlockPilotPulseLength(uint32_t index) {
+  return index < sp128TapeBlockCount ? sp128TapeBlocks[index].pilotPulseLength : 0u;
+}
+
+uint32_t sp128TapeGetBlockSync1PulseLength(uint32_t index) {
+  return index < sp128TapeBlockCount ? sp128TapeBlocks[index].sync1PulseLength : 0u;
+}
+
+uint32_t sp128TapeGetBlockSync2PulseLength(uint32_t index) {
+  return index < sp128TapeBlockCount ? sp128TapeBlocks[index].sync2PulseLength : 0u;
+}
+
+uint32_t sp128TapeGetBlockZeroBitPulseLength(uint32_t index) {
+  return index < sp128TapeBlockCount ? sp128TapeBlocks[index].zeroBitPulseLength : 0u;
+}
+
+uint32_t sp128TapeGetBlockOneBitPulseLength(uint32_t index) {
+  return index < sp128TapeBlockCount ? sp128TapeBlocks[index].oneBitPulseLength : 0u;
+}
+
+uint32_t sp128TapeGetBlockEndSyncPulseLength(uint32_t index) {
+  return index < sp128TapeBlockCount ? sp128TapeBlocks[index].endSyncPulseLength : 0u;
+}
+
+uint32_t sp128TapeGetBlockLastByteUsedBits(uint32_t index) {
+  return index < sp128TapeBlockCount ? sp128TapeBlocks[index].lastByteUsedBits : 0u;
+}
+
+uint32_t sp128TapeGetBlockPilotPulseCount(uint32_t index) {
+  return index < sp128TapeBlockCount ? sp128TapeBlocks[index].pilotPulseCount : 0u;
 }
 
 uint32_t sp128TapeGetSavedBlockCount(void) {
@@ -1497,6 +1719,14 @@ uint32_t sp128GetRamSize(void) {
 
 uint32_t sp128GetRomSize(void) {
   return SP128_ROM_SIZE;
+}
+
+uint32_t sp128GetRomUploadCount(void) {
+  return sp128RomUploadCount;
+}
+
+uint32_t sp128GetRomChecksum(void) {
+  return sp128RomChecksum;
 }
 
 uint32_t sp128GetScreenWidth(void) {
@@ -1549,6 +1779,10 @@ uint32_t sp128GetTactsInCurrentFrame(void) {
   return sp128TactsInCurrentFrame;
 }
 
+uint32_t sp128GetBaseClockFrequency(void) {
+  return SP128_BASE_CLOCK_FREQUENCY;
+}
+
 uint32_t sp128GetFrames(void) {
   return sp128Frames;
 }
@@ -1559,6 +1793,34 @@ uint32_t sp128GetTacts(void) {
 
 uint32_t sp128GetCurrentFrameTact(void) {
   return currentFrameTact();
+}
+
+uint32_t sp128GetRasterLines(void) {
+  return sp128RasterLines;
+}
+
+uint32_t sp128GetScreenLineTime(void) {
+  return sp128ScreenLineTime;
+}
+
+uint32_t sp128GetTimingScreenWidth(void) {
+  return sp128TimingScreenWidth;
+}
+
+uint32_t sp128GetTimingScreenLines(void) {
+  return sp128TimingScreenLines;
+}
+
+uint32_t sp128GetFirstDisplayLine(void) {
+  return sp128FirstDisplayLine;
+}
+
+uint32_t sp128GetFirstVisibleLine(void) {
+  return sp128FirstVisibleLine;
+}
+
+uint32_t sp128GetFirstVisibleBorderTact(void) {
+  return sp128FirstVisibleBorderTact;
 }
 
 uint32_t sp128GetNextFrameStartTact(void) {
@@ -1671,6 +1933,30 @@ void sp128SetCpuAfAlt(uint32_t value) {
   z80SetAfAlt(value);
 }
 
+uint32_t sp128GetCpuBcAlt(void) {
+  return z80GetBcAlt();
+}
+
+void sp128SetCpuBcAlt(uint32_t value) {
+  z80SetBcAlt(value);
+}
+
+uint32_t sp128GetCpuDeAlt(void) {
+  return z80GetDeAlt();
+}
+
+void sp128SetCpuDeAlt(uint32_t value) {
+  z80SetDeAlt(value);
+}
+
+uint32_t sp128GetCpuHlAlt(void) {
+  return z80GetHlAlt();
+}
+
+void sp128SetCpuHlAlt(uint32_t value) {
+  z80SetHlAlt(value);
+}
+
 uint32_t sp128GetCpuBc(void) {
   return z80GetBc();
 }
@@ -1711,6 +1997,22 @@ void sp128SetCpuIy(uint32_t value) {
   z80SetIy(value);
 }
 
+uint32_t sp128GetCpuIr(void) {
+  return z80GetIr();
+}
+
+void sp128SetCpuIr(uint32_t value) {
+  z80SetIr(value);
+}
+
+uint32_t sp128GetCpuWz(void) {
+  return z80GetWz();
+}
+
+void sp128SetCpuWz(uint32_t value) {
+  z80SetWz(value);
+}
+
 uint32_t sp128GetCpuPc(void) {
   return z80GetPc();
 }
@@ -1733,6 +2035,38 @@ uint32_t sp128GetCpuHalted(void) {
 
 uint32_t sp128GetCpuPrefix(void) {
   return z80GetPrefix();
+}
+
+uint32_t sp128GetCpuIff1(void) {
+  return z80GetIff1();
+}
+
+void sp128SetCpuIff1(uint32_t value) {
+  z80SetIff1(value);
+}
+
+uint32_t sp128GetCpuIff2(void) {
+  return z80GetIff2();
+}
+
+void sp128SetCpuIff2(uint32_t value) {
+  z80SetIff2(value);
+}
+
+uint32_t sp128GetCpuInterruptMode(void) {
+  return z80GetInterruptMode();
+}
+
+void sp128SetCpuInterruptMode(uint32_t value) {
+  z80SetInterruptMode(value);
+}
+
+uint32_t sp128GetCpuRetExecuted(void) {
+  return z80GetRetExecuted();
+}
+
+uint32_t sp128GetCpuRetnExecuted(void) {
+  return z80GetRetnExecuted();
 }
 
 uint32_t sp128GetLastMemoryAddress(void) {
@@ -1783,6 +2117,14 @@ uint32_t sp128GetBeeperLevel(void) {
   return sp128BeeperLevel;
 }
 
+uint32_t sp128GetEarBitChangedFrom0Tacts(void) {
+  return sp128EarBitChangedFrom0Tacts;
+}
+
+uint32_t sp128GetEarBitChangedFrom1Tacts(void) {
+  return sp128EarBitChangedFrom1Tacts;
+}
+
 uint32_t sp128GetPsgRegisterIndex(void) {
   return sp128PsgRegisterIndex;
 }
@@ -1807,8 +2149,24 @@ uint32_t sp128GetPsgToneA(void) {
   return sp128PsgGetToneA();
 }
 
+uint32_t sp128GetPsgToneB(void) {
+  return sp128PsgTone[1].period;
+}
+
+uint32_t sp128GetPsgToneC(void) {
+  return sp128PsgTone[2].period;
+}
+
 uint32_t sp128GetPsgVolumeA(void) {
   return sp128PsgGetVolumeA();
+}
+
+uint32_t sp128GetPsgVolumeB(void) {
+  return sp128PsgTone[1].volume & 0x0fu;
+}
+
+uint32_t sp128GetPsgVolumeC(void) {
+  return sp128PsgTone[2].volume & 0x0fu;
 }
 
 uint32_t sp128GetPsgCurrentOutput(void) {

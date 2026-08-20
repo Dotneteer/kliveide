@@ -1,9 +1,9 @@
 const { statSync } = require("node:fs");
 const { buildSp128Wasm, output } = require("./build-sp128-wasm.cjs");
 
-// Initial executable-backend ceiling. Step 5 adds the shared C Z80 core; the
-// measured artifact is 285,138 bytes, so this keeps a small migration margin.
-const DEFAULT_MAX_BYTES = 320_000;
+// Speed-optimized production ceiling with the shared C Z80 core, 128K memory
+// paging, ULA rendering, beeper, PSG, and tape ABI linked in.
+const DEFAULT_MAX_BYTES = 580_000;
 
 function parseMaxBytes(value = process.env.SP128_WASM_MAX_BYTES) {
   if (value == null || value === "") return DEFAULT_MAX_BYTES;

@@ -1,7 +1,7 @@
 const { statSync } = require("node:fs");
 const { buildZxNextWasm, output } = require("./build-zxnext-wasm.cjs");
 
-const DEFAULT_MAX_BYTES = 300_000;
+const DEFAULT_MAX_BYTES = 200_000;
 
 function parseMaxBytes(value = process.env.ZXNEXT_WASM_MAX_BYTES) {
   if (value == null || value === "") return DEFAULT_MAX_BYTES;

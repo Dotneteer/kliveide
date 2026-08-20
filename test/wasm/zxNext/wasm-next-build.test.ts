@@ -9,6 +9,23 @@ import {
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum Next WASM scaffold build", () => {
+  it("builds the production artifact with the speed-optimized profile by default", () => {
+    const calls: Array<{ compiler: string; args: string[] }> = [];
+    buildZxNextWasm({
+      compiler: "fake-c-compiler",
+      run: (compiler: string, args: string[]) => {
+        calls.push({ compiler, args });
+        return { status: 0 };
+      }
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].args).toContain("-O3");
+    expect(calls[0].args).toContain("-Wl,--strip-all");
+    expect(calls[0].args).not.toContain("-Oz");
+    expect(calls[0].args).toContain(productionOutput);
+  });
+
   it("exports the deterministic scaffold control surface", () => {
     expect(productionExports).toEqual(expect.arrayContaining([
       "memory",

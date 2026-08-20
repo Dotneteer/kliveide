@@ -3,7 +3,7 @@ const { buildSpP3eWasm, output } = require("./build-spp3e-wasm.cjs");
 
 // Production ceiling with shared Z80, frame CPU execution, ULA rendering,
 // beeper, PSG, tape, and disk ABI linked in.
-const DEFAULT_MAX_BYTES = 352_000;
+const DEFAULT_MAX_BYTES = 640_000;
 
 function parseMaxBytes(value = process.env.SPP3E_WASM_MAX_BYTES) {
   if (value == null || value === "") return DEFAULT_MAX_BYTES;

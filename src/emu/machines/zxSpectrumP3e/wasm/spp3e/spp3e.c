@@ -648,7 +648,7 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef sp48KeyboardLines
 
 #define sp128Tacts spp3eTacts
-#include "../../../zxSpectrum128/wasm/sp128/sp128-psg.c"
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-psg.c"
 #undef sp128Tacts
 
 #define SP48_DEFAULT_SAMPLE_RATE SPP3E_DEFAULT_SAMPLE_RATE
@@ -735,11 +735,69 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #define Z80_READ_PORT(address) ((uint8_t)spp3eReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) spp3eWritePort((uint32_t)(address), (uint32_t)(value))
 #define Z80_CAPTURE_BUS_EVENTS() spp3eCaptureBusEvents
-#define Z80_TACT_PLUS_N(value) spp3eTactPlusN((uint32_t)(value))
-#define Z80_DELAY_MEMORY_READ(address) spp3eDelayMemoryAccess((uint32_t)(address))
-#define Z80_DELAY_MEMORY_WRITE(address) spp3eDelayMemoryAccess((uint32_t)(address))
-#define Z80_DELAY_PORT_READ(address) spp3eDelayPortAccess((uint32_t)(address))
-#define Z80_DELAY_PORT_WRITE(address) spp3eDelayPortAccess((uint32_t)(address))
+#define SPP3E_CPU_TACT_PLUS_N(value) \
+  do { \
+    const uint32_t z80Spp3eTacts = (uint32_t)(value); \
+    cpu.tacts += z80Spp3eTacts; \
+    spp3eTacts += z80Spp3eTacts; \
+    spp3eCommonSetNextAudioSample(); \
+  } while (0)
+#define SPP3E_CPU_APPLY_CONTENTION() \
+  do { \
+    const uint32_t z80Spp3eDelay = spp3eContention[spp3eUlaCurrentFrameTact()]; \
+    cpu.tacts += z80Spp3eDelay; \
+    spp3eTacts += z80Spp3eDelay; \
+    spp3eCommonSetNextAudioSample(); \
+    spp3eTotalContentionDelaySinceStart += z80Spp3eDelay; \
+    spp3eContentionDelaySincePause += z80Spp3eDelay; \
+  } while (0)
+#define SPP3E_CPU_DELAY_MEMORY_ACCESS(address) \
+  do { \
+    if (spp3eIsContendedMemoryAddress((uint32_t)(address)) != 0u) { \
+      SPP3E_CPU_APPLY_CONTENTION(); \
+    } \
+    SPP3E_CPU_TACT_PLUS_N(3u); \
+  } while (0)
+#define SPP3E_CPU_DELAY_ADDRESS_BUS_ACCESS(address) \
+  do { \
+    if (spp3eIsContendedMemoryAddress((uint32_t)(address)) != 0u) { \
+      SPP3E_CPU_APPLY_CONTENTION(); \
+    } \
+  } while (0)
+#define SPP3E_CPU_DELAY_PORT_ACCESS(address) \
+  do { \
+    const uint32_t z80Spp3ePortAddress = (uint32_t)(address); \
+    const uint8_t z80Spp3eLowBit = (z80Spp3ePortAddress & 0x0001u) != 0u ? 1u : 0u; \
+    if (spp3eIsContendedMemoryAddress(z80Spp3ePortAddress) != 0u) { \
+      if (z80Spp3eLowBit != 0u) { \
+        SPP3E_CPU_APPLY_CONTENTION(); \
+        SPP3E_CPU_TACT_PLUS_N(1u); \
+        SPP3E_CPU_APPLY_CONTENTION(); \
+        SPP3E_CPU_TACT_PLUS_N(1u); \
+        SPP3E_CPU_APPLY_CONTENTION(); \
+        SPP3E_CPU_TACT_PLUS_N(1u); \
+        SPP3E_CPU_APPLY_CONTENTION(); \
+        SPP3E_CPU_TACT_PLUS_N(1u); \
+      } else { \
+        SPP3E_CPU_APPLY_CONTENTION(); \
+        SPP3E_CPU_TACT_PLUS_N(1u); \
+        SPP3E_CPU_APPLY_CONTENTION(); \
+        SPP3E_CPU_TACT_PLUS_N(3u); \
+      } \
+    } else if (z80Spp3eLowBit != 0u) { \
+      SPP3E_CPU_TACT_PLUS_N(4u); \
+    } else { \
+      SPP3E_CPU_TACT_PLUS_N(1u); \
+      SPP3E_CPU_APPLY_CONTENTION(); \
+      SPP3E_CPU_TACT_PLUS_N(3u); \
+    } \
+  } while (0)
+#define Z80_TACT_PLUS_N(value) SPP3E_CPU_TACT_PLUS_N(value)
+#define Z80_DELAY_MEMORY_READ(address) SPP3E_CPU_DELAY_MEMORY_ACCESS(address)
+#define Z80_DELAY_MEMORY_WRITE(address) SPP3E_CPU_DELAY_MEMORY_ACCESS(address)
+#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) SPP3E_CPU_DELAY_ADDRESS_BUS_ACCESS(address)
+#define Z80_DELAY_PORT_READ(address) SPP3E_CPU_DELAY_PORT_ACCESS(address)
+#define Z80_DELAY_PORT_WRITE(address) SPP3E_CPU_DELAY_PORT_ACCESS(address)
 #include "../../../../z80/wasm/z80.c"
 #undef Z80_EXTERNAL_BUS
 #undef Z80_MEMORY_PTR
@@ -752,8 +810,14 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef Z80_TACT_PLUS_N
 #undef Z80_DELAY_MEMORY_READ
 #undef Z80_DELAY_MEMORY_WRITE
+#undef Z80_DELAY_ADDRESS_BUS_ACCESS
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
+#undef SPP3E_CPU_TACT_PLUS_N
+#undef SPP3E_CPU_APPLY_CONTENTION
+#undef SPP3E_CPU_DELAY_MEMORY_ACCESS
+#undef SPP3E_CPU_DELAY_ADDRESS_BUS_ACCESS
+#undef SPP3E_CPU_DELAY_PORT_ACCESS
 
 #define SP48_TAPE_MAX_BLOCKS SPP3E_TAPE_MAX_BLOCKS
 #define SP48_TAPE_DATA_CAPACITY SPP3E_TAPE_DATA_CAPACITY

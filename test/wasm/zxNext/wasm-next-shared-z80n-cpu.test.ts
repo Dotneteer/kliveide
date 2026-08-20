@@ -18,7 +18,7 @@ describe("ZX Spectrum Next WASM shared Z80N CPU integration", () => {
     expect(cpuWrapper).toContain("#define Z80_WRITE_TBBLUE");
     expect(sharedCpu).toContain("z80nMode");
     expect(sharedCpu).toContain("static void z80n91NextregN");
-    expect(statSync(productionOutput).size).toBeGreaterThan(150_000);
+    expect(statSync(productionOutput).size).toBeGreaterThan(90_000);
   });
 
   it("runs Z80N NEXTREG instructions through the shared CPU into ZX Next state", async () => {

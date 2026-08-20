@@ -317,6 +317,12 @@ uint32_t sp48ExecuteInstruction(void);
     tactPlusN(3u); \
   } while (0)
 #define Z80_DELAY_MEMORY_WRITE(address) Z80_DELAY_MEMORY_READ(address)
+#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) \
+  do { \
+    if ((((uint32_t)(address)) & 0xc000u) == 0x4000u) { \
+      SP48_CPU_APPLY_CONTENTION(); \
+    } \
+  } while (0)
 #define Z80_DELAY_PORT_READ(address) SP48_CPU_DELAY_PORT_ACCESS(address)
 #define Z80_DELAY_PORT_WRITE(address) SP48_CPU_DELAY_PORT_ACCESS(address)
 #include "../../../../z80/wasm/z80.c"
@@ -334,6 +340,7 @@ uint32_t sp48ExecuteInstruction(void);
 #undef SP48_CPU_DELAY_PORT_ACCESS
 #undef Z80_DELAY_MEMORY_READ
 #undef Z80_DELAY_MEMORY_WRITE
+#undef Z80_DELAY_ADDRESS_BUS_ACCESS
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
 

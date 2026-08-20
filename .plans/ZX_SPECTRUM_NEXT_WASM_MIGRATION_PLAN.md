@@ -1094,7 +1094,7 @@ TypeScript source files:
 Pattern source files:
 
 - `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-beeper.c`
-- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-psg.c`
+- `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-psg.c`
 - `test/wasm/zxSpectrum/wasm-beeper-audio.test.ts`
 - `test/wasm/zxSpectrum/wasm-psg-audio.test.ts`
 

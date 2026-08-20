@@ -71,7 +71,7 @@ per scanline, or per PSG tick during normal running.
 - `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ports.c`
 - `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ula.c`
 - `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-beeper.c`
-- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-psg.c`
+- `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-psg.c`
 - `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-tape.c`
 - `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-keyboard.c`
 - `scripts/build-sp128-wasm.cjs`
@@ -684,7 +684,7 @@ Status: Done on 2026-08-04.
 
 Files:
 
-- `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-psg.c`
+- `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-psg.c`
 - `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-ports.c`
 - `src/emu/machines/zxSpectrum128/wasm/sp128/sp128-beeper.c`
 - `src/emu/machines/zxSpectrum128/wasm/Sp128WasmV2Loader.ts`

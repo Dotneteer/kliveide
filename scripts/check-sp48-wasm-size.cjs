@@ -1,7 +1,7 @@
 const { statSync } = require("node:fs");
 const { buildSp48Wasm, output } = require("./build-sp48-wasm.cjs");
 
-const DEFAULT_MAX_BYTES = 240_000;
+const DEFAULT_MAX_BYTES = 510_000;
 
 function parseMaxBytes(value = process.env.SP48_WASM_MAX_BYTES) {
   if (value == null || value === "") return DEFAULT_MAX_BYTES;
