@@ -17,7 +17,7 @@ import { buildZxNextWasm, productionOutput } from "../../../scripts/build-zxnext
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum Next WASM v2 IDE scaffold", () => {
-  it("exposes deterministic incomplete surfaces without using inherited TS device state", async () => {
+  it("exposes WASM-backed IDE surfaces while the frame runner remains incomplete", async () => {
     buildZxNextWasm();
     const machine = new ZxNextWasmV2Machine(
       undefined,
@@ -42,6 +42,12 @@ describe("ZX Spectrum Next WASM v2 IDE scaffold", () => {
       screenHeight: ZXNEXT_WASM_V2_SCREEN_HEIGHT
     });
     expect(diagnostics.scaffoldSurfaces).toEqual(ZXNEXT_WASM_V2_SCAFFOLD_SURFACES);
+    expect(diagnostics.scaffoldSurfaces).not.toContain("registers");
+    expect(diagnostics.scaffoldSurfaces).not.toContain("memory");
+    expect(diagnostics.scaffoldSurfaces).not.toContain("disassembly");
+    expect(diagnostics.scaffoldSurfaces).not.toContain("ULA");
+    expect(diagnostics.scaffoldSurfaces).not.toContain("screen");
+    expect(diagnostics.scaffoldSurfaces).not.toContain("debug");
 
     const oracle = new ZxNextMachine();
     expect(machine.screenWidthInPixels).toBe(oracle.screenWidthInPixels);
@@ -61,7 +67,7 @@ describe("ZX Spectrum Next WASM v2 IDE scaffold", () => {
     machine.doWriteMemory(0x4000, 0x5a);
     expect(machine.doReadMemory(0x4000)).toBe(0x5a);
     expect(machine.get64KFlatMemory()[0x4000]).toBe(0x5a);
-    expect(machine.memoryDevice.readMemory(0x4000)).toBe(0x11);
+    expect(machine.memoryDevice.readMemory(0x4000)).toBe(0x5a);
 
     const sections = machine.getDisassemblySections({ ram: true, screen: true });
     expect(sections).toContainEqual({

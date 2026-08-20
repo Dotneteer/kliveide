@@ -659,7 +659,7 @@ Completed in this step:
 
 ### Step 10 - Replace Scaffold Public Adapter Semantics
 
-Status: Not started
+Status: Completed
 
 Replace the Step 2 scaffold values with real WASM-owned public adapter
 semantics after CPU, debug, memory, ports, and interrupt parity are proven. The
@@ -698,6 +698,15 @@ Deviation guardrail:
   this step claims to have migrated.
 - The factory must still default to TypeScript and must not expose a product
   picker model for WASM in this step.
+
+Completed notes:
+
+- `ZxNextWasmV2Machine` now limits scaffold diagnostics to the remaining frame
+  runner surface and routes public adapter memory, screen, port, NextReg,
+  register, reset, and debug semantics through WASM-owned state.
+- Added ZX Next WASM lifecycle and public adapter tests covering reset/hard
+  reset, register/memory/disassembly reads, breakpoint/debug controls, NextReg
+  inspection, screen dimensions, diagnostics, and factory defaults.
 
 ### Step 11 - Replace Scaffold Frame Runner
 

@@ -26,13 +26,7 @@ export type ZxNextWasmV2ScaffoldStopReason =
   | "scaffoldDebugStep";
 
 export const ZXNEXT_WASM_V2_SCAFFOLD_SURFACES: ZxNextWasmV2ScaffoldSurface[] = [
-  "registers",
-  "memory",
-  "disassembly",
-  "ULA",
-  "screen",
-  "frame",
-  "debug"
+  "frame"
 ];
 
 export type ZxNextWasmV2Diagnostics = {
@@ -66,9 +60,8 @@ const ZXNEXT_WASM_OFFS_NEXT_RAM = 0x040000;
 /**
  * Explicit ZX Spectrum Next WASM v2 adapter.
  *
- * This is a deterministic scaffold for IDE integration only. It intentionally
- * reports every exposed surface as incomplete until full Next subsystems move
- * into the C/WASM backend.
+ * This is a deterministic adapter for IDE integration while the frame runner
+ * remains scaffolded until full Next frame execution moves into C/WASM.
  */
 export class ZxNextWasmV2Machine extends ZxNextMachine {
   public readonly implementation = "wasm" as const;
@@ -109,7 +102,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       }
     };
     this.floatingBusDevice = {
-      readFloatingBus: () => 0xff
+      readFloatingBus: () => this.doReadPort(0xffff)
     };
     this.installNextRegScaffold();
     this.installMemoryMappingScaffold();
@@ -817,13 +810,26 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   private installMemoryMappingScaffold(): void {
+    this.memoryDevice.readMemory = (address: number) => this.doReadMemory(address);
+    this.memoryDevice.writeMemory = (address: number, data: number) => {
+      this.doWriteMemory(address, data);
+    };
+    this.memoryDevice.readScreenMemory = (offset: number) => this.readScreenMemory(offset);
+    this.memoryDevice.getMemoryPartition = (index: number) => this.getMemoryPartition(index);
+    this.memoryDevice.getPartitions = () => this.getCurrentPartitions();
+    this.memoryDevice.getPartitionLabels = () => this.getCurrentPartitionLabels();
+    this.memoryDevice.directRead = (index: number) => this.requireWasmV2Runtime().memory[index & (this.requireWasmV2Runtime().memory.length - 1)];
+    this.memoryDevice.directWrite = (index: number, value: number) => {
+      const runtime = this.requireWasmV2Runtime();
+      runtime.memory[index & (runtime.memory.length - 1)] = value & 0xff;
+    };
     this.memoryDevice.getMemoryMappings = () => ({
       allRamBanks: undefined,
       selectedRom: this.getSelectedRomPage(),
       selectedBank: this.getSelectedRamBank(),
-      port7ffd: 0,
-      port1ffd: 0,
-      portDffd: 0,
+      port7ffd: this.getWasmV2Port7ffdValue(),
+      port1ffd: this.getWasmV2Port1ffdValue(),
+      portDffd: this.getWasmV2PortDffdValue(),
       portEff7: 0,
       portLayer2: 0,
       portTimex: 0,
@@ -838,6 +844,20 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
         bank8k: this.requireWasmV2Runtime().nextRegs[0x50 + pageIndex]
       }))
     });
+  }
+
+  private getWasmV2Port7ffdValue(): number {
+    const nextReg8e = this.requireWasmV2Runtime().nextRegs[0x8e];
+    return ((nextReg8e >> 4) & 0x07) | ((nextReg8e & 0x01) << 4);
+  }
+
+  private getWasmV2Port1ffdValue(): number {
+    const nextReg8e = this.requireWasmV2Runtime().nextRegs[0x8e];
+    return ((nextReg8e & 0x04) ? 0x01 : 0x00) | ((nextReg8e & 0x03) << 1);
+  }
+
+  private getWasmV2PortDffdValue(): number {
+    return (this.requireWasmV2Runtime().nextRegs[0x8e] & 0x80) >> 7;
   }
 
   private getWasmV2PartitionLabelForPage(pageIndex: number): string {
