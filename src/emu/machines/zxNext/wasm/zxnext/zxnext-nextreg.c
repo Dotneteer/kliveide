@@ -90,6 +90,15 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   } else if (normalized == 0xbbu) {
     zxnextDivMmcSetNextRegBB(value);
   }
+  if (normalized == 0x08u) {
+    zxnextPsgSetAyStereoMode(value & 0x10u);
+    if ((value & 0x20u) == 0u) zxnextDacReset();
+  } else if (normalized == 0x09u) {
+    zxnextPsgSetChipMonoMode(0u, value & 0x20u);
+    zxnextPsgSetChipMonoMode(1u, value & 0x40u);
+    zxnextPsgSetChipMonoMode(2u, value & 0x80u);
+  }
+  if (zxnextDacHandlesNextReg(normalized)) zxnextDacSetNextReg(normalized, value);
   zxnextPaletteSetNextReg(normalized, value);
   if (normalized == 0x6bu) zxnextPaletteSetSecondTilemap(value & 0x10u);
   zxnextLayer2SetNextReg(normalized, value);
@@ -106,6 +115,10 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
     case 0xb9u: return zxnextDivMmcGetNextRegB9();
     case 0xbau: return zxnextDivMmcGetNextRegBA();
     case 0xbbu: return zxnextDivMmcGetNextRegBB();
+    case 0x2cu:
+    case 0x2du:
+    case 0x2eu:
+      return zxnextDacGetNextReg(reg);
     case 0x40u:
     case 0x41u:
     case 0x43u:

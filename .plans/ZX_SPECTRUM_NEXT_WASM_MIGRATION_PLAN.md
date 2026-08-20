@@ -979,7 +979,7 @@ Completed notes:
 
 ### Step 16 - Advanced Video
 
-Status: In progress
+Status: Done on 2026-08-20.
 
 Migrate palette, ULA+, Timex, Layer 2, LoRes, tilemap, sprites, copper, and full
 composition in separate parity slices.
@@ -1067,7 +1067,7 @@ Completion notes:
 
 ### Step 17 - Audio
 
-Status: Not started
+Status: In progress
 
 Migrate beeper, PSG/TurboSound, DAC, mixer routing, and sample buffer exposure.
 
@@ -1120,6 +1120,35 @@ Deviation guardrail:
   TurboSound chip selection, DAC writes, mixer routing, and frame buffer export.
 - Existing Spectrum WASM beeper/PSG patterns may be reused only after the Next
   audio devices produce identical oracle samples for the tested sequences.
+
+Deviation recorded on 2026-08-20:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext.c` must be touched to include
+  the new audio modules and expose their parity inspection functions from the
+  single translation unit used by the current ZX Next WASM build.
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c` and
+  `src/emu/machines/zxNext/wasm/zxnext/zxnext-ports.c` must be touched so
+  central NextReg and port writes update the migrated audio-state modules.
+- `scripts/build-zxnext-wasm.cjs` and
+  `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts` must be touched to add
+  the new exported audio inspection functions to the build and typed loader
+  surface.
+
+Completion notes:
+
+- Added WASM audio-state modules for beeper EAR/MIC transition sampling,
+  PSG/TurboSound register/chip/panning state, DAC NextReg and port routing, and
+  mixer routing with deterministic sample-buffer export.
+- Wired central WASM NextReg and port writes to the migrated audio modules.
+- Added focused TypeScript-vs-WASM tests for beeper weighted samples,
+  PSG/TurboSound selection and routing, DAC register/port writes, and mixer
+  output/sample buffer exposure.
+- Validation passed:
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-beeper-audio.test.ts test/wasm/zxNext/wasm-next-psg-audio.test.ts test/wasm/zxNext/wasm-next-dac-audio.test.ts test/wasm/zxNext/wasm-next-audio-mixer.test.ts`,
+  `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-build.test.ts test/wasm/zxNext/wasm-next-loader.test.ts`,
+  `npm run check:zxnext-wasm-size`,
+  and `npm run build:check`.
 
 ### Step 18 - DMA, CTC, UART, I2C, Joystick, Mouse, Expansion, And Floppy
 

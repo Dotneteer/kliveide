@@ -70,6 +70,10 @@ static uint8_t micBit;
 #include "zxnext-tilemap.c"
 #include "zxnext-sprites.c"
 #include "zxnext-copper.c"
+#include "zxnext-beeper.c"
+#include "zxnext-dac.c"
+#include "zxnext-psg.c"
+#include "zxnext-audio-mixer.c"
 #include "zxnext-nextreg.c"
 #include "zxnext-ports.c"
 #include "zxnext-cpu.c"
@@ -90,6 +94,10 @@ static void clearScaffoldBuffers(void) {
   zxnextTilemapReset();
   zxnextSpritesReset();
   zxnextCopperReset();
+  zxnextBeeperReset();
+  zxnextDacReset();
+  zxnextPsgReset();
+  zxnextAudioMixerReset();
   zxnextNextRegHardReset();
 }
 
@@ -126,6 +134,10 @@ void zxnextReset(void) {
   zxnextTilemapReset();
   zxnextSpritesReset();
   zxnextCopperReset();
+  zxnextBeeperReset();
+  zxnextDacReset();
+  zxnextPsgReset();
+  zxnextAudioMixerReset();
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryIsWrite = 0;
@@ -226,6 +238,7 @@ uint32_t zxnextGetDaisyInService(uint32_t index) { return zxnextInterruptsGetDai
 void zxnextSetTacts(uint32_t value) {
   tacts = value;
   currentFrameTact = value % zxnextGetTactsInFrame();
+  zxnextBeeperSetTacts(value);
 }
 
 uint32_t zxnextGetCpuAf(void) { return cpuAf; }
@@ -400,3 +413,41 @@ uint32_t zxnextGetCopperListAddress(void) { return zxnextCopperGetListAddress();
 uint32_t zxnextGetCopperListData(void) { return zxnextCopperGetListData(); }
 uint32_t zxnextGetCopperDout(void) { return zxnextCopperGetDout(); }
 uint32_t zxnextGetCopperVerticalLineOffset(void) { return zxnextCopperGetVerticalLineOffset(); }
+void zxnextSetBeeperOutput(uint32_t ear, uint32_t mic) { zxnextBeeperSetOutput(ear, mic); }
+uint32_t zxnextGetBeeperEar(void) { return zxnextBeeperGetEar(); }
+uint32_t zxnextGetBeeperMic(void) { return zxnextBeeperGetMic(); }
+uint32_t zxnextGetBeeperOutputLevelMilli(void) { return zxnextBeeperGetOutputLevelMilli(); }
+uint32_t zxnextGetBeeperSampleLeftMilli(void) { return zxnextBeeperGetSampleLeftMilli(); }
+uint32_t zxnextGetBeeperSampleRightMilli(void) { return zxnextBeeperGetSampleRightMilli(); }
+void zxnextSetPsgTurbosoundEnabled(uint32_t enabled) { zxnextPsgSetTurbosoundEnabled(enabled); }
+void zxnextSetPsgAyStereoMode(uint32_t enabled) { zxnextPsgSetAyStereoMode(enabled); }
+void zxnextSetPsgChipMonoMode(uint32_t chip, uint32_t enabled) { zxnextPsgSetChipMonoMode(chip, enabled); }
+void zxnextSetPsgRegisterIndex(uint32_t value) { zxnextPsgSetRegisterIndex(value); }
+void zxnextWritePsgRegisterValue(uint32_t value) { zxnextPsgWriteRegisterValue(value); }
+uint32_t zxnextReadPsgRegisterValue(void) { return zxnextPsgReadRegisterValue(); }
+void zxnextGeneratePsgOutput(uint32_t chip) { zxnextPsgGenerateOutput(chip); }
+uint32_t zxnextGetPsgSelectedChip(void) { return zxnextPsgGetSelectedChip(); }
+uint32_t zxnextGetPsgSelectedRegister(void) { return zxnextPsgGetSelectedRegister(); }
+uint32_t zxnextGetPsgChipPanning(uint32_t chip) { return zxnextPsgGetChipPanning(chip); }
+uint32_t zxnextGetPsgChipMonoMode(uint32_t chip) { return zxnextPsgGetChipMonoMode(chip); }
+uint32_t zxnextGetPsgRegister(uint32_t chip, uint32_t reg) { return zxnextPsgGetRegister(chip, reg); }
+uint32_t zxnextGetPsgOutputA(uint32_t chip) { return zxnextPsgGetOutputA(chip); }
+uint32_t zxnextGetPsgOutputB(uint32_t chip) { return zxnextPsgGetOutputB(chip); }
+uint32_t zxnextGetPsgOutputC(uint32_t chip) { return zxnextPsgGetOutputC(chip); }
+uint32_t zxnextGetPsgStereoLeft(uint32_t chip) { return zxnextPsgGetStereoLeft(chip); }
+uint32_t zxnextGetPsgStereoRight(uint32_t chip) { return zxnextPsgGetStereoRight(chip); }
+uint32_t zxnextGetPsgNoiseRng(uint32_t chip) { return zxnextPsgGetNoiseRng(chip); }
+uint32_t zxnextGetPsgEnvelopeStep(uint32_t chip) { return zxnextPsgGetEnvelopeStep(chip); }
+uint32_t zxnextGetDacChannel(uint32_t channel) { return zxnextDacGetChannel(channel); }
+uint32_t zxnextGetDacStereoLeft(void) { return zxnextDacGetStereoLeft(); }
+uint32_t zxnextGetDacStereoRight(void) { return zxnextDacGetStereoRight(); }
+void zxnextSetAudioMixerEarLevelMilli(int32_t level) { zxnextAudioMixerSetEarLevelMilli(level); }
+void zxnextSetAudioMixerMicLevelMilli(int32_t level) { zxnextAudioMixerSetMicLevelMilli(level); }
+void zxnextSetAudioMixerPsgOutput(uint32_t left, uint32_t right) { zxnextAudioMixerSetPsgOutput(left, right); }
+void zxnextSetAudioMixerVolumeScaleMilli(uint32_t scale) { zxnextAudioMixerSetVolumeScaleMilli(scale); }
+int32_t zxnextGetAudioMixerMixedLeftWord(void) { return zxnextAudioMixerGetMixedLeftWord(); }
+int32_t zxnextGetAudioMixerMixedRightWord(void) { return zxnextAudioMixerGetMixedRightWord(); }
+uint32_t zxnextAppendAudioMixerCurrentSample(void) { return zxnextAudioMixerAppendCurrentSample(); }
+uint32_t zxnextGetAudioMixerSampleCount(void) { return zxnextAudioMixerGetSampleCount(); }
+int32_t zxnextGetAudioMixerSampleLeft(uint32_t index) { return zxnextAudioMixerGetSampleLeft(index); }
+int32_t zxnextGetAudioMixerSampleRight(uint32_t index) { return zxnextAudioMixerGetSampleRight(index); }

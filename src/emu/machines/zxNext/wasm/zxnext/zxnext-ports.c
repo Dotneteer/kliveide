@@ -4,6 +4,9 @@
 #include "zxnext-ula.h"
 #include "zxnext-divmmc.h"
 #include "zxnext-sd.h"
+#include "zxnext-dac.h"
+#include "zxnext-psg.h"
+#include "zxnext-beeper.h"
 
 static uint8_t zxnextPortsGroupEnabled(uint32_t regIndex, uint32_t bit) {
   uint32_t reg = 0x82u + (regIndex & 0x03u);
@@ -47,6 +50,7 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   lastPortAddress = normalized;
   lastPortValue = byteValue;
   lastPortIsWrite = 1;
+  zxnextDacWritePort(normalized, byteValue);
 
   if ((normalized & 0xffffu) == 0x243bu) {
     zxnextNextRegSetIndex(byteValue);
@@ -68,5 +72,10 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     if (zxnextPortsGroupEnabled(0, 0)) portTimexValue = byteValue;
   } else if ((normalized & 0x0001u) == 0) {
     zxnextUlaWritePortFe(byteValue);
+    zxnextBeeperSetOutput((byteValue & 0x10u) != 0u, (byteValue & 0x08u) != 0u);
+  } else if ((normalized & 0xc002u) == 0xc000u) {
+    zxnextPsgSetRegisterIndex(byteValue);
+  } else if ((normalized & 0xc002u) == 0x8000u) {
+    zxnextPsgWriteRegisterValue(byteValue);
   }
 }

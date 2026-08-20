@@ -12,7 +12,7 @@ export type ZxNextImplementation = "typescript" | "wasm";
 export const ZXNEXT_IMPLEMENTATION = MC_ZXNEXT_IMPLEMENTATION;
 
 /** Default Next backend used when the model/config does not explicitly select one. */
-export const DEFAULT_ZXNEXT_IMPLEMENTATION: ZxNextImplementation = "wasm";
+export const DEFAULT_ZXNEXT_IMPLEMENTATION: ZxNextImplementation = "typescript";
 
 export function getZxNextImplementation(config?: Record<string, unknown>): ZxNextImplementation {
   const configured = config?.[ZXNEXT_IMPLEMENTATION];

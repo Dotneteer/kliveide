@@ -179,6 +179,44 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetCopperListData: ZxNextWasmV2ExportFunction;
   zxnextGetCopperDout: ZxNextWasmV2ExportFunction;
   zxnextGetCopperVerticalLineOffset: ZxNextWasmV2ExportFunction;
+  zxnextSetBeeperOutput: ZxNextWasmV2ExportFunction;
+  zxnextGetBeeperEar: ZxNextWasmV2ExportFunction;
+  zxnextGetBeeperMic: ZxNextWasmV2ExportFunction;
+  zxnextGetBeeperOutputLevelMilli: ZxNextWasmV2ExportFunction;
+  zxnextGetBeeperSampleLeftMilli: ZxNextWasmV2ExportFunction;
+  zxnextGetBeeperSampleRightMilli: ZxNextWasmV2ExportFunction;
+  zxnextSetPsgTurbosoundEnabled: ZxNextWasmV2ExportFunction;
+  zxnextSetPsgAyStereoMode: ZxNextWasmV2ExportFunction;
+  zxnextSetPsgChipMonoMode: ZxNextWasmV2ExportFunction;
+  zxnextSetPsgRegisterIndex: ZxNextWasmV2ExportFunction;
+  zxnextWritePsgRegisterValue: ZxNextWasmV2ExportFunction;
+  zxnextReadPsgRegisterValue: ZxNextWasmV2ExportFunction;
+  zxnextGeneratePsgOutput: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgSelectedChip: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgSelectedRegister: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgChipPanning: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgChipMonoMode: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgRegister: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgOutputA: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgOutputB: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgOutputC: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgStereoLeft: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgStereoRight: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgNoiseRng: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgEnvelopeStep: ZxNextWasmV2ExportFunction;
+  zxnextGetDacChannel: ZxNextWasmV2ExportFunction;
+  zxnextGetDacStereoLeft: ZxNextWasmV2ExportFunction;
+  zxnextGetDacStereoRight: ZxNextWasmV2ExportFunction;
+  zxnextSetAudioMixerEarLevelMilli: ZxNextWasmV2ExportFunction;
+  zxnextSetAudioMixerMicLevelMilli: ZxNextWasmV2ExportFunction;
+  zxnextSetAudioMixerPsgOutput: ZxNextWasmV2ExportFunction;
+  zxnextSetAudioMixerVolumeScaleMilli: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioMixerMixedLeftWord: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioMixerMixedRightWord: ZxNextWasmV2ExportFunction;
+  zxnextAppendAudioMixerCurrentSample: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioMixerSampleCount: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioMixerSampleLeft: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioMixerSampleRight: ZxNextWasmV2ExportFunction;
   zxnextDivMmcBeforeFetch: ZxNextWasmV2ExportFunction;
   zxnextDivMmcAfterFetch: ZxNextWasmV2ExportFunction;
   zxnextDivMmcArmNmi: ZxNextWasmV2ExportFunction;
@@ -408,6 +446,44 @@ const requiredV2Exports = [
   "zxnextGetCopperListData",
   "zxnextGetCopperDout",
   "zxnextGetCopperVerticalLineOffset",
+  "zxnextSetBeeperOutput",
+  "zxnextGetBeeperEar",
+  "zxnextGetBeeperMic",
+  "zxnextGetBeeperOutputLevelMilli",
+  "zxnextGetBeeperSampleLeftMilli",
+  "zxnextGetBeeperSampleRightMilli",
+  "zxnextSetPsgTurbosoundEnabled",
+  "zxnextSetPsgAyStereoMode",
+  "zxnextSetPsgChipMonoMode",
+  "zxnextSetPsgRegisterIndex",
+  "zxnextWritePsgRegisterValue",
+  "zxnextReadPsgRegisterValue",
+  "zxnextGeneratePsgOutput",
+  "zxnextGetPsgSelectedChip",
+  "zxnextGetPsgSelectedRegister",
+  "zxnextGetPsgChipPanning",
+  "zxnextGetPsgChipMonoMode",
+  "zxnextGetPsgRegister",
+  "zxnextGetPsgOutputA",
+  "zxnextGetPsgOutputB",
+  "zxnextGetPsgOutputC",
+  "zxnextGetPsgStereoLeft",
+  "zxnextGetPsgStereoRight",
+  "zxnextGetPsgNoiseRng",
+  "zxnextGetPsgEnvelopeStep",
+  "zxnextGetDacChannel",
+  "zxnextGetDacStereoLeft",
+  "zxnextGetDacStereoRight",
+  "zxnextSetAudioMixerEarLevelMilli",
+  "zxnextSetAudioMixerMicLevelMilli",
+  "zxnextSetAudioMixerPsgOutput",
+  "zxnextSetAudioMixerVolumeScaleMilli",
+  "zxnextGetAudioMixerMixedLeftWord",
+  "zxnextGetAudioMixerMixedRightWord",
+  "zxnextAppendAudioMixerCurrentSample",
+  "zxnextGetAudioMixerSampleCount",
+  "zxnextGetAudioMixerSampleLeft",
+  "zxnextGetAudioMixerSampleRight",
   "zxnextDivMmcBeforeFetch",
   "zxnextDivMmcAfterFetch",
   "zxnextDivMmcArmNmi",
