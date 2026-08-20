@@ -124,6 +124,61 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextAdvanceUlaFrameState: ZxNextWasmV2ExportFunction;
   zxnextGetUlaScanlineForTact: ZxNextWasmV2ExportFunction;
   zxnextGetUlaColumnForTact: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteNextReg: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteEntry: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteCurrentEntry: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteControl: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteSecondWrite: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteStoredValue: ZxNextWasmV2ExportFunction;
+  zxnextSetLayer2Enabled: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2Enabled: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2Resolution: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2PaletteOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ScrollX: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ScrollY: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2Clip: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResRadastanMode: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResPaletteOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResScrollX: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResScrollY: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResStandardAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetLoResRadastanAddress: ZxNextWasmV2ExportFunction;
+  zxnextComposeLayer2Sample: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapNextReg: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapClip: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapEnabled: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapPaletteOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapScrollX: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapScrollY: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapBaseAddressUseBank7: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapBaseAddressMsb: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapDefinitionAddressUseBank7: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapDefinitionAddressMsb: ZxNextWasmV2ExportFunction;
+  zxnextSpriteWritePort303b: ZxNextWasmV2ExportFunction;
+  zxnextSpriteWritePort57: ZxNextWasmV2ExportFunction;
+  zxnextSpriteWritePort5b: ZxNextWasmV2ExportFunction;
+  zxnextSpriteReadPort303b: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteClip: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteTransparencyIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpritePatternIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpritePatternSubIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteSubIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteAttribute: ZxNextWasmV2ExportFunction;
+  zxnextGetSpritePatternByte8: ZxNextWasmV2ExportFunction;
+  zxnextGetSpritePatternByte4: ZxNextWasmV2ExportFunction;
+  zxnextGetLastVisibleSpriteIndex: ZxNextWasmV2ExportFunction;
+  zxnextCopperTick: ZxNextWasmV2ExportFunction;
+  zxnextCopperRead: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperNextReg: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperStartMode: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperInstructionAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperListAddress: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperListData: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperDout: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperVerticalLineOffset: ZxNextWasmV2ExportFunction;
   zxnextDivMmcBeforeFetch: ZxNextWasmV2ExportFunction;
   zxnextDivMmcAfterFetch: ZxNextWasmV2ExportFunction;
   zxnextDivMmcArmNmi: ZxNextWasmV2ExportFunction;
@@ -298,6 +353,61 @@ const requiredV2Exports = [
   "zxnextAdvanceUlaFrameState",
   "zxnextGetUlaScanlineForTact",
   "zxnextGetUlaColumnForTact",
+  "zxnextGetPaletteNextReg",
+  "zxnextGetPaletteEntry",
+  "zxnextGetPaletteCurrentEntry",
+  "zxnextGetPaletteIndex",
+  "zxnextGetPaletteControl",
+  "zxnextGetPaletteSecondWrite",
+  "zxnextGetPaletteStoredValue",
+  "zxnextSetLayer2Enabled",
+  "zxnextGetLayer2Enabled",
+  "zxnextGetLayer2Resolution",
+  "zxnextGetLayer2PaletteOffset",
+  "zxnextGetLayer2ScrollX",
+  "zxnextGetLayer2ScrollY",
+  "zxnextGetLayer2Clip",
+  "zxnextGetLoResEnabled",
+  "zxnextGetLoResRadastanMode",
+  "zxnextGetLoResPaletteOffset",
+  "zxnextGetLoResScrollX",
+  "zxnextGetLoResScrollY",
+  "zxnextGetLoResStandardAddress",
+  "zxnextGetLoResRadastanAddress",
+  "zxnextComposeLayer2Sample",
+  "zxnextGetTilemapNextReg",
+  "zxnextGetTilemapClip",
+  "zxnextGetTilemapEnabled",
+  "zxnextGetTilemapPaletteOffset",
+  "zxnextGetTilemapScrollX",
+  "zxnextGetTilemapScrollY",
+  "zxnextGetTilemapBaseAddressUseBank7",
+  "zxnextGetTilemapBaseAddressMsb",
+  "zxnextGetTilemapDefinitionAddressUseBank7",
+  "zxnextGetTilemapDefinitionAddressMsb",
+  "zxnextSpriteWritePort303b",
+  "zxnextSpriteWritePort57",
+  "zxnextSpriteWritePort5b",
+  "zxnextSpriteReadPort303b",
+  "zxnextGetSpriteClip",
+  "zxnextGetSpriteTransparencyIndex",
+  "zxnextGetSpriteIndex",
+  "zxnextGetSpritePatternIndex",
+  "zxnextGetSpritePatternSubIndex",
+  "zxnextGetSpriteSubIndex",
+  "zxnextGetSpriteAttribute",
+  "zxnextGetSpritePatternByte8",
+  "zxnextGetSpritePatternByte4",
+  "zxnextGetLastVisibleSpriteIndex",
+  "zxnextCopperTick",
+  "zxnextCopperRead",
+  "zxnextGetCopperNextReg",
+  "zxnextGetCopperStartMode",
+  "zxnextGetCopperInstructionAddress",
+  "zxnextGetCopperListAddress",
+  "zxnextGetCopperListData",
+  "zxnextGetCopperDout",
+  "zxnextGetCopperVerticalLineOffset",
   "zxnextDivMmcBeforeFetch",
   "zxnextDivMmcAfterFetch",
   "zxnextDivMmcArmNmi",

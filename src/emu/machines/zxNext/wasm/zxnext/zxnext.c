@@ -65,6 +65,11 @@ static uint8_t micBit;
 #include "zxnext-keyboard.c"
 #include "zxnext-tape.c"
 #include "zxnext-ula.c"
+#include "zxnext-palette.c"
+#include "zxnext-layer2.c"
+#include "zxnext-tilemap.c"
+#include "zxnext-sprites.c"
+#include "zxnext-copper.c"
 #include "zxnext-nextreg.c"
 #include "zxnext-ports.c"
 #include "zxnext-cpu.c"
@@ -80,6 +85,11 @@ static void clearScaffoldBuffers(void) {
   zxnextKeyboardReset();
   zxnextDivMmcReset();
   zxnextSdReset();
+  zxnextPaletteReset();
+  zxnextLayer2Reset();
+  zxnextTilemapReset();
+  zxnextSpritesReset();
+  zxnextCopperReset();
   zxnextNextRegHardReset();
 }
 
@@ -111,6 +121,11 @@ void zxnextReset(void) {
   zxnextTapeReset();
   zxnextDivMmcReset();
   zxnextSdReset();
+  zxnextPaletteReset();
+  zxnextLayer2Reset();
+  zxnextTilemapReset();
+  zxnextSpritesReset();
+  zxnextCopperReset();
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryIsWrite = 0;
@@ -314,3 +329,74 @@ uint32_t zxnextGetUlaFlashFlag(void) { return zxnextUlaGetFlashFlag(); }
 void zxnextAdvanceUlaFrameState(void) { zxnextUlaOnFrameCompleted(); }
 uint32_t zxnextGetUlaScanlineForTact(uint32_t tact) { return zxnextUlaGetScanlineForTact(tact); }
 uint32_t zxnextGetUlaColumnForTact(uint32_t tact) { return zxnextUlaGetColumnForTact(tact); }
+
+uint32_t zxnextGetPaletteNextReg(uint32_t reg) { return zxnextPaletteGetNextReg(reg); }
+uint32_t zxnextGetPaletteEntry(uint32_t palette, uint32_t index) { return zxnextPaletteGetEntry(palette, index); }
+uint32_t zxnextGetPaletteCurrentEntry(uint32_t index) { return zxnextPaletteGetCurrentEntry(index); }
+uint32_t zxnextGetPaletteIndex(void) { return zxnextPaletteGetPaletteIndex(); }
+uint32_t zxnextGetPaletteControl(void) { return zxnextPaletteGetControl(); }
+uint32_t zxnextGetPaletteSecondWrite(void) { return zxnextPaletteGetSecondWrite(); }
+uint32_t zxnextGetPaletteStoredValue(void) { return zxnextPaletteGetStoredValue(); }
+void zxnextSetLayer2Enabled(uint32_t enabled) { zxnextLayer2SetEnabled(enabled); }
+uint32_t zxnextGetLayer2Enabled(void) { return zxnextLayer2GetEnabled(); }
+uint32_t zxnextGetLayer2Resolution(void) { return zxnextLayer2GetResolution(); }
+uint32_t zxnextGetLayer2PaletteOffset(void) { return zxnextLayer2GetPaletteOffset(); }
+uint32_t zxnextGetLayer2ScrollX(void) { return zxnextLayer2GetScrollX(); }
+uint32_t zxnextGetLayer2ScrollY(void) { return zxnextLayer2GetScrollY(); }
+uint32_t zxnextGetLayer2Clip(uint32_t index) { return zxnextLayer2GetClip(index); }
+uint32_t zxnextGetLoResEnabled(void) { return zxnextLoResGetEnabled(); }
+uint32_t zxnextGetLoResRadastanMode(void) { return zxnextLoResGetRadastanMode(); }
+uint32_t zxnextGetLoResPaletteOffset(void) { return zxnextLoResGetPaletteOffset(); }
+uint32_t zxnextGetLoResScrollX(void) { return zxnextLoResGetScrollX(); }
+uint32_t zxnextGetLoResScrollY(void) { return zxnextLoResGetScrollY(); }
+uint32_t zxnextGetLoResStandardAddress(uint32_t x, uint32_t y) { return zxnextLoResStandardAddress(x, y); }
+uint32_t zxnextGetLoResRadastanAddress(uint32_t x, uint32_t y, uint32_t dfile) {
+  return zxnextLoResRadastanAddress(x, y, dfile);
+}
+uint32_t zxnextComposeLayer2Sample(uint32_t layer2Rgb, uint32_t layer2Transparent, uint32_t ulaRgb) {
+  return zxnextLayer2ComposeSample(layer2Rgb, layer2Transparent, ulaRgb);
+}
+uint32_t zxnextGetTilemapNextReg(uint32_t reg) {
+  uint32_t value = zxnextTilemapGetNextReg(reg);
+  return (reg & 0xffu) == 0x6bu ? value | (zxnextPaletteGetSecondTilemap() ? 0x10u : 0u) : value;
+}
+uint32_t zxnextGetTilemapClip(uint32_t index) { return zxnextTilemapGetClip(index); }
+uint32_t zxnextGetTilemapEnabled(void) { return zxnextTilemapGetEnabled(); }
+uint32_t zxnextGetTilemapPaletteOffset(void) { return zxnextTilemapGetPaletteOffset(); }
+uint32_t zxnextGetTilemapScrollX(void) { return zxnextTilemapGetScrollX(); }
+uint32_t zxnextGetTilemapScrollY(void) { return zxnextTilemapGetScrollY(); }
+uint32_t zxnextGetTilemapBaseAddressUseBank7(void) { return zxnextTilemapGetBaseAddressUseBank7(); }
+uint32_t zxnextGetTilemapBaseAddressMsb(void) { return zxnextTilemapGetBaseAddressMsb(); }
+uint32_t zxnextGetTilemapDefinitionAddressUseBank7(void) {
+  return zxnextTilemapGetDefinitionAddressUseBank7();
+}
+uint32_t zxnextGetTilemapDefinitionAddressMsb(void) { return zxnextTilemapGetDefinitionAddressMsb(); }
+void zxnextSpriteWritePort303b(uint32_t value) { zxnextSpritesWritePort303b(value); }
+void zxnextSpriteWritePort57(uint32_t value) { zxnextSpritesWritePort57(value); }
+void zxnextSpriteWritePort5b(uint32_t value) { zxnextSpritesWritePort5b(value); }
+uint32_t zxnextSpriteReadPort303b(void) { return zxnextSpritesReadPort303b(); }
+uint32_t zxnextGetSpriteClip(uint32_t index) { return zxnextSpritesGetClip(index); }
+uint32_t zxnextGetSpriteTransparencyIndex(void) { return zxnextSpritesGetTransparencyIndex(); }
+uint32_t zxnextGetSpriteIndex(void) { return zxnextSpritesGetSpriteIndex(); }
+uint32_t zxnextGetSpritePatternIndex(void) { return zxnextSpritesGetPatternIndex(); }
+uint32_t zxnextGetSpritePatternSubIndex(void) { return zxnextSpritesGetPatternSubIndex(); }
+uint32_t zxnextGetSpriteSubIndex(void) { return zxnextSpritesGetSpriteSubIndex(); }
+uint32_t zxnextGetSpriteAttribute(uint32_t sprite, uint32_t attr) {
+  return zxnextSpritesGetAttribute(sprite, attr);
+}
+uint32_t zxnextGetSpritePatternByte8(uint32_t variant, uint32_t offset) {
+  return zxnextSpritesGetPatternByte8(variant, offset);
+}
+uint32_t zxnextGetSpritePatternByte4(uint32_t variant, uint32_t offset) {
+  return zxnextSpritesGetPatternByte4(variant, offset);
+}
+uint32_t zxnextGetLastVisibleSpriteIndex(void) { return zxnextSpritesGetLastVisibleSpriteIndex(); }
+void zxnextCopperTick(uint32_t vc, uint32_t hc, uint32_t totalVc) { zxnextCopperExecuteTick(vc, hc, totalVc); }
+uint32_t zxnextCopperRead(uint32_t address) { return zxnextCopperReadMemory(address); }
+uint32_t zxnextGetCopperNextReg(uint32_t reg) { return zxnextCopperGetNextReg(reg); }
+uint32_t zxnextGetCopperStartMode(void) { return zxnextCopperGetStartMode(); }
+uint32_t zxnextGetCopperInstructionAddress(void) { return zxnextCopperGetInstructionAddress(); }
+uint32_t zxnextGetCopperListAddress(void) { return zxnextCopperGetListAddress(); }
+uint32_t zxnextGetCopperListData(void) { return zxnextCopperGetListData(); }
+uint32_t zxnextGetCopperDout(void) { return zxnextCopperGetDout(); }
+uint32_t zxnextGetCopperVerticalLineOffset(void) { return zxnextCopperGetVerticalLineOffset(); }

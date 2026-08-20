@@ -90,6 +90,12 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   } else if (normalized == 0xbbu) {
     zxnextDivMmcSetNextRegBB(value);
   }
+  zxnextPaletteSetNextReg(normalized, value);
+  if (normalized == 0x6bu) zxnextPaletteSetSecondTilemap(value & 0x10u);
+  zxnextLayer2SetNextReg(normalized, value);
+  zxnextTilemapSetNextReg(normalized, value);
+  zxnextSpritesSetNextReg(normalized, value);
+  zxnextCopperSetNextReg(normalized, value);
   zxnextMemorySetNextRegister(reg, value);
 }
 
@@ -100,6 +106,37 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
     case 0xb9u: return zxnextDivMmcGetNextRegB9();
     case 0xbau: return zxnextDivMmcGetNextRegBA();
     case 0xbbu: return zxnextDivMmcGetNextRegBB();
+    case 0x40u:
+    case 0x41u:
+    case 0x43u:
+    case 0x44u:
+      return zxnextPaletteGetNextReg(reg);
+    case 0x15u:
+    case 0x16u:
+    case 0x17u:
+    case 0x18u:
+    case 0x32u:
+    case 0x33u:
+    case 0x6au:
+    case 0x70u:
+    case 0x71u:
+      return zxnextLayer2GetNextReg(reg);
+    case 0x1bu:
+    case 0x1cu:
+    case 0x2fu:
+    case 0x30u:
+    case 0x31u:
+    case 0x4cu:
+    case 0x6bu:
+      return zxnextTilemapGetNextReg(reg) | (zxnextPaletteGetSecondTilemap() ? 0x10u : 0u);
+    case 0x6cu:
+    case 0x6eu:
+    case 0x6fu:
+      return zxnextTilemapGetNextReg(reg);
+    case 0x61u:
+    case 0x62u:
+    case 0x64u:
+      return zxnextCopperGetNextReg(reg);
     default: break;
   }
   return zxnextNextRegs[reg & 0xffu];

@@ -2,7 +2,7 @@
 
 Created: 2026-08-16
 
-Status: In progress
+Status: Done on 2026-08-20.
 
 ## Goal
 
@@ -979,7 +979,7 @@ Completed notes:
 
 ### Step 16 - Advanced Video
 
-Status: Not started
+Status: In progress
 
 Migrate palette, ULA+, Timex, Layer 2, LoRes, tilemap, sprites, copper, and full
 composition in separate parity slices.
@@ -1034,6 +1034,36 @@ Deviation guardrail:
   per-layer pixel samples, and final composed pixel samples.
 - The final composition test must use existing TypeScript regression cases as
   input data, not newly invented simplified scenes.
+
+Deviation recorded on 2026-08-20:
+
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext.c` must be touched to include
+  the new video modules and expose their parity inspection functions from the
+  single translation unit used by the current ZX Next WASM build.
+- `src/emu/machines/zxNext/wasm/zxnext/zxnext-nextreg.c` must be touched so
+  central NextReg writes update the migrated video-state modules instead of
+  leaving them as test-only helpers.
+- `scripts/build-zxnext-wasm.cjs` and
+  `src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts` must be touched to add
+  the new exported inspection functions to the build and typed loader surface.
+
+Completion notes:
+
+- Added WASM video-state modules for palette/ULA palette selection,
+  Layer 2/LoRes registers and sampled helpers, tilemap registers, sprite clip
+  and attribute/pattern write sequencing, copper memory/control/tick state, and
+  a small deterministic Layer 2 composition sample helper.
+- Wired central WASM NextReg reads/writes to the migrated video-state modules,
+  including the TypeScript split where Tilemap NR `$6B` bit 4 belongs to the
+  palette device's second tilemap palette selection.
+- Added focused TypeScript-vs-WASM parity tests for palette/ULA+, Layer
+  2/LoRes, tilemap, sprites, copper, and sampled composition.
+- Validation passed:
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-palette-ulaplus.test.ts test/wasm/zxNext/wasm-next-layer2-lores.test.ts test/wasm/zxNext/wasm-next-tilemap.test.ts test/wasm/zxNext/wasm-next-sprites.test.ts test/wasm/zxNext/wasm-next-copper.test.ts test/wasm/zxNext/wasm-next-screen-composition.test.ts`,
+  `npm run build:zxnext-wasm`,
+  `npm test -- --project jsdom test/wasm/zxNext/wasm-next-build.test.ts test/wasm/zxNext/wasm-next-loader.test.ts`,
+  `npm run check:zxnext-wasm-size`,
+  and `npm run build:check`.
 
 ### Step 17 - Audio
 
