@@ -95,6 +95,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextSetCpuIff2: ZxNextWasmV2ExportFunction;
   zxnextGetCpuInterruptMode: ZxNextWasmV2ExportFunction;
   zxnextSetCpuInterruptMode: ZxNextWasmV2ExportFunction;
+  zxnextGetSharedZ80NMode: ZxNextWasmV2ExportFunction;
   zxnextGetLastMemoryAddress: ZxNextWasmV2ExportFunction;
   zxnextGetLastMemoryValue: ZxNextWasmV2ExportFunction;
   zxnextGetLastMemoryIsWrite: ZxNextWasmV2ExportFunction;
@@ -296,6 +297,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextExpansionIsUlaOverride: ZxNextWasmV2ExportFunction;
   zxnextDmaSetMode: ZxNextWasmV2ExportFunction;
   zxnextDmaWritePort: ZxNextWasmV2ExportFunction;
+  zxnextDmaExecuteTransfer: ZxNextWasmV2ExportFunction;
   zxnextDmaReadStatusByte: ZxNextWasmV2ExportFunction;
   zxnextGetDmaMode: ZxNextWasmV2ExportFunction;
   zxnextGetDmaStatus: ZxNextWasmV2ExportFunction;
@@ -305,6 +307,11 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetDmaBlockLength: ZxNextWasmV2ExportFunction;
   zxnextGetDmaEnabled: ZxNextWasmV2ExportFunction;
   zxnextGetDmaByteCounter: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaDirectionAtoB: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaPortAConfig: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaPortBConfig: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaTransferMode: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaTransferredBytes: ZxNextWasmV2ExportFunction;
   zxnextFloppyReadMainStatusRegister: ZxNextWasmV2ExportFunction;
   zxnextFloppyReadDataRegister: ZxNextWasmV2ExportFunction;
   zxnextFloppyWriteDataRegister: ZxNextWasmV2ExportFunction;
@@ -435,6 +442,7 @@ const requiredV2Exports = [
   "zxnextSetCpuIff2",
   "zxnextGetCpuInterruptMode",
   "zxnextSetCpuInterruptMode",
+  "zxnextGetSharedZ80NMode",
   "zxnextGetLastMemoryAddress",
   "zxnextGetLastMemoryValue",
   "zxnextGetLastMemoryIsWrite",
@@ -636,6 +644,7 @@ const requiredV2Exports = [
   "zxnextExpansionIsUlaOverride",
   "zxnextDmaSetMode",
   "zxnextDmaWritePort",
+  "zxnextDmaExecuteTransfer",
   "zxnextDmaReadStatusByte",
   "zxnextGetDmaMode",
   "zxnextGetDmaStatus",
@@ -645,6 +654,11 @@ const requiredV2Exports = [
   "zxnextGetDmaBlockLength",
   "zxnextGetDmaEnabled",
   "zxnextGetDmaByteCounter",
+  "zxnextGetDmaDirectionAtoB",
+  "zxnextGetDmaPortAConfig",
+  "zxnextGetDmaPortBConfig",
+  "zxnextGetDmaTransferMode",
+  "zxnextGetDmaTransferredBytes",
   "zxnextFloppyReadMainStatusRegister",
   "zxnextFloppyReadDataRegister",
   "zxnextFloppyWriteDataRegister",

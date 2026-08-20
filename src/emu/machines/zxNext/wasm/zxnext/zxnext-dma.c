@@ -1,4 +1,8 @@
 #include "zxnext-dma.h"
+#include "zxnext-memory.h"
+
+static uint32_t zxnextPortsRead(uint32_t address);
+static void zxnextPortsWrite(uint32_t address, uint32_t value);
 
 static uint8_t zxnextDmaMode;
 static uint8_t zxnextDmaStatus;
@@ -13,6 +17,10 @@ static uint16_t zxnextDmaBlockLength;
 static uint16_t zxnextDmaByteCounter;
 static uint8_t zxnextDmaEnabled;
 static uint8_t zxnextDmaDirectionAtoB;
+static uint8_t zxnextDmaPortAConfig;
+static uint8_t zxnextDmaPortBConfig;
+static uint8_t zxnextDmaTransferMode;
+static uint32_t zxnextDmaTransferredBytes;
 
 void zxnextDmaReset(void) {
   zxnextDmaMode = 0;
@@ -27,6 +35,10 @@ void zxnextDmaReset(void) {
   zxnextDmaByteCounter = 0;
   zxnextDmaEnabled = 0;
   zxnextDmaDirectionAtoB = 0;
+  zxnextDmaPortAConfig = 0;
+  zxnextDmaPortBConfig = 0;
+  zxnextDmaTransferMode = 0;
+  zxnextDmaTransferredBytes = 0;
 }
 
 void zxnextDmaSetMode(uint32_t mode) { zxnextDmaMode = mode & 1u; }
@@ -91,6 +103,14 @@ void zxnextDmaWritePort(uint32_t value) {
   else if ((byteValue & 0xc7u) == 0x82u) group = 5;
   else group = 6;
 
+  if (group == 1) {
+    zxnextDmaPortAConfig = byteValue;
+  } else if (group == 2) {
+    zxnextDmaPortBConfig = byteValue;
+  } else if (group == 4) {
+    zxnextDmaTransferMode = (byteValue >> 5u) & 0x03u;
+  }
+
   if (group == 6) {
     switch (byteValue) {
       case 0xc3u:
@@ -101,14 +121,17 @@ void zxnextDmaWritePort(uint32_t value) {
         break;
       case 0xcfu:
         zxnextDmaByteCounter = zxnextDmaMode == 0 ? 0 : 0xffffu;
+        zxnextDmaTransferredBytes = 0;
         zxnextDmaStatus |= 0x30u;
         break;
       case 0xd3u:
         zxnextDmaByteCounter = 0;
+        zxnextDmaTransferredBytes = 0;
         zxnextDmaStatus |= 0x30u;
         break;
       case 0x87u:
         zxnextDmaByteCounter = zxnextDmaMode == 0 ? 0 : 0xffffu;
+        zxnextDmaTransferredBytes = 0;
         zxnextDmaEnabled = 1;
         break;
       case 0x83u:
@@ -127,6 +150,58 @@ void zxnextDmaWritePort(uint32_t value) {
     }
   }
   zxnextDmaSetupFollow(group, byteValue);
+}
+
+static uint32_t zxnextDmaPortIsIo(uint32_t config) {
+  return (config & 0x08u) != 0;
+}
+
+static uint32_t zxnextDmaAddressMode(uint32_t config) {
+  return (config >> 4u) & 0x03u;
+}
+
+static uint16_t zxnextDmaNextAddress(uint16_t address, uint32_t config) {
+  switch (zxnextDmaAddressMode(config)) {
+    case 2: return address;
+    case 3: return (uint16_t)(address - 1u);
+    default: return (uint16_t)(address + 1u);
+  }
+}
+
+static uint32_t zxnextDmaReadEndpoint(uint16_t address, uint32_t config) {
+  return zxnextDmaPortIsIo(config) ? zxnextPortsRead(address) : zxnextMemoryReadMapped(address);
+}
+
+static void zxnextDmaWriteEndpoint(uint16_t address, uint32_t config, uint32_t value) {
+  if (zxnextDmaPortIsIo(config)) zxnextPortsWrite(address, value);
+  else zxnextMemoryWriteMapped(address, value);
+}
+
+uint32_t zxnextDmaExecuteTransfer(uint32_t maxBytes) {
+  uint32_t executed = 0;
+  if (!zxnextDmaEnabled || zxnextDmaBlockLength == 0) return 0;
+
+  while (executed < maxBytes && zxnextDmaTransferredBytes < zxnextDmaBlockLength) {
+    uint32_t value;
+    if (zxnextDmaDirectionAtoB) {
+      value = zxnextDmaReadEndpoint(zxnextDmaPortAStartAddress, zxnextDmaPortAConfig);
+      zxnextDmaWriteEndpoint(zxnextDmaPortBStartAddress, zxnextDmaPortBConfig, value);
+    } else {
+      value = zxnextDmaReadEndpoint(zxnextDmaPortBStartAddress, zxnextDmaPortBConfig);
+      zxnextDmaWriteEndpoint(zxnextDmaPortAStartAddress, zxnextDmaPortAConfig, value);
+    }
+
+    zxnextDmaPortAStartAddress = zxnextDmaNextAddress(zxnextDmaPortAStartAddress, zxnextDmaPortAConfig);
+    zxnextDmaPortBStartAddress = zxnextDmaNextAddress(zxnextDmaPortBStartAddress, zxnextDmaPortBConfig);
+    zxnextDmaTransferredBytes++;
+    zxnextDmaByteCounter++;
+    executed++;
+  }
+
+  if (zxnextDmaTransferredBytes >= zxnextDmaBlockLength) {
+    zxnextDmaStatus |= 0x30u;
+  }
+  return executed;
 }
 
 uint32_t zxnextDmaReadStatusByte(void) {
@@ -153,3 +228,8 @@ uint32_t zxnextGetDmaPortBStartAddress(void) { return zxnextDmaPortBStartAddress
 uint32_t zxnextGetDmaBlockLength(void) { return zxnextDmaBlockLength; }
 uint32_t zxnextGetDmaEnabled(void) { return zxnextDmaEnabled; }
 uint32_t zxnextGetDmaByteCounter(void) { return zxnextDmaByteCounter; }
+uint32_t zxnextGetDmaDirectionAtoB(void) { return zxnextDmaDirectionAtoB; }
+uint32_t zxnextGetDmaPortAConfig(void) { return zxnextDmaPortAConfig; }
+uint32_t zxnextGetDmaPortBConfig(void) { return zxnextDmaPortBConfig; }
+uint32_t zxnextGetDmaTransferMode(void) { return zxnextDmaTransferMode; }
+uint32_t zxnextGetDmaTransferredBytes(void) { return zxnextDmaTransferredBytes; }

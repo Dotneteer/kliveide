@@ -1,60 +1,58 @@
 #include "zxnext-cpu.h"
 
-static uint32_t executedInstructions;
+static uint32_t zxnextSharedCpuExecutedInstructions;
 
-static void zxnextCpuReset(void) {
-  executedInstructions = 0;
-}
+static uint32_t zxnextCpuSharedReadMemory(uint32_t address);
+static void zxnextCpuSharedWriteMemory(uint32_t address, uint32_t value);
+static uint32_t zxnextCpuSharedReadPort(uint32_t address);
+static void zxnextCpuSharedWritePort(uint32_t address, uint32_t value);
+static void zxnextCpuSharedWriteTbBlue(uint32_t address, uint32_t value);
 
-static uint8_t zxnextCpuReadOpcode(void) {
-  uint8_t value = (uint8_t)zxnextMemoryReadMapped(cpuPc);
-  cpuPc = (uint16_t)(cpuPc + 1);
+#define Z80_EXTERNAL_BUS 1
+#define Z80_MEMORY_PTR() zxnextMemory
+#define Z80_READ_MEMORY(address) zxnextCpuSharedReadMemory(address)
+#define Z80_WRITE_MEMORY(address, value) zxnextCpuSharedWriteMemory(address, value)
+#define Z80_POKE_MEMORY(address, value) zxnextCpuSharedWriteMemory(address, value)
+#define Z80_READ_PORT(address) zxnextCpuSharedReadPort(address)
+#define Z80_WRITE_PORT(address, value) zxnextCpuSharedWritePort(address, value)
+#define Z80_WRITE_TBBLUE(address, value) zxnextCpuSharedWriteTbBlue(address, value)
+
+#include "../../../../z80/wasm/z80.c"
+
+static uint32_t zxnextCpuSharedReadMemory(uint32_t address) {
+  uint32_t value = zxnextMemoryReadMapped(address & 0xffffu);
+  lastMemoryAddress = (uint16_t)address;
+  lastMemoryValue = (uint8_t)value;
+  lastMemoryIsWrite = 0;
   return value;
 }
 
-static uint8_t zxnextCpuFetchByte(void) {
-  uint8_t value = (uint8_t)zxnextMemoryPeekMapped(cpuPc);
-  cpuPc = (uint16_t)(cpuPc + 1);
-  return value;
+static void zxnextCpuSharedWriteMemory(uint32_t address, uint32_t value) {
+  zxnextMemoryWriteMapped(address & 0xffffu, value & 0xffu);
+  lastMemoryAddress = (uint16_t)address;
+  lastMemoryValue = (uint8_t)value;
+  lastMemoryIsWrite = 1;
 }
 
-static uint16_t zxnextCpuFetchWord(void) {
-  uint8_t low = zxnextCpuFetchByte();
-  uint8_t high = zxnextCpuFetchByte();
-  return (uint16_t)((high << 8) | low);
+static uint32_t zxnextCpuSharedReadPort(uint32_t address) {
+  return zxnextPortsRead(address & 0xffffu);
 }
 
-static uint8_t zxnextCpuReadMemory(uint16_t address);
-static void zxnextCpuWriteMemory(uint16_t address, uint8_t value);
-
-static void zxnextCpuPushWord(uint16_t value) {
-  cpuSp = (uint16_t)(cpuSp - 1u);
-  zxnextCpuWriteMemory(cpuSp, (uint8_t)(value >> 8));
-  cpuSp = (uint16_t)(cpuSp - 1u);
-  zxnextCpuWriteMemory(cpuSp, (uint8_t)(value & 0xffu));
+static void zxnextCpuSharedWritePort(uint32_t address, uint32_t value) {
+  zxnextPortsWrite(address & 0xffffu, value & 0xffu);
 }
 
-static uint16_t zxnextCpuPopWord(void) {
-  uint8_t low = zxnextCpuReadMemory(cpuSp);
-  cpuSp = (uint16_t)(cpuSp + 1u);
-  uint8_t high = zxnextCpuReadMemory(cpuSp);
-  cpuSp = (uint16_t)(cpuSp + 1u);
-  return (uint16_t)((high << 8) | low);
+static void zxnextCpuSharedWriteTbBlue(uint32_t address, uint32_t value) {
+  zxnextNextRegSetDirect(address & 0xffu, value & 0xffu);
 }
 
-static uint8_t zxnextCpuReadMemory(uint16_t address) {
-  return (uint8_t)zxnextMemoryReadMapped(address);
-}
-
-static void zxnextCpuWriteMemory(uint16_t address, uint8_t value) {
-  zxnextMemoryWriteMapped(address, value);
-}
-
-static void zxnextCpuStepTacts(uint32_t instructionTacts) {
+static void zxnextCpuSyncFrameState(uint32_t previousTacts, uint32_t currentTacts) {
   uint32_t previousFrameTact = currentFrameTact;
-  tacts += instructionTacts;
-  currentFrameTact = (previousFrameTact + instructionTacts * 2u) % ZXNEXT_RENDERING_TACTS_IN_FRAME;
-  if (currentFrameTact < previousFrameTact) {
+  uint32_t deltaTacts = currentTacts - previousTacts;
+  uint32_t nextFrameTact = (previousFrameTact + deltaTacts * 2u) % ZXNEXT_RENDERING_TACTS_IN_FRAME;
+  tacts = currentTacts;
+  currentFrameTact = nextFrameTact;
+  if (currentTacts != previousTacts && nextFrameTact < previousFrameTact) {
     frames++;
     frameCompleted = 1;
     zxnextUlaOnFrameCompleted();
@@ -63,195 +61,75 @@ static void zxnextCpuStepTacts(uint32_t instructionTacts) {
   }
 }
 
-static uint32_t zxnextCpuIsAtMaxSpeed(void) {
-  return (zxnextNextRegs[0x07] & 0x03u) == 0x03u;
+static void zxnextCpuReset(void) {
+  zxnextSharedCpuExecutedInstructions = 0;
+  z80Reset();
+  z80SetZ80NMode(1);
+  z80SetTacts(tacts);
 }
 
-static void zxnextCpuRefreshMemory(void) {
-  uint8_t refreshed = (uint8_t)(((cpuIr & 0x00ffu) + 1u) & 0x7fu);
-  cpuIr = (uint16_t)((cpuIr & 0xff00u) | refreshed | (cpuIr & 0x0080u));
-}
-
-static uint16_t zxnextCpuSetHighByte(uint16_t value, uint8_t high) {
-  return (uint16_t)((high << 8) | (value & 0x00ffu));
-}
-
-static uint16_t zxnextCpuSetLowByte(uint16_t value, uint8_t low) {
-  return (uint16_t)((value & 0xff00u) | low);
-}
-
-static uint32_t zxnextCpuProcessNmi(void) {
-  executedInstructions++;
-  zxnextCpuStepTacts(4);
-  if (cpuHalted) {
-    cpuPc = (uint16_t)(cpuPc + 1u);
-    cpuHalted = 0;
+static uint32_t zxnextCpuProcessStacklessNmi(void) {
+  uint32_t previousTacts = z80GetTacts();
+  uint32_t pc = z80GetPc();
+  uint32_t sp = z80GetSp();
+  z80TactPlusN(4);
+  if (z80GetHalted()) {
+    pc = (pc + 1u) & 0xffffu;
   }
-  cpuIff2 = cpuIff1;
-  cpuIff1 = 0;
-  if (zxnextNmiGetStacklessEnabled()) {
-    cpuSp = (uint16_t)(cpuSp - 2u);
-    zxnextNmiSetReturnAddress(cpuPc);
-  } else {
-    zxnextCpuPushWord(cpuPc);
-    cpuWz = 0x0066u;
-  }
-  zxnextCpuRefreshMemory();
-  cpuPc = 0x0066u;
+  z80SetIff2(z80GetIff1());
+  z80SetIff1(0);
+  z80SetSp((sp - 2u) & 0xffffu);
+  z80SetWz(0);
+  z80SetPc(0x0066u);
+  zxnextNmiSetReturnAddress(pc);
   zxnextNmiMarkAccepted();
-  return executedInstructions;
-}
-
-static uint32_t zxnextCpuProcessInt(void) {
-  executedInstructions++;
-  zxnextCpuStepTacts(6);
-  if (cpuHalted) {
-    cpuPc = (uint16_t)(cpuPc + 1u);
-    cpuHalted = 0;
-  }
-  uint8_t vector = (uint8_t)zxnextInterruptsAcknowledge();
-  cpuIff1 = 0;
-  cpuIff2 = 0;
-  zxnextCpuPushWord(cpuPc);
-  zxnextCpuRefreshMemory();
-  if (cpuInterruptMode == 2) {
-    uint16_t tableAddress = (uint16_t)((cpuIr & 0xff00u) | vector);
-    uint8_t low = zxnextCpuReadMemory(tableAddress);
-    uint8_t high = zxnextCpuReadMemory((uint16_t)(tableAddress + 1u));
-    cpuWz = (uint16_t)((high << 8) | low);
-  } else {
-    cpuWz = 0x0038u;
-  }
-  cpuPc = cpuWz;
-  return executedInstructions;
-}
-
-static uint8_t zxnextCpuIsRetnOpcode(uint8_t opcode) {
-  return
-    opcode == 0x45u ||
-    opcode == 0x55u ||
-    opcode == 0x5du ||
-    opcode == 0x65u ||
-    opcode == 0x6du ||
-    opcode == 0x75u ||
-    opcode == 0x7du;
-}
-
-static void zxnextCpuLoad8Immediate(uint16_t *pair, uint8_t highByte) {
-  uint8_t value = zxnextCpuFetchByte();
-  *pair = highByte ? zxnextCpuSetHighByte(*pair, value) : zxnextCpuSetLowByte(*pair, value);
-  zxnextCpuStepTacts(zxnextCpuIsAtMaxSpeed() ? 9u : 7u);
-}
-
-static void zxnextCpuLoad16Immediate(uint16_t *pair) {
-  *pair = zxnextCpuFetchWord();
-  zxnextCpuStepTacts(10);
+  zxnextSharedCpuExecutedInstructions++;
+  zxnextCpuSyncFrameState(previousTacts, z80GetTacts());
+  return zxnextSharedCpuExecutedInstructions;
 }
 
 static uint32_t zxnextCpuExecuteInstruction(void) {
-  if (zxnextNmiGetSignal()) return zxnextCpuProcessNmi();
-  if (zxnextInterruptsShouldAcceptInt() && cpuIff1) return zxnextCpuProcessInt();
+  uint16_t pcBefore = (uint16_t)z80GetPc();
+  uint32_t previousTacts = z80GetTacts();
+  uint8_t shouldAcceptInt = zxnextInterruptsShouldAcceptInt() && z80GetIff1();
+  uint8_t nmiSignal = zxnextNmiGetSignal();
+  uint8_t isRetiInstruction = zxnextMemoryPeekMapped(pcBefore) == 0xedu &&
+    zxnextMemoryPeekMapped((pcBefore + 1u) & 0xffffu) == 0x4du;
+  uint32_t cyclesExecuted = 0;
 
-  executedInstructions++;
-  cpuPrefix = 0;
-  zxnextDivMmcBeforeOpcodeFetch(cpuPc);
-  uint8_t retnSeen = 0;
-  uint8_t opcode = zxnextCpuReadOpcode();
-  zxnextCpuRefreshMemory();
-
-  switch (opcode) {
-    case 0x00:
-      zxnextCpuStepTacts(4);
-      break;
-    case 0x01:
-      zxnextCpuLoad16Immediate(&cpuBc);
-      break;
-    case 0x06:
-      zxnextCpuLoad8Immediate(&cpuBc, 1);
-      break;
-    case 0x0e:
-      zxnextCpuLoad8Immediate(&cpuBc, 0);
-      break;
-    case 0x11:
-      zxnextCpuLoad16Immediate(&cpuDe);
-      break;
-    case 0x16:
-      zxnextCpuLoad8Immediate(&cpuDe, 1);
-      break;
-    case 0x1e:
-      zxnextCpuLoad8Immediate(&cpuDe, 0);
-      break;
-    case 0x21:
-      zxnextCpuLoad16Immediate(&cpuHl);
-      break;
-    case 0x26:
-      zxnextCpuLoad8Immediate(&cpuHl, 1);
-      break;
-    case 0x2e:
-      zxnextCpuLoad8Immediate(&cpuHl, 0);
-      break;
-    case 0x31:
-      zxnextCpuLoad16Immediate(&cpuSp);
-      break;
-    case 0x32: {
-      uint16_t address = zxnextCpuFetchWord();
-      uint8_t accumulator = (uint8_t)(cpuAf >> 8);
-      cpuWz = (uint16_t)((accumulator << 8) | ((address + 1) & 0x00ffu));
-      zxnextCpuWriteMemory(address, accumulator);
-      zxnextCpuStepTacts(13);
-      break;
-    }
-    case 0x3a: {
-      uint16_t address = zxnextCpuFetchWord();
-      uint8_t value = zxnextCpuReadMemory(address);
-      cpuAf = zxnextCpuSetHighByte(cpuAf, value);
-      cpuWz = (uint16_t)(address + 1);
-      zxnextCpuStepTacts(13);
-      break;
-    }
-    case 0x3e:
-      zxnextCpuLoad8Immediate(&cpuAf, 1);
-      break;
-    case 0xaf:
-      cpuAf = 0x0044u;
-      zxnextCpuStepTacts(zxnextCpuIsAtMaxSpeed() ? 5u : 4u);
-      break;
-    case 0xc3:
-      cpuWz = zxnextCpuFetchWord();
-      cpuPc = cpuWz;
-      zxnextCpuStepTacts(10);
-      break;
-    case 0xed: {
-      uint8_t extendedOpcode = zxnextCpuFetchByte();
-      zxnextCpuRefreshMemory();
-      if (zxnextCpuIsRetnOpcode(extendedOpcode) || extendedOpcode == 0x4du) {
-        retnSeen = zxnextCpuIsRetnOpcode(extendedOpcode);
-        cpuPc = zxnextCpuPopWord();
-        cpuIff1 = cpuIff2;
-        cpuWz = cpuPc;
-        if (extendedOpcode == 0x4du) zxnextInterruptsReti();
-        zxnextNmiAfterRetn();
-        zxnextCpuStepTacts(14);
-      } else if (extendedOpcode == 0x91u) {
-        uint32_t wasAtMaxSpeed = zxnextCpuIsAtMaxSpeed();
-        uint8_t reg = zxnextCpuFetchByte();
-        uint8_t value = zxnextCpuFetchByte();
-        zxnextNextRegSetDirect(reg, value);
-        zxnextCpuStepTacts(wasAtMaxSpeed ? 24u : 20u);
-      } else if (extendedOpcode == 0x92u) {
-        uint8_t reg = zxnextCpuFetchByte();
-        zxnextNextRegSetDirect(reg, cpuAf >> 8);
-        zxnextCpuStepTacts(17);
-      } else {
-        zxnextCpuStepTacts(8);
-      }
-      break;
-    }
-    default:
-      zxnextCpuStepTacts(4);
-      break;
+  if (nmiSignal && zxnextNmiGetStacklessEnabled()) {
+    return zxnextCpuProcessStacklessNmi();
   }
 
-  zxnextDivMmcAfterOpcodeFetch(retnSeen, 0);
-  return executedInstructions;
+  zxnextDivMmcBeforeOpcodeFetch(pcBefore);
+  z80SetSigNmi(nmiSignal);
+  z80SetSigInt(shouldAcceptInt);
+  if (shouldAcceptInt) {
+    z80SetInterruptVector(zxnextInterruptsAcknowledge());
+  }
+
+  do {
+    z80ExecuteCpuCycle();
+    cyclesExecuted++;
+  } while (z80GetPrefix() != 0 && cyclesExecuted < 4u);
+
+  zxnextSharedCpuExecutedInstructions++;
+  zxnextCpuSyncFrameState(previousTacts, z80GetTacts());
+
+  if (nmiSignal) {
+    zxnextNmiMarkAccepted();
+  }
+  if (isRetiInstruction) {
+    zxnextInterruptsReti();
+  }
+  if (z80GetRetnExecuted()) {
+    uint8_t stacklessProcessed = zxnextNmiGetStacklessProcessed();
+    uint32_t stacklessReturnAddress = zxnextNmiGetReturnAddress();
+    zxnextNmiAfterRetn();
+    if (stacklessProcessed) {
+      z80SetPc(stacklessReturnAddress);
+    }
+  }
+  zxnextDivMmcAfterOpcodeFetch(z80GetRetnExecuted(), 0);
+  return zxnextSharedCpuExecutedInstructions;
 }

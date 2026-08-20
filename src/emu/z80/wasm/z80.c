@@ -277,6 +277,9 @@ static inline void writePort(uint16_t address, uint8_t value) {
 }
 
 static inline void tbBlueOut(uint8_t address, uint8_t value) {
+#ifdef Z80_WRITE_TBBLUE
+  Z80_WRITE_TBBLUE(address, value);
+#endif
   cpu.lastTbBlueAddress = address;
   cpu.lastTbBlueValue = value;
   cpu.hasTbBlueEvent = 1;

@@ -259,45 +259,47 @@ uint32_t zxnextGetDaisyInService(uint32_t index) { return zxnextInterruptsGetDai
 void zxnextSetTacts(uint32_t value) {
   tacts = value;
   currentFrameTact = value % zxnextGetTactsInFrame();
+  z80SetTacts(value);
   zxnextBeeperSetTacts(value);
 }
 
-uint32_t zxnextGetCpuAf(void) { return cpuAf; }
-void zxnextSetCpuAf(uint32_t value) { cpuAf = (uint16_t)value; }
-uint32_t zxnextGetCpuBc(void) { return cpuBc; }
-void zxnextSetCpuBc(uint32_t value) { cpuBc = (uint16_t)value; }
-uint32_t zxnextGetCpuDe(void) { return cpuDe; }
-void zxnextSetCpuDe(uint32_t value) { cpuDe = (uint16_t)value; }
-uint32_t zxnextGetCpuHl(void) { return cpuHl; }
-void zxnextSetCpuHl(uint32_t value) { cpuHl = (uint16_t)value; }
-uint32_t zxnextGetCpuAfAlt(void) { return cpuAfAlt; }
-void zxnextSetCpuAfAlt(uint32_t value) { cpuAfAlt = (uint16_t)value; }
-uint32_t zxnextGetCpuBcAlt(void) { return cpuBcAlt; }
-void zxnextSetCpuBcAlt(uint32_t value) { cpuBcAlt = (uint16_t)value; }
-uint32_t zxnextGetCpuDeAlt(void) { return cpuDeAlt; }
-void zxnextSetCpuDeAlt(uint32_t value) { cpuDeAlt = (uint16_t)value; }
-uint32_t zxnextGetCpuHlAlt(void) { return cpuHlAlt; }
-void zxnextSetCpuHlAlt(uint32_t value) { cpuHlAlt = (uint16_t)value; }
-uint32_t zxnextGetCpuIx(void) { return cpuIx; }
-void zxnextSetCpuIx(uint32_t value) { cpuIx = (uint16_t)value; }
-uint32_t zxnextGetCpuIy(void) { return cpuIy; }
-void zxnextSetCpuIy(uint32_t value) { cpuIy = (uint16_t)value; }
-uint32_t zxnextGetCpuIr(void) { return cpuIr; }
-void zxnextSetCpuIr(uint32_t value) { cpuIr = (uint16_t)value; }
-uint32_t zxnextGetCpuWz(void) { return cpuWz; }
-void zxnextSetCpuWz(uint32_t value) { cpuWz = (uint16_t)value; }
-uint32_t zxnextGetCpuPc(void) { return cpuPc; }
-void zxnextSetCpuPc(uint32_t value) { cpuPc = (uint16_t)value; }
-uint32_t zxnextGetCpuSp(void) { return cpuSp; }
-void zxnextSetCpuSp(uint32_t value) { cpuSp = (uint16_t)value; }
-uint32_t zxnextGetCpuHalted(void) { return cpuHalted; }
-uint32_t zxnextGetCpuPrefix(void) { return cpuPrefix; }
-uint32_t zxnextGetCpuIff1(void) { return cpuIff1; }
-void zxnextSetCpuIff1(uint32_t value) { cpuIff1 = value != 0; }
-uint32_t zxnextGetCpuIff2(void) { return cpuIff2; }
-void zxnextSetCpuIff2(uint32_t value) { cpuIff2 = value != 0; }
-uint32_t zxnextGetCpuInterruptMode(void) { return cpuInterruptMode; }
-void zxnextSetCpuInterruptMode(uint32_t value) { cpuInterruptMode = (uint8_t)(value & 0x03u); }
+uint32_t zxnextGetCpuAf(void) { return z80GetAf(); }
+void zxnextSetCpuAf(uint32_t value) { z80SetAf(value); }
+uint32_t zxnextGetCpuBc(void) { return z80GetBc(); }
+void zxnextSetCpuBc(uint32_t value) { z80SetBc(value); }
+uint32_t zxnextGetCpuDe(void) { return z80GetDe(); }
+void zxnextSetCpuDe(uint32_t value) { z80SetDe(value); }
+uint32_t zxnextGetCpuHl(void) { return z80GetHl(); }
+void zxnextSetCpuHl(uint32_t value) { z80SetHl(value); }
+uint32_t zxnextGetCpuAfAlt(void) { return z80GetAfAlt(); }
+void zxnextSetCpuAfAlt(uint32_t value) { z80SetAfAlt(value); }
+uint32_t zxnextGetCpuBcAlt(void) { return z80GetBcAlt(); }
+void zxnextSetCpuBcAlt(uint32_t value) { z80SetBcAlt(value); }
+uint32_t zxnextGetCpuDeAlt(void) { return z80GetDeAlt(); }
+void zxnextSetCpuDeAlt(uint32_t value) { z80SetDeAlt(value); }
+uint32_t zxnextGetCpuHlAlt(void) { return z80GetHlAlt(); }
+void zxnextSetCpuHlAlt(uint32_t value) { z80SetHlAlt(value); }
+uint32_t zxnextGetCpuIx(void) { return z80GetIx(); }
+void zxnextSetCpuIx(uint32_t value) { z80SetIx(value); }
+uint32_t zxnextGetCpuIy(void) { return z80GetIy(); }
+void zxnextSetCpuIy(uint32_t value) { z80SetIy(value); }
+uint32_t zxnextGetCpuIr(void) { return z80GetIr(); }
+void zxnextSetCpuIr(uint32_t value) { z80SetIr(value); }
+uint32_t zxnextGetCpuWz(void) { return z80GetWz(); }
+void zxnextSetCpuWz(uint32_t value) { z80SetWz(value); }
+uint32_t zxnextGetCpuPc(void) { return z80GetPc(); }
+void zxnextSetCpuPc(uint32_t value) { z80SetPc(value); }
+uint32_t zxnextGetCpuSp(void) { return z80GetSp(); }
+void zxnextSetCpuSp(uint32_t value) { z80SetSp(value); }
+uint32_t zxnextGetCpuHalted(void) { return z80GetHalted(); }
+uint32_t zxnextGetCpuPrefix(void) { return z80GetPrefix(); }
+uint32_t zxnextGetCpuIff1(void) { return z80GetIff1(); }
+void zxnextSetCpuIff1(uint32_t value) { z80SetIff1(value); }
+uint32_t zxnextGetCpuIff2(void) { return z80GetIff2(); }
+void zxnextSetCpuIff2(uint32_t value) { z80SetIff2(value); }
+uint32_t zxnextGetCpuInterruptMode(void) { return z80GetInterruptMode(); }
+void zxnextSetCpuInterruptMode(uint32_t value) { z80SetInterruptMode(value); }
+uint32_t zxnextGetSharedZ80NMode(void) { return z80GetZ80NMode(); }
 
 uint32_t zxnextGetLastMemoryAddress(void) { return lastMemoryAddress; }
 uint32_t zxnextGetLastMemoryValue(void) { return lastMemoryValue; }

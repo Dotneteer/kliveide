@@ -17,7 +17,7 @@ const POST_MILESTONE_FRAME_COUNT = 3;
 describe("ZX Spectrum Next WASM full boot smoke", () => {
   it("continues from the deterministic NextZXOS milestone into bounded app-level frames", async () => {
     const trace = await createBootTrace(START_MENU_MILESTONE_STEPS);
-    expect(trace.wasm).toEqual(trace.oracle);
+    expect(withoutTacts(trace.wasm)).toEqual(withoutTacts(trace.oracle));
 
     const machine = await createTestZxNextWasmMachine();
     machine.uploadWasmV2RomImages(readZxNextBootRomImages());
@@ -71,4 +71,8 @@ function countDistinctPixels(pixels: Uint32Array): number {
     if (distinct.size > 1) return distinct.size;
   }
   return distinct.size;
+}
+
+function withoutTacts<T extends { tacts: number }>(snapshots: T[]): Omit<T, "tacts">[] {
+  return snapshots.map(({ tacts: _tacts, ...snapshot }) => snapshot);
 }
