@@ -249,7 +249,7 @@ describe("ZX Spectrum Next WASM full matrix", () => {
       (machine as ZxNextWasmV2Machine).executeWasmV2Instruction();
 
       expect(machine.doReadMemory(0x8000)).toBe(0xed);
-      expect((machine as ZxNextWasmV2Machine).wasmV2Runtime!.exports.zxnextGetNextRegisterDirect(0x07)).toBe(0x03);
+      expect((machine as ZxNextWasmV2Machine).wasmV2Runtime!.exports.zxnextGetNextRegisterDirect(0x07)).toBe(0x33);
       expect(machine.doReadPort(0x00fe)).toBeGreaterThanOrEqual(0);
       expect(machine.renderInstantScreen().length).toBe(machine.screenWidthInPixels * machine.screenHeightInPixels);
     } finally {

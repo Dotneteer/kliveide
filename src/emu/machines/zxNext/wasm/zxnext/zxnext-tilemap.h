@@ -6,6 +6,8 @@
 static void zxnextTilemapReset(void);
 static void zxnextTilemapSetNextReg(uint32_t reg, uint32_t value);
 static uint32_t zxnextTilemapGetNextReg(uint32_t reg);
+static void zxnextTilemapResetClipIndex(void);
+static uint32_t zxnextTilemapGetClipIndex(void);
 static uint32_t zxnextTilemapGetClip(uint32_t index);
 static uint32_t zxnextTilemapGetEnabled(void);
 static uint32_t zxnextTilemapGetPaletteOffset(void);

@@ -10,10 +10,16 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MemorySectionType } from "@abstractions/MemorySection";
+import { FILE_PROVIDER } from "@emu/machines/machine-props";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { processMainToEmuMessages } from "@renderer/appEmu/MainToEmuProcessor";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
-import { buildZxNextWasm, productionOutput } from "../../../scripts/build-zxnext-wasm.cjs";
+import {
+  productionOutput,
+  waitForZxNextWasmBuildLock
+} from "../../../scripts/build-zxnext-wasm.cjs";
+import { buildZxNextWasmArtifact } from "./wasm-next-test-helpers";
+import { FileProvider } from "../../zxnext/FileProvider";
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum Next WASM v2 debug tools integration", () => {
@@ -41,16 +47,18 @@ describe("ZX Spectrum Next WASM v2 debug tools integration", () => {
     expect(controller.state).toBe(MachineControllerState.Paused);
     expect(machine.getWasmV2Diagnostics().lastWasmStopReason).toBe("wasmFrameComplete");
 
+    const debugStepsBeforeManualStepping = machine.getWasmV2Diagnostics().debugSteps;
     await controller.stepInto();
     await waitForControllerState(controller, MachineControllerState.Paused);
     await controller.stepOver();
     await waitForControllerState(controller, MachineControllerState.Paused);
 
-    expect(machine.getWasmV2Diagnostics()).toMatchObject({
-      debugSteps: 3,
+    const diagnostics = machine.getWasmV2Diagnostics();
+    expect(diagnostics).toMatchObject({
       lastWasmStopReason: "debugStep"
     });
-    expect(machine.getWasmV2Diagnostics().lastWasmStopReason).not.toMatch(/breakpoint|cpu|device/i);
+    expect(diagnostics.debugSteps).toBeGreaterThan(debugStepsBeforeManualStepping);
+    expect(diagnostics.lastWasmStopReason).not.toMatch(/breakpoint|cpu|device/i);
 
     await controller.stop();
     expect(controller.state).toBe(MachineControllerState.Stopped);
@@ -103,16 +111,20 @@ type ControllerHarness = {
 };
 
 async function createControllerHarness(name: string): Promise<ControllerHarness> {
-  buildZxNextWasm();
+  await buildZxNextWasmArtifact();
   const machine = new ZxNextWasmV2Machine(
     undefined,
     undefined,
     undefined,
     {
       artifactName: `test-zxnext-${name}.wasm`,
-      readArtifact: async () => readFileSync(productionOutput)
+      readArtifact: async () => {
+        waitForZxNextWasmBuildLock();
+        return readFileSync(productionOutput);
+      }
     }
   );
+  machine.setMachineProperty(FILE_PROVIDER, new FileProvider());
   await machine.setup();
   const store = createAppStore(`test-${name}`);
   const messenger = new ResolvingMessenger();

@@ -2,9 +2,10 @@
 
 Created: 2026-08-16
 
-Status: Complete. The normal ZX Spectrum Next model now uses the WASM backend
-by default. The TypeScript backend remains explicitly selectable as a
-compatibility fallback and parity oracle.
+Status: Reopened for ULA/screen parity correction. The normal ZX Spectrum Next
+model currently uses the WASM backend by default, and the TypeScript backend
+remains explicitly selectable as a compatibility fallback and parity oracle.
+However, the ULA/screen migration is not complete.
 
 ## Goal
 
@@ -23,12 +24,12 @@ screen, input, storage, and IDE inspection surfaces.
 
 Updated: 2026-08-22.
 
-The migration is complete for the user's stated goal. Steps 1-29 are recorded
-as done and provide a production-selected ZX Spectrum Next WASM backend with
-shared Z80N CPU integration, a broad WASM test matrix, boot/visual smoke
-coverage, public adapter coverage, representative device parity tests,
-speed-oriented build evidence, a shared-source audit, and a closed
-binary-size/timing-depth audit.
+The previous completion claim was too broad. Steps 1-29 are recorded as done
+and provide a production-selected ZX Spectrum Next WASM backend with shared
+Z80N CPU integration, a broad WASM test matrix, boot/visual smoke coverage,
+public adapter coverage, representative device parity tests, speed-oriented
+build evidence, a shared-source audit, and a closed binary-size/timing-depth
+audit. They do not prove full ULA/screen parity.
 
 The WASM backend is currently the normal ZX Spectrum Next implementation:
 
@@ -36,8 +37,8 @@ The WASM backend is currently the normal ZX Spectrum Next implementation:
 - The normal `ZX Spectrum Next` model selects WASM.
 - `ZX Spectrum Next Compatibility` selects TypeScript explicitly.
 - `ZxNextWasmV2Machine.getWasmV2Diagnostics()` reports
-  `defaultReady: true`, an empty `defaultBlockers` list, and positive
-  `migratedSurfaces`.
+  `defaultReady: false`, ULA/screen blockers, and positive `migratedSurfaces`
+  that intentionally exclude `ULA` and `screen`.
 - `src/emu/machines/zxNext/wasm/README.md`,
   `.ai/wasm-migration-intent-and-lessons.md`, and
   `src/emu/machines/zxNext/ZxNextImplementation.ts` describe TypeScript as the
@@ -69,7 +70,8 @@ Artifact-size audit (2026-08-20):
   and consistent with inlined speed-oriented timing hooks rather than an
   accidentally shallow backend.
 
-No plan steps remain open.
+Open correction work is tracked in
+`.plans/ZX_SPECTRUM_NEXT_ULA_WASM_PARITY_AUDIT.md`.
 
 ## Preliminary Principle Audit
 

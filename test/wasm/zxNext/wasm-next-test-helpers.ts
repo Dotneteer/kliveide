@@ -19,7 +19,13 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
-import { buildZxNextWasm, productionOutput } from "../../../scripts/build-zxnext-wasm.cjs";
+import { FILE_PROVIDER } from "@emu/machines/machine-props";
+import {
+  buildZxNextWasm,
+  productionOutput,
+  waitForZxNextWasmBuildLock
+} from "../../../scripts/build-zxnext-wasm.cjs";
+import { FileProvider } from "../../zxnext/FileProvider";
 import { createTestNextMachine, TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import {
   ZXNEXT_WASM_V2_DEFAULT_BLOCKERS,
@@ -29,13 +35,7 @@ import {
 } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 export const ZXNEXT_ORACLE_MIGRATED_SURFACES: ZxNextWasmV2MigrationSurface[] = [
-  "registers",
-  "memory",
-  "disassembly",
-  "ULA",
-  "screen",
-  "frame",
-  "debug"
+  ...ZXNEXT_WASM_V2_MIGRATED_SURFACES
 ];
 
 const MEMORY_SAMPLE_ADDRESSES = [0x0000, 0x4000, 0x8000, 0xc000];
@@ -48,7 +48,12 @@ export type ZxNextOracleHarness = {
 };
 
 export async function buildZxNextWasmArtifact(force = false): Promise<void> {
+  waitForZxNextWasmBuildLock();
   if (!force && zxNextWasmBuilt && !isZxNextWasmSourceNewerThanArtifact()) return;
+  if (!force && !isZxNextWasmSourceNewerThanArtifact()) {
+    zxNextWasmBuilt = true;
+    return;
+  }
   buildZxNextWasm();
   zxNextWasmBuilt = true;
 }
@@ -61,9 +66,13 @@ export async function createTestZxNextWasmMachine(): Promise<ZxNextWasmV2Machine
     undefined,
     {
       artifactName: "test-zxnext-oracle-harness.wasm",
-      readArtifact: async () => readFileSync(productionOutput)
+      readArtifact: async () => {
+        waitForZxNextWasmBuildLock();
+        return readFileSync(productionOutput);
+      }
     }
   );
+  machine.setMachineProperty(FILE_PROVIDER, new FileProvider());
   await machine.setup();
   return machine;
 }

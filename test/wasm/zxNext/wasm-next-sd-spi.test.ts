@@ -4,6 +4,7 @@ import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
 
 const CMD0 = [0x40, 0x00, 0x00, 0x00, 0x00, 0x95];
 const CMD8 = [0x48, 0x00, 0x00, 0x01, 0xaa, 0x87];
+const CMD9 = [0x49, 0x00, 0x00, 0x00, 0x00, 0xff];
 const CMD16_512 = [0x50, 0x00, 0x00, 0x02, 0x00, 0xff];
 
 describe("ZX Spectrum Next WASM SD SPI parity", () => {
@@ -49,6 +50,24 @@ describe("ZX Spectrum Next WASM SD SPI parity", () => {
     expect(wasm.wasmV2Runtime!.exports.zxnextGetSdLastCommand(1)).toBe(0x40);
     expect(wasm.wasmV2Runtime!.exports.zxnextGetSdState(1)).toBe(0);
     expect(wasm.doReadPort(0xeb)).toBe(oracle.doReadPort(0xeb));
+  });
+
+  it("matches TypeScript card 1 CMD9 zeroed CSD response", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    oracle.hardReset();
+    wasm.hardReset();
+
+    oracle.doWritePort(0xe7, 0x01);
+    wasm.doWritePort(0xe7, 0x01);
+    writeCommand(oracle, wasm, CMD9);
+
+    expect(readBytes(oracle, wasm, 19)).toEqual([
+      0x00, 0xff, 0xfe,
+      0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00
+    ]);
   });
 });
 

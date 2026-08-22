@@ -9,8 +9,10 @@ import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 const BLANK_BORDER_PIXEL = 0xffb6b6b6;
 const STANDARD_SCREEN_WIDTH = 256;
+const STANDARD_SCREEN_SCALE_X = 2;
+const STANDARD_SCREEN_OUTPUT_WIDTH = STANDARD_SCREEN_WIDTH * STANDARD_SCREEN_SCALE_X;
 const STANDARD_SCREEN_HEIGHT = 192;
-const STANDARD_SCREEN_X = (ZXNEXT_WASM_V2_SCREEN_WIDTH - STANDARD_SCREEN_WIDTH) / 2;
+const STANDARD_SCREEN_X = (ZXNEXT_WASM_V2_SCREEN_WIDTH - STANDARD_SCREEN_OUTPUT_WIDTH) / 2;
 const STANDARD_SCREEN_Y = (ZXNEXT_WASM_V2_SCREEN_HEIGHT - STANDARD_SCREEN_HEIGHT) / 2;
 
 describe("ZX Spectrum Next WASM visual smoke", () => {
@@ -34,7 +36,9 @@ describe("ZX Spectrum Next WASM visual smoke", () => {
     const drawnPixels = machine.getPixelBuffer();
 
     expect(drawnPixels[screenIndex(0, 0)]).toBe(0xffffffff);
-    expect(drawnPixels[screenIndex(8, 0)]).toBe(0xff000000);
+    expect(drawnPixels[screenIndex(1, 0)]).toBe(0xffffffff);
+    expect(drawnPixels[screenIndex(15, 0)]).toBe(0xffffffff);
+    expect(drawnPixels[screenIndex(16, 0)]).toBe(0xff000000);
     expect(countDistinctPixels(drawnPixels)).toBeGreaterThanOrEqual(3);
   });
 });

@@ -1,4 +1,9 @@
 import { OFFS_ERR_PAGE } from "../MemoryDevice";
+import {
+  ZXNEXT_FRAME_TRACE_CAPACITY,
+  ZXNEXT_FRAME_TRACE_HEADER_SIZE,
+  ZXNEXT_FRAME_TRACE_RECORD_SIZE
+} from "../diagnostics/ZxNextFrameTrace";
 
 export const ZXNEXT_WASM_V2_ARTIFACT_NAME = "zx-spectrum-next.wasm";
 export const ZXNEXT_WASM_V2_MEMORY_SIZE = OFFS_ERR_PAGE + 0x2000;
@@ -98,10 +103,21 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetSharedZ80NMode: ZxNextWasmV2ExportFunction;
   zxnextGetLastMemoryAddress: ZxNextWasmV2ExportFunction;
   zxnextGetLastMemoryValue: ZxNextWasmV2ExportFunction;
+  zxnextGetLastMemoryAccessed: ZxNextWasmV2ExportFunction;
   zxnextGetLastMemoryIsWrite: ZxNextWasmV2ExportFunction;
   zxnextGetLastPortAddress: ZxNextWasmV2ExportFunction;
   zxnextGetLastPortValue: ZxNextWasmV2ExportFunction;
+  zxnextGetLastPortAccessed: ZxNextWasmV2ExportFunction;
   zxnextGetLastPortIsWrite: ZxNextWasmV2ExportFunction;
+  zxnextTraceGetStartOffset: ZxNextWasmV2ExportFunction;
+  zxnextTraceGetHeaderSize: ZxNextWasmV2ExportFunction;
+  zxnextTraceGetRecordSize: ZxNextWasmV2ExportFunction;
+  zxnextTraceGetCapacity: ZxNextWasmV2ExportFunction;
+  zxnextTraceGetCount: ZxNextWasmV2ExportFunction;
+  zxnextTraceGetOverflow: ZxNextWasmV2ExportFunction;
+  zxnextTraceClear: ZxNextWasmV2ExportFunction;
+  zxnextTraceSetEnabled: ZxNextWasmV2ExportFunction;
+  zxnextTraceFinishFrame: ZxNextWasmV2ExportFunction;
   zxnextSetNextRegisterIndex: ZxNextWasmV2ExportFunction;
   zxnextGetNextRegisterIndex: ZxNextWasmV2ExportFunction;
   zxnextSetNextRegisterValue: ZxNextWasmV2ExportFunction;
@@ -126,6 +142,9 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextAdvanceUlaFrameState: ZxNextWasmV2ExportFunction;
   zxnextGetUlaScanlineForTact: ZxNextWasmV2ExportFunction;
   zxnextGetUlaColumnForTact: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaScrollX: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaScrollY: ZxNextWasmV2ExportFunction;
+  zxnextGetUlaClip: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteNextReg: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteEntry: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteCurrentEntry: ZxNextWasmV2ExportFunction;
@@ -356,6 +375,7 @@ export type ZxNextWasmV2Runtime = {
   readonly pixelBufferBytes: Uint8ClampedArray;
   readonly keyboardLines: Uint8Array;
   readonly nextRegs: Uint8Array;
+  readonly frameTrace: Uint8Array;
 };
 
 const requiredV2Exports = [
@@ -446,10 +466,21 @@ const requiredV2Exports = [
   "zxnextGetSharedZ80NMode",
   "zxnextGetLastMemoryAddress",
   "zxnextGetLastMemoryValue",
+  "zxnextGetLastMemoryAccessed",
   "zxnextGetLastMemoryIsWrite",
   "zxnextGetLastPortAddress",
   "zxnextGetLastPortValue",
+  "zxnextGetLastPortAccessed",
   "zxnextGetLastPortIsWrite",
+  "zxnextTraceGetStartOffset",
+  "zxnextTraceGetHeaderSize",
+  "zxnextTraceGetRecordSize",
+  "zxnextTraceGetCapacity",
+  "zxnextTraceGetCount",
+  "zxnextTraceGetOverflow",
+  "zxnextTraceClear",
+  "zxnextTraceSetEnabled",
+  "zxnextTraceFinishFrame",
   "zxnextSetNextRegisterIndex",
   "zxnextGetNextRegisterIndex",
   "zxnextSetNextRegisterValue",
@@ -474,6 +505,9 @@ const requiredV2Exports = [
   "zxnextAdvanceUlaFrameState",
   "zxnextGetUlaScanlineForTact",
   "zxnextGetUlaColumnForTact",
+  "zxnextGetUlaScrollX",
+  "zxnextGetUlaScrollY",
+  "zxnextGetUlaClip",
   "zxnextGetPaletteNextReg",
   "zxnextGetPaletteEntry",
   "zxnextGetPaletteCurrentEntry",
@@ -727,8 +761,12 @@ export function createZxNextWasmV2Views(
   const nextRegCount = exports.zxnextGetNextRegCount();
   const screenWidth = exports.zxnextGetScreenWidth();
   const screenHeight = exports.zxnextGetScreenHeight();
+  const traceHeaderSize = exports.zxnextTraceGetHeaderSize();
+  const traceRecordSize = exports.zxnextTraceGetRecordSize();
+  const traceCapacity = exports.zxnextTraceGetCapacity();
   const pixelWords = screenWidth * screenHeight;
   const pixelBytes = pixelWords * 4;
+  const traceBytes = traceHeaderSize + traceCapacity * traceRecordSize;
 
   assertExpectedSize(artifactName, "memory", memorySize, ZXNEXT_WASM_V2_MEMORY_SIZE);
   assertExpectedSize(artifactName, "flatMemory", flatMemorySize, ZXNEXT_WASM_V2_FLAT_MEMORY_SIZE);
@@ -736,11 +774,15 @@ export function createZxNextWasmV2Views(
   assertExpectedSize(artifactName, "nextRegs", nextRegCount, ZXNEXT_WASM_V2_NEXT_REG_COUNT);
   assertExpectedSize(artifactName, "screenWidth", screenWidth, ZXNEXT_WASM_V2_SCREEN_WIDTH);
   assertExpectedSize(artifactName, "screenHeight", screenHeight, ZXNEXT_WASM_V2_SCREEN_HEIGHT);
+  assertExpectedSize(artifactName, "traceHeaderSize", traceHeaderSize, ZXNEXT_FRAME_TRACE_HEADER_SIZE);
+  assertExpectedSize(artifactName, "traceRecordSize", traceRecordSize, ZXNEXT_FRAME_TRACE_RECORD_SIZE);
+  assertExpectedSize(artifactName, "traceCapacity", traceCapacity, ZXNEXT_FRAME_TRACE_CAPACITY);
   assertViewRange(artifactName, "memory", exports.zxnextMemoryPtr(), memorySize, memoryBuffer);
   assertViewRange(artifactName, "flatMemory", exports.zxnextMemoryPtr(), flatMemorySize, memoryBuffer);
   assertViewRange(artifactName, "pixelBuffer", exports.zxnextPixelBufferPtr(), pixelBytes, memoryBuffer);
   assertViewRange(artifactName, "keyboardLines", exports.zxnextKeyboardLinesPtr(), keyboardLineCount, memoryBuffer);
   assertViewRange(artifactName, "nextRegs", exports.zxnextNextRegsPtr(), nextRegCount, memoryBuffer);
+  assertViewRange(artifactName, "frameTrace", exports.zxnextTraceGetStartOffset(), traceBytes, memoryBuffer);
 
   return {
     memoryBuffer,
@@ -749,7 +791,8 @@ export function createZxNextWasmV2Views(
     pixelBuffer: new Uint32Array(memoryBuffer, exports.zxnextPixelBufferPtr(), pixelWords),
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.zxnextPixelBufferPtr(), pixelBytes),
     keyboardLines: new Uint8Array(memoryBuffer, exports.zxnextKeyboardLinesPtr(), keyboardLineCount),
-    nextRegs: new Uint8Array(memoryBuffer, exports.zxnextNextRegsPtr(), nextRegCount)
+    nextRegs: new Uint8Array(memoryBuffer, exports.zxnextNextRegsPtr(), nextRegCount),
+    frameTrace: new Uint8Array(memoryBuffer, exports.zxnextTraceGetStartOffset(), traceBytes)
   };
 }
 

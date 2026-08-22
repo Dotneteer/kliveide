@@ -7,7 +7,8 @@ const { performance } = require("node:perf_hooks");
 const {
   buildZxNextWasm,
   optimizationProfiles,
-  productionOutput
+  productionOutput,
+  waitForZxNextWasmBuildLock
 } = require("./build-zxnext-wasm.cjs");
 
 const root = resolve(__dirname, "..");
@@ -113,9 +114,11 @@ Options:
 }
 
 async function instantiateArtifact(artifact = productionOutput) {
+  waitForZxNextWasmBuildLock();
   if (!existsSync(artifact)) {
     buildZxNextWasm();
   }
+  waitForZxNextWasmBuildLock();
   const bytes = readFileSync(artifact);
   const { instance } = await WebAssembly.instantiate(bytes);
   return {
@@ -165,7 +168,9 @@ async function benchmarkZxNextWasm(options = {}) {
     ...options
   };
   const artifact = normalized.artifact ?? productionOutput;
+  waitForZxNextWasmBuildLock();
   if (normalized.build || !existsSync(artifact)) buildZxNextWasm();
+  waitForZxNextWasmBuildLock();
 
   const scenarioMap = createScenarioMap();
   const scenarioReports = [];
@@ -282,7 +287,10 @@ async function createWasmMachine(artifact = productionOutput) {
     undefined,
     {
       artifactName: "benchmark-zx-spectrum-next.wasm",
-      readArtifact: async () => readFileSync(artifact)
+      readArtifact: async () => {
+        waitForZxNextWasmBuildLock();
+        return readFileSync(artifact);
+      }
     }
   );
   await machine.setup();

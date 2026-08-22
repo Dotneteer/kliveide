@@ -16,6 +16,11 @@ static uint8_t zxnextExpansionIntPending;
 static uint8_t zxnextExpansionRomcsSignal;
 static uint8_t zxnextExpansionIorqulaSignal;
 
+static inline void zxnextExpansionRequestSpeedUpdate(void) {
+  cpuEffectiveSpeed = zxnextExpansionEnabled ? 0u : cpuProgrammedSpeed;
+  zxnextNextRegs[0x07u] = (uint8_t)((cpuProgrammedSpeed & 0x03u) | ((cpuEffectiveSpeed & 0x03u) << 4u));
+}
+
 void zxnextExpansionHardReset(void) {
   zxnextExpansionEnabled = 0;
   zxnextExpansionRomcsReplacement = 0;
@@ -32,6 +37,7 @@ void zxnextExpansionHardReset(void) {
   zxnextExpansionIntPending = 0;
   zxnextExpansionRomcsSignal = 0;
   zxnextExpansionIorqulaSignal = 0;
+  zxnextExpansionRequestSpeedUpdate();
 }
 
 void zxnextExpansionReset(void) {
@@ -41,6 +47,7 @@ void zxnextExpansionReset(void) {
   zxnextExpansionDisableIoCycles = (persistence & 0x02u) != 0;
   zxnextExpansionDisableMemCycles = (persistence & 0x01u) != 0;
   zxnextExpansionSoftResetPersistence = persistence;
+  zxnextExpansionRequestSpeedUpdate();
 }
 
 uint32_t zxnextExpansionHandlesNextReg(uint32_t reg) {
@@ -57,11 +64,13 @@ void zxnextExpansionSetNextReg(uint32_t reg, uint32_t value) {
       zxnextExpansionDisableIoCycles = (byteValue & 0x20u) != 0;
       zxnextExpansionDisableMemCycles = (byteValue & 0x10u) != 0;
       zxnextExpansionSoftResetPersistence = byteValue & 0x0fu;
+      zxnextExpansionRequestSpeedUpdate();
       break;
     case 0x81u:
       zxnextExpansionUlaOverrideEnabled = (byteValue & 0x40u) != 0;
       zxnextExpansionNmiDebounceDisabled = (byteValue & 0x20u) != 0;
       zxnextExpansionClockAlwaysOn = (byteValue & 0x10u) != 0;
+      zxnextExpansionRequestSpeedUpdate();
       break;
     case 0x86u:
     case 0x87u:

@@ -24,25 +24,33 @@ export type ZxNextWasmV2MigrationSurface =
   | "frame"
   | "debug";
 
-export type ZxNextWasmV2DefaultBlocker = never;
+export type ZxNextWasmV2DefaultBlocker =
+  | "ula-screen-tact-pipeline-parity"
+  | "ula-timex-mode-rendering-parity"
+  | "ula-next-plus-rendering-parity"
+  | "screen-layer-composition-parity";
 
 export type ZxNextWasmV2StopReason =
   | "reset"
   | "debugStep"
+  | "wasmFrameCommand"
   | "wasmFrameComplete";
 
 export const ZXNEXT_WASM_V2_MIGRATED_SURFACES: ZxNextWasmV2MigrationSurface[] = [
   "registers",
   "memory",
   "disassembly",
-  "ULA",
-  "screen",
   "frame",
   "debug"
 ];
 
-export const ZXNEXT_WASM_V2_DEFAULT_READY = true;
-export const ZXNEXT_WASM_V2_DEFAULT_BLOCKERS: ZxNextWasmV2DefaultBlocker[] = [];
+export const ZXNEXT_WASM_V2_DEFAULT_READY = false;
+export const ZXNEXT_WASM_V2_DEFAULT_BLOCKERS: ZxNextWasmV2DefaultBlocker[] = [
+  "ula-screen-tact-pipeline-parity",
+  "ula-timex-mode-rendering-parity",
+  "ula-next-plus-rendering-parity",
+  "screen-layer-composition-parity"
+];
 
 const ZXNEXT_SD_HOST_COMMAND_READ = 1;
 const ZXNEXT_SD_HOST_COMMAND_WRITE = 2;
@@ -114,6 +122,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private wasmV2NormalFrames = 0;
   private wasmV2DebugSteps = 0;
   private wasmV2LastStopReason: ZxNextWasmV2StopReason = "reset";
+  private wasmV2RomImages?: ZxNextWasmV2RomImages;
+  private wasmV2SdCardInfoLoaded = false;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
   private readonly nextRegDescriptors = this.createNextRegDescriptors();
 
@@ -441,6 +451,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   override async setup(): Promise<void> {
+    this.wasmV2RomImages = await this.loadWasmV2RomImages();
     this.wasmV2Runtime = await loadZxNextWasmV2(this.wasmV2LoaderOptions);
     this.hardResetWasmV2(this.wasmV2Runtime);
     this.syncCpuFromWasmV2(this.wasmV2Runtime);
@@ -481,11 +492,15 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
     this.emulateKeystroke();
     runtime.exports.zxnextExecuteFrame();
-    this.wasmV2NormalFrames++;
     this.syncCpuFromWasmV2(runtime);
     this.syncWasmV2StorageFrameCommand(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
-    this.wasmV2LastStopReason = "wasmFrameComplete";
+    if (this.frameCompleted) {
+      this.wasmV2NormalFrames++;
+      this.wasmV2LastStopReason = "wasmFrameComplete";
+    } else {
+      this.wasmV2LastStopReason = "wasmFrameCommand";
+    }
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -508,11 +523,14 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   uploadWasmV2RomImages(roms: ZxNextWasmV2RomImages): void {
+    this.wasmV2RomImages = {
+      nextRom: roms.nextRom.slice(),
+      divMmcRom: roms.divMmcRom.slice(),
+      multifaceRom: roms.multifaceRom.slice(),
+      altRom: roms.altRom.slice()
+    };
     const runtime = this.requireWasmV2Runtime();
-    runtime.memory.set(roms.nextRom, ZXNEXT_WASM_OFFS_NEXT_ROM);
-    runtime.memory.set(roms.divMmcRom, ZXNEXT_WASM_OFFS_DIVMMC_ROM);
-    runtime.memory.set(roms.multifaceRom, ZXNEXT_WASM_OFFS_MULTIFACE_MEM);
-    runtime.memory.set(roms.altRom, ZXNEXT_WASM_OFFS_ALT_ROM_0);
+    this.uploadCachedWasmV2RomImages(runtime);
   }
 
   private executeWasmV2DebugLoop(runtime: ZxNextWasmV2Runtime): FrameTerminationMode {
@@ -754,6 +772,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     const frameCommand = this.getFrameCommand();
     if (frameCommand == null) return;
 
+    await this.ensureWasmV2SdCardInfo(messenger);
+
     switch (frameCommand.command) {
       case "sd-read":
       case "sd-read-card1":
@@ -773,15 +793,17 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     frameCommand: { command: "sd-read" | "sd-read-card1"; sector: number }
   ): Promise<void> {
     const runtime = this.requireWasmV2Runtime();
-    const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
-    const data = sectorData instanceof Uint8Array ? sectorData : new Uint8Array(sectorData);
-    const ptr = runtime.exports.zxnextGetSdWriteBufferPtr();
-    new Uint8Array(runtime.memoryBuffer).set(data.slice(0, ZXNEXT_SD_BYTES_PER_SECTOR), ptr);
-    runtime.exports.zxnextSetSdReadResponse(
-      frameCommand.command === "sd-read-card1" ? 1 : 0,
-      ptr,
-      Math.min(data.length, ZXNEXT_SD_BYTES_PER_SECTOR)
-    );
+    const card = frameCommand.command === "sd-read-card1" ? 1 : 0;
+    try {
+      const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
+      const data = sectorData instanceof Uint8Array ? sectorData : new Uint8Array(sectorData);
+      const ptr = runtime.exports.zxnextGetSdWriteBufferPtr();
+      new Uint8Array(runtime.memoryBuffer).set(data.slice(0, ZXNEXT_SD_BYTES_PER_SECTOR), ptr);
+      runtime.exports.zxnextSetSdReadResponse(card, ptr, Math.min(data.length, ZXNEXT_SD_BYTES_PER_SECTOR));
+    } catch (err) {
+      console.log(`${frameCommand.command === "sd-read-card1" ? "SD card 1" : "SD card"} sector read error`, err);
+      this.setWasmV2SdInlineResponse(runtime, card, Uint8Array.from([0x0d, 0xff, 0xff]));
+    }
     runtime.exports.zxnextClearSdHostCommand();
   }
 
@@ -790,12 +812,32 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     frameCommand: { command: "sd-write" | "sd-write-card1"; sector: number; data: Uint8Array }
   ): Promise<void> {
     const runtime = this.requireWasmV2Runtime();
-    const result = await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
-    runtime.exports.zxnextSetSdWriteResponse(
-      frameCommand.command === "sd-write-card1" ? 1 : 0,
-      result?.persistenceConfirmed ? 1 : 0
-    );
+    const card = frameCommand.command === "sd-write-card1" ? 1 : 0;
+    try {
+      const result = await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
+      runtime.exports.zxnextSetSdWriteResponse(card, result?.persistenceConfirmed ? 1 : 0);
+    } catch (err) {
+      console.log(`${frameCommand.command === "sd-write-card1" ? "SD card 1" : "SD card"} sector write error`, err);
+      runtime.exports.zxnextSetSdWriteResponse(card, 0);
+    }
     runtime.exports.zxnextClearSdHostCommand();
+  }
+
+  private async ensureWasmV2SdCardInfo(messenger: MessengerBase): Promise<void> {
+    if (this.wasmV2SdCardInfoLoaded) return;
+    try {
+      const info = await createMainApi(messenger).getSdCardInfo();
+      this.requireWasmV2Runtime().exports.zxnextSetSdCardInfo(0, info.totalSectors);
+      this.wasmV2SdCardInfoLoaded = true;
+    } catch (err) {
+      console.warn("SD card info fetch failed, using default CSD", err);
+    }
+  }
+
+  private setWasmV2SdInlineResponse(runtime: ZxNextWasmV2Runtime, card: number, response: Uint8Array): void {
+    const ptr = runtime.exports.zxnextGetSdWriteBufferPtr();
+    new Uint8Array(runtime.memoryBuffer).set(response, ptr);
+    runtime.exports.zxnextSetSdReadResponse(card, ptr, response.length);
   }
 
   override get screenWidthInPixels(): number {
@@ -912,9 +954,28 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
   private hardResetWasmV2(runtime: ZxNextWasmV2Runtime): void {
     runtime.exports.zxnextHardReset();
+    this.uploadCachedWasmV2RomImages(runtime);
     this.wasmV2NormalFrames = 0;
     this.wasmV2DebugSteps = 0;
     this.wasmV2LastStopReason = "reset";
+  }
+
+  private async loadWasmV2RomImages(): Promise<ZxNextWasmV2RomImages> {
+    return {
+      nextRom: await this.loadRomFromFile("roms/enNextZX.rom"),
+      divMmcRom: await this.loadRomFromFile("roms/enNxtmmc.rom"),
+      multifaceRom: await this.loadRomFromFile("roms/enNextMf.rom"),
+      altRom: await this.loadRomFromFile("roms/enAltZX.rom")
+    };
+  }
+
+  private uploadCachedWasmV2RomImages(runtime: ZxNextWasmV2Runtime): void {
+    const roms = this.wasmV2RomImages;
+    if (!roms) return;
+    runtime.memory.set(roms.nextRom, ZXNEXT_WASM_OFFS_NEXT_ROM);
+    runtime.memory.set(roms.divMmcRom, ZXNEXT_WASM_OFFS_DIVMMC_ROM);
+    runtime.memory.set(roms.multifaceRom, ZXNEXT_WASM_OFFS_MULTIFACE_MEM);
+    runtime.memory.set(roms.altRom, ZXNEXT_WASM_OFFS_ALT_ROM_0);
   }
 
   private syncWasmV2StorageFrameCommand(runtime: ZxNextWasmV2Runtime): void {
@@ -1147,7 +1208,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     if (wasm.zxnextGetLastMemoryIsWrite() !== 0) {
       this.lastMemoryWrites[this.lastMemoryWritesCount++] = memoryAddress;
       this.lastMemoryWriteValue = memoryValue;
-    } else if (memoryAddress !== 0 || memoryValue !== 0) {
+    } else if (wasm.zxnextGetLastMemoryAccessed() !== 0) {
       this.lastMemoryReads[this.lastMemoryReadsCount++] = memoryAddress;
       this.lastMemoryReadValue = memoryValue;
     }
@@ -1157,7 +1218,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     if (wasm.zxnextGetLastPortIsWrite() !== 0) {
       this.lastIoWritePort = portAddress;
       this.lastIoWriteValue = portValue;
-    } else if (portAddress !== 0 || portValue !== 0) {
+    } else if (wasm.zxnextGetLastPortAccessed() !== 0) {
       this.lastIoReadPort = portAddress;
       this.lastIoReadValue = portValue;
     }

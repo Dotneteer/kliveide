@@ -4,7 +4,8 @@ import {
   buildZxNextWasm,
   outputRelative,
   productionExports,
-  productionOutput
+  productionOutput,
+  waitForZxNextWasmBuildLock
 } from "../../../scripts/build-zxnext-wasm.cjs";
 import { describe, expect, it } from "vitest";
 
@@ -50,7 +51,11 @@ describe("ZX Spectrum Next WASM build", () => {
       "zxnextGetUlaScanlineForTact",
       "zxnextGetDivMmcAutoMapActive",
       "zxnextGetSdHostCommand",
-      "zxnextSetSdReadResponse"
+      "zxnextSetSdReadResponse",
+      "zxnextTraceGetStartOffset",
+      "zxnextTraceSetEnabled",
+      "zxnextTraceClear",
+      "zxnextTraceFinishFrame"
     ]));
     expect(outputRelative).toBe("src/emu/machines/zxNext/wasm/dist/zx-spectrum-next.wasm");
   });
@@ -59,6 +64,7 @@ describe("ZX Spectrum Next WASM build", () => {
     buildZxNextWasm();
 
     expect(existsSync(productionOutput)).toBe(true);
+    waitForZxNextWasmBuildLock();
     expect(Array.from(readFileSync(productionOutput).subarray(0, 4))).toEqual([0x00, 0x61, 0x73, 0x6d]);
   });
 });

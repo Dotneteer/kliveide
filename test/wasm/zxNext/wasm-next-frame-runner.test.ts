@@ -102,6 +102,30 @@ describe("ZX Spectrum Next WASM v2 frame runner", () => {
 
     expect(executeAndCaptureFrame(wasm)).toEqual(executeAndCaptureFrame(oracle));
   });
+
+  it("stops the native WASM frame loop when an SD command is queued mid-frame", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    initializeFrameRunnerMachine(oracle);
+    initializeFrameRunnerMachine(wasm);
+    installSdReadProgram(oracle);
+    installSdReadProgram(wasm);
+
+    const oracleSnapshot = executeAndCaptureFrame(oracle);
+    const wasmSnapshot = executeAndCaptureFrame(wasm);
+
+    expect(wasm.getFrameCommand()).toEqual(oracle.getFrameCommand());
+    expect(wasmSnapshot).toMatchObject({
+      termination: FrameTerminationMode.Normal,
+      lastTerminationReason: FrameTerminationMode.Normal,
+      pc: oracleSnapshot.pc,
+      frames: 0,
+      frameCompleted: false
+    });
+    expect(wasm.getWasmV2Diagnostics()).toMatchObject({
+      normalFrames: 0,
+      lastWasmStopReason: "wasmFrameCommand"
+    });
+  });
 });
 
 function initializeFrameRunnerMachine(machine: FrameRunnerMachine): void {
@@ -132,4 +156,20 @@ function executeAndCaptureFrame(machine: FrameRunnerMachine): FrameSnapshot {
     lastRenderedFrameTact: machine.lastRenderedFrameTact,
     frameCompleted: machine.frameCompleted
   };
+}
+
+function installSdReadProgram(machine: FrameRunnerMachine): void {
+  const bytes = [
+    0x01, 0xe7, 0xff,       // LD BC,$FFE7
+    0x3e, 0x02,             // LD A,$02
+    0xed, 0x79,             // OUT (C),A: select SD card 0
+    0x01, 0xeb, 0xff,       // LD BC,$FFEB
+    0x3e, 0x51, 0xed, 0x79, // CMD17
+    0x3e, 0x00, 0xed, 0x79,
+    0x3e, 0x00, 0xed, 0x79,
+    0x3e, 0x00, 0xed, 0x79,
+    0x3e, 0x05, 0xed, 0x79,
+    0x3e, 0xff, 0xed, 0x79
+  ];
+  bytes.forEach((byte, offset) => machine.doWriteMemory(0x8000 + offset, byte));
 }

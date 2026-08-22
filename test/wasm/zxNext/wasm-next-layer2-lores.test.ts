@@ -39,6 +39,38 @@ describe("ZX Next WASM advanced video Layer 2 and LoRes", () => {
     ]);
   });
 
+  it("matches TypeScript clip control index reset and Layer 2 clip readback", async () => {
+    const oracle = await createTestNextMachine();
+    const wasm = await createTestZxNextWasmMachine();
+    const exports = wasm.wasmV2Runtime!.exports;
+
+    for (const [reg, value] of [
+      [0x18, 0x01],
+      [0x18, 0xa9],
+      [0x19, 0x02],
+      [0x19, 0x88],
+      [0x1a, 0x03],
+      [0x1a, 0x77],
+      [0x1b, 0x04],
+      [0x1b, 0x66]
+    ]) {
+      oracle.nextRegDevice.directSetRegValue(reg, value);
+      exports.zxnextSetNextRegisterDirect(reg, value);
+    }
+
+    expect(exports.zxnextGetNextRegisterDirect(0x1c)).toBe(oracle.nextRegDevice.directGetRegValue(0x1c));
+    expect(exports.zxnextGetNextRegisterDirect(0x18)).toBe(oracle.nextRegDevice.directGetRegValue(0x18));
+
+    oracle.nextRegDevice.directSetRegValue(0x1c, 0x03);
+    exports.zxnextSetNextRegisterDirect(0x1c, 0x03);
+
+    expect(exports.zxnextGetNextRegisterDirect(0x1c)).toBe(oracle.nextRegDevice.directGetRegValue(0x1c));
+    expect(exports.zxnextGetNextRegisterDirect(0x18)).toBe(oracle.nextRegDevice.directGetRegValue(0x18));
+    expect(exports.zxnextGetNextRegisterDirect(0x19)).toBe(oracle.nextRegDevice.directGetRegValue(0x19));
+    expect(readNextRegPort(wasm, 0x18)).toBe(readNextRegPort(oracle, 0x18));
+    expect(readNextRegPort(wasm, 0x19)).toBe(readNextRegPort(oracle, 0x19));
+  });
+
   it("matches LoRes state and address helpers from existing regression formulas", async () => {
     const oracle = await createTestNextMachine();
     const wasm = await createTestZxNextWasmMachine();
@@ -64,3 +96,13 @@ describe("ZX Next WASM advanced video Layer 2 and LoRes", () => {
     expect(exports.zxnextGetLoResRadastanAddress(3, 9, 1)).toBe(0x2000 | (9 << 6) | 3);
   });
 });
+
+function readNextRegPort(machine: Awaited<ReturnType<typeof createTestNextMachine>>, reg: number): number;
+function readNextRegPort(machine: Awaited<ReturnType<typeof createTestZxNextWasmMachine>>, reg: number): number;
+function readNextRegPort(
+  machine: Awaited<ReturnType<typeof createTestNextMachine>> | Awaited<ReturnType<typeof createTestZxNextWasmMachine>>,
+  reg: number
+): number {
+  machine.doWritePort(0x243b, reg);
+  return machine.doReadPort(0x253b);
+}

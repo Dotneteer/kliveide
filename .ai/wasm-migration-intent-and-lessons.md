@@ -49,13 +49,25 @@ integration, not the optimization profile. The Next CPU speed scale is latched
 at instruction start; `NEXTREG $07` must not change timing for the instruction
 that writes it.
 
-Step 29 completion on 2026-08-22: the timing-depth blocker is closed. The Next
-WASM diagnostics now report `defaultReady: true` and an empty
-`defaultBlockers` list.
+Step 29 completion on 2026-08-22 closed the binary-size/timing-depth blocker,
+but later ULA parity debugging proved the broader Next migration was
+overstated. The Next WASM diagnostics must not report full default readiness
+while ULA/screen parity is still incomplete.
 
 Rollout completion on 2026-08-22: the normal ZX Spectrum Next factory default
 is now WASM. TypeScript remains explicitly selectable as the compatibility
 fallback and parity oracle.
+
+ULA audit correction on 2026-08-22: the WASM backend still has open ULA/screen
+blockers. The TypeScript renderer performs tact-by-tact composed rendering and
+render-before-mutation ordering across standard ULA, Timex modes, LoRes,
+ULANext, ULA+, Layer 2, tilemap, sprites, clipping, scrolling, transparency,
+blending, active-line interrupts, and floating-bus updates. The WASM ULA path
+currently covers only a subset: `$FE` keyboard/ULA behavior, basic standard
+ULA instant rendering, flash, standard colours, ULA scroll/clip registers, and
+the ULA INT pulse. Keep `defaultReady` false and exclude `ULA`/`screen` from
+`migratedSurfaces` until the timed composed screen pipeline is ported and
+oracle-tested.
 
 CTC timing lesson: mirror the TypeScript CTC model as lazy 28 MHz frame-clock
 sync before CTC port access, not per-tact work in the CPU hot path. Port gating

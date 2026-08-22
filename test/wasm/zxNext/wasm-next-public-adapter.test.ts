@@ -10,11 +10,13 @@ import {
   ZXNEXT_IMPLEMENTATION
 } from "@emu/machines/zxNext/ZxNextImplementation";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
-import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
+import {
+  ZXNEXT_WASM_V2_DEFAULT_BLOCKERS,
+  ZXNEXT_WASM_V2_MIGRATED_SURFACES,
+  ZxNextWasmV2Machine
+} from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
-
-const MIGRATED_SURFACES = ["registers", "memory", "disassembly", "ULA", "screen", "debug"];
 
 describe("ZX Spectrum Next WASM public adapter", () => {
   it("uses WASM as the factory default while TypeScript remains explicit", () => {
@@ -27,15 +29,17 @@ describe("ZX Spectrum Next WASM public adapter", () => {
     );
   });
 
-  it("reports migrated public adapter surfaces with the timing-depth audit closed", async () => {
+  it("reports current migrated public adapter surfaces and open ULA/screen blockers", async () => {
     const machine = await createTestZxNextWasmMachine();
     const diagnostics = machine.getWasmV2Diagnostics();
 
-    expect(diagnostics.defaultReady).toBe(true);
-    expect(diagnostics.defaultBlockers).toEqual([]);
-    for (const surface of MIGRATED_SURFACES) {
+    expect(diagnostics.defaultReady).toBe(false);
+    expect(diagnostics.defaultBlockers).toEqual(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS);
+    for (const surface of ZXNEXT_WASM_V2_MIGRATED_SURFACES) {
       expect(diagnostics.migratedSurfaces).toContain(surface);
     }
+    expect(diagnostics.migratedSurfaces).not.toContain("ULA");
+    expect(diagnostics.migratedSurfaces).not.toContain("screen");
   });
 
   it("reads register, memory, NextReg, screen, and disassembly views from WASM-owned state", async () => {

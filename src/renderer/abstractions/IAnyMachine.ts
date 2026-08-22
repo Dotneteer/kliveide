@@ -369,6 +369,12 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   afterInstructionExecuted(): void;
 
   /**
+   * Optional diagnostics hook invoked after a complete CPU instruction.
+   * @param pcBefore PC value captured immediately before instruction execution.
+   */
+  traceInstructionExecuted?(pcBefore: number): void;
+
+  /**
    * This method tests if the CPU reached the specified termination point.
    * @returns True, if the execution has reached the termination point; otherwise, false.
    *

@@ -46,9 +46,6 @@ static void zxnextSpritesSetNextReg(uint32_t reg, uint32_t value) {
       zxnextSpriteClipWindow[zxnextSpriteClipIndex] = byteValue;
       zxnextSpriteClipIndex = (uint8_t)((zxnextSpriteClipIndex + 1u) & 0x03u);
       break;
-    case 0x1au:
-      zxnextSpriteClipIndex = byteValue & 0x03u;
-      break;
     case 0x4bu:
       zxnextSpriteTransparencyIndex = byteValue;
       break;
@@ -78,6 +75,16 @@ static void zxnextSpritesSetNextReg(uint32_t reg, uint32_t value) {
   }
 }
 
+static uint32_t zxnextSpritesGetNextReg(uint32_t reg) {
+  switch (reg & 0xffu) {
+    case 0x19u: return zxnextSpriteClipWindow[zxnextSpriteClipIndex];
+    case 0x4bu: return zxnextSpriteTransparencyIndex;
+    default: return 0u;
+  }
+}
+
+static void zxnextSpritesResetClipIndex(void) { zxnextSpriteClipIndex = 0u; }
+static uint32_t zxnextSpritesGetClipIndex(void) { return zxnextSpriteClipIndex; }
 static void zxnextSpritesWritePort303b(uint32_t value) {
   uint8_t byteValue = (uint8_t)value;
   zxnextSpritePatternIndex = byteValue & 0x3fu;

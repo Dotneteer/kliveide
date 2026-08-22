@@ -92,6 +92,8 @@ static uint32_t zxnextLayer2GetNextReg(uint32_t reg) {
   }
 }
 
+static void zxnextLayer2ResetClipIndex(void) { zxnextLayer2ClipIndex = 0u; }
+static uint32_t zxnextLayer2GetClipIndex(void) { return zxnextLayer2ClipIndex; }
 static void zxnextLayer2SetEnabled(uint32_t enabled) { zxnextLayer2Enabled = enabled != 0u; }
 static uint32_t zxnextLayer2GetEnabled(void) { return zxnextLayer2Enabled; }
 static uint32_t zxnextLayer2GetResolution(void) { return zxnextLayer2Resolution; }

@@ -5,6 +5,8 @@
 #define ZXNEXT_OFFS_ALT_ROM_0 0x018000u
 #define ZXNEXT_OFFS_ALT_ROM_1 0x01c000u
 #define ZXNEXT_OFFS_NEXT_RAM 0x040000u
+#define ZXNEXT_OFFS_BANK_05 0x054000u
+#define ZXNEXT_OFFS_BANK_07 0x05c000u
 #define ZXNEXT_NO_WRITE_OFFSET 0xffffffffu
 #define ZXNEXT_MAX_RAM_8K_PAGES 224u
 
@@ -23,6 +25,7 @@ static uint8_t enableAltRom;
 static uint8_t altRomVisibleOnlyForWrites;
 static uint8_t lockRom1;
 static uint8_t lockRom0;
+static uint8_t useShadowScreen;
 
 static inline void zxnextMemorySetPageInfo(
   uint32_t pageIndex,
@@ -130,23 +133,6 @@ static void zxnextMemoryUpdateMapping(void) {
   for (uint32_t page = 0; page < 8; page++) {
     zxnextMemorySetRamPageByMmu(page);
   }
-
-  if (zxnextDivMmcIsMappingActive()) {
-    zxnextMemorySetPageInfo(
-      0,
-      zxnextDivMmcGetReadOffset(0),
-      zxnextDivMmcGetWriteOffset(0),
-      0xffu,
-      0xffu
-    );
-    zxnextMemorySetPageInfo(
-      1,
-      zxnextDivMmcGetReadOffset(1),
-      zxnextDivMmcGetWriteOffset(1),
-      0xffu,
-      0xffu
-    );
-  }
 }
 
 static void zxnextMemoryUpdateNextReg8E(void) {
@@ -170,6 +156,7 @@ static void zxnextMemoryResetMapping(void) {
   altRomVisibleOnlyForWrites = 0;
   lockRom1 = 0;
   lockRom0 = 0;
+  useShadowScreen = 0;
   zxnextNextRegs[0x50] = 0xff;
   zxnextNextRegs[0x51] = 0xff;
   zxnextNextRegs[0x52] = 0x0a;
@@ -190,34 +177,53 @@ static inline void zxnextMemoryWritePhysical(uint32_t offset, uint32_t value) {
   zxnextMemory[offset % ZXNEXT_MEMORY_SIZE] = (uint8_t)value;
 }
 
+static inline uint32_t zxnextMemoryResolveReadOffset(uint32_t page) {
+  uint32_t normalizedPage = page & 0x07u;
+  if (normalizedPage < 2u && zxnextDivMmcIsMappingActive()) {
+    return zxnextDivMmcGetReadOffset(normalizedPage);
+  }
+  return pageReadOffset[normalizedPage];
+}
+
+static inline uint32_t zxnextMemoryResolveWriteOffset(uint32_t page) {
+  uint32_t normalizedPage = page & 0x07u;
+  if (normalizedPage < 2u && zxnextDivMmcIsMappingActive()) {
+    return zxnextDivMmcGetWriteOffset(normalizedPage);
+  }
+  return pageWriteOffset[normalizedPage];
+}
+
 static inline uint32_t zxnextMemoryReadMapped(uint32_t address) {
   uint32_t normalized = address & 0xffffu;
-  uint32_t physical = pageReadOffset[normalized >> 13] + (normalized & 0x1fffu);
+  uint32_t physical = zxnextMemoryResolveReadOffset(normalized >> 13) + (normalized & 0x1fffu);
   lastMemoryAddress = (uint16_t)normalized;
   lastMemoryValue = zxnextMemoryReadPhysical(physical);
+  lastMemoryAccessed = 1;
   lastMemoryIsWrite = 0;
   return lastMemoryValue;
 }
 
 static inline uint32_t zxnextMemoryPeekMapped(uint32_t address) {
   uint32_t normalized = address & 0xffffu;
-  uint32_t physical = pageReadOffset[normalized >> 13] + (normalized & 0x1fffu);
+  uint32_t physical = zxnextMemoryResolveReadOffset(normalized >> 13) + (normalized & 0x1fffu);
   return zxnextMemoryReadPhysical(physical);
 }
 
 static inline void zxnextMemoryWriteMapped(uint32_t address, uint32_t value) {
   uint32_t normalized = address & 0xffffu;
-  uint32_t physical = pageWriteOffset[normalized >> 13];
+  uint32_t physical = zxnextMemoryResolveWriteOffset(normalized >> 13);
   if (physical != ZXNEXT_NO_WRITE_OFFSET) {
     zxnextMemoryWritePhysical(physical + (normalized & 0x1fffu), value);
   }
   lastMemoryAddress = (uint16_t)normalized;
   lastMemoryValue = (uint8_t)value;
+  lastMemoryAccessed = 1;
   lastMemoryIsWrite = 1;
 }
 
 static uint32_t zxnextMemoryReadScreenOffset(uint32_t offset) {
-  return zxnextMemoryReadMapped(0x4000u + (offset & 0x3fffu));
+  uint32_t base = useShadowScreen ? ZXNEXT_OFFS_BANK_07 : ZXNEXT_OFFS_BANK_05;
+  return zxnextMemoryReadPhysical(base + (offset & 0x3fffu));
 }
 
 static uint32_t zxnextMemoryGetPageReadOffset(uint32_t page) {
@@ -272,6 +278,8 @@ static void zxnextMemorySetNextRegister(uint32_t reg, uint32_t value) {
     }
     zxnextMemoryUpdateNextReg8E();
     zxnextMemoryUpdateMapping();
+  } else if (normalizedReg == 0x69) {
+    useShadowScreen = (byteValue & 0x40u) != 0u;
   }
 }
 

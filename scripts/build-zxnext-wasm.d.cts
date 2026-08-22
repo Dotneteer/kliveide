@@ -26,6 +26,7 @@ export type ZxNextWasmBuild = {
 export const source: string;
 export const output: string;
 export const outputRelative: string;
+export const buildLockPath: string;
 export const packagedArtifactRelative: string;
 export const packagedResourceDirectory: string;
 export const productionExports: string[];
@@ -35,3 +36,4 @@ export const wasmDistDirectory: string;
 export const wasmDistDirectoryRelative: string;
 export function buildZxNextWasm(options?: BuildZxNextWasmOptions): ZxNextWasmBuild;
 export function buildAllZxNextWasm(options?: BuildZxNextWasmOptions): ZxNextWasmBuild[];
+export function waitForZxNextWasmBuildLock(timeoutMs?: number): void;

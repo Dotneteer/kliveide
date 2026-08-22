@@ -10,6 +10,8 @@ type NextRegMachine = TestZxNextMachine | ZxNextWasmV2Machine;
 const RESET_NEXT_REGS = [
   0x00,
   0x01,
+  0x05,
+  0x06,
   0x0e,
   0x12,
   0x13,
@@ -66,6 +68,40 @@ describe("ZX Spectrum Next WASM NextReg core parity", () => {
     expect(wasm.getCurrentPartitionLabels()).toEqual(oracle.getCurrentPartitionLabels());
     expect(wasm.lastIoReadPort).toBe(0x253b);
     expect(wasm.lastIoReadValue).toBe(wasmRead);
+  });
+
+  it("matches TypeScript Peripheral 2 composed state", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    hardResetBoth(oracle, wasm);
+
+    expect(readNextReg(wasm, 0x06)).toBe(0x98);
+    expect(readNextReg(wasm, 0x06)).toBe(readNextReg(oracle, 0x06));
+
+    for (const value of [0x00, 0xff, 0x24, 0x98]) {
+      writeNextReg(oracle, 0x06, value);
+      writeNextReg(wasm, 0x06, value);
+      expect(readNextReg(wasm, 0x06), `value $${hex(value)}`).toBe(readNextReg(oracle, 0x06));
+    }
+  });
+
+  it("matches TypeScript CPU speed readback and expansion bus forcing", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    hardResetBoth(oracle, wasm);
+
+    writeNextReg(oracle, 0x07, 0x03);
+    writeNextReg(wasm, 0x07, 0x03);
+    expect(readNextReg(wasm, 0x07)).toBe(readNextReg(oracle, 0x07));
+    expect(readNextReg(wasm, 0x07)).toBe(0x33);
+
+    writeNextReg(oracle, 0x80, 0x80);
+    writeNextReg(wasm, 0x80, 0x80);
+    expect(readNextReg(wasm, 0x07)).toBe(readNextReg(oracle, 0x07));
+    expect(readNextReg(wasm, 0x07)).toBe(0x03);
+
+    writeNextReg(oracle, 0x80, 0x00);
+    writeNextReg(wasm, 0x80, 0x00);
+    expect(readNextReg(wasm, 0x07)).toBe(readNextReg(oracle, 0x07));
+    expect(readNextReg(wasm, 0x07)).toBe(0x33);
   });
 
   it("matches TypeScript memory-affecting NextReg writes", async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
+import { ZXNEXT_WASM_V2_DEFAULT_BLOCKERS } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
@@ -67,8 +68,8 @@ describe("ZX Spectrum Next WASM machine lifecycle", () => {
 
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
-      defaultReady: true,
-      defaultBlockers: [],
+      defaultReady: false,
+      defaultBlockers: ZXNEXT_WASM_V2_DEFAULT_BLOCKERS,
       normalFrames: 1,
       lastWasmStopReason: "wasmFrameComplete"
     });

@@ -66,6 +66,8 @@ export class MachineFrameRunner implements IMachineFrameRunner {
       // --- Allow the machine to do additional tasks before the next CPU instruction
       machine.beforeInstructionExecuted();
 
+      const tracePcBefore = machine.pc;
+
       // --- Execute the next CPU instruction entirely
       do {
         if (machine.isCpuSnoozed()) {
@@ -87,6 +89,7 @@ export class MachineFrameRunner implements IMachineFrameRunner {
 
       // --- Allow the machine to do additional tasks after the completed CPU instruction
       machine.afterInstructionExecuted();
+      machine.traceInstructionExecuted?.(tracePcBefore);
 
       // --- Do the machine reached the termination point?
       if (machine.testTerminationPoint()) {
@@ -162,6 +165,8 @@ export class MachineFrameRunner implements IMachineFrameRunner {
       // --- Allow the machine to do additional tasks before the next CPU instruction
       machine.beforeInstructionExecuted();
 
+      const tracePcBefore = machine.pc;
+
       // --- Execute the next CPU instruction entirely
       do {
         if (machine.isCpuSnoozed()) {
@@ -184,6 +189,7 @@ export class MachineFrameRunner implements IMachineFrameRunner {
 
       // --- Allow the machine to do additional tasks after the completed CPU instruction
       machine.afterInstructionExecuted();
+      machine.traceInstructionExecuted?.(tracePcBefore);
 
       if (machine.executionContext.debugSupport) {
         // --- Check for memory read/write breakpoints

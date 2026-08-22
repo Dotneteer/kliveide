@@ -190,7 +190,11 @@ static void zxnextSdCompleteCommand(ZxNextSdCard *card, uint32_t cardIndex) {
       break;
     case 0x49: {
       response[0] = 0x00; response[1] = 0xff; response[2] = 0xfe;
-      zxnextSdBuildCsd(card, &response[3]);
+      if ((cardIndex & 0x01u) == 0u) {
+        zxnextSdBuildCsd(card, &response[3]);
+      } else {
+        for (uint32_t i = 3u; i < 19u; i++) response[i] = 0x00u;
+      }
       zxnextSdSetResponse(card, response, 19, 1);
       break;
     }

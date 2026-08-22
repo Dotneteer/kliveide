@@ -35,7 +35,7 @@ describe("ZX Spectrum Next WASM shared Z80N CPU integration", () => {
 
     expect(machine.wasmV2Runtime!.exports.zxnextGetSharedZ80NMode()).toBe(1);
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.DebugEvent);
-    expect(machine.wasmV2Runtime!.exports.zxnextGetNextRegisterDirect(0x07)).toBe(0x03);
+    expect(machine.wasmV2Runtime!.exports.zxnextGetNextRegisterDirect(0x07)).toBe(0x33);
     expect(machine.pc).toBe(0x8004);
   });
 });

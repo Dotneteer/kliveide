@@ -308,7 +308,11 @@ static inline void tbBlueOut(uint8_t address, uint8_t value) {
 }
 
 Z80_ALWAYS_INLINE uint8_t fetchCodeByte(void) {
+#ifdef Z80_FETCH_CODE_BYTE
+  uint8_t value = Z80_FETCH_CODE_BYTE(cpu.pc);
+#else
   uint8_t value = readMemory(cpu.pc);
+#endif
   cpu.pc = (uint16_t)(cpu.pc + 1);
   return value;
 }
@@ -698,9 +702,9 @@ void z80Reset(void) {
   DE = 0x0000;
   HL = 0x0000;
   AF_ALT = 0xffff;
-  BC_ALT = 0x0000;
-  DE_ALT = 0x0000;
-  HL_ALT = 0x0000;
+  BC_ALT = 0xffff;
+  DE_ALT = 0xffff;
+  HL_ALT = 0xffff;
   IX = 0x0000;
   IY = 0x0000;
   IR = 0x0000;

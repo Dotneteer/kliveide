@@ -18,6 +18,7 @@ static uint8_t divMmcConmemActivated;
 static uint8_t divMmcNmiButtonPressed;
 static uint8_t divMmcResetMapramFlag;
 static uint8_t divMmcEnableNmiByDriveButton;
+static uint8_t divMmcEnableMultifaceNmiByM1Button;
 static uint8_t divMmcRstEnabled[8];
 static uint8_t divMmcRstOnlyWithRom3[8];
 static uint8_t divMmcRstInstant[8];
@@ -110,6 +111,7 @@ static void zxnextDivMmcReset(void) {
   divMmcNmiButtonPressed = 0;
   divMmcResetMapramFlag = 0;
   divMmcEnableNmiByDriveButton = 0;
+  divMmcEnableMultifaceNmiByM1Button = 0;
   for (uint32_t i = 0; i < 8u; i++) {
     divMmcRstEnabled[i] = 0;
     divMmcRstOnlyWithRom3[i] = 0;
@@ -201,6 +203,22 @@ static void zxnextDivMmcSetNextRegBB(uint32_t value) {
   divMmcAutomapOn04c6 = (byteValue & 0x04u) != 0;
   divMmcAutomapOn0066 = (byteValue & 0x02u) != 0;
   divMmcAutomapOn0066Delayed = (byteValue & 0x01u) != 0;
+}
+
+static void zxnextDivMmcSetEnableNmiByDriveButton(uint32_t enabled) {
+  divMmcEnableNmiByDriveButton = enabled != 0u;
+}
+
+static void zxnextDivMmcSetEnableMultifaceNmiByM1Button(uint32_t enabled) {
+  divMmcEnableMultifaceNmiByM1Button = enabled != 0u;
+}
+
+static uint32_t zxnextDivMmcGetEnableNmiByDriveButton(void) {
+  return divMmcEnableNmiByDriveButton;
+}
+
+static uint32_t zxnextDivMmcGetEnableMultifaceNmiByM1Button(void) {
+  return divMmcEnableMultifaceNmiByM1Button;
 }
 
 static uint32_t zxnextDivMmcGetNextRegB8(void) {

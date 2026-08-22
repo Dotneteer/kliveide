@@ -38,9 +38,6 @@ static void zxnextTilemapSetNextReg(uint32_t reg, uint32_t value) {
       zxnextTilemapClipWindow[zxnextTilemapClipIndex] = byteValue;
       zxnextTilemapClipIndex = (uint8_t)((zxnextTilemapClipIndex + 1u) & 0x03u);
       break;
-    case 0x1cu:
-      zxnextTilemapClipIndex = byteValue & 0x03u;
-      break;
     case 0x2fu:
       zxnextTilemapScrollX = (uint16_t)(((byteValue & 0x03u) << 8u) | (zxnextTilemapScrollX & 0xffu));
       break;
@@ -76,7 +73,6 @@ static void zxnextTilemapSetNextReg(uint32_t reg, uint32_t value) {
 static uint32_t zxnextTilemapGetNextReg(uint32_t reg) {
   switch (reg & 0xffu) {
     case 0x1bu: return zxnextTilemapClipWindow[zxnextTilemapClipIndex];
-    case 0x1cu: return zxnextTilemapClipIndex;
     case 0x2fu: return (zxnextTilemapScrollX >> 8u) & 0x03u;
     case 0x30u: return zxnextTilemapScrollX & 0xffu;
     case 0x31u: return zxnextTilemapScrollY;
@@ -89,6 +85,8 @@ static uint32_t zxnextTilemapGetNextReg(uint32_t reg) {
   }
 }
 
+static void zxnextTilemapResetClipIndex(void) { zxnextTilemapClipIndex = 0u; }
+static uint32_t zxnextTilemapGetClipIndex(void) { return zxnextTilemapClipIndex; }
 static uint32_t zxnextTilemapGetClip(uint32_t index) { return zxnextTilemapClipWindow[index & 0x03u]; }
 static uint32_t zxnextTilemapGetEnabled(void) { return zxnextTilemapEnabled; }
 static uint32_t zxnextTilemapGetPaletteOffset(void) { return (zxnextTilemapDefaultAttr >> 4u) & 0x0fu; }

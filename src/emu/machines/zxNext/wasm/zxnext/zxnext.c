@@ -49,9 +49,11 @@ static uint8_t cpuEffectiveSpeed;
 static uint32_t cpuTactScale;
 static uint16_t lastMemoryAddress;
 static uint8_t lastMemoryValue;
+static uint8_t lastMemoryAccessed;
 static uint8_t lastMemoryIsWrite;
 static uint16_t lastPortAddress;
 static uint8_t lastPortValue;
+static uint8_t lastPortAccessed;
 static uint8_t lastPortIsWrite;
 static uint8_t nextRegIndex;
 static uint8_t portFeValue;
@@ -90,6 +92,7 @@ static uint8_t micBit;
 #include "zxnext-nextreg.c"
 #include "zxnext-ports.c"
 #include "zxnext-cpu.c"
+#include "zxnext-trace.c"
 
 uint32_t zxnextMemoryPtr(void) { return (uint32_t)(uintptr_t)zxnextMemory; }
 uint32_t zxnextPixelBufferPtr(void) { return (uint32_t)(uintptr_t)zxnextPixelBuffer; }
@@ -143,6 +146,7 @@ void zxnextReset(void) {
   cpuPrefix = 0;
   zxnextFrameReset();
   zxnextDebugReset();
+  zxnextTraceReset();
   zxnextCpuReset();
   zxnextNmiReset();
   zxnextInterruptsReset();
@@ -167,13 +171,20 @@ void zxnextReset(void) {
   zxnextFloppyReset();
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
+  lastMemoryAccessed = 0;
   lastMemoryIsWrite = 0;
+  lastPortAddress = 0;
+  lastPortValue = 0;
+  lastPortAccessed = 0;
+  lastPortIsWrite = 0;
   zxnextPortsReset();
 }
 
 void zxnextHardReset(void) {
   zxnextReset();
   clearMachineBuffers();
+  zxnextDivMmcSetEnableMultifaceNmiByM1Button(1);
+  zxnextDivMmcSetEnableNmiByDriveButton(1);
 }
 
 uint32_t zxnextExecuteFrame(void) {
@@ -310,10 +321,22 @@ uint32_t zxnextGetSharedZ80NMode(void) { return z80GetZ80NMode(); }
 
 uint32_t zxnextGetLastMemoryAddress(void) { return lastMemoryAddress; }
 uint32_t zxnextGetLastMemoryValue(void) { return lastMemoryValue; }
+uint32_t zxnextGetLastMemoryAccessed(void) { return lastMemoryAccessed; }
 uint32_t zxnextGetLastMemoryIsWrite(void) { return lastMemoryIsWrite; }
 uint32_t zxnextGetLastPortAddress(void) { return lastPortAddress; }
 uint32_t zxnextGetLastPortValue(void) { return lastPortValue; }
+uint32_t zxnextGetLastPortAccessed(void) { return lastPortAccessed; }
 uint32_t zxnextGetLastPortIsWrite(void) { return lastPortIsWrite; }
+
+uint32_t zxnextTraceGetStartOffset(void) { return zxnextTraceGetStartOffsetImpl(); }
+uint32_t zxnextTraceGetHeaderSize(void) { return zxnextTraceGetHeaderSizeImpl(); }
+uint32_t zxnextTraceGetRecordSize(void) { return zxnextTraceGetRecordSizeImpl(); }
+uint32_t zxnextTraceGetCapacity(void) { return zxnextTraceGetCapacityImpl(); }
+uint32_t zxnextTraceGetCount(void) { return zxnextTraceGetCountImpl(); }
+uint32_t zxnextTraceGetOverflow(void) { return zxnextTraceGetOverflowImpl(); }
+void zxnextTraceClear(uint32_t frameIndex) { zxnextTraceClearImpl(frameIndex); }
+void zxnextTraceSetEnabled(uint32_t enabled) { zxnextTraceSetEnabledImpl(enabled); }
+void zxnextTraceFinishFrame(void) { zxnextTraceFinishFrameImpl(); }
 
 void zxnextSetNextRegisterIndex(uint32_t reg) { zxnextNextRegSetIndex(reg); }
 uint32_t zxnextGetNextRegisterIndex(void) { return zxnextNextRegGetIndex(); }
@@ -373,6 +396,9 @@ uint32_t zxnextGetUlaFlashFlag(void) { return zxnextUlaGetFlashFlag(); }
 void zxnextAdvanceUlaFrameState(void) { zxnextUlaOnFrameCompleted(); }
 uint32_t zxnextGetUlaScanlineForTact(uint32_t tact) { return zxnextUlaGetScanlineForTact(tact); }
 uint32_t zxnextGetUlaColumnForTact(uint32_t tact) { return zxnextUlaGetColumnForTact(tact); }
+uint32_t zxnextGetUlaScrollX(void) { return zxnextUlaGetScrollX(); }
+uint32_t zxnextGetUlaScrollY(void) { return zxnextUlaGetScrollY(); }
+uint32_t zxnextGetUlaClip(uint32_t index) { return zxnextUlaGetClip(index); }
 
 uint32_t zxnextGetPaletteNextReg(uint32_t reg) { return zxnextPaletteGetNextReg(reg); }
 uint32_t zxnextGetPaletteEntry(uint32_t palette, uint32_t index) { return zxnextPaletteGetEntry(palette, index); }

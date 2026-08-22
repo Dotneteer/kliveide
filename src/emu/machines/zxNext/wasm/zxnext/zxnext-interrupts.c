@@ -139,6 +139,10 @@ static uint32_t zxnextInterruptsGetSignalInt(void) {
   return intSignalActive;
 }
 
+static uint32_t zxnextInterruptsGetHardwareIm2Mode(void) {
+  return hwIm2Mode;
+}
+
 static uint32_t zxnextInterruptsGetLastVector(void) {
   return lastInterruptVector;
 }

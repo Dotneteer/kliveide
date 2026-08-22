@@ -48,4 +48,28 @@ describe("ZX Spectrum Next WASM keyboard and ULA ports", () => {
     });
     expect(wasm.floatingBusDevice.readFloatingBus()).toBe(oracle.doReadPort(0xffff));
   });
+
+  it("matches TypeScript analog EAR discharge timing on port $FE bit 6", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+
+    oracle.setTacts(100);
+    wasm.setTacts(100);
+    oracle.doWritePort(0x00fe, 0x10);
+    wasm.doWritePort(0x00fe, 0x10);
+
+    oracle.setTacts(110);
+    wasm.setTacts(110);
+    oracle.doWritePort(0x00fe, 0x00);
+    wasm.doWritePort(0x00fe, 0x00);
+
+    oracle.setTacts(149);
+    wasm.setTacts(149);
+    expect(wasm.doReadPort(0x00fe)).toBe(oracle.doReadPort(0x00fe));
+    expect(wasm.doReadPort(0x00fe) & 0x40).toBe(0x40);
+
+    oracle.setTacts(150);
+    wasm.setTacts(150);
+    expect(wasm.doReadPort(0x00fe)).toBe(oracle.doReadPort(0x00fe));
+    expect(wasm.doReadPort(0x00fe) & 0x40).toBe(0x00);
+  });
 });

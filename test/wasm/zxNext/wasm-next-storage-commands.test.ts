@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import type { Channel, RequestMessage } from "@messaging/messages-core";
+import { MessengerBase } from "@messaging/MessengerBase";
 
 import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
 
@@ -61,6 +63,23 @@ describe("ZX Spectrum Next WASM storage command handoff", () => {
     wasm.setFrameCommand(null);
     expect(readBytes(oracle, wasm, 3)).toEqual([0x05, 0xff, 0xfe]);
   });
+
+  it("processes WASM read frame commands with lazy card info and sector data", async () => {
+    const { wasm } = await createZxNextOracleHarness();
+    wasm.hardReset();
+
+    wasm.doWritePort(0xe7, 0x02);
+    for (const byte of CMD17_SECTOR_5) wasm.doWritePort(0xeb, byte);
+    expect(wasm.getFrameCommand()).toEqual({ command: "sd-read", sector: 5 });
+
+    const messenger = new StorageMessenger();
+    await wasm.processFrameCommand(messenger);
+
+    expect(messenger.calls).toEqual(["getSdCardInfo", "readSdCardSector"]);
+    expect(wasm.wasmV2Runtime!.exports.zxnextGetSdHostCommand()).toBe(0);
+    expect(wasm.wasmV2Runtime!.exports.zxnextGetSdResponseReady(0)).toBe(1);
+    expect(readWasmBytes(wasm, 8)).toEqual([0x00, 0xff, 0xfe, 0x05, 0x06, 0x07, 0x08, 0x09]);
+  });
 });
 
 function selectCard0(oracle: any, wasm: any): void {
@@ -84,4 +103,38 @@ function readBytes(oracle: any, wasm: any, length: number): number[] {
     result.push(wasmByte);
   }
   return result;
+}
+
+function readWasmBytes(wasm: any, length: number): number[] {
+  return Array.from({ length }, () => wasm.doReadPort(0xeb));
+}
+
+class StorageMessenger extends MessengerBase {
+  readonly calls: string[] = [];
+
+  protected send(message: RequestMessage): void {
+    const method = String(message.method);
+    this.calls.push(method);
+    let result: unknown;
+    if (method === "getSdCardInfo") {
+      result = { totalSectors: 4096 };
+    } else if (method === "readSdCardSector") {
+      result = Uint8Array.from({ length: 512 }, (_, index) => (index + 5) & 0xff);
+    } else if (method === "writeSdCardSector") {
+      result = { success: true, persistenceConfirmed: true };
+    }
+    this.processResponse({
+      type: "ApiMethodResponse",
+      correlationId: message.correlationId,
+      result
+    });
+  }
+
+  get requestChannel(): Channel {
+    return "EmuToMain";
+  }
+
+  get responseChannel(): Channel {
+    return "EmuToMainResponse";
+  }
 }

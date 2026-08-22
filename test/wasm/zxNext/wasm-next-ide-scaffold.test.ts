@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
+import { FILE_PROVIDER } from "@emu/machines/machine-props";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import {
   ZXNEXT_WASM_V2_DEFAULT_BLOCKERS,
@@ -14,21 +15,30 @@ import {
   ZXNEXT_WASM_V2_SCREEN_HEIGHT,
   ZXNEXT_WASM_V2_SCREEN_WIDTH
 } from "@emu/machines/zxNext/wasm/ZxNextWasmV2Loader";
-import { buildZxNextWasm, productionOutput } from "../../../scripts/build-zxnext-wasm.cjs";
+import {
+  productionOutput,
+  waitForZxNextWasmBuildLock
+} from "../../../scripts/build-zxnext-wasm.cjs";
+import { buildZxNextWasmArtifact } from "./wasm-next-test-helpers";
+import { FileProvider } from "../../zxnext/FileProvider";
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum Next WASM v2 IDE integration", () => {
   it("exposes WASM-backed IDE surfaces", async () => {
-    buildZxNextWasm();
+    await buildZxNextWasmArtifact();
     const machine = new ZxNextWasmV2Machine(
       undefined,
       undefined,
       undefined,
       {
         artifactName: "test-zx-spectrum-next.wasm",
-        readArtifact: async () => readFileSync(productionOutput)
+        readArtifact: async () => {
+          waitForZxNextWasmBuildLock();
+          return readFileSync(productionOutput);
+        }
       }
     );
+    machine.setMachineProperty(FILE_PROVIDER, new FileProvider());
 
     await machine.setup();
 
@@ -36,7 +46,7 @@ describe("ZX Spectrum Next WASM v2 IDE integration", () => {
     expect(diagnostics).toMatchObject({
       backend: "wasm",
       engine: "v2",
-      defaultReady: true,
+      defaultReady: false,
       memoryBytes: ZXNEXT_WASM_V2_MEMORY_SIZE,
       flatMemoryBytes: ZXNEXT_WASM_V2_FLAT_MEMORY_SIZE,
       screenWidth: ZXNEXT_WASM_V2_SCREEN_WIDTH,
@@ -48,11 +58,11 @@ describe("ZX Spectrum Next WASM v2 IDE integration", () => {
       "registers",
       "memory",
       "disassembly",
-      "ULA",
-      "screen",
       "debug",
       "frame"
     ]));
+    expect(diagnostics.migratedSurfaces).not.toContain("ULA");
+    expect(diagnostics.migratedSurfaces).not.toContain("screen");
 
     const oracle = new ZxNextMachine();
     expect(machine.screenWidthInPixels).toBe(oracle.screenWidthInPixels);
@@ -104,7 +114,7 @@ describe("ZX Spectrum Next WASM v2 IDE integration", () => {
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
     expect(machine.executeWasmV2DebugStep()).toBe(FrameTerminationMode.DebugEvent);
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
-      defaultReady: true,
+      defaultReady: false,
       normalFrames: 1,
       debugSteps: 1
     });

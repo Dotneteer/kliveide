@@ -6,6 +6,8 @@
 static void zxnextLayer2Reset(void);
 static void zxnextLayer2SetNextReg(uint32_t reg, uint32_t value);
 static uint32_t zxnextLayer2GetNextReg(uint32_t reg);
+static void zxnextLayer2ResetClipIndex(void);
+static uint32_t zxnextLayer2GetClipIndex(void);
 static void zxnextLayer2SetEnabled(uint32_t enabled);
 static uint32_t zxnextLayer2GetEnabled(void);
 static uint32_t zxnextLayer2GetResolution(void);

@@ -5,6 +5,9 @@
 
 static void zxnextSpritesReset(void);
 static void zxnextSpritesSetNextReg(uint32_t reg, uint32_t value);
+static uint32_t zxnextSpritesGetNextReg(uint32_t reg);
+static void zxnextSpritesResetClipIndex(void);
+static uint32_t zxnextSpritesGetClipIndex(void);
 static void zxnextSpritesWritePort303b(uint32_t value);
 static void zxnextSpritesWritePort57(uint32_t value);
 static void zxnextSpritesWritePort5b(uint32_t value);

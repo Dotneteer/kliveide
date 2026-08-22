@@ -1,4 +1,4 @@
-const { existsSync, mkdirSync, readdirSync, unlinkSync } = require("node:fs");
+const { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, statSync, unlinkSync, writeSync } = require("node:fs");
 const { dirname, relative, resolve } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
@@ -7,6 +7,7 @@ const source = resolve(root, "src/emu/machines/zxNext/wasm/zxnext/zxnext.c");
 const productionOutput = resolve(root, "src/emu/machines/zxNext/wasm/dist/zx-spectrum-next.wasm");
 const output = productionOutput;
 const wasmDistDirectory = resolve(root, "src/emu/machines/zxNext/wasm/dist");
+const buildLockPath = resolve(wasmDistDirectory, ".zx-spectrum-next.wasm.lock");
 const packagedResourceDirectory = "wasm/zxNext";
 const packagedArtifactRelative = `${packagedResourceDirectory}/zx-spectrum-next.wasm`;
 
@@ -104,10 +105,21 @@ const productionExports = [
   "zxnextGetSharedZ80NMode",
   "zxnextGetLastMemoryAddress",
   "zxnextGetLastMemoryValue",
+  "zxnextGetLastMemoryAccessed",
   "zxnextGetLastMemoryIsWrite",
   "zxnextGetLastPortAddress",
   "zxnextGetLastPortValue",
+  "zxnextGetLastPortAccessed",
   "zxnextGetLastPortIsWrite",
+  "zxnextTraceGetStartOffset",
+  "zxnextTraceGetHeaderSize",
+  "zxnextTraceGetRecordSize",
+  "zxnextTraceGetCapacity",
+  "zxnextTraceGetCount",
+  "zxnextTraceGetOverflow",
+  "zxnextTraceClear",
+  "zxnextTraceSetEnabled",
+  "zxnextTraceFinishFrame",
   "zxnextSetNextRegisterIndex",
   "zxnextGetNextRegisterIndex",
   "zxnextSetNextRegisterValue",
@@ -132,6 +144,9 @@ const productionExports = [
   "zxnextAdvanceUlaFrameState",
   "zxnextGetUlaScanlineForTact",
   "zxnextGetUlaColumnForTact",
+  "zxnextGetUlaScrollX",
+  "zxnextGetUlaScrollY",
+  "zxnextGetUlaClip",
   "zxnextGetPaletteNextReg",
   "zxnextGetPaletteEntry",
   "zxnextGetPaletteCurrentEntry",
@@ -340,7 +355,7 @@ const buildModes = {
     output: productionOutput,
     exports: productionExports,
     sources: [source],
-    initialMemory: 8 * 1024 * 1024
+    initialMemory: 32 * 1024 * 1024
   }
 };
 
@@ -371,44 +386,125 @@ function buildZxNextWasm({
   const optimizationProfile = normalizeOptimization(optimization);
   const selected = buildModes[buildMode];
   const selectedOutput = outputPath ?? selected.output;
-  if (existsSync(wasmDistDirectory) && dirname(selectedOutput) === wasmDistDirectory) {
-    for (const entry of readdirSync(wasmDistDirectory)) {
-      const candidate = resolve(wasmDistDirectory, entry);
-      if (entry.endsWith(".wasm") && candidate !== selectedOutput) {
-        unlinkSync(candidate);
+  const releaseBuildLock = selectedOutput === productionOutput
+    ? acquireZxNextWasmBuildLock()
+    : () => {};
+  try {
+    if (existsSync(wasmDistDirectory) && dirname(selectedOutput) === wasmDistDirectory) {
+      for (const entry of readdirSync(wasmDistDirectory)) {
+        const candidate = resolve(wasmDistDirectory, entry);
+        if (entry.endsWith(".wasm") && candidate !== selectedOutput) {
+          unlinkSync(candidate);
+        }
       }
     }
+    mkdirSync(dirname(selectedOutput), { recursive: true });
+    const args = [
+      "--target=wasm32",
+      "-std=c11",
+      ...optimizationProfiles[optimizationProfile],
+      "-ffreestanding",
+      "-fno-builtin",
+      "-nostdlib",
+      "-Wl,--no-entry",
+      "-Wl,--export-memory",
+      `-Wl,--initial-memory=${selected.initialMemory}`,
+      `-Wl,--max-memory=${selected.initialMemory}`,
+      ...selected.exports.filter(name => name !== "memory").map(name => `-Wl,--export=${name}`),
+      ...selected.sources,
+      "-o",
+      selectedOutput
+    ];
+    const result = run(compiler, args, { cwd: root, stdio: "inherit" });
+    if (result.error) throw result.error;
+    if (result.status !== 0) throw new Error(`ZX Spectrum Next WASM compilation failed (${result.status}).`);
+    return {
+      compiler,
+      args,
+      mode: buildMode,
+      optimization: optimizationProfile,
+      exports: selected.exports,
+      source: selected.sources[0],
+      sources: selected.sources,
+      output: selectedOutput
+    };
+  } finally {
+    releaseBuildLock();
   }
-  mkdirSync(dirname(selectedOutput), { recursive: true });
-  const args = [
-    "--target=wasm32",
-    "-std=c11",
-    ...optimizationProfiles[optimizationProfile],
-    "-ffreestanding",
-    "-fno-builtin",
-    "-nostdlib",
-    "-Wl,--no-entry",
-    "-Wl,--export-memory",
-    `-Wl,--initial-memory=${selected.initialMemory}`,
-    `-Wl,--max-memory=${selected.initialMemory}`,
-    ...selected.exports.filter(name => name !== "memory").map(name => `-Wl,--export=${name}`),
-    ...selected.sources,
-    "-o",
-    selectedOutput
-  ];
-  const result = run(compiler, args, { cwd: root, stdio: "inherit" });
-  if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(`ZX Spectrum Next WASM compilation failed (${result.status}).`);
-  return {
-    compiler,
-    args,
-    mode: buildMode,
-    optimization: optimizationProfile,
-    exports: selected.exports,
-    source: selected.sources[0],
-    sources: selected.sources,
-    output: selectedOutput
-  };
+}
+
+function acquireZxNextWasmBuildLock(timeoutMs = 120000) {
+  mkdirSync(wasmDistDirectory, { recursive: true });
+  const started = Date.now();
+  while (true) {
+    try {
+      const fd = openSync(buildLockPath, "wx");
+      writeSync(fd, `${process.pid}\n${Date.now()}\n`);
+      return () => {
+        closeSync(fd);
+        if (existsSync(buildLockPath)) unlinkSync(buildLockPath);
+      };
+    } catch (error) {
+      if (error?.code !== "EEXIST") throw error;
+      clearStaleZxNextWasmBuildLock(started, timeoutMs);
+      sleepSync(50);
+    }
+  }
+}
+
+function waitForZxNextWasmBuildLock(timeoutMs = 120000) {
+  const started = Date.now();
+  while (existsSync(buildLockPath)) {
+    clearStaleZxNextWasmBuildLock(started, timeoutMs);
+    sleepSync(50);
+  }
+}
+
+function clearStaleZxNextWasmBuildLock(started, timeoutMs) {
+  if (Date.now() - started > timeoutMs) {
+    throw new Error(`Timed out waiting for ZX Spectrum Next WASM build lock: ${buildLockPath}`);
+  }
+  try {
+    const stat = statSync(buildLockPath);
+    const ageMs = Date.now() - stat.mtimeMs;
+    const owner = readZxNextWasmBuildLockOwner();
+    if (owner?.pid != null && !isProcessAlive(owner.pid)) {
+      unlinkSync(buildLockPath);
+      return;
+    }
+    if (owner == null && ageMs > 1000) {
+      unlinkSync(buildLockPath);
+      return;
+    }
+    if (ageMs > timeoutMs) unlinkSync(buildLockPath);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+}
+
+function readZxNextWasmBuildLockOwner() {
+  try {
+    const [pidLine] = readFileSync(buildLockPath, "utf8").split(/\r?\n/);
+    const pid = Number.parseInt(pidLine, 10);
+    if (!Number.isInteger(pid) || pid <= 0) return undefined;
+    return { pid };
+  } catch (error) {
+    if (error?.code === "ENOENT") return undefined;
+    throw error;
+  }
+}
+
+function isProcessAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error?.code === "EPERM";
+  }
+}
+
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 function buildAllZxNextWasm(options = {}) {
@@ -421,9 +517,11 @@ module.exports = {
   buildZxNextWasm,
   buildAllZxNextWasm,
   buildModes,
+  buildLockPath,
   optimizationProfiles,
   output,
   productionOutput,
+  waitForZxNextWasmBuildLock,
   packagedArtifactRelative,
   packagedResourceDirectory,
   productionExports,

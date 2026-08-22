@@ -84,8 +84,12 @@ describe("ZX Spectrum Next WASM shared-source contract", () => {
 
     expect(zxnextBytes).toBeGreaterThan(sp48Bytes);
     expect(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS).not.toContain("binary-size-parity-audit");
-    expect(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS).not.toContain("timing-depth-parity");
-    expect(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS).toEqual([]);
+    expect(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS).toEqual([
+      "ula-screen-tact-pipeline-parity",
+      "ula-timex-mode-rendering-parity",
+      "ula-next-plus-rendering-parity",
+      "screen-layer-composition-parity"
+    ]);
   });
 
   it("keeps classic Spectrum WASM models on common device sources", () => {

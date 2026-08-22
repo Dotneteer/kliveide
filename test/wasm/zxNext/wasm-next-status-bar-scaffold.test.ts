@@ -6,9 +6,15 @@ import createAppStore from "@state/store";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { FILE_PROVIDER } from "@emu/machines/machine-props";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
-import { buildZxNextWasm, productionOutput } from "../../../scripts/build-zxnext-wasm.cjs";
+import {
+  productionOutput,
+  waitForZxNextWasmBuildLock
+} from "../../../scripts/build-zxnext-wasm.cjs";
+import { buildZxNextWasmArtifact } from "./wasm-next-test-helpers";
+import { FileProvider } from "../../zxnext/FileProvider";
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum Next WASM v2 status bar integration", () => {
@@ -51,16 +57,20 @@ describe("ZX Spectrum Next WASM v2 status bar integration", () => {
 });
 
 async function createTestZxNextWasmMachine(): Promise<ZxNextWasmV2Machine> {
-  buildZxNextWasm();
+  await buildZxNextWasmArtifact();
   const machine = new ZxNextWasmV2Machine(
     undefined,
     undefined,
     undefined,
     {
       artifactName: "test-zxnext-status.wasm",
-      readArtifact: async () => readFileSync(productionOutput)
+      readArtifact: async () => {
+        waitForZxNextWasmBuildLock();
+        return readFileSync(productionOutput);
+      }
     }
   );
+  machine.setMachineProperty(FILE_PROVIDER, new FileProvider());
   await machine.setup();
   return machine;
 }

@@ -21,6 +21,7 @@ static inline uint8_t zxnextPortsGroupEnabled(uint32_t regIndex, uint32_t bit) {
 static void zxnextPortsReset(void) {
   lastPortAddress = 0;
   lastPortValue = 0;
+  lastPortAccessed = 0;
   lastPortIsWrite = 0;
   nextRegIndex = 0;
   zxnextUlaReset();
@@ -29,6 +30,7 @@ static void zxnextPortsReset(void) {
 static uint32_t zxnextPortsRead(uint32_t address) {
   uint16_t normalized = (uint16_t)address;
   lastPortAddress = normalized;
+  lastPortAccessed = 1;
   lastPortIsWrite = 0;
 
   if ((normalized & 0xffffu) == 0x243bu) {
@@ -59,7 +61,7 @@ static uint32_t zxnextPortsRead(uint32_t address) {
              (normalized & 0x00ffu) == 0x0037u) {
     lastPortValue = zxnextInputReadPort(normalized);
   } else if ((normalized & 0x00ffu) == 0x00e3u) {
-    lastPortValue = zxnextPortsGroupEnabled(1, 4) ? zxnextDivMmcGetPortE3() : 0xffu;
+    lastPortValue = zxnextPortsGroupEnabled(1, 0) ? zxnextDivMmcGetPortE3() : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ebu) {
     lastPortValue = zxnextPortsGroupEnabled(1, 3) ? zxnextSdReadMmcData() : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ffu) {
@@ -77,6 +79,7 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   uint8_t byteValue = (uint8_t)value;
   lastPortAddress = normalized;
   lastPortValue = byteValue;
+  lastPortAccessed = 1;
   lastPortIsWrite = 1;
   zxnextDacWritePort(normalized, byteValue);
 
@@ -108,7 +111,7 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   } else if ((normalized & 0xf003u) == 0x1001u) {
     if (zxnextPortsGroupEnabled(0, 3)) zxnextMemorySetPort1ffd(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00e3u) {
-    if (zxnextPortsGroupEnabled(1, 4)) zxnextDivMmcSetPortE3(byteValue);
+    if (zxnextPortsGroupEnabled(1, 0)) zxnextDivMmcSetPortE3(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00e7u) {
     if (zxnextPortsGroupEnabled(1, 3)) zxnextSdSpiCsWrite(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00ebu) {

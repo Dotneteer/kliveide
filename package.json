@@ -37,6 +37,7 @@
     "check:wasm-cpu-contract": "node scripts/check-wasm-cpu-contract.cjs",
     "benchmark:spectrum-wasm": "node scripts/benchmark-spectrum-wasm.cjs",
     "benchmark:zxnext-wasm": "node scripts/benchmark-zxnext-wasm.cjs",
+    "diff:zxnext-machine": "node scripts/run-zxnext-frame-diff.cjs",
     "test:zxnext-wasm-acceptance": "npm test -- --project jsdom test/zxnext/ZxNextMachineFactory.test.ts test/wasm/zxNext/wasm-next-rollout.test.ts test/wasm/zxNext/wasm-next-public-adapter.test.ts test/wasm/zxNext/wasm-next-debug-step.test.ts test/wasm/zxNext/wasm-next-start-menu.test.ts test/wasm/zxNext/wasm-next-frame-runner.test.ts test/wasm/zxNext/wasm-next-performance-boundary.test.ts",
     "test:zxnext-wasm-matrix": "npm test -- --project jsdom test/wasm/zxNext",
     "lint:renderer": "eslint src/renderer --ext .ts,.tsx",
