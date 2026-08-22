@@ -1,6 +1,8 @@
 #include "zxnext-audio-mixer.h"
 
 #define ZXNEXT_AUDIO_SAMPLE_CAPACITY 2048u
+#define ZXNEXT_AUDIO_SAMPLE_RATE 48000u
+#define ZXNEXT_AUDIO_BASE_CLOCK 28000000u
 
 static int32_t zxnextMixerEarLevel;
 static int32_t zxnextMixerMicLevel;
@@ -8,6 +10,7 @@ static uint32_t zxnextMixerPsgLeft;
 static uint32_t zxnextMixerPsgRight;
 static uint32_t zxnextMixerVolumeScaleMilli;
 static uint32_t zxnextMixerSampleCount;
+static uint64_t zxnextMixerNextSampleTactScaled;
 static int32_t zxnextMixerSamplesLeft[ZXNEXT_AUDIO_SAMPLE_CAPACITY];
 static int32_t zxnextMixerSamplesRight[ZXNEXT_AUDIO_SAMPLE_CAPACITY];
 
@@ -23,11 +26,16 @@ static void zxnextAudioMixerReset(void) {
   zxnextMixerPsgLeft = 0u;
   zxnextMixerPsgRight = 0u;
   zxnextMixerVolumeScaleMilli = 1000u;
-  zxnextMixerSampleCount = 0u;
+  zxnextAudioMixerBeginFrame();
   for (uint32_t i = 0u; i < ZXNEXT_AUDIO_SAMPLE_CAPACITY; i++) {
     zxnextMixerSamplesLeft[i] = 0;
     zxnextMixerSamplesRight[i] = 0;
   }
+}
+
+static void zxnextAudioMixerBeginFrame(void) {
+  zxnextMixerSampleCount = 0u;
+  zxnextMixerNextSampleTactScaled = 0u;
 }
 
 static void zxnextAudioMixerSetEarLevelMilli(int32_t level) {
@@ -80,6 +88,33 @@ static uint32_t zxnextAudioMixerAppendCurrentSample(void) {
   zxnextMixerSamplesRight[zxnextMixerSampleCount] = zxnextAudioMixerGetMixedRightWord();
   zxnextMixerSampleCount++;
   return 1u;
+}
+
+static void zxnextAudioMixerRefreshCurrentSources(void) {
+  int32_t ear = (int32_t)zxnextBeeperGetSampleLeftMilli();
+  int32_t mic = (int32_t)zxnextBeeperGetSampleRightMilli();
+  uint32_t psgLeft = 0u;
+  uint32_t psgRight = 0u;
+
+  for (uint32_t chip = 0u; chip < 3u; chip++) {
+    if (zxnextPsgGetTurbosoundEnabled() || chip == zxnextPsgGetSelectedChip()) {
+      psgLeft += zxnextPsgGetStereoLeft(chip);
+      psgRight += zxnextPsgGetStereoRight(chip);
+    }
+  }
+
+  zxnextAudioMixerSetEarLevelMilli(ear);
+  zxnextAudioMixerSetMicLevelMilli(mic);
+  zxnextAudioMixerSetPsgOutput(psgLeft, psgRight);
+}
+
+static void zxnextAudioMixerSetNextSample(uint32_t frameTacts28) {
+  uint64_t currentScaled = (uint64_t)frameTacts28 * ZXNEXT_AUDIO_SAMPLE_RATE;
+  while (currentScaled > zxnextMixerNextSampleTactScaled) {
+    zxnextAudioMixerRefreshCurrentSources();
+    if (!zxnextAudioMixerAppendCurrentSample()) return;
+    zxnextMixerNextSampleTactScaled += (uint64_t)ZXNEXT_AUDIO_BASE_CLOCK;
+  }
 }
 
 static uint32_t zxnextAudioMixerGetSampleCount(void) { return zxnextMixerSampleCount; }

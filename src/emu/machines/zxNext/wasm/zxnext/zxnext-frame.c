@@ -1,5 +1,6 @@
 #include "zxnext-frame.h"
 #include "zxnext-cpu.h"
+#include "zxnext-audio-mixer.h"
 
 static void zxnextFrameReset(void) {
   frames = 0;
@@ -13,6 +14,7 @@ static void zxnextFrameReset(void) {
 
 static uint32_t zxnextFrameExecute(void) {
   frameCompleted = 0;
+  zxnextAudioMixerBeginFrame();
   while (frameCompleted == 0u) {
     zxnextCpuExecuteInstruction();
   }

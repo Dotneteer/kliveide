@@ -17,21 +17,22 @@ import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 const MIGRATED_SURFACES = ["registers", "memory", "disassembly", "ULA", "screen", "debug"];
 
 describe("ZX Spectrum Next WASM public adapter", () => {
-  it("keeps the factory default on TypeScript while WASM remains explicit", () => {
-    expect(DEFAULT_ZXNEXT_IMPLEMENTATION).toBe("typescript");
-    expect(createZxNextMachine()).toBeInstanceOf(ZxNextMachine);
-    expect(createZxNextMachine()).not.toBeInstanceOf(ZxNextWasmV2Machine);
-    expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "wasm" })).toBeInstanceOf(
+  it("uses WASM as the factory default while TypeScript remains explicit", () => {
+    expect(DEFAULT_ZXNEXT_IMPLEMENTATION).toBe("wasm");
+    expect(createZxNextMachine()).toBeInstanceOf(ZxNextWasmV2Machine);
+    expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "wasm" })).toBeInstanceOf(ZxNextWasmV2Machine);
+    expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "typescript" })).toBeInstanceOf(ZxNextMachine);
+    expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "typescript" })).not.toBeInstanceOf(
       ZxNextWasmV2Machine
     );
   });
 
-  it("reports migrated public adapter surfaces while preserving rollout blockers", async () => {
+  it("reports migrated public adapter surfaces with the timing-depth audit closed", async () => {
     const machine = await createTestZxNextWasmMachine();
     const diagnostics = machine.getWasmV2Diagnostics();
 
-    expect(diagnostics.defaultReady).toBe(false);
-    expect(diagnostics.defaultBlockers).toEqual(["timing-depth-parity"]);
+    expect(diagnostics.defaultReady).toBe(true);
+    expect(diagnostics.defaultBlockers).toEqual([]);
     for (const surface of MIGRATED_SURFACES) {
       expect(diagnostics.migratedSurfaces).toContain(surface);
     }

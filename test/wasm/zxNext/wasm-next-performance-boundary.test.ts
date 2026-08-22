@@ -23,6 +23,10 @@ import {
 } from "../../../scripts/benchmark-zxnext-wasm.cjs";
 
 describe("ZX Spectrum Next WASM performance and boundary audit", () => {
+  const BENCHMARK_FRAMES = 5;
+  const BENCHMARK_RUNS = 3;
+  const BENCHMARK_WARMUP = 2;
+
   it("keeps exported memory views inside the fixed production layout with stable backing buffers", async () => {
     const machine = await createTestZxNextWasmMachine();
     const runtime = machine.wasmV2Runtime!;
@@ -80,7 +84,11 @@ describe("ZX Spectrum Next WASM performance and boundary audit", () => {
   });
 
   it("emits benchmark metrics with frame stop reason distribution", async () => {
-    const report = await benchmarkZxNextWasm({ frames: 2, runs: 1, warmup: 1 });
+    const report = await benchmarkZxNextWasm({
+      frames: BENCHMARK_FRAMES,
+      runs: BENCHMARK_RUNS,
+      warmup: BENCHMARK_WARMUP
+    });
 
     expect(report.artifactBytes).toBeGreaterThan(0);
     expect(report.buildProfile).toMatchObject({
@@ -94,8 +102,8 @@ describe("ZX Spectrum Next WASM performance and boundary audit", () => {
     });
     expect(report.scenarios.map((scenario: any) => scenario.id)).toEqual(DEFAULT_SCENARIOS);
     for (const scenario of report.scenarios) {
-      expect(scenario.typescript.metrics.operations).toBe(2);
-      expect(scenario.wasm.metrics.operations).toBe(2);
+      expect(scenario.typescript.metrics.operations).toBe(BENCHMARK_FRAMES);
+      expect(scenario.wasm.metrics.operations).toBe(BENCHMARK_FRAMES);
       expect(scenario.typescript.metrics.millisecondsPerOperation.median).toBeGreaterThanOrEqual(0);
       expect(scenario.wasm.metrics.millisecondsPerOperation.median).toBeGreaterThanOrEqual(0);
       expect(scenario.speedRatio).toBeGreaterThanOrEqual(scenario.minWasmSpeedRatio);
@@ -103,9 +111,9 @@ describe("ZX Spectrum Next WASM performance and boundary audit", () => {
       assertNoSafetyGuardStops(scenario.wasm.stopReasons);
     }
     expect(report.scenarios.find((scenario: any) => scenario.id === "nextzxos-idle").wasm.stopReasons)
-      .toEqual({ wasmFrameComplete: 2 });
+      .toEqual({ wasmFrameComplete: BENCHMARK_FRAMES * BENCHMARK_RUNS });
     expect(report.scenarios.find((scenario: any) => scenario.id === "debug-step").wasm.stopReasons)
-      .toEqual({ debugStep: 2 });
+      .toEqual({ debugStep: BENCHMARK_FRAMES * BENCHMARK_RUNS });
   });
 
   it("summarizes repeated timing runs deterministically", () => {

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { AudioMixerDevice } from "@emu/machines/zxNext/AudioMixerDevice";
 import { DacDevice } from "@emu/machines/zxNext/DacDevice";
-import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine, createZxNextOracleHarness } from "./wasm-next-test-helpers";
 
 describe("ZX Next WASM audio mixer", () => {
   it("matches TypeScript mixer routing and exports the sample buffer", async () => {
@@ -38,4 +38,27 @@ describe("ZX Next WASM audio mixer", () => {
     expect(exports.zxnextGetAudioMixerSampleLeft(0)).toBe(exports.zxnextGetAudioMixerMixedLeftWord());
     expect(exports.zxnextGetAudioMixerSampleRight(0)).toBe(exports.zxnextGetAudioMixerMixedRightWord());
   });
+
+  it("schedules mixer samples from the 28 MHz frame clock during WASM frame execution", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    oracle.hardReset();
+    wasm.hardReset();
+
+    wasm.executeMachineFrame();
+
+    const expectedSamples = expectedSamplesForFrame(oracle.tactsInFrame, 48_000);
+    const samples = wasm.getAudioSamples();
+
+    expect(samples.length).toBe(expectedSamples);
+    expect(wasm.wasmV2Runtime!.exports.zxnextGetAudioMixerSampleCount()).toBe(expectedSamples);
+    expect(samples[0]).toEqual({
+      left: wasm.wasmV2Runtime!.exports.zxnextGetAudioMixerSampleLeft(0) / 32768.0,
+      right: wasm.wasmV2Runtime!.exports.zxnextGetAudioMixerSampleRight(0) / 32768.0
+    });
+  });
 });
+
+function expectedSamplesForFrame(tactsInFrame28: number, sampleRate: number): number {
+  const scaledFrame = tactsInFrame28 * sampleRate;
+  return Math.floor((scaledFrame - 1) / 28_000_000) + 1;
+}

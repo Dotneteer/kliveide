@@ -12,6 +12,7 @@ static void zxnextPsgWriteRegisterValue(uint32_t value);
 static uint32_t zxnextPsgReadRegisterValue(void);
 static void zxnextPsgGenerateOutput(uint32_t chip);
 static uint32_t zxnextPsgGetSelectedChip(void);
+static uint32_t zxnextPsgGetTurbosoundEnabled(void);
 static uint32_t zxnextPsgGetSelectedRegister(void);
 static uint32_t zxnextPsgGetChipPanning(uint32_t chip);
 static uint32_t zxnextPsgGetChipMonoMode(uint32_t chip);

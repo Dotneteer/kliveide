@@ -43,16 +43,28 @@ kind of inversion is unexplained.
 
 Follow-up on 2026-08-20: adding shared Z80N tact and memory/port delay hooks
 moved the Next artifact above the 48K artifact; the current Step 29 build is
-574,085 bytes, with a code section around 557 KB.
+626,534 bytes, with a code section around 609 KB.
 That resolved the size inversion and confirmed the missing depth was timing
 integration, not the optimization profile. The Next CPU speed scale is latched
 at instruction start; `NEXTREG $07` must not change timing for the instruction
 that writes it.
 
+Step 29 completion on 2026-08-22: the timing-depth blocker is closed. The Next
+WASM diagnostics now report `defaultReady: true` and an empty
+`defaultBlockers` list.
+
+Rollout completion on 2026-08-22: the normal ZX Spectrum Next factory default
+is now WASM. TypeScript remains explicitly selectable as the compatibility
+fallback and parity oracle.
+
 CTC timing lesson: mirror the TypeScript CTC model as lazy 28 MHz frame-clock
 sync before CTC port access, not per-tact work in the CPU hot path. Port gating
 comes from NextReg `$85` bit 3; `$84` is DAC/AY port decoding and should not be
 used for CTC enable checks.
+
+Audio scheduling lesson: sample thresholds in the 28 MHz frame-clock domain
+overflow 32-bit arithmetic when multiplied by a 48 kHz sample rate. Use 64-bit
+scaled threshold math for `frameTacts28 * sampleRate` comparisons.
 
 ## Single-Source Device Intent
 

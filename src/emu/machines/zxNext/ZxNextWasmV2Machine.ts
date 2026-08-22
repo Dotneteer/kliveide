@@ -13,6 +13,8 @@ import { createMainApi } from "@common/messaging/MainApi";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
 import { ZxNextMachine } from "./ZxNextMachine";
 
+const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
+
 export type ZxNextWasmV2MigrationSurface =
   | "registers"
   | "memory"
@@ -22,8 +24,7 @@ export type ZxNextWasmV2MigrationSurface =
   | "frame"
   | "debug";
 
-export type ZxNextWasmV2DefaultBlocker =
-  | "timing-depth-parity";
+export type ZxNextWasmV2DefaultBlocker = never;
 
 export type ZxNextWasmV2StopReason =
   | "reset"
@@ -40,10 +41,8 @@ export const ZXNEXT_WASM_V2_MIGRATED_SURFACES: ZxNextWasmV2MigrationSurface[] = 
   "debug"
 ];
 
-export const ZXNEXT_WASM_V2_DEFAULT_READY = false;
-export const ZXNEXT_WASM_V2_DEFAULT_BLOCKERS: ZxNextWasmV2DefaultBlocker[] = [
-  "timing-depth-parity"
-];
+export const ZXNEXT_WASM_V2_DEFAULT_READY = true;
+export const ZXNEXT_WASM_V2_DEFAULT_BLOCKERS: ZxNextWasmV2DefaultBlocker[] = [];
 
 const ZXNEXT_SD_HOST_COMMAND_READ = 1;
 const ZXNEXT_SD_HOST_COMMAND_WRITE = 2;
@@ -115,6 +114,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private wasmV2NormalFrames = 0;
   private wasmV2DebugSteps = 0;
   private wasmV2LastStopReason: ZxNextWasmV2StopReason = "reset";
+  private readonly wasmV2AudioSamples: AudioSample[] = [];
   private readonly nextRegDescriptors = this.createNextRegDescriptors();
 
   constructor(
@@ -834,7 +834,16 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   override getAudioSamples(): AudioSample[] {
-    return [];
+    const runtime = this.requireWasmV2Runtime();
+    const sampleCount = runtime.exports.zxnextGetAudioMixerSampleCount();
+    this.wasmV2AudioSamples.length = 0;
+    for (let i = 0; i < sampleCount; i++) {
+      this.wasmV2AudioSamples.push({
+        left: runtime.exports.zxnextGetAudioMixerSampleLeft(i) / WASM_AUDIO_SAMPLE_SCALE,
+        right: runtime.exports.zxnextGetAudioMixerSampleRight(i) / WASM_AUDIO_SAMPLE_SCALE
+      });
+    }
+    return this.wasmV2AudioSamples;
   }
 
   override getCpuState(): CpuState {

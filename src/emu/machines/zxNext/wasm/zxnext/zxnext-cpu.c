@@ -48,6 +48,8 @@ static inline void zxnextCpuTactPlusN(uint32_t value) {
     zxnextCpuMarkFrameCompleted();
   }
   currentFrameTact = frameTacts28 >> 2;
+  zxnextBeeperSetTacts(tacts);
+  zxnextAudioMixerSetNextSample(frameTacts28);
 }
 
 static inline uint32_t zxnextCpuReadsBank7(uint32_t address) {

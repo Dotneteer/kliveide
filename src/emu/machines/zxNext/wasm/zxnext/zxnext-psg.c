@@ -281,6 +281,7 @@ static void zxnextPsgGenerateOutput(uint32_t chipId) {
 }
 
 static uint32_t zxnextPsgGetSelectedChip(void) { return zxnextPsgSelectedChip; }
+static uint32_t zxnextPsgGetTurbosoundEnabled(void) { return zxnextPsgTurbosoundEnabled; }
 static uint32_t zxnextPsgGetSelectedRegister(void) {
   return zxnextPsgChips[zxnextPsgSelectedChip].selectedReg;
 }

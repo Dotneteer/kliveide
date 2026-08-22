@@ -118,7 +118,7 @@ export function expectMigratedDiagnosticsHaveOracleCoverage(
   }
 }
 
-export function expectCurrentMigrationDiagnosticsAreStillGuarded(
+export function expectCurrentMigrationDiagnosticsMatchRolloutGuard(
   diagnostics: Pick<ZxNextWasmV2Diagnostics, "defaultReady" | "defaultBlockers" | "migratedSurfaces">
 ): void {
   const actualSurfaces = [...diagnostics.migratedSurfaces].sort();

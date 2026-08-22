@@ -36,7 +36,7 @@ describe("ZX Spectrum Next WASM v2 IDE integration", () => {
     expect(diagnostics).toMatchObject({
       backend: "wasm",
       engine: "v2",
-      defaultReady: false,
+      defaultReady: true,
       memoryBytes: ZXNEXT_WASM_V2_MEMORY_SIZE,
       flatMemoryBytes: ZXNEXT_WASM_V2_FLAT_MEMORY_SIZE,
       screenWidth: ZXNEXT_WASM_V2_SCREEN_WIDTH,
@@ -104,7 +104,7 @@ describe("ZX Spectrum Next WASM v2 IDE integration", () => {
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
     expect(machine.executeWasmV2DebugStep()).toBe(FrameTerminationMode.DebugEvent);
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
-      defaultReady: false,
+      defaultReady: true,
       normalFrames: 1,
       debugSteps: 1
     });

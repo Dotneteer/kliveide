@@ -479,6 +479,8 @@ void zxnextSetAudioMixerVolumeScaleMilli(uint32_t scale) { zxnextAudioMixerSetVo
 int32_t zxnextGetAudioMixerMixedLeftWord(void) { return zxnextAudioMixerGetMixedLeftWord(); }
 int32_t zxnextGetAudioMixerMixedRightWord(void) { return zxnextAudioMixerGetMixedRightWord(); }
 uint32_t zxnextAppendAudioMixerCurrentSample(void) { return zxnextAudioMixerAppendCurrentSample(); }
+void zxnextBeginAudioMixerFrame(void) { zxnextAudioMixerBeginFrame(); }
+void zxnextSetNextAudioMixerSample(uint32_t frameTacts28) { zxnextAudioMixerSetNextSample(frameTacts28); }
 uint32_t zxnextGetAudioMixerSampleCount(void) { return zxnextAudioMixerGetSampleCount(); }
 int32_t zxnextGetAudioMixerSampleLeft(uint32_t index) { return zxnextAudioMixerGetSampleLeft(index); }
 int32_t zxnextGetAudioMixerSampleRight(uint32_t index) { return zxnextAudioMixerGetSampleRight(index); }

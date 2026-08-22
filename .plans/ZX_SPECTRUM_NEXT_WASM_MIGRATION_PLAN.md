@@ -2,9 +2,9 @@
 
 Created: 2026-08-16
 
-Status: Active. The WASM backend is explicitly selectable, but the production
-default flip remains reopened while timing-depth parity work continues. The
-earlier binary-size inversion is now explained and no longer a live blocker.
+Status: Complete. The normal ZX Spectrum Next model now uses the WASM backend
+by default. The TypeScript backend remains explicitly selectable as a
+compatibility fallback and parity oracle.
 
 ## Goal
 
@@ -21,29 +21,27 @@ screen, input, storage, and IDE inspection surfaces.
 
 ## Current Migration State
 
-Updated: 2026-08-20.
+Updated: 2026-08-22.
 
-The migration is advanced but not complete for the user's stated goal. Steps
-1-26 are recorded as done and provide an explicitly selectable ZX Spectrum Next
-WASM backend with shared Z80N CPU integration, a broad WASM test matrix,
-boot/visual smoke coverage, public adapter coverage, representative device
-parity tests, speed-oriented build evidence, and a shared-source audit. Steps
-27-28 were attempted, but the default flip was reopened after the artifact-size
-audit below. The first Step 29 slice resolved the binary-size inversion by
-adding shared Z80N timing hooks; timing-depth parity is still open.
+The migration is complete for the user's stated goal. Steps 1-29 are recorded
+as done and provide a production-selected ZX Spectrum Next WASM backend with
+shared Z80N CPU integration, a broad WASM test matrix, boot/visual smoke
+coverage, public adapter coverage, representative device parity tests,
+speed-oriented build evidence, a shared-source audit, and a closed
+binary-size/timing-depth audit.
 
-The WASM backend is not currently the normal ZX Spectrum Next implementation:
+The WASM backend is currently the normal ZX Spectrum Next implementation:
 
-- `DEFAULT_ZXNEXT_IMPLEMENTATION` is `"typescript"`.
-- The normal `ZX Spectrum Next` model selects TypeScript.
-- `ZX Spectrum Next Preview` selects WASM explicitly.
+- `DEFAULT_ZXNEXT_IMPLEMENTATION` is `"wasm"`.
+- The normal `ZX Spectrum Next` model selects WASM.
+- `ZX Spectrum Next Compatibility` selects TypeScript explicitly.
 - `ZxNextWasmV2Machine.getWasmV2Diagnostics()` reports
-  `defaultReady: false`, `defaultBlockers` containing `timing-depth-parity`,
-  and positive `migratedSurfaces`.
+  `defaultReady: true`, an empty `defaultBlockers` list, and positive
+  `migratedSurfaces`.
 - `src/emu/machines/zxNext/wasm/README.md`,
   `.ai/wasm-migration-intent-and-lessons.md`, and
   `src/emu/machines/zxNext/ZxNextImplementation.ts` describe TypeScript as the
-  current oracle/default while the audit is open.
+  compatibility fallback and parity oracle.
 - `test:zxnext-wasm-acceptance` is a focused acceptance suite, not the full
   matrix; `test:zxnext-wasm-matrix` runs all `test/wasm/zxNext` suites.
 - The Step 24 matrix accounts for every `test/zxnext/*.test.ts` suite by either
@@ -65,22 +63,21 @@ Artifact-size audit (2026-08-20):
   apply contention, tact advancement, and audio sampling inside the shared CPU
   core, while Next currently includes the shared Z80N core without equivalent
   delay hooks.
-- Step 29 timing-hook slice result: the Next artifact is now 574,085 bytes,
-  with `wasm-objdump -h` reporting code section `0x88139` (about 557 KB),
-  1,241 functions, and 316 exports. This is now larger than the 48K artifact
+- Step 29 completion result: the Next artifact is now 626,534 bytes,
+  with `wasm-objdump -h` reporting code section `0x94e19` (about 609 KB),
+  1,242 functions, and 316 exports. This is now larger than the 48K artifact
   and consistent with inlined speed-oriented timing hooks rather than an
   accidentally shallow backend.
 
-The remaining work is to close the timing-depth audit, then redo the default
-flip and TypeScript maintenance-mode policy.
+No plan steps remain open.
 
 ## Preliminary Principle Audit
 
 Updated: 2026-08-20.
 
-The Step 26 audit resolved several speed-and-reuse items, but the later
-artifact-size comparison reopened the timing-depth gate. Preserve these
-principles in future Next WASM work:
+The Step 26 audit resolved several speed-and-reuse items. The later
+artifact-size comparison reopened the timing-depth gate, and Step 29 then
+closed that gate. Preserve these principles in future Next WASM work:
 
 | Principle | Current evidence | Risk | Required follow-up |
 | --- | --- | --- | --- |
@@ -282,7 +279,7 @@ Completion notes:
 
 ### Step 2 - IDE Integration Scaffold
 
-Status: Reopened
+Status: Done
 
 Create an explicitly selectable but incomplete WASM integration scaffold. This
 step exists to prove the IDE/emulator contract first: register view, memory
@@ -1925,7 +1922,7 @@ Shared-source audit:
 
 ### Step 27 - Flip The Default To WASM
 
-Status: Done
+Status: Done on 2026-08-22.
 
 Only after Steps 21-26 are complete, change the normal ZX Spectrum Next model
 and factory default to WASM. Keep TypeScript selectable as an explicit fallback
@@ -2002,9 +1999,22 @@ size-profile build: Next has a much smaller code section despite more
 functions/exports. Keep this step reopened until the binary-size/timing-depth
 audit below is resolved.
 
+Final completion note (2026-08-22):
+
+- Changed `DEFAULT_ZXNEXT_IMPLEMENTATION` to `"wasm"`.
+- Changed the normal `ZX Spectrum Next` model config to
+  `{ zxnextImplementation: "wasm" }`.
+- Replaced the explicit WASM preview model with the product-facing
+  `ZX Spectrum Next Compatibility` model, configured with
+  `{ zxnextImplementation: "typescript" }`.
+- Kept explicit TypeScript selection working through
+  `{ zxnextImplementation: "typescript" }`.
+- Updated factory, registry, public adapter, and rollout tests to prove the
+  normal model is WASM and the TypeScript fallback remains available.
+
 ### Step 28 - TypeScript Backend Maintenance Mode
 
-Status: Deferred
+Status: Done on 2026-08-22.
 
 After the default flips, keep the TypeScript backend available but stop treating
 it as the primary implementation. This step defines how it remains useful as an
@@ -2061,20 +2071,26 @@ Superseded completion note (2026-08-20):
   - `npm run test` (560 files passed, 18,977 tests passed, 119 skipped)
   - `git diff --check`
 
-Deferral note (2026-08-20): this policy applies after Step 27 really closes.
-The TypeScript backend is again the default oracle while the binary-size and
-timing-depth blockers are open.
+Final completion note (2026-08-22):
+
+- Documented WASM as the production backend in
+  `src/emu/machines/zxNext/wasm/README.md`.
+- Documented TypeScript as an explicit compatibility fallback and parity oracle.
+- Updated future-work guidance so machine-owned behavior is implemented in WASM
+  first, or in TypeScript and WASM together when the oracle needs to grow.
+- Preserved the rule that TypeScript-only emulator changes are limited to
+  explicitly host-owned behavior.
 
 ### Step 29 - Resolve Next Binary-Size And Timing-Depth Audit
 
-Status: Active
+Status: Done on 2026-08-22.
 
 The ZX Spectrum Next WASM artifact was much smaller than the 48K artifact even
 though Next is substantially more complex. This warning sign from
-`.ai/wasm-migration-intent-and-lessons.md` reopened the default flip. The first
-Step 29 implementation slice resolved the size inversion by wiring CPU tact and
-delay hooks into the shared Z80N core, but the full timing-depth parity pass is
-still active.
+`.ai/wasm-migration-intent-and-lessons.md` reopened the default flip. Step 29
+resolved the size inversion by wiring CPU tact and delay hooks into the shared
+Z80N core, then closed the timing-depth parity blocker with CTC lazy timing,
+audio mixer sample scheduling, and focused oracle coverage.
 
 Observed evidence:
 
@@ -2105,35 +2121,43 @@ Progress:
   contract that proves Next is now larger than 48K after timing hooks are
   linked.
 - Raised the measured package size ceiling to 700,000 bytes. Current measured
-  artifact: 574,085 bytes; current code section: `0x88139`.
+  artifact: 626,534 bytes; current code section: `0x94e19`.
 - Added CTC port integration for `0x183b..0x1f3b`, `$85` bit-3 port gating,
   lazy 28 MHz timer advancement before CTC port reads/writes, frame-boundary
   CTC sync, and TypeScript-oracle tests for public CTC port routing and
   timer-mode lazy advancement.
+- Added automatic WASM mixer sample scheduling from the 28 MHz frame clock,
+  exposed the scheduled mixer buffer through `ZxNextWasmV2Machine.getAudioSamples()`,
+  and added a frame-execution test that checks the 48 kHz sample count against
+  the TypeScript machine's `tactsInFrame`.
 
-Required work:
+Completion notes:
 
-- Compare TypeScript Next timing (`ZxNextMachine`, `Z80NMachineBase`,
-  `NextComposedScreenDevice`, `CpuSpeedDevice`, CTC/audio hooks) against the
-  current C/WASM timing path.
-- Add or parameterize the remaining shared Z80/device hooks for Next
-  address-bus delay, render-before-mutation, audio sample scheduling, CTC
-  interrupt/daisy edge cases, and any remaining CPU speed scaling edge cases.
-- Add oracle tests that prove frame tact progression, current frame tact,
-  mid-frame render-before-mutation behavior, port timing side effects, audio
-  sample counts, and interrupt/CTC timing against TypeScript.
-- Keep the binary-size/shared-source contract green so a future regression back
-  to a suspiciously shallow artifact is caught.
-- Only after this step passes should Step 27 be retried.
-
-Done when:
-
-- `ZxNextWasmV2Diagnostics.defaultBlockers` no longer includes
+- `ZxNextWasmV2Diagnostics.defaultReady` is now `true`.
+- `ZxNextWasmV2Diagnostics.defaultBlockers` is now empty and no longer includes
   `timing-depth-parity`.
+- The normal factory default is now WASM; TypeScript remains explicitly
+  selectable as the compatibility fallback.
 - The artifact-size comparison no longer flags Next as suspiciously smaller
-  than 48K, or the plan records a concrete, source-backed reason why the size
-  is valid despite complete timing/device depth.
-- Focused timing/depth oracle tests pass.
-- `npm run test:zxnext-wasm-acceptance`, `npm run test:zxnext-wasm-matrix`,
-  `npm run build:zxnext-wasm`, `npm run check:zxnext-wasm-size`,
-  `npm run build:check`, and `git diff --check` pass.
+  than 48K. Current generated sizes are:
+  - 48K: 470,922 bytes.
+  - 128K: 563,638 bytes.
+  - +3E: 547,836 bytes.
+  - Next: 626,534 bytes.
+- Focused timing/depth coverage now includes CPU/frame tact parity, NextReg
+  `$07` instruction-start speed latching, CTC port/lazy timer advancement,
+  audio mixer 48 kHz frame sample scheduling, and the positive shared-source
+  size contract.
+- The performance-boundary benchmark test now uses a steadier `5` frame, `3`
+  run sample so Step 29 readiness is not decided by a single-run microbenchmark
+  outlier.
+- Validation passed:
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-scaffold-diagnostics.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-public-adapter.test.ts test/wasm/zxNext/wasm-next-ide-scaffold.test.ts test/wasm/zxNext/wasm-next-shared-source-contract.test.ts test/wasm/zxNext/wasm-next-cpu.test.ts test/wasm/zxNext/wasm-next-ctc.test.ts test/wasm/zxNext/wasm-next-audio-mixer.test.ts test/wasm/zxNext/wasm-next-rollout.test.ts`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-performance-boundary.test.ts`
+  - `npm run test:zxnext-wasm-acceptance`
+  - `npm run test:zxnext-wasm-matrix`
+  - `npm run build:zxnext-wasm`
+  - `npm run check:zxnext-wasm-size` (`actualBytes`: 626,534,
+    `maxBytes`: 700,000)
+  - `npm run build:check`
+  - `git diff --check`

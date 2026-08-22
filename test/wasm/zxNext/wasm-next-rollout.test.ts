@@ -20,41 +20,40 @@ import {
 } from "../../../scripts/build-zxnext-wasm.cjs";
 
 describe("ZX Spectrum Next WASM rollout", () => {
-  it("keeps TypeScript as the default while the WASM timing-depth audit is open", () => {
-    expect(DEFAULT_ZXNEXT_IMPLEMENTATION).toBe("typescript");
+  it("uses WASM as the default while keeping TypeScript as an explicit fallback", () => {
+    expect(DEFAULT_ZXNEXT_IMPLEMENTATION).toBe("wasm");
 
-    expect(createZxNextMachine()).toBeInstanceOf(ZxNextMachine);
-    expect(createZxNextMachine()).not.toBeInstanceOf(ZxNextWasmV2Machine);
+    expect(createZxNextMachine()).toBeInstanceOf(ZxNextWasmV2Machine);
     expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "typescript" })).not.toBeInstanceOf(
       ZxNextWasmV2Machine
     );
     expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "wasm" })).toBeInstanceOf(
       ZxNextWasmV2Machine
     );
-    expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "native" } as any)).not.toBeInstanceOf(
+    expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "native" } as any)).toBeInstanceOf(
       ZxNextWasmV2Machine
     );
   });
 
   it("routes renderer registry creation through the ZX Next factory and model configs", () => {
     const renderer = machineRendererRegistry.find(entry => entry.machineId === MI_ZXNEXT);
-    const model = getZxNextModels().find(model => model.modelId === "preview")!;
+    const model = getZxNextModels().find(model => model.modelId === "standard")!;
 
     const machine = renderer!.factory(undefined as any, model, model.config);
 
     expect(machine).toBeInstanceOf(ZxNextWasmV2Machine);
   });
 
-  it("exposes product-oriented model choices without making the preview the default", () => {
+  it("exposes product-oriented model choices with TypeScript as compatibility fallback", () => {
     const models = getZxNextModels();
 
-    expect(models.map(model => model.modelId)).toEqual(["standard", "preview"]);
+    expect(models.map(model => model.modelId)).toEqual(["standard", "compatibility"]);
     expect(models.map(model => model.displayName)).toEqual([
       "ZX Spectrum Next",
-      "ZX Spectrum Next Preview"
+      "ZX Spectrum Next Compatibility"
     ]);
-    expect(models[0].config[MC_ZXNEXT_IMPLEMENTATION]).toBe("typescript");
-    expect(models[1].config[MC_ZXNEXT_IMPLEMENTATION]).toBe("wasm");
+    expect(models[0].config[MC_ZXNEXT_IMPLEMENTATION]).toBe("wasm");
+    expect(models[1].config[MC_ZXNEXT_IMPLEMENTATION]).toBe("typescript");
     for (const model of models) {
       expect(model.displayName).not.toMatch(/typescript/i);
       expect(model.displayName).not.toMatch(/wasm/i);

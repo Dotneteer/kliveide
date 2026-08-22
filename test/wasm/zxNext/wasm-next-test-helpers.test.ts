@@ -74,7 +74,8 @@ describe("ZX Spectrum Next WASM oracle test helpers", () => {
     });
     expect(comparison.oracle.debug.disassemblyPreview).toHaveLength(4);
 
-    expect(comparison.wasmDiagnostics.defaultReady).toBe(false);
+    expect(comparison.wasmDiagnostics.defaultReady).toBe(true);
+    expect(comparison.wasmDiagnostics.defaultBlockers).toEqual([]);
     expect(comparison.wasmDiagnostics.migratedSurfaces).toEqual(ZXNEXT_ORACLE_MIGRATED_SURFACES);
   });
 });

@@ -172,14 +172,14 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "standard",
         displayName: "ZX Spectrum Next",
         config: {
-          [MC_ZXNEXT_IMPLEMENTATION]: "typescript"
+          [MC_ZXNEXT_IMPLEMENTATION]: "wasm"
         }
       },
       {
-        modelId: "preview",
-        displayName: "ZX Spectrum Next Preview",
+        modelId: "compatibility",
+        displayName: "ZX Spectrum Next Compatibility",
         config: {
-          [MC_ZXNEXT_IMPLEMENTATION]: "wasm"
+          [MC_ZXNEXT_IMPLEMENTATION]: "typescript"
         }
       }
     ],
