@@ -46,6 +46,8 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     lastPortValue = zxnextI2cReadSclPort();
   } else if ((normalized & 0xffffu) == 0x113bu) {
     lastPortValue = zxnextI2cReadSdaPort();
+  } else if ((normalized & 0xffffu) == 0x123bu) {
+    lastPortValue = zxnextPortsGroupEnabled(1, 7) ? zxnextLayer2GetPort123B() : 0xffu;
   } else if ((normalized & 0xf8ffu) == 0x183bu) {
     lastPortValue = zxnextCtcReadPort(normalized);
   } else if ((normalized & 0x00ffu) == 0x006bu) {
@@ -96,6 +98,8 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     zxnextI2cWriteSclPort(byteValue);
   } else if ((normalized & 0xffffu) == 0x113bu) {
     zxnextI2cWriteSdaPort(byteValue);
+  } else if ((normalized & 0xffffu) == 0x123bu) {
+    if (zxnextPortsGroupEnabled(1, 7)) zxnextLayer2SetPort123B(byteValue);
   } else if ((normalized & 0xf8ffu) == 0x183bu) {
     zxnextCtcWritePort(normalized, byteValue);
   } else if ((normalized & 0x00ffu) == 0x006bu) {

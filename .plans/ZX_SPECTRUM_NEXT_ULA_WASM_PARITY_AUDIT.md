@@ -46,6 +46,16 @@ WASM sources:
   output area, paired bitmap bytes from `$4000` and `$6000`, HiRes ink/paper
   palette selection from Timex port `$FF`, X/Y scroll, clipping, fallback
   colour, and physical screen-memory bank 5 or shadow bank 7 reads.
+- LoRes instant rendering when NextReg `$15` bit 7 is enabled, including
+  standard 8bpp LoRes, Radastan 4bpp LoRes, scroll NextRegs `$32/$33`, LoRes
+  control NextReg `$6A`, ULA clip/fallback handling, and the TypeScript rule
+  that LoRes always reads physical bank 5 rather than the shadow-screen bank.
+- Layer 2 256x192 instant rendering when enabled through port `$123B` or the
+  deprecated NextReg `$69` bit 7, including active/shadow bank selection,
+  active/shadow bank NextRegs `$12/$13`, scroll NextRegs `$16/$17/$71`, clip
+  window NextReg `$18`, palette offset NextReg `$70`, global transparency
+  index NextReg `$4B`, Layer 2 palette lookup, and `$123B` CPU read/write
+  aperture mapping.
 - ULA clip window NextReg `$1A`, clip index reset via `$1C`, and scroll
   NextRegs `$26/$27` for the current instant-render path.
 - ULA flash counter and flag progression.
@@ -66,9 +76,9 @@ WASM sources:
   with rendered pixels.
 - ULA Control NextReg `$68` is not rendered: ULA disable output, SLU blending
   mode, ULA+ enable, half-pixel scroll, and stencil mode are still open.
-- Full final screen composition is missing in WASM: ULA/LoRes, Layer 2,
-  tilemap, sprites, global transparency, fallback colour, priority, clipping,
-  and blending do not yet match the TypeScript composition pipeline.
+- Full final screen composition is missing in WASM: 320x256/640x256 Layer 2,
+  tilemap, sprites, priority, clipping, and blending do not yet match the
+  TypeScript composition pipeline.
 - Active video line and line-interrupt behavior are not driven by the same
   per-tact renderer state as TypeScript.
 - Floating bus updates caused by ULA display-memory reads are not equivalent.

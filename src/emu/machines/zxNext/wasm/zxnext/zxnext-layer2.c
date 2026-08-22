@@ -1,6 +1,13 @@
 #include "zxnext-layer2.h"
 
 static uint8_t zxnextLayer2Enabled;
+static uint8_t zxnextLayer2ActiveRamBank;
+static uint8_t zxnextLayer2ShadowRamBank;
+static uint8_t zxnextLayer2UseShadowBank;
+static uint8_t zxnextLayer2Bank;
+static uint8_t zxnextLayer2BankOffset;
+static uint8_t zxnextLayer2EnableMappingForReads;
+static uint8_t zxnextLayer2EnableMappingForWrites;
 static uint8_t zxnextLayer2Resolution;
 static uint8_t zxnextLayer2PaletteOffset;
 static uint16_t zxnextLayer2ScrollX;
@@ -17,6 +24,13 @@ static uint8_t zxnextLoResScrollY;
 
 static void zxnextLayer2Reset(void) {
   zxnextLayer2Enabled = 0u;
+  zxnextLayer2ActiveRamBank = 8u;
+  zxnextLayer2ShadowRamBank = 11u;
+  zxnextLayer2UseShadowBank = 0u;
+  zxnextLayer2Bank = 0u;
+  zxnextLayer2BankOffset = 0u;
+  zxnextLayer2EnableMappingForReads = 0u;
+  zxnextLayer2EnableMappingForWrites = 0u;
   zxnextLayer2Resolution = 0u;
   zxnextLayer2PaletteOffset = 0u;
   zxnextLayer2ScrollX = 0u;
@@ -38,6 +52,12 @@ static void zxnextLayer2Reset(void) {
 static void zxnextLayer2SetNextReg(uint32_t reg, uint32_t value) {
   uint8_t byteValue = (uint8_t)value;
   switch (reg & 0xffu) {
+    case 0x12u:
+      zxnextLayer2ActiveRamBank = byteValue & 0x7fu;
+      break;
+    case 0x13u:
+      zxnextLayer2ShadowRamBank = byteValue & 0x7fu;
+      break;
     case 0x15u:
       zxnextLoResEnabled = (byteValue & 0x80u) != 0u;
       break;
@@ -62,6 +82,9 @@ static void zxnextLayer2SetNextReg(uint32_t reg, uint32_t value) {
       zxnextLoResRadastanTimexXor = (byteValue & 0x10u) != 0u;
       zxnextLoResPaletteOffset = byteValue & 0x0fu;
       break;
+    case 0x69u:
+      zxnextLayer2Enabled = (byteValue & 0x80u) != 0u;
+      break;
     case 0x70u:
       zxnextLayer2Resolution = (byteValue >> 4u) & 0x03u;
       zxnextLayer2PaletteOffset = byteValue & 0x0fu;
@@ -76,6 +99,8 @@ static void zxnextLayer2SetNextReg(uint32_t reg, uint32_t value) {
 
 static uint32_t zxnextLayer2GetNextReg(uint32_t reg) {
   switch (reg & 0xffu) {
+    case 0x12u: return zxnextLayer2ActiveRamBank;
+    case 0x13u: return zxnextLayer2ShadowRamBank;
     case 0x15u: return zxnextLoResEnabled ? 0x80u : 0u;
     case 0x16u: return zxnextLayer2ScrollX & 0xffu;
     case 0x17u: return zxnextLayer2ScrollY;
@@ -86,16 +111,47 @@ static uint32_t zxnextLayer2GetNextReg(uint32_t reg) {
       return (zxnextLoResRadastanMode ? 0x20u : 0u) |
         (zxnextLoResRadastanTimexXor ? 0x10u : 0u) |
         zxnextLoResPaletteOffset;
+    case 0x69u:
+      return (zxnextLayer2Enabled ? 0x80u : 0u) |
+        (zxnextNextRegs[0x69u] & 0x7fu);
     case 0x70u: return ((uint32_t)zxnextLayer2Resolution << 4u) | zxnextLayer2PaletteOffset;
     case 0x71u: return (zxnextLayer2ScrollX >> 8u) & 0x01u;
     default: return 0u;
   }
 }
 
+static void zxnextLayer2SetPort123B(uint32_t value) {
+  uint8_t byteValue = (uint8_t)value;
+  if ((byteValue & 0x10u) == 0u) {
+    zxnextLayer2Bank = (byteValue >> 6u) & 0x03u;
+    zxnextLayer2UseShadowBank = (byteValue & 0x08u) != 0u;
+    zxnextLayer2EnableMappingForReads = (byteValue & 0x04u) != 0u;
+    zxnextLayer2Enabled = (byteValue & 0x02u) != 0u;
+    zxnextLayer2EnableMappingForWrites = (byteValue & 0x01u) != 0u;
+  } else {
+    zxnextLayer2BankOffset = byteValue & 0x07u;
+  }
+}
+
+static uint32_t zxnextLayer2GetPort123B(void) {
+  return ((uint32_t)zxnextLayer2Bank << 6u) |
+    (zxnextLayer2UseShadowBank ? 0x08u : 0x00u) |
+    (zxnextLayer2EnableMappingForReads ? 0x04u : 0x00u) |
+    (zxnextLayer2Enabled ? 0x02u : 0x00u) |
+    (zxnextLayer2EnableMappingForWrites ? 0x01u : 0x00u);
+}
+
 static void zxnextLayer2ResetClipIndex(void) { zxnextLayer2ClipIndex = 0u; }
 static uint32_t zxnextLayer2GetClipIndex(void) { return zxnextLayer2ClipIndex; }
 static void zxnextLayer2SetEnabled(uint32_t enabled) { zxnextLayer2Enabled = enabled != 0u; }
 static uint32_t zxnextLayer2GetEnabled(void) { return zxnextLayer2Enabled; }
+static uint32_t zxnextLayer2GetActiveRamBank(void) { return zxnextLayer2ActiveRamBank; }
+static uint32_t zxnextLayer2GetShadowRamBank(void) { return zxnextLayer2ShadowRamBank; }
+static uint32_t zxnextLayer2GetUseShadowBank(void) { return zxnextLayer2UseShadowBank; }
+static uint32_t zxnextLayer2GetBank(void) { return zxnextLayer2Bank; }
+static uint32_t zxnextLayer2GetBankOffset(void) { return zxnextLayer2BankOffset; }
+static uint32_t zxnextLayer2GetEnableMappingForReads(void) { return zxnextLayer2EnableMappingForReads; }
+static uint32_t zxnextLayer2GetEnableMappingForWrites(void) { return zxnextLayer2EnableMappingForWrites; }
 static uint32_t zxnextLayer2GetResolution(void) { return zxnextLayer2Resolution; }
 static uint32_t zxnextLayer2GetPaletteOffset(void) { return zxnextLayer2PaletteOffset; }
 static uint32_t zxnextLayer2GetScrollX(void) { return zxnextLayer2ScrollX; }

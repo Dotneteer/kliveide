@@ -1,5 +1,6 @@
 #include "zxnext-memory.h"
 #include "zxnext-divmmc.h"
+#include "zxnext-layer2.h"
 
 #define ZXNEXT_OFFS_NEXT_ROM 0x000000u
 #define ZXNEXT_OFFS_ALT_ROM_0 0x018000u
@@ -193,9 +194,39 @@ static inline uint32_t zxnextMemoryResolveWriteOffset(uint32_t page) {
   return pageWriteOffset[normalizedPage];
 }
 
+static inline uint32_t zxnextMemoryResolveLayer2Offset(uint32_t address, uint32_t writeAccess) {
+  if (writeAccess) {
+    if (!zxnextLayer2GetEnableMappingForWrites()) return ZXNEXT_NO_WRITE_OFFSET;
+  } else if (!zxnextLayer2GetEnableMappingForReads()) {
+    return ZXNEXT_NO_WRITE_OFFSET;
+  }
+
+  uint32_t normalized = address & 0xffffu;
+  uint32_t mapSegment = zxnextLayer2GetBank() & 0x03u;
+  uint32_t startAddr = mapSegment == 3u ? 0u : (mapSegment << 14u);
+  uint32_t endAddr = mapSegment == 3u ? 0xc000u : ((mapSegment + 1u) << 14u);
+  if (normalized < startAddr || normalized >= endAddr) return ZXNEXT_NO_WRITE_OFFSET;
+
+  uint32_t activeBank = zxnextLayer2GetUseShadowBank()
+    ? zxnextLayer2GetShadowRamBank()
+    : zxnextLayer2GetActiveRamBank();
+  uint32_t offsetPre = mapSegment == 3u ? ((normalized >> 14u) & 0x03u) : mapSegment;
+  uint32_t bankOffset = (offsetPre + zxnextLayer2GetBankOffset()) & 0x07u;
+  uint32_t layer2Page = (((activeBank + bankOffset) & 0x7fu) << 1u) | ((normalized >> 13u) & 0x01u);
+  uint32_t layer2A21A13 = (((0x01u + ((layer2Page >> 5u) & 0x07u)) & 0x0fu) << 5u) | (layer2Page & 0x1fu);
+  if ((layer2A21A13 & 0x100u) != 0u) return ZXNEXT_NO_WRITE_OFFSET;
+  return ZXNEXT_OFFS_NEXT_RAM + ((layer2A21A13 & 0xffu) << 13u) + (normalized & 0x1fffu);
+}
+
 static inline uint32_t zxnextMemoryReadMapped(uint32_t address) {
   uint32_t normalized = address & 0xffffu;
-  uint32_t physical = zxnextMemoryResolveReadOffset(normalized >> 13) + (normalized & 0x1fffu);
+  uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
+  if (!((normalized >> 13u) < 2u && zxnextDivMmcIsMappingActive())) {
+    physical = zxnextMemoryResolveLayer2Offset(normalized, 0u);
+  }
+  if (physical == ZXNEXT_NO_WRITE_OFFSET) {
+    physical = zxnextMemoryResolveReadOffset(normalized >> 13) + (normalized & 0x1fffu);
+  }
   lastMemoryAddress = (uint16_t)normalized;
   lastMemoryValue = zxnextMemoryReadPhysical(physical);
   lastMemoryAccessed = 1;
@@ -205,15 +236,28 @@ static inline uint32_t zxnextMemoryReadMapped(uint32_t address) {
 
 static inline uint32_t zxnextMemoryPeekMapped(uint32_t address) {
   uint32_t normalized = address & 0xffffu;
-  uint32_t physical = zxnextMemoryResolveReadOffset(normalized >> 13) + (normalized & 0x1fffu);
+  uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
+  if (!((normalized >> 13u) < 2u && zxnextDivMmcIsMappingActive())) {
+    physical = zxnextMemoryResolveLayer2Offset(normalized, 0u);
+  }
+  if (physical == ZXNEXT_NO_WRITE_OFFSET) {
+    physical = zxnextMemoryResolveReadOffset(normalized >> 13) + (normalized & 0x1fffu);
+  }
   return zxnextMemoryReadPhysical(physical);
 }
 
 static inline void zxnextMemoryWriteMapped(uint32_t address, uint32_t value) {
   uint32_t normalized = address & 0xffffu;
-  uint32_t physical = zxnextMemoryResolveWriteOffset(normalized >> 13);
+  uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
+  if (!((normalized >> 13u) < 2u && zxnextDivMmcIsMappingActive())) {
+    physical = zxnextMemoryResolveLayer2Offset(normalized, 1u);
+  }
+  if (physical == ZXNEXT_NO_WRITE_OFFSET) {
+    physical = zxnextMemoryResolveWriteOffset(normalized >> 13);
+    if (physical != ZXNEXT_NO_WRITE_OFFSET) physical += normalized & 0x1fffu;
+  }
   if (physical != ZXNEXT_NO_WRITE_OFFSET) {
-    zxnextMemoryWritePhysical(physical + (normalized & 0x1fffu), value);
+    zxnextMemoryWritePhysical(physical, value);
   }
   lastMemoryAddress = (uint16_t)normalized;
   lastMemoryValue = (uint8_t)value;

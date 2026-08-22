@@ -164,12 +164,15 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
     case 0x43u:
     case 0x44u:
       return zxnextPaletteGetNextReg(reg);
+    case 0x12u:
+    case 0x13u:
     case 0x15u:
     case 0x16u:
     case 0x17u:
     case 0x18u:
     case 0x32u:
     case 0x33u:
+    case 0x69u:
     case 0x6au:
     case 0x70u:
     case 0x71u:

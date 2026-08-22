@@ -131,6 +131,10 @@ static uint32_t zxnextPaletteGetEntry(uint32_t palette, uint32_t index) {
   return zxnextPalettes[palette & 0x07u][index & 0xffu];
 }
 
+static uint32_t zxnextPaletteGetLayer2Entry(uint32_t index) {
+  return zxnextPalettes[zxnextPaletteSecondLayer2 ? 5u : 1u][index & 0xffu];
+}
+
 static uint32_t zxnextPaletteGetCurrentEntry(uint32_t index) {
   return zxnextPalettes[zxnextPaletteCurrentSlot()][index & 0xffu];
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
-import { OFFS_BANK_05, OFFS_NEXT_RAM } from "@emu/machines/zxNext/MemoryDevice";
+import { OFFS_BANK_05, OFFS_BANK_07, OFFS_NEXT_RAM } from "@emu/machines/zxNext/MemoryDevice";
 import { zxNextBgra } from "@emu/machines/zxNext/PaletteDevice";
 import {
   ZXNEXT_WASM_V2_SCREEN_HEIGHT,
@@ -160,6 +160,150 @@ describe("ZX Spectrum Next WASM standard ULA screen", () => {
     expect(pixels[(STANDARD_SCREEN_Y - 1) * ZXNEXT_WASM_V2_SCREEN_WIDTH + STANDARD_SCREEN_X]).toBe(zxNextBgra[0x02d]);
   });
 
+  it("renders standard LoRes as 128x96 bank-5 pixels expanded into the ULA area", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    oracle.hardReset();
+    wasm.hardReset();
+
+    oracle.nextRegDevice.directSetRegValue(0x15, 0x80);
+    oracle.nextRegDevice.directSetRegValue(0x6a, 0x00);
+    exports.zxnextSetNextRegisterDirect(0x15, 0x80);
+    exports.zxnextSetNextRegisterDirect(0x6a, 0x00);
+    expect(exports.zxnextGetLoResEnabled()).toBe(1);
+
+    oracle.memoryDevice.memory[OFFS_BANK_05] = 0x25;
+    oracle.memoryDevice.memory[OFFS_BANK_05 + 1] = 0x12;
+    wasm.wasmV2Runtime!.memory[OFFS_BANK_05] = 0x25;
+    wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + 1] = 0x12;
+
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect(pixels[screenIndex(0, 0)]).toBe(zxNextBgra[0x02d]);
+    expect(pixels[screenIndex(3, 1)]).toBe(zxNextBgra[0x02d]);
+    expect(pixels[screenIndex(4, 0)]).toBe(zxNextBgra[0x140]);
+  });
+
+  it("renders standard LoRes with X/Y scroll registers", async () => {
+    const { wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    wasm.hardReset();
+
+    exports.zxnextSetNextRegisterDirect(0x15, 0x80);
+    exports.zxnextSetNextRegisterDirect(0x6a, 0x00);
+    exports.zxnextSetNextRegisterDirect(0x32, 0x02);
+    exports.zxnextSetNextRegisterDirect(0x33, 0x02);
+
+    wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + ((1 << 7) | 1)] = 0x43;
+
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect(pixels[screenIndex(0, 0)]).toBe(zxNextBgra[0x145]);
+  });
+
+  it("renders LoRes from bank 5 even when the shadow screen is active", async () => {
+    const { wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    wasm.hardReset();
+
+    exports.zxnextSetNextRegisterDirect(0x15, 0x80);
+    exports.zxnextSetNextRegisterDirect(0x6a, 0x00);
+    exports.zxnextSetNextRegisterDirect(0x69, 0x40);
+
+    wasm.wasmV2Runtime!.memory[OFFS_BANK_05] = 0x42;
+    wasm.wasmV2Runtime!.memory[OFFS_BANK_07] = 0x99;
+
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect(pixels[screenIndex(0, 0)]).toBe(zxNextBgra[0x140]);
+  });
+
+  it("renders Radastan LoRes nibbles from bank 5", async () => {
+    const { wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    wasm.hardReset();
+
+    exports.zxnextSetNextRegisterDirect(0x15, 0x80);
+    exports.zxnextSetNextRegisterDirect(0x6a, 0x20);
+
+    wasm.wasmV2Runtime!.memory[OFFS_BANK_05] = 0x5a;
+
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect(pixels[screenIndex(0, 0)]).toBe(zxNextBgra[0x02d]);
+    expect(pixels[screenIndex(3, 0)]).toBe(zxNextBgra[0x02d]);
+    expect(pixels[screenIndex(4, 0)]).toBe(zxNextBgra[0x1c0]);
+  });
+
+  it("renders 256x192 Layer 2 pixels from the active RAM bank over ULA", async () => {
+    const { wasm } = await createZxNextOracleHarness();
+    wasm.hardReset();
+
+    wasm.doWritePort(0x123b, 0x02);
+    expect(wasm.doReadPort(0x123b)).toBe(0x02);
+    wasm.wasmV2Runtime!.memory[layer2Bank16Offset(8)] = 0x11;
+
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect(pixels[screenIndex(0, 0)]).toBe(layer2Bgra(0x11));
+    expect(pixels[screenIndex(1, 0)]).toBe(layer2Bgra(0x11));
+  });
+
+  it("renders 256x192 Layer 2 with clip and scroll registers", async () => {
+    const { wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    wasm.hardReset();
+
+    wasm.doWritePort(0x123b, 0x02);
+    exports.zxnextSetNextRegisterDirect(0x1c, 0x01);
+    for (const value of [0x08, 0x7f, 0x08, 0x7f]) {
+      exports.zxnextSetNextRegisterDirect(0x18, value);
+    }
+    exports.zxnextSetNextRegisterDirect(0x16, 0x01);
+    exports.zxnextSetNextRegisterDirect(0x71, 0x00);
+    exports.zxnextSetNextRegisterDirect(0x17, 0x00);
+    wasm.wasmV2Runtime!.memory[layer2Bank16Offset(8) + 0x08 * 0x100 + 0x09] = 0x22;
+
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect(pixels[screenIndex(14, 8)]).not.toBe(layer2Bgra(0x22));
+    expect(pixels[screenIndex(16, 8)]).toBe(layer2Bgra(0x22));
+  });
+
+  it("keeps the ULA pixel when the Layer 2 palette index is transparent", async () => {
+    const { wasm } = await createZxNextOracleHarness();
+    wasm.hardReset();
+
+    wasm.doWritePort(0x123b, 0x00);
+    wasm.renderInstantScreen();
+    const basePixel = wasm.getPixelBuffer()[screenIndex(0, 0)];
+
+    wasm.doWritePort(0x123b, 0x02);
+    wasm.wasmV2Runtime!.memory[layer2Bank16Offset(8)] = 0xe3;
+
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect(pixels[screenIndex(0, 0)]).toBe(basePixel);
+  });
+
+  it("maps CPU writes through port $123B into Layer 2 RAM", async () => {
+    const { wasm } = await createZxNextOracleHarness();
+    wasm.hardReset();
+
+    wasm.doWritePort(0x123b, 0x07);
+    wasm.doWriteMemory(0x0000, 0x33);
+
+    expect(wasm.wasmV2Runtime!.memory[layer2MappedOffset(8, 0x0000)]).toBe(0x33);
+    expect(wasm.doReadMemory(0x0000)).toBe(0x33);
+  });
+
   it("renders Timex ULA HiRes pixels from both screen bitmap banks", async () => {
     const { oracle, wasm } = await createZxNextOracleHarness();
     oracle.hardReset();
@@ -295,4 +439,21 @@ describe("ZX Spectrum Next WASM standard ULA screen", () => {
 
 function screenIndex(x: number, y: number): number {
   return (STANDARD_SCREEN_Y + y) * ZXNEXT_WASM_V2_SCREEN_WIDTH + STANDARD_SCREEN_X + x;
+}
+
+function layer2Bank16Offset(bank16: number): number {
+  return OFFS_NEXT_RAM + bank16 * 0x4000;
+}
+
+function layer2Bgra(index: number): number {
+  return zxNextBgra[((index << 1) | (index & 0x02 ? 0x01 : 0x00)) & 0x1ff];
+}
+
+function layer2MappedOffset(activeBank: number, address: number, mapSegment = 0, bankOffset = 0): number {
+  const layer2ActiveBankOffsetPre = mapSegment === 3 ? (address >> 14) & 0x03 : mapSegment;
+  const layer2ActiveBankOffset = (layer2ActiveBankOffsetPre + bankOffset) & 0x07;
+  const layer2ActivePage = (((activeBank + layer2ActiveBankOffset) & 0x7f) << 1) | ((address >> 13) & 0x01);
+  const upperNibble = (0x01 + ((layer2ActivePage >> 5) & 0x07)) & 0x0f;
+  const layer2A21A13 = (upperNibble << 5) | (layer2ActivePage & 0x1f);
+  return OFFS_NEXT_RAM + ((layer2A21A13 & 0xff) << 13) + (address & 0x1fff);
 }
