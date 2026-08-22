@@ -13,9 +13,137 @@ typedef struct {
 } ZxNextCtcChannel;
 
 static ZxNextCtcChannel zxnextCtcChannels[4];
+static uint32_t zxnextCtcLastSyncClock;
+static uint8_t zxnextCtcIm2VectorWrite;
 
 static ZxNextCtcChannel *zxnextCtcChannel(uint32_t channel) {
   return &zxnextCtcChannels[channel & 3u];
+}
+
+static inline uint32_t zxnextCtcPortsEnabled(void) {
+  return (zxnextNextRegs[0x85u] & 0x08u) != 0;
+}
+
+static inline uint32_t zxnextCtcPortChannel(uint32_t port) {
+  return (port >> 8) & 0x07u;
+}
+
+static inline uint32_t zxnextCtcIsCounterMode(ZxNextCtcChannel *ch) {
+  return (ch->controlReg & 0x10u) != 0;
+}
+
+static inline uint32_t zxnextCtcComputePrescalerFires(ZxNextCtcChannel *ch, uint32_t div, uint32_t clocks) {
+  if (div == 16u) {
+    const uint32_t firstFire = (0x0fu - (ch->prescalerCount & 0x0fu)) & 0x0fu;
+    if (firstFire >= clocks) return 0;
+    return 1u + ((clocks - 1u - firstFire) / 16u);
+  }
+  const uint32_t firstFire = (0xffu - ch->prescalerCount) & 0xffu;
+  if (firstFire >= clocks) return 0;
+  return 1u + ((clocks - 1u - firstFire) / 256u);
+}
+
+static uint32_t zxnextCtcAdvanceCounterByFires(ZxNextCtcChannel *ch, uint32_t fires) {
+  if (fires == 0) return 0;
+
+  uint32_t zcToCount = 0;
+  uint32_t count = ch->count;
+  const uint32_t timeConstant = ch->timeConstantReg;
+  const uint32_t effectiveTimeConstant = timeConstant == 0 ? 256u : timeConstant;
+
+  if (count == 0) {
+    if (!ch->countZeroD) {
+      zcToCount++;
+      count = timeConstant;
+      if (timeConstant == 0) {
+        if (fires > 0) {
+          count = 255u;
+          fires--;
+        } else {
+          ch->count = 0;
+          ch->countZeroD = 1;
+          return zcToCount;
+        }
+      }
+    } else {
+      count = 255u;
+      fires--;
+    }
+  }
+
+  if (fires == 0) {
+    ch->count = (uint8_t)count;
+    ch->countZeroD = 0;
+    return zcToCount;
+  }
+
+  if (fires < count) {
+    ch->count = (uint8_t)(count - fires);
+    ch->countZeroD = 0;
+    return zcToCount;
+  }
+
+  fires -= count;
+  zcToCount++;
+
+  if (fires > 0) {
+    const uint32_t fullPeriods = fires / effectiveTimeConstant;
+    zcToCount += fullPeriods;
+    fires -= fullPeriods * effectiveTimeConstant;
+  }
+
+  if (fires == 0) {
+    ch->count = (uint8_t)timeConstant;
+    ch->countZeroD = timeConstant == 0;
+    return zcToCount;
+  }
+
+  if (timeConstant == 0) ch->count = (uint8_t)(256u - fires);
+  else ch->count = (uint8_t)(timeConstant - fires);
+  ch->countZeroD = 0;
+  return zcToCount;
+}
+
+static uint32_t zxnextCtcAdvanceChannelBySysClocks(ZxNextCtcChannel *ch, uint32_t clocks) {
+  if (ch->state != 3u || clocks == 0) return 0;
+  const uint32_t prescalerDiv = (ch->controlReg & 0x08u) != 0 ? 256u : 16u;
+  const uint32_t fires = zxnextCtcComputePrescalerFires(ch, prescalerDiv, clocks);
+  ch->prescalerCount = (uint8_t)(ch->prescalerCount + clocks);
+  return zxnextCtcAdvanceCounterByFires(ch, fires);
+}
+
+static uint32_t zxnextCtcAdvanceChannelByTriggers(ZxNextCtcChannel *ch, uint32_t triggers) {
+  if (ch->state != 3u || triggers == 0) return 0;
+  return zxnextCtcAdvanceCounterByFires(ch, triggers);
+}
+
+static void zxnextCtcAdvanceToSysClock(uint32_t currentSysClock) {
+  if (currentSysClock <= zxnextCtcLastSyncClock) return;
+  const uint32_t elapsed = currentSysClock - zxnextCtcLastSyncClock;
+  zxnextCtcLastSyncClock = currentSysClock;
+
+  uint32_t zcToCounts[4] = { 0, 0, 0, 0 };
+  const uint32_t triggerSource[4] = { 3, 0, 1, 2 };
+
+  for (uint32_t i = 0; i < 4; i++) {
+    ZxNextCtcChannel *ch = zxnextCtcChannel(i);
+    if (ch->state == 3u && !zxnextCtcIsCounterMode(ch)) {
+      zcToCounts[i] = zxnextCtcAdvanceChannelBySysClocks(ch, elapsed);
+    }
+  }
+
+  for (uint32_t i = 0; i < 4; i++) {
+    ZxNextCtcChannel *ch = zxnextCtcChannel(i);
+    if (ch->state == 3u && zxnextCtcIsCounterMode(ch)) {
+      zcToCounts[i] = zxnextCtcAdvanceChannelByTriggers(ch, zcToCounts[triggerSource[i]]);
+    }
+  }
+
+  for (uint32_t i = 0; i < 4; i++) {
+    if (zcToCounts[i] > 0 && zxnextGetCtcIntEnabled(i)) {
+      zxnextInterruptsSetDaisyStatus(3u + i, 1);
+    }
+  }
 }
 
 void zxnextCtcReset(void) {
@@ -30,6 +158,8 @@ void zxnextCtcReset(void) {
     zxnextCtcChannels[i].clkTrgD = 0;
     zxnextCtcChannels[i].zcTo = 0;
   }
+  zxnextCtcLastSyncClock = 0;
+  zxnextCtcIm2VectorWrite = 0;
 }
 
 void zxnextCtcClock(uint32_t channel, uint32_t iowr, uint32_t cpuData, uint32_t clkTrg, uint32_t intEnWr, uint32_t intEn) {
@@ -93,6 +223,36 @@ void zxnextCtcClock(uint32_t channel, uint32_t iowr, uint32_t cpuData, uint32_t 
   else if (iowrTc) ch->controlReg = oldControlReg & ~0x01u;
   else if (intEnWr) ch->controlReg = intEn ? (oldControlReg | 0x20u) : (oldControlReg & ~0x20u);
   if (iowrTc) ch->timeConstantReg = byteData;
+}
+
+void zxnextCtcOnFrameCompleted(void) {
+  zxnextCtcAdvanceToSysClock(ZXNEXT_TACTS_IN_FRAME);
+  zxnextCtcLastSyncClock = 0;
+}
+
+uint32_t zxnextCtcReadPort(uint32_t port) {
+  if (!zxnextCtcPortsEnabled()) return 0xffu;
+  const uint32_t channel = zxnextCtcPortChannel(port);
+  if (channel >= 4u) return 0x00u;
+  zxnextCtcAdvanceToSysClock(frameTacts28);
+  return zxnextCtcChannel(channel)->count;
+}
+
+void zxnextCtcWritePort(uint32_t port, uint32_t value) {
+  if (!zxnextCtcPortsEnabled()) return;
+  const uint32_t channel = zxnextCtcPortChannel(port);
+  if (channel >= 4u) return;
+
+  ZxNextCtcChannel *ch = zxnextCtcChannel(channel);
+  if (((value & 0x01u) == 0) && !zxnextGetCtcExpectingTimeConstant(channel)) {
+    zxnextCtcIm2VectorWrite = 1;
+    return;
+  }
+
+  zxnextCtcAdvanceToSysClock(frameTacts28);
+  zxnextCtcClock(channel, 1, value, 0, 0, 0);
+  zxnextCtcClock(channel, 0, value, 0, 0, 0);
+  zxnextCtcLastSyncClock += 2u;
 }
 
 uint32_t zxnextGetCtcState(uint32_t channel) { return zxnextCtcChannel(channel)->state; }

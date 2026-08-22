@@ -13,7 +13,7 @@ import { createMainApi } from "@common/messaging/MainApi";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
 import { ZxNextMachine } from "./ZxNextMachine";
 
-export type ZxNextWasmV2ScaffoldSurface =
+export type ZxNextWasmV2MigrationSurface =
   | "registers"
   | "memory"
   | "disassembly"
@@ -22,12 +22,28 @@ export type ZxNextWasmV2ScaffoldSurface =
   | "frame"
   | "debug";
 
-export type ZxNextWasmV2ScaffoldStopReason =
-  | "scaffoldReset"
-  | "scaffoldDebugStep"
+export type ZxNextWasmV2DefaultBlocker =
+  | "timing-depth-parity";
+
+export type ZxNextWasmV2StopReason =
+  | "reset"
+  | "debugStep"
   | "wasmFrameComplete";
 
-export const ZXNEXT_WASM_V2_SCAFFOLD_SURFACES: ZxNextWasmV2ScaffoldSurface[] = [];
+export const ZXNEXT_WASM_V2_MIGRATED_SURFACES: ZxNextWasmV2MigrationSurface[] = [
+  "registers",
+  "memory",
+  "disassembly",
+  "ULA",
+  "screen",
+  "frame",
+  "debug"
+];
+
+export const ZXNEXT_WASM_V2_DEFAULT_READY = false;
+export const ZXNEXT_WASM_V2_DEFAULT_BLOCKERS: ZxNextWasmV2DefaultBlocker[] = [
+  "timing-depth-parity"
+];
 
 const ZXNEXT_SD_HOST_COMMAND_READ = 1;
 const ZXNEXT_SD_HOST_COMMAND_WRITE = 2;
@@ -39,8 +55,9 @@ export type ZxNextWasmV2Diagnostics = {
   backend: "wasm";
   engine: "v2";
   artifactName: string;
-  implementationIncomplete: true;
-  scaffoldSurfaces: ZxNextWasmV2ScaffoldSurface[];
+  defaultReady: boolean;
+  defaultBlockers: ZxNextWasmV2DefaultBlocker[];
+  migratedSurfaces: ZxNextWasmV2MigrationSurface[];
   memoryBytes: number;
   flatMemoryBytes: number;
   screenWidth: number;
@@ -52,7 +69,7 @@ export type ZxNextWasmV2Diagnostics = {
   frameCompleted: boolean;
   normalFrames: number;
   debugSteps: number;
-  lastScaffoldStopReason: ZxNextWasmV2ScaffoldStopReason;
+  lastWasmStopReason: ZxNextWasmV2StopReason;
   diagnosticFlags: number;
 };
 
@@ -97,7 +114,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
   private wasmV2NormalFrames = 0;
   private wasmV2DebugSteps = 0;
-  private wasmV2LastScaffoldStopReason: ZxNextWasmV2ScaffoldStopReason = "scaffoldReset";
+  private wasmV2LastStopReason: ZxNextWasmV2StopReason = "reset";
   private readonly nextRegDescriptors = this.createNextRegDescriptors();
 
   constructor(
@@ -128,7 +145,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
         return wasmSelf.wasmV2Runtime?.exports.zxnextGetTapeEarBit() !== 0;
       },
       get micBit() {
-        return wasmSelf.wasmV2Runtime?.exports.zxnextGetMicBit() !== 0;
+        return wasmSelf.wasmV2Runtime?.exports.zxnextGetTapeMicBit() !== 0;
       },
       set micBit(value: boolean) {
         wasmSelf.wasmV2Runtime?.exports.zxnextProcessTapeMicBit(value ? 1 : 0);
@@ -140,8 +157,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.floatingBusDevice = {
       readFloatingBus: () => this.doReadPort(0xffff)
     };
-    this.installNextRegScaffold();
-    this.installMemoryMappingScaffold();
+    this.installWasmNextRegFacade();
+    this.installWasmMemoryMappingFacade();
   }
 
   override get a(): number {
@@ -443,7 +460,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       this.wasmV2Runtime.exports.zxnextReset();
       this.wasmV2NormalFrames = 0;
       this.wasmV2DebugSteps = 0;
-      this.wasmV2LastScaffoldStopReason = "scaffoldReset";
+      this.wasmV2LastStopReason = "reset";
       this.syncCpuFromWasmV2(this.wasmV2Runtime);
     }
   }
@@ -468,7 +485,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.syncCpuFromWasmV2(runtime);
     this.syncWasmV2StorageFrameCommand(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
-    this.wasmV2LastScaffoldStopReason = "wasmFrameComplete";
+    this.wasmV2LastStopReason = "wasmFrameComplete";
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
   }
@@ -476,7 +493,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   executeWasmV2DebugStep(): FrameTerminationMode {
     const runtime = this.requireWasmV2Runtime();
     this.executeWasmV2Instruction(runtime);
-    this.wasmV2LastScaffoldStopReason = "scaffoldDebugStep";
+    this.wasmV2LastStopReason = "debugStep";
     this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent;
     return FrameTerminationMode.DebugEvent;
   }
@@ -528,7 +545,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       this.importWasmV2BusAccess(runtime);
       this.syncWasmV2StorageFrameCommand(runtime);
       this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
-      this.wasmV2LastScaffoldStopReason = "scaffoldDebugStep";
+      this.wasmV2LastStopReason = "debugStep";
 
       if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
         const point = this.executionContext.terminationPoint;
@@ -865,8 +882,9 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       backend: "wasm",
       engine: "v2",
       artifactName: runtime.artifactName,
-      implementationIncomplete: true,
-      scaffoldSurfaces: ZXNEXT_WASM_V2_SCAFFOLD_SURFACES.slice(),
+      defaultReady: ZXNEXT_WASM_V2_DEFAULT_READY,
+      defaultBlockers: ZXNEXT_WASM_V2_DEFAULT_BLOCKERS.slice(),
+      migratedSurfaces: ZXNEXT_WASM_V2_MIGRATED_SURFACES.slice(),
       memoryBytes: runtime.exports.zxnextGetMemorySize(),
       flatMemoryBytes: runtime.exports.zxnextGetFlatMemorySize(),
       screenWidth: runtime.exports.zxnextGetScreenWidth(),
@@ -878,7 +896,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       frameCompleted: runtime.exports.zxnextGetFrameCompleted() !== 0,
       normalFrames: this.wasmV2NormalFrames,
       debugSteps: this.wasmV2DebugSteps,
-      lastScaffoldStopReason: this.wasmV2LastScaffoldStopReason,
+      lastWasmStopReason: this.wasmV2LastStopReason,
       diagnosticFlags: runtime.exports.zxnextGetDiagnosticFlags()
     };
   }
@@ -887,7 +905,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     runtime.exports.zxnextHardReset();
     this.wasmV2NormalFrames = 0;
     this.wasmV2DebugSteps = 0;
-    this.wasmV2LastScaffoldStopReason = "scaffoldReset";
+    this.wasmV2LastStopReason = "reset";
   }
 
   private syncWasmV2StorageFrameCommand(runtime: ZxNextWasmV2Runtime): void {
@@ -931,7 +949,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     }
   }
 
-  private installNextRegScaffold(): void {
+  private installWasmNextRegFacade(): void {
     this.nextRegDevice.setNextRegisterIndex = (reg: number) => {
       this.requireWasmV2Runtime().exports.zxnextSetNextRegisterIndex(reg & 0xff);
     };
@@ -948,7 +966,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.nextRegDevice.getNextRegDeviceState = () => this.getWasmNextRegDeviceState();
   }
 
-  private installMemoryMappingScaffold(): void {
+  private installWasmMemoryMappingFacade(): void {
     this.memoryDevice.readMemory = (address: number) => this.doReadMemory(address);
     this.memoryDevice.writeMemory = (address: number, data: number) => {
       this.doWriteMemory(address, data);
@@ -1057,7 +1075,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     for (let id = 0; id < 0x100; id++) {
       descriptors.push({
         id,
-        description: `WASM scaffold NextReg $${id.toString(16).padStart(2, "0").toUpperCase()}`
+        description: `WASM NextReg $${id.toString(16).padStart(2, "0").toUpperCase()}`
       });
     }
     return descriptors;

@@ -27,4 +27,21 @@ describe("ZX Spectrum Next WASM tape state", () => {
     wasm.tapeDevice.processMicBit(true);
     expect(wasm.tapeDevice.micBit).toBe(oracle.tapeDevice.micBit);
   });
+
+  it("matches TypeScript MIC handling through ULA port writes in save and passive modes", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    oracle.tapeDevice = new TapeDevice(oracle as any);
+
+    oracle.tapeDevice.tapeMode = TapeMode.Save;
+    wasm.tapeDevice.tapeMode = TapeMode.Save;
+    oracle.doWritePort(0x00fe, 0x08);
+    wasm.doWritePort(0x00fe, 0x08);
+    expect(wasm.tapeDevice.micBit).toBe(oracle.tapeDevice.micBit);
+
+    oracle.tapeDevice.tapeMode = TapeMode.Passive;
+    wasm.tapeDevice.tapeMode = TapeMode.Passive;
+    oracle.doWritePort(0x00fe, 0x00);
+    wasm.doWritePort(0x00fe, 0x00);
+    expect(wasm.tapeDevice.micBit).toBe(oracle.tapeDevice.micBit);
+  });
 });

@@ -11,8 +11,9 @@
 #include "zxnext-i2c.h"
 #include "zxnext-input.h"
 #include "zxnext-dma.h"
+#include "zxnext-ctc.h"
 
-static uint8_t zxnextPortsGroupEnabled(uint32_t regIndex, uint32_t bit) {
+static inline uint8_t zxnextPortsGroupEnabled(uint32_t regIndex, uint32_t bit) {
   uint32_t reg = 0x82u + (regIndex & 0x03u);
   return (zxnextNextRegs[reg] & (1u << (bit & 0x07u))) != 0;
 }
@@ -43,6 +44,8 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     lastPortValue = zxnextI2cReadSclPort();
   } else if ((normalized & 0xffffu) == 0x113bu) {
     lastPortValue = zxnextI2cReadSdaPort();
+  } else if ((normalized & 0xf8ffu) == 0x183bu) {
+    lastPortValue = zxnextCtcReadPort(normalized);
   } else if ((normalized & 0x00ffu) == 0x006bu) {
     zxnextDmaSetMode(0);
     lastPortValue = zxnextDmaReadStatusByte();
@@ -90,6 +93,8 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     zxnextI2cWriteSclPort(byteValue);
   } else if ((normalized & 0xffffu) == 0x113bu) {
     zxnextI2cWriteSdaPort(byteValue);
+  } else if ((normalized & 0xf8ffu) == 0x183bu) {
+    zxnextCtcWritePort(normalized, byteValue);
   } else if ((normalized & 0x00ffu) == 0x006bu) {
     zxnextDmaSetMode(0);
     zxnextDmaWritePort(byteValue);

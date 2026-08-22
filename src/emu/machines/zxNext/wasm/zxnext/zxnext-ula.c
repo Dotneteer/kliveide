@@ -27,7 +27,7 @@ static void zxnextUlaReset(void) {
   }
 }
 
-static uint32_t zxnextUlaReadPortFe(uint32_t address) {
+static inline uint32_t zxnextUlaReadPortFe(uint32_t address) {
   uint8_t portValue = (uint8_t)zxnextKeyboardReadPort(address);
   uint8_t bit6 = 0u;
   if (earBit) bit6 = 0x40u;
@@ -35,16 +35,15 @@ static uint32_t zxnextUlaReadPortFe(uint32_t address) {
   return (portValue & 0xbfu) | bit6;
 }
 
-static void zxnextUlaWritePortFe(uint32_t value) {
+static inline void zxnextUlaWritePortFe(uint32_t value) {
   uint8_t byteValue = (uint8_t)value;
   portFeValue = byteValue;
   borderColor = byteValue & 0x07u;
   micBit = (byteValue & 0x08u) != 0u;
   earBit = (byteValue & 0x10u) != 0u;
-  zxnextTapeProcessMicBit(micBit);
 }
 
-static uint32_t zxnextUlaColor(uint32_t color, uint32_t bright) {
+static inline uint32_t zxnextUlaColor(uint32_t color, uint32_t bright) {
   static const uint32_t normalColors[8] = {
     0xff000000u, 0xff0000b6u, 0xffb60000u, 0xffb600b6u,
     0xff00b600u, 0xff00b6b6u, 0xffb6b600u, 0xffb6b6b6u
@@ -56,11 +55,11 @@ static uint32_t zxnextUlaColor(uint32_t color, uint32_t bright) {
   return bright ? brightColors[color & 0x07u] : normalColors[color & 0x07u];
 }
 
-static uint32_t zxnextUlaBitmapAddress(uint32_t y, uint32_t xByte) {
+static inline uint32_t zxnextUlaBitmapAddress(uint32_t y, uint32_t xByte) {
   return 0x4000u | ((y & 0xc0u) << 5u) | ((y & 0x07u) << 8u) | ((y & 0x38u) << 2u) | xByte;
 }
 
-static uint32_t zxnextUlaAttributeAddress(uint32_t y, uint32_t xByte) {
+static inline uint32_t zxnextUlaAttributeAddress(uint32_t y, uint32_t xByte) {
   return 0x5800u | ((y >> 3u) << 5u) | xByte;
 }
 

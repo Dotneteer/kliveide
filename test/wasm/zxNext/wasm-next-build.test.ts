@@ -8,7 +8,7 @@ import {
 } from "../../../scripts/build-zxnext-wasm.cjs";
 import { describe, expect, it } from "vitest";
 
-describe("ZX Spectrum Next WASM scaffold build", () => {
+describe("ZX Spectrum Next WASM build", () => {
   it("builds the production artifact with the speed-optimized profile by default", () => {
     const calls: Array<{ compiler: string; args: string[] }> = [];
     buildZxNextWasm({
@@ -26,7 +26,7 @@ describe("ZX Spectrum Next WASM scaffold build", () => {
     expect(calls[0].args).toContain(productionOutput);
   });
 
-  it("exports the deterministic scaffold control surface", () => {
+  it("exports the deterministic WASM control surface", () => {
     expect(productionExports).toEqual(expect.arrayContaining([
       "memory",
       "zxnextMemoryPtr",

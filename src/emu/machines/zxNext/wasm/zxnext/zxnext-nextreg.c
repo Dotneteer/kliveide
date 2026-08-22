@@ -7,6 +7,9 @@
 
 static void zxnextNextRegHardReset(void) {
   for (uint32_t i = 0; i < ZXNEXT_NEXT_REG_COUNT; i++) zxnextNextRegs[i] = 0;
+  cpuProgrammedSpeed = 0;
+  cpuEffectiveSpeed = 0;
+  cpuTactScale = 8;
   zxnextNextRegs[0x00] = 0x08;
   zxnextNextRegs[0x01] = 0x32;
   zxnextNextRegs[0x03] = 0x03;
@@ -95,6 +98,12 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   } else if (normalized == 0xbbu) {
     zxnextDivMmcSetNextRegBB(value);
   }
+  if (normalized == 0x07u) {
+    cpuProgrammedSpeed = (uint8_t)(value & 0x03u);
+    cpuEffectiveSpeed = cpuProgrammedSpeed;
+    zxnextNextRegs[0x07u] = cpuProgrammedSpeed;
+    return;
+  }
   if (normalized == 0x08u) {
     zxnextPsgSetAyStereoMode(value & 0x10u);
     if ((value & 0x20u) == 0u) zxnextDacReset();
@@ -117,6 +126,8 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
 static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
   if (zxnextInterruptsHandlesNextRegister(reg)) return zxnextInterruptsGetNextRegister(reg);
   switch (reg & 0xffu) {
+    case 0x07u:
+      return zxnextNextRegs[0x07u];
     case 0xb8u: return zxnextDivMmcGetNextRegB8();
     case 0xb9u: return zxnextDivMmcGetNextRegB9();
     case 0xbau: return zxnextDivMmcGetNextRegBA();

@@ -39,8 +39,14 @@ static uint8_t cpuPrefix;
 
 static uint32_t frames;
 static uint32_t tacts;
+static uint32_t frameTacts28;
 static uint32_t currentFrameTact;
 static uint8_t frameCompleted;
+static uint32_t totalContentionDelaySinceStart;
+static uint32_t contentionDelaySincePause;
+static uint8_t cpuProgrammedSpeed;
+static uint8_t cpuEffectiveSpeed;
+static uint32_t cpuTactScale;
 static uint16_t lastMemoryAddress;
 static uint8_t lastMemoryValue;
 static uint8_t lastMemoryIsWrite;
@@ -90,7 +96,7 @@ uint32_t zxnextPixelBufferPtr(void) { return (uint32_t)(uintptr_t)zxnextPixelBuf
 uint32_t zxnextKeyboardLinesPtr(void) { return (uint32_t)(uintptr_t)zxnextKeyboardLines; }
 uint32_t zxnextNextRegsPtr(void) { return (uint32_t)(uintptr_t)zxnextNextRegs; }
 
-static void clearScaffoldBuffers(void) {
+static void clearMachineBuffers(void) {
   for (uint32_t i = 0; i < ZXNEXT_MEMORY_SIZE; i++) zxnextMemory[i] = 0;
   for (uint32_t i = 0; i < ZXNEXT_PIXEL_COUNT; i++) zxnextPixelBuffer[i] = 0x00000000u;
   zxnextKeyboardReset();
@@ -136,7 +142,7 @@ void zxnextReset(void) {
   cpuHalted = 0;
   cpuPrefix = 0;
   zxnextFrameReset();
-  zxnextDebugResetScaffold();
+  zxnextDebugReset();
   zxnextCpuReset();
   zxnextNmiReset();
   zxnextInterruptsReset();
@@ -167,7 +173,7 @@ void zxnextReset(void) {
 
 void zxnextHardReset(void) {
   zxnextReset();
-  clearScaffoldBuffers();
+  clearMachineBuffers();
 }
 
 uint32_t zxnextExecuteFrame(void) {
@@ -258,7 +264,8 @@ uint32_t zxnextGetDaisyInService(uint32_t index) { return zxnextInterruptsGetDai
 
 void zxnextSetTacts(uint32_t value) {
   tacts = value;
-  currentFrameTact = value % zxnextGetTactsInFrame();
+  frameTacts28 = (value * (8u >> cpuEffectiveSpeed)) % zxnextGetTactsInFrame();
+  currentFrameTact = frameTacts28 >> 2;
   z80SetTacts(value);
   zxnextBeeperSetTacts(value);
 }
@@ -359,6 +366,7 @@ uint32_t zxnextChecksumPhysicalMemory(uint32_t offset, uint32_t length) {
 void zxnextSetTapeMode(uint32_t mode) { zxnextTapeSetMode(mode); }
 uint32_t zxnextGetTapeMode(void) { return zxnextTapeGetMode(); }
 uint32_t zxnextGetTapeEarBit(void) { return zxnextTapeGetEarBit(); }
+uint32_t zxnextGetTapeMicBit(void) { return zxnextTapeGetMicBit(); }
 void zxnextProcessTapeMicBit(uint32_t value) { zxnextTapeProcessMicBit(value); }
 uint32_t zxnextGetUlaFlashCounter(void) { return zxnextUlaGetFlashCounter(); }
 uint32_t zxnextGetUlaFlashFlag(void) { return zxnextUlaGetFlashFlag(); }

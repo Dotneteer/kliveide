@@ -5,14 +5,14 @@ import {
   createTestZxNextWasmMachine,
   createZxNextOracleComparison,
   createZxNextOracleHarness,
-  ZXNEXT_ORACLE_SCAFFOLD_SURFACES
+  ZXNEXT_ORACLE_MIGRATED_SURFACES
 } from "./wasm-next-test-helpers";
 import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import { describe, expect, it } from "vitest";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 describe("ZX Spectrum Next WASM oracle test helpers", () => {
-  it("creates a TypeScript oracle and explicit WASM scaffold machine", async () => {
+  it("creates a TypeScript oracle and explicit WASM migration machine", async () => {
     const oracle = await createOracleZxNextMachine();
     const wasm = await createTestZxNextWasmMachine();
     const harness = await createZxNextOracleHarness();
@@ -30,8 +30,8 @@ describe("ZX Spectrum Next WASM oracle test helpers", () => {
     expect(comparison.snapshotOrder).toEqual(["typescript", "wasm"]);
     expect(comparison.oracle.backend).toBe("typescript");
     expect(comparison.wasm.backend).toBe("wasm");
-    expect(comparison.oracle.coveredSurfaces).toEqual(ZXNEXT_ORACLE_SCAFFOLD_SURFACES);
-    expect(comparison.wasm.coveredSurfaces).toEqual(ZXNEXT_ORACLE_SCAFFOLD_SURFACES);
+    expect(comparison.oracle.coveredSurfaces).toEqual(ZXNEXT_ORACLE_MIGRATED_SURFACES);
+    expect(comparison.wasm.coveredSurfaces).toEqual(ZXNEXT_ORACLE_MIGRATED_SURFACES);
 
     expect(comparison.oracle.cpu).toMatchObject({
       sp: expect.any(Number),
@@ -74,7 +74,7 @@ describe("ZX Spectrum Next WASM oracle test helpers", () => {
     });
     expect(comparison.oracle.debug.disassemblyPreview).toHaveLength(4);
 
-    expect(comparison.wasmDiagnostics.implementationIncomplete).toBe(true);
-    expect(comparison.wasmDiagnostics.scaffoldSurfaces).toEqual(ZXNEXT_ORACLE_SCAFFOLD_SURFACES);
+    expect(comparison.wasmDiagnostics.defaultReady).toBe(false);
+    expect(comparison.wasmDiagnostics.migratedSurfaces).toEqual(ZXNEXT_ORACLE_MIGRATED_SURFACES);
   });
 });

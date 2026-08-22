@@ -5,6 +5,9 @@
 
 void zxnextCtcReset(void);
 void zxnextCtcClock(uint32_t channel, uint32_t iowr, uint32_t cpuData, uint32_t clkTrg, uint32_t intEnWr, uint32_t intEn);
+void zxnextCtcOnFrameCompleted(void);
+uint32_t zxnextCtcReadPort(uint32_t port);
+void zxnextCtcWritePort(uint32_t port, uint32_t value);
 uint32_t zxnextGetCtcState(uint32_t channel);
 uint32_t zxnextGetCtcControlReg(uint32_t channel);
 uint32_t zxnextGetCtcTimeConstant(uint32_t channel);

@@ -51,8 +51,8 @@ describe("ZX Spectrum Next WASM full boot smoke", () => {
     expect(machine.currentFrameTact).toBeLessThanOrEqual(machine.frameTacts);
     expect(machine.frameCompleted).toBe(true);
     expect(machine.executionContext.lastTerminationReason).toBe(FrameTerminationMode.Normal);
-    expect(diagnostics.lastScaffoldStopReason).toBe("wasmFrameComplete");
-    expect(diagnostics.lastScaffoldStopReason).not.toMatch(/scaffold|guard|safety/i);
+    expect(diagnostics.lastWasmStopReason).toBe("wasmFrameComplete");
+    expect(diagnostics.lastWasmStopReason).not.toMatch(/scaffold|guard|safety/i);
     expect(machine.wasmV2Runtime!.exports.zxnextGetKeyboardLine(0)).toBe(keyboardLineBeforeInput);
 
     const pixels = machine.getPixelBuffer();

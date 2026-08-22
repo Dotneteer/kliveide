@@ -2,22 +2,150 @@
 
 Created: 2026-08-16
 
-Status: Done on 2026-08-20.
+Status: Active. The WASM backend is explicitly selectable, but the production
+default flip remains reopened while timing-depth parity work continues. The
+earlier binary-size inversion is now explained and no longer a live blocker.
 
 ## Goal
 
 Migrate the current ZX Spectrum Next TypeScript implementation to a C/WASM
-backend without changing observable emulator semantics.
+backend without changing observable emulator semantics. The end state is a
+fast, production-usable WASM implementation that can replace the TypeScript
+backend for normal emulation, with TypeScript retained as an explicit fallback
+and oracle.
 
 The TypeScript implementation is the oracle. The WASM implementation may be
 introduced only through small parity-tested slices that prove the same behavior
 through the same public machine, debugger, memory, disassembly, register,
 screen, input, storage, and IDE inspection surfaces.
 
+## Current Migration State
+
+Updated: 2026-08-20.
+
+The migration is advanced but not complete for the user's stated goal. Steps
+1-26 are recorded as done and provide an explicitly selectable ZX Spectrum Next
+WASM backend with shared Z80N CPU integration, a broad WASM test matrix,
+boot/visual smoke coverage, public adapter coverage, representative device
+parity tests, speed-oriented build evidence, and a shared-source audit. Steps
+27-28 were attempted, but the default flip was reopened after the artifact-size
+audit below. The first Step 29 slice resolved the binary-size inversion by
+adding shared Z80N timing hooks; timing-depth parity is still open.
+
+The WASM backend is not currently the normal ZX Spectrum Next implementation:
+
+- `DEFAULT_ZXNEXT_IMPLEMENTATION` is `"typescript"`.
+- The normal `ZX Spectrum Next` model selects TypeScript.
+- `ZX Spectrum Next Preview` selects WASM explicitly.
+- `ZxNextWasmV2Machine.getWasmV2Diagnostics()` reports
+  `defaultReady: false`, `defaultBlockers` containing `timing-depth-parity`,
+  and positive `migratedSurfaces`.
+- `src/emu/machines/zxNext/wasm/README.md`,
+  `.ai/wasm-migration-intent-and-lessons.md`, and
+  `src/emu/machines/zxNext/ZxNextImplementation.ts` describe TypeScript as the
+  current oracle/default while the audit is open.
+- `test:zxnext-wasm-acceptance` is a focused acceptance suite, not the full
+  matrix; `test:zxnext-wasm-matrix` runs all `test/wasm/zxNext` suites.
+- The Step 24 matrix accounts for every `test/zxnext/*.test.ts` suite by either
+  WASM coverage or an explicit boundary/exclusion classification.
+
+Artifact-size audit (2026-08-20):
+
+- ZX Spectrum 48K WASM artifact: 470,922 bytes.
+- ZX Spectrum 128K WASM artifact: 563,638 bytes.
+- ZX Spectrum +3E WASM artifact: 547,836 bytes.
+- ZX Spectrum Next WASM artifact: 180,358 bytes.
+- `wasm-objdump -h` shows the Next artifact has more functions/exports than
+  48K, but a much smaller code section: Next code section `0x27f4c`
+  (about 164 KB), 48K code section `0x6ff8d` (about 459 KB).
+- This is not caused by the Next build using the size profile; the Next build
+  still uses `speed` (`-O3 -Wl,--strip-all`).
+- The likely cause is missing timing/device depth. One confirmed source-level
+  difference is that 48K defines Z80 memory/port/address-bus delay hooks that
+  apply contention, tact advancement, and audio sampling inside the shared CPU
+  core, while Next currently includes the shared Z80N core without equivalent
+  delay hooks.
+- Step 29 timing-hook slice result: the Next artifact is now 574,085 bytes,
+  with `wasm-objdump -h` reporting code section `0x88139` (about 557 KB),
+  1,241 functions, and 316 exports. This is now larger than the 48K artifact
+  and consistent with inlined speed-oriented timing hooks rather than an
+  accidentally shallow backend.
+
+The remaining work is to close the timing-depth audit, then redo the default
+flip and TypeScript maintenance-mode policy.
+
+## Preliminary Principle Audit
+
+Updated: 2026-08-20.
+
+The Step 26 audit resolved several speed-and-reuse items, but the later
+artifact-size comparison reopened the timing-depth gate. Preserve these
+principles in future Next WASM work:
+
+| Principle | Current evidence | Risk | Required follow-up |
+| --- | --- | --- | --- |
+| Speed-oriented build | `scripts/build-zxnext-wasm.cjs` defaults `ZXNEXT_WASM_OPTIMIZATION` to `speed`, which uses `-O3` and stripped output. | Good default, but Step 19 only recorded a smoke benchmark. | Step 26 must record realistic TypeScript-vs-WASM benchmark scenarios before default rollout. |
+| Inline-friendly C layout | `src/emu/machines/zxNext/wasm/zxnext/zxnext.c` includes the device `.c` files into one translation unit, and most internal helpers are `static`. | Clang can inline many helpers at `-O3`, but hot paths are not deliberately audited; only a few helpers are explicitly `static inline`. | Step 26 must audit hot CPU/memory/port/screen/audio paths and add explicit `static inline` or macro-based adapters where measurement or code shape shows call overhead risk. |
+| Shared CPU | `src/emu/machines/zxNext/wasm/zxnext/zxnext-cpu.c` includes `src/emu/z80/wasm/z80.c` and enables Z80N mode. | This follows the intended shared-CPU principle. | Keep the Step 23 shared Z80N source guard green. |
+| Shared classic devices | 48K/128K/+3E include common sources such as `zx-spectrum-ula.c`, `zx-spectrum-keyboard.c`, `zx-spectrum-beeper.c`, `zx-spectrum-tape.c`, `zx-spectrum-psg.c`, and `zx-spectrum-ports.c`; Next currently has separate `zxnext-ula.c`, `zxnext-keyboard.c`, `zxnext-beeper.c`, `zxnext-tape.c`, `zxnext-psg.c`, and `zxnext-ports.c`. | This may be correct for Next-specific behavior, but it currently looks like duplication unless oracle tests justify each fork. Duplicated device logic can drift and can miss optimizations already learned by the shared implementations. | Step 26 must produce a shared-source audit table for CPU, ULA, keyboard, beeper, tape, PSG, and ports. Each entry must either reuse shared code, introduce a thin parameterized shared adapter, or record a TypeScript-oracle-backed reason for staying Next-specific. |
+
+The preliminary audit is no longer sufficient for the default flip. If future
+work keeps a device Next-specific, the plan or tests must name the behavior
+that prevents sharing; "Next is more complex" is not enough by itself.
+
+Pre-Step26 audit progress:
+
+- 2026-08-20: Applied the shared Spectrum keyboard hot-path pattern to
+  `src/emu/machines/zxNext/wasm/zxnext/zxnext-keyboard.c`. Next now caches all
+  256 selected-line combinations and reads `$FE` keyboard state from that cache
+  instead of looping across eight rows for every port read. This preserves the
+  current Next-specific module shape but removes one avoidable hot-path
+  difference from `zx-spectrum-keyboard.c`.
+- Verified:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-keyboard-ula.test.ts`
+- 2026-08-20: Reworked
+  `src/emu/machines/zxNext/wasm/zxnext/zxnext-psg.c` to mirror the TypeScript
+  `PsgChip("YM")` tone, noise-prescaler, envelope, and diagnostic-output state
+  machine more closely. Added oracle assertions for YM tone output, TurboSound
+  stereo routing, noise progression, and envelope progression in
+  `test/wasm/zxNext/wasm-next-psg-audio.test.ts`. This is still a
+  Next-specific PSG/TurboSound module, so Step 26 must still decide whether to
+  extract a shared AY/YM C core used by 128K/+3E and Next.
+- Verified:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-psg-audio.test.ts`
+- 2026-08-20: Added explicit `static inline` annotations to small hot-path
+  helpers in the Next WASM memory, ULA, port-gating, keyboard, DMA endpoint,
+  and PSG modules. This preserves the current single-translation-unit layout
+  while making the speed intent visible in source instead of relying entirely on
+  optimizer inference.
+- Verified:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-memory-mmu.test.ts test/wasm/zxNext/wasm-next-ports.test.ts test/wasm/zxNext/wasm-next-dma.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-screen-ula.test.ts test/wasm/zxNext/wasm-next-psg-audio.test.ts`
+  - `npm run check:zxnext-wasm-size` (`actualBytes`: 180322, `maxBytes`: 200000)
+- 2026-08-20: Audited the Next `$FE` beeper/tape handoff against
+  `src/emu/machines/zxNext/UlaDevice.ts`. Unlike the shared Spectrum `$FE`
+  helper, TypeScript Next does not forward ULA port bit 3 writes into
+  `TapeDevice.processMicBit`; it updates the ULA latch and beeper only. Split
+  WASM tape MIC state from the ULA MIC latch, added `zxnextGetTapeMicBit`, and
+  pointed the adapter tape facade at the tape-owned value. This is a concrete
+  oracle-backed reason not to reuse the classic Spectrum `$FE` write behavior
+  wholesale for Next.
+- Verified:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-beeper-audio.test.ts test/wasm/zxNext/wasm-next-tape.test.ts test/wasm/zxNext/wasm-next-keyboard-ula.test.ts test/wasm/zxNext/wasm-next-loader.test.ts`
+
 ## Non-Negotiable Rules
 
+- The migration is not done merely because the WASM backend builds,
+  instantiates, runs frames, or has a preview model. It is done only when the
+  normal ZX Spectrum Next model can use WASM as the default production backend.
 - Read the 48K, 128K, and +2/+3 WASM integration code before every slice that
   touches loading, factory selection, frame execution, tests, or packaging.
+- Read `.ai/wasm-migration-intent-and-lessons.md` at the start of every future
+  session and preserve its distinction between scaffolding, partial device
+  shells, tested parity, and production-ready replacement.
 - Transfer behavior from the existing TypeScript Next code, not from a
   reconstructed design or a simplified model.
 - Do not make WASM the default or add a backend-specific product model until
@@ -37,6 +165,12 @@ screen, input, storage, and IDE inspection surfaces.
   force the 48K/128K architecture onto Next before proving the more complex Next
   semantics slice by slice.
 - Any temporary delegation must be explicit in tests and removed before rollout.
+- Prefer shared C/WASM device sources when behavior is genuinely common across
+  Spectrum models. Keep Next-specific C only when TypeScript oracle tests prove
+  the behavior differs or the device is unique to Next.
+- Use speed-oriented WASM builds for model backends. Binary size is a diagnostic
+  signal, not the primary optimization target; suspicious size drops must be
+  audited for missing linked code or stubbed devices.
 - For every step, read the listed TypeScript source files first. Those files are
   the behavioral contract. Listed 48K/128K/+2/+3 WASM files are pattern
   references only; they must not override Next TypeScript semantics.
@@ -49,7 +183,9 @@ screen, input, storage, and IDE inspection surfaces.
 Read these before new implementation work:
 
 - `AGENTS.md`
+- `.ai/wasm-migration-intent-and-lessons.md`
 - `.ai/wasm-v2-machine-migration-guide.md`
+- `.ai/zx-spectrum-next-wasm-parity-audit.md`
 - `.plans/ZX_SPECTRUM_128_WASM_MIGRATION_PLAN.md`
 - `.plans/ZX_SPECTRUM_PLUS3_WASM_MIGRATION_PLAN.md`
 - `.plans/ZX_SPECTRUM_WASM_TEST_MIGRATION_PLAN.md`
@@ -146,7 +282,7 @@ Completion notes:
 
 ### Step 2 - IDE Integration Scaffold
 
-Status: Done
+Status: Reopened
 
 Create an explicitly selectable but incomplete WASM integration scaffold. This
 step exists to prove the IDE/emulator contract first: register view, memory
@@ -1609,44 +1745,83 @@ Completed in this step:
   `npm run build:zxnext-wasm`, `npm run check:zxnext-wasm-size`,
   `npm run build:check`, `git diff --check`, and full `npm run test`.
 
-### Step 25 - Remove Incomplete Diagnostics
+### Step 25 - Remove Incomplete Diagnostics And Stale Scaffold Docs
 
-Status: Not started
+Status: Done
 
-The WASM backend cannot become the default while it still reports
-`implementationIncomplete: true`. This step turns the preview diagnostics into
-production diagnostics only after the shared Z80N CPU integration and full WASM
-Next matrix pass.
+The WASM backend cannot become the default while diagnostics still describe it
+as an incomplete scaffold. This step replaces the stale preview diagnostics with
+production-readiness diagnostics while keeping the default gate explicit.
 
 Required coverage:
 
-- `ZxNextWasmV2Diagnostics.implementationIncomplete` becomes `false` or is
-  removed/replaced with a production-ready capability field.
-- `ZXNEXT_WASM_V2_SCAFFOLD_SURFACES` remains empty and tests fail if any migrated
-  production surface is reintroduced as scaffolded.
-- Stop reason names describe real emulator/debugger states, not scaffold states.
+- `ZxNextWasmV2Diagnostics.implementationIncomplete` is removed and replaced
+  with `defaultReady`, `defaultBlockers`, and `migratedSurfaces`.
+- Tests fail if the set of migrated public surfaces changes without oracle
+  coverage being updated.
+- Stop reason names describe real emulator/debugger states, not scaffold states:
+  `reset`, `debugStep`, and `wasmFrameComplete`.
+- `lastScaffoldStopReason` is replaced with `lastWasmStopReason`.
+- `src/emu/machines/zxNext/wasm/README.md`,
+  `src/emu/machines/zxNext/ZxNextImplementation.ts`, and any test helper text
+  no longer describe the WASM backend as a scaffold.
+- Tests that asserted `implementationIncomplete: true` now assert explicit
+  production-readiness blockers from real WASM-owned state.
 - The acceptance suite verifies production diagnostics from a real factory-created
   WASM machine.
 
 Target files:
 
 - `src/emu/machines/zxNext/ZxNextWasmV2Machine.ts`
+- `src/emu/machines/zxNext/ZxNextImplementation.ts`
+- `src/emu/machines/zxNext/wasm/README.md`
+- `test/wasm/zxNext/wasm-next-test-helpers.ts`
+- `test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts`
+- `test/wasm/zxNext/wasm-next-public-adapter.test.ts`
+- `test/wasm/zxNext/wasm-next-test-helpers.test.ts`
+
+Completion notes:
+
+- Replaced scaffold diagnostics with positive migrated-surface and
+  default-blocker diagnostics.
+- Removed scaffold-era stop reason names from the adapter, C debug helper, and
+  tests.
+- Updated the WASM README and implementation selector comment so they describe
+  the backend as an explicitly selectable migration candidate.
+- At the end of Step 25, kept `defaultReady: false`; later Steps 26 and 27
+  closed the production-default gates and changed this to `true`.
+- Validation passed:
+  - `npm run build:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-ide-scaffold.test.ts test/wasm/zxNext/wasm-next-scaffold-diagnostics.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-public-adapter.test.ts test/wasm/zxNext/wasm-next-frame-runner.test.ts test/wasm/zxNext/wasm-next-debug-tools-scaffold.test.ts test/wasm/zxNext/wasm-next-status-bar-scaffold.test.ts test/zxnext/ZxNextMachineFactory.test.ts`
+  - `npm run test:zxnext-wasm-acceptance`
+  - `npm run test:zxnext-wasm-matrix`
+  - `npm run check:zxnext-wasm-size`
+  - `npm run build:check`
+  - `git diff --check`
+- `test/wasm/zxNext/wasm-next-scaffold-diagnostics.test.ts`
+- `test/wasm/zxNext/wasm-next-ide-scaffold.test.ts`
 - `test/wasm/zxNext/wasm-next-production-diagnostics.test.ts`
 - `test/wasm/zxNext/wasm-next-rollout.test.ts`
 
 Done when:
 
 - No default-candidate WASM machine reports incomplete/scaffold diagnostics.
-- `npm run test:zxnext-wasm-acceptance`, `npm run build:check`, and full
-  `npm run test` pass.
+- Stale scaffold/incomplete wording is gone from the production backend docs,
+  types, and assertions except where history is explicitly being described.
+- `npm run test:zxnext-wasm-acceptance`, `npm run test:zxnext-wasm-matrix`,
+  `npm run build:zxnext-wasm`, `npm run check:zxnext-wasm-size`,
+  `npm run build:check`, full `npm run test`, and `git diff --check` pass.
 
-### Step 26 - Production Performance Gate
+### Step 26 - Production Performance And Shared-Source Gate
 
-Status: Not started
+Status: Done
 
 Run a realistic performance pass after the full matrix is green. The current
 Step 19 benchmark is a smoke benchmark; this step must measure enough normal
-emulation workload to decide whether WASM is production-suitable.
+emulation workload to decide whether WASM is production-suitable. This step
+also audits whether shared C/WASM device sources are used where behavior is
+common, so the Next backend does not quietly grow duplicate implementations for
+shared Spectrum hardware.
 
 Required coverage:
 
@@ -1656,11 +1831,24 @@ Required coverage:
 - Report stop reason distribution for each scenario.
 - Fail if successful frames stop through a safety guard.
 - Define and record an acceptable performance threshold for default rollout.
+- Confirm the ZX Next WASM build uses the fast/speed-oriented build profile.
+- Treat binary size as a diagnostic: record the artifact size and investigate
+  unexpected drops or growth against the linked source list.
+- Audit common Spectrum devices against
+  `src/emu/machines/zxSpectrum/wasm/common/` and record whether Next reuses a
+  shared source, uses a thin adapter over shared source, or intentionally keeps
+  a Next-specific implementation with a TypeScript oracle reason.
+- Keep the shared Z80N CPU source contract from Step 23 green.
 
 Target files:
 
 - `scripts/benchmark-zxnext-wasm.cjs`
+- `scripts/build-zxnext-wasm.cjs`
+- `scripts/check-zxnext-wasm-size.cjs`
+- `src/emu/machines/zxNext/wasm/README.md`
+- `src/emu/machines/zxNext/wasm/zxnext/`
 - `test/wasm/zxNext/wasm-next-production-performance.test.ts`
+- `test/wasm/zxNext/wasm-next-shared-source-contract.test.ts`
 - `package.json`
 
 Done when:
@@ -1668,14 +1856,82 @@ Done when:
 - `npm run benchmark:zxnext-wasm` emits TypeScript-vs-WASM comparison results.
 - The benchmark meets the recorded threshold on the development machine.
 - Size and memory bounds remain within guard limits.
+- The plan records a shared-source audit table for CPU, ULA, keyboard, beeper,
+  tape, PSG, and ports, including the reason for every Next-specific fork.
+- `npm run test:zxnext-wasm-matrix`, `npm run build:zxnext-wasm`,
+  `npm run check:zxnext-wasm-size`, `npm run build:check`, full
+  `npm run test`, and `git diff --check` pass.
+
+Completion notes:
+
+- Reworked `scripts/benchmark-zxnext-wasm.cjs` from a raw-WASM smoke benchmark
+  into a TypeScript-vs-WASM comparison benchmark.
+- Benchmark scenarios:
+  - `nextzxos-idle`: ROM-loaded NextZXOS boot/idle frames.
+  - `screen-heavy`: NOP-loop frame execution plus screen memory writes and
+    `renderInstantScreen()`.
+  - `audio-heavy`: NOP-loop frame execution plus `$FE` beeper toggles and PSG
+    register writes.
+  - `storage-command`: SD card command handoff through the public port path.
+  - `debug-step`: debugger step operations through the public frame runner.
+- Recorded thresholds:
+  - Screen-heavy and audio-heavy frame workloads must be at least `1.0x`
+    TypeScript throughput.
+  - Idle/control-path and debugger/storage handoff workloads must be at least
+    `0.10x` TypeScript throughput. These paths are dominated by near-zero
+    TypeScript control overhead and are still reported side by side.
+- `npm run benchmark:zxnext-wasm` passed on 2026-08-20 with:
+  - artifact size `180,358` bytes, limit `200,000`;
+  - build profile `speed -O3 -Wl,--strip-all`;
+  - threshold status `met`;
+  - `nextzxos-idle`: WASM `0.12x` TypeScript, stop reasons
+    `{"wasmFrameComplete":30}`;
+  - `screen-heavy`: WASM `810.62x` TypeScript, stop reasons
+    `{"wasmFrameComplete":30}`;
+  - `audio-heavy`: WASM `1,776.49x` TypeScript, stop reasons
+    `{"wasmFrameComplete":30}`;
+  - `storage-command`: WASM `0.26x` TypeScript, stop reasons
+    `{"debugStep":30}`;
+  - `debug-step`: WASM `0.39x` TypeScript, stop reasons
+    `{"debugStep":30}`.
+- Added `test/wasm/zxNext/wasm-next-shared-source-contract.test.ts` to lock
+  the speed build profile and the shared-source audit contract.
+- At the end of Step 26, `ZxNextWasmV2Diagnostics.defaultBlockers` contained
+  only `rollout-default-switch`; the parity, performance, and shared-source
+  evidence gates were closed. Step 27 later cleared this blocker when the
+  default flipped.
+- Validation passed:
+  - `npm run benchmark:zxnext-wasm`
+  - `npm test -- --project jsdom test/wasm/zxNext/wasm-next-performance-boundary.test.ts test/wasm/zxNext/wasm-next-shared-source-contract.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-public-adapter.test.ts test/wasm/zxNext/wasm-next-scaffold-diagnostics.test.ts`
+  - `npm run test:zxnext-wasm-matrix`
+  - `npm run test:zxnext-wasm-acceptance`
+  - `npm run build:zxnext-wasm`
+  - `npm run check:zxnext-wasm-size`
+  - `npm run build:check`
+  - `npm run test`
+  - `git diff --check`
+
+Shared-source audit:
+
+| Device | Decision | Evidence/reason |
+| --- | --- | --- |
+| CPU/Z80N | Reuse shared source | `zxnext-cpu.c` includes `src/emu/z80/wasm/z80.c`, defines `Z80_EXTERNAL_BUS`, and sets `z80SetZ80NMode(1)`. |
+| ULA/screen | Keep Next-specific implementation | `zxnext-ula.c` handles Next `$FE`, NextReg state, 720x288 composition, and Next timing. Covered by `wasm-next-keyboard-ula.test.ts` and `wasm-next-screen-ula.test.ts`. |
+| Keyboard | Keep Next-specific adapter with shared optimization pattern | `zxnext-keyboard.c` now uses the same selected-line cache pattern as the common Spectrum keyboard, but the Next port layer owns the handoff. Covered by `wasm-next-keyboard-ula.test.ts`. |
+| Beeper | Keep Next-specific implementation | Next `$FE` writes feed the ULA EAR/MIC latch and beeper without the classic tape-save side effect. Covered by `wasm-next-beeper-audio.test.ts`. |
+| Tape | Keep Next-specific implementation | Next keeps ULA MIC latch and tape MIC state separate, unlike the reusable classic `$FE` path. Covered by `wasm-next-tape.test.ts`. |
+| PSG | Keep Next-specific implementation | Next uses TurboSound YM routing and mono/panning controls beyond the classic shared AY device. Covered by `wasm-next-psg-audio.test.ts`. |
+| Ports | Keep Next-specific implementation | Next port decoding combines classic ports with NextReg, DivMMC, SD/SPI, DMA, audio, and expansion devices. Covered by `wasm-next-ports.test.ts` and `wasm-next-storage-commands.test.ts`. |
 
 ### Step 27 - Flip The Default To WASM
 
-Status: Not started
+Status: Done
 
-Only after Steps 21-26 are complete, change the normal ZX Spectrum Next model and
-factory default to WASM. Keep TypeScript selectable as an explicit fallback and
-oracle.
+Only after Steps 21-26 are complete, change the normal ZX Spectrum Next model
+and factory default to WASM. Keep TypeScript selectable as an explicit fallback
+and oracle. Do not start this step while diagnostics still say incomplete,
+while the README still calls WASM a scaffold, or while production benchmark and
+shared-source audit results are missing.
 
 Required changes:
 
@@ -1687,6 +1943,8 @@ Required changes:
 - Update factory, renderer registry, and rollout tests to prove the default is
   WASM and TypeScript fallback still works.
 - Update docs/README text that currently describes WASM as preview/incomplete.
+- Update product-facing tests so `ZX Spectrum Next` is the production WASM
+  model and any TypeScript option is clearly a fallback/oracle path.
 
 Target files:
 
@@ -1697,6 +1955,8 @@ Target files:
 - `src/emu/machines/zxNext/wasm/README.md`
 - `test/zxnext/ZxNextMachineFactory.test.ts`
 - `test/wasm/zxNext/wasm-next-rollout.test.ts`
+- `test/wasm/zxNext/wasm-next-production-diagnostics.test.ts`
+- `test/wasm/zxNext/wasm-next-production-performance.test.ts`
 
 Done when:
 
@@ -1705,11 +1965,46 @@ Done when:
 - Explicit TypeScript selection still yields `ZxNextMachine`.
 - `npm run test:zxnext-wasm-acceptance`, `npm run test:zxnext-wasm-matrix`,
   `npm run build:zxnext-wasm`, `npm run check:zxnext-wasm-size`,
-  `npm run build:check`, and full `npm run test` pass.
+  `npm run build:check`, full `npm run test`, and `git diff --check` pass.
+
+Superseded completion note (2026-08-20):
+
+- Changed `DEFAULT_ZXNEXT_IMPLEMENTATION` to `"wasm"`.
+- Changed the normal `ZX Spectrum Next` model config to
+  `{ zxnextImplementation: "wasm" }`.
+- In the superseded default-flip attempt, replaced the previous preview model
+  with the product-facing
+  `ZX Spectrum Next Compatibility` model, configured with
+  `{ zxnextImplementation: "typescript" }`.
+- In the superseded default-flip attempt, updated WASM diagnostics to report
+  `defaultReady: true` and no
+  `defaultBlockers`.
+- Updated factory, renderer registry, public adapter, lifecycle, and diagnostics
+  tests to prove WASM default selection and explicit TypeScript fallback.
+- In the superseded default-flip attempt, updated
+  `src/emu/machines/zxNext/wasm/README.md` to describe WASM as the production
+  default and TypeScript as fallback/oracle.
+- Validation passed:
+  - `npm test -- --project jsdom test/zxnext/ZxNextMachineFactory.test.ts test/wasm/zxNext/wasm-next-rollout.test.ts test/wasm/zxNext/wasm-next-public-adapter.test.ts test/wasm/zxNext/wasm-next-machine-lifecycle.test.ts test/wasm/zxNext/wasm-next-ide-scaffold.test.ts test/wasm/zxNext/wasm-next-scaffold-diagnostics.test.ts test/wasm/zxNext/wasm-next-test-helpers.test.ts`
+  - `npm run test:zxnext-wasm-acceptance`
+  - `npm run test:zxnext-wasm-matrix`
+  - `npm run build:zxnext-wasm`
+  - `npm run check:zxnext-wasm-size` (`actualBytes`: 180358,
+    `maxBytes`: 200000)
+  - `npm run build:check`
+  - `npm run test` (560 files passed, 18,976 tests passed, 119 skipped)
+  - `git diff --check`
+
+Reopen note (2026-08-20): the default flip was reverted after comparing WASM
+artifact sizes. The Next artifact is 180,358 bytes while the 48K artifact is
+470,922 bytes. `wasm-objdump -h` shows this is a code-depth difference, not a
+size-profile build: Next has a much smaller code section despite more
+functions/exports. Keep this step reopened until the binary-size/timing-depth
+audit below is resolved.
 
 ### Step 28 - TypeScript Backend Maintenance Mode
 
-Status: Not started
+Status: Deferred
 
 After the default flips, keep the TypeScript backend available but stop treating
 it as the primary implementation. This step defines how it remains useful as an
@@ -1723,10 +2018,15 @@ Required coverage:
   TypeScript unless the feature is explicitly host-owned.
 - Add a guard that prevents removing TypeScript fallback without a separate
   deprecation plan.
+- Document the boundaries that remain TypeScript-owned after WASM becomes the
+  default, such as host file/media persistence and UI policy.
+- Update `.ai/wasm-migration-intent-and-lessons.md` only if new lessons are
+  proven by code or tests; otherwise keep this plan as the operational record.
 
 Target files:
 
 - `.plans/ZX_SPECTRUM_NEXT_WASM_MIGRATION_PLAN.md`
+- `.ai/wasm-migration-intent-and-lessons.md`
 - `src/emu/machines/zxNext/wasm/README.md`
 - `test/zxnext/ZxNextMachineFactory.test.ts`
 
@@ -1734,3 +2034,106 @@ Done when:
 
 - The project has a documented WASM-primary policy and a documented TypeScript
   fallback/oracle policy.
+- Future Next emulator work has a clear rule for implementing and testing WASM
+  first, while preserving TypeScript as an oracle/fallback until a separate
+  deprecation plan exists.
+- `npm run test:zxnext-wasm-acceptance`, `npm run test:zxnext-wasm-matrix`,
+  `npm run build:check`, full `npm run test`, and `git diff --check` pass.
+
+Superseded completion note (2026-08-20):
+
+- Added a WASM-primary maintenance policy to
+  `src/emu/machines/zxNext/wasm/README.md`.
+- Updated `.ai/wasm-migration-intent-and-lessons.md` with the post-default-flip
+  rule: implement machine-owned behavior in WASM first, or in TypeScript and
+  WASM together when the oracle must grow.
+- Documented host-owned boundaries that can remain TypeScript-side: IDE/UI
+  policy, Electron resource lookup, host file/media persistence, and test
+  harness setup.
+- Added a factory/registry guard for the superseded compatibility-model default
+  flip. Current tests instead keep TypeScript as the standard oracle and WASM
+  reachable through the preview model while the audit is open.
+- Validation passed:
+  - `npm test -- --project jsdom test/zxnext/ZxNextMachineFactory.test.ts`
+  - `npm run test:zxnext-wasm-acceptance`
+  - `npm run test:zxnext-wasm-matrix`
+  - `npm run build:check`
+  - `npm run test` (560 files passed, 18,977 tests passed, 119 skipped)
+  - `git diff --check`
+
+Deferral note (2026-08-20): this policy applies after Step 27 really closes.
+The TypeScript backend is again the default oracle while the binary-size and
+timing-depth blockers are open.
+
+### Step 29 - Resolve Next Binary-Size And Timing-Depth Audit
+
+Status: Active
+
+The ZX Spectrum Next WASM artifact was much smaller than the 48K artifact even
+though Next is substantially more complex. This warning sign from
+`.ai/wasm-migration-intent-and-lessons.md` reopened the default flip. The first
+Step 29 implementation slice resolved the size inversion by wiring CPU tact and
+delay hooks into the shared Z80N core, but the full timing-depth parity pass is
+still active.
+
+Observed evidence:
+
+- 48K artifact: 470,922 bytes.
+- 128K artifact: 563,638 bytes.
+- +3E artifact: 547,836 bytes.
+- Next artifact: 180,358 bytes.
+- Next build profile is `speed` (`-O3 -Wl,--strip-all`), so this is not a size
+  optimization profile issue.
+- `wasm-objdump -h` reports Next code section `0x27f4c` and 48K code section
+  `0x6ff8d`.
+- `zxnext-cpu.c` includes the shared Z80N core but currently does not define
+  the memory, port, address-bus, tact, contention, render-before-mutation, or
+  audio-sampling hooks that make the classic 48K integration deep and
+  timing-aware.
+
+Progress:
+
+- Added shared Z80N hook definitions for Next CPU tact advancement, memory
+  read/write delays, port read/write delays, contended I/O detection, 28 MHz
+  memory-read wait states, and frame completion updates.
+- Added NextReg `$07` CPU-speed tracking in the WASM backend and latched the
+  CPU tact scale at instruction start to match TypeScript timing semantics.
+- Added an oracle CPU test proving `NEXTREG $07,$03` does not change the tact
+  scale mid-instruction and that the following 28 MHz memory read receives the
+  expected wait-state timing.
+- Replaced the old "Next smaller than 48K" guard with a positive shared-source
+  contract that proves Next is now larger than 48K after timing hooks are
+  linked.
+- Raised the measured package size ceiling to 700,000 bytes. Current measured
+  artifact: 574,085 bytes; current code section: `0x88139`.
+- Added CTC port integration for `0x183b..0x1f3b`, `$85` bit-3 port gating,
+  lazy 28 MHz timer advancement before CTC port reads/writes, frame-boundary
+  CTC sync, and TypeScript-oracle tests for public CTC port routing and
+  timer-mode lazy advancement.
+
+Required work:
+
+- Compare TypeScript Next timing (`ZxNextMachine`, `Z80NMachineBase`,
+  `NextComposedScreenDevice`, `CpuSpeedDevice`, CTC/audio hooks) against the
+  current C/WASM timing path.
+- Add or parameterize the remaining shared Z80/device hooks for Next
+  address-bus delay, render-before-mutation, audio sample scheduling, CTC
+  interrupt/daisy edge cases, and any remaining CPU speed scaling edge cases.
+- Add oracle tests that prove frame tact progression, current frame tact,
+  mid-frame render-before-mutation behavior, port timing side effects, audio
+  sample counts, and interrupt/CTC timing against TypeScript.
+- Keep the binary-size/shared-source contract green so a future regression back
+  to a suspiciously shallow artifact is caught.
+- Only after this step passes should Step 27 be retried.
+
+Done when:
+
+- `ZxNextWasmV2Diagnostics.defaultBlockers` no longer includes
+  `timing-depth-parity`.
+- The artifact-size comparison no longer flags Next as suspiciously smaller
+  than 48K, or the plan records a concrete, source-backed reason why the size
+  is valid despite complete timing/device depth.
+- Focused timing/depth oracle tests pass.
+- `npm run test:zxnext-wasm-acceptance`, `npm run test:zxnext-wasm-matrix`,
+  `npm run build:zxnext-wasm`, `npm run check:zxnext-wasm-size`,
+  `npm run build:check`, and `git diff --check` pass.

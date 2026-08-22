@@ -20,7 +20,7 @@ import {
 } from "../../../scripts/build-zxnext-wasm.cjs";
 
 describe("ZX Spectrum Next WASM rollout", () => {
-  it("keeps TypeScript as the default and fallback while allowing explicit WASM selection", () => {
+  it("keeps TypeScript as the default while the WASM timing-depth audit is open", () => {
     expect(DEFAULT_ZXNEXT_IMPLEMENTATION).toBe("typescript");
 
     expect(createZxNextMachine()).toBeInstanceOf(ZxNextMachine);

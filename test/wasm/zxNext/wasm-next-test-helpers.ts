@@ -12,7 +12,7 @@ import type {
 } from "./wasm-next-oracle-types";
 import type {
   ZxNextWasmV2Diagnostics,
-  ZxNextWasmV2ScaffoldSurface
+  ZxNextWasmV2MigrationSurface
 } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
@@ -22,11 +22,21 @@ import { MemorySectionType } from "@abstractions/MemorySection";
 import { buildZxNextWasm, productionOutput } from "../../../scripts/build-zxnext-wasm.cjs";
 import { createTestNextMachine, TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import {
-  ZXNEXT_WASM_V2_SCAFFOLD_SURFACES,
+  ZXNEXT_WASM_V2_DEFAULT_BLOCKERS,
+  ZXNEXT_WASM_V2_DEFAULT_READY,
+  ZXNEXT_WASM_V2_MIGRATED_SURFACES,
   ZxNextWasmV2Machine
 } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
-export const ZXNEXT_ORACLE_SCAFFOLD_SURFACES: ZxNextWasmV2ScaffoldSurface[] = [];
+export const ZXNEXT_ORACLE_MIGRATED_SURFACES: ZxNextWasmV2MigrationSurface[] = [
+  "registers",
+  "memory",
+  "disassembly",
+  "ULA",
+  "screen",
+  "frame",
+  "debug"
+];
 
 const MEMORY_SAMPLE_ADDRESSES = [0x0000, 0x4000, 0x8000, 0xc000];
 const NEXT_REG_SAMPLE_IDS = [0x00, 0x01, 0x12, 0x15];
@@ -97,28 +107,37 @@ export async function createZxNextOracleComparison(): Promise<ZxNextOracleCompar
   };
 }
 
-export function expectScaffoldDiagnosticsHaveOracleCoverage(
-  diagnostics: Pick<ZxNextWasmV2Diagnostics, "implementationIncomplete" | "scaffoldSurfaces">,
+export function expectMigratedDiagnosticsHaveOracleCoverage(
+  diagnostics: Pick<ZxNextWasmV2Diagnostics, "migratedSurfaces">,
   oracleSnapshot: ZxNextOracleSnapshot
 ): void {
-  if (diagnostics.implementationIncomplete !== true) {
-    throw new Error("ZX Next WASM diagnostics must keep implementationIncomplete=true until parity assertions replace the scaffold.");
-  }
-  for (const surface of diagnostics.scaffoldSurfaces) {
+  for (const surface of diagnostics.migratedSurfaces) {
     if (!oracleSnapshot.coveredSurfaces.includes(surface)) {
-      throw new Error(`ZX Next WASM scaffold surface '${surface}' has no TypeScript oracle snapshot coverage.`);
+      throw new Error(`ZX Next WASM migrated surface '${surface}' has no TypeScript oracle snapshot coverage.`);
     }
   }
 }
 
-export function expectCurrentScaffoldDiagnosticsAreStillGuarded(
-  diagnostics: Pick<ZxNextWasmV2Diagnostics, "scaffoldSurfaces">
+export function expectCurrentMigrationDiagnosticsAreStillGuarded(
+  diagnostics: Pick<ZxNextWasmV2Diagnostics, "defaultReady" | "defaultBlockers" | "migratedSurfaces">
 ): void {
-  const actual = [...diagnostics.scaffoldSurfaces].sort();
-  const expected = [...ZXNEXT_WASM_V2_SCAFFOLD_SURFACES].sort();
-  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+  const actualSurfaces = [...diagnostics.migratedSurfaces].sort();
+  const expectedSurfaces = [...ZXNEXT_WASM_V2_MIGRATED_SURFACES].sort();
+  const actualBlockers = [...diagnostics.defaultBlockers].sort();
+  const expectedBlockers = [...ZXNEXT_WASM_V2_DEFAULT_BLOCKERS].sort();
+  if (diagnostics.defaultReady !== ZXNEXT_WASM_V2_DEFAULT_READY) {
     throw new Error(
-      `ZX Next WASM scaffold diagnostics changed without updating oracle coverage. Actual: ${actual.join(", ")}; expected: ${expected.join(", ")}.`
+      "ZX Next WASM diagnostics changed defaultReady without updating the rollout guard."
+    );
+  }
+  if (JSON.stringify(actualSurfaces) !== JSON.stringify(expectedSurfaces)) {
+    throw new Error(
+      `ZX Next WASM migrated surfaces changed without updating oracle coverage. Actual: ${actualSurfaces.join(", ")}; expected: ${expectedSurfaces.join(", ")}.`
+    );
+  }
+  if (JSON.stringify(actualBlockers) !== JSON.stringify(expectedBlockers)) {
+    throw new Error(
+      `ZX Next WASM default blockers changed without updating the rollout guard. Actual: ${actualBlockers.join(", ")}; expected: ${expectedBlockers.join(", ")}.`
     );
   }
 }
@@ -138,7 +157,7 @@ function captureMachineSnapshot(
 
   return {
     backend,
-    coveredSurfaces: ZXNEXT_ORACLE_SCAFFOLD_SURFACES.slice(),
+    coveredSurfaces: ZXNEXT_ORACLE_MIGRATED_SURFACES.slice(),
     cpu: {
       af: cpu.af,
       bc: cpu.bc,

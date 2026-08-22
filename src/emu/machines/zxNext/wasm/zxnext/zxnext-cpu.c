@@ -7,6 +7,10 @@ static void zxnextCpuSharedWriteMemory(uint32_t address, uint32_t value);
 static uint32_t zxnextCpuSharedReadPort(uint32_t address);
 static void zxnextCpuSharedWritePort(uint32_t address, uint32_t value);
 static void zxnextCpuSharedWriteTbBlue(uint32_t address, uint32_t value);
+static inline void zxnextCpuTactPlusN(uint32_t value);
+static inline void zxnextCpuDelayMemoryRead(uint32_t address);
+static inline void zxnextCpuDelayMemoryWrite(uint32_t address);
+static inline void zxnextCpuDelayPortAccess(uint32_t address);
 
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() zxnextMemory
@@ -16,8 +20,83 @@ static void zxnextCpuSharedWriteTbBlue(uint32_t address, uint32_t value);
 #define Z80_READ_PORT(address) zxnextCpuSharedReadPort(address)
 #define Z80_WRITE_PORT(address, value) zxnextCpuSharedWritePort(address, value)
 #define Z80_WRITE_TBBLUE(address, value) zxnextCpuSharedWriteTbBlue(address, value)
+#define Z80_TACT_PLUS_N(value) zxnextCpuTactPlusN(value)
+#define Z80_DELAY_MEMORY_READ(address) zxnextCpuDelayMemoryRead(address)
+#define Z80_DELAY_MEMORY_WRITE(address) zxnextCpuDelayMemoryWrite(address)
+#define Z80_DELAY_PORT_READ(address) zxnextCpuDelayPortAccess(address)
+#define Z80_DELAY_PORT_WRITE(address) zxnextCpuDelayPortAccess(address)
 
 #include "../../../../z80/wasm/z80.c"
+
+static inline uint32_t zxnextCpuTactScale(void) {
+  return cpuTactScale;
+}
+
+static inline void zxnextCpuMarkFrameCompleted(void) {
+  frames++;
+  frameCompleted = 1;
+  zxnextUlaOnFrameCompleted();
+}
+
+static inline void zxnextCpuTactPlusN(uint32_t value) {
+  cpu.tacts += value;
+  tacts += value;
+  frameTacts28 += value * zxnextCpuTactScale();
+  while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
+    zxnextCtcOnFrameCompleted();
+    frameTacts28 -= ZXNEXT_TACTS_IN_FRAME;
+    zxnextCpuMarkFrameCompleted();
+  }
+  currentFrameTact = frameTacts28 >> 2;
+}
+
+static inline uint32_t zxnextCpuReadsBank7(uint32_t address) {
+  const uint32_t pageIndex = (address >> 13) & 0x07u;
+  return zxnextMemoryGetPageBank8(pageIndex) == 0x0eu;
+}
+
+static inline uint32_t zxnextCpuIsContendedIoAddress(uint32_t address) {
+  if (cpuEffectiveSpeed != 0u) return 0;
+  if ((zxnextNextRegs[0x08u] & 0x40u) != 0u) return 0;
+  const uint32_t page = address & 0xc000u;
+  return page == 0x4000u || (page == 0xc000u && (zxnextMemoryGetSelectedRamBank() & 0x01u) != 0u);
+}
+
+static inline void zxnextCpuDelayMemoryRead(uint32_t address) {
+  zxnextCpuTactPlusN(3u);
+  if (cpuEffectiveSpeed == 3u && !zxnextCpuReadsBank7(address)) {
+    zxnextCpuTactPlusN(1u);
+    totalContentionDelaySinceStart++;
+    contentionDelaySincePause++;
+  }
+}
+
+static inline void zxnextCpuDelayMemoryWrite(uint32_t address) {
+  (void)address;
+  zxnextCpuTactPlusN(3u);
+  totalContentionDelaySinceStart += 3u;
+  contentionDelaySincePause += 3u;
+}
+
+static inline void zxnextCpuDelayPortAccess(uint32_t address) {
+  const uint32_t lowBit = address & 0x0001u;
+  if (zxnextCpuIsContendedIoAddress(address)) {
+    if (lowBit != 0u) {
+      zxnextCpuTactPlusN(1u);
+      zxnextCpuTactPlusN(1u);
+      zxnextCpuTactPlusN(1u);
+      zxnextCpuTactPlusN(1u);
+    } else {
+      zxnextCpuTactPlusN(1u);
+      zxnextCpuTactPlusN(3u);
+    }
+  } else if (lowBit != 0u) {
+    zxnextCpuTactPlusN(4u);
+  } else {
+    zxnextCpuTactPlusN(1u);
+    zxnextCpuTactPlusN(3u);
+  }
+}
 
 static uint32_t zxnextCpuSharedReadMemory(uint32_t address) {
   uint32_t value = zxnextMemoryReadMapped(address & 0xffffu);
@@ -47,18 +126,8 @@ static void zxnextCpuSharedWriteTbBlue(uint32_t address, uint32_t value) {
 }
 
 static void zxnextCpuSyncFrameState(uint32_t previousTacts, uint32_t currentTacts) {
-  uint32_t previousFrameTact = currentFrameTact;
-  uint32_t deltaTacts = currentTacts - previousTacts;
-  uint32_t nextFrameTact = (previousFrameTact + deltaTacts * 2u) % ZXNEXT_RENDERING_TACTS_IN_FRAME;
+  (void)previousTacts;
   tacts = currentTacts;
-  currentFrameTact = nextFrameTact;
-  if (currentTacts != previousTacts && nextFrameTact < previousFrameTact) {
-    frames++;
-    frameCompleted = 1;
-    zxnextUlaOnFrameCompleted();
-  } else {
-    frameCompleted = 0;
-  }
 }
 
 static void zxnextCpuReset(void) {
@@ -97,10 +166,12 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     zxnextMemoryPeekMapped((pcBefore + 1u) & 0xffffu) == 0x4du;
   uint32_t cyclesExecuted = 0;
 
+  frameCompleted = 0;
   if (nmiSignal && zxnextNmiGetStacklessEnabled()) {
     return zxnextCpuProcessStacklessNmi();
   }
 
+  cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
   zxnextDivMmcBeforeOpcodeFetch(pcBefore);
   z80SetSigNmi(nmiSignal);
   z80SetSigInt(shouldAcceptInt);

@@ -24,7 +24,7 @@ static uint8_t altRomVisibleOnlyForWrites;
 static uint8_t lockRom1;
 static uint8_t lockRom0;
 
-static void zxnextMemorySetPageInfo(
+static inline void zxnextMemorySetPageInfo(
   uint32_t pageIndex,
   uint32_t readOffset,
   uint32_t writeOffset,
@@ -38,7 +38,7 @@ static void zxnextMemorySetPageInfo(
   pageBank8[page] = bank8;
 }
 
-static uint32_t zxnextMemoryAltRomOffset(void) {
+static inline uint32_t zxnextMemoryAltRomOffset(void) {
   if (lockRom1) return ZXNEXT_OFFS_ALT_ROM_1;
   if (lockRom0) return ZXNEXT_OFFS_ALT_ROM_0;
   return selectedRomLsb ? ZXNEXT_OFFS_ALT_ROM_1 : ZXNEXT_OFFS_ALT_ROM_0;
@@ -182,15 +182,15 @@ static void zxnextMemoryResetMapping(void) {
   zxnextMemoryUpdateMapping();
 }
 
-static uint32_t zxnextMemoryReadPhysical(uint32_t offset) {
+static inline uint32_t zxnextMemoryReadPhysical(uint32_t offset) {
   return zxnextMemory[offset % ZXNEXT_MEMORY_SIZE];
 }
 
-static void zxnextMemoryWritePhysical(uint32_t offset, uint32_t value) {
+static inline void zxnextMemoryWritePhysical(uint32_t offset, uint32_t value) {
   zxnextMemory[offset % ZXNEXT_MEMORY_SIZE] = (uint8_t)value;
 }
 
-static uint32_t zxnextMemoryReadMapped(uint32_t address) {
+static inline uint32_t zxnextMemoryReadMapped(uint32_t address) {
   uint32_t normalized = address & 0xffffu;
   uint32_t physical = pageReadOffset[normalized >> 13] + (normalized & 0x1fffu);
   lastMemoryAddress = (uint16_t)normalized;
@@ -199,13 +199,13 @@ static uint32_t zxnextMemoryReadMapped(uint32_t address) {
   return lastMemoryValue;
 }
 
-static uint32_t zxnextMemoryPeekMapped(uint32_t address) {
+static inline uint32_t zxnextMemoryPeekMapped(uint32_t address) {
   uint32_t normalized = address & 0xffffu;
   uint32_t physical = pageReadOffset[normalized >> 13] + (normalized & 0x1fffu);
   return zxnextMemoryReadPhysical(physical);
 }
 
-static void zxnextMemoryWriteMapped(uint32_t address, uint32_t value) {
+static inline void zxnextMemoryWriteMapped(uint32_t address, uint32_t value) {
   uint32_t normalized = address & 0xffffu;
   uint32_t physical = pageWriteOffset[normalized >> 13];
   if (physical != ZXNEXT_NO_WRITE_OFFSET) {

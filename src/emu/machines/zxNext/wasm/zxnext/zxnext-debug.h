@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-static void zxnextDebugResetScaffold(void);
-static uint32_t zxnextDebugExecuteScaffoldStep(void);
+static void zxnextDebugReset(void);
+static uint32_t zxnextDebugExecuteStep(void);
 
 #endif

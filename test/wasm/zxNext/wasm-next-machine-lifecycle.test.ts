@@ -41,7 +41,7 @@ describe("ZX Spectrum Next WASM machine lifecycle", () => {
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
       normalFrames: 0,
       debugSteps: 0,
-      lastScaffoldStopReason: "scaffoldReset"
+      lastWasmStopReason: "reset"
     });
   });
 
@@ -67,10 +67,10 @@ describe("ZX Spectrum Next WASM machine lifecycle", () => {
 
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
-      implementationIncomplete: true,
-      scaffoldSurfaces: [],
+      defaultReady: false,
+      defaultBlockers: ["timing-depth-parity"],
       normalFrames: 1,
-      lastScaffoldStopReason: "wasmFrameComplete"
+      lastWasmStopReason: "wasmFrameComplete"
     });
   });
 });

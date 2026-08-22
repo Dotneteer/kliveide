@@ -3,8 +3,8 @@ import { MC_ZXNEXT_IMPLEMENTATION } from "@common/machines/constants";
 /**
  * Selects the execution backend for a ZX Spectrum Next machine.
  *
- * The TypeScript backend remains the default while the WASM backend is an
- * explicitly selectable migration scaffold.
+ * The TypeScript backend remains the default while the WASM backend is audited
+ * against the TypeScript parity oracle.
  */
 export type ZxNextImplementation = "typescript" | "wasm";
 

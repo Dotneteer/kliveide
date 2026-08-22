@@ -13,7 +13,7 @@ import { OFFS_ERR_PAGE } from "@emu/machines/zxNext/MemoryDevice";
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum Next WASM v2 loader", () => {
-  it("rejects incomplete scaffold artifacts", () => {
+  it("rejects incomplete WASM artifacts", () => {
     expect(() => validateZxNextWasmV2Exports({
       memory: new WebAssembly.Memory({ initial: 1 })
     })).toThrow(/missing export 'zxnextMemoryPtr'/);

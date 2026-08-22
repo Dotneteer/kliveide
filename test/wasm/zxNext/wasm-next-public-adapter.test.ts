@@ -26,14 +26,14 @@ describe("ZX Spectrum Next WASM public adapter", () => {
     );
   });
 
-  it("does not report migrated public adapter surfaces as scaffolded", async () => {
+  it("reports migrated public adapter surfaces while preserving rollout blockers", async () => {
     const machine = await createTestZxNextWasmMachine();
     const diagnostics = machine.getWasmV2Diagnostics();
 
-    expect(diagnostics.implementationIncomplete).toBe(true);
-    expect(diagnostics.scaffoldSurfaces).toEqual([]);
+    expect(diagnostics.defaultReady).toBe(false);
+    expect(diagnostics.defaultBlockers).toEqual(["timing-depth-parity"]);
     for (const surface of MIGRATED_SURFACES) {
-      expect(diagnostics.scaffoldSurfaces).not.toContain(surface);
+      expect(diagnostics.migratedSurfaces).toContain(surface);
     }
   });
 
@@ -96,7 +96,7 @@ describe("ZX Spectrum Next WASM public adapter", () => {
     expect(machine.pc).toBe(0x8001);
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
       debugSteps: 1,
-      lastScaffoldStopReason: "scaffoldDebugStep"
+      lastWasmStopReason: "debugStep"
     });
   });
 });

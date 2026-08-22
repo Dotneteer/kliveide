@@ -2,14 +2,15 @@
 
 static uint8_t tapeMode;
 static uint8_t tapeEarBit = 1u;
+static uint8_t tapeMicBit;
 
 static void zxnextTapeReset(void) {
   tapeMode = ZXNEXT_TAPE_MODE_PASSIVE;
   tapeEarBit = 1u;
-  micBit = 0u;
+  tapeMicBit = 0u;
 }
 
-static void zxnextTapeSetMode(uint32_t mode) {
+static inline void zxnextTapeSetMode(uint32_t mode) {
   tapeMode = (uint8_t)(mode > ZXNEXT_TAPE_MODE_SAVE ? ZXNEXT_TAPE_MODE_PASSIVE : mode);
 }
 
@@ -22,11 +23,11 @@ static uint32_t zxnextTapeGetEarBit(void) {
 }
 
 static uint32_t zxnextTapeGetMicBit(void) {
-  return micBit;
+  return tapeMicBit;
 }
 
-static void zxnextTapeProcessMicBit(uint32_t value) {
+static inline void zxnextTapeProcessMicBit(uint32_t value) {
   if (tapeMode == ZXNEXT_TAPE_MODE_SAVE) {
-    micBit = value != 0;
+    tapeMicBit = value != 0;
   }
 }

@@ -152,15 +152,15 @@ void zxnextDmaWritePort(uint32_t value) {
   zxnextDmaSetupFollow(group, byteValue);
 }
 
-static uint32_t zxnextDmaPortIsIo(uint32_t config) {
+static inline uint32_t zxnextDmaPortIsIo(uint32_t config) {
   return (config & 0x08u) != 0;
 }
 
-static uint32_t zxnextDmaAddressMode(uint32_t config) {
+static inline uint32_t zxnextDmaAddressMode(uint32_t config) {
   return (config >> 4u) & 0x03u;
 }
 
-static uint16_t zxnextDmaNextAddress(uint16_t address, uint32_t config) {
+static inline uint16_t zxnextDmaNextAddress(uint16_t address, uint32_t config) {
   switch (zxnextDmaAddressMode(config)) {
     case 2: return address;
     case 3: return (uint16_t)(address - 1u);
@@ -168,11 +168,11 @@ static uint16_t zxnextDmaNextAddress(uint16_t address, uint32_t config) {
   }
 }
 
-static uint32_t zxnextDmaReadEndpoint(uint16_t address, uint32_t config) {
+static inline uint32_t zxnextDmaReadEndpoint(uint16_t address, uint32_t config) {
   return zxnextDmaPortIsIo(config) ? zxnextPortsRead(address) : zxnextMemoryReadMapped(address);
 }
 
-static void zxnextDmaWriteEndpoint(uint16_t address, uint32_t config, uint32_t value) {
+static inline void zxnextDmaWriteEndpoint(uint16_t address, uint32_t config, uint32_t value) {
   if (zxnextDmaPortIsIo(config)) zxnextPortsWrite(address, value);
   else zxnextMemoryWriteMapped(address, value);
 }

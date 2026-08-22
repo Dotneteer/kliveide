@@ -1,28 +1,27 @@
 import {
   createZxNextOracleComparison,
-  expectCurrentScaffoldDiagnosticsAreStillGuarded,
-  expectScaffoldDiagnosticsHaveOracleCoverage,
-  ZXNEXT_ORACLE_SCAFFOLD_SURFACES
+  expectCurrentMigrationDiagnosticsAreStillGuarded,
+  expectMigratedDiagnosticsHaveOracleCoverage,
+  ZXNEXT_ORACLE_MIGRATED_SURFACES
 } from "./wasm-next-test-helpers";
 import { describe, expect, it } from "vitest";
 
-describe("ZX Spectrum Next WASM scaffold diagnostics oracle guard", () => {
-  it("requires every current scaffold diagnostic to have TypeScript oracle coverage", async () => {
+describe("ZX Spectrum Next WASM migration diagnostics oracle guard", () => {
+  it("requires every reported migrated surface to have TypeScript oracle coverage", async () => {
     const comparison = await createZxNextOracleComparison();
 
-    expectCurrentScaffoldDiagnosticsAreStillGuarded(comparison.wasmDiagnostics);
-    expectScaffoldDiagnosticsHaveOracleCoverage(comparison.wasmDiagnostics, comparison.oracle);
-    expect(comparison.wasmDiagnostics.scaffoldSurfaces).toEqual(ZXNEXT_ORACLE_SCAFFOLD_SURFACES);
+    expectCurrentMigrationDiagnosticsAreStillGuarded(comparison.wasmDiagnostics);
+    expectMigratedDiagnosticsHaveOracleCoverage(comparison.wasmDiagnostics, comparison.oracle);
+    expect(comparison.wasmDiagnostics.migratedSurfaces).toEqual(ZXNEXT_ORACLE_MIGRATED_SURFACES);
   });
 
-  it("fails loudly when a scaffold surface has no oracle snapshot coverage", async () => {
+  it("fails loudly when a migrated surface has no oracle snapshot coverage", async () => {
     const comparison = await createZxNextOracleComparison();
 
     expect(() =>
-      expectScaffoldDiagnosticsHaveOracleCoverage(
+      expectMigratedDiagnosticsHaveOracleCoverage(
         {
-          implementationIncomplete: true,
-          scaffoldSurfaces: ["debug"]
+          migratedSurfaces: ["debug"]
         },
         {
           ...comparison.oracle,
@@ -32,11 +31,23 @@ describe("ZX Spectrum Next WASM scaffold diagnostics oracle guard", () => {
     ).toThrow(/debug.*no TypeScript oracle snapshot coverage/);
   });
 
-  it("fails loudly when scaffold diagnostics change without updating the guard", async () => {
+  it("fails loudly when migration diagnostics change without updating the guard", async () => {
     expect(() =>
-      expectCurrentScaffoldDiagnosticsAreStillGuarded({
-        scaffoldSurfaces: ["debug"]
+      expectCurrentMigrationDiagnosticsAreStillGuarded({
+        defaultReady: false,
+        defaultBlockers: ["timing-depth-parity"],
+        migratedSurfaces: ["debug"]
       })
-    ).toThrow(/diagnostics changed without updating oracle coverage/);
+    ).toThrow(/migrated surfaces changed without updating oracle coverage/);
+  });
+
+  it("fails loudly when default readiness changes without updating the guard", async () => {
+    expect(() =>
+      expectCurrentMigrationDiagnosticsAreStillGuarded({
+        defaultReady: true,
+        defaultBlockers: ["timing-depth-parity"],
+        migratedSurfaces: ZXNEXT_ORACLE_MIGRATED_SURFACES
+      })
+    ).toThrow(/defaultReady without updating the rollout guard/);
   });
 });

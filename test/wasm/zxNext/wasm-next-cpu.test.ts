@@ -94,6 +94,15 @@ describe("ZX Spectrum Next WASM CPU single-step parity", () => {
         0x3e, 0x22
       ],
       steps: 2
+    },
+    {
+      name: "matches 28 MHz memory-read wait-state timing",
+      code: [
+        0xed, 0x91, 0x07, 0x03,
+        0x3a, 0x00, 0x80,
+        0x00
+      ],
+      steps: 3
     }
   ];
 
@@ -120,7 +129,7 @@ describe("ZX Spectrum Next WASM CPU single-step parity", () => {
           `step ${step}`
         ).toEqual({
           ...oracleSnapshot,
-          wasmStopReason: "scaffoldDebugStep"
+          wasmStopReason: "debugStep"
         });
       }
     });
@@ -174,7 +183,7 @@ function executeAndSnapshot(machine: StepMachine, sampleAddresses: number[]): St
   return {
     termination,
     lastTerminationReason: machine.executionContext.lastTerminationReason,
-    wasmStopReason: wasmDiagnostics?.lastScaffoldStopReason,
+    wasmStopReason: wasmDiagnostics?.lastWasmStopReason,
     cpu: {
       af: cpu.af,
       bc: cpu.bc,

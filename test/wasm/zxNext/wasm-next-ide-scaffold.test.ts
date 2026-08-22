@@ -4,7 +4,8 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import {
-  ZXNEXT_WASM_V2_SCAFFOLD_SURFACES,
+  ZXNEXT_WASM_V2_DEFAULT_BLOCKERS,
+  ZXNEXT_WASM_V2_MIGRATED_SURFACES,
   ZxNextWasmV2Machine
 } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import {
@@ -16,7 +17,7 @@ import {
 import { buildZxNextWasm, productionOutput } from "../../../scripts/build-zxnext-wasm.cjs";
 import { describe, expect, it } from "vitest";
 
-describe("ZX Spectrum Next WASM v2 IDE scaffold", () => {
+describe("ZX Spectrum Next WASM v2 IDE integration", () => {
   it("exposes WASM-backed IDE surfaces", async () => {
     buildZxNextWasm();
     const machine = new ZxNextWasmV2Machine(
@@ -35,20 +36,23 @@ describe("ZX Spectrum Next WASM v2 IDE scaffold", () => {
     expect(diagnostics).toMatchObject({
       backend: "wasm",
       engine: "v2",
-      implementationIncomplete: true,
+      defaultReady: false,
       memoryBytes: ZXNEXT_WASM_V2_MEMORY_SIZE,
       flatMemoryBytes: ZXNEXT_WASM_V2_FLAT_MEMORY_SIZE,
       screenWidth: ZXNEXT_WASM_V2_SCREEN_WIDTH,
       screenHeight: ZXNEXT_WASM_V2_SCREEN_HEIGHT
     });
-    expect(diagnostics.scaffoldSurfaces).toEqual(ZXNEXT_WASM_V2_SCAFFOLD_SURFACES);
-    expect(diagnostics.scaffoldSurfaces).not.toContain("registers");
-    expect(diagnostics.scaffoldSurfaces).not.toContain("memory");
-    expect(diagnostics.scaffoldSurfaces).not.toContain("disassembly");
-    expect(diagnostics.scaffoldSurfaces).not.toContain("ULA");
-    expect(diagnostics.scaffoldSurfaces).not.toContain("screen");
-    expect(diagnostics.scaffoldSurfaces).not.toContain("debug");
-    expect(diagnostics.scaffoldSurfaces).not.toContain("frame");
+    expect(diagnostics.defaultBlockers).toEqual(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS);
+    expect(diagnostics.migratedSurfaces).toEqual(ZXNEXT_WASM_V2_MIGRATED_SURFACES);
+    expect(diagnostics.migratedSurfaces).toEqual(expect.arrayContaining([
+      "registers",
+      "memory",
+      "disassembly",
+      "ULA",
+      "screen",
+      "debug",
+      "frame"
+    ]));
 
     const oracle = new ZxNextMachine();
     expect(machine.screenWidthInPixels).toBe(oracle.screenWidthInPixels);
@@ -100,7 +104,7 @@ describe("ZX Spectrum Next WASM v2 IDE scaffold", () => {
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
     expect(machine.executeWasmV2DebugStep()).toBe(FrameTerminationMode.DebugEvent);
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
-      implementationIncomplete: true,
+      defaultReady: false,
       normalFrames: 1,
       debugSteps: 1
     });

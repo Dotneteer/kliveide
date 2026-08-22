@@ -44,10 +44,10 @@ describe("ZX Spectrum Next WASM v2 frame runner", () => {
     });
     expect(wasm.getWasmV2Diagnostics()).toMatchObject({
       normalFrames: 1,
-      lastScaffoldStopReason: "wasmFrameComplete"
+      lastWasmStopReason: "wasmFrameComplete"
     });
-    expect(wasm.getWasmV2Diagnostics().lastScaffoldStopReason).not.toBe("scaffoldFrameComplete");
-    expect(wasm.getWasmV2Diagnostics().scaffoldSurfaces).not.toContain("frame");
+    expect(wasm.getWasmV2Diagnostics().lastWasmStopReason).not.toMatch(/scaffold/i);
+    expect(wasm.getWasmV2Diagnostics().migratedSurfaces).toContain("frame");
 
     const pixels = wasm.getPixelBuffer();
     expect(pixels.length).toBe(ZXNEXT_WASM_V2_SCREEN_WIDTH * ZXNEXT_WASM_V2_SCREEN_HEIGHT);

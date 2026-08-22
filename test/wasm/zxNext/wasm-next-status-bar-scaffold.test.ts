@@ -11,7 +11,7 @@ import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import { buildZxNextWasm, productionOutput } from "../../../scripts/build-zxnext-wasm.cjs";
 import { describe, expect, it } from "vitest";
 
-describe("ZX Spectrum Next WASM v2 status bar scaffold", () => {
+describe("ZX Spectrum Next WASM v2 status bar integration", () => {
   it("updates FrameStats and status-bar-readable PC data from WASM frames", async () => {
     const machine = await createTestZxNextWasmMachine();
     const store = createAppStore("test-zxnext-status");
@@ -42,7 +42,7 @@ describe("ZX Spectrum Next WASM v2 status bar scaffold", () => {
       pc: expect.stringMatching(/^[0-9A-F]{4}$/)
     });
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
-      lastScaffoldStopReason: "wasmFrameComplete",
+      lastWasmStopReason: "wasmFrameComplete",
       frameCompleted: true
     });
 
@@ -57,7 +57,7 @@ async function createTestZxNextWasmMachine(): Promise<ZxNextWasmV2Machine> {
     undefined,
     undefined,
     {
-      artifactName: "test-zxnext-status-scaffold.wasm",
+      artifactName: "test-zxnext-status.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     }
   );

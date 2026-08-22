@@ -15,6 +15,9 @@ import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 import { checkZxNextWasmSize, DEFAULT_MAX_BYTES } from "../../../scripts/check-zxnext-wasm-size.cjs";
 import {
   assertNoSafetyGuardStops,
+  DEFAULT_SCENARIOS,
+  MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT,
+  MIN_WASM_SPEED_RATIO_FOR_DEFAULT,
   benchmarkZxNextWasm,
   summarizeRuns
 } from "../../../scripts/benchmark-zxnext-wasm.cjs";
@@ -70,9 +73,9 @@ describe("ZX Spectrum Next WASM performance and boundary audit", () => {
     expect(wasmMetrics.framesAdvanced).toBe(3);
     expect(oracleMetrics.elapsedMs).toBeGreaterThanOrEqual(0);
     expect(wasmMetrics.elapsedMs).toBeGreaterThanOrEqual(0);
-    expect(diagnostics.lastScaffoldStopReason).toBe("wasmFrameComplete");
+    expect(diagnostics.lastWasmStopReason).toBe("wasmFrameComplete");
     expect(diagnostics.normalFrames).toBeGreaterThanOrEqual(3);
-    assertNoSafetyGuardStops({ [diagnostics.lastScaffoldStopReason]: diagnostics.normalFrames });
+    assertNoSafetyGuardStops({ [diagnostics.lastWasmStopReason]: diagnostics.normalFrames });
     expect(() => assertNoSafetyGuardStops({ safetyGuard: 1 })).toThrow(/safety guard/);
   });
 
@@ -80,19 +83,39 @@ describe("ZX Spectrum Next WASM performance and boundary audit", () => {
     const report = await benchmarkZxNextWasm({ frames: 2, runs: 1, warmup: 1 });
 
     expect(report.artifactBytes).toBeGreaterThan(0);
-    expect(report.metrics.framesAdvanced).toBe(2);
-    expect(report.metrics.tactsAdvanced).toBeGreaterThan(0);
-    expect(report.metrics.millisecondsPerFrame.median).toBeGreaterThanOrEqual(0);
-    expect(report.stopReasons).toEqual({ wasmFrameComplete: 2 });
+    expect(report.buildProfile).toMatchObject({
+      optimization: "speed",
+      flags: expect.arrayContaining(["-O3"])
+    });
+    expect(report.threshold).toMatchObject({
+      minWasmSpeedRatioForDefault: MIN_WASM_SPEED_RATIO_FOR_DEFAULT,
+      minWasmControlSpeedRatioForDefault: MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT,
+      met: true
+    });
+    expect(report.scenarios.map((scenario: any) => scenario.id)).toEqual(DEFAULT_SCENARIOS);
+    for (const scenario of report.scenarios) {
+      expect(scenario.typescript.metrics.operations).toBe(2);
+      expect(scenario.wasm.metrics.operations).toBe(2);
+      expect(scenario.typescript.metrics.millisecondsPerOperation.median).toBeGreaterThanOrEqual(0);
+      expect(scenario.wasm.metrics.millisecondsPerOperation.median).toBeGreaterThanOrEqual(0);
+      expect(scenario.speedRatio).toBeGreaterThanOrEqual(scenario.minWasmSpeedRatio);
+      expect(scenario.thresholdMet).toBe(true);
+      assertNoSafetyGuardStops(scenario.wasm.stopReasons);
+    }
+    expect(report.scenarios.find((scenario: any) => scenario.id === "nextzxos-idle").wasm.stopReasons)
+      .toEqual({ wasmFrameComplete: 2 });
+    expect(report.scenarios.find((scenario: any) => scenario.id === "debug-step").wasm.stopReasons)
+      .toEqual({ debugStep: 2 });
   });
 
   it("summarizes repeated timing runs deterministically", () => {
     expect(summarizeRuns([
-      { elapsedMs: 3, framesAdvanced: 2, framesPerSecond: 666.66, millisecondsPerFrame: 1.5, samplesPerFrame: 0, tactsAdvanced: 10 },
-      { elapsedMs: 1, framesAdvanced: 2, framesPerSecond: 2000, millisecondsPerFrame: 0.5, samplesPerFrame: 0, tactsAdvanced: 10 },
-      { elapsedMs: 2, framesAdvanced: 2, framesPerSecond: 1000, millisecondsPerFrame: 1, samplesPerFrame: 0, tactsAdvanced: 10 }
+      { elapsedMs: 3, framesAdvanced: 2, operations: 2, operationsPerSecond: 666.66, millisecondsPerOperation: 1.5, samplesPerOperation: 0, tactsAdvanced: 10 },
+      { elapsedMs: 1, framesAdvanced: 2, operations: 2, operationsPerSecond: 2000, millisecondsPerOperation: 0.5, samplesPerOperation: 0, tactsAdvanced: 10 },
+      { elapsedMs: 2, framesAdvanced: 2, operations: 2, operationsPerSecond: 1000, millisecondsPerOperation: 1, samplesPerOperation: 0, tactsAdvanced: 10 }
     ])).toMatchObject({
       framesAdvanced: 2,
+      operations: 2,
       millisecondsPerFrame: {
         median: 1,
         min: 0.5,

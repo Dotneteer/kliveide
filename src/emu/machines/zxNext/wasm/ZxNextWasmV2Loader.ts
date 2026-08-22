@@ -119,6 +119,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextSetTapeMode: ZxNextWasmV2ExportFunction;
   zxnextGetTapeMode: ZxNextWasmV2ExportFunction;
   zxnextGetTapeEarBit: ZxNextWasmV2ExportFunction;
+  zxnextGetTapeMicBit: ZxNextWasmV2ExportFunction;
   zxnextProcessTapeMicBit: ZxNextWasmV2ExportFunction;
   zxnextGetUlaFlashCounter: ZxNextWasmV2ExportFunction;
   zxnextGetUlaFlashFlag: ZxNextWasmV2ExportFunction;
@@ -466,6 +467,7 @@ const requiredV2Exports = [
   "zxnextSetTapeMode",
   "zxnextGetTapeMode",
   "zxnextGetTapeEarBit",
+  "zxnextGetTapeMicBit",
   "zxnextProcessTapeMicBit",
   "zxnextGetUlaFlashCounter",
   "zxnextGetUlaFlashFlag",
@@ -676,7 +678,7 @@ const requiredV2Exports = [
 ] as const;
 
 export function resetZxNextWasmV2ModuleCache(): void {
-  // Intentionally empty while this scaffold is changing rapidly during migration.
+  // Intentionally empty while the import-free backend is changing rapidly during migration.
 }
 
 export async function loadZxNextWasmV2(options: ZxNextWasmV2LoaderOptions = {}): Promise<ZxNextWasmV2Runtime> {

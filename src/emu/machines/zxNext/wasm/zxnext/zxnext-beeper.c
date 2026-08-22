@@ -28,7 +28,7 @@ static void zxnextBeeperSetTacts(uint32_t value) {
   zxnextBeeperTacts = value;
 }
 
-static void zxnextBeeperRecordTransition(void) {
+static inline void zxnextBeeperRecordTransition(void) {
   uint32_t duration = zxnextBeeperTacts - zxnextBeeperLastChangeTact;
   if (duration > 0u) {
     zxnextBeeperAccumulatedEar += zxnextBeeperEar ? duration : 0u;
@@ -38,7 +38,7 @@ static void zxnextBeeperRecordTransition(void) {
   zxnextBeeperLastChangeTact = zxnextBeeperTacts;
 }
 
-static void zxnextBeeperSetOutput(uint32_t ear, uint32_t mic) {
+static inline void zxnextBeeperSetOutput(uint32_t ear, uint32_t mic) {
   uint8_t nextEar = ear != 0u;
   uint8_t nextMic = mic != 0u;
   if (nextEar != zxnextBeeperEar || nextMic != zxnextBeeperMic) {
@@ -52,7 +52,7 @@ static void zxnextBeeperSetOutput(uint32_t ear, uint32_t mic) {
 static uint32_t zxnextBeeperGetEar(void) { return zxnextBeeperEar; }
 static uint32_t zxnextBeeperGetMic(void) { return zxnextBeeperMic; }
 
-static uint32_t zxnextBeeperGetOutputLevelMilli(void) {
+static inline uint32_t zxnextBeeperGetOutputLevelMilli(void) {
   uint32_t index = (zxnextBeeperMic ? 1u : 0u) | (zxnextBeeperEar ? 2u : 0u);
   switch (index) {
     case 1u: return 330u;
@@ -62,7 +62,7 @@ static uint32_t zxnextBeeperGetOutputLevelMilli(void) {
   }
 }
 
-static void zxnextBeeperUpdateCachedSample(void) {
+static inline void zxnextBeeperUpdateCachedSample(void) {
   if (zxnextBeeperCachedSampleValid) return;
   if (zxnextBeeperAccumulatedTacts > 0u) {
     uint32_t finalDuration = zxnextBeeperTacts - zxnextBeeperLastChangeTact;

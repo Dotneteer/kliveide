@@ -1,15 +1,15 @@
 #include "zxnext-debug.h"
 
-static uint32_t scaffoldDebugSteps;
+static uint32_t debugSteps;
 
-static void zxnextDebugResetScaffold(void) {
-  scaffoldDebugSteps = 0;
+static void zxnextDebugReset(void) {
+  debugSteps = 0;
 }
 
-static uint32_t zxnextDebugExecuteScaffoldStep(void) {
-  scaffoldDebugSteps++;
+static uint32_t zxnextDebugExecuteStep(void) {
+  debugSteps++;
   tacts += 4;
   currentFrameTact = tacts % ZXNEXT_TACTS_IN_FRAME;
   frameCompleted = 0;
-  return scaffoldDebugSteps;
+  return debugSteps;
 }

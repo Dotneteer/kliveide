@@ -2,7 +2,7 @@ import type { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMod
 import type { IMemorySection } from "@abstractions/MemorySection";
 import type {
   ZxNextWasmV2Diagnostics,
-  ZxNextWasmV2ScaffoldSurface
+  ZxNextWasmV2MigrationSurface
 } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 export type ZxNextOracleBackend = "typescript" | "wasm";
@@ -77,7 +77,7 @@ export type ZxNextOracleDebugSnapshot = {
 
 export type ZxNextOracleSnapshot = {
   backend: ZxNextOracleBackend;
-  coveredSurfaces: ZxNextWasmV2ScaffoldSurface[];
+  coveredSurfaces: ZxNextWasmV2MigrationSurface[];
   cpu: ZxNextOracleCpuSnapshot;
   memory: ZxNextOracleMemorySnapshot;
   ports: ZxNextOraclePortSnapshot;

@@ -16,7 +16,7 @@ import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import { buildZxNextWasm, productionOutput } from "../../../scripts/build-zxnext-wasm.cjs";
 import { describe, expect, it } from "vitest";
 
-describe("ZX Spectrum Next WASM v2 debug tools scaffold", () => {
+describe("ZX Spectrum Next WASM v2 debug tools integration", () => {
   it("runs debug commands through WASM debug stepping and breakpoint plumbing", async () => {
     const { controller, machine } = await createControllerHarness("debug-tools");
 
@@ -31,7 +31,7 @@ describe("ZX Spectrum Next WASM v2 debug tools scaffold", () => {
     expect(machine.pc).toBe(0x0001);
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
       debugSteps: 1,
-      lastScaffoldStopReason: "scaffoldDebugStep"
+      lastWasmStopReason: "debugStep"
     });
 
     await controller.start();
@@ -39,7 +39,7 @@ describe("ZX Spectrum Next WASM v2 debug tools scaffold", () => {
     await waitForCompletedFrames(controller, 1);
     await controller.pause();
     expect(controller.state).toBe(MachineControllerState.Paused);
-    expect(machine.getWasmV2Diagnostics().lastScaffoldStopReason).toBe("wasmFrameComplete");
+    expect(machine.getWasmV2Diagnostics().lastWasmStopReason).toBe("wasmFrameComplete");
 
     await controller.stepInto();
     await waitForControllerState(controller, MachineControllerState.Paused);
@@ -48,9 +48,9 @@ describe("ZX Spectrum Next WASM v2 debug tools scaffold", () => {
 
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
       debugSteps: 3,
-      lastScaffoldStopReason: "scaffoldDebugStep"
+      lastWasmStopReason: "debugStep"
     });
-    expect(machine.getWasmV2Diagnostics().lastScaffoldStopReason).not.toMatch(/breakpoint|cpu|device/i);
+    expect(machine.getWasmV2Diagnostics().lastWasmStopReason).not.toMatch(/breakpoint|cpu|device/i);
 
     await controller.stop();
     expect(controller.state).toBe(MachineControllerState.Stopped);

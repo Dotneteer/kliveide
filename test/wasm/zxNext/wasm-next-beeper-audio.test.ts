@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SpectrumBeeperDevice } from "@emu/machines/BeeperDevice";
-import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine, createZxNextOracleHarness } from "./wasm-next-test-helpers";
 
 describe("ZX Next WASM beeper audio", () => {
   it("matches TypeScript EAR/MIC transitions and weighted samples", async () => {
@@ -29,5 +29,24 @@ describe("ZX Next WASM beeper audio", () => {
     expect(exports.zxnextGetBeeperOutputLevelMilli()).toBe(1000);
     expect(exports.zxnextGetBeeperSampleLeftMilli()).toBe(Math.floor(sample.left * 1000));
     expect(exports.zxnextGetBeeperSampleRightMilli()).toBe(Math.floor(sample.right * 1000));
+  });
+
+  it("keeps beeper EAR/MIC state in sync with TypeScript ULA port writes", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+
+    oracle.doWritePort(0x00fe, 0x18);
+    wasm.doWritePort(0x00fe, 0x18);
+
+    expect(exports.zxnextGetBeeperEar()).toBe(oracle.beeperDevice.earBit ? 1 : 0);
+    expect(exports.zxnextGetBeeperMic()).toBe(1);
+    expect(exports.zxnextGetBeeperOutputLevelMilli()).toBe(Math.floor(oracle.beeperDevice.outputLevel * 1000));
+
+    oracle.doWritePort(0x00fe, 0x00);
+    wasm.doWritePort(0x00fe, 0x00);
+
+    expect(exports.zxnextGetBeeperEar()).toBe(oracle.beeperDevice.earBit ? 1 : 0);
+    expect(exports.zxnextGetBeeperMic()).toBe(0);
+    expect(exports.zxnextGetBeeperOutputLevelMilli()).toBe(Math.floor(oracle.beeperDevice.outputLevel * 1000));
   });
 });

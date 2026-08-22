@@ -34,6 +34,26 @@ If a more complex model produces a much smaller WASM binary than a simpler
 model, treat that as suspicious. It may mean code is missing, a shared CPU is
 not actually linked, hot helpers are not inline, or a device was stubbed.
 
+Specific ZX Spectrum Next lesson: on 2026-08-20 the Next artifact was 180,358
+bytes while the 48K artifact was 470,922 bytes. The Next build was still using
+the speed profile, so the small size pointed to shallow timing/device code
+rather than `-Oz`. `wasm-objdump -h` showed the Next code section was far
+smaller than 48K despite more exports. Do not flip Next to default while this
+kind of inversion is unexplained.
+
+Follow-up on 2026-08-20: adding shared Z80N tact and memory/port delay hooks
+moved the Next artifact above the 48K artifact; the current Step 29 build is
+574,085 bytes, with a code section around 557 KB.
+That resolved the size inversion and confirmed the missing depth was timing
+integration, not the optimization profile. The Next CPU speed scale is latched
+at instruction start; `NEXTREG $07` must not change timing for the instruction
+that writes it.
+
+CTC timing lesson: mirror the TypeScript CTC model as lazy 28 MHz frame-clock
+sync before CTC port access, not per-tact work in the CPU hot path. Port gating
+comes from NextReg `$85` bit 3; `$84` is DAC/AY port decoding and should not be
+used for CTC enable checks.
+
 ## Single-Source Device Intent
 
 Do not duplicate hardware devices per model when the behavior is common.
@@ -101,6 +121,27 @@ APIs wherever possible:
 If a behavior is hard to reproduce with tests, still audit the exact TypeScript
 and WASM contracts. Games often reveal mid-frame timing bugs that ordinary unit
 tests miss.
+
+## Before And After The Default Flip
+
+Before a model defaults to WASM, TypeScript remains the default oracle and new
+machine-owned behavior should be implemented in TypeScript and WASM together
+when the oracle must grow. Do not switch the default merely because the WASM
+backend boots, renders a frame, or passes surface-level tests.
+
+Once a model actually defaults to WASM, treat WASM as the primary
+implementation for new machine-owned behavior. Implement new emulator features
+in WASM first, or in TypeScript and WASM together when the TypeScript oracle
+needs to be extended.
+
+Keep the old TypeScript backend available as an explicit fallback and parity
+oracle until a separate deprecation plan removes it. Do not delete the fallback
+just because WASM becomes the default.
+
+Host-owned boundaries, such as UI policy, file/media persistence, Electron
+resource lookup, and test harness setup, can remain in TypeScript. Device,
+timing, memory, port, CPU, screen, audio, tape, and storage behavior should not
+move back to TypeScript merely because it is easier to patch there.
 
 ## Timing Lessons
 
