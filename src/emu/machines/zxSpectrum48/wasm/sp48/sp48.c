@@ -697,6 +697,10 @@ uint32_t sp48GetContentionValue(uint32_t tact) {
   return sp48Contention[tact % sp48TactsInFrame];
 }
 
+void sp48SetContentionValue(uint32_t tact, uint32_t value) {
+  sp48Contention[tact % sp48TactsInFrame] = (uint8_t)(value & 0xffu);
+}
+
 uint32_t sp48GetRenderingPhase(uint32_t tact) {
   return sp48RenderingPhase[tact % sp48TactsInFrame];
 }
@@ -819,6 +823,10 @@ uint32_t sp48GetCpuHlAlt(void) {
 
 uint32_t sp48GetCpuIr(void) {
   return z80GetIr();
+}
+
+void sp48SetCpuIr(uint32_t value) {
+  z80SetIr(value);
 }
 
 uint32_t sp48GetCpuWz(void) {

@@ -1,24 +1,24 @@
 import { describe, it, expect } from "vitest";
-import { ZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48Machine";
-import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
-import { ZxSpectrumP3EMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
+import { createZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48MachineFactory";
+import { createZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128MachineFactory";
+import { createZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachineFactory";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 
 describe("Memory partitions", () => {
   it("ZX Spectrum 48 works #1", () => {
-    const machine = new ZxSpectrum48Machine();
+    const machine = createZxSpectrum48Machine();
     const partition = machine.parsePartitionLabel("R0");
     expect(partition).toEqual(undefined);
   });
 
   it("ZX Spectrum 48 works #2", () => {
-    const machine = new ZxSpectrum48Machine();
+    const machine = createZxSpectrum48Machine();
     const partition = machine.parsePartitionLabel("R1");
     expect(partition).toEqual(undefined);
   });
 
   it("ZX Spectrum 48 works #3", () => {
-    const machine = new ZxSpectrum48Machine();
+    const machine = createZxSpectrum48Machine();
     const partition = machine.parsePartitionLabel("0");
     expect(partition).toEqual(undefined);
   });
@@ -41,7 +41,7 @@ describe("Memory partitions", () => {
 
   sp128Cases.forEach((c) => {
     it(`ZX Spectrum 128 works #1 (${c.l})`, () => {
-      const machine = new ZxSpectrum128Machine();
+      const machine = createZxSpectrum128Machine();
       const partition = machine.parsePartitionLabel(c.l);
       expect(partition).toEqual(c.p);
     });
@@ -66,7 +66,7 @@ describe("Memory partitions", () => {
 
   spp3Cases.forEach((c) => {
     it(`ZX Spectrum +2/+3 works #1 (${c.l})`, () => {
-      const machine = new ZxSpectrumP3EMachine({
+      const machine = createZxSpectrumP3eMachine({
         modelId: "nofdd",
         displayName: "ZX Spectrum +2E",
         config: {}

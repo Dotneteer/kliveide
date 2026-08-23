@@ -8,14 +8,8 @@ import { expect } from "vitest";
 import { buildSp128Wasm, productionOutput as sp128WasmOutput } from "../../../scripts/build-sp128-wasm.cjs";
 import { buildSp48Wasm, productionOutput as sp48WasmOutput } from "../../../scripts/build-sp48-wasm.cjs";
 import { buildSpP3eWasm, productionOutput as spp3eWasmOutput } from "../../../scripts/build-spp3e-wasm.cjs";
-import { SP128_IMPLEMENTATION } from "@emu/machines/zxSpectrum128/ZxSpectrum128Implementation";
-import { SP48_IMPLEMENTATION } from "@emu/machines/zxSpectrum48/ZxSpectrum48Implementation";
-import { SPP3E_IMPLEMENTATION } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eImplementation";
-import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
-import { ZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48Machine";
 import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine";
-import { ZxSpectrumP3EMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
 import { ZxSpectrumP3eWasmV2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eWasmV2Machine";
 
 type BuildCacheKey = "sp48" | "sp128" | "spp3e";
@@ -63,7 +57,6 @@ export type SpectrumModelCase = {
   id: SpectrumModelId;
   name: string;
   createWasmMachine: () => Promise<TestSp48WasmMachine | TestSp128WasmMachine | TestSpp3eWasmMachine>;
-  createOracleMachine: () => Promise<TestOracleSp48Machine | TestOracleSp128Machine | TestOracleSpp3eMachine>;
 };
 
 const DEFAULT_P3E_MODEL: MachineModel = {
@@ -115,10 +108,7 @@ export class TestSp48WasmMachine extends ZxSpectrum48WasmV2Machine {
   ) {
     super(
       modelInfo,
-      {
-        [SP48_IMPLEMENTATION]: "wasm",
-        ...(config ?? {})
-      },
+      config ?? {},
       {
         artifactName: "test-sp48-machine-v2.wasm",
         readArtifact: async () => readFileSync(sp48WasmOutput)
@@ -212,10 +202,7 @@ export class TestSp128WasmMachine extends ZxSpectrum128WasmV2Machine {
   ) {
     super(
       modelInfo,
-      {
-        [SP128_IMPLEMENTATION]: "wasm",
-        ...(config ?? {})
-      },
+      config ?? {},
       {
         artifactName: "test-sp128-machine-v2.wasm",
         readArtifact: async () => readFileSync(sp128WasmOutput)
@@ -311,7 +298,6 @@ export class TestSpp3eWasmMachine extends ZxSpectrumP3eWasmV2Machine {
     super(
       options.modelInfo ?? DEFAULT_P3E_MODEL,
       {
-        [SPP3E_IMPLEMENTATION]: "wasm",
         [MC_DISK_SUPPORT]: options.diskSupport ?? 2,
         ...(options.config ?? {})
       },
@@ -408,273 +394,6 @@ export class TestSpp3eWasmMachine extends ZxSpectrumP3eWasmV2Machine {
   }
 }
 
-export class TestOracleSp48Machine extends ZxSpectrum48Machine {
-  constructor (
-    private readonly rom: Uint8Array = testRom([]),
-    modelInfo?: MachineModel,
-    config?: MachineConfigSet
-  ) {
-    super(modelInfo, {
-      [SP48_IMPLEMENTATION]: "typescript",
-      ...(config ?? {})
-    });
-  }
-
-  protected override async loadRomFromResource(_romName: string, _page = -1): Promise<Uint8Array> {
-    return this.rom;
-  }
-
-  initCode (code: number[], startAddress: number): void {
-    initCodeBytes(this, code, startAddress);
-  }
-
-  setFrameTact (frameTact: number): void {
-    setMachineFrameTact(this, frameTact);
-  }
-
-  executeOne (): void {
-    this.executeCpuCycle();
-  }
-
-  uploadTestRom (rom = this.rom): void {
-    this.uploadRomBytes(rom);
-  }
-
-  readTestMemory (address: number): number {
-    return this.doReadMemory(address & 0xffff);
-  }
-
-  writeTestMemory (address: number, value: number): void {
-    this.doWriteMemory(address & 0xffff, value & 0xff);
-  }
-
-  readTestPort (address: number): number {
-    return this.doReadPort(address & 0xffff);
-  }
-
-  writeTestPort (address: number, value: number): void {
-    this.doWritePort(address & 0xffff, value & 0xff);
-  }
-
-  getTestCpuRegisters (): TestCpuRegisterSnapshot {
-    return getOracleCpuRegisters(this);
-  }
-
-  setTestCpuRegisters (registers: TestCpuRegisters): void {
-    setOracleCpuRegisters(this, registers);
-  }
-
-  setAbsoluteTacts (value: number): void {
-    this.setTacts(value);
-  }
-
-  getCurrentFrameTactForTest (): number {
-    return this.currentFrameTact;
-  }
-
-  getContentionDelayTotalForTest (): number {
-    return this.totalContentionDelaySinceStart;
-  }
-
-  getContentionValueForTest (tact: number): number {
-    return this.getContentionValue(tact);
-  }
-
-  getTestPagingState (): TestPagingState {
-    return {
-      selectedRomPage: this.getSelectedRomPage(),
-      selectedRamBank: this.getSelectedRamBank()
-    };
-  }
-
-  resetContentionCounters (): void {
-    resetMachineContentionCounters(this);
-  }
-
-  setContentionRange (startTact: number, count: number, value: number): void {
-    setMachineContentionRange(this, startTact, count, value);
-  }
-}
-
-export class TestOracleSp128Machine extends ZxSpectrum128Machine {
-  constructor (
-    private readonly rom0: Uint8Array = testRom([]),
-    private readonly rom1: Uint8Array = testRom([])
-  ) {
-    super();
-  }
-
-  protected override async loadRomFromResource(_romName: string, page = 0): Promise<Uint8Array> {
-    return page === 1 ? this.rom1 : this.rom0;
-  }
-
-  initCode (code: number[], startAddress: number): void {
-    initCodeBytes(this, code, startAddress);
-  }
-
-  setFrameTact (frameTact: number): void {
-    setMachineFrameTact(this, frameTact);
-  }
-
-  executeOne (): void {
-    this.executeCpuCycle();
-  }
-
-  uploadTestRom (rom: Uint8Array, page = 0): void {
-    this.uploadRomBytes(page === 1 ? -2 : -1, rom);
-  }
-
-  readTestMemory (address: number): number {
-    return this.doReadMemory(address & 0xffff);
-  }
-
-  writeTestMemory (address: number, value: number): void {
-    this.doWriteMemory(address & 0xffff, value & 0xff);
-  }
-
-  readTestPort (address: number): number {
-    return this.doReadPort(address & 0xffff);
-  }
-
-  writeTestPort (address: number, value: number): void {
-    this.doWritePort(address & 0xffff, value & 0xff);
-  }
-
-  getTestCpuRegisters (): TestCpuRegisterSnapshot {
-    return getOracleCpuRegisters(this);
-  }
-
-  setTestCpuRegisters (registers: TestCpuRegisters): void {
-    setOracleCpuRegisters(this, registers);
-  }
-
-  setAbsoluteTacts (value: number): void {
-    this.setTacts(value);
-  }
-
-  getCurrentFrameTactForTest (): number {
-    return this.currentFrameTact;
-  }
-
-  getContentionDelayTotalForTest (): number {
-    return this.totalContentionDelaySinceStart;
-  }
-
-  getContentionValueForTest (tact: number): number {
-    return this.getContentionValue(tact);
-  }
-
-  getTestPagingState (): TestPagingState {
-    return {
-      selectedRomPage: this.getSelectedRomPage(),
-      selectedRamBank: this.getSelectedRamBank(),
-      pagingEnabled: this.pagingEnabled,
-      useShadowScreen: this.useShadowScreen
-    };
-  }
-
-  resetContentionCounters (): void {
-    resetMachineContentionCounters(this);
-  }
-
-  setContentionRange (startTact: number, count: number, value: number): void {
-    setMachineContentionRange(this, startTact, count, value);
-  }
-}
-
-export class TestOracleSpp3eMachine extends ZxSpectrumP3EMachine {
-  constructor (
-    private readonly romPages: Uint8Array[] = [testRom([]), testRom([]), testRom([]), testRom([])],
-    options: P3eTestMachineOptions = {}
-  ) {
-    super(options.modelInfo ?? DEFAULT_P3E_MODEL, {
-      [SPP3E_IMPLEMENTATION]: "typescript",
-      [MC_DISK_SUPPORT]: options.diskSupport ?? 2,
-      ...(options.config ?? {})
-    });
-  }
-
-  protected override async loadRomFromResource(_romName: string, page = 0): Promise<Uint8Array> {
-    return this.romPages[page] ?? testRom([]);
-  }
-
-  initCode (code: number[], startAddress: number): void {
-    initCodeBytes(this, code, startAddress);
-  }
-
-  setFrameTact (frameTact: number): void {
-    setMachineFrameTact(this, frameTact);
-  }
-
-  executeOne (): void {
-    this.executeCpuCycle();
-  }
-
-  uploadTestRom (rom: Uint8Array, page = 0): void {
-    this.uploadRomBytes(-(page + 1), rom);
-  }
-
-  readTestMemory (address: number): number {
-    return this.doReadMemory(address & 0xffff);
-  }
-
-  writeTestMemory (address: number, value: number): void {
-    this.doWriteMemory(address & 0xffff, value & 0xff);
-  }
-
-  readTestPort (address: number): number {
-    return this.doReadPort(address & 0xffff);
-  }
-
-  writeTestPort (address: number, value: number): void {
-    this.doWritePort(address & 0xffff, value & 0xff);
-  }
-
-  getTestCpuRegisters (): TestCpuRegisterSnapshot {
-    return getOracleCpuRegisters(this);
-  }
-
-  setTestCpuRegisters (registers: TestCpuRegisters): void {
-    setOracleCpuRegisters(this, registers);
-  }
-
-  setAbsoluteTacts (value: number): void {
-    this.setTacts(value);
-  }
-
-  getCurrentFrameTactForTest (): number {
-    return this.currentFrameTact;
-  }
-
-  getContentionDelayTotalForTest (): number {
-    return this.totalContentionDelaySinceStart;
-  }
-
-  getContentionValueForTest (tact: number): number {
-    return this.getContentionValue(tact);
-  }
-
-  getTestPagingState (): TestPagingState {
-    return {
-      selectedRomPage: this.getSelectedRomPage(),
-      selectedRamBank: this.getSelectedRamBank(),
-      pagingEnabled: this.pagingEnabled,
-      useShadowScreen: this.useShadowScreen,
-      inSpecialPagingMode: this.inSpecialPagingMode,
-      specialConfigMode: this.specialConfigMode,
-      diskMotorOn: this.diskMotorOn
-    };
-  }
-
-  resetContentionCounters (): void {
-    resetMachineContentionCounters(this);
-  }
-
-  setContentionRange (startTact: number, count: number, value: number): void {
-    setMachineContentionRange(this, startTact, count, value);
-  }
-}
-
 export async function createTestSp48WasmMachine(
   rom = testRom([]),
   modelInfo?: MachineModel,
@@ -706,34 +425,6 @@ export async function createTestSpp3eWasmMachine(
   return machine;
 }
 
-export async function createOracleSp48Machine(
-  rom = testRom([]),
-  modelInfo?: MachineModel,
-  config?: MachineConfigSet
-): Promise<TestOracleSp48Machine> {
-  const machine = new TestOracleSp48Machine(rom, modelInfo, config);
-  await machine.setup();
-  return machine;
-}
-
-export async function createOracleSp128Machine(
-  rom0 = testRom([]),
-  rom1 = testRom([])
-): Promise<TestOracleSp128Machine> {
-  const machine = new TestOracleSp128Machine(rom0, rom1);
-  await machine.setup();
-  return machine;
-}
-
-export async function createOracleSpp3eMachine(
-  romPages = [testRom([]), testRom([]), testRom([]), testRom([])],
-  options: P3eTestMachineOptions = {}
-): Promise<TestOracleSpp3eMachine> {
-  const machine = new TestOracleSpp3eMachine(romPages, options);
-  await machine.setup();
-  return machine;
-}
-
 export function expectNormalizedSamples(samples: AudioSample[]): void {
   expect(samples.length).toBeGreaterThan(0);
   for (const sample of samples) {
@@ -742,49 +433,6 @@ export function expectNormalizedSamples(samples: AudioSample[]): void {
     expect(Math.abs(sample.left)).toBeLessThanOrEqual(1.0);
     expect(Math.abs(sample.right)).toBeLessThanOrEqual(1.0);
   }
-}
-
-export function expectSameCpuStateSubset(
-  wasmMachine: { getCpuState: () => Record<string, any> },
-  tsMachine: { getCpuState: () => Record<string, any> },
-  fields: string[]
-): void {
-  const wasmState = wasmMachine.getCpuState();
-  const tsState = tsMachine.getCpuState();
-  for (const field of fields) {
-    expect(wasmState[field], field).toEqual(tsState[field]);
-  }
-}
-
-export function expectSameMemoryReads(
-  wasmMachine: { doReadMemory: (address: number) => number; readTestMemory?: (address: number) => number },
-  tsMachine: { doReadMemory: (address: number) => number; readTestMemory?: (address: number) => number },
-  addresses: number[]
-): void {
-  for (const address of addresses) {
-    const wasmValue = wasmMachine.readTestMemory?.(address) ?? wasmMachine.doReadMemory(address);
-    const tsValue = tsMachine.readTestMemory?.(address) ?? tsMachine.doReadMemory(address);
-    expect(wasmValue, `memory ${address.toString(16)}`).toBe(
-      tsValue
-    );
-  }
-}
-
-export function expectSamePartitions(
-  wasmMachine: {
-    getCurrentPartitions: () => number[];
-    getSelectedRamBank: () => number;
-    getSelectedRomPage: () => number;
-  },
-  tsMachine: {
-    getCurrentPartitions: () => number[];
-    getSelectedRamBank: () => number;
-    getSelectedRomPage: () => number;
-  }
-): void {
-  expect(wasmMachine.getCurrentPartitions()).toEqual(tsMachine.getCurrentPartitions());
-  expect(wasmMachine.getSelectedRamBank()).toBe(tsMachine.getSelectedRamBank());
-  expect(wasmMachine.getSelectedRomPage()).toBe(tsMachine.getSelectedRomPage());
 }
 
 export function for48And128AndP3e(run: (testCase: SpectrumModelCase) => void): void {
@@ -808,20 +456,17 @@ function spectrumModelCases (): SpectrumModelCase[] {
     {
       id: "sp48",
       name: "ZX Spectrum 48K",
-      createWasmMachine: () => createTestSp48WasmMachine(rom48),
-      createOracleMachine: () => createOracleSp48Machine(rom48)
+      createWasmMachine: () => createTestSp48WasmMachine(rom48)
     },
     {
       id: "sp128",
       name: "ZX Spectrum 128K",
-      createWasmMachine: () => createTestSp128WasmMachine(rom1280, rom1281),
-      createOracleMachine: () => createOracleSp128Machine(rom1280, rom1281)
+      createWasmMachine: () => createTestSp128WasmMachine(rom1280, rom1281)
     },
     {
       id: "spp3e",
       name: "ZX Spectrum +3E",
-      createWasmMachine: () => createTestSpp3eWasmMachine(romP3e),
-      createOracleMachine: () => createOracleSpp3eMachine(romP3e)
+      createWasmMachine: () => createTestSpp3eWasmMachine(romP3e)
     }
   ];
 }
@@ -933,7 +578,9 @@ function setWasmCpuRegisters (
     callWasmExport(machine, exportName)(registers.interruptMode);
   }
   if (registers.ir != null) {
-    throw new Error(`${prefix}SetCpuIr is not available without changing the WASM implementation exports.`);
+    const exportName = `${prefix}SetCpuIr`;
+    if (!hasWasmExport(machine, exportName)) throw new Error(`${exportName} is not available.`);
+    callWasmExport(machine, exportName)(registers.ir & 0xffff);
   }
   if (registers.halted != null) {
     throw new Error(`${prefix}SetCpuHalted is not available without changing the WASM implementation exports.`);
@@ -979,109 +626,5 @@ function setWasmContentionRange (
   const setContentionValue = callWasmExport(machine, `${prefix}SetContentionValue`);
   for (let i = 0; i < count; i++) {
     setContentionValue(startTact + i, value);
-  }
-}
-
-function getOracleCpuRegisters (
-  machine: {
-    af: number;
-    bc: number;
-    de: number;
-    hl: number;
-    ix: number;
-    iy: number;
-    ir: number;
-    pc: number;
-    sp: number;
-    iff1: boolean;
-    interruptMode: number;
-    halted: boolean;
-    tacts: number;
-  }
-): TestCpuRegisterSnapshot {
-  return {
-    af: machine.af,
-    bc: machine.bc,
-    de: machine.de,
-    hl: machine.hl,
-    ix: machine.ix,
-    iy: machine.iy,
-    ir: machine.ir,
-    pc: machine.pc,
-    sp: machine.sp,
-    iff1: machine.iff1,
-    interruptMode: machine.interruptMode,
-    halted: machine.halted,
-    tacts: machine.tacts
-  };
-}
-
-function setOracleCpuRegisters (
-  machine: {
-    af: number;
-    bc: number;
-    de: number;
-    hl: number;
-    ix: number;
-    iy: number;
-    ir: number;
-    pc: number;
-    sp: number;
-    iff1: boolean;
-    interruptMode: number;
-    halted: boolean;
-    setTacts: (value: number) => void;
-  },
-  registers: TestCpuRegisters
-): void {
-  if (registers.af != null) machine.af = registers.af & 0xffff;
-  if (registers.bc != null) machine.bc = registers.bc & 0xffff;
-  if (registers.de != null) machine.de = registers.de & 0xffff;
-  if (registers.hl != null) machine.hl = registers.hl & 0xffff;
-  if (registers.ix != null) machine.ix = registers.ix & 0xffff;
-  if (registers.iy != null) machine.iy = registers.iy & 0xffff;
-  if (registers.ir != null) machine.ir = registers.ir & 0xffff;
-  if (registers.pc != null) machine.pc = registers.pc & 0xffff;
-  if (registers.sp != null) machine.sp = registers.sp & 0xffff;
-  if (registers.iff1 != null) machine.iff1 = registers.iff1;
-  if (registers.interruptMode != null) machine.interruptMode = registers.interruptMode;
-  if (registers.halted != null) machine.halted = registers.halted;
-  if (registers.tacts != null) machine.setTacts(registers.tacts);
-}
-
-function initCodeBytes (
-  machine: { doWriteMemory: (address: number, value: number) => void },
-  code: number[],
-  startAddress: number
-): void {
-  for (let i = 0; i < code.length; i++) {
-    machine.doWriteMemory((startAddress + i) & 0xffff, code[i]);
-  }
-}
-
-function setMachineFrameTact (
-  machine: { frameTacts: number; tacts: number; currentFrameTact: number },
-  frameTact: number
-): void {
-  machine.frameTacts = frameTact;
-  machine.tacts = frameTact;
-  machine.currentFrameTact = frameTact;
-}
-
-function resetMachineContentionCounters (
-  machine: { totalContentionDelaySinceStart: number; contentionDelaySincePause: number }
-): void {
-  machine.totalContentionDelaySinceStart = 0;
-  machine.contentionDelaySincePause = 0;
-}
-
-function setMachineContentionRange (
-  machine: { setContentionValue: (tact: number, value: number) => void },
-  startTact: number,
-  count: number,
-  value: number
-): void {
-  for (let i = 0; i < count; i++) {
-    machine.setContentionValue(startTact + i, value);
   }
 }

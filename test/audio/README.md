@@ -1,6 +1,8 @@
 # Audio System Test Suite
 
-Complete test coverage for ZX Spectrum 128 audio generation system. All tests validate the 3-layer audio architecture: Audio Device base timing, device-specific implementations (Beeper & PSG), and machine-level integration.
+Audio coverage for shared audio primitives, the Spectrum beeper, the shared PSG
+chip used by ZX Spectrum Next, and Z88 beeper integration. Classic Spectrum
+128K/+3E PSG behavior is covered by the WASM Spectrum tests.
 
 ## Test Statistics
 
@@ -8,9 +10,8 @@ Complete test coverage for ZX Spectrum 128 audio generation system. All tests va
 |-----------|-------|--------|----------|
 | AudioDeviceBase | 21 | ✅ Passing | Sample rate math, tact-based timing, clock multipliers |
 | SpectrumBeeperDevice | 29 | ✅ Passing | EAR bit control, square waves, frame handling |
-| PsgChip & ZxSpectrum128PsgDevice | 41 | ✅ Passing | Registers, tone/noise channels, volume, envelope |
-| Machine Audio Integration | 17 | ✅ Passing | Mixing, frame generation, realistic scenarios |
-| **Total** | **108** | **✅ All Passing** | **Complete coverage** |
+| PsgChip | 30 | ✅ Passing | Registers, tone/noise channels, volume, envelope |
+| Z88 Audio Integration | 2 | ✅ Passing | Z88 beeper sample generation |
 
 ## File Descriptions
 
@@ -45,8 +46,8 @@ Tests the simple EAR bit-based beeper device.
 - `SpectrumBeeperDevice` implementation
 - `AudioDeviceBase` timing logic
 
-### PsgDevice.test.ts (41 tests)
-Tests the AY-3-8912 PSG chip implementation and machine integration.
+### PsgDevice.test.ts (30 tests)
+Tests the AY-3-8912/YM PSG chip implementation retained for ZX Spectrum Next.
 
 **Key Components:**
 
@@ -60,49 +61,17 @@ Tests the AY-3-8912 PSG chip implementation and machine integration.
 - Audio output: Channel mixing and output
 - Reset behavior: Clear state
 
-**ZxSpectrum128PsgDevice Tests (11):**
-- Clock division: PSG clock = CPU clock / 16
-- Orphan sample handling: Accumulation & averaging
-- Frame boundary handling: Reset at frame start
-- Full generation: Complete frame audio output
-- State management: Register forwarding
-
 **Key Insight:**
 PSG generates one output sample every 16 CPU tacts. Output values between audio samples are accumulated and averaged (orphan samples) to prevent aliasing.
 
-### AudioIntegration.test.ts (17 tests)
-Tests machine-level audio mixing of Beeper + PSG.
+### AudioIntegration.test.ts (2 tests)
+Tests Z88 beeper integration.
 
 **Key Test Categories:**
 
-1. **Beeper + PSG Mixing (3 tests)**
-   - Independent output generation
-   - Simultaneous device operation without interference
-   - Consistent mixing logic
-
-2. **Full Frame Audio Generation (3 tests)**
-   - Complete frame generation (69,888 tacts)
-   - Frame boundary handling
-   - Sample rate consistency across frames
-
-3. **Clock Multiplier Effects (2 tests)**
-   - Both devices respect multiplier settings
-   - Accurate sample generation with 1x vs 2x
-
-4. **Dynamic Audio Changes (3 tests)**
-   - Beeper on/off transitions
-   - PSG tone frequency changes
-   - Volume level changes
-
-5. **Realistic Scenarios (3 tests)**
-   - Game with beeper effects + PSG music
-   - Rapid beeper pulses with background PSG
-   - Smooth audio fade (volume decrease)
-
-6. **Error Recovery & Edge Cases (3 tests)**
-   - Reset during playback
-   - Extreme sample rate changes
-   - All channels simultaneously enabled
+1. **Z88 Beeper Samples**
+   - Audio sample shape
+   - Sample generation across EAR bit changes
 
 ## Core Audio Architecture
 
@@ -211,9 +180,8 @@ All tests pass consistently (212ms total execution time) and follow vitest best 
 **Source Files Tested:**
 - `src/emu/machines/AudioDeviceBase.ts`: Abstract base class
 - `src/emu/machines/BeeperDevice.ts`: Beeper implementation
-- `src/emu/machines/zxSpectrum128/ZxSpectrum128PsgDevice.ts`: PSG wrapper
-- `src/emu/machines/ay38912/PsgChip.ts`: PSG chip implementation
-- `src/emu/machines/zxSpectrum128/ZxSpectrum128Machine.ts`: Audio mixing
+- `src/emu/machines/zxSpectrum128/PsgChip.ts`: PSG chip implementation
+- `src/emu/machines/z88/Z88BeeperDevice.ts`: Z88 beeper implementation
 
 **Test Infrastructure:**
 - MockMachine class: Simulates machine tact timing
