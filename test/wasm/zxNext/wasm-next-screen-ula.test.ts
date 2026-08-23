@@ -14,6 +14,11 @@ const STANDARD_SCREEN_OUTPUT_WIDTH = STANDARD_SCREEN_WIDTH * STANDARD_SCREEN_SCA
 const STANDARD_SCREEN_HEIGHT = 192;
 const STANDARD_SCREEN_X = (ZXNEXT_WASM_V2_SCREEN_WIDTH - STANDARD_SCREEN_OUTPUT_WIDTH) / 2;
 const STANDARD_SCREEN_Y = (ZXNEXT_WASM_V2_SCREEN_HEIGHT - STANDARD_SCREEN_HEIGHT) / 2;
+const LAYER2_320_SCREEN_WIDTH = 320;
+const LAYER2_320_SCREEN_OUTPUT_WIDTH = LAYER2_320_SCREEN_WIDTH * STANDARD_SCREEN_SCALE_X;
+const LAYER2_WIDE_SCREEN_HEIGHT = 256;
+const LAYER2_WIDE_SCREEN_X = 32;
+const LAYER2_WIDE_SCREEN_Y = STANDARD_SCREEN_Y - (LAYER2_WIDE_SCREEN_HEIGHT - STANDARD_SCREEN_HEIGHT) / 2;
 
 describe("ZX Spectrum Next WASM standard ULA screen", () => {
   it("matches blank pixel snapshots, flash state, and sampled scanline timing", async () => {
@@ -293,6 +298,85 @@ describe("ZX Spectrum Next WASM standard ULA screen", () => {
     expect(pixels[screenIndex(0, 0)]).toBe(basePixel);
   });
 
+  it("renders 320x256 Layer 2 from five consecutive active RAM banks", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    oracle.hardReset();
+    wasm.hardReset();
+
+    for (const [reg, value] of [
+      [0x1c, 0x01],
+      [0x18, 0x00],
+      [0x18, 0x9f],
+      [0x18, 0x00],
+      [0x18, 0xff],
+      [0x12, 0x09],
+      [0x70, 0x10],
+      [0x69, 0x80]
+    ]) {
+      oracle.nextRegDevice.directSetRegValue(reg, value);
+      exports.zxnextSetNextRegisterDirect(reg, value);
+    }
+
+    for (const [x, value] of [
+      [0x00, 0x0b],
+      [0x40, 0x55],
+      [0x80, 0x17],
+      [0xc0, 0x22],
+      [0x100, 0x2d]
+    ]) {
+      oracle.memoryDevice.memory[layer2PhysicalOffset(9, x << 8)] = value;
+      wasm.wasmV2Runtime!.memory[layer2PhysicalOffset(9, x << 8)] = value;
+    }
+
+    const oraclePixels = oracle.composedScreenDevice.renderFullScreen();
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect(pixels[layer2WideScreenIndex(0x00 * 2, 0)]).toBe(layer2Bgra(0x0b));
+    expect(pixels[layer2WideScreenIndex(0x40 * 2, 0)]).toBe(layer2Bgra(0x55));
+    expect(pixels[layer2WideScreenIndex(0x80 * 2, 0)]).toBe(layer2Bgra(0x17));
+    expect(pixels[layer2WideScreenIndex(0xc0 * 2, 0)]).toBe(layer2Bgra(0x22));
+    expect(pixels[layer2WideScreenIndex(0x100 * 2, 0)]).toBe(layer2Bgra(0x2d));
+    expect(pixels[layer2WideScreenIndex(1, 0)]).toBe(layer2Bgra(0x0b));
+    for (const index of [
+      layer2WideScreenIndex(0x00 * 2, 0),
+      layer2WideScreenIndex(0x40 * 2, 0),
+      layer2WideScreenIndex(0x80 * 2, 0),
+      layer2WideScreenIndex(0xc0 * 2, 0),
+      layer2WideScreenIndex(0x100 * 2, 0)
+    ]) {
+      expect(pixels[index]).toBe(oraclePixels[index]);
+    }
+  });
+
+  it("renders 320x256 Layer 2 with wide clip and 9-bit X scroll wrapping", async () => {
+    const { wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    wasm.hardReset();
+
+    exports.zxnextSetNextRegisterDirect(0x1c, 0x01);
+    for (const value of [0x08, 0x7f, 0x00, 0xff]) {
+      exports.zxnextSetNextRegisterDirect(0x18, value);
+    }
+    exports.zxnextSetNextRegisterDirect(0x12, 0x09);
+    exports.zxnextSetNextRegisterDirect(0x70, 0x10);
+    exports.zxnextSetNextRegisterDirect(0x69, 0x80);
+    exports.zxnextSetNextRegisterDirect(0x16, 0xe0);
+    exports.zxnextSetNextRegisterDirect(0x71, 0x01);
+    exports.zxnextSetNextRegisterDirect(0x17, 0x01);
+
+    const sourceX = layer2WideWrappedX(0x20 + 0x1e0);
+    wasm.wasmV2Runtime!.memory[layer2PhysicalOffset(9, (sourceX << 8) | 0x01)] = 0x33;
+
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect(pixels[layer2WideScreenIndex(0x1e, 0)]).not.toBe(layer2Bgra(0x33));
+    expect(pixels[layer2WideScreenIndex(0x20 * 2, 0)]).toBe(layer2Bgra(0x33));
+    expect(pixels[layer2WideScreenIndex(0x20 * 2 + 1, 0)]).toBe(layer2Bgra(0x33));
+  });
+
   it("maps CPU writes through port $123B into Layer 2 RAM", async () => {
     const { wasm } = await createZxNextOracleHarness();
     wasm.hardReset();
@@ -441,12 +525,32 @@ function screenIndex(x: number, y: number): number {
   return (STANDARD_SCREEN_Y + y) * ZXNEXT_WASM_V2_SCREEN_WIDTH + STANDARD_SCREEN_X + x;
 }
 
+function layer2WideScreenIndex(x: number, y: number): number {
+  return (LAYER2_WIDE_SCREEN_Y + y) * ZXNEXT_WASM_V2_SCREEN_WIDTH + LAYER2_WIDE_SCREEN_X + x;
+}
+
 function layer2Bank16Offset(bank16: number): number {
   return OFFS_NEXT_RAM + bank16 * 0x4000;
 }
 
 function layer2Bgra(index: number): number {
   return zxNextBgra[((index << 1) | (index & 0x02 ? 0x01 : 0x00)) & 0x1ff];
+}
+
+function layer2PhysicalOffset(bank16: number, offset: number): number {
+  const segment16K = (offset >> 14) & 0x07;
+  const half8K = (offset >> 13) & 0x01;
+  const bank8K = ((bank16 + segment16K) << 1) | half8K;
+  return OFFS_NEXT_RAM + bank8K * 0x2000 + (offset & 0x1fff);
+}
+
+function layer2WideWrappedX(x: number): number {
+  x &= 0x3ff;
+  if (x >= 320) {
+    const upper = ((x >> 6) & 0x07) + 3;
+    x = (upper << 6) | (x & 0x3f);
+  }
+  return x & 0x1ff;
 }
 
 function layer2MappedOffset(activeBank: number, address: number, mapSegment = 0, bankOffset = 0): number {

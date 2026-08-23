@@ -56,6 +56,17 @@ WASM sources:
   window NextReg `$18`, palette offset NextReg `$70`, global transparency
   index NextReg `$4B`, Layer 2 palette lookup, and `$123B` CPU read/write
   aperture mapping.
+- Layer 2 320x256 instant rendering for NextReg `$70` resolution 1, including
+  the TypeScript timing-derived wide-screen placement, full 320-pixel X clip
+  expansion from the `$18` clip window, 9-bit X scroll with wide wrapping,
+  column-major `(x << 8) | y` SRAM addressing, and sequential active RAM bank
+  reads across the five 16K banks used by the 320x256 frame.
+- Tilemap 40x32 and 80x32 graphics instant rendering for NextReg `$6B` bit 7,
+  including bank 5/7 VRAM address offsetting through `$6E/$6F`, eliminated or
+  per-tile attributes, default attributes from `$6C`, 512-tile index bit,
+  X/Y mirror and rotate bits, scroll NextRegs `$2F/$30/$31`, clip NextReg
+  `$1B`, transparency NextReg `$4C`, tilemap palette selection, and the
+  TypeScript timing-derived 640x256 wide-screen placement.
 - ULA clip window NextReg `$1A`, clip index reset via `$1C`, and scroll
   NextRegs `$26/$27` for the current instant-render path.
 - ULA flash counter and flag progression.
@@ -76,9 +87,10 @@ WASM sources:
   with rendered pixels.
 - ULA Control NextReg `$68` is not rendered: ULA disable output, SLU blending
   mode, ULA+ enable, half-pixel scroll, and stencil mode are still open.
-- Full final screen composition is missing in WASM: 320x256/640x256 Layer 2,
-  tilemap, sprites, priority, clipping, and blending do not yet match the
-  TypeScript composition pipeline.
+- Full final screen composition is missing in WASM: 640x256 Layer 2, sprites,
+  priority, clipping, and blending do not yet match the TypeScript composition
+  pipeline.
+- Tilemap text mode rendering is not implemented in the WASM instant renderer.
 - Active video line and line-interrupt behavior are not driven by the same
   per-tact renderer state as TypeScript.
 - Floating bus updates caused by ULA display-memory reads are not equivalent.

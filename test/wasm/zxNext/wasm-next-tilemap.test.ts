@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
 
+import { OFFS_BANK_05 } from "@emu/machines/zxNext/MemoryDevice";
+import {
+  ZXNEXT_WASM_V2_SCREEN_HEIGHT,
+  ZXNEXT_WASM_V2_SCREEN_WIDTH
+} from "@emu/machines/zxNext/wasm/ZxNextWasmV2Loader";
+import { zxNextBgra } from "@emu/machines/zxNext/PaletteDevice";
 import { createTestNextMachine } from "../../zxnext/TestNextMachine";
-import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine, createZxNextOracleHarness } from "./wasm-next-test-helpers";
+
+const STANDARD_SCREEN_WIDTH = 256;
+const STANDARD_SCREEN_SCALE_X = 2;
+const STANDARD_SCREEN_OUTPUT_WIDTH = STANDARD_SCREEN_WIDTH * STANDARD_SCREEN_SCALE_X;
+const STANDARD_SCREEN_HEIGHT = 192;
+const STANDARD_SCREEN_X = (ZXNEXT_WASM_V2_SCREEN_WIDTH - STANDARD_SCREEN_OUTPUT_WIDTH) / 2;
+const STANDARD_SCREEN_Y = (ZXNEXT_WASM_V2_SCREEN_HEIGHT - STANDARD_SCREEN_HEIGHT) / 2;
+const TILEMAP_SCREEN_X = 32;
+const TILEMAP_SCREEN_Y = STANDARD_SCREEN_Y - (256 - STANDARD_SCREEN_HEIGHT) / 2;
 
 describe("ZX Next WASM advanced video tilemap", () => {
   it("matches TypeScript tilemap control, clip, scroll, and base registers", async () => {
@@ -52,4 +67,175 @@ describe("ZX Next WASM advanced video tilemap", () => {
     expect(exports.zxnextGetTilemapDefinitionAddressUseBank7()).toBe(screen.tilemapTileDefUseBank7 ? 1 : 0);
     expect(exports.zxnextGetTilemapDefinitionAddressMsb()).toBe(screen.tilemapTileDefBank5Msb);
   });
+
+  it("renders 40x32 graphics tilemap pixels from bank 5 over ULA", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    oracle.hardReset();
+    wasm.hardReset();
+
+    for (const [reg, value] of [
+      [0x1c, 0x08],
+      [0x1b, 0x00],
+      [0x1b, 0x9f],
+      [0x1b, 0x00],
+      [0x1b, 0xff],
+      [0x2f, 0x00],
+      [0x30, 0x00],
+      [0x31, 0x00],
+      [0x6e, 0x00],
+      [0x6f, 0x18],
+      [0x43, 0x30],
+      [0x40, 0x00],
+      [0x41, 0x00],
+      [0x41, 0x03],
+      [0x41, 0xe0],
+      [0x41, 0xe3],
+      [0x41, 0x1c],
+      [0x41, 0x1f],
+      [0x41, 0xfc],
+      [0x41, 0xff],
+      [0x6b, 0xa1],
+      [0x6c, 0x00]
+    ]) {
+      oracle.nextRegDevice.directSetRegValue(reg, value);
+      exports.zxnextSetNextRegisterDirect(reg, value);
+    }
+
+    const tileBytes = [
+      0x00, 0x00, 0x00, 0x00,
+      0x04, 0x44, 0x44, 0x40,
+      0x04, 0x44, 0x44, 0x40,
+      0x04, 0x44, 0x22, 0x22,
+      0x04, 0x44, 0x22, 0x22,
+      0x04, 0x44, 0x33, 0x33,
+      0x04, 0x44, 0x33, 0x33,
+      0x04, 0x44, 0x11, 0x11
+    ];
+    for (let i = 0; i < tileBytes.length; i++) {
+      oracle.memoryDevice.memory[OFFS_BANK_05 + 0x1800 + i] = tileBytes[i];
+      wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + 0x1800 + i] = tileBytes[i];
+    }
+
+    const oraclePixels = oracle.composedScreenDevice.renderFullScreen();
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect(pixels[tilemapScreenIndex(0, 1)]).toBe(oraclePixels[tilemapScreenIndex(0, 1)]);
+    expect(pixels[tilemapScreenIndex(2, 1)]).toBe(oraclePixels[tilemapScreenIndex(2, 1)]);
+    expect(pixels[tilemapScreenIndex(2, 1)]).toBe(tilemapPaletteBgra(4));
+    expect(pixels[tilemapScreenIndex(0, 3)]).toBe(tilemapPaletteBgra(0));
+    expect(pixels[tilemapScreenIndex(12, 3)]).toBe(tilemapPaletteBgra(2));
+    expect(pixels[tilemapScreenIndex(0, 7)]).toBe(tilemapPaletteBgra(0));
+    expect(pixels[tilemapScreenIndex(12, 7)]).toBe(tilemapPaletteBgra(1));
+  });
+
+  it("renders 80x32 graphics tilemap pixels from bank 5 over ULA", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    oracle.hardReset();
+    wasm.hardReset();
+
+    for (const [reg, value] of [
+      [0x1c, 0x08],
+      [0x1b, 0x00],
+      [0x1b, 0x9f],
+      [0x1b, 0x00],
+      [0x1b, 0xff],
+      [0x2f, 0x00],
+      [0x30, 0x00],
+      [0x31, 0x00],
+      [0x6e, 0x00],
+      [0x6f, 0x18],
+      [0x43, 0x30],
+      [0x40, 0x00],
+      [0x41, 0x00],
+      [0x41, 0x03],
+      [0x41, 0xe0],
+      [0x41, 0xe3],
+      [0x41, 0x1c],
+      [0x41, 0x1f],
+      [0x41, 0xfc],
+      [0x41, 0xff],
+      [0x6b, 0xe1],
+      [0x6c, 0x0e]
+    ]) {
+      oracle.nextRegDevice.directSetRegValue(reg, value);
+      exports.zxnextSetNextRegisterDirect(reg, value);
+    }
+
+    const tileBytes = [
+      0x00, 0x00, 0x00, 0x00,
+      0x04, 0x44, 0x44, 0x40,
+      0x04, 0x44, 0x44, 0x40,
+      0x04, 0x44, 0x22, 0x22,
+      0x04, 0x44, 0x22, 0x22,
+      0x04, 0x44, 0x33, 0x33,
+      0x04, 0x44, 0x33, 0x33,
+      0x04, 0x44, 0x11, 0x11,
+      0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55,
+      0x55, 0x55, 0x55, 0x55,
+      0x66, 0x66, 0x66, 0x66,
+      0x66, 0x66, 0x66, 0x66,
+      0x66, 0x66, 0x66, 0x66,
+      0x66, 0x66, 0x66, 0x66,
+      0x66, 0x66, 0x66, 0x66,
+      0x66, 0x66, 0x66, 0x66,
+      0x66, 0x66, 0x66, 0x66,
+      0x66, 0x66, 0x66, 0x66
+    ];
+    for (let i = 0; i < tileBytes.length; i++) {
+      oracle.memoryDevice.memory[OFFS_BANK_05 + 0x1800 + i] = tileBytes[i];
+      wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + 0x1800 + i] = tileBytes[i];
+    }
+    for (const [address, value] of [
+      [0x0001, 0x01],
+      [0x0003, 0x02],
+      [0x0006, 0x01],
+      [0x0007, 0x02],
+      [0x0052, 0x01],
+      [0x0054, 0x02]
+    ]) {
+      oracle.memoryDevice.memory[OFFS_BANK_05 + address] = value;
+      wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + address] = value;
+    }
+
+    const oraclePixels = oracle.composedScreenDevice.renderFullScreen();
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    for (const [x, y] of [
+      [0, 0],
+      [8, 0],
+      [24, 0],
+      [48, 0],
+      [56, 0],
+      [16, 8],
+      [32, 8],
+      [0, 7],
+      [1, 7],
+      [12, 7]
+    ]) {
+      expect(pixels[tilemapScreenIndex(x, y)]).toBe(oraclePixels[tilemapScreenIndex(x, y)]);
+    }
+    expect(pixels[tilemapScreenIndex(8, 0)]).toBe(tilemapPaletteBgra(5));
+    expect(pixels[tilemapScreenIndex(24, 0)]).toBe(tilemapPaletteBgra(6));
+  });
+
 });
+
+function tilemapScreenIndex(x: number, y: number): number {
+  return (TILEMAP_SCREEN_Y + y) * ZXNEXT_WASM_V2_SCREEN_WIDTH + TILEMAP_SCREEN_X + x;
+}
+
+function tilemapPaletteBgra(index: number): number {
+  const valuesWrittenThroughReg41 = [0x00, 0x03, 0xe0, 0xe3, 0x1c, 0x1f, 0xfc, 0xff];
+  const value = valuesWrittenThroughReg41[index];
+  return zxNextBgra[((value << 1) | (value & 0x03 ? 0x01 : 0x00)) & 0x1ff];
+}

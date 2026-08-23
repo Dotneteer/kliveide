@@ -89,6 +89,12 @@ static void zxnextTilemapResetClipIndex(void) { zxnextTilemapClipIndex = 0u; }
 static uint32_t zxnextTilemapGetClipIndex(void) { return zxnextTilemapClipIndex; }
 static uint32_t zxnextTilemapGetClip(uint32_t index) { return zxnextTilemapClipWindow[index & 0x03u]; }
 static uint32_t zxnextTilemapGetEnabled(void) { return zxnextTilemapEnabled; }
+static uint32_t zxnextTilemapGet80x32Resolution(void) { return (zxnextTilemapControl & 0x40u) != 0u; }
+static uint32_t zxnextTilemapGetEliminateAttributes(void) { return (zxnextTilemapControl & 0x20u) != 0u; }
+static uint32_t zxnextTilemapGet512TileMode(void) { return (zxnextTilemapControl & 0x02u) != 0u; }
+static uint32_t zxnextTilemapGetForceOnTopOfUla(void) { return (zxnextTilemapControl & 0x01u) != 0u; }
+static uint32_t zxnextTilemapGetDefaultAttr(void) { return zxnextTilemapDefaultAttr; }
+static uint32_t zxnextTilemapGetTransparencyIndex(void) { return zxnextTilemapTransparencyIndex; }
 static uint32_t zxnextTilemapGetPaletteOffset(void) { return (zxnextTilemapDefaultAttr >> 4u) & 0x0fu; }
 static uint32_t zxnextTilemapGetScrollX(void) { return zxnextTilemapScrollX; }
 static uint32_t zxnextTilemapGetScrollY(void) { return zxnextTilemapScrollY; }

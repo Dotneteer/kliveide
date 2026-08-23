@@ -4,6 +4,7 @@
 #include "zxnext-memory.h"
 #include "zxnext-palette.h"
 #include "zxnext-tape.h"
+#include "zxnext-tilemap.h"
 
 #define ZXNEXT_SCREEN_TOTAL_HC 456u
 #define ZXNEXT_STANDARD_SCREEN_WIDTH 256u
@@ -12,6 +13,11 @@
 #define ZXNEXT_STANDARD_SCREEN_HEIGHT 192u
 #define ZXNEXT_STANDARD_SCREEN_X ((ZXNEXT_SCREEN_WIDTH - ZXNEXT_STANDARD_SCREEN_OUTPUT_WIDTH) / 2u)
 #define ZXNEXT_STANDARD_SCREEN_Y ((ZXNEXT_SCREEN_HEIGHT - ZXNEXT_STANDARD_SCREEN_HEIGHT) / 2u)
+#define ZXNEXT_LAYER2_320_SCREEN_WIDTH 320u
+#define ZXNEXT_LAYER2_320_SCREEN_OUTPUT_WIDTH (ZXNEXT_LAYER2_320_SCREEN_WIDTH * ZXNEXT_STANDARD_SCREEN_SCALE_X)
+#define ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT 256u
+#define ZXNEXT_LAYER2_WIDE_SCREEN_X 32u
+#define ZXNEXT_LAYER2_WIDE_SCREEN_Y (ZXNEXT_STANDARD_SCREEN_Y - ((ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT - ZXNEXT_STANDARD_SCREEN_HEIGHT) / 2u))
 #define ZXNEXT_TRANSPARENT_PIXEL 0x00000000u
 #define ZXNEXT_BLANK_BORDER_PIXEL 0xffb6b6b6u
 #define ZXNEXT_50HZ_INT_START_TACT 0x252u
@@ -20,6 +26,7 @@
 #define ZXNEXT_60HZ_INT_END_TACT 0x158u
 #define ZXNEXT_LAYER2_RAM_OFFSET 0x040000u
 #define ZXNEXT_LORES_BANK_05_OFFSET 0x054000u
+#define ZXNEXT_BANK_07_OFFSET 0x05c000u
 
 static uint8_t ulaFlashCounter;
 static uint8_t ulaFlashFlag;
@@ -113,6 +120,10 @@ static inline uint32_t zxnextUlaPaletteColor(uint32_t index) {
 
 static inline uint32_t zxnextUlaLayer2PaletteColor(uint32_t index) {
   return zxnextUlaRgb333Color(zxnextPaletteGetLayer2Entry(index) & 0x1ffu);
+}
+
+static inline uint32_t zxnextUlaTilemapPaletteColor(uint32_t index) {
+  return zxnextUlaRgb333Color(zxnextPaletteGetTilemapEntry(index) & 0x1ffu);
 }
 
 static inline uint32_t zxnextUlaAttrPaletteIndex(uint32_t attr, uint32_t ink) {
@@ -282,6 +293,15 @@ static inline uint32_t zxnextUlaLayer2WrappedY(uint32_t y) {
   return zxnextUlaLoResWrappedY(y);
 }
 
+static inline uint32_t zxnextUlaLayer2WideWrappedX(uint32_t x) {
+  x &= 0x3ffu;
+  if (x >= 320u) {
+    uint32_t upper = ((x >> 6u) & 0x07u) + 3u;
+    x = (upper << 6u) | (x & 0x3fu);
+  }
+  return x & 0x1ffu;
+}
+
 static uint32_t zxnextUlaReadLayer2Pixel(uint32_t bank16, uint32_t offset) {
   uint32_t segment16K = (offset >> 14u) & 0x07u;
   uint32_t half8K = (offset >> 13u) & 0x01u;
@@ -320,6 +340,174 @@ static void zxnextUlaRenderLayer2_256x192Screen(void) {
   }
 }
 
+static void zxnextUlaRenderLayer2_320x256Screen(void) {
+  uint32_t bank16 = zxnextLayer2GetUseShadowBank()
+    ? zxnextLayer2GetShadowRamBank()
+    : zxnextLayer2GetActiveRamBank();
+  uint32_t scrollX = zxnextLayer2GetScrollX();
+  uint32_t scrollY = zxnextLayer2GetScrollY();
+  uint32_t paletteOffset = zxnextLayer2GetPaletteOffset() & 0x0fu;
+  uint32_t clipX1 = zxnextLayer2GetClip(0) << 1u;
+  uint32_t clipX2 = (zxnextLayer2GetClip(1) << 1u) | 0x01u;
+  uint32_t clipY1 = zxnextLayer2GetClip(2);
+  uint32_t clipY2 = zxnextLayer2GetClip(3);
+  uint32_t transparentIndex = zxnextNextRegs[0x4bu];
+
+  for (uint32_t y = 0; y < ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT; y++) {
+    if (y < clipY1 || y > clipY2) continue;
+    uint32_t sourceY = (y + scrollY) & 0xffu;
+    uint32_t outputOffset = (ZXNEXT_LAYER2_WIDE_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_LAYER2_WIDE_SCREEN_X;
+    for (uint32_t x = 0; x < ZXNEXT_LAYER2_320_SCREEN_OUTPUT_WIDTH; x++) {
+      uint32_t displayX = x >> 1u;
+      if (displayX < clipX1 || displayX > clipX2) continue;
+
+      uint32_t sourceX = zxnextUlaLayer2WideWrappedX(displayX + scrollX);
+      uint32_t pixelValue = zxnextUlaReadLayer2Pixel(bank16, (sourceX << 8u) | sourceY);
+      uint32_t highNibble = ((pixelValue >> 4u) + paletteOffset) & 0x0fu;
+      uint32_t paletteIndex = (highNibble << 4u) | (pixelValue & 0x0fu);
+      if (paletteIndex == transparentIndex) continue;
+      zxnextPixelBuffer[outputOffset + x] = zxnextUlaLayer2PaletteColor(paletteIndex);
+    }
+  }
+}
+
+static uint32_t zxnextUlaReadTilemapVram(uint32_t useBank7, uint32_t offset, uint32_t address) {
+  uint32_t offsetMask = useBank7 ? 0x1fu : 0x3fu;
+  uint32_t highByte = ((offset & offsetMask) + ((address >> 8u) & 0x3fu)) & 0x3fu;
+  uint32_t fullAddress = (highByte << 8u) | (address & 0xffu);
+  uint32_t bankBase = useBank7 ? ZXNEXT_BANK_07_OFFSET : ZXNEXT_LORES_BANK_05_OFFSET;
+  return zxnextMemoryReadPhysical(bankBase + fullAddress);
+}
+
+static uint32_t zxnextUlaTilemapTransform(uint32_t x, uint32_t y, uint32_t attr) {
+  uint32_t rotate = (attr & 0x02u) != 0u;
+  uint32_t effectiveX = x;
+  uint32_t effectiveY = y;
+  if (((attr & 0x08u) != 0u) != rotate) effectiveX = 7u - effectiveX;
+  if ((attr & 0x04u) != 0u) effectiveY = 7u - effectiveY;
+  return rotate ? ((effectiveY << 16u) | effectiveX) : ((effectiveX << 16u) | effectiveY);
+}
+
+static void zxnextUlaRenderTilemap_40x32Screen(void) {
+  uint32_t scrollX = zxnextTilemapGetScrollX();
+  uint32_t scrollY = zxnextTilemapGetScrollY();
+  uint32_t useBank7 = zxnextTilemapGetBaseAddressUseBank7();
+  uint32_t baseMsb = zxnextTilemapGetBaseAddressMsb();
+  uint32_t defUseBank7 = zxnextTilemapGetDefinitionAddressUseBank7();
+  uint32_t defMsb = zxnextTilemapGetDefinitionAddressMsb();
+  uint32_t eliminateAttrs = zxnextTilemapGetEliminateAttributes();
+  uint32_t tile512Mode = zxnextTilemapGet512TileMode();
+  uint32_t forceOnTop = zxnextTilemapGetForceOnTopOfUla();
+  uint32_t defaultAttr = zxnextTilemapGetDefaultAttr();
+  uint32_t transparentIndex = zxnextTilemapGetTransparencyIndex() & 0x0fu;
+  uint32_t clipX1 = zxnextTilemapGetClip(0) << 1u;
+  uint32_t clipX2 = (zxnextTilemapGetClip(1) << 1u) | 0x01u;
+  uint32_t clipY1 = zxnextTilemapGetClip(2);
+  uint32_t clipY2 = zxnextTilemapGetClip(3);
+
+  for (uint32_t y = 0; y < ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT; y++) {
+    if (y < clipY1 || y > clipY2) continue;
+    uint32_t sourceY = (y + scrollY) & 0xffu;
+    uint32_t tileY = sourceY >> 3u;
+    uint32_t yInTile = sourceY & 0x07u;
+    uint32_t outputOffset = (ZXNEXT_LAYER2_WIDE_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_LAYER2_WIDE_SCREEN_X;
+
+    for (uint32_t x = 0; x < ZXNEXT_LAYER2_320_SCREEN_OUTPUT_WIDTH; x++) {
+      uint32_t displayX = x >> 1u;
+      if (displayX < clipX1 || displayX > clipX2) continue;
+
+      uint32_t sourceX = (displayX + scrollX) % ZXNEXT_LAYER2_320_SCREEN_WIDTH;
+      uint32_t tileX = sourceX >> 3u;
+      uint32_t xInTile = sourceX & 0x07u;
+      uint32_t tileArrayIndex = tileY * 40u + tileX;
+      uint32_t tileIndexAddr = eliminateAttrs ? tileArrayIndex : tileArrayIndex << 1u;
+      uint32_t tileIndex = zxnextUlaReadTilemapVram(useBank7, baseMsb, tileIndexAddr);
+      uint32_t attr = eliminateAttrs
+        ? defaultAttr
+        : zxnextUlaReadTilemapVram(useBank7, baseMsb, tileIndexAddr + 1u);
+
+      if (tile512Mode && !eliminateAttrs) {
+        tileIndex |= (attr & 0x01u) << 8u;
+        attr &= 0xfeu;
+      }
+      if (!forceOnTop && (attr & 0x01u) != 0u) continue;
+
+      uint32_t transformed = zxnextUlaTilemapTransform(xInTile, yInTile, attr);
+      uint32_t transformedX = transformed >> 16u;
+      uint32_t transformedY = transformed & 0xffffu;
+      uint32_t patternAddr = tileIndex * 32u + transformedY * 4u + (transformedX >> 1u);
+      uint32_t patternByte = zxnextUlaReadTilemapVram(defUseBank7, defMsb, patternAddr);
+      uint32_t pixelValue = (transformedX & 0x01u) == 0u
+        ? (patternByte >> 4u) & 0x0fu
+        : patternByte & 0x0fu;
+      if ((pixelValue & 0x0fu) == transparentIndex) continue;
+
+      uint32_t paletteIndex = (((attr >> 4u) << 4u) | pixelValue) & 0xffu;
+      zxnextPixelBuffer[outputOffset + x] = zxnextUlaTilemapPaletteColor(paletteIndex);
+    }
+  }
+}
+
+static void zxnextUlaRenderTilemap_80x32Screen(void) {
+  uint32_t scrollX = zxnextTilemapGetScrollX();
+  uint32_t scrollY = zxnextTilemapGetScrollY();
+  uint32_t useBank7 = zxnextTilemapGetBaseAddressUseBank7();
+  uint32_t baseMsb = zxnextTilemapGetBaseAddressMsb();
+  uint32_t defUseBank7 = zxnextTilemapGetDefinitionAddressUseBank7();
+  uint32_t defMsb = zxnextTilemapGetDefinitionAddressMsb();
+  uint32_t eliminateAttrs = zxnextTilemapGetEliminateAttributes();
+  uint32_t tile512Mode = zxnextTilemapGet512TileMode();
+  uint32_t forceOnTop = zxnextTilemapGetForceOnTopOfUla();
+  uint32_t defaultAttr = zxnextTilemapGetDefaultAttr();
+  uint32_t transparentIndex = zxnextTilemapGetTransparencyIndex() & 0x0fu;
+  uint32_t clipX1 = zxnextTilemapGetClip(0) << 1u;
+  uint32_t clipX2 = (zxnextTilemapGetClip(1) << 1u) | 0x01u;
+  uint32_t clipY1 = zxnextTilemapGetClip(2);
+  uint32_t clipY2 = zxnextTilemapGetClip(3);
+
+  for (uint32_t y = 0; y < ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT; y++) {
+    if (y < clipY1 || y > clipY2) continue;
+    uint32_t sourceY = (y + scrollY) & 0xffu;
+    uint32_t tileY = sourceY >> 3u;
+    uint32_t yInTile = sourceY & 0x07u;
+    uint32_t outputOffset = (ZXNEXT_LAYER2_WIDE_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_LAYER2_WIDE_SCREEN_X;
+
+    for (uint32_t x = 0; x < ZXNEXT_LAYER2_320_SCREEN_OUTPUT_WIDTH; x++) {
+      uint32_t displayClockX = x >> 1u;
+      if (displayClockX < clipX1 || displayClockX > clipX2) continue;
+
+      uint32_t sourceClockX = (displayClockX + scrollX) % ZXNEXT_LAYER2_320_SCREEN_WIDTH;
+      uint32_t tileX = sourceClockX >> 2u;
+      uint32_t xInTile = ((sourceClockX & 0x03u) << 1u) | (x & 0x01u);
+      uint32_t tileArrayIndex = tileY * 80u + tileX;
+      uint32_t tileIndexAddr = eliminateAttrs ? tileArrayIndex : tileArrayIndex << 1u;
+      uint32_t tileIndex = zxnextUlaReadTilemapVram(useBank7, baseMsb, tileIndexAddr);
+      uint32_t attr = eliminateAttrs
+        ? defaultAttr
+        : zxnextUlaReadTilemapVram(useBank7, baseMsb, tileIndexAddr + 1u);
+
+      if (tile512Mode && !eliminateAttrs) {
+        tileIndex |= (attr & 0x01u) << 8u;
+        attr &= 0xfeu;
+      }
+      if (!forceOnTop && (attr & 0x01u) != 0u) continue;
+
+      uint32_t transformed = zxnextUlaTilemapTransform(xInTile, yInTile, attr);
+      uint32_t transformedX = transformed >> 16u;
+      uint32_t transformedY = transformed & 0xffffu;
+      uint32_t patternAddr = tileIndex * 32u + transformedY * 4u + (transformedX >> 1u);
+      uint32_t patternByte = zxnextUlaReadTilemapVram(defUseBank7, defMsb, patternAddr);
+      uint32_t pixelValue = (transformedX & 0x01u) == 0u
+        ? (patternByte >> 4u) & 0x0fu
+        : patternByte & 0x0fu;
+      if ((pixelValue & 0x0fu) == transparentIndex) continue;
+
+      uint32_t paletteIndex = (((attr >> 4u) << 4u) | pixelValue) & 0xffu;
+      zxnextPixelBuffer[outputOffset + x] = zxnextUlaTilemapPaletteColor(paletteIndex);
+    }
+  }
+}
+
 static uint32_t zxnextUlaRenderInstantScreen(void) {
   uint32_t timexMode = portTimexValue & 0x07u;
   uint32_t borderPixel = timexMode >= 0x04u ? zxnextUlaHiResPaperColor() : zxnextUlaColor(borderColor, 0u);
@@ -335,8 +523,17 @@ static uint32_t zxnextUlaRenderInstantScreen(void) {
   } else {
     zxnextUlaRenderStandardScreen();
   }
+  if (zxnextTilemapGetEnabled()) {
+    if (zxnextTilemapGet80x32Resolution()) {
+      zxnextUlaRenderTilemap_80x32Screen();
+    } else {
+      zxnextUlaRenderTilemap_40x32Screen();
+    }
+  }
   if (zxnextLayer2GetEnabled() && zxnextLayer2GetResolution() == 0u) {
     zxnextUlaRenderLayer2_256x192Screen();
+  } else if (zxnextLayer2GetEnabled() && zxnextLayer2GetResolution() == 1u) {
+    zxnextUlaRenderLayer2_320x256Screen();
   }
   return ZXNEXT_PIXEL_COUNT;
 }
