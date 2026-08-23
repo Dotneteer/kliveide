@@ -467,9 +467,18 @@ uint32_t spp3eReadScreenMemoryOffset(uint32_t offset);
 static uint8_t spp3eCpuReadMemory(uint32_t address);
 static void spp3eCpuWriteMemory(uint32_t address, uint32_t value);
 static void spp3eCpuPokeMemory(uint32_t address, uint32_t value);
-static void spp3eTactPlusN(uint32_t value);
-static void spp3eDelayMemoryAccess(uint32_t address);
-static void spp3eDelayPortAccess(uint32_t address);
+
+#if defined(__clang__) || defined(__GNUC__)
+#define SPP3E_CPU_NOINLINE __attribute__((noinline))
+#else
+#define SPP3E_CPU_NOINLINE
+#endif
+
+static void SPP3E_CPU_NOINLINE spp3eApplyContentionDelay(void);
+static void SPP3E_CPU_NOINLINE spp3eTactPlusN(uint32_t value);
+static void SPP3E_CPU_NOINLINE spp3eDelayMemoryAccess(uint32_t address);
+static void SPP3E_CPU_NOINLINE spp3eCpuDelayAddressBusAccess(uint32_t address);
+static void SPP3E_CPU_NOINLINE spp3eDelayPortAccess(uint32_t address);
 static void spp3eResetAudio(void);
 static void spp3eBeginAudioFrame(void);
 static void spp3eSetNextAudioSample(void);
@@ -747,69 +756,12 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #define Z80_READ_PORT(address) ((uint8_t)spp3eReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) spp3eWritePort((uint32_t)(address), (uint32_t)(value))
 #define Z80_CAPTURE_BUS_EVENTS() spp3eCaptureBusEvents
-#define SPP3E_CPU_TACT_PLUS_N(value) \
-  do { \
-    const uint32_t z80Spp3eTacts = (uint32_t)(value); \
-    cpu.tacts += z80Spp3eTacts; \
-    spp3eTacts += z80Spp3eTacts; \
-    spp3eCommonSetNextAudioSample(); \
-  } while (0)
-#define SPP3E_CPU_APPLY_CONTENTION() \
-  do { \
-    const uint32_t z80Spp3eDelay = spp3eContention[spp3eUlaCurrentFrameTact()]; \
-    cpu.tacts += z80Spp3eDelay; \
-    spp3eTacts += z80Spp3eDelay; \
-    spp3eCommonSetNextAudioSample(); \
-    spp3eTotalContentionDelaySinceStart += z80Spp3eDelay; \
-    spp3eContentionDelaySincePause += z80Spp3eDelay; \
-  } while (0)
-#define SPP3E_CPU_DELAY_MEMORY_ACCESS(address) \
-  do { \
-    if (spp3eIsContendedMemoryAddress((uint32_t)(address)) != 0u) { \
-      SPP3E_CPU_APPLY_CONTENTION(); \
-    } \
-    SPP3E_CPU_TACT_PLUS_N(3u); \
-  } while (0)
-#define SPP3E_CPU_DELAY_ADDRESS_BUS_ACCESS(address) \
-  do { \
-    if (spp3eIsContendedMemoryAddress((uint32_t)(address)) != 0u) { \
-      SPP3E_CPU_APPLY_CONTENTION(); \
-    } \
-  } while (0)
-#define SPP3E_CPU_DELAY_PORT_ACCESS(address) \
-  do { \
-    const uint32_t z80Spp3ePortAddress = (uint32_t)(address); \
-    const uint8_t z80Spp3eLowBit = (z80Spp3ePortAddress & 0x0001u) != 0u ? 1u : 0u; \
-    if (spp3eIsContendedMemoryAddress(z80Spp3ePortAddress) != 0u) { \
-      if (z80Spp3eLowBit != 0u) { \
-        SPP3E_CPU_APPLY_CONTENTION(); \
-        SPP3E_CPU_TACT_PLUS_N(1u); \
-        SPP3E_CPU_APPLY_CONTENTION(); \
-        SPP3E_CPU_TACT_PLUS_N(1u); \
-        SPP3E_CPU_APPLY_CONTENTION(); \
-        SPP3E_CPU_TACT_PLUS_N(1u); \
-        SPP3E_CPU_APPLY_CONTENTION(); \
-        SPP3E_CPU_TACT_PLUS_N(1u); \
-      } else { \
-        SPP3E_CPU_APPLY_CONTENTION(); \
-        SPP3E_CPU_TACT_PLUS_N(1u); \
-        SPP3E_CPU_APPLY_CONTENTION(); \
-        SPP3E_CPU_TACT_PLUS_N(3u); \
-      } \
-    } else if (z80Spp3eLowBit != 0u) { \
-      SPP3E_CPU_TACT_PLUS_N(4u); \
-    } else { \
-      SPP3E_CPU_TACT_PLUS_N(1u); \
-      SPP3E_CPU_APPLY_CONTENTION(); \
-      SPP3E_CPU_TACT_PLUS_N(3u); \
-    } \
-  } while (0)
-#define Z80_TACT_PLUS_N(value) SPP3E_CPU_TACT_PLUS_N(value)
-#define Z80_DELAY_MEMORY_READ(address) SPP3E_CPU_DELAY_MEMORY_ACCESS(address)
-#define Z80_DELAY_MEMORY_WRITE(address) SPP3E_CPU_DELAY_MEMORY_ACCESS(address)
-#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) SPP3E_CPU_DELAY_ADDRESS_BUS_ACCESS(address)
-#define Z80_DELAY_PORT_READ(address) SPP3E_CPU_DELAY_PORT_ACCESS(address)
-#define Z80_DELAY_PORT_WRITE(address) SPP3E_CPU_DELAY_PORT_ACCESS(address)
+#define Z80_TACT_PLUS_N(value) spp3eTactPlusN((uint32_t)(value))
+#define Z80_DELAY_MEMORY_READ(address) spp3eDelayMemoryAccess((uint32_t)(address))
+#define Z80_DELAY_MEMORY_WRITE(address) spp3eDelayMemoryAccess((uint32_t)(address))
+#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) spp3eCpuDelayAddressBusAccess((uint32_t)(address))
+#define Z80_DELAY_PORT_READ(address) spp3eDelayPortAccess((uint32_t)(address))
+#define Z80_DELAY_PORT_WRITE(address) spp3eDelayPortAccess((uint32_t)(address))
 #include "../../../../z80/wasm/z80.c"
 #undef Z80_EXTERNAL_BUS
 #undef Z80_MEMORY_PTR
@@ -825,11 +777,6 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef Z80_DELAY_ADDRESS_BUS_ACCESS
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
-#undef SPP3E_CPU_TACT_PLUS_N
-#undef SPP3E_CPU_APPLY_CONTENTION
-#undef SPP3E_CPU_DELAY_MEMORY_ACCESS
-#undef SPP3E_CPU_DELAY_ADDRESS_BUS_ACCESS
-#undef SPP3E_CPU_DELAY_PORT_ACCESS
 
 #define SP48_TAPE_MAX_BLOCKS SPP3E_TAPE_MAX_BLOCKS
 #define SP48_TAPE_DATA_CAPACITY SPP3E_TAPE_DATA_CAPACITY
@@ -1136,7 +1083,7 @@ static void spp3eCpuPokeMemory(uint32_t address, uint32_t value) {
   spp3eWriteMemory(address, value);
 }
 
-static void spp3eApplyContentionDelay(void) {
+static void SPP3E_CPU_NOINLINE spp3eApplyContentionDelay(void) {
   const uint32_t delay = spp3eContention[spp3eUlaCurrentFrameTact()];
   cpu.tacts += delay;
   spp3eTacts += delay;
@@ -1145,20 +1092,26 @@ static void spp3eApplyContentionDelay(void) {
   spp3eContentionDelaySincePause += delay;
 }
 
-static void spp3eTactPlusN(uint32_t value) {
+static void SPP3E_CPU_NOINLINE spp3eTactPlusN(uint32_t value) {
   cpu.tacts += value;
   spp3eTacts += value;
   spp3eCommonSetNextAudioSample();
 }
 
-static void spp3eDelayMemoryAccess(uint32_t address) {
+static void SPP3E_CPU_NOINLINE spp3eDelayMemoryAccess(uint32_t address) {
   if (spp3eIsContendedMemoryAddress(address) != 0u) {
     spp3eApplyContentionDelay();
   }
   spp3eTactPlusN(3u);
 }
 
-static void spp3eDelayPortAccess(uint32_t address) {
+static void SPP3E_CPU_NOINLINE spp3eCpuDelayAddressBusAccess(uint32_t address) {
+  if (spp3eIsContendedMemoryAddress(address) != 0u) {
+    spp3eApplyContentionDelay();
+  }
+}
+
+static void SPP3E_CPU_NOINLINE spp3eDelayPortAccess(uint32_t address) {
   const uint8_t lowBit = (address & 0x0001u) != 0u ? 1u : 0u;
   if (spp3eIsContendedMemoryAddress(address) != 0u) {
     if (lowBit != 0u) {
@@ -1180,6 +1133,8 @@ static void spp3eDelayPortAccess(uint32_t address) {
     spp3eTactPlusN(3u);
   }
 }
+
+#undef SPP3E_CPU_NOINLINE
 
 uint8_t *spp3eMemoryPtr(void) { return spp3eMemory; }
 uint8_t *spp3eRamPtr(void) { return spp3eRam; }

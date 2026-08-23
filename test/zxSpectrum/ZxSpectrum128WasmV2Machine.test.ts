@@ -98,6 +98,18 @@ describe("ZX Spectrum 128K WASM v2 machine adapter", () => {
     expect(machine.getPixelBuffer()[displayPixel + 1]).toBe(0xff000000);
   });
 
+  it("reports OS initialization from live WASM CPU state", async () => {
+    buildSp128Wasm();
+    const machine = new TestWasmV2Machine(testRom([0x00]));
+
+    await machine.setup();
+    machine.wasmV2Runtime!.exports.sp128SetCpuIy(0x0000);
+    expect(machine.isOsInitialized).toBe(false);
+
+    machine.wasmV2Runtime!.exports.sp128SetCpuIy(0x5c3a);
+    expect(machine.isOsInitialized).toBe(true);
+  });
+
   it("executes repeated debug step-into operations in the WASM CPU", async () => {
     buildSp128Wasm();
     const machine = new TestWasmV2Machine(testRom([0x00, 0x00, 0x00]));

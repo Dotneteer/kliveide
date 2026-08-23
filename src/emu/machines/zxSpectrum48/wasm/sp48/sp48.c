@@ -257,75 +257,113 @@ uint32_t sp48TapeGetEarBit(void);
 void sp48TapeProcessMicBit(uint32_t micBit);
 uint32_t sp48ExecuteInstruction(void);
 
+#if defined(__clang__) || defined(__GNUC__)
+#define SP48_CPU_NOINLINE __attribute__((noinline))
+#else
+#define SP48_CPU_NOINLINE
+#endif
+
+static void SP48_CPU_NOINLINE sp48CpuTactPlusN(uint32_t value);
+static void SP48_CPU_NOINLINE sp48CpuApplyContention(void);
+static uint8_t *sp48CpuMemoryPtr(void);
+static void sp48CpuPokeMemory(uint32_t address, uint32_t value);
+static uint32_t sp48CpuReadPort(uint32_t address);
+static void sp48CpuWritePort(uint32_t address, uint32_t value);
+static uint8_t sp48CpuCaptureBusEvents(void);
+static void SP48_CPU_NOINLINE sp48CpuDelayPortAccess(uint32_t address);
+static void SP48_CPU_NOINLINE sp48CpuDelayMemoryRead(uint32_t address);
+static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address);
+
 #define Z80_EXTERNAL_BUS 1
-#define Z80_MEMORY_PTR() sp48Memory
+#define Z80_MEMORY_PTR() sp48CpuMemoryPtr()
 #define Z80_READ_MEMORY(address) sp48CpuReadMemory((uint32_t)(address))
 #define Z80_WRITE_MEMORY(address, value) sp48CpuWriteMemory((uint32_t)(address), (uint32_t)(value))
-#define Z80_POKE_MEMORY(address, value) sp48Memory[((uint32_t)(address)) & 0xffffu] = (uint8_t)(value)
-#define Z80_READ_PORT(address) ((uint8_t)sp48ReadPort((uint32_t)(address)))
-#define Z80_WRITE_PORT(address, value) sp48WritePort((uint32_t)(address), (uint32_t)(value))
-#define Z80_CAPTURE_BUS_EVENTS() sp48CaptureBusEvents
-#define Z80_TACT_PLUS_N(value) \
-  do { \
-    const uint32_t z80Sp48Tacts = (uint32_t)(value); \
-    cpu.tacts += z80Sp48Tacts; \
-    sp48Tacts += z80Sp48Tacts; \
-    setNextAudioSample(); \
-  } while (0)
-#define SP48_CPU_APPLY_CONTENTION() \
-  do { \
-    const uint32_t z80Sp48Delay = sp48Contention[currentFrameTact()]; \
-    cpu.tacts += z80Sp48Delay; \
-    sp48Tacts += z80Sp48Delay; \
-    sp48TotalContentionDelaySinceStart += z80Sp48Delay; \
-    sp48ContentionDelaySincePause += z80Sp48Delay; \
-    setNextAudioSample(); \
-  } while (0)
-#define SP48_CPU_DELAY_PORT_ACCESS(address) \
-  do { \
-    const uint32_t z80Sp48PortAddress = (uint32_t)(address); \
-    const uint8_t z80Sp48LowBit = (z80Sp48PortAddress & 0x0001u) != 0u ? 1u : 0u; \
-    if (isContendedIoAddress(z80Sp48PortAddress) != 0u) { \
-      if (z80Sp48LowBit != 0u) { \
-        SP48_CPU_APPLY_CONTENTION(); \
-        tactPlusN(1u); \
-        SP48_CPU_APPLY_CONTENTION(); \
-        tactPlusN(1u); \
-        SP48_CPU_APPLY_CONTENTION(); \
-        tactPlusN(1u); \
-        SP48_CPU_APPLY_CONTENTION(); \
-        tactPlusN(1u); \
-      } else { \
-        SP48_CPU_APPLY_CONTENTION(); \
-        tactPlusN(1u); \
-        SP48_CPU_APPLY_CONTENTION(); \
-        tactPlusN(3u); \
-      } \
-    } else if (z80Sp48LowBit != 0u) { \
-      tactPlusN(4u); \
-    } else { \
-      tactPlusN(1u); \
-      SP48_CPU_APPLY_CONTENTION(); \
-      tactPlusN(3u); \
-    } \
-  } while (0)
-#define Z80_DELAY_MEMORY_READ(address) \
-  do { \
-    if ((((uint32_t)(address)) & 0xc000u) == 0x4000u) { \
-      SP48_CPU_APPLY_CONTENTION(); \
-    } \
-    tactPlusN(3u); \
-  } while (0)
-#define Z80_DELAY_MEMORY_WRITE(address) Z80_DELAY_MEMORY_READ(address)
-#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) \
-  do { \
-    if ((((uint32_t)(address)) & 0xc000u) == 0x4000u) { \
-      SP48_CPU_APPLY_CONTENTION(); \
-    } \
-  } while (0)
-#define Z80_DELAY_PORT_READ(address) SP48_CPU_DELAY_PORT_ACCESS(address)
-#define Z80_DELAY_PORT_WRITE(address) SP48_CPU_DELAY_PORT_ACCESS(address)
+#define Z80_POKE_MEMORY(address, value) sp48CpuPokeMemory((uint32_t)(address), (uint32_t)(value))
+#define Z80_READ_PORT(address) sp48CpuReadPort((uint32_t)(address))
+#define Z80_WRITE_PORT(address, value) sp48CpuWritePort((uint32_t)(address), (uint32_t)(value))
+#define Z80_CAPTURE_BUS_EVENTS() sp48CpuCaptureBusEvents()
+#define Z80_TACT_PLUS_N(value) sp48CpuTactPlusN((uint32_t)(value))
+#define Z80_DELAY_MEMORY_READ(address) sp48CpuDelayMemoryRead((uint32_t)(address))
+#define Z80_DELAY_MEMORY_WRITE(address) sp48CpuDelayMemoryRead((uint32_t)(address))
+#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) sp48CpuDelayAddressBusAccess((uint32_t)(address))
+#define Z80_DELAY_PORT_READ(address) sp48CpuDelayPortAccess((uint32_t)(address))
+#define Z80_DELAY_PORT_WRITE(address) sp48CpuDelayPortAccess((uint32_t)(address))
 #include "../../../../z80/wasm/z80.c"
+
+static void SP48_CPU_NOINLINE sp48CpuTactPlusN(uint32_t value) {
+  cpu.tacts += value;
+  sp48Tacts += value;
+  setNextAudioSample();
+}
+
+static void SP48_CPU_NOINLINE sp48CpuApplyContention(void) {
+  const uint32_t delay = sp48Contention[currentFrameTact()];
+  cpu.tacts += delay;
+  sp48Tacts += delay;
+  sp48TotalContentionDelaySinceStart += delay;
+  sp48ContentionDelaySincePause += delay;
+  setNextAudioSample();
+}
+
+static uint8_t *sp48CpuMemoryPtr(void) {
+  return sp48Memory;
+}
+
+static void sp48CpuPokeMemory(uint32_t address, uint32_t value) {
+  sp48Memory[address & 0xffffu] = (uint8_t)value;
+}
+
+static uint32_t sp48CpuReadPort(uint32_t address) {
+  return sp48ReadPort(address);
+}
+
+static void sp48CpuWritePort(uint32_t address, uint32_t value) {
+  sp48WritePort(address, value);
+}
+
+static uint8_t sp48CpuCaptureBusEvents(void) {
+  return sp48CaptureBusEvents;
+}
+
+static void SP48_CPU_NOINLINE sp48CpuDelayPortAccess(uint32_t address) {
+  const uint8_t lowBit = (address & 0x0001u) != 0u ? 1u : 0u;
+  if (isContendedIoAddress(address) != 0u) {
+    if (lowBit != 0u) {
+      sp48CpuApplyContention();
+      sp48CpuTactPlusN(1u);
+      sp48CpuApplyContention();
+      sp48CpuTactPlusN(1u);
+      sp48CpuApplyContention();
+      sp48CpuTactPlusN(1u);
+      sp48CpuApplyContention();
+      sp48CpuTactPlusN(1u);
+    } else {
+      sp48CpuApplyContention();
+      sp48CpuTactPlusN(1u);
+      sp48CpuApplyContention();
+      sp48CpuTactPlusN(3u);
+    }
+  } else if (lowBit != 0u) {
+    sp48CpuTactPlusN(4u);
+  } else {
+    sp48CpuTactPlusN(1u);
+    sp48CpuApplyContention();
+    sp48CpuTactPlusN(3u);
+  }
+}
+
+static void SP48_CPU_NOINLINE sp48CpuDelayMemoryRead(uint32_t address) {
+  if ((address & 0xc000u) == 0x4000u) {
+    sp48CpuApplyContention();
+  }
+  sp48CpuTactPlusN(3u);
+}
+
+static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address) {
+  if ((address & 0xc000u) == 0x4000u) {
+    sp48CpuApplyContention();
+  }
+}
 
 #undef Z80_EXTERNAL_BUS
 #undef Z80_MEMORY_PTR
@@ -336,13 +374,12 @@ uint32_t sp48ExecuteInstruction(void);
 #undef Z80_WRITE_PORT
 #undef Z80_CAPTURE_BUS_EVENTS
 #undef Z80_TACT_PLUS_N
-#undef SP48_CPU_APPLY_CONTENTION
-#undef SP48_CPU_DELAY_PORT_ACCESS
 #undef Z80_DELAY_MEMORY_READ
 #undef Z80_DELAY_MEMORY_WRITE
 #undef Z80_DELAY_ADDRESS_BUS_ACCESS
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
+#undef SP48_CPU_NOINLINE
 
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-keyboard.c"
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-beeper.c"

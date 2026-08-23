@@ -265,10 +265,18 @@ static uint32_t sp128ReadNonFePort(uint32_t address);
 static void sp128WriteNonFePort(uint32_t address, uint32_t value);
 static uint32_t sp128CommonTapeGetEarBit(void);
 static void sp128CommonTapeProcessMicBit(uint32_t micBit);
-static void tactPlusN128(uint32_t value);
-static void applyContentionDelay(void);
-static void sp128DelayMemoryAccess(uint32_t address);
-static void sp128DelayPortAccess(uint32_t address);
+
+#if defined(__clang__) || defined(__GNUC__)
+#define SP128_CPU_NOINLINE __attribute__((noinline))
+#else
+#define SP128_CPU_NOINLINE
+#endif
+
+static void SP128_CPU_NOINLINE tactPlusN128(uint32_t value);
+static void SP128_CPU_NOINLINE applyContentionDelay(void);
+static void SP128_CPU_NOINLINE sp128DelayMemoryAccess(uint32_t address);
+static void SP128_CPU_NOINLINE sp128CpuDelayAddressBusAccess(uint32_t address);
+static void SP128_CPU_NOINLINE sp128DelayPortAccess(uint32_t address);
 
 static uint32_t ramBankOffset(uint32_t bank) {
   return (bank & 0x07u) * 0x4000u;
@@ -766,64 +774,6 @@ SP128_ALWAYS_INLINE void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
   writeMappedMemory(address, value, 0u);
 }
 
-#define SP128_CPU_TACT_PLUS_N(value) \
-  do { \
-    const uint32_t z80Sp128Tacts = (uint32_t)(value); \
-    cpu.tacts += z80Sp128Tacts; \
-    sp128Tacts += z80Sp128Tacts; \
-    sp128CommonSetNextAudioSample(); \
-  } while (0)
-#define SP128_CPU_APPLY_CONTENTION() \
-  do { \
-    const uint32_t z80Sp128Delay = sp128Contention[currentFrameTact()]; \
-    cpu.tacts += z80Sp128Delay; \
-    sp128Tacts += z80Sp128Delay; \
-    sp128TotalContentionDelaySinceStart += z80Sp128Delay; \
-    sp128ContentionDelaySincePause += z80Sp128Delay; \
-    sp128CommonSetNextAudioSample(); \
-  } while (0)
-#define SP128_CPU_DELAY_MEMORY_ACCESS(address) \
-  do { \
-    if (isContendedMemoryAddress((uint32_t)(address)) != 0u) { \
-      SP128_CPU_APPLY_CONTENTION(); \
-    } \
-    SP128_CPU_TACT_PLUS_N(3u); \
-  } while (0)
-#define SP128_CPU_DELAY_ADDRESS_BUS_ACCESS(address) \
-  do { \
-    if (isContendedMemoryAddress((uint32_t)(address)) != 0u) { \
-      SP128_CPU_APPLY_CONTENTION(); \
-    } \
-  } while (0)
-#define SP128_CPU_DELAY_PORT_ACCESS(address) \
-  do { \
-    const uint32_t z80Sp128PortAddress = (uint32_t)(address); \
-    const uint8_t z80Sp128LowBit = (z80Sp128PortAddress & 0x0001u) != 0u ? 1u : 0u; \
-    if (isContendedIoAddress(z80Sp128PortAddress) != 0u) { \
-      if (z80Sp128LowBit != 0u) { \
-        SP128_CPU_APPLY_CONTENTION(); \
-        SP128_CPU_TACT_PLUS_N(1u); \
-        SP128_CPU_APPLY_CONTENTION(); \
-        SP128_CPU_TACT_PLUS_N(1u); \
-        SP128_CPU_APPLY_CONTENTION(); \
-        SP128_CPU_TACT_PLUS_N(1u); \
-        SP128_CPU_APPLY_CONTENTION(); \
-        SP128_CPU_TACT_PLUS_N(1u); \
-      } else { \
-        SP128_CPU_APPLY_CONTENTION(); \
-        SP128_CPU_TACT_PLUS_N(1u); \
-        SP128_CPU_APPLY_CONTENTION(); \
-        SP128_CPU_TACT_PLUS_N(3u); \
-      } \
-    } else if (z80Sp128LowBit != 0u) { \
-      SP128_CPU_TACT_PLUS_N(4u); \
-    } else { \
-      SP128_CPU_TACT_PLUS_N(1u); \
-      SP128_CPU_APPLY_CONTENTION(); \
-      SP128_CPU_TACT_PLUS_N(3u); \
-    } \
-  } while (0)
-
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() sp128Memory
 #define Z80_READ_MEMORY(address) sp128CpuReadMemory((uint32_t)(address))
@@ -832,12 +782,12 @@ SP128_ALWAYS_INLINE void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
 #define Z80_READ_PORT(address) ((uint8_t)sp128ReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) sp128WritePort((uint32_t)(address), (uint32_t)(value))
 #define Z80_CAPTURE_BUS_EVENTS() sp128CaptureBusEvents
-#define Z80_TACT_PLUS_N(value) SP128_CPU_TACT_PLUS_N(value)
-#define Z80_DELAY_MEMORY_READ(address) SP128_CPU_DELAY_MEMORY_ACCESS(address)
-#define Z80_DELAY_MEMORY_WRITE(address) SP128_CPU_DELAY_MEMORY_ACCESS(address)
-#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) SP128_CPU_DELAY_ADDRESS_BUS_ACCESS(address)
-#define Z80_DELAY_PORT_READ(address) SP128_CPU_DELAY_PORT_ACCESS(address)
-#define Z80_DELAY_PORT_WRITE(address) SP128_CPU_DELAY_PORT_ACCESS(address)
+#define Z80_TACT_PLUS_N(value) tactPlusN128((uint32_t)(value))
+#define Z80_DELAY_MEMORY_READ(address) sp128DelayMemoryAccess((uint32_t)(address))
+#define Z80_DELAY_MEMORY_WRITE(address) sp128DelayMemoryAccess((uint32_t)(address))
+#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) sp128CpuDelayAddressBusAccess((uint32_t)(address))
+#define Z80_DELAY_PORT_READ(address) sp128DelayPortAccess((uint32_t)(address))
+#define Z80_DELAY_PORT_WRITE(address) sp128DelayPortAccess((uint32_t)(address))
 #include "../../../../z80/wasm/z80.c"
 #undef Z80_EXTERNAL_BUS
 #undef Z80_MEMORY_PTR
@@ -853,11 +803,6 @@ SP128_ALWAYS_INLINE void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
 #undef Z80_DELAY_ADDRESS_BUS_ACCESS
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
-#undef SP128_CPU_TACT_PLUS_N
-#undef SP128_CPU_APPLY_CONTENTION
-#undef SP128_CPU_DELAY_MEMORY_ACCESS
-#undef SP128_CPU_DELAY_ADDRESS_BUS_ACCESS
-#undef SP128_CPU_DELAY_PORT_ACCESS
 
 #define SP48_TAPE_MAX_BLOCKS SP128_TAPE_MAX_BLOCKS
 #define SP48_TAPE_DATA_CAPACITY SP128_TAPE_DATA_CAPACITY
@@ -1043,13 +988,13 @@ static void updateTapeMode(void) {
   sp128CommonUpdateTapeMode();
 }
 
-static void tactPlusN128(uint32_t value) {
+static void SP128_CPU_NOINLINE tactPlusN128(uint32_t value) {
   cpu.tacts += value;
   sp128Tacts += value;
   sp128CommonSetNextAudioSample();
 }
 
-static void applyContentionDelay(void) {
+static void SP128_CPU_NOINLINE applyContentionDelay(void) {
   const uint32_t delay = sp128Contention[currentFrameTact()];
   cpu.tacts += delay;
   sp128Tacts += delay;
@@ -1058,14 +1003,20 @@ static void applyContentionDelay(void) {
   sp128CommonSetNextAudioSample();
 }
 
-static void sp128DelayMemoryAccess(uint32_t address) {
+static void SP128_CPU_NOINLINE sp128DelayMemoryAccess(uint32_t address) {
   if (isContendedMemoryAddress(address) != 0u) {
     applyContentionDelay();
   }
   tactPlusN128(3u);
 }
 
-static void sp128DelayPortAccess(uint32_t address) {
+static void SP128_CPU_NOINLINE sp128CpuDelayAddressBusAccess(uint32_t address) {
+  if (isContendedMemoryAddress(address) != 0u) {
+    applyContentionDelay();
+  }
+}
+
+static void SP128_CPU_NOINLINE sp128DelayPortAccess(uint32_t address) {
   const uint8_t lowBit = (address & 0x0001u) != 0u ? 1u : 0u;
 
   if (isContendedIoAddress(address) != 0u) {
@@ -1092,6 +1043,8 @@ static void sp128DelayPortAccess(uint32_t address) {
     tactPlusN128(3u);
   }
 }
+
+#undef SP128_CPU_NOINLINE
 
 static uint32_t normalizeClockMultiplier(uint32_t value) {
   switch (value) {

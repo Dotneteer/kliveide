@@ -42,6 +42,17 @@ describe("ZX Spectrum Next WASM public adapter", () => {
     expect(diagnostics.migratedSurfaces).not.toContain("screen");
   });
 
+  it("reports OS initialization from live WASM CPU state", async () => {
+    const machine = await createTestZxNextWasmMachine();
+    const runtime = machine.wasmV2Runtime!;
+
+    runtime.exports.zxnextSetCpuIy(0x0000);
+    expect(machine.isOsInitialized).toBe(false);
+
+    runtime.exports.zxnextSetCpuIy(0x5c3a);
+    expect(machine.isOsInitialized).toBe(true);
+  });
+
   it("reads register, memory, NextReg, screen, and disassembly views from WASM-owned state", async () => {
     const machine = await createTestZxNextWasmMachine();
     const runtime = machine.wasmV2Runtime!;

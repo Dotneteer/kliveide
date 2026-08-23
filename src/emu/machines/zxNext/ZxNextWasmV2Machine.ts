@@ -718,7 +718,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   override get isOsInitialized(): boolean {
-    return false;
+    const runtime = this.wasmV2Runtime;
+    return runtime != null ? runtime.exports.zxnextGetCpuIy() === 0x5c3a : super.isOsInitialized;
   }
 
   override doReadMemory(address: number): number {

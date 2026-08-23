@@ -143,6 +143,11 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128Machine {
     return this.requireWasmV2Runtime().memory;
   }
 
+  override get isOsInitialized(): boolean {
+    const runtime = this.wasmV2Runtime;
+    return runtime != null ? runtime.exports.sp128GetCpuIy() === 0x5c3a : super.isOsInitialized;
+  }
+
   override getMemoryPartition(index: number): Uint8Array {
     const runtime = this.requireWasmV2Runtime();
     if (index < 0) {
