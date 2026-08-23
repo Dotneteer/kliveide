@@ -3,6 +3,7 @@
 #include "zxnext-layer2.h"
 #include "zxnext-memory.h"
 #include "zxnext-palette.h"
+#include "zxnext-sprites.h"
 #include "zxnext-tape.h"
 #include "zxnext-tilemap.h"
 
@@ -128,6 +129,10 @@ static inline uint32_t zxnextUlaPaletteColor(uint32_t index) {
 
 static inline uint32_t zxnextUlaLayer2PaletteColor(uint32_t index) {
   return zxnextUlaRgb333Color(zxnextPaletteGetLayer2Entry(index) & 0x1ffu);
+}
+
+static inline uint32_t zxnextUlaSpritePaletteColor(uint32_t index) {
+  return zxnextUlaRgb333Color(zxnextPaletteGetSpriteEntry(index) & 0x1ffu);
 }
 
 static inline uint32_t zxnextUlaTilemapPaletteColor(uint32_t index) {
@@ -388,6 +393,156 @@ static void zxnextUlaRenderLayer2_320x256Screen(void) {
       uint32_t paletteIndex = (highNibble << 4u) | (pixelValue & 0x0fu);
       if (paletteIndex == transparentIndex) continue;
       zxnextPixelBuffer[outputOffset + x] = zxnextUlaLayer2PaletteColor(paletteIndex);
+    }
+  }
+}
+
+static void zxnextUlaRenderLayer2_640x256Screen(void) {
+  uint32_t bank16 = zxnextLayer2GetUseShadowBank()
+    ? zxnextLayer2GetShadowRamBank()
+    : zxnextLayer2GetActiveRamBank();
+  uint32_t scrollX = zxnextLayer2GetScrollX();
+  uint32_t scrollY = zxnextLayer2GetScrollY();
+  uint32_t paletteOffset = zxnextLayer2GetPaletteOffset() & 0x0fu;
+  uint32_t clipX1 = zxnextLayer2GetClip(0) << 1u;
+  uint32_t clipX2 = (zxnextLayer2GetClip(1) << 1u) | 0x01u;
+  uint32_t clipY1 = zxnextLayer2GetClip(2);
+  uint32_t clipY2 = zxnextLayer2GetClip(3);
+  uint32_t transparentIndex = zxnextNextRegs[0x4bu];
+
+  for (uint32_t y = 0; y < ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT; y++) {
+    if (y < clipY1 || y > clipY2) continue;
+    uint32_t sourceY = (y + scrollY) & 0xffu;
+    uint32_t outputOffset = (ZXNEXT_LAYER2_WIDE_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_LAYER2_WIDE_SCREEN_X;
+    for (uint32_t displayClockX = 0; displayClockX < ZXNEXT_LAYER2_320_SCREEN_WIDTH; displayClockX++) {
+      if (displayClockX < clipX1 || displayClockX > clipX2) continue;
+
+      uint32_t sourceX = zxnextUlaLayer2WideWrappedX(displayClockX + scrollX);
+      uint32_t pixelByte = zxnextUlaReadLayer2Pixel(bank16, (sourceX << 8u) | sourceY);
+      uint32_t outputPixel = outputOffset + (displayClockX << 1u);
+
+      uint32_t paletteIndex1 = (paletteOffset << 4u) | ((pixelByte >> 4u) & 0x0fu);
+      if (paletteIndex1 != transparentIndex) {
+        zxnextPixelBuffer[outputPixel] = zxnextUlaLayer2PaletteColor(paletteIndex1);
+      }
+
+      uint32_t paletteIndex2 = (paletteOffset << 4u) | (pixelByte & 0x0fu);
+      if (paletteIndex2 != transparentIndex) {
+        zxnextPixelBuffer[outputPixel + 1u] = zxnextUlaLayer2PaletteColor(paletteIndex2);
+      }
+    }
+  }
+}
+
+static void zxnextUlaRenderSpritesScreen(void) {
+  if (!zxnextSpritesGetEnabled()) return;
+  uint32_t lastVisible = zxnextSpritesGetLastVisibleSpriteIndex();
+  if (lastVisible == 0xffffffffu) return;
+  if (lastVisible > 127u) lastVisible = 127u;
+
+  uint32_t clipX1;
+  uint32_t clipX2;
+  uint32_t clipY1;
+  uint32_t clipY2;
+  if (zxnextSpritesGetOverBorderEnabled()) {
+    if (zxnextSpritesGetClippingEnabled()) {
+      clipX1 = zxnextSpritesGetClip(0) << 1u;
+      clipX2 = (zxnextSpritesGetClip(1) << 1u) | 1u;
+      clipY1 = zxnextSpritesGetClip(2);
+      clipY2 = zxnextSpritesGetClip(3);
+    } else {
+      clipX1 = 0u;
+      clipX2 = 319u;
+      clipY1 = 0u;
+      clipY2 = 255u;
+    }
+  } else {
+    clipX1 = zxnextSpritesGetClip(0) + 32u;
+    clipX2 = zxnextSpritesGetClip(1) + 32u;
+    clipY1 = zxnextSpritesGetClip(2) + 32u;
+    clipY2 = zxnextSpritesGetClip(3) + 32u;
+  }
+
+  int32_t start = zxnextSpritesGetSprite0OnTop() ? (int32_t)lastVisible : 0;
+  int32_t end = zxnextSpritesGetSprite0OnTop() ? -1 : (int32_t)lastVisible + 1;
+  int32_t step = zxnextSpritesGetSprite0OnTop() ? -1 : 1;
+
+  for (int32_t sprite = start; sprite != end; sprite += step) {
+    uint32_t attr0 = zxnextSpritesGetAttribute((uint32_t)sprite, 0);
+    uint32_t attr1 = zxnextSpritesGetAttribute((uint32_t)sprite, 1);
+    uint32_t attr2 = zxnextSpritesGetAttribute((uint32_t)sprite, 2);
+    uint32_t attr3 = zxnextSpritesGetAttribute((uint32_t)sprite, 3);
+    uint32_t attr4 = zxnextSpritesGetAttribute((uint32_t)sprite, 4);
+
+    if ((attr3 & 0x80u) == 0u) continue;
+
+    uint32_t has5Attrs = (attr3 & 0x40u) != 0u;
+    uint32_t patternIndex = attr3 & 0x3fu;
+    uint32_t paletteOffset = (attr2 >> 4u) & 0x0fu;
+    uint32_t transformVariant =
+      ((attr2 & 0x02u) ? 4u : 0u) |
+      ((attr2 & 0x08u) ? 2u : 0u) |
+      ((attr2 & 0x04u) ? 1u : 0u);
+    uint32_t is4Bit = has5Attrs && ((attr4 & 0x80u) != 0u);
+    uint32_t patternBit6 = has5Attrs && ((attr4 & 0x20u) != 0u);
+    uint32_t scaleX = has5Attrs ? ((attr4 & 0x18u) >> 3u) : 0u;
+    uint32_t scaleY = has5Attrs ? ((attr4 & 0x06u) >> 1u) : 0u;
+    uint32_t rotate = (attr2 & 0x02u) != 0u;
+    uint32_t baseWidth = 16u << scaleX;
+    uint32_t baseHeight = 16u << scaleY;
+    uint32_t width = rotate ? baseHeight : baseWidth;
+    uint32_t height = rotate ? baseWidth : baseHeight;
+    uint32_t patternVariantIndex = is4Bit
+      ? ((((patternIndex << 1u) | (patternBit6 ? 1u : 0u)) << 3u) | transformVariant)
+      : ((patternIndex << 3u) | transformVariant);
+    int32_t spriteX = (int32_t)(attr0 & 0xffu);
+    int32_t spriteY = (int32_t)(attr1 & 0xffu);
+
+    if (has5Attrs) {
+      uint32_t colorMode = (attr4 >> 6u) & 0x03u;
+      if (colorMode != 0x01u) {
+        spriteX = (int32_t)((((attr4 & 0x01u) << 8u) | (attr0 & 0xffu)) & 0x1ffu);
+      }
+    }
+    if (spriteX > 319) spriteX -= 512;
+    if (spriteY > 255) spriteY -= 512;
+
+    for (uint32_t py = 0u; py < height; py++) {
+      int32_t displayY = spriteY + (int32_t)py;
+      if (displayY < (int32_t)clipY1 || displayY > (int32_t)clipY2) continue;
+      if (displayY < 0 || displayY >= (int32_t)ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT) continue;
+
+      uint32_t patternY = (py >> scaleY) & 0x0fu;
+      uint32_t outputOffset = (ZXNEXT_LAYER2_WIDE_SCREEN_Y + (uint32_t)displayY) *
+        ZXNEXT_SCREEN_WIDTH + ZXNEXT_LAYER2_WIDE_SCREEN_X;
+
+      for (uint32_t px = 0u; px < width; px++) {
+        int32_t displayX = spriteX + (int32_t)px;
+        if (displayX < (int32_t)clipX1 || displayX > (int32_t)clipX2) continue;
+        if (displayX < 0 || displayX >= (int32_t)ZXNEXT_LAYER2_320_SCREEN_WIDTH) continue;
+
+        uint32_t patternX = (px >> scaleX) & 0x0fu;
+        uint32_t patternOffset = (patternY << 4u) | patternX;
+        uint32_t pixelValue = is4Bit
+          ? zxnextSpritesGetPatternByte4(patternVariantIndex, patternOffset)
+          : zxnextSpritesGetPatternByte8(patternVariantIndex, patternOffset);
+        uint32_t transparencyMask = is4Bit ? 0x0fu : 0xffu;
+        if ((pixelValue & transparencyMask) == (zxnextSpritesGetTransparencyIndex() & transparencyMask)) {
+          continue;
+        }
+
+        uint32_t colorValue = is4Bit ? (pixelValue & 0x0fu) : (pixelValue & 0xffu);
+        uint32_t paletteIndex;
+        if (is4Bit) {
+          paletteIndex = (paletteOffset << 4u) | colorValue;
+        } else {
+          paletteIndex = ((((colorValue >> 4u) + paletteOffset) & 0x0fu) << 4u) | (colorValue & 0x0fu);
+        }
+        uint32_t outputPixel = outputOffset + ((uint32_t)displayX << 1u);
+        uint32_t color = zxnextUlaSpritePaletteColor(paletteIndex);
+        zxnextPixelBuffer[outputPixel] = color;
+        zxnextPixelBuffer[outputPixel + 1u] = color;
+      }
     }
   }
 }
@@ -776,7 +931,10 @@ static uint32_t zxnextUlaRenderInstantScreen(void) {
     zxnextUlaRenderLayer2_256x192Screen();
   } else if (zxnextLayer2GetEnabled() && zxnextLayer2GetResolution() == 1u) {
     zxnextUlaRenderLayer2_320x256Screen();
+  } else if (zxnextLayer2GetEnabled() && zxnextLayer2GetResolution() == 2u) {
+    zxnextUlaRenderLayer2_640x256Screen();
   }
+  zxnextUlaRenderSpritesScreen();
   return ZXNEXT_PIXEL_COUNT;
 }
 

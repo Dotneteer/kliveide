@@ -405,6 +405,57 @@ describe("ZX Spectrum Next WASM standard ULA screen", () => {
     expect(pixels[layer2WideScreenIndex(0x20 * 2 + 1, 0)]).toBe(layer2Bgra(0x33));
   });
 
+  it("renders 640x256 Layer 2 nibbles from five consecutive active RAM banks", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    oracle.hardReset();
+    wasm.hardReset();
+
+    for (const [reg, value] of [
+      [0x1c, 0x01],
+      [0x18, 0x00],
+      [0x18, 0x9f],
+      [0x18, 0x00],
+      [0x18, 0xff],
+      [0x12, 0x09],
+      [0x70, 0x20],
+      [0x69, 0x80]
+    ]) {
+      oracle.nextRegDevice.directSetRegValue(reg, value);
+      exports.zxnextSetNextRegisterDirect(reg, value);
+    }
+
+    for (const [x, value] of [
+      [0x00, 0x0b],
+      [0x40, 0x55],
+      [0x80, 0x17],
+      [0xc0, 0x22],
+      [0x100, 0xff]
+    ]) {
+      oracle.memoryDevice.memory[layer2PhysicalOffset(9, x << 8)] = value;
+      wasm.wasmV2Runtime!.memory[layer2PhysicalOffset(9, x << 8)] = value;
+    }
+
+    const oraclePixels = oracle.composedScreenDevice.renderFullScreen();
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    for (const [x, byteValue] of [
+      [0x00, 0x0b],
+      [0x40, 0x55],
+      [0x80, 0x17],
+      [0xc0, 0x22],
+      [0x100, 0xff]
+    ]) {
+      const leftIndex = layer2WideScreenIndex(x * 2, 0);
+      const rightIndex = layer2WideScreenIndex(x * 2 + 1, 0);
+      expect(pixels[leftIndex], `left x=${x.toString(16)}`).toBe(layer2Bgra((byteValue >> 4) & 0x0f));
+      expect(pixels[rightIndex], `right x=${x.toString(16)}`).toBe(layer2Bgra(byteValue & 0x0f));
+      expect(pixels[leftIndex], `oracle left x=${x.toString(16)}`).toBe(oraclePixels[leftIndex]);
+      expect(pixels[rightIndex], `oracle right x=${x.toString(16)}`).toBe(oraclePixels[rightIndex]);
+    }
+  });
+
   it("maps CPU writes through port $123B into Layer 2 RAM", async () => {
     const { wasm } = await createZxNextOracleHarness();
     wasm.hardReset();

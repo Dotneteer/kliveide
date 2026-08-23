@@ -7,6 +7,11 @@ static uint8_t zxnextSpritePatternIndex;
 static uint8_t zxnextSpritePatternSubIndex;
 static uint8_t zxnextSpriteIndex;
 static uint8_t zxnextSpriteSubIndex;
+static uint8_t zxnextSprite0OnTop;
+static uint8_t zxnextSpriteClippingEnabled;
+static uint8_t zxnextSpritesOverBorderEnabled;
+static uint8_t zxnextSpritesEnabled;
+static uint8_t zxnextSpriteLayerPriority;
 static uint8_t zxnextSpriteTooMany;
 static uint8_t zxnextSpriteCollision;
 static int16_t zxnextSpriteLastVisibleIndex;
@@ -25,6 +30,11 @@ static void zxnextSpritesReset(void) {
   zxnextSpritePatternSubIndex = 0u;
   zxnextSpriteIndex = 0u;
   zxnextSpriteSubIndex = 0u;
+  zxnextSprite0OnTop = 0u;
+  zxnextSpriteClippingEnabled = 0u;
+  zxnextSpritesOverBorderEnabled = 0u;
+  zxnextSpritesEnabled = 0u;
+  zxnextSpriteLayerPriority = 0u;
   zxnextSpriteTooMany = 0u;
   zxnextSpriteCollision = 0u;
   zxnextSpriteLastVisibleIndex = -1;
@@ -48,6 +58,13 @@ static void zxnextSpritesSetNextReg(uint32_t reg, uint32_t value) {
       break;
     case 0x4bu:
       zxnextSpriteTransparencyIndex = byteValue;
+      break;
+    case 0x15u:
+      zxnextSprite0OnTop = (byteValue & 0x40u) != 0u;
+      zxnextSpriteClippingEnabled = (byteValue & 0x20u) != 0u;
+      zxnextSpriteLayerPriority = (byteValue >> 2u) & 0x07u;
+      zxnextSpritesOverBorderEnabled = (byteValue & 0x02u) != 0u;
+      zxnextSpritesEnabled = (byteValue & 0x01u) != 0u;
       break;
     case 0x34u:
     case 0x35u:
@@ -79,6 +96,12 @@ static uint32_t zxnextSpritesGetNextReg(uint32_t reg) {
   switch (reg & 0xffu) {
     case 0x19u: return zxnextSpriteClipWindow[zxnextSpriteClipIndex];
     case 0x4bu: return zxnextSpriteTransparencyIndex;
+    case 0x15u:
+      return (zxnextSprite0OnTop ? 0x40u : 0u) |
+        (zxnextSpriteClippingEnabled ? 0x20u : 0u) |
+        ((uint32_t)zxnextSpriteLayerPriority << 2u) |
+        (zxnextSpritesOverBorderEnabled ? 0x02u : 0u) |
+        (zxnextSpritesEnabled ? 0x01u : 0u);
     default: return 0u;
   }
 }
@@ -97,6 +120,10 @@ static void zxnextSpritesWritePort57(uint32_t value) {
   uint8_t sprite = zxnextSpriteIndex & 0x7fu;
   zxnextSpriteAttributes[sprite][zxnextSpriteSubIndex] = (uint8_t)value;
   if (zxnextSpriteSubIndex == 3u && (value & 0x80u)) zxnextSpriteLastVisibleIndex = sprite;
+  if (zxnextSpriteSubIndex == 3u && (value & 0x40u) == 0u) {
+    zxnextSpriteAttributes[sprite][4] = 0u;
+    zxnextSpriteSubIndex++;
+  }
   zxnextSpriteSubIndex++;
   if (zxnextSpriteSubIndex >= 5u) {
     zxnextSpriteSubIndex = 0u;
@@ -159,3 +186,7 @@ static uint32_t zxnextSpritesGetPatternByte4(uint32_t variant, uint32_t offset) 
 static uint32_t zxnextSpritesGetLastVisibleSpriteIndex(void) {
   return zxnextSpriteLastVisibleIndex < 0 ? 0xffffffffu : (uint32_t)zxnextSpriteLastVisibleIndex;
 }
+static uint32_t zxnextSpritesGetSprite0OnTop(void) { return zxnextSprite0OnTop; }
+static uint32_t zxnextSpritesGetClippingEnabled(void) { return zxnextSpriteClippingEnabled; }
+static uint32_t zxnextSpritesGetOverBorderEnabled(void) { return zxnextSpritesOverBorderEnabled; }
+static uint32_t zxnextSpritesGetEnabled(void) { return zxnextSpritesEnabled; }

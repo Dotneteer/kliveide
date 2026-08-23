@@ -22,5 +22,9 @@ static uint32_t zxnextSpritesGetAttribute(uint32_t sprite, uint32_t attr);
 static uint32_t zxnextSpritesGetPatternByte8(uint32_t variant, uint32_t offset);
 static uint32_t zxnextSpritesGetPatternByte4(uint32_t variant, uint32_t offset);
 static uint32_t zxnextSpritesGetLastVisibleSpriteIndex(void);
+static uint32_t zxnextSpritesGetSprite0OnTop(void);
+static uint32_t zxnextSpritesGetClippingEnabled(void);
+static uint32_t zxnextSpritesGetOverBorderEnabled(void);
+static uint32_t zxnextSpritesGetEnabled(void);
 
 #endif
