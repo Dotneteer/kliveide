@@ -68,6 +68,18 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     lastPortValue = zxnextPortsGroupEnabled(1, 0) ? zxnextDivMmcGetPortE3() : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ebu) {
     lastPortValue = zxnextPortsGroupEnabled(1, 3) ? zxnextSdReadMmcData() : 0xffu;
+  } else if ((normalized & 0xc00fu) == 0x8005u) {
+    if (zxnextPortsGroupEnabled(2, 0)) {
+      uint32_t chip = zxnextPsgGetSelectedChip();
+      uint32_t ayId = chip == 0u ? 3u : (chip == 1u ? 2u : 1u);
+      lastPortValue = (uint8_t)((ayId << 6u) | (zxnextPsgGetSelectedRegister() & 0x1fu));
+    } else {
+      lastPortValue = 0xffu;
+    }
+  } else if ((normalized & 0xc007u) == 0xc005u) {
+    lastPortValue = zxnextPortsGroupEnabled(2, 0) ? zxnextPsgReadRegisterValue() : 0xffu;
+  } else if ((normalized & 0xc007u) == 0x8005u) {
+    lastPortValue = zxnextPortsGroupEnabled(2, 0) ? zxnextPsgReadRegisterValue() : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ffu) {
     lastPortValue = zxnextPortsGroupEnabled(0, 0) ? portTimexValue : 0xffu;
   } else if ((normalized & 0x0001u) == 0) {
@@ -134,8 +146,8 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     zxnextUlaWritePortFe(byteValue);
     zxnextBeeperSetOutput((byteValue & 0x10u) != 0u, (byteValue & 0x08u) != 0u);
   } else if ((normalized & 0xc002u) == 0xc000u) {
-    zxnextPsgSetRegisterIndex(byteValue);
+    if (zxnextPortsGroupEnabled(2, 0)) zxnextPsgSetRegisterIndex(byteValue);
   } else if ((normalized & 0xc002u) == 0x8000u) {
-    zxnextPsgWriteRegisterValue(byteValue);
+    if (zxnextPortsGroupEnabled(2, 0)) zxnextPsgWriteRegisterValue(byteValue);
   }
 }

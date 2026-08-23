@@ -47,6 +47,175 @@ describe("Step 20: Final Audio Integration Testing", () => {
       expect(samples.length).toBeGreaterThanOrEqual(0);
     });
 
+    it("should produce audible PSG samples from AY port writes", () => {
+      const writeAy = (register: number, value: number) => {
+        machine.doWritePort(0xfffd, register);
+        machine.doWritePort(0xbffd, value);
+      };
+
+      machine.onInitNewFrame(false);
+
+      writeAy(0, 0x20);
+      writeAy(1, 0x00);
+      writeAy(7, 0x3e);
+      writeAy(8, 0x0f);
+
+      for (let i = 0; i < 3000 && !machine.frameCompleted; i++) {
+        machine.tactPlusN(16);
+        machine.afterInstructionExecuted();
+      }
+
+      const samples = machine.getAudioSamples();
+      const diagnostics = machine.audioControlDevice
+        .getTurboSoundDevice()
+        .getFrameAudioDiagnostics();
+      expect(samples.length).toBeGreaterThan(10);
+      expect(samples.some((sample) => Math.abs(sample.left) > 0.001 || Math.abs(sample.right) > 0.001))
+        .toBe(true);
+      expect(diagnostics.nonZeroSamples).toBeGreaterThan(0);
+      expect(diagnostics.sampleCount).toBeGreaterThan(10);
+    });
+
+    it("should keep collecting PSG samples after the first rendered frame", () => {
+      const writeAy = (register: number, value: number) => {
+        machine.doWritePort(0xfffd, register);
+        machine.doWritePort(0xbffd, value);
+      };
+      const renderFrame = () => {
+        machine.onInitNewFrame(false);
+        machine.frameCompleted = false;
+
+        for (let i = 0; i < 100_000 && !machine.frameCompleted; i++) {
+          machine.tactPlusN(16);
+          machine.afterInstructionExecuted();
+        }
+
+        return machine.audioControlDevice
+          .getTurboSoundDevice()
+          .getFrameAudioDiagnostics();
+      };
+
+      writeAy(0, 0x20);
+      writeAy(1, 0x00);
+      writeAy(7, 0x3e);
+      writeAy(8, 0x0f);
+
+      const firstFrame = renderFrame();
+      const secondFrame = renderFrame();
+
+      expect(firstFrame.sampleCount).toBeGreaterThan(10);
+      expect(firstFrame.nonZeroSamples).toBeGreaterThan(0);
+      expect(secondFrame.sampleCount).toBeGreaterThan(10);
+      expect(secondFrame.nonZeroSamples).toBeGreaterThan(0);
+    });
+
+    it("should keep PSG pitch stable when the ZX Next CPU speed changes", async () => {
+      const renderToneFrame = async (speed: number) => {
+        const testMachine = await createTestNextMachine();
+        testMachine.cpuSpeedDevice.nextReg07Value = speed;
+        testMachine.cpuTactScale = testMachine.cpuSpeedDevice.effectiveCpuTactScale;
+        testMachine.clockMultiplier = testMachine.cpuSpeedDevice.effectiveClockMultiplier;
+        testMachine.onInitNewFrame(false);
+        testMachine.frameCompleted = false;
+
+        const writeAy = (register: number, value: number) => {
+          testMachine.doWritePort(0xfffd, register);
+          testMachine.doWritePort(0xbffd, value);
+        };
+        writeAy(0, 0x20);
+        writeAy(1, 0x00);
+        writeAy(7, 0x3e);
+        writeAy(8, 0x0f);
+
+        for (let i = 0; i < 100_000 && !testMachine.frameCompleted; i++) {
+          testMachine.tactPlusN(16);
+          testMachine.afterInstructionExecuted();
+        }
+
+        return testMachine.audioControlDevice
+          .getTurboSoundDevice()
+          .getAudioSamples()
+          .slice();
+      };
+      const countToneEdges = (samples: { left: number; right: number }[]) => {
+        let edges = 0;
+        let previousHigh = Math.abs(samples[0]?.left ?? 0) > 0.001;
+        for (const sample of samples.slice(1)) {
+          const high = Math.abs(sample.left) > 0.001;
+          if (high !== previousHigh) {
+            edges++;
+            previousHigh = high;
+          }
+        }
+        return edges;
+      };
+
+      const baseEdges = countToneEdges(await renderToneFrame(0));
+      const fastEdges = countToneEdges(await renderToneFrame(3));
+
+      expect(baseEdges).toBeGreaterThan(0);
+      expect(Math.abs(fastEdges - baseEdges)).toBeLessThanOrEqual(1);
+    });
+
+    it("should produce audible PSG samples when YM register selects include high bits", () => {
+      const writeAy = (register: number, value: number) => {
+        machine.doWritePort(0xfffd, 0x10 | register);
+        machine.doWritePort(0xbffd, value);
+      };
+
+      machine.onInitNewFrame(false);
+
+      writeAy(0, 0x20);
+      writeAy(1, 0x00);
+      writeAy(7, 0x3e);
+      writeAy(8, 0x0f);
+
+      for (let i = 0; i < 3000 && !machine.frameCompleted; i++) {
+        machine.tactPlusN(16);
+        machine.afterInstructionExecuted();
+      }
+
+      const samples = machine.getAudioSamples();
+      expect(samples.length).toBeGreaterThan(10);
+      expect(samples.some((sample) => Math.abs(sample.left) > 0.001 || Math.abs(sample.right) > 0.001))
+        .toBe(true);
+    });
+
+    it("should produce audible PSG samples from CPU AY port instructions", () => {
+      machine.initCode([
+        0xf3,                         // di
+        0x01, 0xfd, 0xff, 0x3e, 0x00, 0xed, 0x79, // ld bc,$fffd; ld a,0; out (c),a
+        0x01, 0xfd, 0xbf, 0x3e, 0x20, 0xed, 0x79, // ld bc,$bffd; ld a,$20; out (c),a
+        0x01, 0xfd, 0xff, 0x3e, 0x01, 0xed, 0x79, // ld bc,$fffd; ld a,1; out (c),a
+        0x01, 0xfd, 0xbf, 0x3e, 0x00, 0xed, 0x79, // ld bc,$bffd; ld a,0; out (c),a
+        0x01, 0xfd, 0xff, 0x3e, 0x07, 0xed, 0x79, // ld bc,$fffd; ld a,7; out (c),a
+        0x01, 0xfd, 0xbf, 0x3e, 0x3e, 0xed, 0x79, // ld bc,$bffd; ld a,$3e; out (c),a
+        0x01, 0xfd, 0xff, 0x3e, 0x08, 0xed, 0x79, // ld bc,$fffd; ld a,8; out (c),a
+        0x01, 0xfd, 0xbf, 0x3e, 0x0f, 0xed, 0x79, // ld bc,$bffd; ld a,$0f; out (c),a
+        0x21, 0x00, 0x20,             // ld hl,$2000
+        0x2b,                         // dec hl
+        0x7c,                         // ld a,h
+        0xb5,                         // or l
+        0x20, 0xfb,                   // jr nz,$-3
+        0x76                          // halt
+      ]);
+      machine.pc = 0x8000;
+      machine.onInitNewFrame(false);
+
+      for (let i = 0; i < 50_000 && !machine.halted && !machine.frameCompleted; i++) {
+        machine.beforeInstructionExecuted();
+        do {
+          machine.executeCpuCycle();
+        } while (machine.instructionExecutionInProgress());
+        machine.afterInstructionExecuted();
+      }
+
+      const samples = machine.getAudioSamples();
+      expect(samples.length).toBeGreaterThan(10);
+      expect(samples.some((sample) => Math.abs(sample.left) > 0.001 || Math.abs(sample.right) > 0.001))
+        .toBe(true);
+    });
+
     it("should support multi-chip orchestration", () => {
       const turbo = machine.audioControlDevice.getTurboSoundDevice();
 

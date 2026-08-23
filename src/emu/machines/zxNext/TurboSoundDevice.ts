@@ -2,6 +2,13 @@ import type { PsgChipState } from "@emu/abstractions/PsgChipState";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import { PsgChip } from "@emu/machines/zxSpectrum128/PsgChip";
 
+export type TurboSoundFrameAudioDiagnostics = {
+  sampleCount: number;
+  nonZeroSamples: number;
+  peakLeft: number;
+  peakRight: number;
+};
+
 /**
  * Turbo Sound Next - Manages 3 AY-3-8912 PSG Chips with Stereo Panning and Mixing
  *
@@ -90,9 +97,10 @@ export class TurboSoundDevice {
   private readonly _audioSamples: AudioSample[] = [];
   
   // --- PSG clock tracking (PSG runs at baseClockFrequency / 2 = 1.75 MHz)
-  // --- But generateOutputValue() should be called at 1.75 MHz / 8 due to internal ÷8 prescaler
-  private _psgClockDivisor = 16; // PSG effective rate: CPU ÷ 2 ÷ 8 = CPU ÷ 16
-  private _lastCpuTact = 0; // Last CPU tact when PSG was updated
+  // --- But generateOutputValue() should be called at 1.75 MHz / 8 due to internal ÷8 prescaler.
+  // --- Timing is tracked in the fixed 28 MHz frame-tact domain so CPU speed changes do not shift pitch.
+  private _psgClockDivisor = 128; // 28 MHz / 128 = 1.75 MHz / 8 PSG output steps
+  private _lastPsgFrameTact = 0; // Last 28 MHz frame tact when PSG was updated
   private _psgTactRemainder = 0; // Fractional PSG tacts to carry forward
 
   /**
@@ -140,7 +148,7 @@ export class TurboSoundDevice {
     this._chipMonoMode[2] = false;
     this._audioNextSampleTact = 0;
     this._audioSamples.length = 0;
-    this._lastCpuTact = 0;
+    this._lastPsgFrameTact = 0;
     this._psgTactRemainder = 0;
   }
 
@@ -543,9 +551,10 @@ export class TurboSoundDevice {
   onNewFrame(): void {
     // Clear frame samples for new frame
     this._audioSamples.length = 0;
+    this._audioNextSampleTact = 0;
     
     // Reset PSG tact tracking for new frame
-    this._lastCpuTact = 0;
+    this._lastPsgFrameTact = 0;
     this._psgTactRemainder = 0;
   }
 
@@ -554,24 +563,24 @@ export class TurboSoundDevice {
    * Advances PSG chips by the correct number of tacts since last call
    * PSG generateOutputValue() called at CPU clock / 16 (accounts for ÷2 for 1.75MHz + ÷8 internal prescaler)
    */
-  calculateCurrentAudioValue(currentCpuTact: number): void {
+  calculateCurrentAudioValue(currentFrameTact28: number): void {
     // Initialize on first call to avoid huge elapsed time
-    if (this._lastCpuTact === 0) {
-      this._lastCpuTact = currentCpuTact;
+    if (this._lastPsgFrameTact === 0) {
+      this._lastPsgFrameTact = currentFrameTact28;
       return;
     }
     
-    // Calculate elapsed CPU tacts since last update
-    const cpuTactsElapsed = currentCpuTact - this._lastCpuTact;
-    this._lastCpuTact = currentCpuTact;
+    // Calculate elapsed fixed 28 MHz tacts since last update
+    const frameTactsElapsed = currentFrameTact28 - this._lastPsgFrameTact;
+    this._lastPsgFrameTact = currentFrameTact28;
     
     // Clamp to reasonable range to prevent performance issues
-    if (cpuTactsElapsed <= 0 || cpuTactsElapsed > 100) {
+    if (frameTactsElapsed <= 0 || frameTactsElapsed > 800) {
       return; // Skip if negative (wraparound) or unreasonably large
     }
     
-    // Convert to PSG tacts (PSG runs at half CPU speed + carry forward remainder)
-    const exactPsgTacts = cpuTactsElapsed / this._psgClockDivisor + this._psgTactRemainder;
+    // Convert to PSG tacts (PSG runs from the fixed system clock + carry forward remainder)
+    const exactPsgTacts = frameTactsElapsed / this._psgClockDivisor + this._psgTactRemainder;
     const psgTactsToAdvance = Math.floor(exactPsgTacts);
     this._psgTactRemainder = exactPsgTacts - psgTactsToAdvance;
     
@@ -617,5 +626,28 @@ export class TurboSoundDevice {
   getAudioSamples(): AudioSample[] {
     return this._audioSamples;
   }
-}
 
+  /**
+   * Gets per-frame raw AY/TurboSound sample diagnostics before the audio mixer.
+   */
+  getFrameAudioDiagnostics(): TurboSoundFrameAudioDiagnostics {
+    let nonZeroSamples = 0;
+    let peakLeft = 0;
+    let peakRight = 0;
+
+    for (const sample of this._audioSamples) {
+      if (sample.left !== 0 || sample.right !== 0) {
+        nonZeroSamples++;
+      }
+      peakLeft = Math.max(peakLeft, Math.abs(sample.left));
+      peakRight = Math.max(peakRight, Math.abs(sample.right));
+    }
+
+    return {
+      sampleCount: this._audioSamples.length,
+      nonZeroSamples,
+      peakLeft,
+      peakRight
+    };
+  }
+}

@@ -1556,7 +1556,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   afterInstructionExecuted(): void {
     super.afterInstructionExecuted();
-    this._turboSoundDevice.calculateCurrentAudioValue(this.tacts);
+    this._turboSoundDevice.calculateCurrentAudioValue(this.frameTacts);
     this._dacDevice.calculateCurrentAudioValue();
     this._audioMixerDevice.calculateCurrentAudioValue();
   }

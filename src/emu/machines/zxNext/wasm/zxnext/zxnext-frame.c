@@ -1,6 +1,7 @@
 #include "zxnext-frame.h"
 #include "zxnext-cpu.h"
 #include "zxnext-audio-mixer.h"
+#include "zxnext-psg.h"
 #include "zxnext-sd.h"
 
 static void zxnextFrameReset(void) {
@@ -15,6 +16,7 @@ static void zxnextFrameReset(void) {
 
 static uint32_t zxnextFrameExecute(void) {
   frameCompleted = 0;
+  zxnextPsgBeginFrame();
   zxnextAudioMixerBeginFrame();
   while (frameCompleted == 0u && zxnextSdGetHostCommand() == ZXNEXT_SD_HOST_COMMAND_NONE) {
     zxnextCpuExecuteInstruction();

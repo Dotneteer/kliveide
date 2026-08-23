@@ -32,6 +32,21 @@ describe("ZX Next WASM PSG/TurboSound audio", () => {
     expect(exports.zxnextReadPsgRegisterValue()).toBe(oracle.readPsgRegisterValue());
   });
 
+  it("matches TypeScript high-bit YM register alias selection", async () => {
+    const oracle = new TurboSoundDevice();
+    const wasm = await createTestZxNextWasmMachine();
+    const exports = wasm.wasmV2Runtime!.exports;
+
+    oracle.setPsgRegisterIndex(0x11);
+    oracle.writePsgRegisterValue(0xa5);
+    exports.zxnextSetPsgRegisterIndex(0x11);
+    exports.zxnextWritePsgRegisterValue(0xa5);
+
+    expect(exports.zxnextGetPsgSelectedRegister()).toBe(oracle.getSelectedRegister());
+    expect(exports.zxnextGetPsgRegister(0, 1)).toBe(oracle.getChip(0).readPsgRegisterValue());
+    expect(exports.zxnextReadPsgRegisterValue()).toBe(oracle.readPsgRegisterValue());
+  });
+
   it("exposes deterministic noise/envelope movement and stereo samples", async () => {
     const wasm = await createTestZxNextWasmMachine();
     const exports = wasm.wasmV2Runtime!.exports;
@@ -98,6 +113,20 @@ describe("ZX Next WASM PSG/TurboSound audio", () => {
     expect(exports.zxnextGetPsgEnvelopeStep(0)).toBe((oracle.getChip(0).getState() as any).envStep);
     expect(exports.zxnextGetPsgOutputA(0)).toBe(oracle.getChip(0).currentOutputA);
   });
+
+  it("advances PSG during normal WASM frame execution", async () => {
+    const samples = await renderWasmToneFrame(0);
+    expect(samples.length).toBeGreaterThan(10);
+    expect(countSampleEdges(samples)).toBeGreaterThan(0);
+  });
+
+  it("keeps PSG pitch stable when the WASM ZX Next CPU speed changes", async () => {
+    const baseEdges = countSampleEdges(await renderWasmToneFrame(0));
+    const fastEdges = countSampleEdges(await renderWasmToneFrame(3));
+
+    expect(baseEdges).toBeGreaterThan(0);
+    expect(Math.abs(fastEdges - baseEdges)).toBeLessThanOrEqual(1);
+  });
 });
 
 function writePsgBoth(
@@ -113,4 +142,40 @@ function writePsgBoth(
   oracle.writePsgRegisterValue(value);
   exports.zxnextSetPsgRegisterIndex(reg);
   exports.zxnextWritePsgRegisterValue(value);
+}
+
+async function renderWasmToneFrame(speed: number) {
+  const wasm = await createTestZxNextWasmMachine();
+  const exports = wasm.wasmV2Runtime!.exports;
+
+  wasm.hardReset();
+  wasm.doWriteMemory(0x8000, 0x76);
+  wasm.pc = 0x8000;
+
+  exports.zxnextSetNextRegisterIndex(0x07);
+  exports.zxnextSetNextRegisterValue(speed);
+
+  exports.zxnextSetPsgRegisterIndex(0x00);
+  exports.zxnextWritePsgRegisterValue(0x20);
+  exports.zxnextSetPsgRegisterIndex(0x01);
+  exports.zxnextWritePsgRegisterValue(0x00);
+  exports.zxnextSetPsgRegisterIndex(0x07);
+  exports.zxnextWritePsgRegisterValue(0x3e);
+  exports.zxnextSetPsgRegisterIndex(0x08);
+  exports.zxnextWritePsgRegisterValue(0x0f);
+
+  wasm.executeMachineFrame();
+  return wasm.getAudioSamples().map(sample => sample.left);
+}
+
+function countSampleEdges(samples: number[]): number {
+  let edges = 0;
+  let previous = samples[0] ?? 0;
+  for (const sample of samples.slice(1)) {
+    if (Math.abs(sample - previous) > 0.001) {
+      edges++;
+      previous = sample;
+    }
+  }
+  return edges;
 }

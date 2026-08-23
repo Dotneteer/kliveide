@@ -85,6 +85,20 @@ describe("ZX Spectrum Next WASM port core parity", () => {
     expect(wasm.lastIoReadValue).toBe(wasmRead);
   });
 
+  it("matches TypeScript AY register, data, and info port reads", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    hardResetBoth(oracle, wasm);
+
+    for (const machine of [oracle, wasm]) {
+      machine.doWritePort(0xfffd, 0x01);
+      machine.doWritePort(0xbffd, 0xa5);
+    }
+
+    for (const port of [0xfffd, 0xbffd, 0xbff5]) {
+      expect(wasm.doReadPort(port)).toBe(oracle.doReadPort(port));
+    }
+  });
+
   it("matches TypeScript floating/open-port read behavior separately from handled ports", async () => {
     const { oracle, wasm } = await createZxNextOracleHarness();
     hardResetBoth(oracle, wasm);

@@ -64,15 +64,13 @@ export class AudioRenderer {
     this.context = audioRenderer.context;
     this.worklet = audioRenderer.worklet;
     this.samplesPerFrame = audioRenderer.samplesPerFrame;
-    this.context.suspend().then(() => {
-      this.suspended = true;
-    });
+    this.suspended = this.context.state !== "running";
   }
 
   async play(): Promise<void> {
-    if (this.suspended) {
-      this.suspended = false;
+    if (this.suspended || this.context.state !== "running") {
       await this.context.resume();
+      this.suspended = this.context.state !== "running";
     }
   }
 
@@ -89,7 +87,6 @@ export class AudioRenderer {
    * @param soundLevel Sound level multiplier (0.0 to 1.0)
    */
   storeSamples(samples: AudioSample[], soundLevel: number = 1.0): void {
-    if (this.suspended) return;
     if (this.worklet) {
       // Send interleaved stereo samples: [L, R, L, R, ...]
       const stereoSamples: number[] = [];

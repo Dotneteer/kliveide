@@ -1,5 +1,3 @@
-import type { AudioSample } from "@emu/abstractions/IAudioDevice";
-
 import styles from "./EmulatorPanel.module.scss";
 import { useMachineController } from "@renderer/core/useMachineController";
 import { getGlobalSetting, useGlobalSetting, useSelector, useStore } from "@renderer/core/RendererProvider";
@@ -19,6 +17,7 @@ import { useRecordingManager } from "@renderer/appEmu/recording/RecordingContext
 import { useEmulatorScreen } from "./useEmulatorScreen";
 import { useEmulatorAudio } from "./useEmulatorAudio";
 import { useEmulatorKeyboard } from "./useEmulatorKeyboard";
+import { renderMachineAudioFrame } from "./audioFrameRendering";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 import { applySectorChangesToDiskContents } from "@emu/machines/disk/disk-changes";
 import { mediaStore } from "@emu/machines/media/media-info";
@@ -215,15 +214,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       componentStateRef.current.savedPixelBuffer = currentController.machine.renderInstantScreen();
     }
 
-    if (args.fullFrame && beeperRenderer.current) {
-      const sampleGetter = (currentController.machine as any).getAudioSamples;
-      if (typeof sampleGetter === "function") {
-        const samples = (sampleGetter.call(currentController.machine) as AudioSample[]).slice();
-        const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
-        beeperRenderer.current.storeSamples(samples, soundLevel);
-        await beeperRenderer.current.play();
-        await recordingManagerRef?.current?.submitAudioSamples(samples);
-      }
+    if (args.fullFrame) {
+      const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
+      await renderMachineAudioFrame(
+        currentController.machine,
+        beeperRenderer.current,
+        soundLevel,
+        recordingManagerRef?.current
+      );
     }
 
     if (args.savedFileInfo) {

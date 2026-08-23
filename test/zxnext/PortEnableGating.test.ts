@@ -289,6 +289,13 @@ describe("Next - Port Enable Gating (NR $82-$85)", function () {
   // NR $84 — AY ports (bit 0)
   // ==========================================================================
 
+  it("Port 0xFFFD AY read returns the selected PSG register when NR $84 bit 0 is set", async () => {
+    const m = await createTestNextMachine();
+    m.portManager.writePort(0xfffd, 7);
+    m.portManager.writePort(0xbffd, 0x3e);
+    expect(m.portManager.readPort(0xfffd)).toBe(0x3e);
+  });
+
   it("Port 0xFFFD AY read returns 0xFF when NR $84 bit 0 is cleared", async () => {
     const m = await createTestNextMachine();
     writeNextReg(m, 0x84, 0xfe); // clear bit 0
