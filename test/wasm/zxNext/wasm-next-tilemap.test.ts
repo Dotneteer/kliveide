@@ -13,7 +13,7 @@ const STANDARD_SCREEN_WIDTH = 256;
 const STANDARD_SCREEN_SCALE_X = 2;
 const STANDARD_SCREEN_OUTPUT_WIDTH = STANDARD_SCREEN_WIDTH * STANDARD_SCREEN_SCALE_X;
 const STANDARD_SCREEN_HEIGHT = 192;
-const STANDARD_SCREEN_X = (ZXNEXT_WASM_V2_SCREEN_WIDTH - STANDARD_SCREEN_OUTPUT_WIDTH) / 2;
+const STANDARD_SCREEN_X = 96;
 const STANDARD_SCREEN_Y = (ZXNEXT_WASM_V2_SCREEN_HEIGHT - STANDARD_SCREEN_HEIGHT) / 2;
 const TILEMAP_SCREEN_X = 32;
 const TILEMAP_SCREEN_Y = STANDARD_SCREEN_Y - (256 - STANDARD_SCREEN_HEIGHT) / 2;
@@ -228,6 +228,105 @@ describe("ZX Next WASM advanced video tilemap", () => {
     expect(pixels[tilemapScreenIndex(24, 0)]).toBe(tilemapPaletteBgra(6));
   });
 
+  it("renders 40x32 text tilemap pixels from 1bpp tile definitions", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    oracle.hardReset();
+    wasm.hardReset();
+
+    for (const [reg, value] of [
+      [0x1c, 0x00],
+      [0x1b, 0x00],
+      [0x1b, 0x9f],
+      [0x1b, 0x00],
+      [0x1b, 0xff],
+      [0x2f, 0x00],
+      [0x30, 0x00],
+      [0x31, 0x00],
+      [0x6e, 0x20],
+      [0x6f, 0x30],
+      [0x43, 0x30],
+      [0x40, 0x00],
+      [0x41, 0x00],
+      [0x41, 0x03],
+      [0x41, 0xe0],
+      [0x41, 0xe3],
+      [0x41, 0x1c],
+      [0x41, 0x1f],
+      [0x41, 0xfc],
+      [0x41, 0xff],
+      [0x6b, 0xa9],
+      [0x6c, 0x02]
+    ]) {
+      oracle.nextRegDevice.directSetRegValue(reg, value);
+      exports.zxnextSetNextRegisterDirect(reg, value);
+    }
+
+    const tileBytes = [0xff, 0x81, 0x81, 0x83, 0x87, 0x8f, 0x9f, 0xff];
+    for (let i = 0; i < 40 * 32; i++) {
+      oracle.memoryDevice.memory[OFFS_BANK_05 + 0x2000 + i] = 0x00;
+      wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + 0x2000 + i] = 0x00;
+    }
+    for (let i = 0; i < tileBytes.length; i++) {
+      oracle.memoryDevice.memory[OFFS_BANK_05 + 0x3000 + i] = tileBytes[i];
+      wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + 0x3000 + i] = tileBytes[i];
+    }
+
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect40ColumnTextTilePattern(pixels, tilemapPaletteBgra(2));
+  });
+
+  it("renders 80x32 text tilemap pixels from 1bpp tile definitions", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    oracle.hardReset();
+    wasm.hardReset();
+
+    for (const [reg, value] of [
+      [0x1c, 0x08],
+      [0x1b, 0x00],
+      [0x1b, 0x9f],
+      [0x1b, 0x00],
+      [0x1b, 0xff],
+      [0x2f, 0x00],
+      [0x30, 0x00],
+      [0x31, 0x00],
+      [0x6e, 0x20],
+      [0x6f, 0x30],
+      [0x43, 0x30],
+      [0x40, 0x00],
+      [0x41, 0x00],
+      [0x41, 0x03],
+      [0x41, 0xe0],
+      [0x41, 0xe3],
+      [0x41, 0x1c],
+      [0x41, 0x1f],
+      [0x41, 0xfc],
+      [0x41, 0xff],
+      [0x6b, 0xe9],
+      [0x6c, 0x02]
+    ]) {
+      oracle.nextRegDevice.directSetRegValue(reg, value);
+      exports.zxnextSetNextRegisterDirect(reg, value);
+    }
+
+    const tileBytes = [0xff, 0x81, 0x81, 0x83, 0x87, 0x8f, 0x9f, 0xff];
+    for (let i = 0; i < 80 * 32; i++) {
+      oracle.memoryDevice.memory[OFFS_BANK_05 + 0x2000 + i] = 0x00;
+      wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + 0x2000 + i] = 0x00;
+    }
+    for (let i = 0; i < tileBytes.length; i++) {
+      oracle.memoryDevice.memory[OFFS_BANK_05 + 0x3000 + i] = tileBytes[i];
+      wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + 0x3000 + i] = tileBytes[i];
+    }
+
+    wasm.renderInstantScreen();
+    const pixels = wasm.getPixelBuffer();
+
+    expect80ColumnTextTilePattern(pixels, tilemapPaletteBgra(2));
+  });
 });
 
 function tilemapScreenIndex(x: number, y: number): number {
@@ -238,4 +337,29 @@ function tilemapPaletteBgra(index: number): number {
   const valuesWrittenThroughReg41 = [0x00, 0x03, 0xe0, 0xe3, 0x1c, 0x1f, 0xfc, 0xff];
   const value = valuesWrittenThroughReg41[index];
   return zxNextBgra[((value << 1) | (value & 0x03 ? 0x01 : 0x00)) & 0x1ff];
+}
+
+function expect40ColumnTextTilePattern(pixels: Uint32Array, visibleColor: number): void {
+  for (const x of [0, 1, 14, 15]) {
+    expect(pixels[tilemapScreenIndex(x, 1)]).not.toBe(visibleColor);
+  }
+  for (let x = 2; x < 14; x++) {
+    expect(pixels[tilemapScreenIndex(x, 1)]).toBe(visibleColor);
+  }
+  for (let x = 0; x < 16; x++) {
+    expect(pixels[tilemapScreenIndex(x, 0)]).not.toBe(visibleColor);
+    expect(pixels[tilemapScreenIndex(x, 7)]).not.toBe(visibleColor);
+  }
+}
+
+function expect80ColumnTextTilePattern(pixels: Uint32Array, visibleColor: number): void {
+  expect(pixels[tilemapScreenIndex(0, 1)]).not.toBe(visibleColor);
+  expect(pixels[tilemapScreenIndex(7, 1)]).not.toBe(visibleColor);
+  for (let x = 1; x < 7; x++) {
+    expect(pixels[tilemapScreenIndex(x, 1)]).toBe(visibleColor);
+  }
+  for (let x = 0; x < 8; x++) {
+    expect(pixels[tilemapScreenIndex(x, 0)]).not.toBe(visibleColor);
+    expect(pixels[tilemapScreenIndex(x, 7)]).not.toBe(visibleColor);
+  }
 }

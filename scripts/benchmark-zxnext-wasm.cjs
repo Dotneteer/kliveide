@@ -281,6 +281,8 @@ async function createTypeScriptMachine() {
 async function createWasmMachine(artifact = productionOutput) {
   registerTsRuntime();
   const { ZxNextWasmV2Machine } = require("../src/emu/machines/zxNext/ZxNextWasmV2Machine.ts");
+  const { FILE_PROVIDER } = require("../src/emu/machines/machine-props.ts");
+  const { FileProvider } = require("../test/zxnext/FileProvider.ts");
   const machine = new ZxNextWasmV2Machine(
     undefined,
     undefined,
@@ -293,6 +295,7 @@ async function createWasmMachine(artifact = productionOutput) {
       }
     }
   );
+  machine.setMachineProperty(FILE_PROVIDER, new FileProvider());
   await machine.setup();
   machine.uploadWasmV2RomImages(readZxNextBootRomImages());
   return machine;

@@ -12,7 +12,7 @@ const STANDARD_SCREEN_WIDTH = 256;
 const STANDARD_SCREEN_SCALE_X = 2;
 const STANDARD_SCREEN_OUTPUT_WIDTH = STANDARD_SCREEN_WIDTH * STANDARD_SCREEN_SCALE_X;
 const STANDARD_SCREEN_HEIGHT = 192;
-const STANDARD_SCREEN_X = (ZXNEXT_WASM_V2_SCREEN_WIDTH - STANDARD_SCREEN_OUTPUT_WIDTH) / 2;
+const STANDARD_SCREEN_X = 96;
 const STANDARD_SCREEN_Y = (ZXNEXT_WASM_V2_SCREEN_HEIGHT - STANDARD_SCREEN_HEIGHT) / 2;
 const LAYER2_320_SCREEN_WIDTH = 320;
 const LAYER2_320_SCREEN_OUTPUT_WIDTH = LAYER2_320_SCREEN_WIDTH * STANDARD_SCREEN_SCALE_X;
@@ -64,8 +64,10 @@ describe("ZX Spectrum Next WASM standard ULA screen", () => {
     wasm.wasmV2Runtime!.memory[OFFS_BANK_05] = 0xff;
     wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + 0x1800] = 0x47;
 
-    const oraclePixels = oracle.renderInstantScreen();
-    const wasmPixels = wasm.renderInstantScreen();
+    oracle.renderInstantScreen();
+    wasm.renderInstantScreen();
+    const oraclePixels = oracle.getPixelBuffer();
+    const wasmPixels = wasm.getPixelBuffer();
     const sampleIndexes = [
       screenIndex(0, 0),
       screenIndex(1, 0),
@@ -75,6 +77,32 @@ describe("ZX Spectrum Next WASM standard ULA screen", () => {
 
     for (const index of sampleIndexes) {
       expect(wasmPixels[index]).toBe(oraclePixels[index]);
+    }
+  });
+
+  it("applies ULA half-pixel scroll from NextReg $68", async () => {
+    const { oracle, wasm } = await createZxNextOracleHarness();
+    const exports = wasm.wasmV2Runtime!.exports;
+    oracle.hardReset();
+    wasm.hardReset();
+
+    oracle.memoryDevice.memory[OFFS_BANK_05] = 0x0f;
+    oracle.memoryDevice.memory[OFFS_BANK_05 + 1] = 0xf0;
+    oracle.memoryDevice.memory[OFFS_BANK_05 + 0x1800] = 0x47;
+    wasm.wasmV2Runtime!.memory[OFFS_BANK_05] = 0x0f;
+    wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + 1] = 0xf0;
+    wasm.wasmV2Runtime!.memory[OFFS_BANK_05 + 0x1800] = 0x47;
+    oracle.nextRegDevice.directSetRegValue(0x68, 0x04);
+    exports.zxnextSetNextRegisterDirect(0x68, 0x04);
+
+    oracle.renderInstantScreen();
+    wasm.renderInstantScreen();
+    const oraclePixels = oracle.getPixelBuffer();
+    const wasmPixels = wasm.getPixelBuffer();
+
+    expect(exports.zxnextGetNextRegisterDirect(0x68)).toBe(oracle.nextRegDevice.directGetRegValue(0x68));
+    for (let x = 0; x < 32; x++) {
+      expect(wasmPixels[screenIndex(x, 0)], `x=${x}`).toBe(oraclePixels[screenIndex(x, 0)]);
     }
   });
 

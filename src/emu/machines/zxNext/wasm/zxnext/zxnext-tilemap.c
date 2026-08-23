@@ -91,6 +91,7 @@ static uint32_t zxnextTilemapGetClip(uint32_t index) { return zxnextTilemapClipW
 static uint32_t zxnextTilemapGetEnabled(void) { return zxnextTilemapEnabled; }
 static uint32_t zxnextTilemapGet80x32Resolution(void) { return (zxnextTilemapControl & 0x40u) != 0u; }
 static uint32_t zxnextTilemapGetEliminateAttributes(void) { return (zxnextTilemapControl & 0x20u) != 0u; }
+static uint32_t zxnextTilemapGetTextMode(void) { return (zxnextTilemapControl & 0x08u) != 0u; }
 static uint32_t zxnextTilemapGet512TileMode(void) { return (zxnextTilemapControl & 0x02u) != 0u; }
 static uint32_t zxnextTilemapGetForceOnTopOfUla(void) { return (zxnextTilemapControl & 0x01u) != 0u; }
 static uint32_t zxnextTilemapGetDefaultAttr(void) { return zxnextTilemapDefaultAttr; }

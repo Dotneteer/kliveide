@@ -12,6 +12,7 @@ static uint32_t zxnextTilemapGetClip(uint32_t index);
 static uint32_t zxnextTilemapGetEnabled(void);
 static uint32_t zxnextTilemapGet80x32Resolution(void);
 static uint32_t zxnextTilemapGetEliminateAttributes(void);
+static uint32_t zxnextTilemapGetTextMode(void);
 static uint32_t zxnextTilemapGet512TileMode(void);
 static uint32_t zxnextTilemapGetForceOnTopOfUla(void);
 static uint32_t zxnextTilemapGetDefaultAttr(void);

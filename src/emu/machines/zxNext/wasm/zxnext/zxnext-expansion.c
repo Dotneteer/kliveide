@@ -18,7 +18,6 @@ static uint8_t zxnextExpansionIorqulaSignal;
 
 static inline void zxnextExpansionRequestSpeedUpdate(void) {
   cpuEffectiveSpeed = zxnextExpansionEnabled ? 0u : cpuProgrammedSpeed;
-  zxnextNextRegs[0x07u] = (uint8_t)((cpuProgrammedSpeed & 0x03u) | ((cpuEffectiveSpeed & 0x03u) << 4u));
 }
 
 void zxnextExpansionHardReset(void) {

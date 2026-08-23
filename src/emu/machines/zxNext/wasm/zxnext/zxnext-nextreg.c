@@ -111,7 +111,7 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   if (normalized == 0x07u) {
     cpuProgrammedSpeed = (uint8_t)(value & 0x03u);
     cpuEffectiveSpeed = cpuProgrammedSpeed;
-    zxnextNextRegs[0x07u] = (uint8_t)((cpuProgrammedSpeed & 0x03u) | ((cpuEffectiveSpeed & 0x03u) << 4u));
+    zxnextNextRegs[0x07u] = (uint8_t)(value & 0xffu);
     return;
   }
   if (normalized == 0x08u) {
@@ -180,6 +180,7 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
     case 0x1au:
     case 0x26u:
     case 0x27u:
+    case 0x68u:
       return zxnextUlaGetNextReg(reg);
     case 0x19u:
       return zxnextSpritesGetNextReg(reg);

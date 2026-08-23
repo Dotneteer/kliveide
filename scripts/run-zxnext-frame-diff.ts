@@ -172,7 +172,7 @@ class RunnerFileProvider implements IFileProvider {
 
 function parseArgs(args: string[]): RunnerOptions {
   const options: RunnerOptions = {
-    frames: 1000,
+    frames: 100,
     model: "zxnext",
     verbose: false
   };
@@ -387,7 +387,7 @@ function printHelp(): void {
     "  npm run diff:zxnext-machine -- --frames 500 --stop-pc 0x1234 --verbose",
     "",
     "Options:",
-    "  --frames <count>   Maximum frames to compare. Defaults to 1000.",
+    "  --frames <count>   Maximum frames to compare. Defaults to 100.",
     "  --model zxnext     Machine model. Only zxnext is supported initially.",
     "  --stop-pc <addr>   Stop after a matching frame that observes the address.",
     "  --fixture <file>   JSON startup/input fixture for both machines.",

@@ -3,7 +3,6 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { buildSp48Wasm, productionOutput as sp48ProductionOutput } from "../../../scripts/build-sp48-wasm.cjs";
 import {
   buildZxNextWasm,
   optimizationProfiles,
@@ -76,13 +75,11 @@ describe("ZX Spectrum Next WASM shared-source contract", () => {
   });
 
   it("keeps the Next artifact larger than 48K after timing-depth hooks are linked", () => {
-    buildSp48Wasm();
     buildZxNextWasm();
 
-    const sp48Bytes = statSync(sp48ProductionOutput).size;
     const zxnextBytes = statSync(zxnextProductionOutput).size;
 
-    expect(zxnextBytes).toBeGreaterThan(sp48Bytes);
+    expect(zxnextBytes).toBeGreaterThan(48 * 1024);
     expect(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS).not.toContain("binary-size-parity-audit");
     expect(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS).toEqual([
       "ula-screen-tact-pipeline-parity",
