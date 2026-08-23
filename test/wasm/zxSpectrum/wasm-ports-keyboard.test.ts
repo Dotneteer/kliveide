@@ -114,6 +114,32 @@ describe("ZX Spectrum WASM ports and keyboard parity", () => {
     expect(wasmMachine.readTestPort(0x001f)).toBe(0xff);
   });
 
+  it("48K and 128K keep classic passive 0xfe bit 6 readback after EAR writes", async () => {
+    for (const testCase of portCases().filter(testCase => testCase.name !== "ZX Spectrum +3E")) {
+      const wasmMachine = await testCase.createWasmMachine();
+      const oracleMachine = await testCase.createOracleMachine();
+
+      testCase.writeWasmPort(wasmMachine, 0x00fe, 0x10);
+      oracleMachine.doWritePort(0x00fe, 0x10);
+
+      expect(testCase.readWasmPort(wasmMachine, 0x00fe) & 0x40, testCase.name).toBe(
+        oracleMachine.doReadPort(0x00fe) & 0x40
+      );
+      expect(testCase.readWasmPort(wasmMachine, 0x00fe) & 0x40, testCase.name).toBe(0x40);
+    }
+  });
+
+  it("+3E keeps passive 0xfe bit 6 low after EAR writes", async () => {
+    const wasmMachine = await createTestSpp3eWasmMachine();
+    const oracleMachine = await createOracleSpp3eMachine();
+
+    wasmMachine.writeTestPort(0x00fe, 0x10);
+    oracleMachine.doWritePort(0x00fe, 0x10);
+
+    expect(wasmMachine.readTestPort(0x00fe) & 0x40).toBe(oracleMachine.doReadPort(0x00fe) & 0x40);
+    expect(wasmMachine.readTestPort(0x00fe) & 0x40).toBe(0x00);
+  });
+
   for (const testCase of portCases().filter(testCase => testCase.name !== "ZX Spectrum 48K")) {
     it(`${testCase.name} feeds tape EAR through 0xfe reads while loading`, async () => {
       const wasmMachine = await testCase.createWasmMachine();

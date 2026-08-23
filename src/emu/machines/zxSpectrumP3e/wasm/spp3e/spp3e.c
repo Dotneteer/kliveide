@@ -430,6 +430,18 @@ static void spp3eRebuildFlatMemory(void) {
   }
 }
 
+static inline uint8_t spp3eIsVisibleScreenBankOffset(uint32_t bank, uint32_t offset) {
+  const uint32_t visibleBank = spp3eUseShadowScreen != 0u ? 7u : 5u;
+  return bank == visibleBank && offset < 0x1b00u;
+}
+
+static inline uint8_t spp3eIsVisibleScreenSlotOffset(uint32_t slot, uint32_t offset) {
+  if (spp3eMemorySlotWritable[slot] == 0u) {
+    return 0u;
+  }
+  return spp3eIsVisibleScreenBankOffset((uint32_t)spp3eMemorySlotPartition[slot], offset);
+}
+
 static void spp3eUpdateVisibleRamBankMirrorByte(uint32_t bank, uint32_t offset, uint8_t value) {
   for (uint32_t slot = 0u; slot < 4u; slot++) {
     if (spp3eMemorySlotWritable[slot] != 0u && spp3eMemorySlotPartition[slot] == (int32_t)bank) {
@@ -455,9 +467,18 @@ uint32_t spp3eReadScreenMemoryOffset(uint32_t offset);
 static uint8_t spp3eCpuReadMemory(uint32_t address);
 static void spp3eCpuWriteMemory(uint32_t address, uint32_t value);
 static void spp3eCpuPokeMemory(uint32_t address, uint32_t value);
-static void spp3eTactPlusN(uint32_t value);
-static void spp3eDelayMemoryAccess(uint32_t address);
-static void spp3eDelayPortAccess(uint32_t address);
+
+#if defined(__clang__) || defined(__GNUC__)
+#define SPP3E_CPU_NOINLINE __attribute__((noinline))
+#else
+#define SPP3E_CPU_NOINLINE
+#endif
+
+static void SPP3E_CPU_NOINLINE spp3eApplyContentionDelay(void);
+static void SPP3E_CPU_NOINLINE spp3eTactPlusN(uint32_t value);
+static void SPP3E_CPU_NOINLINE spp3eDelayMemoryAccess(uint32_t address);
+static void SPP3E_CPU_NOINLINE spp3eCpuDelayAddressBusAccess(uint32_t address);
+static void SPP3E_CPU_NOINLINE spp3eDelayPortAccess(uint32_t address);
 static void spp3eResetAudio(void);
 static void spp3eBeginAudioFrame(void);
 static void spp3eSetNextAudioSample(void);
@@ -648,7 +669,7 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef sp48KeyboardLines
 
 #define sp128Tacts spp3eTacts
-#include "../../../zxSpectrum128/wasm/sp128/sp128-psg.c"
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-psg.c"
 #undef sp128Tacts
 
 #define SP48_DEFAULT_SAMPLE_RATE SPP3E_DEFAULT_SAMPLE_RATE
@@ -738,6 +759,7 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #define Z80_TACT_PLUS_N(value) spp3eTactPlusN((uint32_t)(value))
 #define Z80_DELAY_MEMORY_READ(address) spp3eDelayMemoryAccess((uint32_t)(address))
 #define Z80_DELAY_MEMORY_WRITE(address) spp3eDelayMemoryAccess((uint32_t)(address))
+#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) spp3eCpuDelayAddressBusAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_READ(address) spp3eDelayPortAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_WRITE(address) spp3eDelayPortAccess((uint32_t)(address))
 #include "../../../../z80/wasm/z80.c"
@@ -752,6 +774,7 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef Z80_TACT_PLUS_N
 #undef Z80_DELAY_MEMORY_READ
 #undef Z80_DELAY_MEMORY_WRITE
+#undef Z80_DELAY_ADDRESS_BUS_ACCESS
 #undef Z80_DELAY_PORT_READ
 #undef Z80_DELAY_PORT_WRITE
 
@@ -1060,7 +1083,7 @@ static void spp3eCpuPokeMemory(uint32_t address, uint32_t value) {
   spp3eWriteMemory(address, value);
 }
 
-static void spp3eApplyContentionDelay(void) {
+static void SPP3E_CPU_NOINLINE spp3eApplyContentionDelay(void) {
   const uint32_t delay = spp3eContention[spp3eUlaCurrentFrameTact()];
   cpu.tacts += delay;
   spp3eTacts += delay;
@@ -1069,20 +1092,26 @@ static void spp3eApplyContentionDelay(void) {
   spp3eContentionDelaySincePause += delay;
 }
 
-static void spp3eTactPlusN(uint32_t value) {
+static void SPP3E_CPU_NOINLINE spp3eTactPlusN(uint32_t value) {
   cpu.tacts += value;
   spp3eTacts += value;
   spp3eCommonSetNextAudioSample();
 }
 
-static void spp3eDelayMemoryAccess(uint32_t address) {
+static void SPP3E_CPU_NOINLINE spp3eDelayMemoryAccess(uint32_t address) {
   if (spp3eIsContendedMemoryAddress(address) != 0u) {
     spp3eApplyContentionDelay();
   }
   spp3eTactPlusN(3u);
 }
 
-static void spp3eDelayPortAccess(uint32_t address) {
+static void SPP3E_CPU_NOINLINE spp3eCpuDelayAddressBusAccess(uint32_t address) {
+  if (spp3eIsContendedMemoryAddress(address) != 0u) {
+    spp3eApplyContentionDelay();
+  }
+}
+
+static void SPP3E_CPU_NOINLINE spp3eDelayPortAccess(uint32_t address) {
   const uint8_t lowBit = (address & 0x0001u) != 0u ? 1u : 0u;
   if (spp3eIsContendedMemoryAddress(address) != 0u) {
     if (lowBit != 0u) {
@@ -1104,6 +1133,8 @@ static void spp3eDelayPortAccess(uint32_t address) {
     spp3eTactPlusN(3u);
   }
 }
+
+#undef SPP3E_CPU_NOINLINE
 
 uint8_t *spp3eMemoryPtr(void) { return spp3eMemory; }
 uint8_t *spp3eRamPtr(void) { return spp3eRam; }
@@ -1779,6 +1810,9 @@ void spp3eWriteMemory(uint32_t address, uint32_t value) {
   }
   const uint32_t offset = maskedAddress & 0x3fffu;
   const uint8_t byteValue = (uint8_t)value;
+  if (spp3eIsVisibleScreenSlotOffset(slot, offset) != 0u) {
+    spp3eUlaRenderUntilCurrentTact();
+  }
   spp3eMemorySlotBase[slot][offset] = byteValue;
   spp3eMemory[maskedAddress] = byteValue;
   if (spp3eIsContendedMemoryAddress(maskedAddress) != 0u) {
@@ -1798,6 +1832,9 @@ void spp3eWriteRamBank(uint32_t bank, uint32_t offset, uint32_t value) {
     return;
   }
   const uint8_t byteValue = (uint8_t)value;
+  if (spp3eIsVisibleScreenBankOffset(bank, offset) != 0u) {
+    spp3eUlaRenderUntilCurrentTact();
+  }
   spp3eRam[spp3eRamBankOffset(bank) + offset] = byteValue;
   spp3eUpdateVisibleRamBankMirrorByte(bank, offset, byteValue);
 }
@@ -1840,17 +1877,11 @@ uint32_t spp3eReadPort(uint32_t address) {
     const uint32_t selectedLines = (~(address >> 8u)) & 0xffu;
     const uint8_t status = spp3eKeyboardSelectedLineValue[selectedLines];
     uint32_t portValue = ((uint32_t)~status) & 0xffu;
-    uint8_t bit4Sensed = spp3eEarBit;
-    if (bit4Sensed == 0u) {
-      uint32_t chargeTime = spp3eEarBitChangedFrom1Tacts - spp3eEarBitChangedFrom0Tacts;
-      if (chargeTime > 0u) {
-        chargeTime = chargeTime > 700u ? 2800u : 4u * chargeTime;
-        bit4Sensed = spp3eTacts - spp3eEarBitChangedFrom1Tacts < chargeTime ? 1u : 0u;
-      }
+    if (spp3eTapeMode == SPP3E_TAPE_MODE_LOAD) {
+      const uint32_t bit6Value = spp3eCommonTapeGetEarBit() != 0u ? 0x40u : 0x00u;
+      return (portValue & 0xbfu) | bit6Value;
     }
-    const uint8_t earValue = spp3eTapeMode == SPP3E_TAPE_MODE_LOAD ? spp3eCommonTapeGetEarBit() : bit4Sensed;
-    const uint32_t bit6Value = earValue != 0u ? 0x40u : 0x00u;
-    return (portValue & 0xbfu) | bit6Value;
+    return portValue & 0xbfu;
   }
 
   if ((address & 0xc002u) == 0xc000u) {
@@ -1914,8 +1945,12 @@ void spp3eWritePort(uint32_t address, uint32_t value) {
     if (spp3ePagingEnabled == 0u) {
       return;
     }
+    const uint8_t nextUseShadowScreen = (value & 0x08u) != 0u ? 1u : 0u;
+    if (nextUseShadowScreen != spp3eUseShadowScreen) {
+      spp3eUlaRenderUntilCurrentTact();
+    }
     spp3eSelectedBank = (uint8_t)(value & 0x07u);
-    spp3eUseShadowScreen = (value & 0x08u) != 0u ? 1u : 0u;
+    spp3eUseShadowScreen = nextUseShadowScreen;
     spp3eSelectedRom = (uint8_t)(((value >> 4u) & 0x01u) | (spp3eSpecialConfigMode & 0x02u));
     spp3ePagingEnabled = (value & 0x20u) != 0u ? 0u : 1u;
     spp3eRebuildFlatMemory();

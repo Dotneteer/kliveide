@@ -12,7 +12,7 @@ const packagedArtifactRelative = `${packagedResourceDirectory}/zx-spectrum-p3e.w
 
 const optimizationProfiles = {
   speed: ["-O3", "-Wl,--strip-all"],
-  size: ["-Oz"],
+  size: ["-Oz", "-Wl,--strip-all"],
   lto: ["-O3", "-flto"]
 };
 
@@ -269,7 +269,7 @@ function buildSpP3eWasm({
   const optimizationProfile = normalizeOptimization(optimization);
   const selected = buildModes[buildMode];
   const selectedOutput = outputPath ?? selected.output;
-  if (existsSync(wasmDistDirectory)) {
+  if (existsSync(wasmDistDirectory) && dirname(selectedOutput) === wasmDistDirectory) {
     for (const entry of readdirSync(wasmDistDirectory)) {
       const candidate = resolve(wasmDistDirectory, entry);
       if (entry.endsWith(".wasm") && candidate !== selectedOutput) {

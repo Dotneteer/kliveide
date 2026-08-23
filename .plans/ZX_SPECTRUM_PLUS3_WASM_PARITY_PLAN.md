@@ -11,6 +11,7 @@ Status:
 - Focused parity regression sweep: complete and passing.
 - Full unit test suite: complete and passing.
 - Next recommended step: manual game/IDE retest.
+- Reusable lessons recorded in `.ai/wasm-v2-machine-migration-guide.md`.
 
 ## Goal
 

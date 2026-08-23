@@ -143,6 +143,38 @@ the same utility, suspect model glue first:
 Do not start by rewriting the Z80 core when another WASM machine using that core
 passes the same CPU-level utility.
 
+### ZX Spectrum +2E/+3E Floating Bus Parity Lessons
+
+The +3E parity work exposed an important distinction: matching the
+`readFloatingBus()` formula is not enough. The producer of the bus byte must
+also be in parity.
+
+For the TypeScript +3E machine, the ULA byte is produced this way:
+
+- `CommonScreenDevice` advances ULA rendering tact-by-tact;
+- ULA fetch phases call `machine.readScreenMemory(pixelAddress)` or
+  `machine.readScreenMemory(attributeAddress)`;
+- `ZxSpectrumP3eMachine.readScreenMemory` reads from the currently displayed
+  screen bank and writes that byte into `lastUlaReadValue`;
+- during CPU execution, TypeScript advances rendering from tact increments, so
+  the remembered ULA byte is current when a floating-bus port is sampled.
+
+For WASM +3E, keep these invariants:
+
+- `spp3eReadScreenMemoryOffset` must update `spp3eLastUlaReadValue`;
+- `spp3eReadFloatingBus` must advance ULA rendering to the current tact before
+  sampling `spp3eLastUlaReadValue`;
+- the adapter must import `spp3eLastContendedValue` and
+  `spp3eLastUlaReadValue` into the inherited TypeScript-visible fields after
+  public memory/port/screen operations;
+- tests should verify both raw WASM behavior and the TypeScript-facing adapter
+  state, because the IDE and debugger often read through public machine APIs.
+
+The +2/+3 eligible floating-bus port shape is `4 * n + 1` while paging is
+enabled. Do not blindly reuse 128K floatspy ports such as `0x00ff` for +3E
+parity; `0x00ff & 3 == 3`, so it is not a +2/+3 floating-bus port under the
+current TypeScript oracle.
+
 ## Oracle Tests For Spectrum Migrations
 
 Use the TypeScript machine as the oracle while migrating the WASM backend. Static
@@ -180,6 +212,31 @@ The CPU-level repeated `IN A,(C)` loop was the missing test that reproduced the
 128K floatspy failure most faithfully. It catches mistakes in the interaction
 between frame timing, port handling, contention, Z80 tact advancement, and the
 floating bus.
+
+For +3E parity, use the same principle with a +2/+3-eligible port such as
+`0x1235`. Include tests that:
+
+- compare the timing tables and rendering addresses first;
+- seed displayed screen banks 5 and 7 with different bytes;
+- verify `readScreenMemory` updates the TypeScript-facing `lastUlaReadValue`;
+- deliberately seed a stale WASM ULA byte, advance the TypeScript oracle ULA to
+  the sampled tact, and then verify the WASM floating-bus read refreshes before
+  returning;
+- run a repeated `ED 78` (`IN A,(C)`) CPU loop with `BC` set to the eligible
+  +2/+3 port, comparing port address, port value, tacts, and stored result
+  after each instruction;
+- use public adapter APIs such as `doReadMemory`, `doWriteMemory`,
+  `doReadPort`, `readScreenMemory`, `get64KFlatMemory`, and
+  `getCurrentPartitions` when validating IDE-facing parity.
+
+Be careful with synthetic direct WASM helper tests. Raw helper exports are
+useful for isolating C behavior, but they can bypass adapter synchronization.
+If a bug is visible in the IDE or debugger, add at least one assertion through
+the public machine API that the IDE uses.
+
+When comparing a TypeScript oracle value that depends on the remembered ULA
+byte, advance the TypeScript screen renderer to the sampled tact before
+asserting. Setting `currentFrameTact` alone does not perform the ULA fetch.
 
 ## What Belongs In WASM
 

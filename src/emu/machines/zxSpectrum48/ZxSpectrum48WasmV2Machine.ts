@@ -155,6 +155,11 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48Machine {
     return this.requireWasmV2Runtime().memory;
   }
 
+  override get isOsInitialized(): boolean {
+    const runtime = this.wasmV2Runtime;
+    return runtime != null ? runtime.exports.sp48GetCpuIy() === 0x5c3a : super.isOsInitialized;
+  }
+
   override doReadMemory(address: number): number {
     const runtime = this.requireWasmV2Runtime();
     const value = runtime.exports.sp48ReadMemory(address & 0xffff);

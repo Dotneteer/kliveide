@@ -108,6 +108,26 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
     expect(machine.getPixelBuffer()[displayPixel + 1]).toBe(0xff000000);
   });
 
+  it("reports OS initialization from live WASM CPU state", async () => {
+    buildSpP3eWasm();
+    const runtime = await loadSpP3eWasmV2({
+      artifactName: "test-spp3e-machine-os-initialized-v2.wasm",
+      readArtifact: async () => readFileSync(productionOutput)
+    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
+      [SPP3E_IMPLEMENTATION]: "wasm",
+      [MC_DISK_SUPPORT]: 2
+    });
+    machine.wasmV2Runtime = runtime;
+    machine.hardReset();
+
+    runtime.exports.spp3eSetCpuIy(0x0000);
+    expect(machine.isOsInitialized).toBe(false);
+
+    runtime.exports.spp3eSetCpuIy(0x5c3a);
+    expect(machine.isOsInitialized).toBe(true);
+  });
+
   it("syncs disk media and write-protect properties into WASM", async () => {
     buildSpP3eWasm();
     const runtime = await loadSpP3eWasmV2({

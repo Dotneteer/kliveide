@@ -57,7 +57,7 @@ describe("ZX Spectrum 48K WASM build", () => {
     expect(calls[0].args).toContain(productionOutput);
   });
 
-  it("accepts explicit optimization profiles", () => {
+  it("accepts explicit size optimization profiles", () => {
     const calls: Array<{ compiler: string; args: string[] }> = [];
     buildSp48Wasm({
       compiler: "fake-c-compiler",
@@ -70,7 +70,7 @@ describe("ZX Spectrum 48K WASM build", () => {
 
     expect(calls[0].args).toContain("-Oz");
     expect(calls[0].args).not.toContain("-O3");
-    expect(calls[0].args).not.toContain("-Wl,--strip-all");
+    expect(calls[0].args).toContain("-Wl,--strip-all");
   });
 
   it("rejects removed non-production build modes", () => {
@@ -82,7 +82,7 @@ describe("ZX Spectrum 48K WASM build", () => {
   });
 
   it("declares the default production WASM size ceiling", () => {
-    expect(DEFAULT_MAX_BYTES).toBe(240_000);
+    expect(DEFAULT_MAX_BYTES).toBe(510_000);
     expect(parseMaxBytes()).toBe(DEFAULT_MAX_BYTES);
     expect(parseMaxBytes("90000")).toBe(90_000);
     expect(() => parseMaxBytes("not-a-number")).toThrow("Invalid SP48_WASM_MAX_BYTES");

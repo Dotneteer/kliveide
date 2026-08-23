@@ -81,6 +81,18 @@ describe("ZX Spectrum 48K WASM v2 machine adapter", () => {
     );
   });
 
+  it("reports OS initialization from live WASM CPU state", async () => {
+    buildSp48Wasm();
+    const machine = new TestWasmV2Machine(testRom([0x00]));
+
+    await machine.setup();
+    machine.wasmV2Runtime!.exports.sp48SetCpuIy(0x0000);
+    expect(machine.isOsInitialized).toBe(false);
+
+    machine.wasmV2Runtime!.exports.sp48SetCpuIy(0x5c3a);
+    expect(machine.isOsInitialized).toBe(true);
+  });
+
   it("syncs clock multiplier changes to v2 only when needed", async () => {
     buildSp48Wasm();
     const machine = new TestWasmV2Machine(testRom([0x00]));
