@@ -9,12 +9,7 @@ built from this folder and loaded by `SpP3eWasmV2Loader.ts`.
 - `spp3e/`: the +2E/+3E C machine implementation.
 - `dist/`: generated production WASM artifact.
 
-The runtime switch has two supported values:
-
-- `spp3eImplementation: "wasm"` selects the WASM adapter and is the rollout
-  default.
-- `spp3eImplementation: "typescript"` explicitly selects the TypeScript
-  fallback while final parity work is completed.
+ZX Spectrum +2E/+3E models always use this C/WASM implementation.
 
 Build with `npm run build:spp3e-wasm`. The compiler defaults to `clang`; set
 `SPP3E_WASM_CC` to select another C compiler. The build script uses the

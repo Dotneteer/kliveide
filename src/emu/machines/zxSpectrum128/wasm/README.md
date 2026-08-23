@@ -11,12 +11,7 @@ loaded by `Sp128WasmV2Loader.ts`.
 
 The backend reuses the shared C Z80 core from `src/emu/z80/wasm/z80.c`.
 
-The runtime switch has two supported values:
-
-- `sp128Implementation: "wasm"` uses the default C/WASM implementation.
-- `sp128Implementation: "typescript"` uses the TypeScript fallback.
-
-`DEFAULT_SP128_IMPLEMENTATION` in `ZxSpectrum128Implementation.ts` is `"wasm"`.
+ZX Spectrum 128K models always use this C/WASM implementation.
 
 Build with `npm run build:sp128-wasm`. The compiler defaults to `clang`; set
 `SP128_WASM_CC` to select another C compiler. The build script uses the portable

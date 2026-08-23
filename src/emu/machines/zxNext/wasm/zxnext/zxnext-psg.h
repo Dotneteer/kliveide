@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 static void zxnextPsgReset(void);
+static void zxnextPsgBeginFrame(void);
 static void zxnextPsgSetTurbosoundEnabled(uint32_t enabled);
 static void zxnextPsgSetAyStereoMode(uint32_t enabled);
 static void zxnextPsgSetChipMonoMode(uint32_t chip, uint32_t enabled);
@@ -11,6 +12,7 @@ static void zxnextPsgSetRegisterIndex(uint32_t value);
 static void zxnextPsgWriteRegisterValue(uint32_t value);
 static uint32_t zxnextPsgReadRegisterValue(void);
 static void zxnextPsgGenerateOutput(uint32_t chip);
+static void zxnextPsgCalculateCurrentAudioValue(uint32_t frameTact28);
 static uint32_t zxnextPsgGetSelectedChip(void);
 static uint32_t zxnextPsgGetTurbosoundEnabled(void);
 static uint32_t zxnextPsgGetSelectedRegister(void);

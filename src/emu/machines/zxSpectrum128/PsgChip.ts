@@ -318,7 +318,7 @@ export class PsgChip {
 
   setPsgRegisterIndex(index: number): void {
     this._psgRegisterIndex = index & 0x1f;
-    this._active = this.chipType === "YM" || ((index >> 4) === 0);
+    this._active = this.chipType === "YM" || (this._psgRegisterIndex >> 4) === 0;
   }
 
   get psgRegisterIndex(): number {
@@ -328,6 +328,9 @@ export class PsgChip {
   readPsgRegisterValue(): number {
     if (!this._active && this.chipType === "YM") {
       return 0xff;
+    }
+    if (!this._active) {
+      return 0x00;
     }
     const index = this._psgRegisterIndex & 0x0f;
     const value = this._regValues[index];

@@ -12,7 +12,7 @@ import { BinaryWriter } from "@utils/BinaryWriter";
 import { loadSp128WasmV2 } from "./wasm/Sp128WasmV2Loader";
 import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
-import { ZxSpectrum128Machine } from "./ZxSpectrum128Machine";
+import { ZxSpectrum128WasmHost } from "./ZxSpectrum128WasmHost";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -42,7 +42,7 @@ export type Sp128WasmV2Diagnostics = {
 /**
  * Full-machine WASM v2 adapter for the ZX Spectrum 128K migration path.
  */
-export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128Machine {
+export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Sp128WasmV2Runtime;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
@@ -62,7 +62,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128Machine {
     public readonly requestedConfig?: MachineConfigSet,
     private readonly wasmV2LoaderOptions?: Sp128WasmV2LoaderOptions
   ) {
-    super();
+    super(requestedModelInfo, requestedConfig);
   }
 
   override async setup(): Promise<void> {
@@ -523,6 +523,19 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128Machine {
     this.selectedBank = wasm.sp128GetSelectedBank();
     this.pagingEnabled = wasm.sp128GetPagingEnabled() !== 0;
     this.useShadowScreen = wasm.sp128GetUseShadowScreen() !== 0;
+  }
+
+  protected readPsgExport(name: string, ...args: number[]): number | undefined {
+    const fn = this.wasmV2Runtime?.exports[`sp128${name}` as keyof Sp128WasmV2Runtime["exports"]];
+    return typeof fn === "function" ? fn(...args) : undefined;
+  }
+
+  protected writePsgIndex(index: number): void {
+    this.wasmV2Runtime?.exports.sp128SetPsgRegisterIndex(index & 0x0f);
+  }
+
+  protected writePsgValue(value: number): void {
+    this.wasmV2Runtime?.exports.sp128WritePsgRegisterValue(value & 0xff);
   }
 
   private executeWasmV2DebugStep(runtime: Sp128WasmV2Runtime): FrameTerminationMode {

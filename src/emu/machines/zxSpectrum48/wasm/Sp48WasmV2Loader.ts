@@ -56,6 +56,7 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & {
   sp48GetFirstVisibleLine: Sp48WasmV2ExportFunction;
   sp48GetFirstVisibleBorderTact: Sp48WasmV2ExportFunction;
   sp48GetContentionValue: Sp48WasmV2ExportFunction;
+  sp48SetContentionValue: Sp48WasmV2ExportFunction;
   sp48GetRenderingPhase: Sp48WasmV2ExportFunction;
   sp48GetRenderingPixelAddress: Sp48WasmV2ExportFunction;
   sp48GetRenderingAttributeAddress: Sp48WasmV2ExportFunction;
@@ -86,6 +87,7 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & {
   sp48GetCpuIy: Sp48WasmV2ExportFunction;
   sp48SetCpuIy: Sp48WasmV2ExportFunction;
   sp48GetCpuIr: Sp48WasmV2ExportFunction;
+  sp48SetCpuIr: Sp48WasmV2ExportFunction;
   sp48GetCpuWz: Sp48WasmV2ExportFunction;
   sp48GetCpuPc: Sp48WasmV2ExportFunction;
   sp48SetCpuPc: Sp48WasmV2ExportFunction;
@@ -232,6 +234,7 @@ const requiredV2Exports = [
   "sp48GetFirstVisibleLine",
   "sp48GetFirstVisibleBorderTact",
   "sp48GetContentionValue",
+  "sp48SetContentionValue",
   "sp48GetRenderingPhase",
   "sp48GetRenderingPixelAddress",
   "sp48GetRenderingAttributeAddress",
@@ -262,6 +265,7 @@ const requiredV2Exports = [
   "sp48GetCpuIy",
   "sp48SetCpuIy",
   "sp48GetCpuIr",
+  "sp48SetCpuIr",
   "sp48GetCpuWz",
   "sp48GetCpuPc",
   "sp48SetCpuPc",

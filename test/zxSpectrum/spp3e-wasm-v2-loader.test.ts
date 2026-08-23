@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 
 import { buildSpP3eWasm, productionOutput } from "../../scripts/build-spp3e-wasm.cjs";
-import { TestSpectrumP3eMachine } from "./TestSpectrumP3eMachine";
 import {
   createSpP3eWasmV2Views,
   loadSpP3eWasmV2,
@@ -417,49 +416,6 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     expect(runtime.exports.spp3eGetCpuTacts()).toBe(runtime.exports.spp3eGetTacts());
     expect(runtime.exports.spp3eFdcGetCurrentDrive()).toBe(0);
     expect(runtime.exports.spp3eFdcGetOperationPhase()).toBeGreaterThanOrEqual(0);
-  });
-
-  it("matches the TypeScript +3E screen timing and contention table tact by tact", async () => {
-    buildSpP3eWasm();
-    const runtime = await loadSpP3eWasmV2({
-      artifactName: "test-spp3e-timing-table-v2.wasm",
-      readArtifact: async () => readFileSync(productionOutput)
-    });
-    const tsMachine = new TestSpectrumP3eMachine();
-
-    runtime.exports.spp3eHardReset();
-    tsMachine.reset();
-
-    const mismatches: string[] = [];
-    for (let tact = 0; tact < tsMachine.tactsInFrame; tact++) {
-      const tsRenderingTact = tsMachine.screenDevice.renderingTactTable[tact];
-      const checks = [
-        ["phase", tsRenderingTact.phase, runtime.exports.spp3eGetRenderingPhase(tact)],
-        ["pixel", tsRenderingTact.pixelAddress, runtime.exports.spp3eGetRenderingPixelAddress(tact)],
-        [
-          "attr",
-          tsRenderingTact.attributeAddress,
-          runtime.exports.spp3eGetRenderingAttributeAddress(tact)
-        ],
-        ["pixelIndex", tsRenderingTact.pixelBufferIndex, runtime.exports.spp3eGetRenderingPixelIndex(tact)],
-        ["contention", tsMachine.getContentionValue(tact), runtime.exports.spp3eGetContentionValue(tact)]
-      ] as const;
-
-      for (const [name, expected, actual] of checks) {
-        if (actual !== expected) {
-          mismatches.push(`${tact} ${name}: ts=${expected} wasm=${actual}`);
-          break;
-        }
-      }
-      if (mismatches.length >= 20) {
-        break;
-      }
-    }
-
-    expect(runtime.exports.spp3eGetTactsInFrame()).toBe(tsMachine.tactsInFrame);
-    expect(runtime.exports.spp3eGetScreenWidth()).toBe(tsMachine.screenWidthInPixels);
-    expect(runtime.exports.spp3eGetScreenHeight()).toBe(tsMachine.screenHeightInPixels);
-    expect(mismatches).toEqual([]);
   });
 
   it("updates the keyboard matrix and reads selected rows from port 0xfe", async () => {
@@ -953,7 +909,7 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     expect(runtime.exports.spp3eFdcGetOperationPhase()).toBe(0);
   });
 
-  it("matches TypeScript FDC Sense Drive results for absent and empty drive B", async () => {
+  it("returns FDC Sense Drive results for absent and empty drive B", async () => {
     buildSpP3eWasm();
     const runtime = await loadSpP3eWasmV2({
       artifactName: "test-spp3e-fdc-sense-drive-count-v2.wasm",

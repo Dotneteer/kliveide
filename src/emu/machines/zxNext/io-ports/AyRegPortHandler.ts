@@ -11,8 +11,7 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
  *   - Bits 4:0: Register index (0-15 for AY-3-8912)
  */
 export function readAyRegPort(machine: IZxNextMachine, ulaPort: number): number {
-  // Reading from register select port returns 0xff (write-only for our implementation)
-  return 0xff;
+  return machine.audioControlDevice.getTurboSoundDevice().readSelectedRegister();
 }
 
 export function writeAyRegPort(machine: IZxNextMachine, value: number): void {

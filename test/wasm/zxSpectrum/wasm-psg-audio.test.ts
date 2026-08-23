@@ -3,15 +3,11 @@ import { describe, expect, it } from "vitest";
 import { AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
 
 import {
-  createOracleSp128Machine,
-  createOracleSpp3eMachine,
   createTestSp128WasmMachine,
   createTestSp48WasmMachine,
   createTestSpp3eWasmMachine,
   expectNormalizedSamples,
   testRom,
-  type TestOracleSp128Machine,
-  type TestOracleSpp3eMachine,
   type TestSp128WasmMachine,
   type TestSp48WasmMachine,
   type TestSpp3eWasmMachine
@@ -19,16 +15,14 @@ import {
 
 type Prefix = "sp128" | "spp3e";
 type PsgWasmMachine = TestSp128WasmMachine | TestSpp3eWasmMachine;
-type PsgOracleMachine = TestOracleSp128Machine | TestOracleSpp3eMachine;
 
 type PsgCase = {
   name: string;
   prefix: Prefix;
   createWasmMachine: () => Promise<PsgWasmMachine>;
-  createOracleMachine: () => Promise<PsgOracleMachine>;
 };
 
-describe("ZX Spectrum WASM PSG register and audio parity", () => {
+describe("ZX Spectrum WASM PSG register and audio", () => {
   it("48K keeps PSG ports on the 48K fallback contract", async () => {
     const machine = await createTestSp48WasmMachine(testRom([]));
 
@@ -41,25 +35,18 @@ describe("ZX Spectrum WASM PSG register and audio parity", () => {
   });
 
   for (const testCase of psgCases()) {
-    it(`${testCase.name} resets PSG registers and selected index like TypeScript`, async () => {
+    it(`${testCase.name} resets PSG registers and selected index`, async () => {
       const wasmMachine = await testCase.createWasmMachine();
-      const oracleMachine = await testCase.createOracleMachine();
 
-      expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgRegisterIndex`)()).toBe(
-        oracleMachine.psgDevice.getPsgState().psgRegisterIndex
-      );
+      expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgRegisterIndex`)()).toBe(0);
       for (const register of [0, 1, 6, 8, 13]) {
-        expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgRegisterValue`)(register), `R${register}`).toBe(
-          oracleMachine.psgDevice.getPsgState().regValues[register]
-        );
+        expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgRegisterValue`)(register), `R${register}`).toBe(0);
       }
       expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgRegisterValue`)(7)).toBe(0x00);
-      expect(oracleMachine.psgDevice.getPsgState().regValues[7]).toBe(0xff);
     });
 
     it(`${testCase.name} applies register index and read masks`, async () => {
       const wasmMachine = await testCase.createWasmMachine();
-      const oracleMachine = await testCase.createOracleMachine();
 
       for (const [register, value, masked] of [
         [1, 0xff, 0x0f],
@@ -67,54 +54,35 @@ describe("ZX Spectrum WASM PSG register and audio parity", () => {
         [8, 0xff, 0x1f],
         [13, 0xff, 0x0f]
       ] as const) {
-        setPsgRegister(wasmMachine, oracleMachine, testCase.prefix, register, value);
+        setPsgRegister(wasmMachine, testCase.prefix, register, value);
 
         expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgRegisterIndex`)()).toBe(register);
-        expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgRegisterValue`)(register)).toBe(
-          oracleMachine.psgDevice.getPsgState().regValues[register]
-        );
+        expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgRegisterValue`)(register)).toBe(value);
         expect(callWasmExport(wasmMachine, `${testCase.prefix}ReadPsgRegisterValue`)()).toBe(masked);
-        expect(oracleMachine.psgDevice.readPsgRegisterValue()).toBe(masked);
       }
     });
 
-    it(`${testCase.name} decodes PSG index/data ports like TypeScript`, async () => {
+    it(`${testCase.name} decodes PSG index/data ports`, async () => {
       const wasmMachine = await testCase.createWasmMachine();
-      const oracleMachine = await testCase.createOracleMachine();
 
       wasmMachine.writeTestPort(0xfffd, 0x18);
-      oracleMachine.writeTestPort(0xfffd, 0x18);
-      expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgRegisterIndex`)()).toBe(
-        oracleMachine.psgDevice.getPsgState().psgRegisterIndex
-      );
+      expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgRegisterIndex`)()).toBe(0x08);
 
       wasmMachine.writeTestPort(0xbffd, 0x07);
-      oracleMachine.writeTestPort(0xbffd, 0x07);
 
-      expect(wasmMachine.readTestPort(0xfffd)).toBe(oracleMachine.readTestPort(0xfffd));
       expect(wasmMachine.readTestPort(0xfffd)).toBe(0x07);
     });
 
     it(`${testCase.name} updates tone period, mixer, and volume state`, async () => {
       const wasmMachine = await testCase.createWasmMachine();
-      const oracleMachine = await testCase.createOracleMachine();
 
-      setPsgRegister(wasmMachine, oracleMachine, testCase.prefix, 0, 0x34);
-      setPsgRegister(wasmMachine, oracleMachine, testCase.prefix, 1, 0x12);
-      setPsgRegister(wasmMachine, oracleMachine, testCase.prefix, 7, 0x3e);
-      setPsgRegister(wasmMachine, oracleMachine, testCase.prefix, 8, 0x1f);
+      setPsgRegister(wasmMachine, testCase.prefix, 0, 0x34);
+      setPsgRegister(wasmMachine, testCase.prefix, 1, 0x12);
+      setPsgRegister(wasmMachine, testCase.prefix, 7, 0x3e);
+      setPsgRegister(wasmMachine, testCase.prefix, 8, 0x1f);
 
-      expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgToneA`)()).toBe(
-        oracleMachine.psgDevice.getPsgState().toneA
-      );
       expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgToneA`)()).toBe(0x0234);
-      expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgVolumeA`)()).toBe(
-        oracleMachine.psgDevice.getPsgState().volA
-      );
       expect(callWasmExport(wasmMachine, `${testCase.prefix}GetPsgVolumeA`)()).toBe(0x0f);
-      expect(oracleMachine.psgDevice.getPsgState().toneAEnabled).toBe(true);
-      expect(oracleMachine.psgDevice.getPsgState().toneBEnabled).toBe(false);
-      expect(oracleMachine.psgDevice.getPsgState().toneCEnabled).toBe(false);
     });
 
     it(`${testCase.name} generates normalized tone audio and reacts to mixer disable`, async () => {
@@ -138,9 +106,9 @@ describe("ZX Spectrum WASM PSG register and audio parity", () => {
       const machine = await testCase.createWasmMachine();
 
       const energy = capturePsgEnergy(machine, testCase.prefix, () => {
-        setPsgRegister(machine, undefined, testCase.prefix, 6, 0x00);
-        setPsgRegister(machine, undefined, testCase.prefix, 7, 0x37);
-        setPsgRegister(machine, undefined, testCase.prefix, 8, 0x0f);
+        setPsgRegister(machine, testCase.prefix, 6, 0x00);
+        setPsgRegister(machine, testCase.prefix, 7, 0x37);
+        setPsgRegister(machine, testCase.prefix, 8, 0x0f);
       }, 44100);
 
       const samples = rawAudioSamples(machine, testCase.prefix);
@@ -154,12 +122,12 @@ describe("ZX Spectrum WASM PSG register and audio parity", () => {
       const machine = await testCase.createWasmMachine();
 
       const energy = capturePsgEnergy(machine, testCase.prefix, () => {
-        setPsgRegister(machine, undefined, testCase.prefix, 0, 0x04);
-        setPsgRegister(machine, undefined, testCase.prefix, 7, 0x3e);
-        setPsgRegister(machine, undefined, testCase.prefix, 8, 0x10);
-        setPsgRegister(machine, undefined, testCase.prefix, 11, 0x02);
-        setPsgRegister(machine, undefined, testCase.prefix, 12, 0x00);
-        setPsgRegister(machine, undefined, testCase.prefix, 13, 0x0e);
+        setPsgRegister(machine, testCase.prefix, 0, 0x04);
+        setPsgRegister(machine, testCase.prefix, 7, 0x3e);
+        setPsgRegister(machine, testCase.prefix, 8, 0x10);
+        setPsgRegister(machine, testCase.prefix, 11, 0x02);
+        setPsgRegister(machine, testCase.prefix, 12, 0x00);
+        setPsgRegister(machine, testCase.prefix, 13, 0x0e);
       }, 44100);
 
       expect(energy).toBeGreaterThan(0);
@@ -195,7 +163,7 @@ describe("ZX Spectrum WASM PSG register and audio parity", () => {
       machine.setMachineProperty(AUDIO_SAMPLE_RATE, 1000);
       configureToneA(machine, testCase.prefix, 4, 0x3e, 0x02);
       machine.setAbsoluteTacts(Math.floor(machine.tactsInFrame / 2));
-      setPsgRegister(machine, undefined, testCase.prefix, 8, 0x0f);
+      setPsgRegister(machine, testCase.prefix, 8, 0x0f);
       machine.executeMachineFrame();
 
       const samples = rawAudioSamples(machine, testCase.prefix);
@@ -214,12 +182,12 @@ describe("ZX Spectrum WASM PSG register and audio parity", () => {
   it("+3E exposes B and C tone/volume debug state", async () => {
     const machine = await createTestSpp3eWasmMachine();
 
-    setPsgRegister(machine, undefined, "spp3e", 2, 0x20);
-    setPsgRegister(machine, undefined, "spp3e", 3, 0x01);
-    setPsgRegister(machine, undefined, "spp3e", 4, 0x30);
-    setPsgRegister(machine, undefined, "spp3e", 5, 0x02);
-    setPsgRegister(machine, undefined, "spp3e", 9, 0x1e);
-    setPsgRegister(machine, undefined, "spp3e", 10, 0x1d);
+    setPsgRegister(machine, "spp3e", 2, 0x20);
+    setPsgRegister(machine, "spp3e", 3, 0x01);
+    setPsgRegister(machine, "spp3e", 4, 0x30);
+    setPsgRegister(machine, "spp3e", 5, 0x02);
+    setPsgRegister(machine, "spp3e", 9, 0x1e);
+    setPsgRegister(machine, "spp3e", 10, 0x1d);
 
     expect(callWasmExport(machine, "spp3eGetPsgToneB")()).toBe(0x0120);
     expect(callWasmExport(machine, "spp3eGetPsgToneC")()).toBe(0x0230);
@@ -233,29 +201,24 @@ function psgCases(): PsgCase[] {
     {
       name: "ZX Spectrum 128K",
       prefix: "sp128",
-      createWasmMachine: () => createTestSp128WasmMachine(testRom([]), testRom([])),
-      createOracleMachine: () => createOracleSp128Machine(testRom([]), testRom([]))
+      createWasmMachine: () => createTestSp128WasmMachine(testRom([]), testRom([]))
     },
     {
       name: "ZX Spectrum +3E",
       prefix: "spp3e",
-      createWasmMachine: () => createTestSpp3eWasmMachine([testRom([]), testRom([]), testRom([]), testRom([])]),
-      createOracleMachine: () => createOracleSpp3eMachine([testRom([]), testRom([]), testRom([]), testRom([])])
+      createWasmMachine: () => createTestSpp3eWasmMachine([testRom([]), testRom([]), testRom([]), testRom([])])
     }
   ];
 }
 
 function setPsgRegister(
   wasmMachine: PsgWasmMachine,
-  oracleMachine: PsgOracleMachine | undefined,
   prefix: Prefix,
   register: number,
   value: number
 ): void {
   callWasmExport(wasmMachine, `${prefix}SetPsgRegisterIndex`)(register);
   callWasmExport(wasmMachine, `${prefix}WritePsgRegisterValue`)(value);
-  oracleMachine?.psgDevice.setPsgRegisterIndex(register);
-  oracleMachine?.psgDevice.writePsgRegisterValue(value);
 }
 
 function configureToneA(
@@ -265,10 +228,10 @@ function configureToneA(
   mixer: number,
   volume: number
 ): void {
-  setPsgRegister(machine, undefined, prefix, 0, period & 0xff);
-  setPsgRegister(machine, undefined, prefix, 1, (period >> 8) & 0x0f);
-  setPsgRegister(machine, undefined, prefix, 7, mixer);
-  setPsgRegister(machine, undefined, prefix, 8, volume);
+  setPsgRegister(machine, prefix, 0, period & 0xff);
+  setPsgRegister(machine, prefix, 1, (period >> 8) & 0x0f);
+  setPsgRegister(machine, prefix, 7, mixer);
+  setPsgRegister(machine, prefix, 8, volume);
 }
 
 function capturePsgEnergy(

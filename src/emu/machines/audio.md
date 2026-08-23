@@ -1,11 +1,14 @@
 # Audio Generation Testing Status
 
 ## Current State
-**No unit tests exist** for core audio generation components:
-- `AudioDeviceBase` - untested
-- `SpectrumBeeperDevice` - untested  
-- `ZxSpectrum128PsgDevice` - untested
-- `PsgChip` - untested
+Core audio components have dedicated unit coverage:
+- `AudioDeviceBase`
+- `SpectrumBeeperDevice`
+- `PsgChip`
+
+Classic ZX Spectrum PSG device integration now lives in the WASM machine
+implementations. The TypeScript `PsgChip` remains covered directly and is still
+used by the ZX Spectrum Next TypeScript implementation.
 
 ## Test Gaps
 
@@ -61,7 +64,7 @@
 
 ### Integration Tests
 ```typescript
-- ZxSpectrum128Machine.getAudioSamples() mixing
+- WASM-backed Spectrum audio sample generation
 - Full frame generation at 44.1kHz
 - Beeper + PSG simultaneous output
 ```
@@ -100,7 +103,7 @@ Location: `test/audio/BeeperDevice.test.ts`
 - Inheritance: AudioDeviceBase method chain
 - Realistic Scenarios: Beep effects, audio modulation simulation
 
-### PsgChip & ZxSpectrum128PsgDevice Tests ✓ (41 tests passing)
+### PsgChip Tests ✓
 Location: `test/audio/PsgDevice.test.ts`
 
 **Coverage (PsgChip):**
@@ -113,20 +116,10 @@ Location: `test/audio/PsgDevice.test.ts`
 - Audio Output: Zero/non-zero output, accumulation, multi-channel mixing
 - Reset Behavior: State reset, orphan sample clearing
 
-**Coverage (ZxSpectrum128PsgDevice):**
-- Register Forwarding: Pass-through to PsgChip
-- PSG State Query: getPsgState() functionality
-- Clock Division: 16-tact PSG clock intervals
-- Output Accumulation: Multiple clock ticks
-- Orphan Sample Averaging: Normalization, reset after averaging
-- Frame Boundary: PSG clock adjustment
-- Full Frame Generation: Multiple frames with different tones
-- Reset/State Management: Complete device reset, rapid register changes
-
 ## Test Statistics
-- **Total Tests**: 91 passing ✓
+- **Total Tests**: See the current jsdom audio test run
 - **Test Files**: 3
-- **Coverage**: AudioDeviceBase + SpectrumBeeperDevice + PSG (Chip + Device)
+- **Coverage**: AudioDeviceBase + SpectrumBeeperDevice + PsgChip
 
 Run all audio tests: `npm test -- test/audio/`
 

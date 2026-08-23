@@ -7,7 +7,6 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { FAST_LOAD, REWIND_REQUESTED, TAPE_MODE } from "@emu/machines/machine-props";
-import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
 import { describe, expect, it } from "vitest";
 
@@ -215,62 +214,6 @@ describe("ZX Spectrum 128K WASM v2 machine adapter", () => {
     expect(diagnostics.tapeLoaded).toBe(true);
   });
 
-  it("matches TypeScript 128K representative paging and port behavior", async () => {
-    buildSp128Wasm();
-    const wasmMachine = new TestWasmV2Machine(testRom([0x10]), testRom([0x11]));
-    const tsMachine = new ZxSpectrum128Machine();
-
-    await wasmMachine.setup();
-    tsMachine.reset();
-    tsMachine.uploadRomBytes(-1, testRom([0x10]));
-    tsMachine.uploadRomBytes(-2, testRom([0x11]));
-
-    for (const machine of [wasmMachine, tsMachine]) {
-      machine.doWriteMemory(0x4000, 0x55);
-      machine.doWriteMemory(0xc000, 0x99);
-      machine.doWritePort(0x7ffd, 0x1b);
-      machine.doWriteMemory(0xc000, 0x33);
-    }
-
-    expect(wasmMachine.getCurrentPartitions()).toEqual(tsMachine.getCurrentPartitions());
-    expect(wasmMachine.getSelectedRamBank()).toBe(tsMachine.getSelectedRamBank());
-    expect(wasmMachine.getSelectedRomPage()).toBe(tsMachine.getSelectedRomPage());
-    expect(wasmMachine.doReadMemory(0x0000)).toBe(tsMachine.doReadMemory(0x0000));
-    expect(wasmMachine.doReadMemory(0x4000)).toBe(tsMachine.doReadMemory(0x4000));
-    expect(wasmMachine.doReadMemory(0xc000)).toBe(tsMachine.doReadMemory(0xc000));
-    expect(wasmMachine.readScreenMemory(0)).toBe(tsMachine.readScreenMemory(0));
-    expect(wasmMachine.doReadPort(0x001f)).toBe(0xff);
-    expect(tsMachine.doReadPort(0x001f)).toBe(0xff);
-  });
-
-  it("returns open bus at the RAMSOFT floatspy boundary tacts", async () => {
-    buildSp128Wasm();
-    const wasmMachine = new TestWasmV2Machine(testRom([]));
-    const tsMachine = new ZxSpectrum128Machine();
-
-    await wasmMachine.setup();
-    tsMachine.reset();
-    const wasm = wasmMachine.wasmV2Runtime!.exports;
-
-    wasmMachine.doWriteMemory(0x4000, 0x5a);
-    wasmMachine.doWriteMemory(0x5800, 0x2c);
-    tsMachine.writeMemory(0x4000, 0x5a);
-    tsMachine.writeMemory(0x5800, 0x2c);
-
-    const compareFloatingBus = (tact: number): void => {
-      wasmMachine.setTacts(tact);
-      tsMachine.setTacts(tact);
-      tsMachine.frameTacts = tact % tsMachine.tactsInFrame;
-      tsMachine.currentFrameTact = tsMachine.frameTacts;
-
-      expect(wasm.sp128ReadFloatingBus()).toBe(tsMachine.floatingBusDevice.readFloatingBus());
-    };
-
-    compareFloatingBus(14362);
-    compareFloatingBus(14363);
-    compareFloatingBus(14368);
-    compareFloatingBus(14369);
-  });
 });
 
 function testRom(bytes: number[]): Uint8Array {

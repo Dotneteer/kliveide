@@ -48,6 +48,8 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     lastPortValue = zxnextI2cReadSdaPort();
   } else if ((normalized & 0xffffu) == 0x123bu) {
     lastPortValue = zxnextPortsGroupEnabled(1, 7) ? zxnextLayer2GetPort123B() : 0xffu;
+  } else if ((normalized & 0xffffu) == 0x303bu) {
+    lastPortValue = zxnextPortsGroupEnabled(1, 6) ? zxnextSpritesReadPort303b() : 0xffu;
   } else if ((normalized & 0xf8ffu) == 0x183bu) {
     lastPortValue = zxnextCtcReadPort(normalized);
   } else if ((normalized & 0x00ffu) == 0x006bu) {
@@ -66,6 +68,18 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     lastPortValue = zxnextPortsGroupEnabled(1, 0) ? zxnextDivMmcGetPortE3() : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ebu) {
     lastPortValue = zxnextPortsGroupEnabled(1, 3) ? zxnextSdReadMmcData() : 0xffu;
+  } else if ((normalized & 0xc00fu) == 0x8005u) {
+    if (zxnextPortsGroupEnabled(2, 0)) {
+      uint32_t chip = zxnextPsgGetSelectedChip();
+      uint32_t ayId = chip == 0u ? 3u : (chip == 1u ? 2u : 1u);
+      lastPortValue = (uint8_t)((ayId << 6u) | (zxnextPsgGetSelectedRegister() & 0x1fu));
+    } else {
+      lastPortValue = 0xffu;
+    }
+  } else if ((normalized & 0xc007u) == 0xc005u) {
+    lastPortValue = zxnextPortsGroupEnabled(2, 0) ? zxnextPsgReadRegisterValue() : 0xffu;
+  } else if ((normalized & 0xc007u) == 0x8005u) {
+    lastPortValue = zxnextPortsGroupEnabled(2, 0) ? zxnextPsgReadRegisterValue() : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ffu) {
     lastPortValue = zxnextPortsGroupEnabled(0, 0) ? portTimexValue : 0xffu;
   } else if ((normalized & 0x0001u) == 0) {
@@ -100,6 +114,12 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     zxnextI2cWriteSdaPort(byteValue);
   } else if ((normalized & 0xffffu) == 0x123bu) {
     if (zxnextPortsGroupEnabled(1, 7)) zxnextLayer2SetPort123B(byteValue);
+  } else if ((normalized & 0xffffu) == 0x303bu) {
+    if (zxnextPortsGroupEnabled(1, 6)) zxnextSpritesWritePort303b(byteValue);
+  } else if ((normalized & 0x00ffu) == 0x0057u) {
+    if (zxnextPortsGroupEnabled(1, 6)) zxnextSpritesWritePort57(byteValue);
+  } else if ((normalized & 0x00ffu) == 0x005bu) {
+    if (zxnextPortsGroupEnabled(1, 6)) zxnextSpritesWritePort5b(byteValue);
   } else if ((normalized & 0xf8ffu) == 0x183bu) {
     zxnextCtcWritePort(normalized, byteValue);
   } else if ((normalized & 0x00ffu) == 0x006bu) {
@@ -126,8 +146,8 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     zxnextUlaWritePortFe(byteValue);
     zxnextBeeperSetOutput((byteValue & 0x10u) != 0u, (byteValue & 0x08u) != 0u);
   } else if ((normalized & 0xc002u) == 0xc000u) {
-    zxnextPsgSetRegisterIndex(byteValue);
+    if (zxnextPortsGroupEnabled(2, 0)) zxnextPsgSetRegisterIndex(byteValue);
   } else if ((normalized & 0xc002u) == 0x8000u) {
-    zxnextPsgWriteRegisterValue(byteValue);
+    if (zxnextPortsGroupEnabled(2, 0)) zxnextPsgWriteRegisterValue(byteValue);
   }
 }

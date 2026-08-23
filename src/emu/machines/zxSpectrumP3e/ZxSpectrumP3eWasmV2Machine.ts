@@ -26,7 +26,7 @@ import { loadSpP3eWasmV2 } from "./wasm/SpP3eWasmV2Loader";
 import { readDiskData } from "../disk/disk-readers";
 import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
-import { ZxSpectrumP3EMachine } from "./ZxSpectrumP3eMachine";
+import { ZxSpectrumP3eWasmHost, mergeZxSpectrumP3eConfig } from "./ZxSpectrumP3eWasmHost";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -65,7 +65,7 @@ export type SpP3eWasmV2Diagnostics = {
 /**
  * Full-machine WASM v2 adapter for the ZX Spectrum +2E/+3E migration path.
  */
-export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
+export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: SpP3eWasmV2Runtime;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
@@ -342,7 +342,10 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
   override async setup(): Promise<void> {
     this.wasmV2Runtime = await loadSpP3eWasmV2(this.wasmV2LoaderOptions);
     this.hardResetWasmV2(this.wasmV2Runtime);
-    await super.setup();
+    this.uploadRomBytes(-1, await this.loadRomFromResource(this.romId, 0));
+    this.uploadRomBytes(-2, await this.loadRomFromResource(this.romId, 1));
+    this.uploadRomBytes(-3, await this.loadRomFromResource(this.romId, 2));
+    this.uploadRomBytes(-4, await this.loadRomFromResource(this.romId, 3));
     this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
     this.syncTapeStateToWasmV2(this.wasmV2Runtime);
     this.syncDiskStateToWasmV2(this.wasmV2Runtime);
@@ -353,6 +356,7 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
     super.hardReset();
     if (this.wasmV2Runtime != null) {
       this.hardResetWasmV2(this.wasmV2Runtime);
+      this.replayUploadedRomPages((partition, data) => this.uploadRomBytes(partition, data));
       this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
       this.syncTapeStateToWasmV2(this.wasmV2Runtime);
       this.syncDiskStateToWasmV2(this.wasmV2Runtime);
@@ -1063,6 +1067,19 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3EMachine {
     this.inSpecialPagingMode = wasm.spp3eGetInSpecialPagingMode() !== 0;
     this.specialConfigMode = wasm.spp3eGetSpecialConfigMode();
     this.diskMotorOn = wasm.spp3eGetDiskMotorOn() !== 0;
+  }
+
+  protected readPsgExport(name: string, ...args: number[]): number | undefined {
+    const fn = this.wasmV2Runtime?.exports[`spp3e${name}` as keyof SpP3eWasmV2Runtime["exports"]];
+    return typeof fn === "function" ? fn(...args) : undefined;
+  }
+
+  protected writePsgIndex(index: number): void {
+    this.wasmV2Runtime?.exports.spp3eSetPsgRegisterIndex(index & 0x0f);
+  }
+
+  protected writePsgValue(value: number): void {
+    this.wasmV2Runtime?.exports.spp3eWritePsgRegisterValue(value & 0xff);
   }
 
   private executeWasmV2DebugStep(runtime: SpP3eWasmV2Runtime): FrameTerminationMode {

@@ -20,19 +20,19 @@ import { loadSpP3eWasmV2 } from "@emu/machines/zxSpectrumP3e/wasm/SpP3eWasmV2Loa
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { readDiskData } from "@emu/machines/disk/disk-readers";
-import { SPP3E_IMPLEMENTATION } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eImplementation";
 import { describe, expect, it } from "vitest";
 import { ZxSpectrumP3eWasmV2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eWasmV2Machine";
 
 class TestWasmV2Machine extends ZxSpectrumP3eWasmV2Machine {
   constructor(private readonly romPages: Uint8Array[]) {
-    super(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    }, {
-      artifactName: "test-spp3e-machine-lifecycle-v2.wasm",
-      readArtifact: async () => readFileSync(productionOutput)
-    });
+    super(
+      undefined,
+      { [MC_DISK_SUPPORT]: 2 },
+      {
+        artifactName: "test-spp3e-machine-lifecycle-v2.wasm",
+        readArtifact: async () => readFileSync(productionOutput)
+      }
+    );
   }
 
   protected override async loadRomFromResource(_romName: string, page = 0): Promise<Uint8Array> {
@@ -41,16 +41,13 @@ class TestWasmV2Machine extends ZxSpectrumP3eWasmV2Machine {
 }
 
 describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
-  it("uses the WASM normal frame path while leaving debug frames on the TypeScript runner", async () => {
+  it("uses the WASM normal frame path while debug frames stay single-step controlled", async () => {
     buildSpP3eWasm();
     const runtime = await loadSpP3eWasmV2({
       artifactName: "test-spp3e-machine-frame-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
     machine.wasmV2Runtime = runtime;
     machine.hardReset();
 
@@ -77,10 +74,7 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
       artifactName: "test-spp3e-machine-screen-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
     machine.wasmV2Runtime = runtime;
     machine.hardReset();
 
@@ -114,10 +108,7 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
       artifactName: "test-spp3e-machine-os-initialized-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
     machine.wasmV2Runtime = runtime;
     machine.hardReset();
 
@@ -134,10 +125,7 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
       artifactName: "test-spp3e-machine-disk-sync-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
     machine.wasmV2Runtime = runtime;
     machine.hardReset();
 
@@ -170,10 +158,7 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
       artifactName: "test-spp3e-machine-disk-pre-runtime-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
     const diskA = new Uint8Array(readFileSync("test/testfiles/blank180K.dsk"));
     const normalizedDisk = getFirstNormalizedSector(diskA);
 
@@ -194,10 +179,7 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
       artifactName: "test-spp3e-machine-disk-reset-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
     machine.wasmV2Runtime = runtime;
     machine.hardReset();
 
@@ -221,10 +203,7 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
       artifactName: "test-spp3e-machine-real-dsk-read-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
     machine.wasmV2Runtime = runtime;
     machine.hardReset();
 
@@ -266,10 +245,7 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
       artifactName: "test-spp3e-machine-disk-changes-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
     machine.wasmV2Runtime = runtime;
     machine.hardReset();
 
@@ -311,10 +287,7 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
       artifactName: "test-spp3e-machine-keyboard-sync-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
     machine.wasmV2Runtime = runtime;
     machine.hardReset();
 
@@ -338,10 +311,7 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
       artifactName: "test-spp3e-machine-audio-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
     machine.wasmV2Runtime = runtime;
     machine.hardReset();
 
@@ -365,10 +335,7 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
       artifactName: "test-spp3e-machine-tape-sync-v2.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, {
-      [SPP3E_IMPLEMENTATION]: "wasm",
-      [MC_DISK_SUPPORT]: 2
-    });
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
     machine.wasmV2Runtime = runtime;
     machine.hardReset();
 

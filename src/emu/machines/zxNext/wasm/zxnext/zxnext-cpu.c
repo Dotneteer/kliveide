@@ -1,6 +1,7 @@
 #include "zxnext-cpu.h"
 #include "zxnext-trace.h"
 #include "zxnext-ula.h"
+#include "zxnext-psg.h"
 
 static uint32_t zxnextSharedCpuExecutedInstructions;
 
@@ -247,6 +248,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   if (z80GetRetExecuted()) {
     z80SetRetExecuted(0);
   }
+  zxnextPsgCalculateCurrentAudioValue(frameTacts28);
   zxnextTraceRecordInstruction(pcBefore);
   return zxnextSharedCpuExecutedInstructions;
 }

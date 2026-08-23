@@ -14,7 +14,7 @@ import { BinaryWriter } from "@utils/BinaryWriter";
 import { loadSp48WasmV2 } from "./wasm/Sp48WasmV2Loader";
 import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
-import { ZxSpectrum48Machine } from "./ZxSpectrum48Machine";
+import { ZxSpectrum48WasmHost } from "./ZxSpectrum48WasmHost";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -50,7 +50,7 @@ export type Sp48WasmV2Diagnostics = {
  * pixels, and audio, while later migration phases fill in the complete IDE
  * debugger/tape compatibility surface.
  */
-export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48Machine {
+export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Sp48WasmV2Runtime;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
