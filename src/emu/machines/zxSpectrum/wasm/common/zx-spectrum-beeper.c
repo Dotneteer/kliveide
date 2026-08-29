@@ -10,7 +10,7 @@
 #endif
 
 #ifndef SP48_AUDIO_BEFORE_SAMPLE
-#define SP48_AUDIO_BEFORE_SAMPLE() ((void)0)
+#define SP48_AUDIO_BEFORE_SAMPLE(sampleEndTact) ((void)0)
 #endif
 
 #define SP48_AUDIO_DC_CUTOFF_HZ 1.4
@@ -178,7 +178,7 @@ static void setNextAudioSample(void) {
   double rawLeft;
   double rawRight;
 
-  SP48_AUDIO_BEFORE_SAMPLE();
+  SP48_AUDIO_BEFORE_SAMPLE(sp48AudioNextSampleTact);
   getExactWindowAudioSample(sp48AudioNextSampleTact, &rawLeft, &rawRight);
 
   const double alpha = audioDcFilterAlpha();

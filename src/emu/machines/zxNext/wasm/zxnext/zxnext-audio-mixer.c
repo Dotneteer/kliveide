@@ -136,7 +136,7 @@ static uint32_t zxnextAudioMixerAppendCurrentSample(void) {
   return 1u;
 }
 
-static void zxnextAudioMixerRefreshCurrentSources(double sampleEndTact) {
+static void zxnextAudioMixerRefreshCurrentSources(double sampleEndTact, double sampleEndFrameTacts28) {
   int32_t ear = zxnextAudioMixerFilterBeeperMilli(
     (int32_t)zxnextBeeperGetSampleLeftMilli(sampleEndTact),
     &zxnextMixerBeeperDcPrevInputEarMilli,
@@ -147,19 +147,11 @@ static void zxnextAudioMixerRefreshCurrentSources(double sampleEndTact) {
     &zxnextMixerBeeperDcPrevInputMicMilli,
     &zxnextMixerBeeperDcPrevOutputMicMilli
   );
-  uint32_t psgLeft = 0u;
-  uint32_t psgRight = 0u;
-
-  for (uint32_t chip = 0u; chip < 3u; chip++) {
-    if (zxnextPsgGetTurbosoundEnabled() || chip == zxnextPsgGetSelectedChip()) {
-      psgLeft += zxnextPsgGetStereoLeft(chip);
-      psgRight += zxnextPsgGetStereoRight(chip);
-    }
-  }
+  zxnextPsgPrepareAudioSample(sampleEndFrameTacts28);
 
   zxnextAudioMixerSetEarLevelMilli(ear);
   zxnextAudioMixerSetMicLevelMilli(mic);
-  zxnextAudioMixerSetPsgOutput(psgLeft, psgRight);
+  zxnextAudioMixerSetPsgOutput(zxnextPsgGetSampleLeft(), zxnextPsgGetSampleRight());
 }
 
 static void zxnextAudioMixerSetNextSample(uint32_t frameTacts28) {
@@ -168,7 +160,7 @@ static void zxnextAudioMixerSetNextSample(uint32_t frameTacts28) {
     const double tactScale = cpuTactScale == 0u ? 1.0 : (double)cpuTactScale;
     const double sampleEndFrameTacts28 = (double)zxnextMixerNextSampleTactScaled / (double)zxnextAudioSampleRate;
     const double sampleEndTact = zxnextBeeperFrameStartTact + sampleEndFrameTacts28 / tactScale;
-    zxnextAudioMixerRefreshCurrentSources(sampleEndTact);
+    zxnextAudioMixerRefreshCurrentSources(sampleEndTact, sampleEndFrameTacts28);
     if (!zxnextAudioMixerAppendCurrentSample()) return;
     zxnextMixerNextSampleTactScaled += (uint64_t)ZXNEXT_AUDIO_BASE_CLOCK;
   }

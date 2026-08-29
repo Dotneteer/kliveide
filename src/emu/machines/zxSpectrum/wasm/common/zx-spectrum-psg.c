@@ -60,8 +60,10 @@ static uint32_t sp128PsgNoiseRng;
 static uint8_t sp128PsgVolEnabled[3];
 static uint32_t sp128PsgNextClockTact;
 static double sp128PsgStreamOutput[3];
+static double sp128PsgCurrentRoutedOutput;
 static double sp128PsgAccumulatedOutput;
-static uint32_t sp128PsgAccumulatedSamples;
+static double sp128PsgAccumulatedTacts;
+static double sp128PsgLastAccumulationTact;
 static double sp128PsgAudioSampleLevel;
 static int32_t sp128PsgCurrentOutput;
 static uint8_t sp128PsgMixerTablesInitialized;
@@ -171,8 +173,10 @@ static void resetPsg(void) {
   sp128PsgNoisePrescale = 0u;
   sp128PsgNoiseRng = 1u;
   sp128PsgNextClockTact = sp128Tacts + SP128_PSG_CLOCK_STEP;
+  sp128PsgCurrentRoutedOutput = 0.0;
   sp128PsgAccumulatedOutput = 0.0;
-  sp128PsgAccumulatedSamples = 0u;
+  sp128PsgAccumulatedTacts = 0.0;
+  sp128PsgLastAccumulationTact = (double)sp128Tacts;
   sp128PsgAudioSampleLevel = 0.0;
   sp128PsgCurrentOutput = 0;
 }
@@ -301,23 +305,34 @@ static void sp128PsgGenerateStreamSample(void) {
     routedOutput += sp128PsgStreamOutput[channel] * SP128_PSG_ROUTE_GAIN;
   }
   sp128PsgCurrentOutput = diagnosticOutput;
-  sp128PsgAccumulatedOutput += routedOutput;
-  sp128PsgAccumulatedSamples++;
+  sp128PsgCurrentRoutedOutput = routedOutput;
 }
 
-static void sp128PsgAdvanceToTact(uint32_t tact) {
-  while (sp128PsgNextClockTact <= tact) {
+static void sp128PsgAccumulateCurrentOutputUntil(double tact) {
+  if (tact <= sp128PsgLastAccumulationTact) {
+    return;
+  }
+  const double duration = tact - sp128PsgLastAccumulationTact;
+  sp128PsgAccumulatedOutput += sp128PsgCurrentRoutedOutput * duration;
+  sp128PsgAccumulatedTacts += duration;
+  sp128PsgLastAccumulationTact = tact;
+}
+
+static void sp128PsgAdvanceToTact(double tact) {
+  while ((double)sp128PsgNextClockTact <= tact) {
+    sp128PsgAccumulateCurrentOutputUntil((double)sp128PsgNextClockTact);
     sp128PsgGenerateStreamSample();
     sp128PsgNextClockTact += SP128_PSG_CLOCK_STEP;
   }
+  sp128PsgAccumulateCurrentOutputUntil(tact);
 }
 
-static void sp128PsgPrepareAudioSample(void) {
-  sp128PsgAdvanceToTact(sp128Tacts);
-  if (sp128PsgAccumulatedSamples != 0u) {
-    sp128PsgAudioSampleLevel = sp128PsgAccumulatedOutput / (double)sp128PsgAccumulatedSamples;
+static void sp128PsgPrepareAudioSample(double sampleEndTact) {
+  sp128PsgAdvanceToTact(sampleEndTact);
+  if (sp128PsgAccumulatedTacts > 0.0) {
+    sp128PsgAudioSampleLevel = sp128PsgAccumulatedOutput / sp128PsgAccumulatedTacts;
     sp128PsgAccumulatedOutput = 0.0;
-    sp128PsgAccumulatedSamples = 0u;
+    sp128PsgAccumulatedTacts = 0.0;
   }
 }
 
@@ -326,7 +341,7 @@ static double sp128PsgAudioLevel(void) {
 }
 
 static void sp128PsgAddressWrite(uint32_t value) {
-  sp128PsgAdvanceToTact(sp128Tacts);
+  sp128PsgAdvanceToTact((double)sp128Tacts);
   sp128PsgActive = ((value >> 4u) == 0u) ? 1u : 0u;
   sp128PsgRegisterIndex = (uint8_t)(value & 0x1fu);
 }
@@ -335,7 +350,7 @@ static void sp128PsgDataWrite(uint32_t value) {
   if (sp128PsgActive == 0u) {
     return;
   }
-  sp128PsgAdvanceToTact(sp128Tacts);
+  sp128PsgAdvanceToTact((double)sp128Tacts);
   sp128PsgWriteRegister(sp128PsgRegisterIndex, (uint8_t)value);
 }
 

@@ -91,6 +91,25 @@ describe("ZX Next WASM PSG/TurboSound audio", () => {
     expect(exports.zxnextGetPsgStereoRight(0)).toBe(oracle.getChipStereoOutput(0).right);
   });
 
+  it("averages PSG output over the exact WASM sample window", async () => {
+    const wasm = await createTestZxNextWasmMachine();
+    const exports = wasm.wasmV2Runtime!.exports as any;
+
+    exports.zxnextSetPsgRegisterIndex(0x00);
+    exports.zxnextWritePsgRegisterValue(0x01);
+    exports.zxnextSetPsgRegisterIndex(0x01);
+    exports.zxnextWritePsgRegisterValue(0x00);
+    exports.zxnextSetPsgRegisterIndex(0x07);
+    exports.zxnextWritePsgRegisterValue(0x3e);
+    exports.zxnextSetPsgRegisterIndex(0x08);
+    exports.zxnextWritePsgRegisterValue(0x0f);
+
+    exports.zxnextPreparePsgAudioSample(256);
+
+    expect(exports.zxnextGetPsgSampleLeft()).toBe(32_768);
+    expect(exports.zxnextGetPsgSampleRight()).toBe(0);
+  });
+
   it("matches TypeScript YM envelope and noise progression", async () => {
     const oracle = new TurboSoundDevice();
     const wasm = await createTestZxNextWasmMachine();

@@ -44,8 +44,17 @@ static uint8_t zxnextPsgTurbosoundEnabled;
 static uint8_t zxnextPsgAyStereoMode;
 static uint8_t zxnextPsgChipPanning[3];
 static uint8_t zxnextPsgChipMonoMode[3];
-static uint32_t zxnextPsgLastFrameTact;
-static uint32_t zxnextPsgTactRemainder;
+static double zxnextPsgNextClockFrameTact;
+static double zxnextPsgLastAccumulationFrameTact;
+static double zxnextPsgAccumulatedLeft;
+static double zxnextPsgAccumulatedRight;
+static double zxnextPsgAccumulatedTacts;
+static uint32_t zxnextPsgCurrentLeft;
+static uint32_t zxnextPsgCurrentRight;
+static uint32_t zxnextPsgSampleLeft;
+static uint32_t zxnextPsgSampleRight;
+
+static void zxnextPsgRefreshCurrentStereoOutput(void);
 
 static void zxnextPsgResetTone(ZxNextPsgTone *tone) {
   tone->period = 0u;
@@ -82,6 +91,14 @@ static void zxnextPsgResetChip(uint32_t chip) {
   state->noiseRng = 1u;
 }
 
+static void zxnextPsgResetAudioWindow(void) {
+  zxnextPsgNextClockFrameTact = 128.0;
+  zxnextPsgLastAccumulationFrameTact = 0.0;
+  zxnextPsgAccumulatedLeft = 0.0;
+  zxnextPsgAccumulatedRight = 0.0;
+  zxnextPsgAccumulatedTacts = 0.0;
+}
+
 static void zxnextPsgReset(void) {
   for (uint32_t chip = 0u; chip < 3u; chip++) {
     zxnextPsgResetChip(chip);
@@ -91,25 +108,34 @@ static void zxnextPsgReset(void) {
   zxnextPsgSelectedChip = 0u;
   zxnextPsgTurbosoundEnabled = 0u;
   zxnextPsgAyStereoMode = 0u;
-  zxnextPsgLastFrameTact = 0u;
-  zxnextPsgTactRemainder = 0u;
+  zxnextPsgCurrentLeft = 0u;
+  zxnextPsgCurrentRight = 0u;
+  zxnextPsgSampleLeft = 0u;
+  zxnextPsgSampleRight = 0u;
+  zxnextPsgResetAudioWindow();
 }
 
 static void zxnextPsgBeginFrame(void) {
-  zxnextPsgLastFrameTact = 0u;
-  zxnextPsgTactRemainder = 0u;
+  zxnextPsgResetAudioWindow();
+  zxnextPsgRefreshCurrentStereoOutput();
 }
 
 static void zxnextPsgSetTurbosoundEnabled(uint32_t enabled) {
+  zxnextPsgAdvanceToFrameTact((double)frameTacts28);
   zxnextPsgTurbosoundEnabled = enabled != 0u;
+  zxnextPsgRefreshCurrentStereoOutput();
 }
 
 static void zxnextPsgSetAyStereoMode(uint32_t enabled) {
+  zxnextPsgAdvanceToFrameTact((double)frameTacts28);
   zxnextPsgAyStereoMode = enabled != 0u;
+  zxnextPsgRefreshCurrentStereoOutput();
 }
 
 static void zxnextPsgSetChipMonoMode(uint32_t chip, uint32_t enabled) {
+  zxnextPsgAdvanceToFrameTact((double)frameTacts28);
   zxnextPsgChipMonoMode[chip % 3u] = enabled != 0u;
+  zxnextPsgRefreshCurrentStereoOutput();
 }
 
 static inline void zxnextPsgSetTonePeriod(ZxNextPsgChip *chip, uint32_t channel) {
@@ -175,6 +201,7 @@ static void zxnextPsgWriteRegister(ZxNextPsgChip *chip, uint32_t reg, uint32_t v
 
 static void zxnextPsgSetRegisterIndex(uint32_t value) {
   uint8_t byteValue = (uint8_t)value;
+  zxnextPsgAdvanceToFrameTact((double)frameTacts28);
   if ((byteValue & 0x80u) != 0u && (byteValue & 0x1cu) == 0x1cu) {
     if (zxnextPsgTurbosoundEnabled) {
       uint8_t chipSelect = byteValue & 0x03u;
@@ -182,6 +209,7 @@ static void zxnextPsgSetRegisterIndex(uint32_t value) {
       else if (chipSelect == 0x01u) zxnextPsgSelectedChip = 2u;
       else zxnextPsgSelectedChip = 0u;
       zxnextPsgChipPanning[zxnextPsgSelectedChip] = (byteValue >> 5u) & 0x03u;
+      zxnextPsgRefreshCurrentStereoOutput();
     }
   } else if ((byteValue & 0xe0u) == 0u) {
     zxnextPsgChips[zxnextPsgSelectedChip].selectedReg = byteValue & 0x0fu;
@@ -190,6 +218,7 @@ static void zxnextPsgSetRegisterIndex(uint32_t value) {
 
 static void zxnextPsgWriteRegisterValue(uint32_t value) {
   ZxNextPsgChip *chip = &zxnextPsgChips[zxnextPsgSelectedChip];
+  zxnextPsgAdvanceToFrameTact((double)frameTacts28);
   zxnextPsgWriteRegister(chip, chip->selectedReg, value);
 }
 
@@ -293,25 +322,55 @@ static void zxnextPsgGenerateAllOutput(void) {
   for (uint32_t chip = 0u; chip < 3u; chip++) {
     zxnextPsgGenerateOutput(chip);
   }
+  zxnextPsgRefreshCurrentStereoOutput();
 }
 
-static void zxnextPsgCalculateCurrentAudioValue(uint32_t frameTact28) {
-  if (zxnextPsgLastFrameTact == 0u) {
-    zxnextPsgLastFrameTact = frameTact28;
+static void zxnextPsgAccumulateCurrentOutputUntil(double frameTact28) {
+  if (frameTact28 <= zxnextPsgLastAccumulationFrameTact) {
     return;
   }
 
-  uint32_t elapsed = frameTact28 - zxnextPsgLastFrameTact;
-  zxnextPsgLastFrameTact = frameTact28;
-  if (elapsed == 0u || elapsed > 800u) return;
+  const double duration = frameTact28 - zxnextPsgLastAccumulationFrameTact;
+  zxnextPsgAccumulatedLeft += (double)zxnextPsgCurrentLeft * duration;
+  zxnextPsgAccumulatedRight += (double)zxnextPsgCurrentRight * duration;
+  zxnextPsgAccumulatedTacts += duration;
+  zxnextPsgLastAccumulationFrameTact = frameTact28;
+}
 
-  uint32_t total = elapsed + zxnextPsgTactRemainder;
-  uint32_t steps = total / 128u;
-  zxnextPsgTactRemainder = total % 128u;
-
-  for (uint32_t i = 0u; i < steps; i++) {
-    zxnextPsgGenerateAllOutput();
+static void zxnextPsgAdvanceToFrameTact(double frameTact28) {
+  if (frameTact28 < zxnextPsgLastAccumulationFrameTact) {
+    zxnextPsgResetAudioWindow();
   }
+
+  while (zxnextPsgNextClockFrameTact <= frameTact28) {
+    zxnextPsgAccumulateCurrentOutputUntil(zxnextPsgNextClockFrameTact);
+    zxnextPsgGenerateAllOutput();
+    zxnextPsgNextClockFrameTact += 128.0;
+  }
+
+  zxnextPsgAccumulateCurrentOutputUntil(frameTact28);
+}
+
+static void zxnextPsgCalculateCurrentAudioValue(uint32_t frameTact28) {
+  zxnextPsgAdvanceToFrameTact((double)frameTact28);
+}
+
+static void zxnextPsgPrepareAudioSample(double sampleEndFrameTact28) {
+  zxnextPsgAdvanceToFrameTact(sampleEndFrameTact28);
+
+  if (zxnextPsgAccumulatedTacts > 0.0) {
+    double left = zxnextPsgAccumulatedLeft / zxnextPsgAccumulatedTacts;
+    double right = zxnextPsgAccumulatedRight / zxnextPsgAccumulatedTacts;
+    zxnextPsgSampleLeft = (uint32_t)(left >= 0.0 ? left + 0.5 : 0.0);
+    zxnextPsgSampleRight = (uint32_t)(right >= 0.0 ? right + 0.5 : 0.0);
+  } else {
+    zxnextPsgSampleLeft = zxnextPsgCurrentLeft;
+    zxnextPsgSampleRight = zxnextPsgCurrentRight;
+  }
+
+  zxnextPsgAccumulatedLeft = 0.0;
+  zxnextPsgAccumulatedRight = 0.0;
+  zxnextPsgAccumulatedTacts = 0.0;
 }
 
 static uint32_t zxnextPsgGetSelectedChip(void) { return zxnextPsgSelectedChip; }
@@ -347,6 +406,24 @@ static uint32_t zxnextPsgGetStereoRight(uint32_t chipId) {
   uint8_t pan = zxnextPsgChipPanning[id];
   return pan == 0u || pan == 2u ? 0u : right;
 }
+
+static void zxnextPsgRefreshCurrentStereoOutput(void) {
+  uint32_t psgLeft = 0u;
+  uint32_t psgRight = 0u;
+
+  for (uint32_t chip = 0u; chip < 3u; chip++) {
+    if (zxnextPsgGetTurbosoundEnabled() || chip == zxnextPsgGetSelectedChip()) {
+      psgLeft += zxnextPsgGetStereoLeft(chip);
+      psgRight += zxnextPsgGetStereoRight(chip);
+    }
+  }
+
+  zxnextPsgCurrentLeft = psgLeft;
+  zxnextPsgCurrentRight = psgRight;
+}
+
+static uint32_t zxnextPsgGetSampleLeft(void) { return zxnextPsgSampleLeft; }
+static uint32_t zxnextPsgGetSampleRight(void) { return zxnextPsgSampleRight; }
 
 static uint32_t zxnextPsgGetNoiseRng(uint32_t chip) { return zxnextPsgChips[chip % 3u].noiseRng; }
 static uint32_t zxnextPsgGetEnvelopeStep(uint32_t chip) { return (uint32_t)zxnextPsgChips[chip % 3u].envelope.step; }

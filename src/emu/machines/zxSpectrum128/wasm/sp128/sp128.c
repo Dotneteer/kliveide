@@ -473,7 +473,7 @@ static uint32_t screenBankOffset(void) {
 #define SP48_AUDIO_TRANSITION_CAPACITY SP128_AUDIO_TRANSITION_CAPACITY
 #define SP48_AUDIO_SAMPLE_SCALE SP128_AUDIO_SAMPLE_SCALE
 #define SP48_TAPE_MODE_LOAD SP128_TAPE_MODE_LOAD
-#define SP48_AUDIO_BEFORE_SAMPLE() sp128PsgPrepareAudioSample()
+#define SP48_AUDIO_BEFORE_SAMPLE(sampleEndTact) sp128PsgPrepareAudioSample(sampleEndTact)
 #define SP48_AUDIO_EXTRA_LEFT() sp128PsgAudioLevel()
 #define SP48_AUDIO_EXTRA_RIGHT() sp128PsgAudioLevel()
 #define sp48TapeMode sp128TapeMode

@@ -34,6 +34,7 @@ export function readAyDatPort(machine: IZxNextMachine, ulaPort: number): number 
 
 export function writeAyDatPort(machine: IZxNextMachine, value: number): void {
   const turboSound = machine.audioControlDevice.getTurboSoundDevice();
+  turboSound.calculateCurrentAudioValue(machine.frameTacts);
   
   // Write to currently selected register
   turboSound.writeSelectedRegister(value);

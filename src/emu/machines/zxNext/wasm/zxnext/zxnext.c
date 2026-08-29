@@ -484,6 +484,10 @@ void zxnextSetPsgRegisterIndex(uint32_t value) { zxnextPsgSetRegisterIndex(value
 void zxnextWritePsgRegisterValue(uint32_t value) { zxnextPsgWriteRegisterValue(value); }
 uint32_t zxnextReadPsgRegisterValue(void) { return zxnextPsgReadRegisterValue(); }
 void zxnextGeneratePsgOutput(uint32_t chip) { zxnextPsgGenerateOutput(chip); }
+void zxnextAdvancePsgToFrameTact(uint32_t frameTact28) { zxnextPsgAdvanceToFrameTact((double)frameTact28); }
+void zxnextPreparePsgAudioSample(double sampleEndFrameTact28) { zxnextPsgPrepareAudioSample(sampleEndFrameTact28); }
+uint32_t zxnextGetPsgSampleLeft(void) { return zxnextPsgGetSampleLeft(); }
+uint32_t zxnextGetPsgSampleRight(void) { return zxnextPsgGetSampleRight(); }
 uint32_t zxnextGetPsgSelectedChip(void) { return zxnextPsgGetSelectedChip(); }
 uint32_t zxnextGetPsgSelectedRegister(void) { return zxnextPsgGetSelectedRegister(); }
 uint32_t zxnextGetPsgChipPanning(uint32_t chip) { return zxnextPsgGetChipPanning(chip); }

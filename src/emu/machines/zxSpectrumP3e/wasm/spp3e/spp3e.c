@@ -685,7 +685,7 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #define SP48_AUDIO_TRANSITION_CAPACITY SPP3E_AUDIO_TRANSITION_CAPACITY
 #define SP48_AUDIO_SAMPLE_SCALE 32767.0
 #define SP48_TAPE_MODE_LOAD SPP3E_TAPE_MODE_LOAD
-#define SP48_AUDIO_BEFORE_SAMPLE() sp128PsgPrepareAudioSample()
+#define SP48_AUDIO_BEFORE_SAMPLE(sampleEndTact) sp128PsgPrepareAudioSample(sampleEndTact)
 #define SP48_AUDIO_EXTRA_LEFT() sp128PsgAudioLevel()
 #define SP48_AUDIO_EXTRA_RIGHT() sp128PsgAudioLevel()
 #define sp48TapeMode spp3eTapeMode
@@ -1195,7 +1195,7 @@ static void spp3eResetPsg(void) {
 }
 
 static void spp3ePsgAddressWrite(uint32_t value) {
-  sp128PsgAdvanceToTact(spp3eTacts);
+  sp128PsgAdvanceToTact((double)spp3eTacts);
   sp128PsgActive = 1u;
   sp128PsgRegisterIndex = (uint8_t)(value & 0x0fu);
 }
@@ -2259,7 +2259,7 @@ uint32_t spp3eGetPsgVolumeA(void) { return sp128PsgGetVolumeA(); }
 uint32_t spp3eGetPsgVolumeB(void) { return sp128PsgTone[1].volume & 0x0fu; }
 uint32_t spp3eGetPsgVolumeC(void) { return sp128PsgTone[2].volume & 0x0fu; }
 int32_t spp3eGetPsgCurrentOutput(void) {
-  sp128PsgPrepareAudioSample();
+  sp128PsgPrepareAudioSample((double)spp3eTacts);
   return sp128PsgCurrentOutput;
 }
 uint32_t spp3eGetTactsInFrame(void) { return spp3eTactsInFrame; }
