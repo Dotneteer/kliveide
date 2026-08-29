@@ -6,7 +6,6 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { getAllMachineModels } from "@common/machines/machine-registry";
 import { split } from "lodash";
-import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useMainApi } from "@renderer/core/MainApi";
 import Dropdown from "@renderer/controls/Dropdown";
 import { useRendererContext } from "@renderer/core/RendererProvider";
@@ -48,21 +47,27 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const [templateDirs, setTemplateDirs] = useState<{ value: string; label: string }[]>([]);
   const [templateId, setTemplateId] = useState<string>(INITIAL_TEMPLATE_ID);
 
-  // --- Refresh the template list according to the current machine id
-  const refreshTemplateList = async () => {
-    if (!machineId) return;
-    const dirs = await mainApi.getTemplateDirectories(machineId);
-    setTemplateDirs(dirs.map((d) => ({ value: d, label: d })));
-  };
-  useInitializeAsync(async () => {
-    await refreshTemplateList();
-  });
-
   // --- Read the template names for a particular machine ID
   useEffect(() => {
+    let cancelled = false;
+
     (async () => {
-      await refreshTemplateList();
+      if (!machineId) return;
+
+      const dirs = await mainApi.getTemplateDirectories(machineId);
+      if (cancelled) return;
+
+      setTemplateDirs(dirs.map((d) => ({ value: d, label: d })));
+      setTemplateId((current) => {
+        if (dirs.includes(current)) return current;
+        if (dirs.includes(INITAIL_TEMPLATE_ID)) return INITAIL_TEMPLATE_ID;
+        return dirs[0] ?? INITAIL_TEMPLATE_ID;
+      });
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [machineId]);
 
   const folderError = requiredPath(validationService, projectFolder);
@@ -144,7 +149,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
           <Dropdown
             placeholder="Select..."
             options={templateDirs}
-            initialValue={"default"}
+            initialValue={templateId}
             width={468}
             onChanged={(option) => {
               setTemplateId(option);

@@ -10,7 +10,14 @@ import {
   ListFileItem,
 } from "@abstractions/CompilerInfo";
 import { createSettingsReader } from "@common/utils/SettingsReader";
+import {
+  MI_SPECTRUM_128,
+  MI_SPECTRUM_3E,
+  MI_SPECTRUM_48,
+  MI_ZXNEXT
+} from "@common/machines/constants";
 import { SJASMP_INSTALL_FOLDER, SJASMP_KEEP_TEMP_FILES } from "./sjasmp-config";
+import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import {
   createSjasmRunner,
   SJASM_LIST_FILE,
@@ -149,6 +156,9 @@ export class SjasmPCompiler implements IKliveCompiler {
       // --- Remove the output files
       removeTempFiles();
 
+      const sourceContent = fs.readFileSync(filename, "utf-8");
+      const modelType = getSjasmModelType(sourceContent, this.state?.emulatorState?.machineId);
+
       // --- Done.
       return {
         traceOutput: result.traceOutput,
@@ -156,7 +166,7 @@ export class SjasmPCompiler implements IKliveCompiler {
         errors: [],
         injectOptions: { subroutine: true },
         segments,
-        modelType: 1, // Spectrum 48
+        modelType,
         sourceFileList,
         sourceMap,
         listFileItems
@@ -210,6 +220,46 @@ export class SjasmPCompiler implements IKliveCompiler {
       messageFilterIndex: 4,
       warningFilterIndex: 3
     };
+  }
+}
+
+export function getSjasmModelType(
+  sourceContent: string,
+  fallbackMachineId?: string
+): SpectrumModelType {
+  const deviceMatch = sourceContent.match(/^\s*device\s+([^\s;]+)/im);
+  const deviceName = deviceMatch?.[1]?.toLowerCase();
+
+  switch (deviceName) {
+    case "zxspectrum128":
+    case "zxspectrum128k":
+      return SpectrumModelType.Spectrum128;
+    case "zxspectrum3":
+    case "zxspectrump3":
+    case "zxspectrum+3":
+    case "zxspectrum+3e":
+      return SpectrumModelType.SpectrumP3;
+    case "zxspectrumnext":
+    case "zxspectrum_next":
+    case "zxnext":
+      return SpectrumModelType.Next;
+    case "zxspectrum16":
+    case "zxspectrum16k":
+    case "zxspectrum48":
+    case "zxspectrum48k":
+      return SpectrumModelType.Spectrum48;
+  }
+
+  switch (fallbackMachineId) {
+    case MI_SPECTRUM_128:
+      return SpectrumModelType.Spectrum128;
+    case MI_SPECTRUM_3E:
+      return SpectrumModelType.SpectrumP3;
+    case MI_ZXNEXT:
+      return SpectrumModelType.Next;
+    case MI_SPECTRUM_48:
+    default:
+      return SpectrumModelType.Spectrum48;
   }
 }
 
