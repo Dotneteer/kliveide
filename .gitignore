@@ -32,6 +32,9 @@ yarn.lock
 dist-electron
 .next
 out
+test-results
+playwright-report
 docs-out
+src/emu/machines/zxSpectrum48/wasm/test-dist
 tsconfig.tsbuildinfo
 tsconfig.web.tsbuildinfo

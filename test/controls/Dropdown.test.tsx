@@ -4,8 +4,8 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Dropdown from "@renderer/controls/Dropdown";
 
-vi.mock("@renderer/core/useThemeRoot", () => ({
-  useThemeRoot: () => document.body
+vi.mock("@renderer/controls/overlay/useOverlayRoot", () => ({
+  useOverlayRoot: () => document.body
 }));
 
 vi.mock("@renderer/controls/Icon", () => ({

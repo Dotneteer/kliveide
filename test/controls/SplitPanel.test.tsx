@@ -6,8 +6,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import React, { act } from "react";
-import { renderWithProviders, fireEvent } from "../react-test-utils";
+import { renderWithProviders, fireEvent, act } from "../react-test-utils";
 import { SplitPanel } from "@controls/SplitPanel";
 
 // ---------------------------------------------------------------------------
@@ -112,6 +111,31 @@ describe("SplitPanel — Step 1.7: drag listener cleanup via refs", () => {
     const removedEndMove = removeSpy.mock.calls.find(([type]) => type === "mouseup")?.[1];
 
     // The exact same function object must be passed to both add and remove
+    expect(removedMove).toBe(addedMove);
+    expect(removedEndMove).toBe(addedEndMove);
+
+    addSpy.mockRestore();
+    removeSpy.mockRestore();
+  });
+
+  it("removes drag listeners when unmounted during a drag", async () => {
+    const addSpy = vi.spyOn(window, "addEventListener");
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+
+    const { unmount } = renderSplitPanel();
+    const splitter = document.querySelector('[class*="splitter"]') as HTMLElement;
+
+    await act(async () => {
+      fireEvent.mouseDown(splitter, { button: 0, clientX: 200, clientY: 0 });
+    });
+
+    unmount();
+
+    const addedMove = addSpy.mock.calls.find(([type]) => type === "mousemove")?.[1];
+    const addedEndMove = addSpy.mock.calls.find(([type]) => type === "mouseup")?.[1];
+    const removedMove = removeSpy.mock.calls.find(([type]) => type === "mousemove")?.[1];
+    const removedEndMove = removeSpy.mock.calls.find(([type]) => type === "mouseup")?.[1];
+
     expect(removedMove).toBe(addedMove);
     expect(removedEndMove).toBe(addedEndMove);
 

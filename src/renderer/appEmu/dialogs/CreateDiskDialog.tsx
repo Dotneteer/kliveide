@@ -1,11 +1,13 @@
 import styles from "./CreateDiskDialog.module.scss";
-import { ModalApi, Modal } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import Dropdown from "@renderer/controls/Dropdown";
 import { TextInput } from "@renderer/controls/TextInput";
+import { DialogForm } from "@renderer/controls/DialogForm";
 import { useMainApi } from "@renderer/core/MainApi";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { requiredFilename, requiredPath } from "@renderer/appIde/dialogs/dialogValidators";
 
 const NEW_DISK_FOLDER_ID = "newDiskFolder";
 
@@ -18,26 +20,42 @@ const diskTypesIds = [
 
 type Props = {
   onClose: () => void;
+  onCreate?: (result: CreateDiskDialogResult) => void;
 };
 
-export const CreateDiskDialog = ({ onClose }: Props) => {
-  const modalApi = useRef<ModalApi>(null);
+export type CreateDiskDialogResult = {
+  diskType: string;
+  folder: string;
+  filename: string;
+  path: string;
+};
+
+export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
   const mainApi = useMainApi();
   const { validationService } = useAppServices();
 
   const [diskType, setDiskType] = useState<string>("ss");
   const [diskFileFolder, setDiskFileFolder] = useState("");
   const [filename, setFilename] = useState("");
-  const [folderIsValid, setFolderIsValid] = useState(true);
-  const [fileIsValid, setFileIsValid] = useState(true);
+  const folderError = requiredPath(validationService, diskFileFolder);
+  const fileError = requiredFilename(validationService, filename);
 
-  useEffect(() => {
-    const fValid = validationService.isValidPath(diskFileFolder);
-    setFolderIsValid(fValid);
-    const nValid = validationService.isValidFilename(filename);
-    setFileIsValid(nValid);
-    modalApi.current.enablePrimaryButton(fValid && nValid);
-  }, [diskFileFolder, filename]);
+  const createDisk = async (): Promise<boolean> => {
+    // --- Create the project
+    try {
+      const path = await mainApi.createDiskFile(diskFileFolder, filename, diskType);
+      await mainApi.displayMessageBox(
+        "info",
+        "Disk created",
+        `Disk file successfully created: ${path}`
+      );
+      onCreate?.({ diskType, folder: diskFileFolder, filename, path });
+      return false;
+    } catch (err) {
+      await mainApi.displayMessageBox("error", "Create Disk File Error", err.toString());
+      return true;
+    }
+  };
 
   return (
     <Modal
@@ -46,31 +64,19 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
       fullScreen={false}
       translateY={0}
       width={500}
-      onApiLoaded={(api) => (modalApi.current = api)}
-      primaryLabel="Create"
-      primaryEnabled={true}
-      initialFocus="none"
-      onPrimaryClicked={async (result) => {
-        const name = result ? result[0] : filename;
-        const folder = result ? result[1] : diskFileFolder;
-        // --- Create the project
-        try {
-          const path = await mainApi.createDiskFile(folder, name, diskType);
-          await mainApi.displayMessageBox(
-            "info",
-            "Disk created",
-            `Disk file successfully created: ${path}`
-          );
-          return false;
-        } catch (err) {
-          await mainApi.displayMessageBox("error", "Create Disk File Error", err.toString());
-          return true;
-        }
-      }}
+      footerVisible={false}
       onClose={() => {
         onClose();
       }}
     >
+      <DialogForm
+        submitLabel="Create"
+        submitDisabled={Boolean(folderError || fileError)}
+        onSubmit={async () => {
+          if (!(await createDisk())) onClose();
+        }}
+        onCancel={onClose}
+      >
       <DialogRow rows={true} label="Disk type">
         <div className={styles.dropdownWrapper}>
           <Dropdown
@@ -87,43 +93,22 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
       <DialogRow label="Disk file folder:">
         <TextInput
           value={diskFileFolder}
-          isValid={folderIsValid}
-          focusOnInit={true}
+          error={folderError}
+          autoFocus={true}
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
-          buttonClicked={async () => {
-            const folder = await mainApi.showOpenFolderDialog(NEW_DISK_FOLDER_ID);
-            if (folder) {
-              setDiskFileFolder(folder);
-            }
-            return folder;
-          }}
-          valueChanged={(val) => {
-            setDiskFileFolder(val);
-            return false;
-          }}
+          browse={() => mainApi.showOpenFolderDialog(NEW_DISK_FOLDER_ID)}
+          onChange={setDiskFileFolder}
         />
       </DialogRow>
       <DialogRow label="Project name:">
         <TextInput
           value={filename}
-          isValid={fileIsValid}
-          focusOnInit={true}
-          keyPressed={(e) => {
-            if (e.code === "Enter") {
-              if (folderIsValid && fileIsValid) {
-                e.preventDefault();
-                e.stopPropagation();
-                modalApi.current.triggerPrimary([filename, diskFileFolder]);
-              }
-            }
-          }}
-          valueChanged={(val) => {
-            setFilename(val);
-            return false;
-          }}
+          error={fileError}
+          onChange={setFilename}
         />
       </DialogRow>
+      </DialogForm>
     </Modal>
   );
 };

@@ -53,13 +53,21 @@ export type ThemeProperties = {
   "--color-context-item-disabled"?: string;
   "--bgcolor-context-item-pointed"?: string;
   "--color-context-item-pointed"?: string;
+  "--bgcolor-context-item-dangerous-pointed"?: string;
   "--color-context-separator"?: string;
+  "--border-context-menu"?: string;
+  "--shadow-context-menu"?: string;
+  "--radius-context-menu"?: string;
 
   // --- Modal
   "--bgcolor-backdrop"?: string;
   "--bgcolor-modal"?: string;
   "--color-modal"?: string;
   "--border-modal"?: string;
+  "--border-modal-section"?: string;
+  "--shadow-modal"?: string;
+  "--color-modal-accent"?: string;
+  "--bgimage-modal-header"?: string;
   "--radius-modal"?: string;
   "--bgcolor-modal-header"?: string;
   "--color-modal-header"?: string;

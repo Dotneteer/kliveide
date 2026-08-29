@@ -126,9 +126,9 @@ redux action creators. Persist via existing `appSettings` infrastructure.
 `setJoystickState` via the custom-command channel.
 
 **Files:**
-- `src/renderer/appEmu/EmulatorArea/useEmulatorJoystick.ts` — keydown/keyup
+- `src/renderer/features/emulator/useEmulatorJoystick.ts` — keydown/keyup
   handlers, build left/right state bytes, dispatch to machine.
-- `src/renderer/appEmu/EmulatorArea/EmulatorPanel.tsx` — mount the hook.
+- `src/renderer/features/emulator/EmulatorPanel.tsx` — mount the hook.
 
 **Tests:** new `test/renderer/useEmulatorJoystick.test.ts` (jsdom):
 - Press ArrowRight + RControl → `setJoystickState` invoked with bit0|bit4.
@@ -180,7 +180,7 @@ gamepads in this step — defer if not trivial).
 `setMouseDelta` (Y inverted). Esc cancels.
 
 **Files:**
-- `src/renderer/appEmu/EmulatorArea/useEmulatorMouse.ts` — new hook.
+- `src/renderer/features/emulator/useEmulatorMouse.ts` — new hook.
 - `EmulatorPanel.tsx` — mount with canvas ref.
 
 **Tests:** jsdom integration test:

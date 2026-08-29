@@ -200,11 +200,6 @@ export const closeFolderAction: ActionCreator = () => ({
   type: "CLOSE_FOLDER"
 });
 
-export const displayDialogAction: ActionCreator = (index?: number, value?: any) => ({
-  type: "DISPLAY_DIALOG",
-  payload: { index, value }
-});
-
 export const setBuildRootAction: ActionCreator = (files: string[], flag: boolean) => ({
   type: "SET_BUILD_ROOT",
   payload: { files, flag }
@@ -312,7 +307,7 @@ export const emuSetKeyboardLayoutAction: ActionCreator = (id: string) => ({
 });
 
 export const incMenuVersionAction: ActionCreator = () => ({
-  type: "START_SCREEN_DISPLAYED"
+  type: "INC_MENU_VERSION"
 });
 
 export const setMachineSpecificAction: ActionCreator = (value: any) => ({

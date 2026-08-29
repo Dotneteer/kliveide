@@ -15,7 +15,7 @@ import {
 } from "@common/state/actions";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction, writeErrorMessageWithLinks } from "@common/utils/output-utils";
-import { isInjectableCompilerOutput } from "../utils/compiler-utils";
+import { isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 type CodeInjectionType = "inject" | "run" | "debug";

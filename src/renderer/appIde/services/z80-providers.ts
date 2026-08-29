@@ -656,6 +656,55 @@ export function computeDefinition(
   };
 }
 
+/**
+ * Gets the assembly symbol containing a Monaco position from a source line.
+ *
+ * Monaco's word lookup can return only the final component when the cursor is
+ * on `Read` in `IoDemo.Read`. Definition lookup must use the complete name,
+ * because module members are indexed under their qualified names.
+ */
+export function getSymbolAtPosition(lineContent: string, column: number): string | null {
+  const offset = column - 1;
+  const symbolPattern = /(?:::)?[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*|@[a-zA-Z_][a-zA-Z0-9_]*/g;
+
+  for (const match of lineContent.matchAll(symbolPattern)) {
+    const start = match.index!;
+    const end = start + match[0].length;
+    if (offset >= start && offset <= end) return match[0];
+  }
+
+  return null;
+}
+
+/**
+ * Resolves the complete symbol name at a source position. At a declaration,
+ * the intelligence index supplies the qualified name (`IoDemo.Read`), while
+ * uses get their name directly from the line text.
+ */
+export function resolveSymbolNameAtPosition(
+  lineContent: string,
+  fileIndex: number | undefined,
+  line: number,
+  column: number,
+  service: ILanguageIntelService
+): string | null {
+  const definition = fileIndex === undefined
+    ? null
+    : service.getSymbolAtPosition(fileIndex, line, column - 1);
+  const symbol = definition?.name ?? getSymbolAtPosition(lineContent, column);
+  if (!symbol?.startsWith("@") || fileIndex === undefined) return symbol;
+
+  // Module-local symbols are stored with their enclosing module path (for
+  // example, `IoDemo.@Title_ReadIo`) but source references deliberately use
+  // the short `@Title_ReadIo` form. Resolve the unambiguous local definition
+  // from the same source file before looking it up.
+  const suffix = `.${symbol.toLowerCase()}`;
+  const candidates = service.getCompletionCandidates("").filter((candidate) =>
+    candidate.fileIndex === fileIndex && candidate.name.toLowerCase().endsWith(suffix)
+  );
+  return candidates.length === 1 ? candidates[0].name : symbol;
+}
+
 // ---------------------------------------------------------------------------
 // Step 4.4 — References (Find All References)
 // ---------------------------------------------------------------------------
@@ -1234,9 +1283,17 @@ export function registerZ80Providers(
       }
 
       // --- Symbol definition
+      const svc = getService();
+      const modelPath: string = model.uri?.fsPath ?? model.uri?.path ?? "";
+      const symbol = resolveSymbolNameAtPosition(
+        lineContent ?? "",
+        svc.getFileIndex(modelPath),
+        position.lineNumber,
+        position.column,
+        svc
+      );
       const word = model.getWordAtPosition(position);
-      if (!word) return null;
-      const result = computeDefinition(word.word, getService());
+      const result = computeDefinition(symbol ?? word?.word ?? "", svc);
       if (!result) return null;
       return {
         uri: monaco.Uri.file(result.filePath),
@@ -1253,12 +1310,21 @@ export function registerZ80Providers(
   // --- References
   monaco.languages.registerReferenceProvider(LANG, {
     provideReferences(model: any, position: any, ctx: any) {
+      const svc = getService();
+      const lineContent: string = model.getLineContent(position.lineNumber) ?? "";
+      const modelPath: string = model.uri?.fsPath ?? model.uri?.path ?? "";
+      const symbol = resolveSymbolNameAtPosition(
+        lineContent,
+        svc.getFileIndex(modelPath),
+        position.lineNumber,
+        position.column,
+        svc
+      );
       const word = model.getWordAtPosition(position);
-      if (!word) return [];
       const results = computeReferences(
-        word.word,
+        symbol ?? word?.word ?? "",
         ctx.includeDeclaration ?? false,
-        getService()
+        svc
       );
       return results.map((r) => ({
         uri: monaco.Uri.file(r.filePath),

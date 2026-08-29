@@ -1,5 +1,6 @@
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { CSSProperties, memo } from "react";
+import type { SVGProps } from "react";
 
 type Props = {
   iconName: string;
@@ -67,7 +68,7 @@ export const Icon = memo(({
       >
         <path
           d={iconInfo.path}
-          fillRule={iconInfo["fill-rule"] as any}
+          fillRule={iconInfo["fill-rule"] as SVGProps<SVGPathElement>["fillRule"]}
           clipRule={iconInfo["clip-rule"]}
         />
       </svg>

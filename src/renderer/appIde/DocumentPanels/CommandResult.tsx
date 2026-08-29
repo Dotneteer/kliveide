@@ -1,13 +1,14 @@
 import styles from "./CommandResult.module.scss";
+import { Label } from "@renderer/controls/layout/Label";
 import { SmallIconButton } from "@controls/IconButton";
-import { LabelSeparator, Label } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
 import { useDispatch } from "@renderer/core/RendererProvider";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { useRef } from "react";
 import { CommandResultData } from "../../abstractions/CommandResultData";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
-import { useDocumentHubService } from "../services/DocumentServiceProvider";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
 
 type CommandResultViewState = {
@@ -34,7 +35,7 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
     const mergedState: CommandResultViewState = {
       topPosition: topPosition.current
     };
-    documentHubService.saveActiveDocumentState(mergedState);
+    documentHubService.setDocumentViewState(document.id, mergedState);
   };
 
   return (

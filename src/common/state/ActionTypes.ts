@@ -60,8 +60,6 @@ export interface ActionTypes {
   SET_PROJECT_BUILD_FILE: null;
   INC_BUILD_FILE_VERSION: null;
 
-  DISPLAY_DIALOG: null;
-
   RESET_COMPILE: null;
   START_COMPILE: null;
   END_COMPILE: null;

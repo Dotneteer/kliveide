@@ -22,7 +22,11 @@ export class CloseFolderCommand extends IdeCommandBase {
     await saveAllBeforeQuit(context.store, context.service.projectService);
     context.store.dispatch(closeFolderAction(), context.messageSource);
     context.emuApi.eraseAllBreakpoints();
-    context.service.projectService.getActiveDocumentHubService()?.closeAllDocuments();
+    await Promise.all(
+      context.service.projectService
+        .getDocumentHubServiceInstances()
+        .map((hub) => hub.closeAllDocuments())
+    );
     writeSuccessMessage(context.output, `Folder ${projectPath} closed.`);
     return commandSuccess;
   }

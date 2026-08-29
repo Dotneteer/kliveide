@@ -1,9 +1,9 @@
 import classnames from "classnames";
-import { DumpSection } from "./DumpSection";
+import { MemoryDumpSection } from "@renderer/features/memory/MemoryDumpSection";
 import styles from "./StaticMemoryView.module.scss";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
 import { useEffect, useState } from "react";
-import { Label } from "@controls/generic";
+import { Label } from "@renderer/controls/layout/Label";
 
 type MemoryViewProps = {
   memory: Uint8Array;
@@ -56,18 +56,22 @@ export const StaticMemoryView = ({ memory, initialShowAll = false, maxBytesInCon
                 [styles.twoSections]: true
               })}
             >
-              <DumpSection
+              <MemoryDumpSection
                 key={mi}
                 address={mi}
-                memory={memory}
+                bytes={memory.slice(mi, mi + 8)}
+                decimalView={false}
                 charDump={true}
+                lastJumpAddress={-1}
               />
               {mi + 0x08 < bytesDisplayed && (
-                <DumpSection
+                <MemoryDumpSection
                   key={mi + 0x08}
                   address={mi + 0x08}
-                  memory={memory}
+                  bytes={memory.slice(mi + 0x08, mi + 0x10)}
+                  decimalView={false}
                   charDump={true}
+                  lastJumpAddress={-1}
                 />
               )}
             </div>

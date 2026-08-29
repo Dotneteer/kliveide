@@ -1,19 +1,20 @@
 import styles from "./ExportCodeDialog.module.scss";
-import { ModalApi, Modal } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { getNodeExtension, getNodeName } from "../project/project-node";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { useMainApi } from "@renderer/core/MainApi";
 import Dropdown from "@renderer/controls/Dropdown";
 import { useDispatch, useRendererContext } from "@renderer/core/RendererProvider";
 import { incProjectFileVersionAction, setExportDialogInfoAction } from "@common/state/actions";
+import { DialogForm } from "@renderer/controls/DialogForm";
+import { decimalAddress, optionalPath, requiredFilename } from "./dialogValidators";
+import { buildExportCodeCommand } from "./exportCodeCommand";
 
 const EXPORT_CODE_FOLDER_ID = "exportCodeFolder";
-const VALID_INTEGER = /^\d+$/;
 
 const formatIds = [
   {
@@ -71,43 +72,41 @@ const borderIds = [
 
 type Props = {
   onClose: () => void;
-  onExport: () => Promise<void>;
+  onExport?: (result: ExportCodeDialogResult) => Promise<void> | void;
 };
 
-export const ExportCodeDialog = ({ onClose }: Props) => {
+export type ExportCodeDialogResult = {
+  command: string;
+  fullFilename: string;
+  formatId: string;
+  exportName: string;
+  exportFolder: string;
+  programName: string;
+  startAddress: string;
+};
+
+export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   const dispatch = useDispatch();
   const { store } = useRendererContext();
   const exportSettings = store.getState()?.project?.exportSettings ?? {};
   const mainApi = useMainApi();
   const { outputPaneService, ideCommandsService, validationService } = useAppServices();
-  const modalApi = useRef<ModalApi>(null);
   const [formatId, setFormatId] = useState(exportSettings.formatId ?? "tzx");
   const [exportFolder, setExportFolder] = useState(exportSettings?.exportFolder ?? "");
-  const [folderIsValid, setFolderIsValid] = useState(true);
   const [exportName, setExportName] = useState(exportSettings?.exportName ?? "");
-  const [exportIsValid, setExportIsValid] = useState(true);
   const [programName, setProgramName] = useState(exportSettings?.programName ?? "");
   const [borderId, setBorderId] = useState(exportSettings?.border?.toString() ?? "none");
   const [screenFilename, setScreenFilename] = useState(exportSettings?.screenFilename ?? "");
-  const [screenFileIsValid, setScreenFileIsValid] = useState(true);
   const [startAddress, setStartAddress] = useState(exportSettings?.startAddress?.toString() ?? "");
-  const [startAddressIsValid, setStartAddressIsValid] = useState(true);
   const [startBlock, setStartBlock] = useState(exportSettings?.startBlock ?? true);
   const [addPause, setAddPause] = useState(exportSettings?.addPause ?? false);
   const [addClear, setAddClear] = useState(exportSettings?.addClear ?? true);
   const [singleBlock, setSingleBlock] = useState(exportSettings?.singleBlock ?? false);
 
-  useEffect(() => {
-    const fValid = validationService.isValidPath(exportFolder);
-    setFolderIsValid(fValid);
-    const nValid = validationService.isValidFilename(exportName);
-    setExportIsValid(nValid);
-    const addressValid = startAddress.trim() === "" || VALID_INTEGER.test(startAddress);
-    setStartAddressIsValid(addressValid);
-    const scrValid = validationService.isValidPath(screenFilename);
-    setScreenFileIsValid(scrValid);
-    modalApi.current.enablePrimaryButton(fValid && nValid && addressValid && scrValid);
-  }, [exportFolder, exportName, startAddress, screenFilename]);
+  const folderError = optionalPath(validationService, exportFolder);
+  const exportError = requiredFilename(validationService, exportName);
+  const screenFileError = optionalPath(validationService, screenFilename);
+  const startAddressError = decimalAddress(startAddress);
 
   // --- Save the dialog data whenever it changes
   useEffect(() => {
@@ -146,6 +145,48 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
     singleBlock
   ]);
 
+  const canExport = !folderError && !exportError && !startAddressError && !screenFileError;
+
+  const exportCode = async (): Promise<boolean> => {
+    // --- Dialog can be closed
+    const { command, fullFilename } = buildExportCodeCommand({
+      addClear, addPause, borderId, exportFolder, exportName, formatId, programName,
+      screenFilename, singleBlock, startAddress, startBlock
+    });
+    const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+    const result = await ideCommandsService.executeCommand(command, buildPane);
+    if (result.success) {
+      await mainApi.displayMessageBox(
+        "info",
+        "Exporting code",
+        result.finalMessage ?? "Code successfully exported."
+      );
+      await onExport?.({
+        command,
+        fullFilename,
+        formatId,
+        exportName,
+        exportFolder,
+        programName,
+        startAddress
+      });
+    } else {
+      // --- Analyze the message and
+      let message = result.finalMessage;
+      if (message.includes("-addr")) {
+        message = "Code start address must be between 16384 and 65535.";
+      } else {
+        // --- Other messages
+      }
+      await mainApi.displayMessageBox(
+        "error",
+        "Exporting code",
+        message ?? result.finalMessage ?? "Code export failed"
+      );
+    }
+    return !result.success;
+  };
+
   return (
     <Modal
       title="Export Code"
@@ -153,58 +194,19 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
       fullScreen={false}
       width={500}
       translateY={0}
-      onApiLoaded={(api) => (modalApi.current = api)}
-      primaryLabel="Export"
-      primaryEnabled={true}
-      initialFocus="none"
-      onPrimaryClicked={async () => {
-        // --- Dialog can be closed
-        let filename = exportName;
-        let exportExt = getNodeExtension(exportName);
-        if (!exportExt || exportExt === ".") {
-          filename += `.${formatId}`;
-        }
-        const fullFilename = (exportFolder ? `${exportFolder}/${filename}` : filename).replaceAll(
-          "\\",
-          "/"
-        );
-        const name = programName ? programName : getNodeName(exportName);
-        const command = `expc "${fullFilename}" -n ${name} -f ${formatId}${
-          startBlock ? " -as" : ""
-        }${addPause ? " -p" : ""}${
-          borderId !== "none" ? ` -b ${borderId}` : ""
-        }${singleBlock ? " -sb" : ""}${
-          startAddress ? ` -addr ${startAddress}` : ""
-        }${addClear ? " -c" : ""}${screenFilename ? ` -scr "${screenFilename.replaceAll("\\", "/")}"` : ""}`;
-        const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-        console.log("export command:", command);
-        const result = await ideCommandsService.executeCommand(command, buildPane);
-        if (result.success) {
-          await mainApi.displayMessageBox(
-            "info",
-            "Exporting code",
-            result.finalMessage ?? "Code successfully exported."
-          );
-        } else {
-          // --- Analyze the message and
-          let message = result.finalMessage;
-          if (message.includes("-addr")) {
-            message = "Code start address must be between 16384 and 65535.";
-          } else {
-            // --- Other messages
-          }
-          await mainApi.displayMessageBox(
-            "error",
-            "Exporting code",
-            message ?? result.finalMessage ?? "Code export failed"
-          );
-        }
-        return !result.success;
-      }}
+      footerVisible={false}
       onClose={() => {
         onClose();
       }}
     >
+      <DialogForm
+        submitLabel="Export"
+        submitDisabled={!canExport}
+        onSubmit={async () => {
+          if (!(await exportCode())) onClose();
+        }}
+        onCancel={onClose}
+      >
       <DialogRow label="Export format:">
         <div className={styles.dropdownWrapper}>
           <Dropdown
@@ -219,31 +221,19 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
       <DialogRow label="Export folder:">
         <TextInput
           value={exportFolder}
-          isValid={folderIsValid}
+          error={folderError}
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
-          buttonClicked={async () => {
-            const folder = await mainApi.showOpenFolderDialog(EXPORT_CODE_FOLDER_ID);
-            if (folder) {
-              setExportFolder(folder);
-            }
-            return folder;
-          }}
-          valueChanged={(val) => {
-            setExportFolder(val);
-            return false;
-          }}
+          browse={() => mainApi.showOpenFolderDialog(EXPORT_CODE_FOLDER_ID)}
+          onChange={setExportFolder}
         />
       </DialogRow>
       <DialogRow label="Export file name: *">
         <TextInput
           value={exportName}
-          isValid={exportIsValid}
-          focusOnInit={true}
-          valueChanged={(val) => {
-            setExportName(val);
-            return false;
-          }}
+          error={exportError}
+          autoFocus={true}
+          onChange={setExportName}
         />
       </DialogRow>
       <DialogRow label="Program name:">
@@ -251,11 +241,7 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           value={programName}
           width={100}
           maxLength={10}
-          isValid={true}
-          valueChanged={(val) => {
-            setProgramName(val);
-            return false;
-          }}
+          onChange={setProgramName}
         />
       </DialogRow>
       {formatId !== "hex" && (
@@ -308,27 +294,18 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           <DialogRow label="Screen file:">
             <TextInput
               value={screenFilename}
-              isValid={screenFileIsValid}
+              error={screenFileError}
               buttonIcon="file-code"
               buttonTitle="Select the screen file"
-              buttonClicked={async () => {
-                const file = await mainApi.showOpenFileDialog(
+              browse={() => mainApi.showOpenFileDialog(
                   [
                     { name: "Tape files", extensions: ["tap", "tzx"] },
                     { name: "Screen files", extensions: ["scr"] },
                     { name: "All Files", extensions: ["*"] }
                   ],
                   EXPORT_CODE_FOLDER_ID
-                );
-                if (file) {
-                  setScreenFilename(file);
-                }
-                return file;
-              }}
-              valueChanged={(val) => {
-                setScreenFilename(val);
-                return false;
-              }}
+                )}
+              onChange={setScreenFilename}
             />
           </DialogRow>
           <DialogRow label="Code start address:">
@@ -337,15 +314,13 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
               maxLength={5}
               width={60}
               numberOnly
-              isValid={startAddressIsValid}
-              valueChanged={(val) => {
-                setStartAddress(val);
-                return false;
-              }}
+              error={startAddressError}
+              onChange={setStartAddress}
             />
           </DialogRow>
         </>
       )}
+      </DialogForm>
     </Modal>
   );
 };

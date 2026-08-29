@@ -1,4 +1,4 @@
-import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import {
   GenericFileEditorContext,
   GenericFileEditorPanel

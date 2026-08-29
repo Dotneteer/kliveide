@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { LanguageIntelService } from "@renderer/appIde/services/LanguageIntelService";
-import { computeReferences } from "@renderer/appIde/services/z80-providers";
+import { computeReferences, resolveSymbolNameAtPosition } from "@renderer/appIde/services/z80-providers";
 import type { LanguageIntelData, SymbolDefinitionInfo, SymbolReferenceInfo } from "@abstractions/CompilerInfo";
 
 function makeSym(partial: Partial<SymbolDefinitionInfo> & { name: string }): SymbolDefinitionInfo {
@@ -90,6 +90,21 @@ describe("computeReferences", () => {
     expect(paths).toContain("/project/lib.asm");   // definition
     expect(paths).toContain("/project/main.asm");  // ref in main
     expect(paths).toContain("/project/lib.asm");   // ref in lib
+  });
+
+  it("resolves a module member's declaration to its qualified name", () => {
+    svc.update(makeData(
+      [makeSym({ name: "IoDemo.Read", fileIndex: 1, line: 6, startColumn: 0, endColumn: 4 })],
+      [makeRef({ symbolName: "IoDemo.Read", fileIndex: 0, line: 69 })]
+    ));
+
+    const symbol = resolveSymbolNameAtPosition("Read", 1, 6, 2, svc);
+    expect(symbol).toBe("IoDemo.Read");
+
+    const results = computeReferences(symbol!, false, svc);
+    expect(results).toHaveLength(1);
+    expect(results[0].filePath).toBe("/project/main.asm");
+    expect(results[0].line).toBe(69);
   });
 
   // --- Case-insensitive lookup

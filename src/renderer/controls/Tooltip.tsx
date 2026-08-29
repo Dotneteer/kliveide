@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePopper } from "react-popper";
 import styles from "./Tooltip.module.scss";
-import { useTheme } from "@renderer/theming/ThemeProvider";
+import { useOverlayRoot } from "./overlay/useOverlayRoot";
 
 // =====================================================================================================================
 // Tooltip React component definition
@@ -37,11 +37,10 @@ export const Tooltip = ({
   offsetY = 8,
   isShown = false
 }: Props) => {
-  const { root } = useTheme();
-  const handle = useRef<any>();
+  const root = useOverlayRoot();
+  const handle = useRef<ReturnType<typeof setTimeout>>();
   const [visible, setVisible] = useState(isShown);
-  const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(null);
-  const [popperElement, setPopperElement] = useState(null);
+  const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
   let fallbackPlacement: Placement = "bottom";
   switch (placement) {
     case "top":
@@ -57,7 +56,7 @@ export const Tooltip = ({
       fallbackPlacement = "left";
   }
 
-  const { styles: popperStyles, attributes } = usePopper(referenceElement, popperElement, {
+  const { styles: popperStyles, attributes } = usePopper(refElement, popperElement, {
     placement,
     modifiers: [
       {
@@ -76,33 +75,38 @@ export const Tooltip = ({
     strategy: "fixed"
   });
 
-  const onMouseEnter = useCallback(() => {
-    handle.current = setTimeout(() => setVisible(true), showDelay);
-  }, []);
-  const onMouseLeave = useCallback(() => {
+  const clearShowTimer = useCallback(() => {
     if (handle.current !== undefined) {
       clearTimeout(handle.current);
       handle.current = undefined;
     }
-    setVisible(false);
   }, []);
 
-  useEffect(() => {
-    setReferenceElement(refElement);
+  const onMouseEnter = useCallback(() => {
+    handle.current = setTimeout(() => setVisible(true), showDelay);
+  }, [showDelay]);
+  const onMouseLeave = useCallback(() => {
+    clearShowTimer();
+    setVisible(false);
+  }, [clearShowTimer]);
 
-    if (refElement) {
-      refElement.addEventListener("mouseenter", onMouseEnter);
-      refElement.addEventListener("mouseleave", onMouseLeave);
-    }
+  useEffect(() => {
+    setVisible(isShown);
+  }, [isShown]);
+
+  useEffect(() => {
+    const element = refElement;
+    if (!element) return;
+
+    element.addEventListener("mouseenter", onMouseEnter);
+    element.addEventListener("mouseleave", onMouseLeave);
 
     return () => {
-      if (referenceElement) {
-        referenceElement.removeEventListener("mouseenter", onMouseEnter);
-        referenceElement.removeEventListener("mouseleave", onMouseLeave);
-        setReferenceElement(null);
-      }
+      element.removeEventListener("mouseenter", onMouseEnter);
+      element.removeEventListener("mouseleave", onMouseLeave);
+      clearShowTimer();
     };
-  }, [refElement, onMouseEnter, onMouseLeave, referenceElement]);
+  }, [clearShowTimer, refElement, onMouseEnter, onMouseLeave]);
 
   return (
     <>
@@ -110,13 +114,13 @@ export const Tooltip = ({
         createPortal(
           <div
             className={styles.tooltip}
-            ref={(el: any) => setPopperElement(el)}
+            ref={setPopperElement}
             style={popperStyles.popper}
             {...attributes.popper}
           >
             {children}
           </div>,
-          root
+          root ?? document.body
         )}
     </>
   );
@@ -162,13 +166,13 @@ export function TooltipFactory({
   );
 }
 
-export function useTooltipRef(...deps: any[]) {
-  const ref = useRef<any>(null);
-  const [version, setVersion] = useState(0);
+export function useTooltipRef<T extends HTMLElement = HTMLElement>() {
+  const ref = useRef<T | null>(null);
+  const [, setVersion] = useState(0);
 
   useEffect(() => {
-    setVersion(version + 1);
-  }, [ref?.current, ...deps]);
+    setVersion((version) => version + 1);
+  }, []);
 
   return ref;
 }

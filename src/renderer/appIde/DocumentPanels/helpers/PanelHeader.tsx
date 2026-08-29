@@ -1,4 +1,4 @@
-import { HStack } from "@renderer/controls/new/Panels";
+import { HStack } from "@renderer/controls/layout/Panels";
 
 type Props = {
   children?: React.ReactNode;

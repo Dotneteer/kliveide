@@ -5,8 +5,8 @@ import styles from "./NextBankDropdown.module.scss";
 
 import classnames from "classnames";
 import { Icon } from "../Icon";
-import { HStack } from "./Panels";
-import { useThemeRoot } from "@renderer/core/useThemeRoot";
+import { HStack } from "@renderer/controls/layout/Panels";
+import { useOverlayRoot } from "@renderer/controls/overlay/useOverlayRoot";
 import { toDecimal3, toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 type Props = {
@@ -34,7 +34,7 @@ export default function NextBankDropdown({
   decimalView,
   onChanged
 }: Props) {
-  const rootElement = useThemeRoot();
+  const rootElement = useOverlayRoot();
 
   // Create an array of bank values
   const bankValues = Array.from({ length: banks }, (_, i) => i);
@@ -55,7 +55,6 @@ export default function NextBankDropdown({
   const setNewValue = (value: number) => {
     const newValue = value < 0 ? value.toString(10) : toHexa2(value);
     setSelectedValue(newValue);
-    console.log("Selected value: ", newValue);
     onChanged?.(value);
   };
 
@@ -94,7 +93,6 @@ export default function NextBankDropdown({
     <Select.Root
       value={selectedValue}
       onValueChange={(v) => {
-        console.log("nv", v);
         setNewValue(v.startsWith("-") ? parseInt(v, 10) : parseInt(v, 16));
       }}
     >

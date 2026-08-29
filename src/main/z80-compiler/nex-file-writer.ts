@@ -1,6 +1,6 @@
-import { AssemblerOutput } from "@main/compiler-common/assembler-in-out";
-import * as fs from "fs/promises";
-import * as path from "path";
+import type { AssemblerOutput } from "@main/compiler-common/assembler-in-out";
+
+export type NexFileReader = (filename: string) => Promise<Uint8Array>;
 
 /**
  * NEX file format writer for ZX Spectrum Next.
@@ -337,7 +337,8 @@ export class NexFileWriter {
    */
   static async fromAssemblerOutput(
     output: AssemblerOutput<any, any>,
-    baseDir: string
+    baseDir: string,
+    readFile: NexFileReader = missingNexFileReader
   ): Promise<Uint8Array> {
     if (!output.nexConfig) {
       throw new Error("No NEX configuration in assembler output");
@@ -389,22 +390,22 @@ export class NexFileWriter {
 
     // Load screen
     if (config.screen && config.screen.filename) {
-      const screenPath = path.resolve(baseDir, config.screen.filename);
-      const screenData = await fs.readFile(screenPath);
+      const screenPath = resolveNexPath(baseDir, config.screen.filename);
+      const screenData = await readFile(screenPath);
       writer.addScreen(config.screen.type, new Uint8Array(screenData));
     }
 
     // Load palette
     if (config.paletteFile) {
-      const palettePath = path.resolve(baseDir, config.paletteFile);
-      const paletteData = await fs.readFile(palettePath);
+      const palettePath = resolveNexPath(baseDir, config.paletteFile);
+      const paletteData = await readFile(palettePath);
       writer.setPalette(new Uint8Array(paletteData));
     }
 
     // Load copper
     if (config.copperFile) {
-      const copperPath = path.resolve(baseDir, config.copperFile);
-      const copperData = await fs.readFile(copperPath);
+      const copperPath = resolveNexPath(baseDir, config.copperFile);
+      const copperData = await readFile(copperPath);
       writer.setCopper(new Uint8Array(copperData));
     }
 
@@ -482,4 +483,29 @@ export class NexFileWriter {
 
     return writer.write();
   }
+}
+
+function resolveNexPath(baseDir: string, filename: string): string {
+  if (filename.startsWith("/") || /^[A-Za-z]:[\\\/]/.test(filename)) {
+    return normalizeSeparators(filename);
+  }
+  return normalizeSeparators(`${baseDir.replace(/[\\\/]+$/, "")}/${filename}`);
+}
+
+function normalizeSeparators(filename: string): string {
+  const [prefix, ...segments] = filename.replace(/\\/g, "/").split("/");
+  const normalizedSegments: string[] = [];
+  for (const segment of segments) {
+    if (segment === "" || segment === ".") continue;
+    if (segment === ".." && normalizedSegments.length > 0) {
+      normalizedSegments.pop();
+      continue;
+    }
+    normalizedSegments.push(segment);
+  }
+  return [prefix, ...normalizedSegments].join("/");
+}
+
+async function missingNexFileReader(filename: string): Promise<Uint8Array> {
+  throw new Error(`Cannot read '${filename}' without a NEX file reader.`);
 }

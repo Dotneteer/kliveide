@@ -1,10 +1,8 @@
-import {
-  Label,
-  LabelSeparator,
-  Secondary,
-  Separator,
-  Value
-} from "@controls/generic";
+import { Label } from "@renderer/controls/layout/Label";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Secondary } from "@renderer/controls/layout/Secondary";
+import { Separator } from "@renderer/controls/layout/Separator";
+import { Value } from "@renderer/controls/layout/Value";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
 import { toHexa2, toHexa4 } from "../services/ide-commands";

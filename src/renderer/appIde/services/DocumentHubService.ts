@@ -7,7 +7,8 @@ import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { getFileTypeEntry, getNodeFile } from "../project/project-node";
+import { getFileTypeEntry, getNodeFile } from "@renderer/appIde/project/project-node";
+import { documentPanelRegistry } from "@renderer/registry";
 
 /**
  * This class provides the default implementation of the document service
@@ -18,6 +19,8 @@ class DocumentHubService implements IDocumentHubService {
 
   private _openDocs: ProjectDocumentState[] = [];
   private _activeDocIndex = -1;
+  private _closingDocumentIds = new Set<string>();
+  private _hubClosureRequested = false;
 
   onProjectClosed = () => {
     this._documentViewState.clear();
@@ -95,50 +98,35 @@ class DocumentHubService implements IDocumentHubService {
    * Opens the specified document
    * @param document Document to open
    * @param viewState Optional viewstate assigned to the document
-   * @param temporary Open it as temporary documents? (Default: true)
+   * @param temporary Open it as a temporary document? (Default: true)
    */
   async openDocument(
     document: ProjectDocumentState,
     viewState?: any,
     temporary = true
   ): Promise<void> {
-    const docIndex = this._openDocs.findIndex((d) => d.id === document.id);
-    if (docIndex >= 0) {
-      // --- A similar document exists with the same ID
-      const existingDoc = this._openDocs[docIndex];
-      if (existingDoc !== document) {
-        throw new Error(`Duplicated document with ID '${document.id}'`);
-      }
-    } else {
-      if (temporary) {
-        // --- Check for temporary documents
-        document.isTemporary = true;
-        const tempIndex = this._openDocs.findIndex((d) => d.isTemporary);
-        if (tempIndex >= 0) {
-          // --- Change the former temp document to this one
-          this._openDocs[tempIndex] = document;
-          this.signHubStateChanged();
-        } else {
-          // --- Add as the last document
-          this._openDocs.push(document);
-        }
-      } else {
-        // --- Add as the last document
-        document.isTemporary = false;
-        this._openDocs.push(document);
-      }
-    }
-
-    // --- Save (or remove) the document data
-    if (viewState) {
-      this._documentViewState.set(document.id, viewState);
-    } else {
-      this._documentViewState.delete(document.id);
-    }
-
-    // --- Now, activate the newly opened document
-    this.projectService.openInDocumentHub(document.id, this);
+    const wasAdded = this.addDocument(document, viewState, temporary);
     await this.setActiveDocument(document.id);
+    if (wasAdded) {
+      this.signHubStateChanged();
+    }
+  }
+
+  /**
+   * Opens the specified document as a tab without activating/rendering its contents.
+   * @param document Document to open
+   * @param viewState Optional viewstate assigned to the document
+   * @param temporary Open it as a temporary document?
+   */
+  async openDocumentTab(
+    document: ProjectDocumentState,
+    viewState?: any,
+    temporary = false
+  ): Promise<void> {
+    const wasAdded = this.addDocument(document, viewState, temporary);
+    if (wasAdded) {
+      this.signHubStateChanged();
+    }
   }
 
   /**
@@ -186,7 +174,7 @@ class DocumentHubService implements IDocumentHubService {
   }
 
   /**
-   * Gets the project file is open
+   * Gets the open project file document, if any.
    */
   async getOpenProjectFileDocument(): Promise<ProjectDocumentState | undefined> {
     const state = this.store.getState();
@@ -212,7 +200,16 @@ class DocumentHubService implements IDocumentHubService {
     if (docIndex < 0) {
       throw new Error(`Unknown document: ${id}`);
     }
+    const document = this._openDocs[docIndex];
+    let documentWasLoaded = false;
+    if (document.path && document.node && document.contents === undefined) {
+      await this.projectService.getDocumentForProjectNode(document.node);
+      documentWasLoaded = true;
+    }
     if (this._activeDocIndex === docIndex) {
+      if (documentWasLoaded) {
+        this.signHubStateChanged();
+      }
       // --- No change
       return;
     }
@@ -266,48 +263,81 @@ class DocumentHubService implements IDocumentHubService {
     return this.closeDocuments(id);
   }
 
-  private async closeDocuments(...ids: string[]) {
-    const indices = ids
-      .map((id) => this._openDocs.findIndex((doc) => doc.id === id))
-      .filter((i) => i >= 0);
+  /**
+   * Detaches the specified document view without invoking disposal/save hooks.
+   */
+  detachDocument(id: string): ProjectDocumentState | undefined {
+    const docIndex = this._openDocs.findIndex((doc) => doc.id === id);
+    if (docIndex < 0) return undefined;
 
-    if (indices.length <= 0) return;
-
-    const closedDocs = indices.map((i) => this._openDocs[i]);
-    await this.ensureDocumentSaved(...closedDocs.map((doc) => doc.id));
-
-    // --- This is needed when evaluating active document below.
     const activeDoc = this._openDocs[this._activeDocIndex];
+    const [detachedDoc] = this._openDocs.splice(docIndex, 1);
 
-    this._openDocs = this._openDocs.filter((doc) => !closedDocs.includes(doc));
-    for (const doc of closedDocs) {
-      // --- If volatile, sign its closed
-      if (!doc.path) {
-        this.store.dispatch(setVolatileDocStateAction(doc.id, false), "ide");
-      }
+    // --- Release the view-local API and state, but keep shared document contents alone.
+    this._documentApi.delete(detachedDoc.id);
+    this._documentViewState.delete(detachedDoc.id);
+    this.projectService.closeInDocumentHub(detachedDoc.id, this);
 
-      // --- Release the document API
-      this._documentApi.delete(doc.id);
-
-      // --- Release the document view data
-      this._documentViewState.delete(doc.id);
-
-      // --- Notify the project service about closing the document
-      this.projectService.closeInDocumentHub(doc.id, this);
-    }
-
-    // --- Activate another document
     this._activeDocIndex = this._openDocs.indexOf(activeDoc);
     if (this._activeDocIndex < 0 && this._openDocs.length > 0) {
-      const docIndex = indices.sort()[0];
       this._activeDocIndex = docIndex > 0 ? docIndex - 1 : docIndex;
     }
 
     this.signHubStateChanged();
+    this.requestHubClosureIfEmpty();
 
-    // --- Close the document hub service
-    if (this._openDocs.length <= 0) {
-      this.projectService.closeDocumentHubService(this);
+    return detachedDoc;
+  }
+
+  private async closeDocuments(...ids: string[]) {
+    const documentIds = [...new Set(ids)].filter(
+      (id) => !this._closingDocumentIds.has(id) && !!this.getDocument(id)
+    );
+    if (documentIds.length <= 0) return;
+
+    documentIds.forEach((id) => this._closingDocumentIds.add(id));
+    try {
+      const indices = documentIds
+        .map((id) => this._openDocs.findIndex((doc) => doc.id === id))
+        .filter((i) => i >= 0);
+
+      if (indices.length <= 0) return;
+
+      const closedDocs = indices.map((i) => this._openDocs[i]);
+      await this.ensureDocumentSaved(...closedDocs.map((doc) => doc.id));
+
+      // --- This is needed when evaluating active document below.
+      const activeDoc = this._openDocs[this._activeDocIndex];
+
+      this._openDocs = this._openDocs.filter((doc) => !closedDocs.includes(doc));
+      for (const doc of closedDocs) {
+        // --- If volatile, sign its closed
+        if (!doc.path) {
+          this.store.dispatch(setVolatileDocStateAction(doc.id, false), "ide");
+        }
+
+        // --- Release the document API
+        this._documentApi.delete(doc.id);
+
+        // --- Release the document view data
+        this._documentViewState.delete(doc.id);
+
+        // --- Notify the project service about closing the document
+        this.projectService.closeInDocumentHub(doc.id, this);
+      }
+
+      // --- Activate another document
+      this._activeDocIndex = this._openDocs.indexOf(activeDoc);
+      if (this._activeDocIndex < 0 && this._openDocs.length > 0) {
+        const docIndex = indices.sort()[0];
+        this._activeDocIndex = docIndex > 0 ? docIndex - 1 : docIndex;
+      }
+
+      this.signHubStateChanged();
+
+      this.requestHubClosureIfEmpty();
+    } finally {
+      documentIds.forEach((id) => this._closingDocumentIds.delete(id));
     }
   }
 
@@ -338,7 +368,7 @@ class DocumentHubService implements IDocumentHubService {
   }
 
   /**
-   * Moves the active tab to left
+   * Moves the active tab to the left
    */
   moveActiveToLeft(): void {
     const index = this._activeDocIndex;
@@ -351,15 +381,40 @@ class DocumentHubService implements IDocumentHubService {
   }
 
   /**
-   * Moves the active tab to right
+   * Moves the active tab to the right
    */
   moveActiveToRight(): void {
     const index = this._activeDocIndex;
-    if (index >= this._openDocs.length) return;
+    if (index < 0 || index >= this._openDocs.length - 1) return;
     const tmp = this._openDocs[index + 1];
     this._openDocs[index + 1] = this._openDocs[index];
     this._openDocs[index] = tmp;
     this._activeDocIndex++;
+    this.signHubStateChanged();
+  }
+
+  /**
+   * Moves a document tab before or after another document tab.
+   */
+  moveDocument(sourceId: string, targetId: string, after = false): void {
+    const sourceIndex = this._openDocs.findIndex((d) => d.id === sourceId);
+    const targetIndex = this._openDocs.findIndex((d) => d.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return;
+
+    let insertIndex = targetIndex;
+    if (sourceIndex < targetIndex) {
+      insertIndex--;
+    }
+    if (after) {
+      insertIndex++;
+    }
+    insertIndex = Math.max(0, Math.min(insertIndex, this._openDocs.length));
+    if (insertIndex === sourceIndex) return;
+
+    const activeDoc = this._openDocs[this._activeDocIndex];
+    const [document] = this._openDocs.splice(sourceIndex, 1);
+    this._openDocs.splice(insertIndex, 0, document);
+    this._activeDocIndex = this._openDocs.indexOf(activeDoc);
     this.signHubStateChanged();
   }
 
@@ -374,10 +429,11 @@ class DocumentHubService implements IDocumentHubService {
   /**
    * Saves the specified document state
    * @param id Document ID
-   * @param vieState State to save
+   * @param viewState State to save
    */
   setDocumentViewState(id: string, viewState: any): void {
     this._documentViewState.set(id, viewState);
+    this.signHubStateChanged();
   }
 
   /**
@@ -439,6 +495,66 @@ class DocumentHubService implements IDocumentHubService {
         .filter((api) => !!api?.beforeDocumentDisposal)
         .map((api) => api?.beforeDocumentDisposal(false))
     );
+  }
+
+  private addDocument(
+    document: ProjectDocumentState,
+    viewState: any,
+    temporary: boolean
+  ): boolean {
+    this._hubClosureRequested = false;
+    const docIndex = this._openDocs.findIndex((d) => d.id === document.id);
+    let wasAdded = false;
+    this.assignDocumentRendererMetadata(document);
+    if (docIndex >= 0) {
+      // --- A similar document exists with the same ID
+      const existingDoc = this._openDocs[docIndex];
+      if (existingDoc !== document) {
+        throw new Error(`Duplicated document with ID '${document.id}'`);
+      }
+    } else {
+      if (temporary) {
+        // --- Check for temporary documents
+        document.isTemporary = true;
+        const tempIndex = this._openDocs.findIndex((d) => d.isTemporary);
+        if (tempIndex >= 0) {
+          // --- Change the former temp document to this one
+          this._openDocs[tempIndex] = document;
+        } else {
+          // --- Add as the last document
+          this._openDocs.push(document);
+        }
+      } else {
+        // --- Add as the last document
+        document.isTemporary = false;
+        this._openDocs.push(document);
+      }
+      wasAdded = true;
+    }
+
+    // --- Save (or remove) the document data
+    if (viewState) {
+      this._documentViewState.set(document.id, viewState);
+    } else {
+      this._documentViewState.delete(document.id);
+    }
+
+    this.projectService.openInDocumentHub(document.id, this);
+    return wasAdded;
+  }
+
+  private assignDocumentRendererMetadata(document: ProjectDocumentState): void {
+    const docRenderer = documentPanelRegistry.find((dp) => dp.id === document.type);
+    if (!docRenderer) return;
+    document.iconName ||= docRenderer.icon;
+    document.iconFill ||= docRenderer.iconFill;
+  }
+
+  private requestHubClosureIfEmpty(): void {
+    if (this._openDocs.length > 0 || this._hubClosureRequested) return;
+
+    this._hubClosureRequested = true;
+    this.projectService.closeDocumentHubService(this);
   }
 
   // --- Increment the document hub service version number to sign a state change

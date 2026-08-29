@@ -38,6 +38,33 @@
     background: transparent;
     opacity: 0.0;
 
+    &.withBorder {
+        opacity: 1.0;
+
+        &::after {
+            content: "";
+            position: absolute;
+            pointer-events: none;
+            background: var(--color-tool-border);
+        }
+    }
+
+    &.verticalBorder::after {
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 1px;
+        transform: translateX(-0.5px);
+    }
+
+    &.horizontalBorder::after {
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        transform: translateY(-0.5px);
+    }
+
     &.pointed {
         background: var(--bgcolor-splitter);
         opacity: 1.0;

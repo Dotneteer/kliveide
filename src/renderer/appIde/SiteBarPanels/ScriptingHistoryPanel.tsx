@@ -2,14 +2,14 @@ import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 import styles from "./ScriptingHistoryPanel.module.scss";
 import { useEffect, useState } from "react";
-import { LabelSeparator } from "@controls/generic";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Icon } from "@renderer/controls/Icon";
 import classnames from "classnames";
 import { useSelector } from "@renderer/core/RendererProvider";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { TabButton } from "@renderer/controls/TabButton";
 import { isScriptCompleted, scriptDocumentId } from "@common/utils/script-utils";
-import { Text } from "@renderer/controls/generic/Text";
+import { Text } from "@renderer/controls/layout/Text";
 import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
@@ -159,9 +159,9 @@ const ScriptItem = ({ script, itemKey, isSelected, onSelect }: ScriptItemProps) 
       })}
       onClick={async () => await onSelect?.()}
     >
-      <LabelSeparator width={4} />
+      <LabelSeparator />
       <Icon iconName={taskIcon} fill={taskIconColor} width={16} height={16} />
-      <LabelSeparator width={4} />
+      <LabelSeparator />
       <Icon iconName={icon} fill={color} width={16} height={16} />
       <div className={styles.itemId}>{script.id}</div>
       <div className={styles.itemText}>{taskName}</div>

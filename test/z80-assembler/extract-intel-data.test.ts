@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, it, expect } from "vitest";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { extractLanguageIntelData } from "@main/compiler-integration/extractIntelData";
@@ -221,6 +224,64 @@ LocalLabel:
       s.name.includes("mymod") && s.name.includes("locallabel")
     );
     expect(sym).toBeDefined();
+  });
+
+  it("keeps module symbols available after an earlier syntax error", async () => {
+    const compiler = new Z80Assembler();
+    const output = await compiler.compile(`
+      /
+      .module IoDemo
+Read:
+      nop
+      .endmodule
+`);
+    expect(output.errorCount).toBeGreaterThan(0);
+
+    const intel = extractLanguageIntelData(output as unknown as KliveCompilerOutput);
+    const read = intel.symbolDefinitions.find((symbol) => symbol.name === "iodemo.read");
+    expect(read).toBeDefined();
+    expect(read!.line).toBe(4);
+  });
+
+  it("keeps symbols from includes following an include with a syntax error", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "klive-intel-"));
+    const mainFile = join(directory, "main.asm");
+
+    try {
+      writeFileSync(join(directory, "invalid.asm"), "/\n");
+      writeFileSync(join(directory, "io.asm"), `.module IoDemo\nRead:\n  nop\n.endmodule\n`);
+      writeFileSync(mainFile, `#include "invalid.asm"\n#include "io.asm"\n`);
+
+      const output = await new Z80Assembler().compileFile(mainFile);
+      expect(output.errorCount).toBeGreaterThan(0);
+
+      const intel = extractLanguageIntelData(output as unknown as KliveCompilerOutput);
+      expect(intel.symbolDefinitions.some((symbol) => symbol.name === "iodemo.read")).toBe(true);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("records a forward module-local symbol used as a macro argument", async () => {
+    const compiler = new Z80Assembler();
+    const output = await compiler.compile(`
+.module IoDemo
+Pass .macro(addr)
+  ld hl,{{addr}}
+.endm
+Read
+  Pass(@Title)
+@Title:
+  .defn "Title"
+.endmodule
+`);
+    expect(output.errorCount).toBe(0);
+
+    const intel = extractLanguageIntelData(output as unknown as KliveCompilerOutput);
+    expect(intel.symbolReferences).toContainEqual(expect.objectContaining({
+      symbolName: "iodemo.@title",
+      line: 7
+    }));
   });
 
   // ---------------------------------------------------------------------------

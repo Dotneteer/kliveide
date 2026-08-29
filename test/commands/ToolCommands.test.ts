@@ -170,7 +170,31 @@ describe("ShowMemoryCommand", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should dispatch setVolatileDocStateAction when opening", async () => {
+    it("opens Memory only in the active document hub", async () => {
+      const activeHub = {
+        isOpen: vi.fn(() => false),
+        openDocument: vi.fn().mockResolvedValue(undefined),
+        setActiveDocument: vi.fn()
+      };
+      const inactiveHub = {
+        isOpen: vi.fn(() => false),
+        openDocument: vi.fn(),
+        setActiveDocument: vi.fn()
+      };
+      (context.service.projectService.getActiveDocumentHubService as any).mockReturnValue(activeHub);
+
+      await command.execute(context);
+
+      expect(activeHub.openDocument).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "$memory" }),
+        undefined,
+        false
+      );
+      expect(inactiveHub.openDocument).not.toHaveBeenCalled();
+      expect(inactiveHub.setActiveDocument).not.toHaveBeenCalled();
+    });
+
+    it("should not update a global visibility flag when opening", async () => {
       // Arrange
       const mockService = context.service as any;
       const mockDocService = mockService.projectService.getActiveDocumentHubService() as any;
@@ -181,7 +205,7 @@ describe("ShowMemoryCommand", () => {
       await command.execute(context);
 
       // Assert
-      expect(context.store.dispatch).toHaveBeenCalled();
+      expect(context.store.dispatch).not.toHaveBeenCalled();
     });
 
     it("should return success", async () => {
@@ -259,7 +283,18 @@ describe("HideMemoryCommand", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should dispatch setVolatileDocStateAction when closing", async () => {
+    it("closes Memory only in the active document hub", async () => {
+      const activeHub = { closeDocument: vi.fn().mockResolvedValue(undefined) };
+      const inactiveHub = { closeDocument: vi.fn() };
+      (context.service.projectService.getActiveDocumentHubService as any).mockReturnValue(activeHub);
+
+      await command.execute(context);
+
+      expect(activeHub.closeDocument).toHaveBeenCalledWith("$memory");
+      expect(inactiveHub.closeDocument).not.toHaveBeenCalled();
+    });
+
+    it("should not update a global visibility flag when closing", async () => {
       // Arrange
       const mockService = context.service as any;
       const mockDocService = mockService.projectService.getActiveDocumentHubService() as any;
@@ -269,7 +304,7 @@ describe("HideMemoryCommand", () => {
       await command.execute(context);
 
       // Assert
-      expect(context.store.dispatch).toHaveBeenCalled();
+      expect(context.store.dispatch).not.toHaveBeenCalled();
     });
 
     it("should return success", async () => {
@@ -346,7 +381,7 @@ describe("ShowDisassemblyCommand", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should dispatch setVolatileDocStateAction when opening", async () => {
+    it("should not update a global visibility flag when opening", async () => {
       // Arrange
       const mockService = context.service as any;
       const mockDocService = mockService.projectService.getActiveDocumentHubService() as any;
@@ -357,7 +392,7 @@ describe("ShowDisassemblyCommand", () => {
       await command.execute(context);
 
       // Assert
-      expect(context.store.dispatch).toHaveBeenCalled();
+      expect(context.store.dispatch).not.toHaveBeenCalled();
     });
 
     it("should return success", async () => {
@@ -435,7 +470,7 @@ describe("HideDisassemblyCommand", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should dispatch setVolatileDocStateAction when closing", async () => {
+    it("should not update a global visibility flag when closing", async () => {
       // Arrange
       const mockService = context.service as any;
       const mockDocService = mockService.projectService.getActiveDocumentHubService() as any;
@@ -445,7 +480,7 @@ describe("HideDisassemblyCommand", () => {
       await command.execute(context);
 
       // Assert
-      expect(context.store.dispatch).toHaveBeenCalled();
+      expect(context.store.dispatch).not.toHaveBeenCalled();
     });
 
     it("should return success", async () => {

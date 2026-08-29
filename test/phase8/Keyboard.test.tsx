@@ -7,8 +7,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import React, { act } from "react";
-import { renderWithProviders } from "../react-test-utils";
+import { renderWithProviders, act } from "../react-test-utils";
 import { renderHook } from "@testing-library/react";
 import { useKeyboard } from "@renderer/appEmu/Keyboard/useKeyboard";
 import { KeyboardApi } from "@renderer/appEmu/Keyboard/KeyboardPanel";
@@ -19,7 +18,7 @@ import { Sp48Keyboard } from "@renderer/appEmu/Keyboard/Sp48Keyboard";
 // ---------------------------------------------------------------------------
 
 vi.mock("@appIde/services/AppServicesProvider", () => ({
-  useAppServices: () => ({
+  useAppServices: (): any => ({
     machineService: {
       getMachineController: () => ({
         machine: {
@@ -29,11 +28,11 @@ vi.mock("@appIde/services/AppServicesProvider", () => ({
       }),
       getMachineInfo: () => ({
         machine: { displayName: "ZX Spectrum 48K" },
-        model: undefined
+        model: undefined as any
       })
     },
     uiService: { dragging: false },
-    outputPaneService: { getBuffer: () => null }
+    outputPaneService: { getBuffer: (): null => null }
   })
 }));
 

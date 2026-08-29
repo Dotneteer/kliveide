@@ -18,6 +18,7 @@ export default defineConfig({
         test: {
           name: "node",
           include: ["./test/**/*.test.ts"],
+          exclude: ["./test/wasm/z80/**/*.test.ts"],
           environment: "node"
         }
       },

@@ -1,12 +1,15 @@
-import { Flag, Label, LabelSeparator, Secondary } from "@controls/generic";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { Flag } from "@renderer/controls/layout/Flag";
+import { Label } from "@renderer/controls/layout/Label";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Secondary } from "@renderer/controls/layout/Secondary";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import styles from "./DskViewerPanel.module.scss";
 import classnames from "classnames";
 import { useEffect, useState } from "react";
 import {
   useDocumentHubService,
   useDocumentHubServiceVersion
-} from "../services/DocumentServiceProvider";
+} from "@renderer/appIde/services/DocumentServiceProvider";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { DataSection } from "@renderer/controls/DataSection";
 import { StaticMemoryView } from "./StaticMemoryView";
@@ -39,7 +42,6 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
     floppyInfo = createDiskSurface(fileInfo);
   } catch (err) {
     // --- Intentionally ignored
-    console.log(err);
   }
 
   useEffect(() => {
@@ -287,7 +289,7 @@ const LabeledValue = ({ label, title, value }: LabeledValueProps) => (
     <LabelSeparator width={6} />
     <Label text={label} tooltip={title} />
     <ValueLabel text={value.toString()} />
-    <LabelSeparator width={4} />
+    <LabelSeparator />
   </>
 );
 
@@ -303,7 +305,7 @@ const LabeledFlag = ({ label, title, value }: LabeledFlagProps) => (
     <Label text={label} tooltip={title} />
     <LabelSeparator width={8} />
     <Flag value={value} />
-    <LabelSeparator width={4} />
+    <LabelSeparator />
   </>
 );
 

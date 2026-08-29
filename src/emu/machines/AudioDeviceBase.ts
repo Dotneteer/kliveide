@@ -5,18 +5,20 @@ import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
  * This class represents the functionality of an audio device that can generate audio samples
  */
 export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
+  private static readonly SAMPLE_TACT_EPSILON = 1.0e-7;
+  private static readonly DC_FILTER_CUTOFF_HZ = 1.4;
   private _audioSampleRate = 0;
-  private _audioSampleLength = 0;
-  private _audioNextSampleTact = 0;
+  protected _audioSampleLength = 0;
+  protected _audioNextSampleTact = 0;
   // Current frame's samples — returned by getAudioSamples()
   private _audioSamples: AudioSample[] = [];
   // Reuse pool — objects recycled from the previous frame to avoid GC pressure
   private _audioSamplePool: AudioSample[] = [];
   private _poolIndex = 0;
 
-  // --- DC offset high-pass filter state (MAME spkrdev.cpp form)
-  // y[n] = x[n] - x[n-1] + α × y[n-1] where α ≈ 0.995
-  private static readonly DC_FILTER_ALPHA = 0.995;
+  // --- DC offset high-pass filter state.
+  // y[n] = x[n] - x[n-1] + R * y[n-1], R = exp(-2*pi*cutoff/sampleRate)
+  private _dcFilterAlpha = 0;
   private _dcFilterPrevInputLeft = 0;
   private _dcFilterPrevInputRight = 0;
   private _dcFilterPrevOutputLeft = 0;
@@ -57,7 +59,10 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
   setAudioSampleRate (sampleRate: number): void {
     this._audioSampleRate = sampleRate;
     this._audioSampleLength = this.machine.baseClockFrequency / sampleRate;
-    this._audioNextSampleTact = 0;
+    this._audioNextSampleTact = this._audioSampleLength * this.machine.clockMultiplier;
+    this._dcFilterAlpha = sampleRate > 0
+      ? Math.exp((-2 * Math.PI * AudioDeviceBase.DC_FILTER_CUTOFF_HZ) / sampleRate)
+      : 0;
   }
 
   /**
@@ -94,9 +99,9 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
    */
   setNextAudioSample (): void {
     this.calculateCurrentAudioValue();
-    if (this.machine.tacts <= this._audioNextSampleTact) return;
+    if (this.machine.tacts + AudioDeviceBase.SAMPLE_TACT_EPSILON < this._audioNextSampleTact) return;
 
-    const raw = this.getCurrentSampleValue();
+    const raw = this.getCurrentSampleValue(this._audioNextSampleTact);
 
     // Try to reuse a pool object; allocate only when pool is exhausted
     let slot: AudioSample;
@@ -108,7 +113,7 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
     this._poolIndex++;
 
     // Apply DC high-pass filter inline into slot (eliminates temporary object allocation)
-    const a = AudioDeviceBase.DC_FILTER_ALPHA;
+    const a = this._dcFilterAlpha;
     const outLeft = raw.left - this._dcFilterPrevInputLeft + a * this._dcFilterPrevOutputLeft;
     const outRight = raw.right - this._dcFilterPrevInputRight + a * this._dcFilterPrevOutputRight;
     this._dcFilterPrevInputLeft = raw.left;
@@ -124,9 +129,23 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
   }
 
   /**
+   * Renders audio samples up to the specified absolute CPU tact without requiring
+   * the host machine's per-tact execution hook.
+   * @param targetTact Absolute machine tact to render up to
+   */
+  renderSamplesUntilTact(targetTact: number): void {
+    if (this._audioSampleRate <= 0 || this._audioSampleLength <= 0) return;
+    while (targetTact >= this._audioNextSampleTact) {
+      this.machine.setTacts(this._audioNextSampleTact);
+      this.setNextAudioSample();
+    }
+    this.machine.setTacts(targetTact);
+  }
+
+  /**
    * Gets the current sound sample (according to the current CPU tact)
    */
-  getCurrentSampleValue (): AudioSample {
+  getCurrentSampleValue (_sampleEndTact?: number): AudioSample {
     return { left: 0.0, right: 0.0 };
   }
 }

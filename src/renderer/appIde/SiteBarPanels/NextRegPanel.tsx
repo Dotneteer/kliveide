@@ -1,4 +1,7 @@
-import { Label, LabelSeparator, Secondary, Value } from "@controls/generic";
+import { Label } from "@renderer/controls/layout/Label";
+import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { Secondary } from "@renderer/controls/layout/Secondary";
+import { Value } from "@renderer/controls/layout/Value";
 import { useEffect, useState } from "react";
 import { toHexa2 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
@@ -47,9 +50,9 @@ export const NextRegPanel = () => {
   return (
     <div className={styles.nextRegPanel}>
       <div className={styles.regItem}>
-        <LabelSeparator width={4} />
+        <LabelSeparator />
         <Label text={`Last Reg Index:`} />
-        <LabelSeparator width={4} />
+        <LabelSeparator />
         <Value text={toHexa2(lastRegIndex ?? 0)} />
       </div>
       <VirtualizedList
@@ -58,7 +61,7 @@ export const NextRegPanel = () => {
           const item = regVals[idx];
           return (
             <div className={styles.regItem}>
-              <LabelSeparator width={4} />
+              <LabelSeparator />
               <Label
                 text={`Reg ${toHexa2(item.id)}:`}
                 width={VAR_WIDTH}

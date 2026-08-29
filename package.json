@@ -26,12 +26,31 @@
     "dev": "electron-vite dev --config build/electron.vite.config.ts",
     "build": "tsc && electron-vite build --config build/electron.vite.config.ts && electron-builder",
     "build:check": "tsc",
+    "build:sp48-wasm": "node scripts/build-sp48-wasm.cjs",
+    "check:sp48-wasm-size": "node scripts/check-sp48-wasm-size.cjs",
+    "build:sp128-wasm": "node scripts/build-sp128-wasm.cjs",
+    "check:sp128-wasm-size": "node scripts/check-sp128-wasm-size.cjs",
+    "build:spp3e-wasm": "node scripts/build-spp3e-wasm.cjs",
+    "check:spp3e-wasm-size": "node scripts/check-spp3e-wasm-size.cjs",
+    "build:zxnext-wasm": "node scripts/build-zxnext-wasm.cjs",
+    "check:zxnext-wasm-size": "node scripts/check-zxnext-wasm-size.cjs",
+    "check:wasm-cpu-contract": "node scripts/check-wasm-cpu-contract.cjs",
+    "benchmark:spectrum-wasm": "node scripts/benchmark-spectrum-wasm.cjs",
+    "benchmark:zxnext-wasm": "node scripts/benchmark-zxnext-wasm.cjs",
+    "diff:zxnext-machine": "node scripts/run-zxnext-frame-diff.cjs",
+    "test:zxnext-wasm-acceptance": "npm test -- --project jsdom test/zxnext/ZxNextMachineFactory.test.ts test/wasm/zxNext/wasm-next-rollout.test.ts test/wasm/zxNext/wasm-next-public-adapter.test.ts test/wasm/zxNext/wasm-next-debug-step.test.ts test/wasm/zxNext/wasm-next-start-menu.test.ts test/wasm/zxNext/wasm-next-frame-runner.test.ts test/wasm/zxNext/wasm-next-performance-boundary.test.ts",
+    "test:zxnext-wasm-matrix": "npm test -- --project jsdom test/wasm/zxNext",
+    "lint:renderer": "eslint src/renderer --ext .ts,.tsx",
+    "e2e:app": "node scripts/run-e2e-app.cjs",
+    "build:e2e": "electron-vite build --config build/electron.vite.config.ts",
     "build:win": "npm run build && electron-builder build --win --x64",
     "build:mac": "npm run build && electron-builder build --mac --x64",
     "build:mac:arm64": "npm run build && electron-builder build --mac --arm64",
     "build:linux": "npm run build && electron-builder build --linux --x64",
     "build:linux:arm64": "npm run build && electron-builder build --linux --arm64",
-    "test": "vitest run --config build/vitest.config.ts",
+    "test:unit": "vitest run --config build/vitest.config.ts",
+    "test:e2e": "npm run build:e2e && playwright test --config playwright.config.ts",
+    "test": "npm run test:unit",
     "doc:dev": "cd docs && next dev",
     "doc:build": "(rm -f _experiments/testprojects/next-examples.zip && cd _experiments/testprojects/next && zip -r ../next-examples.zip book && cp ../next-examples.zip ../../../docs/public/) && (cd docs && next build)",
     "bootstrap:ci": "npm ci"
@@ -40,23 +59,25 @@
     "node": "^14.18.0 || >=16.0.0"
   },
   "devDependencies": {
-    "@electron-toolkit/eslint-config-prettier": "^2.0.0",
-    "@electron-toolkit/eslint-config-ts": "^2.0.0",
-    "@electron-toolkit/tsconfig": "^1.0.1",
+    "@electron-toolkit/eslint-config-prettier": "^3.0.0",
+    "@electron-toolkit/eslint-config-ts": "^3.1.0",
+    "@electron-toolkit/tsconfig": "^2.0.0",
     "@eslint-community/regexpp": "^4.10.0",
     "@monaco-editor/react": "^4.7.0",
+    "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/lodash": "^4.17.0",
     "@types/react": "^18.0.25",
     "@types/react-dom": "^18.0.8",
-    "@typescript-eslint/parser": "^5.47.1",
+    "@typescript-eslint/parser": "^8.65.0",
     "@vitejs/plugin-react": "^4.4.1",
-    "electron": "^39.8.6",
-    "electron-builder": "^26.6.0",
-    "electron-vite": "^3.1.0",
-    "eslint": "^8.31.0",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "eslint": "^9.35.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "execa": "^8.0.1",
     "expect": "^29.3.1",
     "jsdom": "^28.1.0",
@@ -69,14 +90,14 @@
     "react-dom": "^18.3.1",
     "react-virtualized-auto-sizer": "^1.0.24",
     "sass": "^1.75.0",
-    "sharp": "^0.33.5",
+    "sharp": "^0.35.3",
     "shiki": "^0.14.7",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^6.0.2",
     "vite": "^6.4.3",
     "vite-electron-plugin": "^0.8.3",
-    "vite-plugin-electron-renderer": "^0.14.6",
+    "vite-plugin-electron-renderer": "^1.0.0",
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^4.1.0"
   },
@@ -86,12 +107,12 @@
     }
   },
   "dependencies": {
-    "@electron-toolkit/preload": "^3.0.1",
-    "@electron-toolkit/utils": "^3.0.0",
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@radix-ui/react-select": "^2.1.6",
     "classnames": "^2.5.1",
-    "electron-updater": "^6.6.2",
+    "electron-updater": "^6.8.9",
     "overlayscrollbars-react": "^0.5.6",
     "react-popper": "^2.3.0",
     "react-switch": "^7.0.0",
@@ -181,6 +202,34 @@
         "to": "images",
         "filter": [
           "**/*"
+        ]
+      },
+      {
+        "from": "src/emu/machines/zxSpectrum48/wasm/dist",
+        "to": "wasm/zxSpectrum48",
+        "filter": [
+          "**/*.wasm"
+        ]
+      },
+      {
+        "from": "src/emu/machines/zxSpectrum128/wasm/dist",
+        "to": "wasm/zxSpectrum128",
+        "filter": [
+          "**/*.wasm"
+        ]
+      },
+      {
+        "from": "src/emu/machines/zxSpectrumP3e/wasm/dist",
+        "to": "wasm/zxSpectrumP3e",
+        "filter": [
+          "**/*.wasm"
+        ]
+      },
+      {
+        "from": "src/emu/machines/zxNext/wasm/dist",
+        "to": "wasm/zxNext",
+        "filter": [
+          "**/*.wasm"
         ]
       }
     ]

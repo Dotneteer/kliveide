@@ -21,6 +21,8 @@ type Props = {
   recordingManagerRef?: MutableRefObject<RecordingManager | null>;
 };
 
+const SECONDARY_ICON_SIZE = 20;
+
 export const ViewControls = ({ recordingManagerRef }: Props) => {
   const dispatch = useDispatch();
   const emuApi = useEmuApi();
@@ -51,6 +53,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       <ToolbarSeparator />
       <IconButton
         iconName={stayOnTop ? "pinned" : "pin"}
+        iconSize={SECONDARY_ICON_SIZE}
         fill="--color-toolbarbutton"
         selected={stayOnTop}
         title={"Stay on top"}
@@ -61,6 +64,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       <ToolbarSeparator />
       <IconButton
         iconName="vm"
+        iconSize={SECONDARY_ICON_SIZE}
         fill="--color-toolbarbutton"
         selected={showInstantScreen}
         title="Turn on/off instant screen"
@@ -71,6 +75,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       <ToolbarSeparator />
       <IconButton
         iconName="keyboard"
+        iconSize={SECONDARY_ICON_SIZE}
         fill="--color-toolbarbutton"
         selected={showKeyboard}
         title="Show/Hide keyboard"
@@ -82,6 +87,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       {!muted && (
         <IconButton
           iconName="mute"
+          iconSize={SECONDARY_ICON_SIZE}
           fill="--color-toolbarbutton"
           title="Mute sound"
           clicked={async () => {
@@ -93,6 +99,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       {muted && (
         <IconButton
           iconName="unmute"
+          iconSize={SECONDARY_ICON_SIZE}
           fill="--color-toolbarbutton"
           title="Unmute sound"
           clicked={async () => {
@@ -105,6 +112,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       {tapeSupport && (
         <IconButton
           iconName="rocket"
+          iconSize={SECONDARY_ICON_SIZE}
           fill="--color-toolbarbutton"
           title="Fast LOAD mode"
           selected={fastLoad}
@@ -116,6 +124,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       {tapeSupport && (
         <IconButton
           iconName="reverse-tape"
+          iconSize={SECONDARY_ICON_SIZE}
           fill="--color-toolbarbutton"
           title="Rewind the tape"
           enable={!!tapeFile}
@@ -129,6 +138,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
       {recordingAvailable && (
         <IconButton
           iconName="record"
+          iconSize={SECONDARY_ICON_SIZE}
           fill={
             !recState || recState === "idle"
               ? undefined

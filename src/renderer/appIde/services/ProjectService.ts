@@ -1,7 +1,7 @@
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { IProjectService } from "../../abstractions/IProjectService";
-import { compareProjectNode, getFileTypeEntry, getNodeDir, getNodeFile, registerDetectedTextFile, clearDetectedTextFiles, registerDetectedBinaryFile, clearDetectedBinaryFiles } from "../project/project-node";
+import { compareProjectNode, getFileTypeEntry, getNodeDir, getNodeFile, registerDetectedTextFile, clearDetectedTextFiles, registerDetectedBinaryFile, clearDetectedBinaryFiles } from "@renderer/appIde/project/project-node";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -406,7 +406,7 @@ class ProjectService implements IProjectService {
   async getDocumentForProjectNode(node: ProjectNode): Promise<ProjectDocumentState> {
     // --- Check the document cache
     const documentState = this._projectItemCache.get(node.fullPath);
-    if (documentState) return documentState;
+    if (documentState?.contents !== undefined) return documentState;
 
     let contents: string | Uint8Array;
     let editorType = node.editor;
@@ -435,25 +435,22 @@ class ProjectService implements IProjectService {
       contents = await this.getFileContent(node.fullPath, node.isBinary);
     }
 
-    // --- Get renderer information to extract icon properties
-    const docRenderer = documentPanelRegistry.find((dp) => dp.id === editorType);
+    const projectDoc = documentState ?? this.createProjectDocumentState(node, editorType);
+    this.assignDocumentRenderer(projectDoc, node, editorType);
+    projectDoc.contents = contents;
+    this._projectItemCache.set(node.fullPath, projectDoc);
+    return projectDoc;
+  }
 
-    // --- Create the document's initial state
-    const projectDoc: ProjectDocumentState = {
-      id: node.fullPath,
-      name: node.name,
-      path: node.fullPath,
-      type: editorType,
-      contents,
-      language: node.subType,
-      iconName: (editorType === TEXT_EDITOR || editorType === BIN_VIEWER) ? docRenderer?.icon : (node.icon ?? docRenderer?.icon),
-      iconFill: (editorType === TEXT_EDITOR || editorType === BIN_VIEWER) ? docRenderer?.iconFill : (node.iconFill ?? docRenderer?.iconFill),
-      isReadOnly: node.isReadOnly,
-      isTemporary: true,
-      node,
-      editVersionCount: 1,
-      savedVersionCount: 1
-    };
+  /**
+   * Gets a lightweight document shell for the specified project node without reading file contents.
+   * @param node Project node to get
+   */
+  getDocumentShellForProjectNode(node: ProjectNode): ProjectDocumentState {
+    const documentState = this._projectItemCache.get(node.fullPath);
+    if (documentState) return documentState;
+
+    const projectDoc = this.createProjectDocumentState(node, node.editor);
     this._projectItemCache.set(node.fullPath, projectDoc);
     return projectDoc;
   }
@@ -625,6 +622,43 @@ class ProjectService implements IProjectService {
 
   private signDocServiceVersionChanged(hubId: number): void {
     this.store.dispatch(incDocHubServiceVersionAction(hubId), "ide");
+  }
+
+  private createProjectDocumentState(
+    node: ProjectNode,
+    editorType: string
+  ): ProjectDocumentState {
+    const projectDoc: ProjectDocumentState = {
+      id: node.fullPath,
+      name: node.name,
+      path: node.fullPath,
+      type: editorType,
+      language: node.subType,
+      isReadOnly: node.isReadOnly,
+      isTemporary: true,
+      node,
+      editVersionCount: 1,
+      savedVersionCount: 1
+    };
+    this.assignDocumentRenderer(projectDoc, node, editorType);
+    return projectDoc;
+  }
+
+  private assignDocumentRenderer(
+    document: ProjectDocumentState,
+    node: ProjectNode,
+    editorType: string
+  ): void {
+    const docRenderer = documentPanelRegistry.find((dp) => dp.id === editorType);
+    document.type = editorType;
+    document.iconName =
+      editorType === TEXT_EDITOR || editorType === BIN_VIEWER
+        ? docRenderer?.icon
+        : node.icon ?? docRenderer?.icon;
+    document.iconFill =
+      editorType === TEXT_EDITOR || editorType === BIN_VIEWER
+        ? docRenderer?.iconFill
+        : node.iconFill ?? docRenderer?.iconFill;
   }
 }
 

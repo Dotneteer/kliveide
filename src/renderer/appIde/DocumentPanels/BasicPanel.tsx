@@ -5,12 +5,11 @@ import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import {
   incProjectFileVersionAction,
-  setIdeStatusMessageAction,
-  setWorkspaceSettingsAction
+  setIdeStatusMessageAction
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { CSSProperties, useEffect, useRef, useState } from "react";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { toHexa2 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
 import {
@@ -21,25 +20,21 @@ import {
   SpectrumColor
 } from "./BasicLine";
 import styles from "./BasicPanel.module.scss";
-import { useDocumentHubService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import classnames from "classnames";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useAppServices } from "../services/AppServicesProvider";
-import { FullPanel } from "@renderer/controls/new/Panels";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { FullPanel } from "@renderer/controls/layout/Panels";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VirtualizerHandle } from "virtua";
 import { PanelHeader } from "./helpers/PanelHeader";
-import { BASIC_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
+import {
+  type BasicViewState,
+  useBasicViewStatePersistence
+} from "./basicViewState";
 
-type BasicViewState = {
-  topIndex?: number;
-  autoRefresh?: boolean;
-  showCodes?: boolean;
-  showSpectrumFont?: boolean;
-};
-
-const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
+const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const emuApi = useEmuApi();
@@ -47,9 +42,8 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
 
   const documentHubService = useDocumentHubService();
 
-  // --- Read the view state of the document
-  const workspace = useSelector((s) => s.workspaceSettings?.[BASIC_EDITOR]);
-  const [topIndex, setTopIndex] = useState(viewState?.topIndex ?? workspace?.topIndex ?? 0);
+  // --- Read the view state of the rendered document
+  const [topIndex, setTopIndex] = useState(viewState?.topIndex ?? 0);
 
   // --- Use these app state variables
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -58,13 +52,9 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
-  const [autoRefresh, setAutoRefresh] = useState(
-    viewState?.autoRefresh ?? workspace?.autoRefresh ?? true
-  );
-  const [showCodes, setShowCodes] = useState(viewState?.showCodes ?? workspace?.showCodes ?? false);
-  const [showSpectrumFont, setShowSpectrumFont] = useState(
-    viewState?.showSpectrumFont ?? workspace?.showSpectrumFont ?? true
-  );
+  const [autoRefresh, setAutoRefresh] = useState(viewState?.autoRefresh ?? true);
+  const [showCodes, setShowCodes] = useState(viewState?.showCodes ?? false);
+  const [showSpectrumFont, setShowSpectrumFont] = useState(viewState?.showSpectrumFont ?? true);
 
   const refreshInProgress = useRef(false);
   const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
@@ -318,19 +308,19 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
   useEffect(() => {
     useAutoRefresh.current = autoRefresh;
     useCodes.current = showCodes;
-    const mergedState: BasicViewState = {
-      topIndex,
-      autoRefresh,
-      showCodes,
-      showSpectrumFont
-    };
-    documentHubService.saveActiveDocumentState(mergedState);
-    dispatch(setWorkspaceSettingsAction(BASIC_EDITOR, mergedState));
-    (async () => {
-      await mainApi.saveProject();
-      dispatch(incProjectFileVersionAction());
-    })();
   }, [topIndex, autoRefresh, showCodes, showSpectrumFont]);
+
+  useBasicViewStatePersistence({
+    autoRefresh,
+    dispatch,
+    documentHubService,
+    documentId: document?.id,
+    incProjectFileVersion: incProjectFileVersionAction,
+    mainApi,
+    showCodes,
+    showSpectrumFont,
+    topIndex
+  });
   // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {
     if (!basicLines?.length) return;
@@ -515,6 +505,6 @@ function getColorCode(code: number): SpectrumColor {
   return colorCodes[code & 0x07];
 }
 
-export const createBasicPanel = ({ viewState }: DocumentProps) => (
-  <BasicPanel viewState={viewState} apiLoaded={() => {}} />
+export const createBasicPanel = ({ document, viewState }: DocumentProps) => (
+  <BasicPanel document={document} viewState={viewState} apiLoaded={() => {}} />
 );

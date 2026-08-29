@@ -131,7 +131,6 @@ const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
           if (s.actionable) {
             // --- Execute the command
             if ((s.data as ConsoleAction)?.type === "@navigate") {
-              console.log("Navigate to");
               const payload = (s.data as ConsoleAction).payload;
               if (!payload) return;
               await ideCommandsService.executeCommand(

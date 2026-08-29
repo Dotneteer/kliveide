@@ -1,4 +1,4 @@
-import { PanelProps } from "@renderer/controls/new/PanelProps";
+import type { PanelProps } from "@renderer/controls/layout/LayoutProps";
 import { CSSProperties } from "react";
 
 export function processStyleValue(name: string, defaultValue?: any): string {

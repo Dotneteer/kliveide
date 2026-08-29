@@ -2,7 +2,7 @@ import { MutableRefObject } from "react";
 import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { HStack } from "./new/Panels";
+import { HStack } from "@renderer/controls/layout/Panels";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
 import { ExecutionControls } from "./ExecutionControls";
@@ -17,15 +17,20 @@ type Props = {
   recordingManagerRef?: MutableRefObject<RecordingManager | null>;
 };
 
+const SECONDARY_ICON_SIZE = 20;
+
 export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props) => {
   const mainApi = useMainApi();
-  const volatileDocs = useSelector((s) => s.ideView.volatileDocs);
   const syncSourceBps = useGlobalSetting(SETTING_IDE_SYNC_BREAKPOINTS);
-  const { ideCommandsService } = useAppServices();
+  const { ideCommandsService, projectService } = useAppServices();
+  useSelector((s) => s.ideView?.documentHubState);
+  const activeDocumentHub = projectService.getActiveDocumentHubService();
+  const isMemoryOpen = activeDocumentHub?.isOpen(MEMORY_PANEL_ID) ?? false;
+  const isDisassemblyOpen = activeDocumentHub?.isOpen(DISASSEMBLY_PANEL_ID) ?? false;
 
   return (
     <HStack
-      height="38px"
+      height="34px"
       backgroundColor="--bgcolor-toolbar"
       paddingHorizontal="--space-1_5"
       paddingVertical="--space-1"
@@ -38,6 +43,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           <ToolbarSeparator />
           <IconButton
             iconName="sync-ignored"
+            iconSize={SECONDARY_ICON_SIZE}
             selected={syncSourceBps}
             fill="--color-toolbarbutton-orange"
             title="Sync the source with the current breakpoint"
@@ -48,11 +54,12 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           <ToolbarSeparator />
           <IconButton
             iconName="memory-icon"
+            iconSize={SECONDARY_ICON_SIZE}
             fill="--color-toolbarbutton-orange"
             title="Show Memory Panel"
-            selected={volatileDocs?.[MEMORY_PANEL_ID]}
+            selected={isMemoryOpen}
             clicked={async () => {
-              if (volatileDocs?.[MEMORY_PANEL_ID]) {
+              if (isMemoryOpen) {
                 await ideCommandsService.executeCommand("hide-memory");
               } else {
                 await ideCommandsService.executeCommand("show-memory");
@@ -61,11 +68,12 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           />
           <IconButton
             iconName="disassembly-icon"
+            iconSize={SECONDARY_ICON_SIZE}
             fill="--color-toolbarbutton-orange"
             title="Show Disassembly Panel"
-            selected={volatileDocs?.[DISASSEMBLY_PANEL_ID]}
+            selected={isDisassemblyOpen}
             clicked={async () => {
-              if (volatileDocs?.[DISASSEMBLY_PANEL_ID]) {
+              if (isDisassemblyOpen) {
                 await ideCommandsService.executeCommand("hide-disass");
               } else {
                 await ideCommandsService.executeCommand("show-disass");

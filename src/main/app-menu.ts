@@ -18,7 +18,6 @@ import {
   setClockMultiplierAction,
   setSoundLevelAction,
   closeFolderAction,
-  displayDialogAction,
   dimMenuAction,
   setVolatileDocStateAction,
   setKeyMappingsAction
@@ -28,11 +27,13 @@ import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { openFolder, openFolderByPath, saveKliveProject } from "./projects";
 import {
+  ABOUT_DIALOG,
   NEW_PROJECT_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
   FIRST_STARTUP_DIALOG_IDE
 } from "@messaging/dialog-ids";
+import { createAboutDialogData } from "@messaging/about-dialog";
 import { MEMORY_PANEL_ID, DISASSEMBLY_PANEL_ID } from "@state/common-ids";
 import { logEmuEvent, setMachineType } from "./registeredMachines";
 import { createSettingsReader } from "@common/utils/SettingsReader";
@@ -223,9 +224,9 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       {
         id: NEW_PROJECT,
         label: "New project...",
-        click: () => {
+        click: async () => {
           ensureIdeWindow();
-          mainStore.dispatch(displayDialogAction(NEW_PROJECT_DIALOG));
+          await getIdeApi().displayDialog(NEW_PROJECT_DIALOG);
         }
       },
       {
@@ -259,8 +260,9 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
               id: EXCLUDED_PROJECT_ITEMS,
               label: "\nManage Excluded Items",
               enabled: true,
-              click: () => {
-                mainStore.dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
+              click: async () => {
+                ensureIdeWindow();
+                await getIdeApi().displayDialog(EXCLUDED_PROJECT_ITEMS_DIALOG);
               }
             }
           ] as MenuItemConstructorOptions[])),
@@ -1028,7 +1030,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
 
   let specificHelpMenus: MenuItemConstructorOptions[] = [];
   if (machineMenus && machineMenus.helpItems) {
-    specificIdeMenus = machineMenus.helpItems(
+    specificHelpMenus = machineMenus.helpItems(
       {
         emuWindow,
         ideWindow
@@ -1057,16 +1059,15 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         id: HELP_ABOUT,
         label: "About",
         click: async () => {
-          const result = await dialog.showMessageBox(ideFocus ? ideWindow : emuWindow, {
-            message: "About Klive IDE",
-            detail:
-              `${KLIVE_GITHUB_PAGES}\n\nVersion: ${app.getVersion()}\n` +
-              `Electron version: ${process.versions.electron}\n` +
-              `OS version: ${os.version()}`,
-            buttons: ["Close", "Visit website"]
-          });
-          if (result.response) {
-            shell.openExternal(KLIVE_GITHUB_PAGES);
+          const about = createAboutDialogData(
+            app.getVersion(),
+            process.versions.electron,
+            os.version()
+          );
+          if (ideFocus) {
+            await getIdeApi().displayDialog(ABOUT_DIALOG, about);
+          } else {
+            await getEmuApi().displayDialog(ABOUT_DIALOG, about);
           }
         }
       },
@@ -1079,11 +1080,11 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       {
         id: HELP_SHOW_WELCOME,
         label: "Welcome screen",
-        click: () => {
+        click: async () => {
           if (isIdeWindowFocused()) {
-            mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_IDE));
+            await getIdeApi().displayDialog(FIRST_STARTUP_DIALOG_IDE);
           } else {
-            mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
+            await getEmuApi().displayDialog(FIRST_STARTUP_DIALOG_EMU);
           }
         }
       },

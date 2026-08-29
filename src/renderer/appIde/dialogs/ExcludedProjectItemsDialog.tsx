@@ -7,20 +7,25 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { TabButton } from "@renderer/controls/TabButton";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import { setExcludedProjectItemsAction } from "@common/state/actions";
-import { saveProject } from "../utils/save-project";
+import { saveProject } from "@renderer/appIde/utils/save-project";
 import {
   ExcludedItemInfo,
   getExcludedProjectItemsFromGlobalSettings,
   excludedItemsFromProject
 } from "../utils/excluded-items-utils";
-import { getNodeFile } from "../project/project-node";
+import { getNodeFile } from "@renderer/appIde/project/project-node";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 type Props = {
   onClose: () => void;
+  onApply?: (result: ExcludedProjectItemsDialogResult) => void;
 };
 
-export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
+export type ExcludedProjectItemsDialogResult = {
+  excludedItemIds: string[];
+};
+
+export const ExcludedProjectItemsDialog = ({ onClose, onApply }: Props) => {
   const { messenger, store } = useRendererContext();
 
   const [globalExcludes, setGlobalExcludes] = useState([]);
@@ -49,8 +54,10 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
       primaryEnabled={true}
       initialFocus="none"
       onPrimaryClicked={async () => {
-        disp(setExcludedProjectItemsAction(excludedItems.map((t) => t.id)));
+        const excludedItemIds = excludedItems.map((t) => t.id);
+        disp(setExcludedProjectItemsAction(excludedItemIds));
         await saveProject(messenger);
+        onApply?.({ excludedItemIds });
         return false;
       }}
       onClose={() => {

@@ -418,14 +418,6 @@ export class M6510Assembler extends CommonAssembler<M6510Node, M6510TokenType> {
           imm: 0xcb // AXS #$xx
         });
         break;
-      case "sax":
-        this.withAddressing(compoundInstr, {
-          idx: 0x83, // SAX ($xx,X)
-          zp: 0x87, // SAX $xx
-          abs: 0x8f, // SAX $xxxx
-          zpy: 0x97 // SAX $xx,Y
-        });
-        break;
       case "dcp":
         this.withAddressing(compoundInstr, {
           idx: 0xc3, // DCP ($xx,X)

@@ -1,5 +1,12 @@
 # Klive IDE Changelog
 
+## 0.58.0
+
+### Features
+
+- Multiple document hubs are avaliable through Split Right and Split Down document tab context menus
+- Context menus and modal dialogs re-styled
+
 ## 0.57.1
 
 ### Fix

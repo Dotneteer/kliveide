@@ -65,8 +65,6 @@ export type IdeView = {
   statusMessage?: string;
   statusSuccess?: boolean;
   toolCommandSeqNo: number;
-  dialogToDisplay?: number;
-  dialogData?: any;
   cursorLine?: number;
   cursorColumn?: number;
 };

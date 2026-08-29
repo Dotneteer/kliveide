@@ -1,0 +1,129 @@
+.dumpSection {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.partitionPrefix {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.8ch;
+  margin-left: 0.8ch;
+  margin-right: 1.2ch;
+  color: var(--color-label);
+}
+
+.partitionLabel {
+  display: inline-flex;
+  justify-content: flex-start;
+}
+
+.partitionColon {
+  display: inline-flex;
+}
+
+.addressLabel {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  margin-right: 1.2ch;
+  color: var(--color-label);
+}
+
+@keyframes borderColorChange {
+  0% {
+    border-color: var(--border-color-dropdown-menu);
+  }
+  20% {
+    border-color: var(--color-label);
+  }
+  40% {
+    border-color: var(--border-color-dropdown-menu);
+  }
+  60% {
+    border-color: var(--color-label);
+  }
+  80% {
+    border-color: var(--border-color-dropdown-menu);
+  }
+  100% {
+    border-color: var(--color-label);
+  }
+}
+
+.hexValues {
+  position: relative;
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-start;
+  color: var(--color-value);
+  white-space: nowrap;
+  width: fit-content;
+  border: 1px solid transparent;
+  z-index: 1;
+}
+
+.byteHoverOverlay {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  border: 1px solid var(--bgcolor-memory-pointed);
+  background: var(--bgcolor-memory-hover);
+  color: var(--color-memory-pointed);
+  padding-left: 2px;
+  pointer-events: none;
+}
+
+.lastJumpOverlay {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  border: 1px solid transparent;
+  padding-left: 2px;
+  pointer-events: none;
+  animation: borderColorChange 3s alternate;
+  animation-delay: 400ms;
+}
+
+.charValues {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-start;
+  color: var(--color-secondary-label);
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+    opacity: 0.9;
+  }
+}
+
+.charItem {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-secondary-label);
+  border: 1px solid transparent;
+}
+
+.charHighlight {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  background: var(--bgcolor-memory-hover);
+  color: var(--color-memory-pointed);
+  border: 1px solid var(--bgcolor-memory-pointed);
+}
+
+.charPlaceholder {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: transparent;
+}

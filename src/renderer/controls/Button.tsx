@@ -8,6 +8,7 @@ type Props = {
   disabled?: boolean;
   focusOnInit?: boolean;
   isDanger?: boolean,
+  type?: "button" | "submit";
   spaceLeft?: number;
   spaceRight?: number;
   clicked?: () => void;
@@ -19,6 +20,7 @@ export const Button = ({
   disabled = false,
   focusOnInit,
   isDanger,
+  type = "button",
   spaceLeft,
   spaceRight,
   clicked
@@ -37,6 +39,7 @@ export const Button = ({
 
   return visible ? (
     <button
+      type={type}
       ref={ref}
       style={{ marginLeft: spaceLeft, marginRight: spaceRight }}
       className={classnames(styles.button, {[styles.isDanger]: isDanger})}

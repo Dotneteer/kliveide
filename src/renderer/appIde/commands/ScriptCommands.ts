@@ -4,7 +4,7 @@ import { commandError, commandSuccessWith, IdeCommandBase } from "../services/id
 import { SCRIPT_OUTPUT_VIEWER } from "@common/state/common-ids";
 import { BUILD_FILE } from "@common/structs/project-const";
 import { scriptDocumentId } from "@common/utils/script-utils";
-import { isAbsolutePath } from "../project/project-node";
+import { isAbsolutePath } from "@renderer/appIde/project/project-node";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
 type RunScriptCommandArgs = {

@@ -16,8 +16,7 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@common/utils/BinaryReader";
-import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
-import { ZxSpectrumP3EMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
+import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
 import { IZ88KeyboardDevice } from "@emu/machines/z88/IZ88KeyboardDevice";
 import { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
@@ -38,6 +37,7 @@ import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { IMemorySection } from "@abstractions/MemorySection";
 import type { RecordingManager } from "./recording/RecordingManager";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -110,6 +110,14 @@ class EmuMessageProcessor {
       case "custom":
         return controller.customCommand(customCommand);
     }
+  }
+
+  /**
+   * Displays a registered EMU dialog.
+   */
+  async displayDialog(dialogId: number, dialogData?: any): Promise<unknown | undefined> {
+    if (typeof dialogId !== "number") return undefined;
+    return await openRendererDialog("emu", dialogId, dialogData);
   }
 
   /**
@@ -257,9 +265,15 @@ class EmuMessageProcessor {
     const kbDevice = (machine as ZxSpectrumBase).keyboardDevice;
     let romP = 0;
     let ramB = 0;
-    if (machine.machineId === "sp128") {
-      (romP = (machine as ZxSpectrum128Machine).selectedRom),
-        (ramB = (machine as ZxSpectrum128Machine).selectedBank);
+    if (machine.machineId === "sp128" || machine.machineId === "spp3e") {
+      const pagingMachine = machine as Partial<{
+        getSelectedRomPage(): number;
+        getSelectedRamBank(): number;
+        selectedRom: number;
+        selectedBank: number;
+      }>;
+      romP = pagingMachine.getSelectedRomPage?.() ?? pagingMachine.selectedRom ?? 0;
+      ramB = pagingMachine.getSelectedRamBank?.() ?? pagingMachine.selectedBank ?? 0;
     }
     let ras = Math.floor(machine.currentFrameTact / machine.screenWidthInPixels);
     if (isNaN(ras)) {
@@ -304,8 +318,11 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    const machine = controller.machine;
-    const psgDevice = (machine as ZxSpectrum128Machine).psgDevice;
+    const machine = controller.machine as Partial<{ psgDevice: ISpectrumPsgDevice }>;
+    const psgDevice = machine.psgDevice;
+    if (!psgDevice) {
+      throw new Error("PSG device is not available");
+    }
     return psgDevice.getPsgState();
   }
 
@@ -535,7 +552,6 @@ class EmuMessageProcessor {
    * @param projectDebug True to use project debug mode.
    */
   runCodeCommand(codeToInject: CodeToInject, additionalInfo: any, debug: boolean, projectDebug: boolean) {
-    console.log("Running code command", additionalInfo);
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
@@ -616,7 +632,7 @@ class EmuMessageProcessor {
     }
     const machine = controller.machine;
     if (machine.machineId.startsWith("spp3e")) {
-      return (machine as ZxSpectrumP3EMachine).floppyDevice.getLogEntries();
+      return (machine as Partial<{ floppyDevice: { getLogEntries(): unknown[] } }>).floppyDevice?.getLogEntries() ?? [];
     }
     return [];
   }

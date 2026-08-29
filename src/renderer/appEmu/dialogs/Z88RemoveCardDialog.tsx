@@ -10,9 +10,14 @@ import { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
 type Props = {
   slot: number;
   onClose: () => void;
+  onRemove?: (result: Z88RemoveCardDialogResult) => void;
 };
 
-export const Z88RemoveCardDialog = ({ slot, onClose }: Props) => {
+export type Z88RemoveCardDialogResult = {
+  slot: number;
+};
+
+export const Z88RemoveCardDialog = ({ slot, onClose, onRemove }: Props) => {
   const { store } = useRendererContext();
   const { machineService } = useAppServices();
   const machine = machineService.getMachineController().machine as IZ88Machine;
@@ -36,13 +41,13 @@ export const Z88RemoveCardDialog = ({ slot, onClose }: Props) => {
           const emulatorState = store.getState().emulatorState;
           const machineConfig = emulatorState.config ?? {};
           const newConfig = { ...machineConfig, [MC_Z88_SLOT0]: slotState };
-          console.log(newConfig);
           const machineId = emulatorState?.machineId;
           const modelId = emulatorState?.modelId;
 
           // --- Change the configuration
           await machineService.setMachineType(machineId, modelId, newConfig);
         }
+        onRemove?.({ slot });
         return false;
       }}
       onClose={() => {

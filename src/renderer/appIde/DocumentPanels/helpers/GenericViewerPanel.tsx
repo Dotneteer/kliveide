@@ -1,8 +1,8 @@
 import styles from "./GenericViewerPanel.module.scss";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
-import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { createElement, useEffect, useState } from "react";
-import { Panel } from "@renderer/controls/generic/Panel";
+import { Panel } from "@renderer/controls/layout/Panel";
 
 // --- Generic file viewer panel state
 type GenericViewerViewState = {
@@ -27,6 +27,7 @@ type GenericViewerProps<TState extends GenericViewerViewState> =
 
 // --- Generic file viewer panel renderer function
 export function GenericViewerPanel<TState extends GenericViewerViewState> ({
+  document,
   saveScrollTop = true,
   viewState,
   headerRenderer,
@@ -42,10 +43,10 @@ export function GenericViewerPanel<TState extends GenericViewerViewState> ({
 
   // --- Save the view state whenever it changes
   useEffect(() => {
-    if (currentViewState) {
-      documentHubService.saveActiveDocumentState(currentViewState);
+    if (document?.id && currentViewState) {
+      documentHubService.setDocumentViewState(document.id, currentViewState);
     }
-  }, [currentViewState]);
+  }, [currentViewState, document?.id, documentHubService]);
 
   // --- Create the context to pass
   const context: GenericViewerContext<TState> = {

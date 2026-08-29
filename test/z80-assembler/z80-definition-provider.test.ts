@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { LanguageIntelService } from "@renderer/appIde/services/LanguageIntelService";
-import { computeDefinition } from "@renderer/appIde/services/z80-providers";
+import {
+  computeDefinition,
+  getSymbolAtPosition,
+  resolveSymbolNameAtPosition
+} from "@renderer/appIde/services/z80-providers";
 import type { LanguageIntelData, SymbolDefinitionInfo } from "@abstractions/CompilerInfo";
 
 function makeSym(partial: Partial<SymbolDefinitionInfo> & { name: string }): SymbolDefinitionInfo {
@@ -59,6 +63,44 @@ describe("computeDefinition", () => {
     expect(result).not.toBeNull();
     expect(result!.filePath).toBe("/project/lib.asm");
     expect(result!.line).toBe(30);
+  });
+
+  it("resolves a module-qualified label", () => {
+    svc.update(makeData([
+      makeSym({ name: "IoDemo.Read", line: 12, startColumn: 0, endColumn: 4 })
+    ]));
+
+    const result = computeDefinition("IoDemo.Read", svc);
+    expect(result).not.toBeNull();
+    expect(result!.line).toBe(12);
+  });
+
+  it("resolves a qualified label when the cursor is on its final component", () => {
+    svc.update(makeData([
+      makeSym({ name: "IoDemo.Read", line: 12, startColumn: 0, endColumn: 4 })
+    ]));
+    const line = "    call IoDemo.Read";
+    const readColumn = line.indexOf("Read") + 2;
+
+    const symbol = getSymbolAtPosition(line, readColumn);
+    expect(symbol).toBe("IoDemo.Read");
+    expect(computeDefinition(symbol!, svc)?.line).toBe(12);
+  });
+
+  it("resolves a module-local symbol referenced by its short @ name", () => {
+    svc.update(makeData([
+      makeSym({ name: "IoDemo.@Title_ReadIo", line: 37, startColumn: 0, endColumn: 13 })
+    ]));
+
+    const symbol = resolveSymbolNameAtPosition(
+      "    Display.PrintTitle(@Title_ReadIo)",
+      0,
+      7,
+      26,
+      svc
+    );
+    expect(symbol).toBe("IoDemo.@Title_ReadIo");
+    expect(computeDefinition(symbol!, svc)?.line).toBe(37);
   });
 
   // --- Case-insensitive lookup

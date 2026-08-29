@@ -36,7 +36,7 @@ import {
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction, writeErrorMessageWithLinks } from "@common/utils/output-utils";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
-import { isInjectableCompilerOutput } from "../utils/compiler-utils";
+import { isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
 
@@ -58,11 +58,6 @@ export class KliveBuildCommand extends IdeCommandBase {
       return commandError(compileResult.message);
     }
 
-    // --- Compile succeeded, run the onSuccess commands
-    if ((compileResult.result as any)?.onSuccessCommands) {
-      const commands = (compileResult.result as any).onSuccessCommands as string[];
-      console.log("onSuccessCommands", commands);
-    }
     return commandSuccessWith(`Project file successfully compiled.`);
   }
 }
@@ -76,7 +71,6 @@ export class KliveCompileCommand extends IdeCommandBase {
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const compileResult = await compileCode(context);
-    console.log(compileResult.result);
     return compileResult.message
       ? commandError(compileResult.message)
       : commandSuccessWith(`Project file successfully compiled.`);
@@ -978,7 +972,11 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
 
       // --- Generate NEX file data
-      const nexData = await NexFileWriter.fromAssemblerOutput(compiledOutput as any, projectRoot);
+      const nexData = await NexFileWriter.fromAssemblerOutput(
+        compiledOutput as any,
+        projectRoot,
+        async (filename) => await context.mainApi.readBinaryFile(filename)
+      );
 
       // --- Save the NEX file
       const filePath = await context.mainApi.saveBinaryFile(
@@ -1076,7 +1074,6 @@ async function compileCode(
     result = await context.mainApi.compileFile(fullPath, language);
   } catch (err) {
     failedMessage = err.message;
-    console.log("FAIL", failedMessage);
   } finally {
     context.store.dispatch(endCompileAction(result));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);

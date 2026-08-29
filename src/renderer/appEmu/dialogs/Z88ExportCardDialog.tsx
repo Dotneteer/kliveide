@@ -4,9 +4,14 @@ import { Modal } from "@renderer/controls/Modal";
 type Props = {
   slot: number;
   onClose: () => void;
+  onExport?: (result: Z88ExportCardDialogResult) => void;
 };
 
-export const Z88ExportCardDialog = ({ slot, onClose }: Props) => {
+export type Z88ExportCardDialogResult = {
+  slot: number;
+};
+
+export const Z88ExportCardDialog = ({ slot, onClose, onExport }: Props) => {
   return (
     <Modal
       isOpen={true}
@@ -15,6 +20,7 @@ export const Z88ExportCardDialog = ({ slot, onClose }: Props) => {
       translateY={0}
       onPrimaryClicked={async () => {
         // TODO
+        onExport?.({ slot });
         return false;
       }}
       onClose={() => {

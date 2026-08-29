@@ -19,9 +19,16 @@ const ramSizes = [
 
 type Props = {
   onClose: () => void;
+  onChange?: (result: Z88ChangeRamDialogResult) => void;
 };
 
-export const Z88ChangeRamDialog = ({ onClose }: Props) => {
+export type Z88ChangeRamDialogResult = {
+  selectedSize: string;
+  ramMask: number;
+  changed: boolean;
+};
+
+export const Z88ChangeRamDialog = ({ onClose, onChange }: Props) => {
   const { store } = useRendererContext();
   const { machineService } = useAppServices();
   const ideApi = useIdeApi();
@@ -74,7 +81,8 @@ export const Z88ChangeRamDialog = ({ onClose }: Props) => {
         const config = emulatorState?.config ?? {};
         if (config[MC_Z88_INTRAM] === newRamSize) {
           // --- No change, nothing to do
-          return null;
+          onChange?.({ selectedSize, ramMask: newRamSize, changed: false });
+          return false;
         }
 
         // --- Get the new machine configuration
@@ -90,6 +98,8 @@ export const Z88ChangeRamDialog = ({ onClose }: Props) => {
           foreground: "bright-cyan",
           writeLine: true
         });
+
+        onChange?.({ selectedSize, ramMask: newRamSize, changed: true });
 
         // --- Close the dialog
         return false;

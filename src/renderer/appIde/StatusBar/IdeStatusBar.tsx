@@ -5,7 +5,7 @@ import { Icon } from "@controls/Icon";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import classnames from "classnames";
 import styles from "./IdeStatusBar.module.scss";
-import { useAppServices } from "../services/AppServicesProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CODE_EDITOR } from "@common/state/common-ids";
 
 type IdeStatusBarProps = {
@@ -21,6 +21,7 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   const compilation = useSelector((s) => s.compilation);
   const cursorLine = useSelector((s) => s.ideView?.cursorLine);
   const cursorColumn = useSelector((s) => s.ideView?.cursorColumn);
+  useSelector((s) => s.ideView?.documentHubState);
 
   const machineState = useMemo(() => {
     switch (execState) {

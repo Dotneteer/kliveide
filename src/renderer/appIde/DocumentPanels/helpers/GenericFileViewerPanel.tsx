@@ -1,8 +1,8 @@
 import styles from "./GenericViewerPanel.module.scss";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
-import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { createElement, useEffect, useState } from "react";
-import { Panel } from "@renderer/controls/generic/Panel";
+import { Panel } from "@renderer/controls/layout/Panel";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 

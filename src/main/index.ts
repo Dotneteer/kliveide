@@ -38,7 +38,6 @@ import {
   setClockMultiplierAction,
   setSoundLevelAction,
   setThemeAction,
-  displayDialogAction,
   startScreenDisplayedAction,
   setKeyMappingsAction,
   setMachineSpecificAction,
@@ -53,8 +52,7 @@ import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
 import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
 import { createSettingsReader } from "@utils/SettingsReader";
-import { FIRST_STARTUP_DIALOG_EMU } from "@messaging/dialog-ids";
-import { MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 
 import { setupMenu } from "./app-menu";
 import { __WIN32__ } from "./electron-utils";
@@ -63,12 +61,19 @@ import { mainStore } from "./main-store";
 import { createWindowStateManager } from "./WindowStateManager";
 import { setMachineType } from "./registeredMachines";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
-import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
+import { setSelectedDiskFile, setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
-import { appSettings, getSettingValue, loadAppSettings, saveAppSettings } from "./settings-utils";
+import {
+  appSettings,
+  getSettingValue,
+  loadAppSettings,
+  saveAppSettings,
+  settingsFileLoaded
+} from "./settings-utils";
 import { KLIVE_HOME_FOLDER } from "./settings";
+import { KLIVE_APP_VERSION } from "./app-version";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -92,13 +97,19 @@ app.commandLine.appendSwitch('enable-zero-copy');
 // --- Set application name for Windows 10+ notifications
 if (__WIN32__) app.setAppUserModelId(app.getName());
 
-// --- Make sure, only one instance is running
-if (!app.requestSingleInstanceLock()) {
+// --- Electron otherwise reports its runtime version when launched from the built entry point.
+app.setVersion(KLIVE_APP_VERSION);
+
+// --- E2E tests deliberately launch an isolated app instance alongside a developer's Klive process.
+// --- Production and manual launches retain the normal single-instance protection.
+const isE2eRun = process.env.KLIVE_E2E === "1";
+if (!isE2eRun && !app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
 }
 
 loadAppSettings();
+const shouldShowFirstStartupDialog = !settingsFileLoaded || !appSettings.startScreenDisplayed;
 
 // --- Store initial user settings
 mainStore.dispatch(saveUserSettingAction(appSettings.userSettings));
@@ -333,7 +344,16 @@ async function createAppWindows() {
       mainStore.dispatch(setModelTypeAction(modelId));
 
       if (appSettings.media?.[MEDIA_TAPE]) {
-        setSelectedTapeFile(appSettings.media[MEDIA_TAPE]);
+        await setSelectedTapeFile(appSettings.media[MEDIA_TAPE]);
+      }
+
+      const diskAState = appSettings.media?.[MEDIA_DISK_A];
+      if (diskAState?.diskFile) {
+        await setSelectedDiskFile(0, diskAState.diskFile, diskAState.writeProtected ?? true);
+      }
+      const diskBState = appSettings.media?.[MEDIA_DISK_B];
+      if (diskBState?.diskFile) {
+        await setSelectedDiskFile(1, diskBState.diskFile, diskBState.writeProtected ?? true);
       }
 
       // --- Set key mappings
@@ -344,13 +364,6 @@ async function createAppWindows() {
           mainStore.dispatch(setKeyMappingsAction(appSettings.keyMappingFile, mappings));
         } catch (err) {
           // --- Intentionally ignored
-        }
-      }
-
-      if (!appSettings.startScreenDisplayed) {
-        await new Promise((r) => setTimeout(r, 400));
-        if (!appSettings.startScreenDisplayed) {
-          mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
         }
       }
 
@@ -382,17 +395,18 @@ async function createAppWindows() {
   // --- initialize the Monaco editor as soon as the IDE app starts.
   const devAppPath = `&apppath=${encodeURIComponent(app.getAppPath())}`;
   const prodAppPath = `&apppath=${encodeURIComponent(process.resourcesPath)}`;
+  const firstStartupDialogQuery = shouldShowFirstStartupDialog ? "&firststart=1" : "";
 
   // --- HMR for renderer base on electron-vite cli.
   // --- Load the remote URL for development or the local html file for production.
   const devUrl = process.env["ELECTRON_RENDERER_URL"];
   const prodUrl = join(__dirname, "../renderer/index.html");
   if (is.dev && devUrl) {
-    emuWindow.loadURL(devUrl + EMU_QP + devAppPath);
+    emuWindow.loadURL(devUrl + EMU_QP + devAppPath + firstStartupDialogQuery);
     ideWindow.loadURL(devUrl + IDE_QP + devAppPath);
   } else {
     emuWindow.loadFile(prodUrl, {
-      search: EMU_QP + prodAppPath
+      search: EMU_QP + prodAppPath + firstStartupDialogQuery
     });
     ideWindow.loadFile(prodUrl, {
       search: IDE_QP + prodAppPath

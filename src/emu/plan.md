@@ -15,7 +15,7 @@ The emulation core is **largely already in place** for both devices. The work re
 | NextReg `$83` peripheral disable | `NextRegDevice.ts:1860-1900` | Stores bits but **does not yet gate** `$DF`/`$FBDF`/`$FFDF`/`$FADF` reads. |
 | Machine wiring | `src/emu/machines/zxNext/ZxNextMachine.ts:32-37, 110-112, 213-214, 282-285` | Devices constructed and reset alongside the rest. No frame-loop tick is needed — joystick/mouse are passive. |
 | Existing tests | `test/zxnext/KempstonJoystick.test.ts`, `KempstonMouse.test.ts`, `NextRegDevice.test.ts`, `NextIoPortManager.test.ts`, `TestNextMachine.ts` | Use `createTestNextMachine()` factory. Hard reset sets NR `$05 = $41` → joy1=Kempston1, joy2=Sinclair2; NR `$0A = $01` → DPI 1, no swap. |
-| Renderer keyboard pipeline | `src/renderer/appEmu/EmulatorArea/useEmulatorKeyboard.ts` and `EmulatorPanel.tsx` | `useEmulatorKeyboard` reads `state.keyMappings`, normalises with `defaultKeyMappings`, calls `keyStatusSet(code, down)`. This is the pattern joystick host-mapping should follow. |
+| Renderer keyboard pipeline | `src/renderer/features/emulator/useEmulatorKeyboard.ts` and `EmulatorPanel.tsx` | `useEmulatorKeyboard` reads `state.keyMappings`, normalises with `defaultKeyMappings`, calls `keyStatusSet(code, down)`. This is the pattern joystick host-mapping should follow. |
 | Menu layer | `src/main/app-menu.ts:159, 683-812, 925`, `src/main/machine-menus/zx-next-menus.ts`, `src/main/machine-menus/machine-menu-registry.ts:75-83` | Per-machine items injected via `machineMenus.machineItems(...)`. Add a `joystickMenuRenderer` and `mouseMenuRenderer` returning `MachineMenuItem[]`, then push them into the `MI_ZXNEXT` entry. |
 | Custom-command bridge | `ZxNextMachine.ts:594-...` `executeCustomCommand` | Already used by hotkey menu items. Use the same channel for `attachJoystick`, `setMouseCapture`, etc. |
 
@@ -144,13 +144,13 @@ A modal "Configure ZX Spectrum Next Joystick" reachable from the menu and from a
 
 ### 4.1 New files
 
-- `src/renderer/appEmu/EmulatorArea/useEmulatorJoystick.ts`
+- `src/renderer/features/emulator/useEmulatorJoystick.ts`
   - Subscribes to `state.nextJoystickBindings`.
   - Listens for `keydown`/`keyup` *and* polls Gamepad API on each frame (driven by `requestAnimationFrame` or piggyback on screen-render hook).
   - Maintains two 8-bit state bytes; on each change calls into the machine via `getEmuApi().issueMachineCommand("custom", "setJoystickState", { left, right })` or, if running in-process, directly `machine.joystickDevice.setLeftState/setRightState`.
   - Also dispatches matrix-key presses for non-Kempston modes by reading `joystickDevice.joystick1Mode`/`joystick2Mode` and translating to `SpectrumKeyCode` calls.
 
-- `src/renderer/appEmu/EmulatorArea/useEmulatorMouse.ts`
+- `src/renderer/features/emulator/useEmulatorMouse.ts`
   - Wires pointer-lock, mousemove, mousedown/up, wheel, sensitivity scaling, and capture-toggle.
   - Receives a redux-stored "mouseCaptureRequested" flag toggled by the menu.
   - Calls `machine.mouseDevice.addDelta/addWheelDelta/setButtons`.
@@ -193,7 +193,7 @@ A modal "Configure ZX Spectrum Next Joystick" reachable from the menu and from a
 - `src/main/machine-menus/machine-menu-registry.ts:75-83`
   - Add `joystickMenuRenderer` and `mouseMenuRenderer` to the `MI_ZXNEXT.machineItems` array.
 
-- `src/renderer/appEmu/EmulatorArea/EmulatorPanel.tsx`
+- `src/renderer/features/emulator/EmulatorPanel.tsx`
   - Mount `useEmulatorJoystick(machine)` and `useEmulatorMouse(machine, hostElement)`.
   - Forward `requestPointerLock` calls and overlay state.
 
@@ -529,9 +529,9 @@ runtime joystick behaviour is unchanged. Verify persistence only:
 `setJoystickState` via the custom-command channel.
 
 **Files:**
-- `src/renderer/appEmu/EmulatorArea/useEmulatorJoystick.ts` — keydown/keyup
+- `src/renderer/features/emulator/useEmulatorJoystick.ts` — keydown/keyup
   handlers, build left/right state bytes, dispatch to machine.
-- `src/renderer/appEmu/EmulatorArea/EmulatorPanel.tsx` — mount the hook.
+- `src/renderer/features/emulator/EmulatorPanel.tsx` — mount the hook.
 
 **Tests:** new `test/renderer/useEmulatorJoystick.test.ts` (jsdom):
 - Press ArrowRight + RControl → `setJoystickState` invoked with bit0|bit4.
@@ -625,7 +625,7 @@ running.
 `setMouseDelta` (Y inverted). Esc cancels.
 
 **Files:**
-- `src/renderer/appEmu/EmulatorArea/useEmulatorMouse.ts` — new hook.
+- `src/renderer/features/emulator/useEmulatorMouse.ts` — new hook.
 - `EmulatorPanel.tsx` — mount with canvas ref.
 
 **Tests:** jsdom integration test:

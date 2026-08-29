@@ -1,8 +1,8 @@
 import styles from "./Layer2Screen.module.scss";
 import { SmallIconButton } from "../IconButton";
-import { openStaticMemoryDump } from "@renderer/appIde/DocumentPanels/Memory/StaticMemoryDump";
-import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { HeaderRow } from "../generic/Row";
+import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
+import { HeaderRow } from "@renderer/controls/layout/Row";
 import { ScreenCanvas } from "./ScreenCanvas";
 
 type Props = {
@@ -13,7 +13,7 @@ type Props = {
 };
 
 export const Layer2Screen = ({ documentSource, data, palette, zoomFactor = 2 }: Props) => {
-  const { projectService } = useAppServices();
+  const documentHubService = useDocumentHubService();
 
   // --- Create the Layer2 screen from the data provided
   const createPixelData = (data: Uint8Array, palette: number[], target: Uint32Array) => {
@@ -34,7 +34,7 @@ export const Layer2Screen = ({ documentSource, data, palette, zoomFactor = 2 }: 
           clicked={async () => {
             if (!documentSource) return;
             await openStaticMemoryDump(
-              projectService.getActiveDocumentHubService(),
+              documentHubService,
               `layer2ScreenDump${documentSource}`,
               `${documentSource} - Layer2`,
               data

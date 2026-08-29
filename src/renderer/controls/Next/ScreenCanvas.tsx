@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Row } from "../generic/Row";
+import { Row } from "@renderer/controls/layout/Row";
 
 type Props = {
   data: Uint8Array;

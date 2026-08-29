@@ -1,17 +1,31 @@
-import { Row } from "@renderer/controls/generic/Row";
-import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
+import { Row } from "@renderer/controls/layout/Row";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
 import { BinaryReader } from "@common/utils/BinaryReader";
-import { ExpandableRow } from "@renderer/controls/generic/ExpandableRow";
-import { LabeledText } from "@renderer/controls/generic/LabeledText";
+import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
+import { LabeledText } from "@renderer/controls/layout/LabeledText";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { LabeledFlag } from "@renderer/controls/generic/LabeledFlag";
+import { LabeledFlag } from "@renderer/controls/layout/LabeledFlag";
 import { decompressZ80DataBlock } from "@renderer/appIde/utils/compression/z80-file-compression";
 import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
 import { createElement } from "react";
 
 const REG_LABEL_WIDTH = 32;
 const REG_PAIR_VALUE_WIDTH = 108;
+
+type RegisterTextProps = {
+  label: string;
+  value: string;
+};
+
+const RegisterText = ({ label, value }: RegisterTextProps) => (
+  <LabeledText
+    label={label}
+    labelWidth={REG_LABEL_WIDTH}
+    value={value}
+    valueWidth={REG_PAIR_VALUE_WIDTH}
+  />
+);
 
 const VIDEO_SYNC_MODES = ["Normal", "High", "Normal", "Low"];
 const JOYSTICKS = [
@@ -123,112 +137,86 @@ const Z80FileViewerPanel = ({
             </Row>
             <ExpandableRow
               heading='Registers'
-              expanded={cvs?.registersExpanded ?? true}
+              initialExpanded={cvs?.registersExpanded ?? true}
               onExpanded={exp => change(vs => (vs.registersExpanded = exp))}
             >
               <Row>
-                <LabeledText
+                <RegisterText
                   label='AF:'
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regA * 256 + fi.regF)} (${(
                     fi.regA * 256 +
                     fi.regF
                   ).toString(10)})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
-                <LabeledText
+                <RegisterText
                   label='BC:'
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regBC)} (${fi.regBC.toString(10)})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
-                <LabeledText
+                <RegisterText
                   label='DE:'
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regDE)} (${fi.regDE.toString(10)})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
-                <LabeledText
+                <RegisterText
                   label='HL:'
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regHL)} (${fi.regHL.toString(10)})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
-                <LabeledText
+                <RegisterText
                   label='PC:'
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regPC)} (${fi.regPC.toString(10)})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
               </Row>
               <Row>
-                <LabeledText
+                <RegisterText
                   label="AF':"
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regASec * 256 + fi.regFSec)} (${(
                     fi.regASec * 256 +
                     fi.regFSec
                   ).toString(10)})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
-                <LabeledText
+                <RegisterText
                   label="BC':"
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regBCSec)} (${fi.regBCSec.toString(
                     10
                   )})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
-                <LabeledText
+                <RegisterText
                   label="DE':"
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regDESec)} (${fi.regDESec.toString(
                     10
                   )})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
-                <LabeledText
+                <RegisterText
                   label="HL':"
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regHLSec)} (${fi.regHLSec.toString(
                     10
                   )})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
-                <LabeledText
+                <RegisterText
                   label='SP:'
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regSP)} (${fi.regSP.toString(10)})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
               </Row>
               <Row>
-                <LabeledText
+                <RegisterText
                   label='IR:'
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regI * 256 + fi.regR)} (${(
                     fi.regI * 256 +
                     fi.regR
                   ).toString(10)})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
-                <LabeledText
+                <RegisterText
                   label='IX:'
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regIX)} (${fi.regIX.toString(10)})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
-                <LabeledText
+                <RegisterText
                   label='IY:'
-                  labelWidth={REG_LABEL_WIDTH}
                   value={`$${toHexa4(fi.regIY)} (${fi.regIY.toString(10)})`}
-                  valueWidth={REG_PAIR_VALUE_WIDTH}
                 />
               </Row>
             </ExpandableRow>
             <ExpandableRow
               heading='Various Flags & Values'
-              expanded={cvs?.flags1Expanded ?? true}
+              initialExpanded={cvs?.flags1Expanded ?? true}
               onExpanded={exp => change(vs => (vs.flags1Expanded = exp))}
             >
               <Row>
@@ -404,7 +392,7 @@ const Z80FileViewerPanel = ({
               <>
                 <ExpandableRow
                   heading='Sound Registers'
-                  expanded={cvs?.soundRegsExpanded ?? false}
+                  initialExpanded={cvs?.soundRegsExpanded ?? false}
                   onExpanded={exp => change(vs => (vs.soundRegsExpanded = exp))}
                 >
                   <Row>
@@ -492,7 +480,7 @@ const Z80FileViewerPanel = ({
                   <>
                     <ExpandableRow
                       heading='Key Mappings'
-                      expanded={cvs?.keyMappingsExpanded ?? false}
+                      initialExpanded={cvs?.keyMappingsExpanded ?? false}
                       onExpanded={exp =>
                         change(vs => (vs.keyMappingsExpanded = exp))
                       }
@@ -580,7 +568,7 @@ const Z80FileViewerPanel = ({
                   heading={`Data Block Page #${db.pageNumber}: ${
                     db.dataLength
                   } bytes ${db.compressed ? "(compressed)" : ""}`}
-                  expanded={cvs?.datablocksExpanded?.[index] ?? false}
+                  initialExpanded={cvs?.datablocksExpanded?.[index] ?? false}
                   onExpanded={exp =>
                     change(vs => {
                       vs.datablocksExpanded ??= {};

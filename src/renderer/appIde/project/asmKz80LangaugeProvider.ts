@@ -10,9 +10,12 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
   allowBuildRoot: true,
   supportsKlive: true,
   options: {
-    // Include '.' '#' '@' as word-start chars so that getWordAtPosition()
-    // returns e.g. '.macro' or '#ifdef' — required for completion ranges/hover.
-    wordPattern: /([#.@][a-zA-Z0-9_]*)|([a-zA-Z_][a-zA-Z0-9_]*)/g,
+    // Keep qualified module paths (for example, `IoDemo.Read`) in one word so
+    // symbol providers can resolve the same fully-qualified name the compiler
+    // exports. `::` optionally anchors a name at global scope.
+    // Include '.' '#' '@' as word-start chars for directives and module-local
+    // symbols, e.g. '.macro', '#ifdef', and '@local'.
+    wordPattern: /((?:::)?[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)|([#.@][a-zA-Z0-9_]*)/g,
     comments: {
       lineComment: ";",
     }

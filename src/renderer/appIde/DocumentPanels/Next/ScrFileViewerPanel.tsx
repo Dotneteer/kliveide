@@ -1,12 +1,13 @@
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
-import { HeaderRow } from "@renderer/controls/generic/Row";
-import { openStaticMemoryDump } from "../Memory/StaticMemoryDump";
+import { HeaderRow } from "@renderer/controls/layout/Row";
+import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
-import { Panel } from "@renderer/controls/generic/Panel";
-import { Column } from "@renderer/controls/generic/Column";
+import { Panel } from "@renderer/controls/layout/Panel";
+import { Column } from "@renderer/controls/layout/Column";
 import { createElement } from "react";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 
 type ScrFileViewState = {
   scrollPosition?: number;
@@ -17,6 +18,8 @@ const ScrFileViewerPanel = ({
   contents,
   viewState
 }: DocumentProps<ScrFileViewState>) => {
+  const documentHubService = useDocumentHubService();
+
   return createElement(
     GenericFileViewerPanel<ScrFileContents, ScrFileViewState>,
     {
@@ -25,7 +28,6 @@ const ScrFileViewerPanel = ({
       viewState,
       fileLoader: loadScrFileContents,
       validRenderer: context => {
-        const projectService = context.appServices.projectService;
         const documentSource = document.node.projectPath;
 
         // --- Create the Layer2 screen from the data provided
@@ -74,7 +76,7 @@ const ScrFileViewerPanel = ({
                   title='Display screen data dump'
                   clicked={async () => {
                     await openStaticMemoryDump(
-                      projectService.getActiveDocumentHubService(),
+                      documentHubService,
                       `scrData${documentSource}`,
                       `${documentSource} - Dump`,
                       contents
