@@ -53,6 +53,31 @@ describe("Modal — Step 1.2: dimMenuAction dispatched only on isOpen change", (
     expect(store.getState().dimMenu).toBe(false);
   });
 
+  it("clears dimMenu when an open modal is unmounted directly", async () => {
+    function Harness() {
+      const [visible, setVisible] = useState(true);
+      return (
+        <>
+          <button onClick={() => setVisible(false)}>Unmount modal</button>
+          {visible && (
+            <Modal isOpen={true} title="T" onClose={vi.fn()}>
+              <div />
+            </Modal>
+          )}
+        </>
+      );
+    }
+
+    const { store } = renderWithProviders(<Harness />);
+    expect(store.getState().dimMenu).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Unmount modal" }));
+
+    await waitFor(() => {
+      expect(store.getState().dimMenu).toBe(false);
+    });
+  });
+
   it("does not dispatch again on an unrelated re-render", () => {
     const dispatchSpy = vi.fn();
     const { store, rerender } = renderWithProviders(

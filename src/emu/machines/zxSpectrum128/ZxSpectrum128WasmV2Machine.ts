@@ -65,6 +65,24 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
     super(requestedModelInfo, requestedConfig);
   }
 
+  override get pc(): number {
+    return super.pc;
+  }
+
+  override set pc(value: number) {
+    super.pc = value;
+    this.wasmV2Runtime?.exports.sp128SetCpuPc(super.pc);
+  }
+
+  override get sp(): number {
+    return super.sp;
+  }
+
+  override set sp(value: number) {
+    super.sp = value;
+    this.wasmV2Runtime?.exports.sp128SetCpuSp(super.sp);
+  }
+
   override async setup(): Promise<void> {
     this.wasmV2Runtime = await loadSp128WasmV2(this.wasmV2LoaderOptions);
     const runtime = this.requireWasmV2Runtime();
@@ -119,7 +137,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
       this.executionContext.debugStepMode !== DebugStepMode.NoDebug ||
       this.executionContext.frameTerminationMode !== FrameTerminationMode.Normal
     ) {
-      return this.executeWasmV2DebugStep(runtime);
+      return this.executeWasmV2DebugLoop(runtime);
     }
 
     this.emulateKeystroke();
@@ -538,18 +556,126 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
     this.wasmV2Runtime?.exports.sp128WritePsgRegisterValue(value & 0xff);
   }
 
-  private executeWasmV2DebugStep(runtime: Sp128WasmV2Runtime): FrameTerminationMode {
-    this.emulateKeystroke();
-    this.syncKeyboardToWasmV2(runtime);
-    this.syncAudioSampleRateToWasmV2(runtime);
-    this.syncTargetClockMultiplierToWasmV2(runtime);
-    runtime.exports.sp128ExecuteInstruction();
+  private executeWasmV2DebugLoop(runtime: Sp128WasmV2Runtime): FrameTerminationMode {
+    const debugSupport = this.executionContext.debugSupport;
+    let instructionsExecuted = 0;
+    this.executionContext.lastTerminationReason = undefined;
+
+    if (this.frameCompleted) {
+      this.onInitNewFrame(false);
+      this.frameCompleted = false;
+      this.emulateKeystroke();
+    }
+
     this.syncCpuFromWasmV2(runtime);
-    this.importWasmV2BusAccess(runtime);
-    this.publishSavedTapeFromWasmV2(runtime);
-    this.frameCompleted = runtime.exports.sp128GetFrameCompleted() !== 0;
-    this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent;
-    return FrameTerminationMode.DebugEvent;
+    if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
+      if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+    }
+    if (debugSupport) {
+      debugSupport.lastStartupBreakpoint = undefined;
+    }
+
+    while (!this.frameCompleted) {
+      this.emulateKeystroke();
+      this.syncKeyboardToWasmV2(runtime);
+      this.syncAudioSampleRateToWasmV2(runtime);
+      this.syncTargetClockMultiplierToWasmV2(runtime);
+      runtime.exports.sp128ExecuteInstruction();
+      instructionsExecuted++;
+      this.syncCpuFromWasmV2(runtime);
+      this.importWasmV2BusAccess(runtime);
+      this.publishSavedTapeFromWasmV2(runtime);
+      this.frameCompleted = runtime.exports.sp128GetFrameCompleted() !== 0;
+
+      if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
+        const point = this.executionContext.terminationPoint;
+        if (point != null && this.pc === (point & 0xffff)) {
+          return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
+        }
+      }
+      if (this.hasWasmV2AccessBreakpoint()) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+      if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+      if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
+        if (debugSupport) {
+          debugSupport.imminentBreakpoint = undefined;
+        }
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
+      if (this.getFrameCommand()) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+      }
+    }
+
+    return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+  }
+
+  private finishWasmV2DebugLoop(termination: FrameTerminationMode): FrameTerminationMode {
+    this.executionContext.lastTerminationReason = termination;
+    return termination;
+  }
+
+  private shouldStopAtWasmV2Breakpoint(instructionsExecuted: number): boolean {
+    const debugSupport = this.executionContext.debugSupport;
+    if (!debugSupport) return false;
+
+    const stopAt = debugSupport.shouldStopAt(this.pc, () => this.getPartition(this.pc));
+    if (
+      stopAt &&
+      (instructionsExecuted > 0 ||
+        debugSupport.lastBreakpoint === undefined ||
+        debugSupport.lastBreakpoint !== this.pc)
+    ) {
+      debugSupport.lastBreakpoint = this.pc;
+      debugSupport.imminentBreakpoint = undefined;
+      return true;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StopAtBreakpoint) {
+      return false;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StepOver) {
+      if (debugSupport.imminentBreakpoint !== undefined) {
+        if (debugSupport.imminentBreakpoint === this.pc) {
+          debugSupport.imminentBreakpoint = undefined;
+          return true;
+        }
+        return false;
+      }
+      const length = this.getCallInstructionLength();
+      if (length > 0) {
+        debugSupport.imminentBreakpoint = (this.pc + length) & 0xffff;
+        return false;
+      }
+      return instructionsExecuted > 0;
+    }
+
+    if (this.executionContext.debugStepMode === DebugStepMode.StepOut) {
+      if (this.stepOutAddress === this.pc || this.retExecuted) {
+        debugSupport.imminentBreakpoint = undefined;
+        return true;
+      }
+      return false;
+    }
+
+    return false;
+  }
+
+  private hasWasmV2AccessBreakpoint(): boolean {
+    const debugSupport = this.executionContext.debugSupport;
+    if (!debugSupport) return false;
+    return (
+      debugSupport.hasMemoryRead(this.lastMemoryReads, this.lastMemoryReadsCount, (addr) => this.getPartition(addr)) ||
+      debugSupport.hasMemoryWrite(this.lastMemoryWrites, this.lastMemoryWritesCount, (addr) => this.getPartition(addr)) ||
+      debugSupport.hasIoRead(this.lastIoReadPort) ||
+      debugSupport.hasIoWrite(this.lastIoWritePort)
+    );
   }
 
   private syncCpuFromWasmV2(runtime: Sp128WasmV2Runtime): void {

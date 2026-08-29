@@ -21,6 +21,17 @@ describe("dialog validators", () => {
     expect(optionalPath(validationService, "")).toBeUndefined();
   });
 
+  it("treats nullable values as empty input", () => {
+    expect(requiredFilename(validationService, null)).toBe("Enter a file name.");
+    expect(requiredPath(validationService, null)).toBe("Choose a folder.");
+    expect(optionalPath(validationService, null)).toBeUndefined();
+    expect(decimalAddress(null)).toBeUndefined();
+  });
+
+  it("treats whitespace-only optional paths as empty input", () => {
+    expect(optionalPath(validationService, "   ")).toBeUndefined();
+  });
+
   it("explains duplicate and unchanged item names", () => {
     expect(newItemName(validationService, ["valid.asm"], "valid.asm")).toBe(
       "An item with this name already exists."
