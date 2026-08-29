@@ -2,6 +2,7 @@ import styles from "./Dropdown.module.scss";
 import * as Select from "@radix-ui/react-select";
 import { Icon } from "./Icon";
 import { useThemeRoot } from "@renderer/core/useThemeRoot";
+import { useEffect, useState } from "react";
 
 export type DropdownOption = {
   value: string;
@@ -28,9 +29,21 @@ export default function Dropdown({
   onOpenChange,
 }: Props) {
   const rootElement = useThemeRoot();
+  const [selectedValue, setSelectedValue] = useState(initialValue);
+
+  useEffect(() => {
+    setSelectedValue(initialValue);
+  }, [initialValue]);
 
   return (
-    <Select.Root value={initialValue} onValueChange={(v) => onChanged?.(v)} onOpenChange={onOpenChange}>
+    <Select.Root
+      value={selectedValue}
+      onValueChange={(v) => {
+        setSelectedValue(v);
+        onChanged?.(v);
+      }}
+      onOpenChange={onOpenChange}
+    >
       <Select.Trigger className={styles.SelectTrigger} style={{ width }}>
         <Select.Value placeholder={placeholder ?? "Select..."} />
         <div style={{ width: "100%" }} />

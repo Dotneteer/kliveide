@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   extractSegmentsFromListFile,
+  getSjasmModelType,
   SjasmPCompiler
 } from "@main/sjasmp-integration/SjasmPCompiler";
+import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 describe("Sjasmp list file parsing", () => {
   it("Single comment line", () => {
@@ -256,5 +258,22 @@ describe("Sjasmp list file parsing", () => {
       const result = await comp.lineCanHaveBreakpoint(`label:${kwd} blabla`);
       expect(result).toEqual(false);
     });
+  });
+});
+
+describe("Sjasmp model type inference", () => {
+  it("uses the source DEVICE directive when present", () => {
+    expect(getSjasmModelType("    device zxspectrum128\n    org #8000")).toBe(
+      SpectrumModelType.Spectrum128
+    );
+    expect(getSjasmModelType("DEVICE ZXSPECTRUM48")).toBe(SpectrumModelType.Spectrum48);
+    expect(getSjasmModelType(" device zxspectrumnext")).toBe(SpectrumModelType.Next);
+  });
+
+  it("falls back to the selected project machine", () => {
+    expect(getSjasmModelType("org #8000", "sp128")).toBe(SpectrumModelType.Spectrum128);
+    expect(getSjasmModelType("org #8000", "spp3e")).toBe(SpectrumModelType.SpectrumP3);
+    expect(getSjasmModelType("org #8000", "zxnext")).toBe(SpectrumModelType.Next);
+    expect(getSjasmModelType("org #8000", "sp48")).toBe(SpectrumModelType.Spectrum48);
   });
 });
