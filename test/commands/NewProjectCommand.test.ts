@@ -158,7 +158,7 @@ describe("NewProjectCommand", () => {
       // Arrange
       const mockMainApi = context.mainApi as any;
       mockMainApi.createKliveProject.mockResolvedValue("/new/project");
-      mockMainApi.openFolder.mockResolvedValue(undefined);
+      mockMainApi.openFolder.mockResolvedValue(null);
       
       const mockStore = context.store as any;
       mockStore.getState.mockReturnValue({ project: { buildRoots: ["src"] } });
@@ -248,7 +248,7 @@ describe("NewProjectCommand", () => {
       // Arrange
       const mockMainApi = context.mainApi as any;
       mockMainApi.createKliveProject.mockResolvedValue("/new/project");
-      mockMainApi.openFolder.mockResolvedValue(undefined);
+      mockMainApi.openFolder.mockResolvedValue(null);
       
       const mockStore = context.store as any;
       mockStore.getState.mockReturnValue({ project: { buildRoots: ["src/main.asm"] } });
@@ -275,7 +275,7 @@ describe("NewProjectCommand", () => {
       // Arrange
       const mockMainApi = context.mainApi as any;
       mockMainApi.createKliveProject.mockResolvedValue("/new/project");
-      mockMainApi.openFolder.mockResolvedValue(undefined);
+      mockMainApi.openFolder.mockResolvedValue(null);
       
       const mockStore = context.store as any;
       mockStore.getState.mockReturnValue({ project: { buildRoots: [] } });
@@ -293,6 +293,32 @@ describe("NewProjectCommand", () => {
       await command.execute(context, args);
 
       // Assert
+      expect(mockService.ideCommandsService.executeCommand).not.toHaveBeenCalled();
+    });
+
+    it("should not fail when project state has no buildRoots after opening", async () => {
+      // Arrange
+      const mockMainApi = context.mainApi as any;
+      mockMainApi.createKliveProject.mockResolvedValue("/new/project");
+      mockMainApi.openFolder.mockResolvedValue(null);
+
+      const mockStore = context.store as any;
+      mockStore.getState.mockReturnValue({ project: {} });
+
+      const mockService = context.service as any;
+      mockService.ideCommandsService.executeCommand.mockResolvedValue(undefined);
+
+      const args: NewProjectCommandArgs = {
+        machineId: "spectrum",
+        projectName: "MyProject",
+        "-o": true
+      };
+
+      // Act
+      const result = await command.execute(context, args);
+
+      // Assert
+      expect(result.success).toBe(true);
       expect(mockService.ideCommandsService.executeCommand).not.toHaveBeenCalled();
     });
 

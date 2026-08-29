@@ -9,6 +9,103 @@ afterEach(() => {
 });
 
 describe("ExplorerPanel dialog migration", () => {
+  it("opens IDE registry dialogs from the empty explorer state with dialog controls", async () => {
+    const state = {
+      dimMenu: false,
+      isWindows: false,
+      project: undefined,
+      ideView: {
+        explorerViewVersion: 1
+      }
+    };
+    const store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(() => state)
+    };
+    const dialogRenderer = vi.fn(
+      (_data: unknown, controls: { close: (result?: unknown) => void }) => (
+        <button onClick={() => controls.close({ created: true })}>
+          confirm registry dialog
+        </button>
+      )
+    );
+
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      useDispatch: () => vi.fn(),
+      useRendererContext: () => ({ messenger: {}, store }),
+      useSelector: (selector: (appState: unknown) => unknown) => selector(state)
+    }));
+    vi.doMock("@renderer/core/MainApi", () => ({
+      useMainApi: () => ({ openFolder: vi.fn() })
+    }));
+    vi.doMock("@renderer/core/EmuApi", () => ({
+      useEmuApi: () => ({})
+    }));
+    vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
+      useAppServices: () => ({
+        ideCommandsService: { executeCommand: vi.fn() },
+        projectService: {
+          getActiveDocumentHubService: () => ({
+            getDocument: vi.fn(),
+            isOpen: vi.fn(() => false),
+            setActiveDocument: vi.fn()
+          }),
+          getDocumentHubServiceInstances: () => [],
+          setPermanent: vi.fn()
+        }
+      })
+    }));
+    vi.doMock("@renderer/appIde/project/project-node", () => ({
+      getFileTypeEntry: () => undefined
+    }));
+    vi.doMock("@renderer/features/explorer/useExplorerTree", () => ({
+      clearExplorerFolderCache: vi.fn(),
+      useExplorerTree: () => ({
+        refreshTree: vi.fn(),
+        rememberExpandedItems: vi.fn(),
+        selected: -1,
+        setSelected: vi.fn(),
+        setSelectedNode: vi.fn(),
+        tree: {
+          getViewNodeByIndex: vi.fn(),
+          rootNode: {}
+        },
+        visibleNodes: []
+      })
+    }));
+    vi.doMock("@renderer/appIde/dialogs/ideDialogRegistry", () => ({
+      ideDialogRegistry: {
+        1: dialogRenderer
+      }
+    }));
+
+    const { DialogProvider } = await import("@renderer/controls/overlay/DialogProvider");
+    const { ExplorerPanel } = await import("@renderer/features/explorer/ExplorerPanel");
+
+    render(
+      <DialogProvider>
+        <ExplorerPanel />
+      </DialogProvider>
+    );
+
+    fireEvent.click(screen.getByText("Create a Klive Project"));
+
+    expect(await screen.findByText("confirm registry dialog")).toBeInTheDocument();
+    expect(dialogRenderer).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({
+        cancel: expect.any(Function),
+        close: expect.any(Function)
+      })
+    );
+
+    fireEvent.click(screen.getByText("confirm registry dialog"));
+
+    await waitFor(() => {
+      expect(screen.queryByText("confirm registry dialog")).not.toBeInTheDocument();
+    });
+  });
+
   it("opens add, rename, and delete dialogs through the dialog service", async () => {
     const state = {
       dimMenu: false,

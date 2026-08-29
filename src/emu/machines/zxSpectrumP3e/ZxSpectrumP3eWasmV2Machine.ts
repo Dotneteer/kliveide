@@ -549,11 +549,11 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
   }
 
   override get screenWidthInPixels(): number {
-    return this.requireWasmV2Runtime().exports.spp3eGetScreenWidth();
+    return this.wasmV2Runtime?.exports.spp3eGetScreenWidth() ?? super.screenWidthInPixels;
   }
 
   override get screenHeightInPixels(): number {
-    return this.requireWasmV2Runtime().exports.spp3eGetScreenHeight();
+    return this.wasmV2Runtime?.exports.spp3eGetScreenHeight() ?? super.screenHeightInPixels;
   }
 
   override get tactsInDisplayLine(): number {

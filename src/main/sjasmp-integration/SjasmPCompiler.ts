@@ -233,12 +233,9 @@ export function getSjasmModelType(
   switch (deviceName) {
     case "zxspectrum128":
     case "zxspectrum128k":
-      return SpectrumModelType.Spectrum128;
-    case "zxspectrum3":
-    case "zxspectrump3":
-    case "zxspectrum+3":
-    case "zxspectrum+3e":
-      return SpectrumModelType.SpectrumP3;
+      return fallbackMachineId === MI_SPECTRUM_3E
+        ? SpectrumModelType.SpectrumP3
+        : SpectrumModelType.Spectrum128;
     case "zxspectrumnext":
     case "zxspectrum_next":
     case "zxnext":

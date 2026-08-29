@@ -88,7 +88,7 @@ class MainApiImpl {
    * @param _folder Optional folder path to open.
    * @returns Error message or null if successful.
    */
-  async openFolder(_folder?: string): Promise<string> {
+  async openFolder(_folder?: string): Promise<string | null> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
