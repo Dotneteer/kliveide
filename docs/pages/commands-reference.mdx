@@ -367,6 +367,38 @@ The `filename` argument is a project file name. When you specify the name, use t
 
 You can specify an optional `line` and `column` argument to jump to the specified location within the file.
 
+## `ncp`
+
+This command copies a file between the host filesystem and ZX Spectrum Next storage.
+
+```
+ncp to <host-source> <next-destination> [-cim <cim-file>]
+ncp from <next-source> <host-destination> [-cim <cim-file>]
+```
+
+Available aliases: `next-copy`
+
+The command has two directions:
+- `to`: Copies a host file into ZX Spectrum Next storage.
+- `from`: Copies a file from ZX Spectrum Next storage to the host filesystem.
+
+By default, the command uses the current emulator storage. This mode works only when the current machine is ZX Spectrum Next. You can also specify a `.cim` image explicitly with `-cim <cim-file>`; this mode does not depend on the current machine type.
+
+The command runs only when the emulator is stopped or not started. It is rejected while the emulator is running or paused, and it does not start, stop, or pause the machine automatically.
+
+If the target is a folder, the command reuses the source file name. Missing target folders are created recursively. If the target file already exists, the command asks for overwrite confirmation before replacing it.
+
+Examples:
+
+```text
+ncp to "build/game.nex" "/games/game.nex"
+ncp to "build/game.nex" "/games/"
+ncp from "/logs/boot.txt" "./boot.txt"
+ncp from "/logs/boot.txt" "./logs/"
+ncp to "./assets/title.scr" "/assets/" -cim "/tmp/test-card.cim"
+ncp from "/logs/boot.txt" "./boot.txt" -cim "/tmp/test-card.cim"
+```
+
 ## `newp`
 
 This project creates a new Klive project and optionally opens it.

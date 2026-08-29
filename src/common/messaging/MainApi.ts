@@ -11,6 +11,25 @@ const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
 export type MessageBoxType = "none" | "info" | "error" | "question" | "warning";
 
+export type ZxNextStorageRef = { kind: "current" } | { kind: "cim"; cimFile: string };
+
+export type ZxNextStorageCopyDirection = "to" | "from";
+
+export type ZxNextStorageCopyRequest = {
+  direction: ZxNextStorageCopyDirection;
+  storage: ZxNextStorageRef;
+  hostPath: string;
+  storagePath: string;
+  overwrite?: boolean;
+};
+
+export type ZxNextStorageCopyResult = {
+  hostPath: string;
+  storagePath: string;
+  cimFile: string;
+  bytesCopied: number;
+};
+
 /**
  * This class defines the shape of the main process API that can be called from
  * the Emu and Ide processes. The methods are called through a JavaScript proxy.
@@ -42,6 +61,14 @@ class MainApiImpl {
    * @param _message The dialog message.
    */
   async displayMessageBox(_messageType?: MessageBoxType, _title?: string, _message?: string) {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Asks the user to confirm overwriting an existing file.
+   * @param _targetPath The target path that would be overwritten.
+   */
+  async confirmFileOverwrite(_targetPath: string): Promise<boolean> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -203,6 +230,16 @@ class MainApiImpl {
    * @param _destFile The destination file path on the SD card image.
    */
   async copyToSdCard(_srcFile: string, _destFile: string): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Copies a file between the host filesystem and ZX Spectrum Next storage.
+   * @param _request Copy direction, storage target, host path, and storage path.
+   */
+  async copyZxNextStorageFile(
+    _request: ZxNextStorageCopyRequest
+  ): Promise<ZxNextStorageCopyResult> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

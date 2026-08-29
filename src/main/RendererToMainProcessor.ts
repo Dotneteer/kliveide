@@ -40,6 +40,7 @@ import { checkZ88SlotFile } from "./machine-menus/z88-menus";
 import {
   MEDIA_DISK_A,
   MEDIA_DISK_B,
+  MEDIA_SD_CARD,
   MEDIA_TAPE,
   PROJECT_TEMPLATES
 } from "@common/structs/project-const";
@@ -49,10 +50,14 @@ import { mainScriptManager } from "./ksx-runner/MainScriptManager";
 import { collectedBuildTasks } from "./build";
 import { Dispatch } from "react";
 import { Action } from "@common/state/Action";
-import { MessageBoxType } from "@common/messaging/MainApi";
+import type { MessageBoxType, ZxNextStorageCopyRequest } from "@common/messaging/MainApi";
 import { CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
-import { DEFAULT_SD_CARD_FILE, getSdCardHandler, invalidateSdCardHandler } from "./machine-menus/zx-next-menus";
+import {
+  DEFAULT_SD_CARD_FILE,
+  getSdCardHandler,
+  invalidateSdCardHandler
+} from "./machine-menus/zx-next-menus";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { appSettings, saveAppSettings, setSettingValue } from "./settings-utils";
 import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
@@ -66,6 +71,7 @@ import { StubRecordingBackend } from "./recording/StubRecordingBackend";
 import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 import { resolveRecordingPath } from "./recording/outputPath";
 import type { RecordingFormat } from "@common/state/AppState";
+import { copyZxNextStorageFile as copyZxNextStorageFileOnHost } from "./zx-next-storage-copy";
 
 const compilerRegistry = createCompilerRegistry();
 
@@ -133,6 +139,26 @@ class MainMessageProcessor {
         title: title,
         message: message
       });
+    } finally {
+      this.dispatch(dimMenuAction(false));
+    }
+  }
+
+  /**
+   * Asks the user to confirm overwriting an existing file.
+   * @param targetPath The target path that would be overwritten.
+   */
+  async confirmFileOverwrite(targetPath: string): Promise<boolean> {
+    try {
+      const result = await dialog.showMessageBox(this.window, {
+        type: "question",
+        buttons: ["Overwrite", "Cancel"],
+        defaultId: 1,
+        cancelId: 1,
+        title: "Overwrite File",
+        message: `The target file already exists:\n${targetPath}\n\nDo you want to overwrite it?`
+      });
+      return result.response === 0;
     } finally {
       this.dispatch(dimMenuAction(false));
     }
@@ -413,6 +439,23 @@ class MainMessageProcessor {
 
     // --- Close the CimFile to release its file descriptor and flush data.
     cimFile.close();
+  }
+
+  /**
+   * Copies a file between the host filesystem and ZX Spectrum Next storage.
+   * @param request Copy direction, storage target, host path, and storage path.
+   */
+  async copyZxNextStorageFile(request: ZxNextStorageCopyRequest) {
+    const appState = mainStore.getState();
+    const currentStoragePath =
+      appState.media?.[MEDIA_SD_CARD] ??
+      path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+
+    return await copyZxNextStorageFileOnHost(request, {
+      projectFolder: appState.project?.folderPath,
+      currentStoragePath,
+      invalidateCurrentStorage: invalidateSdCardHandler
+    });
   }
 
   /**

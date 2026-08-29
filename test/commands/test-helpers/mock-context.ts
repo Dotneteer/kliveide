@@ -89,6 +89,13 @@ export function createMockMainApi() {
     addGlobalExcludedProjectItem: vi.fn().mockResolvedValue(undefined),
     setRegisterValue: vi.fn().mockResolvedValue(undefined),
     compileFile: vi.fn().mockResolvedValue({}),
+    confirmFileOverwrite: vi.fn().mockResolvedValue(true),
+    copyZxNextStorageFile: vi.fn().mockResolvedValue({
+      hostPath: "/host/file.bin",
+      storagePath: "next/file.bin",
+      cimFile: "/cards/ks2.cim",
+      bytesCopied: 0
+    }),
     displayMessageBox: vi.fn().mockResolvedValue(undefined)
   } as any;
 }
