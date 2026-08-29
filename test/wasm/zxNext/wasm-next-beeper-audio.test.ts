@@ -5,7 +5,7 @@ import { createTestZxNextWasmMachine, createZxNextOracleHarness } from "./wasm-n
 
 describe("ZX Next WASM beeper audio", () => {
   it("matches TypeScript EAR/MIC transitions and weighted samples", async () => {
-    const machine = { tacts: 0, setTacts(value: number) { this.tacts = value; } };
+    const machine = { machineId: "zxnext", tacts: 0, setTacts(value: number) { this.tacts = value; } };
     const oracle = new SpectrumBeeperDevice(machine as any);
     const wasm = await createTestZxNextWasmMachine();
     const exports = wasm.wasmV2Runtime!.exports;

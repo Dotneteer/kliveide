@@ -62,6 +62,7 @@ static uint8_t borderColor;
 static uint8_t earBit;
 static uint8_t micBit;
 
+#include "zxnext-beeper.h"
 #include "zxnext-frame.c"
 #include "zxnext-debug.c"
 #include "zxnext-memory.c"
@@ -474,8 +475,8 @@ void zxnextSetBeeperOutput(uint32_t ear, uint32_t mic) { zxnextBeeperSetOutput(e
 uint32_t zxnextGetBeeperEar(void) { return zxnextBeeperGetEar(); }
 uint32_t zxnextGetBeeperMic(void) { return zxnextBeeperGetMic(); }
 uint32_t zxnextGetBeeperOutputLevelMilli(void) { return zxnextBeeperGetOutputLevelMilli(); }
-uint32_t zxnextGetBeeperSampleLeftMilli(void) { return zxnextBeeperGetSampleLeftMilli(); }
-uint32_t zxnextGetBeeperSampleRightMilli(void) { return zxnextBeeperGetSampleRightMilli(); }
+uint32_t zxnextGetBeeperSampleLeftMilli(void) { return zxnextBeeperGetSampleLeftMilli((double)zxnextBeeperTacts); }
+uint32_t zxnextGetBeeperSampleRightMilli(void) { return zxnextBeeperGetSampleRightMilli((double)zxnextBeeperTacts); }
 void zxnextSetPsgTurbosoundEnabled(uint32_t enabled) { zxnextPsgSetTurbosoundEnabled(enabled); }
 void zxnextSetPsgAyStereoMode(uint32_t enabled) { zxnextPsgSetAyStereoMode(enabled); }
 void zxnextSetPsgChipMonoMode(uint32_t chip, uint32_t enabled) { zxnextPsgSetChipMonoMode(chip, enabled); }

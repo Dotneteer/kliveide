@@ -14,6 +14,7 @@
 #define SP48_BASE_CLOCK_FREQUENCY_NTSC 3527500u
 #define SP48_DEFAULT_SAMPLE_RATE 44100u
 #define SP48_AUDIO_SAMPLE_CAPACITY 2048u
+#define SP48_AUDIO_TRANSITION_CAPACITY 8192u
 #define SP48_AUDIO_SAMPLE_SCALE 32767.0
 #define SP48_TAPE_MAX_BLOCKS 512u
 #define SP48_TAPE_DATA_CAPACITY 0x400000u
@@ -169,6 +170,13 @@ static uint32_t sp48AudioLastLevelChangeTact;
 static double sp48AudioAccumulatedEar;
 static double sp48AudioAccumulatedMic;
 static double sp48AudioAccumulatedTacts;
+static double sp48AudioSampleWindowStartTact;
+static uint8_t sp48AudioSampleWindowStartEar;
+static uint8_t sp48AudioSampleWindowStartMic;
+static uint32_t sp48AudioTransitionCount;
+static uint32_t sp48AudioTransitionTacts[SP48_AUDIO_TRANSITION_CAPACITY];
+static uint8_t sp48AudioTransitionEar[SP48_AUDIO_TRANSITION_CAPACITY];
+static uint8_t sp48AudioTransitionMic[SP48_AUDIO_TRANSITION_CAPACITY];
 static double sp48DcFilterPrevInputLeft;
 static double sp48DcFilterPrevInputRight;
 static double sp48DcFilterPrevOutputLeft;

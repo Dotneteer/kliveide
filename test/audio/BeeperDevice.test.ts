@@ -62,8 +62,8 @@ describe("SpectrumBeeperDevice", () => {
 
       // DC filter means the first sample won't be exactly 1.0, but should be > 0
       expect(beeper.getAudioSamples()[0].left).toBeGreaterThan(0);
-      // MIC is off (default micBit=false), so right channel should be silent
-      expect(beeper.getAudioSamples()[0].right).toBe(0.0);
+      // Classic Spectrum beeper output is mono
+      expect(beeper.getAudioSamples()[0].right).toBe(beeper.getAudioSamples()[0].left);
     });
 
     it("should generate 0.0 sample when EAR bit is false", () => {
@@ -102,6 +102,57 @@ describe("SpectrumBeeperDevice", () => {
       beeper.setNextAudioSample();
       // Back to HIGH: should be greater than the previous LOW sample
       expect(beeper.getAudioSamples()[2].left).toBeGreaterThan(beeper.getAudioSamples()[1].left);
+    });
+  });
+
+  describe("Exact sample-window integration", () => {
+    beforeEach(() => {
+      machine = new MockMachine(1000);
+      beeper = new SpectrumBeeperDevice(machine as any);
+      beeper.setAudioSampleRate(10); // 100 tacts per sample
+    });
+
+    it("integrates only to the ideal sample boundary when sample generation is late", () => {
+      beeper.setOutputLevel(true, false);
+      machine.tacts = 50;
+      beeper.setOutputLevel(false, false);
+
+      machine.tacts = 150;
+      beeper.setNextAudioSample();
+
+      expect(beeper.getAudioSamples()).toHaveLength(1);
+      expect(beeper.getAudioSamples()[0].left).toBeCloseTo(0.33, 6);
+      expect(beeper.getAudioSamples()[0].right).toBe(beeper.getAudioSamples()[0].left);
+    });
+
+    it("keeps a transition at the sample boundary for the following sample", () => {
+      machine.tacts = 100;
+      beeper.setOutputLevel(true, false);
+
+      machine.tacts = 150;
+      beeper.setNextAudioSample();
+      expect(beeper.getAudioSamples()[0].left).toBe(0.0);
+
+      machine.tacts = 250;
+      beeper.setNextAudioSample();
+      expect(beeper.getAudioSamples()[1].left).toBeGreaterThan(0.65);
+      expect(beeper.getAudioSamples()[1].right).toBe(beeper.getAudioSamples()[1].left);
+    });
+
+    it("averages multiple toggles inside one sample by duty cycle", () => {
+      beeper.setOutputLevel(true, false);
+      machine.tacts = 10;
+      beeper.setOutputLevel(false, false);
+      machine.tacts = 40;
+      beeper.setOutputLevel(true, false);
+      machine.tacts = 70;
+      beeper.setOutputLevel(false, false);
+
+      machine.tacts = 150;
+      beeper.setNextAudioSample();
+
+      expect(beeper.getAudioSamples()[0].left).toBeCloseTo(0.264, 6);
+      expect(beeper.getAudioSamples()[0].right).toBe(beeper.getAudioSamples()[0].left);
     });
   });
 
@@ -286,8 +337,8 @@ describe("SpectrumBeeperDevice", () => {
       expect(beeper.getAudioSamples().length).toBe(10);
       // DC filter: positive but not exactly 1.0
       expect(beeper.getAudioSamples()[0].left).toBeGreaterThan(0);
-      // MIC is off — right channel is silent
-      expect(beeper.getAudioSamples()[0].right).toBe(0.0);
+      // Classic Spectrum beeper output is mono
+      expect(beeper.getAudioSamples()[0].right).toBe(beeper.getAudioSamples()[0].left);
     });
 
     it("should work at 22.05kHz", () => {
@@ -424,8 +475,7 @@ describe("SpectrumBeeperDevice", () => {
       // DC filter: all samples should be positive (> 0) for constant HIGH on EAR
       for (const sample of samples) {
         expect(sample.left).toBeGreaterThan(0);
-        // MIC is off (default), so right channel stays silent
-        expect(sample.right).toBe(0.0);
+        expect(sample.right).toBe(sample.left);
       }
     });
   });
@@ -452,8 +502,8 @@ describe("SpectrumBeeperDevice", () => {
       for (const s of samples) {
         expect(s.left).toBeGreaterThan(0);
       }
-      // left=EAR channel, right=MIC channel — they differ when only EAR is on
-      expect(samples.every(s => s.right === 0.0)).toBe(true);
+      // Classic Spectrum beeper output is mono.
+      expect(samples.every(s => s.right === s.left)).toBe(true);
     });
 
     it("should support inheritance method chain", () => {

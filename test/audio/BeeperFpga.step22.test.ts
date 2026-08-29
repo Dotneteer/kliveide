@@ -24,6 +24,7 @@ import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
  */
 
 class MockMachine implements Partial<IAnyMachine> {
+  machineId = "zxnext";
   baseClockFrequency = 3_546_900;
   tacts = 0;
   clockMultiplier = 1;

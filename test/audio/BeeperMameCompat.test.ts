@@ -134,27 +134,27 @@ describe("Phase 1: 4-Level Speaker Output", () => {
     });
   });
 
-  describe("FPGA model: EAR controls left channel, MIC controls right channel", () => {
-    it("should put EAR on left channel and MIC on right channel independently", () => {
+  describe("Classic mono resistor-mixed beeper output", () => {
+    it("should mix EAR and MIC into the same mono level on both channels", () => {
       // Both off → both silent
       beeper.setOutputLevel(false, false);
       let sample = beeper.getCurrentSampleValue();
       expect(sample.left).toBe(0.0);
       expect(sample.right).toBe(0.0);
 
-      // MIC only → right=1.0, left=0.0
+      // MIC only → lower mono level
       beeper.setOutputLevel(false, true);
       sample = beeper.getCurrentSampleValue();
-      expect(sample.left).toBe(0.0);
-      expect(sample.right).toBe(1.0);
+      expect(sample.left).toBe(0.33);
+      expect(sample.right).toBe(0.33);
 
-      // EAR only → left=1.0, right=0.0
+      // EAR only → higher mono level
       beeper.setOutputLevel(true, false);
       sample = beeper.getCurrentSampleValue();
-      expect(sample.left).toBe(1.0);
-      expect(sample.right).toBe(0.0);
+      expect(sample.left).toBe(0.66);
+      expect(sample.right).toBe(0.66);
 
-      // Both on → left=1.0, right=1.0
+      // Both on → full mono level
       beeper.setOutputLevel(true, true);
       sample = beeper.getCurrentSampleValue();
       expect(sample.left).toBe(1.0);
@@ -199,13 +199,14 @@ describe("Phase 1: 4-Level Speaker Output", () => {
       // ordering should hold for the first samples)
     });
 
-    it("EAR-only peak on left channel should exceed MIC-only peak (4:1 ratio enforced in mixer)", () => {
+    it("EAR-only peak should exceed MIC-only peak in the mono classic mix", () => {
       beeper.setAudioSampleRate(48000);
       const sampleLength = machine.baseClockFrequency / 48000;
 
       // Generate a square wave with MIC-only (0.33 level)
       beeper.reset();
       beeper.setAudioSampleRate(48000);
+      machine.tacts = 0;
       for (let i = 1; i <= 100; i++) {
         beeper.setOutputLevel(false, i % 10 < 5); // MIC toggles
         machine.tacts = sampleLength * i;
@@ -215,24 +216,24 @@ describe("Phase 1: 4-Level Speaker Output", () => {
       // Capture peaks before beeper.reset() (getAudioSamples() returns a live reference)
       const micLeftPeak = Math.max(...micSamples.map(s => Math.abs(s.left)));
       const micRightPeak = Math.max(...micSamples.map(s => Math.abs(s.right)));
+      expect(micRightPeak).toBe(micLeftPeak);
 
       // Generate a square wave with EAR-only (0.66 level)
       beeper.reset();
       beeper.setAudioSampleRate(48000);
+      machine.tacts = 0;
       for (let i = 1; i <= 100; i++) {
         beeper.setOutputLevel(i % 10 < 5, false); // EAR toggles
         machine.tacts = sampleLength * i;
         beeper.setNextAudioSample();
       }
       const earSamples = beeper.getAudioSamples();
-      // EAR-only peak uses the left channel
       const earPeak = Math.max(...earSamples.map(s => Math.abs(s.left)));
+      const earRightPeak = Math.max(...earSamples.map(s => Math.abs(s.right)));
+      expect(earRightPeak).toBe(earPeak);
 
-      // EAR-only left channel peak should be larger than MIC-only LEFT channel peak
-      // (MIC-only case has no EAR signal → left channel stays at 0)
       expect(earPeak).toBeGreaterThan(micLeftPeak);
-      // MIC signal appears on the RIGHT channel
-      expect(micRightPeak).toBeGreaterThan(0);
+      expect(micLeftPeak).toBeGreaterThan(0);
     });
   });
 });
@@ -598,8 +599,10 @@ describe("E2E: Full Frame Beeper Simulation", () => {
     const halfPeriod = 100; // Toggle every 100 tacts
 
     // Generate EAR-only square wave
+    machine.tacts = 0;
     beeper.reset();
     beeper.setAudioSampleRate(48000);
+    beeper.setOutputLevel(false, false);
     beeper.onNewFrame();
     for (let tact = 1; tact <= tactsPerFrame; tact++) {
       machine.tacts = tact;
@@ -613,8 +616,10 @@ describe("E2E: Full Frame Beeper Simulation", () => {
     );
 
     // Generate EAR+MIC square wave (toggling both bits together)
+    machine.tacts = 0;
     beeper.reset();
     beeper.setAudioSampleRate(48000);
+    beeper.setOutputLevel(false, false);
     beeper.onNewFrame();
     for (let tact = 1; tact <= tactsPerFrame; tact++) {
       machine.tacts = tact;
@@ -626,20 +631,11 @@ describe("E2E: Full Frame Beeper Simulation", () => {
     const bothRMS = Math.sqrt(
       bothSamples.reduce((sum, s) => sum + s.left * s.left, 0) / bothSamples.length
     );
-
-    // EAR channels should be approximately equal (same pattern)
-    const bothEarRMS = Math.sqrt(
-      bothSamples.reduce((sum, s) => sum + s.left * s.left, 0) / bothSamples.length
-    );
-    expect(bothEarRMS).toBeCloseTo(earOnlyRMS, 1);
-    // MIC contribution appears on the RIGHT channel
-    const bothMicRMS = Math.sqrt(
-      bothSamples.reduce((sum, s) => sum + s.right * s.right, 0) / bothSamples.length
-    );
-    expect(bothMicRMS).toBeGreaterThan(0);
+    expect(bothRMS).toBeGreaterThan(earOnlyRMS);
+    expect(bothSamples.every(s => s.right === s.left)).toBe(true);
   });
 
-  it("should handle tape loading scenario: MIC bit toggling appears on right channel", () => {
+  it("should handle tape loading scenario: MIC bit toggling appears in mono output", () => {
       const sampleLength = machine.baseClockFrequency / 48000;
 
       // Simulate tape loading: MIC bit toggles rapidly while EAR is off
@@ -651,15 +647,14 @@ describe("E2E: Full Frame Beeper Simulation", () => {
       }
 
       const samples = beeper.getAudioSamples();
-      // MIC signal appears on the RIGHT channel (left=EAR=0 throughout)
-      const nonSilentRight = samples.filter(s => Math.abs(s.right) > 0.01).length;
-      expect(nonSilentRight).toBeGreaterThan(0);
-      // EAR channel (left) stays silent
       const nonSilentLeft = samples.filter(s => Math.abs(s.left) > 0.01).length;
-      expect(nonSilentLeft).toBe(0);
+      const nonSilentRight = samples.filter(s => Math.abs(s.right) > 0.01).length;
+      expect(nonSilentLeft).toBeGreaterThan(0);
+      expect(nonSilentRight).toBe(nonSilentLeft);
+      expect(samples.every(s => s.right === s.left)).toBe(true);
   });
 
-  it("should put EAR on left, MIC on right (BeeperDevice uses stereo for EAR+MIC)", () => {
+  it("should duplicate classic EAR-only output to both channels", () => {
     const sampleLength = machine.baseClockFrequency / 48000;
 
     beeper.setOutputLevel(true, false);
@@ -669,11 +664,9 @@ describe("E2E: Full Frame Beeper Simulation", () => {
     }
 
     const samples = beeper.getAudioSamples();
-    // Left channel (EAR) has signal
     expect(samples[0].left).toBeGreaterThan(0);
-    // Right channel (MIC=off) is silent
     for (const s of samples) {
-      expect(s.right).toBe(0.0);
+      expect(s.right).toBe(s.left);
     }
   });
 });

@@ -60,5 +60,5 @@ describe("ZX Next WASM audio mixer", () => {
 
 function expectedSamplesForFrame(tactsInFrame28: number, sampleRate: number): number {
   const scaledFrame = tactsInFrame28 * sampleRate;
-  return Math.floor((scaledFrame - 1) / 28_000_000) + 1;
+  return Math.floor(scaledFrame / 28_000_000);
 }

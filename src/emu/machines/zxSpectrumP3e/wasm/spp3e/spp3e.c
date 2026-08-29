@@ -8,6 +8,7 @@
 #define SPP3E_SCREEN_HEIGHT 287u
 #define SPP3E_PIXEL_BUFFER_WORDS (SPP3E_SCREEN_WIDTH * SPP3E_SCREEN_HEIGHT)
 #define SPP3E_AUDIO_SAMPLE_CAPACITY 2048u
+#define SPP3E_AUDIO_TRANSITION_CAPACITY 8192u
 #define SPP3E_AUDIO_SAMPLE_SCALE 12000
 #define SPP3E_DEFAULT_SAMPLE_RATE 44100u
 #define SPP3E_BASE_CLOCK_FREQUENCY 3546900u
@@ -240,6 +241,13 @@ static uint32_t spp3eAudioLastLevelChangeTact;
 static double spp3eAudioAccumulatedEar;
 static double spp3eAudioAccumulatedMic;
 static double spp3eAudioAccumulatedTacts;
+static double spp3eAudioSampleWindowStartTact;
+static uint8_t spp3eAudioSampleWindowStartEar;
+static uint8_t spp3eAudioSampleWindowStartMic;
+static uint32_t spp3eAudioTransitionCount;
+static uint32_t spp3eAudioTransitionTacts[SPP3E_AUDIO_TRANSITION_CAPACITY];
+static uint8_t spp3eAudioTransitionEar[SPP3E_AUDIO_TRANSITION_CAPACITY];
+static uint8_t spp3eAudioTransitionMic[SPP3E_AUDIO_TRANSITION_CAPACITY];
 static double spp3eDcFilterPrevInputLeft;
 static double spp3eDcFilterPrevInputRight;
 static double spp3eDcFilterPrevOutputLeft;
@@ -674,6 +682,7 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 
 #define SP48_DEFAULT_SAMPLE_RATE SPP3E_DEFAULT_SAMPLE_RATE
 #define SP48_AUDIO_SAMPLE_CAPACITY SPP3E_AUDIO_SAMPLE_CAPACITY
+#define SP48_AUDIO_TRANSITION_CAPACITY SPP3E_AUDIO_TRANSITION_CAPACITY
 #define SP48_AUDIO_SAMPLE_SCALE 32767.0
 #define SP48_TAPE_MODE_LOAD SPP3E_TAPE_MODE_LOAD
 #define SP48_AUDIO_BEFORE_SAMPLE() sp128PsgPrepareAudioSample()
@@ -687,6 +696,13 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #define sp48AudioAccumulatedMic spp3eAudioAccumulatedMic
 #define sp48AudioAccumulatedTacts spp3eAudioAccumulatedTacts
 #define sp48AudioLastLevelChangeTact spp3eAudioLastLevelChangeTact
+#define sp48AudioSampleWindowStartTact spp3eAudioSampleWindowStartTact
+#define sp48AudioSampleWindowStartEar spp3eAudioSampleWindowStartEar
+#define sp48AudioSampleWindowStartMic spp3eAudioSampleWindowStartMic
+#define sp48AudioTransitionCount spp3eAudioTransitionCount
+#define sp48AudioTransitionTacts spp3eAudioTransitionTacts
+#define sp48AudioTransitionEar spp3eAudioTransitionEar
+#define sp48AudioTransitionMic spp3eAudioTransitionMic
 #define sp48Tacts spp3eTacts
 #define sp48AudioSampleCount spp3eAudioSampleCount
 #define sp48AudioSampleLength spp3eAudioSampleLength
@@ -732,6 +748,13 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef sp48AudioSampleLength
 #undef sp48AudioSampleCount
 #undef sp48Tacts
+#undef sp48AudioTransitionMic
+#undef sp48AudioTransitionEar
+#undef sp48AudioTransitionTacts
+#undef sp48AudioTransitionCount
+#undef sp48AudioSampleWindowStartMic
+#undef sp48AudioSampleWindowStartEar
+#undef sp48AudioSampleWindowStartTact
 #undef sp48AudioLastLevelChangeTact
 #undef sp48AudioAccumulatedTacts
 #undef sp48AudioAccumulatedMic
@@ -746,6 +769,7 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef SP48_TAPE_MODE_LOAD
 #undef SP48_AUDIO_SAMPLE_SCALE
 #undef SP48_AUDIO_SAMPLE_CAPACITY
+#undef SP48_AUDIO_TRANSITION_CAPACITY
 #undef SP48_DEFAULT_SAMPLE_RATE
 
 #define Z80_EXTERNAL_BUS 1
@@ -1914,7 +1938,7 @@ void spp3eWritePort(uint32_t address, uint32_t value) {
     const uint8_t nextMicBit = (value & 0x08u) != 0u ? 1u : 0u;
     const uint8_t nextEarBit = (value & 0x10u) != 0u ? 1u : 0u;
     if (nextEarBit != spp3eEarBit || nextMicBit != spp3eMicBit) {
-      spp3eCommonRecordAudioTransition(spp3eTacts);
+      spp3eCommonRecordAudioTransition(spp3eTacts, spp3eTapeMode == SPP3E_TAPE_MODE_LOAD ? spp3eTapeEarBit : nextEarBit, nextMicBit);
     }
     spp3eMicBit = nextMicBit;
     spp3eCommonTapeProcessMicBit(spp3eMicBit);

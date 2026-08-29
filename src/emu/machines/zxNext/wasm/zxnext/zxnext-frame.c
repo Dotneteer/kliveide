@@ -16,6 +16,7 @@ static void zxnextFrameReset(void) {
 
 static uint32_t zxnextFrameExecute(void) {
   frameCompleted = 0;
+  zxnextBeeperBeginFrame();
   zxnextPsgBeginFrame();
   zxnextAudioMixerBeginFrame();
   while (frameCompleted == 0u && zxnextSdGetHostCommand() == ZXNEXT_SD_HOST_COMMAND_NONE) {

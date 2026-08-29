@@ -23,12 +23,14 @@ class MockMachine implements Partial<IAnyMachine> {
  */
 class TestAudioDevice extends AudioDeviceBase<IAnyMachine> {
   private _currentSampleValue = { left: 0.0, right: 0.0 };
+  lastSampleEndTact: number | undefined;
 
   setSampleValue(left: number, right: number): void {
     this._currentSampleValue = { left, right };
   }
 
-  override getCurrentSampleValue(): AudioSample {
+  override getCurrentSampleValue(sampleEndTact?: number): AudioSample {
+    this.lastSampleEndTact = sampleEndTact;
     return this._currentSampleValue;
   }
 }
@@ -142,8 +144,7 @@ describe("AudioDeviceBase", () => {
       machine.tacts = sampleLength / 2; // Not enough tacts
       device.setNextAudioSample();
       
-      // First sample is generated at first interval crossing
-      expect(device.getAudioSamples().length).toBe(1);
+      expect(device.getAudioSamples().length).toBe(0);
     });
 
     it("should generate sample when tacts exceed threshold", () => {
@@ -181,6 +182,16 @@ describe("AudioDeviceBase", () => {
       device.setNextAudioSample();
       
       expect(device.getAudioSamples()[0].left).toBeCloseTo(0.5, 1);
+    });
+
+    it("should ask the device for the ideal sample boundary when the pull is late", () => {
+      device.setAudioSampleRate(44100);
+      const sampleLength = 3_546_900 / 44100;
+
+      machine.tacts = sampleLength + 10;
+      device.setNextAudioSample();
+
+      expect(device.lastSampleEndTact).toBeCloseTo(sampleLength, 6);
     });
   });
 
@@ -286,6 +297,35 @@ describe("AudioDeviceBase", () => {
       expect(samples[2].left).toBeGreaterThan(0.9);
       expect(samples[3].left).toBeCloseTo(-0.5, 1);
       expect(samples[4].left).toBeCloseTo(0.25, 1);
+    });
+
+    it("should use a low sample-rate-derived DC cutoff", () => {
+      device.setAudioSampleRate(48000);
+      device.setSampleValue(1.0, 1.0);
+
+      const sampleLength = 3_546_900 / 48000;
+      for (let i = 1; i <= 500; i++) {
+        machine.tacts = sampleLength * i;
+        device.setNextAudioSample();
+      }
+
+      const shortHeldDcSamples = device.getAudioSamples();
+      expect(shortHeldDcSamples[499].left).toBeGreaterThan(0.9);
+      expect(shortHeldDcSamples[499].left).toBeLessThan(shortHeldDcSamples[0].left);
+
+      machine.tacts = 0;
+      device.reset();
+      device.setAudioSampleRate(48000);
+      device.setSampleValue(1.0, 1.0);
+
+      for (let i = 1; i <= 96_000; i++) {
+        machine.tacts = sampleLength * i;
+        device.setNextAudioSample();
+      }
+
+      const longHeldDcSamples = device.getAudioSamples();
+      expect(longHeldDcSamples.length).toBeGreaterThan(95_000);
+      expect(Math.abs(longHeldDcSamples[longHeldDcSamples.length - 1].left)).toBeLessThan(0.001);
     });
   });
 

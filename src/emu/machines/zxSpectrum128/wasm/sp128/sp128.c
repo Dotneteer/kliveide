@@ -12,6 +12,7 @@
 #define SP128_DISPLAY_TOP 48u
 #define SP128_PIXEL_BUFFER_WORDS (SP128_SCREEN_WIDTH * SP128_SCREEN_HEIGHT)
 #define SP128_AUDIO_SAMPLE_CAPACITY 2048u
+#define SP128_AUDIO_TRANSITION_CAPACITY 8192u
 #define SP128_AUDIO_SAMPLE_SCALE 24576.0
 #define SP128_BASE_CLOCK_FREQUENCY 3546900.0
 #define SP128_TACTS_PER_FRAME 70908u
@@ -172,6 +173,13 @@ static uint32_t sp128AudioLastLevelChangeTact;
 static double sp128AudioAccumulatedEar;
 static double sp128AudioAccumulatedMic;
 static double sp128AudioAccumulatedTacts;
+static double sp128AudioSampleWindowStartTact;
+static uint8_t sp128AudioSampleWindowStartEar;
+static uint8_t sp128AudioSampleWindowStartMic;
+static uint32_t sp128AudioTransitionCount;
+static uint32_t sp128AudioTransitionTacts[SP128_AUDIO_TRANSITION_CAPACITY];
+static uint8_t sp128AudioTransitionEar[SP128_AUDIO_TRANSITION_CAPACITY];
+static uint8_t sp128AudioTransitionMic[SP128_AUDIO_TRANSITION_CAPACITY];
 static double sp128DcFilterPrevInputLeft;
 static double sp128DcFilterPrevInputRight;
 static double sp128DcFilterPrevOutputLeft;
@@ -462,6 +470,7 @@ static uint32_t screenBankOffset(void) {
 
 #define SP48_DEFAULT_SAMPLE_RATE SP128_DEFAULT_SAMPLE_RATE
 #define SP48_AUDIO_SAMPLE_CAPACITY SP128_AUDIO_SAMPLE_CAPACITY
+#define SP48_AUDIO_TRANSITION_CAPACITY SP128_AUDIO_TRANSITION_CAPACITY
 #define SP48_AUDIO_SAMPLE_SCALE SP128_AUDIO_SAMPLE_SCALE
 #define SP48_TAPE_MODE_LOAD SP128_TAPE_MODE_LOAD
 #define SP48_AUDIO_BEFORE_SAMPLE() sp128PsgPrepareAudioSample()
@@ -475,6 +484,13 @@ static uint32_t screenBankOffset(void) {
 #define sp48AudioAccumulatedMic sp128AudioAccumulatedMic
 #define sp48AudioAccumulatedTacts sp128AudioAccumulatedTacts
 #define sp48AudioLastLevelChangeTact sp128AudioLastLevelChangeTact
+#define sp48AudioSampleWindowStartTact sp128AudioSampleWindowStartTact
+#define sp48AudioSampleWindowStartEar sp128AudioSampleWindowStartEar
+#define sp48AudioSampleWindowStartMic sp128AudioSampleWindowStartMic
+#define sp48AudioTransitionCount sp128AudioTransitionCount
+#define sp48AudioTransitionTacts sp128AudioTransitionTacts
+#define sp48AudioTransitionEar sp128AudioTransitionEar
+#define sp48AudioTransitionMic sp128AudioTransitionMic
 #define sp48Tacts sp128Tacts
 #define sp48AudioSampleCount sp128AudioSampleCount
 #define sp48AudioSampleLength sp128AudioSampleLength
@@ -520,6 +536,13 @@ static uint32_t screenBankOffset(void) {
 #undef sp48AudioSampleLength
 #undef sp48AudioSampleCount
 #undef sp48Tacts
+#undef sp48AudioTransitionMic
+#undef sp48AudioTransitionEar
+#undef sp48AudioTransitionTacts
+#undef sp48AudioTransitionCount
+#undef sp48AudioSampleWindowStartMic
+#undef sp48AudioSampleWindowStartEar
+#undef sp48AudioSampleWindowStartTact
 #undef sp48AudioLastLevelChangeTact
 #undef sp48AudioAccumulatedTacts
 #undef sp48AudioAccumulatedMic
@@ -534,6 +557,7 @@ static uint32_t screenBankOffset(void) {
 #undef SP48_TAPE_MODE_LOAD
 #undef SP48_AUDIO_SAMPLE_SCALE
 #undef SP48_AUDIO_SAMPLE_CAPACITY
+#undef SP48_AUDIO_TRANSITION_CAPACITY
 #undef SP48_DEFAULT_SAMPLE_RATE
 
 #define SP48_TAPE_MODE_LOAD SP128_TAPE_MODE_LOAD
@@ -548,6 +572,7 @@ static uint32_t screenBankOffset(void) {
 #define sp48EarBitChangedFrom1Tacts sp128EarBitChangedFrom1Tacts
 #define sp48KeyboardSelectedLineValue sp128KeyboardSelectedLineValue
 #define sp48TapeMode sp128TapeMode
+#define sp48TapeEarBit sp128TapeEarBit
 #define sp48Tacts sp128Tacts
 #define resetPortFe sp128CommonResetPortFe
 #define sp48ReadPort sp128ReadPort
@@ -567,6 +592,7 @@ static uint32_t screenBankOffset(void) {
 #undef sp48Tacts
 #undef sp48TapeMode
 #undef sp48KeyboardSelectedLineValue
+#undef sp48TapeEarBit
 #undef sp48EarBitChangedFrom1Tacts
 #undef sp48EarBitChangedFrom0Tacts
 #undef sp48BeeperLevel

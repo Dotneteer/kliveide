@@ -543,7 +543,7 @@ static void setTapeEarBit(uint8_t value) {
   if (sp48TapeEarBit == value) {
     return;
   }
-  recordAudioTransition(sp48Tacts);
+  recordAudioTransition(sp48Tacts, value, sp48MicBit);
   sp48TapeEarBit = value;
   sp48BeeperLevel = (uint8_t)((sp48MicBit != 0u ? 1u : 0u) | (sp48TapeEarBit != 0u ? 2u : 0u));
 }
