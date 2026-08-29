@@ -36,6 +36,7 @@ describe("ZX Spectrum WASM beeper audio parity", () => {
       expect(sampleCount).toBeLessThanOrEqual(getAudioSampleCapacity(machine, testCase.prefix));
       expect(rawAudioEnergy(machine)).toBeGreaterThan(0);
       expectNormalizedSamples(machine.getAudioSamples());
+      expectInterleavedStereoPairsEqual(rawAudioSamples(machine));
     });
 
     it(`${testCase.name} starts each frame with a fresh non-empty audio collection`, async () => {
@@ -91,6 +92,7 @@ describe("ZX Spectrum WASM beeper audio parity", () => {
       expect(getAudioSampleCount(machine, testCase.prefix)).toBeGreaterThan(0);
       expect(rawSamples.some(sample => sample !== 0)).toBe(true);
       expect(countDistinctValues(rawSamples)).toBeGreaterThan(1);
+      expectInterleavedStereoPairsEqual(rawSamples);
       expectNormalizedSamples(machine.getAudioSamples());
     });
   }
@@ -146,6 +148,12 @@ function rawAudioSamples(machine: WasmMachine): number[] {
 
 function countDistinctValues(samples: number[]): number {
   return new Set(samples).size;
+}
+
+function expectInterleavedStereoPairsEqual(samples: number[]): void {
+  for (let i = 0; i < samples.length; i += 2) {
+    expect(samples[i + 1]).toBe(samples[i]);
+  }
 }
 
 function callWasmExport(machine: WasmMachine, name: string): (...args: number[]) => number {

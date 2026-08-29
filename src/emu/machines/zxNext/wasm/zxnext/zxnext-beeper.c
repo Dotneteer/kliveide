@@ -1,26 +1,44 @@
 #include "zxnext-beeper.h"
 
+#define ZXNEXT_BEEPER_TRANSITION_CAPACITY 8192u
+
 static uint8_t zxnextBeeperEar;
 static uint8_t zxnextBeeperMic;
 static uint32_t zxnextBeeperTacts;
-static uint32_t zxnextBeeperLastChangeTact;
-static uint32_t zxnextBeeperAccumulatedEar;
-static uint32_t zxnextBeeperAccumulatedMic;
-static uint32_t zxnextBeeperAccumulatedTacts;
+static double zxnextBeeperFrameStartTact;
+static double zxnextBeeperSampleWindowStartTact;
+static uint8_t zxnextBeeperSampleWindowStartEar;
+static uint8_t zxnextBeeperSampleWindowStartMic;
+static uint32_t zxnextBeeperTransitionCount;
+static double zxnextBeeperTransitionTacts[ZXNEXT_BEEPER_TRANSITION_CAPACITY];
+static uint8_t zxnextBeeperTransitionEar[ZXNEXT_BEEPER_TRANSITION_CAPACITY];
+static uint8_t zxnextBeeperTransitionMic[ZXNEXT_BEEPER_TRANSITION_CAPACITY];
 static uint32_t zxnextBeeperCachedLeftMilli;
 static uint32_t zxnextBeeperCachedRightMilli;
+static double zxnextBeeperCachedSampleEndTact;
 static uint8_t zxnextBeeperCachedSampleValid;
 
 static void zxnextBeeperReset(void) {
   zxnextBeeperEar = 0u;
   zxnextBeeperMic = 0u;
   zxnextBeeperTacts = 0u;
-  zxnextBeeperLastChangeTact = 0u;
-  zxnextBeeperAccumulatedEar = 0u;
-  zxnextBeeperAccumulatedMic = 0u;
-  zxnextBeeperAccumulatedTacts = 0u;
+  zxnextBeeperFrameStartTact = 0.0;
+  zxnextBeeperSampleWindowStartTact = 0.0;
+  zxnextBeeperSampleWindowStartEar = 0u;
+  zxnextBeeperSampleWindowStartMic = 0u;
+  zxnextBeeperTransitionCount = 0u;
   zxnextBeeperCachedLeftMilli = 0u;
   zxnextBeeperCachedRightMilli = 0u;
+  zxnextBeeperCachedSampleEndTact = 0.0;
+  zxnextBeeperCachedSampleValid = 0u;
+}
+
+static void zxnextBeeperBeginFrame(void) {
+  zxnextBeeperFrameStartTact = (double)zxnextBeeperTacts;
+  zxnextBeeperSampleWindowStartTact = zxnextBeeperFrameStartTact;
+  zxnextBeeperSampleWindowStartEar = zxnextBeeperEar;
+  zxnextBeeperSampleWindowStartMic = zxnextBeeperMic;
+  zxnextBeeperTransitionCount = 0u;
   zxnextBeeperCachedSampleValid = 0u;
 }
 
@@ -28,23 +46,35 @@ static void zxnextBeeperSetTacts(uint32_t value) {
   zxnextBeeperTacts = value;
 }
 
-static inline void zxnextBeeperRecordTransition(void) {
-  uint32_t duration = zxnextBeeperTacts - zxnextBeeperLastChangeTact;
-  if (duration > 0u) {
-    zxnextBeeperAccumulatedEar += zxnextBeeperEar ? duration : 0u;
-    zxnextBeeperAccumulatedMic += zxnextBeeperMic ? duration : 0u;
-    zxnextBeeperAccumulatedTacts += duration;
+static inline void zxnextBeeperDiscardTransitions(uint32_t count) {
+  if (count == 0u) return;
+  if (count >= zxnextBeeperTransitionCount) {
+    zxnextBeeperTransitionCount = 0u;
+    return;
   }
-  zxnextBeeperLastChangeTact = zxnextBeeperTacts;
+
+  const uint32_t remaining = zxnextBeeperTransitionCount - count;
+  for (uint32_t i = 0u; i < remaining; i++) {
+    const uint32_t from = i + count;
+    zxnextBeeperTransitionTacts[i] = zxnextBeeperTransitionTacts[from];
+    zxnextBeeperTransitionEar[i] = zxnextBeeperTransitionEar[from];
+    zxnextBeeperTransitionMic[i] = zxnextBeeperTransitionMic[from];
+  }
+  zxnextBeeperTransitionCount = remaining;
 }
 
 static inline void zxnextBeeperSetOutput(uint32_t ear, uint32_t mic) {
   uint8_t nextEar = ear != 0u;
   uint8_t nextMic = mic != 0u;
   if (nextEar != zxnextBeeperEar || nextMic != zxnextBeeperMic) {
-    zxnextBeeperRecordTransition();
+    if (zxnextBeeperTransitionCount < ZXNEXT_BEEPER_TRANSITION_CAPACITY) {
+      const uint32_t index = zxnextBeeperTransitionCount++;
+      zxnextBeeperTransitionTacts[index] = (double)zxnextBeeperTacts;
+      zxnextBeeperTransitionEar[index] = nextEar;
+      zxnextBeeperTransitionMic[index] = nextMic;
+    }
+    zxnextBeeperCachedSampleValid = 0u;
   }
-  zxnextBeeperCachedSampleValid = 0u;
   zxnextBeeperEar = nextEar;
   zxnextBeeperMic = nextMic;
 }
@@ -62,32 +92,66 @@ static inline uint32_t zxnextBeeperGetOutputLevelMilli(void) {
   }
 }
 
-static inline void zxnextBeeperUpdateCachedSample(void) {
-  if (zxnextBeeperCachedSampleValid) return;
-  if (zxnextBeeperAccumulatedTacts > 0u) {
-    uint32_t finalDuration = zxnextBeeperTacts - zxnextBeeperLastChangeTact;
-    uint32_t totalTacts = zxnextBeeperAccumulatedTacts + finalDuration;
-    uint32_t totalEar = zxnextBeeperAccumulatedEar + (zxnextBeeperEar ? finalDuration : 0u);
-    uint32_t totalMic = zxnextBeeperAccumulatedMic + (zxnextBeeperMic ? finalDuration : 0u);
-    zxnextBeeperCachedLeftMilli = totalTacts > 0u ? (totalEar * 1000u) / totalTacts : (zxnextBeeperEar ? 1000u : 0u);
-    zxnextBeeperCachedRightMilli = totalTacts > 0u ? (totalMic * 1000u) / totalTacts : (zxnextBeeperMic ? 1000u : 0u);
-    zxnextBeeperAccumulatedEar = 0u;
-    zxnextBeeperAccumulatedMic = 0u;
-    zxnextBeeperAccumulatedTacts = 0u;
-    zxnextBeeperLastChangeTact = zxnextBeeperTacts;
-  } else {
+static inline void zxnextBeeperUpdateCachedSample(double sampleEndTact) {
+  if (zxnextBeeperCachedSampleValid && zxnextBeeperCachedSampleEndTact == sampleEndTact) return;
+
+  const double sampleStartTact = zxnextBeeperSampleWindowStartTact;
+  if (sampleEndTact <= sampleStartTact) {
     zxnextBeeperCachedLeftMilli = zxnextBeeperEar ? 1000u : 0u;
     zxnextBeeperCachedRightMilli = zxnextBeeperMic ? 1000u : 0u;
+    zxnextBeeperCachedSampleEndTact = sampleEndTact;
+    zxnextBeeperCachedSampleValid = 1u;
+    return;
   }
+
+  double cursor = sampleStartTact;
+  uint8_t ear = zxnextBeeperSampleWindowStartEar;
+  uint8_t mic = zxnextBeeperSampleWindowStartMic;
+  double totalEar = 0.0;
+  double totalMic = 0.0;
+  uint32_t consumed = 0u;
+
+  while (consumed < zxnextBeeperTransitionCount) {
+    const double transitionTact = zxnextBeeperTransitionTacts[consumed];
+    if (transitionTact >= sampleEndTact) break;
+
+    const double clippedTact = transitionTact < cursor ? cursor : transitionTact;
+    const double duration = clippedTact - cursor;
+    if (duration > 0.0) {
+      totalEar += (ear != 0u ? 1.0 : 0.0) * duration;
+      totalMic += (mic != 0u ? 1.0 : 0.0) * duration;
+    }
+
+    cursor = clippedTact;
+    ear = zxnextBeeperTransitionEar[consumed];
+    mic = zxnextBeeperTransitionMic[consumed];
+    consumed++;
+  }
+
+  const double finalDuration = sampleEndTact - cursor;
+  if (finalDuration > 0.0) {
+    totalEar += (ear != 0u ? 1.0 : 0.0) * finalDuration;
+    totalMic += (mic != 0u ? 1.0 : 0.0) * finalDuration;
+  }
+
+  zxnextBeeperDiscardTransitions(consumed);
+  zxnextBeeperSampleWindowStartTact = sampleEndTact;
+  zxnextBeeperSampleWindowStartEar = ear;
+  zxnextBeeperSampleWindowStartMic = mic;
+
+  const double totalTacts = sampleEndTact - sampleStartTact;
+  zxnextBeeperCachedLeftMilli = totalTacts > 0.0 ? (uint32_t)((totalEar * 1000.0) / totalTacts) : (ear ? 1000u : 0u);
+  zxnextBeeperCachedRightMilli = totalTacts > 0.0 ? (uint32_t)((totalMic * 1000.0) / totalTacts) : (mic ? 1000u : 0u);
+  zxnextBeeperCachedSampleEndTact = sampleEndTact;
   zxnextBeeperCachedSampleValid = 1u;
 }
 
-static uint32_t zxnextBeeperGetSampleLeftMilli(void) {
-  zxnextBeeperUpdateCachedSample();
+static uint32_t zxnextBeeperGetSampleLeftMilli(double sampleEndTact) {
+  zxnextBeeperUpdateCachedSample(sampleEndTact);
   return zxnextBeeperCachedLeftMilli;
 }
 
-static uint32_t zxnextBeeperGetSampleRightMilli(void) {
-  zxnextBeeperUpdateCachedSample();
+static uint32_t zxnextBeeperGetSampleRightMilli(double sampleEndTact) {
+  zxnextBeeperUpdateCachedSample(sampleEndTact);
   return zxnextBeeperCachedRightMilli;
 }

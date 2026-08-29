@@ -62,6 +62,7 @@ static uint8_t borderColor;
 static uint8_t earBit;
 static uint8_t micBit;
 
+#include "zxnext-beeper.h"
 #include "zxnext-frame.c"
 #include "zxnext-debug.c"
 #include "zxnext-memory.c"
@@ -474,8 +475,8 @@ void zxnextSetBeeperOutput(uint32_t ear, uint32_t mic) { zxnextBeeperSetOutput(e
 uint32_t zxnextGetBeeperEar(void) { return zxnextBeeperGetEar(); }
 uint32_t zxnextGetBeeperMic(void) { return zxnextBeeperGetMic(); }
 uint32_t zxnextGetBeeperOutputLevelMilli(void) { return zxnextBeeperGetOutputLevelMilli(); }
-uint32_t zxnextGetBeeperSampleLeftMilli(void) { return zxnextBeeperGetSampleLeftMilli(); }
-uint32_t zxnextGetBeeperSampleRightMilli(void) { return zxnextBeeperGetSampleRightMilli(); }
+uint32_t zxnextGetBeeperSampleLeftMilli(void) { return zxnextBeeperGetSampleLeftMilli((double)zxnextBeeperTacts); }
+uint32_t zxnextGetBeeperSampleRightMilli(void) { return zxnextBeeperGetSampleRightMilli((double)zxnextBeeperTacts); }
 void zxnextSetPsgTurbosoundEnabled(uint32_t enabled) { zxnextPsgSetTurbosoundEnabled(enabled); }
 void zxnextSetPsgAyStereoMode(uint32_t enabled) { zxnextPsgSetAyStereoMode(enabled); }
 void zxnextSetPsgChipMonoMode(uint32_t chip, uint32_t enabled) { zxnextPsgSetChipMonoMode(chip, enabled); }
@@ -483,6 +484,10 @@ void zxnextSetPsgRegisterIndex(uint32_t value) { zxnextPsgSetRegisterIndex(value
 void zxnextWritePsgRegisterValue(uint32_t value) { zxnextPsgWriteRegisterValue(value); }
 uint32_t zxnextReadPsgRegisterValue(void) { return zxnextPsgReadRegisterValue(); }
 void zxnextGeneratePsgOutput(uint32_t chip) { zxnextPsgGenerateOutput(chip); }
+void zxnextAdvancePsgToFrameTact(uint32_t frameTact28) { zxnextPsgAdvanceToFrameTact((double)frameTact28); }
+void zxnextPreparePsgAudioSample(double sampleEndFrameTact28) { zxnextPsgPrepareAudioSample(sampleEndFrameTact28); }
+uint32_t zxnextGetPsgSampleLeft(void) { return zxnextPsgGetSampleLeft(); }
+uint32_t zxnextGetPsgSampleRight(void) { return zxnextPsgGetSampleRight(); }
 uint32_t zxnextGetPsgSelectedChip(void) { return zxnextPsgGetSelectedChip(); }
 uint32_t zxnextGetPsgSelectedRegister(void) { return zxnextPsgGetSelectedRegister(); }
 uint32_t zxnextGetPsgChipPanning(uint32_t chip) { return zxnextPsgGetChipPanning(chip); }
@@ -498,6 +503,8 @@ uint32_t zxnextGetPsgEnvelopeStep(uint32_t chip) { return zxnextPsgGetEnvelopeSt
 uint32_t zxnextGetDacChannel(uint32_t channel) { return zxnextDacGetChannel(channel); }
 uint32_t zxnextGetDacStereoLeft(void) { return zxnextDacGetStereoLeft(); }
 uint32_t zxnextGetDacStereoRight(void) { return zxnextDacGetStereoRight(); }
+void zxnextSetAudioSampleRate(uint32_t rate) { zxnextAudioMixerSetSampleRate(rate); }
+uint32_t zxnextGetAudioSampleRate(void) { return zxnextAudioMixerGetSampleRate(); }
 void zxnextSetAudioMixerEarLevelMilli(int32_t level) { zxnextAudioMixerSetEarLevelMilli(level); }
 void zxnextSetAudioMixerMicLevelMilli(int32_t level) { zxnextAudioMixerSetMicLevelMilli(level); }
 void zxnextSetAudioMixerPsgOutput(uint32_t left, uint32_t right) { zxnextAudioMixerSetPsgOutput(left, right); }

@@ -258,19 +258,22 @@ class TestAudioDevice extends AudioDeviceBase<IAnyMachine> {
   }
 }
 
-describe("Phase 11: DC filter uses MAME form y = x - x_prev + α·y_prev", () => {
+describe("Phase 11: DC filter uses MAME form y = x - x_prev + R·y_prev", () => {
+  const sampleRate = 44100;
+  const dcFilterAlpha = Math.exp((-2 * Math.PI * 1.4) / sampleRate);
+
   let machine: MockMachine;
   let device: TestAudioDevice;
 
   beforeEach(() => {
     machine = new MockMachine();
     device = new TestAudioDevice(machine as IAnyMachine);
-    device.setAudioSampleRate(44100);
+    device.setAudioSampleRate(sampleRate);
   });
 
   function collectSamples(values: number[], count?: number): AudioSample[] {
     const n = count ?? values.length;
-    const sampleLength = machine.baseClockFrequency / 44100;
+    const sampleLength = machine.baseClockFrequency / sampleRate;
     for (let i = 0; i < n; i++) {
       const v = values[Math.min(i, values.length - 1)];
       device.setSample(v, v);
@@ -287,43 +290,42 @@ describe("Phase 11: DC filter uses MAME form y = x - x_prev + α·y_prev", () =>
   });
 
   it("should pass through first non-zero sample unattenuated", () => {
-    // First sample: y = x - 0 + 0.995·0 = x (exactly)
+    // First sample: y = x - 0 + R*0 = x (exactly)
     const samples = collectSamples([1.0]);
     expect(samples[0].left).toBe(1.0);
     expect(samples[0].right).toBe(1.0);
   });
 
   it("constant input should decay toward zero (removes DC offset)", () => {
-    // Feed constant 1.0 for many samples — α=0.995 decays slowly
-    const samples = collectSamples([1.0], 1000);
+    // Feed constant 1.0 for enough samples for the low 1.4 Hz cutoff to decay.
+    const samples = collectSamples([1.0], 50_000);
 
     // First sample: y = 1 - 0 + 0 = 1.0
     expect(samples[0].left).toBe(1.0);
 
-    // After 1000 samples: ~0.995^999 ≈ 0.0067
+    // After 50,000 samples: R^49,999 is near zero even with the low cutoff.
     const lastSample = samples[samples.length - 1];
-    expect(Math.abs(lastSample.left)).toBeLessThan(0.05);
+    expect(Math.abs(lastSample.left)).toBeLessThan(0.001);
   });
 
-  it("second sample of constant input should be α·y_prev (MAME form)", () => {
-    // Sample 0: y[0] = 1.0 - 0 + 0.995·0 = 1.0
-    // Sample 1: y[1] = 1.0 - 1.0 + 0.995·1.0 = 0.995 (exactly)
-    // With old formula: y[1] = 0.995·(1.0 + 1.0 - 1.0) = 0.995 (same for this case)
+  it("second sample of constant input should be R*y_prev (MAME form)", () => {
+    // Sample 0: y[0] = 1.0 - 0 + R*0 = 1.0
+    // Sample 1: y[1] = 1.0 - 1.0 + R*1.0 = R
     const samples = collectSamples([1.0, 1.0]);
-    expect(samples[1].left).toBeCloseTo(0.995, 6);
+    expect(samples[1].left).toBeCloseTo(dcFilterAlpha, 6);
   });
 
   it("MAME form differs from old form on subsequent samples", () => {
     // The MAME and old forms diverge after 2+ samples.
-    // MAME: y[2] = 1.0 - 1.0 + 0.995·0.995 = 0.990025
-    // Old:  y[2] = 0.995·(0.995 + 1.0 - 1.0) = 0.990025 (still same for constant!)
+    // MAME: y[2] = 1.0 - 1.0 + R*R
+    // Old:  y[2] = R*(R + 1.0 - 1.0) = R*R (still same for constant!)
     // They diverge when input changes:
     // After [1.0, 0.0]:
-    //   MAME: y[0]=1.0, y[1] = 0 - 1.0 + 0.995·1.0 = -0.005
-    //   Old:  y[0]=1.0, y[1] = 0.995·(1.0 + 0 - 1.0) = 0.995·0 = 0
+    //   MAME: y[0]=1.0, y[1] = 0 - 1.0 + R*1.0 = R - 1.0
+    //   Old:  y[0]=1.0, y[1] = R*(1.0 + 0 - 1.0) = 0
     const samples = collectSamples([1.0, 0.0]);
-    // MAME form: y[1] = 0.0 - 1.0 + 0.995 * 1.0 = -0.005
-    expect(samples[1].left).toBeCloseTo(-0.005, 6);
+    // MAME form: y[1] = 0.0 - 1.0 + R * 1.0 = R - 1.0
+    expect(samples[1].left).toBeCloseTo(dcFilterAlpha - 1.0, 6);
   });
 
   it("step response down should produce small negative undershoot (MAME characteristic)", () => {
@@ -337,7 +339,7 @@ describe("Phase 11: DC filter uses MAME form y = x - x_prev + α·y_prev", () =>
 
   it("should handle symmetric Left/Right channels", () => {
     device.setSample(0.5, -0.3);
-    machine.tacts += machine.baseClockFrequency / 44100;
+    machine.tacts += machine.baseClockFrequency / sampleRate;
     device.setNextAudioSample();
 
     const s = device.getAudioSamples()[0];

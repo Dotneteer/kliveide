@@ -213,6 +213,10 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextWritePsgRegisterValue: ZxNextWasmV2ExportFunction;
   zxnextReadPsgRegisterValue: ZxNextWasmV2ExportFunction;
   zxnextGeneratePsgOutput: ZxNextWasmV2ExportFunction;
+  zxnextAdvancePsgToFrameTact: ZxNextWasmV2ExportFunction;
+  zxnextPreparePsgAudioSample: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgSampleLeft: ZxNextWasmV2ExportFunction;
+  zxnextGetPsgSampleRight: ZxNextWasmV2ExportFunction;
   zxnextGetPsgSelectedChip: ZxNextWasmV2ExportFunction;
   zxnextGetPsgSelectedRegister: ZxNextWasmV2ExportFunction;
   zxnextGetPsgChipPanning: ZxNextWasmV2ExportFunction;
@@ -228,6 +232,8 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetDacChannel: ZxNextWasmV2ExportFunction;
   zxnextGetDacStereoLeft: ZxNextWasmV2ExportFunction;
   zxnextGetDacStereoRight: ZxNextWasmV2ExportFunction;
+  zxnextSetAudioSampleRate: ZxNextWasmV2ExportFunction;
+  zxnextGetAudioSampleRate: ZxNextWasmV2ExportFunction;
   zxnextSetAudioMixerEarLevelMilli: ZxNextWasmV2ExportFunction;
   zxnextSetAudioMixerMicLevelMilli: ZxNextWasmV2ExportFunction;
   zxnextSetAudioMixerPsgOutput: ZxNextWasmV2ExportFunction;
@@ -576,6 +582,10 @@ const requiredV2Exports = [
   "zxnextWritePsgRegisterValue",
   "zxnextReadPsgRegisterValue",
   "zxnextGeneratePsgOutput",
+  "zxnextAdvancePsgToFrameTact",
+  "zxnextPreparePsgAudioSample",
+  "zxnextGetPsgSampleLeft",
+  "zxnextGetPsgSampleRight",
   "zxnextGetPsgSelectedChip",
   "zxnextGetPsgSelectedRegister",
   "zxnextGetPsgChipPanning",
@@ -591,6 +601,8 @@ const requiredV2Exports = [
   "zxnextGetDacChannel",
   "zxnextGetDacStereoLeft",
   "zxnextGetDacStereoRight",
+  "zxnextSetAudioSampleRate",
+  "zxnextGetAudioSampleRate",
   "zxnextSetAudioMixerEarLevelMilli",
   "zxnextSetAudioMixerMicLevelMilli",
   "zxnextSetAudioMixerPsgOutput",
