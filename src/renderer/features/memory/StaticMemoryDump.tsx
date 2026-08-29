@@ -2,19 +2,20 @@ import styles from "./StaticMemoryDump.module.scss";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { STATIC_MEMORY_DUMP_VIEWER } from "@common/state/common-ids";
-import { GenericViewerPanel } from "@renderer/appIde/DocumentPanels/helpers/GenericViewerPanel";
 import { Row } from "@renderer/controls/layout/Row";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { LabeledText } from "@renderer/controls/layout/LabeledText";
-import { createElement, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import classnames from "classnames";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
-import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import { createRowAddresses } from "./memoryViewModel";
 import { MemoryDumpSection } from "./MemoryDumpSection";
+import { FullPanel } from "@renderer/controls/layout/Panels";
+import { PanelHeader } from "@renderer/appIde/DocumentPanels/helpers/PanelHeader";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 
 type MemoryDumpViewState = {
   twoColumns?: boolean;
@@ -24,25 +25,54 @@ type MemoryDumpViewState = {
   topAddress?: number;
 };
 
+const STATIC_DUMP_ROW_ITEM_SIZE = 22;
+
 const StaticMemoryDump = ({
   document,
   contents,
   viewState
 }: DocumentProps<MemoryDumpViewState>) => {
-  return createElement(GenericViewerPanel<MemoryDumpViewState>, {
-    saveScrollTop: false,
-    document,
-    contents,
-    viewState,
-    headerRenderer: (context) => {
-      return (
+  const documentHubService = useDocumentHubService();
+  const [currentViewState, setCurrentViewState] = useState<MemoryDumpViewState>(
+    viewState ?? {}
+  );
+  const [jumpAddress, setJumpAddress] = useState<number>();
+  const vlApi = useRef<VListHandle>();
+  const pendingScrollPosition = useRef(viewState?.scrollPosition ?? 0);
+  const restoredInitialScroll = useRef(false);
+  const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
+
+  const changeViewState = useCallback((setter: (vs: MemoryDumpViewState) => void) => {
+    setCurrentViewState((current) => {
+      const newViewState = { ...current };
+      setter(newViewState);
+      return newViewState;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (document?.id) {
+      documentHubService.setDocumentViewState(document.id, currentViewState);
+    }
+  }, [currentViewState, document?.id, documentHubService]);
+
+  useEffect(() => {
+    if (!vlApi.current || jumpAddress === undefined) return;
+    vlApi.current.scrollToIndex(Math.floor(jumpAddress / 16), {
+      align: "start"
+    });
+  }, [jumpAddress]);
+
+  return (
+    <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
+      <PanelHeader>
         <Row>
           <AddressInput
             label="Go to address:"
             decimalView={false}
             onAddressSent={async (address) => {
-              context.changeViewState((vs) => (vs.topAddress = address));
-              context.update(address);
+              changeViewState((vs) => (vs.topAddress = address));
+              setJumpAddress(address);
             }}
           />
           <LabelSeparator width={8} />
@@ -51,66 +81,60 @@ const StaticMemoryDump = ({
             value={`$${toHexa4(contents.length)} (${contents.length})`}
           />
         </Row>
-      );
-    },
-    renderer: (context) => {
-      const vlApi = useRef<VListHandle>();
-      const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
-
-      useInitializeAsync(async () => {
-        if (viewState?.scrollPosition) {
-          await new Promise((resolve) => setTimeout(resolve, 40));
-          vlApi.current?.scrollTo(viewState.scrollPosition);
-        }
-      });
-
-      // --- Update the scroll position according to the address set
-      useEffect(() => {
-        if (!vlApi.current || typeof context.contextData !== "number") return;
-        vlApi.current.scrollToIndex(Math.floor(context.contextData / 16), {
-          align: "start"
-        });
-      }, [context.version]);
-
-      return contents ? (
-        <VirtualizedList
-          items={items}
-          onScroll={() => {
-            if (!vlApi.current) return;
-            const topPos = vlApi.current.getItemOffset(0);
-            context.changeViewState((vs) => (vs.scrollPosition = topPos));
-          }}
-          apiLoaded={(api) => (vlApi.current = api)}
-          renderItem={(idx, item) => {
-            return (
-              <div
-                className={classnames(styles.item, {
-                  [styles.even]: idx % 2 == 0
-                })}
-              >
-                <Row>
-                  <MemoryDumpSection
-                    address={item}
-                    bytes={Array.from(contents.slice(item, item + 8))}
-                    decimalView={false}
-                    charDump={true}
-                    lastJumpAddress={-1}
-                  />
-                  <MemoryDumpSection
-                    address={item + 8}
-                    bytes={Array.from(contents.slice(item + 8, item + 16))}
-                    decimalView={false}
-                    charDump={true}
-                    lastJumpAddress={-1}
-                  />
-                </Row>
-              </div>
-            );
-          }}
-        />
-      ) : null;
-    }
-  });
+      </PanelHeader>
+      <FullPanel>
+        {contents ? (
+          <VirtualizedList
+            items={items}
+            itemSize={STATIC_DUMP_ROW_ITEM_SIZE}
+            revealUnmeasuredItems
+            onScroll={(offset) => {
+              pendingScrollPosition.current = offset;
+            }}
+            onScrollEnd={() => {
+              const topPos = pendingScrollPosition.current;
+              changeViewState((vs) => (vs.scrollPosition = topPos));
+            }}
+            apiLoaded={(api) => {
+              vlApi.current = api;
+              if (!restoredInitialScroll.current && viewState?.scrollPosition) {
+                restoredInitialScroll.current = true;
+                requestAnimationFrame(() => {
+                  api.scrollTo(viewState.scrollPosition);
+                });
+              }
+            }}
+            renderItem={(idx, item) => {
+              return (
+                <div
+                  className={classnames(styles.item, {
+                    [styles.even]: idx % 2 == 0
+                  })}
+                >
+                  <Row>
+                    <MemoryDumpSection
+                      address={item}
+                      bytes={contents.subarray(item, item + 8)}
+                      decimalView={false}
+                      charDump={true}
+                      lastJumpAddress={-1}
+                    />
+                    <MemoryDumpSection
+                      address={item + 8}
+                      bytes={contents.subarray(item + 8, item + 16)}
+                      decimalView={false}
+                      charDump={true}
+                      lastJumpAddress={-1}
+                    />
+                  </Row>
+                </div>
+              );
+            }}
+          />
+        ) : null}
+      </FullPanel>
+    </FullPanel>
+  );
 };
 
 export const createStaticMemoryDump = ({ document, contents, viewState }: DocumentProps) => (

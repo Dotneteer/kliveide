@@ -151,13 +151,16 @@ export const Modal = ({
 
     return () => {
       unregister();
+      if (getModalStackSize() === 0) {
+        store.dispatch(dimMenuAction(false), messageSource);
+      }
       const elementToRestore = restoreFocusElementRef.current;
       restoreFocusElementRef.current = null;
       if (elementToRestore && document.contains(elementToRestore)) {
         elementToRestore.focus();
       }
     };
-  }, [isOpen, modalId]);
+  }, [isOpen, messageSource, modalId, store]);
 
   useEffect(() => {
     const container = containerRef.current;

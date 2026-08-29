@@ -53,6 +53,19 @@ describe("Modal — Step 1.2: dimMenuAction dispatched only on isOpen change", (
     expect(store.getState().dimMenu).toBe(false);
   });
 
+  it("clears dimMenuAction when an open modal is unmounted directly", () => {
+    const { store, unmount } = renderWithProviders(
+      <Modal isOpen={true} title="T" onClose={vi.fn()}>
+        <div />
+      </Modal>
+    );
+    expect(store.getState().dimMenu).toBe(true);
+
+    unmount();
+
+    expect(store.getState().dimMenu).toBe(false);
+  });
+
   it("does not dispatch again on an unrelated re-render", () => {
     const dispatchSpy = vi.fn();
     const { store, rerender } = renderWithProviders(

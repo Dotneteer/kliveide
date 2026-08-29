@@ -1,0 +1,87 @@
+{
+  "kliveVersion": "0.58.0",
+  "machineType": "sp48",
+  "clockMultiplier": 1,
+  "soundLevel": 0.8,
+  "soundMuted": false,
+  "savedSoundLevel": 0.8,
+  "media": {
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim",
+    "tape": "/Users/dotneteer/Downloads/LTK128/LTK128.TAP",
+    "diskA": {
+      "diskFile": "/Users/dotneteer/disk1.dsk",
+      "writeProtected": false
+    }
+  },
+  "machineSpecific": {},
+  "ide": {
+    "excludedProjectItems": []
+  },
+  "viewOptions": {
+    "theme": "dark"
+  },
+  "debugger": {
+    "breakpoints": []
+  },
+  "builder": {
+    "roots": [
+      "code/code.kz80.asm"
+    ]
+  },
+  "workspaceSettings": {
+    "docsWorkspace": {
+      "version": 2,
+      "layout": {
+        "type": "leaf",
+        "areaId": "document-area-1"
+      },
+      "activeAreaId": "document-area-1",
+      "areas": [
+        {
+          "areaId": "document-area-1",
+          "documents": [
+            {
+              "type": "CodeEditor",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/code/code.kz80.asm",
+              "position": {
+                "line": 0,
+                "column": 0
+              },
+              "viewState": {
+                "cursorState": [
+                  {
+                    "inSelectionMode": false,
+                    "selectionStart": {
+                      "lineNumber": 1,
+                      "column": 1
+                    },
+                    "position": {
+                      "lineNumber": 1,
+                      "column": 1
+                    }
+                  }
+                ],
+                "viewState": {
+                  "scrollLeft": 0,
+                  "firstPosition": {
+                    "lineNumber": 1,
+                    "column": 1
+                  },
+                  "firstPositionDeltaTop": 0
+                },
+                "contributionsState": {
+                  "editor.contrib.folding": {
+                    "lineCount": 23,
+                    "foldedImports": false
+                  },
+                  "editor.contrib.wordHighlighter": false
+                }
+              }
+            }
+          ],
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/code/code.kz80.asm"
+        }
+      ]
+    }
+  }
+}

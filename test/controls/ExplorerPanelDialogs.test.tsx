@@ -9,6 +9,85 @@ afterEach(() => {
 });
 
 describe("ExplorerPanel dialog migration", () => {
+  it("opens the new project dialog from the empty-state project button", async () => {
+    const state = {
+      dimMenu: false,
+      isWindows: false,
+      project: undefined,
+      ideView: {
+        explorerViewVersion: 1
+      }
+    };
+    const store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(() => state)
+    };
+
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      useDispatch: () => vi.fn(),
+      useRendererContext: () => ({ messenger: {}, store }),
+      useSelector: (selector: (appState: unknown) => unknown) => selector(state)
+    }));
+    vi.doMock("@renderer/core/MainApi", () => ({
+      useMainApi: () => ({ openFolder: vi.fn(), showItemInFolder: vi.fn() })
+    }));
+    vi.doMock("@renderer/core/EmuApi", () => ({
+      useEmuApi: () => ({})
+    }));
+    vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
+      useAppServices: () => ({
+        ideCommandsService: { executeCommand: vi.fn() },
+        projectService: {
+          getActiveDocumentHubService: () => ({
+            isOpen: vi.fn(() => false),
+            setActiveDocument: vi.fn()
+          }),
+          getDocumentHubServiceInstances: () => [],
+          setPermanent: vi.fn()
+        }
+      })
+    }));
+    vi.doMock("@renderer/appIde/project/project-node", () => ({
+      getFileTypeEntry: () => undefined
+    }));
+    vi.doMock("@renderer/features/explorer/useExplorerTree", () => ({
+      clearExplorerFolderCache: vi.fn(),
+      useExplorerTree: () => ({
+        refreshTree: vi.fn(),
+        rememberExpandedItems: vi.fn(),
+        selected: -1,
+        setSelected: vi.fn(),
+        setSelectedNode: vi.fn(),
+        tree: {
+          getViewNodeByIndex: vi.fn(),
+          rootNode: undefined
+        },
+        visibleNodes: []
+      })
+    }));
+    vi.doMock("@renderer/features/explorer/ExplorerContextMenu", () => ({
+      ExplorerContextMenu: () => null
+    }));
+    vi.doMock("@renderer/appIde/dialogs/NewProjectDialog", () => ({
+      NewProjectDialog: ({ onClose }: { onClose: () => void }) => (
+        <button onClick={onClose}>new project dialog</button>
+      )
+    }));
+
+    const { DialogProvider } = await import("@renderer/controls/overlay/DialogProvider");
+    const { ExplorerPanel } = await import("@renderer/features/explorer/ExplorerPanel");
+
+    render(
+      <DialogProvider>
+        <ExplorerPanel />
+      </DialogProvider>
+    );
+
+    fireEvent.click(screen.getByText("Create a Klive Project"));
+
+    expect(await screen.findByText("new project dialog")).toBeInTheDocument();
+  });
+
   it("opens add, rename, and delete dialogs through the dialog service", async () => {
     const state = {
       dimMenu: false,
