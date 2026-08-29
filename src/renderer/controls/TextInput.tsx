@@ -15,7 +15,7 @@ type Props = {
   numberOnly?: boolean;
   onKeyDown?: KeyboardEventHandler<HTMLInputElement>;
   onChange: (newValue: string) => void;
-  browse?: () => Promise<string | undefined>;
+  browse?: () => Promise<string | undefined | null>;
 };
 
 export const TextInput = ({
@@ -67,7 +67,7 @@ export const TextInput = ({
               aria-label={buttonTitle}
               onClick={async () => {
                 const newValue = await browse?.();
-                if (newValue !== undefined) {
+                if (newValue != null) {
                   onChange(newValue);
                   ref.current?.focus();
                 }

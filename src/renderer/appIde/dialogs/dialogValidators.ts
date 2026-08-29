@@ -1,19 +1,30 @@
 import type { IValidationService } from "@renderer/core/ValidationService";
 
-export type FieldValidator = (value: string) => string | undefined;
+export type FieldValidator = (value: string | null | undefined) => string | undefined;
 
-export function requiredFilename(validationService: IValidationService, value: string): string | undefined {
-  if (!value.trim()) return "Enter a file name.";
-  return validationService.isValidFilename(value) ? undefined : "Enter a valid file name.";
+export function requiredFilename(
+  validationService: IValidationService,
+  value: string | null | undefined
+): string | undefined {
+  const normalizedValue = (value ?? "").trim();
+  if (!normalizedValue.trim()) return "Enter a file name.";
+  return validationService.isValidFilename(normalizedValue) ? undefined : "Enter a valid file name.";
 }
 
-export function requiredPath(validationService: IValidationService, value: string): string | undefined {
-  if (!value.trim()) return "Choose a folder.";
-  return validationService.isValidPath(value, false) ? undefined : "Enter a valid folder path.";
+export function requiredPath(
+  validationService: IValidationService,
+  value: string | null | undefined
+): string | undefined {
+  const normalizedValue = (value ?? "").trim();
+  if (!normalizedValue.trim()) return "Choose a folder.";
+  return validationService.isValidPath(normalizedValue, false) ? undefined : "Enter a valid folder path.";
 }
 
-export function optionalPath(validationService: IValidationService, value: string): string | undefined {
-  return validationService.isValidPath(value, true) ? undefined : "Enter a valid path.";
+export function optionalPath(
+  validationService: IValidationService,
+  value: string | null | undefined
+): string | undefined {
+  return validationService.isValidPath((value ?? "").trim(), true) ? undefined : "Enter a valid path.";
 }
 
 export function newItemName(
@@ -35,6 +46,7 @@ export function renamedItemName(
   return requiredFilename(validationService, value);
 }
 
-export function decimalAddress(value: string): string | undefined {
-  return !value.trim() || /^\d+$/.test(value) ? undefined : "Enter a decimal address.";
+export function decimalAddress(value: string | null | undefined): string | undefined {
+  const normalizedValue = (value ?? "").trim();
+  return !normalizedValue.trim() || /^\d+$/.test(normalizedValue) ? undefined : "Enter a decimal address.";
 }

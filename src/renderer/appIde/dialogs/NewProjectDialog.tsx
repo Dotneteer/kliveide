@@ -11,7 +11,7 @@ import Dropdown from "@renderer/controls/Dropdown";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { ensureProjectLoaded, ensureWorkspaceLoaded } from "../IdeEventsHandler";
 import { DialogForm } from "@renderer/controls/DialogForm";
-import { requiredFilename, requiredPath } from "./dialogValidators";
+import { optionalPath, requiredFilename } from "./dialogValidators";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const INITIAL_MACHINE_IDE = "sp48";
@@ -60,8 +60,8 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       setTemplateDirs(dirs.map((d) => ({ value: d, label: d })));
       setTemplateId((current) => {
         if (dirs.includes(current)) return current;
-        if (dirs.includes(INITAIL_TEMPLATE_ID)) return INITAIL_TEMPLATE_ID;
-        return dirs[0] ?? INITAIL_TEMPLATE_ID;
+        if (dirs.includes(INITIAL_TEMPLATE_ID)) return INITIAL_TEMPLATE_ID;
+        return dirs[0] ?? INITIAL_TEMPLATE_ID;
       });
     })();
 
@@ -70,7 +70,8 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
     };
   }, [machineId]);
 
-  const folderError = requiredPath(validationService, projectFolder);
+  const projectFolderPath = projectFolder.trim();
+  const folderError = optionalPath(validationService, projectFolderPath);
   const projectError = requiredFilename(validationService, projectName);
 
   const createProject = async (): Promise<boolean> => {
@@ -79,7 +80,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       const responsePath = await mainApi.createKliveProject(
         machineId,
         projectName,
-        projectFolder,
+        projectFolderPath,
         modelId,
         templateId
       );
@@ -98,7 +99,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
         modelId,
         templateId,
         projectName,
-        projectFolder
+        projectFolder: projectFolderPath
       });
     } catch (error) {
       await mainApi.displayMessageBox("error", "New Klive Project Error", error.toString());
