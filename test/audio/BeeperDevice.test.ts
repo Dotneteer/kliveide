@@ -154,6 +154,23 @@ describe("SpectrumBeeperDevice", () => {
       expect(beeper.getAudioSamples()[0].left).toBeCloseTo(0.264, 6);
       expect(beeper.getAudioSamples()[0].right).toBe(beeper.getAudioSamples()[0].left);
     });
+
+    it("keeps EAR and MIC separate for ZX Next sample windows", () => {
+      machine = new MockMachine(1000);
+      (machine as any).machineId = "zxnext";
+      beeper = new SpectrumBeeperDevice(machine as any);
+      beeper.setAudioSampleRate(10);
+
+      beeper.setOutputLevel(true, false);
+      machine.tacts = 50;
+      beeper.setOutputLevel(false, true);
+
+      machine.tacts = 150;
+      beeper.setNextAudioSample();
+
+      expect(beeper.getAudioSamples()[0].left).toBeCloseTo(0.5, 6);
+      expect(beeper.getAudioSamples()[0].right).toBeCloseTo(0.5, 6);
+    });
   });
 
   describe("Square Wave Pattern", () => {

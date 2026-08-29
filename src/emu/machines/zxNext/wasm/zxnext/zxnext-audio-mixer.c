@@ -1,11 +1,12 @@
 #include "zxnext-audio-mixer.h"
 
 #define ZXNEXT_AUDIO_SAMPLE_CAPACITY 2048u
-#define ZXNEXT_AUDIO_SAMPLE_RATE 48000u
+#define ZXNEXT_DEFAULT_AUDIO_SAMPLE_RATE 48000u
 #define ZXNEXT_AUDIO_BASE_CLOCK 28000000u
 #define ZXNEXT_AUDIO_DC_CUTOFF_HZ 1.4
 #define ZXNEXT_AUDIO_TWO_PI 6.28318530717958647692
 
+static uint32_t zxnextAudioSampleRate = ZXNEXT_DEFAULT_AUDIO_SAMPLE_RATE;
 static int32_t zxnextMixerEarLevel;
 static int32_t zxnextMixerMicLevel;
 static uint32_t zxnextMixerPsgLeft;
@@ -27,7 +28,10 @@ static int32_t zxnextMixerClampWord(int32_t value) {
 }
 
 static inline double zxnextMixerDcFilterAlpha(void) {
-  const double x = (ZXNEXT_AUDIO_TWO_PI * ZXNEXT_AUDIO_DC_CUTOFF_HZ) / (double)ZXNEXT_AUDIO_SAMPLE_RATE;
+  const double rate = zxnextAudioSampleRate == 0u
+    ? (double)ZXNEXT_DEFAULT_AUDIO_SAMPLE_RATE
+    : (double)zxnextAudioSampleRate;
+  const double x = (ZXNEXT_AUDIO_TWO_PI * ZXNEXT_AUDIO_DC_CUTOFF_HZ) / rate;
   const double x2 = x * x;
   const double x3 = x2 * x;
   return 1.0 / (1.0 + x + 0.5 * x2 + (x3 / 6.0));
@@ -65,6 +69,19 @@ static void zxnextAudioMixerReset(void) {
 static void zxnextAudioMixerBeginFrame(void) {
   zxnextMixerSampleCount = 0u;
   zxnextMixerNextSampleTactScaled = (uint64_t)ZXNEXT_AUDIO_BASE_CLOCK;
+}
+
+static void zxnextAudioMixerSetSampleRate(uint32_t rate) {
+  zxnextAudioSampleRate = rate == 0u ? ZXNEXT_DEFAULT_AUDIO_SAMPLE_RATE : rate;
+  zxnextMixerBeeperDcPrevInputEarMilli = 0;
+  zxnextMixerBeeperDcPrevInputMicMilli = 0;
+  zxnextMixerBeeperDcPrevOutputEarMilli = 0.0;
+  zxnextMixerBeeperDcPrevOutputMicMilli = 0.0;
+  zxnextAudioMixerBeginFrame();
+}
+
+static uint32_t zxnextAudioMixerGetSampleRate(void) {
+  return zxnextAudioSampleRate;
 }
 
 static void zxnextAudioMixerSetEarLevelMilli(int32_t level) {
@@ -146,10 +163,10 @@ static void zxnextAudioMixerRefreshCurrentSources(double sampleEndTact) {
 }
 
 static void zxnextAudioMixerSetNextSample(uint32_t frameTacts28) {
-  uint64_t currentScaled = (uint64_t)frameTacts28 * ZXNEXT_AUDIO_SAMPLE_RATE;
-  while (currentScaled > zxnextMixerNextSampleTactScaled) {
+  uint64_t currentScaled = (uint64_t)frameTacts28 * zxnextAudioSampleRate;
+  while (currentScaled >= zxnextMixerNextSampleTactScaled) {
     const double tactScale = cpuTactScale == 0u ? 1.0 : (double)cpuTactScale;
-    const double sampleEndFrameTacts28 = (double)zxnextMixerNextSampleTactScaled / (double)ZXNEXT_AUDIO_SAMPLE_RATE;
+    const double sampleEndFrameTacts28 = (double)zxnextMixerNextSampleTactScaled / (double)zxnextAudioSampleRate;
     const double sampleEndTact = zxnextBeeperFrameStartTact + sampleEndFrameTacts28 / tactScale;
     zxnextAudioMixerRefreshCurrentSources(sampleEndTact);
     if (!zxnextAudioMixerAppendCurrentSample()) return;

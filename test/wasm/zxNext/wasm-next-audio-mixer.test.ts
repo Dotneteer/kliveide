@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { AudioMixerDevice } from "@emu/machines/zxNext/AudioMixerDevice";
 import { DacDevice } from "@emu/machines/zxNext/DacDevice";
+import { AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
 import { createTestZxNextWasmMachine, createZxNextOracleHarness } from "./wasm-next-test-helpers";
 
 describe("ZX Next WASM audio mixer", () => {
@@ -55,6 +56,22 @@ describe("ZX Next WASM audio mixer", () => {
       left: wasm.wasmV2Runtime!.exports.zxnextGetAudioMixerSampleLeft(0) / 32768.0,
       right: wasm.wasmV2Runtime!.exports.zxnextGetAudioMixerSampleRight(0) / 32768.0
     });
+  });
+
+  it("uses the configured sample rate for full-frame WASM mixer scheduling", async () => {
+    for (const sampleRate of [44_100, 48_000, 96_000]) {
+      const wasm = await createTestZxNextWasmMachine();
+      const exports = wasm.wasmV2Runtime!.exports;
+
+      wasm.setMachineProperty(AUDIO_SAMPLE_RATE, sampleRate);
+      wasm.hardReset();
+      wasm.executeMachineFrame();
+
+      expect(exports.zxnextGetAudioSampleRate()).toBe(sampleRate);
+      expect(wasm.getAudioSamples()).toHaveLength(
+        expectedSamplesForFrame(exports.zxnextGetTactsInFrame(), sampleRate)
+      );
+    }
   });
 });
 

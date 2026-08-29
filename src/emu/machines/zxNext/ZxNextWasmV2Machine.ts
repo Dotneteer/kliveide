@@ -12,6 +12,7 @@ import { TapeMode } from "@emu/abstractions/TapeMode";
 import { createMainApi } from "@common/messaging/MainApi";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
 import { ZxNextMachine } from "./ZxNextMachine";
+import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -124,6 +125,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private wasmV2LastStopReason: ZxNextWasmV2StopReason = "reset";
   private wasmV2RomImages?: ZxNextWasmV2RomImages;
   private wasmV2SdCardInfoLoaded = false;
+  private wasmV2AudioSampleRate = -1;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
   private readonly nextRegDescriptors = this.createNextRegDescriptors();
 
@@ -454,6 +456,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.wasmV2RomImages = await this.loadWasmV2RomImages();
     this.wasmV2Runtime = await loadZxNextWasmV2(this.wasmV2LoaderOptions);
     this.hardResetWasmV2(this.wasmV2Runtime);
+    this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
     this.syncCpuFromWasmV2(this.wasmV2Runtime);
   }
 
@@ -461,6 +464,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     super.hardReset();
     if (this.wasmV2Runtime != null) {
       this.hardResetWasmV2(this.wasmV2Runtime);
+      this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
       this.syncCpuFromWasmV2(this.wasmV2Runtime);
     }
   }
@@ -472,7 +476,16 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       this.wasmV2NormalFrames = 0;
       this.wasmV2DebugSteps = 0;
       this.wasmV2LastStopReason = "reset";
+      this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
       this.syncCpuFromWasmV2(this.wasmV2Runtime);
+    }
+  }
+
+  override setMachineProperty(key: string, value?: any): void {
+    super.setMachineProperty(key, value);
+    const runtime = this.wasmV2Runtime;
+    if (runtime != null && key === AUDIO_SAMPLE_RATE) {
+      this.syncAudioSampleRateToWasmV2(runtime);
     }
   }
 
@@ -977,6 +990,14 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     runtime.memory.set(roms.divMmcRom, ZXNEXT_WASM_OFFS_DIVMMC_ROM);
     runtime.memory.set(roms.multifaceRom, ZXNEXT_WASM_OFFS_MULTIFACE_MEM);
     runtime.memory.set(roms.altRom, ZXNEXT_WASM_OFFS_ALT_ROM_0);
+  }
+
+  private syncAudioSampleRateToWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
+    if (typeof audioRate === "number" && audioRate !== this.wasmV2AudioSampleRate) {
+      runtime.exports.zxnextSetAudioSampleRate(audioRate);
+      this.wasmV2AudioSampleRate = audioRate;
+    }
   }
 
   private syncWasmV2StorageFrameCommand(runtime: ZxNextWasmV2Runtime): void {

@@ -230,6 +230,8 @@ const productionExports = [
   "zxnextGetDacChannel",
   "zxnextGetDacStereoLeft",
   "zxnextGetDacStereoRight",
+  "zxnextSetAudioSampleRate",
+  "zxnextGetAudioSampleRate",
   "zxnextSetAudioMixerEarLevelMilli",
   "zxnextSetAudioMixerMicLevelMilli",
   "zxnextSetAudioMixerPsgOutput",

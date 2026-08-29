@@ -499,6 +499,8 @@ uint32_t zxnextGetPsgEnvelopeStep(uint32_t chip) { return zxnextPsgGetEnvelopeSt
 uint32_t zxnextGetDacChannel(uint32_t channel) { return zxnextDacGetChannel(channel); }
 uint32_t zxnextGetDacStereoLeft(void) { return zxnextDacGetStereoLeft(); }
 uint32_t zxnextGetDacStereoRight(void) { return zxnextDacGetStereoRight(); }
+void zxnextSetAudioSampleRate(uint32_t rate) { zxnextAudioMixerSetSampleRate(rate); }
+uint32_t zxnextGetAudioSampleRate(void) { return zxnextAudioMixerGetSampleRate(); }
 void zxnextSetAudioMixerEarLevelMilli(int32_t level) { zxnextAudioMixerSetEarLevelMilli(level); }
 void zxnextSetAudioMixerMicLevelMilli(int32_t level) { zxnextAudioMixerSetMicLevelMilli(level); }
 void zxnextSetAudioMixerPsgOutput(uint32_t left, uint32_t right) { zxnextAudioMixerSetPsgOutput(left, right); }
