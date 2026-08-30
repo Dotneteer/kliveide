@@ -69,6 +69,12 @@ export function deriveDisassemblyRowViewModel({
   const opCodes =
     item.opCodes?.map((opCode) => (decimalView ? toDecimal3(opCode) : toHexa2(opCode))).join(" ") ??
     "";
+  const formattedLabel = item.formattedLabel;
+  const labelText = formattedLabel
+    ? formattedLabel.endsWith(":") ? formattedLabel : `${formattedLabel}:`
+    : item.hasLabel
+      ? `L${decimalView ? toDecimal5(address) : toHexa4(address)}:`
+      : "";
 
   return {
     address,
@@ -79,7 +85,7 @@ export function deriveDisassemblyRowViewModel({
     execPoint: address === pausedPc,
     hasBreakpoint: !!breakpoint,
     instruction: item.instruction ?? "",
-    labelText: item.hasLabel ? `L${decimalView ? toDecimal5(address) : toHexa4(address)}:` : "",
+    labelText,
     opCodes,
     partitionLabel,
     showBankLabel: bankLabel && showBanks,
@@ -138,10 +144,16 @@ export const DisassemblyRow = memo(function DisassemblyRow({
         {viewModel.addressText}
       </div>
       <Secondary text={viewModel.opCodes} width={viewModelParams.decimalView ? 140 : 100} />
-      <Label text={viewModel.labelText} width={60} />
+      <Label text={viewModel.labelText} width="18ch" />
       <div className={styles.tstates}>{viewModel.tstates}</div>
-      <Value text={viewModel.instruction} width={160} />
-      {item.hardComment && <Secondary text={"; " + item.hardComment} />}
+      {item.prefixComment !== undefined ? (
+        <Secondary text={`; ${item.prefixComment}`} />
+      ) : (
+        <>
+          <Value text={viewModel.instruction} width={160} />
+          {item.hardComment && <Secondary text={"; " + item.hardComment} />}
+        </>
+      )}
     </div>
   );
 });

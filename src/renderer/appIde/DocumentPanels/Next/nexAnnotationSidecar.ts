@@ -58,12 +58,13 @@ export function formatNexAnnotations(annotations: NexFileAnnotations): string {
 }
 
 export async function loadNexAnnotationSidecar(
-  projectService: Pick<IProjectService, "getFileContent">,
+  projectService: Pick<IProjectService, "readFileContent">,
   paths: NexAnnotationSidecarPaths,
   loadedBanks: number[]
 ): Promise<NexAnnotationSidecarState> {
   try {
-    const contents = await projectService.getFileContent(paths.fullPath, false);
+    // The sidecar can be added or removed independently of the cached NEX file.
+    const contents = await projectService.readFileContent(paths.fullPath, false);
     if (typeof contents !== "string") {
       return {
         status: "error",
@@ -107,7 +108,7 @@ export async function loadNexAnnotationSidecar(
 }
 
 export async function createNexAnnotationSidecar(
-  projectService: Pick<IProjectService, "getFileContent" | "saveFileContent">,
+  projectService: Pick<IProjectService, "readFileContent" | "saveFileContent">,
   paths: NexAnnotationSidecarPaths,
   options: CreateDefaultNexAnnotationsOptions
 ): Promise<NexAnnotationSidecarState> {

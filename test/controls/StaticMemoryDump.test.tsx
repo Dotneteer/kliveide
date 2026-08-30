@@ -40,10 +40,17 @@ describe("MiniMemoryDump", () => {
 });
 
 describe("StaticMemoryDump", () => {
-  async function renderStaticMemoryDump(viewState: Record<string, unknown> = {}) {
+  async function renderStaticMemoryDump(
+    viewState: Record<string, unknown> = {},
+    readFileContent = vi.fn(() => Promise.reject(new Error("File does not exist"))),
+    contents = new Uint8Array(0x4000)
+  ) {
     vi.resetModules();
 
     const setDocumentViewState = vi.fn();
+    const projectService = {
+      readFileContent
+    };
     const virtualApi = {
       scrollTo: vi.fn(),
       scrollToIndex: vi.fn()
@@ -60,6 +67,20 @@ describe("StaticMemoryDump", () => {
       useDocumentHubService: () => ({
         setDocumentViewState
       })
+    }));
+    vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
+      useAppServices: () => ({
+        projectService
+      })
+    }));
+    vi.doMock("@renderer/theming/ThemeProvider", () => ({
+      useTheme: () => ({
+        theme: { tone: "dark" },
+        getIcon: () => ({ width: 16, height: 16, path: "" }),
+        getImage: () => ({ type: "png", data: "" }),
+        getThemeProperty: () => "currentColor"
+      }),
+      default: ({ children }: { children: ReactNode }) => <>{children}</>
     }));
     vi.doMock("@renderer/controls/AddressInput", () => ({
       AddressInput: ({ onAddressSent }: { onAddressSent: (address: number) => Promise<void> }) => (
@@ -109,7 +130,6 @@ describe("StaticMemoryDump", () => {
     }));
 
     const { createStaticMemoryDump } = await import("@renderer/features/memory/StaticMemoryDump");
-    const contents = new Uint8Array(0x4000);
     const document = { id: "static-dump-doc" };
     const result = render(
       createStaticMemoryDump({
@@ -121,6 +141,7 @@ describe("StaticMemoryDump", () => {
 
     return {
       ...result,
+      readFileContent,
       setDocumentViewState,
       virtualApi,
       getVirtualOnScroll: () => virtualOnScroll,
@@ -169,6 +190,48 @@ describe("StaticMemoryDump", () => {
       "static-dump-doc",
       expect.objectContaining({ topAddress: 0x1234 })
     );
+  });
+
+  it("renders annotated NEX bank disassembly when a sidecar is available", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [{ start: 0, end: 3, type: "bytes" }],
+              localLabels: [{ name: "BytesHere", value: 0 }],
+              lineAnnotations: {
+                "0": {
+                  synopsis: "Packed data",
+                  comment: "four values"
+                }
+              }
+            }
+          }
+        })
+      )
+    );
+    const contents = new Uint8Array(0x4000);
+    contents.set([1, 2, 3, 4]);
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      contents
+    );
+
+    expect(await screen.findByText("; Packed data")).toBeInTheDocument();
+    expect(screen.getByText("BytesHere:")).toBeInTheDocument();
+    expect(screen.getByText(".defb $01, $02, $03, $04")).toBeInTheDocument();
+    expect(screen.getByText("; four values")).toBeInTheDocument();
   });
 
   it("opens static dumps with optional disassembly view state", async () => {

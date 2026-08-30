@@ -81,6 +81,31 @@ describe("deriveDisassemblyRowViewModel", () => {
     );
   });
 
+  it("uses annotation formatted labels before generated labels", () => {
+    expect(
+      deriveDisassemblyRowViewModel({
+        bankLabel: false,
+        currentSegment: 0,
+        decimalView: false,
+        isFullView: true,
+        item: {
+          address: 0x8000,
+          formattedLabel: "SixteenCharLabel",
+          hasLabel: true,
+          instruction: "nop"
+        },
+        mem64kLabels: [],
+        partitionLabels: {},
+        pausedPc: -1,
+        showBanks: false
+      })
+    ).toEqual(
+      expect.objectContaining({
+        labelText: "SixteenCharLabel:"
+      })
+    );
+  });
+
   it("renders bank prefix and address as compact cells", () => {
     const { getByText } = render(
       <DisassemblyRow
@@ -105,5 +130,29 @@ describe("deriveDisassemblyRowViewModel", () => {
     expect(getByText("R0").className).toContain("partitionLabel");
     expect(getByText(":").className).toContain("partitionColon");
     expect(getByText("6000").className).toContain("addressLabel");
+  });
+
+  it("renders prefix comments as comment rows", () => {
+    const { getByText } = render(
+      <DisassemblyRow
+        bankLabel={false}
+        currentSegment={0}
+        decimalView={false}
+        index={0}
+        isFullView={true}
+        item={{
+          address: 0x8000,
+          isPrefixItem: true,
+          prefixComment: "Program entry"
+        }}
+        mem64kLabels={[]}
+        partitionLabels={{}}
+        pausedPc={0x0000}
+        rowHeight={18}
+        showBanks={false}
+      />
+    );
+
+    expect(getByText("; Program entry")).toBeInTheDocument();
   });
 });

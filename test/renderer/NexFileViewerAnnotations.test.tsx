@@ -29,14 +29,18 @@ afterEach(() => {
 
 describe("NexFileViewerPanel annotations", () => {
   it("shows missing sidecar state and creates a default annotation file", async () => {
-    const getFileContent = vi.fn(() => Promise.reject(new Error("File does not exist")));
+    const readFileContent = vi.fn(() => Promise.reject(new Error("File does not exist")));
     const saveFileContent = vi.fn(() => Promise.resolve());
     const dispatch = vi.fn();
 
-    await renderNexViewer({ getFileContent, saveFileContent, dispatch });
+    await renderNexViewer({ readFileContent, saveFileContent, dispatch });
 
-    expect(await screen.findByText("No annotation file")).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Create"));
+    expect(await screen.findByText("No annotation file attached.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Click to create one!" })).toBeInTheDocument();
+    expect(screen.queryByText("No annotation sidecar file found.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Open JSON")).not.toBeInTheDocument();
+    expect(screen.queryByText("Reload")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Click to create one!" }));
 
     await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
     expect(saveFileContent).toHaveBeenCalledWith(
@@ -54,11 +58,17 @@ describe("NexFileViewerPanel annotations", () => {
       }
     });
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "INC_EXPLORER_VIEW_VERSION" }));
-    expect(await screen.findByText("Loaded")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByText("No annotation file attached.")).not.toBeInTheDocument()
+    );
+    expect(screen.queryByText("Loaded")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Click to create one!" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Open JSON")).not.toBeInTheDocument();
+    expect(screen.queryByText("Reload")).not.toBeInTheDocument();
   });
 
   it("uses the loaded annotation offset for bank pop-out disassembly defaults", async () => {
-    const getFileContent = vi.fn(() =>
+    const readFileContent = vi.fn(() =>
       Promise.resolve(
         JSON.stringify({
           schemaVersion: 1,
@@ -72,30 +82,45 @@ describe("NexFileViewerPanel annotations", () => {
       )
     );
 
-    await renderNexViewer({ getFileContent });
+    await renderNexViewer({ readFileContent });
 
     await waitFor(() => expect(screen.getByTestId("memory-viewer-bank-5")).toHaveAttribute("data-offset", "32768"));
     expect(screen.getByTestId("memory-viewer-bank-5")).toHaveAttribute(
       "data-annotation-path",
       "/project/ScrollNutter.nex.dis"
     );
-    expect(await screen.findByText("Loaded")).toBeInTheDocument();
+    await waitFor(() => expect(readFileContent).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText("Loaded")).not.toBeInTheDocument();
+    expect(screen.queryByText("No annotation file attached.")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Click to create one!" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Open JSON")).not.toBeInTheDocument();
+    expect(screen.queryByText("Reload")).not.toBeInTheDocument();
+  });
+
+  it("shows a short error when an existing sidecar cannot be loaded", async () => {
+    const readFileContent = vi.fn(() => Promise.resolve("{"));
+
+    await renderNexViewer({ readFileContent });
+
+    expect(await screen.findByText("Annotation file could not be loaded.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Click to create one!" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Loaded")).not.toBeInTheDocument();
   });
 });
 
 async function renderNexViewer({
-  getFileContent = vi.fn(() => Promise.reject(new Error("File does not exist"))),
+  readFileContent = vi.fn(() => Promise.reject(new Error("File does not exist"))),
   saveFileContent = vi.fn(() => Promise.resolve()),
   dispatch = vi.fn()
 }: {
-  getFileContent?: ReturnType<typeof vi.fn>;
+  readFileContent?: ReturnType<typeof vi.fn>;
   saveFileContent?: ReturnType<typeof vi.fn>;
   dispatch?: ReturnType<typeof vi.fn>;
 }) {
   const setDocumentViewState = vi.fn();
   const openDocument = vi.fn(() => Promise.resolve());
   const projectService = {
-    getFileContent,
+    readFileContent,
     saveFileContent,
     getNodeForFile: vi.fn(() => undefined),
     getDocumentForProjectNode: vi.fn(() => Promise.resolve({}))

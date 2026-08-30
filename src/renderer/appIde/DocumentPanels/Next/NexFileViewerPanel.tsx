@@ -13,11 +13,9 @@ import { createElement, useEffect, useMemo, useState } from "react";
 import styles from "./NexFileViewerPanel.module.scss";
 import { loadNexFileContents, ScreenBlockFlags } from "./nexFileLoader";
 import type { NexFileContents, NexHeader } from "./nexFileLoader";
-import { Button } from "@renderer/controls/Button";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
-import { useDispatch, useRendererContext } from "@renderer/core/RendererProvider";
+import { useDispatch } from "@renderer/core/RendererProvider";
 import { incExploreViewVersionAction } from "@common/state/actions";
 import {
   NexAnnotationSidecarPaths,
@@ -25,8 +23,7 @@ import {
   createNexAnnotationSidecar,
   getAnnotatedDisassemblyOffsetForBank,
   getNexAnnotationSidecarPaths,
-  loadNexAnnotationSidecar,
-  openNexAnnotationSidecarDocument
+  loadNexAnnotationSidecar
 } from "./nexAnnotationSidecar";
 import { NexFileAnnotations, NexAnnotationOffsetIndex } from "./nexAnnotations";
 
@@ -109,8 +106,6 @@ const NexFileViewerContents = ({
 }: NexFileViewerContentsProps) => {
   const h = fi.header;
   const cvs = viewState;
-  const documentHubService = useDocumentHubService();
-  const { store } = useRendererContext();
   const dispatch = useDispatch();
   const loadedBanks = useMemo(() => fi.bankData.map(([bank]) => bank), [fi.bankData]);
   const sidecarPaths = useMemo(() => getNexAnnotationSidecarPaths(document), [document]);
@@ -179,38 +174,6 @@ const NexFileViewerContents = ({
     }
   };
 
-  const reloadAnnotations = async () => {
-    if (!sidecarPaths) return;
-    setAnnotationState({
-      status: "loading",
-      paths: sidecarPaths,
-      diagnostics: [],
-      message: "Loading annotations..."
-    });
-    setAnnotationState(
-      await loadNexAnnotationSidecar(appServices.projectService, sidecarPaths, loadedBanks)
-    );
-  };
-
-  const openAnnotation = async () => {
-    if (!sidecarPaths || annotationState.status === "missing") return;
-    try {
-      await openNexAnnotationSidecarDocument(
-        appServices.projectService,
-        documentHubService,
-        sidecarPaths,
-        store
-      );
-    } catch (err) {
-      setAnnotationState({
-        status: "error",
-        paths: sidecarPaths,
-        diagnostics: [],
-        message: err instanceof Error ? err.message : String(err)
-      });
-    }
-  };
-
   const loadedAnnotations =
     annotationState.status === "loaded" ? annotationState.annotations : undefined;
 
@@ -219,8 +182,6 @@ const NexFileViewerContents = ({
       <NexAnnotationPanel
         state={annotationState}
         onCreate={createAnnotation}
-        onOpen={openAnnotation}
-        onReload={reloadAnnotations}
       />
       <ExpandableRow
         heading='Header attributes'
@@ -406,80 +367,44 @@ const NexFileViewerContents = ({
 type NexAnnotationPanelProps = {
   state: NexAnnotationViewerState;
   onCreate: () => void;
-  onOpen: () => void;
-  onReload: () => void;
 };
 
 const NexAnnotationPanel = ({
   state,
-  onCreate,
-  onOpen,
-  onReload
+  onCreate
 }: NexAnnotationPanelProps) => {
-  const errorCount = state.diagnostics.filter((d) => d.severity === "error").length;
-  const warningCount = state.diagnostics.filter((d) => d.severity === "warning").length;
-  const statusText = getAnnotationStatusText(state, errorCount, warningCount);
-  const canCreate = state.status === "missing";
-  const canOpen = state.status === "loaded" || state.status === "invalid";
-  const canReload = !!state.paths && state.status !== "loading" && state.status !== "creating";
-
-  return (
-    <div className={styles.annotationPanel}>
-      <div className={styles.annotationSummary}>
-        <span className={styles.annotationLabel}>Annotations:</span>
-        <span className={styles.annotationStatus}>{statusText}</span>
-        {state.paths?.projectPath || state.paths?.fullPath ? (
-          <span className={styles.annotationPath}>
-            {state.paths.projectPath ?? state.paths.fullPath}
-          </span>
-        ) : null}
+  if (state.status === "missing") {
+    return (
+      <div className={styles.annotationPanel}>
+        <span>No annotation file attached.</span>
+        <button
+          type='button'
+          className={styles.annotationLink}
+          onClick={onCreate}
+        >
+          Click to create one!
+        </button>
       </div>
-      {state.message && <div className={styles.annotationMessage}>{state.message}</div>}
-      {state.diagnostics.length > 0 && (
-        <div className={styles.annotationDiagnostics}>
-          {state.diagnostics.slice(0, 3).map((diagnostic, idx) => (
-            <div key={idx}>
-              {diagnostic.severity}: {diagnostic.path} {diagnostic.message}
-            </div>
-          ))}
-          {state.diagnostics.length > 3 && (
-            <div>{state.diagnostics.length - 3} more annotation diagnostics</div>
-          )}
-        </div>
-      )}
-      <div className={styles.annotationActions}>
-        <Button text='Create' disabled={!canCreate} clicked={onCreate} />
-        <Button text='Open JSON' disabled={!canOpen} clicked={onOpen} />
-        <Button text='Reload' disabled={!canReload} clicked={onReload} />
-      </div>
-    </div>
-  );
-};
-
-function getAnnotationStatusText(
-  state: NexAnnotationViewerState,
-  errorCount: number,
-  warningCount: number
-): string {
-  switch (state.status) {
-    case "loading":
-      return "Loading";
-    case "creating":
-      return "Creating";
-    case "loaded":
-      if (errorCount > 0) return `Loaded with ${errorCount} error${errorCount === 1 ? "" : "s"}`;
-      if (warningCount > 0) return `Loaded with ${warningCount} warning${warningCount === 1 ? "" : "s"}`;
-      return "Loaded";
-    case "missing":
-      return "No annotation file";
-    case "invalid":
-      return `${errorCount} validation error${errorCount === 1 ? "" : "s"}`;
-    case "error":
-      return "Error";
-    case "unavailable":
-      return "Unavailable";
+    );
   }
-}
+
+  if (state.status === "invalid" || state.status === "error") {
+    const details = [
+      state.message,
+      ...state.diagnostics.map((diagnostic) =>
+        `${diagnostic.severity}: ${diagnostic.path} ${diagnostic.message}`
+      )
+    ].filter(Boolean).join("\n");
+
+    return (
+      <div className={styles.annotationPanel} title={details || undefined}>
+        <span className={styles.annotationError}>Annotation file could not be loaded.</span>
+      </div>
+    );
+  }
+
+  return null;
+};
 
 type BankFlagsProps = {
   startIndex: number;

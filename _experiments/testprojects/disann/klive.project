@@ -80,22 +80,42 @@
               }
             },
             {
-              "type": "Disassembly",
-              "id": "$disassembly",
+              "type": "CodeEditor",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex.dis",
               "position": {
                 "line": 0,
                 "column": 0
               },
               "viewState": {
-                "topAddress": 0,
-                "isFullView": true,
-                "currentSegment": 0,
-                "decimalView": false,
-                "bankLabel": true,
-                "autoRefresh": true,
-                "ram": true,
-                "screen": false,
-                "disassOffset": 0
+                "cursorState": [
+                  {
+                    "inSelectionMode": false,
+                    "selectionStart": {
+                      "lineNumber": 1,
+                      "column": 1
+                    },
+                    "position": {
+                      "lineNumber": 1,
+                      "column": 1
+                    }
+                  }
+                ],
+                "viewState": {
+                  "scrollLeft": 0,
+                  "firstPosition": {
+                    "lineNumber": 1,
+                    "column": 1
+                  },
+                  "firstPositionDeltaTop": 0
+                },
+                "contributionsState": {
+                  "editor.contrib.folding": {
+                    "lineCount": 230,
+                    "provider": "syntax",
+                    "foldedImports": false
+                  },
+                  "editor.contrib.wordHighlighter": false
+                }
               }
             },
             {
@@ -104,10 +124,15 @@
               "position": {
                 "line": 0,
                 "column": 0
+              },
+              "viewState": {
+                "bankExpanded": {
+                  "0": true
+                }
               }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
+          "activeDocumentId": "memoryDump-bankDumpScrollNutter.nex:5"
         }
       ]
     }

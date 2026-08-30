@@ -15,12 +15,16 @@ import { MemoryDumpSection } from "./MemoryDumpSection";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { PanelHeader } from "@renderer/appIde/DocumentPanels/helpers/PanelHeader";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { Text } from "@renderer/controls/layout/Text";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySection, type DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 import { DisassemblyRow } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
+import { loadNexAnnotationSidecar } from "@renderer/appIde/DocumentPanels/Next/nexAnnotationSidecar";
+import { createAnnotatedNexDisassemblyItems } from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
+import type { NexFileAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
 
 type MemoryDumpViewState = {
   disassemblyEnabled?: boolean;
@@ -67,6 +71,7 @@ const StaticMemoryDump = ({
   viewState
 }: DocumentProps<MemoryDumpViewState>) => {
   const documentHubService = useDocumentHubService();
+  const appServices = useAppServices();
   const [currentViewState, setCurrentViewState] = useState<MemoryDumpViewState>(
     viewState ?? {}
   );
@@ -78,6 +83,7 @@ const StaticMemoryDump = ({
   const disassOffset = currentViewState.disassOffset ?? 0;
   const [memoryJumpAddress, setMemoryJumpAddress] = useState<number>();
   const [disassemblyJumpAddress, setDisassemblyJumpAddress] = useState<number>();
+  const [nexAnnotations, setNexAnnotations] = useState<NexFileAnnotations>();
   const [disassemblyItems, setDisassemblyItems] = useState<DisassemblyItem[]>([]);
   const memoryVlApi = useRef<VListHandle>();
   const disassemblyVlApi = useRef<VListHandle>();
@@ -109,28 +115,79 @@ const StaticMemoryDump = ({
   }, [memoryJumpAddress]);
 
   useEffect(() => {
+    let cancelled = false;
+    const annotationPath = currentViewState.nexAnnotationPath;
+    const bank = currentViewState.nexAnnotationBank;
+    if (!annotationPath || bank === undefined) {
+      setNexAnnotations(undefined);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    loadNexAnnotationSidecar(
+      appServices.projectService,
+      { fullPath: annotationPath },
+      [bank]
+    ).then((state) => {
+      if (!cancelled) {
+        setNexAnnotations(state.status === "loaded" ? state.annotations : undefined);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    appServices.projectService,
+    currentViewState.nexAnnotationBank,
+    currentViewState.nexAnnotationPath
+  ]);
+
+  useEffect(() => {
     if (!disassemblyEnabled || viewMode !== "disassembly") return;
     let cancelled = false;
 
     (async () => {
-      const memorySections = [
-        new MemorySection(0x0000, Math.max(0, contents.length - 1))
-      ];
-      const disassembler = new Z80Disassembler(memorySections, contents, undefined, {
-        allowExtendedSet: true,
-        decimalMode: decimalView
-      });
-      disassembler.setAddressOffset(disassOffset);
-      const output = await disassembler.disassemble(0x0000, contents.length - 1);
+      const annotationItems = nexAnnotations && currentViewState.nexAnnotationBank !== undefined
+        ? await createAnnotatedNexDisassemblyItems({
+            annotations: nexAnnotations,
+            bank: currentViewState.nexAnnotationBank,
+            contents,
+            decimalView,
+            disassOffset
+          })
+        : undefined;
+      let outputItems = annotationItems;
+      if (!outputItems) {
+        const memorySections = [
+          new MemorySection(0x0000, Math.max(0, contents.length - 1))
+        ];
+        const disassembler = new Z80Disassembler(memorySections, contents, undefined, {
+          allowExtendedSet: true,
+          decimalMode: decimalView
+        });
+        disassembler.setAddressOffset(disassOffset);
+        const output = await disassembler.disassemble(0x0000, contents.length - 1);
+        outputItems = output?.outputItems ?? [];
+      }
       if (!cancelled) {
-        setDisassemblyItems(output?.outputItems ?? []);
+        setDisassemblyItems(outputItems);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [contents, decimalView, disassOffset, disassemblyEnabled, viewMode]);
+  }, [
+    contents,
+    currentViewState.nexAnnotationBank,
+    decimalView,
+    disassOffset,
+    disassemblyEnabled,
+    nexAnnotations,
+    viewMode
+  ]);
 
   useEffect(() => {
     if (!disassemblyVlApi.current || disassemblyJumpAddress === undefined) return;

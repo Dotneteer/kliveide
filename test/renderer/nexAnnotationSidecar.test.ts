@@ -32,7 +32,7 @@ describe("NEX annotation sidecar helpers", () => {
 
   it("reports a missing sidecar without treating it as an error", async () => {
     const projectService = {
-      getFileContent: vi.fn(() => Promise.reject(new Error("File does not exist")))
+      readFileContent: vi.fn(() => Promise.reject(new Error("File does not exist")))
     };
 
     const state = await loadNexAnnotationSidecar(
@@ -50,7 +50,7 @@ describe("NEX annotation sidecar helpers", () => {
 
   it("loads and validates an existing sidecar", async () => {
     const projectService = {
-      getFileContent: vi.fn(() =>
+      readFileContent: vi.fn(() =>
         Promise.resolve(
           JSON.stringify({
             schemaVersion: 1,
@@ -72,11 +72,40 @@ describe("NEX annotation sidecar helpers", () => {
     expect(state.status).toBe("loaded");
     expect(state.annotations?.banks["5"].offsetIndex).toBe(3);
     expect(state.diagnostics).toEqual([]);
+    expect(projectService.readFileContent).toHaveBeenCalledWith("/project/game.nex.dis", false);
+  });
+
+  it("bypasses cached sidecar contents when checking the annotation file", async () => {
+    const projectService = {
+      getFileContent: vi.fn(() =>
+        Promise.resolve(
+          formatNexAnnotations({
+            schemaVersion: 1,
+            banks: {
+              "5": {
+                offsetIndex: 1,
+                regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
+              }
+            }
+          })
+        )
+      ),
+      readFileContent: vi.fn(() => Promise.reject(new Error("File does not exist")))
+    };
+
+    const state = await loadNexAnnotationSidecar(
+      projectService,
+      { fullPath: "/project/game.nex.dis" },
+      [5]
+    );
+
+    expect(state.status).toBe("missing");
+    expect(projectService.getFileContent).not.toHaveBeenCalled();
   });
 
   it("keeps invalid sidecars available for read-only JSON opening", async () => {
     const projectService = {
-      getFileContent: vi.fn(() =>
+      readFileContent: vi.fn(() =>
         Promise.resolve(
           JSON.stringify({
             schemaVersion: 1,
@@ -105,7 +134,7 @@ describe("NEX annotation sidecar helpers", () => {
   it("creates a default sidecar only when the file is missing", async () => {
     const savedContent: string[] = [];
     const projectService = {
-      getFileContent: vi.fn(() => Promise.reject(new Error("File does not exist"))),
+      readFileContent: vi.fn(() => Promise.reject(new Error("File does not exist"))),
       saveFileContent: vi.fn((_path: string, content: string) => {
         savedContent.push(content);
         return Promise.resolve();
@@ -143,7 +172,7 @@ describe("NEX annotation sidecar helpers", () => {
 
   it("does not overwrite an existing sidecar", async () => {
     const projectService = {
-      getFileContent: vi.fn(() =>
+      readFileContent: vi.fn(() =>
         Promise.resolve(
           formatNexAnnotations({
             schemaVersion: 1,

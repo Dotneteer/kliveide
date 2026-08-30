@@ -2,7 +2,7 @@
 
 Created: 2026-08-30
 
-Status: Steps 1, 2, and 3 implemented on 2026-08-30. Later steps pending.
+Status: Steps 1, 2, 3, and 4 implemented on 2026-08-30. Later steps pending.
 
 ## Implementation Progress
 
@@ -67,13 +67,20 @@ Added NEX viewer sidecar discovery and actions in
 The viewer now supports:
 
 - deriving the associated `.nex.dis` path for the loaded `.nex` document;
-- showing whether the sidecar is missing, loaded, invalid, unavailable, or hit a
-  file error;
+- showing a compact missing-sidecar line with an inline `create` action;
+- hiding the annotation header entirely when the sidecar is loaded or has just
+  been created;
+- showing one short error line when the sidecar exists but cannot be loaded;
 - creating a default sidecar JSON file next to the source NEX file without
   overwriting an existing file;
 - refreshing Explorer after sidecar creation;
-- opening an existing sidecar in the read-only JSON document view;
-- reloading annotation state from disk;
+- relying on Explorer for opening `.nex.dis` JSON files instead of duplicating
+  that action in the NEX viewer;
+- keeping annotation state in memory after the initial load, without an
+  explicit reload action in the NEX viewer;
+- reading sidecar contents from the file system instead of the project file
+  cache when the NEX viewer initializes, so deleting a sidecar and reopening the
+  NEX file shows the missing/create state correctly;
 - surfacing validation diagnostics without breaking the bank list;
 - using loaded bank annotations to choose the default disassembly offset for
   bank pop-out documents;
@@ -85,6 +92,47 @@ Validation run:
 ```text
 npm test -- --project node test/renderer/nexAnnotations.test.ts test/renderer/nexAnnotationFileType.test.ts test/renderer/nexAnnotationSidecar.test.ts
 npm test -- --project jsdom test/renderer/NexFileViewerPanel.test.tsx test/renderer/NexFileViewerAnnotations.test.tsx test/controls/StaticMemoryDump.test.tsx
+npm run build:check
+npm run lint:renderer
+```
+
+`npm run lint:renderer` completed with the existing 55 hook-warning baseline and
+no errors.
+
+### Step 4 Result
+
+Added annotated static NEX bank disassembly rendering in
+`src/renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly.ts`, integrated
+into `src/renderer/features/memory/StaticMemoryDump.tsx`.
+
+The annotated static disassembly now supports:
+
+- loading the associated `.nex.dis` sidecar into the popped-out bank memory dump
+  and keeping that model in memory;
+- falling back to the existing static disassembly behavior when no valid bank
+  annotation is available;
+- mapping annotation regions to generated output;
+- rendering `disassemble` regions with the existing Z80 disassembler;
+- rendering byte regions as `.defb` with up to 4 byte values per generated
+  line;
+- rendering word regions as `.defw` with up to 2 word values per generated
+  line;
+- rendering skip regions as `.skip`;
+- rendering synopsis annotations as prefix comment rows;
+- rendering end-of-line annotations in the hard-comment lane;
+- rendering annotation global/local label names at matching addresses;
+- widening the disassembly label cell to fit 16-character annotation labels plus
+  a colon.
+
+Operand label substitution for 16-bit instruction operands remains deliberately
+deferred to Step 5, where the Z80 disassembler will get the necessary resolver
+extension without brittle string replacement.
+
+Validation run:
+
+```text
+npm test -- --project node test/renderer/nexAnnotations.test.ts test/renderer/nexAnnotationFileType.test.ts test/renderer/nexAnnotationSidecar.test.ts test/renderer/nexAnnotatedDisassembly.test.ts
+npm test -- --project jsdom test/renderer/NexFileViewerPanel.test.tsx test/renderer/NexFileViewerAnnotations.test.tsx test/controls/StaticMemoryDump.test.tsx test/controls/DisassemblyRow.test.tsx
 npm run build:check
 npm run lint:renderer
 ```
@@ -306,11 +354,18 @@ Extend the NEX viewer with annotation awareness.
 
 UI:
 
-- show whether an annotation sidecar exists, is loaded, is missing, or has
-  validation errors;
-- provide an action to create the sidecar file when it does not exist;
-- provide an action to open the sidecar read-only JSON document;
+- when there is no annotation sidecar, show one compact header line with a
+  short message and an inline `create` action;
+- when the annotation sidecar is loaded, or has just been created, do not show
+  an annotation header;
+- when the annotation sidecar exists but cannot be loaded, show one short error
+  line;
 - pass the loaded annotation context when popping out a bank document.
+
+Do not add Open JSON or Reload actions to the NEX viewer annotation strip. The
+Explorer already opens `.nex.dis` files as read-only JSON, and the viewer should
+keep the loaded/edited annotation model in memory rather than asking the user to
+reload it manually.
 
 Creation behavior:
 
