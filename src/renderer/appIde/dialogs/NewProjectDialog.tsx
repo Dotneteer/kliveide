@@ -17,6 +17,7 @@ const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const INITIAL_MACHINE_IDE = "sp48";
 const INITIAL_MODEL_ID = "pal";
 const INITIAL_TEMPLATE_ID = "default";
+const PROJECT_CREATION_TIMEOUT_MS = 30_000;
 
 const machineIds = getAllMachineModels().map((m) => ({
   value: `${m.machineId}${m.modelId ? ":" + m.modelId : ""}`,
@@ -68,7 +69,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [machineId]);
+  }, [machineId, mainApi]);
 
   const projectFolderPath = projectFolder.trim();
   const folderError = optionalPath(validationService, projectFolderPath);
@@ -77,20 +78,39 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const createProject = async (): Promise<boolean> => {
     // --- Create the project
     try {
-      const responsePath = await mainApi.createKliveProject(
-        machineId,
-        projectName,
-        projectFolderPath,
-        modelId,
-        templateId
+      const responsePath = await withTimeout(
+        mainApi.createKliveProject(
+          machineId,
+          projectName,
+          projectFolderPath,
+          modelId,
+          templateId
+        ),
+        PROJECT_CREATION_TIMEOUT_MS,
+        "Creating the Klive project"
       );
       // --- Open the newly created project
-      await mainApi.openFolder(responsePath);
-      await ensureProjectLoaded(projectService);
-      await ensureWorkspaceLoaded(store);
+      const errorMessage = await withTimeout(
+        mainApi.openFolder(responsePath),
+        PROJECT_CREATION_TIMEOUT_MS,
+        "Opening the new Klive project"
+      );
+      if (errorMessage) {
+        throw new Error(`Error opening folder: ${errorMessage}`);
+      }
+      await withTimeout(
+        ensureProjectLoaded(projectService),
+        PROJECT_CREATION_TIMEOUT_MS,
+        "Loading the new Klive project"
+      );
+      await withTimeout(
+        ensureWorkspaceLoaded(store),
+        PROJECT_CREATION_TIMEOUT_MS,
+        "Loading the new Klive workspace"
+      );
 
       // --- Navigate to the project root
-      const buildRoots = store.getState().project?.buildRoots;
+      const buildRoots = store.getState().project?.buildRoots ?? [];
       if (buildRoots.length > 0) {
         ideCommandsService.executeCommand(`nav "${buildRoots[0]}"`);
       }
@@ -102,7 +122,12 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
         projectFolder: projectFolderPath
       });
     } catch (error) {
-      await mainApi.displayMessageBox("error", "New Klive Project Error", error.toString());
+      console.error("New Klive project creation failed", error);
+      void mainApi
+        .displayMessageBox("error", "New Klive Project Error", getErrorMessage(error))
+        .catch((messageBoxError) =>
+          console.error("Displaying the new project error failed", messageBoxError)
+        );
       return true;
     }
 
@@ -180,3 +205,19 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
     </Modal>
   );
 };
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${operation} timed out after ${timeoutMs / 1000} seconds.`));
+    }, timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

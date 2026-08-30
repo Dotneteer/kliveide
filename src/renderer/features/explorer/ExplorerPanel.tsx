@@ -311,7 +311,7 @@ export const ExplorerPanel = () => {
   const openIdeDialog = (dialogId: number): void => {
     const dialogRenderer = ideDialogRegistry[dialogId];
     if (!dialogRenderer) return;
-    void dialogs.open<IdeDialogResult>((controls) => dialogRenderer(controls));
+    void dialogs.open<IdeDialogResult>((controls) => dialogRenderer(undefined, controls));
   };
 
   // --- This function represents a project item component

@@ -57,7 +57,7 @@ export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
         await ensureWorkspaceLoaded(context.store);
 
         // --- Navigate to the project root
-        const buildRoots = context.store.getState().project?.buildRoots;
+        const buildRoots = context.store.getState().project?.buildRoots ?? [];
         if (buildRoots.length > 0) {
           context.service.ideCommandsService.executeCommand(`nav "${buildRoots[0]}"`);
         }

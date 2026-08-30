@@ -270,6 +270,15 @@ describe("Sjasmp model type inference", () => {
     expect(getSjasmModelType(" device zxspectrumnext")).toBe(SpectrumModelType.Next);
   });
 
+  it("allows SJASMPLUS ZXSPECTRUM128 device output to target Spectrum +2E/+3E projects", () => {
+    expect(getSjasmModelType("    device zxspectrum128\n    org #8000", "spp3e")).toBe(
+      SpectrumModelType.SpectrumP3
+    );
+    expect(getSjasmModelType("    device zxspectrum128\n    org #8000", "sp128")).toBe(
+      SpectrumModelType.Spectrum128
+    );
+  });
+
   it("falls back to the selected project machine", () => {
     expect(getSjasmModelType("org #8000", "sp128")).toBe(SpectrumModelType.Spectrum128);
     expect(getSjasmModelType("org #8000", "spp3e")).toBe(SpectrumModelType.SpectrumP3);

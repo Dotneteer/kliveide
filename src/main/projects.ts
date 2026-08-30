@@ -57,9 +57,14 @@ export async function createKliveProject(
   projectName: string,
   projectFolder?: string
 ): Promise<ProjectCreationResult> {
+  const selectedTemplateId = templateId ?? "default";
   const projPath = getKliveProjectFolder(projectFolder);
   const fullProjectFolder = path.join(projPath, projectName);
-  const templateFolder = path.join(resolvePublicFilePath(PROJECT_TEMPLATES), machineId, templateId);
+  const templateFolder = path.join(
+    resolvePublicFilePath(PROJECT_TEMPLATES),
+    machineId,
+    selectedTemplateId
+  );
 
   try {
     // --- Check if the folder exists
@@ -91,8 +96,7 @@ export async function createKliveProject(
     const projectFile = path.join(fullProjectFolder, PROJECT_FILE);
 
     // --- Set up the initial project structure
-    const projectStructure = await getKliveProjectStructure();
-    projectStructure.debugger = { breakpoints: [] };
+    const projectStructure = getKliveProjectStructureFromState([]);
     const project = { ...projectStructure, ...mergedProps };
     project.machineType = machineId;
     project.modelId = modelId;
@@ -100,7 +104,7 @@ export async function createKliveProject(
     fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
   } catch (err) {
     return {
-      errorMessage: err.toString()
+      errorMessage: String(err)
     };
   }
 
@@ -300,9 +304,19 @@ export function getKliveProjectFolder(projectFolder: string): string {
 }
 
 // --- Get the current klive project structure to save
-export async function getKliveProjectStructure(): Promise<KliveProjectStructure> {
-  const state = mainStore.getState();
-  const bpResponse = await getEmuApi().listBreakpoints();
+export async function getKliveProjectStructure(options: {
+  includeBreakpoints?: boolean;
+} = {}): Promise<KliveProjectStructure> {
+  const includeBreakpoints = options.includeBreakpoints ?? true;
+  const bpResponse = includeBreakpoints
+    ? await getEmuApi().listBreakpoints()
+    : { breakpoints: [] };
+  return getKliveProjectStructureFromState(bpResponse.breakpoints);
+}
+
+function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): KliveProjectStructure {
+  const state = mainStore.getState() ?? {};
+  const emulatorState = state.emulatorState ?? {};
   const globalSettings: Record<string, any> = {};
   Object.keys(KliveGlobalSettings).forEach((key) => {
     if (getSettingDefinition(key)?.saveWithProject ?? false) {
@@ -311,15 +325,15 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
   });
   return {
     kliveVersion: app.getVersion(),
-    machineType: state.emulatorState.machineId,
-    modelId: state.emulatorState.modelId,
-    config: state.emulatorState.config,
-    clockMultiplier: state.emulatorState.clockMultiplier,
-    soundLevel: state.emulatorState.soundLevel,
-    soundMuted: state.emulatorState.soundMuted,
-    savedSoundLevel: state.emulatorState.savedSoundLevel,
+    machineType: emulatorState.machineId,
+    modelId: emulatorState.modelId,
+    config: emulatorState.config,
+    clockMultiplier: emulatorState.clockMultiplier,
+    soundLevel: emulatorState.soundLevel,
+    soundMuted: emulatorState.soundMuted,
+    savedSoundLevel: emulatorState.savedSoundLevel,
     media: state.media,
-    machineSpecific: state.emulatorState.machineSpecific,
+    machineSpecific: emulatorState.machineSpecific,
     ide: {
       excludedProjectItems: state.project?.excludedItems ?? []
     },
@@ -327,7 +341,7 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
       theme: state.theme
     },
     debugger: {
-      breakpoints: bpResponse.breakpoints
+      breakpoints
     },
     builder: {
       roots: state.project?.buildRoots ?? []
