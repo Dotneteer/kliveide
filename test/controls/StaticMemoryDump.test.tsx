@@ -1,6 +1,13 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+beforeEach(() => {
+  Object.defineProperty(document, "queryCommandSupported", {
+    configurable: true,
+    value: vi.fn(() => false)
+  });
+});
 
 afterEach(() => {
   cleanup();
@@ -161,6 +168,34 @@ describe("StaticMemoryDump", () => {
     expect(harness.setDocumentViewState).toHaveBeenCalledWith(
       "static-dump-doc",
       expect.objectContaining({ topAddress: 0x1234 })
+    );
+  });
+
+  it("opens static dumps with optional disassembly view state", async () => {
+    const openDocument = vi.fn();
+    const { openStaticMemoryDump } = await import("@renderer/features/memory/StaticMemoryDump");
+
+    await openStaticMemoryDump(
+      {
+        isOpen: () => false,
+        openDocument
+      } as any,
+      "bankDump",
+      "Bank Dump",
+      new Uint8Array(0x4000),
+      { disassemblyEnabled: true, disassOffset: 0x8000 }
+    );
+
+    expect(openDocument).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "memoryDump-bankDump",
+        name: "Bank Dump"
+      }),
+      expect.objectContaining({
+        disassemblyEnabled: true,
+        disassOffset: 0x8000
+      }),
+      false
     );
   });
 });

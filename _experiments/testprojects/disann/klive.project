@@ -1,5 +1,5 @@
 {
-  "kliveVersion": "0.58.0",
+  "kliveVersion": "0.58.1",
   "machineType": "sp48",
   "clockMultiplier": 1,
   "soundLevel": 0.8,
@@ -72,14 +72,48 @@
                 "contributionsState": {
                   "editor.contrib.folding": {
                     "lineCount": 23,
+                    "provider": "syntax",
                     "foldedImports": false
                   },
                   "editor.contrib.wordHighlighter": false
                 }
               }
+            },
+            {
+              "type": "NexViewer",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex",
+              "position": {
+                "line": 0,
+                "column": 0
+              },
+              "viewState": {
+                "scrollPosition": 212,
+                "bankExpanded": {
+                  "0": true
+                }
+              }
+            },
+            {
+              "type": "Disassembly",
+              "id": "$disassembly",
+              "position": {
+                "line": 0,
+                "column": 0
+              },
+              "viewState": {
+                "topAddress": 0,
+                "isFullView": true,
+                "currentSegment": 0,
+                "decimalView": false,
+                "bankLabel": true,
+                "autoRefresh": true,
+                "ram": true,
+                "screen": false,
+                "disassOffset": 0
+              }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/code/code.kz80.asm"
+          "activeDocumentId": "memoryDump-bankDumpScrollNutter.nex:5"
         }
       ]
     }

@@ -1,0 +1,818 @@
+# NEX File Annotations Plan
+
+Created: 2026-08-30
+
+Status: Proposed. Waiting for approval before implementation.
+
+## Goal
+
+Add optional sidecar annotations for `.nex` files so a user can reverse engineer
+and comment a NEX program directly from the IDE.
+
+The sidecar file is JSON and uses the file-name convention:
+
+```text
+<source-file>.nex -> <source-file>.nex.dis
+```
+
+Example:
+
+```text
+ScrollNutter.nex -> ScrollNutter.nex.dis
+```
+
+The NEX viewer should be able to create and use this sidecar file. The Explorer
+should display `.nex.dis` files as read-only JSON with syntax highlighting.
+
+## Product Decisions
+
+### Local Label References
+
+Local labels should also be usable as 16-bit operand references.
+
+Recommended resolution rules:
+
+- Explicit operand references stored in the annotation file win over automatic
+  label matching.
+- Global labels match the absolute 16-bit operand value.
+- Local labels match the operand value after translating it into the current
+  bank window: `operandValue - bankAddressOffset`, where `bankAddressOffset` is
+  `$0000`, `$4000`, `$8000`, or `$C000`.
+- If an operand could match both a global and a local label, the UI should show
+  both choices while editing and store the selected scope explicitly.
+- For automatic display without an explicit reference, prefer the global label
+  for absolute operands and the local label only when the operand falls inside
+  the selected 16K bank window.
+
+This keeps global labels useful for true addresses while making local labels
+useful for bank-relative reverse engineering.
+
+### Raw JSON View
+
+The `.nex.dis` document should open read-only from Explorer. Editing should be
+done through the NEX disassembly UI so the IDE can validate names, ranges,
+overlaps, offset choices, and operand references before writing JSON.
+
+## Annotation File Format
+
+Use a versioned JSON document. The first implementation should validate and
+normalize this structure in a dedicated module, rather than scattering shape
+checks through React components.
+
+Draft schema:
+
+```json
+{
+  "schemaVersion": 1,
+  "source": {
+    "fileName": "ScrollNutter.nex",
+    "sha256": "optional-source-hash"
+  },
+  "globalLabels": [
+    {
+      "name": "MainLoop",
+      "value": 49152
+    }
+  ],
+  "banks": {
+    "5": {
+      "offsetIndex": 1,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ],
+      "localLabels": [
+        {
+          "name": "DrawSprite",
+          "value": 4660
+        }
+      ],
+      "lineAnnotations": {
+        "0": {
+          "synopsis": "Entry point\nInitializes display state.",
+          "comment": "sets up SP"
+        }
+      },
+      "operandReferences": {
+        "12": [
+          {
+            "operandIndex": 0,
+            "scope": "global",
+            "name": "MainLoop"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+Rules:
+
+- `schemaVersion` is required and starts at `1`.
+- `source.fileName` is informational; association is still determined by the
+  `.nex.dis` sidecar path.
+- `source.sha256` is optional, but useful later for stale-annotation warnings.
+- Bank keys are decimal bank numbers matching the NEX file banks.
+- `offsetIndex` is `0`, `1`, `2`, or `3`, mapping to `$0000`, `$4000`, `$8000`,
+  or `$C000`.
+- Region `start` and `end` are inclusive bank-relative offsets in
+  `$0000..$3FFF`.
+- Region types are `disassemble`, `bytes`, `words`, and `skip`.
+- The editor should write normalized non-overlapping regions that cover the
+  entire `0..0x3fff` range. New banks default to a single `disassemble` region.
+- Byte regions generate `.defb` lines with up to 4 byte values per line.
+- Word regions generate `.defw` lines with up to 2 word values per line.
+- Skip regions generate `.skip` pragmas.
+- `lineAnnotations` keys are bank-relative offsets.
+- `synopsis` renders before the generated line as one or more comment lines,
+  each prefixed with `; `.
+- `comment` renders at the end of the generated line where hard comments are
+  currently displayed.
+- Label names must follow the assembler identifier convention and be at most
+  16 characters long.
+- Global label values are `0..0xffff`.
+- Local label values are `0..0x3fff` and are bank-relative.
+- Operand references store scope and label name so global and local labels with
+  the same name can still be distinguished if the format later permits it.
+
+## Current Code Areas To Inspect
+
+Primary implementation areas expected from the current NEX and disassembly
+work:
+
+- `src/renderer/appIde/DocumentPanels/Next/NexFileViewerPanel.tsx`
+- `src/renderer/appIde/DocumentPanels/Next/nexFileLoader.ts`
+- `src/renderer/features/memory/StaticMemoryDump.tsx`
+- `src/renderer/controls/memory/MemoryDumpViewer.tsx`
+- `src/renderer/appIde/DocumentPanels/DisassemblyPanel.tsx`
+- `src/renderer/appIde/DocumentPanels/DisassemblyRow.tsx`
+- `src/renderer/appIde/DocumentPanels/DisassemblyToolbars.tsx`
+- `src/renderer/appIde/disassemblers/Z80Disassembler.ts`
+- `src/renderer/appIde/disassemblers/common-types.ts`
+- document and Explorer registration code for file extension handling
+- renderer/main file APIs used to create and save project files
+
+Before implementation, inspect the document registry and project file APIs to
+choose the narrowest integration point for `.nex.dis` documents.
+
+## Implementation Slices
+
+### 1. Add Annotation Model, Parser, And Validation
+
+Create a NEX annotation module near the NEX viewer or disassembler code.
+
+Responsibilities:
+
+- derive sidecar path from a `.nex` path;
+- create a default annotation object for a loaded NEX file;
+- parse and validate JSON from disk;
+- normalize region ordering and full-bank coverage;
+- validate bank numbers against the loaded NEX file;
+- validate label names, label value ranges, comments, offset indexes, and
+  operand references;
+- expose small helper APIs such as `getBankOffset(offsetIndex)`,
+  `getBankAnnotation(bank)`, and `resolveAnnotationLabel(...)`.
+
+Acceptance:
+
+- Invalid annotation files produce clear non-crashing diagnostics in the NEX
+  viewer.
+- Unknown future fields are preserved if practical, or ignored deliberately with
+  a documented rule.
+
+Tests:
+
+- parser accepts a minimal valid file;
+- default file generation creates loaded banks with full disassembly regions;
+- invalid ranges, duplicate labels, bad names, and overlapping regions are
+  rejected;
+- sidecar path derivation maps `ScrollNutter.nex` to `ScrollNutter.nex.dis`.
+
+### 2. Register `.nex.dis` As Read-Only JSON
+
+Add document handling so selecting a `.nex.dis` file in Explorer opens a
+read-only text/code document with JSON syntax highlighting.
+
+Important detail:
+
+- Match `.nex.dis` before any generic `.dis` or unknown-file handling.
+
+Acceptance:
+
+- Explorer opens `.nex.dis` files with JSON highlighting.
+- The editor surface is read-only.
+- Opening ordinary `.json`, `.dis`, and `.nex` files keeps existing behavior.
+
+Tests:
+
+- focused document registration or Explorer-open test, depending on existing
+  test patterns.
+
+### 3. Add NEX Viewer Sidecar Actions
+
+Extend the NEX viewer with annotation awareness.
+
+UI:
+
+- show whether an annotation sidecar exists, is loaded, is missing, or has
+  validation errors;
+- provide an action to create the sidecar file when it does not exist;
+- provide an action to open the sidecar read-only JSON document;
+- pass the loaded annotation context when popping out a bank document.
+
+Creation behavior:
+
+- create `<nex path>.dis` next to the source file;
+- seed it with `schemaVersion: 1`, source metadata, loaded banks, default
+  offset indexes, and full-bank disassembly regions;
+- do not overwrite an existing annotation file without confirmation.
+
+Acceptance:
+
+- A loaded NEX file can create its sidecar annotation file from the viewer.
+- A loaded sidecar influences the default bank offset shown in bank pop-outs.
+- The viewer remains useful when no sidecar exists.
+
+Tests:
+
+- NEX viewer discovers an existing sidecar;
+- create action calls the project/main file API with the expected path and JSON;
+- validation errors are surfaced without breaking the bank list.
+
+### 4. Apply Annotations To Static Bank Disassembly
+
+Use bank annotations when rendering the popped-out NEX bank disassembly.
+
+Behavior:
+
+- map annotation regions to `MemorySection` entries;
+- use bank `offsetIndex` to initialize the disassembly offset dropdown;
+- render `.defb`, `.defw`, and `.skip` output for non-disassembly regions;
+- render synopsis comments before annotated lines;
+- append end-of-line comments where hard comments appear now;
+- render global and local labels with the annotation label names;
+- expand the label column so 16-character labels plus the trailing colon fit
+  cleanly.
+
+Acceptance:
+
+- Existing unannotated static disassembly output remains unchanged.
+- Annotated bank output uses the sidecar regions and comments.
+- A 16-character label does not get visually clipped or crowd instruction text.
+
+Tests:
+
+- annotated regions generate expected disassembly items;
+- synopsis comments split into multiple `; ` lines;
+- end-of-line comments render in the hard-comment position;
+- 16-character labels are visible in `DisassemblyRow`.
+
+### 5. Extend The Z80 Disassembler Deliberately
+
+Modify `Z80Disassembler` only where annotations require it, keeping normal live
+machine disassembly behavior stable.
+
+Likely extensions:
+
+- add options for byte and word grouping sizes, defaulting to current behavior
+  unless annotation mode overrides them;
+- add a label resolver callback or annotation resolver object;
+- expose operand metadata for instructions that contain 16-bit operands;
+- allow resolved label names to replace the rendered 16-bit operand text;
+- allow generated disassembly items to carry explicit label text, pre-line
+  comments, and annotation comments.
+
+Avoid brittle string replacement after disassembly when possible. Prefer
+resolving labels from the same instruction metadata that knows which operand is
+a 16-bit address.
+
+Acceptance:
+
+- Existing disassembly tests continue to pass.
+- Annotated static disassembly can substitute global and local label names for
+  supported 16-bit operands.
+- Unsupported or ambiguous operand references fail gracefully and keep the
+  numeric operand text.
+
+Tests:
+
+- global label substitution for a 16-bit operand;
+- local label substitution when operand falls inside the current bank window;
+- explicit operand reference precedence;
+- unchanged output when no annotation resolver is supplied.
+
+### 6. Add Interactive Annotation Editing In Bank Disassembly
+
+Add editing controls to the popped-out NEX bank disassembly view.
+
+#### 6.1 Bank Disassembly Toolbar
+
+Keep the current Memory/Disassembly, Decimal, Offset, and Go To controls. Add a
+small annotation command group that is visible only for popped-out NEX banks
+with annotation support.
+
+Toolbar elements:
+
+- annotation status text:
+  - `No annotation file`
+  - `Annotations loaded`
+  - `Annotations changed`
+  - `Annotation errors`
+- Save button, enabled only when the annotation model is dirty;
+- Open JSON button, opening the `.nex.dis` file in the read-only JSON view;
+- Manage Labels button;
+- Manage Regions button;
+- Annotate dropdown for actions that apply to the current row or selection.
+
+The toolbar should not become crowded. If horizontal space is tight, collapse
+Open JSON, Manage Labels, and Manage Regions into a single menu button while
+keeping Save and the status text visible.
+
+#### 6.2 Row And Selection Affordances
+
+Disassembly rows should expose small visual cues without becoming noisy:
+
+- a comment marker in the gutter when a row has synopsis or end-of-line notes;
+- a label marker or label text when a global or local label is attached;
+- subtle region styling for bytes, words, and skip rows;
+- selected row and selected range styling for region actions.
+
+Selection behavior:
+
+- clicking a row makes it the active annotation target;
+- Shift-click selects a range;
+- keyboard navigation updates the active row;
+- region actions default to the selected range when there is one, otherwise to
+  the current generated row's source byte span.
+
+Each generated row must retain enough metadata to map it back to a bank-relative
+offset and byte span. Comment-only generated rows should map to the annotated
+target offset.
+
+#### 6.3 Row Context Menu
+
+Right-clicking a disassembly row opens an annotation context menu.
+
+Items:
+
+- Synopsis Comment...
+- End-of-Line Comment...
+- Add/Edit Global Label...
+- Add/Edit Local Label...
+- Assign Operand Label... only enabled when the row has at least one 16-bit
+  operand candidate;
+- Mark As Disassembly
+- Mark As Bytes
+- Mark As Words
+- Mark As Skip
+- Clear Row Annotations, enabled only when the row has row-level annotations.
+
+Range-sensitive items should use the current selection if the right-click is
+inside the selected range. Otherwise, they should use only the clicked row.
+
+#### 6.4 Synopsis Comment Dialog
+
+Purpose:
+
+- edit the comment lines that render before a generated disassembly line.
+
+Suggested title:
+
+```text
+Synopsis Comment
+```
+
+Fields:
+
+- Location, read-only:
+  - Bank number;
+  - bank-relative offset in hex and decimal;
+  - effective address using the active bank offset;
+- Comment, multi-line text area;
+- Preview, read-only, showing one generated `; ` line per entered line.
+
+Defaults:
+
+- if the row already has a synopsis comment, prefill it;
+- otherwise leave the text area empty and focus it;
+- location defaults to the active row's bank-relative offset.
+
+Actions:
+
+- Save;
+- Clear, shown only when an existing synopsis comment is present;
+- Cancel.
+
+Validation:
+
+- empty Save is treated like Clear;
+- preserve line breaks in JSON;
+- trim trailing whitespace from each line, but preserve intentionally blank
+  lines by rendering them as `;`.
+
+#### 6.5 End-Of-Line Comment Dialog
+
+Purpose:
+
+- edit the user comment that appears in the hard-comment lane at the end of a
+  generated line.
+
+Suggested title:
+
+```text
+End-of-Line Comment
+```
+
+Fields:
+
+- Location, read-only;
+- Instruction, read-only, showing the current generated instruction or pragma;
+- Generated hard comment, read-only, shown only when the disassembler already
+  provides one;
+- User comment, single-line text input;
+- Preview, read-only, showing the rendered line comment lane.
+
+Defaults:
+
+- if an annotation comment exists, prefill User comment with it;
+- otherwise keep User comment empty;
+- do not copy generated hard comments into the annotation file automatically.
+
+Rendering rule:
+
+- if both a generated hard comment and a user comment exist, render them in the
+  same comment lane with a compact separator, for example
+  `; generated | user note`;
+- if only the user comment exists, render `; user note`;
+- if only the generated hard comment exists, keep current behavior.
+
+Actions:
+
+- Save;
+- Clear, shown only when an annotation comment exists;
+- Cancel.
+
+Validation:
+
+- user comments are single-line values;
+- pasted line breaks are converted to spaces or rejected with an inline message,
+  depending on the app's existing dialog style.
+
+#### 6.6 Add Or Edit Label Dialog
+
+Purpose:
+
+- create or edit a global or bank-local label at an address.
+
+Suggested title:
+
+```text
+Label
+```
+
+Fields:
+
+- Scope segmented control:
+  - Global;
+  - Local to Bank NN;
+- Name text input;
+- Value input with hex-first display and decimal support;
+- Existing labels search box;
+- Filtered labels list.
+
+Defaults:
+
+- when opened through Add/Edit Global Label, Scope defaults to Global and Value
+  defaults to the active row's effective address;
+- when opened through Add/Edit Local Label, Scope defaults to Local and Value
+  defaults to the active row's bank-relative offset;
+- if a label already exists at that value and scope, prefill the existing name;
+- otherwise suggest a valid generated name such as `L_C000` for global labels
+  or `L_0123` for local labels.
+
+Existing labels list:
+
+- filters by name, hex value, decimal value, and scope;
+- shows name, value, scope, and whether the label is referenced;
+- clicking a label loads it into the form;
+- duplicate-name conflicts are shown inline.
+
+Actions:
+
+- Save;
+- Delete, shown only when editing an existing label;
+- Cancel.
+
+Validation:
+
+- label name must match the assembler identifier convention;
+- label name length must be at most 16 characters;
+- global value must be `$0000..$FFFF`;
+- local value must be `$0000..$3FFF`;
+- duplicate names in the same scope are blocked;
+- deleting a referenced label requires a confirmation and clears or reports the
+  affected operand references.
+
+#### 6.7 Assign Operand Label Dialog
+
+Purpose:
+
+- assign a global or local label reference to a particular 16-bit operand in the
+  current instruction.
+
+Suggested title:
+
+```text
+Operand Label Reference
+```
+
+Fields:
+
+- Instruction, read-only;
+- Operand selector, shown only if the instruction exposes more than one
+  candidate operand;
+- Operand value, read-only, shown in hex and decimal;
+- Candidate labels search box;
+- Candidate labels filtered list;
+- Inline Create Label action.
+
+Defaults:
+
+- select the existing explicit reference if one is stored;
+- otherwise select an exact global label match if one exists;
+- otherwise select an exact local label match if the operand maps into the
+  current bank window;
+- otherwise show no selected label and offer Create Global Label and, when
+  applicable, Create Local Label.
+
+Candidate labels list:
+
+- first group: exact matches;
+- second group: labels in the same numeric neighborhood;
+- third group: all labels filtered by search text;
+- each row shows scope, name, value, and effective address meaning;
+- the search box matches name, hex value, decimal value, and scope.
+
+Actions:
+
+- Apply Reference;
+- Clear Reference, enabled only when a reference is explicit;
+- Create Global Label;
+- Create Local Label, enabled only when the operand maps into `0..0x3fff` for
+  the current bank offset;
+- Cancel.
+
+Validation:
+
+- a selected label must exist in the selected scope;
+- local labels can be referenced only when the operand maps into the current
+  bank window;
+- if a label is renamed later, operand references should be updated by the
+  label manager rather than left dangling.
+
+#### 6.8 Mark Region Dialog
+
+Purpose:
+
+- change a byte range to disassembly, bytes, words, or skip.
+
+Suggested title:
+
+```text
+Memory Region
+```
+
+Fields:
+
+- Type segmented control:
+  - Disassembly;
+  - Bytes;
+  - Words;
+  - Skip;
+- Start offset input;
+- End offset input;
+- Length, read-only, shown in hex and decimal;
+- Affected existing regions list;
+- Preview, showing sample generated output for the first few lines.
+
+Defaults:
+
+- Start and End default to the selected range;
+- if there is no range, use the clicked/generated row's source byte span;
+- Type defaults to the current region type for that span;
+- if opened from a specific Mark As menu item, Type defaults to that item.
+
+Affected regions list:
+
+- shows each intersecting region with start, end, type, and length;
+- updates live as Start and End are edited;
+- highlights whether the change will split, replace, or merge regions.
+
+Actions:
+
+- Apply;
+- Cancel.
+
+Validation:
+
+- range must stay inside `$0000..$3FFF`;
+- Start must be less than or equal to End;
+- Word regions must contain an even number of bytes, or the dialog must offer
+  an explicit adjustment before applying;
+- applying a region normalizes neighboring regions of the same type.
+
+#### 6.9 Manage Labels Dialog
+
+Purpose:
+
+- provide a searchable overview of global and current-bank local labels.
+
+Suggested title:
+
+```text
+Labels
+```
+
+Fields:
+
+- Scope tabs or segmented control:
+  - All;
+  - Global;
+  - Bank NN;
+- Search box;
+- Sort selector:
+  - Address;
+  - Name;
+  - Reference count;
+- Label table;
+- Add Label button.
+
+Label table columns:
+
+- scope;
+- name;
+- value;
+- effective address for local labels under the current offset;
+- reference count;
+- actions: Edit, Delete, Go To.
+
+Defaults:
+
+- open with the current bank's labels visible;
+- search box empty;
+- sort by address.
+
+Behavior:
+
+- Go To navigates the bank disassembly to the label address;
+- Edit opens the Label dialog;
+- Delete follows the referenced-label confirmation rule;
+- Add Label opens the Label dialog with a value defaulting to the active row.
+
+#### 6.10 Manage Regions Dialog
+
+Purpose:
+
+- provide an exact editor for all regions in the current bank.
+
+Suggested title:
+
+```text
+Regions
+```
+
+Fields:
+
+- Search/filter box accepting address text and region type;
+- Region type filter;
+- Region table;
+- Add Region button;
+- Preview of selected region.
+
+Region table columns:
+
+- start;
+- end;
+- length;
+- type;
+- generated line count estimate;
+- actions: Edit, Split, Delete/Revert, Go To.
+
+Defaults:
+
+- filter empty;
+- current row's region selected;
+- regions sorted by start offset.
+
+Behavior:
+
+- Edit opens the Memory Region dialog for the selected region;
+- Split opens the Memory Region dialog with Start defaulting to the active row
+  inside the selected region;
+- Delete/Revert turns the selected region back into `disassemble` and then
+  normalizes adjacent regions;
+- Go To scrolls the bank disassembly to the region start.
+
+#### 6.11 Dirty State And Saving
+
+Save behavior:
+
+- update the in-memory annotation model immediately after each dialog Apply or
+  Save;
+- re-render the disassembly immediately;
+- show unsaved state in the popped-out document title or toolbar status;
+- write JSON only on explicit Save;
+- preserve formatting with a stable two-space JSON layout.
+
+If multiple bank pop-outs for the same NEX file are open, they should share a
+single annotation model through a small document-level service or owner state so
+saves and dirty state do not diverge.
+
+#### 6.12 Implementation Notes
+
+Acceptance:
+
+- A user can add comments, labels, operand references, and regions without
+  editing raw JSON.
+- Invalid input is blocked before it reaches disk.
+- Saved annotations are visible after closing and reopening the NEX file.
+- Dialogs provide useful defaults from the active row, selected range, current
+  bank, and current offset.
+- Searchable lists are available for labels, operand-reference candidates, and
+  region management.
+- Row metadata is sufficient to map generated output back to source bank
+  offsets, even for pragmas and comment-only rows.
+
+Tests:
+
+- row context actions open the correct editor state;
+- adding comments updates rendered output;
+- adding labels updates rendered label text and operand choices;
+- region changes update generated `.defb`, `.defw`, `.skip`, or instruction
+  output;
+- save writes normalized JSON.
+- dialog defaults are correct for current row, selected range, global label, and
+  local label actions;
+- label and region searches filter by name, scope, address, and type;
+- deleting or renaming labels updates or reports affected operand references.
+
+### 7. Documentation And Polish
+
+Add short user-facing or developer-facing documentation once the behavior is
+implemented.
+
+Potential locations:
+
+- NEX viewer docs, if the project already has a user-facing page for it;
+- `.docs` developer notes if a new annotation/disassembler contract is added;
+- tests as executable examples for the JSON format.
+
+Polish items:
+
+- stale source warning if optional `sha256` exists and no longer matches;
+- small annotation marker in the NEX bank list for banks with notes, regions,
+  or labels;
+- import/export action if later requested;
+- keyboard shortcuts for common annotation actions after the menu workflow is
+  stable.
+
+## Risks And Mitigations
+
+- Disassembler operand replacement may touch a mature path. Mitigate by adding
+  resolver hooks and keeping default output unchanged when no annotation
+  resolver is supplied.
+- `.defb` and `.defw` grouping requirements differ from existing defaults.
+  Mitigate with option-driven grouping so annotation mode can use 4 bytes and
+  2 words without changing other views unintentionally.
+- Sidecar saving must not corrupt user notes. Mitigate with validation,
+  explicit Save, non-overwrite creation, and stable JSON formatting.
+- Label scope can be confusing. Mitigate by storing explicit scope in operand
+  references and showing scope in UI choices.
+
+## Suggested Implementation Order
+
+1. Annotation model, validation, and tests.
+2. `.nex.dis` read-only JSON document registration.
+3. NEX viewer sidecar discovery, create/open actions, and load diagnostics.
+4. Annotated static bank disassembly rendering.
+5. Z80 disassembler resolver extensions for labels and 16-bit operands.
+6. Interactive annotation editing and save workflow.
+7. Polish, docs, and full verification.
+
+## Verification Plan
+
+Focused checks during implementation:
+
+```text
+npm test -- --project jsdom <focused annotation and viewer tests>
+npm test -- --project node <focused parser/validator tests if added outside jsdom>
+npm run build:check
+npm run lint:renderer
+```
+
+Before finishing the implementation, also run the relevant focused NEX viewer
+and static memory dump tests already touched by the recent disassembly work.
