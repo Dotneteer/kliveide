@@ -74,6 +74,24 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     super(modelInfo, config);
   }
 
+  override get pc(): number {
+    return super.pc;
+  }
+
+  override set pc(value: number) {
+    super.pc = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuPc(super.pc);
+  }
+
+  override get sp(): number {
+    return super.sp;
+  }
+
+  override set sp(value: number) {
+    super.sp = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuSp(super.sp);
+  }
+
   override async setup(): Promise<void> {
     this.wasmV2Runtime = await loadSp48WasmV2(this.wasmV2LoaderOptions);
     const runtime = this.requireWasmV2Runtime();

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
+import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 
 import {
   createTestSp128WasmMachine,
@@ -75,6 +76,36 @@ describe("ZX Spectrum WASM debug step parity", () => {
       expect(machine.getCpuState().af >> 8).toBe(0xbe);
       expect(machine.lastIoReadPort).toBe(0xfefe);
       expect(machine.lastIoReadValue).toBe(0xbe);
+    });
+
+    it(`${testCase.name} keeps running in UntilExecutionPoint mode so queued keys reach WASM`, async () => {
+      const machine = await testCase.createMachine(testRom([0x00]));
+
+      machine.executionContext.frameTerminationMode = FrameTerminationMode.UntilExecutionPoint;
+      machine.queueKeystroke(0, 5, SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
+
+      expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
+      expect(machine.frameJustCompleted).toBe(true);
+      expect(machine.frames).toBe(1);
+      expect(callWasmExport(machine, `${testCase.prefix}ReadPort`)(0xfefe)).toBe(0xbe);
+      expect(callWasmExport(machine, `${testCase.prefix}ReadPort`)(0xeffe)).toBe(0xaf);
+    });
+
+    it(`${testCase.name} starts injected RAM code after public PC/SP assignments`, async () => {
+      const machine = await testCase.createMachine(testRom([0x00]));
+
+      machine.initCode([0x3e, 0x66], 0x8000);
+      machine.pc = 0x8000;
+      machine.sp = 0x9000;
+      machine.executionContext.debugStepMode = DebugStepMode.StepInto;
+      machine.executionContext.frameTerminationMode = FrameTerminationMode.Normal;
+
+      expect(callWasmExport(machine, `${testCase.prefix}GetCpuPc`)()).toBe(0x8000);
+      expect(callWasmExport(machine, `${testCase.prefix}GetCpuSp`)()).toBe(0x9000);
+      expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.DebugEvent);
+      expect(machine.getCpuState().pc).toBe(0x8002);
+      expect(machine.getCpuState().sp).toBe(0x9000);
+      expect(machine.getCpuState().af >> 8).toBe(0x66);
     });
   }
 

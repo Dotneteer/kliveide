@@ -6,18 +6,18 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { getAllMachineModels } from "@common/machines/machine-registry";
 import { split } from "lodash";
-import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useMainApi } from "@renderer/core/MainApi";
 import Dropdown from "@renderer/controls/Dropdown";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { ensureProjectLoaded, ensureWorkspaceLoaded } from "../IdeEventsHandler";
 import { DialogForm } from "@renderer/controls/DialogForm";
-import { requiredFilename, requiredPath } from "./dialogValidators";
+import { optionalPath, requiredFilename } from "./dialogValidators";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const INITIAL_MACHINE_IDE = "sp48";
 const INITIAL_MODEL_ID = "pal";
 const INITIAL_TEMPLATE_ID = "default";
+const PROJECT_CREATION_TIMEOUT_MS = 30_000;
 
 const machineIds = getAllMachineModels().map((m) => ({
   value: `${m.machineId}${m.modelId ? ":" + m.modelId : ""}`,
@@ -48,43 +48,69 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const [templateDirs, setTemplateDirs] = useState<{ value: string; label: string }[]>([]);
   const [templateId, setTemplateId] = useState<string>(INITIAL_TEMPLATE_ID);
 
-  // --- Refresh the template list according to the current machine id
-  const refreshTemplateList = async () => {
-    if (!machineId) return;
-    const dirs = await mainApi.getTemplateDirectories(machineId);
-    setTemplateDirs(dirs.map((d) => ({ value: d, label: d })));
-  };
-  useInitializeAsync(async () => {
-    await refreshTemplateList();
-  });
-
   // --- Read the template names for a particular machine ID
   useEffect(() => {
-    (async () => {
-      await refreshTemplateList();
-    })();
-  }, [machineId]);
+    let cancelled = false;
 
-  const folderError = requiredPath(validationService, projectFolder);
+    (async () => {
+      if (!machineId) return;
+
+      const dirs = await mainApi.getTemplateDirectories(machineId);
+      if (cancelled) return;
+
+      setTemplateDirs(dirs.map((d) => ({ value: d, label: d })));
+      setTemplateId((current) => {
+        if (dirs.includes(current)) return current;
+        if (dirs.includes(INITIAL_TEMPLATE_ID)) return INITIAL_TEMPLATE_ID;
+        return dirs[0] ?? INITIAL_TEMPLATE_ID;
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [machineId, mainApi]);
+
+  const projectFolderPath = projectFolder.trim();
+  const folderError = optionalPath(validationService, projectFolderPath);
   const projectError = requiredFilename(validationService, projectName);
 
   const createProject = async (): Promise<boolean> => {
     // --- Create the project
     try {
-      const responsePath = await mainApi.createKliveProject(
-        machineId,
-        projectName,
-        projectFolder,
-        modelId,
-        templateId
+      const responsePath = await withTimeout(
+        mainApi.createKliveProject(
+          machineId,
+          projectName,
+          projectFolderPath,
+          modelId,
+          templateId
+        ),
+        PROJECT_CREATION_TIMEOUT_MS,
+        "Creating the Klive project"
       );
       // --- Open the newly created project
-      await mainApi.openFolder(responsePath);
-      await ensureProjectLoaded(projectService);
-      await ensureWorkspaceLoaded(store);
+      const errorMessage = await withTimeout(
+        mainApi.openFolder(responsePath),
+        PROJECT_CREATION_TIMEOUT_MS,
+        "Opening the new Klive project"
+      );
+      if (errorMessage) {
+        throw new Error(`Error opening folder: ${errorMessage}`);
+      }
+      await withTimeout(
+        ensureProjectLoaded(projectService),
+        PROJECT_CREATION_TIMEOUT_MS,
+        "Loading the new Klive project"
+      );
+      await withTimeout(
+        ensureWorkspaceLoaded(store),
+        PROJECT_CREATION_TIMEOUT_MS,
+        "Loading the new Klive workspace"
+      );
 
       // --- Navigate to the project root
-      const buildRoots = store.getState().project?.buildRoots;
+      const buildRoots = store.getState().project?.buildRoots ?? [];
       if (buildRoots.length > 0) {
         ideCommandsService.executeCommand(`nav "${buildRoots[0]}"`);
       }
@@ -93,10 +119,15 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
         modelId,
         templateId,
         projectName,
-        projectFolder
+        projectFolder: projectFolderPath
       });
     } catch (error) {
-      await mainApi.displayMessageBox("error", "New Klive Project Error", error.toString());
+      console.error("New Klive project creation failed", error);
+      void mainApi
+        .displayMessageBox("error", "New Klive Project Error", getErrorMessage(error))
+        .catch((messageBoxError) =>
+          console.error("Displaying the new project error failed", messageBoxError)
+        );
       return true;
     }
 
@@ -144,7 +175,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
           <Dropdown
             placeholder="Select..."
             options={templateDirs}
-            initialValue={"default"}
+            initialValue={templateId}
             width={468}
             onChanged={(option) => {
               setTemplateId(option);
@@ -174,3 +205,19 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
     </Modal>
   );
 };
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${operation} timed out after ${timeoutMs / 1000} seconds.`));
+    }, timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

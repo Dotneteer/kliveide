@@ -132,6 +132,11 @@ export const Modal = ({
 
   useEffect(() => {
     store.dispatch(dimMenuAction(isOpen), messageSource);
+    return () => {
+      if (isOpen && getModalStackSize() <= 1) {
+        store.dispatch(dimMenuAction(false), messageSource);
+      }
+    };
   }, [isOpen, messageSource, store]);
 
   useEffect(() => {

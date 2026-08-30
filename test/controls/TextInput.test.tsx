@@ -41,6 +41,23 @@ describe("TextInput", () => {
     await vi.waitFor(() => expect(onChange).toHaveBeenCalledWith("/tmp/project"));
   });
 
+  it("ignores nullable browse results", async () => {
+    const onChange = vi.fn();
+    renderWithProviders(
+      <TextInput
+        value=""
+        onChange={onChange}
+        buttonIcon="folder"
+        buttonTitle="Choose folder"
+        browse={async () => null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Choose folder" }));
+
+    await vi.waitFor(() => expect(onChange).not.toHaveBeenCalled());
+  });
+
   it("exposes an invalid value and its error to assistive technology", () => {
     renderWithProviders(<TextInput value="bad" onChange={vi.fn()} error="Use a valid filename." />);
 

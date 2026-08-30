@@ -9,7 +9,7 @@ afterEach(() => {
 });
 
 describe("ExplorerPanel dialog migration", () => {
-  it("opens the new project dialog from the empty-state project button", async () => {
+  it("opens IDE registry dialogs from the empty explorer state with dialog controls", async () => {
     const state = {
       dimMenu: false,
       isWindows: false,
@@ -22,6 +22,13 @@ describe("ExplorerPanel dialog migration", () => {
       dispatch: vi.fn(),
       getState: vi.fn(() => state)
     };
+    const dialogRenderer = vi.fn(
+      (_data: unknown, controls: { close: (result?: unknown) => void }) => (
+        <button onClick={() => controls.close({ created: true })}>
+          confirm registry dialog
+        </button>
+      )
+    );
 
     vi.doMock("@renderer/core/RendererProvider", () => ({
       useDispatch: () => vi.fn(),
@@ -39,6 +46,7 @@ describe("ExplorerPanel dialog migration", () => {
         ideCommandsService: { executeCommand: vi.fn() },
         projectService: {
           getActiveDocumentHubService: () => ({
+            getDocument: vi.fn(),
             isOpen: vi.fn(() => false),
             setActiveDocument: vi.fn()
           }),
@@ -60,18 +68,15 @@ describe("ExplorerPanel dialog migration", () => {
         setSelectedNode: vi.fn(),
         tree: {
           getViewNodeByIndex: vi.fn(),
-          rootNode: undefined
+          rootNode: {}
         },
         visibleNodes: []
       })
     }));
-    vi.doMock("@renderer/features/explorer/ExplorerContextMenu", () => ({
-      ExplorerContextMenu: () => null
-    }));
-    vi.doMock("@renderer/appIde/dialogs/NewProjectDialog", () => ({
-      NewProjectDialog: ({ onClose }: { onClose: () => void }) => (
-        <button onClick={onClose}>new project dialog</button>
-      )
+    vi.doMock("@renderer/appIde/dialogs/ideDialogRegistry", () => ({
+      ideDialogRegistry: {
+        1: dialogRenderer
+      }
     }));
 
     const { DialogProvider } = await import("@renderer/controls/overlay/DialogProvider");
@@ -85,7 +90,20 @@ describe("ExplorerPanel dialog migration", () => {
 
     fireEvent.click(screen.getByText("Create a Klive Project"));
 
-    expect(await screen.findByText("new project dialog")).toBeInTheDocument();
+    expect(await screen.findByText("confirm registry dialog")).toBeInTheDocument();
+    expect(dialogRenderer).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({
+        cancel: expect.any(Function),
+        close: expect.any(Function)
+      })
+    );
+
+    fireEvent.click(screen.getByText("confirm registry dialog"));
+
+    await waitFor(() => {
+      expect(screen.queryByText("confirm registry dialog")).not.toBeInTheDocument();
+    });
   });
 
   it("opens add, rename, and delete dialogs through the dialog service", async () => {

@@ -41,6 +41,15 @@ class TestWasmV2Machine extends ZxSpectrumP3eWasmV2Machine {
 }
 
 describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
+  it("exposes stable screen dimensions before the WASM runtime is loaded", () => {
+    const machine = new ZxSpectrumP3eWasmV2Machine(undefined, { [MC_DISK_SUPPORT]: 2 });
+
+    expect(machine.wasmV2Runtime).toBeUndefined();
+    expect(machine.screenWidthInPixels).toBe(352);
+    expect(machine.screenHeightInPixels).toBe(287);
+    expect(machine.tactsInDisplayLine).toBe(176);
+  });
+
   it("uses the WASM normal frame path while debug frames stay single-step controlled", async () => {
     buildSpP3eWasm();
     const runtime = await loadSpP3eWasmV2({

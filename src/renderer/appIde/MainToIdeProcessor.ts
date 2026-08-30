@@ -306,11 +306,12 @@ function convertToProjectStructure(
 ): ProjectStructure {
   const project = store.getState().project;
   const nodes = collectNodes(tree.rootNode.children);
+  const buildRoots = project.buildRoots ?? [];
 
   return {
     rootPath: project.folderPath,
     hasBuildFile: !!project.hasBuildFile,
-    buildRoot: project.buildRoots.length > 0 ? project.buildRoots[0] : undefined,
+    buildRoot: buildRoots.length > 0 ? buildRoots[0] : undefined,
     buildFunctions: [],
     children: nodes
   };
