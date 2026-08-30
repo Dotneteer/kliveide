@@ -24,8 +24,8 @@ Message:
     defb 0x11, 0x04       ; PAPER 4
     defb 0x13, 0x00       ; BRIGHT 0
     defm "Welcome to Klive IDE"
-    defb 0x16, 0x0b, 0x05 ; AT 11, 5
+    defb 0x16, 0x0b, 0x06 ; AT 11, 6
     defb 0x11, 0x04       ; PAPER 4
     defb 0x13, 0x01       ; BRIGHT 1
-    defm "(ZX Spectrum +2/+3E)"
+    defm "(ZX Spectrum +2/3)"
     defb 0xff             ; terminate
