@@ -1,0 +1,73 @@
+@use "@styles/core.scss" as *;
+
+.location {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  color: var(--color-modal-body);
+}
+
+.locationLabel {
+  color: var(--color-label);
+}
+
+.readOnlyValue {
+  box-sizing: border-box;
+  min-height: 26px;
+  overflow: hidden;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 5px 8px;
+  background: var(--bgcolor-modal-header);
+  color: var(--color-doc-inactiveText);
+  font-family: var(--monospace-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comment {
+  box-sizing: border-box;
+  width: 100%;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-input);
+  color: var(--color-input);
+  font-family: var(--monospace-font);
+  font-size: 0.9em;
+  outline: none;
+
+  &:focus {
+    outline: 2px solid var(--color-button-focused);
+  }
+}
+
+.preview {
+  box-sizing: border-box;
+  min-height: 32px;
+  overflow: hidden;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-modal-header);
+  color: var(--color-doc-inactiveText);
+  font-family: var(--monospace-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 8px;
+  margin: 20px -20px -20px;
+  padding: 12px 20px;
+  border-top: var(--border-modal-section);
+  background: var(--bgcolor-modal-footer);
+  border-bottom-left-radius: var(--radius-modal);
+  border-bottom-right-radius: var(--radius-modal);
+}
+
+.footerSpacer {
+  flex: 1 1 auto;
+}

@@ -1,0 +1,100 @@
+@use "@styles/core.scss" as *;
+
+.typeOptions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.typeOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-modal-body);
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-input);
+  color: var(--color-input);
+  font-family: var(--monospace-font);
+  font-size: 0.9em;
+  outline: none;
+
+  &:focus {
+    outline: 2px solid var(--color-button-focused);
+  }
+}
+
+.readOnlyValue {
+  box-sizing: border-box;
+  min-height: 26px;
+  overflow: hidden;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 5px 8px;
+  background: var(--bgcolor-modal-header);
+  color: var(--color-doc-inactiveText);
+  font-family: var(--monospace-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error {
+  margin: 2px 0 8px 128px;
+  color: var(--console-ansi-bright-red);
+  font-size: 0.85em;
+}
+
+.regionList {
+  box-sizing: border-box;
+  max-height: 145px;
+  overflow: auto;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  background: var(--bgcolor-modal-header);
+}
+
+.regionItem {
+  display: grid;
+  grid-template-columns: 7ch 7ch 12ch 9ch 8ch;
+  gap: 8px;
+  padding: 5px 8px;
+  color: var(--color-modal-body);
+  font-family: var(--monospace-font);
+}
+
+.emptyList {
+  padding: 8px;
+  color: var(--color-doc-inactiveText);
+}
+
+.preview {
+  box-sizing: border-box;
+  min-height: 72px;
+  max-height: 130px;
+  overflow: auto;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-modal-header);
+  color: var(--color-doc-inactiveText);
+  font-family: var(--monospace-font);
+  white-space: pre-wrap;
+}
+
+.footer {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 8px;
+  margin: 20px -20px -20px;
+  padding: 12px 20px;
+  border-top: var(--border-modal-section);
+  background: var(--bgcolor-modal-footer);
+  border-bottom-left-radius: var(--radius-modal);
+  border-bottom-right-radius: var(--radius-modal);
+}

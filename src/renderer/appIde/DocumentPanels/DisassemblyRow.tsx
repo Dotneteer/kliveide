@@ -1,5 +1,6 @@
 import classnames from "classnames";
 import { memo } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
@@ -97,59 +98,101 @@ export function deriveDisassemblyRowViewModel({
 type DisassemblyRowProps = DisassemblyRowViewModelParams & {
   index: number;
   rowHeight: number;
+  selected?: boolean;
+  selectedRange?: boolean;
+  onClick?: (event: MouseEvent<HTMLDivElement>) => void;
+  onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
 };
 
 export const DisassemblyRow = memo(function DisassemblyRow({
   index,
   item,
+  onClick,
+  onContextMenu,
+  onKeyDown,
   rowHeight,
+  selected,
+  selectedRange,
   ...viewModelParams
 }: DisassemblyRowProps) {
-  const viewModel = deriveDisassemblyRowViewModel({
-    ...viewModelParams,
-    item
-  });
+  const isPrefixComment = item.prefixComment !== undefined;
+  const viewModel = !isPrefixComment
+    ? deriveDisassemblyRowViewModel({
+        ...viewModelParams,
+        item
+      })
+    : undefined;
 
   return (
     <div
       className={classnames(styles.item, {
-        [styles.even]: index % 2 == 0
+        [styles.even]: index % 2 == 0,
+        [styles.selectedRangeItem]: selectedRange,
+        [styles.selectedItem]: selected
       })}
+      data-testid={`disassembly-row-${index}`}
+      data-annotation-offset={item.annotation?.bankOffset}
+      data-annotation-length={item.annotation?.byteLength}
+      data-annotation-region={item.annotation?.regionType}
+      data-selected={selected ? "true" : undefined}
+      data-selected-range={selectedRange ? "true" : undefined}
+      onClick={onClick}
+      onContextMenu={onContextMenu}
+      onKeyDown={onKeyDown}
+      aria-selected={selected || selectedRange || undefined}
+      tabIndex={onClick || onContextMenu || onKeyDown ? 0 : undefined}
       style={{ height: rowHeight }}
     >
-      <LabelSeparator />
-      <BreakpointIndicator
-        showType={false}
-        partition={viewModel.breakpointPartition}
-        address={viewModel.breakpointAddress}
-        hasBreakpoint={viewModel.hasBreakpoint}
-        current={viewModel.execPoint}
-        disabled={viewModelParams.breakpoint?.disabled ?? false}
-      />
-      {viewModel.showBankLabel && viewModel.partitionLabel && (
-        <div className={styles.partitionPrefix}>
-          <span
-            className={styles.partitionLabel}
-            style={{ width: viewModel.useWidePartitions ? "3ch" : "2ch" }}
-          >
-            {viewModel.partitionLabel}
-          </span>
-          <span className={styles.partitionColon}>:</span>
-        </div>
-      )}
-      <div
-        className={styles.addressLabel}
-        style={{ width: viewModelParams.decimalView ? 48 : 40 }}
-      >
-        {viewModel.addressText}
-      </div>
-      <Secondary text={viewModel.opCodes} width={viewModelParams.decimalView ? 140 : 100} />
-      <Label text={viewModel.labelText} width="18ch" />
-      <div className={styles.tstates}>{viewModel.tstates}</div>
-      {item.prefixComment !== undefined ? (
-        <Secondary text={`; ${item.prefixComment}`} />
+      {isPrefixComment ? (
+        <div className={styles.synopsisCommentLine}>; {item.prefixComment}</div>
       ) : (
         <>
+          <LabelSeparator />
+          <BreakpointIndicator
+            showType={false}
+            partition={viewModel.breakpointPartition}
+            address={viewModel.breakpointAddress}
+            hasBreakpoint={viewModel.hasBreakpoint}
+            current={viewModel.execPoint}
+            disabled={viewModelParams.breakpoint?.disabled ?? false}
+          />
+          {item.annotation && (
+            <div className={styles.annotationGutter}>
+              <span
+                className={classnames(styles.annotationMarker, styles.commentMarker, {
+                  [styles.visibleAnnotationMarker]: item.annotation.hasLineAnnotation
+                })}
+                title={item.annotation.hasLineAnnotation ? "Annotated comment" : undefined}
+              />
+              <span
+                className={classnames(styles.annotationMarker, styles.labelMarker, {
+                  [styles.visibleAnnotationMarker]: item.annotation.hasLabel
+                })}
+                title={item.annotation.hasLabel ? "Annotated label" : undefined}
+              />
+            </div>
+          )}
+          {viewModel.showBankLabel && viewModel.partitionLabel && (
+            <div className={styles.partitionPrefix}>
+              <span
+                className={styles.partitionLabel}
+                style={{ width: viewModel.useWidePartitions ? "3ch" : "2ch" }}
+              >
+                {viewModel.partitionLabel}
+              </span>
+              <span className={styles.partitionColon}>:</span>
+            </div>
+          )}
+          <div
+            className={styles.addressLabel}
+            style={{ width: viewModelParams.decimalView ? 48 : 40 }}
+          >
+            {viewModel.addressText}
+          </div>
+          <Secondary text={viewModel.opCodes} width={viewModelParams.decimalView ? 140 : 100} />
+          <Label text={viewModel.labelText} width="18ch" />
+          <div className={styles.tstates}>{viewModel.tstates}</div>
           <Value text={viewModel.instruction} width={160} />
           {item.hardComment && <Secondary text={"; " + item.hardComment} />}
         </>

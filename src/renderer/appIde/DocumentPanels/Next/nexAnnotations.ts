@@ -7,6 +7,7 @@ export const NEX_LABEL_MAX_LENGTH = 16;
 export type NexAnnotationOffsetIndex = 0 | 1 | 2 | 3;
 export type NexAnnotationRegionType = "disassemble" | "bytes" | "words" | "skip";
 export type NexAnnotationLabelScope = "global" | "local";
+export type NexAnnotationBankView = "memory" | "disassembly";
 
 export type NexAnnotationDiagnostic = {
   severity: "error" | "warning";
@@ -43,6 +44,8 @@ export type NexOperandReference = {
 
 export type NexBankAnnotation = {
   offsetIndex: NexAnnotationOffsetIndex;
+  lastView?: NexAnnotationBankView;
+  decimalView?: boolean;
   regions: NexAnnotationRegion[];
   localLabels?: NexAnnotationLabel[];
   lineAnnotations?: Record<string, NexLineAnnotation>;
@@ -86,6 +89,7 @@ const REGION_TYPES = new Set<NexAnnotationRegionType>([
   "skip"
 ]);
 const LABEL_SCOPES = new Set<NexAnnotationLabelScope>(["global", "local"]);
+const BANK_VIEWS = new Set<NexAnnotationBankView>(["memory", "disassembly"]);
 const DEFAULT_REGION: NexAnnotationRegion = {
   start: 0,
   end: NEX_BANK_LAST_OFFSET,
@@ -102,6 +106,16 @@ export function isNexAnnotationPath(path: string): boolean {
 
 export function getNexBankAddressOffset(offsetIndex: NexAnnotationOffsetIndex): number {
   return offsetIndex * NEX_BANK_SIZE;
+}
+
+export function getNexBankOffsetIndex(addressOffset: number): NexAnnotationOffsetIndex | undefined {
+  if (!Number.isInteger(addressOffset) || addressOffset % NEX_BANK_SIZE !== 0) {
+    return undefined;
+  }
+  const offsetIndex = addressOffset / NEX_BANK_SIZE;
+  return isIntegerInRange(offsetIndex, 0, 3)
+    ? offsetIndex as NexAnnotationOffsetIndex
+    : undefined;
 }
 
 export function isValidNexLabelName(name: string): boolean {
@@ -345,6 +359,8 @@ function readBankAnnotation(
   }
 
   const offsetIndex = readOffsetIndex(value.offsetIndex, `${path}.offsetIndex`, diagnostics);
+  const lastView = readLastView(value.lastView, `${path}.lastView`, diagnostics);
+  const decimalView = readOptionalBoolean(value.decimalView, `${path}.decimalView`, diagnostics);
   const localLabels = readLabels(value.localLabels, `${path}.localLabels`, NEX_BANK_LAST_OFFSET, diagnostics);
   const regions = normalizeRegions(value.regions, `${path}.regions`, diagnostics);
   const lineAnnotations = readLineAnnotations(value.lineAnnotations, `${path}.lineAnnotations`, diagnostics);
@@ -364,6 +380,12 @@ function readBankAnnotation(
     offsetIndex,
     regions
   };
+  if (lastView) {
+    annotation.lastView = lastView;
+  }
+  if (decimalView !== undefined) {
+    annotation.decimalView = decimalView;
+  }
   if (localLabels.length > 0 || Array.isArray(value.localLabels)) {
     annotation.localLabels = localLabels;
   }
@@ -389,6 +411,36 @@ function readOffsetIndex(
     return undefined;
   }
   return value as NexAnnotationOffsetIndex;
+}
+
+function readLastView(
+  value: unknown,
+  path: string,
+  diagnostics: NexAnnotationDiagnostic[]
+): NexAnnotationBankView | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!BANK_VIEWS.has(value as NexAnnotationBankView)) {
+    diagnostics.push(error(path, "lastView must be memory or disassembly."));
+    return undefined;
+  }
+  return value as NexAnnotationBankView;
+}
+
+function readOptionalBoolean(
+  value: unknown,
+  path: string,
+  diagnostics: NexAnnotationDiagnostic[]
+): boolean | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== "boolean") {
+    diagnostics.push(error(path, "decimalView must be a boolean."));
+    return undefined;
+  }
+  return value;
 }
 
 function normalizeRegions(

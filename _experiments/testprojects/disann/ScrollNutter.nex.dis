@@ -1,9 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": {
-    "fileName": "ScrollNutter.nex"
-  },
-  "globalLabels": [],
   "banks": {
     "0": {
       "offsetIndex": 3,
@@ -33,7 +29,19 @@
           "end": 16383,
           "type": "disassemble"
         }
-      ]
+      ],
+      "lastView": "disassembly",
+      "lineAnnotations": {
+        "2": {
+          "synopsis": "My synopsis"
+        },
+        "7": {
+          "synopsis": "Other\n"
+        },
+        "9": {
+          "comment": "sdsdssa"
+        }
+      }
     },
     "12": {
       "offsetIndex": 0,
@@ -225,5 +233,9 @@
         }
       ]
     }
-  }
+  },
+  "source": {
+    "fileName": "ScrollNutter.nex"
+  },
+  "globalLabels": []
 }

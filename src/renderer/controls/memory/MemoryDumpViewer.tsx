@@ -17,6 +17,8 @@ type Props = {
   bank?: number;
   allowDisassembly?: boolean;
   disassOffset?: number;
+  decimalView?: boolean;
+  viewMode?: "memory" | "disassembly";
   nexAnnotationPath?: string;
   nexAnnotationBank?: number;
   iconTitle: string;
@@ -30,6 +32,8 @@ export const MemoryDumpViewer = ({
   bank,
   allowDisassembly = false,
   disassOffset,
+  decimalView,
+  viewMode,
   nexAnnotationPath,
   nexAnnotationBank,
   iconTitle,
@@ -54,6 +58,8 @@ export const MemoryDumpViewer = ({
               {
                 disassemblyEnabled: allowDisassembly,
                 disassOffset,
+                decimalView,
+                viewMode,
                 nexAnnotationPath,
                 nexAnnotationBank
               }

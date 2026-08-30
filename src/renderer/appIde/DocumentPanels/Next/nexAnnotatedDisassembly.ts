@@ -2,10 +2,14 @@ import { MemorySectionType } from "@abstractions/MemorySection";
 import { toDecimal3, toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import {
   DisassemblyItem,
+  DisassemblyAnnotationMetadata,
+  DisassemblyOperandLabelResolver,
   MemorySection
 } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import {
+  NexAnnotationLabel,
+  NexAnnotationLabelScope,
   NexBankAnnotation,
   NexFileAnnotations,
   NEX_BANK_LAST_OFFSET,
@@ -46,7 +50,16 @@ export async function createAnnotatedNexDisassemblyItems({
     switch (region.type) {
       case "disassemble":
         items.push(
-          ...(await createInstructionItems(contents, start, end, decimalView, addressOffset))
+          ...(await createInstructionItems(
+            annotations,
+            bankAnnotation,
+            bank,
+            contents,
+            start,
+            end,
+            decimalView,
+            addressOffset
+          ))
         );
         break;
 
@@ -68,6 +81,9 @@ export async function createAnnotatedNexDisassemblyItems({
 }
 
 async function createInstructionItems(
+  annotations: NexFileAnnotations,
+  bankAnnotation: NexBankAnnotation,
+  bank: number,
   contents: Uint8Array,
   start: number,
   end: number,
@@ -80,12 +96,104 @@ async function createInstructionItems(
     undefined,
     {
       allowExtendedSet: true,
-      decimalMode: decimalView
+      decimalMode: decimalView,
+      operandLabelResolver: createAnnotationOperandLabelResolver(
+        annotations,
+        bankAnnotation,
+        bank,
+        addressOffset
+      )
     }
   );
   disassembler.setAddressOffset(addressOffset);
   const output = await disassembler.disassemble(start, end);
-  return output?.outputItems ?? [];
+  return (output?.outputItems ?? []).map((item) => ({
+    ...item,
+    annotation: createAnnotationMetadata(
+      bank,
+      bankOffsetFromAddress(item.address, addressOffset),
+      item.opCodes?.length ?? 1,
+      "disassemble"
+    )
+  }));
+}
+
+function createAnnotationOperandLabelResolver(
+  annotations: NexFileAnnotations,
+  bankAnnotation: NexBankAnnotation,
+  bank: number,
+  addressOffset: number
+): DisassemblyOperandLabelResolver {
+  return ({ instructionOffset, operandIndex, operandValue }) => {
+    const bankOffset = instructionOffset & NEX_BANK_LAST_OFFSET;
+    const explicitReference = bankAnnotation.operandReferences?.[String(bankOffset)]?.find(
+      (reference) => reference.operandIndex === operandIndex
+    );
+
+    if (explicitReference) {
+      return resolveReferencedOperandLabel(
+        annotations,
+        bankAnnotation,
+        explicitReference.scope,
+        explicitReference.name,
+        operandValue,
+        addressOffset
+      );
+    }
+
+    return resolveAutomaticOperandLabel(annotations, bankAnnotation, operandValue, addressOffset);
+  };
+}
+
+function resolveAutomaticOperandLabel(
+  annotations: NexFileAnnotations,
+  bankAnnotation: NexBankAnnotation,
+  operandValue: number,
+  addressOffset: number
+): string | undefined {
+  const globalLabel = annotations.globalLabels?.find((label) => label.value === operandValue);
+  if (globalLabel) {
+    return globalLabel.name;
+  }
+
+  const bankRelativeValue = operandValue - addressOffset;
+  if (bankRelativeValue < 0 || bankRelativeValue > NEX_BANK_LAST_OFFSET) {
+    return undefined;
+  }
+  return bankAnnotation.localLabels?.find((label) => label.value === bankRelativeValue)?.name;
+}
+
+function resolveReferencedOperandLabel(
+  annotations: NexFileAnnotations,
+  bankAnnotation: NexBankAnnotation,
+  scope: NexAnnotationLabelScope,
+  name: string,
+  operandValue: number,
+  addressOffset: number
+): string | undefined {
+  const label =
+    scope === "global"
+      ? annotations.globalLabels?.find((item) => item.name === name)
+      : bankAnnotation.localLabels?.find((item) => item.name === name);
+  if (!label) {
+    return undefined;
+  }
+  return labelMatchesOperand(label, scope, operandValue, addressOffset) ? label.name : undefined;
+}
+
+function labelMatchesOperand(
+  label: NexAnnotationLabel,
+  scope: NexAnnotationLabelScope,
+  operandValue: number,
+  addressOffset: number
+): boolean {
+  if (scope === "global") {
+    return label.value === operandValue;
+  }
+  const bankRelativeValue = operandValue - addressOffset;
+  return bankRelativeValue >= 0 && bankRelativeValue <= NEX_BANK_LAST_OFFSET
+    ? label.value === bankRelativeValue
+    : false;
 }
 
 function createByteItems(
@@ -104,7 +212,13 @@ function createByteItems(
     }
     items.push({
       address: effectiveAddress(offset, addressOffset),
-      instruction: `.defb ${values.join(", ")}`
+      instruction: `.defb ${values.join(", ")}`,
+      annotation: createAnnotationMetadata(
+        undefined,
+        offset,
+        Math.min(4, end - offset + 1),
+        "bytes"
+      )
     });
   }
   return items;
@@ -126,7 +240,13 @@ function createWordItems(
     }
     items.push({
       address: effectiveAddress(offset, addressOffset),
-      instruction: `.defw ${values.join(", ")}`
+      instruction: `.defw ${values.join(", ")}`,
+      annotation: createAnnotationMetadata(
+        undefined,
+        offset,
+        Math.min(4, end - offset + 1),
+        "words"
+      )
     });
   }
   return items;
@@ -141,7 +261,8 @@ function createSkipItem(
   const length = end - start + 1;
   return {
     address: effectiveAddress(start, addressOffset),
-    instruction: `.skip ${decimalView ? length.toString(10) : `$${toHexa4(length)}`}`
+    instruction: `.skip ${decimalView ? length.toString(10) : `$${toHexa4(length)}`}`,
+    annotation: createAnnotationMetadata(undefined, start, length, "skip")
   };
 }
 
@@ -154,15 +275,25 @@ function decorateAnnotatedItems(
 ): DisassemblyItem[] {
   const decorated: DisassemblyItem[] = [];
   for (const item of items) {
-    const bankOffset = bankOffsetFromAddress(item.address, addressOffset);
+    const bankOffset = item.annotation?.bankOffset ?? bankOffsetFromAddress(item.address, addressOffset);
     const lineAnnotation = bankAnnotation.lineAnnotations?.[String(bankOffset)];
+    const rowByteLength = item.annotation?.byteLength ?? item.opCodes?.length ?? 1;
+    const rowRegionType = item.annotation?.regionType;
+    const generatedHardComment = item.hardComment;
 
     if (lineAnnotation?.synopsis) {
       for (const commentLine of lineAnnotation.synopsis.split(/\r?\n/)) {
         decorated.push({
           address: item.address,
           isPrefixItem: true,
-          prefixComment: commentLine
+          prefixComment: commentLine,
+          annotation: createAnnotationMetadata(
+            bank,
+            bankOffset,
+            rowByteLength,
+            rowRegionType,
+            true
+          )
         });
       }
     }
@@ -178,10 +309,33 @@ function decorateAnnotatedItems(
         ? `${item.hardComment} | ${lineAnnotation.comment}`
         : lineAnnotation.comment;
     }
+    item.annotation = {
+      ...(item.annotation ?? createAnnotationMetadata(bank, bankOffset, rowByteLength, rowRegionType)),
+      bank,
+      hasLineAnnotation: !!lineAnnotation?.synopsis || !!lineAnnotation?.comment,
+      hasLabel: labels.length > 0,
+      generatedHardComment
+    };
 
     decorated.push(item);
   }
   return decorated;
+}
+
+function createAnnotationMetadata(
+  bank: number | undefined,
+  bankOffset: number,
+  byteLength: number,
+  regionType?: DisassemblyAnnotationMetadata["regionType"],
+  hasLineAnnotation = false
+): DisassemblyAnnotationMetadata {
+  return {
+    bank,
+    bankOffset,
+    byteLength,
+    regionType,
+    hasLineAnnotation
+  };
 }
 
 function getLabelsForOffset(

@@ -1,5 +1,82 @@
 import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 
+export type DisassemblyOperandPragma = "L" | "W" | "w";
+
+export type DisassemblyOperandInfo = {
+  /**
+   * The displayed instruction address, including any configured address offset.
+   */
+  instructionAddress: number;
+
+  /**
+   * The raw offset of the instruction within the disassembled memory contents.
+   */
+  instructionOffset: number;
+
+  /**
+   * Zero-based index of the 16-bit operand within this instruction.
+   */
+  operandIndex: number;
+
+  /**
+   * The numeric 16-bit operand value decoded from the instruction stream.
+   */
+  operandValue: number;
+
+  /**
+   * The disassembler pragma that produced this operand.
+   */
+  pragma: DisassemblyOperandPragma;
+
+  /**
+   * The text the disassembler would render without a resolver.
+   */
+  defaultText: string;
+};
+
+export type DisassemblyOperandLabelResolver = (
+  operand: DisassemblyOperandInfo
+) => string | undefined;
+
+export type DisassemblyAnnotationRegionType = "disassemble" | "bytes" | "words" | "skip";
+
+export type DisassemblyAnnotationMetadata = {
+  /**
+   * Optional bank number for bank-relative annotated disassembly.
+   */
+  bank?: number;
+
+  /**
+   * Offset of the generated row within the source bank or memory block.
+   */
+  bankOffset: number;
+
+  /**
+   * Number of source bytes represented by the generated row.
+   */
+  byteLength: number;
+
+  /**
+   * Region type that produced the generated row.
+   */
+  regionType?: DisassemblyAnnotationRegionType;
+
+  /**
+   * True when the row has a synopsis or end-of-line annotation.
+   */
+  hasLineAnnotation?: boolean;
+
+  /**
+   * True when the row has a local or global annotation label.
+   */
+  hasLabel?: boolean;
+
+  /**
+   * Original disassembler-generated comment before user annotations are appended.
+   */
+  generatedHardComment?: string;
+};
+
 /**
  * Base disassembly options that can be extended by specific CPU disassemblers
  */
@@ -18,6 +95,11 @@ export interface DisassemblyOptions {
    * Gets the current ROM page number
    */
   getRomPage?: () => number;
+
+  /**
+   * Optionally resolves 16-bit operand values to display labels.
+   */
+  operandLabelResolver?: DisassemblyOperandLabelResolver;
 
   /**
    * Allow additional properties
@@ -445,6 +527,11 @@ export interface DisassemblyItem {
   symbolValue?: number;
 
   /**
+   * 16-bit operand candidates that may be annotated with a label reference.
+   */
+  operandCandidates?: DisassemblyOperandInfo[];
+
+  /**
    * Indicates if this item has a label symbol
    */
   hasLabelSymbol?: boolean;
@@ -478,4 +565,9 @@ export interface DisassemblyItem {
    * The number of T-states consumed by the instruction (alternative)
    */
   tstates2?: number;
+
+  /**
+   * Optional metadata used by annotated disassembly views.
+   */
+  annotation?: DisassemblyAnnotationMetadata;
 }

@@ -304,7 +304,8 @@ class DocumentHubService implements IDocumentHubService {
       if (indices.length <= 0) return;
 
       const closedDocs = indices.map((i) => this._openDocs[i]);
-      await this.ensureDocumentSaved(...closedDocs.map((doc) => doc.id));
+      const canClose = await this.ensureDocumentSaved(...closedDocs.map((doc) => doc.id));
+      if (!canClose) return;
 
       // --- This is needed when evaluating active document below.
       const activeDoc = this._openDocs[this._activeDocIndex];
@@ -467,7 +468,7 @@ class DocumentHubService implements IDocumentHubService {
    * @param id Document ID
    * @param api API instance
    */
-  setDocumentApi(id: string, api: DocumentApi): void {
+  setDocumentApi(id: string, api: DocumentApi | undefined): void {
     const doc = this._openDocs.find((d) => d.id === id);
     if (!doc) return;
     if (api) {
@@ -487,14 +488,15 @@ class DocumentHubService implements IDocumentHubService {
   // --- Helper methods
 
   // --- This method ensures the document is saved before deactivating and disposing it
-  private async ensureDocumentSaved(...ids: string[]): Promise<void> {
+  private async ensureDocumentSaved(...ids: string[]): Promise<boolean> {
     // --- Use the API to save the document
-    await Promise.all(
+    const disposalResults = await Promise.all(
       ids
         .map((id) => this.getDocumentApi(id))
         .filter((api) => !!api?.beforeDocumentDisposal)
-        .map((api) => api?.beforeDocumentDisposal(false))
+        .map((api) => api?.beforeDocumentDisposal())
     );
+    return disposalResults.every((result) => result !== false);
   }
 
   private addDocument(

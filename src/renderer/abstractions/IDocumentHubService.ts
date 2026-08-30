@@ -178,7 +178,7 @@ export interface IDocumentHubService {
    * @param id Document ID
    * @param api API instance
    */
-  setDocumentApi(id: string, api: DocumentApi): void;
+  setDocumentApi(id: string, api: DocumentApi | undefined): void;
 
   /**
    * Disposes the resources held by the instance

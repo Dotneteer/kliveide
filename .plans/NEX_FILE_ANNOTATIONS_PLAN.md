@@ -2,7 +2,7 @@
 
 Created: 2026-08-30
 
-Status: Steps 1, 2, 3, and 4 implemented on 2026-08-30. Later steps pending.
+Status: Steps 1, 2, 3, 4, 5, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, and 6.8 implemented on 2026-08-30. Later steps pending.
 
 ## Implementation Progress
 
@@ -139,6 +139,211 @@ npm run lint:renderer
 
 `npm run lint:renderer` completed with the existing 55 hook-warning baseline and
 no errors.
+
+### Step 5 Result
+
+Added typed 16-bit operand label resolution to
+`src/renderer/appIde/disassemblers/common-types.ts` and
+`src/renderer/appIde/disassemblers/z80-disassembler/z80-disassembler.ts`, and
+wired NEX annotation labels through
+`src/renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly.ts`.
+
+The resolver now supports:
+
+- replacing `^L`, `^W`, and `^w` operands while the Z80 disassembler is still
+  processing the operand pragma;
+- exposing operand metadata including instruction address, raw instruction
+  offset, operand index, operand value, pragma kind, and default rendered text;
+- keeping existing numeric output unchanged when no resolver is supplied;
+- using explicit NEX operand references before automatic label matches;
+- resolving explicit references only when the referenced label still matches
+  the decoded operand value;
+- resolving automatic global labels from the raw 16-bit operand value;
+- resolving automatic local labels when the operand falls inside the current
+  16K bank address window.
+
+Validation run:
+
+```text
+npm test -- --project node test/z80-disassembler test/renderer/nexAnnotatedDisassembly.test.ts test/renderer/nexAnnotations.test.ts
+npm test -- --project jsdom test/controls/StaticMemoryDump.test.tsx test/controls/DisassemblyRow.test.tsx
+```
+
+### Step 6.1 Result
+
+Added the first interactive annotation toolbar infrastructure for popped-out NEX
+bank documents and the NEX viewer bank header pop-out action.
+
+The implementation now supports:
+
+- optional per-bank `lastView` annotation metadata with `memory` and
+  `disassembly` values;
+- validating `lastView` while keeping older annotation files valid when the
+  property is omitted;
+- applying the annotated bank's saved `lastView` when opening the popped-out
+  bank document;
+- applying the annotated bank's saved `decimalView` and `offsetIndex` when
+  opening the popped-out bank document;
+- storing Memory/Disassembly view changes, Decimal changes, and disassembly
+  offset changes back into the in-memory annotation model;
+- marking the popped-out bank document dirty when the annotation model changes;
+- showing only quiet dirty/error annotation markers in the popped-out bank
+  toolbar, with no persistent loaded-state text;
+- showing Manage Labels, Manage Regions, and Annotate controls in the popped-out
+  bank toolbar;
+- saving changed annotations back to the associated `.nex.dis` file;
+- keeping the dirty marker after failed saves;
+- asking for discard confirmation when a dirty popped-out bank document is
+  closed;
+- cancelling document close when the disposal hook returns `false`;
+- rendering a pop-out icon directly in each expandable bank header in the NEX
+  viewer.
+
+Validation run:
+
+```text
+npm test -- --project node test/renderer/nexAnnotations.test.ts test/renderer/nexAnnotationSidecar.test.ts test/controls/DocumentHubService.test.ts
+npm test -- --project jsdom test/renderer/NexFileViewerAnnotations.test.tsx test/controls/StaticMemoryDump.test.tsx
+npm run build:check
+npm run lint:renderer
+git diff --check
+```
+
+### Step 6.5 Result
+
+Added interactive end-of-line comment editing for popped-out NEX bank
+disassembly rows.
+
+The implementation now supports:
+
+- opening an End-of-Line Comment dialog from the row context menu;
+- opening the same dialog from the Annotate toolbar action for the active row;
+- showing the row location and generated instruction or pragma in the dialog;
+- showing an existing disassembler-generated hard comment separately when one
+  exists;
+- editing only the user-owned end-of-line annotation comment;
+- previewing the final rendered hard-comment lane with generated and user
+  comments joined by ` | `;
+- treating empty Save as Clear;
+- preserving synopsis comments while updating or clearing end-of-line comments;
+- storing changes in the in-memory annotation model and marking the popped-out
+  bank document dirty until saved.
+
+Validation run:
+
+```text
+npm test -- --project jsdom test/renderer/NexEndOfLineCommentDialog.test.tsx test/controls/StaticMemoryDump.test.tsx
+npm test -- --project node test/renderer/nexAnnotatedDisassembly.test.ts
+npm run build:check
+npm run lint:renderer
+```
+
+### Step 6.6 Result
+
+Added interactive global and current-bank local label editing for popped-out NEX
+bank disassembly rows.
+
+The implementation now supports:
+
+- opening a Label dialog from Add/Edit Global Label and Add/Edit Local Label in
+  the row context menu;
+- defaulting global labels to the active row's effective address;
+- defaulting local labels to the active row's bank-relative offset;
+- pre-filling an existing label when the selected scope already has a label at
+  the default value;
+- suggesting generated labels such as `L_C000` and `L_0123` when no matching
+  label exists;
+- accepting `$`, `0x`, `#`, trailing-`h`, and decimal label values;
+- validating assembler-style identifier names, maximum 16-character names,
+  duplicate names in the same scope, and global/local value ranges;
+- showing a searchable existing-label list with scope, value, and referenced
+  state;
+- loading a listed label into the form for editing;
+- saving added or edited labels back into the in-memory annotation model;
+- deleting labels;
+- confirming deletion of referenced labels;
+- clearing explicit operand references that point to deleted labels, across all
+  banks for global labels and only the current bank for local labels.
+
+Validation run:
+
+```text
+npm test -- --project jsdom test/renderer/NexLabelDialog.test.tsx test/controls/StaticMemoryDump.test.tsx
+npm test -- --project node test/renderer/nexAnnotations.test.ts test/renderer/nexAnnotatedDisassembly.test.ts
+npm run build:check
+npm run lint:renderer
+git diff --check
+```
+
+### Step 6.7 Result
+
+Added interactive operand label reference assignment for popped-out NEX bank
+disassembly rows.
+
+The implementation now supports:
+
+- opening an Operand Label Reference dialog from Assign Operand Label in the
+  row context menu;
+- opening the same dialog from the Annotate toolbar action for the active row;
+- showing the selected instruction and 16-bit operand value;
+- showing an operand selector when an instruction exposes multiple 16-bit
+  operand candidates;
+- preferring an existing explicit operand reference when one is stored;
+- otherwise preferring exact global labels, then exact current-bank local
+  labels;
+- grouping candidate labels as exact matches, nearby labels, and all labels;
+- filtering candidates by name, hex value, decimal value, effective value, and
+  scope;
+- applying an explicit operand reference to the selected operand;
+- clearing an explicit reference for the selected operand;
+- creating a generated global or local label inline and immediately assigning it
+  as the explicit operand reference;
+- enabling local label creation only when the operand maps into the current
+  16K bank window.
+
+Validation run:
+
+```text
+npm test -- --project jsdom test/renderer/NexOperandLabelDialog.test.tsx test/controls/StaticMemoryDump.test.tsx
+npm test -- --project node test/renderer/nexAnnotations.test.ts test/renderer/nexAnnotatedDisassembly.test.ts test/z80-disassembler/operand-label-resolver.test.ts
+npm run build:check
+npm run lint:renderer
+git diff --check
+```
+
+### Step 6.8 Result
+
+Added interactive memory region marking for popped-out NEX bank disassembly
+rows.
+
+The implementation now supports:
+
+- opening a Memory Region dialog from Mark As Disassembly, Mark As Bytes, Mark
+  As Words, and Mark As Skip in the row context menu;
+- defaulting the dialog type from the selected Mark As action;
+- defaulting Start and End to the clicked row's source byte span, or to the
+  selected row range when right-clicking inside a multi-row selection;
+- editing Start and End with `$`, `0x`, `#`, trailing-`h`, or decimal values;
+- showing the selected length in hex and decimal;
+- validating bank offset range, Start <= End, and even byte count for word
+  regions;
+- showing affected existing regions and whether each one will be split,
+  replaced, or left unchanged;
+- showing a small preview for byte, word, skip, and disassembly region output;
+- replacing the selected byte span while preserving before/after fragments of
+  intersecting regions;
+- sorting and merging adjacent regions of the same type after the edit;
+- marking the popped-out bank document dirty until annotations are saved.
+
+Validation run:
+
+```text
+npm test -- --project jsdom test/renderer/NexRegionDialog.test.tsx test/controls/StaticMemoryDump.test.tsx
+npm test -- --project node test/renderer/nexAnnotations.test.ts test/renderer/nexAnnotatedDisassembly.test.ts
+npm run build:check
+npm run lint:renderer
+git diff --check
+```
 
 ## Goal
 
@@ -460,22 +665,75 @@ with annotation support.
 
 Toolbar elements:
 
-- annotation status text:
-  - `No annotation file`
-  - `Annotations loaded`
-  - `Annotations changed`
-  - `Annotation errors`
+- quiet annotation state markers:
+  - no marker for the normal loaded state;
+  - dirty marker only when annotation changes are unsaved;
+  - error marker only when annotation loading or saving fails;
 - Save button, enabled only when the annotation model is dirty;
-- Open JSON button, opening the `.nex.dis` file in the read-only JSON view;
 - Manage Labels button;
 - Manage Regions button;
 - Annotate dropdown for actions that apply to the current row or selection.
 
+Dirty state:
+
+- any interactive annotation edit sets the popped-out NEX bank document's
+  annotation model to dirty;
+- changing the Memory/Disassembly view for an annotated popped-out bank stores
+  that bank's `lastView` preference in the annotation model and marks it dirty;
+- changing the Decimal switch for an annotated popped-out bank stores that
+  bank's `decimalView` preference in the annotation model and marks it dirty;
+- changing the disassembly offset for an annotated popped-out bank stores that
+  bank's `offsetIndex` preference in the annotation model and marks it dirty;
+- the dirty state should be visible in the toolbar or document tab/header, for
+  example with a small unsaved marker rather than persistent status text;
+- the dirty marker should disappear immediately after a successful Save;
+- failed saves should keep the document dirty and show a short error status.
+
+Close behavior:
+
+- closing a popped-out bank document with dirty annotations should ask for
+  confirmation before discarding unsaved annotation changes;
+- the confirmation should clearly name the associated `.nex.dis` file and offer
+  at least Save, Discard, and Cancel choices if the app's dialog infrastructure
+  supports three-way confirmation;
+- if only a two-choice confirmation is available, use Cancel and Discard, and
+  keep Save available from the toolbar;
+- closing a clean popped-out bank document should not ask for confirmation.
+
 The toolbar should not become crowded. If horizontal space is tight, collapse
-Open JSON, Manage Labels, and Manage Regions into a single menu button while
-keeping Save and the status text visible.
+Manage Labels and Manage Regions into a single menu button while keeping Save
+and the dirty/error marker visible.
+
+Bank pop-out behavior:
+
+- each bank annotation may store an optional `lastView` value of `memory` or
+  `disassembly`;
+- popping out an annotated bank should open with that bank's saved `lastView`;
+- each bank annotation may store an optional `decimalView` value and the bank's
+  `offsetIndex`;
+- popping out an annotated bank should open with that bank's saved Decimal
+  state and offset;
+- banks without a saved `lastView` should keep the current default memory view;
+- each expandable bank header in the NEX viewer should include a pop-out icon
+  that opens the same bank document as the preview's pop-out action.
 
 #### 6.2 Row And Selection Affordances
+
+Status: Implemented.
+
+Result:
+
+- annotated generated rows now retain source metadata: bank, bank-relative
+  offset, byte length, and region type;
+- synopsis/comment rows map back to the annotated target offset and byte span;
+- rows with synopsis or end-of-line annotations show a subtle comment marker;
+- rows with local/global labels show a subtle label marker while still showing
+  the label text in the label column;
+- byte, word, and skip regions use quiet left-edge styling;
+- clicking a row selects it as the active annotation target;
+- Shift-click selects a range;
+- Arrow Up, Arrow Down, Home, and End move the active row; holding Shift extends
+  the selected range.
 
 Disassembly rows should expose small visual cues without becoming noisy:
 
@@ -498,6 +756,25 @@ target offset.
 
 #### 6.3 Row Context Menu
 
+Status: Implemented.
+
+Result:
+
+- right-clicking an annotated NEX bank disassembly row opens the annotation
+  context menu;
+- the menu exposes the planned comment, label, operand-label, region-marking,
+  and clear actions;
+- Assign Operand Label is enabled only when the clicked row has a recorded
+  16-bit operand candidate;
+- Clear Row Annotations is enabled only when the clicked row or selected range
+  has row-level annotations;
+- right-clicking inside the selected row range keeps that range as the menu
+  target;
+- right-clicking outside the selected range selects the clicked row and uses
+  that row as the menu target;
+- menu actions are placeholders until the individual edit dialogs and region
+  mutation steps are implemented.
+
 Right-clicking a disassembly row opens an annotation context menu.
 
 Items:
@@ -518,6 +795,22 @@ Range-sensitive items should use the current selection if the right-click is
 inside the selected range. Otherwise, they should use only the clicked row.
 
 #### 6.4 Synopsis Comment Dialog
+
+Status: Implemented.
+
+Result:
+
+- Synopsis Comment opens from the disassembly row context menu;
+- the Annotate toolbar action opens the same dialog for the active row;
+- the dialog shows the bank, bank-relative offset, and effective address;
+- the dialog provides a multiline comment textarea and live `; ` preview;
+- Save stores the normalized synopsis comment in the in-memory bank annotation;
+- Clear, or saving an empty/whitespace-only value, removes the synopsis comment
+  while preserving any end-of-line comment on the same row;
+- saved synopsis edits mark the popped-out bank document dirty and are written
+  to the `.nex.dis` file by the existing Save button;
+- comment normalization trims trailing spaces/tabs per line and preserves
+  intentionally blank lines.
 
 Purpose:
 

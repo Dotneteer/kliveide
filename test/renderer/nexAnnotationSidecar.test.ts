@@ -4,6 +4,7 @@ import {
   createNexAnnotationProjectNode,
   createNexAnnotationSidecar,
   formatNexAnnotations,
+  getAnnotatedDecimalViewForBank,
   getAnnotatedDisassemblyOffsetForBank,
   getNexAnnotationSidecarPaths,
   loadNexAnnotationSidecar,
@@ -215,6 +216,26 @@ describe("NEX annotation sidecar helpers", () => {
       )
     ).toBe(0x8000);
     expect(getAnnotatedDisassemblyOffsetForBank(undefined, 5, 0x4000)).toBe(0x4000);
+  });
+
+  it("uses annotation decimal view before fallback decimal view", () => {
+    expect(
+      getAnnotatedDecimalViewForBank(
+        {
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              decimalView: true,
+              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
+            }
+          }
+        },
+        5,
+        false
+      )
+    ).toBe(true);
+    expect(getAnnotatedDecimalViewForBank(undefined, 5, true)).toBe(true);
   });
 
   it("creates a typed JSON project node for annotation files", () => {

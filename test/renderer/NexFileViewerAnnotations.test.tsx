@@ -75,6 +75,8 @@ describe("NexFileViewerPanel annotations", () => {
           banks: {
             "5": {
               offsetIndex: 2,
+              lastView: "disassembly",
+              decimalView: true,
               regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
             }
           }
@@ -86,6 +88,14 @@ describe("NexFileViewerPanel annotations", () => {
 
     await waitFor(() => expect(screen.getByTestId("memory-viewer-bank-5")).toHaveAttribute("data-offset", "32768"));
     expect(screen.getByTestId("memory-viewer-bank-5")).toHaveAttribute(
+      "data-view-mode",
+      "disassembly"
+    );
+    expect(screen.getByTestId("memory-viewer-bank-5")).toHaveAttribute(
+      "data-decimal-view",
+      "true"
+    );
+    expect(screen.getByTestId("memory-viewer-bank-5")).toHaveAttribute(
       "data-annotation-path",
       "/project/ScrollNutter.nex.dis"
     );
@@ -95,6 +105,46 @@ describe("NexFileViewerPanel annotations", () => {
     expect(screen.queryByRole("button", { name: "Click to create one!" })).not.toBeInTheDocument();
     expect(screen.queryByText("Open JSON")).not.toBeInTheDocument();
     expect(screen.queryByText("Reload")).not.toBeInTheDocument();
+  });
+
+  it("opens a bank from the expandable bank header pop-out icon", async () => {
+    const openDocument = vi.fn(() => Promise.resolve());
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              lastView: "disassembly",
+              decimalView: true,
+              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
+            }
+          }
+        })
+      )
+    );
+
+    await renderNexViewer({ readFileContent, openDocument });
+
+    fireEvent.click(await screen.findByTestId("icon-pop-out"));
+
+    await waitFor(() =>
+      expect(openDocument).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "memoryDump-bankDumpScrollNutter.nex:5"
+        }),
+        expect.objectContaining({
+          disassemblyEnabled: true,
+          disassOffset: 0x8000,
+          decimalView: true,
+          viewMode: "disassembly",
+          nexAnnotationPath: "/project/ScrollNutter.nex.dis",
+          nexAnnotationBank: 5
+        }),
+        false
+      )
+    );
   });
 
   it("shows a short error when an existing sidecar cannot be loaded", async () => {
@@ -111,14 +161,15 @@ describe("NexFileViewerPanel annotations", () => {
 async function renderNexViewer({
   readFileContent = vi.fn(() => Promise.reject(new Error("File does not exist"))),
   saveFileContent = vi.fn(() => Promise.resolve()),
-  dispatch = vi.fn()
+  dispatch = vi.fn(),
+  openDocument = vi.fn(() => Promise.resolve())
 }: {
   readFileContent?: ReturnType<typeof vi.fn>;
   saveFileContent?: ReturnType<typeof vi.fn>;
   dispatch?: ReturnType<typeof vi.fn>;
+  openDocument?: ReturnType<typeof vi.fn>;
 }) {
   const setDocumentViewState = vi.fn();
-  const openDocument = vi.fn(() => Promise.resolve());
   const projectService = {
     readFileContent,
     saveFileContent,
@@ -133,6 +184,7 @@ async function renderNexViewer({
     useDocumentHubService: () => ({
       setDocumentViewState,
       getDocument: vi.fn(() => undefined),
+      isOpen: vi.fn(() => false),
       setActiveDocument: vi.fn(),
       openDocument
     })
@@ -162,11 +214,15 @@ async function renderNexViewer({
     MemoryDumpViewer: (props: {
       bank?: number;
       disassOffset?: number;
+      decimalView?: boolean;
+      viewMode?: string;
       nexAnnotationPath?: string;
     }) => (
       <div
         data-testid={`memory-viewer-bank-${props.bank ?? "none"}`}
         data-offset={props.disassOffset}
+        data-decimal-view={String(props.decimalView)}
+        data-view-mode={props.viewMode}
         data-annotation-path={props.nexAnnotationPath}
       />
     )

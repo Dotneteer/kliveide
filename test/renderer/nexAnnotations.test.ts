@@ -4,6 +4,7 @@ import {
   getLabelsAtBankOffset,
   getNexAnnotationPath,
   getNexBankAddressOffset,
+  getNexBankOffsetIndex,
   getOperandLabelCandidates,
   isNexAnnotationPath,
   isValidNexLabelName,
@@ -48,6 +49,8 @@ describe("NEX annotations", () => {
         banks: {
           "5": {
             offsetIndex: 3,
+            lastView: "disassembly",
+            decimalView: true,
             localLabels: [{ name: "LocalLoop", value: 0x0123 }],
             regions: [
               { start: 0x0100, end: 0x0103, type: "bytes" },
@@ -68,6 +71,8 @@ describe("NEX annotations", () => {
     );
 
     expect(result.diagnostics).toEqual([]);
+    expect(result.annotations?.banks["5"].lastView).toBe("disassembly");
+    expect(result.annotations?.banks["5"].decimalView).toBe(true);
     expect(result.annotations?.banks["5"].regions).toEqual([
       { start: 0x0000, end: 0x00ff, type: "disassemble" },
       { start: 0x0100, end: 0x0103, type: "bytes" },
@@ -151,6 +156,44 @@ describe("NEX annotations", () => {
     );
   });
 
+  it("rejects invalid bank last view values", () => {
+    const result = validateNexAnnotations({
+      schemaVersion: 1,
+      banks: {
+        "5": {
+          offsetIndex: 0,
+          lastView: "hex"
+        }
+      }
+    });
+
+    expect(result.annotations).toBeUndefined();
+    expect(result.diagnostics).toContainEqual({
+      severity: "error",
+      path: "$.banks.5.lastView",
+      message: "lastView must be memory or disassembly."
+    });
+  });
+
+  it("rejects invalid bank decimal view values", () => {
+    const result = validateNexAnnotations({
+      schemaVersion: 1,
+      banks: {
+        "5": {
+          offsetIndex: 0,
+          decimalView: "yes"
+        }
+      }
+    });
+
+    expect(result.annotations).toBeUndefined();
+    expect(result.diagnostics).toContainEqual({
+      severity: "error",
+      path: "$.banks.5.decimalView",
+      message: "decimalView must be a boolean."
+    });
+  });
+
   it("rejects overlapping regions and odd-length word regions", () => {
     const overlapping = validateNexAnnotations({
       schemaVersion: 1,
@@ -232,6 +275,8 @@ describe("NEX annotations", () => {
 
     expect(result.annotations).toBeDefined();
     expect(getNexBankAddressOffset(3)).toBe(0xc000);
+    expect(getNexBankOffsetIndex(0xc000)).toBe(3);
+    expect(getNexBankOffsetIndex(0x2000)).toBeUndefined();
     expect(getLabelsAtBankOffset(result.annotations!, 5, 0x0123)).toEqual([
       { name: "GlobalTarget", value: 0xc123, scope: "global" },
       { name: "LocalTarget", value: 0x0123, scope: "local", bank: 5 }

@@ -132,8 +132,8 @@ describe("deriveDisassemblyRowViewModel", () => {
     expect(getByText("6000").className).toContain("addressLabel");
   });
 
-  it("renders prefix comments as comment rows", () => {
-    const { getByText } = render(
+  it("renders prefix comments as full-line comment rows", () => {
+    const { getByText, queryByText } = render(
       <DisassemblyRow
         bankLabel={false}
         currentSegment={0}
@@ -142,7 +142,11 @@ describe("deriveDisassemblyRowViewModel", () => {
         isFullView={true}
         item={{
           address: 0x8000,
+          formattedLabel: "EntryPoint",
+          hardComment: "generated note",
           isPrefixItem: true,
+          instruction: "call L1234",
+          opCodes: [0xcd, 0x34, 0x12],
           prefixComment: "Program entry"
         }}
         mem64kLabels={[]}
@@ -154,5 +158,37 @@ describe("deriveDisassemblyRowViewModel", () => {
     );
 
     expect(getByText("; Program entry")).toBeInTheDocument();
+    expect(queryByText("8000")).not.toBeInTheDocument();
+    expect(queryByText("CD 34 12")).not.toBeInTheDocument();
+    expect(queryByText("EntryPoint:")).not.toBeInTheDocument();
+    expect(queryByText("call L1234")).not.toBeInTheDocument();
+    expect(queryByText("; generated note")).not.toBeInTheDocument();
+  });
+
+  it("keeps row parity classes on selected range rows", () => {
+    const { getByTestId } = render(
+      <DisassemblyRow
+        bankLabel={false}
+        currentSegment={0}
+        decimalView={false}
+        index={2}
+        isFullView={true}
+        item={{
+          address: 0x8000,
+          instruction: "NOP",
+          opCodes: [0x00]
+        }}
+        mem64kLabels={[]}
+        partitionLabels={{}}
+        pausedPc={0x0000}
+        rowHeight={18}
+        selectedRange={true}
+        showBanks={false}
+      />
+    );
+
+    const row = getByTestId("disassembly-row-2");
+    expect(row.className).toContain("even");
+    expect(row.className).toContain("selectedRangeItem");
   });
 });

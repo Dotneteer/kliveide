@@ -8,6 +8,7 @@ import { getFileTypeEntry, getNodeFile } from "@renderer/appIde/project/project-
 import {
   CreateDefaultNexAnnotationsOptions,
   NexAnnotationDiagnostic,
+  NexAnnotationBankView,
   NexFileAnnotations,
   createDefaultNexAnnotations,
   getBankAnnotation,
@@ -51,6 +52,22 @@ export function getAnnotatedDisassemblyOffsetForBank(
 ): number {
   const bankAnnotation = annotations ? getBankAnnotation(annotations, bank) : undefined;
   return bankAnnotation ? getNexBankAddressOffset(bankAnnotation.offsetIndex) : fallbackOffset;
+}
+
+export function getAnnotatedLastViewForBank(
+  annotations: NexFileAnnotations | undefined,
+  bank: number
+): NexAnnotationBankView | undefined {
+  return annotations ? getBankAnnotation(annotations, bank)?.lastView : undefined;
+}
+
+export function getAnnotatedDecimalViewForBank(
+  annotations: NexFileAnnotations | undefined,
+  bank: number,
+  fallbackDecimalView: boolean
+): boolean {
+  const bankAnnotation = annotations ? getBankAnnotation(annotations, bank) : undefined;
+  return bankAnnotation?.decimalView ?? fallbackDecimalView;
 }
 
 export function formatNexAnnotations(annotations: NexFileAnnotations): string {

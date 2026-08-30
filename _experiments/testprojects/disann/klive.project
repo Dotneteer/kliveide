@@ -1,6 +1,10 @@
 {
   "kliveVersion": "0.58.1",
   "machineType": "sp48",
+  "modelId": "pal",
+  "config": {
+    "screenFreq": "pal"
+  },
   "clockMultiplier": 1,
   "soundLevel": 0.8,
   "soundMuted": false,
@@ -110,7 +114,7 @@
                 },
                 "contributionsState": {
                   "editor.contrib.folding": {
-                    "lineCount": 230,
+                    "lineCount": 239,
                     "provider": "syntax",
                     "foldedImports": false
                   },
@@ -124,11 +128,6 @@
               "position": {
                 "line": 0,
                 "column": 0
-              },
-              "viewState": {
-                "bankExpanded": {
-                  "0": true
-                }
               }
             }
           ],

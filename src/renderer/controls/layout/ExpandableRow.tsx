@@ -6,6 +6,8 @@ import styles from "./Layout.module.scss";
 type Props = {
   /** Heading text shown in the expandable row trigger. */
   heading: string;
+  /** Optional command rendered at the far edge of the row heading. */
+  headingAction?: React.ReactNode;
   /** Nested content shown when the row is expanded. */
   children?: React.ReactNode;
   /** Initial expanded state used when the row first mounts. */
@@ -19,6 +21,7 @@ type Props = {
  */
 export const ExpandableRow = ({
   heading,
+  headingAction,
   children,
   initialExpanded,
   onExpanded
@@ -34,6 +37,14 @@ export const ExpandableRow = ({
         }}
       >
         <span className={styles.headingText}>{heading}</span>
+        {headingAction && (
+          <span
+            className={styles.headingAction}
+            onClick={(event) => event.stopPropagation()}
+          >
+            {headingAction}
+          </span>
+        )}
         <Icon
           iconName={isExpanded ? "chevron-down" : "chevron-right"}
           width={16}

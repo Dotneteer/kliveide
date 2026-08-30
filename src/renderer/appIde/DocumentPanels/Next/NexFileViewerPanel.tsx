@@ -17,11 +17,16 @@ import { AppServices } from "@renderer/abstractions/AppServices";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { useDispatch } from "@renderer/core/RendererProvider";
 import { incExploreViewVersionAction } from "@common/state/actions";
+import { SmallIconButton } from "@renderer/controls/IconButton";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
+import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import {
   NexAnnotationSidecarPaths,
   NexAnnotationSidecarState,
   createNexAnnotationSidecar,
+  getAnnotatedDecimalViewForBank,
   getAnnotatedDisassemblyOffsetForBank,
+  getAnnotatedLastViewForBank,
   getNexAnnotationSidecarPaths,
   loadNexAnnotationSidecar
 } from "./nexAnnotationSidecar";
@@ -107,6 +112,7 @@ const NexFileViewerContents = ({
   const h = fi.header;
   const cvs = viewState;
   const dispatch = useDispatch();
+  const documentHubService = useDocumentHubService();
   const loadedBanks = useMemo(() => fi.bankData.map(([bank]) => bank), [fi.bankData]);
   const sidecarPaths = useMemo(() => getNexAnnotationSidecarPaths(document), [document]);
   const [annotationState, setAnnotationState] = useState<NexAnnotationViewerState>({
@@ -325,10 +331,50 @@ const NexFileViewerContents = ({
       )}
       {fi.bankData.map((entry, idx) => {
         const defaultOffset = getDefaultDisassemblyOffsetForBank(entry[0], h);
+        const annotationPath = loadedAnnotations ? sidecarPaths?.fullPath : undefined;
+        const annotationBank = loadedAnnotations ? entry[0] : undefined;
+        const disassOffset = getAnnotatedDisassemblyOffsetForBank(
+          loadedAnnotations,
+          entry[0],
+          defaultOffset
+        );
+        const viewMode = loadedAnnotations
+          ? getAnnotatedLastViewForBank(loadedAnnotations, entry[0])
+          : undefined;
+        const decimalView = getAnnotatedDecimalViewForBank(
+          loadedAnnotations,
+          entry[0],
+          false
+        );
+        const openBankDump = async () => {
+          if (!document.node.projectPath) return;
+          await openStaticMemoryDump(
+            documentHubService,
+            `bankDump${document.node.projectPath}:${entry[0]}`,
+            `${document.node.projectPath} - Bank: ${entry[0]}`,
+            entry[1],
+            {
+              disassemblyEnabled: true,
+              disassOffset,
+              decimalView,
+              viewMode,
+              nexAnnotationPath: annotationPath,
+              nexAnnotationBank: annotationBank
+            }
+          );
+        };
         return (
           <ExpandableRow
             key={idx}
             heading={getBankHeading(entry[0], h)}
+            headingAction={
+              <SmallIconButton
+                iconName='pop-out'
+                fill='--color-value'
+                title='Display bank data dump'
+                clicked={openBankDump}
+              />
+            }
             initialExpanded={cvs?.bankExpanded?.[idx] ?? false}
             onExpanded={exp =>
               change(vs => {
@@ -342,13 +388,11 @@ const NexFileViewerContents = ({
               contents={entry[1]}
               bank={entry[0]}
               allowDisassembly={true}
-              disassOffset={getAnnotatedDisassemblyOffsetForBank(
-                loadedAnnotations,
-                entry[0],
-                defaultOffset
-              )}
-              nexAnnotationPath={loadedAnnotations ? sidecarPaths?.fullPath : undefined}
-              nexAnnotationBank={loadedAnnotations ? entry[0] : undefined}
+              disassOffset={disassOffset}
+              decimalView={decimalView}
+              viewMode={viewMode}
+              nexAnnotationPath={annotationPath}
+              nexAnnotationBank={annotationBank}
               iconTitle='Display bank data dump'
               idFactory={(documentSource: string, bank: number) =>
                 `bankDump${documentSource}:${bank}`

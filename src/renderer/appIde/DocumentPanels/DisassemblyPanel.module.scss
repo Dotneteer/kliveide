@@ -39,6 +39,7 @@
   flex-direction: row;
   align-items: center;
   height: 18px;
+  outline: none;
 
   &.even {
     background: var(--bgcolor-disass-even-row);
@@ -47,6 +48,70 @@
   &:hover {
     background: var(--bgcolor-disass-hover);
   }
+
+  &.selectedRangeItem {
+    background: color-mix(in srgb, var(--bgcolor-disass-hover) 65%, transparent);
+  }
+
+  &.selectedRangeItem.even {
+    background: color-mix(
+      in srgb,
+      var(--bgcolor-disass-hover) 65%,
+      var(--bgcolor-disass-even-row)
+    );
+  }
+
+  &.selectedItem {
+    background: color-mix(in srgb, var(--bgcolor-explorer-focused-selected) 34%, transparent);
+    box-shadow: inset 0 0 0 1px var(--color-toolbarbutton-selected);
+  }
+
+  &.selectedItem.even {
+    background: color-mix(
+      in srgb,
+      var(--bgcolor-explorer-focused-selected) 34%,
+      var(--bgcolor-disass-even-row)
+    );
+  }
+}
+
+.annotationGutter {
+  display: inline-flex;
+  width: 14px;
+  gap: 2px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.8ch;
+}
+
+.annotationMarker {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.visibleAnnotationMarker {
+  opacity: 1;
+}
+
+.commentMarker {
+  background: var(--console-ansi-yellow);
+}
+
+.labelMarker {
+  background: var(--console-ansi-bright-magenta);
+}
+
+.synopsisCommentLine {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  padding-left: 0.8ch;
+  color: var(--color-secondary-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .iconPlaceholder {
