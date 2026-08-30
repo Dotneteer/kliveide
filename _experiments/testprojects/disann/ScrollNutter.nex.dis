@@ -1,0 +1,229 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "fileName": "ScrollNutter.nex"
+  },
+  "globalLabels": [],
+  "banks": {
+    "0": {
+      "offsetIndex": 3,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "2": {
+      "offsetIndex": 2,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "5": {
+      "offsetIndex": 1,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "12": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "13": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "14": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "15": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "16": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "17": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "18": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "19": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "20": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "21": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "22": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "23": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "24": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "25": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "26": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "27": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "28": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "29": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    },
+    "30": {
+      "offsetIndex": 0,
+      "regions": [
+        {
+          "start": 0,
+          "end": 16383,
+          "type": "disassemble"
+        }
+      ]
+    }
+  }
+}

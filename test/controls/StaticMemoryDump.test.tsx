@@ -183,7 +183,12 @@ describe("StaticMemoryDump", () => {
       "bankDump",
       "Bank Dump",
       new Uint8Array(0x4000),
-      { disassemblyEnabled: true, disassOffset: 0x8000 }
+      {
+        disassemblyEnabled: true,
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      }
     );
 
     expect(openDocument).toHaveBeenCalledWith(
@@ -193,7 +198,9 @@ describe("StaticMemoryDump", () => {
       }),
       expect.objectContaining({
         disassemblyEnabled: true,
-        disassOffset: 0x8000
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
       }),
       false
     );

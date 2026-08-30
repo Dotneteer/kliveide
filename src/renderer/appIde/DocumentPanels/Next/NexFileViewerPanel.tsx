@@ -9,10 +9,26 @@ import { Row } from "@renderer/controls/layout/Row";
 import { LabeledText } from "@renderer/controls/layout/LabeledText";
 import { LabeledFlag } from "@renderer/controls/layout/LabeledFlag";
 import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
-import { createElement } from "react";
+import { createElement, useEffect, useMemo, useState } from "react";
 import styles from "./NexFileViewerPanel.module.scss";
 import { loadNexFileContents, ScreenBlockFlags } from "./nexFileLoader";
 import type { NexFileContents, NexHeader } from "./nexFileLoader";
+import { Button } from "@renderer/controls/Button";
+import { AppServices } from "@renderer/abstractions/AppServices";
+import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
+import { useDispatch, useRendererContext } from "@renderer/core/RendererProvider";
+import { incExploreViewVersionAction } from "@common/state/actions";
+import {
+  NexAnnotationSidecarPaths,
+  NexAnnotationSidecarState,
+  createNexAnnotationSidecar,
+  getAnnotatedDisassemblyOffsetForBank,
+  getNexAnnotationSidecarPaths,
+  loadNexAnnotationSidecar,
+  openNexAnnotationSidecarDocument
+} from "./nexAnnotationSidecar";
+import { NexFileAnnotations, NexAnnotationOffsetIndex } from "./nexAnnotations";
 
 const HEADER_LABEL_WIDTH = 160;
 const HEADER_VALUE_WIDTH = 132;
@@ -25,6 +41,16 @@ const NEX_SLOT_2_BANK = 2;
 const NEX_SLOT_1_START = 0x4000;
 const NEX_SLOT_2_START = 0x8000;
 const NEX_SLOT_3_START = 0xc000;
+
+type NexAnnotationViewerState =
+  | NexAnnotationSidecarState
+  | {
+      status: "loading" | "creating" | "unavailable";
+      paths?: NexAnnotationSidecarPaths;
+      annotations?: NexFileAnnotations;
+      diagnostics: [];
+      message?: string;
+    };
 
 type NexFileViewState = {
   headerAttrExpanded?: boolean;
@@ -52,188 +78,408 @@ const NexFileViewerPanel = ({
       viewState,
       fileLoader: loadNexFileContents,
       validRenderer: context => {
-        const fi = context.fileInfo;
-        const cvs = viewState;
-        const change = context.changeViewState;
-        const h = context.fileInfo.header;
         return (
-          <>
-            <ExpandableRow
-              heading='Header attributes'
-              initialExpanded={cvs?.headerAttrExpanded ?? true}
-              onExpanded={exp => change(vs => (vs.headerAttrExpanded = exp))}
-            >
-              <HeaderAttributes header={h} />
-            </ExpandableRow>
-            <ExpandableRow
-              heading='Bank flags'
-              initialExpanded={cvs?.bankFlagsExpanded ?? false}
-              onExpanded={exp => change(vs => (vs.bankFlagsExpanded = exp))}
-            >
-              <BankFlags startIndex={0} flags={h.bankFlags.slice(0, 8)} />
-              <BankFlags startIndex={8} flags={h.bankFlags.slice(8, 16)} />
-              <BankFlags startIndex={16} flags={h.bankFlags.slice(16, 24)} />
-              <BankFlags startIndex={24} flags={h.bankFlags.slice(24, 32)} />
-              <BankFlags startIndex={32} flags={h.bankFlags.slice(32, 40)} />
-              <BankFlags startIndex={40} flags={h.bankFlags.slice(40, 48)} />
-              <BankFlags startIndex={48} flags={h.bankFlags.slice(48, 56)} />
-              <BankFlags startIndex={56} flags={h.bankFlags.slice(56, 64)} />
-              <BankFlags startIndex={64} flags={h.bankFlags.slice(64, 72)} />
-              <BankFlags startIndex={72} flags={h.bankFlags.slice(72, 80)} />
-              <BankFlags startIndex={80} flags={h.bankFlags.slice(80, 88)} />
-              <BankFlags startIndex={88} flags={h.bankFlags.slice(88, 96)} />
-              <BankFlags startIndex={96} flags={h.bankFlags.slice(96, 104)} />
-              <BankFlags startIndex={104} flags={h.bankFlags.slice(104, 112)} />
-            </ExpandableRow>
-            {fi.palette?.length > 0 && (
-              <ExpandableRow
-                heading='Palette (Layer2, LoRes or Tilemap screen)'
-                initialExpanded={cvs?.paletteExpanded ?? false}
-                onExpanded={exp =>
-                  context.changeViewState(vs => (vs.paletteExpanded = exp))
-                }
-              >
-                <NextPaletteViewer
-                  palette={context.fileInfo?.palette}
-                  allowSelection={true}
-                />
-              </ExpandableRow>
-            )}
-            {fi.layer2LoadingScreen?.length > 0 && (
-              <ExpandableRow
-                heading='Layer 2 Loading Screen'
-                initialExpanded={cvs?.layer2LoadingScreenExpanded ?? false}
-                onExpanded={exp =>
-                  change(vs => (vs.layer2LoadingScreenExpanded = exp))
-                }
-              >
-                <Layer2Screen
-                  documentSource={document.node.projectPath}
-                  data={fi?.layer2LoadingScreen}
-                  palette={fi.palette.map(v => getAbrgForPaletteCode(v))}
-                />
-              </ExpandableRow>
-            )}
-            {fi.ulaLoadingScreen?.length > 0 && (
-              <ExpandableRow
-                heading='ULA Loading Screen'
-                initialExpanded={cvs?.ulaLoadingScreenExpanded ?? false}
-                onExpanded={exp =>
-                  change(vs => (vs.ulaLoadingScreenExpanded = exp))
-                }
-              >
-                <MemoryDumpViewer
-                  documentSource={document.node.projectPath}
-                  contents={fi?.ulaLoadingScreen}
-                  iconTitle='Display ULA dump'
-                  idFactory={(documentSource: string) =>
-                    `ulaDump${documentSource}`
-                  }
-                  titleFactory={(documentSource: string) =>
-                    `${documentSource} - ULA`
-                  }
-                />
-              </ExpandableRow>
-            )}
-            {fi.loResLoadingScreen?.length > 0 && (
-              <ExpandableRow
-                heading='LoRes Loading Screen'
-                initialExpanded={cvs?.loResLoadingScreenExpanded ?? false}
-                onExpanded={exp =>
-                  change(vs => (vs.loResLoadingScreenExpanded = exp))
-                }
-              >
-                <MemoryDumpViewer
-                  documentSource={document.node.projectPath}
-                  contents={fi?.loResLoadingScreen}
-                  iconTitle='Display LoRes dump'
-                  idFactory={(documentSource: string) =>
-                    `loResDump${documentSource}`
-                  }
-                  titleFactory={(documentSource: string) =>
-                    `${documentSource} - LoRes`
-                  }
-                />
-              </ExpandableRow>
-            )}
-            {fi.timexHiResLoadingScreen?.length > 0 && (
-              <ExpandableRow
-                heading='Timex HiRes Loading Screen'
-                initialExpanded={cvs?.timexHiResLoadingScreenExpanded ?? false}
-                onExpanded={exp =>
-                  change(vs => (vs.timexHiResLoadingScreenExpanded = exp))
-                }
-              >
-                <MemoryDumpViewer
-                  documentSource={document.node.projectPath}
-                  contents={fi?.timexHiResLoadingScreen}
-                  iconTitle='Display Timex HiRes dump'
-                  idFactory={(documentSource: string) =>
-                    `timexHiResDump${documentSource}`
-                  }
-                  titleFactory={(documentSource: string) =>
-                    `${documentSource} - Timex HiRes`
-                  }
-                />
-              </ExpandableRow>
-            )}
-            {fi.timexHiColLoadingScreen?.length > 0 && (
-              <ExpandableRow
-                heading='Timex HiCol Loading Screen'
-                initialExpanded={cvs?.timexHiColLoadingScreenExpanded ?? false}
-                onExpanded={exp =>
-                  change(vs => (vs.timexHiColLoadingScreenExpanded = exp))
-                }
-              >
-                <MemoryDumpViewer
-                  documentSource={document.node.projectPath}
-                  contents={fi?.timexHiColLoadingScreen}
-                  iconTitle='Display Timex HiCol dump'
-                  idFactory={(documentSource: string) =>
-                    `timexHiColDump${documentSource}`
-                  }
-                  titleFactory={(documentSource: string) =>
-                    `${documentSource} - Timex Hicol`
-                  }
-                />
-              </ExpandableRow>
-            )}
-            {fi.bankData.map((entry, idx) => {
-              return (
-                <ExpandableRow
-                  key={idx}
-                  heading={getBankHeading(entry[0], h)}
-                  initialExpanded={cvs?.bankExpanded?.[idx] ?? false}
-                  onExpanded={exp =>
-                    change(vs => {
-                      vs.bankExpanded ??= {};
-                      vs.bankExpanded![idx] = exp;
-                    })
-                  }
-                >
-                  <MemoryDumpViewer
-                    documentSource={document.node.projectPath}
-                    contents={entry[1]}
-                    bank={entry[0]}
-                    allowDisassembly={true}
-                    disassOffset={getDefaultDisassemblyOffsetForBank(entry[0], h)}
-                    iconTitle='Display bank data dump'
-                    idFactory={(documentSource: string, bank: number) =>
-                      `bankDump${documentSource}:${bank}`
-                    }
-                    titleFactory={(documentSource: string, bank: number) =>
-                      `${documentSource} - Bank: ${bank}`
-                    }
-                  />
-                </ExpandableRow>
-              );
-            })}
-          </>
+          <NexFileViewerContents
+            document={document}
+            fileInfo={context.fileInfo}
+            viewState={viewState}
+            appServices={context.appServices}
+            changeViewState={context.changeViewState}
+          />
         );
       }
     }
   );
 };
+
+type NexFileViewerContentsProps = {
+  document: ProjectDocumentState;
+  fileInfo: NexFileContents;
+  viewState?: NexFileViewState;
+  appServices: AppServices;
+  changeViewState: (setter: (vs: NexFileViewState) => void) => void;
+};
+
+const NexFileViewerContents = ({
+  document,
+  fileInfo: fi,
+  viewState,
+  appServices,
+  changeViewState: change
+}: NexFileViewerContentsProps) => {
+  const h = fi.header;
+  const cvs = viewState;
+  const documentHubService = useDocumentHubService();
+  const { store } = useRendererContext();
+  const dispatch = useDispatch();
+  const loadedBanks = useMemo(() => fi.bankData.map(([bank]) => bank), [fi.bankData]);
+  const sidecarPaths = useMemo(() => getNexAnnotationSidecarPaths(document), [document]);
+  const [annotationState, setAnnotationState] = useState<NexAnnotationViewerState>({
+    status: sidecarPaths ? "loading" : "unavailable",
+    paths: sidecarPaths,
+    diagnostics: [],
+    message: sidecarPaths ? "Loading annotations..." : "This document has no file path."
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!sidecarPaths) {
+      setAnnotationState({
+        status: "unavailable",
+        diagnostics: [],
+        message: "This document has no file path."
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setAnnotationState({
+      status: "loading",
+      paths: sidecarPaths,
+      diagnostics: [],
+      message: "Loading annotations..."
+    });
+    loadNexAnnotationSidecar(appServices.projectService, sidecarPaths, loadedBanks).then((state) => {
+      if (!cancelled) {
+        setAnnotationState(state);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [appServices.projectService, sidecarPaths, loadedBanks]);
+
+  const createAnnotation = async () => {
+    if (!sidecarPaths) return;
+    setAnnotationState({
+      status: "creating",
+      paths: sidecarPaths,
+      diagnostics: [],
+      message: "Creating annotation file..."
+    });
+    try {
+      const state = await createNexAnnotationSidecar(appServices.projectService, sidecarPaths, {
+        nexPath: document.node?.fullPath ?? document.path ?? document.id,
+        nexFileName: document.name,
+        loadedBanks,
+        getDefaultOffsetIndex: (bank) => getDefaultDisassemblyOffsetIndexForBank(bank, h)
+      });
+      setAnnotationState(state);
+      if (state.status === "loaded") {
+        dispatch(incExploreViewVersionAction());
+      }
+    } catch (err) {
+      setAnnotationState({
+        status: "error",
+        paths: sidecarPaths,
+        diagnostics: [],
+        message: err instanceof Error ? err.message : String(err)
+      });
+    }
+  };
+
+  const reloadAnnotations = async () => {
+    if (!sidecarPaths) return;
+    setAnnotationState({
+      status: "loading",
+      paths: sidecarPaths,
+      diagnostics: [],
+      message: "Loading annotations..."
+    });
+    setAnnotationState(
+      await loadNexAnnotationSidecar(appServices.projectService, sidecarPaths, loadedBanks)
+    );
+  };
+
+  const openAnnotation = async () => {
+    if (!sidecarPaths || annotationState.status === "missing") return;
+    try {
+      await openNexAnnotationSidecarDocument(
+        appServices.projectService,
+        documentHubService,
+        sidecarPaths,
+        store
+      );
+    } catch (err) {
+      setAnnotationState({
+        status: "error",
+        paths: sidecarPaths,
+        diagnostics: [],
+        message: err instanceof Error ? err.message : String(err)
+      });
+    }
+  };
+
+  const loadedAnnotations =
+    annotationState.status === "loaded" ? annotationState.annotations : undefined;
+
+  return (
+    <>
+      <NexAnnotationPanel
+        state={annotationState}
+        onCreate={createAnnotation}
+        onOpen={openAnnotation}
+        onReload={reloadAnnotations}
+      />
+      <ExpandableRow
+        heading='Header attributes'
+        initialExpanded={cvs?.headerAttrExpanded ?? true}
+        onExpanded={exp => change(vs => (vs.headerAttrExpanded = exp))}
+      >
+        <HeaderAttributes header={h} />
+      </ExpandableRow>
+      <ExpandableRow
+        heading='Bank flags'
+        initialExpanded={cvs?.bankFlagsExpanded ?? false}
+        onExpanded={exp => change(vs => (vs.bankFlagsExpanded = exp))}
+      >
+        <BankFlags startIndex={0} flags={h.bankFlags.slice(0, 8)} />
+        <BankFlags startIndex={8} flags={h.bankFlags.slice(8, 16)} />
+        <BankFlags startIndex={16} flags={h.bankFlags.slice(16, 24)} />
+        <BankFlags startIndex={24} flags={h.bankFlags.slice(24, 32)} />
+        <BankFlags startIndex={32} flags={h.bankFlags.slice(32, 40)} />
+        <BankFlags startIndex={40} flags={h.bankFlags.slice(40, 48)} />
+        <BankFlags startIndex={48} flags={h.bankFlags.slice(48, 56)} />
+        <BankFlags startIndex={56} flags={h.bankFlags.slice(56, 64)} />
+        <BankFlags startIndex={64} flags={h.bankFlags.slice(64, 72)} />
+        <BankFlags startIndex={72} flags={h.bankFlags.slice(72, 80)} />
+        <BankFlags startIndex={80} flags={h.bankFlags.slice(80, 88)} />
+        <BankFlags startIndex={88} flags={h.bankFlags.slice(88, 96)} />
+        <BankFlags startIndex={96} flags={h.bankFlags.slice(96, 104)} />
+        <BankFlags startIndex={104} flags={h.bankFlags.slice(104, 112)} />
+      </ExpandableRow>
+      {fi.palette?.length > 0 && (
+        <ExpandableRow
+          heading='Palette (Layer2, LoRes or Tilemap screen)'
+          initialExpanded={cvs?.paletteExpanded ?? false}
+          onExpanded={exp =>
+            change(vs => (vs.paletteExpanded = exp))
+          }
+        >
+          <NextPaletteViewer
+            palette={fi?.palette}
+            allowSelection={true}
+          />
+        </ExpandableRow>
+      )}
+      {fi.layer2LoadingScreen?.length > 0 && (
+        <ExpandableRow
+          heading='Layer 2 Loading Screen'
+          initialExpanded={cvs?.layer2LoadingScreenExpanded ?? false}
+          onExpanded={exp =>
+            change(vs => (vs.layer2LoadingScreenExpanded = exp))
+          }
+        >
+          <Layer2Screen
+            documentSource={document.node.projectPath}
+            data={fi?.layer2LoadingScreen}
+            palette={fi.palette.map(v => getAbrgForPaletteCode(v))}
+          />
+        </ExpandableRow>
+      )}
+      {fi.ulaLoadingScreen?.length > 0 && (
+        <ExpandableRow
+          heading='ULA Loading Screen'
+          initialExpanded={cvs?.ulaLoadingScreenExpanded ?? false}
+          onExpanded={exp =>
+            change(vs => (vs.ulaLoadingScreenExpanded = exp))
+          }
+        >
+          <MemoryDumpViewer
+            documentSource={document.node.projectPath}
+            contents={fi?.ulaLoadingScreen}
+            iconTitle='Display ULA dump'
+            idFactory={(documentSource: string) =>
+              `ulaDump${documentSource}`
+            }
+            titleFactory={(documentSource: string) =>
+              `${documentSource} - ULA`
+            }
+          />
+        </ExpandableRow>
+      )}
+      {fi.loResLoadingScreen?.length > 0 && (
+        <ExpandableRow
+          heading='LoRes Loading Screen'
+          initialExpanded={cvs?.loResLoadingScreenExpanded ?? false}
+          onExpanded={exp =>
+            change(vs => (vs.loResLoadingScreenExpanded = exp))
+          }
+        >
+          <MemoryDumpViewer
+            documentSource={document.node.projectPath}
+            contents={fi?.loResLoadingScreen}
+            iconTitle='Display LoRes dump'
+            idFactory={(documentSource: string) =>
+              `loResDump${documentSource}`
+            }
+            titleFactory={(documentSource: string) =>
+              `${documentSource} - LoRes`
+            }
+          />
+        </ExpandableRow>
+      )}
+      {fi.timexHiResLoadingScreen?.length > 0 && (
+        <ExpandableRow
+          heading='Timex HiRes Loading Screen'
+          initialExpanded={cvs?.timexHiResLoadingScreenExpanded ?? false}
+          onExpanded={exp =>
+            change(vs => (vs.timexHiResLoadingScreenExpanded = exp))
+          }
+        >
+          <MemoryDumpViewer
+            documentSource={document.node.projectPath}
+            contents={fi?.timexHiResLoadingScreen}
+            iconTitle='Display Timex HiRes dump'
+            idFactory={(documentSource: string) =>
+              `timexHiResDump${documentSource}`
+            }
+            titleFactory={(documentSource: string) =>
+              `${documentSource} - Timex HiRes`
+            }
+          />
+        </ExpandableRow>
+      )}
+      {fi.timexHiColLoadingScreen?.length > 0 && (
+        <ExpandableRow
+          heading='Timex HiCol Loading Screen'
+          initialExpanded={cvs?.timexHiColLoadingScreenExpanded ?? false}
+          onExpanded={exp =>
+            change(vs => (vs.timexHiColLoadingScreenExpanded = exp))
+          }
+        >
+          <MemoryDumpViewer
+            documentSource={document.node.projectPath}
+            contents={fi?.timexHiColLoadingScreen}
+            iconTitle='Display Timex HiCol dump'
+            idFactory={(documentSource: string) =>
+              `timexHiColDump${documentSource}`
+            }
+            titleFactory={(documentSource: string) =>
+              `${documentSource} - Timex Hicol`
+            }
+          />
+        </ExpandableRow>
+      )}
+      {fi.bankData.map((entry, idx) => {
+        const defaultOffset = getDefaultDisassemblyOffsetForBank(entry[0], h);
+        return (
+          <ExpandableRow
+            key={idx}
+            heading={getBankHeading(entry[0], h)}
+            initialExpanded={cvs?.bankExpanded?.[idx] ?? false}
+            onExpanded={exp =>
+              change(vs => {
+                vs.bankExpanded ??= {};
+                vs.bankExpanded![idx] = exp;
+              })
+            }
+          >
+            <MemoryDumpViewer
+              documentSource={document.node.projectPath}
+              contents={entry[1]}
+              bank={entry[0]}
+              allowDisassembly={true}
+              disassOffset={getAnnotatedDisassemblyOffsetForBank(
+                loadedAnnotations,
+                entry[0],
+                defaultOffset
+              )}
+              nexAnnotationPath={loadedAnnotations ? sidecarPaths?.fullPath : undefined}
+              nexAnnotationBank={loadedAnnotations ? entry[0] : undefined}
+              iconTitle='Display bank data dump'
+              idFactory={(documentSource: string, bank: number) =>
+                `bankDump${documentSource}:${bank}`
+              }
+              titleFactory={(documentSource: string, bank: number) =>
+                `${documentSource} - Bank: ${bank}`
+              }
+            />
+          </ExpandableRow>
+        );
+      })}
+    </>
+  );
+};
+
+type NexAnnotationPanelProps = {
+  state: NexAnnotationViewerState;
+  onCreate: () => void;
+  onOpen: () => void;
+  onReload: () => void;
+};
+
+const NexAnnotationPanel = ({
+  state,
+  onCreate,
+  onOpen,
+  onReload
+}: NexAnnotationPanelProps) => {
+  const errorCount = state.diagnostics.filter((d) => d.severity === "error").length;
+  const warningCount = state.diagnostics.filter((d) => d.severity === "warning").length;
+  const statusText = getAnnotationStatusText(state, errorCount, warningCount);
+  const canCreate = state.status === "missing";
+  const canOpen = state.status === "loaded" || state.status === "invalid";
+  const canReload = !!state.paths && state.status !== "loading" && state.status !== "creating";
+
+  return (
+    <div className={styles.annotationPanel}>
+      <div className={styles.annotationSummary}>
+        <span className={styles.annotationLabel}>Annotations:</span>
+        <span className={styles.annotationStatus}>{statusText}</span>
+        {state.paths?.projectPath || state.paths?.fullPath ? (
+          <span className={styles.annotationPath}>
+            {state.paths.projectPath ?? state.paths.fullPath}
+          </span>
+        ) : null}
+      </div>
+      {state.message && <div className={styles.annotationMessage}>{state.message}</div>}
+      {state.diagnostics.length > 0 && (
+        <div className={styles.annotationDiagnostics}>
+          {state.diagnostics.slice(0, 3).map((diagnostic, idx) => (
+            <div key={idx}>
+              {diagnostic.severity}: {diagnostic.path} {diagnostic.message}
+            </div>
+          ))}
+          {state.diagnostics.length > 3 && (
+            <div>{state.diagnostics.length - 3} more annotation diagnostics</div>
+          )}
+        </div>
+      )}
+      <div className={styles.annotationActions}>
+        <Button text='Create' disabled={!canCreate} clicked={onCreate} />
+        <Button text='Open JSON' disabled={!canOpen} clicked={onOpen} />
+        <Button text='Reload' disabled={!canReload} clicked={onReload} />
+      </div>
+    </div>
+  );
+};
+
+function getAnnotationStatusText(
+  state: NexAnnotationViewerState,
+  errorCount: number,
+  warningCount: number
+): string {
+  switch (state.status) {
+    case "loading":
+      return "Loading";
+    case "creating":
+      return "Creating";
+    case "loaded":
+      if (errorCount > 0) return `Loaded with ${errorCount} error${errorCount === 1 ? "" : "s"}`;
+      if (warningCount > 0) return `Loaded with ${warningCount} warning${warningCount === 1 ? "" : "s"}`;
+      return "Loaded";
+    case "missing":
+      return "No annotation file";
+    case "invalid":
+      return `${errorCount} validation error${errorCount === 1 ? "" : "s"}`;
+    case "error":
+      return "Error";
+    case "unavailable":
+      return "Unavailable";
+  }
+}
 
 type BankFlagsProps = {
   startIndex: number;
@@ -311,6 +557,13 @@ function getDefaultDisassemblyOffsetForBank (
     return NEX_SLOT_2_START;
   }
   return 0x0000;
+}
+
+function getDefaultDisassemblyOffsetIndexForBank (
+  bank: number,
+  header: NexHeader
+): NexAnnotationOffsetIndex {
+  return (getDefaultDisassemblyOffsetForBank(bank, header) / 0x4000) as NexAnnotationOffsetIndex;
 }
 
 type HeaderAttributesProps = {

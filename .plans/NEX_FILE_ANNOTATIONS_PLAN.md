@@ -2,7 +2,95 @@
 
 Created: 2026-08-30
 
-Status: Proposed. Waiting for approval before implementation.
+Status: Steps 1, 2, and 3 implemented on 2026-08-30. Later steps pending.
+
+## Implementation Progress
+
+### Step 1 Result
+
+Added a pure TypeScript NEX annotation model and validation layer in
+`src/renderer/appIde/DocumentPanels/Next/nexAnnotations.ts`, with focused tests
+in `test/renderer/nexAnnotations.test.ts`.
+
+The module currently supports:
+
+- deriving and recognizing `.nex.dis` sidecar paths;
+- creating default annotation documents for loaded NEX banks;
+- parsing JSON and returning structured diagnostics;
+- validating schema version, bank keys, offset indexes, labels, regions, line
+  annotations, and operand references;
+- normalizing bank regions into full-bank non-overlapping coverage;
+- resolving labels at bank offsets and finding global/local operand label
+  candidates.
+
+Validation run:
+
+```text
+npm test -- --project node test/renderer/nexAnnotations.test.ts
+npm run build:check
+npm run lint:renderer
+```
+
+`npm run lint:renderer` completed with the existing hook-warning baseline and
+no errors.
+
+### Step 2 Result
+
+Registered `.nex.dis` files as read-only JSON code documents in
+`src/renderer/registry.ts`, with focused tests in
+`test/renderer/nexAnnotationFileType.test.ts`.
+
+The registration currently supports:
+
+- selecting `.nex.dis` files in Explorer as text/code documents;
+- JSON syntax highlighting through `subType: "json"`;
+- read-only editor behavior;
+- preserving regular `.nex` files as binary NEX viewer documents.
+
+Validation run:
+
+```text
+npm test -- --project node test/renderer/nexAnnotations.test.ts test/renderer/nexAnnotationFileType.test.ts
+npm run build:check
+npm run lint:renderer
+```
+
+`npm run lint:renderer` completed with the existing hook-warning baseline and
+no errors.
+
+### Step 3 Result
+
+Added NEX viewer sidecar discovery and actions in
+`src/renderer/appIde/DocumentPanels/Next/NexFileViewerPanel.tsx`, supported by
+`src/renderer/appIde/DocumentPanels/Next/nexAnnotationSidecar.ts`.
+
+The viewer now supports:
+
+- deriving the associated `.nex.dis` path for the loaded `.nex` document;
+- showing whether the sidecar is missing, loaded, invalid, unavailable, or hit a
+  file error;
+- creating a default sidecar JSON file next to the source NEX file without
+  overwriting an existing file;
+- refreshing Explorer after sidecar creation;
+- opening an existing sidecar in the read-only JSON document view;
+- reloading annotation state from disk;
+- surfacing validation diagnostics without breaking the bank list;
+- using loaded bank annotations to choose the default disassembly offset for
+  bank pop-out documents;
+- passing the annotation sidecar path and bank number into static memory dump
+  documents for the later annotated rendering steps.
+
+Validation run:
+
+```text
+npm test -- --project node test/renderer/nexAnnotations.test.ts test/renderer/nexAnnotationFileType.test.ts test/renderer/nexAnnotationSidecar.test.ts
+npm test -- --project jsdom test/renderer/NexFileViewerPanel.test.tsx test/renderer/NexFileViewerAnnotations.test.tsx test/controls/StaticMemoryDump.test.tsx
+npm run build:check
+npm run lint:renderer
+```
+
+`npm run lint:renderer` completed with the existing 55 hook-warning baseline and
+no errors.
 
 ## Goal
 

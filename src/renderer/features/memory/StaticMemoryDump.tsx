@@ -33,6 +33,8 @@ type MemoryDumpViewState = {
   disassemblyScrollPosition?: number;
   version?: number;
   topAddress?: number;
+  nexAnnotationPath?: string;
+  nexAnnotationBank?: number;
 };
 
 type StaticDumpViewMode = "memory" | "disassembly";
@@ -40,6 +42,8 @@ type StaticDumpViewMode = "memory" | "disassembly";
 type StaticMemoryDumpOptions = {
   disassemblyEnabled?: boolean;
   disassOffset?: number;
+  nexAnnotationPath?: string;
+  nexAnnotationBank?: number;
 };
 
 const STATIC_DUMP_ROW_ITEM_SIZE = 22;
@@ -329,7 +333,9 @@ export async function openStaticMemoryDump(
       },
       {
         disassemblyEnabled: options.disassemblyEnabled ?? false,
-        disassOffset: options.disassOffset ?? 0
+        disassOffset: options.disassOffset ?? 0,
+        nexAnnotationPath: options.nexAnnotationPath,
+        nexAnnotationBank: options.nexAnnotationBank
       } satisfies MemoryDumpViewState,
       false
     );

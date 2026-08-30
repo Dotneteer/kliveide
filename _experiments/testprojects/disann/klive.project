@@ -80,20 +80,6 @@
               }
             },
             {
-              "type": "NexViewer",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex",
-              "position": {
-                "line": 0,
-                "column": 0
-              },
-              "viewState": {
-                "scrollPosition": 212,
-                "bankExpanded": {
-                  "0": true
-                }
-              }
-            },
-            {
               "type": "Disassembly",
               "id": "$disassembly",
               "position": {
@@ -111,9 +97,17 @@
                 "screen": false,
                 "disassOffset": 0
               }
+            },
+            {
+              "type": "NexViewer",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex",
+              "position": {
+                "line": 0,
+                "column": 0
+              }
             }
           ],
-          "activeDocumentId": "memoryDump-bankDumpScrollNutter.nex:5"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
         }
       ]
     }

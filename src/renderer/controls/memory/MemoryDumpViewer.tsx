@@ -17,6 +17,8 @@ type Props = {
   bank?: number;
   allowDisassembly?: boolean;
   disassOffset?: number;
+  nexAnnotationPath?: string;
+  nexAnnotationBank?: number;
   iconTitle: string;
   idFactory: (documentSource: string, bank: number) => string;
   titleFactory: (documentSource: string, bank: number) => string;
@@ -28,6 +30,8 @@ export const MemoryDumpViewer = ({
   bank,
   allowDisassembly = false,
   disassOffset,
+  nexAnnotationPath,
+  nexAnnotationBank,
   iconTitle,
   idFactory,
   titleFactory
@@ -47,7 +51,12 @@ export const MemoryDumpViewer = ({
               idFactory(documentSource, bank), // `bankDump${documentSource}:${bank}`,
               titleFactory(documentSource, bank), // `${documentSource} - Bank: ${bank}`,
               contents,
-              { disassemblyEnabled: allowDisassembly, disassOffset }
+              {
+                disassemblyEnabled: allowDisassembly,
+                disassOffset,
+                nexAnnotationPath,
+                nexAnnotationBank
+              }
             );
           }}
         />
