@@ -455,7 +455,11 @@ async function createAppWindows() {
         // --- Do not allow the ide close while IDE is not saved
         e.preventDefault();
         // --- Make sure all edited documents are saved
-        await saveOnClose();
+        const canClose = await saveOnClose();
+        if (!canClose) {
+          allowCloseIde = false;
+          return;
+        }
 
         // --- Try to close the IDE (provided, it's not disposed)
         ideWindow?.close();
@@ -524,7 +528,11 @@ async function createAppWindows() {
       // --- Do not allow the emu close while IDE is not saved
       e.preventDefault();
       // --- Start saving the IDE and return back from event. The IDE will be still alive
-      await saveOnClose();
+      const canClose = await saveOnClose();
+      if (!canClose) {
+        allowCloseIde = false;
+        return;
+      }
 
       // --- Close both renderer windows (unless already disposed)
       allowCloseIde = true;
@@ -545,6 +553,7 @@ app.whenReady().then(() => {
 
 // --- When the user is about to quit the app, allow closing the IDE window
 app.on("before-quit", (_e) => {
+  allowCloseIde = true;
   ideWindowStateSaved = true;
   saveAppSettings();
 });
@@ -647,8 +656,8 @@ async function forwardActions(message: RequestMessage): Promise<ResponseMessage 
 }
 
 async function saveOnClose() {
-  await getIdeApi().saveAllBeforeQuit();
-  ideSaved = true;
+  ideSaved = await getIdeApi().saveAllBeforeQuit();
+  return ideSaved;
 }
 
 export function isEmuWindowFocused() {

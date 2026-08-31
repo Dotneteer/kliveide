@@ -120,7 +120,12 @@ export interface IDocumentHubService {
   /**
    * Closes all open documents
    */
-  closeAllDocuments(...exceptIds: string[]): Promise<void>;
+  closeAllDocuments(...exceptIds: string[]): Promise<boolean>;
+
+  /**
+   * Checks if all open documents can be closed without actually closing them.
+   */
+  canCloseAllDocuments(...exceptIds: string[]): Promise<boolean>;
 
   /**
    * Closes all open explorer documents

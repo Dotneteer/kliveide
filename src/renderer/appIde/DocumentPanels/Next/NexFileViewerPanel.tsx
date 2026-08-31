@@ -114,6 +114,10 @@ const NexFileViewerContents = ({
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const loadedBanks = useMemo(() => fi.bankData.map(([bank]) => bank), [fi.bankData]);
+  const layer2Palette = useMemo(
+    () => fi.palette.map(v => getAbrgForPaletteCode(v)),
+    [fi.palette]
+  );
   const sidecarPaths = useMemo(() => getNexAnnotationSidecarPaths(document), [document]);
   const [annotationState, setAnnotationState] = useState<NexAnnotationViewerState>({
     status: sidecarPaths ? "loading" : "unavailable",
@@ -241,7 +245,7 @@ const NexFileViewerContents = ({
           <Layer2Screen
             documentSource={document.node.projectPath}
             data={fi?.layer2LoadingScreen}
-            palette={fi.palette.map(v => getAbrgForPaletteCode(v))}
+            palette={layer2Palette}
           />
         </ExpandableRow>
       )}

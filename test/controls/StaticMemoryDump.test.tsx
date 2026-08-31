@@ -151,14 +151,16 @@ describe("StaticMemoryDump", () => {
     vi.doMock("@renderer/controls/IconButton", () => ({
       SmallIconButton: ({
         title,
+        fill,
         enable = true,
         clicked
       }: {
         title?: string;
+        fill?: string;
         enable?: boolean;
         clicked?: () => void;
       }) => (
-        <button disabled={!enable} onClick={clicked}>
+        <button data-fill={fill} disabled={!enable} onClick={clicked}>
           {title}
         </button>
       )
@@ -380,6 +382,84 @@ describe("StaticMemoryDump", () => {
     expect(screen.getByTestId("disassembly-row-1")).toHaveAttribute(
       "data-annotation-region",
       "bytes"
+    );
+  });
+
+  it("opens the labels manager from the toolbar and jumps to a selected label", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          globalLabels: [{ name: "GlobalEntry", value: 0x9234 }],
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }],
+              localLabels: [{ name: "LocalTarget", value: 2 }],
+              operandReferences: {
+                "0": [{ operandIndex: 0, scope: "local", name: "LocalTarget" }]
+              }
+            }
+          }
+        })
+      )
+    );
+    const openDialog = vi.fn(() => Promise.resolve({
+      action: "go-to",
+      label: {
+        scope: "local",
+        bank: 5,
+        name: "LocalTarget",
+        value: 2,
+        referenceCount: 1
+      }
+    }));
+
+    const harness = await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      vi.fn(() => Promise.resolve()),
+      new Uint8Array(0x4000),
+      openDialog
+    );
+
+    await screen.findByTestId("disassembly-row-0");
+    fireEvent.click(screen.getByText("Manage Labels"));
+
+    await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+    expect(openDialog.mock.calls[0][0].name).toBe("NexLabelsDialog");
+    expect(openDialog.mock.calls[0][1]).toMatchObject({
+      bank: 5,
+      bankAddressOffset: 0x8000
+    });
+    expect(openDialog.mock.calls[0][1].labels).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          scope: "local",
+          bank: 5,
+          name: "LocalTarget",
+          value: 2,
+          referenced: true,
+          referenceCount: 1
+        }),
+        expect.objectContaining({
+          scope: "global",
+          name: "GlobalEntry",
+          value: 0x9234,
+          referenceCount: 0
+        })
+      ])
+    );
+    await waitFor(() =>
+      expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(2, {
+        align: "start"
+      })
     );
   });
 
@@ -613,6 +693,10 @@ describe("StaticMemoryDump", () => {
       initialSynopsis: undefined
     });
     await waitFor(() => expect(screen.getByText("Save annotations")).not.toBeDisabled());
+    expect(screen.getByText("Save annotations")).toHaveAttribute(
+      "data-fill",
+      "--console-ansi-yellow"
+    );
 
     fireEvent.click(screen.getByText("Save annotations"));
 
@@ -1024,13 +1108,21 @@ describe("StaticMemoryDump", () => {
         "4"
       )
     );
+    fireEvent.click(screen.getByTestId("disassembly-row-0"));
+    fireEvent.click(screen.getByTestId("disassembly-row-1"), { shiftKey: true });
+    expect(screen.getByTestId("disassembly-row-0")).toHaveAttribute(
+      "data-selected-range",
+      "true"
+    );
+    expect(screen.getByTestId("disassembly-row-1")).toHaveAttribute("data-selected", "true");
+
     fireEvent.contextMenu(screen.getByTestId("disassembly-row-1"));
     fireEvent.click(screen.getByText("Mark As Bytes"));
 
     await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
     expect(openDialog.mock.calls[0][1]).toMatchObject({
       initialType: "bytes",
-      initialStart: 4,
+      initialStart: 0,
       initialEnd: 4,
       regions: [
         { start: 0, end: 3, type: "bytes" },
@@ -1038,6 +1130,12 @@ describe("StaticMemoryDump", () => {
         { start: 8, end: 0x3fff, type: "bytes" }
       ]
     });
+    await waitFor(() =>
+      expect(screen.getByTestId("disassembly-row-0")).not.toHaveAttribute(
+        "data-selected-range"
+      )
+    );
+    expect(screen.getByTestId("disassembly-row-1")).not.toHaveAttribute("data-selected");
 
     fireEvent.click(screen.getByText("Save annotations"));
 
@@ -1046,6 +1144,169 @@ describe("StaticMemoryDump", () => {
     expect(savedAnnotations.banks["5"].regions).toEqual([
       { start: 0, end: 0x3fff, type: "bytes" }
     ]);
+  });
+
+  it("opens the region manager and then the memory region dialog from the toolbar", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [
+                { start: 0, end: 3, type: "bytes" },
+                { start: 4, end: 0x3fff, type: "disassemble" }
+              ]
+            }
+          }
+        })
+      )
+    );
+    const openDialog = vi.fn()
+      .mockResolvedValueOnce({
+        action: "edit",
+        region: { start: 0, end: 3, type: "bytes" }
+      })
+      .mockResolvedValueOnce(undefined);
+    const contents = new Uint8Array(0x4000);
+    contents.set([1, 2, 3, 4, 0]);
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      vi.fn(() => Promise.resolve()),
+      contents,
+      openDialog
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("disassembly-row-0")).toHaveAttribute(
+        "data-annotation-region",
+        "bytes"
+      )
+    );
+    fireEvent.click(screen.getByTestId("disassembly-row-0"));
+    fireEvent.click(screen.getByText("Manage Regions"));
+
+    await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(2));
+    expect(openDialog.mock.calls[0][0].name).toBe("NexRegionsDialog");
+    expect(openDialog.mock.calls[0][1]).toMatchObject({
+      activeOffset: 0,
+      regions: [
+        { start: 0, end: 3, type: "bytes" },
+        { start: 4, end: 0x3fff, type: "disassemble" }
+      ]
+    });
+    expect(openDialog.mock.calls[1][0].name).toBe("NexRegionDialog");
+    expect(openDialog.mock.calls[1][1]).toMatchObject({
+      initialType: "bytes",
+      initialStart: 0,
+      initialEnd: 3,
+      regions: [
+        { start: 0, end: 3, type: "bytes" },
+        { start: 4, end: 0x3fff, type: "disassemble" }
+      ]
+    });
+  });
+
+  it("does not open Manage Regions without an active disassembly row", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
+            }
+          }
+        })
+      )
+    );
+    const openDialog = vi.fn(() => Promise.resolve(undefined));
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      vi.fn(() => Promise.resolve()),
+      new Uint8Array(0x4000),
+      openDialog
+    );
+
+    await screen.findByTestId("disassembly-row-0");
+    expect(screen.getByText("Manage Regions")).toBeDisabled();
+    fireEvent.click(screen.getByText("Manage Regions"));
+
+    expect(openDialog).not.toHaveBeenCalled();
+  });
+
+  it("asks before applying a full-bank memory region change", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
+            }
+          }
+        })
+      )
+    );
+    const saveFileContent = vi.fn(() => Promise.resolve());
+    const openDialog = vi.fn()
+      .mockResolvedValueOnce({
+        action: "edit",
+        region: { start: 0, end: 0x3fff, type: "disassemble" }
+      })
+      .mockResolvedValueOnce({
+        type: "bytes",
+        start: 0,
+        end: 0x3fff
+      });
+    vi.stubGlobal("confirm", vi.fn(() => false));
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      saveFileContent,
+      new Uint8Array(0x4000),
+      openDialog
+    );
+
+    await screen.findByTestId("disassembly-row-0");
+    fireEvent.click(screen.getByTestId("disassembly-row-0"));
+    fireEvent.click(screen.getByText("Manage Regions"));
+
+    await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(window.confirm).toHaveBeenCalledWith(
+        "This changes the entire 16K bank. Continue?"
+      )
+    );
+    expect(screen.getByText("Save annotations")).toBeDisabled();
+    fireEvent.click(screen.getByText("Save annotations"));
+    expect(saveFileContent).not.toHaveBeenCalled();
   });
 
   it("opens static dumps with optional disassembly view state", async () => {

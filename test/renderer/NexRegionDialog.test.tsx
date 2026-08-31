@@ -60,6 +60,33 @@ describe("NexRegionDialog", () => {
     });
   });
 
+  it("sets the range to the full bank explicitly", () => {
+    const controls = createControls();
+
+    render(
+      <NexRegionDialog
+        initialType="bytes"
+        initialStart={0x0004}
+        initialEnd={0x0007}
+        regions={[
+          { start: 0, end: 3, type: "disassemble" },
+          { start: 4, end: 15, type: "bytes" }
+        ]}
+        bytes={[0, 1, 2, 3, 4, 5, 6, 7]}
+        controls={controls}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Entire bank" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(controls.close).toHaveBeenCalledWith({
+      type: "bytes",
+      start: 0,
+      end: 0x3fff
+    });
+  });
+
   it("blocks odd-length word regions", () => {
     const controls = createControls();
 

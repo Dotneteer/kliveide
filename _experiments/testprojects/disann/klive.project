@@ -1,9 +1,9 @@
 {
   "kliveVersion": "0.58.1",
-  "machineType": "sp48",
-  "modelId": "pal",
+  "machineType": "zxnext",
+  "modelId": "standard",
   "config": {
-    "screenFreq": "pal"
+    "zxnextImplementation": "wasm"
   },
   "clockMultiplier": 1,
   "soundLevel": 0.8,
@@ -82,56 +82,9 @@
                   "editor.contrib.wordHighlighter": false
                 }
               }
-            },
-            {
-              "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex.dis",
-              "position": {
-                "line": 0,
-                "column": 0
-              },
-              "viewState": {
-                "cursorState": [
-                  {
-                    "inSelectionMode": false,
-                    "selectionStart": {
-                      "lineNumber": 1,
-                      "column": 1
-                    },
-                    "position": {
-                      "lineNumber": 1,
-                      "column": 1
-                    }
-                  }
-                ],
-                "viewState": {
-                  "scrollLeft": 0,
-                  "firstPosition": {
-                    "lineNumber": 1,
-                    "column": 1
-                  },
-                  "firstPositionDeltaTop": 0
-                },
-                "contributionsState": {
-                  "editor.contrib.folding": {
-                    "lineCount": 239,
-                    "provider": "syntax",
-                    "foldedImports": false
-                  },
-                  "editor.contrib.wordHighlighter": false
-                }
-              }
-            },
-            {
-              "type": "NexViewer",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex",
-              "position": {
-                "line": 0,
-                "column": 0
-              }
             }
           ],
-          "activeDocumentId": "memoryDump-bankDumpScrollNutter.nex:5"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/code/code.kz80.asm"
         }
       ]
     }

@@ -191,4 +191,30 @@ describe("deriveDisassemblyRowViewModel", () => {
     expect(row.className).toContain("even");
     expect(row.className).toContain("selectedRangeItem");
   });
+
+  it("uses a wide instruction cell for four-byte data directives", () => {
+    const { getByText } = render(
+      <DisassemblyRow
+        bankLabel={false}
+        currentSegment={0}
+        decimalView={false}
+        index={0}
+        isFullView={true}
+        item={{
+          address: 0x8000,
+          instruction: ".defb $00, $00, $00, $00",
+          opCodes: []
+        }}
+        mem64kLabels={[]}
+        partitionLabels={{}}
+        pausedPc={0x0000}
+        rowHeight={18}
+        showBanks={false}
+      />
+    );
+
+    expect(getByText(".defb $00, $00, $00, $00")).toHaveStyle({
+      width: "240px"
+    });
+  });
 });

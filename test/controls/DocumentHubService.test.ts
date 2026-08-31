@@ -232,6 +232,43 @@ describe("DocumentHubService", () => {
     expect(projectService.closeDocumentHubService).not.toHaveBeenCalled();
   });
 
+  it("checks document disposal hooks without closing documents", async () => {
+    const store = createStoreMock();
+    const document = createDocument("doc-a", "Doc A");
+    const projectService = createProjectServiceMock([document]);
+    const hub = createDocumentHubService(1, store as never, projectService as never);
+    const api = {
+      beforeDocumentDisposal: vi.fn(() => Promise.resolve(true))
+    };
+
+    await hub.openDocumentTab(document);
+    hub.setDocumentApi(document.id, api);
+
+    await expect(hub.canCloseAllDocuments()).resolves.toBe(true);
+
+    expect(api.beforeDocumentDisposal).toHaveBeenCalledTimes(1);
+    expect(hub.getDocument(document.id)).toBe(document);
+    expect(projectService.closeInDocumentHub).not.toHaveBeenCalled();
+  });
+
+  it("reports false when a disposal hook vetoes all-document close checks", async () => {
+    const store = createStoreMock();
+    const document = createDocument("doc-a", "Doc A");
+    const projectService = createProjectServiceMock([document]);
+    const hub = createDocumentHubService(1, store as never, projectService as never);
+    const api = {
+      beforeDocumentDisposal: vi.fn(() => Promise.resolve(false))
+    };
+
+    await hub.openDocumentTab(document);
+    hub.setDocumentApi(document.id, api);
+
+    await expect(hub.canCloseAllDocuments()).resolves.toBe(false);
+
+    expect(api.beforeDocumentDisposal).toHaveBeenCalledTimes(1);
+    expect(hub.getDocument(document.id)).toBe(document);
+  });
+
   it("detaches a document without invoking disposal hooks", async () => {
     const store = createStoreMock();
     const document = createDocument("doc-a", "Doc A");

@@ -287,6 +287,37 @@ describe("CloseFolderCommand", () => {
       expect(closeFirstHub).toHaveBeenCalledTimes(1);
       expect(closeSecondHub).toHaveBeenCalledTimes(1);
     });
+
+    it("should not dispatch close folder action when document close is cancelled", async () => {
+      // Arrange
+      const mockStore = context.store as any;
+      mockStore.getState.mockReturnValue({
+        project: { folderPath: "/test/project" },
+        dimMenu: false
+      });
+      const mockProjectService = {
+        performAllDelayedSavesNow: vi.fn().mockResolvedValue(undefined),
+        getDocumentHubServiceInstances: vi.fn().mockReturnValue([
+          {
+            closeAllDocuments: vi.fn().mockResolvedValue(false)
+          }
+        ])
+      };
+      (context.service as any).projectService = mockProjectService;
+      context.emuApi.eraseAllBreakpoints = vi.fn();
+
+      // Act
+      const result = await command.execute(context);
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.finalMessage).toContain("cancelled");
+      expect(context.store.dispatch).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: "CLOSE_FOLDER" }),
+        expect.anything()
+      );
+      expect(context.emuApi.eraseAllBreakpoints).not.toHaveBeenCalled();
+    });
   });
 });
 

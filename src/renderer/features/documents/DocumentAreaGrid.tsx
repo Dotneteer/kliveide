@@ -213,7 +213,8 @@ export const DocumentAreaGrid = ({
     const activeHub = hubsByAreaId.get(activeAreaId);
     if (!activeHub) return;
 
-    await activeHub.closeAllDocuments();
+    const closed = await activeHub.closeAllDocuments();
+    if (closed === false) return;
     const areaIds = findAreaIds(layout);
     if (areaIds.length <= 1) return;
 
@@ -239,13 +240,14 @@ export const DocumentAreaGrid = ({
     if (!activeHub) return;
 
     const areaIds = findAreaIds(layout);
-    await Promise.all(
+    const closeResults = await Promise.all(
       areaIds
         .filter((areaId) => areaId !== activeAreaId)
         .map((areaId) => hubsByAreaId.get(areaId))
         .filter((hub): hub is IDocumentHubService => !!hub)
         .map((hub) => hub.closeAllDocuments())
     );
+    if (closeResults.some((closed) => closed === false)) return;
 
     setLayout(createSingleAreaLayout(activeAreaId));
     setHubsByAreaId(new Map([[activeAreaId, activeHub]]));

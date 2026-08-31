@@ -19,11 +19,13 @@ function createHarness() {
     ideCommandsService: { executeCommand },
     outputPaneService: { getOutputPaneBuffer: vi.fn() },
     projectService: {
-      getActiveDocumentHubService: vi.fn(() => activeHub)
+      getActiveDocumentHubService: vi.fn(() => activeHub),
+      getDocumentHubServiceInstances: vi.fn(() => []),
+      performAllDelayedSavesNow: vi.fn().mockResolvedValue(undefined)
     },
     scriptService: { getScriptOutputBuffer: vi.fn() }
   };
-  const store = { dispatch: vi.fn(), getState: vi.fn() };
+  const store = { dispatch: vi.fn(), getState: vi.fn(() => ({ dimMenu: false })) };
 
   const invoke = (method: string, ...args: unknown[]) =>
     processMainToIdeMessages(
@@ -32,7 +34,7 @@ function createHarness() {
       services as never
     );
 
-  return { activeHub, executeCommand, inactiveHub, invoke };
+  return { activeHub, executeCommand, inactiveHub, invoke, services, store };
 }
 
 describe("MainToIde special-document visibility", () => {
@@ -88,5 +90,50 @@ describe("MainToIde special-document visibility", () => {
     expect(activeHub.closeDocument).toHaveBeenCalledWith("$basic");
     expect(inactiveHub.setActiveDocument).not.toHaveBeenCalled();
     expect(inactiveHub.closeDocument).not.toHaveBeenCalled();
+  });
+});
+
+describe("MainToIde shutdown preparation", () => {
+  it("saves delayed files and allows shutdown when all document hubs can close", async () => {
+    const { invoke, services } = createHarness();
+    const firstHub = {
+      canCloseAllDocuments: vi.fn().mockResolvedValue(true)
+    };
+    const secondHub = {
+      canCloseAllDocuments: vi.fn().mockResolvedValue(true)
+    };
+    services.projectService.getDocumentHubServiceInstances.mockReturnValue([
+      firstHub,
+      secondHub
+    ]);
+
+    const response = await invoke("saveAllBeforeQuit");
+
+    expect(response).toEqual(expect.objectContaining({
+      type: "ApiMethodResponse",
+      result: true
+    }));
+    expect(services.projectService.performAllDelayedSavesNow).toHaveBeenCalledTimes(1);
+    expect(firstHub.canCloseAllDocuments).toHaveBeenCalledTimes(1);
+    expect(secondHub.canCloseAllDocuments).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks shutdown when any document hub vetoes close", async () => {
+    const { invoke, services } = createHarness();
+    services.projectService.getDocumentHubServiceInstances.mockReturnValue([
+      {
+        canCloseAllDocuments: vi.fn().mockResolvedValue(true)
+      },
+      {
+        canCloseAllDocuments: vi.fn().mockResolvedValue(false)
+      }
+    ]);
+
+    const response = await invoke("saveAllBeforeQuit");
+
+    expect(response).toEqual(expect.objectContaining({
+      type: "ApiMethodResponse",
+      result: false
+    }));
   });
 });

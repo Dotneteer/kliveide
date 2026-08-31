@@ -150,7 +150,10 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
   if (!fs.existsSync(projectFolder)) {
     return `Folder ${projectFolder} does not exists.`;
   }
-  await getIdeApi().saveAllBeforeQuit();
+  const canClose = await getIdeApi().saveAllBeforeQuit();
+  if (!canClose) {
+    return "Folder switch cancelled.";
+  }
   const disp = mainStore.dispatch;
   disp(closeFolderAction());
 

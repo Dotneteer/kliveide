@@ -75,35 +75,6 @@
   }
 }
 
-.annotationGutter {
-  display: inline-flex;
-  width: 14px;
-  gap: 2px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  margin-right: 0.8ch;
-}
-
-.annotationMarker {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  opacity: 0;
-}
-
-.visibleAnnotationMarker {
-  opacity: 1;
-}
-
-.commentMarker {
-  background: var(--console-ansi-yellow);
-}
-
-.labelMarker {
-  background: var(--console-ansi-bright-magenta);
-}
-
 .synopsisCommentLine {
   flex: 1 1 auto;
   min-width: 0;

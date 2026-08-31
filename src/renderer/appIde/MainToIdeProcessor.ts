@@ -177,7 +177,7 @@ class IdeMessageProcessor {
    */
   async saveAllBeforeQuit() {
     // --- No input to validate
-    await saveAllBeforeQuit(this.store, this.projectService);
+    return await saveAllBeforeQuit(this.store, this.projectService);
   }
 
   /**
@@ -238,12 +238,22 @@ export async function processMainToIdeMessages(
 
 export async function saveAllBeforeQuit(
   store: Store<AppState>,
-  projectService: IProjectService
-): Promise<void> {
+  projectService: IProjectService,
+  options: { checkDocumentDisposal?: boolean } = {}
+): Promise<boolean> {
   let wasDimmed = store.getState().dimMenu;
   store.dispatch(dimMenuAction(true));
   try {
     await projectService.performAllDelayedSavesNow();
+    if (options.checkDocumentDisposal === false) {
+      return true;
+    }
+    const canCloseResults = await Promise.all(
+      projectService
+        .getDocumentHubServiceInstances()
+        .map((hub) => hub.canCloseAllDocuments())
+    );
+    return canCloseResults.every((canClose) => canClose);
   } finally {
     store.dispatch(dimMenuAction(wasDimmed));
   }

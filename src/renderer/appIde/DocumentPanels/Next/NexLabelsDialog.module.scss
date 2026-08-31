@@ -1,0 +1,128 @@
+@use "@styles/core.scss" as *;
+
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.search,
+.sort {
+  box-sizing: border-box;
+  min-width: 0;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-input);
+  color: var(--color-input);
+  font-family: var(--monospace-font);
+  font-size: 0.9em;
+  outline: none;
+
+  &:focus {
+    outline: 2px solid var(--color-button-focused);
+  }
+}
+
+.scopeOptions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.scopeOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-modal-body);
+}
+
+.table {
+  box-sizing: border-box;
+  max-height: 310px;
+  overflow: auto;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  background: var(--bgcolor-modal-header);
+}
+
+.tableHeader,
+.labelRow {
+  display: grid;
+  grid-template-columns: 8ch minmax(12ch, 1fr) 8ch 10ch 6ch 148px;
+  column-gap: 10px;
+  align-items: center;
+  padding: 5px 8px;
+  font-family: var(--monospace-font);
+}
+
+.tableHeader {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid var(--border-modal-section);
+  background: var(--bgcolor-modal-footer);
+  color: var(--color-doc-inactiveText);
+  font-size: 0.82em;
+}
+
+.labelRow {
+  color: var(--color-modal-body);
+
+  &:nth-child(odd) {
+    background: var(--bgcolor-disass-even-row);
+  }
+}
+
+.labelName {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-value);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted,
+.emptyList {
+  color: var(--color-doc-inactiveText);
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.actionButton {
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 3px 7px;
+  background: transparent;
+  color: var(--color-modal-body);
+  font-size: 0.85em;
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+  }
+}
+
+.emptyList {
+  padding: 10px;
+}
+
+.footer {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 8px;
+  margin: 20px -20px -20px;
+  padding: 12px 20px;
+  border-top: var(--border-modal-section);
+  background: var(--bgcolor-modal-footer);
+  border-bottom-left-radius: var(--radius-modal);
+  border-bottom-right-radius: var(--radius-modal);
+}
+
+.footerSpacer {
+  flex: 1 1 auto;
+}

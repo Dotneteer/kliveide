@@ -26,6 +26,36 @@
       "regions": [
         {
           "start": 0,
+          "end": 10,
+          "type": "disassemble"
+        },
+        {
+          "start": 11,
+          "end": 15,
+          "type": "bytes"
+        },
+        {
+          "start": 16,
+          "end": 16,
+          "type": "disassemble"
+        },
+        {
+          "start": 17,
+          "end": 21,
+          "type": "bytes"
+        },
+        {
+          "start": 22,
+          "end": 23,
+          "type": "disassemble"
+        },
+        {
+          "start": 24,
+          "end": 26,
+          "type": "skip"
+        },
+        {
+          "start": 27,
           "end": 16383,
           "type": "disassemble"
         }
@@ -51,7 +81,8 @@
           "end": 16383,
           "type": "disassemble"
         }
-      ]
+      ],
+      "lastView": "disassembly"
     },
     "13": {
       "offsetIndex": 0,
@@ -237,5 +268,10 @@
   "source": {
     "fileName": "ScrollNutter.nex"
   },
-  "globalLabels": []
+  "globalLabels": [
+    {
+      "name": "L012345678901234",
+      "value": 16412
+    }
+  ]
 }

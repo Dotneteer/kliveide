@@ -156,18 +156,49 @@ describe("NexFileViewerPanel annotations", () => {
     expect(screen.queryByRole("button", { name: "Click to create one!" })).not.toBeInTheDocument();
     expect(screen.queryByText("Loaded")).not.toBeInTheDocument();
   });
+
+  it("does not rerender the Layer 2 loading screen while the viewer scrolls", async () => {
+    const layer2ScreenRender = vi.fn(() => <div data-testid="layer2-screen" />);
+
+    const harness = await renderNexViewer({
+      contents: createNexWithLayer2AndBank5(),
+      layer2ScreenRender,
+      viewState: {
+        layer2LoadingScreenExpanded: true
+      }
+    });
+
+    await screen.findByTestId("layer2-screen");
+    const initialRenderCount = layer2ScreenRender.mock.calls.length;
+    const panel = screen.getByTestId("generic-file-panel");
+    fireEvent.scroll(panel, { target: { scrollTop: 320 } });
+
+    await waitFor(() =>
+      expect(harness.setDocumentViewState).toHaveBeenCalledWith(
+        "/project/ScrollNutter.nex",
+        expect.objectContaining({ scrollPosition: 320 })
+      )
+    );
+    expect(layer2ScreenRender).toHaveBeenCalledTimes(initialRenderCount);
+  });
 });
 
 async function renderNexViewer({
   readFileContent = vi.fn(() => Promise.reject(new Error("File does not exist"))),
   saveFileContent = vi.fn(() => Promise.resolve()),
   dispatch = vi.fn(),
-  openDocument = vi.fn(() => Promise.resolve())
+  openDocument = vi.fn(() => Promise.resolve()),
+  contents = createNexWithBank5(),
+  layer2ScreenRender = vi.fn(() => <div data-testid="layer2-screen" />),
+  viewState = { bankExpanded: { 0: true } }
 }: {
   readFileContent?: ReturnType<typeof vi.fn>;
   saveFileContent?: ReturnType<typeof vi.fn>;
   dispatch?: ReturnType<typeof vi.fn>;
   openDocument?: ReturnType<typeof vi.fn>;
+  contents?: Uint8Array;
+  layer2ScreenRender?: ReturnType<typeof vi.fn>;
+  viewState?: Record<string, unknown>;
 }) {
   const setDocumentViewState = vi.fn();
   const projectService = {
@@ -210,6 +241,28 @@ async function renderNexViewer({
   vi.doMock("@renderer/controls/Icon", () => ({
     Icon: ({ iconName }: { iconName: string }) => <span data-testid={`icon-${iconName}`} />
   }));
+  vi.doMock("@renderer/controls/layout/Panel", () => ({
+    Panel: ({
+      children,
+      initialScrollPosition,
+      onScrolled
+    }: {
+      children: ReactNode;
+      initialScrollPosition?: number;
+      onScrolled?: (pos: number) => void;
+    }) => (
+      <div
+        data-testid="generic-file-panel"
+        data-initial-scroll-position={initialScrollPosition}
+        onScroll={(event) => onScrolled?.(event.currentTarget.scrollTop)}
+      >
+        {children}
+      </div>
+    )
+  }));
+  vi.doMock("@renderer/controls/Next/Layer2Screen", () => ({
+    Layer2Screen: layer2ScreenRender
+  }));
   vi.doMock("@renderer/controls/memory/MemoryDumpViewer", () => ({
     MemoryDumpViewer: (props: {
       bank?: number;
@@ -246,10 +299,14 @@ async function renderNexViewer({
           projectPath: "ScrollNutter.nex"
         }
       },
-      contents: createNexWithBank5(),
-      viewState: { bankExpanded: { 0: true } }
+      contents,
+      viewState
     } as any)
   );
+
+  return {
+    setDocumentViewState
+  };
 }
 
 function createNexWithBank5(): Uint8Array {
@@ -259,5 +316,17 @@ function createNexWithBank5(): Uint8Array {
   contents[9] = 1;
   contents[18 + 5] = 1;
   contents[HEADER_SIZE] = 0x55;
+  return contents;
+}
+
+function createNexWithLayer2AndBank5(): Uint8Array {
+  const contents = new Uint8Array(HEADER_SIZE + 512 + 0xc000 + BANK_SIZE);
+  contents.set([0x4e, 0x65, 0x78, 0x74], 0); // Next
+  contents.set([0x56, 0x31, 0x2e, 0x32], 4); // V1.2
+  contents[9] = 1;
+  contents[10] = 0x01;
+  contents[18 + 5] = 1;
+  contents[HEADER_SIZE + 512] = 0x22;
+  contents[HEADER_SIZE + 512 + 0xc000] = 0x55;
   return contents;
 }

@@ -19,9 +19,4 @@
   flex: 1 1 auto;
   min-height: 0;
   outline: none;
-
-  &:focus-visible {
-    outline: 1px solid var(--color-toolbarbutton-selected);
-    outline-offset: -1px;
-  }
 }

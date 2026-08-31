@@ -30,6 +30,13 @@
   }
 }
 
+.rangeInputRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
 .readOnlyValue {
   box-sizing: border-box;
   min-height: 26px;
@@ -61,11 +68,18 @@
 
 .regionItem {
   display: grid;
-  grid-template-columns: 7ch 7ch 12ch 9ch 8ch;
-  gap: 8px;
+  grid-template-columns: 7ch 7ch 14ch minmax(12ch, 1fr) 9ch;
+  column-gap: 12px;
   padding: 5px 8px;
   color: var(--color-modal-body);
   font-family: var(--monospace-font);
+
+  > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .emptyList {

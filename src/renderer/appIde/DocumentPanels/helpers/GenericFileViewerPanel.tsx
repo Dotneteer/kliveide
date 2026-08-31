@@ -1,7 +1,7 @@
 import styles from "./GenericViewerPanel.module.scss";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
-import { createElement, useEffect, useState } from "react";
+import { createElement, useCallback, useEffect, useRef, useState } from "react";
 import { Panel } from "@renderer/controls/layout/Panel";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
@@ -52,6 +52,7 @@ export function GenericFileViewerPanel<
 }: GenericFileViewerProps<TFile, TState>) {
   // --- Initial view state
   const [currentViewState, setCurrentViewState] = useState<TState>(viewState);
+  const currentViewStateRef = useRef<TState>(viewState);
   const documentHubService = useDocumentHubService();
 
   const [fileInfo, setFileInfo] = useState<TFile>();
@@ -63,6 +64,31 @@ export function GenericFileViewerPanel<
 
   // --- We pass AppServices to the context
   const appServices = useAppServices();
+
+  const changeViewState = useCallback((setter: (vs: TState) => void) => {
+    const newViewState = { ...currentViewStateRef.current };
+    setter(newViewState);
+    currentViewStateRef.current = newViewState;
+    setCurrentViewState(newViewState);
+  }, []);
+
+  const storeScrollPosition = useCallback((pos: number) => {
+    if (currentViewStateRef.current?.scrollPosition === pos) {
+      return;
+    }
+
+    const newViewState = {
+      ...currentViewStateRef.current,
+      scrollPosition: pos
+    };
+    currentViewStateRef.current = newViewState;
+    if (document.id) {
+      documentHubService.setDocumentViewState(document.id, newViewState);
+    }
+  }, [
+    document.id,
+    documentHubService
+  ]);
 
   // --- Obtain the document file whenever it changes
   useEffect(() => {
@@ -97,23 +123,23 @@ export function GenericFileViewerPanel<
         valid,
         initialized,
         appServices,
-        changeViewState: (setter: (vs: TState) => void) => {
-          const newViewState = { ...currentViewState };
-          setter(newViewState);
-          setCurrentViewState(newViewState);
-        }
+        changeViewState
       });
     }
-  }, [fileInfo, fileError, valid, initialized, currentViewState]);
+  }, [
+    changeViewState,
+    fileError,
+    fileInfo,
+    initialized,
+    valid
+  ]);
 
   // --- Render the view
   return context ? (
     <Panel
       xclass={styles.panelFont}
       initialScrollPosition={currentViewState?.scrollPosition}
-      onScrolled={pos =>
-        context.changeViewState(vs => (vs.scrollPosition = pos))
-      }
+      onScrolled={storeScrollPosition}
     >
       {!valid && (
         <div className={styles.invalid}>

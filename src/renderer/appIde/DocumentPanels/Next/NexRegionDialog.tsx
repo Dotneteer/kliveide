@@ -100,12 +100,21 @@ export function NexRegionDialog({
         />
       </DialogRow>
       <DialogRow label="End offset" rows={true}>
-        <input
-          className={styles.input}
-          spellCheck={false}
-          value={endText}
-          onChange={(event) => setEndText(event.target.value)}
-        />
+        <div className={styles.rangeInputRow}>
+          <input
+            className={styles.input}
+            spellCheck={false}
+            value={endText}
+            onChange={(event) => setEndText(event.target.value)}
+          />
+          <Button
+            text="Entire bank"
+            clicked={() => {
+              setStartText(formatRegionOffset(0));
+              setEndText(formatRegionOffset(NEX_BANK_LAST_OFFSET));
+            }}
+          />
+        </div>
       </DialogRow>
       <DialogRow label="Length" rows={true}>
         <div className={styles.readOnlyValue}>

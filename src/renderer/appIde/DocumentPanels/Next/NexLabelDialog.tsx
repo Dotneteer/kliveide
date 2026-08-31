@@ -17,6 +17,7 @@ export type NexLabelDialogLabel = {
   name: string;
   value: number;
   referenced?: boolean;
+  referenceCount?: number;
 };
 
 export type NexLabelDialogResult = {
@@ -132,9 +133,10 @@ export function NexLabelDialog({
         <input
           autoFocus
           className={styles.input}
+          maxLength={NEX_LABEL_MAX_LENGTH}
           spellCheck={false}
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => setName(event.target.value.slice(0, NEX_LABEL_MAX_LENGTH))}
         />
       </DialogRow>
       <DialogRow label="Value" rows={true}>

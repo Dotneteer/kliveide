@@ -259,8 +259,8 @@ class DocumentHubService implements IDocumentHubService {
    * Closes the specified document
    * @param id Document to close
    */
-  closeDocument(id: string): Promise<void> {
-    return this.closeDocuments(id);
+  async closeDocument(id: string): Promise<void> {
+    await this.closeDocuments(id);
   }
 
   /**
@@ -289,11 +289,11 @@ class DocumentHubService implements IDocumentHubService {
     return detachedDoc;
   }
 
-  private async closeDocuments(...ids: string[]) {
+  private async closeDocuments(...ids: string[]): Promise<boolean> {
     const documentIds = [...new Set(ids)].filter(
       (id) => !this._closingDocumentIds.has(id) && !!this.getDocument(id)
     );
-    if (documentIds.length <= 0) return;
+    if (documentIds.length <= 0) return true;
 
     documentIds.forEach((id) => this._closingDocumentIds.add(id));
     try {
@@ -301,11 +301,11 @@ class DocumentHubService implements IDocumentHubService {
         .map((id) => this._openDocs.findIndex((doc) => doc.id === id))
         .filter((i) => i >= 0);
 
-      if (indices.length <= 0) return;
+      if (indices.length <= 0) return true;
 
       const closedDocs = indices.map((i) => this._openDocs[i]);
       const canClose = await this.ensureDocumentSaved(...closedDocs.map((doc) => doc.id));
-      if (!canClose) return;
+      if (!canClose) return false;
 
       // --- This is needed when evaluating active document below.
       const activeDoc = this._openDocs[this._activeDocIndex];
@@ -337,6 +337,7 @@ class DocumentHubService implements IDocumentHubService {
       this.signHubStateChanged();
 
       this.requestHubClosureIfEmpty();
+      return true;
     } finally {
       documentIds.forEach((id) => this._closingDocumentIds.delete(id));
     }
@@ -345,11 +346,12 @@ class DocumentHubService implements IDocumentHubService {
   /**
    * Closes all open documents
    */
-  async closeAllDocuments(...exceptIds: string[]): Promise<void> {
+  async closeAllDocuments(...exceptIds: string[]): Promise<boolean> {
     // --- Close the documents
-    await this.closeDocuments(
+    const closed = await this.closeDocuments(
       ...this._openDocs.filter((d) => exceptIds?.includes(d.id) !== true).map((d) => d.id)
     );
+    if (!closed) return false;
 
     // --- Wait while all documents are closed
     let count = 0;
@@ -358,6 +360,18 @@ class DocumentHubService implements IDocumentHubService {
       if (this._openDocs.length <= 0) break;
       count++;
     }
+    return this._openDocs.every((doc) => exceptIds?.includes(doc.id) === true);
+  }
+
+  /**
+   * Checks if all open documents can be closed without actually closing them.
+   */
+  async canCloseAllDocuments(...exceptIds: string[]): Promise<boolean> {
+    return await this.ensureDocumentSaved(
+      ...this._openDocs
+        .filter((doc) => exceptIds?.includes(doc.id) !== true)
+        .map((doc) => doc.id)
+    );
   }
 
   /**

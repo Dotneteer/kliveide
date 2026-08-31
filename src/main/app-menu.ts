@@ -195,7 +195,8 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       label: rp,
       click: async () => {
         ensureIdeWindow();
-        await getIdeApi().saveAllBeforeQuit();
+        const canClose = await getIdeApi().saveAllBeforeQuit();
+        if (!canClose) return;
         mainStore.dispatch(closeFolderAction());
         await getEmuApi().eraseAllBreakpoints();
         fileChangeWatcher.stopWatching();
@@ -245,7 +246,8 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         enabled: !!folderOpen,
         click: async () => {
           ensureIdeWindow();
-          await getIdeApi().saveAllBeforeQuit();
+          const canClose = await getIdeApi().saveAllBeforeQuit();
+          if (!canClose) return;
           mainStore.dispatch(closeFolderAction());
           await getEmuApi().eraseAllBreakpoints();
           fileChangeWatcher.stopWatching();

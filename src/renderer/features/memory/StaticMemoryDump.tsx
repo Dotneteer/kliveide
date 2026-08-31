@@ -52,6 +52,10 @@ import {
   type NexLabelDialogResult
 } from "@renderer/appIde/DocumentPanels/Next/NexLabelDialog";
 import {
+  NexLabelsDialog,
+  type NexLabelsDialogResult
+} from "@renderer/appIde/DocumentPanels/Next/NexLabelsDialog";
+import {
   NexOperandLabelDialog,
   type NexOperandLabelDialogResult
 } from "@renderer/appIde/DocumentPanels/Next/NexOperandLabelDialog";
@@ -60,7 +64,12 @@ import {
   type NexRegionDialogResult
 } from "@renderer/appIde/DocumentPanels/Next/NexRegionDialog";
 import {
+  NexRegionsDialog,
+  type NexRegionsDialogResult
+} from "@renderer/appIde/DocumentPanels/Next/NexRegionsDialog";
+import {
   getBankAnnotation,
+  NEX_BANK_LAST_OFFSET,
   getNexBankAddressOffset,
   getNexBankOffsetIndex,
   type NexAnnotationOffsetIndex,
@@ -459,6 +468,11 @@ const StaticMemoryDump = ({
     });
   }, []);
 
+  const clearDisassemblySelection = useCallback(() => {
+    disassemblySelectionRef.current = undefined;
+    setDisassemblySelection(undefined);
+  }, []);
+
   const moveDisassemblySelection = useCallback((
     delta: number,
     extendSelection: boolean
@@ -664,17 +678,35 @@ const StaticMemoryDump = ({
   ): NexLabelDialogLabel[] => {
     const bankAnnotation = getBankAnnotation(annotations, annotationBank);
     return [
-      ...(annotations.globalLabels ?? []).map((label) => ({
-        ...label,
-        scope: "global" as const,
-        referenced: countLabelReferences(annotations, annotationBank, "global", label.name) > 0
-      })),
-      ...(bankAnnotation?.localLabels ?? []).map((label) => ({
-        ...label,
-        scope: "local" as const,
-        bank: annotationBank,
-        referenced: countLabelReferences(annotations, annotationBank, "local", label.name) > 0
-      }))
+      ...(annotations.globalLabels ?? []).map((label) => {
+        const referenceCount = countLabelReferences(
+          annotations,
+          annotationBank,
+          "global",
+          label.name
+        );
+        return {
+          ...label,
+          scope: "global" as const,
+          referenced: referenceCount > 0,
+          referenceCount
+        };
+      }),
+      ...(bankAnnotation?.localLabels ?? []).map((label) => {
+        const referenceCount = countLabelReferences(
+          annotations,
+          annotationBank,
+          "local",
+          label.name
+        );
+        return {
+          ...label,
+          scope: "local" as const,
+          bank: annotationBank,
+          referenced: referenceCount > 0,
+          referenceCount
+        };
+      })
     ];
   }, []);
 
@@ -869,6 +901,13 @@ const StaticMemoryDump = ({
     if (!bankAnnotation) {
       return;
     }
+    if (
+      result.start === 0 &&
+      result.end === NEX_BANK_LAST_OFFSET &&
+      !window.confirm("This changes the entire 16K bank. Continue?")
+    ) {
+      return;
+    }
 
     const nextBankAnnotation: NexBankAnnotation = {
       ...bankAnnotation,
@@ -891,7 +930,9 @@ const StaticMemoryDump = ({
     setNexAnnotations(updatedAnnotations);
     setAnnotationSaveError(undefined);
     setAnnotationDirtyState(true);
+    clearDisassemblySelection();
   }, [
+    clearDisassemblySelection,
     currentViewState.nexAnnotationBank,
     setAnnotationDirtyState
   ]);
@@ -990,21 +1031,17 @@ const StaticMemoryDump = ({
     setEndOfLineComment
   ]);
 
-  const openLabelDialog = useCallback(async (
-    rowIndex: number | undefined,
-    initialScope: NexAnnotationLabelScope
+  const openLabelDialogForValues = useCallback(async (
+    initialScope: NexAnnotationLabelScope,
+    initialGlobalValue: number,
+    initialLocalValue: number
   ) => {
-    if (rowIndex === undefined) {
-      return;
-    }
-    const item = disassemblyItems[rowIndex];
     const annotationBank = currentViewState.nexAnnotationBank;
     const annotations = nexAnnotationsRef.current;
-    if (!item?.annotation || annotationBank === undefined || !annotations) {
+    if (annotationBank === undefined || !annotations) {
       return;
     }
 
-    const bankOffset = item.annotation.bankOffset;
     const result = await dialogs.open<NexLabelDialogResult, {
       bank: number;
       initialScope: NexAnnotationLabelScope;
@@ -1016,8 +1053,8 @@ const StaticMemoryDump = ({
       {
         bank: annotationBank,
         initialScope,
-        initialGlobalValue: (disassOffset + bankOffset) & 0xffff,
-        initialLocalValue: bankOffset,
+        initialGlobalValue,
+        initialLocalValue,
         labels: createLabelDialogLabels(annotations, annotationBank)
       },
       {
@@ -1032,9 +1069,31 @@ const StaticMemoryDump = ({
     applyLabelDialogResult,
     createLabelDialogLabels,
     currentViewState.nexAnnotationBank,
-    dialogs,
+    dialogs
+  ]);
+
+  const openLabelDialog = useCallback(async (
+    rowIndex: number | undefined,
+    initialScope: NexAnnotationLabelScope
+  ) => {
+    if (rowIndex === undefined) {
+      return;
+    }
+    const item = disassemblyItems[rowIndex];
+    if (!item?.annotation) {
+      return;
+    }
+
+    const bankOffset = item.annotation.bankOffset;
+    await openLabelDialogForValues(
+      initialScope,
+      (disassOffset + bankOffset) & 0xffff,
+      bankOffset
+    );
+  }, [
     disassOffset,
-    disassemblyItems
+    disassemblyItems,
+    openLabelDialogForValues
   ]);
 
   const openOperandLabelDialog = useCallback(async (rowIndex: number | undefined) => {
@@ -1092,13 +1151,14 @@ const StaticMemoryDump = ({
     getGeneratedDisassemblyItemForRow
   ]);
 
-  const openRegionDialog = useCallback(async (
-    target: StaticDisassemblyContextTarget | undefined,
-    initialType: NexAnnotationRegionType
+  const openRegionDialogForValues = useCallback(async (
+    initialType: NexAnnotationRegionType,
+    initialStart: number,
+    initialEnd: number
   ) => {
     const annotationBank = currentViewState.nexAnnotationBank;
     const annotations = nexAnnotationsRef.current;
-    if (!target || annotationBank === undefined || !annotations) {
+    if (annotationBank === undefined || !annotations) {
       return;
     }
     const bankAnnotation = getBankAnnotation(annotations, annotationBank);
@@ -1116,8 +1176,8 @@ const StaticMemoryDump = ({
       NexRegionDialog,
       {
         initialType,
-        initialStart: target.bankOffsetStart,
-        initialEnd: target.bankOffsetEnd,
+        initialStart,
+        initialEnd,
         regions: bankAnnotation.regions,
         bytes: Array.from(contents)
       },
@@ -1134,6 +1194,193 @@ const StaticMemoryDump = ({
     contents,
     currentViewState.nexAnnotationBank,
     dialogs
+  ]);
+
+  const openRegionDialog = useCallback(async (
+    target: StaticDisassemblyContextTarget | undefined,
+    initialType?: NexAnnotationRegionType
+  ) => {
+    const annotationBank = currentViewState.nexAnnotationBank;
+    const annotations = nexAnnotationsRef.current;
+    if (!target || annotationBank === undefined || !annotations) {
+      return;
+    }
+    const bankAnnotation = getBankAnnotation(annotations, annotationBank);
+    if (!bankAnnotation) {
+      return;
+    }
+    await openRegionDialogForValues(
+      initialType ?? getRegionTypeForSpan(
+        bankAnnotation.regions,
+        target.bankOffsetStart,
+        target.bankOffsetEnd
+      ),
+      target.bankOffsetStart,
+      target.bankOffsetEnd
+    );
+  }, [
+    currentViewState.nexAnnotationBank,
+    openRegionDialogForValues
+  ]);
+
+  const openManageRegionDialog = useCallback(async () => {
+    const annotationBank = currentViewState.nexAnnotationBank;
+    const annotations = nexAnnotationsRef.current;
+    const activeIndex = disassemblySelectionRef.current?.activeIndex;
+    const activeItem = activeIndex !== undefined ? disassemblyItems[activeIndex] : undefined;
+    const activeOffset = activeItem?.annotation?.bankOffset;
+    if (annotationBank === undefined || !annotations || activeOffset === undefined) {
+      return;
+    }
+    const bankAnnotation = getBankAnnotation(annotations, annotationBank);
+    if (!bankAnnotation) {
+      return;
+    }
+
+    const result = await dialogs.open<NexRegionsDialogResult, {
+      activeOffset?: number;
+      bytes: number[];
+      regions: NexAnnotationRegion[];
+    }>(
+      NexRegionsDialog,
+      {
+        activeOffset,
+        bytes: Array.from(contents),
+        regions: bankAnnotation.regions
+      },
+      {
+        title: "Regions",
+        width: 840
+      }
+    );
+    if (!result) {
+      return;
+    }
+
+    if (result.action === "go-to") {
+      const address = (disassOffset + result.region.start) & 0xffff;
+      changeViewState((vs) => (vs.topAddress = address));
+      setDisassemblyJumpAddress(address);
+    } else if (result.action === "edit") {
+      await openRegionDialogForValues(
+        result.region.type,
+        result.region.start,
+        result.region.end
+      );
+    } else if (result.action === "split") {
+      const splitStart = activeOffset >= result.region.start && activeOffset <= result.region.end
+        ? activeOffset
+        : result.region.start;
+      const splitEnd = Math.min(
+        result.region.end,
+        splitStart + Math.max(1, activeItem?.annotation?.byteLength ?? 1) - 1
+      );
+      await openRegionDialogForValues(
+        getAlternativeRegionType(result.region.type),
+        splitStart,
+        splitEnd
+      );
+    } else if (result.action === "add") {
+      await openRegionDialogForValues(
+        getAlternativeRegionType(
+          getRegionTypeForSpan(bankAnnotation.regions, activeOffset, activeOffset)
+        ),
+        activeOffset,
+        Math.min(
+          NEX_BANK_LAST_OFFSET,
+          activeOffset + Math.max(1, activeItem?.annotation?.byteLength ?? 1) - 1
+        )
+      );
+    } else {
+      applyRegionDialogResult({
+        type: "disassemble",
+        start: result.region.start,
+        end: result.region.end
+      });
+    }
+  }, [
+    applyRegionDialogResult,
+    changeViewState,
+    contents,
+    currentViewState.nexAnnotationBank,
+    dialogs,
+    disassOffset,
+    disassemblyItems,
+    openRegionDialogForValues
+  ]);
+
+  const openManageLabelsDialog = useCallback(async () => {
+    const annotationBank = currentViewState.nexAnnotationBank;
+    const annotations = nexAnnotationsRef.current;
+    if (annotationBank === undefined || !annotations) {
+      return;
+    }
+
+    const labels = createLabelDialogLabels(annotations, annotationBank);
+    const result = await dialogs.open<NexLabelsDialogResult, {
+      bank: number;
+      bankAddressOffset: number;
+      labels: NexLabelDialogLabel[];
+    }>(
+      NexLabelsDialog,
+      {
+        bank: annotationBank,
+        bankAddressOffset: disassOffset,
+        labels
+      },
+      {
+        title: "Labels",
+        width: 780
+      }
+    );
+    if (!result) {
+      return;
+    }
+
+    if (result.action === "go-to") {
+      const address = result.label.scope === "local"
+        ? (disassOffset + result.label.value) & 0xffff
+        : result.label.value;
+      changeViewState((vs) => (vs.topAddress = address));
+      setDisassemblyJumpAddress(address);
+    } else if (result.action === "add") {
+      const activeIndex = disassemblySelectionRef.current?.activeIndex;
+      const bankOffset = activeIndex !== undefined
+        ? disassemblyItems[activeIndex]?.annotation?.bankOffset ?? 0
+        : 0;
+      await openLabelDialogForValues(
+        result.scope,
+        (disassOffset + bankOffset) & 0xffff,
+        bankOffset
+      );
+    } else if (result.action === "edit") {
+      await openLabelDialogForValues(
+        result.label.scope,
+        result.label.scope === "global"
+          ? result.label.value
+          : (disassOffset + result.label.value) & 0xffff,
+        result.label.scope === "local"
+          ? result.label.value
+          : result.label.value & NEX_BANK_LAST_OFFSET
+      );
+    } else {
+      applyLabelDialogResult({
+        action: "delete",
+        scope: result.label.scope,
+        name: result.label.name,
+        value: result.label.value,
+        originalLabel: result.label
+      });
+    }
+  }, [
+    applyLabelDialogResult,
+    changeViewState,
+    createLabelDialogLabels,
+    currentViewState.nexAnnotationBank,
+    dialogs,
+    disassOffset,
+    disassemblyItems,
+    openLabelDialogForValues
   ]);
 
   const openDisassemblyContextMenu = useCallback((
@@ -1324,16 +1571,6 @@ const StaticMemoryDump = ({
         {currentViewState.nexAnnotationPath && (
           <>
             <LabelSeparator width={8} />
-            {annotationDirty && !annotationSaveError && !annotationLoadError && (
-              <span title="Unsaved annotation changes">
-                <Icon
-                  iconName="circle-filled"
-                  fill="--console-ansi-yellow"
-                  width={16}
-                  height={16}
-                />
-              </span>
-            )}
             {(annotationSaveError || annotationLoadError || (!annotationLoading && !annotationEnabled)) && (
               <span title={annotationSaveError ?? annotationLoadError ?? "Annotation file could not be loaded."}>
                 <Icon
@@ -1348,17 +1585,20 @@ const StaticMemoryDump = ({
               iconName="save"
               title="Save annotations"
               enable={annotationDirty && !!nexAnnotations}
+              fill={annotationDirty ? "--console-ansi-yellow" : undefined}
               clicked={saveAnnotations}
             />
             <SmallIconButton
               iconName="symbol-event"
               title="Manage Labels"
               enable={annotationEnabled}
+              clicked={openManageLabelsDialog}
             />
             <SmallIconButton
               iconName="dump"
               title="Manage Regions"
-              enable={annotationEnabled}
+              enable={annotationEnabled && disassemblySelection?.activeIndex !== undefined}
+              clicked={openManageRegionDialog}
             />
             <ToolbarSplitButton
               options={annotateOptions}
@@ -1610,6 +1850,23 @@ function replaceAnnotationRegion(
   }
   nextRegions.push({ start, end, type });
   return mergeAnnotationRegions(nextRegions);
+}
+
+function getRegionTypeForSpan(
+  regions: NexAnnotationRegion[],
+  start: number,
+  end: number
+): NexAnnotationRegionType {
+  const intersectingRegions = regions.filter((region) => region.start <= end && region.end >= start);
+  const firstRegion = intersectingRegions[0];
+  return intersectingRegions.length > 0 &&
+    intersectingRegions.every((region) => region.type === firstRegion.type)
+    ? firstRegion.type
+    : "disassemble";
+}
+
+function getAlternativeRegionType(type: NexAnnotationRegionType): NexAnnotationRegionType {
+  return type === "disassemble" ? "bytes" : "disassemble";
 }
 
 function mergeAnnotationRegions(regions: NexAnnotationRegion[]): NexAnnotationRegion[] {

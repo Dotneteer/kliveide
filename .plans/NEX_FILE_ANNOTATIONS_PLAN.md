@@ -2,7 +2,7 @@
 
 Created: 2026-08-30
 
-Status: Steps 1, 2, 3, 4, 5, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, and 6.8 implemented on 2026-08-30. Later steps pending.
+Status: Steps 1, 2, 3, 4, 5, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, and 6.10 implemented. Later steps pending.
 
 ## Implementation Progress
 
@@ -1109,6 +1109,21 @@ Behavior:
 - Delete follows the referenced-label confirmation rule;
 - Add Label opens the Label dialog with a value defaulting to the active row.
 
+Implementation result:
+
+- added `NexLabelsDialog` with Bank/Global/All scope filters, search, and
+  Address/Name/Reference count sorting;
+- shows scope, label name, stored value, local effective address, and reference
+  counts;
+- row actions support Go To, Edit, and Delete;
+- Add Global and Add Bank Label open the existing validated Label dialog with
+  values defaulting to the active disassembly row;
+- wired the Manage Labels toolbar button in popped-out annotated NEX bank
+  disassembly;
+- reused the existing label save/delete path, including confirmation before
+  deleting referenced labels;
+- added focused dialog and StaticMemoryDump integration tests.
+
 #### 6.10 Manage Regions Dialog
 
 Purpose:
@@ -1152,6 +1167,21 @@ Behavior:
 - Delete/Revert turns the selected region back into `disassemble` and then
   normalizes adjacent regions;
 - Go To scrolls the bank disassembly to the region start.
+
+Implementation result:
+
+- added `NexRegionsDialog` with search and region-type filtering;
+- shows every current-bank region sorted by start offset;
+- displays start, end, length, type, and generated-line estimate;
+- selects the active disassembly row's containing region by default;
+- includes a live preview for the selected region;
+- row actions support Go To, Edit, Split, and Revert;
+- Add Region, Edit, and Split reuse the existing Memory Region dialog for
+  exact range/type editing;
+- Revert turns the selected region back into `disassemble` through the same
+  normalized region-update path;
+- kept the full-bank confirmation guard before applying whole-bank changes;
+- added focused dialog and StaticMemoryDump integration tests.
 
 #### 6.11 Dirty State And Saving
 

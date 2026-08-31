@@ -91,6 +91,29 @@ describe("NexLabelDialog", () => {
       originalLabel: undefined
     });
   });
+
+  it("does not allow typing more than sixteen name characters", () => {
+    const controls = createControls();
+
+    render(
+      <NexLabelDialog
+        bank={5}
+        initialScope="local"
+        initialGlobalValue={0x8123}
+        initialLocalValue={0x0123}
+        labels={[]}
+        controls={controls}
+      />
+    );
+
+    const nameInput = screen.getAllByRole("textbox")[0];
+    fireEvent.change(nameInput, {
+      target: { value: "SixteenCharsHereAndMore" }
+    });
+
+    expect(nameInput).toHaveAttribute("maxLength", "16");
+    expect(nameInput).toHaveValue("SixteenCharsHere");
+  });
 });
 
 function createControls() {

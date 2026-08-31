@@ -12,6 +12,8 @@ import type { DisassemblyItem } from "../disassemblers/common-types";
 import { toDecimal3, toDecimal5, toHexa2, toHexa4 } from "../services/ide-commands";
 import styles from "./DisassemblyPanel.module.scss";
 
+const Z80_INSTRUCTION_COLUMN_WIDTH = 240;
+
 export type DisassemblyRowViewModel = {
   address: number;
   addressText: string;
@@ -157,22 +159,6 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             current={viewModel.execPoint}
             disabled={viewModelParams.breakpoint?.disabled ?? false}
           />
-          {item.annotation && (
-            <div className={styles.annotationGutter}>
-              <span
-                className={classnames(styles.annotationMarker, styles.commentMarker, {
-                  [styles.visibleAnnotationMarker]: item.annotation.hasLineAnnotation
-                })}
-                title={item.annotation.hasLineAnnotation ? "Annotated comment" : undefined}
-              />
-              <span
-                className={classnames(styles.annotationMarker, styles.labelMarker, {
-                  [styles.visibleAnnotationMarker]: item.annotation.hasLabel
-                })}
-                title={item.annotation.hasLabel ? "Annotated label" : undefined}
-              />
-            </div>
-          )}
           {viewModel.showBankLabel && viewModel.partitionLabel && (
             <div className={styles.partitionPrefix}>
               <span
@@ -193,7 +179,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
           <Secondary text={viewModel.opCodes} width={viewModelParams.decimalView ? 140 : 100} />
           <Label text={viewModel.labelText} width="18ch" />
           <div className={styles.tstates}>{viewModel.tstates}</div>
-          <Value text={viewModel.instruction} width={160} />
+          <Value text={viewModel.instruction} width={Z80_INSTRUCTION_COLUMN_WIDTH} />
           {item.hardComment && <Secondary text={"; " + item.hardComment} />}
         </>
       )}
