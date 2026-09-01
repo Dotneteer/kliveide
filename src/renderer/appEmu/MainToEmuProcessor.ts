@@ -159,16 +159,20 @@ class EmuMessageProcessor {
       dataBlocks = tzxReader.dataBlocks.map((b) => b.getDataBlock()).filter((b) => b);
     }
 
-    // --- Store the tape file in the media store
+    // --- Store the tape file in the media store. This is the durable record: whenever a machine
+    // --- starts, the controller re-attaches every stored medium to it, so the tape survives a
+    // --- machine change and does not depend on a machine being live right now.
     mediaStore.addMedia({
       id: MEDIA_TAPE,
       mediaFile: file,
       mediaContents: dataBlocks
     });
 
-    // --- Pass the tape file data blocks to the machine
+    // --- Pass the tape file data blocks to the machine, if one is already live. There may be none
+    // --- yet during startup, while a machine is still being set up - the stored medium above is
+    // --- attached when that machine starts, so this is not an error.
     const controller = this.machineService.getMachineController();
-    controller.machine.setMachineProperty(MEDIA_TAPE, dataBlocks);
+    controller?.machine?.setMachineProperty(MEDIA_TAPE, dataBlocks);
 
     // --- Done.
     if (confirm) {
@@ -203,15 +207,18 @@ class EmuMessageProcessor {
     const drive = diskIndex ? "B" : "A";
     // --- Try to parse the disk file
     try {
-      // --- Store the tape file in the media store
+      // --- Store the disk file in the media store. This is the durable record: whenever a machine
+      // --- starts, the controller re-attaches every stored medium to it.
       mediaStore.addMedia({
         id: mediaId,
         mediaFile: file,
         mediaContents: contents
       });
 
-      // --- Pass the tape file data blocks to the machine
-      controller.machine.setMachineProperty(mediaId, contents ?? null);
+      // --- Pass the disk contents to the machine, if one is already live. There may be none yet
+      // --- during startup, while a machine is still being set up - the stored medium above is
+      // --- attached when that machine starts, so this is not an error.
+      controller?.machine?.setMachineProperty(mediaId, contents ?? null);
 
       // --- Done.
       if (confirm) {
@@ -242,7 +249,9 @@ class EmuMessageProcessor {
   setDiskWriteProtection(index: number, protect: boolean) {
     const controller = this.machineService.getMachineController();
     const propName = index ? DISK_B_WP : DISK_A_WP;
-    controller.machine.setMachineProperty(propName, protect);
+    // --- There may be no live machine yet during startup, while one is still being set up.
+    // --- Crashing here would abort the whole disk restore and eject the disk.
+    controller?.machine?.setMachineProperty(propName, protect);
   }
 
   /**
