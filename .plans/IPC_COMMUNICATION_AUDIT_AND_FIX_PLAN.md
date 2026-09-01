@@ -176,6 +176,40 @@ worth normalizing only if `MessengerBase` is being touched anyway.
 
 ## Part 2 — Endpoint-Specific Findings
 
+> **STATUS: IMPLEMENTED (2026-09-01).** Every finding below is fixed except
+> **A7** (TOCTOU file-entry checks), which the plan explicitly recommended
+> against acting on. A5/B1/C1 were already closed by the Part 1 work.
+>
+> Findings discovered or corrected while implementing:
+>
+> 1. **A4 had a third instance the audit missed**:
+>    `src/renderer/appIde/utils/excluded-items-utils.ts` used the same
+>    first-occurrence-only `replace`, so nested excluded paths were also
+>    *displayed* with mixed separators. All three sites now use `split`/`join`,
+>    which converts every separator without regex-escaping pitfalls.
+> 2. **The SD card reset path had an unreported bug of the same family as A1**:
+>    `resetToDefaultSdCardFile` unlinked and replaced the image without first
+>    invalidating the cached handler. Since the cache is only invalidated when
+>    the *file name* changes (it does not here), the stale handler was reused
+>    against the replaced file - and on Windows the open descriptor makes the
+>    unlink itself fail. It now invalidates first, under the same lock.
+> 3. **B5 could not be fixed by simply switching to `resetBreakpointsTo`.**
+>    That path rebuilds definitions via `addBreakpoint`, which deliberately does
+>    not copy the `disabled` flag, so the obvious swap would have silently
+>    re-armed every disabled breakpoint. A dedicated atomic
+>    `restoreBreakpoints` was added instead, which re-applies disabled state
+>    inside the same synchronous handler.
+> 4. **C3 needed no new API**: `getCpuStateChunk()` already returns the
+>    authoritative `MachineControllerState`. Worth noting the emulator performs
+>    *no* precondition check of its own on `issueMachineCommand`, so the IDE-side
+>    guard is the only gate - which makes reading a stale mirror a real
+>    correctness issue rather than only a cosmetic one.
+> 5. **A3's `await` fix was necessary but not sufficient**, because one caller
+>    (`setSettingValue`) is synchronous and cannot await. `saveKliveProject` is
+>    therefore serialized internally as well, so ordering is now correct
+>    regardless of caller discipline; it also no longer swallows failures
+>    silently.
+
 ### Group A — Renderer → Main
 
 **A1. [Data-integrity risk, HIGH confidence] `copyToSdCard` races the cached SD-card file handle.**
@@ -356,21 +390,21 @@ race by gating something on them again.
 ## Part 3 — Recommended Implementation Order
 
 **Phase 1 — Quick, isolated, high-confidence wins** (low risk, do first):
-1. C2 — `NewProjectCommand.ts`: add the missing `ensureBuildRootsLoaded` call (1 line, mirrors existing code)
+1. ~~C2 — `NewProjectCommand.ts`: add the missing `ensureBuildRootsLoaded` call~~ **DONE**
 2. ~~S3 — `MessageProxy.ts`: treat `NotReady` as an error, same as `ErrorResponse`~~ **DONE**
-3. B3 — `setDiskFile` drive-letter message fix
-4. B4 — `getAllBreakpoints` missing `return`
-5. C5 — delete vestigial `ideStateSynched`/`emuStateSynched`
-6. C4 — await ordering fix in `app-menu.ts`
+3. ~~B3 — `setDiskFile` drive-letter message fix~~ **DONE**
+4. ~~B4 — `getAllBreakpoints` missing `return`~~ **DONE** (fixed rather than deleted; it remains dead code, redundant with `listBreakpoints`, so deleting it is still a reasonable follow-up)
+5. ~~C5 — delete vestigial `ideStateSynched`/`emuStateSynched`~~ **DONE** (also removed the unused `EMU_STATE_SYNCHED`/`IDE_STATE_SYNCHED` action types and the `emuSynchedAction` creator)
+6. ~~C4 — await ordering fix in `app-menu.ts`~~ **DONE**
 
 **Phase 2 — Root-cause fix for the two biggest findings** (B1, C1) and the general listener-registration gap:
 7. ~~S6 — move `registerMainToEmuIpc()`/`registerMainToIdeIpc()` to synchronous/early registration instead of a passive `useEffect`~~ **DONE** (plus the store/messenger caching and readiness-guard refinement described in the Part 1 status note — needed for C1 to actually close)
 
-**Phase 3 — Data-integrity fixes** (independent of the transport work; should not wait):
-8. A1 + A2 — `copyToSdCard` handler race + missing try/finally
-9. A3 — `await saveKliveProject()` at all 4 sites; consider serializing the function itself
-10. A4 — global-regex path-separator fix at both sites (`directory-content.ts:78` + the still-open `RendererToMainProcessor.ts:252`)
-11. A6 — `hasNextAutoExec` fd leak
+**Phase 3 — Data-integrity fixes** (independent of the transport work; should not wait): **ALL DONE**
+8. ~~A1 + A2 — `copyToSdCard` handler race + missing try/finally~~ **DONE** — all SD-image access now runs through a `withSdCardAccess` serialization gate (new `src/main/sd-card-access.ts`), covering the copy, the sector read/write/info calls, `hasNextAutoExec`, and the image reset
+9. ~~A3 — `await saveKliveProject()` at all 4 sites; consider serializing the function itself~~ **DONE** — awaited at the 3 async sites and serialized internally (the 4th caller is synchronous and cannot await)
+10. ~~A4 — path-separator fix~~ **DONE** — at all **three** sites (a third was found in `excluded-items-utils.ts`), using `split`/`join`
+11. ~~A6 — `hasNextAutoExec` fd leak~~ **DONE**
 
 **Phase 4 — Transport hardening** (do together — they interact): **ALL DONE**
 12. ~~S5/A5 — try/catch around `forwardActions()` in `main/index.ts`~~ **DONE** (also guards the null-response `TypeError` noted under S2)
@@ -378,10 +412,10 @@ race by gating something on them again.
 14. ~~S2 — destroyed-window guards start logging/signaling instead of silently dropping~~ **DONE** — main→renderer sends now throw a typed `TargetWindowUnavailableError` (fail fast rather than waiting out the timeout); renderer→main response drops log a warning
 15. ~~Add `.catch()` handlers to the fire-and-forget forwarder chains~~ **DONE** — centralized in `redux-light.ts`'s dispatch, which ignores `TargetWindowUnavailableError` (expected during shutdown) and logs everything else; `main-store.ts` now delivers to both renderers via `allSettled` so one unreachable window cannot suppress the other
 
-**Phase 5 — Remaining correctness/robustness items** (lower urgency, opportunistic):
-16. B2 — propagate a "superseded" signal from `setMachineType`
-17. B5 — breakpoint-mutation serialization
-18. C3 — highest-value IDE commands query EMU live instead of trusting the mirror
+**Phase 5 — Remaining correctness/robustness items** (lower urgency, opportunistic): **ALL DONE**
+16. ~~B2 — propagate a "superseded" signal from `setMachineType`~~ **DONE** — threaded through `MachineService` → `MainToEmuProcessor` → `EmuApi` → `registeredMachines`; `openFolderByPath` now skips the breakpoint replay when its machine was superseded
+17. ~~B5 — breakpoint-mutation serialization~~ **DONE** — replaced the multi-round-trip erase+replay with a single atomic `restoreBreakpoints` call
+18. ~~C3 — highest-value IDE commands query EMU live instead of trusting the mirror~~ **DONE** — all six machine lifecycle/step commands now read state via `getCpuStateChunk()`, falling back to the mirror only if the emulator is unreachable
 
 **Explicitly not recommended near-term:**
 - True delivery guarantees / persistent-outbox redesign (Part 1, item 6) — a deliberate bigger decision, not an incremental patch

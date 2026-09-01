@@ -164,7 +164,11 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       isValidProject = !!(projectStruct.kliveVersion && projectStruct.machineType);
 
       // --- Apply the machine type saved in the project
-      await setMachineType(projectStruct.machineType, projectStruct.modelId, projectStruct.config);
+      const machineApplied = await setMachineType(
+        projectStruct.machineType,
+        projectStruct.modelId,
+        projectStruct.config
+      );
 
       // --- Apply settings if the project is valid, merge with current state
       disp(setMachineSpecificAction(projectStruct.machineSpecific));
@@ -174,17 +178,24 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       disp(setExportDialogInfoAction(projectStruct.exportDialog));
       disp(setWorkspaceSettingsAction(undefined, projectStruct.workspaceSettings));
 
-      // --- Restore breakpoints
-      await getEmuApi().eraseAllBreakpoints();
-      if (projectStruct.debugger?.breakpoints) {
-        for (const bp of projectStruct.debugger.breakpoints) {
-          if (bp.line && bp.line <= 0) continue;
-          delete bp.resolvedAddress;
-          await getEmuApi().setBreakpoint(bp);
-          if (bp.disabled) {
-            await getEmuApi().enableBreakpoint(bp, !bp.disabled);
-          }
-        }
+      // --- Restore breakpoints, but only onto the machine this project actually installed. If a
+      // --- concurrent machine change superseded ours, the live machine is somebody else's and
+      // --- wiping its breakpoints to install this project's would corrupt that machine's state.
+      if (machineApplied) {
+        const restoredBreakpoints = (projectStruct.debugger?.breakpoints ?? []).filter(
+          (bp) => !(bp.line && bp.line <= 0)
+        );
+        restoredBreakpoints.forEach((bp) => delete bp.resolvedAddress);
+
+        // --- Install the whole set in one atomic call. The previous erase-then-add-each-one
+        // --- sequence spanned many IPC round trips, during which a breakpoint the user toggled
+        // --- in the IDE could be wiped or overwritten.
+        await getEmuApi().restoreBreakpoints(restoredBreakpoints);
+      } else {
+        console.warn(
+          `Skipped restoring breakpoints for '${projectFolder}': the project's machine was ` +
+            `superseded by a concurrent machine change.`
+        );
       }
 
       // --- Start watching project changes in the opened folder
@@ -352,19 +363,37 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
   };
 }
 
-// --- Saves the current Klive project
-export async function saveKliveProject(): Promise<void> {
-  const projectState = mainStore.getState().project;
-  if (!projectState.folderPath) return;
+/**
+ * Serializes project saves.
+ *
+ * A save is not atomic: it awaits a cross-window IPC round trip (to collect the breakpoints)
+ * before writing the whole project file from a state snapshot. Two overlapping saves can
+ * therefore finish in a different order than they started, letting an older snapshot be written
+ * last and silently revert the newer one. Chaining them guarantees each save observes the state
+ * as of its own turn, and that the last save to *start* is also the last to be written.
+ */
+let saveProjectChain: Promise<void> = Promise.resolve();
 
-  try {
-    const projectFile = path.join(projectState.folderPath, PROJECT_FILE);
-    const project = await getKliveProjectStructure();
-    fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
-    mainStore.dispatch(incProjectFileVersionAction());
-  } catch {
-    // --- Intentionally ignored
-  }
+// --- Saves the current Klive project
+export function saveKliveProject(): Promise<void> {
+  const runSave = async () => {
+    const projectState = mainStore.getState().project;
+    if (!projectState.folderPath) return;
+
+    try {
+      const projectFile = path.join(projectState.folderPath, PROJECT_FILE);
+      const project = await getKliveProjectStructure();
+      fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
+      mainStore.dispatch(incProjectFileVersionAction());
+    } catch (err) {
+      // --- A failed save must not break the chain for subsequent saves, but it should no longer
+      // --- vanish without a trace either.
+      console.error("Saving the Klive project failed.", err);
+    }
+  };
+
+  saveProjectChain = saveProjectChain.then(runSave, runSave);
+  return saveProjectChain;
 }
 
 let recentProjects: string[] = [];

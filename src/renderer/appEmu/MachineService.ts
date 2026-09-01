@@ -47,7 +47,7 @@ class MachineService implements IMachineService {
     machineId: string,
     modelId?: string,
     config?: MachineConfigSet
-  ): Promise<void> {
+  ): Promise<boolean> {
     // --- Two independent startup paths can each call this method with no ordering guarantee
     // --- between them (the app's default-machine initialization in main/index.ts, and opening a
     // --- project - including "open last project at startup" - in main/projects.ts). If a second
@@ -106,9 +106,10 @@ class MachineService implements IMachineService {
 
     if (generation !== this._initGeneration) {
       // --- A newer setMachineType call superseded this one while setup/reset were in flight.
-      // --- Discard this now-stale machine instead of publishing it.
+      // --- Discard this now-stale machine instead of publishing it, and report the outcome so
+      // --- the caller does not go on to configure a machine that is not the live one.
       newController.dispose();
-      return;
+      return false;
     }
 
     this._controller = newController;
@@ -118,6 +119,7 @@ class MachineService implements IMachineService {
     this.store.dispatch(setMachineTypeAction(machineId), this.messageSource);
     this.store.dispatch(setModelTypeAction(modelId), this.messageSource);
     this.store.dispatch(setMachineConfigAction(config || modelInfo?.config), this.messageSource);
+    return true;
   }
 
   /**

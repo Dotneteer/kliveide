@@ -72,7 +72,9 @@ class EmuMessageProcessor {
    * @param config Optional configuration object.
    */
   async setMachineType(machineId: string, modelId?: string, config?: Record<string, any>) {
-    await this.machineService.setMachineType(machineId, modelId, config);
+    // --- Report whether this call's machine actually became the live one, so the caller can tell
+    // --- a real success from being superseded by a later, concurrent machine change.
+    return this.machineService.setMachineType(machineId, modelId, config);
   }
 
   /**
@@ -196,7 +198,9 @@ class EmuMessageProcessor {
     // --- Get disk information
     const controller = this.machineService.getMachineController();
     const mediaId = diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A;
-    const drive = diskIndex[0] ? "B" : "A";
+    // --- `diskIndex` is a number, so indexing it always yielded `undefined` and every message
+    // --- claimed drive A regardless of which drive was actually used.
+    const drive = diskIndex ? "B" : "A";
     // --- Try to parse the disk file
     try {
       // --- Store the tape file in the media store
@@ -599,6 +603,33 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Replaces the whole breakpoint set in a single, atomic step, preserving each breakpoint's
+   * enabled/disabled state.
+   *
+   * Restoring breakpoints as "erase all, then add them back one at a time" spans many separate
+   * IPC round trips, and any breakpoint edit made from the IDE in between (a gutter toggle, a
+   * script) is either wiped by the erase or overwritten by the replay. Doing the whole swap inside
+   * one synchronous handler closes that window completely.
+   * @param bps The breakpoints to install
+   */
+  restoreBreakpoints(bps: BreakpointInfo[]) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const debugSupport = controller.debugSupport;
+    debugSupport.resetBreakpointsTo(bps ?? []);
+
+    // --- `resetBreakpointsTo` rebuilds the definitions without carrying the `disabled` flag over,
+    // --- so re-apply it here; otherwise every restored breakpoint would come back enabled.
+    for (const bp of bps ?? []) {
+      if (bp.disabled) {
+        debugSupport.enableBreakpoint(bp, false);
+      }
+    }
+  }
+
+  /**
    * Gets all breakpoints in the emulator.
    */
   getAllBreakpoints() {
@@ -606,7 +637,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    controller.debugSupport.breakpoints;
+    return controller.debugSupport.breakpoints;
   }
 
   /**

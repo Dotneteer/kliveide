@@ -91,7 +91,11 @@ export function setSettingValue(id: string, value: any): void {
     saveAppSettings();
   }
   if (setting.saveWithProject) {
-    saveKliveProject();
+    // --- Intentionally not awaited: this function is synchronous and is called from menu
+    // --- handlers that cannot await. That is safe because `saveKliveProject` serializes its
+    // --- saves internally (so this one cannot be reordered against another) and reports its own
+    // --- failures, so it neither loses writes nor rejects.
+    void saveKliveProject();
   }
 }
 

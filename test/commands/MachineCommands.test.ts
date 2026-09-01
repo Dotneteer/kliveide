@@ -19,6 +19,25 @@ type MockIdeCommandContext = IdeCommandContext & {
   emuApi: any;
 };
 
+/**
+ * Puts the machine into the given state for a command under test.
+ *
+ * These commands read the authoritative state from the emulator (`getCpuStateChunk`) rather than
+ * from this window's store, because the store copy is only an asynchronously forwarded mirror and
+ * can lag. The store is set too, so anything still reading the mirror stays consistent.
+ */
+function setMachineState(
+  context: MockIdeCommandContext,
+  state: MachineControllerState
+): void {
+  context.store.getState.mockReturnValue({ emulatorState: { machineState: state } });
+  context.emuApi.getCpuStateChunk.mockResolvedValue({
+    state,
+    pcValue: 0x8000,
+    tacts: 0
+  });
+}
+
 describe("StartMachineCommand", () => {
   let command: StartMachineCommand;
   let context: MockIdeCommandContext;
@@ -50,10 +69,7 @@ describe("StartMachineCommand", () => {
   describe("execute", () => {
     it("should start machine when in None state", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.None }
-      });
+      setMachineState(context, MachineControllerState.None);
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
       // Act
@@ -67,10 +83,7 @@ describe("StartMachineCommand", () => {
 
     it("should start machine when in Paused state", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Paused }
-      });
+      setMachineState(context, MachineControllerState.Paused);
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
       // Act
@@ -83,10 +96,7 @@ describe("StartMachineCommand", () => {
 
     it("should start machine when in Stopped state", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Stopped }
-      });
+      setMachineState(context, MachineControllerState.Stopped);
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
       // Act
@@ -99,10 +109,7 @@ describe("StartMachineCommand", () => {
 
     it("should fail when machine is already Running", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Running }
-      });
+      setMachineState(context, MachineControllerState.Running);
 
       // Act
       const result = await command.execute(context);
@@ -115,10 +122,7 @@ describe("StartMachineCommand", () => {
 
     it("should display success message when started", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.None }
-      });
+      setMachineState(context, MachineControllerState.None);
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
       // Act
@@ -164,10 +168,7 @@ describe("PauseMachineCommand", () => {
   describe("execute", () => {
     it("should pause machine when Running", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Running }
-      });
+      setMachineState(context, MachineControllerState.Running);
       context.emuApi.getCpuState.mockResolvedValue({ pc: 0x8000 });
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
@@ -182,10 +183,7 @@ describe("PauseMachineCommand", () => {
 
     it("should fail when machine is not Running", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Paused }
-      });
+      setMachineState(context, MachineControllerState.Paused);
 
       // Act
       const result = await command.execute(context);
@@ -198,10 +196,7 @@ describe("PauseMachineCommand", () => {
 
     it("should display PC address in success message", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Running }
-      });
+      setMachineState(context, MachineControllerState.Running);
       context.emuApi.getCpuState.mockResolvedValue({ pc: 0x8000 });
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
@@ -249,10 +244,7 @@ describe("StopMachineCommand", () => {
   describe("execute", () => {
     it("should stop machine when Running", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Running }
-      });
+      setMachineState(context, MachineControllerState.Running);
       context.emuApi.getCpuState.mockResolvedValue({ pc: 0x8000 });
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
@@ -266,10 +258,7 @@ describe("StopMachineCommand", () => {
 
     it("should stop machine when Paused", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Paused }
-      });
+      setMachineState(context, MachineControllerState.Paused);
       context.emuApi.getCpuState.mockResolvedValue({ pc: 0x8000 });
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
@@ -283,10 +272,7 @@ describe("StopMachineCommand", () => {
 
     it("should fail when machine is not Running or Paused", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.None }
-      });
+      setMachineState(context, MachineControllerState.None);
 
       // Act
       const result = await command.execute(context);
@@ -299,10 +285,7 @@ describe("StopMachineCommand", () => {
 
     it("should display PC address in success message", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Running }
-      });
+      setMachineState(context, MachineControllerState.Running);
       context.emuApi.getCpuState.mockResolvedValue({ pc: 0x9000 });
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
@@ -350,10 +333,7 @@ describe("RestartMachineCommand", () => {
   describe("execute", () => {
     it("should restart machine when Running", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Running }
-      });
+      setMachineState(context, MachineControllerState.Running);
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
       // Act
@@ -366,10 +346,7 @@ describe("RestartMachineCommand", () => {
 
     it("should restart machine when Paused", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Paused }
-      });
+      setMachineState(context, MachineControllerState.Paused);
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
       // Act
@@ -382,10 +359,7 @@ describe("RestartMachineCommand", () => {
 
     it("should fail when machine is not Running or Paused", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.None }
-      });
+      setMachineState(context, MachineControllerState.None);
 
       // Act
       const result = await command.execute(context);
@@ -398,10 +372,7 @@ describe("RestartMachineCommand", () => {
 
     it("should display success message", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Running }
-      });
+      setMachineState(context, MachineControllerState.Running);
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
       // Act
@@ -447,10 +418,7 @@ describe("StartDebugMachineCommand", () => {
   describe("execute", () => {
     it("should start machine in debug mode when in None state", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.None }
-      });
+      setMachineState(context, MachineControllerState.None);
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
       // Act
@@ -463,10 +431,7 @@ describe("StartDebugMachineCommand", () => {
 
     it("should start machine in debug mode when Paused", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Paused }
-      });
+      setMachineState(context, MachineControllerState.Paused);
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
       // Act
@@ -479,10 +444,7 @@ describe("StartDebugMachineCommand", () => {
 
     it("should start machine in debug mode when Stopped", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Stopped }
-      });
+      setMachineState(context, MachineControllerState.Stopped);
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
       // Act
@@ -495,10 +457,7 @@ describe("StartDebugMachineCommand", () => {
 
     it("should fail when machine is already Running", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Running }
-      });
+      setMachineState(context, MachineControllerState.Running);
 
       // Act
       const result = await command.execute(context);
@@ -510,10 +469,7 @@ describe("StartDebugMachineCommand", () => {
 
     it("should display debug mode success message", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.None }
-      });
+      setMachineState(context, MachineControllerState.None);
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
       // Act
@@ -559,10 +515,7 @@ describe("StepIntoMachineCommand", () => {
   describe("execute", () => {
     it("should step into when machine is Paused", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Paused }
-      });
+      setMachineState(context, MachineControllerState.Paused);
       context.emuApi.getCpuState.mockResolvedValue({ pc: 0x8000 });
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
@@ -576,10 +529,7 @@ describe("StepIntoMachineCommand", () => {
 
     it("should fail when machine is not Paused", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Running }
-      });
+      setMachineState(context, MachineControllerState.Running);
 
       // Act
       const result = await command.execute(context);
@@ -592,10 +542,7 @@ describe("StepIntoMachineCommand", () => {
 
     it("should display 'Step into' message with PC", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Paused }
-      });
+      setMachineState(context, MachineControllerState.Paused);
       context.emuApi.getCpuState.mockResolvedValue({ pc: 0x8000 });
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
@@ -643,10 +590,7 @@ describe("StepOverMachineCommand", () => {
   describe("execute", () => {
     it("should step over when machine is Paused", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Paused }
-      });
+      setMachineState(context, MachineControllerState.Paused);
       context.emuApi.getCpuState.mockResolvedValue({ pc: 0x8000 });
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
@@ -660,10 +604,7 @@ describe("StepOverMachineCommand", () => {
 
     it("should fail when machine is not Paused", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.None }
-      });
+      setMachineState(context, MachineControllerState.None);
 
       // Act
       const result = await command.execute(context);
@@ -676,10 +617,7 @@ describe("StepOverMachineCommand", () => {
 
     it("should display 'Step over' message with PC", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Paused }
-      });
+      setMachineState(context, MachineControllerState.Paused);
       context.emuApi.getCpuState.mockResolvedValue({ pc: 0x9000 });
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
@@ -727,10 +665,7 @@ describe("StepOutMachineCommand", () => {
   describe("execute", () => {
     it("should step out when machine is Paused", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Paused }
-      });
+      setMachineState(context, MachineControllerState.Paused);
       context.emuApi.getCpuState.mockResolvedValue({ pc: 0x8000 });
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 
@@ -744,10 +679,7 @@ describe("StepOutMachineCommand", () => {
 
     it("should fail when machine is not Paused", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Stopped }
-      });
+      setMachineState(context, MachineControllerState.Stopped);
 
       // Act
       const result = await command.execute(context);
@@ -760,10 +692,7 @@ describe("StepOutMachineCommand", () => {
 
     it("should display 'Step out' message with PC", async () => {
       // Arrange
-      const mockStore = context.store as any;
-      mockStore.getState.mockReturnValue({
-        emulatorState: { machineState: MachineControllerState.Paused }
-      });
+      setMachineState(context, MachineControllerState.Paused);
       context.emuApi.getCpuState.mockResolvedValue({ pc: 0xA000 });
       context.emuApi.issueMachineCommand.mockResolvedValue(undefined);
 

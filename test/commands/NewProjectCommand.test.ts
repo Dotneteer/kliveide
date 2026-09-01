@@ -11,7 +11,10 @@ vi.mock("@renderer/registry", () => ({
 // Mock IdeEventsHandler to avoid external dependencies
 vi.mock("@renderer/appIde/IdeEventsHandler", () => ({
   ensureProjectLoaded: vi.fn().mockResolvedValue(undefined),
-  ensureWorkspaceLoaded: vi.fn().mockResolvedValue(undefined)
+  ensureWorkspaceLoaded: vi.fn().mockResolvedValue(undefined),
+  // --- The command waits for the build root to be forwarded before reading it, mirroring the
+  // --- New Project dialog.
+  ensureBuildRootsLoaded: vi.fn().mockResolvedValue(undefined)
 }));
 
 // Type assertion helper for mock context

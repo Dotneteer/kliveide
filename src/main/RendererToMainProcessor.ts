@@ -53,6 +53,7 @@ import { MessageBoxType } from "@common/messaging/MainApi";
 import { CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { DEFAULT_SD_CARD_FILE, getSdCardHandler, invalidateSdCardHandler } from "./machine-menus/zx-next-menus";
+import { withSdCardAccess } from "./sd-card-access";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { appSettings, saveAppSettings, setSettingValue } from "./settings-utils";
 import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
@@ -249,7 +250,10 @@ class MainMessageProcessor {
    * @param files The files or folders to exclude.
    */
   addGlobalExcludedProjectItem(files: string[]) {
-    const excludedItems = files.map((p: any) => p.trim().replace(path.sep, "/"));
+    // --- `split`/`join` converts EVERY separator. `replace` with a plain string only converted
+    // --- the first one, so a nested path such as "build\temp" was stored half-converted on
+    // --- Windows and then never matched anything.
+    const excludedItems = files.map((p: any) => p.trim().split(path.sep).join("/"));
     appSettings.excludedProjectItems = (
       appSettings.excludedProjectItems?.concat(excludedItems) ?? excludedItems
     ).filter((v: any, i: any, a: string | any[]) => a.indexOf(v) === i);
@@ -401,18 +405,27 @@ class MainMessageProcessor {
       return;
     }
 
-    // --- Invalidate the cached CimHandler before modifying the .cim file,
-    // --- so its stale file handle doesn't conflict with the CimFile writes.
-    invalidateSdCardHandler();
+    // --- Hold exclusive access for the whole operation. This copy invalidates the cached handler
+    // --- and then yields on I/O; without the lock, a sector read/write arriving in that window
+    // --- would lazily open a second, independent handler on the same image and the two writers
+    // --- would corrupt it.
+    await withSdCardAccess(async () => {
+      // --- Invalidate the cached CimHandler before modifying the .cim file,
+      // --- so its stale file handle doesn't conflict with the CimFile writes.
+      invalidateSdCardHandler();
 
-    const cimFile = new CimFile(sdCardPath);
-    const vol = new Fat32Volume(cimFile);
-    vol.init();
-    const fm = new FileManager(vol);
-    await fm.copyFile(srcFile, destFile);
-
-    // --- Close the CimFile to release its file descriptor and flush data.
-    cimFile.close();
+      const cimFile = new CimFile(sdCardPath);
+      try {
+        const vol = new Fat32Volume(cimFile);
+        vol.init();
+        const fm = new FileManager(vol);
+        await fm.copyFile(srcFile, destFile);
+      } finally {
+        // --- Always close the CimFile to release its file descriptor and flush data, even if the
+        // --- copy failed part-way through.
+        cimFile.close();
+      }
+    });
   }
 
   /**
@@ -420,7 +433,9 @@ class MainMessageProcessor {
    */
   async saveProject() {
     await new Promise((resolve) => setTimeout(resolve, 200));
-    saveKliveProject();
+    // --- Await the save: the caller treats this call resolving as "the project has been saved",
+    // --- and a follow-up operation must not race the write.
+    await saveKliveProject();
   }
 
   /**
@@ -466,10 +481,10 @@ class MainMessageProcessor {
    * @param key The setting key.
    * @param value The value to set.
    */
-  applyProjectSettings(key: string, value?: any) {
+  async applyProjectSettings(key: string, value?: any) {
     if (key) {
       this.dispatch(applyProjectSettingAction(key, value));
-      saveKliveProject();
+      await saveKliveProject();
     }
   }
 
@@ -680,7 +695,7 @@ class MainMessageProcessor {
    * Removes a file from the project's build roots.
    * @param filename The file to remove from build roots.
    */
-  checkBuildRoot(filename: string) {
+  async checkBuildRoot(filename: string) {
     if (!mainStore.getState().project?.buildRoots) {
       return;
     }
@@ -688,7 +703,7 @@ class MainMessageProcessor {
     if (buildRoots.includes(filename)) {
       buildRoots.splice(buildRoots.indexOf(filename), 1);
       this.dispatch(setBuildRootAction(buildRoots));
-      saveKliveProject();
+      await saveKliveProject();
     }
   }
 
@@ -701,8 +716,7 @@ class MainMessageProcessor {
       throw new Error("Invalid sector index");
     }
     // --- Input validated
-    const sdHandler = getSdCardHandler();
-    return sdHandler.readSector(sectorIndex);
+    return withSdCardAccess(() => getSdCardHandler().readSector(sectorIndex));
   }
 
   /**
@@ -721,8 +735,7 @@ class MainMessageProcessor {
       throw new Error("Data must be a Uint8Array");
     }
     // --- Input validated
-    const sdHandler = getSdCardHandler();
-    sdHandler.writeSector(sectorIndex, data);
+    await withSdCardAccess(() => getSdCardHandler().writeSector(sectorIndex, data));
 
     // --- FIX for ISSUE #8: Explicit persistence confirmation
     // --- Only return success after fsyncSync has completed
@@ -737,10 +750,10 @@ class MainMessageProcessor {
    * Returns the total number of 512-byte sectors on the mounted SD card image.
    */
   async getSdCardInfo(): Promise<{ totalSectors: number }> {
-    const sdHandler = getSdCardHandler();
-    const info = sdHandler.cimInfo;
-    const totalSectors = (info.maxSize * 2048) / info.sectorSize;
-    return { totalSectors };
+    return withSdCardAccess(() => {
+      const info = getSdCardHandler().cimInfo;
+      return { totalSectors: (info.maxSize * 2048) / info.sectorSize };
+    });
   }
 
   /**
@@ -780,10 +793,19 @@ class MainMessageProcessor {
       return false;
     }
 
-    const cimFile = new CimFile(sdCardPath);
-    const vol = new Fat32Volume(cimFile);
-    vol.init();
-    return vol.open("nextzxos/autoexec.1st", O_RDONLY) !== null;
+    // --- This opens its own handle on the SD card image, so it must not overlap with a copy or a
+    // --- reset that is rewriting that image.
+    return withSdCardAccess(() => {
+      const cimFile = new CimFile(sdCardPath);
+      try {
+        const vol = new Fat32Volume(cimFile);
+        vol.init();
+        return vol.open("nextzxos/autoexec.1st", O_RDONLY) !== null;
+      } finally {
+        // --- Release the file descriptor. Without this, every ZX Next code injection leaked one.
+        cimFile.close();
+      }
+    });
   }
 
   // ---------------------------------------------------------------------------

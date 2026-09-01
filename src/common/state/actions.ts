@@ -23,10 +23,6 @@ export const emuLoadedAction: ActionCreator = () => ({
   type: "EMU_LOADED"
 });
 
-export const emuSynchedAction: ActionCreator = () => ({
-  type: "EMU_STATE_SYNCHED"
-});
-
 export const ideLoadedAction: ActionCreator = () => ({
   type: "IDE_LOADED"
 });
