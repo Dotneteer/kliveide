@@ -38,8 +38,37 @@ describe("renderer IPC registration", () => {
     await ipcRenderer.emit("MainToIde", { type: "ApiMethodRequest", correlationId: "ide-1" });
 
     expect(processMainToIdeMessages).not.toHaveBeenCalled();
+    // --- The correlation ID must be echoed back, otherwise the sender cannot match the response
+    // --- to its pending request and would wait forever instead of failing fast.
     expect(ipcRenderer.send).toHaveBeenCalledWith("MainToIdeResponse", {
-      type: "NotReady"
+      type: "NotReady",
+      correlationId: "ide-1",
+      sourceId: "ide"
+    });
+  });
+
+  it("still applies forwarded state actions before services are cached", async () => {
+    const ipcRenderer = createIpcRenderer();
+    const store = {};
+    const { registerMainToIdeIpc, processMainToIdeMessages } = await loadMainToIdeIpc({
+      appServices: undefined,
+      store
+    });
+
+    registerMainToIdeIpc(ipcRenderer);
+    await ipcRenderer.emit("MainToIde", { type: "ForwardAction", correlationId: "ide-fwd" });
+
+    // --- A forwarded action needs only the store. Rejecting it as "NotReady" would silently and
+    // --- permanently drop the main process's initial state broadcast.
+    expect(processMainToIdeMessages).toHaveBeenCalledWith(
+      { type: "ForwardAction", correlationId: "ide-fwd" },
+      store,
+      undefined
+    );
+    expect(ipcRenderer.send).not.toHaveBeenCalledWith("MainToIdeResponse", {
+      type: "NotReady",
+      correlationId: "ide-fwd",
+      sourceId: "ide"
     });
   });
 
@@ -100,9 +129,35 @@ describe("renderer IPC registration", () => {
     await ipcRenderer.emit("MainToEmu", { type: "ApiMethodRequest", correlationId: "emu-1" });
 
     expect(processMainToEmuMessages).not.toHaveBeenCalled();
+    // --- The correlation ID must be echoed back, otherwise the sender cannot match the response
+    // --- to its pending request and would wait forever instead of failing fast.
     expect(ipcRenderer.send).toHaveBeenCalledWith("MainToEmuResponse", {
-      type: "NotReady"
+      type: "NotReady",
+      correlationId: "emu-1",
+      sourceId: "emu"
     });
+  });
+
+  it("still applies forwarded state actions to EMU before services are cached", async () => {
+    const ipcRenderer = createIpcRenderer();
+    const store = {};
+    const messenger = {};
+    const { registerMainToEmuIpc, processMainToEmuMessages } = await loadMainToEmuIpc({
+      appServices: undefined,
+      messenger,
+      store
+    });
+
+    registerMainToEmuIpc(ipcRenderer);
+    await ipcRenderer.emit("MainToEmu", { type: "ForwardAction", correlationId: "emu-fwd" });
+
+    // --- A forwarded action needs only the store, not the app services.
+    expect(processMainToEmuMessages).toHaveBeenCalledWith(
+      { type: "ForwardAction", correlationId: "emu-fwd" },
+      store,
+      messenger,
+      undefined
+    );
   });
 
   it("sends MainToEmu processor responses with correlation and source", async () => {

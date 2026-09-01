@@ -19,7 +19,6 @@ import {
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { initializeMonaco } from "@renderer/features/editor/monaco/MonacoEditor";
 import { registerIdeCommands } from "./IdeCommands";
-import { registerMainToIdeIpc } from "./MainToIdeIpc";
 
 type IdeStartupArgs = {
   appPath: string;
@@ -48,7 +47,10 @@ export function useIdeStartup({
 }: IdeStartupArgs): void {
   const mounted = useRef(false);
 
-  useEffect(() => registerMainToIdeIpc(), []);
+  // --- NOTE: the "MainToIde" IPC listener is intentionally NOT registered here. It is registered
+  // --- at module load time in `renderer/main.tsx`, because a React effect runs too late: the main
+  // --- process can broadcast its initial state before this component ever commits, and Electron
+  // --- silently drops messages sent to a channel with no listener.
 
   useLayoutEffect(() => {
     initializeMonaco();

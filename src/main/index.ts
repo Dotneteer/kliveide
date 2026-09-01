@@ -586,35 +586,59 @@ app.on("activate", () => {
 
 // --- This channel processes emulator requests and sends the results back
 ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
-  let response = await forwardActions(msg);
-  if (response === null) {
-    try {
+  let response: ResponseMessage | null;
+  try {
+    // --- `forwardActions` dispatches into the main store, and a malformed action or a throwing
+    // --- reducer would otherwise reject this handler's promise, leaving the sender with no
+    // --- response at all - a permanent hang on its side.
+    response = await forwardActions(msg);
+    if (response === null) {
       response = await processRendererToMainMessages(msg, emuWindow);
-    } catch (err) {
-      response = errorResponse(err.toString());
     }
+  } catch (err) {
+    response = errorResponse(String(err));
+  }
+  // --- Never leave the sender without a response: it is waiting on this correlation ID.
+  if (!response) {
+    response = errorResponse(`No response was produced for the request '${msg.type}'.`);
   }
   response.correlationId = msg.correlationId;
   response.sourceId = "main";
   if (emuWindow?.isDestroyed() === false) {
     emuWindow.webContents.send("EmuToMainResponse", response);
+  } else {
+    console.warn(
+      `[ipc] Dropping EmuToMain response (correlationId ${msg.correlationId}): the emulator ` +
+        `window is gone. The caller in that window will not receive a reply.`
+    );
   }
 });
 
 // --- This channel processes ide requests and sends the results back
 ipcMain.on("IdeToMain", async (_ev, msg: RequestMessage) => {
-  let response = await forwardActions(msg);
-  if (response === null) {
-    try {
+  let response: ResponseMessage | null;
+  try {
+    // --- See the EmuToMain handler above: a throwing dispatch must not rob the sender of a reply.
+    response = await forwardActions(msg);
+    if (response === null) {
       response = await processRendererToMainMessages(msg, ideWindow);
-    } catch (err) {
-      response = errorResponse(err.toString());
     }
+  } catch (err) {
+    response = errorResponse(String(err));
+  }
+  // --- Never leave the sender without a response: it is waiting on this correlation ID.
+  if (!response) {
+    response = errorResponse(`No response was produced for the request '${msg.type}'.`);
   }
   response.correlationId = msg.correlationId;
   response.sourceId = "main";
   if (ideWindow?.isDestroyed() === false) {
     ideWindow.webContents.send("IdeToMainResponse", response);
+  } else {
+    console.warn(
+      `[ipc] Dropping IdeToMain response (correlationId ${msg.correlationId}): the IDE window ` +
+        `is gone. The caller in that window will not receive a reply.`
+    );
   }
 });
 

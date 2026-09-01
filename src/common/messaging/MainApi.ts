@@ -503,6 +503,33 @@ class MainApiImpl {
 
 export type MainApi = MainApiImpl;
 
+/**
+ * Main-process methods whose duration is genuinely unbounded, and which therefore opt out of the
+ * default request timeout. Everything else is covered by it, so a lost response surfaces as an
+ * error instead of hanging forever.
+ */
+const UNBOUNDED_MAIN_METHODS = [
+  // --- Block until the user responds
+  "displayMessageBox",
+  "showOpenFolderDialog",
+  "showOpenFileDialog",
+  // --- The app is terminating; a response may legitimately never arrive
+  "exitApp",
+  // --- Compilation time scales with the project and the external toolchain
+  "compileFile",
+  "startBackgroundCompile",
+  // --- Script lifetime is controlled by the script/user, not by this call
+  "startScript",
+  "stopScript",
+  "closeScript",
+  // --- Bulk media work whose duration scales with file size
+  "copyToSdCard",
+  "startScreenRecording",
+  "stopScreenRecording"
+] as const;
+
 export function createMainApi(messenger: MessengerBase): MainApiImpl {
-  return buildMessagingProxy(new MainApiImpl(), messenger, "main");
+  return buildMessagingProxy(new MainApiImpl(), messenger, "main", {
+    unboundedMethods: UNBOUNDED_MAIN_METHODS
+  });
 }

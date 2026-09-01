@@ -1183,17 +1183,20 @@ export async function processMainToEmuMessages(
   message: RequestMessage,
   store: Store<AppState>,
   emuToMain: MessengerBase,
-  { machineService }: AppServices
+  appServices: AppServices
 ): Promise<ResponseMessage> {
-  const emuMessageProcessor = new EmuMessageProcessor(emuToMain, machineService);
-
   switch (message.type) {
     case "ForwardAction":
-      // --- The emu sent a state change action. Replay it in the main store without formarding it
+      // --- The emu sent a state change action. Replay it in the main store without formarding it.
+      // --- This deliberately needs nothing but the store, so state broadcast from the main
+      // --- process still lands while this window is still starting up and its app services do
+      // --- not exist yet.
       store.dispatch(message.action, message.sourceId);
       break;
 
     case "ApiMethodRequest":
+      const emuMessageProcessor = new EmuMessageProcessor(emuToMain, appServices.machineService);
+
       // --- We accept only methods defined in the MainMessageProcessor
       const processingMethod = emuMessageProcessor[message.method];
       if (typeof processingMethod === "function") {
