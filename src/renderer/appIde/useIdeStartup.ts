@@ -1,11 +1,12 @@
+import { get } from "lodash";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SETTING_IDE_OPEN_LAST_PROJECT } from "@common/settings/setting-const";
+import { KliveGlobalSettings } from "@common/settings/setting-definitions";
 import { AppState } from "@common/state/AppState";
 import { Dispatch, Store } from "@common/state/redux-light";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
-import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "@renderer/registry";
 import { setCachedAppServices, setCachedStore } from "@renderer/CachedServices";
 import { setIsWindows } from "@renderer/os-utils";
@@ -18,7 +19,6 @@ import {
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { initializeMonaco } from "@renderer/features/editor/monaco/MonacoEditor";
 import { registerIdeCommands } from "./IdeCommands";
-import { registerMainToIdeIpc } from "./MainToIdeIpc";
 
 type IdeStartupArgs = {
   appPath: string;
@@ -47,7 +47,10 @@ export function useIdeStartup({
 }: IdeStartupArgs): void {
   const mounted = useRef(false);
 
-  useEffect(() => registerMainToIdeIpc(), []);
+  // --- NOTE: the "MainToIde" IPC listener is intentionally NOT registered here. It is registered
+  // --- at module load time in `renderer/main.tsx`, because a React effect runs too late: the main
+  // --- process can broadcast its initial state before this component ever commits, and Electron
+  // --- silently drops messages sent to a channel with no listener.
 
   useLayoutEffect(() => {
     initializeMonaco();
@@ -90,18 +93,26 @@ export function useIdeStartup({
 
     let cancelled = false;
     (async () => {
-      let counter = 0;
-      while (counter < 100) {
-        if (store.getState().ideStateSynched) break;
-        counter++;
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-      if (cancelled || counter >= 100) return;
-
+      // --- Read the "open last project" setting and the last project's path directly from the
+      // --- main process via a request/response IPC call, rather than from this window's own
+      // --- redux store. The store's copy of global settings only becomes available once the main
+      // --- process broadcasts INIT_GLOBAL_SETTINGS and this window's IPC listener has already been
+      // --- registered to receive it - that broadcast is fire-and-forget (no ack, no queue, no
+      // --- retry), gated only on the EMU window's readiness, and can be lost entirely if it races
+      // --- ahead of this window's listener registration (this has been observed on Windows, where
+      // --- the IDE window's heavier startup - e.g. initializing Monaco - can lag behind EMU's).
+      // --- Going straight to main sidesteps that race: this call always gets a real answer.
       const mainApi = createMainApi(messenger);
-      const openLastProject = getGlobalSetting(store, SETTING_IDE_OPEN_LAST_PROJECT);
+      const settings = await mainApi.getAppSettings();
+      if (cancelled) return;
+
+      const settingDef = KliveGlobalSettings[SETTING_IDE_OPEN_LAST_PROJECT];
+      const openLastProject = get(
+        settings?.globalSettings ?? {},
+        SETTING_IDE_OPEN_LAST_PROJECT,
+        settingDef?.defaultValue
+      );
       if (openLastProject) {
-        const settings = await mainApi.getAppSettings();
         let projectPath = settings?.project?.folderPath;
         if (projectPath && !cancelled) {
           projectPath = projectPath.replaceAll("\\", "/");
@@ -113,5 +124,5 @@ export function useIdeStartup({
     return () => {
       cancelled = true;
     };
-  }, [ideLoaded, messenger, store]);
+  }, [ideLoaded, messenger]);
 }

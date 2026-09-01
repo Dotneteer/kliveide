@@ -17,15 +17,25 @@ export async function setMachineType(
   machineId: string,
   modelId?: string,
   config?: MachineConfigSet
-): Promise<void> {
+): Promise<boolean> {
   // --- Setup the machine, it it requires a setup
   const machineInfo = machineMenuRegistry[machineId];
   machineInfo?.setup?.();
 
   // --- Set the emulator to the selected machine type and log the event
-  await getEmuApi().setMachineType(machineId, modelId, config);
+  const applied = await getEmuApi().setMachineType(machineId, modelId, config);
   const machineName = getMachineName(machineId, modelId);
+  if (applied === false) {
+    // --- Another machine change started while this one was setting up and won. Say so instead of
+    // --- reporting a change that did not actually take effect.
+    await logEmuEvent(
+      `Switching to ${machineName} was superseded by another machine change`,
+      "yellow"
+    );
+    return false;
+  }
   await logEmuEvent(`Machine type changed to ${machineName}`, "bright-cyan");
+  return true;
 }
 
 // --- The number of events logged with the emulator

@@ -109,6 +109,20 @@ export type ResponseMessage =
 export type AnyMessage = RequestMessage | ResponseMessage;
 
 /**
+ * Raised when a message cannot be delivered because the destination window no longer exists.
+ *
+ * This is an expected condition while the application is shutting down (state changes are still
+ * dispatched as windows are torn down), so callers that merely mirror state - such as the action
+ * forwarders - may ignore it. Callers awaiting a real result should treat it as a failure.
+ */
+export class TargetWindowUnavailableError extends Error {
+  constructor (message: string) {
+    super(message);
+    this.name = "TargetWindowUnavailableError";
+  }
+}
+
+/**
  * Creates the default response message (no result)
  */
 export function defaultResponse (): DefaultResponse {

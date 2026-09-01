@@ -95,6 +95,21 @@ class ProxyIdeApiImpl extends IdeApiImpl {}
 
 export type IdeApi = IdeApiImpl;
 
+/**
+ * IDE-process methods whose duration is genuinely unbounded, and which therefore opt out of the
+ * default request timeout.
+ */
+const UNBOUNDED_IDE_METHODS = [
+  // --- Blocks until the user responds
+  "displayDialog",
+  // --- Runs an arbitrary IDE command, which may itself build or run a project
+  "executeCommand",
+  // --- Saves every dirty document on the quit path
+  "saveAllBeforeQuit"
+] as const;
+
 export function createIdeApi(messenger: MessengerBase): IdeApiImpl {
-  return buildMessagingProxy(new ProxyIdeApiImpl(), messenger, "ide");
+  return buildMessagingProxy(new ProxyIdeApiImpl(), messenger, "ide", {
+    unboundedMethods: UNBOUNDED_IDE_METHODS
+  });
 }

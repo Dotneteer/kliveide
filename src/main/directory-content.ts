@@ -75,6 +75,9 @@ export async function getProjectDirectoryContentFilter(): Promise<DirectoryConte
   const ignored = appSettings.excludedProjectItems
     .concat(proj.ide.excludedProjectItems)
     .filter((value, index, array) => array.indexOf(value) === index)
-    .map((v) => v.replace("/", path.sep));
+    // --- Convert EVERY separator, not just the first: a nested excluded item such as
+    // --- "build/temp" would otherwise stay half-converted on Windows and never prefix-match the
+    // --- native paths it is compared against, silently failing to exclude anything.
+    .map((v) => v.split("/").join(path.sep));
   return (p: string) => !ignored.some((v) => pathStartsWith(p, v));
 }

@@ -16,6 +16,7 @@ import { appSettings, saveAppSettings, setSettingValue } from "@main/settings-ut
 import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
 import { SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
 import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
+import { withSdCardAccess } from "../sd-card-access";
 
 export const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
 export const DEFAULT_SD_CARD_FILE = "ks2.cim";
@@ -230,25 +231,36 @@ async function logSdCardEvent(filename: string): Promise<void> {
 }
 
 async function resetToDefaultSdCardFile(): Promise<void> {
-  // --- Get the default SD Card file, and delete the current one
   const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
-  if (fs.existsSync(sdCardPath) && fs.statSync(sdCardPath).isFile()) {
-    // --- Delete the file
-    fs.unlinkSync(sdCardPath);
-  }
 
-  // --- Copy the SD Card file from the source
-  const sourceSdCardPath = path.join(process.env.PUBLIC, SOURCE_SD_CARD_FILE);
-  if (fs.existsSync(sourceSdCardPath) && fs.statSync(sourceSdCardPath).isFile()) {
-    fs.copyFileSync(sourceSdCardPath, sdCardPath);
-  }
+  // --- Rewriting the image must not overlap with emulated sector I/O or a file copy, all of
+  // --- which work on the very same file.
+  await withSdCardAccess(async () => {
+    // --- Release the cached handler before touching the file. It holds an open descriptor on the
+    // --- image: on Windows that descriptor makes the unlink below fail outright, and everywhere
+    // --- else the cache would happily keep serving a handler bound to the deleted file (the
+    // --- cache is only invalidated when the *file name* changes, and it does not change here).
+    invalidateSdCardHandler();
 
-  // --- Create backup of reset file
-  await ensureSdCardBackupIfEnabled(sdCardPath);
+    // --- Get the default SD Card file, and delete the current one
+    if (fs.existsSync(sdCardPath) && fs.statSync(sdCardPath).isFile()) {
+      // --- Delete the file
+      fs.unlinkSync(sdCardPath);
+    }
 
-  // --- Make the file writeable
-  const cimHandler = getSdCardHandler();
-  cimHandler.setReadOnly(false);
+    // --- Copy the SD Card file from the source
+    const sourceSdCardPath = path.join(process.env.PUBLIC, SOURCE_SD_CARD_FILE);
+    if (fs.existsSync(sourceSdCardPath) && fs.statSync(sourceSdCardPath).isFile()) {
+      fs.copyFileSync(sourceSdCardPath, sdCardPath);
+    }
+
+    // --- Create backup of reset file
+    await ensureSdCardBackupIfEnabled(sdCardPath);
+
+    // --- Make the file writeable
+    const cimHandler = getSdCardHandler();
+    cimHandler.setReadOnly(false);
+  });
 
   mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, undefined));
   await saveKliveProject();

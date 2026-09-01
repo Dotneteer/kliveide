@@ -14,6 +14,9 @@ import createAppStore from "@state/store";
 import { MessageSource } from "@messaging/messages-core";
 import { OverlayProvider } from "./controls/overlay/OverlayProvider";
 import { DialogProvider } from "./controls/overlay/DialogProvider";
+import { registerMainToEmuIpc } from "./appEmu/MainToEmuIpc";
+import { registerMainToIdeIpc } from "./appIde/MainToIdeIpc";
+import { setCachedMessenger, setCachedStore } from "./CachedServices";
 
 // --- Create the application messenger and the store according to the discriminator parameter
 const isEmu = location.search.startsWith("?emu");
@@ -34,6 +37,28 @@ const store = createAppStore(messageSource, async (action, source) => {
     });
   }
 });
+
+// --- Publish the store and the messenger to the out-of-React message processing path right away.
+// --- The startup hooks publish these too, but only from a React effect - far too late for the
+// --- state the main process broadcasts while this window is still booting. The app services are
+// --- still published by those hooks, and requests that genuinely need them are answered with
+// --- "NotReady" until they exist.
+setCachedStore(store);
+setCachedMessenger(messenger);
+
+// --- Start listening for main-process requests immediately, at module load time - before React
+// --- renders anything, and only once the store above can already receive forwarded state. The
+// --- main process starts broadcasting state (theme, machine type, model, key mappings, global
+// --- settings, ...) as soon as the *emulator* window reports ready, which is decoupled from this
+// --- window's own readiness. Electron drops messages sent to a channel that has no listener yet
+// --- and never redelivers them, so registering from a React effect - which runs only after the
+// --- first commit, and after any heavier layout-effect work such as initializing Monaco - leaves
+// --- a window in which that whole broadcast is silently and permanently lost.
+if (isEmu) {
+  registerMainToEmuIpc();
+} else {
+  registerMainToIdeIpc();
+}
 
 document.title = isEmu ? "Klive Retro-Computer Emulator" : "Klive IDE";
 

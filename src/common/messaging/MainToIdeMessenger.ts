@@ -1,5 +1,6 @@
 import { createIdeApi, IdeApi } from "./IdeApi";
 import type { Channel, RequestMessage, ResponseMessage } from "./messages-core";
+import { TargetWindowUnavailableError } from "./messages-core";
 import { MessengerBase } from "./MessengerBase";
 
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
@@ -14,7 +15,10 @@ class MainToIdeMessenger extends MessengerBase {
    */
   constructor(public readonly window: BrowserWindow) {
     super();
-    this._requestSeqNo = 1000;
+    // --- NOTE: correlation IDs deliberately start from the base class's default. Each messenger
+    // --- keeps its own counter and its own pending-request map, so IDs are only ever matched
+    // --- within one messenger and cannot collide across them. This class used to seed the counter
+    // --- at 1000, which suggested a cross-messenger uniqueness requirement that does not exist.
     ipcMain?.on(this.responseChannel, (_ev: IpcMainEvent, response: ResponseMessage) =>
       this.processResponse(response)
     );
@@ -27,7 +31,14 @@ class MainToIdeMessenger extends MessengerBase {
   protected send(message: RequestMessage): void {
     if (this.window?.isDestroyed() === false) {
       this.window.webContents.send(this.requestChannel, message);
+      return;
     }
+    // --- Fail fast and loudly. Silently swallowing the send would leave the caller waiting for a
+    // --- response that can never arrive, until its timeout eventually fires with a far less
+    // --- specific message.
+    throw new TargetWindowUnavailableError(
+      `Cannot send '${message.type}' to the IDE window: the window no longer exists.`
+    );
   }
 
   /**

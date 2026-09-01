@@ -63,6 +63,12 @@ export function createMockEmuApi(): any {
     eraseAllBreakpoints: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     enableBreakpoint: vi.fn<(address: any, enabled: boolean) => Promise<boolean>>().mockResolvedValue(true),
     getCpuState: vi.fn<() => Promise<any>>().mockResolvedValue({ pc: 0x8000 }),
+    // --- Machine commands read the authoritative machine state from the emulator rather than
+    // --- from the (asynchronously mirrored) store, so this must be present for them to exercise
+    // --- their real code path. `createMockContextWithMachineState` fills in the actual state.
+    getCpuStateChunk: vi
+      .fn<() => Promise<any>>()
+      .mockResolvedValue({ state: undefined, pcValue: 0x8000, tacts: 0 }),
     issueMachineCommand: vi.fn<(command: any) => Promise<void>>().mockResolvedValue(undefined),
     setMemoryContent: vi.fn<(partition: any, address: any, data: any, breakpoints: any) => Promise<void>>().mockResolvedValue(undefined),
     parsePartitionLabel: vi.fn<(label: string) => Promise<number>>().mockResolvedValue(0),
@@ -231,8 +237,14 @@ export function createMockContextWithMachineState(
     }
   } as any);
 
+  // --- Make the mock emulator report the same state it is mirrored as, so commands that query it
+  // --- directly (the machine lifecycle commands) see the state this helper was asked for.
+  const emuApi = createMockEmuApi();
+  emuApi.getCpuStateChunk.mockResolvedValue({ state, pcValue: 0x8000, tacts: 0 });
+
   return createMockContext({
     store: mockStore,
+    emuApi,
     ...overrides
   });
 }

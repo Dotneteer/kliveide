@@ -28,9 +28,19 @@ export function registerMainToIdeIpc(
     ipcRenderer,
     "MainToIde",
     async (_ev, msg: RequestMessage) => {
-      if (!getCachedAppServices()) {
+      // --- A forwarded state action only needs the store, which exists from module load onwards.
+      // --- Requiring the app services here too would reject the main process's initial state
+      // --- broadcast (theme, machine type, model, key mappings, global settings, ...), which is
+      // --- sent as soon as the emulator window is ready and would then be lost for good.
+      const needsAppServices = msg?.type !== "ForwardAction";
+      if (!getCachedStore() || (needsAppServices && !getCachedAppServices())) {
+        // --- The correlation ID must be echoed back, otherwise the sender cannot match this
+        // --- response to its pending request and would wait forever instead of learning that
+        // --- this window was not ready yet.
         ipcRenderer?.send("MainToIdeResponse", {
-          type: "NotReady"
+          type: "NotReady",
+          correlationId: msg.correlationId,
+          sourceId: "ide"
         } as NotReadyResponse);
         return;
       }

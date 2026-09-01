@@ -25,11 +25,15 @@ class EmuApiImpl {
    * @param _modelId Optional model ID.
    * @param _config Optional configuration object.
    */
+  /**
+   * @returns True if the requested machine became the live one; false if a later, concurrent
+   * machine change superseded this call while it was still setting up.
+   */
   async setMachineType(
     _machineId: string,
     _modelId?: string,
     _config?: Record<string, any>
-  ): Promise<void> {
+  ): Promise<boolean> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -229,6 +233,16 @@ class EmuApiImpl {
    * @param _bps The new set of breakpoints.
    */
   async resetBreakpointsTo(_bps: BreakpointInfo[]): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Replaces the whole breakpoint set atomically, preserving each breakpoint's disabled state.
+   * Prefer this over erasing and re-adding breakpoints one by one, which lets concurrent
+   * breakpoint edits be lost between the individual calls.
+   * @param _bps The breakpoints to install.
+   */
+  async restoreBreakpoints(_bps: BreakpointInfo[]): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -668,6 +682,21 @@ export type PaletteDeviceInfo = {
 
 export type EmuApi = EmuApiImpl;
 
+/**
+ * Emulator-process methods whose duration is genuinely unbounded, and which therefore opt out of
+ * the default request timeout. Everything else - including `setMachineType`, whose WASM setup is
+ * slow but bounded - stays covered, so a lost response surfaces as an error instead of hanging.
+ */
+const UNBOUNDED_EMU_METHODS = [
+  // --- Blocks until the user responds
+  "displayDialog",
+  // --- Script lifetime is controlled by the script/user, not by this call
+  "startScript",
+  "stopScript"
+] as const;
+
 export function createEmuApi(messenger: MessengerBase): EmuApiImpl {
-  return buildMessagingProxy(new EmuApiImpl(), messenger, "emu");
+  return buildMessagingProxy(new EmuApiImpl(), messenger, "emu", {
+    unboundedMethods: UNBOUNDED_EMU_METHODS
+  });
 }

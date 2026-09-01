@@ -738,8 +738,10 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       accelerator: "Shift+F4",
       click: async () => {
         if (appState.ideFocused && appState.project.isKliveProject) {
-          getIdeApi().executeCommand("outp build");
-          getIdeApi().executeCommand(appState.emulatorState?.isDebugging ? "debug" : "run");
+          // --- Await the first command: these are independent IPC round trips, so firing both at
+          // --- once lets the build output pane switch race the build it is meant to display.
+          await getIdeApi().executeCommand("outp build");
+          await getIdeApi().executeCommand(appState.emulatorState?.isDebugging ? "debug" : "run");
         } else {
           await getEmuApi().issueMachineCommand("restart");
         }

@@ -197,23 +197,27 @@ class IdeMessageProcessor {
 export async function processMainToIdeMessages(
   message: RequestMessage,
   store: Store<AppState>,
-  { outputPaneService, ideCommandsService, projectService, scriptService }: AppServices
+  appServices: AppServices
 ): Promise<ResponseMessage> {
-  const ideMessageProcessor = new IdeMessageProcessor(
-    store,
-    outputPaneService,
-    ideCommandsService,
-    projectService,
-    scriptService
-  );
-
   switch (message.type) {
     case "ForwardAction":
-      // --- The emu sent a state change action. Replay it in the main store without formatting it
+      // --- The emu sent a state change action. Replay it in the main store without formatting it.
+      // --- This deliberately needs nothing but the store, so state broadcast from the main
+      // --- process still lands while this window is still starting up and its app services do
+      // --- not exist yet.
       store.dispatch(message.action, message.sourceId);
       break;
 
     case "ApiMethodRequest":
+      const { outputPaneService, ideCommandsService, projectService, scriptService } = appServices;
+      const ideMessageProcessor = new IdeMessageProcessor(
+        store,
+        outputPaneService,
+        ideCommandsService,
+        projectService,
+        scriptService
+      );
+
       // --- We accept only methods defined in the MainMessageProcessor
       const processingMethod = ideMessageProcessor[message.method];
       if (typeof processingMethod === "function") {
