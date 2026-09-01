@@ -33,11 +33,12 @@ import {
   useContextMenuState
 } from "@renderer/controls/ContextMenu";
 import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
-import {
-  formatNexAnnotations,
-  loadNexAnnotationSidecar
-} from "@renderer/appIde/DocumentPanels/Next/nexAnnotationSidecar";
 import { createAnnotatedNexDisassemblyItems } from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
+import {
+  saveNexAnnotationSession,
+  subscribeNexAnnotationSession,
+  updateNexAnnotationSession
+} from "@renderer/appIde/DocumentPanels/Next/nexAnnotationSession";
 import {
   NexSynopsisCommentDialog,
   type NexSynopsisCommentDialogResult
@@ -257,6 +258,21 @@ const StaticMemoryDump = ({
     });
   }, []);
 
+  const publishNexAnnotations = useCallback((annotations: NexFileAnnotations) => {
+    const annotationPath = currentViewState.nexAnnotationPath;
+    if (annotationPath) {
+      updateNexAnnotationSession(annotationPath, annotations);
+    } else {
+      nexAnnotationsRef.current = annotations;
+      setNexAnnotations(annotations);
+      setAnnotationSaveError(undefined);
+      setAnnotationDirtyState(true);
+    }
+  }, [
+    currentViewState.nexAnnotationPath,
+    setAnnotationDirtyState
+  ]);
+
   useEffect(() => {
     if (document?.id) {
       documentHubService.setDocumentViewState(document.id, currentViewState);
@@ -301,7 +317,6 @@ const StaticMemoryDump = ({
   }, [memoryJumpAddress]);
 
   useEffect(() => {
-    let cancelled = false;
     const annotationPath = currentViewState.nexAnnotationPath;
     const bank = currentViewState.nexAnnotationBank;
     if (!annotationPath || bank === undefined) {
@@ -309,49 +324,52 @@ const StaticMemoryDump = ({
       setNexAnnotations(undefined);
       setAnnotationLoading(false);
       setAnnotationLoadError(undefined);
-      return () => {
-        cancelled = true;
-      };
+      setAnnotationSaveError(undefined);
+      setAnnotationDirtyState(false);
+      return;
     }
 
-    setAnnotationLoading(true);
-    setAnnotationLoadError(undefined);
-    loadNexAnnotationSidecar(
+    return subscribeNexAnnotationSession(
       appServices.projectService,
-      { fullPath: annotationPath },
-      [bank]
-    ).then((state) => {
-      if (!cancelled) {
-        const annotations = state.status === "loaded" ? state.annotations : undefined;
-        nexAnnotationsRef.current = annotations;
-        setNexAnnotations(annotations);
-        setAnnotationLoading(false);
-        setAnnotationLoadError(state.status === "loaded" ? undefined : state.message);
-        setAnnotationSaveError(undefined);
-        setAnnotationDirtyState(false);
-        if (annotations) {
-          const bankAnnotation = getBankAnnotation(annotations, bank);
-          if (bankAnnotation) {
-            changeViewState((vs) => {
-              vs.disassOffset = getNexBankAddressOffset(bankAnnotation.offsetIndex);
-              if (bankAnnotation.decimalView !== undefined) {
-                vs.decimalView = bankAnnotation.decimalView;
-              }
-              if (bankAnnotation.lastView) {
-                vs.viewMode = bankAnnotation.lastView;
-              }
-            });
-          }
+      annotationPath,
+      bank,
+      (snapshot) => {
+        nexAnnotationsRef.current = snapshot.annotations;
+        setNexAnnotations(snapshot.annotations);
+        setAnnotationLoading(snapshot.loading);
+        setAnnotationLoadError(snapshot.loadError);
+        setAnnotationSaveError(snapshot.saveError);
+        setAnnotationDirtyState(snapshot.dirty);
+        const bankAnnotation = snapshot.annotations
+          ? getBankAnnotation(snapshot.annotations, bank)
+          : undefined;
+        if (bankAnnotation) {
+          setCurrentViewState((current) => {
+            const nextViewState = { ...current };
+            let changed = false;
+            const nextDisassOffset = getNexBankAddressOffset(bankAnnotation.offsetIndex);
+            if (nextViewState.disassOffset !== nextDisassOffset) {
+              nextViewState.disassOffset = nextDisassOffset;
+              changed = true;
+            }
+            if (
+              bankAnnotation.decimalView !== undefined &&
+              nextViewState.decimalView !== bankAnnotation.decimalView
+            ) {
+              nextViewState.decimalView = bankAnnotation.decimalView;
+              changed = true;
+            }
+            if (bankAnnotation.lastView && nextViewState.viewMode !== bankAnnotation.lastView) {
+              nextViewState.viewMode = bankAnnotation.lastView;
+              changed = true;
+            }
+            return changed ? nextViewState : current;
+          });
         }
       }
-    });
-
-    return () => {
-      cancelled = true;
-    };
+    );
   }, [
     appServices.projectService,
-    changeViewState,
     currentViewState.nexAnnotationBank,
     currentViewState.nexAnnotationPath,
     setAnnotationDirtyState
@@ -360,21 +378,13 @@ const StaticMemoryDump = ({
   const saveAnnotations = useCallback(async () => {
     const annotationsToSave = nexAnnotationsRef.current;
     if (!annotationsToSave || !currentViewState.nexAnnotationPath) return;
-    try {
-      await appServices.projectService.saveFileContent(
-        currentViewState.nexAnnotationPath,
-        formatNexAnnotations(annotationsToSave)
-      );
-      setAnnotationSaveError(undefined);
-      setAnnotationDirtyState(false);
-    } catch (err) {
-      setAnnotationSaveError(err instanceof Error ? err.message : String(err));
-      setAnnotationDirtyState(true);
-    }
+    await saveNexAnnotationSession(
+      appServices.projectService,
+      currentViewState.nexAnnotationPath
+    );
   }, [
     appServices.projectService,
-    currentViewState.nexAnnotationPath,
-    setAnnotationDirtyState
+    currentViewState.nexAnnotationPath
   ]);
 
   const updateAnnotatedBankSettings = useCallback((
@@ -429,13 +439,10 @@ const StaticMemoryDump = ({
         [bankKey]: nextBankAnnotation
       }
     };
-    nexAnnotationsRef.current = updatedAnnotations;
-    setNexAnnotations(updatedAnnotations);
-    setAnnotationSaveError(undefined);
-    setAnnotationDirtyState(true);
+    publishNexAnnotations(updatedAnnotations);
   }, [
     currentViewState.nexAnnotationBank,
-    setAnnotationDirtyState
+    publishNexAnnotations
   ]);
 
   const changeViewMode = useCallback((nextView: StaticDumpViewMode) => {
@@ -617,13 +624,10 @@ const StaticMemoryDump = ({
         [String(annotationBank)]: nextBankAnnotation
       }
     };
-    nexAnnotationsRef.current = updatedAnnotations;
-    setNexAnnotations(updatedAnnotations);
-    setAnnotationSaveError(undefined);
-    setAnnotationDirtyState(true);
+    publishNexAnnotations(updatedAnnotations);
   }, [
     currentViewState.nexAnnotationBank,
-    setAnnotationDirtyState
+    publishNexAnnotations
   ]);
 
   const setSynopsisComment = useCallback((bankOffset: number, synopsis?: string) => {
@@ -795,13 +799,10 @@ const StaticMemoryDump = ({
       delete updatedAnnotations.globalLabels;
     }
 
-    nexAnnotationsRef.current = updatedAnnotations;
-    setNexAnnotations(updatedAnnotations);
-    setAnnotationSaveError(undefined);
-    setAnnotationDirtyState(true);
+    publishNexAnnotations(updatedAnnotations);
   }, [
     currentViewState.nexAnnotationBank,
-    setAnnotationDirtyState
+    publishNexAnnotations
   ]);
 
   const applyOperandLabelDialogResult = useCallback((
@@ -882,13 +883,10 @@ const StaticMemoryDump = ({
       delete updatedAnnotations.globalLabels;
     }
 
-    nexAnnotationsRef.current = updatedAnnotations;
-    setNexAnnotations(updatedAnnotations);
-    setAnnotationSaveError(undefined);
-    setAnnotationDirtyState(true);
+    publishNexAnnotations(updatedAnnotations);
   }, [
     currentViewState.nexAnnotationBank,
-    setAnnotationDirtyState
+    publishNexAnnotations
   ]);
 
   const applyRegionDialogResult = useCallback((result: NexRegionDialogResult) => {
@@ -926,15 +924,12 @@ const StaticMemoryDump = ({
       }
     };
 
-    nexAnnotationsRef.current = updatedAnnotations;
-    setNexAnnotations(updatedAnnotations);
-    setAnnotationSaveError(undefined);
-    setAnnotationDirtyState(true);
+    publishNexAnnotations(updatedAnnotations);
     clearDisassemblySelection();
   }, [
     clearDisassemblySelection,
     currentViewState.nexAnnotationBank,
-    setAnnotationDirtyState
+    publishNexAnnotations
   ]);
 
   const openSynopsisCommentDialog = useCallback(async (rowIndex: number | undefined) => {

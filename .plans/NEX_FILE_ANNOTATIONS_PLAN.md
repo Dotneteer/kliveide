@@ -2,7 +2,7 @@
 
 Created: 2026-08-30
 
-Status: Steps 1, 2, 3, 4, 5, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, and 6.10 implemented. Later steps pending.
+Status: Completed. Steps 1 through 7 implemented.
 
 ## Implementation Progress
 
@@ -1198,6 +1198,22 @@ If multiple bank pop-outs for the same NEX file are open, they should share a
 single annotation model through a small document-level service or owner state so
 saves and dirty state do not diverge.
 
+Implementation result:
+
+- added a shared `nexAnnotationSession` keyed by `.nex.dis` path;
+- popped-out bank documents subscribe to the shared session instead of loading
+  and saving isolated annotation copies;
+- annotation edits update the session model immediately and broadcast to all
+  open bank subscribers;
+- dirty state, save errors, successful saves, and loaded annotations propagate
+  to all subscribers;
+- the Save button writes the shared session JSON and clears dirty state for all
+  open bank views on success;
+- existing close confirmation and app-close protection use the propagated dirty
+  state;
+- added focused tests for shared session load, update, dirty propagation, and
+  save propagation.
+
 #### 6.12 Implementation Notes
 
 Acceptance:
@@ -1245,6 +1261,11 @@ Polish items:
 - import/export action if later requested;
 - keyboard shortcuts for common annotation actions after the menu workflow is
   stable.
+
+Implementation result:
+
+- added `.docs/nex-annotations.md` with sidecar naming, viewer behavior,
+  interactive editing, shared sessions, label rules, and region rules.
 
 ## Risks And Mitigations
 
