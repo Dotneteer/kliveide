@@ -25,6 +25,7 @@ class MachineService implements IMachineService {
   private _newInitializing = new LiteEvent<IAnyMachine>();
   private _newInitialized = new LiteEvent<IAnyMachine>();
   private _controller?: MachineController;
+  private _initGeneration = 0;
 
   /**
    * Initializes the machine service to use the specified store
@@ -47,6 +48,15 @@ class MachineService implements IMachineService {
     modelId?: string,
     config?: MachineConfigSet
   ): Promise<void> {
+    // --- Two independent startup paths can each call this method with no ordering guarantee
+    // --- between them (the app's default-machine initialization in main/index.ts, and opening a
+    // --- project - including "open last project at startup" - in main/projects.ts). If a second
+    // --- call arrives while an earlier call's async `machine.setup()` is still in flight, only the
+    // --- call that is still current when ITS setup finishes is allowed to publish its controller;
+    // --- otherwise `this._controller` could end up pointing at a machine whose WASM runtime never
+    // --- finished loading, which crashes any code that reads machine state (e.g. EmulatorPanel).
+    const generation = ++this._initGeneration;
+
     // --- Check if machine type is available
     const machineInfo = machineRegistry.find(
       (m) =>
@@ -74,13 +84,15 @@ class MachineService implements IMachineService {
       this._controller = undefined;
     }
 
-    // --- Initialize the new machine
+    // --- Initialize the new machine. Deliberately NOT assigned to `this._controller` yet - it
+    // --- must not become observable (via getMachineController()) until setup below has actually
+    // --- completed for the still-current generation.
     const rendererInfo = machineRendererRegistry.find((r) => r.machineId === machineId);
     const machine = rendererInfo.factory(this.store, modelInfo, config, this.messenger);
-    this._controller = new MachineController(this.store, this.messenger, machine);
+    const newController = new MachineController(this.store, this.messenger, machine);
 
     // --- Restore the breakpoints from the old machine
-    this._controller.debugSupport = new DebugSupport(this.store, oldBps);
+    newController.debugSupport = new DebugSupport(this.store, oldBps);
     this._newInitializing.fire(machine);
 
     // --- Seup the machine
@@ -91,6 +103,15 @@ class MachineService implements IMachineService {
     );
     await machine.setup();
     await machine.hardReset();
+
+    if (generation !== this._initGeneration) {
+      // --- A newer setMachineType call superseded this one while setup/reset were in flight.
+      // --- Discard this now-stale machine instead of publishing it.
+      newController.dispose();
+      return;
+    }
+
+    this._controller = newController;
     this._newInitialized.fire(machine);
 
     // --- Ready, sign the machine type state change

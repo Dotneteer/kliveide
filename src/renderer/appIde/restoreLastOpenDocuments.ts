@@ -45,13 +45,23 @@ export async function restoreLastOpenDocuments(
 
   for (const [index, area] of workspace.areas.entries()) {
     const hub = availableHubs[index] ?? projectService.createDocumentHubService();
-    const { firstRestoredDocId, restoredActiveDocId } = await restoreAreaDocuments(
-      area,
-      hub,
-      projectPath,
-      projectService,
-      state.workspaceSettings
-    );
+    // --- A single unreadable/locked document (more likely on Windows, e.g. a file still held by
+    // --- another process) must not abort restoration of every other area/document - without this,
+    // --- an exception here propagates out of restoreLastOpenDocuments entirely, silently dropping
+    // --- every remaining tab and preventing the workspace-loaded signal from ever firing.
+    let firstRestoredDocId = "";
+    let restoredActiveDocId = "";
+    try {
+      ({ firstRestoredDocId, restoredActiveDocId } = await restoreAreaDocuments(
+        area,
+        hub,
+        projectPath,
+        projectService,
+        state.workspaceSettings
+      ));
+    } catch (err) {
+      console.error(`Failed to restore documents for area '${area.areaId}':`, err);
+    }
     restoredAreas.push({
       area,
       firstRestoredDocId,
@@ -68,7 +78,11 @@ export async function restoreLastOpenDocuments(
     const docToActivate =
       restoredArea.restoredActiveDocId || restoredArea.firstRestoredDocId;
     if (docToActivate) {
-      await restoredArea.hub.setActiveDocument(docToActivate);
+      try {
+        await restoredArea.hub.setActiveDocument(docToActivate);
+      } catch (err) {
+        console.error(`Failed to activate document '${docToActivate}':`, err);
+      }
     }
     if (restoredArea.area.areaId === workspace.activeAreaId && docToActivate) {
       activeAreaHub = restoredArea.hub;
@@ -98,11 +112,18 @@ async function restoreAreaDocuments(
     const restoredDocument = restoreDocument(doc, projectPath, projectService, workspaceSettings);
     if (!restoredDocument) continue;
 
-    await documentHubService.openDocumentTab(
-      restoredDocument.document,
-      restoredDocument.viewState,
-      false
-    );
+    // --- One document failing to open (e.g. a slow/locked file read) must not prevent the
+    // --- remaining documents in this area from being restored.
+    try {
+      await documentHubService.openDocumentTab(
+        restoredDocument.document,
+        restoredDocument.viewState,
+        false
+      );
+    } catch (err) {
+      console.error(`Failed to restore document '${doc.id}':`, err);
+      continue;
+    }
     firstRestoredDocId ||= restoredDocument.document.id;
     if (restoredDocument.document.id === area.activeDocumentId) {
       restoredActiveDocId = restoredDocument.document.id;

@@ -9,7 +9,7 @@ import { split } from "lodash";
 import { useMainApi } from "@renderer/core/MainApi";
 import Dropdown from "@renderer/controls/Dropdown";
 import { useRendererContext } from "@renderer/core/RendererProvider";
-import { ensureProjectLoaded, ensureWorkspaceLoaded } from "../IdeEventsHandler";
+import { ensureBuildRootsLoaded, ensureProjectLoaded, ensureWorkspaceLoaded } from "../IdeEventsHandler";
 import { DialogForm } from "@renderer/controls/DialogForm";
 import { optionalPath, requiredFilename } from "./dialogValidators";
 
@@ -42,7 +42,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const { validationService, projectService, ideCommandsService } = useAppServices();
   const { store } = useRendererContext();
   const [machineId, setMachineId] = useState<string>(INITIAL_MACHINE_IDE);
-  const [modelId, setmodelId] = useState<string>(undefined);
+  const [modelId, setmodelId] = useState<string>(INITIAL_MODEL_ID);
   const [projectFolder, setProjectFolder] = useState("");
   const [projectName, setProjectName] = useState("");
   const [templateDirs, setTemplateDirs] = useState<{ value: string; label: string }[]>([]);
@@ -108,6 +108,12 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
         PROJECT_CREATION_TIMEOUT_MS,
         "Loading the new Klive workspace"
       );
+
+      // --- The build root is dispatched by the main process and forwarded to this window's
+      // --- store asynchronously; give it a bounded chance to arrive before we read it, otherwise
+      // --- the explorer never gets asked to reveal/mark the build root node (seen on Windows,
+      // --- where the forwarded action can lag behind the "open folder" IPC response).
+      await ensureBuildRootsLoaded(store);
 
       // --- Navigate to the project root
       const buildRoots = store.getState().project?.buildRoots ?? [];

@@ -81,10 +81,16 @@ export const IdeEventsHandler = () => {
       await mainApi.setGlobalSettingsValue(SETTING_IDE_MAXIMIZE_TOOLS, false);
 
       // --- Wait while the project is loaded
-      await ensureProjectLoaded(projectService);
+      const projectTreeLoaded = await ensureProjectLoaded(projectService);
 
-      // --- Restore document tabs and activate only the last active document
-      await restoreLastOpenDocuments(projectService, store);
+      // --- Restore document tabs and activate only the last active document. Skip this if the
+      // --- project tree never became available - every document lookup would fail against it
+      // --- anyway, silently dropping every tab instead of actually restoring any of them.
+      if (projectTreeLoaded) {
+        await restoreLastOpenDocuments(projectService, store);
+      } else {
+        console.error("Skipping document restoration because the project tree failed to load");
+      }
       const sideBarWidth = getGlobalSetting(store, SETTING_IDE_SIDEBAR_WIDTH);
       const toolPanelHeight = getGlobalSetting(store, SETTING_IDE_TOOLPANEL_HEIGHT);
 
@@ -140,20 +146,29 @@ export const IdeEventsHandler = () => {
   }
 };
 
-export async function ensureProjectLoaded(projectService: IProjectService) {
-  // --- Wait up to 10 seconds for the project tree to be loaded
+/**
+ * Waits for the project tree to be built and set on the project service.
+ *
+ * The tree is populated by a completely separate component (the explorer sidebar), which issues
+ * its own IPC round trip to main to recursively scan the project folder from disk. That scan can
+ * take noticeably longer on Windows (e.g. under real-time antivirus scanning) than the fixed
+ * budget this function used to enforce, so the wait window here is generous. Returns whether the
+ * tree became available in time - callers MUST check this before relying on the tree, since
+ * proceeding against a not-yet-loaded (or never loaded) tree causes every subsequent lookup
+ * (e.g. resolving a saved document's file to a tree node) to silently fail.
+ */
+export async function ensureProjectLoaded(projectService: IProjectService): Promise<boolean> {
+  // --- Wait up to 30 seconds for the project tree to be loaded
   let count = 0;
 
-  while (count < 100) {
+  while (count < 300) {
     const tree = projectService.getProjectTree();
-    if (tree) break;
+    if (tree) return true;
     count++;
     await delay(100);
   }
-  if (count >= 100) {
-    console.error("Timeout while loading the project tree");
-    return;
-  }
+  console.error("Timeout while loading the project tree");
+  return false;
 }
 
 export async function ensureWorkspaceLoaded(store: Store<AppState>) {
@@ -168,5 +183,28 @@ export async function ensureWorkspaceLoaded(store: Store<AppState>) {
   if (count >= 100) {
     console.error("Timeout while loading the workspace");
     return;
+  }
+}
+
+/**
+ * Waits for the project's build root(s) to be populated in the store.
+ *
+ * The main process dispatches SET_BUILD_ROOT to its own store and then forwards it to this
+ * window's store asynchronously over IPC ("fire and forget" - the forwarding promise is never
+ * awaited by the dispatcher). A caller that reads `store.getState().project.buildRoots`
+ * immediately after the "open folder" IPC call resolves can race ahead of that forwarded action,
+ * especially when cross-process IPC/scheduling is slower (this has been observed on Windows).
+ * This helper gives the forwarded action a bounded window to arrive before the caller gives up.
+ *
+ * Not every project has a configured build root, so a timeout here is not treated as an error.
+ */
+export async function ensureBuildRootsLoaded(store: Store<AppState>): Promise<void> {
+  // --- Wait up to 5 seconds for the build root(s) to be forwarded from the main process
+  let count = 0;
+
+  while (count < 50) {
+    if ((store.getState()?.project?.buildRoots ?? []).length > 0) break;
+    count++;
+    await delay(100);
   }
 }
