@@ -249,6 +249,15 @@ class EmuMessageProcessor {
   setDiskWriteProtection(index: number, protect: boolean) {
     const controller = this.machineService.getMachineController();
     const propName = index ? DISK_B_WP : DISK_A_WP;
+
+    // --- Record it alongside the medium. Machine properties are lost whenever the machine is
+    // --- replaced, so without this a machine change would quietly remount a write-protected disk
+    // --- as writable; the controller re-applies this flag every time it re-attaches the medium.
+    mediaStore.addMedia({
+      id: index ? MEDIA_DISK_B : MEDIA_DISK_A,
+      writeProtected: protect
+    });
+
     // --- There may be no live machine yet during startup, while one is still being set up.
     // --- Crashing here would abort the whole disk restore and eject the disk.
     controller?.machine?.setMachineProperty(propName, protect);

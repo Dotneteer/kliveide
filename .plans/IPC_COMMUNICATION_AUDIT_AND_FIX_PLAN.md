@@ -417,6 +417,10 @@ race by gating something on them again.
 17. ~~B5 — breakpoint-mutation serialization~~ **DONE** — replaced the multi-round-trip erase+replay with a single atomic `restoreBreakpoints` call
 18. ~~C3 — highest-value IDE commands query EMU live instead of trusting the mirror~~ **DONE** — all six machine lifecycle/step commands now read state via `getCpuStateChunk()`, falling back to the mirror only if the emulator is unreachable
 
+**Follow-ups found while implementing (both now DONE):**
+19. ~~Media restore crashed when no machine was live yet~~ **DONE** — `setTapeFile`/`setDiskFile`/`setDiskWriteProtection` dereferenced `controller.machine` unguarded. Harmless until Phase 5 moved the controller publication to after WASM setup and made "open last project" reliable, at which point the app's default-machine init and the project's machine change genuinely race on every startup. They now store the medium unconditionally and only attach it if a machine exists (the controller re-attaches stored media when a machine starts).
+20. ~~Write protection was lost whenever the machine changed~~ **DONE** — it is a machine property, and machine properties do not survive machine replacement, so a write-protected disk silently came back writable after any machine type/model switch (pre-existing, not just in the startup race). It is now stored next to the medium and re-applied by `attachStoredMedia`, **before** the contents, because the floppy controller and the +3E WASM machine both read the flag at attach time.
+
 **Explicitly not recommended near-term:**
 - True delivery guarantees / persistent-outbox redesign (Part 1, item 6) — a deliberate bigger decision, not an incremental patch
 - A7 — TOCTOU file-entry checks — low likelihood for a single-user desktop app
