@@ -648,17 +648,6 @@ class EmuMessageProcessor {
   }
 
   /**
-   * Gets all breakpoints in the emulator.
-   */
-  getAllBreakpoints() {
-    const controller = this.machineService.getMachineController();
-    if (!controller) {
-      noController();
-    }
-    return controller.debugSupport.breakpoints;
-  }
-
-  /**
    * Normalizes breakpoints for a resource and line count.
    * @param resource The resource (file) name.
    * @param lineCount The number of lines in the resource.

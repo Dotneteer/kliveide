@@ -1,6 +1,15 @@
 # IPC Communication Audit & Fix Plan
 
 Created: 2026-09-01
+Completed: 2026-09-01
+
+> **PLAN COMPLETE.** Every finding in Parts 1 and 2 is implemented and verified
+> against the code, along with two follow-ups discovered while implementing
+> (items 19-20) and the two originally-deferred items (21-22). The single
+> remaining entry — true delivery guarantees / a persistent-outbox redesign — is
+> deliberately left open as an architectural decision rather than an omission;
+> see the closing section for what it entails and why the current state is a
+> coherent resting point without it.
 
 ## Verdict
 
@@ -393,7 +402,7 @@ race by gating something on them again.
 1. ~~C2 — `NewProjectCommand.ts`: add the missing `ensureBuildRootsLoaded` call~~ **DONE**
 2. ~~S3 — `MessageProxy.ts`: treat `NotReady` as an error, same as `ErrorResponse`~~ **DONE**
 3. ~~B3 — `setDiskFile` drive-letter message fix~~ **DONE**
-4. ~~B4 — `getAllBreakpoints` missing `return`~~ **DONE** (fixed rather than deleted; it remains dead code, redundant with `listBreakpoints`, so deleting it is still a reasonable follow-up)
+4. ~~B4 — `getAllBreakpoints` missing `return`~~ **DONE** — ultimately **deleted**. It had zero references anywhere (no `EmuApi` declaration, no call sites, no tests), was fully redundant with the wired-up `listBreakpoints`, and was subtly worse: it handed back the raw internal `debugSupport.breakpoints` array instead of the defensive copies `listBreakpoints` makes — while still being reachable through the dynamic method-name dispatch.
 5. ~~C5 — delete vestigial `ideStateSynched`/`emuStateSynched`~~ **DONE** (also removed the unused `EMU_STATE_SYNCHED`/`IDE_STATE_SYNCHED` action types and the `emuSynchedAction` creator)
 6. ~~C4 — await ordering fix in `app-menu.ts`~~ **DONE**
 
