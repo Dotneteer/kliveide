@@ -22,8 +22,10 @@ export interface IMachineService {
    * @param machineId ID of the machine type to set
    * @param modelId ID of the machine model
    * @param config Optional machine configuration
+   * @returns True if this call's machine became the live one; false if a later call superseded it
+   * while this one was still setting up, in which case the caller must not configure the machine.
    */
-  setMachineType(machineId: string, modelId?: string, config?: MachineConfigSet): Promise<void>;
+  setMachineType(machineId: string, modelId?: string, config?: MachineConfigSet): Promise<boolean>;
 
   /**
    * Gets the current machine type

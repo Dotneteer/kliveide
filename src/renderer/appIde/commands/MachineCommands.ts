@@ -11,6 +11,27 @@ import {
   IdeCommandBase
 } from "../services/ide-commands";
 
+/**
+ * Reads the machine's current state straight from the emulator.
+ *
+ * The copy in this window's store is only a mirror, kept up to date by state actions forwarded
+ * from the emulator process. Those arrive asynchronously, so right after a state-changing command
+ * (or two commands issued in quick succession from a keybinding or a script) the mirror can still
+ * describe the previous state, and these preconditions are the only gate on the command - the
+ * emulator itself performs no such check. Asking the emulator directly costs one round trip and
+ * always reflects reality.
+ */
+async function getLiveMachineState(
+  context: IdeCommandContext
+): Promise<MachineControllerState | undefined> {
+  try {
+    return (await context.emuApi.getCpuStateChunk())?.state;
+  } catch {
+    // --- Fall back to the mirrored value if the emulator cannot be reached.
+    return context.store.getState()?.emulatorState?.machineState;
+  }
+}
+
 export class StartMachineCommand extends IdeCommandBase {
   readonly id = "em-start";
   readonly description = "Starts the emulated machine";
@@ -18,7 +39,7 @@ export class StartMachineCommand extends IdeCommandBase {
   readonly aliases = [":s"];
 
   async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const machineState = context.store.getState()?.emulatorState?.machineState;
+    const machineState = await getLiveMachineState(context);
     if (
       machineState === MachineControllerState.None ||
       machineState === MachineControllerState.Paused ||
@@ -41,7 +62,7 @@ export class PauseMachineCommand extends IdeCommandBase {
   readonly aliases = [":p"];
 
   async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const machineState = context.store.getState()?.emulatorState?.machineState;
+    const machineState = await getLiveMachineState(context);
     if (machineState === MachineControllerState.Running) {
       const cpuState = await context.emuApi.getCpuState();
       await context.emuApi.issueMachineCommand("pause");
@@ -62,7 +83,7 @@ export class StopMachineCommand extends IdeCommandBase {
   readonly aliases = [":h"];
 
   async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const machineState = context.store.getState()?.emulatorState?.machineState;
+    const machineState = await getLiveMachineState(context);
     if (
       machineState === MachineControllerState.Running ||
       machineState === MachineControllerState.Paused
@@ -86,7 +107,7 @@ export class RestartMachineCommand extends IdeCommandBase {
   readonly aliases = [":r"];
 
   async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const machineState = context.store.getState()?.emulatorState?.machineState;
+    const machineState = await getLiveMachineState(context);
     if (
       machineState === MachineControllerState.Running ||
       machineState === MachineControllerState.Paused
@@ -106,7 +127,7 @@ export class StartDebugMachineCommand extends IdeCommandBase {
   readonly aliases = [":d"];
 
   async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const machineState = context.store.getState()?.emulatorState?.machineState;
+    const machineState = await getLiveMachineState(context);
     if (
       machineState === MachineControllerState.None ||
       machineState === MachineControllerState.Paused ||
@@ -160,7 +181,7 @@ async function stepCommand (
   cmd: MachineCommand,
   cmdName: string
 ): Promise<IdeCommandResult> {
-  const machineState = context.store.getState()?.emulatorState?.machineState;
+  const machineState = await getLiveMachineState(context);
   if (machineState === MachineControllerState.Paused) {
     const cpuState = await context.emuApi.getCpuState();
     await context.emuApi.issueMachineCommand(cmd);

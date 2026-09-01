@@ -72,7 +72,9 @@ class EmuMessageProcessor {
    * @param config Optional configuration object.
    */
   async setMachineType(machineId: string, modelId?: string, config?: Record<string, any>) {
-    await this.machineService.setMachineType(machineId, modelId, config);
+    // --- Report whether this call's machine actually became the live one, so the caller can tell
+    // --- a real success from being superseded by a later, concurrent machine change.
+    return this.machineService.setMachineType(machineId, modelId, config);
   }
 
   /**
@@ -157,16 +159,20 @@ class EmuMessageProcessor {
       dataBlocks = tzxReader.dataBlocks.map((b) => b.getDataBlock()).filter((b) => b);
     }
 
-    // --- Store the tape file in the media store
+    // --- Store the tape file in the media store. This is the durable record: whenever a machine
+    // --- starts, the controller re-attaches every stored medium to it, so the tape survives a
+    // --- machine change and does not depend on a machine being live right now.
     mediaStore.addMedia({
       id: MEDIA_TAPE,
       mediaFile: file,
       mediaContents: dataBlocks
     });
 
-    // --- Pass the tape file data blocks to the machine
+    // --- Pass the tape file data blocks to the machine, if one is already live. There may be none
+    // --- yet during startup, while a machine is still being set up - the stored medium above is
+    // --- attached when that machine starts, so this is not an error.
     const controller = this.machineService.getMachineController();
-    controller.machine.setMachineProperty(MEDIA_TAPE, dataBlocks);
+    controller?.machine?.setMachineProperty(MEDIA_TAPE, dataBlocks);
 
     // --- Done.
     if (confirm) {
@@ -196,18 +202,23 @@ class EmuMessageProcessor {
     // --- Get disk information
     const controller = this.machineService.getMachineController();
     const mediaId = diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A;
-    const drive = diskIndex[0] ? "B" : "A";
+    // --- `diskIndex` is a number, so indexing it always yielded `undefined` and every message
+    // --- claimed drive A regardless of which drive was actually used.
+    const drive = diskIndex ? "B" : "A";
     // --- Try to parse the disk file
     try {
-      // --- Store the tape file in the media store
+      // --- Store the disk file in the media store. This is the durable record: whenever a machine
+      // --- starts, the controller re-attaches every stored medium to it.
       mediaStore.addMedia({
         id: mediaId,
         mediaFile: file,
         mediaContents: contents
       });
 
-      // --- Pass the tape file data blocks to the machine
-      controller.machine.setMachineProperty(mediaId, contents ?? null);
+      // --- Pass the disk contents to the machine, if one is already live. There may be none yet
+      // --- during startup, while a machine is still being set up - the stored medium above is
+      // --- attached when that machine starts, so this is not an error.
+      controller?.machine?.setMachineProperty(mediaId, contents ?? null);
 
       // --- Done.
       if (confirm) {
@@ -238,7 +249,18 @@ class EmuMessageProcessor {
   setDiskWriteProtection(index: number, protect: boolean) {
     const controller = this.machineService.getMachineController();
     const propName = index ? DISK_B_WP : DISK_A_WP;
-    controller.machine.setMachineProperty(propName, protect);
+
+    // --- Record it alongside the medium. Machine properties are lost whenever the machine is
+    // --- replaced, so without this a machine change would quietly remount a write-protected disk
+    // --- as writable; the controller re-applies this flag every time it re-attaches the medium.
+    mediaStore.addMedia({
+      id: index ? MEDIA_DISK_B : MEDIA_DISK_A,
+      writeProtected: protect
+    });
+
+    // --- There may be no live machine yet during startup, while one is still being set up.
+    // --- Crashing here would abort the whole disk restore and eject the disk.
+    controller?.machine?.setMachineProperty(propName, protect);
   }
 
   /**
@@ -599,14 +621,30 @@ class EmuMessageProcessor {
   }
 
   /**
-   * Gets all breakpoints in the emulator.
+   * Replaces the whole breakpoint set in a single, atomic step, preserving each breakpoint's
+   * enabled/disabled state.
+   *
+   * Restoring breakpoints as "erase all, then add them back one at a time" spans many separate
+   * IPC round trips, and any breakpoint edit made from the IDE in between (a gutter toggle, a
+   * script) is either wiped by the erase or overwritten by the replay. Doing the whole swap inside
+   * one synchronous handler closes that window completely.
+   * @param bps The breakpoints to install
    */
-  getAllBreakpoints() {
+  restoreBreakpoints(bps: BreakpointInfo[]) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
-    controller.debugSupport.breakpoints;
+    const debugSupport = controller.debugSupport;
+    debugSupport.resetBreakpointsTo(bps ?? []);
+
+    // --- `resetBreakpointsTo` rebuilds the definitions without carrying the `disabled` flag over,
+    // --- so re-apply it here; otherwise every restored breakpoint would come back enabled.
+    for (const bp of bps ?? []) {
+      if (bp.disabled) {
+        debugSupport.enableBreakpoint(bp, false);
+      }
+    }
   }
 
   /**
@@ -1183,17 +1221,20 @@ export async function processMainToEmuMessages(
   message: RequestMessage,
   store: Store<AppState>,
   emuToMain: MessengerBase,
-  { machineService }: AppServices
+  appServices: AppServices
 ): Promise<ResponseMessage> {
-  const emuMessageProcessor = new EmuMessageProcessor(emuToMain, machineService);
-
   switch (message.type) {
     case "ForwardAction":
-      // --- The emu sent a state change action. Replay it in the main store without formarding it
+      // --- The emu sent a state change action. Replay it in the main store without formarding it.
+      // --- This deliberately needs nothing but the store, so state broadcast from the main
+      // --- process still lands while this window is still starting up and its app services do
+      // --- not exist yet.
       store.dispatch(message.action, message.sourceId);
       break;
 
     case "ApiMethodRequest":
+      const emuMessageProcessor = new EmuMessageProcessor(emuToMain, appServices.machineService);
+
       // --- We accept only methods defined in the MainMessageProcessor
       const processingMethod = emuMessageProcessor[message.method];
       if (typeof processingMethod === "function") {

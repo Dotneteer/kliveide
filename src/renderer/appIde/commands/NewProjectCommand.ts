@@ -1,6 +1,10 @@
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { ensureProjectLoaded, ensureWorkspaceLoaded } from "../IdeEventsHandler";
+import {
+  ensureBuildRootsLoaded,
+  ensureProjectLoaded,
+  ensureWorkspaceLoaded
+} from "../IdeEventsHandler";
 import {
   commandError,
   writeSuccessMessage,
@@ -55,6 +59,11 @@ export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
         }
         await ensureProjectLoaded(context.service.projectService);
         await ensureWorkspaceLoaded(context.store);
+
+        // --- The build root arrives through a separately forwarded action, so waiting for the
+        // --- workspace above says nothing about whether it has landed yet. Give it a bounded
+        // --- chance to arrive, exactly as the New Project dialog does.
+        await ensureBuildRootsLoaded(context.store);
 
         // --- Navigate to the project root
         const buildRoots = context.store.getState().project?.buildRoots ?? [];

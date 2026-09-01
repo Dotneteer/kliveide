@@ -1,5 +1,6 @@
 import type { Channel, RequestMessage, ResponseMessage } from "./messages-core";
 
+import { TargetWindowUnavailableError } from "./messages-core";
 import { MessengerBase } from "./MessengerBase";
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 import { createEmuApi, EmuApi } from "./EmuApi";
@@ -25,7 +26,14 @@ class MainToEmuMessenger extends MessengerBase {
   protected send(message: RequestMessage): void {
     if (this.window?.isDestroyed() === false) {
       this.window.webContents.send(this.requestChannel, message);
+      return;
     }
+    // --- Fail fast and loudly. Silently swallowing the send would leave the caller waiting for a
+    // --- response that can never arrive, until its timeout eventually fires with a far less
+    // --- specific message.
+    throw new TargetWindowUnavailableError(
+      `Cannot send '${message.type}' to the emulator window: the window no longer exists.`
+    );
   }
 
   /**

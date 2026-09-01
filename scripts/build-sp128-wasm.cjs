@@ -1,4 +1,4 @@
-const { existsSync, mkdirSync, readdirSync, unlinkSync } = require("node:fs");
+const { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } = require("node:fs");
 const { dirname, relative, resolve } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
@@ -283,6 +283,12 @@ function buildSp128Wasm({
   const result = run(compiler, args, { cwd: root, stdio: "inherit" });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`ZX Spectrum 128K WASM compilation failed (${result.status}).`);
+  if (!existsSync(selectedOutput) || statSync(selectedOutput).size === 0) {
+    throw new Error(
+      `ZX Spectrum 128K WASM compilation reported success (compiler: '${compiler}'), but '${selectedOutput}' is missing or empty. ` +
+      `The build must not continue - packaging this app would ship a broken emulator.`
+    );
+  }
   return {
     compiler,
     args,

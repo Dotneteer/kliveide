@@ -14,16 +14,13 @@ export function appStateFlagsReducer (
       return { ...state, emuLoaded: false, ideLoaded: false };
 
     case "EMU_LOADED":
-      return { ...state, emuLoaded: true, emuStateSynched: false };
-
-    case "EMU_STATE_SYNCHED":
-      return { ...state, emuStateSynched: true };
+      return { ...state, emuLoaded: true };
 
     case "IDE_LOADED":
-      return { ...state, ideLoaded: true, ideStateSynched: false };
+      return { ...state, ideLoaded: true };
 
     case "INIT_GLOBAL_SETTINGS":
-      return { ...state, ideStateSynched: true, globalSettings: payload.value };
+      return { ...state, globalSettings: payload.value };
 
     case "IS_WINDOWS":
       return { ...state, isWindows: payload?.flag };

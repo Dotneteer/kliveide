@@ -417,7 +417,23 @@ async function getCompiledV2Module(
 
 async function defaultReadV2Artifact(artifactName: string): Promise<ArrayBuffer> {
   const artifactUrl = new URL(`./dist/${artifactName}`, import.meta.url);
-  const response = await fetch(artifactUrl);
+  if (!artifactUrl.toString().endsWith(`/${artifactName}`)) {
+    throw new Error(
+      `ZX Spectrum 128K WASM v2 artifact '${artifactName}' was not found among the packaged renderer assets ` +
+      `(resolved to '${artifactUrl.toString()}' instead). This build is missing its compiled WASM binary ` +
+      `- verify 'npm run build:sp128-wasm' produced a non-empty file before packaging.`
+    );
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(artifactUrl);
+  } catch (err) {
+    throw new Error(
+      `Cannot load ZX Spectrum 128K WASM v2 artifact '${artifactName}' from ${artifactUrl.toString()}: ` +
+      `${err instanceof Error ? err.message : String(err)}. The packaged app may be missing its compiled WASM binaries.`
+    );
+  }
   if (!response.ok) {
     throw new Error(
       `Cannot load ZX Spectrum 128K WASM v2 artifact from ${artifactUrl.toString()} (${response.status} ${response.statusText}).`

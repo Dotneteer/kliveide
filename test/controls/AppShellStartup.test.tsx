@@ -10,7 +10,7 @@ afterEach(() => {
 });
 
 describe("app shell startup hooks", () => {
-  it("runs IDE startup once and unregisters IPC on unmount", async () => {
+  it("runs IDE startup once and does not own MainToIde IPC registration", async () => {
     const cleanupIpc = vi.fn();
     const registerMainToIdeIpc = vi.fn(() => cleanupIpc);
     const registerIdeCommands = vi.fn();
@@ -49,8 +49,12 @@ describe("app shell startup hooks", () => {
       })
     );
 
-    await waitFor(() => expect(registerMainToIdeIpc).toHaveBeenCalledTimes(1));
-    expect(initializeMonaco).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(initializeMonaco).toHaveBeenCalledTimes(1));
+    // --- The "MainToIde" listener is registered at module load in renderer/main.tsx, NOT by this
+    // --- hook: a React effect runs after the first commit, by which time the main process may
+    // --- already have broadcast its initial state to a channel with no listener (Electron drops
+    // --- such messages permanently).
+    expect(registerMainToIdeIpc).not.toHaveBeenCalled();
     expect(setCachedAppServices).toHaveBeenCalledWith(appServices);
     expect(setCachedStore).toHaveBeenCalledWith(store);
     expect(registerIdeCommands).toHaveBeenCalledWith(appServices.ideCommandsService);
@@ -66,7 +70,9 @@ describe("app shell startup hooks", () => {
     expect(registerIdeCommands).toHaveBeenCalledTimes(1);
 
     unmount();
-    expect(cleanupIpc).toHaveBeenCalledTimes(1);
+    // --- Unmounting must NOT tear down the IPC listener: it is owned by the module-level
+    // --- registration and has to outlive any individual React tree.
+    expect(cleanupIpc).not.toHaveBeenCalled();
   });
 
   it("loads the last IDE project after settings are synced", async () => {
@@ -113,7 +119,7 @@ describe("app shell startup hooks", () => {
     await waitFor(() => expect(openFolder).toHaveBeenCalledWith("c:/workspace/demo"));
   });
 
-  it("runs EMU startup once and unregisters IPC on unmount", async () => {
+  it("runs EMU startup once and does not own MainToEmu IPC registration", async () => {
     const cleanupIpc = vi.fn();
     const registerMainToEmuIpc = vi.fn(() => cleanupIpc);
     const dispatch = vi.fn();
@@ -151,8 +157,11 @@ describe("app shell startup hooks", () => {
       })
     );
 
-    await waitFor(() => expect(registerMainToEmuIpc).toHaveBeenCalledTimes(1));
-    expect(setCachedAppServices).toHaveBeenCalledWith(appServices);
+    await waitFor(() => expect(setCachedAppServices).toHaveBeenCalledWith(appServices));
+    // --- The "MainToEmu" listener is registered at module load in renderer/main.tsx, NOT by this
+    // --- hook: the main process builds the application menu and issues its default
+    // --- setMachineType call before this component ever commits.
+    expect(registerMainToEmuIpc).not.toHaveBeenCalled();
     expect(setCachedMessenger).toHaveBeenCalledWith(messenger);
     expect(setCachedStore).toHaveBeenCalledWith(store);
     expect(dispatch).toHaveBeenCalledWith({ type: "EMU_LOADED" });
@@ -167,7 +176,9 @@ describe("app shell startup hooks", () => {
     expect(dispatch.mock.calls.filter(([action]) => action.type === "EMU_LOADED")).toHaveLength(1);
 
     unmount();
-    expect(cleanupIpc).toHaveBeenCalledTimes(1);
+    // --- Unmounting must NOT tear down the IPC listener: it is owned by the module-level
+    // --- registration and has to outlive any individual React tree.
+    expect(cleanupIpc).not.toHaveBeenCalled();
   });
 });
 

@@ -37,7 +37,10 @@ export function excludedItemsFromProject(project?: IdeProject): ExcludedItemInfo
   );
 }
 
-const cvtPath = (id: string) => id.replace("/", getIsWindows() ? "\\" : "/");
+// --- Convert EVERY separator, not just the first: `replace` with a plain string left nested
+// --- paths such as "build/temp" half-converted, so they were displayed with mixed separators.
+const cvtPath = (id: string) =>
+  id.split("/").join(getIsWindows() ? "\\" : "/");
 const postprocessResult = (result: ExcludedItemInfo[]): ExcludedItemInfo[] => {
   result.sort((a, b) => a.value.localeCompare(b.value));
   return result;

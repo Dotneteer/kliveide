@@ -117,7 +117,22 @@ export function createStore<S = any, A extends Action = Action> (
       isDispatching = true;
       currentState = currentReducer(currentState, action);
       if (source && forwarder) {
-        (async () => await forwarder(action, source))();
+        // --- Forwarding this action to the other process(es) is intentionally not awaited: local
+        // --- state must update synchronously. It must still never reject unobserved, though -
+        // --- an unhandled rejection here would hide the fact that the other side never received
+        // --- the action, which is exactly the class of bug this logging exists to expose.
+        (async () => await forwarder(action, source))().catch((err) => {
+          if (err?.name === "TargetWindowUnavailableError") {
+            // --- Expected while a window is closing or the app is quitting: there is no longer
+            // --- anyone to mirror this state to.
+            return;
+          }
+          console.error(
+            `[state] Failed to forward action '${action.type}' from '${source}'. The other ` +
+              `process may now hold stale state.`,
+            err
+          );
+        });
       }
     } finally {
       isDispatching = false;

@@ -27,7 +27,15 @@ import {
   setMachineStateAction,
   setProjectDebuggingAction
 } from "@state/actions";
-import { DISK_A_CHANGES, DISK_B_CHANGES, FAST_LOAD, SAVED_TO_TAPE } from "./machine-props";
+import {
+  DISK_A_CHANGES,
+  DISK_A_WP,
+  DISK_B_CHANGES,
+  DISK_B_WP,
+  FAST_LOAD,
+  SAVED_TO_TAPE
+} from "./machine-props";
+import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 import { delay } from "@renderer/utils/timing";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
@@ -36,6 +44,44 @@ import { createIdeApi } from "@common/messaging/IdeApi";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
+
+/**
+ * Maps a write-protectable medium to the machine property that carries its write-protection flag.
+ */
+const DISK_WRITE_PROTECTION_PROPS: Record<string, string> = {
+  [MEDIA_DISK_A]: DISK_A_WP,
+  [MEDIA_DISK_B]: DISK_B_WP
+};
+
+/**
+ * Attaches every stored medium the machine supports to that machine.
+ *
+ * Media outlive machines: the media store is the durable record, and a freshly created machine
+ * starts with no media and no machine properties at all. This re-attaches both the contents and
+ * the write-protection flag, so inserting a disk and then switching machine type does not quietly
+ * drop the disk or remount it as writable.
+ *
+ * Write protection is applied BEFORE the contents on purpose: the consumers of the media property
+ * (the floppy controller and the +3E WASM machine) read the write-protection flag at the moment
+ * the contents are attached, so applying it afterwards would leave the drive writable.
+ * @param machine The machine to attach the stored media to
+ * @param mediaIds The media the machine supports
+ */
+export function attachStoredMedia(machine: IAnyMachine, mediaIds?: string[]): void {
+  mediaIds?.forEach((mediaId) => {
+    const mediaInfo = mediaStore.getMedia(mediaId);
+    if (!mediaInfo) return;
+
+    const wpPropName = DISK_WRITE_PROTECTION_PROPS[mediaId];
+    if (wpPropName && mediaInfo.writeProtected !== undefined) {
+      machine.setMachineProperty(wpPropName, mediaInfo.writeProtected);
+    }
+
+    if (mediaInfo.mediaContents) {
+      machine.setMachineProperty(mediaId, mediaInfo.mediaContents);
+    }
+  });
+}
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -464,12 +510,7 @@ export class MachineController implements IMachineController {
         }
 
         // --- Check for supported media, attach media contents to the machine
-        this._machineInfo.mediaIds?.forEach((mediaId) => {
-          const mediaInfo = mediaStore.getMedia(mediaId);
-          if (mediaInfo?.mediaContents) {
-            this.machine.setMachineProperty(mediaId, mediaInfo.mediaContents);
-          }
-        });
+        attachStoredMedia(this.machine, this._machineInfo.mediaIds);
         break;
     }
 

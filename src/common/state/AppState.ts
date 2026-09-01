@@ -28,9 +28,7 @@ export type WatchInfo = {
 export type AppState = {
   appPath?: string;
   emuLoaded?: boolean;
-  emuStateSynched?: boolean;
   ideLoaded?: boolean;
-  ideStateSynched?: boolean;
   startScreenDisplayed?: boolean;
   isWindows?: boolean;
   emuFocused?: boolean;
