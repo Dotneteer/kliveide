@@ -284,16 +284,27 @@ class MainMessageProcessor {
     if (!fs.existsSync(name)) {
       throw new Error(`File or folder does not exist: ${name}`);
     }
-    if (isFolder) {
-      if (!fs.statSync(name).isDirectory()) {
-        throw new Error(`${name} is not a directory`);
+    // --- The entry can still disappear between the check above and the work below (an external
+    // --- tool, a sync client, the user's shell). Report that as the same "does not exist" error
+    // --- rather than leaking a raw ENOENT, so the outcome does not depend on the exact moment it
+    // --- vanished.
+    try {
+      if (isFolder) {
+        if (!fs.statSync(name).isDirectory()) {
+          throw new Error(`${name} is not a directory`);
+        }
+        fs.rmdirSync(name, { recursive: true });
+      } else {
+        if (!fs.statSync(name).isFile()) {
+          throw new Error(`${name} is not a file`);
+        }
+        fs.unlinkSync(name);
       }
-      fs.rmdirSync(name, { recursive: true });
-    } else {
-      if (!fs.statSync(name).isFile()) {
-        throw new Error(`${name} is not a file`);
+    } catch (err: any) {
+      if (err?.code === "ENOENT") {
+        throw new Error(`File or folder does not exist: ${name}`);
       }
-      fs.unlinkSync(name);
+      throw err;
     }
   }
 
@@ -315,10 +326,21 @@ class MainMessageProcessor {
     if (fs.existsSync(newItemName)) {
       throw new Error(`${newItemName} already exists`);
     }
-    if (isFolder) {
-      fs.mkdirSync(newItemName);
-    } else {
-      fs.closeSync(fs.openSync(newItemName, "w"));
+    // --- Create exclusively, so an entry that appears between the check above and the creation
+    // --- below fails instead of being silently overwritten. `mkdirSync` already refuses to
+    // --- clobber; the "wx" flag gives a plain file the same guarantee ("w" alone would truncate
+    // --- whatever appeared in the meantime).
+    try {
+      if (isFolder) {
+        fs.mkdirSync(newItemName);
+      } else {
+        fs.closeSync(fs.openSync(newItemName, "wx"));
+      }
+    } catch (err: any) {
+      if (err?.code === "EEXIST") {
+        throw new Error(`${newItemName} already exists`);
+      }
+      throw err;
     }
   }
 
@@ -343,7 +365,19 @@ class MainMessageProcessor {
     if (fs.existsSync(newName)) {
       throw new Error(`Target file or folder already exists: ${newName}`);
     }
-    fs.renameSync(oldName, newName);
+    // --- KNOWN LIMITATION: `renameSync` overwrites an existing target on POSIX, so a target that
+    // --- appears between the check above and this call is replaced rather than reported. Node
+    // --- offers no portable no-clobber rename (a link+unlink workaround does not cover
+    // --- directories), and the window is a few microseconds inside the user's own project folder,
+    // --- so the check above is deliberately left as the guard.
+    try {
+      fs.renameSync(oldName, newName);
+    } catch (err: any) {
+      if (err?.code === "ENOENT") {
+        throw new Error(`Source file or folder does not exist: ${oldName}`);
+      }
+      throw err;
+    }
   }
 
   /**

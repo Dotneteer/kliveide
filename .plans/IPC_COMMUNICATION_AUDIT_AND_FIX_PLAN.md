@@ -421,10 +421,12 @@ race by gating something on them again.
 19. ~~Media restore crashed when no machine was live yet~~ **DONE** — `setTapeFile`/`setDiskFile`/`setDiskWriteProtection` dereferenced `controller.machine` unguarded. Harmless until Phase 5 moved the controller publication to after WASM setup and made "open last project" reliable, at which point the app's default-machine init and the project's machine change genuinely race on every startup. They now store the medium unconditionally and only attach it if a machine exists (the controller re-attaches stored media when a machine starts).
 20. ~~Write protection was lost whenever the machine changed~~ **DONE** — it is a machine property, and machine properties do not survive machine replacement, so a write-protected disk silently came back writable after any machine type/model switch (pre-existing, not just in the startup race). It is now stored next to the medium and re-applied by `attachStoredMedia`, **before** the contents, because the floppy controller and the +3E WASM machine both read the flag at attach time.
 
-**Explicitly not recommended near-term:**
-- True delivery guarantees / persistent-outbox redesign (Part 1, item 6) — a deliberate bigger decision, not an incremental patch
-- A7 — TOCTOU file-entry checks — low likelihood for a single-user desktop app
-- S7 — correlation-ID scheme normalization — only worth doing opportunistically if `MessengerBase` is touched anyway for Phase 4
+**Originally deferred, subsequently completed:**
+21. ~~S7 — correlation-ID scheme normalization~~ **DONE** — its stated precondition (`MessengerBase` being touched anyway) was met by Phase 4. `MainToIdeMessenger` no longer seeds its counter at 1000, which had implied a cross-messenger uniqueness requirement that does not exist: each messenger matches IDs only within its own pending-request map.
+22. ~~A7 — TOCTOU file-entry checks~~ **DONE** — the operations themselves are now race-proof rather than relying on the pre-check: `addNewFileEntry` creates exclusively (`wx`, and `mkdirSync` already refuses to clobber) so an entry appearing mid-call can no longer be truncated, and `deleteFileEntry`/`renameFileEntry` translate a mid-call `ENOENT` into the same friendly error the pre-check would have produced. One residual is documented in place: `renameSync` overwrites an existing target on POSIX and Node has no portable no-clobber rename, so the pre-check remains the guard there.
+
+**Still deliberately NOT done — needs an explicit architectural decision:**
+- True delivery guarantees / persistent-outbox redesign (Part 1, item 6). Everything above converts silent losses into visible, diagnosable errors; it does not make delivery *guaranteed*. Doing so means changing the message envelope (`messages-core.ts`), adding sequence numbers with gap detection, and adding receiver-side idempotency (action replay is not idempotent today, so retry without it would corrupt state). That is a redesign of the messaging backbone with real risk, and should be a considered decision rather than a continuation of this cleanup. The current resting point is coherent: no silent hangs, no silently swallowed failures, and the known-lossy paths are logged.
 
 ## Validation Commands
 
