@@ -100,31 +100,75 @@ jobs:
 
       - name: Configure WASM compiler
         shell: bash
+        # NOTE: deliberately no `set -e` - every failure path reports what it tried.
         run: |
-          set -euo pipefail
-          find_llvm() {
-            for formula in llvm@20 llvm llvm@19 llvm@18 llvm@17; do
-              prefix="$(brew --prefix "$formula" 2>/dev/null || true)"
-              if [ -n "$prefix" ] && [ -x "$prefix/bin/clang" ]; then
-                echo "$prefix"
-                return 0
-              fi
+          set -uo pipefail
+
+          BREW_PREFIX="$(brew --prefix 2>/dev/null || echo /opt/homebrew)"
+          echo "arch=$(uname -m)  brew_prefix=$BREW_PREFIX"
+          echo "Preinstalled LLVM/LLD kegs:"
+          ls -d "$BREW_PREFIX"/opt/llvm* 2>/dev/null || echo "  (no llvm keg)"
+          ls -d "$BREW_PREFIX"/opt/lld* 2>/dev/null || echo "  (no lld keg)"
+
+          # 1. Pick a clang that can target wasm32. Xcode's clang cannot.
+          WASM_CC=""
+          for candidate in \
+            "$BREW_PREFIX"/opt/llvm@2*/bin/clang \
+            "$BREW_PREFIX"/opt/llvm/bin/clang \
+            "$BREW_PREFIX"/opt/llvm@1*/bin/clang
+          do
+            if [ -x "$candidate" ]; then WASM_CC="$candidate"; break; fi
+          done
+          if [ -z "$WASM_CC" ]; then
+            echo "No Homebrew LLVM on this image; installing llvm@20."
+            brew install llvm@20 || { echo "ERROR: 'brew install llvm@20' failed."; exit 1; }
+            WASM_CC="$BREW_PREFIX/opt/llvm@20/bin/clang"
+          fi
+          CC_BIN="$(dirname "$WASM_CC")"
+          LLVM_MAJOR="$("$WASM_CC" -dumpversion | cut -d. -f1)"
+          echo "clang: $WASM_CC (LLVM $LLVM_MAJOR)"
+
+          # 2. Homebrew's current llvm formulae no longer ship lld ("LLD is now
+          #    provided in a separate formula: brew install lld@N"), but linking a
+          #    wasm32 module needs wasm-ld. Without it clang fails with
+          #    'unable to execute command: Executable "wasm-ld" doesn't exist!'
+          find_wasm_ld() {
+            for dir in "$CC_BIN" "$BREW_PREFIX/opt/lld@$LLVM_MAJOR/bin" "$BREW_PREFIX/opt/lld/bin"; do
+              if [ -x "$dir/wasm-ld" ]; then echo "$dir"; return 0; fi
             done
             return 1
           }
-          LLVM_PREFIX="$(find_llvm || true)"
-          if [ -z "$LLVM_PREFIX" ]; then
-            echo "No Homebrew LLVM found on the runner; installing llvm@20 (this may take a few minutes)."
-            brew install llvm@20
-            LLVM_PREFIX="$(brew --prefix llvm@20)"
+          LD_BIN="$(find_wasm_ld || true)"
+          if [ -z "$LD_BIN" ]; then
+            echo "wasm-ld not present next to clang; installing lld@$LLVM_MAJOR."
+            brew install "lld@$LLVM_MAJOR" || brew install lld || {
+              echo "ERROR: could not install lld."; exit 1; }
+            LD_BIN="$(find_wasm_ld || true)"
           fi
-          echo "Using LLVM at $LLVM_PREFIX"
-          "$LLVM_PREFIX/bin/clang" --version
-          # Fail here (not deep inside the app build) if this clang cannot emit wasm32.
+          if [ -z "$LD_BIN" ]; then
+            echo "ERROR: wasm-ld still not found. Searched:"
+            echo "  $CC_BIN, $BREW_PREFIX/opt/lld@$LLVM_MAJOR/bin, $BREW_PREFIX/opt/lld/bin"
+            ls -d "$BREW_PREFIX"/opt/lld* 2>/dev/null
+            exit 1
+          fi
+          echo "wasm-ld: $LD_BIN/wasm-ld"
+
+          # 3. Prove the toolchain links a wasm32 module before the build relies on it.
+          export PATH="$CC_BIN:$LD_BIN:$PATH"
           printf 'int wasmProbe(void) { return 0; }\n' > "$RUNNER_TEMP/wasm-probe.c"
-          "$LLVM_PREFIX/bin/clang" --target=wasm32 -nostdlib -Wl,--no-entry \
-            -Wl,--export=wasmProbe -o "$RUNNER_TEMP/wasm-probe.wasm" "$RUNNER_TEMP/wasm-probe.c"
-          echo "$LLVM_PREFIX/bin" >> "$GITHUB_PATH"
+          if ! "$WASM_CC" --target=wasm32 -nostdlib -Wl,--no-entry -Wl,--export=wasmProbe \
+                 -o "$RUNNER_TEMP/wasm-probe.wasm" "$RUNNER_TEMP/wasm-probe.c"; then
+            echo "ERROR: wasm32 probe failed (compiler error above)."
+            exit 1
+          fi
+          echo "wasm32 probe OK ($(wc -c < "$RUNNER_TEMP/wasm-probe.wasm" | tr -d ' ') bytes)"
+
+          # clang resolves 'wasm-ld' through PATH, so both dirs must be exported.
+          printf '%s\n' "$CC_BIN" >> "$GITHUB_PATH"
+          [ "$LD_BIN" = "$CC_BIN" ] || printf '%s\n' "$LD_BIN" >> "$GITHUB_PATH"
+          for prefix in SP48 SP128 SPP3E ZXNEXT; do
+            echo "${prefix}_WASM_CC=$WASM_CC" >> "$GITHUB_ENV"
+          done
 
       - name: Install npm dependencies
         run: npm run bootstrap:ci
@@ -155,31 +199,75 @@ jobs:
 
       - name: Configure WASM compiler
         shell: bash
+        # NOTE: deliberately no `set -e` - every failure path reports what it tried.
         run: |
-          set -euo pipefail
-          find_llvm() {
-            for formula in llvm@20 llvm llvm@19 llvm@18 llvm@17; do
-              prefix="$(brew --prefix "$formula" 2>/dev/null || true)"
-              if [ -n "$prefix" ] && [ -x "$prefix/bin/clang" ]; then
-                echo "$prefix"
-                return 0
-              fi
+          set -uo pipefail
+
+          BREW_PREFIX="$(brew --prefix 2>/dev/null || echo /opt/homebrew)"
+          echo "arch=$(uname -m)  brew_prefix=$BREW_PREFIX"
+          echo "Preinstalled LLVM/LLD kegs:"
+          ls -d "$BREW_PREFIX"/opt/llvm* 2>/dev/null || echo "  (no llvm keg)"
+          ls -d "$BREW_PREFIX"/opt/lld* 2>/dev/null || echo "  (no lld keg)"
+
+          # 1. Pick a clang that can target wasm32. Xcode's clang cannot.
+          WASM_CC=""
+          for candidate in \
+            "$BREW_PREFIX"/opt/llvm@2*/bin/clang \
+            "$BREW_PREFIX"/opt/llvm/bin/clang \
+            "$BREW_PREFIX"/opt/llvm@1*/bin/clang
+          do
+            if [ -x "$candidate" ]; then WASM_CC="$candidate"; break; fi
+          done
+          if [ -z "$WASM_CC" ]; then
+            echo "No Homebrew LLVM on this image; installing llvm@20."
+            brew install llvm@20 || { echo "ERROR: 'brew install llvm@20' failed."; exit 1; }
+            WASM_CC="$BREW_PREFIX/opt/llvm@20/bin/clang"
+          fi
+          CC_BIN="$(dirname "$WASM_CC")"
+          LLVM_MAJOR="$("$WASM_CC" -dumpversion | cut -d. -f1)"
+          echo "clang: $WASM_CC (LLVM $LLVM_MAJOR)"
+
+          # 2. Homebrew's current llvm formulae no longer ship lld ("LLD is now
+          #    provided in a separate formula: brew install lld@N"), but linking a
+          #    wasm32 module needs wasm-ld. Without it clang fails with
+          #    'unable to execute command: Executable "wasm-ld" doesn't exist!'
+          find_wasm_ld() {
+            for dir in "$CC_BIN" "$BREW_PREFIX/opt/lld@$LLVM_MAJOR/bin" "$BREW_PREFIX/opt/lld/bin"; do
+              if [ -x "$dir/wasm-ld" ]; then echo "$dir"; return 0; fi
             done
             return 1
           }
-          LLVM_PREFIX="$(find_llvm || true)"
-          if [ -z "$LLVM_PREFIX" ]; then
-            echo "No Homebrew LLVM found on the runner; installing llvm@20 (this may take a few minutes)."
-            brew install llvm@20
-            LLVM_PREFIX="$(brew --prefix llvm@20)"
+          LD_BIN="$(find_wasm_ld || true)"
+          if [ -z "$LD_BIN" ]; then
+            echo "wasm-ld not present next to clang; installing lld@$LLVM_MAJOR."
+            brew install "lld@$LLVM_MAJOR" || brew install lld || {
+              echo "ERROR: could not install lld."; exit 1; }
+            LD_BIN="$(find_wasm_ld || true)"
           fi
-          echo "Using LLVM at $LLVM_PREFIX"
-          "$LLVM_PREFIX/bin/clang" --version
-          # Fail here (not deep inside the app build) if this clang cannot emit wasm32.
+          if [ -z "$LD_BIN" ]; then
+            echo "ERROR: wasm-ld still not found. Searched:"
+            echo "  $CC_BIN, $BREW_PREFIX/opt/lld@$LLVM_MAJOR/bin, $BREW_PREFIX/opt/lld/bin"
+            ls -d "$BREW_PREFIX"/opt/lld* 2>/dev/null
+            exit 1
+          fi
+          echo "wasm-ld: $LD_BIN/wasm-ld"
+
+          # 3. Prove the toolchain links a wasm32 module before the build relies on it.
+          export PATH="$CC_BIN:$LD_BIN:$PATH"
           printf 'int wasmProbe(void) { return 0; }\n' > "$RUNNER_TEMP/wasm-probe.c"
-          "$LLVM_PREFIX/bin/clang" --target=wasm32 -nostdlib -Wl,--no-entry \
-            -Wl,--export=wasmProbe -o "$RUNNER_TEMP/wasm-probe.wasm" "$RUNNER_TEMP/wasm-probe.c"
-          echo "$LLVM_PREFIX/bin" >> "$GITHUB_PATH"
+          if ! "$WASM_CC" --target=wasm32 -nostdlib -Wl,--no-entry -Wl,--export=wasmProbe \
+                 -o "$RUNNER_TEMP/wasm-probe.wasm" "$RUNNER_TEMP/wasm-probe.c"; then
+            echo "ERROR: wasm32 probe failed (compiler error above)."
+            exit 1
+          fi
+          echo "wasm32 probe OK ($(wc -c < "$RUNNER_TEMP/wasm-probe.wasm" | tr -d ' ') bytes)"
+
+          # clang resolves 'wasm-ld' through PATH, so both dirs must be exported.
+          printf '%s\n' "$CC_BIN" >> "$GITHUB_PATH"
+          [ "$LD_BIN" = "$CC_BIN" ] || printf '%s\n' "$LD_BIN" >> "$GITHUB_PATH"
+          for prefix in SP48 SP128 SPP3E ZXNEXT; do
+            echo "${prefix}_WASM_CC=$WASM_CC" >> "$GITHUB_ENV"
+          done
 
       - name: Install npm dependencies
         run: npm run bootstrap:ci
