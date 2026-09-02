@@ -99,7 +99,32 @@ jobs:
           node-version: 22.x
 
       - name: Configure WASM compiler
-        run: echo "$(brew --prefix llvm@20)/bin" >> "$GITHUB_PATH"
+        shell: bash
+        run: |
+          set -euo pipefail
+          find_llvm() {
+            for formula in llvm@20 llvm llvm@19 llvm@18 llvm@17; do
+              prefix="$(brew --prefix "$formula" 2>/dev/null || true)"
+              if [ -n "$prefix" ] && [ -x "$prefix/bin/clang" ]; then
+                echo "$prefix"
+                return 0
+              fi
+            done
+            return 1
+          }
+          LLVM_PREFIX="$(find_llvm || true)"
+          if [ -z "$LLVM_PREFIX" ]; then
+            echo "No Homebrew LLVM found on the runner; installing llvm@20 (this may take a few minutes)."
+            brew install llvm@20
+            LLVM_PREFIX="$(brew --prefix llvm@20)"
+          fi
+          echo "Using LLVM at $LLVM_PREFIX"
+          "$LLVM_PREFIX/bin/clang" --version
+          # Fail here (not deep inside the app build) if this clang cannot emit wasm32.
+          printf 'int wasmProbe(void) { return 0; }\n' > "$RUNNER_TEMP/wasm-probe.c"
+          "$LLVM_PREFIX/bin/clang" --target=wasm32 -nostdlib -Wl,--no-entry \
+            -Wl,--export=wasmProbe -o "$RUNNER_TEMP/wasm-probe.wasm" "$RUNNER_TEMP/wasm-probe.c"
+          echo "$LLVM_PREFIX/bin" >> "$GITHUB_PATH"
 
       - name: Install npm dependencies
         run: npm run bootstrap:ci
@@ -129,7 +154,32 @@ jobs:
           node-version: 22.x
 
       - name: Configure WASM compiler
-        run: echo "$(brew --prefix llvm@20)/bin" >> "$GITHUB_PATH"
+        shell: bash
+        run: |
+          set -euo pipefail
+          find_llvm() {
+            for formula in llvm@20 llvm llvm@19 llvm@18 llvm@17; do
+              prefix="$(brew --prefix "$formula" 2>/dev/null || true)"
+              if [ -n "$prefix" ] && [ -x "$prefix/bin/clang" ]; then
+                echo "$prefix"
+                return 0
+              fi
+            done
+            return 1
+          }
+          LLVM_PREFIX="$(find_llvm || true)"
+          if [ -z "$LLVM_PREFIX" ]; then
+            echo "No Homebrew LLVM found on the runner; installing llvm@20 (this may take a few minutes)."
+            brew install llvm@20
+            LLVM_PREFIX="$(brew --prefix llvm@20)"
+          fi
+          echo "Using LLVM at $LLVM_PREFIX"
+          "$LLVM_PREFIX/bin/clang" --version
+          # Fail here (not deep inside the app build) if this clang cannot emit wasm32.
+          printf 'int wasmProbe(void) { return 0; }\n' > "$RUNNER_TEMP/wasm-probe.c"
+          "$LLVM_PREFIX/bin/clang" --target=wasm32 -nostdlib -Wl,--no-entry \
+            -Wl,--export=wasmProbe -o "$RUNNER_TEMP/wasm-probe.wasm" "$RUNNER_TEMP/wasm-probe.c"
+          echo "$LLVM_PREFIX/bin" >> "$GITHUB_PATH"
 
       - name: Install npm dependencies
         run: npm run bootstrap:ci
