@@ -127,6 +127,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private wasmV2SdCardInfoLoaded = false;
   private wasmV2AudioSampleRate = -1;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
+  private readonly wasmV2KeyboardRows = new Uint8Array(8);
+  private wasmV2KeyboardRowsValid = false;
   private readonly nextRegDescriptors = this.createNextRegDescriptors();
 
   constructor(
@@ -504,6 +506,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     }
 
     this.emulateKeystroke();
+    this.syncKeyboardToWasmV2(runtime);
     runtime.exports.zxnextExecuteFrame();
     this.syncCpuFromWasmV2(runtime);
     this.syncWasmV2StorageFrameCommand(runtime);
@@ -556,6 +559,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       this.onInitNewFrame(false);
       this.frameCompleted = false;
       this.emulateKeystroke();
+      this.syncKeyboardToWasmV2(runtime);
     }
 
     if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
@@ -569,6 +573,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
 
     while (!this.frameCompleted) {
       this.emulateKeystroke();
+      this.syncKeyboardToWasmV2(runtime);
       runtime.exports.zxnextExecuteInstruction();
       instructionsExecuted++;
       this.wasmV2DebugSteps++;
@@ -990,6 +995,35 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     runtime.memory.set(roms.divMmcRom, ZXNEXT_WASM_OFFS_DIVMMC_ROM);
     runtime.memory.set(roms.multifaceRom, ZXNEXT_WASM_OFFS_MULTIFACE_MEM);
     runtime.memory.set(roms.altRom, ZXNEXT_WASM_OFFS_ALT_ROM_0);
+  }
+
+  /**
+   * Pushes the TS-side keyboard matrix (mutated by emulateKeystroke() during
+   * the code-injection "run project" flow, and by manual key presses that
+   * reach the base class before the WASM-syncing setKeyStatus override runs)
+   * into the WASM core's own keyboard matrix. Without this, the WASM machine
+   * never observes emulated keystrokes: emulateKeystroke() only updates
+   * this.keyboardDevice, and zxnextReadPort() reads exclusively from the
+   * WASM-side matrix - so `.nexload` (and any other simulated typing) is
+   * silently dropped and the boot sequence stalls right after OS init.
+   */
+  private syncKeyboardToWasmV2(runtime: ZxNextWasmV2Runtime): void {
+    for (let line = 0; line < 8; line++) {
+      const lineValue = this.keyboardDevice.getKeyLineValue(line) & 0x1f;
+      if (this.wasmV2KeyboardRowsValid && this.wasmV2KeyboardRows[line] === lineValue) {
+        continue;
+      }
+      const oldLineValue = this.wasmV2KeyboardRowsValid ? this.wasmV2KeyboardRows[line] : 0;
+      const changedBits = oldLineValue ^ lineValue;
+      for (let bit = 0; bit < 5; bit++) {
+        const mask = 1 << bit;
+        if ((changedBits & mask) !== 0) {
+          runtime.exports.zxnextSetKeyStatus(line * 5 + bit, (lineValue & mask) !== 0 ? 1 : 0);
+        }
+      }
+      this.wasmV2KeyboardRows[line] = lineValue;
+    }
+    this.wasmV2KeyboardRowsValid = true;
   }
 
   private syncAudioSampleRateToWasmV2(runtime: ZxNextWasmV2Runtime): void {
