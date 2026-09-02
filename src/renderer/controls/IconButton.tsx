@@ -1,4 +1,5 @@
 import { useCallback, useEffect, memo, useState } from "react";
+import type { MouseEvent } from "react";
 import { Icon } from "./Icon";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import classnames from "classnames";
@@ -13,7 +14,7 @@ type Props = {
   fill?: string;
   enable?: boolean;
   selected?: boolean;
-  clicked?: () => void;
+  clicked?: (event: MouseEvent<HTMLDivElement>) => void;
   noPadding?: boolean;
 };
 
@@ -44,8 +45,8 @@ export const IconButton = memo(({
   const handleMouseEnter = useCallback(() => setHover(true), []);
   const handleMouseDown = useCallback(() => setKeyDown(true), []);
   const handleMouseLeave = useCallback(() => { setKeyDown(false); setHover(false); }, []);
-  const handleClick = useCallback(() => {
-    if (isActive) clicked?.();
+  const handleClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if (isActive) clicked?.(event);
     setKeyDown(false);
   }, [isActive, clicked]);
 
@@ -97,7 +98,7 @@ type SmallProps = {
   enable?: boolean;
   selected?: boolean;
   fill?: string;
-  clicked?: () => void;
+  clicked?: (event: MouseEvent<HTMLDivElement>) => void;
 };
 
 export const SmallIconButton = ({

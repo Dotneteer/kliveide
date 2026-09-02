@@ -25,7 +25,6 @@ import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler
 import { MemorySection, type DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 import { DisassemblyRow } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { ToolbarSplitButton, type ToolbarSplitButtonOption } from "@renderer/controls/ToolbarSplitButton";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -100,9 +99,11 @@ type MemoryDumpViewState = {
 };
 
 type StaticDumpViewMode = "memory" | "disassembly";
-type NexAnnotateAction = "synopsis" | "comment" | "operand-label" | "clear";
 type NexContextMenuAction =
-  | NexAnnotateAction
+  | "synopsis"
+  | "comment"
+  | "operand-label"
+  | "clear"
   | "global-label"
   | "local-label"
   | "mark-disassembly"
@@ -120,7 +121,6 @@ type StaticDisassemblyContextTarget = {
   bankOffsetStart: number;
   bankOffsetEnd: number;
   canAssignOperandLabel: boolean;
-  canClearRowAnnotations: boolean;
 };
 
 type StaticMemoryDumpOptions = {
@@ -139,33 +139,6 @@ const STATIC_DISASSEMBLY_FALLBACK_PAGE_ROWS = 16;
 const staticDumpViewModeOptions: DropdownOption[] = [
   { value: "memory", label: "Memory" },
   { value: "disassembly", label: "Disassembly" }
-];
-
-const annotateOptions: ToolbarSplitButtonOption<NexAnnotateAction>[] = [
-  {
-    value: "synopsis",
-    label: "Synopsis Comment...",
-    iconName: "note",
-    fill: "--color-command-icon"
-  },
-  {
-    value: "comment",
-    label: "End-of-Line Comment...",
-    iconName: "pencil",
-    fill: "--color-command-icon"
-  },
-  {
-    value: "operand-label",
-    label: "Assign Operand Label...",
-    iconName: "symbol-event",
-    fill: "--color-command-icon"
-  },
-  {
-    value: "clear",
-    label: "Clear Row Annotations",
-    iconName: "circle-slash",
-    fill: "--console-ansi-bright-red"
-  }
 ];
 
 function createStaticDisassemblyOffsetOptions(decimalView: boolean): DropdownOption[] {
@@ -575,8 +548,7 @@ const StaticMemoryDump = ({
       rangeEndIndex,
       bankOffsetStart,
       bankOffsetEnd,
-      canAssignOperandLabel: !clickedItem.isPrefixItem && !!clickedItem.operandCandidates?.length,
-      canClearRowAnnotations: sourceRows.some((item) => !!item.annotation?.hasLineAnnotation)
+      canAssignOperandLabel: !clickedItem.isPrefixItem && !!clickedItem.operandCandidates?.length
     };
   }, [disassemblyItems, selectedDisassemblyRange]);
 
@@ -1221,7 +1193,9 @@ const StaticMemoryDump = ({
   const openManageRegionDialog = useCallback(async () => {
     const annotationBank = currentViewState.nexAnnotationBank;
     const annotations = nexAnnotationsRef.current;
-    const activeIndex = disassemblySelectionRef.current?.activeIndex;
+    const activeIndex =
+      disassemblyContextTarget?.rowIndex ??
+      disassemblySelectionRef.current?.activeIndex;
     const activeItem = activeIndex !== undefined ? disassemblyItems[activeIndex] : undefined;
     const activeOffset = activeItem?.annotation?.bankOffset;
     if (annotationBank === undefined || !annotations || activeOffset === undefined) {
@@ -1298,6 +1272,7 @@ const StaticMemoryDump = ({
     changeViewState,
     contents,
     currentViewState.nexAnnotationBank,
+    disassemblyContextTarget?.rowIndex,
     dialogs,
     disassOffset,
     disassemblyItems,
@@ -1402,6 +1377,111 @@ const StaticMemoryDump = ({
     selectDisassemblyRow
   ]);
 
+  const openToolbarAnnotationContextMenu = useCallback((
+    event: MouseEvent<HTMLDivElement>
+  ) => {
+    if (!annotationEnabled) {
+      return;
+    }
+    const activeIndex = disassemblySelectionRef.current?.activeIndex;
+    if (activeIndex === undefined) {
+      return;
+    }
+    const target = getDisassemblyContextTarget(activeIndex);
+    if (!target) {
+      return;
+    }
+
+    setDisassemblyContextTarget(target);
+    contextMenuApi.show(event);
+  }, [
+    annotationEnabled,
+    contextMenuApi,
+    getDisassemblyContextTarget
+  ]);
+
+  const clearRowAnnotations = useCallback((
+    target: StaticDisassemblyContextTarget | undefined
+  ) => {
+    const annotationBank = currentViewState.nexAnnotationBank;
+    const currentAnnotations = nexAnnotationsRef.current;
+    if (!target || !currentAnnotations || annotationBank === undefined) {
+      return;
+    }
+    const bankAnnotation = getBankAnnotation(currentAnnotations, annotationBank);
+    if (!bankAnnotation) return;
+
+    const nextLineAnnotations = { ...(bankAnnotation.lineAnnotations ?? {}) };
+    let changed = false;
+    for (const offsetKey of Object.keys(nextLineAnnotations)) {
+      const offset = Number(offsetKey);
+      if (
+        Number.isInteger(offset) &&
+        offset >= target.bankOffsetStart &&
+        offset <= target.bankOffsetEnd
+      ) {
+        delete nextLineAnnotations[offsetKey];
+        changed = true;
+      }
+    }
+    const resetRegionToDisassembly = bankAnnotation.regions.some((region) =>
+      region.type !== "disassemble" &&
+      region.start <= target.bankOffsetEnd &&
+      region.end >= target.bankOffsetStart
+    );
+    if (!changed) {
+      if (resetRegionToDisassembly) {
+        publishNexAnnotations({
+          ...currentAnnotations,
+          banks: {
+            ...currentAnnotations.banks,
+            [String(annotationBank)]: {
+              ...bankAnnotation,
+              regions: replaceAnnotationRegion(
+                bankAnnotation.regions,
+                target.bankOffsetStart,
+                target.bankOffsetEnd,
+                "disassemble"
+              )
+            }
+          }
+        });
+      }
+      clearDisassemblySelection();
+      return;
+    }
+
+    const nextBankAnnotation: NexBankAnnotation = {
+      ...bankAnnotation,
+      regions: resetRegionToDisassembly
+        ? replaceAnnotationRegion(
+          bankAnnotation.regions,
+          target.bankOffsetStart,
+          target.bankOffsetEnd,
+          "disassemble"
+        )
+        : bankAnnotation.regions
+    };
+    if (Object.keys(nextLineAnnotations).length > 0) {
+      nextBankAnnotation.lineAnnotations = nextLineAnnotations;
+    } else {
+      delete nextBankAnnotation.lineAnnotations;
+    }
+
+    publishNexAnnotations({
+      ...currentAnnotations,
+      banks: {
+        ...currentAnnotations.banks,
+        [String(annotationBank)]: nextBankAnnotation
+      }
+    });
+    clearDisassemblySelection();
+  }, [
+    clearDisassemblySelection,
+    currentViewState.nexAnnotationBank,
+    publishNexAnnotations
+  ]);
+
   const runDisassemblyContextAction = useCallback(async (action: NexContextMenuAction) => {
     const target = disassemblyContextTarget;
     contextMenuApi.conceal();
@@ -1423,28 +1503,17 @@ const StaticMemoryDump = ({
       await openRegionDialog(target, "words");
     } else if (action === "mark-skip") {
       await openRegionDialog(target, "skip");
+    } else if (action === "clear") {
+      clearRowAnnotations(target);
     }
   }, [
+    clearRowAnnotations,
     contextMenuApi,
     disassemblyContextTarget,
     openEndOfLineCommentDialog,
     openLabelDialog,
     openOperandLabelDialog,
     openRegionDialog,
-    openSynopsisCommentDialog
-  ]);
-
-  const runAnnotateToolbarAction = useCallback(async (action: NexAnnotateAction) => {
-    if (action === "synopsis") {
-      await openSynopsisCommentDialog(disassemblySelectionRef.current?.activeIndex);
-    } else if (action === "comment") {
-      await openEndOfLineCommentDialog(disassemblySelectionRef.current?.activeIndex);
-    } else if (action === "operand-label") {
-      await openOperandLabelDialog(disassemblySelectionRef.current?.activeIndex);
-    }
-  }, [
-    openEndOfLineCommentDialog,
-    openOperandLabelDialog,
     openSynopsisCommentDialog
   ]);
 
@@ -1584,23 +1653,10 @@ const StaticMemoryDump = ({
               clicked={saveAnnotations}
             />
             <SmallIconButton
-              iconName="symbol-event"
-              title="Manage Labels"
-              enable={annotationEnabled}
-              clicked={openManageLabelsDialog}
-            />
-            <SmallIconButton
-              iconName="dump"
-              title="Manage Regions"
+              iconName="note"
+              title="Annotations"
               enable={annotationEnabled && disassemblySelection?.activeIndex !== undefined}
-              clicked={openManageRegionDialog}
-            />
-            <ToolbarSplitButton
-              options={annotateOptions}
-              selectedValue="synopsis"
-              enable={annotationEnabled}
-              dropdownTitle="Annotate"
-              onAction={runAnnotateToolbarAction}
+              clicked={openToolbarAnnotationContextMenu}
             />
           </>
         )}
@@ -1725,6 +1781,21 @@ const StaticMemoryDump = ({
       </FullPanel>
       <ContextMenu state={contextMenuState} onClickOutside={contextMenuApi.conceal}>
         <ContextMenuItem
+          text="Manage Labels..."
+          clicked={() => {
+            contextMenuApi.conceal();
+            openManageLabelsDialog();
+          }}
+        />
+        <ContextMenuItem
+          text="Manage Regions..."
+          clicked={() => {
+            contextMenuApi.conceal();
+            openManageRegionDialog();
+          }}
+        />
+        <ContextMenuSeparator />
+        <ContextMenuItem
           text="Synopsis Comment..."
           clicked={() => runDisassemblyContextAction("synopsis")}
         />
@@ -1766,7 +1837,6 @@ const StaticMemoryDump = ({
         <ContextMenuSeparator />
         <ContextMenuItem
           text="Clear Row Annotations"
-          disabled={!disassemblyContextTarget?.canClearRowAnnotations}
           clicked={() => runDisassemblyContextAction("clear")}
         />
       </ContextMenu>

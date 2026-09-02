@@ -18,11 +18,12 @@ disassembly offset are stored per bank in the sidecar.
 The popped-out bank disassembly toolbar provides:
 
 - Save annotations, enabled only while the shared annotation model is dirty;
-- Manage Labels, for searchable global and current-bank local labels;
-- Manage Regions, for searchable bank regions with Go To, Edit, Split, Revert,
-  and Add Region actions;
-- Annotate, for row-oriented synopsis comments, end-of-line comments, and
-  operand label references.
+- Annotations, enabled when a disassembly row or range is selected.
+
+The Annotations button opens the same menu as right-clicking the selected
+disassembly row or range. The menu contains Manage Labels, Manage Regions,
+synopsis comments, end-of-line comments, label actions, operand label
+references, region marking, and row annotation clearing.
 
 Edits update the in-memory annotation model immediately and re-render the
 disassembly. JSON is written only when the user explicitly saves.

@@ -189,8 +189,8 @@ The implementation now supports:
 - marking the popped-out bank document dirty when the annotation model changes;
 - showing only quiet dirty/error annotation markers in the popped-out bank
   toolbar, with no persistent loaded-state text;
-- showing Manage Labels, Manage Regions, and Annotate controls in the popped-out
-  bank toolbar;
+- showing a single Annotations toolbar button after Save, which opens the same
+  annotation context menu as the selected disassembly row or range;
 - saving changed annotations back to the associated `.nex.dis` file;
 - keeping the dirty marker after failed saves;
 - asking for discard confirmation when a dirty popped-out bank document is
@@ -217,7 +217,7 @@ disassembly rows.
 The implementation now supports:
 
 - opening an End-of-Line Comment dialog from the row context menu;
-- opening the same dialog from the Annotate toolbar action for the active row;
+- opening the same dialog from the Annotations toolbar menu for the active row;
 - showing the row location and generated instruction or pragma in the dialog;
 - showing an existing disassembler-generated hard comment separately when one
   exists;
@@ -284,7 +284,7 @@ The implementation now supports:
 
 - opening an Operand Label Reference dialog from Assign Operand Label in the
   row context menu;
-- opening the same dialog from the Annotate toolbar action for the active row;
+- opening the same dialog from the Annotations toolbar menu for the active row;
 - showing the selected instruction and 16-bit operand value;
 - showing an operand selector when an instruction exposes multiple 16-bit
   operand candidates;
@@ -670,9 +670,8 @@ Toolbar elements:
   - dirty marker only when annotation changes are unsaved;
   - error marker only when annotation loading or saving fails;
 - Save button, enabled only when the annotation model is dirty;
-- Manage Labels button;
-- Manage Regions button;
-- Annotate dropdown for actions that apply to the current row or selection.
+- a single Annotations button, enabled only when a disassembly row or range is
+  selected, that opens the same context menu as the selected row/range.
 
 Dirty state:
 
@@ -700,9 +699,8 @@ Close behavior:
   keep Save available from the toolbar;
 - closing a clean popped-out bank document should not ask for confirmation.
 
-The toolbar should not become crowded. If horizontal space is tight, collapse
-Manage Labels and Manage Regions into a single menu button while keeping Save
-and the dirty/error marker visible.
+The toolbar should not become crowded. Keep annotation actions behind the single
+Annotations menu button while keeping Save and the dirty/error marker visible.
 
 Bank pop-out behavior:
 
@@ -801,7 +799,7 @@ Status: Implemented.
 Result:
 
 - Synopsis Comment opens from the disassembly row context menu;
-- the Annotate toolbar action opens the same dialog for the active row;
+- the Annotations toolbar menu opens the same dialog for the active row;
 - the dialog shows the bank, bank-relative offset, and effective address;
 - the dialog provides a multiline comment textarea and live `; ` preview;
 - Save stores the normalized synopsis comment in the in-memory bank annotation;
@@ -1118,8 +1116,7 @@ Implementation result:
 - row actions support Go To, Edit, and Delete;
 - Add Global and Add Bank Label open the existing validated Label dialog with
   values defaulting to the active disassembly row;
-- wired the Manage Labels toolbar button in popped-out annotated NEX bank
-  disassembly;
+- wired Manage Labels into the shared row/range Annotations context menu;
 - reused the existing label save/delete path, including confirmation before
   deleting referenced labels;
 - added focused dialog and StaticMemoryDump integration tests.

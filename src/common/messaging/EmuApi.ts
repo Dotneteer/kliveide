@@ -690,6 +690,8 @@ export type EmuApi = EmuApiImpl;
 const UNBOUNDED_EMU_METHODS = [
   // --- Blocks until the user responds
   "displayDialog",
+  // --- Project startup can wait on emulated ROM/OS execution; a later stop command cancels it
+  "runCodeCommand",
   // --- Script lifetime is controlled by the script/user, not by this call
   "startScript",
   "stopScript"

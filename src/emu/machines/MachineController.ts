@@ -45,6 +45,12 @@ import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
+class MachineOperationCanceledError extends Error {
+  constructor() {
+    super("Project startup canceled.");
+  }
+}
+
 /**
  * Maps a write-protectable medium to the machine property that carries its write-protection flag.
  */
@@ -92,6 +98,7 @@ export class MachineController implements IMachineController {
   private _machineState: MachineControllerState;
   private _loggedEventNo = 0;
   private readonly _machineInfo: MachineInfo;
+  private _operationRevision = 0;
 
   /**
    * Initializes the controller to manage the specified machine.
@@ -191,26 +198,43 @@ export class MachineController implements IMachineController {
   /**
    * Start the machine in normal mode.
    */
-  async start(): Promise<void> {
+  async start(operationRevision?: number): Promise<void> {
+    const activeOperationRevision = this.prepareMachineOperation(operationRevision);
     await this.sendOutput("Machine started", "green");
+    this.assertMachineOperationIsCurrent(activeOperationRevision);
     this.isDebugging = false;
-    this.run();
+    await this.run(
+      FrameTerminationMode.Normal,
+      DebugStepMode.NoDebug,
+      undefined,
+      undefined,
+      activeOperationRevision
+    );
   }
 
   /**
    * Start the machine in debug mode.
    */
-  async startDebug(): Promise<void> {
+  async startDebug(operationRevision?: number): Promise<void> {
+    const activeOperationRevision = this.prepareMachineOperation(operationRevision);
     this.isDebugging = true;
     this.machine?.awakeCpu();
     await this.sendOutput("Machine started in debug mode", "green");
-    this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StopAtBreakpoint);
+    this.assertMachineOperationIsCurrent(activeOperationRevision);
+    await this.run(
+      FrameTerminationMode.DebugEvent,
+      DebugStepMode.StopAtBreakpoint,
+      undefined,
+      undefined,
+      activeOperationRevision
+    );
   }
 
   /**
    * Pause the running machine.
    */
-  async pause(): Promise<void> {
+  async pause(operationRevision?: number): Promise<void> {
+    this.prepareMachineOperation(operationRevision);
     if (this.state !== MachineControllerState.Running) {
       throw new Error("The machine is not running");
     }
@@ -225,7 +249,8 @@ export class MachineController implements IMachineController {
   /**
    * Stop the running or paused machine.
    */
-  async stop(): Promise<void> {
+  async stop(operationRevision?: number): Promise<void> {
+    this.prepareMachineOperation(operationRevision);
     // --- Stop the machine
     const beforeState = this.state;
     this.isDebugging = false;
@@ -260,61 +285,92 @@ export class MachineController implements IMachineController {
   /**
    * Reset the CPU of the machine.
    */
-  async cpuReset(): Promise<void> {
-    await this.stop();
+  async cpuReset(operationRevision?: number): Promise<void> {
+    const activeOperationRevision = this.prepareMachineOperation(operationRevision);
+    await this.stop(activeOperationRevision);
+    this.assertMachineOperationIsCurrent(activeOperationRevision);
     await this.sendOutput("CPU reset", "cyan");
+    this.assertMachineOperationIsCurrent(activeOperationRevision);
     this.machine.reset();
-    await this.start();
+    await this.start(activeOperationRevision);
   }
 
   /**
    * Stop and then start the machine again.
    */
-  async restart(): Promise<void> {
-    await this.stop();
+  async restart(operationRevision?: number): Promise<void> {
+    const activeOperationRevision = this.prepareMachineOperation(operationRevision);
+    await this.stop(activeOperationRevision);
+    this.assertMachineOperationIsCurrent(activeOperationRevision);
     await this.sendOutput("Hard reset", "cyan");
+    this.assertMachineOperationIsCurrent(activeOperationRevision);
     await this.machine.hardReset();
-    await this.start();
+    this.assertMachineOperationIsCurrent(activeOperationRevision);
+    await this.start(activeOperationRevision);
   }
 
   /**
    * Starts the machine in step-into mode.
    */
-  async stepInto(): Promise<void> {
+  async stepInto(operationRevision?: number): Promise<void> {
+    const activeOperationRevision = this.prepareMachineOperation(operationRevision);
     this.isDebugging = true;
     this.machine?.awakeCpu();
     await this.sendOutput(
       `Step-into (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
     );
-    this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepInto);
+    this.assertMachineOperationIsCurrent(activeOperationRevision);
+    await this.run(
+      FrameTerminationMode.DebugEvent,
+      DebugStepMode.StepInto,
+      undefined,
+      undefined,
+      activeOperationRevision
+    );
   }
 
   /**
    * Starts the machine in step-over mode.
    */
-  async stepOver(): Promise<void> {
+  async stepOver(operationRevision?: number): Promise<void> {
+    const activeOperationRevision = this.prepareMachineOperation(operationRevision);
     this.isDebugging = true;
     this.machine?.awakeCpu();
     await this.sendOutput(
       `Step-over (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
     );
-    this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepOver);
+    this.assertMachineOperationIsCurrent(activeOperationRevision);
+    await this.run(
+      FrameTerminationMode.DebugEvent,
+      DebugStepMode.StepOver,
+      undefined,
+      undefined,
+      activeOperationRevision
+    );
   }
 
   /**
    * Starts the machine in step-out mode.
    */
-  async stepOut(): Promise<void> {
+  async stepOut(operationRevision?: number): Promise<void> {
+    const activeOperationRevision = this.prepareMachineOperation(operationRevision);
     this.isDebugging = true;
     this.machine?.awakeCpu();
     await this.sendOutput(
       `Step-out (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
     );
+    this.assertMachineOperationIsCurrent(activeOperationRevision);
     this.machine.markStepOutAddress();
-    this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepOut);
+    await this.run(
+      FrameTerminationMode.DebugEvent,
+      DebugStepMode.StepOut,
+      undefined,
+      undefined,
+      activeOperationRevision
+    );
   }
 
   /**
@@ -338,8 +394,11 @@ export class MachineController implements IMachineController {
     debug: boolean,
     projectDebug: boolean
   ): Promise<void> {
+    const operationRevision = this.beginMachineOperation();
+
     // --- Stop the machine
-    await this.stop();
+    await this.stop(operationRevision);
+    this.assertMachineOperationIsCurrent(operationRevision);
 
     // --- Adjust project debug mode
     if (projectDebug) {
@@ -352,12 +411,15 @@ export class MachineController implements IMachineController {
       codeToInject.model ?? m.machineId,
       additionalInfo
     );
+    this.assertMachineOperationIsCurrent(operationRevision);
     await this.sendOutput("Initialize the machine", "blue");
+    this.assertMachineOperationIsCurrent(operationRevision);
     this.isDebugging = debug;
 
     let entryPoint = 0;
     let keepPc = false;
     for (const step of injectionFlow) {
+      this.assertMachineOperationIsCurrent(operationRevision);
       switch (step.type) {
         case "KeepPc":
           keepPc = true;
@@ -366,15 +428,17 @@ export class MachineController implements IMachineController {
         case "ReachExecPoint":
           // --- Run while a particular entry point is reached
           if (this._machineState === MachineControllerState.Running) {
-            await this.pause();
+            await this.pause(operationRevision);
           }
           await this.run(
             FrameTerminationMode.UntilExecutionPoint,
             DebugStepMode.NoDebug,
             step.rom,
-            step.execPoint
+            step.execPoint,
+            operationRevision
           );
           await this._machineTask;
+          this.assertMachineOperationIsCurrent(operationRevision);
           break;
 
         case "Start":
@@ -383,12 +447,13 @@ export class MachineController implements IMachineController {
           // --- in StopAtBreakpoint mode here would stop the machine at any user
           // --- breakpoint mid-flow, causing all queued keystrokes to share the
           // --- same startTact and expire before the machine can process them.
-          await this.start();
+          await this.start(operationRevision);
           break;
 
         case "Wait":
           if ((step.duration ?? 100) > 0) {
             await delay(step.duration);
+            this.assertMachineOperationIsCurrent(operationRevision);
           }
           break;
 
@@ -396,6 +461,7 @@ export class MachineController implements IMachineController {
           m.queueKeystroke(0, 5, step.primary, step.secondary, step.ternary);
           if ((step.wait ?? 100) > 0) {
             await delay(step.wait);
+            this.assertMachineOperationIsCurrent(operationRevision);
           }
           break;
 
@@ -406,6 +472,7 @@ export class MachineController implements IMachineController {
             `Code injected and ready to start at $${toHexa4(entryPoint)}})`,
             "blue"
           );
+          this.assertMachineOperationIsCurrent(operationRevision);
           break;
 
         case "SetReturn":
@@ -418,13 +485,17 @@ export class MachineController implements IMachineController {
               `Code will start as a subroutine to return to $${toHexa4(step.returnPoint)}`,
               "blue"
             );
+            this.assertMachineOperationIsCurrent(operationRevision);
           }
           break;
       }
       if (step.message) {
         await this.sendOutput(step.message, "blue");
+        this.assertMachineOperationIsCurrent(operationRevision);
       }
     }
+
+    this.assertMachineOperationIsCurrent(operationRevision);
 
     // --- Set the continuation point
     if (!keepPc) {
@@ -447,10 +518,10 @@ export class MachineController implements IMachineController {
         this.machine?.awakeCpu();
         this.store.dispatch(setDebuggingAction(true), "emu");
       } else {
-        await this.startDebug();
+        await this.startDebug(operationRevision);
       }
     } else {
-      await this.start();
+      await this.start(operationRevision);
     }
   }
 
@@ -494,8 +565,10 @@ export class MachineController implements IMachineController {
     terminationMode = FrameTerminationMode.Normal,
     debugStepMode = DebugStepMode.NoDebug,
     terminationPartition?: number,
-    terminationPoint?: number
+    terminationPoint?: number,
+    operationRevision?: number
   ): Promise<void> {
+    this.assertMachineOperationIsCurrent(operationRevision);
     switch (this.state) {
       case MachineControllerState.Running:
         return;
@@ -507,6 +580,7 @@ export class MachineController implements IMachineController {
           this.machine.reset();
         } else {
           await this.machine.hardReset();
+          this.assertMachineOperationIsCurrent(operationRevision);
         }
 
         // --- Check for supported media, attach media contents to the machine
@@ -681,6 +755,34 @@ export class MachineController implements IMachineController {
       this._machineTask = undefined;
     }
     this.state = afterState;
+  }
+
+  /**
+   * Starts a new externally visible machine operation and invalidates any older project startup
+   * sequence that may still be waiting on ROM execution, queued keys, or startup delays.
+   */
+  private beginMachineOperation(): number {
+    return ++this._operationRevision;
+  }
+
+  /**
+   * Invalidates pending project startup continuations for user-issued machine control commands.
+   */
+  private prepareMachineOperation(operationRevision?: number): number {
+    if (operationRevision === undefined) {
+      return this.beginMachineOperation();
+    }
+    this.assertMachineOperationIsCurrent(operationRevision);
+    return operationRevision;
+  }
+
+  /**
+   * Throws when an async project startup continuation has been superseded by a newer command.
+   */
+  private assertMachineOperationIsCurrent(operationRevision?: number): void {
+    if (operationRevision !== undefined && operationRevision !== this._operationRevision) {
+      throw new MachineOperationCanceledError();
+    }
   }
 
   /**

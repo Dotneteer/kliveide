@@ -6,9 +6,9 @@
     "zxnextImplementation": "wasm"
   },
   "clockMultiplier": 1,
-  "soundLevel": 0.8,
+  "soundLevel": 1,
   "soundMuted": false,
-  "savedSoundLevel": 0.8,
+  "savedSoundLevel": 1,
   "media": {
     "sdCard": "/Users/dotneteer/Klive/ks2.cim",
     "tape": "/Users/dotneteer/Downloads/LTK128/LTK128.TAP",

@@ -165,21 +165,6 @@ describe("StaticMemoryDump", () => {
         </button>
       )
     }));
-    vi.doMock("@renderer/controls/ToolbarSplitButton", () => ({
-      ToolbarSplitButton: ({
-        dropdownTitle,
-        enable = true,
-        onAction
-      }: {
-        dropdownTitle?: string;
-        enable?: boolean;
-        onAction?: (value: string) => void;
-      }) => (
-        <button disabled={!enable} onClick={() => onAction?.("synopsis")}>
-          {dropdownTitle}
-        </button>
-      )
-    }));
     vi.doMock("@renderer/controls/ContextMenu", () => ({
       ContextMenu: ({
         children,
@@ -372,9 +357,10 @@ describe("StaticMemoryDump", () => {
     expect(screen.getByText(".defb $01, $02, $03, $04")).toBeInTheDocument();
     expect(screen.getByText("; four values")).toBeInTheDocument();
     expect(screen.queryByText("Annotations loaded")).not.toBeInTheDocument();
-    expect(screen.getByText("Manage Labels")).toBeInTheDocument();
-    expect(screen.getByText("Manage Regions")).toBeInTheDocument();
-    expect(screen.getByText("Annotate")).toBeInTheDocument();
+    expect(screen.getByText("Annotations")).toBeDisabled();
+    expect(screen.queryByText("Manage Labels")).not.toBeInTheDocument();
+    expect(screen.queryByText("Manage Regions")).not.toBeInTheDocument();
+    expect(screen.queryByText("Annotate")).not.toBeInTheDocument();
     expect(screen.getByTestId("disassembly-row-0")).toHaveAttribute(
       "data-annotation-offset",
       "0"
@@ -430,7 +416,9 @@ describe("StaticMemoryDump", () => {
     );
 
     await screen.findByTestId("disassembly-row-0");
-    fireEvent.click(screen.getByText("Manage Labels"));
+    fireEvent.click(screen.getByTestId("disassembly-row-0"));
+    fireEvent.click(screen.getByText("Annotations"));
+    fireEvent.click(screen.getByText("Manage Labels..."));
 
     await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
     expect(openDialog.mock.calls[0][0].name).toBe("NexLabelsDialog");
@@ -627,6 +615,8 @@ describe("StaticMemoryDump", () => {
     fireEvent.contextMenu(screen.getByTestId("disassembly-row-0"));
 
     expect(screen.getByTestId("annotation-context-menu")).toBeInTheDocument();
+    expect(screen.getByText("Manage Labels...")).toBeInTheDocument();
+    expect(screen.getByText("Manage Regions...")).toBeInTheDocument();
     expect(screen.getByText("Synopsis Comment...")).toBeInTheDocument();
     expect(screen.getByText("End-of-Line Comment...")).toBeInTheDocument();
     expect(screen.getByText("Add/Edit Global Label...")).toBeInTheDocument();
@@ -776,6 +766,124 @@ describe("StaticMemoryDump", () => {
       synopsis: "Entry point",
       comment: "updated note"
     });
+  });
+
+  it("clears row annotations for the selected disassembly range", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }],
+              lineAnnotations: {
+                "0": { comment: "first note" },
+                "1": { synopsis: "Second note", comment: "second note" },
+                "3": { comment: "outside range" }
+              }
+            }
+          }
+        })
+      )
+    );
+    const saveFileContent = vi.fn(() => Promise.resolve());
+    const contents = new Uint8Array(0x4000);
+    contents.set([0x00, 0x00, 0x00, 0x00]);
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      saveFileContent,
+      contents
+    );
+
+    await screen.findByText("; Second note");
+    fireEvent.click(screen.getByTestId("disassembly-row-0"));
+    fireEvent.click(screen.getByTestId("disassembly-row-2"), { shiftKey: true });
+    fireEvent.contextMenu(screen.getByTestId("disassembly-row-1"));
+    fireEvent.click(screen.getByText("Clear Row Annotations"));
+
+    await waitFor(() => expect(screen.getByText("Save annotations")).not.toBeDisabled());
+    await waitFor(() =>
+      expect(screen.getByTestId("disassembly-row-0")).not.toHaveAttribute("data-selected")
+    );
+    fireEvent.click(screen.getByText("Save annotations"));
+
+    await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
+    const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
+    expect(savedAnnotations.banks["5"].lineAnnotations).toEqual({
+      "3": { comment: "outside range" }
+    });
+  });
+
+  it("clears a selected byte region span by marking it as disassembly", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [
+                { start: 0, end: 11, type: "bytes" },
+                { start: 12, end: 0x3fff, type: "disassemble" }
+              ]
+            }
+          }
+        })
+      )
+    );
+    const saveFileContent = vi.fn(() => Promise.resolve());
+    const contents = new Uint8Array(0x4000);
+    contents.set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0]);
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      saveFileContent,
+      contents
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("disassembly-row-1")).toHaveAttribute(
+        "data-annotation-offset",
+        "4"
+      )
+    );
+    expect(screen.getByTestId("disassembly-row-1")).toHaveAttribute(
+      "data-annotation-region",
+      "bytes"
+    );
+
+    fireEvent.click(screen.getByTestId("disassembly-row-1"));
+    fireEvent.contextMenu(screen.getByTestId("disassembly-row-1"));
+    fireEvent.click(screen.getByText("Clear Row Annotations"));
+
+    await waitFor(() => expect(screen.getByText("Save annotations")).not.toBeDisabled());
+    expect(screen.getByTestId("disassembly-row-1")).not.toHaveAttribute("data-selected");
+    fireEvent.click(screen.getByText("Save annotations"));
+
+    await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
+    const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
+    expect(savedAnnotations.banks["5"].regions).toEqual([
+      { start: 0, end: 3, type: "bytes" },
+      { start: 4, end: 7, type: "disassemble" },
+      { start: 8, end: 11, type: "bytes" },
+      { start: 12, end: 0x3fff, type: "disassemble" }
+    ]);
   });
 
   it("adds and saves a local label from the annotation context menu", async () => {
@@ -1193,7 +1301,8 @@ describe("StaticMemoryDump", () => {
       )
     );
     fireEvent.click(screen.getByTestId("disassembly-row-0"));
-    fireEvent.click(screen.getByText("Manage Regions"));
+    fireEvent.click(screen.getByText("Annotations"));
+    fireEvent.click(screen.getByText("Manage Regions..."));
 
     await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(2));
     expect(openDialog.mock.calls[0][0].name).toBe("NexRegionsDialog");
@@ -1216,7 +1325,7 @@ describe("StaticMemoryDump", () => {
     });
   });
 
-  it("does not open Manage Regions without an active disassembly row", async () => {
+  it("does not open the toolbar annotation menu without an active disassembly row", async () => {
     const readFileContent = vi.fn(() =>
       Promise.resolve(
         JSON.stringify({
@@ -1247,8 +1356,8 @@ describe("StaticMemoryDump", () => {
     );
 
     await screen.findByTestId("disassembly-row-0");
-    expect(screen.getByText("Manage Regions")).toBeDisabled();
-    fireEvent.click(screen.getByText("Manage Regions"));
+    expect(screen.getByText("Annotations")).toBeDisabled();
+    fireEvent.click(screen.getByText("Annotations"));
 
     expect(openDialog).not.toHaveBeenCalled();
   });
@@ -1296,7 +1405,8 @@ describe("StaticMemoryDump", () => {
 
     await screen.findByTestId("disassembly-row-0");
     fireEvent.click(screen.getByTestId("disassembly-row-0"));
-    fireEvent.click(screen.getByText("Manage Regions"));
+    fireEvent.click(screen.getByText("Annotations"));
+    fireEvent.click(screen.getByText("Manage Regions..."));
 
     await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(2));
     await waitFor(() =>
