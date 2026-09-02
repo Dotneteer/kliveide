@@ -1,10 +1,8 @@
 {
   "kliveVersion": "0.58.2",
-  "machineType": "zxnext",
-  "modelId": "standard",
-  "config": {
-    "zxnextImplementation": "wasm"
-  },
+  "machineType": "sp48",
+  "modelId": "pal",
+  "config": {},
   "clockMultiplier": 1,
   "soundLevel": 1,
   "soundMuted": false,
@@ -25,19 +23,10 @@
     "theme": "dark"
   },
   "debugger": {
-    "breakpoints": [
-      {
-        "resource": "next/book/main.kz80.asm",
-        "line": 9,
-        "exec": true,
-        "ioMask": 65535
-      }
-    ]
+    "breakpoints": []
   },
   "builder": {
-    "roots": [
-      "main.kz80.asm"
-    ]
+    "roots": []
   },
   "workspaceSettings": {
     "docsWorkspace": {
@@ -53,21 +42,21 @@
           "documents": [
             {
               "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/screen-tests/klive.project",
               "position": {
-                "line": 10,
-                "column": 1
+                "line": 0,
+                "column": 0
               },
               "viewState": {
                 "cursorState": [
                   {
                     "inSelectionMode": false,
                     "selectionStart": {
-                      "lineNumber": 10,
+                      "lineNumber": 1,
                       "column": 1
                     },
                     "position": {
-                      "lineNumber": 10,
+                      "lineNumber": 1,
                       "column": 1
                     }
                   }
@@ -83,7 +72,6 @@
                 "contributionsState": {
                   "editor.contrib.folding": {
                     "lineCount": 105,
-                    "provider": "syntax",
                     "foldedImports": false
                   },
                   "editor.contrib.wordHighlighter": false
@@ -91,7 +79,7 @@
               }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/screen-tests/klive.project"
         }
       ]
     }
