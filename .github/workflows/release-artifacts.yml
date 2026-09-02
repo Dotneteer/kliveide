@@ -98,6 +98,9 @@ jobs:
         with:
           node-version: 22.x
 
+      - name: Configure WASM compiler
+        run: echo "$(brew --prefix llvm@20)/bin" >> "$GITHUB_PATH"
+
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
@@ -124,6 +127,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
+
+      - name: Configure WASM compiler
+        run: echo "$(brew --prefix llvm@20)/bin" >> "$GITHUB_PATH"
 
       - name: Install npm dependencies
         run: npm run bootstrap:ci
