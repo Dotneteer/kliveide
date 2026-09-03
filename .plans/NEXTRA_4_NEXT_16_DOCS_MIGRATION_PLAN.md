@@ -1,6 +1,6 @@
 # Nextra 4 + Next.js 16 Documentation Migration Plan
 
-**Status:** Phases 0-4 complete (2026-09-03); Phase 5 (Pagefind) next
+**Status:** Phases 0-5 complete (2026-09-03); Phase 6 (Next 16) next
 **Branch:** `dotneteer/update-nextra`
 **Owner:** @dotneteer
 **Created:** 2026-09-03
@@ -37,7 +37,7 @@ publishing pipeline.
 | 2 | ✅ Parameterize `basePath`, kill hardcoded `/kliveide` | unchanged | — |
 | 3 | ✅ **Preview deploy to GitHub Pages from this branch** | unchanged | ✅ **proven live** |
 | 4 | ✅ Nextra 3 → 4 structural migration (Next 15, React 19) | Nextra 4 / Next 15 / React 19 | ✅ re-verified live |
-| 5 | Pagefind search | Nextra 4 / Next 15 / React 19 | re-verified |
+| 5 | ✅ Pagefind search | Nextra 4 / Next 15 / React 19 | ✅ re-verified live |
 | 6 | Next 15 → 16 | **Nextra 4 / Next 16 / React 19** | re-verified |
 | 7 | Content sweep — the "entirely updated docs" pass | — | re-verified |
 | 8 | Production cutover to `master` | — | ✅ live |
@@ -1160,6 +1160,74 @@ resolves correctly under the preview basePath, so only the index is missing.
 That removes one of the two unknowns in Decision 5 before Phase 5 starts; the
 remaining one is whether **result links** carry the basePath. The Nextra 3
 baseline to match is in §4b.
+
+---
+
+## 4d. Execution log — Phase 5 (2026-09-03)
+
+Commit `dd7e5222`. Search is live at
+<https://dotneteer.github.io/kliveide/preview/update-nextra/>
+
+```
+postbuild: pagefind --site out --output-path out/_pagefind --include-characters '#$.%'
+```
+
+### The `--site` question, settled empirically
+
+Nextra's docs prescribe `--site .next/server/app` for static exports. **That is
+wrong for this site**, and Decision 5's instruction to measure rather than trust
+paid off. Both directories index the same 88 pages, but the URLs differ:
+
+| `--site` | result URL | after Nextra strips `.html` | matches our routes? |
+|---|---|---|---|
+| `.next/server/app` | `/book/21-rtc-i2c.html` | `/book/21-rtc-i2c` | ✗ no trailing slash |
+| **`out`** | `/book/book-writing-guidelines/` | unchanged | ✓ exact |
+
+We use `trailingSlash: true`, so indexing `out/` is the correct choice and
+avoids a redirect hop on every search result.
+
+### R6 resolved — in favour of the source reading, not the bug report
+
+The hardcoded `baseUrl: "/"` in `nextra@4.6.1` is **not** a problem here. Live,
+under the preview basePath, result hrefs come back as
+`/kliveide/preview/update-nextra/book/02-io-and-nextregs/` — basePath applied
+**exactly once**, trailing slash intact, anchors working — because Nextra renders
+results through `next/link`, which re-applies basePath itself. That matches the
+Nextra 3 baseline in §4b. **No patch, and no need for the unreleased 4.6.2
+change.** Verified both locally and on the live GitHub Pages deploy.
+
+### `--include-characters` is what makes Z80 searchable
+
+Without it, `.defb` and `#6000` tokenise away to nothing. With it the index grew
+7466 → 10261 words and normal prose queries are unaffected:
+
+| query | hits |
+|---|---|
+| `assembler` | 31 |
+| `.defb` | 5 |
+| `#6000` | 4 |
+| `nextreg` | 31 |
+| `ZX Spectrum Next` | 46 |
+
+### Search is now better than Nextra 3
+
+`nextreg` returned **zero** results under FlexSearch (measured in Phase 3) and
+returns 31 under Pagefind, which indexes the hidden `book` section too.
+
+### R2 confirmed mitigated
+
+`_pagefind/` starts with an underscore and would have been deleted by Pages'
+Jekyll build. It serves 200 live because of the root `.nojekyll` guard added in
+Phase 3c — the risk landed exactly where predicted and the mitigation held.
+
+### Also verified
+
+- `out/_pagefind/pagefind.js` present, 1.5 MB index, 88 pages.
+- Clicking a result navigates correctly under basePath.
+- Dev mode degrades gracefully with Nextra's "Search isn't available in
+  development" notice rather than erroring.
+- Routes (90), assets (102) and all six highlight colours still green; the
+  `_pagefind` output is invisible to both golden checks by construction.
 
 ---
 
