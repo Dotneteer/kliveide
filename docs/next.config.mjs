@@ -356,6 +356,9 @@ const withNextra = nextra({
 });
 
 export default withNextra({
+  // The docs site is an isolated npm package nested inside the Electron repo, so
+  // Next sees two lockfiles and infers the wrong workspace root. Pin it.
+  outputFileTracingRoot: import.meta.dirname,
   output: "export",
   trailingSlash: true,
   images: {

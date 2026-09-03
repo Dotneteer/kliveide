@@ -4,14 +4,14 @@
   "version": "0.0.0",
   "description": "Klive IDE documentation site (Nextra)",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "postbuild": "pagefind --site out --output-path out/_pagefind --include-characters '#$.%'",
     "start": "next start",
     "postinstall": "patch-package"
   },
   "dependencies": {
-    "next": "15.5.5",
+    "next": "16.3.4",
     "nextra": "4.6.1",
     "nextra-theme-docs": "4.6.1",
     "react": "19.1.0",
@@ -26,5 +26,8 @@
     "sharp": "^0.35.3",
     "shiki": "^3.2.1",
     "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=20.9"
   }
 }
