@@ -1,0 +1,1 @@
+self.__SSG_MANIFEST=new Set(["\u002F_meta","\u002Fcontribute\u002F_meta","\u002Fgetting-started\u002F_meta","\u002Fhowto\u002F_meta","\u002Fscripting\u002F_meta","\u002Fworking-with-ide\u002F_meta","\u002Fz80-assembly\u002F_meta"]);self.__SSG_MANIFEST_CB&&self.__SSG_MANIFEST_CB()
