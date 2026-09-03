@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "pagefind --site out --output-path out/_pagefind --include-characters '#$.%'",
     "start": "next start",
     "postinstall": "patch-package"
   },
