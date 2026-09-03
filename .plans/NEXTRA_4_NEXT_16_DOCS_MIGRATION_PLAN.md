@@ -1,6 +1,6 @@
 # Nextra 4 + Next.js 16 Documentation Migration Plan
 
-**Status:** Phases 0-6 complete (2026-09-03) — **the version upgrade is done**; Phase 7 (content sweep) next
+**Status:** Phases 0-7 and 9 complete (2026-09-03). Phase 8 (production cutover) is open as a pull request awaiting review.
 **Branch:** `dotneteer/update-nextra`
 **Owner:** @dotneteer
 **Created:** 2026-09-03
@@ -39,9 +39,9 @@ publishing pipeline.
 | 4 | ✅ Nextra 3 → 4 structural migration (Next 15, React 19) | Nextra 4 / Next 15 / React 19 | ✅ re-verified live |
 | 5 | ✅ Pagefind search | Nextra 4 / Next 15 / React 19 | ✅ re-verified live |
 | 6 | ✅ Next 15 → 16 | **Nextra 4 / Next 16 / React 19** | ✅ re-verified live |
-| 7 | Content sweep — the "entirely updated docs" pass | — | re-verified |
-| 8 | Production cutover to `master` | — | ✅ live |
-| 9 | Cleanup of root package + CI | — | — |
+| 7 | ✅ Content sweep | — | ✅ re-verified |
+| 8 | 🔶 Production cutover — **open as a PR for review** | — | pending merge |
+| 9 | ✅ Cleanup of root package + CI + AGENTS.md | — | — |
 
 Phases 0–3 are pure infrastructure with **zero content risk** and can land as their own
 PR. Phase 4 is the only large, irreversible-feeling step, and by the time it runs, the
@@ -1294,6 +1294,77 @@ from Nextra's official example) is correct; the annotation was reverted.
   still contains **no** Next or Nextra at all.
 - Production `gh-pages` untouched — **0 production paths removed across every
   deploy in this migration.**
+
+---
+
+## 4f. Execution log — Phases 7 and 9 (2026-09-03)
+
+Commits `ec0e7bc` (Phase 7) and the Phase 9 cleanup.
+
+### Phase 7 — three changes, two deliberate non-changes
+
+**Two author-facing documents were being published.** `content/book/toc.md` and
+`content/book/book-writing-guidelines.md` are internal working documents — the
+first contains a section headed *"Open Questions for You"* asking the author to
+confirm chapter scope. Both were live at `/book/toc/` and
+`/book/book-writing-guidelines/` and in the Pagefind index. Moved to
+`docs/authoring/`, outside `content/` and therefore route-free. This is the most
+notable content change in the whole migration and deserves a look during review.
+
+**Link auditing.** `scripts/check-docs-links.cjs` resolves every same-origin
+`href`/`src` in the built site against the files on disk, mirroring how Pages
+serves them. **11 517 references across 89 pages, zero broken.** Negative-tested
+by deleting an asset. Folded into `npm run doc:check`, so both workflows run it.
+
+**`description` frontmatter on 84 of 86 pages**, derived from each page's own
+opening prose and trimmed to whole sentences; pages previously inherited the
+layout's generic description for `<meta description>` and OpenGraph. The two
+skipped files are `_TBD_` stubs (`project-templates.mdx`,
+`working-with-ide/ide-settings.mdx`) — both published but empty, worth writing.
+`title:` was deliberately *not* added: every page has an `h1`, which Nextra 4
+already uses, so it would be duplication with two places to keep in sync.
+
+**Not done — ClickableImage → ImageZoom (plan item 7.1).** `ImageZoom` is
+`FC<ImageProps>`, i.e. `next/image`, which requires explicit `width`/`height`
+for a string `src`. Our 94 usages mostly pass neither, so adopting it means
+deriving intrinsic dimensions for 102 images and risking visual regressions
+site-wide for a UX nicety. The basePath argument that motivated it no longer
+holds: Phase 2 replaced the hardcoded `/kliveide` with an env lookup, so there
+is no "hack" left to delete. Available as follow-up.
+
+**Not done — `_meta.ts` ordering for `content/book` (plan item 7.3).** Measured
+first: book pages render **no sidebar and no pagination at all**, because
+`display: 'hidden'` hides the whole subtree. The ordering would render nowhere.
+The order readers actually use is the hand-written contents list in `book.mdx`,
+which is already correct. Worth revisiting only if the book is ever unhidden.
+
+**Plan correction.** Phase 0's "12 files with frontmatter" was a bad grep
+matching horizontal rules — **no** content file had frontmatter before Phase 7.
+
+### Phase 9 — cleanup
+
+- Root `package.json` confirmed free of `next` / `nextra` / `shiki` and of the
+  `overrides.next` pin; root `node_modules` contains none of them.
+- Removed three now-dead `electron-builder` excludes (`!next.config.mjs`,
+  `!_docs`, `!docs-out`) left over from when the docs lived at the repo root.
+- `AGENTS.md` gained a Documentation Site section covering the package split,
+  the `--webpack` requirement, the Shiki language-registration trap, the
+  `patch-package` fix and when to remove it, and `NEXT_PUBLIC_BASE_PATH`.
+- `.github/dependabot.yml` (added in Phase 1) already gives `/docs` its own
+  update stream.
+
+### Final state
+
+| check | result |
+|---|---|
+| `doc:build` | green |
+| routes / assets | 89 / 102, match golden |
+| internal links | 11 517 checked, 0 broken |
+| Z80 highlighting | all six colours at Nextra 3 levels |
+| `build:check` | green |
+| `test:unit` | 18 938 passed, 119 skipped |
+| `electron-vite build` | green |
+| production `gh-pages` | **0 paths removed across the entire migration** |
 
 ---
 
