@@ -1,6 +1,5 @@
 /404.html
 /404/index.html
-/_mdx-components/index.html
 /book/01-z80n/index.html
 /book/02-io-and-nextregs/index.html
 /book/03-memory/index.html

@@ -6,21 +6,24 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "next": "15.5.5",
-    "nextra": "3.3.0",
-    "nextra-theme-docs": "3.3.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "nextra": "4.6.1",
+    "nextra-theme-docs": "4.6.1",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "pagefind": "^1.3.0",
+    "patch-package": "^8.0.1",
     "sass": "^1.75.0",
     "sharp": "^0.35.3",
-    "shiki": "^0.14.7",
+    "shiki": "^3.2.1",
     "typescript": "^5.9.0"
   }
 }

@@ -1,5 +1,5 @@
 import nextra from "nextra";
-import { getHighlighter } from "shiki";
+import { createHighlighter } from "shiki";
 
 // Z80 assembly language grammar embedded directly to avoid file system operations
 const z80Language = {
@@ -147,11 +147,19 @@ const z80Language = {
 };
 
 const customTheme = {
+  // Shiki v3 requires `name` and `type` on a theme registration.
+  name: "z80klive-dark",
+  type: "dark",
   colors: {
     "editor.background": "#1E1E1E",
     "editor.foreground": "#a4a4a4"
   },
-  settings: [
+  // Must be `tokenColors`, not the TextMate `settings` key: rehype-pretty-code
+  // identifies a single theme purely by `Object.hasOwn(theme, "tokenColors")`.
+  // With `settings` it treats the object as a MAP of themes, reads its values as
+  // theme names, and fails with "Theme `dark` not found" (from `type: "dark"`).
+  // Shiki itself accepts either spelling.
+  tokenColors: [
     {
       scope: ["comment"],
       settings: {
@@ -296,28 +304,48 @@ const customTheme = {
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const withNextra = nextra({
-  theme: "nextra-theme-docs",
-  themeConfig: "./theme.config.tsx",
+  // `theme` / `themeConfig` are gone in Nextra 4 - the theme is now applied by
+  // <Layout> in app/layout.tsx, and NextraConfigSchema rejects unknown keys.
   mdxOptions: {
     remarkPlugins: [],
     rehypePlugins: [],
     rehypePrettyCodeOptions: {
-      theme: {
-        myTheme: customTheme,
-      },
+      // A single theme object (rather than a keyed map) makes rehype-pretty-code
+      // emit inline `style="color:#..."`, matching the Nextra 3 output. A keyed
+      // map would switch it to CSS variables and silently drop every colour.
+      theme: customTheme,
       getHighlighter: async (options) => {
-        return await getHighlighter({
+        // The option key stays `getHighlighter` (it belongs to rehype-pretty-code);
+        // only the Shiki function it calls was renamed.
+        return await createHighlighter({
           ...options,
+          // rehype-pretty-code forwards only the theme *name* in `options.themes`;
+          // the registration object itself has to be supplied here or shiki throws
+          // "Theme `z80klive-dark` is not included in this bundle".
+          themes: [customTheme],
+          // Every language used by a code fence anywhere in content/ must be
+          // listed. Shiki v3 THROWS on an unregistered language ("Language `asm`
+          // not found"), where Shiki 0.14 silently fell back to plain text - so
+          // adding a fence in a new language will fail the build until it is
+          // added here. ("text" needs no registration.)
           langs: [
             "javascript",
             "typescript",
+            "jsx",
+            "tsx",
             "json",
+            "yaml",
             "html",
+            "css",
             "bash",
+            "shell",
+            "markdown",
+            "asm",
+            "diff",
             {
-              id: "z80klive",
+              ...z80Language,
+              name: "z80klive",
               scopeName: "source.z80klive",
-              grammar: z80Language,
               aliases: ["z80-assembly"]
             }
           ]
@@ -328,11 +356,6 @@ const withNextra = nextra({
 });
 
 export default withNextra({
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true
-  },
   output: "export",
   trailingSlash: true,
   images: {
