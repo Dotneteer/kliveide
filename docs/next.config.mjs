@@ -288,6 +288,13 @@ const customTheme = {
   ]
 };
 
+// Where the site will be served from, e.g. "/kliveide" in production or
+// "/kliveide/preview/<branch>" for a branch preview. Deployment path is a
+// deployment concern, not a NODE_ENV concern: coupling the two is what made it
+// impossible to publish a preview at a different path.
+// Production default lives in .env.production; dev leaves it empty.
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 const withNextra = nextra({
   theme: "nextra-theme-docs",
   themeConfig: "./theme.config.tsx",
@@ -338,8 +345,8 @@ export default withNextra({
     });
     return config;
   },
-  basePath: process.env.NODE_ENV === "production" ? "/kliveide" : "",
-  assetPrefix: process.env.NODE_ENV === "production" ? "/kliveide/" : ""
+  basePath,
+  assetPrefix: basePath ? `${basePath}/` : ""
 });
 
 // If you have other Next.js configurations, you can pass them as the parameter:
