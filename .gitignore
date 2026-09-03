@@ -27,6 +27,9 @@ artifacts/**/*
 release
 .vscode/.debug.env
 package-lock.json
+# The docs site is an isolated npm package; its lockfile must be tracked so
+# `npm ci` in CI is reproducible (see .plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md).
+!docs/package-lock.json
 pnpm-lock.yaml
 yarn.lock
 dist-electron
