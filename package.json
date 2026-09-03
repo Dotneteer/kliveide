@@ -112,7 +112,8 @@
   "overrides": {
     "postcss": "^8.5.26",
     "dompurify": "^3.4.14",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "next": "15.5.5"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
