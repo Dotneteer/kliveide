@@ -5,4 +5,4 @@
 :HL["/kliveide/images/working-with-ide/select-start-mode.png","image"]
 :HL["/kliveide/images/working-with-ide/machine-running.png","image"]
 :HL["/kliveide/images/working-with-ide/machine-paused.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"working-with-ide/run-debug","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"UtilWLooFrocXZ2VRu7YE"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"working-with-ide/run-debug","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"YPf86E6rDkYOVtKgdIZaO"}
