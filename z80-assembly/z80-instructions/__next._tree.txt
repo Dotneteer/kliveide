@@ -1,4 +1,4 @@
 :HL["/kliveide/_next/static/css/11c59cc40cabfed8.css","style"]
 :HL["/kliveide/_next/static/css/0bf80bfc72b7f908.css","style"]
 :HL["/kliveide/images/klive-logo.svg","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"z80-assembly/z80-instructions","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"1iSC7fUff1Tu0YRlp4Chv"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"z80-assembly/z80-instructions","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"UtilWLooFrocXZ2VRu7YE"}
