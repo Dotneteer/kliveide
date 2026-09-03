@@ -54,6 +54,8 @@
     "test": "npm run test:unit",
     "doc:dev": "cd docs && next dev",
     "doc:build": "(rm -f _experiments/testprojects/next-examples.zip && cd _experiments/testprojects/next && zip -r ../next-examples.zip book && cp ../next-examples.zip ../../../docs/public/) && (cd docs && next build)",
+    "doc:check:routes": "node scripts/check-docs-routes.cjs",
+    "doc:serve": "node scripts/serve-docs.cjs",
     "bootstrap:ci": "npm ci",
     "check:lockfile": "rm -rf node_modules && npm ci",
     "fix:lockfile": "rm -rf node_modules && npm install && git diff --stat package-lock.json"
