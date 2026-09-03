@@ -28,6 +28,15 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "@types/react-dom"
         update-types: ["version-update:semver-major"]
+      # monaco-editor 0.56 reorganized the ESM entry points: the package now has an
+      # "exports" map that maps "./*" to "./esm/vs/*.js", so every existing
+      # "monaco-editor/esm/vs/..." deep import stops resolving, and the language
+      # contributions and workers move to new "monaco-editor/features/..." and
+      # "monaco-editor/languages/..." register entry points. Revisit when the
+      # monacoBootstrap/worker wiring has been migrated to those entry points.
+      # Patch updates within 0.55.x are still allowed.
+      - dependency-name: "monaco-editor"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /docs
