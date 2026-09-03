@@ -1,0 +1,6 @@
+:HL["/kliveide/preview/update-nextra/_next/static/css/11c59cc40cabfed8.css","style"]
+:HL["/kliveide/preview/update-nextra/_next/static/css/0bf80bfc72b7f908.css","style"]
+:HL["/kliveide/preview/update-nextra/images/klive-logo.svg","image"]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/export-dialog-1.png","image"]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/export-dialog-2.png","image"]
+0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"working-with-ide/exporting-code","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"XNV2ymCXYAck-N2nD3Rh6"}

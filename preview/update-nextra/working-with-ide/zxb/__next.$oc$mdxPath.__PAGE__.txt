@@ -1,0 +1,105 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+5:Tcd9,import { Callout } from 'nextra/components'
+
+import zxbRunning from '../../public/images/working-with-ide/zxb-running.png'
+
+# Using ZX BASIC
+
+The ZX Spectrum was famous for its BASIC interpreter, which was significantly faster than other home computers' BASIC variants in 1982. However, the compiled variants that emerged later were much faster, making BASIC a viable alternative to writing games and applications in assembly language.
+
+With the ZX BASIC extensions, including graphics utilities, user-defined functions, and a powerful array handling facility, developers could create useful programs, including animation and sound effects.
+
+However, BASIC still ran as an interpreted language, which means the computer had to process the source code line by line, limiting the execution speed of BASIC programs. This issue, and the emergence of BASIC compilers including HiSoft BASIC, gave birth to new possibilities.
+
+Boriel's ZX BASIC (you can find it [here](https://zxbasic.readthedocs.io/en/docs/)) is a BASIC dialect similar to the original Sinclair BASIC. It fixes many issues found in the original language, such as proper subroutine handling and local variables. It compiles BASIC source code to Z80 binary code, which runs much faster than interpreted BASIC.
+
+Klive supports Boriel's ZX BASIC with an extension that allows you to write BASIC source code and create ZX Spectrum executables.
+
+## ZX BASIC Files
+
+Files with the `.bas` extension are automatically recognized as ZX BASIC files. You can open a Klive project and create a new ZX BASIC source file:
+
+<ClickableImage src="/images/working-with-ide/zxb-reset.png" width={770} />
+
+You can use the `zxb-reset` command to set up ZXBASIC integration. This command has the following format:
+
+```
+zxb-reset <Full ZXBC executable path> [<python3 path>]
+```
+
+Provide the full executable path of the ZXBC compiler. Optionally, you can provide the path to the Python3 executable.
+
+### Windows
+
+Specify only the first argument and use the `zxbc.exe` executable. For example, if your username is "djohn" and you installed the compiler into the `zxbasic` folder, use this command:
+
+```
+zxb-reset "C:\Users\djohn\zxbasic\zxbc.exe"
+```
+
+## Using ZX BASIC
+
+When you create a ZX BASIC file, you can write your source code using ZX BASIC syntax. When you open a `.bas` file, you can see four build-related icons in the document tab bar:
+
+<ClickableImage src="/images/working-with-ide/zxb-actions.png" width={725} />
+
+Click the rightmost icon (with the "play" sign) to compile and run the code:
+
+<ClickableImage src="/images/working-with-ide/zxb-running.png" width={480} />
+
+<Callout type="info" emoji="💡">
+You can also try keyboard shortcuts to trigger these actions: `F7` to compile, `Ctrl+F7` to inject code into memory, `Shift+F7` to run the code, and `Ctrl+Shift+F7` to run it in debug mode.
+</Callout>
+
+## Handling Errors
+
+When you run the code, the compiler checks the syntax. If there are any errors, the IDE displays them in a list in the Output panel. You can click on an error to navigate to its location in the source code.
+
+## Debugging
+
+You can run your code in debug mode by clicking the last icon in the document tab bar or pressing `Ctrl+Shift+F7`. In debug mode, the IDE will stop at any breakpoints you set in your code.a:X
+f:X
+f:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"ZX BASIC Files","id":"zx-basic-files","depth":2},{"value":"Windows","id":"windows","depth":3},{"value":"Using ZX BASIC","id":"using-zx-basic","depth":2},{"value":"Handling Errors","id":"handling-errors","depth":2},{"value":"Debugging","id":"debugging","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"Using ZX BASIC","filePath":"content/working-with-ide/zxb.mdx","timestamp":1788420416000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+22:I[484,[],"OutletBoundary"]
+23:"$Sreact.suspense"
+25:I[484,[],"ViewportBoundary"]
+26:I[484,[],"MetadataBoundary"]
+27:I[7121,[],""]
+28:I[4581,[],""]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/zxb-reset.png","image"]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using ZX BASIC","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ZX Spectrum was famous for its BASIC interpreter, which was significantly faster than other home computers’ BASIC variants in 1982. However, the compiled variants that emerged later were much faster, making BASIC a viable alternative to writing games and applications in assembly language."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With the ZX BASIC extensions, including graphics utilities, user-defined functions, and a powerful array handling facility, developers could create useful programs, including animation and sound effects."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"However, BASIC still ran as an interpreted language, which means the computer had to process the source code line by line, limiting the execution speed of BASIC programs. This issue, and the emergence of BASIC compilers including HiSoft BASIC, gave birth to new possibilities."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Boriel’s ZX BASIC (you can find it ",["$","a",null,{"href":"https://zxbasic.readthedocs.io/en/docs/","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["here",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}],") is a BASIC dialect similar to the original Sinclair BASIC. It fixes many issues found in the original language, such as proper subroutine handling and local variables. It compiles BASIC source code to Z80 binary code, which runs much faster than interpreted BASIC."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive supports Boriel’s ZX BASIC with an extension that allows you to write BASIC source code and create ZX Spectrum executables."}],"\n",["$","h2",null,{"id":"zx-basic-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["ZX BASIC Files",["$","$L12",null,{"id":"zx-basic-files"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Files with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bas"}]," extension are automatically recognized as ZX BASIC files. You can open a Klive project and create a new ZX BASIC source file:"]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/preview/update-nextra/images/working-with-ide/zxb-reset.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/preview/update-nextra/images/working-with-ide/zxb-reset.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":770,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxb-reset"}]," command to set up ZXBASIC integration. This command has the following format:"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined","$L13"]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21"]}]
+8:["$","$L22",null,{"children":["$","$23",null,{"name":"Next.MetadataOutlet","children":"$@24"}]}]
+b:["$","$1","h",{"children":[null,["$","$L25",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L26",null,{"children":["$","$23",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using ZX BASIC - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L27",null,{"parallelRouterKey":"children","template":["$","$L28",null,{}]}]]}]
+11:true
+29:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ToggleWordWrapButton"]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/zxb-actions.png","image"]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/zxb-running.png","image"]
+13:["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L29",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"zxb-reset <Full ZXBC executable path> [<python3 path>]"}]}]}]]}]
+14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Provide the full executable path of the ZXBC compiler. Optionally, you can provide the path to the Python3 executable."}]
+15:["$","h3",null,{"id":"windows","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Windows",["$","$L12",null,{"id":"windows"}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Specify only the first argument and use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxbc.exe"}]," executable. For example, if your username is “djohn” and you installed the compiler into the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxbasic"}]," folder, use this command:"]}]
+17:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L29",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"zxb-reset \"C:\\Users\\djohn\\zxbasic\\zxbc.exe\""}]}]}]]}]]}]
+18:["$","h2",null,{"id":"using-zx-basic","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Using ZX BASIC",["$","$L12",null,{"id":"using-zx-basic"}]]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you create a ZX BASIC file, you can write your source code using ZX BASIC syntax. When you open a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bas"}]," file, you can see four build-related icons in the document tab bar:"]}]
+1a:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/preview/update-nextra/images/working-with-ide/zxb-actions.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/preview/update-nextra/images/working-with-ide/zxb-actions.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":725,"height":"auto"}}]}]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Click the rightmost icon (with the “play” sign) to compile and run the code:"}]
+1c:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/preview/update-nextra/images/working-with-ide/zxb-running.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/preview/update-nextra/images/working-with-ide/zxb-running.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":480,"height":"auto"}}]}]}]
+1d:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can also try keyboard shortcuts to trigger these actions: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"F7"}]," to compile, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Ctrl+F7"}]," to inject code into memory, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Shift+F7"}]," to run the code, and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Ctrl+Shift+F7"}]," to run it in debug mode."]}]}]]}]
+1e:["$","h2",null,{"id":"handling-errors","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Handling Errors",["$","$L12",null,{"id":"handling-errors"}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you run the code, the compiler checks the syntax. If there are any errors, the IDE displays them in a list in the Output panel. You can click on an error to navigate to its location in the source code."}]
+20:["$","h2",null,{"id":"debugging","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Debugging",["$","$L12",null,{"id":"debugging"}]]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can run your code in debug mode by clicking the last icon in the document tab bar or pressing ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Ctrl+Shift+F7"}],". In debug mode, the IDE will stop at any breakpoints you set in your code."]}]
+24:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

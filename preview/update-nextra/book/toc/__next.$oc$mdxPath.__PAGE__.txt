@@ -1,0 +1,547 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+5:T4bfd,# Table of Contents — Plan & Rationale
+
+This document is a **planning artifact**, not part of the book. It proposes a
+complete chapter structure for *Inside the ZX Spectrum Next*, explains the
+ordering rationale, and lays out concrete steps to evolve the current draft
+into the proposed structure.
+
+Read top to bottom: first the proposed TOC, then the dependency map, then the
+discussion of dilemmas, then the migration plan from today's state to the
+target.
+
+---
+
+## 1. Guiding Principles
+
+The TOC is built around four constraints:
+
+1. **Hardware coverage.** Every significant piece of hardware that a typical
+   Next owner has out of the box (CPU, memory, video layers, sprites, audio,
+   storage, joysticks, mouse, keyboard, RTC, UART, Copper, DMA) gets at least
+   one chapter or a clearly named section.
+2. **Klive-only exercises.** Every exercise must be runnable on a stock ZX
+   Spectrum Next as emulated by Klive — no hardware extensions, no peripherals
+   that Klive doesn't model. Code uses the Klive Z80 Assembly dialect
+   (`.kz80.asm`).
+3. **Progressive dependency.** Each chapter should build on a small, named set
+   of earlier chapters. The reader should never need to "skip ahead" to make
+   sense of a current example.
+4. **One concept, one home.** Cross-cutting concerns (interrupts, NextRegs,
+   palettes) live in a single primary chapter and are *referenced* — not
+   re-explained — from later chapters.
+
+---
+
+## 2. Proposed Table of Contents
+
+### Front Matter
+- **Preface** *(existing)*
+- **Introduction** *(existing)*
+- **Flying Start** *(existing)* — Klive setup, project structure, the example pack
+
+### Part I — The CPU and the Bus
+
+1. **Z80N: The Next's Z80 CPU** *(existing — `z80n.mdx`)*
+   - Registers, flags, machine cycles, undocumented behaviour, Z80N extension
+     instructions, hardware multiplier.
+2. **Talking to the Hardware: I/O Ports and NextRegs**
+   *(split out from the current `next-hardware.mdx`)*
+   - How `IN`/`OUT` decode addresses on the Next, partial decoding, the
+     NextReg `0x243B`/`0x253B` pair, the `NEXTREG` Z80N instructions, reading
+     vs. writing NextRegs, the "current register" state.
+   - This is the chapter every later chapter cross-references.
+
+### Part II — Memory
+
+3. **Memory Architecture: ROM, RAM, Banks, and the MMU**
+   - 16-bit Z80 address space vs. 21-bit physical (2 MB).
+   - The 8 MMU slots × 8 KB pages, NextRegs `0x50`–`0x57`.
+   - Legacy paging compatibility: `0x7FFD`, `0x1FFD`, `0xDFFD`.
+   - Memory regions vs. banks vs. pages vs. slots (consistent with the
+     glossary).
+   - Divmmc and the alt-ROM mechanism (overview only — full discussion when we
+     reach storage).
+   - **Exercises**: page in a high bank and write a signature; build a small
+     "memory probe" that walks the 2 MB and prints the first byte of each
+     8 KB page.
+
+### Part III — Time and Events
+
+4. **Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System**
+   - Z80 interrupt modes (IM0/IM1/IM2), the I register, the IM2 vector table.
+   - Maskable vs. non-maskable, the NMI button on real hardware (Klive
+     emulates the press).
+   - The Next's interrupt control: NextRegs `0xC0`–`0xC8`, line interrupt,
+     ULA frame interrupt, CTC interrupts, UART interrupts, DMA interrupts.
+   - Writing a clean IM2 handler in Z80N assembly.
+   - **Why this comes before CTC, video, and audio:** every later chapter
+     uses interrupts in some form. We pay the conceptual cost once.
+   - **Exercises**: a 50 Hz frame counter; a colour-cycling border using only
+     the frame interrupt; an IM2 handler that dispatches to two different
+     sources.
+
+5. **The CTC: Counter/Timer Circuit**
+   *(split out from the current `next-hardware.mdx`)*
+   - The four CTC channels, their clock sources, prescalers, time constants.
+   - **Three uses, one chapter:**
+     - Measuring code execution time (polling the down-counter).
+     - Generating periodic ticks (interrupt-driven, references Chapter 4).
+     - Cascading channels for long intervals.
+   - Cross-references audio (Part VI) for sample-rate generation, but does
+     not duplicate that material.
+   - **Exercises**: cycle-accurate stopwatch around an `LDIR`; 1 kHz tick
+     handler that increments a counter visible in the IDE watch window.
+
+6. **The zxnDMA: Moving Data Without the CPU** *(existing — `zxndma.md`)*
+   - Already covers Port A/B model, transfer modes, real patterns.
+   - **Add**: short cross-references to interrupts (DMA-end interrupt) and to
+     audio (DMA-driven sample feeding) once those chapters exist.
+
+### Part IV — Input
+
+7. **Input Devices: Keyboard, Joysticks, Mouse**
+   - Reading port `0xFE` and the keyboard matrix (already touched in the
+     existing I/O chapter — moved here in full).
+   - Kempston joystick port `0x1F`, Sinclair joysticks via the keyboard
+     matrix, Kempston mouse on `0xFADF`/`0xFBDF`/`0xFFDF`.
+   - Joystick mode selection via NextReg `0x05`.
+   - **Exercises**: paint a tile under the mouse cursor; a small "input
+     monitor" overlay that shows the live state of all three input devices.
+
+### Part V — Video
+
+This is the largest part. It is ordered from "what the original Spectrum had"
+outward, because every later layer composes on top of earlier concepts.
+
+8. **The ULA Screen and Border**
+   - The classic 256×192 bitmap, attribute layout, attribute colour clash,
+     border port `0xFE`, the FLASH bit, the BRIGHT bit.
+   - Screen address arithmetic and the bitmap's interleaved layout.
+   - **Exercises**: print text using the ROM character set; a border-bar
+     timing demo driven from the frame interrupt (uses Chapter 4).
+
+9. **Palettes and Colour on the Next**
+   - The 9-bit palette format, the palette index register, palette select
+     (NextReg `0x43`), the eight palette banks (ULA, Layer 2, Sprites,
+     Tilemap, each with a "first" and "second" palette).
+   - Per-pixel priority bit.
+   - **Why a dedicated chapter:** every video layer that follows uses the
+     same palette mechanism. Explain it once, reference it everywhere.
+   - **Exercises**: palette-shift a ULA screen without redrawing it;
+     animate by rotating palette entries.
+
+10. **LoRes Mode**
+    - 128×96, two colours per 4×8 block, NextReg `0x15` bit 7.
+    - Trade-offs vs. ULA, scrolling LoRes (NextRegs `0x32`/`0x33`).
+    - **Exercises**: draw a LoRes scene; smooth-scroll it horizontally.
+
+11. **Layer 2: True-Colour Bitmap**
+    - 256×192/256, 320×256/256, 640×256/16. Memory layout, paging Layer 2
+      RAM into the Z80 address space (NextReg `0x12`/`0x13`).
+    - Scrolling, clipping window, priority over ULA.
+    - **Exercises**: load a Layer 2 image (provided in the example pack);
+      vertical split-screen using the line interrupt (uses Chapter 4).
+
+12. **The Tilemap**
+    - 40×32 and 80×32 layouts, tile definitions, tilemap palette, attribute
+      bytes, transparency.
+    - Tilemap scrolling, clipping window, ULA-over-tilemap and
+      tilemap-over-ULA modes.
+    - **Exercises**: build a small text console using tilemap mode; a
+      side-scrolling background.
+
+13. **Hardware Sprites**
+    - 128 sprites, 16×16 patterns, 4-bit and 8-bit modes, anchor sprites and
+      relative sprites, scaling, mirroring, rotation, "over border".
+    - Sprite collision register.
+    - **Exercises**: bouncing sprite; sprite swarm using anchor + relative
+      sprites.
+
+14. **The Copper: Graphics Co-Processor**
+    - The Copper instruction set (`WAIT`, `MOVE`), Copper memory, run modes,
+      using the Copper to change palette/scroll registers mid-frame.
+    - **Why this comes after every video layer:** the Copper's main job is
+      to retime register writes to specific raster positions, which means
+      the reader needs to already know which registers are interesting.
+    - **Exercises**: Copper-driven gradient sky; mid-screen palette swap
+      that would be impossible from Z80 code alone.
+
+15. **Compositing, Priorities, and Layer Combinations**
+    - NextReg `0x15` (layer priority), `0x68` (ULA disable), per-pixel
+      priority, transparency colour (NextReg `0x14`/`0x4A`).
+    - Putting ULA + Tilemap + Layer 2 + Sprites together in one frame.
+    - **Exercises**: a mini scene that uses all four layer types
+      simultaneously.
+
+### Part VI — Audio
+
+16. **The Beeper and the Border-Sound Heritage**
+    - Bit 4 of port `0xFE`, the original Spectrum beeper trick, and why it
+      still matters on the Next.
+    - **Exercises**: square-wave melody; PWM tone using a tight CTC-paced
+      loop (references Chapter 5).
+
+17. **The AY-3-8912 Family: Three Chips, Nine Channels**
+    - The classic AY register set, port `0xFFFD`/`0xBFFD`, Turbosound
+      selection via NextReg-aware port behaviour, stereo modes (ABC/ACB).
+    - **Exercises**: play a tone on each of the three AYs; envelope demo;
+      load and play a tracker tune from the example pack.
+
+18. **DACs and Sample Playback**
+    - The four 8-bit DACs (left/right, A/B/C/D) on ports `0xFB`/`0xB3`/etc.
+    - Driving the DAC from a CTC interrupt (references Chapters 4 and 5).
+    - Driving the DAC from the zxnDMA (references Chapter 6).
+    - **Why DAC-via-CTC lives here, not in the CTC chapter:** the CTC
+      chapter teaches the timer; this chapter applies it. Splitting them
+      keeps each chapter focused.
+    - **Exercises**: play an 8 kHz raw sample with a CTC interrupt; replay
+      the same sample using DMA and compare CPU load.
+
+### Part VII — Storage and the Outside World
+
+19. **NextZXOS, esxDOS, and the SD Card**
+    - The dot-command interface, the M_GETSETDRV-style hooks, opening and
+      reading files from Z80 code.
+    - DivMMC and the alt-ROM (callback to Chapter 3).
+    - **Exercises**: read a file from the SD card and display its first
+      line; write a small dot-command.
+
+20. **The UART and the ESP WiFi Module**
+    - The UART ports (`0x143B`/`0x133B`), baud rate via NextReg, basic
+      framing.
+    - Talking to the ESP at AT-command level.
+    - **Klive note:** Klive emulates the UART loopback / a configurable
+      virtual peer; exercises target that surface.
+    - **Exercises**: echo characters between a Z80 program and the host
+      via the Klive-emulated UART.
+
+21. **The Real-Time Clock and I²C**
+    - The I²C bus exposed via NextReg `0x103B`/`0x113B`, reading and
+      setting the RTC.
+    - **Exercises**: print the current emulated date and time on screen.
+
+### Part VIII — Putting It All Together
+
+22. **Building a Small Game**
+    - A capstone chapter that combines: tilemap background, sprite
+      character, AY music, DAC sound effects, joystick input, line-interrupt
+      status bar. No new hardware — only composition.
+
+### Appendices *(existing, lightly extended)*
+
+- **Appendix A: The NEX File Format** *(existing)*
+- **Appendix B: NextReg Reference** *(existing)*
+- **Appendix C: I/O Ports Reference** *(existing)*
+- **Appendix D: Klive Z80 Assembly Quick Reference** *(new)* —
+  directives, expressions, macros, and Klive-specific syntax features
+  used throughout the book.
+- **Appendix E: Glossary** *(new)* — already required by the writing
+  guidelines (`book-writing-guidelines.md`), currently missing.
+
+---
+
+## 3. Dependency Map
+
+A compact view of which chapters each chapter assumes. "→" means "builds on".
+
+```
+1 Z80N        → (none beyond Flying Start)
+2 I/O+NextReg → 1
+3 Memory/MMU  → 1, 2
+4 Interrupts  → 1, 2
+5 CTC         → 2, 4
+6 zxnDMA      → 2, 4
+7 Input       → 2
+8 ULA         → 2, 3, 4
+9 Palettes    → 2
+10 LoRes      → 2, 8, 9
+11 Layer 2    → 2, 3, 4, 9
+12 Tilemap    → 2, 3, 9
+13 Sprites    → 2, 3, 9
+14 Copper     → 2, 4, 9, 11, 12, 13
+15 Compositing→ 8, 9, 10, 11, 12, 13
+16 Beeper     → 2, 5
+17 AY         → 2
+18 DAC        → 2, 4, 5, 6
+19 Storage    → 2, 3
+20 UART       → 2
+21 RTC/I²C    → 2
+22 Game       → 7, 12, 13, 17, 18, plus interrupts
+```
+
+Every back-reference is one or two chapters away at most, except where a
+later chapter (Copper, Compositing, Game) deliberately ties many threads
+together.
+
+---
+
+## 4. Resolving the Stated Dilemmas
+
+### CTC vs. Interrupts vs. DAC
+
+Your specific question: should CTC live inside Interrupts? Inside DAC?
+Should it be split?
+
+**Recommendation: keep one CTC chapter, place it after Interrupts, and
+have Audio/DAC reference it.**
+
+Reasoning:
+
+- **CTC is a peripheral, not an interrupt source.** Its three real jobs —
+  measuring elapsed time, generating periodic events, and cascading for
+  long intervals — are all coherent under one roof. Splitting "CTC for
+  timing" from "CTC for interrupts" forces the reader to learn the same
+  register layout twice.
+- **Interrupts are a CPU concept.** The Interrupts chapter belongs to the
+  CPU side: IM0/IM1/IM2, the I register, the Next's interrupt controller.
+  It teaches the *mechanism*. CTC is one of many *sources*.
+- **DAC-via-CTC is an application of CTC, not a redefinition of it.**
+  Putting DAC sample playback inside the CTC chapter would derail the
+  narrative ("we were learning about timers — why are we suddenly emitting
+  audio?"). Putting it in the Audio chapter, with an explicit
+  "this uses Chapter 5" reference, keeps both chapters readable on their
+  own.
+
+This is a direct application of principle #4 ("one concept, one home").
+
+### NextRegs: dedicated chapter or scattered?
+
+**Recommendation: dedicated chapter (Chapter 2), with a *reference table*
+of "NextRegs introduced in this chapter" at the end of every later
+chapter that touches new ones.**
+
+NextRegs are touched by every other chapter. Explaining the access
+mechanism repeatedly would be wasteful; relying on Appendix B alone would
+be too cold. A short focused chapter plus a "NextRegs in this chapter"
+recap gives the right rhythm.
+
+### Palettes: with each video layer or standalone?
+
+**Recommendation: standalone (Chapter 9), inserted between ULA and the
+new layers.**
+
+The same palette mechanism feeds ULA (when palette mode is enabled),
+LoRes, Layer 2, Tilemap, and Sprites. Teaching it once, immediately after
+the reader has seen *something* coloured (ULA in Chapter 8), means every
+subsequent video chapter can say "configure its palette as in Chapter 9"
+in a single sentence.
+
+### Copper: where?
+
+**Recommendation: after every regular video layer, before Compositing.**
+
+The Copper has nothing interesting to do until the reader knows which
+registers are worth retiming. Placing it last among the "single-layer"
+chapters lets each Copper example actually demonstrate something
+visually striking.
+
+### Memory: one chapter or split?
+
+**Recommendation: one chapter (Chapter 3).**
+
+The MMU, legacy paging ports, and physical-vs-logical model are tightly
+coupled. A single chapter that introduces all of them and finishes with a
+"memory probe" exercise gives the reader a lasting mental model. Specific
+uses (Layer 2 banks, sprite pattern storage, AY tracker memory) are
+referenced inline from the relevant later chapters.
+
+---
+
+## 5. Migration Plan from Today's Draft
+
+Current state of `docs/pages/book/`:
+
+```
+preface.mdx
+introduction.mdx
+flying-start.mdx
+z80n.mdx
+next-hardware.mdx           ← contains I/O + NextRegs + CTC together
+zxndma.md
+app-A-nex-file-format.md
+app-B-nextreg-reference.md
+app-C-io-ports-reference.md
+book-writing-guidelines.md
+```
+
+### 5.1 Structural changes
+
+1. **Split `next-hardware.mdx`** into two files:
+   - `io-and-nextregs.mdx` — Chapter 2 of the proposed TOC. Keep all the
+     I/O addressing and NextReg material; move the keyboard-row example
+     out (it belongs in the future Input chapter — leave a placeholder
+     stub or a TODO comment).
+   - `ctc.mdx` — Chapter 5. Move the CTC sections here. Add the
+     three-uses framing and a forward reference to the future Audio
+     chapter.
+2. **Rename for consistency:** all chapter files use `.mdx` (the existing
+   `zxndma.md` and the appendices use `.md`). Decide one way and migrate.
+   Recommended: `.mdx` for chapters (so they can use `<Callout>` and
+   `<ClickableImage>`), `.md` for appendices that are pure reference.
+   `zxndma.md` should become `zxndma.mdx`.
+3. **Create stub files** for every new chapter listed in §2 above, even if
+   only with a title and a one-paragraph "what this chapter will cover"
+   note. This makes the TOC in `book.mdx` complete and lets the reader
+   see the road ahead.
+4. **Add `glossary.md`** in `docs/pages/book/`. The writing guidelines
+   already require it; it doesn't exist yet. Seed it with the terms
+   defined in `book-writing-guidelines.md` (Memory region, Bank, Page,
+   Slot, MMU, NextReg) plus terms already used in the existing chapters
+   (M1, T-state, ULA, Z80N, NEX, CTC, DMA, Layer 2, Tilemap, Copper).
+
+### 5.2 Edits to existing chapters
+
+- **`introduction.mdx`** — no structural change. Optional: trim the
+  Kickstarter history if it grows further; it currently competes for
+  attention with the technical introduction.
+- **`flying-start.mdx`** — add a short "what each chapter assumes"
+  paragraph mirroring the dependency map in §3.
+- **`z80n.mdx`** — already in good shape for Chapter 1. Add a closing
+  pointer to the new Chapter 2.
+- **`next-hardware.mdx`** — to be split as described in §5.1.
+- **`zxndma.md`** — already a strong Chapter 6. After Chapter 4
+  (Interrupts) exists, add a short subsection on the DMA-end interrupt;
+  after Chapter 18 (DAC) exists, add a forward pointer to the
+  DMA-driven audio example.
+- **Appendices** — no content change needed yet; add Appendix D and E as
+  described in §2.
+
+### 5.3 Update `book.mdx`
+
+Replace the current short list with the full TOC of §2, grouped under
+the eight parts. Each entry links to its file (real or stub). This makes
+the reader's path through the book obvious from the landing page.
+
+### 5.4 Suggested order of execution
+
+A pragmatic sequence that keeps the published book usable at every step:
+
+1. Add `toc.md` (this file). *Done by this change.*
+2. Create `glossary.md` from the seed list above.
+3. Split `next-hardware.mdx` into `io-and-nextregs.mdx` and `ctc.mdx`,
+   update internal links.
+4. Rewrite `book.mdx` with the full TOC and stubs for missing chapters.
+5. Write Chapter 3 (Memory) — unblocks several later chapters.
+6. Write Chapter 4 (Interrupts) — unblocks CTC, video, audio.
+7. Write Part V (Video) end to end, ULA → Compositing.
+8. Write Part VI (Audio).
+9. Write Part VII (Storage / UART / RTC).
+10. Write the capstone game chapter.
+11. Backfill Appendices D and E as material settles.
+
+---
+
+## 6. Open Questions for You
+
+Before any of the above is executed, please confirm or adjust:
+
+1. **Scope of "stock Next."** Is the assumption "Issue 2 board, no Pi
+   accelerator, no expansion peripherals" correct for the exercises? If
+   the Pi accelerator is in scope, we should add a short chapter under
+   Part VIII.
+2. **NextZXOS depth.** Do you want Chapter 19 to teach writing dot
+   commands in any detail, or just file I/O from a NEX program?
+3. **Capstone game.** Is a top-down "walk a sprite around a tilemap"
+   demo enough, or do you have a specific game-flavour in mind (shooter,
+   platformer, puzzle)?
+4. **Klive UART/RTC fidelity.** Do the exercises in Chapters 20 and 21
+   need to be adjusted to match what Klive currently emulates, or are
+   you planning to extend Klive to support them as you write the book?
+5. **`.md` vs `.mdx` for appendices.** Confirm the recommendation in
+   §5.1 is acceptable, or pick a single extension.a:X
+f:X
+f:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"1. Guiding Principles","id":"1-guiding-principles","depth":2},{"value":"2. Proposed Table of Contents","id":"2-proposed-table-of-contents","depth":2},{"value":"Front Matter","id":"front-matter","depth":3},{"value":"Part I — The CPU and the Bus","id":"part-i--the-cpu-and-the-bus","depth":3},{"value":"Part II — Memory","id":"part-ii--memory","depth":3},{"value":"Part III — Time and Events","id":"part-iii--time-and-events","depth":3},{"value":"Part IV — Input","id":"part-iv--input","depth":3},{"value":"Part V — Video","id":"part-v--video","depth":3},{"value":"Part VI — Audio","id":"part-vi--audio","depth":3},{"value":"Part VII — Storage and the Outside World","id":"part-vii--storage-and-the-outside-world","depth":3},{"value":"Part VIII — Putting It All Together","id":"part-viii--putting-it-all-together","depth":3},{"value":[["$","$1",".0",{"children":["Appendices ",["$","em",".1",{"children":"(existing, lightly extended)"}]]}]],"id":"appendices-existing-lightly-extended","depth":3},{"value":"3. Dependency Map","id":"3-dependency-map","depth":2},{"value":"4. Resolving the Stated Dilemmas","id":"4-resolving-the-stated-dilemmas","depth":2},{"value":"CTC vs. Interrupts vs. DAC","id":"ctc-vs-interrupts-vs-dac","depth":3},{"value":"NextRegs: dedicated chapter or scattered?","id":"nextregs-dedicated-chapter-or-scattered","depth":3},{"value":"Palettes: with each video layer or standalone?","id":"palettes-with-each-video-layer-or-standalone","depth":3},{"value":"Copper: where?","id":"copper-where","depth":3},{"value":"Memory: one chapter or split?","id":"memory-one-chapter-or-split","depth":3},{"value":"5. Migration Plan from Today’s Draft","id":"5-migration-plan-from-todays-draft","depth":2},{"value":"5.1 Structural changes","id":"51-structural-changes","depth":3},{"value":"5.2 Edits to existing chapters","id":"52-edits-to-existing-chapters","depth":3},{"value":[["$","$1",".0",{"children":["5.3 Update ",["$","code",".1",{"className":"nextra-code","dir":"ltr","children":"book.mdx"}]]}]],"id":"53-update-bookmdx","depth":3},{"value":"5.4 Suggested order of execution","id":"54-suggested-order-of-execution","depth":3},{"value":"6. Open Questions for You","id":"6-open-questions-for-you","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"Table of Contents — Plan & Rationale","filePath":"content/book/toc.md","timestamp":1788420416000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+52:I[484,[],"OutletBoundary"]
+53:"$Sreact.suspense"
+55:I[484,[],"ViewportBoundary"]
+56:I[484,[],"MetadataBoundary"]
+57:I[7121,[],""]
+58:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Table of Contents — Plan & Rationale","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This document is a ",["$","strong",null,{"children":"planning artifact"}],", not part of the book. It proposes a\ncomplete chapter structure for ",["$","em",null,{"children":"Inside the ZX Spectrum Next"}],", explains the\nordering rationale, and lays out concrete steps to evolve the current draft\ninto the proposed structure."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Read top to bottom: first the proposed TOC, then the dependency map, then the\ndiscussion of dilemmas, then the migration plan from today’s state to the\ntarget."}],"\n",["$","hr",null,{"className":"x:my-[2em] nextra-border"}],"\n",["$","h2",null,{"id":"1-guiding-principles","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["1. Guiding Principles",["$","$L12",null,{"id":"1-guiding-principles"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The TOC is built around four constraints:"}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Hardware coverage."}]," Every significant piece of hardware that a typical\nNext owner has out of the box (CPU, memory, video layers, sprites, audio,\nstorage, joysticks, mouse, keyboard, RTC, UART, Copper, DMA) gets at least\none chapter or a clearly named section."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Klive-only exercises."}]," Every exercise must be runnable on a stock ZX\nSpectrum Next as emulated by Klive — no hardware extensions, no peripherals\nthat Klive doesn’t model. Code uses the Klive Z80 Assembly dialect\n(",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".kz80.asm"}],")."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Progressive dependency."}]," Each chapter should build on a small, named set\nof earlier chapters. The reader should never need to “skip ahead” to make\nsense of a current example."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"One concept, one home."}]," Cross-cutting concerns (interrupts, NextRegs,\npalettes) live in a single primary chapter and are ",["$","em",null,{"children":"referenced"}]," — not\nre-explained — from later chapters."]}],"\n"]}],"\n",["$","hr",null,{"className":"x:my-[2em] nextra-border"}],"\n",["$","h2",null,{"id":"2-proposed-table-of-contents","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["2. Proposed Table of Contents",["$","$L12",null,{"id":"2-proposed-table-of-contents"}]]}],"\n",["$","h3",null,{"id":"front-matter","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Front Matter",["$","$L12",null,{"id":"front-matter"}]]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Preface"}]," ",["$","em",null,{"children":"(existing)"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Introduction"}]," ",["$","em",null,{"children":"(existing)"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$L13"," ","$L14"," — Klive setup, project structure, the example pack"]}],"\n"]}],"\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51"]}]
+8:["$","$L52",null,{"children":["$","$53",null,{"name":"Next.MetadataOutlet","children":"$@54"}]}]
+b:["$","$1","h",{"children":[null,["$","$L55",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L56",null,{"children":["$","$53",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Table of Contents — Plan & Rationale - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L57",null,{"parallelRouterKey":"children","template":["$","$L58",null,{}]}]]}]
+11:true
+5e:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ToggleWordWrapButton"]
+13:["$","strong",null,{"children":"Flying Start"}]
+14:["$","em",null,{"children":"(existing)"}]
+15:["$","h3",null,{"id":"part-i--the-cpu-and-the-bus","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part I — The CPU and the Bus",["$","$L12",null,{"id":"part-i--the-cpu-and-the-bus"}]]}]
+16:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Z80N: The Next’s Z80 CPU"}]," ",["$","em",null,{"children":["(existing — ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"z80n.mdx"}],")"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Registers, flags, machine cycles, undocumented behaviour, Z80N extension\ninstructions, hardware multiplier."}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Talking to the Hardware: I/O Ports and NextRegs"}],"\n",["$","em",null,{"children":["(split out from the current ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"next-hardware.mdx"}],")"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["How ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OUT"}]," decode addresses on the Next, partial decoding, the\nNextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x243B"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x253B"}]," pair, the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NEXTREG"}]," Z80N instructions, reading\nvs. writing NextRegs, the “current register” state."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"This is the chapter every later chapter cross-references."}],"\n"]}],"\n"]}],"\n"]}]
+17:["$","h3",null,{"id":"part-ii--memory","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part II — Memory",["$","$L12",null,{"id":"part-ii--memory"}]]}]
+18:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"3","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Memory Architecture: ROM, RAM, Banks, and the MMU"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"16-bit Z80 address space vs. 21-bit physical (2 MB)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The 8 MMU slots × 8 KB pages, NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x50"}],"–",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x57"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Legacy paging compatibility: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x7FFD"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x1FFD"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xDFFD"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Memory regions vs. banks vs. pages vs. slots (consistent with the\nglossary)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Divmmc and the alt-ROM mechanism (overview only — full discussion when we\nreach storage)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": page in a high bank and write a signature; build a small\n“memory probe” that walks the 2 MB and prints the first byte of each\n8 KB page."]}],"\n"]}],"\n"]}],"\n"]}]
+19:["$","h3",null,{"id":"part-iii--time-and-events","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part III — Time and Events",["$","$L12",null,{"id":"part-iii--time-and-events"}]]}]
+1a:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"4","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Interrupts: IM1, IM2, and the Next’s Multi-Source Interrupt System"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Z80 interrupt modes (IM0/IM1/IM2), the I register, the IM2 vector table."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Maskable vs. non-maskable, the NMI button on real hardware (Klive\nemulates the press)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The Next’s interrupt control: NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xC0"}],"–",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xC8"}],", line interrupt,\nULA frame interrupt, CTC interrupts, UART interrupts, DMA interrupts."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Writing a clean IM2 handler in Z80N assembly."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Why this comes before CTC, video, and audio:"}]," every later chapter\nuses interrupts in some form. We pay the conceptual cost once."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": a 50 Hz frame counter; a colour-cycling border using only\nthe frame interrupt; an IM2 handler that dispatches to two different\nsources."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"The CTC: Counter/Timer Circuit"}],"\n",["$","em",null,{"children":["(split out from the current ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"next-hardware.mdx"}],")"]}]]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The four CTC channels, their clock sources, prescalers, time constants."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Three uses, one chapter:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Measuring code execution time (polling the down-counter)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Generating periodic ticks (interrupt-driven, references Chapter 4)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Cascading channels for long intervals."}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Cross-references audio (Part VI) for sample-rate generation, but does\nnot duplicate that material."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": cycle-accurate stopwatch around an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LDIR"}],"; 1 kHz tick\nhandler that increments a counter visible in the IDE watch window."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"The zxnDMA: Moving Data Without the CPU"}]," ",["$","em",null,{"children":["(existing — ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxndma.md"}],")"]}]]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Already covers Port A/B model, transfer modes, real patterns."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Add"}],": short cross-references to interrupts (DMA-end interrupt) and to\naudio (DMA-driven sample feeding) once those chapters exist."]}],"\n"]}],"\n"]}],"\n"]}]
+1b:["$","h3",null,{"id":"part-iv--input","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part IV — Input",["$","$L12",null,{"id":"part-iv--input"}]]}]
+1c:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"7","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Input Devices: Keyboard, Joysticks, Mouse"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Reading port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xFE"}]," and the keyboard matrix (already touched in the\nexisting I/O chapter — moved here in full)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Kempston joystick port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x1F"}],", Sinclair joysticks via the keyboard\nmatrix, Kempston mouse on ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xFADF"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xFBDF"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xFFDF"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Joystick mode selection via NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x05"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": paint a tile under the mouse cursor; a small “input\nmonitor” overlay that shows the live state of all three input devices."]}],"\n"]}],"\n"]}],"\n"]}]
+1d:["$","h3",null,{"id":"part-v--video","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part V — Video",["$","$L12",null,{"id":"part-v--video"}]]}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is the largest part. It is ordered from “what the original Spectrum had”\noutward, because every later layer composes on top of earlier concepts."}]
+1f:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"8","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The ULA Screen and Border"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The classic 256×192 bitmap, attribute layout, attribute colour clash,\nborder port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xFE"}],", the FLASH bit, the BRIGHT bit."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Screen address arithmetic and the bitmap’s interleaved layout."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": print text using the ROM character set; a border-bar\ntiming demo driven from the frame interrupt (uses Chapter 4)."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Palettes and Colour on the Next"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The 9-bit palette format, the palette index register, palette select\n(NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x43"}],"), the eight palette banks (ULA, Layer 2, Sprites,\nTilemap, each with a “first” and “second” palette)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Per-pixel priority bit."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Why a dedicated chapter:"}]," every video layer that follows uses the\nsame palette mechanism. Explain it once, reference it everywhere."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": palette-shift a ULA screen without redrawing it;\nanimate by rotating palette entries."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"LoRes Mode"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["128×96, two colours per 4×8 block, NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x15"}]," bit 7."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Trade-offs vs. ULA, scrolling LoRes (NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x32"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x33"}],")."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": draw a LoRes scene; smooth-scroll it horizontally."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Layer 2: True-Colour Bitmap"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["256×192/256, 320×256/256, 640×256/16. Memory layout, paging Layer 2\nRAM into the Z80 address space (NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x12"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x13"}],")."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Scrolling, clipping window, priority over ULA."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": load a Layer 2 image (provided in the example pack);\nvertical split-screen using the line interrupt (uses Chapter 4)."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n","$L59","\n","$L5a","\n"]}],"\n","$L5b","\n","$L5c","\n","$L5d","\n"]}]
+20:["$","h3",null,{"id":"part-vi--audio","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part VI — Audio",["$","$L12",null,{"id":"part-vi--audio"}]]}]
+21:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"16","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The Beeper and the Border-Sound Heritage"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Bit 4 of port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xFE"}],", the original Spectrum beeper trick, and why it\nstill matters on the Next."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": square-wave melody; PWM tone using a tight CTC-paced\nloop (references Chapter 5)."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The AY-3-8912 Family: Three Chips, Nine Channels"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The classic AY register set, port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xFFFD"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xBFFD"}],", Turbosound\nselection via NextReg-aware port behaviour, stereo modes (ABC/ACB)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": play a tone on each of the three AYs; envelope demo;\nload and play a tracker tune from the example pack."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"DACs and Sample Playback"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The four 8-bit DACs (left/right, A/B/C/D) on ports ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xFB"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xB3"}],"/etc."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Driving the DAC from a CTC interrupt (references Chapters 4 and 5)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Driving the DAC from the zxnDMA (references Chapter 6)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Why DAC-via-CTC lives here, not in the CTC chapter:"}]," the CTC\nchapter teaches the timer; this chapter applies it. Splitting them\nkeeps each chapter focused."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": play an 8 kHz raw sample with a CTC interrupt; replay\nthe same sample using DMA and compare CPU load."]}],"\n"]}],"\n"]}],"\n"]}]
+22:["$","h3",null,{"id":"part-vii--storage-and-the-outside-world","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part VII — Storage and the Outside World",["$","$L12",null,{"id":"part-vii--storage-and-the-outside-world"}]]}]
+23:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"19","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"NextZXOS, esxDOS, and the SD Card"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The dot-command interface, the M_GETSETDRV-style hooks, opening and\nreading files from Z80 code."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"DivMMC and the alt-ROM (callback to Chapter 3)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": read a file from the SD card and display its first\nline; write a small dot-command."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The UART and the ESP WiFi Module"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The UART ports (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x143B"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x133B"}],"), baud rate via NextReg, basic\nframing."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Talking to the ESP at AT-command level."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Klive note:"}]," Klive emulates the UART loopback / a configurable\nvirtual peer; exercises target that surface."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": echo characters between a Z80 program and the host\nvia the Klive-emulated UART."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The Real-Time Clock and I²C"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The I²C bus exposed via NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x103B"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x113B"}],", reading and\nsetting the RTC."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": print the current emulated date and time on screen."]}],"\n"]}],"\n"]}],"\n"]}]
+24:["$","h3",null,{"id":"part-viii--putting-it-all-together","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part VIII — Putting It All Together",["$","$L12",null,{"id":"part-viii--putting-it-all-together"}]]}]
+25:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"22","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Building a Small Game"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"A capstone chapter that combines: tilemap background, sprite\ncharacter, AY music, DAC sound effects, joystick input, line-interrupt\nstatus bar. No new hardware — only composition."}],"\n"]}],"\n"]}],"\n"]}]
+26:["$","h3",null,{"id":"appendices-existing-lightly-extended","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["Appendices ",["$","em",null,{"children":"(existing, lightly extended)"}]],["$","$L12",null,{"id":"appendices-existing-lightly-extended"}]]}]
+27:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Appendix A: The NEX File Format"}]," ",["$","em",null,{"children":"(existing)"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Appendix B: NextReg Reference"}]," ",["$","em",null,{"children":"(existing)"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Appendix C: I/O Ports Reference"}]," ",["$","em",null,{"children":"(existing)"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Appendix D: Klive Z80 Assembly Quick Reference"}]," ",["$","em",null,{"children":"(new)"}]," —\ndirectives, expressions, macros, and Klive-specific syntax features\nused throughout the book."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Appendix E: Glossary"}]," ",["$","em",null,{"children":"(new)"}]," — already required by the writing\nguidelines (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"book-writing-guidelines.md"}],"), currently missing."]}],"\n"]}]
+28:["$","hr",null,{"className":"x:my-[2em] nextra-border"}]
+29:["$","h2",null,{"id":"3-dependency-map","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["3. Dependency Map",["$","$L12",null,{"id":"3-dependency-map"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A compact view of which chapters each chapter assumes. ”→” means “builds on”."}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"1 Z80N        → (none beyond Flying Start)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"2 I/O+NextReg → 1"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"3 Memory/MMU  → 1, 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"4 Interrupts  → 1, 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"5 CTC         → 2, 4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"6 zxnDMA      → 2, 4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"7 Input       → 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"8 ULA         → 2, 3, 4"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"9 Palettes    → 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"10 LoRes      → 2, 8, 9"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"11 Layer 2    → 2, 3, 4, 9"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"12 Tilemap    → 2, 3, 9"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"13 Sprites    → 2, 3, 9"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"14 Copper     → 2, 4, 9, 11, 12, 13"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"15 Compositing→ 8, 9, 10, 11, 12, 13"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"16 Beeper     → 2, 5"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"17 AY         → 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"18 DAC        → 2, 4, 5, 6"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"19 Storage    → 2, 3"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"20 UART       → 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"21 RTC/I²C    → 2"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"22 Game       → 7, 12, 13, 17, 18, plus interrupts"}]}]]}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Every back-reference is one or two chapters away at most, except where a\nlater chapter (Copper, Compositing, Game) deliberately ties many threads\ntogether."}]
+2d:["$","hr",null,{"className":"x:my-[2em] nextra-border"}]
+2e:["$","h2",null,{"id":"4-resolving-the-stated-dilemmas","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["4. Resolving the Stated Dilemmas",["$","$L12",null,{"id":"4-resolving-the-stated-dilemmas"}]]}]
+2f:["$","h3",null,{"id":"ctc-vs-interrupts-vs-dac","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["CTC vs. Interrupts vs. DAC",["$","$L12",null,{"id":"ctc-vs-interrupts-vs-dac"}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Your specific question: should CTC live inside Interrupts? Inside DAC?\nShould it be split?"}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Recommendation: keep one CTC chapter, place it after Interrupts, and\nhave Audio/DAC reference it."}]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Reasoning:"}]
+33:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CTC is a peripheral, not an interrupt source."}]," Its three real jobs —\nmeasuring elapsed time, generating periodic events, and cascading for\nlong intervals — are all coherent under one roof. Splitting “CTC for\ntiming” from “CTC for interrupts” forces the reader to learn the same\nregister layout twice."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Interrupts are a CPU concept."}]," The Interrupts chapter belongs to the\nCPU side: IM0/IM1/IM2, the I register, the Next’s interrupt controller.\nIt teaches the ",["$","em",null,{"children":"mechanism"}],". CTC is one of many ",["$","em",null,{"children":"sources"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"DAC-via-CTC is an application of CTC, not a redefinition of it."}],"\nPutting DAC sample playback inside the CTC chapter would derail the\nnarrative (“we were learning about timers — why are we suddenly emitting\naudio?”). Putting it in the Audio chapter, with an explicit\n“this uses Chapter 5” reference, keeps both chapters readable on their\nown."]}],"\n"]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is a direct application of principle #4 (“one concept, one home”)."}]
+35:["$","h3",null,{"id":"nextregs-dedicated-chapter-or-scattered","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["NextRegs: dedicated chapter or scattered?",["$","$L12",null,{"id":"nextregs-dedicated-chapter-or-scattered"}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":["Recommendation: dedicated chapter (Chapter 2), with a ",["$","em",null,{"children":"reference table"}],"\nof “NextRegs introduced in this chapter” at the end of every later\nchapter that touches new ones."]}]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"NextRegs are touched by every other chapter. Explaining the access\nmechanism repeatedly would be wasteful; relying on Appendix B alone would\nbe too cold. A short focused chapter plus a “NextRegs in this chapter”\nrecap gives the right rhythm."}]
+38:["$","h3",null,{"id":"palettes-with-each-video-layer-or-standalone","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Palettes: with each video layer or standalone?",["$","$L12",null,{"id":"palettes-with-each-video-layer-or-standalone"}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Recommendation: standalone (Chapter 9), inserted between ULA and the\nnew layers."}]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The same palette mechanism feeds ULA (when palette mode is enabled),\nLoRes, Layer 2, Tilemap, and Sprites. Teaching it once, immediately after\nthe reader has seen ",["$","em",null,{"children":"something"}]," coloured (ULA in Chapter 8), means every\nsubsequent video chapter can say “configure its palette as in Chapter 9”\nin a single sentence."]}]
+3b:["$","h3",null,{"id":"copper-where","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Copper: where?",["$","$L12",null,{"id":"copper-where"}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Recommendation: after every regular video layer, before Compositing."}]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Copper has nothing interesting to do until the reader knows which\nregisters are worth retiming. Placing it last among the “single-layer”\nchapters lets each Copper example actually demonstrate something\nvisually striking."}]
+3e:["$","h3",null,{"id":"memory-one-chapter-or-split","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Memory: one chapter or split?",["$","$L12",null,{"id":"memory-one-chapter-or-split"}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Recommendation: one chapter (Chapter 3)."}]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The MMU, legacy paging ports, and physical-vs-logical model are tightly\ncoupled. A single chapter that introduces all of them and finishes with a\n“memory probe” exercise gives the reader a lasting mental model. Specific\nuses (Layer 2 banks, sprite pattern storage, AY tracker memory) are\nreferenced inline from the relevant later chapters."}]
+41:["$","hr",null,{"className":"x:my-[2em] nextra-border"}]
+42:["$","h2",null,{"id":"5-migration-plan-from-todays-draft","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["5. Migration Plan from Today’s Draft",["$","$L12",null,{"id":"5-migration-plan-from-todays-draft"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Current state of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"docs/pages/book/"}],":"]}]
+44:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L5e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"preface.mdx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"introduction.mdx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"flying-start.mdx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"z80n.mdx"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"next-hardware.mdx           ← contains I/O + NextRegs + CTC together"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"zxndma.md"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"app-A-nex-file-format.md"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"app-B-nextreg-reference.md"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"app-C-io-ports-reference.md"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"book-writing-guidelines.md"}]}]]}]]}]]}]
+45:["$","h3",null,{"id":"51-structural-changes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["5.1 Structural changes",["$","$L12",null,{"id":"51-structural-changes"}]]}]
+46:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Split ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"next-hardware.mdx"}]]}]," into two files:\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"io-and-nextregs.mdx"}]," — Chapter 2 of the proposed TOC. Keep all the\nI/O addressing and NextReg material; move the keyboard-row example\nout (it belongs in the future Input chapter — leave a placeholder\nstub or a TODO comment)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ctc.mdx"}]," — Chapter 5. Move the CTC sections here. Add the\nthree-uses framing and a forward reference to the future Audio\nchapter."]}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Rename for consistency:"}]," all chapter files use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mdx"}]," (the existing\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxndma.md"}]," and the appendices use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".md"}],"). Decide one way and migrate.\nRecommended: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mdx"}]," for chapters (so they can use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<Callout>"}]," and\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<ClickableImage>"}],"), ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".md"}]," for appendices that are pure reference.\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxndma.md"}]," should become ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxndma.mdx"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Create stub files"}]," for every new chapter listed in §2 above, even if\nonly with a title and a one-paragraph “what this chapter will cover”\nnote. This makes the TOC in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"book.mdx"}]," complete and lets the reader\nsee the road ahead."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Add ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"glossary.md"}]]}]," in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"docs/pages/book/"}],". The writing guidelines\nalready require it; it doesn’t exist yet. Seed it with the terms\ndefined in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"book-writing-guidelines.md"}]," (Memory region, Bank, Page,\nSlot, MMU, NextReg) plus terms already used in the existing chapters\n(M1, T-state, ULA, Z80N, NEX, CTC, DMA, Layer 2, Tilemap, Copper)."]}],"\n"]}]
+47:["$","h3",null,{"id":"52-edits-to-existing-chapters","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["5.2 Edits to existing chapters",["$","$L12",null,{"id":"52-edits-to-existing-chapters"}]]}]
+48:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"introduction.mdx"}]}]," — no structural change. Optional: trim the\nKickstarter history if it grows further; it currently competes for\nattention with the technical introduction."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"flying-start.mdx"}]}]," — add a short “what each chapter assumes”\nparagraph mirroring the dependency map in §3."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"z80n.mdx"}]}]," — already in good shape for Chapter 1. Add a closing\npointer to the new Chapter 2."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"next-hardware.mdx"}]}]," — to be split as described in §5.1."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxndma.md"}]}]," — already a strong Chapter 6. After Chapter 4\n(Interrupts) exists, add a short subsection on the DMA-end interrupt;\nafter Chapter 18 (DAC) exists, add a forward pointer to the\nDMA-driven audio example."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Appendices"}]," — no content change needed yet; add Appendix D and E as\ndescribed in §2."]}],"\n"]}]
+49:["$","h3",null,{"id":"53-update-bookmdx","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["5.3 Update ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"book.mdx"}]],["$","$L12",null,{"id":"53-update-bookmdx"}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Replace the current short list with the full TOC of §2, grouped under\nthe eight parts. Each entry links to its file (real or stub). This makes\nthe reader’s path through the book obvious from the landing page."}]
+4b:["$","h3",null,{"id":"54-suggested-order-of-execution","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["5.4 Suggested order of execution",["$","$L12",null,{"id":"54-suggested-order-of-execution"}]]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A pragmatic sequence that keeps the published book usable at every step:"}]
+4d:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Add ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"toc.md"}]," (this file). ",["$","em",null,{"children":"Done by this change."}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Create ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"glossary.md"}]," from the seed list above."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Split ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"next-hardware.mdx"}]," into ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"io-and-nextregs.mdx"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ctc.mdx"}],",\nupdate internal links."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Rewrite ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"book.mdx"}]," with the full TOC and stubs for missing chapters."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Write Chapter 3 (Memory) — unblocks several later chapters."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Write Chapter 4 (Interrupts) — unblocks CTC, video, audio."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Write Part V (Video) end to end, ULA → Compositing."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Write Part VI (Audio)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Write Part VII (Storage / UART / RTC)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Write the capstone game chapter."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Backfill Appendices D and E as material settles."}],"\n"]}]
+4e:["$","hr",null,{"className":"x:my-[2em] nextra-border"}]
+4f:["$","h2",null,{"id":"6-open-questions-for-you","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["6. Open Questions for You",["$","$L12",null,{"id":"6-open-questions-for-you"}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Before any of the above is executed, please confirm or adjust:"}]
+51:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Scope of “stock Next.”"}]," Is the assumption “Issue 2 board, no Pi\naccelerator, no expansion peripherals” correct for the exercises? If\nthe Pi accelerator is in scope, we should add a short chapter under\nPart VIII."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"NextZXOS depth."}]," Do you want Chapter 19 to teach writing dot\ncommands in any detail, or just file I/O from a NEX program?"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Capstone game."}]," Is a top-down “walk a sprite around a tilemap”\ndemo enough, or do you have a specific game-flavour in mind (shooter,\nplatformer, puzzle)?"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Klive UART/RTC fidelity."}]," Do the exercises in Chapters 20 and 21\nneed to be adjusted to match what Klive currently emulates, or are\nyou planning to extend Klive to support them as you write the book?"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":".md"}]," vs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mdx"}]," for appendices."]}]," Confirm the recommendation in\n§5.1 is acceptable, or pick a single extension."]}],"\n"]}]
+54:null
+a:300
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The Tilemap"}]}]
+5a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"40×32 and 80×32 layouts, tile definitions, tilemap palette, attribute\nbytes, transparency."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Tilemap scrolling, clipping window, ULA-over-tilemap and\ntilemap-over-ULA modes."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": build a small text console using tilemap mode; a\nside-scrolling background."]}],"\n"]}]
+5b:["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Hardware Sprites"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"128 sprites, 16×16 patterns, 4-bit and 8-bit modes, anchor sprites and\nrelative sprites, scaling, mirroring, rotation, “over border”."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Sprite collision register."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": bouncing sprite; sprite swarm using anchor + relative\nsprites."]}],"\n"]}],"\n"]}]
+5c:["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"The Copper: Graphics Co-Processor"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The Copper instruction set (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"WAIT"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MOVE"}],"), Copper memory, run modes,\nusing the Copper to change palette/scroll registers mid-frame."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Why this comes after every video layer:"}]," the Copper’s main job is\nto retime register writes to specific raster positions, which means\nthe reader needs to already know which registers are interesting."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": Copper-driven gradient sky; mid-screen palette swap\nthat would be impossible from Z80 code alone."]}],"\n"]}],"\n"]}]
+5d:["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Compositing, Priorities, and Layer Combinations"}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x15"}]," (layer priority), ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x68"}]," (ULA disable), per-pixel\npriority, transparency colour (NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x14"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x4A"}],")."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Putting ULA + Tilemap + Layer 2 + Sprites together in one frame."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Exercises"}],": a mini scene that uses all four layer types\nsimultaneously."]}],"\n"]}],"\n"]}]
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

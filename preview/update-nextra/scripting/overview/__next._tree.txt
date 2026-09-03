@@ -1,0 +1,10 @@
+:HL["/kliveide/preview/update-nextra/_next/static/css/11c59cc40cabfed8.css","style"]
+:HL["/kliveide/preview/update-nextra/_next/static/css/0bf80bfc72b7f908.css","style"]
+:HL["/kliveide/preview/update-nextra/images/klive-logo.svg","image"]
+:HL["/kliveide/preview/update-nextra/images/scripting/empty-script-file.png","image"]
+:HL["/kliveide/preview/update-nextra/images/scripting/script-with-icons.png","image"]
+:HL["/kliveide/preview/update-nextra/images/scripting/script-output.png","image"]
+:HL["/kliveide/preview/update-nextra/images/scripting/script-output-pane.png","image"]
+:HL["/kliveide/preview/update-nextra/images/scripting/script-output-progress.png","image"]
+:HL["/kliveide/preview/update-nextra/images/scripting/scripting-history.png","image"]
+0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"scripting/overview","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"XNV2ymCXYAck-N2nD3Rh6"}

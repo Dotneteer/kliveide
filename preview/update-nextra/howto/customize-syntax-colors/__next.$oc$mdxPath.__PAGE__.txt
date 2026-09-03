@@ -1,0 +1,342 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+5:T195f,import { Callout } from 'nextra/components';
+
+# Customizing Syntax Highlighting Colors
+
+Klive IDE allows you to customize the syntax highlighting colors for each programming language. You can modify token colors by creating simple JSON configuration files in your Klive settings folder.
+
+## Token Color Files Location
+
+Create your custom token files in the Klive settings folder:
+
+- **macOS/Linux**: `~/Klive/`
+- **Windows**: `C:\Users\<YourUsername>\Klive\`
+
+<Callout type="info" emoji="💡">
+The Klive settings folder is created automatically when you first run Klive. It's the same folder where application settings are stored.
+</Callout>
+
+## Supported Languages
+
+You can customize token colors for these languages:
+
+| Language | File Name |
+|----------|-----------|
+| Klive Z80 Assembly | `kz80-asm.tokens.json` |
+| 6510 Assembly (C64) | `6510-asm.tokens.json` |
+| ZX Basic Assembly | `zxbasm.tokens.json` |
+| ZX Basic | `zxbas.tokens.json` |
+| Klive Script | `ksx.tokens.json` |
+| SjASM Plus | `sjasmp.tokens.json` |
+| pasta80 Pascal | `pasta80.tokens.json` |
+
+## Token File Format
+
+Each token file uses a simple JSON structure with two main sections:
+
+```json
+{
+  "darkTheme": {
+    "comment": "6a9955",
+    "keyword": {
+      "foreground": "569cd6",
+      "fontStyle": "bold"
+    },
+    "identifier": "dcdcaa"
+  },
+  "lightTheme": {
+    "comment": "237122",
+    "keyword": {
+      "foreground": "0070c0",
+      "fontStyle": "bold"
+    },
+    "identifier": "795e26"
+  }
+}
+```
+
+### Token Values
+
+You can specify each token in two ways:
+
+1. **Simple string** (foreground color only):
+   ```json
+   "comment": "6a9955"
+   ```
+
+2. **Object** (with font style):
+   ```json
+   "keyword": {
+     "foreground": "569cd6",
+     "fontStyle": "bold"
+   }
+   ```
+
+### Color Format
+
+Colors are specified as 6-digit hexadecimal values **without** the `#` prefix:
+
+- `"6a9955"` - greenish gray
+- `"569cd6"` - blue
+- `"af00db"` - purple
+
+### Font Styles
+
+Available font styles:
+
+- `"bold"`
+- `"italic"`
+- `"underline"`
+- Or combinations: `"bold italic"`
+
+## Example: Customizing Z80 Assembly Colors
+
+Let's customize the syntax highlighting for Klive Z80 Assembly:
+
+1. Create a new file called `kz80-asm.tokens.json` in your Klive settings folder (`~/Klive/` on macOS/Linux).
+
+2. Add the following content:
+
+```json
+{
+  "darkTheme": {
+    "comment": "6a9955",
+    "keyword": {
+      "foreground": "569cd6",
+      "fontStyle": "bold"
+    },
+    "identifier": "dcdcaa",
+    "register": "9cdcfe",
+    "variable": "dcdcaa",
+    "namespace": "86c691",
+    "struct": "4ec9b0",
+    "equ": "4fcfff",
+    "macro": {
+      "foreground": "4ec9b0",
+      "fontStyle": "bold italic"
+    }
+  },
+  "lightTheme": {
+    "comment": "237122",
+    "keyword": {
+      "foreground": "0070c0",
+      "fontStyle": "bold"
+    },
+    "identifier": "795e26",
+    "register": "0089ba",
+    "variable": "795e26",
+    "namespace": "267f99",
+    "struct": "267f99",
+    "equ": "0070c1",
+    "macro": {
+      "foreground": "267f99",
+      "fontStyle": "bold italic"
+    }
+  }
+}
+```
+
+3. Save the file and restart Klive IDE.
+
+<Callout type="info" emoji="💡">
+You must restart Klive IDE for token color changes to take effect.
+</Callout>
+
+## Common Token Names
+
+### Assembly Languages (Z80, 6510, ZXB Assembly, SjASM)
+
+**Syntax tokens:**
+- `comment` - Comments
+- `keyword` - CPU instructions (LD, ADD, SUB, etc.)
+- `statement` - Assembler directives and statements
+- `pragma` - Pragma directives
+- `identifier` - Labels and identifiers
+- `register` - CPU registers (A, B, C, HL, etc.)
+- `condition` - Condition flags (Z, NZ, C, NC, etc.)
+- `function` - Built-in functions
+- `macroparam` - Macro parameters
+- `escape` - Escape sequences in strings
+
+**Semantic tokens (compiler-resolved):**
+- `variable` - Resolved labels and variables
+- `namespace` - Module scopes
+- `struct` - Struct type definitions
+- `equ` - .equ constant definitions
+- `macro` - Macro and procedure definitions
+
+### ZX Basic
+
+- `comment` - Comments
+- `statement` - BASIC keywords (PRINT, LET, etc.)
+- `identifier` - Variable names
+- `function` - Built-in functions
+- `escape` - Escape sequences
+- `asmdel` - ASM block delimiters
+- `directive` - Preprocessor directives
+
+### pasta80 Pascal
+
+- `comment` - Comments (`{ }`, `(* *)`)
+- `keyword` - Language keywords (`program`, `begin`, `end`, `var`, etc.) — **bold**
+- `type` - Built-in types (`integer`, `string`, `boolean`, etc.)
+- `constant` - Built-in constants (`true`, `false`, `maxint`)
+- `support.function` - Built-in functions (`writeln`, `readln`, `chr`, etc.)
+- `identifier` - User-defined identifiers
+- `string` - String and character literals (`'...'`, `#65`)
+- `string.escape` - Escaped quote inside string (`''`)
+- `number` - Decimal number literals
+- `number.hex` - Hexadecimal literals (`$FF`)
+- `annotation` - Compiler directives (`{$...}`)
+- `delimiter` - Operators and punctuation
+
+### Klive Script
+
+- `comment` - Comments
+- `keyword` - Language keywords
+- `statement` - Statement keywords
+- `identifier` - Identifiers
+- `regexp` - Regular expressions
+- `regexp.escape` - Regex escapes
+- `string.escape` - String escapes
+
+## Partial Customization
+
+You don't need to specify all tokens. You can override only the tokens you want to customize:
+
+```json
+{
+  "lightTheme": {
+    "comment": "008000",
+    "keyword": "0000ff"
+  }
+}
+```
+
+Unspecified tokens will use their default colors.
+
+## Tips for Choosing Colors
+
+1. **Ensure Contrast**: Make sure there's sufficient contrast between foreground and background colors
+2. **Test Both Themes**: Define colors for both dark and light themes
+3. **Stay Consistent**: Use a consistent color scheme across related token types
+4. **Start Simple**: Begin by customizing just a few key tokens (comments, keywords, identifiers)
+
+## Troubleshooting
+
+### Colors Not Applied
+
+- Verify the file is in the correct folder with the correct name
+- Check that the JSON syntax is valid (no missing commas, brackets, etc.)
+- Ensure you've restarted Klive IDE
+
+### Invalid JSON
+
+Use a JSON validator or editor with JSON support to check for syntax errors.
+
+### Wrong Colors Displayed
+
+- Verify you're using 6-digit hex values without the `#` prefix
+- Check that you're editing the right theme section (dark vs light)
+- Ensure file permissions allow Klive to read the file
+
+<Callout type="warning" emoji="⚠️">
+If a token file cannot be read or parsed, Klive will silently skip it and use default colors. Check your JSON syntax if your customizations don't appear.
+</Callout>a:X
+f:X
+f:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Token Color Files Location","id":"token-color-files-location","depth":2},{"value":"Supported Languages","id":"supported-languages","depth":2},{"value":"Token File Format","id":"token-file-format","depth":2},{"value":"Token Values","id":"token-values","depth":3},{"value":"Color Format","id":"color-format","depth":3},{"value":"Font Styles","id":"font-styles","depth":3},{"value":"Example: Customizing Z80 Assembly Colors","id":"example-customizing-z80-assembly-colors","depth":2},{"value":"Common Token Names","id":"common-token-names","depth":2},{"value":"Assembly Languages (Z80, 6510, ZXB Assembly, SjASM)","id":"assembly-languages-z80-6510-zxb-assembly-sjasm","depth":3},{"value":"ZX Basic","id":"zx-basic","depth":3},{"value":"pasta80 Pascal","id":"pasta80-pascal","depth":3},{"value":"Klive Script","id":"klive-script","depth":3},{"value":"Partial Customization","id":"partial-customization","depth":2},{"value":"Tips for Choosing Colors","id":"tips-for-choosing-colors","depth":2},{"value":"Troubleshooting","id":"troubleshooting","depth":2},{"value":"Colors Not Applied","id":"colors-not-applied","depth":3},{"value":"Invalid JSON","id":"invalid-json","depth":3},{"value":"Wrong Colors Displayed","id":"wrong-colors-displayed","depth":3}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"Customizing Syntax Highlighting Colors","filePath":"content/howto/customize-syntax-colors.mdx","timestamp":1788420416000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+45:I[484,[],"OutletBoundary"]
+46:"$Sreact.suspense"
+48:I[484,[],"ViewportBoundary"]
+49:I[484,[],"MetadataBoundary"]
+4a:I[7121,[],""]
+4b:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Customizing Syntax Highlighting Colors","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive IDE allows you to customize the syntax highlighting colors for each programming language. You can modify token colors by creating simple JSON configuration files in your Klive settings folder."}],"\n",["$","h2",null,{"id":"token-color-files-location","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Token Color Files Location",["$","$L12",null,{"id":"token-color-files-location"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Create your custom token files in the Klive settings folder:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"macOS/Linux"}],": ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"~/Klive/"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Windows"}],": ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"C:\\Users\\<YourUsername>\\Klive\\"}]]}],"\n"]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Klive settings folder is created automatically when you first run Klive. It’s the same folder where application settings are stored."}]}]]}],"\n",["$","h2",null,{"id":"supported-languages","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Supported Languages",["$","$L12",null,{"id":"supported-languages"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can customize token colors for these languages:"}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Language","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"File Name","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Klive Z80 Assembly","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"kz80-asm.tokens.json"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"6510 Assembly (C64)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L13"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L14","$L15","$L16","$L17","$L18"]}]]}],"\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44"]}]
+8:["$","$L45",null,{"children":["$","$46",null,{"name":"Next.MetadataOutlet","children":"$@47"}]}]
+b:["$","$1","h",{"children":[null,["$","$L48",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L49",null,{"children":["$","$46",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Customizing Syntax Highlighting Colors - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L4a",null,{"parallelRouterKey":"children","template":["$","$L4b",null,{}]}]]}]
+11:true
+4c:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ToggleWordWrapButton"]
+13:["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"6510-asm.tokens.json"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+14:["$","tr",null,{"children":[["$","td",null,{"children":"ZX Basic Assembly","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxbasm.tokens.json"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+15:["$","tr",null,{"children":[["$","td",null,{"children":"ZX Basic","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxbas.tokens.json"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+16:["$","tr",null,{"children":[["$","td",null,{"children":"Klive Script","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ksx.tokens.json"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+17:["$","tr",null,{"children":[["$","td",null,{"children":"SjASM Plus","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"sjasmp.tokens.json"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+18:["$","tr",null,{"children":[["$","td",null,{"children":"pasta80 Pascal","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"pasta80.tokens.json"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+19:["$","h2",null,{"id":"token-file-format","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Token File Format",["$","$L12",null,{"id":"token-file-format"}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each token file uses a simple JSON structure with two main sections:"}]
+1b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4c",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"{"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"  \"darkTheme\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"comment\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"6a9955\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"keyword\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"foreground\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"569cd6\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"fontStyle\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"bold\""}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"    },"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"identifier\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"dcdcaa\""}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"  },"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"  \"lightTheme\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"comment\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"237122\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"keyword\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"foreground\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"0070c0\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"fontStyle\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"bold\""}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"    },"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"identifier\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"795e26\""}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"  }"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"}"}]}]]}]]}]]}]
+1c:["$","h3",null,{"id":"token-values","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Token Values",["$","$L12",null,{"id":"token-values"}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can specify each token in two ways:"}]
+1e:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Simple string"}]," (foreground color only):"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4c",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"comment\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"6a9955\""}]]}]}]]}]]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Object"}]," (with font style):"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4c",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"keyword\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"  \"foreground\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"569cd6\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"  \"fontStyle\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"bold\""}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"}"}]}]]}]]}]]}],"\n"]}],"\n"]}]
+1f:["$","h3",null,{"id":"color-format","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Color Format",["$","$L12",null,{"id":"color-format"}]]}]
+20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Colors are specified as 6-digit hexadecimal values ",["$","strong",null,{"children":"without"}]," the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#"}]," prefix:"]}]
+21:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"\"6a9955\""}]," - greenish gray"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"\"569cd6\""}]," - blue"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"\"af00db\""}]," - purple"]}],"\n"]}]
+22:["$","h3",null,{"id":"font-styles","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Font Styles",["$","$L12",null,{"id":"font-styles"}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Available font styles:"}]
+24:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"\"bold\""}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"\"italic\""}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"\"underline\""}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Or combinations: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"\"bold italic\""}]]}],"\n"]}]
+25:["$","h2",null,{"id":"example-customizing-z80-assembly-colors","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Example: Customizing Z80 Assembly Colors",["$","$L12",null,{"id":"example-customizing-z80-assembly-colors"}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Let’s customize the syntax highlighting for Klive Z80 Assembly:"}]
+27:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Create a new file called ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"kz80-asm.tokens.json"}]," in your Klive settings folder (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"~/Klive/"}]," on macOS/Linux)."]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Add the following content:"}],"\n"]}],"\n"]}]
+28:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4c",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"{"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"  \"darkTheme\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"comment\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"6a9955\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"keyword\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"foreground\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"569cd6\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"fontStyle\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"bold\""}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"    },"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"identifier\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"dcdcaa\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"register\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"9cdcfe\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"variable\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"dcdcaa\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"namespace\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"86c691\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"struct\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"4ec9b0\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"equ\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"4fcfff\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"macro\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"foreground\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"4ec9b0\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"fontStyle\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"bold italic\""}]]}],"\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60"]}]]}]]}]
+29:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"3","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Save the file and restart Klive IDE."}],"\n"]}]
+2a:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:10:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You must restart Klive IDE for token color changes to take effect."}]}]]}]
+2b:["$","h2",null,{"id":"common-token-names","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Common Token Names",["$","$L12",null,{"id":"common-token-names"}]]}]
+2c:["$","h3",null,{"id":"assembly-languages-z80-6510-zxb-assembly-sjasm","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Assembly Languages (Z80, 6510, ZXB Assembly, SjASM)",["$","$L12",null,{"id":"assembly-languages-z80-6510-zxb-assembly-sjasm"}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax tokens:"}]}]
+2e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"comment"}]," - Comments"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"keyword"}]," - CPU instructions (LD, ADD, SUB, etc.)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"statement"}]," - Assembler directives and statements"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"pragma"}]," - Pragma directives"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"identifier"}]," - Labels and identifiers"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"register"}]," - CPU registers (A, B, C, HL, etc.)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"condition"}]," - Condition flags (Z, NZ, C, NC, etc.)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"function"}]," - Built-in functions"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"macroparam"}]," - Macro parameters"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"escape"}]," - Escape sequences in strings"]}],"\n"]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Semantic tokens (compiler-resolved):"}]}]
+30:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"variable"}]," - Resolved labels and variables"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"namespace"}]," - Module scopes"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"struct"}]," - Struct type definitions"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"equ"}]," - .equ constant definitions"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"macro"}]," - Macro and procedure definitions"]}],"\n"]}]
+31:["$","h3",null,{"id":"zx-basic","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ZX Basic",["$","$L12",null,{"id":"zx-basic"}]]}]
+32:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"comment"}]," - Comments"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"statement"}]," - BASIC keywords (PRINT, LET, etc.)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"identifier"}]," - Variable names"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"function"}]," - Built-in functions"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"escape"}]," - Escape sequences"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"asmdel"}]," - ASM block delimiters"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"directive"}]," - Preprocessor directives"]}],"\n"]}]
+33:["$","h3",null,{"id":"pasta80-pascal","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["pasta80 Pascal",["$","$L12",null,{"id":"pasta80-pascal"}]]}]
+34:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"comment"}]," - Comments (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"{ }"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"(* *)"}],")"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"keyword"}]," - Language keywords (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"program"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"begin"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"end"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"var"}],", etc.) — ",["$","strong",null,{"children":"bold"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"type"}]," - Built-in types (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"integer"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"string"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"boolean"}],", etc.)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"constant"}]," - Built-in constants (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"true"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"false"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"maxint"}],")"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"support.function"}]," - Built-in functions (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"writeln"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"readln"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"chr"}],", etc.)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"identifier"}]," - User-defined identifiers"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"string"}]," - String and character literals (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"'...'"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#65"}],")"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"string.escape"}]," - Escaped quote inside string (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"''"}],")"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"number"}]," - Decimal number literals"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"number.hex"}]," - Hexadecimal literals (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],")"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"annotation"}]," - Compiler directives (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"{$...}"}],")"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"delimiter"}]," - Operators and punctuation"]}],"\n"]}]
+35:["$","h3",null,{"id":"klive-script","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Klive Script",["$","$L12",null,{"id":"klive-script"}]]}]
+36:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"comment"}]," - Comments"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"keyword"}]," - Language keywords"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"statement"}]," - Statement keywords"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"identifier"}]," - Identifiers"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"regexp"}]," - Regular expressions"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"regexp.escape"}]," - Regex escapes"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"string.escape"}]," - String escapes"]}],"\n"]}]
+37:["$","h2",null,{"id":"partial-customization","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Partial Customization",["$","$L12",null,{"id":"partial-customization"}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You don’t need to specify all tokens. You can override only the tokens you want to customize:"}]
+39:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L4c",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"{"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"  \"lightTheme\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"comment\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"008000\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"keyword\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"0000ff\""}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"  }"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"}"}]}]]}]]}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Unspecified tokens will use their default colors."}]
+3b:["$","h2",null,{"id":"tips-for-choosing-colors","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Tips for Choosing Colors",["$","$L12",null,{"id":"tips-for-choosing-colors"}]]}]
+3c:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Ensure Contrast"}],": Make sure there’s sufficient contrast between foreground and background colors"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Test Both Themes"}],": Define colors for both dark and light themes"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Stay Consistent"}],": Use a consistent color scheme across related token types"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Start Simple"}],": Begin by customizing just a few key tokens (comments, keywords, identifiers)"]}],"\n"]}]
+3d:["$","h2",null,{"id":"troubleshooting","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Troubleshooting",["$","$L12",null,{"id":"troubleshooting"}]]}]
+3e:["$","h3",null,{"id":"colors-not-applied","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Colors Not Applied",["$","$L12",null,{"id":"colors-not-applied"}]]}]
+3f:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Verify the file is in the correct folder with the correct name"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Check that the JSON syntax is valid (no missing commas, brackets, etc.)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Ensure you’ve restarted Klive IDE"}],"\n"]}]
+40:["$","h3",null,{"id":"invalid-json","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Invalid JSON",["$","$L12",null,{"id":"invalid-json"}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Use a JSON validator or editor with JSON support to check for syntax errors."}]
+42:["$","h3",null,{"id":"wrong-colors-displayed","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Wrong Colors Displayed",["$","$L12",null,{"id":"wrong-colors-displayed"}]]}]
+43:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Verify you’re using 6-digit hex values without the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#"}]," prefix"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Check that you’re editing the right theme section (dark vs light)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Ensure file permissions allow Klive to read the file"}],"\n"]}]
+44:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:10:props:children:0:props:style","data-pagefind-ignore":"all","children":"⚠️"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If a token file cannot be read or parsed, Klive will silently skip it and use default colors. Check your JSON syntax if your customizations don’t appear."}]}]]}]
+47:null
+a:300
+4d:["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"    }"}]}]
+4e:["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"  },"}]}]
+4f:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"  \"lightTheme\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}]
+50:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"comment\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"237122\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}]
+51:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"keyword\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}]
+52:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"foreground\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"0070c0\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}]
+53:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"fontStyle\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"bold\""}]]}]
+54:["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"    },"}]}]
+55:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"identifier\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"795e26\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}]
+56:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"register\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"0089ba\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}]
+57:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"variable\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"795e26\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}]
+58:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"namespace\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"267f99\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}]
+59:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"struct\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"267f99\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}]
+5a:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"equ\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"0070c1\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}]
+5b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"    \"macro\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": {"}]]}]
+5c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"foreground\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"267f99\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}]
+5d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"      \"fontStyle\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"bold italic\""}]]}]
+5e:["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"    }"}]}]
+5f:["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"  }"}]}]
+60:["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"}"}]}]
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

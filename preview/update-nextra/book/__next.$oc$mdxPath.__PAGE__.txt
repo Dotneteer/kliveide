@@ -1,0 +1,134 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+5:Tcef,import { Callout } from 'nextra/components';
+
+# Inside the ZX Spectrum Next: Z80 Assembly, System Concepts, and Practical Programming
+
+Welcome to my book about the ZX Spectrum Next and its programming with Z80 Assembly. 
+
+<Callout type="warning" emoji="💡">
+This book is still in development, so what you see here is a very early and incomplete version.
+</Callout>
+
+Copyright © 2025-2026 István Novák
+
+This work is licensed under the Creative Commons Attribution 4.0 International License (CC BY 4.0). You are free to:
+
+- **Share** — copy and redistribute the material in any medium or format
+- **Adapt** — remix, transform, and build upon the material for any purpose, even commercially
+
+Under the following terms:
+
+- **Attribution** — You must give appropriate credit to István Novák, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
+
+To view a copy of this license, visit: https://creativecommons.org/licenses/by/4.0/
+
+## Dedication
+
+Dad, Mom, without your support, I would not become the proud family man and software engineer I am.
+
+Your son
+
+## Table of Contents
+
+### Front Matter
+
+- [Preface](./book/preface.mdx)
+- [Introduction](./book/introduction.mdx)
+- [Flying Start](./book/flying-start.mdx)
+
+### Part I — The CPU, Bus, and Memory
+
+1. [Z80N: The Next's Z80 CPU](./book/01-z80n.mdx)
+2. [Talking to the Hardware: I/O Ports and NextRegs](./book/02-io-and-nextregs.mdx)
+3. [Memory Architecture: ROM, RAM, Banks, and the MMU](./book/03-memory.mdx)
+
+### Part II — Time and Events
+
+4. [Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System](./book/04-interrupts.mdx)
+5. [The CTC: Counter/Timer Circuit](./book/05-ctc.mdx)
+6. [The zxnDMA: Moving Data Without the CPU](./book/06-zxndma.mdx)
+
+### Part III — Input
+
+7. [Input Devices: Keyboard, Joysticks, Mouse](./book/07-input.mdx)
+
+### Part IV — Video
+
+8. [The ULA Screen and Border](./book/08-ula-screen.mdx)
+9. [Palettes and Colour on the Next](./book/09-palettes.mdx)
+10. [LoRes Mode](./book/10-lores.mdx)
+11. [Layer 2: True-Colour Bitmap](./book/11-layer2.mdx)
+12. [The Tilemap](./book/12-tilemap.mdx)
+13. [Hardware Sprites](./book/13-sprites.mdx)
+14. [The Copper: Graphics Co-Processor](./book/14-copper.mdx)
+15. [Compositing, Priorities, and Layer Combinations](./book/15-compositing.mdx)
+
+### Part V — Audio
+
+16. [The Beeper and the Border-Sound Heritage](./book/16-beeper.mdx)
+17. [The AY-3-8912 Family: Three Chips, Nine Channels](./book/17-ay.mdx)
+18. [DACs and Sample Playback](./book/18-dac.mdx)
+
+### Part VI — Storage and the Outside World
+
+19. [NextZXOS, esxDOS, and the SD Card](./book/19-storage.mdx)
+20. [The UART and the ESP WiFi Module](./book/20-uart.mdx)
+21. [The Real-Time Clock and I²C](./book/21-rtc-i2c.mdx)
+
+### Part VII — Putting It All Together
+
+22. [Building a Small Game](./book/22-game.mdx)
+
+### Appendices
+
+- [Appendix A: The NEX File Format](./book/app-A-nex-file-format.md)
+- [Appendix B: NextReg Reference](./book/app-B-nextreg-reference.md)
+- [Appendix C: I/O Ports Reference](./book/app-C-io-ports-reference.md)
+- [Appendix D: Klive Z80 Assembly Quick Reference](./book/app-D-klive-asm-reference.md)
+- [Appendix E: Glossary](./book/app-E-glossary.md)a:X
+f:X
+f:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Dedication","id":"dedication","depth":2},{"value":"Table of Contents","id":"table-of-contents","depth":2},{"value":"Front Matter","id":"front-matter","depth":3},{"value":"Part I — The CPU, Bus, and Memory","id":"part-i--the-cpu-bus-and-memory","depth":3},{"value":"Part II — Time and Events","id":"part-ii--time-and-events","depth":3},{"value":"Part III — Input","id":"part-iii--input","depth":3},{"value":"Part IV — Video","id":"part-iv--video","depth":3},{"value":"Part V — Audio","id":"part-v--audio","depth":3},{"value":"Part VI — Storage and the Outside World","id":"part-vi--storage-and-the-outside-world","depth":3},{"value":"Part VII — Putting It All Together","id":"part-vii--putting-it-all-together","depth":3},{"value":"Appendices","id":"appendices","depth":3}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"Inside the ZX Spectrum Next: Z80 Assembly, System Concepts, and Practical Programming","filePath":"content/book.mdx","timestamp":1788420416000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+26:I[484,[],"OutletBoundary"]
+27:"$Sreact.suspense"
+29:I[484,[],"ViewportBoundary"]
+2a:I[484,[],"MetadataBoundary"]
+2b:I[7121,[],""]
+2c:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Inside the ZX Spectrum Next: Z80 Assembly, System Concepts, and Practical Programming","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Welcome to my book about the ZX Spectrum Next and its programming with Z80 Assembly."}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This book is still in development, so what you see here is a very early and incomplete version."}]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Copyright © 2025-2026 István Novák"}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This work is licensed under the Creative Commons Attribution 4.0 International License (CC BY 4.0). You are free to:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Share"}]," — copy and redistribute the material in any medium or format"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Adapt"}]," — remix, transform, and build upon the material for any purpose, even commercially"]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Under the following terms:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Attribution"}]," — You must give appropriate credit to István Novák, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use."]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To view a copy of this license, visit: ",["$","a",null,{"href":"https://creativecommons.org/licenses/by/4.0/","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["https://creativecommons.org/licenses/by/4.0/",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]]}],"\n",["$","h2",null,{"id":"dedication","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Dedication",["$","$L12",null,{"id":"dedication"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Dad, Mom, without your support, I would not become the proud family man and software engineer I am."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Your son"}],"\n",["$","h2",null,{"id":"table-of-contents","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Table of Contents","$L13"]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25"]}]
+8:["$","$L26",null,{"children":["$","$27",null,{"name":"Next.MetadataOutlet","children":"$@28"}]}]
+b:["$","$1","h",{"children":[null,["$","$L29",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L2a",null,{"children":["$","$27",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Inside the ZX Spectrum Next: Z80 Assembly, System Concepts, and Practical Programming - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L2b",null,{"parallelRouterKey":"children","template":["$","$L2c",null,{}]}]]}]
+11:true
+2d:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],""]
+13:["$","$L12",null,{"id":"table-of-contents"}]
+14:["$","h3",null,{"id":"front-matter","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Front Matter",["$","$L12",null,{"id":"front-matter"}]]}]
+15:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/preface","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Preface"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/introduction","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Introduction"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/flying-start","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Flying Start"}]}],"\n"]}]
+16:["$","h3",null,{"id":"part-i--the-cpu-bus-and-memory","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part I — The CPU, Bus, and Memory",["$","$L12",null,{"id":"part-i--the-cpu-bus-and-memory"}]]}]
+17:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/01-z80n","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Z80N: The Next’s Z80 CPU"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/02-io-and-nextregs","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Talking to the Hardware: I/O Ports and NextRegs"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/03-memory","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Memory Architecture: ROM, RAM, Banks, and the MMU"}]}],"\n"]}]
+18:["$","h3",null,{"id":"part-ii--time-and-events","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part II — Time and Events",["$","$L12",null,{"id":"part-ii--time-and-events"}]]}]
+19:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"4","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/04-interrupts","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Interrupts: IM1, IM2, and the Next’s Multi-Source Interrupt System"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/05-ctc","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The CTC: Counter/Timer Circuit"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/06-zxndma","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The zxnDMA: Moving Data Without the CPU"}]}],"\n"]}]
+1a:["$","h3",null,{"id":"part-iii--input","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part III — Input",["$","$L12",null,{"id":"part-iii--input"}]]}]
+1b:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"7","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/07-input","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Input Devices: Keyboard, Joysticks, Mouse"}]}],"\n"]}]
+1c:["$","h3",null,{"id":"part-iv--video","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part IV — Video",["$","$L12",null,{"id":"part-iv--video"}]]}]
+1d:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"8","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/08-ula-screen","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The ULA Screen and Border"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/09-palettes","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Palettes and Colour on the Next"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/10-lores","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"LoRes Mode"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/11-layer2","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Layer 2: True-Colour Bitmap"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/12-tilemap","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Tilemap"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/13-sprites","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Hardware Sprites"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/14-copper","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Copper: Graphics Co-Processor"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/15-compositing","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Compositing, Priorities, and Layer Combinations"}]}],"\n"]}]
+1e:["$","h3",null,{"id":"part-v--audio","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part V — Audio",["$","$L12",null,{"id":"part-v--audio"}]]}]
+1f:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"16","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/16-beeper","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Beeper and the Border-Sound Heritage"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/17-ay","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The AY-3-8912 Family: Three Chips, Nine Channels"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/18-dac","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DACs and Sample Playback"}]}],"\n"]}]
+20:["$","h3",null,{"id":"part-vi--storage-and-the-outside-world","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part VI — Storage and the Outside World",["$","$L12",null,{"id":"part-vi--storage-and-the-outside-world"}]]}]
+21:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"19","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/19-storage","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"NextZXOS, esxDOS, and the SD Card"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/20-uart","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The UART and the ESP WiFi Module"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/21-rtc-i2c","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Real-Time Clock and I²C"}]}],"\n"]}]
+22:["$","h3",null,{"id":"part-vii--putting-it-all-together","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Part VII — Putting It All Together",["$","$L12",null,{"id":"part-vii--putting-it-all-together"}]]}]
+23:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"22","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/22-game","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Building a Small Game"}]}],"\n"]}]
+24:["$","h3",null,{"id":"appendices","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Appendices",["$","$L12",null,{"id":"appendices"}]]}]
+25:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/app-A-nex-file-format","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Appendix A: The NEX File Format"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/app-B-nextreg-reference","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Appendix B: NextReg Reference"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/app-C-io-ports-reference","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Appendix C: I/O Ports Reference"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/app-D-klive-asm-reference","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Appendix D: Klive Z80 Assembly Quick Reference"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L2d",null,{"href":"./book/app-E-glossary","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Appendix E: Glossary"}]}],"\n"]}]
+28:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

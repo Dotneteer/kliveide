@@ -1,0 +1,64 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+5:Td8f,# Preface
+
+Everyone has a personal story about their ZX Spectrum. Mine started before I even got my first Speccy. One day, my late father (I'm bearing his name, István Novák) brought back a TI-59 programmable calculator from his workspace. This wasn't just a calculator&mdash;it had keys with mysterious text that went far beyond simple arithmetic. As a kid with an affection for math, I learned programming from its user guide. My father saw my enthusiasm and asked my uncle, György Marczin (an electrical engineer), to help me improve.
+
+I live in Hungary. In 1981, when I was 13, Hungary was part of the communist bloc. My uncle, working for a large state-owned company, had the privilege of traveling to Western Europe. He saw the spark in me and helped me get a ZX81 from West Germany. Getting it wasn't simple&mdash;my father had to buy Deutschmarks at the Hungarian black markets, since the Forint wasn't convertible at the time.
+
+The 16K expansion pack for the ZX81 was great, but it became too small. Two years later, my father bought me a ZX Spectrum 48K. I went through the same awakening as countless others around the world who touched that rubber-keyed wonder.
+
+## School Days and Programming Contests
+
+We didn't know it at the time, but in about seven years we'd have a revolution&mdash;a relatively peaceful transition from communism to something else. But we already had a technical revolution happening.
+
+In my first year at gymnasium (Berze Nagy János Gymnasium), HT-1080Z school computers (TRS-80 clones) became available for Hungarian students. We had four of them in my school! With other awakened buddies, we formed a small group that spent time in the computer lab before and after teaching hours. Another young electrical engineer, about 15 years older than us (Tibor Veres), coached us. Soon we were participating in&mdash;and winning&mdash;programming contests across Hungary.
+
+After the gymnasium, I became a software engineer at the Technical University of Budapest and earned a doctoral title in software technology.
+
+## From Testing to Emulation
+
+At the beginning of the 2010s, I found myself as a freelance technology coach, helping software development teams and evangelizing automated testing. I needed something to demonstrate unit and integration testing. About ten years ago, one January morning, I woke up with a dream: let me go back to my childhood and create a ZX Spectrum emulator. Creating a high-fidelity emulator requires extensive automated tests—it would serve as the perfect example for designing and writing tests.
+
+And so, my first emulator was born: SpectNetIDE (written in C#), integrated into Visual Studio. Years later, when I coached teams on Web technologies, I started implementing Klive IDE, a TypeScript implementation.
+
+## The ZX Spectrum Next Challenge
+
+I witnessed the ZX Spectrum revival with the ZX Spectrum Next. Though I missed the KS1 campaign, I have KS2 and (will have) KS3 machines. I felt a personal challenge to emulate this powerful successor in my Klive IDE.
+
+While working on the emulator, I learned a tremendous amount about this great machine from a programmer's point of view: how its Z80N CPU, memory system, graphics layers, audio, storage, and timing features fit together when you actually want to make something run. The Next pushes boundaries—it's not just nostalgia, it's modern retro hardware done right.
+
+Let me share these learnings with the community.
+
+&mdash; István Nováka:X
+f:X
+f:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"School Days and Programming Contests","id":"school-days-and-programming-contests","depth":2},{"value":"From Testing to Emulation","id":"from-testing-to-emulation","depth":2},{"value":"The ZX Spectrum Next Challenge","id":"the-zx-spectrum-next-challenge","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"Preface","filePath":"content/book/preface.mdx","timestamp":1788420416000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+19:I[484,[],"OutletBoundary"]
+1a:"$Sreact.suspense"
+1c:I[484,[],"ViewportBoundary"]
+1d:I[484,[],"MetadataBoundary"]
+1e:I[7121,[],""]
+1f:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Preface","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Everyone has a personal story about their ZX Spectrum. Mine started before I even got my first Speccy. One day, my late father (I’m bearing his name, István Novák) brought back a TI-59 programmable calculator from his workspace. This wasn’t just a calculator—it had keys with mysterious text that went far beyond simple arithmetic. As a kid with an affection for math, I learned programming from its user guide. My father saw my enthusiasm and asked my uncle, György Marczin (an electrical engineer), to help me improve."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"I live in Hungary. In 1981, when I was 13, Hungary was part of the communist bloc. My uncle, working for a large state-owned company, had the privilege of traveling to Western Europe. He saw the spark in me and helped me get a ZX81 from West Germany. Getting it wasn’t simple—my father had to buy Deutschmarks at the Hungarian black markets, since the Forint wasn’t convertible at the time."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The 16K expansion pack for the ZX81 was great, but it became too small. Two years later, my father bought me a ZX Spectrum 48K. I went through the same awakening as countless others around the world who touched that rubber-keyed wonder."}],"\n",["$","h2",null,{"id":"school-days-and-programming-contests","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["School Days and Programming Contests",["$","$L12",null,{"id":"school-days-and-programming-contests"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"We didn’t know it at the time, but in about seven years we’d have a revolution—a relatively peaceful transition from communism to something else. But we already had a technical revolution happening."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In my first year at gymnasium (Berze Nagy János Gymnasium), HT-1080Z school computers (TRS-80 clones) became available for Hungarian students. We had four of them in my school! With other awakened buddies, we formed a small group that spent time in the computer lab before and after teaching hours. Another young electrical engineer, about 15 years older than us (Tibor Veres), coached us. Soon we were participating in—and winning—programming contests across Hungary."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After the gymnasium, I became a software engineer at the Technical University of Budapest and earned a doctoral title in software technology."}],"\n",["$","h2",null,{"id":"from-testing-to-emulation","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["From Testing to Emulation",["$","$L12",null,{"id":"from-testing-to-emulation"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"At the beginning of the 2010s, I found myself as a freelance technology coach, helping software development teams and evangelizing automated testing. I needed something to demonstrate unit and integration testing. About ten years ago, one January morning, I woke up with a dream: let me go back to my childhood and create a ZX Spectrum emulator. Creating a high-fidelity emulator requires extensive automated tests—it would serve as the perfect example for designing and writing tests."}],"\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18"]}]
+8:["$","$L19",null,{"children":["$","$1a",null,{"name":"Next.MetadataOutlet","children":"$@1b"}]}]
+b:["$","$1","h",{"children":[null,["$","$L1c",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L1d",null,{"children":["$","$1a",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Preface - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L1e",null,{"parallelRouterKey":"children","template":["$","$L1f",null,{}]}]]}]
+11:true
+13:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"And so, my first emulator was born: SpectNetIDE (written in C#), integrated into Visual Studio. Years later, when I coached teams on Web technologies, I started implementing Klive IDE, a TypeScript implementation."}]
+14:["$","h2",null,{"id":"the-zx-spectrum-next-challenge","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The ZX Spectrum Next Challenge",["$","$L12",null,{"id":"the-zx-spectrum-next-challenge"}]]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"I witnessed the ZX Spectrum revival with the ZX Spectrum Next. Though I missed the KS1 campaign, I have KS2 and (will have) KS3 machines. I felt a personal challenge to emulate this powerful successor in my Klive IDE."}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"While working on the emulator, I learned a tremendous amount about this great machine from a programmer’s point of view: how its Z80N CPU, memory system, graphics layers, audio, storage, and timing features fit together when you actually want to make something run. The Next pushes boundaries—it’s not just nostalgia, it’s modern retro hardware done right."}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Let me share these learnings with the community."}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"— István Novák"}]
+1b:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

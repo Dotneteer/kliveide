@@ -1,0 +1,118 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+5:T111a,import { Callout } from 'nextra/components'
+
+# The Disassembly View
+
+You can view the disassembly of the memory with the **IDE | Show Disassembly** menu command:
+
+<ClickableImage src="/images/working-with-ide/disass-view.png" width={512} />
+
+Besides viewing the disassembly, you can add breakpoints by clicking with the right mouse button to the left of the line address (see address line `0007`):
+
+<ClickableImage src="/images/working-with-ide/disassembly-breakpoint-message.png" width={512} />
+
+When you click an existing breakpoint with the right mouse button, the IDE removes it.
+
+<Callout type="info" emoji="💡">
+Currently, you can only add execution breakpoints to the Disassembly view. With interactive [commands](/commands-reference) (see the ones starting with `bp-`), you can create memory and I/O operations breakpoints.
+</Callout>
+
+By default, when you display the disassembly, it uses the current value of the PC (Program Counter) register and disassembles up to 1024 bytes of code.
+
+Turn off the **Follow PC** option to disassemble the entire memory (or a selected bank). With this option turned off, models supporting memory paging display a second row of options:
+
+<ClickableImage src="/images/working-with-ide/banked-disass-view.png" width={512} />
+
+## Display Options
+
+The Disassembly View provides a few options to display and navigate the memory contents:
+- **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses, opcodes, and instructions are displayed with decimal numbers; otherwise, they are hexadecimal.
+- **Ram**: This option (on, by default) allows you to disassemble the RAM's contents.
+- **Screen**: This option (off, by default) lets you disassemble the screen memory's ($4000-$5AFF) contents.
+- **Bank**: This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging.
+- **Go To**: Type an address into this box and press Enter to jump to the particular address. If the particular address is not at a disassembled instruction's boundary, it will settle at the next instruction. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses.
+
+A little icon (up or down arrow) is before the **Go To** address box. Unless the machine is paused, this icon is disabled. When the machine is in a paused state, clicking the button jumps to the disassembly at the address pointed by the PC. The direction of the arrow indicates where the PC position can be found relative to the current view.
+
+## Banked Disassembly Views
+
+When your model supports memory paging, a new switch, **64K View**, is displayed in the second header row. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the **Select bank** dropdown. The Disassembly View will display only the disassembled contents of that segment, even if that segment is not paged in.
+
+The **Offset** dropdown lets you select a disassembly offset from one of the 8K page boundaries. This selection may help set a disassembly base address to emulate the page's location.
+
+## Machine-Specific Memory Partitions
+
+### ZX Spectrum 48K
+
+This model supports only the 64K view.
+
+### ZX Spectrum 128K
+
+The `ROM 0` and `ROM 1` segments allow you to access the two ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` or `BANK 7` segments.
+
+### ZX Spectrum +2E, +3E
+
+The `ROM 0`... `ROM 3` segments allow you to access the four ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` ... `BANK 7` segments.
+
+### Cambridge Z88
+
+You can access one of the available 256 banks (16K each) by selecting the bank's index from the dropdown.
+
+### ZX Spectrum Next
+
+The dropdown provides these options to access memory segments:
+- IDs from `00` to `DF` (`000` to `224` in decimal view) to select an 8K RAM bank. The view does not support displaying them as 16K banks. 
+- `M0`, `M1` ... `MF`: The 16 DivMMC RAM banks (8K each)
+- `NROM0` ... `NROM3`: The ROM pages of the ZX Next OS (16K each)
+- `ALTR0`, `ALTR1`: The alternate ROM pages (16K each)
+- `DivMR`: The DivMMC ROM (8K)a:X
+f:X
+f:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Display Options","id":"display-options","depth":2},{"value":"Banked Disassembly Views","id":"banked-disassembly-views","depth":2},{"value":"Machine-Specific Memory Partitions","id":"machine-specific-memory-partitions","depth":2},{"value":"ZX Spectrum 48K","id":"zx-spectrum-48k","depth":3},{"value":"ZX Spectrum 128K","id":"zx-spectrum-128k","depth":3},{"value":"ZX Spectrum +2E, +3E","id":"zx-spectrum-2e-3e","depth":3},{"value":"Cambridge Z88","id":"cambridge-z88","depth":3},{"value":"ZX Spectrum Next","id":"zx-spectrum-next","depth":3}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"The Disassembly View","filePath":"content/working-with-ide/disassembly.mdx","timestamp":1788420416000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],""]
+27:I[484,[],"OutletBoundary"]
+28:"$Sreact.suspense"
+2a:I[484,[],"ViewportBoundary"]
+2b:I[484,[],"MetadataBoundary"]
+2c:I[7121,[],""]
+2d:I[4581,[],""]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/disass-view.png","image"]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/disassembly-breakpoint-message.png","image"]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Disassembly View","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can view the disassembly of the memory with the ",["$","strong",null,{"children":"IDE | Show Disassembly"}]," menu command:"]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/preview/update-nextra/images/working-with-ide/disass-view.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/preview/update-nextra/images/working-with-ide/disass-view.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":512,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Besides viewing the disassembly, you can add breakpoints by clicking with the right mouse button to the left of the line address (see address line ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0007"}],"):"]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/preview/update-nextra/images/working-with-ide/disassembly-breakpoint-message.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/preview/update-nextra/images/working-with-ide/disassembly-breakpoint-message.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":512,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you click an existing breakpoint with the right mouse button, the IDE removes it."}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Currently, you can only add execution breakpoints to the Disassembly view. With interactive ",["$","$L12",null,{"href":"/commands-reference","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"commands"}]," (see the ones starting with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-"}],"), you can create memory and I/O operations breakpoints."]}]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"By default, when you display the disassembly, it uses the current value of the PC (Program Counter) register and disassembles up to 1024 bytes of code."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Turn off the ",["$","strong",null,{"children":"Follow PC"}]," option to disassemble the entire memory (or a selected bank). With this option turned off, models supporting memory paging display a second row of options:"]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/preview/update-nextra/images/working-with-ide/banked-disass-view.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":"$L13"}]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26"]}]
+8:["$","$L27",null,{"children":["$","$28",null,{"name":"Next.MetadataOutlet","children":"$@29"}]}]
+b:["$","$1","h",{"children":[null,["$","$L2a",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L2b",null,{"children":["$","$28",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Disassembly View - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L2c",null,{"parallelRouterKey":"children","template":["$","$L2d",null,{}]}]]}]
+11:true
+2e:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/banked-disass-view.png","image"]
+13:["$","img",null,{"src":"/kliveide/preview/update-nextra/images/working-with-ide/banked-disass-view.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":512,"height":"auto"}}]
+14:["$","h2",null,{"id":"display-options","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Display Options",["$","$L2e",null,{"id":"display-options"}]]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Disassembly View provides a few options to display and navigate the memory contents:"}]
+16:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Decimal"}],": Turns on or off the decimal display (off, by default). When turned off, memory addresses, opcodes, and instructions are displayed with decimal numbers; otherwise, they are hexadecimal."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Ram"}],": This option (on, by default) allows you to disassemble the RAM’s contents."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Screen"}],": This option (off, by default) lets you disassemble the screen memory’s ($4000-$5AFF) contents."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bank"}],": This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Go To"}],": Type an address into this box and press Enter to jump to the particular address. If the particular address is not at a disassembled instruction’s boundary, it will settle at the next instruction. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses."]}],"\n"]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A little icon (up or down arrow) is before the ",["$","strong",null,{"children":"Go To"}]," address box. Unless the machine is paused, this icon is disabled. When the machine is in a paused state, clicking the button jumps to the disassembly at the address pointed by the PC. The direction of the arrow indicates where the PC position can be found relative to the current view."]}]
+18:["$","h2",null,{"id":"banked-disassembly-views","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Banked Disassembly Views",["$","$L2e",null,{"id":"banked-disassembly-views"}]]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When your model supports memory paging, a new switch, ",["$","strong",null,{"children":"64K View"}],", is displayed in the second header row. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the ",["$","strong",null,{"children":"Select bank"}]," dropdown. The Disassembly View will display only the disassembled contents of that segment, even if that segment is not paged in."]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"Offset"}]," dropdown lets you select a disassembly offset from one of the 8K page boundaries. This selection may help set a disassembly base address to emulate the page’s location."]}]
+1b:["$","h2",null,{"id":"machine-specific-memory-partitions","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Machine-Specific Memory Partitions",["$","$L2e",null,{"id":"machine-specific-memory-partitions"}]]}]
+1c:["$","h3",null,{"id":"zx-spectrum-48k","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ZX Spectrum 48K",["$","$L2e",null,{"id":"zx-spectrum-48k"}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This model supports only the 64K view."}]
+1e:["$","h3",null,{"id":"zx-spectrum-128k","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ZX Spectrum 128K",["$","$L2e",null,{"id":"zx-spectrum-128k"}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ROM 0"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ROM 1"}]," segments allow you to access the two ROM pages (16K each). The RAM banks (16K each) can be selected with one of the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BANK 0"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BANK 7"}]," segments."]}]
+20:["$","h3",null,{"id":"zx-spectrum-2e-3e","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ZX Spectrum +2E, +3E",["$","$L2e",null,{"id":"zx-spectrum-2e-3e"}]]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ROM 0"}],"… ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ROM 3"}]," segments allow you to access the four ROM pages (16K each). The RAM banks (16K each) can be selected with one of the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BANK 0"}]," … ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BANK 7"}]," segments."]}]
+22:["$","h3",null,{"id":"cambridge-z88","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Cambridge Z88",["$","$L2e",null,{"id":"cambridge-z88"}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can access one of the available 256 banks (16K each) by selecting the bank’s index from the dropdown."}]
+24:["$","h3",null,{"id":"zx-spectrum-next","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ZX Spectrum Next",["$","$L2e",null,{"id":"zx-spectrum-next"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The dropdown provides these options to access memory segments:"}]
+26:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["IDs from ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"00"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DF"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"000"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"224"}]," in decimal view) to select an 8K RAM bank. The view does not support displaying them as 16K banks."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"M0"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"M1"}]," … ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MF"}],": The 16 DivMMC RAM banks (8K each)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NROM0"}]," … ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NROM3"}],": The ROM pages of the ZX Next OS (16K each)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ALTR0"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ALTR1"}],": The alternate ROM pages (16K each)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DivMR"}],": The DivMMC ROM (8K)"]}],"\n"]}]
+29:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

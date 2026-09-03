@@ -1,0 +1,135 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+5:T146f,import { Callout } from 'nextra/components'
+
+# Displaying the Memory Contents
+
+You can view the contents of the memory with the **IDE | Show Machine Memory** menu command that displays the contents of the full 64K memory addressable by Z80:
+
+<ClickableImage src="/images/working-with-ide/mem-view.png" width={512} />
+
+While the ZX Spectrum 48K does not support paging, other models do. When you use them, you can choose to show only the contents of a particular bank:
+
+<ClickableImage src="/images/working-with-ide/banked-mem-view.png" width={512} />
+
+Some models (such as ZX Spectrum Next or Cambridge Z88) offer you many banks to choose from:
+
+<ClickableImage src="/images/working-with-ide/next-mem-view.png" width={512} />
+
+## Display Options
+
+The Memory View provides several options to display and navigate the memory contents:
+- **Decimal**: Turns on or off the decimal display (off, by default). When turned on, memory addresses and content are displayed with decimal numbers; otherwise, they are hexadecimal.
+- **View**: A dropdown menu to select the memory layout display mode:
+  - **8B / 1 col**: Display 8 bytes per row in a single column (one dump section).
+  - **8B / 2 col**: Display 8 bytes per row in two columns (two dump sections side by side). This is the default mode.
+  - **16B / 1 col**: Display 16 bytes per row in a single column.
+- **Chars**: This toggles the display of the character view for a particular memory section (on, by default). When enabled, each byte's character representation is shown alongside the hex dump. Hovering over a byte in the hex area highlights the corresponding character in the character section with a border.
+- **Bank**: This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging.
+- **Go To**: Type an address into this box and press Enter to jump to the particular address. Though memory sections are aligned to 8-byte boundaries when jumping to a new address, the designated address's content flashes for about 3 seconds to let you identify the jump target. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses.
+
+## Banked Memory Views
+
+A new switch, **64K View**, is displayed in the second header row when your model supports memory paging. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the **Select bank** dropdown. The Memory View will display only the contents of that memory even if that segment is not paged in.
+
+## Edit Memory Content
+
+When you hover the mouse over a memory address that represents RAM, you can edit its content by right-clicking it:
+
+<ClickableImage src="/images/working-with-ide/edit-memory.png" width={256} />
+
+You can specify the new value with decimal numbers, hexadecimal numbers (use the `$` prefix), or binary numbers (use the `%` prefix). You can use spaces to group digits; the IDE will remove them.
+
+If the specified value cannot be parsed, a red border marks the invalid state. Clicking the **Set** button or pressing Enter will set the contents to the specified value.
+
+With this dialog, you can write 1, 2, 3, or 4 consecutive bytes into the memory (select the size from the dropdown). The given value is entered as a little-endian value (LSB first). However, checking the **Big-endian write** flag stores the MSB first. This flag is available only for 2, 3, and 4-byte values.
+
+<Callout type="info" emoji="💡">
+Writing into the memory can be done while the machine is running. In this case, the machine may overwrite the modified value you set with this dialog! If necessary, pause the machine before setting the content of a particular memory address.
+</Callout>
+
+<Callout type="info" emoji="💡">
+Though it seems unlogical, this command allows you to write memory contents while the machine is stopped. This feature may benefit several machines (such as Z88) with flash drives used as the operational memory.
+</Callout>
+
+## Machine-Specific Memory Partitions
+
+### ZX Spectrum 48K
+
+This model supports only the 64K view.
+
+### ZX Spectrum 128K
+
+The `ROM 0` and `ROM 1` segments allow you to access the two ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` or `BANK 7` segments.
+
+### ZX Spectrum +2E, +3E
+
+The `ROM 0`... `ROM 3` segments allow you to access the four ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` ... `BANK 7` segments.
+
+### Cambridge Z88
+
+You can access one of the available 256 banks (16K each) by selecting the bank's index from the dropdown.
+
+### ZX Spectrum Next
+
+The dropdown provides these options to access memory segments:
+- IDs from `00` to `DF` (`000` to `224` in decimal view) to select an 8K RAM bank. The view does not support displaying them as 16K banks. 
+- `M0`, `M1` ... `MF`: The 16 DivMMC RAM banks (8K each)
+- `NROM0` ... `NROM3`: The ROM pages of the ZX Next OS (16K each)
+- `ALTR0`, `ALTR1`: The alternate ROM pages (16K each)
+- `DivMR`: The DivMMC ROM (8K)a:X
+f:X
+f:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Display Options","id":"display-options","depth":2},{"value":"Banked Memory Views","id":"banked-memory-views","depth":2},{"value":"Edit Memory Content","id":"edit-memory-content","depth":2},{"value":"Machine-Specific Memory Partitions","id":"machine-specific-memory-partitions","depth":2},{"value":"ZX Spectrum 48K","id":"zx-spectrum-48k","depth":3},{"value":"ZX Spectrum 128K","id":"zx-spectrum-128k","depth":3},{"value":"ZX Spectrum +2E, +3E","id":"zx-spectrum-2e-3e","depth":3},{"value":"Cambridge Z88","id":"cambridge-z88","depth":3},{"value":"ZX Spectrum Next","id":"zx-spectrum-next","depth":3}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"Displaying the Memory Contents","filePath":"content/working-with-ide/memory.mdx","timestamp":1788420416000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+2d:I[484,[],"OutletBoundary"]
+2e:"$Sreact.suspense"
+30:I[484,[],"ViewportBoundary"]
+31:I[484,[],"MetadataBoundary"]
+32:I[7121,[],""]
+33:I[4581,[],""]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/mem-view.png","image"]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/banked-mem-view.png","image"]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/next-mem-view.png","image"]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Displaying the Memory Contents","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can view the contents of the memory with the ",["$","strong",null,{"children":"IDE | Show Machine Memory"}]," menu command that displays the contents of the full 64K memory addressable by Z80:"]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/preview/update-nextra/images/working-with-ide/mem-view.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/preview/update-nextra/images/working-with-ide/mem-view.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":512,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"While the ZX Spectrum 48K does not support paging, other models do. When you use them, you can choose to show only the contents of a particular bank:"}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/preview/update-nextra/images/working-with-ide/banked-mem-view.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/preview/update-nextra/images/working-with-ide/banked-mem-view.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":512,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Some models (such as ZX Spectrum Next or Cambridge Z88) offer you many banks to choose from:"}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/preview/update-nextra/images/working-with-ide/next-mem-view.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/preview/update-nextra/images/working-with-ide/next-mem-view.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":512,"height":"auto"}}]}]}],"\n",["$","h2",null,{"id":"display-options","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Display Options",["$","$L12",null,{"id":"display-options"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Memory View provides several options to display and navigate the memory contents:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Decimal"}],": Turns on or off the decimal display (off, by default). When turned on, memory addresses and content are displayed with decimal numbers; otherwise, they are hexadecimal."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"View"}],": A dropdown menu to select the memory layout display mode:","\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"8B / 1 col"}],": Display 8 bytes per row in a single column (one dump section)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"8B / 2 col"}],": Display 8 bytes per row in two columns (two dump sections side by side). This is the default mode."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$L13",": Display 16 bytes per row in a single column."]}],"\n"]}],"\n"]}],"\n","$L14","\n","$L15","\n","$L16","\n"]}],"\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c"]}]
+8:["$","$L2d",null,{"children":["$","$2e",null,{"name":"Next.MetadataOutlet","children":"$@2f"}]}]
+b:["$","$1","h",{"children":[null,["$","$L30",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L31",null,{"children":["$","$2e",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Displaying the Memory Contents - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L32",null,{"parallelRouterKey":"children","template":["$","$L33",null,{}]}]]}]
+11:true
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/edit-memory.png","image"]
+13:["$","strong",null,{"children":"16B / 1 col"}]
+14:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Chars"}],": This toggles the display of the character view for a particular memory section (on, by default). When enabled, each byte’s character representation is shown alongside the hex dump. Hovering over a byte in the hex area highlights the corresponding character in the character section with a border."]}]
+15:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bank"}],": This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging."]}]
+16:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Go To"}],": Type an address into this box and press Enter to jump to the particular address. Though memory sections are aligned to 8-byte boundaries when jumping to a new address, the designated address’s content flashes for about 3 seconds to let you identify the jump target. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses."]}]
+17:["$","h2",null,{"id":"banked-memory-views","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Banked Memory Views",["$","$L12",null,{"id":"banked-memory-views"}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A new switch, ",["$","strong",null,{"children":"64K View"}],", is displayed in the second header row when your model supports memory paging. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the ",["$","strong",null,{"children":"Select bank"}]," dropdown. The Memory View will display only the contents of that memory even if that segment is not paged in."]}]
+19:["$","h2",null,{"id":"edit-memory-content","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Edit Memory Content",["$","$L12",null,{"id":"edit-memory-content"}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you hover the mouse over a memory address that represents RAM, you can edit its content by right-clicking it:"}]
+1b:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/preview/update-nextra/images/working-with-ide/edit-memory.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/preview/update-nextra/images/working-with-ide/edit-memory.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":256,"height":"auto"}}]}]}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can specify the new value with decimal numbers, hexadecimal numbers (use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$"}]," prefix), or binary numbers (use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"%"}]," prefix). You can use spaces to group digits; the IDE will remove them."]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If the specified value cannot be parsed, a red border marks the invalid state. Clicking the ",["$","strong",null,{"children":"Set"}]," button or pressing Enter will set the contents to the specified value."]}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With this dialog, you can write 1, 2, 3, or 4 consecutive bytes into the memory (select the size from the dropdown). The given value is entered as a little-endian value (LSB first). However, checking the ",["$","strong",null,{"children":"Big-endian write"}]," flag stores the MSB first. This flag is available only for 2, 3, and 4-byte values."]}]
+1f:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Writing into the memory can be done while the machine is running. In this case, the machine may overwrite the modified value you set with this dialog! If necessary, pause the machine before setting the content of a particular memory address."}]}]]}]
+20:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$1f:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Though it seems unlogical, this command allows you to write memory contents while the machine is stopped. This feature may benefit several machines (such as Z88) with flash drives used as the operational memory."}]}]]}]
+21:["$","h2",null,{"id":"machine-specific-memory-partitions","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Machine-Specific Memory Partitions",["$","$L12",null,{"id":"machine-specific-memory-partitions"}]]}]
+22:["$","h3",null,{"id":"zx-spectrum-48k","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ZX Spectrum 48K",["$","$L12",null,{"id":"zx-spectrum-48k"}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This model supports only the 64K view."}]
+24:["$","h3",null,{"id":"zx-spectrum-128k","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ZX Spectrum 128K",["$","$L12",null,{"id":"zx-spectrum-128k"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ROM 0"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ROM 1"}]," segments allow you to access the two ROM pages (16K each). The RAM banks (16K each) can be selected with one of the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BANK 0"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BANK 7"}]," segments."]}]
+26:["$","h3",null,{"id":"zx-spectrum-2e-3e","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ZX Spectrum +2E, +3E",["$","$L12",null,{"id":"zx-spectrum-2e-3e"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ROM 0"}],"… ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ROM 3"}]," segments allow you to access the four ROM pages (16K each). The RAM banks (16K each) can be selected with one of the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BANK 0"}]," … ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"BANK 7"}]," segments."]}]
+28:["$","h3",null,{"id":"cambridge-z88","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Cambridge Z88",["$","$L12",null,{"id":"cambridge-z88"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can access one of the available 256 banks (16K each) by selecting the bank’s index from the dropdown."}]
+2a:["$","h3",null,{"id":"zx-spectrum-next","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ZX Spectrum Next",["$","$L12",null,{"id":"zx-spectrum-next"}]]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The dropdown provides these options to access memory segments:"}]
+2c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["IDs from ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"00"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DF"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"000"}]," to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"224"}]," in decimal view) to select an 8K RAM bank. The view does not support displaying them as 16K banks."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"M0"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"M1"}]," … ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MF"}],": The 16 DivMMC RAM banks (8K each)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NROM0"}]," … ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NROM3"}],": The ROM pages of the ZX Next OS (16K each)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ALTR0"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ALTR1"}],": The alternate ROM pages (16K each)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DivMR"}],": The DivMMC ROM (8K)"]}],"\n"]}]
+2f:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

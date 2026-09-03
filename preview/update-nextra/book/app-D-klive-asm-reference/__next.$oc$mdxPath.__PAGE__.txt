@@ -1,0 +1,74 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+5:T81a,# Appendix D: Klive Z80 Assembly Quick Reference
+
+> **Status:** Placeholder. This appendix will be filled in as the book stabilises and we identify exactly which Klive-specific syntax features are used most.
+
+## Synopsis
+
+A focused reference for the Klive Z80 assembly dialect (`.kz80.asm`), targeted at a reader who already knows another Z80 assembler (sjasmplus, Pasmo, z88dk). It covers only what differs from "vanilla" Z80 syntax and the directives the book actually uses.
+
+Planned sections:
+
+- **File and project structure.** Build root, includes, the `.kz80.asm` extension, multi-file projects.
+- **Lexical conventions.** Comment styles, character literals, string escapes, the backtick (`` ` ``) prefix for local labels.
+- **Number literals.** Hex (`$AB`, `0xAB`), binary (`%1010_1010`), decimal, the single-quote thousands-separator style.
+- **Symbol definition.** `equ`, `=`, label vs. symbol scoping.
+- **Data directives.** `.db` / `.defb`, `.dw` / `.defw`, `.defm`, `.defn`, `.ds` / `.defs`, `.dz`.
+- **Origin and section directives.** `.org`, `.bank`, `.entry`, `.export`, `.disp`, the NEX-aware section primitives Klive adds for ZX Spectrum Next targets.
+- **Macros.** `.macro` / `.endm`, parameter passing, local labels inside macros, `.foreach`, `.repeat`.
+- **Conditional assembly.** `.if`, `.elif`, `.else`, `.endif`, `.ifdef`, `.ifused`.
+- **Expression syntax.** Operator precedence, supported functions (`high`, `low`, `attr`, `len`, etc.), forward references.
+- **Z80N extensions.** Mnemonics added by the Z80N (`mul d,e`, `swapnib`, `nextreg n,v`, `push imm16`, the `bsla`/`bsra`/`bsrl`/`bsrf`/`brlc` family, `jp (c)`, `ldws`, `ldix`, `lddx`, `ldirx`, `lddrx`, `ldpirx`, `outinb`, `add hl,a`, `add hl,bc`, `add hl,de`, `pixeldn`, `pixelad`, `setae`).
+- **Built-in helpers used in the book.** `attr(...)`, `Ink(...)`, `Paper(...)`, `NewLine()`, the `_print*` family — what's part of the dialect vs. what comes from the standard project template.
+- **Differences from sjasmplus.** A short side-by-side table for readers porting code in either direction.c:X
+11:X
+11:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Synopsis","id":"synopsis","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"Appendix D: Klive Z80 Assembly Quick Reference","filePath":"content/book/app-D-klive-asm-reference.md","timestamp":1788420416000},"sourceCode":"$5","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Appendix D: Klive Z80 Assembly Quick Reference","$undefined"]}],"\n",["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Status:"}]," Placeholder. This appendix will be filled in as the book stabilises and we identify exactly which Klive-specific syntax features are used most."]}],"\n"]}],"\n",["$","h2",null,{"id":"synopsis","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Synopsis","$L6"]}],"\n","$L7","\n","$L8","\n","$L9"]}]]}]]}]}],null,"$La"]}],"isPartial":"$@b","staleTime":"$c","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$c","varyParams":null},{"rsc":"$Lf","isPartial":"$@10","staleTime":"$c","varyParams":"$11"}],"isUpgradeableISRFallback":false,"a":"$@12","rootVaryParams":null,"needsRuntimeRequest":"$@13"}
+14:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+2c:I[484,[],"OutletBoundary"]
+2d:"$Sreact.suspense"
+2f:I[484,[],"ViewportBoundary"]
+30:I[484,[],"MetadataBoundary"]
+31:I[7121,[],""]
+32:I[4581,[],""]
+6:["$","$L14",null,{"id":"synopsis"}]
+7:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A focused reference for the Klive Z80 assembly dialect (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".kz80.asm"}],"), targeted at a reader who already knows another Z80 assembler (sjasmplus, Pasmo, z88dk). It covers only what differs from “vanilla” Z80 syntax and the directives the book actually uses."]}]
+8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Planned sections:"}]
+9:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"File and project structure."}]," Build root, includes, the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".kz80.asm"}]," extension, multi-file projects."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Lexical conventions."}]," Comment styles, character literals, string escapes, the backtick (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"`"}],") prefix for local labels."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Number literals."}]," Hex (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$AB"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0xAB"}],"), binary (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"%1010_1010"}],"), decimal, the single-quote thousands-separator style."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Symbol definition."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"equ"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"="}],", label vs. symbol scoping."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Data directives."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".db"}]," / ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defb"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dw"}]," / ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defw"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defm"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defn"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".ds"}]," / ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".defs"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dz"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Origin and section directives."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".org"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".entry"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".export"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".disp"}],", the NEX-aware section primitives Klive adds for ZX Spectrum Next targets."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Macros."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".macro"}]," / ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".endm"}],", parameter passing, local labels inside macros, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".foreach"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".repeat"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Conditional assembly."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".if"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".elif"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".else"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".endif"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".ifdef"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".ifused"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Expression syntax."}]," Operator precedence, supported functions (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"high"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"low"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"attr"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"len"}],", etc.), forward references."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Z80N extensions."}]," Mnemonics added by the Z80N (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"mul d,e"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"swapnib"}],", ","$L15",", ","$L16",", the ","$L17","/","$L18","/","$L19","/","$L1a","/","$L1b"," family, ","$L1c",", ","$L1d",", ","$L1e",", ","$L1f",", ","$L20",", ","$L21",", ","$L22",", ","$L23",", ","$L24",", ","$L25",", ","$L26",", ","$L27",", ","$L28",", ","$L29",")."]}],"\n","$L2a","\n","$L2b","\n"]}]
+a:["$","$L2c",null,{"children":["$","$2d",null,{"name":"Next.MetadataOutlet","children":"$@2e"}]}]
+d:["$","$1","h",{"children":[null,["$","$L2f",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L30",null,{"children":["$","$2d",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Appendix D: Klive Z80 Assembly Quick Reference - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+f:["$","$1","c",{"children":[null,["$","$L31",null,{"parallelRouterKey":"children","template":["$","$L32",null,{}]}]]}]
+13:true
+15:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nextreg n,v"}]
+16:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"push imm16"}]
+17:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bsla"}]
+18:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bsra"}]
+19:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bsrl"}]
+1a:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bsrf"}]
+1b:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"brlc"}]
+1c:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"jp (c)"}]
+1d:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ldws"}]
+1e:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ldix"}]
+1f:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"lddx"}]
+20:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ldirx"}]
+21:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"lddrx"}]
+22:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ldpirx"}]
+23:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"outinb"}]
+24:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"add hl,a"}]
+25:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"add hl,bc"}]
+26:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"add hl,de"}]
+27:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"pixeldn"}]
+28:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"pixelad"}]
+29:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"setae"}]
+2a:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Built-in helpers used in the book."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"attr(...)"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Ink(...)"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Paper(...)"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NewLine()"}],", the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"_print*"}]," family — what’s part of the dialect vs. what comes from the standard project template."]}]
+2b:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Differences from sjasmplus."}]," A short side-by-side table for readers porting code in either direction."]}]
+2e:null
+c:300
+c:C
+12:0
+e:"$undefined"
+10:"$undefined"
+b:"$undefined"

@@ -1,0 +1,441 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+5:T35ca,# Writing Guidelines for "Inside the ZX Spectrum Next: Z80 Assembly, System Concepts, and Practical Programming"
+
+## Purpose
+
+This document defines the writing style, tone, and conventions for the book about programming the ZX Spectrum Next with Z80 Assembly. The goal is to create an engaging, readable technical guide that teaches the system concepts behind practical Next programming without putting readers to sleep.
+
+## Target Audience
+
+- Developers with intermediate programming knowledge (comfortable with TypeScript/JavaScript)
+- Retro computing enthusiasts who want to understand how the machine works
+- Anyone curious about how computers work at a low level
+- Readers who appreciate clear explanations without academic stuffiness
+
+## Core Writing Principles
+
+### 1. Write Like You're Explaining to a Friend
+
+**Do this:**
+> The Z80 CPU doesn't know about our fancy 2MB memory - it's stuck in 1976 with just 16 address lines. That's like trying to navigate a modern city with a map that only shows 64 streets.
+
+**Not this:**
+> The Z80 microprocessor architecture is constrained to a 16-bit address bus, limiting direct addressability to 65,536 bytes of memory space.
+
+### 2. Use Concrete Examples
+
+Don't just state facts - show them in action. If you're explaining a register, show what happens when you write to it. If you're describing memory mapping, walk through an actual address translation.
+
+**Do this:**
+> Let's say MMU register 2 contains 0x0A. When the CPU reads from address 0x4000 (slot 2), the MMU calculates:
+> - Region bits: 0x0A[7:5] = 0, so (0+1) = region 1
+> - Physical address: 0x014000 + offset
+> This lands us right in Bank 5, the video memory.
+
+### 3. Light Humor is Welcome (But Don't Force It)
+
+A little personality goes a long way. Use humor to:
+- Ease tension when introducing complex topics
+- Make memorable points
+- Keep the reader engaged
+
+But never sacrifice clarity for a joke.
+
+**Good examples:**
+> "The priority decode chain has more levels than a corporate hierarchy - and just like in the corporate world, the top level always wins."
+
+> "The ULA does memory contention like a bouncer at an exclusive club: 'Sorry CPU, the screen refresh is using that memory right now. You'll have to wait.'"
+
+### 4. Sound Human, Not Hermetically Sealed
+
+The prose should feel like it was written by someone who has actually wrestled with this hardware, blinked at the datasheet, muttered "oh, of course," and then found a way to explain it. A clean technical voice is good; a voice with no fingerprints is not.
+
+Use:
+- Small human asides when they help the reader breathe: "this is where the Z80 shows its age," "slightly rude, but useful," "the hardware is doing us a favor here."
+- Occasional rhetorical questions, especially before explaining motivation.
+- Short sentences after dense ones. Let the reader land.
+- Mildly opinionated phrasing when the opinion teaches something: "elegant," "awkward," "clever," "a bit of a trap."
+
+Avoid:
+- Over-smoothed AI cadence: "It is important to understand that...", "This section explores...", "By leveraging..."
+- Fake enthusiasm pasted onto neutral facts.
+- Jokes that interrupt the explanation or make the hardware sound sillier than it is.
+
+### 5. Use Metaphors as Teaching Tools
+
+Metaphors are welcome when they carry real explanatory weight. Pick concrete metaphors and reuse them consistently within a chapter instead of inventing a new image every paragraph.
+
+Good recurring metaphors:
+- **MMU as a switchboard or stage crew**: the Z80 asks for an address, the MMU quietly connects that slot to the current page.
+- **DivMMC as a butler**: it appears when the program calls for storage, handles the SD card business discreetly, then leaves the room before anyone has to think about paging.
+- **Copper as a stage manager**: waits for the exact cue line, changes the lighting, and lets the main actor keep talking.
+- **DMA as a moving company**: shifts boxes of bytes while the CPU gets on with other work.
+
+Keep the metaphor technically honest. If it starts requiring caveats every sentence, retire it and explain the mechanism directly.
+
+### 6. Explain the "Why" Not Just the "What"
+
+Readers want to understand the reasoning behind design decisions.
+
+**Do this:**
+> Why the "+1" offset in the formula? Because the first 64KB (region 0) is reserved for system ROMs. The MMU starts allocating pages from region 1 onwards. Without this offset, every MMU register would need special handling for the ROM area.
+
+**Not this:**
+> The formula uses a "+1" offset for the region selector.
+
+### 7. Structure for Clarity
+
+- **Short paragraphs**: 2-4 sentences is ideal
+- **Bullet points**: Use them liberally for lists and key points
+- **Code blocks**: Always formatted and commented
+- **Headings**: Clear hierarchy, descriptive titles
+- **Tables**: When comparing multiple items with properties
+- **Diagrams**: Use ASCII art or describe visual concepts clearly
+- **Where Next**: Every chapter should end with a `## Where Next` section that points readers to the most relevant follow-up chapters or appendices.
+
+Do not add standalone `Exercises` sections. The book can invite experimentation in the prose when it is natural, but it should not assign homework or contain exercise blocks.
+
+### 8. Cross-Reference Generously
+
+When a chapter mentions a topic that has its own chapter or appendix, link it the first time the reference appears in that local section. Examples:
+- A Z80N discussion of interrupt modes should link to [Interrupts](./04-interrupts.mdx).
+- A memory discussion that mentions NextRegs should link to [I/O Ports and NextRegs](./02-io-and-nextregs.mdx) or [Appendix B](./app-B-nextreg-reference.md), depending on whether the reader needs the concept or the register table.
+- A storage discussion that mentions divMMC or dot commands should link to [NextZXOS, esxDOS, and the SD Card](./19-storage.mdx).
+
+Keep links useful rather than noisy. Repeated mentions in the same paragraph do not all need links; one clear path is enough.
+
+### 9. Technical Accuracy First
+
+Humor and accessibility never justify incorrect information. When in doubt:
+1. Check the VHDL source
+2. Reference official documentation
+3. Verify against real hardware behavior
+4. Note any assumptions or simplifications made for clarity
+
+### 10. Progressive Disclosure
+
+Introduce concepts in layers:
+1. **High-level overview**: What it does and why
+2. **Conceptual explanation**: How it works at a design level  
+3. **Implementation details**: The nitty-gritty for actual coding
+4. **Edge cases and gotchas**: The stuff that trips people up
+
+Don't dump everything at once.
+
+## Language Conventions
+
+### Terminology Consistency
+
+Maintain consistent terminology throughout the book. When introducing a new technical term:
+1. **Define it clearly** on first use
+2. **Add it to the glossary** (see glossary.md)
+3. **Use it consistently** - don't switch between synonyms
+4. **Cross-check** the glossary before using similar terms to avoid confusion
+
+Key terms:
+- **Memory region**: 64KB address space divisions (A20:A16 selects 1 of 32)
+- **Bank**: Traditional ZX Spectrum memory areas (Bank 5, Bank 7)
+- **Page**: 8KB units mapped by MMU
+- **Slot**: Z80 address space divisions (0-7, each 8KB)
+- **MMU**: Memory Management Unit
+- **NextReg**: Next extended registers (0x00-0xFF)
+
+See [glossary.md](glossary.md) for the complete reference.
+
+### Code and Technical Elements
+
+- Use backticks for: register names (`MMU0`), values (`0x4000`), code elements (`CPU_A[12:0]`)
+- Use **bold** for: emphasis, key concepts on first mention
+- Use *italics* for: rare emphasis or when defining terms
+- File names and paths: Use links when referencing project files, plain text for examples
+- **Hexadecimal notation**: For addresses longer than 4 digits, use single quote (') as a grouping character in groups of 4 from the right (e.g., `0x04'0000`, `0x1F'FFFF`, `0x23'E000`). This improves readability for long addresses.
+- **Side notes**: Use block quotes (>) for side notes, explanatory asides, or contextual information that supports but isn't critical to the main flow
+- **Z80 assembly operand spacing**: No space after the comma between instruction operands. Write `ld bc,CTC_CH0` and `in a,(c)`, not `ld bc, CTC_CH0` or `in a, (c)`. This applies to instruction operands only; spaces inside macro or data-directive argument lists (e.g., `attr(COLOR_BLACK, COLOR_GREEN, 1)` or `.db 0, 0, 0`) are acceptable.
+
+### Voice and Tense
+
+- **Active voice** preferred: "The MMU translates addresses" not "Addresses are translated by the MMU"
+- **Present tense** for describing behavior: "The CPU reads from memory" not "The CPU will read"
+- **Second person** when addressing implementation: "You should check for Bank 5" not "One should check"
+
+## Things to Avoid
+
+### ❌ Academic Stuffiness
+
+- No unnecessary jargon
+- No "as previously discussed" or "aforementioned"
+- No "it should be noted that" - just note it
+- No passive constructions when active is clearer
+
+### ❌ Condescension
+
+- Don't use "simply" or "just" to dismiss complexity
+- Don't assume knowledge is obvious
+- Acknowledge when things are genuinely difficult
+
+### ❌ Apologizing
+
+- Don't write "sorry for the complexity"
+- Don't hedge with "this might be wrong, but..."
+- State information confidently (but accurately)
+
+### ❌ Walls of Text
+
+- Break up long paragraphs
+- Add subheadings frequently
+- Use lists and tables
+- Insert examples between explanations
+
+## Examples of Good vs. Bad
+
+### Example 1: Explaining Memory Contention
+
+**❌ Bad:**
+> Memory contention occurs when multiple components require simultaneous access to shared memory resources, resulting in arbitration mechanisms that introduce variable latency.
+
+**✅ Good:**
+> The ULA and CPU both need to read from Bank 5 (screen memory). When they want it at the same time, someone has to wait. This is memory contention. The ULA gets priority because missing a screen refresh would cause visible artifacts, while the CPU can usually afford a few extra clock cycles.
+
+### Example 2: Introducing a Formula
+
+**❌ Bad:**
+> Physical_Address = ((MMU_reg[7:5] + 1) << 16) | (MMU_reg[4:0] << 13) | CPU_A[12:0]
+
+**✅ Good:**
+> Here's the address translation formula:
+> ```
+> Physical_Address = ((MMU_reg[7:5] + 1) << 16) | (MMU_reg[4:0] << 13) | CPU_A[12:0]
+> ```
+> 
+> Let's break this down with a concrete example. If the CPU reads from 0x5234 (slot 2) and MMU2 contains 0x0A:
+> 1. Extract region: (0x0A >> 5) + 1 = 1
+> 2. Extract page offset: (0x0A & 0x1F) << 13 = 0x14000
+> 3. Add CPU offset: 0x1234
+> 4. Final address: 0x010000 + 0x14000 + 0x1234 = 0x025234
+
+## Chapter Structure Template
+
+Each major topic should follow this structure:
+
+```markdown
+# [Topic Name]
+
+## Overview
+Brief introduction - what is this and why does it matter?
+
+## Background
+Historical context or prerequisite knowledge (if needed)
+
+## How It Works
+Conceptual explanation with diagrams
+
+## Implementation
+Practical details for coding
+
+### [Subtopic 1]
+### [Subtopic 2]
+
+## Where Next
+Links to the next few chapters that build on this one, with one sentence explaining why each link matters.
+```
+
+## Glossary Management
+
+The book includes a **glossary.md** file that defines all technical terminology using the same conversational style as the rest of the book.
+
+### When to Add a Term
+
+Add a term to the glossary when:
+- It's specific to ZX Spectrum/Next architecture
+- It could be confused with similar terms
+- It's used frequently throughout multiple chapters
+- It's technical jargon that needs clear explanation
+
+### Glossary Entry Format
+
+Each entry should follow this structure:
+
+```markdown
+### Term Name
+Conversational explanation that covers:
+- What it is (in plain language)
+- Why it matters
+- How it relates to other concepts
+- Common usage or context
+- Any potential confusion points
+```
+
+### Writing Style for Glossary
+
+- **No dry dictionary definitions**: Write like you're explaining to a colleague
+- **Use analogies**: Help make abstract concepts concrete
+- **Cross-reference**: Link to related terms
+- **Be consistent**: Use the exact phrasing that appears in the book
+- **Keep it brief**: 2-4 sentences for simple terms, up to a paragraph for complex ones
+
+### Maintaining the Glossary
+
+- **Check before writing**: Before introducing a new term, check if it's in the glossary
+- **Update when terms evolve**: If usage changes, update the glossary entry
+- **Note ambiguities**: If a term risks confusion, add clarification
+- **Alphabetize**: Keep entries in alphabetical order by term
+
+### Example of Good vs. Bad Glossary Entries
+
+**❌ Bad (too dry):**
+> **MMU**: Memory Management Unit. Hardware component responsible for address translation.
+
+**✅ Good (conversational):**
+> **MMU (Memory Management Unit)**: The hardware that translates Z80's 16-bit addresses into 21-bit physical addresses. Divides the 64KB Z80 address space into 8 slots of 8KB each, with each slot pointing to any 8KB page in the 2MB physical memory.
+
+## Extension Notes
+
+This document will grow as we identify patterns, conventions, and lessons learned from writing the book. Future additions might include:
+
+- Diagram style guidelines
+- Code example conventions  
+- Cross-referencing standards
+- Bibliography and citation forma
+## Extension Notes
+
+This document will grow as we identify patterns, conventions, and lessons learned from writing the book. Future additions might include:
+
+- Diagram style guidelines
+- Code example conventions  
+- Cross-referencing standards
+- Bibliography and citation format
+- Glossary management
+- Version control and update policies
+
+---
+
+**Remember**: The goal is to teach, engage, and maybe make the reader smile occasionally. If you're having fun writing it, the reader will probably have fun reading it.a:X
+f:X
+f:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Purpose","id":"purpose","depth":2},{"value":"Target Audience","id":"target-audience","depth":2},{"value":"Core Writing Principles","id":"core-writing-principles","depth":2},{"value":"1. Write Like You’re Explaining to a Friend","id":"1-write-like-youre-explaining-to-a-friend","depth":3},{"value":"2. Use Concrete Examples","id":"2-use-concrete-examples","depth":3},{"value":"3. Light Humor is Welcome (But Don’t Force It)","id":"3-light-humor-is-welcome-but-dont-force-it","depth":3},{"value":"4. Sound Human, Not Hermetically Sealed","id":"4-sound-human-not-hermetically-sealed","depth":3},{"value":"5. Use Metaphors as Teaching Tools","id":"5-use-metaphors-as-teaching-tools","depth":3},{"value":"6. Explain the “Why” Not Just the “What”","id":"6-explain-the-why-not-just-the-what","depth":3},{"value":"7. Structure for Clarity","id":"7-structure-for-clarity","depth":3},{"value":"8. Cross-Reference Generously","id":"8-cross-reference-generously","depth":3},{"value":"9. Technical Accuracy First","id":"9-technical-accuracy-first","depth":3},{"value":"10. Progressive Disclosure","id":"10-progressive-disclosure","depth":3},{"value":"Language Conventions","id":"language-conventions","depth":2},{"value":"Terminology Consistency","id":"terminology-consistency","depth":3},{"value":"Code and Technical Elements","id":"code-and-technical-elements","depth":3},{"value":"Voice and Tense","id":"voice-and-tense","depth":3},{"value":"Things to Avoid","id":"things-to-avoid","depth":2},{"value":"❌ Academic Stuffiness","id":"-academic-stuffiness","depth":3},{"value":"❌ Condescension","id":"-condescension","depth":3},{"value":"❌ Apologizing","id":"-apologizing","depth":3},{"value":"❌ Walls of Text","id":"-walls-of-text","depth":3},{"value":"Examples of Good vs. Bad","id":"examples-of-good-vs-bad","depth":2},{"value":"Example 1: Explaining Memory Contention","id":"example-1-explaining-memory-contention","depth":3},{"value":"Example 2: Introducing a Formula","id":"example-2-introducing-a-formula","depth":3},{"value":"Chapter Structure Template","id":"chapter-structure-template","depth":2},{"value":"Glossary Management","id":"glossary-management","depth":2},{"value":"When to Add a Term","id":"when-to-add-a-term","depth":3},{"value":"Glossary Entry Format","id":"glossary-entry-format","depth":3},{"value":"Writing Style for Glossary","id":"writing-style-for-glossary","depth":3},{"value":"Maintaining the Glossary","id":"maintaining-the-glossary","depth":3},{"value":"Example of Good vs. Bad Glossary Entries","id":"example-of-good-vs-bad-glossary-entries","depth":3},{"value":"Extension Notes","id":"extension-notes","depth":2},{"value":"Extension Notes","id":"extension-notes-1","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"Writing Guidelines for \"Inside the ZX Spectrum Next: Z80 Assembly, System Concepts, and Practical Programming\"","filePath":"content/book/book-writing-guidelines.md","timestamp":1788420416000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+78:I[484,[],"OutletBoundary"]
+79:"$Sreact.suspense"
+7b:I[484,[],"ViewportBoundary"]
+7c:I[484,[],"MetadataBoundary"]
+7d:I[7121,[],""]
+7e:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Writing Guidelines for “Inside the ZX Spectrum Next: Z80 Assembly, System Concepts, and Practical Programming”","$undefined"]}],"\n",["$","h2",null,{"id":"purpose","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Purpose",["$","$L12",null,{"id":"purpose"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This document defines the writing style, tone, and conventions for the book about programming the ZX Spectrum Next with Z80 Assembly. The goal is to create an engaging, readable technical guide that teaches the system concepts behind practical Next programming without putting readers to sleep."}],"\n",["$","h2",null,{"id":"target-audience","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Target Audience",["$","$L12",null,{"id":"target-audience"}]]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Developers with intermediate programming knowledge (comfortable with TypeScript/JavaScript)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Retro computing enthusiasts who want to understand how the machine works"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Anyone curious about how computers work at a low level"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Readers who appreciate clear explanations without academic stuffiness"}],"\n"]}],"\n",["$","h2",null,{"id":"core-writing-principles","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Core Writing Principles",["$","$L12",null,{"id":"core-writing-principles"}]]}],"\n",["$","h3",null,{"id":"1-write-like-youre-explaining-to-a-friend","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["1. Write Like You’re Explaining to a Friend",["$","$L12",null,{"id":"1-write-like-youre-explaining-to-a-friend"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Do this:"}]}],"\n",["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z80 CPU doesn’t know about our fancy 2MB memory - it’s stuck in 1976 with just 16 address lines. That’s like trying to navigate a modern city with a map that only shows 64 streets."}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Not this:"}]}],"\n",["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z80 microprocessor architecture is constrained to a 16-bit address bus, limiting direct addressability to 65,536 bytes of memory space."}],"\n"]}],"\n",["$","h3",null,{"id":"2-use-concrete-examples","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["2. Use Concrete Examples","$L13"]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77"]}]
+8:["$","$L78",null,{"children":["$","$79",null,{"name":"Next.MetadataOutlet","children":"$@7a"}]}]
+b:["$","$1","h",{"children":[null,["$","$L7b",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L7c",null,{"children":["$","$79",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Writing Guidelines for \"Inside the ZX Spectrum Next: Z80 Assembly, System Concepts, and Practical Programming\" - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L7d",null,{"parallelRouterKey":"children","template":["$","$L7e",null,{}]}]]}]
+11:true
+7f:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],""]
+80:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ToggleWordWrapButton"]
+13:["$","$L12",null,{"id":"2-use-concrete-examples"}]
+14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Don’t just state facts - show them in action. If you’re explaining a register, show what happens when you write to it. If you’re describing memory mapping, walk through an actual address translation."}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Do this:"}]}]
+16:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Let’s say MMU register 2 contains 0x0A. When the CPU reads from address 0x4000 (slot 2), the MMU calculates:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Region bits: 0x0A[7:5] = 0, so (0+1) = region 1"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Physical address: 0x014000 + offset\nThis lands us right in Bank 5, the video memory."}],"\n"]}],"\n"]}]
+17:["$","h3",null,{"id":"3-light-humor-is-welcome-but-dont-force-it","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["3. Light Humor is Welcome (But Don’t Force It)",["$","$L12",null,{"id":"3-light-humor-is-welcome-but-dont-force-it"}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A little personality goes a long way. Use humor to:"}]
+19:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Ease tension when introducing complex topics"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Make memorable points"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Keep the reader engaged"}],"\n"]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"But never sacrifice clarity for a joke."}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Good examples:"}]}]
+1c:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"“The priority decode chain has more levels than a corporate hierarchy - and just like in the corporate world, the top level always wins.”"}],"\n"]}]
+1d:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"“The ULA does memory contention like a bouncer at an exclusive club: ‘Sorry CPU, the screen refresh is using that memory right now. You’ll have to wait.’”"}],"\n"]}]
+1e:["$","h3",null,{"id":"4-sound-human-not-hermetically-sealed","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["4. Sound Human, Not Hermetically Sealed",["$","$L12",null,{"id":"4-sound-human-not-hermetically-sealed"}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The prose should feel like it was written by someone who has actually wrestled with this hardware, blinked at the datasheet, muttered “oh, of course,” and then found a way to explain it. A clean technical voice is good; a voice with no fingerprints is not."}]
+20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Use:"}]
+21:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Small human asides when they help the reader breathe: “this is where the Z80 shows its age,” “slightly rude, but useful,” “the hardware is doing us a favor here.”"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Occasional rhetorical questions, especially before explaining motivation."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Short sentences after dense ones. Let the reader land."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Mildly opinionated phrasing when the opinion teaches something: “elegant,” “awkward,” “clever,” “a bit of a trap.”"}],"\n"]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Avoid:"}]
+23:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Over-smoothed AI cadence: “It is important to understand that…”, “This section explores…”, “By leveraging…”"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Fake enthusiasm pasted onto neutral facts."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Jokes that interrupt the explanation or make the hardware sound sillier than it is."}],"\n"]}]
+24:["$","h3",null,{"id":"5-use-metaphors-as-teaching-tools","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["5. Use Metaphors as Teaching Tools",["$","$L12",null,{"id":"5-use-metaphors-as-teaching-tools"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Metaphors are welcome when they carry real explanatory weight. Pick concrete metaphors and reuse them consistently within a chapter instead of inventing a new image every paragraph."}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Good recurring metaphors:"}]
+27:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"MMU as a switchboard or stage crew"}],": the Z80 asks for an address, the MMU quietly connects that slot to the current page."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"DivMMC as a butler"}],": it appears when the program calls for storage, handles the SD card business discreetly, then leaves the room before anyone has to think about paging."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Copper as a stage manager"}],": waits for the exact cue line, changes the lighting, and lets the main actor keep talking."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"DMA as a moving company"}],": shifts boxes of bytes while the CPU gets on with other work."]}],"\n"]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Keep the metaphor technically honest. If it starts requiring caveats every sentence, retire it and explain the mechanism directly."}]
+29:["$","h3",null,{"id":"6-explain-the-why-not-just-the-what","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["6. Explain the “Why” Not Just the “What”",["$","$L12",null,{"id":"6-explain-the-why-not-just-the-what"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Readers want to understand the reasoning behind design decisions."}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Do this:"}]}]
+2c:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Why the “+1” offset in the formula? Because the first 64KB (region 0) is reserved for system ROMs. The MMU starts allocating pages from region 1 onwards. Without this offset, every MMU register would need special handling for the ROM area."}],"\n"]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Not this:"}]}]
+2e:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The formula uses a “+1” offset for the region selector."}],"\n"]}]
+2f:["$","h3",null,{"id":"7-structure-for-clarity","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["7. Structure for Clarity",["$","$L12",null,{"id":"7-structure-for-clarity"}]]}]
+30:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Short paragraphs"}],": 2-4 sentences is ideal"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bullet points"}],": Use them liberally for lists and key points"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Code blocks"}],": Always formatted and commented"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Headings"}],": Clear hierarchy, descriptive titles"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Tables"}],": When comparing multiple items with properties"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Diagrams"}],": Use ASCII art or describe visual concepts clearly"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Where Next"}],": Every chapter should end with a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"## Where Next"}]," section that points readers to the most relevant follow-up chapters or appendices."]}],"\n"]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Do not add standalone ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Exercises"}]," sections. The book can invite experimentation in the prose when it is natural, but it should not assign homework or contain exercise blocks."]}]
+32:["$","h3",null,{"id":"8-cross-reference-generously","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["8. Cross-Reference Generously",["$","$L12",null,{"id":"8-cross-reference-generously"}]]}]
+33:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When a chapter mentions a topic that has its own chapter or appendix, link it the first time the reference appears in that local section. Examples:"}]
+34:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["A Z80N discussion of interrupt modes should link to ",["$","$L7f",null,{"href":"./04-interrupts","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Interrupts"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A memory discussion that mentions NextRegs should link to ",["$","$L7f",null,{"href":"./02-io-and-nextregs","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"I/O Ports and NextRegs"}]," or ",["$","$L7f",null,{"href":"./app-B-nextreg-reference","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Appendix B"}],", depending on whether the reader needs the concept or the register table."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A storage discussion that mentions divMMC or dot commands should link to ",["$","$L7f",null,{"href":"./19-storage","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"NextZXOS, esxDOS, and the SD Card"}],"."]}],"\n"]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Keep links useful rather than noisy. Repeated mentions in the same paragraph do not all need links; one clear path is enough."}]
+36:["$","h3",null,{"id":"9-technical-accuracy-first","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["9. Technical Accuracy First",["$","$L12",null,{"id":"9-technical-accuracy-first"}]]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Humor and accessibility never justify incorrect information. When in doubt:"}]
+38:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Check the VHDL source"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Reference official documentation"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Verify against real hardware behavior"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Note any assumptions or simplifications made for clarity"}],"\n"]}]
+39:["$","h3",null,{"id":"10-progressive-disclosure","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["10. Progressive Disclosure",["$","$L12",null,{"id":"10-progressive-disclosure"}]]}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Introduce concepts in layers:"}]
+3b:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"High-level overview"}],": What it does and why"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Conceptual explanation"}],": How it works at a design level"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Implementation details"}],": The nitty-gritty for actual coding"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Edge cases and gotchas"}],": The stuff that trips people up"]}],"\n"]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Don’t dump everything at once."}]
+3d:["$","h2",null,{"id":"language-conventions","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Language Conventions",["$","$L12",null,{"id":"language-conventions"}]]}]
+3e:["$","h3",null,{"id":"terminology-consistency","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Terminology Consistency",["$","$L12",null,{"id":"terminology-consistency"}]]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Maintain consistent terminology throughout the book. When introducing a new technical term:"}]
+40:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Define it clearly"}]," on first use"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Add it to the glossary"}]," (see glossary.md)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Use it consistently"}]," - don’t switch between synonyms"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Cross-check"}]," the glossary before using similar terms to avoid confusion"]}],"\n"]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Key terms:"}]
+42:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Memory region"}],": 64KB address space divisions (A20:A16 selects 1 of 32)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bank"}],": Traditional ZX Spectrum memory areas (Bank 5, Bank 7)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Page"}],": 8KB units mapped by MMU"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Slot"}],": Z80 address space divisions (0-7, each 8KB)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"MMU"}],": Memory Management Unit"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"NextReg"}],": Next extended registers (0x00-0xFF)"]}],"\n"]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["See ",["$","$L7f",null,{"href":"glossary","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"glossary.md"}]," for the complete reference."]}]
+44:["$","h3",null,{"id":"code-and-technical-elements","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Code and Technical Elements",["$","$L12",null,{"id":"code-and-technical-elements"}]]}]
+45:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Use backticks for: register names (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MMU0"}],"), values (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x4000"}],"), code elements (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CPU_A[12:0]"}],")"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Use ",["$","strong",null,{"children":"bold"}]," for: emphasis, key concepts on first mention"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Use ",["$","em",null,{"children":"italics"}]," for: rare emphasis or when defining terms"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"File names and paths: Use links when referencing project files, plain text for examples"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Hexadecimal notation"}],": For addresses longer than 4 digits, use single quote (’) as a grouping character in groups of 4 from the right (e.g., ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x04'0000"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x1F'FFFF"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"0x23'E000"}],"). This improves readability for long addresses."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Side notes"}],": Use block quotes (>) for side notes, explanatory asides, or contextual information that supports but isn’t critical to the main flow"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Z80 assembly operand spacing"}],": No space after the comma between instruction operands. Write ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ld bc,CTC_CH0"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"in a,(c)"}],", not ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ld bc, CTC_CH0"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"in a, (c)"}],". This applies to instruction operands only; spaces inside macro or data-directive argument lists (e.g., ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"attr(COLOR_BLACK, COLOR_GREEN, 1)"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".db 0, 0, 0"}],") are acceptable."]}],"\n"]}]
+46:["$","h3",null,{"id":"voice-and-tense","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Voice and Tense",["$","$L12",null,{"id":"voice-and-tense"}]]}]
+47:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Active voice"}]," preferred: “The MMU translates addresses” not “Addresses are translated by the MMU”"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Present tense"}]," for describing behavior: “The CPU reads from memory” not “The CPU will read”"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Second person"}]," when addressing implementation: “You should check for Bank 5” not “One should check”"]}],"\n"]}]
+48:["$","h2",null,{"id":"things-to-avoid","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Things to Avoid",["$","$L12",null,{"id":"things-to-avoid"}]]}]
+49:["$","h3",null,{"id":"-academic-stuffiness","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["❌ Academic Stuffiness",["$","$L12",null,{"id":"-academic-stuffiness"}]]}]
+4a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"No unnecessary jargon"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"No “as previously discussed” or “aforementioned”"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"No “it should be noted that” - just note it"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"No passive constructions when active is clearer"}],"\n"]}]
+4b:["$","h3",null,{"id":"-condescension","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["❌ Condescension",["$","$L12",null,{"id":"-condescension"}]]}]
+4c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Don’t use “simply” or “just” to dismiss complexity"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Don’t assume knowledge is obvious"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Acknowledge when things are genuinely difficult"}],"\n"]}]
+4d:["$","h3",null,{"id":"-apologizing","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["❌ Apologizing",["$","$L12",null,{"id":"-apologizing"}]]}]
+4e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Don’t write “sorry for the complexity”"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Don’t hedge with “this might be wrong, but…”"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"State information confidently (but accurately)"}],"\n"]}]
+4f:["$","h3",null,{"id":"-walls-of-text","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["❌ Walls of Text",["$","$L12",null,{"id":"-walls-of-text"}]]}]
+50:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Break up long paragraphs"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Add subheadings frequently"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Use lists and tables"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Insert examples between explanations"}],"\n"]}]
+51:["$","h2",null,{"id":"examples-of-good-vs-bad","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Examples of Good vs. Bad",["$","$L12",null,{"id":"examples-of-good-vs-bad"}]]}]
+52:["$","h3",null,{"id":"example-1-explaining-memory-contention","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Example 1: Explaining Memory Contention",["$","$L12",null,{"id":"example-1-explaining-memory-contention"}]]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"❌ Bad:"}]}]
+54:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Memory contention occurs when multiple components require simultaneous access to shared memory resources, resulting in arbitration mechanisms that introduce variable latency."}],"\n"]}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"✅ Good:"}]}]
+56:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ULA and CPU both need to read from Bank 5 (screen memory). When they want it at the same time, someone has to wait. This is memory contention. The ULA gets priority because missing a screen refresh would cause visible artifacts, while the CPU can usually afford a few extra clock cycles."}],"\n"]}]
+57:["$","h3",null,{"id":"example-2-introducing-a-formula","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Example 2: Introducing a Formula",["$","$L12",null,{"id":"example-2-introducing-a-formula"}]]}]
+58:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"❌ Bad:"}]}]
+59:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Physical_Address = ((MMU_reg[7:5] + 1) << 16) | (MMU_reg[4:0] << 13) | CPU_A[12:0]"}],"\n"]}]
+5a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"✅ Good:"}]}]
+5b:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Here’s the address translation formula:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L80",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"Physical_Address = ((MMU_reg[7:5] + 1) << 16) | (MMU_reg[4:0] << 13) | CPU_A[12:0]"}]}]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Let’s break this down with a concrete example. If the CPU reads from 0x5234 (slot 2) and MMU2 contains 0x0A:"}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Extract region: (0x0A >> 5) + 1 = 1"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Extract page offset: (0x0A & 0x1F) << 13 = 0x14000"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Add CPU offset: 0x1234"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Final address: 0x010000 + 0x14000 + 0x1234 = 0x025234"}],"\n"]}],"\n"]}]
+5c:["$","h2",null,{"id":"chapter-structure-template","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Chapter Structure Template",["$","$L12",null,{"id":"chapter-structure-template"}]]}]
+5d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each major topic should follow this structure:"}]
+5e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L80",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"# [Topic Name]"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"## Overview"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"Brief introduction - what is this and why does it matter?"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"## Background"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"Historical context or prerequisite knowledge (if needed)"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"## How It Works"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"Conceptual explanation with diagrams"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"## Implementation"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"Practical details for coding"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"### [Subtopic 1]"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"### [Subtopic 2]"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"## Where Next"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"Links to the next few chapters that build on this one, with one sentence explaining why each link matters."}]}]]}]]}]]}]
+5f:["$","h2",null,{"id":"glossary-management","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Glossary Management",["$","$L12",null,{"id":"glossary-management"}]]}]
+60:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The book includes a ",["$","strong",null,{"children":"glossary.md"}]," file that defines all technical terminology using the same conversational style as the rest of the book."]}]
+61:["$","h3",null,{"id":"when-to-add-a-term","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["When to Add a Term",["$","$L12",null,{"id":"when-to-add-a-term"}]]}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Add a term to the glossary when:"}]
+63:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"It’s specific to ZX Spectrum/Next architecture"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"It could be confused with similar terms"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"It’s used frequently throughout multiple chapters"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"It’s technical jargon that needs clear explanation"}],"\n"]}]
+64:["$","h3",null,{"id":"glossary-entry-format","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Glossary Entry Format",["$","$L12",null,{"id":"glossary-entry-format"}]]}]
+65:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each entry should follow this structure:"}]
+66:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L80",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"### Term Name"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"Conversational explanation that covers:"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"- What it is (in plain language)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"- Why it matters"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"- How it relates to other concepts"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"- Common usage or context"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"- Any potential confusion points"}]}]]}]]}]]}]
+67:["$","h3",null,{"id":"writing-style-for-glossary","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Writing Style for Glossary",["$","$L12",null,{"id":"writing-style-for-glossary"}]]}]
+68:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"No dry dictionary definitions"}],": Write like you’re explaining to a colleague"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Use analogies"}],": Help make abstract concepts concrete"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Cross-reference"}],": Link to related terms"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Be consistent"}],": Use the exact phrasing that appears in the book"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Keep it brief"}],": 2-4 sentences for simple terms, up to a paragraph for complex ones"]}],"\n"]}]
+69:["$","h3",null,{"id":"maintaining-the-glossary","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Maintaining the Glossary",["$","$L12",null,{"id":"maintaining-the-glossary"}]]}]
+6a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Check before writing"}],": Before introducing a new term, check if it’s in the glossary"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Update when terms evolve"}],": If usage changes, update the glossary entry"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Note ambiguities"}],": If a term risks confusion, add clarification"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Alphabetize"}],": Keep entries in alphabetical order by term"]}],"\n"]}]
+6b:["$","h3",null,{"id":"example-of-good-vs-bad-glossary-entries","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Example of Good vs. Bad Glossary Entries",["$","$L12",null,{"id":"example-of-good-vs-bad-glossary-entries"}]]}]
+6c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"❌ Bad (too dry):"}]}]
+6d:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"MMU"}],": Memory Management Unit. Hardware component responsible for address translation."]}],"\n"]}]
+6e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"✅ Good (conversational):"}]}]
+6f:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"MMU (Memory Management Unit)"}],": The hardware that translates Z80’s 16-bit addresses into 21-bit physical addresses. Divides the 64KB Z80 address space into 8 slots of 8KB each, with each slot pointing to any 8KB page in the 2MB physical memory."]}],"\n"]}]
+70:["$","h2",null,{"id":"extension-notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Extension Notes",["$","$L12",null,{"id":"extension-notes"}]]}]
+71:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This document will grow as we identify patterns, conventions, and lessons learned from writing the book. Future additions might include:"}]
+72:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Diagram style guidelines"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Code example conventions"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Cross-referencing standards"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Bibliography and citation forma"}],"\n"]}]
+73:["$","h2",null,{"id":"extension-notes-1","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Extension Notes",["$","$L12",null,{"id":"extension-notes-1"}]]}]
+74:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This document will grow as we identify patterns, conventions, and lessons learned from writing the book. Future additions might include:"}]
+75:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Diagram style guidelines"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Code example conventions"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Cross-referencing standards"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Bibliography and citation format"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Glossary management"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Version control and update policies"}],"\n"]}]
+76:["$","hr",null,{"className":"x:my-[2em] nextra-border"}]
+77:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Remember"}],": The goal is to teach, engage, and maybe make the reader smile occasionally. If you’re having fun writing it, the reader will probably have fun reading it."]}]
+7a:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

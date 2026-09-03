@@ -1,0 +1,772 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+5:T65d8,# Appendix A: The NEX File Format
+
+The original ZX Spectrum had multiple file formats: TAP files for tape images, SNA and Z80 for snapshots, raw binaries that needed manual loading. Each format served a purpose, but none were ideal for modern distribution. TAP files included tape loading headers with checksums. Snapshot formats saved entire machine state but couldn't preserve modern Next features. Raw binaries required complex multi-step loading procedures.
+
+The Next needed something better: **a self-contained executable format** that could:
+
+- Load directly from the SD card operating system (NextZXOS/ESXDOS)
+- Specify exactly which memory banks to load and where
+- Include loading screens (Layer 2, ULA, LoRes, or Timex modes)
+- Set up hardware registers, palettes, and initial state
+- Support the full 2MB address space (112 banks of 16KB each)
+- Run immediately after loading without manual setup
+
+That's NEX. Think of it as the Next's equivalent to EXE on Windows or ELF on Linux - a standardized executable format that "just works."
+
+## File Structure: Layers of a NEX File
+
+Every NEX file starts with a mandatory 512-byte header, followed by optional blocks as needed. Here's the complete structure:
+
+| Block                   | Size               | Purpose                                                |
+| ----------------------- | ------------------ | ------------------------------------------------------ |
+| Header                  | 512 bytes          | Magic number, version, loading instructions, bank list |
+| Palette                 | 512 bytes          | 256 color entries (Layer 2, LoRes, Tilemap screens)    |
+| Loading Screen          | 6,912–81,920 bytes | ULA, Layer 2, LoRes, or Timex display during loading   |
+| Copper Code             | 2,048 bytes        | Raster effects for animated loading bar                |
+| Bank 5                  | 16,384 bytes       | First memory bank in file order (ULA screen memory)    |
+| Bank 2                  | 16,384 bytes       | Second bank (typically working memory)                 |
+| Banks 0, 1, 3, 4, 6–111 | 16,384 bytes each  | Remaining banks in defined order                       |
+| Custom Data             | Variable           | Application-defined data (levels, assets, etc.)        |
+
+The header tells you what's coming. The optional blocks appear only if the header says they're present. Everything is laid out sequentially - no seeks, no compression, no complex structures. Just read block after block in order.
+
+## The Header: Control Center for Loading
+
+The first 512 bytes contain everything the loader needs to know. Let's break down the key fields:
+
+### Identification and Version (Offsets 0-7)
+
+```
+Offset 0: "Next" (4 bytes) - Magic number identifying NEX files
+Offset 4: "V1.2" (4 bytes) - Version string (V1.0, V1.1, or V1.2)
+```
+
+Every NEX file starts with the ASCII string "Next" followed by the version. This lets loaders quickly verify "yes, this is a NEX file" and "yes, I understand this version." If you encounter "Next" but an unknown version, you can reject the file early.
+
+### Memory Requirements (Offset 8)
+
+```
+Offset 8: RAM required (1 byte)
+  0 = 768KB (standard Next)
+  1 = 1792KB (expanded Next)
+```
+
+Most Next machines have 1MB or 2MB of RAM. This byte tells the loader whether 768KB is sufficient or if the full expanded memory is required. If the machine doesn't have enough RAM, the loader can bail out with a clear error message instead of attempting to load and failing mysteriously.
+
+### Bank Loading Information (Offsets 9-129)
+
+```
+Offset 9:  Number of banks to load (1 byte) - count of 16KB banks (0-112)
+Offset 18: Bank presence array (112 bytes) - one byte per bank (0=skip, 1=load)
+```
+
+This is clever: the header contains a 112-byte array where each byte corresponds to one of the 112 possible 16KB banks (banks 0-111). A value of 1 means "this bank's data is in the file," 0 means "skip this bank."
+
+But here's the twist: **banks appear in the file in a specific order**, not sequential order:
+
+**File order**: 5, 2, 0, 1, 3, 4, 6, 7, 8, 9, 10, ..., 111
+
+**Why start with bank 5?** Because bank 5 is the ULA screen memory (0x4000-0x7FFF). If you're showing a loading screen, you want it first. Bank 2 comes next because it's often used as working memory during loading. After the first few special-case banks, the rest are sequential.
+
+**Example**: If the header says banks 5, 7, and 10 are present:
+
+- Byte at offset 18+5 = 23 will be 1 (bank 5 present)
+- Byte at offset 18+7 = 25 will be 1 (bank 7 present)
+- Byte at offset 18+10 = 28 will be 1 (bank 10 present)
+- All other bytes in the array will be 0
+
+In the file data section, you'll find: bank 5 data (16KB), bank 7 data (16KB), bank 10 data (16KB).
+
+### Loading Screens (Offset 10)
+
+```
+Offset 10: Loading screen type (1 byte, bit flags)
+  Bit 7 (128): No palette block (palette omitted even if screen uses one)
+  Bit 4 (16):  Timex HiCol screen
+  Bit 3 (8):   Timex HiRes screen
+  Bit 2 (4):   LoRes screen
+  Bit 1 (2):   ULA screen
+  Bit 0 (1):   Layer 2 screen
+```
+
+A NEX file can include a loading screen displayed while banks load. This byte is a **bit field** - multiple bits can be set, though typical files include only one screen type.
+
+The screen types have different sizes:
+
+- **Layer 2 (standard)**: 49,152 bytes (48KB) - 256×192, 256 colors
+- **Layer 2 (extended)**: 81,920 bytes (80KB) - 320×256×8 or 640×256×4
+- **ULA**: 6,912 bytes (6KB + 768 bytes attrs) - classic Spectrum screen
+- **LoRes**: 12,288 bytes (12KB) - 128×96 with enhanced color attributes
+- **Timex HiRes**: 12,288 bytes (12KB) - 512×192 monochrome
+- **Timex HiCol**: 12,288 bytes (12KB) - 256×192 with 8×1 color cells
+
+If bit 7 is clear and the screen type uses palettes (Layer 2, LoRes, Tilemap), a 512-byte palette block follows the header.
+
+### Execution Parameters (Offsets 11-16)
+
+```
+Offset 11: Border color (1 byte) - 0-7 (standard Spectrum colors)
+Offset 12: Stack pointer (2 bytes, little-endian)
+Offset 14: Program counter (2 bytes, little-endian) - 0 means "don't run, just load"
+Offset 16: Extra files count (2 bytes) - currently unused
+```
+
+The **program counter** is crucial: if it's zero, the loader loads everything into memory but doesn't start execution. This is useful for data files or multi-stage loading. If non-zero, the loader jumps to that address after loading completes.
+
+The **stack pointer** sets the initial SP value. Most programs use 0xFFFE (top of memory, growing downward), but you can specify a custom stack location if needed.
+
+### Loading Progress Indicators (Offsets 130-133)
+
+```
+Offset 130: Layer 2 loading bar (1 byte) - 0=off, 1=on
+Offset 131: Loading bar color (1 byte) - 0-255 (palette index)
+Offset 132: Delay per bank (1 byte) - frames to wait after loading each bank
+Offset 133: Start delay (1 byte) - frames to wait before execution
+```
+
+Remember those tape loading borders that flashed colors while loading? The NEX format supports a modern equivalent: a **loading bar** that progresses across the screen as banks load.
+
+Setting offset 130 to 1 enables this bar (only works with Layer 2 screens). Offset 131 sets the bar color. Offset 132 adds artificial delay between banks - useful if you want users to actually see the loading bar rather than having everything load instantly from SD card. Offset 133 adds delay before execution starts.
+
+**Why artificial delays?** Nostalgia, mostly. Loading from SD card is so fast that loading screens flash by unreadably. Adding a small delay (say, 2-3 frames per bank) lets users appreciate that beautiful loading screen you crafted.
+
+### Hardware Configuration (Offsets 134-141)
+
+```
+Offset 134: Preserve NextRegs (1 byte) - 0=reset machine state, 1=preserve
+Offset 135: Required core version (3 bytes) - major.minor.subminor (0-15.0-15.0-255)
+Offset 138: Timex color / Layer 2 palette offset (1 byte)
+Offset 139: Entry bank (1 byte) - bank mapped to slot 3 (0xC000-0xFFFF)
+Offset 140: File handle address (2 bytes) - where to store file handle (0=close file)
+Offset 142: Disable expansion bus (1 byte) - 0=enabled, 1=disabled (V1.3+ loaders)
+```
+
+**Preserve NextRegs** determines whether the loader resets all Next registers to defaults or leaves them as-is. Most programs want 0 (reset everything) for clean state. Setting 1 is useful for utilities that modify the environment without overwriting it.
+
+**Required core version** specifies minimum hardware requirements. The loader checks this against the actual FPGA core version and refuses to load if the hardware is too old. Format is three bytes: major version (4 bits), minor version (4 bits), subminor version (8 bits).
+
+**Entry bank** sets which bank appears at 0xC000-0xFFFF when execution starts. The program counter (offset 14) runs after this mapping is established. If your code lives in bank 0 and expects to run from 0xC000, set this to 0.
+
+**File handle address** is subtle: normally the loader closes the NEX file after loading (value 0). But if your program wants to read more data from the file (perhaps you included custom data at the end), you can request the file handle:
+
+- **0**: Close file (standard behavior)
+- **1-0x3FFF**: Pass file handle in BC register when program starts
+- **0x4000-0xFFFF**: Write file handle to specified memory address
+
+This enables **streaming assets** - include gigabytes of data at the end of the NEX file, keep it open, and read on demand.
+
+**Disable expansion bus** (offset 142, V1.3+ loaders): Controls whether the expansion bus is available during program execution. Set to 1 to disable the expansion bus (useful if your program expects exclusive hardware access and doesn't want interference from expansion devices). Set to 0 to leave it enabled. **Note:** This flag is only honored on core versions 3.0.5 or newer. Earlier loaders and core versions ignore this byte.
+
+## Optional Blocks: Palette, Screens, and Copper
+
+After the 512-byte header come the optional blocks. Their presence is determined by header flags.
+
+### Palette Block (512 bytes)
+
+If the loading screen uses a palette (Layer 2, LoRes, or Tilemap) and bit 7 of offset 10 is clear, the next 512 bytes define the palette. The format is:
+
+```
+256 entries × 2 bytes per entry = 512 bytes total
+
+Each entry (little-endian 16-bit):
+  Bits 0-2:   RRR (3-bit red)
+  Bits 3-5:   GGG (3-bit green)
+  Bits 6-8:   BBB (3-bit blue)
+  Bits 9-15:  Reserved (should be 0)
+```
+
+The Next uses 9-bit RGB333 color (3 bits red, 3 bits green, 3 bits blue). The format stores this as little-endian 16-bit values: the lower 9 bits contain the color (BBBGGGRRR), and the upper 7 bits are reserved. The loader writes these values to NextReg $44 (PALETTE_VALUE_BIT9_REGISTER).
+
+**Byte layout per entry:**
+- Byte 0 (bits 0-7): BBGGGRRR (red[2:0], green[2:0], blue[1:0])
+- Byte 1 (bits 8-15): 0000000B (reserved, blue[2])
+
+**Why 512 bytes for 256 entries?** The format uses 2 bytes per entry to accommodate the 9-bit RGB333 format with room for future expansion.
+
+### Loading Screen Blocks
+
+The screen data (if present) follows the palette. The size depends on which screen type is specified:
+
+**Layer 2 (48KB)**: 256×192 pixels, 256 colors per pixel
+
+- 256 × 192 = 49,152 bytes
+- Linear framebuffer: byte N is pixel N
+- Color is direct palette index (0-255)
+
+**Layer 2 Extended (80KB)**: 320×256 or 640×256 pixels
+
+- 320×256×8 bpp: 320 × 256 = 81,920 bytes
+- 640×256×4 bpp: 640 × 256 ÷ 2 = 81,920 bytes (two pixels per byte)
+
+**ULA (6,912 bytes)**: Classic Spectrum format
+
+- 6,144 bytes pixel data (256×192, 1 bit per pixel)
+- 768 bytes attribute data (32×24 cells, 8×8 pixels per cell)
+- Non-linear layout (three 2KB thirds, each with 64 rows)
+
+**LoRes (12,288 bytes)**: 128×96 with 4×8 color cells
+
+- 6,144 bytes pixel data
+- 6,144 bytes attribute data (one byte per 4×8 block)
+- Allows two colors per 4×8 block vs. ULA's 8×8
+
+**Timex HiRes (12,288 bytes)**: 512×192 monochrome
+
+- Bitmap layout similar to ULA but double horizontal resolution
+- Color specified in header (offset 138)
+
+**Timex HiCol (12,288 bytes)**: 256×192 with 8×1 color cells
+
+- Enhanced color resolution compared to ULA's 8×8
+- Each 8-pixel row can have unique foreground/background colors
+
+### Copper Code Block (2,048 bytes)
+
+If you want animated loading effects (rainbow borders, color cycling, raster bars), include a 2KB Copper program. The Copper is a simple raster-synchronized co-processor that executes a list of WAIT/MOVE instructions:
+
+- **WAIT** instructions: Pause until the raster beam reaches position (X,Y)
+- **MOVE** instructions: Write value to NextReg register
+
+The loader enables the Copper if this block is present, creating effects that run automatically while banks load. After loading completes, the Copper is disabled (unless your program re-enables it).
+
+**Example use**: Fade the border color through the spectrum as banks load, or animate the loading bar with raster effects.
+
+## Bank Data: The Actual Program
+
+After all the optional blocks come the memory banks themselves. Each bank present in the header's bank array (offset 18-129) contributes 16,384 bytes of raw data.
+
+**Remember the order**: 5, 2, 0, 1, 3, 4, 6, 7, 8, ..., 111
+
+If your program uses banks 0, 5, and 20:
+
+1. Skip to end of optional blocks
+2. Read 16KB → this is bank 5
+3. Read 16KB → this is bank 0 (comes before bank 2 in file order)
+4. Read 16KB → this is bank 20
+
+The loader tracks which bank it's reading using the header's bank presence array. It walks through the array in file order, loading each present bank into the corresponding memory location.
+
+**Important**: Bank data is **raw memory dumps**. No compression, no encoding, no headers. Just 16,384 bytes exactly as they should appear in memory. This makes loading fast (no decompression) but files large if you include many banks.
+
+## Custom Data: Beyond the Standard Format
+
+After all the standard NEX blocks, you can append arbitrary binary data. The NEX specification doesn't define or interpret this data - it's entirely application-specific.
+
+**Use cases**:
+
+- **Level data**: Store game levels, load on demand via file handle
+- **Graphics assets**: High-resolution bitmaps, too large for memory banks
+- **Audio samples**: PCM data for music/sound effects
+- **Script data**: Dialog, cutscenes, game logic in custom format
+
+Access this data by:
+
+1. Setting the file handle address (header offset 140) to non-zero
+2. Keeping the file open after loading
+3. Reading from file handle using standard file I/O from your program
+
+**Example**: A game might include 100 levels as custom data. The program loads level 1's data on demand when the player enters it, level 2 when they progress, etc. This avoids loading all levels into memory simultaneously.
+
+## Practical Example: Anatomy of a Simple NEX File
+
+Let's trace through a minimal NEX file: a program that displays "HELLO WORLD" in the center of a blue Layer 2 screen.
+
+### Header Construction
+
+```
+Offset 0-3:   "Next" (4 bytes)
+Offset 4-7:   "V1.2" (4 bytes)
+Offset 8:     0 (768KB RAM sufficient)
+Offset 9:     3 (three banks: 5, 9, 10)
+Offset 10:    1 (bit 0 set: Layer 2 screen included)
+Offset 11:    1 (blue border)
+Offset 12-13: 0xFFFE (stack at top of memory)
+Offset 14-15: 0xC000 (start execution at 0xC000)
+Offset 16-17: 0 (no extra files)
+```
+
+**Bank array (offset 18-129)**:
+
+```
+Offset 23 (18+5):  1 (bank 5 present)
+Offset 27 (18+9):  1 (bank 9 present)
+Offset 28 (18+10): 1 (bank 10 present)
+All others:        0 (not present)
+```
+
+**Loading bar settings**:
+
+```
+Offset 130: 1 (enable loading bar)
+Offset 131: 255 (white bar)
+Offset 132: 2 (2-frame delay per bank for visibility)
+Offset 133: 50 (1-second delay before execution at 50Hz)
+```
+
+**Hardware config**:
+
+```
+Offset 134: 0 (reset machine state)
+Offset 135-137: 3, 1, 10 (require core 3.1.10 minimum)
+Offset 138: 0 (Layer 2 palette offset 0)
+Offset 139: 5 (map bank 5 to slot 3 at 0xC000)
+Offset 140-141: 0 (close file after loading)
+```
+
+**Remainder**: Pad to 512 bytes with zeros.
+
+### Optional Blocks
+
+**Palette (512 bytes)**:
+
+- Entry 0: 0x0000 (black)
+- Entry 1: 0x00E0 (blue = 000 111 00 in RGB332)
+- Entry 255: 0x00FF (white = 111 111 11 in RGB332)
+- Entries 2-254: Other colors as needed
+- Each entry: 2 bytes (color in low byte, 0 in high byte)
+- Total: 256 × 2 = 512 bytes
+
+**Layer 2 Screen (49,152 bytes)**:
+
+- Fill with palette index 1 (blue background): 49,152 bytes of 0x01
+- Except center region where text renders: pixels set to index 255 (white)
+
+**No Copper code** (omitted).
+
+### Bank Data (3 × 16KB = 48KB)
+
+**Bank 5** (16,384 bytes):
+
+- Contains the Layer 2 screen data (though that's already shown via loading screen)
+- Or contains font data, code, whatever bank 5 needs for the program
+
+**Bank 9** (16,384 bytes):
+
+- Additional Layer 2 screen data (Layer 2 can span banks 9, 10, 11)
+
+**Bank 10** (16,384 bytes):
+
+- More Layer 2 screen data
+
+**File size**: 512 (header) + 512 (palette) + 49,152 (screen) + 49,152 (3 banks) = 99,328 bytes ≈ 97KB
+
+## Loading Procedure: How Your Code is Started
+
+Understanding how the NEX loader operates helps you write better programs and debug loading issues. Here's the complete loading sequence.
+
+### Initial Setup
+
+When the NEX loader starts, memory is configured as follows: the first 8K (`$0000–$1FFF`) holds the ESXDOS ROM, and the second 8K slot (`$2000–$3FFF`) is RAM containing the loader itself — completely isolated from the `$4000–$FFFF` address space. The loader immediately saves the current Stack Pointer and moves the stack to the top of that second slot (`$3FFF`).
+
+Before opening the NEX file, the loader disables interrupts and sets the CPU speed to 14MHz. Once the file is open, the loader saves the file handle for later use (see Offset 140) and initializes the screen:
+
+- Sets ULA transparency
+- Disables Layer 2
+- Enables sprites (not over border; sprites above Layer 2, Layer 2 above ULA)
+
+The loader then maps the upper three 16K memory slots:
+
+| Slot | Address range   | Bank   |
+|------|-----------------|--------|
+| 1    | `$4000–$7FFF`   | Bank 5 |
+| 2    | `$8000–$BFFF`   | Bank 2 |
+| 3    | `$C000–$FFFF`   | Bank 0 |
+
+### Reading the Header
+
+The loader reads the 512-byte NEX header into Bank 0 at `$C000` and performs these checks in order:
+
+1. **Loader version**: If the NEX file requires a newer loader version, loading aborts with an error.
+2. **Expansion bus** (Offset 142): If requested, the loader disables the expansion bus by clearing the top four bits of NextReg `$80`.
+3. **Core version** (Offsets 135–137): On real hardware, if the current FPGA core is older than the required version, loading aborts with an upgrade prompt. In an emulator, this check is skipped.
+
+The loader then blacks out the screen — black border, all ULA attributes set to PAPER 0 / INK 0.
+
+### Resetting Next Registers (Offset 134)
+
+If Offset 134 is 0, the loader resets the Next hardware to a clean state:
+
+- Stops the Copper
+- Disables DivMMC NMI (DRIVE button), enables Multiface NMI (M1 button)
+- Unlocks port `$7FFD`
+- Disables RAM and port contention
+- Sets AY stereo mode to ABC
+- Enables Spectdrum (four 8-bit DACs) and TurboSound
+- Enables the Timex port (`$FF`)
+- Sets CPU speed to 28MHz
+- Sets Layer 2 page to Bank 16, shadow page to Bank 12
+- Sets global transparency color to `$E3`
+- Enables sprites (not over border; sprites above Layer 2 above ULA)
+- Resets Layer 2 and LoRes scroll positions to zero
+- Resets all clip windows to defaults (no clipping)
+- Enables flashing
+- Initializes primary ULA, Layer 2, and sprite palettes
+- Sets the fallback color (all layers transparent) to 0
+- Pages the ROM back into `$0000–$3FFF`
+
+The following Peripheral Settings 2 flags are preserved regardless:
+
+- F8 CPU speed hotkey and F5/F6 expansion bus hotkeys
+- BEEP routed to internal speaker only
+- F3 50/60Hz hotkey
+
+After waiting for the next screen frame to begin, the loader restores the AY stereo mode that was active before the reset.
+
+### Loading the Palette and Screen
+
+The loader reads Offset 10 to determine whether a palette and loading screen are present.
+
+**Palette**: The 512-byte palette block is skipped if bit 7 of Offset 10 is set, or if the screen type is ULA, HiRes, or HiColor (these modes don't use a NEX palette). Otherwise, the loader reads the palette and programs the appropriate hardware palette:
+
+- **LoRes**: Enables ULANext and uploads to the primary ULA palette
+- **Layer 2**: Uploads to the Layer 2 primary palette
+
+**Loading screen**: Each screen type is loaded as follows:
+
+| Screen type | Size        | Destination              | Notes                                    |
+|-------------|-------------|--------------------------|------------------------------------------|
+| Layer 2     | 48KB        | Banks 9, 10, 11          | Enables Layer 2; resets Timex port       |
+| ULA         | 6,912 bytes | `$4000` (Bank 5)         | Disables Layer 2; resets Timex port      |
+| LoRes       | 2 × 6,144 B | `$4000` and `$6000`      | Disables Layer 2; enables LoRes mode     |
+| HiRes       | 2 × 6,144 B | `$4000` and `$6000`      | Disables Layer 2; enables HiRes mode     |
+| HiColor     | 2 × 6,144 B | `$4000` and `$6000`      | Disables Layer 2; enables HiColor mode   |
+
+All screen types set sprite priority to: sprites above Layer 2, Layer 2 above ULA.
+
+The border color (Offset 11) is applied only if a loading screen is present.
+
+After all screens are loaded, Bank 0 is paged back into Slot 3 (`$C000–$FFFF`).
+
+### Loading Memory Banks
+
+Banks are loaded in this fixed order: **5, 2, 0, 1, 3, 4, 6, 7**, then **8 through 111** sequentially. For each bank, the loader checks the corresponding flag byte in the header (Offsets 18–129). If the flag is set, the loader maps that bank to Slot 3 via MMU 6 and MMU 7 and reads 16KB of data from the file into `$C000–$FFFF`.
+
+After each bank loads, the loader updates the loading progress indicator. If a loading screen is present, it also waits the number of frames specified in Offset 132 before proceeding.
+
+### Starting Execution
+
+Once all banks are loaded:
+
+1. **File handle** (Offset 140): If the value is zero, the NEX file is closed. Otherwise, it remains open for the program to use.
+2. **Entry bank** (Offset 139): The specified bank is paged into Slot 3 (`$C000–$FFFF`) via MMU 6 and MMU 7.
+3. **File handle delivery**: If Offset 140 is in the range `$0001–$3FFF`, the file handle is placed in register BC. If it is in the range `$4000–$FFFF`, the file handle is written to that memory address.
+4. **Stack pointer**: SP is set to the value at Offset 12.
+5. **Program counter** (Offset 14):
+   - **Zero**: The NEX file is closed, SP and Slot 3 are restored to their original values, and control returns to the NextBASIC prompt.
+   - **Non-zero**: The loader jumps to that address with ZX Spectrum Next ROM3 paged in, starting your program.
+
+
+## Creating NEX Files with Klive Assembler
+
+You don't manually construct NEX files byte-by-byte (though you could). Klive IDE includes a Z80 assembler with built-in NEX file generation - it's the tool we'll use throughout this book.
+
+Klive's assembler makes NEX creation straightforward using the `.model next` directive and `.savenex` pragma. Here's a complete example:
+
+```z80klive
+.model next
+
+.savenex file "game.nex"
+.savenex core 3, 1, 10       ; Require core 3.1.10
+.savenex border 5            ; Cyan border
+
+; Your code starts at $8000 automatically (unbanked code maps to bank 2)
+main
+    ld a, 2
+    out (0xFE), a            ; Set border color
+    call game_loop
+    
+trap
+    jr trap
+
+game_loop
+    ; Game logic here
+    ret
+```
+
+When you use `.model next`, Klive automatically sets sensible defaults:
+- **RAM requirement**: 768KB
+- **Border color**: 7 (white, unless you override it)
+- **Entry address**: $8000
+- **Bank mapping**: Unbanked code goes to bank 2
+
+The `.savenex` pragma accepts multiple subcommands to configure every aspect of the NEX file:
+
+**Basic Configuration:**
+```z80klive
+.savenex file "myapp.nex"        ; Output filename
+.savenex ram 768                 ; 768KB or 1792KB
+.savenex border 4                ; Green border (0-7)
+.savenex stackaddr 0xFFFE        ; Stack pointer
+.savenex entryaddr 0x8000        ; Entry point
+.savenex entrybank 2             ; Bank at 0xC000 on startup
+```
+
+**Loading Screen:**
+```z80klive
+.savenex screen "layer2", "loading.scr"
+.savenex palette "colors.nxp"
+.savenex bar "on", 2, 50, 100    ; Enable loading bar: color 2, delay 50, start delay 100
+```
+
+**Advanced Features:**
+```z80klive
+.savenex copper "effects.cu"     ; Copper code for loading effects
+.savenex filehandle "open"       ; Keep file open, pass handle in BC
+.savenex preserve "on"           ; Preserve Next registers
+```
+
+**Multi-Bank Applications:**
+
+For complex programs using multiple memory banks, combine unbanked code with explicit `.bank` sections:
+
+```z80klive
+.model next
+
+.savenex file "multibank.nex"
+.savenex core "3.1.0"
+
+; Unbanked code in bank 2 at $8000
+main
+    ; Page in bank $20 to $A000-$BFFF
+    nextreg $55, $40
+    call DrawScreen
+    jr main
+
+; Explicit bank $20 code
+.bank $20
+.org $0000
+.disp $a000
+
+DrawScreen
+    ; Drawing code here
+    ret
+```
+
+The assembler tracks which banks your code uses and automatically includes them in the NEX file. Unbanked code (without `.bank` pragma) goes to bank 2 starting at $8000. Code with explicit `.bank` directives goes to the specified bank at the addresses you define.
+
+## Version Differences: V1.0, V1.1, V1.2
+
+The NEX format has evolved through three versions:
+
+**V1.0** (original):
+
+- Basic header structure
+- Standard loading screens (Layer 2, ULA, LoRes)
+- Bank loading with fixed order
+
+**V1.1** (added):
+
+- Timex HiRes and HiCol screen support
+- Copper code block for loading effects
+- Extended core version checking
+- File handle preservation for streaming assets
+
+**V1.2** (current, added):
+
+- Layer 2 extended modes (320×256×8, 640×256×4)
+- Palette offset for Layer 2 (**header offset 138** reused)
+- Enhanced loading bar options
+- Entry bank specification for cleaner initializationa:X
+f:X
+f:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"File Structure: Layers of a NEX File","id":"file-structure-layers-of-a-nex-file","depth":2},{"value":"The Header: Control Center for Loading","id":"the-header-control-center-for-loading","depth":2},{"value":"Identification and Version (Offsets 0-7)","id":"identification-and-version-offsets-0-7","depth":3},{"value":"Memory Requirements (Offset 8)","id":"memory-requirements-offset-8","depth":3},{"value":"Bank Loading Information (Offsets 9-129)","id":"bank-loading-information-offsets-9-129","depth":3},{"value":"Loading Screens (Offset 10)","id":"loading-screens-offset-10","depth":3},{"value":"Execution Parameters (Offsets 11-16)","id":"execution-parameters-offsets-11-16","depth":3},{"value":"Loading Progress Indicators (Offsets 130-133)","id":"loading-progress-indicators-offsets-130-133","depth":3},{"value":"Hardware Configuration (Offsets 134-141)","id":"hardware-configuration-offsets-134-141","depth":3},{"value":"Optional Blocks: Palette, Screens, and Copper","id":"optional-blocks-palette-screens-and-copper","depth":2},{"value":"Palette Block (512 bytes)","id":"palette-block-512-bytes","depth":3},{"value":"Loading Screen Blocks","id":"loading-screen-blocks","depth":3},{"value":"Copper Code Block (2,048 bytes)","id":"copper-code-block-2048-bytes","depth":3},{"value":"Bank Data: The Actual Program","id":"bank-data-the-actual-program","depth":2},{"value":"Custom Data: Beyond the Standard Format","id":"custom-data-beyond-the-standard-format","depth":2},{"value":"Practical Example: Anatomy of a Simple NEX File","id":"practical-example-anatomy-of-a-simple-nex-file","depth":2},{"value":"Header Construction","id":"header-construction","depth":3},{"value":"Optional Blocks","id":"optional-blocks","depth":3},{"value":"Bank Data (3 × 16KB = 48KB)","id":"bank-data-3--16kb--48kb","depth":3},{"value":"Loading Procedure: How Your Code is Started","id":"loading-procedure-how-your-code-is-started","depth":2},{"value":"Initial Setup","id":"initial-setup","depth":3},{"value":"Reading the Header","id":"reading-the-header","depth":3},{"value":"Resetting Next Registers (Offset 134)","id":"resetting-next-registers-offset-134","depth":3},{"value":"Loading the Palette and Screen","id":"loading-the-palette-and-screen","depth":3},{"value":"Loading Memory Banks","id":"loading-memory-banks","depth":3},{"value":"Starting Execution","id":"starting-execution","depth":3},{"value":"Creating NEX Files with Klive Assembler","id":"creating-nex-files-with-klive-assembler","depth":2},{"value":"Version Differences: V1.0, V1.1, V1.2","id":"version-differences-v10-v11-v12","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"Appendix A: The NEX File Format","filePath":"content/book/app-A-nex-file-format.md","timestamp":1788420416000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+c1:I[484,[],"OutletBoundary"]
+c2:"$Sreact.suspense"
+c4:I[484,[],"ViewportBoundary"]
+c5:I[484,[],"MetadataBoundary"]
+c6:I[7121,[],""]
+c7:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Appendix A: The NEX File Format","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The original ZX Spectrum had multiple file formats: TAP files for tape images, SNA and Z80 for snapshots, raw binaries that needed manual loading. Each format served a purpose, but none were ideal for modern distribution. TAP files included tape loading headers with checksums. Snapshot formats saved entire machine state but couldn’t preserve modern Next features. Raw binaries required complex multi-step loading procedures."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Next needed something better: ",["$","strong",null,{"children":"a self-contained executable format"}]," that could:"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Load directly from the SD card operating system (NextZXOS/ESXDOS)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Specify exactly which memory banks to load and where"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Include loading screens (Layer 2, ULA, LoRes, or Timex modes)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Set up hardware registers, palettes, and initial state"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Support the full 2MB address space (112 banks of 16KB each)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Run immediately after loading without manual setup"}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"That’s NEX. Think of it as the Next’s equivalent to EXE on Windows or ELF on Linux - a standardized executable format that “just works.”"}],"\n",["$","h2",null,{"id":"file-structure-layers-of-a-nex-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["File Structure: Layers of a NEX File",["$","$L12",null,{"id":"file-structure-layers-of-a-nex-file"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Every NEX file starts with a mandatory 512-byte header, followed by optional blocks as needed. Here’s the complete structure:"}],"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Block","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Size","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Purpose","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Header","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"512 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Magic number, version, loading instructions, bank list","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L13","$L14","$L15","$L16","$L17","$L18","$L19"]}]]}],"\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4","\n","$La5","\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa","\n","$Lab","\n","$Lac","\n","$Lad","\n","$Lae","\n","$Laf","\n","$Lb0","\n","$Lb1","\n","$Lb2","\n","$Lb3","\n","$Lb4","\n","$Lb5","\n","$Lb6","\n","$Lb7","\n","$Lb8","\n","$Lb9","\n","$Lba","\n","$Lbb","\n","$Lbc","\n","$Lbd","\n","$Lbe","\n","$Lbf","\n","$Lc0"]}]
+8:["$","$Lc1",null,{"children":["$","$c2",null,{"name":"Next.MetadataOutlet","children":"$@c3"}]}]
+b:["$","$1","h",{"children":[null,["$","$Lc4",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$Lc5",null,{"children":["$","$c2",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Appendix A: The NEX File Format - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$Lc6",null,{"parallelRouterKey":"children","template":["$","$Lc7",null,{}]}]]}]
+11:true
+c8:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ToggleWordWrapButton"]
+13:["$","tr",null,{"children":[["$","td",null,{"children":"Palette","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"512 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"256 color entries (Layer 2, LoRes, Tilemap screens)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+14:["$","tr",null,{"children":[["$","td",null,{"children":"Loading Screen","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"6,912–81,920 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ULA, Layer 2, LoRes, or Timex display during loading","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+15:["$","tr",null,{"children":[["$","td",null,{"children":"Copper Code","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"2,048 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Raster effects for animated loading bar","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+16:["$","tr",null,{"children":[["$","td",null,{"children":"Bank 5","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"16,384 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"First memory bank in file order (ULA screen memory)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+17:["$","tr",null,{"children":[["$","td",null,{"children":"Bank 2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"16,384 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Second bank (typically working memory)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+18:["$","tr",null,{"children":[["$","td",null,{"children":"Banks 0, 1, 3, 4, 6–111","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"16,384 bytes each","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Remaining banks in defined order","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+19:["$","tr",null,{"children":[["$","td",null,{"children":"Custom Data","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Variable","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Application-defined data (levels, assets, etc.)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The header tells you what’s coming. The optional blocks appear only if the header says they’re present. Everything is laid out sequentially - no seeks, no compression, no complex structures. Just read block after block in order."}]
+1b:["$","h2",null,{"id":"the-header-control-center-for-loading","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Header: Control Center for Loading",["$","$L12",null,{"id":"the-header-control-center-for-loading"}]]}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first 512 bytes contain everything the loader needs to know. Let’s break down the key fields:"}]
+1d:["$","h3",null,{"id":"identification-and-version-offsets-0-7","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Identification and Version (Offsets 0-7)",["$","$L12",null,{"id":"identification-and-version-offsets-0-7"}]]}]
+1e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Offset 0: \"Next\" (4 bytes) - Magic number identifying NEX files"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 4: \"V1.2\" (4 bytes) - Version string (V1.0, V1.1, or V1.2)"}]}]]}]]}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Every NEX file starts with the ASCII string “Next” followed by the version. This lets loaders quickly verify “yes, this is a NEX file” and “yes, I understand this version.” If you encounter “Next” but an unknown version, you can reject the file early."}]
+20:["$","h3",null,{"id":"memory-requirements-offset-8","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Memory Requirements (Offset 8)",["$","$L12",null,{"id":"memory-requirements-offset-8"}]]}]
+21:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Offset 8: RAM required (1 byte)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  0 = 768KB (standard Next)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  1 = 1792KB (expanded Next)"}]}]]}]]}]]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Most Next machines have 1MB or 2MB of RAM. This byte tells the loader whether 768KB is sufficient or if the full expanded memory is required. If the machine doesn’t have enough RAM, the loader can bail out with a clear error message instead of attempting to load and failing mysteriously."}]
+23:["$","h3",null,{"id":"bank-loading-information-offsets-9-129","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Bank Loading Information (Offsets 9-129)",["$","$L12",null,{"id":"bank-loading-information-offsets-9-129"}]]}]
+24:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Offset 9:  Number of banks to load (1 byte) - count of 16KB banks (0-112)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 18: Bank presence array (112 bytes) - one byte per bank (0=skip, 1=load)"}]}]]}]]}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is clever: the header contains a 112-byte array where each byte corresponds to one of the 112 possible 16KB banks (banks 0-111). A value of 1 means “this bank’s data is in the file,” 0 means “skip this bank.”"}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["But here’s the twist: ",["$","strong",null,{"children":"banks appear in the file in a specific order"}],", not sequential order:"]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"File order"}],": 5, 2, 0, 1, 3, 4, 6, 7, 8, 9, 10, …, 111"]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Why start with bank 5?"}]," Because bank 5 is the ULA screen memory (0x4000-0x7FFF). If you’re showing a loading screen, you want it first. Bank 2 comes next because it’s often used as working memory during loading. After the first few special-case banks, the rest are sequential."]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Example"}],": If the header says banks 5, 7, and 10 are present:"]}]
+2a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Byte at offset 18+5 = 23 will be 1 (bank 5 present)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Byte at offset 18+7 = 25 will be 1 (bank 7 present)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Byte at offset 18+10 = 28 will be 1 (bank 10 present)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"All other bytes in the array will be 0"}],"\n"]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the file data section, you’ll find: bank 5 data (16KB), bank 7 data (16KB), bank 10 data (16KB)."}]
+2c:["$","h3",null,{"id":"loading-screens-offset-10","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Loading Screens (Offset 10)",["$","$L12",null,{"id":"loading-screens-offset-10"}]]}]
+2d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Offset 10: Loading screen type (1 byte, bit flags)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  Bit 7 (128): No palette block (palette omitted even if screen uses one)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  Bit 4 (16):  Timex HiCol screen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  Bit 3 (8):   Timex HiRes screen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  Bit 2 (4):   LoRes screen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  Bit 1 (2):   ULA screen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  Bit 0 (1):   Layer 2 screen"}]}]]}]]}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A NEX file can include a loading screen displayed while banks load. This byte is a ",["$","strong",null,{"children":"bit field"}]," - multiple bits can be set, though typical files include only one screen type."]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The screen types have different sizes:"}]
+30:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Layer 2 (standard)"}],": 49,152 bytes (48KB) - 256×192, 256 colors"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Layer 2 (extended)"}],": 81,920 bytes (80KB) - 320×256×8 or 640×256×4"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"ULA"}],": 6,912 bytes (6KB + 768 bytes attrs) - classic Spectrum screen"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"LoRes"}],": 12,288 bytes (12KB) - 128×96 with enhanced color attributes"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Timex HiRes"}],": 12,288 bytes (12KB) - 512×192 monochrome"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Timex HiCol"}],": 12,288 bytes (12KB) - 256×192 with 8×1 color cells"]}],"\n"]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If bit 7 is clear and the screen type uses palettes (Layer 2, LoRes, Tilemap), a 512-byte palette block follows the header."}]
+32:["$","h3",null,{"id":"execution-parameters-offsets-11-16","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Execution Parameters (Offsets 11-16)",["$","$L12",null,{"id":"execution-parameters-offsets-11-16"}]]}]
+33:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Offset 11: Border color (1 byte) - 0-7 (standard Spectrum colors)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 12: Stack pointer (2 bytes, little-endian)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 14: Program counter (2 bytes, little-endian) - 0 means \"don't run, just load\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 16: Extra files count (2 bytes) - currently unused"}]}]]}]]}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"program counter"}]," is crucial: if it’s zero, the loader loads everything into memory but doesn’t start execution. This is useful for data files or multi-stage loading. If non-zero, the loader jumps to that address after loading completes."]}]
+35:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"stack pointer"}]," sets the initial SP value. Most programs use 0xFFFE (top of memory, growing downward), but you can specify a custom stack location if needed."]}]
+36:["$","h3",null,{"id":"loading-progress-indicators-offsets-130-133","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Loading Progress Indicators (Offsets 130-133)",["$","$L12",null,{"id":"loading-progress-indicators-offsets-130-133"}]]}]
+37:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Offset 130: Layer 2 loading bar (1 byte) - 0=off, 1=on"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 131: Loading bar color (1 byte) - 0-255 (palette index)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 132: Delay per bank (1 byte) - frames to wait after loading each bank"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 133: Start delay (1 byte) - frames to wait before execution"}]}]]}]]}]]}]
+38:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Remember those tape loading borders that flashed colors while loading? The NEX format supports a modern equivalent: a ",["$","strong",null,{"children":"loading bar"}]," that progresses across the screen as banks load."]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Setting offset 130 to 1 enables this bar (only works with Layer 2 screens). Offset 131 sets the bar color. Offset 132 adds artificial delay between banks - useful if you want users to actually see the loading bar rather than having everything load instantly from SD card. Offset 133 adds delay before execution starts."}]
+3a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Why artificial delays?"}]," Nostalgia, mostly. Loading from SD card is so fast that loading screens flash by unreadably. Adding a small delay (say, 2-3 frames per bank) lets users appreciate that beautiful loading screen you crafted."]}]
+3b:["$","h3",null,{"id":"hardware-configuration-offsets-134-141","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Hardware Configuration (Offsets 134-141)",["$","$L12",null,{"id":"hardware-configuration-offsets-134-141"}]]}]
+3c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Offset 134: Preserve NextRegs (1 byte) - 0=reset machine state, 1=preserve"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 135: Required core version (3 bytes) - major.minor.subminor (0-15.0-15.0-255)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 138: Timex color / Layer 2 palette offset (1 byte)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 139: Entry bank (1 byte) - bank mapped to slot 3 (0xC000-0xFFFF)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 140: File handle address (2 bytes) - where to store file handle (0=close file)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 142: Disable expansion bus (1 byte) - 0=enabled, 1=disabled (V1.3+ loaders)"}]}]]}]]}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Preserve NextRegs"}]," determines whether the loader resets all Next registers to defaults or leaves them as-is. Most programs want 0 (reset everything) for clean state. Setting 1 is useful for utilities that modify the environment without overwriting it."]}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Required core version"}]," specifies minimum hardware requirements. The loader checks this against the actual FPGA core version and refuses to load if the hardware is too old. Format is three bytes: major version (4 bits), minor version (4 bits), subminor version (8 bits)."]}]
+3f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Entry bank"}]," sets which bank appears at 0xC000-0xFFFF when execution starts. The program counter (offset 14) runs after this mapping is established. If your code lives in bank 0 and expects to run from 0xC000, set this to 0."]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"File handle address"}]," is subtle: normally the loader closes the NEX file after loading (value 0). But if your program wants to read more data from the file (perhaps you included custom data at the end), you can request the file handle:"]}]
+41:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"0"}],": Close file (standard behavior)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"1-0x3FFF"}],": Pass file handle in BC register when program starts"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"0x4000-0xFFFF"}],": Write file handle to specified memory address"]}],"\n"]}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This enables ",["$","strong",null,{"children":"streaming assets"}]," - include gigabytes of data at the end of the NEX file, keep it open, and read on demand."]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Disable expansion bus"}]," (offset 142, V1.3+ loaders): Controls whether the expansion bus is available during program execution. Set to 1 to disable the expansion bus (useful if your program expects exclusive hardware access and doesn’t want interference from expansion devices). Set to 0 to leave it enabled. ",["$","strong",null,{"children":"Note:"}]," This flag is only honored on core versions 3.0.5 or newer. Earlier loaders and core versions ignore this byte."]}]
+44:["$","h2",null,{"id":"optional-blocks-palette-screens-and-copper","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Optional Blocks: Palette, Screens, and Copper",["$","$L12",null,{"id":"optional-blocks-palette-screens-and-copper"}]]}]
+45:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After the 512-byte header come the optional blocks. Their presence is determined by header flags."}]
+46:["$","h3",null,{"id":"palette-block-512-bytes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Palette Block (512 bytes)",["$","$L12",null,{"id":"palette-block-512-bytes"}]]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the loading screen uses a palette (Layer 2, LoRes, or Tilemap) and bit 7 of offset 10 is clear, the next 512 bytes define the palette. The format is:"}]
+48:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"256 entries × 2 bytes per entry = 512 bytes total"}]}],"\n",["$","span",null,{"children":["$","span",null,{}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Each entry (little-endian 16-bit):"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  Bits 0-2:   RRR (3-bit red)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  Bits 3-5:   GGG (3-bit green)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  Bits 6-8:   BBB (3-bit blue)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"  Bits 9-15:  Reserved (should be 0)"}]}]]}]]}]]}]
+49:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Next uses 9-bit RGB333 color (3 bits red, 3 bits green, 3 bits blue). The format stores this as little-endian 16-bit values: the lower 9 bits contain the color (BBBGGGRRR), and the upper 7 bits are reserved. The loader writes these values to NextReg $44 (PALETTE_VALUE_BIT9_REGISTER)."}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Byte layout per entry:"}]}]
+4b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Byte 0 (bits 0-7): BBGGGRRR (red[2:0], green[2:0], blue[1:0])"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Byte 1 (bits 8-15): 0000000B (reserved, blue[2])"}],"\n"]}]
+4c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Why 512 bytes for 256 entries?"}]," The format uses 2 bytes per entry to accommodate the 9-bit RGB333 format with room for future expansion."]}]
+4d:["$","h3",null,{"id":"loading-screen-blocks","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Loading Screen Blocks",["$","$L12",null,{"id":"loading-screen-blocks"}]]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The screen data (if present) follows the palette. The size depends on which screen type is specified:"}]
+4f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Layer 2 (48KB)"}],": 256×192 pixels, 256 colors per pixel"]}]
+50:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"256 × 192 = 49,152 bytes"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Linear framebuffer: byte N is pixel N"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Color is direct palette index (0-255)"}],"\n"]}]
+51:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Layer 2 Extended (80KB)"}],": 320×256 or 640×256 pixels"]}]
+52:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"320×256×8 bpp: 320 × 256 = 81,920 bytes"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"640×256×4 bpp: 640 × 256 ÷ 2 = 81,920 bytes (two pixels per byte)"}],"\n"]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"ULA (6,912 bytes)"}],": Classic Spectrum format"]}]
+54:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"6,144 bytes pixel data (256×192, 1 bit per pixel)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"768 bytes attribute data (32×24 cells, 8×8 pixels per cell)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Non-linear layout (three 2KB thirds, each with 64 rows)"}],"\n"]}]
+55:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"LoRes (12,288 bytes)"}],": 128×96 with 4×8 color cells"]}]
+56:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"6,144 bytes pixel data"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"6,144 bytes attribute data (one byte per 4×8 block)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Allows two colors per 4×8 block vs. ULA’s 8×8"}],"\n"]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Timex HiRes (12,288 bytes)"}],": 512×192 monochrome"]}]
+58:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Bitmap layout similar to ULA but double horizontal resolution"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Color specified in header (offset 138)"}],"\n"]}]
+59:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Timex HiCol (12,288 bytes)"}],": 256×192 with 8×1 color cells"]}]
+5a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Enhanced color resolution compared to ULA’s 8×8"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Each 8-pixel row can have unique foreground/background colors"}],"\n"]}]
+5b:["$","h3",null,{"id":"copper-code-block-2048-bytes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Copper Code Block (2,048 bytes)",["$","$L12",null,{"id":"copper-code-block-2048-bytes"}]]}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you want animated loading effects (rainbow borders, color cycling, raster bars), include a 2KB Copper program. The Copper is a simple raster-synchronized co-processor that executes a list of WAIT/MOVE instructions:"}]
+5d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"WAIT"}]," instructions: Pause until the raster beam reaches position (X,Y)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"MOVE"}]," instructions: Write value to NextReg register"]}],"\n"]}]
+5e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The loader enables the Copper if this block is present, creating effects that run automatically while banks load. After loading completes, the Copper is disabled (unless your program re-enables it)."}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Example use"}],": Fade the border color through the spectrum as banks load, or animate the loading bar with raster effects."]}]
+60:["$","h2",null,{"id":"bank-data-the-actual-program","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Bank Data: The Actual Program",["$","$L12",null,{"id":"bank-data-the-actual-program"}]]}]
+61:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After all the optional blocks come the memory banks themselves. Each bank present in the header’s bank array (offset 18-129) contributes 16,384 bytes of raw data."}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Remember the order"}],": 5, 2, 0, 1, 3, 4, 6, 7, 8, …, 111"]}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If your program uses banks 0, 5, and 20:"}]
+64:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Skip to end of optional blocks"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Read 16KB → this is bank 5"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Read 16KB → this is bank 0 (comes before bank 2 in file order)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Read 16KB → this is bank 20"}],"\n"]}]
+65:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The loader tracks which bank it’s reading using the header’s bank presence array. It walks through the array in file order, loading each present bank into the corresponding memory location."}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Important"}],": Bank data is ",["$","strong",null,{"children":"raw memory dumps"}],". No compression, no encoding, no headers. Just 16,384 bytes exactly as they should appear in memory. This makes loading fast (no decompression) but files large if you include many banks."]}]
+67:["$","h2",null,{"id":"custom-data-beyond-the-standard-format","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Custom Data: Beyond the Standard Format",["$","$L12",null,{"id":"custom-data-beyond-the-standard-format"}]]}]
+68:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After all the standard NEX blocks, you can append arbitrary binary data. The NEX specification doesn’t define or interpret this data - it’s entirely application-specific."}]
+69:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Use cases"}],":"]}]
+6a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Level data"}],": Store game levels, load on demand via file handle"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Graphics assets"}],": High-resolution bitmaps, too large for memory banks"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Audio samples"}],": PCM data for music/sound effects"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Script data"}],": Dialog, cutscenes, game logic in custom format"]}],"\n"]}]
+6b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Access this data by:"}]
+6c:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Setting the file handle address (header offset 140) to non-zero"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Keeping the file open after loading"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Reading from file handle using standard file I/O from your program"}],"\n"]}]
+6d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Example"}],": A game might include 100 levels as custom data. The program loads level 1’s data on demand when the player enters it, level 2 when they progress, etc. This avoids loading all levels into memory simultaneously."]}]
+6e:["$","h2",null,{"id":"practical-example-anatomy-of-a-simple-nex-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Practical Example: Anatomy of a Simple NEX File",["$","$L12",null,{"id":"practical-example-anatomy-of-a-simple-nex-file"}]]}]
+6f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Let’s trace through a minimal NEX file: a program that displays “HELLO WORLD” in the center of a blue Layer 2 screen."}]
+70:["$","h3",null,{"id":"header-construction","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Header Construction",["$","$L12",null,{"id":"header-construction"}]]}]
+71:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Offset 0-3:   \"Next\" (4 bytes)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 4-7:   \"V1.2\" (4 bytes)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 8:     0 (768KB RAM sufficient)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 9:     3 (three banks: 5, 9, 10)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 10:    1 (bit 0 set: Layer 2 screen included)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 11:    1 (blue border)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 12-13: 0xFFFE (stack at top of memory)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 14-15: 0xC000 (start execution at 0xC000)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 16-17: 0 (no extra files)"}]}]]}]]}]]}]
+72:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Bank array (offset 18-129)"}],":"]}]
+73:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Offset 23 (18+5):  1 (bank 5 present)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 27 (18+9):  1 (bank 9 present)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 28 (18+10): 1 (bank 10 present)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"All others:        0 (not present)"}]}]]}]]}]]}]
+74:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Loading bar settings"}],":"]}]
+75:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Offset 130: 1 (enable loading bar)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 131: 255 (white bar)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 132: 2 (2-frame delay per bank for visibility)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 133: 50 (1-second delay before execution at 50Hz)"}]}]]}]]}]]}]
+76:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Hardware config"}],":"]}]
+77:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Offset 134: 0 (reset machine state)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 135-137: 3, 1, 10 (require core 3.1.10 minimum)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 138: 0 (Layer 2 palette offset 0)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 139: 5 (map bank 5 to slot 3 at 0xC000)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Offset 140-141: 0 (close file after loading)"}]}]]}]]}]]}]
+78:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Remainder"}],": Pad to 512 bytes with zeros."]}]
+79:["$","h3",null,{"id":"optional-blocks","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Optional Blocks",["$","$L12",null,{"id":"optional-blocks"}]]}]
+7a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Palette (512 bytes)"}],":"]}]
+7b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Entry 0: 0x0000 (black)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Entry 1: 0x00E0 (blue = 000 111 00 in RGB332)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Entry 255: 0x00FF (white = 111 111 11 in RGB332)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Entries 2-254: Other colors as needed"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Each entry: 2 bytes (color in low byte, 0 in high byte)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Total: 256 × 2 = 512 bytes"}],"\n"]}]
+7c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Layer 2 Screen (49,152 bytes)"}],":"]}]
+7d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Fill with palette index 1 (blue background): 49,152 bytes of 0x01"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Except center region where text renders: pixels set to index 255 (white)"}],"\n"]}]
+7e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"No Copper code"}]," (omitted)."]}]
+7f:["$","h3",null,{"id":"bank-data-3--16kb--48kb","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Bank Data (3 × 16KB = 48KB)",["$","$L12",null,{"id":"bank-data-3--16kb--48kb"}]]}]
+80:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Bank 5"}]," (16,384 bytes):"]}]
+81:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Contains the Layer 2 screen data (though that’s already shown via loading screen)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Or contains font data, code, whatever bank 5 needs for the program"}],"\n"]}]
+82:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Bank 9"}]," (16,384 bytes):"]}]
+83:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Additional Layer 2 screen data (Layer 2 can span banks 9, 10, 11)"}],"\n"]}]
+84:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Bank 10"}]," (16,384 bytes):"]}]
+85:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"More Layer 2 screen data"}],"\n"]}]
+86:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"File size"}],": 512 (header) + 512 (palette) + 49,152 (screen) + 49,152 (3 banks) = 99,328 bytes ≈ 97KB"]}]
+87:["$","h2",null,{"id":"loading-procedure-how-your-code-is-started","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Loading Procedure: How Your Code is Started",["$","$L12",null,{"id":"loading-procedure-how-your-code-is-started"}]]}]
+88:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Understanding how the NEX loader operates helps you write better programs and debug loading issues. Here’s the complete loading sequence."}]
+89:["$","h3",null,{"id":"initial-setup","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Initial Setup",["$","$L12",null,{"id":"initial-setup"}]]}]
+8a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When the NEX loader starts, memory is configured as follows: the first 8K (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0000–$1FFF"}],") holds the ESXDOS ROM, and the second 8K slot (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$2000–$3FFF"}],") is RAM containing the loader itself — completely isolated from the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$4000–$FFFF"}]," address space. The loader immediately saves the current Stack Pointer and moves the stack to the top of that second slot (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$3FFF"}],")."]}]
+8b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Before opening the NEX file, the loader disables interrupts and sets the CPU speed to 14MHz. Once the file is open, the loader saves the file handle for later use (see Offset 140) and initializes the screen:"}]
+8c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Sets ULA transparency"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Disables Layer 2"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Enables sprites (not over border; sprites above Layer 2, Layer 2 above ULA)"}],"\n"]}]
+8d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The loader then maps the upper three 16K memory slots:"}]
+8e:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Slot","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Address range","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Bank","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$4000–$7FFF"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bank 5","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$8000–$BFFF"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bank 2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"3","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000–$FFFF"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bank 0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+8f:["$","h3",null,{"id":"reading-the-header","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Reading the Header",["$","$L12",null,{"id":"reading-the-header"}]]}]
+90:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The loader reads the 512-byte NEX header into Bank 0 at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000"}]," and performs these checks in order:"]}]
+91:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Loader version"}],": If the NEX file requires a newer loader version, loading aborts with an error."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Expansion bus"}]," (Offset 142): If requested, the loader disables the expansion bus by clearing the top four bits of NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$80"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Core version"}]," (Offsets 135–137): On real hardware, if the current FPGA core is older than the required version, loading aborts with an upgrade prompt. In an emulator, this check is skipped."]}],"\n"]}]
+92:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The loader then blacks out the screen — black border, all ULA attributes set to PAPER 0 / INK 0."}]
+93:["$","h3",null,{"id":"resetting-next-registers-offset-134","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Resetting Next Registers (Offset 134)",["$","$L12",null,{"id":"resetting-next-registers-offset-134"}]]}]
+94:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If Offset 134 is 0, the loader resets the Next hardware to a clean state:"}]
+95:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Stops the Copper"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Disables DivMMC NMI (DRIVE button), enables Multiface NMI (M1 button)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Unlocks port ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$7FFD"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Disables RAM and port contention"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Sets AY stereo mode to ABC"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Enables Spectdrum (four 8-bit DACs) and TurboSound"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Enables the Timex port (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}],")"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Sets CPU speed to 28MHz"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Sets Layer 2 page to Bank 16, shadow page to Bank 12"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Sets global transparency color to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$E3"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Enables sprites (not over border; sprites above Layer 2 above ULA)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Resets Layer 2 and LoRes scroll positions to zero"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Resets all clip windows to defaults (no clipping)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Enables flashing"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Initializes primary ULA, Layer 2, and sprite palettes"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Sets the fallback color (all layers transparent) to 0"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Pages the ROM back into ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0000–$3FFF"}]]}],"\n"]}]
+96:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The following Peripheral Settings 2 flags are preserved regardless:"}]
+97:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"F8 CPU speed hotkey and F5/F6 expansion bus hotkeys"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"BEEP routed to internal speaker only"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"F3 50/60Hz hotkey"}],"\n"]}]
+98:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After waiting for the next screen frame to begin, the loader restores the AY stereo mode that was active before the reset."}]
+99:["$","h3",null,{"id":"loading-the-palette-and-screen","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Loading the Palette and Screen",["$","$L12",null,{"id":"loading-the-palette-and-screen"}]]}]
+9a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The loader reads Offset 10 to determine whether a palette and loading screen are present."}]
+9b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Palette"}],": The 512-byte palette block is skipped if bit 7 of Offset 10 is set, or if the screen type is ULA, HiRes, or HiColor (these modes don’t use a NEX palette). Otherwise, the loader reads the palette and programs the appropriate hardware palette:"]}]
+9c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"LoRes"}],": Enables ULANext and uploads to the primary ULA palette"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Layer 2"}],": Uploads to the Layer 2 primary palette"]}],"\n"]}]
+9d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Loading screen"}],": Each screen type is loaded as follows:"]}]
+9e:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Screen type","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Size","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Destination","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Notes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Layer 2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"48KB","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Banks 9, 10, 11","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Enables Layer 2; resets Timex port","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ULA","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"6,912 bytes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$4000"}]," (Bank 5)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Disables Layer 2; resets Timex port","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"LoRes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"2 × 6,144 B","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$4000"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6000"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Disables Layer 2; enables LoRes mode","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"HiRes","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"2 × 6,144 B","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$4000"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6000"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Disables Layer 2; enables HiRes mode","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$Lc9"]}]]}]
+9f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All screen types set sprite priority to: sprites above Layer 2, Layer 2 above ULA."}]
+a0:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The border color (Offset 11) is applied only if a loading screen is present."}]
+a1:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["After all screens are loaded, Bank 0 is paged back into Slot 3 (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000–$FFFF"}],")."]}]
+a2:["$","h3",null,{"id":"loading-memory-banks","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Loading Memory Banks",["$","$L12",null,{"id":"loading-memory-banks"}]]}]
+a3:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Banks are loaded in this fixed order: ",["$","strong",null,{"children":"5, 2, 0, 1, 3, 4, 6, 7"}],", then ",["$","strong",null,{"children":"8 through 111"}]," sequentially. For each bank, the loader checks the corresponding flag byte in the header (Offsets 18–129). If the flag is set, the loader maps that bank to Slot 3 via MMU 6 and MMU 7 and reads 16KB of data from the file into ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000–$FFFF"}],"."]}]
+a4:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"After each bank loads, the loader updates the loading progress indicator. If a loading screen is present, it also waits the number of frames specified in Offset 132 before proceeding."}]
+a5:["$","h3",null,{"id":"starting-execution","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Starting Execution",["$","$L12",null,{"id":"starting-execution"}]]}]
+a6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Once all banks are loaded:"}]
+a7:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"File handle"}]," (Offset 140): If the value is zero, the NEX file is closed. Otherwise, it remains open for the program to use."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Entry bank"}]," (Offset 139): The specified bank is paged into Slot 3 (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000–$FFFF"}],") via MMU 6 and MMU 7."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"File handle delivery"}],": If Offset 140 is in the range ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0001–$3FFF"}],", the file handle is placed in register BC. If it is in the range ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$4000–$FFFF"}],", the file handle is written to that memory address."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Stack pointer"}],": SP is set to the value at Offset 12."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Program counter"}]," (Offset 14):\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Zero"}],": The NEX file is closed, SP and Slot 3 are restored to their original values, and control returns to the NextBASIC prompt."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Non-zero"}],": The loader jumps to that address with ZX Spectrum Next ROM3 paged in, starting your program."]}],"\n"]}],"\n"]}],"\n"]}]
+a8:["$","h2",null,{"id":"creating-nex-files-with-klive-assembler","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Creating NEX Files with Klive Assembler",["$","$L12",null,{"id":"creating-nex-files-with-klive-assembler"}]]}]
+a9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You don’t manually construct NEX files byte-by-byte (though you could). Klive IDE includes a Z80 assembler with built-in NEX file generation - it’s the tool we’ll use throughout this book."}]
+aa:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive’s assembler makes NEX creation straightforward using the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}]," directive and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," pragma. Here’s a complete example:"]}]
+ab:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".model"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" next"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"game.nex\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" core"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 3"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"10"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"       ; Require core 3.1.10"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" border"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 5"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"            ; Cyan border"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Your code starts at $8000 automatically (unbanked code maps to bank 2)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#B5890F"},"children":"main"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"2"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0xFE"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"), "}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"            ; Set border color"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" game_loop"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"    "}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#B5890F"},"children":"trap"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" trap"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#B5890F"},"children":"game_loop"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; Game logic here"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ret"}]}]]}]]}]]}]
+ac:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}],", Klive automatically sets sensible defaults:"]}]
+ad:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"RAM requirement"}],": 768KB"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Border color"}],": 7 (white, unless you override it)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Entry address"}],": $8000"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bank mapping"}],": Unbanked code goes to bank 2"]}],"\n"]}]
+ae:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," pragma accepts multiple subcommands to configure every aspect of the NEX file:"]}]
+af:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Basic Configuration:"}]}]
+b0:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"myapp.nex\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":"        ; Output filename"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" ram"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 768"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                 ; 768KB or 1792KB"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" border"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 4"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                ; Green border (0-7)"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" stackaddr"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0xFFFE"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"        ; Stack pointer"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" entryaddr"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0x8000"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"        ; Entry point"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" entrybank"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 2"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"             ; Bank at 0xC000 on startup"}]]}]]}]]}]]}]
+b1:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Loading Screen:"}]}]
+b2:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" screen"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"layer2\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"loading.scr\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" palette"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"colors.nxp\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" bar"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"on\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"2"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"50"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"100"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; Enable loading bar: color 2, delay 50, start delay 100"}]]}]]}]]}]]}]
+b3:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Advanced Features:"}]}]
+b4:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" copper"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"effects.cu\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":"     ; Copper code for loading effects"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" filehandle"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"open\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":"       ; Keep file open, pass handle in BC"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" preserve"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"on\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":"           ; Preserve Next registers"}]]}]]}]]}]]}]
+b5:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Multi-Bank Applications:"}]}]
+b6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For complex programs using multiple memory banks, combine unbanked code with explicit ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}]," sections:"]}]
+b7:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$Lc8",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".model"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" next"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"multibank.nex\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" core"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"3.1.0\""}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Unbanked code in bank 2 at $8000"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#B5890F"},"children":"main"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; Page in bank $20 to $A000-$BFFF"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $55"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$40"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" DrawScreen"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" main"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Explicit bank $20 code"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".bank"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $20"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".org"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $0000"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".disp"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $a000"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#B5890F"},"children":"DrawScreen"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; Drawing code here"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ret"}]}]]}]]}]]}]
+b8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The assembler tracks which banks your code uses and automatically includes them in the NEX file. Unbanked code (without ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}]," pragma) goes to bank 2 starting at $8000. Code with explicit ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}]," directives goes to the specified bank at the addresses you define."]}]
+b9:["$","h2",null,{"id":"version-differences-v10-v11-v12","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Version Differences: V1.0, V1.1, V1.2",["$","$L12",null,{"id":"version-differences-v10-v11-v12"}]]}]
+ba:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The NEX format has evolved through three versions:"}]
+bb:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"V1.0"}]," (original):"]}]
+bc:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Basic header structure"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Standard loading screens (Layer 2, ULA, LoRes)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Bank loading with fixed order"}],"\n"]}]
+bd:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"V1.1"}]," (added):"]}]
+be:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Timex HiRes and HiCol screen support"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Copper code block for loading effects"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Extended core version checking"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"File handle preservation for streaming assets"}],"\n"]}]
+bf:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"V1.2"}]," (current, added):"]}]
+c0:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Layer 2 extended modes (320×256×8, 640×256×4)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Palette offset for Layer 2 (",["$","strong",null,{"children":"header offset 138"}]," reused)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Enhanced loading bar options"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Entry bank specification for cleaner initialization"}],"\n"]}]
+c3:null
+a:300
+c9:["$","tr",null,{"children":[["$","td",null,{"children":"HiColor","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"2 × 6,144 B","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$4000"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6000"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Disables Layer 2; enables HiColor mode","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

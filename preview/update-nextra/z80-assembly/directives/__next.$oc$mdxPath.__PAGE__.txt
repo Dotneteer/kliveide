@@ -1,0 +1,156 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+5:Tb5b,# Directives
+
+The directives of the **Klive** Z80 Assembler representation are used for preprocessing, similarly to those in the C and C++ programming languages, though their semantics are different.
+> Although you can add comments to the end of directives, they may not have labels.
+
+## The #IF Directive
+
+You can use this directive for conditional compilation. The argument of the directive is a
+conditional expression, and it determines on which branch the compilation goes on. __#IF__
+works in concert with `#ELSE` and `#ENDIF`:
+
+```z80klive
+; Block #1
+#if 2 > 3
+    ld a,b
+#endif
+
+; Block #2;
+#if 2 < 3
+    nop
+#else
+    ld b,c
+#endif
+
+; Block #3
+#if $ > $+2
+    nop
+#else
+    ld b,c
+#endif
+```
+
+Here, since the condition is false, **Block #1** does not generate output. **Block #2** emits a `nop`, as the condition is true. The false condition value in **Block #3** moves code parsing to the `#else` branch, emitting a `ld b,c` instruction.
+
+## The #IFDEF and #IFNDEF Directives
+
+These directives work similarly to #IF. However, they check if a particular symbol has (`#IFDEF`) or has not (`#IFNDEF`) been defined. So, their single argument is an identifier name.
+
+## The #IFMOD and #IFNMOD Directives
+
+These directives work similarly to `#IF`. However, these check if the code's current model is specified with the identifier following the `IFMOD` or `IFNMOD` pragma. Here is a short sample of using this directive:
+
+```z80klive
+    .model Spectrum48
+
+#ifmod Spectrum128
+    BorderColor: .equ 5
+    RetAddr: .equ #2604
+#else
+    BorderColor: .equ 4
+    RetAddr: .equ #12a2
+#endif
+
+Start:
+	.org #8000
+    ld a,BorderColor
+    out (#fe),a
+    jp RetAddr
+```
+
+You can use only these identifiers with this pragma (case-insensitively): `SPECTRUM48`, 
+`SPECTRUM128`, `SPECTRUMP3`, `NEXT`.
+
+## The #DEFINE and #UNDEF Directives
+
+You can explicitly define a symbol with the `#DEFINE` directive. Such a symbol has no concrete value, just its existence. With `#UNDEF`, you may declare a symbol undefined.
+
+```z80klive
+#define SYMB
+
+; Block #1
+#ifdef SYMB
+    ld a,b
+#endif
+
+#undef SYMB
+
+; Block #2;
+#ifdef SYMB
+    nop
+#else
+    ld b,c
+#endif
+```
+
+According to this definition, the first block emits a `ld, a,b` instruction, and the second one emits a `ld b,c` instruction.
+
+## The #INCLUDE Directive
+
+You can use this directive to load and process a source file from within another source file.
+
+`#INCLUDE` accepts a string that names a file with its extension. The file name may contain either an absolute or a relative path. When a relative path is provided, its starting point is always the source file with the `#INCLUDE` directive.
+
+Assume that this code is in the `C:\Work` folder:
+
+```z80klive
+#include "Symbol.z80asm"
+#include "./MyRules.z80asm"
+#include "/Common/scroll.z80asm"
+```
+
+The compiler will check the `C:\Work` folder for the first two include files and `C:\Work\Commmon` for the third one.a:X
+f:X
+f:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"The #IF Directive","id":"the-if-directive","depth":2},{"value":"The #IFDEF and #IFNDEF Directives","id":"the-ifdef-and-ifndef-directives","depth":2},{"value":"The #IFMOD and #IFNMOD Directives","id":"the-ifmod-and-ifnmod-directives","depth":2},{"value":"The #DEFINE and #UNDEF Directives","id":"the-define-and-undef-directives","depth":2},{"value":"The #INCLUDE Directive","id":"the-include-directive","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"Directives","filePath":"content/z80-assembly/directives.mdx","timestamp":1788420416000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+13:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ToggleWordWrapButton"]
+2e:I[484,[],"OutletBoundary"]
+2f:"$Sreact.suspense"
+31:I[484,[],"ViewportBoundary"]
+32:I[484,[],"MetadataBoundary"]
+33:I[7121,[],""]
+34:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Directives","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The directives of the ",["$","strong",null,{"children":"Klive"}]," Z80 Assembler representation are used for preprocessing, similarly to those in the C and C++ programming languages, though their semantics are different."]}],"\n",["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Although you can add comments to the end of directives, they may not have labels."}],"\n"]}],"\n",["$","h2",null,{"id":"the-if-directive","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The #IF Directive",["$","$L12",null,{"id":"the-if-directive"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can use this directive for conditional compilation. The argument of the directive is a\nconditional expression, and it determines on which branch the compilation goes on. ",["$","strong",null,{"children":"#IF"}],"\nworks in concert with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#ELSE"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#ENDIF"}],":"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Block #1"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6"},"children":"#if"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 2"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" >"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 3"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"b"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6"},"children":"#endif"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Block #2;"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6"},"children":"#if"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 2"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 3"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    nop"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6"},"children":"#else"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],"$L14"]}],"\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c"]}]]}]]}],"\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d"]}]
+8:["$","$L2e",null,{"children":["$","$2f",null,{"name":"Next.MetadataOutlet","children":"$@30"}]}]
+b:["$","$1","h",{"children":[null,["$","$L31",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L32",null,{"children":["$","$2f",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Directives - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L33",null,{"parallelRouterKey":"children","template":["$","$L34",null,{}]}]]}]
+11:true
+14:["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}]
+15:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6"},"children":"#endif"}]}]
+16:["$","span",null,{"children":" "}]
+17:["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Block #3"}]}]
+18:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6"},"children":"#if"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" $ "}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" $"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"+"}],["$","span",null,{"style":{"color":"#4D8061"},"children":"2"}]]}]
+19:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    nop"}]}]
+1a:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6"},"children":"#else"}]}]
+1b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}]]}]
+1c:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6"},"children":"#endif"}]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Here, since the condition is false, ",["$","strong",null,{"children":"Block #1"}]," does not generate output. ",["$","strong",null,{"children":"Block #2"}]," emits a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nop"}],", as the condition is true. The false condition value in ",["$","strong",null,{"children":"Block #3"}]," moves code parsing to the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#else"}]," branch, emitting a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ld b,c"}]," instruction."]}]
+1e:["$","h2",null,{"id":"the-ifdef-and-ifndef-directives","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The #IFDEF and #IFNDEF Directives",["$","$L12",null,{"id":"the-ifdef-and-ifndef-directives"}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["These directives work similarly to #IF. However, they check if a particular symbol has (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#IFDEF"}],") or has not (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#IFNDEF"}],") been defined. So, their single argument is an identifier name."]}]
+20:["$","h2",null,{"id":"the-ifmod-and-ifnmod-directives","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The #IFMOD and #IFNMOD Directives",["$","$L12",null,{"id":"the-ifmod-and-ifnmod-directives"}]]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["These directives work similarly to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#IF"}],". However, these check if the code’s current model is specified with the identifier following the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IFMOD"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IFNMOD"}]," pragma. Here is a short sample of using this directive:"]}]
+22:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .model"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" Spectrum48"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6"},"children":"#ifmod"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" Spectrum128"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"    BorderColor"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#C586C0"},"children":" .equ"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 5"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"    RetAddr"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#C586C0"},"children":" .equ"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" #2604"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6"},"children":"#else"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"    BorderColor"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#C586C0"},"children":" .equ"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 4"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"    RetAddr"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#C586C0"},"children":" .equ"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" #12a2"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6"},"children":"#endif"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Start"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"\t.org"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" #8000"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"BorderColor"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" (#"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"fe"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jp"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" RetAddr"}]]}]]}]]}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can use only these identifiers with this pragma (case-insensitively): ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SPECTRUM48"}],",\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SPECTRUM128"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SPECTRUMP3"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NEXT"}],"."]}]
+24:["$","h2",null,{"id":"the-define-and-undef-directives","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The #DEFINE and #UNDEF Directives",["$","$L12",null,{"id":"the-define-and-undef-directives"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can explicitly define a symbol with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#DEFINE"}]," directive. Such a symbol has no concrete value, just its existence. With ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#UNDEF"}],", you may declare a symbol undefined."]}]
+26:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6"},"children":"#define"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" SYMB"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Block #1"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6"},"children":"#ifdef"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" SYMB"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"b"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6"},"children":"#endif"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6"},"children":"#undef"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" SYMB"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Block #2;"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6"},"children":"#ifdef"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" SYMB"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    nop"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6"},"children":"#else"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6"},"children":"#endif"}]}]]}]]}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["According to this definition, the first block emits a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ld, a,b"}]," instruction, and the second one emits a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ld b,c"}]," instruction."]}]
+28:["$","h2",null,{"id":"the-include-directive","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The #INCLUDE Directive",["$","$L12",null,{"id":"the-include-directive"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can use this directive to load and process a source file from within another source file."}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#INCLUDE"}]," accepts a string that names a file with its extension. The file name may contain either an absolute or a relative path. When a relative path is provided, its starting point is always the source file with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#INCLUDE"}]," directive."]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Assume that this code is in the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"C:\\Work"}]," folder:"]}]
+2c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6"},"children":"#include"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"Symbol.z80asm\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6"},"children":"#include"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"./MyRules.z80asm\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6"},"children":"#include"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"/Common/scroll.z80asm\""}]]}]]}]]}]]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The compiler will check the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"C:\\Work"}]," folder for the first two include files and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"C:\\Work\\Commmon"}]," for the third one."]}]
+30:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

@@ -1,0 +1,46 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+:HL["/kliveide/preview/update-nextra/images/working-with-ide/basic-list.png","image"]
+5:T623,# The BASIC Listing
+
+One of Klive IDE's unique features is that it can list the BASIC program from within the running machine's memory. You can access this view with the IDE | Show BASIC Listing menu command:
+
+<ClickableImage src="/images/working-with-ide/basic-list.png" width={640} />
+
+The toolbar of the view contains these controls from left to right:
+- **Refresh button**. You can refresh the BASIC list view.
+- **Copy to Clipboard**. This button copies the current BASIC list to the clipboard.
+- **Auto Refresh**. With this switch turned on (on by default), the IDE automatically reads and displays the current BASIC listing from the computer (even during program loading).
+- **Show non-printable**. When this switch is turned on (off by default), the non-printable characters are displayed with their two-digit hexadecimal code with a `$` prefix and shaded background.
+- **Use ZX Spectrum font**: This switch allows you to use the ZX Spectrum font instead of Klive's default monospace font.
+
+If the BASIC listing is not available (or it is corrupted), this view may display one of these messages:
+- **Machine OS has not been initialized yet**: This message appears while the machine's operating system is booting. It disappears when the machine reaches its main execution cycle.
+- **BASIC program area is empty**: There is no BASIC program to list.
+- **BASIC code corrupted or partially loaded**: When the BASIC program area is corrupted (some unexpected data is found) or the program is being loaded, the view displays this message at the location of the error.c:X
+11:X
+11:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"The BASIC Listing","filePath":"content/working-with-ide/basic.mdx","timestamp":1788420416000},"sourceCode":"$5","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The BASIC Listing","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"One of Klive IDE’s unique features is that it can list the BASIC program from within the running machine’s memory. You can access this view with the IDE | Show BASIC Listing menu command:"}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/preview/update-nextra/images/working-with-ide/basic-list.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/preview/update-nextra/images/working-with-ide/basic-list.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":640,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The toolbar of the view contains these controls from left to right:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Refresh button"}],". You can refresh the BASIC list view."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Copy to Clipboard"}],". This button copies the current BASIC list to the clipboard."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Auto Refresh"}],". With this switch turned on (on by default), the IDE automatically reads and displays the current BASIC listing from the computer (even during program loading)."]}],"\n","$L6","\n","$L7","\n"]}],"\n","$L8","\n","$L9"]}]]}]]}]}],null,"$La"]}],"isPartial":"$@b","staleTime":"$c","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$c","varyParams":null},{"rsc":"$Lf","isPartial":"$@10","staleTime":"$c","varyParams":"$11"}],"isUpgradeableISRFallback":false,"a":"$@12","rootVaryParams":null,"needsRuntimeRequest":"$@13"}
+14:I[484,[],"OutletBoundary"]
+15:"$Sreact.suspense"
+17:I[484,[],"ViewportBoundary"]
+18:I[484,[],"MetadataBoundary"]
+19:I[7121,[],""]
+1a:I[4581,[],""]
+6:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Show non-printable"}],". When this switch is turned on (off by default), the non-printable characters are displayed with their two-digit hexadecimal code with a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$"}]," prefix and shaded background."]}]
+7:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Use ZX Spectrum font"}],": This switch allows you to use the ZX Spectrum font instead of Klive’s default monospace font."]}]
+8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If the BASIC listing is not available (or it is corrupted), this view may display one of these messages:"}]
+9:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Machine OS has not been initialized yet"}],": This message appears while the machine’s operating system is booting. It disappears when the machine reaches its main execution cycle."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"BASIC program area is empty"}],": There is no BASIC program to list."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"BASIC code corrupted or partially loaded"}],": When the BASIC program area is corrupted (some unexpected data is found) or the program is being loaded, the view displays this message at the location of the error."]}],"\n"]}]
+a:["$","$L14",null,{"children":["$","$15",null,{"name":"Next.MetadataOutlet","children":"$@16"}]}]
+d:["$","$1","h",{"children":[null,["$","$L17",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L18",null,{"children":["$","$15",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The BASIC Listing - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+f:["$","$1","c",{"children":[null,["$","$L19",null,{"parallelRouterKey":"children","template":["$","$L1a",null,{}]}]]}]
+13:true
+16:null
+c:300
+c:C
+12:0
+e:"$undefined"
+10:"$undefined"
+b:"$undefined"

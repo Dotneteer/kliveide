@@ -1,0 +1,88 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"ClientWrapper"]
+6:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-39ca6dfbd50e5cdd.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-1e0dbb2f764779a8.js"],"HeadingAnchor"]
+5:T530,# Machine Types
+
+This document summarizes the machines and models available in Klive IDE.
+
+## ZX Spectrum 48K
+
+Machine ID: `sp48`
+
+Available models:
+- `pal`: The original ZX Spectrum 48K model with PAL video output.
+- `ntsc`: The original ZX Spectrum 48K model with NTSC video output.
+- `pal-16k`: The original ZX Spectrum 48K model with PAL video output and 16K RAM.
+
+## ZX Spectrum 128K
+
+Machine ID: `sp128`
+
+Available models: Only the original ZX Spectrum 128K model is available.
+
+## ZX Spectrum +2E/+3E
+
+Machine ID: `spp3e`
+
+Available models:
+- `nofdd`: ZX Spectrum +2E (without floppy disk drive).
+- `fdd1`: ZX Spectrum +3E (with a single floppy disk drive).
+- `fdd2`: ZX Spectrum +3E (with two floppy disk drives).
+
+## ZX Spectrum Next
+
+Machine ID: `zxnext`
+
+Available models: Only the original ZX Spectrum Next (KS2) model is available; it is still in development.
+
+## Cambridge Z88
+
+Machine ID: `z88`
+
+Available models:
+- `OZ50`: Cambridge Z88 (OZ v5.0 r1f99aaae)
+- `OZ47`: Cambridge Z88 (OZ v4.7)
+- `OZ40`: Cambridge Z88 (OZ v4.0 UK)
+- `OZ40FI`: Cambridge Z88 (OZ v4.01 SE/FI)
+- `OZ30`: Cambridge Z88 (OZ v3.0 UK)
+- `OZ323IT`: Cambridge Z88 (OZ v3.23 IT)
+- `OZ326FR`: Cambridge Z88 (OZ v3.26 FR)
+- `OZ319ES`: Cambridge Z88 (OZ v3.19 ES)
+- `OZ321DK`: Cambridge Z88 (OZ v3.21 DK)
+- `OZ318DE`: Cambridge Z88 (OZ v3.18 DE)17:X
+1c:X
+1c:C
+0:{"buildId":"XNV2ymCXYAck-N2nD3Rh6","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"ZX Spectrum 48K","id":"zx-spectrum-48k","depth":2},{"value":"ZX Spectrum 128K","id":"zx-spectrum-128k","depth":2},{"value":"ZX Spectrum +2E/+3E","id":"zx-spectrum-2e3e","depth":2},{"value":"ZX Spectrum Next","id":"zx-spectrum-next","depth":2},{"value":"Cambridge Z88","id":"cambridge-z88","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"title":"Machine Types","filePath":"content/machine-types.mdx","timestamp":1788420416000},"sourceCode":"$5","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Machine Types","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This document summarizes the machines and models available in Klive IDE."}],"\n",["$","h2",null,{"id":"zx-spectrum-48k","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["ZX Spectrum 48K",["$","$L6",null,{"id":"zx-spectrum-48k"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Machine ID: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"sp48"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Available models:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"pal"}],": The original ZX Spectrum 48K model with PAL video output."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ntsc"}],": The original ZX Spectrum 48K model with NTSC video output."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"pal-16k"}],": The original ZX Spectrum 48K model with PAL video output and 16K RAM."]}],"\n"]}],"\n",["$","h2",null,{"id":"zx-spectrum-128k","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["ZX Spectrum 128K","$L7"]}],"\n","$L8","\n","$L9","\n","$La","\n","$Lb","\n","$Lc","\n","$Ld","\n","$Le","\n","$Lf","\n","$L10","\n","$L11","\n","$L12","\n","$L13","\n","$L14"]}]]}]]}]}],null,"$L15"]}],"isPartial":"$@16","staleTime":"$17","varyParams":null},{"rsc":"$L18","isPartial":"$@19","staleTime":"$17","varyParams":null},{"rsc":"$L1a","isPartial":"$@1b","staleTime":"$17","varyParams":"$1c"}],"isUpgradeableISRFallback":false,"a":"$@1d","rootVaryParams":null,"needsRuntimeRequest":"$@1e"}
+1f:I[484,[],"OutletBoundary"]
+20:"$Sreact.suspense"
+22:I[484,[],"ViewportBoundary"]
+23:I[484,[],"MetadataBoundary"]
+24:I[7121,[],""]
+25:I[4581,[],""]
+7:["$","$L6",null,{"id":"zx-spectrum-128k"}]
+8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Machine ID: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"sp128"}]]}]
+9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Available models: Only the original ZX Spectrum 128K model is available."}]
+a:["$","h2",null,{"id":"zx-spectrum-2e3e","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["ZX Spectrum +2E/+3E",["$","$L6",null,{"id":"zx-spectrum-2e3e"}]]}]
+b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Machine ID: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"spp3e"}]]}]
+c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Available models:"}]
+d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nofdd"}],": ZX Spectrum +2E (without floppy disk drive)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"fdd1"}],": ZX Spectrum +3E (with a single floppy disk drive)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"fdd2"}],": ZX Spectrum +3E (with two floppy disk drives)."]}],"\n"]}]
+e:["$","h2",null,{"id":"zx-spectrum-next","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["ZX Spectrum Next",["$","$L6",null,{"id":"zx-spectrum-next"}]]}]
+f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Machine ID: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zxnext"}]]}]
+10:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Available models: Only the original ZX Spectrum Next (KS2) model is available; it is still in development."}]
+11:["$","h2",null,{"id":"cambridge-z88","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Cambridge Z88",["$","$L6",null,{"id":"cambridge-z88"}]]}]
+12:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Machine ID: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"z88"}]]}]
+13:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Available models:"}]
+14:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OZ50"}],": Cambridge Z88 (OZ v5.0 r1f99aaae)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OZ47"}],": Cambridge Z88 (OZ v4.7)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OZ40"}],": Cambridge Z88 (OZ v4.0 UK)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OZ40FI"}],": Cambridge Z88 (OZ v4.01 SE/FI)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OZ30"}],": Cambridge Z88 (OZ v3.0 UK)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OZ323IT"}],": Cambridge Z88 (OZ v3.23 IT)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OZ326FR"}],": Cambridge Z88 (OZ v3.26 FR)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OZ319ES"}],": Cambridge Z88 (OZ v3.19 ES)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OZ321DK"}],": Cambridge Z88 (OZ v3.21 DK)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OZ318DE"}],": Cambridge Z88 (OZ v3.18 DE)"]}],"\n"]}]
+15:["$","$L1f",null,{"children":["$","$20",null,{"name":"Next.MetadataOutlet","children":"$@21"}]}]
+18:["$","$1","h",{"children":[null,["$","$L22",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L23",null,{"children":["$","$20",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Machine Types - Klive IDE"}],["$","meta","1",{"name":"description","content":"The comprehensive guide to Klive IDE"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+1a:["$","$1","c",{"children":[null,["$","$L24",null,{"parallelRouterKey":"children","template":["$","$L25",null,{}]}]]}]
+1e:true
+21:null
+17:300
+17:C
+1d:0
+19:"$undefined"
+1b:"$undefined"
+16:"$undefined"
