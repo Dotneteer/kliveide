@@ -17,7 +17,7 @@ on:
     branches: [dotneteer/update-nextra]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: docs-preview-${{ github.ref }}
@@ -65,3 +65,34 @@ jobs:
           name: docs-preview
           path: docs/out
           retention-days: 7
+
+      # GitHub Pages' legacy Jekyll build strips paths beginning with `_`, which
+      # would silently delete _next/ (and _pagefind/ once Phase 5 lands). The
+      # .nojekyll written above lands inside the preview subfolder, which does NOT
+      # disable Jekyll for the branch - only a root one does. Fail loudly rather
+      # than publish a preview that renders unstyled.
+      - name: Require a root .nojekyll on gh-pages
+        run: |
+          git fetch origin gh-pages --depth=1
+          if git ls-tree --name-only origin/gh-pages | grep -qx '.nojekyll'; then
+            echo "gh-pages has a root .nojekyll"
+          else
+            echo "::error::gh-pages is missing a root .nojekyll; _next/ would be stripped by Jekyll"
+            exit 1
+          fi
+
+      # clean: false is load-bearing, not laziness. The deploy action's docs do not
+      # state whether `clean` is scoped to target-folder or to the whole branch, and
+      # the production site lives at the root of this same branch. Do not enable it.
+      - name: Deploy preview 🚀
+        uses: JamesIves/github-pages-deploy-action@v4.6.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          folder: docs/out
+          target-folder: ${{ env.PREVIEW_PATH }}
+          clean: false
+          commit-message: "docs preview: ${{ env.PREVIEW_PATH }} @ ${{ github.sha }}"
+
+      - name: Preview URL
+        run: echo "Published to https://dotneteer.github.io/kliveide/${PREVIEW_PATH}/"
