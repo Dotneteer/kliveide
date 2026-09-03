@@ -109,6 +109,9 @@
       "VITE_DEV_SERVER_URL": "http://127.0.0.1:7777"
     }
   },
+  "overrides": {
+    "postcss": "^8.5.26"
+  },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
