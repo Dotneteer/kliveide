@@ -101,7 +101,7 @@
     "sharp": "^0.35.3",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^6.0.2",
+    "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vite-electron-plugin": "^0.8.3",
     "vite-plugin-electron-renderer": "^1.0.0",
