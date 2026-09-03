@@ -17,6 +17,12 @@ updates:
       # only vite ^5 || ^6 || ^7. Revisit when electron-vite supports vite 8.
       - dependency-name: "@vitejs/plugin-react"
         update-types: ["version-update:semver-major"]
+      # Same blocker from the other side: electron-vite@5 (the latest stable)
+      # peers on vite "^5.0.0 || ^6.0.0 || ^7.0.0", so a vite 8 root dependency
+      # makes `npm ci` fail with ERESOLVE. Revisit together with the entry above
+      # when electron-vite supports vite 8.
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
       # The Electron renderer stays on React 18 on purpose (see AGENTS.md); the
       # docs site is where React 19 lives. Bumping these individually also breaks
       # the react/react-dom pairing, which must match exactly.
@@ -37,6 +43,14 @@ updates:
       # Patch updates within 0.55.x are still allowed.
       - dependency-name: "monaco-editor"
         update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      # TypeScript 7 is the native rewrite. Every typescript-eslint v8 package
+      # (parser, eslint-plugin, and the typescript-eslint pulled in by
+      # @electron-toolkit/eslint-config-ts) declares a peer range of
+      # "typescript >=4.8.4 <6.1.0", so a TypeScript 7 root dependency makes
+      # `npm ci` fail with ERESOLVE before anything can build. Revisit when
+      # typescript-eslint ships a release that peers on TypeScript 7.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /docs
