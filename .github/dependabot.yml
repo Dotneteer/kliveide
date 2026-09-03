@@ -1,7 +1,10 @@
 # The Electron application (root) and the documentation site (docs/) are separate
-# npm packages with separate lockfiles and deliberately different React/Next.js
-# versions. They get separate update streams so a docs-only bump can never drag the
-# Electron renderer along with it.
+# npm packages with separate lockfiles and deliberately different React versions.
+# They get separate update streams so a docs-only bump can never drag the Electron
+# renderer along with it.
+#
+# The `ignore` entries below are pins with reasons, not blanket blocks. Re-check
+# them when the stated blocker is resolved.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -9,6 +12,22 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    ignore:
+      # @vitejs/plugin-react 6.x requires vite ^8, but electron-vite@5 supports
+      # only vite ^5 || ^6 || ^7. Revisit when electron-vite supports vite 8.
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
+      # The Electron renderer stays on React 18 on purpose (see AGENTS.md); the
+      # docs site is where React 19 lives. Bumping these individually also breaks
+      # the react/react-dom pairing, which must match exactly.
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /docs
@@ -18,6 +37,12 @@ updates:
     labels:
       - dependencies
       - documentation
+    ignore:
+      # TypeScript 7 is the native rewrite and no longer exposes ts.sys.readFile,
+      # which Nextra's @shikijs/twoslash path calls; Nextra also pins ts-morph@^27,
+      # which targets TypeScript 5.x. Revisit when Nextra supports TypeScript 7.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
