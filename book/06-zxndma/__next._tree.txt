@@ -4,4 +4,4 @@
 :HL["/kliveide/images/book/06-zxndma/ldir-dma.png","image"]
 :HL["/kliveide/images/book/06-zxndma/interrupt-break-into.png","image"]
 :HL["/kliveide/images/book/06-zxndma/heartbeat.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"book/06-zxndma","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"9jtCZWCJqZZo5tV3jbCVB"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"book/06-zxndma","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"1iSC7fUff1Tu0YRlp4Chv"}

@@ -10,4 +10,4 @@
 :HL["/kliveide/images/getting-started/sizing-end.png","image"]
 :HL["/kliveide/images/getting-started/below-key.png","image"]
 :HL["/kliveide/images/getting-started/glyph-key.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"getting-started/keyboard","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"9jtCZWCJqZZo5tV3jbCVB"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"getting-started/keyboard","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"1iSC7fUff1Tu0YRlp4Chv"}
