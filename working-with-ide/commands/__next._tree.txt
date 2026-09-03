@@ -2,4 +2,4 @@
 :HL["/kliveide/_next/static/css/0bf80bfc72b7f908.css","style"]
 :HL["/kliveide/images/klive-logo.svg","image"]
 :HL["/kliveide/images/working-with-ide/ide-commands.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"working-with-ide/commands","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"8gc0VWirpyWEXa40vBwnW"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"working-with-ide/commands","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"8Wt7FqaSv5Y5GSmhLAVoq"}
