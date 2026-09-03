@@ -53,8 +53,8 @@ jobs:
         env:
           NEXT_PUBLIC_BASE_PATH: /kliveide/${{ env.PREVIEW_PATH }}
 
-      - name: Verify the build against the golden snapshot
-        run: npm run doc:check:routes
+      - name: Verify the build against the golden snapshots
+        run: npm run doc:check
 
       - name: Disable Jekyll processing
         run: touch docs/out/.nojekyll

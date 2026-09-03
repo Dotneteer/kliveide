@@ -57,6 +57,8 @@
     "doc:dev": "npm run doc:assets && cd docs && npm run dev",
     "doc:build": "npm run doc:assets && cd docs && npm run build",
     "doc:check:routes": "node scripts/check-docs-routes.cjs",
+    "doc:check:highlighting": "node scripts/check-docs-highlighting.cjs",
+    "doc:check": "npm run doc:check:routes && npm run doc:check:highlighting",
     "doc:serve": "node scripts/serve-docs.cjs",
     "bootstrap:ci": "npm ci",
     "check:lockfile": "rm -rf node_modules && npm ci",
