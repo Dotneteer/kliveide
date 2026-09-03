@@ -1,6 +1,6 @@
 # Nextra 4 + Next.js 16 Documentation Migration Plan
 
-**Status:** proposed
+**Status:** Phases 0-3 complete (2026-09-03); Phase 4 next
 **Branch:** `dotneteer/update-nextra`
 **Owner:** @dotneteer
 **Created:** 2026-09-03
@@ -32,10 +32,10 @@ publishing pipeline.
 
 | Phase | What | Framework at end of phase | Publishing proven? |
 |---|---|---|---|
-| 0 | Baseline + golden route snapshot | Nextra 3 / Next 15 / React 18 | — |
-| 1 | Split `docs/` into its own npm package | unchanged | — |
-| 2 | Parameterize `basePath`, kill hardcoded `/kliveide` | unchanged | — |
-| 3 | **Preview deploy to GitHub Pages from this branch** | unchanged | ✅ **yes** |
+| 0 | ✅ Baseline + golden route snapshot | Nextra 3 / Next 15 / React 18 | — |
+| 1 | ✅ Split `docs/` into its own npm package | unchanged | — |
+| 2 | ✅ Parameterize `basePath`, kill hardcoded `/kliveide` | unchanged | — |
+| 3 | ✅ **Preview deploy to GitHub Pages from this branch** | unchanged | ✅ **proven live** |
 | 4 | Nextra 3 → 4 structural migration (Next 15, React 19) | Nextra 4 / Next 15 / React 19 | re-verified |
 | 5 | Pagefind search | Nextra 4 / Next 15 / React 19 | re-verified |
 | 6 | Next 15 → 16 | **Nextra 4 / Next 16 / React 19** | re-verified |
@@ -951,7 +951,8 @@ With Nextra 4 proven on Next 15, this becomes a small, isolated bump.
 
 - [ ] `npm run doc:build` exits 0 on Next 16.3.4
 - [ ] route list unchanged from Phase 5
-- [ ] `z80klive` highlighting intact (this is what `--webpack` protects)
+- [ ] **`npm run doc:check:highlighting` green** — this is what `--webpack`
+      protects, and the only guard against R1's silent failure
 - [ ] Pagefind index still produced at the same path
 - [ ] full Phase 3e checklist green on a preview deploy
 - [ ] root `npm ci` no longer resolves any `next` package
@@ -1027,6 +1028,65 @@ Now that the framework is stable, do the content work Nextra 4 unlocks.
 - [ ] Update `AGENTS.md` with the docs-package split and the `--webpack` requirement
       (a future contributor *will* drop that flag otherwise)
 - [ ] Archive this plan with an outcome note
+
+---
+
+## 4b. Execution log — Phases 0-3 (2026-09-03)
+
+Branch `dotneteer/update-nextra`, commits `baedccb` … `59075e1`.
+
+**Live preview: <https://dotneteer.github.io/kliveide/preview/update-nextra/>**
+
+### Verified
+
+- Production site untouched across **two** preview deploys: `git ls-tree -r` on
+  `gh-pages` shows **0 production paths removed**, and every added path is under
+  `preview/update-nextra/`. `https://dotneteer.github.io/kliveide/` still 200s.
+- Golden snapshots byte-identical through Phases 1 and 2 (91 routes, 102 assets).
+- Preview build rewrites `basePath` correctly in all three formerly-hardcoded
+  places (CSS/JS, logo, `ClickableImage` targets) with no stray bare `/kliveide/`.
+- All 69 assets referenced by the preview home page resolve; `_next/` survives
+  Jekyll (root `.nojekyll` was already present on `gh-pages`).
+- Custom `z80klive` grammar and theme render live — `.org` `#C586C0`, `ld`
+  `#569CD6` bold, `#6000` `#4D8061`, matching `customTheme` exactly.
+- **Nextra 3 search baseline captured** for the Phase 5 Pagefind comparison:
+  the FlexSearch index loads from
+  `…/preview/update-nextra/_next/static/chunks/nextra-data-en-US.json` (200), a
+  query returns results, and result `href`s carry the full preview basePath
+  **exactly once** (`/kliveide/preview/update-nextra/z80-assembly/z80-assembler/`).
+  Phase 5 must reproduce this with Pagefind — see R6.
+- Electron app unaffected: `build:check`, 18 938 unit tests, and
+  `electron-vite build` all green. Root lockfile shrank 27 868 → 18 058 lines.
+
+### Findings not anticipated by the plan
+
+1. **`docs/tsconfig.json` carried `ignoreDeprecations: "6.0"`**, valid only under
+   the root's TypeScript 6. The first isolated build failed with
+   *"Invalid value for '--ignoreDeprecations'"*. Removed — exactly the hidden
+   coupling Phase 1 exists to break. Phase 4 rewrites this file anyway
+   (`moduleResolution: "bundler"`).
+2. **A route/asset diff cannot detect lost syntax highlighting.** R1's failure
+   mode leaves every page present and merely uncoloured. Added
+   `scripts/check-docs-highlighting.cjs`, which counts rendered token colours and
+   fails below 80 % of baseline (2154 keyword / 1372 pragma / 1579 numeric /
+   1968 identifier / 1157 comment / 387 string spans across 31 pages).
+   Negative-tested by stripping colours from a build. Now `npm run doc:check`
+   (routes + assets + highlighting) in both workflows. **This becomes the
+   load-bearing exit criterion for Phase 6.**
+3. **Preview deploys accumulate stale files.** `clean: false` is required for
+   safety (Decision 4), so each redeploy leaves the previous build's hashed
+   `_next/` chunks behind — `gh-pages` went 310 → 620 → 710 files over two
+   deploys. Harmless to serving, but Phase 8 should delete
+   `preview/update-nextra/` wholesale at cutover rather than assume it self-cleans.
+
+### Deviations from the plan as written
+
+- Checker scripts are `.cjs`, not `.mjs`, to match the existing `scripts/`
+  convention.
+- Phase 3d (`clean-exclude: preview/**` on production) landed early, in Phase 1,
+  since that workflow was already being edited.
+- Added `@types/react-dom` to the docs package (the plan listed only
+  `@types/react`).
 
 ---
 
