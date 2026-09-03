@@ -1,6 +1,6 @@
 # Nextra 4 + Next.js 16 Documentation Migration Plan
 
-**Status:** Phases 0-7 and 9 complete (2026-09-03). Phase 8 (production cutover) is open as a pull request awaiting review.
+**Status:** Phases 0-7 and 9 complete (2026-09-03). Phase 8 (production cutover) is open for review as PR #1288.
 **Branch:** `dotneteer/update-nextra`
 **Owner:** @dotneteer
 **Created:** 2026-09-03
@@ -1007,6 +1007,12 @@ Now that the framework is stable, do the content work Nextra 4 unlocks.
 ---
 
 ### Phase 8 — Production cutover
+
+> **Opened as [PR #1288](https://github.com/Dotneteer/kliveide/pull/1288) rather
+> than merged directly.** The plan as written said "merge the branch to master",
+> but this repo works through PRs (see #1285, #1287) and merging publishes to the
+> live documentation site — that is the author's call to make, not an automated
+> step. Everything up to the merge button is done and verified.
 
 1. Update `.github/workflows/deploy-doc.yml`: `npm run doc:install` step present,
    `NEXT_PUBLIC_BASE_PATH=/kliveide`, `clean-exclude: preview/**` retained.
