@@ -1,6 +1,6 @@
 # Nextra 4 + Next.js 16 Documentation Migration Plan
 
-**Status:** Phases 0-3 complete (2026-09-03); Phase 4 next
+**Status:** Phases 0-4 complete (2026-09-03); Phase 5 (Pagefind) next
 **Branch:** `dotneteer/update-nextra`
 **Owner:** @dotneteer
 **Created:** 2026-09-03
@@ -36,7 +36,7 @@ publishing pipeline.
 | 1 | ✅ Split `docs/` into its own npm package | unchanged | — |
 | 2 | ✅ Parameterize `basePath`, kill hardcoded `/kliveide` | unchanged | — |
 | 3 | ✅ **Preview deploy to GitHub Pages from this branch** | unchanged | ✅ **proven live** |
-| 4 | Nextra 3 → 4 structural migration (Next 15, React 19) | Nextra 4 / Next 15 / React 19 | re-verified |
+| 4 | ✅ Nextra 3 → 4 structural migration (Next 15, React 19) | Nextra 4 / Next 15 / React 19 | ✅ re-verified live |
 | 5 | Pagefind search | Nextra 4 / Next 15 / React 19 | re-verified |
 | 6 | Next 15 → 16 | **Nextra 4 / Next 16 / React 19** | re-verified |
 | 7 | Content sweep — the "entirely updated docs" pass | — | re-verified |
@@ -1087,6 +1087,79 @@ Branch `dotneteer/update-nextra`, commits `baedccb` … `59075e1`.
   since that workflow was already being edited.
 - Added `@types/react-dom` to the docs package (the plan listed only
   `@types/react`).
+
+---
+
+## 4c. Execution log — Phase 4 (2026-09-03)
+
+Commit `e7ebb44`. Live: <https://dotneteer.github.io/kliveide/preview/update-nextra/>
+
+Now on **Nextra 4.6.1 + React 19.1 + Next 15.5.5**. Route diff vs the Phase 0
+golden is exactly one removal — `/_mdx-components/`, the bogus page Nextra 3
+made of the dummy component file — so the golden is re-baselined at 90 routes.
+
+### Four upstream incompatibilities, none fully predicted
+
+1. **R11 hit, and it is worse than "a bug": `<Layout>` in 4.6.1 cannot render at
+   all.** Upstream [#5036](https://github.com/shuding/nextra/issues/5036) — the
+   compiled component rest-destructures `children` out of props *before*
+   validating the remainder against `LayoutPropsSchema`, where `children` is
+   required, so Zod always sees a missing key. Every page 500s regardless of
+   usage. Fixed upstream for 4.6.2, which R13 means was never published.
+   Applied the documented workaround with **patch-package**
+   (`patches/nextra-theme-docs+4.6.1.patch`, one line,
+   `children: reactNode` → `children: reactNode.optional()`), wired as a
+   `postinstall`. Chosen over a sed script precisely because it will **fail
+   loudly** when 4.6.2 finally lands, which is the signal to delete it.
+
+2. **Shiki v3 silently dropped the Z80 grammar.** v3 ignores the 0.14
+   `{ id, scopeName, grammar }` shape — the grammar object *is* the
+   registration and `name` is the id. It registered as `undefined`, so all 436
+   `z80klive` blocks fell back to plaintext. **The build stayed green.** Only
+   `check-docs-highlighting.cjs` caught it — the script written in Phase 3 for
+   R1, firing two phases early and for an entirely different cause. Without it
+   this would have shipped.
+
+3. **`rehype-pretty-code` identifies a single theme solely by
+   `Object.hasOwn(theme, "tokenColors")`.** Our theme used the TextMate
+   `settings` key, so it was read as a *map* of themes whose values became theme
+   names — failing with ``Theme `dark` not found`` (from `type: "dark"`).
+   Renamed the key; Shiki accepts either spelling.
+
+4. **Shiki v3 throws on unregistered fence languages** where 0.14 fell back
+   silently. `markdown`, `asm` and `jsx` were used in content but never
+   registered, so the build failed outright. Widened the `langs` list; adding a
+   fence in a new language now fails the build until it is registered there.
+
+### Corrections to the plan
+
+- **`--webpack` cannot be pre-staged on Next 15** — the flag does not exist
+  until Next 16 (`error: unknown option '--webpack'`). Phase 4.4's advice was
+  wrong. It moves to Phase 6; Next 15 already defaults to webpack, and
+  `doc:check:highlighting` is what guards against forgetting it.
+- Phase 4.2's `_meta` expectation was overstated: the Nextra 3 export leaked
+  only `/_mdx-components/`, not the per-folder `_meta` routes.
+
+### Verified
+
+- 90 routes, 102 assets; all six Z80 token colours at Nextra 3 levels
+  (2154 / 1372 / 1579 / 1968 / 1157 / 385).
+- 111 callouts and 93 ClickableImages render. The apparent shortfalls against
+  the source counts (112 / 94) are **documentation examples inside code
+  fences** in `book/toc.md` and `contribute/improve-docs.mdx`, not regressions.
+- `book` still hidden from the sidebar, reachable at `/book/`.
+- All 69 home-page assets resolve; CI ran `patch-package` under `npm ci` and
+  the golden checks passed on the runner.
+- Production site untouched.
+
+### Early signal for Phase 5 (R6 / Decision 5)
+
+Search is dead, as expected — but the failing request is
+`…/preview/update-nextra/_pagefind/pagefind.js` (404). `addBasePath` already
+resolves correctly under the preview basePath, so only the index is missing.
+That removes one of the two unknowns in Decision 5 before Phase 5 starts; the
+remaining one is whether **result links** carry the basePath. The Nextra 3
+baseline to match is in §4b.
 
 ---
 
