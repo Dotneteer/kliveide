@@ -75,7 +75,7 @@
     "@eslint-community/regexpp": "^4.10.0",
     "@monaco-editor/react": "^4.7.0",
     "@playwright/test": "^1.62.1",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/lodash": "^4.17.0",
