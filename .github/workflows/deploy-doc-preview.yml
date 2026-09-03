@@ -85,7 +85,7 @@ jobs:
       # state whether `clean` is scoped to target-folder or to the whole branch, and
       # the production site lives at the root of this same branch. Do not enable it.
       - name: Deploy preview 🚀
-        uses: JamesIves/github-pages-deploy-action@v4.6.4
+        uses: JamesIves/github-pages-deploy-action@v4.9.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
