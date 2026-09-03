@@ -1,0 +1,115 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:T12e1,---
+description: "The first time you start Klive, it displays the Emulator window. You can recognize it from the dark grey box representing a turned-off machine."
+---
+
+import { Callout } from 'nextra/components'
+
+# Running Klive
+
+The first time you start Klive, it displays the Emulator window. You can recognize it from the dark grey box representing a turned-off machine.
+
+<ClickableImage src="/images/getting-started/emulator-start-screen.png" />
+
+Klive stores your last selected machine type and a few other settings when you close the app and reloads them automatically the next time you start Klive again.
+
+Klive has two separate windows; however, the first time you start it, the app shows only the Emulator window. Select the **View | Show IDE** menu command and Klive displays the IDE window:
+
+<ClickableImage src="/images/getting-started/ide-start-screen.png" />
+
+When you close the Emulator window, it automatically closes the IDE window, too. However, closing the IDE window keeps the Emulator window open. You can quit the Klive application by closing the Emulator window or selecting **File | Exit** on Windows or **Klive | Quit klive-emu** on Mac.
+
+<Callout type="info" emoji="💡">
+Klive saves the window positions when exiting the app. If you use multiple monitors, the windows will be restored according to their last display the next time you start Klive.
+</Callout>
+
+## Controlling the Emulator
+
+You can start the emulated machine (ZX Spectrum 48K, by default) in several ways:
+
+1. Pressing the **F5** key.
+2. Using the **Machine | Start** menu command
+3. Clicking the **Play** toolbar button (the leftmost green button of the Emulator's toolbar)
+
+<Callout type="info" emoji="💡">
+You can also start the machine with the `em-start` (or `:s`) interactive command within the IDE.
+</Callout>
+
+You can control the running machine with other commands:
+
+- **Pause**: You can suspend running the machine with the `Shift+F5` key, the **Pause** icon in the toolbar, or the **Machine | Pause** menu. Later, you can restore running the machine.
+- **Stop**: When turning the emulated machine off, use the `F4` key, the **Stop** icon in the toolbar, or the **Machine | Stop** menu command. Though you can view the state of the stopped machine, you cannot continue running it.
+- **Restart**: You can stop and immediately start the machine again with the `Shift+F4` key. The same action is available with the **Restart** toolbar icon and the **Machine | Restart** menu.
+
+## Debug Mode
+
+The emulator supports running in debug mode. In this mode, the running machine will stop at designated breakpoints, allowing you to examine the current state.
+
+You can turn the machine on in debug mode with the `Ctrl+F5` key, using the **Machine | Start with Debugging** menu, or selecting the "Start with Debugging" option from the toolbar's drop-down and pressing the play button.
+
+When you suspend (pause) the machine, you can continue running it in debug mode with `Ctrl+F5`. Also, while the machine is paused, you can move it into debug mode with any of these debugger commands:
+
+- **Step Into**. This command executes the next Z80 instruction and pauses the machine again. Use the `F10` key, the **Machine | Step Into command**, or the **Step Into** toolbar key.
+- **Step Over**. This command executes the next Z80 instruction and pauses the machine again. Suppose the instruction is a subroutine call, an `RST` call, or a block operation (e.g., `LDIR`). In that case, the entire instruction is executed, and the machine pauses again at the next instruction following the call or the block operation. Use the `F11` key, the **Machine | Step Over command**, or the **Step Over** toolbar key.
+- **Step Out**. This command executes all Z80 instructions to the next return instruction and suspends running again at the return point. Use the `Shift+F11` key, the **Machine | Step Over command**, or the **Step Over** toolbar key.
+
+<Callout type="info" emoji="💡">
+The Step Out command may not work in every context. There are Z80 programs that do not use the `RET` statement (or its conditional equivalents) but manipulate the stack and use indirect jump statements. The Step Out command cannot work with such constructs.
+</Callout>
+
+## Changing the View
+
+In the **View** menu, you find several commands that allow changing  the view of the current window (Emulator or IDE):
+
+- **Actual Size**: Sets the view size to Normal (100%) according to the operating system on which you run Klive.
+- **Zoom In**: Enlarges the screen (including all text and graphics).
+- **Zoom Out**: Makes text and graphics smaller.
+- **Toggle Full Screen**: Turns on and off full-screen mode.
+
+<Callout type="info" emoji="💡">
+While the **Toggle Full Screen** command handles the Emulator and IDE windows independently, other commands affect both.
+</Callout>a:X
+f:X
+f:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Controlling the Emulator","id":"controlling-the-emulator","depth":2},{"value":"Debug Mode","id":"debug-mode","depth":2},{"value":"Changing the View","id":"changing-the-view","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"The first time you start Klive, it displays the Emulator window. You can recognize it from the dark grey box representing a turned-off machine.","title":"Running Klive","filePath":"content/getting-started/first-run.mdx","timestamp":1788422465000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+23:I[484,[],"OutletBoundary"]
+24:"$Sreact.suspense"
+26:I[484,[],"ViewportBoundary"]
+27:I[484,[],"MetadataBoundary"]
+28:I[7121,[],""]
+29:I[4581,[],""]
+:HL["/kliveide/images/getting-started/emulator-start-screen.png","image"]
+:HL["/kliveide/images/getting-started/ide-start-screen.png","image"]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Running Klive","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first time you start Klive, it displays the Emulator window. You can recognize it from the dark grey box representing a turned-off machine."}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/emulator-start-screen.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/emulator-start-screen.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive stores your last selected machine type and a few other settings when you close the app and reloads them automatically the next time you start Klive again."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive has two separate windows; however, the first time you start it, the app shows only the Emulator window. Select the ",["$","strong",null,{"children":"View | Show IDE"}]," menu command and Klive displays the IDE window:"]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/ide-start-screen.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/ide-start-screen.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you close the Emulator window, it automatically closes the IDE window, too. However, closing the IDE window keeps the Emulator window open. You can quit the Klive application by closing the Emulator window or selecting ",["$","strong",null,{"children":"File | Exit"}]," on Windows or ",["$","strong",null,{"children":"Klive | Quit klive-emu"}]," on Mac."]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive saves the window positions when exiting the app. If you use multiple monitors, the windows will be restored according to their last display the next time you start Klive."}]}]]}],"\n",["$","h2",null,{"id":"controlling-the-emulator","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Controlling the Emulator",["$","$L12",null,{"id":"controlling-the-emulator"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can start the emulated machine (ZX Spectrum 48K, by default) in several ways:"}],"\n",["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Pressing the ","$L13"," key."]}],"\n","$L14","\n","$L15","\n"]}],"\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22"]}]
+8:["$","$L23",null,{"children":["$","$24",null,{"name":"Next.MetadataOutlet","children":"$@25"}]}]
+b:["$","$1","h",{"children":[null,["$","$L26",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L27",null,{"children":["$","$24",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Running Klive - Klive IDE"}],["$","meta","1",{"name":"description","content":"The first time you start Klive, it displays the Emulator window. You can recognize it from the dark grey box representing a turned-off machine."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L28",null,{"parallelRouterKey":"children","template":["$","$L29",null,{}]}]]}]
+11:true
+13:["$","strong",null,{"children":"F5"}]
+14:["$","li",null,{"className":"x:my-[.5em]","children":["Using the ",["$","strong",null,{"children":"Machine | Start"}]," menu command"]}]
+15:["$","li",null,{"className":"x:my-[.5em]","children":["Clicking the ",["$","strong",null,{"children":"Play"}]," toolbar button (the leftmost green button of the Emulator’s toolbar)"]}]
+16:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:14:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can also start the machine with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"em-start"}]," (or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":":s"}],") interactive command within the IDE."]}]}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can control the running machine with other commands:"}]
+18:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Pause"}],": You can suspend running the machine with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Shift+F5"}]," key, the ",["$","strong",null,{"children":"Pause"}]," icon in the toolbar, or the ",["$","strong",null,{"children":"Machine | Pause"}]," menu. Later, you can restore running the machine."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Stop"}],": When turning the emulated machine off, use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"F4"}]," key, the ",["$","strong",null,{"children":"Stop"}]," icon in the toolbar, or the ",["$","strong",null,{"children":"Machine | Stop"}]," menu command. Though you can view the state of the stopped machine, you cannot continue running it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Restart"}],": You can stop and immediately start the machine again with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Shift+F4"}]," key. The same action is available with the ",["$","strong",null,{"children":"Restart"}]," toolbar icon and the ",["$","strong",null,{"children":"Machine | Restart"}]," menu."]}],"\n"]}]
+19:["$","h2",null,{"id":"debug-mode","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Debug Mode",["$","$L12",null,{"id":"debug-mode"}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The emulator supports running in debug mode. In this mode, the running machine will stop at designated breakpoints, allowing you to examine the current state."}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can turn the machine on in debug mode with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Ctrl+F5"}]," key, using the ",["$","strong",null,{"children":"Machine | Start with Debugging"}]," menu, or selecting the “Start with Debugging” option from the toolbar’s drop-down and pressing the play button."]}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you suspend (pause) the machine, you can continue running it in debug mode with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Ctrl+F5"}],". Also, while the machine is paused, you can move it into debug mode with any of these debugger commands:"]}]
+1d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Step Into"}],". This command executes the next Z80 instruction and pauses the machine again. Use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"F10"}]," key, the ",["$","strong",null,{"children":"Machine | Step Into command"}],", or the ",["$","strong",null,{"children":"Step Into"}]," toolbar key."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Step Over"}],". This command executes the next Z80 instruction and pauses the machine again. Suppose the instruction is a subroutine call, an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST"}]," call, or a block operation (e.g., ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LDIR"}],"). In that case, the entire instruction is executed, and the machine pauses again at the next instruction following the call or the block operation. Use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"F11"}]," key, the ",["$","strong",null,{"children":"Machine | Step Over command"}],", or the ",["$","strong",null,{"children":"Step Over"}]," toolbar key."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Step Out"}],". This command executes all Z80 instructions to the next return instruction and suspends running again at the return point. Use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Shift+F11"}]," key, the ",["$","strong",null,{"children":"Machine | Step Over command"}],", or the ",["$","strong",null,{"children":"Step Over"}]," toolbar key."]}],"\n"]}]
+1e:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:14:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Step Out command may not work in every context. There are Z80 programs that do not use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RET"}]," statement (or its conditional equivalents) but manipulate the stack and use indirect jump statements. The Step Out command cannot work with such constructs."]}]}]]}]
+1f:["$","h2",null,{"id":"changing-the-view","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Changing the View",["$","$L12",null,{"id":"changing-the-view"}]]}]
+20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["In the ",["$","strong",null,{"children":"View"}]," menu, you find several commands that allow changing  the view of the current window (Emulator or IDE):"]}]
+21:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Actual Size"}],": Sets the view size to Normal (100%) according to the operating system on which you run Klive."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Zoom In"}],": Enlarges the screen (including all text and graphics)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Zoom Out"}],": Makes text and graphics smaller."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Toggle Full Screen"}],": Turns on and off full-screen mode."]}],"\n"]}]
+22:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:14:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["While the ",["$","strong",null,{"children":"Toggle Full Screen"}]," command handles the Emulator and IDE windows independently, other commands affect both."]}]}]]}]
+25:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

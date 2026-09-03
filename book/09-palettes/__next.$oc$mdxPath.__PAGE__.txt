@@ -1,0 +1,76 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:Ta96,---
+description: "Every video layer that comes after this chapter - LoRes, Layer 2, Tilemap, Sprites - uses the same palette mechanism."
+---
+
+import { Callout } from 'nextra/components'
+
+# Palettes and Colour on the Next
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+Every video layer that comes after this chapter — LoRes, Layer 2, Tilemap, Sprites — uses the same palette mechanism. The Next has **eight 256-entry palettes** (ULA "first" and "second", Layer 2 "first" and "second", Sprites "first" and "second", Tilemap "first" and "second"), each entry is 9 bits wide (RRRGGGBBB plus an optional priority bit), and they all funnel through the same two NextRegs. We cover it once, here, and every later chapter just says *"set up its palette as in [Palettes](./09-palettes.mdx)"*.
+
+Topics:
+
+- **The 9-bit colour space.** RRR-GGG-BBB layout, the "extra blue bit" trick (NextReg `$44`), and why 9 bits gives you 512 colours instead of 8.
+- **The palette banks.** All eight, what each one feeds, and why "first" vs "second" exists (live-swap without redrawing).
+- **Selecting a palette to edit.** NextReg `$43` — bits selecting which of the eight palettes is the current target for the index/value registers.
+- **Writing palette entries.** NextReg `$40` (palette index, auto-increment), `$41` (8-bit colour value), and `$44` (the 9th bit + priority bit). The auto-increment lets you upload a whole 256-entry palette in one tight loop.
+- **Per-pixel priority.** The priority bit on a per-entry basis, and how it interacts with the layer compositing rules covered later in [Compositing](./15-compositing.mdx).
+- **The transparency colour.** NextReg `$14` (global) and `$4A` (sprite/tilemap-specific) — pixel values that get treated as see-through.
+- **ULA palette mode.** Switching the ULA from its hardwired colours to a programmable palette via NextReg `$43`.
+
+## What you should know first
+
+- [I/O and NextRegs](./02-io-and-nextregs.mdx).
+- [The ULA Screen and Border](./08-ula-screen.mdx) — gives you a "before" picture so the palette swap exercise is visually striking.
+
+## What this chapter unlocks
+
+- Every chapter in Part V from here on.
+
+## Planned exercises
+
+- **Palette shift.** Take a ULA screen and rotate its 16 palette entries every frame — animated colour without touching screen memory.
+- **512-colour gradient.** Fill the entire palette with a smooth gradient and display it on Layer 2 (uses [Layer 2](./11-layer2.mdx)).
+- **Palette swap.** Build the same scene twice — once in palette "first", once in palette "second" — and toggle between them on key press to demonstrate instant theme switching.a:X
+f:X
+f:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Synopsis","id":"synopsis","depth":2},{"value":"What you should know first","id":"what-you-should-know-first","depth":2},{"value":"What this chapter unlocks","id":"what-this-chapter-unlocks","depth":2},{"value":"Planned exercises","id":"planned-exercises","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Every video layer that comes after this chapter - LoRes, Layer 2, Tilemap, Sprites - uses the same palette mechanism.","title":"Palettes and Colour on the Next","filePath":"content/book/09-palettes.mdx","timestamp":1788422465000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+13:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],""]
+1c:I[484,[],"OutletBoundary"]
+1d:"$Sreact.suspense"
+1f:I[484,[],"ViewportBoundary"]
+20:I[484,[],"MetadataBoundary"]
+21:I[7121,[],""]
+22:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Palettes and Colour on the Next","$undefined"]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"🚧"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This chapter is a placeholder. The full text is being written."}]}]]}],"\n",["$","h2",null,{"id":"synopsis","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Synopsis",["$","$L12",null,{"id":"synopsis"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Every video layer that comes after this chapter — LoRes, Layer 2, Tilemap, Sprites — uses the same palette mechanism. The Next has ",["$","strong",null,{"children":"eight 256-entry palettes"}]," (ULA “first” and “second”, Layer 2 “first” and “second”, Sprites “first” and “second”, Tilemap “first” and “second”), each entry is 9 bits wide (RRRGGGBBB plus an optional priority bit), and they all funnel through the same two NextRegs. We cover it once, here, and every later chapter just says ",["$","em",null,{"children":["“set up its palette as in ",["$","$L13",null,{"href":"./09-palettes","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Palettes"}],"”"]}],"."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Topics:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The 9-bit colour space."}]," RRR-GGG-BBB layout, the “extra blue bit” trick (NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$44"}],"), and why 9 bits gives you 512 colours instead of 8."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The palette banks."}]," All eight, what each one feeds, and why “first” vs “second” exists (live-swap without redrawing)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Selecting a palette to edit."}]," NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$43"}]," — bits selecting which of the eight palettes is the current target for the index/value registers."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Writing palette entries."}]," NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$40"}]," (palette index, auto-increment), ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$41"}]," (8-bit colour value), and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$44"}]," (the 9th bit + priority bit). The auto-increment lets you upload a whole 256-entry palette in one tight loop."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Per-pixel priority."}]," The priority bit on a per-entry basis, and how it interacts with the layer compositing rules covered later in ",["$","$L13",null,{"href":"./15-compositing","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Compositing"}],"."]}],"\n","$L14","\n","$L15","\n"]}],"\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b"]}]
+8:["$","$L1c",null,{"children":["$","$1d",null,{"name":"Next.MetadataOutlet","children":"$@1e"}]}]
+b:["$","$1","h",{"children":[null,["$","$L1f",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L20",null,{"children":["$","$1d",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Palettes and Colour on the Next - Klive IDE"}],["$","meta","1",{"name":"description","content":"Every video layer that comes after this chapter - LoRes, Layer 2, Tilemap, Sprites - uses the same palette mechanism."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L21",null,{"parallelRouterKey":"children","template":["$","$L22",null,{}]}]]}]
+11:true
+14:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The transparency colour."}]," NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$14"}]," (global) and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$4A"}]," (sprite/tilemap-specific) — pixel values that get treated as see-through."]}]
+15:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"ULA palette mode."}]," Switching the ULA from its hardwired colours to a programmable palette via NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$43"}],"."]}]
+16:["$","h2",null,{"id":"what-you-should-know-first","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What you should know first",["$","$L12",null,{"id":"what-you-should-know-first"}]]}]
+17:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L13",null,{"href":"./02-io-and-nextregs","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"I/O and NextRegs"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L13",null,{"href":"./08-ula-screen","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The ULA Screen and Border"}]," — gives you a “before” picture so the palette swap exercise is visually striking."]}],"\n"]}]
+18:["$","h2",null,{"id":"what-this-chapter-unlocks","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What this chapter unlocks",["$","$L12",null,{"id":"what-this-chapter-unlocks"}]]}]
+19:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Every chapter in Part V from here on."}],"\n"]}]
+1a:["$","h2",null,{"id":"planned-exercises","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Planned exercises",["$","$L12",null,{"id":"planned-exercises"}]]}]
+1b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Palette shift."}]," Take a ULA screen and rotate its 16 palette entries every frame — animated colour without touching screen memory."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"512-colour gradient."}]," Fill the entire palette with a smooth gradient and display it on Layer 2 (uses ",["$","$L13",null,{"href":"./11-layer2","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Layer 2"}],")."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Palette swap."}]," Build the same scene twice — once in palette “first”, once in palette “second” — and toggle between them on key press to demonstrate instant theme switching."]}],"\n"]}]
+1e:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

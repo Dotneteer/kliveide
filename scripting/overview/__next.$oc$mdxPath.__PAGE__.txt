@@ -1,0 +1,105 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:Tb6e,---
+description: "The Klive IDE offers a simple but powerful way to automate tasks with a scripting facility."
+---
+
+import { Callout } from 'nextra/components'
+import scriptingHistory from '../../public/images/scripting/scripting-history.png'
+
+# Scripting Overview
+
+The Klive IDE offers a simple but powerful way to automate tasks with a scripting facility. When you create a new Klive project (or open a folder containing a project), you can create script files with the `.ksx` file extension.
+
+## `.ksx` Files
+
+When you add a new `.ksx` file to your project, the code editor recognizes that and creates a source file using the scripting language. This example shows an empty scripting file:
+
+<ClickableImage src="/images/scripting/empty-script-file.png" width={780} />
+
+When you create a simple script, two icons appear in the document tab bar:
+
+<ClickableImage src="/images/scripting/script-with-icons.png" width={780} />
+
+The first icon executes the script, the second one starts a new Klive instance and starts script execution in debug mode (so that you can debug your script with breakpoints).
+
+When running the script, Klive displays a notification bar at the top of the code editor window:
+
+<ClickableImage src="/images/scripting/script-output.png" alt="ScriptOutput" width={780} height={202} />
+
+## The Output Pane
+
+As the script executes, it may display output, including information, errors, and warnings. All of these are displayed in a dedicated Output Pane below the code editor. The script execution keeps track of its output, so that you can see information from any script execution.
+
+If you use the `$log()` API in your script, you can output information to the Output Pane:
+
+<ClickableImage src="/images/scripting/script-output-pane.png" width={795} />
+
+<Callout type="info" emoji="💡">
+You can clear the content of the Output Pane with `Ctrl+L`.
+</Callout>
+
+## Execution Progress
+
+Sometimes, you may run a script that takes a long time to complete. Your script can display progress information with a progress bar and a descriptive text. Use the `$progress()` function:
+
+<ClickableImage src="/images/scripting/script-output-progress.png" width={795} />
+
+<Callout type="info" emoji="💡">
+If your script takes too long to complete or enters an infinite loop, the UI hangs too. Be mindful of your script's execution time and handle errors appropriately.
+</Callout>
+
+## Scripting History
+
+The Klive IDE automatically keeps track of the scripts you have executed. The latest 50 scripts are displayed in the Scripting History panel. To see it, select the **View | Show Scripting History** menu command:
+
+<ClickableImage src="/images/scripting/scripting-history.png" width={304} />
+
+<Callout type="info" emoji="💡">
+When you move your mouse over a script file name in the history, a tooltip shows you the entire path to that file.
+</Callout>
+
+You can click any item in the history to run that script again.a:X
+f:X
+f:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":[["$","$1",".0",{"children":[["$","code",".0",{"className":"nextra-code","dir":"ltr","children":".ksx"}]," Files"]}]],"id":"ksx-files","depth":2},{"value":"The Output Pane","id":"the-output-pane","depth":2},{"value":"Execution Progress","id":"execution-progress","depth":2},{"value":"Scripting History","id":"scripting-history","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"The Klive IDE offers a simple but powerful way to automate tasks with a scripting facility.","title":"Scripting Overview","filePath":"content/scripting/overview.mdx","timestamp":1788422465000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+1f:I[484,[],"OutletBoundary"]
+20:"$Sreact.suspense"
+22:I[484,[],"ViewportBoundary"]
+23:I[484,[],"MetadataBoundary"]
+24:I[7121,[],""]
+25:I[4581,[],""]
+:HL["/kliveide/images/scripting/empty-script-file.png","image"]
+:HL["/kliveide/images/scripting/script-with-icons.png","image"]
+:HL["/kliveide/images/scripting/script-output.png","image"]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Scripting Overview","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Klive IDE offers a simple but powerful way to automate tasks with a scripting facility. When you create a new Klive project (or open a folder containing a project), you can create script files with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".ksx"}]," file extension."]}],"\n",["$","h2",null,{"id":"ksx-files","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[[["$","code",null,{"className":"nextra-code","dir":"ltr","children":".ksx"}]," Files"],["$","$L12",null,{"id":"ksx-files"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you add a new ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".ksx"}]," file to your project, the code editor recognizes that and creates a source file using the scripting language. This example shows an empty scripting file:"]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/scripting/empty-script-file.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/scripting/empty-script-file.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":780,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you create a simple script, two icons appear in the document tab bar:"}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/scripting/script-with-icons.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/scripting/script-with-icons.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":780,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first icon executes the script, the second one starts a new Klive instance and starts script execution in debug mode (so that you can debug your script with breakpoints)."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When running the script, Klive displays a notification bar at the top of the code editor window:"}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/scripting/script-output.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/scripting/script-output.png","alt":"ScriptOutput","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":780,"height":202}}]}]}],"\n",["$","h2",null,{"id":"the-output-pane","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Output Pane",["$","$L12",null,{"id":"the-output-pane"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"As the script executes, it may display output, including information, errors, and warnings. All of these are displayed in a dedicated Output Pane below the code editor. The script execution keeps track of its output, so that you can see information from any script execution."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you use the ","$L13"," API in your script, you can output information to the Output Pane:"]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e"]}]
+8:["$","$L1f",null,{"children":["$","$20",null,{"name":"Next.MetadataOutlet","children":"$@21"}]}]
+b:["$","$1","h",{"children":[null,["$","$L22",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L23",null,{"children":["$","$20",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Scripting Overview - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Klive IDE offers a simple but powerful way to automate tasks with a scripting facility."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L24",null,{"parallelRouterKey":"children","template":["$","$L25",null,{}]}]]}]
+11:true
+:HL["/kliveide/images/scripting/script-output-pane.png","image"]
+:HL["/kliveide/images/scripting/script-output-progress.png","image"]
+:HL["/kliveide/images/scripting/scripting-history.png","image"]
+13:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$log()"}]
+14:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/scripting/script-output-pane.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/scripting/script-output-pane.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":795,"height":"auto"}}]}]}]
+15:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can clear the content of the Output Pane with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Ctrl+L"}],"."]}]}]]}]
+16:["$","h2",null,{"id":"execution-progress","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Execution Progress",["$","$L12",null,{"id":"execution-progress"}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Sometimes, you may run a script that takes a long time to complete. Your script can display progress information with a progress bar and a descriptive text. Use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$progress()"}]," function:"]}]
+18:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/scripting/script-output-progress.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/scripting/script-output-progress.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":795,"height":"auto"}}]}]}]
+19:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$15:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If your script takes too long to complete or enters an infinite loop, the UI hangs too. Be mindful of your script’s execution time and handle errors appropriately."}]}]]}]
+1a:["$","h2",null,{"id":"scripting-history","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Scripting History",["$","$L12",null,{"id":"scripting-history"}]]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The Klive IDE automatically keeps track of the scripts you have executed. The latest 50 scripts are displayed in the Scripting History panel. To see it, select the ",["$","strong",null,{"children":"View | Show Scripting History"}]," menu command:"]}]
+1c:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/scripting/scripting-history.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/scripting/scripting-history.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":304,"height":"auto"}}]}]}]
+1d:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$15:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you move your mouse over a script file name in the history, a tooltip shows you the entire path to that file."}]}]]}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can click any item in the history to run that script again."}]
+21:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

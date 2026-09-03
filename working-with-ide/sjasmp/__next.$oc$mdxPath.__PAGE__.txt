@@ -1,0 +1,87 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:T9ed,---
+description: "Klive IDE supports SJASMPLUS out-of-the-box, provided you installed the SjasmPlus Z80 assembler utility on your machine."
+---
+
+import { Callout } from 'nextra/components'
+
+# SJASMPLUS Integration
+
+Klive IDE supports SJASMPLUS out-of-the-box, provided you installed the SjasmPlus Z80 assembler utility on your machine. After setting up SjasmPlus integration, you can use Klive IDE to edit, run, and debug programs created with this assembler.
+
+<Callout type="warning" emoji="💡">
+Running and debugging SjasmPlus-compiled code is tested only with the ZX Spectrum 48K model.
+</Callout>
+
+As Klive IDE does not know where to find the SjasmPlus compiler on your machine, you must set it up before using it.
+
+## Setting up SJASMPLUS
+
+Visit the GitHub page of [SjasmPlus](https://github.com/z00m128/sjasmplus) for details about this excellent Z80 assembler. You can read information about installing it [here](https://github.com/z00m128/sjasmplus/blob/master/INSTALL.md). Note the installation folder; you will need it to set up the integration with Klive.
+
+The IDE provides a command, `sjasmp-reset` (or shorter, `sjasmpr`), to connect Klive with SjasmPlus. You can issue this command from the Command window:
+
+<ClickableImage src="/images/working-with-ide/sjasmp-reset.png" width={770} />
+
+The command expects a single parameter: the path of the SjasmPlus installation folder. When Klive invokes the assembler, the SjasmPlus executable name is added to this path. 
+
+<Callout type="info" emoji="💡">
+Klive stores the SjasmPlus settings in the `Klive.setting` file. If you want to change this path for a particular project (perhaps you want to test with another SjasmPlus version), use the `-p` switch to save this setting into the currently open project.
+</Callout>
+
+## Using SJASMPLUS
+
+After setting up the SjasmPlus integration, you can create Klive projects with the `sjasmplus` template: 
+
+<ClickableImage src="/images/working-with-ide/new-sjasmp-project.png" width={512} />
+
+This template creates a project with a `code.asm` file as the build root and associates the `.asm` and `.sjasm` file extensions with the SjasmPlus compiler.
+
+If you start with an existing project, you can create source code files with the `.sjasm` extension and promote them to build roots. Such a file will leverage the SjasmPlus compiler.
+
+When you run the SjasmPlus code in the default Klive project template, you can see the result in the Emulator window:
+
+<ClickableImage src="/images/working-with-ide/running-sjasmp-code.png" width={480} />18:X
+1d:X
+1d:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Setting up SJASMPLUS","id":"setting-up-sjasmplus","depth":2},{"value":"Using SJASMPLUS","id":"using-sjasmplus","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Klive IDE supports SJASMPLUS out-of-the-box, provided you installed the SjasmPlus Z80 assembler utility on your machine.","title":"SJASMPLUS Integration","filePath":"content/working-with-ide/sjasmp.mdx","timestamp":1788422465000},"sourceCode":"$5","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["SJASMPLUS Integration","$undefined"]}],"\n","$L6","\n","$L7","\n","$L8","\n","$L9","\n","$La","\n","$Lb","\n","$Lc","\n","$Ld","\n","$Le","\n","$Lf","\n","$L10","\n","$L11","\n","$L12","\n","$L13","\n","$L14","\n","$L15"]}]]}]]}]}],null,"$L16"]}],"isPartial":"$@17","staleTime":"$18","varyParams":null},{"rsc":"$L19","isPartial":"$@1a","staleTime":"$18","varyParams":null},{"rsc":"$L1b","isPartial":"$@1c","staleTime":"$18","varyParams":"$1d"}],"isUpgradeableISRFallback":false,"a":"$@1e","rootVaryParams":null,"needsRuntimeRequest":"$@1f"}
+20:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+21:I[484,[],"OutletBoundary"]
+22:"$Sreact.suspense"
+24:I[484,[],"ViewportBoundary"]
+25:I[484,[],"MetadataBoundary"]
+26:I[7121,[],""]
+27:I[4581,[],""]
+:HL["/kliveide/images/working-with-ide/sjasmp-reset.png","image"]
+:HL["/kliveide/images/working-with-ide/new-sjasmp-project.png","image"]
+:HL["/kliveide/images/working-with-ide/running-sjasmp-code.png","image"]
+6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive IDE supports SJASMPLUS out-of-the-box, provided you installed the SjasmPlus Z80 assembler utility on your machine. After setting up SjasmPlus integration, you can use Klive IDE to edit, run, and debug programs created with this assembler."}]
+7:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Running and debugging SjasmPlus-compiled code is tested only with the ZX Spectrum 48K model."}]}]]}]
+8:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"As Klive IDE does not know where to find the SjasmPlus compiler on your machine, you must set it up before using it."}]
+9:["$","h2",null,{"id":"setting-up-sjasmplus","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Setting up SJASMPLUS",["$","$L20",null,{"id":"setting-up-sjasmplus"}]]}]
+a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Visit the GitHub page of ",["$","a",null,{"href":"https://github.com/z00m128/sjasmplus","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["SjasmPlus",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," for details about this excellent Z80 assembler. You can read information about installing it ",["$","a",null,{"href":"https://github.com/z00m128/sjasmplus/blob/master/INSTALL.md","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["here",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}],". Note the installation folder; you will need it to set up the integration with Klive."]}]
+b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The IDE provides a command, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"sjasmp-reset"}]," (or shorter, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"sjasmpr"}],"), to connect Klive with SjasmPlus. You can issue this command from the Command window:"]}]
+c:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/sjasmp-reset.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/sjasmp-reset.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":770,"height":"auto"}}]}]}]
+d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The command expects a single parameter: the path of the SjasmPlus installation folder. When Klive invokes the assembler, the SjasmPlus executable name is added to this path."}]
+e:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive stores the SjasmPlus settings in the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Klive.setting"}]," file. If you want to change this path for a particular project (perhaps you want to test with another SjasmPlus version), use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-p"}]," switch to save this setting into the currently open project."]}]}]]}]
+f:["$","h2",null,{"id":"using-sjasmplus","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Using SJASMPLUS",["$","$L20",null,{"id":"using-sjasmplus"}]]}]
+10:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["After setting up the SjasmPlus integration, you can create Klive projects with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"sjasmplus"}]," template:"]}]
+11:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/new-sjasmp-project.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/new-sjasmp-project.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":512,"height":"auto"}}]}]}]
+12:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This template creates a project with a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"code.asm"}]," file as the build root and associates the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".asm"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".sjasm"}]," file extensions with the SjasmPlus compiler."]}]
+13:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you start with an existing project, you can create source code files with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".sjasm"}]," extension and promote them to build roots. Such a file will leverage the SjasmPlus compiler."]}]
+14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you run the SjasmPlus code in the default Klive project template, you can see the result in the Emulator window:"}]
+15:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/running-sjasmp-code.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/running-sjasmp-code.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":480,"height":"auto"}}]}]}]
+16:["$","$L21",null,{"children":["$","$22",null,{"name":"Next.MetadataOutlet","children":"$@23"}]}]
+19:["$","$1","h",{"children":[null,["$","$L24",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L25",null,{"children":["$","$22",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"SJASMPLUS Integration - Klive IDE"}],["$","meta","1",{"name":"description","content":"Klive IDE supports SJASMPLUS out-of-the-box, provided you installed the SjasmPlus Z80 assembler utility on your machine."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+1b:["$","$1","c",{"children":[null,["$","$L26",null,{"parallelRouterKey":"children","template":["$","$L27",null,{}]}]]}]
+1f:true
+23:null
+18:300
+18:C
+1e:0
+1a:"$undefined"
+1c:"$undefined"
+17:"$undefined"

@@ -1,0 +1,164 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:T1362,---
+description: "Square waves are fine for chip music. But the Next can also play actual sampled sound - speech, drums, wave-tables, anything you can put in memory as 8-bit PCM."
+---
+
+import { Callout } from 'nextra/components'
+
+# DACs and Sample Playback
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+Square waves are fine for chip music. But the Next can also play actual sampled sound — speech, drums, wave-tables, anything you can put in memory as 8-bit PCM. The trick is the four built-in 8-bit DACs (left A, left B, right A, right B), each controlled by one I/O port. Write a byte → that byte becomes a voltage. Do it 8000 times a second and you have a wavetable synthesiser.
+
+This chapter is where two earlier chapters pay off in a single application: we use the [CTC](./05-ctc.mdx) to keep accurate sample-rate timing, and the [zxnDMA](./06-zxndma.mdx) to do the actual byte transfer with zero CPU overhead. We use both, side by side, and compare them.
+
+Topics:
+
+- **The four DAC ports.** `$FB` (left A), `$B3` (left B), `$0F` (right A), `$DF` (right B), and the eight-bit unsigned PCM convention.
+- **Routing.** NextReg `$08` bits — which DAC goes to which output, including "all four to both speakers" for max volume.
+- **Sample formats.** Raw 8-bit signed/unsigned, the 11025 Hz / 22050 Hz / 44100 Hz convention, and how to convert WAV in advance.
+- **CPU-driven playback.** A CTC channel ticks at the sample rate; its ISR does an `OUT (DAC),A` and advances a pointer. Costs ~150 T-states per sample at 11 kHz.
+- **DMA-driven playback.** A CTC channel is wired to the DMA via NextReg `$CD`. The DMA copies one byte from a sample buffer to the DAC port on every CTC tick. **The CPU does literally nothing during playback.** This is how the Next does professional-quality audio.
+- **Looping, ping-pong, and end-of-buffer.** DMA modes that automatically restart, plus status polling or a separate timing interrupt when you need to queue the next buffer.
+- **Mixing AY and DAC.** Both go to the same output stage; the chip music continues underneath the samples.
+
+## What you should know first
+
+- [Interrupts](./04-interrupts.mdx).
+- [The CTC](./05-ctc.mdx).
+- [zxnDMA](./06-zxndma.mdx).
+
+## Planned exercises
+
+- **CPU-paced sample.** Play an 8 kHz speech sample using a CTC ISR.
+- **DMA-paced sample.** Replay the same sample using DMA. Compare CPU load (use the CTC profiling utility from chapter 5 to measure how much main-loop time you actually win back).
+- **CTC-paced DMA streaming.** Stream a small unsigned 8-bit sample buffer to a DAC port using burst-mode DMA paced by a CTC channel. The DMA transfers one byte per CTC trigger, releases the bus between samples, and lets the CPU continue running a small animation or counter in the foreground. The foreground activity proves the CPU is not trapped in the sample-output loop.
+- **Drum + chip music.** AY tracker tune playing in the background, DMA-driven drum hits triggered on key press.
+
+## Planned Demo: Audio Streaming with CTC Timing
+
+This demo belongs here rather than in the zxnDMA chapter because the interesting question is not how to upload a DMA table; it is how to produce a stable audio sample rate. The CTC supplies the sample clock, and zxnDMA moves one byte from the sample buffer to a DAC port on each CTC trigger.
+
+The DMA program is close to an ordinary memory-to-port burst transfer, but WR2 has no prescaler. NextReg `$CD` connects a CTC channel's ZC/TO pulse to the DMA trigger path:
+
+```z80klive
+CTC_CH3     equ $1B3B        ; Use channel 3 for audio timing
+NR_REG      equ $243B
+NR_DAT      equ $253B
+
+; --- Configure CTC Channel 3 as a timer at about 22 kHz.
+;     28 MHz / 16 / 80 = 21,875 Hz
+    ld bc,CTC_CH3
+    ld a,%00000101          ; Timer, prescaler /16, TC follows
+    out (c),a
+    ld a,80
+    out (c),a
+
+; --- Arm the CTC -> DMA trigger: NR $CD bit 3 = CTC channel 3.
+    ld a,$CD
+    ld bc,NR_REG
+    out (c),a
+    ld a,%00001000
+    ld bc,NR_DAT
+    out (c),a
+
+; --- DMA program: burst mode, no WR2 prescaler.
+audioCTCDMAProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer
+audioCTCSrc:  .dw 0                     ; patch: source buffer address
+audioCTCLen:  .dw 0                     ; patch: sample count
+    .dma wr1 memory, increment
+    .dma wr2 io, fixed                  ; no prescaler: CTC handles timing
+    .dma wr4 burst
+    .dw $00DF                           ; Port B = DAC port $DF
+    .dma wr5
+    .dma load
+    .dma enable
+audioCTCDMAProgram_end:
+
+; Kick off streaming: HL = buffer address, BC = sample count
+    ld (audioCTCSrc),hl
+    ld (audioCTCLen),bc
+    ld hl,audioCTCDMAProgram
+    ld b,audioCTCDMAProgram_end - audioCTCDMAProgram
+    ld c,$6B
+    otir
+```
+
+The CPU runs between CTC-triggered burst transfers. Each CTC tick delivers one sample to the DAC, and the foreground code can keep animating, polling input, or preparing the next buffer.a:X
+f:X
+f:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Synopsis","id":"synopsis","depth":2},{"value":"What you should know first","id":"what-you-should-know-first","depth":2},{"value":"Planned exercises","id":"planned-exercises","depth":2},{"value":"Planned Demo: Audio Streaming with CTC Timing","id":"planned-demo-audio-streaming-with-ctc-timing","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Square waves are fine for chip music. But the Next can also play actual sampled sound - speech, drums, wave-tables, anything you can put in memory as 8-bit PCM.","title":"DACs and Sample Playback","filePath":"content/book/18-dac.mdx","timestamp":1788422465000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+13:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],""]
+20:I[484,[],"OutletBoundary"]
+21:"$Sreact.suspense"
+23:I[484,[],"ViewportBoundary"]
+24:I[484,[],"MetadataBoundary"]
+25:I[7121,[],""]
+26:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["DACs and Sample Playback","$undefined"]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"🚧"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This chapter is a placeholder. The full text is being written."}]}]]}],"\n",["$","h2",null,{"id":"synopsis","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Synopsis",["$","$L12",null,{"id":"synopsis"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Square waves are fine for chip music. But the Next can also play actual sampled sound — speech, drums, wave-tables, anything you can put in memory as 8-bit PCM. The trick is the four built-in 8-bit DACs (left A, left B, right A, right B), each controlled by one I/O port. Write a byte → that byte becomes a voltage. Do it 8000 times a second and you have a wavetable synthesiser."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This chapter is where two earlier chapters pay off in a single application: we use the ",["$","$L13",null,{"href":"./05-ctc","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"CTC"}]," to keep accurate sample-rate timing, and the ",["$","$L13",null,{"href":"./06-zxndma","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"zxnDMA"}]," to do the actual byte transfer with zero CPU overhead. We use both, side by side, and compare them."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Topics:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The four DAC ports."}]," ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FB"}]," (left A), ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$B3"}]," (left B), ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0F"}]," (right A), ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$DF"}]," (right B), and the eight-bit unsigned PCM convention."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Routing."}]," NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$08"}]," bits — which DAC goes to which output, including “all four to both speakers” for max volume."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Sample formats."}]," Raw 8-bit signed/unsigned, the 11025 Hz / 22050 Hz / 44100 Hz convention, and how to convert WAV in advance."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CPU-driven playback."}]," A CTC channel ticks at the sample rate; its ISR does an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OUT (DAC),A"}]," and advances a pointer. Costs ~150 T-states per sample at 11 kHz."]}],"\n","$L14","\n","$L15","\n","$L16","\n"]}],"\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f"]}]
+8:["$","$L20",null,{"children":["$","$21",null,{"name":"Next.MetadataOutlet","children":"$@22"}]}]
+b:["$","$1","h",{"children":[null,["$","$L23",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L24",null,{"children":["$","$21",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"DACs and Sample Playback - Klive IDE"}],["$","meta","1",{"name":"description","content":"Square waves are fine for chip music. But the Next can also play actual sampled sound - speech, drums, wave-tables, anything you can put in memory as 8-bit PCM."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L25",null,{"parallelRouterKey":"children","template":["$","$L26",null,{}]}]]}]
+11:true
+27:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ToggleWordWrapButton"]
+14:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"DMA-driven playback."}]," A CTC channel is wired to the DMA via NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CD"}],". The DMA copies one byte from a sample buffer to the DAC port on every CTC tick. ",["$","strong",null,{"children":"The CPU does literally nothing during playback."}]," This is how the Next does professional-quality audio."]}]
+15:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Looping, ping-pong, and end-of-buffer."}]," DMA modes that automatically restart, plus status polling or a separate timing interrupt when you need to queue the next buffer."]}]
+16:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Mixing AY and DAC."}]," Both go to the same output stage; the chip music continues underneath the samples."]}]
+17:["$","h2",null,{"id":"what-you-should-know-first","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What you should know first",["$","$L12",null,{"id":"what-you-should-know-first"}]]}]
+18:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L13",null,{"href":"./04-interrupts","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Interrupts"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L13",null,{"href":"./05-ctc","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The CTC"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L13",null,{"href":"./06-zxndma","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"zxnDMA"}],"."]}],"\n"]}]
+19:["$","h2",null,{"id":"planned-exercises","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Planned exercises",["$","$L12",null,{"id":"planned-exercises"}]]}]
+1a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CPU-paced sample."}]," Play an 8 kHz speech sample using a CTC ISR."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"DMA-paced sample."}]," Replay the same sample using DMA. Compare CPU load (use the CTC profiling utility from chapter 5 to measure how much main-loop time you actually win back)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"CTC-paced DMA streaming."}]," Stream a small unsigned 8-bit sample buffer to a DAC port using burst-mode DMA paced by a CTC channel. The DMA transfers one byte per CTC trigger, releases the bus between samples, and lets the CPU continue running a small animation or counter in the foreground. The foreground activity proves the CPU is not trapped in the sample-output loop."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Drum + chip music."}]," AY tracker tune playing in the background, DMA-driven drum hits triggered on key press."]}],"\n"]}]
+1b:["$","h2",null,{"id":"planned-demo-audio-streaming-with-ctc-timing","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Planned Demo: Audio Streaming with CTC Timing",["$","$L12",null,{"id":"planned-demo-audio-streaming-with-ctc-timing"}]]}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This demo belongs here rather than in the zxnDMA chapter because the interesting question is not how to upload a DMA table; it is how to produce a stable audio sample rate. The CTC supplies the sample clock, and zxnDMA moves one byte from the sample buffer to a DAC port on each CTC trigger."}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The DMA program is close to an ordinary memory-to-port burst transfer, but WR2 has no prescaler. NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CD"}]," connects a CTC channel’s ZC/TO pulse to the DMA trigger path:"]}]
+1e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L27",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"CTC_CH3"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"     equ"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $1B3B"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"        ; Use channel 3 for audio timing"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"NR_REG"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"      equ"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $243B"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"NR_DAT"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"      equ"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $253B"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; --- Configure CTC Channel 3 as a timer at about 22 kHz."}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":";     28 MHz / 16 / 80 = 21,875 Hz"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"CTC_CH3"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%00000101"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"          ; Timer, prescaler /16, TC follows"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"80"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; --- Arm the CTC -> DMA trigger: NR $CD bit 3 = CTC channel 3."}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$CD"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"NR_REG"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    out"}],"$L28","$L29","$L2a","$L2b"]}],"\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45"]}]]}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The CPU runs between CTC-triggered burst transfers. Each CTC tick delivers one sample to the DAC, and the foreground code can keep animating, polling input, or preparing the next buffer."}]
+22:null
+a:300
+28:["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}]
+29:["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}]
+2a:["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}]
+2b:["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]
+2c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"%00001000"}]]}]
+2d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"NR_DAT"}]]}]
+2e:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]
+2f:["$","span",null,{"children":" "}]
+30:["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; --- DMA program: burst mode, no WR2 prescaler."}]}]
+31:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"audioCTCDMAProgram"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}]
+32:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dma"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" reset"}]]}]
+33:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dma"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" wr0"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" a_to_b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"transfer"}]]}]
+34:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"audioCTCSrc"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"  .dw"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                     ; patch: source buffer address"}]]}]
+35:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"audioCTCLen"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"  .dw"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                     ; patch: sample count"}]]}]
+36:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dma"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" wr1"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" memory"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"increment"}]]}]
+37:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dma"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" wr2"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" io"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"fixed"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                  ; no prescaler: CTC handles timing"}]]}]
+38:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dma"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" wr4"}],["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":" burst"}]]}]
+39:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dw"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $00DF"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"                           ; Port B = DAC port $DF"}]]}]
+3a:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dma"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" wr5"}]]}]
+3b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dma"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" load"}]]}]
+3c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dma"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" enable"}]]}]
+3d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"audioCTCDMAProgram_end"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}]
+3e:["$","span",null,{"children":" "}]
+3f:["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Kick off streaming: HL = buffer address, BC = sample count"}]}]
+40:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#B5890F"},"children":"audioCTCSrc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}]]}]
+41:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#B5890F"},"children":"audioCTCLen"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"bc"}]]}]
+42:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"audioCTCDMAProgram"}]]}]
+43:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"audioCTCDMAProgram_end"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" -"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" audioCTCDMAProgram"}]]}]
+44:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$6B"}]]}]
+45:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    otir"}]}]
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

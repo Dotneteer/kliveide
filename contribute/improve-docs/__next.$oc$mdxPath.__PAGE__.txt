@@ -1,0 +1,139 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:Tfd0,---
+description: "Though we strive to maintain high-quality documentation, you may find typos, grammar issues, clumsy explanations, out-of-date information, and other problems."
+---
+
+# Improve the Documentation
+
+Though we strive to maintain high-quality documentation, you may find typos, grammar issues, clumsy explanations, out-of-date information, and other problems.
+
+You can help by fixing these issues or submitting new content.
+
+Klive generates its documentation using [Nextra](https://nextra.site/). This article explains how to contribute to improving the documentation. 
+
+Follow the steps to [get the source code](./get-source).
+
+## Running the Documentation Site Locally
+
+Start the documentation site locally on your development machine with the `npm run doc:dev` command, then visit http://localhost:3000 in your browser.
+
+This site uses hot module reloading (HMR), so as you modify the documentation, updates are displayed live in your browser. When you have completed all modifications, create a GitHub Pull Request from your working branch to Klive's `master` branch for review and merging.
+
+## Documentation Structure
+
+You can find these documentation-related folders within the project's root:
+- **`pages`**: The source documentation files using Nextra and the `.mdx` (extended markdown) format. Documentation lives in `.mdx` files. The content of this folder represents the hierarchy of the documentation. Each folder describes its content in a `_meta.ts` file (you'll understand them; they map the individual files with the table of contents).
+- **`public/images`**: The image resources of the documentation pages (organized hierarchically). 
+The project contains some other Nextra-related files; please do not touch them. If you have to do so, please add some comments to your submitted PR to explain your intention.
+
+## Common Documentation Tasks
+
+### Adding a New Page
+
+1. Create a new `.mdx` page in the appropriate folder. Use a short name representing the contents you intend to describe.
+2. Optionally, you can create a new folder and add documentation files there.
+3. Ensure you update the `_meta.ts` file in the new article folder with a suitable title. Place the new article in the location where it fits the best among the already existing articles.
+
+You can consider existing articles as examples.
+
+### Creating Hidden Pages
+
+Sometimes you may want to create documentation pages that are accessible via URL but don't appear in the navigation sidebar. This is useful for:
+- Supplementary reference materials
+- Draft content that's ready but not yet promoted
+- Special-purpose landing pages
+- Beta feature documentation
+
+To create a hidden page:
+
+1. Create your `.mdx` file in the appropriate folder (e.g., `pages/book.mdx`)
+2. Add an entry for this page in the corresponding `_meta.ts` file with `display: "hidden"`
+3. The page will be accessible via its URL path (e.g., `/book`) but won't appear in navigation
+
+Example:
+```typescript
+// pages/_meta.ts
+export default {
+  index: "Introduction",
+  "getting-started": "Getting Started",
+  book: {
+    display: "hidden"  // Page exists at /book but hidden from sidebar
+  }
+};
+```
+
+The page at `pages/book.mdx` will be accessible at `/book` but hidden from the sidebar. You can link to hidden pages from other documentation pages using standard markdown links: `[Link text](/book)`.
+
+See the [example hidden page](/book) to understand how this works in practice.
+
+### Adding images
+
+You can add images following these steps:
+
+1. Add the following line to the top of the `.mdx` file:
+```js
+```
+
+2. Copy the image to add into the right folder within `public/images` (under the project's root folder).
+
+3. Use the `<ClickableImage>` component to place your image in an article:
+
+```jsx
+<ClickableImage 
+  src="/images/working-with-ide/mem-view.png" 
+  alt="Memory view" 
+  width={512} 
+/>
+```
+
+To set the image's display dimensions, use the `width` attribute. The `ClickableImage` component will handle proper path resolution for both development and production environments.a:X
+f:X
+f:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Running the Documentation Site Locally","id":"running-the-documentation-site-locally","depth":2},{"value":"Documentation Structure","id":"documentation-structure","depth":2},{"value":"Common Documentation Tasks","id":"common-documentation-tasks","depth":2},{"value":"Adding a New Page","id":"adding-a-new-page","depth":3},{"value":"Creating Hidden Pages","id":"creating-hidden-pages","depth":3},{"value":"Adding images","id":"adding-images","depth":3}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Though we strive to maintain high-quality documentation, you may find typos, grammar issues, clumsy explanations, out-of-date information, and other problems.","title":"Improve the Documentation","filePath":"content/contribute/improve-docs.mdx","timestamp":1788422465000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],""]
+13:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+2a:I[484,[],"OutletBoundary"]
+2b:"$Sreact.suspense"
+2d:I[484,[],"ViewportBoundary"]
+2e:I[484,[],"MetadataBoundary"]
+2f:I[7121,[],""]
+30:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Improve the Documentation","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Though we strive to maintain high-quality documentation, you may find typos, grammar issues, clumsy explanations, out-of-date information, and other problems."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can help by fixing these issues or submitting new content."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive generates its documentation using ",["$","a",null,{"href":"https://nextra.site/","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["Nextra",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}],". This article explains how to contribute to improving the documentation."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Follow the steps to ",["$","$L12",null,{"href":"./get-source","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"get the source code"}],"."]}],"\n",["$","h2",null,{"id":"running-the-documentation-site-locally","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Running the Documentation Site Locally",["$","$L13",null,{"id":"running-the-documentation-site-locally"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Start the documentation site locally on your development machine with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"npm run doc:dev"}]," command, then visit ",["$","a",null,{"href":"http://localhost:3000","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["http://localhost:3000",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," in your browser."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This site uses hot module reloading (HMR), so as you modify the documentation, updates are displayed live in your browser. When you have completed all modifications, create a GitHub Pull Request from your working branch to Klive’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"master"}]," branch for review and merging."]}],"\n",["$","h2",null,{"id":"documentation-structure","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Documentation Structure",["$","$L13",null,{"id":"documentation-structure"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can find these documentation-related folders within the project’s root:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n","$L14","\n","$L15","\n"]}],"\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29"]}]
+8:["$","$L2a",null,{"children":["$","$2b",null,{"name":"Next.MetadataOutlet","children":"$@2c"}]}]
+b:["$","$1","h",{"children":[null,["$","$L2d",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L2e",null,{"children":["$","$2b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Improve the Documentation - Klive IDE"}],["$","meta","1",{"name":"description","content":"Though we strive to maintain high-quality documentation, you may find typos, grammar issues, clumsy explanations, out-of-date information, and other problems."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L2f",null,{"parallelRouterKey":"children","template":["$","$L30",null,{}]}]]}]
+11:true
+31:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ToggleWordWrapButton"]
+14:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"pages"}]}],": The source documentation files using Nextra and the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mdx"}]," (extended markdown) format. Documentation lives in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mdx"}]," files. The content of this folder represents the hierarchy of the documentation. Each folder describes its content in a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"_meta.ts"}]," file (you’ll understand them; they map the individual files with the table of contents)."]}]
+15:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"public/images"}]}],": The image resources of the documentation pages (organized hierarchically).\nThe project contains some other Nextra-related files; please do not touch them. If you have to do so, please add some comments to your submitted PR to explain your intention."]}]
+16:["$","h2",null,{"id":"common-documentation-tasks","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Common Documentation Tasks",["$","$L13",null,{"id":"common-documentation-tasks"}]]}]
+17:["$","h3",null,{"id":"adding-a-new-page","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Adding a New Page",["$","$L13",null,{"id":"adding-a-new-page"}]]}]
+18:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Create a new ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mdx"}]," page in the appropriate folder. Use a short name representing the contents you intend to describe."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Optionally, you can create a new folder and add documentation files there."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Ensure you update the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"_meta.ts"}]," file in the new article folder with a suitable title. Place the new article in the location where it fits the best among the already existing articles."]}],"\n"]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can consider existing articles as examples."}]
+1a:["$","h3",null,{"id":"creating-hidden-pages","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Creating Hidden Pages",["$","$L13",null,{"id":"creating-hidden-pages"}]]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Sometimes you may want to create documentation pages that are accessible via URL but don’t appear in the navigation sidebar. This is useful for:"}]
+1c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Supplementary reference materials"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Draft content that’s ready but not yet promoted"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Special-purpose landing pages"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Beta feature documentation"}],"\n"]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To create a hidden page:"}]
+1e:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Create your ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mdx"}]," file in the appropriate folder (e.g., ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"pages/book.mdx"}],")"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Add an entry for this page in the corresponding ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"_meta.ts"}]," file with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"display: \"hidden\""}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The page will be accessible via its URL path (e.g., ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"/book"}],") but won’t appear in navigation"]}],"\n"]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Example:"}]
+20:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L31",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"// pages/_meta.ts"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":"export"}],["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":" default"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#A4A4A4"},"children":"  index: "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"Introduction\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF6B35"},"children":"  \"getting-started\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":": "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"Getting Started\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"  book: {"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#A4A4A4"},"children":"    display: "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"hidden\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":"  // Page exists at /book but hidden from sidebar"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"  }"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"};"}]}]]}]]}]]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The page at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"pages/book.mdx"}]," will be accessible at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"/book"}]," but hidden from the sidebar. You can link to hidden pages from other documentation pages using standard markdown links: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"[Link text](/book)"}],"."]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["See the ",["$","$L12",null,{"href":"/book","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"example hidden page"}]," to understand how this works in practice."]}]
+23:["$","h3",null,{"id":"adding-images","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Adding images",["$","$L13",null,{"id":"adding-images"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can add images following these steps:"}]
+25:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Add the following line to the top of the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".mdx"}]," file:"]}],"\n"]}]
+26:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L31",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":" "}]}]]}]]}]
+27:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"2","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Copy the image to add into the right folder within ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"public/images"}]," (under the project’s root folder)."]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<ClickableImage>"}]," component to place your image in an article:"]}],"\n"]}],"\n"]}]
+28:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L31",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"<ClickableImage "}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#A4A4A4"},"children":"  src"}],["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":"="}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"/images/working-with-ide/mem-view.png\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" "}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#A4A4A4"},"children":"  alt"}],["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":"="}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"Memory view\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" "}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#A4A4A4"},"children":"  width"}],["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":"="}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"{"}],["$","span",null,{"style":{"color":"#4D8061"},"children":"512"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"} "}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"/>"}]}]]}]]}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To set the image’s display dimensions, use the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"width"}]," attribute. The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ClickableImage"}]," component will handle proper path resolution for both development and production environments."]}]
+2c:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

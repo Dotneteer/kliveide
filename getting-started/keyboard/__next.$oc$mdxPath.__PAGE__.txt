@@ -1,0 +1,127 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:T11db,---
+description: "You can use the computer's physical keyboard or a virtual keyboard to emulate keystrokes."
+---
+
+import { Callout } from 'nextra/components'
+ 
+# Using the Keyboard
+
+You can use the computer's physical keyboard or a virtual keyboard to emulate keystrokes. To let the Emulator process the computer's keyboard, the Emulator should have the focus. When you change the current window to the Emulator with your machine's keys or click it with the mouse, it is ready to receive keystrokes.
+
+Of course, you should start the machine and wait while it reaches its main execution cycles and starts watching for keys.
+
+## Using the Virtual Keyboard
+
+If you do not find it easy to use the computer's physical keyboard, you can use the virtual keyboard. You can display (or hide) it with one of these actions:
+
+- Click the **View | Show the Virtual Keyboard** menu command while in the Emulator window
+- Click the **Keyboard** icon in the Emulator's toolbar
+
+When the keyboard is to show, Klive displays it according to the selected machine's type. These figures show the ZX Spectrum 48K keyboard and the ZX Spectrum 128L/+2E/+3E keyboard.
+
+<ClickableImage src="/images/getting-started/sp48-keyboard.png" width={650} />
+
+<ClickableImage src="/images/getting-started/sp128-keyboard.png" alt="ZX Spectrum 128 Keyboard" width={650} />
+
+<Callout type="info" emoji="💡">
+Klive also has custom keyboards for the Cambridge Z88 and the ZX Spectrum Next computers.
+</Callout>
+
+To press a key, move the mouse over the particular virtual key and click it. If you keep the mouse button down, it's just like keeping the button pressed. Releasing the mouse button behaves as you released the real key.
+
+When you move the button slowly over a particular key, it will highlight the part of the button with the symbol shift-related and extended mode-related keys. When you click the mouse, it will automatically "press" the symbol shift or extended mode keys. 
+
+You can use both the left and right mouse buttons. However, when using the right mouse button with normal keys, it behaves as if you pressed the **CAPS SHIFT** key simultaneously.
+
+This table shows a few examples:
+
+| Example | Description
+|-|:-|
+| <ClickableImage src="/images/getting-started/main-key.png" alt="Main Key" width={64} /> | The click will display `INPUT` (`i`) when you use the left mouse button or `INPUT` (`I`) with the right mouse button, depending on the current ZX Spectrum cursor mode. |
+| <ClickableImage src="/images/getting-started/symbol-key.png" alt="Symbol Key" width={64} /> | The click will result in `AT` regardless of which mouse button you click. |
+| <ClickableImage src="/images/getting-started/above-key.png" alt="Above Key" width={64} /> | The click will show `CODE` regardless of which mouse button you click. |
+| <ClickableImage src="/images/getting-started/below-key.png" alt="Below Key" width={64} /> | The click will display `IN` regardless of which mouse button you click. |
+| <ClickableImage src="/images/getting-started/glyph-key.png" alt="Glyph Key" width={64} /> | The click will display a glyph with its top-left corner set if you click the left mouse button and the inverse of that glyph when you use the right mouse button. |
+
+## Resizing the Virtual Keyboard
+
+When you move the mouse to the top border of the virtual keyboard, a sizing splitter bar appears:
+
+<ClickableImage 
+  src="/images/getting-started/sizing-start.png"
+  alt="Sizing Start" 
+  width={550}
+/>
+
+Hold down the mouse key while over the splitter, and move it. As you move, Klive changes the keyboard size and resizes the emulator display accordingly:
+
+<ClickableImage 
+  src="/images/getting-started/sizing-end.png"
+  alt="Sizing End" 
+  width={550}
+/>
+
+When you reach the desired size, release the mouse button.
+
+## Known Issues with the Virtual Keyboard
+
+Klive uses some cheats with the glyphs over the numeric buttons. It emulates that you press the **GRAPHICS** button to turn on the graphics mode, then emulates the keypress, after that releases the key, and then emulates **GRAPHICS** again. While keeping the key pressed (the mouse button is held down) works for other keys, this behavior is ignored for glyphs.
+
+If you click a glyph button several times repeatedly, the ZX Spectrum OS may not process the emulation of **GRAPHICS** quickly enough, and thus, the editor does not get out of the graphics mode. 
+
+<Callout type="info" emoji="💡">
+This is a difficult issue to manage. There is currently no fix for it. Please be patient and type a bit slower when you're about to use glyphs.
+</Callout>a:X
+f:X
+f:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Using the Virtual Keyboard","id":"using-the-virtual-keyboard","depth":2},{"value":"Resizing the Virtual Keyboard","id":"resizing-the-virtual-keyboard","depth":2},{"value":"Known Issues with the Virtual Keyboard","id":"known-issues-with-the-virtual-keyboard","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"You can use the computer's physical keyboard or a virtual keyboard to emulate keystrokes.","title":"Using the Keyboard","filePath":"content/getting-started/keyboard.mdx","timestamp":1788422465000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+21:I[484,[],"OutletBoundary"]
+22:"$Sreact.suspense"
+24:I[484,[],"ViewportBoundary"]
+25:I[484,[],"MetadataBoundary"]
+26:I[7121,[],""]
+27:I[4581,[],""]
+:HL["/kliveide/images/getting-started/sp48-keyboard.png","image"]
+:HL["/kliveide/images/getting-started/sp128-keyboard.png","image"]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using the Keyboard","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can use the computer’s physical keyboard or a virtual keyboard to emulate keystrokes. To let the Emulator process the computer’s keyboard, the Emulator should have the focus. When you change the current window to the Emulator with your machine’s keys or click it with the mouse, it is ready to receive keystrokes."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Of course, you should start the machine and wait while it reaches its main execution cycles and starts watching for keys."}],"\n",["$","h2",null,{"id":"using-the-virtual-keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Using the Virtual Keyboard",["$","$L12",null,{"id":"using-the-virtual-keyboard"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"If you do not find it easy to use the computer’s physical keyboard, you can use the virtual keyboard. You can display (or hide) it with one of these actions:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Click the ",["$","strong",null,{"children":"View | Show the Virtual Keyboard"}]," menu command while in the Emulator window"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Click the ",["$","strong",null,{"children":"Keyboard"}]," icon in the Emulator’s toolbar"]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the keyboard is to show, Klive displays it according to the selected machine’s type. These figures show the ZX Spectrum 48K keyboard and the ZX Spectrum 128L/+2E/+3E keyboard."}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/sp48-keyboard.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/sp48-keyboard.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":650,"height":"auto"}}]}]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/sp128-keyboard.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/sp128-keyboard.png","alt":"ZX Spectrum 128 Keyboard","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":650,"height":"auto"}}]}]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive also has custom keyboards for the Cambridge Z88 and the ZX Spectrum Next computers."}]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"To press a key, move the mouse over the particular virtual key and click it. If you keep the mouse button down, it’s just like keeping the button pressed. Releasing the mouse button behaves as you released the real key."}],"\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20"]}]
+8:["$","$L21",null,{"children":["$","$22",null,{"name":"Next.MetadataOutlet","children":"$@23"}]}]
+b:["$","$1","h",{"children":[null,["$","$L24",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L25",null,{"children":["$","$22",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using the Keyboard - Klive IDE"}],["$","meta","1",{"name":"description","content":"You can use the computer's physical keyboard or a virtual keyboard to emulate keystrokes."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L26",null,{"parallelRouterKey":"children","template":["$","$L27",null,{}]}]]}]
+11:true
+:HL["/kliveide/images/getting-started/main-key.png","image"]
+:HL["/kliveide/images/getting-started/symbol-key.png","image"]
+:HL["/kliveide/images/getting-started/above-key.png","image"]
+:HL["/kliveide/images/getting-started/sizing-start.png","image"]
+:HL["/kliveide/images/getting-started/sizing-end.png","image"]
+13:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you move the button slowly over a particular key, it will highlight the part of the button with the symbol shift-related and extended mode-related keys. When you click the mouse, it will automatically “press” the symbol shift or extended mode keys."}]
+14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can use both the left and right mouse buttons. However, when using the right mouse button with normal keys, it behaves as if you pressed the ",["$","strong",null,{"children":"CAPS SHIFT"}]," key simultaneously."]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This table shows a few examples:"}]
+16:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Example","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"style":{"textAlign":"left"},"children":"Description","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/main-key.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/main-key.png","alt":"Main Key","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":64,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":["The click will display ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INPUT"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"i"}],") when you use the left mouse button or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INPUT"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"I"}],") with the right mouse button, depending on the current ZX Spectrum cursor mode."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/symbol-key.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/symbol-key.png","alt":"Symbol Key","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":64,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":["The click will result in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"AT"}]," regardless of which mouse button you click."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/above-key.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/above-key.png","alt":"Above Key","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":64,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":["The click will show ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CODE"}]," regardless of which mouse button you click."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":"$L28"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L29"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L2a"]}]]}]
+17:["$","h2",null,{"id":"resizing-the-virtual-keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Resizing the Virtual Keyboard",["$","$L12",null,{"id":"resizing-the-virtual-keyboard"}]]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you move the mouse to the top border of the virtual keyboard, a sizing splitter bar appears:"}]
+19:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/sizing-start.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/sizing-start.png","alt":"Sizing Start","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":550,"height":"auto"}}]}]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Hold down the mouse key while over the splitter, and move it. As you move, Klive changes the keyboard size and resizes the emulator display accordingly:"}]
+1b:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/sizing-end.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/sizing-end.png","alt":"Sizing End","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":550,"height":"auto"}}]}]}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you reach the desired size, release the mouse button."}]
+1d:["$","h2",null,{"id":"known-issues-with-the-virtual-keyboard","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Known Issues with the Virtual Keyboard",["$","$L12",null,{"id":"known-issues-with-the-virtual-keyboard"}]]}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive uses some cheats with the glyphs over the numeric buttons. It emulates that you press the ",["$","strong",null,{"children":"GRAPHICS"}]," button to turn on the graphics mode, then emulates the keypress, after that releases the key, and then emulates ",["$","strong",null,{"children":"GRAPHICS"}]," again. While keeping the key pressed (the mouse button is held down) works for other keys, this behavior is ignored for glyphs."]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you click a glyph button several times repeatedly, the ZX Spectrum OS may not process the emulation of ",["$","strong",null,{"children":"GRAPHICS"}]," quickly enough, and thus, the editor does not get out of the graphics mode."]}]
+20:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:18:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This is a difficult issue to manage. There is currently no fix for it. Please be patient and type a bit slower when you’re about to use glyphs."}]}]]}]
+23:null
+:HL["/kliveide/images/getting-started/below-key.png","image"]
+:HL["/kliveide/images/getting-started/glyph-key.png","image"]
+a:300
+28:["$","a",null,{"href":"/kliveide/images/getting-started/below-key.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/below-key.png","alt":"Below Key","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":64,"height":"auto"}}]}]
+29:["$","td",null,{"style":{"textAlign":"left"},"children":["The click will display ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"IN"}]," regardless of which mouse button you click."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+2a:["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/glyph-key.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/glyph-key.png","alt":"Glyph Key","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":64,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"The click will display a glyph with its top-left corner set if you click the left mouse button and the inverse of that glyph when you use the right mouse button.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

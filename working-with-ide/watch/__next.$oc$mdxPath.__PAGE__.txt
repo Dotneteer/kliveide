@@ -1,0 +1,164 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:Te44,---
+description: "With this view, you can observe values of symbols while developing and debugging. You can find this view in the Debug activity tab with the Watch header."
+---
+
+# The Watch View
+
+With this view, you can observe values of symbols while developing and debugging. You can find this view in the Debug activity tab with the Watch header.
+
+<ClickableImage src="/images/working-with-ide/watch-panel.png" width={351} />
+
+Each row represents a watch item with the following information:
+- An icon showing the watch value category
+  - numeric (direct or indirect)
+  - string
+  - warning (when unresolved)
+- The symbol name (uppercased)
+- The current value (formatted)
+
+When a watch cannot be evaluated yet (for example, compiled symbols or memory content are unavailable), it displays “`<unknown>`”. If the symbol is not found in the current compiled output, the value shows “`<not found>`”.
+
+> **Note:** To ensure symbol addresses are up to date, rebuild your project after making code changes. Unresolved symbols will display as “`<not found>`”.
+
+## Adding and Removing Watch Items
+
+You manage watches through interactive commands:
+
+- Add a watch
+
+  ```
+  w-add [>]<symbol>[:<type>[:<length>]]
+  ```
+
+  `>`: optional; when present, uses the symbol's direct value rather than reading from memory
+
+  `<type>`:
+  - b: 8-bit value
+  - w: 16-bit little-endian value
+  - -w: 16-bit big-endian value
+  - l: 32-bit little-endian value
+  - -l: 32-bit big-endian value
+  - f: flag (true/false)
+  - a: byte array (length required; default: 8 when omitted)
+  - s: string (length required; default: 8 when omitted)
+
+- Remove a watch
+
+  ```
+  w-del <symbol>
+  ```
+
+- List watches
+
+  ```
+  w-list
+  ```
+
+- Remove all watches
+
+  ```
+  w-ea
+  ```
+
+In addition to commands, you can remove a watch directly in the Watch view by right‑clicking its icon.
+
+Examples:
+- `w-add playerScore`
+- `w-add playerScore:w`
+- `w-add >playerAddress:w`
+- `w-add buffer:a:32`
+- `w-add text:s:16`
+
+## Understanding Value Formatting
+
+The Watch panel formats values based on the symbol’s type and whether the watch is direct or memory-based.
+
+- Direct integer values (uses '>')
+  - Always shown as 16-bit number: $HHHH (D)
+  - Example: $12AB (4779)
+
+- Memory-based integer values (no '>')
+  - The symbol’s integer value is treated as a 16-bit address
+  - The panel reads memory according to the selected type and endianness
+  - Displayed as $HH (D), $HHHH (D), or $HHHHHHHH (D) for 8/16/32-bit types
+
+- Strings (type: s)
+  - Reads up to `<length>` bytes, stops at NUL (0x00)
+  - Non-printable bytes are shown as '.'
+  - Displayed quoted: "..."
+
+- Arrays (type: a)
+  - Displays up to the first 16 bytes as hex pairs separated by spaces
+  - If longer than 16 bytes, shows a suffix like:  … (+N)
+
+- Flags (type: f)
+  - Shown as true or false (non-zero => true)
+
+> **Note**: When you move the mouse over the watch item's icon, the appearing tooltip will show the symbol's display type.
+
+## Typical Workflows
+
+- Track a direct counter/constant
+  - w-add >frameCounter
+  - Shows as a 16-bit value regardless of the type
+
+- Monitor a pointer and the data it refers to
+  - w-add ptr:w   # watch shows the 16-bit value at address ptr (little-endian)
+  - w-add textPtr:s:32   # shows a printable string at the location pointed by textPtr
+
+- Inspect a small memory block
+  - w-add buffer:a:16
+
+## Tips
+
+- If you frequently work with strings or arrays and omit length, the default is 8.
+- Use w-list to verify your watch specifications and types.
+- Rebuild your project to update symbol addresses when you change code; unresolved symbols will display as “`<not found>`”.a:X
+f:X
+f:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Adding and Removing Watch Items","id":"adding-and-removing-watch-items","depth":2},{"value":"Understanding Value Formatting","id":"understanding-value-formatting","depth":2},{"value":"Typical Workflows","id":"typical-workflows","depth":2},{"value":"Tips","id":"tips","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"With this view, you can observe values of symbols while developing and debugging. You can find this view in the Debug activity tab with the Watch header.","title":"The Watch View","filePath":"content/working-with-ide/watch.mdx","timestamp":1788422465000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+26:I[484,[],"OutletBoundary"]
+27:"$Sreact.suspense"
+29:I[484,[],"ViewportBoundary"]
+2a:I[484,[],"MetadataBoundary"]
+2b:I[7121,[],""]
+2c:I[4581,[],""]
+:HL["/kliveide/images/working-with-ide/watch-panel.png","image"]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Watch View","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With this view, you can observe values of symbols while developing and debugging. You can find this view in the Debug activity tab with the Watch header."}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/watch-panel.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/watch-panel.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":351,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each row represents a watch item with the following information:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["An icon showing the watch value category","\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"numeric (direct or indirect)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"string"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"warning (when unresolved)"}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The symbol name (uppercased)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The current value (formatted)"}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When a watch cannot be evaluated yet (for example, compiled symbols or memory content are unavailable), it displays “",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<unknown>"}],"”. If the symbol is not found in the current compiled output, the value shows “",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<not found>"}],"”."]}],"\n",["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Note:"}]," To ensure symbol addresses are up to date, rebuild your project after making code changes. Unresolved symbols will display as “",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<not found>"}],"”."]}],"\n"]}],"\n",["$","h2",null,{"id":"adding-and-removing-watch-items","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Adding and Removing Watch Items",["$","$L12",null,{"id":"adding-and-removing-watch-items"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You manage watches through interactive commands:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Add a watch"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":["$L13","$L14"]}]]}],"\n","$L15","\n","$L16","\n","$L17","\n"]}],"\n","$L18","\n","$L19","\n","$L1a","\n"]}],"\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25"]}]
+8:["$","$L26",null,{"children":["$","$27",null,{"name":"Next.MetadataOutlet","children":"$@28"}]}]
+b:["$","$1","h",{"children":[null,["$","$L29",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L2a",null,{"children":["$","$27",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Watch View - Klive IDE"}],["$","meta","1",{"name":"description","content":"With this view, you can observe values of symbols while developing and debugging. You can find this view in the Debug activity tab with the Watch header."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L2b",null,{"parallelRouterKey":"children","template":["$","$L2c",null,{}]}]]}]
+11:true
+2d:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ToggleWordWrapButton"]
+13:["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2d",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}]
+14:["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"w-add [>]<symbol>[:<type>[:<length>]]"}]}]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":">"}],": optional; when present, uses the symbol’s direct value rather than reading from memory"]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<type>"}],":"]}]
+17:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"b: 8-bit value"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"w: 16-bit little-endian value"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"-w: 16-bit big-endian value"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"l: 32-bit little-endian value"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"-l: 32-bit big-endian value"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"f: flag (true/false)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"a: byte array (length required; default: 8 when omitted)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"s: string (length required; default: 8 when omitted)"}],"\n"]}]
+18:["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Remove a watch"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2d",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"w-del <symbol>"}]}]}]]}]]}],"\n"]}]
+19:["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"List watches"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2d",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"w-list"}]}]}]]}]]}],"\n"]}]
+1a:["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Remove all watches"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2d",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"w-ea"}]}]}]]}]]}],"\n"]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In addition to commands, you can remove a watch directly in the Watch view by right‑clicking its icon."}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Examples:"}]
+1d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"w-add playerScore"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"w-add playerScore:w"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"w-add >playerAddress:w"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"w-add buffer:a:32"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"w-add text:s:16"}]}],"\n"]}]
+1e:["$","h2",null,{"id":"understanding-value-formatting","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Understanding Value Formatting",["$","$L12",null,{"id":"understanding-value-formatting"}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Watch panel formats values based on the symbol’s type and whether the watch is direct or memory-based."}]
+20:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Direct integer values (uses ’>’)"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Always shown as 16-bit number: $HHHH (D)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Example: $12AB (4779)"}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Memory-based integer values (no ’>’)"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The symbol’s integer value is treated as a 16-bit address"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The panel reads memory according to the selected type and endianness"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Displayed as $HH (D), $HHHH (D), or $HHHHHHHH (D) for 8/16/32-bit types"}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Strings (type: s)"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Reads up to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<length>"}]," bytes, stops at NUL (0x00)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Non-printable bytes are shown as ’.’"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Displayed quoted: ”…”"}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Arrays (type: a)"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Displays up to the first 16 bytes as hex pairs separated by spaces"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"If longer than 16 bytes, shows a suffix like:  … (+N)"}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Flags (type: f)"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Shown as true or false (non-zero => true)"}],"\n"]}],"\n"]}],"\n"]}]
+21:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Note"}],": When you move the mouse over the watch item’s icon, the appearing tooltip will show the symbol’s display type."]}],"\n"]}]
+22:["$","h2",null,{"id":"typical-workflows","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Typical Workflows",["$","$L12",null,{"id":"typical-workflows"}]]}]
+23:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Track a direct counter/constant"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"w-add >frameCounter"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Shows as a 16-bit value regardless of the type"}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Monitor a pointer and the data it refers to"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"w-add ptr:w   # watch shows the 16-bit value at address ptr (little-endian)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"w-add textPtr:s:32   # shows a printable string at the location pointed by textPtr"}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Inspect a small memory block"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"w-add buffer:a:16"}],"\n"]}],"\n"]}],"\n"]}]
+24:["$","h2",null,{"id":"tips","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Tips",["$","$L12",null,{"id":"tips"}]]}]
+25:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"If you frequently work with strings or arrays and omit length, the default is 8."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Use w-list to verify your watch specifications and types."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Rebuild your project to update symbol addresses when you change code; unresolved symbols will display as “",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"<not found>"}],"”."]}],"\n"]}]
+28:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

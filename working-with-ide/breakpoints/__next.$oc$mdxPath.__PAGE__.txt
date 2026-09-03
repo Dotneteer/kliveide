@@ -1,0 +1,93 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:Td1a,---
+description: "With this view, you can overview and manage the breakpoints used for debugging. You can find this view in the Debug activity tag with the BreakPoints header:"
+---
+
+# The Breakpoints View
+
+With this view, you can overview and manage the breakpoints used for debugging. You can find this view in the Debug activity tag with the **BreakPoints** header:
+
+<ClickableImage src="/images/working-with-ide/bp-view.png" width={384} />
+
+This view displays all breakpoints you created with interactive commands or in the source code. Each line represents a particular breakpoint with this information:
+- A checkbox shows if the current breakpoint is enabled or disabled. You can set this status by toggling the checkbox.
+- A filled circle representing the status of a breakpoint:
+  - cyan: This breakpoint has been created with an interactive command.
+  - red: This breakpoint has been created in the source code.
+  - orange: This color indicates that a breakpoint has been created in the source code but not resolved to an actual address as the code has not been compiled (after opening the project or editing the code).
+  - gray: This breakpoint has been disabled.
+- An icon representing the breakpoint type
+- The breakpoint's address or source code location
+- Other information (such as the disassembly at the location)
+
+## Manipulating Breakpoints
+
+When you hover the mouse over the first two icons, they display additional information:
+
+<ClickableImage src="/images/working-with-ide/bp-explain.png" width={384} />
+
+With the right mouse button, you can remove an existing breakpoint. If you want to deactivate a breakpoint temporarily, disable it by clearing the checkbox on its left.
+
+## Resolved Source Code Breakpoints
+
+When you open a project or modify an assembly source code file, the source code breakpoint addresses are not resolved to an actual physical address. The orange color of a source code breakpoint indicates this status:
+
+<ClickableImage src="/images/working-with-ide/bp-not-resolved.png" width={384} />
+
+Source code breakpoints are resolved to a CPU address after compilation, and this address is displayed with the breakpoint. The following figure shows that the last two source code breakpoints display their resolved CPU address after the compilation.
+
+<ClickableImage src="/images/working-with-ide/bp-resolved.png" width={384} />
+
+## Breakpoint Types
+
+The second icon of the breakpoint item displays its type. There are five types of breakpoints (depending on the operation triggering the machine to pause), as the following figure shows:
+
+<ClickableImage src="/images/working-with-ide/bp-types.png" width={128} />
+
+These are the available breakpoint types (from top to bottom in the figure):
+- **I/O read**. This breakpoint is triggered when a particular I/O port has been read. The displayed address is the 16-bit I/O port address.
+- **I/O write**. This breakpoint is triggered when a particular I/O port has been written. The displayed address is the 16-bit I/O port address.
+- **Execution**. This breakpoint is triggered when the PC register reaches the specified address.
+- **Memory read**. This breakpoint is triggered when a particular 16-bit memory address (including instruction fetches) has been read. 
+- **Memory write**. This breakpoint is triggered when a particular 16-bit memory address has been written.a:X
+f:X
+f:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Manipulating Breakpoints","id":"manipulating-breakpoints","depth":2},{"value":"Resolved Source Code Breakpoints","id":"resolved-source-code-breakpoints","depth":2},{"value":"Breakpoint Types","id":"breakpoint-types","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"With this view, you can overview and manage the breakpoints used for debugging. You can find this view in the Debug activity tag with the BreakPoints header:","title":"The Breakpoints View","filePath":"content/working-with-ide/breakpoints.mdx","timestamp":1788422465000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+1d:I[484,[],"OutletBoundary"]
+1e:"$Sreact.suspense"
+20:I[484,[],"ViewportBoundary"]
+21:I[484,[],"MetadataBoundary"]
+22:I[7121,[],""]
+23:I[4581,[],""]
+:HL["/kliveide/images/working-with-ide/bp-view.png","image"]
+:HL["/kliveide/images/working-with-ide/bp-explain.png","image"]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Breakpoints View","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With this view, you can overview and manage the breakpoints used for debugging. You can find this view in the Debug activity tag with the ",["$","strong",null,{"children":"BreakPoints"}]," header:"]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/bp-view.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/bp-view.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":384,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This view displays all breakpoints you created with interactive commands or in the source code. Each line represents a particular breakpoint with this information:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"A checkbox shows if the current breakpoint is enabled or disabled. You can set this status by toggling the checkbox."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A filled circle representing the status of a breakpoint:","\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"cyan: This breakpoint has been created with an interactive command."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"red: This breakpoint has been created in the source code."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"orange: This color indicates that a breakpoint has been created in the source code but not resolved to an actual address as the code has not been compiled (after opening the project or editing the code)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"gray: This breakpoint has been disabled."}],"\n"]}],"\n"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"An icon representing the breakpoint type"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The breakpoint’s address or source code location"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Other information (such as the disassembly at the location)"}],"\n"]}],"\n",["$","h2",null,{"id":"manipulating-breakpoints","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Manipulating Breakpoints",["$","$L12",null,{"id":"manipulating-breakpoints"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you hover the mouse over the first two icons, they display additional information:"}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/bp-explain.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/bp-explain.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":384,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"With the right mouse button, you can remove an existing breakpoint. If you want to deactivate a breakpoint temporarily, disable it by clearing the checkbox on its left."}],"\n",["$","h2",null,{"id":"resolved-source-code-breakpoints","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Resolved Source Code Breakpoints","$L13"]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c"]}]
+8:["$","$L1d",null,{"children":["$","$1e",null,{"name":"Next.MetadataOutlet","children":"$@1f"}]}]
+b:["$","$1","h",{"children":[null,["$","$L20",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L21",null,{"children":["$","$1e",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Breakpoints View - Klive IDE"}],["$","meta","1",{"name":"description","content":"With this view, you can overview and manage the breakpoints used for debugging. You can find this view in the Debug activity tag with the BreakPoints header:"}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L22",null,{"parallelRouterKey":"children","template":["$","$L23",null,{}]}]]}]
+11:true
+:HL["/kliveide/images/working-with-ide/bp-not-resolved.png","image"]
+:HL["/kliveide/images/working-with-ide/bp-resolved.png","image"]
+:HL["/kliveide/images/working-with-ide/bp-types.png","image"]
+13:["$","$L12",null,{"id":"resolved-source-code-breakpoints"}]
+14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you open a project or modify an assembly source code file, the source code breakpoint addresses are not resolved to an actual physical address. The orange color of a source code breakpoint indicates this status:"}]
+15:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/bp-not-resolved.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/bp-not-resolved.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":384,"height":"auto"}}]}]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Source code breakpoints are resolved to a CPU address after compilation, and this address is displayed with the breakpoint. The following figure shows that the last two source code breakpoints display their resolved CPU address after the compilation."}]
+17:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/bp-resolved.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/bp-resolved.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":384,"height":"auto"}}]}]}]
+18:["$","h2",null,{"id":"breakpoint-types","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Breakpoint Types",["$","$L12",null,{"id":"breakpoint-types"}]]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The second icon of the breakpoint item displays its type. There are five types of breakpoints (depending on the operation triggering the machine to pause), as the following figure shows:"}]
+1a:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/bp-types.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/bp-types.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":128,"height":"auto"}}]}]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"These are the available breakpoint types (from top to bottom in the figure):"}]
+1c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"I/O read"}],". This breakpoint is triggered when a particular I/O port has been read. The displayed address is the 16-bit I/O port address."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"I/O write"}],". This breakpoint is triggered when a particular I/O port has been written. The displayed address is the 16-bit I/O port address."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Execution"}],". This breakpoint is triggered when the PC register reaches the specified address."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Memory read"}],". This breakpoint is triggered when a particular 16-bit memory address (including instruction fetches) has been read."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Memory write"}],". This breakpoint is triggered when a particular 16-bit memory address has been written."]}],"\n"]}]
+1f:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

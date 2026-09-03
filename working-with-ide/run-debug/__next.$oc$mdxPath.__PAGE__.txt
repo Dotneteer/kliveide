@@ -1,0 +1,86 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:Tcac,---
+description: "Klive displays a toolbar at the top of the screen in the Emulator window and another in the IDE window."
+---
+
+import { Callout } from 'nextra/components'
+
+# Running and Debugging code
+
+Klive displays a toolbar at the top of the screen in the Emulator window and another in the IDE window. They have the same functionality: they control the emulated machine. The toolbar contains some emulator and IDE-specific functions; however, the machine control commands use the same components.
+
+This screen shows these controls in the emulator:
+
+<ClickableImage src="/images/working-with-ide/emu-toolbar-startup.png" width={512} />
+
+Move the mouse over a particular control; it displays a tooltip to let you know its function.
+
+The leftmost button starts the machine in the selected mode (running with or without debugging). The dropdown next to the start button lets you select this mode:
+
+<ClickableImage src="/images/working-with-ide/select-start-mode.png" width={256} />
+
+<Callout type="info" emoji="💡">
+The IDE displays **Run Project (F5)** and **Debug Project (Ctrl+F5)** options.
+</Callout>
+
+Starting the machine has a different meaning for the Emulator and IDE windows. 
+- In the emulator, you start the machine and let it run.
+- With its toolbar control in the IDE, you can start the machine only when a project is loaded. This start not only starts the emulated machine but also injects the compiled code into it and jumps to its entry point (or invokes it, depending on compilation options).
+
+Klive provides views (memory, disassembly, BASIC listing, and many more) that allow you to examine the machine's state.
+
+When the machine is running, you can use any of the windows to control it (pause, stop, or restart)
+
+<ClickableImage src="/images/working-with-ide/machine-running.png" width={512} />
+
+- **Pause**: Klive pauses the machine at the current execution point. Soon, you will learn what you can do with the machine in this mode.
+- **Stop**: This stops the machine (like turning off the hardware). Though the machine is stopped, you can still examine its memory contents and state when turning it off.
+- **Restart**: This function stops the machine and then starts it again. When you restart the machine in the IDE with a project loaded, it restarts your code and not just the machine.
+
+<ClickableImage src="/images/working-with-ide/machine-paused.png" width={512} />
+
+In the paused state of a machine, you can use these actions:
+- **Continue**. Go on running the machine.
+- **Stop**. *(As described above)*
+- **Restart**. *(As described above)*
+- **Step into**. Execute the subsequent CPU instruction and pause the machine again.
+- **Step over**. Execute the subsequent CPU instruction entirely. If it is a `CALL` or `RST` instruction, a block operation (like `LDIR`), the IDE pauses again at the instruction following the current execution point.
+- **Step out**. If you are within a subroutine, this function stops when the subroutine returns to its caller. Please note that this function only works if subroutine calls are completed by some of the `RET` instructions, not stack manipulation and jump statements.
+
+While the machine is paused, you can change between the run/debug execution modes with the dropdown.a:X
+f:X
+f:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Klive displays a toolbar at the top of the screen in the Emulator window and another in the IDE window.","title":"Running and Debugging code","filePath":"content/working-with-ide/run-debug.mdx","timestamp":1788422465000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+19:I[484,[],"OutletBoundary"]
+1a:"$Sreact.suspense"
+1c:I[484,[],"ViewportBoundary"]
+1d:I[484,[],"MetadataBoundary"]
+1e:I[7121,[],""]
+1f:I[4581,[],""]
+:HL["/kliveide/images/working-with-ide/emu-toolbar-startup.png","image"]
+:HL["/kliveide/images/working-with-ide/select-start-mode.png","image"]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Running and Debugging code","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive displays a toolbar at the top of the screen in the Emulator window and another in the IDE window. They have the same functionality: they control the emulated machine. The toolbar contains some emulator and IDE-specific functions; however, the machine control commands use the same components."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"This screen shows these controls in the emulator:"}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/emu-toolbar-startup.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/emu-toolbar-startup.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":512,"height":"auto"}}]}]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Move the mouse over a particular control; it displays a tooltip to let you know its function."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The leftmost button starts the machine in the selected mode (running with or without debugging). The dropdown next to the start button lets you select this mode:"}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/select-start-mode.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/select-start-mode.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":256,"height":"auto"}}]}]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The IDE displays ",["$","strong",null,{"children":"Run Project (F5)"}]," and ",["$","strong",null,{"children":"Debug Project (Ctrl+F5)"}]," options."]}]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Starting the machine has a different meaning for the Emulator and IDE windows."}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"In the emulator, you start the machine and let it run."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"With its toolbar control in the IDE, you can start the machine only when a project is loaded. This start not only starts the emulated machine but also injects the compiled code into it and jumps to its entry point (or invokes it, depending on compilation options)."}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive provides views (memory, disassembly, BASIC listing, and many more) that allow you to examine the machine’s state."}],"\n","$L12","\n","$L13","\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18"]}]
+8:["$","$L19",null,{"children":["$","$1a",null,{"name":"Next.MetadataOutlet","children":"$@1b"}]}]
+b:["$","$1","h",{"children":[null,["$","$L1c",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L1d",null,{"children":["$","$1a",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Running and Debugging code - Klive IDE"}],["$","meta","1",{"name":"description","content":"Klive displays a toolbar at the top of the screen in the Emulator window and another in the IDE window."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L1e",null,{"parallelRouterKey":"children","template":["$","$L1f",null,{}]}]]}]
+11:true
+:HL["/kliveide/images/working-with-ide/machine-running.png","image"]
+:HL["/kliveide/images/working-with-ide/machine-paused.png","image"]
+12:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the machine is running, you can use any of the windows to control it (pause, stop, or restart)"}]
+13:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/machine-running.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/machine-running.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":512,"height":"auto"}}]}]}]
+14:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Pause"}],": Klive pauses the machine at the current execution point. Soon, you will learn what you can do with the machine in this mode."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Stop"}],": This stops the machine (like turning off the hardware). Though the machine is stopped, you can still examine its memory contents and state when turning it off."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Restart"}],": This function stops the machine and then starts it again. When you restart the machine in the IDE with a project loaded, it restarts your code and not just the machine."]}],"\n"]}]
+15:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/working-with-ide/machine-paused.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/working-with-ide/machine-paused.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":512,"height":"auto"}}]}]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"In the paused state of a machine, you can use these actions:"}]
+17:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Continue"}],". Go on running the machine."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Stop"}],". ",["$","em",null,{"children":"(As described above)"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Restart"}],". ",["$","em",null,{"children":"(As described above)"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Step into"}],". Execute the subsequent CPU instruction and pause the machine again."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Step over"}],". Execute the subsequent CPU instruction entirely. If it is a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CALL"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST"}]," instruction, a block operation (like ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LDIR"}],"), the IDE pauses again at the instruction following the current execution point."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Step out"}],". If you are within a subroutine, this function stops when the subroutine returns to its caller. Please note that this function only works if subroutine calls are completed by some of the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RET"}]," instructions, not stack manipulation and jump statements."]}],"\n"]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"While the machine is paused, you can change between the run/debug execution modes with the dropdown."}]
+1b:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

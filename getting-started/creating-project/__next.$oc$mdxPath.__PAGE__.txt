@@ -1,0 +1,198 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:T1ca9,---
+description: "The IDE supports developing applications with a Klive project. With the File | Open folder command, you can open the contents of a particular folder and display it."
+---
+
+import { Callout } from 'nextra/components'
+
+# Creating a Klive Project
+
+The IDE supports developing applications with a *Klive project*. With the **File | Open folder** command, you can open the contents of a particular folder and display it. The IDE considers folders with a well-formed `klive.project` file within them a *Klive project*.
+
+<Callout type="info" emoji="💡">
+In Klive v0.32.0, a new file, `build.ksx`, was introduced to allow build process customization. At the end of this article, you will find a section about updating your old Klive projects to leverage the new build system.
+</Callout>
+
+## The New Project Dialog
+
+With the **File | New project** menu command, you can create a new Klive project:
+
+<ClickableImage src="/images/getting-started/new-klive-project.png" width={502} />
+
+- You can select the machine type to use in the project (you can change it any time when the project is open).
+- The IDE offers you a few project templates depending on the machine type.
+- You can specify a root folder for your project directory. The new project will be a subfolder of the root. If you leave it empty, the new project goes into your user home's `KliveProjects` folder.
+- The project requires a name (`MyFirstKliveProject` in the figure above). 
+
+When you click Create, the IDE creates the new project folder and opens it.
+
+## The Project Structure
+
+A Klive project is a folder with a `klive.project` file in it. The file is a JSON file that describes the project's properties. The IDE creates the following structure for a new project:
+
+<ClickableImage src="/images/getting-started/project-in-explorer.png" width={248} />
+
+The little home icon to the left of the root folder name (`MyFirstKliveProject`) indicates that the open folder is a Klive project. The last two files contain essential information related to the current project.
+
+- `klive.project` is the file that stores project settings, including the machine type, IDE options, breakpoints, etc. Klive IDE does not allow editing it in its code editor.
+- `build.tsx` is a script file that executes within the IDE. It contains functions representing build commands.
+
+By changing the functions' body, you can customize the build (and create new build-related commands).
+
+
+When you open a folder that is not a Klive project (does not have a valid `klive.project` file), you cannot see the home icon:
+
+<ClickableImage src="/images/getting-started/non-klive-project.png" width={247} />
+
+## The Build Root
+
+When you develop your code, you may work with multiple files — Klive needs to know the main file to compile it to machine code. The *build root* designates this main file. When you create a new project, Klive automatically assigns a file as the build root. In the Explorer, the "combine" icon to the right of the file name indicates this:
+
+<ClickableImage src="/images/getting-started/build-root-sign.png" width={248} />
+
+You can change the build root any time by right-clicking on a file and selecting the **Promote to Build Root** command.
+
+<ClickableImage src="/images/getting-started/promote-build-root.png" width={320} />
+
+<Callout type="info" emoji="💡">
+The Promote to Build Root command is available only for particular file types Klive supports.
+</Callout>
+
+## Build Root commands
+
+When you select the build root in the Explorer, the content of the file opens in the code editor, and it displays four icons at the right side of the document tab bar:
+
+<ClickableImage src="/images/getting-started/build-root-icons.png" width={675} />
+
+Each of these icons carries out a particular operation:
+
+| Icon | Operation |
+| ---- | --------- |
+| <ClickableImage src="/images/getting-started/compile.png" width={50} /> | This command compiles the project using the build root file as the main file. This operation lets you check whether your code is free from compilation errors. |
+| <ClickableImage src="/images/getting-started/inject.png" width={50} /> | This command compiles the project. If the compilation is successful, it immediately injects the binary code into the memory of the paused machine. After the operation, you can resume the machine and execute the code (for example, with the `RANDOMIZE USR(<address>)` command). |
+| <ClickableImage src="/images/getting-started/start.png" width={50} /> | With this command, you can start the compiled code. |
+| <ClickableImage src="/images/getting-started/debug.png" width={50} /> | With this command, you can start the compiled code in debug mode. |
+
+When you start the code, Klive executes several steps to ensure a one-click user experience to run or debug the code:
+
+1. The IDE compiles the code. If the compilation fails, no program is started.
+2. The IDE restarts the current machine on successful compilation and runs while its OS reaches the main execution cycle. At this point, the IDE may emulate keystrokes to lead the OS to a point where code execution is safe.
+3. Klive pauses the machine and injects the code into the memory.
+4. Klive sets the Program Counter (PC) register to the entry point of the injected code and resumes the machine.
+5. The injected code runs.
+
+## The Project File
+
+The `klive.project` file encapsulates information about the current project, including the machine type, UI settings, breakpoint, project state, and many others. While you work with the project, the IDE may update this file.
+
+The project file uses JSON format. When you click it in the Explorer, you can look at its content within the code editor. However, the IDE considers this file read-only; thus, it does not allow you to edit it directly. The little shield icon to the right of the filename indicates this read-only state.
+
+<ClickableImage src="/images/getting-started/klive-project-in-editor.png" width={675} />
+
+<Callout type="info" emoji="💡">
+Though you cannot edit this file with the IDE, you can modify it outside. Such modifications may lead to the loss of the project file if the IDE cannot parse `klive.project` while opening the project folder. If you ever decide to modify `klive.project` manually, make sure that particular project is not open in the IDE.
+</Callout>
+
+## Updating Old Projects
+
+If you created your Klive project before v0.32.0, you might have a project without a `build.ksx` file. After v0.4.0, these projects will not compile, inject, or run your code, as it needs the `build.ksx` file. Follow these steps to fix the issue:
+
+1. Open your project in Klive.
+2. With the **New file** context menu, add a new file to your project root folder. (It must be the same level as the `klive.project` file.)
+3. Type the following code into the `build.ksx` file:
+
+```javascript
+export function buildCode() {
+  $command("klive.compile")
+}
+
+export function injectCode() {
+  $command("klive.inject")
+}
+
+export function runCode() {
+  $command("klive.run")
+}
+
+export function debugCode() {
+  $command("klive.debug")
+}
+
+export function exportCode() {
+  $command("display-dialog export")
+}
+```
+
+4. Close the project.
+5. Open the project again; Klive recognizes the `build.ksx` file and prepares the build functions accordingly.
+6. Now, you should be able to compile, inject, and run your code.a:X
+f:X
+f:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"The New Project Dialog","id":"the-new-project-dialog","depth":2},{"value":"The Project Structure","id":"the-project-structure","depth":2},{"value":"The Build Root","id":"the-build-root","depth":2},{"value":"Build Root commands","id":"build-root-commands","depth":2},{"value":"The Project File","id":"the-project-file","depth":2},{"value":"Updating Old Projects","id":"updating-old-projects","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"The IDE supports developing applications with a Klive project. With the File | Open folder command, you can open the contents of a particular folder and display it.","title":"Creating a Klive Project","filePath":"content/getting-started/creating-project.mdx","timestamp":1788422465000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+32:I[484,[],"OutletBoundary"]
+33:"$Sreact.suspense"
+35:I[484,[],"ViewportBoundary"]
+36:I[484,[],"MetadataBoundary"]
+37:I[7121,[],""]
+38:I[4581,[],""]
+:HL["/kliveide/images/getting-started/new-klive-project.png","image"]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Creating a Klive Project","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The IDE supports developing applications with a ",["$","em",null,{"children":"Klive project"}],". With the ",["$","strong",null,{"children":"File | Open folder"}]," command, you can open the contents of a particular folder and display it. The IDE considers folders with a well-formed ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive.project"}]," file within them a ",["$","em",null,{"children":"Klive project"}],"."]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["In Klive v0.32.0, a new file, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"build.ksx"}],", was introduced to allow build process customization. At the end of this article, you will find a section about updating your old Klive projects to leverage the new build system."]}]}]]}],"\n",["$","h2",null,{"id":"the-new-project-dialog","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The New Project Dialog",["$","$L12",null,{"id":"the-new-project-dialog"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With the ",["$","strong",null,{"children":"File | New project"}]," menu command, you can create a new Klive project:"]}],"\n",["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/new-klive-project.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/new-klive-project.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":502,"height":"auto"}}]}]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"You can select the machine type to use in the project (you can change it any time when the project is open)."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The IDE offers you a few project templates depending on the machine type."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["You can specify a root folder for your project directory. The new project will be a subfolder of the root. If you leave it empty, the new project goes into your user home’s ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"KliveProjects"}]," folder."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The project requires a name (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MyFirstKliveProject"}]," in the figure above)."]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you click Create, the IDE creates the new project folder and opens it."}],"\n",["$","h2",null,{"id":"the-project-structure","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Project Structure","$L13"]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31"]}]
+8:["$","$L32",null,{"children":["$","$33",null,{"name":"Next.MetadataOutlet","children":"$@34"}]}]
+b:["$","$1","h",{"children":[null,["$","$L35",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L36",null,{"children":["$","$33",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Creating a Klive Project - Klive IDE"}],["$","meta","1",{"name":"description","content":"The IDE supports developing applications with a Klive project. With the File | Open folder command, you can open the contents of a particular folder and display it."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L37",null,{"parallelRouterKey":"children","template":["$","$L38",null,{}]}]]}]
+11:true
+3a:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ToggleWordWrapButton"]
+:HL["/kliveide/images/getting-started/project-in-explorer.png","image"]
+:HL["/kliveide/images/getting-started/non-klive-project.png","image"]
+:HL["/kliveide/images/getting-started/build-root-sign.png","image"]
+:HL["/kliveide/images/getting-started/promote-build-root.png","image"]
+:HL["/kliveide/images/getting-started/build-root-icons.png","image"]
+:HL["/kliveide/images/getting-started/compile.png","image"]
+:HL["/kliveide/images/getting-started/inject.png","image"]
+:HL["/kliveide/images/getting-started/start.png","image"]
+:HL["/kliveide/images/getting-started/debug.png","image"]
+:HL["/kliveide/images/getting-started/klive-project-in-editor.png","image"]
+13:["$","$L12",null,{"id":"the-project-structure"}]
+14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A Klive project is a folder with a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive.project"}]," file in it. The file is a JSON file that describes the project’s properties. The IDE creates the following structure for a new project:"]}]
+15:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/project-in-explorer.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/project-in-explorer.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":248,"height":"auto"}}]}]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The little home icon to the left of the root folder name (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"MyFirstKliveProject"}],") indicates that the open folder is a Klive project. The last two files contain essential information related to the current project."]}]
+17:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive.project"}]," is the file that stores project settings, including the machine type, IDE options, breakpoints, etc. Klive IDE does not allow editing it in its code editor."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"build.tsx"}]," is a script file that executes within the IDE. It contains functions representing build commands."]}],"\n"]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"By changing the functions’ body, you can customize the build (and create new build-related commands)."}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you open a folder that is not a Klive project (does not have a valid ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive.project"}]," file), you cannot see the home icon:"]}]
+1a:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/non-klive-project.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/non-klive-project.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":247,"height":"auto"}}]}]}]
+1b:["$","h2",null,{"id":"the-build-root","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Build Root",["$","$L12",null,{"id":"the-build-root"}]]}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you develop your code, you may work with multiple files — Klive needs to know the main file to compile it to machine code. The ",["$","em",null,{"children":"build root"}]," designates this main file. When you create a new project, Klive automatically assigns a file as the build root. In the Explorer, the “combine” icon to the right of the file name indicates this:"]}]
+1d:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/build-root-sign.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/build-root-sign.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":248,"height":"auto"}}]}]}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can change the build root any time by right-clicking on a file and selecting the ",["$","strong",null,{"children":"Promote to Build Root"}]," command."]}]
+1f:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/promote-build-root.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/promote-build-root.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":320,"height":"auto"}}]}]}]
+20:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:4:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Promote to Build Root command is available only for particular file types Klive supports."}]}]]}]
+21:["$","h2",null,{"id":"build-root-commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Build Root commands",["$","$L12",null,{"id":"build-root-commands"}]]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you select the build root in the Explorer, the content of the file opens in the code editor, and it displays four icons at the right side of the document tab bar:"}]
+23:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/build-root-icons.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/build-root-icons.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":675,"height":"auto"}}]}]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each of these icons carries out a particular operation:"}]
+25:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Icon","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Operation","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/compile.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/compile.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":50,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"This command compiles the project using the build root file as the main file. This operation lets you check whether your code is free from compilation errors.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/inject.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/inject.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":50,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["This command compiles the project. If the compilation is successful, it immediately injects the binary code into the memory of the paused machine. After the operation, you can resume the machine and execute the code (for example, with the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RANDOMIZE USR(<address>)"}]," command)."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/start.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/start.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":50,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"With this command, you can start the compiled code.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/debug.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/debug.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":50,"height":"auto"}}]}]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L39"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When you start the code, Klive executes several steps to ensure a one-click user experience to run or debug the code:"}]
+27:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The IDE compiles the code. If the compilation fails, no program is started."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The IDE restarts the current machine on successful compilation and runs while its OS reaches the main execution cycle. At this point, the IDE may emulate keystrokes to lead the OS to a point where code execution is safe."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Klive pauses the machine and injects the code into the memory."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Klive sets the Program Counter (PC) register to the entry point of the injected code and resumes the machine."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The injected code runs."}],"\n"]}]
+28:["$","h2",null,{"id":"the-project-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Project File",["$","$L12",null,{"id":"the-project-file"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive.project"}]," file encapsulates information about the current project, including the machine type, UI settings, breakpoint, project state, and many others. While you work with the project, the IDE may update this file."]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The project file uses JSON format. When you click it in the Explorer, you can look at its content within the code editor. However, the IDE considers this file read-only; thus, it does not allow you to edit it directly. The little shield icon to the right of the filename indicates this read-only state."}]
+2b:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/getting-started/klive-project-in-editor.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/getting-started/klive-project-in-editor.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":675,"height":"auto"}}]}]}]
+2c:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:4:props:children:0:props:style","data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Though you cannot edit this file with the IDE, you can modify it outside. Such modifications may lead to the loss of the project file if the IDE cannot parse ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive.project"}]," while opening the project folder. If you ever decide to modify ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive.project"}]," manually, make sure that particular project is not open in the IDE."]}]}]]}]
+2d:["$","h2",null,{"id":"updating-old-projects","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Updating Old Projects",["$","$L12",null,{"id":"updating-old-projects"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If you created your Klive project before v0.32.0, you might have a project without a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"build.ksx"}]," file. After v0.4.0, these projects will not compile, inject, or run your code, as it needs the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"build.ksx"}]," file. Follow these steps to fix the issue:"]}]
+2f:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Open your project in Klive."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["With the ",["$","strong",null,{"children":"New file"}]," context menu, add a new file to your project root folder. (It must be the same level as the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"klive.project"}]," file.)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Type the following code into the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"build.ksx"}]," file:"]}],"\n"]}]
+30:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L3a",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":"export"}],["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":" function"}],["$","span",null,{"style":{"color":"#FF8C42"},"children":" buildCode"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"() {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"  $command"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"("}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"klive.compile\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"}"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":"export"}],["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":" function"}],["$","span",null,{"style":{"color":"#FF8C42"},"children":" injectCode"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"() {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"  $command"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"("}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"klive.inject\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"}"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":"export"}],["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":" function"}],["$","span",null,{"style":{"color":"#FF8C42"},"children":" runCode"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"() {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"  $command"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"("}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"klive.run\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"}"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":"export"}],["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":" function"}],["$","span",null,{"style":{"color":"#FF8C42"},"children":" debugCode"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"() {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"  $command"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"("}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"klive.debug\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"}"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":"export"}],["$","span",null,{"style":{"color":"#4A9EFF","fontWeight":"bold"},"children":" function"}],["$","span",null,{"style":{"color":"#FF8C42"},"children":" exportCode"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"() {"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#FF8C42"},"children":"  $command"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"("}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"display-dialog export\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#A4A4A4"},"children":"}"}]}]]}]]}]]}]
+31:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"4","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Close the project."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Open the project again; Klive recognizes the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"build.ksx"}]," file and prepares the build functions accordingly."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Now, you should be able to compile, inject, and run your code."}],"\n"]}]
+34:null
+a:300
+39:["$","td",null,{"children":"With this command, you can start the compiled code in debug mode.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

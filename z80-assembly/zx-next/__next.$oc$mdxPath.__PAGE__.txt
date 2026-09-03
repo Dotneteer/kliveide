@@ -1,0 +1,822 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:T399e,---
+description: "The ZX Spectrum Next assembler in Klive IDE provides a comprehensive development environment for the ZX Spectrum Next platform."
+---
+
+# ZX Spectrum Next Development
+
+The ZX Spectrum Next assembler in Klive IDE provides a comprehensive development environment for the ZX Spectrum Next platform. This page covers all Next-specific features, including automatic conveniences, the `.savenex` pragma, and NEX file generation.
+
+## Quick Start
+
+The simplest ZX Spectrum Next program in Klive IDE looks like this:
+
+```z80klive
+.model next
+
+.savenex file "myapp.nex"
+
+; Your code starts at $8000 automatically
+main:
+    ld a, 4
+    out (0xFE), a    ; Set border color to green
+trap: 
+    jr $
+```
+
+When you use `.model next`, Klive automatically:
+- Sets `.savenex ram 768` (768K RAM)
+- Sets `.savenex border 7` (white border)
+- Sets `.savenex entryaddr $8000` (entry at $8000)
+- Maps unbanked code to bank 2 at address $8000
+
+## Automatic Conveniences for `.model next`
+
+### Default `.savenex` Values
+
+When `.model next` is specified, these defaults are automatically applied:
+
+| Parameter | Default Value | Description |
+|-----------|--------------|-------------|
+| `ram` | 768 | 768K RAM configuration |
+| `border` | 7 | White border color |
+| `entryaddr` | $8000 | Entry point at $8000 |
+
+You can override any default by explicitly specifying the `.savenex` pragma:
+
+```z80klive
+.model next
+
+.savenex file "myapp.nex"
+.savenex border 5        ; Override default (use cyan instead of white)
+.savenex ram 1792        ; Override default (use 1792K instead of 768K)
+
+; Code...
+```
+
+### Unbanked Code (Automatic Bank 2 Mapping)
+
+When you write code without an explicit `.bank` pragma, it's considered "unbanked" code and automatically:
+
+1. **Starts at $8000** - The default assembly address is $8000
+2. **Maps to Bank 2** - During NEX export, unbanked code is written to bank 2
+3. **Uses the range $8000-$bfff** - The standard 16KB bank 2 address range
+
+**Example - Simple unbanked program:**
+
+```z80klive
+.model next
+
+.savenex file "simple.nex"
+
+; This code is unbanked - automatically starts at $8000 and maps to bank 2
+main:
+    ld a, 3
+    call setborder
+trap:
+    jr $
+
+setborder:
+    out (0xFE), a
+    ret
+```
+
+### Address Range Warning (Z0904)
+
+The assembler warns you if unbanked code exceeds the typical bank 2 range ($bfff):
+
+```z80klive
+.model next
+
+.savenex file "test.nex"
+
+.org $c000              ; ⚠️ Warning Z0904: Address $c000 exceeds $bfff
+    ld a, 7
+trap:
+    jr $
+```
+
+The warning message is:
+
+```
+Warning Z0904: Unbanked code address $c000 exceeds typical bank 2 range ($8000-$bfff). 
+Consider using .bank pragma for explicit memory layout.
+```
+
+**Note:** This is a warning, not an error. Your code will still compile and the NEX file will be generated, but you should review whether you intended to extend beyond the standard bank 2 range.
+
+### Multiple Unbanked Sections
+
+You can have multiple unbanked code sections at different addresses using `.org`:
+
+```z80klive
+.model next
+
+.savenex file "multi.nex"
+
+; First section at $8000
+    ld a, 1
+    call routine1
+
+; Second section at $9000
+.org $9000
+routine1:
+    out (0xFE), a
+    ret
+
+; Third section at $a000
+.org $a000
+routine2:
+    ld a, 2
+    ret
+```
+
+All unbanked sections are collected and written to bank 2 in the NEX file at their respective addresses.
+
+## Multi-Bank Applications
+
+For complex applications requiring multiple memory banks, use explicit `.bank` pragmas alongside unbanked code:
+
+```z80klive
+.model next
+
+.savenex file "screen-tests.nex"
+.savenex core "3.1.0"
+
+; Unbanked code in bank 2 at $8000
+main:
+    ; 
+    ; Save the current MMU 5 value ($A000-$BFFF)
+    ld a,$55
+    ld bc,$243b
+    out (c),a
+    inc b
+    in a,(c)
+    push af
+    ;
+    ; Page in the first 8K of 16K Bank $20 to $A000-$BFFF
+    di
+    nextreg $55,$40
+    ;
+    ; Invoke the subrouting in Bank $20
+    call SetBorder
+    ;
+    ; Restore the old MMU 5 value
+    pop af
+    nextreg $55,a
+    ei
+trap 
+    jr $
+
+
+; Explicit bank $20 code
+.bank $20
+.org $0000
+.disp $a000
+
+SetBorder
+    ld a,3
+    out ($fe),a
+    ret
+```
+
+### How Multi-Bank Code Works
+
+- **Unbanked code** exports to **bank 2** at the addresses where it's assembled ($8000-$bfff typically)
+- **`.bank` sections** export to **their specified bank** (e.g., bank 5) at the addresses defined by `.org` and `.disp`
+- Both can coexist in the same source file
+- Each bank section is independent
+
+---
+
+# SAVENEX Pragma Reference
+
+The `.savenex` pragma provides a declarative way to configure ZX Spectrum Next NEX file generation parameters directly in your assembly source code. This pragma is only available when targeting the ZX Spectrum Next (Model 4).
+
+## Overview
+
+The `.savenex` pragma uses a subcommand syntax where each subcommand configures a specific aspect of the NEX file. You can use multiple `.savenex` pragmas throughout your source code, and the compiler will collect and merge all declarations into a complete NEX file configuration.
+
+**Syntax:**
+
+```z80klive
+.savenex <subcommand> <parameters>
+```
+
+The pragma is case-insensitive, so `.savenex`, `.SAVENEX`, and `.SaveNex` are all valid.
+
+## Subcommands
+
+### FILE - Set Output Filename
+
+Specifies the name of the NEX file to be generated.
+
+**Syntax:**
+
+```z80klive
+.savenex file <filename>
+```
+
+- **filename**: String literal or expression that evaluates to a string
+
+**Example:**
+
+```z80klive
+.savenex file "myprogram.nex"
+```
+
+### RAM - Set RAM Configuration
+
+Specifies the amount of RAM required by the program.
+
+**Syntax:**
+
+```z80klive
+.savenex ram <size>
+```
+
+- **size**: Must be either 768 (for 768K RAM) or 1792 (for 1792K RAM)
+- **Default when `.model next` is used**: 768
+
+**Examples:**
+
+```z80klive
+.savenex ram 768    ; 768K RAM (default for .model next)
+.savenex ram 1792   ; 1792K RAM
+```
+
+### BORDER - Set Border Color
+
+Specifies the border color to be set when the program loads.
+
+**Syntax:**
+
+```z80klive
+.savenex border <color>
+```
+
+- **color**: Integer value from 0 to 7
+- **Default when `.model next` is used**: 7 (white)
+
+**Example:**
+
+```z80klive
+.savenex border 5   ; Cyan border
+```
+
+**Border Colors:**
+
+| Value | Color |
+|-------|-------|
+| 0 | Black |
+| 1 | Blue |
+| 2 | Red |
+| 3 | Magenta |
+| 4 | Green |
+| 5 | Cyan |
+| 6 | Yellow |
+| 7 | White |
+
+### CORE - Specify Required Core Version
+
+Specifies the minimum ZX Spectrum Next core version required to run the program.
+
+**Syntax:**
+
+```z80klive
+.savenex core <major>, <minor>, <subminor>
+; or
+.savenex core <version-string>
+```
+
+- **major**: Integer value from 0 to 255
+- **minor**: Integer value from 0 to 255
+- **subminor**: Integer value from 0 to 255
+- **version-string**: String literal in the format "major.minor.subminor"
+
+**Examples:**
+
+```z80klive
+.savenex core 3, 1, 10       ; Requires core version 3.1.10 or higher
+.savenex core "3.1.10"       ; Alternative string format
+```
+
+> **Note**: Both formats are supported. The string format is convenient when the version comes from a constant or macro, while the comma-separated format allows for calculated values.
+
+### STACKADDR - Set Stack Pointer Address
+
+Specifies the initial stack pointer address.
+
+**Syntax:**
+
+```z80klive
+.savenex stackaddr <address>
+```
+
+- **address**: Integer value from 0 to 0xFFFF
+
+**Example:**
+
+```z80klive
+.savenex stackaddr 0xFF00
+```
+
+### ENTRYADDR - Set Entry Point Address
+
+Specifies the program's entry point address.
+
+**Syntax:**
+
+```z80klive
+.savenex entryaddr <address>
+```
+
+- **address**: Integer value from 0 to 0xFFFF
+- **Default when `.model next` is used**: $8000
+
+**Example:**
+
+```z80klive
+.savenex entryaddr 0x8000    ; Entry at $8000 (default for .model next)
+```
+
+### ENTRYBANK - Set Entry Bank
+
+Specifies the bank number to be paged in when the program starts.
+
+**Syntax:**
+
+```z80klive
+.savenex entrybank <bank>
+```
+
+- **bank**: Integer value from 0 to 111
+
+**Example:**
+
+```z80klive
+.savenex entrybank 5
+```
+
+### FILEHANDLE - Set File Handle Mode
+
+Specifies whether to close or keep open the NEX file handle after loading.
+
+**Syntax:**
+
+```z80klive
+.savenex filehandle <mode>
+```
+
+- **mode**: Either "close" (close file after loading) or "open" (keep file open, pass handle in BC register)
+- **Default**: "close" (file is closed after loading)
+
+**Examples:**
+
+```z80klive
+.savenex filehandle "close"  ; Close file after loading (default)
+.savenex filehandle "open"   ; Keep file open, pass handle in BC register
+```
+
+**NEX File Specification:**
+- "close" writes 0x0000 to offset 140 (file is closed by loader)
+- "open" writes 0x0001 to offset 140 (file kept open, handle passed in BC register)
+
+### PRESERVE - Preserve Next Registers
+
+Specifies whether to preserve the Next hardware registers after loading.
+
+**Syntax:**
+
+```z80klive
+.savenex preserve <value>
+```
+
+- **value**: "on"/"off" or 1/0
+
+**Examples:**
+
+```z80klive
+.savenex preserve "on"
+.savenex preserve 1
+.savenex preserve "off"
+.savenex preserve 0
+```
+
+### SCREEN - Configure Loading Screen
+
+Specifies a loading screen to display while the program loads.
+
+**Syntax:**
+
+```z80klive
+.savenex screen <type> [, <filename> [, <palette-offset>]]
+```
+
+- **type**: Screen type - one of: "layer2", "ula", "lores", "hires-color", "hires-mono"
+- **filename**: (Optional) Filename of the screen data
+- **palette-offset**: (Optional) Offset in the palette file (0-255)
+
+**Examples:**
+
+```z80klive
+.savenex screen "layer2"
+.savenex screen "layer2", "loading.scr"
+.savenex screen "layer2", "loading.scr", 0
+```
+
+### PALETTE - Set Palette File
+
+Specifies a palette file to load.
+
+**Syntax:**
+
+```z80klive
+.savenex palette <filename>
+```
+
+- **filename**: String literal with the palette filename
+
+**Example:**
+
+```z80klive
+.savenex palette "colors.nxp"
+```
+
+### COPPER - Set Copper Code File
+
+Specifies a copper code file to load and execute.
+
+**Syntax:**
+
+```z80klive
+.savenex copper <filename>
+```
+
+- **filename**: String literal with the copper code filename
+
+**Example:**
+
+```z80klive
+.savenex copper "effects.cu"
+```
+
+### BAR - Configure Loading Bar
+
+Configures the loading bar display.
+
+**Syntax:**
+
+```z80klive
+.savenex bar <enabled> [, <color> [, <delay> [, <start-delay>]]]
+```
+
+- **enabled**: "on"/"off" or 1/0
+- **color**: (Optional) Bar color (0-255)
+- **delay**: (Optional) Delay per bar step (0-255)
+- **start-delay**: (Optional) Delay before starting (0-255)
+
+**Examples:**
+
+```z80klive
+.savenex bar "on"
+.savenex bar "on", 2
+.savenex bar "on", 2, 50
+.savenex bar "on", 2, 50, 100
+```
+
+
+## NEX File Format
+
+The NEX file format [(see details here)](https://wiki.specnext.dev/NEX_file_format) is the native executable format for the ZX Spectrum Next. It's a container format that includes:
+
+- **Header Information**: File version, RAM requirements, entry points, etc.
+- **Screen Data**: Optional loading screen in various formats
+- **Palette Data**: Optional palette information
+- **Copper Code**: Optional copper coprocessor code
+- **Loading Bar**: Optional visual feedback during loading
+- **Program Banks**: The actual program code and data organized in 16K banks
+
+### NEX File Version
+
+The `.savenex` pragma targets NEX file format version 1.2, which is the current standard for ZX Spectrum Next executables.
+
+### Bank Organization
+
+The NEX file organizes code and data into 16K banks that correspond to the Next's memory management system:
+
+- **Banks 0-1**: ROM (read-only, system)
+- **Bank 2**: Default user code bank (unbanked code maps here automatically)
+- **Banks 3-4**: Standard RAM banks
+- **Banks 5-111**: Extended RAM banks available for paging
+
+### How Unbanked Code Maps to Bank 2
+
+When you use `.model next` and write code without explicit `.bank` pragmas:
+
+1. Your code is assembled at addresses starting from $8000
+2. During NEX export, this "unbanked" code is written to bank 2
+3. The offset calculation is: `bank2_offset = address - $8000`
+4. Code at $8000 goes to offset 0 in bank 2
+5. Code at $9000 goes to offset $1000 in bank 2
+6. And so on...
+
+**Example:**
+
+```z80klive
+.model next
+.savenex file "test.nex"
+
+; Code at $8000 → bank 2, offset $0000
+main:
+    ld a, 1
+
+; Code at $9000 → bank 2, offset $1000
+.org $9000
+routine:
+    ld a, 2
+```
+
+### Loading Process
+
+When a NEX file loads on the ZX Spectrum Next:
+
+1. The NEX loader reads the header to determine requirements
+2. If specified, the loading screen is displayed
+3. If enabled, the loading bar provides visual feedback
+4. Program banks are loaded into the specified memory locations
+5. Hardware registers are configured according to the NEX header
+6. Control is transferred to the entry point address with the entry bank paged in
+
+## Default Values
+
+Default values for `.savenex` parameters depend on whether you're using `.model next`:
+
+### With `.model next` (Automatic Conveniences)
+
+| Parameter | Default Value | Description |
+|-----------|--------------|-------------|
+| `ram` | 768 | 768K RAM |
+| `border` | 7 | White border |
+| `entryaddr` | $8000 | Entry point at $8000 |
+| `entryBank` | 0 | Bank 0 |
+| `fileHandle` | "close" | Close NEX file after loading |
+| `preserveRegs` | false | Don't preserve registers |
+
+### Without `.model next` (Traditional Mode)
+
+| Parameter | Default Value | Description |
+|-----------|--------------|-------------|
+| `ram` | (none) | Must be specified |
+| `border` | 0 | Black border |
+| `entryaddr` | (none) | Must be specified |
+| `entryBank` | 0 | Bank 0 |
+| `fileHandle` | "close" | Close NEX file after loading |
+| `preserveRegs` | false | Don't preserve registers |
+
+## Error Handling
+
+The assembler will generate errors if:
+
+- You use `.savenex` when not targeting the ZX Spectrum Next (Model 4)
+- Invalid values are provided (e.g., border color > 7, bank > 111)
+- Required parameters are missing
+- Invalid screen types or modes are specified
+- Version numbers exceed 255
+
+The assembler will generate warnings if:
+
+- **Z0904**: Unbanked code address exceeds $bfff (typical bank 2 range)
+
+## Notes
+
+- The `.savenex` pragma only configures the NEX file parameters; it doesn't generate the actual NEX file. The file generation happens during the export process.
+- Multiple `.savenex` pragmas with the same subcommand will use the last value specified.
+- Expression support allows you to use symbols, calculations, and other expressions for numeric parameters.
+- String parameters can be string literals or expressions that evaluate to strings.
+- Unbanked code is automatically tracked and exported to bank 2 during NEX file generation.
+- You can mix unbanked code and explicit `.bank` sections in the same source file.
+
+---
+
+## See Also
+
+- [.dma Pragma Reference](./zx-next-dma) - DMA register group pragma (ZX Spectrum Next)
+- [Pragmas](./pragmas) - Complete pragma reference
+- [Klive Z80 Assembler Overview](./z80-assembler) - General assembler documentationa:X
+f:X
+f:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Quick Start","id":"quick-start","depth":2},{"value":[["$","$1",".0",{"children":["Automatic Conveniences for ",["$","code",".1",{"className":"nextra-code","dir":"ltr","children":".model next"}]]}]],"id":"automatic-conveniences-for-model-next","depth":2},{"value":[["$","$1",".0",{"children":["Default ",["$","code",".1",{"className":"nextra-code","dir":"ltr","children":".savenex"}]," Values"]}]],"id":"default-savenex-values","depth":3},{"value":"Unbanked Code (Automatic Bank 2 Mapping)","id":"unbanked-code-automatic-bank-2-mapping","depth":3},{"value":"Address Range Warning (Z0904)","id":"address-range-warning-z0904","depth":3},{"value":"Multiple Unbanked Sections","id":"multiple-unbanked-sections","depth":3},{"value":"Multi-Bank Applications","id":"multi-bank-applications","depth":2},{"value":"How Multi-Bank Code Works","id":"how-multi-bank-code-works","depth":3},{"value":"Overview","id":"overview","depth":2},{"value":"Subcommands","id":"subcommands","depth":2},{"value":"FILE - Set Output Filename","id":"file---set-output-filename","depth":3},{"value":"RAM - Set RAM Configuration","id":"ram---set-ram-configuration","depth":3},{"value":"BORDER - Set Border Color","id":"border---set-border-color","depth":3},{"value":"CORE - Specify Required Core Version","id":"core---specify-required-core-version","depth":3},{"value":"STACKADDR - Set Stack Pointer Address","id":"stackaddr---set-stack-pointer-address","depth":3},{"value":"ENTRYADDR - Set Entry Point Address","id":"entryaddr---set-entry-point-address","depth":3},{"value":"ENTRYBANK - Set Entry Bank","id":"entrybank---set-entry-bank","depth":3},{"value":"FILEHANDLE - Set File Handle Mode","id":"filehandle---set-file-handle-mode","depth":3},{"value":"PRESERVE - Preserve Next Registers","id":"preserve---preserve-next-registers","depth":3},{"value":"SCREEN - Configure Loading Screen","id":"screen---configure-loading-screen","depth":3},{"value":"PALETTE - Set Palette File","id":"palette---set-palette-file","depth":3},{"value":"COPPER - Set Copper Code File","id":"copper---set-copper-code-file","depth":3},{"value":"BAR - Configure Loading Bar","id":"bar---configure-loading-bar","depth":3},{"value":"NEX File Format","id":"nex-file-format","depth":2},{"value":"NEX File Version","id":"nex-file-version","depth":3},{"value":"Bank Organization","id":"bank-organization","depth":3},{"value":"How Unbanked Code Maps to Bank 2","id":"how-unbanked-code-maps-to-bank-2","depth":3},{"value":"Loading Process","id":"loading-process","depth":3},{"value":"Default Values","id":"default-values","depth":2},{"value":[["$","$1",".0",{"children":["With ",["$","code",".1",{"className":"nextra-code","dir":"ltr","children":".model next"}]," (Automatic Conveniences)"]}]],"id":"with-model-next-automatic-conveniences","depth":3},{"value":[["$","$1",".0",{"children":["Without ",["$","code",".1",{"className":"nextra-code","dir":"ltr","children":".model next"}]," (Traditional Mode)"]}]],"id":"without-model-next-traditional-mode","depth":3},{"value":"Error Handling","id":"error-handling","depth":2},{"value":"Notes","id":"notes","depth":2},{"value":"See Also","id":"see-also","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"The ZX Spectrum Next assembler in Klive IDE provides a comprehensive development environment for the ZX Spectrum Next platform.","title":"ZX Spectrum Next Development","filePath":"content/z80-assembly/zx-next.mdx","timestamp":1788422465000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+13:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ToggleWordWrapButton"]
+bb:I[484,[],"OutletBoundary"]
+bc:"$Sreact.suspense"
+be:I[484,[],"ViewportBoundary"]
+bf:I[484,[],"MetadataBoundary"]
+c0:I[7121,[],""]
+c1:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["ZX Spectrum Next Development","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ZX Spectrum Next assembler in Klive IDE provides a comprehensive development environment for the ZX Spectrum Next platform. This page covers all Next-specific features, including automatic conveniences, the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," pragma, and NEX file generation."]}],"\n",["$","h2",null,{"id":"quick-start","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Quick Start",["$","$L12",null,{"id":"quick-start"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The simplest ZX Spectrum Next program in Klive IDE looks like this:"}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".model"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" next"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"myapp.nex\""}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Your code starts at $8000 automatically"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"main"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"4"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0xFE"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"), "}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; Set border color to green"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"trap"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" "}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" $"}]]}]]}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}],", Klive automatically:"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n"]}],"\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b","\n","$L3c","\n","$L3d","\n","$L3e","\n","$L3f","\n","$L40","\n","$L41","\n","$L42","\n","$L43","\n","$L44","\n","$L45","\n","$L46","\n","$L47","\n","$L48","\n","$L49","\n","$L4a","\n","$L4b","\n","$L4c","\n","$L4d","\n","$L4e","\n","$L4f","\n","$L50","\n","$L51","\n","$L52","\n","$L53","\n","$L54","\n","$L55","\n","$L56","\n","$L57","\n","$L58","\n","$L59","\n","$L5a","\n","$L5b","\n","$L5c","\n","$L5d","\n","$L5e","\n","$L5f","\n","$L60","\n","$L61","\n","$L62","\n","$L63","\n","$L64","\n","$L65","\n","$L66","\n","$L67","\n","$L68","\n","$L69","\n","$L6a","\n","$L6b","\n","$L6c","\n","$L6d","\n","$L6e","\n","$L6f","\n","$L70","\n","$L71","\n","$L72","\n","$L73","\n","$L74","\n","$L75","\n","$L76","\n","$L77","\n","$L78","\n","$L79","\n","$L7a","\n","$L7b","\n","$L7c","\n","$L7d","\n","$L7e","\n","$L7f","\n","$L80","\n","$L81","\n","$L82","\n","$L83","\n","$L84","\n","$L85","\n","$L86","\n","$L87","\n","$L88","\n","$L89","\n","$L8a","\n","$L8b","\n","$L8c","\n","$L8d","\n","$L8e","\n","$L8f","\n","$L90","\n","$L91","\n","$L92","\n","$L93","\n","$L94","\n","$L95","\n","$L96","\n","$L97","\n","$L98","\n","$L99","\n","$L9a","\n","$L9b","\n","$L9c","\n","$L9d","\n","$L9e","\n","$L9f","\n","$La0","\n","$La1","\n","$La2","\n","$La3","\n","$La4","\n","$La5","\n","$La6","\n","$La7","\n","$La8","\n","$La9","\n","$Laa","\n","$Lab","\n","$Lac","\n","$Lad","\n","$Lae","\n","$Laf","\n","$Lb0","\n","$Lb1","\n","$Lb2","\n","$Lb3","\n","$Lb4","\n","$Lb5","\n","$Lb6","\n","$Lb7","\n","$Lb8","\n","$Lb9","\n","$Lba"]}]
+8:["$","$Lbb",null,{"children":["$","$bc",null,{"name":"Next.MetadataOutlet","children":"$@bd"}]}]
+b:["$","$1","h",{"children":[null,["$","$Lbe",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$Lbf",null,{"children":["$","$bc",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"ZX Spectrum Next Development - Klive IDE"}],["$","meta","1",{"name":"description","content":"The ZX Spectrum Next assembler in Klive IDE provides a comprehensive development environment for the ZX Spectrum Next platform."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$Lc0",null,{"parallelRouterKey":"children","template":["$","$Lc1",null,{}]}]]}]
+11:true
+d7:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],""]
+14:["$","li",null,{"className":"x:my-[.5em]","children":["Sets ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex ram 768"}]," (768K RAM)"]}]
+15:["$","li",null,{"className":"x:my-[.5em]","children":["Sets ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex border 7"}]," (white border)"]}]
+16:["$","li",null,{"className":"x:my-[.5em]","children":["Sets ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex entryaddr $8000"}]," (entry at $8000)"]}]
+17:["$","li",null,{"className":"x:my-[.5em]","children":"Maps unbanked code to bank 2 at address $8000"}]
+18:["$","h2",null,{"id":"automatic-conveniences-for-model-next","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["Automatic Conveniences for ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}]],["$","$L12",null,{"id":"automatic-conveniences-for-model-next"}]]}]
+19:["$","h3",null,{"id":"default-savenex-values","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["Default ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," Values"],["$","$L12",null,{"id":"default-savenex-values"}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}]," is specified, these defaults are automatically applied:"]}]
+1b:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Parameter","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Default Value","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Description","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ram"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"768","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"768K RAM configuration","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"border"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"7","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"White border color","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"entryaddr"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"$$8000","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Entry point at $8000","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can override any default by explicitly specifying the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," pragma:"]}]
+1d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".model"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" next"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"myapp.nex\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" border"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 5"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"        ; Override default (use cyan instead of white)"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" ram"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 1792"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"        ; Override default (use 1792K instead of 768K)"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Code..."}]}]]}]]}]]}]
+1e:["$","h3",null,{"id":"unbanked-code-automatic-bank-2-mapping","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Unbanked Code (Automatic Bank 2 Mapping)",["$","$L12",null,{"id":"unbanked-code-automatic-bank-2-mapping"}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you write code without an explicit ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}]," pragma, it’s considered “unbanked” code and automatically:"]}]
+20:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Starts at $8000"}]," - The default assembly address is $8000"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Maps to Bank 2"}]," - During NEX export, unbanked code is written to bank 2"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Uses the range $8000-$bfff"}]," - The standard 16KB bank 2 address range"]}],"\n"]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Example - Simple unbanked program:"}]}]
+22:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".model"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" next"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"simple.nex\""}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; This code is unbanked - automatically starts at $8000 and maps to bank 2"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"main"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"3"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" setborder"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"trap"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" $"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"setborder"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0xFE"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"), "}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ret"}]}]]}]]}]]}]
+23:["$","h3",null,{"id":"address-range-warning-z0904","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Address Range Warning (Z0904)",["$","$L12",null,{"id":"address-range-warning-z0904"}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The assembler warns you if unbanked code exceeds the typical bank 2 range ($bfff):"}]
+25:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".model"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" next"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"test.nex\""}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".org"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $c000"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"              ; ⚠️ Warning Z0904: Address $c000 exceeds $bfff"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"7"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"trap"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" $"}]]}]]}]]}]]}]
+26:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The warning message is:"}]
+27:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"Warning Z0904: Unbanked code address $c000 exceeds typical bank 2 range ($8000-$bfff). "}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"Consider using .bank pragma for explicit memory layout."}]}]]}]]}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Note:"}]," This is a warning, not an error. Your code will still compile and the NEX file will be generated, but you should review whether you intended to extend beyond the standard bank 2 range."]}]
+29:["$","h3",null,{"id":"multiple-unbanked-sections","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Multiple Unbanked Sections",["$","$L12",null,{"id":"multiple-unbanked-sections"}]]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can have multiple unbanked code sections at different addresses using ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".org"}],":"]}]
+2b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".model"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" next"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"multi.nex\""}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; First section at $8000"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" routine1"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Second section at $9000"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".org"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $9000"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"routine1"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0xFE"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"), "}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ret"}]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Third section at $a000"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".org"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $a000"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"routine2"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"2"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ret"}]}]]}]]}]]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"All unbanked sections are collected and written to bank 2 in the NEX file at their respective addresses."}]
+2d:["$","h2",null,{"id":"multi-bank-applications","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Multi-Bank Applications",["$","$L12",null,{"id":"multi-bank-applications"}]]}]
+2e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For complex applications requiring multiple memory banks, use explicit ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}]," pragmas alongside unbanked code:"]}]
+2f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".model"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" next"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"screen-tests.nex\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" core"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"3.1.0\""}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Unbanked code in bank 2 at $8000"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"main"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; "}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; Save the current MMU 5 value ($A000-$BFFF)"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$55"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" bc"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$243b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" b"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    in"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"c"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    push"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" af"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"    ;"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; Page in the first 8K of 16K Bank $20 to $A000-$BFFF"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    di"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $55"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$40"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"    ;"}]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; Invoke the subrouting in Bank $20"}]}],"\n","$Lc2","\n","$Lc3","\n","$Lc4","\n","$Lc5","\n","$Lc6","\n","$Lc7","\n","$Lc8","\n","$Lc9","\n","$Lca","\n","$Lcb","\n","$Lcc","\n","$Lcd","\n","$Lce","\n","$Lcf","\n","$Ld0","\n","$Ld1","\n","$Ld2","\n","$Ld3","\n","$Ld4"]}]]}]]}]
+30:["$","h3",null,{"id":"how-multi-bank-code-works","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["How Multi-Bank Code Works",["$","$L12",null,{"id":"how-multi-bank-code-works"}]]}]
+31:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Unbanked code"}]," exports to ",["$","strong",null,{"children":"bank 2"}]," at the addresses where it’s assembled ($8000-$bfff typically)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}]," sections"]}]," export to ",["$","strong",null,{"children":"their specified bank"}]," (e.g., bank 5) at the addresses defined by ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".org"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".disp"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Both can coexist in the same source file"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Each bank section is independent"}],"\n"]}]
+32:["$","hr",null,{"className":"x:my-[2em] nextra-border"}]
+33:["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["SAVENEX Pragma Reference","$undefined"]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," pragma provides a declarative way to configure ZX Spectrum Next NEX file generation parameters directly in your assembly source code. This pragma is only available when targeting the ZX Spectrum Next (Model 4)."]}]
+35:["$","h2",null,{"id":"overview","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Overview",["$","$L12",null,{"id":"overview"}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," pragma uses a subcommand syntax where each subcommand configures a specific aspect of the NEX file. You can use multiple ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," pragmas throughout your source code, and the compiler will collect and merge all declarations into a complete NEX file configuration."]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+38:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"subcommand"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"parameters"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]}]]}]]}]
+39:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The pragma is case-insensitive, so ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".SAVENEX"}],", and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".SaveNex"}]," are all valid."]}]
+3a:["$","h2",null,{"id":"subcommands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Subcommands",["$","$L12",null,{"id":"subcommands"}]]}]
+3b:["$","h3",null,{"id":"file---set-output-filename","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["FILE - Set Output Filename",["$","$L12",null,{"id":"file---set-output-filename"}]]}]
+3c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies the name of the NEX file to be generated."}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+3e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"filename"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]}]]}]]}]
+3f:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"filename"}],": String literal or expression that evaluates to a string"]}],"\n"]}]
+40:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Example:"}]}]
+41:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"myprogram.nex\""}]]}]}]]}]]}]
+42:["$","h3",null,{"id":"ram---set-ram-configuration","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["RAM - Set RAM Configuration",["$","$L12",null,{"id":"ram---set-ram-configuration"}]]}]
+43:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies the amount of RAM required by the program."}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+45:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" ram"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"size"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]}]]}]]}]
+46:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"size"}],": Must be either 768 (for 768K RAM) or 1792 (for 1792K RAM)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Default when ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}]," is used"]}],": 768"]}],"\n"]}]
+47:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Examples:"}]}]
+48:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" ram"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 768"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; 768K RAM (default for .model next)"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" ram"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 1792"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"   ; 1792K RAM"}]]}]]}]]}]]}]
+49:["$","h3",null,{"id":"border---set-border-color","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["BORDER - Set Border Color",["$","$L12",null,{"id":"border---set-border-color"}]]}]
+4a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies the border color to be set when the program loads."}]
+4b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+4c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" border"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"color"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]}]]}]]}]
+4d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"color"}],": Integer value from 0 to 7"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Default when ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}]," is used"]}],": 7 (white)"]}],"\n"]}]
+4e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Example:"}]}]
+4f:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" border"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 5"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"   ; Cyan border"}]]}]}]]}]]}]
+50:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Border Colors:"}]}]
+51:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Value","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Color","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Black","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"1","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Blue","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"2","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Red","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"3","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Magenta","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"4","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Green","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"5","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Cyan","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"6","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Yellow","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"7","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"White","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+52:["$","h3",null,{"id":"core---specify-required-core-version","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["CORE - Specify Required Core Version",["$","$L12",null,{"id":"core---specify-required-core-version"}]]}]
+53:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies the minimum ZX Spectrum Next core version required to run the program."}]
+54:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+55:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" core"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"major"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"<"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"minor"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"<"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"subminor"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; or"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" core"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"version"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"-"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"string"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]]}]]}]]}]
+56:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"major"}],": Integer value from 0 to 255"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"minor"}],": Integer value from 0 to 255"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"subminor"}],": Integer value from 0 to 255"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"version-string"}],": String literal in the format “major.minor.subminor”"]}],"\n"]}]
+57:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Examples:"}]}]
+58:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" core"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 3"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"10"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"       ; Requires core version 3.1.10 or higher"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" core"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"3.1.10\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":"       ; Alternative string format"}]]}]]}]]}]]}]
+59:["$","blockquote",null,{"className":"x:not-first:mt-[1.25em] x:border-gray-300 x:italic x:text-gray-700 x:dark:border-gray-700 x:dark:text-gray-400 x:border-s-2 x:ps-[1.5em]","children":["\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Note"}],": Both formats are supported. The string format is convenient when the version comes from a constant or macro, while the comma-separated format allows for calculated values."]}],"\n"]}]
+5a:["$","h3",null,{"id":"stackaddr---set-stack-pointer-address","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["STACKADDR - Set Stack Pointer Address",["$","$L12",null,{"id":"stackaddr---set-stack-pointer-address"}]]}]
+5b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies the initial stack pointer address."}]
+5c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+5d:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" stackaddr"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"address"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]}]]}]]}]
+5e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"address"}],": Integer value from 0 to 0xFFFF"]}],"\n"]}]
+5f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Example:"}]}]
+60:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" stackaddr"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0xFF00"}]]}]}]]}]]}]
+61:["$","h3",null,{"id":"entryaddr---set-entry-point-address","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ENTRYADDR - Set Entry Point Address",["$","$L12",null,{"id":"entryaddr---set-entry-point-address"}]]}]
+62:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies the program’s entry point address."}]
+63:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+64:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" entryaddr"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"address"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]}]]}]]}]
+65:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"address"}],": Integer value from 0 to 0xFFFF"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["Default when ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}]," is used"]}],": $8000"]}],"\n"]}]
+66:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Example:"}]}]
+67:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" entryaddr"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0x8000"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; Entry at $8000 (default for .model next)"}]]}]}]]}]]}]
+68:["$","h3",null,{"id":"entrybank---set-entry-bank","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["ENTRYBANK - Set Entry Bank",["$","$L12",null,{"id":"entrybank---set-entry-bank"}]]}]
+69:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies the bank number to be paged in when the program starts."}]
+6a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+6b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" entrybank"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#C586C0"},"children":"bank"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]}]]}]]}]
+6c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"bank"}],": Integer value from 0 to 111"]}],"\n"]}]
+6d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Example:"}]}]
+6e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" entrybank"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 5"}]]}]}]]}]]}]
+6f:["$","h3",null,{"id":"filehandle---set-file-handle-mode","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["FILEHANDLE - Set File Handle Mode",["$","$L12",null,{"id":"filehandle---set-file-handle-mode"}]]}]
+70:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies whether to close or keep open the NEX file handle after loading."}]
+71:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+72:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" filehandle"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"mode"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]}]]}]]}]
+73:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"mode"}],": Either “close” (close file after loading) or “open” (keep file open, pass handle in BC register)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Default"}],": “close” (file is closed after loading)"]}],"\n"]}]
+74:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Examples:"}]}]
+75:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" filehandle"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"close\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":"  ; Close file after loading (default)"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" filehandle"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"open\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":"   ; Keep file open, pass handle in BC register"}]]}]]}]]}]]}]
+76:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"NEX File Specification:"}]}]
+77:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"“close” writes 0x0000 to offset 140 (file is closed by loader)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"“open” writes 0x0001 to offset 140 (file kept open, handle passed in BC register)"}],"\n"]}]
+78:["$","h3",null,{"id":"preserve---preserve-next-registers","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["PRESERVE - Preserve Next Registers",["$","$L12",null,{"id":"preserve---preserve-next-registers"}]]}]
+79:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies whether to preserve the Next hardware registers after loading."}]
+7a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+7b:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" preserve"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"value"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]}]]}]]}]
+7c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"value"}],": “on”/“off” or 1/0"]}],"\n"]}]
+7d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Examples:"}]}]
+7e:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" preserve"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"on\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" preserve"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 1"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" preserve"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"off\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" preserve"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0"}]]}]]}]]}]]}]
+7f:["$","h3",null,{"id":"screen---configure-loading-screen","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["SCREEN - Configure Loading Screen",["$","$L12",null,{"id":"screen---configure-loading-screen"}]]}]
+80:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies a loading screen to display while the program loads."}]
+81:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+82:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" screen"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"type"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" [, "}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"<"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"filename"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" [, "}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"<"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"palette"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"-"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"offset"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"]]"}]]}]}]]}]]}]
+83:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"type"}],": Screen type - one of: “layer2”, “ula”, “lores”, “hires-color”, “hires-mono”"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"filename"}],": (Optional) Filename of the screen data"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"palette-offset"}],": (Optional) Offset in the palette file (0-255)"]}],"\n"]}]
+84:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Examples:"}]}]
+85:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" screen"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"layer2\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" screen"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"layer2\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"loading.scr\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" screen"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"layer2\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\"loading.scr\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"0"}]]}]]}]]}]]}]
+86:["$","h3",null,{"id":"palette---set-palette-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["PALETTE - Set Palette File",["$","$L12",null,{"id":"palette---set-palette-file"}]]}]
+87:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies a palette file to load."}]
+88:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+89:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" palette"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"filename"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]}]]}]]}]
+8a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"filename"}],": String literal with the palette filename"]}],"\n"]}]
+8b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Example:"}]}]
+8c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" palette"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"colors.nxp\""}]]}]}]]}]]}]
+8d:["$","h3",null,{"id":"copper---set-copper-code-file","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["COPPER - Set Copper Code File",["$","$L12",null,{"id":"copper---set-copper-code-file"}]]}]
+8e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Specifies a copper code file to load and execute."}]
+8f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+90:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" copper"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"filename"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}]]}]}]]}]]}]
+91:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"filename"}],": String literal with the copper code filename"]}],"\n"]}]
+92:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Example:"}]}]
+93:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" copper"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"effects.cu\""}]]}]}]]}]]}]
+94:["$","h3",null,{"id":"bar---configure-loading-bar","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["BAR - Configure Loading Bar",["$","$L12",null,{"id":"bar---configure-loading-bar"}]]}]
+95:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Configures the loading bar display."}]
+96:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Syntax:"}]}]
+97:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" bar"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":" <"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"enabled"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" [, "}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"<"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"color"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" [, "}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"<"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"delay"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" [, "}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"<"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"start"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":"-"}],["$","span",null,{"style":{"color":"#B5890F"},"children":"delay"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":">"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"]]]"}]]}]}]]}]]}]
+98:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"enabled"}],": “on”/“off” or 1/0"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"color"}],": (Optional) Bar color (0-255)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"delay"}],": (Optional) Delay per bar step (0-255)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"start-delay"}],": (Optional) Delay before starting (0-255)"]}],"\n"]}]
+99:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Examples:"}]}]
+9a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" bar"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"on\""}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" bar"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"on\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"2"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" bar"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"on\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"2"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"50"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" bar"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"on\""}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"2"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"50"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"100"}]]}]]}]]}]]}]
+9b:["$","h2",null,{"id":"nex-file-format","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["NEX File Format",["$","$L12",null,{"id":"nex-file-format"}]]}]
+9c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The NEX file format ",["$","a",null,{"href":"https://wiki.specnext.dev/NEX_file_format","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["(see details here)",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," is the native executable format for the ZX Spectrum Next. It’s a container format that includes:"]}]
+9d:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Header Information"}],": File version, RAM requirements, entry points, etc."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Screen Data"}],": Optional loading screen in various formats"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Palette Data"}],": Optional palette information"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Copper Code"}],": Optional copper coprocessor code"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Loading Bar"}],": Optional visual feedback during loading"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Program Banks"}],": The actual program code and data organized in 16K banks"]}],"\n"]}]
+9e:["$","h3",null,{"id":"nex-file-version","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["NEX File Version",["$","$L12",null,{"id":"nex-file-version"}]]}]
+9f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," pragma targets NEX file format version 1.2, which is the current standard for ZX Spectrum Next executables."]}]
+a0:["$","h3",null,{"id":"bank-organization","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Bank Organization",["$","$L12",null,{"id":"bank-organization"}]]}]
+a1:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The NEX file organizes code and data into 16K banks that correspond to the Next’s memory management system:"}]
+a2:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Banks 0-1"}],": ROM (read-only, system)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Bank 2"}],": Default user code bank (unbanked code maps here automatically)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Banks 3-4"}],": Standard RAM banks"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Banks 5-111"}],": Extended RAM banks available for paging"]}],"\n"]}]
+a3:["$","h3",null,{"id":"how-unbanked-code-maps-to-bank-2","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["How Unbanked Code Maps to Bank 2",["$","$L12",null,{"id":"how-unbanked-code-maps-to-bank-2"}]]}]
+a4:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["When you use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}]," and write code without explicit ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}]," pragmas:"]}]
+a5:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Your code is assembled at addresses starting from $8000"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"During NEX export, this “unbanked” code is written to bank 2"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The offset calculation is: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bank2_offset = address - $8000"}]]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Code at $8000 goes to offset 0 in bank 2"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Code at $9000 goes to offset $1000 in bank 2"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"And so on…"}],"\n"]}]
+a6:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"Example:"}]}]
+a7:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L13",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".model"}],["$","span",null,{"style":{"color":"#C586C0","fontWeight":"bold"},"children":" next"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".savenex"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" file"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"test.nex\""}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Code at $8000 → bank 2, offset $0000"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"main"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"1"}]]}],"\n",["$","span",null,{"children":" "}],"\n",["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Code at $9000 → bank 2, offset $1000"}]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".org"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $9000"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"routine"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":", "}],["$","span",null,{"style":{"color":"#4D8061"},"children":"2"}]]}]]}]]}]]}]
+a8:["$","h3",null,{"id":"loading-process","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Loading Process",["$","$L12",null,{"id":"loading-process"}]]}]
+a9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When a NEX file loads on the ZX Spectrum Next:"}]
+aa:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"The NEX loader reads the header to determine requirements"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"If specified, the loading screen is displayed"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"If enabled, the loading bar provides visual feedback"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Program banks are loaded into the specified memory locations"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Hardware registers are configured according to the NEX header"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Control is transferred to the entry point address with the entry bank paged in"}],"\n"]}]
+ab:["$","h2",null,{"id":"default-values","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Default Values",["$","$L12",null,{"id":"default-values"}]]}]
+ac:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Default values for ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," parameters depend on whether you’re using ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}],":"]}]
+ad:["$","h3",null,{"id":"with-model-next-automatic-conveniences","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["With ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}]," (Automatic Conveniences)"],["$","$L12",null,{"id":"with-model-next-automatic-conveniences"}]]}]
+ae:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Parameter","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Default Value","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Description","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ram"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"768","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"768K RAM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"border"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"7","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"White border","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"entryaddr"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"$$8000","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Entry point at $8000","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"entryBank"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bank 0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"fileHandle"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"“close”","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Close NEX file after loading","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"preserveRegs"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"false","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$Ld5"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+af:["$","h3",null,{"id":"without-model-next-traditional-mode","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":[["Without ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".model next"}]," (Traditional Mode)"],["$","$L12",null,{"id":"without-model-next-traditional-mode"}]]}]
+b0:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Parameter","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Default Value","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Description","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ram"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"(none)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Must be specified","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"border"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Black border","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"entryaddr"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"(none)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Must be specified","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"entryBank"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Bank 0","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"fileHandle"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"“close”","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Close NEX file after loading","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"preserveRegs"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"false","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$Ld6"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+b1:["$","h2",null,{"id":"error-handling","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Error Handling",["$","$L12",null,{"id":"error-handling"}]]}]
+b2:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The assembler will generate errors if:"}]
+b3:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["You use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," when not targeting the ZX Spectrum Next (Model 4)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Invalid values are provided (e.g., border color > 7, bank > 111)"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Required parameters are missing"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Invalid screen types or modes are specified"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Version numbers exceed 255"}],"\n"]}]
+b4:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The assembler will generate warnings if:"}]
+b5:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Z0904"}],": Unbanked code address exceeds $bfff (typical bank 2 range)"]}],"\n"]}]
+b6:["$","h2",null,{"id":"notes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Notes",["$","$L12",null,{"id":"notes"}]]}]
+b7:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," pragma only configures the NEX file parameters; it doesn’t generate the actual NEX file. The file generation happens during the export process."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Multiple ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".savenex"}]," pragmas with the same subcommand will use the last value specified."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Expression support allows you to use symbols, calculations, and other expressions for numeric parameters."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"String parameters can be string literals or expressions that evaluate to strings."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Unbanked code is automatically tracked and exported to bank 2 during NEX file generation."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["You can mix unbanked code and explicit ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".bank"}]," sections in the same source file."]}],"\n"]}]
+b8:["$","hr",null,{"className":"x:my-[2em] nextra-border"}]
+b9:["$","h2",null,{"id":"see-also","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["See Also",["$","$L12",null,{"id":"see-also"}]]}]
+ba:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$Ld7",null,{"href":"./zx-next-dma","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":".dma Pragma Reference"}]," - DMA register group pragma (ZX Spectrum Next)"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$Ld7",null,{"href":"./pragmas","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Pragmas"}]," - Complete pragma reference"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$Ld7",null,{"href":"./z80-assembler","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Klive Z80 Assembler Overview"}]," - General assembler documentation"]}],"\n"]}]
+bd:null
+a:300
+c2:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    call"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" SetBorder"}]]}]
+c3:["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"    ;"}]}]
+c4:["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; Restore the old MMU 5 value"}]}]
+c5:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    pop"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" af"}]]}]
+c6:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    nextreg"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $55"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]
+c7:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ei"}]}]
+c8:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"trap"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" "}]]}]
+c9:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" $"}]]}]
+ca:["$","span",null,{"children":" "}]
+cb:["$","span",null,{"children":" "}]
+cc:["$","span",null,{"children":["$","span",null,{"style":{"color":"#6A9955"},"children":"; Explicit bank $20 code"}]}]
+cd:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".bank"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $20"}]]}]
+ce:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".org"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $0000"}]]}]
+cf:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":".disp"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" $a000"}]]}]
+d0:["$","span",null,{"children":" "}]
+d1:["$","span",null,{"children":["$","span",null,{"style":{"color":"#B5890F"},"children":"SetBorder"}]}]
+d2:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"3"}]]}]
+d3:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    out"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":" ("}],["$","span",null,{"style":{"color":"#4D8061"},"children":"$$fe"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":"),"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"a"}]]}]
+d4:["$","span",null,{"children":["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ret"}]}]
+d5:["$","td",null,{"children":"Don’t preserve registers","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+d6:["$","td",null,{"children":"Don’t preserve registers","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"

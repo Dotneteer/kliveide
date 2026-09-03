@@ -1,0 +1,124 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:Ta80,---
+description: "Klive makes it easy to measure the number of T-states (clock cycles) that a piece of code consumes."
+---
+
+import { Callout } from 'nextra/components'
+
+# Measuring T-States
+
+Klive makes it easy to measure the number of T-states (clock cycles) that a piece of code consumes. When you open the [CPU panel](../working-with-ide/cpu), it displays a value, **TSP**, which stands for *T-states elapsed since the last pause*. Whenever your paused machine continues the code execution (debugging), the next time it gets paused, this value displays the number of T-states used since the last pause.
+
+## Example
+
+Take a look at the following code (use the ZX Spectrum 48K model):
+
+```z80klive
+Start:
+    .model Spectrum48
+    .org #8000
+    ld a,2;	      ; (START)
+    call #1601    ; open the channel
+    ld hl,Message ; HL points the the message string
+NextCh:
+    ld a,(hl)     ; get next character
+    or a
+    jr z,Done     ; we reached the end
+    rst #10       ; display character
+    inc hl        ; next character
+    jr NextCh     ; next loop
+Done:
+    jp #12a9      ; (END)
+
+
+Message:
+    .dm "\a\x0A\x06" ; AT 10, 6
+    .dm "\p\x04"     ; PAPER 4
+    .dm "Welcome to Klive IDE"
+    .dm "\a\x0B\x08" ; AT 10, 8
+    .dm "\p\x04"     ; PAPER 4
+    .dm "\b\x01"     ; BRIGH 1
+    .dm "(ZX Spectrum 48)"
+    .db 0x00         ; terminate
+```
+
+Add two breakpoints to the lines marked with **(START)** and **(END)**. Now, run the code in the debugger. When the code execution stops at the first breakpoint, **(START)**, check **TSP** at the CPU panel:
+
+<ClickableImage src="/images/howto/tstate-1.png" width={256} />
+
+Click continue and let your code access the second breakpoint, **(END)**. The **TSP** value shows the number of T-states that have elapsed since continuing from **(START)**:
+
+<ClickableImage src="/images/howto/tstate-2.png" width={256} />
+
+<Callout type="info" emoji="💡">
+Now you can see how many T-states your code consumes between two breakpoints. This feature is handy when you want to optimize your code for speed.
+</Callout>
+
+## Conditions Influencing T-States
+
+There are some things you should consider when measuring the number of T-States:
+
+**1. Memory contention**
+
+The ZX Spectrum 48K model's CPU and ULA contend for memory access to the $4000-$7fff address range when reading or writing information. The ULA may block the CPU for a few states. So, when your code runs, it may display a bit different **TSP** values for each run due to memory contention.
+
+**2. Interrupts**
+
+If your code takes more than 20 milliseconds to run, an interrupt request is likely. In this case, the interrupt handler's T-states are also summed up to the **TSP** value.18:X
+1d:X
+1d:C
+0:{"buildId":"1VHud9YR4wWqKm3EyvscH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Example","id":"example","depth":2},{"value":"Conditions Influencing T-States","id":"conditions-influencing-t-states","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Klive makes it easy to measure the number of T-states (clock cycles) that a piece of code consumes.","title":"Measuring T-States","filePath":"content/howto/measure-t-states.mdx","timestamp":1788422465000},"sourceCode":"$5","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":["$L6","\n","$L7","\n","$L8","\n","$L9","\n","$La","\n","$Lb","\n","$Lc","\n","$Ld","\n","$Le","\n","$Lf","\n","$L10","\n","$L11","\n","$L12","\n","$L13","\n","$L14","\n","$L15"]}]]}]]}]}],null,"$L16"]}],"isPartial":"$@17","staleTime":"$18","varyParams":null},{"rsc":"$L19","isPartial":"$@1a","staleTime":"$18","varyParams":null},{"rsc":"$L1b","isPartial":"$@1c","staleTime":"$18","varyParams":"$1d"}],"isUpgradeableISRFallback":false,"a":"$@1e","rootVaryParams":null,"needsRuntimeRequest":"$@1f"}
+20:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],""]
+21:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+22:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ToggleWordWrapButton"]
+30:I[484,[],"OutletBoundary"]
+31:"$Sreact.suspense"
+33:I[484,[],"ViewportBoundary"]
+34:I[484,[],"MetadataBoundary"]
+35:I[7121,[],""]
+36:I[4581,[],""]
+:HL["/kliveide/images/howto/tstate-1.png","image"]
+:HL["/kliveide/images/howto/tstate-2.png","image"]
+6:["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Measuring T-States","$undefined"]}]
+7:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive makes it easy to measure the number of T-states (clock cycles) that a piece of code consumes. When you open the ",["$","$L20",null,{"href":"../working-with-ide/cpu","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"CPU panel"}],", it displays a value, ",["$","strong",null,{"children":"TSP"}],", which stands for ",["$","em",null,{"children":"T-states elapsed since the last pause"}],". Whenever your paused machine continues the code execution (debugging), the next time it gets paused, this value displays the number of T-states used since the last pause."]}]
+8:["$","h2",null,{"id":"example","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Example",["$","$L21",null,{"id":"example"}]]}]
+9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Take a look at the following code (use the ZX Spectrum 48K model):"}]
+a:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L22",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Start"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .model"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" Spectrum48"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .org"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" #8000"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#4D8061"},"children":"2"}],["$","span",null,{"style":{"color":"#6A9955"},"children":";\t      ; (START)"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    call"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" #1601"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"    ; open the channel"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Message"}],["$","span",null,{"style":{"color":"#6A9955"},"children":" ; HL points the the message string"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"NextCh"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    ld"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":",("}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":"hl"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":")     "}],["$","span",null,{"style":{"color":"#6A9955"},"children":"; get next character"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    or"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" a"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" z"}],["$","span",null,{"style":{"color":"#A4A4A4"},"children":","}],["$","span",null,{"style":{"color":"#B5890F"},"children":"Done"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"     ; we reached the end"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    rst"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" #10"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"       ; display character"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    inc"}],["$","span",null,{"style":{"color":"#2B7CB3"},"children":" hl"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"        ; next character"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jr"}],["$","span",null,{"style":{"color":"#B5890F"},"children":" NextCh"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"     ; next loop"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Done"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}],"\n",["$","span",null,{"children":[["$","span",null,{"style":{"color":"#569CD6","fontWeight":"bold"},"children":"    jp"}],"$L23","$L24"]}],"\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f"]}]]}]]}]
+b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Add two breakpoints to the lines marked with ",["$","strong",null,{"children":"(START)"}]," and ",["$","strong",null,{"children":"(END)"}],". Now, run the code in the debugger. When the code execution stops at the first breakpoint, ",["$","strong",null,{"children":"(START)"}],", check ",["$","strong",null,{"children":"TSP"}]," at the CPU panel:"]}]
+c:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/howto/tstate-1.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/howto/tstate-1.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":256,"height":"auto"}}]}]}]
+d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Click continue and let your code access the second breakpoint, ",["$","strong",null,{"children":"(END)"}],". The ",["$","strong",null,{"children":"TSP"}]," value shows the number of T-states that have elapsed since continuing from ",["$","strong",null,{"children":"(START)"}],":"]}]
+e:["$","div",null,{"className":"ClickableImage_container__GtwVc","children":["$","a",null,{"href":"/kliveide/images/howto/tstate-2.png","target":"_blank","rel":"noopener noreferrer","className":"ClickableImage_imageLink__rDd_l","children":["$","img",null,{"src":"/kliveide/images/howto/tstate-2.png","className":"ClickableImage_image__ljXcs ClickableImage_default__czrP7","style":{"width":256,"height":"auto"}}]}]}]
+f:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Now you can see how many T-states your code consumes between two breakpoints. This feature is handy when you want to optimize your code for speed."}]}]]}]
+10:["$","h2",null,{"id":"conditions-influencing-t-states","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Conditions Influencing T-States",["$","$L21",null,{"id":"conditions-influencing-t-states"}]]}]
+11:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are some things you should consider when measuring the number of T-States:"}]
+12:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"1. Memory contention"}]}]
+13:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ZX Spectrum 48K model’s CPU and ULA contend for memory access to the $4000-$7fff address range when reading or writing information. The ULA may block the CPU for a few states. So, when your code runs, it may display a bit different ",["$","strong",null,{"children":"TSP"}]," values for each run due to memory contention."]}]
+14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","strong",null,{"children":"2. Interrupts"}]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If your code takes more than 20 milliseconds to run, an interrupt request is likely. In this case, the interrupt handler’s T-states are also summed up to the ",["$","strong",null,{"children":"TSP"}]," value."]}]
+16:["$","$L30",null,{"children":["$","$31",null,{"name":"Next.MetadataOutlet","children":"$@32"}]}]
+19:["$","$1","h",{"children":[null,["$","$L33",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L34",null,{"children":["$","$31",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Measuring T-States - Klive IDE"}],["$","meta","1",{"name":"description","content":"Klive makes it easy to measure the number of T-states (clock cycles) that a piece of code consumes."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+1b:["$","$1","c",{"children":[null,["$","$L35",null,{"parallelRouterKey":"children","template":["$","$L36",null,{}]}]]}]
+1f:true
+23:["$","span",null,{"style":{"color":"#4D8061"},"children":" #12a9"}]
+24:["$","span",null,{"style":{"color":"#6A9955"},"children":"      ; (END)"}]
+25:["$","span",null,{"children":" "}]
+26:["$","span",null,{"children":" "}]
+27:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#B5890F"},"children":"Message"}],["$","span",null,{"style":{"color":"#A4A4A4","fontWeight":"bold"},"children":":"}]]}]
+28:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dm"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \""}],["$","span",null,{"style":{"color":"#FF6000"},"children":"\\a\\x0A\\x06"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":" ; AT 10, 6"}]]}]
+29:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dm"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \""}],["$","span",null,{"style":{"color":"#FF6000"},"children":"\\p\\x04"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":"     ; PAPER 4"}]]}]
+2a:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dm"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"Welcome to Klive IDE\""}]]}]
+2b:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dm"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \""}],["$","span",null,{"style":{"color":"#FF6000"},"children":"\\a\\x0B\\x08"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":" ; AT 10, 8"}]]}]
+2c:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dm"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \""}],["$","span",null,{"style":{"color":"#FF6000"},"children":"\\p\\x04"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":"     ; PAPER 4"}]]}]
+2d:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dm"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \""}],["$","span",null,{"style":{"color":"#FF6000"},"children":"\\b\\x01"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":"\""}],["$","span",null,{"style":{"color":"#6A9955"},"children":"     ; BRIGH 1"}]]}]
+2e:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .dm"}],["$","span",null,{"style":{"color":"#FF6B35"},"children":" \"(ZX Spectrum 48)\""}]]}]
+2f:["$","span",null,{"children":[["$","span",null,{"style":{"color":"#C586C0"},"children":"    .db"}],["$","span",null,{"style":{"color":"#4D8061"},"children":" 0x00"}],["$","span",null,{"style":{"color":"#6A9955"},"children":"         ; terminate"}]]}]
+32:null
+18:300
+18:C
+1e:0
+1a:"$undefined"
+1c:"$undefined"
+17:"$undefined"
