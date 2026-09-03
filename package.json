@@ -105,7 +105,7 @@
     "vite": "^6.4.3",
     "vite-electron-plugin": "^0.8.3",
     "vite-plugin-electron-renderer": "^1.0.0",
-    "vite-tsconfig-paths": "^4.3.2",
+    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.0"
   },
   "debug": {
