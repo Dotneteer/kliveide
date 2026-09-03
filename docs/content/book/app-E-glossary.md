@@ -1,6 +1,10 @@
+---
+description: "A reference for the technical terminology used throughout the book. Entries are alphabetical."
+---
+
 # Appendix E: Glossary
 
-> **Status:** Initial seed. Entries will be added and refined as the book is written, following the conversational style described in [book-writing-guidelines.md](./book-writing-guidelines.md).
+> **Status:** Initial seed. Entries will be added and refined as the book is written, following the conversational style described in the book's authoring guidelines.
 
 A reference for the technical terminology used throughout the book. Entries are alphabetical. When two terms could be confused, both are listed and cross-referenced.
 

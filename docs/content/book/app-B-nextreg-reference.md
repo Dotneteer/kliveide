@@ -1,3 +1,7 @@
+---
+description: "The original Spectrum gave you half a dozen ports to poke at."
+---
+
 # Appendix B: NextReg Reference
 
 The original Spectrum gave you half a dozen ports to poke at. The ZX Spectrum Next extends that with the **NextRegs**: a bank of hardware registers addressed from `0x00` to `0xFF`. Not all 256 addresses are used—many are reserved, some are gaps, and a few are write-only sentinels that exist only to protect against hardware conflicts. The registers that are implemented form a dense, organized control surface for everything the Next adds beyond the original hardware.

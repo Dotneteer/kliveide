@@ -28,12 +28,10 @@
 /book/app-C-io-ports-reference/index.html
 /book/app-D-klive-asm-reference/index.html
 /book/app-E-glossary/index.html
-/book/book-writing-guidelines/index.html
 /book/flying-start/index.html
 /book/index.html
 /book/introduction/index.html
 /book/preface/index.html
-/book/toc/index.html
 /commands-reference/index.html
 /contribute/get-source/index.html
 /contribute/improve-docs/index.html

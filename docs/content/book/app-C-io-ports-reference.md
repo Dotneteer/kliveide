@@ -1,3 +1,7 @@
+---
+description: "The original 48K Spectrum had exactly one I/O port worth knowing about: 0xFE. Write to it and your border changed colour and your speaker clicked."
+---
+
 # Appendix C: I/O Ports Reference
 
 The original 48K Spectrum had exactly one I/O port worth knowing about: `0xFE`. Write to it and your border changed colour and your speaker clicked. Read from it and you found out which keys were pressed. That was more or less the whole story.

@@ -1,3 +1,7 @@
+---
+description: "A focused reference for the Klive Z80 assembly dialect (. kz80. asm), targeted at a reader who already knows another Z80 assembler (sjasmplus, Pasmo, z88dk)."
+---
+
 # Appendix D: Klive Z80 Assembly Quick Reference
 
 > **Status:** Placeholder. This appendix will be filled in as the book stabilises and we identify exactly which Klive-specific syntax features are used most.

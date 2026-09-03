@@ -1,3 +1,7 @@
+---
+description: "The original ZX Spectrum had multiple file formats: TAP files for tape images, SNA and Z80 for snapshots, raw binaries that needed manual loading."
+---
+
 # Appendix A: The NEX File Format
 
 The original ZX Spectrum had multiple file formats: TAP files for tape images, SNA and Z80 for snapshots, raw binaries that needed manual loading. Each format served a purpose, but none were ideal for modern distribution. TAP files included tape loading headers with checksums. Snapshot formats saved entire machine state but couldn't preserve modern Next features. Raw binaries required complex multi-step loading procedures.
