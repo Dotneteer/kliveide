@@ -56,6 +56,15 @@ jobs:
       - name: Verify the build against the golden snapshots
         run: npm run doc:check
 
+      - name: Assert the site was built for the right path
+        run: |
+          if grep -q "\"/kliveide/${PREVIEW_PATH}/_next/" docs/out/index.html; then
+            echo "Built for /kliveide/${PREVIEW_PATH} as expected"
+          else
+            echo "::error::docs/out was not built for /kliveide/${PREVIEW_PATH}; every asset would 404"
+            exit 1
+          fi
+
       - name: Disable Jekyll processing
         run: touch docs/out/.nojekyll
 

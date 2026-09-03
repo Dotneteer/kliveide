@@ -19,6 +19,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      BASE_PATH: /kliveide
 
     steps:
       - name: Checkout 🛎️
@@ -43,9 +45,23 @@ jobs:
 
       - name: Build the docs site
         run: npm run doc:build
+        env:
+          # docs/.env.production supplies the same value, but setting it here
+          # makes the deployment path explicit and symmetric with the preview
+          # workflow, rather than depending on dotenv loading order in CI.
+          NEXT_PUBLIC_BASE_PATH: ${{ env.BASE_PATH }}
 
       - name: Verify the build against the golden snapshots
         run: npm run doc:check
+
+      - name: Assert the site was built for the right path
+        run: |
+          if grep -q "\"${BASE_PATH}/_next/" docs/out/index.html; then
+            echo "Built for ${BASE_PATH} as expected"
+          else
+            echo "::error::docs/out was not built for ${BASE_PATH}; every asset would 404"
+            exit 1
+          fi
 
       - name: Disable Jekyll processing
         run: touch docs/out/.nojekyll
