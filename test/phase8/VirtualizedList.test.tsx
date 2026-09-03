@@ -30,13 +30,13 @@ vi.mock("overlayscrollbars-react", () => ({
 // Mock virtua's Virtualizer to render items directly in jsdom
 vi.mock("virtua", () => ({
   Virtualizer: React.forwardRef(function MockVirtualizer(
-    { count, children, ...props }: any,
+    { data, children, ...props }: any,
     ref: any
   ) {
-    // children is a render function (i) => ReactNode
+    // children is a render function (item, index) => ReactNode
     const items = [];
-    for (let i = 0; i < (count ?? 0); i++) {
-      items.push(<React.Fragment key={i}>{children(i)}</React.Fragment>);
+    for (let i = 0; i < (data?.length ?? 0); i++) {
+      items.push(<React.Fragment key={i}>{children(data[i], i)}</React.Fragment>);
     }
     return <div data-testid="virtualizer">{items}</div>;
   })

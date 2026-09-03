@@ -55,6 +55,7 @@ import {
 import { applyExternalRenameEdits } from "./monacoExternalEdits";
 import { applyMonacoUserOptions } from "./monacoEditorOptions";
 import { registerMonacoDebugShortcuts } from "./monacoDebugShortcuts";
+import { getNormalizedLineNumberSelection } from "./monacoLineNumberSelection";
 
 export { initializeMonaco } from "./monacoBootstrap";
 
@@ -65,6 +66,10 @@ type Decoration = monacoEditor.editor.IModelDeltaDecoration;
 type EditorDecorationsCollection = monacoEditor.editor.IEditorDecorationsCollection;
 type MarkdownString = monacoEditor.IMarkdownString;
 
+// --- Monaco's MouseTargetType enum is visible in types, but not exported by
+// --- the renderer bundle entry at runtime.
+const MONACO_GUTTER_GLYPH_MARGIN = 2;
+const MONACO_GUTTER_LINE_NUMBERS = 3;
 
 // --- This type represents the API that we can access from outside
 export type EditorApi = DocumentApi & {
@@ -177,6 +182,11 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   // --- True when a compile was requested while one was already in progress
   const pendingCompile = useRef(false);
+
+  // --- Line-number clicks select the right text, but Monaco leaves the active
+  // --- cursor on the next line. Keep the clicked line until mouse-up, then
+  // --- normalize only simple single-line gutter selections.
+  const lineNumberSelectionClick = useRef<number | null>(null);
 
   // --- The name of the resource this editor displays
   const resourceName = document.node?.projectPath;
@@ -553,6 +563,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     const disposables: monacoEditor.IDisposable[] = [];
     disposables.push(
       ed.onMouseDown(handleEditorMouseDown),
+      ed.onMouseUp(handleEditorMouseUp),
       ed.onMouseLeave(handleEditorMouseLeave),
       ed.onMouseMove(handleEditorMouseMove),
       ed.onDidChangeCursorPosition(saveViewState),
@@ -991,7 +1002,23 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
    * @param e
    */
   function handleEditorMouseDown(e: monacoEditor.editor.IEditorMouseEvent): void {
-    if (e.event.leftButton && e.target?.type === 2) {
+    const isPlainLineNumberClick =
+      e.event.leftButton &&
+      !e.event.altKey &&
+      !e.event.ctrlKey &&
+      !e.event.metaKey &&
+      !e.event.shiftKey &&
+      e.event.detail === 1 &&
+      e.target?.type === MONACO_GUTTER_LINE_NUMBERS;
+
+    lineNumberSelectionClick.current = isPlainLineNumberClick
+      ? e.target.position.lineNumber
+      : null;
+
+    if (
+      e.event.leftButton &&
+      e.target?.type === MONACO_GUTTER_GLYPH_MARGIN
+    ) {
       // --- Breakpoint glyph is clicked
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
@@ -1022,6 +1049,30 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
           }
         }
       })();
+    }
+  }
+
+  /**
+   * Keeps the current-line highlight on the line selected through the line-number gutter.
+   * @param e
+   */
+  function handleEditorMouseUp(_e: monacoEditor.editor.IEditorMouseEvent): void {
+    const clickedLineNumber = lineNumberSelectionClick.current;
+    lineNumberSelectionClick.current = null;
+
+    if (!clickedLineNumber || !editor.current) {
+      return;
+    }
+
+    const model = editor.current.getModel();
+    const normalizedSelection = getNormalizedLineNumberSelection(
+      editor.current.getSelection(),
+      clickedLineNumber,
+      model?.getLineCount() ?? 0
+    );
+
+    if (normalizedSelection) {
+      editor.current.setSelection(normalizedSelection, "line-number-selection");
     }
   }
 

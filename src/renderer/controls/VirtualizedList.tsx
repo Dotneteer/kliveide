@@ -66,15 +66,15 @@ export const VirtualizedList = <T,>({
     <ScrollViewer>
       <Virtualizer
         ref={ref}
+        data={safeItems}
         itemSize={itemSize}
         item={revealUnmeasuredItems ? RevealedVirtualItem : undefined}
-        overscan={overscan}
+        bufferSize={overscan}
         onScroll={(offset) => onScroll?.(offset)}
         onScrollEnd={onScrollEnd}
-        count={safeItems.length}
       >
-        {(i) => {
-          const rendered = renderItem?.(i, safeItems[i]);
+        {(item, i) => {
+          const rendered = renderItem?.(i, item);
           return rendered !== undefined && rendered !== null && rendered !== false ? (
             <>{rendered}</>
           ) : (
