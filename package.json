@@ -97,7 +97,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-virtualized-auto-sizer": "^1.0.24",
-    "sass": "^1.75.0",
+    "sass": "^1.103.1",
     "sharp": "^0.35.3",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
