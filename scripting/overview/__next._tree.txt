@@ -7,4 +7,4 @@
 :HL["/kliveide/images/scripting/script-output-pane.png","image"]
 :HL["/kliveide/images/scripting/script-output-progress.png","image"]
 :HL["/kliveide/images/scripting/scripting-history.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"scripting/overview","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"YPf86E6rDkYOVtKgdIZaO"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"scripting/overview","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"8gc0VWirpyWEXa40vBwnW"}
