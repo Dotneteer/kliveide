@@ -4,4 +4,4 @@
 :HL["/kliveide/preview/update-nextra/images/working-with-ide/sysvar-view.png","image"]
 :HL["/kliveide/preview/update-nextra/images/working-with-ide/sysvar-explain.png","image"]
 :HL["/kliveide/preview/update-nextra/images/working-with-ide/sysvar-flag.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"working-with-ide/system-vars","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"ZNVZ3tZPSdOv-DSOA95DD"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"working-with-ide/system-vars","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"BY_CNoSSo1S2Kb5xeKLzu"}
