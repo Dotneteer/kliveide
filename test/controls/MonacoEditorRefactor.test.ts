@@ -91,6 +91,57 @@ describe("Monaco globals", () => {
 });
 
 describe("Monaco editor adapters", () => {
+  it("keeps a line-number selection active on the clicked line", async () => {
+    const { getNormalizedLineNumberSelection } = await import(
+      "@renderer/features/editor/monaco/monacoLineNumberSelection"
+    );
+
+    expect(
+      getNormalizedLineNumberSelection(
+        {
+          startLineNumber: 2,
+          startColumn: 1,
+          endLineNumber: 3,
+          endColumn: 1,
+          selectionStartLineNumber: 2,
+          selectionStartColumn: 1,
+          positionLineNumber: 3,
+          positionColumn: 1
+        },
+        2,
+        5
+      )
+    ).toEqual({
+      selectionStartLineNumber: 3,
+      selectionStartColumn: 1,
+      positionLineNumber: 2,
+      positionColumn: 1
+    });
+  });
+
+  it("leaves non-matching line-number selections unchanged", async () => {
+    const { getNormalizedLineNumberSelection } = await import(
+      "@renderer/features/editor/monaco/monacoLineNumberSelection"
+    );
+
+    expect(
+      getNormalizedLineNumberSelection(
+        {
+          startLineNumber: 2,
+          startColumn: 1,
+          endLineNumber: 4,
+          endColumn: 1,
+          selectionStartLineNumber: 2,
+          selectionStartColumn: 1,
+          positionLineNumber: 4,
+          positionColumn: 1
+        },
+        2,
+        5
+      )
+    ).toBeNull();
+  });
+
   it("applies user option changes in one editor update", async () => {
     const { applyMonacoUserOptions } = await import(
       "@renderer/features/editor/monaco/monacoEditorOptions"

@@ -55,20 +55,20 @@
               "type": "CodeEditor",
               "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
               "position": {
-                "line": 10,
-                "column": 1
+                "line": 6,
+                "column": 7
               },
               "viewState": {
                 "cursorState": [
                   {
                     "inSelectionMode": false,
                     "selectionStart": {
-                      "lineNumber": 10,
-                      "column": 1
+                      "lineNumber": 6,
+                      "column": 7
                     },
                     "position": {
-                      "lineNumber": 10,
-                      "column": 1
+                      "lineNumber": 6,
+                      "column": 7
                     }
                   }
                 ],
