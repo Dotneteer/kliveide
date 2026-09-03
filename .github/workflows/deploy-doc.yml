@@ -1,11 +1,20 @@
-# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+# Builds the Nextra documentation site and publishes it to GitHub Pages.
+#
+# The docs site is an isolated npm package under docs/ with its own lockfile, so it
+# needs a second install step. See .plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md.
 
 name: GitHub Pages deploy
 
 on:
   push:
     branches: [master]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-production
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -16,16 +25,30 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for all branches and tags
+
       - name: Use Node.js 22.x
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            docs/package-lock.json
 
-      - name: Installing my packages
+      - name: Install root packages
         run: npm ci
 
-      - name: Build my App
-        run: npm run doc:build && touch docs/out/.nojekyll
+      - name: Install docs packages
+        run: npm run doc:install
+
+      - name: Build the docs site
+        run: npm run doc:build
+
+      - name: Verify the build against the golden snapshots
+        run: npm run doc:check
+
+      - name: Disable Jekyll processing
+        run: touch docs/out/.nojekyll
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.6.4
@@ -34,3 +57,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action will deploy to
           FOLDER: docs/out # The folder the action will deploy to
+          # Never let a production deploy wipe an in-flight branch preview
+          # published by deploy-doc-preview.yml.
+          clean-exclude: |
+            preview/**

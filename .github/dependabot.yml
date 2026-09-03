@@ -1,0 +1,25 @@
+# The Electron application (root) and the documentation site (docs/) are separate
+# npm packages with separate lockfiles and deliberately different React/Next.js
+# versions. They get separate update streams so a docs-only bump can never drag the
+# Electron renderer along with it.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - documentation
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

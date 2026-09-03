@@ -20,30 +20,31 @@ interface ClickableImageProps {
   style?: React.CSSProperties
 }
 
-// Helper function to handle base path for images
+/**
+ * Prefixes an image path with the site's base path.
+ *
+ * NEXT_PUBLIC_BASE_PATH is inlined into the client bundle by Next.js, so the same
+ * value applies during static generation and in the browser. It must match the
+ * `basePath` in next.config.mjs.
+ */
 const getAdjustedPath = (path: string): string => {
   // Early return if the path is an absolute URL or data URL
   if (path.startsWith('http') || path.startsWith('data:')) {
     return path
   }
 
-  // Try to detect if we're in a production environment
-  // This works in both browser and during static generation
-  const isProduction = process.env.NODE_ENV === 'production'
-  
-  // Use the basePath from Next.js config
-  const basePath = isProduction ? '/kliveide' : ''
-  
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
   // If the path already starts with the base path, return it as is
-  if (path.startsWith(basePath)) {
+  if (basePath && path.startsWith(basePath)) {
     return path
   }
-  
+
   // If path starts with '/', make sure it's properly combined with base path
   if (path.startsWith('/')) {
     return `${basePath}${path}`
   }
-  
+
   // Otherwise, ensure there's a leading slash
   return `${basePath}/${path}`
 }

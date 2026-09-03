@@ -1,0 +1,13 @@
+diff --git a/node_modules/nextra-theme-docs/dist/schemas.js b/node_modules/nextra-theme-docs/dist/schemas.js
+index 060d0b9..f17054e 100644
+--- a/node_modules/nextra-theme-docs/dist/schemas.js
++++ b/node_modules/nextra-theme-docs/dist/schemas.js
+@@ -65,7 +65,7 @@ const LayoutPropsSchema = z.strictObject({
+   banner: reactNode.optional().meta({
+     description: "Rendered [`<Banner>` component](/docs/built-ins/banner). E.g. `<Banner {...bannerProps} />`"
+   }),
+-  children: reactNode,
++  children: reactNode.optional(),
+   copyPageButton: z.boolean().default(true).meta({
+     description: "Hide/show copy page content button."
+   }),
