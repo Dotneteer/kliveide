@@ -1,0 +1,67 @@
+# Publishes a branch preview of the documentation site.
+#
+# Why a subfolder of gh-pages rather than a second branch: GitHub Pages for this
+# repo is a legacy build served from the root of `gh-pages`
+# (`gh api repos/Dotneteer/kliveide/pages`), so there is no second branch a preview
+# could be pointed at. The preview therefore lives at
+# https://dotneteer.github.io/kliveide/preview/<branch>/ and the production deploy
+# in deploy-doc.yml carries `clean-exclude: preview/**` so it can never wipe it.
+#
+# See .plans/NEXTRA_4_NEXT_16_DOCS_MIGRATION_PLAN.md, Phase 3.
+
+name: GitHub Pages preview deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dotneteer/update-nextra]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      PREVIEW_PATH: preview/update-nextra
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            docs/package-lock.json
+
+      - name: Install root packages
+        run: npm ci
+
+      - name: Install docs packages
+        run: npm run doc:install
+
+      - name: Build the docs site for the preview path
+        run: npm run doc:build
+        env:
+          NEXT_PUBLIC_BASE_PATH: /kliveide/${{ env.PREVIEW_PATH }}
+
+      - name: Verify the build against the golden snapshot
+        run: npm run doc:check:routes
+
+      - name: Disable Jekyll processing
+        run: touch docs/out/.nojekyll
+
+      - name: Upload the built site
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-preview
+          path: docs/out
+          retention-days: 7
