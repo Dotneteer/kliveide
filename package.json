@@ -54,7 +54,9 @@
     "test": "npm run test:unit",
     "doc:dev": "cd docs && next dev",
     "doc:build": "(rm -f _experiments/testprojects/next-examples.zip && cd _experiments/testprojects/next && zip -r ../next-examples.zip book && cp ../next-examples.zip ../../../docs/public/) && (cd docs && next build)",
-    "bootstrap:ci": "npm ci"
+    "bootstrap:ci": "npm ci",
+    "check:lockfile": "rm -rf node_modules && npm ci",
+    "fix:lockfile": "rm -rf node_modules && npm install && git diff --stat package-lock.json"
   },
   "engines": {
     "node": "^14.18.0 || >=16.0.0"
