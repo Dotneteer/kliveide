@@ -96,7 +96,7 @@
     "prettier": "^3.9.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-virtualized-auto-sizer": "^1.0.24",
+    "react-virtualized-auto-sizer": "^2.0.3",
     "sass": "^1.103.1",
     "sharp": "^0.35.3",
     "ts-node": "^10.9.2",
