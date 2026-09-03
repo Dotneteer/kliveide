@@ -6,4 +6,4 @@
 :HL["/kliveide/preview/update-nextra/images/working-with-ide/bp-not-resolved.png","image"]
 :HL["/kliveide/preview/update-nextra/images/working-with-ide/bp-resolved.png","image"]
 :HL["/kliveide/preview/update-nextra/images/working-with-ide/bp-types.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"working-with-ide/breakpoints","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"shzMA9J067AW82eVsNw9f"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4112,"slots":{"children":{"name":"mdxPath","param":{"type":"oc","key":"working-with-ide/breakpoints","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"ZNVZ3tZPSdOv-DSOA95DD"}
