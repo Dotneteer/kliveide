@@ -16,13 +16,35 @@ As Klive IDE does not know where to find the SjasmPlus compiler on your machine,
 
 ## Setting up SJASMPLUS
 
-Visit the GitHub page of [SjasmPlus](https://github.com/z00m128/sjasmplus) for details about this excellent Z80 assembler. You can read information about installing it [here](https://github.com/z00m128/sjasmplus/blob/master/INSTALL.md). Note the installation folder; you will need it to set up the integration with Klive.
+Visit the GitHub page of [SjasmPlus](https://github.com/z00m128/sjasmplus) for details about this excellent Z80 assembler.
 
-The IDE provides a command, `sjasmp-reset` (or shorter, `sjasmpr`), to connect Klive with SjasmPlus. You can issue this command from the Command window:
+The IDE provides a graphical setup dialog from the `IDE > Integrations > SJASMPLUS...` menu item. The dialog can:
+
+- Detect an existing `sjasmplus` executable from your `PATH`.
+- On Windows, check the latest 20 official SjasmPlus GitHub releases and suggest a compatible stable download.
+- Download a selected release into a versioned folder under the folder you choose.
+- Use an existing local installation when you select its executable file.
+- Validate the selected executable by compiling a tiny Z80 program before the setting is saved.
+
+Choose `Local executable` when SJASMPLUS is already on your machine. Choose `Online release` when you want Klive to download and prepare a release for you.
+
+<Callout type="warning" emoji="💡">
+SjasmPlus publishes **Windows binaries and source archives only**. On macOS and Linux, `Online release` therefore shows build instructions and a link to the SjasmPlus repository instead of a download list: build SjasmPlus from source (or install it from your package manager), then set it up with `Local executable`.
+</Callout>
+
+By default, Klive saves the integration in user settings. When a Klive project is open, you can choose project settings instead to override the user-level SJASMPLUS path for that project.
+
+<Callout type="info" emoji="💡">
+The release dialog hides prereleases by default. Enable the prerelease option only when you explicitly want to test a non-stable build.
+</Callout>
+
+## Command-line setup
+
+The IDE also provides the `sjasmp-reset` command (or shorter, `sjasmpr`) to connect Klive with SjasmPlus from the Command window:
 
 <ClickableImage src="/images/working-with-ide/sjasmp-reset.png" width={770} />
 
-The command expects a single parameter: the path of the SjasmPlus installation folder. When Klive invokes the assembler, the SjasmPlus executable name is added to this path. 
+The command expects a single parameter: the path of the SjasmPlus installation folder. When Klive invokes the assembler, the SjasmPlus executable name is added to this path.
 
 <Callout type="info" emoji="💡">
 Klive stores the SjasmPlus settings in the `Klive.setting` file. If you want to change this path for a particular project (perhaps you want to test with another SjasmPlus version), use the `-p` switch to save this setting into the currently open project.

@@ -67,6 +67,23 @@ import { StubRecordingBackend } from "./recording/StubRecordingBackend";
 import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 import { resolveRecordingPath } from "./recording/outputPath";
 import type { RecordingFormat } from "@common/state/AppState";
+import type {
+  SjasmplusIntegrationApplyRequest,
+  SjasmplusReleaseDownloadRequest,
+  SjasmplusReleaseListRequest
+} from "@common/messaging/SjasmplusIntegration";
+import {
+  downloadSjasmplusRelease,
+  getSjasmplusPathSuggestions,
+  listSjasmplusReleases,
+  probeSjasmplusPath,
+  validateSjasmplusExecutable
+} from "./sjasmp-integration/sjasmplus-integration-service";
+import {
+  SJASMP_EXECUTABLE_PATH,
+  SJASMP_INSTALL_FOLDER,
+  SJASMP_VERSION
+} from "./sjasmp-integration/sjasmp-config";
 
 const compilerRegistry = createCompilerRegistry();
 
@@ -506,6 +523,11 @@ class MainMessageProcessor {
       } else {
         _.set(appSettings.userSettings, key, value);
       }
+      // --- Publish the change to the renderers before saving. Without this the file
+      // --- on disk and the running session disagree until the next start: the `set`
+      // --- command (and `sjasmp-reset`, which builds on it) would write a setting
+      // --- that the IDE keeps reporting as unset.
+      this.dispatch(saveUserSettingAction({ ...appSettings.userSettings }));
       saveAppSettings();
     }
   }
@@ -554,6 +576,70 @@ class MainMessageProcessor {
         saveAppSettings();
       }
     }
+  }
+
+  probeSjasmplusPath(itemPath: string) {
+    return probeSjasmplusPath(
+      itemPath,
+      mainStore.getState().isWindows ?? (process.platform === "win32")
+    );
+  }
+
+  getSjasmplusPathSuggestions() {
+    return getSjasmplusPathSuggestions(
+      process.env.PATH ?? "",
+      mainStore.getState().isWindows ?? (process.platform === "win32")
+    );
+  }
+
+  async listSjasmplusReleases(request?: SjasmplusReleaseListRequest) {
+    return await listSjasmplusReleases(request);
+  }
+
+  async downloadSjasmplusRelease(request: SjasmplusReleaseDownloadRequest) {
+    return await downloadSjasmplusRelease(request, {
+      isWindows: mainStore.getState().isWindows ?? (process.platform === "win32")
+    });
+  }
+
+  async validateSjasmplusExecutable(executablePath: string) {
+    return await validateSjasmplusExecutable(executablePath);
+  }
+
+  async applySjasmplusIntegration(request: SjasmplusIntegrationApplyRequest) {
+    if (!request || typeof request !== "object") {
+      throw new Error("Invalid SJASMPLUS integration request.");
+    }
+    const { scope, installFolder, executablePath, version } = request;
+    if (scope !== "user" && scope !== "project") {
+      throw new Error("Invalid SJASMPLUS integration scope.");
+    }
+    if (!installFolder || !executablePath) {
+      throw new Error("SJASMPLUS install folder and executable path are required.");
+    }
+
+    if (scope === "project" && !mainStore.getState().project?.isKliveProject) {
+      throw new Error("You need a Klive project loaded to save SJASMPLUS project settings.");
+    }
+
+    if (scope === "user") {
+      appSettings.userSettings ??= {};
+      _.set(appSettings.userSettings, SJASMP_INSTALL_FOLDER, installFolder);
+      _.set(appSettings.userSettings, SJASMP_EXECUTABLE_PATH, executablePath);
+      if (version) {
+        _.set(appSettings.userSettings, SJASMP_VERSION, version);
+      } else {
+        _.unset(appSettings.userSettings, SJASMP_VERSION);
+      }
+      this.dispatch(saveUserSettingAction({ ...appSettings.userSettings }));
+      saveAppSettings();
+      return;
+    }
+
+    this.dispatch(applyProjectSettingAction(SJASMP_INSTALL_FOLDER, installFolder));
+    this.dispatch(applyProjectSettingAction(SJASMP_EXECUTABLE_PATH, executablePath));
+    this.dispatch(applyProjectSettingAction(SJASMP_VERSION, version));
+    await saveKliveProject();
   }
 
   /**

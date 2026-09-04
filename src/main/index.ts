@@ -312,6 +312,12 @@ async function createAppWindows() {
       // --- Store all global settings
       mainStore.dispatch(initGlobalSettingsAction(appSettings.globalSettings ?? {}));
 
+      // --- Re-send the saved user settings. They are dispatched once before the windows
+      // --- exist, and that forward reaches no renderer, so the IDE would start with an
+      // --- empty `userSettings` and report integrations (SJASMPLUS, PASTA/80, ...) as
+      // --- unconfigured until they were set up again.
+      mainStore.dispatch(saveUserSettingAction(appSettings.userSettings ?? {}));
+
       // --- Set saved traits
       if (appSettings.startScreenDisplayed) {
         mainStore.dispatch(startScreenDisplayedAction());
