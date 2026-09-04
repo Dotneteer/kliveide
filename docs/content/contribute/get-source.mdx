@@ -9,6 +9,7 @@ If you want to contribute to Klive, you should get the source code with these st
 2. We recommend using Visual Studio Code. Nonetheless, you can work with your preferred development tool.
 3. Fork the Klive GitHub repository (https://github.com/Dotneteer/kliveide) and clone your fork with `git clone`.
 4. Execute `npm install`.
-5. After these steps, Klive should start with `npm run dev`.
+5. Install the WASM toolchain and build the emulator cores. The compiled `.wasm` files are build outputs and are not part of the repository, so this step is required on every fresh clone — see [Install the WASM toolchain](./wasm-toolchain), then run `npm run build:all-wasm`.
+6. After these steps, Klive should start with `npm run dev`.
 
 When your contribution is ready to submit, create a GitHub Pull Request from your fork's branch to Klive's `master` branch. The team will review it and decide how to merge it.

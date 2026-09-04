@@ -379,8 +379,21 @@ Full documentation: [dotneteer.github.io/kliveide](https://dotneteer.github.io/k
 git clone https://github.com/Dotneteer/kliveide.git
 cd kliveide
 npm install
+
+# Build the emulator cores (required on a fresh clone - see the note below)
+npm run build:all-wasm
+
 npm run dev
 ```
+
+> **Prerequisite:** the emulator cores are written in C and compiled to WebAssembly.
+> The resulting `.wasm` files are build outputs and are **not** committed to the
+> repository, so `npm run build:all-wasm` is required on every fresh clone. It needs
+> `clang` with the `wasm32` target plus `wasm-ld` (Emscripten is *not* required).
+> Skipping it makes Klive start with a `WebAssembly.compile(): expected magic word`
+> error in the emulator window. See
+> [Install the WASM toolchain](https://dotneteer.github.io/kliveide/contribute/wasm-toolchain)
+> for per-platform install instructions.
 
 ### Testing
 
