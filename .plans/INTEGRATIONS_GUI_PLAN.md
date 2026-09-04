@@ -1,6 +1,6 @@
 # SJASMPLUS Integration GUI Plan
 
-**Status:** Draft plan, updated with accepted decisions
+**Status:** Complete
 **Created:** 2026-09-03
 **Updated:** 2026-09-03
 **Scope:** Add GUI-driven SJASMPLUS integration setup under the IDE menu. ZX BASIC, PASTA/80, and other integrations are explicitly out of scope for this plan.
@@ -17,7 +17,7 @@ The goal is to add:
 - A dedicated SJASMPLUS integration dialog.
 - Online release discovery from the official SJASMPLUS GitHub releases.
 - Guided download and extraction of a compatible release.
-- Offline setup by selecting an existing install folder or executable file.
+- Offline setup by selecting an existing executable file.
 - Executable validation by compiling a small Z80 smoke-test program.
 - User-level or project-level integration, defaulting to user settings.
 - Clear status showing the effective configured path and whether it comes from user or project settings.
@@ -115,20 +115,22 @@ Suggested sections:
 
 2. Setup source
    - `Download a release` radio option.
-   - `Use existing folder or executable` radio option.
+   - `Use existing executable` radio option.
    - `Detected on PATH` suggestions if any are found.
+   - Show only the controls for the selected setup source.
 
 3. Online release picker
    - Fetch releases from `https://api.github.com/repos/z00m128/sjasmplus/releases`.
    - Suggest the newest non-prerelease release with an asset matching the current OS/architecture.
+   - Limit the visible release selector to the latest 20 releases.
    - Let advanced users show prereleases.
    - Let advanced users choose another compatible release or raw asset if asset naming is ambiguous.
+   - Let the user select the parent folder for downloaded material before download.
    - Provide retry, offline, and no-compatible-asset states.
 
 4. Local selection
-   - Folder picker: user selects a folder containing `sjasmplus` or `sjasmplus.exe`.
    - File picker: user selects the executable directly.
-   - Normalize either choice into both `installFolder` and `executablePath`.
+   - Normalize the choice into both `installFolder` and `executablePath`.
 
 5. Scope
    - Segmented control or radio buttons:
@@ -351,7 +353,7 @@ Dialog layout guidance:
 - Follow `.docs/dialog-pattern.md`.
 - Use the existing `Modal` component.
 - Use stable dimensions and wrap long filesystem paths safely.
-- Use familiar controls: radio/segmented scope selector, buttons for folder/file picking, dropdown for release choice, progress state for download/validation.
+- Use familiar controls: radio/segmented scope selector, buttons for file and download-folder picking, dropdown for release choice, progress state for download/validation.
 - Keep the dialog usable without internet by making local selection and PATH suggestions first-class paths, not hidden fallbacks behind release loading.
 
 ---
@@ -420,51 +422,82 @@ npx electron-vite build --config build/electron.vite.config.ts
 
 ### Slice 1: Menu and Dialog Shell
 
-- Add `SJASMPLUS_INTEGRATION_DIALOG`.
-- Add `IDE > Integrations > SJASMPLUS...`.
-- Add `SjasmplusIntegrationDialog`.
-- Show current effective settings and scope.
-- Add registry/menu smoke tests.
+- [x] Add `SJASMPLUS_INTEGRATION_DIALOG`.
+- [x] Add `IDE > Integrations > SJASMPLUS...`.
+- [x] Add `SjasmplusIntegrationDialog`.
+- [x] Show current effective settings and scope.
+- [x] Add registry/menu smoke tests.
 
 ### Slice 2: Local Path Setup
 
-- Add `SJASMP_EXECUTABLE_PATH` and `SJASMP_VERSION`.
-- Add executable resolver.
-- Update SJASMPLUS compiler command resolution.
-- Add folder/file selection.
-- Add validation probe.
-- Add `Test again`.
-- Save user/project settings after successful validation.
-- Keep release download out of this slice.
+- [x] Add `SJASMP_EXECUTABLE_PATH` and `SJASMP_VERSION`.
+- [x] Add executable resolver.
+- [x] Update SJASMPLUS compiler command resolution.
+- [x] Add executable-file selection.
+- [x] Add validation probe.
+- [x] Add `Test again`.
+- [x] Save user/project settings after successful validation.
+- [x] Keep release download out of this slice.
 
 This removes the largest pain immediately, even offline.
 
 ### Slice 3: PATH Suggestions
 
-- Detect `sjasmplus` from `PATH`.
-- Probe suggestions before presenting them.
-- Let the user choose a suggestion and validate again before saving.
+- [x] Detect `sjasmplus` from `PATH`.
+- [x] Probe suggestions before presenting them.
+- [x] Let the user choose a suggestion and validate again before saving.
 
 ### Slice 4: Online Release Discovery
 
-- Add release-list API.
-- Add platform/architecture asset filtering.
-- Add prerelease toggle.
-- Add UI states for loading/error/no-compatible-assets.
-- Show suggested release and advanced asset chooser.
+- [x] Add release-list API.
+- [x] Add platform/architecture asset filtering.
+- [x] Add prerelease toggle.
+- [x] Add UI states for loading/error/no-compatible-assets.
+- [x] Show suggested release and advanced asset chooser.
 
 ### Slice 5: Download And Install
 
-- Add streaming download.
-- Add extraction/direct-executable install.
-- Install into versioned folders.
-- Add progress reporting if practical.
-- Probe downloaded executable.
-- Save settings after successful validation.
+- [x] Add streaming download.
+- [x] Add extraction/direct-executable install.
+- [x] Install into versioned folders.
+- [x] Add progress reporting if practical.
+- [x] Probe downloaded executable.
+- [x] Save settings after successful validation.
 
 ### Slice 6: Polish And Documentation
 
-- Add docs page/update existing docs for SJASMPLUS GUI integration.
-- Mention that `sjasmp-reset` remains available.
-- Consider adding an `Open SJASMPLUS Integration` interactive command if useful.
+- [x] Add docs page/update existing docs for SJASMPLUS GUI integration.
+- [x] Mention that `sjasmp-reset` remains available.
+- [x] Consider adding an `Open SJASMPLUS Integration` interactive command if useful.
 
+---
+
+## 15. Completion Record
+
+The SJASMPLUS integration GUI has been implemented end-to-end:
+
+- `IDE > Integrations > SJASMPLUS...` opens the SJASMPLUS integration dialog.
+- Existing settings are shown with effective user/project scope.
+- Existing local installations can be selected by executable file.
+- `PATH` candidates are detected and offered as suggestions.
+- Official GitHub releases are listed, with compatible stable assets suggested by default and prereleases hidden behind an option.
+- Selected release assets can be downloaded and installed into versioned folders.
+- Direct executable, `.zip`, `.tar.gz`, and `.tgz` release assets are supported.
+- Downloaded or selected executables must pass the smoke compile validation before settings are saved.
+- User settings remain the default save target; project settings are available only when a Klive project is open.
+- `sjasmp.executablePath` and `sjasmp.version` are supported while preserving `sjasmp.root` compatibility.
+- The existing `sjasmp-reset` command remains available and documented.
+- The existing hidden `display-dialog` command can open the dialog through `sjasmplusIntegration`.
+
+Final verification:
+
+```sh
+npm test -- --project jsdom test/controls/AppShellStartup.test.tsx test/controls/SjasmplusIntegrationDialog.test.tsx --project node test/main/ide-integrations-menu.test.ts test/main/sjasmplus-resolver.test.ts test/main/sjasmplus-integration-service.test.ts test/commands/DialogCommands.test.ts
+npm run build:check
+npm run doc:build
+npm run doc:check
+npm run lint:renderer
+npx electron-vite build --config build/electron.vite.config.ts
+```
+
+All verification commands passed. `npm run lint:renderer` still reports the existing warning-only renderer lint baseline, and the Electron/Vite build still reports the existing Rollup annotation and large-chunk warnings.

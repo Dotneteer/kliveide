@@ -7,14 +7,14 @@ import {
   ErrorFilterDescriptor,
   OptionResult
 } from "@main/cli-integration/CliRunner";
-import { SJASMP_INSTALL_FOLDER } from "@main/sjasmp-integration/sjasmp-config";
+import { resolveSjasmplusExecutable } from "@main/sjasmp-integration/sjasmplus-resolver";
 import { AppState } from "@common/state/AppState";
 
 export const SJASM_OUTPUT_FILE = "_output.bin";
 export const SJASM_LIST_FILE = "_output.txt";
 export const SJASM_SLD_FILE = "_output.sld.txt";
 
-const SjasmOptions: CmdLineOptionSet = {
+export const SjasmOptions: CmdLineOptionSet = {
   help: {
     optionName: "h",
     description: "Help information",
@@ -54,7 +54,9 @@ const SjasmOptions: CmdLineOptionSet = {
     type: "string"
   },
   inc: {
-    optionName: "-i",
+    // --- Renders as "--inc=<path>". The short forms ("-i <path>", "-I <path>") take
+    // --- the path as a separate argument, which this option renderer cannot emit.
+    optionName: "-inc",
     description: "Include path",
     type: "string"
   },
@@ -183,7 +185,7 @@ class SjasmCliManager extends CliManager {
   private getRootPath(): string {
     if (!this._rootPath) {
       const settingsReader = createSettingsReader(this.state);
-      this._rootPath = settingsReader.readSetting(SJASMP_INSTALL_FOLDER);
+      this._rootPath = resolveSjasmplusExecutable(settingsReader);
     }
     if (!this._rootPath) {
       throw new Error(
@@ -197,7 +199,7 @@ class SjasmCliManager extends CliManager {
    * Prepares the command name
    */
   protected prepareCommand(): string {
-    return `${this.getRootPath()}/sjasmplus`;
+    return this.getRootPath();
   }
 
   /**

@@ -16,7 +16,8 @@ import {
   MI_SPECTRUM_48,
   MI_ZXNEXT
 } from "@common/machines/constants";
-import { SJASMP_INSTALL_FOLDER, SJASMP_KEEP_TEMP_FILES } from "./sjasmp-config";
+import { SJASMP_KEEP_TEMP_FILES } from "./sjasmp-config";
+import { resolveSjasmplusExecutable } from "./sjasmplus-resolver";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import {
   createSjasmRunner,
@@ -67,8 +68,8 @@ export class SjasmPCompiler implements IKliveCompiler {
     const settingsReader = createSettingsReader(this.state);
     try {
       // --- Obtain configuration info for SjasmPlus
-      const execPath = settingsReader.readSetting(SJASMP_INSTALL_FOLDER)?.toString();
-      if (!execPath || execPath.trim() === "") {
+      const execPath = resolveSjasmplusExecutable(settingsReader);
+      if (!execPath) {
         throw new Error("SjasmPlus executable path is not set, cannot start the compiler.");
       }
 

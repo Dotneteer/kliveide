@@ -51,6 +51,7 @@ import {
   saveAppSettings,
   setSettingValue
 } from "./settings-utils";
+import { createIdeIntegrationsMenu } from "./ide-integrations-menu";
 import {
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
@@ -1013,6 +1014,8 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       },
       { type: "separator" },
       ...specificIdeMenus,
+      { type: "separator" },
+      createIdeIntegrationsMenu((dialogId) => getIdeApi().displayDialog(dialogId)),
       { type: "separator" },
       {
         type: "submenu",

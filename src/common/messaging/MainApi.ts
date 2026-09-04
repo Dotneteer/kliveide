@@ -6,6 +6,14 @@ import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { AppSettings } from "@main/settings";
+import type {
+  SjasmplusIntegrationApplyRequest,
+  SjasmplusProbeResult,
+  SjasmplusReleaseDownloadRequest,
+  SjasmplusReleaseDownloadResult,
+  SjasmplusReleaseListRequest,
+  SjasmplusReleaseListResult
+} from "./SjasmplusIntegration";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -251,6 +259,57 @@ class MainApiImpl {
    * @param _copy True to copy, false to merge.
    */
   async moveSettings(_pull: boolean, _copy: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Probes a folder or executable path as a possible SJASMPLUS installation.
+   * @param _path Folder or executable path to probe.
+   */
+  async probeSjasmplusPath(_path: string): Promise<SjasmplusProbeResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Returns SJASMPLUS executable candidates detected from the current PATH.
+   */
+  async getSjasmplusPathSuggestions(): Promise<SjasmplusProbeResult[]> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Lists SJASMPLUS GitHub releases and marks compatible assets for the current platform.
+   * @param _request Release list options.
+   */
+  async listSjasmplusReleases(
+    _request?: SjasmplusReleaseListRequest
+  ): Promise<SjasmplusReleaseListResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Downloads and prepares a selected SJASMPLUS release asset under a destination folder.
+   * @param _request Selected release asset and destination folder.
+   */
+  async downloadSjasmplusRelease(
+    _request: SjasmplusReleaseDownloadRequest
+  ): Promise<SjasmplusReleaseDownloadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Validates an SJASMPLUS executable by compiling a tiny Z80 program.
+   * @param _executablePath Executable path to validate.
+   */
+  async validateSjasmplusExecutable(_executablePath: string): Promise<SjasmplusProbeResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Applies a validated SJASMPLUS integration to user or project settings.
+   * @param _request Validated integration settings.
+   */
+  async applySjasmplusIntegration(_request: SjasmplusIntegrationApplyRequest): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -524,6 +583,7 @@ const UNBOUNDED_MAIN_METHODS = [
   "closeScript",
   // --- Bulk media work whose duration scales with file size
   "copyToSdCard",
+  "downloadSjasmplusRelease",
   "startScreenRecording",
   "stopScreenRecording"
 ] as const;
