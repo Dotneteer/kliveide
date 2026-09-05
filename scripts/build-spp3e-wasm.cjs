@@ -1,5 +1,5 @@
 const { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } = require("node:fs");
-const { dirname, relative, resolve } = require("node:path");
+const { dirname, relative, resolve, sep } = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const root = resolve(__dirname, "..");
@@ -321,6 +321,12 @@ function buildAllSpP3eWasm(options = {}) {
 
 if (require.main === module) buildAllSpP3eWasm();
 
+// --- electron-builder resource paths and package.json config use forward slashes on
+// --- every platform, so never leak Windows backslashes from path.relative().
+function toPosixRelative(from, to) {
+  return relative(from, to).split(sep).join("/");
+}
+
 module.exports = {
   buildSpP3eWasm,
   buildAllSpP3eWasm,
@@ -332,7 +338,7 @@ module.exports = {
   productionExports,
   source,
   wasmDistDirectory,
-  outputRelative: relative(root, output),
-  productionOutputRelative: relative(root, productionOutput),
-  wasmDistDirectoryRelative: relative(root, wasmDistDirectory)
+  outputRelative: toPosixRelative(root, output),
+  productionOutputRelative: toPosixRelative(root, productionOutput),
+  wasmDistDirectoryRelative: toPosixRelative(root, wasmDistDirectory)
 };

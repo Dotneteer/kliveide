@@ -100,10 +100,7 @@ if (__WIN32__) app.setAppUserModelId(app.getName());
 // --- Electron otherwise reports its runtime version when launched from the built entry point.
 app.setVersion(KLIVE_APP_VERSION);
 
-// --- E2E tests deliberately launch an isolated app instance alongside a developer's Klive process.
-// --- Production and manual launches retain the normal single-instance protection.
-const isE2eRun = process.env.KLIVE_E2E === "1";
-if (!isE2eRun && !app.requestSingleInstanceLock()) {
+if (!app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
 }

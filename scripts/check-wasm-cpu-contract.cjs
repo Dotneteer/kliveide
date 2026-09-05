@@ -1,5 +1,5 @@
 const { existsSync, readFileSync, statSync } = require("node:fs");
-const { relative, resolve } = require("node:path");
+const { relative, resolve, sep } = require("node:path");
 
 const root = resolve(__dirname, "..");
 const sharedCpuSource = resolve(root, "src/emu/z80/wasm/z80.c");
@@ -89,8 +89,9 @@ const spectrumWasmCpuContract = [
   }
 ];
 
+// --- Contract paths are reported and compared as forward-slash paths on every platform.
 function relativeToRoot(path) {
-  return relative(root, path);
+  return relative(root, path).split(sep).join("/");
 }
 
 function readText(path) {

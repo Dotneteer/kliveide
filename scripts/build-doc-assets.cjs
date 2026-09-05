@@ -21,6 +21,39 @@ const bookDir = join(sourceDir, "book");
 const archive = join(repoRoot, "_experiments", "testprojects", "next-examples.zip");
 const published = join(repoRoot, "docs", "public", "next-examples.zip");
 
+// An external archiver is used rather than a Node library so the archive stays
+// byte-comparable with the one produced by the previous shell pipeline.
+//
+// `zip` covers macOS, Linux and GitHub's ubuntu-latest runners, but Windows ships
+// no such command. There, the bsdtar that comes with the OS writes the same zip
+// format — forward-slash entry names included — so it stands in. It is addressed
+// by its full path: Git for Windows puts a GNU tar (which cannot write zip) ahead
+// of it on PATH.
+function getArchivers() {
+  const zip = { command: "zip", args: ["-rq", archive, "book"] };
+  const bsdTar = {
+    command: join(process.env.SystemRoot || "C:\\Windows", "System32", "tar.exe"),
+    args: ["-c", "--format", "zip", "-f", archive, "book"]
+  };
+  return process.platform === "win32" ? [bsdTar, zip] : [zip];
+}
+
+function createArchive() {
+  const failures = [];
+  for (const { command, args } of getArchivers()) {
+    try {
+      execFileSync(command, args, { cwd: sourceDir, stdio: "inherit" });
+      return;
+    } catch (error) {
+      failures.push(`  ${command}: ${error.message}`);
+    }
+  }
+
+  throw new Error(
+    `Failed to create ${archive}. No usable archiver was found:\n${failures.join("\n")}`
+  );
+}
+
 function buildDocAssets() {
   if (!existsSync(bookDir) || !statSync(bookDir).isDirectory()) {
     throw new Error(
@@ -30,17 +63,7 @@ function buildDocAssets() {
   }
 
   rmSync(archive, { force: true });
-
-  // `zip` is used rather than a Node library so the archive stays byte-comparable
-  // with the one produced by the previous shell pipeline. Present on macOS, Linux
-  // and GitHub's ubuntu-latest runners.
-  try {
-    execFileSync("zip", ["-rq", archive, "book"], { cwd: sourceDir, stdio: "inherit" });
-  } catch (error) {
-    throw new Error(
-      `Failed to create ${archive}. Is the 'zip' command available on PATH?\n${error.message}`
-    );
-  }
+  createArchive();
 
   mkdirSync(dirname(published), { recursive: true });
   copyFileSync(archive, published);

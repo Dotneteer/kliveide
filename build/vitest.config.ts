@@ -8,9 +8,10 @@ export default defineConfig({
     root: resolve(__dirname, ".."),
     /**
      * By default, vitest search test files in all packages.
-     * For e2e tests have sense search only is project root tests folder.
-     * .test.ts  files run in Node (no DOM).
-     * .test.tsx files run in jsdom (React components).
+     * Search only in the project root tests folder.
+     * .test.ts       files run in Node (no DOM).
+     * .test.tsx      files run in jsdom (React components).
+     * .perf.test.ts  files assert wall-clock budgets; see the "perf" project.
      */
     projects: [
       {
@@ -18,7 +19,7 @@ export default defineConfig({
         test: {
           name: "node",
           include: ["./test/**/*.test.ts"],
-          exclude: ["./test/wasm/z80/**/*.test.ts"],
+          exclude: ["./test/wasm/z80/**/*.test.ts", "./test/**/*.perf.test.ts"],
           environment: "node"
         }
       },
@@ -29,11 +30,29 @@ export default defineConfig({
           include: ["./test/**/*.test.tsx"],
           environment: "jsdom"
         }
+      },
+      /**
+       * Tests that measure elapsed time against a fixed budget. They pass with a
+       * comfortable margin on an idle machine and fail on a busy one, so they say
+       * more about what else the box is doing than about this code: run them
+       * deliberately (`npm run test:perf`) rather than in `npm test`, which is why
+       * `test:unit` names the other two projects explicitly.
+       *
+       * A file belongs here purely by its name, so a new perf suite needs no
+       * config change - only the `.perf.test.ts` suffix.
+       */
+      {
+        extends: true,
+        test: {
+          name: "perf",
+          include: ["./test/**/*.perf.test.ts"],
+          environment: "node"
+        }
       }
     ],
 
     /**
-     * A default timeout of 5000ms is sometimes not enough for playwright.
+     * A default timeout of 5000ms is sometimes not enough for the slower suites.
      */
     testTimeout: 30_000,
     hookTimeout: 30_000,

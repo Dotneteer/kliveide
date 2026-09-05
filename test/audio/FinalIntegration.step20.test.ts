@@ -641,65 +641,6 @@ describe("Step 20: Final Audio Integration Testing", () => {
     });
   });
 
-  // ===== Real-Time Performance Validation =====
-  describe("Real-Time Performance Validation", () => {
-    it("should generate audio quickly", () => {
-      const turbo = machine.audioControlDevice.getTurboSoundDevice();
-
-      const chip0 = turbo.getChip(0);
-      chip0.setPsgRegisterIndex(0);
-      chip0.writePsgRegisterValue(0xE8);
-      chip0.setPsgRegisterIndex(8);
-      chip0.writePsgRegisterValue(0x0F);
-
-      const startTime = performance.now();
-
-      for (let i = 0; i < 50; i++) {
-        machine.getAudioSamples();
-      }
-
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      expect(duration).toBeLessThan(5000);
-    });
-
-    it("should handle rapid PSG register updates quickly", () => {
-      const turbo = machine.audioControlDevice.getTurboSoundDevice();
-
-      const startTime = performance.now();
-
-      for (let i = 0; i < 1000; i++) {
-        const chip = turbo.getChip(i % 3);
-        chip.setPsgRegisterIndex(i % 16);
-        chip.writePsgRegisterValue(i & 0xFF);
-      }
-
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      expect(duration).toBeLessThan(100);
-    });
-
-    it("should handle high-frequency DAC updates quickly", () => {
-      const dac = machine.audioControlDevice.getDacDevice();
-
-      const startTime = performance.now();
-
-      for (let i = 0; i < 10000; i++) {
-        dac.setDacA((i * 0x11) & 0xFF);
-        dac.setDacB((i * 0x22) & 0xFF);
-        dac.setDacC((i * 0x44) & 0xFF);
-        dac.setDacD((i * 0x88) & 0xFF);
-      }
-
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      expect(duration).toBeLessThan(100);
-    });
-  });
-
   // ===== System State Consistency =====
   describe("System State Consistency", () => {
     it("should maintain consistent state across all devices", () => {

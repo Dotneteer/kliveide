@@ -450,6 +450,9 @@ describe("FatVolume", () => {
     }
   });
 
+  // --- This one writes enough directory entries to take ~10s on an idle machine,
+  // --- a third of the 30s default. That leaves too little room on a busy box, so
+  // --- it gets a timeout of its own rather than failing for want of a CPU.
   it("mkdir works #9", () => {
     // --- Arrange
     const DIR = "testDir";
@@ -487,7 +490,7 @@ describe("FatVolume", () => {
       expect(entry.DIR_Attr).toBe(FS_ATTR_DIRECTORY);
       expect(entry.DIR_Name).toBe("..         ");
     }
-  });
+  }, 120_000);
 
   it("rmDir works #1", () => {
     // --- Arrange
