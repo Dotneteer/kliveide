@@ -68,7 +68,8 @@ export default defineConfig({
       "@emu": resolve(__dirname, "..", "src/emu"),
       "@appIde": resolve(__dirname, "..", "src/renderer/appIde"),
       "@main": resolve(__dirname, "..", "src/main"),
-      "@controls": resolve(__dirname, "..", "src/renderer/controls")
+      "@controls": resolve(__dirname, "..", "src/renderer/controls"),
+      "@mvc": resolve(__dirname, "..", "src/renderer/mvc")
     }
   }
 });

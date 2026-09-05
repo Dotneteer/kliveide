@@ -259,17 +259,3 @@ button.suggestionButton {
   flex: 0 0 auto;
   align-items: center;
 }
-
-// --- Discard confirmation shown when Close would drop an unapplied setup.
-.confirmBody {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-  line-height: 1.5;
-}
-
-.confirmPath {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}

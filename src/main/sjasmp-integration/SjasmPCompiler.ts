@@ -17,7 +17,11 @@ import {
   MI_ZXNEXT
 } from "@common/machines/constants";
 import { SJASMP_KEEP_TEMP_FILES } from "./sjasmp-config";
-import { resolveSjasmplusExecutable } from "./sjasmplus-resolver";
+import {
+  resolveSjasmplusExecutable,
+  sjasmplusNotWorkingMessage,
+  SJASMPLUS_NOT_CONFIGURED_MESSAGE
+} from "./sjasmplus-resolver";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import {
   createSjasmRunner,
@@ -70,7 +74,14 @@ export class SjasmPCompiler implements IKliveCompiler {
       // --- Obtain configuration info for SjasmPlus
       const execPath = resolveSjasmplusExecutable(settingsReader);
       if (!execPath) {
-        throw new Error("SjasmPlus executable path is not set, cannot start the compiler.");
+        throw new Error(SJASMPLUS_NOT_CONFIGURED_MESSAGE);
+      }
+      // --- Settings survive whatever happens to the disk: the install folder may
+      // --- have been renamed, moved or removed since it was set up. Say so in
+      // --- the words the integration dialog uses, rather than letting the spawn
+      // --- fail with an ENOENT nobody can act on.
+      if (!fs.existsSync(execPath)) {
+        throw new Error(sjasmplusNotWorkingMessage(execPath));
       }
 
       // --- Create the command line arguments

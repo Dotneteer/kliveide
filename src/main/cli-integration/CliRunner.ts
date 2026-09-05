@@ -1,6 +1,13 @@
 import { ExecaSyncError, execa } from "execa";
 import type { AssemblerErrorInfo, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
 
+// --- Anything can be thrown; this always produces something a user can read.
+function toErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "string" && error) return error;
+  const message = (error as { message?: unknown })?.message;
+  return typeof message === "string" && message ? message : fallback;
+}
+
 /**
  * This class is responsible for running the CLI commands that are passed to it.
  */
@@ -88,9 +95,12 @@ export class CliRunner {
               stderr: errorInfo.stderr
             };
       }
+      // --- No exit code means the process never started: a missing, unusable or
+      // --- unexecutable binary. There is no output to interpret, only the
+      // --- spawn error itself.
       return {
         traceOutput: [`Executing ${command}`],
-        failed: error.tosString()
+        failed: toErrorMessage(error, `Could not execute ${command}`)
       };
     }
   }

@@ -29,7 +29,7 @@ import {
 import {
   SjasmplusIntegrationDialog,
   SjasmplusIntegrationDialogResult
-} from "./SjasmplusIntegrationDialog";
+} from "./sjasmplus/SjasmplusIntegrationDialog";
 
 export type IdeDialogResult =
   | NewProjectDialogResult

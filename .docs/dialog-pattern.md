@@ -2,6 +2,12 @@
 
 This document captures the expected pattern for modal dialogs in the React renderer processes. Use it when adding, migrating, or reviewing dialogs.
 
+> **For dialogs with async orchestration**, see [`dialog-mvc-pattern.md`](./dialog-mvc-pattern.md).
+> It layers a Model/Controller/View split on top of everything here, so the dialog's behavior can
+> be tested without rendering it. Everything in this document still applies: MVC dialogs are opened
+> with `useDialogs().open(...)`, settle through `controls`, and render inside `Modal`. Dialogs that
+> just ask one question stay on the plain pattern below.
+
 ## Goals
 
 - Open dialogs imperatively from renderer code with `useDialogs().open(...)`.

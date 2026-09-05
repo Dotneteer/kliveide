@@ -26,7 +26,8 @@
       "@emu/*": ["./src/emu/*"],
       "@appIde/*": ["./src/renderer/appIde/*"],
       "@main/*": ["./src/main/*"],
-      "@controls/*": ["./src/renderer/controls/*"]
+      "@controls/*": ["./src/renderer/controls/*"],
+      "@mvc/*": ["./src/renderer/mvc/*"]
 		},
   },
   "include": ["./**/*", "../src/**/*"],
