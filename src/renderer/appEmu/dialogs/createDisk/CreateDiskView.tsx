@@ -52,7 +52,7 @@ export const CreateDiskView = ({ vm, dispatch }: CreateDiskViewProps) => (
         onChange={(folder) => dispatch({ type: "folderEdited", folder })}
       />
     </DialogRow>
-    <DialogRow label="Project name:">
+    <DialogRow label="Disk file name:">
       <TextInput
         value={vm.filename.value}
         error={vm.filename.error}
