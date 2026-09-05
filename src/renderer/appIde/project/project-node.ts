@@ -1,4 +1,9 @@
 import type { ProjectNode, ProjectNodeWithChildren } from "@abstractions/ProjectNode";
+
+// --- Re-exported so every existing importer keeps working; they live in their
+// --- own module now because they are pure string helpers and pulling them in
+// --- should not drag the editor registry (and Monaco) along with them.
+export { getNodeDir, getNodeExtension, getNodeFile, getNodeName } from "./project-paths";
 import type { ITreeNode, ITreeView } from "@abstractions/ITreeNode";
 
 import { TreeNode, TreeView } from "@renderer/core/tree-node";
@@ -33,59 +38,6 @@ export function registerDetectedBinaryFile(path: string): void {
 
 export function clearDetectedBinaryFiles(): void {
   detectedBinaryFilePaths.clear();
-}
-
-/**
- * Gets the folder of the specified project node
- * @param node Project node
- * @returns Extension part of the project node
- */
-export function getNodeDir(node: ProjectNode | string): string {
-  const fullPath = typeof node === "string" ? node : node.fullPath;
-  const segments = fullPath.split("/").slice(0, -1);
-  return fullPath ? segments.join("/") : "";
-}
-
-/**
- * Gets the filename of the specified project node
- * @param node Project node
- * @returns Filename + extension part of the project node
- */
-export function getNodeFile(node: ProjectNode | string): string {
-  const fullPath = typeof node === "string" ? node : node.fullPath;
-  let segments = fullPath.split("/");
-  // if (segments.length > 1) {
-  //   segments = segments.slice(0, -1);
-  // }
-  return fullPath && segments.length > 0 ? segments[segments.length - 1] : "";
-}
-
-/**
- * Gets the extension of the specified project node
- * @param node Project node
- * @returns Extension part of the project node
- */
-export function getNodeName(node: ProjectNode | string): string {
-  const filename = getNodeFile(node);
-  if (!filename) {
-    return "";
-  }
-  const fileParts = filename.split(".");
-  return fileParts.length > 0 ? fileParts[0] : "";
-}
-
-/**
- * Gets the extension of the specified project node
- * @param node Project node
- * @returns Extension part of the project node
- */
-export function getNodeExtension(node: ProjectNode | string): string {
-  const filename = getNodeFile(node);
-  if (!filename) {
-    return "";
-  }
-  const fileParts = filename.split(".");
-  return fileParts.length > 0 ? "." + fileParts.slice(1).join(".") : "";
 }
 
 export function buildProjectTree(

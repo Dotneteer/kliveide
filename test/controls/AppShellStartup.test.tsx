@@ -245,17 +245,17 @@ describe("app shell dialog registries and bridges", () => {
   });
 
   it("opens IDE dialogs through the renderer bridge", async () => {
-    vi.doMock("@renderer/appIde/dialogs/NewProjectDialog", () => ({
+    vi.doMock("@renderer/appIde/dialogs/newProject/NewProjectDialog", () => ({
       NewProjectDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>new project close</button>
       )
     }));
-    vi.doMock("@renderer/appIde/dialogs/ExportCodeDialog", () => ({
+    vi.doMock("@renderer/appIde/dialogs/exportCode/ExportCodeDialog", () => ({
       ExportCodeDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>export close</button>
       )
     }));
-    vi.doMock("@renderer/appIde/dialogs/ExcludedProjectItemsDialog", () => ({
+    vi.doMock("@renderer/appIde/dialogs/excludedItems/ExcludedProjectItemsDialog", () => ({
       ExcludedProjectItemsDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>excluded close</button>
       )
@@ -294,7 +294,7 @@ describe("app shell dialog registries and bridges", () => {
         <button onClick={onClose}>first close</button>
       )
     }));
-    vi.doMock("@renderer/appEmu/dialogs/Z88RemoveCardDialog", () => ({
+    vi.doMock("@renderer/appEmu/dialogs/z88/removeCard/Z88RemoveCardDialog", () => ({
       Z88RemoveCardDialog: ({
         slot,
         onRemove
@@ -305,7 +305,7 @@ describe("app shell dialog registries and bridges", () => {
         <button onClick={() => onRemove({ slot })}>remove {slot}</button>
       )
     }));
-    vi.doMock("@renderer/appEmu/dialogs/Z88InsertCardDialog", () => ({
+    vi.doMock("@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardDialog", () => ({
       Z88InsertCardDialog: ({ slot, onClose }: { slot: number; onClose: () => void }) => (
         <button onClick={onClose}>insert {slot}</button>
       )
@@ -315,12 +315,12 @@ describe("app shell dialog registries and bridges", () => {
         <button onClick={onClose}>export {slot}</button>
       )
     }));
-    vi.doMock("@renderer/appEmu/dialogs/Z88ChangeRamDialog", () => ({
+    vi.doMock("@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamDialog", () => ({
       Z88ChangeRamDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>change ram</button>
       )
     }));
-    vi.doMock("@renderer/appEmu/dialogs/CreateDiskDialog", () => ({
+    vi.doMock("@renderer/appEmu/dialogs/createDisk/CreateDiskDialog", () => ({
       CreateDiskDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>create disk</button>
       )

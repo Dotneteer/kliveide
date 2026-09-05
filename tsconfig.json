@@ -59,6 +59,9 @@
       ],
       "@controls/*": [
         "./src/renderer/controls/*"
+      ],
+      "@mvc/*": [
+        "./src/renderer/mvc/*"
       ]
     },
     "target": "ES2017"

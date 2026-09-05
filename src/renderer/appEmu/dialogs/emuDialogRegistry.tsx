@@ -18,15 +18,15 @@ import {
 import {
   CreateDiskDialog,
   CreateDiskDialogResult
-} from "./CreateDiskDialog";
+} from "./createDisk/CreateDiskDialog";
 import {
   Z88RemoveCardDialog,
   Z88RemoveCardDialogResult
-} from "./Z88RemoveCardDialog";
+} from "./z88/removeCard/Z88RemoveCardDialog";
 import {
   Z88InsertCardDialog,
   Z88InsertCardDialogResult
-} from "./Z88InsertCardDialog";
+} from "./z88/insertCard/Z88InsertCardDialog";
 import {
   Z88ExportCardDialog,
   Z88ExportCardDialogResult
@@ -34,7 +34,7 @@ import {
 import {
   Z88ChangeRamDialog,
   Z88ChangeRamDialogResult
-} from "./Z88ChangeRamDialog";
+} from "./z88/changeRam/Z88ChangeRamDialog";
 
 export type EmuDialogResult =
   | FirstStartDialogResult

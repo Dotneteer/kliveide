@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveSjasmplusExecutable } from "@main/sjasmp-integration/sjasmplus-resolver";
+import { SJASMP_CONFIGURED_FAILED_MESSAGE } from "@main/sjasmp-integration/sjasmp-config";
+import {
+  resolveSjasmplusExecutable,
+  sjasmplusNotWorkingMessage,
+  SJASMPLUS_NOT_CONFIGURED_MESSAGE
+} from "@main/sjasmp-integration/sjasmplus-resolver";
 
 describe("resolveSjasmplusExecutable", () => {
   it("prefers the explicit executable path", () => {
@@ -26,5 +31,23 @@ describe("resolveSjasmplusExecutable", () => {
         readSetting: (key) => (key === "sjasmp.root" ? "C:\\tools\\sjasmplus" : undefined)
       }, true)
     ).toBe("C:/tools/sjasmplus/sjasmplus.exe");
+  });
+});
+
+describe("SJASMPLUS failure messages", () => {
+  it("says what the dialog says about a broken setup, and names the executable", () => {
+    const message = sjasmplusNotWorkingMessage("/Users/me/sjasmp/sjasmplus");
+
+    // --- One source of truth: the compiler and the dialog use the same phrase
+    expect(message).toContain(SJASMP_CONFIGURED_FAILED_MESSAGE);
+    expect(message).toContain("/Users/me/sjasmp/sjasmplus");
+    // --- ...and it says where to fix it
+    expect(message).toContain("Integrations | SjasmPlus Assembler");
+  });
+
+  it("distinguishes 'never set up' from 'set up but broken'", () => {
+    expect(SJASMPLUS_NOT_CONFIGURED_MESSAGE).toContain("No SJASMPLUS assembler is set up yet");
+    expect(SJASMPLUS_NOT_CONFIGURED_MESSAGE).not.toContain(SJASMP_CONFIGURED_FAILED_MESSAGE);
+    expect(SJASMPLUS_NOT_CONFIGURED_MESSAGE).toContain("Integrations | SjasmPlus Assembler");
   });
 });

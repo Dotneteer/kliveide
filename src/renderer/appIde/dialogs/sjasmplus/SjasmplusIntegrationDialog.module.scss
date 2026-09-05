@@ -1,0 +1,261 @@
+// --- Compact, fixed-height layout for the SJASMPLUS integration dialog.
+// --- Every logical row is a single line (label + value), so the dialog stays short.
+
+$labelWidth: 78px;
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.9rem;
+
+  button {
+    padding: 4px 10px;
+    min-width: 0;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: $labelWidth minmax(0, 1fr);
+  align-items: center;
+  column-gap: 10px;
+  min-height: 26px;
+  min-width: 0;
+}
+
+.label {
+  color: var(--color-label);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.value {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wrapValue {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.divider {
+  height: 0;
+  border-top: var(--border-modal-section);
+  margin: 3px 0;
+}
+
+// --- The setup panel keeps the same height for every source, so switching
+// --- between local and online does not resize the dialog. The value is the
+// --- natural height of the tallest panel (the Windows download flow: four rows).
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 126px;
+  min-width: 0;
+}
+
+.path {
+  min-width: 0;
+  // --- Shrinks (and ellipsizes) only when it has to, so short paths hug the
+  // --- controls next to them instead of stretching across the row.
+  flex: 0 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}
+
+.pushRight {
+  margin-left: auto;
+}
+
+// --- Secondary text. Dims the body color rather than using --color-label,
+// --- which is an accent color (orange in the dark theme) in Klive themes.
+.muted {
+  opacity: 0.7;
+}
+
+.sep {
+  flex: 0 0 auto;
+  opacity: 0.5;
+}
+
+.option {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+
+  input {
+    margin: 0;
+  }
+}
+
+.disabled {
+  opacity: 0.5;
+}
+
+.selectBox {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 6px;
+  border: var(--border-modal-section);
+  background: var(--bgcolor-input);
+  color: var(--color-input);
+  font-size: 0.9rem;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  max-height: 52px;
+  overflow: auto;
+}
+
+button.suggestionButton {
+  max-width: 100%;
+  padding: 2px 8px;
+  border: var(--border-modal-section);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--color-modal-body);
+  font-size: 0.85rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--bgcolor-item-hover);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+// --- Instructions shown where no download is available; aligned with the value
+// --- column of the rows around them.
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: $labelWidth + 10px;
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+.link {
+  color: var(--color-text-hilite);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// --- Two-line summary block (a value line plus an explanation line) with a
+// --- stable height, so the dialog never jumps when a message appears.
+.block {
+  align-items: start;
+  min-height: 40px;
+}
+
+.blockValue {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.blockLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 20px;
+}
+
+.blockHint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 18px;
+  opacity: 0.7;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.messageText {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+// --- Explanations quote paths (a download error, a folder that went missing),
+// --- which do not fit one row of this dialog. These hints get two lines, at a
+// --- height fixed whatever the state, so a longer message never resizes the
+// --- dialog and a shorter one never shrinks it.
+.twoLines {
+  align-items: flex-start;
+  height: 34px;
+  line-height: 17px;
+  white-space: normal;
+
+  .messageText {
+    white-space: normal;
+    text-overflow: clip;
+  }
+}
+
+.message {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.failed {
+  color: var(--console-ansi-bright-red);
+  opacity: 1;
+}
+
+// --- SJASMPLUS is set up and working. --color-secondary-label is the only green
+// --- in the palette that clears WCAG AA on both the light and the dark modal
+// --- background (7.4:1 either way); the bright greens score 2.1 on light.
+// --- The check icon carries the same meaning without relying on color.
+.integrated {
+  color: var(--color-secondary-label);
+  opacity: 1;
+  font-weight: 500;
+}
+
+.badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}

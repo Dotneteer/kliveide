@@ -54,7 +54,11 @@ merely uncoloured, which no route diff can see.
 
 ## Current Useful Commands
 
-- Type-check: `npm run build:check`
+- Type-check: `npm run build:check` - **currently a no-op**: the root `tsconfig.json` is
+  solution-style (`"files": []` plus project references), so plain `tsc` resolves no input files
+  and exits 0 without checking anything. Verify with
+  `npx tsc --noEmit --listFiles | grep -c "src/renderer"` (prints 0). Until this is fixed,
+  type-check against `build/tsconfig.web.json` explicitly and do not treat `build:check` as a gate.
 - Renderer hook lint baseline: `npm run lint:renderer`
 - Focused jsdom tests: `npm test -- --project jsdom <test files>`
 - Docs build: `npm run doc:build`
@@ -63,6 +67,10 @@ merely uncoloured, which no route diff can see.
 
 ## Notes For React Refactors
 
+- Dialogs with async orchestration use a Model/Controller/View split so their behavior can be
+  tested without rendering. Read `.ai/ui-mvc-guide.md` before adding or migrating one; the full
+  pattern is in `.docs/dialog-mvc-pattern.md` and the reference implementation is
+  `src/renderer/appIde/dialogs/sjasmplus/`.
 - Fix conditional hook calls before tuning dependency arrays.
 - Prefer extracting hooks/components over broad rewrites.
 - When moving files, update consumers to the new direct path and delete the old file if it only re-exported the moved symbol.
