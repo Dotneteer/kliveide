@@ -33,9 +33,19 @@ type Props = {
 type SettingsScope = "project" | "user" | "none";
 type SetupMode = "local" | "online";
 type BusyState = "probe" | "download" | "validate" | "apply" | undefined;
+// --- Verdict on the executable the settings point at. Saved settings alone say
+// --- nothing about it: the folder may have been moved or deleted since setup.
+type StatusCheck = "none" | "checking" | "passed" | "failed";
 
 const DISPLAYED_RELEASE_LIMIT = 20;
 const SJASMPLUS_REPOSITORY_URL = "https://github.com/z00m128/sjasmplus";
+const CONFIGURED_FAILED_MESSAGE =
+  "The configured SJASMPLUS executable is missing or failed its test.";
+const CONFIGURED_PASSED_HINT = "The configured executable passed its test.";
+const CONFIGURED_FAILED_HINT =
+  "Pick a working executable below, or restore the missing one and press Test again.";
+const REPLACEMENT_READY_MESSAGE = "Press Apply to replace it with the executable below.";
+const CANDIDATE_REJECTED_MESSAGE = "Unchanged — the executable below failed its test.";
 
 type SjasmplusStatus = {
   source: SettingsScope;
@@ -81,16 +91,41 @@ export const SjasmplusIntegrationDialog = ({ onClose }: Props) => {
   const [validation, setValidation] = useState<SjasmplusProbeResult | undefined>();
   const [busy, setBusy] = useState<BusyState>();
   const [message, setMessage] = useState<string>("");
+  const [statusCheck, setStatusCheck] = useState<StatusCheck>(
+    status.source === "none" || !status.executablePath ? "none" : "checking"
+  );
+  const [statusError, setStatusError] = useState<string>("");
 
   const canUseProjectScope = isKliveProject;
   // --- Anything Apply would still change: a different executable than the one in
   // --- use, or the same one destined for a different scope.
+  const isConfiguredCandidate = isSamePath(
+    candidate?.executablePath,
+    status.executablePath,
+    isWindows
+  );
   const hasPendingChanges =
-    !!candidate?.executablePath &&
-    (candidate.executablePath !== status.executablePath || scope !== initialScope);
+    !!candidate?.executablePath && (!isConfiguredCandidate || scope !== initialScope);
   const canValidate = !!candidate?.executablePath && !busy;
   const canApply =
     !!validation?.ok && !!candidate?.installFolder && !!candidate?.executablePath && !busy;
+  // --- The block reports on the configured executable, while the "To apply"
+  // --- block below reports on whatever the user just tested. When those two
+  // --- verdicts disagree, this block drops its own badge and says what the newer
+  // --- one means for the setup instead: a badge next to a contradicting result
+  // --- reads as a verdict on that result.
+  const testedAnother = !!validation && !!candidate?.executablePath && !isConfiguredCandidate;
+  // --- A working executable is one Apply away, so the old failure is no longer
+  // --- what the user has to act on.
+  const showsReplacement = statusCheck === "failed" && testedAnother && !!validation?.ok;
+  // --- The tested executable is unusable, so nothing is going to change; saying
+  // --- so is more useful than a success badge for a setup nobody asked about.
+  const showsRejection = statusCheck === "passed" && testedAnother && !validation?.ok;
+  const statusNote = showsReplacement
+    ? REPLACEMENT_READY_MESSAGE
+    : showsRejection
+      ? CANDIDATE_REJECTED_MESSAGE
+      : "";
 
   const updateReleaseSelection = useCallback((result: SjasmplusReleaseListResult): void => {
     setReleaseList(result);
@@ -107,6 +142,48 @@ export const SjasmplusIntegrationDialog = ({ onClose }: Props) => {
         ""
     );
   }, []);
+
+  // --- The settings survive whatever happens to the disk: the install folder may
+  // --- have been renamed, moved or removed since it was set up. Run the same
+  // --- smoke test the user would trigger with "Test again", so the dialog only
+  // --- reports a working integration when the executable actually works.
+  useEffect(() => {
+    const configuredPath = status.executablePath;
+    if (status.source === "none" || !configuredPath) {
+      setStatusCheck("none");
+      setStatusError("");
+      return;
+    }
+
+    let cancelled = false;
+
+    setStatusCheck("checking");
+    setStatusError("");
+    setBusy("validate");
+    void mainApi
+      .validateSjasmplusExecutable(configuredPath)
+      .then((result) => {
+        if (cancelled) return;
+        // --- recordValidation owns the verdict; the message here only says what
+        // --- to do next, so the failure is not spelled out twice on screen.
+        const merged = recordValidation(result, configuredPath);
+        setMessage(merged.ok ? CONFIGURED_PASSED_HINT : CONFIGURED_FAILED_HINT);
+      })
+      .catch((err: any) => {
+        if (cancelled) return;
+        recordValidation({ ok: false, error: err?.message ?? String(err) }, configuredPath);
+        setMessage(CONFIGURED_FAILED_HINT);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setBusy(undefined);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mainApi, status.source, status.executablePath]);
 
   useEffect(() => {
     let cancelled = false;
@@ -228,34 +305,82 @@ export const SjasmplusIntegrationDialog = ({ onClose }: Props) => {
               </>
             ) : (
               <>
-                <div className={classnames(styles.blockLine, styles.integrated)}>
-                  <span
-                    className={styles.badge}
-                    role="img"
-                    aria-label="SJASMPLUS is set up"
-                    title="SJASMPLUS is set up and passed its last test"
-                    data-testid="sjasmplus-integrated-badge"
-                  >
-                    <Icon
-                      iconName="check"
-                      width={16}
-                      height={16}
-                      fill="--color-secondary-label"
-                    />
-                  </span>
+                {/* --- The success highlight is earned by the check, not by the
+                    --- presence of a setting. There is no badge and no color while
+                    --- the check runs, or while a newer verdict for another
+                    --- executable would contradict it. */}
+                <div
+                  className={classnames(styles.blockLine, {
+                    [styles.integrated]: statusCheck === "passed" && !showsRejection,
+                    [styles.failed]: statusCheck === "failed" && !showsReplacement
+                  })}
+                >
+                  {statusCheck === "passed" && !showsRejection && (
+                    <span
+                      className={styles.badge}
+                      role="img"
+                      aria-label="SJASMPLUS is set up"
+                      title="SJASMPLUS is set up and passed its last test"
+                      data-testid="sjasmplus-integrated-badge"
+                    >
+                      <Icon
+                        iconName="check"
+                        width={16}
+                        height={16}
+                        fill="--color-secondary-label"
+                      />
+                    </span>
+                  )}
+                  {statusCheck === "failed" && !showsReplacement && (
+                    <span
+                      className={styles.badge}
+                      role="img"
+                      aria-label="SJASMPLUS is not usable"
+                      title={statusError || CONFIGURED_FAILED_MESSAGE}
+                      data-testid="sjasmplus-broken-badge"
+                    >
+                      <Icon
+                        iconName="warning"
+                        width={16}
+                        height={16}
+                        fill="--console-ansi-bright-red"
+                      />
+                    </span>
+                  )}
                   <Path
                     testId="sjasmplus-executable-path"
                     value={status.executablePath}
                     fallback="Not resolved"
                   />
                 </div>
-                <div className={classnames(styles.blockHint, styles.integrated)}>
-                  <span data-testid="sjasmplus-status">Configured</span> in{" "}
-                  <span data-testid="sjasmplus-scope">{formatScope(status.source)}</span>
+                <div
+                  className={classnames(styles.blockHint, styles.twoLines, {
+                    [styles.integrated]: statusCheck === "passed" && !showsRejection,
+                    [styles.failed]: statusCheck === "failed" && !showsReplacement
+                  })}
+                  title={statusNote || statusError || undefined}
+                >
+                  <span data-testid="sjasmplus-status">
+                    {statusCheck === "failed" ? "Not working" : "Configured"}
+                  </span>{" "}
+                  in <span data-testid="sjasmplus-scope">{formatScope(status.source)}</span>
                   <span className={styles.sep}>&middot;</span>
-                  <span data-testid="sjasmplus-version">
-                    {status.version ?? "version unknown"}
-                  </span>
+                  {/* --- What the newer verdict means comes first, then the reason
+                      --- this setup is broken; the version is only worth the room
+                      --- when neither of those has anything to say. */}
+                  {statusNote ? (
+                    <span className={styles.messageText} data-testid="sjasmplus-status-note">
+                      {statusNote}
+                    </span>
+                  ) : statusCheck === "failed" ? (
+                    <span className={styles.messageText} data-testid="sjasmplus-status-error">
+                      {statusError || CONFIGURED_FAILED_MESSAGE}
+                    </span>
+                  ) : (
+                    <span data-testid="sjasmplus-version">
+                      {status.version ?? "version unknown"}
+                    </span>
+                  )}
                 </div>
               </>
             )}
@@ -487,7 +612,7 @@ export const SjasmplusIntegrationDialog = ({ onClose }: Props) => {
               )}
             </div>
             <div
-              className={classnames(styles.blockHint, {
+              className={classnames(styles.blockHint, styles.twoLines, {
                 [styles.integrated]: !!validation?.ok && !busy,
                 [styles.failed]: !!validation && !validation.ok
               })}
@@ -657,14 +782,39 @@ export const SjasmplusIntegrationDialog = ({ onClose }: Props) => {
   ): Promise<SjasmplusProbeResult | undefined> {
     if (!executablePath) return undefined;
     const result = await mainApi.validateSjasmplusExecutable(executablePath);
-    setValidation(result);
-    setCandidate(result);
+    const merged = recordValidation(result, executablePath);
     setMessage(
-      result.ok
+      merged.ok
         ? "The smoke-test compile succeeded, press Apply to save it."
-        : result.error ?? "The smoke-test compile failed, so this executable cannot be saved."
+        : merged.error ?? "The smoke-test compile failed, so this executable cannot be saved."
     );
-    return result;
+    return merged;
+  }
+
+  // --- Records a verdict against the executable it was requested for. A probe
+  // --- that cannot resolve the path (a deleted folder) returns no path of its
+  // --- own, so the requested one is carried over and the dialog keeps saying
+  // --- which executable failed.
+  function recordValidation(
+    result: SjasmplusProbeResult | undefined,
+    requestedPath: string
+  ): SjasmplusProbeResult {
+    const merged: SjasmplusProbeResult = {
+      ok: false,
+      ...result,
+      executablePath: result?.executablePath ?? requestedPath,
+      installFolder: result?.installFolder ?? getPathFolder(requestedPath)
+    };
+    setValidation(merged);
+    setCandidate(merged);
+    // --- A verdict on the executable the settings point at is a verdict on the
+    // --- integration itself: putting the missing folder back and pressing "Test
+    // --- again" has to clear the failure, not just change the hint.
+    if (isSamePath(merged.executablePath, status.executablePath, isWindows)) {
+      setStatusCheck(merged.ok ? "passed" : "failed");
+      setStatusError(merged.ok ? "" : merged.error ?? CONFIGURED_FAILED_MESSAGE);
+    }
+    return merged;
   }
 
   async function applyIntegration(): Promise<boolean> {
@@ -775,15 +925,40 @@ function readStatus(
     return { source: "none" };
   }
 
-  const normalizedFolder = installFolder || getPathFolder(executablePath);
+  // --- Settings can carry either separator: the `sjasm` command stores the path
+  // --- the user typed, while the main process always hands back forward slashes.
+  // --- Normalizing here keeps the displayed path and the probe results in the
+  // --- same shape, so they can be compared later.
+  const normalizedFolder = normalizeSeparators(installFolder || getPathFolder(executablePath));
   return {
     source,
     installFolder: normalizedFolder,
     executablePath:
-      executablePath ||
+      normalizeSeparators(executablePath) ||
       `${removeTrailingSeparators(normalizedFolder)}/${isWindows ? "sjasmplus.exe" : "sjasmplus"}`,
     version: version || undefined
   };
+}
+
+function normalizeSeparators(path: string): string {
+  return path.replaceAll("\\", "/");
+}
+
+// --- Two paths name the same executable when only their separators (or, on
+// --- Windows, their casing) differ. A settings path and a probed one routinely
+// --- differ that way, and treating them as different executables would leave a
+// --- passed re-test looking like it belonged to something else.
+function isSamePath(
+  left: string | undefined,
+  right: string | undefined,
+  isWindows: boolean
+): boolean {
+  if (!left || !right) return false;
+  const leftPath = removeTrailingSeparators(normalizeSeparators(left));
+  const rightPath = removeTrailingSeparators(normalizeSeparators(right));
+  return isWindows
+    ? leftPath.toLowerCase() === rightPath.toLowerCase()
+    : leftPath === rightPath;
 }
 
 function readStringSetting(settings: Record<string, any> | undefined, key: string): string {

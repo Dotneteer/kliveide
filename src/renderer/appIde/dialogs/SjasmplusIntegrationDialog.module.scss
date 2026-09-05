@@ -214,6 +214,22 @@ button.suggestionButton {
   text-overflow: ellipsis;
 }
 
+// --- Explanations quote paths (a download error, a folder that went missing),
+// --- which do not fit one row of this dialog. These hints get two lines, at a
+// --- height fixed whatever the state, so a longer message never resizes the
+// --- dialog and a shorter one never shrinks it.
+.twoLines {
+  align-items: flex-start;
+  height: 34px;
+  line-height: 17px;
+  white-space: normal;
+
+  .messageText {
+    white-space: normal;
+    text-overflow: clip;
+  }
+}
+
 .message {
   min-width: 0;
   overflow: hidden;

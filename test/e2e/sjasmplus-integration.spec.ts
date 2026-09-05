@@ -15,7 +15,7 @@ test.use({
   }
 });
 
-test("restores a saved SJASMPLUS integration into the IDE on the next start", async ({
+test("restores a saved SJASMPLUS integration and re-tests it on the next start", async ({
   kliveApp
 }) => {
   await kliveApp.triggerMenuItem(IDE_INTEGRATION_SJASMPLUS);
@@ -28,8 +28,16 @@ test("restores a saved SJASMPLUS integration into the IDE on the next start", as
     "/tools/sjasmplus/sjasmplus"
   );
   await expect(dialog.getByTestId("sjasmplus-scope")).toHaveText("User settings");
-  await expect(dialog.getByTestId("sjasmplus-version")).toHaveText("v1.24.0");
-  await expect(dialog.getByTestId("sjasmplus-integrated-badge")).toBeVisible();
+
+  // --- Nothing lives at the saved path, so opening the dialog re-tests it and
+  // --- refuses to present it as a working integration.
+  await expect(dialog.getByTestId("sjasmplus-broken-badge")).toBeVisible();
+  await expect(dialog.getByTestId("sjasmplus-status")).toHaveText("Not working");
+  await expect(dialog.getByTestId("sjasmplus-status-error")).toContainText(
+    "/tools/sjasmplus/sjasmplus"
+  );
+  await expect(dialog.getByTestId("sjasmplus-integrated-badge")).toBeHidden();
+  await expect(dialog.getByTestId("sjasmplus-version")).toBeHidden();
 
   await dialog.getByRole("button", { name: "Close" }).click();
   await expect(dialog).toBeHidden();
