@@ -24,7 +24,7 @@ describe("settings file path", () => {
   });
 
   it("uses an absolute test settings-file override", () => {
-    const settingsPath = path.join(os.tmpdir(), "klive-e2e-case", "klive.settings");
+    const settingsPath = path.join(os.tmpdir(), "klive-settings-case", "klive.settings");
 
     expect(resolveSettingsFilePath("/test-home", { [KLIVE_SETTINGS_FILE_ENV]: settingsPath })).toBe(
       settingsPath

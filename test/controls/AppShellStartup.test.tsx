@@ -9,6 +9,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+// --- The first dynamic import of useIdeStartup pulls in (and transforms) the whole IDE
+// --- renderer graph via "@renderer/registry". That costs ~12s on an idle machine and
+// --- well past the 30s default when the rest of the suite is competing for CPU.
+const IDE_STARTUP_IMPORT_TIMEOUT = 120_000;
+
 describe("app shell startup hooks", () => {
   it("runs IDE startup once and does not own MainToIde IPC registration", async () => {
     const cleanupIpc = vi.fn();
@@ -73,7 +78,7 @@ describe("app shell startup hooks", () => {
     // --- Unmounting must NOT tear down the IPC listener: it is owned by the module-level
     // --- registration and has to outlive any individual React tree.
     expect(cleanupIpc).not.toHaveBeenCalled();
-  });
+  }, IDE_STARTUP_IMPORT_TIMEOUT);
 
   it("loads the last IDE project after settings are synced", async () => {
     const openFolder = vi.fn(() => Promise.resolve());

@@ -1,3 +1,4 @@
+import path from "path";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // ---------------------------------------------------------------------------
@@ -54,7 +55,9 @@ vi.mock("child_process", () => {
 import { spawn } from "child_process";
 import { FfmpegRecordingBackend } from "@main/recording/FfmpegRecordingBackend";
 
-const OUTPUT = "/tmp/KliveExports/recording_20260228_140500.mp4";
+// --- The backend rebuilds the path with path.join, so the expectation must use the
+// --- native separator too (backslashes on Windows).
+const OUTPUT = path.join("/tmp/KliveExports", "recording_20260228_140500.mp4");
 const W = 352;
 const H = 288;
 const FPS = 50;

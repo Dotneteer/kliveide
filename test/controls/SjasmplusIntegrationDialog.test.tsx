@@ -41,6 +41,9 @@ describe("SjasmplusIntegrationDialog", () => {
       ok: false,
       error: "Download not mocked."
     });
+    // --- Opening the dialog re-tests whatever the settings point at, so every
+    // --- configured-state test needs a verdict for that check.
+    mainApiMock.validateSjasmplusExecutable.mockResolvedValue({ ok: true });
   });
 
   it("shows an empty configuration when no SJASMPLUS setting exists", () => {
@@ -58,20 +61,22 @@ describe("SjasmplusIntegrationDialog", () => {
     );
   });
 
-  it("shows the user-level install folder when only user settings define it", () => {
+  it("shows the user-level install folder when only user settings define it", async () => {
     const store = createMockStore();
     store.dispatch(saveUserSettingAction({ sjasmp: { root: "/tools/sjasmplus" } }), "ide");
 
     renderWithProviders(<SjasmplusIntegrationDialog onClose={vi.fn()} />, { store });
 
-    expect(screen.getByTestId("sjasmplus-status")).toHaveTextContent("Configured");
+    await waitFor(() =>
+      expect(screen.getByTestId("sjasmplus-status")).toHaveTextContent("Configured")
+    );
     expect(screen.getByTestId("sjasmplus-scope")).toHaveTextContent("User settings");
     expect(screen.getByTestId("sjasmplus-executable-path")).toHaveTextContent(
       "/tools/sjasmplus/sjasmplus"
     );
   });
 
-  it("marks a working integration with the success badge", () => {
+  it("marks a working integration with the success badge", async () => {
     const store = createMockStore();
     store.dispatch(
       saveUserSettingAction({ sjasmp: { root: "/tools/sjasmplus", version: "v1.24.0" } }),
@@ -83,7 +88,7 @@ describe("SjasmplusIntegrationDialog", () => {
     });
 
     // --- The badge carries the meaning without relying on color alone
-    expect(screen.getByLabelText("SJASMPLUS is set up")).toBeInTheDocument();
+    expect(await screen.findByLabelText("SJASMPLUS is set up")).toBeInTheDocument();
     expect(screen.getByTestId("sjasmplus-integrated-badge")).toBeInTheDocument();
     unmount();
 
@@ -93,7 +98,7 @@ describe("SjasmplusIntegrationDialog", () => {
     expect(screen.queryByTestId("sjasmplus-integrated-badge")).not.toBeInTheDocument();
   });
 
-  it("prefers the explicit executable path when it exists", () => {
+  it("prefers the explicit executable path when it exists", async () => {
     const store = createMockStore();
     store.dispatch(
       saveUserSettingAction({
@@ -108,35 +113,264 @@ describe("SjasmplusIntegrationDialog", () => {
 
     renderWithProviders(<SjasmplusIntegrationDialog onClose={vi.fn()} />, { store });
 
-    expect(screen.getByTestId("sjasmplus-executable-path")).toHaveTextContent(
-      "/custom/bin/sjasmplus"
+    await waitFor(() =>
+      expect(screen.getByTestId("sjasmplus-executable-path")).toHaveTextContent(
+        "/custom/bin/sjasmplus"
+      )
     );
     expect(screen.getByTestId("sjasmplus-version")).toHaveTextContent("sjasmplus v1.23.0");
   });
 
-  it("shows project settings as effective when both scopes define SJASMPLUS", () => {
+  it("shows project settings as effective when both scopes define SJASMPLUS", async () => {
     const store = createMockStore();
     store.dispatch(saveUserSettingAction({ sjasmp: { root: "/user/sjasmplus" } }), "ide");
     store.dispatch(saveProjectSettingAction({ sjasmp: { root: "/project/sjasmplus" } }), "ide");
 
     renderWithProviders(<SjasmplusIntegrationDialog onClose={vi.fn()} />, { store });
 
-    expect(screen.getByTestId("sjasmplus-scope")).toHaveTextContent("Project settings");
+    await waitFor(() =>
+      expect(screen.getByTestId("sjasmplus-scope")).toHaveTextContent("Project settings")
+    );
     expect(screen.getByTestId("sjasmplus-executable-path")).toHaveTextContent(
       "/project/sjasmplus/sjasmplus"
     );
   });
 
-  it("resolves the Windows executable name from the current platform state", () => {
+  it("resolves the Windows executable name from the current platform state", async () => {
     const store = createMockStore();
     store.dispatch(saveUserSettingAction({ sjasmp: { root: "C:/tools/sjasmplus" } }), "ide");
     store.resetTo({ ...store.getState(), isWindows: true });
 
     renderWithProviders(<SjasmplusIntegrationDialog onClose={vi.fn()} />, { store });
 
-    expect(screen.getByTestId("sjasmplus-executable-path")).toHaveTextContent(
-      "C:/tools/sjasmplus/sjasmplus.exe"
+    await waitFor(() =>
+      expect(screen.getByTestId("sjasmplus-executable-path")).toHaveTextContent(
+        "C:/tools/sjasmplus/sjasmplus.exe"
+      )
     );
+  });
+
+  it("re-tests the configured executable when the dialog opens", async () => {
+    const store = createMockStore();
+    store.dispatch(
+      saveUserSettingAction({
+        sjasmp: { executablePath: "/tools/sjasmplus/sjasmplus", version: "v1.24.0" }
+      }),
+      "ide"
+    );
+
+    renderWithProviders(<SjasmplusIntegrationDialog onClose={vi.fn()} />, { store });
+
+    await waitFor(() =>
+      expect(mainApiMock.validateSjasmplusExecutable).toHaveBeenCalledWith(
+        "/tools/sjasmplus/sjasmplus"
+      )
+    );
+    // --- The check is what earns the success highlight
+    expect(await screen.findByTestId("sjasmplus-integrated-badge")).toBeInTheDocument();
+    expect(screen.queryByTestId("sjasmplus-status-error")).not.toBeInTheDocument();
+  });
+
+  it("does not report a configured executable as working when the test fails", async () => {
+    const store = createMockStore();
+    store.dispatch(
+      saveUserSettingAction({
+        sjasmp: { executablePath: "/moved/away/sjasmplus", version: "v1.24.0" }
+      }),
+      "ide"
+    );
+    mainApiMock.validateSjasmplusExecutable.mockResolvedValue({
+      ok: false,
+      error: "Path does not exist: /moved/away/sjasmplus"
+    });
+
+    renderWithProviders(<SjasmplusIntegrationDialog onClose={vi.fn()} />, { store });
+
+    // --- A folder that was moved or deleted must not keep the success badge
+    expect(await screen.findByTestId("sjasmplus-broken-badge")).toBeInTheDocument();
+    expect(screen.queryByTestId("sjasmplus-integrated-badge")).not.toBeInTheDocument();
+    expect(screen.getByTestId("sjasmplus-status")).toHaveTextContent("Not working");
+    expect(screen.getByTestId("sjasmplus-status-error")).toHaveTextContent(
+      "Path does not exist: /moved/away/sjasmplus"
+    );
+    // --- The stale version is not restated for a setup that cannot run
+    expect(screen.queryByTestId("sjasmplus-version")).not.toBeInTheDocument();
+    expect(screen.getByTestId("sjasmplus-message")).toHaveTextContent(
+      "Pick a working executable below"
+    );
+    // --- ...and the settings cannot be re-applied on top of a failed test
+    expect(screen.getByText("Apply")).toBeDisabled();
+  });
+
+  it("clears the failure when the restored executable passes a re-test", async () => {
+    const store = createMockStore();
+    store.dispatch(
+      saveUserSettingAction({ sjasmp: { executablePath: "/moved/away/sjasmplus" } }),
+      "ide"
+    );
+    mainApiMock.validateSjasmplusExecutable.mockResolvedValue({
+      ok: false,
+      error: "Path does not exist: /moved/away/sjasmplus"
+    });
+
+    renderWithProviders(<SjasmplusIntegrationDialog onClose={vi.fn()} />, { store });
+    await screen.findByTestId("sjasmplus-broken-badge");
+
+    // --- The user can put the executable back and test it without reselecting it
+    mainApiMock.validateSjasmplusExecutable.mockResolvedValue({
+      ok: true,
+      installFolder: "/moved/away",
+      executablePath: "/moved/away/sjasmplus",
+      version: "v1.24.0"
+    });
+    fireEvent.click(screen.getByText("Test again"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("sjasmplus-validation")).toHaveTextContent("Passed")
+    );
+    expect(mainApiMock.validateSjasmplusExecutable).toHaveBeenLastCalledWith(
+      "/moved/away/sjasmplus"
+    );
+    // --- The configured executable works again, so the failure is gone for good
+    expect(screen.getByTestId("sjasmplus-integrated-badge")).toBeInTheDocument();
+    expect(screen.queryByTestId("sjasmplus-broken-badge")).not.toBeInTheDocument();
+    expect(screen.getByTestId("sjasmplus-status")).toHaveTextContent("Configured");
+  });
+
+  it("clears the failure when a re-test passes on a differently spelled path", async () => {
+    // --- The `sjasm` command stores the path as typed, so settings can hold
+    // --- backslashes while every probe result comes back with forward slashes
+    const store = createMockStore();
+    store.dispatch(saveUserSettingAction({ sjasmp: { root: "C:\\tools\\sjasmplus" } }), "ide");
+    store.resetTo({ ...store.getState(), isWindows: true });
+    mainApiMock.validateSjasmplusExecutable.mockResolvedValue({
+      ok: false,
+      error: "SJASMPLUS exited with code 1"
+    });
+
+    renderWithProviders(<SjasmplusIntegrationDialog onClose={vi.fn()} />, { store });
+    await screen.findByTestId("sjasmplus-broken-badge");
+
+    mainApiMock.validateSjasmplusExecutable.mockResolvedValue({
+      ok: true,
+      installFolder: "C:/Tools/SjasmPlus",
+      executablePath: "C:/Tools/SjasmPlus/sjasmplus.exe",
+      version: "v1.24.0"
+    });
+    fireEvent.click(screen.getByText("Test again"));
+
+    // --- Same executable, so this is the configured setup working again, not a
+    // --- replacement waiting to be applied
+    expect(await screen.findByTestId("sjasmplus-integrated-badge")).toBeInTheDocument();
+    expect(screen.getByTestId("sjasmplus-status")).toHaveTextContent("Configured");
+    expect(screen.queryByTestId("sjasmplus-status-note")).not.toBeInTheDocument();
+  });
+
+  it("drops the success badge while a tested executable is failing", async () => {
+    const store = createMockStore();
+    store.dispatch(
+      saveUserSettingAction({
+        sjasmp: { executablePath: "/tools/sjasmplus/sjasmplus", version: "v1.24.0" }
+      }),
+      "ide"
+    );
+
+    renderWithProviders(<SjasmplusIntegrationDialog onClose={vi.fn()} />, { store });
+    await screen.findByTestId("sjasmplus-integrated-badge");
+
+    // --- The user picks the wrong file; the working setup stays untouched, but a
+    // --- success badge next to a failed test reads as a verdict on that test
+    mainApiMock.showOpenFileDialog.mockResolvedValue("/downloads/readme.txt");
+    mainApiMock.probeSjasmplusPath.mockResolvedValue({
+      ok: true,
+      installFolder: "/downloads",
+      executablePath: "/downloads/readme.txt"
+    });
+    mainApiMock.validateSjasmplusExecutable.mockResolvedValue({
+      ok: false,
+      installFolder: "/downloads",
+      executablePath: "/downloads/readme.txt",
+      error: "SJASMPLUS exited with code 1"
+    });
+    fireEvent.click(screen.getByText("Select executable..."));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("sjasmplus-validation")).toHaveTextContent("Failed")
+    );
+    expect(screen.queryByTestId("sjasmplus-integrated-badge")).not.toBeInTheDocument();
+    expect(screen.getByTestId("sjasmplus-status-note")).toHaveTextContent(
+      "Unchanged — the executable below failed its test."
+    );
+    // --- The saved setup is not the broken one, so it is not flagged either
+    expect(screen.queryByTestId("sjasmplus-broken-badge")).not.toBeInTheDocument();
+    expect(screen.getByTestId("sjasmplus-status")).toHaveTextContent("Configured");
+    expect(screen.getByText("Apply")).toBeDisabled();
+  });
+
+  it("keeps the success badge when the configured executable is re-tested", async () => {
+    const store = createMockStore();
+    store.dispatch(
+      saveUserSettingAction({
+        sjasmp: { executablePath: "/tools/sjasmplus/sjasmplus", version: "v1.24.0" }
+      }),
+      "ide"
+    );
+
+    renderWithProviders(<SjasmplusIntegrationDialog onClose={vi.fn()} />, { store });
+    await screen.findByTestId("sjasmplus-integrated-badge");
+
+    fireEvent.click(screen.getByText("Test again"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("sjasmplus-validation")).toHaveTextContent("Passed")
+    );
+    expect(screen.getByTestId("sjasmplus-integrated-badge")).toBeInTheDocument();
+    expect(screen.queryByTestId("sjasmplus-status-note")).not.toBeInTheDocument();
+    expect(screen.getByTestId("sjasmplus-version")).toHaveTextContent("v1.24.0");
+  });
+
+  it("stops flagging the old setup once a replacement passes its test", async () => {
+    const store = createMockStore();
+    store.dispatch(
+      saveUserSettingAction({
+        sjasmp: { executablePath: "/moved/away/sjasmplus", version: "v1.24.0" }
+      }),
+      "ide"
+    );
+    mainApiMock.validateSjasmplusExecutable.mockResolvedValue({
+      ok: false,
+      error: "Path does not exist: /moved/away/sjasmplus"
+    });
+
+    renderWithProviders(<SjasmplusIntegrationDialog onClose={vi.fn()} />, { store });
+    await screen.findByTestId("sjasmplus-broken-badge");
+
+    // --- The user picks a different, working executable
+    mainApiMock.showOpenFileDialog.mockResolvedValue("/new/tools/sjasmplus");
+    mainApiMock.probeSjasmplusPath.mockResolvedValue({
+      ok: true,
+      installFolder: "/new/tools",
+      executablePath: "/new/tools/sjasmplus"
+    });
+    mainApiMock.validateSjasmplusExecutable.mockResolvedValue({
+      ok: true,
+      installFolder: "/new/tools",
+      executablePath: "/new/tools/sjasmplus",
+      version: "v1.25.0"
+    });
+    fireEvent.click(screen.getByText("Select executable..."));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("sjasmplus-validation")).toHaveTextContent("Passed")
+    );
+    // --- The old setup is still the configured one, but the fix is a click away,
+    // --- so the stale error stops being the headline
+    expect(screen.queryByTestId("sjasmplus-broken-badge")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("sjasmplus-status-error")).not.toBeInTheDocument();
+    expect(screen.getByTestId("sjasmplus-status-note")).toHaveTextContent(
+      "Press Apply to replace it with the executable below."
+    );
+    expect(screen.getByText("Apply")).toBeEnabled();
   });
 
   it("uses the exported SJASMPLUS setting key", () => {

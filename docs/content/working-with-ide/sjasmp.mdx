@@ -18,25 +18,59 @@ As Klive IDE does not know where to find the SjasmPlus compiler on your machine,
 
 Visit the GitHub page of [SjasmPlus](https://github.com/z00m128/sjasmplus) for details about this excellent Z80 assembler.
 
-The IDE provides a graphical setup dialog from the `IDE > Integrations > SJASMPLUS...` menu item. The dialog can:
+Open the `IDE > Integrations > SjasmPlus Assembler` menu item to display the **SJASMPLUS Integration** dialog. This is the recommended way to set up the assembler: it tests the executable before saving it, so a setup that the dialog accepts is one that Klive can actually compile with.
 
-- Detect an existing `sjasmplus` executable from your `PATH`.
-- On Windows, check the latest 20 official SjasmPlus GitHub releases and suggest a compatible stable download.
-- Download a selected release into a versioned folder under the folder you choose.
-- Use an existing local installation when you select its executable file.
-- Validate the selected executable by compiling a tiny Z80 program before the setting is saved.
+The dialog is built around two summary blocks, with the setup controls between them:
 
-Choose `Local executable` when SJASMPLUS is already on your machine. Choose `Online release` when you want Klive to download and prepare a release for you.
+- **In use** — the assembler Klive uses right now, and whether it still works.
+- **To apply** — the executable you are setting up, and the result of its last test.
+
+### The In use block: is the current setup still good?
+
+Klive re-runs its test every time you open the dialog. The stored setting alone proves nothing: you may have moved, renamed, or deleted the SjasmPlus folder since you set it up, or replaced its content. The test compiles a tiny Z80 program with the configured executable and checks the bytes it generates.
+
+The block reports the outcome like this:
+
+| Display | Meaning |
+|---------|---------|
+| No badge, `Configured` | The test is still running. |
+| ✔ Green check, `Configured` | The configured executable passed its test — the integration works. |
+| ⚠ Red warning, `Not working` | The configured executable is missing or failed, with the reason next to it (for example, `Path does not exist: ...`). |
+
+<Callout type="warning" emoji="💡">
+A `Not working` state means Klive cannot assemble SJASMPLUS sources until you fix it. If the folder simply moved back, press `Test again`; otherwise set up the executable at its new location, as described below.
+</Callout>
+
+### Choosing the executable
+
+The `Source` row selects where the executable comes from:
+
+- **Local executable** — SjasmPlus is already on your machine. Press `Select executable...` and pick the binary. Any `sjasmplus` executable found on your `PATH` is offered as a one-click shortcut in the `On PATH` row.
+- **Online release** — let Klive fetch one for you. It lists the latest 20 official SjasmPlus GitHub releases, marks how many builds each one offers for your system, and preselects a compatible stable release and asset. Choose a target folder with `Select folder...`, then press `Download...`.
+
+A download is installed into a versioned folder, `<the folder you chose>/sjasmplus/<release tag>`, so several releases can live side by side. Klive never overwrites an existing one: if that folder is already there, the download stops with `SJASMPLUS release folder already exists`. Delete it first, or pick another folder.
+
+Whichever route you take, Klive runs the same test on the result and reports it in the **To apply** block as `Passed` or `Failed`, with the compiler's own message when it fails.
 
 <Callout type="warning" emoji="💡">
 SjasmPlus publishes **Windows binaries and source archives only**. On macOS and Linux, `Online release` therefore shows build instructions and a link to the SjasmPlus repository instead of a download list: build SjasmPlus from source (or install it from your package manager), then set it up with `Local executable`.
 </Callout>
 
-By default, Klive saves the integration in user settings. When a Klive project is open, you can choose project settings instead to override the user-level SJASMPLUS path for that project.
-
 <Callout type="info" emoji="💡">
-The release dialog hides prereleases by default. Enable the prerelease option only when you explicitly want to test a non-stable build.
+The release list hides prereleases by default. Enable the prerelease option only when you explicitly want to test a non-stable build.
 </Callout>
+
+### Saving the setup
+
+The `Save to` row decides where the setting goes. By default, Klive saves the integration in user settings. When a Klive project is open, you can choose project settings instead to override the user-level SJASMPLUS path for that project.
+
+Three buttons close the loop:
+
+- **Test again** — re-runs the test on the executable currently shown in **To apply**. Use it after you restore a missing folder, or to double-check a setup.
+- **Apply** — saves the setup and closes the dialog. It stays disabled until a test has passed, so a broken executable can never be saved.
+- **Close** — leaves the settings untouched. If you picked an executable but did not apply it, Klive asks before discarding it.
+
+When you test an executable that is not the configured one, the **In use** block steps back from its own verdict and tells you what the new result means for your setup: `Press Apply to replace it with the executable below` when the tested executable works, or `Unchanged — the executable below failed its test` when it does not. The two blocks never show a success and a failure that look like they are about the same thing.
 
 ## Command-line setup
 
@@ -45,6 +79,8 @@ The IDE also provides the `sjasmp-reset` command (or shorter, `sjasmpr`) to conn
 <ClickableImage src="/images/working-with-ide/sjasmp-reset.png" width={770} />
 
 The command expects a single parameter: the path of the SjasmPlus installation folder. When Klive invokes the assembler, the SjasmPlus executable name is added to this path.
+
+Unlike the dialog, this command stores the path without testing it. Open the integration dialog afterwards if you want to confirm that the folder really holds a working assembler.
 
 <Callout type="info" emoji="💡">
 Klive stores the SjasmPlus settings in the `Klive.setting` file. If you want to change this path for a particular project (perhaps you want to test with another SjasmPlus version), use the `-p` switch to save this setting into the currently open project.

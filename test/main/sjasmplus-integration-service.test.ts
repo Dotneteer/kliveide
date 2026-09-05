@@ -414,30 +414,66 @@ function createTarGz(entries: { name: string; data: Buffer }[]): Buffer {
 
 // --- Mimics the SJASMPLUS CLI: rejects single-dash long options, honours
 // --- --nologo/--version, and assembles the probe source into _probe.bin.
+// --- The behaviour lives in a Node script so the fake works on every platform;
+// --- a tiny shim gives it the shape the host OS can actually execute.
 function createFakeSjasmplus(options?: { failWith?: string }): string {
   const folder = createTempFolder();
-  const executablePath = path.join(folder, "sjasmplus");
-  const failure = options?.failWith;
-  const script = [
-    "#!/bin/sh",
-    'BANNER="SjASMPlus Z80 Cross-Assembler v1.21.0"',
-    "SOURCE=''",
-    "for ARG in \"$@\"; do",
-    "  case \"$ARG\" in",
-    "    --version) echo \"$BANNER\"; exit 0 ;;",
-    "    --nologo) ;;",
-    "    -*) echo \"error: unrecognized option: $ARG\" >&2; exit 1 ;;",
-    "    *) SOURCE=\"$ARG\" ;;",
-    "  esac",
-    "done",
-    failure ? `echo "${failure}" >&2; exit 1` : "",
-    '[ -n "$SOURCE" ] || { echo "error: no source file" >&2; exit 1; }',
-    "printf '\\076\\102\\311' > _probe.bin",
-    "exit 0"
-  ]
-    .filter(Boolean)
-    .join("\n");
-  fs.writeFileSync(executablePath, script + "\n", "utf8");
-  fs.chmodSync(executablePath, 0o755);
+  const isWindows = process.platform === "win32";
+  const logicName = "fake-sjasmplus.js";
+  fs.writeFileSync(
+    path.join(folder, logicName),
+    buildFakeSjasmplusLogic(options?.failWith),
+    "utf8"
+  );
+
+  const executablePath = path.join(folder, isWindows ? "sjasmplus.cmd" : "sjasmplus");
+  if (isWindows) {
+    // --- cmd.exe cannot run an extensionless file, so the fake is a .cmd shim.
+    fs.writeFileSync(
+      executablePath,
+      `@echo off\r\nnode "%~dp0${logicName}" %*\r\nexit /b %errorlevel%\r\n`,
+      "utf8"
+    );
+  } else {
+    fs.writeFileSync(
+      executablePath,
+      `#!/bin/sh\nexec node "$(dirname "$0")/${logicName}" "$@"\n`,
+      "utf8"
+    );
+    fs.chmodSync(executablePath, 0o755);
+  }
+
   return executablePath.replaceAll("\\", "/");
+}
+
+function buildFakeSjasmplusLogic(failWith?: string): string {
+  return [
+    'const fs = require("fs");',
+    'const BANNER = "SjASMPlus Z80 Cross-Assembler v1.21.0";',
+    `const FAILURE = ${JSON.stringify(failWith ?? null)};`,
+    'let source = "";',
+    "for (const arg of process.argv.slice(2)) {",
+    '  if (arg === "--version") {',
+    "    console.log(BANNER);",
+    "    process.exit(0);",
+    "  }",
+    '  if (arg === "--nologo") continue;',
+    '  if (arg.startsWith("-")) {',
+    "    console.error(`error: unrecognized option: ${arg}`);",
+    "    process.exit(1);",
+    "  }",
+    "  source = arg;",
+    "}",
+    "if (FAILURE) {",
+    "  console.error(FAILURE);",
+    "  process.exit(1);",
+    "}",
+    "if (!source) {",
+    '  console.error("error: no source file");',
+    "  process.exit(1);",
+    "}",
+    'fs.writeFileSync("_probe.bin", Buffer.from([0x3e, 0x42, 0xc9]));',
+    "process.exit(0);",
+    ""
+  ].join("\n");
 }
