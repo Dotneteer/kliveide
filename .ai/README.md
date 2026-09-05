@@ -9,3 +9,6 @@ This folder stores durable notes for future AI-assisted work in this repository.
 - For the user's high-level TypeScript-to-WASM migration intent and lessons
   learned from 48K/128K/+3E work, read
   `wasm-migration-intent-and-lessons.md`.
+- **Before adding or migrating a dialog (or any stateful UI part) to the
+  Model/Controller/View split that makes it testable without rendering, read
+  `ui-mvc-guide.md`.**

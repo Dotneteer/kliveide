@@ -125,5 +125,5 @@ export function renderWithProviders(
 
 // ─── Re-exports ───────────────────────────────────────────────────────────────
 
-export { screen, fireEvent, waitFor, act } from "@testing-library/react";
+export { screen, fireEvent, waitFor, act, within, cleanup } from "@testing-library/react";
 export { default as userEvent } from "@testing-library/user-event";

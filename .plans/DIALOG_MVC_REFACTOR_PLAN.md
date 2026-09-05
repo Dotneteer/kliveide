@@ -1287,3 +1287,89 @@ before being kept.
 Fixed alongside it: the container now reads `onClose` through a ref. The controller holds its ports
 for its lifetime, and the dialog registry passes a fresh arrow on every render, so the captured one
 would eventually go stale.
+
+---
+
+# Rollout — the remaining dialogs
+
+Status: **complete**. Seven dialogs migrated in four waves after the SJASMPLUS prototype, in
+increasing order of risk. `npm test` went from **19157** to **19591** passing tests; `tsc` against
+`build/tsconfig.web.json` went from 181 pre-existing errors to 180 (one was fixed in passing);
+`npm run lint:renderer --quiet` and `electron-vite build` are clean.
+
+## What moved
+
+| Wave | Dialog | New location | Tests added |
+| --- | --- | --- | --- |
+| 1 | CreateDiskDialog | `appEmu/dialogs/createDisk/` | 38 node + 18 jsdom |
+| 2 | Z88ChangeRamDialog | `appEmu/dialogs/z88/changeRam/` | 35 node (shared) + views |
+| 2 | Z88RemoveCardDialog | `appEmu/dialogs/z88/removeCard/` | ↑ |
+| 2 | Z88InsertCardDialog | `appEmu/dialogs/z88/insertCard/` | 115 node + 23 jsdom (wave total) |
+| 3 | NewProjectDialog | `appIde/dialogs/newProject/` | 70 node + 19 jsdom |
+| 3 | ExportCodeDialog | `appIde/dialogs/exportCode/` | 83 node + 24 jsdom |
+| 4 | ExcludedProjectItemsDialog | `appIde/dialogs/excludedItems/` | 33 node + 13 jsdom |
+
+Left on the plain pattern, per the "when to use it" rule: `DeleteDialog`, `RenameDialog`,
+`NewItemDialog`, `AboutDialog`, `SetMemoryDialog`, `FirstStartDialog`, `Z88ExportCardDialog`. Each
+asks one question or renders one fact; the Intent/Event split would be pure ceremony.
+
+## Shared infrastructure this produced
+
+- `test/mvc/fixtures.ts` — `deepMerge` / `DeepPartial`, lifted out of the SJASMPLUS fakes so every
+  suite builds fixtures the same way.
+- `appEmu/dialogs/z88/Z88Ports.ts` + `useZ88Ports.ts` — one `Z88MachinePort`, `Z88OutputPort` and
+  environment reader behind all three Z88 dialogs. Designing this once was the point of doing that
+  family adjacently.
+- `appEmu/machines/z88Cards.ts` — the card catalogue and `applyCardStateChange`, split out of
+  `Z88ToolArea.tsx` so a model layer does not import a React component to learn what a card is.
+- `appIde/project/project-paths.ts` — `getNodeDir/File/Name/Extension`, split out of
+  `project-node.ts`, which reaches the editor registry and through it Monaco. Importing two string
+  helpers used to drag Monaco into any jsdom test that touched them.
+
+## Behaviour deliberately changed
+
+Each of these is a fix the migration surfaced, not an accident. None is covered by an old test.
+
+1. **Double-submit is impossible.** Every migrated dialog now has a `busy` flag guarding its
+   primary action. Previously a second click started a second disk write / project creation /
+   machine rebuild / project save. `Z88ChangeRam` and `ExcludedItems` were the easiest to hit,
+   because `saveProject` sleeps a second by design.
+2. **`Z88ChangeRamDialog` no longer rebuilds a machine for nothing.** It compared raw chip masks,
+   so a machine with no `intRAM` key — which reads, and is *displayed*, as 512K — was rebuilt when
+   the user pressed Ok without changing anything. It now compares fitted sizes, so what the warning
+   says and what Ok does cannot disagree.
+3. **`Z88InsertCardDialog` no longer throws on an inconclusive card check.** A check that returned
+   neither content nor a message hit `contents.length` on `undefined`.
+4. **`Z88InsertCardDialog`'s accepted sizes are derived, not cached.** The old component stored them
+   when the dropdown changed and never refreshed them after a size-implied substitution, so a
+   second file was judged against the first card's rules.
+5. **`ExportCodeDialog` no longer throws on a silent failure.** `message.includes("-addr")` ran on
+   `result.finalMessage`, which is optional; a failure with no message replaced itself with a
+   TypeError. It also no longer saves the project for an edit that changed nothing.
+6. **`NewProjectDialog` handles a failed template lookup.** The old effect had no failure path, so a
+   rejection escaped as an unhandled promise and left the dropdown empty with no explanation. The
+   same is true of `ExcludedProjectItemsDialog`'s global-exclusions lookup.
+7. **`NewProjectDialog`'s template lookup is generation-guarded.** Its `cancelled` flag covered
+   unmount but not overtaking, so switching machines twice quickly could land the first machine's
+   templates on the second machine's dropdown.
+8. **One cosmetic regression, accepted.** Dialogs whose folder picker is owned by the controller no
+   longer re-focus the text input after browsing: `TextInput.browse` refocuses only when it resolves
+   a value, and the value now arrives through the view model instead.
+
+## Traps met along the way
+
+Beyond the five already documented above:
+
+- **`vi.doMock` on a path that no longer exists fails silently.** Moving a dialog left
+  `AppShellStartup.test.tsx` stubbing a module that had gone, so the real component rendered against
+  a partial provider mock. The error named `useRendererContext`, not the stale path. After moving a
+  component, grep the test tree for its old specifier.
+- **`harness.dispatch` deadlocks against a held-open port.** It drains *every* pending handler, so
+  using it for a mid-flight edit waits on the very operation the test is holding open. Use `send`.
+- **`ResizeObserver` and virtualized lists.** `VirtualizedList` renders nothing under jsdom, because
+  every element measures zero. The view suites stub the list so they test the view's own mapping
+  rather than virtua's measuring.
+- **Radix `Dropdown` renders its label twice** — once in the visible trigger, once in the hidden
+  native select it keeps for accessibility — so `getByText` on an option label finds two nodes.
+- **`IconButton` and `TabButton` render a `div`.** Neither has a role or an accessible name, so a
+  clickable one needs a wrapper carrying the `data-testid` and the handler.

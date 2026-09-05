@@ -13,15 +13,15 @@ import { AboutDialog, AboutDialogResult } from "./AboutDialog";
 import {
   NewProjectDialog,
   NewProjectDialogResult
-} from "./NewProjectDialog";
+} from "./newProject/NewProjectDialog";
 import {
   ExportCodeDialog,
   ExportCodeDialogResult
-} from "./ExportCodeDialog";
+} from "./exportCode/ExportCodeDialog";
 import {
   ExcludedProjectItemsDialog,
   ExcludedProjectItemsDialogResult
-} from "./ExcludedProjectItemsDialog";
+} from "./excludedItems/ExcludedProjectItemsDialog";
 import {
   FirstStartDialog,
   FirstStartDialogResult
