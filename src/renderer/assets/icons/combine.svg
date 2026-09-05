@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!--
+    "Combine" = two sources on the left, one result on the right, and a single
+    chevron between them showing the direction of the flow. Replaces the stock
+    icon, which had three sources, one arrow and a tall two-cell result block.
+
+    This icon renders at 16px in the explorer and the status bar, and that
+    governs the whole design. Two earlier attempts failed there:
+
+      - two thin arrows, one per source: the chevron heads were 1.8 units
+        (~1.2px at 16) and vanished outright, leaving a smudge between the
+        squares. This is what "the connecting arrows aren't visible" was.
+      - two arrows with solid 4-unit heads: legible, but four separate marks
+        in the middle of a 16px box still crowded into each other.
+
+    One large chevron carries the same meaning with a single mark, so it has
+    the whole middle of the icon to itself, and at stroke-width 2.6 (against
+    the squares' 2) it survives the downscale. Its painted extent is x
+    9.3-14.8, between the sources' edge at 8.0 and the result's at 15.8.
+
+    The stroke is NOT scaled with the shape. Taking it down proportionally
+    (2.24) looks better at 80px but leaves the chevron lighter than the squares
+    it sits between, and at 16px that is the difference between reading it and
+    not.
+
+    Verify any change by rasterising at 16px and viewing it magnified. At full
+    size every version of this icon looked fine, including the broken ones.
+  -->
+
+  <!-- Two sources -->
+  <rect x="1" y="2.5" width="6" height="6" rx="1.3"/>
+  <rect x="1" y="15.5" width="6" height="6" rx="1.3"/>
+
+  <!-- Direction of the flow -->
+  <path stroke-width="2.6" d="M10.57 8.16 13.53 12 10.57 15.84"/>
+
+  <!-- The merged result -->
+  <rect x="16.8" y="9" width="6" height="6" rx="1.3"/>
+</svg>

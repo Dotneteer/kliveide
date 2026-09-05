@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!--
+    "Debug" = the play glyph from play.svg + the bug pictogram lifted verbatim
+    from the stock "debug" entry in icon-defs.ts.
+
+    The triangle uses the family transform (see play.svg) so it stays identical
+    across play / debug / debug-continue / debug-continue-with-bug.
+
+    The triangle and a bug big enough to read at the 20px toolbar size cannot
+    both fit without touching, so the triangle is drawn through a mask that
+    punches the bug's own silhouette - dilated by 0.85 user units - out of it.
+    The silhouette, rather than a circle, keeps the gap even around the antennae.
+
+    The bug's baseline sits ~1.36 units BELOW the triangle's lowest vertex, not
+    level with it. Pinned level, a bug this size grows up into the triangle's
+    right vertex and the mask cuts the point off the play glyph - the one
+    feature that makes it read as "play".
+  -->
+
+  <defs>
+    <!-- White = keep, black = cut. Stroke 2 * 0.85 / 0.70125 = 2.424: the
+         stroke is centred, so it dilates the shape by half its width, and the
+         group scale then shrinks it. -->
+    <mask id="bug-cutout">
+      <rect width="24" height="24" fill="white"/>
+      <g transform="translate(12.360,4.180) scale(0.70125)">
+        <path fill="black" stroke="black" stroke-width="2.424" stroke-linejoin="round" stroke-linecap="round"
+              d="M10.94 13.5l-1.32 1.32a3.73 3.73 0 0 0-7.24 0L1.06 13.5 0 14.56l1.72 1.72-.22.22V18H0v1.5h1.5v.08c.077.489.214.966.41 1.42L0 22.94 1.06 24l1.65-1.65A4.308 4.308 0 0 0 6 24a4.31 4.31 0 0 0 3.29-1.65L10.94 24 12 22.94 10.09 21c.198-.464.336-.951.41-1.45v-.1H12V18h-1.5v-1.5l-.22-.22L12 14.56l-1.06-1.06zM6 13.5a2.25 2.25 0 0 1 2.25 2.25h-4.5A2.25 2.25 0 0 1 6 13.5zm3 6a3.33 3.33 0 0 1-3 3 3.33 3.33 0 0 1-3-3v-2.25h6v2.25z"/>
+      </g>
+    </mask>
+  </defs>
+
+  <!-- The Lucide play path, scaled 0.85 about translate(1.65,1.8). The group
+       scale shrinks the stroke too, so stroke-width is pre-divided by 0.85 to
+       keep the rendered weight at the Lucide standard of 2. -->
+  <g mask="url(#bug-cutout)" transform="translate(1.65,1.8) scale(0.85)" stroke-width="2.353">
+    <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>
+  </g>
+
+  <!-- The bug is line art drawn as a filled path rather than a stroked outline,
+       so it opts out of the root stroke and paints with fill - still
+       currentColor, so it follows the theme. -->
+  <g transform="translate(12.360,4.180) scale(0.70125)">
+    <path fill="currentColor" stroke="none" d="M10.94 13.5l-1.32 1.32a3.73 3.73 0 0 0-7.24 0L1.06 13.5 0 14.56l1.72 1.72-.22.22V18H0v1.5h1.5v.08c.077.489.214.966.41 1.42L0 22.94 1.06 24l1.65-1.65A4.308 4.308 0 0 0 6 24a4.31 4.31 0 0 0 3.29-1.65L10.94 24 12 22.94 10.09 21c.198-.464.336-.951.41-1.45v-.1H12V18h-1.5v-1.5l-.22-.22L12 14.56l-1.06-1.06zM6 13.5a2.25 2.25 0 0 1 2.25 2.25h-4.5A2.25 2.25 0 0 1 6 13.5zm3 6a3.33 3.33 0 0 1-3 3 3.33 3.33 0 0 1-3-3v-2.25h6v2.25z"/>
+  </g>
+</svg>

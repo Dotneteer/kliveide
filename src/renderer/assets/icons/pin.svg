@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!--
+    "Not pinned" = pinned.svg turned 90 degrees clockwise, so the pin lies on
+    its side with the point to the left. ViewControls.tsx toggles between the
+    two ("pinned" upright, "pin" on its side) for the always-on-top button, and
+    the stock icons this replaces used the same convention.
+
+    The geometry is the pinned.svg paths verbatim, rotated by a group transform
+    rather than recomputed, so the two icons can never drift apart: edit
+    pinned.svg and this follows.
+
+    Rotation is isometric, so unlike the scaled groups in play.svg and debug.svg
+    the stroke-width needs no compensation here.
+
+    Rotating about the centre of the 24x24 box keeps everything inside it: the
+    source spans x 5..19, y 2..22, and (x,y) -> (24-y, x) maps that to
+    x 2..22, y 5..19.
+  -->
+  <g transform="rotate(90, 12, 12)">
+    <path d="M12 17v5"/>
+    <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>
+  </g>
+</svg>

@@ -65,6 +65,18 @@ merely uncoloured, which no route diff can see.
 - Docs verification: `npm run doc:check`
 - Docs preview at the production path: `npm run doc:serve`
 
+## Icons
+
+- To add an icon, drop an `.svg` file into `src/renderer/assets/icons/`. The file
+  name is the icon ID (`sun.svg` -> `<Icon iconName="sun" />`). Do **not** hand-add
+  entries to `src/renderer/theming/icon-defs.ts`; that array is the legacy stock.
+- File icons override stock icons of the same name.
+- Lucide icons can be saved verbatim: they paint with `currentColor`, which the
+  `Icon` component wires to the theme colour.
+- The folder's `README.md` documents the naming rules, the sanitizing, and the
+  theming contract. `src/renderer/theming/svg-icon-parser.ts` is the parser and
+  `icon-registry.ts` owns the override precedence.
+
 ## Notes For React Refactors
 
 - Dialogs with async orchestration use a Model/Controller/View split so their behavior can be

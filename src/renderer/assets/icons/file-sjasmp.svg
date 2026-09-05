@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!--
+    SJASMPLUS source file, converted from the "file-sjasmp" PNG pair in
+    image-defs.ts. It replaces BOTH of those: the PNG needed a "-light" variant
+    only because its frame was a fixed colour (#C0C0C0 dark / #000000 light),
+    and this design needs no theme variant at all.
+
+    Why a filled tile rather than the PNG's outlined frame with a bare purple
+    glyph: the icon renders at 16px in the explorer, over four different row
+    backgrounds - #202020, #f1f1f1 and the selected-row #002952 and #0057b3.
+    The brand purple #A349A4 scores only 1.3:1 against that last one, so on a
+    focused selection in the light theme today's PNG all but disappears. Putting
+    the purple down as the tile and the letter in white makes the icon carry its
+    own contrast: the S sits at 5.2:1 against the tile on every background.
+
+    That also means the icon deliberately ignores `currentColor`. It is
+    self-contained, so the `fill` prop the explorer passes has no effect here -
+    which is the point, not an oversight.
+
+    #A349A4 is the exact purple sampled from the source PNG.
+  -->
+
+  <!-- Brand tile -->
+  <rect x="2" y="2" width="20" height="20" rx="3" fill="#A349A4" stroke="none"/>
+
+  <!-- "S", drawn as a stroke so it stays crisp when the icon is scaled down -->
+  <path fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"
+        d="M15 8.8C14.3 7.6 13.2 7 12 7C10.3 7 9 8 9 9.3C9 12.2 15 10.9 15 14.3C15 15.8 13.7 17 12 17C10.6 17 9.6 16.4 9 15.4"/>
+</svg>

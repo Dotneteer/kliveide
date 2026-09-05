@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!--
+    klive.project - the read-only JSON manifest at the project root.
+
+    Replaces the "file-project" PNG pair, whose blue window with an orange block
+    read as a generic application window and said nothing about what the file
+    is. The list says what it actually is: a summary of the elements the project
+    contains.
+
+    Same self-contained tile construction as the file-* siblings, and like them
+    it deliberately ignores `currentColor`.
+
+    The glyph is dark on amber rather than white: white on #E8A33D is only
+    2.2:1, while #202020 reaches 7.6:1 - and at the 16px the explorer renders
+    this at, that difference is the whole legibility of the icon.
+
+    Two shapes were rejected on evidence rather than taste: a gear blurs into
+    the tile at 16px, and an indented tree collapses into what reads as a
+    letter "E" - actively misleading next to siblings that ARE letters (S, K, B).
+
+    Trade-off worth knowing, the same one file-zxbas.svg carries: the tile is
+    1.9:1 against the light row (#f1f1f1), under the 3:1 guideline for graphical
+    objects. Amber against light grey separates on hue rather than luminance,
+    and the dark glyph inside - the part actually read - is well clear. Reaching
+    3:1 would need an amber dark enough to stop being amber.
+  -->
+
+  <!-- Project tile -->
+  <rect x="2" y="2" width="20" height="20" rx="3" fill="#E8A33D" stroke="none"/>
+
+  <!-- Contents: three listed items, centred on the tile -->
+  <g fill="#202020" stroke="none">
+    <circle cx="7.6" cy="8.3" r="1.3"/>
+    <circle cx="7.6" cy="12" r="1.3"/>
+    <circle cx="7.6" cy="15.7" r="1.3"/>
+  </g>
+  <g fill="none" stroke="#202020" stroke-width="2.2" stroke-linecap="round">
+    <path d="M10.6 8.3h6"/>
+    <path d="M10.6 12h6"/>
+    <path d="M10.6 15.7h6"/>
+  </g>
+</svg>

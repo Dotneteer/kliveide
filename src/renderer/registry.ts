@@ -464,7 +464,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     editor: CODE_EDITOR,
     subType: "json",
     isReadOnly: true,
-    icon: "@file-project"
+    icon: "file-project"
   },
   {
     matchType: "full",
@@ -502,7 +502,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".kz80.asm",
     editor: CODE_EDITOR,
     subType: "kz80-asm",
-    icon: "@file-kz80-asm"
+    icon: "file-kz80-asm"
   },
   {
     matchType: "ends",
@@ -517,7 +517,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     editor: CODE_EDITOR,
     subType: "sjasmp",
     canBeBuildRoot: true,
-    icon: "@file-sjasmp"
+    icon: "file-sjasmp"
   },
   {
     matchType: "ends",
@@ -525,7 +525,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     editor: CODE_EDITOR,
     subType: "kz80-asm",
     canBeBuildRoot: true,
-    icon: "@file-kz80-asm"
+    icon: "file-kz80-asm"
   },
   {
     matchType: "ends",
@@ -539,14 +539,14 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".zxbas",
     editor: CODE_EDITOR,
     subType: "zxbas",
-    icon: "@file-zxbas"
+    icon: "file-zxbas"
   },
   {
     matchType: "ends",
     pattern: ".bas",
     editor: CODE_EDITOR,
     subType: "zxbas",
-    icon: "@file-zxbas"
+    icon: "file-zxbas"
   },
   {
     matchType: "ends",

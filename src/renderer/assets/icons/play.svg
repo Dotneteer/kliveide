@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!--
+    The Lucide "play" glyph, scaled to 85%.
+
+    The whole run/debug family (play, debug, debug-continue,
+    debug-continue-with-bug) shares this exact transform, because the toolbar
+    swaps these icons inside one split button and the triangle must not appear
+    to resize. The 85% also buys the room that debug-continue.svg needs for its
+    pause bar: at full size the bar and the triangle merged at 20px.
+  -->
+  <!-- The Lucide play path, scaled 0.85 about translate(1.65,1.8). The group
+       scale shrinks the stroke too, so stroke-width is pre-divided by 0.85 to
+       keep the rendered weight at the Lucide standard of 2. -->
+  <g transform="translate(1.65,1.8) scale(0.85)" stroke-width="2.353">
+    <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>
+  </g>
+</svg>

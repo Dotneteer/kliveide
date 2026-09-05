@@ -7,6 +7,20 @@ import { SpaceFiller } from "@controls/SpaceFiller";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import styles from "./ExplorerPanel.module.scss";
 
+/**
+ * Size of every icon on an explorer row: the expand chevron, the
+ * home/folder/file glyph, and the right-hand exclude and build-root badges.
+ *
+ * One value for the whole row on purpose - a smaller badge beside a 20px file
+ * tile reads as an accident rather than a hierarchy. Matches TAB_ICON_SIZE in
+ * DocumentTab.tsx, so the same file shows the same size icon in the tree and on
+ * its tab.
+ *
+ * `.item` in ExplorerPanel.module.scss is sized to fit this; if you change one,
+ * check the other.
+ */
+const EXPLORER_ICON_SIZE = 20;
+
 type ExplorerProjectItemProps = {
   canShowExcludedItems: boolean;
   focused: boolean;
@@ -82,12 +96,22 @@ export function ExplorerProjectItem({
             onExcludedItemsClick();
           }}
         >
-          <Icon xclass={styles.actionButton} iconName="exclude" width={16} height={16} />
+          <Icon
+            xclass={styles.actionButton}
+            iconName="exclude"
+            width={EXPLORER_ICON_SIZE}
+            height={EXPLORER_ICON_SIZE}
+          />
         </div>
       )}
       {!node.data.isFolder && isBuildRoot && (
         <div className={styles.iconRight}>
-          <Icon iconName="combine" fill="--console-ansi-bright-green" width={16} height={16} />
+          <Icon
+            iconName="combine"
+            fill="--console-ansi-bright-green"
+            width={EXPLORER_ICON_SIZE}
+            height={EXPLORER_ICON_SIZE}
+          />
         </div>
       )}
     </div>
@@ -104,7 +128,12 @@ function HomeNodeIcon({ isExpanded, isSelected }: ExpandableNodeIconProps) {
   return (
     <span className={styles.nodeIconGroup}>
       <ExpandIcon isExpanded={isExpanded} isSelected={isSelected} />
-      <Icon iconName="home" fill="--console-ansi-bright-magenta" width={16} height={16} />
+      <Icon
+        iconName="home"
+        fill="--console-ansi-bright-magenta"
+        width={EXPLORER_ICON_SIZE}
+        height={EXPLORER_ICON_SIZE}
+      />
     </span>
   );
 }
@@ -117,8 +146,8 @@ function FolderNodeIcon({ isExpanded, isSelected }: ExpandableNodeIconProps) {
       <Icon
         iconName={isExpanded ? "folder-opened" : "folder"}
         fill="--fill-explorer-icon"
-        width={16}
-        height={16}
+        width={EXPLORER_ICON_SIZE}
+        height={EXPLORER_ICON_SIZE}
       />
     </span>
   );
@@ -133,12 +162,16 @@ type FileNodeIconProps = {
 function FileNodeIcon({ iconFill, iconName }: FileNodeIconProps) {
   return (
     <span className={styles.nodeIconGroup}>
-      <span className={styles.nodeIconPlaceholder} aria-hidden="true" />
+      <span
+        className={styles.nodeIconPlaceholder}
+        style={{ width: EXPLORER_ICON_SIZE, height: EXPLORER_ICON_SIZE }}
+        aria-hidden="true"
+      />
       <Icon
         iconName={iconName ?? "file-code"}
         fill={iconFill ?? "--fill-explorer-icon"}
-        width={16}
-        height={16}
+        width={EXPLORER_ICON_SIZE}
+        height={EXPLORER_ICON_SIZE}
       />
     </span>
   );
@@ -148,8 +181,8 @@ function ExpandIcon({ isExpanded, isSelected }: ExpandableNodeIconProps) {
   return (
     <Icon
       iconName={isExpanded ? "chevron-down" : "chevron-right"}
-      width={16}
-      height={16}
+      width={EXPLORER_ICON_SIZE}
+      height={EXPLORER_ICON_SIZE}
       fill={isSelected ? "--color-chevron-selected" : "--color-chevron"}
     />
   );

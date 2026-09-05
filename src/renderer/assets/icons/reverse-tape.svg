@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!--
+    "Rewind tape" = debug-continue.svg mirrored horizontally, with the triangle
+    filled: the bar ends up on the right and the triangle points left, which is
+    the orientation of the stock "reverse-tape" this replaces.
+
+    The mirror is a group transform over the unchanged debug-continue geometry
+    rather than mirrored coordinates, so this icon inherits the family
+    proportions (see play.svg) and cannot drift from them.
+
+    The triangle carries fill="currentColor" but KEEPS the inherited stroke.
+    That matters: a stroked outline reaches one unit beyond its path on every
+    side, so filling without the stroke would quietly shrink the triangle by a
+    unit all round and make it lighter than the rest of the toolbar. Filling and
+    stroking gives a solid triangle with exactly the silhouette the outlined one
+    has in debug-continue.svg.
+
+    scale(-1,1) is isometric, so - as with the rotation in pin.svg, and unlike
+    the scaled groups - the stroke-width needs no compensation for the mirror
+    itself. The inner 2.353 is the family scale compensation.
+  -->
+  <g transform="translate(24,0) scale(-1,1)">
+    <!-- Tape bar, identical to the pause bar in debug-continue.svg -->
+    <rect x="0.4" y="3.35" width="2.2" height="17.3" rx="1.1" fill="currentColor" stroke="none"/>
+
+    <!-- The Lucide play path under the shared family transform, filled -->
+    <g transform="translate(1.65,1.8) scale(0.85)" stroke-width="2.353">
+      <path fill="currentColor" d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>
+    </g>
+  </g>
+</svg>

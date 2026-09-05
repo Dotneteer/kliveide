@@ -15,6 +15,16 @@ import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
 import type { MainApi } from "@common/messaging/MainApi";
 
+/**
+ * Size of every icon on a document tab: the file-type glyph and the read-only
+ * and locked badges.
+ *
+ * TabButton already renders the close/dirty affordance at 20, so this is the
+ * value that makes the whole tab consistent rather than an exception to it.
+ * The tab is 36px tall, so there is room to spare.
+ */
+const TAB_ICON_SIZE = 20;
+
 // Preserves the hover affordance when tab order or labels change under a stationary pointer.
 let lastDocumentTabPointerPosition: { clientX: number; clientY: number } | undefined;
 
@@ -198,7 +208,12 @@ export const DocumentTab = ({
       onDoubleClick={() => tabDoubleClicked?.()}
       onContextMenu={contextMenuApi.show}
     >
-      <Icon iconName={iconName} width={16} height={16} fill={iconFill} />
+      <Icon
+        iconName={iconName}
+        width={TAB_ICON_SIZE}
+        height={TAB_ICON_SIZE}
+        fill={iconFill}
+      />
       <span
         ref={nameRef}
         className={classnames(styles.titleText, {
@@ -364,8 +379,8 @@ function renderReadOnlyBadge(
     <div className={styles.readOnlyIcon} ref={readOnlyRef}>
       <Icon
         iconName="shield"
-        width={16}
-        height={16}
+        width={TAB_ICON_SIZE}
+        height={TAB_ICON_SIZE}
         fill={"--color-readonly-icon-" + (isActive ? "active" : "inactive")}
       />
       <TooltipFactory
@@ -382,7 +397,12 @@ function renderReadOnlyBadge(
 function renderLockedBadge(lockedRef: ReturnType<typeof useTooltipRef>) {
   return (
     <div className={styles.lockedIcon} ref={lockedRef}>
-      <Icon iconName="lock" width={16} height={16} fill="--console-ansi-bright-red" />
+      <Icon
+        iconName="lock"
+        width={TAB_ICON_SIZE}
+        height={TAB_ICON_SIZE}
+        fill="--console-ansi-bright-red"
+      />
       <TooltipFactory
         refElement={lockedRef.current}
         placement="right"

@@ -3,7 +3,7 @@ import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import classnames from "classnames";
 import { darkTheme } from "./dark-theme";
-import { iconLibrary } from "./icon-defs";
+import { lookupIcon } from "./icon-registry";
 import { imageLibrary } from "./image-defs";
 import { lightTheme } from "./light-theme";
 import { ThemeInfo, ThemeManager } from "./theme";
@@ -94,9 +94,7 @@ function ThemeProvider({ children }: Props) {
       theme: activeThemeInfo,
       root,
       getThemeProperty: (key: string) => activeThemeInfo.properties[key],
-      getIcon: (key: string) =>
-        iconLibrary.find((ic) => ic.name === key) ??
-        iconLibrary.find((ic) => ic.name === "unknown"),
+      getIcon: (key: string) => lookupIcon(key),
       getImage: (key: string) =>
         imageLibrary.find((im) => im.name === key) ??
         imageLibrary.find((im) => im.name === "file-code")

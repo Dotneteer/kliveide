@@ -59,6 +59,44 @@ export const Icon = memo(({
       );
     }
 
+    // --- Icons loaded from assets/icons keep arbitrary inner markup, which is
+    // --- what multi-element, stroke-based sets (Lucide) need.
+    if (iconInfo.kind === "markup") {
+      const { paint } = iconInfo;
+      return (
+        <svg
+          className={xclass}
+          xmlns='http://www.w3.org/2000/svg'
+          viewBox={iconInfo.viewBox}
+          // --- The source root's paint attributes have to survive: dropping
+          // --- fill="none" would turn every outline icon into a solid blob.
+          fill={paint.fill}
+          stroke={paint.stroke}
+          strokeWidth={paint["stroke-width"]}
+          strokeLinecap={paint["stroke-linecap"] as SVGProps<SVGSVGElement>["strokeLinecap"]}
+          strokeLinejoin={paint["stroke-linejoin"] as SVGProps<SVGSVGElement>["strokeLinejoin"]}
+          fillRule={paint["fill-rule"] as SVGProps<SVGSVGElement>["fillRule"]}
+          clipRule={paint["clip-rule"]}
+          style={{
+            width: `${width}px`,
+            height: `${height}px`,
+            // --- The theme colour reaches the markup through currentColor.
+            // --- Setting `fill` here instead would override the root's
+            // --- fill="none" and fill in every stroke icon.
+            color: fillValue,
+            fillOpacity: opacity,
+            // --- fillOpacity alone does nothing for a stroked icon
+            strokeOpacity: opacity,
+            transform: `rotate(${rotate ?? 0}deg)`,
+            flexShrink: 0,
+            flexGrow: 0,
+            ...style
+          }}
+          dangerouslySetInnerHTML={{ __html: iconInfo.content }}
+        />
+      );
+    }
+
     return (
       <svg
         className={xclass}

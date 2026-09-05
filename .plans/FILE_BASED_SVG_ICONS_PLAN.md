@@ -1,8 +1,8 @@
 # File-Based SVG Icons Plan
 
-**Status:** Proposed
+**Status:** Complete
 **Created:** 2026-09-05
-**Updated:** 2026-09-05
+**Updated:** 2026-09-05 (implemented)
 **Scope:** Add a drop-in folder of `.svg` files that register themselves as icon IDs (filename = ID) and override same-named stock icons. Targets the renderer icon stock only (`Icon`, `getIcon`). The base64 PNG stock in `image-defs.ts` (`@name` references) is explicitly out of scope.
 
 ---
@@ -398,3 +398,70 @@ Run: `npm test -- --project node test/theming/…` then `npm test -- --project j
 - `npm run icons:list` — a small script printing `listIconNames()`, useful when hunting for an existing ID.
 - A dev-only "icon gallery" panel rendering every registered ID with its name, which makes both the stock and the file set browsable.
 - Generated `export type IconId = "sun" | "rocket" | …` so a typo in `iconName` fails the type-check.
+
+---
+
+## 12. Implementation Notes
+
+Implemented as planned. Three findings worth recording, because each of them
+would have shipped a silent defect:
+
+1. **`strictNullChecks: false` defeats truthiness narrowing.** `if (!parsed.ok)`
+   does not narrow a discriminated union in this project's compiler mode, so
+   `parsed.reason` failed to type-check. Callers must compare the discriminant
+   explicitly (`parsed.ok === false`); the rule is documented on the `ParsedIcon`
+   type so it does not get "simplified" back into a build break.
+
+2. **ID namespacing has to cover *referenced* IDs, not just defined ones.** The
+   first implementation scoped only IDs an icon declares, which left a dangling
+   `href="#shape"` global and able to resolve against an unrelated element
+   elsewhere in the document. `namespaceIds` now collects both definitions and
+   references.
+
+3. **The SVG-namespace question is invisible to jsdom.** Setting `innerHTML` on
+   an `<svg>` must produce children in the SVG namespace or they render as
+   nothing; jsdom's `querySelector("circle")` matches either way, so the unit
+   tests could not prove it. Verified separately in Chromium: all children are
+   created in `http://www.w3.org/2000/svg`, they have non-zero bounding boxes,
+   `fill` stays `none`, and `currentColor` resolves per instance.
+
+### Verification performed
+
+- `npx tsc --noEmit -p build/tsconfig.web.json` - no new errors (the project has
+  a 181-error pre-existing baseline; the only hit in touched files,
+  `IconButton.tsx(54,7)`, was confirmed pre-existing by stashing).
+- `npm run test:unit` - 19,633 passed, 0 failed, across 615 files.
+- `npm run lint:renderer` - 0 errors, 60 warnings, byte-identical to the
+  pre-change baseline.
+- `npx electron-vite build` - exit 0; the icon geometry is confirmed inlined in
+  `out/renderer/assets/index-*.js`.
+- Chromium check of the `innerHTML` namespace behaviour described above.
+
+- Manual in-app check: confirmed by the author. The seeded `rocket.svg`
+  renders correctly in the running IDE, overriding the stock `rocket` used by
+  the "Fast LOAD mode" toolbar button in `ViewControls.tsx`.
+
+### Update: the stock array is being retired icon by icon
+
+`icon-defs.ts` is shrinking as icons move into `assets/icons/`; entries whose
+`.svg` exists are being deleted outright (`play`, `debug`, `rocket`, `stop`,
+`pause`, `home`, `restart`, `folder`, `sun`, ...), so those names now resolve
+through the file library alone.
+
+Two registry tests originally named a specific icon and broke on this: the
+un-shadowed-stock test named `play` (which gained a `play.svg`) and the
+precedence test named `rocket` (whose stock entry was later deleted). Both now
+discover their subject at run time by intersecting `iconLibrary` with
+`fileIconLibrary`. **Do not reintroduce a hard-coded icon name in these tests** -
+any name will eventually be migrated or retired.
+
+### Decision: `rocket.svg` is intentional, not a leftover fixture
+
+`assets/icons/rocket.svg` deliberately shadows the stock `rocket` in
+`icon-defs.ts`, which means the "Fast LOAD mode" button in `ViewControls.tsx`
+now renders the Lucide stroke rocket instead of the original filled one. The
+author accepted this as a real UI change.
+
+Its stock counterpart has since been deleted from `icon-defs.ts`, so `rocket` is
+now a file-only icon and no longer demonstrates precedence. The tests no longer
+depend on it.

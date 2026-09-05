@@ -19,7 +19,9 @@
     overflow: hidden;
     outline: none;
     width: calc(100% - 2px);
-    height: 20px;
+    // Sized to fit NODE_ICON_SIZE (20px) in ExplorerProjectItem.tsx with a
+    // little air; raise both together if the node icons grow again.
+    height: 24px;
     align-items: center;
     border: 1px solid transparent;
 
@@ -56,11 +58,12 @@
     gap: 4px;
   }
 
+  // Reserves the expand-chevron column so file nodes line up under the folder
+  // glyphs of their parent. Its size comes from NODE_ICON_SIZE as an inline
+  // style, so it cannot drift away from the chevron it stands in for.
   .nodeIconPlaceholder {
     flex-shrink: 0;
     flex-grow: 0;
-    width: 16px;
-    height: 16px;
   }
 
   .name {

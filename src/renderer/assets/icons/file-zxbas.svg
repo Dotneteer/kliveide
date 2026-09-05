@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!--
+    ZX BASIC source file, converted from the "file-zxbas" PNG pair in
+    image-defs.ts and replacing both of them.
+
+    Same self-contained construction as file-sjasmp.svg and file-kz80-asm.svg -
+    a coloured tile carrying the letter - but with the letter DARK rather than
+    white, for two reasons:
+
+      1. #D670D6 is the exact glyph colour sampled from both source PNGs, and it
+         is too light to sit behind white text (2.9:1). Against #202020 it
+         scores 5.5:1, the best letter contrast of any option considered.
+
+      2. It keeps this icon apart from file-sjasmp.svg. That icon's #A349A4 is
+         hue 299 and this pink is hue 300 - the same colour, differing only in
+         lightness. Darkening this one until white worked would have landed
+         almost exactly on the sjasmp purple and made two file types look alike
+         in the explorer. Inverting the letter instead separates them at a
+         glance: dark tile + light letter there, light tile + dark letter here.
+
+    Trade-off worth knowing: the tile itself is 2.6:1 against the light row
+    (#f1f1f1), under the 3:1 guideline for graphical objects. The pink/grey hue
+    difference carries it in practice, and the letter - the part actually read -
+    is well clear. Darkening the tile to #C960C9 would reach 3.1:1 at the cost
+    of the exact brand colour and some of the separation from sjasmp.
+
+    Like its siblings this icon deliberately ignores `currentColor`.
+  -->
+
+  <!-- Brand tile -->
+  <rect x="2" y="2" width="20" height="20" rx="3" fill="#D670D6" stroke="none"/>
+
+  <!-- "B", stroked so it stays crisp at the 16px the explorer renders it at -->
+  <g fill="none" stroke="#202020" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9.2 7V17"/>
+    <path d="M9.2 7h3.4a2.5 2.5 0 0 1 0 5H9.2"/>
+    <path d="M9.2 12h4a2.5 2.5 0 0 1 0 5H9.2"/>
+  </g>
+</svg>
