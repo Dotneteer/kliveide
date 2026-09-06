@@ -20,6 +20,7 @@
 
 .addressPrompt {
   outline: none;
+  @include focus-ring;
   border: none;
   font-family: var(--monospace-font);
   height: 20px;

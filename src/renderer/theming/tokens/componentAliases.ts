@@ -110,7 +110,9 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-toolbar": "var(--surface-chrome)",
   "--bgcolor-keydown-toolbarbutton": "var(--surface-active)",
   "--bgcolor-toolbarbutton-disabled": "var(--text-disabled)",
-  "--color-toolbarbutton": "var(--text-secondary)",
+  // Primary actions, so full-contrast rather than the secondary tier the first pass used — with
+  // --text-secondary the whole toolbar read as disabled.
+  "--color-toolbarbutton": "var(--text-primary)",
   "--color-toolbarbutton-green": "var(--status-success)",
   "--color-toolbarbutton-blue": "var(--accent-solid)",
   "--color-toolbarbutton-orange": "var(--status-warning)",

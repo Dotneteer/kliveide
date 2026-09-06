@@ -1,14 +1,52 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * A real <button>, with every visual state expressed in CSS.
+ *
+ * Hover used to be React state driving an inline `backgroundColor`, which meant the button could not
+ * be themed from a stylesheet, could not transition properly, and behaved differently from
+ * `ToolbarSplitButton` sitting immediately next to it in the same toolbar. Both now share the same
+ * hover/active/disabled/focus recipe.
+ */
+
 .iconButton {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1px;
-  border-radius: 6px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
   transition:
-    background-color 80ms ease,
-    opacity 80ms ease;
+    background-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+
+  &:not(:disabled) {
+    cursor: pointer;
+  }
+
+  &:not(:disabled):hover {
+    background: var(--bgcolor-toolbarbutton-hover);
+  }
+
+  &:not(:disabled):active {
+    background: var(--bgcolor-keydown-toolbarbutton);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 30%);
+  }
+
+  /*
+   * `:focus-visible` rather than `:focus`, so the ring appears for keyboard users without flashing
+   * on every mouse click. This is the app's single focus treatment.
+   */
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -1px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
 }
 
 .noPadding {
@@ -20,18 +58,10 @@
   justify-content: center;
   align-items: center;
   border: 2px solid transparent;
-  border-radius: 5px;
-}
-
-.enabled {
-  cursor: pointer;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
 }
 
 .selected {
-  border: 2px solid var(--color-toolbarbutton-selected);
-}
-
-.keyDown {
-  background: var(--bgcolor-keydown-toolbarbutton);
-  box-shadow: inset 0 1px 3px rgb(0 0 0 / 30%);
+  border-color: var(--color-toolbarbutton-selected);
 }

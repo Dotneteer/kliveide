@@ -1,6 +1,6 @@
 import { Icon } from "../../controls/Icon";
 import { TabButton } from "@controls/TabButton";
-import { type DragEvent, type MouseEvent, useLayoutEffect, useRef, useState } from "react";
+import { type DragEvent, useLayoutEffect, useRef } from "react";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 
 import styles from "./DocumentTab.module.scss";
@@ -24,9 +24,6 @@ import type { MainApi } from "@common/messaging/MainApi";
  * The tab is 36px tall, so there is room to spare.
  */
 const TAB_ICON_SIZE = 20;
-
-// Preserves the hover affordance when tab order or labels change under a stationary pointer.
-let lastDocumentTabPointerPosition: { clientX: number; clientY: number } | undefined;
 
 export enum CloseMode {
   All,
@@ -113,10 +110,9 @@ export const DocumentTab = ({
 
   const ref = useRef<HTMLDivElement>(null);
   const nameRef = useTooltipRef();
-  const readOnlyRef = useTooltipRef();
-  const lockedRef = useTooltipRef();
+  const readOnlyRef = useTooltipRef<HTMLDivElement>();
+  const lockedRef = useTooltipRef<HTMLDivElement>();
   const isWindows = !!store.getState().isWindows;
-  const [pointed, setPointed] = useState(false);
 
   // --- Whenever the tab is displayed or its position has changed, report it to the
   // --- parent (DocumentsHeader) so that the entire tab viewport could be displayed
@@ -125,26 +121,6 @@ export const DocumentTab = ({
       tabDisplayed?.(ref.current);
     }
   });
-
-  useLayoutEffect(() => {
-    const element = ref.current;
-    const pointerPosition = lastDocumentTabPointerPosition;
-    if (!element || !pointerPosition) return;
-
-    const hoveredElement = document.elementFromPoint(
-      pointerPosition.clientX,
-      pointerPosition.clientY
-    );
-    const isPointerOverTab = !!hoveredElement && element.contains(hoveredElement);
-    setPointed((current) => current === isPointerOverTab ? current : isPointerOverTab);
-  }, [awaiting, isActive, name, path, tabsCount]);
-
-  const rememberPointerPosition = (e: MouseEvent<HTMLDivElement>): void => {
-    lastDocumentTabPointerPosition = {
-      clientX: e.clientX,
-      clientY: e.clientY
-    };
-  };
 
   const dismissTooltips = () => {
     [nameRef.current, readOnlyRef.current, lockedRef.current].forEach((element) => {
@@ -187,18 +163,10 @@ export const DocumentTab = ({
       onDragLeave={tabDragLeave}
       onDragOver={tabDragOver}
       onDragStart={(event) => {
-        setPointed(false);
         dismissTooltips();
         tabDragStart?.(event);
       }}
       onDrop={tabDrop}
-      onMouseEnter={(e) => {
-        rememberPointerPosition(e);
-        setPointed(true);
-      }}
-      onMouseMove={rememberPointerPosition}
-      onMouseDown={rememberPointerPosition}
-      onMouseLeave={() => setPointed(false)}
       onClick={(e) => {
         if (e.button === 0) tabClicked?.();
       }}
@@ -239,7 +207,10 @@ export const DocumentTab = ({
 
       <TabButton
         iconName={hasChanges ? "circle-filled" : "close"}
-        hide={!pointed && !isActive}
+        // Visibility is CSS (`.documentTab:hover`, `.active`): the browser re-evaluates :hover when
+        // tabs reorder or rename under a stationary pointer, which is exactly the case the old
+        // elementFromPoint probe existed to paper over.
+        xclass={styles.closeButton}
         fill={"--color-tabbutton-fill-" + (isActive ? "active" : "inactive")}
         clicked={() => tabCloseClicked?.(CloseMode.This)}
       />
@@ -372,7 +343,7 @@ function renderDocumentTabContextMenu({
 }
 
 function renderReadOnlyBadge(
-  readOnlyRef: ReturnType<typeof useTooltipRef>,
+  readOnlyRef: ReturnType<typeof useTooltipRef<HTMLDivElement>>,
   isActive: boolean
 ) {
   return (
@@ -394,7 +365,7 @@ function renderReadOnlyBadge(
   );
 }
 
-function renderLockedBadge(lockedRef: ReturnType<typeof useTooltipRef>) {
+function renderLockedBadge(lockedRef: ReturnType<typeof useTooltipRef<HTMLDivElement>>) {
   return (
     <div className={styles.lockedIcon} ref={lockedRef}>
       <Icon

@@ -3,8 +3,31 @@ import { readFileSync, readdirSync, statSync } from "fs";
 import { join, relative } from "path";
 import { fileURLToPath } from "url";
 
-import { darkTheme } from "@renderer/theming/dark-theme";
-import { lightTheme } from "@renderer/theming/light-theme";
+import { semanticTokens } from "@renderer/theming/tokens/semantic";
+import { dimensionTokens } from "@renderer/theming/tokens/dimensions";
+import { rowSizeTokens } from "@renderer/theming/tokens/rowSizes";
+import { componentAliases } from "@renderer/theming/tokens/componentAliases";
+import { staticTokens, toneTokens } from "@renderer/theming/tokens/staticTokens";
+import { ACCENT_IDS, DEFAULT_ACCENT } from "@common/theming/accents";
+
+/**
+ * Build the full token set a tone actually emits, in the same order ThemeProvider composes it.
+ * There is no longer a `darkTheme` / `lightTheme` object to inspect: a theme is a tone plus the
+ * ramps it selects.
+ */
+function tokensFor(tone: "dark" | "light", accent = DEFAULT_ACCENT) {
+  return {
+    ...staticTokens,
+    ...toneTokens(tone),
+    ...semanticTokens(tone, accent),
+    ...dimensionTokens(tone),
+    ...rowSizeTokens(),
+    ...componentAliases
+  };
+}
+
+const darkTheme = tokensFor("dark");
+const lightTheme = tokensFor("light");
 
 /**
  * The theme-token contract.
@@ -14,20 +37,17 @@ import { lightTheme } from "@renderer/theming/light-theme";
  * set of silent failures: `var(--undefined-name)` is not an error in CSS, it simply drops the
  * declaration, so a missing token looks like a design decision rather than a bug.
  *
- * This test closes that gap. It is deliberately written before the token layer lands (Phase 0.1 of
- * .plans/UI_MODERNIZATION_PLAN.md) so that its initial failures document the existing breakage.
- *
- * Contrast and perceptual-distance assertions are NOT here: they need the accent ramps, which
- * arrive in Phase 1. See §5.4 of the plan.
+ * This test closes that gap. It was written before the token layer landed (Phase 0.1 of
+ * .plans/UI_MODERNIZATION_PLAN.md) so that its initial failures documented the existing breakage,
+ * and now guards the layer that replaced it.
  */
 
 const RENDERER = fileURLToPath(new URL("../../src/renderer", import.meta.url));
 const REPO = fileURLToPath(new URL("../..", import.meta.url));
 
 /**
- * Custom properties that are supplied at runtime rather than by a theme, and so can never appear
- * in `dark-theme.ts` / `light-theme.ts`. Keep this list short and justified: every entry is a hole
- * in the contract.
+ * Custom properties supplied at runtime rather than by the token layer, so they can never appear in
+ * `tokensFor()`. Keep this list short and justified: every entry is a hole in the contract.
  */
 const RUNTIME_PROVIDED = new Set([
   // Synthesized by ThemeProvider from the platform-specific font tokens.
@@ -182,6 +202,16 @@ describe("theme token contract", () => {
     expect(styleFiles.length).toBeGreaterThan(100);
     expect(codeFiles.length).toBeGreaterThan(100);
     expect(darkKeys.size).toBeGreaterThan(150);
+  });
+
+  it("emits the same token set for every accent", () => {
+    // The accent axis must not add or remove tokens, only change their values — otherwise a
+    // stylesheet would resolve under one accent and not another.
+    const base = Object.keys(tokensFor("dark", DEFAULT_ACCENT)).sort();
+    for (const accent of ACCENT_IDS) {
+      expect(Object.keys(tokensFor("dark", accent)).sort(), `accent ${accent}`).toEqual(base);
+      expect(Object.keys(tokensFor("light", accent)).sort(), `accent ${accent}`).toEqual(base);
+    }
   });
 
   it("defines the same token set in both themes", () => {

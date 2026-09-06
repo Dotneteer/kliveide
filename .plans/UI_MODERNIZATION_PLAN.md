@@ -1042,16 +1042,44 @@ checkable by contrast ratio: both are legitimate colours, they just must not be 
 That is worth recording as a limit of the tooling: **the contract test cannot catch a token that is
 correct in isolation and wrong in context.** The screenshot pass is not optional.
 
-**Still open inside Phase 1**, and the honest reason each was deferred:
+#### Phase 1.4 — the theme files are gone
 
-- **The literal values in `dark-theme.ts` / `light-theme.ts` are now dead weight.** The alias layer
-  overrides them, so they no longer affect rendering, but the files still carry ~200 literals each.
-  Deleting them is safe but noisy, and doing it in the same commit as the visual change would have
-  made the diff unreviewable. Next step of Phase 1.
-- **Monaco still uses its own palette** — that is Phase 8 by design, and it is now visibly the odd
-  one out, which is the strongest argument yet for doing it.
-- **The `--strip-statusbar: 26px` value is emitted but not consumed**; the status bars still declare
-  40px in their own stylesheets. Phase 5 wires it.
+**`dark-theme.ts` and `light-theme.ts` are deleted: 515 lines of hand-authored literals.** A
+mechanical audit showed **188 of their 201 tokens** were already produced by L2/L3 or aliased onto
+them, and that light held **no** leftovers dark did not — so the remainder collapsed to one shared
+`staticTokens.ts` (four font stacks, six data-URI breakpoint glyphs, one padding shorthand) plus a
+two-value `toneTokens()` for the backdrop wash and the modal-header texture. A theme is now just a
+tone. All 490 jsdom tests and the contract test pass.
+
+**A correctness gap surfaced while doing it, and it mattered more than the deletion.**
+`getThemeProperty()` looked tokens up in the theme object, so after 1.3 it was still handing the
+**pre-token literals** to the ~30 imperative consumers: every stylesheet had moved to the new palette
+while the toolbar icons, activity-bar icons and all 26 keyboard SVGs quietly kept the old one. The
+screenshots looked plausible, which is exactly why it nearly passed.
+
+The fix had to resolve *computed* values rather than return the alias text, because the keyboard puts
+the result into an SVG **presentation attribute** (`<rect fill={…}>`), where `var()` does not resolve
+at all. `getThemeProperty` now reads `getComputedStyle(root).getPropertyValue(key)`, with the merged
+map as a first-render fallback.
+
+**And that fix immediately exposed a design error of mine.** With the imperative path finally
+resolving real tokens, the toolbar turned out to be painted `--text-secondary` — I had aliased
+`--color-toolbarbutton` to the secondary tier, and the whole toolbar read as disabled. Promoted to
+`--text-primary`. The genuinely disabled buttons now read correctly too, having previously used
+`--bgcolor-toolbarbutton-disabled` (`#d0d0d0` in dark — a *background* token misused as a foreground
+fill, which the audit flagged in §2.3).
+
+**The contract test grew a sixth assertion**: every accent must emit the *same key set*, so a
+stylesheet cannot resolve under one accent and fail under another.
+
+**Still open**, deferred by design:
+
+- **Monaco still uses its own palette** — Phase 8. It is now visibly the odd one out, which is the
+  strongest argument yet for doing it.
+- **`--strip-statusbar: 26px` is emitted but not consumed**; the status bars still declare 40px in
+  their own stylesheets. Phase 5 wires it.
+- **The `--measure-*`, `--row-*` and `--icon-*` scales are emitted but unused** until Phases 3-7
+  migrate the panels onto them.
 
 ### Phase 2 — Shared primitives
 `IconButton` becomes a real `<button>` with CSS `:hover`/`:active`/`:focus-visible`; delete the React
@@ -1059,8 +1087,89 @@ hover state, the module-global pointer position and the `elementFromPoint` probe
 (promoted to a real component: title, actions, surface, border), one `Tab`, one focus-ring treatment.
 Keyboard access and ARIA roles across the shell. Reconcile `common/Icon.tsx` vs `controls/Icon.tsx`.
 
+#### Phase 2 retrospective *(2026-09-06)*
+
+490 jsdom tests pass, 54 theming tests pass, build green, and **`tsc` is down to 175 from the
+180-error baseline** — five fewer than before the phase started, because several of the errors were
+the mistyped tooltip refs on the very components being converted.
+
+**Three `<div>`s became real `<button>`s**, and each one deleted machinery rather than adding it:
+
+| Component | Was | Now |
+|---|---|---|
+| `IconButton` | `<div>` + `useState` hover + inline `backgroundColor` + `keyDown` state | `<button>`; hover/active/disabled/focus are CSS |
+| `TabButton` | `<div>` + `keyDown` state + a spacer `.placeholder` | `<button>`; `:active` and `:disabled` |
+| `ActivityButton` | `<div>` + `pointed` state feeding `getThemeProperty` | `<button role="tab">`; `currentColor` |
+
+**The `DocumentTab` hover machinery is gone entirely** — the module-global
+`lastDocumentTabPointerPosition`, the `elementFromPoint` probe and the `pointed` state. All three
+existed because `onMouseEnter` does not re-fire when tabs reorder or rename under a stationary
+pointer. CSS `:hover` re-evaluates on layout change for free. The close button is now hidden with
+`visibility` rather than unmounted, which preserves the no-reflow property the spacer placeholder
+was there to provide.
+
+**The shell went from essentially unfocusable to 42 focusable elements**, verified at runtime:
+`role="tablist"` on the activity bar, `role="tab"` + `aria-selected` + `aria-label` on its buttons,
+and `aria-label` on every icon button. A single `focus-ring` mixin in `core.scss` replaces the
+ad-hoc treatments, and is applied to the five interactive controls that carried a bare
+`outline: none` — including the command prompt, the only text input in the tool area.
+
+**One test had to be rewritten, and it is worth being explicit about why.**
+`"reveals the close button when an inactive tab moves under the pointer"` existed specifically to
+cover the `elementFromPoint` probe. jsdom does not evaluate `:hover`, so that behaviour is no longer
+testable at this level; the test now asserts what still can be — that the button is always rendered
+and carries the class the stylesheet keys on. **Deleting a mechanism means honestly re-scoping its
+test, not quietly dropping it.**
+
+**A process near-miss worth recording.** My first attempt to replace that test bounded the region
+with `rindex("});")` and silently removed **22 of the file's 32 tests** — and the suite went green,
+because the remaining 10 passed. Only the test *count* gave it away. Restored from git and redone
+with a precisely bounded replacement. **A green suite after an edit to a test file proves nothing
+unless the test count is checked too.**
+
+**Deferred from Phase 2**, and honestly still outstanding:
+
+- **`PanelHeader` is not yet a real component** (title / actions / surface / border). It is still the
+  twelve-line `HStack` with hardcoded padding. It belongs with slice 7.2, which unifies the 17
+  hand-rolled panel toolbars — doing it here would have meant designing the API twice.
+- **`common/Icon.tsx` vs `controls/Icon.tsx` are still two files.** Reconciling them touches every
+  icon call site and deserves its own reviewable change.
+
 ### Phase 3 — IDE: activity bar + sidebar
 Fixes 1 and 7 from §4; chevron transition; drop the `100000px` sentinel.
+
+#### Phase 3 retrospective *(2026-09-06)*
+
+All four items landed. 490 jsdom tests, 54 theming tests, build green, `tsc` unchanged at 175.
+
+**The activity bar's solid accent block is gone** — §4's "single most dated element in the IDE". The
+active item is now a 2px accent stripe on the inner edge with a subtle surface behind it, drawn as a
+`::before` on the button rather than a background fill of the whole cell.
+
+**Geometry is on-token and verified at runtime**, not just declared:
+
+| | Before | Now |
+|---|---|---|
+| Activity bar | 52px | **48px** (`--size-activitybar`) |
+| Activity button | 48px | **44px** (`--size-activitybutton`) |
+| Sidebar header | 36px | **34px** (`--strip-sidebarHeader`) |
+| Panel header | 26px | **26px** (`--row-panelHeader`) |
+
+**The `100000px` sentinel is gone.** It was standing in for `min-height: 0` — the actual mechanism
+that lets a flex child shrink below its content size. The huge number was an approximation of it.
+
+**The sidebar header's fake indent is gone too.** `padding-left: 4px` on the container plus
+`padding-left: 20px` on the text existed to eyeball alignment with the panel chevrons below; it is
+now one `--space-2` step, and the uppercase title finally has letter-spacing.
+
+**The chevron transition was fixed at the `Icon` level, not the chevron's.** Rotation is applied as
+an inline `transform`, so a `transition` next to it covers every rotating icon in the app — the
+sidebar chevrons and the tool-area layout toggle both animate now instead of snapping.
+
+**A measurement caveat worth recording.** My first check of the stripe read
+`getComputedStyle(btn, "::before").backgroundColor` as transparent, because I queried it in the same
+tick as the click that made the button active — React had not re-rendered. The screenshot settled it.
+**Reading computed style immediately after a synthetic click measures the previous state.**
 
 ### Phase 4 — IDE: document tabs, header, tool area
 Fixes 3 and 4; unify the 38/36/32 ladder onto `--strip-tabbar`; give the tool area header its own

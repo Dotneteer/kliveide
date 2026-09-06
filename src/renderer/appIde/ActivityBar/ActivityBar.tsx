@@ -18,7 +18,14 @@ export const ActivityBar = ({ order, activities }: Props) => {
   const sideBarVisible = useGlobalSetting(SETTING_IDE_SHOW_SIDEBAR);
 
   return (
-    <div className={styles.activityBar} style={{ order }}>
+    <div
+      className={styles.activityBar}
+      style={{ order }}
+      // The buttons are role="tab"; the strip that owns them is the tab list.
+      role="tablist"
+      aria-orientation="vertical"
+      aria-label="Activities"
+    >
       {[
         ...activities.map((act) => (
           <ActivityButton

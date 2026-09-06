@@ -29,6 +29,7 @@
 }
 .prompt {
     outline: none;
+  @include focus-ring;
     border: none;
     width: 100%;
     background: transparent;

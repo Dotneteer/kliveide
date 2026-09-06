@@ -12,15 +12,22 @@
   flex-grow: 0;
 }
 
+/*
+ * An expanded panel takes all the space its siblings do not.
+ *
+ * This used to be `height: 100000px` — a sentinel that leaned on flex-shrink to pull it back down.
+ * `min-height: 0` is the actual mechanism: it lets a flex child shrink below its content size, which
+ * is what the huge number was approximating.
+ */
 .expanded {
   flex-shrink: 1;
   flex-grow: 1;
-  height: 100000px;
+  min-height: 0;
 }
 
 .header {
-  /* Total including the border, which border-box now counts inside the box. */
-  height: 26px;
+  /* Includes the 1px transparent border, which border-box counts inside the box. */
+  height: var(--row-panelHeader);
   display: flex;
   flex-direction: row;
   flex-shrink: 0;
@@ -28,7 +35,8 @@
   align-items: center;
   border: 1px solid transparent;
   outline: none;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
+  @include focus-ring(-1px);
 }
 
 .notFirst {

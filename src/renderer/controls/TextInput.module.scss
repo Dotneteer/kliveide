@@ -1,3 +1,5 @@
+@use "@styles/core.scss" as *;
+
 .inputContainer {
   display: flex;
   flex-direction: column;
@@ -14,6 +16,7 @@
 
 .input {
   outline: none;
+  @include focus-ring;
   border: none;
   padding: 4px;
   margin: 8px 0;

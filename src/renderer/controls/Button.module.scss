@@ -7,6 +7,7 @@
   padding: 8px 12px;
   min-width: 50px;
   outline: none;
+  @include focus-ring;
   color: var(--color-button);
   font-family: var(--main-font-family);
   font-size: 1em;

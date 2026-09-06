@@ -78,3 +78,21 @@
   align-items: center;
   padding-right: 8px;
 }
+
+/*
+ * The close/dirty affordance.
+ *
+ * Hidden rather than unmounted, so the tab does not reflow when it appears — the same reason the
+ * previous implementation rendered a spacer placeholder. Driving it from `:hover` means the browser
+ * re-evaluates it when tabs reorder or rename under a stationary pointer, which is the case the old
+ * `elementFromPoint` probe and module-global pointer cache existed to handle.
+ */
+.closeButton {
+  visibility: hidden;
+}
+
+.documentTab:hover .closeButton,
+.documentTab.active .closeButton,
+.closeButton:focus-visible {
+  visibility: visible;
+}

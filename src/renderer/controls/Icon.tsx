@@ -42,6 +42,8 @@ export const Icon = memo(({
       fill: `${fillValue}`,
       fillOpacity: opacity,
       transform: `rotate(${rotate ?? 0}deg)`,
+      // Chevrons and the layout-panel toggle animate their rotation rather than snapping.
+      transition: `transform var(--duration-base) var(--ease-standard)`,
       flexShrink: 0,
       flexGrow: 0
     };
@@ -88,6 +90,8 @@ export const Icon = memo(({
             // --- fillOpacity alone does nothing for a stroked icon
             strokeOpacity: opacity,
             transform: `rotate(${rotate ?? 0}deg)`,
+      // Chevrons and the layout-panel toggle animate their rotation rather than snapping.
+      transition: `transform var(--duration-base) var(--ease-standard)`,
             flexShrink: 0,
             flexGrow: 0,
             ...style
