@@ -30,7 +30,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
 
   return (
     <HStack
-      height="34px"
+      // 42px is what this rendered as before the border-box change (34px content + 4px x 2
+      // padding). Transitional: Phase 5 replaces it with --strip-toolbar.
+      height="42px"
       backgroundColor="--bgcolor-toolbar"
       paddingHorizontal="--space-1_5"
       paddingVertical="--space-1"

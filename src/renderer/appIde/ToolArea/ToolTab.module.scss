@@ -14,7 +14,8 @@
 .textWrapper {
   display: flex;
   align-items: center;
-  height: 32px;
+  /* Total including the border, which border-box now counts inside the box. */
+  height: 33px;
   border-bottom: 1px solid transparent;
 }
 

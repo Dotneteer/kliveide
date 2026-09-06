@@ -842,8 +842,8 @@ exact state each image was taken in.
 - `Values.tsx:246` — `styles.flag`/`styles.clickable` resolve to `undefined`. Fixing it restores
   centering and the pointer cursor to **~120 flag indicators** across Ula/Blink/Vic and every
   `FlagRow`. Users will notice.
-- `EmuStatusBar` `.isMonospace` — the specificity collision that renders every numeric readout at
-  16px beside its own 12.8px label. Fixing it makes the 26px status bar viable (§4).
+- `EmuStatusBar` **and `IdeStatusBar`** `.isMonospace` — the specificity collision that renders every
+  numeric readout at 16px beside its own 12.8px label. Fixing it makes the 26px status bar viable (§4).
 - `SideBarPanel.tsx:56` — the `noScrollViewer` inversion, and the double-nested `ScrollViewer` it
   causes in `NecUpd765Panel` and `ScriptingHistoryPanel`.
 - `SideBarPanel.tsx:68` — `tabIndex={index}` (positive tabindex overriding tab order app-wide) → `0`.
@@ -852,11 +852,74 @@ exact state each image was taken in.
 *Verification:* focused tests around the touched panels; manual check that the two double-scrolled
 panels now measure a bounded viewport.
 
+#### Phase 0.4 retrospective *(2026-09-06)*
+
+All five landed. Contract test still 5/5; `tsc` still exactly 180 errors (the pre-existing baseline),
+none in a touched file; build green.
+
+**The status-bar collision existed in *both* windows.** The plan named only `EmuStatusBar`, but
+`IdeStatusBar` carries the identical `.label` (0.8em) / `.isMonospace` (1em) pair — visible in the
+baseline as `Ln **23** Col **33**`. Fixed in both; fixing one would have left the inconsistency to be
+rediscovered in Phase 5. The pixel diff is confined **exactly** to the status-bar row in both
+windows — emulator `x 32–257` (the frame-time and PC readouts), IDE `x 1174–1263` (Ln/Col) — and
+nothing else moved.
+
+**The `BitValue` bug was real but the audit's mechanism was wrong.** It reported that
+`styles.flag` / `styles.clickable` "resolve to `undefined`". They do not: Sass compiles
+`.bitValue { &.clickable }` to `.bitValue.clickable`, so CSS Modules exports **both** names. The
+element therefore received two perfectly valid class names that simply have **no standalone rules** —
+same net effect, different cause. Worth knowing, because "the export is missing" and "the rule is
+compound" call for different fixes.
+
+**I deviated from the plan here, deliberately.** The plan said to restore the pointer cursor to
+"~120 flag indicators". Only **5 of 29** `BitValue` call sites pass a `clicked` handler, so an
+unconditional `cursor: pointer` would advertise interactivity that 24 of them do not have. The fix
+applies `.bitValue` always and `.clickable` only when `clicked` is supplied. Verified at runtime: 40
+elements in the ULA panel now carry `_bitValue_…`, with `display: flex`, `justify-content: center`
+and a working `cursor: pointer`.
+
+**The `BitValue` fix produced no layout change**, which is worth recording so it is not mistaken for
+a failed fix later. Without `.bitValue` the div was `display: block`, but as a flex item inside
+`.cols` it already shrank to its content, so the icon sat where `justify-content: center` would have
+put it anyway. The real repairs are the cursor and the now-explicit centering.
+
+**My analysis of the registry was wrong; the plan was right.** A first regex mis-attributed
+`useScrollViewer: false` and suggested five panels double-nested. Correctly parsed, the flag belongs
+to CallStack/NextReg/Watch/Breakpoints/SysVars, and exactly the two panels the plan named —
+`NecUpd765Panel` and `ScriptingHistoryPanel` — were missing it. Confirmed after the fix:
+`overlayScrollbarHosts: 1, nestedScrollHosts: 0` for Scripting History, with a bounded viewport.
+
+**The flag was renamed rather than re-polarised.** `noScrollViewer` now reads `useScrollViewer`,
+with the five existing call sites carrying their values across unchanged — **zero behaviour change**,
+and the name finally matches what the field does. Inverting the logic instead would have flipped the
+behaviour of five working panels to satisfy a name.
+
 #### 0.5 — Anchor the root font size *(intended no-op)*
-Set an explicit `font-size` on the theme root. Today every `em` resolves against the browser's 16px
+Set an explicit `font-size` on **`<html>`** — not on the theme root, which would leave the 22 `rem`
+values in the tree unanchored, since `rem` resolves against the root element. Today every `em` resolves against the browser's 16px
 default (§2.2), so **anchoring at exactly 16px changes nothing visually** — it just stops the value
 being implicit before Phase 1 starts moving type onto tokens. Resist the temptation to set the
 compact size here; that is a Phase 1 change with a much wider blast radius.
+
+#### Phase 0.5 retrospective *(2026-09-06)*
+
+**A proven no-op.** `html { font-size: 16px }` added to `index.css`; three views
+(Explorer, Debug, emulator) are pixel-identical **against the post-0.4 captures**, which is the
+comparison that isolates this step — diffing against the original baseline would have folded in
+0.4's status-bar change and told us nothing. Runtime confirms `html`, `body` and `#themeRoot` all
+compute to `16px`.
+
+**It belongs on `<html>`, not on the theme root.** The plan said "the theme root", which would have
+left the 22 `rem` values in the tree unanchored — `rem` resolves against the root *element*, and
+`#themeRoot` is a `<div>` well below it. Anchoring `<html>` covers both the 55 `em` font-sizes
+inheriting through the chain and the `rem` values. §0.5 of the plan is corrected.
+
+**The pixel-identical result is itself the proof that 16px was the value already in effect.** Had
+Chromium's default differed, the diff would have been non-zero everywhere.
+
+*Noise checked and dismissed:* a scan for malformed `rem` literals flagged
+`ExcludedProjectItemsDialog.module.scss:33`, which turned out to be the regex matching `.removeButton`
+— the `.` of the class selector followed by "rem". Not a defect.
 
 #### 0.6 — `box-sizing: border-box` *(the risky one, alone, last)*
 Add `*, *::before, *::after { box-sizing: border-box }` to `index.css`.
@@ -870,12 +933,58 @@ Known casualties to fix in the same commit, from §2.2:
 *Verification:* full screenshot diff against 0.0. This is the step where the baseline pays for
 itself.
 
+#### Phase 0.6 retrospective *(2026-09-06)*
+
+The riskiest step, and the one that behaved least like the plan predicted. Contract test 5/5, `tsc`
+still exactly 180, build green, app runs correctly in both windows.
+
+**Compensations applied, all verified exact.** Measured before and after at the same window size:
+
+| Element | Before | After compensation |
+|---|---|---|
+| Toolbar (`HStack`) | 42px rendered (34 declared) | `height="42px"` → **42px** ✓ |
+| `ToolbarSeparator` | 9 x 38 | `width: 9px; height: 38px` → **9 x 38** ✓ |
+| `IconButton` | 34 x 32 | `+4 / +2` on the inline totals → **34 x 32** ✓ |
+| `DocumentTab`, sidebar `.header`, explorer `.item`, `.closingTab`, tool-tab `.textWrapper` | — | declared sizes raised by their border widths |
+
+`theme-utils.ts` also had to stop subtracting horizontal padding from `width`: that
+`calc(100% - pad - pad)` existed to undo content-box, and under border-box it shrank every padded
+panel by twice its padding. That single line was the root of the `y-8` cascade through the whole IDE.
+
+**Two differences remain, and both are corrections rather than regressions.** I chose not to
+compensate them, because doing so would mean preserving an overflow bug:
+
+1. **`IconButton`'s `.iconWrapper`** is `fill-parent-flex` plus `border: 2px solid transparent`.
+   Under content-box it was 100% of its parent *plus* 4px, so the selection ring on toggled toolbar
+   buttons overflowed its own button. It now sits inside it (32x30 within a 34x32 button).
+   Preserving the old look would have required `calc(100% + 4px)`.
+2. **The split boundaries resolve ~3px differently** (emulator keyboard top CSS 539 → 542). The
+   persisted values are unchanged (`keyboardPanelHeight: 241px`), but `SplitPanel` sizes from
+   `clientHeight`, which no longer includes an overflowed ancestor. The split is user-draggable and
+   persisted, so this is not a visual defect.
+
+The toolbar and both status bars — the things that would actually be noticed — are **pixel-exact**
+(toolbar bottom CSS 42, status bar top CSS 788, identical before and after).
+
+**Method corrections, both of which cost time:**
+
+- **Never measure geometry on a hot-reloaded app.** After HMR applied a CSS change plus three `.tsx`
+  changes in sequence, the React root emptied and every element reported as REMOVED. Geometry and
+  screenshots require a **fresh launch**.
+- **The comparison baseline must match window size.** My "before" geometry snapshot was taken at the
+  user's own window size and the "after" at the pinned capture size, which produced a 100+ element
+  diff that was pure noise. Screenshots were unaffected because both were pinned — but the geometry
+  table was worthless until re-taken.
+
+**On the Phase 0 exit criteria:** the list of "five knowingly-visible changes" needs extending to
+seven — the two above are visible, intended, and are corrections of real bugs.
+
 #### Phase 0 exit criteria
 - `token-contract.test.ts` green.
 - `npx tsc --noEmit -p build/tsconfig.web.json`, `npm run lint:renderer`, `npm test -- --project jsdom`,
   and `electron-vite build` all green.
-- Screenshot diff vs 0.0 reviewed, and every difference is one of the five knowingly-visible changes
-  above.
+- Screenshot diff vs 0.0 reviewed, and every difference is one of the **seven** knowingly-visible
+  changes above (five from 0.3/0.4, plus the two border-box corrections in 0.6).
 - **Phase 0 retrospective written** (§6.0) — Phase 0 is the phase that calibrates every estimate that
   follows.
 
@@ -895,6 +1004,54 @@ itself.
   `--console-ansi-*`, and collapse the three different row-hover tokens into one.
 - **Review gate:** the whole app should already look new here. Screenshot both windows, both themes.
 - **Watch item:** M3 must land with this phase or every virtualized panel breaks.
+
+#### Phase 1 retrospective *(2026-09-06)*
+
+**The token layer is in and the app looks different.** Contract test 5/5, `tsc` still exactly 180,
+build green, both windows and both themes verified, accent switching verified end to end.
+
+Sequenced like Phase 0 rather than as one commit:
+
+| Step | What | Visible? |
+|---|---|---|
+| 1.0 | `tokens/palette.ts` (L1), `semantic.ts` (L2), `dimensions.ts` (L3), `rowSizes.ts` (M3) | no |
+| 1.1 | `ThemeProvider` emits all four layers | no |
+| 1.2 | Accent axis: `common/theming/accents.ts`, state, persistence, **View → Accent** menu | no |
+| 1.3 | `componentAliases.ts` repoints the ~200 legacy tokens onto L2/L3 | **yes — everything** |
+
+**The L4 aliasing trick worked exactly as designed.** Not one stylesheet was edited, and the whole
+app changed palette: the saturated `#007acc` status bar is gone, the activity bar's solid accent slab
+is gone, and every surface now comes from one ramp. §3's central claim holds.
+
+**And it collapsed the light theme, as §8.2 predicted.** Because L2 already varies by tone, the alias
+map is tone-*independent* — one map serves both themes. Light is now derived rather than
+hand-maintained.
+
+**The accent registry had to live in `common/`, not the renderer.** `app-menu.ts` runs in the main
+process and needs the labels; the renderer needs the ramps. Splitting ids/labels (`common/theming/
+accents.ts`) from colour values (`renderer/theming/tokens/palette.ts`) keeps one source of truth
+without dragging renderer colour code into main.
+
+**One real bug, caught only by looking at the app.** My first `--surface-stage` value (`#0f1113`) sat
+within one step of `--device-bezel` (`#0f1012`), so **the emulator screen disappeared into its own
+surround**. Every automated gate passed — contract test, typecheck, build — because nothing here is
+checkable by contrast ratio: both are legitimate colours, they just must not be *adjacent*. Fixed to
+`#2a2d32`, restoring the "darker screen on a lighter stage" relationship the original design had at
+`#404040` on `#606060`.
+
+That is worth recording as a limit of the tooling: **the contract test cannot catch a token that is
+correct in isolation and wrong in context.** The screenshot pass is not optional.
+
+**Still open inside Phase 1**, and the honest reason each was deferred:
+
+- **The literal values in `dark-theme.ts` / `light-theme.ts` are now dead weight.** The alias layer
+  overrides them, so they no longer affect rendering, but the files still carry ~200 literals each.
+  Deleting them is safe but noisy, and doing it in the same commit as the visual change would have
+  made the diff unreviewable. Next step of Phase 1.
+- **Monaco still uses its own palette** — that is Phase 8 by design, and it is now visibly the odd
+  one out, which is the strongest argument yet for doing it.
+- **The `--strip-statusbar: 26px` value is emitted but not consumed**; the status bars still declare
+  40px in their own stylesheets. Phase 5 wires it.
 
 ### Phase 2 — Shared primitives
 `IconButton` becomes a real `<button>` with CSS `:hover`/`:active`/`:focus-visible`; delete the React

@@ -1,7 +1,44 @@
+/*
+ * Anchor the root font size.
+ *
+ * Nothing used to set a font-size anywhere above the components, so every relative unit in the app
+ * resolved against the browser's default — 16px in Chromium, but implicitly rather than by
+ * intention. That is 55 `em` font-sizes inheriting through an unowned chain and 22 `rem` values
+ * resolving against <html>.
+ *
+ * 16px is deliberately the value that was already in effect, so this changes nothing on screen; it
+ * only makes the number explicit and owned before Phase 1 starts moving type onto tokens. It sits
+ * on <html> rather than on the theme root because `rem` resolves against the root element, and the
+ * theme root is a <div> further down.
+ *
+ * The compact type scale is a Phase 1 change, not this one.
+ */
+html {
+  font-size: 16px;
+}
+
+/*
+ * Universal border-box.
+ *
+ * `box-sizing` was previously set on `html, body, #root` only, so every component below them sized
+ * in content-box: a declared height was the height of the content *before* padding and borders were
+ * added. Widths and heights in the stylesheets therefore did not describe what appeared on screen —
+ * the toolbar declared 34px and rendered 42px, and `ToolbarSeparator` declared 30px and rendered
+ * 38px, taller than the toolbar containing it.
+ *
+ * Elements whose rendered size depended on that arithmetic have had their declared sizes adjusted in
+ * the same commit, so this change is visually inert. Those adjusted values are transitional: the
+ * `--strip-*` / `--size-*` scale in Phases 1-5 replaces them.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html, body, #root {
   height: 100%;
   overflow: hidden;
-  box-sizing: border-box;
 }
 
 body {

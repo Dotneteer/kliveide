@@ -18,16 +18,11 @@ export function getPanelPropValues(props: Omit<PanelProps, "children">): CSSProp
   const paddingTop = processStyleValue(props.paddingVertical) || padding || 0;
   const paddingBottom = processStyleValue(props.paddingVertical) || padding || 0;
   const height = processStyleValue(props.height);
-  let width = processStyleValue(props.width) || "100%";
-  if (paddingLeft) {
-    if (paddingRight) {
-      width = `calc(${width} - ${paddingLeft} - ${paddingRight})`;
-    } else {
-      width = `calc(${width} - ${paddingLeft})`;
-    }
-  } else if (paddingRight) {
-    width = `calc(${width} - ${paddingRight})`;
-  }
+  // Horizontal padding used to be subtracted from the width here, because content-box added it back
+  // on top. Under the universal border-box rule (assets/styles/index.css) padding is already inside
+  // the declared width, so subtracting it a second time would shrink every padded panel by 2x its
+  // padding.
+  const width = processStyleValue(props.width) || "100%";
   const elementStyle: CSSProperties = {
     padding,
     paddingLeft,

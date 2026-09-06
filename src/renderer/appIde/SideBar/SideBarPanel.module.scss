@@ -19,7 +19,8 @@
 }
 
 .header {
-  height: 24px;
+  /* Total including the border, which border-box now counts inside the box. */
+  height: 26px;
   display: flex;
   flex-direction: row;
   flex-shrink: 0;

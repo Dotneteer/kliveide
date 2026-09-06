@@ -1,7 +1,8 @@
 @use "@styles/core.scss" as *;
 
 .documentTab {
-  @include fix-height-panel(36px);
+  /* Total including the border, which border-box now counts inside the box. */
+  @include fix-height-panel(38px);
   width: auto;
   position: relative;
   display: flex;

@@ -25,7 +25,8 @@
 
 .closingTab {
   @include fix-height-panel(38px);
-  width: 4px;
+  /* Total including the border, which border-box now counts inside the box. */
+  width: 5px;
   border-left: 1px solid var(--color-doc-border);
 }
 

@@ -2,14 +2,15 @@
 
 .toolbarSeparator {
   display: flex;
-  width: 1px;
-  height: 30px;
+  /* Totals including the 4px padding, which border-box now counts inside the box. */
+  width: 9px;
+  height: 38px;
   padding: 4px 4px;
   flex-shrink: 0;
   flex-grow: 0;
 
   &.small {
-    height: 22px;
+    height: 28px;
     padding-bottom: 2px;
   }
 }

@@ -17,6 +17,7 @@
 // parameter).
 // ====================================================================================================================
 import { app, shell, BrowserWindow, ipcMain, Menu } from "electron";
+import { DEFAULT_ACCENT } from "@common/theming/accents";
 
 import fs from "fs";
 import { release } from "os";
@@ -38,6 +39,7 @@ import {
   setClockMultiplierAction,
   setSoundLevelAction,
   setThemeAction,
+  setAccentAction,
   startScreenDisplayedAction,
   setKeyMappingsAction,
   setMachineSpecificAction,
@@ -321,6 +323,7 @@ async function createAppWindows() {
         mainStore.dispatch(startScreenDisplayedAction());
       }
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
+      mainStore.dispatch(setAccentAction(appSettings.accent ?? DEFAULT_ACCENT));
 
       // --- Update IDE Settings
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));

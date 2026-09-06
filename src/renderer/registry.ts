@@ -171,7 +171,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "callStackPanel",
     title: "Call Stack",
     hostActivity: ACTIVITY_DEBUG_ID,
-    noScrollViewer: false,
+    useScrollViewer: false,
     renderer: CallStackPanel,
   },
   {
@@ -185,7 +185,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "nextRegPanel",
     title: "Next Registers",
     hostActivity: ACTIVITY_DEBUG_ID,
-    noScrollViewer: false,
+    useScrollViewer: false,
     renderer: NextRegPanel,
     restrictTo: [MI_ZXNEXT]
   },
@@ -217,7 +217,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "watchPanel",
     title: "Watch",
     hostActivity: ACTIVITY_DEBUG_ID,
-    noScrollViewer: false,
+    useScrollViewer: false,
     renderer: WatchPanel,
     expandedOnInit: true
   },
@@ -225,7 +225,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "breakpointsPanel",
     title: "Breakpoints",
     hostActivity: ACTIVITY_DEBUG_ID,
-    noScrollViewer: false,
+    useScrollViewer: false,
     renderer: BreakpointsPanel,
     expandedOnInit: true
   },
@@ -233,7 +233,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "sysVarsPanel",
     title: "System Variables",
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
-    noScrollViewer: false,
+    useScrollViewer: false,
     renderer: SysVarsPanel
   },
   {
@@ -250,6 +250,8 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
     renderer: NecUpd765Panel,
     initialSize: 500,
+    // Renders a VirtualizedList, which brings its own ScrollViewer.
+    useScrollViewer: false,
     requireConfig: [MC_DISK_SUPPORT]
   },
   {
@@ -264,7 +266,9 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     title: "Scripting History",
     hostActivity: ACTIVITY_SCRIPTING_ID,
     renderer: ScriptingHistoryPanel,
-    initialSize: 500
+    initialSize: 500,
+    // Renders a VirtualizedList, which brings its own ScrollViewer.
+    useScrollViewer: false
   },
 ];
 

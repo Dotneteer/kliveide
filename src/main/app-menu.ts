@@ -13,9 +13,11 @@ import os from "os";
 
 import { __DARWIN__, __WIN32__ } from "./electron-utils";
 import { getEditorFontOptions } from "@common/settings/editor-fonts";
+import { ACCENT_MENU_ITEMS, DEFAULT_ACCENT } from "@common/theming/accents";
 import { mainStore } from "./main-store";
 import {
   setThemeAction,
+  setAccentAction,
   setClockMultiplierAction,
   setSoundLevelAction,
   closeFolderAction,
@@ -95,6 +97,7 @@ const TOGGLE_DEVTOOLS = "toggle_devtools";
 const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
+const ACCENTS = "accents";
 const EXCLUDED_PROJECT_ITEMS = "manage_excluded_items";
 
 const SHOW_IDE_WINDOW = "show_ide_window";
@@ -555,6 +558,21 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             }
           }
         ]
+      },
+      {
+        id: ACCENTS,
+        label: "Accent",
+        // The accent is orthogonal to the tone: any accent pairs with either theme.
+        submenu: ACCENT_MENU_ITEMS.map(({ id, label }) => ({
+          id: `accent_${id}`,
+          label,
+          type: "checkbox" as const,
+          checked: (appState.accent ?? DEFAULT_ACCENT) === id,
+          click: async () => {
+            mainStore.dispatch(setAccentAction(id));
+            await saveKliveProject();
+          }
+        }))
       },
       { type: "separator" },
       {

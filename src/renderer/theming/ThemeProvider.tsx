@@ -7,6 +7,11 @@ import { lookupIcon } from "./icon-registry";
 import { imageLibrary } from "./image-defs";
 import { lightTheme } from "./light-theme";
 import { ThemeInfo, ThemeManager } from "./theme";
+import { DEFAULT_ACCENT, isAccentId, type AccentId } from "./tokens/palette";
+import { semanticTokens } from "./tokens/semantic";
+import { dimensionTokens, SPACE_BASE } from "./tokens/dimensions";
+import { rowSizeTokens } from "./tokens/rowSizes";
+import { componentAliases } from "./tokens/componentAliases";
 
 // =====================================================================================================================
 // Collect the supported themes
@@ -60,7 +65,9 @@ type Props = {
 function ThemeProvider({ children }: Props) {
   const [root, setRoot] = useState(() => document.getElementById("root") || document.body);
   const selectedTheme = useSelector((s) => s.theme);
+  const selectedAccent = useSelector((s) => s.accent);
   const isWindows = useSelector((s) => s.isWindows);
+  const accentId: AccentId = isAccentId(selectedAccent) ? selectedAccent : DEFAULT_ACCENT;
 
   const [styleProps, setStyleProps] = useState<Record<string, any>>(EMPTY_OBJECT);
 
@@ -77,12 +84,27 @@ function ThemeProvider({ children }: Props) {
       activeThemeInfo.properties[
         isWindows ? "--shell-windows-monospace-font-family" : "--shell-monospace-font-family"
       ];
+    const tone = activeThemeInfo.tone;
     return {
+      // Order matters. The legacy theme object still supplies the values that have no semantic
+      // equivalent — font stacks, the breakpoint data-URI images, the modal header gradient — so it
+      // goes first and the token layers override the rest.
       ...activeThemeInfo.properties,
+
+      // L2 semantics and L3 dimensions.
+      ...semanticTokens(tone, accentId),
+      ...dimensionTokens(tone),
+      ...rowSizeTokens(),
+      "--space-base": SPACE_BASE,
+
+      // L4: the ~200 names the stylesheets actually ask for, repointed onto the layers above. This
+      // is what makes the whole app change palette without touching a single stylesheet.
+      ...componentAliases,
+
       "--main-font-family": mainFont,
       "--monospace-font": monospaceFont
     };
-  }, [selectedTheme, isWindows]);
+  }, [selectedTheme, isWindows, accentId]);
 
   useEffect(() => {
     setStyleProps({ ...themeVariables, ...generateBaseSpacings(themeVariables) });

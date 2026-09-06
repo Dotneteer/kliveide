@@ -57,8 +57,9 @@ export const IconButton = memo(({
         [styles.noPadding]: noPadding
       })}
       style={{
-        width: buttonWidth + (noPadding ? 0 : 2),
-        height: buttonHeight,
+        // Totals including the 1px padding, which border-box now counts inside the box.
+        width: buttonWidth + (noPadding ? 0 : 4),
+        height: buttonHeight + (noPadding ? 0 : 2),
         backgroundColor: hover && enable ? "var(--bgcolor-toolbarbutton-hover)" : "transparent"
       }}
       onMouseEnter={handleMouseEnter}

@@ -243,7 +243,7 @@ export const BitValue = ({ value, tooltip, clicked }: BitValueProps) => {
   return (
     <div
       ref={ref}
-      className={classnames(styles.flag, styles.clickable)}
+      className={classnames(styles.bitValue, { [styles.clickable]: !!clicked })}
       onClick={() => clicked?.()}
     >
       <div className={styles.flagValue}>

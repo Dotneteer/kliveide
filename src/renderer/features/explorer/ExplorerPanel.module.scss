@@ -21,7 +21,8 @@
     width: calc(100% - 2px);
     // Sized to fit NODE_ICON_SIZE (20px) in ExplorerProjectItem.tsx with a
     // little air; raise both together if the node icons grow again.
-    height: 24px;
+    /* Total including the border, which border-box now counts inside the box. */
+  height: 26px;
     align-items: center;
     border: 1px solid transparent;
 

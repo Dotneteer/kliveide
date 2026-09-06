@@ -111,6 +111,7 @@ export function saveAppSettings(): void {
   const state = mainStore.getState();
   appSettings.startScreenDisplayed = state.startScreenDisplayed;
   appSettings.theme = state.theme;
+  appSettings.accent = state.accent;
   appSettings.globalSettings = state.globalSettings;
   appSettings.ideSettings = state.ideSettings;
   appSettings.machineId = state.emulatorState?.machineId;
