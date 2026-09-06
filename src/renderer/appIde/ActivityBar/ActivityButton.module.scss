@@ -10,20 +10,12 @@
     &:hover {
         background: var(--bgcolor-activitybar-pointed);
     }
-};
+}
 
 .iconWrapper {
     @include fill-parent-flex;
     justify-content: center;
     align-items: center;
-}
-
-.icon {
-    fill: var(--color-activitybar);
-}
-
-.iconPointed {
-    fill: var(--color-activitybar-pointed);
 }
 
 .active {

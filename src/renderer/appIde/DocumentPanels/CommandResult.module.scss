@@ -18,23 +18,3 @@
   flex-shrink: 0;
   flex-grow: 0;
 }
-
-.listWrapper {
-  @include fill-parent-flex;
-  font-family: var(--monospace-font);
-  box-sizing: border-box;
-  flex-direction: column;
-  user-select: none;
-}
-
-.item {
-  display: flex;
-  flex-direction: row;
-  width: fit-content;
-  overflow-x: hidden;
-  word-break: break-all;
-
-  &:hover {
-    background: var(--bgcolor-disass-hover);
-  }
-}

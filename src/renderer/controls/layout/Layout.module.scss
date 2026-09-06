@@ -44,8 +44,12 @@
   padding: 0;
 }
 
+/*
+ * Marker class for `HeaderRow` (controls/layout/Row.tsx). It carried
+ * `background-color: var()` — an empty var() is a parse error, so the declaration was always
+ * dropped and the class has never painted anything. Phase 3 gives panel headers a real surface.
+ */
 .headerRow {
-  background-color: var();
 }
 
 .column {

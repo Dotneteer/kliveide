@@ -10,6 +10,7 @@ import { ViewControls } from "./ViewControls";
 import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
 import { SETTING_IDE_SYNC_BREAKPOINTS } from "@common/settings/setting-const";
 import type { RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
+import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
 
 type Props = {
   ide: boolean;
@@ -17,7 +18,6 @@ type Props = {
   recordingManagerRef?: MutableRefObject<RecordingManager | null>;
 };
 
-const SECONDARY_ICON_SIZE = 20;
 
 export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props) => {
   const mainApi = useMainApi();

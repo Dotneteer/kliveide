@@ -16,12 +16,12 @@ import {
 } from "@common/settings/setting-const";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
 
 type Props = {
   recordingManagerRef?: MutableRefObject<RecordingManager | null>;
 };
 
-const SECONDARY_ICON_SIZE = 20;
 
 export const ViewControls = ({ recordingManagerRef }: Props) => {
   const dispatch = useDispatch();

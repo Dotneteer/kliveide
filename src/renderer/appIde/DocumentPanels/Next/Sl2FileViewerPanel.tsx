@@ -1,4 +1,4 @@
-import styles from "./Sl2FileViewerPanel.module.scss";
+import styles from "./NextFileViewerPanel.module.scss";
 import { Label } from "@renderer/controls/layout/Label";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 

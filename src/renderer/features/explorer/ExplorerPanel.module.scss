@@ -5,7 +5,7 @@
   box-sizing: border-box;
   flex-direction: column;
   user-select: none;
-  font-family: var(--main-font);
+  font-family: var(--main-font-family);
   font-size: 0.9em;
   font-weight: 500;
   outline: none;
@@ -103,6 +103,6 @@
   border: none;
   color: white;
   background: transparent;
-  font-family: var(--main-font);
+  font-family: var(--main-font-family);
   font-size: 1em;
 }

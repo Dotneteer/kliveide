@@ -37,10 +37,6 @@
   width: 4px;
 }
 
-.sectionSeparator {
-  width: 8px;
-}
-
 .section {
   display: flex;
   flex-shrink: 0;
@@ -50,26 +46,4 @@
   align-content: flex-start;
   align-items: center;
   justify-items: start;
-}
-
-.infiniteRotate {
-  animation: rotate-animation 1s infinite linear;
-}
-
-@keyframes rotate-animation {
-  0% {
-    transform: scale(1, 1);
-  }
-  25% {
-    transform: scale(0.8, 1);
-  }
-  50% {
-    transform: scale(0.05, 1);
-  }
-  75% {
-    transform: scale(0.8, 1);
-  }
-  100% {
-    transform: scale(1, 1);
-  }
 }

@@ -93,6 +93,7 @@ export const lightTheme: ThemeProperties = {
   "--console-ansi-red": "#cd3131",
   "--console-ansi-white": "#e5e5e5",
   "--console-ansi-yellow": "#949800",
+  "--console-default": "#202020",
   "--console-lineNo": "#808080",
 
   // --- Label colors
