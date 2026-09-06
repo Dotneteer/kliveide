@@ -1132,21 +1132,33 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   // Preserve the submenus as a dedicated array.
   const submenus = template.map((i) => i.submenu);
 
-  // --- Set the menu
+  // --- Set the menu. `setupMenu` runs on *every* state change, and most of those changes do not
+  // --- alter the menu at all. Handing an unchanged menu to the OS is not free: on macOS every
+  // --- `Menu.setApplicationMenu` call replaces the single global NSMenu, which makes an
+  // --- auto-hidden menu bar (System Settings > "Automatically hide and show the menu bar", or
+  // --- full-screen mode) tear down and re-reveal itself - the menu bar visibly flashes while the
+  // --- pointer rests at the top of the screen. So only touch the native menu when the rendered
+  // --- menu really differs from the one already installed.
   if (__DARWIN__) {
     const windowFocused = isEmuWindowFocused() ? emuWindow : ideWindow;
     if (!windowFocused.isDestroyed()) {
       template.forEach(templateTransform(windowFocused));
-      Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+      if (menuChanged("app", template)) {
+        Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+      }
     }
   } else {
     if (emuWindow && !emuWindow.isDestroyed()) {
       template.forEach(templateTransform(emuWindow));
-      emuWindow.setMenu(Menu.buildFromTemplate(template));
+      if (menuChanged("emu", template)) {
+        emuWindow.setMenu(Menu.buildFromTemplate(template));
+      }
     }
     if (ideWindow && !ideWindow.isDestroyed()) {
       template.forEach(templateTransform(ideWindow));
-      ideWindow.setMenu(Menu.buildFromTemplate(template));
+      if (menuChanged("ide", template)) {
+        ideWindow.setMenu(Menu.buildFromTemplate(template));
+      }
     }
   }
 
@@ -1168,6 +1180,73 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         ) => (i.submenu = submenus[idx])
       : (i: { submenu: null }) => (i.submenu = null);
   }
+}
+
+/**
+ * The signature of the menu last handed to the OS, per menu target ("app" on macOS, "emu"/"ide"
+ * elsewhere). Used to suppress redundant native menu updates.
+ */
+const lastMenuSignatures = new Map<string, string>();
+
+/**
+ * Counts the menu updates suppressed since the last real rebuild, per target. Reported only when
+ * the KLIVE_MENU_DEBUG environment variable is set.
+ */
+const suppressedMenuUpdates = new Map<string, number>();
+
+/**
+ * Serializes the visible shape of a menu template: everything that can make the rendered menu look
+ * or behave differently (labels, ids, roles, types, accelerators, enabled/visible/checked flags and
+ * the nesting of submenus). Click handlers are deliberately excluded: they are freshly created
+ * closures on every build, so comparing them would never report an unchanged menu.
+ */
+function menuSignature(items: (MenuItemConstructorOptions | MenuItem)[] | Electron.Menu): string {
+  return JSON.stringify(items, (key, value) =>
+    typeof value === "function" || key === "icon" || key === "sharingItem" ? undefined : value
+  );
+}
+
+/**
+ * Tests whether the given menu template differs from the one most recently installed for the
+ * specified target, and remembers it when it does.
+ * @param target Menu target key
+ * @param template The template about to be installed
+ * @returns True if the native menu needs to be replaced
+ */
+function menuChanged(
+  target: string,
+  template: (MenuItemConstructorOptions | MenuItem)[]
+): boolean {
+  let signature: string;
+  try {
+    signature = menuSignature(template);
+  } catch {
+    // --- A template we cannot serialize (unexpected cyclic value) must never suppress an update.
+    lastMenuSignatures.delete(target);
+    return true;
+  }
+  if (lastMenuSignatures.get(target) === signature) {
+    suppressedMenuUpdates.set(target, (suppressedMenuUpdates.get(target) ?? 0) + 1);
+    return false;
+  }
+  if (process.env.KLIVE_MENU_DEBUG) {
+    console.log(
+      `[menu] rebuilding '${target}' menu (${suppressedMenuUpdates.get(target) ?? 0} redundant ` +
+        `update(s) suppressed since the previous rebuild)`
+    );
+  }
+  suppressedMenuUpdates.set(target, 0);
+  lastMenuSignatures.set(target, signature);
+  return true;
+}
+
+/**
+ * Forgets the cached menu signatures so that the next `setupMenu` call rebuilds the native menu
+ * even if its contents are unchanged (for example after the menu has been cleared).
+ */
+export function invalidateMenuCache(): void {
+  lastMenuSignatures.clear();
+  suppressedMenuUpdates.clear();
 }
 
 /**

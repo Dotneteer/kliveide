@@ -585,7 +585,66 @@ describe("DocumentAreaGrid", () => {
     expect(getByText("hub-1")).toBeTruthy();
     expect(getByText("hub-2")).toBeTruthy();
   });
+
+  it("persists the document workspace when it differs from the stored one", async () => {
+    const activeHub = createDocumentHub(1, [createDocument("/project/code.asm")]);
+    const projectService = createProjectService(activeHub);
+    const { saveProject, store } = mockDocumentAreaGridDependencies(projectService, {
+      state: {
+        ideView: { documentHubState: {} },
+        project: { folderPath: "/project", workspaceLoaded: true },
+        workspaceSettings: {}
+      }
+    });
+
+    const { DocumentAreaGrid } = await import("@renderer/features/documents/DocumentAreaGrid");
+    render(<DocumentAreaGrid />);
+
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    expect(workspaceDispatches(store)).toHaveLength(1);
+    expect(workspaceDispatches(store)[0].payload.value.areas[0].documents[0].id).toBe(
+      "/project/code.asm"
+    );
+  });
+
+  it("does not persist or save the document workspace again when it did not change", async () => {
+    const activeHub = createDocumentHub(1, [createDocument("/project/code.asm")]);
+    const projectService = createProjectService(activeHub);
+    const state: Record<string, any> = {
+      ideView: { documentHubState: {} },
+      project: { folderPath: "/project", workspaceLoaded: true },
+      workspaceSettings: {}
+    };
+    const { saveProject, store } = mockDocumentAreaGridDependencies(projectService, { state });
+
+    const { DocumentAreaGrid } = await import("@renderer/features/documents/DocumentAreaGrid");
+    const { rerender } = render(<DocumentAreaGrid />);
+
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+
+    // --- Mirror what the real store does with the dispatch above, then sign a document hub state
+    // --- change - exactly what a completed project save triggers. The workspace itself is
+    // --- unchanged, so nothing may be dispatched or saved: this is the loop that kept re-saving
+    // --- the project file about once a second.
+    state.workspaceSettings.docsWorkspace = workspaceDispatches(store)[0].payload.value;
+    store.dispatch.mockClear();
+    saveProject.mockClear();
+    state.ideView = { documentHubState: {} };
+
+    await act(async () => {
+      rerender(<DocumentAreaGrid />);
+    });
+
+    expect(workspaceDispatches(store)).toHaveLength(0);
+    expect(saveProject).not.toHaveBeenCalled();
+  });
 });
+
+function workspaceDispatches(store: { dispatch: ReturnType<typeof vi.fn> }) {
+  return store.dispatch.mock.calls
+    .map(([action]) => action)
+    .filter((action) => action?.type === "SET_WORKSPACE_SETTINGS" && action.payload?.value);
+}
 
 function mockDocumentAreaGridDependencies(
   projectService: ReturnType<typeof createProjectService>,
@@ -605,6 +664,7 @@ function mockDocumentAreaGridDependencies(
     dispatch: vi.fn(),
     getState: vi.fn(() => state)
   };
+  const saveProject = vi.fn(() => Promise.resolve());
   vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
     useAppServices: () => ({ projectService })
   }));
@@ -614,7 +674,7 @@ function mockDocumentAreaGridDependencies(
       selector(state)
   }));
   vi.doMock("@renderer/core/MainApi", () => ({
-    useMainApi: () => ({ saveProject: vi.fn(() => Promise.resolve()) })
+    useMainApi: () => ({ saveProject })
   }));
   vi.doMock("@renderer/features/documents/DocumentAreaPane", () => ({
     DocumentAreaPane: ({
@@ -657,6 +717,8 @@ function mockDocumentAreaGridDependencies(
       </div>
     )
   }));
+
+  return { saveProject, state, store };
 }
 
 function createProjectService(
