@@ -22,6 +22,7 @@ export const SETTING_IDE_ACTIVE_OUTPUT_PANE = "ideViewOptions.activeOutputPane";
 export const SETTING_IDE_OPEN_LAST_PROJECT = "ideBehavior.openLastProject";
 export const SETTING_IDE_CLOSE_EMU = "ideBehavior.closeEmuWithIde";
 export const SETTING_EDITOR_FONT_SIZE = "editorOptions.fontSize";
+export const SETTING_EDITOR_FONT_FAMILY = "editorOptions.fontFamily";
 export const SETTING_EDITOR_AUTOCOMPLETE = "editorOptions.autoComplete";
 export const SETTING_EDITOR_TABSIZE = "editorOptions.tabSize";
 export const SETTING_EDITOR_INSERT_SPACES = "editorOptions.insertSpaces";

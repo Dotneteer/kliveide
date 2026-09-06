@@ -11,7 +11,8 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
-import { __DARWIN__ } from "./electron-utils";
+import { __DARWIN__, __WIN32__ } from "./electron-utils";
+import { getEditorFontOptions } from "@common/settings/editor-fonts";
 import { mainStore } from "./main-store";
 import {
   setThemeAction,
@@ -61,6 +62,7 @@ import {
   SETTING_EMU_SCANLINE_EFFECT,
   SETTING_IDE_CLOSE_EMU,
   SETTING_EDITOR_FONT_SIZE,
+  SETTING_EDITOR_FONT_FAMILY,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
   SETTING_IDE_SHOW_SIDEBAR,
@@ -120,6 +122,7 @@ const IDE_SETTINGS = "ide_settings";
 
 const EDITOR_OPTIONS = "editor_options";
 const EDITOR_FONT_SIZE = "editor_font_size";
+const EDITOR_FONT_FAMILY = "editor_font_family";
 const EDITOR_TAB_SIZE = "editor_tab_size";
 const EDITOR_QUICK_SUGGESTION_DELAY = "editor_quick_suggestion_delay";
 const EDITOR_RENDER_WHITESPACE = "editor_render_whitespace";
@@ -296,6 +299,22 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   // View menu
 
   // --- Prepare the view menu
+  // --- Font family option. Only the fonts available on this platform are offered. A value
+  // --- persisted on another platform stays in the settings file but shows nothing checked here,
+  // --- and the editor falls back to the bundled default until the user picks again.
+  const currentFontFamily = getSettingValue(SETTING_EDITOR_FONT_FAMILY);
+  const editorFontFamilyMenu: MenuItemConstructorOptions[] = getEditorFontOptions(__WIN32__).map(
+    (f, idx) => ({
+      id: `${EDITOR_FONT_FAMILY}_${idx}`,
+      label: f.label,
+      type: "checkbox",
+      checked: currentFontFamily === f.id,
+      click: async () => {
+        setSettingValue(SETTING_EDITOR_FONT_FAMILY, f.id);
+      }
+    })
+  );
+
   // --- Font size option
   const editorFontOptions = [
     {
@@ -542,6 +561,11 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         id: EDITOR_OPTIONS,
         label: "Editor Options",
         submenu: [
+          {
+            id: EDITOR_FONT_FAMILY,
+            label: "Font Family",
+            submenu: editorFontFamilyMenu
+          },
           {
             id: EDITOR_FONT_SIZE,
             label: "Font Size",

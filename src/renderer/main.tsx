@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import IdeApp from "./appIde/IdeApp";
 import RendererProvider from "./core/RendererProvider";
 // import "overlayscrollbars/overlayscrollbars.css";
+import "@styles/fonts.css";
 import "@styles/overlayScrollbars-modified.css"
 import "@styles/index.css";
 import ThemeProvider from "./theming/ThemeProvider";

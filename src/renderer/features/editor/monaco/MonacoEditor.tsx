@@ -23,6 +23,7 @@ import {
 } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { getIsWindows } from "@renderer/os-utils";
+import { getEditorFontFamily } from "@common/settings/editor-fonts";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { createEmuApi } from "@common/messaging/EmuApi";
 import { createMainApi } from "@common/messaging/MainApi";
@@ -32,6 +33,7 @@ import {
   SETTING_EDITOR_AUTOCOMPLETE,
   SETTING_EDITOR_DETECT_INDENTATION,
   SETTING_EDITOR_FONT_SIZE,
+  SETTING_EDITOR_FONT_FAMILY,
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
   SETTING_EDITOR_INSERT_SPACES,
   SETTING_EDITOR_RENDER_WHITESPACE,
@@ -153,6 +155,12 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   // --- Respond to editor font size change requests
   const editorFontSize = useGlobalSetting(SETTING_EDITOR_FONT_SIZE);
+
+  // --- Respond to editor font family change requests. The setting stores a platform-independent
+  // --- id; resolving it here keeps a value written on another platform from breaking the editor.
+  const editorFontId = useGlobalSetting(SETTING_EDITOR_FONT_FAMILY);
+  const isWindowsPlatform = useSelector((s) => s.isWindows ?? false);
+  const editorFontFamily = getEditorFontFamily(editorFontId, isWindowsPlatform);
 
   // --- We use these services to respond to various IDE events
   const { store, messenger } = useRendererContext();
@@ -844,6 +852,12 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         <Editor
           options={{
             fontSize: editorFontSize,
+            // --- Chosen in View | Editor Options | Font Family; defaults to the bundled
+            // --- Iosevka, whose 0.5em glyphs fit noticeably more columns than the platform
+            // --- default mono. Ligatures stay off - they are wrong in Z80 source and in
+            // --- hex/disassembly listings.
+            fontFamily: editorFontFamily,
+            fontLigatures: false,
             readOnly: document.isReadOnly || (isProjectDebugging && document.isLocked),
             glyphMargin: languageInfo?.supportsBreakpoints,
             "semanticHighlighting.enabled": true,

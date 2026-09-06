@@ -11,8 +11,7 @@ body {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: var(--monospace-font);
 }
 
 /* Force Monaco editor input widgets (e.g. rename input) to inherit theme colors.

@@ -1,0 +1,210 @@
+/* ---------------------------------------------------------------------------
+ * Bundled application fonts.
+ *
+ * All faces ship inside the app (no network access at runtime) and are built by
+ * scripts/build-fonts.py from the @fontsource packages. Both families are
+ * licensed under the SIL Open Font License 1.1.
+ *
+ *   Inter   - UI / display text. Variable weight 100-900.
+ *   Iosevka - code, disassembly, memory and register dumps. Every glyph is
+ *             exactly 0.5em wide (vs 0.6em for Menlo/Consolas/JetBrains Mono),
+ *             which fits ~17% more columns in the same panel width.
+ *
+ * `font-display: block` is deliberate: the files are local, so they resolve
+ * immediately, and blocking avoids a reflow when the 0.5em metrics of Iosevka
+ * replace a wider fallback mono.
+ * ------------------------------------------------------------------------- */
+
+/* --- Inter (UI) ---------------------------------------------------------- */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('../fonts/inter-latin.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('../fonts/inter-latin-ext.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('../fonts/inter-latin-italic.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('../fonts/inter-latin-ext-italic.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* --- Iosevka (monospace) ------------------------------------------------- */
+@font-face {
+  font-family: 'Iosevka';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('../fonts/iosevka-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Iosevka';
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url('../fonts/iosevka-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Iosevka';
+  font-style: italic;
+  font-weight: 400;
+  font-display: block;
+  src: url('../fonts/iosevka-400-italic.woff2') format('woff2');
+}
+
+
+/* --- Editor fonts offered in View | Editor Options | Font Family ---------- *
+ * Fontsource variable builds: one file spans the whole weight range. Each family is split into a
+ * `latin` half (copied verbatim) and a `latin-ext` half (subset to Latin Extended-A/B by
+ * scripts/build-fonts.py). Both halves come from the same source font and therefore share its
+ * advance width, so accented text stays column-aligned - it would not if the ext range fell
+ * through to the next family in the stack.
+ *
+ * Note the weight ranges are per family and are NOT interchangeable. Fira Code in particular
+ * starts at 300 and defaults to 300, so declaring it as `400 700` would render Light wherever a
+ * regular weight is asked for.
+ */
+
+@font-face {
+  font-family: 'Inconsolata';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: block;
+  src: url('../fonts/inconsolata.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Inconsolata';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: block;
+  src: url('../fonts/inconsolata-ext.woff2') format('woff2-variations');
+  unicode-range: U+0100-017F, U+0180-024F;
+}
+
+@font-face {
+  font-family: 'Noto Sans Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('../fonts/noto-sans-mono.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Noto Sans Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url('../fonts/noto-sans-mono-ext.woff2') format('woff2-variations');
+  unicode-range: U+0100-017F, U+0180-024F;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: block;
+  src: url('../fonts/jetbrains-mono.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: block;
+  src: url('../fonts/jetbrains-mono-ext.woff2') format('woff2-variations');
+  unicode-range: U+0100-017F, U+0180-024F;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: italic;
+  font-weight: 100 800;
+  font-display: block;
+  src: url('../fonts/jetbrains-mono-italic.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: italic;
+  font-weight: 100 800;
+  font-display: block;
+  src: url('../fonts/jetbrains-mono-ext-italic.woff2') format('woff2-variations');
+  unicode-range: U+0100-017F, U+0180-024F;
+}
+
+@font-face {
+  font-family: 'Fira Code';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: block;
+  src: url('../fonts/fira-code.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Fira Code';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: block;
+  src: url('../fonts/fira-code-ext.woff2') format('woff2-variations');
+  unicode-range: U+0100-017F, U+0180-024F;
+}
+
+/* --- Global typographic defaults ----------------------------------------- */
+
+/* Inter ships proportional figures by default, which makes live-updating
+   numbers (T-states, PC, frame counters) jitter as digits change width. */
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Iosevka carries programming ligatures in `calt`. They are wrong in a
+   disassembly listing or a hex dump, so they stay off everywhere; opt back in
+   per-element with `font-variant-ligatures: contextual` if ever wanted. */
+code,
+pre,
+.monaco-editor {
+  font-variant-ligatures: none;
+  font-feature-settings: 'calt' 0, 'dlig' 0;
+}
