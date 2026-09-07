@@ -211,6 +211,26 @@ export const DEVICE = {
   legendBelow: "#d02000"
 } as const;
 
+/**
+ * The Spectrum's INK legends printed above the number keys.
+ *
+ * These are the machine's own eight colours plus the two greys used for BRIGHT/FLASH, and they were
+ * nine hex literals inline in `Sp48Keyboard.tsx` — the keyboard equivalent of the emulator overlays
+ * hardcoding `#303030`. Theme-invariant like every other `--device-*` value (§8.2.1): the legends
+ * are printed on the case, and print does not have a light mode.
+ */
+export const DEVICE_INK = {
+  blue: "#0030ff",
+  red: "#ff0000",
+  magenta: "#e000e0",
+  green: "#00c000",
+  cyan: "#00c0c0",
+  yellow: "#fff000",
+  white: "#ffffff",
+  grey: "#a0a0a0",
+  greyDark: "#505050"
+} as const;
+
 // ---------------------------------------------------------------------------------------------
 // ANSI console palette
 // ---------------------------------------------------------------------------------------------

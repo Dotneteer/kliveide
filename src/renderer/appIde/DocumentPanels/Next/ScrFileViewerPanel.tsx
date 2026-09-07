@@ -1,6 +1,6 @@
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
-import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
+import { GenericFilePanel } from "../helpers/GenericFilePanel";
 import { HeaderRow } from "@renderer/controls/layout/Row";
 import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
@@ -21,7 +21,7 @@ const ScrFileViewerPanel = ({
   const documentHubService = useDocumentHubService();
 
   return createElement(
-    GenericFileViewerPanel<ScrFileContents, ScrFileViewState>,
+    GenericFilePanel<ScrFileContents, ScrFileViewState>,
     {
       document,
       contents,

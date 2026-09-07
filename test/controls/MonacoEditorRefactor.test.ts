@@ -290,7 +290,16 @@ describe("Monaco bootstrap", () => {
     expect(config).toHaveBeenCalledTimes(1);
     expect(loadCustomTokenColors).toHaveBeenCalledTimes(1);
     expect(register).toHaveBeenCalledWith({ id: "klive-z80" });
-    expect(defineTheme).toHaveBeenCalledWith("klive-z80-light", expect.any(Object));
+    /*
+     * Theme definition deliberately no longer happens here.
+     *
+     * Registering a language used to define its themes once, from literals in the provider. Phase 8
+     * generates the palette from the active tone *and accent*, so a theme's contents change while
+     * its name does not — it has to be re-definable, which `ensureLanguage`'s
+     * register-once-and-return-early cannot support. `defineLanguageThemes` does it instead, called
+     * from the editor on mount and whenever the tone or accent changes.
+     */
+    expect(defineTheme).not.toHaveBeenCalled();
     expect(registerZ80Providers).toHaveBeenCalledTimes(1);
     expect(registerEditorOpener).toHaveBeenCalledTimes(1);
   });

@@ -32,7 +32,7 @@ export const OutputPanel = () => {
 
   return (
     <div className={styles.outputPanel}>
-      {activePane && <ConsoleOutput buffer={buffer} scrollLocked={false} showLineNo={false} />}
+      {activePane && <ConsoleOutput buffer={buffer} followTail />}
     </div>
   );
 };

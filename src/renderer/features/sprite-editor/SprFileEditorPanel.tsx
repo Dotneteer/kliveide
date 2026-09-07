@@ -1,8 +1,8 @@
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import {
-  GenericFileEditorContext,
-  GenericFileEditorPanel
-} from "@renderer/appIde/DocumentPanels/helpers/GenericFileEditorPanel";
+  GenericFileContext,
+  GenericFilePanel
+} from "@renderer/appIde/DocumentPanels/helpers/GenericFilePanel";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { createElement } from "react";
 import { SprFileContents, SprFileViewState } from "./sprite-common";
@@ -19,10 +19,10 @@ const SprFileEditorPanel = ({
   viewState
 }: DocumentProps) => {
   const validRenderer: (
-    context: GenericFileEditorContext<SprFileContents, SprFileViewState>
+    context: GenericFileContext<SprFileContents, SprFileViewState>
   ) => JSX.Element = context => <SpriteEditor context={context} />;
   return createElement(
-    GenericFileEditorPanel<SprFileContents, SprFileViewState>,
+    GenericFilePanel<SprFileContents, SprFileViewState>,
     {
       document,
       contents,

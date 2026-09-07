@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { asmKz80LanguageProvider } from "@renderer/appIde/project/asmKz80LangaugeProvider";
+import { asmKz80LanguageProvider } from "@renderer/appIde/project/asmKz80LanguageProvider";
 
 describe("Klive Z80 language word pattern", () => {
   it("keeps qualified module symbols together", () => {

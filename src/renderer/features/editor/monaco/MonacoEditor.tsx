@@ -1,4 +1,5 @@
 import Editor from "@monaco-editor/react";
+import { DEFAULT_ACCENT, isAccentId, type AccentId } from "@common/theming/accents";
 import * as monacoEditor from "monaco-editor";
 import AutoSizer from "../../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
@@ -48,7 +49,7 @@ import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { languageIntelSingleton } from "@renderer/appIde/services/LanguageIntelService";
 import { notifySemanticTokensChanged, type RenameEdit } from "@renderer/appIde/services/z80-providers";
-import { initializeMonaco, isMonacoInitialized } from "./monacoBootstrap";
+import { defineLanguageThemes, initializeMonaco, isMonacoInitialized } from "./monacoBootstrap";
 import {
   setMonacoExternalEditHandler,
   setMonacoNavigationHandler,
@@ -150,6 +151,9 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   // --- Recognize app theme changes and update Monaco editor theme accordingly
   const { theme } = useTheme();
+  const selectedAccent = useSelector((s) => s.accent);
+  const accentId: AccentId = isAccentId(selectedAccent) ? selectedAccent : DEFAULT_ACCENT;
+  const monacoRef = useRef<typeof monacoEditor>();
   const mainApi = useMainApi();
   const [monacoTheme, setMonacoTheme] = useState("");
 
@@ -280,22 +284,27 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     quickSuggestionDelay
   ]);
 
-  // --- Respond to theme changes
-  useEffect(() => {
-    // --- Set the Monaco editor theme according to the document language
+  /*
+   * Respond to theme *and accent* changes.
+   *
+   * The syntax palette follows the accent (§8.1), so a theme's contents change while its name stays
+   * the same. Re-defining is therefore not enough on its own: React would not re-apply an unchanged
+   * `theme` prop, so `setTheme` is called explicitly after the definitions are refreshed.
+   */
+  const themeNameFor = (tone: string) => {
     const languageInfo = customLanguagesRegistry.find((l) => l.id === document.language);
+    return languageInfo ? `${languageInfo.id}-${tone}` : tone === "light" ? "vs" : "vs-dark";
+  };
 
-    // --- Default theme name according to the Klive theme's tone
-    let themeName = theme.tone === "light" ? "vs" : "vs-dark";
-    if (
-      (languageInfo?.lightTheme && theme.tone === "light") ||
-      (languageInfo?.darkTheme && theme.tone === "dark")
-    ) {
-      // --- The custom language supports the current theme
-      themeName = `${languageInfo.id}-${theme.tone}`;
+  useEffect(() => {
+    const monaco = monacoRef.current;
+    const themeName = themeNameFor(theme.tone);
+    if (monaco) {
+      defineLanguageThemes(monaco, theme.tone as "light" | "dark", accentId);
+      monaco.editor.setTheme(themeName);
     }
     setMonacoTheme(themeName);
-  }, [theme, document.language]);
+  }, [theme, accentId, document.language]);
 
   // --- Respond to readonly and locked document changes
   useEffect(() => {
@@ -471,7 +480,18 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   }, [store, mainApi, allowBackgroundCompile]);
 
   // --- Initializes the editor when mounted
-  const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, _: typeof monacoEditor): void => {
+  const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, monaco: typeof monacoEditor): void => {
+    /*
+     * Held so the theme effect can re-define the language themes when the accent changes.
+     *
+     * The themes must also be defined *here*, not only in that effect: the effect runs on mount
+     * while this callback has not fired yet, so `monacoRef` is still empty and the first pass
+     * defines nothing. Without this the editor would open on Monaco's bare `vs-dark` and only pick
+     * up the Klive palette on a later theme or accent change.
+     */
+    monacoRef.current = monaco;
+    defineLanguageThemes(monaco, theme.tone as "light" | "dark", accentId);
+    monaco.editor.setTheme(themeNameFor(theme.tone));
     // --- Restore the view state to display the editor is it has been left
     mounted.current = false;
     editor.current = ed;

@@ -68,8 +68,7 @@ type EmptyStateProps = {
  * Values are the machine's own, converted from the ABGR entries in
  * `emu/machines/CommonScreenDevice.ts` — bright red, yellow, green and cyan — rather than invented.
  *
- * NOTE: the *order* here is from memory of the case flash and could not be confirmed from a
- * documentary source; it needs a second pair of eyes.
+ * The order — red, yellow, green, cyan — was confirmed by the project author.
  */
 const RAINBOW = ["#FF0000", "#FFFF00", "#00FF00", "#00FFFF"];
 
@@ -319,9 +318,11 @@ export const HexValue = ({
 /**
  * The hex prefix used throughout the UI.
  *
- * `$` matches what the panels overwhelmingly already showed. Note that Klive's *own* Z80 dialect
- * writes hex with `#` (`.org #7C00`), so the UI and the assembler disagree — a deliberate open
- * question rather than an oversight. Changing it is a one-line edit here.
+ * `$` matches what the panels overwhelmingly already showed, and there is no disagreement with the
+ * assembler to resolve: Klive's Z80 dialect accepts **both** prefixes. `common-token-stream.ts`
+ * lexes `#` (guarded by `supportsHashedHexadecimal`, on by default) and `$` alike, so `.org #7C00`
+ * and `.org $7C00` are the same program. The UI settling on one of the two is a display choice, not
+ * an inconsistency.
  */
 export const HEX_PREFIX = "$";
 
@@ -337,6 +338,37 @@ export const HEX_PREFIX = "$";
 export function formatHex(value: number, digits = 2, prefix = HEX_PREFIX): string {
   return `${prefix}${(value >>> 0).toString(16).toUpperCase().padStart(digits, "0")}`;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Address gutter
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * The `bank:` prefix in front of an address.
+ *
+ * Widths are `ch` (M2): a partition label is two or three characters, so the column is exactly that
+ * wide whatever the font does.
+ */
+export const PartitionPrefix = ({ label, wide }: { label: string; wide?: boolean }) => (
+  <div className={styles.partitionPrefix}>
+    <span className={styles.partitionLabel} style={{ width: wide ? "3ch" : "2ch" }}>
+      {label}
+    </span>
+    <span className={styles.partitionColon}>:</span>
+  </div>
+);
+
+/**
+ * The address at the head of a data row.
+ *
+ * `width` is in `ch`, so the column holds a fixed number of digits rather than a pixel count tuned
+ * to one font — the disassembly and memory rows previously passed 40, 48, 64 and 72 px between them.
+ */
+export const AddressLabel = ({ text, width }: { text: string; width: number }) => (
+  <div className={styles.addressLabel} style={{ width: `${width}ch` }}>
+    {text}
+  </div>
+);
 
 // ---------------------------------------------------------------------------------------------
 // Hex byte grid

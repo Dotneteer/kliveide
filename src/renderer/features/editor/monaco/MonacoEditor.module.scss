@@ -114,18 +114,56 @@
   cursor: pointer;
 }
 
-.errorDecoration {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 6' enable-background='new 0 0 9 6' height='6' width='9'%3E%3Cg fill='%23ff0000'%3E%3Cpath d='M0,2 C1.5,0 3,0 4.5,2 S7.5,4 9,2' stroke='%23ff0000' stroke-width='0.75' fill='none'/%3E%3C/g%3E%3C/svg%3E");
-  background-position: bottom;
-  background-repeat: repeat-x;
-  background-size: 9px 6px;
+/*
+ * Error and warning squiggles.
+ *
+ * The wave was a data-URI SVG with `%23ff0000` / `%23ff9900` baked into it, so the squiggle colour
+ * could not follow the theme and did not match the status hues used everywhere else. Using the SVG
+ * as a mask and painting it with `background-color` moves the colour into a token; the geometry is
+ * the same wave.
+ *
+ * These stay on the status hues and are deliberately excluded from the accent mapping (§8.1): an
+ * error must mean the same thing whatever accent is active.
+ */
+%squiggle {
+  --squiggle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 6' height='6' width='9'%3E%3Cpath d='M0,2 C1.5,0 3,0 4.5,2 S7.5,4 9,2' stroke='black' stroke-width='0.75' fill='none'/%3E%3C/svg%3E");
+  -webkit-mask-image: var(--squiggle);
+  mask-image: var(--squiggle);
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+  -webkit-mask-position: bottom;
+  mask-position: bottom;
+  -webkit-mask-size: 9px 6px;
+  mask-size: 9px 6px;
   padding-bottom: 4px;
+  /* Monaco writes its own underline onto these elements, so these two must win. */
   border-bottom: none !important;
   text-decoration: none !important;
 }
 
-.errorIcon, .warningIcon {
-  background-color: var(--console-ansi-red) !important;
+.errorDecoration {
+  @extend %squiggle;
+  background-color: var(--status-error);
+}
+
+.warningDecoration {
+  @extend %squiggle;
+  background-color: var(--status-warning);
+}
+
+/*
+ * The inline error/warning pills.
+ *
+ * `.warningIcon` was declared three times: once sharing a block with `.errorIcon`, once setting
+ * `background-color: orangered !important`, and once setting `color: orange` — which never applied,
+ * because the shared block's `color: … !important` outranked it. One of the three declarations was
+ * dead, and a named CSS colour was doing the work of a status token.
+ *
+ * `!important` stays only on the properties Monaco sets inline on these decoration elements; the
+ * rest no longer carry it.
+ */
+.errorIcon,
+.warningIcon {
   color: var(--console-ansi-bright-white) !important;
   font-family: var(--shell-font-family) !important;
   font-size: 0.8rem !important;
@@ -133,8 +171,8 @@
   margin-left: 0.75rem !important;
   padding-left: 0.5rem !important;
   padding-right: 0.5rem !important;
-  border-top-left-radius: 100px !important;
-  border-bottom-left-radius: 100px !important;
+  border-top-left-radius: 100px;
+  border-bottom-left-radius: 100px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -144,20 +182,10 @@
   text-align: right;
 }
 
-.warningIcon {
-  background-color: orangered !important;
-}
-
-.warningDecoration {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 6' enable-background='new 0 0 9 6' height='6' width='9'%3E%3Cg fill='%23ff9900'%3E%3Cpath d='M0,2 C1.5,0 3,0 4.5,2 S7.5,4 9,2' stroke='%23ff9900' stroke-width='0.75' fill='none'/%3E%3C/g%3E%3C/svg%3E");
-  background-position: bottom;
-  background-repeat: repeat-x;
-  background-size: 9px 6px;
-  padding-bottom: 4px;
-  border-bottom: none !important;
-  text-decoration: none !important;
+.errorIcon {
+  background-color: var(--status-error);
 }
 
 .warningIcon {
-  color: orange;
+  background-color: var(--status-warning);
 }

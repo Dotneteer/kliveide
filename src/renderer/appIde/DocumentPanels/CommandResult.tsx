@@ -1,7 +1,6 @@
 import styles from "./CommandResult.module.scss";
 import { Label } from "@renderer/controls/layout/Label";
 import { SmallIconButton } from "@controls/IconButton";
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
 import { useDispatch } from "@renderer/core/RendererProvider";
 import { setIdeStatusMessageAction } from "@state/actions";
@@ -56,14 +55,11 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
           }}
         />
         <ToolbarSeparator small={true} />
-        <LabelSeparator width={8} />
         <Label text={title} />
       </PanelHeader>
       <ConsoleOutput
         buffer={buffer}
         initialTopPosition={topPosition.current}
-        scrollLocked={true}
-        showLineNo={false}
         onTopPositionChanged={(position: number) => {
           topPosition.current = position;
           saveViewState();

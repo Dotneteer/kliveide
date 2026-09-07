@@ -228,6 +228,42 @@
 }
 
 /*
+ * The address gutter shared by the disassembly and memory-dump rows.
+ *
+ * These four rules were byte-identical in `DisassemblyPanel.module.scss` and
+ * `MemoryDumpSection.module.scss`, and the JSX that used them was copy-pasted too. Note that only
+ * the *gutter* is shared: after the address the two rows have nothing in common — one continues
+ * with opcodes, T-states and an instruction, the other with hex and character values — so this is
+ * a pair of leading cells, not the single `DataGridRow` the plan assumed.
+ */
+.partitionPrefix {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--measure-gap);
+  margin-left: var(--measure-gap);
+  margin-right: 1.2ch;
+  color: var(--data-label);
+}
+
+.partitionLabel {
+  display: inline-flex;
+  justify-content: flex-start;
+}
+
+.partitionColon {
+  display: inline-flex;
+}
+
+.addressLabel {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  margin-right: 1.2ch;
+  color: var(--data-label);
+}
+
+/*
  * A grid of hex bytes — a system-variable array, a small buffer.
  *
  * Slice 6.0 surfaced this as a genuine gap: `SysVarsPanel` still owned `.byteValue`, `.dumpRows` and

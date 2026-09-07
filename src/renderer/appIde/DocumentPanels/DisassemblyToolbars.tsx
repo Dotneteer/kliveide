@@ -7,7 +7,7 @@ import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import BankDropdown from "@renderer/controls/new/BankDropdown";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Text } from "@renderer/controls/layout/Text";
-import { PanelHeader } from "./helpers/PanelHeader";
+import { PanelHeader } from "@renderer/controls/data";
 import { toHexa4 } from "../services/ide-commands";
 
 export function createDisassemblyOffsetOptions(decimalView: boolean): DropdownOption[] {
@@ -64,7 +64,6 @@ export const DisassemblyToolbar = ({
       title="Use decimal numbers?"
       clicked={onDecimalViewChanged}
     />
-    <LabelSeparator width={0} />
     <LabeledSwitch
       value={autoRefresh}
       label="Follow PC"
@@ -183,7 +182,6 @@ export const DisassemblyBankToolbar = ({
               onChanged={onCurrentSegmentChanged}
             />
           )}
-          <LabelSeparator width={8} />
           <Text text="Offset" />
           <LabelSeparator />
           <Dropdown

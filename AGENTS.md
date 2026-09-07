@@ -77,6 +77,25 @@ merely uncoloured, which no route diff can see.
   theming contract. `src/renderer/theming/svg-icon-parser.ts` is the parser and
   `icon-registry.ts` owns the override precedence.
 
+## Theming, Tokens, And Shared UI Primitives
+
+- Colour, spacing, type and motion come from the four token layers in
+  `src/renderer/theming/tokens/` (L1 primitives -> L2 semantics -> L3 dimensions -> L4 legacy
+  aliases). **Do not put a colour literal in a stylesheet or a component**; alias it at L4 or add it
+  to L1/L2. The light theme is *derived*, not hand-copied.
+- Data-dense panels build on `@renderer/controls/data` (`DataPanel`, `DataRow`, `DataLabel`,
+  `PanelHeader`, `EmptyState`, `HexValue`, ...). `controls/layout`'s `Label`/`Value`/`Secondary`
+  delegate to those and add only tooltip behaviour.
+- Three rules have tests that will fail you: no `em` font sizes (M1), no px column widths - use `ch`
+  (M2), and no component-private row-height constants - use `theming/tokens/rowSizes.ts` (M3).
+- The Monaco syntax palette is mid-revision: **read `.plans/SYNTAX_PALETTE_REVISION_PLAN.md`**
+  before changing `theming/tokens/syntax.ts`. It supersedes §8.1 of the modernization plan.
+- **Read `.ai/ui-theming-intent-and-lessons.md` before this kind of work.** It records the settled
+  product decisions, how to run and visually inspect the app (CDP, the app menu, the
+  `.plans/baseline/` scripts), and the failure modes this work already hit.
+- Type-check with `npx tsc --noEmit -p build/tsconfig.web.json`; tests need an explicit project
+  (`--project=jsdom` or `--project='!perf'`) and the `build/vitest.config.ts` config.
+
 ## Notes For React Refactors
 
 - Dialogs with async orchestration use a Model/Controller/View split so their behavior can be

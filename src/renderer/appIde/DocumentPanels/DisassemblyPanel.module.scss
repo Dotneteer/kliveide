@@ -11,7 +11,8 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  height: 18px;
+  /* M3: the same number the virtualizer positions rows with. */
+  height: var(--row-size-disassembly);
 
   &.even {
     background: var(--bgcolor-disass-even-row);
@@ -20,33 +21,6 @@
   &:hover {
     background: var(--bgcolor-disass-hover);
   }
-}
-
-.partitionPrefix {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 0.8ch;
-  margin-left: 0.8ch;
-  margin-right: 1.2ch;
-  color: var(--color-label);
-}
-
-.partitionLabel {
-  display: inline-flex;
-  justify-content: flex-start;
-}
-
-.partitionColon {
-  display: inline-flex;
-}
-
-.addressLabel {
-  display: flex;
-  flex: 0 0 auto;
-  justify-content: flex-start;
-  margin-right: 1.2ch;
-  color: var(--color-label);
 }
 
 .tstates {

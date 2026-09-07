@@ -4,7 +4,7 @@ import { MemoryDumpSection } from "@renderer/features/memory/MemoryDumpSection";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { DataPanel, DataRow, EmptyState } from "@renderer/controls/data";
-import { PanelHeader } from "./helpers/PanelHeader";
+import { PanelHeader } from "@renderer/controls/data";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { VListHandle } from "virtua";
@@ -70,7 +70,6 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
           value={decimalView}
           clicked={(val) => setDecimalView(val)}
         />
-        <LabelSeparator width={8} />
         <Text text="View" />
         <LabelSeparator />
         <Dropdown
@@ -79,14 +78,12 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
           width={88}
           onChanged={(val) => setViewMode(val as DumpViewMode)}
         />
-        <LabelSeparator width={8} />
         <LabeledSwitch
           label="Chars"
           title="Show character dump"
           value={charDump}
           clicked={(val) => setCharDump(val)}
         />
-        <LabelSeparator width={8} />
         <AddressInput
           label="Go To"
           clearOnEnter={true}
@@ -105,7 +102,6 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
       <FullPanel>
         <VirtualizedList
           items={rows}
-          overscan={25}
           apiLoaded={(api) => {
             vlApi.current = api;
             lastScrolledIndex.current = -1;

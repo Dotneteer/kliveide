@@ -5,7 +5,7 @@ import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
 import { Layer2Screen } from "@renderer/controls/Next/Layer2Screen";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
-import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
+import { GenericFilePanel } from "../helpers/GenericFilePanel";
 import { Row } from "@renderer/controls/layout/Row";
 import { Label } from "@renderer/controls/layout/Label";
 import { LabeledText } from "@renderer/controls/layout/LabeledText";
@@ -32,7 +32,7 @@ const NexFileViewerPanel = ({
   viewState
 }: DocumentProps<NexFileViewState>) => {
   return createElement(
-    GenericFileViewerPanel<NexFileContents, NexFileViewState>,
+    GenericFilePanel<NexFileContents, NexFileViewState>,
     {
       document,
       contents,

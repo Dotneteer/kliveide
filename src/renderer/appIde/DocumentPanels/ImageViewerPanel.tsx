@@ -2,9 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { FullPanel } from "@renderer/controls/layout/Panels";
-import { PanelHeader } from "./helpers/PanelHeader";
+import { PanelHeader } from "@renderer/controls/data";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { IconButton } from "@renderer/controls/IconButton";
 import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 import styles from "./ImageViewerPanel.module.scss";
@@ -159,7 +158,6 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
           width={110}
           onChanged={(v) => setFitMode(v as FitMode)}
         />
-        <LabelSeparator width={8} />
         <IconButton
           iconName="zoom-out"
           iconSize={16}

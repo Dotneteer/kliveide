@@ -30,6 +30,22 @@
   border-left: 1px solid var(--border-subtle);
 }
 
+/*
+ * The overflow affordance: two scroll chevrons and the open-documents list.
+ *
+ * Only rendered while the strip actually overflows, so it adds no permanent chrome to a header that
+ * fits its tabs.
+ */
+.overflowControls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: var(--space-1);
+  padding: 0 var(--space-1);
+  border-left: 1px solid var(--border-subtle);
+}
+
 .commandBar {
   width: auto;
   display: flex;

@@ -32,21 +32,39 @@
     @include fill-parent-flex;
 }
 
+/*
+ * The splitter.
+ *
+ * It was `opacity: 0` at rest, so the only way to discover that two panels could be resized was to
+ * sweep the mouse along the seam and see something appear. It now shows a hairline at rest and
+ * takes the accent while pointed or dragging.
+ *
+ * The transition moved off `.pointed`. Declaring it there meant it applied only while the class was
+ * present, so the splitter faded *in* over 200ms and snapped *out* instantly — a one-way animation
+ * that reads as a glitch rather than a highlight.
+ */
 .splitter {
     position: fixed;
-    z-index: 10;
+    z-index: var(--z-splitter);
     background: transparent;
-    opacity: 0.0;
+    transition:
+        background-color var(--duration-base) var(--ease-standard),
+        opacity var(--duration-base) var(--ease-standard);
 
-    &.withBorder {
-        opacity: 1.0;
+    /*
+     * The visible line is a pseudo-element inset inside the grab zone, so the hit area can be
+     * comfortably larger than the hairline the user sees.
+     */
+    &::after {
+        content: "";
+        position: absolute;
+        pointer-events: none;
+        background: var(--border-subtle);
+        transition: background-color var(--duration-base) var(--ease-standard);
+    }
 
-        &::after {
-            content: "";
-            position: absolute;
-            pointer-events: none;
-            background: var(--color-tool-border);
-        }
+    &.withBorder::after {
+        background: var(--color-tool-border);
     }
 
     &.verticalBorder::after {
@@ -62,12 +80,15 @@
         left: 0;
         right: 0;
         height: 1px;
+        width: auto;
         transform: translateY(-0.5px);
     }
 
     &.pointed {
         background: var(--bgcolor-splitter);
-        opacity: 1.0;
-        transition: opacity 0.2s;
+
+        &::after {
+            background: var(--accent-solid);
+        }
     }
 }

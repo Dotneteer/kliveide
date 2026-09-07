@@ -160,9 +160,16 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
             dispatch(incToolCommandSeqNoAction());
           }}
         />
+        {/*
+          * `scrollLocked` true means auto scrolling is OFF, so clicking turns it ON. The tooltip
+          * said the opposite — "Turn auto scrolling off" at the moment the click would turn it on —
+          * which is what a boolean you have to mentally negate eventually costs you. The state name
+          * and its persisted `locked` key are left alone; renaming them would need a view-state
+          * migration for no user-visible gain.
+          */}
         <SmallIconButton
           iconName={scrollLocked ? "unlock" : "lock"}
-          title={`Turn auto scrolling ${scrollLocked ? "off" : "on"}`}
+          title={`Turn auto scrolling ${scrollLocked ? "on" : "off"}`}
           clicked={() => setLocked(!scrollLocked)}
         />
         <ToolbarSeparator small={true} />
@@ -176,7 +183,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
       <ConsoleOutput
         buffer={scriptBuffer}
         initialTopPosition={topPosition.current}
-        scrollLocked={scrollLocked}
+        followTail={!scrollLocked}
         showLineNo={showLineNo}
         onTopPositionChanged={(position: number) => {
           topPosition.current = position;

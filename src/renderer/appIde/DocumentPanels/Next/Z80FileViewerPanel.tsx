@@ -1,6 +1,6 @@
 import { Row } from "@renderer/controls/layout/Row";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
-import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
+import { GenericFilePanel } from "../helpers/GenericFilePanel";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
 import { LabeledText } from "@renderer/controls/layout/LabeledText";
@@ -112,7 +112,7 @@ const Z80FileViewerPanel = ({
   viewState
 }: DocumentProps<Z80FileViewState>) => {
   return createElement(
-    GenericFileViewerPanel<Z80FileContents, Z80FileViewState>,
+    GenericFilePanel<Z80FileContents, Z80FileViewState>,
     {
       document,
       contents,

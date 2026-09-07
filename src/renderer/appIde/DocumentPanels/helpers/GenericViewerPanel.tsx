@@ -1,7 +1,7 @@
 import styles from "./GenericViewerPanel.module.scss";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
-import { createElement, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Panel } from "@renderer/controls/layout/Panel";
 
 // --- Generic file viewer panel state
@@ -17,7 +17,15 @@ type GenericViewerContext<TState extends GenericViewerViewState> = {
   update: (data?: any) => void;
 };
 
-// --- Properties of a generic file panel renderer
+/*
+ * Renderers are render functions, not components.
+ *
+ * They were passed to `createElement`, which makes React treat them as component *types*. The one
+ * consumer defines them inline, so the type changed on every parent render and React remounted the
+ * whole body each time — discarding the virtualizer handle and re-running its async scroll restore.
+ * Calling them inlines their output here instead. A renderer that needs hooks should return an
+ * element of a module-scope component, as `StaticMemoryDump` now does.
+ */
 type GenericViewerProps<TState extends GenericViewerViewState> =
   DocumentProps<TState> & {
     saveScrollTop?: boolean;
@@ -68,7 +76,7 @@ export function GenericViewerPanel<TState extends GenericViewerViewState> ({
   // --- Render the view
   return (
     <Panel xclass={styles.panelFont}>
-      {headerRenderer && createElement(headerRenderer, context)}
+      {headerRenderer?.(context)}
       <Panel
         initialScrollPosition={currentViewState?.scrollPosition}
         onScrolled={pos => {
@@ -77,7 +85,7 @@ export function GenericViewerPanel<TState extends GenericViewerViewState> ({
           }
         }}
       >
-        {createElement(renderer, context)}
+        {renderer?.(context)}
       </Panel>
     </Panel>
   );

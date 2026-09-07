@@ -254,7 +254,13 @@ function hasDocumentTabDragData(
   );
 }
 
-function getDuplicateDocumentNames(openDocs: ProjectDocumentState[]): Set<string> {
+/**
+ * Names that more than one open document shares.
+ *
+ * Exported because the tab-overflow list has to label its rows the way the tabs do; deriving the
+ * name a second time is how the two drift apart.
+ */
+export function getDuplicateDocumentNames(openDocs: ProjectDocumentState[]): Set<string> {
   const nameCounts = new Map<string, number>();
   openDocs.forEach((document) => {
     nameCounts.set(document.name, (nameCounts.get(document.name) ?? 0) + 1);
@@ -266,7 +272,8 @@ function getDuplicateDocumentNames(openDocs: ProjectDocumentState[]): Set<string
   );
 }
 
-function getDocumentTabName(
+/** The label a tab shows: the bare name, or the path when the name is ambiguous. */
+export function getDocumentTabName(
   document: ProjectDocumentState,
   duplicateNames: Set<string>
 ): string {

@@ -31,7 +31,12 @@ export const ToolsHeader = ({ tool, topPosition }: Props) => {
   const dispatch = useDispatch();
 
   return (
-    <div className={styles.toolsHeader}>
+    <div
+      className={styles.toolsHeader}
+      // The tabs are role="tab"; the strip that owns them is the tab list.
+      role="tablist"
+      aria-label="Tool panels"
+    >
       {(tools ?? [])
         .filter((t) => t.visible ?? true)
         .map((d) => (

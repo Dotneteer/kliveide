@@ -1,12 +1,4 @@
-import {
-  ACCENTS,
-  ANSI,
-  DEVICE,
-  NEUTRAL,
-  STATUS,
-  type AccentId,
-  type Tone
-} from "./palette";
+import { ACCENTS, ANSI, DEVICE, NEUTRAL, STATUS, type AccentId, type Tone, DEVICE_INK } from "./palette";
 
 /**
  * L2 — semantics.
@@ -122,6 +114,9 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--device-legend-main": DEVICE.legendMain,
     "--device-legend-symbol": DEVICE.legendSymbol,
     "--device-legend-above": DEVICE.legendAbove,
-    "--device-legend-below": DEVICE.legendBelow
+    "--device-legend-below": DEVICE.legendBelow,
+    ...Object.fromEntries(
+      Object.entries(DEVICE_INK).map(([k, v]) => [`--device-ink-${k.toLowerCase()}`, v])
+    )
   };
 }

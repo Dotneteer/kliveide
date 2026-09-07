@@ -1378,10 +1378,13 @@ through the old palette to a green — colour with no meaning attached. They now
   colours next to a debugger's error red and success green would be exactly the competition that
   confined the motif to empty states in the first place.
 
-**One thing I could not verify.** I searched for the case-badge stripe *order* and neither
-`worldofspectrum.org` nor Wikipedia documents it — Wikipedia describes "rainbow slashes" without a
-sequence. The order shipped (red, yellow, green, cyan) is from memory and is flagged as such in a
-comment in `controls/data/index.tsx`. **It needs confirming by someone who knows the hardware.**
+**One thing I could not verify — since confirmed.** I searched for the case-badge stripe *order*
+and neither `worldofspectrum.org` nor Wikipedia documents it; Wikipedia describes "rainbow slashes"
+without a sequence. The order shipped (red, yellow, green, cyan) was from memory and flagged as such
+in the code. **The project author has since confirmed it is correct**, and the comment now says so
+rather than asking for a second opinion. Worth noting the failure mode this avoided: the motif would
+have looked deliberate either way, so nothing in the app or its tests could ever have caught a wrong
+order — only someone who knows the hardware.
 
 #### Slice 6.2 retrospective — `PanelHeader` *(2026-09-07)*
 
@@ -1473,12 +1476,17 @@ three local components (`FullDumpSection`, `DumpSection`, `ByteValue`) are gone.
 `BlinkPanel`'s local `ValueFieldRow` — a fourth private "labelled hex value" — is gone too, and its
 `LAB_WIDTH` moved from `48px` to `7ch`.
 
-**An open question I am flagging rather than deciding silently.** The UI uses `$` for hex, and that
-is what shipped. But **Klive's own Z80 dialect writes hex with `#`** — the project's own source reads
-`.org #7C00`, `call #1601`. So the debugger and the assembler disagree about how a hex number looks,
-in the same product. `$` was chosen because it matches what the panels overwhelmingly already showed
-and is a legitimate Z80 prefix, but the inconsistency is real. It is a one-line change:
-`HEX_PREFIX` in `controls/data/index.tsx`.
+**An open question I flagged rather than deciding silently — since answered, and my framing of it
+was wrong.** I described the UI's `$` and the sample source's `#7C00` as the debugger and the
+assembler *disagreeing*. They do not: Klive's Z80 dialect accepts **both** prefixes. Reading
+`compiler-common/common-token-stream.ts` confirms it — `#` is lexed at line 301 (guarded by
+`supportsHashedHexadecimal`, on by default) and `$` at line 310, so `.org #7C00` and `.org $7C00`
+are the same program. `$` stays, now as a display choice rather than a resolved conflict.
+
+The lesson is about evidence, not hex: I inferred a language rule from **sample code** — one project
+file that happened to use `#` — and reported it as an inconsistency in the product. Two minutes in
+the lexer would have shown there was nothing to reconcile. Reading the grammar is cheap; inferring
+it from a sample is how a non-problem gets escalated.
 
 #### Slice 6.5 retrospective — the `ch` measure scale *(2026-09-07)*
 
@@ -1572,6 +1580,306 @@ One jsdom test was worth more here than every measurement I took by hand.
 still exists for cells that are not yet inside a `DataRow`. Both are bounded and belong with the
 remaining panel migrations.
 
+#### Slice 7.2 retrospective — `PanelToolbar` and the tab overflow *(2026-09-07)*
+
+19697 tests pass (5 new), build green, `tsc` unchanged at 166.
+
+**The plan was wrong about the separators, and I checked before consolidating them.** It called
+`LabelSeparator width={8}` and `<ToolbarSeparator small>` "two competing separator components doing
+the same visual job". They are not: `ToolbarSeparator` renders a visible 1px rule, `LabelSeparator`
+renders an empty box that only reserves width. A divider and a spacer, with names similar enough to
+read as duplicates. Merging them would have deleted every group divider in the app. The plan entry
+is struck through and corrected rather than quietly dropped.
+
+The spacers still went — but for the right reason. Inside a `PanelHeader` the row already has a
+`gap`, so a spacer element is redundant; 7 of them are gone from four toolbars, including a
+`<LabelSeparator width={0} />` in `DisassemblyToolbars` that reserved nothing at all. Spacers inside
+*data rows*, where they align columns, were deliberately left alone — the edit walks each
+`<PanelHeader>…</PanelHeader>` block and only strips within it.
+
+**Phase 6 had left the job half-done and the plan did not say so.** `DocumentPanels/helpers/PanelHeader`
+— the twelve-line `HStack` with hardcoded 4px/2px padding that §6.2 was supposed to replace — was
+still there, still imported by five files. So the app had *two* `PanelHeader`s for the whole of
+Phase 6. It is now deleted and its importers point at `controls/data`.
+
+**Fix 4 is in, and it needed a menu that could be used from a keyboard.** The tab-list dropdown is a
+`ContextMenu`, per the decision to reuse an existing pattern — but that menu's rows were `<div>`s
+with an `onClick` and no keyboard path whatsoever, so a menu opened from a keyboard-reachable control
+could be dismissed and never used. Rows are now `role="menuitem"` `<button>`s with arrow-key/Home/End
+navigation and focus moved into the menu on open. That fixes the explorer and tab context menus too,
+which is the second time in this project that reusing a control has been worth more than the feature
+that prompted it.
+
+**Two details the DOM caught that the arithmetic would not have.** The rows first derived their icon
+from the file type, which produced *no icon at all* for the virtual documents (`Machine Memory`,
+`Disassembly`) because those have no node; they now read `iconName`/`iconFill` off the document, as
+`DocumentTabs` does. And the label now comes from the exported `getDocumentTabName`, so a row shows
+the disambiguated path exactly when its tab does, instead of deriving the name a second way.
+
+**Verified by constraining the strip, not by opening documents.** The project's three tabs do not
+overflow an 823px header. Electron does not expose CDP's `Emulator` domain, so instead of opening
+extra documents — which would have altered the workspace — the header was given a temporary
+`max-width`, which drives the same `ResizeObserver` path. Measured: left chevron correctly disabled
+at scroll 0, right enabled, all rows carrying icons, names and `aria-current` on the active
+document.
+
+**A layout observation for a later slice.** At a 420px header the tab strip was left **145px** while
+the document command bar kept ~195px: the command bar does not yield to the tabs. That is why all
+three rows showed as hidden — correctly, given the viewport. Worth revisiting when the header is
+next touched.
+
+**A design detail worth a second opinion:** hidden rows are marked with a trailing `···`, which sits
+a little close in meaning to the `···` button that opens the list. Dimming the row instead would read
+more clearly. Left as chosen rather than changed unilaterally.
+
+**Deferred:** `TapViewerPanel`, `DskViewerPanel`, `PaletteEditor` and `MemoryToolbar` still inline
+their own toolbars rather than using `PanelHeader` — they have bespoke header markup rather than a
+simple control strip, and folding them in is a bigger change than the rest of this slice combined.
+
+#### Slice 7.3a retrospective — one `GenericFilePanel` *(2026-09-07)*
+
+19701 tests pass (4 new), build green, `tsc` unchanged at 166. Three helper files became two;
+`GenericFileViewerPanel` and `GenericFileEditorPanel` are gone, and with `helpers/PanelHeader`
+deleted in 7.2 the `helpers/` folder is down by 430 lines against 263 added.
+
+**The merge itself was the easy half.** The editor was the viewer plus two context members, so giving
+every panel `viewState` and `saveToFile` collapses them; a viewer simply never calls `saveToFile`.
+
+**The half that mattered was a bug none of the three files' authors could have seen from the code.**
+All three passed their renderers to `createElement`, which makes React treat a renderer as a
+component **type**. Every consumer defines its renderer inline at the call site, so that type had a
+new identity on each parent render and React unmounted and remounted the entire file view every
+time. `StaticMemoryDump`'s renderer holds a `useRef` for the virtualizer and an async scroll restore
+in `useInitializeAsync`: all of it was being thrown away and re-run on every render of its parent.
+
+Renderers are now plain render functions that get *called*, so identity stops mattering. The cost is
+that a renderer may no longer call hooks, which was true of exactly one — `StaticMemoryDump`'s — now
+a module-scope `MemoryDumpBody` component.
+
+**I nearly shipped a test that proved nothing.** The first version of the remount test drove the
+parent with a raw `element.click()`, which never flushed the React update, so it passed against the
+broken implementation too. Switching to `fireEvent.click` and asserting the parent's own counter
+actually changed made it real: against `createElement` the body mounts **3 times**, against the fix
+**once**. Verified by temporarily restoring the old line rather than by reasoning about it — a test
+written after the fix is worth nothing until it has been seen to fail.
+
+**Also fixed while in there:** the loader effect depended on `document` alone, so new bytes under the
+same document showed the old parse; the context was kept in `useState` and written from an effect,
+costing two renders per view-state change and leaving the context one render stale; and the editor
+called `useAppServices()` twice.
+
+**The second half of the slice is now 7.3b, and the plan's premise for it was half wrong.** Two of
+the five hand-rolled viewers do not fit the abstraction at all — `Unknown` loads no file and `Bin`
+neither parses nor persists view state. The other three do, and checking them turned up the same
+class of defect as above: `DskViewerPanel` has **no `useMemo` anywhere** and calls `readDiskData`
+plus `createDiskSurface` in its render body, and `TapViewerPanel` calls `readTapeFile` there too, so
+both re-parse the whole file on every render. That is a good reason to migrate them and also why it
+is not a rename: they carry a different view-state pattern and are 978 lines between them.
+
+#### Slice 7.4 retrospective — the virtualization contract *(2026-09-07)*
+
+19704 tests pass (3 new), build green, `tsc` unchanged at 166. 56 lines of stylesheet removed
+against 13 added.
+
+**M3 was written in Phase 1 and never finished.** `rowSizes.ts` names `MEMORY_ROW_ITEM_SIZE = 20`
+and `DISASSEMBLY_ROW_ITEM_SIZE = 18` in its own header as the constants it exists to replace — and
+both were still sitting in their components, unchanged, six phases later. The module emitted
+`--row-size-*` for the stylesheets while the virtualizer went on reading private literals, so the
+two halves of a number that *must* agree were in different files with nothing tying them together,
+which is precisely the failure the module was written to prevent. `DisassemblyPanel.module.scss`
+carried the third copy as a hardcoded `height: 18px`.
+
+All three now read the module, and a **ratchet test** stops it happening again: it scans every
+`.ts`/`.tsx`/`.scss` under `src/renderer` for a component-private `*ROW*SIZE|HEIGHT` literal and
+fails naming the file and line. Verified by restoring the old constant and watching it fail — a
+guard that has never been seen to fail is not a guard.
+
+**The plan's `DataGridRow` was the wrong shape, and the code said so.** The duplicated block is real
+— four rules byte-identical in two stylesheets, plus the JSX that used them — but it is the row's
+**address gutter**, not the row. After the address, one row continues with opcodes, T-states and an
+instruction and the other with hex and character values; they share nothing else. So the extraction
+is two leading cells, `PartitionPrefix` and `AddressLabel`, not a single row component. Building the
+row the plan described would have meant a component with two disjoint halves selected by a flag.
+
+**The overscan divergence had no rationale to preserve.** Four of fifteen call sites passed
+`overscan={25}` and eleven passed nothing, so two lists in the same panel buffered differently for
+no stated reason. The explicit value became the default and the four repetitions went; any list with
+a real reason to differ can still say so.
+
+**Seven px widths from the 7.2 leftovers are now `ch`.** Measured at the disassembly row's own
+12.8px Iosevka (1ch = 6.4px) and converted preserving capacity: 40→7ch, 48→8ch, 64→10ch, 72→12ch,
+100→16ch, 140→22ch, 160→25ch, and `.tstates`. Verified live: rows still 18px, address column
+40px→44.8px, **zero clipped cells**. Worth noting the address column is the roomiest of them — 7ch
+holding a 4-character address — so sizing these to content rather than to their old pixel counts
+would reclaim about 2ch per row. Left as a capacity-preserving conversion, consistent with 6.5.
+
+#### Slice 7.5 retrospective — the `ToolArea` shell *(2026-09-07)*
+
+19708 tests pass (4 new, the tool tabs' first), build green, `tsc` unchanged at 166.
+
+**Two of the three things the plan asked for were already done or wrong, and the third was not in the
+plan at all.**
+
+*The focus ring was not missing.* The plan still described the command prompt as `outline: none` with
+no replacement. `git log` shows `@include focus-ring` was added to `.prompt` in my own **Phase 3**
+commit and the plan entry was never updated. Verified rather than assumed, and the verification took
+two attempts: focusing the input from script reported `outline-style: none`, because Chrome only
+matches `:focus-visible` once the user has actually used the keyboard. Dispatching a real key event
+through CDP first gives `matches(':focus-visible') === true` and a computed
+`solid 2px rgba(167, 138, 245, 0.7)` — the accent, at rest. A programmatic focus is not a user
+focus, and measuring one while claiming the other is how a working feature gets "fixed" twice.
+
+*`PanelHeader` is the wrong shape for `ToolsHeader`.* The plan said the tool area should adopt it.
+`ToolsHeader` is a tab strip that happens to carry an action group; `PanelHeader` is a titled chrome
+bar. Forcing one into the other is the same mistake as `Col`→`DataRow` in 6.6 and `DataGridRow` in
+7.4 — the third time this phase that a planned consolidation turned out to be two things that merely
+look alike. `ConsoleOutput`, the other half of that entry, was genuinely adopted — in 7.1.
+
+*The real defect was `ToolTab`.* The tool area's tabs — Commands and Output, its primary navigation —
+were unfocusable `<div>`s with an `onClick`: no `tabIndex`, no `role`, no `aria-selected`, no focus
+ring. That is precisely what Phase 2 fixed on the toolbar, the document tabs and the activity bar,
+and it survived because this tab is a plain text label rather than one of the shared button
+controls, so nothing in that sweep touched it. It is now a `<button role="tab">` inside a
+`role="tablist"` strip, mirroring `ActivityButton` exactly, and it has four tests.
+
+**Also cleaned up while in there:** `CommandPanel.module.scss` carried a dead `.outputLine` rule
+copied from `ConsoleOutput` and rendered by nothing, and an `.outputWrapper` that set a font family
+and size the console has overridden since 7.1. Three `em` sizes and three px literals became tokens.
+
+### Phase 7 complete
+
+7.1-7.5 done. The recurring lesson across the phase is worth stating once: **three of the five slices
+found that a planned consolidation was between two things that merely resembled each other** — the
+two separators (a divider and a spacer), `DataGridRow` (a shared gutter, not a shared row), and
+`PanelHeader` for `ToolsHeader` (a tab strip, not a header). In each case the code said so plainly
+and the plan, written from a distance, did not. Checking the shape before merging cost minutes;
+merging first would have deleted every group divider in the app in the first case alone.
+
+#### Phase 8 retrospective — the Monaco syntax palette *(2026-09-07)*
+
+19714 tests pass (6 new), build green, `tsc` unchanged at 166. **146 colour literals removed** from
+the seven language providers; the count was 146, not the 158 the plan estimated — the difference is
+the editor stylesheet's own colours, which this phase also cleaned up.
+
+**The mechanism the plan assumed could not have worked.** §8.1 asks for a palette that follows the
+accent, but `ensureLanguage` defined each theme exactly once, guarded by a
+register-once-and-return-early check. That was survivable while the colours were literals and only
+the *tone* could change, because both themes were defined up front and switching tone just switched
+which name was applied. It cannot work when the accent changes a theme's **contents while its name
+stays the same**. Theme definition therefore moved out to `defineLanguageThemes`, which is callable
+repeatedly — `defineTheme` is idempotent by name — with an explicit `setTheme` afterwards, because
+React will not re-apply an unchanged `theme` prop.
+
+**A bug I introduced and caught before shipping.** With definition moved into the theme effect, the
+editor opened on Monaco's bare `vs-dark`: the effect runs on mount while `monacoRef` is still empty,
+because it is set in `onMount`, which fires later. The themes are now defined in `onMount` too. The
+existing `MonacoEditorRefactor` test caught the move (it asserted `defineTheme` was called during
+registration) and is updated to assert the new contract deliberately, not silenced.
+
+**Contrast is proved, not eyeballed.** Six accents times two tones is twelve palettes, and every
+colour is pushed away from the editor background until it clears 4.5:1 (3.5:1 for comments, which
+are recessive by design). A test asserts the floor across all twelve, that the error colour **never**
+varies with the accent, and that the keyword colour always does. This is the §5 lesson applied
+again: the first accent set passed a hue-angle rule while being perceptually identical to the data
+colours, so a property that matters gets asserted rather than inspected.
+
+**The first pass gave keywords and functions the same colour** and leaned on the keyword's bold
+weight to separate them — a mnemonic and a call sit on the same line constantly, and weight alone is
+not enough. Functions got their own ramp step and the adjacency test grew two more pairs.
+
+**I misread my own screenshot, and the DOM corrected me.** Hex literals looked unstyled — the same
+near-grey as operands. Querying the computed colour showed `#7C00` at `#9e89d7`: the *number*
+colour, a desaturated accent that reads as grey at 12px next to saturated violet keywords. That is
+§8.1's stated intent ("related to keywords but recessive"), not a gap. Worth stating plainly though:
+**a single-accent scheme is inherently more monochrome than VS Code's multi-hue default** — labels,
+types and numbers are all steps of one hue by construction. That is the design, and it is what makes
+the editor look like part of the app; it is not an accident to be fixed later.
+
+**Verified end to end through the app's own menu.** Switching View -> Accent -> Phosphor Green
+repainted the editor live: keyword `rgb(188,166,247)` -> `rgb(135,207,90)`, label
+`rgb(153,119,243)` -> `rgb(108,190,55)`, number likewise, and the operand colour **unchanged** at
+`rgb(228,230,234)`, as a neutral should be. That also proves the one thing a unit test could not:
+that `defineTheme` followed by `setTheme` with the *same theme name* actually repaints. The accent
+was restored to Ultraviolet afterwards.
+
+**Editor chrome now shares the app's ground.** `editor.background` was never set, so the editor sat
+on Monaco's `#1e1e1e` inside a `#141517` window — the plan's own description of the editor as "the
+largest surface in the IDE and the one most obviously not part of the same design" was literally
+true at the pixel level. Line numbers, gutter, widget and input colours come from the neutral ramp
+too.
+
+**Stylesheet cleanup.** `.warningIcon` was declared **three** times, not the two the plan recorded:
+once sharing a block with `.errorIcon`, once as `background-color: orangered !important`, and once
+as `color: orange` — which never applied, because the shared block's `color: … !important`
+outranked it. So a named CSS colour was doing a status token's job and a third of the declaration
+was dead. The error and warning squiggles were data-URI SVGs with `%23ff0000` / `%23ff9900` baked
+in; they are now masks painted with `--status-error` / `--status-warning`, so they follow the theme
+while staying off the accent. `!important` is down from 11 to 12 declarations but now only on the
+properties Monaco actually sets inline — the rest were cargo.
+
+**Custom token overrides still work.** `customTokenLoader` writes into each provider's theme block;
+those blocks are now empty override slots merged *after* the generated rules, so a user's
+`<languageId>.tokens.json` still wins. Deleting them outright would have removed a working feature
+along with the literals.
+
+The two `Langauge` filename typos are fixed.
+
+#### Phase 9 retrospective — emulator area and keyboard *(2026-09-07)*
+
+19714 tests pass, build green, `tsc` unchanged at 166. Fixes 5 and 6 are done; the keyboard is a
+device surface with its duplication removed. Window chrome stays deferred, as the plan says.
+
+**Fix 5 — the screen is a device now.** A bezel, `--radius-md` and `--shadow-2` around the canvas,
+and `image-rendering: pixelated`, which had never been set at all: the canvas is scaled by an
+integer ratio, so the browser's default bilinear filter was softening every frame for no reason.
+
+**The `- 8` was worse than a magic number — it was a margin that existed only in JavaScript.**
+`useEmulatorScreen` subtracted 8 from the host's `offsetWidth` and `offsetHeight` inside its ratio
+arithmetic, so the gutter around the screen was invisible to every stylesheet and could only be
+changed by editing a sizing calculation. It is real padding on `.emulatorPanel` now, and the hook
+reads what the CSS actually left. That change broke a test, and the test was right to break: it
+handed the hook a plain object as its host, which cannot answer `getComputedStyle`. The hook is
+guarded and the test now passes a real element — which is what the component passes anyway.
+
+**The two overlays were positioning themselves against each other.** The execution pill sat at
+`top: 8px` and the recording pill at `top: 40px`, the latter carrying a comment deriving 40 from
+"~8px top + ~28px content height" — arithmetic that is correct only while the pill above keeps
+exactly that height. They are a flex column with a gap. Both also hardcoded `#303030` and
+`lightgreen` while `--bgcolor-emuoverlay` / `--color-emuoverlay` sat dead in the token layer, which
+is exactly why the light theme kept a dark pill.
+
+**Fix 6 — the splitter had a one-way animation.** It was `opacity: 0` at rest, so the only way to
+discover that two panels could be resized was to sweep the mouse along the seam. Worse, the
+transition was declared *inside* `.pointed`, so it applied only while that class was present: the
+splitter faded in over 200ms and snapped out instantly. It now shows a `--border-subtle` hairline at
+rest and takes the accent while pointed, with the transition on the base rule so it moves both ways.
+
+**And I introduced a bug fixing it, which the DOM caught.** The orientation classes were applied
+only when `showBorder` was set — harmless while the splitter was invisible, since there was nothing
+to orient. With a permanent hairline, a splitter without that flag had no orientation, and my
+stylesheet fallback guessed *vertical*: the horizontal splitter between screen and keyboard rendered
+a 1px x 4px vertical stub. Measured, not seen — at 4px it is invisible in a screenshot. Orientation
+is now applied unconditionally.
+
+**The keyboard's duplication was four-fold, not three.** The plan said `calculateZoom` / `rootStyle`
+/ `rowStyle` were duplicated across "the three keyboards"; there are four (`Sp48`, `Sp128`, `Next`,
+`Z88`), each with a byte-identical copy, and the two inset constants (24 horizontal, 12 vertical)
+were repeated four times with nothing keeping them in step.
+
+**Nine Spectrum INK colours became device tokens.** `Sp48Keyboard` carried the machine's own eight
+colours plus a grey as inline hex — the keyboard's version of the overlays' `#303030`. They are
+`--device-ink-*`, theme-invariant like every other device value (§8.2.1), because the legends are
+printed on the case. Per M4 the key SVGs stay imperative, so the caller passes *token names* and
+`Sp48Key` resolves them through `themeService`, exactly as it already did for its other seven
+colours — rather than introducing a second convention with `fill="var(...)"`.
+
+### Phases 0-9 complete
+
+Every phase in the plan is done except the explicitly deferred window chrome. Both questions that
+were standing for the user are now answered: the rainbow **stripe order** is confirmed correct, and
+the `$` / `#` **hex prefix** was never a conflict — the Z80 dialect accepts both, so `$` in the UI
+is simply a display choice. Both retrospectives above are corrected in place.
+
 #### The ratchet
 
 Old and new stacks coexist during Phase 6, which is exactly when a migration stalls at 80%. Guard it
@@ -1585,6 +1893,52 @@ const LIMITS = { "controls/valuedisplay": 5, "controls/layout/Label": 12, /* …
 
 It costs ten minutes to write and makes backsliding impossible. The last slice sets the limits to
 `0` and deletes the old directories along with the test entries.
+
+#### Slice 7.1 retrospective — `ConsoleOutput` *(2026-09-07)*
+
+19692 tests pass (6 new, the component's first), build green, `tsc` unchanged at 166.
+
+**The API rename was not cosmetic — the old name had already caused a shipped bug.** `scrollLocked`
+was *true* when auto-scrolling was **off**, so every call site had to negate it mentally, and
+`ScriptOutputPanel` duly negated it wrongly: its button read "Turn auto scrolling off" at the moment
+clicking it would turn auto scrolling **on**. The prop is now `followTail`, which cannot be read
+backwards, and the tooltip is fixed. The `scrollLocked` *state* and its persisted `locked` key are
+left alone — renaming them needs a view-state migration for no user-visible gain.
+
+**Two bugs the new tests found, both pre-existing, neither visible in a screenshot.**
+
+1. **`followTail` never scrolled on mount.** The list is only rendered once there is something to
+   show, so on mount the refresh effect runs while the virtualizer handle is still null and its
+   scroll silently no-ops. Following only began when the *next* line arrived — a panel reopened on a
+   buffer that already had content showed the top of it. The first scroll now happens in
+   `apiLoaded`, where the handle actually exists, with a restored scroll position taking precedence.
+2. **`SCROLL_END = 5_000_000`** was a sentinel that relied on the virtualizer clamping an
+   out-of-range index. It is now `contents.length - 1`. The test asserts both the right index and
+   the absence of the sentinel, because this is the kind of thing that reappears.
+
+**A third, from the same family as a Phase 3 finding.** `backgroundColor` was built as
+`var(${... : "transparent"})`, interpolating the literal word `transparent` into `var()`. That is not
+a custom-property reference, so the declaration was invalid and dropped every time a span had no
+background — which is every span. It looked correct only because "no background" was the intent.
+Same silent-drop as the empty `background-color: var()` in `.headerRow`.
+
+**The actionable span is now a `<button>`.** It was a bare `<span>` with an `onClick` that runs an
+IDE `nav` command: reachable with a mouse and by nothing else, in the component the plan singled out
+as the one already handling `user-select` correctly. Same treatment the toolbar and tab controls got
+in Phase 2, including the shared `focus-ring` mixin.
+
+**Effect churn removed.** The buffer subscription used a dependency-less `useEffect` guarded by a
+`mounted` ref, so it unsubscribed and resubscribed on every render; a `latest` ref now holds the
+callbacks that change identity each render, and the effect depends only on the buffer. The dead
+`scrollVersion` state — set on every buffer change, read nowhere — is gone.
+
+**Measured, not assumed:** the console was rendering at 12.8px, so `.lineNo`'s `min-width: 48px` was
+7.5ch. Pinning the wrapper to `--font-size-200` (M1) makes it 12px, where 8ch is exactly the 48px it
+replaced.
+
+**Not verified live:** the actionable button and the line-number gutter. Both need output this
+session could not produce without manufacturing a compile error in the user's own project — the
+`help` output has neither file links nor line numbers. The unit tests cover both paths.
 
 ### Phase 7 — Composite & structural components
 
@@ -1600,10 +1954,11 @@ others and can be reordered freely.
 | # | Slice | Scope today | Why it matters |
 |---|---|---|---|
 | **7.1** | **`ConsoleOutput`** | 157 lines + 22 SCSS, **4 consumers** across two folders (`CommandPanel`, `OutputPanel`, `ScriptOutputPanel`, `CommandResult`) | The app's shared rich-text/ANSI renderer, and the only component already doing `user-select: text` correctly. Needs a real API, `.lineNo`'s `min-width: 48px` converted to the `ch` measure scale (M2), the `SCROLL_END = 5_000_000` sentinel replaced, and a keyboard path for the clickable `<span>` at `ConsoleOutput.tsx:130` that runs an IDE navigate command. |
-| **7.2** | **`PanelToolbar`** | 11 files carrying in-panel toolbars; only `DisassemblyToolbars.tsx` is extracted — `BasicPanel`, `ScriptOutputPanel`, `CommandResult`, `TapViewerPanel`, `DskViewerPanel` (19 controls), `BinFileViewerPanel`, `ImageViewerPanel` and `PaletteEditor` all inline theirs | Also settles the **two competing separator components** doing the same visual job: `LabelSeparator width={8}` (Disassembly/Bin/Image) vs `<ToolbarSeparator small>` (Basic/Script/Command/Tap/Dsk).  **Carries fix 4 from §4** — the tab overflow chevrons and tab-list dropdown, deferred from Phase 4. Only the timing-hack half of that fix landed there; the affordance itself belongs here because it is a panel-header action area, and because building its popup before this slice would add a *fourth* menu pattern alongside `ContextMenu`, `Dropdown` and `ToolbarSplitButton`'s portalled menu. The `ResizeObserver` added in Phase 4 already measures the strip, so the overflow signal is a few lines away. Three design questions need answering first, against a project that actually overflows: all tabs or only hidden ones; icons and dirty markers in the list or not; menu-style keys or a filterable list. |
-| **7.3** | **`GenericPanel` family** | 347 lines across 3 files, **7 consumers**. `GenericFileEditorPanel` is `GenericFileViewerPanel` plus `saveToFile` — their render bodies are line-for-line identical, as are the `fileLoader` effect and the view-state persistence effect | Collapse to one parameterized component. This is the abstraction the five hand-rolled viewers (`Bin`/`Dsk`/`Tap`/`Image`/`Unknown`) should have been using; migrating them onto it is part of the slice. |
-| **7.4** | **Virtualization contract** | **15 `VirtualizedList` consumers**, configured differently: `itemSize` passed by 2 and omitted by 3, `overscan: 25` in some and absent in others | Binds row heights to M3's JS-readable `rowSizes` module, which is what stops the type scale and the virtualizer drifting apart. Also folds in the **byte-identical column block** shared by `DisassemblyPanel.module.scss` and `features/memory/MemoryDumpSection.module.scss` (verified identical) and its copy-pasted TSX (`DisassemblyRow.tsx:123-139` ≡ `MemoryDumpSection.tsx:84-97`) into one `DataGridRow`. |
-| **7.5** | **`ToolArea/` shell** | 532 lines: `ToolsContainer`, `ToolsHeader`, `ToolTab`, `CommandPanel`, `OutputPanel` | Adopts `PanelHeader` (7.2) and `ConsoleOutput` (7.1) rather than its own. Restores a focus ring on the command prompt — `outline: none` with no replacement, on **the only text input in the tool area**. |
+| **7.2** | **`PanelToolbar`** | 11 files carrying in-panel toolbars; only `DisassemblyToolbars.tsx` is extracted — `BasicPanel`, `ScriptOutputPanel`, `CommandResult`, `TapViewerPanel`, `DskViewerPanel` (19 controls), `BinFileViewerPanel`, `ImageViewerPanel` and `PaletteEditor` all inline theirs | ~~Also settles the **two competing separator components** doing the same visual job.~~ **Corrected in the 7.2 retrospective: they do different jobs.** `ToolbarSeparator` draws a visible 1px rule; `LabelSeparator` draws nothing at all and only reserves width. They are a divider and a spacer with confusingly similar names, and several files use both.  **Carries fix 4 from §4** — the tab overflow chevrons and tab-list dropdown, deferred from Phase 4. Only the timing-hack half of that fix landed there; the affordance itself belongs here because it is a panel-header action area, and because building its popup before this slice would add a *fourth* menu pattern alongside `ContextMenu`, `Dropdown` and `ToolbarSplitButton`'s portalled menu. The `ResizeObserver` added in Phase 4 already measures the strip, so the overflow signal is a few lines away. Three design questions need answering first, against a project that actually overflows: all tabs or only hidden ones; icons and dirty markers in the list or not; menu-style keys or a filterable list. |
+| **7.3a** | **`GenericPanel` family** *(done)* | 347 lines across 3 files, **7 consumers**. `GenericFileEditorPanel` is `GenericFileViewerPanel` plus `saveToFile` — their render bodies are line-for-line identical, as are the `fileLoader` effect and the view-state persistence effect | Collapsed to one `GenericFilePanel`. Also fixed the renderer-identity bug described in the retrospective. |
+| **7.3b** | **The hand-rolled viewers** | `Dsk` (363), `Tap` (382), `Image` (233), `Bin` (140), `Unknown` (15) | Split out of 7.3 because the premise was only half right. **Two do not fit at all:** `Unknown` loads no file (it renders a single "no viewer" sentence) and `Bin` neither parses nor persists view state — for them `GenericFilePanel` is pure indirection. **Three do fit, and have a real bug the abstraction fixes:** `DskViewerPanel` (which contains no `useMemo` at all) calls `readDiskData` **and** `createDiskSurface` directly in its render body, and `TapViewerPanel` calls `readTapeFile` the same way, so both re-parse the entire file on every render. They also use a different view-state pattern (`getDocumentViewState` + `signHubStateChanged`) than `GenericFilePanel`, so each needs its own migration rather than a rename. |
+| **7.4** | **Virtualization contract** | **15 `VirtualizedList` consumers**, configured differently: `itemSize` passed by 2 and omitted by 3, `overscan: 25` in some and absent in others | Binds row heights to M3's JS-readable `rowSizes` module, which is what stops the type scale and the virtualizer drifting apart. Also folds in the **byte-identical column block** shared by `DisassemblyPanel.module.scss` and `features/memory/MemoryDumpSection.module.scss` (verified identical) and its copy-pasted TSX. **Corrected in the retrospective: this is not one `DataGridRow`.** Only the *address gutter* is shared — after the address the two rows have nothing in common, so the extraction is a pair of leading cells (`PartitionPrefix`, `AddressLabel`). |
+| **7.5** | **`ToolArea/` shell** | 532 lines: `ToolsContainer`, `ToolsHeader`, `ToolTab`, `CommandPanel`, `OutputPanel` | Adopts `ConsoleOutput` (7.1). ~~Adopts `PanelHeader` (7.2)~~ and ~~restores a focus ring on the command prompt~~ — **both corrected in the retrospective**: the focus ring was already restored in Phase 3 and is verified working, and `ToolsHeader` is a tab strip rather than a panel header, so `PanelHeader` is the wrong shape for it. The real defect here was `ToolTab`. |
 
 **Boundary with Phase 4.** Phase 4 restyles ToolArea's *chrome* — tab heights, header surface, the
 1px active underline. Slice 7.5 changes its *structure*, replacing bespoke components with shared
@@ -1677,6 +2032,11 @@ Plus, for this work specifically:
 ---
 
 ## 8.1 Monaco syntax palette — accent-coherent
+
+> **SUPERSEDED by `.plans/SYNTAX_PALETTE_REVISION_PLAN.md`.** The scheme below — every class a step
+> of the accent ramp — optimised for coherence with the accent and lost the thing syntax colouring is
+> for: separating token classes by **hue**. It shipped with nine of eleven classes in one blue and
+> comments in neutral grey. The section is kept for the record; do not implement from it.
 
 **Decided:** the 158 hardcoded colours across the 7 language providers are regenerated from the L1
 ramps and **follow the active accent**, rather than being preserved as-is.
