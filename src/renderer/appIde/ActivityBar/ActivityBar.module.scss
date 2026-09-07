@@ -1,8 +1,8 @@
 @use "@styles/core.scss" as *;
 
 .activityBar {
-    @include fix-width-panel(52px);
-    display: flex;
-    flex-direction: column;
-    background: var(--bgcolor-activitybar);
+  @include fix-width-panel(var(--size-activitybar));
+  display: flex;
+  flex-direction: column;
+  background: var(--bgcolor-activitybar);
 }

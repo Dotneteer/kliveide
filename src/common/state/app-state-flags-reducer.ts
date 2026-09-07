@@ -28,6 +28,9 @@ export function appStateFlagsReducer (
     case "SET_THEME":
       return { ...state, theme: payload?.id };
 
+    case "SET_ACCENT":
+      return { ...state, accent: payload?.id };
+
     case "EMU_FOCUSED":
       return { ...state, emuFocused: payload?.flag };
 

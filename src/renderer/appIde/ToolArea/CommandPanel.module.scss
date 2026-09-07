@@ -7,36 +7,49 @@
     user-select: text;
 }
 
+/*
+ * Just a box. The font used to be set here too, but `ConsoleOutput` now pins its own family and
+ * size (slice 7.1), so these were overridden on every line they appeared to style.
+ */
 .outputWrapper {
     @include fill-parent-flex;
     box-sizing: border-box;
     flex-direction: column;
     user-select: text;
-    font-family: var(--monospace-font);
-    font-size: 0.8em;
 }
 
 .promptWrapper {
-    @include fix-height-panel(32px);
+    /* One control's worth of strip, from the scale rather than a literal. */
+    @include fix-height-panel(var(--size-controlMd));
     display: flex;
     flex-direction: row;
     align-items: center;
 }
 
 .promptPrefix {
-    margin-right: 8px;
-    color: var(--color-prompt)
+    margin-right: var(--space-2);
+    color: var(--color-prompt);
 }
+/*
+ * The command prompt: the only text input in the tool area.
+ *
+ * `outline: none` on its own would leave the app's one focusable text field with no focus
+ * indication at all. The ring is restored through the shared mixin rather than a bespoke rule, so
+ * the prompt matches every other focusable control.
+ */
 .prompt {
     outline: none;
     border: none;
     width: 100%;
     background: transparent;
-    margin-right: 8px;
+    margin-right: var(--space-2);
     font-family: var(--monospace-font);
-    font-size: 0.8em;
+    /* M1: the same 12px the console above it renders at, so the prompt matches its own output. */
+    font-size: var(--font-size-200);
     color: var(--color-prompt);
     font-weight: 600;
+
+    @include focus-ring;
 }
 
 .executing::placeholder {
@@ -44,7 +57,3 @@
     font-weight: 400;
 }
 
-.outputLine {
-    overflow-x: hidden;
-    word-break: break-all;
-}

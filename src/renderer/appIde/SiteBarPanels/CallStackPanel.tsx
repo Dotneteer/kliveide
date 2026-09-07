@@ -11,6 +11,7 @@ import { Icon } from "@renderer/controls/Icon";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
+import { EmptyState } from "@renderer/controls/data";
 
 export const CallStackPanel = () => {
   const emuApi = useEmuApi();
@@ -63,7 +64,7 @@ export const CallStackPanel = () => {
           }}
         />
       )}
-      {!refreshed && <div className={styles.center}>Call stack not available</div>}
+      {!refreshed && <EmptyState message="Call stack not available" />}
     </div>
   );
 };

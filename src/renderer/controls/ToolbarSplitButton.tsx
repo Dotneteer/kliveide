@@ -4,6 +4,7 @@ import classnames from "classnames";
 import { Icon } from "./Icon";
 import { useOverlayRoot } from "./overlay/useOverlayRoot";
 import styles from "./ToolbarSplitButton.module.scss";
+import { iconSizes } from "@renderer/theming/tokens/dimensions";
 
 export type ToolbarSplitButtonOption<TValue extends string> = {
   value: TValue;
@@ -95,7 +96,7 @@ export function ToolbarSplitButton<TValue extends string>({
           role="menuitem"
           onClick={() => void handleMenuAction(option.value)}
         >
-          <Icon iconName={option.iconName} fill={option.fill} width={18} height={18} />
+          <Icon iconName={option.iconName} fill={option.fill} width={iconSizes.sm} height={iconSizes.sm} />
           <span>{option.label}</span>
         </button>
       ))}
@@ -134,8 +135,8 @@ export function ToolbarSplitButton<TValue extends string>({
         <Icon
           iconName="chevron-down"
           fill={enable ? "--color-toolbarbutton" : "--bgcolor-toolbarbutton-disabled"}
-          width={12}
-          height={12}
+          width={iconSizes.xs}
+          height={iconSizes.xs}
           opacity={enable ? 1.0 : 0.5}
         />
       </button>

@@ -1,7 +1,7 @@
 @use "@styles/core.scss" as *;
 
 .documentsHeader {
-  @include fix-height-panel(38px);
+  @include fix-height-panel(var(--strip-tabbar));
   flex-direction: row;
   background: var(--bgcolor-docsheader);
   outline: none;
@@ -12,7 +12,7 @@
     flex: 1;
     width: max-content;
     min-width: 100%;
-    min-height: 38px;
+    min-height: var(--strip-tabbar);
   }
 
   .dragAppend::after {
@@ -23,15 +23,32 @@
   }
 }
 
+/* Fills the strip to the right of the last tab so the header reads as one surface. */
 .closingTab {
-  @include fix-height-panel(38px);
-  width: 4px;
-  border-left: 1px solid var(--color-doc-border);
+  @include fix-height-panel(var(--strip-tabbar));
+  width: 5px;
+  border-left: 1px solid var(--border-subtle);
+}
+
+/*
+ * The overflow affordance: two scroll chevrons and the open-documents list.
+ *
+ * Only rendered while the strip actually overflows, so it adds no permanent chrome to a header that
+ * fits its tabs.
+ */
+.overflowControls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: var(--space-1);
+  padding: 0 var(--space-1);
+  border-left: 1px solid var(--border-subtle);
 }
 
 .commandBar {
   width: auto;
   display: flex;
   align-items: center;
-  padding-left: 8px;
+  padding-left: var(--space-2);
 }

@@ -1,4 +1,5 @@
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { AddressLabel, PartitionPrefix } from "@renderer/controls/data";
 import { TooltipFactory } from "@controls/Tooltip";
 import classnames from "classnames";
 import { toHexa4, toHexa6Dash, toHexa2, toDecimal5, toDecimal7, toDecimal3, toBin8 } from "@renderer/appIde/services/ide-commands";
@@ -74,27 +75,22 @@ const MemoryDumpSectionViewComponent = ({
   const addressText = decimalView
     ? (addressDigits === 6 ? toDecimal7(address) : toDecimal5(address))
     : (addressDigits === 6 ? toHexa6Dash(address) : toHexa4(address));
+  /*
+   * M2: `ch`, not px. Capacity preserved from 64/48/72/40 at the row's 12.8px Iosevka
+   * (1ch = 6.4px). Each value comfortably holds its formatter's output: `toDecimal7` and
+   * `toHexa6Dash` are 7 characters, `toDecimal5` is 5, `toHexa4` is 4.
+   */
   const addressWidth = decimalView
-    ? (addressDigits === 6 ? 64 : 48)
-    : (addressDigits === 6 ? 72 : 40);
+    ? (addressDigits === 6 ? 10 : 8)
+    : (addressDigits === 6 ? 12 : 7);
 
   return (
     <div className={classnames(styles.dumpSection)}>
       <LabelSeparator width={8} />
       {showPartitions && partitionLabel && (
-        <div className={styles.partitionPrefix}>
-          <span
-            className={styles.partitionLabel}
-            style={{ width: useWidePartitions ? "3ch" : "2ch" }}
-          >
-            {partitionLabel}
-          </span>
-          <span className={styles.partitionColon}>:</span>
-        </div>
+        <PartitionPrefix label={partitionLabel} wide={useWidePartitions} />
       )}
-      <div className={styles.addressLabel} style={{ width: addressWidth }}>
-        {addressText}
-      </div>
+      <AddressLabel text={addressText} width={addressWidth} />
       <HexValues
         address={address}
         bytes={bytes}

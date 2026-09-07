@@ -30,10 +30,20 @@ const RevealedVirtualItem = forwardRef<HTMLDivElement, VirtualItemProps>(
 
 RevealedVirtualItem.displayName = "RevealedVirtualItem";
 
+/**
+ * How many rows to keep mounted beyond the viewport.
+ *
+ * Four of the fifteen call sites passed `overscan={25}` and eleven passed nothing, which meant two
+ * lists sitting side by side in the same panel buffered differently for no stated reason. The value
+ * the explicit sites chose becomes the default, so the eleven silent ones get the same behaviour
+ * and the four stop repeating it. A list with a genuine reason to differ still can.
+ */
+const DEFAULT_OVERSCAN = 25;
+
 export const VirtualizedList = <T,>({
   items,
   itemSize,
-  overscan,
+  overscan = DEFAULT_OVERSCAN,
   revealUnmeasuredItems,
   startIndex,
   renderItem,

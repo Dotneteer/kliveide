@@ -44,13 +44,7 @@ export const Flag = ({
       onClick={() => clicked?.()}
     >
       <Icon
-        iconName={
-          value === undefined
-            ? "close"
-            : value
-            ? "circle-filled"
-            : "circle-outline"
-        }
+        iconName={value === undefined ? "close" : value ? "circle-filled" : "circle-outline"}
         width={16}
         height={16}
         fill="--color-value"

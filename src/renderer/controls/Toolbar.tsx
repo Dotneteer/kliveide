@@ -10,6 +10,7 @@ import { ViewControls } from "./ViewControls";
 import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
 import { SETTING_IDE_SYNC_BREAKPOINTS } from "@common/settings/setting-const";
 import type { RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
+import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
 
 type Props = {
   ide: boolean;
@@ -17,7 +18,6 @@ type Props = {
   recordingManagerRef?: MutableRefObject<RecordingManager | null>;
 };
 
-const SECONDARY_ICON_SIZE = 20;
 
 export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props) => {
   const mainApi = useMainApi();
@@ -30,11 +30,16 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
 
   return (
     <HStack
-      height="34px"
+      height="--strip-toolbar"
       backgroundColor="--bgcolor-toolbar"
-      paddingHorizontal="--space-1_5"
-      paddingVertical="--space-1"
+      paddingHorizontal="--space-2"
+      // 2px, not 4px: a 38px strip with 4px padding leaves a 30px content box, and the buttons are
+      // 32px tall (30 + 1px padding each side), so they would overflow it.
+      paddingVertical="--space-0_5"
       verticalContentAlignment="center"
+      // The buttons used to abut with no gap at all, so the toolbar read as one undifferentiated
+      // run of icons.
+      gap="--space-0_5"
     >
       <ExecutionControls ide={ide} kliveProjectLoaded={kliveProjectLoaded} />
       {!ide && <ViewControls recordingManagerRef={recordingManagerRef} />}

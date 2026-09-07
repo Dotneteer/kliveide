@@ -53,7 +53,7 @@ export const SideBarPanel = ({
   const _endMove = () => endMove();
 
   const newHeight = { height: `${suggestedSize}px` };
-  const useScrollViewer = sideBar.noScrollViewer ?? true;
+  const useScrollViewer = sideBar.useScrollViewer ?? true;
   return (
     <div
       ref={panelRef}
@@ -65,7 +65,7 @@ export const SideBarPanel = ({
     >
       <div
         ref={headerRef}
-        tabIndex={index}
+        tabIndex={0}
         className={classnames(styles.header, {
           [styles.notFirst]: index,
           [styles.focused]: focused

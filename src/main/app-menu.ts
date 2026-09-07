@@ -11,10 +11,13 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
-import { __DARWIN__ } from "./electron-utils";
+import { __DARWIN__, __WIN32__ } from "./electron-utils";
+import { getEditorFontOptions } from "@common/settings/editor-fonts";
+import { ACCENT_MENU_ITEMS, DEFAULT_ACCENT } from "@common/theming/accents";
 import { mainStore } from "./main-store";
 import {
   setThemeAction,
+  setAccentAction,
   setClockMultiplierAction,
   setSoundLevelAction,
   closeFolderAction,
@@ -61,6 +64,7 @@ import {
   SETTING_EMU_SCANLINE_EFFECT,
   SETTING_IDE_CLOSE_EMU,
   SETTING_EDITOR_FONT_SIZE,
+  SETTING_EDITOR_FONT_FAMILY,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
   SETTING_IDE_SHOW_SIDEBAR,
@@ -93,6 +97,7 @@ const TOGGLE_DEVTOOLS = "toggle_devtools";
 const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
+const ACCENTS = "accents";
 const EXCLUDED_PROJECT_ITEMS = "manage_excluded_items";
 
 const SHOW_IDE_WINDOW = "show_ide_window";
@@ -120,6 +125,7 @@ const IDE_SETTINGS = "ide_settings";
 
 const EDITOR_OPTIONS = "editor_options";
 const EDITOR_FONT_SIZE = "editor_font_size";
+const EDITOR_FONT_FAMILY = "editor_font_family";
 const EDITOR_TAB_SIZE = "editor_tab_size";
 const EDITOR_QUICK_SUGGESTION_DELAY = "editor_quick_suggestion_delay";
 const EDITOR_RENDER_WHITESPACE = "editor_render_whitespace";
@@ -296,6 +302,22 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   // View menu
 
   // --- Prepare the view menu
+  // --- Font family option. Only the fonts available on this platform are offered. A value
+  // --- persisted on another platform stays in the settings file but shows nothing checked here,
+  // --- and the editor falls back to the bundled default until the user picks again.
+  const currentFontFamily = getSettingValue(SETTING_EDITOR_FONT_FAMILY);
+  const editorFontFamilyMenu: MenuItemConstructorOptions[] = getEditorFontOptions(__WIN32__).map(
+    (f, idx) => ({
+      id: `${EDITOR_FONT_FAMILY}_${idx}`,
+      label: f.label,
+      type: "checkbox",
+      checked: currentFontFamily === f.id,
+      click: async () => {
+        setSettingValue(SETTING_EDITOR_FONT_FAMILY, f.id);
+      }
+    })
+  );
+
   // --- Font size option
   const editorFontOptions = [
     {
@@ -537,11 +559,31 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
           }
         ]
       },
+      {
+        id: ACCENTS,
+        label: "Accent",
+        // The accent is orthogonal to the tone: any accent pairs with either theme.
+        submenu: ACCENT_MENU_ITEMS.map(({ id, label }) => ({
+          id: `accent_${id}`,
+          label,
+          type: "checkbox" as const,
+          checked: (appState.accent ?? DEFAULT_ACCENT) === id,
+          click: async () => {
+            mainStore.dispatch(setAccentAction(id));
+            await saveKliveProject();
+          }
+        }))
+      },
       { type: "separator" },
       {
         id: EDITOR_OPTIONS,
         label: "Editor Options",
         submenu: [
+          {
+            id: EDITOR_FONT_FAMILY,
+            label: "Font Family",
+            submenu: editorFontFamilyMenu
+          },
           {
             id: EDITOR_FONT_SIZE,
             label: "Font Size",
@@ -1108,21 +1150,33 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   // Preserve the submenus as a dedicated array.
   const submenus = template.map((i) => i.submenu);
 
-  // --- Set the menu
+  // --- Set the menu. `setupMenu` runs on *every* state change, and most of those changes do not
+  // --- alter the menu at all. Handing an unchanged menu to the OS is not free: on macOS every
+  // --- `Menu.setApplicationMenu` call replaces the single global NSMenu, which makes an
+  // --- auto-hidden menu bar (System Settings > "Automatically hide and show the menu bar", or
+  // --- full-screen mode) tear down and re-reveal itself - the menu bar visibly flashes while the
+  // --- pointer rests at the top of the screen. So only touch the native menu when the rendered
+  // --- menu really differs from the one already installed.
   if (__DARWIN__) {
     const windowFocused = isEmuWindowFocused() ? emuWindow : ideWindow;
     if (!windowFocused.isDestroyed()) {
       template.forEach(templateTransform(windowFocused));
-      Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+      if (menuChanged("app", template)) {
+        Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+      }
     }
   } else {
     if (emuWindow && !emuWindow.isDestroyed()) {
       template.forEach(templateTransform(emuWindow));
-      emuWindow.setMenu(Menu.buildFromTemplate(template));
+      if (menuChanged("emu", template)) {
+        emuWindow.setMenu(Menu.buildFromTemplate(template));
+      }
     }
     if (ideWindow && !ideWindow.isDestroyed()) {
       template.forEach(templateTransform(ideWindow));
-      ideWindow.setMenu(Menu.buildFromTemplate(template));
+      if (menuChanged("ide", template)) {
+        ideWindow.setMenu(Menu.buildFromTemplate(template));
+      }
     }
   }
 
@@ -1144,6 +1198,73 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         ) => (i.submenu = submenus[idx])
       : (i: { submenu: null }) => (i.submenu = null);
   }
+}
+
+/**
+ * The signature of the menu last handed to the OS, per menu target ("app" on macOS, "emu"/"ide"
+ * elsewhere). Used to suppress redundant native menu updates.
+ */
+const lastMenuSignatures = new Map<string, string>();
+
+/**
+ * Counts the menu updates suppressed since the last real rebuild, per target. Reported only when
+ * the KLIVE_MENU_DEBUG environment variable is set.
+ */
+const suppressedMenuUpdates = new Map<string, number>();
+
+/**
+ * Serializes the visible shape of a menu template: everything that can make the rendered menu look
+ * or behave differently (labels, ids, roles, types, accelerators, enabled/visible/checked flags and
+ * the nesting of submenus). Click handlers are deliberately excluded: they are freshly created
+ * closures on every build, so comparing them would never report an unchanged menu.
+ */
+function menuSignature(items: (MenuItemConstructorOptions | MenuItem)[] | Electron.Menu): string {
+  return JSON.stringify(items, (key, value) =>
+    typeof value === "function" || key === "icon" || key === "sharingItem" ? undefined : value
+  );
+}
+
+/**
+ * Tests whether the given menu template differs from the one most recently installed for the
+ * specified target, and remembers it when it does.
+ * @param target Menu target key
+ * @param template The template about to be installed
+ * @returns True if the native menu needs to be replaced
+ */
+function menuChanged(
+  target: string,
+  template: (MenuItemConstructorOptions | MenuItem)[]
+): boolean {
+  let signature: string;
+  try {
+    signature = menuSignature(template);
+  } catch {
+    // --- A template we cannot serialize (unexpected cyclic value) must never suppress an update.
+    lastMenuSignatures.delete(target);
+    return true;
+  }
+  if (lastMenuSignatures.get(target) === signature) {
+    suppressedMenuUpdates.set(target, (suppressedMenuUpdates.get(target) ?? 0) + 1);
+    return false;
+  }
+  if (process.env.KLIVE_MENU_DEBUG) {
+    console.log(
+      `[menu] rebuilding '${target}' menu (${suppressedMenuUpdates.get(target) ?? 0} redundant ` +
+        `update(s) suppressed since the previous rebuild)`
+    );
+  }
+  suppressedMenuUpdates.set(target, 0);
+  lastMenuSignatures.set(target, signature);
+  return true;
+}
+
+/**
+ * Forgets the cached menu signatures so that the next `setupMenu` call rebuilds the native menu
+ * even if its contents are unchanged (for example after the menu has been cleared).
+ */
+export function invalidateMenuCache(): void {
+  lastMenuSignatures.clear();
+  suppressedMenuUpdates.clear();
 }
 
 /**

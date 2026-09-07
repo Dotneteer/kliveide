@@ -1,6 +1,6 @@
 import styles from "./SpriteEditor.module.scss";
 import { Value } from "@renderer/controls/layout/Value";
-import { GenericFileEditorContext } from "@renderer/appIde/DocumentPanels/helpers/GenericFileEditorPanel";
+import { GenericFileContext } from "@renderer/appIde/DocumentPanels/helpers/GenericFilePanel";
 import { SprFileContents, SprFileViewState, SpriteTools } from "./sprite-common";
 import {
   getCssStringForPaletteCode, getLuminanceForPaletteCode, getRgbPartsForPaletteCode
@@ -25,7 +25,7 @@ for (let i = 0; i < 256; i++) {
 }
 
 type Props = {
-  context: GenericFileEditorContext<SprFileContents, SprFileViewState>;
+  context: GenericFileContext<SprFileContents, SprFileViewState>;
 };
 
 export const SpriteEditor = ({ context }: Props) => {

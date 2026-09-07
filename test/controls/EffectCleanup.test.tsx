@@ -95,10 +95,13 @@ describe("effect cleanup fixes", () => {
     expect(projectClosed.off).toHaveBeenCalledWith(projectClosed.on.mock.calls[0][0]);
   });
 
-  it("clears scheduled DocumentsHeader tab visibility work on unmount", async () => {
+  it("cancels the pending DocumentsHeader tab-visibility frame on unmount", async () => {
+    // Tab visibility used to be scheduled five times per change — immediately, in a
+    // requestAnimationFrame, and again on 0ms/50ms/150ms timeouts — so unmount had to clear three
+    // timers as well as the frame. A ResizeObserver now provides the signal those timeouts were
+    // guessing at, leaving a single rAF to cancel.
     const requestAnimationFrame = vi.fn(() => 123);
     const cancelAnimationFrame = vi.fn();
-    const clearTimeout = vi.spyOn(globalThis, "clearTimeout");
     const documentHubService = createDocumentHubServiceMock();
 
     vi.stubGlobal("requestAnimationFrame", requestAnimationFrame);
@@ -114,11 +117,9 @@ describe("effect cleanup fixes", () => {
 
     await waitFor(() => expect(requestAnimationFrame).toHaveBeenCalledTimes(1));
 
-    const clearTimeoutCallsBeforeUnmount = clearTimeout.mock.calls.length;
     unmount();
 
     expect(cancelAnimationFrame).toHaveBeenCalledWith(123);
-    expect(clearTimeout).toHaveBeenCalledTimes(clearTimeoutCallsBeforeUnmount + 3);
   });
 
   it("clears awaiting state after tab activation and close operations settle", async () => {

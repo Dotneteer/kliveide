@@ -374,6 +374,20 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
  */
 let saveProjectChain: Promise<void> = Promise.resolve();
 
+/**
+ * Reads the current contents of the project file, or undefined when it cannot be read (it does not
+ * exist yet, or it is inaccessible). An unreadable file must always count as "different" so that
+ * the save goes ahead.
+ * @param projectFile Full path of the project file
+ */
+function readProjectFileContents(projectFile: string): string | undefined {
+  try {
+    return fs.readFileSync(projectFile, "utf8");
+  } catch {
+    return undefined;
+  }
+}
+
 // --- Saves the current Klive project
 export function saveKliveProject(): Promise<void> {
   const runSave = async () => {
@@ -383,7 +397,19 @@ export function saveKliveProject(): Promise<void> {
     try {
       const projectFile = path.join(projectState.folderPath, PROJECT_FILE);
       const project = await getKliveProjectStructure();
-      fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
+      const projectContents = JSON.stringify(project, null, 2);
+
+      // --- Writing a project file that is byte-for-byte identical to the one already on disk is
+      // --- pure churn: it rewrites the file, wakes the project folder watcher, and - through
+      // --- `incProjectFileVersionAction` - tells both renderers about a change that never
+      // --- happened. The document layer answers that notification by persisting its (unchanged)
+      // --- workspace and requesting another save, which closes a feedback loop that keeps
+      // --- re-saving the project about once a second for as long as the project file is open as
+      // --- a document. Comparing against the file itself, rather than a cached string, keeps an
+      // --- externally modified project file correctly rewritten.
+      if (readProjectFileContents(projectFile) === projectContents) return;
+
+      fs.writeFileSync(projectFile, projectContents);
       mainStore.dispatch(incProjectFileVersionAction());
     } catch (err) {
       // --- A failed save must not break the chain for subsequent saves, but it should no longer

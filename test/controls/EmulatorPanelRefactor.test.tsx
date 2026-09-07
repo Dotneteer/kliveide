@@ -277,6 +277,130 @@ describe("EmulatorPanel", () => {
       expect(screen.getByText("Paused (PC: $1234) - Instant screen")).toBeInTheDocument()
     );
   });
+
+  it("dispatches the clock multiplier only when it actually changes", async () => {
+    const controller = createController();
+    controller.machine = {
+      baseClockFrequency: 3_500_000,
+      frameTactMultiplier: 1,
+      // --- Together with uiFrameFrequency 2 this keeps the frame handler off the screen
+      // --- rendering path, so the test drives the clock multiplier logic alone.
+      frames: 1,
+      getAspectRatio: vi.fn(() => [2, 1]),
+      getDefaultKeyMapping: vi.fn(() => ({})),
+      getKeyCodeSet: vi.fn(() => ({})),
+      getPixelBuffer: vi.fn(() => new Uint32Array(4)),
+      machineId: "test-machine",
+      pc: 0,
+      renderInstantScreen: vi.fn(() => new Uint32Array(4)),
+      screenHeightInPixels: 192,
+      screenWidthInPixels: 256,
+      setMachineProperty: vi.fn(),
+      tactsInFrame: 70_000,
+      uiFrameFrequency: 2
+    };
+
+    const captured = {
+      controllerChanged: undefined as (controller: unknown) => Promise<void>,
+      frameCompleted: undefined as (args: unknown) => Promise<void>
+    };
+    const emulatorState = {
+      audioSampleRate: 44_100,
+      clockMultiplier: 1,
+      machineState: MachineControllerState.Running,
+      soundLevel: 0.25
+    };
+    const store = {
+      dispatch: vi.fn((action: { type: string; payload?: { numValue?: number } }) => {
+        // --- Mirror what the real store does, so the handler sees the updated value
+        if (action.type === "SET_CLOCK_MULTIPLIER") {
+          emulatorState.clockMultiplier = action.payload.numValue;
+        }
+      }),
+      getState: vi.fn(() => ({ emulatorState, globalSettings: {} }))
+    };
+
+    vi.doMock("@renderer/core/useMachineController", () => ({
+      useMachineController: (
+        controllerChanged: typeof captured.controllerChanged,
+        _stateChanged: unknown,
+        frameCompleted: typeof captured.frameCompleted
+      ) => {
+        captured.controllerChanged = controllerChanged;
+        captured.frameCompleted = frameCompleted;
+        return controller;
+      }
+    }));
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      getGlobalSetting: () => false,
+      useGlobalSetting: () => false,
+      useSelector: (selector: (state: unknown) => unknown) => selector(store.getState()),
+      useStore: () => store
+    }));
+    vi.doMock("@renderer/core/MainApi", () => ({
+      useMainApi: () => ({ saveBinaryFile: vi.fn(), saveDiskChanges: vi.fn() })
+    }));
+    vi.doMock("@renderer/appEmu/recording/RecordingContext", () => ({
+      useRecordingManager: () => ({ current: undefined })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorScreen", () => ({
+      useEmulatorScreen: () => ({
+        canvasHeight: 192,
+        canvasWidth: 256,
+        displayScreenData: vi.fn(),
+        imageBuffer8: { current: new Uint8Array([1]) },
+        screenElement: { current: null } as MutableRefObject<HTMLCanvasElement>,
+        updateScreenDimensions: vi.fn(),
+        xRatio: { current: 2 },
+        yRatio: { current: 3 }
+      })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorAudio", () => ({
+      useEmulatorAudio: () => ({
+        beeperRenderer: { current: undefined },
+        initAudio: vi.fn(() => Promise.resolve())
+      })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorKeyboard", () => ({
+      useEmulatorKeyboard: () => ({ setKeyData: vi.fn() })
+    }));
+    vi.doMock("@renderer/features/emulator/EmulatorOverlay", () => ({
+      EmulatorOverlay: () => null
+    }));
+    vi.doMock("@renderer/appEmu/tool-registry", () => ({
+      machineEmuToolRegistry: []
+    }));
+
+    const { EmulatorPanel } = await import("@renderer/features/emulator/EmulatorPanel");
+
+    render(<EmulatorPanel />);
+    await act(async () => {
+      await captured.controllerChanged(controller);
+    });
+    store.dispatch.mockClear();
+
+    const clockMultiplierDispatches = () =>
+      store.dispatch.mock.calls.filter(([action]) => action?.type === "SET_CLOCK_MULTIPLIER");
+
+    // --- The emulator reports the unchanged multiplier on every single frame
+    await act(async () => {
+      for (let i = 0; i < 5; i++) {
+        await captured.frameCompleted({ clockMultiplier: 1 });
+      }
+    });
+
+    expect(clockMultiplierDispatches()).toHaveLength(0);
+
+    // --- Only a real change reaches the store, and only once
+    await act(async () => {
+      for (let i = 0; i < 5; i++) {
+        await captured.frameCompleted({ clockMultiplier: 4 });
+      }
+    });
+
+    expect(clockMultiplierDispatches()).toHaveLength(1);
+    expect(clockMultiplierDispatches()[0][0].payload.numValue).toBe(4);
+  });
 });
 
 function createController() {

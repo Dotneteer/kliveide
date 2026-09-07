@@ -1,7 +1,6 @@
 import styles from "./CommandResult.module.scss";
 import { Label } from "@renderer/controls/layout/Label";
 import { SmallIconButton } from "@controls/IconButton";
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
 import { useDispatch } from "@renderer/core/RendererProvider";
 import { setIdeStatusMessageAction } from "@state/actions";
@@ -10,6 +9,7 @@ import { CommandResultData } from "../../abstractions/CommandResultData";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
+import { PanelHeader } from "@renderer/controls/data";
 
 type CommandResultViewState = {
   topPosition?: number;
@@ -40,7 +40,7 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
 
   return (
     <div className={styles.panel}>
-      <div className={styles.header}>
+      <PanelHeader>
         <SmallIconButton
           iconName='copy'
           title={"Copy to clipboard"}
@@ -55,14 +55,11 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
           }}
         />
         <ToolbarSeparator small={true} />
-        <LabelSeparator width={8} />
         <Label text={title} />
-      </div>
+      </PanelHeader>
       <ConsoleOutput
         buffer={buffer}
         initialTopPosition={topPosition.current}
-        scrollLocked={true}
-        showLineNo={false}
         onTopPositionChanged={(position: number) => {
           topPosition.current = position;
           saveViewState();

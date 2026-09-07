@@ -7,6 +7,7 @@ export interface ActionTypes {
   IDE_LOADED: null;
   IS_WINDOWS: null;
   SET_THEME: null;
+  SET_ACCENT: null;
   IDE_FOCUSED: null,
   EMU_FOCUSED: null,
   DIM_MENU: null,

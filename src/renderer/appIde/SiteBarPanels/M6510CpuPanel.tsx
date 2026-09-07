@@ -10,8 +10,8 @@ import {
   FlagValue,
   SimpleValue,
   VerticalFlagValue
-} from "@renderer/controls/valuedisplay/Values";
-import { CenteredRow, Col, SidePanel } from "@renderer/controls/valuedisplay/Layout";
+} from "@renderer/controls/data/registers";
+import { DataPanel, DataRow } from "@renderer/controls/data";
 
 const REG16_ONLY_TOOLTIP = "{r16N}: {r16v}";
 const REG8_TOOLTIP = "{r8N}: {r8v}";
@@ -28,8 +28,8 @@ export const M6510CpuPanel = () => {
   });
 
   return (
-    <SidePanel>
-      <CenteredRow>
+    <DataPanel autoHeight>
+      <DataRow dense>
         <FlagLetter label="P" />
         <VerticalFlagValue label="N" value={toFlag(cpuState?.p, 7)} tooltip="Negative" />
         <VerticalFlagValue label="V" value={toFlag(cpuState?.p, 6)} tooltip="Overflow" />
@@ -39,21 +39,21 @@ export const M6510CpuPanel = () => {
         <VerticalFlagValue label="I" value={toFlag(cpuState?.p, 2)} tooltip="Interrupt mask" />
         <VerticalFlagValue label="Z" value={toFlag(cpuState?.p, 1)} tooltip="Zero" />
         <VerticalFlagValue label="C" value={toFlag(cpuState?.p, 0)} tooltip="Carry" />
-      </CenteredRow>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <Bit8Value label="A" value={cpuState?.a} tooltip={REG8_TOOLTIP} />
         <Bit8Value label="SP" value={cpuState?.sp} tooltip={REG8_TOOLTIP} />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit8Value label="X" value={cpuState?.x} tooltip={REG8_TOOLTIP} />
         <Bit8Value label="Y" value={cpuState?.y} tooltip={REG8_TOOLTIP} />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit16Value label="PC" reg16Label="PC" value={cpuState?.pc} tooltip={REG16_ONLY_TOOLTIP} />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <Bit8Value
           label="LMR"
           value={cpuState?.lastMemoryReadValue ?? 0}
@@ -64,34 +64,34 @@ export const M6510CpuPanel = () => {
           value={cpuState?.lastMemoryWriteValue ?? 0}
           tooltip={"Last value written to memory:\n{r8v}"}
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <FlagValue label="IRQ" value={cpuState?.irqRequested} tooltip="IRQ requested" />
         <FlagValue label="NMI" value={cpuState?.nmiRequested} tooltip="NMI requested" />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue label="STL" value={cpuState?.stalled} tooltip="CPU stalled" />
         <FlagValue label="JAM" value={cpuState?.jammed} tooltip="CPU jammed" />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue
           label="CLK"
           value={cpuState?.tacts ?? 0}
           tooltip="Current CPU clock"
           fullWidth
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <SimpleValue
           label="TSP"
           value={(cpuState?.tacts ?? 0) - (cpuState?.tactsAtLastStart ?? 0)}
           tooltip="T-States since last start after pause"
           fullWidth
         />
-      </Col>
-    </SidePanel>
+      </DataRow>
+    </DataPanel>
   );
 };
 

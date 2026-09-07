@@ -1,6 +1,6 @@
 import { Sp128Key as Key } from "./Sp128Key";
-import { Column, Row, KeyboardButtonClickArgs } from "./keyboard-common";
-import { CSSProperties, useState } from "react";
+import { Column, Row, KeyboardButtonClickArgs, calculateKeyboardZoom, keyboardRootStyle, keyboardRowStyle } from "./keyboard-common";
+import { useState } from "react";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import { Sp128EnterKeyTop } from "./Sp128EnterKeyTop";
@@ -20,12 +20,12 @@ type Props = {
 export const Sp128Keyboard = ({ width, height, apiLoaded }: Props) => {
   const { machineService } = useAppServices();
   const [hilited, setHilited] = useState(false);
-  const zoom = calculateZoom(width, height);
+  const zoom = calculateKeyboardZoom(width, height, DEFAULT_WIDTH, DEFAULT_HEIGHT);
   const { api, isPressed } = useKeyboard(apiLoaded);
 
   return (
-    <Column width='auto' style={rootStyle}>
-      <Row height='auto' style={rowStyle}>
+    <Column width='auto' style={keyboardRootStyle}>
+      <Row height='auto' style={keyboardRowStyle}>
         <Key
           zoom={zoom}
           code={18}
@@ -172,7 +172,7 @@ export const Sp128Keyboard = ({ width, height, apiLoaded }: Props) => {
           pressed={isPressed(35, 0)}
         />
       </Row>
-      <Row height='auto' style={rowStyle}>
+      <Row height='auto' style={keyboardRowStyle}>
         <Key
           zoom={zoom}
           xwidth={110}
@@ -323,7 +323,7 @@ export const Sp128Keyboard = ({ width, height, apiLoaded }: Props) => {
           pressed={isPressed(30)}
         />
       </Row>
-      <Row height='auto' style={rowStyle}>
+      <Row height='auto' style={keyboardRowStyle}>
         <Key
           zoom={zoom}
           xwidth={110}
@@ -465,7 +465,7 @@ export const Sp128Keyboard = ({ width, height, apiLoaded }: Props) => {
           }
         />
       </Row>
-      <Row height='auto' style={rowStyle}>
+      <Row height='auto' style={keyboardRowStyle}>
         <Key
           zoom={zoom}
           xwidth={170}
@@ -582,7 +582,7 @@ export const Sp128Keyboard = ({ width, height, apiLoaded }: Props) => {
           pressed={isPressed(0)}
         />
       </Row>
-      <Row height='auto' style={rowStyle}>
+      <Row height='auto' style={keyboardRowStyle}>
         <Key
           zoom={zoom}
           code={36}
@@ -747,26 +747,6 @@ export const Sp128Keyboard = ({ width, height, apiLoaded }: Props) => {
       }
     }
   }
-
-  function calculateZoom (width: number, height: number): number {
-    if (!width || !height) return 0.05;
-    let widthRatio = (width - 24) / DEFAULT_WIDTH;
-    let heightRatio = (height - 12) / DEFAULT_HEIGHT;
-    return Math.min(widthRatio, heightRatio);
-  }
 };
 
-const rootStyle: CSSProperties = {
-  boxSizing: "border-box",
-  flexDirection: "column",
-  alignContent: "start",
-  justifyItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-  userSelect: "none"
-};
 
-const rowStyle: CSSProperties = {
-  padding: "0px 0px",
-  fontWeight: "bold"
-};

@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { rowSizes } from "@renderer/theming/tokens/rowSizes";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
@@ -7,7 +8,7 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import { FullPanel, HStack } from "@renderer/controls/layout/Panels";
-import { PanelHeader } from "@renderer/appIde/DocumentPanels/helpers/PanelHeader";
+import { PanelHeader } from "@renderer/controls/data";
 import {
   incProjectFileVersionAction
 } from "@common/state/actions";
@@ -37,7 +38,15 @@ import { MemoryBankToolbar } from "./MemoryBankToolbar";
 import { getMemoryCharacterInfo, MemoryDumpSectionView } from "./MemoryDumpSection";
 import { createVisibleMemoryRenderRecorder } from "./memoryPerformance";
 
-const MEMORY_ROW_ITEM_SIZE = 20;
+/*
+ * M3: the row height comes from the shared module, not a private copy.
+ *
+ * `rowSizes.ts` was written in Phase 1 to be the one place this number lives — its own header names
+ * this constant as the thing it replaces — but the JS half of the wiring was never done, so the
+ * module emitted `--row-size-memory` for stylesheets while the virtualizer went on reading a
+ * duplicate literal. Two numbers that must agree, in two files, with nothing tying them together.
+ */
+const MEMORY_ROW_ITEM_SIZE = rowSizes.memory;
 
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // Services stay at the panel boundary. Visible memory rows use a service-free
@@ -337,7 +346,6 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
         <VirtualizedList
           items={memoryItems}
           itemSize={MEMORY_ROW_ITEM_SIZE}
-          overscan={25}
           // Memory rows have a known fixed height. Revealing unmeasured rows
           // avoids the first-drag blanking behavior that virtua uses for
           // variable-height lists until ResizeObserver reports measurements.

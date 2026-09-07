@@ -44,8 +44,12 @@
   padding: 0;
 }
 
+/*
+ * Marker class for `HeaderRow` (controls/layout/Row.tsx). It carried
+ * `background-color: var()` — an empty var() is a parse error, so the declaration was always
+ * dropped and the class has never painted anything. Phase 3 gives panel headers a real surface.
+ */
 .headerRow {
-  background-color: var();
 }
 
 .column {
@@ -57,13 +61,31 @@
   padding: 0.2em 0;
 }
 
-.label {
+/*
+ * Legacy inline spacing for cells that are not yet inside a `DataRow`.
+ *
+ * These cells used `margin: 0 0.4em`, which at the 12px data font is 4.8px — exactly
+ * `--measure-gap` (0.8ch). So this is a unit change, not a visual one, and it is a *modifier* on
+ * `controls/data`'s cell rather than a second cell implementation. It disappears per panel as rows
+ * move onto `DataRow`, whose `gap` does the same job once for the whole row.
+ */
+.legacySpacing {
+  margin-inline: var(--measure-gap);
+}
+
+.legacyValueSpacing {
+  margin-inline-end: calc(2 * var(--measure-gap));
+}
+
+.centered {
+  justify-content: center;
+}
+
+/* A pure spacer: reserves width, paints nothing. */
+.spacer {
   display: flex;
   flex-grow: 0;
   flex-shrink: 0;
-  color: var(--color-label);
-  margin-left: 0.4em;
-  margin-right: 0.4em;
 }
 
 .text {
@@ -88,13 +110,7 @@
   }
 }
 
-.value {
-  display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-  color: var(--color-value);
-  margin-right: 0.8em;
-}
+
 
 .flag {
   display: flex;
@@ -103,12 +119,7 @@
   padding: 0 0.4em 0 0.2em;
 }
 
-.secondary {
-  display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-  color: var(--color-secondary-label);
-}
+
 
 .separator {
   height: 1px;

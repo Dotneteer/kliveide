@@ -17,6 +17,7 @@
 // parameter).
 // ====================================================================================================================
 import { app, shell, BrowserWindow, ipcMain, Menu } from "electron";
+import { DEFAULT_ACCENT } from "@common/theming/accents";
 
 import fs from "fs";
 import { release } from "os";
@@ -38,6 +39,7 @@ import {
   setClockMultiplierAction,
   setSoundLevelAction,
   setThemeAction,
+  setAccentAction,
   startScreenDisplayedAction,
   setKeyMappingsAction,
   setMachineSpecificAction,
@@ -54,7 +56,7 @@ import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMesse
 import { createSettingsReader } from "@utils/SettingsReader";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 
-import { setupMenu } from "./app-menu";
+import { invalidateMenuCache, setupMenu } from "./app-menu";
 import { __WIN32__ } from "./electron-utils";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { mainStore } from "./main-store";
@@ -290,6 +292,7 @@ async function createAppWindows() {
 
   // --- Prepare the main menu. Update items on application state change
   Menu.setApplicationMenu(null);
+  invalidateMenuCache();
   setupMenu(emuWindow, ideWindow);
 
   // --- Respond to state changes
@@ -320,6 +323,7 @@ async function createAppWindows() {
         mainStore.dispatch(startScreenDisplayedAction());
       }
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
+      mainStore.dispatch(setAccentAction(appSettings.accent ?? DEFAULT_ACCENT));
 
       // --- Update IDE Settings
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));

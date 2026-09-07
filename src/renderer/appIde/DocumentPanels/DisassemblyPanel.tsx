@@ -1,4 +1,5 @@
 import styles from "./DisassemblyPanel.module.scss";
+import { rowSizes } from "@renderer/theming/tokens/rowSizes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
@@ -37,7 +38,8 @@ import {
   DisassemblyToolbar
 } from "./DisassemblyToolbars";
 
-const DISASSEMBLY_ROW_ITEM_SIZE = 18;
+/* M3: see `MemoryPanel` — the height belongs to `rowSizes`, not to this file. */
+const DISASSEMBLY_ROW_ITEM_SIZE = rowSizes.disassembly;
 
 const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
@@ -268,7 +270,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
             items={items}
             apiLoaded={(api) => (vlApi.current = api)}
             itemSize={DISASSEMBLY_ROW_ITEM_SIZE}
-            overscan={25}
             revealUnmeasuredItems
             onScroll={async () => {
               if (!vlApi.current) return;

@@ -53,64 +53,86 @@ const StaticMemoryDump = ({
         </Row>
       );
     },
-    renderer: (context) => {
-      const vlApi = useRef<VListHandle>();
-      const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
+    renderer: (context) => (
+      <MemoryDumpBody context={context} contents={contents} viewState={viewState} />
+    )
+  });
+};
 
-      useInitializeAsync(async () => {
-        if (viewState?.scrollPosition) {
-          await new Promise((resolve) => setTimeout(resolve, 40));
-          vlApi.current?.scrollTo(viewState.scrollPosition);
-        }
-      });
+/*
+ * The dump body, as a real component.
+ *
+ * It was an inline arrow holding `useRef`, `useMemo`, `useInitializeAsync` and `useEffect`, handed
+ * to `createElement` — so React saw a brand new component type on every render of the parent and
+ * remounted it, throwing away the virtualizer handle and re-running the async scroll restore each
+ * time. Declared at module scope, its identity is stable and the state survives.
+ */
+type MemoryDumpBodyProps = {
+  context: {
+    version: number;
+    contextData?: any;
+    changeViewState: (setter: (vs: MemoryDumpViewState) => void) => void;
+  };
+  contents: Uint8Array;
+  viewState?: MemoryDumpViewState;
+};
 
-      // --- Update the scroll position according to the address set
-      useEffect(() => {
-        if (!vlApi.current || typeof context.contextData !== "number") return;
-        vlApi.current.scrollToIndex(Math.floor(context.contextData / 16), {
-          align: "start"
-        });
-      }, [context.version]);
+const MemoryDumpBody = ({ context, contents, viewState }: MemoryDumpBodyProps) => {
+  const vlApi = useRef<VListHandle>();
+  const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
 
-      return contents ? (
-        <VirtualizedList
-          items={items}
-          onScroll={() => {
-            if (!vlApi.current) return;
-            const topPos = vlApi.current.getItemOffset(0);
-            context.changeViewState((vs) => (vs.scrollPosition = topPos));
-          }}
-          apiLoaded={(api) => (vlApi.current = api)}
-          renderItem={(idx, item) => {
-            return (
-              <div
-                className={classnames(styles.item, {
-                  [styles.even]: idx % 2 == 0
-                })}
-              >
-                <Row>
-                  <MemoryDumpSection
-                    address={item}
-                    bytes={Array.from(contents.slice(item, item + 8))}
-                    decimalView={false}
-                    charDump={true}
-                    lastJumpAddress={-1}
-                  />
-                  <MemoryDumpSection
-                    address={item + 8}
-                    bytes={Array.from(contents.slice(item + 8, item + 16))}
-                    decimalView={false}
-                    charDump={true}
-                    lastJumpAddress={-1}
-                  />
-                </Row>
-              </div>
-            );
-          }}
-        />
-      ) : null;
+  useInitializeAsync(async () => {
+    if (viewState?.scrollPosition) {
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      vlApi.current?.scrollTo(viewState.scrollPosition);
     }
   });
+
+  // --- Update the scroll position according to the address set
+  useEffect(() => {
+    if (!vlApi.current || typeof context.contextData !== "number") return;
+    vlApi.current.scrollToIndex(Math.floor(context.contextData / 16), {
+      align: "start"
+    });
+  }, [context.version]);
+
+  return contents ? (
+    <VirtualizedList
+      items={items}
+      onScroll={() => {
+        if (!vlApi.current) return;
+        const topPos = vlApi.current.getItemOffset(0);
+        context.changeViewState((vs) => (vs.scrollPosition = topPos));
+      }}
+      apiLoaded={(api) => (vlApi.current = api)}
+      renderItem={(idx, item) => {
+        return (
+          <div
+            className={classnames(styles.item, {
+              [styles.even]: idx % 2 == 0
+            })}
+          >
+            <Row>
+              <MemoryDumpSection
+                address={item}
+                bytes={Array.from(contents.slice(item, item + 8))}
+                decimalView={false}
+                charDump={true}
+                lastJumpAddress={-1}
+              />
+              <MemoryDumpSection
+                address={item + 8}
+                bytes={Array.from(contents.slice(item + 8, item + 16))}
+                decimalView={false}
+                charDump={true}
+                lastJumpAddress={-1}
+              />
+            </Row>
+          </div>
+        );
+      }}
+    />
+  ) : null;
 };
 
 export const createStaticMemoryDump = ({ document, contents, viewState }: DocumentProps) => (
@@ -149,10 +171,7 @@ type MiniDumpProps = {
 
 export const MiniMemoryDump = ({ contents, length = 64 }: MiniDumpProps) => {
   const displayLength = Math.min(length, contents.length);
-  const items = useMemo(
-    () => createRowAddresses(displayLength, 16),
-    [displayLength]
-  );
+  const items = useMemo(() => createRowAddresses(displayLength, 16), [displayLength]);
 
   return items?.length ? (
     <>

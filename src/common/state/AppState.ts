@@ -35,6 +35,9 @@ export type AppState = {
   ideFocused?: boolean;
   dimMenu?: boolean;
   theme?: string;
+
+  /** Selected accent id (see theming/tokens/palette.ts). */
+  accent?: string;
   globalSettings?: Record<string, any>;
   ideView?: IdeView;
   ideSettings?: IdeSettings;
@@ -171,6 +174,7 @@ export const initialAppState: AppState = {
   ideLoaded: false,
   isWindows: false,
   theme: "dark",
+  accent: "sinclairBlue",
   emuFocused: false,
   ideFocused: false,
   menuVersion: 0,

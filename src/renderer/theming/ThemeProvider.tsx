@@ -2,24 +2,30 @@ import { useSelector } from "@renderer/core/RendererProvider";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import classnames from "classnames";
-import { darkTheme } from "./dark-theme";
 import { lookupIcon } from "./icon-registry";
 import { imageLibrary } from "./image-defs";
-import { lightTheme } from "./light-theme";
 import { ThemeInfo, ThemeManager } from "./theme";
+import { DEFAULT_ACCENT, isAccentId, type AccentId } from "./tokens/palette";
+import { semanticTokens } from "./tokens/semantic";
+import { dimensionTokens, SPACE_BASE } from "./tokens/dimensions";
+import { rowSizeTokens } from "./tokens/rowSizes";
+import { componentAliases } from "./tokens/componentAliases";
+import { staticTokens, toneTokens } from "./tokens/staticTokens";
 
 // =====================================================================================================================
 // Collect the supported themes
 
+/**
+ * A theme is now just a tone.
+ *
+ * `dark-theme.ts` and `light-theme.ts` used to carry 201 hand-authored values each — the light one a
+ * copy of the dark one that had drifted (a missing token, an inverted one, overlays that ignored the
+ * theme). Everything they held is now either derived from the ramps or aliased onto them, so all
+ * that remains of a "theme" is which end of the ramp to read.
+ */
 const availableThemes: Record<string, ThemeInfo> = {
-  light: {
-    tone: "light",
-    properties: lightTheme
-  },
-  dark: {
-    tone: "dark",
-    properties: darkTheme
-  }
+  light: { tone: "light", properties: staticTokens },
+  dark: { tone: "dark", properties: staticTokens }
 };
 
 // =====================================================================================================================
@@ -60,7 +66,9 @@ type Props = {
 function ThemeProvider({ children }: Props) {
   const [root, setRoot] = useState(() => document.getElementById("root") || document.body);
   const selectedTheme = useSelector((s) => s.theme);
+  const selectedAccent = useSelector((s) => s.accent);
   const isWindows = useSelector((s) => s.isWindows);
+  const accentId: AccentId = isAccentId(selectedAccent) ? selectedAccent : DEFAULT_ACCENT;
 
   const [styleProps, setStyleProps] = useState<Record<string, any>>(EMPTY_OBJECT);
 
@@ -77,12 +85,28 @@ function ThemeProvider({ children }: Props) {
       activeThemeInfo.properties[
         isWindows ? "--shell-windows-monospace-font-family" : "--shell-monospace-font-family"
       ];
+    const tone = activeThemeInfo.tone;
     return {
+      // Order matters. The legacy theme object still supplies the values that have no semantic
+      // equivalent — font stacks, the breakpoint data-URI images, the modal header gradient — so it
+      // goes first and the token layers override the rest.
       ...activeThemeInfo.properties,
+      ...toneTokens(tone),
+
+      // L2 semantics and L3 dimensions.
+      ...semanticTokens(tone, accentId),
+      ...dimensionTokens(tone),
+      ...rowSizeTokens(),
+      "--space-base": SPACE_BASE,
+
+      // L4: the ~200 names the stylesheets actually ask for, repointed onto the layers above. This
+      // is what makes the whole app change palette without touching a single stylesheet.
+      ...componentAliases,
+
       "--main-font-family": mainFont,
       "--monospace-font": monospaceFont
     };
-  }, [selectedTheme, isWindows]);
+  }, [selectedTheme, isWindows, accentId]);
 
   useEffect(() => {
     setStyleProps({ ...themeVariables, ...generateBaseSpacings(themeVariables) });
@@ -93,13 +117,34 @@ function ThemeProvider({ children }: Props) {
     return {
       theme: activeThemeInfo,
       root,
-      getThemeProperty: (key: string) => activeThemeInfo.properties[key],
+      /**
+       * Resolve a theme token to a final value.
+       *
+       * This reads the *computed* value off the theme root rather than looking the key up in the
+       * theme object, for two reasons:
+       *
+       * - Since Phase 1 the component-level tokens are aliases (`var(--surface-chrome)`), so a raw
+       *   lookup would return the alias text, and the ~30 imperative consumers would silently keep
+       *   painting the pre-token palette while every stylesheet moved.
+       * - Several of those consumers — the keyboard key SVGs above all — put the result into an SVG
+       *   *presentation attribute* (`<rect fill={...}>`), where `var()` does not resolve at all.
+       *   Only a concrete colour works there.
+       *
+       * Falls back to the merged style map before the root element is attached on first render.
+       */
+      getThemeProperty: (key: string) => {
+        if (root) {
+          const resolved = getComputedStyle(root).getPropertyValue(key).trim();
+          if (resolved) return resolved;
+        }
+        return styleProps[key] ?? activeThemeInfo.properties[key];
+      },
       getIcon: (key: string) => lookupIcon(key),
       getImage: (key: string) =>
         imageLibrary.find((im) => im.name === key) ??
         imageLibrary.find((im) => im.name === "file-code")
     };
-  }, [selectedTheme, root, isWindows]);
+  }, [selectedTheme, root, isWindows, styleProps]);
 
   return (
     <ThemeContext.Provider value={themeValue}>

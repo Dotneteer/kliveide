@@ -36,6 +36,7 @@ import {
   getMultiAreaDocumentWorkspace
 } from "./useDocumentWorkspacePersistence";
 import { setDocumentAreaCommandTarget } from "./documentAreaCommandTarget";
+import { deepEqual } from "@common/utils/deep-equal";
 import { getLegacySpecialDocumentWorkspaceSettingIds } from "./specialDocuments";
 
 export const DEFAULT_DOCUMENT_AREA_ID = "document-area-1";
@@ -336,19 +337,33 @@ export const DocumentAreaGrid = ({
       activeAreaId,
       folderPath
     );
+    let workspaceChanged = false;
     for (const settingId of getLegacySpecialDocumentWorkspaceSettingIds()) {
       if (store.getState().workspaceSettings?.[settingId] !== undefined) {
         store.dispatch(setWorkspaceSettingsAction(settingId, undefined), "ide");
+        workspaceChanged = true;
       }
     }
 
-    store.dispatch(
-      setWorkspaceSettingsAction(
-        DOCS_WORKSPACE,
-        documentWorkspace
-      ),
-      "ide"
-    );
+    // --- This effect re-runs whenever the document hub signs a state change, and most of those
+    // --- changes leave the persisted workspace exactly as it was. Re-saving it is not free: the
+    // --- dispatch is forwarded to the main process, and `saveProject` costs a cross-window round
+    // --- trip plus a project file write. Worse, a completed save is answered with a project file
+    // --- version bump that lands right back here, so saving unconditionally keeps the whole
+    // --- chain cycling. Persist genuine changes only.
+    if (!deepEqual(store.getState().workspaceSettings?.[DOCS_WORKSPACE], documentWorkspace)) {
+      store.dispatch(
+        setWorkspaceSettingsAction(
+          DOCS_WORKSPACE,
+          documentWorkspace
+        ),
+        "ide"
+      );
+      workspaceChanged = true;
+    }
+
+    if (!workspaceChanged) return;
+
     (async () => {
       await mainApi.saveProject();
     })();

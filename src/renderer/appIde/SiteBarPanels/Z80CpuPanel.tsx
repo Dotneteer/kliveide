@@ -10,8 +10,8 @@ import {
   FlagValue,
   SimpleValue,
   VerticalFlagValue
-} from "@renderer/controls/valuedisplay/Values";
-import { CenteredRow, Col, SidePanel } from "@renderer/controls/valuedisplay/Layout";
+} from "@renderer/controls/data/registers";
+import { DataPanel, DataRow } from "@renderer/controls/data";
 
 const REG16_TOOLTIP = "{r16N}: {r16v}\n{r8HN}: {r8Hv}\n{r8LN}: {r8Lv}";
 const REG16_ONLY_TOOLTIP = "{r16N}: {r16v}";
@@ -29,8 +29,8 @@ export const Z80CpuPanel = () => {
   });
 
   return (
-    <SidePanel>
-      <CenteredRow>
+    <DataPanel autoHeight>
+      <DataRow dense>
         <FlagLetter label="F" />
         <VerticalFlagValue label="S" value={toFlag(cpuState?.af, 7)} tooltip="Sign" />
         <VerticalFlagValue label="Z" value={toFlag(cpuState?.af, 6)} tooltip="Zero" />
@@ -40,9 +40,9 @@ export const Z80CpuPanel = () => {
         <VerticalFlagValue label="P" value={toFlag(cpuState?.af, 2)} tooltip="Parity/Overflow" />
         <VerticalFlagValue label="N" value={toFlag(cpuState?.af, 1)} tooltip="Subtract" />
         <VerticalFlagValue label="C" value={toFlag(cpuState?.af, 0)} tooltip="Carry" />
-      </CenteredRow>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <Bit16Value
           label="AF"
           reg16Label="AF"
@@ -57,8 +57,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.af_}
           tooltip={REG16_ONLY_TOOLTIP}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit16Value
           label="BC"
           reg16Label="BC"
@@ -73,8 +73,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.bc_}
           tooltip={REG16_ONLY_TOOLTIP}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit16Value
           label="DE"
           reg16Label="DE"
@@ -89,8 +89,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.de_}
           tooltip={REG16_ONLY_TOOLTIP}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit16Value
           label="HL"
           reg16Label="HL"
@@ -105,8 +105,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.hl_}
           tooltip={REG16_ONLY_TOOLTIP}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit16Value
           label="IX"
           reg16Label="IX"
@@ -115,8 +115,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.ix}
           tooltip={REG16_TOOLTIP}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit16Value
           label="IY"
           reg16Label="IY"
@@ -125,18 +125,18 @@ export const Z80CpuPanel = () => {
           value={cpuState?.iy}
           tooltip={REG16_TOOLTIP}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit16Value label="PC" reg16Label="PC" value={cpuState?.pc} tooltip={REG16_ONLY_TOOLTIP} />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit16Value label="SP" reg16Label="SP" value={cpuState?.sp} tooltip={REG16_ONLY_TOOLTIP} />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit8Value label="I" value={cpuState?.ir ? cpuState.ir >>> 8 : 0} tooltip={REG8_TOOLTIP} />
         <Bit8Value label="R" value={cpuState?.ir ? cpuState.ir & 0xff : 0} tooltip={REG8_TOOLTIP} />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit16Value
           label="WZ"
           reg16Label="WZ"
@@ -145,9 +145,9 @@ export const Z80CpuPanel = () => {
           value={cpuState?.wz}
           tooltip={REG16_TOOLTIP}
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <Bit8Value
           label="LMR"
           value={cpuState?.lastMemoryReadValue ?? 0}
@@ -158,8 +158,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.lastMemoryWriteValue ?? 0}
           tooltip={"Last value written to memory:\n{r8v}"}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Bit8Value
           label="IRV"
           value={cpuState?.lastIoReadValue ?? 0}
@@ -170,37 +170,37 @@ export const Z80CpuPanel = () => {
           value={cpuState?.lastIoWriteValue ?? 0}
           tooltip={"Last value written to the I/O port:\n{r8v}"}
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue label="IM" value={cpuState?.interruptMode ?? 0} tooltip="Interrupt Mode" />
         <FlagValue label="SNZ" value={cpuState?.snoozed} tooltip="Is the CPU snoozed?" />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue label="IF1" value={cpuState?.iff1} tooltip="Interrupt flip-flop #1" />
         <FlagValue label="IF2" value={cpuState?.iff2} tooltip="Interrupt flip-flop #2" />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue label="INT" value={cpuState?.sigINT} tooltip="Interrupt signal" />
         <FlagValue label="HLT" value={cpuState?.halted} tooltip="Halted" />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <SimpleValue
           label="CLK"
           value={cpuState?.tacts ?? 0}
           tooltip="Current CPU clock"
           fullWidth
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <SimpleValue
           label="TSP"
           value={(cpuState?.tacts ?? 0) - (cpuState?.tactsAtLastStart ?? 0)}
           tooltip="T-States since last start after pause"
           fullWidth
         />
-      </Col>
-    </SidePanel>
+      </DataRow>
+    </DataPanel>
   );
 };
 

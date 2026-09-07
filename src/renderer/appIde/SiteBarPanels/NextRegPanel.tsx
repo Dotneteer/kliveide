@@ -10,10 +10,12 @@ import {} from "@controls/Tooltip";
 import { NextRegDescriptor, RegValueState } from "@emu/machines/zxNext/NextRegDevice";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
+import { DataRow } from "@renderer/controls/data";
 
-const VAR_WIDTH = 64;
-const WRITE_VALUE_WIDTH = 60;
-const VALUE_WIDTH = 32;
+// M2: `ch`, not px. Capacity preserved from the px width at its old 12.8px size (px / 6.4).
+const VAR_WIDTH = "10ch"; // 64px / 6.4
+const WRITE_VALUE_WIDTH = "10ch"; // 60px / 6.4 = 9.4
+const VALUE_WIDTH = "5ch"; // 32px / 6.4
 
 let nextRegDescriptors: Record<number, NextRegDescriptor>;
 
@@ -49,18 +51,18 @@ export const NextRegPanel = () => {
 
   return (
     <div className={styles.nextRegPanel}>
-      <div className={styles.regItem}>
+      <DataRow hoverable>
         <LabelSeparator />
         <Label text={`Last Reg Index:`} />
         <LabelSeparator />
         <Value text={toHexa2(lastRegIndex ?? 0)} />
-      </div>
+      </DataRow>
       <VirtualizedList
         items={regVals ?? []}
         renderItem={(idx) => {
           const item = regVals[idx];
           return (
-            <div className={styles.regItem}>
+            <DataRow hoverable>
               <LabelSeparator />
               <Label
                 text={`Reg ${toHexa2(item.id)}:`}
@@ -76,7 +78,7 @@ export const NextRegPanel = () => {
               {item.value !== undefined && (
                 <Value text={`${toHexa2(item.value)}`} width={VALUE_WIDTH} />
               )}
-            </div>
+            </DataRow>
           );
         }}
       />

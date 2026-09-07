@@ -1,15 +1,28 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * The status bar.
+ *
+ * 26px rather than 40px. The old height made the least important strip in the window the tallest —
+ * taller than the toolbar above it — and it only became viable at 26px once Phase 0.4 fixed the
+ * `.isMonospace` specificity collision that had been rendering every numeric readout at 16px beside
+ * its own 12.8px label.
+ *
+ * The saturated accent band is gone too (Phase 1): the bar is `--surface-chrome` and *state* carries
+ * colour, rather than the whole strip being blue regardless of what is happening.
+ */
+
 .ideStatusBar {
-  @include fix-height-panel(40px);
+  @include fix-height-panel(var(--strip-statusbar));
   flex-direction: row;
   align-items: center;
   background: var(--bgcolor-statusbar);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .sectionWrapper {
   display: flex;
-  margin: 0 8px;
+  margin: 0 var(--space-2);
   width: 100%;
   flex-direction: row;
   flex-shrink: 1;
@@ -18,27 +31,25 @@
 }
 
 .label {
-  font-size: 0.8em;
+  font-size: var(--font-size-100);
   color: var(--color-statusbar-label);
-  padding: 4px;
-  border-radius: 4px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
 }
 
 .isMonospace {
-  font-family: monospace;
-  font-size: 1em;
+  font-family: var(--monospace-font);
 }
 
+/* A chip, not a bar: the error state is the thing that should be coloured. */
 .isError {
   background-color: var(--bgcolor-errorLabel);
+  color: var(--text-on-accent);
+  font-weight: 600;
 }
 
 .labelSeparator {
-  width: 4px;
-}
-
-.sectionSeparator {
-  width: 8px;
+  width: var(--space-1);
 }
 
 .section {
@@ -46,30 +57,6 @@
   flex-shrink: 0;
   flex-grow: 0;
   height: 100%;
-  margin: 0 4px;
-  align-content: flex-start;
+  margin: 0 var(--space-1);
   align-items: center;
-  justify-items: start;
-}
-
-.infiniteRotate {
-  animation: rotate-animation 1s infinite linear;
-}
-
-@keyframes rotate-animation {
-  0% {
-    transform: scale(1, 1);
-  }
-  25% {
-    transform: scale(0.8, 1);
-  }
-  50% {
-    transform: scale(0.05, 1);
-  }
-  75% {
-    transform: scale(0.8, 1);
-  }
-  100% {
-    transform: scale(1, 1);
-  }
 }

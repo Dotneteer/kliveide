@@ -1,7 +1,5 @@
-import { useTheme } from "@renderer/theming/ThemeProvider";
 import classnames from "classnames";
 import { noop } from "@renderer/utils/stablerefs";
-import { useState } from "react";
 import { Icon } from "../../controls/Icon";
 import { TooltipFactory, useTooltipRef } from "../../controls/Tooltip";
 import { Activity } from "../../abstractions/Activity";
@@ -16,20 +14,28 @@ type Props = {
   clicked?: () => void;
 };
 
+/**
+ * One entry in the activity bar.
+ *
+ * A real `<button>` with `role="tab"`: the activity bar is a tab list, and it previously had no
+ * keyboard path at all — an unfocusable `<div>` with an `onClick`, no `tabIndex`, no `role` and no
+ * accessible name beyond a custom tooltip.
+ *
+ * Hover is CSS. The icon colour used to be resolved in JS from a `pointed` state, which meant the
+ * hover treatment could not transition and lived in a different place from every other hover in the
+ * app; `currentColor` now carries it.
+ */
 export const ActivityButton = ({ activity, active = false, clicked = noop }: Props) => {
-  const ref = useTooltipRef();
+  const ref = useTooltipRef<HTMLButtonElement>();
 
-  const [pointed, setPointed] = useState(false);
-  const theme = useTheme();
-  const iconFill = theme.getThemeProperty(
-    pointed || active ? "--color-activitybar-active" : "--color-activitybar"
-  );
   return (
-    <div
+    <button
       ref={ref}
+      type="button"
+      role="tab"
+      aria-selected={active}
+      aria-label={activity.title}
       className={classnames(styles.activityButton, { [styles.active]: active })}
-      onMouseEnter={() => setPointed(true)}
-      onMouseLeave={() => setPointed(false)}
       onClick={clicked}
     >
       <TooltipFactory
@@ -40,8 +46,8 @@ export const ActivityButton = ({ activity, active = false, clicked = noop }: Pro
         content={activity.title}
       />
       <div className={styles.iconWrapper}>
-        <Icon iconName={activity.iconName} width={24} height={24} fill={iconFill} />
+        <Icon iconName={activity.iconName} width={24} height={24} fill="currentColor" />
       </div>
-    </div>
+    </button>
   );
 };

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, memo, useState } from "react";
+import { memo } from "react";
 import { Icon } from "./Icon";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import classnames from "classnames";
+import { iconSizes } from "@renderer/theming/tokens/dimensions";
 import styles from "./IconButton.module.scss";
 
 type Props = {
@@ -18,78 +19,64 @@ type Props = {
 };
 
 /**
- * Represents the statusbar of the emulator
+ * An icon-only toolbar button.
+ *
+ * This is a real `<button>`: hover, press, disabled and focus are CSS states rather than React
+ * state. The previous implementation tracked hover in `useState` and wrote an inline
+ * `backgroundColor`, which meant it could not transition, could not be restyled from a stylesheet,
+ * and drifted from `ToolbarSplitButton` — a genuine `<button>` — sitting beside it in the same
+ * toolbar. Using the element's own semantics also gets keyboard activation and `:focus-visible`
+ * for free, where the old `<div>` had neither.
  */
-export const IconButton = memo(({
-  iconName,
-  iconSize: size = 24,
-  buttonWidth = 30,
-  buttonHeight = 30,
-  title,
-  fill,
-  enable = true,
-  selected,
-  clicked,
-  noPadding
-}: Props) => {
-  const ref = useTooltipRef();
-  const [keyDown, setKeyDown] = useState(null);
-  const [hover, setHover] = useState(false);
-  const isActive = enable;
+export const IconButton = memo(
+  ({
+    iconName,
+    iconSize: size = 24,
+    buttonWidth = 30,
+    buttonHeight = 30,
+    title,
+    fill,
+    enable = true,
+    selected,
+    clicked,
+    noPadding
+  }: Props) => {
+    const ref = useTooltipRef<HTMLButtonElement>();
 
-  useEffect(() => {
-    setKeyDown(false);
-  }, []);
-
-  const handleMouseEnter = useCallback(() => setHover(true), []);
-  const handleMouseDown = useCallback(() => setKeyDown(true), []);
-  const handleMouseLeave = useCallback(() => { setKeyDown(false); setHover(false); }, []);
-  const handleClick = useCallback(() => {
-    if (isActive) clicked?.();
-    setKeyDown(false);
-  }, [isActive, clicked]);
-
-  return (
-    <div
-      ref={ref}
-      className={classnames(styles.iconButton, {
-        [styles.enabled]: isActive,
-        [styles.noPadding]: noPadding
-      })}
-      style={{
-        width: buttonWidth + (noPadding ? 0 : 2),
-        height: buttonHeight,
-        backgroundColor: hover && enable ? "var(--bgcolor-toolbarbutton-hover)" : "transparent"
-      }}
-      onMouseEnter={handleMouseEnter}
-      onMouseDown={handleMouseDown}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
-    >
-      <div
-        className={classnames(styles.iconWrapper, {
-          [styles.keyDown]: keyDown && isActive,
-          [styles.selected]: selected
-        })}
+    return (
+      <button
+        ref={ref}
+        type="button"
+        disabled={!enable}
+        aria-label={title}
+        aria-pressed={selected}
+        className={classnames(styles.iconButton, { [styles.noPadding]: noPadding })}
+        style={{
+          // Totals including the 1px padding, which border-box counts inside the box.
+          width: buttonWidth + (noPadding ? 0 : 4),
+          height: buttonHeight + (noPadding ? 0 : 2)
+        }}
+        onClick={() => clicked?.()}
       >
-        <TooltipFactory
-          refElement={ref.current}
-          placement="right"
-          offsetX={-12}
-          offsetY={28}
-          content={title}
-        />
-        <Icon
-          iconName={iconName}
-          fill={isActive ?? true ? fill : "--bgcolor-toolbarbutton-disabled"}
-          width={size}
-          height={size}
-          opacity={isActive ? 1.0 : 0.5}
-        />
-      </div>
-    </div>
-  );
-});
+        <div className={classnames(styles.iconWrapper, { [styles.selected]: selected })}>
+          <TooltipFactory
+            refElement={ref.current}
+            placement="right"
+            offsetX={-12}
+            offsetY={28}
+            content={title}
+          />
+          <Icon
+            iconName={iconName}
+            fill={enable ? fill : "--text-disabled"}
+            width={size}
+            height={size}
+          />
+        </div>
+      </button>
+    );
+  }
+);
 
 type SmallProps = {
   iconName: string;
@@ -111,7 +98,7 @@ export const SmallIconButton = ({
   return (
     <IconButton
       iconName={iconName}
-      iconSize={18}
+      iconSize={iconSizes.sm}
       buttonHeight={24}
       buttonWidth={24}
       title={title}

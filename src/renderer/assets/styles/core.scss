@@ -1,5 +1,19 @@
 $splitterHighlightColor: "blue";
 
+/*
+ * The app's single focus treatment.
+ *
+ * `:focus-visible` rather than `:focus`, so the ring appears for keyboard users without flashing on
+ * every mouse click. Before this, `outline: none` appeared in 19 stylesheets with nothing replacing
+ * it — including on the command prompt, the only text input in the tool area.
+ */
+@mixin focus-ring($offset: -1px) {
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: $offset;
+  }
+}
+
 @mixin fill-parent {
   margin: 0;
   height: 100%;
@@ -64,7 +78,12 @@ $splitterHighlightColor: "blue";
   width: auto;
   padding: 0;
   font-family: var(--monospace-font);
-  font-size: 0.8em;
+  /*
+   * M1: absolute, not `em`. This was `0.8em` of the 16px root = 12.8px, which is where the panels'
+   * `ch` columns were tuned. Pinning it to the same 12px as `.dataPanel` makes 1ch exactly 6px in
+   * every data panel, so a `ch` width means the same thing whichever stack drew the row.
+   */
+  font-size: var(--font-size-200);
   padding: 4px 4px 4px 8px;
 }
 

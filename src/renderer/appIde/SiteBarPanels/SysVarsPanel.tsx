@@ -1,21 +1,17 @@
 import type { SysVar } from "@abstractions/SysVar";
 
-import { FlagRow } from "@renderer/controls/layout/FlagRow";
-import { Label } from "@renderer/controls/layout/Label";
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
-import { Secondary } from "@renderer/controls/layout/Secondary";
-import { Value } from "@renderer/controls/layout/Value";
+import { FlagRow } from "@renderer/controls/data/registers";
+import { DataLabel, DataPanel, DataRow, EmptyState, HexByteGrid, HexValue, formatHex } from "@renderer/controls/data";
 import { useState } from "react";
-import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
 import { SysVarType } from "@abstractions/SysVar";
-import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
-const VAR_WIDTH = 64;
-const VALUE_WIDTH = 40;
+// `ch`, not px: this survives a font or size change (M2). The old 64px was tuned to a monospace
+// advance that changed under it when the stack moved to Iosevka.
+const VAR_WIDTH = 9;
 
 type SysVarData = {
   sysVar: SysVar;
@@ -73,8 +69,8 @@ export const SysVarsPanel = () => {
   });
 
   return (
-    <div className={styles.sysVarsPanel}>
-      {sysVars.length === 0 && <div className={styles.center}>No system variables available</div>}
+    <DataPanel>
+      {sysVars.length === 0 && <EmptyState message="No system variables available" />}
       {sysVars.length > 0 && (
         <VirtualizedList
           items={sysVars}
@@ -84,101 +80,38 @@ export const SysVarsPanel = () => {
             const value = item.value;
             const length = item.length;
             const type = sysVar.type;
-            const tooltip = `${sysVar.name}: $${toHexa4(sysVar.address)} (${
+            const tooltip = `${sysVar.name}: ${formatHex(sysVar.address, 4)} (${
               sysVar.address
             }), length: ${length}\n${sysVar.description}`;
             return (
-              <div className={styles.sysVar}>
-                <LabelSeparator />
-                <Label text={sysVar.name} width={VAR_WIDTH} tooltip={tooltip} />
+              <DataRow index={idx} hoverable>
+                <DataLabel text={sysVar.name} width={VAR_WIDTH} title={tooltip} />
                 <div className={styles.sysVarValue}>
                   {type === SysVarType.Byte && (
-                    <>
-                      <LabelSeparator width={2} />
-                      <Value text={toHexa2(value ?? 0)} width={VALUE_WIDTH} />
-                      <Secondary text={`(${value})`} />
-                    </>
+                    <HexValue value={value ?? 0} digits={2} decimal />
                   )}
                   {type === SysVarType.Word && (
-                    <>
-                      <LabelSeparator width={2} />
-                      <Value text={toHexa4(value ?? 0)} width={VALUE_WIDTH} />
-                      <Secondary text={`(${value})`} />
-                    </>
+                    <HexValue value={value ?? 0} digits={4} decimal />
                   )}
-                  {type === SysVarType.Array && <FullDumpSection sysVarData={item} />}
+                  {type === SysVarType.Array && (
+                    <HexByteGrid
+                      bytes={item.valueList ?? []}
+                      titleFor={(i) =>
+                        `Address: ${formatHex(sysVar.address + i, 4)}\n${
+                          sysVar.byteDescriptions?.[i] ?? ""
+                        }`
+                      }
+                    />
+                  )}
                   {type === SysVarType.Flags && (
                     <FlagRow value={value} flagDescriptions={sysVar.flagDecriptions} />
                   )}
                 </div>
-              </div>
+              </DataRow>
             );
           }}
         />
       )}
-    </div>
+    </DataPanel>
   );
 };
-
-type FullDumpProps = {
-  sysVarData: SysVarData;
-};
-
-const FullDumpSection = ({ sysVarData }: FullDumpProps) => {
-  const dumpItems: JSX.Element[] = [];
-  for (let i = 0; i < (sysVarData.valueList?.length ?? 0); i += 8) {
-    const dumpValue = <DumpSection key={i} sysVarData={sysVarData} index={i} />;
-    dumpItems.push(dumpValue);
-  }
-  return <div className={styles.dumpRows}>{dumpItems}</div>;
-};
-
-type DumpProps = {
-  sysVarData: SysVarData;
-  index: number;
-};
-
-const DumpSection = ({ sysVarData, index }: DumpProps) => {
-  const byteItems: JSX.Element[] = [];
-  for (let i = index; i < index + 8 && i < (sysVarData.valueList?.length ?? 0); i++) {
-    const byteValue = (
-      <ByteValue
-        key={i}
-        address={sysVarData.sysVar.address + i}
-        value={sysVarData.valueList[i]}
-        tooltip={sysVarData.sysVar.byteDescriptions?.[i] ?? ""}
-      />
-    );
-    byteItems.push(byteValue);
-  }
-  return <div className={styles.dumpSection}>{byteItems}</div>;
-};
-
-type ByteValueProps = {
-  address: number;
-  value: number;
-  tooltip?: string;
-};
-
-const ByteValue = ({ address, value, tooltip }: ByteValueProps) => {
-  const ref = useTooltipRef();
-  const title = `Address: $${toHexa4(address)}, Value: $${toHexa2(
-    value
-  )} (${value})\n${tooltip ?? ""}`;
-  return (
-    <div ref={ref} className={styles.byteValue}>
-      {toHexa2(value)}
-      {tooltip && (
-        <TooltipFactory
-          refElement={ref.current}
-          placement="right"
-          offsetX={8}
-          offsetY={32}
-          showDelay={100}
-          content={title}
-        />
-      )}
-    </div>
-  );
-};
-

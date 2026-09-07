@@ -91,9 +91,21 @@ export const Sp48Key = memo(({
   const aboveStrokeColor = mouseOverAbove ? highlightKeyColor : "transparent";
   const belowFillColor = mouseOverBelow ? highlightKeyColor : belowKeyColor;
   const belowStrokeColor = mouseOverBelow ? highlightKeyColor : "transparent";
+  /*
+   * The INK legend above a number key.
+   *
+   * These were nine hex literals inline in `Sp48Keyboard` — the Spectrum's own eight colours plus a
+   * grey — and are now `--device-ink-*` tokens, theme-invariant like every other device value
+   * (§8.2.1): the legends are printed on the case. Resolved here through `themeService` because M4
+   * keeps the key SVGs imperative; what M4 requires is that they read *token names*, which is what
+   * the caller now passes.
+   */
+  const resolvedTopNumColor = topNumColor?.startsWith("--")
+    ? themeService.getThemeProperty(topNumColor)
+    : topNumColor;
   const topNumFillColor = mouseOverTopNum
     ? highlightKeyColor
-    : topNumColor || mainKeyColor;
+    : resolvedTopNumColor || mainKeyColor;
   const topNumStrokeColor = mouseOverTopNum ? highlightKeyColor : "transparent";
   const glyphFillColor = mouseOverGlyph ? highlightKeyColor : mainKeyColor;
   const cursor =

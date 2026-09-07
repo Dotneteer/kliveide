@@ -288,41 +288,7 @@ export const turboPascalLanguageProvider: MonacoAwareCustomLanguageInfo = {
     }
   },
 
-  darkTheme: {
-    rules: [
-      { token: "keyword.block", foreground: "c586c0", fontStyle: "bold" },
-      { token: "keyword", foreground: "569cd6", fontStyle: "bold" },
-      { token: "type", foreground: "4ec9b0" },
-      { token: "constant", foreground: "9cdcfe" },
-      { token: "support.function", foreground: "dcdcaa" },
-      { token: "identifier", foreground: "9cdcfe" },
-      { token: "string", foreground: "ce9178" },
-      { token: "string.escape", foreground: "d7ba7d" },
-      { token: "number", foreground: "b5cea8" },
-      { token: "number.hex", foreground: "b5cea8" },
-      { token: "comment", foreground: "6a9955" },
-      { token: "annotation", foreground: "c586c0" },
-      { token: "delimiter", foreground: "d4d4d4" }
-    ],
-    colors: {}
-  },
+  darkTheme: { rules: [], colors: {} },
 
-  lightTheme: {
-    rules: [
-      { token: "keyword.block", foreground: "af00db", fontStyle: "bold" },
-      { token: "keyword", foreground: "0000ff", fontStyle: "bold" },
-      { token: "type", foreground: "008080" },
-      { token: "constant", foreground: "098658" },
-      { token: "support.function", foreground: "795e26" },
-      { token: "identifier", foreground: "000000" },
-      { token: "string", foreground: "a31515" },
-      { token: "string.escape", foreground: "a5673f" },
-      { token: "number", foreground: "098658" },
-      { token: "number.hex", foreground: "098658" },
-      { token: "comment", foreground: "008000" },
-      { token: "annotation", foreground: "af00db" },
-      { token: "delimiter", foreground: "000000" }
-    ],
-    colors: {}
-  }
+  lightTheme: { rules: [], colors: {} }
 };

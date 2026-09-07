@@ -1,5 +1,12 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * The keyboard panel.
+ *
+ * A device surface (§8.2.1): dark in both themes, because the machine's case is dark and a dark
+ * machine framed by light chrome reads correctly as hardware on a desk. What looks like a
+ * light-mode bug is the intent.
+ */
 .keyboard {
   display: flex;
   overflow: hidden;
@@ -7,9 +14,22 @@
   flex-grow: 1;
   height: 100%;
   background: var(--bgcolor-keyboard);
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   box-sizing: border-box;
   align-content: start;
   justify-items: start;
   justify-content: center;
+
+  /*
+   * Keys settle rather than snap.
+   *
+   * The key SVGs swap their fill between the resting and pressed colours with no transition, so a
+   * keypress was a hard cut. `--duration-fast` is the app's press duration; the fill is the only
+   * property that moves, so this cannot affect layout.
+   */
+  rect,
+  path,
+  text {
+    transition: fill var(--duration-fast) var(--ease-standard);
+  }
 }

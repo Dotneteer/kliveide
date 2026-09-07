@@ -1,31 +1,35 @@
 @use "@styles/core.scss" as *;
 
+/* A real <button>, so it needs stripping back to looking like a tab. */
 .toolTab {
-  @include fix-height-panel(36px);
+  @include fix-height-panel(var(--strip-tabbar));
   width: auto;
   display: flex;
   flex-direction: row;
   align-items: center;
-  border-right: none;
   cursor: pointer;
-  padding: 0 12px;
-}
+  padding: 0 var(--space-3);
+  border: 0;
+  background: none;
+  font: inherit;
+  transition: color var(--duration-fast) var(--ease-standard);
 
-.textWrapper {
-  display: flex;
-  align-items: center;
-  height: 32px;
-  border-bottom: 1px solid transparent;
+  @include focus-ring(-2px);
 }
 
 .active {
   color: var(--color-tooltab-active);
-  border-bottom: 1px solid var(--btopcolor-tooltab-activeTab);
+  box-shadow: inset 0 -2px 0 var(--btopcolor-tooltab-activeTab);
 }
 
+/*
+ * The active marker is a 2px inset bar on the tab itself, matching the document tabs rather than
+ * being a 1px hairline that only lands crisply at 1x DPI.
+ */
 .titleText {
   color: var(--color-doc-inactiveText);
-  font-size: 0.8em;
+  /* M1: absolute, not `em`. This was `0.8em` of the 16px root — 12.8px, which is not on the scale. */
+  font-size: var(--font-size-200);
   font-weight: 600;
   text-transform: uppercase;
 }

@@ -1,4 +1,5 @@
 import classnames from "classnames";
+import { AddressLabel, PartitionPrefix } from "@renderer/controls/data";
 import { memo } from "react";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { getBreakpointKey } from "@common/utils/breakpoints";
@@ -121,26 +122,19 @@ export const DisassemblyRow = memo(function DisassemblyRow({
         disabled={viewModelParams.breakpoint?.disabled ?? false}
       />
       {viewModel.showBankLabel && viewModel.partitionLabel && (
-        <div className={styles.partitionPrefix}>
-          <span
-            className={styles.partitionLabel}
-            style={{ width: viewModel.useWidePartitions ? "3ch" : "2ch" }}
-          >
-            {viewModel.partitionLabel}
-          </span>
-          <span className={styles.partitionColon}>:</span>
-        </div>
+        <PartitionPrefix label={viewModel.partitionLabel} wide={viewModel.useWidePartitions} />
       )}
-      <div
-        className={styles.addressLabel}
-        style={{ width: viewModelParams.decimalView ? 48 : 40 }}
-      >
-        {viewModel.addressText}
-      </div>
-      <Secondary text={viewModel.opCodes} width={viewModelParams.decimalView ? 140 : 100} />
-      <Label text={viewModel.labelText} width={60} />
+      {/*
+        * M2: `ch`, not px. Capacity is preserved from the px these replace, measured at the row's
+        * own 12.8px Iosevka (1ch = 6.4px): 48 -> 8ch, 40 -> 7ch, 140 -> 22ch, 100 -> 16ch,
+        * 60 -> 10ch, 160 -> 25ch. The address column is the roomiest of them — 7ch holding a
+        * 4-character address — so there is slack to reclaim if these are ever sized to content.
+        */}
+      <AddressLabel text={viewModel.addressText} width={viewModelParams.decimalView ? 8 : 7} />
+      <Secondary text={viewModel.opCodes} width={viewModelParams.decimalView ? "22ch" : "16ch"} />
+      <Label text={viewModel.labelText} width="10ch" />
       <div className={styles.tstates}>{viewModel.tstates}</div>
-      <Value text={viewModel.instruction} width={160} />
+      <Value text={viewModel.instruction} width="25ch" />
       {item.hardComment && <Secondary text={"; " + item.hardComment} />}
     </div>
   );

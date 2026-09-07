@@ -1,19 +1,15 @@
 import { Label } from "@renderer/controls/layout/Label";
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
-import { Secondary } from "@renderer/controls/layout/Secondary";
 import { Separator } from "@renderer/controls/layout/Separator";
-import { Value } from "@renderer/controls/layout/Value";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
-import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { BlinkState } from "@common/messaging/EmuApi";
-import { Col, SidePanel } from "@renderer/controls/valuedisplay/Layout";
-import { BitValue, FlagFieldRow } from "@renderer/controls/valuedisplay/Values";
+import { BitValue, FlagFieldRow } from "@renderer/controls/data/registers";
+import { DataPanel, DataRow } from "@renderer/controls/data";
+import { DataLabel, HexValue } from "@renderer/controls/data";
 
-const LAB_WIDTH = 48;
-const VALUE_WIDTH = 40;
-const KEY_LAB_WIDTH = 46;
+const LAB_WIDTH = 7;   // ch, not px (M2)
+const KEY_LAB_WIDTH = "8ch"; // 46px / 6.4 = 7.2
 
 export const BlinkPanel = () => {
   const emuApi = useEmuApi();
@@ -22,7 +18,7 @@ export const BlinkPanel = () => {
   useEmuStateListener(emuApi, async () => setBlinkState(await emuApi.getBlinkState()));
 
   return (
-    <SidePanel>
+    <DataPanel autoHeight>
       <FlagFieldRow
         label="COM"
         tooltip="Command Register handles LCD, Beeper, Clock ticking, UV Eprom in slot 3 and if lower 8K of S0 in slot 0 is ROM or RAM"
@@ -133,71 +129,71 @@ export const BlinkPanel = () => {
         flagDescriptions={TMKDescription}
       />
       <Separator />
-      <Col>
+      <DataRow dense>
         <KeyboardLine
           text="A15#7"
           tooltip="Keyboard address line A15 (#7) from KBD register"
           value={blinkState?.keyLines?.[7]}
           titles={["\u00a3", "/", ".", "CAPS LOCK", "INDEX", "ESC", "\u25fb", "SHIFT (right)"]}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <KeyboardLine
           text="A14#6"
           tooltip="Keyboard address line A14 (#6) from KBD register"
           value={blinkState?.keyLines?.[6]}
           titles={["'", ";", ",", "MENU", "\u25c7", "TAB", "SHIFT (left)", "HELP"]}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <KeyboardLine
           text="A13#5"
           tooltip="Keyboard address line A13 (#5) from KBD register"
           value={blinkState?.keyLines?.[5]}
           titles={["0", "L", "Z", "A", "Q", "1", "SPACE", "["]}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <KeyboardLine
           text="A12#4"
           tooltip="Keyboard address line A12 (#4) from KBD register"
           value={blinkState?.keyLines?.[4]}
           titles={["P", "M", "X", "S", "W", "2", "⬅︎", "]"]}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <KeyboardLine
           text="A11#3"
           tooltip="Keyboard address line A11 (#3) from KBD register"
           value={blinkState?.keyLines?.[3]}
           titles={["9", "K", "C", "D", "E", "3", "➡︎", "-"]}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <KeyboardLine
           text="A10#2"
           tooltip="Keyboard address line A10 (#2) from KBD register"
           value={blinkState?.keyLines?.[2]}
           titles={["O", "J", "V", "F", "R", "4", "⬇︎", "="]}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <KeyboardLine
           text="A09#1"
           tooltip="Keyboard address line A9 (#1) from KBD register"
           value={blinkState?.keyLines?.[1]}
           titles={["I", "U", "B", "G", "T", "5", "⬆︎", "\\"]}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <KeyboardLine
           text="A08#0"
           tooltip="Keyboard address line A8 (#0) from KBD register"
           value={blinkState?.keyLines?.[0]}
           titles={["8", "7", "N", "H", "Y", "6", "ENTER", "DEL"]}
         />
-      </Col>
-    </SidePanel>
+      </DataRow>
+    </DataPanel>
   );
 };
 
@@ -212,7 +208,7 @@ const KeyboardLine = ({ value, titles, text, tooltip }: KeyboardLineProps) => {
   const toFlag = (val: number | undefined, bitNo: number) =>
     val !== undefined ? !!(val & (1 << bitNo)) : undefined;
   return (
-    <Col>
+    <DataRow dense>
       <Label text={text} width={KEY_LAB_WIDTH} tooltip={tooltip} />
       <BitValue value={toFlag(value, 7)} tooltip={titles?.[7]} />
       <BitValue value={toFlag(value, 6)} tooltip={titles?.[6]} />
@@ -222,7 +218,7 @@ const KeyboardLine = ({ value, titles, text, tooltip }: KeyboardLineProps) => {
       <BitValue value={toFlag(value, 2)} tooltip={titles?.[2]} />
       <BitValue value={toFlag(value, 1)} tooltip={titles?.[1]} />
       <BitValue value={toFlag(value, 0)} tooltip={titles?.[0]} />
-    </Col>
+    </DataRow>
   );
 };
 
@@ -234,13 +230,12 @@ type ValueFieldProps = {
 };
 
 const ValueFieldRow = ({ label, tooltip, value, word }: ValueFieldProps) => {
+  // Was a local re-implementation of "labelled hex value" — one of six across the codebase.
   return (
-      <Col>
-        <Label text={label} width={LAB_WIDTH} tooltip={tooltip} />
-        <LabelSeparator width={2} />
-        <Value text={word ? toHexa4(value ?? 0) : toHexa2(value ?? 0)} width={VALUE_WIDTH} />
-        <Secondary text={`(${value})`} />
-      </Col>
+    <DataRow dense>
+      <DataLabel text={label} width={LAB_WIDTH} title={tooltip} />
+      <HexValue value={value ?? 0} digits={word ? 4 : 2} decimal />
+    </DataRow>
   );
 };
 

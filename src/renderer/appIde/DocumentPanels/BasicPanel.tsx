@@ -27,7 +27,7 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VirtualizerHandle } from "virtua";
-import { PanelHeader } from "./helpers/PanelHeader";
+import { PanelHeader } from "@renderer/controls/data";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
   type BasicViewState,
@@ -416,7 +416,6 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
       {!message && (
         <VirtualizedList
           items={basicLines}
-          overscan={25}
           onScroll={() => {
             if (!vlApi.current || cachedLines.current.length === 0) return;
             storeTopAddress();

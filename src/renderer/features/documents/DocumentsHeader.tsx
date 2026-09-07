@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CloseMode } from "./DocumentTab";
 import { DocumentCommandBar } from "./DocumentCommandBar";
-import { DocumentTabs } from "./DocumentTabs";
+import { DocumentTabs, getDocumentTabName, getDuplicateDocumentNames } from "./DocumentTabs";
 import {
   useActiveDocumentAreaId,
   useDocumentAreaGridApi,
@@ -19,6 +19,12 @@ import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentStat
 import { incProjectViewStateVersionAction } from "@common/state/actions";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
+import { SmallIconButton } from "@renderer/controls/IconButton";
+import {
+  ContextMenu,
+  ContextMenuItem,
+  useContextMenuState
+} from "@renderer/controls/ContextMenu";
 import {
   DOCS_WORKSPACE,
   DocumentWorkspace,
@@ -50,6 +56,9 @@ export const DocumentsHeader = () => {
   const svApi = useRef<ScrollViewerApi>();
   const tabDims = useRef<HTMLDivElement[]>([]);
   const tabVisibilityEffectInitialized = useRef(false);
+  const [overflow, setOverflow] = useState<TabOverflow>(NO_OVERFLOW);
+  const [tabListState, tabListApi] = useContextMenuState();
+  const tabListAnchor = useRef<HTMLSpanElement>(null);
 
   const openDocs = documentHubService.getOpenDocuments();
   const activeDocIndex = documentHubService.getActiveDocumentIndex();
@@ -81,7 +90,56 @@ export const DocumentsHeader = () => {
     }
   }, [activeDocIndex]);
 
-  const scheduleEnsureTabVisible = useScheduledTabVisibility(ensureTabVisible);
+  /*
+   * Which tabs the strip is currently showing.
+   *
+   * `ScrollViewerApi` exposes no scroll width, but the tab elements are already collected in
+   * `tabDims` for `ensureTabVisible`, so the content width is the right edge of the last tab. That
+   * keeps the overflow signal in this component instead of widening a shared control's API.
+   */
+  const measureOverflow = useCallback(() => {
+    const api = svApi.current;
+    const tabs = tabDims.current.filter(Boolean);
+    if (!api || !tabs.length) {
+      setOverflow((prev) => (prev === NO_OVERFLOW ? prev : NO_OVERFLOW));
+      return;
+    }
+    const contentWidth = Math.max(...tabs.map((t) => t.offsetLeft + t.offsetWidth));
+    const clientWidth = api.getClientWidth();
+    const scrollLeft = api.getScrollLeft();
+    const hidden = new Set<number>();
+    tabDims.current.forEach((tab, idx) => {
+      if (!tab) return;
+      const left = tab.offsetLeft;
+      const right = left + tab.offsetWidth;
+      // A tab counts as hidden when either edge is outside the viewport, matching what the eye sees.
+      if (left < scrollLeft - 1 || right > scrollLeft + clientWidth + 1) hidden.add(idx);
+    });
+    const next: TabOverflow = {
+      active: contentWidth > clientWidth + 1,
+      canLeft: scrollLeft > 1,
+      canRight: scrollLeft + clientWidth < contentWidth - 1,
+      hidden
+    };
+    setOverflow((prev) => (sameOverflow(prev, next) ? prev : next));
+  }, []);
+
+  const scheduleEnsureTabVisible = useTabVisibility(
+    () => {
+      ensureTabVisible();
+      measureOverflow();
+    },
+    () => tabDims.current.find(Boolean)?.parentElement ?? undefined
+  );
+
+  // Scroll the strip by most of a viewport, leaving a sliver of context like a page-scroll does.
+  const scrollTabsBy = (direction: -1 | 1) => {
+    const api = svApi.current;
+    if (!api) return;
+    const step = Math.max(api.getClientWidth() - 40, 40);
+    api.scrollToHorizontal(Math.max(api.getScrollLeft() + direction * step, 0));
+    measureOverflow();
+  };
   const scrollViewerApiLoaded = useCallback((api: ScrollViewerApi) => {
     svApi.current = api;
     scheduleEnsureTabVisible();
@@ -212,6 +270,8 @@ export const DocumentsHeader = () => {
     documentHubService.moveDocument(documentId, targetDocument.id, offset > 0);
   };
 
+  const duplicateNames = getDuplicateDocumentNames(openDocs ?? []);
+
   const tabsCount = openDocs?.length ?? 0;
   if (tabsCount <= 0) {
     return null;
@@ -224,6 +284,7 @@ export const DocumentsHeader = () => {
         allowVertical={false}
         thinScrollBar={true}
         apiLoaded={scrollViewerApiLoaded}
+        onScrolled={measureOverflow}
       >
         <DocumentTabs
           activeDocIndex={activeDocIndex}
@@ -266,6 +327,72 @@ export const DocumentsHeader = () => {
         />
         <div className={styles.closingTab} />
       </ScrollViewer>
+      {overflow.active && (
+        /*
+         * Shown only when the strip cannot fit its tabs.
+         *
+         * Before this the header relied on horizontal scrolling alone, with no indication that
+         * there was anything to scroll to — the only way to discover a hidden tab was to drag the
+         * thin scrollbar or to already know it was there.
+         */
+        <div className={styles.overflowControls}>
+          <SmallIconButton
+            iconName="chevron-left"
+            title="Scroll tabs left"
+            enable={overflow.canLeft}
+            clicked={() => scrollTabsBy(-1)}
+          />
+          <SmallIconButton
+            iconName="chevron-right"
+            title="Scroll tabs right"
+            enable={overflow.canRight}
+            clicked={() => scrollTabsBy(1)}
+          />
+          <span ref={tabListAnchor}>
+            <SmallIconButton
+              iconName="ellipsis"
+              title="Show all open documents"
+              clicked={() => tabListApi.showAt(tabListAnchor.current)}
+            />
+          </span>
+          <ContextMenu
+            state={tabListState}
+            placement="bottom-end"
+            onClickOutside={tabListApi.conceal}
+          >
+            {(openDocs ?? []).map((doc, idx) => (
+              <ContextMenuItem
+                key={doc.id}
+                /*
+                 * Name, icon and fill come from the document itself — the same three values
+                 * `DocumentTabs` hands to each tab — so a row looks like the tab it stands for.
+                 * Deriving them here instead (from the file type) silently produced no icon at all
+                 * for the virtual documents, which have no node.
+                 */
+                text={getDocumentTabName(doc, duplicateNames)}
+                iconName={doc.iconName ?? "file-code"}
+                iconFill={doc.iconFill ?? "--color-doc-icon"}
+                selected={idx === activeDocIndex}
+                /*
+                 * The list holds every open document, not only the hidden ones, so it doubles as a
+                 * switcher and its contents do not shift as the window is resized. Hidden tabs are
+                 * marked rather than filtered.
+                 */
+                trailing={
+                  <>
+                    {dirtyStates?.[idx] ? "\u25CF" : ""}
+                    {overflow.hidden.has(idx) ? " \u00B7\u00B7\u00B7" : ""}
+                  </>
+                }
+                clicked={() => {
+                  tabListApi.conceal();
+                  void tabClicked(doc.id);
+                }}
+              />
+            ))}
+          </ContextMenu>
+        </div>
+      )}
       {tabsCount > 0 && (
         <DocumentCommandBar
           activeFullPath={activeNode?.fullPath}
@@ -280,29 +407,77 @@ export const DocumentsHeader = () => {
 export type { DocumentWorkspace, SavedDocumentInfo };
 export { DOCS_WORKSPACE };
 
-function useScheduledTabVisibility(ensureTabVisible: () => void): () => void {
-  const animationFrameRef = useRef<number>();
-  const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+/** What the tab strip can currently show, and what it cannot. */
+type TabOverflow = {
+  active: boolean;
+  canLeft: boolean;
+  canRight: boolean;
+  hidden: Set<number>;
+};
 
-  const clearScheduledVisibility = useCallback(() => {
-    if (animationFrameRef.current !== undefined) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = undefined;
-    }
-    timeoutRefs.current.forEach((timeoutId) => clearTimeout(timeoutId));
-    timeoutRefs.current = [];
-  }, []);
+const NO_OVERFLOW: TabOverflow = {
+  active: false,
+  canLeft: false,
+  canRight: false,
+  hidden: new Set()
+};
 
-  useEffect(() => clearScheduledVisibility, [clearScheduledVisibility]);
+/*
+ * Measurement runs on every scroll and every resize, so it must not hand back a fresh object each
+ * time — that would re-render the header continuously while the strip is being dragged.
+ */
+function sameOverflow(a: TabOverflow, b: TabOverflow): boolean {
+  if (a.active !== b.active || a.canLeft !== b.canLeft || a.canRight !== b.canRight) return false;
+  if (a.hidden.size !== b.hidden.size) return false;
+  for (const idx of a.hidden) if (!b.hidden.has(idx)) return false;
+  return true;
+}
 
-  return useCallback(() => {
-    clearScheduledVisibility();
-    ensureTabVisible();
-    animationFrameRef.current = requestAnimationFrame(() => ensureTabVisible());
-    timeoutRefs.current.push(
-      setTimeout(() => ensureTabVisible(), 0),
-      setTimeout(() => ensureTabVisible(), 50),
-      setTimeout(() => ensureTabVisible(), 150)
-    );
-  }, [clearScheduledVisibility, ensureTabVisible]);
+/**
+ * Keeps the active document tab fully in view.
+ *
+ * The previous implementation called `ensureTabVisible` five times for every change — immediately,
+ * inside a `requestAnimationFrame`, and again on timeouts at 0ms, 50ms and 150ms. That ladder
+ * existed because tab geometry is not settled when the effect runs (layout, fonts and the
+ * ScrollViewer's own measurement all land later) and there was no signal for when it would be, so
+ * the code guessed at several plausible moments and hoped one of them was right.
+ *
+ * A `ResizeObserver` is that signal. It fires when the strip has actually been laid out, so one
+ * scheduled call plus the observer replaces all five guesses — and it also covers the cases the
+ * timeouts never could, such as the window being resized or a long filename arriving late.
+ */
+function useTabVisibility(
+  ensureTabVisible: () => void,
+  getStrip: () => HTMLElement | undefined
+): () => void {
+  const frameRef = useRef<number>();
+
+  const schedule = useCallback(() => {
+    if (frameRef.current !== undefined) cancelAnimationFrame(frameRef.current);
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = undefined;
+      ensureTabVisible();
+    });
+  }, [ensureTabVisible]);
+
+  useEffect(() => {
+    const strip = getStrip();
+    if (!strip || typeof ResizeObserver === "undefined") return undefined;
+
+    // Observing the children as well as the strip catches a single tab changing width — a rename,
+    // or a dirty marker appearing — which does not necessarily resize the strip itself.
+    const observer = new ResizeObserver(() => schedule());
+    observer.observe(strip);
+    for (const child of Array.from(strip.children)) observer.observe(child);
+    return () => observer.disconnect();
+  });
+
+  useEffect(
+    () => () => {
+      if (frameRef.current !== undefined) cancelAnimationFrame(frameRef.current);
+    },
+    []
+  );
+
+  return schedule;
 }

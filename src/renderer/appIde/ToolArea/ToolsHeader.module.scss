@@ -1,8 +1,16 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * The tool area's tab strip.
+ *
+ * It had no background of its own, so it inherited `--bgcolor-toolarea` and the tabs sat on exactly
+ * the same surface as the output below them — unlike the document header, which does get its own.
+ */
 .toolsHeader {
-    @include fix-height-panel(38px);
+    @include fix-height-panel(var(--strip-tabbar));
     flex-direction: row;
+    background: var(--surface-chrome);
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .headerBar {
@@ -11,7 +19,7 @@
     align-items: center;
     width: auto;
     height: 100%;
-    padding: 0 8px;
+    padding: 0 var(--space-2);
 }
 
 

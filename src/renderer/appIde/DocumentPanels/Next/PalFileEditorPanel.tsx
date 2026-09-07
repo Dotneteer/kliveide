@@ -1,8 +1,8 @@
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import {
-  GenericFileEditorContext,
-  GenericFileEditorPanel
-} from "../helpers/GenericFileEditorPanel";
+  GenericFileContext,
+  GenericFilePanel
+} from "../helpers/GenericFilePanel";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { PaletteEditor } from "./PaletteEditor";
 import { createElement } from "react";
@@ -19,7 +19,7 @@ const PalFileEditorPanel = ({
   viewState
 }: DocumentProps) => {
   const validRenderer: (
-    context: GenericFileEditorContext<PalFileContents, PalFileViewState>
+    context: GenericFileContext<PalFileContents, PalFileViewState>
   ) => JSX.Element = context => {
     return (
       <PaletteEditor
@@ -37,7 +37,7 @@ const PalFileEditorPanel = ({
     );
   };
   return createElement(
-    GenericFileEditorPanel<PalFileContents, PalFileViewState>,
+    GenericFilePanel<PalFileContents, PalFileViewState>,
     {
       document,
       contents,

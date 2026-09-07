@@ -1,23 +1,29 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * The sidebar's title strip ("EXPLORER", "DEBUG").
+ *
+ * Height comes from `--strip-sidebar-header` rather than a local 36px, and the text is indented by
+ * one space step instead of the old `padding-left: 4px` on the container plus `padding-left: 20px`
+ * on the text — an ad-hoc 24px that existed to fake alignment with the panel chevrons below.
+ */
 .sideBarHeader {
-    @include fix-height-panel(36px);
-    padding-left: 4px;
-    align-items: center;
-    flex-direction: row;
-
+  @include fix-height-panel(var(--strip-sidebarHeader));
+  padding-left: var(--space-2);
+  align-items: center;
+  flex-direction: row;
 }
 
 .text {
-    color: var(--color-header);
-    font-size: 0.8em;
-    font-weight: 400;
-    padding-left: 20px;
-    width: 100%;
-    flex-grow: 1;
-    flex-shrink: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-transform: uppercase;
-  }
+  color: var(--color-header);
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  width: 100%;
+  flex-grow: 1;
+  flex-shrink: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}

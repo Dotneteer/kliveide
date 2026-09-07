@@ -1,4 +1,5 @@
 import { Setting } from "@abstractions/Setting";
+import { DEFAULT_EDITOR_FONT_ID } from "@common/settings/editor-fonts";
 import { PANE_ID_EMU } from "@common/integration/constants";
 import {
   SETTING_EMU_FAST_LOAD,
@@ -13,6 +14,7 @@ import {
   SETTING_IDE_ACTIVE_TOOL,
   SETTING_IDE_CLOSE_EMU,
   SETTING_EDITOR_FONT_SIZE,
+  SETTING_EDITOR_FONT_FAMILY,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
   SETTING_IDE_SHOW_SIDEBAR,
@@ -236,6 +238,14 @@ const settingDefinitions: Setting[] = [
     defaultValue: true,
     saveWithIde: true,
     boundTo: "ide"
+  },
+  {
+    id: SETTING_EDITOR_FONT_FAMILY,
+    title: "Font Family",
+    description: "Monospace font used by the editor. The choices offered depend on the platform.",
+    type: "string",
+    defaultValue: DEFAULT_EDITOR_FONT_ID,
+    saveWithIde: true,
   },
   {
     id: SETTING_EDITOR_FONT_SIZE,

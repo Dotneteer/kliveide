@@ -33,11 +33,7 @@ export const CommandPanel = () => {
       onFocus={() => inputRef?.current.focus()}
     >
       <div className={styles.outputWrapper}>
-      <ConsoleOutput
-          buffer={buffer}
-          scrollLocked={false}
-          showLineNo={false}
-        />
+      <ConsoleOutput buffer={buffer} followTail />
       </div>
       <div className={styles.promptWrapper}>
         <span className={styles.promptPrefix}>$</span>

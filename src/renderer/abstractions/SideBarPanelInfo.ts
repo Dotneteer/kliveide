@@ -24,9 +24,16 @@ export type SideBarPanelInfo = {
   readonly renderer: PanelRenderer;
 
   /**
-   * Indicates if the panel does not require a scroll viewer
+   * Whether the panel's content should be wrapped in a `ScrollViewer`. Defaults to `true`.
+   *
+   * Set this to `false` for panels that scroll themselves — anything rendering a
+   * `VirtualizedList`, which supplies its own `ScrollViewer`. Nesting one inside another leaves
+   * the virtualizer without a bounded viewport to measure against.
+   *
+   * Previously named `noScrollViewer`, whose sense was inverted: `noScrollViewer: false`
+   * *suppressed* the viewer. The behaviour is unchanged; only the name now matches it.
    */
-  readonly noScrollViewer?: boolean;
+  readonly useScrollViewer?: boolean;
 
   /**
    * Is the panel expanded when initializing?

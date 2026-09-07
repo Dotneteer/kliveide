@@ -3,6 +3,12 @@
 .listWrapper {
   @include fill-parent-flex;
   font-family: var(--monospace-font);
+  /*
+   * M1: absolute, not inherited from an `em` chain. The console was rendering at 12.8px because an
+   * ancestor multiplied the root by 0.8; pinning it to the same 12px as the data panels makes the
+   * `ch` gutter below mean exactly what it says.
+   */
+  font-size: var(--font-size-200);
   box-sizing: border-box;
   flex-direction: column;
   user-select: text;
@@ -13,10 +19,41 @@
   word-break: break-all;
 }
 
+/*
+ * The line-number gutter.
+ *
+ * `min-width` was 48px, tuned when the mono stack had a different advance (M2). At the pinned 12px
+ * Iosevka that is exactly 8ch, which is also the width at which a five-digit line number and its
+ * colon still fit.
+ */
 .lineNo {
   display: inline-block;
   color: var(--console-lineNo);
-  padding-right: 12px;
-  min-width: 48px;
+  padding-right: var(--space-3);
+  min-width: 8ch;
   text-align: end;
+}
+
+/*
+ * An actionable span — a file reference that runs an IDE `nav` command.
+ *
+ * It is a <button>, so it has to be stripped back to looking like the text around it: the console
+ * line is a flow of spans and this one must not become a widget in the middle of it.
+ */
+.actionable {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  @include focus-ring(-1px);
 }

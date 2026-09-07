@@ -1,44 +1,47 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * The recording-state pill.
+ *
+ * It used to carry `top: 40px` with a comment deriving 40 from "~8px top + ~28px content height" —
+ * an offset that was correct only while the pill above it kept exactly that height. The overlay
+ * stack positions both now.
+ */
 .recordingOverlay {
-    position: relative;
-    left: 8px;
-    /* Push below the ExecutionStateOverlay (~8px top + ~28px content height) */
-    top: 40px;
-    height: 0;
-    flex-shrink: 0;
-    flex-grow: 0;
+  display: flex;
+  flex: 0 0 auto;
 }
 
 %pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background-color: #303030;
-    opacity: 0.85;
-    font-size: 0.9em;
-    padding: 3px 10px 3px 8px;
-    border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: var(--bgcolor-emuoverlay);
+  opacity: 0.85;
+  font-size: var(--font-size-200);
+  padding: 3px var(--space-3) 3px var(--space-2);
+  border-radius: var(--radius-sm);
 }
 
 .icon {
-    display: inline-flex;
-    align-items: center;
-    line-height: 1;
-    font-size: 0.75em; /* smaller circle glyph */
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  font-size: var(--font-size-100); /* smaller circle glyph */
 }
 
+/* The three states read as status, not as three invented hexes (#ffd700 / #ff4444 / #ff8800). */
 .armed {
-    @extend %pill;
-    color: #ffd700;
+  @extend %pill;
+  color: var(--status-warning);
 }
 
 .recording {
-    @extend %pill;
-    color: #ff4444;
+  @extend %pill;
+  color: var(--status-error);
 }
 
 .paused {
-    @extend %pill;
-    color: #ff8800;
+  @extend %pill;
+  color: var(--text-secondary);
 }
