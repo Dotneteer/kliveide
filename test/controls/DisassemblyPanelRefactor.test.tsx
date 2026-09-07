@@ -309,6 +309,15 @@ describe("DisassemblyPanel refactor characterization", () => {
     expect(screen.getByText("LD (4000H),A")).toBeInTheDocument();
     expect(screen.getByTestId("breakpoint-0:$6000")).toHaveAttribute("data-current", "true");
     expect(screen.getByTestId("breakpoint-0:$6000")).toHaveAttribute("data-has-breakpoint", "true");
+
+    // The row at the current PC (0x6000, matching the mocked `getMemoryContents().pc`) gets the
+    // exec-point highlight; the other row does not.
+    expect(screen.getByTestId("disassembly-row-0").firstElementChild?.className).toContain(
+      "execPoint"
+    );
+    expect(screen.getByTestId("disassembly-row-1").firstElementChild?.className).not.toContain(
+      "execPoint"
+    );
   });
 
   it("scrolls to the row containing a submitted address", async () => {
@@ -360,5 +369,35 @@ describe("DisassemblyPanel refactor characterization", () => {
         expect.objectContaining({ topAddress: 0x6002 })
       );
     });
+  });
+
+  it("refreshes with the follow-PC section immediately, not the stale manual one, when Follow PC is turned on", async () => {
+    /*
+     * Regression test for a stale-ref read: `onAutoRefreshChanged` used to call
+     * `refreshDisassembly()` directly, which reads `cachedRefreshState.current.autoRefresh` - a
+     * ref that `useDisassemblyViewStatePersistence` only updates in its own effect, one render
+     * after this handler runs. So the very refresh this handler triggered still saw the *old*
+     * `autoRefresh` (false), and ran a manual, full-range disassembly (via
+     * `getDisassemblySections`) instead of the small ~1KB window around PC - the "few seconds"
+     * delay this test guards against. `autoRefresh` is now a dependency of the effect that calls
+     * `refreshDisassembly()`, which fires after the sync effect and so always sees the current
+     * value.
+     */
+    const { disassemblerFactory } = await renderDisassemblyPanel({
+      viewState: { autoRefresh: false }
+    });
+    disassemblerFactory.mockClear();
+
+    fireEvent.click(screen.getByText("Follow PC:off"));
+
+    await waitFor(() => {
+      expect(disassemblerFactory).toHaveBeenCalled();
+    });
+
+    const [memSections] = disassemblerFactory.mock.calls.at(-1)!;
+    // The follow-PC section: one section starting exactly at PC (0x6000, from the mocked
+    // `getMemoryContents`) - not the empty list `getDisassemblySections` mocks for manual mode.
+    expect(memSections).toHaveLength(1);
+    expect(memSections[0].startAddress).toBe(0x6000);
   });
 });

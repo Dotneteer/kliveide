@@ -197,6 +197,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   useEffect(() => {
     refreshDisassembly();
   }, [
+    autoRefresh,
     bpsVersion,
     injectionVersion,
     isFullView,
@@ -220,13 +221,21 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         bankLabel={bankLabel}
         decimalView={decimalView}
         machineState={machineState}
-        onAutoRefreshChanged={async (value) => {
+        onAutoRefreshChanged={(value) => {
           setAutoRefresh(value);
           if (value) {
             setToScroll(0);
           }
           setScrollVersion((version) => version + 1);
-          await refreshDisassembly();
+          // Not `refreshDisassembly()` here: it reads `cachedRefreshState.current`, which only
+          // picks up this new `autoRefresh` value once `useDisassemblyViewStatePersistence`'s own
+          // effect re-runs and syncs it - one render after this handler, not during it. Calling it
+          // here read the *previous* `autoRefresh`, so turning Follow PC on silently ran a manual,
+          // full-range disassembly instead of the small ~1KB window around PC - the "few seconds"
+          // this switch used to take. `autoRefresh` is now a dependency of the "refresh when the
+          // follow PC option changes" effect below, which - because `useDisassemblyViewStatePersistence`
+          // is called earlier in this component and so registers its effect first - always runs
+          // after the sync effect, and so always sees the current value.
         }}
         onDecimalViewChanged={setDecimalView}
         onGoToAddress={(address) => {

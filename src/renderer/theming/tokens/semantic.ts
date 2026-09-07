@@ -23,6 +23,7 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
   const s = STATUS[tone];
   const accent = ACCENTS[accentId];
   const solid = accent.solid[tone];
+  const secondary = accent.secondary[tone];
 
   return {
     // --- Surfaces ------------------------------------------------------------------------------
@@ -53,6 +54,7 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--text-tertiary": n.textTertiary,
     "--text-disabled": n.textDisabled,
     "--text-on-accent": accent.onSolid[tone],
+    "--text-on-accent-secondary": accent.onSecondary[tone],
 
     // --- Borders -------------------------------------------------------------------------------
     "--border-subtle": n.borderSubtle,
@@ -66,8 +68,33 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--accent-subtle": alpha(solid, 18),
     "--accent-border": alpha(solid, 55),
     "--accent-text": solid,
+    /**
+     * A softer accent for text that should read as accent-tinted without competing with
+     * `--accent-text` for attention - e.g. the memory dump's character column, sitting beside its
+     * accent-solid address column (§ memory dump colour, below `--data-*`).
+     *
+     * This is alpha over the panel's own (dark) surface, so it is not just "a dimmer accent" - the
+     * surface shows through the transparent remainder, and 65% read as too dark/muddy to be legible
+     * body text at a normal reading size. 85% keeps it visibly softer than full-strength
+     * `--accent-text` while staying close to the accent's own true brightness.
+     */
+    "--accent-text-subtle": alpha(solid, 85),
     /** One focus treatment for the whole app; nothing should invent its own. */
     "--focus-ring": alpha(solid, 70),
+
+    /*
+     * A second hue for the same accent - see `AccentDef.secondary` in palette.ts. Same six-level
+     * shape as `--accent-*` above, generated the same way, so a consumer of one already knows the
+     * other. For the moments the primary and its shades run out of contrast to spend against each
+     * other - e.g. a hovered byte needs to read as distinct from the address column beside it,
+     * which already claims the primary.
+     */
+    "--accent-secondary-solid": secondary,
+    "--accent-secondary-solid-hover": alpha(secondary, 88),
+    "--accent-secondary-subtle": alpha(secondary, 18),
+    "--accent-secondary-border": alpha(secondary, 55),
+    "--accent-secondary-text": secondary,
+    "--accent-secondary-text-subtle": alpha(secondary, 85),
 
     // --- Status --------------------------------------------------------------------------------
     // Fixed across accents on purpose: an error must look like an error whichever accent is chosen.

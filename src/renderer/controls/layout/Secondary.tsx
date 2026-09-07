@@ -6,6 +6,12 @@ type Props = {
   text: string;
   /** Explicit secondary text cell width. A number is `ch` (M2); a string is a CSS length. */
   width?: string | number;
+  /**
+   * Extra class merged onto the cell, for a caller that wants its own restyled secondary text
+   * (e.g. the disassembly view's accent-tinted opcode column) without touching every other
+   * consumer of this shared component.
+   */
+  className?: string;
 };
 
 /**
@@ -13,6 +19,6 @@ type Props = {
  *
  * Delegates to `controls/data`'s `DataSecondary`; see `Label` for why.
  */
-export const Secondary = ({ text, width }: Props) => (
-  <DataSecondary text={text} width={cssWidth(width)} />
+export const Secondary = ({ text, width, className }: Props) => (
+  <DataSecondary text={text} width={cssWidth(width)} xclass={className} />
 );

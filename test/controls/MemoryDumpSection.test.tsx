@@ -166,6 +166,53 @@ describe("MemoryDumpSection", () => {
     expect(editClicked).toHaveBeenCalledWith(0x4001);
   });
 
+  it("colours the hover tooltip's lines to match the column each one describes", async () => {
+    mockIdeCommands(() => ({ 0x41: { v: "A", t: "letter A" } }));
+    const { MemoryDumpSection } = await import("@renderer/features/memory/MemoryDumpSection");
+
+    const { getByText } = render(
+      <MemoryDumpSection
+        address={0x4000}
+        bytes={[0x41, 0x42]}
+        decimalView={false}
+        charDump={false}
+        lastJumpAddress={-1}
+      />
+    );
+
+    const hexValues = getByText("41 42");
+    vi.spyOn(hexValues, "getBoundingClientRect").mockReturnValue({
+      x: 0,
+      y: 0,
+      left: 0,
+      top: 0,
+      right: 50,
+      bottom: 16,
+      width: 50,
+      height: 16,
+      toJSON: () => ({})
+    });
+
+    fireEvent.mouseMove(hexValues, { clientX: 5, clientY: 8 });
+
+    // The tooltip is portaled (to #overlayRoot, or document.body as a fallback in this
+    // provider-less render), so it lands outside RTL's own `container` - query the document.
+    const header = document.body.querySelector('[class*="tooltipHeader"]');
+    const value = document.body.querySelector('[class*="tooltipValue"]');
+    const charDesc = document.body.querySelector('[class*="tooltipCharDesc"]');
+
+    expect(header?.textContent).toBe("Value at $4000 (16384):");
+    expect(value?.textContent).toBe("$41 (65, 01000001)");
+    expect(charDesc?.textContent).toBe("A letter A");
+
+    // The tooltip box itself carries the memory view's own styling (a darker surface, accent
+    // border) rather than the app's generic shared `.tooltip` look - `.memoryTooltip` is merged
+    // onto the same element `.tooltip` is on, not used instead of it.
+    const tooltipBox = header?.parentElement;
+    expect(tooltipBox?.className).toContain("tooltip_");
+    expect(tooltipBox?.className).toContain("memoryTooltip");
+  });
+
   it("updates character output when the active machine charset changes", async () => {
     let charset = {
       0x41: { v: "A", t: "letter A" }
@@ -200,5 +247,43 @@ describe("MemoryDumpSection", () => {
 
     expect(getByText("B")).toBeTruthy();
     expect(queryByText("A")).not.toBeInTheDocument();
+  });
+
+  it("renders each byte's own character when bytes come from a Uint8Array view, not a plain array", async () => {
+    /*
+     * The live Machine Memory panel (`MemoryPanel.tsx`) passes `bytes` as `memory.subarray(...)` -
+     * a `Uint8Array` view, not a plain array, to avoid copying on every scroll. `CharDump` used to
+     * build its `<span>`s with `bytes.map(...)`: fine for `Array.prototype.map`, but
+     * `Uint8Array.prototype.map` builds a *new typed array* instead, coercing every callback
+     * return value (a JSX element) to a number for storage - a React element coerces to `NaN`,
+     * clamped to `0` - so every position showed "0" regardless of the byte's actual value. Only
+     * the character column was affected: `HexValues` builds its string with an indexing `for`
+     * loop, which behaves identically on both array kinds.
+     */
+    mockIdeCommands(() => ({
+      0x41: { v: "A" },
+      0x42: { v: "B" },
+      0x43: { v: "C" }
+    }));
+    const { MemoryDumpSection } = await import("@renderer/features/memory/MemoryDumpSection");
+
+    const memory = new Uint8Array(0x10000);
+    memory[0x8000] = 0x41;
+    memory[0x8001] = 0x42;
+    memory[0x8002] = 0x43;
+    const bytes = memory.subarray(0x8000, 0x8003);
+
+    const { container } = render(
+      <MemoryDumpSection
+        address={0x8000}
+        bytes={bytes as unknown as number[]}
+        decimalView={false}
+        charDump={true}
+        lastJumpAddress={-1}
+      />
+    );
+
+    expect(container.querySelector('[class*="hexValues"]')?.textContent).toBe("41 42 43");
+    expect(container.querySelector('[class*="charValues"]')?.textContent).toBe("ABC");
   });
 });

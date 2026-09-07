@@ -13,6 +13,12 @@ type Props = {
   center?: boolean;
   /** Optional tooltip shown for the label cell. */
   tooltip?: string;
+  /**
+   * Extra class merged onto the cell, for a caller that wants its own restyled label text (e.g.
+   * the disassembly view's jump-target label column) without touching every other consumer of
+   * this shared component.
+   */
+  className?: string;
 };
 
 /**
@@ -23,7 +29,7 @@ type Props = {
  * implementations — here, in `controls/valuedisplay`, and in `controls/data` — and this is the one
  * with 21 importers, so it delegates rather than being rewritten at every call site.
  */
-export const Label = ({ text, width, center, tooltip }: Props) => {
+export const Label = ({ text, width, center, tooltip, className }: Props) => {
   const ref = useTooltipRef();
 
   return (
@@ -32,7 +38,7 @@ export const Label = ({ text, width, center, tooltip }: Props) => {
         ref={ref}
         text={text}
         width={cssWidth(width)}
-        xclass={classnames(styles.legacySpacing, { [styles.centered]: center })}
+        xclass={classnames(styles.legacySpacing, { [styles.centered]: center }, className)}
       />
       {tooltip && (
         <TooltipFactory

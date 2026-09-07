@@ -363,9 +363,20 @@ export const PartitionPrefix = ({ label, wide }: { label: string; wide?: boolean
  *
  * `width` is in `ch`, so the column holds a fixed number of digits rather than a pixel count tuned
  * to one font — the disassembly and memory rows previously passed 40, 48, 64 and 72 px between them.
+ *
+ * `className` lets one caller restyle its own addresses (the memory dump, for its accent-tinted
+ * gutter) without touching every other consumer of this shared component (disassembly rows).
  */
-export const AddressLabel = ({ text, width }: { text: string; width: number }) => (
-  <div className={styles.addressLabel} style={{ width: `${width}ch` }}>
+export const AddressLabel = ({
+  text,
+  width,
+  className
+}: {
+  text: string;
+  width: number;
+  className?: string;
+}) => (
+  <div className={classnames(styles.addressLabel, className)} style={{ width: `${width}ch` }}>
     {text}
   </div>
 );

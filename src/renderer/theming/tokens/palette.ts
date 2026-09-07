@@ -104,6 +104,23 @@ export type AccentDef = {
   solid: Record<Tone, string>;
   /** Foreground for text placed *on* `solid`. */
   onSolid: Record<Tone, string>;
+  /**
+   * A second hue for the same accent, for the moments the primary and its shades run out of
+   * contrast to spend against each other - two things needing to read as distinct highlights in
+   * the same view, e.g. the memory dump's address column (primary) versus its hovered-byte
+   * highlight (secondary).
+   *
+   * Derived from `solid`, not hand-picked: rotate `solid`'s hue by a fixed per-accent offset,
+   * keep saturation, and only then adjust lightness where the naive rotation left the secondary
+   * sitting at nearly the same luminance as the primary (a hue rotation alone does not move
+   * luminance evenly - two colours can be 30° apart and still read as the same brightness). See
+   * the "Accent Secondary Palette" artifact this was designed against for the full contrast
+   * accounting; sinclairBlue/ember/ultraviolet/phosphorGreen kept the primary's own lightness,
+   * spectrumMagenta did not (1.04:1 against its own primary, lightened to 1.44:1).
+   */
+  secondary: Record<Tone, string>;
+  /** Foreground for text placed *on* `secondary`. */
+  onSecondary: Record<Tone, string>;
 };
 
 /**
@@ -122,38 +139,72 @@ export const ACCENTS: Record<AccentId, AccentDef> = {
     label: "Sinclair Blue",
     // Today's #007acc, brightened because the original is 4.05:1 on dark and fails AA.
     solid: { dark: "#45A5E6", light: "#0A6FB8" },
-    onSolid: { dark: "#0e0f11", light: "#ffffff" }
+    onSolid: { dark: "#0e0f11", light: "#ffffff" },
+    // H+30° toward indigo, same saturation as the primary. The naive same-lightness rotation
+    // (#4554E6) was only 3.19:1 against canvas and 2.61:1 against `--surface-hover` - illegible
+    // as text - because blue-family hues carry far less of WCAG's relative-luminance weight than
+    // green or yellow (0.0722 for blue against 0.7152 for green), so matching the primary's own
+    // HSL lightness does not remotely match its actual brightness once the hue shifts further
+    // into blue. Lightened 59%→76% to clear AA against both backgrounds; light tone was already
+    // fine (11.4:1 against white) since dark text needs the opposite move.
+    secondary: { dark: "#939CF0", light: "#0A18B8" },
+    onSecondary: { dark: "#0e0f11", light: "#ffffff" }
   },
   spectrumMagenta: {
     id: "spectrumMagenta",
     label: "Spectrum Magenta",
     solid: { dark: "#C264D6", light: "#9B2FB4" },
-    onSolid: { dark: "#0e0f11", light: "#ffffff" }
+    onSolid: { dark: "#0e0f11", light: "#ffffff" },
+    // H+30° toward rose. The naive same-lightness rotation (#D664B1 / #B42F8B) sat at 1.04:1
+    // against its own primary - indistinguishable as a separate colour next to it - so this one
+    // also moves lightness: 62%→72% in dark, 44.5%→34% in light, each away from the primary.
+    secondary: { dark: "#E18EC6", light: "#8A246A" },
+    onSecondary: { dark: "#0e0f11", light: "#ffffff" }
   },
   ember: {
     id: "ember",
     label: "Ember",
     // Gold rather than orange: true orange sits on top of the warning hue whatever we do.
     solid: { dark: "#FFC933", light: "#8A6A00" },
-    onSolid: { dark: "#0e0f11", light: "#ffffff" }
+    onSolid: { dark: "#0e0f11", light: "#ffffff" },
+    // H+30° toward chartreuse, same S/L - fully saturated like the primary, so it reads as vivid
+    // rather than muted next to it.
+    secondary: { dark: "#CFFF33", light: "#658A00" },
+    onSecondary: { dark: "#0e0f11", light: "#ffffff" }
   },
   ultraviolet: {
     id: "ultraviolet",
     label: "Ultraviolet",
     solid: { dark: "#A78AF5", light: "#6340C8" },
-    onSolid: { dark: "#0e0f11", light: "#ffffff" }
+    onSolid: { dark: "#0e0f11", light: "#ffffff" },
+    // H-35° toward periwinkle, same S/L as the primary.
+    secondary: { dark: "#8AABF5", light: "#406CC8" },
+    onSecondary: { dark: "#0e0f11", light: "#ffffff" }
   },
   deepTeal: {
     id: "deepTeal",
     label: "Deep Teal",
     solid: { dark: "#2FC2BE", light: "#0A7D78" },
-    onSolid: { dark: "#0e0f11", light: "#ffffff" }
+    onSolid: { dark: "#0e0f11", light: "#ffffff" },
+    // H+45°, wider than the usual ±30° - the naive rotation landed within a few degrees of the
+    // `info` status blue (and the reverse direction within a few degrees of `success` green), so
+    // this needed the larger offset to actually clear either.
+    //
+    // That rotation also landed in blue, same trap as sinclairBlue: matching the primary's own
+    // 47% lightness gave only 2.87:1 against canvas (2.35:1 against `--surface-hover`) once hue
+    // moved further into a WCAG-luminance-poor family. Lightened 47%→73%; light tone was already
+    // fine (12.6:1 against white).
+    secondary: { dark: "#90A7E4", light: "#0A2C7D" },
+    onSecondary: { dark: "#0e0f11", light: "#ffffff" }
   },
   phosphorGreen: {
     id: "phosphorGreen",
     label: "Phosphor Green",
     solid: { dark: "#76C842", light: "#3B7A16" },
-    onSolid: { dark: "#0e0f11", light: "#ffffff" }
+    onSolid: { dark: "#0e0f11", light: "#ffffff" },
+    // H-30° toward olive, same S/L as the primary.
+    secondary: { dark: "#B9C842", light: "#6D7A16" },
+    onSecondary: { dark: "#0e0f11", light: "#ffffff" }
   }
 };
 

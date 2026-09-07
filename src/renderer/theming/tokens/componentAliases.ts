@@ -209,6 +209,60 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-memory-pc-pointed": "var(--status-success-subtle)",
   "--color-memory-pointed": "var(--text-primary)",
 
+  /*
+   * Memory dump columns: address, hex byte, ASCII char.
+   *
+   * Deliberately scoped to the memory dump alone, not folded into the shared `--data-*` hierarchy
+   * that registers/watch/disassembly read - that hierarchy was flattened to neutral on purpose
+   * (see the comment above `--data-value` et al.) so an orange accent would not collide with an
+   * amber label in the densest panels. The memory dump is a classic hex-editor view instead of a
+   * dense register grid, so it can afford - and reads better for - real colour: the address column
+   * anchors the row in accent, the char column echoes it at lower strength so the two read as one
+   * family, and the hex bytes stay the brightest, boldest thing in the row (`--text-primary` +
+   * `.dumpSection`'s own bold weight) since they are what the user is actually here to read.
+   *
+   * The address/char family uses the accent's *primary* hue; the hovered-byte highlight below uses
+   * the *secondary* hue instead. Keeping those two on different hues is what lets a hovered byte
+   * read as "this is highlighted" instead of "this became an address": they sit right next to each
+   * other in the row, so sharing a hue would blur the two meanings.
+   */
+  "--color-memory-address": "var(--accent-text)",
+  "--color-memory-value": "var(--text-primary)",
+  "--color-memory-char": "var(--accent-text-subtle)",
+  /*
+   * The hovered byte (hex and its ASCII pair) uses the secondary accent - see the note above
+   * `--color-memory-address` for why the two columns deliberately use different hues from the
+   * same accent.
+   */
+  "--color-memory-highlight": "var(--accent-secondary-text)",
+  "--border-memory-highlight": "var(--accent-secondary-border)",
+
+  /*
+   * Disassembly columns: address, opcode bytes, decoded instruction, jump-target label.
+   *
+   * Same principles as the memory dump above, mapped onto disassembly's own columns rather than
+   * reusing memory's literal roles: the address anchors the row in accent, and the decoded
+   * instruction - what a disassembly view is actually for - takes the brightest, boldest neutral,
+   * the same "most legible thing in the row" treatment the memory dump gives its hex bytes.
+   *
+   * Address and the jump-target label (`L8000:`) both take the *primary* hue - a label is a name
+   * for the same address, not a different kind of information, so the two read as one family. The
+   * opcode bytes take the *secondary* hue instead: unlike the memory dump's char column, these are
+   * not being read as an extension of the address, so keeping them off the primary hue is what
+   * keeps a busy row from reading as "everything here is the address".
+   */
+  "--color-disassembly-address": "var(--accent-text)",
+  "--color-disassembly-instruction": "var(--text-primary)",
+  "--color-disassembly-opcodes": "var(--accent-secondary-text)",
+  "--color-disassembly-label": "var(--accent-text)",
+  /*
+   * The row the CPU is currently paused at - the same background wash the memory dump's hovered
+   * byte sits on (`--bgcolor-memory-hover`, itself `--surface-hover`), scoped independently rather
+   * than pointed at that name directly, matching every other `--color-disassembly-*`/
+   * `--color-memory-*` token here being its own view's token even where the value happens to agree.
+   */
+  "--bgcolor-disassembly-current": "var(--surface-hover)",
+
   // --- Explorer ---------------------------------------------------------------------------------
   "--color-explorer": "var(--text-secondary)",
   "--bgcolor-explorer-pointed": "var(--surface-hover)",

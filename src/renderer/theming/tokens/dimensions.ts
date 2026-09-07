@@ -35,9 +35,15 @@ export const RADIUS = {
  * `statusbar` drops from 40px to 26px — the single biggest density win, and it also fixes the
  * inversion where the least important strip in the window was the tallest. It only became viable
  * once the `.isMonospace` collision was fixed in Phase 0.4; before that the readouts were 16px.
+ *
+ * `toolbar` is the one exception to the 38px collapse: its tallest child is a 32px `IconButton`
+ * (see `Toolbar.tsx`), and 38px only left 1px of clearance above and below it — indistinguishable
+ * from touching, especially for a `selected` button's border ring, which sits right at the button's
+ * own edge. 42px gives that button 3px of clearance on each side without changing `Toolbar.tsx`'s
+ * padding, and restores the room the strip had pre-modernization.
  */
 export const STRIP = {
-  toolbar: "38px",
+  toolbar: "42px",
   statusbar: "26px",
   tabbar: "36px",
   sidebarHeader: "34px",

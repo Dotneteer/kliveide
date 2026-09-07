@@ -108,7 +108,8 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   return (
     <div
       className={classnames(styles.item, {
-        [styles.even]: index % 2 == 0
+        [styles.even]: index % 2 == 0,
+        [styles.execPoint]: viewModel.execPoint
       })}
       style={{ height: rowHeight }}
     >
@@ -130,11 +131,19 @@ export const DisassemblyRow = memo(function DisassemblyRow({
         * 60 -> 10ch, 160 -> 25ch. The address column is the roomiest of them — 7ch holding a
         * 4-character address — so there is slack to reclaim if these are ever sized to content.
         */}
-      <AddressLabel text={viewModel.addressText} width={viewModelParams.decimalView ? 8 : 7} />
-      <Secondary text={viewModel.opCodes} width={viewModelParams.decimalView ? "22ch" : "16ch"} />
-      <Label text={viewModel.labelText} width="10ch" />
+      <AddressLabel
+        text={viewModel.addressText}
+        width={viewModelParams.decimalView ? 8 : 7}
+        className={styles.disassemblyAddress}
+      />
+      <Secondary
+        text={viewModel.opCodes}
+        width={viewModelParams.decimalView ? "22ch" : "16ch"}
+        className={styles.disassemblyOpcodes}
+      />
+      <Label text={viewModel.labelText} width="10ch" className={styles.disassemblyLabel} />
       <div className={styles.tstates}>{viewModel.tstates}</div>
-      <Value text={viewModel.instruction} width="25ch" />
+      <Value text={viewModel.instruction} width="25ch" className={styles.disassemblyInstruction} />
       {item.hardComment && <Secondary text={"; " + item.hardComment} />}
     </div>
   );

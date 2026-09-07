@@ -84,7 +84,7 @@ export function ExplorerProjectItem({
       ) : (
         <FileNodeIcon iconName={node.data.icon} iconFill={node.data.iconFill} />
       )}
-      <LabelSeparator width={0} />
+      <LabelSeparator width={8} />
       <span className={styles.name}>{node.data.name}</span>
       <div className={styles.indent} style={{ width: 8 }}></div>
       <SpaceFiller />

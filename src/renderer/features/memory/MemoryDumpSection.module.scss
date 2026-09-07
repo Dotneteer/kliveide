@@ -5,27 +5,46 @@
   padding: 2px 0;
 }
 
-@keyframes borderColorChange {
+/*
+ * Overrides `AddressLabel`'s own (shared, neutral) colour for the memory dump only - disassembly
+ * rows use the same component and keep its default. Nested under `.dumpSection` rather than bare,
+ * so this beats `AddressLabel`'s own `.addressLabel` rule (from a separate stylesheet) on
+ * specificity alone, whichever order the two modules' CSS happens to load in.
+ */
+.dumpSection .memoryAddress {
+  color: var(--color-memory-address);
+  font-weight: 600;
+}
+
+@keyframes outlineColorChange {
   0% {
-    border-color: var(--border-color-dropdown-menu);
+    outline-color: var(--border-color-dropdown-menu);
   }
   20% {
-    border-color: var(--color-label);
+    outline-color: var(--color-label);
   }
   40% {
-    border-color: var(--border-color-dropdown-menu);
+    outline-color: var(--border-color-dropdown-menu);
   }
   60% {
-    border-color: var(--color-label);
+    outline-color: var(--color-label);
   }
   80% {
-    border-color: var(--border-color-dropdown-menu);
+    outline-color: var(--border-color-dropdown-menu);
   }
   100% {
-    border-color: var(--color-label);
+    outline-color: var(--color-label);
   }
 }
 
+/*
+ * Address, hex byte and char colours are memory-dump-specific (`--color-memory-*`), not the shared
+ * `--color-value`/`--color-label`/`--color-secondary-label` aliases the register, watch and
+ * disassembly panels read - those were deliberately flattened to neutral (see the comment above
+ * `--data-value` in semantic.ts) so this hex-editor-style view can stay colourful without
+ * reopening that clash. See the comment above `--color-memory-address` in componentAliases.ts for
+ * the palette's reasoning as a whole.
+ */
 .hexValues {
   position: relative;
   display: flex;
@@ -33,21 +52,41 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: flex-start;
-  color: var(--color-value);
+  color: var(--color-memory-value);
+  font-weight: 600;
   white-space: nowrap;
   width: fit-content;
   border: 1px solid transparent;
   z-index: 1;
 }
 
+/*
+ * `left`/`width` in the inline style (see `overlayStyle` in the component) already line this box
+ * up exactly with the hovered byte's own glyphs in the `hexValues` text underneath it - so this
+ * must add no horizontal inset of its own. `padding-left: 2px` used to do exactly that, shifting
+ * the overlay's (duplicate) text 2px right of the real glyphs it sits on top of - and a `border`
+ * has the same effect: it is part of the box model, so it pushes the content box (and the text
+ * inside it) 1px right of `left`, while the real, unbordered text underneath does not move.
+ * `outline` paints at the same position a border would without taking part in layout at all, so
+ * the highlighted text stays exactly where the real glyphs are.
+ */
+/*
+ * `.hexValues` centres its (single-line) text vertically with flex `align-items: center`. These
+ * overlays sit 1px above/below its edges (`top: -1px; bottom: -1px`) to bleed slightly past the
+ * row, so their own box is a couple of px taller than the text needs - without `display: flex;
+ * align-items: center` here too, that extra height is not evenly split around the text, and the
+ * plain block layout leaves it sitting near the top of the box: a "shifted up" highlighted byte
+ * relative to the real, centred text underneath.
+ */
 .byteHoverOverlay {
   position: absolute;
   top: -1px;
   bottom: -1px;
-  border: 1px solid var(--bgcolor-memory-pointed);
+  display: flex;
+  align-items: center;
+  outline: 1px solid var(--border-memory-highlight);
   background: var(--bgcolor-memory-hover);
-  color: var(--color-memory-pointed);
-  padding-left: 2px;
+  color: var(--color-memory-highlight);
   pointer-events: none;
 }
 
@@ -55,10 +94,11 @@
   position: absolute;
   top: -1px;
   bottom: -1px;
-  border: 1px solid transparent;
-  padding-left: 2px;
+  display: flex;
+  align-items: center;
+  outline: 1px solid transparent;
   pointer-events: none;
-  animation: borderColorChange 3s alternate;
+  animation: outlineColorChange 3s alternate;
   animation-delay: 400ms;
 }
 
@@ -68,7 +108,8 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: flex-start;
-  color: var(--color-secondary-label);
+  color: var(--color-memory-char);
+  font-weight: 600;
   white-space: nowrap;
 
   &:hover {
@@ -81,17 +122,18 @@
   display: flex;
   flex-grow: 0;
   flex-shrink: 0;
-  color: var(--color-secondary-label);
+  color: var(--color-memory-char);
   border: 1px solid transparent;
 }
 
+/* Mirrors `.byteHoverOverlay`: the char column's half of the same hovered byte. */
 .charHighlight {
   display: flex;
   flex-grow: 0;
   flex-shrink: 0;
   background: var(--bgcolor-memory-hover);
-  color: var(--color-memory-pointed);
-  border: 1px solid var(--bgcolor-memory-pointed);
+  color: var(--color-memory-highlight);
+  border: 1px solid var(--border-memory-highlight);
 }
 
 .charPlaceholder {
@@ -99,4 +141,45 @@
   flex-grow: 0;
   flex-shrink: 0;
   color: transparent;
+}
+
+/*
+ * The hovered-byte tooltip's lines, coloured to match the column each one describes - so the
+ * tooltip reads with the same hierarchy as the row instead of every line being identical,
+ * uncoloured text next to a now-colourful row (see `tooltipLines` in the component).
+ */
+.tooltipHeader {
+  color: var(--color-memory-address);
+  font-weight: 600;
+  margin-bottom: 0.25em;
+}
+
+.tooltipValue {
+  color: var(--color-memory-value);
+  font-weight: 600;
+}
+
+.tooltipCharDesc {
+  color: var(--color-memory-char);
+}
+
+.tooltipPointed {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  margin-top: 0.35em;
+}
+
+/*
+ * The hovered-byte tooltip's own box, distinct from the app's shared `.tooltip` (a lighter
+ * `--surface-overlay`) - a solid, darker surface and an accent-coloured border so the box itself
+ * carries the memory view's identity, matching the coloured lines inside it.
+ *
+ * Selector doubled to force higher specificity than `.tooltip` (both are single-class rules from
+ * different stylesheets, so which one wins would otherwise depend on load order) - `className` is
+ * merged onto the same element as `.tooltip` (see `Tooltip.tsx`), not used instead of it.
+ */
+.memoryTooltip.memoryTooltip {
+  background-color: var(--surface-canvas);
+  border: 1px solid var(--accent-border);
+  box-shadow: var(--shadow-3);
 }

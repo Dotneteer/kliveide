@@ -21,6 +21,15 @@
   &:hover {
     background: var(--bgcolor-disass-hover);
   }
+
+  /*
+   * The row the CPU is currently paused at. Declared last (same specificity as `.even` and
+   * `:hover` above, both one extra class/pseudo-class on `.item`) so it wins the cascade tie and
+   * this persistent, meaningful state is not overridden by the zebra stripe or a passing hover.
+   */
+  &.execPoint {
+    background: var(--bgcolor-disassembly-current);
+  }
 }
 
 .tstates {
@@ -30,4 +39,32 @@
   text-align: end;
   color: var(--color-doc-inactiveText);
   flex: 0 0 auto;
+}
+
+/*
+ * Same colouring principles as the memory dump (`--color-memory-*` in componentAliases.ts),
+ * mapped onto disassembly's own columns - see `--color-disassembly-*` there for the full
+ * reasoning. `AddressLabel`/`Secondary`/`Value`/`Label` are shared with registers, watch and
+ * elsewhere, so these are nested under `.item` rather than bare: same specificity trick as the
+ * memory dump's `.dumpSection .memoryAddress`, so this reliably beats those components' own
+ * single-class rules regardless of which stylesheet happens to load second.
+ */
+.item .disassemblyAddress {
+  color: var(--color-disassembly-address);
+  font-weight: 600;
+}
+
+.item .disassemblyInstruction {
+  color: var(--color-disassembly-instruction);
+  font-weight: 600;
+}
+
+.item .disassemblyOpcodes {
+  color: var(--color-disassembly-opcodes);
+  font-weight: 600;
+}
+
+.item .disassemblyLabel {
+  color: var(--color-disassembly-label);
+  font-weight: 600;
 }
