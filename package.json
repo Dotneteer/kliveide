@@ -93,7 +93,7 @@
     "eslint": "^10.9.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "execa": "^10.0.1",
-    "expect": "^30.5.0",
+    "expect": "^30.5.1",
     "jsdom": "^30.0.1",
     "lodash": "^4.18.1",
     "monaco-editor": "^0.55.1",
