@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { forwardRef } from "react";
 import classnames from "classnames";
 import styles from "./Data.module.scss";
 
@@ -20,6 +21,14 @@ import styles from "./Data.module.scss";
 
 type DataPanelProps = {
   children?: ReactNode;
+  /**
+   * Size to content instead of filling the parent.
+   *
+   * Set this whenever the panel's registry entry leaves `useScrollViewer` at its default, because
+   * then the host wraps the panel in a `ScrollViewer` and a panel pinned to `height: 100%` hides its
+   * own overflow before the viewer can scroll it.
+   */
+  autoHeight?: boolean;
   /** Extra class for panel-specific layout. Should be rare. */
   xclass?: string;
   style?: CSSProperties;
@@ -28,8 +37,11 @@ type DataPanelProps = {
 /**
  * The root of a data panel: fills its parent, monospace, tokenized type, and **selectable text**.
  */
-export const DataPanel = ({ children, xclass, style }: DataPanelProps) => (
-  <div className={classnames(styles.dataPanel, xclass)} style={style}>
+export const DataPanel = ({ children, autoHeight, xclass, style }: DataPanelProps) => (
+  <div
+    className={classnames(styles.dataPanel, xclass, { [styles.autoHeight]: autoHeight })}
+    style={style}
+  >
     {children}
   </div>
 );
@@ -113,6 +125,30 @@ export const PanelHeaderActions = ({ children }: { children?: ReactNode }) => (
   <div className={styles.panelHeaderActions}>{children}</div>
 );
 
+/**
+ * A heading *within* panel content — a disk track, a sector, a memory bank.
+ *
+ * Not a `PanelHeader`: that is a panel's own chrome, with a chrome surface and a bottom border.
+ * `DskViewerPanel` used one class for both roles, which is why its nested headings looked like
+ * strips of chrome dropped into the middle of a listing.
+ */
+export const SectionHeader = ({
+  title,
+  children,
+  clicked,
+  xclass
+}: PanelHeaderProps & { clicked?: () => void }) => (
+  <div
+    className={classnames(styles.sectionHeader, xclass, {
+      [styles.sectionHeaderClickable]: !!clicked
+    })}
+    onClick={clicked}
+  >
+    {title && <span>{title}</span>}
+    {children}
+  </div>
+);
+
 // ---------------------------------------------------------------------------------------------
 // Rows
 // ---------------------------------------------------------------------------------------------
@@ -123,6 +159,16 @@ type DataRowProps = {
   index?: number;
   hoverable?: boolean;
   clicked?: () => void;
+  /**
+   * A field row inside a register/state panel: the shared gap, none of the list chrome.
+   *
+   * The register panels draw 15px rows of label/value pairs. They are not list rows -- no striping,
+   * no hover, no click -- and giving them the 22px `--row-size-list` and the 8px side padding would
+   * have made the Z80 panel 47% taller. Slice 6.6 found this the way slice 6.0 found `HexByteGrid`:
+   * a panel that would not migrate cleanly means the primitive set is incomplete, not that the panel
+   * is special.
+   */
+  dense?: boolean;
   xclass?: string;
   style?: CSSProperties;
 };
@@ -134,19 +180,24 @@ type DataRowProps = {
  * a rule in `DisassemblyPanel.module.scss`, and another in `StaticMemoryView.module.scss`. This is
  * the one implementation.
  */
-export const DataRow = ({ children, index, hoverable, clicked, xclass, style }: DataRowProps) => (
-  <div
-    className={classnames(styles.dataRow, xclass, {
-      [styles.even]: index !== undefined && index % 2 === 0,
-      [styles.hoverable]: hoverable ?? !!clicked,
-      [styles.clickable]: !!clicked
-    })}
-    style={style}
-    onClick={clicked}
-  >
-    {children}
-  </div>
+export const DataRow = forwardRef<HTMLDivElement, DataRowProps>(
+  ({ children, index, hoverable, clicked, dense, xclass, style }, ref) => (
+    <div
+      ref={ref}
+      className={classnames(styles.dataRow, xclass, {
+        [styles.dense]: dense,
+        [styles.even]: index !== undefined && index % 2 === 0,
+        [styles.hoverable]: hoverable ?? !!clicked,
+        [styles.clickable]: !!clicked
+      })}
+      style={style}
+      onClick={clicked}
+    >
+      {children}
+    </div>
+  )
 );
+DataRow.displayName = "DataRow";
 
 // ---------------------------------------------------------------------------------------------
 // Values
@@ -154,41 +205,78 @@ export const DataRow = ({ children, index, hoverable, clicked, xclass, style }: 
 
 type CellProps = {
   text: string;
-  /** Width in `ch`, so columns survive a font or size change (M2). */
-  width?: number;
+  /**
+   * Width in `ch`, so columns survive a font or size change (M2).
+   *
+   * A string is passed through as a CSS length. Prefer sizing from a stylesheet via `xclass` —
+   * moving column widths out of React props and into CSS is the point of the measure scale — but
+   * the string form is what lets the `controls/layout` wrappers, whose `width` prop 21 files
+   * already pass, delegate here without changing their API.
+   */
+  width?: number | string;
   /** Highlights a value that moved since the last stop. */
   changed?: boolean;
   title?: string;
   xclass?: string;
 };
 
-const cellStyle = (width?: number): CSSProperties | undefined =>
-  width === undefined ? undefined : { width: `${width}ch` };
+const cellStyle = (width?: number | string): CSSProperties | undefined =>
+  width === undefined ? undefined : { width: typeof width === "number" ? `${width}ch` : width };
+
+/*
+ * The three cells forward their ref.
+ *
+ * That is what lets `controls/layout`'s `Label`/`Value`/`Secondary` keep their richer
+ * `TooltipFactory` API -- which 21 files import -- while delegating the actual cell to these
+ * primitives. Without it, the tooltip would need a wrapper element and the layout would change, and
+ * the alternative -- pulling `TooltipFactory` down into `controls/data` -- would put a hook on all
+ * 187 cells to serve the handful that show a tooltip.
+ */
 
 /** A field name. Recedes: `--data-label`. */
-export const DataLabel = ({ text, width, title, xclass }: CellProps) => (
-  <span className={classnames(styles.dataLabel, xclass)} style={cellStyle(width)} title={title}>
-    {text}
-  </span>
+export const DataLabel = forwardRef<HTMLSpanElement, CellProps>(
+  ({ text, width, title, xclass }, ref) => (
+    <span
+      ref={ref}
+      className={classnames(styles.dataLabel, xclass)}
+      style={cellStyle(width)}
+      title={title}
+    >
+      {text}
+    </span>
+  )
 );
+DataLabel.displayName = "DataLabel";
 
 /** The datum itself. The most legible thing in the row: `--data-value`. */
-export const DataValue = ({ text, width, changed, title, xclass }: CellProps) => (
-  <span
-    className={classnames(styles.dataValue, xclass, { [styles.changed]: changed })}
-    style={cellStyle(width)}
-    title={title}
-  >
-    {text}
-  </span>
+export const DataValue = forwardRef<HTMLSpanElement, CellProps>(
+  ({ text, width, changed, title, xclass }, ref) => (
+    <span
+      ref={ref}
+      className={classnames(styles.dataValue, xclass, { [styles.changed]: changed })}
+      style={cellStyle(width)}
+      title={title}
+    >
+      {text}
+    </span>
+  )
 );
+DataValue.displayName = "DataValue";
 
 /** An annotation beside a value — a decimal echo, a unit. */
-export const DataSecondary = ({ text, width, title, xclass }: CellProps) => (
-  <span className={classnames(styles.dataSecondary, xclass)} style={cellStyle(width)} title={title}>
-    {text}
-  </span>
+export const DataSecondary = forwardRef<HTMLSpanElement, CellProps>(
+  ({ text, width, title, xclass }, ref) => (
+    <span
+      ref={ref}
+      className={classnames(styles.dataSecondary, xclass)}
+      style={cellStyle(width)}
+      title={title}
+    >
+      {text}
+    </span>
+  )
 );
+DataSecondary.displayName = "DataSecondary";
 
 // ---------------------------------------------------------------------------------------------
 // Hex
@@ -218,15 +306,75 @@ export const HexValue = ({
   value,
   digits = 2,
   decimal,
-  prefix = "$",
+  prefix = HEX_PREFIX,
   changed,
   title
-}: HexValueProps) => {
-  const hex = (value >>> 0).toString(16).toUpperCase().padStart(digits, "0");
+}: HexValueProps) => (
+  <>
+    <DataValue text={formatHex(value, digits, prefix)} changed={changed} title={title} />
+    {decimal && <DataSecondary text={`(${value})`} />}
+  </>
+);
+
+/**
+ * The hex prefix used throughout the UI.
+ *
+ * `$` matches what the panels overwhelmingly already showed. Note that Klive's *own* Z80 dialect
+ * writes hex with `#` (`.org #7C00`), so the UI and the assembler disagree — a deliberate open
+ * question rather than an oversight. Changing it is a one-line edit here.
+ */
+export const HEX_PREFIX = "$";
+
+/**
+ * The single hex formatter.
+ *
+ * Exported as a function, not only as a component, because several call sites need the string
+ * outside JSX — `WatchPanel` builds tooltip text and array previews this way, and had drifted into
+ * producing **uppercase on one line and lowercase forty lines later** in the same file.
+ *
+ * Uppercase, because that is what the shared `toHexa2`/`toHexa4` helpers have always produced.
+ */
+export function formatHex(value: number, digits = 2, prefix = HEX_PREFIX): string {
+  return `${prefix}${(value >>> 0).toString(16).toUpperCase().padStart(digits, "0")}`;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Hex byte grid
+// ---------------------------------------------------------------------------------------------
+
+type HexByteGridProps = {
+  bytes: Uint8Array | number[];
+  /** Bytes per row. */
+  stride?: number;
+  /** Tooltip for byte `i`, if the caller has one. */
+  titleFor?: (index: number) => string | undefined;
+};
+
+/**
+ * A wrapped grid of hex bytes.
+ *
+ * The gap slice 6.0 found: every other part of `SysVarsPanel` migrated cleanly, but its array dump
+ * kept three private rules because the primitive set had nothing for a byte grid.
+ */
+export const HexByteGrid = ({ bytes, stride = 8, titleFor }: HexByteGridProps) => {
+  const rows: number[][] = [];
+  for (let i = 0; i < bytes.length; i += stride) {
+    rows.push(Array.from(bytes.slice(i, i + stride) as ArrayLike<number>));
+  }
   return (
-    <>
-      <DataValue text={`${prefix}${hex}`} changed={changed} title={title} />
-      {decimal && <DataSecondary text={`(${value})`} />}
-    </>
+    <div className={styles.hexByteGrid}>
+      {rows.map((row, r) => (
+        <div key={r} className={styles.hexByteRow}>
+          {row.map((b, c) => {
+            const index = r * stride + c;
+            return (
+              <span key={index} className={styles.hexByte} title={titleFor?.(index)}>
+                {formatHex(b, 2, "")}
+              </span>
+            );
+          })}
+        </div>
+      ))}
+    </div>
   );
 };

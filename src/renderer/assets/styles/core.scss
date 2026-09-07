@@ -78,7 +78,12 @@ $splitterHighlightColor: "blue";
   width: auto;
   padding: 0;
   font-family: var(--monospace-font);
-  font-size: 0.8em;
+  /*
+   * M1: absolute, not `em`. This was `0.8em` of the 16px root = 12.8px, which is where the panels'
+   * `ch` columns were tuned. Pinning it to the same 12px as `.dataPanel` makes 1ch exactly 6px in
+   * every data panel, so a `ch` width means the same thing whichever stack drew the row.
+   */
+  font-size: var(--font-size-200);
   padding: 4px 4px 4px 8px;
 }
 

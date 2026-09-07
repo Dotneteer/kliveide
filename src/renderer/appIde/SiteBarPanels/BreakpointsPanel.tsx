@@ -21,7 +21,7 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { MemorySection } from "../disassemblers/common-types";
 import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySectionType } from "@abstractions/MemorySection";
-import { EmptyState } from "@renderer/controls/data";
+import { DataRow, EmptyState } from "@renderer/controls/data";
 
 export const BreakpointsPanel = () => {
   const emuApi = useEmuApi();
@@ -146,7 +146,7 @@ export const BreakpointsPanel = () => {
               }
 
               return (
-                <div className={styles.breakpoint}>
+                <DataRow hoverable>
                   <LabelSeparator />
                   <BreakpointIndicator
                     partition={
@@ -181,7 +181,7 @@ export const BreakpointsPanel = () => {
                         <Value text={disassLines.current[idx] ?? "???"} width="auto" />
                       </>
                     )}
-                </div>
+                </DataRow>
               );
             } catch (e) {
               return <div key={idx} />;

@@ -2,14 +2,15 @@ import styles from "./LabeledFlag.module.scss";
 import { Flag } from "@renderer/controls/layout/Flag";
 import { Label } from "@renderer/controls/layout/Label";
 
-const LAB_WIDTH = 48;
-const FLAG_WIDTH = 16;
+// M2: `ch`, not px. Capacity preserved from the px width at its old 12.8px size (px / 6.4).
+const LAB_WIDTH = "8ch";
+const FLAG_WIDTH = "3ch"; // 16px / 6.4 = 2.5
 
 type Props = {
   label: string;
-  width?: number;
+  width?: string | number;
   value: boolean;
-  flagWidth?: number;
+  flagWidth?: string | number;
   toolTip?: string;
   center?: boolean;
 };

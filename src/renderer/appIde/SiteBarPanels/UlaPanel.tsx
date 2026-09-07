@@ -5,10 +5,11 @@ import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { UlaState } from "@common/messaging/EmuApi";
-import { BitValue, FlagValue, SimpleValue } from "@renderer/controls/valuedisplay/Values";
-import { Col, SidePanel } from "@renderer/controls/valuedisplay/Layout";
+import { BitValue, FlagValue, SimpleValue } from "@renderer/controls/data/registers";
+import { DataPanel, DataRow } from "@renderer/controls/data";
 
-const LAB_WIDTH = 48;
+// M2: `ch`, not px. Capacity preserved from the px width at its old 12.8px size (px / 6.4).
+const LAB_WIDTH = "8ch"; // 48px / 6.4 = 7.5
 
 export const UlaPanel = () => {
   const emuApi = useEmuApi();
@@ -28,24 +29,24 @@ export const UlaPanel = () => {
   };
 
   return (
-    <SidePanel>
-      <Col>
+    <DataPanel autoHeight>
+      <DataRow dense>
         <SimpleValue label="FCL" value={ulaState?.fcl} tooltip="FrameClock" />
         <SimpleValue label="FRM" value={ulaState?.frm} tooltip="#of frames rendered" />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <SimpleValue label="RAS" value={ulaState?.ras} tooltip="Current raster line" />
         <SimpleValue label="POS" value={ulaState?.pos} tooltip="Pixel in the current line" />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <SimpleValue label="PIX" value={ulaState?.pix} tooltip="Pixel operation" />
         <SimpleValue label="BOR" value={ulaState?.bor} tooltip="Current border color" />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <SimpleValue label="FLO" value={ulaState?.flo} tooltip="Floating bus value" />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue label="CON" value={ulaState?.con} tooltip="Contention tacts" fullWidth />
         <SimpleValue
           label="LCO"
@@ -53,13 +54,13 @@ export const UlaPanel = () => {
           tooltip="Contention tacts since last pause"
           fullWidth
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue label="EAR" value={ulaState?.ear} tooltip="EAR bit value" />
         <FlagValue label="MIC" value={ulaState?.mic} tooltip="MIC bit value" />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <Label text="KL0" width={LAB_WIDTH} tooltip="Keyboard line #0" />
         <KeyboardLine
           lineNo={0}
@@ -67,8 +68,8 @@ export const UlaPanel = () => {
           titles={["Caps Shift", "Z", "X", "C", "V"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Label text="KL1" width={LAB_WIDTH} tooltip="Keyboard line #1" />
         <KeyboardLine
           lineNo={1}
@@ -76,8 +77,8 @@ export const UlaPanel = () => {
           titles={["A", "S", "D", "F", "G"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Label text="KL2" width={LAB_WIDTH} tooltip="Keyboard line #2" />
         <KeyboardLine
           lineNo={2}
@@ -85,8 +86,8 @@ export const UlaPanel = () => {
           titles={["Q", "W", "E", "R", "T"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Label text="KL3" width={LAB_WIDTH} tooltip="Keyboard line #3" />
         <KeyboardLine
           lineNo={3}
@@ -94,8 +95,8 @@ export const UlaPanel = () => {
           titles={["1", "2", "3", "4", "5"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Label text="KL4" width={LAB_WIDTH} tooltip="Keyboard line #4" />
         <KeyboardLine
           lineNo={4}
@@ -103,8 +104,8 @@ export const UlaPanel = () => {
           titles={["0", "9", "8", "7", "6"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Label text="KL5" width={LAB_WIDTH} tooltip="Keyboard line #5" />
         <KeyboardLine
           lineNo={5}
@@ -112,8 +113,8 @@ export const UlaPanel = () => {
           titles={["P", "O", "I", "U", "Y"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Label text="KL6" width={LAB_WIDTH} tooltip="Keyboard line #6" />
         <KeyboardLine
           lineNo={6}
@@ -121,8 +122,8 @@ export const UlaPanel = () => {
           titles={["Enter", "L", "K", "J", "H"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Label text="KL7" width={LAB_WIDTH} tooltip="Keyboard line #7" />
         <KeyboardLine
           lineNo={7}
@@ -130,7 +131,7 @@ export const UlaPanel = () => {
           titles={["Space", "Symbol Shift", "M", "N", "B"]}
           clicked={keyClicked}
         />
-      </Col>
+      </DataRow>
       {machineId === "sp128" && (
         <>
           <Separator />
@@ -138,7 +139,7 @@ export const UlaPanel = () => {
           <SimpleValue label="RAMB" value={ulaState?.ramB} tooltip="Current RAM bank" />
         </>
       )}
-    </SidePanel>
+    </DataPanel>
   );
 };
 
@@ -154,13 +155,13 @@ const KeyboardLine = ({ value, titles, lineNo, clicked }: FlagLineProps) => {
     val !== undefined ? !!(val & (1 << bitNo)) : undefined;
   const lineClicked = (bitNo: number) => clicked?.(lineNo, bitNo);
   return (
-    <Col>
+    <DataRow dense>
       <BitValue value={toFlag(value, 4)} clicked={() => lineClicked(4)} tooltip={titles?.[4]} />
       <BitValue value={toFlag(value, 3)} clicked={() => lineClicked(3)} tooltip={titles?.[3]} />
       <BitValue value={toFlag(value, 2)} clicked={() => lineClicked(2)} tooltip={titles?.[2]} />
       <BitValue value={toFlag(value, 1)} clicked={() => lineClicked(1)} tooltip={titles?.[1]} />
       <BitValue value={toFlag(value, 0)} clicked={() => lineClicked(0)} tooltip={titles?.[0]} />
-    </Col>
+    </DataRow>
   );
 };
 

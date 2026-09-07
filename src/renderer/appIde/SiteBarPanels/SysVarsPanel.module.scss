@@ -1,8 +1,11 @@
 @use "@styles/core.scss" as *;
 
 /*
- * Only what is genuinely specific to this panel. The root block and the empty state now come from
- * `controls/data`; `.sysVar`, `.center` and `.sysVarsPanel` are gone with them.
+ * All that is left of this panel's own styling.
+ *
+ * The root block, empty state, row and byte grid all come from `controls/data` now; `.byteValue`,
+ * `.dumpRows` and `.dumpSection` went with `HexByteGrid`, which slice 6.0 identified as the missing
+ * primitive that was keeping them alive.
  */
 
 .sysVarValue {
@@ -11,30 +14,4 @@
   align-items: center;
   gap: var(--measure-gap);
   width: fit-content;
-}
-
-.byteValue {
-  display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-  color: var(--data-value);
-  justify-content: center;
-  width: var(--measure-hex2);
-
-  &:hover {
-    background: var(--bgcolor-disass-hover);
-  }
-}
-
-.dumpRows {
-  display: flex;
-  flex-direction: column;
-}
-
-.dumpSection {
-  display: flex;
-  flex-direction: row;
-  flex-shrink: 0;
-  flex-grow: 0;
-  gap: var(--measure-gap);
 }

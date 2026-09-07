@@ -13,9 +13,10 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { EmptyState } from "@renderer/controls/data";
+import { DataRow, EmptyState, formatHex } from "@renderer/controls/data";
 
-const LABEL_WIDTH = 120;
+// M2: `ch`, not px. Capacity preserved from the px width at its old 12.8px size (px / 6.4).
+const LABEL_WIDTH = "19ch"; // 120px / 6.4 = 18.75
 
 type WatchEntry = {
   symbol: string;
@@ -147,7 +148,7 @@ const WatchItem = memo(({ watch }: WatchItemProps) => {
   const tip = watch ? `(${watch.typeName}) Right-click to delete '${watch.symbol}'` : "";
 
   return watch ? (
-    <div className={styles.watchItem}>
+    <DataRow hoverable>
       <LabelSeparator />
       <div ref={watchRef} style={{ cursor: "pointer" }} onContextMenu={handleRemove}>
         <Icon iconName={watch.icon} width={16} height={16} fill={watch.fill} />
@@ -163,7 +164,7 @@ const WatchItem = memo(({ watch }: WatchItemProps) => {
       <LabelSeparator width={8} />
       <Label text={watch.symbol} width={LABEL_WIDTH} />
       <Value text={watch.value} />
-    </div>
+    </DataRow>
   ) : null;
 });
 
@@ -173,10 +174,8 @@ function formatIntegerWatchValue(watch: WatchInfo, mem: Uint8Array, symbolInfo: 
     const wtype = watch.type ?? "b";
     const val = (Number(symbolInfo.value?._value) | 0) as number;
 
-    const formatNum = (num: number, width: 2 | 4 | 8): string => {
-      const hex = num >>> 0; // ensure unsigned for display
-      return `$${hex.toString(16).toUpperCase().padStart(width, "0")} (${hex})`;
-    };
+    const formatNum = (num: number, width: 2 | 4 | 8): string =>
+      `${formatHex(num, width)} (${num >>> 0})`;
 
     // Helper to wrap addresses to 16-bit range and read byte(s)
     const readByte = (addr: number) => mem[(addr & 0xffff) >>> 0];
@@ -224,7 +223,8 @@ function formatIntegerWatchValue(watch: WatchInfo, mem: Uint8Array, symbolInfo: 
       const maxPreview = Math.min(len, 16);
       for (let i = 0; i < maxPreview; i++) {
         const b = readByte(addr + i);
-        bytes.push(b.toString(16).padStart(2, "0"));
+        // Was lowercase and unprefixed, unlike formatNum forty lines above in this same file.
+        bytes.push(formatHex(b, 2, ""));
       }
       const suffix = len > maxPreview ? ` … (+${len - maxPreview})` : "";
       return bytes.join(" ") + suffix;

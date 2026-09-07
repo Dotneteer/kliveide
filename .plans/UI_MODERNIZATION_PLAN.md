@@ -381,6 +381,26 @@ silently mistuning the way the Iosevka switch just did (§2.4d):
 --measure-gap                      0.8ch  (matches the existing DisassemblyPanel idiom)
 ```
 
+**The measured basis (slice 6.5).** Iosevka's advance was measured, not assumed — both in a
+standalone probe against the bundled `iosevka-400.woff2` and in the running app via CDP:
+
+| context | font-size | 1ch |
+|---|---|---|
+| `.dataPanel` (the target) | 12px Iosevka | **6.000px** |
+| legacy panel root (`font-size: 0.8em` of the 16px root) | 12.8px | 6.400px |
+| Menlo fallback, for comparison | 12px | 7.225px |
+
+Iosevka is exactly **0.5em** at every size tested (11/12/13/15/16px). Two consequences:
+
+1. Slices 6.0–6.2 converted against roughly the *Menlo* figure (48px→7ch, 64px→9ch, i.e. ~7.1px/ch),
+   so those columns came out ~15% narrower than the px they replaced. Live measurement of all 187
+   migrated cells shows **zero clipping**, so this is tighter-than-before rather than broken, and is
+   left alone; it is recorded here so the discrepancy is not rediscovered as a bug.
+2. `ch` on a `DataLabel` only means 6px if an ancestor is `.dataPanel`. Legacy `Label`/`Value` cells
+   inherit their family, and several were measured rendering in **Inter**, not Iosevka — a
+   proportional font, where a `ch` column does not align at all. **Converting a panel's cells to
+   `DataLabel`/`DataValue` therefore requires converting its root to `DataPanel` in the same edit.**
+
 The 18 hardcoded px widths are converted; the 9 existing `ch` values become the canonical pattern.
 
 **M3 — Dimension tokens that affect row height must be readable from JS.** `MEMORY_ROW_ITEM_SIZE = 20`
@@ -1326,7 +1346,7 @@ cheap and I should not have dropped it** — the same class of mistake nearly co
 | **6.3** | `DataRow` | 16 separate row rules with 8 different paddings | Low–medium |
 | **6.4** | `HexValue` / `FlagValue` / `BitValue` | 6 "labeled hex value" implementations | **Medium** — unifies real behaviour differences: uppercase vs lowercase hex, `$` prefix present in some panels and absent in others. Decide the convention here and apply it everywhere. |
 | **6.5** | `DataLabel` / `DataValue` + the `ch` measure scale (M2) | 13 magic width constants, 6 different label widths, 6 CSS widths in `valuedisplay` | **Highest.** Moves sizing out of React props into CSS, which changes how `Label`/`Value`/`Flag`/`Text` are called app-wide. **Sub-slice by folder:** SiteBarPanels first, then DocumentPanels. |
-| **6.6** | `DataPanel` root + delete the old stacks | 10 near-identical roots; removes one of the two `Row` components and one of the two `.label`/`.value` implementations | Medium — but by now every consumer has already moved. |
+| **6.6** | `DataPanel` root + `DataLabel`/`DataValue` migration + delete the old stacks | 10 near-identical roots; removes one of the two `Row` components and one of the two `.label`/`.value` implementations | Medium — but by now every consumer has already moved. **Carries three items handed over by 6.5:** (a) the `DataLabel`/`DataValue` component migration itself, which 6.5 could not do because `ch` is only 6px under a `.dataPanel` ancestor; (b) the label/value column misalignment between `valuedisplay` and `layout/Label` — equal widths are not enough, `layout/Label`'s `0.4em` side margins have to go and `DataRow`'s `gap` replace them; (c) the `fullWidth` defect that renders `CON 0LCO 0` in the ULA panel, fixed for free by that same `gap`. |
 
 Each slice ships independently and leaves the app coherent: a slice that unifies empty states while
 41 panels still use the old row markup is not a half-finished state, because empty states are
@@ -1393,6 +1413,164 @@ built on: consolidate first, then delete the consolidated thing once a primitive
   panel content — a track, a sector — not a panel's own header. Forcing them into `PanelHeader` would
   put a chrome surface and a bottom border in the middle of a data listing. They want a
   `SectionHeader` primitive, which belongs with slice 6.3's row work.
+
+#### Slice 6.3 retrospective — `DataRow` *(2026-09-07)*
+
+490 jsdom tests, 54 theming tests, build green, `tsc` unchanged at 174. Net **-38 lines** in
+`SiteBarPanels/`.
+
+**Five row rules replaced across 23 call sites** — `Breakpoints`, `NecUpd765`, `Watch`, `NextReg`
+and `MemMapping` (18 rows on its own). Verified at runtime: **39 `DataRow`s** rendering at 22px with
+`0 8px` padding and a 4.8px gap — that is `--row-size-list`, `--space-2`, and `0.8ch` resolving
+against the 12px mono. The `ch` measure works in practice, not just in principle.
+
+Four different paddings collapsed into one: `2px 8px`, `2px 0`, `2px`, and none at all — plus a
+stray `min-height: 20px` on `WatchPanel` that no other row had.
+
+**`SectionHeader` landed here**, as slice 6.2 flagged it should. It is deliberately *not* a
+`PanelHeader`: a section heading sits inside content — a disk track, a sector, a memory bank — so it
+reads as a heavier data row (recessed background, label colour, no border) rather than carrying the
+chrome surface and bottom border that would drop a strip of chrome into the middle of a listing.
+
+**The closings needed a real parser.** 23 `<div>` tags had to become `</DataRow>`, and a naive
+replace is precisely the mistake that rewrote `ByteValue`'s closing tag in slice 6.0. I wrote a small
+depth-matcher instead — walk forward from each opening tag, track `<div>` depth, replace the `</div>`
+at depth 0 — which closed all 23 correctly on the first run. **For a structural edit at this scale,
+the ten minutes spent on a matcher is cheaper than one silent mis-close.**
+
+**A trap the guard clause created.** My "add the import" helper skipped any file that already
+imported from `controls/data`, which after slice 6.1 meant three panels got `DataRow` used but never
+imported. TypeScript caught it immediately. The fix was to *extend* the existing named imports rather
+than test for the module path.
+
+**Deliberately not migrated:**
+
+- `ExplorerPanel.item` — a tree row with indentation and selection states, a different role.
+- `DisassemblyPanel.item` — its height is pinned to `rowSizes.disassembly` for the virtualizer;
+  it belongs with slice 7.4's virtualization contract.
+- `StaticMemoryView`, `StaticMemoryDump`, `BasicPanel` — the `DocumentPanels` rows, which want the
+  same treatment but were not in this slice's scope.
+- `SjasmplusIntegrationDialog.row` — a dialog, outside Phase 6 entirely.
+
+#### Slice 6.4 retrospective — hex values *(2026-09-07)*
+
+490 jsdom tests, 54 theming tests, build green, `tsc` unchanged at 174.
+
+**The convention is settled: uppercase, `$`-prefixed.** Uppercase was not a coin flip — the shared
+`toHexa2`/`toHexa4` helpers have always produced it, so `WatchPanel:226`'s lowercase array preview
+was simply a fork, forty lines below a `formatNum` in the *same file* that produced uppercase. Both
+now route through one function.
+
+**`formatHex` is exported as a function, not only as a component.** That is what made the
+unification possible: several call sites need the string outside JSX — tooltip text, array previews —
+and a component-only API is exactly why six separate implementations existed.
+
+**`HexByteGrid` closes the gap slice 6.0 found.** `SysVarsPanel` had migrated everything except its
+array dump, which kept `.byteValue`, `.dumpRows` and `.dumpSection` alive purely because the
+primitive set had nothing for a byte grid. Its stylesheet is now **40 lines → 18**, and the panel's
+three local components (`FullDumpSection`, `DumpSection`, `ByteValue`) are gone.
+
+`BlinkPanel`'s local `ValueFieldRow` — a fourth private "labelled hex value" — is gone too, and its
+`LAB_WIDTH` moved from `48px` to `7ch`.
+
+**An open question I am flagging rather than deciding silently.** The UI uses `$` for hex, and that
+is what shipped. But **Klive's own Z80 dialect writes hex with `#`** — the project's own source reads
+`.org #7C00`, `call #1601`. So the debugger and the assembler disagree about how a hex number looks,
+in the same product. `$` was chosen because it matches what the panels overwhelmingly already showed
+and is a legitimate Z80 prefix, but the inconsistency is real. It is a one-line change:
+`HEX_PREFIX` in `controls/data/index.tsx`.
+
+#### Slice 6.5 retrospective — the `ch` measure scale *(2026-09-07)*
+
+19686 tests pass (490 jsdom), build green, `tsc` unchanged at 174. Zero clipped cells measured in the
+live app across every migrated and converted panel.
+
+**I measured the font instead of trusting the plan, and the plan was right while my arithmetic was
+wrong.** Iosevka is exactly **0.5em** at every size tested, confirmed twice — a standalone probe
+against the bundled `iosevka-400.woff2`, and `document.fonts.check` plus a 100-glyph span inside the
+running app. So 1ch = 6px at the 12px data font. Slices 6.0-6.2 had converted against roughly *Menlo's*
+7.2px/ch (48px→7ch, 64px→9ch), producing columns ~15% narrower than the px they replaced. I went into
+this slice expecting to file that as a regression; measuring all 187 migrated cells in the live app
+showed **zero clipping**, so it is tighter-than-before rather than broken, and it stays. The lesson is
+narrower than "measure things": *the arithmetic looking wrong is not evidence that the rendering is*.
+
+**The real blocker was discovered by measurement, not by reading.** `ch` on a `DataLabel` only means
+6px if an ancestor is `.dataPanel`. Legacy `Label`/`Value` cells set no font-family, and several were
+measured rendering in **Inter** — a proportional font, where a `ch` column does not align at all.
+That is why this slice converts the *measure scale* and pins the panel roots, and leaves the
+`DataLabel`/`DataValue` component migration to 6.6, where `valuedisplay` is deleted anyway. Splitting
+it that way was forced by the evidence; the original slice description had them as one job.
+
+**One mixin did most of the work.** `side-panel-content` carried `font-size: 0.8em` (12.8px off the
+16px root) and feeds four sidebar data panels. Pinning it to `--font-size-200` put every data panel on
+the same 12px Iosevka as `.dataPanel`, so a `ch` width now means the same thing whichever stack drew
+the row. Measured after: `valuedisplay .label` 44px → 42px (7ch), `.value` 48px → 48px (8ch) — the
+value column did not move at all.
+
+**A misalignment that has always been there, now documented rather than half-fixed.**
+`Values.module.scss` declared a 44px label while `UlaPanel` and `FlagFieldRow` passed 48px to sit
+beside it and `VicPanel` passed 41px, and `layout/Label` additionally carries `0.4em` side margins
+that the `valuedisplay` label has not. Equalising the widths alone would *not* have aligned them, so
+I deliberately preserved each component's own capacity rather than snapping them to one token and
+claiming a fix. 6.6 settles it, when both stacks land on `DataRow` and its real `gap`.
+
+**A live defect for 6.6, found by screenshot after all automated gates passed.** `SimpleValue`'s
+`fullWidth` sets an inline `width: auto`, and with no gap on the row the value butts straight into the
+next label: the ULA panel renders **`CON 0LCO 0`**. Confirmed in the DOM as pre-existing
+(`inlineWidth: "auto"`, 6px wide, no trailing space) and untouched by this slice. `DataRow`'s
+`gap: var(--measure-gap)` removes the whole class of bug.
+
+**Still unverified:** `WatchPanel`'s `LABEL_WIDTH` (19ch) and `MemMappingPanel`'s `VAR_WIDTH` (17ch)
+were converted but could not be seen — the watch list was empty and memory mapping needs a machine
+that was not loaded. `NextRegPanel`, `VicPanel` and `BlinkPanel` are ZX Next / C64 / Z88 only and were
+likewise not renderable in this session's machine. Their conversions are arithmetic-only.
+
+#### Slice 6.6 retrospective — `DataPanel` root, and deleting the third stack *(2026-09-07)*
+
+19686 tests pass (490 jsdom), build green, `tsc` **166** — eight below the 174 baseline.
+`controls/valuedisplay/` is gone (4 files), `controls/layout/FlagRow.tsx` with it; net −292 lines.
+
+**There were three `.label`/`.value` implementations, not two.** The plan said two. `controls/data`,
+`controls/layout` and `controls/valuedisplay` each had their own, and the deciding fact was import
+counts: `controls/layout/Label` has **21 importers** against `valuedisplay`'s 6. So the layout
+wrappers now delegate their cell to `controls/data` and keep only what is theirs — the
+`TooltipFactory` behaviour — and the register components moved to `controls/data/registers.tsx`.
+Making the three data cells `forwardRef` is what made that possible without either adding a wrapper
+element or pushing a tooltip hook onto all 187 cells.
+
+**Three bugs, all found after the automated gates were green, none by them.**
+
+1. **`DataRow` had no `flex-shrink: 0`.** The stack it replaced set `flex-grow: 0; flex-shrink: 0`;
+   `DataRow` did not. Inside a column that overflows — the ULA panel is taller than the sidebar
+   gives it — the flex algorithm compressed every row. Measured at **8px against a 15px line**, with
+   the text still painting outside its own row box, which is exactly why no clipping check saw it.
+2. **`DataPanel` clipped the panels that do not scroll themselves.** `.dataPanel` fills its parent
+   and hides overflow, which suits the panels the registry marks `useScrollViewer: false`. For the
+   rest the *host* supplies the viewer, and a panel pinned to `height: 100%` never lets that viewer
+   see any overflow: the Z80 panel measured a **325px content box inside a 247px client box** with
+   `overflow-y: hidden`, so IM, IF1, INT, CLK and TSP were on screen nowhere and unreachable by
+   scrolling. The stack this replaced sized to content. Hence `DataPanel autoHeight`, set on the
+   five panels whose registry entries leave `useScrollViewer` at its default.
+3. **The `fullWidth` defect handed over from 6.5 is fixed**, as predicted, by `DataRow`'s `gap`:
+   `CON 0LCO 0` now reads `CON 0 LCO 0`.
+
+The first two are the same mistake in two forms: **I replaced a container without checking which of
+its declarations were load-bearing.** `flex: 0 0 auto` and `height: auto` both looked like noise in
+the old stylesheets and both were the only thing standing between the panel and a layout collapse.
+Deleting a stack means reading what it did, not just what it looked like.
+
+**A gap in the 6.5 survey, caught by a test.** `LayoutPrimitives` failed with `width: 320px` against
+an expected `40px`: delegating `layout/Label` to `DataLabel` silently reinterpreted its numeric
+`width` from px to `ch`. Seven call sites pass bare numbers — `DisassemblyRow`'s `width={160}`
+instruction column would have become 960px. My 6.5 survey grepped `const …WIDTH` and never saw
+inline literals. Numbers therefore stay **px** in the `controls/layout` wrappers, via one shared
+`cssWidth` helper, and the tabular call sites move to explicit `ch` strings before that branch dies.
+One jsdom test was worth more here than every measurement I took by hand.
+
+**Two things deferred, honestly.** `MemMappingPanel`, `PsgPanel` and `PalettePanel` still use the old
+`side-panel-content` mixin rather than `DataPanel`; and `layout/Label`'s `legacySpacing` modifier
+still exists for cells that are not yet inside a `DataRow`. Both are bounded and belong with the
+remaining panel migrations.
 
 #### The ratchet
 

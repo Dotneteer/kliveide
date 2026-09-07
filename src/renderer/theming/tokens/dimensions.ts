@@ -98,8 +98,22 @@ export const MEASURE = {
   hex2: "2ch",
   hex4: "4ch",
   hex8: "8ch",
-  label: "6ch",
-  value: "9ch"
+  /**
+   * The label and value columns of the register/state panels.
+   *
+   * 7ch/8ch preserve the character capacity the previous 44px/48px had at the 12.8px those panels
+   * used to render at (44/6.4 = 6.9, 48/6.4 = 7.5), rounded up so nothing that fitted before clips.
+   *
+   * These used to disagree with the columns `controls/layout/Label` drew beside them:
+   * `Values.module.scss` declared a 44px label while `UlaPanel` and `FlagFieldRow` passed 48px to
+   * sit next to it and `VicPanel` passed 41px, and `layout/Label` carried `0.4em` side margins that
+   * the `valuedisplay` label had not. Slice 6.6 removed the disagreement at the source: the third
+   * stack is gone, every register row is a `DataRow` whose `gap` supplies the spacing, and both
+   * columns read these tokens. `layout/Label`'s margin survives only as `legacySpacing`, for the
+   * cells that are not inside a `DataRow` yet.
+   */
+  label: "7ch",
+  value: "8ch"
 } as const;
 
 /**

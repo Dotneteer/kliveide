@@ -14,7 +14,7 @@ import { Icon } from "@renderer/controls/Icon";
 import { createEmuApi } from "@common/messaging/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { EmptyState } from "@renderer/controls/data";
+import { DataRow, EmptyState } from "@renderer/controls/data";
 
 export const NecUpd765Panel = () => {
   const { messenger } = useRendererContext();
@@ -64,7 +64,7 @@ export const NecUpd765Panel = () => {
                 break;
             }
             return (
-              <div className={styles.entry}>
+              <DataRow hoverable>
                 <LabelSeparator />
                 <Icon iconName={icon} width={16} height={16} fill={iconColor} />
                 <LabelSeparator width={8} />
@@ -74,7 +74,7 @@ export const NecUpd765Panel = () => {
                 <LabelSeparator width={8} />
                 <Label text={item.phase ?? " "} width={16} />
                 <Secondary text={item.comment ?? ""} />
-              </div>
+              </DataRow>
             );
           }}
         />

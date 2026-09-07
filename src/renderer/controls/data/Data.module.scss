@@ -26,6 +26,22 @@
   user-select: text;
 }
 
+/*
+ * A panel whose host wraps it in a `ScrollViewer`.
+ *
+ * `.dataPanel` fills its parent and hides its overflow, which is right for the panels that manage
+ * their own scrolling — the registry marks those `useScrollViewer: false`. For the rest the host
+ * supplies the viewer, and a panel pinned to `height: 100%` never lets that viewer see any overflow:
+ * the Z80 panel measured a 325px content box inside a 247px client box with `overflow-y: hidden`,
+ * so IM, IF1, INT, CLK and TSP were on screen nowhere and could not be scrolled to. The stack this
+ * replaced sized to its content (`height: auto`), which is what a scrolled panel needs.
+ */
+.autoHeight {
+  height: auto;
+  overflow: visible;
+  flex: 0 0 auto;
+}
+
 /* Chrome inside a data panel — headers, toolbars — should not be selectable. */
 .noSelect {
   user-select: none;
@@ -72,9 +88,28 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  /*
+   * A row keeps its height when the panel overflows.
+   *
+   * The stack this replaced set `flex-grow: 0; flex-shrink: 0` and `DataRow` did not, so inside a
+   * column that overflows — the ULA panel, which is taller than the space the sidebar gives it —
+   * every row was compressed by the flex algorithm. Measured at **8px against a 15px line**, with
+   * the text still painting outside its own row box, which is why no clipping check caught it.
+   */
+  flex: 0 0 auto;
   min-height: var(--row-size-list);
   padding: 0 var(--space-2);
   gap: var(--measure-gap);
+}
+
+/*
+ * A field row in a register/state panel. Keeps the gap -- which is the point -- and drops the list
+ * chrome. The gap is also what fixes `SimpleValue fullWidth`, where an auto-width value used to butt
+ * straight into the next label and render `CON 0LCO 0` in the ULA panel.
+ */
+.dense {
+  min-height: 0;
+  padding: 0;
 }
 
 /* Zebra striping, previously expressed three different ways: inline props, and two stylesheets. */
@@ -158,4 +193,67 @@
   align-items: center;
   gap: var(--space-1);
   margin-left: auto;
+}
+
+/*
+ * A section header *inside* panel content — a disk track, a sector, a memory bank.
+ *
+ * Distinct from `PanelHeader`, which is a panel's own chrome. Slice 6.2 found `DskViewerPanel` using
+ * the same `.header` class for both roles; giving a section header the panel-chrome surface and
+ * bottom border would drop a strip of chrome into the middle of a data listing.
+ *
+ * So this reads as a heavier data row rather than as chrome: no border, a recessed background, and
+ * the label colour rather than the header colour.
+ */
+.sectionHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: var(--row-panelHeader);
+  padding: 0 var(--space-2);
+  gap: var(--space-2);
+  background: var(--bgcolor-disass-even-row);
+  color: var(--data-label);
+  font-weight: 600;
+  user-select: none;
+}
+
+.sectionHeaderClickable {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+/*
+ * A grid of hex bytes — a system-variable array, a small buffer.
+ *
+ * Slice 6.0 surfaced this as a genuine gap: `SysVarsPanel` still owned `.byteValue`, `.dumpRows` and
+ * `.dumpSection` after migrating everything else, which was the API being incomplete rather than the
+ * panel being special.
+ */
+.hexByteGrid {
+  display: flex;
+  flex-direction: column;
+}
+
+.hexByteRow {
+  display: flex;
+  flex-direction: row;
+  flex: 0 0 auto;
+  gap: var(--measure-gap);
+}
+
+.hexByte {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  width: var(--measure-hex2);
+  color: var(--data-value);
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+  }
 }

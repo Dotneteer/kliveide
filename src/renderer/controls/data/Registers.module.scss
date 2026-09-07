@@ -1,0 +1,77 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The register/state display components.
+ *
+ * What is left here is only what is genuinely specific to showing CPU state: the bit indicators and
+ * the vertical flag strip. Everything structural — the row, the label cell, the value cell, the
+ * column widths — comes from `controls/data`, which is the whole point of slice 6.6: Klive had
+ * three separate `.label`/`.value` implementations (`controls/data`, `controls/layout`,
+ * `controls/valuedisplay`) and now has one.
+ */
+
+/* The label and value columns, sized from the measure scale rather than from px (M2). */
+.regLabel {
+  width: var(--measure-label);
+}
+
+.regValue {
+  width: var(--measure-value);
+}
+
+/* A value that sizes to its content — the `fullWidth` case. */
+.regValueAuto {
+  width: auto;
+}
+
+.flagRows {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.verticalLabel {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  justify-content: center;
+  width: 3ch;
+  color: var(--data-label);
+}
+
+.flagValue {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.flagLetter {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--data-label);
+  /* TODO(M1): 1.6em compounds off the panel size; belongs on the type scale. */
+  font-size: 1.6em;
+  /* `ch` resolves against this element's own 1.6em, so 3ch is ~28.8px, not 18px. */
+  width: 3ch;
+}
+
+.bitValue {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  justify-content: center;
+
+  &.clickable {
+    cursor: pointer;
+  }
+}
+
+/* An eight-bit flag strip. */
+.flagStrip {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 0;
+  flex-shrink: 0;
+}

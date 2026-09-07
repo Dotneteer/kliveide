@@ -17,12 +17,7 @@ type Props = {
 /**
  * Provides a collapsible row section for optionally visible nested controls.
  */
-export const ExpandableRow = ({
-  heading,
-  children,
-  initialExpanded,
-  onExpanded
-}: Props) => {
+export const ExpandableRow = ({ heading, children, initialExpanded, onExpanded }: Props) => {
   const [isExpanded, setIsExpanded] = useState(initialExpanded ?? false);
   return (
     <div className={styles.expandableRow}>

@@ -1,19 +1,11 @@
 import type { SysVar } from "@abstractions/SysVar";
 
-import { FlagRow } from "@renderer/controls/layout/FlagRow";
-import {
-  DataLabel,
-  DataPanel,
-  DataRow,
-  EmptyState,
-  HexValue
-} from "@renderer/controls/data";
+import { FlagRow } from "@renderer/controls/data/registers";
+import { DataLabel, DataPanel, DataRow, EmptyState, HexByteGrid, HexValue, formatHex } from "@renderer/controls/data";
 import { useState } from "react";
-import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
 import { SysVarType } from "@abstractions/SysVar";
-import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
@@ -88,7 +80,7 @@ export const SysVarsPanel = () => {
             const value = item.value;
             const length = item.length;
             const type = sysVar.type;
-            const tooltip = `${sysVar.name}: $${toHexa4(sysVar.address)} (${
+            const tooltip = `${sysVar.name}: ${formatHex(sysVar.address, 4)} (${
               sysVar.address
             }), length: ${length}\n${sysVar.description}`;
             return (
@@ -101,7 +93,16 @@ export const SysVarsPanel = () => {
                   {type === SysVarType.Word && (
                     <HexValue value={value ?? 0} digits={4} decimal />
                   )}
-                  {type === SysVarType.Array && <FullDumpSection sysVarData={item} />}
+                  {type === SysVarType.Array && (
+                    <HexByteGrid
+                      bytes={item.valueList ?? []}
+                      titleFor={(i) =>
+                        `Address: ${formatHex(sysVar.address + i, 4)}\n${
+                          sysVar.byteDescriptions?.[i] ?? ""
+                        }`
+                      }
+                    />
+                  )}
                   {type === SysVarType.Flags && (
                     <FlagRow value={value} flagDescriptions={sysVar.flagDecriptions} />
                   )}
@@ -114,66 +115,3 @@ export const SysVarsPanel = () => {
     </DataPanel>
   );
 };
-
-type FullDumpProps = {
-  sysVarData: SysVarData;
-};
-
-const FullDumpSection = ({ sysVarData }: FullDumpProps) => {
-  const dumpItems: JSX.Element[] = [];
-  for (let i = 0; i < (sysVarData.valueList?.length ?? 0); i += 8) {
-    const dumpValue = <DumpSection key={i} sysVarData={sysVarData} index={i} />;
-    dumpItems.push(dumpValue);
-  }
-  return <div className={styles.dumpRows}>{dumpItems}</div>;
-};
-
-type DumpProps = {
-  sysVarData: SysVarData;
-  index: number;
-};
-
-const DumpSection = ({ sysVarData, index }: DumpProps) => {
-  const byteItems: JSX.Element[] = [];
-  for (let i = index; i < index + 8 && i < (sysVarData.valueList?.length ?? 0); i++) {
-    const byteValue = (
-      <ByteValue
-        key={i}
-        address={sysVarData.sysVar.address + i}
-        value={sysVarData.valueList[i]}
-        tooltip={sysVarData.sysVar.byteDescriptions?.[i] ?? ""}
-      />
-    );
-    byteItems.push(byteValue);
-  }
-  return <div className={styles.dumpSection}>{byteItems}</div>;
-};
-
-type ByteValueProps = {
-  address: number;
-  value: number;
-  tooltip?: string;
-};
-
-const ByteValue = ({ address, value, tooltip }: ByteValueProps) => {
-  const ref = useTooltipRef<HTMLDivElement>();
-  const title = `Address: $${toHexa4(address)}, Value: $${toHexa2(
-    value
-  )} (${value})\n${tooltip ?? ""}`;
-  return (
-    <div ref={ref} className={styles.byteValue}>
-      {toHexa2(value)}
-      {tooltip && (
-        <TooltipFactory
-          refElement={ref.current}
-          placement="right"
-          offsetX={8}
-          offsetY={32}
-          showDelay={100}
-          content={title}
-        />
-      )}
-    </div>
-  );
-};
-

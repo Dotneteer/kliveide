@@ -1,12 +1,22 @@
 import { toBin16, toBin8, toHexa4, toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { TooltipFactory, useTooltipRef } from "../Tooltip";
 import { Icon } from "../Icon";
-import styles from "./Values.module.scss";
+import { DataLabel, DataRow, DataValue } from "./index";
+import styles from "./Registers.module.scss";
 import { useMemo, memo } from "react";
 import classnames from "classnames";
-import { Col } from "./Layout";
-import { FlagRow } from "@renderer/controls/layout/FlagRow";
-import { Label } from "@renderer/controls/layout/Label";
+
+/**
+ * Register and CPU-state displays.
+ *
+ * Moved here from `controls/valuedisplay` in slice 6.6. The components are unchanged in behaviour;
+ * what changed is that their row, label and value now come from `controls/data` instead of from a
+ * third private copy of the same three shapes.
+ *
+ * Every row is a `dense` `DataRow`: the shared `--measure-gap` between cells, and none of the list
+ * chrome. That gap is also the fix for the `fullWidth` defect, where an auto-width value used to
+ * butt straight into the next label and render `CON 0LCO 0` in the ULA panel.
+ */
 
 type Props = {
   label: string;
@@ -19,7 +29,7 @@ type Props = {
 
 export const Bit16Value = memo(
   ({ label, tooltip, reg16Label, reg8LLabel, reg8HLabel, value }: Props) => {
-    const ref = useTooltipRef();
+    const ref = useTooltipRef<HTMLDivElement>();
 
     const tooltipText = useMemo(() => {
       if (!tooltip) return null;
@@ -49,22 +59,20 @@ export const Bit16Value = memo(
     }, [value]);
 
     return (
-      <div ref={ref} className={styles.cols}>
-        <div className={styles.label}>
-          {label}
-          {tooltip && (
-            <TooltipFactory
-              refElement={ref.current}
-              placement="right"
-              offsetX={-8}
-              offsetY={0}
-              showDelay={100}
-              content={tooltipText}
-            />
-          )}
-        </div>
-        <div className={styles.value}>{displayValue}</div>
-      </div>
+      <DataRow ref={ref} dense>
+        <DataLabel text={label} xclass={styles.regLabel} />
+        {tooltip && (
+          <TooltipFactory
+            refElement={ref.current}
+            placement="right"
+            offsetX={-8}
+            offsetY={0}
+            showDelay={100}
+            content={tooltipText}
+          />
+        )}
+        <DataValue text={displayValue} xclass={styles.regValue} />
+      </DataRow>
     );
   }
 );
@@ -76,7 +84,7 @@ type Bit8Props = {
 };
 
 export const Bit8Value = memo(({ label, tooltip, value }: Bit8Props) => {
-  const ref = useTooltipRef();
+  const ref = useTooltipRef<HTMLDivElement>();
 
   const tooltipText = useMemo(() => {
     if (!tooltip) return null;
@@ -97,22 +105,20 @@ export const Bit8Value = memo(({ label, tooltip, value }: Bit8Props) => {
   }, [value]);
 
   return (
-    <div ref={ref} className={styles.cols}>
-      <div className={styles.label}>
-        {label}
-        {tooltip && (
-          <TooltipFactory
-            refElement={ref.current}
-            placement="right"
-            offsetX={-24}
-            offsetY={0}
-            showDelay={100}
-            content={tooltipText}
-          />
-        )}
-      </div>
-      <div className={styles.value}>{displayValue}</div>
-    </div>
+    <DataRow ref={ref} dense>
+      <DataLabel text={label} xclass={styles.regLabel} />
+      {tooltip && (
+        <TooltipFactory
+          refElement={ref.current}
+          placement="right"
+          offsetX={-24}
+          offsetY={0}
+          showDelay={100}
+          content={tooltipText}
+        />
+      )}
+      <DataValue text={displayValue} xclass={styles.regValue} />
+    </DataRow>
   );
 });
 
@@ -124,31 +130,27 @@ type SimpleProps = {
 };
 
 export const SimpleValue = memo(({ label, tooltip, value, fullWidth = false }: SimpleProps) => {
-  const ref = useTooltipRef();
+  const ref = useTooltipRef<HTMLDivElement>();
 
   const displayValue = useMemo(() => {
     return value !== undefined ? value.toString() : "--";
   }, [value]);
 
   return (
-    <div ref={ref} className={styles.cols}>
-      <div className={styles.label}>
-        {label}
-        {tooltip && (
-          <TooltipFactory
-            refElement={ref.current}
-            placement="right"
-            offsetX={fullWidth ? 8 : 0}
-            offsetY={0}
-            showDelay={100}
-            content={tooltip}
-          />
-        )}
-      </div>
-      <div className={styles.value} style={fullWidth ? { width: "auto" } : undefined}>
-        {displayValue}
-      </div>
-    </div>
+    <DataRow ref={ref} dense>
+      <DataLabel text={label} xclass={styles.regLabel} />
+      {tooltip && (
+        <TooltipFactory
+          refElement={ref.current}
+          placement="right"
+          offsetX={fullWidth ? 8 : 0}
+          offsetY={0}
+          showDelay={100}
+          content={tooltip}
+        />
+      )}
+      <DataValue text={displayValue} xclass={fullWidth ? styles.regValueAuto : styles.regValue} />
+    </DataRow>
   );
 });
 
@@ -158,43 +160,38 @@ type FlagProps = {
   tooltip?: string;
 };
 
-export const FlagValue = memo(({ label, tooltip, value }: FlagProps) => {
-  const ref = useTooltipRef();
+const flagIcon = (value?: boolean | number | null) => {
+  if (value === undefined || value === null) return "close";
+  return value ? "circle-filled" : "circle-outline";
+};
 
-  const iconName = useMemo(() => {
-    if (value === undefined || value === null) return "close";
-    return value ? "circle-filled" : "circle-outline";
-  }, [value]);
+export const FlagValue = memo(({ label, tooltip, value }: FlagProps) => {
+  const ref = useTooltipRef<HTMLDivElement>();
+  const iconName = useMemo(() => flagIcon(value), [value]);
 
   return (
-    <div ref={ref} className={styles.cols}>
-      <div className={classnames(styles.label, styles.flag)}>
-        {label}
-        {tooltip && (
-          <TooltipFactory
-            refElement={ref.current}
-            placement="right"
-            offsetX={-32}
-            offsetY={0}
-            showDelay={100}
-            content={tooltip}
-          />
-        )}
+    <DataRow ref={ref} dense>
+      <DataLabel text={label} xclass={styles.regLabel} />
+      {tooltip && (
+        <TooltipFactory
+          refElement={ref.current}
+          placement="right"
+          offsetX={-32}
+          offsetY={0}
+          showDelay={100}
+          content={tooltip}
+        />
+      )}
+      <div className={classnames(styles.flagValue, styles.regValue)}>
+        <Icon iconName={iconName} width={16} height={16} fill="--data-value" />
       </div>
-      <div className={classnames(styles.value, styles.flag)}>
-        <Icon iconName={iconName} width={16} height={16} fill="--color-value" />
-      </div>
-    </div>
+    </DataRow>
   );
 });
 
 export const VerticalFlagValue = memo(({ label, tooltip, value }: FlagProps) => {
-  const ref = useTooltipRef();
-
-  const iconName = useMemo(() => {
-    if (value === undefined || value === null) return "close";
-    return value ? "circle-filled" : "circle-outline";
-  }, [value]);
+  const ref = useTooltipRef<HTMLDivElement>();
+  const iconName = useMemo(() => flagIcon(value), [value]);
 
   return (
     <div ref={ref} className={styles.flagRows}>
@@ -212,7 +209,7 @@ export const VerticalFlagValue = memo(({ label, tooltip, value }: FlagProps) => 
         )}
       </div>
       <div className={styles.flagValue}>
-        <Icon iconName={iconName} width={16} height={16} fill="--color-value" />
+        <Icon iconName={iconName} width={16} height={16} fill="--data-value" />
       </div>
     </div>
   );
@@ -233,12 +230,8 @@ export type BitValueProps = {
 };
 
 export const BitValue = ({ value, tooltip, clicked }: BitValueProps) => {
-  const ref = useTooltipRef();
-
-  const iconName = useMemo(() => {
-    if (value === undefined || value === null) return "close";
-    return value ? "circle-filled" : "circle-outline";
-  }, [value]);
+  const ref = useTooltipRef<HTMLDivElement>();
+  const iconName = useMemo(() => flagIcon(value), [value]);
 
   return (
     <div
@@ -247,7 +240,7 @@ export const BitValue = ({ value, tooltip, clicked }: BitValueProps) => {
       onClick={() => clicked?.()}
     >
       <div className={styles.flagValue}>
-        <Icon iconName={iconName} width={16} height={16} fill="--color-value" />
+        <Icon iconName={iconName} width={16} height={16} fill="--data-value" />
       </div>
       {tooltip && (
         <TooltipFactory
@@ -263,6 +256,26 @@ export const BitValue = ({ value, tooltip, clicked }: BitValueProps) => {
   );
 };
 
+type FlagRowProps = {
+  /** Bit descriptions shown in per-flag tooltips, indexed from bit 0 to bit 7. */
+  flagDescriptions: string[];
+  /** Byte value rendered as eight individual bit indicators. */
+  value: number;
+};
+
+/** An eight-bit flag strip for register and memory state displays. */
+export const FlagRow = ({ value, flagDescriptions }: FlagRowProps) => (
+  <div className={styles.flagStrip}>
+    {[7, 6, 5, 4, 3, 2, 1, 0].map((bit) => (
+      <BitValue
+        key={bit}
+        value={value & (1 << bit)}
+        tooltip={`Bit ${bit}: ${flagDescriptions?.[bit] ?? ""}`}
+      />
+    ))}
+  </div>
+);
+
 type FlagFieldRowProps = {
   label: string;
   tooltip: string;
@@ -270,13 +283,23 @@ type FlagFieldRowProps = {
   flagDescriptions: string[];
 };
 
-const LAB_WIDTH = 48;
-
 export const FlagFieldRow = ({ label, tooltip, value, flagDescriptions }: FlagFieldRowProps) => {
+  const ref = useTooltipRef<HTMLDivElement>();
+
   return (
-    <Col>
-      <Label text={label} width={LAB_WIDTH} tooltip={tooltip} />
+    <DataRow ref={ref} dense>
+      <DataLabel text={label} xclass={styles.regLabel} />
+      {tooltip && (
+        <TooltipFactory
+          refElement={ref.current}
+          placement="right"
+          offsetX={0}
+          offsetY={0}
+          showDelay={100}
+          content={tooltip}
+        />
+      )}
       <FlagRow value={value} flagDescriptions={flagDescriptions} />
-    </Col>
+    </DataRow>
   );
 };
