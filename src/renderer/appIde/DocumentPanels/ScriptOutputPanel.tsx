@@ -19,6 +19,7 @@ import {
 } from "@common/state/actions";
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
 import { createSettingsReader } from "@common/utils/SettingsReader";
+import { PanelHeader } from "@renderer/controls/data";
 
 type ScriptOutputPanelViewState = {
   topPosition?: number;
@@ -114,7 +115,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
 
   return (
     <div className={styles.panel}>
-      <div className={styles.header}>
+      <PanelHeader>
         <SmallIconButton
           iconName='stop'
           title='Stop this script file'
@@ -171,7 +172,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
           variant={variant}
           text={`${scriptRunning ? "(Running)" : `(${conclusion})`}`}
         />
-      </div>
+      </PanelHeader>
       <ConsoleOutput
         buffer={scriptBuffer}
         initialTopPosition={topPosition.current}

@@ -1,45 +1,28 @@
 @use "@styles/core.scss" as *;
 
-.sysVarsPanel {
-  @include fill-parent-flex;
-  box-sizing: border-box;
-  flex-direction: column;
-  user-select: none;
-  font-family: var(--monospace-font);
-  font-size: 0.8em;
+/*
+ * Only what is genuinely specific to this panel. The root block and the empty state now come from
+ * `controls/data`; `.sysVar`, `.center` and `.sysVarsPanel` are gone with them.
+ */
 
-  .center {
-    @include fill-parent-flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: var(--color-secondary-label);
-  }
-
-  .sysVar {
-    display: flex;
-    flex-direction: row;
-    padding: 2px;
-
-    .sysVarValue {
-      display: flex;
-      flex-direction: row;
-      width: fit-content;
-    }
-  }
+.sysVarValue {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--measure-gap);
+  width: fit-content;
 }
 
 .byteValue {
   display: flex;
   flex-grow: 0;
   flex-shrink: 0;
-  color: var(--color-value);
+  color: var(--data-value);
   justify-content: center;
-  width: 20px;
+  width: var(--measure-hex2);
 
   &:hover {
     background: var(--bgcolor-disass-hover);
-    opacity: 0.9;
   }
 }
 
@@ -53,4 +36,5 @@
   flex-direction: row;
   flex-shrink: 0;
   flex-grow: 0;
+  gap: var(--measure-gap);
 }

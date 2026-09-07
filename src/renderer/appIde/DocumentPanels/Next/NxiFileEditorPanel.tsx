@@ -1,14 +1,11 @@
-import styles from "./NextFileViewerPanel.module.scss";
-import { Label } from "@renderer/controls/layout/Label";
+import { DataPanel, PanelHeader } from "@renderer/controls/data";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 
 const NxiFileEditorPanel = ({}: DocumentProps) => {
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <Label text=".NXI Editor" />
-      </div>
-    </div>
+    <DataPanel>
+      <PanelHeader title=".NXI Editor" />
+    </DataPanel>
   );
 };
 

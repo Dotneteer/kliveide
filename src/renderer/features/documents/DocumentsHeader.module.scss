@@ -1,7 +1,7 @@
 @use "@styles/core.scss" as *;
 
 .documentsHeader {
-  @include fix-height-panel(38px);
+  @include fix-height-panel(var(--strip-tabbar));
   flex-direction: row;
   background: var(--bgcolor-docsheader);
   outline: none;
@@ -12,7 +12,7 @@
     flex: 1;
     width: max-content;
     min-width: 100%;
-    min-height: 38px;
+    min-height: var(--strip-tabbar);
   }
 
   .dragAppend::after {
@@ -23,16 +23,16 @@
   }
 }
 
+/* Fills the strip to the right of the last tab so the header reads as one surface. */
 .closingTab {
-  @include fix-height-panel(38px);
-  /* Total including the border, which border-box now counts inside the box. */
+  @include fix-height-panel(var(--strip-tabbar));
   width: 5px;
-  border-left: 1px solid var(--color-doc-border);
+  border-left: 1px solid var(--border-subtle);
 }
 
 .commandBar {
   width: auto;
   display: flex;
   align-items: center;
-  padding-left: 8px;
+  padding-left: var(--space-2);
 }

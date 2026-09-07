@@ -81,7 +81,10 @@ export const DocumentsHeader = () => {
     }
   }, [activeDocIndex]);
 
-  const scheduleEnsureTabVisible = useScheduledTabVisibility(ensureTabVisible);
+  const scheduleEnsureTabVisible = useTabVisibility(
+    ensureTabVisible,
+    () => tabDims.current.find(Boolean)?.parentElement ?? undefined
+  );
   const scrollViewerApiLoaded = useCallback((api: ScrollViewerApi) => {
     svApi.current = api;
     scheduleEnsureTabVisible();
@@ -280,29 +283,51 @@ export const DocumentsHeader = () => {
 export type { DocumentWorkspace, SavedDocumentInfo };
 export { DOCS_WORKSPACE };
 
-function useScheduledTabVisibility(ensureTabVisible: () => void): () => void {
-  const animationFrameRef = useRef<number>();
-  const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+/**
+ * Keeps the active document tab fully in view.
+ *
+ * The previous implementation called `ensureTabVisible` five times for every change — immediately,
+ * inside a `requestAnimationFrame`, and again on timeouts at 0ms, 50ms and 150ms. That ladder
+ * existed because tab geometry is not settled when the effect runs (layout, fonts and the
+ * ScrollViewer's own measurement all land later) and there was no signal for when it would be, so
+ * the code guessed at several plausible moments and hoped one of them was right.
+ *
+ * A `ResizeObserver` is that signal. It fires when the strip has actually been laid out, so one
+ * scheduled call plus the observer replaces all five guesses — and it also covers the cases the
+ * timeouts never could, such as the window being resized or a long filename arriving late.
+ */
+function useTabVisibility(
+  ensureTabVisible: () => void,
+  getStrip: () => HTMLElement | undefined
+): () => void {
+  const frameRef = useRef<number>();
 
-  const clearScheduledVisibility = useCallback(() => {
-    if (animationFrameRef.current !== undefined) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = undefined;
-    }
-    timeoutRefs.current.forEach((timeoutId) => clearTimeout(timeoutId));
-    timeoutRefs.current = [];
-  }, []);
+  const schedule = useCallback(() => {
+    if (frameRef.current !== undefined) cancelAnimationFrame(frameRef.current);
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = undefined;
+      ensureTabVisible();
+    });
+  }, [ensureTabVisible]);
 
-  useEffect(() => clearScheduledVisibility, [clearScheduledVisibility]);
+  useEffect(() => {
+    const strip = getStrip();
+    if (!strip || typeof ResizeObserver === "undefined") return undefined;
 
-  return useCallback(() => {
-    clearScheduledVisibility();
-    ensureTabVisible();
-    animationFrameRef.current = requestAnimationFrame(() => ensureTabVisible());
-    timeoutRefs.current.push(
-      setTimeout(() => ensureTabVisible(), 0),
-      setTimeout(() => ensureTabVisible(), 50),
-      setTimeout(() => ensureTabVisible(), 150)
-    );
-  }, [clearScheduledVisibility, ensureTabVisible]);
+    // Observing the children as well as the strip catches a single tab changing width — a rename,
+    // or a dirty marker appearing — which does not necessarily resize the strip itself.
+    const observer = new ResizeObserver(() => schedule());
+    observer.observe(strip);
+    for (const child of Array.from(strip.children)) observer.observe(child);
+    return () => observer.disconnect();
+  });
+
+  useEffect(
+    () => () => {
+      if (frameRef.current !== undefined) cancelAnimationFrame(frameRef.current);
+    },
+    []
+  );
+
+  return schedule;
 }

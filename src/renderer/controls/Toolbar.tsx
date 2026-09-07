@@ -30,13 +30,16 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
 
   return (
     <HStack
-      // 42px is what this rendered as before the border-box change (34px content + 4px x 2
-      // padding). Transitional: Phase 5 replaces it with --strip-toolbar.
-      height="42px"
+      height="--strip-toolbar"
       backgroundColor="--bgcolor-toolbar"
-      paddingHorizontal="--space-1_5"
-      paddingVertical="--space-1"
+      paddingHorizontal="--space-2"
+      // 2px, not 4px: a 38px strip with 4px padding leaves a 30px content box, and the buttons are
+      // 32px tall (30 + 1px padding each side), so they would overflow it.
+      paddingVertical="--space-0_5"
       verticalContentAlignment="center"
+      // The buttons used to abut with no gap at all, so the toolbar read as one undifferentiated
+      // run of icons.
+      gap="--space-0_5"
     >
       <ExecutionControls ide={ide} kliveProjectLoaded={kliveProjectLoaded} />
       {!ide && <ViewControls recordingManagerRef={recordingManagerRef} />}

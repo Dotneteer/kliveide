@@ -14,6 +14,7 @@ import { Icon } from "@renderer/controls/Icon";
 import { createEmuApi } from "@common/messaging/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { EmptyState } from "@renderer/controls/data";
 
 export const NecUpd765Panel = () => {
   const { messenger } = useRendererContext();
@@ -35,7 +36,7 @@ export const NecUpd765Panel = () => {
 
   return (
     <div className={styles.necPanel}>
-      {log.length === 0 && <div className={styles.center}>No log entries collected </div>}
+      {log.length === 0 && <EmptyState message="No log entries collected" />}
       {log.length > 0 && (
         <VirtualizedList
           items={log}

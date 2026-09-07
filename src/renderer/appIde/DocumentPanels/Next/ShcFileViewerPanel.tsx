@@ -1,14 +1,11 @@
-import styles from "./NextFileViewerPanel.module.scss";
-import { Label } from "@renderer/controls/layout/Label";
+import { DataPanel, PanelHeader } from "@renderer/controls/data";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 
 const ShcFileViewerPanel = ({}: DocumentProps) => {
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <Label text=".SHC Viewer" />
-      </div>
-    </div>
+    <DataPanel>
+      <PanelHeader title=".SHC Viewer" />
+    </DataPanel>
   );
 };
 

@@ -10,6 +10,7 @@ import { CommandResultData } from "../../abstractions/CommandResultData";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
+import { PanelHeader } from "@renderer/controls/data";
 
 type CommandResultViewState = {
   topPosition?: number;
@@ -40,7 +41,7 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
 
   return (
     <div className={styles.panel}>
-      <div className={styles.header}>
+      <PanelHeader>
         <SmallIconButton
           iconName='copy'
           title={"Copy to clipboard"}
@@ -57,7 +58,7 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
         <ToolbarSeparator small={true} />
         <LabelSeparator width={8} />
         <Label text={title} />
-      </div>
+      </PanelHeader>
       <ConsoleOutput
         buffer={buffer}
         initialTopPosition={topPosition.current}

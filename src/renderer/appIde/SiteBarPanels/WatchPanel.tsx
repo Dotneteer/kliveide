@@ -13,6 +13,7 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { EmptyState } from "@renderer/controls/data";
 
 const LABEL_WIDTH = 120;
 
@@ -111,7 +112,7 @@ export const WatchPanel = () => {
   return (
     <div className={styles.watchPanel}>
       {displayedWatches.length === 0 && (
-        <div className={styles.center}>No watch expressions defined</div>
+        <EmptyState message="No watch expressions defined" />
       )}
       {displayedWatches.length > 0 && (
         <VirtualizedList

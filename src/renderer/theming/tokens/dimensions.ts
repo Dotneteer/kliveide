@@ -40,7 +40,9 @@ export const STRIP = {
   toolbar: "38px",
   statusbar: "26px",
   tabbar: "36px",
-  sidebarHeader: "34px"
+  sidebarHeader: "34px",
+  /** A document panel's own header. Was 30px in some panels and 32px in others. */
+  panelHeader: "30px"
 } as const;
 
 export const ROW = {
@@ -55,11 +57,26 @@ export const SIZE = {
   activitybutton: "44px"
 } as const;
 
-export const ICON = {
-  sm: "16px",
-  md: "20px",
-  lg: "24px"
+/**
+ * Icon sizes.
+ *
+ * Numbers, not CSS strings, because icons are sized through React props (`<Icon width=... />`) as
+ * well as from stylesheets — the same split that `rowSizes.ts` exists for. `iconTokens()` emits the
+ * px forms for CSS.
+ *
+ * The toolbar family previously used five unrelated sizes: 24 for run/pause, 20 for the secondary
+ * controls, 18 for `SmallIconButton`, 16 in the status bars and 12 for the split-button chevron.
+ * `xs` earns its place — the chevron sits in a 16px-wide button, where a 16px icon would fill it
+ * edge to edge — so five values collapse to four deliberate steps rather than three forced ones.
+ */
+export const iconSizes = {
+  xs: 12,
+  sm: 16,
+  md: 20,
+  lg: 24
 } as const;
+
+export type IconSizeKey = keyof typeof iconSizes;
 
 /** M1: px, not em. Named by weight rather than by use so panels cannot re-litigate sizing. */
 export const FONT_SIZE = {
@@ -132,7 +149,7 @@ export function dimensionTokens(tone: "dark" | "light"): Record<string, string> 
   for (const [k, v] of Object.entries(STRIP)) out[`--strip-${k}`] = v;
   for (const [k, v] of Object.entries(ROW)) out[`--row-${k}`] = v;
   for (const [k, v] of Object.entries(SIZE)) out[`--size-${k}`] = v;
-  for (const [k, v] of Object.entries(ICON)) out[`--icon-${k}`] = v;
+  for (const [k, v] of Object.entries(iconSizes)) out[`--icon-${k}`] = `${v}px`;
   for (const [k, v] of Object.entries(FONT_SIZE)) out[`--font-size-${k}`] = v;
   for (const [k, v] of Object.entries(MEASURE)) out[`--measure-${k}`] = v;
   for (const [k, v] of Object.entries(SHADOW[tone])) out[`--shadow-${k}`] = v;

@@ -1175,9 +1175,84 @@ tick as the click that made the button active — React had not re-rendered. The
 Fixes 3 and 4; unify the 38/36/32 ladder onto `--strip-tabbar`; give the tool area header its own
 surface; restore a focus ring on the command prompt.
 
+#### Phase 4 retrospective *(2026-09-07)*
+
+490 jsdom tests, 54 theming tests, build green, `tsc` unchanged at 175.
+
+**The height ladder is collapsed.** Verified at runtime, all four now report **36px**
+(`--strip-tabbar`): documents header, document tab, tools header, tool tab. The `.textWrapper` that
+sat at 33px inside a 36px tab is gone with it — it existed only to leave room for the 1px underline
+that is now an inset bar on the tab itself.
+
+**Tabs stop merging into one band.** They carried `border-right: none`, and the border they did have
+was `--color-doc-border`, which in dark resolved to the *same value as the document body* — so it was
+invisible even where it existed. Inactive tabs now have a real `--border-subtle` right edge
+(confirmed: `1px rgb(36, 39, 43)`).
+
+**The active tab has a genuine treatment**: a 2px accent bar plus `--surface-raised`, replacing a 1px
+top border over a background identical to the body. The bar is an inset shadow rather than a
+pseudo-element because `::before`/`::after` are already taken by the drag indicators.
+
+**The tool area header has its own surface** — `#1b1d21` against the body's `#17191c`. It previously
+had no background at all, so its tabs sat on exactly the same surface as the output below them,
+unlike the document header which always had one.
+
+**The five-shot timing hack is gone.** `useScheduledTabVisibility` fired `ensureTabVisible`
+immediately, in a `requestAnimationFrame`, and again at 0ms, 50ms and 150ms — guessing at when tab
+geometry might have settled, because nothing told it. A `ResizeObserver` *is* that signal. It also
+covers cases the timeouts never could: a window resize, or a long filename arriving late. One rAF
+plus the observer replaces all five calls.
+
+**A second test had to be re-scoped**, for the same reason as Phase 2's:
+`"clears scheduled DocumentsHeader tab visibility work on unmount"` asserted `clearTimeout` was
+called three extra times — cleanup for timers that no longer exist. It now asserts what remains true,
+that the pending frame is cancelled. **This time I checked the test count before and after (5 → 5)**,
+having nearly lost 22 tests to an unbounded replacement in Phase 2.
+
+**Deferred, and genuinely still outstanding:** fix 4's **overflow chevrons and tab-list dropdown**.
+Only the timing-hack half of that fix landed. The affordance is a new piece of UI rather than a
+restyle — it needs an overflow measurement, a popup list and its own keyboard handling — and it did
+not belong in the same change as the tab geometry it would sit beside.
+
 ### Phase 5 — Both windows: status bars + toolbar
 Fixes 2 and 8; both status bars to `--strip-statusbar`; toolbar icon sizes collapse from five onto
 `--icon-sm/md/lg`.
+
+#### Phase 5 retrospective *(2026-09-07)*
+
+490 jsdom tests, 54 theming tests, build green, `tsc` unchanged at 175. **The shell is now done** —
+Phases 0–5 complete.
+
+**Both status bars are 26px**, down from 40px, and identical to each other for the first time. They
+were near-duplicate files with divergent values (2px vs 4px separators, different label padding);
+they now share one structure on tokens. The height only became viable because Phase 0.4 fixed the
+`.isMonospace` collision that was rendering every readout at 16px.
+
+**The toolbar is 38px** (`--strip-toolbar`), down from the accidental 42px that content-box produced,
+and its buttons no longer abut — there is a real `--space-0_5` gap between them.
+
+**The separator finally fits inside its own toolbar.** It was 9 x 38px in a 34px content box: taller
+than the strip containing it. It is now a 1px rule at 60% height, centred in a 30px slot — a divider
+rather than a bar competing with the buttons.
+
+**A follow-on the first pass missed.** After moving the toolbar to 38px the 32px buttons overflowed
+its 30px content box by 2px. Invisible, because the backgrounds are transparent — but real. Dropping
+the vertical padding to 2px gives a 34px content box, verified at runtime (`fits: true`). **A token
+that changes a container's height silently invalidates the padding arithmetic inside it.**
+
+**Icon sizes: five values to four.** 24/20/18/16/12 becomes `iconSizes.lg/md/sm/xs`, exported as
+*numbers* — icons are sized through React props as well as stylesheets, the same split `rowSizes.ts`
+exists for. The plan asked for three; I kept `xs: 12` because the split-button chevron sits in a
+16px-wide button, where a 16px icon would fill it edge to edge. Four deliberate steps beat three
+forced ones.
+
+`SECONDARY_ICON_SIZE` no longer holds its own number either — it reads `iconSizes.md`, so the toolbar
+cannot drift from the rest of the app.
+
+**Deferred:** the plan wanted the empty 2px/4px spacer `<div>`s in the status bars replaced by a
+shared section/separator primitive. Their *sizes* are tokenized, but the elements remain. Collapsing
+them into `gap` is a shared-primitive concern and belongs with the `controls/data/` work, not a
+one-off here.
 
 ### Phase 6 — Presentational primitives, in slices
 
@@ -1199,6 +1274,48 @@ It is also **cheaper to review**, which matters because visual review is this pl
 (§6.0). A concern-slice has a narrow, predictable visual signature — "every empty state changed" is
 a two-minute check. "Everything about the Watch panel changed" is not.
 
+#### Slice 6.0 retrospective — the pilot *(2026-09-07)*
+
+490 jsdom tests, 54 theming tests, build green, `tsc` **174** — one below the Phase 5 baseline.
+
+`controls/data/` now exists (`DataPanel`, `DataChrome`, `EmptyState`, `DataRow`, `DataLabel`,
+`DataValue`, `DataSecondary`, `HexValue`), and both pilots are migrated: `SysVarsPanel` from
+`SiteBarPanels/` and `BinFileViewerPanel` from `DocumentPanels/`.
+
+**The API survived first contact, which was not the expectation.** 6.0 was written expecting to throw
+the first attempt away. It held because the two folders turned out to want *the same four things* —
+a mono panel shell, an empty state, a row, and a hex value — which is the whole premise of Phase 6
+confirmed rather than assumed.
+
+**What the pilot changed about the design:**
+
+- **`DataValue` was not needed directly by either panel.** `HexValue` covers the case, because the
+  pattern is always hex-plus-optional-decimal rather than a bare value. The surface is smaller than
+  I guessed; `DataValue` stays as the primitive `HexValue` is built from, not as something panels
+  reach for.
+- **`HexValue` absorbing the decimal echo was right.** `<Value hex/><Secondary (dec)/>` was the
+  literal shape in `SysVarsPanel`, and the same pair recurs in `BlinkPanel` — one prop replaces it.
+- **`ch` widths work.** `VAR_WIDTH` went from `64px` to `9ch` with no visible change, which is the
+  first evidence that M2 is practical and not just principled.
+- **A missing primitive surfaced.** `SysVarsPanel` still owns `.byteValue`, `.dumpRows` and
+  `.dumpSection` — a hex byte-grid the API does not cover. That is a real gap, not a panel being
+  special, and it belongs to slice 6.4 alongside the other hex work.
+
+**A visible change that needs a decision.** `HexValue` defaults to a `$` prefix, so system variables
+now read `$00 (0)` where they previously read `00 (0)`. That is the formatter unification working as
+intended — the codebase had `$` in `Breakpoints`/`Watch` and not in `SysVars`/`MemMapping`/`NextReg`/
+`Blink` — but **slice 6.4 must settle the convention deliberately** rather than letting the default
+decide it panel by panel.
+
+**Evidence for the scale of what follows:** `BinFileViewerPanel.module.scss` was deleted outright —
+both of its rules were empty states — and `SysVarsPanel.module.scss` lost its root block and empty
+state. Two panels in, and one stylesheet is already gone.
+
+**A process lapse worth recording.** I used Python's `str.replace()` without the count assertion I
+had been applying all session; it is global, so it rewrote `ByteValue`'s closing `</div>` as
+`</DataPanel>` as well as the intended one. TypeScript caught it immediately. **The assertion is
+cheap and I should not have dropped it** — the same class of mistake nearly cost 22 tests in Phase 2.
+
 #### The slices, ordered by risk
 
 | # | Slice | Replaces | Risk |
@@ -1214,6 +1331,68 @@ a two-minute check. "Everything about the Watch panel changed" is not.
 Each slice ships independently and leaves the app coherent: a slice that unifies empty states while
 41 panels still use the old row markup is not a half-finished state, because empty states are
 self-contained.
+
+#### Slice 6.1 retrospective — `EmptyState` *(2026-09-07)*
+
+490 jsdom tests, 54 theming tests, build green, `tsc` unchanged at 174. Net **-57 lines** across
+`SiteBarPanels/`.
+
+Five `.center` blocks removed — `Breakpoints`, `Watch`, `CallStack`, `NecUpd765` migrated to
+`EmptyState`, and `ScriptingHistory`'s deleted outright as the audit predicted: it was declared but
+never rendered.
+
+**Two stray trailing spaces are gone** — `"No breakpoints defined "` and
+`"No log entries collected "`. They survived precisely because each message was written separately;
+a single primitive with a `message` prop makes that class of drift impossible.
+
+**The empty states are no longer green.** They rendered in `--color-secondary-label`, which resolved
+through the old palette to a green — colour with no meaning attached. They now use
+`--data-secondary`.
+
+**The rainbow motif landed here** (§9.2), and two decisions shaped it:
+
+- **The hues are the machine's own**, converted from the ABGR entries in
+  `emu/machines/CommonScreenDevice.ts` — bright red, yellow, green, cyan — rather than eyeballed. The
+  app already contained the authoritative values.
+- **It is held at 0.5 opacity and 18px tall**, so it reads as a watermark. Full-strength Spectrum
+  colours next to a debugger's error red and success green would be exactly the competition that
+  confined the motif to empty states in the first place.
+
+**One thing I could not verify.** I searched for the case-badge stripe *order* and neither
+`worldofspectrum.org` nor Wikipedia documents it — Wikipedia describes "rainbow slashes" without a
+sequence. The order shipped (red, yellow, green, cyan) is from memory and is flagged as such in a
+comment in `controls/data/index.tsx`. **It needs confirming by someone who knows the hardware.**
+
+#### Slice 6.2 retrospective — `PanelHeader` *(2026-09-07)*
+
+490 jsdom tests, 54 theming tests, build green, `tsc` unchanged at 174. Net **-57 lines** in
+`DocumentPanels/`.
+
+`PanelHeader` and `PanelHeaderActions` now exist in `controls/data`, with a real title slot, an
+actions area, a surface and a border — replacing the twelve-line `HStack` that had none of those,
+which is why most panels rolled their own instead of using it.
+
+**A new token was needed.** A document panel's header is a different role from the sidebar's
+collapsible section header (`--row-panelHeader`, 26px), so it gets `--strip-panelHeader: 30px`
+rather than borrowing one. That resolves the 26/30/32 spread the audit found.
+
+**9 of 15 hand-rolled headers migrated**: the seven `Next/` viewers, `ScriptOutputPanel` and
+`CommandResult`.
+
+**The `Next/` stylesheet is now gone entirely** — a satisfying arc. Phase 0.2 collapsed eight
+byte-identical `Next/*.module.scss` files into one shared module; this slice migrated all seven
+consumers to `PanelHeader`, orphaning it. **8 files → 1 → 0.** That is the pattern the whole phase is
+built on: consolidate first, then delete the consolidated thing once a primitive absorbs it.
+
+**Six headers remain, deliberately:**
+
+- `TapViewerPanel`, `StaticMemoryView`, `ScriptingHistoryPanel` and `DskViewerPanel`'s top-level
+  header — straightforward, but each needs its closing tag matched by hand rather than by pattern,
+  and there was no value in rushing four more of those in one sitting.
+- **`DskViewerPanel`'s two *nested* headers are a different thing.** They are section headers *inside*
+  panel content — a track, a sector — not a panel's own header. Forcing them into `PanelHeader` would
+  put a chrome surface and a bottom border in the middle of a data listing. They want a
+  `SectionHeader` primitive, which belongs with slice 6.3's row work.
 
 #### The ratchet
 
@@ -1243,7 +1422,7 @@ others and can be reordered freely.
 | # | Slice | Scope today | Why it matters |
 |---|---|---|---|
 | **7.1** | **`ConsoleOutput`** | 157 lines + 22 SCSS, **4 consumers** across two folders (`CommandPanel`, `OutputPanel`, `ScriptOutputPanel`, `CommandResult`) | The app's shared rich-text/ANSI renderer, and the only component already doing `user-select: text` correctly. Needs a real API, `.lineNo`'s `min-width: 48px` converted to the `ch` measure scale (M2), the `SCROLL_END = 5_000_000` sentinel replaced, and a keyboard path for the clickable `<span>` at `ConsoleOutput.tsx:130` that runs an IDE navigate command. |
-| **7.2** | **`PanelToolbar`** | 11 files carrying in-panel toolbars; only `DisassemblyToolbars.tsx` is extracted — `BasicPanel`, `ScriptOutputPanel`, `CommandResult`, `TapViewerPanel`, `DskViewerPanel` (19 controls), `BinFileViewerPanel`, `ImageViewerPanel` and `PaletteEditor` all inline theirs | Also settles the **two competing separator components** doing the same visual job: `LabelSeparator width={8}` (Disassembly/Bin/Image) vs `<ToolbarSeparator small>` (Basic/Script/Command/Tap/Dsk). |
+| **7.2** | **`PanelToolbar`** | 11 files carrying in-panel toolbars; only `DisassemblyToolbars.tsx` is extracted — `BasicPanel`, `ScriptOutputPanel`, `CommandResult`, `TapViewerPanel`, `DskViewerPanel` (19 controls), `BinFileViewerPanel`, `ImageViewerPanel` and `PaletteEditor` all inline theirs | Also settles the **two competing separator components** doing the same visual job: `LabelSeparator width={8}` (Disassembly/Bin/Image) vs `<ToolbarSeparator small>` (Basic/Script/Command/Tap/Dsk).  **Carries fix 4 from §4** — the tab overflow chevrons and tab-list dropdown, deferred from Phase 4. Only the timing-hack half of that fix landed there; the affordance itself belongs here because it is a panel-header action area, and because building its popup before this slice would add a *fourth* menu pattern alongside `ContextMenu`, `Dropdown` and `ToolbarSplitButton`'s portalled menu. The `ResizeObserver` added in Phase 4 already measures the strip, so the overflow signal is a few lines away. Three design questions need answering first, against a project that actually overflows: all tabs or only hidden ones; icons and dirty markers in the list or not; menu-style keys or a filterable list. |
 | **7.3** | **`GenericPanel` family** | 347 lines across 3 files, **7 consumers**. `GenericFileEditorPanel` is `GenericFileViewerPanel` plus `saveToFile` — their render bodies are line-for-line identical, as are the `fileLoader` effect and the view-state persistence effect | Collapse to one parameterized component. This is the abstraction the five hand-rolled viewers (`Bin`/`Dsk`/`Tap`/`Image`/`Unknown`) should have been using; migrating them onto it is part of the slice. |
 | **7.4** | **Virtualization contract** | **15 `VirtualizedList` consumers**, configured differently: `itemSize` passed by 2 and omitted by 3, `overscan: 25` in some and absent in others | Binds row heights to M3's JS-readable `rowSizes` module, which is what stops the type scale and the virtualizer drifting apart. Also folds in the **byte-identical column block** shared by `DisassemblyPanel.module.scss` and `features/memory/MemoryDumpSection.module.scss` (verified identical) and its copy-pasted TSX (`DisassemblyRow.tsx:123-139` ≡ `MemoryDumpSection.tsx:84-97`) into one `DataGridRow`. |
 | **7.5** | **`ToolArea/` shell** | 532 lines: `ToolsContainer`, `ToolsHeader`, `ToolTab`, `CommandPanel`, `OutputPanel` | Adopts `PanelHeader` (7.2) and `ConsoleOutput` (7.1) rather than its own. Restores a focus ring on the command prompt — `outline: none` with no replacement, on **the only text input in the tool area**. |

@@ -1,19 +1,31 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * A document tab.
+ *
+ * Inactive tabs previously carried `border-right: none`, so adjacent ones merged into a single
+ * continuous band with nothing between them — and the border they did have was
+ * `--color-doc-border`, which in dark resolved to the same value as the document body, making it
+ * invisible anyway.
+ */
 .documentTab {
-  /* Total including the border, which border-box now counts inside the box. */
-  @include fix-height-panel(38px);
+  @include fix-height-panel(var(--strip-tabbar));
   width: auto;
   position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 0 8px 0 12px;
-  border: 1px solid var(--color-doc-border);
-  border-right: none;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border: 0;
+  border-right: 1px solid var(--border-subtle);
   background: var(--bgcolor-doc-inactiveTab);
   max-width: 360px;
   cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+
+  &:hover {
+    background: var(--surface-hover);
+  }
 }
 
 .dragBefore::before,
@@ -34,11 +46,24 @@
   right: 1px;
 }
 
+/*
+ * The active tab.
+ *
+ * Marked by a 2px accent bar and a genuinely raised surface. It used to rely on a 1px top border
+ * plus a background that in dark mode was the *same colour as the document body* — so the whole
+ * distinction rested on one hairline.
+ *
+ * The bar is an inset shadow rather than a pseudo-element because ::before and ::after are already
+ * taken by the drag indicators.
+ */
 .active {
-  background: var(--bgcolor-doc-activeTab);
+  background: var(--surface-raised);
   color: var(--color-doc-activeText);
-  border-top: 1px solid var(--btopcolor-doc-activeTab);
-  border-bottom: 1px solid transparent;
+  box-shadow: inset 0 2px 0 var(--btopcolor-doc-activeTab);
+
+  &:hover {
+    background: var(--surface-raised);
+  }
 }
 
 .awaiting {
@@ -47,7 +72,7 @@
 
 .titleText {
   color: var(--color-doc-inactiveText);
-  font-size: 0.9em;
+  font-size: var(--font-size-300);
   font-weight: 600;
   padding: 0 8px;
   display: block;

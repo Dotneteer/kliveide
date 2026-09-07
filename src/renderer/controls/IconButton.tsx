@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Icon } from "./Icon";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import classnames from "classnames";
+import { iconSizes } from "@renderer/theming/tokens/dimensions";
 import styles from "./IconButton.module.scss";
 
 type Props = {
@@ -97,7 +98,7 @@ export const SmallIconButton = ({
   return (
     <IconButton
       iconName={iconName}
-      iconSize={18}
+      iconSize={iconSizes.sm}
       buttonHeight={24}
       buttonWidth={24}
       title={title}

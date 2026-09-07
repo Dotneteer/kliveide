@@ -1,0 +1,161 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The `controls/data` primitives.
+ *
+ * These replace the block that was copy-pasted into 7 of the 12 SiteBarPanel stylesheets and, in a
+ * near-identical form, into 10 of the DocumentPanels ones — `fill-parent-flex`, column,
+ * `user-select: none`, the monospace family, and `font-size: 0.8em`. That `0.8em` alone appeared 25
+ * times across the two folders.
+ */
+
+.dataPanel {
+  @include fill-parent-flex;
+  flex-direction: column;
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-200);
+  color: var(--data-value);
+
+  /*
+   * Data is selectable.
+   *
+   * `user-select: none` appeared in 30 declarations across these folders against 4 that opted back
+   * in, so hex dumps, disassembly and BASIC listings could not be copied with the mouse — panels
+   * worked around their own rule with bespoke "copy to clipboard" buttons.
+   */
+  user-select: text;
+}
+
+/* Chrome inside a data panel — headers, toolbars — should not be selectable. */
+.noSelect {
+  user-select: none;
+}
+
+.emptyState {
+  @include fill-parent-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  text-align: center;
+  padding: var(--space-4);
+  color: var(--data-secondary);
+  user-select: none;
+}
+
+/*
+ * The Sinclair rainbow flash.
+ *
+ * Confined to empty states and the About panel (§9.2): decorative colour must never sit permanently
+ * beside the functional accent and the status hues, and red/green/yellow all carry meaning
+ * elsewhere in this app. An empty panel is the one surface with no data and no status to confuse.
+ *
+ * The four hues are the Spectrum's own bright red / yellow / green / cyan, taken from the emulator's
+ * palette in `emu/machines/CommonScreenDevice.ts` rather than invented. They are held well below
+ * full strength so the motif reads as a watermark, not as decoration competing for attention.
+ */
+.rainbow {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  opacity: 0.5;
+  transform: skewX(-18deg);
+}
+
+.rainbowStripe {
+  width: 4px;
+  height: 18px;
+  border-radius: 1px;
+}
+
+.dataRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: var(--row-size-list);
+  padding: 0 var(--space-2);
+  gap: var(--measure-gap);
+}
+
+/* Zebra striping, previously expressed three different ways: inline props, and two stylesheets. */
+.even {
+  background: var(--bgcolor-disass-even-row);
+}
+
+.hoverable:hover {
+  background: var(--bgcolor-disass-hover);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+/*
+ * Label and value.
+ *
+ * Widths are `ch`, not px (M2). The previous px widths — 44/48/41/51 in `valuedisplay`, plus 13
+ * magic constants across 8 panels — were tuned to a specific monospace advance, and the mono stack
+ * had just changed from Menlo/Consolas (0.6em) to Iosevka (0.5em), silently mistuning every one.
+ */
+.dataLabel {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--data-label);
+}
+
+.dataValue {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--data-value);
+}
+
+.dataSecondary {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--data-secondary);
+}
+
+/* Marks a value that moved since the last stop — a signal Klive did not previously express. */
+.changed {
+  color: var(--data-changed);
+}
+
+/*
+ * A data panel's header.
+ *
+ * There were 17 hand-rolled versions of this across 13 files, at three different heights (26px,
+ * 30px, 32px), and the one shared helper that did exist was twelve lines of `HStack` with hardcoded
+ * padding, no title, no actions slot, no surface and no border.
+ */
+.panelHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 0 0 auto;
+  height: var(--strip-panelHeader);
+  padding: 0 var(--space-2);
+  gap: var(--space-1);
+  background: var(--surface-chrome);
+  border-bottom: 1px solid var(--border-subtle);
+  user-select: none;
+}
+
+.panelTitle {
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Pushes trailing actions to the right edge. */
+.panelHeaderActions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
