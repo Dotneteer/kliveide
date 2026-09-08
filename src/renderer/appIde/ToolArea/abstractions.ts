@@ -31,6 +31,16 @@ export type OutputSpan = {
   isStrikeThru?: boolean;
   actionable?: boolean;
   data?: unknown;
+
+  /**
+   * Id of this span's style combination, from `output-style-table`.
+   *
+   * Resolved once at write time so the renderer can memoise the `CSSProperties` object it builds,
+   * instead of allocating a fresh one per span per render. Optional because it is a rendering
+   * optimisation, not part of the wire format: `OutputSpecification` crosses IPC without it, and a
+   * span that arrives without one still paints correctly from its own fields.
+   */
+  styleId?: number;
 };
 
 export type OutputSpecification = OutputSpan & {
@@ -139,8 +149,21 @@ export interface IOutputBuffer {
 
   /**
    * This event fires when the contents of the buffer changes.
+   *
+   * **Coalesced**: a burst of writes produces one notification rather than one per styled run.
+   * Compare `revision` when you need to know whether you have seen the latest content.
    */
   readonly contentsChanged: ILiteEvent<void>;
+
+  /**
+   * A counter that increases on every content change, whether or not a notification has fired yet.
+   */
+  readonly revision: number;
+
+  /**
+   * Fires any pending change notification immediately, instead of on the next frame.
+   */
+  flushChanges(): void;
 
   /**
    * Gets the string representation of the buffer

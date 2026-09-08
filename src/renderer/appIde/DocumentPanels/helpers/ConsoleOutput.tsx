@@ -9,6 +9,18 @@ import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { ConsoleAction } from "@common/utils/output-utils";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
+import { rowSizes } from "@renderer/theming/tokens/rowSizes";
+
+/**
+ * Overscan, in **pixels**.
+ *
+ * `VirtualizedList` forwards this to virtua's `bufferSize`, which its own documentation defines as
+ * "extra item space in pixels" — while the shared default is named `overscan` and documented as a
+ * number of *rows*. Whatever the other lists intend by it, 25 here would be a buffer of one and a
+ * half console lines, and fast-scrolling a log is exactly the case that shows blank rows. This is
+ * the pixel equivalent of roughly 25 unwrapped lines.
+ */
+const CONSOLE_OVERSCAN_PX = rowSizes.console * 25;
 
 /**
  * The app's shared rich-text / ANSI console renderer.
@@ -59,7 +71,13 @@ export const ConsoleOutput = ({
 
   const refresh = useCallback(() => {
     if (!buffer) return;
-    const contents = buffer.getContents().slice();
+    /*
+     * No defensive `.slice()`. `getContents()` now returns a stable snapshot — the same array
+     * instance until the contents actually change, a new one after — so copying it here would
+     * undo exactly the allocation the buffer stopped making. The identity change is what React
+     * needs to re-render, and the buffer provides it.
+     */
+    const contents = buffer.getContents();
     setLines(contents);
     latest.current.onContentsChanged?.();
     if (!latest.current.followTail) return;
@@ -93,6 +111,21 @@ export const ConsoleOutput = ({
       {lines.length > 0 && (
         <VirtualizedList
           items={lines}
+          /*
+           * Deliberately **not** `scrollRowsHorizontally`, and deliberately no `itemSize`.
+           *
+           * `scrollRowsHorizontally` puts `min-width: max-content` on virtua's row wrapper, so the
+           * row grows to whatever its content needs — which means a long line would never reach a
+           * right edge and `word-break: break-all` would never fire. Horizontal scrolling and
+           * wrapping are mutually exclusive, and this console wraps.
+           *
+           * `itemSize` is virtua's size hint for unmeasured rows. It was worth setting while every
+           * line was exactly one pinned line box; now a wrapped line occupies several, so a flat
+           * hint would be wrong for exactly the long lines whose height matters most. virtua's own
+           * guidance is to omit it and let sizes be estimated from measurements, which is what
+           * happens here.
+           */
+          overscan={CONSOLE_OVERSCAN_PX}
           onScroll={() => {
             if (!vlApi.current) return;
             onTopPositionChanged?.(vlApi.current.getItemOffset(0));
@@ -131,7 +164,7 @@ type OutputContentLineProps = {
   showLineNo?: boolean;
 };
 
-const spanStyle = (s: OutputSpan): CSSProperties => ({
+const buildSpanStyle = (s: OutputSpan): CSSProperties => ({
   fontWeight: s.isBold ? 600 : 400,
   fontStyle: s.isItalic ? "italic" : "normal",
   /*
@@ -150,6 +183,29 @@ const spanStyle = (s: OutputSpan): CSSProperties => ({
       .filter(Boolean)
       .join(" ") || undefined
 });
+
+/**
+ * Style objects keyed by the span's interned `styleId`.
+ *
+ * A console uses a couple of dozen distinct style combinations across millions of spans, so the
+ * object is built once per combination and then shared. Without this, every span of every visible
+ * row got a freshly allocated `style` prop on every render, which React can only treat as changed.
+ *
+ * Ids come from a module-level table, so they mean the same thing in all four panels and this cache
+ * can be shared between them. A span with no `styleId` — one that crossed IPC, or a test fixture —
+ * falls back to building its style directly.
+ */
+const styleCache = new Map<number, CSSProperties>();
+
+const spanStyle = (s: OutputSpan): CSSProperties => {
+  if (s.styleId === undefined) return buildSpanStyle(s);
+  let style = styleCache.get(s.styleId);
+  if (!style) {
+    style = buildSpanStyle(s);
+    styleCache.set(s.styleId, style);
+  }
+  return style;
+};
 
 const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
   const { ideCommandsService } = useAppServices();

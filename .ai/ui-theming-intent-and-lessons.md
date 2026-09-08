@@ -24,8 +24,8 @@ These were decided by the project author. Changing them is a product decision, n
 | Monaco | The syntax palette is a **fixed multi-hue table**; only the *keyword* colour follows the accent. Comments are green and italic, never grey. |
 | Window chrome | Frameless/title-bar toolbar: **explicitly deferred.** |
 | Secondary accent | **Yes, added in Phase 10.** Every accent has a second hue (`--accent-secondary-*`), for the specific case one hue can't cover — two things in the same view that must both read as accent-tied and clearly apart. Not a general "add more colour" licence; see below. |
-| Memory dump / disassembly colour | **These two views are exceptions to §5.2's neutral data-panel hierarchy**, added in Phase 10 — hex-editor-style views read better for real colour. The watch panel is unaffected and stays neutral. |
-| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack. Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
+| Memory dump / disassembly colour | **These two views are exceptions to §5.2's neutral data-panel hierarchy**, added in Phase 10 — hex-editor-style views read better for real colour. |
+| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints. Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
 > lightness step of the accent, which put nine of eleven classes in one blue and comments in neutral
@@ -59,8 +59,10 @@ Full derivation, per-accent numbers and the WCAG accounting are in `.plans/UI_MO
   - *Accepted* — `CallStackPanel`'s rows (`4: 5BFF → FF00`): the stack slot an address is *stored
     at* against the address it *returns to*. Two 16-bit numbers of identical shape, one row apart
     from meaning completely different things.
+  - *Accepted* — `BreakpointsPanel`: the resolved address against the disassembled instruction at it.
+    Same split by role — the addresses locate, the instruction is what the row is for.
 
-  All three accepted cases share the shape: **one row, two kinds of number, no words**. Dropping the
+  All the accepted cases share the shape: **one row, two kinds of number, no words**. Dropping the
   weaker of a pair to plain `--data-secondary` is not a consolation prize either — it makes the
   thing read as chrome rather than as a value, which is wrong when both are data.
 - They share **one token**, `--color-state-value-alt`, for the same reason the panels share
@@ -82,9 +84,9 @@ Full derivation, per-accent numbers and the WCAG accounting are in `.plans/UI_MO
 ## View-Scoped Colour: Memory Dump, Disassembly & The Register/State Panels
 
 **§5.2's neutral data-panel hierarchy (`--data-value`/`--data-label`/`--data-secondary`) still
-stands for the watch panel and every register panel that has not been explicitly excepted.** The
+stands for every panel that has not been explicitly excepted.** The
 memory dump, the disassembly view and the converted register/state panels (Z80 CPU, ULA & I/O, Next
-Registers, Next Memory Mapping, Call Stack) are the deliberate exceptions, and each has
+Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints) are the deliberate exceptions, and each has
 its **own** token family in `componentAliases.ts` (`--color-memory-*`/`--bgcolor-memory-*`,
 `--color-disassembly-*`/`--bgcolor-disassembly-*`, `--color-state-value`) rather than a shared one, so
 colouring one never touches the others or the still-neutral panels. Full role tables are in the plan
@@ -452,9 +454,28 @@ class (`.foo.foo`) to force a deterministic win instead of an order-dependent on
 - Do not reach for the secondary accent because something "needs more colour". It exists for one
   case: two things in the same view that must both read as accent-tied and clearly apart from each
   other. One accent-worthy thing in a view is `--accent-*`.
-- Do not give a register or watch panel colour beyond §5.2's neutral hierarchy. The memory dump, the
-  disassembly view and the Z80 CPU panel are the only exceptions, and each was made deliberately, by
-  the author, not by drift.
+- Do not give a data panel colour beyond §5.2's neutral hierarchy on your own initiative. The memory
+  dump, the disassembly view and the converted register/state panels are the exceptions, and **each
+  one was asked for by the author, panel by panel** — none of them by drift.
+- Do not spend the **console's** ANSI palette on a data panel. Two panels did:
+  - `WatchPanel` filled its type icons with `--console-ansi-cyan`/`-bright-green`/`-bright-red` —
+    three saturated hues marking a *type*, which is not state and which the glyph already says.
+    Types went neutral; the one genuinely stateful thing — a watch that will not resolve — took
+    `--status-warning`, for both its icon and its `<not found>` placeholder, so an unresolved row
+    cannot be mistaken for data.
+  - `BreakpointIndicator` painted its five type badges bright blue / green / magenta, where the hues
+    were carrying read-versus-write. **Fix the glyphs first and the colour problem dissolves**: once
+    the redrawn icons said it themselves (arrow up reads, arrow down writes, body says memory or
+    port), one token — `--color-breakpoint-type`, the secondary accent — covered all five.
+- **Icons are a system or they are noise.** The breakpoint set was a lightning bolt borrowed from
+  another family plus four glyphs mixing solid slabs with hairline outlines, two of them with arrows
+  clipped off the top edge. Redrawn on Lucide's grid (24×24, `stroke-width 2`, round caps,
+  `currentColor`) as *container + direction*. Practical notes for the next set: a `.svg` dropped in
+  `renderer/assets/icons/` **overrides** the stock `icon-defs.ts` entry of the same name, so check
+  whether that name is shared before overriding it — `symbol-event` is also used by `registry.ts`,
+  which is why execution got a new `bp-exec` file and a one-line call-site change instead. And at
+  16px a hairline notch disappears: the memory pins are drawn as round dots (`h.01` with a round
+  linecap), which survive.
 - Do not put horizontal padding on `DataRow`/`.dense` without the nested-row reset — the value
   components each render their own row, so it lands twice on register rows. § "Alignment In The
   Register Panels".

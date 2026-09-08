@@ -8,3 +8,108 @@
   font-family: var(--monospace-font);
   font-size: var(--font-size-200);
 }
+
+/*
+ * The type icon, which doubles as the right-click target for deleting the watch — so it keeps the
+ * pointer cursor the inline style used to carry.
+ */
+.watchIcon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  cursor: pointer;
+}
+
+/*
+ * The symbol column. `margin-inline: 0` drops `controls/layout` `Label`'s `.legacySpacing`, which
+ * together with the two `LabelSeparator` spacers this row used to carry put the symbol on a
+ * different origin from every other converted panel. The width lives here because `Label` passes
+ * its `width` prop as an *inline* style, which a class cannot override.
+ */
+span.watchLabel {
+  /*
+   * `min-width`, not `width`: 19ch keeps the value column aligned for ordinary symbols, but a symbol
+   * longer than that now *widens its cell* instead of spilling out of a fixed box. A fixed-width
+   * cell swallows its own overflow — measured in the running IDE as a label whose `scrollWidth` was
+   * 336 inside a 114px `clientWidth`, while the row it sits in still reported no overflow at all, so
+   * nothing downstream could know the content was too wide to fit.
+   */
+  min-width: 19ch;
+  margin-inline: 0;
+}
+
+/*
+ * A row sizes to its content so a long symbol or value can be scrolled to.
+ *
+ * Needed together with `VirtualizedList`'s `scrollRowsHorizontally` — see the comment on that prop.
+ * The row growing is what makes virtua's wrapper grow; the wrapper growing is what the scroll
+ * container actually measures.
+ */
+.watchRow {
+  min-width: max-content;
+  /* Containing block for the hover highlight below. */
+  position: relative;
+}
+
+/*
+ * The hover highlight spans the whole scrollable width — and so does the area you can hover to get
+ * it.
+ *
+ * Rows are sized individually: `virtua` gives each one a wrapper of the viewport width and
+ * `min-width: max-content` grows only the ones that need it, so a short row is narrower than a long
+ * one. Scrolled right, that left two problems, and the second is the one that is easy to miss:
+ *
+ * 1. `.hoverable`'s own background stopped where the row's content ended, so the rest of the visible
+ *    row stayed unpainted.
+ * 2. The row's *hit area* stopped there too — hovering the empty space to the right of a short row
+ *    highlighted nothing at all, because the pointer was past the row's box.
+ *
+ * So this pseudo-element is **always present**, not just on `:hover`: transparent by default, and it
+ * carries the hover colour when the row is hovered. Being a rendered part of the row, hit-testing it
+ * counts as hovering the row itself, which fixes (2) — and the row tooltip fires out there for the
+ * same reason.
+ *
+ * `pointer-events: auto` has to hold in *both* states. Flipping it to `none` on `:hover` would make
+ * the row stop receiving the pointer the instant it lit up, un-hover, light down, and flicker.
+ *
+ * `100vw` is simply "wider than any sidebar can be"; the scroll viewport clips it. It does *not*
+ * inflate the scroll width — measured in the running IDE, `scrollWidth` stayed at 453 against a
+ * 282 viewport while hovered — because the same absolutely positioned wrapper that hid the row's
+ * overflow in the first place also contains this.
+ *
+ * `::before` rather than `::after`, with the cells given a position of their own: all are then
+ * positioned descendants painted in DOM order, so the highlight lands *under* the row's text, and
+ * the cells stay on top for hit-testing too, which keeps right-clicking the icon working. A negative
+ * `z-index` is the obvious alternative and is wrong here — it would drop the highlight behind the
+ * sidebar's own background and make it invisible.
+ */
+.watchRow > * {
+  position: relative;
+}
+
+.watchRow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.watchRow:hover::before {
+  background: var(--bgcolor-disass-hover);
+}
+
+/*
+ * A watch that could not be resolved — `<unknown>`, `<not found>`, `<error>`.
+ *
+ * Status, not data, so it takes the status hue rather than `--color-state-value`: an unresolved
+ * placeholder rendered in the same accent as a real value reads as though it *were* one. This is
+ * §5.2's point that colour is freed to mean state.
+ */
+span.watchValueError {
+  color: var(--status-warning);
+  font-weight: 600;
+}

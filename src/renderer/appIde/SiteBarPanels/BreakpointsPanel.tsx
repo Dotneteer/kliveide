@@ -1,6 +1,5 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Label } from "@renderer/controls/layout/Label";
 import { Value } from "@renderer/controls/layout/Value";
 import { Secondary } from "@renderer/controls/layout/Secondary";
@@ -22,6 +21,79 @@ import { MemorySection } from "../disassemblers/common-types";
 import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { DataRow, EmptyState } from "@renderer/controls/data";
+import regStyles from "@renderer/controls/data/Registers.module.scss";
+import type { ReactNode } from "react";
+
+/*
+ * M2: `ch`, not px. Capacity preserved from the px widths at the panel's old 12.8px size (px / 6.4),
+ * so the columns keep the room they had while no longer being tuned to one font.
+ */
+const RESOLVED_WIDTH = "13ch"; // 80px / 6.4 = 12.5
+const OP_ADDR_WIDTH = "8ch"; // 52px / 6.4 = 8.125
+
+/**
+ * What a breakpoint row says when you hover it.
+ *
+ * The panel packs a lot into a narrow row — an indicator whose shape encodes the type, one or two
+ * addresses, and a disassembled instruction — so the tooltip is where those are named. It folds in
+ * the "go to source" hint that used to live on the address label alone, because the row now owns the
+ * tooltip and two nested tooltips would both try to show.
+ */
+const breakpointTooltip = (
+  bp: BreakpointInfo,
+  addrKey: string,
+  instruction: string,
+  isWatchpoint: boolean
+): string => {
+  const kind = bp.memoryRead
+    ? "Memory read"
+    : bp.memoryWrite
+      ? "Memory write"
+      : bp.ioRead
+        ? "I/O read"
+        : bp.ioWrite
+          ? "I/O write"
+          : "Execution";
+  const lines = [`${kind} breakpoint at ${addrKey}`];
+  if (bp.disabled) lines.push("Disabled");
+  if (bp.resolvedAddress !== undefined) {
+    lines.push(`Resolves to $${toHexa4(bp.resolvedAddress)} (${bp.resolvedAddress})`);
+  }
+  if ((bp.exec || isWatchpoint) && instruction) lines.push(instruction);
+  if (bp.resource !== undefined && bp.line !== undefined) {
+    lines.push(`Click the address to go to ${bp.resource.split("/").pop()}:${bp.line}`);
+  }
+  // --- The indicator's own action hints, folded in: it renders with `noTooltip` here so that its
+  // --- two tooltips do not fire on top of this one.
+  lines.push(bp.disabled ? "Check the box to enable" : "Uncheck the box to disable");
+  lines.push("Right-click the indicator to remove");
+  return lines.join("\n");
+};
+
+/**
+ * A breakpoint row whose tooltip covers the whole row.
+ *
+ * Same shape as `TipRow` in `MemMappingPanel`: `DataRow` forwards its ref, `TooltipFactory` binds to
+ * whatever element it is handed, and it renders nothing inline (it portals only while visible) so it
+ * is safe as a child of the row's flex container.
+ */
+const BreakpointRow = ({ tooltip, children }: { tooltip: string; children: ReactNode }) => {
+  const ref = useTooltipRef<HTMLDivElement>();
+
+  return (
+    <DataRow hoverable ref={ref}>
+      {children}
+      <TooltipFactory
+        refElement={ref.current}
+        placement="right"
+        offsetX={0}
+        offsetY={0}
+        showDelay={100}
+        content={tooltip}
+      />
+    </DataRow>
+  );
+};
 
 export const BreakpointsPanel = () => {
   const emuApi = useEmuApi();
@@ -145,9 +217,11 @@ export const BreakpointsPanel = () => {
                 }
               }
 
+              const isWatchpoint = !!(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite);
+              const instruction = disassLines.current[idx] ?? "???";
+
               return (
-                <DataRow hoverable>
-                  <LabelSeparator />
+                <BreakpointRow tooltip={breakpointTooltip(bp, addrKey, instruction, isWatchpoint)}>
                   <BreakpointIndicator
                     partition={
                       bp?.partition !== undefined ? partitionLabels[bp.partition] ?? "?" : undefined
@@ -163,25 +237,44 @@ export const BreakpointsPanel = () => {
                     ioWrite={bp.ioWrite}
                     ioMask={bp.ioMask}
                     showType
+                    noTooltip
                   />
-                  <LabelSeparator />
+                  {/*
+                    * The breakpoint's own address is the headline and takes the primary accent (see
+                    * `.bpLabel`); the *resolved* address is the supporting one and takes the
+                    * secondary (`--color-state-value-alt`). The disassembled instruction keeps
+                    * `Value`'s neutral `--data-value` — it is context for the address.
+                    */}
                   {bp.resolvedAddress !== undefined && (
-                    <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={80} />
+                    <Value
+                      text={`$${toHexa4(bp.resolvedAddress)}`}
+                      width={RESOLVED_WIDTH}
+                      className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                    />
                   )}
                   <BreakpointAddressLabel addrKey={addrKey} breakpoint={bp} />
-                  {bp.address !== undefined && <Label text="" width={40} />}
-                  {bp.exec && <Value text={disassLines.current[idx] ?? "???"} width="auto" />}
-                  {(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite) &&
-                    machineState === MachineControllerState.Paused && (
-                      <>
-                        <Secondary
-                          text={`$${toHexa4(lastCpuState?.opStartAddress ?? -1)}:`}
-                          width={52}
-                        />
-                        <Value text={disassLines.current[idx] ?? "???"} width="auto" />
-                      </>
-                    )}
-                </DataRow>
+                  {bp.exec && (
+                    <Value
+                      text={instruction}
+                      width="auto"
+                      className={styles.bpCell}
+                    />
+                  )}
+                  {isWatchpoint && machineState === MachineControllerState.Paused && (
+                    <>
+                      <Secondary
+                        text={`$${toHexa4(lastCpuState?.opStartAddress ?? -1)}:`}
+                        width={OP_ADDR_WIDTH}
+                        className={regStyles.stateValueAlt}
+                      />
+                      <Value
+                        text={instruction}
+                        width="auto"
+                        className={styles.bpCell}
+                      />
+                    </>
+                  )}
+                </BreakpointRow>
               );
             } catch (e) {
               return <div key={idx} />;
@@ -200,36 +293,25 @@ type BreakpointAddressLabelProps = {
 
 const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelProps) => {
   const { ideCommandsService } = useAppServices();
-  const navRef = useTooltipRef();
   const navigable = breakpoint.resource !== undefined && breakpoint.line !== undefined;
-  let filename = "";
-  if (navigable) {
-    const segments = breakpoint.resource.split("/");
-    if (segments.length > 0) {
-      filename = segments[segments.length - 1];
-    }
-  }
 
   return (
     <span
-      ref={navRef}
       className={classnames({ [styles.navigable]: navigable })}
       onClick={async () => {
+        // --- Only a source-backed breakpoint has somewhere to go. Without this guard a click on an
+        // --- address-only breakpoint still ran `nav "undefined" undefined`, and the cursor never
+        // --- suggested it was clickable in the first place.
+        if (!navigable) return;
         const command = `nav "${breakpoint.resource}" ${breakpoint.line}`;
         await ideCommandsService.executeCommand(command);
       }}
     >
-      <Label text={addrKey} width={breakpoint.address !== undefined ? 40 : undefined} />
-      {navigable && (
-        <TooltipFactory
-          refElement={navRef.current}
-          placement="bottom"
-          offsetX={0}
-          offsetY={40}
-          showDelay={100}
-          content={`Go to ${filename}:${breakpoint.line}`}
-        />
-      )}
+      {/*
+        * No tooltip of its own any more: the row carries one, and it names this navigation hint. A
+        * second tooltip nested inside the row's would try to show at the same time.
+        */}
+      <Label text={addrKey} className={styles.bpLabel} />
     </span>
   );
 };

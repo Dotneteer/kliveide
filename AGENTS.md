@@ -96,7 +96,7 @@ merely uncoloured, which no route diff can see.
 - Every accent has a **primary and a secondary hue** (`--accent-*` / `--accent-secondary-*`) — the
   secondary exists for two things in one view that must both read as accent-tied yet stay clearly
   apart (see the memory dump's hovered byte and disassembly's opcode column). The memory dump, the
-  disassembly view **and the converted register/state panels** (Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack — one shared
+  disassembly view **and the converted register/state panels** (Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints — one shared
   `--color-state-value`) are the deliberate exceptions to the otherwise-neutral data hierarchy;
   unconverted panels stay neutral. Full detail in `.ai/ui-theming-intent-and-lessons.md` and
   `.plans/UI_MODERNIZATION_PLAN.md` §10.

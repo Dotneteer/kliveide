@@ -49,16 +49,19 @@ let loggedEmuOutputEvents = 0;
 export async function logEmuEvent(text: string, foreground?: OutputColor): Promise<void> {
   loggedEmuOutputEvents++;
   const ideApi = getIdeApi();
-  await ideApi.displayOutput({
-    pane: PANE_ID_EMU,
-    text: `[${loggedEmuOutputEvents}] `,
-    foreground: "yellow",
-    writeLine: false
-  });
-  await ideApi.displayOutput({
-    pane: PANE_ID_EMU,
-    text,
-    foreground,
-    writeLine: true
-  });
+  // --- One message, not two: see `MachineController.sendOutput`.
+  await ideApi.displayOutputBatch([
+    {
+      pane: PANE_ID_EMU,
+      text: `[${loggedEmuOutputEvents}] `,
+      foreground: "yellow",
+      writeLine: false
+    },
+    {
+      pane: PANE_ID_EMU,
+      text,
+      foreground,
+      writeLine: true
+    }
+  ]);
 }

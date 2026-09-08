@@ -19,6 +19,14 @@ type Props = {
   ioMask?: number;
   showType?: boolean;
   resolvedAddress?: number;
+  /**
+   * Suppress this component's own tooltips.
+   *
+   * For a caller whose *row* already carries one: two tooltips on nested elements both fire on
+   * hover and render on top of each other. `BreakpointsPanel` sets this and folds the action hints
+   * below into its row tooltip; the disassembly view, which has no row tooltip, leaves it off.
+   */
+  noTooltip?: boolean;
 };
 
 export const BreakpointIndicator = ({
@@ -33,7 +41,8 @@ export const BreakpointIndicator = ({
   ioWrite,
   ioMask,
   showType,
-  resolvedAddress
+  resolvedAddress,
+  noTooltip
 }: Props) => {
   const { ideCommandsService } = useAppServices();
   const cbkRef = useTooltipRef();
@@ -50,25 +59,26 @@ export const BreakpointIndicator = ({
       : address;
 
   let bpType = "execute";
-  let typeIcon = "symbol-event";
-  let typeColor = "--console-ansi-bright-blue";
+  // --- `bp-exec`, not the shared `symbol-event`: that one is a lightning bolt from another icon
+  // --- family, it belongs to no set, and `registry.ts` still uses it elsewhere — so the breakpoint
+  // --- type icons get their own glyph rather than overriding a shared name.
+  let typeIcon = "bp-exec";
   if (memoryRead) {
     bpType = "memory read";
     typeIcon = "bp-mem-read";
-    typeColor = "--console-ansi-bright-green";
   } else if (memoryWrite) {
     bpType = "memory write";
     typeIcon = "bp-mem-write";
-    typeColor = "--console-ansi-bright-magenta";
   } else if (ioRead) {
     bpType = "I/O read";
     typeIcon = "bp-io-read";
-    typeColor = "--console-ansi-bright-green";
   } else if (ioWrite) {
     bpType = "I/O write";
     typeIcon = "bp-io-write";
-    typeColor = "--console-ansi-bright-magenta";
   }
+  // --- One colour for all five: the glyphs now carry the read/write distinction the three ANSI
+  // --- hues used to. See `--color-breakpoint-type` in componentAliases.ts.
+  const typeColor = "--color-breakpoint-type";
 
   const tooltipCommon = `${addrLabel}${(ioRead || ioWrite) && ioMask ? " /$" + toHexa4(ioMask) : ""} (${bpType})`;
   const tooltip =
@@ -137,14 +147,16 @@ export const BreakpointIndicator = ({
       {showType && (
         <div ref={cbkRef} style={{ zoom: 0.8 }}>
           <Checkbox key={address} initialValue={!isDisabled} right={true} onChange={enableOrDisable} />
-          <TooltipFactory
-            refElement={cbkRef.current}
-            placement="right"
-            offsetX={0}
-            offsetY={40}
-            showDelay={100}
-            content={tooltipCheckbox}
-          />
+          {!noTooltip && (
+            <TooltipFactory
+              refElement={cbkRef.current}
+              placement="right"
+              offsetX={0}
+              offsetY={40}
+              showDelay={100}
+              content={tooltipCheckbox}
+            />
+          )}
         </div>
       )}
       <div
@@ -159,14 +171,16 @@ export const BreakpointIndicator = ({
         ) : (
           <div className={styles.iconPlaceholder} />
         )}
-        <TooltipFactory
-          refElement={ref.current}
-          placement="right"
-          offsetX={0}
-          offsetY={40}
-          showDelay={100}
-          content={tooltip}
-        />
+        {!noTooltip && (
+          <TooltipFactory
+            refElement={ref.current}
+            placement="right"
+            offsetX={0}
+            offsetY={40}
+            showDelay={100}
+            content={tooltip}
+          />
+        )}
         {showType && <Icon iconName={typeIcon} fill={typeColor} width={16} height={16} />}
       </div>
     </div>

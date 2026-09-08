@@ -74,6 +74,19 @@ class IdeMessageProcessor {
   }
 
   /**
+   * Displays several output spans in one round trip.
+   *
+   * The buffer coalesces its own change notification, so a batch of any size costs one repaint.
+   * @param toDisplay Output specifications, applied in order.
+   */
+  displayOutputBatch(toDisplay: OutputSpecification[]) {
+    // Input validation
+    if (!Array.isArray(toDisplay)) return;
+    // --- Input validated
+    for (const spec of toDisplay) this.displayOutput(spec);
+  }
+
+  /**
    * Sends script output to the IDE.
    * @param id Script ID.
    * @param operation Buffer operation to perform.
@@ -84,6 +97,24 @@ class IdeMessageProcessor {
     if (typeof id !== "number" || !operation) return;
     // --- Input validated
     executeScriptOutput(this.scriptService, id, operation, args);
+  }
+
+  /**
+   * Applies a run of script-output operations in one round trip.
+   *
+   * Order matters here in a way it does not for `displayOutputBatch`: script output style is
+   * stateful, so a `color` must be applied before the `write` it colours.
+   * @param id Script ID.
+   * @param operations Buffer operations, applied in order.
+   */
+  scriptOutputBatch(id: number, operations: { operation: any; args?: any[] }[]) {
+    // Input validation
+    if (typeof id !== "number" || !Array.isArray(operations)) return;
+    // --- Input validated
+    for (const op of operations) {
+      if (!op?.operation) continue;
+      executeScriptOutput(this.scriptService, id, op.operation, op.args);
+    }
   }
 
   /**

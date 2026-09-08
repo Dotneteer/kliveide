@@ -735,17 +735,21 @@ export class MachineController implements IMachineController {
   async sendOutput(text: string, foreground: OutputColor): Promise<void> {
     this._loggedEventNo++;
     const ideApi = createIdeApi(this.messenger);
-    await ideApi.displayOutput({
-      pane: PANE_ID_EMU,
-      text: `[${this._loggedEventNo}] `,
-      foreground: "magenta",
-      writeLine: false
-    });
-    await ideApi.displayOutput({
-      pane: PANE_ID_EMU,
-      text,
-      foreground,
-      writeLine: true
-    });
+    // --- One message, not two. The numbered prefix and the text are one line of output; sending
+    // --- them as separate awaited requests doubled the round trips for every logged event.
+    await ideApi.displayOutputBatch([
+      {
+        pane: PANE_ID_EMU,
+        text: `[${this._loggedEventNo}] `,
+        foreground: "magenta",
+        writeLine: false
+      },
+      {
+        pane: PANE_ID_EMU,
+        text,
+        foreground,
+        writeLine: true
+      }
+    ]);
   }
 }

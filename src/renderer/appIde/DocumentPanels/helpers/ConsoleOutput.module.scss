@@ -15,8 +15,40 @@
 }
 
 .outputLine {
-  overflow-x: hidden;
+  /*
+   * Terminal wrapping: keep every space, and break at the column where the text runs out of room —
+   * inside a word if that is where the edge falls.
+   *
+   * The two declarations do different jobs and both are needed.
+   *
+   * `pre-wrap` preserves runs of spaces and leading indentation while still allowing line breaks.
+   * (`pre` preserves them and forbids breaking; plain `normal` allows breaking and collapses the
+   * spaces. Only `pre-wrap` does both.) This is what replaced the buffer's old trick of
+   * substituting U+00A0 for every space, which preserved the look by corrupting the text — it
+   * reached the clipboard, and it made column alignment depend on the fallback font sharing NBSP's
+   * advance.
+   *
+   * `break-all` is what makes the break happen at the overflow column rather than at the last word
+   * boundary. `overflow-wrap: anywhere` is the near-miss here: it only splits a word that cannot
+   * fit on a line of its own, so `hello world` in eight columns gives `hello` / `world`, where a
+   * terminal — and this — gives `hello wo` / `rld`.
+   */
+  white-space: pre-wrap;
   word-break: break-all;
+
+  /*
+   * One line box per visual row, pinned.
+   *
+   * The height used to be whatever `line-height: normal` produced for the resolved font, which is a
+   * different number in Iosevka than in the Menlo/Courier fallbacks. Pinning it keeps a wrapped
+   * line's rows evenly spaced, and gives an *explicitly blank* line — `writeLine()` with no
+   * message, which has no spans — a height it would otherwise not have. The trailing line the
+   * cursor sits on is unaffected: `getContents()` drops it.
+   *
+   * `min-height`, not `height`: a wrapped line is legitimately taller than one row.
+   */
+  line-height: var(--row-size-console);
+  min-height: var(--row-size-console);
 }
 
 /*

@@ -25,7 +25,18 @@ export const rowSizes = {
   /** Memory dump rows — wider glyph runs, so slightly taller than disassembly. */
   memory: 20,
   /** Disassembly rows. The densest list in the app. */
-  disassembly: 18
+  disassembly: 18,
+  /**
+   * Console lines — Output, Command, Script Output, Command Result.
+   *
+   * Unlike the three above, this is not a padded, hoverable UI row: it is exactly one line box of
+   * 12px monospace text and nothing else, so it sits at the 16px line box rather than the 18px
+   * floor the others need for their padding. `row-size-contract.test.ts` records that exception.
+   *
+   * It is here, rather than in the stylesheet, because Phase 2 gives `VirtualizedList` the same
+   * number as its `itemSize` hint — which is precisely the CSS/JS pair M3 exists to keep together.
+   */
+  console: 16
 } as const;
 
 export type RowSizeKey = keyof typeof rowSizes;

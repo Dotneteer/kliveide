@@ -1,15 +1,17 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * Just the box the console fills.
+ *
+ * It used to also set `font-family`, a `font-size: 0.8em` — an `em` font size, which M1 forbids —
+ * and an `.outputLine` rule. All three were dead: `ConsoleOutput` pins its own family and size, and
+ * the `.outputLine` that actually renders is the one in `ConsoleOutput.module.scss`. The `em` was
+ * the more interesting of the two, since it silently lost to the inner declaration and so looked
+ * like it worked.
+ */
 .outputPanel {
     @include fill-parent-flex;
     box-sizing: border-box;
     flex-direction: column;
     user-select: text;
-    font-family: var(--monospace-font);
-    font-size: 0.8em;
-}
-
-.outputLine {
-    overflow-x: hidden;
-    word-break: break-all;
 }

@@ -49,10 +49,27 @@ describe("row size contract (M3)", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("keeps every row size tall enough for a 12px monospace line", () => {
-    // The module's own rule: ~16px line box at --font-size-200, so 18px is the practical floor.
+  /**
+   * Rows that are a line box and nothing else, so the 18px floor below does not apply to them.
+   *
+   * Membership is opt-in and listed here rather than inferred, so a new row size defaults to the
+   * strict floor and joining this list stays a deliberate decision with a reason in `rowSizes.ts`.
+   */
+  const LINE_BOX_ONLY = ["console"];
+
+  it("keeps every padded row tall enough for a 12px monospace line plus its padding", () => {
+    // The module's own rule: ~16px line box at --font-size-200, so 18px is the practical floor for
+    // a row that also draws padding and a hover state.
     for (const [key, value] of Object.entries(rowSizes)) {
+      if (LINE_BOX_ONLY.includes(key)) continue;
       expect(value, `row size "${key}" is too short for its text`).toBeGreaterThanOrEqual(18);
+    }
+  });
+
+  it("keeps every row size at least one 12px monospace line box", () => {
+    // Applies to the exceptions too: a console line may drop the padding, never the text.
+    for (const [key, value] of Object.entries(rowSizes)) {
+      expect(value, `row size "${key}" cannot fit a line of text`).toBeGreaterThanOrEqual(16);
     }
   });
 });

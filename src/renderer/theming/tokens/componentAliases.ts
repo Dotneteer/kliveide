@@ -200,6 +200,21 @@ export const componentAliases: Record<string, string> = {
   "--color-breakpoint-mixed": "var(--console-ansi-bright-magenta)",
   "--color-breakpoint-disabled": "var(--text-disabled)",
   "--color-breakpoint-current": "var(--status-warning)",
+  /*
+   * The type badge beside a breakpoint — execute, memory read/write, I/O read/write.
+   *
+   * **One colour for all five.** These icons used to be painted from the *console's* ANSI palette —
+   * bright blue for execute, bright green for the reads, bright magenta for the writes — three
+   * saturated hues in the densest part of the sidebar, which is what §5.2 removed everywhere else.
+   * The hues were carrying the read/write distinction, but the redrawn glyphs now say it themselves:
+   * arrow up is a read, arrow down is a write, and the body says memory or port. With the shape
+   * doing that work the colour has nothing left to encode, so it stops competing.
+   *
+   * The secondary accent rather than the primary: the row's *value* (the disassembled instruction)
+   * is what the eye should land on first, and the badge is the supporting mark — the same primary/
+   * secondary split this panel already uses for its instruction and its addresses.
+   */
+  "--color-breakpoint-type": "var(--accent-secondary-text)",
 
   // --- Disassembly / memory ---------------------------------------------------------------------
   "--bgcolor-disass-even-row": "var(--surface-panel)",

@@ -45,7 +45,9 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
           iconName='copy'
           title={"Copy to clipboard"}
           clicked={async () => {
-            navigator.clipboard.writeText(buffer.getBufferText().replaceAll("\xa0", " "));
+            // --- No `replaceAll("\xa0", " ")` any more: the buffer stores real spaces, so this
+            // --- panel no longer has to undo a substitution the other two copy buttons never did.
+            navigator.clipboard.writeText(buffer.getBufferText());
             dispatch(
               setIdeStatusMessageAction(
                 "Command output text copied to the clipboard",
