@@ -1,5 +1,6 @@
 import { Icon } from "@renderer/controls/Icon";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
+import classnames from "classnames";
 import styles from "./Layout.module.scss";
 
 type Props = {
@@ -15,6 +16,21 @@ type Props = {
   tooltip?: string;
   /** Optional click handler for interactive flag cells. */
   clicked?: () => void;
+  /**
+   * The theme property the indicator is filled with. Defaults to the neutral `--color-value`, which
+   * is what all 70-odd existing call sites get; a converted panel passes `--color-state-value` to
+   * opt in. Same shape as `iconFill` on `controls/data/registers`' flag components.
+   */
+  iconFill?: string;
+  /**
+   * Extra class merged onto the flag cell, for a caller that needs the indicator on its own column
+   * grid. `Label`/`Value`/`Secondary` all take one; this did not, so a panel could not put the dot
+   * anywhere but where this component's own padding left it.
+   *
+   * Note that `width`, `justifyContent` and `marginLeft` below are *inline* styles and so beat any
+   * class: leave the `width` prop off and pass `adjustLeft={false}` if the class is to own those.
+   */
+  className?: string;
 };
 
 /**
@@ -26,14 +42,16 @@ export const Flag = ({
   adjustLeft = true,
   center = true,
   tooltip,
-  clicked
+  clicked,
+  iconFill,
+  className
 }: Props) => {
   const ref = useTooltipRef();
 
   return (
     <div
       ref={ref}
-      className={styles.flag}
+      className={classnames(styles.flag, className)}
       style={{
         width,
         display: "flex",
@@ -47,7 +65,7 @@ export const Flag = ({
         iconName={value === undefined ? "close" : value ? "circle-filled" : "circle-outline"}
         width={16}
         height={16}
-        fill="--color-value"
+        fill={iconFill ?? "--color-value"}
       />
       {tooltip && (
         <TooltipFactory

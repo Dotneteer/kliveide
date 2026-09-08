@@ -56,6 +56,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
   private wasmV2CpuRegisterSyncs = 0;
   private wasmV2TapeUploadCount = 0;
   private wasmV2SavedTapeRevision = 0;
+  private wasmV2ContentionPauseBase = 0;
 
   constructor(
     public readonly requestedModelInfo?: MachineModel,
@@ -111,6 +112,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
     super.reset();
     if (this.wasmV2Runtime != null) {
       this.wasmV2Runtime.exports.sp128Reset();
+      this.wasmV2ContentionPauseBase = 0;
       this.invalidateWasmV2Sync();
       this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
       this.syncTargetClockMultiplierToWasmV2(this.wasmV2Runtime);
@@ -347,6 +349,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
 
   private hardResetWasmV2(runtime: Sp128WasmV2Runtime): void {
     runtime.exports.sp128HardReset();
+    this.wasmV2ContentionPauseBase = 0;
     this.invalidateWasmV2Sync();
     this.wasmV2SavedTapeRevision = 0;
     this.setTactsInFrame(runtime.exports.sp128GetTactsInFrame());
@@ -678,6 +681,24 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
     );
   }
 
+  /**
+   * The WASM backend owns the contention counters, so the JS-side fields are refreshed from the
+   * backend whenever machine state is synced. `contentionDelaySincePause` restarts at every run, so
+   * it is reported relative to the backend value captured at the last reset.
+   */
+  override resetContentionDelaySincePause(): void {
+    this.wasmV2ContentionPauseBase =
+      this.wasmV2Runtime?.exports.sp128GetContentionDelaySincePause() ?? 0;
+    this.contentionDelaySincePause = 0;
+  }
+
+  private syncContentionCountersFromWasmV2(runtime: Sp128WasmV2Runtime): void {
+    const wasm = runtime.exports;
+    this.totalContentionDelaySinceStart = wasm.sp128GetTotalContentionDelaySinceStart();
+    this.contentionDelaySincePause =
+      wasm.sp128GetContentionDelaySincePause() - this.wasmV2ContentionPauseBase;
+  }
+
   private syncCpuFromWasmV2(runtime: Sp128WasmV2Runtime): void {
     const wasm = runtime.exports;
     this.af = wasm.sp128GetCpuAf();
@@ -697,6 +718,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
     this.halted = wasm.sp128GetCpuHalted() !== 0;
     this.opCode = wasm.sp128GetCpuPrefix();
     this.syncPagingStateFromWasmV2(runtime);
+    this.syncContentionCountersFromWasmV2(runtime);
     this.wasmV2CpuRegisterSyncs++;
   }
 
@@ -710,6 +732,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
     this.frameTacts = this.tacts % this.tactsInCurrentFrame;
     this.currentFrameTact = this.frameTacts;
     this.syncPagingStateFromWasmV2(runtime);
+    this.syncContentionCountersFromWasmV2(runtime);
   }
 
   private importWasmV2BusAccess(runtime: Sp128WasmV2Runtime): void {

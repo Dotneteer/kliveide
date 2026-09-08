@@ -1,8 +1,9 @@
 # UI Modernization: Intent And Lessons
 
-Durable notes from the Phase 0–9 UI modernization (`.plans/UI_MODERNIZATION_PLAN.md`).
-Read `../AGENTS.md` first. Read this before touching theming, tokens, the shared data-display
-primitives, or the Monaco palette.
+Durable notes from the Phase 0–9 UI modernization and the Phase 10 follow-up
+(`.plans/UI_MODERNIZATION_PLAN.md`). Read `../AGENTS.md` first. Read this before touching theming,
+tokens, the shared data-display primitives, the Monaco palette, **or the memory dump/disassembly
+colour** (§ "Secondary Accents" and § "View-Scoped Colour" below).
 
 The plan file is the detailed record: every phase has a retrospective written **after** it shipped,
 including the mistakes. This file is the part worth carrying into unrelated work.
@@ -22,6 +23,9 @@ These were decided by the project author. Changing them is a product decision, n
 | Rainbow motif | Confined to empty states and the About panel. Order (red, yellow, green, cyan) confirmed correct by the author. |
 | Monaco | The syntax palette is a **fixed multi-hue table**; only the *keyword* colour follows the accent. Comments are green and italic, never grey. |
 | Window chrome | Frameless/title-bar toolbar: **explicitly deferred.** |
+| Secondary accent | **Yes, added in Phase 10.** Every accent has a second hue (`--accent-secondary-*`), for the specific case one hue can't cover — two things in the same view that must both read as accent-tied and clearly apart. Not a general "add more colour" licence; see below. |
+| Memory dump / disassembly colour | **These two views are exceptions to §5.2's neutral data-panel hierarchy**, added in Phase 10 — hex-editor-style views read better for real colour. The watch panel is unaffected and stays neutral. |
+| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack. Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
 > lightness step of the accent, which put nine of eleven classes in one blue and comments in neutral
@@ -31,6 +35,182 @@ These were decided by the project author. Changing them is a product decision, n
 > keyword for all six accents). Before touching `theming/tokens/syntax.ts`, read
 > **`.plans/SYNTAX_PALETTE_REVISION_PLAN.md`** — including its retrospective, which records that the
 > two tightest accent pairings were reviewed and **deliberately left as they are**.
+
+## Secondary Accents
+
+Full derivation, per-accent numbers and the WCAG accounting are in `.plans/UI_MODERNIZATION_PLAN.md`
+§10.2. What to carry forward:
+
+- **Each accent has a second hue**: `--accent-secondary-solid`/`-solid-hover`/`-subtle`/`-border`/
+  `-text`/`-text-subtle`, generated in `semantic.ts` from `AccentDef.secondary` exactly the way
+  `--accent-*` is generated from `AccentDef.solid`. `--text-on-accent-secondary` mirrors
+  `--text-on-accent`.
+- **It exists for one reason: two things in the same view both need to read as accent-tied *and*
+  clearly apart.** It is not a second colour to reach for whenever something "needs more colour" —
+  if only one thing in a view needs an accent, that is `--accent-*`, full stop.
+- **The test that separates a real case from a wanted one is whether anything *else* already tells
+  the two apart.** Four attempts, three accepted, and the refusal is the instructive one:
+  - *Refused* — the Z80 shadow bank. `AF'` is already named differently from `AF`, so a second hue
+    duplicates what the label says.
+  - *Accepted* — `NextRegPanel`'s previous value (`08 → 08`): the same register a moment apart,
+    with nothing but position separating the pair.
+  - *Accepted* — `MemMappingPanel`'s page rows (`FF -- 000000 0000FF`): bank numbers and memory
+    offsets, four unlabelled hex numbers where only the colour split says where the pair breaks.
+  - *Accepted* — `CallStackPanel`'s rows (`4: 5BFF → FF00`): the stack slot an address is *stored
+    at* against the address it *returns to*. Two 16-bit numbers of identical shape, one row apart
+    from meaning completely different things.
+
+  All three accepted cases share the shape: **one row, two kinds of number, no words**. Dropping the
+  weaker of a pair to plain `--data-secondary` is not a consolation prize either — it makes the
+  thing read as chrome rather than as a value, which is wrong when both are data.
+- They share **one token**, `--color-state-value-alt`, for the same reason the panels share
+  `--color-state-value`: the role is "the second kind of value in this row", not "the previous
+  value" or "the offset column". Name a role, not a use.
+- **A hue rotation with the primary's own lightness is not automatically legible.** Blue-family
+  hues carry far less of WCAG's relative-luminance weight than green/yellow (0.0722 vs. 0.7152), so
+  a rotation that lands in blue can fail the 4.5:1 text floor even though the primary it was
+  derived from clears it comfortably. Separately, hue alone does not reliably separate two colours'
+  *luminance* — a rotation can leave the secondary reading as the same colour as its own primary
+  even when both are individually legible. **Check contrast against the background AND against the
+  primary, not just one.** Sinclair Blue and Deep Teal needed the first fix, Spectrum Magenta the
+  second; Ultraviolet and Phosphor Green needed neither because their primaries already sit at a
+  lightness that carries over safely.
+- If you add a seventh accent (§5.4 already asks for a `token-contract.test.ts` re-run), it needs a
+  `secondary`/`onSecondary` pair through the same two checks, not just a hue offset copied from a
+  neighbour.
+
+## View-Scoped Colour: Memory Dump, Disassembly & The Register/State Panels
+
+**§5.2's neutral data-panel hierarchy (`--data-value`/`--data-label`/`--data-secondary`) still
+stands for the watch panel and every register panel that has not been explicitly excepted.** The
+memory dump, the disassembly view and the converted register/state panels (Z80 CPU, ULA & I/O, Next
+Registers, Next Memory Mapping, Call Stack) are the deliberate exceptions, and each has
+its **own** token family in `componentAliases.ts` (`--color-memory-*`/`--bgcolor-memory-*`,
+`--color-disassembly-*`/`--bgcolor-disassembly-*`, `--color-state-value`) rather than a shared one, so
+colouring one never touches the others or the still-neutral panels. Full role tables are in the plan
+§10.3; the pattern to reuse elsewhere is:
+
+- **One thing anchors the view in the primary accent** (an address column, usually) and **one
+  column is the "most legible thing in the row"** in plain bold `--text-primary` — not accent —
+  because legibility of the actual data was the point of §5.2 and still is here.
+- **A highlight that could be confused with the anchor takes the secondary accent instead of
+  echoing the primary.** The memory dump's hovered byte and disassembly's opcode bytes both ended up
+  here; disassembly's jump-target label did not, because a label is a *name for* the address rather
+  than a different kind of information, so it deliberately shares the address's hue.
+- **Give a shared component (`AddressLabel`, `controls/layout`'s `Secondary`/`Value`/`Label`,
+  `Tooltip`/`TooltipFactory`) an optional `className`** merged onto its existing class, rather than
+  forking it or restyling it for everyone. Every other one of its 20+ other call sites simply does
+  not pass the prop.
+- **That override class lives in a different stylesheet than the shared component's own base
+  class, so both are single-class selectors of equal specificity** — the load order between two
+  separate CSS Modules files decides the tie, which is not something to depend on. Nest the
+  override under something unique to the caller's own row (`.dumpSection .memoryAddress`,
+  `.item .disassemblyAddress`) or double the class (`.memoryTooltip.memoryTooltip`) to force it to
+  win regardless of load order.
+- **A tooltip usually belongs to the row, not to the cell.** `controls/layout`'s `Label`/`Value`/
+  `Secondary`/`Flag` each bind their own tooltip to their own cell, so the hit area ends up being a
+  two-character hex value while the rest of a wide row is inert. `DataRow` forwards its ref, and
+  `TooltipFactory` binds `mouseenter`/`mouseleave` to whatever element it is handed — so wrap the
+  row (see `TipRow` in `MemMappingPanel`) and drop the per-cell `tooltip` props. It renders nothing
+  inline (it portals only while visible), so it is safe as a child of the row's flex container.
+  Keep per-cell tooltips only where a row genuinely has two things to say — `NextRegPanel` names
+  its previous and current values separately.
+- A shared primitive can also take an **optional prop that is not a class** where the styling does
+  not go through CSS — `FlagValue`/`VerticalFlagValue`/`BitValue` take `iconFill` (a token *name*,
+  resolved by `Icon` via `getThemeProperty`), because an SVG presentation attribute cannot read
+  `var()`. Same principle as M4: pass token names, never literals.
+- **The register/state panels share one role token, `--color-state-value`, rather than a family
+  each.** This is the one place the per-view rule above does not apply, and the reason is that the
+  rule is about *role tables*, not about view count: memory and disassembly are separate families
+  because their roles genuinely differ (address/hex/char against address/opcode/instruction), while
+  every register/state panel has the same single role — "this is a live value". Adding
+  `--color-ula-value`, `--color-vic-value` and so on would be a near-identical family per panel.
+  Split it the day a panel needs a role the others do not have.
+
+## Alignment In The Register Panels
+
+Three traps found the hard way while aligning the Z80 CPU panel. All three produce offsets small
+enough to look like "it just feels off" and large enough to be visible.
+
+- **A `DataRow` can contain another `DataRow`.** `Bit16Value`/`Bit8Value`/`SimpleValue`/`FlagValue`
+  each render their *own* `DataRow` for their label/value pair, and a panel row puts two of those
+  side by side — a register row is literally a row inside a row. Putting horizontal padding on
+  `.dense` therefore indented register rows **twice** (16px) and the flag strip, which is built from
+  bare divs, **once** (8px): measured live as `.flagLetter` at x=56 against the `AF` label at x=64.
+  `.dataRow .dataRow { padding-left: 0; padding-right: 0 }` makes the outermost row own the gutter.
+  Prefer that over moving the gutter to the panel, which would stop row backgrounds being
+  full-bleed and so break the zebra/hover treatments.
+- **A glyph's left side bearing scales with its font size, so a larger label does not optically
+  left-align with a normal one even when the boxes share an x.** The flag strip's `F` is `1.6em`:
+  in the bundled Iosevka it carries 1.843px of bearing at 19.2px against `A`'s 0.528px at 12px, so
+  its stem printed 1.315px right of the label column. Corrected with `margin-left: -0.0685em` on the
+  glyph — expressed in the glyph's own em so it tracks the type scale. Keep the scaling on an inner
+  span, never on the width-bearing box: `ch` resolves against the element's own font size, so a
+  `1.6em` box measuring `3ch` is 28.8px while its `1em` neighbours' `3ch` is 18px.
+- **A conditionally rendered cell moves every column after it.** `NextRegPanel` renders its
+  `previous value -->` cell only when the register has a `lastWrite`, so the value column sits 10ch
+  further right on those rows than on the others — a ragged column in a 128-row virtualized list.
+  Left as-is for now (see the note in that panel's review): reserving the column always would put an
+  8ch hole in the majority of rows, which fights the Density decision above. Worth knowing as a
+  shape: in a tabular list, a cell that can vanish needs a placeholder or the grid is not a grid.
+- **`controls/layout`'s `Label` is not on the same origin as `controls/data`'s.** It adds
+  `.legacySpacing` — `margin-inline: var(--measure-gap)` on *both* sides — so a row using it starts
+  0.8ch right of a row using `DataLabel`/`SimpleValue`. The ULA panel had both shapes and therefore
+  two label origins (`KL0` against `FCL`). Override it from the caller's own stylesheet with a
+  type+class selector (`span.klLabel { margin-inline: 0 }`), which beats the single-class
+  `.legacySpacing` whatever the load order. It also takes its `width` as an **inline style**, so a
+  width in your override class is ignored unless you drop the `width` prop. `NextRegPanel` had the
+  same margin *plus* a leading `LabelSeparator`, which started its content ~21.6px into the row
+  while the two panels stacked above it started at 8px — worth checking the left edge of adjacent
+  sidebar panels against each other, not just rows within one panel.
+- **A fixed-px icon in a `ch`-sized cell does not align with text in that cell.** A 16px flag dot at
+  the value cell's `flex-start` centres ~8px in, while a digit's ink centres half a character in, so
+  every dot read as shifted right of the numbers above it. Wrap the icon in a `width: 1ch;
+  justify-content: center` box (`.flagDot`) — it then centres on the first character cell whatever
+  the font does, and the icon simply overflows that box symmetrically, which is invisible for a
+  round glyph. Same idea aligns the flag strip to the value column: `.flagLetter` is
+  `calc(var(--measure-label) - 1ch)`, because a `3ch` flag column centres its content 1.5ch in while
+  a value cell's first character centres 0.5ch in.
+
+## Verify Geometry In The Running App, Never In A Replica
+
+This is the process lesson from the same work, and it cost two rounds of shipping a "fix" the user
+could see was still broken.
+
+A standalone HTML page that copies the stylesheet rules is **not** evidence. The replica used to
+"prove" the alignment above flattened the nested `DataRow`, so it measured everything landing within
+0.01px while the real panel was 8px out. A replica can only confirm what you already modelled
+correctly; it cannot discover the wrapper you did not know about.
+
+Drive the real thing instead — `.plans/baseline/drive.mjs` against a CDP-enabled launch:
+
+```bash
+npx electron-vite dev --config build/electron.vite.config.ts --remoteDebuggingPort=9222
+node .plans/baseline/drive.mjs ide "<expression returning a JSON string>" - -
+```
+
+Specifics worth keeping:
+
+- **CSS Module class names are hashed**, so query by substring: `[class*=flagLetterGlyph]`.
+- **The sidebar panels only exist when their activity is selected.** The Z80 panel needs the Debug
+  activity; a fresh profile opens on Explorer and the probe returns zero elements. Check for
+  `_active_` before clicking an activity button — clicking the active one collapses the sidebar.
+- **Relaunch after SCSS + `.tsx` edits.** HMR left the panel missing from the tree mid-session,
+  which matches the warning under "Running the app for visual checks" below.
+- Measure *ink*, not boxes, when the question is optical: `getBoundingClientRect()` gives the
+  advance box, and canvas `measureText(...).actualBoundingBoxLeft` gives the bearing to add to it.
+- **Hovering over CDP needs the mouse parked elsewhere first, and patience.** `TooltipFactory`
+  listens for `mouseenter` on its `refElement`, so a synthetic `new MouseEvent` often does nothing —
+  use `Input.dispatchMouseEvent`. And the previous tooltip's hide timer outlives a fast script:
+  reading too early returns the *last* row's tooltip and looks like crossed wiring. Park at a far
+  corner, wait ~1s, hover, wait ~1s, then read.
+
+It catches more than geometry. This same loop caught a **blank renderer**: replacing the panel's
+`writeOffset ?? 0xff` with a `=== undefined` test let a `null` through to `toHexa6`, which threw
+`Cannot read properties of null` and took the whole React tree down — `tsc` and `eslint` were both
+clean, because the field's type says `number | undefined` while the emulator actually sends `null`.
+When you tighten a nullish check, keep it nullish (`== null`, or an explicit both-branches helper),
+and load the panel before believing it.
 
 ## Token Architecture
 
@@ -75,13 +255,24 @@ a new hand-copied light value is a regression.
   `controls/data` and add only `TooltipFactory` behaviour.
 - **`theming/tokens/syntax.ts`** — `syntaxPalette(tone, accent)`, `syntaxRules`, `editorColors`,
   plus the colour maths (`contrastRatio`, `ensureContrast`).
+- **`theming/tokens/palette.ts`** — `AccentDef.secondary`/`onSecondary` alongside `solid`/`onSolid`,
+  one pair per accent (Phase 10).
+- **`theming/tokens/semantic.ts`** — the `--accent-secondary-*` family, generated from `secondary`
+  the same way `--accent-*` is generated from `solid` (Phase 10).
+- **`theming/tokens/componentAliases.ts`** — `--color-memory-*`/`--bgcolor-memory-*`,
+  `--color-disassembly-*`/`--bgcolor-disassembly-*` and `--color-state-value`, the memory dump's,
+  disassembly's and the Z80 CPU panel's own scoped colour tokens (see § "View-Scoped Colour" above).
 - **Deleted:** `controls/valuedisplay/`, `DocumentPanels/helpers/PanelHeader.tsx`,
   `GenericFileViewerPanel`/`GenericFileEditorPanel` (now one `GenericFilePanel`).
 
-Two traps worth knowing:
+Three traps worth knowing:
 
 - `DataRow` needs `dense` for register/state rows (15px). The default carries `--row-size-list`
-  (22px) and list chrome, which inflates a register panel ~47%.
+  (22px) and list chrome, which inflates a register panel ~47%. `dense` drops the row *height*, not
+  the side padding — see the next trap for why that distinction matters.
+- **`DataRow` nests**: the value components each render one, so panel row → component row → cells.
+  Anything you add to the row primitive applies once per level. See § "Alignment In The Register
+  Panels".
 - `DataPanel` needs `autoHeight` whenever the panel's registry entry leaves `useScrollViewer` at its
   default — the host supplies the viewer, and a panel pinned to `height: 100%` hides its own
   overflow before the viewer can scroll it.
@@ -206,12 +397,51 @@ thirteenth accent. Hand-checked values do not.
 order it used — no test or screenshot could ever have caught a wrong one. That is the class of
 question to raise rather than guess at; the author confirmed it in one line.
 
+**An imperative theme read can lag the DOM by exactly one render, and CSS never shows you this.**
+`getThemeProperty` resolves a token via `getComputedStyle(root)` *during render*, but `root`'s
+`style` attribute only updates at *commit* — one step later. The render that first reacts to a new
+accent reads DOM state that still reflects the old one, so `react-switch`/SVG-fill colours lagged
+CSS-driven text by however long it took some *unrelated* future render to happen to fix it. Any
+`getComputedStyle`/`getBoundingClientRect` read inside a render path that also depends on a style
+change from that same update has this bug. Fix: force one more render after commit
+(`useLayoutEffect` bumping a tick state), not a bigger `useMemo` dependency list.
+
+**`Array.prototype.map` and `TypedArray.prototype.map` are not interchangeable, and nothing type-
+checks the difference if the parameter is typed as `readonly number[]`.** A `Uint8Array` structurally
+satisfies that type, but its own `.map` builds a *new typed array*, coercing every callback return
+value to a number — return JSX from it and every entry silently becomes `0`. If a prop is typed as
+a plain array but a caller might hand it a live buffer view (here: `memory.subarray(...)`, to avoid
+copying on every scroll), wrap with `Array.from(...)` before `.map`-ing for anything but numbers.
+
+**A ref that a click handler reads is only as fresh as the last effect that synced it — and effects
+run after the handler, not during it.** Two bugs this session had the same shape: a click handler
+called an async worker that read `somethingRef.current`, synced by a *different* effect elsewhere,
+and the call happened before that effect had run for this update. One symptom was a stale
+`autoRefresh` making "Follow PC" silently do a full disassembly instead of the small PC-relative
+one; the other was a `ResizeObserver` rebuilt on every render because its setup effect had no
+dependency array, invisible in jsdom (no `ResizeObserver` there at all — the test needed its own
+stub to see the bug exist). If a value has to be current *inside this same event*, don't route it
+through a ref-plus-effect pair; if a value only needs to be current *for the next scheduled work*,
+put it in that work's own dependency array instead of calling the work directly from the handler.
+
+**A `border` is part of the box model; an `outline` is not — and that difference is exactly the bug
+when a box overlays text it doesn't own.** An absolutely-positioned overlay sized to line up with
+real text underneath it stayed positioned correctly at its own edge, but a `border` still pushed its
+*content* inward from that edge — invisible until you overlay something whose alignment actually
+matters. `outline` paints at the same visual position without participating in layout.
+
+**A shared component's override class and its own base class, from two different CSS Modules
+files, are a specificity tie — and ties resolve by stylesheet load order, which is not something to
+depend on.** Nest the override under a selector unique to the caller (`.item .foo`) or double the
+class (`.foo.foo`) to force a deterministic win instead of an order-dependent one.
+
 ## Recommended First Reading For UI Work
 
 1. `../AGENTS.md`
 2. This file.
 3. `.plans/UI_MODERNIZATION_PLAN.md` §3 (token architecture and the five mandates), then the
-   retrospective for whatever area you are touching.
+   retrospective for whatever area you are touching — §10 for the secondary accent or the memory
+   dump/disassembly colour specifically.
 4. `src/renderer/theming/tokens/` — the four layers, in order.
 
 ## Non-Negotiable Handoff Message
@@ -219,5 +449,17 @@ question to raise rather than guess at; the author confirmed it in one line.
 - Do not add a colour literal to a stylesheet or a `.tsx`. Alias it in L4 or add it to L1/L2.
 - Do not add a hand-copied light-theme value. Light is derived.
 - Do not add a component-private row height, `em` font-size, or px column width. M1/M2/M3 have tests.
+- Do not reach for the secondary accent because something "needs more colour". It exists for one
+  case: two things in the same view that must both read as accent-tied and clearly apart from each
+  other. One accent-worthy thing in a view is `--accent-*`.
+- Do not give a register or watch panel colour beyond §5.2's neutral hierarchy. The memory dump, the
+  disassembly view and the Z80 CPU panel are the only exceptions, and each was made deliberately, by
+  the author, not by drift.
+- Do not put horizontal padding on `DataRow`/`.dense` without the nested-row reset — the value
+  components each render their own row, so it lands twice on register rows. § "Alignment In The
+  Register Panels".
+- Run the visual check **in the running app over CDP**, not in a standalone replica of the CSS. A
+  replica cannot show you the wrapper you did not model; this shipped two wrong "fixes" in one
+  session. § "Verify Geometry In The Running App, Never In A Replica".
 - Run the visual check. The token contract, row-size and syntax-palette tests catch structure, never
   appearance.

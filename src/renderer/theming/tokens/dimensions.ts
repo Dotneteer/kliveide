@@ -119,7 +119,7 @@ export const MEASURE = {
    * cells that are not inside a `DataRow` yet.
    */
   label: "7ch",
-  value: "8ch"
+  value: "10ch"
 } as const;
 
 /**

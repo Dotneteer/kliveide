@@ -93,6 +93,20 @@ merely uncoloured, which no route diff can see.
 - **Read `.ai/ui-theming-intent-and-lessons.md` before this kind of work.** It records the settled
   product decisions, how to run and visually inspect the app (CDP, the app menu, the
   `.plans/baseline/` scripts), and the failure modes this work already hit.
+- Every accent has a **primary and a secondary hue** (`--accent-*` / `--accent-secondary-*`) — the
+  secondary exists for two things in one view that must both read as accent-tied yet stay clearly
+  apart (see the memory dump's hovered byte and disassembly's opcode column). The memory dump, the
+  disassembly view **and the converted register/state panels** (Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack — one shared
+  `--color-state-value`) are the deliberate exceptions to the otherwise-neutral data hierarchy;
+  unconverted panels stay neutral. Full detail in `.ai/ui-theming-intent-and-lessons.md` and
+  `.plans/UI_MODERNIZATION_PLAN.md` §10.
+- **A `DataRow` can contain another `DataRow`.** `Bit16Value`/`Bit8Value`/`SimpleValue`/`FlagValue`
+  each render their own row for their label/value pair, so a register row is a row inside a row.
+  Any horizontal padding put on the row primitive therefore lands *twice* on register rows and once
+  on rows built from bare divs. See the alignment traps in `.ai/ui-theming-intent-and-lessons.md`.
+- **Verify panel geometry in the running app, not in a standalone HTML replica.** A replica that
+  omits one wrapper "proves" an alignment that is wrong on screen; this cost two failed rounds. Use
+  the CDP recipe in `.ai/ui-theming-intent-and-lessons.md`.
 - Type-check with `npx tsc --noEmit -p build/tsconfig.web.json`; tests need an explicit project
   (`--project=jsdom` or `--project='!perf'`) and the `build/vitest.config.ts` config.
 

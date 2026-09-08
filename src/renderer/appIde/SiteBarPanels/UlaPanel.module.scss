@@ -1,0 +1,47 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The ULA & I/O panel's own two cells.
+ *
+ * Everything else in this panel comes from `controls/data` and `controls/data/registers`; only the
+ * keyboard-line strip needs geometry of its own, because it is the one row shape that is a strip of
+ * bits rather than a label/value pair.
+ */
+
+/*
+ * A keyboard-line label ("KL0" ... "KL7").
+ *
+ * Two corrections against `controls/layout`'s `Label`, which is what these rows use for their
+ * tooltip behaviour:
+ *
+ * - `margin-inline: 0` drops that component's `.legacySpacing`, a `--measure-gap` margin on *both*
+ *   sides. It pushed every KL label 0.8ch right of `FCL`/`RAS`/`EAR`, which come from `SimpleValue`
+ *   and carry no such margin, so the panel had two different label origins.
+ * - The width is one character narrower than the label column, which is what lands the *first key
+ *   bit* on the value column's first character. Identical reasoning to `.flagLetter` in
+ *   `Registers.module.scss`: a `3ch` bit column centres its content 1.5ch in while a value cell's
+ *   first character centres 0.5ch in, and the label text is left-aligned so narrowing its box moves
+ *   the strip without moving the text:
+ *
+ *     (7ch - 1ch) + 0.8ch gap + 1.5ch  ==  7ch + 0.8ch gap + 0.5ch
+ *
+ * `span.` beats `.legacySpacing` on specificity alone (type + class against one class), so this
+ * wins regardless of which CSS Module the bundler loads second.
+ */
+span.klLabel {
+  width: calc(var(--measure-label) - 1ch);
+  margin-inline: 0;
+}
+
+/*
+ * One key bit in a keyboard line.
+ *
+ * `3ch` rather than `BitValue`'s default icon-sized box: it puts the strip on the character grid
+ * (see `.klLabel` above), matches the Z80 panel's flag columns, and gives each key an 18px hit
+ * target instead of 16px — these bits are clickable, they toggle the emulated key. Passed in via
+ * `BitValue`'s `xclass`, so the VIC, Blink and SysVars strips that share the component keep the
+ * default cell.
+ */
+.keyBit {
+  width: 3ch;
+}

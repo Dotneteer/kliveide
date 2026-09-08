@@ -619,6 +619,13 @@ export class Z80Cpu implements IZ80Cpu {
   contentionDelaySincePause: number;
 
   /**
+   * Resets the contention accumulated since the last pause.
+   */
+  resetContentionDelaySincePause(): void {
+    this.contentionDelaySincePause = 0;
+  }
+
+  /**
    * Number of clock cycles at the last machine frame cycle start
    */
   tactsAtLastStart: number;

@@ -5,4 +5,63 @@
   user-select: none;
   font-family: var(--monospace-font);
   font-size: var(--font-size-200);
+
+  /*
+   * The gutter belongs to the row, not to the panel *and* the row.
+   *
+   * `side-panel-content` ends with `padding: 4px 4px 4px 8px`, and every row here is a `DataRow`,
+   * which carries `padding: 0 var(--space-2)` of its own — so the label started 16px in, plus the
+   * 0.8ch `.legacySpacing` margin below, against the 8px used by the Z80 CPU, ULA & I/O and Next
+   * Registers panels stacked around it. Dropping the panel's own inline padding leaves the row's,
+   * which is the one every other converted panel uses. The vertical padding stays.
+   */
+  padding-inline: 0;
+}
+
+/*
+ * The label column.
+ *
+ * `margin-inline: 0` drops `controls/layout` `Label`'s `.legacySpacing`; the width moves here from
+ * the call site because that component passes `width` as an inline style, which a class cannot
+ * override. `span.` beats the single-class `.legacySpacing` on specificity alone, whatever order
+ * the two CSS Modules load in.
+ *
+ * 17ch is the author's own column, kept: the longest label ("Current Bank:") is 13 characters, and
+ * the page rows that follow are wide, so there is no case for tightening it here.
+ */
+span.memMapLabel {
+  width: 17ch;
+  margin-inline: 0;
+}
+
+/*
+ * A value cell in a page row.
+ *
+ * `controls/layout`'s `Value` carries `.legacyValueSpacing` — `margin-inline-end` of two
+ * `--measure-gap`s. That is invisible on a row with one value, but a page row now has two cells
+ * side by side, and 1.6ch of margin *plus* the row's own 0.8ch gap would open a 2.4ch canyon
+ * between the bank pair and the offsets. Zeroing it leaves the row gap as the only separator, so
+ * the four numbers read as one run split into two coloured halves.
+ */
+span.memMapCell {
+  margin-inline-end: 0;
+}
+
+/*
+ * The DivMMC state indicator, on its own row and sitting in the value column.
+ *
+ * Same centring as `.flagDot` in `Registers.module.scss`, and for the same reason: the icon is a
+ * fixed 16px while the column is measured in `ch`, so a left-aligned icon puts its 8px centre well
+ * right of where a digit's ink sits. A `1ch` box with the icon centred lands the dot on the first
+ * character cell — directly under the `00` in the row above — whatever the font does. The icon
+ * overflows this box symmetrically, which is invisible for a round glyph.
+ *
+ * `padding: 0` drops `.flag`'s own `0 0.4em 0 0.2em`, which would otherwise offset the content box
+ * inside the cell. The call site passes `adjustLeft={false}` and no `width`, because both of those
+ * are inline styles on the component and would win over this rule.
+ */
+div.memMapFlag {
+  width: 1ch;
+  padding: 0;
+  justify-content: center;
 }

@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { forwardRef } from "react";
 import classnames from "classnames";
+import { toBin8 } from "@renderer/appIde/services/ide-commands";
 import styles from "./Data.module.scss";
 
 /**
@@ -337,6 +338,18 @@ export const HEX_PREFIX = "$";
  */
 export function formatHex(value: number, digits = 2, prefix = HEX_PREFIX): string {
   return `${prefix}${(value >>> 0).toString(16).toUpperCase().padStart(digits, "0")}`;
+}
+
+/**
+ * A tooltip for a byte, in the memory dump's format: a heading, then hex with the decimal and
+ * binary in parentheses — `$08 (8, %0000 1000)`.
+ *
+ * The same line `buildByteTooltipCache` builds in `features/memory/MemoryDumpSection.tsx`. Shared
+ * from here rather than copied per panel, because "what does this byte say in decimal and binary"
+ * is the same question in every data panel and had already been answered three different ways.
+ */
+export function byteTooltip(heading: string, value: number): string {
+  return `${heading}\n${formatHex(value, 2)} (${value}, ${toBin8(value)})`;
 }
 
 // ---------------------------------------------------------------------------------------------

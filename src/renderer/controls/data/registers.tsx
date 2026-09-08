@@ -25,10 +25,18 @@ type Props = {
   reg8HLabel?: string;
   value: number;
   tooltip?: string;
+  /**
+   * Extra class merged onto the value cell.
+   *
+   * Lets one panel opt into `--color-state-value` (see the comment over that token in
+   * componentAliases.ts) without recolouring the other panels that share this component — omit it
+   * and the cell stays the neutral `--data-value` it always was.
+   */
+  valueXclass?: string;
 };
 
 export const Bit16Value = memo(
-  ({ label, tooltip, reg16Label, reg8LLabel, reg8HLabel, value }: Props) => {
+  ({ label, tooltip, reg16Label, reg8LLabel, reg8HLabel, value, valueXclass }: Props) => {
     const ref = useTooltipRef<HTMLDivElement>();
 
     const tooltipText = useMemo(() => {
@@ -71,7 +79,7 @@ export const Bit16Value = memo(
             content={tooltipText}
           />
         )}
-        <DataValue text={displayValue} xclass={styles.regValue} />
+        <DataValue text={displayValue} xclass={classnames(styles.regValue, valueXclass)} />
       </DataRow>
     );
   }
@@ -81,9 +89,11 @@ type Bit8Props = {
   label: string;
   value: number;
   tooltip?: string;
+  /** See `Props.valueXclass` above. */
+  valueXclass?: string;
 };
 
-export const Bit8Value = memo(({ label, tooltip, value }: Bit8Props) => {
+export const Bit8Value = memo(({ label, tooltip, value, valueXclass }: Bit8Props) => {
   const ref = useTooltipRef<HTMLDivElement>();
 
   const tooltipText = useMemo(() => {
@@ -117,7 +127,7 @@ export const Bit8Value = memo(({ label, tooltip, value }: Bit8Props) => {
           content={tooltipText}
         />
       )}
-      <DataValue text={displayValue} xclass={styles.regValue} />
+      <DataValue text={displayValue} xclass={classnames(styles.regValue, valueXclass)} />
     </DataRow>
   );
 });
@@ -127,37 +137,50 @@ type SimpleProps = {
   value: number | string;
   tooltip?: string;
   fullWidth?: boolean;
+  /** See `Props.valueXclass` above. */
+  valueXclass?: string;
 };
 
-export const SimpleValue = memo(({ label, tooltip, value, fullWidth = false }: SimpleProps) => {
-  const ref = useTooltipRef<HTMLDivElement>();
+export const SimpleValue = memo(
+  ({ label, tooltip, value, fullWidth = false, valueXclass }: SimpleProps) => {
+    const ref = useTooltipRef<HTMLDivElement>();
 
-  const displayValue = useMemo(() => {
-    return value !== undefined ? value.toString() : "--";
-  }, [value]);
+    const displayValue = useMemo(() => {
+      return value !== undefined ? value.toString() : "--";
+    }, [value]);
 
-  return (
-    <DataRow ref={ref} dense>
-      <DataLabel text={label} xclass={styles.regLabel} />
-      {tooltip && (
-        <TooltipFactory
-          refElement={ref.current}
-          placement="right"
-          offsetX={fullWidth ? 8 : 0}
-          offsetY={0}
-          showDelay={100}
-          content={tooltip}
+    return (
+      <DataRow ref={ref} dense>
+        <DataLabel text={label} xclass={styles.regLabel} />
+        {tooltip && (
+          <TooltipFactory
+            refElement={ref.current}
+            placement="right"
+            offsetX={fullWidth ? 8 : 0}
+            offsetY={0}
+            showDelay={100}
+            content={tooltip}
+          />
+        )}
+        <DataValue
+          text={displayValue}
+          xclass={classnames(fullWidth ? styles.regValueAuto : styles.regValue, valueXclass)}
         />
-      )}
-      <DataValue text={displayValue} xclass={fullWidth ? styles.regValueAuto : styles.regValue} />
-    </DataRow>
-  );
-});
+      </DataRow>
+    );
+  }
+);
 
 type FlagProps = {
   label: string;
   value?: boolean | null;
   tooltip?: string;
+  /**
+   * The theme property the dot icon is filled with. Defaults to the neutral `--data-value`, the
+   * same as every other consumer of `FlagValue`/`VerticalFlagValue`; a panel passes
+   * `--color-state-value` (see componentAliases.ts) to opt in.
+   */
+  iconFill?: string;
 };
 
 const flagIcon = (value?: boolean | number | null) => {
@@ -165,7 +188,7 @@ const flagIcon = (value?: boolean | number | null) => {
   return value ? "circle-filled" : "circle-outline";
 };
 
-export const FlagValue = memo(({ label, tooltip, value }: FlagProps) => {
+export const FlagValue = memo(({ label, tooltip, value, iconFill }: FlagProps) => {
   const ref = useTooltipRef<HTMLDivElement>();
   const iconName = useMemo(() => flagIcon(value), [value]);
 
@@ -183,13 +206,15 @@ export const FlagValue = memo(({ label, tooltip, value }: FlagProps) => {
         />
       )}
       <div className={classnames(styles.flagValue, styles.regValue)}>
-        <Icon iconName={iconName} width={16} height={16} fill="--data-value" />
+        <div className={styles.flagDot}>
+          <Icon iconName={iconName} width={16} height={16} fill={iconFill ?? "--data-value"} />
+        </div>
       </div>
     </DataRow>
   );
 });
 
-export const VerticalFlagValue = memo(({ label, tooltip, value }: FlagProps) => {
+export const VerticalFlagValue = memo(({ label, tooltip, value, iconFill }: FlagProps) => {
   const ref = useTooltipRef<HTMLDivElement>();
   const iconName = useMemo(() => flagIcon(value), [value]);
 
@@ -208,8 +233,8 @@ export const VerticalFlagValue = memo(({ label, tooltip, value }: FlagProps) => 
           />
         )}
       </div>
-      <div className={styles.flagValue}>
-        <Icon iconName={iconName} width={16} height={16} fill="--data-value" />
+      <div className={styles.verticalFlagValue}>
+        <Icon iconName={iconName} width={16} height={16} fill={iconFill ?? "--data-value"} />
       </div>
     </div>
   );
@@ -220,27 +245,39 @@ type FlagLetterProps = {
 };
 
 export const FlagLetter = memo(({ label }: FlagLetterProps) => {
-  return <div className={styles.flagLetter}>{label}</div>;
+  return (
+    <div className={styles.flagLetter}>
+      <span className={styles.flagLetterGlyph}>{label}</span>
+    </div>
+  );
 });
 
 export type BitValueProps = {
   value?: boolean | number;
   tooltip?: string;
   clicked?: () => void;
+  /** See `FlagProps.iconFill` above. */
+  iconFill?: string;
+  /**
+   * Extra class merged onto the bit cell, for a caller that needs its strip on a particular column
+   * grid. The default cell sizes to the icon; `UlaPanel` widens it so its keyboard bits sit on the
+   * same character grid as the value column above them.
+   */
+  xclass?: string;
 };
 
-export const BitValue = ({ value, tooltip, clicked }: BitValueProps) => {
+export const BitValue = ({ value, tooltip, clicked, iconFill, xclass }: BitValueProps) => {
   const ref = useTooltipRef<HTMLDivElement>();
   const iconName = useMemo(() => flagIcon(value), [value]);
 
   return (
     <div
       ref={ref}
-      className={classnames(styles.bitValue, { [styles.clickable]: !!clicked })}
+      className={classnames(styles.bitValue, xclass, { [styles.clickable]: !!clicked })}
       onClick={() => clicked?.()}
     >
       <div className={styles.flagValue}>
-        <Icon iconName={iconName} width={16} height={16} fill="--data-value" />
+        <Icon iconName={iconName} width={16} height={16} fill={iconFill ?? "--data-value"} />
       </div>
       {tooltip && (
         <TooltipFactory

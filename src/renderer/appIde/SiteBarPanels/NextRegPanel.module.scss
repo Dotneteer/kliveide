@@ -7,4 +7,72 @@
   user-select: none;
   font-family: var(--monospace-font);
   font-size: var(--font-size-200);
+
+  /*
+   * The panel's column geometry, declared once so the one-off header row can *derive* its offset
+   * instead of guessing at it. Both are `ch` (M2).
+   */
+  --nextreg-label: 10ch;
+  /*
+   * Two hex digits, a space, and the arrow — and the arrow is **two** cells wide, not one: measured
+   * in the running app, `→` advances 12px against a digit's 6px at `--font-size-200`. Sizing this
+   * 4ch (the character count) made the text overflow its own cell to the left.
+   */
+  --nextreg-write: 5ch;
+}
+
+/*
+ * The `Reg XX:` label column.
+ *
+ * `controls/layout`'s `Label` adds `.legacySpacing` — a `--measure-gap` margin on *both* sides —
+ * which, together with the leading `LabelSeparator` these rows used to carry, started this panel's
+ * content ~21.6px into the row while the Z80 CPU and ULA & I/O panels stacked directly above it
+ * start at `--space-2` (8px). Dropping both puts all three sidebar panels on one left edge.
+ *
+ * The width stays this panel's own `10ch` rather than moving to the shared `--measure-label`. The
+ * shared measure is 7ch, which `Reg XX:` fills *exactly*, leaving only the 0.8ch row gap before the
+ * dim `XX --> ` column — legible but cramped, and it buys only the alignment of this panel's first
+ * data column with the value column of the panels above it. That is a weak prize: they are separate
+ * collapsible sections with their own headers, and this row shape (label, previous value, value) is
+ * genuinely not the label/value pair those panels draw. In-row readability wins.
+ *
+ * `span.` beats the single-class `.legacySpacing` on specificity alone, whatever the load order.
+ * Note that `Label` passes its `width` prop as an *inline* style, so the width can only be set from
+ * here if the call site stops passing that prop.
+ */
+span.nextRegLabel {
+  width: var(--nextreg-label);
+  margin-inline: 0;
+}
+
+/*
+ * The previous-value cell (`08 →`).
+ *
+ * Right-aligned, which is what actually holds the arrow column still. The cell has to be wide
+ * enough for its longest content, and the content varies — two hex digits normally, a single `X`
+ * where the register cannot be read back — so left-aligning would slide the arrow a character left
+ * on those rows. Aligning to the trailing edge instead pins the arrow and lets the variable part
+ * move, and it also absorbs any width the arrow glyph itself does not have if the mono stack ever
+ * falls back to a font whose `→` is not exactly 1ch.
+ *
+ * The value that follows is then separated by the row's own `--measure-gap` alone, which is the
+ * fix for the too-wide gap: this cell used to be 10ch holding 7 characters, so it carried 3ch of
+ * dead slack *inside* the cell on top of the row gap.
+ */
+span.nextRegWrite {
+  width: var(--nextreg-write);
+  justify-content: flex-end;
+}
+
+/*
+ * The panel's one-off header label ("Last Reg Index:"), far wider than a register label and sized
+ * to its own text.
+ *
+ * Its width is the register rows' label *plus* their previous-value cell plus the gap between the
+ * two, so the header's value lands in the same column as every register value below it rather than
+ * floating short of them.
+ */
+span.nextRegHeaderLabel {
+  width: calc(var(--nextreg-label) + var(--measure-gap) + var(--nextreg-write));
+  margin-inline: 0;
 }

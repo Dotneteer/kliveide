@@ -263,6 +263,51 @@ export const componentAliases: Record<string, string> = {
    */
   "--bgcolor-disassembly-current": "var(--surface-hover)",
 
+  /*
+   * The value column of the register/state sidebar panels — Z80 CPU, ULA & I/O, and any other that
+   * opts in (see `valueXclass`/`iconFill` in `controls/data/registers.tsx`).
+   *
+   * Same principle as the memory dump and disassembly views above: the shared `--data-*` hierarchy
+   * stays neutral on purpose (see the comment over `--data-value` in semantic.ts), so a panel that
+   * wants real colour layers a token on top of the value cell alone rather than reopening that
+   * clash. Labels (`AF`, `IF1`, `FCL`, `KL0`, ...) stay on `--data-label`; only the *value* — the
+   * hex word, the decimal, the flag dot, the key bit — takes a hue.
+   *
+   * **One role token, not one per panel**, which is where this departs from `--color-memory-*` and
+   * `--color-disassembly-*`. Those two are separate families because their role *tables* differ
+   * (address/hex/char against address/opcode/instruction). Every register/state panel has the same
+   * one-role table — "this is a live value" — so a shared token is the honest model, and it stops
+   * the map growing a near-identical family per panel. Split it only when a panel needs a role the
+   * others do not have.
+   *
+   * One hue, deliberately: every value in these panels is the same kind of thing, so the main bank,
+   * the shadow bank (AF', BC', ...), the scalars, the flag dots and the keyboard bits all read as
+   * one column of data. Splitting the shadow bank onto the secondary hue was tried and rejected:
+   * `'` already says "shadow". The secondary accent stays reserved for the places it carries
+   * information the text does not — memory's hovered byte, disassembly's opcode column.
+   */
+  "--color-state-value": "var(--accent-text)",
+
+  /*
+   * The *second kind* of value in a row, where a row carries two that must not be confused.
+   *
+   * This is the secondary accent's actual criterion, and these panels meet it twice:
+   *
+   * - `NextRegPanel`'s `08 → 08` — the left number is what was last written to the register, the
+   *   right one is what it reads back as. The same register a moment apart.
+   * - `MemMappingPanel`'s page rows — `bank8k bank16k readOffset writeOffset`, where the first two
+   *   are *bank numbers* and the last two are *addresses into memory*. Four hex numbers in a row
+   *   with no labels, and only the colour split says where one pair ends and the other begins.
+   *
+   * Note what it is not: the Z80 shadow bank was refused this exact treatment, because `AF'` is
+   * *named* differently from `AF` — something already tells those two apart, so a second hue buys
+   * nothing. Here nothing does but position.
+   *
+   * Dimmer emphasis alone (`--data-secondary`) is not a substitute: it makes the second value read
+   * as chrome rather than as a value, when the whole point is that both are data.
+   */
+  "--color-state-value-alt": "var(--accent-secondary-text)",
+
   // --- Explorer ---------------------------------------------------------------------------------
   "--color-explorer": "var(--text-secondary)",
   "--bgcolor-explorer-pointed": "var(--surface-hover)",
