@@ -6,16 +6,51 @@
   flex-direction: column;
   user-select: none;
   font-family: var(--monospace-font);
-  font-size: 0.8em;
+  /*
+   * M1: absolute, not `em`. This was `0.8em`, which compounds off whatever the panel is nested in
+   * instead of naming a size. Pinning it to the same `--font-size-200` every other data panel uses
+   * is also what makes the `ch` columns below exactly 6px.
+   */
+  font-size: var(--font-size-200);
 }
 
 .item {
   display: flex;
   flex-direction: row;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   align-items: center;
+  /*
+   * The row's own gap, which replaces the three `LabelSeparator` spacers this row used to carry
+   * between its four cells — the same `--measure-gap` `DataRow` puts between cells everywhere else.
+   * The row keeps its `2px` vertical padding rather than moving to `DataRow`: these rows are built
+   * around a 16px icon and are shorter than `--row-size-list`, and nothing here should move.
+   */
+  gap: var(--measure-gap);
 
   &:hover {
     background-color: var(--bgcolor-item-hover);
   }
+}
+
+/*
+ * The frame index ("Top:", "1:", "2:", ...).
+ *
+ * Trailing-aligned so the colons line up down the column whatever the number's width — the same
+ * reason `NextRegPanel` right-aligns its arrow cell. `margin-inline: 0` drops `controls/layout`
+ * `Label`'s `.legacySpacing`; `5ch` holds the widest form ("Top:" and a three-digit index are both
+ * four characters) and replaces a `width={32}` **px** prop, which M2 forbids.
+ */
+span.csIndex {
+  width: 5ch;
+  margin-inline: 0;
+  justify-content: flex-end;
+}
+
+/*
+ * The two address cells. `Value` carries `.legacyValueSpacing` — a `margin-inline-end` of two
+ * `--measure-gap`s — which on a row of four cells stacks on top of the row gap and opens a canyon
+ * between the address and the arrow. Zeroing it leaves the row gap as the only separator.
+ */
+span.csCell {
+  margin-inline-end: 0;
 }

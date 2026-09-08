@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { forwardRef } from "react";
 import classnames from "classnames";
+import { toBin8 } from "@renderer/appIde/services/ide-commands";
 import styles from "./Data.module.scss";
 
 /**
@@ -339,6 +340,18 @@ export function formatHex(value: number, digits = 2, prefix = HEX_PREFIX): strin
   return `${prefix}${(value >>> 0).toString(16).toUpperCase().padStart(digits, "0")}`;
 }
 
+/**
+ * A tooltip for a byte, in the memory dump's format: a heading, then hex with the decimal and
+ * binary in parentheses — `$08 (8, %0000 1000)`.
+ *
+ * The same line `buildByteTooltipCache` builds in `features/memory/MemoryDumpSection.tsx`. Shared
+ * from here rather than copied per panel, because "what does this byte say in decimal and binary"
+ * is the same question in every data panel and had already been answered three different ways.
+ */
+export function byteTooltip(heading: string, value: number): string {
+  return `${heading}\n${formatHex(value, 2)} (${value}, ${toBin8(value)})`;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Address gutter
 // ---------------------------------------------------------------------------------------------
@@ -363,9 +376,20 @@ export const PartitionPrefix = ({ label, wide }: { label: string; wide?: boolean
  *
  * `width` is in `ch`, so the column holds a fixed number of digits rather than a pixel count tuned
  * to one font — the disassembly and memory rows previously passed 40, 48, 64 and 72 px between them.
+ *
+ * `className` lets one caller restyle its own addresses (the memory dump, for its accent-tinted
+ * gutter) without touching every other consumer of this shared component (disassembly rows).
  */
-export const AddressLabel = ({ text, width }: { text: string; width: number }) => (
-  <div className={styles.addressLabel} style={{ width: `${width}ch` }}>
+export const AddressLabel = ({
+  text,
+  width,
+  className
+}: {
+  text: string;
+  width: number;
+  className?: string;
+}) => (
+  <div className={classnames(styles.addressLabel, className)} style={{ width: `${width}ch` }}>
     {text}
   </div>
 );

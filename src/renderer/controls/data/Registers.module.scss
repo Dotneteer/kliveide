@@ -24,6 +24,33 @@
   width: auto;
 }
 
+/*
+ * The coloured value cell a panel opts into via `valueXclass`/`iconFill` (see `registers.tsx`).
+ * Left as a plain class here so every consumer of `Bit16Value`/`Bit8Value`/`SimpleValue`/
+ * `FlagValue`/`VerticalFlagValue` keeps today's neutral `--data-value` by default; only a panel
+ * that passes it in gets the `--color-state-value` treatment (see componentAliases.ts).
+ *
+ * `span.` combines a type selector with the class so this reliably beats `.dataValue`'s own
+ * single-class colour rule on specificity alone, regardless of which stylesheet the bundler
+ * happens to load second — the same trick `DisassemblyPanel.module.scss` and
+ * `MemoryDumpSection.module.scss` use to beat the shared components' own rules.
+ */
+span.stateValue {
+  color: var(--color-state-value);
+  font-weight: 600;
+}
+
+/*
+ * The second kind of value in a row — a previous value beside a current one, or an address column
+ * beside a bank-number one. Opt-in exactly like `.stateValue`; see the comment over
+ * `--color-state-value-alt` in componentAliases.ts for which rows earn the secondary accent and
+ * why the Z80 shadow bank did not.
+ */
+span.stateValueAlt {
+  color: var(--color-state-value-alt);
+  font-weight: 600;
+}
+
 .flagRows {
   display: flex;
   flex-direction: column;
@@ -46,15 +73,86 @@
   flex-shrink: 0;
 }
 
-.flagLetter {
+/*
+ * The dot inside a `FlagValue`'s value cell (IF1, IF2, INT, HLT, SNZ).
+ *
+ * The cell itself stays `--measure-value` wide, so the second label/value pair in rows like
+ * `IF1 ● IF2 ●` keeps its column. Inside it, the dot is centred over the *first character cell*
+ * — the icon used to sit at the cell's flex-start, which put its 16px box's centre ~8px in while
+ * a hex digit's ink sits ~half a character in, so every dot read as shifted right of the numbers
+ * above and below it. `1ch` centring is font-relative (M2), so it holds whatever the mono stack
+ * does; the icon simply overflows this box symmetrically, which is invisible for a round glyph.
+ */
+.flagDot {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  width: 1ch;
+}
+
+/*
+ * The dot under a vertical flag letter (the `S Z 5 H 3 P N C` strip). A dedicated class, not a
+ * reuse of `.flagValue` above: `.flagValue` also backs `FlagValue`'s and `BitValue`'s dots, whose
+ * boxes must stay left-aligned inside the `--measure-value` column they share with hex text. This
+ * one instead centres in the same `3ch` width as `.verticalLabel`, so the dot sits under the
+ * middle of its letter instead of flush against whichever edge the icon's own box happens to
+ * touch.
+ */
+.verticalFlagValue {
   display: flex;
   flex-grow: 0;
   flex-shrink: 0;
+  justify-content: center;
+  width: 3ch;
+}
+
+/*
+ * The "F" that leads the flag strip: a label-column-sized box, so the flags that follow it land on
+ * the same grid as the register rows below.
+ *
+ * The `- 1ch` is what puts the *first flag* over the *first hex digit*. A flag column is `3ch` with
+ * its content centred, so its centre sits 1.5ch in, while a value cell's first character centres
+ * 0.5ch in — one character further left. Since "F" is left-aligned in this box, taking a character
+ * off the box's width moves the whole strip left without moving the "F" itself:
+ *
+ *   (7ch - 1ch) + 0.8ch gap + 1.5ch  ==  7ch + 0.8ch gap + 0.5ch
+ *
+ * Both sides are `ch`, so this holds at any font size (M2).
+ */
+.flagLetter {
+  display: flex;
+  align-items: center;
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: calc(var(--measure-label) - 1ch);
   color: var(--data-label);
+}
+
+/*
+ * The glyph alone scales up, on its own inline element — not the `.flagLetter` box, whose width
+ * must stay measured at the panel's base font size to match `--measure-label`. Previously the
+ * `1.6em` sat directly on the width-bearing box, so its `3ch` resolved against that box's own
+ * 1.6em (≈28.8px) rather than the 1em (≈18px) `--measure-label`/`.verticalLabel` use — two
+ * "3ch"/"7ch" columns of different actual widths next to each other.
+ */
+.flagLetterGlyph {
   /* TODO(M1): 1.6em compounds off the panel size; belongs on the type scale. */
   font-size: 1.6em;
-  /* `ch` resolves against this element's own 1.6em, so 3ch is ~28.8px, not 18px. */
-  width: 3ch;
+
+  /*
+   * Optically left-align the "F" with the label column ("AF", "BC", ...) below it.
+   *
+   * The boxes already start at the same x — both measure 8.000px from the panel edge — but a
+   * glyph's *left side bearing* scales with its font size, and Iosevka's "F" is a narrow cap while
+   * "A" fills its cell. Measured against the bundled `iosevka-400.woff2` at `--font-size-200`:
+   * "F" at 1.6em carries 1.843px of bearing, "A" at 1em carries 0.528px — so the F's stem printed
+   * 1.315px right of the label column's edge and the flag row read as indented.
+   *
+   * This pulls exactly that difference back out. It is expressed in `em` of the glyph's own size
+   * (1.315px / 19.2px), so it tracks the type scale instead of pinning a px offset to one size.
+   * It is a metric correction, not a magic nudge: re-measure it if the mono stack ever changes.
+   */
+  margin-left: -0.0685em;
 }
 
 .bitValue {

@@ -170,6 +170,32 @@ describe("ZX Spectrum WASM contention", () => {
     });
   });
 
+  it("mirrors the WASM contention counters onto the machine state", async () => {
+    const machines: WasmMachine[] = [
+      await createTestSp48WasmMachine(testRom([])),
+      await createTestSp128WasmMachine(testRom([]), testRom([])),
+      await createTestSpp3eWasmMachine([testRom([]), testRom([]), testRom([]), testRom([])])
+    ];
+
+    for (const machine of machines) {
+      // --- The counters live in the WASM backend; the machine must surface them, as the ULA panel
+      // --- reads them straight off the machine object.
+      const afterStart = runFramesUntilContention(machine);
+      expect(afterStart).toBeGreaterThan(0);
+      expect(machine.totalContentionDelaySinceStart).toBe(afterStart);
+      expect(machine.contentionDelaySincePause).toBe(afterStart);
+
+      // --- A new run restarts the "since pause" counter without disturbing the total.
+      machine.resetContentionDelaySincePause();
+      expect(machine.contentionDelaySincePause).toBe(0);
+      expect(machine.totalContentionDelaySinceStart).toBe(afterStart);
+
+      const afterResume = runFramesUntilContention(machine, afterStart);
+      expect(machine.totalContentionDelaySinceStart).toBe(afterResume);
+      expect(machine.contentionDelaySincePause).toBe(afterResume - afterStart);
+    }
+  });
+
   it("48K contention stats include only real I/O delays", async () => {
     const machine = await createTestSp48WasmMachine(testRom([]));
 
@@ -188,6 +214,17 @@ describe("ZX Spectrum WASM contention", () => {
     });
   });
 });
+
+function runFramesUntilContention(machine: WasmMachine, from = 0): number {
+  for (let i = 0; i < 32; i++) {
+    machine.executeMachineFrame();
+    const total = machine.getContentionDelayTotalForTest();
+    if (total > from) {
+      return total;
+    }
+  }
+  throw new Error("The machine did not accumulate any contention delay.");
+}
 
 function expectAddressDelay(
   machine: WasmMachine,

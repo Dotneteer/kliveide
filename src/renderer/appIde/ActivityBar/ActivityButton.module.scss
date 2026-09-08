@@ -38,8 +38,13 @@
  * The active item.
  *
  * This used to be a solid accent fill of the whole 48px cell — the single most dated element in the
- * IDE, and a big saturated block against everything around it. It is now the standard idiom: a 2px
- * accent stripe on the inner edge, the icon at accent colour, and a subtle surface behind it.
+ * IDE, and a big saturated block against everything around it. It is now the VS Code idiom: a 2px
+ * accent bar spanning the full button height on the inner edge, the icon at accent colour, and a
+ * subtle surface behind it.
+ *
+ * The bar used to float as a short, rounded stripe inset 8px from the top and bottom — closer to a
+ * floating pill than the edge-to-edge marker this is meant to read as. Full height (0/0 insets, no
+ * corner rounding, since it now touches both button edges) matches the reference.
  */
 .active {
   background: var(--bgcolor-activitybar-active);
@@ -49,10 +54,9 @@
     content: "";
     position: absolute;
     inset-inline-start: 0;
-    top: 8px;
-    bottom: 8px;
+    top: 0;
+    bottom: 0;
     width: 2px;
-    border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
     background: var(--accent-solid);
   }
 

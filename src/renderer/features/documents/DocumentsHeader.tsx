@@ -124,13 +124,29 @@ export const DocumentsHeader = () => {
     setOverflow((prev) => (sameOverflow(prev, next) ? prev : next));
   }, []);
 
-  const scheduleEnsureTabVisible = useTabVisibility(
-    () => {
-      ensureTabVisible();
-      measureOverflow();
-    },
-    () => tabDims.current.find(Boolean)?.parentElement ?? undefined
+  /*
+   * Both callbacks must be stable across renders. `useTabVisibility` feeds `ensureVisible` into a
+   * `useCallback([ensureVisible])`, and the `schedule` function that comes back is itself a
+   * dependency of the effect below - so an inline arrow here (a fresh identity every render)
+   * made that effect re-fire, and `ensureTabVisible()` re-run, on every unrelated re-render of
+   * this component. On a narrow strip that is not a no-op: if the active tab does not fit in the
+   * current scroll position, `ensureTabVisible` snaps back to reveal it - which is exactly what
+   * happens right after a "scroll tabs" click, since `scrollTabsBy` calls `measureOverflow()`,
+   * which sets state, which re-renders, which (with the old inline arrows) re-scheduled this and
+   * undid the click. `ensureTabVisible` already depends on `activeDocIndex`, so memoizing on that
+   * (plus the stable `measureOverflow`) keeps the one re-trigger that is actually wanted: revealing
+   * the newly active tab when the active document changes.
+   */
+  const ensureActiveTabVisible = useCallback(() => {
+    ensureTabVisible();
+    measureOverflow();
+  }, [ensureTabVisible, measureOverflow]);
+  const getTabStrip = useCallback(
+    () => tabDims.current.find(Boolean)?.parentElement ?? undefined,
+    []
   );
+  const { schedule: scheduleEnsureTabVisible, observeElement: observeTabElement } =
+    useTabVisibility(ensureActiveTabVisible, getTabStrip);
 
   // Scroll the strip by most of a viewport, leaving a sliver of context like a page-scroll does.
   const scrollTabsBy = (direction: -1 | 1) => {
@@ -196,10 +212,16 @@ export const DocumentsHeader = () => {
   const tabDisplayed = useCallback((idx: number, el: HTMLDivElement) => {
     const oldTabElement = tabDims.current[idx];
     tabDims.current[idx] = el;
+    // DocumentTab reports itself from a dep-less `useLayoutEffect`, so this runs on every one of
+    // its renders, not only on mount - guard so a new element (a new tab, or the strip on the
+    // very first tab) is only handed to the observer once.
+    if (oldTabElement !== el) {
+      observeTabElement(el);
+    }
     if (!oldTabElement) {
       scheduleEnsureTabVisible();
     }
-  }, [scheduleEnsureTabVisible]);
+  }, [observeTabElement, scheduleEnsureTabVisible]);
 
   // --- Responds to the event when a document tab has been clicked; it makes the clicked
   // --- document the active one
@@ -445,12 +467,32 @@ function sameOverflow(a: TabOverflow, b: TabOverflow): boolean {
  * A `ResizeObserver` is that signal. It fires when the strip has actually been laid out, so one
  * scheduled call plus the observer replaces all five guesses — and it also covers the cases the
  * timeouts never could, such as the window being resized or a long filename arriving late.
+ *
+ * The observer itself is created once and lives for the strip's lifetime; callers register new tab
+ * elements through `observeElement` as they mount (see `tabDisplayed`) instead of this hook
+ * rebuilding the observer on every render. Rebuilding used to be exactly the bug: a `ResizeObserver`
+ * delivers an initial entry for every target the moment it starts observing it, even when nothing
+ * has actually resized, so tearing the observer down and recreating it on each unrelated re-render
+ * of `DocumentsHeader` re-fired `schedule()` — and thereby `ensureTabVisible()` — constantly. On a
+ * strip too narrow to show the active tab at every scroll position, that meant the active tab got
+ * yanked back into view on almost every render, overriding any manual scroll before the user could
+ * see the result. jsdom has no `ResizeObserver`, so this path is invisible to component tests here;
+ * it only shows up in a real browser.
  */
 function useTabVisibility(
   ensureTabVisible: () => void,
   getStrip: () => HTMLElement | undefined
-): () => void {
+): { schedule: () => void; observeElement: (el: HTMLElement) => void } {
   const frameRef = useRef<number>();
+  const observerRef = useRef<ResizeObserver>();
+  const observedStripRef = useRef<HTMLElement>();
+  // `DocumentTab` reports itself from a dep-less `useLayoutEffect`, and on the very first commit
+  // every child's layout effects run before this hook's own (regular) effect creates the observer
+  // - so the opening batch of tabs always calls `observeElement` before `observerRef.current`
+  // exists. Queue them here and flush the queue once the observer is ready, instead of silently
+  // dropping them (which would leave the opening tabs unobserved until something else happened to
+  // reschedule).
+  const pendingRef = useRef<Set<HTMLElement>>(new Set());
 
   const schedule = useCallback(() => {
     if (frameRef.current !== undefined) cancelAnimationFrame(frameRef.current);
@@ -460,17 +502,53 @@ function useTabVisibility(
     });
   }, [ensureTabVisible]);
 
+  // `schedule` changes identity whenever `ensureTabVisible` does (e.g. the active tab changes),
+  // but the observer below is built exactly once - so its callback reads `schedule` through this
+  // ref rather than closing over the value from whichever render created it.
+  const scheduleRef = useRef(schedule);
   useEffect(() => {
-    const strip = getStrip();
-    if (!strip || typeof ResizeObserver === "undefined") return undefined;
+    scheduleRef.current = schedule;
+  }, [schedule]);
 
-    // Observing the children as well as the strip catches a single tab changing width — a rename,
-    // or a dirty marker appearing — which does not necessarily resize the strip itself.
-    const observer = new ResizeObserver(() => schedule());
-    observer.observe(strip);
-    for (const child of Array.from(strip.children)) observer.observe(child);
-    return () => observer.disconnect();
-  });
+  // Observing the children as well as the strip catches a single tab changing width — a rename,
+  // or a dirty marker appearing — which does not necessarily resize the strip itself.
+  const observeWithStrip = useCallback(
+    (observer: ResizeObserver, el: HTMLElement) => {
+      observer.observe(el);
+      if (observedStripRef.current) return;
+      const strip = getStrip();
+      if (strip) {
+        observer.observe(strip);
+        observedStripRef.current = strip;
+      }
+    },
+    [getStrip]
+  );
+
+  useEffect(() => {
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(() => scheduleRef.current());
+    observerRef.current = observer;
+    for (const el of pendingRef.current) observeWithStrip(observer, el);
+    pendingRef.current.clear();
+    return () => {
+      observer.disconnect();
+      observerRef.current = undefined;
+      observedStripRef.current = undefined;
+    };
+  }, [observeWithStrip]);
+
+  const observeElement = useCallback(
+    (el: HTMLElement) => {
+      const observer = observerRef.current;
+      if (!observer) {
+        pendingRef.current.add(el);
+        return;
+      }
+      observeWithStrip(observer, el);
+    },
+    [observeWithStrip]
+  );
 
   useEffect(
     () => () => {
@@ -479,5 +557,5 @@ function useTabVisibility(
     []
   );
 
-  return schedule;
+  return { schedule, observeElement };
 }

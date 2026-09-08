@@ -33,8 +33,10 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
       height="--strip-toolbar"
       backgroundColor="--bgcolor-toolbar"
       paddingHorizontal="--space-2"
-      // 2px, not 4px: a 38px strip with 4px padding leaves a 30px content box, and the buttons are
-      // 32px tall (30 + 1px padding each side), so they would overflow it.
+      // 2px, not 4px: with 4px padding a 30px content box would clip the buttons, which are
+      // 32px tall (30 + 1px padding each side). At the 42px strip height (see STRIP.toolbar in
+      // dimensions.ts) 2px padding leaves a 38px content box - 3px of clearance above and below
+      // each button.
       paddingVertical="--space-0_5"
       verticalContentAlignment="center"
       // The buttons used to abut with no gap at all, so the toolbar read as one undifferentiated

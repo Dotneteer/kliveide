@@ -1,3 +1,4 @@
+import classnames from "classnames";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import { cssWidth } from "./cssWidth";
 import { DataValue } from "@renderer/controls/data";
@@ -10,6 +11,12 @@ type Props = {
   width?: string | number;
   /** Optional tooltip shown for the value cell. */
   tooltip?: string;
+  /**
+   * Extra class merged onto the cell, for a caller that wants its own restyled value text (e.g.
+   * the disassembly view's instruction column) without touching every other consumer of this
+   * shared component.
+   */
+  className?: string;
 };
 
 /**
@@ -17,12 +24,17 @@ type Props = {
  *
  * Delegates the cell to `controls/data`'s `DataValue`; see `Label` for why.
  */
-export const Value = ({ text, width, tooltip }: Props) => {
+export const Value = ({ text, width, tooltip, className }: Props) => {
   const ref = useTooltipRef();
 
   return (
     <>
-      <DataValue ref={ref} text={text} width={cssWidth(width)} xclass={styles.legacyValueSpacing} />
+      <DataValue
+        ref={ref}
+        text={text}
+        width={cssWidth(width)}
+        xclass={classnames(styles.legacyValueSpacing, className)}
+      />
       {tooltip && (
         <TooltipFactory
           refElement={ref.current}

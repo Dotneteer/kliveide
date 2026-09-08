@@ -106,10 +106,34 @@
  * A field row in a register/state panel. Keeps the gap -- which is the point -- and drops the list
  * chrome. The gap is also what fixes `SimpleValue fullWidth`, where an auto-width value used to butt
  * straight into the next label and render `CON 0LCO 0` in the ULA panel.
+ *
+ * What `dense` drops is the row *height* (`min-height`), which is what would otherwise have made the
+ * Z80 panel 47% taller. It keeps `.dataRow`'s side padding: dropping that too was collateral —
+ * horizontal padding costs no height at all, and without it these rows start hard against the
+ * sidebar's left edge, i.e. against the activity bar, while the panel's own header is indented.
+ * `dense` is used only by the sidebar register panels (Z80, M6510, ULA, VIC, Blink, SysVars), so
+ * this is the gutter for all of them.
  */
 .dense {
   min-height: 0;
-  padding: 0;
+  padding: 0 var(--space-2);
+}
+
+/*
+ * A nested row carries no gutter of its own — the outermost row owns it.
+ *
+ * `Bit16Value`/`Bit8Value`/`SimpleValue`/`FlagValue` each render their *own* `DataRow` for their
+ * label/value pair, and a panel row puts two of those side by side, so a register row is literally
+ * a row inside a row. Without this, the side padding above lands at both levels and every register
+ * row sits 8px right of the flag strip, which has no inner row — measured in the running IDE as
+ * `.flagLetter` at x=56 against the `AF` label at x=64.
+ *
+ * Padding rather than a margin on the panel keeps a row's background full-bleed, which is what the
+ * zebra/hover treatments above want.
+ */
+.dataRow .dataRow {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* Zebra striping, previously expressed three different ways: inline props, and two stylesheets. */

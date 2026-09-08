@@ -1,6 +1,13 @@
 import { useSelector } from "@renderer/core/RendererProvider";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState
+} from "react";
 import classnames from "classnames";
 import { lookupIcon } from "./icon-registry";
 import { imageLibrary } from "./image-defs";
@@ -112,6 +119,29 @@ function ThemeProvider({ children }: Props) {
     setStyleProps({ ...themeVariables, ...generateBaseSpacings(themeVariables) });
   }, [themeVariables]);
 
+  /*
+   * `getThemeProperty` below resolves an aliased token (e.g. `--color-switch-on: var(--accent-solid)`)
+   * by reading `getComputedStyle(root)` - the only way to flatten an alias into a concrete colour for
+   * the imperative consumers (react-switch, SVG `fill` attributes) that cannot use `var()` themselves.
+   * That read happens during render, but `root`'s `style` attribute is only updated at *commit* -
+   * after render. So the render that first reacts to a new accent/theme calls `getThemeProperty` for
+   * DOM state that still reflects the *previous* accent, and returns the old colour; CSS-driven
+   * consumers (a stylesheet's own `color: var(--accent-text)`) don't have this problem, since the
+   * browser reflows every `var()` reference the instant the custom property changes on the DOM,
+   * commit included. `getThemeProperty`'s stale read then sits there until *something else* happens
+   * to re-render that consumer - which could be anywhere from immediate to, in practice, several
+   * seconds later.
+   *
+   * `domCommitTick` closes that one-render gap: a `useLayoutEffect` runs synchronously right after
+   * the commit that applied the new `styleProps` to `root`, so bumping this state re-renders
+   * `themeValue`'s consumers before the browser paints - `getThemeProperty` calls made on that next
+   * render see the already-updated DOM, and the correction is invisible instead of a multi-second lag.
+   */
+  const [domCommitTick, setDomCommitTick] = useState(0);
+  useLayoutEffect(() => {
+    setDomCommitTick((tick) => tick + 1);
+  }, [styleProps]);
+
   const themeValue = useMemo(() => {
     const activeThemeInfo = availableThemes[selectedTheme];
     return {
@@ -131,6 +161,9 @@ function ThemeProvider({ children }: Props) {
        *   Only a concrete colour works there.
        *
        * Falls back to the merged style map before the root element is attached on first render.
+       * `domCommitTick` is read only to force this memo (and so every consumer) to recompute the
+       * render after `root`'s `style` attribute actually carries the new custom properties - see the
+       * comment on the `useLayoutEffect` above.
        */
       getThemeProperty: (key: string) => {
         if (root) {
@@ -144,7 +177,7 @@ function ThemeProvider({ children }: Props) {
         imageLibrary.find((im) => im.name === key) ??
         imageLibrary.find((im) => im.name === "file-code")
     };
-  }, [selectedTheme, root, isWindows, styleProps]);
+  }, [selectedTheme, root, isWindows, styleProps, domCommitTick]);
 
   return (
     <ThemeContext.Provider value={themeValue}>

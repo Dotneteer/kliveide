@@ -209,6 +209,105 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-memory-pc-pointed": "var(--status-success-subtle)",
   "--color-memory-pointed": "var(--text-primary)",
 
+  /*
+   * Memory dump columns: address, hex byte, ASCII char.
+   *
+   * Deliberately scoped to the memory dump alone, not folded into the shared `--data-*` hierarchy
+   * that registers/watch/disassembly read - that hierarchy was flattened to neutral on purpose
+   * (see the comment above `--data-value` et al.) so an orange accent would not collide with an
+   * amber label in the densest panels. The memory dump is a classic hex-editor view instead of a
+   * dense register grid, so it can afford - and reads better for - real colour: the address column
+   * anchors the row in accent, the char column echoes it at lower strength so the two read as one
+   * family, and the hex bytes stay the brightest, boldest thing in the row (`--text-primary` +
+   * `.dumpSection`'s own bold weight) since they are what the user is actually here to read.
+   *
+   * The address/char family uses the accent's *primary* hue; the hovered-byte highlight below uses
+   * the *secondary* hue instead. Keeping those two on different hues is what lets a hovered byte
+   * read as "this is highlighted" instead of "this became an address": they sit right next to each
+   * other in the row, so sharing a hue would blur the two meanings.
+   */
+  "--color-memory-address": "var(--accent-text)",
+  "--color-memory-value": "var(--text-primary)",
+  "--color-memory-char": "var(--accent-text-subtle)",
+  /*
+   * The hovered byte (hex and its ASCII pair) uses the secondary accent - see the note above
+   * `--color-memory-address` for why the two columns deliberately use different hues from the
+   * same accent.
+   */
+  "--color-memory-highlight": "var(--accent-secondary-text)",
+  "--border-memory-highlight": "var(--accent-secondary-border)",
+
+  /*
+   * Disassembly columns: address, opcode bytes, decoded instruction, jump-target label.
+   *
+   * Same principles as the memory dump above, mapped onto disassembly's own columns rather than
+   * reusing memory's literal roles: the address anchors the row in accent, and the decoded
+   * instruction - what a disassembly view is actually for - takes the brightest, boldest neutral,
+   * the same "most legible thing in the row" treatment the memory dump gives its hex bytes.
+   *
+   * Address and the jump-target label (`L8000:`) both take the *primary* hue - a label is a name
+   * for the same address, not a different kind of information, so the two read as one family. The
+   * opcode bytes take the *secondary* hue instead: unlike the memory dump's char column, these are
+   * not being read as an extension of the address, so keeping them off the primary hue is what
+   * keeps a busy row from reading as "everything here is the address".
+   */
+  "--color-disassembly-address": "var(--accent-text)",
+  "--color-disassembly-instruction": "var(--text-primary)",
+  "--color-disassembly-opcodes": "var(--accent-secondary-text)",
+  "--color-disassembly-label": "var(--accent-text)",
+  /*
+   * The row the CPU is currently paused at - the same background wash the memory dump's hovered
+   * byte sits on (`--bgcolor-memory-hover`, itself `--surface-hover`), scoped independently rather
+   * than pointed at that name directly, matching every other `--color-disassembly-*`/
+   * `--color-memory-*` token here being its own view's token even where the value happens to agree.
+   */
+  "--bgcolor-disassembly-current": "var(--surface-hover)",
+
+  /*
+   * The value column of the register/state sidebar panels — Z80 CPU, ULA & I/O, and any other that
+   * opts in (see `valueXclass`/`iconFill` in `controls/data/registers.tsx`).
+   *
+   * Same principle as the memory dump and disassembly views above: the shared `--data-*` hierarchy
+   * stays neutral on purpose (see the comment over `--data-value` in semantic.ts), so a panel that
+   * wants real colour layers a token on top of the value cell alone rather than reopening that
+   * clash. Labels (`AF`, `IF1`, `FCL`, `KL0`, ...) stay on `--data-label`; only the *value* — the
+   * hex word, the decimal, the flag dot, the key bit — takes a hue.
+   *
+   * **One role token, not one per panel**, which is where this departs from `--color-memory-*` and
+   * `--color-disassembly-*`. Those two are separate families because their role *tables* differ
+   * (address/hex/char against address/opcode/instruction). Every register/state panel has the same
+   * one-role table — "this is a live value" — so a shared token is the honest model, and it stops
+   * the map growing a near-identical family per panel. Split it only when a panel needs a role the
+   * others do not have.
+   *
+   * One hue, deliberately: every value in these panels is the same kind of thing, so the main bank,
+   * the shadow bank (AF', BC', ...), the scalars, the flag dots and the keyboard bits all read as
+   * one column of data. Splitting the shadow bank onto the secondary hue was tried and rejected:
+   * `'` already says "shadow". The secondary accent stays reserved for the places it carries
+   * information the text does not — memory's hovered byte, disassembly's opcode column.
+   */
+  "--color-state-value": "var(--accent-text)",
+
+  /*
+   * The *second kind* of value in a row, where a row carries two that must not be confused.
+   *
+   * This is the secondary accent's actual criterion, and these panels meet it twice:
+   *
+   * - `NextRegPanel`'s `08 → 08` — the left number is what was last written to the register, the
+   *   right one is what it reads back as. The same register a moment apart.
+   * - `MemMappingPanel`'s page rows — `bank8k bank16k readOffset writeOffset`, where the first two
+   *   are *bank numbers* and the last two are *addresses into memory*. Four hex numbers in a row
+   *   with no labels, and only the colour split says where one pair ends and the other begins.
+   *
+   * Note what it is not: the Z80 shadow bank was refused this exact treatment, because `AF'` is
+   * *named* differently from `AF` — something already tells those two apart, so a second hue buys
+   * nothing. Here nothing does but position.
+   *
+   * Dimmer emphasis alone (`--data-secondary`) is not a substitute: it makes the second value read
+   * as chrome rather than as a value, when the whole point is that both are data.
+   */
+  "--color-state-value-alt": "var(--accent-secondary-text)",
+
   // --- Explorer ---------------------------------------------------------------------------------
   "--color-explorer": "var(--text-secondary)",
   "--bgcolor-explorer-pointed": "var(--surface-hover)",

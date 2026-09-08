@@ -65,6 +65,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
   private wasmV2CpuRegisterSyncs = 0;
   private wasmV2TapeUploadCount = 0;
   private wasmV2SavedTapeRevision = 0;
+  private wasmV2ContentionPauseBase = 0;
 
   constructor(
     modelInfo?: MachineModel,
@@ -123,6 +124,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     super.reset();
     if (this.wasmV2Runtime != null) {
       this.wasmV2Runtime.exports.sp48Reset();
+      this.wasmV2ContentionPauseBase = 0;
       this.invalidateWasmV2Sync();
       this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
       this.syncTargetClockMultiplierToWasmV2(this.wasmV2Runtime);
@@ -314,6 +316,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     const is16KModel = this.modelInfo?.config?.[MC_MEM_SIZE] === 16 ? 1 : 0;
     const isNtsc = this.modelInfo?.config?.[MC_SCREEN_FREQ] === "ntsc" ? 1 : 0;
     runtime.exports.sp48HardReset(is16KModel, isNtsc);
+    this.wasmV2ContentionPauseBase = 0;
     this.invalidateWasmV2Sync();
     this.wasmV2SavedTapeRevision = 0;
     this.setTactsInFrame(runtime.exports.sp48GetTactsInFrame());
@@ -651,6 +654,24 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     }
   }
 
+  /**
+   * The WASM backend owns the contention counters, so the JS-side fields are refreshed from the
+   * backend whenever machine state is synced. `contentionDelaySincePause` restarts at every run, so
+   * it is reported relative to the backend value captured at the last reset.
+   */
+  override resetContentionDelaySincePause(): void {
+    this.wasmV2ContentionPauseBase =
+      this.wasmV2Runtime?.exports.sp48GetContentionDelaySincePause() ?? 0;
+    this.contentionDelaySincePause = 0;
+  }
+
+  private syncContentionCountersFromWasmV2(runtime: Sp48WasmV2Runtime): void {
+    const wasm = runtime.exports;
+    this.totalContentionDelaySinceStart = wasm.sp48GetTotalContentionDelaySinceStart();
+    this.contentionDelaySincePause =
+      wasm.sp48GetContentionDelaySincePause() - this.wasmV2ContentionPauseBase;
+  }
+
   private syncCpuFromWasmV2(runtime: Sp48WasmV2Runtime): void {
     const wasm = runtime.exports;
     this.af = wasm.sp48GetCpuAf();
@@ -679,6 +700,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     this.interruptMode = wasm.sp48GetCpuInterruptMode();
     this.opCode = wasm.sp48GetCpuPrefix();
     this.retExecuted = wasm.sp48GetCpuRetExecuted() !== 0 || wasm.sp48GetCpuRetnExecuted() !== 0;
+    this.syncContentionCountersFromWasmV2(runtime);
     this.wasmV2CpuRegisterSyncs++;
   }
 
@@ -691,6 +713,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     this.tactsInCurrentFrame = wasm.sp48GetTactsInCurrentFrame();
     this.frameTacts = this.tacts % this.tactsInCurrentFrame;
     this.currentFrameTact = this.frameTacts;
+    this.syncContentionCountersFromWasmV2(runtime);
   }
 
   private invalidateWasmV2Sync(): void {

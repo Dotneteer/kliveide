@@ -90,7 +90,7 @@ const MemoryDumpSectionViewComponent = ({
       {showPartitions && partitionLabel && (
         <PartitionPrefix label={partitionLabel} wide={useWidePartitions} />
       )}
-      <AddressLabel text={addressText} width={addressWidth} />
+      <AddressLabel text={addressText} width={addressWidth} className={styles.memoryAddress} />
       <HexValues
         address={address}
         bytes={bytes}
@@ -161,9 +161,19 @@ const CharDumpComponent = ({ bytes, characterSet, hoveredByteIndex }: CharDumpPr
   return (
     <>
       <div className={styles.charValues}>
-        {bytes.map((value, i) => {
+        {/*
+         * `bytes` is typed as `readonly number[]`, but the live Machine Memory panel actually
+         * hands it a `Uint8Array` view (`memory.subarray(...)`) to avoid copying on every scroll.
+         * `Array.prototype.map` renders each byte's index and value; `Uint8Array.prototype.map`
+         * builds a *new typed array* instead, coercing every callback return value (a JSX
+         * element, here) to a number for storage - which turns each `<span>` into `NaN`, clamped
+         * to `0`. React then rendered that all-zero Uint8Array directly, showing "0" for every
+         * byte regardless of its actual value. `Array.from` normalizes both array and typed-array
+         * inputs to a plain array first, so `.map` is always the one that returns JSX.
+         */}
+        {Array.from(bytes).map((value, i) => {
           if (value === undefined) return <span key={i} className={styles.charPlaceholder}>&nbsp;</span>;
-          const valueInfo = characterSet[(value ?? 0x20) & 0xff];
+          const valueInfo = characterSet[(value ?? 0x20) & 0xff] ?? {};
           const ch = valueInfo.v ?? ".";
           const isHovered = hoveredByteIndex === i;
           return (
@@ -271,13 +281,31 @@ const HexValuesComponent = ({
     }
   }, [editClicked, decimalView, hexParts.length, hexString.length, address]);
 
-  // Tooltip content - memoized
-  const tooltipContent = useMemo(() => {
-    if (hoveredByteIndex == null || bytes[hoveredByteIndex] === undefined) {
+  /*
+   * Tooltip content - memoized.
+   *
+   * Broken into its pieces (rather than one `\n`-joined string for `TooltipFactory`'s plain-text
+   * `content` prop) so each line can carry the same colour as the column it describes - the
+   * address heading in `--color-memory-address`, the hex/decimal/binary value in
+   * `--color-memory-value`, the character/description in `--color-memory-char` - instead of every
+   * line reading as identical, uncoloured text next to a row that is now anything but.
+   *
+   * `tooltipCache[value]` (built by `buildByteTooltipCache`) is still a plain two-line string - it
+   * is also asserted on directly in tests as a string - so it is split here rather than changing
+   * its shape.
+   */
+  const tooltipLines = useMemo(() => {
+    const byteValue = hoveredByteIndex == null ? undefined : bytes[hoveredByteIndex];
+    if (hoveredByteIndex == null || byteValue === undefined) {
       return null;
     }
-    return `Value at $${toHexa4(address + hoveredByteIndex)} (${address + hoveredByteIndex}):` +
-      `\n${tooltipCache[bytes[hoveredByteIndex]]}`;
+    const byteAddress = address + hoveredByteIndex;
+    const [valueLine, charDescLine] = (tooltipCache[byteValue] ?? "").split("\n");
+    return {
+      header: `Value at $${toHexa4(byteAddress)} (${byteAddress}):`,
+      value: valueLine,
+      charDesc: charDescLine
+    };
   }, [hoveredByteIndex, address, bytes, tooltipCache]);
 
   const pointedHint = hoveredByteIndex != null ? pointedInfo?.[address + hoveredByteIndex] : undefined;
@@ -336,7 +364,7 @@ const HexValuesComponent = ({
           )}
         </div>
       )}
-      {tooltipContent && containerRef.current && (
+      {tooltipLines && containerRef.current && (
         <TooltipFactory
           refElement={containerRef.current}
           placement="bottom"
@@ -344,8 +372,15 @@ const HexValuesComponent = ({
           offsetY={0}
           showDelay={0}
           isShown={true}
-          content={tooltipContent + `${pointedHint ? `\nPointed by: ${pointedHint}` : ""}`}
-        />
+          className={styles.memoryTooltip}
+        >
+          <div className={styles.tooltipHeader}>{tooltipLines.header}</div>
+          <div className={styles.tooltipValue}>{tooltipLines.value}</div>
+          <div className={styles.tooltipCharDesc}>{tooltipLines.charDesc}</div>
+          {pointedHint && (
+            <div className={styles.tooltipPointed}>Pointed by: {pointedHint}</div>
+          )}
+        </TooltipFactory>
       )}
     </div>
   );

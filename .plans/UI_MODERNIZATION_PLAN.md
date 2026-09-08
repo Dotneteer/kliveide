@@ -2143,5 +2143,168 @@ so a dark machine does not sit on a glaring field.
 9. **`ToolArea/` is in scope** alongside `DocumentPanels/` and `SiteBarPanels/` — it shares
    `ConsoleOutput` with both and duplicates their header and toolbar patterns. See Phase 7.
 
-**Nothing is open.** The plan is ready to start at Phase 0.0 (baseline capture).
+**Phases 0–9 are closed.** Phase 10 below is a post-launch addition, not a re-opening of §5 or §9 —
+it adds a second axis to the accent system and revisits two specific views' colour, on user
+feedback gathered after Phases 0–9 shipped.
+
+---
+
+## 10. Phase 10 — Secondary accents & per-view colour *(2026-09-08)*
+
+Everything below happened in one review pass after Phases 0–9 shipped: the user exercised the new
+UI, filed concrete visual bugs and design requests view by view, and this phase is the record of
+both. **`.ai/ui-theming-intent-and-lessons.md` carries the distilled version** — read that first for
+anything reusable; this section is the detailed history, in the same spirit as the Phase 0–9
+retrospectives above.
+
+### 10.1 Bug fixes (not colour, found along the way)
+
+None of these were part of the accent/colour request; they surfaced from actually using the app
+after Phase 0–9 and are recorded here because each is the kind of thing that reappears.
+
+| Area | Symptom | Cause | Fix |
+|---|---|---|---|
+| Project Explorer | Icon/label gap collapsed to ~0px | `LabelSeparator` used to *borrow* `.label`'s CSS margins as an implicit gap (`layout/Label.module.scss`'s `.label` carried `margin: 0 0.4em`); Phase-6-era cleanup correctly gave `LabelSeparator` its own `.spacer` class with no margins, which broke the one call site (`ExplorerProjectItem.tsx`) that was relying on the borrowed margin via `width={0}` | Pass an explicit `width={8}` instead of relying on inherited margin |
+| Main toolbar | Buttons read as touching the strip edges, especially the `selected` border ring | `STRIP.toolbar` (38px) left only 1px of clearance around the 32px `IconButton` after Phase 5's 4px→2px padding fix — mathematically non-overflowing, but visually indistinguishable from touching | `STRIP.toolbar` → 42px. It is the *only* consumer of `--strip-toolbar`, so this is fully scoped |
+| Activity bar | Active-tab indicator was a short floating pill, not the VS Code full-height bar | `top: 8px; bottom: 8px` plus rounded corners on the accent stripe — introduced deliberately in Phase 3 as "the standard idiom", but inset from a full-height bar rather than matching it | `top: 0; bottom: 0`, corner radius removed |
+| Document tab strip | Horizontal scroll silently undid itself on a narrow strip: `scrollTabsBy` would move the strip, then it snapped straight back | Two independent bugs, same root shape. (1) `scheduleEnsureTabVisible` was built from two inline arrow functions passed to `useTabVisibility` on every render, so the `useCallback` inside it saw a fresh identity every render, and the effect that depends on it re-ran — and re-scrolled to the active tab — on every unrelated render, not just when the active document changed. (2) Independently, `useTabVisibility`'s `ResizeObserver`-setup effect had no dependency array, so it tore the observer down and rebuilt it every render too; `ResizeObserver.observe()` delivers an initial entry for every newly observed target even when nothing resized, so the rebuild alone re-triggered the same re-scroll in a **real browser** — invisible in jsdom, which has no `ResizeObserver`, so this half needed a test that supplies its own stub to see at all | (1) Memoize both callbacks passed into `useTabVisibility`. (2) Build the `ResizeObserver` once, in a mount-only effect; new tab elements register with the same long-lived observer via a returned `observeElement`, queued if they mount before the observer exists (a child's layout effect runs before the parent's own effect on first commit) |
+| Theming (app-wide) | A toggled accent/theme recoloured CSS-driven text instantly but left `react-switch`/SVG-fill colours on the old accent for anywhere from one render to several seconds | `getThemeProperty` resolves an aliased token (`--color-switch-on: var(--accent-solid)`) via `getComputedStyle(root)`, called during **render** — but `root`'s `style` attribute (the inline custom properties `ThemeProvider` writes) only updates at **commit**, one step later. The render that first reacts to a new accent reads DOM state that still reflects the *previous* one. CSS-driven consumers never hit this: the browser re-evaluates every `var()` the instant the DOM's custom property changes, commit included | A `useLayoutEffect` bumps a `domCommitTick` state right after the commit that applied the new `styleProps`; `themeValue`'s memo depends on it, so every `getThemeProperty()` caller re-resolves once more, synchronously before paint — invisible to the user, instead of stuck until some unrelated future render |
+| Memory dump | ASCII column showed the literal character "0" for every byte, regardless of value | The live panel passes `bytes` as `memory.subarray(...)` — a `Uint8Array` view, not a plain array, to avoid copying on every scroll. `CharDump` built its `<span>`s with `bytes.map(...)`: `Array.prototype.map` returns an array of whatever the callback returns, but **`Uint8Array.prototype.map` builds a new typed array**, coercing every callback return value (a JSX element, here) to a number for storage — a React element coerces to `NaN`, clamped to `0` | `Array.from(bytes).map(...)` — normalizes both array and typed-array inputs to a plain array first |
+| Memory dump | Hovered byte's highlighted text sat ~2-3px right and a few px above the real glyphs underneath | A `border` is part of the box model: it pushes the *content box* (and the text inside it) inward from the box's own `left`, while the real, unbordered text underneath does not move — `outline` paints at the same visual position without taking part in layout at all, so it does not shift anything it sits on top of. Separately, the overlay bled 1-2px past the row's own edges (`top: -1px; bottom: -1px`) to look right at the seams, which made its own box a little taller than the text needs; without `display: flex; align-items: center` (matching the parent `.hexValues`'s own centring), a plain block box does not split that extra height evenly and the text sits near the top | Swap `border` for `outline` (same visual position, no layout participation); add `display: flex; align-items: center` to the overlay so it centres its own text the same way its parent does |
+| Disassembly | Toggling "Follow PC" took a few seconds and (rarely) failed to scroll to PC on the first click | `onAutoRefreshChanged` called `refreshDisassembly()` directly from the click handler, right after `setAutoRefresh(value)`. `refreshDisassembly()` reads `cachedRefreshState.current.autoRefresh` — a ref that `useDisassemblyViewStatePersistence` only syncs in its *own* effect, one render after the click handler runs. So the very refresh the click triggered still read the **old** `autoRefresh`, and silently ran a manual, full-range disassembly instead of the small ~1KB window around PC. Every other toggle on the same panel (RAM, screen, decimal view, segment) already avoided this because they are bare state setters — the actual `refreshDisassembly()` call for those happens later, from an effect keyed on that value, which fires *after* the sync effect in the same commit. The comment above that effect already said *"Refresh when the follow PC option changes"* — `autoRefresh` was simply missing from its dependency array | Add `autoRefresh` to that effect's dependency array; remove the direct call from the click handler, matching every other toggle's existing pattern |
+
+### 10.2 Secondary accents
+
+**Decided:** each of the six accents (§5.3) gains a **second hue**, for the specific case the
+single-hue axis cannot cover — two things in the same view that both need to read as accent-tied
+*and* clearly apart from each other. The motivating case: the memory dump's address column already
+claims the primary accent, so colouring the hovered-byte highlight with that same primary would read
+as "this became an address" rather than "this is highlighted".
+
+**Derivation, not hand-authored:** convert the primary's `solid` to HSL, add a fixed per-accent hue
+offset, keep saturation, convert back — the harmony comes from sharing the hue *family*
+(analogous colour), the distinction comes from the hue itself. Lightness is kept equal to the
+primary's own **only where that still clears legibility**; three of the six needed it corrected
+instead, for two different reasons:
+
+1. **Illegible against the background.** Sinclair Blue (H 204°→234°) and Deep Teal (H 178°→223°, see
+   below for why its offset is wider) both rotate into blue, and blue carries far less of WCAG's
+   relative-luminance weight than green or yellow (0.0722 vs. 0.7152) — so matching the primary's
+   own HSL lightness left both nowhere near as bright as the primary actually reads. Sinclair Blue's
+   naive `#4554E6` was 3.19:1 against canvas (2.61:1 against the memory dump's own hover
+   background); Deep Teal's naive `#2F58C2` was 2.87:1 — both below the 4.5:1 AA floor for text.
+   Both lightened independent of the hue rotation (Sinclair Blue 59%→76%, Deep Teal 47%→73%); light
+   tone needed no change for either, since light theme needs the opposite lightness move.
+2. **Illegible against its own primary.** Spectrum Magenta's naive rotation (H 290°→320°) was legible
+   on its own (5.5:1 against canvas) but sat at **1.04:1 against its own primary** — hue alone does
+   not move relative luminance evenly, and this rotation barely moved it at all, so the two read as
+   the same colour side by side. Lightened for separation rather than background contrast (dark
+   62%→72%, light 44.5%→34%, the latter darkened rather than lightened since light theme's primary
+   is already dark and needs more of the same to separate further).
+
+The same primary-vs-secondary check on the other three: Phosphor Green sits at 1.13:1 and
+Ultraviolet at 1.21:1 — lower than Sinclair Blue/Ember/Deep Teal (2.1–2.9:1 once corrected) but not
+adjusted, since both are already legible against the background on their own; worth a look if either
+reads flat in practice.
+
+**Final six** (dark tone; light tone and the full alpha ladder are in `palette.ts`):
+
+| Accent | Primary | Secondary | Offset | Note |
+|---|---|---|---|---|
+| Sinclair Blue | `#45A5E6` | `#939CF0` | +30° (indigo) | Lightened 59%→76% for background legibility |
+| Spectrum Magenta | `#C264D6` | `#E18EC6` | +30° (rose) | Lightened 62%→72% for separation from primary |
+| Ember | `#FFC933` | `#CFFF33` | +30° (chartreuse) | Full saturation, like the primary — reads as vivid; flagged, not corrected |
+| Ultraviolet | `#A78AF5` | `#8AABF5` | −35° (periwinkle) | No correction needed — the primary's own high lightness (75%) carries over safely |
+| Deep Teal | `#2FC2BE` | `#90A7E4` | +45° (blue) | Wider than ±30°: the naive rotation landed a few degrees from `info` blue one direction, `success` green the other. Also lightened 47%→73% for background legibility |
+| Phosphor Green | `#76C842` | `#B9C842` | −30° (olive) | No correction needed |
+
+**Token family** (`semantic.ts`, mirroring `--accent-*` exactly): `--accent-secondary-solid`,
+`--accent-secondary-solid-hover` (88%), `--accent-secondary-subtle` (18%),
+`--accent-secondary-border` (55%), `--accent-secondary-text` (= solid),
+`--accent-secondary-text-subtle` (85%), plus `--text-on-accent-secondary` mirroring
+`--text-on-accent`. `AccentDef` (`palette.ts`) gained `secondary`/`onSecondary`, both
+`Record<Tone, string>` alongside the existing `solid`/`onSolid`.
+
+One incidental fix while building this: `--accent-text-subtle` (the primary's own soft-text level,
+added earlier for the memory dump's char column) was originally 65% alpha and read as too dark —
+alpha is composited *over the panel's own dark surface*, so the transparent remainder darkens it
+more than "65% as bright as full strength" suggests. Raised to 85%.
+
+`test/theming/token-contract.test.ts` requires no changes to stay green: it asserts every accent
+emits the same *token set*, not fixed values, so a new token family that every accent defines
+identically passes by construction.
+
+### 10.3 View-scoped colour: memory dump and disassembly
+
+§5.2 deliberately flattened the register/watch/disassembly-adjacent "data panel" hierarchy
+(`--data-value`/`--data-label`/`--data-secondary`) to neutral, on the reasoning that three
+competing saturated hues in the densest panels is what made an orange accent impossible in the
+first place. **That reasoning still holds for register and watch panels** — nothing here reopens
+§5.2's decision or touches `--data-*`.
+
+The memory dump and the disassembly view are different in kind: they are hex-editor-style views,
+not dense register grids, and read better for real colour rather than worse. Each gets its **own**
+token family (`--color-memory-*`/`--bgcolor-memory-*` and `--color-disassembly-*`/
+`--bgcolor-disassembly-*` in `componentAliases.ts`) so the two can carry colour without reopening
+the register/watch panels' neutrality — every one of these aliases still bottoms out on the shared
+`--accent-*`/`--accent-secondary-*`/`--text-*` tokens, so an accent change still recolours both
+automatically.
+
+**Memory dump** (`MemoryDumpSection.tsx`/`.module.scss`):
+
+| Column | Token | Value | Why |
+|---|---|---|---|
+| Address | `--color-memory-address` | `--accent-text`, bold | Anchors the row in accent |
+| Hex bytes | `--color-memory-value` | `--text-primary`, bold | The datum itself — brightest, boldest thing in the row |
+| ASCII chars | `--color-memory-char` | `--accent-text-subtle` | Echoes the address's hue at lower strength — same underlying bytes, softer treatment |
+| Hovered byte (hex + its ASCII pair) | `--color-memory-highlight` / `--border-memory-highlight` | `--accent-secondary-text` / `--accent-secondary-border` | The *secondary* hue, deliberately not the address's primary — see §10.2's motivating case |
+
+The hover tooltip is scoped the same way: its own box (`.memoryTooltip`, a darker
+`--surface-canvas` background and an accent-coloured border, distinct from the app's shared
+lighter `--surface-overlay` tooltip) and its content lines individually coloured to match the
+column each one describes (address line in `--color-memory-address`, value line in
+`--color-memory-value`, char/description line in `--color-memory-char`), rather than uniform plain
+text.
+
+**Disassembly** (`DisassemblyRow.tsx`/`DisassemblyPanel.module.scss`) — mapped onto its own columns
+rather than reusing memory's roles literally:
+
+| Column | Token | Value | Why |
+|---|---|---|---|
+| Address | `--color-disassembly-address` | `--accent-text`, bold | Anchors the row, same as memory |
+| Decoded instruction | `--color-disassembly-instruction` | `--text-primary`, bold | What a disassembly view is *for* — the "most legible thing in the row" role, same as memory's hex bytes |
+| Opcode bytes | `--color-disassembly-opcodes` | `--accent-secondary-text`, bold | The secondary hue — after review, this reads better than echoing the address the way memory's chars do |
+| Jump-target label (`L8000:`) | `--color-disassembly-label` | `--accent-text`, bold | A *name for* the same address, not a different kind of information — shares the address's hue rather than needing separation from it |
+| Current-PC row | `--bgcolor-disassembly-current` | `--surface-hover` | The row background while paused there, independent of the zebra stripe or a passing mouse hover — declared last in the cascade so it wins both |
+
+Comment/annotation text (`; hardComment`) stays on the shared, neutral `Secondary` styling — it is
+editorial text, not part of the address/value/echo relationship the rest of the row expresses.
+
+**Mechanics, both views.** `AddressLabel`, and the `controls/layout` wrappers `Secondary`/`Value`/
+`Label` (21+ importers between them, shared with registers and watch), plus `Tooltip`/
+`TooltipFactory`, each gained an optional `className` prop merged onto their existing internal
+class. Every other consumer simply does not pass it, so this is additive — only `MemoryDumpSection`
+and `DisassemblyRow` opt in to their own view's colours.
+
+**The CSS specificity trap this created, twice.** A shared component's own base class
+(`.addressLabel`, `.tooltip`) and a caller's override class live in **different stylesheets**, so
+both are single-class selectors of equal specificity — whichever module's CSS happens to load
+*second* wins, which is not something to depend on. Two fixes, same problem: nest the override
+under a selector unique to the caller's own row (`.dumpSection .memoryAddress`,
+`.item .disassemblyAddress` — two-class specificity beats one-class regardless of load order), or
+double the override class itself (`.memoryTooltip.memoryTooltip`) where nesting is not available.
+
+### Phase 10 exit
+
+- Full suite green: 629 files / 19,755 tests (`npx vitest run --config build/vitest.config.ts`),
+  including `test/theming/token-contract.test.ts` (6/6, unchanged assertions).
+- Every bug in §10.1 has a regression test that was verified to fail against the pre-fix code and
+  pass against the fix — not merely written after and trusted (the Method Lessons in
+  `.ai/ui-theming-intent-and-lessons.md` explain why that verification step is the point).
+- Not done: extending the secondary accent or the view-scoped colour treatment to any panel beyond
+  the memory dump and disassembly view. Nothing here implies register/watch panels should follow —
+  §5.2's neutral hierarchy for those stands.
+
+**Nothing is open.** The plan is ready to start at Phase 0.0 (baseline capture) — Phase 10 above is
+complete and does not reopen it.
 

@@ -523,7 +523,7 @@ export class MachineController implements IMachineController {
     this.context.debugSupport = this.debugSupport;
 
     // --- Set up the state
-    this.machine.contentionDelaySincePause = 0;
+    this.machine.resetContentionDelaySincePause();
     this.machine.tactsAtLastStart = this.machine.tacts;
 
     // --- Obtain fastload settings

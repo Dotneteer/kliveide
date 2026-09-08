@@ -20,9 +20,13 @@
     align-items: center;
     gap: var(--space-2);
     width: 100%;
-    height: 22px;
-    margin: 1px 0;
-    padding: 3px 10px;
+    // Was 22px/1px margin (2px between rows) - rows this close together, especially the
+    // icon+text+trailing rows the open-documents overflow list uses, read as one crowded block
+    // rather than a list. 24px/2px margin (4px between rows) gives the same relative room a
+    // 26px explorer row has over its 20px icons.
+    height: 24px;
+    margin: 2px 0;
+    padding: 4px 10px;
     border: 0;
     background: none;
     color: inherit;
