@@ -22,7 +22,17 @@ import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassemb
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { DataRow, EmptyState } from "@renderer/controls/data";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
-import type { ReactNode } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import {
+  ContextMenu,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  useContextMenuState
+} from "@controls/ContextMenu";
+import { IconButton } from "@renderer/controls/IconButton";
+import { useConfirmPort } from "@mvc/dialogs/useDialogPorts";
+import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
+import { isBinaryBreakpoint } from "../utils/breakpoint-form";
 
 /*
  * M2: `ch`, not px. Capacity preserved from the px widths at the panel's old 12.8px size (px / 6.4),
@@ -67,6 +77,10 @@ const breakpointTooltip = (
   // --- two tooltips do not fire on top of this one.
   lines.push(bp.disabled ? "Check the box to enable" : "Uncheck the box to disable");
   lines.push("Right-click the indicator to remove");
+  // --- The row's own gestures. Only a binary breakpoint is editable here; a source-bound one is
+  // --- placed and moved from the editor's glyph margin.
+  lines.push("Right-click the row for more actions");
+  if (bp.address !== undefined) lines.push("Double-click the row to edit");
   return lines.join("\n");
 };
 
@@ -77,11 +91,21 @@ const breakpointTooltip = (
  * whatever element it is handed, and it renders nothing inline (it portals only while visible) so it
  * is safe as a child of the row's flex container.
  */
-const BreakpointRow = ({ tooltip, children }: { tooltip: string; children: ReactNode }) => {
+const BreakpointRow = ({
+  tooltip,
+  children,
+  onContextMenu,
+  onDoubleClick
+}: {
+  tooltip: string;
+  children: ReactNode;
+  onContextMenu?: (e: ReactMouseEvent) => void;
+  onDoubleClick?: () => void;
+}) => {
   const ref = useTooltipRef<HTMLDivElement>();
 
   return (
-    <DataRow hoverable ref={ref}>
+    <DataRow hoverable ref={ref} onContextMenu={onContextMenu} onDoubleClick={onDoubleClick}>
       {children}
       <TooltipFactory
         refElement={ref.current}
@@ -97,9 +121,15 @@ const BreakpointRow = ({ tooltip, children }: { tooltip: string; children: React
 
 export const BreakpointsPanel = () => {
   const emuApi = useEmuApi();
+  const confirmPort = useConfirmPort();
+  const openBreakpointDialog = useBreakpointDialog();
   const [bps, setBps] = useState<BreakpointInfo[]>([]);
   const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>({});
   const [lastCpuState, setLastCpuState] = useState<CpuState>();
+  const [menuState, menuApi] = useContextMenuState();
+  // --- The row the context menu was opened on. A breakpoint has no id, so the row itself is held
+  // --- rather than a key that the next refresh could invalidate.
+  const [menuTarget, setMenuTarget] = useState<BreakpointInfo>();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const bpsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
@@ -184,8 +214,115 @@ export const BreakpointsPanel = () => {
     await refreshBreakpoints();
   });
 
+  const editBreakpoint = async (initial?: BreakpointInfo) => {
+    if (await openBreakpointDialog(initial)) await refreshBreakpoints();
+  };
+
+  const removeBreakpoint = async (bp: BreakpointInfo) => {
+    await emuApi.removeBreakpoint(bp);
+    await refreshBreakpoints();
+  };
+
+  const toggleBreakpoint = async (bp: BreakpointInfo) => {
+    await emuApi.enableBreakpoint(bp, !!bp.disabled);
+    await refreshBreakpoints();
+  };
+
+  const removeAllBreakpoints = async () => {
+    // --- This keeps `bp-ea`'s semantics: it erases every breakpoint, source-bound ones included.
+    // --- That is the one place the panel does something the dialog's binary-only scope would not
+    // --- predict, so the question names the source count rather than asking a bare "Are you sure?".
+    const sourceCount = bps.filter((bp) => !isBinaryBreakpoint(bp)).length;
+    const confirmed = await confirmPort.confirm({
+      title: "Remove all breakpoints",
+      lines: [
+        `Remove all ${bps.length} breakpoint${bps.length === 1 ? "" : "s"}?`,
+        ...(sourceCount
+          ? [
+              `This includes ${sourceCount} source-code breakpoint${
+                sourceCount === 1 ? "" : "s"
+              } set in the editor.`
+            ]
+          : []),
+        "This cannot be undone."
+      ],
+      confirmLabel: "Remove all",
+      cancelLabel: "Cancel",
+      danger: true
+    });
+    if (!confirmed) return;
+    await emuApi.eraseAllBreakpoints();
+    await refreshBreakpoints();
+  };
+
+  const showRowMenu = (bp: BreakpointInfo, e: ReactMouseEvent) => {
+    e.preventDefault();
+    setMenuTarget(bp);
+    menuApi.show(e);
+  };
+
+  const runFromMenu = (action: () => Promise<void>) => () => {
+    menuApi.conceal();
+    void action();
+  };
+
+  // --- Source-bound breakpoints appear in this list but cannot be authored here; the editor's
+  // --- glyph margin owns them. Everything that is a *set* operation still applies to them.
+  const menuTargetIsEditable = isBinaryBreakpoint(menuTarget);
+
   return (
     <div className={styles.breakpointsPanel}>
+      <div className={styles.toolbar}>
+        <IconButton
+          iconName="plus"
+          title="Add breakpoint"
+          iconSize={16}
+          buttonWidth={22}
+          buttonHeight={22}
+          fill="--color-command-icon"
+          clicked={() => void editBreakpoint()}
+        />
+        <IconButton
+          iconName="clear-all"
+          title="Remove all breakpoints"
+          iconSize={16}
+          buttonWidth={22}
+          buttonHeight={22}
+          enable={bps.length > 0}
+          fill="--color-command-icon"
+          clicked={() => void removeAllBreakpoints()}
+        />
+      </div>
+      <ContextMenu state={menuState} onClickOutside={() => menuApi.conceal()}>
+        {menuTargetIsEditable ? (
+          <ContextMenuItem
+            text="Edit breakpoint..."
+            iconName="pencil"
+            clicked={runFromMenu(() => editBreakpoint(menuTarget))}
+          />
+        ) : (
+          /*
+           * A source-bound row gets a disabled hint rather than a silently shorter menu: an item
+           * that is simply missing invites a hunt for the state that brings it back.
+           */
+          <ContextMenuItem text="Edit from the editor's left margin" disabled />
+        )}
+        <ContextMenuItem
+          text={menuTarget?.disabled ? "Enable breakpoint" : "Disable breakpoint"}
+          clicked={runFromMenu(() => toggleBreakpoint(menuTarget))}
+        />
+        <ContextMenuItem
+          text="Remove breakpoint"
+          dangerous
+          clicked={runFromMenu(() => removeBreakpoint(menuTarget))}
+        />
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          text="Remove all breakpoints"
+          dangerous
+          clicked={runFromMenu(removeAllBreakpoints)}
+        />
+      </ContextMenu>
       {bps.length === 0 && <EmptyState message="No breakpoints defined" />}
       {bps.length > 0 && (
         <VirtualizedList
@@ -221,7 +358,15 @@ export const BreakpointsPanel = () => {
               const instruction = disassLines.current[idx] ?? "???";
 
               return (
-                <BreakpointRow tooltip={breakpointTooltip(bp, addrKey, instruction, isWatchpoint)}>
+                <BreakpointRow
+                  tooltip={breakpointTooltip(bp, addrKey, instruction, isWatchpoint)}
+                  onContextMenu={(e) => showRowMenu(bp, e)}
+                  onDoubleClick={
+                    // --- Only a binary breakpoint has anything to open; a source-bound one is the
+                    // --- editor's to edit.
+                    isBinaryBreakpoint(bp) ? () => void editBreakpoint(bp) : undefined
+                  }
+                >
                   <BreakpointIndicator
                     partition={
                       bp?.partition !== undefined ? partitionLabels[bp.partition] ?? "?" : undefined

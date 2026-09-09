@@ -1,9 +1,9 @@
-import { MF_BANK, MF_ROM } from "@common/machines/constants";
+import { MF_ROM } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import type { EmuApi } from "@common/messaging/EmuApi";
 import type { DropdownOption } from "@renderer/controls/Dropdown";
 import { useEffect, useState } from "react";
-import { createSegmentOptions, getDefaultSegment } from "./memoryViewModel";
+import { derivePartitionSetup, getDefaultSegment } from "./memoryViewModel";
 
 export type MemoryMachineSetupState = {
   banksView: boolean;
@@ -42,7 +42,6 @@ export function useMemoryMachineSetup(
 
     const machine = machineRegistry.find((mi) => mi.machineId === machineId);
     const romPagesValue = machine?.features?.[MF_ROM] ?? 0;
-    const ramBankValue = machine?.features?.[MF_BANK] ?? 0;
 
     void (async () => {
       const [romFlags, labels] = await Promise.all([
@@ -54,14 +53,17 @@ export function useMemoryMachineSetup(
         return;
       }
 
+      // --- Shared with the breakpoint dialog, so the two offer the same chooser for a machine.
+      const partitionSetup = derivePartitionSetup(machineId, labels);
+
       setSetup((prev) => ({
-        banksView: romPagesValue > 0 || ramBankValue > 0,
+        banksView: partitionSetup.banksView,
         defaultSegment: getDefaultSegment(romPagesValue),
-        displayBankMatrix: ramBankValue > 8 || romPagesValue > 8,
+        displayBankMatrix: partitionSetup.displayBankMatrix,
         isInitializing: false,
         partitionLabels: labels,
         romFlags,
-        segmentOptions: createSegmentOptions(labels, ramBankValue),
+        segmentOptions: partitionSetup.segmentOptions,
         setupVersion: prev.setupVersion + 1
       }));
     })();

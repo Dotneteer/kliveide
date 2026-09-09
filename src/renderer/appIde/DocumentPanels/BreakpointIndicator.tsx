@@ -27,6 +27,13 @@ type Props = {
    * below into its row tooltip; the disassembly view, which has no row tooltip, leaves it off.
    */
   noTooltip?: boolean;
+  /**
+   * Open an editor for this breakpoint.
+   *
+   * Supplied by the disassembly view, where the row has no menu of its own; the Breakpoints panel
+   * leaves it unset because its own row already handles the same gesture.
+   */
+  onEdit?: () => void;
 };
 
 export const BreakpointIndicator = ({
@@ -42,7 +49,8 @@ export const BreakpointIndicator = ({
   ioMask,
   showType,
   resolvedAddress,
-  noTooltip
+  noTooltip,
+  onEdit
 }: Props) => {
   const { ideCommandsService } = useAppServices();
   const cbkRef = useTooltipRef();
@@ -83,7 +91,8 @@ export const BreakpointIndicator = ({
   const tooltipCommon = `${addrLabel}${(ioRead || ioWrite) && ioMask ? " /$" + toHexa4(ioMask) : ""} (${bpType})`;
   const tooltip =
     `${tooltipCommon})\n` +
-    (hasBreakpoint ? `Right-click to remove this breakpoint` : "Right-click to set a breakpoint");
+    (hasBreakpoint ? `Right-click to remove this breakpoint` : "Right-click to set a breakpoint") +
+    (hasBreakpoint && onEdit ? "\nDouble-click to edit this breakpoint" : "");
   const tooltipCheckbox =
     `${tooltipCommon})\n` +
     (disabled ? `Check to enable this breakpoint` : "Uncheck to disable this breakpoint");
@@ -143,6 +152,17 @@ export const BreakpointIndicator = ({
       className={styles.breakpointWrapper}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
+      /*
+       * The indicator owns right-click within its own bounds.
+       *
+       * `BreakpointsPanel` puts a context menu on the whole row, and this indicator sits inside
+       * every one of those rows while binding right-click to *delete the breakpoint outright*.
+       * Without this the two would fight: the row menu would open on top of a silent delete, or
+       * shadow it, depending on where in the indicator the click landed. Stopping propagation on
+       * the wrapper — rather than on the icon alone — keeps the checkbox and the glyph behaving as
+       * one unit, instead of a menu appearing a few pixels away from a gesture that deletes.
+       */
+      onContextMenu={(e) => e.stopPropagation()}
     >
       {showType && (
         <div ref={cbkRef} style={{ zoom: 0.8 }}>
@@ -162,7 +182,21 @@ export const BreakpointIndicator = ({
       <div
         ref={ref}
         style={{ display: "flex", flexDirection: "row", justifyContent: "center" }}
-        onContextMenu={handleRemove}
+        onContextMenu={(e) => {
+          // --- Suppress the platform menu; the wrapper above has already stopped this reaching a
+          // --- row-level menu.
+          e.preventDefault();
+          void handleRemove();
+        }}
+        onDoubleClick={
+          hasBreakpoint && onEdit
+            ? (e) => {
+                // --- Where a row also listens for a double-click, only one editor should open.
+                e.stopPropagation();
+                onEdit();
+              }
+            : undefined
+        }
       >
         {iconName ? (
           <div className={styles.breakpointIndicator}>

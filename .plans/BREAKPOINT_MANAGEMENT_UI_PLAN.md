@@ -1,6 +1,6 @@
 # Breakpoint Management UI Plan
 
-Status: **proposed** — not started
+Status: **implemented** — Phases 1-4 complete (see §11 for what was deliberately skipped)
 Scope: renderer only (`src/renderer`), plus one docs page and new icon assets
 Related docs: `.docs/dialog-pattern.md`, `.docs/dialog-mvc-pattern.md`
 
@@ -266,8 +266,23 @@ becomes mandatory rather than defensive.
 **A toolbar strip inside the panel body**, above the `VirtualizedList`:
 
 - `+` **Add breakpoint…** — opens the dialog in add mode
-- `clear-all` **Remove all breakpoints** — `eraseAllBreakpoints()`, behind a `ConfirmDialog`
-  (`src/renderer/mvc/dialogs/ConfirmDialog.tsx`), since it is unrecoverable
+- `clear-all` **Remove all breakpoints** — a plain `eraseAllBreakpoints()` call, behind a
+  `ConfirmDialog` (`src/renderer/mvc/dialogs/ConfirmDialog.tsx`), since it is unrecoverable
+
+**Remove all keeps `bp-ea` semantics exactly: it erases every breakpoint, source-bound ones
+included.** One command, one meaning, whichever front door you came through — a panel button that
+quietly erased less than `bp-ea` would be the worse surprise, and there is no second API for a
+partial erase.
+
+But the §5.4 split makes this the one place where the panel does something the dialog's scope would
+not predict, so the confirmation has to say so rather than ask a bare "Are you sure?". Count the two
+kinds and name them:
+
+> Remove all 7 breakpoints? This includes 3 source-code breakpoints set in the editor. This cannot
+> be undone.
+
+Drop the second sentence when no source breakpoints are present. This is the entire cost of keeping
+the semantics aligned, and it is cheap.
 
 `SideBarPanelInfo` (`src/renderer/abstractions/SideBarPanelInfo.ts`) has **no header-action support**
 and `SideBarPanel.tsx` renders only a chevron and a title. Putting the toolbar in the panel body is
@@ -296,7 +311,8 @@ resolved address. On those rows:
   §5.1.
 - **Enable/Disable, Remove, and Remove all stay live.** Those are set operations, not authoring, and
   they already work on source breakpoints today through `bp-en`/`bp-del`/`bp-ea` and the indicator
-  checkbox. Removing that would be a regression dressed as scope discipline.
+  checkbox. Removing that would be a regression dressed as scope discipline. Remove all in
+  particular erases source breakpoints too, per the toolbar note above.
 - Where a source row's menu would otherwise be one item shorter with no explanation, add a disabled
   hint item: *"Edit from the editor's left margin"*.
 
@@ -382,7 +398,7 @@ Each phase is independently shippable and independently testable.
 8. Toolbar strip + Add flow in `BreakpointsPanel.tsx`.
 9. Row context menu, double-click-to-edit, and the `stopPropagation` fix on the indicator (§5.4).
 10. Tooltip text update.
-11. `ConfirmDialog` on Remove all.
+11. `ConfirmDialog` on Remove all, with the two-kind count in its message (§5.4).
 12. jsdom test `test/controls/BreakpointsPanelActions.test.tsx`: menu contents reflect row state,
     each item calls the expected action, indicator right-click does not open the row menu, **and a
     source-bound row offers no Edit item and ignores double-click while still offering
@@ -455,6 +471,38 @@ npx electron-vite build --config build/electron.vite.config.ts
    follow-up?
 3. **`SideBarPanelInfo.headerActions`:** worth doing now for a nicer toolbar placement, or later as
    its own change across panels?
-4. **Remove-all and source breakpoints:** `bp-ea` erases everything, source-bound included. Should
-   the panel's Remove all keep that meaning, or offer "remove binary breakpoints only"? Keeping
-   `bp-ea`'s exact semantics is the simpler answer and the one assumed above.
+
+**Decided:** *Remove all keeps `bp-ea` semantics* — it erases every breakpoint, source-bound
+included, rather than offering a binary-only variant. The confirmation names the source count so the
+scope is stated at the point of action (§5.4).
+
+## 11. Implementation notes
+
+Phases 1-4 are implemented. Three deviations from the plan as written, all deliberate:
+
+1. **`useBreakpointDialog` was extracted** (`src/renderer/appIde/dialogs/useBreakpointDialog.ts`).
+   The plan had the panel build the dialog's environment inline. Once the disassembly view needed
+   the same thing, one hook became the obvious home — and it fixed a latent bug: the panel was
+   building `existingKeys` from its own render-old copy of the breakpoint list, so the
+   duplicate-key check was only as fresh as the last refresh. The hook reads the list when the
+   dialog opens.
+
+2. **`applyKindChange` was added to the pure module.** Switching type left a stale partition (its
+   control disabled) or a stale port mask (its field not rendered at all) in the form, failing
+   validation against a field the user could not see or reach. Found on review in Phase 2.
+
+3. **Step 13b — registering the dialog by id — was skipped.** The plan estimated "three small
+   edits", which turned out to understate it: `ideDialogRegistry` renderers are
+   `(data, controls) => ReactElement`, but this dialog needs an environment that can only be read
+   asynchronously in the renderer. Reaching it from `display-dialog` or the Electron menu therefore
+   needs a loading host component, not a registry line. That is real surface to build and test for
+   a second route to something the Breakpoints panel already offers in one click. Revisit if a
+   Debug-menu entry is actually wanted.
+
+Also fixed in passing: `docs/content/commands-reference.mdx` had a committed corruption in the
+`bp-del` section — its parameter list ended mid-sentence, and the missing text had been spliced
+into a bodyless duplicate `## show-memory` heading further down. Repaired while editing that file.
+
+`npm run doc:check` reports one route not in the golden snapshot,
+`/contribute/wasm-toolchain/index.html`. It predates this work (committed in `f176f2398`), so the
+golden was left alone rather than silently absorbing someone else's drift.

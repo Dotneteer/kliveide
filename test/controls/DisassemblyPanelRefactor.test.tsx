@@ -130,6 +130,12 @@ async function renderDisassemblyPanel({
       emuStateCallback = callback;
     }
   }));
+  // --- The panel opens the breakpoint editor through this hook, which reaches `AppServicesProvider`
+  // --- and from there drags Monaco into the module graph — Monaco touches `document` APIs jsdom
+  // --- does not implement. The panel's own editing path is covered in `BreakpointsPanelActions`.
+  vi.doMock("@renderer/appIde/dialogs/useBreakpointDialog", () => ({
+    useBreakpointDialog: () => vi.fn().mockResolvedValue(false)
+  }));
   vi.doMock("@renderer/appIde/DocumentPanels/BreakpointIndicator", () => ({
     BreakpointIndicator: ({
       address,

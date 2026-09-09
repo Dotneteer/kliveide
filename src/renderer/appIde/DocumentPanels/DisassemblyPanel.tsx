@@ -1,6 +1,7 @@
 import styles from "./DisassemblyPanel.module.scss";
 import { useRowSizes } from "@renderer/theming/useRowSizes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
@@ -33,6 +34,7 @@ import {
 } from "./useDisassemblyRefresh";
 import { DisassemblyRow } from "./DisassemblyRow";
 import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
+import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
 import {
   createDisassemblyOffsetOptions,
   DisassemblyBankToolbar,
@@ -48,6 +50,14 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
+  // --- One hook for the whole listing rather than one per row. Wrapped in `useCallback` because
+  // --- `DisassemblyRow` is memoized: a fresh arrow on every render would re-render every row in
+  // --- the listing on every tick.
+  const openBreakpointDialog = useBreakpointDialog();
+  const editBreakpoint = useCallback(
+    (bp: BreakpointInfo) => void openBreakpointDialog(bp),
+    [openBreakpointDialog]
+  );
 
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -365,6 +375,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   isFullView={isFullView}
                   item={item}
                   mem64kLabels={mem64kLabels}
+                  onEditBreakpoint={editBreakpoint}
                   partitionLabels={machineSetup.partitionLabels}
                   partitionWidthCh={partitionWidthCh}
                   pausedPc={pausedPc}

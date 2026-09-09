@@ -1,6 +1,4 @@
-import { MI_Z88, MI_ZXNEXT } from "@common/machines/constants";
-import BankDropdown from "@renderer/controls/new/BankDropdown";
-import Dropdown from "@renderer/controls/Dropdown";
+import { PartitionPicker } from "@renderer/controls/PartitionPicker";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Text } from "@renderer/controls/layout/Text";
@@ -42,32 +40,18 @@ export const MemoryBankToolbar = ({
           <LabelSeparator />
           <Text text="Selected bank" />
           <LabelSeparator />
-          {!machineSetup.displayBankMatrix && (
-            <Dropdown
-              options={machineSetup.segmentOptions}
-              initialValue={currentSegment?.toString()}
-              width={80}
-              onChanged={(opt) => onSegmentChanged(parseInt(opt))}
-            />
-          )}
-          {machineSetup.displayBankMatrix && machineId === MI_Z88 && (
-            <BankDropdown
-              initialValue={currentSegment ?? 0}
-              width={48}
-              decimalView={decimalView}
-              onChanged={onSegmentChanged}
-            />
-          )}
-          {machineSetup.displayBankMatrix && machineId === MI_ZXNEXT && (
-            <BankDropdown
-              banks={224}
-              showNextItems
-              initialValue={currentSegment ?? 0}
-              width={80}
-              decimalView={decimalView}
-              onChanged={onSegmentChanged}
-            />
-          )}
+          {/*
+            * The three-way branch this used to spell out inline now lives in `PartitionPicker`,
+            * which the breakpoint dialog uses too — one machine, one chooser, wherever it appears.
+            */}
+          <PartitionPicker
+            value={currentSegment}
+            onChange={onSegmentChanged}
+            machineId={machineId}
+            displayBankMatrix={machineSetup.displayBankMatrix}
+            segmentOptions={machineSetup.segmentOptions}
+            decimalView={decimalView}
+          />
         </>
       )}
     </>

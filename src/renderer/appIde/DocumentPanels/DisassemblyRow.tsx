@@ -104,16 +104,28 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
    * the cell is omitted entirely. Derived by `derivePartitionWidthCh`.
    */
   partitionWidthCh: number;
+  /**
+   * Open the breakpoint editor for this row's breakpoint.
+   *
+   * Supplied by the panel so the whole listing shares one callback: the disassembly view has no row
+   * menu of its own, so the indicator's double-click is the way in.
+   */
+  onEditBreakpoint?: (breakpoint: BreakpointInfo) => void;
 };
 
 export const DisassemblyRow = memo(function DisassemblyRow({
   commentWidthCh,
   index,
   item,
+  onEditBreakpoint,
   partitionWidthCh,
   rowHeight,
   ...viewModelParams
 }: DisassemblyRowProps) {
+  const breakpoint = viewModelParams.breakpoint;
+  // --- Only an address-bound breakpoint is editable here. A source-bound one belongs to the
+  // --- editor's glyph margin, which places and moves it by line.
+  const editable = onEditBreakpoint && breakpoint && breakpoint.address !== undefined;
   const viewModel = deriveDisassemblyRowViewModel({
     ...viewModelParams,
     item
@@ -135,6 +147,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
         hasBreakpoint={viewModel.hasBreakpoint}
         current={viewModel.execPoint}
         disabled={viewModelParams.breakpoint?.disabled ?? false}
+        onEdit={editable ? () => onEditBreakpoint(breakpoint) : undefined}
       />
       {/*
         * Rendered whenever the listing has a bank column at all, not merely when *this* row has a

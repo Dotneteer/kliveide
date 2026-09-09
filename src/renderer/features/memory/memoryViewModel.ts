@@ -1,6 +1,8 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import type { MemoryInfo } from "@common/messaging/EmuApi";
 import type { DropdownOption } from "@renderer/controls/Dropdown";
+import { MF_BANK, MF_ROM } from "@common/machines/constants";
+import { machineRegistry } from "@common/machines/machine-registry";
 
 export type DumpViewMode = "8x1" | "8x2" | "16x1";
 
@@ -84,6 +86,37 @@ export function createSegmentOptions(
       }
       return { value: key.toString(), label: `BANK ${key}` };
     });
+}
+
+/**
+ * How this machine lets you choose a memory partition.
+ *
+ * Pure and synchronous: everything here comes from the machine registry plus a partition-label map
+ * the caller already has. `useMemoryMachineSetup` calls it for the Memory view, and
+ * `useBreakpointDialog` calls it when the breakpoint dialog opens — so the two cannot decide
+ * differently whether a machine has banks, or offer different choosers for the same one.
+ *
+ * Keeping it synchronous is what lets the dialog build its own answer at open time instead of
+ * reading a hook's state that may not have settled yet.
+ */
+export function derivePartitionSetup(
+  machineId: string | undefined,
+  labels: Record<number, string>
+): {
+  banksView: boolean;
+  displayBankMatrix: boolean;
+  segmentOptions: DropdownOption[];
+} {
+  const machine = machineRegistry.find((mi) => mi.machineId === machineId);
+  const romPagesValue = machine?.features?.[MF_ROM] ?? 0;
+  const ramBankValue = machine?.features?.[MF_BANK] ?? 0;
+
+  return {
+    banksView: romPagesValue > 0 || ramBankValue > 0,
+    // --- Past eight banks a list stops being a chooser; the ZX Next has 247.
+    displayBankMatrix: ramBankValue > 8 || romPagesValue > 8,
+    segmentOptions: createSegmentOptions(labels, ramBankValue)
+  };
 }
 
 export function getDefaultSegment(romPagesValue: number): number {

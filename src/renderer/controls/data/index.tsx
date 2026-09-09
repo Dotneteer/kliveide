@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { forwardRef } from "react";
 import classnames from "classnames";
 import { toBin8 } from "@renderer/appIde/services/ide-commands";
@@ -171,6 +171,15 @@ type DataRowProps = {
   dense?: boolean;
   xclass?: string;
   style?: CSSProperties;
+  /**
+   * Row-level gestures, for a list whose rows carry a context menu or open an editor.
+   *
+   * `clicked` above stays the primary action; these are the secondary ones a data row can offer.
+   * A child that binds the same gesture — the breakpoint indicator's right-click-to-delete, say —
+   * is responsible for stopping propagation so the two do not both fire.
+   */
+  onContextMenu?: (e: MouseEvent<HTMLDivElement>) => void;
+  onDoubleClick?: () => void;
 };
 
 /**
@@ -181,7 +190,10 @@ type DataRowProps = {
  * the one implementation.
  */
 export const DataRow = forwardRef<HTMLDivElement, DataRowProps>(
-  ({ children, index, hoverable, clicked, dense, xclass, style }, ref) => (
+  (
+    { children, index, hoverable, clicked, dense, xclass, style, onContextMenu, onDoubleClick },
+    ref
+  ) => (
     <div
       ref={ref}
       className={classnames(styles.dataRow, xclass, {
@@ -192,6 +204,8 @@ export const DataRow = forwardRef<HTMLDivElement, DataRowProps>(
       })}
       style={style}
       onClick={clicked}
+      onContextMenu={onContextMenu}
+      onDoubleClick={onDoubleClick}
     >
       {children}
     </div>

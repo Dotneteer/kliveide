@@ -61,3 +61,27 @@ span.bpLabel {
 span.bpCell {
   margin-inline-end: 0;
 }
+
+/*
+ * The panel's own action strip.
+ *
+ * `SideBarPanelInfo` has no header-action slot and `SideBarPanel` renders only a chevron and a
+ * title, so the toolbar lives inside the panel body. Giving the framework a `headerActions` slot is
+ * the better long-term shape — several panels would use it — but that is a wider change than this
+ * one, so it is deliberately deferred.
+ */
+.toolbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--color-panel-border);
+  flex-shrink: 0;
+}
+
+.listArea {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}

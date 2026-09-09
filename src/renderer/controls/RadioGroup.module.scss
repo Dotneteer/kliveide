@@ -1,0 +1,74 @@
+@use "@styles/core.scss" as *;
+
+.group {
+  display: grid;
+  gap: 4px 16px;
+  padding: 2px 0;
+}
+
+.option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+}
+
+/*
+ * The radio reuses the checkbox's colour tokens rather than introducing its own: the two controls
+ * sit side by side in the same dialog, and a second set of tokens would only be a way for them to
+ * drift apart.
+ */
+.radio {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  display: grid;
+  place-content: center;
+  min-width: 1.2em;
+  min-height: 1.2em;
+  width: 1.2em;
+  height: 1.2em;
+  border: 2px solid var(--color-checkbox-border-normal);
+  border-radius: 50%;
+  background-color: var(--bgcolor-checkbox);
+  outline: none;
+  cursor: pointer;
+  @include focus-ring;
+
+  &::before {
+    content: "";
+    width: 0.6em;
+    height: 0.6em;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: 0.1s transform ease-out;
+    box-shadow: inset 1em 1em var(--color-checkbox);
+  }
+
+  &:checked::before {
+    transform: scale(1);
+  }
+
+  &:focus {
+    border-color: var(--color-checkbox-border-focused);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    border-color: gray;
+
+    &::before {
+      box-shadow: inset 1em 1em gray;
+    }
+  }
+}
+
+.label {
+  cursor: pointer;
+
+  &.disabled {
+    color: gray;
+    cursor: not-allowed;
+  }
+}
