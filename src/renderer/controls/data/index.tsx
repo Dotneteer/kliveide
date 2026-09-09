@@ -362,9 +362,32 @@ export function byteTooltip(heading: string, value: number): string {
  * Widths are `ch` (M2): a partition label is two or three characters, so the column is exactly that
  * wide whatever the font does.
  */
-export const PartitionPrefix = ({ label, wide }: { label: string; wide?: boolean }) => (
-  <div className={styles.partitionPrefix}>
-    <span className={styles.partitionLabel} style={{ width: wide ? "3ch" : "2ch" }}>
+export const PartitionPrefix = ({
+  label,
+  width
+}: {
+  label: string;
+  /**
+   * Label width in `ch`, shared by every row of the list.
+   *
+   * Required, and deliberately not derived from `label`: this used to be a `wide` boolean that each
+   * row resolved from its own label, which is what let one list mix 2ch and 3ch cells. See
+   * `derivePartitionWidthCh`.
+   */
+  width: number;
+}) => (
+  /*
+   * `visibility`, not a conditional render, when the row has no label.
+   *
+   * A hidden box still occupies its space, so a row whose bank is unlabelled keeps the column and
+   * ends where its neighbours do — the alternative, omitting the element, is what made a
+   * disassembly listing ragged in full view. Nothing paints, so no misleading bare ":" appears.
+   */
+  <div className={styles.partitionPrefix} style={label ? undefined : { visibility: "hidden" }}>
+    <span
+      className={styles.partitionLabel}
+      style={{ width: `${width}ch` }}
+    >
       {label}
     </span>
     <span className={styles.partitionColon}>:</span>

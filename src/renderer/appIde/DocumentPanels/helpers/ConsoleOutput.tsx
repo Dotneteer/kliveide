@@ -9,18 +9,7 @@ import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { ConsoleAction } from "@common/utils/output-utils";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
-import { rowSizes } from "@renderer/theming/tokens/rowSizes";
-
-/**
- * Overscan, in **pixels**.
- *
- * `VirtualizedList` forwards this to virtua's `bufferSize`, which its own documentation defines as
- * "extra item space in pixels" — while the shared default is named `overscan` and documented as a
- * number of *rows*. Whatever the other lists intend by it, 25 here would be a buffer of one and a
- * half console lines, and fast-scrolling a log is exactly the case that shows blank rows. This is
- * the pixel equivalent of roughly 25 unwrapped lines.
- */
-const CONSOLE_OVERSCAN_PX = rowSizes.console * 25;
+import { useRowSizes } from "@renderer/theming/useRowSizes";
 
 /**
  * The app's shared rich-text / ANSI console renderer.
@@ -58,6 +47,19 @@ export const ConsoleOutput = ({
 }: Props) => {
   const vlApi = useRef<VListHandle>(null);
   const [lines, setLines] = useState<OutputContentLine[]>([]);
+
+  /*
+   * Overscan, in **pixels**.
+   *
+   * `VirtualizedList` forwards this to virtua's `bufferSize`, which its own documentation defines
+   * as "extra item space in pixels" — while the shared default is named `overscan` and documented
+   * as a number of *rows*. Whatever the other lists intend by it, 25 here would be a buffer of one
+   * and a half console lines, and fast-scrolling a log is exactly the case that shows blank rows.
+   * This is the pixel equivalent of roughly 25 unwrapped lines, at whatever size the panels are
+   * currently set to render.
+   */
+  const { console: consoleRowSize } = useRowSizes();
+  const consoleOverscanPx = consoleRowSize * 25;
 
   /*
    * The buffer subscription must not depend on props that change identity every render.
@@ -125,7 +127,7 @@ export const ConsoleOutput = ({
            * guidance is to omit it and let sizes be estimated from measurements, which is what
            * happens here.
            */
-          overscan={CONSOLE_OVERSCAN_PX}
+          overscan={consoleOverscanPx}
           onScroll={() => {
             if (!vlApi.current) return;
             onTopPositionChanged?.(vlApi.current.getItemOffset(0));

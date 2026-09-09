@@ -16,7 +16,10 @@
   flex-grow: 1;
   width: calc(100% - 8px);
   padding: 4px;
-  font-size: 0.8em;
+  /* --- Was `0.8em`, one of the stragglers M1 missed: an em size compounds, and here it
+     --- resolved against a 16px root to 12.8px rather than the 12px every sibling panel used.
+     --- Now the same user-set size as the rest. */
+  font-size: var(--panel-font-size);
 
   &.selected {
     background-color: var(--bgcolor-explorer-focused-selected);

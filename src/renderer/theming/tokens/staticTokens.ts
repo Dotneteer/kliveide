@@ -23,8 +23,9 @@ export const staticTokens: Record<string, string> = {
   "--shell-font-family":
     "Inter, -apple-system, BlinkMacSystemFont, Helvetica, Neue-Light, Ubuntu, Droid Sans, sans-serif",
   "--shell-windows-font-family": "Inter, Segoe WPC, Segoe UI, sans-serif",
-  "--shell-windows-monospace-font-family": "Iosevka, Consolas, Courier New, monospace",
-  "--shell-monospace-font-family": "Iosevka, Menlo, Monaco, Courier New, monospace",
+  // --- There is deliberately no monospace stack here. `--monospace-font` is resolved in
+  // --- ThemeProvider from the user's View | Panel Font setting against the shared registry in
+  // --- @common/settings/monospace-fonts, which supplies its own bundled-Iosevka fallback.
 
   // --- Tooltip padding --------------------------------------------------------------------------
   "--padding-tooltip": "0.25em 0.5em",

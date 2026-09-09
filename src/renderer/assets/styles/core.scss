@@ -80,15 +80,15 @@ $splitterHighlightColor: "blue";
   font-family: var(--monospace-font);
   /*
    * M1: absolute, not `em`. This was `0.8em` of the 16px root = 12.8px, which is where the panels'
-   * `ch` columns were tuned. Pinning it to the same 12px as `.dataPanel` makes 1ch exactly 6px in
-   * every data panel, so a `ch` width means the same thing whichever stack drew the row.
+   * `ch` columns were tuned. It then became a flat `--font-size-200` (12px), and is now the user's
+   * View | Panel Options | Font Size, which still defaults to that 12px.
+   *
+   * What M2 cared about survives the change: every data panel reads this one variable, so they all
+   * render at the same size and 1ch means the same thing in each, whichever stack drew the row. It
+   * is only no longer 6px in particular.
    */
-  font-size: var(--font-size-200);
+  font-size: var(--panel-font-size);
+  /* --- Declared, not inherited from the font's metrics; see `.dataPanel` in Data.module.scss. */
+  line-height: var(--panel-line-height);
   padding: 4px 4px 4px 8px;
 }
-
-@font-face {
-  font-family: 'ZxSpectrum';
-  src: url('../fonts/zxspectrum.woff2');
-}
-

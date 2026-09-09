@@ -110,7 +110,11 @@ async function renderDisassemblyPanel({
   }));
   vi.doMock("@renderer/core/RendererProvider", () => ({
     useDispatch: () => dispatch,
-    useSelector: (selector: (appState: typeof state) => unknown) => selector(state)
+    useSelector: (selector: (appState: typeof state) => unknown) => selector(state),
+    // --- The panel reads the row height through `useRowSizes`, which reads the panel font size.
+    // --- Returning undefined lets `getRowSizes` fall back to its default, i.e. the 20/18px these
+    // --- characterizations were written against.
+    useGlobalSetting: () => undefined
   }));
   vi.doMock("@renderer/appIde/services/DocumentServiceProvider", () => ({
     useDocumentHubService: () => documentHubService
@@ -155,7 +159,8 @@ async function renderDisassemblyPanel({
       onScroll,
       onScrollEnd,
       revealUnmeasuredItems,
-      renderItem
+      renderItem,
+      scrollRowsHorizontally
     }: {
       apiLoaded?: (api: typeof virtualApi) => void;
       itemSize?: number;
@@ -164,6 +169,7 @@ async function renderDisassemblyPanel({
       onScrollEnd?: () => void;
       revealUnmeasuredItems?: boolean;
       renderItem: (index: number, item: unknown) => ReactNode;
+      scrollRowsHorizontally?: boolean;
     }) => {
       virtualOnScroll = onScroll;
       virtualOnScrollEnd = onScrollEnd;
@@ -174,6 +180,7 @@ async function renderDisassemblyPanel({
         <div
           data-item-size={String(itemSize)}
           data-reveal-unmeasured={String(revealUnmeasuredItems)}
+          data-scroll-horizontally={String(!!scrollRowsHorizontally)}
           data-testid="disassembly-list"
         >
           {items.slice(0, 2).map((item, index) => (
@@ -301,6 +308,11 @@ describe("DisassemblyPanel refactor characterization", () => {
     expect(getMemoryContents).toHaveBeenCalledWith(undefined);
     expect(disassemblerFactory).toHaveBeenCalled();
     expect(screen.getByTestId("disassembly-list")).toHaveAttribute("data-item-size", "18");
+    /* --- Long operands and the bank/T-state columns overflow a narrow panel; see `MemoryPanel`. */
+    expect(screen.getByTestId("disassembly-list")).toHaveAttribute(
+      "data-scroll-horizontally",
+      "true"
+    );
     expect(screen.getByTestId("disassembly-list")).toHaveAttribute(
       "data-reveal-unmeasured",
       "true"

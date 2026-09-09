@@ -91,6 +91,59 @@ describe("MemoryDumpSection", () => {
     expect(appendChild).not.toHaveBeenCalled();
   });
 
+  /**
+   * The bank column is shared by the whole dump, not sized per row.
+   *
+   * In a full 64K view a row's label is `mem64kLabels[address >> 13]`, so a bank with no label used
+   * to drop the cell — which shifts that row's address and hex columns left of its neighbours', not
+   * merely shortening the row. `MemoryPanel` derives one width and every row holds it open.
+   */
+  it("holds the bank column open on a row whose bank has no label", async () => {
+    mockIdeCommands();
+    const { MemoryDumpSection } = await import("@renderer/features/memory/MemoryDumpSection");
+
+    const { container } = render(
+      <MemoryDumpSection
+        showPartitions={true}
+        partitionLabel={undefined}
+        partitionWidthCh={2}
+        address={0}
+        bytes={[0x41]}
+        decimalView={false}
+        charDump={false}
+        lastJumpAddress={-1}
+      />
+    );
+
+    const prefix = container.querySelector<HTMLElement>('[class*="partitionPrefix"]');
+    // --- Present and sized, so the columns after it still start where they do on a labelled row,
+    // --- but painting nothing: no bare ":" where there is no bank.
+    expect(prefix).not.toBeNull();
+    expect(prefix?.style.visibility).toBe("hidden");
+    expect(prefix?.querySelector<HTMLElement>('[class*="partitionLabel"]')?.style.width).toBe("2ch");
+  });
+
+  it("omits the bank column entirely when the dump has no labels at all", async () => {
+    mockIdeCommands();
+    const { MemoryDumpSection } = await import("@renderer/features/memory/MemoryDumpSection");
+
+    const { container } = render(
+      <MemoryDumpSection
+        showPartitions={false}
+        partitionWidthCh={0}
+        address={0}
+        bytes={[0x41]}
+        decimalView={false}
+        charDump={false}
+        lastJumpAddress={-1}
+      />
+    );
+
+    // --- 0 must cost nothing: an unbanked machine renders exactly as it did before the column
+    // --- became shared.
+    expect(container.querySelector('[class*="partitionPrefix"]')).toBeNull();
+  });
+
   it("renders the bank prefix and address as compact cells", async () => {
     mockIdeCommands();
     const { MemoryDumpSection } = await import("@renderer/features/memory/MemoryDumpSection");
@@ -99,6 +152,7 @@ describe("MemoryDumpSection", () => {
       <MemoryDumpSection
         showPartitions={true}
         partitionLabel="R0"
+        partitionWidthCh={2}
         address={0}
         bytes={[0x41]}
         decimalView={false}
@@ -120,6 +174,7 @@ describe("MemoryDumpSection", () => {
       <MemoryDumpSection
         showPartitions={true}
         partitionLabel="0A"
+        partitionWidthCh={3}
         address={10}
         bytes={[0x41]}
         decimalView={true}

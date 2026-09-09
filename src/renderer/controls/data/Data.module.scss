@@ -13,7 +13,17 @@
   @include fill-parent-flex;
   flex-direction: column;
   font-family: var(--monospace-font);
-  font-size: var(--font-size-200);
+  /* --- The data body follows View | Panel Options | Font Size. `.panelTitle` below deliberately
+     --- does not: a panel's title is chrome, and stays on the fixed scale. */
+  font-size: var(--panel-font-size);
+  /*
+   * Leading is declared, never inherited from the font.
+   *
+   * `line-height: normal` takes it from the chosen face's own metrics, which range from 0.885em
+   * (ZX Spectrum) to 1.320em (JetBrains Mono). A `dense` row is `min-height: 0`, so the row *is*
+   * its line box — under the ZX face the Z80 and ULA registers collapsed onto each other.
+   */
+  line-height: var(--panel-line-height);
   color: var(--data-value);
 
   /*

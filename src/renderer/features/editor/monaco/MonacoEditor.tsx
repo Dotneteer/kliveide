@@ -24,7 +24,7 @@ import {
 } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { getIsWindows } from "@renderer/os-utils";
-import { getEditorFontFamily } from "@common/settings/editor-fonts";
+import { getMonospaceFontFamily } from "@common/settings/monospace-fonts";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { createEmuApi } from "@common/messaging/EmuApi";
 import { createMainApi } from "@common/messaging/MainApi";
@@ -164,7 +164,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   // --- id; resolving it here keeps a value written on another platform from breaking the editor.
   const editorFontId = useGlobalSetting(SETTING_EDITOR_FONT_FAMILY);
   const isWindowsPlatform = useSelector((s) => s.isWindows ?? false);
-  const editorFontFamily = getEditorFontFamily(editorFontId, isWindowsPlatform);
+  const editorFontFamily = getMonospaceFontFamily(editorFontId, isWindowsPlatform);
 
   // --- We use these services to respond to various IDE events
   const { store, messenger } = useRendererContext();

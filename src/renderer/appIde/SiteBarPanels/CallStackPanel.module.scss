@@ -11,7 +11,7 @@
    * instead of naming a size. Pinning it to the same `--font-size-200` every other data panel uses
    * is also what makes the `ch` columns below exactly 6px.
    */
-  font-size: var(--font-size-200);
+  font-size: var(--panel-font-size);
 }
 
 .item {

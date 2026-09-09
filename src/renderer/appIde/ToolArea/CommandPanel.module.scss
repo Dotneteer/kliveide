@@ -45,7 +45,7 @@
     margin-right: var(--space-2);
     font-family: var(--monospace-font);
     /* M1: the same 12px the console above it renders at, so the prompt matches its own output. */
-    font-size: var(--font-size-200);
+    font-size: var(--panel-font-size);
     color: var(--color-prompt);
     font-weight: 600;
 

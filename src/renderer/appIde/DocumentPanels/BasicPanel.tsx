@@ -362,7 +362,9 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
     : "Machine OS has not been initialized yet";
 
   return (
-    <FullPanel fontSize="0.8em" fontFamily="--monospace-font">
+    /* --- M1: `0.8em` gave 12.8px here; see `MemoryPanel`. Follows the panel font size now - the
+       --- listing's own ZxSpectrum face is applied by `.spectrum` further in. */
+    <FullPanel fontSize="--panel-font-size" fontFamily="--monospace-font">
       <PanelHeader>
         <SmallIconButton
           iconName="refresh"

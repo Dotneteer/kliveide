@@ -19,6 +19,16 @@ vi.mock("@renderer/appIde/services/AppServicesProvider", () => ({
   useAppServices: () => ({ ideCommandsService: { executeCommand } })
 }));
 
+/*
+ * The console sizes its overscan from `useRowSizes`, which reads the panel font size from the
+ * store. These tests render the component bare, with no `RendererProvider` above it, so the setting
+ * is stubbed as unset - `getRowSizes` then falls back to the default and the 16px console row these
+ * assertions were written against.
+ */
+vi.mock("@renderer/core/RendererProvider", () => ({
+  useGlobalSetting: () => undefined
+}));
+
 /** The props the list was last rendered with, so the layout contract can be asserted. */
 const listProps: { current: Record<string, unknown> } = { current: {} };
 

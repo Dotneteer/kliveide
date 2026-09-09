@@ -109,7 +109,11 @@ async function renderMemoryPanel({
 
   vi.doMock("@renderer/core/RendererProvider", () => ({
     useDispatch: () => dispatch,
-    useSelector: (selector: (appState: typeof state) => unknown) => selector(state)
+    useSelector: (selector: (appState: typeof state) => unknown) => selector(state),
+    // --- The panel reads the row height through `useRowSizes`, which reads the panel font size.
+    // --- Returning undefined lets `getRowSizes` fall back to its default, i.e. the 20/18px these
+    // --- characterizations were written against.
+    useGlobalSetting: () => undefined
   }));
   vi.doMock("@renderer/appIde/services/DocumentServiceProvider", () => ({
     useDocumentHubService: () => documentHubService
@@ -154,6 +158,7 @@ async function renderMemoryPanel({
       onScrollEnd,
       revealUnmeasuredItems,
       renderItem,
+      scrollRowsHorizontally,
       startIndex
     }: {
       apiLoaded?: (api: typeof virtualApi) => void;
@@ -163,6 +168,7 @@ async function renderMemoryPanel({
       onScrollEnd?: () => void;
       revealUnmeasuredItems?: boolean;
       renderItem: (index: number, item: number) => ReactNode;
+      scrollRowsHorizontally?: boolean;
       startIndex?: number;
     }) => {
       virtualOnScroll = onScroll;
@@ -175,6 +181,7 @@ async function renderMemoryPanel({
           data-testid="memory-list"
           data-item-size={itemSize}
           data-reveal-unmeasured={String(revealUnmeasuredItems)}
+          data-scroll-horizontally={String(!!scrollRowsHorizontally)}
           data-start-index={startIndex}
         >
           {items.slice(0, 2).map((item, index) => (
@@ -364,6 +371,13 @@ describe("MemoryPanel refactor characterization", () => {
     expect(screen.getByTestId("dump-0")).toHaveAttribute("data-char-dump", "true");
     expect(screen.getByTestId("memory-list")).toHaveAttribute("data-item-size", "20");
     expect(screen.getByTestId("memory-list")).toHaveAttribute("data-reveal-unmeasured", "true");
+    /*
+     * A dump row is a fixed run of hex columns and overflows a narrow panel - more so since the
+     * panel font became settable and the ZX Spectrum face doubled the advance. Without this prop
+     * virtua pins the row wrapper to the viewport width, the scroll container reports
+     * `scrollWidth === clientWidth`, and no horizontal bar appears to drag.
+     */
+    expect(screen.getByTestId("memory-list")).toHaveAttribute("data-scroll-horizontally", "true");
   });
 
   it("updates rendered row sections when the view mode changes", async () => {

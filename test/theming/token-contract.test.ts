@@ -52,7 +52,12 @@ const REPO = fileURLToPath(new URL("../..", import.meta.url));
 const RUNTIME_PROVIDED = new Set([
   // Synthesized by ThemeProvider from the platform-specific font tokens.
   "--main-font-family",
+  // ThemeProvider resolves these two from user settings rather than from a theme: the monospace
+  // family from View | Panel Options | Font Family, the size from | Font Size.
   "--monospace-font",
+  "--panel-font-size",
+  // Emitted by `rowSizeTokens()` alongside the --row-size-* family.
+  "--panel-line-height",
   // Supplied by Radix on the select trigger element itself.
   "--radix-select-trigger-width"
 ]);

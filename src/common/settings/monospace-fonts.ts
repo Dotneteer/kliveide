@@ -1,16 +1,27 @@
 /**
- * The monospace fonts offered for the Monaco editor in View | Editor Options | Font Family.
+ * THE single registry of monospace fonts Klive offers, shared by every consumer.
+ *
+ * Two independent settings pick from this one list, so the two menus can never drift apart:
+ *   - `editorOptions.fontFamily`  -> View | Editor Options | Font Family, applied to Monaco.
+ *   - `panelOptions.fontFamily`   -> View | Panel Font, applied to the `--monospace-font` CSS
+ *     variable and thus to every monitoring view that reads it (memory, disassembly, Z80/M6510
+ *     CPU, ULA, watch, breakpoints, call stack, NextReg, PSG, the file viewers) plus the
+ *     address/text inputs, the IDE status bar and the output/console panes.
+ *
+ * Add a font here once and it shows up in both menus. This module lives in `common/` because both
+ * processes need it: the main process builds the menus from the labels, the renderer resolves the
+ * stored id to a CSS stack.
  *
  * Iosevka ships with Klive (see src/renderer/assets/styles/fonts.css) and is the default on every
  * platform. The remaining entries are the best system monospace font of their platform, offered so
  * users who prefer their platform's familiar look are not forced onto the bundled one.
  */
-export type EditorFontOption = {
+export type MonospaceFontOption = {
   /** Stable id persisted in the settings file. */
   id: string;
   /** Label shown in the menu. */
   label: string;
-  /** CSS font stack handed to Monaco. */
+  /** CSS font stack handed to Monaco, or assigned to the --monospace-font CSS variable. */
   fontFamily: string;
   /**
    * Platform this font is offered on. Omitted means "every platform".
@@ -20,7 +31,7 @@ export type EditorFontOption = {
   platform?: "win32" | "posix";
 };
 
-export const EDITOR_FONT_OPTIONS: EditorFontOption[] = [
+export const MONOSPACE_FONT_OPTIONS: MonospaceFontOption[] = [
   // --- Bundled fonts. These have no `platform`, so they are offered everywhere and render
   // --- identically on every OS. Each stack falls back to Iosevka before the system fonts: it is
   // --- always present and has the widest glyph coverage of the bundled set.
@@ -56,6 +67,17 @@ export const EDITOR_FONT_OPTIONS: EditorFontOption[] = [
     label: "Fira Code",
     fontFamily: "'Fira Code', Iosevka, Menlo, Consolas, monospace"
   },
+  {
+    // --- The ZX Spectrum ROM character set, for reading listings and dumps in the machine's own
+    // --- typeface. Two things set it apart from the rest of this list:
+    // --- - 0.988em per glyph, nearly square and twice Iosevka's width, so panels fit roughly half
+    // ---   the columns. That is the authentic look, not a flaw.
+    // --- - 122 glyphs, ASCII minus the backtick plus a few strays. Everything else - arrows, box
+    // ---   drawing, accented text - falls through to Iosevka, which is why it leads the fallbacks.
+    id: "zx-spectrum",
+    label: "ZX Spectrum",
+    fontFamily: "ZxSpectrum, Iosevka, Menlo, Consolas, monospace"
+  },
 
   // --- System fonts, offered only where they actually exist.
   {
@@ -75,21 +97,21 @@ export const EDITOR_FONT_OPTIONS: EditorFontOption[] = [
 ];
 
 /** The id used when nothing is stored yet, or when the stored id is not valid here. */
-export const DEFAULT_EDITOR_FONT_ID = EDITOR_FONT_OPTIONS[0].id;
+export const DEFAULT_MONOSPACE_FONT_ID = MONOSPACE_FONT_OPTIONS[0].id;
 
-/** The fonts to offer on the current platform, in menu order. */
-export function getEditorFontOptions(isWindows: boolean): EditorFontOption[] {
+/** The fonts to offer on the current platform, in menu order. Used to build both menus. */
+export function getMonospaceFontOptions(isWindows: boolean): MonospaceFontOption[] {
   const platform = isWindows ? "win32" : "posix";
-  return EDITOR_FONT_OPTIONS.filter((f) => !f.platform || f.platform === platform);
+  return MONOSPACE_FONT_OPTIONS.filter((f) => !f.platform || f.platform === platform);
 }
 
 /**
- * Resolves a stored font id to the CSS stack to hand Monaco. Falls back to the bundled default
+ * Resolves a stored font id to the CSS stack to apply. Falls back to the bundled default
  * when the id is unknown or belongs to another platform - which happens whenever a settings file
  * written on Windows is opened on macOS/Linux, or the other way round.
  */
-export function getEditorFontFamily(fontId: string, isWindows: boolean): string {
-  const available = getEditorFontOptions(isWindows);
+export function getMonospaceFontFamily(fontId: string, isWindows: boolean): string {
+  const available = getMonospaceFontOptions(isWindows);
   const match = available.find((f) => f.id === fontId);
   return (match ?? available[0]).fontFamily;
 }

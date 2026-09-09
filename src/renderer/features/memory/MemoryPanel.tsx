@@ -1,5 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { rowSizes } from "@renderer/theming/tokens/rowSizes";
+import { useRowSizes } from "@renderer/theming/useRowSizes";
+import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
+import styles from "./MemoryPanel.module.scss";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
@@ -45,10 +47,13 @@ import { createVisibleMemoryRenderRecorder } from "./memoryPerformance";
  * this constant as the thing it replaces — but the JS half of the wiring was never done, so the
  * module emitted `--row-size-memory` for stylesheets while the virtualizer went on reading a
  * duplicate literal. Two numbers that must agree, in two files, with nothing tying them together.
+ *
+ * It is a hook rather than a module constant because the height now follows the user's panel font
+ * size, and a constant would be captured at import time and never see the change.
  */
-const MEMORY_ROW_ITEM_SIZE = rowSizes.memory;
-
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
+  // --- M3: the row height the virtualizer places by, matching `--row-size-memory` in the CSS.
+  const { memory: memoryRowItemSize } = useRowSizes();
   // Services stay at the panel boundary. Visible memory rows use a service-free
   // row component below, so fast virtualized scrolling does not mount context
   // consumers for every first-seen row.
@@ -300,6 +305,34 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     })();
   }, [decimalView, dialogs, ideCommandsService, machineSetup.romFlags, memoryRefresh.memory]);
 
+  /*
+   * The width every row reserves for its bank label.
+   *
+   * Shared across the dump so the address and hex columns line up: a row in an unlabelled bank used
+   * to drop the cell and pull all of its columns left, and a decimal view could mix a 2ch hex label
+   * with a 3ch decimal one down the same list. See `derivePartitionWidthCh`.
+   */
+  const partitionWidthCh = useMemo(
+    () =>
+      derivePartitionWidthCh({
+        // --- In a full view a row's label comes from its own 8K bank, so any of the eight can be
+        // --- the widest; otherwise every row shows the one label of the current segment.
+        candidateLabels: isFullView
+          ? memoryRefresh.mem64kLabels
+          : [machineSetup.partitionLabels?.[currentSegment]],
+        decimalView,
+        enabled: bankLabel
+      }),
+    [
+      bankLabel,
+      currentSegment,
+      decimalView,
+      isFullView,
+      machineSetup.partitionLabels,
+      memoryRefresh.mem64kLabels
+    ]
+  );
+
   // Don't render at all until isReady
   if (!isReady) {
     return null;
@@ -311,7 +344,10 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   return (
     <FullPanel
       fontFamily="--monospace-font"
-      fontSize="0.8em"
+      /* --- M1: was `0.8em`, which resolved against the 16px root to 12.8px rather than the 12px
+         --- every other data panel used, and which the row heights were derived from. Now the
+         --- user's View | Panel Options | Font Size, like the rest. */
+      fontSize="--panel-font-size"
       style={{ opacity: shouldHideUntilScrolled ? 0 : 1 }}
     >
       <PanelHeader>
@@ -345,11 +381,21 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       <FullPanel>
         <VirtualizedList
           items={memoryItems}
-          itemSize={MEMORY_ROW_ITEM_SIZE}
+          itemSize={memoryRowItemSize}
           // Memory rows have a known fixed height. Revealing unmeasured rows
           // avoids the first-drag blanking behavior that virtua uses for
           // variable-height lists until ResizeObserver reports measurements.
           revealUnmeasuredItems
+          /*
+           * A dump row is a fixed run of hex columns, so it is wider than the panel whenever the
+           * panel is narrow, the byte width is high, or the font is wide - and the ZX Spectrum face
+           * at ~2x the advance of the others makes that the common case rather than the edge one.
+           * Without this, virtua's absolutely positioned row wrapper stays pinned to the viewport
+           * width, the scroll container reports `scrollWidth === clientWidth`, and there is no
+           * horizontal bar to drag. The row has no `width: 100%` or flex-grow child, so the
+           * `max-content` this turns on cannot change how it measures.
+           */
+          scrollRowsHorizontally
           startIndex={topIndex}
           onScroll={() => {
             if (!vlApi.current || memoryItems.length === 0) return;
@@ -396,12 +442,14 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             return (
               <HStack
                 backgroundColor={idx % 2 === 0 ? "--bgcolor-disass-even-row" : "transparent"}
+                classExt={styles.memoryRow}
                 hoverBackgroundColor="--bgcolor-disass-hover"
-                height={`${MEMORY_ROW_ITEM_SIZE}px`}
+                height={`${memoryRowItemSize}px`}
               >
                 <MemoryDumpSectionView
                   showPartitions={bankLabel}
                   partitionLabel={partitionLabel}
+                  partitionWidthCh={partitionWidthCh}
                   address={section1Address}
                   bytes={section1Bytes}
                   characterInfo={memoryCharacterInfo}
@@ -416,6 +464,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                   <MemoryDumpSectionView
                     showPartitions={bankLabel}
                     partitionLabel={partitionLabel}
+                    partitionWidthCh={partitionWidthCh}
                     address={section2Address}
                     bytes={section2Bytes}
                     characterInfo={memoryCharacterInfo}

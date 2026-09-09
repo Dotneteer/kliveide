@@ -8,7 +8,7 @@
    * ancestor multiplied the root by 0.8; pinning it to the same 12px as the data panels makes the
    * `ch` gutter below mean exactly what it says.
    */
-  font-size: var(--font-size-200);
+  font-size: var(--panel-font-size);
   box-sizing: border-box;
   flex-direction: column;
   user-select: text;

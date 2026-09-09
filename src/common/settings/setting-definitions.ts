@@ -1,5 +1,9 @@
 import { Setting } from "@abstractions/Setting";
-import { DEFAULT_EDITOR_FONT_ID } from "@common/settings/editor-fonts";
+import { DEFAULT_MONOSPACE_FONT_ID } from "@common/settings/monospace-fonts";
+import {
+  DEFAULT_EDITOR_FONT_SIZE,
+  DEFAULT_PANEL_FONT_SIZE
+} from "@common/settings/font-sizes";
 import { PANE_ID_EMU } from "@common/integration/constants";
 import {
   SETTING_EMU_FAST_LOAD,
@@ -15,6 +19,8 @@ import {
   SETTING_IDE_CLOSE_EMU,
   SETTING_EDITOR_FONT_SIZE,
   SETTING_EDITOR_FONT_FAMILY,
+  SETTING_PANEL_FONT_FAMILY,
+  SETTING_PANEL_FONT_SIZE,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
   SETTING_IDE_SHOW_SIDEBAR,
@@ -240,11 +246,33 @@ const settingDefinitions: Setting[] = [
     boundTo: "ide"
   },
   {
+    id: SETTING_PANEL_FONT_FAMILY,
+    title: "Panel Font",
+    description:
+      "Monospace font used by the monitoring panels and views (memory, disassembly, CPU, ULA and " +
+      "the rest). Chosen from the same list as the editor font; the choices offered depend on the " +
+      "platform.",
+    type: "string",
+    defaultValue: DEFAULT_MONOSPACE_FONT_ID,
+    saveWithIde: true,
+  },
+  {
+    id: SETTING_PANEL_FONT_SIZE,
+    title: "Panel Font Size",
+    description:
+      "Font size, in pixels, of the data shown by the monitoring panels and views. Panel titles, " +
+      "tabs and the status bar keep their own size, just as the editor's font size leaves the " +
+      "chrome around it alone.",
+    type: "number",
+    defaultValue: DEFAULT_PANEL_FONT_SIZE,
+    saveWithIde: true,
+  },
+  {
     id: SETTING_EDITOR_FONT_FAMILY,
     title: "Font Family",
     description: "Monospace font used by the editor. The choices offered depend on the platform.",
     type: "string",
-    defaultValue: DEFAULT_EDITOR_FONT_ID,
+    defaultValue: DEFAULT_MONOSPACE_FONT_ID,
     saveWithIde: true,
   },
   {
@@ -252,7 +280,7 @@ const settingDefinitions: Setting[] = [
     title: "Font Size",
     description: "Font size for the editor.",
     type: "number",
-    defaultValue: 16,
+    defaultValue: DEFAULT_EDITOR_FONT_SIZE,
     saveWithIde: true,
   },
   {

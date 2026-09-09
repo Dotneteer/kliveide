@@ -11,7 +11,7 @@
    * rather than naming a size, and it is what the `ch` columns below are measured against — pinning
    * it to `--font-size-200` makes 1ch exactly 6px here as in every other data panel.
    */
-  font-size: var(--font-size-200);
+  font-size: var(--panel-font-size);
 }
 
 .navigable {

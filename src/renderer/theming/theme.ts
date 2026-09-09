@@ -8,8 +8,6 @@ export type ThemeProperties = {
   // --- Font attributes
   "--shell-windows-font-family"?: string;
   "--shell-font-family"?: string;
-  "--shell-windows-monospace-font-family"?: string;
-  "--shell-monospace-font-family"?: string;
 
   // --- Global theme attributes
   "--color-text"?: string;

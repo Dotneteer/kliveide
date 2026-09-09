@@ -63,7 +63,7 @@ span.stateValueAlt {
   flex-grow: 0;
   flex-shrink: 0;
   justify-content: center;
-  width: 3ch;
+  width: 2.4ch;
   color: var(--data-label);
 }
 
@@ -103,41 +103,50 @@ span.stateValueAlt {
   flex-grow: 0;
   flex-shrink: 0;
   justify-content: center;
-  width: 3ch;
+  width: 2.4ch;
 }
 
 /*
  * The "F" that leads the flag strip: a label-column-sized box, so the flags that follow it land on
  * the same grid as the register rows below.
  *
- * The `- 1ch` is what puts the *first flag* over the *first hex digit*. A flag column is `3ch` with
- * its content centred, so its centre sits 1.5ch in, while a value cell's first character centres
- * 0.5ch in — one character further left. Since "F" is left-aligned in this box, taking a character
- * off the box's width moves the whole strip left without moving the "F" itself:
+ * The subtracted `0.7ch` is what puts the *first flag* over the *first hex digit*. A flag column is
+ * `2.4ch` with its content centred, so its centre sits 1.2ch in, while a value cell's first
+ * character centres 0.5ch in. Since "F" is left-aligned in this box, taking that difference off the
+ * box's width moves the whole strip left without moving the "F" itself:
  *
- *   (7ch - 1ch) + 0.8ch gap + 1.5ch  ==  7ch + 0.8ch gap + 0.5ch
+ *   (7ch - 0.7ch) + 0.8ch gap + 1.2ch  ==  7ch + 0.8ch gap + 0.5ch
  *
- * Both sides are `ch`, so this holds at any font size (M2).
+ * In general the box is `--measure-label + 0.5ch - (column / 2)`; it was `- 1ch` while the column
+ * was 3ch. Both sides are `ch`, so this holds at any font size (M2).
  */
 .flagLetter {
   display: flex;
   align-items: center;
   flex-grow: 0;
   flex-shrink: 0;
-  width: calc(var(--measure-label) - 1ch);
+  width: calc(var(--measure-label) - 0.7ch);
   color: var(--data-label);
 }
 
 /*
  * The glyph alone scales up, on its own inline element — not the `.flagLetter` box, whose width
  * must stay measured at the panel's base font size to match `--measure-label`. Previously the
- * `1.6em` sat directly on the width-bearing box, so its `3ch` resolved against that box's own
- * 1.6em (≈28.8px) rather than the 1em (≈18px) `--measure-label`/`.verticalLabel` use — two
- * "3ch"/"7ch" columns of different actual widths next to each other.
+ * scale sat directly on the width-bearing box, so its `ch` width resolved against that box's own
+ * enlarged size rather than the 1em `--measure-label`/`.verticalLabel` use — two `ch` columns of
+ * different actual widths next to each other.
  */
 .flagLetterGlyph {
-  /* TODO(M1): 1.6em compounds off the panel size; belongs on the type scale. */
-  font-size: 1.6em;
+  /*
+   * The flag letters, one step above the panel's own size.
+   *
+   * This was `1.6em`, and it is what actually set the flag strip's width: a column has to hold its
+   * letter, so at 1.6em the eight of them needed 12.8em however narrow the columns claimed to be.
+   * That went unnoticed while every mono in the stack had a ~0.5em advance; the ZX Spectrum face
+   * (0.988em) made the strip twice as wide as the register rows it labels. 1.25em keeps the letters
+   * clearly larger than the data while letting the columns come in to 2.4ch.
+   */
+  font-size: 1.25em;
 
   /*
    * Optically left-align the "F" with the label column ("AF", "BC", ...) below it.
@@ -148,11 +157,18 @@ span.stateValueAlt {
    * "F" at 1.6em carries 1.843px of bearing, "A" at 1em carries 0.528px — so the F's stem printed
    * 1.315px right of the label column's edge and the flag row read as indented.
    *
-   * This pulls exactly that difference back out. It is expressed in `em` of the glyph's own size
-   * (1.315px / 19.2px), so it tracks the type scale instead of pinning a px offset to one size.
-   * It is a metric correction, not a magic nudge: re-measure it if the mono stack ever changes.
+   * This pulls exactly that difference back out. It is expressed in `em` of the glyph's own size,
+   * so it tracks the type scale instead of pinning a px offset to one size.
+   *
+   * Re-derived when the glyph dropped from 1.6em to 1.25em: Iosevka's "F" carries 96/1000 em of
+   * bearing, so 1.440px at a 15px glyph against "A"'s 0.528px at 12px — a 0.912px difference, or
+   * 0.0608em of the glyph's own size. (It was 1.315px / 19.2px = 0.0685em at 1.6em.)
+   *
+   * It is a metric correction, not a magic nudge, and it is measured against **Iosevka**. The mono
+   * stack is now a user setting, so a different face has different bearings and this lands slightly
+   * off — under a pixel, which is why it is not worth making font-aware.
    */
-  margin-left: -0.0685em;
+  margin-left: -0.0608em;
 }
 
 .bitValue {
