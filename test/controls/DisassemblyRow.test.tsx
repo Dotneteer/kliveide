@@ -41,7 +41,10 @@ describe("deriveDisassemblyRowViewModel", () => {
     ).toEqual(
       expect.objectContaining({
         addressText: "6000",
-        breakpointAddress: "0:$6000",
+        // --- The partition's *label*, not its raw index. This row used to render `0:$6000` here
+        // --- while showing `R0` in `breakpointPartition` just below — two names for one partition
+        // --- inside a single view model.
+        breakpointAddress: "R0:$6000",
         breakpointPartition: "R0",
         execPoint: true,
         hasBreakpoint: true,

@@ -56,27 +56,57 @@ Though it seems unlogical, this command allows you to write memory contents whil
 
 ## Machine-Specific Memory Partitions
 
+Every partition has one **name** and one **description**. The name is what identifies it: it is what
+the bank column shows, what a breakpoint is listed under, and what the `bp-*` commands accept in a
+partition-qualified address such as `bp-set r1:$32ac`. The description is the longer form a chooser
+spells out beside the name; it is never typed and never appears in a breakpoint key.
+
+Names are accepted case-insensitively, so `r1` and `R1` are the same partition.
+
 ### ZX Spectrum 48K
 
-This model supports only the 64K view.
+No partitions: this model supports only the 64K view.
 
 ### ZX Spectrum 128K
 
-The `ROM 0` and `ROM 1` segments allow you to access the two ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` or `BANK 7` segments.
+| Name | Description | What it is |
+| --- | --- | --- |
+| `R0`, `R1` | ROM 0, ROM 1 | The two ROM pages, 16K each |
+| `B0` ... `B7` | Bank 0 ... Bank 7 | The eight RAM banks, 16K each |
 
 ### ZX Spectrum +2E, +3E
 
-The `ROM 0`... `ROM 3` segments allow you to access the four ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` ... `BANK 7` segments.
+| Name | Description | What it is |
+| --- | --- | --- |
+| `R0` ... `R3` | ROM 0 ... ROM 3 | The four ROM pages, 16K each |
+| `B0` ... `B7` | Bank 0 ... Bank 7 | The eight RAM banks, 16K each |
 
 ### Cambridge Z88
 
-You can access one of the available 256 banks (16K each) by selecting the bank's index from the dropdown.
+| Name | Description | What it is |
+| --- | --- | --- |
+| `00` ... `FF` | Bank $00 ... Bank $FF | The 256 banks, 16K each |
+
+The Z88 has no ROM partitions: its ROM is a card in slot 0 rather than a fixed page.
 
 ### ZX Spectrum Next
 
-The dropdown provides these options to access memory segments:
-- IDs from `00` to `DF` (`000` to `224` in decimal view) to select an 8K RAM bank. The view does not support displaying them as 16K banks. 
-- `M0`, `M1` ... `MF`: The 16 DivMMC RAM banks (8K each)
-- `NROM0` ... `NROM3`: The ROM pages of the ZX Next OS (16K each)
-- `ALTR0`, `ALTR1`: The alternate ROM pages (16K each)
-- `DivMR`: The DivMMC ROM (8K)
+| Group | Name | What it is |
+| --- | --- | --- |
+| Next ROM | `R0` ... `R3` | The ROM pages of the ZX Next OS, 16K each |
+| Alt ROM | `X0`, `X1` | The alternate ROM pages, 16K each |
+| DivMMC ROM | `DM` | The DivMMC ROM, 8K |
+| DivMMC RAM | `M0` ... `MF` | The 16 DivMMC RAM banks, 8K each |
+| &mdash; | `00` ... `DF` | The 224 RAM banks, 8K each (`000` to `223` in decimal view) |
+
+The bank chooser heads each group once rather than repeating it on every entry, so a DivMMC RAM
+bank appears as `M3` under a **DivMMC RAM** heading. Hovering any entry names it in full.
+
+<Callout type="info">
+The alternate ROMs are named `X0` and `X1` rather than the more obvious `A0`/`A1`, and the DivMMC
+RAM banks `M0`...`MF` rather than `D0`...`DF`, because `A0` and `D0` are already valid *RAM bank*
+names on this machine. A name has to mean one thing.
+
+Earlier versions called the alternate ROMs `Q0` and `Q1`. Those spellings are still accepted by
+`bp-set` and friends, so existing scripts keep working, but the IDE now shows `X0` and `X1`.
+</Callout>

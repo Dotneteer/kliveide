@@ -1,7 +1,7 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { EmuApi } from "@common/messaging/EmuApi";
 
-import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getBreakpointStorageKey } from "@common/utils/breakpoints";
 
 /**
  * What the breakpoint dialog hands back.
@@ -38,13 +38,13 @@ export async function applyBreakpointEdit(
   result: BreakpointDialogResult
 ): Promise<void> {
   const { breakpoint, replaces } = result;
-  const newKey = getBreakpointKey(breakpoint);
-  const oldKey = replaces ? getBreakpointKey(replaces) : undefined;
+  const newKey = getBreakpointStorageKey(breakpoint);
+  const oldKey = replaces ? getBreakpointStorageKey(replaces) : undefined;
 
   if (oldKey !== undefined && oldKey !== newKey) {
     const current = await emuApi.listBreakpoints();
     const next = (current?.breakpoints ?? [])
-      .filter((bp) => getBreakpointKey(bp) !== oldKey && getBreakpointKey(bp) !== newKey)
+      .filter((bp) => getBreakpointStorageKey(bp) !== oldKey && getBreakpointStorageKey(bp) !== newKey)
       .concat(breakpoint);
     await emuApi.restoreBreakpoints(next);
     return;

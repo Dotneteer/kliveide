@@ -1,13 +1,13 @@
-import { MI_Z88, MI_ZXNEXT } from "@common/machines/constants";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
-import BankDropdown from "@renderer/controls/new/BankDropdown";
+import { PartitionPicker } from "@renderer/controls/PartitionPicker";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Text } from "@renderer/controls/layout/Text";
 import { PanelHeader } from "@renderer/controls/data";
+import type { PartitionOption } from "@renderer/features/memory/memoryViewModel";
 import { toHexa4 } from "../services/ide-commands";
 
 export function createDisassemblyOffsetOptions(decimalView: boolean): DropdownOption[] {
@@ -116,12 +116,13 @@ type DisassemblyBankToolbarProps = {
   disassOffset: number;
   displayBankMatrix: boolean;
   isFullView: boolean;
-  machineId: string | undefined;
   offsetOptions: DropdownOption[];
   onCurrentSegmentChanged: (segment: number) => void;
   onDisassOffsetChanged: (offset: number) => void;
   onFullViewChanged: (value: boolean) => void;
   segmentOptions: DropdownOption[];
+  /** Every partition, for the matrix-shaped chooser. */
+  partitionOptions: PartitionOption[];
 };
 
 export const DisassemblyBankToolbar = ({
@@ -132,11 +133,11 @@ export const DisassemblyBankToolbar = ({
   disassOffset,
   displayBankMatrix,
   isFullView,
-  machineId,
   offsetOptions,
   onCurrentSegmentChanged,
   onDisassOffsetChanged,
   onFullViewChanged,
+  partitionOptions,
   segmentOptions
 }: DisassemblyBankToolbarProps) => {
   if (autoRefresh || !allowViews) {
@@ -156,32 +157,19 @@ export const DisassemblyBankToolbar = ({
           <LabelSeparator />
           <Text text="Select bank" />
           <LabelSeparator />
-          {!displayBankMatrix && (
-            <Dropdown
-              options={segmentOptions}
-              initialValue={currentSegment?.toString()}
-              width={80}
-              onChanged={(option) => onCurrentSegmentChanged(parseInt(option))}
-            />
-          )}
-          {displayBankMatrix && machineId === MI_Z88 && (
-            <BankDropdown
-              initialValue={currentSegment ?? 0}
-              width={48}
-              decimalView={decimalView}
-              onChanged={onCurrentSegmentChanged}
-            />
-          )}
-          {displayBankMatrix && machineId === MI_ZXNEXT && (
-            <BankDropdown
-              banks={224}
-              showNextItems
-              initialValue={currentSegment ?? 0}
-              width={80}
-              decimalView={decimalView}
-              onChanged={onCurrentSegmentChanged}
-            />
-          )}
+          {/*
+            * The same chooser the Memory view and the breakpoint dialog use. This was a third copy
+            * of the machine-id branch, which is how the disassembly view could have ended up
+            * offering a different picker than the view beside it.
+            */}
+          <PartitionPicker
+            value={currentSegment}
+            onChange={onCurrentSegmentChanged}
+            displayBankMatrix={displayBankMatrix}
+            segmentOptions={segmentOptions}
+            partitionOptions={partitionOptions}
+            decimalView={decimalView}
+          />
           <Text text="Offset" />
           <LabelSeparator />
           <Dropdown

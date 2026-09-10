@@ -11,6 +11,7 @@ import { MemorySectionType } from "@abstractions/MemorySection";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { createMainApi } from "@common/messaging/MainApi";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
+import { UNPAGED_PARTITION_LABEL } from "./MemoryDevice";
 import { ZxNextMachine } from "./ZxNextMachine";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
@@ -724,11 +725,19 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   override getCurrentPartitionLabels(): string[] {
-    return Array.from({ length: 8 }, (_, pageIndex) => this.getWasmV2PartitionLabelForPage(pageIndex));
+    // --- Names come from the machine's own partition map, so a page cannot be shown under a name
+    // --- `parsePartitionLabel` would not accept back.
+    const labels = this.getPartitionLabels();
+    return Array.from({ length: 8 }, (_, pageIndex) => {
+      const partition = this.getWasmV2PartitionForPage(pageIndex);
+      return partition === undefined
+        ? UNPAGED_PARTITION_LABEL
+        : (labels[partition] ?? UNPAGED_PARTITION_LABEL);
+    });
   }
 
   override getPartition(address: number): number | undefined {
-    return this.parseWasmV2PartitionLabel(this.getWasmV2PartitionLabelForPage((address >>> 13) & 0x07));
+    return this.getWasmV2PartitionForPage((address >>> 13) & 0x07);
   }
 
   override getRomFlags(): boolean[] {
@@ -1118,14 +1127,27 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       portTimex: 0,
       divMmc: 0,
       divMmcIn: false,
-      pageInfo: this.getCurrentPartitionLabels().map((label, pageIndex) => ({
-        readOffset: pageIndex * 0x2000,
-        writeOffset: label.startsWith("R") || label.startsWith("A") || label === "DM" || label === "UN"
-          ? null
-          : pageIndex * 0x2000,
-        bank16k: this.parseWasmV2PartitionLabel(label) ?? 0xff,
-        bank8k: this.requireWasmV2Runtime().nextRegs[0x50 + pageIndex]
-      }))
+      /*
+       * Built from partition *indices*, not from display names.
+       *
+       * This used to format a label per page and then inspect the string — `writeOffset` came from
+       * `label.startsWith("R") || startsWith("A") || label === "DM"`, and `bank16k` from re-parsing
+       * the label. A display name was carrying data, which is why deleting the second naming
+       * scheme had to start here.
+       *
+       * The read-only set is unchanged: partitions -1..-7 are the four Next ROMs, the two alt ROMs
+       * and the DivMMC ROM. DivMMC RAM (-8..-23) and the RAM banks stay writable, as before.
+       */
+      pageInfo: Array.from({ length: 8 }, (_, pageIndex) => {
+        const partition = this.getWasmV2PartitionForPage(pageIndex);
+        const isRomPage = partition !== undefined && partition <= -1 && partition >= -7;
+        return {
+          readOffset: pageIndex * 0x2000,
+          writeOffset: partition === undefined || isRomPage ? null : pageIndex * 0x2000,
+          bank16k: partition ?? 0xff,
+          bank8k: this.requireWasmV2Runtime().nextRegs[0x50 + pageIndex]
+        };
+      })
     });
   }
 
@@ -1143,57 +1165,42 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     return (this.requireWasmV2Runtime().nextRegs[0x8e] & 0x80) >> 7;
   }
 
-  private getWasmV2PartitionLabelForPage(pageIndex: number): string {
+  /**
+   * The partition index paged into an 8K page, or `undefined` when the page is not backed by one.
+   *
+   * The WASM counterpart of `MemoryDevice.getPartitionForPage`, and the only offset-to-index
+   * function on this path. It replaces a pair — one building a label from offsets, one parsing that
+   * label back — whose vocabularies (`A0`/`A1`, `D0`..`DF`) matched each other and nothing else in
+   * the system.
+   *
+   * The `bank8 < 224` threshold is carried over verbatim from the function this replaces; see
+   * `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 3.
+   */
+  private getWasmV2PartitionForPage(pageIndex: number): number | undefined {
     const wasm = this.requireWasmV2Runtime().exports;
     const bank8 = wasm.zxnextGetMemoryPageBank8(pageIndex);
-    if (bank8 < 224) return (bank8 >> 1).toString(16).padStart(2, "0").toUpperCase();
+    if (bank8 < 224) return bank8 >> 1;
 
     const readOffset = wasm.zxnextGetMemoryPageReadOffset(pageIndex);
-    if (readOffset >= ZXNEXT_WASM_OFFS_NEXT_RAM) return "UN";
+    if (readOffset >= ZXNEXT_WASM_OFFS_NEXT_RAM) return undefined;
     if (readOffset >= ZXNEXT_WASM_OFFS_DIVMMC_RAM) {
-      return `D${((readOffset - ZXNEXT_WASM_OFFS_DIVMMC_RAM) >> 13).toString(16).toUpperCase()}`;
+      // --- DivMMC RAM pages 0..15 occupy partitions -8..-23 ("M0".."MF")
+      return -8 - ((readOffset - ZXNEXT_WASM_OFFS_DIVMMC_RAM) >> 13);
     }
     if (readOffset >= ZXNEXT_WASM_OFFS_ALT_ROM_1 && readOffset < ZXNEXT_WASM_OFFS_ALT_ROM_1 + 0x4000) {
-      return "A1";
+      return -6; // --- Alt ROM 1, "X1"
     }
     if (readOffset >= ZXNEXT_WASM_OFFS_ALT_ROM_0 && readOffset < ZXNEXT_WASM_OFFS_ALT_ROM_0 + 0x4000) {
-      return "A0";
+      return -5; // --- Alt ROM 0, "X0"
     }
     if (readOffset >= ZXNEXT_WASM_OFFS_DIVMMC_ROM && readOffset < ZXNEXT_WASM_OFFS_DIVMMC_ROM + 0x2000) {
-      return "DM";
+      return -7; // --- DivMMC ROM, "DM"
     }
-    if (readOffset < ZXNEXT_WASM_OFFS_NEXT_ROM + 0x10000) return `R${readOffset >> 14}`;
-    return "UN";
-  }
-
-  private parseWasmV2PartitionLabel(label: string): number | undefined {
-    const normalized = label.toUpperCase();
-    switch (normalized) {
-      case "UN":
-        return undefined;
-      case "R0":
-        return -1;
-      case "R1":
-        return -2;
-      case "R2":
-        return -3;
-      case "R3":
-        return -4;
-      case "A0":
-        return -5;
-      case "A1":
-        return -6;
-      case "DM":
-        return -7;
-      default:
-        if (normalized.startsWith("D")) {
-          return -8 - parseInt(normalized.substring(1), 16);
-        }
-        if (normalized.match(/^[0-9A-F]{1,2}$/)) {
-          return parseInt(normalized, 16);
-        }
-        return undefined;
+    if (readOffset < ZXNEXT_WASM_OFFS_NEXT_ROM + 0x10000) {
+      // --- Next ROM 0..3 occupy partitions -1..-4
+      return -1 - (readOffset >> 14);
     }
+    return undefined;
   }
 
   private createNextRegDescriptors(): NextRegDescriptor[] {

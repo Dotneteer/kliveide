@@ -19,7 +19,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
-import { VListHandle } from "virtua";
+import type { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
@@ -103,7 +103,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const customDisassembly = machineInfo?.toolInfo?.[CT_CUSTOM_DISASSEMBLER];
 
   // --- Internal state values for disassembly
-  const vlApi = useRef<VListHandle>(null);
+  const vlApi = useRef<VirtualizedListApi>(null);
 
   const [toScroll, setToScroll] = useState<number>(null);
   const [scrollVersion, setScrollVersion] = useState(0);
@@ -328,12 +328,12 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         disassOffset={disassOffset}
         displayBankMatrix={machineSetup.displayBankMatrix}
         isFullView={isFullView}
-        machineId={machineId}
         offsetOptions={createDisassemblyOffsetOptions(decimalView)}
         onCurrentSegmentChanged={setCurrentSegment}
         onDisassOffsetChanged={setDisassOffset}
         onFullViewChanged={setIsFullView}
         segmentOptions={machineSetup.segmentOptions}
+        partitionOptions={machineSetup.partitionOptions}
       />
       {items.length > 0 && (
         <div className={styles.disassemblyWrapper}>

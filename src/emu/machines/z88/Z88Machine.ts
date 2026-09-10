@@ -175,11 +175,38 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param partition Partition index
    */
   getPartitionLabels(): Record<number, string> {
-    const labels: string[] = [];
+    // --- A real `Record`, not a `string[]` returned as one. The array worked by index, but it made
+    // --- the Z88 the only machine whose map could not be enumerated with `Object.entries` the way
+    // --- every consumer does.
+    const labels: Record<number, string> = {};
     for (let i = 0; i <= 0xff; i++) {
-      labels.push(toHexa2(i));
+      labels[i] = toHexa2(i);
     }
     return labels;
+  }
+
+  /**
+   * The Z88 has no ROM partitions: its ROM is a card in slot 0 rather than a fixed page, so the
+   * bank map above is complete rather than missing entries. See
+   * `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 2.
+   */
+  /**
+   * The Z88's partitions are all RAM banks, so its chooser needs one caption beside the grid.
+   */
+  getPartitionGroups(): Record<number, string> {
+    const groups: Record<number, string> = {};
+    for (let i = 0; i <= 0xff; i++) {
+      groups[i] = "RAM Banks";
+    }
+    return groups;
+  }
+
+  getPartitionDescriptions(): Record<number, string> {
+    const descriptions: Record<number, string> = {};
+    for (let i = 0; i <= 0xff; i++) {
+      descriptions[i] = `Bank $${toHexa2(i)}`;
+    }
+    return descriptions;
   }
 
   /**

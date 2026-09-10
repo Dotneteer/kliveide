@@ -12,6 +12,8 @@ function deferred<T>() {
 
 type SetupApi = {
   getPartitionLabels: ReturnType<typeof vi.fn>;
+  getPartitionDescriptions: ReturnType<typeof vi.fn>;
+  getPartitionGroups: ReturnType<typeof vi.fn>;
   getRomFlags: ReturnType<typeof vi.fn>;
 };
 
@@ -40,6 +42,8 @@ describe("useMemoryMachineSetup", () => {
   it("loads non-banked machine setup", async () => {
     const emuApi = {
       getPartitionLabels: vi.fn(() => Promise.resolve({})),
+      getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
+      getPartitionGroups: vi.fn(() => Promise.resolve({})),
       getRomFlags: vi.fn(() => Promise.resolve(new Array(8).fill(false)))
     };
 
@@ -55,6 +59,8 @@ describe("useMemoryMachineSetup", () => {
   it("loads banked machine setup with ROM and bank options", async () => {
     const emuApi = {
       getPartitionLabels: vi.fn(() => Promise.resolve({ [-1]: "rom0", 0: "bank0", 3: "bank3" })),
+      getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
+      getPartitionGroups: vi.fn(() => Promise.resolve({})),
       getRomFlags: vi.fn(() => Promise.resolve([true, true, false, false]))
     };
 
@@ -64,13 +70,16 @@ describe("useMemoryMachineSetup", () => {
     expect(screen.getByTestId("banks")).toHaveTextContent("true");
     expect(screen.getByTestId("matrix")).toHaveTextContent("false");
     expect(screen.getByTestId("segment")).toHaveTextContent("-1");
-    expect(screen.getByTestId("options")).toHaveTextContent("ROM 0,BANK 0,BANK 3");
+    // --- The machine's own labels, not `ROM n` invented from the index.
+    expect(screen.getByTestId("options")).toHaveTextContent("rom0,bank0,bank3");
     expect(screen.getByTestId("rom-flags")).toHaveTextContent("true,true,false,false");
   });
 
   it("uses bank matrix mode for ZX Next scale bank lists", async () => {
     const emuApi = {
       getPartitionLabels: vi.fn(() => Promise.resolve({ 0: "bank0" })),
+      getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
+      getPartitionGroups: vi.fn(() => Promise.resolve({})),
       getRomFlags: vi.fn(() => Promise.resolve([true, true, false, false]))
     };
 
@@ -88,6 +97,8 @@ describe("useMemoryMachineSetup", () => {
     const secondLabels = deferred<Record<number, string>>();
     const secondRomFlags = deferred<boolean[]>();
     const emuApi = {
+      getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
+      getPartitionGroups: vi.fn(() => Promise.resolve({})),
       getPartitionLabels: vi
         .fn()
         .mockReturnValueOnce(firstLabels.promise)

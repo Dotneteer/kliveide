@@ -54,15 +54,16 @@ type Props = DialogComponentProps<BreakpointDialogResult> & {
    * The same machine setup the Memory view uses, so the partition picker here is the very control
    * that view offers — a list on a machine with a handful of banks, a bank matrix on one with 247.
    */
-  machineSetup: Pick<MemoryMachineSetupState, "displayBankMatrix" | "segmentOptions">;
-  machineId?: string;
+  machineSetup: Pick<
+    MemoryMachineSetupState,
+    "displayBankMatrix" | "segmentOptions" | "partitionOptions"
+  >;
 };
 
 export const BreakpointDialog = ({
   initial,
   env,
   machineSetup,
-  machineId,
   controls
 }: Props) => {
   const [form, setForm] = useState<BreakpointFormState>(() =>
@@ -154,9 +155,9 @@ export const BreakpointDialog = ({
                 setTouched((t) => ({ ...t, partition: true }));
                 update({ partition });
               }}
-              machineId={machineId}
               displayBankMatrix={machineSetup.displayBankMatrix}
               segmentOptions={machineSetup.segmentOptions}
+              partitionOptions={machineSetup.partitionOptions}
             />
           )}
           {!partitionEnabled && (

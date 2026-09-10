@@ -35,6 +35,8 @@ const emuApi = vi.hoisted(() => ({
   listBreakpoints: vi.fn(),
   getCpuState: vi.fn(),
   getPartitionLabels: vi.fn(),
+  getPartitionDescriptions: vi.fn(),
+  getPartitionGroups: vi.fn(),
   setBreakpoint: vi.fn(),
   removeBreakpoint: vi.fn(),
   enableBreakpoint: vi.fn(),
@@ -101,6 +103,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   emuApi.getCpuState.mockResolvedValue({ pc: 0x0000 });
   emuApi.getPartitionLabels.mockResolvedValue({});
+  emuApi.getPartitionDescriptions.mockResolvedValue({});
+  emuApi.getPartitionGroups.mockResolvedValue({});
   emuApi.removeBreakpoint.mockResolvedValue(true);
   emuApi.enableBreakpoint.mockResolvedValue(true);
   emuApi.eraseAllBreakpoints.mockResolvedValue(undefined);

@@ -317,6 +317,23 @@ class EmuApiImpl {
   }
 
   /**
+   * Gets a human-readable name for each partition, keyed like `getPartitionLabels()`.
+   *
+   * Presentation only: the label identifies a partition, the description spells it out. May be
+   * empty for a machine that supplies none.
+   */
+  async getPartitionDescriptions(): Promise<Record<number, string>> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets the caption each partition sits under in a chooser, keyed like `getPartitionLabels()`.
+   */
+  async getPartitionGroups(): Promise<Record<number, string>> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the current call stack information.
    */
   async getCallStack(): Promise<CallStackInfo> {

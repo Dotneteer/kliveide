@@ -11,6 +11,9 @@ import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext
 // Type assertion helper for mock context
 type MockIdeCommandContext = IdeCommandContext & {
   store: any;
+  // --- `createMockContext` fills this with `vi.fn()`s; the real `EmuApi` type has no mock helpers
+  // --- on its methods, so widen it here rather than casting at every call site.
+  emuApi: any;
 };
 
 // This type mirrors the internal WatchSpecArgs type
@@ -413,6 +416,41 @@ describe("ListWatchCommand", () => {
       const calls = (context.output.writeLine as any).mock.calls;
       const message = calls.map((call: any) => call[0]).join(" ");
       expect(message).toContain("No watch");
+    });
+
+    it("names a partition by its label, in the same order bp-set uses", async () => {
+      // --- Regression: this printed `addr: $8000:-1` — a raw index, and with the partition after
+      // --- the address, which is the reverse of the `R0:$8000` notation every other surface uses.
+      const mockStore = context.store as any;
+      mockStore.getState.mockReturnValue({
+        watchExpressions: [{ symbol: "score", type: "byte", address: 0x8000, partition: -1 }]
+      });
+      context.emuApi.getPartitionLabels.mockResolvedValue({ [-1]: "R0" });
+
+      await command.execute(context);
+
+      const written = (context.output.write as any).mock.calls
+        .concat((context.output.writeLine as any).mock.calls)
+        .map((call: any) => call[0])
+        .join(" ");
+      expect(written).toContain("R0:$8000");
+      expect(written).not.toContain(":-1");
+    });
+
+    it("prints an unpartitioned watch without a partition prefix", async () => {
+      const mockStore = context.store as any;
+      mockStore.getState.mockReturnValue({
+        watchExpressions: [{ symbol: "score", type: "byte", address: 0x8000 }]
+      });
+
+      await command.execute(context);
+
+      const written = (context.output.write as any).mock.calls
+        .concat((context.output.writeLine as any).mock.calls)
+        .map((call: any) => call[0])
+        .join(" ");
+      expect(written).toContain("$8000");
+      expect(written).not.toContain(":$8000");
     });
 
     it("should list all watch expressions", async () => {

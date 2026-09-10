@@ -1,65 +1,95 @@
 .SelectTrigger {
-    display: flex;
-    align-items: center;
-    justify-content: start;
-    background-color: var(--bg-color-dropdown-input);
-    color: var(--color-dropdown-input);
-    width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    border: none;
-    padding: 2px 4px 2px 8px;
-    border-radius: 4px;
-  
-    &:focus {
-      outline: 1px solid var(--border-color-dropdown-menu);
-    }
-  
-    &.value {
-      align-self: flex-end;
-    }
-  }
-  
-  .SelectContent {
-    background-color: var(--bg-color-dropdown-input);
-    color: var(--color-dropdown-input);
-    border-radius: 4px;
-    padding: 2px 4px;
-    z-index: 100;
-  }
-  
-  .SelectItem {
-    flex-direction: row;
-    margin: 1px 2px;
-    width: 18px;
-    border: none;
-    font-size: 0.8em;
-    text-align: center;
-    cursor: pointer;
-    border: 2px solid transparent;
-  
-    &:focus {
-      outline: 2px solid var(--border-color-dropdown-menu);
-    }
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  background-color: var(--bg-color-dropdown-input);
+  color: var(--color-dropdown-input);
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: none;
+  padding: 2px 4px 2px 8px;
+  border-radius: 4px;
 
-    &.selected {
-      background-color: var(--bg-color-dropdown-menu-selected);
-    }
-
-    &.decimal {
-      width: 24px;
-    }
-
-    &.wide {
-      width: 50px;
-    }
+  &:focus {
+    outline: 1px solid var(--border-color-dropdown-menu);
   }
 
-  .SelectSeparator {
-    width: 100%;
-    height: 2px;
-    background-color: var(--bgcolor-disass-hover);
-    margin: 4px 2px;
+  &.value {
+    align-self: flex-end;
   }
-  
+}
+
+.SelectContent {
+  background-color: var(--bg-color-dropdown-input);
+  color: var(--color-dropdown-input);
+  border-radius: 4px;
+  z-index: 100;
+}
+
+/*
+ * The chooser's one grid.
+ *
+ * A caption column that sizes to its own content, then sixteen cell columns shared by every row —
+ * so `M3` lands above bank `03` without anyone choosing a pixel width. The previous layout was a
+ * flex row per block with a hardcoded 72px caption, which "DivMMC RAM" overflowed straight into the
+ * chips beside it.
+ *
+ * `max-content` on the cell columns keeps them uniform because every label is the same length; a
+ * decimal view widens all of them together rather than one row.
+ */
+.grid {
+  display: grid;
+  grid-template-columns: max-content repeat(16, max-content);
+  align-items: center;
+  column-gap: 6px;
+  row-gap: 4px;
+  padding: 8px 10px;
+}
+
+/*
+ * The caption naming a block — "DivMMC RAM" above `M0`..`MF`.
+ *
+ * Explicitly in column 1, which is also what makes each block start a fresh grid row.
+ */
+.caption {
+  grid-column: 1;
+  justify-self: end;
+  padding-right: 4px;
+  color: var(--color-secondary-label);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+/** Opens the bank grid in column 2, since banks carry no caption to place there. */
+.bankRowStart {
+  grid-column-start: 2;
+}
+
+.SelectItem {
+  padding: 1px 3px;
+  border: none;
+  border-radius: 3px;
+  font-size: 0.8em;
+  text-align: center;
+  justify-self: stretch;
+  cursor: pointer;
+  outline: 2px solid transparent;
+
+  &:focus {
+    outline-color: var(--border-color-dropdown-menu);
+  }
+
+  &.selected {
+    background-color: var(--bg-color-dropdown-menu-selected);
+  }
+}
+
+.SelectSeparator {
+  /* --- Spans the whole grid, caption column included. */
+  grid-column: 1 / -1;
+  height: 1px;
+  background-color: var(--bgcolor-disass-hover);
+  margin: 4px 0;
+}

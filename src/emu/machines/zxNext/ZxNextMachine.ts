@@ -678,33 +678,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param address Address to get the partition for
    */
   getPartition(address: number): number | undefined {
-    const pageIndex = address >> 13;
-    const page = this.memoryDevice.getPageInfo(pageIndex);
-    if (page.bank16k === 0xff) {
-      const romLabel = this.memoryDevice.getPartitionLabelForPage(pageIndex);
-      switch (romLabel) {
-        case "UN":
-          return undefined;
-        case "R0":
-          return -1;
-        case "R1":
-          return -2;
-        case "R2":
-          return -3;
-        case "R3":
-          return -4;
-        case "A0":
-          return -5;
-        case "A1":
-          return -6;
-        case "DM":
-          return -7;
-        default:
-          return -8 - parseInt(romLabel.substring(1));
-      }
-    } else {
-      return page.bank16k;
-    }
+    // --- One offset-to-index function, shared with the label lookup. This used to format a label
+    // --- and switch on the string, which is why it recognised `A0`/`D3` — names no other part of
+    // --- the system uses.
+    return this.memoryDevice.getPartitionForPage(address >> 13);
   }
 
   /**
@@ -712,7 +689,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param label Label to parse
    */
   parsePartitionLabel(label: string): number | undefined {
-    switch (label.toUpperCase()) {
+    // --- Normalize once and use the normalized value throughout. The `default:` branch used to
+    // --- test the *original* string (`label.startsWith("M")`) while the switch tested the
+    // --- uppercased one, and `BreakpointCommands` lowercases an address spec before parsing it —
+    // --- so `bp-set m0:$8000` fell through to the hex branch, failed, and reported "Invalid
+    // --- partition". Every DivMMC RAM partition was unreachable from every breakpoint command.
+    const normalized = (label ?? "").trim().toUpperCase();
+    switch (normalized) {
       case "UN":
         return undefined;
       case "R0":
@@ -723,27 +706,35 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         return -3;
       case "R3":
         return -4;
+      case "X0":
+        return -5;
+      case "X1":
+        return -6;
+      // --- `Q0`/`Q1` were the alternate ROMs' names before they were renamed to the slightly more
+      // --- suggestive `X0`/`X1` ("eXtra"). Still accepted so a script that names them keeps
+      // --- working; `getPartitionLabels` no longer returns them.
       case "Q0":
         return -5;
       case "Q1":
         return -6;
       case "DM":
         return -7;
-      default:
-        if (label.startsWith("M")) {
-          const part = label.substring(1);
-          if (part.match(/^[0-9a-fA-F]$/)) {
-            let partition = parseInt(part, 16);
-            return partition >= 0 && partition <= 15 ? -8 - partition : undefined;
-          }
-          return -8 - parseInt(label.substring(1));
-        }
-        if (label.match(/^[0-9a-fA-F]{1,2}$/)) {
-          const partValue = parseInt(label, 16);
-          return partValue >= 0 && partValue < 224 ? partValue : undefined;
-        }
-        return undefined;
     }
+
+    // --- DivMMC RAM pages M0..MF occupy partitions -8..-23.
+    if (normalized.startsWith("M")) {
+      const page = normalized.substring(1);
+      return /^[0-9A-F]$/.test(page) ? -8 - parseInt(page, 16) : undefined;
+    }
+
+    // --- Everything else is a RAM bank, named by its hex index. Note this is what makes `A0` and
+    // --- `D0` mean banks $A0 and $D0 rather than the alt ROM and a DivMMC page: those spellings
+    // --- are ambiguous with the bank namespace, which is why the map does not use them.
+    if (/^[0-9A-F]{1,2}$/.test(normalized)) {
+      const bank = parseInt(normalized, 16);
+      return bank >= 0 && bank < 224 ? bank : undefined;
+    }
+    return undefined;
   }
 
   /**
@@ -756,8 +747,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       [-2]: "R1",
       [-3]: "R2",
       [-4]: "R3",
-      [-5]: "Q0",
-      [-6]: "Q1",
+      [-5]: "X0",
+      [-6]: "X1",
       [-7]: "DM"
     };
     for (let i = 0; i < 16; i++) {
@@ -765,6 +756,59 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     }
     for (let i = 0; i < 224; i++) {
       result[i] = toHexa2(i).toUpperCase();
+    }
+    return result;
+  }
+
+  /**
+   * The long forms of this machine's partition names.
+   *
+   * These are the words behind the abbreviations: the memory view's bank chooser used to *label*
+   * these partitions `NROM0`, `ALTR0` and `DivMR` — names nothing else in the system used and that
+   * `parsePartitionLabel` rejected. They are descriptions now, and the label is what identifies.
+   */
+  getPartitionDescriptions(): Record<number, string> {
+    const result: Record<number, string> = {
+      [-1]: "Next ROM 0",
+      [-2]: "Next ROM 1",
+      [-3]: "Next ROM 2",
+      [-4]: "Next ROM 3",
+      [-5]: "Alt ROM 0",
+      [-6]: "Alt ROM 1",
+      [-7]: "DivMMC ROM"
+    };
+    for (let i = 0; i < 16; i++) {
+      result[-8 - i] = `DivMMC RAM ${i}`;
+    }
+    for (let i = 0; i < 224; i++) {
+      result[i] = `Bank $${toHexa2(i).toUpperCase()}`;
+    }
+    return result;
+  }
+
+  /**
+   * The four blocks a chooser groups this machine's special partitions into.
+   *
+   * The caption carries the noun so the chip does not have to: `M0`..`MF` sit under one
+   * "DivMMC RAM" heading rather than spelling it out sixteen times.
+   */
+  getPartitionGroups(): Record<number, string> {
+    const result: Record<number, string> = {
+      [-1]: "Next ROM",
+      [-2]: "Next ROM",
+      [-3]: "Next ROM",
+      [-4]: "Next ROM",
+      [-5]: "Alt ROM",
+      [-6]: "Alt ROM",
+      [-7]: "DivMMC ROM"
+    };
+    for (let i = 0; i < 16; i++) {
+      result[-8 - i] = "DivMMC RAM";
+    }
+    // --- The bank grid's caption sits to its *left*, on the first row, so naming it costs no
+    // --- height — which was the only reason to leave it unlabelled.
+    for (let i = 0; i < 224; i++) {
+      result[i] = "RAM Banks";
     }
     return result;
   }

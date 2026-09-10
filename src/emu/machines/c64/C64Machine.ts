@@ -372,6 +372,15 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
     return {};
   }
 
+  getPartitionDescriptions(): Record<number, string> {
+    // --- No partitions yet, so nothing to describe. See `getPartitionLabels` above.
+    return {};
+  }
+
+  getPartitionGroups(): Record<number, string> {
+    return {};
+  }
+
   getCallStack(_frames?: number): CallStackInfo {
     return {
       sp: 0,

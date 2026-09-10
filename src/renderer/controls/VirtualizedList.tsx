@@ -1,5 +1,31 @@
 import { CSSProperties, forwardRef, ReactNode, useEffect, useRef } from "react";
-import { Virtualizer, VListHandle } from "virtua";
+import { Virtualizer, type VirtualizerHandle } from "virtua";
+
+/**
+ * What a list hands its owner.
+ *
+ * `virtua`'s own handle plus `findStartIndex`, the one thing panels ask for that it does not offer.
+ * It used to be called on the raw handle, where it has never existed — `virtua` has
+ * `findItemIndex(offset)` — so every scroll threw a `TypeError` and the panels' scroll bookkeeping
+ * silently stopped updating. Adapting it here keeps the knowledge of `virtua`'s API in the one
+ * component that wraps it.
+ */
+export type VirtualizedListApi = VirtualizerHandle & {
+  /** The index of the item at the top of the viewport. */
+  findStartIndex(): number;
+};
+
+/**
+ * Wrap `virtua`'s handle with the extra method the panels expect.
+ *
+ * Prototype-based so every getter on the handle — `scrollOffset`, `cache`, `viewportSize` — keeps
+ * reading live values rather than being snapshotted at wrap time.
+ */
+export function toVirtualizedListApi(handle: VirtualizerHandle): VirtualizedListApi {
+  return Object.assign(Object.create(handle) as VirtualizerHandle, {
+    findStartIndex: () => handle.findItemIndex(handle.scrollOffset)
+  });
+}
 import ScrollViewer from "./ScrollViewer";
 
 type VirtualItemProps = {
@@ -31,7 +57,7 @@ type Props<T> = {
    */
   scrollRowsHorizontally?: boolean;
   renderItem?: (index: number, item: T) => ReactNode;
-  apiLoaded?: (api: VListHandle) => void;
+  apiLoaded?: (api: VirtualizedListApi) => void;
   onScroll?: (offset: number) => void;
   onScrollEnd?: () => void;
 };
@@ -80,7 +106,7 @@ export const VirtualizedList = <T,>({
   onScroll,
   onScrollEnd
 }: Props<T>) => {
-  const ref = useRef<VListHandle>(null);
+  const ref = useRef<VirtualizerHandle>(null);
   const hasScrolledToStart = useRef(false);
   const hasNotifiedApi = useRef(false);
   const safeItems = items ?? [];
@@ -90,7 +116,7 @@ export const VirtualizedList = <T,>({
       // Only call apiLoaded once per component instance
       if (!hasNotifiedApi.current) {
         hasNotifiedApi.current = true;
-        apiLoaded?.(ref.current);
+        apiLoaded?.(toVirtualizedListApi(ref.current));
       }
 
       // Scroll to initial position on first mount only

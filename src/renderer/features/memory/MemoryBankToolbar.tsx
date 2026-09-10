@@ -8,7 +8,6 @@ type MemoryBankToolbarProps = {
   currentSegment: number;
   decimalView: boolean;
   isFullView: boolean;
-  machineId: string | undefined;
   machineSetup: MemoryMachineSetupState;
   onFullViewChanged: (value: boolean) => void;
   onSegmentChanged: (segment: number) => void;
@@ -18,7 +17,6 @@ export const MemoryBankToolbar = ({
   currentSegment,
   decimalView,
   isFullView,
-  machineId,
   machineSetup,
   onFullViewChanged,
   onSegmentChanged
@@ -47,9 +45,9 @@ export const MemoryBankToolbar = ({
           <PartitionPicker
             value={currentSegment}
             onChange={onSegmentChanged}
-            machineId={machineId}
             displayBankMatrix={machineSetup.displayBankMatrix}
             segmentOptions={machineSetup.segmentOptions}
+            partitionOptions={machineSetup.partitionOptions}
             decimalView={decimalView}
           />
         </>

@@ -1,6 +1,6 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
-import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
 import { parseCommand } from "@renderer/appIde/services/command-parser";
 import { getNumericTokenValue, toHexa4 } from "@renderer/appIde/services/ide-commands";
 
@@ -11,7 +11,7 @@ import { getNumericTokenValue, toHexa4 } from "@renderer/appIde/services/ide-com
  * project instead of through a mounted form. See `.plans/BREAKPOINT_MANAGEMENT_UI_PLAN.md` §5.1.
  *
  * **Binary breakpoints only.** A `BreakpointInfo` is either address-bound (`address`, optionally
- * `partition`) or source-bound (`resource` + `line`) — `getBreakpointKey` branches on exactly that.
+ * `partition`) or source-bound (`resource` + `line`) — `getBreakpointDisplayKey` branches on exactly that.
  * The dialog authors the first kind; source-code breakpoints stay owned by the editor's glyph
  * margin, which places them by clicking a line, tracks them as lines move, and has its own
  * undo/redo. Nothing here ever reads or writes `resource`/`line`.
@@ -55,7 +55,7 @@ export type BreakpointEnvironment = {
   /** Whether the machine declares `MF_ROM` or `MF_BANK`. */
   supportsPartitions: boolean;
   /**
-   * `getBreakpointKey(bp, partitionLabels)` for every breakpoint currently set — **built with the
+   * `getBreakpointDisplayKey(bp, partitionLabels)` for every breakpoint currently set — **built with the
    * same `partitionLabels` map above**, or the duplicate check silently stops matching.
    */
   existingKeys: string[];
@@ -160,7 +160,7 @@ export function isKnownPartition(partition: number, env: BreakpointEnvironment):
  * Turn a valid form into the breakpoint it describes.
  *
  * Only meaningful for a form `validateBreakpointForm` accepts; an unparseable address becomes
- * `undefined`, which `getBreakpointKey` would reject. Never emits `resource`/`line`.
+ * `undefined`, which `getBreakpointDisplayKey` would reject. Never emits `resource`/`line`.
  */
 export function formToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
   const address = parseNumericInput(form.address);
@@ -284,9 +284,9 @@ export function breakpointKeyOf(
   env: BreakpointEnvironment
 ): string | undefined {
   try {
-    return getBreakpointKey(formToBreakpointInfo(form), env.partitionLabels);
+    return getBreakpointDisplayKey(formToBreakpointInfo(form), env.partitionLabels);
   } catch {
-    // --- `getBreakpointKey` throws when neither an address nor a resource is present.
+    // --- `getBreakpointDisplayKey` throws when neither an address nor a resource is present.
     return undefined;
   }
 }

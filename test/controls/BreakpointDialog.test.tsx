@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import type { BreakpointEnvironment } from "@renderer/appIde/utils/breakpoint-form";
 import type { DropdownOption } from "@renderer/controls/Dropdown";
+import { derivePartitionOptions } from "@renderer/features/memory/memoryViewModel";
 
 import { BreakpointDialog } from "@renderer/appIde/dialogs/BreakpointDialog";
 import { renderWithProviders } from "../react-test-utils";
@@ -24,18 +25,34 @@ const anEnv = (over: Partial<BreakpointEnvironment> = {}): BreakpointEnvironment
 
 const someControls = () => ({ cancel: vi.fn(), close: vi.fn(), id: "bp", reject: vi.fn() });
 
-/** A machine with a handful of banks: the list-shaped picker. */
+/**
+ * A machine with a handful of banks: the list-shaped picker.
+ *
+ * Options carry the machine's own labels with the long forms as descriptions — `R0` / "ROM 0" —
+ * which is the split the naming unification established.
+ */
 const aListMachine = {
   displayBankMatrix: false,
   segmentOptions: [
-    { value: "-1", label: "ROM 0" },
-    { value: "0", label: "BANK 0" },
-    { value: "1", label: "BANK 1" }
-  ]
+    { value: "-1", label: "R0", description: "ROM 0" },
+    { value: "0", label: "B0", description: "Bank 0" },
+    { value: "1", label: "B1", description: "Bank 1" }
+  ] as DropdownOption[],
+  partitionOptions: derivePartitionOptions(
+    { [-1]: "R0", 0: "B0", 1: "B1" },
+    { [-1]: "ROM 0", 0: "Bank 0", 1: "Bank 1" }
+  )
 };
 
-/** A ZX Next-shaped machine: 247 partitions, so the bank matrix. */
-const aMatrixMachine = { displayBankMatrix: true, segmentOptions: [] as DropdownOption[] };
+/** A ZX Next-shaped machine: too many banks to list, so the matrix. */
+const aMatrixMachine = {
+  displayBankMatrix: true,
+  segmentOptions: [] as DropdownOption[],
+  partitionOptions: derivePartitionOptions(
+    { [-1]: "R0", [-5]: "Q0", 0: "00", 1: "01" },
+    { [-1]: "Next ROM 0", [-5]: "Alt ROM 0", 0: "Bank $00", 1: "Bank $01" }
+  )
+};
 
 const addressBox = () => screen.getAllByRole("textbox")[0];
 const typeAddress = (value: string) => fireEvent.change(addressBox(), { target: { value } });

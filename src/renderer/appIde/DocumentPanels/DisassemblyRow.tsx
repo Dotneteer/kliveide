@@ -3,7 +3,7 @@ import { AddressLabel, PartitionPrefix } from "@renderer/controls/data";
 import { isWidePartitionLabel } from "@renderer/controls/data/partitionWidth";
 import { memo } from "react";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Label } from "@renderer/controls/layout/Label";
 import { Secondary } from "@renderer/controls/layout/Secondary";
@@ -71,7 +71,11 @@ export function deriveDisassemblyRowViewModel({
   return {
     address,
     addressText: decimalView ? toDecimal5(address) : toHexa4(address),
-    breakpointAddress: breakpoint?.resource ? getBreakpointKey(breakpoint) : address,
+    // --- Only a source-bound breakpoint is named by its key here; an address-bound one shows its
+    // --- raw address. The label map matters for neither, but the display form requires it.
+    breakpointAddress: breakpoint?.resource
+      ? getBreakpointDisplayKey(breakpoint, partitionLabels)
+      : address,
     breakpointPartition:
       breakpoint?.partition !== undefined ? (partitionLabels[breakpoint.partition] ?? "?") : undefined,
     execPoint: address === pausedPc,

@@ -223,6 +223,27 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   getPartitionLabels(): Record<number, string>;
 
   /**
+   * A human-readable name for each partition, keyed the same way as `getPartitionLabels()`.
+   *
+   * Presentation only. The *label* is a partition's identity — it is what a key contains, what a
+   * bank column shows, and what `parsePartitionLabel` accepts; a description is what a chooser
+   * spells out beside it ("Alt ROM 0" for `X0`). Never parsed, never put in a key.
+   *
+   * May be empty, or may cover only some partitions: a machine that supplies none simply shows
+   * labels everywhere. See `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §3.
+   */
+  getPartitionDescriptions(): Record<number, string>;
+
+  /**
+   * The caption each partition sits under in a chooser, keyed like `getPartitionLabels()`.
+   *
+   * Presentation only, and a *shared* string: every partition in a group returns the same one, so a
+   * chooser can print it once above the block instead of repeating it on every chip. A machine that
+   * supplies none simply gets no captions.
+   */
+  getPartitionGroups(): Record<number, string>;
+
+  /**
    * Gets the current call stack information
    */
   getCallStack(frames?: number): CallStackInfo;

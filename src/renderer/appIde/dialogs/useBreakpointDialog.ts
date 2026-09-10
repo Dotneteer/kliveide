@@ -2,7 +2,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { BreakpointEnvironment } from "@renderer/appIde/utils/breakpoint-form";
 
 import { useCallback } from "react";
-import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
@@ -39,22 +39,29 @@ export function useBreakpointDialog() {
      * @returns Whether anything was installed; false when the dialog was cancelled.
      */
     async (initial?: BreakpointInfo): Promise<boolean> => {
-      const [partitionLabels, bpState] = await Promise.all([
+      const [partitionLabels, partitionDescriptions, partitionGroups, bpState] = await Promise.all([
         emuApi.getPartitionLabels(),
+        emuApi.getPartitionDescriptions(),
+        emuApi.getPartitionGroups(),
         emuApi.listBreakpoints()
       ]);
 
-      const machineSetup = derivePartitionSetup(machineId, partitionLabels);
+      const machineSetup = derivePartitionSetup(
+        machineId,
+        partitionLabels,
+        partitionDescriptions,
+        partitionGroups
+      );
 
       const env: BreakpointEnvironment = {
         partitionLabels,
         // --- `banksView` is exactly "this machine declares MF_ROM or MF_BANK".
         supportsPartitions: machineSetup.banksView,
         existingKeys: (bpState?.breakpoints ?? []).map((bp) =>
-          getBreakpointKey(bp, partitionLabels)
+          getBreakpointDisplayKey(bp, partitionLabels)
         ),
         // --- A breakpoint must be allowed to keep its own key while being edited.
-        editingKey: initial ? getBreakpointKey(initial, partitionLabels) : undefined
+        editingKey: initial ? getBreakpointDisplayKey(initial, partitionLabels) : undefined
       };
 
       const result = await dialogs.open(

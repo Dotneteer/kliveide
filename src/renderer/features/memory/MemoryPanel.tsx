@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
-import { VListHandle } from "virtua";
+import type { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { FullPanel, HStack } from "@renderer/controls/layout/Panels";
 import { PanelHeader } from "@renderer/controls/data";
 import {
@@ -93,7 +93,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const [charDump, setCharDump] = useState(() => loadedViewState?.charDump ?? true);
   const [isReady, setIsReady] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
-  const vlApi = useRef<VListHandle>(null);
+  const vlApi = useRef<VirtualizedListApi>(null);
   const [scrollVersion, setScrollVersion] = useState(1);
   const [lastJumpAddress, setLastJumpAddress] = useState<number>(-1);
   const renderMetrics = useMemo(() => createVisibleMemoryRenderRecorder(), []);
@@ -371,7 +371,6 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             currentSegment={currentSegment}
             decimalView={decimalView}
             isFullView={isFullView}
-            machineId={machineId}
             machineSetup={machineSetup}
             onFullViewChanged={setIsFullView}
             onSegmentChanged={handleSegmentChanged}

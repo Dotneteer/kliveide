@@ -160,7 +160,6 @@ export class Z80Disassembler {
 
       const startAddress = (section.startAddress + i) & 0xffff;
       this._output.addItem({
-        partition: this.partitionLabels?.[startAddress >> 13] ?? undefined,
         address: startAddress,
         instruction: ".defb " + bytes.join(", ")
       });
@@ -192,7 +191,6 @@ export class Z80Disassembler {
 
       const startAddress = (section.startAddress + i) & 0xffff;
       this._output.addItem({
-        partition: this.partitionLabels?.[startAddress >> 13] ?? undefined,
         address: startAddress,
         instruction: ".defw " + words.join(", ")
       });
@@ -208,7 +206,6 @@ export class Z80Disassembler {
    */
   private generateSkipOutput(section: MemorySection): void {
     this._output.addItem({
-      partition: this.partitionLabels?.[section.startAddress >> 13] ?? undefined,
       address: section.startAddress,
       instruction:
         ".skip" + this._decimalMode
@@ -408,9 +405,7 @@ export class Z80Disassembler {
       overflow = true;
     }
     const opcode = this.memoryContents[offset];
-    const partitionLabel = this.partitionLabels?.[offset >> 13] ?? undefined;
     return {
-      partitionLabel,
       offset,
       overflow,
       opcode
@@ -429,7 +424,6 @@ export class Z80Disassembler {
   ): DisassemblyItem {
     // --- By default, unknown codes are NOP operations
     const disassemblyItem: DisassemblyItem = {
-      partition: this.partitionLabels?.[address >> 13] ?? undefined,
       address: (address + this._addressOffset) & 0xffff,
       opCodes: this._currentOpCodes,
       instruction: "nop",

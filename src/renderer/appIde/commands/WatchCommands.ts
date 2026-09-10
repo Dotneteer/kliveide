@@ -261,6 +261,9 @@ export class ListWatchCommand extends IdeCommandBase {
     // Retrieve watch expressions from Redux store
     const state = context.store.getState();
     const watchExpressions = state.watchExpressions || [];
+    // --- Named, not numbered: a partition printed as a raw index is not a notation any command
+    // --- accepts back. Same reason `bp-list` needed fixing.
+    const partitionLabels = await context.emuApi.getPartitionLabels();
 
     if (watchExpressions.length === 0) {
       writeMessage(context.output, "No watch expressions defined", "bright-blue");
@@ -277,10 +280,11 @@ export class ListWatchCommand extends IdeCommandBase {
         }
 
         if (w.address !== undefined) {
-          writeMessage(context.output, `, addr: $${toHexa4(w.address)}`, "yellow", false);
-          if (w.partition !== undefined) {
-            writeMessage(context.output, `:${w.partition}`, "yellow", false);
-          }
+          // --- `R0:$8000`, matching the order `bp-set` and the Breakpoints panel use. This used to
+          // --- print the partition *after* the address, and as a raw index.
+          const partition =
+            w.partition !== undefined ? `${partitionLabels?.[w.partition] ?? "?"}:` : "";
+          writeMessage(context.output, `, addr: ${partition}$${toHexa4(w.address)}`, "yellow", false);
         } else {
           writeMessage(context.output, `, unresolved`, "red", false);
         }

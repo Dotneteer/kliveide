@@ -52,7 +52,8 @@ every option the `bp-set` command accepts, without the flag syntax:
   and not available for I/O breakpoints, which watch a port rather than a partition. Ticking it
   reveals the same partition chooser the [Memory View](./memory) uses: a short list on a machine
   with a handful of banks, and the bank matrix on a machine like the ZX Next, whose 247 partitions
-  no list could sensibly hold.
+  no list could sensibly hold. The names it offers are the machine's own; see
+  [Machine-Specific Memory Partitions](./memory#machine-specific-memory-partitions).
 - **Address** (or **Port**, for the I/O types) &mdash; accepts the same literals the commands do:
   `$8000`, `32768` or `%1000000000000000`.
 - **Port mask** &mdash; only for the I/O types. Leave it empty to match the port exactly.

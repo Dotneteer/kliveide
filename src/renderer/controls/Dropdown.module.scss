@@ -43,3 +43,15 @@
   }
 }
 
+
+/*
+ * The gloss beside an option's label while the list is open.
+ *
+ * Muted and secondary on purpose: the label is the option's identity — the thing that appears in a
+ * breakpoint key, a bank column and a command line — and this only explains it.
+ */
+.SelectItemDescription {
+  margin-left: 8px;
+  color: var(--color-secondary-label);
+  font-size: 0.85em;
+}

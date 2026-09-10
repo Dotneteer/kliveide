@@ -94,6 +94,8 @@ async function renderMemoryPanel({
   const emuApi = {
     getMemoryContents,
     getPartitionLabels: vi.fn(() => Promise.resolve(partitionLabels)),
+    getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
+    getPartitionGroups: vi.fn(() => Promise.resolve({})),
     getRomFlags: vi.fn(() => Promise.resolve(romFlags))
   };
   const virtualApi = {

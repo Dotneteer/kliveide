@@ -26,7 +26,7 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
-import { VirtualizerHandle } from "virtua";
+import type { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { PanelHeader } from "@renderer/controls/data";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
@@ -62,7 +62,7 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   const programBuffer = useRef(new BasicProgramBuffer());
   const showListing = useRef(false);
   const cachedLines = useRef<BasicLine[]>([]);
-  const vlApi = useRef<VirtualizerHandle>(null);
+  const vlApi = useRef<VirtualizedListApi>(null);
   const [scrollVersion, setScrollVersion] = useState(0);
 
   const useCodes = useRef(false);

@@ -45,27 +45,6 @@ The **Offset** dropdown lets you select a disassembly offset from one of the 8K 
 
 ## Machine-Specific Memory Partitions
 
-### ZX Spectrum 48K
-
-This model supports only the 64K view.
-
-### ZX Spectrum 128K
-
-The `ROM 0` and `ROM 1` segments allow you to access the two ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` or `BANK 7` segments.
-
-### ZX Spectrum +2E, +3E
-
-The `ROM 0`... `ROM 3` segments allow you to access the four ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` ... `BANK 7` segments.
-
-### Cambridge Z88
-
-You can access one of the available 256 banks (16K each) by selecting the bank's index from the dropdown.
-
-### ZX Spectrum Next
-
-The dropdown provides these options to access memory segments:
-- IDs from `00` to `DF` (`000` to `224` in decimal view) to select an 8K RAM bank. The view does not support displaying them as 16K banks. 
-- `M0`, `M1` ... `MF`: The 16 DivMMC RAM banks (8K each)
-- `NROM0` ... `NROM3`: The ROM pages of the ZX Next OS (16K each)
-- `ALTR0`, `ALTR1`: The alternate ROM pages (16K each)
-- `DivMR`: The DivMMC ROM (8K)
+The bank column and the bank chooser name partitions exactly as the rest of the IDE does. See
+[Machine-Specific Memory Partitions](./memory#machine-specific-memory-partitions) in the Memory View
+for the names each machine uses.

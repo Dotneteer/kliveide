@@ -46,15 +46,38 @@ describe("memoryViewModel", () => {
     expect(convertTopIndexForViewMode(4, "8x2", "16x1")).toBe(4);
   });
 
-  it("creates bank and ROM segment options in current display order", () => {
-    expect(createSegmentOptions({ [-2]: "rom1", [-1]: "rom0", 0: "bank0", 3: "bank3" }, 8))
-      .toEqual([
-        { value: "-1", label: "ROM 0" },
-        { value: "-2", label: "ROM 1" },
-        { value: "0", label: "BANK 0" },
-        { value: "3", label: "BANK 3" }
-      ]);
-    expect(createSegmentOptions({ 0: "bank0" }, 9)).toEqual([]);
+  it("labels segment options with the machine's own partition names", () => {
+    // --- This used to format `ROM 0` / `BANK 0` from the index and throw the label map away, which
+    // --- is why the memory view named a partition something the breakpoints panel and `bp-set`
+    // --- did not recognise. The invented names are descriptions now.
+    expect(
+      createSegmentOptions(
+        { [-2]: "R1", [-1]: "R0", 0: "B0", 3: "B3" },
+        8,
+        { [-1]: "ROM 0", [-2]: "ROM 1", 0: "Bank 0", 3: "Bank 3" }
+      )
+    ).toEqual([
+      { value: "-1", label: "R0", description: "ROM 0" },
+      { value: "-2", label: "R1", description: "ROM 1" },
+      { value: "0", label: "B0", description: "Bank 0" },
+      { value: "3", label: "B3", description: "Bank 3" }
+    ]);
+  });
+
+  it("keeps ROMs before banks, each ordered outward from zero", () => {
+    expect(
+      createSegmentOptions({ 3: "B3", [-1]: "R0", 0: "B0", [-2]: "R1" }, 8).map((o) => o.value)
+    ).toEqual(["-1", "-2", "0", "3"]);
+  });
+
+  it("works for a machine that supplies no descriptions", () => {
+    expect(createSegmentOptions({ [-1]: "R0" }, 8)).toEqual([
+      { value: "-1", label: "R0", description: undefined }
+    ]);
+  });
+
+  it("yields nothing past eight banks, where the matrix picker takes over", () => {
+    expect(createSegmentOptions({ 0: "00" }, 9)).toEqual([]);
   });
 
   it("derives default segment and refresh partition", () => {

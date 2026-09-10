@@ -761,6 +761,28 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Gets a human-readable name for each partition. Presentation only; the label is the identity.
+   */
+  getPartitionDescriptions() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.machine.getPartitionDescriptions();
+  }
+
+  /**
+   * Gets the caption each partition sits under in a chooser.
+   */
+  getPartitionGroups() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.machine.getPartitionGroups();
+  }
+
+  /**
    * Gets the current call stack information.
    */
   getCallStack() {

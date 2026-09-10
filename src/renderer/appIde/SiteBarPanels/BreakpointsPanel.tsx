@@ -9,7 +9,7 @@ import { useState, useRef, useEffect } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./BreakpointsPanel.module.scss";
-import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
 import { toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { CpuState } from "@common/messaging/EmuApi";
@@ -330,7 +330,7 @@ export const BreakpointsPanel = () => {
           renderItem={(idx) => {
             try {
               const bp = bps[idx];
-              const addrKey = getBreakpointKey(
+              const addrKey = getBreakpointDisplayKey(
                 { ...bp, memoryRead: false, memoryWrite: false, ioRead: false, ioWrite: false },
                 partitionLabels
               );

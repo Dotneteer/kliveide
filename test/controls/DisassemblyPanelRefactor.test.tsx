@@ -82,7 +82,9 @@ async function renderDisassemblyPanel({
   const emuApi = {
     getDisassemblySections: vi.fn(() => Promise.resolve([])),
     getMemoryContents,
-    getPartitionLabels: vi.fn(() => Promise.resolve({ [-1]: "R0", 0: "B0" }))
+    getPartitionLabels: vi.fn(() => Promise.resolve({ [-1]: "R0", 0: "B0" })),
+    getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
+    getPartitionGroups: vi.fn(() => Promise.resolve({}))
   };
   const virtualApi = {
     findStartIndex: vi.fn(() => 0),
@@ -325,8 +327,13 @@ describe("DisassemblyPanel refactor characterization", () => {
     );
     expect(screen.getByText("LD A,1")).toBeInTheDocument();
     expect(screen.getByText("LD (4000H),A")).toBeInTheDocument();
-    expect(screen.getByTestId("breakpoint-0:$6000")).toHaveAttribute("data-current", "true");
-    expect(screen.getByTestId("breakpoint-0:$6000")).toHaveAttribute("data-has-breakpoint", "true");
+    // --- `B0:$6000`, not `0:$6000`: the row names a partition by its label now. It always showed
+    // --- the label in `data-partition`; the address beside it used to disagree, giving one row two
+    // --- names for one partition.
+    const indicator = screen.getByTestId("breakpoint-B0:$6000");
+    expect(indicator).toHaveAttribute("data-current", "true");
+    expect(indicator).toHaveAttribute("data-has-breakpoint", "true");
+    expect(indicator).toHaveAttribute("data-partition", "B0");
 
     // The row at the current PC (0x6000, matching the mocked `getMemoryContents().pc`) gets the
     // exec-point highlight; the other row does not.
