@@ -48,6 +48,28 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
      */
     "--surface-stage": tone === "dark" ? "#2a2d32" : "#c8ccd2",
 
+    /**
+     * The band behind a collapsible panel header.
+     *
+     * Two stops, painted as a shallow top-lit gradient: `-lit` is the top edge, `-header` the
+     * bottom. A flat fill at this size reads as a *selected row* — the sidebar's list rows are the
+     * same height and also highlight on hover — whereas a lit strip reads as chrome. That
+     * distinction is the whole point of the band, so it is expressed here rather than left to
+     * whichever stylesheet happens to draw it.
+     *
+     * It cannot reuse `--surface-raised`, which is the obvious candidate: "raised" means *lighter*,
+     * and that is only correct in dark. In light, `raised` is pure white — lighter than the panel
+     * it would sit on — so the band would read as a hole rather than a ridge. A header band is
+     * lighter than its panel in dark and *darker* in light, which is why it needs its own name.
+     *
+     * In both tones the top stop is the lighter of the pair, so the implied light source is
+     * consistent between them.
+     */
+    "--surface-header": tone === "dark" ? n.raised : n.hover,
+    "--surface-header-lit": tone === "dark" ? n.hover : n.chrome,
+    "--surface-header-hover": tone === "dark" ? n.hover : n.active,
+    "--surface-header-lit-hover": tone === "dark" ? n.active : n.hover,
+
     // --- Text ----------------------------------------------------------------------------------
     "--text-primary": n.text,
     "--text-secondary": n.textSecondary,

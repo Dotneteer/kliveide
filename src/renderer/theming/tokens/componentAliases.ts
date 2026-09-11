@@ -24,7 +24,14 @@ export const componentAliases: Record<string, string> = {
   "--color-command-icon-disabled": "var(--text-disabled)",
   "--bgcolor-scrollbar": "transparent",
   "--bgcolor-scrollbar-thumb": "var(--border-strong)",
-  "--bgcolor-attached-shadow": "var(--surface-canvas)",
+  /*
+   * The overflow shadow. This used to be `var(--surface-canvas)` — a *surface*, used as a shadow.
+   * That is why the affordance never appeared: in dark, canvas (#141517) is three RGB steps from
+   * the panel it was drawn on, and in light it is pure white, i.e. a white shadow. Both tones were
+   * painting something perfectly invisible.
+   */
+  "--bgcolor-attached-shadow": "var(--shadow-scroll)",
+  "--bgcolor-attached-shadow-line": "var(--shadow-scroll-line)",
   "--bgcolor-button": "var(--accent-solid)",
   "--color-button": "var(--text-on-accent)",
   "--bgcolor-button-pointed": "var(--accent-solid-hover)",
@@ -130,11 +137,27 @@ export const componentAliases: Record<string, string> = {
 
   // --- Sidebar ("sitebar" in the source) --------------------------------------------------------
   "--bgcolor-sitebar": "var(--surface-panel)",
-  "--color-header": "var(--text-secondary)",
+  /*
+   * The sidebar's own title ("DEBUG", "EXPLORER"). Promoted from `--text-secondary`: it is the
+   * heading the panel headers below it sit under, and it was rendering *quieter* than they were.
+   */
+  "--color-header": "var(--text-primary)",
   "--color-chevron": "var(--text-tertiary)",
   "--color-chevron-selected": "var(--text-primary)",
   "--color-panel-header": "var(--text-secondary)",
+  /* An expanded panel's title, and any header under the pointer. */
+  "--color-panel-header-active": "var(--text-primary)",
   "--color-panel-border": "var(--border-subtle)",
+  /* The band behind a panel header, and its hover state. Gradients, not flat colours — see
+   * `--surface-header*` in semantic.ts for why the band is lit rather than filled. */
+  "--bgcolor-panelHeader":
+    "linear-gradient(180deg, var(--surface-header-lit), var(--surface-header))",
+  "--bgcolor-panelHeader-hover":
+    "linear-gradient(180deg, var(--surface-header-lit-hover), var(--surface-header-hover))",
+  /* The rule at the band's foot. The open panel earns the stronger of the two, because that is the
+   * edge data is about to scroll under. */
+  "--color-panelHeader-rule": "var(--border-subtle)",
+  "--color-panelHeader-rule-open": "var(--border-default)",
   "--color-panel-focused": "var(--accent-solid)",
 
   // --- Emulator area ----------------------------------------------------------------------------

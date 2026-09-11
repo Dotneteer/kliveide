@@ -42,8 +42,12 @@ import { asmKz80LanguageProvider } from "./appIde/project/asmKz80LanguageProvide
 import { asmZxbLanguageProvider } from "./appIde/project/asmZxbLanguageProvider";
 import { zxBasLanguageProvider } from "./appIde/project/zxBasLanguageProvider";
 import { BreakpointsPanel } from "./appIde/SiteBarPanels/BreakpointsPanel";
+import { BreakpointsBadge } from "./appIde/SiteBarPanels/BreakpointsBadge";
+import { WatchBadge } from "./appIde/SiteBarPanels/WatchBadge";
 import { Z80CpuPanel } from "./appIde/SiteBarPanels/Z80CpuPanel";
 import { ExplorerPanel } from "@renderer/features/explorer/ExplorerPanel";
+import { OpenEditorsPanel } from "@renderer/features/openEditors/OpenEditorsPanel";
+import { OpenEditorsBadge } from "@renderer/features/openEditors/OpenEditorsBadge";
 import { SysVarsPanel } from "./appIde/SiteBarPanels/SysVarsPanel";
 import { UlaPanel } from "./appIde/SiteBarPanels/UlaPanel";
 import {
@@ -145,6 +149,18 @@ export const activityRegistry: Activity[] = [
 // --- Set up side bar panels
 export const sideBarPanelRegistry: SideBarPanelInfo[] = [
   {
+    id: "openEditorsPanel",
+    title: "Open Editors",
+    hostActivity: ACTIVITY_FILE_ID,
+    renderer: OpenEditorsPanel,
+    badge: OpenEditorsBadge,
+    // Collapsed until asked for: the project tree is what the file activity is opened for, and a
+    // second expanded panel above it would push the tree down for everyone. The badge keeps the
+    // open-editor count visible while the panel stays shut.
+    expandedOnInit: false,
+    initialSize: 300
+  },
+  {
     id: "explorerPanel",
     title: "Klive Project",
     hostActivity: ACTIVITY_FILE_ID,
@@ -219,6 +235,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_DEBUG_ID,
     useScrollViewer: false,
     renderer: WatchPanel,
+    badge: WatchBadge,
     expandedOnInit: true
   },
   {
@@ -227,6 +244,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_DEBUG_ID,
     useScrollViewer: false,
     renderer: BreakpointsPanel,
+    badge: BreakpointsBadge,
     expandedOnInit: true
   },
   {

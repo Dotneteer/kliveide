@@ -233,6 +233,92 @@ describe("DocumentHubService", () => {
     expect(projectService.closeDocumentHubService).toHaveBeenCalledWith(hub);
   });
 
+  it("stamps documents in activation order, and only the ones activated", async () => {
+    const hub = createDocumentHubService(
+      1,
+      createStoreMock() as never,
+      createProjectServiceMock() as never
+    );
+
+    await hub.openDocumentTab(createDocument("doc-a", "Doc A"));
+    await hub.openDocumentTab(createDocument("doc-b", "Doc B"));
+    await hub.setActiveDocument("doc-a");
+    await hub.setActiveDocument("doc-b");
+    await hub.setActiveDocument("doc-a");
+
+    // A background tab was opened but never activated: it has no place in the order yet.
+    expect(hub.getActivationStamp("doc-a")).toBeGreaterThan(hub.getActivationStamp("doc-b"));
+    expect(hub.getActivationStamp("doc-b")).toBeGreaterThan(0);
+    expect(hub.getActivationStamp("unknown-doc")).toBe(0);
+  });
+
+  it("stamps activations across hubs on one scale", async () => {
+    // The Open Editors panel sorts the documents of every hub into a single list, so a stamp from
+    // one hub has to be comparable with a stamp from another.
+    const projectService = createProjectServiceMock();
+    const firstHub = createDocumentHubService(1, createStoreMock() as never, projectService as never);
+    const secondHub = createDocumentHubService(2, createStoreMock() as never, projectService as never);
+
+    await firstHub.openDocument(createDocument("doc-a", "Doc A"));
+    await secondHub.openDocument(createDocument("doc-b", "Doc B"));
+    await firstHub.setActiveDocument("doc-a");
+
+    expect(firstHub.getActivationStamp("doc-a")).toBeGreaterThan(
+      secondHub.getActivationStamp("doc-b")
+    );
+  });
+
+  it("re-stamps the active document even when it is already the active one", async () => {
+    // Re-activating the current document is still the most recent activation - in a split view it
+    // is how the other pane's document loses the top spot.
+    const hub = createDocumentHubService(
+      1,
+      createStoreMock() as never,
+      createProjectServiceMock() as never
+    );
+
+    await hub.openDocument(createDocument("doc-a", "Doc A"));
+    await hub.openDocument(createDocument("doc-b", "Doc B"));
+    const before = hub.getActivationStamp("doc-b");
+
+    await hub.setActiveDocument("doc-b");
+
+    expect(hub.getActivationStamp("doc-b")).toBeGreaterThan(before);
+  });
+
+  it("carries the activation stamp through a rename", async () => {
+    const hub = createDocumentHubService(
+      1,
+      createStoreMock() as never,
+      createProjectServiceMock() as never
+    );
+
+    await hub.openDocument(createDocument("doc-a", "Doc A"));
+    const stamp = hub.getActivationStamp("doc-a");
+
+    hub.renameDocument("doc-a", "doc-renamed");
+
+    expect(hub.getActivationStamp("doc-renamed")).toBe(stamp);
+    expect(hub.getActivationStamp("doc-a")).toBe(0);
+  });
+
+  it("forgets the activation stamp of a detached document", async () => {
+    const document = createDocument("doc-a", "Doc A");
+    const hub = createDocumentHubService(
+      1,
+      createStoreMock() as never,
+      createProjectServiceMock([document]) as never
+    );
+
+    await hub.openDocument(document);
+    await hub.openDocumentTab(createDocument("doc-b", "Doc B"));
+    expect(hub.getActivationStamp("doc-a")).toBeGreaterThan(0);
+
+    hub.detachDocument("doc-a");
+
+    expect(hub.getActivationStamp("doc-a")).toBe(0);
+  });
+
   it("keeps a shared document cached when moving it between hubs", async () => {
     const store = createStoreMock();
     const document = createDocument("doc-a", "Doc A");

@@ -1,12 +1,30 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * The overflow shadow a scrollable region casts when its content has scrolled up under the top
+ * edge — the affordance that says "there is more above this line".
+ *
+ * Two layers, not one. A single gradient is very nearly invisible on `--surface-panel` (#17191c in
+ * dark), so the 1px line carries the *edge* and the gradient carries the *depth*. See
+ * `SCROLL_SHADOW` in theming/tokens/dimensions.ts.
+ *
+ * It also used to draw with `box-shadow: <colour> 0 6px 6px -6px inset` on a 3px-tall box, where
+ * the colour was a *surface* token. Painting it as a background instead makes the two layers
+ * expressible and lets the height come from a token rather than from three interacting
+ * box-shadow offsets.
+ */
 .attachedShadow {
   position: absolute;
-  height: 3px;
-  box-shadow: none;
-
+  height: var(--shadow-scroll-height);
+  /* It sits over content: without this it would swallow clicks on the topmost row. */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+  background:
+    linear-gradient(to bottom, var(--bgcolor-attached-shadow-line) 0 1px, transparent 1px),
+    linear-gradient(to bottom, var(--bgcolor-attached-shadow), transparent);
 }
 
 .show {
-  box-shadow: var(--bgcolor-attached-shadow) 0 6px 6px -6px inset;
+  opacity: 1;
 }

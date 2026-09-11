@@ -140,6 +140,34 @@ export const SHADOW = {
   }
 } as const;
 
+/**
+ * The overflow ("attached") shadow a scrollable region casts when content has scrolled up under
+ * its top edge — and the matching fade at the bottom edge when content continues below.
+ *
+ * These are *colours*, not `box-shadow` values like `SHADOW` above, because the shadow is painted
+ * as a two-layer gradient rather than as a real shadow. That is not a stylistic preference: on
+ * `--surface-panel` (`#17191c` in dark) a pure gradient is very nearly invisible — a few RGB steps
+ * from the surface it sits on. So the `line` carries the *edge* and the `base` gradient carries the
+ * *depth*. Dropping either one loses the affordance in one of the two tones.
+ *
+ * The two tones are not the same value at different strengths, for the same reason `SHADOW` is
+ * hand-tuned per tone: a shadow tuned for dark reads as dirt in light.
+ */
+export const SCROLL_SHADOW = {
+  dark: { base: "rgb(0 0 0 / 75%)", line: "rgb(0 0 0 / 90%)" },
+  light: { base: "rgb(20 25 35 / 20%)", line: "rgb(20 25 35 / 28%)" }
+} as const;
+
+/**
+ * How tall that shadow is.
+ *
+ * Deliberately short. The job is to say "there is content above this edge", not to dim the first
+ * row of data — and the panels this appears over are dense, monospaced and only ~22px per row, so a
+ * tall shadow eats a meaningful fraction of the first visible line. 6px was picked against the
+ * alternatives (14/8/6/4/1) in `sidebar-lab.html`.
+ */
+export const SCROLL_SHADOW_HEIGHT = "6px";
+
 export const DURATION = {
   fast: "80ms",
   base: "140ms"
@@ -173,6 +201,9 @@ export function dimensionTokens(tone: "dark" | "light"): Record<string, string> 
   for (const [k, v] of Object.entries(FONT_SIZE)) out[`--font-size-${k}`] = v;
   for (const [k, v] of Object.entries(MEASURE)) out[`--measure-${k}`] = v;
   for (const [k, v] of Object.entries(SHADOW[tone])) out[`--shadow-${k}`] = v;
+  out["--shadow-scroll"] = SCROLL_SHADOW[tone].base;
+  out["--shadow-scroll-line"] = SCROLL_SHADOW[tone].line;
+  out["--shadow-scroll-height"] = SCROLL_SHADOW_HEIGHT;
   for (const [k, v] of Object.entries(DURATION)) out[`--duration-${k}`] = v;
   for (const [k, v] of Object.entries(EASE)) out[`--ease-${k}`] = v;
   for (const [k, v] of Object.entries(Z)) out[`--z-${k}`] = v;

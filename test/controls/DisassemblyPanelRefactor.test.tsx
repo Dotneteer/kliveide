@@ -357,6 +357,46 @@ describe("DisassemblyPanel refactor characterization", () => {
     });
   });
 
+  it("says so when Go To names an address past the disassembled range", async () => {
+    /*
+     * Regression: this scrolled nowhere and said nothing.
+     *
+     * The listing covers only the selected bank with the 64K view off, and about a kilobyte around
+     * PC while Follow PC is on, so asking for an address outside it is ordinary. Discarding the
+     * request silently is indistinguishable from Go To being broken — which is exactly how it was
+     * reported.
+     */
+    const { virtualApi, dispatch } = await renderDisassemblyPanel();
+    dispatch.mockClear();
+
+    const goTo = screen.getByLabelText("Go To");
+    fireEvent.change(goTo, { target: { value: "9000" } });
+    fireEvent.keyDown(goTo, { key: "Enter" });
+
+    await waitFor(() => expect(dispatch).toHaveBeenCalled());
+    const messages = dispatch.mock.calls
+      .map((call: any) => JSON.stringify(call[0]))
+      .join(" ");
+    expect(messages).toContain("$9000");
+    expect(messages).toContain("outside the disassembled range");
+    expect(virtualApi.scrollToIndex).not.toHaveBeenCalled();
+  });
+
+  it("scrolls to the top for an address below the disassembled range", async () => {
+    // --- No special case needed: `findIndex` lands on the first instruction at or after the
+    // --- target, which is the top of the listing.
+    const { virtualApi, dispatch } = await renderDisassemblyPanel();
+    dispatch.mockClear();
+
+    const goTo = screen.getByLabelText("Go To");
+    fireEvent.change(goTo, { target: { value: "1000" } });
+    fireEvent.keyDown(goTo, { key: "Enter" });
+
+    await waitFor(() =>
+      expect(virtualApi.scrollToIndex).toHaveBeenCalledWith(0, { align: "start" })
+    );
+  });
+
   it("refreshes when the emulator state listener fires", async () => {
     const { emuStateCallback, getMemoryContents } = await renderDisassemblyPanel();
     getMemoryContents.mockClear();

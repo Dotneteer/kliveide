@@ -12,16 +12,41 @@
   padding-left: var(--space-2);
   align-items: center;
   flex-direction: row;
+  /* Closes the strip, so the first panel's header band starts against an edge rather than
+     floating in the middle of an undifferentiated column. */
+  border-bottom: 1px solid var(--color-panel-border);
+}
+
+/*
+ * This used to render at `--font-size-100` (11px) while the panel headers *below* it were at
+ * `0.8em` — 12.8px of the 16px root. The sidebar's own title was therefore smaller than the titles
+ * of the things inside it: a hierarchy inverted by accident, not by choice. It now outranks them
+ * on both size and weight, and the panel headers have moved to an absolute size (M1).
+ *
+ * The tracking drops from 0.09em to 0.04em in the process. Wide tracking is what makes an 11px
+ * all-caps label legible; at 13px/700 it just looks loose.
+ */
+/*
+ * The "..." menu slot. Present only when the activity defines commands, so an activity without
+ * them is not paying for an empty flex child.
+ */
+.actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding-right: var(--space-1);
 }
 
 .text {
   color: var(--color-header);
-  font-size: var(--font-size-100);
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  width: 100%;
+  font-size: var(--font-size-300);
+  font-weight: 700;
+  letter-spacing: 0.04em;
   flex-grow: 1;
+  /* `min-width: 0` is what actually lets a flex child shrink below its content and ellipsize;
+     the old `width: 100%` only worked while nothing else shared the row. */
   flex-shrink: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

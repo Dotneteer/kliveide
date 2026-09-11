@@ -34,6 +34,7 @@ import {
 } from "./useDisassemblyRefresh";
 import { DisassemblyRow } from "./DisassemblyRow";
 import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
+import { toHexa4 } from "../services/ide-commands";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
 import {
   createDisassemblyOffsetOptions,
@@ -181,16 +182,36 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
 
   // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {
-    if (items.length > 0 && toScroll !== null) {
-      const idx = items.findIndex((di) => di.address >= (toScroll ?? 0));
-      if (idx >= 0) {
-        vlApi.current?.scrollToIndex(idx, {
-          align: "start"
-        });
-      }
-      setToScroll(null);
+    if (items.length === 0 || toScroll === null) return;
+
+    const idx = items.findIndex((di) => di.address >= toScroll);
+    if (idx >= 0) {
+      vlApi.current?.scrollToIndex(idx, {
+        align: "start"
+      });
+    } else {
+      /*
+       * Asked for an address past the last disassembled instruction.
+       *
+       * The listing is not the whole 64K: with the 64K view off it covers only the selected bank
+       * ($0000-$3FFF), and while Follow PC is on only about a kilobyte around PC. So a perfectly
+       * valid address is often outside it — and this used to discard the request without a word,
+       * which is indistinguishable from Go To being broken.
+       *
+       * An address *below* the range needs no special case: `findIndex` lands on the first
+       * instruction at or after it, which is the top of the listing.
+       */
+      dispatch(
+        setIdeStatusMessageAction(
+          `$${toHexa4(toScroll)} is outside the disassembled range ` +
+            `($${toHexa4(items[0].address)}-$${toHexa4(items[items.length - 1].address)}). ` +
+            `Turn on the 64K view, or turn off Follow PC, to reach it.`,
+          true
+        )
+      );
     }
-  }, [items, scrollVersion, toScroll]);
+    setToScroll(null);
+  }, [items, scrollVersion, toScroll, dispatch]);
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
