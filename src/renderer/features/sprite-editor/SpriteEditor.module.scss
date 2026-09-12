@@ -1,7 +1,8 @@
 @use "@styles/core.scss" as *;
 
 /* ==============================================================================================
- * Layout — variant C of `sprite-lab.html`.
+ * Layout — "variant C" of the four the author chose between (see
+ * `.plans/SPRITE_EDITOR_MODERNIZATION_PLAN.md` §4.1; the prototype itself has been deleted).
  *
  * The editor is one grid. What it replaced was a stack of four full-width strips with a fixed-size
  * canvas sitting in a flex row beside a 285px palette, which meant the canvas was capped at 513px

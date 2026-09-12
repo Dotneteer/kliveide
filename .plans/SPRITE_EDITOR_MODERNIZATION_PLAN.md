@@ -6,8 +6,11 @@ not this plan's.
 Scope: `src/renderer/features/sprite-editor/*` (5 files, 1622 lines), plus two L4 token aliases, one
 existing emu API call, a handful of new icons, and the first tests this feature has ever had
 Related docs: `.ai/ui-theming-intent-and-lessons.md`, `.plans/UI_MODERNIZATION_PLAN.md` §10/§11
-Design prototype: `sprite-lab.html` at the repo root — **a design artefact, not evidence.** Delete it
-once Phase 5 ships (`.ai/ui-theming-intent-and-lessons.md`, "Prototype For Design Decisions").
+Design prototypes: **deleted**, having done their job — `sprite-lab.html` (the four layouts) and
+`spr-icons-lab.html` (the icon contact sheet). They were design artefacts, never evidence, and
+leaving them behind invites the next session to treat them as a reference
+(`.ai/ui-theming-intent-and-lessons.md`, "Prototype For Design Decisions"). §4.1 records what they
+showed; the generators are gone with them.
 
 ---
 
@@ -115,10 +118,11 @@ placeholder, it is a lie about what the artist is drawing.
 
 ### 4.1 Layout
 
-`sprite-lab.html` draws four layouts, each in dark and light, from the real tokens and the real Next
-colour maths. Every frame is the **same markup** with a different `data-v`, so the comparison is
-about the design and not the mock-up. **A — Current is a replica of what ships**, not an impression
-of it: same 2 px pixel gutters, same diagonal transparency hatch, same missing selection ring.
+The prototype (since deleted) drew four layouts, each in dark and light, from the real tokens and
+the real Next colour maths. Every frame was the **same markup** with a different `data-v`, so the
+comparison was about the design and not the mock-up, and "A — Current" was a replica of what shipped
+rather than an impression of it — same 2 px pixel gutters, same diagonal transparency hatch, same
+missing selection ring. The table below is the record of what it showed.
 
 | | Layout | Buys | Costs |
 | --- | --- | --- | --- |
@@ -556,8 +560,9 @@ Delete the dead CSS and wire the two orphan tokens (U8, U9).
 >   they were redrawn as a solid shape beside its outline mirror across a dashed axis. The outline
 >   pointer was mostly empty space at 18px and is now filled. The line tool's endpoint dots merged
 >   into its own stroke until they went from `r=1.7` to `r=2.2`.
-> - Contact sheet: `spr-icons-lab.html` (18px dark, 18px light, 48px detail). A design artefact —
->   delete it along with `sprite-lab.html`.
+> - The contact sheet that caught those four (18px dark, 18px light, 48px detail) has been deleted
+>   along with the layout prototype. Build a fresh one for the next icon set; that is cheaper than
+>   keeping a stale one around to be mistaken for a reference.
 
 ### Phase 6 — keyboard and discoverability
 §4.4. Right-click-paints-with-fill gets said out loud in the pen/fill tooltip (U14).
@@ -712,8 +717,8 @@ panels use. Original list, for the record — icons needed that were not in
 Per `AGENTS.md` and the lessons file: drop `.svg` files in `renderer/assets/icons/` (the filename is
 the ID), draw them **on Lucide's grid — 24×24, `stroke-width 2`, round caps, `currentColor`** — and
 **check whether the name is already used elsewhere before overriding a stock icon**, the way
-`symbol-event` forced `bp-exec` to get a new file. `sprite-lab.html` carries a first draft of all of
-them, drawn to that spec.
+`symbol-event` forced `bp-exec` to get a new file. **Done** — see the icon note in the Phase 5
+retrospective for what shipped and why it is namespaced `spr-*`.
 
 `--color-ruler-sprite-editor` and `--bgcolor-sprite-editor` already exist and finally get used.
 No new colour literals: anything else gets aliased at L4.
@@ -746,7 +751,7 @@ No new colour literals: anything else gets aliased at L4.
 - **Visual check in the running app over CDP, never in a replica.** Relaunch first; confirm port
   9222 is refused before launching, or the single-instance lock hands you the previous build. The
   recipe, the `.plans/baseline/` scripts and the `KLIVE_SETTINGS_FILE` seeding trick are in
-  `.ai/ui-theming-intent-and-lessons.md`. **`sprite-lab.html` is not evidence that anything works.**
+  `.ai/ui-theming-intent-and-lessons.md`. **A prototype is never evidence that anything works.**
 - A manual pass that must be green before Phase 5 closes: drag a filled ellipse off every edge;
   draw on sprite 1, select sprite 3, undo; cut the last sprite and reopen the file; open a `.spr`
   padded with 3 trailing bytes; open a zero-byte `.spr`; close the tab mid-drag.
