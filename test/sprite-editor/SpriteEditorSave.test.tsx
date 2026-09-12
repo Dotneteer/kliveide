@@ -1109,3 +1109,138 @@ describe("SpriteEditor - sheet height", () => {
     expect(el.getAttribute("aria-valuenow")).toBe("3"); // 176px / 63px, rounded
   });
 });
+
+/* --------------------------------------------------------------------------------------------
+ * Reordering the sheet by dragging a thumbnail.
+ * ------------------------------------------------------------------------------------------ */
+
+const SPRITE_MIME = "application/x-klive-sprite-index";
+
+/** A DataTransfer stand-in: jsdom does not implement one for synthetic drag events. */
+const dragData = (types: string[] = [SPRITE_MIME]) => {
+  const store: Record<string, string> = {};
+  return {
+    types,
+    effectAllowed: "none",
+    dropEffect: "none",
+    setData: (k: string, v: string) => {
+      store[k] = v;
+    },
+    getData: (k: string) => store[k] ?? ""
+  };
+};
+
+/**
+ * A `dragover` carrying a real `clientX`.
+ *
+ * `fireEvent.dragOver` does not preserve pointer coordinates in jsdom, so the midpoint test that
+ * decides "before or after" always read the left half - which silently made every drop land one
+ * slot early. Building the event on `MouseEvent` keeps `clientX`.
+ */
+const fireDragOver = (target: HTMLElement, dataTransfer: unknown, clientX: number) => {
+  // jsdom gives every element a zero-size rect, so the midpoint needs a real one.
+  Object.defineProperty(target, "getBoundingClientRect", {
+    configurable: true,
+    value: () => ({ left: 100, width: 40, right: 140, top: 0, bottom: 40, height: 40, x: 100, y: 0 })
+  });
+  const event = new MouseEvent("dragover", { bubbles: true, cancelable: true, clientX });
+  Object.defineProperty(event, "dataTransfer", { value: dataTransfer });
+  // `act`, because a raw `dispatchEvent` queues React's state update without flushing it - unlike
+  // `fireEvent`, which wraps the dispatch for you. Without this the marker is never re-rendered.
+  act(() => void target.dispatchEvent(event));
+  return event;
+};
+
+/** Drag cell `from` onto `to`, dropping on its left or right half. */
+const dragCell = (
+  container: HTMLElement,
+  from: number,
+  to: number,
+  side: "left" | "right"
+) => {
+  const cells = sheetCells(container);
+  const dataTransfer = dragData();
+  fireEvent.dragStart(cells[from], { dataTransfer });
+  fireDragOver(cells[to], dataTransfer, side === "left" ? 105 : 135);
+  fireEvent.drop(cells[to], { dataTransfer });
+  fireEvent.dragEnd(cells[from], { dataTransfer });
+};
+
+const sheetOrder = () => [...lastWrite()].filter((_, i) => i % SPRITE_SIZE === 0);
+
+describe("SpriteEditor - reordering the sheet by dragging", () => {
+  it("moves a sprite forward when dropped on the right of a later cell", () => {
+    const { container } = renderEditor(fileOf(4)); // sprites filled 1,2,3,4
+    dragCell(container, 0, 2, "right");
+    vi.advanceTimersByTime(1000);
+    expect(sheetOrder()).toEqual([2, 3, 1, 4]);
+  });
+
+  it("moves a sprite backward when dropped on the left of an earlier cell", () => {
+    const { container } = renderEditor(fileOf(4));
+    dragCell(container, 3, 1, "left");
+    vi.advanceTimersByTime(1000);
+    expect(sheetOrder()).toEqual([1, 4, 2, 3]);
+  });
+
+  it("selects the sprite that was dragged, at its new place", () => {
+    const { container } = renderEditor(fileOf(4));
+    dragCell(container, 0, 2, "right");
+    expect(selectionLabel(container)).toBe("Sprite #3 of 4");
+  });
+
+  it("writes the file once and pushes one undo entry", () => {
+    const { container } = renderEditor(fileOf(4));
+    dragCell(container, 0, 2, "right");
+    vi.advanceTimersByTime(1000);
+    expect(saveFileContent).toHaveBeenCalledTimes(1);
+
+    click(container, "Undo");
+    vi.advanceTimersByTime(1000);
+    expect(sheetOrder()).toEqual([1, 2, 3, 4]);
+  });
+
+  it("does nothing when a sprite is dropped back beside itself", () => {
+    // The commonest accident in a drag, and it must not write or become an undo step.
+    const { container } = renderEditor(fileOf(4));
+    dragCell(container, 1, 1, "left");
+    dragCell(container, 1, 1, "right");
+    vi.advanceTimersByTime(1000);
+    expect(saveFileContent).not.toHaveBeenCalled();
+    expect(button(container, "Undo").disabled).toBe(true);
+  });
+
+  it("marks where the drop would land, on the side the pointer is nearest", () => {
+    const { container } = renderEditor(fileOf(4));
+    const cells = sheetCells(container);
+    const dataTransfer = dragData();
+    fireEvent.dragStart(cells[0], { dataTransfer });
+
+    fireDragOver(cells[2], dataTransfer, 105);
+    expect(sheetCells(container)[2].className).toMatch(/dragBefore/);
+
+    fireDragOver(cells[2], dataTransfer, 135);
+    expect(sheetCells(container)[2].className).toMatch(/dragAfter/);
+
+    fireEvent.dragEnd(cells[0], { dataTransfer });
+    expect(sheetCells(container)[2].className).not.toMatch(/drag(Before|After)/);
+  });
+
+  it("ignores a drag that is not one of its own sprites", () => {
+    /*
+     * A document tab, a file from the OS or a dragged text selection must not draw an insertion
+     * marker or reorder anything. The payload cannot be read during `dragover`, so the media type
+     * is the only thing available to check - and it has to be checked.
+     */
+    const { container } = renderEditor(fileOf(4));
+    const cells = sheetCells(container);
+    const foreign = dragData(["text/plain", "Files"]);
+    const event = new Event("dragover", { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "dataTransfer", { value: foreign });
+    cells[2].dispatchEvent(event);
+
+    expect(sheetCells(container)[2].className).not.toMatch(/drag(Before|After)/);
+    // Not calling preventDefault is what tells the browser the drop is refused.
+    expect(event.defaultPrevented).toBe(false);
+  });
+});

@@ -20,6 +20,7 @@ import {
   createDocument,
   currentSprite,
   duplicateSprite,
+  moveSprite,
   moveSpriteLeft,
   moveSpriteRight,
   redo,
@@ -300,6 +301,11 @@ export const SpriteEditor = ({ context }: Props) => {
   const handleDuplicate = useCallback(() => commit(duplicateSprite(latestDoc.current)), [commit]);
   const handleMoveLeft = useCallback(() => commit(moveSpriteLeft(latestDoc.current)), [commit]);
   const handleMoveRight = useCallback(() => commit(moveSpriteRight(latestDoc.current)), [commit]);
+  /* Dropping a thumbnail is one edit, exactly like the Move buttons - undoable and saved. */
+  const handleReorder = useCallback(
+    (from: number, to: number) => commit(moveSprite(latestDoc.current, from, to)),
+    [commit]
+  );
   const handleAdd = useCallback(
     () => commit(addSprite(latestDoc.current, transparencyRef.current)),
     [commit]
@@ -738,6 +744,7 @@ export const SpriteEditor = ({ context }: Props) => {
         separated={!!spriteImagesSeparated}
         showTransparencyColor={!!showTrancparencyColor}
         onSelect={navigate}
+        onReorder={handleReorder}
         height={sheetHeight}
         onResize={handleResizeSheet}
         onResizeEnd={handleResizeSheetEnd}

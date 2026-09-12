@@ -8,6 +8,7 @@ import {
   createDocument,
   currentSprite,
   duplicateSprite,
+  moveSprite,
   moveSpriteLeft,
   moveSpriteRight,
   redo,
@@ -222,5 +223,61 @@ describe("sprite-document: construction", () => {
 
   it("clamps a restored selection that no longer exists", () => {
     expect(createDocument([sprite(1), sprite(2)], 77).selected).toBe(1);
+  });
+});
+
+describe("sprite-document: moveSprite", () => {
+  it("moves a sprite forward, and the selection follows it", () => {
+    // `to` is an insertion point: "before the sprite currently at index 3".
+    const doc = moveSprite(docOf(1, 2, 3, 4), 0, 3);
+    expect(sheet(doc)).toEqual([2, 3, 1, 4]);
+    expect(doc.selected).toBe(2);
+  });
+
+  it("moves a sprite backward", () => {
+    const doc = moveSprite(docOf(1, 2, 3, 4), 3, 1);
+    expect(sheet(doc)).toEqual([1, 4, 2, 3]);
+    expect(doc.selected).toBe(1);
+  });
+
+  it("moves a sprite to the very end", () => {
+    const doc = moveSprite(docOf(1, 2, 3), 0, 3);
+    expect(sheet(doc)).toEqual([2, 3, 1]);
+    expect(doc.selected).toBe(2);
+  });
+
+  it("moves a sprite to the very front", () => {
+    const doc = moveSprite(docOf(1, 2, 3), 2, 0);
+    expect(sheet(doc)).toEqual([3, 1, 2]);
+    expect(doc.selected).toBe(0);
+  });
+
+  it("treats a drop on either side of itself as no move at all", () => {
+    // The two cases a drag produces constantly, and neither should push an undo entry.
+    const start = docOf(1, 2, 3);
+    expect(moveSprite(start, 1, 1)).toBe(start);
+    expect(moveSprite(start, 1, 2)).toBe(start);
+  });
+
+  it("ignores an out-of-range source and clamps the target", () => {
+    const start = docOf(1, 2, 3);
+    expect(moveSprite(start, 9, 0)).toBe(start);
+    expect(moveSprite(start, -1, 0)).toBe(start);
+    expect(sheet(moveSprite(start, 0, 99))).toEqual([2, 3, 1]);
+  });
+
+  it("is one undoable edit that restores both order and selection", () => {
+    const start = selectSprite(docOf(1, 2, 3, 4), 3);
+    const moved = moveSprite(start, 0, 3);
+    expect(sheet(moved)).toEqual([2, 3, 1, 4]);
+    const back = undo(moved);
+    expect(sheet(back)).toEqual([1, 2, 3, 4]);
+    expect(back.selected).toBe(3);
+    expect(sheet(redo(back))).toEqual([2, 3, 1, 4]);
+  });
+
+  it("agrees with moveSpriteRight over a single step", () => {
+    const start = selectSprite(docOf(1, 2, 3), 0);
+    expect(sheet(moveSprite(start, 0, 2))).toEqual(sheet(moveSpriteRight(start)));
   });
 });

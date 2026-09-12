@@ -1,6 +1,6 @@
 import styles from "./SpriteEditor.module.scss";
 import classnames from "classnames";
-import { memo } from "react";
+import { DragEvent, memo, useCallback, useState } from "react";
 import { SpriteImage } from "./SpriteImage";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { SpriteSheetResizer } from "./SpriteSheetResizer";
@@ -13,6 +13,8 @@ type Props = {
   separated: boolean;
   showTransparencyColor: boolean;
   onSelect: (index: number) => void;
+  /** Reorder: move `from` to the insertion point `to` (see `moveSprite`). */
+  onReorder: (from: number, to: number) => void;
   height: number;
   onResize: (height: number) => void;
   onResizeEnd: (height: number) => void;
@@ -36,11 +38,33 @@ export const SpriteSheetBrowser = memo(
     separated,
     showTransparencyColor,
     onSelect,
+    onReorder,
     height,
     onResize,
     onResizeEnd,
     onResetHeight
-  }: Props) => (
+  }: Props) => {
+    /*
+     * Reordering by dragging, following the document tabs' idiom: the dragged item is `draggable`,
+     * the item under the pointer shows a 2px bar on the side the drop would land, and the drop is
+     * one `moveSprite` edit.
+     */
+    const [dragFrom, setDragFrom] = useState<number | undefined>(undefined);
+    const [dropAt, setDropAt] = useState<{ index: number; after: boolean } | undefined>(undefined);
+
+    const endDrag = useCallback(() => {
+      setDragFrom(undefined);
+      setDropAt(undefined);
+    }, []);
+
+    const handleDrop = useCallback(() => {
+      if (dragFrom !== undefined && dropAt) {
+        onReorder(dragFrom, dropAt.index + (dropAt.after ? 1 : 0));
+      }
+      endDrag();
+    }, [dragFrom, dropAt, endDrag, onReorder]);
+
+    return (
     <div className={styles.sheetPane}>
       <SpriteSheetResizer
         height={height}
@@ -69,14 +93,34 @@ export const SpriteSheetBrowser = memo(
             separated={separated}
             showTransparencyColor={showTransparencyColor}
             onSelect={onSelect}
+            dragging={dragFrom === index}
+            dropSide={dropAt?.index === index ? (dropAt.after ? "after" : "before") : undefined}
+            onDragStarted={setDragFrom}
+            onDragOverCell={setDropAt}
+            onDropped={handleDrop}
+            onDragFinished={endDrag}
           />
             ))}
           </div>
         </ScrollViewer>
       </div>
     </div>
-  )
+    );
+  }
 );
+
+/**
+ * The drag's own media type.
+ *
+ * Checked on `dragover` so the sheet only reacts to its own drags - a document tab, a file from the
+ * OS or a text selection dragged over the sheet must not draw an insertion marker or reorder
+ * anything. The *payload* cannot be read during `dragover` (only the type list is exposed), which is
+ * why the source index is held in component state rather than read back from the event.
+ */
+const SPRITE_DRAG_MIME = "application/x-klive-sprite-index";
+
+const isSpriteDrag = (e: DragEvent<HTMLElement>) =>
+  e.dataTransfer.types.includes(SPRITE_DRAG_MIME);
 
 type CellProps = {
   sprite: Uint8Array;
@@ -87,6 +131,12 @@ type CellProps = {
   separated: boolean;
   showTransparencyColor: boolean;
   onSelect: (index: number) => void;
+  dragging: boolean;
+  dropSide?: "before" | "after";
+  onDragStarted: (index: number) => void;
+  onDragOverCell: (at: { index: number; after: boolean }) => void;
+  onDropped: () => void;
+  onDragFinished: () => void;
 };
 
 const SheetCell = memo(
@@ -98,7 +148,13 @@ const SheetCell = memo(
     transparencyIndex,
     separated,
     showTransparencyColor,
-    onSelect
+    onSelect,
+    dragging,
+    dropSide,
+    onDragStarted,
+    onDragOverCell,
+    onDropped,
+    onDragFinished
   }: CellProps) => {
     const isEmpty = sprite.every((value) => value === transparencyIndex);
     return (
@@ -109,9 +165,32 @@ const SheetCell = memo(
         tabIndex={selected ? 0 : -1}
         className={classnames(styles.sheetCell, {
           [styles.sheetCellSelected]: selected,
-          [styles.separated]: separated
+          [styles.separated]: separated,
+          [styles.sheetCellDragging]: dragging,
+          [styles.dragBefore]: dropSide === "before",
+          [styles.dragAfter]: dropSide === "after"
         })}
         onClick={() => onSelect(index)}
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData(SPRITE_DRAG_MIME, String(index));
+          e.dataTransfer.effectAllowed = "move";
+          onDragStarted(index);
+        }}
+        onDragOver={(e) => {
+          if (!isSpriteDrag(e)) return;
+          // Without `preventDefault` the browser refuses the drop outright.
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          const r = e.currentTarget.getBoundingClientRect();
+          onDragOverCell({ index, after: e.clientX > r.left + r.width / 2 });
+        }}
+        onDrop={(e) => {
+          if (!isSpriteDrag(e)) return;
+          e.preventDefault();
+          onDropped();
+        }}
+        onDragEnd={onDragFinished}
       >
         <SpriteImage
           spriteMap={sprite}

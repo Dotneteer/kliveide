@@ -673,6 +673,13 @@ instead - that is the same coupling with extra steps, and it was the first thing
 
 These cost real time. They generalize past this codebase.
 
+- **Synthetic drag events need help that `fireEvent` does not give you.** `fireEvent.dragOver` drops
+  the pointer coordinates in jsdom, so a "which half of the target am I over" test silently always
+  reads the first half — every drop lands one slot early and every assertion about the *other* half
+  fails for a reason that looks like application logic. Build the event on `MouseEvent` to keep
+  `clientX`, and wrap the raw `dispatchEvent` in `act()`, which `fireEvent` would have done for you.
+  In the running app the same events are *batched*: read the DOM in a later evaluate, not the same
+  one.
 - **A patch script that batches edits in memory and writes once at the end loses every edit when a
   later assertion fails.** This produced two silent no-ops in one session: the file looked edited in
   the transcript, the assertion error scrolled past, and the bug being "fixed" was still there in

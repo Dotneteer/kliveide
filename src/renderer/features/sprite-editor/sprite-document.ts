@@ -177,6 +177,32 @@ function swap(doc: SpriteDocument, a: number, b: number): SpriteDocument {
   return applyList(doc, sprites, b);
 }
 
+/**
+ * Move a sprite to a new place in the sheet.
+ *
+ * `to` is an **insertion point in the current array** - "put it before the sprite currently at this
+ * index" - with `sprites.length` meaning "at the end". That is the coordinate a drop naturally
+ * produces (the gap the pointer is nearest), and it keeps the two no-op cases obvious: dropping a
+ * sprite immediately before or immediately after itself changes nothing.
+ *
+ * Distinct from `moveSpriteLeft`/`moveSpriteRight`, which *swap* with a neighbour. Over one step
+ * the two agree; over several they do not, and a drag is a move, not a chain of swaps.
+ */
+export function moveSprite(doc: SpriteDocument, from: number, to: number): SpriteDocument {
+  const count = doc.sprites.length;
+  if (!Number.isFinite(from) || from < 0 || from >= count) return doc;
+  const target = Math.min(count, Math.max(0, Math.round(to)));
+  if (target === from || target === from + 1) return doc;
+
+  const sprites = doc.sprites.slice();
+  const [moved] = sprites.splice(from, 1);
+  // Removing the sprite shifts everything after it down one, so a forward target moves with it.
+  const insertAt = target > from ? target - 1 : target;
+  sprites.splice(insertAt, 0, moved);
+  // The selection follows the sprite, not the slot it left.
+  return applyList(doc, sprites, insertAt);
+}
+
 export const moveSpriteLeft = (doc: SpriteDocument): SpriteDocument =>
   swap(doc, doc.selected, doc.selected - 1);
 

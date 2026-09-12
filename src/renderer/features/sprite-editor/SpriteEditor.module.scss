@@ -454,6 +454,35 @@
   box-shadow: 0 0 0 2px var(--accent-solid);
 }
 
+/* The sprite being dragged, dimmed so the insertion marker is what the eye follows. */
+.sheetCellDragging {
+  opacity: 0.4;
+}
+
+/*
+ * Where the drop would land: a 2px bar on the side of the cell the pointer is nearest. Same marker
+ * the document tabs use for the same job - the sheet wraps into rows, so a vertical bar reads as
+ * "between these two" in a way a horizontal one would not.
+ */
+.dragBefore::before,
+.dragAfter::after {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 2px;
+  content: "";
+  background: var(--accent-solid);
+  pointer-events: none;
+}
+
+.dragBefore::before {
+  left: -5px;
+}
+
+.dragAfter::after {
+  right: -5px;
+}
+
 /*
  * The index sits *under* the thumbnail, not over it.
  *
