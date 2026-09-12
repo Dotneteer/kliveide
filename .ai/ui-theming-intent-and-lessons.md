@@ -1022,6 +1022,27 @@ verification failure recorded above.
     were carrying read-versus-write. **Fix the glyphs first and the colour problem dissolves**: once
     the redrawn icons said it themselves (arrow up reads, arrow down writes, body says memory or
     port), one token — `--color-breakpoint-type`, the secondary accent — covered all five.
+  - The **document and file-type registries** tinted every tab and tree icon from `--console-ansi-*`
+    — 51 live fills across `documentPanelRegistry`, `fileTypeRegistry`, `specialDocuments` and
+    `StaticMemoryDump`. This one is worth knowing in detail, because it looked like the one case
+    where per-type colour is legitimate — a VS Code file icon theme — and was not one. **Test that
+    defence before granting it**: a file icon theme's colour is identity, so it is stable, unique
+    per type and consistent everywhere. These were seven hues over fifty entries; the same `vm`
+    glyph in five colours; `code`+magenta and `chip`+magenta each used for *two* types; one hue on
+    all ten image formats; and the most-opened tab of all, the code editor, neutral — the loudest
+    colour on the rarest tabs. Measured with `contrastRatio`, four of the seven fell at or below
+    3:1 on the light tab strip (`bright-green` 1.90:1, `bright-yellow` 1.88:1), and pairs sat
+    within the 1.04:1 that §10.2 already called "the same colour side by side" (dark
+    `bright-blue`/`bright-red` 1.06:1; light `bright-green`/`bright-yellow` 1.01:1). Every fill was
+    deleted: the glyph carries the type, the filename beside it carries the rest, and the surface's
+    own default — `--color-doc-icon` on tabs, `--fill-explorer-icon` in the tree — carries the
+    colour. One neutral, 5.96:1 dark / 6.02:1 light, and it follows the accent where the ANSI
+    palette never could. `test/theming/doc-icon-neutrality.test.ts` pins it, source text included,
+    so a commented-out entry cannot smuggle the pattern back.
+  - **The exemption that *is* real: baked artwork.** `@`-prefixed icons are images and ignore
+    `fill` outright; several `assets/icons` SVGs (`file-project`, the `K` source-file badges) carry
+    their own hex. Those are a genuine file icon theme and were deliberately left alone — a rule
+    against tinting type icons must not be read as licence to strip them.
 - **Icons are a system or they are noise.** The breakpoint set was a lightning bolt borrowed from
   another family plus four glyphs mixing solid slabs with hairline outlines, two of them with arrows
   clipped off the top edge. Redrawn on Lucide's grid (24×24, `stroke-width 2`, round caps,

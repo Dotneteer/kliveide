@@ -51,7 +51,10 @@ describe("DocumentHubService", () => {
 
     expect(hub.getDocument("doc-a")).toEqual(
       expect.objectContaining({
-        iconFill: "--console-ansi-bright-yellow",
+        // A document type is carried by its glyph, not by a colour: the renderer supplies the icon
+        // NAME and no fill, so the tab falls back to `--color-doc-icon`. Asserted as `undefined`
+        // rather than dropped, so re-adding a per-type hue fails here.
+        iconFill: undefined,
         iconName: "note"
       })
     );

@@ -824,12 +824,29 @@ Answered by the author on 2026-09-12, except §10.6, which is deliberately out o
    here is pen/fill/selection markers, and more hues would compete with the artwork. Recorded so it
    reads as a decision rather than an omission, per the lessons file's rule that view-scoped colour
    is granted panel by panel and never taken by drift.
-6. **The document-type icon colours** (`registry.ts:326-459`) — **still open, and deliberately not
-   this plan's.** All 20 document types draw their tab icon with an `iconFill` from the console's
+6. **The document-type icon colours** (`registry.ts:326-459`) — **answered, and the colour is
+   gone.** Reviewed separately, as this plan asked. The `iconFill`s were not a VS Code-style file
+   icon theme, which is the one defence that would have made them legitimate: seven hues over fifty
+   entries, `vm` in five colours, two icon+colour pairs used for two types each, one hue on all ten
+   image formats, and the code editor — the most-opened tab — neutral all along. All 51 live fills
+   were deleted; the glyph and the filename carry the type, and each surface's own default carries
+   the colour. The original text follows, for the record.
+
+   **Original entry — "still open, and deliberately not this plan's":** All 20 document types draw their tab icon with an `iconFill` from the console's
    ANSI palette, and `registry.ts` is the *only* consumer of those tokens outside the console itself.
    Whether that is the same mistake `WatchPanel` and `BreakpointIndicator` made is a question about
    the whole table — 20 entries sharing 6 colours, with `vm` appearing in five different ones — not
    about `.spr`. Fixing one row would only make the table less consistent. Raise separately.
+
+   *One claim in that original was wrong and is corrected here rather than edited away:*
+   `registry.ts` was **not** the only consumer of `--console-ansi-*` outside the console. About
+   thirty files use it, and the rest split in two: three more doc-icon sites, which went with this
+   change, and a larger group where the ANSI palette is doing `--status-*`'s job — `bright-red` as
+   error text in `Button`, `TextInput`, `DialogField`, `LabeledGroup`, `Layout`, two Z88 dialogs
+   and `GenericViewerPanel`, plus status hues in `ScriptingHistoryPanel` and `NecUpd765Panel`, and
+   two role markers in `ExplorerProjectItem` (build root, project home) and the locked badge in
+   `DocumentTab`. That group is state, not type, so it is a separate question with a different
+   answer: those want a `--status-*` or accent token, not neutrality. **Still open.**
 
 ## 11. Documentation obligation
 

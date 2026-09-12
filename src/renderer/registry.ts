@@ -335,146 +335,122 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
   {
     id: TEXT_EDITOR,
     renderer: createTextEditorPanel,
-    icon: "note",
-    iconFill: "--console-ansi-bright-yellow"
+    icon: "note"
   },
   {
     id: DISASSEMBLY_EDITOR,
     renderer: createBankedDisassemblyPanel,
-    icon: "disassembly-icon",
-    iconFill: "--console-ansi-bright-cyan"
+    icon: "disassembly-icon"
   },
   {
     id: MEMORY_EDITOR,
     renderer: createMemoryPanel,
-    icon: "memory-icon",
-    iconFill: "--console-ansi-bright-cyan"
+    icon: "memory-icon"
   },
   {
     id: BASIC_EDITOR,
     renderer: createBasicPanel,
-    icon: "code",
-    iconFill: "--console-ansi-bright-magenta"
+    icon: "code"
   },
   {
     id: COMMAND_RESULT_EDITOR,
     renderer: createCommandResultPanel,
-    icon: "code",
-    iconFill: "--console-ansi-bright-magenta"
+    icon: "code"
   },
   {
     id: STATIC_MEMORY_DUMP_VIEWER,
     renderer: createStaticMemoryDump,
-    icon: "memory-icon",
-    iconFill: "--console-ansi-bright-magenta"
+    icon: "memory-icon"
   },
   {
     id: TAP_VIEWER,
     renderer: createTapViewerPanel,
-    icon: "@file-tap-tzx",
-    iconFill: "--console-ansi-bright-cyan"
+    icon: "@file-tap-tzx"
   },
   {
     id: DSK_VIEWER,
     renderer: createDskViewerPanel,
-    icon: "floppy",
-    iconFill: "--console-ansi-bright-blue"
+    icon: "floppy"
   },
   {
     id: NEX_VIEWER,
     renderer: createNexFileViewerPanel,
-    icon: "chip",
-    iconFill: "--console-ansi-bright-blue"
+    icon: "chip"
   },
   {
     id: Z80_VIEWER,
     renderer: createZ80FileViewerPanel,
-    icon: "chip",
-    iconFill: "--console-ansi-bright-magenta"
+    icon: "chip"
   },
   {
     id: SNA_VIEWER,
     renderer: createSnaFileViewerPanel,
-    icon: "chip",
-    iconFill: "--console-ansi-bright-magenta"
+    icon: "chip"
   },
   {
     id: SCR_VIEWER,
     renderer: createScrFileViewerPanel,
-    icon: "vm",
-    iconFill: "--console-ansi-bright-blue"
+    icon: "vm"
   },
   {
     id: SHC_VIEWER,
     renderer: createShcFileViewerPanel,
-    icon: "vm",
-    iconFill: "--console-ansi-bright-green"
+    icon: "vm"
   },
   {
     id: SHR_VIEWER,
     renderer: createShrFileViewerPanel,
-    icon: "vm",
-    iconFill: "--console-ansi-bright-cyan"
+    icon: "vm"
   },
   {
     id: SLR_VIEWER,
     renderer: createSlrFileViewerPanel,
-    icon: "vm",
-    iconFill: "--console-ansi-bright-red"
+    icon: "vm"
   },
   {
     id: SL2_VIEWER,
     renderer: createSl2FileViewerPanel,
-    icon: "vm",
-    iconFill: "--console-ansi-yellow"
+    icon: "vm"
   },
   {
     id: PAL_EDITOR,
     renderer: createPalFileEditorPanel,
-    icon: "palette",
-    iconFill: "--console-ansi-bright-blue"
+    icon: "palette"
   },
   {
     id: NPL_EDITOR,
     renderer: createPalFileEditorPanel,
-    icon: "palette",
-    iconFill: "--console-ansi-bright-magenta"
+    icon: "palette"
   },
   {
     id: NXI_EDITOR,
     renderer: createNxiFileEditorPanel,
-    icon: "layers",
-    iconFill: "--console-ansi-bright-blue"
+    icon: "layers"
   },
   {
     id: SPR_EDITOR,
     renderer: createSprFileEditorPanel,
-    icon: "sprite",
-    iconFill: "--console-ansi-bright-green"
+    icon: "sprite"
   },
   {
     id: VID_VIEWER,
     renderer: createVidFileViewerPanel,
-    icon: "video",
-    iconFill: "--console-ansi-bright-cyan"
+    icon: "video"
   },
   {
     id: BIN_VIEWER,
     renderer: createBinFileViewerPanel,
-    icon: "file-code",
-    iconFill: "--console-ansi-bright-green"
+    icon: "file-code"
   },
   {
     id: IMAGE_VIEWER,
     renderer: createImageViewerPanel,
-    icon: "preview",
-    iconFill: "--console-ansi-bright-cyan"
+    icon: "preview"
   },
   {
     id: SCRIPT_OUTPUT_VIEWER,
     renderer: createScriptOutputPanel,
-    icon: "note",
-    iconFill: "--console-ansi-bright-green"
+    icon: "note"
   },
 ];
 
@@ -493,8 +469,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: BUILD_FILE,
     editor: CODE_EDITOR,
     subType: "ksx",
-    icon: "combine",
-    iconFill: "--console-ansi-bright-magenta"
+    icon: "combine"
   },
   {
     matchType: "ends",
@@ -622,7 +597,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".dsk",
     editor: DSK_VIEWER,
     icon: "floppy",
-    iconFill: "--console-ansi-bright-blue",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -632,7 +606,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".nex",
     editor: NEX_VIEWER,
     icon: "chip",
-    iconFill: "--console-ansi-bright-blue",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -642,7 +615,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   //   pattern: ".z80",
   //   editor: Z80_VIEWER,
   //   icon: "chip",
-  //   iconFill: "--console-ansi-bright-magenta",
   //   isBinary: true,
   //   isReadOnly: true,
   //   openPermanent: true
@@ -652,7 +624,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".sna",
     editor: SNA_VIEWER,
     icon: "chip",
-    iconFill: "--console-ansi-bright-magenta",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -662,7 +633,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".scr",
     editor: SCR_VIEWER,
     icon: "vm",
-    iconFill: "--console-ansi-bright-blue",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -672,7 +642,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".shc",
     editor: SHC_VIEWER,
     icon: "vm",
-    iconFill: "--console-ansi-bright-green",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -682,7 +651,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".shr",
     editor: SHR_VIEWER,
     icon: "vm",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -692,7 +660,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".slr",
     editor: SLR_VIEWER,
     icon: "vm",
-    iconFill: "--console-ansi-bright-red",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -702,7 +669,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".sl2",
     editor: SL2_VIEWER,
     icon: "vm",
-    iconFill: "--console-ansi-yellow",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -712,7 +678,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".pal",
     editor: PAL_EDITOR,
     icon: "palette",
-    iconFill: "--console-ansi-bright-blue",
     isBinary: true,
     openPermanent: true
   },
@@ -721,7 +686,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".npl",
     editor: NPL_EDITOR,
     icon: "palette",
-    iconFill: "--console-ansi-bright-magenta",
     isBinary: true,
     openPermanent: true
   },
@@ -730,7 +694,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".nxi",
     editor: NXI_EDITOR,
     icon: "layers",
-    iconFill: "--console-ansi-bright-blue",
     isBinary: true,
     openPermanent: true
   },
@@ -739,7 +702,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".spr",
     editor: SPR_EDITOR,
     icon: "sprite",
-    iconFill: "--console-ansi-bright-green",
     isBinary: true,
     openPermanent: true
   },
@@ -748,7 +710,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".vid",
     editor: VID_VIEWER,
     icon: "video",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     openPermanent: true
   },
@@ -757,7 +718,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".bin",
     editor: BIN_VIEWER,
     icon: "file-code",
-    iconFill: "--console-ansi-bright-green",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -767,7 +727,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".rom",
     editor: BIN_VIEWER,
     icon: "file-code",
-    iconFill: "--console-ansi-bright-green",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -777,7 +736,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".png",
     editor: IMAGE_VIEWER,
     icon: "preview",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -787,7 +745,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".jpg",
     editor: IMAGE_VIEWER,
     icon: "preview",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -797,7 +754,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".jpeg",
     editor: IMAGE_VIEWER,
     icon: "preview",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -807,7 +763,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".gif",
     editor: IMAGE_VIEWER,
     icon: "preview",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -817,7 +772,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".bmp",
     editor: IMAGE_VIEWER,
     icon: "preview",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -827,7 +781,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".webp",
     editor: IMAGE_VIEWER,
     icon: "preview",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -837,7 +790,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".ico",
     editor: IMAGE_VIEWER,
     icon: "preview",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -847,7 +799,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".svg",
     editor: IMAGE_VIEWER,
     icon: "preview",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -857,7 +808,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".tiff",
     editor: IMAGE_VIEWER,
     icon: "preview",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -867,7 +817,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".tif",
     editor: IMAGE_VIEWER,
     icon: "preview",
-    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
@@ -876,8 +825,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
 export const unknownFileType: FileTypeEditor = {
   pattern: "*",
   editor: UNKNOWN_EDITOR,
-  icon: "code",
-  iconFill: "--console-ansi-bright-yellow"
+  icon: "code"
 };
 
 // --- Supported custom languages
