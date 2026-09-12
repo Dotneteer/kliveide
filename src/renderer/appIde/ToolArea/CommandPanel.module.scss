@@ -10,50 +10,114 @@
 /*
  * Just a box. The font used to be set here too, but `ConsoleOutput` now pins its own family and
  * size (slice 7.1), so these were overridden on every line they appeared to style.
+ *
+ * The gutter and the rule below are new. `ConsoleOutput` has no left padding of its own — its lines
+ * start hard against the panel edge — so the gutter is applied here rather than in the shared
+ * component, which the Output, Script Output and Command Result panels also render. It exists to
+ * line the console up with the prompt's sigil: 2px of rail plus 10px of padding puts that sigil at
+ * `--space-3`, which is where these lines now start too.
  */
 .outputWrapper {
     @include fill-parent-flex;
     box-sizing: border-box;
     flex-direction: column;
     user-select: text;
+    padding-left: var(--space-3);
+    border-bottom: 1px solid var(--border-default);
 }
 
+/*
+ * The command prompt strip.
+ *
+ * ## Why there is no focus ring here any more
+ *
+ * There used to be, via `@include focus-ring`, and it was the loudest thing in the panel. Not
+ * because the mixin is wrong — because a `:focus-visible` ring is for picking one control out of
+ * many, and this input is never not the chosen one. `CommandPanel.tsx` focuses it on mount and
+ * again after every command, and the panel's own `onFocus` bounces focus straight back into it. A
+ * ring that is always on is not a signal; it is a border. And since the input is `width: 100%` of
+ * the tool area, it was a border around the widest element on screen.
+ *
+ * What replaces it is a strip that looks deliberate at rest: its own ground, a rule separating it
+ * from the scrolling output, and a 2px edge down the left. Focus moves that edge and the sigil to
+ * the accent — two changes, neither of which encloses the text being typed.
+ *
+ * `:focus-within`, not `:focus-visible`: the input is focused programmatically as often as it is
+ * clicked, and both deserve the same answer here.
+ */
 .promptWrapper {
     /* One control's worth of strip, from the scale rather than a literal. */
     @include fix-height-panel(var(--size-controlMd));
     display: flex;
     flex-direction: row;
     align-items: center;
+    position: relative;
+    padding: 0 var(--space-3) 0 calc(var(--space-3) - 2px);
+    background: var(--bgcolor-prompt);
+
+    /*
+     * The rail. A pseudo-element rather than a `border-left`, because `fix-height-panel` fixes the
+     * height and `box-sizing` is `border-box` app-wide: a real border would take its 2px out of the
+     * row's content instead of sitting beside it.
+     */
+    &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--border-prompt-rail);
+        transition: background-color var(--duration-fast) var(--ease-standard);
+    }
+
+    &:focus-within::before {
+        background: var(--border-prompt-rail-active);
+    }
+
+    &:focus-within .promptPrefix {
+        color: var(--color-prompt-sigil-active);
+    }
+
+    /*
+     * While a command runs. The rail stays lit but drops to half strength, so a long-running
+     * command reads differently from an idle prompt without adding a spinner to a 30px strip.
+     * Before this, `executing` only italicised the placeholder — which is invisible in practice,
+     * because the field is rarely empty at the moment you press Enter.
+     */
+    &.executing::before {
+        background: var(--border-prompt-rail-active);
+        opacity: 0.5;
+    }
 }
 
 .promptPrefix {
     margin-right: var(--space-2);
-    color: var(--color-prompt);
+    color: var(--color-prompt-sigil);
+    font-family: var(--monospace-font);
+    font-size: var(--panel-font-size);
+    font-weight: 600;
+    line-height: 1;
+    transition: color var(--duration-fast) var(--ease-standard);
 }
+
 /*
- * The command prompt: the only text input in the tool area.
- *
- * `outline: none` on its own would leave the app's one focusable text field with no focus
- * indication at all. The ring is restored through the shared mixin rather than a bespoke rule, so
- * the prompt matches every other focusable control.
+ * The input itself now carries no chrome at all — the strip around it does. Weight 400 and
+ * `--color-prompt`, so the line you are typing is set exactly like the lines it will join.
  */
 .prompt {
     outline: none;
     border: none;
     width: 100%;
     background: transparent;
-    margin-right: var(--space-2);
     font-family: var(--monospace-font);
     /* M1: the same 12px the console above it renders at, so the prompt matches its own output. */
     font-size: var(--panel-font-size);
     color: var(--color-prompt);
-    font-weight: 600;
-
-    @include focus-ring;
-}
-
-.executing::placeholder {
-    font-style: italic;
     font-weight: 400;
+    caret-color: var(--border-prompt-rail-active);
 }
 
+.executing .prompt::placeholder {
+    font-style: italic;
+}

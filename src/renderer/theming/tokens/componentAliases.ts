@@ -272,7 +272,38 @@ export const componentAliases: Record<string, string> = {
   "--btopcolor-tooltab-activeTab": "var(--accent-solid)",
   "--color-tooltab-active": "var(--text-primary)",
   "--color-tooltab-inactive": "var(--text-tertiary)",
-  "--color-prompt": "var(--status-success)",
+  /**
+   * The text you type at the command prompt — the same ink the console prints in, so the line you
+   * are writing matches the lines above it.
+   *
+   * It was `--status-success`. Nothing about an empty prompt is a success, and spending a status
+   * colour on a field with no status to report left both the sigil and every character typed in
+   * green at weight 600. Status colours are for the output, which already uses them.
+   */
+  "--color-prompt": "var(--text-primary)",
+  /** The `\u276f` sigil at rest: present, but not competing with what you are typing. */
+  "--color-prompt-sigil": "var(--text-tertiary)",
+  /** The sigil while the prompt has focus — the accent's second appearance on the row. */
+  "--color-prompt-sigil-active": "var(--accent-solid)",
+  /**
+   * The prompt strip's own ground.
+   *
+   * The prompt used to sit directly on the tool area with nothing between it and the scrolling
+   * output, which is most of why its focus ring had to shout: the ring was the only thing marking
+   * where the output stopped and the input began. A floor does that job without enclosing anything.
+   */
+  "--bgcolor-prompt": "var(--surface-chrome)",
+  /**
+   * The 2px edge down the left of the prompt strip, and the accent it takes when focused.
+   *
+   * This replaces `@include focus-ring` on the input. A `:focus-visible` ring is for picking one
+   * control out of many; `CommandPanel` focuses its input on mount and again after every command,
+   * and bounces focus back to it from the panel, so the ring was never not showing — permanent
+   * chrome the width of the tool area. The rail says the same thing from the edge of the strip,
+   * and it is the same device the Explorer uses to mark its selected row.
+   */
+  "--border-prompt-rail": "var(--border-strong)",
+  "--border-prompt-rail-active": "var(--accent-solid)",
   "--color-tool-border": "var(--border-default)",
 
   // --- Breakpoints ------------------------------------------------------------------------------
