@@ -353,9 +353,30 @@
   min-height: 0;
   /* Never let the thumbnails' intrinsic width drive the grid's column sizes. */
   min-width: 0;
-  max-height: 42%;
+  /*
+   * No `max-height` here, and that is the point.
+   *
+   * It carried `max-height: 42%` from the layout before this one, where the pane was a plain flex
+   * child of the editor. As a *grid item* a percentage resolves against the grid area - the 132px
+   * track - not against the editor, so 42% silently capped the sheet at 55px: less than one 63px
+   * thumbnail cell. The row was clipped and a scrollbar appeared over it, which read as broken
+   * rather than as scrollable. The track owns this height; nothing else should have an opinion.
+   */
   background: var(--surface-panel);
   border-top: 1px solid var(--border-subtle);
+}
+
+/*
+ * The scroll container, sized by the pane.
+ *
+ * Scrolling goes through `ScrollViewer` like everywhere else in the app rather than a bare
+ * `overflow-y: auto`. A native bar is 15px of permanent layout width - a seventh of this pane - and
+ * it does not look like any other scrollable surface here; the app's is an overlay that auto-hides.
+ */
+.sheetScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
 }
 
 .sheetCells {
@@ -364,8 +385,6 @@
   align-content: flex-start;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  overflow-y: auto;
-  min-height: 0;
 }
 
 /*

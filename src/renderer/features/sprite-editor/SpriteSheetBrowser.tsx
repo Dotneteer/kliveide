@@ -2,6 +2,7 @@ import styles from "./SpriteEditor.module.scss";
 import classnames from "classnames";
 import { memo } from "react";
 import { SpriteImage } from "./SpriteImage";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 type Props = {
   sprites: Uint8Array[];
@@ -39,8 +40,10 @@ export const SpriteSheetBrowser = memo(
           {sprites.length} {sprites.length === 1 ? "sprite" : "sprites"}
         </span>
       </div>
-      <div className={styles.sheetCells} role="listbox" aria-label="Sprite sheet">
-        {sprites.map((sprite, index) => (
+      <div className={styles.sheetScroll}>
+        <ScrollViewer allowHorizontal={false} thinScrollBar={true}>
+          <div className={styles.sheetCells} role="listbox" aria-label="Sprite sheet">
+            {sprites.map((sprite, index) => (
           <SheetCell
             key={index}
             sprite={sprite}
@@ -52,7 +55,9 @@ export const SpriteSheetBrowser = memo(
             showTransparencyColor={showTransparencyColor}
             onSelect={onSelect}
           />
-        ))}
+            ))}
+          </div>
+        </ScrollViewer>
       </div>
     </div>
   )

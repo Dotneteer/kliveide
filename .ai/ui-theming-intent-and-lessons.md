@@ -1029,6 +1029,16 @@ verification failure recorded above.
   first; the fix is usually one token, not new markup.
 - Before building an affordance that seems to be missing, **grep for it**. `AttachedShadow` had been
   rendering invisibly for the life of the project because its token pointed at a surface.
+- **A percentage `max-height` on a grid item resolves against its grid area, not against the
+  container you were picturing.** The sprite editor's sheet carried `max-height: 42%` from the flex
+  layout that preceded it; as a grid item in a 132px track that became 42% *of 132px* — 55px, less
+  than one 63px thumbnail. The row was clipped and a scrollbar appeared over it, which reads as
+  broken rather than as scrollable. When a track owns a height, nothing inside it should have a
+  second opinion; delete the old constraint rather than leaving both.
+- **Scroll through `ScrollViewer`, not a bare `overflow: auto`.** The app's scrollbars are
+  auto-hiding overlays that take **no** layout width; a native one is ~15px of permanent width and
+  looks like nothing else in the window. In a 132px pane that is a seventh of the space, spent on
+  something the rest of the app does not show at all.
 - **A fixed-size, empty element in a nowrap flex row needs `flex: 0 0 auto`.** An empty div's
   automatic minimum size is zero, so it is the only item in a row of text labels that *can* shrink
   — and with the default `flex-shrink: 1` it absorbs the whole overflow the moment the pane gets
