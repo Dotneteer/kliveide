@@ -513,6 +513,25 @@ export type M6510CpuState = {
 // --- The response with the CPU state information
 export type CpuState = Z80CpuState | M6510CpuState;
 
+/**
+ * Border colour names, indexed by the 3-bit ULA border value.
+ *
+ * Beside `UlaState` because `bor` is declared a *name*, not an index, and two different producers
+ * fill this type — `MainToEmuProcessor` for the interpreted machines and `ZxNextWasmV2Machine` for
+ * the WASM core. The WASM one was putting the raw index in, so the ULA panel showed a bare digit
+ * where the other showed "Cyan". A table each is how that happened; one table is how it stops.
+ */
+export const ULA_BORDER_COLOR_NAMES = [
+  "Black",
+  "Blue",
+  "Red",
+  "Magenta",
+  "Green",
+  "Cyan",
+  "Yellow",
+  "White"
+] as const;
+
 export type UlaState = {
   fcl: number;
   frm: number;

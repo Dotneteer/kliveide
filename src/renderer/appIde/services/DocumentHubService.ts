@@ -27,6 +27,24 @@ class DocumentHubService implements IDocumentHubService {
   private _documentViewState = new Map<string, any>();
   private _documentApi = new Map<string, DocumentApi>();
 
+  /**
+   * The open documents, in tab order.
+   *
+   * **Replaced, never mutated in place.** `getOpenDocuments()` hands this array straight to the
+   * renderer, where React uses its identity as the "did the tab strip change?" signal — in effect
+   * dependencies, in `useMemo`, in `React.memo` comparisons. While opens were `push` and reorders
+   * were index swaps, that identity never changed, so those hooks never re-ran on anything but a
+   * multi-document close (the one path that already used `filter`).
+   *
+   * That shipped as a visible bug: `DocumentTabs` memoised the duplicate-filename set on
+   * `[openDocs]`, computed it while only one `klive.project` was open, and never recomputed when
+   * the second arrived — so two tabs with the same name both rendered as that bare name, while the
+   * overflow list beside them (which derived the same set unmemoised) correctly showed paths.
+   *
+   * Every structural change below therefore assigns a new array. It costs one shallow copy per
+   * open/close/reorder of a list that is a dozen entries long, and it makes the reference mean what
+   * every consumer already assumed it meant.
+   */
   private _openDocs: ProjectDocumentState[] = [];
   /** Document ID -> the value of `activationSequence` when it was last activated. */
   private _activationStamps = new Map<string, number>();
@@ -304,7 +322,8 @@ class DocumentHubService implements IDocumentHubService {
     if (docIndex < 0) return undefined;
 
     const activeDoc = this._openDocs[this._activeDocIndex];
-    const [detachedDoc] = this._openDocs.splice(docIndex, 1);
+    const detachedDoc = this._openDocs[docIndex];
+    this._openDocs = this._openDocs.filter((_, i) => i !== docIndex);
 
     // --- Release the view-local API and state, but keep shared document contents alone.
     this._documentApi.delete(detachedDoc.id);
@@ -410,9 +429,9 @@ class DocumentHubService implements IDocumentHubService {
   moveActiveToLeft(): void {
     const index = this._activeDocIndex;
     if (index === 0) return;
-    const tmp = this._openDocs[index - 1];
-    this._openDocs[index - 1] = this._openDocs[index];
-    this._openDocs[index] = tmp;
+    const reordered = [...this._openDocs];
+    [reordered[index - 1], reordered[index]] = [reordered[index], reordered[index - 1]];
+    this._openDocs = reordered;
     this._activeDocIndex--;
     this.signHubStateChanged();
   }
@@ -423,9 +442,9 @@ class DocumentHubService implements IDocumentHubService {
   moveActiveToRight(): void {
     const index = this._activeDocIndex;
     if (index < 0 || index >= this._openDocs.length - 1) return;
-    const tmp = this._openDocs[index + 1];
-    this._openDocs[index + 1] = this._openDocs[index];
-    this._openDocs[index] = tmp;
+    const reordered = [...this._openDocs];
+    [reordered[index + 1], reordered[index]] = [reordered[index], reordered[index + 1]];
+    this._openDocs = reordered;
     this._activeDocIndex++;
     this.signHubStateChanged();
   }
@@ -449,8 +468,10 @@ class DocumentHubService implements IDocumentHubService {
     if (insertIndex === sourceIndex) return;
 
     const activeDoc = this._openDocs[this._activeDocIndex];
-    const [document] = this._openDocs.splice(sourceIndex, 1);
-    this._openDocs.splice(insertIndex, 0, document);
+    const reordered = [...this._openDocs];
+    const [document] = reordered.splice(sourceIndex, 1);
+    reordered.splice(insertIndex, 0, document);
+    this._openDocs = reordered;
     this._activeDocIndex = this._openDocs.indexOf(activeDoc);
     this.signHubStateChanged();
   }
@@ -557,15 +578,15 @@ class DocumentHubService implements IDocumentHubService {
         if (tempIndex >= 0) {
           // --- Change the former temp document to this one
           this._activationStamps.delete(this._openDocs[tempIndex].id);
-          this._openDocs[tempIndex] = document;
+          this._openDocs = this._openDocs.map((d, i) => (i === tempIndex ? document : d));
         } else {
           // --- Add as the last document
-          this._openDocs.push(document);
+          this._openDocs = [...this._openDocs, document];
         }
       } else {
         // --- Add as the last document
         document.isTemporary = false;
-        this._openDocs.push(document);
+        this._openDocs = [...this._openDocs, document];
       }
       wasAdded = true;
     }

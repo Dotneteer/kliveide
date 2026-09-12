@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { ULA_BORDER_COLOR_NAMES } from "@common/messaging/EmuApi";
 
 const KEY_CASES = [0, 6, 14, 23, 39];
 const PORT_CASES = [0xfefe, 0xfdfe, 0xfbfe, 0x7ffe, 0x00fe];
@@ -42,7 +43,9 @@ describe("ZX Spectrum Next WASM keyboard and ULA ports", () => {
     oracle.doWritePort(0x00fe, 0x17);
     wasm.doWritePort(0x00fe, 0x17);
     expect(wasm.getWasmV2UlaState()).toMatchObject({
-      bor: oracle.composedScreenDevice.borderColor,
+      // --- Still a WASM-vs-TypeScript parity check; it now also pins the name mapping that
+      // --- `UlaState.bor` declares. See ULA_BORDER_COLOR_NAMES in @common/messaging/EmuApi.
+      bor: ULA_BORDER_COLOR_NAMES[oracle.composedScreenDevice.borderColor & 0x07],
       ear: true,
       mic: false
     });

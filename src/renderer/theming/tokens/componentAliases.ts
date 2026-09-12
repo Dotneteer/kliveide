@@ -233,8 +233,30 @@ export const componentAliases: Record<string, string> = {
   "--color-doc-border": "var(--border-subtle)",
   "--color-doc-activeText": "var(--text-primary)",
   "--color-doc-inactiveText": "var(--text-tertiary)",
+  /**
+   * Still emitted so a custom theme can set it, but the document tab strip no longer draws a top
+   * accent bar: the active tab is now marked by taking the editor's own fill, by weight, and by
+   * `--bgcolor-doc-activeGlyph` behind its file icon. The tool tabs keep their own
+   * `--btopcolor-tooltab-activeTab`.
+   */
   "--btopcolor-doc-activeTab": "var(--accent-solid)",
   "--bgcolor-doc-activeTab": "var(--surface-canvas)",
+  /**
+   * The rule between the tab strip and the editor below it.
+   *
+   * `--border-default`, not `--color-doc-border` (the hairline *between* tabs): this one separates
+   * two different surfaces, the other divides one surface into cells, and the audit's whole point
+   * was that those are not the same weight of line.
+   */
+  "--color-doc-seam": "var(--border-default)",
+  /**
+   * The chip behind the active tab's file glyph — where the accent now lands.
+   *
+   * A tab already carries a coloured, type-specific icon, so the accent has to either fight that
+   * icon or frame it. Framing it puts the accent on the mark the eye goes to first and costs the
+   * strip no extra ink.
+   */
+  "--bgcolor-doc-activeGlyph": "var(--accent-subtle)",
   "--bgcolor-doc-inactiveTab": "var(--surface-chrome)",
   "--color-tabbutton-fill-inactive": "var(--text-tertiary)",
   "--color-tabbutton-fill-active": "var(--text-primary)",

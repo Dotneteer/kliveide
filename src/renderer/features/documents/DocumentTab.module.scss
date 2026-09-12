@@ -7,6 +7,25 @@
  * continuous band with nothing between them — and the border they did have was
  * `--color-doc-border`, which in dark resolved to the same value as the document body, making it
  * invisible anyway.
+ *
+ * ## Why the lines here are background layers
+ *
+ * A tab draws two rules: the *seam* along the bottom of the strip, and the *divider* against its
+ * right-hand neighbour. Neither can be a border and neither can be a pseudo-element.
+ *
+ * - Not a border: `fix-height-panel` fixes the tab at `--strip-tabbar` and `box-sizing` is
+ *   `border-box` app-wide (assets/styles/index.css), so a 1px border does not sit beside the
+ *   content — it eats a pixel of it, out of a 36px box that the icon and the type were already
+ *   fitted into.
+ * - Not `::before`/`::after`: both are spoken for by the drag-placement indicators below.
+ *
+ * A `background` layer costs the box nothing and stacks in a defined order, which is also what
+ * makes the seam break under the active tab fall out for free: the active tab simply omits the
+ * seam layer, so the strip's own rule — painted by `.documentsHeader` underneath — is covered by
+ * the tab's fill and the tab opens straight into the document. No erasing element, no z-index.
+ *
+ * The divider is inset to 16px of the 36px strip. Full-height dividers are what made the strip
+ * read as a row of bricks; a centred rule separates the tabs without drawing their outlines.
  */
 .documentTab {
   @include fix-height-panel(var(--strip-tabbar));
@@ -17,14 +36,39 @@
   align-items: center;
   padding: 0 var(--space-2) 0 var(--space-3);
   border: 0;
-  border-right: 1px solid var(--border-subtle);
-  background: var(--bgcolor-doc-inactiveTab);
+  background:
+    linear-gradient(var(--color-doc-seam), var(--color-doc-seam)) left bottom / 100% 1px no-repeat,
+    linear-gradient(var(--color-doc-border), var(--color-doc-border)) right center / 1px 16px no-repeat,
+    var(--bgcolor-doc-inactiveTab);
   max-width: 360px;
   cursor: pointer;
   transition: background-color var(--duration-fast) var(--ease-standard);
 
   &:hover {
-    background: var(--surface-hover);
+    background:
+      linear-gradient(var(--color-doc-seam), var(--color-doc-seam)) left bottom / 100% 1px no-repeat,
+      linear-gradient(var(--color-doc-border), var(--color-doc-border)) right center / 1px 16px no-repeat,
+      var(--surface-hover);
+  }
+}
+
+/*
+ * No divider on either side of the active tab.
+ *
+ * The tab's own right-hand divider goes with `.active` below; this is the other one — the divider
+ * belonging to the tab *before* it, which would otherwise draw a line into the active tab's edge.
+ * `:has()` is the only way to reach backwards, and it is the reason both rules are dividers-on-the-
+ * right rather than one rule per gap.
+ */
+.documentTab:has(+ .active) {
+  background:
+    linear-gradient(var(--color-doc-seam), var(--color-doc-seam)) left bottom / 100% 1px no-repeat,
+    var(--bgcolor-doc-inactiveTab);
+
+  &:hover {
+    background:
+      linear-gradient(var(--color-doc-seam), var(--color-doc-seam)) left bottom / 100% 1px no-repeat,
+      var(--surface-hover);
   }
 }
 
@@ -49,20 +93,26 @@
 /*
  * The active tab.
  *
- * Marked by a 2px accent bar and a genuinely raised surface. It used to rely on a 1px top border
- * plus a background that in dark mode was the *same colour as the document body* — so the whole
- * distinction rested on one hairline.
+ * It takes the *editor's* fill and omits the seam layer, so it stops being a control sitting above
+ * the document and becomes the document's own top edge.
  *
- * The bar is an inset shadow rather than a pseudo-element because ::before and ::after are already
- * taken by the drag indicators.
+ * This is a correction as much as a restyle. The rule here was `--surface-raised`, which in light
+ * resolves to #ffffff — the same value as `--surface-canvas` under the tab, so light already had
+ * this merge. In dark, `raised` is #202329 against a #141517 editor: the active tab was *lighter*
+ * than the document it opened onto, and the two tones were showing different designs from one
+ * stylesheet. `--bgcolor-doc-activeTab` already aliased `--surface-canvas` and already meant
+ * exactly this; it had simply stopped being used.
+ *
+ * With the fill carrying the state, the 2px accent bar across the top is gone. The accent moves to
+ * `.activeGlyph` instead, where it frames the icon the eye lands on first rather than adding a
+ * fifth horizontal line to a strip that already has the seam, the divider and two text baselines.
  */
 .active {
-  background: var(--surface-raised);
+  background: var(--bgcolor-doc-activeTab);
   color: var(--color-doc-activeText);
-  box-shadow: inset 0 2px 0 var(--btopcolor-doc-activeTab);
 
   &:hover {
-    background: var(--surface-raised);
+    background: var(--bgcolor-doc-activeTab);
   }
 }
 
@@ -70,10 +120,18 @@
   cursor: wait;
 }
 
+/*
+ * 400/600, not 600/700.
+ *
+ * A strip of a dozen files at weight 600 has no ground for the active one to stand out from — the
+ * step to 700 is the smallest the scale offers and it was being asked to carry the whole state on
+ * its own. Dropping the inactive tabs to regular gives that step somewhere to happen, and lets the
+ * filenames recede behind the one file you are actually editing.
+ */
 .titleText {
   color: var(--color-doc-inactiveText);
   font-size: var(--font-size-300);
-  font-weight: 600;
+  font-weight: 400;
   padding: 0 8px;
   display: block;
   overflow: hidden;
@@ -84,11 +142,32 @@
 
 .activeTitle {
   color: var(--color-doc-activeText);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .temporaryTitle {
   font-style: italic;
+}
+
+/*
+ * The file-type glyph, and the accent chip that claims it on the active tab.
+ *
+ * Negative margins equal to the chip's padding, so the glyph itself does not move when a tab
+ * becomes active — the chip grows around it. Without that, switching tabs nudges every name in the
+ * strip by 2px.
+ */
+.tabGlyph {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.active .tabGlyph {
+  background: var(--bgcolor-doc-activeGlyph);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  margin: 0 -2px;
 }
 
 .readOnlyIcon {

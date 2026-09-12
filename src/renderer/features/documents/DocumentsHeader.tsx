@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CloseMode } from "./DocumentTab";
 import { DocumentCommandBar } from "./DocumentCommandBar";
-import { DocumentTabs, getDocumentTabName, getDuplicateDocumentNames } from "./DocumentTabs";
+import { DocumentTabs, getDocumentTabLabels } from "./DocumentTabs";
 import {
   useActiveDocumentAreaId,
   useDocumentAreaGridApi,
@@ -292,7 +292,7 @@ export const DocumentsHeader = () => {
     documentHubService.moveDocument(documentId, targetDocument.id, offset > 0);
   };
 
-  const duplicateNames = getDuplicateDocumentNames(openDocs ?? []);
+  const tabLabels = getDocumentTabLabels(openDocs ?? []);
 
   const tabsCount = openDocs?.length ?? 0;
   if (tabsCount <= 0) {
@@ -391,7 +391,7 @@ export const DocumentsHeader = () => {
                  * Deriving them here instead (from the file type) silently produced no icon at all
                  * for the virtual documents, which have no node.
                  */
-                text={getDocumentTabName(doc, duplicateNames)}
+                text={tabLabels.get(doc.id) ?? doc.name}
                 iconName={doc.iconName ?? "file-code"}
                 iconFill={doc.iconFill ?? "--color-doc-icon"}
                 selected={idx === activeDocIndex}

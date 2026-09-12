@@ -25,8 +25,8 @@
   "scripts": {
     "predev": "install-electron",
     "dev": "electron-vite dev --config build/electron.vite.config.ts",
-    "build": "tsc && electron-vite build --config build/electron.vite.config.ts && electron-builder",
-    "build:check": "tsc",
+    "build": "npm run build:check && electron-vite build --config build/electron.vite.config.ts && electron-builder",
+    "build:check": "node scripts/check-types.cjs",
     "build:sp48-wasm": "node scripts/build-sp48-wasm.cjs",
     "check:sp48-wasm-size": "node scripts/check-sp48-wasm-size.cjs",
     "build:sp128-wasm": "node scripts/build-sp128-wasm.cjs",

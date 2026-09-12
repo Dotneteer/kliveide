@@ -1,5 +1,5 @@
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
-import type { CpuState, UlaState } from "@common/messaging/EmuApi";
+import { ULA_BORDER_COLOR_NAMES, type CpuState, type UlaState } from "@common/messaging/EmuApi";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { NextRegDeviceState, RegValueState } from "./NextRegDevice";
@@ -9,6 +9,7 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { TapeMode } from "@emu/abstractions/TapeMode";
+import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { createMainApi } from "@common/messaging/MainApi";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
 import { UNPAGED_PARTITION_LABEL } from "./MemoryDevice";
@@ -110,16 +111,22 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     readonly renderingTactTable: { phase: number }[];
     readonly borderColor: number;
   };
-  public readonly tapeDevice: {
-    tapeMode: TapeMode;
-    updateTapeMode: () => void;
-    getTapeEarBit: () => boolean;
-    micBit: boolean;
-    processMicBit: (micBit: boolean) => void;
-  };
-  public readonly floatingBusDevice: {
-    readFloatingBus: () => number;
-  };
+  /*
+   * `tapeDevice` and `floatingBusDevice` are NOT redeclared here.
+   *
+   * They used to be, with a structural type naming only the members the facades below happened to
+   * implement — which is how they came to be missing `machine` and `reset()` from
+   * `IGenericDevice`: the narrowed declaration hid the gap from the base's `ITapeDevice` /
+   * `IFloatingBusDevice` contract, and TS2416 said so to an empty room.
+   *
+   * Removing the redeclarations also removes a live hazard. `target` is `esnext`, so
+   * `useDefineForClassFields` is on and a bare field declaration installs an own property during
+   * *this* class's field-init phase — after `super()` has returned. It is harmless here only
+   * because `ZxNextMachine` declares both without ever assigning them; the day the base assigns one
+   * in its constructor, the child's redeclaration would silently overwrite it with `undefined`.
+   * That is the same mechanism that left `iff1`/`iff2`/`interruptMode` unmirrored (see the note in
+   * Z80Cpu.ts), and the cheapest defence is not to redeclare an inherited field at all.
+   */
 
   private wasmV2NormalFrames = 0;
   private wasmV2DebugSteps = 0;
@@ -165,10 +172,40 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       },
       processMicBit(micBit: boolean) {
         wasmSelf.wasmV2Runtime?.exports.zxnextProcessTapeMicBit(micBit ? 1 : 0);
+      },
+      /*
+       * The device back-reference `IGenericDevice` requires.
+       *
+       * The cast is load-bearing and worth reading. `ITapeDevice` and `IFloatingBusDevice` both
+       * extend `IGenericDevice<IZxSpectrumMachine>` — they were written for the Spectrum family,
+       * where `new TapeDevice(this)` type-checks because the host really is one. A ZX Next is not:
+       * `IZxNextMachine extends IZ80Machine`, deliberately, so no Next machine can satisfy the
+       * parameter these interfaces fix.
+       *
+       * Nothing reads it, which is why the gap went unnoticed. Every member of these facades closes
+       * over `wasmSelf` instead, and the one place that does read `tapeDevice.machine`
+       * (`TapeSaver`, TapeDevice.ts:700) is constructed from a concrete `TapeDevice` and can never
+       * be handed one of these.
+       *
+       * The real repair is to widen the machine parameter of the device interfaces — which touches
+       * every Spectrum device and belongs in its own change. Until then this records the mismatch
+       * rather than leaving the member off and the contract unmet.
+       */
+      machine: wasmSelf as unknown as IZxSpectrumMachine,
+      reset() {
+        // --- Deliberately empty. This facade holds no state of its own — every member above reads
+        // --- or writes the WASM core — and the core has no per-device reset export, only the
+        // --- whole-machine `zxnextReset` / `zxnextHardReset` that `reset()`/`hardReset()` on this
+        // --- class already call. Forwarding to those from here would reset the entire machine
+        // --- because someone reset the tape.
       }
     };
     this.floatingBusDevice = {
-      readFloatingBus: () => this.doReadPort(0xffff)
+      readFloatingBus: () => this.doReadPort(0xffff),
+      // --- See the note on the tape facade's `machine` above.
+      machine: wasmSelf as unknown as IZxSpectrumMachine,
+      // --- Stateless, like the tape facade above: the value comes from a port read each time.
+      reset() {}
     };
     this.installWasmNextRegFacade();
     this.installWasmMemoryMappingFacade();
@@ -936,12 +973,18 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   getWasmV2UlaState(): UlaState {
     const runtime = this.requireWasmV2Runtime();
     return {
-      fcl: runtime.exports.zxnextGetFrameCompleted() !== 0,
+      // --- `fcl` is the frame clock — a tact count, as `MainToEmuProcessor` fills it. It used to
+      // --- hold `zxnextGetFrameCompleted() !== 0`, so the ULA panel's "FrameClock" readout showed
+      // --- `true`/`false`.
+      fcl: runtime.exports.zxnextGetCurrentFrameTact(),
       frm: runtime.exports.zxnextGetFrames(),
       ras: 0,
       pos: runtime.exports.zxnextGetCurrentFrameTact(),
-      pix: 0,
-      bor: runtime.exports.zxnextGetBorderColor(),
+      // --- `pix` is a RenderingPhase *name*. The WASM core keeps no rendering-tact table and
+      // --- exports no phase, so there is nothing truthful to report — say so, rather than send the
+      // --- literal 0 that the panel rendered as a bare digit under "Pixel operation".
+      pix: "n/a",
+      bor: ULA_BORDER_COLOR_NAMES[runtime.exports.zxnextGetBorderColor() & 0x07],
       flo: 0xff,
       con: 0,
       lco: 0,

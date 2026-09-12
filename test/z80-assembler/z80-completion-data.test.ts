@@ -6,6 +6,7 @@ import {
   Z80_PRAGMA_ITEMS,
   Z80_KEYWORD_ITEMS,
   Z80_DIRECTIVE_ITEMS,
+  Z80_SNIPPET_ITEMS,
   type StaticCompletionItem
 } from "@renderer/appIde/services/z80-completion-data";
 
@@ -191,12 +192,17 @@ describe("Z80_DIRECTIVE_ITEMS", () => {
 
 describe("Z80_COMPLETION_ITEMS (combined)", () => {
   it("is the union of all sub-lists", () => {
+    // --- `Z80_SNIPPET_ITEMS` is the reason this test is worth having. The snippets table had no
+    // --- dedicated export and was never spread into Z80_COMPLETION_ITEMS, so this sum matched a
+    // --- combined list that was silently missing thirteen entries. A table with no export here is
+    // --- a table this test cannot see.
     const expectedCount =
       Z80_INSTRUCTION_ITEMS.length +
       Z80_REGISTER_ITEMS.length +
       Z80_PRAGMA_ITEMS.length +
       Z80_KEYWORD_ITEMS.length +
-      Z80_DIRECTIVE_ITEMS.length;
+      Z80_DIRECTIVE_ITEMS.length +
+      Z80_SNIPPET_ITEMS.length;
     expect(Z80_COMPLETION_ITEMS.length).toBe(expectedCount);
   });
 

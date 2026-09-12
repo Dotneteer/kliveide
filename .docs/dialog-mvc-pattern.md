@@ -180,10 +180,10 @@ These each cost real debugging time; none is obvious from the code.
 - **A new path alias needs six files.** `tsconfig.json`, `test/tsconfig.json`,
   `build/tsconfig.web.json`, `build/tsconfig.node.json`, `build/electron.vite.config.ts`,
   `build/vitest.config.ts`. A missing one fails only at build time, or only at test time.
-- **`npm run build:check` currently type-checks nothing.** The root `tsconfig.json` is
-  solution-style (`"files": []` plus references), so plain `tsc` resolves no inputs and exits 0.
-  Verify with `npx tsc --noEmit --listFiles | grep -c "src/renderer"` — it prints 0. Until that is
-  fixed, type-check against `build/tsconfig.web.json` explicitly.
+- **`npm run build:check` is a ratchet, not a clean bill of health.** It type-checks both
+  referenced projects and fails only on errors absent from `build/type-errors-baseline.json`. A
+  green run means "you added nothing new", not "this file type-checks"; read the baseline if you
+  need to know what is still outstanding in the file you are editing.
 
 ## Migrating a dialog
 

@@ -3,7 +3,15 @@
 .documentsHeader {
   @include fix-height-panel(var(--strip-tabbar));
   flex-direction: row;
-  background: var(--bgcolor-docsheader);
+  /*
+   * Chrome, plus the 1px seam against the editor drawn as a background layer rather than a
+   * `border-bottom` — see the long note in DocumentTab.module.scss. The layer sits *under* the
+   * tabs, so the active tab covers it simply by having a fill, and the strip opens into the
+   * document exactly where that tab is.
+   */
+  background:
+    linear-gradient(var(--color-doc-seam), var(--color-doc-seam)) left bottom / 100% 1px no-repeat,
+    var(--bgcolor-docsheader);
   outline: none;
   
   .tabWrapper {
@@ -23,11 +31,15 @@
   }
 }
 
-/* Fills the strip to the right of the last tab so the header reads as one surface. */
+/*
+ * Fills the strip to the right of the last tab so the header reads as one surface.
+ *
+ * No `border-left` any more: the last tab draws its own right-hand divider, so this was the second
+ * of two lines 5px apart at the end of the strip.
+ */
 .closingTab {
   @include fix-height-panel(var(--strip-tabbar));
   width: 5px;
-  border-left: 1px solid var(--border-subtle);
 }
 
 /*

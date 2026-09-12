@@ -1,7 +1,7 @@
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { CloseMode, DocumentTab } from "./DocumentTab";
 import styles from "./DocumentsHeader.module.scss";
-import { type DragEvent, useMemo, useState } from "react";
+import { type DragEvent, useState } from "react";
 import { type DocumentAreaId } from "./documentAreaLayout";
 import classnames from "classnames";
 
@@ -72,7 +72,14 @@ export function DocumentTabs({
     id: string;
     placement: TabDropPlacement;
   }>();
-  const duplicateNames = useMemo(() => getDuplicateDocumentNames(openDocs), [openDocs]);
+  /*
+   * Not memoised. `openDocs` is the hub's own array and its identity is the only thing a
+   * `useMemo` here could key on — which is what broke this before the hub started replacing that
+   * array rather than pushing into it (see `_openDocs` in DocumentHubService). The hub is fixed,
+   * but a dozen-entry grouping is not worth re-acquiring a dependency on that invariant, and the
+   * overflow list next door has always computed it this way.
+   */
+  const tabLabels = getDocumentTabLabels(openDocs);
 
   const getDropPlacement = (event: DragEvent<HTMLDivElement>): TabDropPlacement => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -126,7 +133,7 @@ export function DocumentTabs({
       }}
     >
       {openDocs.map((document, idx) => {
-        const docName = getDocumentTabName(document, duplicateNames);
+        const docName = tabLabels.get(document.id) ?? document.name;
         return (
           <DocumentTab
             key={document.id}
@@ -255,29 +262,70 @@ function hasDocumentTabDragData(
 }
 
 /**
- * Names that more than one open document shares.
+ * The label every open document should show, keyed by document id.
  *
- * Exported because the tab-overflow list has to label its rows the way the tabs do; deriving the
- * name a second time is how the two drift apart.
+ * A document that does not share its name with another shows that bare name. One that does shows
+ * the **shortest run of parent folders that tells it apart** from the others — `screen-tests/
+ * klive.project` beside a plain `klive.project`, and only as deep as it has to go.
+ *
+ * The previous rule was "show `document.path` when the name is ambiguous", and path is absolute.
+ * That produced tabs labelled
+ * `/Users/dotneteer/source/kliveide/_experiments/testprojects/next/klive.project`, which then hit
+ * `max-width: 360px` and `direction: rtl` on `.titleText` and rendered as
+ * `…iments/testprojects/next/klive.project` — the middle of a path, with the one segment that
+ * actually disambiguated it (`screen-tests/`, or its absence) clipped off the front. Every tab was
+ * also inflated to its maximum width, which on a five-file strip was enough to push the first tab
+ * into overflow.
+ *
+ * Set-wise rather than per-document because "shortest suffix that disambiguates" is not a property
+ * of one document: two files can share a parent folder *name* (`src/utils/io.asm` and
+ * `test/utils/io.asm`), so one level up is not always enough and only the group can say how far to
+ * go.
+ *
+ * Exported as one map because the tab strip and the tab-overflow list must label the same document
+ * the same way; deriving it twice is exactly how those two drifted apart before.
  */
-export function getDuplicateDocumentNames(openDocs: ProjectDocumentState[]): Set<string> {
-  const nameCounts = new Map<string, number>();
-  openDocs.forEach((document) => {
-    nameCounts.set(document.name, (nameCounts.get(document.name) ?? 0) + 1);
-  });
-  return new Set(
-    [...nameCounts]
-      .filter(([, count]) => count > 1)
-      .map(([name]) => name)
-  );
+export function getDocumentTabLabels(openDocs: ProjectDocumentState[]): Map<string, string> {
+  const labels = new Map<string, string>();
+
+  const byName = new Map<string, ProjectDocumentState[]>();
+  for (const document of openDocs) {
+    const group = byName.get(document.name);
+    if (group) group.push(document);
+    else byName.set(document.name, [document]);
+  }
+
+  for (const [name, group] of byName) {
+    // --- Unique already, or one of them is a virtual document with no path to qualify it by.
+    if (group.length === 1 || group.some((d) => !d.path)) {
+      group.forEach((d) => labels.set(d.id, name));
+      continue;
+    }
+
+    // --- Parent folders, nearest first, so `depth` counts outwards from the file.
+    const parents = group.map((d) => splitPathSegments(d.path).slice(0, -1).reverse());
+    const maxDepth = Math.max(...parents.map((p) => p.length));
+
+    let depth = 1;
+    let suffixes = qualify(parents, name, depth);
+    while (new Set(suffixes).size !== suffixes.length && depth < maxDepth) {
+      suffixes = qualify(parents, name, ++depth);
+    }
+
+    // --- Identical suffixes at `maxDepth` mean identical paths, which the hub already rejects as a
+    // --- duplicate id. Whatever we have is then the best available label.
+    group.forEach((d, i) => labels.set(d.id, suffixes[i]));
+  }
+
+  return labels;
 }
 
-/** The label a tab shows: the bare name, or the path when the name is ambiguous. */
-export function getDocumentTabName(
-  document: ProjectDocumentState,
-  duplicateNames: Set<string>
-): string {
-  return duplicateNames.has(document.name) && document.path
-    ? document.path
-    : document.name;
+/** `depth` parent folders back in front of the file name, re-reversed into reading order. */
+function qualify(parents: string[][], name: string, depth: number): string[] {
+  return parents.map((p) => [...p.slice(0, depth)].reverse().concat(name).join("/"));
+}
+
+/** Splits on both separators, so a Windows path qualifies the same way a POSIX one does. */
+function splitPathSegments(path: string): string[] {
+  return path.split(/[\\/]+/).filter((segment) => segment.length > 0);
 }

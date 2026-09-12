@@ -62,11 +62,12 @@ merely uncoloured, which no route diff can see.
 
 ## Current Useful Commands
 
-- Type-check: `npm run build:check` - **currently a no-op**: the root `tsconfig.json` is
-  solution-style (`"files": []` plus project references), so plain `tsc` resolves no input files
-  and exits 0 without checking anything. Verify with
-  `npx tsc --noEmit --listFiles | grep -c "src/renderer"` (prints 0). Until this is fixed,
-  type-check against `build/tsconfig.web.json` explicitly and do not treat `build:check` as a gate.
+- Type-check: `npm run build:check` - runs `scripts/check-types.cjs`, which type-checks both
+  referenced projects and compares the result against `build/type-errors-baseline.json`. It fails
+  on errors that are **new**, not on the backlog that accumulated while the command was a no-op
+  (plain `tsc` on a solution-style root config resolves no inputs and exits 0). Clearing an entry
+  from the baseline is a normal part of touching a file; run `npm run build:check -- --update` to
+  record it. Raising a count needs a reason in the PR.
 - Renderer hook lint baseline: `npm run lint:renderer`
 - Focused jsdom tests: `npm test -- --project jsdom <test files>`
 - Docs build: `npm run doc:build`

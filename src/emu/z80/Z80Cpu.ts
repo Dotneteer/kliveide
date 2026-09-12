@@ -27,6 +27,12 @@ export class Z80Cpu implements IZ80Cpu {
   // --- Cached index register view based on current prefix
   private _indexView: DataView;
   private _prefix: OpCodePrefix;
+  // --- Backing store for the three interrupt-state accessors below. Declared without an
+  // --- initializer, exactly as `_pc`/`_sp` are, so the pre-reset value stays `undefined` and this
+  // --- change alters nothing but the shape of the properties.
+  private _interruptMode: number;
+  private _iff1: boolean;
+  private _iff2: boolean;
 
   // --- Special registers
   private _pc: number;
@@ -427,20 +433,66 @@ export class Z80Cpu implements IZ80Cpu {
    */
   sigRST: boolean;
 
+  /*
+   * ## Why these three are accessors and not fields
+   *
+   * They used to be bare declarations — `iff1: boolean;` — like `sigNMI` above. That is fine for a
+   * leaf property, but these three are *mirrored* by `ZxNextWasmV2Machine`, which overrides them
+   * with `get`/`set` pairs that push each write into the WASM core, the same way it mirrors `sp`,
+   * `pc`, `a` and twenty-odd other registers.
+   *
+   * The mirrors did not work. `target` resolves to `esnext`, so `useDefineForClassFields` is on and
+   * a bare field is installed with `Object.defineProperty` on every instance during *this* class's
+   * construction. An own data property shadows a prototype accessor permanently, so
+   * `machine.iff1 = true` wrote straight to the instance and `zxnextSetCpuIff1` was never called —
+   * while `machine.sp = 0x1234` worked, because `sp` was already a real accessor here. Twenty-five
+   * registers reached the WASM core and three silently did not.
+   *
+   * Note what the obvious repair would have done. TypeScript's own TS2612 text suggests adding a
+   * `declare` modifier to the child's declaration; the symmetric idea is to `declare` these here.
+   * Either way the own property disappears, `super.iff1` then resolves against `Z80Cpu.prototype`,
+   * which — as a bare field — has nothing on it, and the getter returns `undefined`. The emulator
+   * breaks immediately. The fix has to be a real accessor pair, so that `super.iff1` has something
+   * to reach, which is what this is.
+   *
+   * Cost: `pc` and `sp` are accessors in this same class and are referenced 128 and 78 times here
+   * against `iff1`'s 9, so the interpreter already pays this on far hotter paths. The one read in
+   * the execution loop (`if (this.iff1 && ...)`) sits behind a `sigINT` test and does not run per
+   * instruction.
+   *
+   * The lasting fix for the *class* of bug is `strictPropertyInitialization`, which flags every
+   * bare field of this shape. It currently reports 842 of them, so it is not a near-term option.
+   */
+
   /**
    * The current maskable interrupt mode (0, 1, or 2)
    */
-  interruptMode: number;
+  get interruptMode(): number {
+    return this._interruptMode;
+  }
+  set interruptMode(value: number) {
+    this._interruptMode = value;
+  }
 
   /**
    * The state of the Interrupt Enable Flip-Flop
    */
-  iff1: boolean;
+  get iff1(): boolean {
+    return this._iff1;
+  }
+  set iff1(value: boolean) {
+    this._iff1 = value;
+  }
 
   /**
    * Temporary storage for Iff1.
    */
-  iff2: boolean;
+  get iff2(): boolean {
+    return this._iff2;
+  }
+  set iff2(value: boolean) {
+    this._iff2 = value;
+  }
 
   /**
    * This flag indicates if the CPU is in a halted state.

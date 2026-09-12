@@ -32,14 +32,19 @@ import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
-import { CpuState, CpuStateChunk, VicState } from "@common/messaging/EmuApi";
+import {
+  CpuState,
+  CpuStateChunk,
+  ULA_BORDER_COLOR_NAMES,
+  VicState
+} from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { IMemorySection } from "@abstractions/MemorySection";
 import type { RecordingManager } from "./recording/RecordingManager";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
 
-const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
+const borderColors = ULA_BORDER_COLOR_NAMES;
 
 // Module-level ref so menu commands can reach the renderer RecordingManager.
 let _emuRecordingManager: RecordingManager | null = null;

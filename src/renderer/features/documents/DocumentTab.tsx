@@ -19,11 +19,19 @@ import type { MainApi } from "@common/messaging/MainApi";
  * Size of every icon on a document tab: the file-type glyph and the read-only
  * and locked badges.
  *
- * TabButton already renders the close/dirty affordance at 20, so this is the
- * value that makes the whole tab consistent rather than an exception to it.
- * The tab is 36px tall, so there is room to spare.
+ * 16, not 20. Matching `TabButton`'s close affordance was the old rule, and it
+ * sized the strip's icons off another icon rather than off the thing they label:
+ * at 20 against `--font-size-300` type, every glyph was drawn half again as
+ * large as the filename it belongs to, and a strip of open files read as a row
+ * of coloured tiles with captions. 16 puts the glyph just above the cap height
+ * of the name beside it, which is the relationship the Explorer tree now uses
+ * for exactly the same reason (see NODE_GLYPH_SIZE in ExplorerProjectItem.tsx).
+ *
+ * The close/dirty affordance stays at TabButton's 20 on purpose: it is a hit
+ * target, not a label, and it is the one mark on the tab that has to stay easy
+ * to click.
  */
-const TAB_ICON_SIZE = 20;
+const TAB_ICON_SIZE = 16;
 
 export enum CloseMode {
   All,
@@ -176,12 +184,14 @@ export const DocumentTab = ({
       onDoubleClick={() => tabDoubleClicked?.()}
       onContextMenu={contextMenuApi.show}
     >
-      <Icon
-        iconName={iconName}
-        width={TAB_ICON_SIZE}
-        height={TAB_ICON_SIZE}
-        fill={iconFill}
-      />
+      <span className={styles.tabGlyph}>
+        <Icon
+          iconName={iconName}
+          width={TAB_ICON_SIZE}
+          height={TAB_ICON_SIZE}
+          fill={iconFill}
+        />
+      </span>
       <span
         ref={nameRef}
         className={classnames(styles.titleText, {

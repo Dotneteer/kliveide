@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useSelector } from "@renderer/core/RendererProvider";
-import { getDuplicateDocumentNames } from "@renderer/features/documents/DocumentTabs";
+import { getDocumentTabLabels } from "@renderer/features/documents/DocumentTabs";
 import type { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 
@@ -82,11 +82,16 @@ export function useOpenEditors(): OpenEditorEntry[] {
     }
 
     // --- Two files called `code.asm` are told apart by their folder, exactly as the tab strip
-    // --- tells them apart by their path. Unambiguous names stay bare: a folder on every row is
-    // --- noise that makes the names themselves harder to scan.
-    const duplicateNames = getDuplicateDocumentNames(entries.map((entry) => entry.document));
+    // --- tells them apart by qualifying the name. Unambiguous names stay bare: a folder on every
+    // --- row is noise that makes the names themselves harder to scan.
+    // ---
+    // --- Ambiguity is read off the tab strip's own labels — a document is ambiguous exactly when
+    // --- the strip had to qualify it — so the panel and the strip can never disagree about which
+    // --- rows need a folder. What they *show* still differs on purpose: a row has a second column
+    // --- for the whole project-relative folder, a tab has only the width of its own name.
+    const tabLabels = getDocumentTabLabels(entries.map((entry) => entry.document));
     for (const entry of entries) {
-      if (duplicateNames.has(entry.document.name)) {
+      if (tabLabels.get(entry.document.id) !== entry.document.name) {
         entry.detail = getDocumentFolder(entry.document, folderPath);
       }
     }
