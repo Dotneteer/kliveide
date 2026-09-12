@@ -4,6 +4,10 @@ import React from "react";
 import { SPRITE_SIZE } from "@renderer/features/sprite-editor/sprite-raster";
 import { DEFAULT_SPRITE_TRANSPARENCY } from "@renderer/features/sprite-editor/sprite-file";
 import { resetSpriteClipboard } from "@renderer/features/sprite-editor/sprite-clipboard";
+import {
+  DEFAULT_SHEET_HEIGHT,
+  MIN_SHEET_HEIGHT
+} from "@renderer/features/sprite-editor/sheet-metrics";
 
 /*
  * What this file is for.
@@ -1018,5 +1022,90 @@ describe("SpriteEditor - sheet clipboard", () => {
     expect(button(container, "Cut region")).toBeTruthy();
     expect(button(container, "Copy region")).toBeTruthy();
     expect(button(container, "Clear region")).toBeTruthy();
+  });
+});
+
+/* --------------------------------------------------------------------------------------------
+ * The sheet pane's height: two rows by default, and draggable.
+ * ------------------------------------------------------------------------------------------ */
+
+const editorEl = (container: HTMLElement) => editorRoot(container);
+const sheetHeight = (container: HTMLElement) =>
+  editorEl(container).style.getPropertyValue("--sheet-height");
+const resizer = (container: HTMLElement) =>
+  container.querySelector('[role="separator"]') as HTMLElement;
+
+/** jsdom reports 0 for every measured size, so the clamp needs a height to work against. */
+const withEditorHeight = (container: HTMLElement, px: number) =>
+  Object.defineProperty(editorEl(container), "clientHeight", { value: px, configurable: true });
+
+const dragResizer = (container: HTMLElement, dy: number) => {
+  const el = resizer(container);
+  (el as any).setPointerCapture = () => {};
+  (el as any).hasPointerCapture = () => false;
+  (el as any).releasePointerCapture = () => {};
+  fireEvent.pointerDown(el, { button: 0, clientY: 400, pointerId: 1 });
+  fireEvent.pointerMove(el, { clientY: 400 + dy, pointerId: 1 });
+  fireEvent.pointerUp(el, { clientY: 400 + dy, pointerId: 1 });
+};
+
+describe("SpriteEditor - sheet height", () => {
+  it("shows two rows of thumbnails by default", () => {
+    const { container } = renderEditor(fileOf(20));
+    expect(sheetHeight(container)).toBe(`${DEFAULT_SHEET_HEIGHT}px`);
+  });
+
+  it("restores a height the user dragged to", () => {
+    const { container } = render(
+      createSprFileEditorPanel({
+        document: { id: "spr-1" } as any,
+        contents: fileOf(20),
+        viewState: { sheetHeight: 300 },
+        apiLoaded: () => {}
+      } as any)
+    );
+    expect(sheetHeight(container)).toBe("300px");
+  });
+
+  it("grows when the handle is dragged up, and persists on release", () => {
+    const { container } = renderEditor(fileOf(20));
+    withEditorHeight(container, 900);
+    // The handle is on the pane's top edge, so dragging *up* makes the sheet taller.
+    dragResizer(container, -80);
+    expect(sheetHeight(container)).toBe(`${DEFAULT_SHEET_HEIGHT + 80}px`);
+    expect(setDocumentViewState).toHaveBeenCalled();
+  });
+
+  it("shrinks when dragged down, but never past one whole row", () => {
+    // A clipped row plus a scrollbar is what the stale `max-height: 42%` produced, and it read as
+    // broken rather than as scrollable.
+    const { container } = renderEditor(fileOf(20));
+    withEditorHeight(container, 900);
+    dragResizer(container, 5000);
+    expect(sheetHeight(container)).toBe(`${MIN_SHEET_HEIGHT}px`);
+  });
+
+  it("leaves the canvas its floor however far the handle is dragged", () => {
+    const { container } = renderEditor(fileOf(20));
+    withEditorHeight(container, 400);
+    dragResizer(container, -5000);
+    // 400 - 27 of toolbar - 140 of stage minimum.
+    expect(sheetHeight(container)).toBe("233px");
+  });
+
+  it("double-clicking the handle restores the two-row default", () => {
+    const { container } = renderEditor(fileOf(20));
+    withEditorHeight(container, 900);
+    dragResizer(container, -120);
+    expect(sheetHeight(container)).not.toBe(`${DEFAULT_SHEET_HEIGHT}px`);
+    fireEvent.doubleClick(resizer(container));
+    expect(sheetHeight(container)).toBe(`${DEFAULT_SHEET_HEIGHT}px`);
+  });
+
+  it("announces the handle as a separator with the row count it is showing", () => {
+    const { container } = renderEditor(fileOf(20));
+    const el = resizer(container);
+    expect(el.getAttribute("aria-orientation")).toBe("horizontal");
+    expect(el.getAttribute("aria-valuenow")).toBe("3"); // 176px / 63px, rounded
   });
 });

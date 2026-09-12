@@ -3,6 +3,7 @@ import classnames from "classnames";
 import { memo } from "react";
 import { SpriteImage } from "./SpriteImage";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
+import { SpriteSheetResizer } from "./SpriteSheetResizer";
 
 type Props = {
   sprites: Uint8Array[];
@@ -12,6 +13,10 @@ type Props = {
   separated: boolean;
   showTransparencyColor: boolean;
   onSelect: (index: number) => void;
+  height: number;
+  onResize: (height: number) => void;
+  onResizeEnd: (height: number) => void;
+  onResetHeight: () => void;
 };
 
 /**
@@ -30,9 +35,19 @@ export const SpriteSheetBrowser = memo(
     transparencyIndex,
     separated,
     showTransparencyColor,
-    onSelect
+    onSelect,
+    height,
+    onResize,
+    onResizeEnd,
+    onResetHeight
   }: Props) => (
     <div className={styles.sheetPane}>
+      <SpriteSheetResizer
+        height={height}
+        onResize={onResize}
+        onResizeEnd={onResizeEnd}
+        onReset={onResetHeight}
+      />
       <div className={styles.sectionHeader}>
         <span>Sheet</span>
         <span className={styles.statusSpacer} />

@@ -41,6 +41,7 @@ import {
   patchRegionAt
 } from "./sprite-selection";
 import { spriteClipboard } from "./sprite-clipboard";
+import { DEFAULT_SHEET_HEIGHT, clampSheetHeight } from "./sheet-metrics";
 import { SpritePoint } from "./sprite-raster";
 import { SpritePaletteHeader } from "./SpritePaletteHeader";
 import { useSpritePalette } from "./useSpritePalette";
@@ -78,6 +79,7 @@ export const SpriteEditor = ({ context }: Props) => {
   // --- Sprite editor state
   const [showGrid, setShowGrid] = useState(true);
   const [showOnionSkin, setShowOnionSkin] = useState(false);
+  const [sheetHeight, setSheetHeight] = useState(DEFAULT_SHEET_HEIGHT);
   /*
    * Whether Paste has anything to offer - read from the module-level clipboard store, so the button
    * lights up even when the copy happened in another open `.spr` document.
@@ -150,6 +152,7 @@ export const SpriteEditor = ({ context }: Props) => {
      */
     setShowGrid(context.viewState?.showGrid ?? true);
     setShowOnionSkin(context.viewState?.showOnionSkin ?? false);
+    setSheetHeight(context.viewState?.sheetHeight ?? DEFAULT_SHEET_HEIGHT);
     setSpriteImagesSeparated(context.viewState?.spriteImagesSeparated ?? true);
     setShowTrancparencyColor(context.viewState?.showTrancparencyColor ?? false);
     setPencilColorIndex(context.viewState?.pencilColorIndex ?? 0x0f);
@@ -311,6 +314,32 @@ export const SpriteEditor = ({ context }: Props) => {
   const handleToggleSeparated = useCallback(() => setSpriteImagesSeparated((v) => !v), []);
   const handleToggleGrid = useCallback(() => setShowGrid((v) => !v), []);
   const handleToggleOnionSkin = useCallback(() => setShowOnionSkin((v) => !v), []);
+
+  /*
+   * Resizing the sheet.
+   *
+   * Clamped against the editor's own height so a drag can never take the canvas below its floor or
+   * shrink the sheet past one whole row. The view state is written on *release*, not per pixel -
+   * a drag is one decision, not two hundred.
+   */
+  const editorRef = useRef<HTMLDivElement>(null);
+  const handleResizeSheet = useCallback(
+    (height: number) =>
+      setSheetHeight(clampSheetHeight(height, editorRef.current?.clientHeight ?? 0)),
+    []
+  );
+  const handleResizeSheetEnd = useCallback(
+    (height: number) => {
+      const clamped = clampSheetHeight(height, editorRef.current?.clientHeight ?? 0);
+      setSheetHeight(clamped);
+      context.changeViewState((vs) => (vs.sheetHeight = clamped));
+    },
+    [context]
+  );
+  const handleResetSheetHeight = useCallback(() => {
+    setSheetHeight(DEFAULT_SHEET_HEIGHT);
+    context.changeViewState((vs) => (vs.sheetHeight = DEFAULT_SHEET_HEIGHT));
+  }, [context]);
   const handleFpsChange = useCallback(
     (fps: number) => context.changeViewState((vs) => (vs.animationFps = fps)),
     [context]
@@ -543,7 +572,13 @@ export const SpriteEditor = ({ context }: Props) => {
      * palette - rather than only while the 16x16 grid happens to hold it. `tabIndex={-1}` makes the
      * root focusable by click without adding a stop to the tab order.
      */
-    <div className={styles.editor} tabIndex={-1} onKeyDown={handleKeyDown}>
+    <div
+      ref={editorRef}
+      className={styles.editor}
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
+      style={{ "--sheet-height": `${sheetHeight}px` } as React.CSSProperties}
+    >
       <SpriteSheetToolbar
         spriteCount={sprites.length}
         selectedIndex={selectedSpriteIndex}
@@ -703,6 +738,10 @@ export const SpriteEditor = ({ context }: Props) => {
         separated={!!spriteImagesSeparated}
         showTransparencyColor={!!showTrancparencyColor}
         onSelect={navigate}
+        height={sheetHeight}
+        onResize={handleResizeSheet}
+        onResizeEnd={handleResizeSheetEnd}
+        onResetHeight={handleResetSheetHeight}
       />
     </div>
   );

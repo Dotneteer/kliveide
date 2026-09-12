@@ -30,6 +30,8 @@ export type SprFileViewState = {
   showOnionSkin?: boolean;
   /** Frames per second for the sheet animation preview. */
   animationFps?: number;
+  /** Height of the sheet pane in px, as the user dragged it. */
+  sheetHeight?: number;
   spriteImagesSeparated?: boolean;
   showTrancparencyColor?: boolean;
   selectedSpriteIndex?: number;

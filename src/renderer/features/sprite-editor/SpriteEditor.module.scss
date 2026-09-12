@@ -46,7 +46,7 @@
    * sheet the thing that yields, which is the right way round: the sheet scrolls, the canvas is
    * what the editor is for.
    */
-  grid-template-rows: auto minmax(140px, 1fr) minmax(0, 132px);
+  grid-template-rows: auto minmax(140px, 1fr) minmax(0, var(--sheet-height));
   grid-template-columns: auto 1fr auto;
   background-color: var(--bgcolor-sprite-editor);
   color: var(--text-secondary);
@@ -363,7 +363,42 @@
    * rather than as scrollable. The track owns this height; nothing else should have an opinion.
    */
   background: var(--surface-panel);
-  border-top: 1px solid var(--border-subtle);
+}
+
+/*
+ * The resize handle, and the sheet pane's top border in one.
+ *
+ * `SplitPanel`'s idiom: a transparent grab zone with the visible hairline inset as a pseudo-element,
+ * so the hit area is comfortably bigger than the line the user aims at. 6px is easy to hit without
+ * eating into the pane.
+ */
+.sheetResizer {
+  flex: 0 0 auto;
+  position: relative;
+  height: 6px;
+  cursor: row-resize;
+  background: transparent;
+  transition: background-color var(--duration-base) var(--ease-standard);
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border-subtle);
+    pointer-events: none;
+    transition: background-color var(--duration-base) var(--ease-standard);
+  }
+}
+
+.sheetResizerActive {
+  background: var(--bgcolor-splitter);
+
+  &::after {
+    background: var(--accent-solid);
+  }
 }
 
 /*
