@@ -40,7 +40,7 @@ import {
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
-type CodeInjectionType = "inject" | "run" | "debug";
+export type CodeInjectionType = "inject" | "run" | "debug";
 
 export class KliveBuildCommand extends IdeCommandBase {
   readonly id = "klive.build";
@@ -1020,7 +1020,29 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
   }
 }
 
-async function injectCode(
+/**
+ * Compiles the build root and injects the result into the machine.
+ *
+ * ## Why this is exported, and why it lives here
+ *
+ * There were two of these, one per compiler command file, and unlike the two `compileCode`s they
+ * had genuinely diverged — seven user-visible differences, both copies reachable from live UI:
+ * `ExecutionControls` drives `run`/`debug`, while the document toolbar reaches `klive.inject` and
+ * friends through build.ksx. They were merged onto *this* behaviour, so `run` and `debug` now also
+ * export a NEX file for ZX Next builds, lock the compiled source list while debugging, and pass the
+ * exported path to `runCodeCommand`; they no longer raise a modal for a successful injection or for
+ * zero-length output, the command result already says both.
+ *
+ * It stays in this module rather than moving to `utils/` beside `compileCode` because the NEX step
+ * calls `ExportCodeCommand.exportCompiledCode`, which is defined below and is far too entangled to
+ * follow it. `CompilerCommand.ts` importing from here is one-directional; the reverse import does
+ * not exist.
+ *
+ * One difference was deliberately left unresolved: the paused-machine check below fires only for
+ * ZX Next, where the other copy required a paused machine before any injection. That is a safety
+ * rule, not a style choice, and it is being revisited separately.
+ */
+export async function injectCode(
   context: IdeCommandContext,
   operationType: CodeInjectionType
 ): Promise<IdeCommandResult> {
