@@ -1,11 +1,20 @@
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import classnames from "classnames";
 import styles from "./ConsoleOutput.module.scss";
 import {
   IOutputBuffer,
   OutputContentLine,
+  OutputSeverity,
   OutputSpan
 } from "@renderer/appIde/ToolArea/abstractions";
-import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import {
+  CSSProperties,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState
+} from "react";
 import { ConsoleAction } from "@common/utils/output-utils";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
@@ -21,6 +30,15 @@ import { useRowSizes } from "@renderer/theming/useRowSizes";
 
 type Props = {
   buffer: IOutputBuffer;
+  /**
+   * What to show while the buffer has no lines.
+   *
+   * The component already knew it had nothing to draw — it just drew nothing, and a panel whose
+   * pane has not run yet was an unexplained empty rectangle. The node belongs to the caller because
+   * only the caller knows what would fill it: "run `compile`" is right for the Build pane and
+   * meaningless for Command Result.
+   */
+  emptyState?: ReactNode;
   /**
    * Keep the newest line in view as content arrives.
    *
@@ -39,6 +57,7 @@ type Props = {
 
 export const ConsoleOutput = ({
   buffer,
+  emptyState,
   followTail = false,
   showLineNo = false,
   initialTopPosition,
@@ -109,7 +128,8 @@ export const ConsoleOutput = ({
   }, [buffer, refresh]);
 
   return (
-    <div className={styles.listWrapper}>
+    <div className={classnames(styles.listWrapper, { [styles.withLineNo]: showLineNo })}>
+      {lines.length === 0 && emptyState}
       {lines.length > 0 && (
         <VirtualizedList
           items={lines}
@@ -152,7 +172,12 @@ export const ConsoleOutput = ({
             }
           }}
           renderItem={(idx) => (
-            <OutputLine lineNo={idx + 1} showLineNo={showLineNo} spans={lines[idx]?.spans} />
+            <OutputLine
+              lineNo={idx + 1}
+              showLineNo={showLineNo}
+              severity={lines[idx]?.severity}
+              spans={lines[idx]?.spans}
+            />
           )}
         />
       )}
@@ -162,6 +187,11 @@ export const ConsoleOutput = ({
 
 type OutputContentLineProps = {
   spans: OutputSpan[];
+  /**
+   * What the line means, when its writer said. Drives the line number's colour — the severity cue
+   * rides in a column that is already there, instead of spending more of a 12px row on a stripe.
+   */
+  severity?: OutputSeverity;
   lineNo: number;
   showLineNo?: boolean;
 };
@@ -180,7 +210,18 @@ const buildSpanStyle = (s: OutputSpan): CSSProperties => ({
   backgroundColor: s.background !== undefined ? `var(--console-ansi-${s.background})` : undefined,
   color:
     s.foreground !== undefined ? `var(--console-ansi-${s.foreground})` : "var(--console-default)",
-  textDecoration:
+  /*
+   * `textDecorationLine`, not the `textDecoration` shorthand.
+   *
+   * The shorthand resets every decoration longhand it does not mention — including
+   * `text-decoration-color` — and this is an *inline* style, so it beat anything the stylesheet
+   * said. `OutputPaneBuffer.write` marks every actionable span `isUnderline`, so that reset landed
+   * on exactly the spans whose underline the stylesheet wants to style: `.actionable`'s colour rule
+   * was computing correctly and then being overwritten on the way to the screen.
+   *
+   * The line is the span's business; its colour, offset and thickness are the stylesheet's.
+   */
+  textDecorationLine:
     [s.isUnderline ? "underline" : "", s.isStrikeThru ? "line-through" : ""]
       .filter(Boolean)
       .join(" ") || undefined
@@ -209,7 +250,7 @@ const spanStyle = (s: OutputSpan): CSSProperties => {
   return style;
 };
 
-const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
+const OutputLine = ({ spans, severity, lineNo, showLineNo }: OutputContentLineProps) => {
   const { ideCommandsService } = useAppServices();
 
   const activate = async (s: OutputSpan) => {
@@ -229,7 +270,16 @@ const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
 
   return (
     <div className={styles.outputLine}>
-      {showLineNo && <span className={styles.lineNo}>{lineNo}:</span>}
+      {showLineNo && (
+        <span
+          className={classnames(styles.lineNo, {
+            [styles.lineNoError]: severity === "error",
+            [styles.lineNoWarning]: severity === "warning"
+          })}
+        >
+          {lineNo}:
+        </span>
+      )}
       {(spans ?? []).map((s, idx) =>
         s.actionable ? (
           /*

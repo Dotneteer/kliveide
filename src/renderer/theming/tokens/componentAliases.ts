@@ -269,6 +269,35 @@ export const componentAliases: Record<string, string> = {
 
   // --- Tool area --------------------------------------------------------------------------------
   "--bgcolor-toolarea": "var(--surface-panel)",
+  /**
+   * The console's line-number gutter.
+   *
+   * `ConsoleOutput.module.scss` has read `var(--console-lineNo)` since the gutter was written, and
+   * `theme.ts` declares it as a themable property — but nothing ever gave it a value, so the
+   * reference resolved to nothing and the numbers inherited whatever colour the line was painting
+   * in. It went unnoticed because the only panel that could have shown it never switched
+   * `showLineNo` on.
+   *
+   * `--text-tertiary`, not `--text-disabled`: a line number is a quiet reference mark, not a
+   * switched-off control, and `textDisabled` is deliberately below AA.
+   */
+  "--console-lineNo": "var(--text-tertiary)",
+  /**
+   * The line number of a line a writer marked as a diagnostic.
+   *
+   * The status colours rather than the ANSI palette: these answer "is this an error" and should
+   * track the rest of the app's error and warning ink, not the sixteen terminal colours a pane
+   * happens to paint its text with.
+   */
+  "--console-lineNo-error": "var(--status-error)",
+  "--console-lineNo-warning": "var(--status-warning)",
+  /**
+   * The hovered console row. A console line carries clickable file references, so the row is a
+   * target as well as text; this is what says so before the pointer reaches the link itself.
+   */
+  "--bgcolor-console-hovered": "var(--surface-hover)",
+  /** Empty-state and watermark ink — present, but never competing with real output. */
+  "--color-console-quiet": "var(--text-tertiary)",
   "--btopcolor-tooltab-activeTab": "var(--accent-solid)",
   "--color-tooltab-active": "var(--text-primary)",
   "--color-tooltab-inactive": "var(--text-tertiary)",

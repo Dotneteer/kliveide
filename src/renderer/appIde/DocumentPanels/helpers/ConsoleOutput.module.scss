@@ -49,6 +49,41 @@
    */
   line-height: var(--row-size-console);
   min-height: var(--row-size-console);
+
+  /*
+   * The gutter.
+   *
+   * It lives here rather than on each panel's wrapper because every console wants it and they were
+   * drifting: the Commands panel had just grown one of its own to line up with its prompt sigil,
+   * while the Output, Script Output and Command Result panels still started their text hard against
+   * the panel edge. One rule, four panels.
+   *
+   * `.withLineNo` takes it back off — there the number column *is* the gutter.
+   */
+  padding: 0 var(--space-3);
+
+  /*
+   * A console line is not only text: an error's file reference is a real button that runs a `nav`
+   * command. The row hover is what says the line is a target before the pointer finds the link.
+   */
+  &:hover {
+    background-color: var(--bgcolor-console-hovered);
+  }
+}
+
+/*
+ * With a number column, the gutter becomes a hanging indent.
+ *
+ * `padding-left` reserves the column's width for every visual row and `text-indent` pulls the first
+ * one back out of it, which is where `.lineNo` sits. Without this the number column is only
+ * reserved on a line's first row and a wrapped line — a compiler diagnostic carrying an absolute
+ * path is reliably one — runs back underneath the numbers.
+ *
+ * 8ch is `.lineNo`'s own `min-width`; the two have to agree.
+ */
+.withLineNo .outputLine {
+  padding-left: 8ch;
+  text-indent: -8ch;
 }
 
 /*
@@ -64,6 +99,27 @@
   padding-right: var(--space-3);
   min-width: 8ch;
   text-align: end;
+}
+
+/*
+ * Severity, in the column that is already there.
+ *
+ * A build log is read by scanning for the lines that went wrong, and until now the only thing
+ * saying which those were was the message's own colour — a wall of red among a wall of text. The
+ * number column is the one piece of chrome on the row, it runs down the whole panel, and colouring
+ * it turns "find the errors" into a glance without spending any more of a 12px row.
+ *
+ * It is not the only cue: the diagnostic's own text keeps its colour, so this is never carrying the
+ * distinction alone.
+ */
+.lineNoError {
+  color: var(--console-lineNo-error);
+  font-weight: 600;
+}
+
+.lineNoWarning {
+  color: var(--console-lineNo-warning);
+  font-weight: 600;
 }
 
 /*
@@ -83,8 +139,22 @@
   text-align: inherit;
   cursor: pointer;
 
+  /*
+   * Underlined at rest, not only on hover.
+   *
+   * This is the one interactive thing on a compiler diagnostic — click it and the editor jumps to
+   * the line — and until the pointer happened to cross it, it looked exactly like the coloured text
+   * either side. The underline is drawn in the span's own ink at partial strength, so it works for
+   * every colour a pane might write the reference in rather than needing a colour of its own; the
+   * `currentColor` line before it is what a browser without `color-mix` falls back to.
+   */
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 2px;
+
   &:hover {
-    text-decoration: underline;
+    text-decoration-color: currentColor;
   }
 
   @include focus-ring(-1px);

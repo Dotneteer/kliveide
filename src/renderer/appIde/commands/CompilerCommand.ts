@@ -159,6 +159,9 @@ async function compileCode(
   if ((result.errors?.length ?? 0) > 0) {
     for (let i = 0; i < result.errors.length; i++) {
       const err = result.errors[i];
+      // --- The colour says how it looks; this says what it is. A panel can count, mark or filter
+      // --- on the second and not on the first.
+      out.severity(err.isWarning ? "warning" : "error");
       out.color(err.isWarning ? "yellow" : "bright-red");
       out.bold(true);
       out.write(`${err.errorCode}: `);

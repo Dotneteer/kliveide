@@ -11,18 +11,15 @@
  * Just a box. The font used to be set here too, but `ConsoleOutput` now pins its own family and
  * size (slice 7.1), so these were overridden on every line they appeared to style.
  *
- * The gutter and the rule below are new. `ConsoleOutput` has no left padding of its own — its lines
- * start hard against the panel edge — so the gutter is applied here rather than in the shared
- * component, which the Output, Script Output and Command Result panels also render. It exists to
- * line the console up with the prompt's sigil: 2px of rail plus 10px of padding puts that sigil at
- * `--space-3`, which is where these lines now start too.
+ * The rule below is new. The gutter that used to be here moved into `ConsoleOutput` itself once the
+ * Output panel needed the same thing — the console lines still start at `--space-3`, which is where
+ * 2px of rail plus 10px of padding puts the prompt's sigil.
  */
 .outputWrapper {
     @include fill-parent-flex;
     box-sizing: border-box;
     flex-direction: column;
     user-select: text;
-    padding-left: var(--space-3);
     border-bottom: 1px solid var(--border-default);
 }
 

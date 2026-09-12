@@ -1,5 +1,11 @@
 import { LiteEvent } from "@emu/utils/lite-event";
-import { IOutputBuffer, OutputColor, OutputContentLine, OutputSpan } from "./abstractions";
+import {
+  IOutputBuffer,
+  OutputColor,
+  OutputContentLine,
+  OutputSeverity,
+  OutputSpan
+} from "./abstractions";
 import { ILiteEvent } from "@abstractions/ILiteEvent";
 import { internStyle } from "./output-style-table";
 
@@ -10,6 +16,7 @@ type StyleState = {
   isItalic: boolean;
   isUnderline: boolean;
   isStrikethru: boolean;
+  severity?: OutputSeverity;
 };
 
 /** Appended in place of the remainder of a line that exceeded `maxLineLength`. */
@@ -51,6 +58,8 @@ export class OutputPaneBuffer implements IOutputBuffer {
   private _isItalic: boolean = false;
   private _isUnderline: boolean = false;
   private _isStrikethru: boolean = false;
+  /** Severity stamped onto every line written until `resetStyle()` or another `severity()`. */
+  private _severity: OutputSeverity | undefined;
   private _contentsChanged = new LiteEvent<void>();
   private _styleStack: StyleState[] = [];
 
@@ -127,6 +136,28 @@ export class OutputPaneBuffer implements IOutputBuffer {
     this._isItalic = false;
     this._isStrikethru = false;
     this._isUnderline = false;
+    this._severity = undefined;
+  }
+
+  /**
+   * Marks the lines written from now on with a severity.
+   *
+   * Sticky, like the colour and attribute setters: a diagnostic declares its severity once and then
+   * writes the several spans that make up its line. `write()` stamps it onto the line it is
+   * appending to, so a severity set part-way through a line still applies to the whole of it.
+   */
+  severity(severity: OutputSeverity | undefined): void {
+    this._severity = severity;
+    /*
+     * Apply it to the line already in progress, if any. Without this, `severity()` called after the
+     * first `write()` of a line would mark only the *next* line — which is the order a writer would
+     * reach for when the severity is not known until the message has been composed.
+     */
+    const current = this._buffer[this._buffer.length - 1];
+    if (current) {
+      current.severity = severity;
+      this.contentChanged();
+    }
   }
 
   /**
@@ -209,7 +240,9 @@ export class OutputPaneBuffer implements IOutputBuffer {
       cutHere = true;
     }
 
-    const spans = this._buffer[this._buffer.length - 1].spans;
+    const line = this._buffer[this._buffer.length - 1];
+    if (this._severity !== undefined) line.severity = this._severity;
+    const spans = line.spans;
     spans.push(this.makeSpan(text, this._isUnderline || !!actionable, actionable, data));
     this._currentLineLength += text.length;
 
@@ -319,7 +352,8 @@ export class OutputPaneBuffer implements IOutputBuffer {
       isBold: this._isBold,
       isItalic: this._isItalic,
       isUnderline: this._isUnderline,
-      isStrikethru: this._isStrikethru
+      isStrikethru: this._isStrikethru,
+      severity: this._severity
     });
   }
 
@@ -337,6 +371,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
     this._isItalic = state.isItalic;
     this._isUnderline = state.isUnderline;
     this._isStrikethru = state.isStrikethru;
+    this._severity = state.severity;
   }
 
   /**

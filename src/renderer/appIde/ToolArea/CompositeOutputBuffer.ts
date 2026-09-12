@@ -1,5 +1,10 @@
 import { LiteEvent } from "@emu/utils/lite-event";
-import { IOutputBuffer, OutputColor, OutputContentLine } from "./abstractions";
+import {
+  IOutputBuffer,
+  OutputColor,
+  OutputContentLine,
+  OutputSeverity
+} from "./abstractions";
 import { ILiteEvent } from "@abstractions/ILiteEvent";
 
 /**
@@ -10,6 +15,10 @@ export class CompositeOutputBuffer implements IOutputBuffer {
 
   resetStyle (): void {
     this.buffers.forEach(buffer => buffer.resetStyle());
+  }
+
+  severity (severity: OutputSeverity | undefined): void {
+    this.buffers.forEach(buffer => buffer.severity(severity));
   }
 
   color (color: OutputColor): void {

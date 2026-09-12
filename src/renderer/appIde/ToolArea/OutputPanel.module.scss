@@ -8,10 +8,86 @@
  * the `.outputLine` that actually renders is the one in `ConsoleOutput.module.scss`. The `em` was
  * the more interesting of the two, since it silently lost to the inner declaration and so looked
  * like it worked.
+ *
+ * `position: relative` is new, and anchors the pane watermark.
  */
 .outputPanel {
     @include fill-parent-flex;
     box-sizing: border-box;
     flex-direction: column;
     user-select: text;
+    position: relative;
+}
+
+/*
+ * The pane name, bottom-right.
+ *
+ * Three panes share this panel and only one is visible at a time; the only thing that said which
+ * was the dropdown in the tool header, which is a long way from the text you are reading and looks
+ * like a control rather than a label. This is the answer to "what am I looking at" without moving
+ * the eye off the output.
+ *
+ * `pointer-events: none` because the text underneath is selectable and this must not interrupt a
+ * drag. It is hidden outright while the pane is empty — the empty state already names the pane, and
+ * two labels for one pane is one too many.
+ */
+.watermark {
+    position: absolute;
+    right: var(--space-3);
+    bottom: var(--space-2);
+    pointer-events: none;
+    user-select: none;
+    font-family: var(--main-font-family);
+    font-size: var(--font-size-50);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-console-quiet);
+    opacity: 0.55;
+}
+
+/*
+ * What an empty pane says.
+ *
+ * It used to say nothing at all: `OutputPanel` rendered the console and the console rendered
+ * nothing, so a pane that had not run yet was an unexplained black rectangle — and two of the three
+ * panes are in that state most of the time.
+ */
+.emptyState {
+    @include fill-parent-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-4);
+    user-select: none;
+}
+
+.emptyBox {
+    max-width: 40ch;
+}
+
+.emptyTitle {
+    font-family: var(--main-font-family);
+    font-size: var(--font-size-300);
+    font-weight: 500;
+    color: var(--color-console-quiet);
+}
+
+.emptyHint {
+    margin-top: var(--space-1);
+    font-family: var(--main-font-family);
+    font-size: var(--font-size-100);
+    line-height: 1.5;
+    color: var(--color-console-quiet);
+    opacity: 0.85;
+}
+
+/* The command you would type, set in the font it would be typed in. */
+.emptyHint code {
+    font-family: var(--monospace-font);
+    font-size: var(--font-size-100);
+    background: var(--bgcolor-console-hovered);
+    padding: 1px 5px;
+    border-radius: var(--radius-xs);
 }

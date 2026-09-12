@@ -60,6 +60,8 @@ class IdeMessageProcessor {
     const buffer = this.outputPaneService.getOutputPaneBuffer(toDisplay.pane);
     if (!buffer) return;
     buffer.resetStyle();
+    // --- Before the writes below, so the line it lands on is the one they append to.
+    if (toDisplay.severity !== undefined) buffer.severity(toDisplay.severity);
     if (toDisplay.foreground !== undefined) buffer.color(toDisplay.foreground);
     if (toDisplay.background !== undefined) buffer.backgroundColor(toDisplay.background);
     buffer.bold(toDisplay.isBold ?? false);
@@ -298,6 +300,9 @@ function executeScriptOutput(
   switch (operation) {
     case "clear":
       buffer.clear();
+      break;
+    case "severity":
+      buffer.severity(args?.[0]);
       break;
     case "write":
       buffer.write(args[0]?.toString(), args[1], args[2]);

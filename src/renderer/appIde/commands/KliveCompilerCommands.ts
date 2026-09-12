@@ -1112,6 +1112,16 @@ async function compileCode(
   if ((result.errors?.length ?? 0) > 0) {
     for (let i = 0; i < result.errors.length; i++) {
       const err = result.errors[i];
+      /*
+       * The colour says how it looks; this says what it is.
+       *
+       * Set in both copies of `compileCode` — this one and the near-identical function in
+       * CompilerCommand.ts. They differ by about a dozen lines and each is reached by different
+       * commands (`compile` versus `klive.compile`, which is what the toolbar's Build button runs
+       * through build.ksx), so a change made to one and not the other is invisible until someone
+       * uses the other command. That is exactly how this line came to be missing here first.
+       */
+      out.severity(err.isWarning ? "warning" : "error");
       out.color(err.isWarning ? "yellow" : "bright-red");
       out.bold(true);
       out.write(`${err.errorCode}: `);

@@ -255,3 +255,103 @@ describe("CompositeOutputBuffer", () => {
     expect(childHandler).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * Line severity.
+ *
+ * The buffer carried colour and nothing else, so a panel that wanted to mark, count or filter
+ * diagnostics had only the hue to go on — and hue is chosen for contrast, shared by unrelated
+ * things, and unanswerable to "which of these are errors". These pin the separate channel.
+ */
+describe("OutputPaneBuffer severity", () => {
+  const severitiesOf = (buffer: OutputPaneBuffer) =>
+    buffer.getContents().map((line) => line.severity);
+
+  it("leaves lines unmarked by default", () => {
+    const buffer = new OutputPaneBuffer();
+    buffer.writeLine("Start compiling");
+    buffer.writeLine("Done");
+    expect(severitiesOf(buffer)).toEqual([undefined, undefined]);
+  });
+
+  it("marks the lines written while it is set", () => {
+    const buffer = new OutputPaneBuffer();
+    buffer.writeLine("Start compiling");
+    buffer.severity("error");
+    buffer.writeLine("Z0201: Cannot find include file");
+    expect(severitiesOf(buffer)).toEqual([undefined, "error"]);
+  });
+
+  it("marks a whole line assembled from several spans", () => {
+    // --- The real shape: a bold code, the message, then a clickable file reference. All of them
+    // --- belong to one diagnostic, and the severity is a property of the line they make up.
+    const buffer = new OutputPaneBuffer();
+    buffer.severity("error");
+    buffer.write("Z0101: ");
+    buffer.write("Register A expected");
+    buffer.write(" - ");
+    buffer.writeLine("io.asm(24,5)", { type: "@navigate" }, true);
+    expect(severitiesOf(buffer)).toEqual(["error"]);
+    expect(buffer.getContents()[0].spans).toHaveLength(4);
+  });
+
+  it("applies to a line already in progress", () => {
+    // --- A writer that composes the message before it knows the severity sets it late; the line it
+    // --- is part-way through is still the line it means.
+    const buffer = new OutputPaneBuffer();
+    buffer.write("Z0201: ");
+    buffer.severity("warning");
+    buffer.writeLine("Unused symbol");
+    expect(severitiesOf(buffer)).toEqual(["warning"]);
+  });
+
+  it("is cleared by resetStyle, like every other write-state setting", () => {
+    const buffer = new OutputPaneBuffer();
+    buffer.severity("error");
+    buffer.writeLine("Z0201: Cannot find include file");
+    buffer.resetStyle();
+    buffer.writeLine("Compilation failed with 1 error.");
+    expect(severitiesOf(buffer)).toEqual(["error", undefined]);
+  });
+
+  it("is saved and restored by pushStyle / popStyle", () => {
+    const buffer = new OutputPaneBuffer();
+    buffer.severity("error");
+    buffer.pushStyle();
+    buffer.severity("warning");
+    buffer.writeLine("a warning");
+    buffer.popStyle();
+    buffer.writeLine("back to the error");
+    expect(severitiesOf(buffer)).toEqual(["warning", "error"]);
+  });
+
+  it("survives the getContents snapshot being reused", () => {
+    // --- `getContents()` hands out a cached array until the revision moves. Marking a line has to
+    // --- move it, or the panel renders the severity it saw before the mark.
+    const buffer = new OutputPaneBuffer();
+    buffer.write("Z0101: Register A expected");
+    expect(buffer.getContents()[0].severity).toBeUndefined();
+    buffer.severity("error");
+    expect(buffer.getContents()[0].severity).toBe("error");
+  });
+
+  it("is forwarded by a composite buffer to every member", () => {
+    const a = new OutputPaneBuffer();
+    const b = new OutputPaneBuffer();
+    const composite = new CompositeOutputBuffer([a, b]);
+    composite.severity("warning");
+    composite.writeLine("Z0002: A line cannot start with this token");
+    expect(severitiesOf(a)).toEqual(["warning"]);
+    expect(severitiesOf(b)).toEqual(["warning"]);
+  });
+
+  it("clears with the buffer", () => {
+    const buffer = new OutputPaneBuffer();
+    buffer.severity("error");
+    buffer.writeLine("Z0201: Cannot find include file");
+    buffer.clear();
+    buffer.resetStyle();
+    buffer.writeLine("Start compiling");
+    expect(severitiesOf(buffer)).toEqual([undefined]);
+  });
+});

@@ -43,9 +43,25 @@ export type OutputSpan = {
   styleId?: number;
 };
 
+/**
+ * What a line of output *means*, as opposed to what colour it is painted.
+ *
+ * The buffer has always carried colour — `CompilerCommand` writes an error in `bright-red` and a
+ * warning in `yellow` — and colour is not a substitute. It is chosen for contrast against a theme,
+ * several unrelated things legitimately share one, and no panel can ask "which of these are errors"
+ * of a hue. Marking, counting or filtering diagnostics needs the intent recorded separately, which
+ * is what this is.
+ *
+ * Optional everywhere: most output is not a diagnostic, and a pane that never sets it behaves
+ * exactly as it did before this existed.
+ */
+export type OutputSeverity = "error" | "warning" | "info";
+
 export type OutputSpecification = OutputSpan & {
   pane: string;
   writeLine?: boolean;
+  /** Severity for the line this span is written into. See `OutputSeverity`. */
+  severity?: OutputSeverity;
 };
 
 /**
@@ -53,6 +69,15 @@ export type OutputSpecification = OutputSpan & {
  */
 export type OutputContentLine = {
   spans: OutputSpan[];
+
+  /**
+   * The severity of this line, when a writer declared one.
+   *
+   * On the line rather than on the span, because that is the unit it describes: a diagnostic is a
+   * line assembled from several spans — a bold code, a message, a clickable file reference — and
+   * all of them belong to the same error.
+   */
+  severity?: OutputSeverity;
 };
 
 /**
@@ -70,7 +95,8 @@ export type BufferOperation =
   | "underline"
   | "strikethru"
   | "pushStyle"
-  | "popStyle";
+  | "popStyle"
+  | "severity";
 
 /**
  * Represents a buffer for an output pane
@@ -90,6 +116,17 @@ export interface IOutputBuffer {
    * Sets the default color
    */
   resetStyle(): void;
+
+  /**
+   * Marks the lines written from now on with a severity, until `resetStyle()` or another call.
+   *
+   * Shaped like the style setters below — sticky state applied at write time, saved and restored by
+   * `pushStyle`/`popStyle`, cleared by `resetStyle` — because that is how every writer already
+   * drives this buffer, and a diagnostic sets its severity in the same breath as its colour.
+   *
+   * @param severity The severity to mark, or `undefined` to stop marking.
+   */
+  severity(severity: OutputSeverity | undefined): void;
 
   /**
    * Sets the output to the specified color
