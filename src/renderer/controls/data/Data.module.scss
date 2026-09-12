@@ -190,6 +190,24 @@
 }
 
 /*
+ * The same signal, as a background wash rather than a colour.
+ *
+ * Both forms exist because `--data-changed` **is** `--accent-text` — L2 derives both from the
+ * accent's `solid` — and `--color-state-value` is `--accent-text` as well. So on a panel converted
+ * to the register/state colour (§10.3), `.changed` repaints an accent value in the same accent and
+ * draws nothing at all: wired up, running, invisible, exactly like the `AttachedShadow` token that
+ * pointed at a surface. The wash is 18% of the same hue *behind* the glyphs, which reads against
+ * accent text and neutral text alike.
+ *
+ * Use `.changed` on a neutral panel and `.changedWash` on a converted one. No padding: a wash that
+ * inflated the cell would move the `ch` columns it sits in.
+ */
+.changedWash {
+  background: var(--data-changed-bg);
+  border-radius: var(--radius-xs);
+}
+
+/*
  * A data panel's header.
  *
  * There were 17 hand-rolled versions of this across 13 files, at three different heights (26px,
@@ -227,6 +245,80 @@
   align-items: center;
   gap: var(--space-1);
   margin-left: auto;
+}
+
+/*
+ * The filter row (`PanelFilter`).
+ *
+ * Content, not chrome: no `--surface-chrome`, no bottom border, because a sidebar panel's header
+ * band already is chrome and a second strip under it reads as a second title. One list row tall so
+ * it costs the panel exactly one row of data.
+ */
+.panelFilter {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: var(--row-size-list);
+  padding: 0 var(--space-2);
+  gap: var(--measure-gap);
+  user-select: none;
+}
+
+.panelFilterInput {
+  flex: 1 1 auto;
+  /* Lets the box shrink below its content width in a narrow sidebar instead of pushing the
+     status and clear button out of the row — the `width: 100%` trap from the sidebar headers. */
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-1);
+  font-family: var(--monospace-font);
+  /* M1: absolute. The data below follows the user's panel size; the filter is chrome and does not. */
+  font-size: var(--font-size-200);
+  line-height: var(--panel-line-height);
+  color: var(--data-value);
+  background: var(--bgcolor-input);
+  outline: none;
+
+  &::placeholder {
+    color: var(--data-secondary);
+  }
+
+  &:focus-visible {
+    border-color: var(--accent-border);
+  }
+}
+
+/* `12 / 244`. An annotation on the input, so it takes the annotation colour. */
+.panelFilterStatus {
+  flex: 0 0 auto;
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+}
+
+.panelFilterClear {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-controlSm);
+  height: var(--size-controlSm);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-border);
+    outline-offset: -2px;
+  }
 }
 
 /*

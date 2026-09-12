@@ -148,6 +148,42 @@ export const componentAliases: Record<string, string> = {
   /* An expanded panel's title, and any header under the pointer. */
   "--color-panel-header-active": "var(--text-primary)",
   "--color-panel-border": "var(--border-subtle)",
+  /*
+   * The rule between sections of a register/state panel -- the `<Separator/>` after the Z80 flag
+   * strip, after WZ, after IWV, and its equivalents in the M6510, VIC, Blink and ULA panels.
+   *
+   * `--border-strong`, not the `--border-default` these rules used to borrow from
+   * `--color-toolbar-separator`. A border token is only as visible as the surface behind it, and
+   * these sit on `--surface-panel` -- the darkest surface in the dark tone -- where
+   * `--border-default` measures 1.37:1 and disappears. `--border-strong` takes it to 1.74:1 in
+   * dark and 1.76:1 in light, and is what the ramp already carries for exactly this case: an edge
+   * that has to be seen rather than merely implied.
+   *
+   * A divider is not text and not a control, so no WCAG threshold applies to it; the number that
+   * matters is that it is now visible at a glance on both tones, which 1.37:1 was not.
+   */
+  "--color-panel-separator": "var(--border-strong)",
+
+  /*
+   * The overlay scrollbar handle, in its three interaction states.
+   *
+   * These replace hardcoded `#808080c0` / `#a0a0a0c0` / `#c0c0c0c0` literals that sat in
+   * `assets/styles/overlayScrollbars-modified.css` — a single mid-grey used for *both* tones, which
+   * is why the handle read as heavy on a dark panel and washed out on a light one.
+   *
+   * The three steps are existing text roles rather than new greys, so the progression is derived in
+   * both tones and moves with the neutral ramp: at rest `--text-disabled` (2.78:1 dark / 2.48:1
+   * light against `--surface-panel`) — present, but quieter than any real content; `--text-tertiary`
+   * under the pointer (~4.7:1); `--text-secondary` while dragging (~6.3:1). A scrollbar is
+   * navigation furniture, so resting contrast is deliberately below the data it sits beside.
+   *
+   * Tone-aware by construction, which is why the `os-theme-dark*` and `os-theme-light*` classes now
+   * carry identical declarations — the *token* resolves per tone, so the two class pairs no longer
+   * need to differ. (They are kept distinct only because `ScrollViewer` still selects between them.)
+   */
+  "--color-scrollbar-handle": "var(--text-disabled)",
+  "--color-scrollbar-handle-hover": "var(--text-tertiary)",
+  "--color-scrollbar-handle-active": "var(--text-secondary)",
   /* The band behind a panel header, and its hover state. Gradients, not flat colours — see
    * `--surface-header*` in semantic.ts for why the band is lit rather than filled. */
   "--bgcolor-panelHeader":

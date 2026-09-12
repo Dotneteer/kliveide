@@ -2,7 +2,7 @@ import type { MachineConfigSet, MachineModel } from "@common/machines/info-types
 import type { CpuState, UlaState } from "@common/messaging/EmuApi";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
-import type { NextRegDescriptor, NextRegDeviceState, RegValueState } from "./NextRegDevice";
+import type { NextRegDeviceState, RegValueState } from "./NextRegDevice";
 import type { ZxNextWasmV2LoaderOptions, ZxNextWasmV2Runtime } from "./wasm/ZxNextWasmV2Loader";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
@@ -130,8 +130,6 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private readonly wasmV2AudioSamples: AudioSample[] = [];
   private readonly wasmV2KeyboardRows = new Uint8Array(8);
   private wasmV2KeyboardRowsValid = false;
-  private readonly nextRegDescriptors = this.createNextRegDescriptors();
-
   constructor(
     public readonly requestedModelInfo?: MachineModel,
     public readonly requestedConfig?: MachineConfigSet,
@@ -1097,7 +1095,21 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.nextRegDevice.getNextRegisterValue = () => (
       this.requireWasmV2Runtime().exports.zxnextGetNextRegisterValue()
     );
-    this.nextRegDevice.getDescriptors = () => this.nextRegDescriptors;
+    /*
+     * `getDescriptors` is deliberately NOT overridden.
+     *
+     * It used to be pointed at a locally generated table of 256 placeholders reading
+     * "WASM NextReg $XX", which meant the Next Registers panel showed neither the registers' real
+     * names nor the `slices` breakdown — on the *production default* backend, since
+     * `ZxNextImplementation` selects WASM unless a config says otherwise. The descriptor table is
+     * static documentation (id, description, read/write-only, slices); none of it depends on which
+     * backend executes the registers, and `NextRegDevice` — which this class inherits a fully
+     * constructed instance of — already builds it and already strips the `readFn`/`writeFn`
+     * closures on the way out, so it is safe to send over IPC.
+     *
+     * The register *values* still come from WASM: `getNextRegDeviceState` below is overridden, and
+     * that is the part that is backend-specific.
+     */
     this.nextRegDevice.getNextRegDeviceState = () => this.getWasmNextRegDeviceState();
   }
 
@@ -1201,17 +1213,6 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       return -1 - (readOffset >> 14);
     }
     return undefined;
-  }
-
-  private createNextRegDescriptors(): NextRegDescriptor[] {
-    const descriptors: NextRegDescriptor[] = [];
-    for (let id = 0; id < 0x100; id++) {
-      descriptors.push({
-        id,
-        description: `WASM NextReg $${id.toString(16).padStart(2, "0").toUpperCase()}`
-      });
-    }
-    return descriptors;
   }
 
   private getWasmNextRegDeviceState(): NextRegDeviceState {

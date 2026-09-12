@@ -588,11 +588,16 @@ export const SpriteEditor = ({ context }: Props) => {
               onSignEscape={() => context.changeViewState((vs) => (vs.currentTool = "pointer"))}
             />
             <Column>
+              {/*
+                * `cellSize`, not the old `smallDisplay`. The viewer is sized from its swatch now,
+                * which is what keeps this control from taking the rest of the editor in an
+                * open-ended flex row. 2.2ch + 16*17 = 285px, i.e. what the small mode measured.
+                */}
               <NextPaletteViewer
                 palette={defaultPalette}
+                cellSize={17}
                 transparencyIndex={0xe3}
                 allowSelection={true}
-                smallDisplay={true}
                 onSelection={(idx) => setPencilColorIndex(idx)}
                 onRightClick={(idx) => setFillColorIndex(idx)}
               />

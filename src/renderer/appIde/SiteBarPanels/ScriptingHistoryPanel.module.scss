@@ -20,6 +20,14 @@
      --- resolved against a 16px root to 12.8px rather than the 12px every sibling panel used.
      --- Now the same user-set size as the rest. */
   font-size: var(--panel-font-size);
+  /*
+   * Leading is declared, never inherited from the font's metrics. This panel is not a `DataPanel`
+   * and does not include the `side-panel-content` mixin, so it had neither's `line-height` and ran
+   * on whatever the selected mono face reports — measured on a comparable row as 21.5px (Iosevka),
+   * 20px (ZX Spectrum) and 22.5px (JetBrains Mono). See `CallStackPanel.module.scss` for the full
+   * reasoning.
+   */
+  line-height: var(--panel-line-height);
 
   &.selected {
     background-color: var(--bgcolor-explorer-focused-selected);

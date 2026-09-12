@@ -17,6 +17,7 @@ import { isScriptCompleted } from "../../common/utils/script-utils";
 import { getMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
 import { executeModule, isModuleErrors, parseKsxModule } from "@common/ksx/ksx-module";
 import { createScriptConsole } from "./ScriptConsole";
+import type { ScriptOutputOptions } from "../../common/ksx/script-runner";
 import { concludeScript, sendScriptOutput } from "../../common/ksx/script-runner";
 import { createProjectStructure } from "./ProjectStructure";
 import { executeIdeCommand } from "./ide-commands";
@@ -46,7 +47,7 @@ class MainScriptManager {
       scriptContents: string,
       evalContext: EvaluationContext
     ) => Promise<void>,
-    private outputFn: (text: string, options?: Record<string, any>) => Promise<void> = (
+    private outputFn: (text: string, options?: ScriptOutputOptions) => Promise<void> = (
       text,
       options
     ) => sendScriptOutput(getMainToIdeMessenger(), text, options),
@@ -87,7 +88,7 @@ class MainScriptManager {
     if (script) {
       // --- The script is already running, nothing to do
       await this.outputFn?.(`Script ${scriptFileName} is already running.`, {
-        color: "yellow"
+        foreground: "yellow"
       });
       return { id: -script.id };
     }
@@ -141,7 +142,7 @@ class MainScriptManager {
     mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
 
     // --- We intentionally do not await the script execution here
-    this.outputFn?.(`Script started`, { color: "green" });
+    this.outputFn?.(`Script started`, { foreground: "green" });
     concludeScript(
       mainStore,
       execTask,
@@ -209,7 +210,7 @@ class MainScriptManager {
     mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
 
     // --- We intentionally do not await the script execution here
-    this.outputFn?.(`Script started`, { color: "green" });
+    this.outputFn?.(`Script started`, { foreground: "green" });
     concludeScript(
       mainStore,
       execTask,
@@ -403,7 +404,7 @@ class MainScriptManager {
           await this.outputFn?.(
             `${error.code}: ${error.text} (${moduleName}:${error.line}:${error.column})`,
             {
-              color: "bright-red"
+              foreground: "bright-red"
             }
           );
         });

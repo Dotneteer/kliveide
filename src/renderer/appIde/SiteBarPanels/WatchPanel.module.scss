@@ -7,6 +7,14 @@
   user-select: none;
   font-family: var(--monospace-font);
   font-size: var(--panel-font-size);
+  /*
+   * Leading is declared, never inherited from the font's metrics. This panel is not a `DataPanel`
+   * and does not include the `side-panel-content` mixin, so it had neither's `line-height` and ran
+   * on whatever the selected mono face reports — measured on a comparable row as 21.5px (Iosevka),
+   * 20px (ZX Spectrum) and 22.5px (JetBrains Mono). See `CallStackPanel.module.scss` for the full
+   * reasoning.
+   */
+  line-height: var(--panel-line-height);
 }
 
 /*

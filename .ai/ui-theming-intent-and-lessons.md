@@ -1,12 +1,22 @@
 # UI Modernization: Intent And Lessons
 
-Durable notes from the Phase 0–9 UI modernization and the Phase 10 follow-up
+Durable notes from the Phase 0–9 UI modernization and the Phase 10 / Phase 11 follow-ups
 (`.plans/UI_MODERNIZATION_PLAN.md`). Read `../AGENTS.md` first. Read this before touching theming,
 tokens, the shared data-display primitives, the Monaco palette, **or the memory dump/disassembly
 colour** (§ "Secondary Accents" and § "View-Scoped Colour" below).
 
 The plan file is the detailed record: every phase has a retrospective written **after** it shipped,
 including the mistakes. This file is the part worth carrying into unrelated work.
+
+> ## Standing Instruction From The Author
+>
+> **Every style or theming change updates this file, in the same change.** Not a changelog entry —
+> the durable rule the change taught, written so a session that never saw the work can apply it.
+> Fold new learnings into the existing sections; if a rule here is superseded, **replace it**.
+>
+> The author is explicit that *the history of the learnings is not wanted* — only their current
+> state. Do not append "Phase N found…", do not date entries, do not keep a superseded rule beside
+> its replacement. This file is a standing brief, not a log.
 
 ## Settled Intent — Do Not Re-Litigate
 
@@ -25,6 +35,10 @@ These were decided by the project author. Changing them is a product decision, n
 | Window chrome | Frameless/title-bar toolbar: **explicitly deferred.** |
 | Secondary accent | **Yes, added in Phase 10.** Every accent has a second hue (`--accent-secondary-*`), for the specific case one hue can't cover — two things in the same view that must both read as accent-tied and clearly apart. Not a general "add more colour" licence; see below. |
 | Memory dump / disassembly colour | **These two views are exceptions to §5.2's neutral data-panel hierarchy**, added in Phase 10 — hex-editor-style views read better for real colour. |
+| Sidebar panel headers | **A shallow top-lit gradient band** (`--surface-header*`), added in Phase 11. Deliberately not a flat fill: the band is 26px and the list rows under it are 22px and also hover-highlight, so a flat strip reads as *a selected row*. A lit strip reads as chrome. |
+| Overflow (scroll) shadow | **6px, a 1px hairline over a gradient**, app-wide via `AttachedShadow`. The author chose the height against 14/8/6/4/1px. It says "there is content above", it does not dim the first row. |
+| Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
+| Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints. Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
@@ -117,6 +131,17 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   inline (it portals only while visible), so it is safe as a child of the row's flex container.
   Keep per-cell tooltips only where a row genuinely has two things to say — `NextRegPanel` names
   its previous and current values separately.
+- **A row tooltip and a cell tooltip inside it are two boxes for one pointer.** Where a row's cells
+  each have something to say — 192 array bytes, eight flag bits — do not give the cells tooltips
+  *and* the row one: both appear, at different placements and on different timings, and a native
+  `title` on the cell is the worse half of the pair (unstyled, and on the browser's clock). The
+  shape that works is the memory dump's: **the row owns the one tooltip and the hovered cell only
+  reports its index**, so the tooltip's *content* changes with what is under the pointer. The shared
+  primitives now offer exactly that — `HexByteGrid`'s `onHoverByte` and `FlagRow`'s `onHoverBit`,
+  which **suppress their own per-cell tooltips when passed**, because a caller taking over the
+  content is the only reason to ask for the index. `SysVarsPanel` is the worked example.
+  `FlagFieldRow` still has the double-tooltip latent (a row `TooltipFactory` over eight
+  `BitValue` tooltips); it is now fixable from the same prop.
 - A shared primitive can also take an **optional prop that is not a class** where the styling does
   not go through CSS — `FlagValue`/`VerticalFlagValue`/`BitValue` take `iconFill` (a token *name*,
   resolved by `Icon` via `getThemeProperty`), because an SVG presentation attribute cannot read
@@ -128,6 +153,76 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   every register/state panel has the same single role — "this is a live value". Adding
   `--color-ula-value`, `--color-vic-value` and so on would be a near-identical family per panel.
   Split it the day a panel needs a role the others do not have.
+- **Converting a panel to the accent silently disarms `--data-changed`.** That token and
+  `--color-state-value` are *both* the accent's `solid`, so `.changed` repaints an accent value in
+  the same accent: present in the DOM, absent on screen — the `AttachedShadow` failure again, from
+  the other direction. Use `.changedWash` (`--data-changed-bg`, 18% of the same hue *behind* the
+  glyphs) on any converted panel; `.changed` stays correct on a neutral one. `SysVarsPanel` marks
+  both its scalars and its individual array bytes this way, and pins the class in a test, because
+  "simplify this to `changed`" is precisely the tidy-up that would remove the only visible half.
+
+## Colour That Belongs To The Machine, Not To The Theme
+
+Two rules, both learned on the Next palette, both general.
+
+**A Next palette entry exists in two packings and nothing can tell them apart by inspection.**
+
+| Layout | Shape | Held by |
+|---|---|---|
+| **Register** | `RRRGGGBB` in bits 7..0, the low blue bit in bit 8, priority in bit 15 | `PaletteEditor`, `.nex`/`.pal` files, `SpriteEditor`'s ramp — and **every function in `emu/machines/zxNext/palette.ts`** |
+| **Device** | straight `RRRGGGBBB` | `PaletteDevice`, and therefore `getPalettedDeviceInfo`'s payload |
+
+They are a **one-bit rotation** apart. Convert at the boundary with `paletteCodeFromDeviceValue`
+and never anywhere else; do not add a function that "detects" the layout, because both cover
+0..511. The reason this matters more than a normal unit mismatch is how it fails: the rotation
+leaves greys and whites *unchanged* and moves saturated colours to another plausible colour, so a
+palette drawn through the wrong one still looks like a palette. It shipped for as long as nobody
+put it beside the emulator's own screen. `test/zxnext/palette-codec.test.ts` pins both directions,
+and pins the 3-bit→8-bit intensity ramp across all three tables that encode it (`zxNextBgra`,
+`zxNextRgb333Codes`, `colorIntensity`) — one of them had `0x25` where bit-replication gives `0x24`.
+
+**A state mark that is always present is not a signal.** The palette panel's bank control first
+marked the live bank with a corner dot. Because the shown bank follows the live bank by default, that
+dot was on every device, all the time, and carried information only in the rare pinned state — while
+costing legibility always: on the *filled* segment it had to be drawn in `--text-on-accent` to show
+up at all, which is `#0e0f11` in dark, so the ordinary state rendered as a near-black speck on a blue
+chip and read as a rendering artefact. The author flagged it as one. Mark the **exception** instead:
+the ring that now carries it is the same accent as the fill it normally sits under, i.e. invisible
+until the two states diverge. Before adding a second indicator to a control, check which of its
+states is the common one — if the mark is on screen in the default case, it is decoration.
+
+**A reference image is sized from its content, not from its container — and on whole pixels.** The
+palette grid was first built with `repeat(16, 1fr)`, which is the right instinct for a *layout* and
+the wrong one for a *picture of data*. Two things went wrong at once, and they have the same fix.
+Dragging the sidebar swung the swatches from 13.9px to 30.2px — a 2.2x change from resizing chrome,
+on something the reader is trying to hold in their head between glances. And every one of those
+widths was fractional, so cell edges and the hairlines between them landed off the pixel grid and the
+whole mosaic was faintly soft at *every* size; nobody reports that as a bug, they just find the view
+slightly unconvincing. Size such a view from its unit (`--palette-cell`) and let the container's
+extra width go unused. The shape that keeps it shrinkable is `width: calc(<gutter> + 16 *
+var(--cell)); max-width: 100%` with `1fr` tracks — a definite width so the tracks divide an exact
+multiple and land on integers, and a percentage cap so a genuinely narrower container degrades by
+shrinking instead of clipping. Fixed tracks (`repeat(16, var(--cell))`) would overflow, which is the
+clipping this replaced.
+
+**A preview must be a miniature of the thing, not a re-encoding of it.** The same panel first
+previewed each palette as a 2x128 gradient strip. At ~1.7px per entry it could not show an
+individual colour, and on the ULA — whose palette repeats every 16 — the stripes it *did* show were
+the repeat period rather than anything about the colours, so it read as texture. A 32px thumbnail of
+the actual 16x16 grid, at an integer 2px per entry, says "palette" instantly and shows the ramp
+palettes' real two-dimensional structure. When a summary needs its own encoding to fit, that is the
+signal it is too small, not that it needs a cleverer encoding.
+
+**Anything drawn *on top of* user colour takes its contrast from that colour, never from a token.**
+A swatch is arbitrary machine colour, not a themed surface, so there is no tone-dependent value that
+stays legible across a palette: one fixed alpha disappears over half of any of them and a theme
+neutral over more. `NextPaletteViewer` computes white-or-black from the entry's own luminance
+(`getLuminanceForPaletteCode(...) < 3.5`) for its selection ring, transparency disc and priority
+notch, and sets `--palette-rule` per element the same way for the quadrant hairlines. This is the
+same principle as the settled "device surfaces are theme-invariant" decision, one level down. Such a
+property has to be registered in `RUNTIME_PROVIDED` in `test/theming/token-contract.test.ts`, with
+the justification written there — that list is a hole in the contract and each entry pays for itself
+in prose.
 
 ## Alignment In The Register Panels
 
@@ -184,6 +279,23 @@ A standalone HTML page that copies the stylesheet rules is **not** evidence. The
 0.01px while the real panel was 8px out. A replica can only confirm what you already modelled
 correctly; it cannot discover the wrapper you did not know about.
 
+**This was violated again in Phase 11, in a way worth spelling out, because the violation looked
+reasonable from the inside.** The author asked for prototypes — a legitimate request, and a
+standalone HTML gallery is the right tool for *choosing between design options*. The failure was
+never drawing the line at the other end: the chosen design was then applied to the real SCSS and
+reported as done on the strength of a passing build, a green suite and a read of the compiled CSS,
+with "my tools can't drive an Electron window" said twice — while this very file documents the
+recipe that can. Keep the two apart:
+
+| Purpose | Replica | Running app over CDP |
+|---|---|---|
+| Choosing between design options, A/B-ing a value with the author | **Yes** — cheap, side by side, no relaunch | Awkward |
+| Believing a change works | **Never** | **Always** |
+
+A prototype that is honest about being a prototype is fine. A prototype standing in for verification
+is the same mistake twice. If the app is already running without `--remoteDebuggingPort=9222`, that
+is a reason to ask the author to relaunch it — not a reason to skip the check.
+
 Drive the real thing instead — `.plans/baseline/drive.mjs` against a CDP-enabled launch:
 
 ```bash
@@ -201,6 +313,12 @@ Specifics worth keeping:
   which matches the warning under "Running the app for visual checks" below.
 - Measure *ink*, not boxes, when the question is optical: `getBoundingClientRect()` gives the
   advance box, and canvas `measureText(...).actualBoundingBoxLeft` gives the bearing to add to it.
+- **Never clear `#themeRoot`'s inline `style` to test something.** That attribute *is* the token
+  set — `ThemeProvider` emits all ~400 custom properties onto it — so wiping it renders the whole app
+  in CSS initial values. It looks exactly like a component failing to resolve its own tokens (black
+  text on black, every surface transparent) and will send you hunting a bug you just caused. Setting
+  properties on it is fine, and is how to preview the other tone without the app menu: dump the light
+  set from `semanticTokens("light", …)` and `setProperty` each one. Reload the window to undo.
 - **Hovering over CDP needs the mouse parked elsewhere first, and patience.** `TooltipFactory`
   listens for `mouseenter` on its `refElement`, so a synthetic `new MouseEvent` often does nothing —
   use `Input.dispatchMouseEvent`. And the previous tooltip's hide timer outlives a fast script:
@@ -229,6 +347,13 @@ Four layers, in `src/renderer/theming/tokens/`:
 Because L2 varies by tone and the alias map does not, `light-theme.ts` collapsed. Keep it that way:
 a new hand-copied light value is a regression.
 
+**`ThemeProperties` in `theming/theme.ts` lists L4 alias names only** — not L1/L2/L3. Add every new
+alias there as well as to `componentAliases.ts`. Nothing enforces it: the alias map is typed
+`Record<string, string>`, so a missing entry compiles, passes the token-contract test, and works at
+runtime. It is a documentation convention, and the only way to keep it is to follow it. (Phase 11
+added six aliases and registered none of them until a concurrent change on the same file made the
+omission visible.)
+
 ### The five mandates
 
 - **M1 — the type scale is absolute, never `em`.** `em` compounds. Real example found: a panel set
@@ -251,8 +376,13 @@ a new hand-copied light value is a regression.
 
 - **`controls/data/`** — the shared data-display primitives: `DataPanel`, `DataRow` (+`dense`),
   `DataLabel`/`DataValue`/`DataSecondary` (ref-forwarding), `PanelHeader`, `SectionHeader`,
-  `EmptyState`, `HexValue`/`formatHex`, `HexByteGrid`, `PartitionPrefix`, `AddressLabel`.
-  `registers.tsx` holds the CPU-state components.
+  `PanelFilter`, `EmptyState`, `HexValue`/`formatHex`, `HexByteGrid`, `PartitionPrefix`,
+  `AddressLabel`. `registers.tsx` holds the CPU-state components.
+  **`PanelFilter`** is the one-row filter box at the top of a long list (name/address matching is
+  the *panel's* decision; the box only owns the input, the count and the clear). It is content, not
+  chrome — no `--surface-chrome`, no bottom border — because a sidebar panel already has a header
+  band and a second strip under it reads as a second title. `TextInput` is not a substitute: it is a
+  dialog field, with 8px block margins, a 32px button and a `font-size: 0.9em` M1 forbids.
 - **`controls/layout/`** — the wrappers with 21+ importers. They now *delegate* their cell to
   `controls/data` and add only `TooltipFactory` behaviour.
 - **`theming/tokens/syntax.ts`** — `syntaxPalette(tone, accent)`, `syntaxRules`, `editorColors`,
@@ -261,14 +391,125 @@ a new hand-copied light value is a regression.
   one pair per accent (Phase 10).
 - **`theming/tokens/semantic.ts`** — the `--accent-secondary-*` family, generated from `secondary`
   the same way `--accent-*` is generated from `solid` (Phase 10).
+- **`theming/tokens/componentAliases.ts`** — also `--color-scrollbar-handle` / `-hover` /
+  `-active`, the overlay scrollbar handle's three states (`--text-disabled` → `--text-tertiary` →
+  `--text-secondary`, so the progression is derived in both tones). The sizing lives in
+  `assets/styles/overlayScrollbars-modified.css`: `--os-size` is the **track**, and the painted
+  handle is `--os-size - 2 x --os-padding-perpendicular` — 12px/2px = an 8px handle, 10px/2px = 6px
+  for the `thinScrollBar` variant. Fully rounded (`--os-handle-border-radius: 999px`).
+- **`theming/tokens/componentAliases.ts`** — also `--color-panel-separator`, the rule between
+  sections of a register/state panel (`controls/layout/Separator`, used by the Z80, M6510, VIC,
+  Blink and ULA panels). Distinct from `--color-toolbar-separator`; see the trap below.
 - **`theming/tokens/componentAliases.ts`** — `--color-memory-*`/`--bgcolor-memory-*`,
   `--color-disassembly-*`/`--bgcolor-disassembly-*` and `--color-state-value`, the memory dump's,
   disassembly's and the Z80 CPU panel's own scoped colour tokens (see § "View-Scoped Colour" above).
+- **`appIde/SideBar/SideBarBadge.tsx`** — the panel-header pill, four tones (`neutral` default,
+  `accent`, `warning`, `error`). **Renders `null` for an empty count** (zero, negative, `undefined`,
+  `NaN`); that is why it exists rather than a `<span>` per panel, so no future badge can forget the
+  empty case. Consumers: `SiteBarPanels/BreakpointsBadge.tsx`, `SiteBarPanels/WatchBadge.tsx`.
+- **`theming/tokens/dimensions.ts`** — also `SCROLL_SHADOW` (per-tone colours, like `SHADOW`) and
+  `SCROLL_SHADOW_HEIGHT`, emitted as `--shadow-scroll`, `--shadow-scroll-line`,
+  `--shadow-scroll-height` (Phase 11).
+- **`theming/tokens/semantic.ts`** — also `--surface-header`/`-lit`/`-hover`/`-lit-hover`, the panel
+  header band's gradient stops (Phase 11).
 - **Deleted:** `controls/valuedisplay/`, `DocumentPanels/helpers/PanelHeader.tsx`,
   `GenericFileViewerPanel`/`GenericFileEditorPanel` (now one `GenericFilePanel`).
 
-Three traps worth knowing:
+Four traps worth knowing:
 
+- **An overlay positioned near its own anchor must be `pointer-events: none`, or it destroys the
+  hover that produced it.** `Tooltip` renders its box relative to the anchor, and the register rows
+  place it over the right-hand end of their *own* row (`placement: "right"`, `offsetX: -32`). With
+  the box hit-testable, a pointer reaching that band was covered by the tooltip, so the anchor
+  stopped being topmost, `mouseleave` fired, the box unmounted, the anchor was topmost again, and
+  `mouseenter` restarted it. Self-sustaining, and it runs at the anchor's own `showDelay` — ~107ms
+  per cycle against the register rows' `showDelay={100}`, about nine flashes a second.
+  **The symptom names the wrong culprit**: it was reported (reasonably) as "the tooltip flickers
+  near the vertical scrollbar", because a sidebar row's right-hand end is where the scrollbar is.
+  The trigger is the anchor/overlay overlap; the scrollbar is a bystander. Any portalled overlay
+  driven by the anchor's own pointer events — tooltip, popover, hover card — has this bug latent
+  the moment its box can reach back over its anchor.
+
+- **Before re-implementing a library's behaviour in React state, check whether the library already
+  has it.** `ScrollViewer` drove scrollbar auto-hide from a `pointed` state
+  (`onMouseEnter`/`onMouseMove`/`onMouseLeave`) feeding a second OverlayScrollbars theme,
+  `os-theme-not-hovered`, whose only declaration was `--os-handle-bg: transparent`. The library has
+  `scrollbars.autoHide: "leave"`, and the vendored stylesheet already carried the
+  `.os-scrollbar-auto-hide-hidden` rule and its `opacity .15s, visibility .15s` transition. The
+  hand-rolled version could not fade (a custom property flips instantly), re-rendered the panel's
+  whole subtree on **every mouse move**, and depended on React's synthesised `onMouseLeave` — which
+  comes from `mouseout` and does not arrive by every path a pointer can leave an element. It is now
+  `autoHide: "leave"` + `autoHideDelay: 100` and the component has no mouse handlers at all.
+  `autoHideSuspend: false` matters: the default (`true`) holds every scrollbar visible until the
+  first scroll.
+
+- **Two single-class selectors setting the same custom property are a tie that stylesheet order
+  breaks.** `.os-theme-not-hovered { --os-handle-bg: transparent }` was declared *before*
+  `.os-theme-dark { --os-handle-bg: #808080c0 }`, so any moment both classes sat on one element the
+  handle painted grey whatever the hover state was — verified by setting both on a probe element in
+  the running app and reading the resolved value. This is the same specificity-tie trap recorded for
+  CSS Modules overrides further down, and it is *worse* for custom properties, because the losing
+  declaration produces no visual artefact to notice — just an occasional wrong colour.
+
+- **A border token is only as visible as the surface behind it — so one shared token cannot serve
+  two surfaces.** `--color-toolbar-separator` drew both the toolbar dividers (on `--surface-chrome`)
+  and the section rules in the register panels (on `--surface-panel`, the darkest surface in the
+  dark tone). `--border-default` is correct on chrome and measures **1.37:1** on panel — a rule that
+  physically exists and optically does not. The fix is to *split the token*, never to retune the
+  shared one: raising `--color-toolbar-separator` would have heavied every toolbar in the app to
+  solve a sidebar problem. Panel section rules are now `--color-panel-separator`
+  (`--border-strong`, 1.74:1 dark / 1.76:1 light). **Before changing a shared L4 alias, list every
+  surface it lands on.** Same family as the `AttachedShadow` trap below, arriving from the other
+  side: there a token pointed at the wrong semantic family, here a correct token was asked to cover
+  two grounds at once.
+
+- **`--surface-raised` is not "the raised surface" in both tones.** It means *lighter*, which is only
+  what "raised" implies in dark; in light it is pure white. Anything that must read as lifted in
+  dark and **recessed** in light — a header band on a panel — needs its own semantic pair, not
+  `raised`. This is the general shape of the one asymmetry the derived light theme cannot absorb.
+
+- **A panel that is not a `DataPanel` gets no declared leading, and nothing tells you.** Both
+  `Data.module.scss`'s `.dataPanel` and the `side-panel-content` mixin declare
+  `line-height: var(--panel-line-height)`; a panel root that sets `font-size: var(--panel-font-size)`
+  by hand and nothing else runs on `line-height: normal`, i.e. on the *selected font's* metrics.
+  Measured on the Call Stack row: **21.5px on Iosevka, 20px on the ZX Spectrum face, 22.5px on
+  JetBrains Mono** — a 12% spread driven entirely by a user font setting, and it collapses furthest
+  on exactly the face this app ships for authenticity. With the leading declared it is 23px on all
+  three. **Survey for this rather than fixing the reported instance**: grep for stylesheets that name
+  `--panel-font-size` but neither set `line-height` nor include `side-panel-content`. That grep is
+  now clean: `CallStackPanel`, `NextRegPanel`, `BreakpointsPanel`, `WatchPanel`, `NecUpd765Panel` and
+  `ScriptingHistoryPanel` all declare it. **Re-run the grep after adding a panel** — the mandate has
+  no test behind it, and a new panel that hand-rolls `font-family` + `font-size` instead of using
+  `DataPanel` or the mixin re-opens the hole silently.
+
+  Two notes from fixing the last four. **Declare it where the `font-size` is, not on the panel root
+  by reflex**: `ScriptingHistoryPanel` sets its size on `.itemWrapper`, so that is where the leading
+  belongs. And **a fix with no visible effect is still the fix** — `BreakpointsPanel` and
+  `WatchPanel` measured 26px before and after across all three faces, because their rows carry
+  `min-height: --row-size-list`, which exceeds any line box they can produce. They were protected by
+  a row height that a later `dense` would remove. Where a panel has no content to measure (an empty
+  history, or a panel gated to another machine), verify the *rule* instead: a probe element with the
+  hashed class resolving `line-height` to `19px` rather than `normal` proves it applies.
+
+- **Three row heights coexist in the sidebar, and they are not interchangeable.** At a 14px panel:
+  `DataRow` default = `--row-size-list` (26px, list chrome — right for Watch and Breakpoints, which
+  *are* lists); `dense` = the bare line box (~19px — Z80 CPU, ULA & I/O); and Call Stack's `.item`,
+  which is `dense` plus `2px` of block padding (~22.5px). The Next Registers and Next Memory Mapping
+  panels were on the 26px list row despite being label/value displays, and now carry `dense` plus
+  the same 2px — the author's chosen reference for them is the Call Stack row, not the Z80 one.
+  When matching a panel to another panel, **measure both in the running app first**: `dense` alone
+  looked like the obvious answer and would have landed 3.5px *under* the target.
+- **Add leading with `padding-block`, never a `min-height`.** M3 keeps row heights in
+  `rowSizes.ts` so CSS and `VirtualizedList` cannot disagree; a component-private height constant is
+  what that mandate forbids. Padding leaves the row measuring its own content, which is what `virtua`
+  reads. Check the list does not pass `itemSize` before changing a row's height — where it is
+  omitted (as in these two panels) `virtua` measures rows itself and a CSS change is safe; where it
+  is passed, the number has to move with the CSS.
+- **A class passed through `xclass` ties with `DataRow`'s own `.dense`/`.dataRow` rules.** Both are
+  single-class selectors from different CSS Modules, so the cascade falls back to emit order. Double
+  the class (`.memMapRow.memMapRow`). This bit *inside this very session*: the first version measured
+  correctly in the running app and was still order-dependent — a passing measurement does not prove a
+  deterministic rule.
 - `DataRow` needs `dense` for register/state rows (15px). The default carries `--row-size-list`
   (22px) and list chrome, which inflates a register panel ~47%. `dense` drops the row *height*, not
   the side padding — see the next trap for why that distinction matters.
@@ -316,8 +557,15 @@ file.
   and reported all 162 elements as removed.
 - **Verify no process before launching.** Electron's single-instance lock makes a second instance
   quit with exit code 0, which looks like success.
-- **`klive.settings` is rewritten at startup.** You cannot set the theme or accent by editing it —
-  the app silently reverts it. Use the app's own menu.
+- **`klive.settings` is rewritten at startup — for the app's *own* settings file.** Editing
+  `~/Klive/klive.settings` to set the theme or accent does not work; the app writes its state back
+  over your edit. Use the app's own menu for an app you launched yourself.
+  **But a scripted launch can seed settings, and this is now the preferred way to pin them.** Point
+  `KLIVE_SETTINGS_FILE` (absolute; `src/main/settings-path.ts`) at a file written *before* launch and
+  the app honours it: seeding `theme: "light"` took mean window brightness from 26/255 to 246/255,
+  and `globalSettings.ideViewOptions.toolPanelHeight` visibly resized the panel. That also pins
+  accent, panel sizes and fonts, which is what makes a screenshot comparable across runs. See
+  `doc-screenshots-guide.md`.
 - **Driving the app menu (macOS) needs one script and an explicit menu-bar click**, or the items are
   not addressable:
 
@@ -341,7 +589,11 @@ EOF
   To test responsive/overflow behaviour, set a temporary `max-width` on the element in the page; it
   drives the same `ResizeObserver` path.
 - macOS `screencapture` is permission-blocked here. Use CDP `Page.captureScreenshot`, with `clip`
-  and `scale: 2` for readable crops.
+  and `scale: 2` for readable crops. **For a crop of one component, prefer the Playwright harness**
+  (`scripts/doc-shots/`, and `doc-screenshots-guide.md`): `locator.screenshot()` on a
+  `[class*="_toolArea_"]`-style prefix selector bounds the image by the element, so it keeps
+  following the layout instead of being a pixel rectangle that quietly goes wrong after a reflow.
+  It also launches its own isolated instance, so it needs no hand-started dev server on port 9222.
 
 ## Method Lessons
 
@@ -372,6 +624,80 @@ before combining.
 `flex: 0 0 auto` and `height: auto` both looked like noise in the old stylesheets. Dropping the first
 let the flex algorithm compress rows to 8px against a 15px line; dropping the second hid 78px of Z80
 state behind `overflow: hidden` with no way to scroll to it.
+
+**Never quote a contrast ratio you have not computed — and this repo already exports the
+function.** `contrastRatio(a, b)` is exported from `theming/tokens/syntax.ts`; the syntax palette is
+built on it. A ratio asserted from a glance at two hexes is a fabricated measurement that reads as
+authoritative, survives into code comments, and is repeated back by the next session. Dark neutrals
+are the easiest place to be wrong: `#2e3238` on `#17191c` *looks* like nothing and is 1.37:1, not
+the ~1.1:1 it appears to be, because WCAG's `(L+0.05)` floor compresses the whole bottom of the
+ramp. Run the number.
+
+**And name the right threshold, or none.** A divider, a hairline, a shadow edge is neither text nor
+a control, so **no WCAG minimum applies to it** — quoting AA at a 1px rule invents a standard. The
+honest claim is the before/after pair plus "visible at a glance on both tones". Reserve 4.5:1 for
+text and 3:1 for control boundaries, where they actually bind.
+
+**A semantic HTML element brings a UA stylesheet you did not write.** `<hr>` carries `0.5em` block
+margins and `auto` inline margins. Nothing in any project stylesheet said so, so the panel section
+rules were silently spaced by a **type-relative** value that drifts with the panel font size (the
+thing M1 exists to prevent) and ran the full panel width, ignoring `.dataRow`'s `--space-2` gutter.
+When you adopt `<hr>`, `<fieldset>`, `<button>` or `<dialog>` as a design primitive, reset its box
+explicitly — the declarations you *don't* see are still load-bearing. Corollary of the existing
+"check which declarations were load-bearing" lesson, for declarations that were never in the repo.
+
+**A field can be declared at every layer and populated at none — and the type system will agree
+with you all the way down.** `NextRegDevice` documents 73 of its 141 Next registers field by field
+(338 slices), `NextRegInfo` declares `slices`, `getDescriptors()` explicitly maps `slices:
+reg.slices`, and the IPC response type in `EmuApi.ts` declares it too. It had never reached a
+consumer: the private `registerNextReg` destructured `{ id, description, readFn, writeFn }` and
+rebuilt the entry from those four, dropping `slices` at the point of registration. Every layer
+type-checked, because each was correct about a field that was always `undefined`. **When data
+"exists" but nothing shows it, trace the write path before the read path** — and be suspicious of
+any constructor that rebuilds an object from a destructured subset rather than spreading it.
+
+**A second wrapper can quietly replace a real implementation with a placeholder.**
+`ZxNextWasmV2Machine` — the *production default* backend — assigned
+`nextRegDevice.getDescriptors = () => this.nextRegDescriptors`, a locally built table of 256 entries
+reading `"WASM NextReg $XX"`. So the panel showed neither register names nor detail, and the symptom
+looked like "the feature was never built" rather than "the data is being overwritten". Descriptor
+tables are static documentation and do not belong behind a backend switch; only the *values* did
+(`getNextRegDeviceState` is still overridden, correctly). Verified by reading the live tooltip over
+`Reg 00:` in the running app: `"WASM NextReg $00"` before, `"Machine ID"` after.
+
+**When a visual bug is reported "near X", check whether X is the cause or merely the landmark.**
+A user describes where their pointer was, which is evidence about *position*, not about mechanism.
+The tooltip flicker above was reported at the scrollbar and caused by the tooltip's own geometry;
+chasing the scrollbar would have found nothing, and the two had just been changed in the same area,
+which makes the wrong suspect look guilty. Instrument the elements actually involved — log the
+anchor's `mouseenter`/`mouseleave`, and read `document.elementFromPoint` along the path the pointer
+takes — before believing the label on the report.
+
+**HMR does not just break geometry — it manufactures convincing intermittent *behaviour* bugs.**
+The existing rule ("always relaunch for geometry") is too narrow. After an HMR-applied change to a
+component that owns a third-party instance, a stale instance can survive alongside the new one: a
+scrollbar auto-hide measured 3-of-30 failures and a 2.5s outlier under HMR, and 0-of-30 with a tight
+246-284ms spread after a clean relaunch. The HMR numbers were about to be written up as a real race.
+**Relaunch before believing any measurement, especially a flaky one** — flakiness is the signature of
+this, not evidence against it.
+
+**Electron's single-instance lock will quietly hand you a stale app to measure.** The second instance
+exits 0 and the dev server prints its usual "starting electron app..." — so CDP connects, evaluates,
+screenshots, and answers about the *old* build. Two separate wrong conclusions came from this in one
+session. `pkill` the dev command is not enough; the app processes outlive it. Assert the count is
+zero (`ps aux | grep -ci '[k]liveide'`) and that port 9222 is refused *before* launching, every time.
+
+**Reproduce the bug before fixing it, and make the repro's own mechanism suspect.** A first attempt
+to reproduce a stuck scrollbar dispatched `new MouseEvent("mouseleave")` from an injected script and
+"confirmed" the bug — but React synthesises `onMouseLeave` from **`mouseout`** at the root container,
+so a hand-dispatched `mouseleave` never reaches a React handler at all. The apparent confirmation was
+the harness, not the app. Drive real input through CDP `Input.dispatchMouseEvent`; a synthetic
+`dispatchEvent` tests a different code path than the one users take.
+
+**Measure the timing in the page, not across the debugger.** A pass/fail threshold applied from the
+driving script counted CDP round-trips as part of the effect and reported "sometimes stuck" for a
+transition that was merely still running. Resolve a `Promise` inside `Runtime.evaluate` off
+`requestAnimationFrame` and return elapsed `performance.now()`; then a number means what it says.
 
 **Read the grammar; do not infer a rule from a sample.** I reported the UI's `$` hex prefix as
 disagreeing with Klive's Z80 dialect because one project file used `#7C00`. The lexer accepts both
@@ -437,13 +763,123 @@ files, are a specificity tie — and ties resolve by stylesheet load order, whic
 depend on.** Nest the override under a selector unique to the caller (`.item .foo`) or double the
 class (`.foo.foo`) to force a deterministic win instead of an order-dependent one.
 
+**A feature can be fully wired up, running, and drawing nothing — and CSS will not tell you.**
+The sidebar looked like it had no scroll affordance. It had one: `ScrollViewer` has always rendered
+`AttachedShadow` with real `isScrolled` state. Its colour token was aliased to `--surface-canvas` —
+a *surface* used as a *shadow*, three RGB steps from the panel in dark and pure white in light. The
+lesson is the diagnostic order: **before building a missing affordance, grep for it.** A token
+pointed at the wrong semantic family produces no error, no warning and no visible output, and
+looks identical to "never implemented".
+
+**An `em` font-size does not just produce a wrong size — it can invert a hierarchy.** M1 has existed
+since Phase 0, and one violation survived every phase: the sidebar's own title was 11px (absolute,
+correct) while the panel headers inside it were `0.8em` = 12.8px. A parent heading rendering smaller
+than its children is the kind of thing that reads as "someone chose this" for years. When M1 finds a
+survivor, check what it is *next to*, not only what it computes to.
+
+**A black gradient is invisible on a dark surface; the edge has to be carried by a line.** A shadow
+over `--surface-panel` (`#17191c`) needs a 1px hairline *plus* the gradient — the line carries the
+edge, the gradient carries the depth. And the fade-in **ramp has to be chosen with the height**: a
+6px shadow on a ramp tuned for 14px spends most of its life half-lit.
+
+**`width: 100%` with `flex-grow: 1` works only until something shares the row.** Both sidebar title
+elements had it, and both would have pushed a sibling out of the strip rather than ellipsizing —
+latent until a badge and a menu button arrived. `min-width: 0` is the mechanism that actually lets a
+flex child shrink below its content size. Same family as the `height: 100000px` → `min-height: 0`
+fix recorded earlier: a number standing in for the constraint that was actually meant.
+
+**Unused infrastructure needs tests *because* it is unused.** Two extension points were added ahead
+of their consumers. Nothing else holds those to their contract — a break would stay invisible until
+the first real menu or badge, and would then look like a bug in *that* feature rather than in the
+slot it plugged into.
+
+**`container.firstElementChild` is not your component under `renderWithProviders`.** It is
+`ThemeProvider`'s `#themeRoot` wrapper. A test asserting on its `className` compares the same
+wrapper every time and passes vacuously — mine "passed" across four distinct tones. Query by role or
+text and read the element you actually mean.
+
+**JS block scope will silently shadow a loop variable, with no error.**
+`for (const [, , h] of VARIANTS) { const h = document.createElement("p"); … }` is legal: the body is
+its own scope. Every later use of `h` got the element, so a CSS custom property was set to
+`[object HTMLParagraphElement]`, the rule was dropped, and the element rendered at zero height —
+looking exactly like "the design does not work". Found only by asserting on **computed heights**
+rather than reading a screenshot, which is the existing "do not trust the screenshot over the DOM"
+lesson arriving from a new direction.
+
+**Do not copy the neighbouring component's refresh strategy; ask what makes *its* data stale.**
+`BreakpointsPanel` polls on a timer because its disassembly, resolved addresses and PC go stale as
+the machine runs. A *count* of breakpoints does not — it changes only when the list does, and every
+mutation already bumps `breakpointsVersion`. Copying the panel would have bought nothing and cost an
+IPC round trip per tick, per open sidebar, forever. The no-polling property is now a test, because
+"make the badge more responsive" is exactly the change that would undo it.
+
+**And ask it per *field*, not per panel: one panel usually has two kinds of staleness.**
+`SysVarsPanel` fetched its variable *table* and a 64K memory snapshot on the same tick, and the
+table can only ever have returned the descriptors it returned the tick before — it is static per
+machine, so `machineId` is what invalidates it, while only the values need the timer. Two round
+trips per tick where one was a constant. The shape to look for is a call inside a refresh whose
+arguments never mention anything that moves.
+
+**`useEmuStateListener` keys its subscription on the callback's identity**, so a plain inline
+`async () => …` unsubscribes and re-subscribes on every render — on a panel that re-renders every
+tick, that is every tick. Wrap the refresh in `useCallback` with the state it actually reads, and
+the subscription then churns only when that state changes.
+
+**Selector granularity is a re-render budget.** `useSelector((s) => s.watchExpressions || [])`
+allocates a fresh `[]` on every state change while the list is empty, so referential equality never
+matches. Correct for a panel that needs the items; wrong for a badge that needs the count. Select the
+narrowest value that answers the question — a number compares by value.
+
+**Do not use one word family for two different things in a design conversation.** "Shaded header"
+for the header band and `.scrollShade` for the overflow shadow cost a full round trip when the author
+said "the shade is too tall" and the wrong one was refined. Name the two things apart *before* asking
+which one to change.
+
+## Prototype For Design Decisions, Never For Verification
+
+The Phase 11 prototype loop worked well enough to repeat, and is worth separating from the
+verification failure recorded above.
+
+- **Build the replica out of the real tokens.** `sidebar-lab.html` lifted its palette from
+  `palette.ts`/`semantic.ts`/`dimensions.ts` rather than eyeballed hexes, so colour judgements
+  transferred to the app unchanged.
+- **Restyle one markup skeleton per variant.** Every prototype was the same DOM with a different
+  `data-v`, which is what made the comparison about the design rather than about the mock-up.
+- **Add the controls the decision needs** — tone toggle, accent switcher, a live slider for the value
+  under discussion, an A/B toggle for the effect. An author dragging a slider settles in seconds what
+  costs several round trips to guess at.
+- **Pre-render it; ship no JavaScript.** A prototype gets opened in whatever pane is to hand —
+  a `file://` preview, a static snapshot host, a chat attachment — and several of those run no
+  scripts and can't be driven by page tools. A JS-built gallery renders as a blank page in exactly
+  the moment you need the author to look at it. Generate the variants with a script and write the
+  finished HTML.
+- **Put every tone on the page instead of behind a toggle.** Same reason, plus the author sees both
+  at once, which is when a treatment that works in dark and dies in light becomes obvious.
+- **Label each variant with its trade-off, not just its name.** The author is choosing, and the cost
+  (vertical space, accent dependence, competition with zebra striping) is the half of the decision a
+  picture can't show.
+- **Include the current state as a labelled variant.** "A — Current" is what turns a gallery of
+  options into a comparison, and it is also the cheapest way to discover the thing is not broken but
+  merely invisible.
+- **Draw "A — Current" through the real data and the real helpers, not an impression of them.** The
+  Next palette panel's colour bug was found this way and by nothing else: the replica rendered the
+  actual `PaletteDevice` power-on values through the actual `getCssStringForPaletteCode`, which put
+  the app's ULA palette beside the Spectrum colours it is supposed to be, and they were visibly
+  different. A screenshot of the shipped panel says nothing — wrong colours still look like colours.
+  A replica built from an *idea* of the current state would have reproduced the idea.
+- **Do not make the gallery scroll horizontally.** It was unreachable in the author's pane; wrapping
+  into rows fixed it. The prototype's own usability is part of the deliverable.
+- **Then throw it away.** It is a design artefact, not evidence, and leaving it around invites the
+  next session to treat it as a reference.
+
 ## Recommended First Reading For UI Work
 
 1. `../AGENTS.md`
 2. This file.
 3. `.plans/UI_MODERNIZATION_PLAN.md` §3 (token architecture and the five mandates), then the
    retrospective for whatever area you are touching — §10 for the secondary accent or the memory
-   dump/disassembly colour specifically.
+   dump/disassembly colour, §11 for the sidebar, the overflow shadow, or either of the two sidebar
+   extension points (`Activity.commands`, `SideBarPanelInfo.badge`).
 4. `src/renderer/theming/tokens/` — the four layers, in order.
 
 ## Non-Negotiable Handoff Message
@@ -479,6 +915,28 @@ class (`.foo.foo`) to force a deterministic win instead of an order-dependent on
 - Do not put horizontal padding on `DataRow`/`.dense` without the nested-row reset — the value
   components each render their own row, so it lands twice on register rows. § "Alignment In The
   Register Panels".
+- **A prototype is for choosing a design; it is never evidence the change works.** Phase 11 shipped
+  on a green suite and a compiled-CSS read, having twice told the author the running app could not
+  be driven — while § "Verify Geometry In The Running App, Never In A Replica" documents the recipe.
+  If the app is running without `--remoteDebuggingPort=9222`, ask for a relaunch.
+- **Every portalled overlay gets `pointer-events: none`** unless it has content to interact with —
+  and if it ever does, it needs hover-to-keep-open logic at the same time, because today `Tooltip`
+  hides unconditionally on the anchor's `mouseleave`.
+- **Verify in the running app, and relaunch it first.** Kill every app process and confirm port
+  9222 is refused before launching, or the single-instance lock silently gives you the previous
+  build to measure. Flaky measurements are usually HMR, not the code.
+- **Compute every contrast ratio with `contrastRatio` from `theming/tokens/syntax.ts`.** Do not
+  quote one from inspection, and do not cite a WCAG threshold for a divider, hairline or shadow —
+  none applies to a non-text, non-control edge.
+- **Do not retune a shared L4 alias to fix one caller.** List the surfaces it lands on; if they
+  differ, split the token. `--color-panel-separator` (panels, `--border-strong`) and
+  `--color-toolbar-separator` (toolbars, `--border-default`) are the worked example.
+- **Before "adding" a visual element, check whether it is already rendered and merely invisible.**
+  The panel section rules and `AttachedShadow` were both fully wired up and drawing nothing. Grep
+  first; the fix is usually one token, not new markup.
+- Before building an affordance that seems to be missing, **grep for it**. `AttachedShadow` had been
+  rendering invisibly for the life of the project because its token pointed at a surface.
+- Do not give a badge a tone louder than `neutral` without a reason. A count is a fact.
 - Run the visual check **in the running app over CDP**, not in a standalone replica of the CSS. A
   replica cannot show you the wrapper you did not model; this shipped two wrong "fixes" in one
   session. § "Verify Geometry In The Running App, Never In A Replica".

@@ -81,9 +81,20 @@ const MATRIX: MatrixEntry[] = [
   {
     category: "NextReg/palette",
     requiredDomain: "NextReg",
-    typeScriptTests: ["NextRegDevice.test.ts", "PaletteDevice.test.ts", "PaletteDeviceFpgaFixes.test.ts"],
+    typeScriptTests: [
+      "NextRegDevice.test.ts",
+      "PaletteDevice.test.ts",
+      "PaletteDeviceFpgaFixes.test.ts",
+      "palette-codec.test.ts"
+    ],
     wasmSuites: ["wasm-next-nextreg.test.ts", "wasm-next-palette-ulaplus.test.ts"],
-    reason: "wasm-suite"
+    reason: "typescript-owned-host-boundary",
+    note:
+      "Device and NextReg palette behaviour is covered in WASM. `palette-codec.test.ts` is not: it " +
+      "pins the two bit layouts the *host* moves a palette entry around in (the register packing " +
+      "versus PaletteDevice's straight 9 bits) and the 3-bit to 8-bit component ramp the renderer " +
+      "expands them with. None of that crosses into the emulated machine — the WASM core never " +
+      "sees a CSS string or an ABRG word."
   },
   {
     category: "ports",

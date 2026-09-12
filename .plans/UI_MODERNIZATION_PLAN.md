@@ -4,7 +4,8 @@
 **Process:** Phases are amended in place after each retrospective (§6.0). If this file and your
 memory of it disagree, this file wins.
 **Created:** 2026-09-06
-**Updated:** 2026-09-06 (data-panel audit → §2.4/§3.0; accents settled → §5; Phase 0 detailed, and
+**Updated:** 2026-09-11 (Phase 12 — the System Variables panel → §12; Phase 11 — sidebar
+modernization, the two sidebar extension points and the first two badges → §11). Earlier: 2026-09-06 (data-panel audit → §2.4/§3.0; accents settled → §5; Phase 0 detailed, and
 the consolidation sliced across Phases 6–7 covering `DocumentPanels/`, `SiteBarPanels/` and
 `ToolArea/` → §6). All open questions resolved.
 **Branch:** `dotneteer/ui-modernize`
@@ -2308,3 +2309,403 @@ double the override class itself (`.memoryTooltip.memoryTooltip`) where nesting 
 **Nothing is open.** The plan is ready to start at Phase 0.0 (baseline capture) — Phase 10 above is
 complete and does not reopen it.
 
+---
+
+## 11. Phase 11 — Sidebar modernization *(2026-09-11)*
+
+Like Phase 10, this was a review pass rather than a planned phase: the author used the new UI, said
+the sidebar was the part that had not kept up with the panels, and the work followed from three
+specific complaints plus an open invitation for more. **`.ai/ui-theming-intent-and-lessons.md`
+carries the distilled version** — read that first.
+
+### 11.0 What was asked
+
+Verbatim, because two of the three turned out to be latent bugs rather than taste:
+
+1. The sidebar's title ("DEBUG") uses a *smaller* font than the panel headers below it.
+2. The panel headers could look nicer.
+3. There should be a small shadow at the top of a panel's content when it has scrolled up under the
+   header.
+
+### 11.1 Bug fixes (found while answering those three)
+
+| Area | Symptom | Cause | Fix |
+|---|---|---|---|
+| Sidebar header | The sidebar's own title rendered *smaller* than the titles of the panels inside it | An **M1 violation that survived Phases 0–9**. `SideBarHeader`'s `.text` was `--font-size-100` (11px, absolute and correct); `SideBarPanel`'s `.headerText` was `font-size: 0.8em` — 0.8 of the 16px root = **12.8px**. The child outranked its parent by 1.8px, entirely by accident | `.headerText` → `--font-size-100`; the title → `--font-size-300`/700. Tracking dropped 0.09em → 0.04em in the process: wide tracking is what makes an 11px all-caps label legible, and at 13px/700 it only looks loose |
+| Overflow shadow (app-wide) | The sidebar appeared to have no scroll affordance at all | **It already had one, and had always been drawing nothing.** `ScrollViewer` has always rendered `AttachedShadow`, driven by real `isScrolled` state — but `--bgcolor-attached-shadow` was aliased to `var(--surface-canvas)`, a *surface* used as a *shadow*. In dark that is `#141517` against a `#17191c` panel: three RGB steps. In light it is `#ffffff` — a white shadow. Wired up, running, invisible in both tones | New `SCROLL_SHADOW` in `dimensions.ts` (per-tone, like `SHADOW`), `--bgcolor-attached-shadow` repointed at it, plus a `-line` companion |
+| `AttachedShadow` | Swallowed clicks on the topmost row of every scrollable region | No `pointer-events: none` on an element positioned over content | Added |
+| Sidebar header + panel header | Both title elements would push a sibling out of the strip rather than ellipsizing | `width: 100%` together with `flex-grow: 1`. That works only while nothing else shares the row; `min-width: 0` is the mechanism that actually lets a flex child shrink below its content size. Latent until §11.3's badges and menu button arrived | `min-width: 0`, `width: 100%` removed. Same family as the `height: 100000px` → `min-height: 0` note already in `SideBarPanel.module.scss` |
+
+### 11.2 The treatment
+
+Chosen by the author from five prototypes, then narrowed twice (see § "Prototype For Design
+Decisions, Never For Verification" in the lessons file for how, and for what was wrong with the
+method).
+
+**Panel header band — a shallow top-lit gradient, not a flat fill.** The distinction is not
+decorative. The band is 26px tall and the list rows directly beneath it are 22px and also highlight
+on hover, so a flat filled strip reads as *a selected row*. A lit strip reads as chrome.
+
+This needed its own semantic pair rather than `--surface-raised`, which is the obvious candidate and
+is wrong: "raised" means *lighter*, which only holds in dark. In light, `raised` is pure white —
+lighter than the panel it would sit on — so the band would read as a hole rather than a ridge. A
+header band is lighter than its panel in dark and **darker** in light.
+
+| Token | Dark | Light |
+|---|---|---|
+| `--surface-header-lit` (top stop) | `n.hover` | `n.chrome` |
+| `--surface-header` (bottom stop) | `n.raised` | `n.hover` |
+| `--surface-header-lit-hover` | `n.active` | `n.hover` |
+| `--surface-header-hover` | `n.hover` | `n.active` |
+
+In both tones the top stop is the lighter of the pair, so the implied light source is consistent
+between them. Exposed through L4 as `--bgcolor-panelHeader` / `-hover`, whose values are
+**gradients, not colours** — nothing in the alias layer requires a colour, and expressing the
+gradient once beats emitting four stops for every consumer to re-assemble.
+
+The open panel's header takes the stronger foot rule (`--color-panelHeader-rule-open` =
+`--border-default`) since that is the edge its data scrolls under; collapsed headers take
+`--border-subtle`. The `.notFirst` hairline stays even though headers are now filled: two adjacent
+*collapsed* panels are two bands touching edge to edge, and without it they merge into one bar.
+
+**Overflow shadow — a hairline over a gradient, 6px.** Two layers, because a pure gradient is very
+nearly invisible on `--surface-panel`: the 1px line carries the *edge*, the gradient carries the
+*depth*. Dropping either loses the affordance in one of the two tones. Per-tone strength for the
+same reason `SHADOW` is hand-tuned per tone (`rgb(0 0 0 / 75%)` dark, `rgb(20 25 35 / 20%)` light).
+
+Height was chosen by the author against 14/8/6/4/1px side by side. 6px, because the job is to say
+"there is content above", not to dim the first row of data — and these panels are dense, monospaced
+and ~22px per row. `SCROLL_SHADOW_HEIGHT` records it.
+
+The fade-in ramp moved with it. It was hard-coded to 12px of scroll travel, already slightly wrong
+at 14px and clearly wrong at 6px: the shadow would have spent most of its life half-lit. **Height
+and ramp have to be chosen together.**
+
+**Also:** `--color-header` repointed `--text-secondary` → `--text-primary` (only `SideBarHeader`
+reads it), a closing rule under the title strip, and hover feedback on panel headers — which had
+none at all, on an element whose entire purpose is to be clicked.
+
+### 11.3 Two extension points, built before they had users
+
+The author asked for both explicitly, to be filled in later.
+
+**`Activity.commands`** — a "..." menu in the sidebar's title strip. **Omitted by every activity
+today, and omitting it renders no button at all**: a control that opens nothing is worse than no
+control, so the strip stays clean until an activity has something to put in it.
+
+**`SideBarPanelInfo.badge`** — a small annotation at the right of a panel header.
+
+Both are **components, not descriptor lists**. A sidebar command's label and enabled state, and a
+badge's number, depend on live state; a component reads it with the same hooks as everything else,
+where a static descriptor would need a context object threaded from a module-level registry that has
+no store access. Two consequences worth keeping:
+
+- The commands component is **mounted only while the menu is open**. Command components subscribe to
+  the store, and mounting them eagerly would re-render the sidebar header on every machine tick for
+  a menu nobody has opened.
+- The menu **does not self-close on selection** — some commands are toggles. The item calls `close()`.
+
+`SideBarBadge` (`appIde/SideBar/SideBarBadge.tsx`) supplies the pill in four tones — `neutral`
+(default, "a fact"), `accent`, `warning`, `error` — and **renders `null` when there is nothing to
+say**: no children, or a count that is zero, negative, `undefined` or `NaN`. That is why it exists
+rather than a `<span>` per panel. A badge reading "0" is worse than no badge, because it draws the
+eye to a panel exactly when the panel is empty; making the empty case the component's own
+responsibility means no future badge can forget it.
+
+Its colours come straight from L2 rather than through new L4 aliases. The alias layer exists to
+repoint names the app *already* used (§3); a component written after that layer landed has nothing
+to migrate, and eight aliases nothing else would read would make the map longer without making
+anything more changeable.
+
+### 11.4 First two badges — and why they look nothing alike
+
+| Panel | Source | Implementation |
+|---|---|---|
+| Watch | `AppState.watchExpressions` — renderer state | A selector. That is the whole component |
+| Breakpoints | Owned by the emulator's `DebugSupport`, reached over IPC | Fetch, plus a refresh contract |
+
+**They differ because the data does, not because one is doing it the long way.** The renderer store
+carries only `breakpointsVersion`, a counter `DebugSupport` bumps on every mutation (set, remove,
+enable, erase, resolve); that counter plus `machineId` is what says when to re-fetch.
+
+**`BreakpointsBadge` deliberately does not poll**, and copying its own panel would have made it.
+`BreakpointsPanel` refreshes on `useEmuStateListener` — on a timer — because it draws disassembly at
+each breakpoint address, the resolved address and the current PC, all of which go stale as the
+machine executes even when the list does not. A *count* changes only when the list does. Polling
+would have bought nothing and cost an IPC round trip per tick, per open sidebar, forever. There is a
+test pinning it (`advanceTimersByTimeAsync(10_000)` → exactly one call), because a future "make the
+badge more responsive" change is exactly what would undo it.
+
+`WatchBadge` selects `s.watchExpressions?.length ?? 0`, **not** `s.watchExpressions || []` as
+`WatchPanel` does. The panel's form is right for the panel — it needs the items — but it allocates a
+fresh `[]` on every state change while the list is empty, so referential equality never matches and
+the header would re-render on every unrelated store update. A number compares by value.
+
+Both are `neutral`-toned, per `SideBarBadge`'s own convention that a count is a fact rather than
+something to act on.
+
+### Phase 11 exit
+
+- Full suite green: 642 files / **20,056 tests**; `tsc --noEmit -p tsconfig.json` clean;
+  `electron-vite build` succeeds.
+- 23 new tests across three files: `SideBarExtensionPoints.test.tsx` (the two slots),
+  `BreakpointsBadge.test.tsx` (the refresh contract, including the no-polling assertion),
+  `WatchBadge.test.tsx`.
+- Compiled CSS was inspected in `out/renderer/assets/*.css` rather than trusting the SCSS — the
+  nested `&:hover .headerText` and `.expanded > .header` rules were verified to emit descendant
+  selectors with the specificity they need.
+- **Not verified in the running app.** This is the phase's one real gap and it is recorded as a
+  process failure, not a footnote — see § "Prototype For Design Decisions, Never For Verification"
+  in the lessons file. The author had a dev instance running without `--remoteDebuggingPort`, and
+  the CDP check was offered rather than performed.
+- Six new L4 aliases were registered in `ThemeProperties` (`theming/theme.ts`) — caught late, and
+  only because a concurrent change to the same file did it correctly. Nothing enforces that
+  convention; see the note under § "Token Architecture" in the lessons file.
+- `sidebar-lab.html` (repo root, untracked) is the prototype gallery. It is a design artefact, not
+  evidence; delete it once the treatment is settled.
+
+---
+
+## 12. Phase 12 — System Variables panel *(2026-09-11)*
+
+Another review pass rather than a planned phase: the author asked for this one panel to be
+modernized. It is the first sidebar **list** (as opposed to a register/state display) to take the
+full treatment, and the first panel whose problems were about *volume* rather than about colour.
+
+### 12.0 What the panel actually had
+
+`SysVarsPanel` was slice 6.0's pilot, so it had been on `controls/data` since Phase 6 and looked
+converted. What it had not had was a review against what the panel is *for*:
+
+| Problem | Evidence |
+|---|---|
+| No address anywhere on screen | The address was in a native `title` on the name cell. Every other converted view anchors its rows with a visible address column |
+| Neutral, next to converted neighbours | Sat in the Machine Info activity beside ULA & I/O, which had taken `--color-state-value` |
+| Array variables dumped inline, in full | `TSTACK` is 115 bytes on the ZX 128 and `TBUFFER` 192 on the C64 — 15 and 24 grid rows inside a list of 22px ones. Scrolling past one is most of the panel |
+| No way to find a variable | The C64 defines **244** system variables, the ZX Next 119. The only navigation was the scrollbar |
+| Nothing said what had just moved | The panel refreshes ~1.3×/s while the machine runs and redraws every value identically |
+| Two IPC round trips per tick, one of them a constant | `getSysVars()` (the static per-machine table) was fetched beside the 64K memory snapshot on every refresh |
+| Native `title` tooltips | On the name cell and on every array byte — unstyled, on the browser's clock, and firing *alongside* any row tooltip |
+
+### 12.1 The treatment
+
+**The row is now `[disclosure] [address] [name] [value]`.** The address takes
+`--color-state-value-alt` and the value `--color-state-value`, which is the split §10.3 defines for
+a row carrying two numbers that only position tells apart. Which of the two gets the primary follows
+`CallStackPanel`: the payload, not the place it lives.
+
+**Arrays longer than one grid row collapse** to a preview of their first eight bytes plus
+`(192 bytes)`, and expand in place. At or below eight bytes there is nothing to collapse, so those
+rows are unchanged — a chevron on a row already one line tall is friction. The disclosure column is
+**present on every row and merely invisible** where there is nothing to disclose, because a cell
+that vanishes takes every column after it with it (the `NextRegPanel` raggedness noted in §10.3).
+Expansion state lives in the panel, not the row: rows unmount when the virtualized list scrolls.
+
+**A filter box**, as `PanelFilter` in `controls/data` rather than as a private input. "This list is
+too long to scroll" is not a System Variables problem — the Next has 141 hardware registers behind
+the same shape — and the primitive set is where the second panel will find it. It matches on name
+and on the address **as the row writes it** (`5c0`, `$5C`), and deliberately not on the
+descriptions: a hit the reader cannot see in the row it produced reads as a bug.
+
+**What moved is marked with a wash, not a colour**, and that is the one finding here worth carrying
+past this panel. `--data-changed` has had no consumer since Phase 6 — this is its first — and it
+resolves to the accent's `solid`, which is exactly what `--color-state-value` resolves to. So the
+obvious implementation repaints an accent value in the same accent: wired up, running, invisible,
+the `AttachedShadow` failure from the other side. `.changedWash` (`--data-changed-bg`, the same hue
+at 18%, behind the glyphs) is the form that survives conversion, and it is applied per *byte* in an
+array, so a 192-byte buffer says which of its bytes moved.
+
+**One tooltip per row, whose content follows the pointer.** A row here can hold eight flag bits or
+192 array bytes, each with its own description, and the primitives drawing those each answered with
+a tooltip of their own while the row wanted one for the variable — two boxes for one pointer.
+`MemoryDumpSection` had already settled this: the row owns the tooltip, the hovered cell reports its
+index. `HexByteGrid` gained `onHoverByte` (replacing `titleFor`, whose only consumer this was) and
+`FlagRow` gained `onHoverBit`; **both suppress their own per-cell tooltips when passed**, since a
+caller taking over the content is the only reason to ask.
+
+**The table is fetched on `machineId`, not on the tick.** Per-field staleness, not per-panel: the
+descriptors change when the machine does, the values change constantly. The refresh is a
+`useCallback` because `useEmuStateListener` keys its subscription on the callback's identity, and
+this panel re-renders on every tick.
+
+### 12.2 Shared-primitive changes
+
+Small, and each one is the "the primitive set is incomplete" signal rather than a panel special
+case — the same conclusion slice 6.0 reached about `HexByteGrid` itself:
+
+| Primitive | Change |
+|---|---|
+| `PanelFilter` | New. One row, inset input, count, clear; content rather than chrome |
+| `.changedWash` | New. The wash form of the changed signal, for converted panels |
+| `HexValue` | `valueXclass`/`secondaryXclass`, the same opt-in `registers.tsx` already exposed |
+| `HexByteGrid` | `titleFor` → `onHoverByte`; `changedFor` for per-byte marking |
+| `FlagRow` | `iconFill`, `xclass`, `onHoverBit` |
+| `BitValue` | `onHover`, on the cell rather than a wrapper div — `.flagStrip` is a flex row, and an extra div in it is an extra flex item |
+
+### 12.3 Known, not fixed
+
+`FlagFieldRow` (VIC, Blink) still binds a row `TooltipFactory` over eight `BitValue` tooltips, which
+is the double-tooltip described above. It is now fixable from the same `onHoverBit` prop, and was
+left alone because changing it changes five panels the author has not asked about.
+
+A **badge** was considered and rejected: a count of system variables is a constant of the machine,
+and `SideBarBadge`'s own convention is that a badge states a fact worth watching. The filter row's
+`12 / 244` covers the only count that moves.
+
+### Phase 12 exit
+
+- 18 new tests (`test/controls/SysVarsPanel.test.tsx`): the row's columns, both array behaviours,
+  the five filter behaviours, the change signal across three refreshes (including that it *stops*),
+  and the IPC contract — table once, values per tick, re-fetch on machine change.
+- `tsc --noEmit -p build/tsconfig.web.json`: 162 errors before and after, the same set by message.
+- `electron-vite build` succeeds; the compiled CSS was read to confirm the doubled-class overrides
+  (`.sysVarRow.sysVarRow`, `.sysVarAddress.sysVarAddress`) emit at the specificity they need.
+
+---
+
+## 13. Phase 13 — Next Palettes panel & the palette grid *(2026-09-11)*
+
+A third review pass by request: the author said the Next Palettes sidebar panel had "many design
+flaws" and that the component drawing a palette was "awkward", asked for prototypes, and chose
+**panel variant B** (device rows with an always-on ribbon) and **grid variant D** (fluid mosaic with
+an index gutter and quadrant rules) out of four of each.
+
+The prototype loop is the one § "Prototype For Design Decisions" describes and it worked again
+unchanged. What is new is that **the gallery's own "A — Current" variant is what found the colour
+bug**: drawing the replica out of the real `PaletteDevice` data, through the real
+`getCssStringForPaletteCode`, put the app's ULA palette next to the Spectrum colours it is supposed
+to be, and they were plainly different. Nothing in a screenshot of the shipped panel says that; a
+palette of wrong colours still looks like a palette.
+
+### 13.0 The three bugs
+
+**The sidebar drew every colour wrong.** The Next holds a 9-bit RGB333 entry in two packings that
+are a one-bit rotation apart:
+
+| Layout | Shape | Who holds it |
+|---|---|---|
+| Register | `RRRGGGBB` in bits 7..0, low blue bit in bit 8, priority in bit 15 | `PaletteEditor`, `.nex`/`.pal` files, `SpriteEditor`'s default ramp — and every function in `zxNext/palette.ts` |
+| Device | straight `RRRGGGBBB` | `PaletteDevice`, and therefore `getPalettedDeviceInfo`'s payload |
+
+`PalettePanel` passed the device layout into a viewer that speaks the register one, so ULA blue
+`$005` (`#0000b6`) drew as `#002449`, a dark teal. **This is a quiet class of bug**: the rotation
+leaves greys and whites unchanged and moves saturated colours to another plausible colour, so the
+panel looked fine for as long as nobody compared it to the emulator's own screen.
+
+`getRgbPartsForPaletteCode` was decoding the *other* layout from its two siblings, so the viewer's
+tooltip and the swatch beside it disagreed about the same number — and each was right for a
+different caller. It now decodes the register layout like everything else, which also fixes
+`SpriteEditor`'s R/G/B readout.
+
+`colorIntensity` in the same file had `0x25` where the hardware's bit-replication gives `0x24`
+(`001` → `00100100`), so `getAbrgForPaletteCode` — the path `Layer2Screen` and `SpriteImage` draw
+through — rendered that one level a step brighter than `zxNextBgra` displayed the same colour.
+
+Also: `ArrowDown` wrapped on `> 256` rather than `>= 256`, so the last row selected index 256;
+`intiallyVisible` was misspelled *and* never passed, so all eight sections opened collapsed.
+
+### 13.1 The panel
+
+**Four devices, not eight palettes.** A Next device has one palette with two banks and a register
+bit saying which is live; the panel had flattened that into eight peers named "ULA first", "ULA
+second", … , which threw away the pairing and the live fact both. `DEVICES` is a table, because the
+shape is the point.
+
+**A switch was the wrong control twice over.** `LabeledSwitch` says "turn this on" for what is
+disclosure, and *two* switches for two mutually exclusive banks says each can be independently on.
+Now: a chevron for disclosure, and a two-segment control for the bank.
+
+**The shown bank is a fill; the live bank is an accent ring.** Two fills cannot say which is which,
+so the two states take different kinds of mark. The ring marks the *exception*: shown follows live by
+default, so it sits under the fill and is invisible until the view is pinned away from the hardware,
+which is the only moment it has anything to say. The old panel marked the live palette with
+`--bgcolor-button-pointed` — *a hover token* — across only the 140px its inline-styled switch box
+occupied, so it read as a half-drawn hover.
+
+This shipped first as a 3px corner dot and the author spotted it immediately, as a possible
+rendering bug rather than as a mark — correctly, because on the filled segment the dot had to be
+`--text-on-accent` (`#0e0f11` in dark) to be visible at all, and because it was present on all four
+devices in the default state. The durable form of that lesson is in the lessons file: **a state mark
+that is on screen in the common case is decoration, not a signal.**
+
+**Shown bank follows live until the user picks one, then stays.** The default answers the question
+the panel exists for; the pin is what makes comparing the two banks possible while a program flips
+`$43`. Nothing resets it — the live dot on the other segment is the standing indication.
+
+**An always-on preview per device.** The previous panel opened on eight collapsed switches and no
+colour at all. This shipped first as a wrapped 2×128 gradient ribbon and the author rejected it on
+sight: at ~1.7px per entry it cannot show an individual colour, and on the ULA the stripes it showed
+were the palette's 16-entry repeat period rather than its colours. It read as texture.
+
+What replaced it is a **32px thumbnail of the real 16×16 grid**, inline in the 36px device row —
+2px per entry, chosen against 1px (still aliases a period-16 palette) and 3px (a 52px row, and the
+preview starts competing with the grid it previews). Still gradients rather than elements — sixteen
+16-stop rows, not 256 nodes — because this panel re-polls on a timer and four devices of per-entry
+DOM is a thousand nodes reconciled per tick for something nobody clicks.
+
+**Transparency is marked only where it is an index.** Sprites (`$4B`) and tilemap (`$4C`) name a
+palette slot; ULA and Layer 2 do not — `$14` is a global transparency *colour* matched against a
+pixel's 8-bit value. `PaletteDeviceInfo` gained the two real indexes and lost `trancparencyColor`,
+a misspelled field carrying `fallbackColor` that no consumer had ever read.
+
+### 13.2 The grid
+
+**Sized from the swatch, and no `smallDisplay` prop.** The viewer had two hand-sized modes (18×14
+cells in a fixed 324px column, 24×22 in 480px) and the sidebar got the small one, which meant it drew
+a 288px grid into whatever width the sidebar had and clipped. One grid now covers the sidebar and the
+`.pal` editor from one code path, with each call site naming its own `cellSize` — 14px in the
+sidebar, 29px in the `.pal` editor and `.nex` viewer, 17px beside the sprite grid, the last two
+reproducing the widths their old fixed `Column`s reserved.
+
+**This was `repeat(16, 1fr)` first, and the author rejected that too.** Fluid columns fixed the
+clipping and introduced a worse problem: dragging the sidebar swung the cells 13.9px → 30.2px, and
+every one of those widths was fractional, so the cell edges and quadrant rules sat off the pixel grid
+at every size. `width: calc(2.2ch + 16 * var(--palette-cell)); max-width: 100%` over `1fr` tracks
+fixes both — a definite width so the tracks divide an exact multiple and land on integers, a
+percentage cap so a container narrower than the grid degrades by shrinking rather than clipping. The
+gutter stays `ch` (M2) and appears in the calc for exactly that reason: the sixteen cells get
+`16 × --palette-cell` between them whatever `2.2ch` resolves to.
+
+**Index labels at every size.** The small mode had dropped them entirely, so the panel that most
+needed to name an index was the one that could not.
+
+**Quadrant rules every fourth row and column**, as `inset` box-shadows — a grid of `1fr` tracks
+cannot afford a box-model change, and a 1px border on every fourth cell takes a pixel out of that
+column. Without them, finding `$A7` means counting ten cells across an unbroken band of colour.
+
+**Everything drawn *on* a swatch takes its contrast from that swatch**, including the rules —
+`--palette-rule` is set per element from the entry's own luminance. There is no theme answer to
+"a hairline over arbitrary user colour": one fixed alpha vanishes over half of any palette and a
+theme neutral over more. It is registered in `token-contract.test.ts`'s `RUNTIME_PROVIDED` for that
+reason, with the justification written out.
+
+**One tooltip for the grid, not 256.** Each cell mounted its own `TooltipFactory`; the sidebar drew
+eight palettes, so 2048 popper instances, rebuilt on every poll. One pointer, one readout — driven
+through `isShown` rather than `Tooltip`'s own listeners, which attach on the effect *after* the
+`mouseenter` that would have started them. Delay is 220ms, not the app's 800ms: a palette is scanned,
+and at 800ms the answer arrives after the eye has moved on.
+
+**The swatch is a `div`.** Each was an `<svg>` with no `width`/`height`/`viewBox`, so every one took
+the SVG default replaced size of **300×150** inside an 18px cell; only the absence of a background
+on the overflow kept that invisible. The `memo` also never hit — it was keyed on the `palette` array,
+whose identity changes on every poll — so the primitives are now per-entry and the memo works.
+
+### Phase 13 exit
+
+- Full suite green: **20,148 tests** / 649 files; `electron-vite build` succeeds;
+  `tsc --noEmit -p build/tsconfig.web.json` unchanged against baseline for every touched file.
+- 42 new tests: `test/zxnext/palette-codec.test.ts` (the two layouts, both directions, against the
+  device's own `nextReg41Value` derivation, and the three intensity tables pinned to each other),
+  `test/controls/NextPaletteViewer.test.tsx`, `test/controls/PalettePanel.test.tsx`.
+- Two existing gates fired and were satisfied rather than suppressed: `token-contract.test.ts` on
+  `--palette-rule`, and `wasm-next-full-matrix.test.ts`, which requires every TypeScript ZX Next
+  suite to be accounted for — `palette-codec.test.ts` is `typescript-owned-host-boundary`, since the
+  WASM core never sees a CSS string or an ABRG word.
+- **Verified in the running app over CDP**, which Phase 11 did not do: both tones, the transparency
+  mark, and the hover readout (`$E3 — R: 7, G: 0, B: 7 (transparency)`) — the value that proves the
+  device→register conversion end to end. The sizing was measured by driving the sidebar's own width
+  host: **14.00px cells and a 242.5px grid at 260, 400 and 520px sidebars**, and a clean shrink to
+  11.6px and 10px at 220 and 180px with no overflow past the panel.
+- One trap worth recording: **wiping `#themeRoot`'s inline style to test something removes the whole
+  token set**, since that is where `ThemeProvider` emits it. It renders the app in initial values and
+  looks exactly like a component failing to resolve its own tokens. Reload the window instead.

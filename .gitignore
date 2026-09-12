@@ -45,3 +45,6 @@ _pagefind/
 
 # Local venv used by scripts/build-fonts.py
 .fontenv/
+
+# Staging output of scripts/doc-shots/run.cjs, reviewed before publishing into docs/
+.doc-shots/

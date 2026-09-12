@@ -691,7 +691,16 @@ export type PaletteDeviceInfo = {
   tilemapFirst: number[];
   tilemapSecond: number[];
   storedPaletteValue: number;
-  trancparencyColor: number;
+  /**
+   * The sprite palette index the sprite engine treats as transparent (Next Reg $4B).
+   *
+   * An *index*, unlike the ULA/Layer 2 case: Next Reg $14 is a global transparency **colour**,
+   * matched against a pixel's 8-bit value rather than naming a palette slot, so there is no single
+   * entry to mark for those two devices and none is reported here.
+   */
+  spriteTransparencyIndex: number;
+  /** The tilemap palette index treated as transparent (Next Reg $4C). */
+  tilemapTransparencyIndex: number;
   reg43Value: number;
   reg6bValue: number;
   ulaNextFormat: number;

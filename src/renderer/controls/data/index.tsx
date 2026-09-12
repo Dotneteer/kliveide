@@ -2,6 +2,8 @@ import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { forwardRef } from "react";
 import classnames from "classnames";
 import { toBin8 } from "@renderer/appIde/services/ide-commands";
+import { Icon } from "@renderer/controls/Icon";
+import { iconSizes } from "@renderer/theming/tokens/dimensions";
 import styles from "./Data.module.scss";
 
 /**
@@ -146,6 +148,76 @@ export const SectionHeader = ({
   >
     {title && <span>{title}</span>}
     {children}
+  </div>
+);
+
+// ---------------------------------------------------------------------------------------------
+// Filter
+// ---------------------------------------------------------------------------------------------
+
+type PanelFilterProps = {
+  value: string;
+  onChange: (value: string) => void;
+  /** What the reader can type. Say which fields are matched — the panel decides, not this box. */
+  placeholder?: string;
+  /** Right-aligned count, e.g. `12 / 244`. Omit while the filter is empty. */
+  status?: string;
+  /** Accessible name for the input. Defaults to "Filter". */
+  label?: string;
+};
+
+/**
+ * A one-row filter box at the top of a data panel.
+ *
+ * Here rather than in the panel that first needed it, because "this list is too long to scroll"
+ * is not a System Variables problem: the C64 defines 244 system variables, the Next 141 hardware
+ * registers, and the pattern that solves one solves the others. The primitive set is the place a
+ * second panel can find it — the alternative is the 16-hand-rolled-data-rows situation slice 6.0
+ * cleaned up, one generation later.
+ *
+ * **Not a `PanelHeader`.** A sidebar panel already has a header — the gradient band Phase 11 gave
+ * it — and stacking a second strip of chrome under the first reads as two titles. This is content:
+ * it sits on the panel surface, is one list row tall, and carries the inset input as the only
+ * chrome in it.
+ *
+ * `TextInput` was not reused: it is a *dialog* field (8px block margins, a 32px button, and a
+ * `font-size: 0.9em` that M1 forbids), and stripping all of that leaves nothing of it.
+ */
+export const PanelFilter = ({ value, onChange, placeholder, status, label }: PanelFilterProps) => (
+  <div className={styles.panelFilter}>
+    <Icon iconName="eyeglass" width={iconSizes.sm} height={iconSizes.sm} fill="--data-label" />
+    <input
+      className={styles.panelFilterInput}
+      type="text"
+      value={value}
+      placeholder={placeholder}
+      aria-label={label ?? "Filter"}
+      spellCheck={false}
+      autoComplete="off"
+      onChange={(e) => onChange(e.target.value)}
+      /*
+       * Escape clears rather than blurs. The box is inside a scrolling panel, so a blurred-but-full
+       * filter leaves the list silently truncated with the control that did it scrolled out of
+       * sight.
+       */
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && value) {
+          e.stopPropagation();
+          onChange("");
+        }
+      }}
+    />
+    {status && <span className={styles.panelFilterStatus}>{status}</span>}
+    {value && (
+      <button
+        type="button"
+        className={styles.panelFilterClear}
+        aria-label="Clear filter"
+        onClick={() => onChange("")}
+      >
+        <Icon iconName="close" width={iconSizes.xs} height={iconSizes.xs} fill="--data-label" />
+      </button>
+    )}
   </div>
 );
 
@@ -306,6 +378,16 @@ type HexValueProps = {
   prefix?: string;
   changed?: boolean;
   title?: string;
+  /**
+   * Extra class merged onto the hex cell, for a panel that colours its own values.
+   *
+   * The same shape `registers.tsx` exposes as `valueXclass` on `Bit16Value`/`Bit8Value`/
+   * `SimpleValue`, and for the same reason: a view-scoped colour (`--color-state-value`) is opted
+   * into by the caller, never applied by restyling the shared primitive for its other consumers.
+   */
+  valueXclass?: string;
+  /** Extra class merged onto the decimal echo. Rare — the decimal is an annotation, not a datum. */
+  secondaryXclass?: string;
 };
 
 /**
@@ -322,11 +404,18 @@ export const HexValue = ({
   decimal,
   prefix = HEX_PREFIX,
   changed,
-  title
+  title,
+  valueXclass,
+  secondaryXclass
 }: HexValueProps) => (
   <>
-    <DataValue text={formatHex(value, digits, prefix)} changed={changed} title={title} />
-    {decimal && <DataSecondary text={`(${value})`} />}
+    <DataValue
+      text={formatHex(value, digits, prefix)}
+      changed={changed}
+      title={title}
+      xclass={valueXclass}
+    />
+    {decimal && <DataSecondary text={`(${value})`} xclass={secondaryXclass} />}
   </>
 );
 
@@ -439,29 +528,43 @@ type HexByteGridProps = {
   bytes: Uint8Array | number[];
   /** Bytes per row. */
   stride?: number;
-  /** Tooltip for byte `i`, if the caller has one. */
-  titleFor?: (index: number) => string | undefined;
+  /**
+   * The index under the pointer, or `null` when it leaves the grid.
+   *
+   * **Not a per-byte `title`.** This used to hand each byte a native tooltip, which fires
+   * *alongside* the `TooltipFactory` its own row carries — two tooltips for one pointer, one of them
+   * unstyled and on the browser's timing. The memory dump had already settled the shape: one tooltip
+   * per row, whose *content* depends on which byte is hovered (see `tooltipLines` in
+   * `MemoryDumpSection`). Reporting the index lets the caller do that; rendering it is the caller's
+   * job, because only the caller knows what the byte means.
+   */
+  onHoverByte?: (index: number | null) => void;
+  /** Whether byte `i` moved since the previous refresh. */
+  changedFor?: (index: number) => boolean;
 };
 
-/**
- * A wrapped grid of hex bytes.
- *
- * The gap slice 6.0 found: every other part of `SysVarsPanel` migrated cleanly, but its array dump
- * kept three private rules because the primitive set had nothing for a byte grid.
- */
-export const HexByteGrid = ({ bytes, stride = 8, titleFor }: HexByteGridProps) => {
+export const HexByteGrid = ({ bytes, stride = 8, onHoverByte, changedFor }: HexByteGridProps) => {
   const rows: number[][] = [];
   for (let i = 0; i < bytes.length; i += stride) {
     rows.push(Array.from(bytes.slice(i, i + stride) as ArrayLike<number>));
   }
   return (
-    <div className={styles.hexByteGrid}>
+    <div
+      className={styles.hexByteGrid}
+      onMouseLeave={onHoverByte ? () => onHoverByte(null) : undefined}
+    >
       {rows.map((row, r) => (
         <div key={r} className={styles.hexByteRow}>
           {row.map((b, c) => {
             const index = r * stride + c;
             return (
-              <span key={index} className={styles.hexByte} title={titleFor?.(index)}>
+              <span
+                key={index}
+                className={classnames(styles.hexByte, {
+                  [styles.changedWash]: changedFor?.(index)
+                })}
+                onMouseEnter={onHoverByte ? () => onHoverByte(index) : undefined}
+              >
                 {formatHex(b, 2, "")}
               </span>
             );

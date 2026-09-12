@@ -826,7 +826,8 @@ class EmuMessageProcessor {
       tilemapFirst: pd.tilemapFirst,
       tilemapSecond: pd.tilemapSecond,
       storedPaletteValue: pd.storedPaletteValue,
-      trancparencyColor: machine.composedScreenDevice.fallbackColor,
+      spriteTransparencyIndex: machine.spriteDevice.transparencyIndex,
+      tilemapTransparencyIndex: machine.tilemapDevice.transparencyIndex,
       reg43Value: pd.nextReg43Value,
       reg6bValue: machine.tilemapDevice.nextReg6bValue,
       ulaNextFormat: machine.composedScreenDevice.ulaNextFormat

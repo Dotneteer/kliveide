@@ -46,6 +46,14 @@ React 19 + Next 16.
 - The deployment path is `NEXT_PUBLIC_BASE_PATH` (see `docs/.env.production`),
   never a hardcoded `/kliveide` and never keyed off `NODE_ENV`.
 
+- **Screenshots can be generated rather than hand-captured.** `scripts/doc-shots/` launches
+  Klive under Playwright's Electron driver, drives it through the IDE's own command prompt,
+  and captures element-scoped PNGs — no manual cropping, no window chrome. Output stages to
+  `.doc-shots/` for review; `DOC_SHOTS_OUT=docs/public/images` publishes. Read
+  `.ai/doc-screenshots-guide.md` before using or extending it: it carries the command
+  vocabulary, the settings-seeding that makes runs reproducible, and the fixture-project
+  guard that keeps a recipe away from a real `~/KliveProjects` folder.
+
 Verify a docs change with `npm run doc:build && npm run doc:check`, which
 diffs routes and assets against `.plans/docs-*.golden.txt`, audits every
 internal link, and asserts the Z80 syntax highlighting actually rendered. The
@@ -90,6 +98,10 @@ merely uncoloured, which no route diff can see.
   (M2), and no component-private row-height constants - use `theming/tokens/rowSizes.ts` (M3).
 - The Monaco syntax palette is mid-revision: **read `.plans/SYNTAX_PALETTE_REVISION_PLAN.md`**
   before changing `theming/tokens/syntax.ts`. It supersedes §8.1 of the modernization plan.
+- **Any style, theming or visual change must update `.ai/ui-theming-intent-and-lessons.md` in the
+  same change** — a standing instruction from the project author. Record the durable rule the change
+  taught, not what happened: fold it into the existing sections, replace anything it supersedes, and
+  keep no history. That file is how style decisions reach sessions that never saw the work.
 - **Read `.ai/ui-theming-intent-and-lessons.md` before this kind of work.** It records the settled
   product decisions, how to run and visually inspect the app (CDP, the app menu, the
   `.plans/baseline/` scripts), and the failure modes this work already hit.

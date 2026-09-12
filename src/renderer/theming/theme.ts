@@ -17,6 +17,7 @@ export type ThemeProperties = {
   "--bgcolor-scrollbar"?: string;
   "--bgcolor-scrollbar-thumb"?: string;
   "--bgcolor-attached-shadow"?: string;
+  "--bgcolor-attached-shadow-line"?: string;
   "--bgcolor-button-disabled"?: string;
   "--color-button-disabled"?: string;
   "--bgcolor-button"?: string;
@@ -141,7 +142,16 @@ export type ThemeProperties = {
   "--color-chevron"?: string;
   "--color-chevron-selected"?: string;
   "--color-panel-header"?: string;
+  "--color-panel-header-active"?: string;
   "--color-panel-border"?: string;
+  "--bgcolor-panelHeader"?: string;
+  "--bgcolor-panelHeader-hover"?: string;
+  "--color-panelHeader-rule"?: string;
+  "--color-panelHeader-rule-open"?: string;
+  "--color-panel-separator"?: string;
+  "--color-scrollbar-handle"?: string;
+  "--color-scrollbar-handle-hover"?: string;
+  "--color-scrollbar-handle-active"?: string;
   "--color-panel-focused"?: string;
 
   // --- Emulator area
