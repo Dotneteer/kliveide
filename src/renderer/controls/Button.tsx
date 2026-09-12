@@ -8,6 +8,12 @@ type Props = {
   disabled?: boolean;
   focusOnInit?: boolean;
   isDanger?: boolean,
+  /**
+   * `primary` (the default) is the filled accent that commits; `secondary` is the outline beside
+   * it. A footer with two primaries says nothing about which button commits, which is what every
+   * dialog footer looked like before this existed.
+   */
+  variant?: "primary" | "secondary";
   type?: "button" | "submit";
   spaceLeft?: number;
   spaceRight?: number;
@@ -20,6 +26,7 @@ export const Button = ({
   disabled = false,
   focusOnInit,
   isDanger,
+  variant = "primary",
   type = "button",
   spaceLeft,
   spaceRight,
@@ -42,7 +49,10 @@ export const Button = ({
       type={type}
       ref={ref}
       style={{ marginLeft: spaceLeft, marginRight: spaceRight }}
-      className={classnames(styles.button, {[styles.isDanger]: isDanger})}
+      className={classnames(styles.button, {
+        [styles.isDanger]: isDanger,
+        [styles.isSecondary]: variant === "secondary" && !isDanger
+      })}
       disabled={disabled}
       onClick={() => clicked?.()}
     >

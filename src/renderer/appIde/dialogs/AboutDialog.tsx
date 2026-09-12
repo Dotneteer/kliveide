@@ -15,6 +15,7 @@ export function AboutDialog({ about, onClose }: Props) {
   return (
     <Modal
       title="About Klive IDE"
+      iconName="question"
       isOpen={true}
       width={460}
       primaryVisible={false}

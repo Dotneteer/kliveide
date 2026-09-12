@@ -13,12 +13,12 @@
   place-content: center;
   background-color: var(--bgcolor-checkbox);
   color: currentColor;
-  min-width: 1.2em;
-  min-height: 1.2em;
-  width: 1.2em;
-  height: 1.2em;
+  min-width: 14px;
+  min-height: 14px;
+  width: 14px;
+  height: 14px;
   border: 2px solid var(--color-checkbox-border-normal);
-  border-radius: 0.2em;
+  border-radius: var(--radius-xs);
   outline: none;
   @include focus-ring;
   cursor: pointer;
@@ -30,8 +30,8 @@
 
   &::before {
     content: "";
-    width: 0.7em;
-    height: 0.7em;
+    width: 8px;
+    height: 8px;
     transform: scale(0);
     transition: 0.1s transform ease-out;
     box-shadow: inset 1em 1em var(--color-checkbox);
@@ -61,23 +61,25 @@
   }
 }
 
+/* M1: absolute, never `em` — see the note in `RadioGroup.module.scss`. */
 .checkboxWrapper {
   display: flex;
   flex-direction: row;
+  align-items: center;
   justify-items: center;
-  font-size: 0.9em;
-  margin: 2px 0 6px 0;
+  font-size: var(--font-size-200);
+  margin: var(--space-0_5) 0 var(--space-1_5) 0;
 }
 
 label {
   cursor: pointer;
 
   &.left {
-    margin-right: 8px;
+    margin-right: var(--space-2);
   }
 
   &.right {
-    margin-left: 8px;
+    margin-left: var(--space-2);
   }
 
   &.disabled {

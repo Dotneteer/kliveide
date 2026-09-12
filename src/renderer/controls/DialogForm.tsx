@@ -53,7 +53,12 @@ export function DialogForm({
     <form ref={formRef} className={styles.form} onSubmit={handleSubmit}>
       <div className={styles.body}>{children}</div>
       <footer className={styles.footer}>
-        <Button text={cancelLabel} disabled={submitting} clicked={handleCancel} />
+        <Button
+          text={cancelLabel}
+          variant='secondary'
+          disabled={submitting}
+          clicked={handleCancel}
+        />
         <Button
           type='submit'
           text={submitting ? "Working…" : submitLabel}

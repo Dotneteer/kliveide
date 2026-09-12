@@ -25,14 +25,23 @@ export type ThemeProperties = {
   "--bgcolor-button-pointed"?: string;
   "--color-button-pointed"?: string;
   "--color-button-focused"?: string;
+  "--bgcolor-button-secondary"?: string;
+  "--color-button-secondary"?: string;
+  "--border-button-secondary"?: string;
+  "--bgcolor-button-secondary-pointed"?: string;
+  "--bgcolor-button-danger"?: string;
+  "--bgcolor-button-danger-pointed"?: string;
+  "--color-button-danger"?: string;
   "--color-text-hilite"?: string;
   "--bgcolor-input"?: string;
   "--color-input"?: string;
+  "--border-input"?: string;
   "--bgcolor-item-hover"?: string,
 
   // --- Drowpdown
   "--bg-color-dropdown-input"?: string;
   "--color-dropdown-input"?: string;
+  "--border-color-dropdown-input"?: string;
   "--bg-color-dropdown-menu"?: string;
   "--color-dropdown-menu"?: string;
   "--bg-color-dropdown-menu-pointed"?: string;
@@ -65,8 +74,6 @@ export type ThemeProperties = {
   "--border-modal"?: string;
   "--border-modal-section"?: string;
   "--shadow-modal"?: string;
-  "--color-modal-accent"?: string;
-  "--bgimage-modal-header"?: string;
   "--radius-modal"?: string;
   "--bgcolor-modal-header"?: string;
   "--color-modal-header"?: string;
@@ -74,6 +81,10 @@ export type ThemeProperties = {
   "--color-modal-body"?: string;
   "--bgcolor-modal-footer"?: string;
   "--color-modal-footer"?: string;
+  "--bgcolor-modal-chip"?: string;
+  "--color-modal-chip"?: string;
+  "--bgcolor-modal-chip-danger"?: string;
+  "--color-modal-chip-danger"?: string;
 
   // --- Console colors
   "--console-ansi-black"?: string;

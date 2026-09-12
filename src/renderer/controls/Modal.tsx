@@ -37,6 +37,13 @@ export type ModalProps = {
   fullWidth?: boolean;
   fullScreen?: boolean;
   title?: string;
+  /**
+   * The glyph for the header's accent chip — the accent's only landing place in the dialog chrome.
+   * Optional: a dialog that supplies none renders no chip. The chip takes the danger tone whenever
+   * `primaryDanger` is set, so a destructive dialog is marked in the header as well as on its
+   * commit button.
+   */
+  iconName?: string;
   isOpen?: boolean;
   translateY?: number;
   primaryLabel?: string;
@@ -65,6 +72,7 @@ export const Modal = ({
   fullScreen,
   portalTo,
   dialogRole,
+  iconName,
   closeOnEscape = true,
   closeOnOutsideClick = true,
   title,
@@ -278,36 +286,29 @@ export const Modal = ({
               })}
               style={{ width, transform: `translateY(${translateY}px)` }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  position: "relative"
-                }}
-              >
-                <header id={titleId} className={styles.dialogTitle}>{title}</header>
-              </div>
-
-              <div
-                style={{
-                  position: "absolute",
-                  right: "0.5rem",
-                  top: "0.5rem"
-                }}
-              >
+              <header className={styles.dialogHeader}>
+                {iconName && (
+                  <span
+                    className={classnames(styles.titleChip, {
+                      [styles.danger]: primaryDanger
+                    })}
+                    aria-hidden='true'
+                  >
+                    <Icon iconName={iconName} height={14} width={14} fill='currentColor' />
+                  </span>
+                )}
+                <span id={titleId} className={styles.dialogTitle}>
+                  {title}
+                </span>
                 <button
                   type='button'
+                  aria-label='Close dialog'
                   className={styles.closeButton}
                   onClick={() => doClose()}
                 >
-                  <Icon
-                    iconName='close'
-                    height={16}
-                    width={16}
-                    fill='--color-command-icon'
-                  />
+                  <Icon iconName='close' height={14} width={14} fill='currentColor' />
                 </button>
-              </div>
+              </header>
 
               <div className={styles.dialogBody}>{children}</div>
 
@@ -326,6 +327,7 @@ export const Modal = ({
                   <span data-modal-action="secondary">
                     <Button
                       text={secondaryLabel}
+                      variant='secondary'
                       visible={secondaryVisible}
                       focusOnInit={
                         secondaryEnabled && initialFocus === "secondary"
@@ -337,6 +339,7 @@ export const Modal = ({
                   <span data-modal-action="cancel">
                     <Button
                       text={cancelLabel}
+                      variant='secondary'
                       visible={cancelVisible}
                       disabled={!cancelEnabled}
                       focusOnInit={

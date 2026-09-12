@@ -87,6 +87,7 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   return (
     <Modal
       title="Export Code"
+      iconName="repo-push"
       isOpen={true}
       fullScreen={false}
       width={500}

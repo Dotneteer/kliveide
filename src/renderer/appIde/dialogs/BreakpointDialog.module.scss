@@ -1,9 +1,9 @@
 .hint {
   color: var(--color-secondary-label);
-  font-size: 0.8em;
+  font-size: var(--font-size-100);
 }
 
 .error {
-  color: var(--console-ansi-bright-red);
-  font-size: 0.875rem;
+  color: var(--status-error);
+  font-size: var(--font-size-100);
 }

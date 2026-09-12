@@ -39,14 +39,38 @@ export const componentAliases: Record<string, string> = {
   "--color-button-focused": "var(--accent-solid)",
   "--bgcolor-button-disabled": "var(--surface-active)",
   "--color-button-disabled": "var(--text-disabled)",
+  /**
+   * The secondary button — an outline, not a second filled accent.
+   *
+   * `Button` used to have one variant axis (`isDanger`), so a dialog footer drew Cancel and its
+   * commit button in the identical accent fill and nothing said which one committed.
+   */
+  "--bgcolor-button-secondary": "transparent",
+  "--color-button-secondary": "var(--text-primary)",
+  "--border-button-secondary": "var(--border-default)",
+  "--bgcolor-button-secondary-pointed": "var(--surface-hover)",
+  /**
+   * The destructive button takes the *status* hue. It used to take `--console-ansi-red`, and the
+   * ANSI table is deliberately non-semantic and identical in both tones, so a light-theme danger
+   * button painted itself in the dark theme's red.
+   */
+  "--bgcolor-button-danger": "var(--status-error)",
+  "--bgcolor-button-danger-pointed": "var(--status-error-hover)",
+  "--color-button-danger": "var(--text-on-accent)",
   "--color-text-hilite": "var(--accent-text)",
+  /**
+   * A dialog field needs an edge, not just a fill. `--surface-raised` is `#ffffff` in the light
+   * tone and so is the modal body, which left every input and dropdown in every dialog invisible.
+   */
   "--bgcolor-input": "var(--surface-raised)",
   "--color-input": "var(--text-primary)",
+  "--border-input": "var(--border-default)",
   "--bgcolor-item-hover": "var(--surface-hover)",
 
   // --- Dropdown (the source misspells this group "Drowpdown") -----------------------------------
   "--bg-color-dropdown-input": "var(--surface-raised)",
   "--color-dropdown-input": "var(--text-primary)",
+  "--border-color-dropdown-input": "var(--border-default)",
   "--bg-color-dropdown-menu": "var(--surface-overlay)",
   "--color-dropdown-menu": "var(--text-primary)",
   "--bg-color-dropdown-menu-pointed": "var(--surface-hover)",
@@ -73,19 +97,41 @@ export const componentAliases: Record<string, string> = {
   "--radius-context-menu": "var(--radius-md)",
 
   // --- Modal ------------------------------------------------------------------------------------
+  /**
+   * A dialog is a floating *tool panel*, not a lifted card.
+   *
+   * Header and footer take `--surface-chrome` and the flat `PanelHeader` idiom the Output panel and
+   * the sprite editor's toolbar already wear. They deliberately do **not** take `--surface-raised`:
+   * "raised" means lighter, which in the light tone means `#ffffff` — the same value as
+   * `--surface-overlay`, so the header, the body and the footer all painted one undifferentiated
+   * white and the band existed only as a 2%-opacity texture. Same trap as the sidebar header band.
+   *
+   * The seams are `--border-default`, not `--border-subtle`: they separate two *surfaces*, where
+   * subtle divides one surface into cells.
+   */
   "--bgcolor-modal": "var(--surface-overlay)",
   "--color-modal": "var(--text-primary)",
   "--border-modal": "1px solid var(--border-default)",
-  "--border-modal-section": "1px solid var(--border-subtle)",
+  "--border-modal-section": "1px solid var(--border-default)",
   "--shadow-modal": "var(--shadow-3)",
-  "--color-modal-accent": "var(--accent-solid)",
-  "--radius-modal": "var(--radius-lg)",
-  "--bgcolor-modal-header": "var(--surface-raised)",
-  "--color-modal-header": "var(--text-primary)",
+  "--radius-modal": "var(--radius-md)",
+  "--bgcolor-modal-header": "var(--surface-chrome)",
+  "--color-modal-header": "var(--text-secondary)",
   "--bgcolor-modal-body": "var(--surface-overlay)",
   "--color-modal-body": "var(--text-primary)",
-  "--bgcolor-modal-footer": "var(--surface-raised)",
+  "--bgcolor-modal-footer": "var(--surface-chrome)",
   "--color-modal-footer": "var(--text-primary)",
+  /**
+   * The title chip — the accent's only landing place in the dialog chrome.
+   *
+   * The 2px accent slab this replaces was the last one in the app; document tabs moved the same cue
+   * onto a chip behind their glyph. `-danger` follows `primaryDanger`, so a destructive dialog is
+   * marked in the header as well as on its commit button.
+   */
+  "--bgcolor-modal-chip": "var(--accent-subtle)",
+  "--color-modal-chip": "var(--accent-text)",
+  "--bgcolor-modal-chip-danger": "var(--status-error-subtle)",
+  "--color-modal-chip-danger": "var(--status-error)",
 
   // --- Data labels ------------------------------------------------------------------------------
   // The re-cast from three hues to a contrast hierarchy (§5.2).

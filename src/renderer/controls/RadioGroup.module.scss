@@ -2,16 +2,21 @@
 
 .group {
   display: grid;
-  gap: 4px 16px;
-  padding: 2px 0;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-0_5) 0;
 }
 
+/*
+ * M1: absolute, never `em`. `0.9em` measured 14.4px while the dialog body ran on the 16px root and
+ * 11.7px once the body declared its own 13px — two different sizes, neither of them on the scale,
+ * from one unchanged declaration. That is the whole reason the mandate exists.
+ */
 .option {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
-  font-size: 0.9em;
+  gap: var(--space-2);
+  font-size: var(--font-size-200);
 }
 
 /*
@@ -25,10 +30,10 @@
   margin: 0;
   display: grid;
   place-content: center;
-  min-width: 1.2em;
-  min-height: 1.2em;
-  width: 1.2em;
-  height: 1.2em;
+  min-width: 14px;
+  min-height: 14px;
+  width: 14px;
+  height: 14px;
   border: 2px solid var(--color-checkbox-border-normal);
   border-radius: 50%;
   background-color: var(--bgcolor-checkbox);
@@ -38,8 +43,8 @@
 
   &::before {
     content: "";
-    width: 0.6em;
-    height: 0.6em;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     transform: scale(0);
     transition: 0.1s transform ease-out;

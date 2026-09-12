@@ -37,6 +37,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Memory dump / disassembly colour | **These two views are exceptions to §5.2's neutral data-panel hierarchy**, added in Phase 10 — hex-editor-style views read better for real colour. |
 | Sidebar panel headers | **A shallow top-lit gradient band** (`--surface-header*`), added in Phase 11. Deliberately not a flat fill: the band is 26px and the list rows under it are 22px and also hover-highlight, so a flat strip reads as *a selected row*. A lit strip reads as chrome. |
 | Sprite editor layout | **Document editors are exempt from the `Layout freedom` rule above, which governs the shell.** The sprite editor was rebuilt as one CSS grid — tool rail, pane-fitted canvas with rulers, right inspector, sheet browser — because its canvas was capped at 513px however wide the pane was, so the editor got *emptier* as the window grew. A workspace whose content cannot use its own pane is not fixable by redrawing. |
+| Modal dialogs | **A floating tool panel, not a lifted card.** Header and footer are flat `--surface-chrome` at `--strip-panelHeader` (30px) with `--border-default` seams — the shared `PanelHeader` idiom — an 11px/600 uppercase title, `--radius-md`, and the accent on **one chip** behind an optional header glyph (`ModalProps.iconName`), never a slab. Dialogs were never in the modernization and had to be brought in wholesale; the four treatments were prototyped and the author chose this one. |
 | Overflow (scroll) shadow | **6px, a 1px hairline over a gradient**, app-wide via `AttachedShadow`. The author chose the height against 14/8/6/4/1px. It says "there is content above", it does not dim the first row. |
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
@@ -462,6 +463,19 @@ omission visible.)
   `--shadow-scroll-height` (Phase 11).
 - **`theming/tokens/semantic.ts`** — also `--surface-header`/`-lit`/`-hover`/`-lit-hover`, the panel
   header band's gradient stops (Phase 11).
+- **`controls/Modal.tsx` + `Modal.module.scss`** — the dialog frame. `iconName` is the optional
+  header glyph; the chip takes the danger tone from `primaryDanger`, so `DialogOptions` carries
+  `iconName` and `danger` through to it and `useConfirmPort` sets both. The close button sits in the
+  header's flow (it was absolutely positioned from an inline style, which is why the header used to
+  carry a 52px right padding). `--z-modal` is the z-index; it was a literal `100`, i.e. the
+  *overlay* level, which is also what the two portalled dropdown menus were sitting at.
+- **`controls/Button.tsx`** — three variants now: `primary` (filled accent), `variant="secondary"`
+  (an outline, `--border-button-secondary`) and `isDanger`. Dialog footers pair secondary + primary.
+  It had one axis before, so Cancel and the commit button were the identical accent fill.
+- **`theming/tokens/semantic.ts`** — also `--status-error-hover`, derived from `--status-error` the
+  way `--accent-solid-hover` is derived from `--accent-solid`, for the filled destructive button.
+- **Deleted:** `--bgimage-modal-header` (the header scanline) and `--color-modal-accent` (the 2px
+  slab) — and with the scanline gone, `toneTokens()` is down to the backdrop alone.
 - **Deleted:** `controls/valuedisplay/`, `DocumentPanels/helpers/PanelHeader.tsx`,
   `GenericFileViewerPanel`/`GenericFileEditorPanel` (now one `GenericFilePanel`).
 
@@ -517,6 +531,15 @@ Four traps worth knowing:
   what "raised" implies in dark; in light it is pure white. Anything that must read as lifted in
   dark and **recessed** in light — a header band on a panel — needs its own semantic pair, not
   `raised`. This is the general shape of the one asymmetry the derived light theme cannot absorb.
+
+  **The sharper form of the same trap: `--surface-raised` and `--surface-overlay` are the *same
+  value* in light (`#ffffff`), so anything that distinguishes itself from an overlay by being
+  "raised" is invisible there.** The modal was the worst case — its header, body and footer all
+  resolved to white, held apart only by a 2%-opacity scanline — but so was every dialog *field*:
+  `--bgcolor-input` and both dropdown triggers were borderless `--surface-raised` on a white body.
+  **A control that distinguishes itself only by fill needs a border as well**, and dialog fields now
+  carry `--border-input` / `--border-color-dropdown-input`. Check a surface pair in *both* tones
+  before trusting it; the dark values differing is not evidence.
 
 - **A panel that is not a `DataPanel` gets no declared leading, and nothing tells you.** Both
   `Data.module.scss`'s `.dataPanel` and the `side-panel-content` mixin declare
@@ -954,6 +977,48 @@ for the header band and `.scrollShade` for the overflow shadow cost a full round
 said "the shade is too tall" and the wrong one was refined. Name the two things apart *before* asking
 which one to change.
 
+## A Surface That Declares No Type Inherits The 16px Root
+
+The panel-leading trap has a twin, and the dialog work is where it surfaced: **a container that
+declares no `font-size` runs on the 16px `<html>` root**, which is three steps off the top of the
+10/11/12/13/15px scale. Dialog bodies are prose and bare `<div>`s — `RenameDialog`'s "Rename <name>
+to:", `ConfirmDialog`'s lines, every hint under a field — and none of them set a size, so all of it
+rendered a third larger than any other text in the app. `.dialogBody` now declares
+`--font-size-300` and a `line-height`, and both belong there rather than in thirteen dialog bodies.
+
+**Fixing the container moves every `em` inside it, which is the point and also the hazard.**
+`RadioGroup`'s and `Checkbox`'s `0.9em` measured 14.4px against the root and 11.7px against the new
+13px body — two different sizes, neither on the scale, from one unchanged declaration. That is
+precisely what M1 exists to prevent, and the fix is the absolute token, never a re-tuned `em`.
+**After changing an inherited size, measure the `em`-based descendants in the running app**; they
+will have moved, and they will not have moved to anywhere you chose.
+
+The controls that stayed `1em` — `LabeledGroup`, `AddressInput`, `LabeledSwitch` — live in toolbars
+and document panels, not dialogs. They are still M1 violations waiting for whoever restyles those.
+
+## One Focus Affordance, Never Two
+
+The command prompt's rule generalizes: a control gets `@include focus-ring` **or** a focused
+border/colour swap, not both. `Button` carried the ring *and* a `:focus` border swap; a first pass at
+`TextInput` reintroduced exactly the same thing (ring + accent border), which draws a double blue
+ring around a focused field. `[data-state="open"]` on a dropdown trigger is *not* a second focus
+signal — open and focused are different states — so that pairing is fine.
+
+Related, from the same pass: **`--console-ansi-*` is not a UI palette.** The danger button, four
+dialog validation messages and one status badge were all drawing themselves from the ANSI table,
+which is deliberately non-semantic *and identical in both tones* — so a light-theme error painted
+itself in the dark theme's red. Errors are `--status-error`.
+
+## A Shared Control Can Be Invisible In One Of Its Two Homes
+
+`BankDropdown` is a toolbar control that also appears inside the breakpoint dialog. Its borderless
+`--surface-raised` trigger reads fine on a toolbar's `--surface-chrome` ground and disappears
+completely on a dialog body, because both are `#ffffff` in light. **When a control has two hosts,
+check it against the lighter one** — and note that `Dropdown` and `BankDropdown` are two components
+with two stylesheets both exporting `.SelectTrigger`, so fixing one silently leaves the other.
+That duplication is also a good way to waste a session: the element carrying the *other* component's
+hashed class looks exactly like stale HMR.
+
 ## Prototype For Design Decisions, Never For Verification
 
 The Phase 11 prototype loop worked well enough to repeat, and is worth separating from the
@@ -1006,6 +1071,11 @@ verification failure recorded above.
 - Do not add a colour literal to a stylesheet or a `.tsx`. Alias it in L4 or add it to L1/L2.
 - Do not add a hand-copied light-theme value. Light is derived.
 - Do not add a component-private row height, `em` font-size, or px column width. M1/M2/M3 have tests.
+- Do not let a container render prose without declaring its own `font-size` and `line-height`. The
+  fallback is the 16px root, three steps off the scale, and nothing tells you.
+- Do not give a control two focus affordances. `@include focus-ring` **or** a focused border swap.
+- Do not trust a surface pair you have only checked in dark. `--surface-raised` and
+  `--surface-overlay` are both `#ffffff` in light, and so is `--surface-canvas`.
 - Do not reach for the secondary accent because something "needs more colour". It exists for one
   case: two things in the same view that must both read as accent-tied and clearly apart from each
   other. One accent-worthy thing in a view is `--accent-*`.

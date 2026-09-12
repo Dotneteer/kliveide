@@ -127,6 +127,15 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--status-error-subtle": alpha(s.error, 18),
     "--status-warning-subtle": alpha(s.warning, 18),
     "--status-success-subtle": alpha(s.success, 18),
+    /**
+     * The hover step for a *filled* status button, derived exactly as `--accent-solid-hover` is.
+     *
+     * A destructive commit button needs a hover state, and the only alternatives were a colour
+     * literal or borrowing `--console-ansi-bright-red` — which is what the old danger button did.
+     * The ANSI table is the one part of the palette deliberately kept non-semantic, and it does not
+     * move with the tone, so a light-theme danger button drew itself in the dark theme's red.
+     */
+    "--status-error-hover": alpha(s.error, 88),
 
     // --- Data panels ---------------------------------------------------------------------------
     /**

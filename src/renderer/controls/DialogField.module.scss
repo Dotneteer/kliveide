@@ -1,20 +1,27 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-1_5);
 }
 
+/* M1: absolute, never `rem`. All three were `0.875rem` off the 16px root. */
 .label {
-  font-size: 0.875rem;
+  font-size: var(--font-size-200);
   font-weight: 500;
+  color: var(--color-label);
 }
 
 .help {
   color: var(--color-secondary-label);
-  font-size: 0.875rem;
+  font-size: var(--font-size-100);
 }
 
+/*
+ * `--status-error`, not `--console-ansi-bright-red`. The ANSI table is deliberately non-semantic
+ * and identical in both tones, so a light-theme validation error drew itself in the dark theme's
+ * red — the same mistake the danger button was making.
+ */
 .error {
-  color: var(--console-ansi-bright-red);
-  font-size: 0.875rem;
+  color: var(--status-error);
+  font-size: var(--font-size-100);
 }

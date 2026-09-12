@@ -59,6 +59,7 @@ export const Z88ChangeRamDialog = ({ onClose, onChange }: Props) => {
     <Modal
       isOpen={true}
       title="Change Z88 RAM size"
+      iconName="chip"
       width={300}
       translateY={0}
       primaryEnabled={vm.applyEnabled}

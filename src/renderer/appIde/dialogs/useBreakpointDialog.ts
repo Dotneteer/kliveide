@@ -67,7 +67,7 @@ export function useBreakpointDialog() {
       const result = await dialogs.open(
         BreakpointDialog,
         { initial, env, machineSetup, machineId },
-        { title: initial ? "Edit breakpoint" : "Add breakpoint", width: 420 }
+        { title: initial ? "Edit breakpoint" : "Add breakpoint", width: 420, iconName: "debug-with-bp" }
       );
       // --- A dismissed dialog resolves undefined, which is a cancellation, not an empty edit.
       if (!result) return false;

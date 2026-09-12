@@ -53,6 +53,7 @@ export const Z88RemoveCardDialog = ({ slot, onClose, onRemove }: Props) => {
     <Modal
       isOpen={true}
       title="Remove Z88 Card"
+      iconName="chip"
       translateY={0}
       primaryEnabled={vm.removeEnabled}
       onPrimaryClicked={async () => {

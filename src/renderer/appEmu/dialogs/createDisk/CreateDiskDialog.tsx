@@ -72,6 +72,7 @@ export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
   return (
     <Modal
       title="Create a new disk file"
+      iconName="floppy"
       isOpen={true}
       fullScreen={false}
       translateY={0}

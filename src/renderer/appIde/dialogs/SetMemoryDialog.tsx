@@ -63,6 +63,7 @@ export const SetMemoryDialog = ({
   return (
     <Modal
       title="Set Memory Content"
+      iconName="memory-icon"
       isOpen={true}
       fullScreen={false}
       width={300}
