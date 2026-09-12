@@ -1,73 +1,71 @@
-import styles from "./SpriteEditor.module.scss";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
-import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
-import classnames from "classnames";
-import { useState, useEffect } from "react";
+import { memo, useCallback, useMemo } from "react";
+import { SPRITE_DIM, SPRITE_SIZE } from "./sprite-raster";
 
 type Props = {
-  title?: string;
-  zoom?: number;
   spriteMap: Uint8Array;
   palette: number[];
   transparencyIndex: number;
-  separated?: boolean;
+  /** Screen pixels per sprite pixel. */
+  zoom?: number;
   showTransparencyColor?: boolean;
-  selected?: boolean;
-  clicked: () => void;
+  xclass?: string;
 };
 
-export const SpriteImage = ({
-  title = "No title",
-  zoom = 3,
-  spriteMap,
-  palette,
-  transparencyIndex,
-  showTransparencyColor = false,
-  separated = false,
-  selected,
-  clicked
-}: Props) => {
-  const ref = useTooltipRef();
-  const [version, setVersion] = useState(0);
+/**
+ * A sprite, rendered. Nothing else - no selection, no click handling, no tooltip.
+ *
+ * It is `memo`, and the `data` array it hands `ScreenCanvas` is memoized on what actually affects
+ * the picture. `ScreenCanvas`'s redraw effect keys on `[data]`, and this component used to pass
+ * `spriteMap.slice(0)` - a brand-new `Uint8Array` on *every* render - so a 200-pixel pencil drag
+ * forced 2,010 full getImageData/putImageData/drawImage redraws, ten per pixel: one for every
+ * sprite in the sheet, whether or not it had changed. Merely *hovering* across 100 cells cost 1,610.
+ *
+ * The `slice` is still here on purpose. `ScreenCanvas` is shared, its effect depends only on
+ * `data`, and retuning it for this one caller is the wrong move - so instead the copy is made once
+ * per real change. Anything that alters the rendering must therefore be in the dependency list
+ * below, which is what the dead `version`/`useEffect` pair was faking before.
+ */
+export const SpriteImage = memo(
+  ({
+    spriteMap,
+    palette,
+    transparencyIndex,
+    zoom = 3,
+    showTransparencyColor = false,
+    xclass
+  }: Props) => {
+    const data = useMemo(
+      () => spriteMap.slice(0),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [spriteMap, palette, transparencyIndex, showTransparencyColor]
+    );
 
-  useEffect(() => {
-    setVersion(version + 1);
-  }, [showTransparencyColor]);
+    const createPixelData = useCallback(
+      (source: Uint8Array, pal: number[], target: Uint32Array) => {
+        for (let i = 0; i < SPRITE_SIZE; i++) {
+          const colorIndex = source[i];
+          target[i] =
+            colorIndex !== transparencyIndex || showTransparencyColor
+              ? getAbrgForPaletteCode(pal[colorIndex])
+              : 0x00000000;
+        }
+      },
+      [transparencyIndex, showTransparencyColor]
+    );
 
-  const createPixelData = (data: Uint8Array, palette: number[], target: Uint32Array) => {
-    for (let i = 0; i < 256; i++) {
-      const colorIndex = data[i];
-      target[i] =
-        colorIndex !== transparencyIndex || showTransparencyColor
-          ? getAbrgForPaletteCode(palette[colorIndex])
-          : 0x00000000;
-    }
-  };
-  return (
-    <div
-      ref={ref}
-      className={classnames(styles.spriteImageWrapper, {
-        [styles.separated]: separated,
-        [styles.selected]: selected
-      })}
-      onClick={clicked}
-    >
-      <ScreenCanvas
-        data={spriteMap.slice(0)}
-        palette={palette}
-        zoomFactor={zoom}
-        screenWidth={16}
-        screenHeight={16}
-        createPixelData={createPixelData}
-      />
-      <TooltipFactory
-        refElement={ref.current}
-        placement="right"
-        offsetX={-12}
-        offsetY={28}
-        content={title}
-      />
-    </div>
-  );
-};
+    return (
+      <div className={xclass} style={{ lineHeight: 0 }}>
+        <ScreenCanvas
+          data={data}
+          palette={palette}
+          zoomFactor={zoom}
+          screenWidth={SPRITE_DIM}
+          screenHeight={SPRITE_DIM}
+          createPixelData={createPixelData}
+        />
+      </div>
+    );
+  }
+);

@@ -401,10 +401,23 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-editors": "var(--surface-canvas)",
 
   // --- Sprite editor ----------------------------------------------------------------------------
-  "--bgcolor-sprite-editor": "var(--surface-panel)",
+  /** The editor's own ground. Declared since the token layers were built; first used in Phase 5. */
+  "--bgcolor-sprite-editor": "var(--surface-canvas)",
+  /** Ruler ticks and numbers. Also unused until Phase 5 - the rulers had never been written. */
   "--color-ruler-sprite-editor": "var(--text-tertiary)",
+  /** The crosshatch that marks a transparent pixel. */
   "--color-dash-sprite-editor": "var(--border-subtle)",
+  /** The cursor box on the hovered pixel. */
   "--color-pos-sprite-editor": "var(--accent-solid)",
+  /**
+   * The pixel grid, and the 8px guides over it.
+   *
+   * Two steps apart on purpose: the hairline has to separate adjacent pixels without competing with
+   * the artwork, while the guide marks the axis a 16x16 sprite is composed around and has to stay
+   * readable *through* it. Neither is a text or control edge, so no WCAG threshold applies.
+   */
+  "--color-grid-sprite-editor": "var(--border-subtle)",
+  "--color-guide-sprite-editor": "var(--border-strong)",
 
   // --- Switch -----------------------------------------------------------------------------------
   "--color-switch-on": "var(--accent-solid)",

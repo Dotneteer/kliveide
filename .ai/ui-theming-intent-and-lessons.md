@@ -36,6 +36,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Secondary accent | **Yes, added in Phase 10.** Every accent has a second hue (`--accent-secondary-*`), for the specific case one hue can't cover — two things in the same view that must both read as accent-tied and clearly apart. Not a general "add more colour" licence; see below. |
 | Memory dump / disassembly colour | **These two views are exceptions to §5.2's neutral data-panel hierarchy**, added in Phase 10 — hex-editor-style views read better for real colour. |
 | Sidebar panel headers | **A shallow top-lit gradient band** (`--surface-header*`), added in Phase 11. Deliberately not a flat fill: the band is 26px and the list rows under it are 22px and also hover-highlight, so a flat strip reads as *a selected row*. A lit strip reads as chrome. |
+| Sprite editor layout | **Document editors are exempt from the `Layout freedom` rule above, which governs the shell.** The sprite editor was rebuilt as one CSS grid — tool rail, pane-fitted canvas with rulers, right inspector, sheet browser — because its canvas was capped at 513px however wide the pane was, so the editor got *emptier* as the window grew. A workspace whose content cannot use its own pane is not fixable by redrawing. |
 | Overflow (scroll) shadow | **6px, a 1px hairline over a gradient**, app-wide via `AttachedShadow`. The author chose the height against 14/8/6/4/1px. It says "there is content above", it does not dim the first row. |
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
@@ -169,7 +170,7 @@ Two rules, both learned on the Next palette, both general.
 
 | Layout | Shape | Held by |
 |---|---|---|
-| **Register** | `RRRGGGBB` in bits 7..0, the low blue bit in bit 8, priority in bit 15 | `PaletteEditor`, `.nex`/`.pal` files, `SpriteEditor`'s ramp — and **every function in `emu/machines/zxNext/palette.ts`** |
+| **Register** | `RRRGGGBB` in bits 7..0, the low blue bit in bit 8, priority in bit 15 | `PaletteEditor`, `.nex`/`.pal` files, the sprite editor's *fallback* ramp — and **every function in `emu/machines/zxNext/palette.ts`** |
 | **Device** | straight `RRRGGGBBB` | `PaletteDevice`, and therefore `getPalettedDeviceInfo`'s payload |
 
 They are a **one-bit rotation** apart. Convert at the boundary with `paletteCodeFromDeviceValue`
@@ -180,6 +181,33 @@ palette drawn through the wrong one still looks like a palette. It shipped for a
 put it beside the emulator's own screen. `test/zxnext/palette-codec.test.ts` pins both directions,
 and pins the 3-bit→8-bit intensity ramp across all three tables that encode it (`zxNextBgra`,
 `zxNextRgb333Codes`, `colorIntensity`) — one of them had `0x25` where bit-replication gives `0x24`.
+
+**A view that shows the machine's colours reads them from the machine, and labels it when it
+cannot.** The sprite editor drew every sprite through an invented identity ramp — `palette[i] = i` —
+while `getPalettedDeviceInfo()` had been serving the real sprite palette to the sidebar all along.
+That is not a placeholder, it is a claim about what the artist is painting, and it was false in a way
+no screenshot catches: the ramp never sets bit 8 of the register layout, which is the low blue bit,
+so it cannot express four of the Next's eight blue levels and contains **no pure white and no pure
+blue at all**. On the real machine `$FF` is `#ffffff`; through the ramp it drew `#ffffdb`. Two rules
+follow. Read the device, converting once at the boundary. And when there is no machine — a `.spr` is
+perfectly editable with the emulator stopped — fall back, but **say so where the colours are**, in
+`--status-warning`: a silently-wrong palette still looks like a palette, which is exactly how the
+rotation bug above survived.
+
+**A user who has learned one control should not have to learn it twice.** The sprite editor's bank
+switch is the sidebar's, deliberately — same two segments, same meaning (*the fill is the bank you
+are looking at, the ring is the bank the machine is drawing with*), same default of following the
+hardware until the user pins it. Reuse the vocabulary before inventing a second one; a control that
+means something slightly different in two places is worse than either version of it.
+
+**A ghost layer over artwork goes *above* the art and is masked to its holes, not underneath it.**
+The sprite editor's onion skin was first drawn beneath the pixel layer, which renders nothing at
+all: a transparent pixel is painted with an opaque crosshatch, so anything below it is hidden by the
+very pixels it is supposed to show through. Drawn above but restricted to the cells the current
+sprite leaves transparent, it does what is wanted - the neighbouring frame shows through the holes,
+and never over the work in progress. **And it carries opacity only, no tint.** Device artwork is
+theme-invariant, and a hue laid over pixel art is read as part of the pixel art rather than as
+chrome, which is why the red/blue onion tinting other editors use was rejected here.
 
 **A state mark that is always present is not a signal.** The palette panel's bank control first
 marked the live bank with a corner dot. Because the shown bank follows the live bank by default, that
@@ -268,6 +296,28 @@ enough to look like "it just feels off" and large enough to be visible.
   round glyph. Same idea aligns the flag strip to the value column: `.flagLetter` is
   `calc(var(--measure-label) - 1ch)`, because a `3ch` flag column centres its content 1.5ch in while
   a value cell's first character centres 0.5ch in.
+
+## CSS Grid: What Sizes A Track
+
+Two layout bugs in the sprite editor's rebuild had the same cause and neither looked like itself.
+**An item that spans an intrinsically-sized track (`auto`, `min-content`, `max-content`) pushes its
+own content size into that track**, and the damage shows up somewhere else entirely.
+
+- **A 34px tool rail rendered 358px wide.** The sheet toolbar had no `grid-area` at all — it
+  rendered a bare `Row` — so it was auto-placed into row 1, column 1, and its row of buttons became
+  the intrinsic width of the rail's `auto` column. Nothing about the toolbar looked wrong; the
+  *rail* looked wrong. **Every child of a grid must claim its area**; audit with
+  `[...grid.children].filter(c => getComputedStyle(c).gridArea === "auto")`.
+- **A canvas collapsed to its 3px minimum in a short pane.** The inspector — a 272px palette plus a
+  preview — spanned the sheet's `auto` row, forcing it open and starving the `1fr` stage row. Bound
+  any track a tall item spans (`minmax(0, 132px)`), or do not span it.
+- **`minmax(0, 132px)` is a *definite* max, and definite maxima are satisfied before `fr` gets
+  anything.** So the sheet took its full 132px while the stage row starved. If one region must win
+  when space is scarce, give *that* region the floor — `minmax(140px, 1fr)` — rather than trusting
+  `1fr` to mean "the important one".
+- **A fitted canvas needs integer cell sizes.** Same lesson `NextPaletteViewer` learned with `1fr`
+  columns: fractional cells put every edge and hairline off the device pixel grid and the mosaic
+  goes faintly soft at *every* size. Floor the division, clamp it, and re-measure on resize.
 
 ## Verify Geometry In The Running App, Never In A Replica
 
@@ -555,6 +605,13 @@ file.
 
 - **Always relaunch for geometry.** HMR after a CSS + several `.tsx` edits has emptied the React root
   and reported all 162 elements as removed.
+- **Never `git stash` to A/B a change in a repo you do not own the state of.** `git stash push --
+  <paths>` **fails outright if any path is untracked**, and a failed push followed by `git stash
+  pop` pops *whatever was on the stack* - in this repo, an unrelated WIP from another branch, which
+  landed seven conflicted files across `emu/machines/zxNext/` and looked at first like the type
+  errors had improved. The author's stashes survived only because a conflicted pop keeps its entry.
+  To A/B a file, copy it aside and copy it back; to isolate one change, disable that one line rather
+  than reverting the file. Check `git stash list` before and after anything that touches the stack.
 - **Verify no process before launching.** Electron's single-instance lock makes a second instance
   quit with exit code 0, which looks like success.
 - **`klive.settings` is rewritten at startup — for the app's *own* settings file.** Editing
@@ -585,9 +642,16 @@ EOF
 
 **Restore anything you change this way** (theme, accent, open tabs) when you are done.
 
-- **Electron does not expose CDP's `Emulator` domain**, so `setDeviceMetricsOverride` is unavailable.
-  To test responsive/overflow behaviour, set a temporary `max-width` on the element in the page; it
-  drives the same `ResizeObserver` path.
+- **Electron exposes neither CDP's `Emulator` domain nor its `Browser` domain**, so
+  `setDeviceMetricsOverride` and `Browser.setWindowBounds` are both unavailable, and AppleScript
+  resizing of the window does not take either. To test responsive/overflow behaviour, set a
+  temporary size on the element in the page (`position: fixed` plus an explicit `width`/`height`);
+  it drives the same `ResizeObserver` path a real pane resize would, and it is the only way to see
+  a large-pane layout from a small dev window. Put the override back afterwards.
+- **Diff type errors by message, but expect false positives from union ordering.** TypeScript prints
+  union members in an unstable order (`"start" | "inherit" | …` one run, `"inherit" | "end" | …` the
+  next), so a `comm` over sorted messages can report the same error as both added and removed.
+  Compare counts per file before believing a diff.
 - macOS `screencapture` is permission-blocked here. Use CDP `Page.captureScreenshot`, with `clip`
   and `scale: 2` for readable crops. **For a crop of one component, prefer the Playwright harness**
   (`scripts/doc-shots/`, and `doc-screenshots-guide.md`): `locator.screenshot()` on a
@@ -906,12 +970,25 @@ verification failure recorded above.
 - **Icons are a system or they are noise.** The breakpoint set was a lightning bolt borrowed from
   another family plus four glyphs mixing solid slabs with hairline outlines, two of them with arrows
   clipped off the top edge. Redrawn on Lucide's grid (24×24, `stroke-width 2`, round caps,
-  `currentColor`) as *container + direction*. Practical notes for the next set: a `.svg` dropped in
-  `renderer/assets/icons/` **overrides** the stock `icon-defs.ts` entry of the same name, so check
-  whether that name is shared before overriding it — `symbol-event` is also used by `registry.ts`,
-  which is why execution got a new `bp-exec` file and a one-line call-site change instead. And at
-  16px a hairline notch disappears: the memory pins are drawn as round dots (`h.01` with a round
-  linecap), which survive.
+  `currentColor`) as *container + direction*. The sprite editor's 23-glyph set followed the same
+  grid. Practical notes for the next set:
+  - **A feature-local set takes a feature prefix.** A `.svg` dropped in `renderer/assets/icons/`
+    **overrides** the stock `icon-defs.ts` entry of the same name, app-wide. Five of the sprite
+    editor's natural names — `pencil`, `circle-filled`, `zoom-in`, `zoom-out`, `copy` — collide with
+    stock icons that are *in use elsewhere*, and `circle-filled` is the dirty-file dot in Open
+    Editors, so overriding it would have silently redrawn that. `spr-*` makes the collision
+    impossible rather than checking each name. Audit with the stock name list before choosing, and
+    reuse an existing drop-in (`plus`) rather than drawing a second one.
+  - **Lucide's `flip-horizontal`/`flip-vertical` do not survive 18px.** Two bracket outlines either
+    side of a dotted axis collapse into "[:]" — unreadable, and worse, *indistinguishable from each
+    other*, which is the one thing a pair of flip buttons must not be. A shape beside its mirror
+    works: solid triangle one side, outline triangle the other, dashed axis between.
+  - **An outline cursor at 18px is mostly empty space.** Fill the pointer glyph.
+  - **At 16px a hairline notch disappears** — the memory pins are round dots (`h.01` with a round
+    linecap), which survive. Line-tool endpoints needed `r=2.2`, not `1.7`, for the same reason.
+  - **Render a contact sheet at the real size, in both tones, before wiring anything up.** Source
+    review cannot tell you that a glyph reads as a slash or that two of them look the same; 18px on
+    both grounds can, in one screenshot.
 - Do not put horizontal padding on `DataRow`/`.dense` without the nested-row reset — the value
   components each render their own row, so it lands twice on register rows. § "Alignment In The
   Register Panels".
@@ -936,6 +1013,14 @@ verification failure recorded above.
   first; the fix is usually one token, not new markup.
 - Before building an affordance that seems to be missing, **grep for it**. `AttachedShadow` had been
   rendering invisibly for the life of the project because its token pointed at a surface.
+- **A fixed-size, empty element in a nowrap flex row needs `flex: 0 0 auto`.** An empty div's
+  automatic minimum size is zero, so it is the only item in a row of text labels that *can* shrink
+  — and with the default `flex-shrink: 1` it absorbs the whole overflow the moment the pane gets
+  narrow, collapsing to 0px while every label keeps its size. The sprite editor's 20px colour
+  swatches did exactly this: right background colour, none of it left to see, and only below a
+  certain pane width, which is why it survived every wide-window screenshot. Suspect this whenever
+  something is "missing" but its row still has a gap where it should be; check the *measured* width,
+  not the computed background.
 - Do not give a badge a tone louder than `neutral` without a reason. A count is a fact.
 - Run the visual check **in the running app over CDP**, not in a standalone replica of the CSS. A
   replica cannot show you the wrapper you did not model; this shipped two wrong "fixes" in one

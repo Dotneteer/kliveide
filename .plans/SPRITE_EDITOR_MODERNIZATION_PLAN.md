@@ -1,11 +1,12 @@
 # Sprite Editor Modernization Plan
 
-Status: **proposed** — no code written yet
+Status: **Phases 1-7 complete**, §7's icon set included. Only Phase 8 (selection and clipboard) remains. Layout and scope decided (§10); only §10.6 remains open, and it is
+not this plan's.
 Scope: `src/renderer/features/sprite-editor/*` (5 files, 1622 lines), plus two L4 token aliases, one
 existing emu API call, a handful of new icons, and the first tests this feature has ever had
 Related docs: `.ai/ui-theming-intent-and-lessons.md`, `.plans/UI_MODERNIZATION_PLAN.md` §10/§11
 Design prototype: `sprite-lab.html` at the repo root — **a design artefact, not evidence.** Delete it
-once §4.1 is decided (`.ai/ui-theming-intent-and-lessons.md`, "Prototype For Design Decisions").
+once Phase 5 ships (`.ai/ui-theming-intent-and-lessons.md`, "Prototype For Design Decisions").
 
 ---
 
@@ -37,6 +38,8 @@ depends on them.
 | C9 | A tool value not in the `switch` propagates `sprite: null` into the parent *before* the null check, which stores `null` into the sprite list and then `sprites.set(null, …)`. Unreachable today only because `"pointer"` bails at mousedown. | `SpriteEditorGrid.tsx:97-99`, `:194-196`, `SpriteEditor.tsx:105`, `:112` | A landmine for the next tool anyone adds. |
 | C10 | `setVersion(version + 1)` closes over a stale `version`, so two moves inside one commit produce the same value and React bails out of the second. `lastMovePos` is a plain `let` in the render body, so the de-dup guard resets on every render and never actually de-dups. | `SpriteEditorGrid.tsx:59`, `:103`, `:54` | Dropped frames mid-drag. |
 | C11 | `zoomFactor` is clamped only by the buttons' `enable` props; a value restored from persisted view state goes straight into the size maths unchecked. | `SpriteEditor.tsx:61`, `:341`, `:347` | Latent. |
+| C13 | **The two flip buttons are swapped.** "Flip vertically" mirrored *columns* (a left-to-right flip) and "Flip horizontally" mirrored *rows*. Label and icon both said the opposite of what the button did, against the GIMP/Aseprite/Photoshop convention. | `SpriteEditor.tsx:446-455` vs `:468-477` (pre-fix) | Found while porting the transforms; fixed in Phase 1. |
+| C14 | **The pencil plots a dot per event, not a stroke.** Nothing interpolated between the previous position and the current one, so any drag faster than the event rate left gaps - compounded by C10's dropped frames. | `SpriteEditorGrid.tsx:158` (pre-fix) | Fixed in Phase 1: with C10 fixed, this was the only thing left making the pencil feel unreliable. |
 | C12 | The `@pointer` button's tooltip — and therefore its `aria-label` — says **"Pencil tool"**. Two indistinguishable "Pencil tool" buttons for a screen reader. | `SpriteEditor.tsx:353` vs `:359`, `IconButton.tsx:51` | — |
 
 **There are no tests.** Nothing in `test/` touches `SpriteEditor`, `SpriteImage` or `SprFile`; the
@@ -109,7 +112,7 @@ placeholder, it is a lie about what the artist is drawing.
 
 ## 4. Design
 
-### 4.1 Layout — the decision to make
+### 4.1 Layout
 
 `sprite-lab.html` draws four layouts, each in dark and light, from the real tokens and the real Next
 colour maths. Every frame is the **same markup** with a different `data-v`, so the comparison is
@@ -123,19 +126,21 @@ of it: same 2 px pixel gutters, same diagonal transparency hatch, same missing s
 | **C** | B + rulers, 8 px guides, onion skin, animation preview, sheet as a wrapping browser with index labels | Everything a pixel editor is judged on | The most chrome and the most to build; a wrapping browser is better for a 40-sprite sheet and worse for scrubbing a 4-frame animation |
 | **D** | Canvas-first: 44 px rail with tools + pen/fill + recents, palette as a popover, thin unlabelled sheet strip | The biggest canvas by a wide margin; usable in a narrow split | The palette is a click away, which is expensive on multi-colour work; recents only help after you have used a colour |
 
-**Recommendation: B as the floor, with C's rulers, guides and 1:1 preview adopted individually.**
-B is the smallest change that fixes U1 and U2, which are the two that make the editor feel unfinished.
-C's animation preview and wrapping sheet browser are genuinely separable and can wait. D is the right
-answer only if the author wants this editor usable beside a debugger panel; it is not the right
-default.
+**Decided: C, with all of its extras** (§10.2). B is C without the extras, so C's structure — tool
+rail, pane-fitted canvas, right inspector, sheet as a wrapping browser — is the target, and rulers,
+8 px guides, onion skin, the 1:1 preview and the animation preview are all in scope. D is not
+pursued.
 
-> **This contradicts a settled decision and needs the author to say so explicitly.**
+> **This overrides a settled decision, and the override is deliberate.**
 > `.ai/ui-theming-intent-and-lessons.md` records *"Restyle + targeted layout fixes only. Nothing
-> moves, everything is re-drawn."* B moves things. The claim here is that the rule was scoped to the
-> **shell** — sidebar, tab bar, status bar, panels — and that a document *editor* whose canvas cannot
-> use the pane is a different case. If the author disagrees, the fallback is A-with-fixes: keep the
-> layout exactly, and take only §4.2–§4.6 plus U3, U6, U8, U9, U10. That still fixes every defect in
-> §1.1 and §1.2. **See §10.1.**
+> moves, everything is re-drawn."* C moves things: tools go from two horizontal toolbars to a
+> vertical rail, the palette goes from beside the canvas to a right-hand inspector, the sheet goes
+> from between the toolbars to a bottom dock. The reading this plan proceeds on is that the rule was
+> scoped to the **shell** — sidebar, tab bar, status bar, panels — and that a document *editor*
+> whose canvas cannot use its own pane is a different case. §11 owes the lessons file a
+> `Settled Intent` row saying exactly that, so the next session does not have to re-derive it.
+> **§10.1 is answered: document editors are exempt from the rule.** The scope of `Layout freedom`
+> is the shell.
 
 ### 4.2 The palette must come from the machine
 
@@ -208,6 +213,49 @@ at 256 bytes an entry even for a large sheet) and reset it when the document's b
   `onSpriteChange`, and clicking a thumbnail must not write.
 - Keep using `context.saveToFile`; do not touch `ProjectService`.
 
+### 4.7 Selection and a real clipboard
+
+Decided (§10.3): **build a real clipboard**, not a rename. That has a consequence worth stating up
+front — it makes the `select` tool, which does nothing today (U13), the load-bearing part of the
+feature, because a clipboard with no way to choose a region is only half of what "copy" means in a
+pixel editor.
+
+Two clipboards, deliberately separate, because they hold different things:
+
+| | Scope | Cut | Paste |
+| --- | --- | --- | --- |
+| **Sheet clipboard** | whole 256-byte sprites | removes the sprite from the sheet | inserts **after** the selection (§4.8) |
+| **Region clipboard** | a rectangular pixel region of the current sprite | clears the region to the transparency index | drops a *floating* region the user places; commits on click-away or `Enter` |
+
+Rules:
+
+- **`Ctrl/Cmd+X/C/V` act on whichever is active** — a pixel region if one is selected, the sprite
+  otherwise. One key set, no modifier gymnastics.
+- **A pasted region floats before it commits.** Nudge with the arrow keys, cancel with `Escape` —
+  which is now the *second* thing Escape has to do correctly (C5), and the reason the tool state
+  machine belongs in `useSpriteTool.ts` (§5) rather than inside the grid component.
+- **Paste clips at the sprite edge.** It does not resize, wrap or scroll. Same clamping rule as C2.
+- **System clipboard: sheet only, and only as `.spr` bytes**, so a sprite can move between two open
+  `.spr` documents. Pixel regions stay in-process. Reading image data off the OS clipboard means
+  quantising arbitrary colours into the Next palette — a real feature, and not this one.
+- **Cut stops being a lie.** Today's "Cut sprite" is a delete with a scissors icon and no paste
+  (U12). Once paste exists the name becomes true, and **Delete** gains its own separate button.
+
+The `select` tool therefore needs: drag to mark a rectangle, an outline that reads over arbitrary
+artwork (accent dashes, not marching ants — animation in a canvas competes with the artwork),
+`Ctrl/Cmd+A` for select-all, `Escape` to clear, and arrow-key nudge of the region's *contents*. This
+is the largest single piece of work in the plan, hence its own phase.
+
+### 4.8 Insert position
+
+Decided (§10.4): **Duplicate inserts after the selection.** Today Duplicate *and* Add both insert
+before it (`SpriteEditor.tsx:176-205`, `:285-310`), which is the opposite of every list UI.
+
+`Add new sprite` gets the same treatment in the same change — not because it was asked for, but
+because one of a pair inserting before and the other after is worse than either rule applied
+consistently. **If Add should stay as it is, say so and it stays.** Both continue to select the
+sprite they just created.
+
 ---
 
 ## 5. Architecture — extract a pure model
@@ -240,41 +288,377 @@ Per `AGENTS.md`: import from the file that owns the component; do not leave re-e
 
 ## 6. Phases
 
-Each phase is independently shippable and independently revertable. **Phase 1 is worth doing even if
-§4.1 is rejected outright.**
+Each phase is independently shippable and independently revertable. **Phases 1–4 carry no visual change at
+all**; the layout work starts at Phase 5.
 
 ### Phase 1 — stop the bleeding (no visual change)
-Fix C1, C2, C7, C9, C11 and the save storm P1/P2. Clamp every coordinate at the raster boundary; give
-the ellipse fill a terminating condition; guard the empty-sprite-list path; coalesce saves to the
-operation boundary. Extract `sprite-raster.ts` and `sprite-file.ts` and write their tests first —
-C1 and C2 should be caught by a test that draws a filled ellipse from `(-4,-4)` to `(20,20)`.
+Fix C1, C2, C7, C9, C11 and the save storm P1/P2. Clamp every coordinate at the raster boundary;
+give the ellipse fill a terminating condition; guard the empty-sprite-list path; coalesce saves to
+the operation boundary. Extract `sprite-raster.ts` and `sprite-file.ts` and **write their tests
+first** — C1 and C2 should both fall out of a test that drags a filled ellipse from `(-4,-4)` to
+`(20,20)`.
+
+> **Phase 1 retrospective.**
+>
+> Shipped: C1, C2, C7, C9, C11, C12, C13, C14, P1, P2, and C8/C10.
+>
+> - **The hang was real, and is now proven both ways.** The original span fill was replayed against
+>   the six drag geometries the new test uses: three throw `TypeError` and two spin forever (stopped
+>   only by a 5,000,000-iteration trip counter). All six now complete, and a filled ellipse dragged
+>   400 px off every edge *in the running app* returned in **3 ms** with the renderer alive.
+> - **`sprite-raster.ts` and `sprite-file.ts`** now carry every raster operation and the `.spr`
+>   format. `SpriteEditorGrid.tsx` fell from **724 lines to 331**. The midpoint-ellipse and
+>   Bresenham-circle maths, including the quarter-pixel `up`/`down` nudges, were ported
+>   *unchanged* - they are what gives small ellipses their hand-tuned look, and altering them would
+>   silently redraw everyone's existing sprites.
+> - **Two rules make the bounds bugs unrepeatable**: every write goes through one `plot()` that is
+>   the only place testing bounds, and shapes **clip rather than clamp**, so a caller may pass any
+>   coordinate. `MAX_SPAN` bounds the work a wild `clientX` can cost.
+> - **The drag position comes from the grid's own `getBoundingClientRect`**, not from a mousedown
+>   delta, so it stays correct when the grid is scrolled or scaled mid-drag.
+> - **38 pure tests + 10 component tests, and all 48 were confirmed to fail against the old code.**
+>   That check is worth repeating every phase: two component tests passed for the wrong reason until
+>   it was run.
+> - **The mislabelled pointer tooltip (C12) was found by the tests, not by reading.** `title` feeds
+>   `aria-label`, so `[aria-label="Pencil tool"]` matched two buttons and would have silently driven
+>   the wrong tool. The test now asserts that label is unique.
+> - **Verified in the running app over CDP**, not in a replica: an isolated fixture project in the
+>   scratchpad, seeded through `KLIVE_SETTINGS_FILE`, so nothing of the author's was touched. **The
+>   file on disk is the ground truth for the save model** - unchanged immediately after mouse-up,
+>   changed after the debounce - and that is the one thing jsdom cannot prove, because it stubs the
+>   IPC boundary the old code was hammering.
+> - **A fast drag of two mouse-moves wrote ten contiguous pixels**, confirming C14's fix end to end.
+>   The old code would have written two.
+> - **No visual change, so `.ai/ui-theming-intent-and-lessons.md` is deliberately untouched.**
+>   Phase 5 owes it the entries listed in section 11.
+> - Type errors unchanged (161, no new messages); lint warnings 49 -> 48; all 20,188 tests pass.
 
 ### Phase 2 — undo, escape, and the tooltip
-§4.5's indexed edit model; C3, C4, C5, C12. One test per undo/redo path, including the cross-sprite
-case that C3 describes.
+§4.5's indexed edit model; C3, C4, C5. (C12 came forward into Phase 1, and §4.8's insert-after came
+forward into Phase 2 - see the retrospectives.) One test per undo/redo path, including the
+cross-sprite case C3 describes.
+
+> **Phase 2 retrospective.**
+>
+> Shipped: C3, C4, C5, and §4.8's insert-after, which came forward from Phase 8 because the five
+> sheet operations were being rewritten anyway and touching them twice would have been worse.
+>
+> - **C3 was worse than the plan recorded.** Replaying the original undo path shows it corrupts in
+>   *both* directions: draw on sprite 1, select sprite 3, undo, and the sheet goes `[11,22,33]` →
+>   `[99,22,11]`. The edit is **not** undone *and* sprite 3 is destroyed, from one keystroke.
+> - **The root cause was four pieces of state kept in step by hand** - `selectedSpriteIndex`,
+>   `spriteMap`, `editStack`/`editStackIndex`, and the live `context.fileInfo.sprites` array. Every
+>   undo bug was a place where they came apart. `sprite-document.ts` makes them one value, and the
+>   five sheet operations collapsed from ~25 lines of hand-built edit records each to one line each.
+> - **`commit()` is the only place a change becomes real.** Undo, redo and Cut each used to mutate
+>   the array and return without scheduling a write; routing *every* mutation through one function
+>   is what stops "this operation forgot to save" recurring, rather than fixing three call sites.
+> - **Undo now navigates to the sprite it affected.** Applying the change to the right sprite is
+>   only half the fix - a user left looking at a different sprite sees nothing happen and presses
+>   undo again.
+> - **Escape backs out one level**, a deliberate narrowing of the original intent: cancelling a drag
+>   no longer changes the tool, because losing your tool mid-stroke is surprising, but an Escape
+>   with nothing in flight returns to the pointer, which is what the old code was reaching for.
+>   Flag this if the old all-in-one behaviour was wanted.
+> - **The old “Cut sprite” is now labelled “Delete sprite”.** It has no clipboard and never did;
+>   §4.7 gives it a real Cut, and a separate Delete, in Phase 8.
+> - **Verified in the running app, and the file on disk is again the ground truth.** Undo of a pixel
+>   edit made while viewing a *different* sprite restored the sheet to byte-for-byte identical with
+>   the original - which can only happen if undo both targeted the right sprite *and* persisted.
+>   Delete took the file 2560 → 2304 bytes and its undo took it back to 2560 with zero differing
+>   bytes. Escape during a drag left the file untouched and the pencil still selected; a second
+>   Escape flipped `aria-pressed` to the pointer, which is precisely what the old code could not do.
+> - **A test-harness trap worth remembering**: clicking a tool button and then dispatching a draw in
+>   the *same* CDP evaluate does nothing, because React has not re-rendered and the grid still holds
+>   the old `tool` prop. Split the interaction across calls. The same mistake made a thumbnail click
+>   land on the wrong sprite, since `ScreenCanvas` renders **two** canvases per thumbnail.
+> - 23 pure + 11 new component tests; all 34 confirmed failing against the pre-Phase-2 code. Type
+>   errors unchanged (161); lint 48 warnings, 0 errors; all 20,232 tests pass.
 
 ### Phase 3 — performance
-P3–P8. Extract the status bar, memoize the canvas, hoist the toolbars, stabilize the palette
-callbacks, drop the dead `version` state in `SpriteImage`. **Measure before and after** with a
-React profile over a 200-pixel drag; the acceptance number is "no Redux dispatch and no disk write
-between mouse-down and mouse-up".
+P3–P8. Extract the status bar, memoize the canvas, hoist the toolbars out of the component body,
+stabilize the palette callbacks, drop the dead `version` state in `SpriteImage`. **Measure before
+and after** with a React profile over a 200-pixel drag; the acceptance criterion is *no Redux
+dispatch and no disk write between mouse-down and mouse-up*.
+
+> **Phase 3 retrospective.**
+>
+> Shipped: P3-P8, measured before and after in the running app over a scripted 200-step pencil drag
+> and a 100-cell hover. The counters are exact (patched `putImageData`/`drawImage`, plus a
+> `MutationObserver`); wall-clock is not, because the harness yields between steps.
+>
+> | | Original | After Phase 3 |
+> | --- | --- | --- |
+> | Thumbnail redraws, **hovering** 100 cells | **1,610** | **0** |
+> | DOM mutation records, hovering 100 cells | 7,323 | 532 |
+> | Thumbnail redraws, 200-pixel drag | 2,010 *(after Phases 1-2)* | **1** |
+> | DOM mutation records, 200-pixel drag | 9,428 *(after Phases 1-2)* | 194 |
+>
+> - **Merely moving the pointer across the sprite redrew all ten thumbnails, sixteen times per
+>   cell.** Not clicking, not drawing. That is the number that says what the architecture was: the
+>   grid pushed the hover position into the state of the component that also owns the palette, both
+>   toolbars and the whole strip, and `currentColorIndex` was mirrored into the *persisted* view
+>   state, so each of those renders also dispatched into Redux.
+> - **Three structural changes did nearly all of it**, and none of them is a `memo` sprinkle:
+>   1. **The readout is not application state.** `sprite-hover.ts` is an external store;
+>      `SpriteStatusBar` subscribes with `useSyncExternalStore` and is the only thing that re-renders
+>      when the pointer moves. The hovered colour is no longer persisted at all - restoring "the
+>      colour under the pointer last session" was never meaningful.
+>   2. **The drag preview stopped round-tripping.** Every intermediate map was published up to the
+>      editor and handed straight back down as a prop - a full editor re-render per mouse-move for
+>      data the grid already held in a ref. The grid owns the in-progress bitmap and reports only on
+>      completion; the `preview` state is gone.
+>   3. **`SpriteImage` memoizes the array it hands `ScreenCanvas`.** It passed `spriteMap.slice(0)`,
+>      a new `Uint8Array` every render, and `ScreenCanvas`'s redraw effect keys on `[data]` - so
+>      every sprite in the sheet did a full getImageData/putImageData/drawImage cycle on every
+>      render, changed or not. The `slice` stays (retuning a shared control for one caller is the
+>      wrong move); it just happens once per *real* change now.
+> - **Memoization only works behind stable callbacks.** Every handler became a `useCallback` reading
+>   `latestDoc.current` rather than closing over `doc`, so `commit` and everything built on it keep
+>   one identity for the life of the editor. This is also what finally lets `NextPaletteViewer`'s own
+>   `PaletteItem` memo hit - it was being defeated by inline arrows at the call site.
+> - **Side effects stay out of `setState` updaters.** An early draft put the save scheduling inside
+>   `setDoc(prev => ...)`, where StrictMode would run it twice.
+> - **Both toolbars moved to module level** (`SpriteSheetToolbar`, `SpriteToolsToolbar`), which ends
+>   the unmount/remount-per-render of every button and tooltip popper.
+> - **A latent visual bug surfaced and was fixed**: the 20px colour swatches carried no
+>   `flex-shrink: 0`, so in a narrow document pane they - the only empty elements in a nowrap row of
+>   text - absorbed the entire overflow and collapsed to **0px wide** while keeping the correct
+>   background colour. Pre-existing, not a Phase 3 regression (the stylesheet was untouched until
+>   now), and invisible in every wide-window screenshot. **This is the one style change in Phases
+>   1-3, and `.ai/ui-theming-intent-and-lessons.md` is updated in the same change** per the standing
+>   instruction.
+> - **Two measurement traps, both of which produced a confident wrong number first:** a
+>   `MutationObserver` callback is a microtask, so reading its counter at the end of a synchronous
+>   loop reports zero; and React synthesises `onMouseEnter` from the bubbling `mouseover`, not from
+>   native `mouseenter`, so dispatching `mouseenter` measures nothing happening at all.
+> - Type errors 161 → **160** (the `useTooltipRef` generic in `SpriteImage`, fixed in passing); lint
+>   48 → **47** warnings, 0 errors; all 20,232 tests still pass, unchanged.
 
 ### Phase 4 — the real palette
-§4.2 and §4.3. Pass `selectedIndex` (U3). Bank control. Fallback labelling.
+§4.2 and §4.3. Pass `selectedIndex` (U3). Bank control. Visible fallback labelling.
 
-### Phase 5 — layout
-Whichever of §4.1 the author picks. New icons (§7). Delete the dead CSS and wire the two orphan
-tokens (U8, U9). Rulers, status bar, 1:1 preview if C's items are adopted.
+> **Phase 4 retrospective.**
+>
+> Shipped: §4.2, §4.3, U3, U4, U5, and the bank control.
+>
+> - **The ramp was not a placeholder, it was a false claim, and the proof is one value.** On the
+>   running machine the editor now paints `$FF` as `rgb(255,255,255)` and `$03` as `rgb(0,0,255)`.
+>   Through the old identity ramp those were `#ffffdb` and `#0000db`. The ramp never sets bit 8 of
+>   the register layout - the low blue bit - so it cannot express four of the Next's eight blue
+>   levels, and it contains **no pure white and no pure blue at all**. The alien fixture's eyes went
+>   from cream to white in the strip the moment the real palette was wired in, thumbnails included.
+> - **The Next's own default sprite palette is not the ramp either.** `PaletteDevice` seeds it with
+>   `(i << 1) | (i & 2 ? 1 : 0)`, so its blue levels are {0, 2, 5, 7} where the ramp's are
+>   {0, 2, 4, 6}. Anyone assuming "the default is the identity" would have found the two agree
+>   nowhere except at blue 0 and 2.
+> - **The fallback is labelled, in `--status-warning`, where the colours are.** A `.spr` is
+>   perfectly editable with the emulator stopped, so falling back is right - but a silently-wrong
+>   palette still looks like a palette, which is precisely how the device/register rotation bug
+>   survived in the sidebar. The label carries a tooltip explaining what is missing and why.
+> - **Identity stability had to be designed in, not added afterwards.** The hook re-runs on every
+>   emulator state change, and the palette is a prop of the memoized grid, all ten thumbnails and 256
+>   swatches - so it returns the *previous* array unless the values actually differ. Without that,
+>   Phase 3 would have been undone by Phase 4 on the very next CPU tick.
+> - **The bank control is the sidebar's, on purpose**: fill = the bank you are looking at, accent
+>   ring = the bank the machine is drawing with, following the hardware until the user pins it.
+>   Verified in the app with the view pinned away from live, which is the only state where the ring
+>   is visible: the live segment showed `box-shadow: rgb(69,165,230) inset` with a transparent fill,
+>   the pinned one an accent fill and no ring.
+> - **`selectedIndex` was a one-line fix for a three-part bug** (U3): the palette had shown no
+>   selection at all - not the pen colour restored from view state, not the result of Swap - and its
+>   own keyboard navigation was dead until a swatch was clicked, because `handleKey` returns early
+>   while `selected` is undefined.
+> - **A test expectation of mine was wrong in the instructive direction**: I predicted ramp index 1
+>   would be blue level 1 (`rgb(0,0,36)`); it is level 2 (`rgb(0,0,73)`), because odd blue levels are
+>   unreachable. The test now carries that as its comment.
+> - 6 new component tests, all confirmed failing against the pre-Phase-4 code. Type errors unchanged
+>   (160); lint 47 warnings, 0 errors; all 20,238 tests pass.
+> - `.ai/ui-theming-intent-and-lessons.md` updated in the same change (new palette styles): the
+>   read-from-the-device rule with its visible fallback, and the reuse-the-vocabulary rule for the
+>   bank control.
+
+### Phase 5 — layout C, structure
+The tool rail, the pane-fitted canvas at an integer zoom, the right inspector, the sheet as a
+wrapping browser with index labels and distinct hover/selected states (U6), and a real status bar
+(U10). Rulers and the 8 px guides (U8 — wiring `--color-ruler-sprite-editor` for the first time) and
+the 1:1 preview (U11) land here because they are part of the canvas geometry. New icons (§7).
+Delete the dead CSS and wire the two orphan tokens (U8, U9).
+
+> **Phase 5 retrospective.**
+>
+> Shipped: U1, U2, U6, U8, U9, U10, U11, U13, and layout C's structure. **§7's icon redraw is not
+> done** — see the caveat at the end.
+>
+> - **The canvas is finally sized from the pane.** Measured in the running app, fit mode across five
+>   pane sizes: 1400×900 → 656px, 1100×760 → 512px, 820×560 → 320px, 640×420 → 176px, with no
+>   overflow at any of them. The old editor was 257, 385 or 513px and nothing else, ever.
+> - **Two layout bugs, one cause, and neither looked like itself.** A grid item spanning an
+>   intrinsically-sized track pushes its content size into that track:
+>   1. The sheet toolbar had **no `grid-area`** — it rendered a bare `Row` — so it auto-placed into
+>      row 1, column 1 and its row of buttons sized the tool rail's `auto` column to **358px**,
+>      squeezing the canvas to under half the pane. Nothing about the toolbar looked wrong; the
+>      *rail* looked wrong. My first diagnosis blamed the sheet browser instead and I shipped a
+>      comment saying so before measuring properly; the comment is now corrected in the stylesheet.
+>   2. The inspector (a 272px palette plus a preview) spanned the sheet's `auto` row, forcing it
+>      open and starving the `1fr` stage row — the canvas collapsed to its 3px floor in a short pane.
+> - **`minmax(0, 132px)` is a definite maximum, and definite maxima are satisfied before `fr` gets
+>   anything.** So the sheet took its full 132px while the stage starved. The stage now carries the
+>   floor (`minmax(140px, 1fr)`) and the sheet yields, which is the right way round: the sheet
+>   scrolls, the canvas is what the editor is for.
+> - **Integer cell sizes, re-measured on resize.** Fractional cells put every edge and hairline off
+>   the device pixel grid — the same lesson `NextPaletteViewer` learned from `1fr` columns.
+> - **Pixels are drawn edge to edge with the grid as an overlay.** They used to be inset 1px and 2px
+>   short in each direction, so the "grid" was whatever panel background showed through the gaps:
+>   the gaps grew with the zoom, the pixels were never the size they claimed, and the pointer maths
+>   had to carry the inset around with it.
+> - **Two tokens got their first use ever** — `--color-ruler-sprite-editor` and
+>   `--bgcolor-sprite-editor` were declared, typed and aliased, and referenced by nothing. This was
+>   not "rendered but invisible": the rulers had never been written. Two more were added for the
+>   grid and the 8px guides.
+> - **The sheet index sits *under* each thumbnail, not over it.** Overlaying needs a halo to survive
+>   arbitrary pixel art, and that halo would have to work against *device* pixels — which are
+>   theme-invariant, so it could not come from a theme token — besides obscuring a corner of every
+>   sprite. A caption costs 10px and owes nothing to what is in the picture.
+> - **`ResizeObserver` had to be stubbed in `test/vitest.setup.ts`**: jsdom does not implement it, so
+>   every caller (`SplitPanel`, `AttachedShadow`, the keyboard and memory panels, and now this)
+>   throws on mount without it.
+> - **Tests moved to the ARIA the new markup provides** — `role="option"` cells in a `role="listbox"`
+>   sheet — instead of a `data-testid` on a mocked canvas. The 256 pixel rects live in one
+>   `<g data-role="pixels">` so they stay addressable without an attribute on each.
+> - **The window could not be resized**: Electron exposes neither CDP's `Emulator` nor its `Browser`
+>   domain, and AppleScript resizing did not take. The documented substitute — sizing the element
+>   itself, which drives the same `ResizeObserver` path — is how every measurement above was taken.
+> - 27 component tests still pass unchanged against the rebuilt layout, which is the useful signal:
+>   the behaviour Phases 1-4 pinned survived a full restructure. Type errors 160, no new messages;
+>   lint 47 warnings, 0 errors; all 20,238 tests pass.
+> - `.ai/ui-theming-intent-and-lessons.md` updated in the same change: a `Settled Intent` row
+>   recording that document editors are exempt from `Layout freedom`, a new **CSS Grid: What Sizes A
+>   Track** section, and the two operational notes above.
+>
+> **Icons (§7) — done, as a follow-on pass.** 23 glyphs on Lucide's grid, replacing the legacy
+> `@`-prefixed stock images. Every button in the editor now renders inline SVG: verified in the app
+> as 26 buttons, 26 inline `<svg>`, **zero** legacy `<img>` and **zero** duplicate glyph signatures,
+> so nothing silently fell back to `unknown`.
+>
+> - **The set is namespaced `spr-*`, and that was not fussiness.** A drop-in `.svg` overrides the
+>   stock icon of the same name *app-wide*, and five of the natural names collide with stock icons
+>   in active use elsewhere: `pencil` (Breakpoints), `zoom-in`/`zoom-out` (Image viewer), `copy`
+>   (four panels) and `circle-filled` — which is the **dirty-file dot in Open Editors**. A prefix
+>   makes the collision impossible instead of relying on the check being repeated next time.
+>   `plus.svg` already existed as a drop-in, so "Add sprite" reuses it rather than drawing a second.
+> - **The two misleading glyphs are gone**: "Fit to pane" was borrowing `@separate-vertical` and now
+>   has corner brackets; "Show pixel grid" was borrowing `@rectangle` and now has a 3×3 grid.
+> - **Four glyphs failed their first draft, and only a contact sheet showed it.** Lucide's own
+>   `flip-horizontal`/`flip-vertical` collapse at 18px into "[:]" — unreadable, and
+>   *indistinguishable from each other*, which is the one thing a pair of flip buttons must not be;
+>   they were redrawn as a solid shape beside its outline mirror across a dashed axis. The outline
+>   pointer was mostly empty space at 18px and is now filled. The line tool's endpoint dots merged
+>   into its own stroke until they went from `r=1.7` to `r=2.2`.
+> - Contact sheet: `spr-icons-lab.html` (18px dark, 18px light, 48px detail). A design artefact —
+>   delete it along with `sprite-lab.html`.
 
 ### Phase 6 — keyboard and discoverability
-§4.4. Right-click-paints gets said out loud in the pen/fill tooltip (U14). Rename Cut → Delete, or
-give it a real clipboard and a Paste (U12) — **§10.3**.
+§4.4. Right-click-paints-with-fill gets said out loud in the pen/fill tooltip (U14).
 
----
+> **Phase 6 retrospective.**
+>
+> Shipped: §4.4's keyboard map and U14. The editor previously had **no keyboard at all** - not a
+> tool shortcut, not undo, not an arrow key. The grid carried `tabIndex={0}` and a focus style and
+> listened for exactly one key, Escape, which did nothing.
+>
+> - **The tool table moved to `sprite-tools.ts` before the keyboard was written.** A keypress has to
+>   apply a tool *exactly* as a click does, and the alternative - a second `switch` for the keyboard
+>   - is the kind of duplicate that gets one case added to it and not the other. `applyTool` now
+>   serves both, with `from === to` for a keypress, so a keyboard press on a shape tool draws a
+>   one-pixel shape just as a mouse click does.
+> - **One cursor, not two.** Arrow keys write to the same hover store the pointer does, so there is
+>   no caret that can disagree with the mouse - and the status bar readout follows both. Verified in
+>   the app: four arrow presses put the readout on `x 11, y 10` and `Enter` painted exactly that
+>   pixel.
+> - **The cursor moved into its own component.** `SpriteCursor` subscribes to the store itself, so
+>   the grid no longer re-renders all 256 `<rect>`s to move a single outline - a Phase 3-style win
+>   that fell out of needing the cursor to be keyboard-addressable.
+> - **The first arrow press summons the cursor to the centre without moving it.** Applying the delta
+>   immediately would offset it from an origin the user never saw. My first test asserted the other
+>   behaviour; the code was right and the test was wrong, and the rule is now written down where the
+>   constant is defined.
+> - **Only keys the editor claims are swallowed.** Anything with an unclaimed modifier falls through,
+>   so `F5`, `Ctrl+S` and the debugger keys still work with the editor focused. Two tests pin this
+>   from both sides: unclaimed keys must not be `defaultPrevented`, claimed ones must be.
+> - **U14 is the other half of a keyboard map: publishing it.** Every tool's tooltip now carries its
+>   shortcut, and the drawing tools say that **right-dragging paints with the fill colour** - true
+>   since long before this work and mentioned nowhere in the UI.
+> - **Test helpers moved to prefix matching** (`button(container, "Pencil tool")`), since labels now
+>   carry help text. The helper still asserts exactly one match, so the Phase 1 duplicate-label
+>   regression stays covered.
+> - **A process failure worth recording: I corrupted the working tree with `git stash`.** The
+>   `git stash push -- <paths>` I used to A/B the change failed because some paths were untracked,
+>   and the `git stash pop` that followed popped an *unrelated* WIP stash from another branch into
+>   the tree - seven conflicted files across `emu/machines/zxNext/`, which first showed up as the
+>   type-error count dropping from 160 to 38. Recovered fully: the files were reset to HEAD, the
+>   author's two stashes were intact throughout (a conflicted pop keeps its entry), and the suite
+>   returned to green. The isolation check was then redone by disabling the single `onKeyDown`
+>   line, which is both safer and a sharper test - it isolates Phase 6 instead of conflating it with
+>   the five phases before it. The rule is now in the lessons file.
+> - 20 new tests (7 pure + 13 component), and the 9 that depend on the key handler were confirmed to
+>   fail with that one line removed. Type errors 160, no new messages; lint 47 warnings, 0 errors;
+>   all 20,258 tests pass.
+
+### Phase 7 — onion skin and animation preview
+Grouped because both are the same new capability: **rendering a sprite other than the selected one**.
+Onion skin needs the previous/next sheet cell composited under the canvas at low alpha — device
+surfaces are theme-invariant, so the under-layer dims toward the checkerboard, not toward a theme
+colour. The animation preview needs a frame timer, a frame-rate control, and a play/stop that stops
+itself when the document loses focus.
+
+> **Phase 7 retrospective.**
+>
+> Shipped: onion skin and the animation preview - grouped, as planned, because both are the same new
+> capability: rendering a sprite other than the selected one.
+>
+> - **The onion layer goes *above* the pixels, not below them.** Below renders nothing at all: a
+>   transparent pixel is painted with the crosshatch, which is opaque, so a ghost underneath is
+>   hidden by exactly the pixels it is supposed to show through. Drawn above but masked to the cells
+>   the current sprite leaves transparent, it does the right thing in both directions - the previous
+>   frame shows through the holes, and never over the work in progress. Verified in the app on the
+>   bobbed-alien fixture: 18 ghost rects at opacity 0.38, and the current sprite's own feet
+>   unobscured.
+> - **Opacity only, no tint.** Other editors colour-code onion frames red/blue. Device artwork is
+>   theme-invariant and a hue laid over pixel art reads as *part of the pixel art*, so the ghost is
+>   the neighbour's real colours at low alpha and nothing else.
+> - **Previous frame only, and that is a narrowing of the plan.** §6 said "previous/next". Showing
+>   both needs them told apart, and the only honest way to do that over pixel art is the tint just
+>   ruled out - so the control ghosts the frame *before* this one, which is the direction a sheet is
+>   read when it is an animation. It disables itself on the first sprite rather than ghosting
+>   nothing. Say the word if the next frame is wanted too and it can carry a second control.
+> - **The animation timer lives in `SpritePreview`, not in `SpriteEditor`.** Hoisting the frame
+>   counter would have put a `setState` at up to 24 Hz above the grid, the palette and the sheet -
+>   undoing Phase 3 the moment anyone pressed play. Playing re-renders three 16x16 thumbnails.
+> - **It stops itself when the window is hidden**, rather than throttling: a timer running behind
+>   another tab is invisible work, and pausing means the frame you come back to is the one you left.
+>   It also refuses to "play" a one-sprite sheet, and recovers if sprites are deleted out from under
+>   a running animation.
+> - `play.svg` and `stop.svg` already existed as drop-in icons, so only `spr-onion` was drawn.
+> - **Isolation checks were done by disabling one expression at a time** - the onion source, then the
+>   preview's frame selection - which is the technique that replaced `git stash` after Phase 6.
+>   Two tests fell over for each, and none for the other, which is what says they test what they
+>   claim.
+> - 18 new tests (10 for the animation hook, 8 component). Type errors 160, no new messages; lint 47
+>   warnings, 0 errors; token contract green; all 20,276 tests pass.
+
+### Phase 8 — selection and clipboard
+§4.7, in this order: the `select` tool and its outline → region cut/copy/paste with the floating
+commit → sheet cut/copy/paste (insert-after already landed in Phase 2) → renaming Delete back to
+Cut alongside a real Delete → `.spr` bytes
+on the system clipboard. Each step is usable on its own; stop anywhere and what shipped still works.
 
 ## 7. New assets and primitives
 
-Icons needed that are not in `src/renderer/assets/icons/` (which holds 33 files today): `pointer`,
+**Done** — see the icon note at the end of the Phase 5 retrospective. The set shipped as `spr-*`
+rather than the bare names listed below, because five of those names shadow stock icons that other
+panels use. Original list, for the record — icons needed that were not in
+`src/renderer/assets/icons/` (which held 33 files then, 56 now): `pointer`,
 `pencil`, `line`, `rect`, `rect-filled`, `ellipse`, `ellipse-filled`, `bucket`, `dropper`, `select`,
 `rotate-ccw`, `rotate-cw`, `flip-h`, `flip-v`, `zoom-in`, `zoom-out`, `fit`, `pixel-grid`,
 `checkerboard`, `onion`, `swap`. Today these are `@`-prefixed stock IDs from the legacy
@@ -324,26 +708,35 @@ No new colour literals: anything else gets aliased at L4.
 
 ---
 
-## 10. Open questions
+## 10. Decisions and remaining questions
 
-1. **Does the "nothing moves" rule bind a document editor?** §4.1. Everything in Phase 5 waits on
-   this; nothing in Phases 1–4 does.
-2. **Which of C's extras are wanted** — rulers, 8 px guides, onion skin, animation preview, wrapping
-   sheet browser? They are individually adoptable and the prototype shows each.
-3. **Cut with no paste** (U12): rename it Delete, or build a real sprite clipboard? A clipboard also
-   wants pixel-region copy/paste, which implies the `select` tool actually does something — that is
-   a larger piece of work than the rest of Phase 6.
-4. **Should insert go before or after the selection?** Today both Add and Duplicate insert *before*.
-5. **Does the sprite editor deserve view-scoped colour?** Per the lessons file this must be asked for
-   panel by panel and never taken by drift. My read: **no** — it is a canvas, not a data panel; the
-   accent's whole job here is the pen/fill/selection markers, and adding more hues would compete with
-   the artwork. Recorded so it is a decision and not an omission.
-6. Minor: the registry gives the `.spr` document type `iconFill: "--console-ansi-bright-green"`
-   (`registry.ts:453`). The lessons file's rule is about not spending the console palette on *data
-   panels*, and a file-type identity colour is arguably a different case — but the whole
-   `documentPanelRegistry` table (three entries share this exact fill) does this, so it is a separate, table-wide question, not this plan's.
+Answered by the author on 2026-09-12, except §10.6, which is deliberately out of scope.
 
----
+1. **Does the "nothing moves" rule bind a document editor?** — **answered: no. Document editors are
+   exempt.** The `Layout freedom` row of `Settled Intent` governs the **shell** — sidebar, activity
+   bar, tab bar, status bar, panels — where moving things spends users' muscle memory for little
+   gain. A document editor is a workspace, and this one's defect is that its canvas cannot use its
+   own pane, which no amount of redrawing fixes. §11 owes the lessons file a `Settled Intent` row
+   recording the scope, so the next session does not re-derive it.
+2. **Which of C's extras are wanted?** — **all of them.** Rulers, 8 px guides, onion skin, animation
+   preview and the wrapping sheet browser are in scope (§4.1). Split across Phases 5 and 7 by what
+   they need, not by how much they cost: the canvas-geometry ones ship with the layout, the two that
+   require rendering a *different* sprite ship together afterwards.
+3. **Cut with no paste** — **build a real clipboard.** §4.7. This is the largest piece of work in
+   the plan and it drags the dead `select` tool in with it, which is the point: a clipboard without
+   region selection is half a feature.
+4. **Insert before or after the selection?** — **after.** §4.8. Applied to Add as well as Duplicate,
+   for consistency; say so if Add should keep inserting before.
+5. **Does the sprite editor deserve view-scoped colour?** — **no.** Settled. The accent's whole job
+   here is pen/fill/selection markers, and more hues would compete with the artwork. Recorded so it
+   reads as a decision rather than an omission, per the lessons file's rule that view-scoped colour
+   is granted panel by panel and never taken by drift.
+6. **The document-type icon colours** (`registry.ts:326-459`) — **still open, and deliberately not
+   this plan's.** All 20 document types draw their tab icon with an `iconFill` from the console's
+   ANSI palette, and `registry.ts` is the *only* consumer of those tokens outside the console itself.
+   Whether that is the same mistake `WatchPanel` and `BreakpointIndicator` made is a question about
+   the whole table — 20 entries sharing 6 colours, with `vm` appearing in five different ones — not
+   about `.spr`. Fixing one row would only make the table less consistent. Raise separately.
 
 ## 11. Documentation obligation
 
@@ -354,10 +747,12 @@ taught, fold it into the existing sections, replace anything it supersedes, and 
 Candidates this plan already knows it will produce:
 
 - The `Settled Intent` table gains a **sprite editor** row once §10.1 is answered, whichever way.
-- A rule for **canvas-style views**: they are sized from the pane, not from a constant, and a device
-  palette is read from the device with a *visible* fallback — the sprite editor is the second place
-  (after the Next palette panel) where a plausible-looking hardcoded palette was wrong in a way no
-  screenshot could show.
+- ~~A rule for **canvas-style views**: a device palette is read from the device with a *visible*
+  fallback.~~ **Done in Phase 4** — the read-from-the-device rule and the reuse-the-bank-vocabulary
+  rule are both in the lessons file now. The remaining half — that a canvas is sized from its pane
+  rather than from a constant — is still owed, and belongs to Phase 5.
+- A rule for **selection outlines on a canvas**: accent dashes, not marching ants — animation inside
+  a drawing surface competes with the artwork it is drawn over (§4.7).
 - The existing "check whether it is already rendered and merely invisible" note gains its sharper
   sibling: **a token can exist, be typed, be aliased, and never have been wired to anything at all**
   (`--color-ruler-sprite-editor`). Grep for the *token*, not just for the element.

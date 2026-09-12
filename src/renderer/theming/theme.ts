@@ -256,6 +256,8 @@ export type ThemeProperties = {
   "--color-ruler-sprite-editor"?: string;
   "--color-dash-sprite-editor"?: string;
   "--color-pos-sprite-editor"?: string;
+  "--color-grid-sprite-editor"?: string;
+  "--color-guide-sprite-editor"?: string;
 
   // --- Switch
   "--color-switch-on"?: string;
