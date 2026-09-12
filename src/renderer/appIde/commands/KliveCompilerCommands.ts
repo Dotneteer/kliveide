@@ -9,7 +9,6 @@ import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
-import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import {
   IdeCommandBase,
   commandError,
@@ -27,18 +26,17 @@ import { BinaryWriter } from "@utils/BinaryWriter";
 import { TzxHeader } from "@emu/machines/tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
 import {
-  endCompileAction,
-  incBreakpointsVersionAction,
   incInjectionVersionAction,
-  setProjectDebuggingAction,
-  startCompileAction
+  setProjectDebuggingAction
 } from "@common/state/actions";
-import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { outputNavigateAction, writeErrorMessageWithLinks } from "@common/utils/output-utils";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
+import {
+  compileCode,
+  modelTypeToMachineType
+} from "@renderer/appIde/utils/compile-code";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -1020,132 +1018,6 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       return commandError(`NEX export failed: ${err.toString()}`);
     }
   }
-}
-
-// --- Gets the model code according to machine type
-function modelTypeToMachineType(model: SpectrumModelType): string | null {
-  switch (model) {
-    case SpectrumModelType.Spectrum48:
-      return "sp48";
-    case SpectrumModelType.Spectrum128:
-      return "sp128";
-    case SpectrumModelType.SpectrumP3:
-      return "spp3e";
-    case SpectrumModelType.Next:
-      return "next";
-    default:
-      return null;
-  }
-}
-
-// --- Compile the current project's code
-async function compileCode(
-  context: IdeCommandContext
-): Promise<{ result?: KliveCompilerOutput; message?: string }> {
-  // --- Release the files locked by the debugger
-  context.service.projectService.releaseLocks();
-
-  // --- Shortcuts
-  const out = context.output;
-
-  // --- Check if we have a build root to compile
-  const state = context.store.getState();
-  if (!state.project?.isKliveProject) {
-    return { message: "No Klive project loaded." };
-  }
-  const buildRoot = state.project.buildRoots?.[0];
-  if (!buildRoot) {
-    return { message: "No build root selected in the current Klive project." };
-  }
-  const fullPath = `${state.project.folderPath}/${buildRoot}`;
-  const language = getFileTypeEntry(fullPath, context.store)?.subType;
-
-  // --- Compile the build root
-  out.color("bright-blue");
-  out.write("Start compiling ");
-  outputNavigateAction(context.output, buildRoot);
-  out.writeLine();
-  out.resetStyle();
-
-  context.store.dispatch(startCompileAction(fullPath));
-  let result: KliveCompilerOutput;
-  let failedMessage = "";
-  try {
-    result = await context.mainApi.compileFile(fullPath, language);
-  } catch (err) {
-    failedMessage = err.message;
-  } finally {
-    context.store.dispatch(endCompileAction(result));
-    await refreshSourceCodeBreakpoints(context.store, context.messenger);
-    context.store.dispatch(incBreakpointsVersionAction());
-  }
-
-  // --- Display optional trace output
-  const traceOutput = result?.traceOutput;
-  if (traceOutput?.length > 0) {
-    out.resetStyle();
-    traceOutput.forEach((msg) => out.writeLine(msg));
-  }
-
-  // --- Display optional debug messages (e.g., DISPLAY directives from SjasmPlus)
-  const debugMessages = (result as any)?.debugMessages;
-  if (debugMessages?.length > 0) {
-    out.resetStyle();
-    out.color("bright-cyan");
-    debugMessages.forEach((msg: string) => {
-      out.writeLine(msg);
-    });
-    out.resetStyle();
-  }
-
-  // --- Collect errors
-  const errorCount = result?.errors?.filter((m) => !m.isWarning).length ?? 0;
-
-  if (failedMessage) {
-    if (!result || errorCount === 0) {
-      // --- Some unexpected error with the compilation
-      return { message: failedMessage };
-    }
-  }
-
-  // --- Display the errors
-  if ((result.errors?.length ?? 0) > 0) {
-    for (let i = 0; i < result.errors.length; i++) {
-      const err = result.errors[i];
-      /*
-       * The colour says how it looks; this says what it is.
-       *
-       * Set in both copies of `compileCode` — this one and the near-identical function in
-       * CompilerCommand.ts. They differ by about a dozen lines and each is reached by different
-       * commands (`compile` versus `klive.compile`, which is what the toolbar's Build button runs
-       * through build.ksx), so a change made to one and not the other is invisible until someone
-       * uses the other command. That is exactly how this line came to be missing here first.
-       */
-      out.severity(err.isWarning ? "warning" : "error");
-      out.color(err.isWarning ? "yellow" : "bright-red");
-      out.bold(true);
-      out.write(`${err.errorCode}: `);
-      writeErrorMessageWithLinks(
-        context.output,
-        err.message,
-        err.isWarning ? "yellow" : "bright-red"
-      );
-      out.write(" - ");
-      out.bold(false);
-      out.color("bright-cyan");
-      outputNavigateAction(context.output, err.filename, err.line, err.startColumn);
-      out.writeLine();
-      out.resetStyle();
-    }
-  }
-
-  // --- Done.
-  return errorCount > 0
-    ? {
-        result,
-        message: `Compilation failed with ${errorCount} error${errorCount > 1 ? "s" : ""}.`
-      }
-    : { result };
 }
 
 async function injectCode(
