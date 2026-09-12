@@ -391,6 +391,26 @@ export const componentAliases: Record<string, string> = {
   "--color-explorer-selected": "var(--text-primary)",
   "--color-explorer-focused-selected": "var(--text-primary)",
   "--border-explorer-focused": "var(--accent-solid)",
+  /**
+   * Folder names, which carry the tree's structure, against `--color-explorer` for the files
+   * inside them. Two inks plus two weights are what make a deep tree scannable without guides
+   * doing all the work.
+   *
+   * The filename's *extension* is receded with opacity rather than a third ink, because it must
+   * recede by the same amount on all four row backgrounds — normal, hovered, selected and
+   * focused-selected — and those do not share a foreground to derive a third ink from. The first
+   * attempt used `--text-tertiary`, which is one 10% step off `--text-secondary` and did not read
+   * at all against the file name it was meant to be separated from.
+   */
+  "--color-explorer-folder": "var(--text-primary)",
+  /**
+   * The 1px indent rules. `--border-default` rather than `--border-subtle`: a guide sits *on* the
+   * panel surface with nothing else near it, so the subtler of the two disappears at 1px — in light
+   * tone especially, where `borderSubtle` (#e5e7ea) is barely a step off `panel` (#f7f8f9).
+   */
+  "--border-explorer-guide": "var(--border-default)",
+  /** The rail marking the selected row. Reads at 3px where a full-bleed wash alone does not. */
+  "--border-explorer-rail": "var(--accent-solid)",
 
   // --- Debugging --------------------------------------------------------------------------------
   "--bgcolor-debug-active-bp": "var(--accent-subtle)",

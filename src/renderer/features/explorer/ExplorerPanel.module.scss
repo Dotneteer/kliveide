@@ -6,8 +6,12 @@
   flex-direction: column;
   user-select: none;
   font-family: var(--main-font-family);
-  font-size: 0.9em;
-  font-weight: 500;
+  // --- Full panel size, not 0.9 of it. The row is 26px and the glyphs on it are now 16px; at 0.9em
+  // --- the label rendered at 10.8px against 20px icons, which put the chrome of a row ahead of the
+  // --- filename the row exists to show. `1em` keeps the label scaling with View | Panel Options |
+  // --- Font Size, which a hard px value would have broken.
+  font-size: 1em;
+  font-weight: 400;
   outline: none;
 
   .item {
@@ -18,29 +22,52 @@
     color: var(--color-explorer);
     overflow: hidden;
     outline: none;
-    width: calc(100% - 2px);
-    // Sized to fit NODE_ICON_SIZE (20px) in ExplorerProjectItem.tsx with a
-    // little air; raise both together if the node icons grow again.
-    /* Total including the border, which border-box now counts inside the box. */
-  height: 26px;
+    width: 100%;
+    // Sized to fit NODE_GLYPH_SIZE (16px) in ExplorerProjectItem.tsx with a little air; raise both
+    // together if the node icons grow again. Deliberately unchanged from the 20px era: the room
+    // freed by the smaller glyphs is spent on the label and the meta column, not on density.
+    height: 26px;
     align-items: center;
-    border: 1px solid transparent;
+    // --- Anchors the absolutely positioned indent guides drawn by ExplorerProjectItem.
+    position: relative;
 
     &:hover {
-        background-color: var(--bgcolor-explorer-pointed)
+      background-color: var(--bgcolor-explorer-pointed);
     }
 
+    // --- An outline, not a border. The border lived inside `box-sizing: border-box`, so focusing a
+    // --- row shrank its content box by 2px and every glyph on it shifted a pixel left. An outline
+    // --- is drawn outside the box model and costs the row nothing; `-1px` offset keeps it inside
+    // --- the row's own bounds so it does not overlap the neighbours.
     &.focused:focus-within {
-      border-color: var(--border-explorer-focused);
+      outline: 1px solid var(--border-explorer-focused);
+      outline-offset: -1px;
     }
 
     &.selected {
       background-color: var(--bgcolor-explorer-selected);
       color: var(--color-explorer-selected);
 
+      // --- The rail. A wash alone has to be strong enough to be noticed, which fights the syntax
+      // --- colours of the file glyphs sitting on it; a 3px accent edge is noticed at any wash
+      // --- strength, so the wash can stay quiet.
+      &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background-color: var(--border-explorer-rail);
+      }
+
       &.focused {
         background-color: var(--bgcolor-explorer-focused-selected);
         color: var(--color-explorer-focused-selected);
+      }
+
+      .name {
+        color: var(--color-explorer-selected);
       }
     }
   }
@@ -49,6 +76,19 @@
     display: flex;
     flex-shrink: 0;
     flex-grow: 0;
+  }
+
+  // --- One 1px rule per ancestor level, positioned from NODE_INDENT and NODE_TWISTY_SIZE so a
+  // --- guide lands on the centre line of the twisty of the folder it belongs to. Drawn per row
+  // --- rather than as one overlay because the list is virtualized: rows mount and unmount
+  // --- independently, so there is no element spanning the tree to hang a full-height rule on.
+  .guide {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: var(--border-explorer-guide);
+    pointer-events: none;
   }
 
   .nodeIconGroup {
@@ -60,7 +100,7 @@
   }
 
   // Reserves the expand-chevron column so file nodes line up under the folder
-  // glyphs of their parent. Its size comes from NODE_ICON_SIZE as an inline
+  // glyphs of their parent. Its size comes from NODE_TWISTY_SIZE as an inline
   // style, so it cannot drift away from the chevron it stands in for.
   .nodeIconPlaceholder {
     flex-shrink: 0;
@@ -74,11 +114,49 @@
     text-overflow: ellipsis;
   }
 
+  // --- Folders carry the structure, so they get the primary ink and the heavier weight; files sit
+  // --- at `--color-explorer` and 400. The pair is what lets a reader find the shape of a deep tree
+  // --- without reading it.
+  .folderName {
+    color: var(--color-explorer-folder);
+    font-weight: 600;
+  }
+
+  // --- `main` before `.kz80.asm`: the stem identifies the file, the extension only repeats what the
+  // --- glyph beside it already said.
+  // ---
+  // --- Opacity, not a dimmer ink. The row has four backgrounds — normal, hovered, selected and
+  // --- focused-selected — each with its own foreground, so a fixed third colour would be right on
+  // --- at most one of them. Opacity recedes by the same proportion from whichever ink the row is
+  // --- currently using. (The first attempt used `--text-tertiary`, one 10% step off
+  // --- `--text-secondary`, and was invisible next to the stem it was separating from.)
+  .extension {
+    opacity: 0.6;
+  }
+
+  // --- How much a *collapsed* folder is holding, in the meta column.
+  // ---
+  // --- Collapsed only. On an expanded folder the children are right there to be counted, so the
+  // --- number is a second telling of something the reader can already see — and on a deep tree
+  // --- that is a column of redundant digits down the panel edge, far from the names they belong
+  // --- to. Against a closed folder it is the one thing the row cannot otherwise say.
+  .childCount {
+    font-size: 0.8em;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+    flex-shrink: 0;
+    flex-grow: 0;
+    margin-right: 14px;
+  }
+
+  // --- 14px, not 8: the tool area's overlay scrollbar floats over the last few pixels of every
+  // --- row, and at 8px it clipped whatever sat in the meta column. Nothing used to sit there on
+  // --- more than a row or two, so the clipping went unnoticed until the child counts arrived.
   .iconRight {
     display: flex;
     flex-grow: 0;
     flex-shrink: 0;
-    margin-right: 8px;
+    margin-right: 14px;
   }
 }
 
