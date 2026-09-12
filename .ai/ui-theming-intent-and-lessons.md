@@ -1029,6 +1029,17 @@ verification failure recorded above.
   first; the fix is usually one token, not new markup.
 - Before building an affordance that seems to be missing, **grep for it**. `AttachedShadow` had been
   rendering invisibly for the life of the project because its token pointed at a surface.
+- **`offsetTop` and `position: absolute` are measured against *different* elements, and a component
+  that mixes them will eventually land in the wrong place.** `offsetTop` is relative to the nearest
+  ancestor with a `position`; an absolutely positioned box resolves against its *containing block*,
+  which `transform`, `filter` and `contain` also establish without becoming an offset parent. They
+  coincide by luck, not by rule. `AttachedShadow` copied a scroll container's
+  `offsetTop`/`offsetLeft`/`offsetWidth` into inline styles and drew wherever that landed; because
+  the shadow is invisible until the region scrolls, the failure presented as *"the fade jumps to the
+  wrong place the moment I start scrolling"*. It also tracked size but not position, so a container
+  that merely moved left the shadow behind. **If a box belongs to an element's edge, make it a child
+  of that element and pin it with `top/left/right: 0`.** No measurement, no `ResizeObserver`, nothing
+  to go stale - and a shared control shed one observer per scrollable region.
 - **A percentage `max-height` on a grid item resolves against its grid area, not against the
   container you were picturing.** The sprite editor's sheet carried `max-height: 42%` from the flex
   layout that preceded it; as a grid item in a 132px track that became 42% *of 132px* — 55px, less

@@ -14,7 +14,14 @@
  * box-shadow offsets.
  */
 .attachedShadow {
+  /*
+   * Pinned to the scroll container's top edge by CSS. `ScrollViewer` is `position: relative` so
+   * this resolves against it - see `AttachedShadow.tsx` for what the measured version got wrong.
+   */
   position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   height: var(--shadow-scroll-height);
   /* It sits over content: without this it would swallow clicks on the topmost row. */
   pointer-events: none;

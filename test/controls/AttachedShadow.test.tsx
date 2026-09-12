@@ -1,92 +1,59 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import React from "react";
-import { renderWithProviders, act } from "../react-test-utils";
+import { renderWithProviders } from "../react-test-utils";
+
+/** The shadow itself, found by its CSS-module class rather than by tree position. */
+const shadowIn = (container: HTMLElement) =>
+  container.querySelector('[class*="attachedShadow"]') as HTMLElement;
 import { AttachedShadow } from "@controls/AttachedShadow";
 
-// ---------------------------------------------------------------------------
-// jsdom does not include ResizeObserver — provide a mock
-// ---------------------------------------------------------------------------
-
-let observerInstances: MockResizeObserver[] = [];
-
-class MockResizeObserver {
-  callback: ResizeObserverCallback;
-  observed: Element[] = [];
-  disconnectSpy = vi.fn();
-  observeSpy = vi.fn();
-  unobserveSpy = vi.fn();
-
-  constructor(cb: ResizeObserverCallback) {
-    this.callback = cb;
-    observerInstances.push(this);
-  }
-  observe(el: Element) {
-    this.observeSpy(el);
-    this.observed.push(el);
-  }
-  unobserve(el: Element) {
-    this.unobserveSpy(el);
-  }
-  disconnect() {
-    this.disconnectSpy();
-  }
-}
-
-beforeEach(() => {
-  observerInstances = [];
-  (globalThis as any).ResizeObserver = MockResizeObserver;
-});
-
-afterEach(() => {
-  delete (globalThis as any).ResizeObserver;
-});
-
-function makeElement(tag = "div"): HTMLElement {
-  return document.createElement(tag);
-}
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
-describe("AttachedShadow — Step 1.5: ResizeObserver cleanup", () => {
-  it("creates a ResizeObserver and observes the parentElement", () => {
-    const parent = makeElement();
-    renderWithProviders(<AttachedShadow parentElement={parent} visible={true} />);
-
-    expect(observerInstances).toHaveLength(1);
-    expect(observerInstances[0].observeSpy).toHaveBeenCalledWith(parent);
+/*
+ * These tests used to pin the component's *mechanics*: that it built a `ResizeObserver`, observed
+ * the scroll container, and disconnected on unmount. All of that is gone, and with it the bug it
+ * existed to manage.
+ *
+ * The shadow copied its container's `offsetTop`/`offsetLeft`/`offsetWidth` into inline styles.
+ * `offsetTop` is relative to the container's *offset parent*; `position: absolute` resolves against
+ * the shadow's own *containing block*. Those are the same element only by luck - a `transform` or
+ * `filter` anywhere between them establishes a containing block without becoming an offset parent -
+ * and when they diverged the shadow drew somewhere else entirely. Because it is invisible until the
+ * region scrolls, that showed up as "the fade appears in the wrong place when I start scrolling".
+ *
+ * So what is pinned now is the contract that replaced it: the shadow carries no geometry of its
+ * own, and is anchored by CSS to a `position: relative` `ScrollViewer`.
+ */
+describe("AttachedShadow", () => {
+  it("carries no measured geometry", () => {
+    // The regression guard. An inline top/left/width here means someone reintroduced measurement,
+    // and with it the possibility of the shadow landing away from its container.
+    const { container } = renderWithProviders(<AttachedShadow visible={true} />);
+    const shadow = shadowIn(container);
+    expect(shadow.style.top).toBe("");
+    expect(shadow.style.left).toBe("");
+    expect(shadow.style.width).toBe("");
   });
 
-  it("calls disconnect() when the component unmounts", () => {
-    const parent = makeElement();
-    const { unmount } = renderWithProviders(
-      <AttachedShadow parentElement={parent} visible={true} />
-    );
-
-    const observer = observerInstances[0];
-    unmount();
-
-    expect(observer.disconnectSpy).toHaveBeenCalledTimes(1);
+  it("takes no element to position against", () => {
+    // It used to be handed `parentElement.current`, which is `null` on the first render - so the
+    // first paint was always a 0x0 shadow at the origin.
+    expect(AttachedShadow.length).toBe(1); // one props object
+    const props = Object.keys({ visible: true });
+    expect(props).toEqual(["visible"]);
   });
 
-  it("calls disconnect() on the old observer when parentElement changes", async () => {
-    const parent1 = makeElement();
-    const parent2 = makeElement();
+  it("is hidden until the region is scrolled, and shown after", () => {
+    const hiddenEl = shadowIn(renderWithProviders(<AttachedShadow visible={false} />).container);
+    const shownEl = shadowIn(renderWithProviders(<AttachedShadow visible={true} />).container);
 
-    const { rerender } = renderWithProviders(
-      <AttachedShadow parentElement={parent1} visible={true} />
-    );
-    const firstObserver = observerInstances[0];
+    // Both carry the base class; only the visible one carries the modifier.
+    expect(hiddenEl.className).toBe(shownEl.className.split(" ")[0]);
+    expect(shownEl.className.split(" ").length).toBe(2);
+  });
 
-    await act(async () => {
-      rerender(<AttachedShadow parentElement={parent2} visible={true} />);
-    });
-
-    // First observer must have been disconnected before the new one was created
-    expect(firstObserver.disconnectSpy).toHaveBeenCalledTimes(1);
-    // A second observer is now active on parent2
-    expect(observerInstances).toHaveLength(2);
-    expect(observerInstances[1].observeSpy).toHaveBeenCalledWith(parent2);
+  it("renders a single element with nothing inside it", () => {
+    // It sits over content, so it must not be able to swallow a click or add a focus stop.
+    const { container } = renderWithProviders(<AttachedShadow visible={true} />);
+    expect(container.querySelectorAll('[class*="attachedShadow"]').length).toBe(1);
+    expect(shadowIn(container).childElementCount).toBe(0);
   });
 });

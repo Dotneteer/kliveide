@@ -195,7 +195,7 @@ const ScrollViewer: React.FC<Props> = ({
       >
         {children}
       </OverlayScrollbarsComponent>
-      <AttachedShadow parentElement={parentElement.current} visible={isScrolled} />
+      <AttachedShadow visible={isScrolled} />
     </div>
   );
 };
