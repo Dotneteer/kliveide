@@ -981,6 +981,269 @@ describe("SpriteEditor - region clipboard", () => {
   });
 });
 
+/**
+ * A sheet of one sprite, filled with 1, carrying a 2x2 block of 5 in the top-left corner.
+ *
+ * `fileOf` paints every pixel the same value, which cannot show whether pixels MOVED - only that
+ * they changed. This fixture can: the block is distinguishable from its background, and from the
+ * transparency a lift leaves behind.
+ */
+const fileWithBlock = () => {
+  const bytes = new Uint8Array(SPRITE_SIZE);
+  bytes.fill(1);
+  for (const [row, col] of [[0, 0], [0, 1], [1, 0], [1, 1]]) bytes[row * 16 + col] = 5;
+  return bytes;
+};
+
+const px = (map: Uint8Array, row: number, col: number) => map[row * 16 + col];
+
+/**
+ * Escape, delivered where the app delivers it: the focused grid.
+ *
+ * `press` aims at the editor root and so reaches the editor's own Escape ladder directly. The grid
+ * wrapper is what actually holds focus while drawing, and it intercepts Escape to cancel a drag in
+ * flight - a path the editor-root route skips entirely.
+ */
+const pressOnGrid = (container: HTMLElement, key: string) => {
+  const grid = container.querySelector('[data-role="pixels"]')!.closest("[tabindex]") as HTMLElement;
+  fireEvent.keyDown(grid, { key });
+};
+
+/** Press inside the marked region and release elsewhere: pick the pixels up and put them down. */
+const dragRegion = (
+  container: HTMLElement,
+  from: [number, number],
+  to: [number, number]
+) => {
+  fireEvent.mouseDown(cellAt(container, from[0], from[1]), { button: 0 });
+  fireEvent.mouseUp(cellAt(container, to[0], to[1]));
+};
+
+describe("SpriteEditor - dragging the marked region", () => {
+  it("carries the pixels to where they are dropped, and blanks where they came from", () => {
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    dragRegion(container, [0, 0], [4, 4]);
+    vi.advanceTimersByTime(1000);
+
+    const written = lastWrite();
+    expect(px(written, 4, 4)).toBe(5);
+    expect(px(written, 5, 5)).toBe(5);
+    // The hole the lift left is transparency, not the background colour.
+    expect(px(written, 0, 0)).toBe(DEFAULT_SPRITE_TRANSPARENCY);
+    expect(px(written, 1, 1)).toBe(DEFAULT_SPRITE_TRANSPARENCY);
+    expect(px(written, 3, 3)).toBe(1); // nothing else disturbed
+  });
+
+  it("is ONE undo entry for the whole move, not a cut and a paste", () => {
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    dragRegion(container, [0, 0], [4, 4]);
+    vi.advanceTimersByTime(1000);
+
+    // A single undo puts every byte back: the lift and the drop were never separate edits.
+    click(container, "Undo");
+    vi.advanceTimersByTime(1000);
+    const written = lastWrite();
+    expect(px(written, 0, 0)).toBe(5);
+    expect(px(written, 1, 1)).toBe(5);
+    expect(px(written, 4, 4)).toBe(1);
+    expect(button(container, "Undo").disabled).toBe(true);
+  });
+
+  it("keeps the grabbed pixel under the pointer", () => {
+    // Grabbed by its bottom-right corner, the patch follows the cursor rather than snapping its
+    // top-left corner to it.
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    dragRegion(container, [1, 1], [5, 5]);
+    vi.advanceTimersByTime(1000);
+
+    const written = lastWrite();
+    expect(px(written, 5, 5)).toBe(5); // the grabbed pixel
+    expect(px(written, 4, 4)).toBe(5); // and the rest of the block with it
+    expect(px(written, 6, 6)).toBe(1);
+  });
+
+  it("marks a new region when the drag starts outside the old one", () => {
+    // The grab must not swallow every select drag: pressing on bare canvas still marks.
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    dragSelect(container, [8, 8], [9, 9]);
+    press(container, "Delete");
+    vi.advanceTimersByTime(1000);
+
+    const written = lastWrite();
+    expect(px(written, 8, 8)).toBe(DEFAULT_SPRITE_TRANSPARENCY); // the NEW region was deleted
+    expect(px(written, 0, 0)).toBe(5); // the block never moved
+  });
+
+  it("does not touch the sprite until the button comes up", () => {
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    saveFileContent.mockClear();
+
+    fireEvent.mouseDown(cellAt(container, 0, 0), { button: 0 });
+    fireEvent.mouseEnter(cellAt(container, 6, 6));
+    vi.advanceTimersByTime(1000);
+    expect(saveFileContent).not.toHaveBeenCalled();
+    expect(button(container, "Undo").disabled).toBe(true);
+  });
+
+  it("Escape abandons a lift and leaves the sprite exactly as it was", () => {
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    saveFileContent.mockClear();
+
+    fireEvent.mouseDown(cellAt(container, 0, 0), { button: 0 });
+    press(container, "Escape");
+    fireEvent.mouseUp(cellAt(container, 6, 6));
+    vi.advanceTimersByTime(1000);
+
+    // Nothing was written, because nothing changed - the hole only ever existed on screen.
+    expect(saveFileContent).not.toHaveBeenCalled();
+    expect(button(container, "Undo").disabled).toBe(true);
+  });
+
+  it("writes nothing when the region is dropped where it was picked up", () => {
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    saveFileContent.mockClear();
+
+    dragRegion(container, [0, 0], [0, 0]);
+    vi.advanceTimersByTime(1000);
+    expect(saveFileContent).not.toHaveBeenCalled();
+    expect(button(container, "Undo").disabled).toBe(true);
+  });
+
+  it("survives a press, a move and a release delivered in one task", () => {
+    // What a synthetic driver does, and what a fast mouse can do: no render between the events.
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    act(() => {
+      fireEvent.mouseDown(cellAt(container, 0, 0), { button: 0 });
+      fireEvent.mouseUp(cellAt(container, 4, 4));
+    });
+    vi.advanceTimersByTime(1000);
+
+    const written = lastWrite();
+    expect(px(written, 4, 4)).toBe(5);
+    expect(px(written, 5, 5)).toBe(5);
+    expect(px(written, 0, 0)).toBe(DEFAULT_SPRITE_TRANSPARENCY);
+  });
+
+  it("moves the region twice in a row", () => {
+    // The second drag grabs what the first one put down - the selection follows the pixels.
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    dragRegion(container, [0, 0], [4, 4]);
+    dragRegion(container, [4, 4], [8, 8]);
+    vi.advanceTimersByTime(1000);
+
+    const written = lastWrite();
+    expect(px(written, 8, 8)).toBe(5);
+    expect(px(written, 9, 9)).toBe(5);
+    expect(px(written, 4, 4)).toBe(DEFAULT_SPRITE_TRANSPARENCY);
+    expect(px(written, 0, 0)).toBe(DEFAULT_SPRITE_TRANSPARENCY);
+    // And the pixels still exist: a move must never consume the patch.
+    expect([...written.slice(0, SPRITE_SIZE)].filter((v) => v === 5).length).toBe(4);
+  });
+
+  it("shows the hole as an overlay, leaving the real pixels in the map underneath", () => {
+    /*
+     * The hole a lift leaves is a drawing, not an edit.
+     *
+     * If it were punched into the map the grid draws from, then anything that commits that map
+     * mid-lift would make the gap permanent - the lifted pixels would be gone, and Escape would
+     * have nothing to put back. So: a hole rect appears, and the pixel layer stays opaque.
+     */
+    const { container } = renderEditor(fileWithBlock()); // no transparent pixel anywhere
+    const hatched = () =>
+      gridCells(container).filter((r) => (r.getAttribute("fill") ?? "").startsWith("url(")).length;
+    dragSelect(container, [0, 0], [1, 1]);
+    expect(hatched()).toBe(0);
+
+    fireEvent.mouseDown(cellAt(container, 0, 0), { button: 0 });
+    fireEvent.mouseEnter(cellAt(container, 6, 6));
+    expect(container.querySelector('[data-role="hole"]')).not.toBeNull();
+    expect(hatched()).toBe(0);
+  });
+
+  it("Escape during a lift puts the pixels back and takes the hole with it", () => {
+    // The grid cancels the drag; the patch above it has to go too, or the pixels stay hidden under
+    // a hole until a second Escape - having never been edited at all.
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    saveFileContent.mockClear();
+
+    fireEvent.mouseDown(cellAt(container, 0, 0), { button: 0 });
+    expect(container.querySelector('[data-role="hole"]')).not.toBeNull();
+    pressOnGrid(container, "Escape");
+
+    expect(container.querySelector('[data-role="hole"]')).toBeNull();
+    expect(container.querySelector('[data-role="float"]')).toBeNull();
+    fireEvent.mouseUp(cellAt(container, 6, 6));
+    vi.advanceTimersByTime(1000);
+    expect(saveFileContent).not.toHaveBeenCalled();
+    expect(button(container, "Undo").disabled).toBe(true);
+    // The selection survives, because Escape cancelled the drag and not the mark.
+    expect(selectionOutline(container)).not.toBeNull();
+  });
+
+  it("Escape during a drag keeps a pasted patch in the air", () => {
+    // A paste is not the drag's to destroy - backing out of the move leaves it floating, and the
+    // NEXT Escape is what cancels the paste.
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    press(container, "c", { ctrlKey: true });
+    press(container, "v", { ctrlKey: true });
+    expect(container.querySelector('[data-role="float"]')).not.toBeNull();
+
+    fireEvent.mouseDown(cellAt(container, 0, 0), { button: 0 });
+    pressOnGrid(container, "Escape");
+    expect(container.querySelector('[data-role="float"]')).not.toBeNull();
+    pressOnGrid(container, "Escape");
+    expect(container.querySelector('[data-role="float"]')).toBeNull();
+  });
+
+  it("neither duplicates nor loses the patch when a commit lands mid-drag", () => {
+    /*
+     * Space commits a float, so pressed mid-drag it puts the patch down while the button is still
+     * held - and then the release commits again. Two commits, one patch: the second clears the
+     * source region a second time and pastes the same pixels, which stays consistent only because
+     * the patch is carried rather than consumed. Pinned because the failure mode is silent - four
+     * pixels becoming eight, or none.
+     */
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+
+    fireEvent.mouseDown(cellAt(container, 0, 0), { button: 0 });
+    act(() => {
+      press(container, " "); // commit where it stands
+      fireEvent.mouseUp(cellAt(container, 1, 1)); // ... and the release commits again
+    });
+    vi.advanceTimersByTime(1000);
+
+    // Whatever the patch ended up doing, the four pixels still exist exactly once.
+    const written = saveFileContent.mock.calls.length ? lastWrite() : fileWithBlock();
+    expect([...written.slice(0, SPRITE_SIZE)].filter((v) => v === 5).length).toBe(4);
+  });
+
+  it("drags a floating paste without blanking what it was copied from", () => {
+    // A clipboard paste was never lifted off the sprite, so dropping it leaves the original alone.
+    const { container } = renderEditor(fileWithBlock());
+    dragSelect(container, [0, 0], [1, 1]);
+    press(container, "c", { ctrlKey: true });
+    press(container, "v", { ctrlKey: true });
+    dragRegion(container, [0, 0], [8, 8]);
+    vi.advanceTimersByTime(1000);
+
+    const written = lastWrite();
+    expect(px(written, 8, 8)).toBe(5); // the copy landed
+    expect(px(written, 0, 0)).toBe(5); // the original is still there
+  });
+});
+
 describe("SpriteEditor - sheet clipboard", () => {
   it("Cut removes the sprite when nothing is marked, and Paste brings it back", () => {
     const { container } = renderEditor(fileOf(3));

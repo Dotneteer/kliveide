@@ -703,6 +703,49 @@ on the system clipboard. Each step is usable on its own; stop anywhere and what 
 > else. Worth asking separately rather than answering by default.
 
 
+### Phase 9 — Direct manipulation (added after the plan closed)
+
+The plan gave the editor every operation it needed and no way to perform any of them by hand. Two
+drags, asked for after Phase 8, on the machinery Phase 8 had already built.
+
+**Reorder the sheet by dragging a thumbnail.** HTML5 drag-and-drop with a private MIME type
+(`application/x-klive-sprite-index`), an insertion marker between cells, and one new pure function,
+`moveSprite(doc, from, to)`, alongside the existing `moveSpriteLeft/Right`. The `to` is an insertion
+*gap*, not an index, which is what makes "drop after the last one" expressible and the two no-op
+cases (`to === from`, `to === from + 1`) falsifiable in a pure test.
+
+**Move a marked region by dragging it.** One mousedown now starts one of three gestures, decided by
+where it lands: draw, mark, or move. Inside the marked region — or inside a paste still floating —
+it picks the pixels up.
+
+> **Retrospective.**
+>
+> - **Lift, don't cut.** The lifted patch goes into the same `floating` state a paste uses, with a
+>   `lifted` region recorded alongside it. The drop clears the source and pastes in **one** edit, so
+>   a move is one undo entry and never a cut followed by a paste. Verified in the app: block moved,
+>   source blanked, and a single `Ctrl+Z` put every byte back.
+> - **The hole is a drawing, not an edit.** First attempt handed the canvas a doctored map with the
+>   region already cleared — correct on screen, and one stray `onCommit` away from destroying the
+>   lifted pixels. It is now an overlay, so the map the canvas draws from is always the document's.
+>   A test with a sprite containing no transparent pixel pins it: lifting adds zero hatched pixels.
+> - **Two rects, because the hatch is lines.** Painted straight over the artwork, the transparency
+>   pattern let the lifted block show between its strokes. The canvas ground goes down first.
+> - **Cancelling the drag had to cancel the lift.** `onCancelDrag` had been a `NOOP` since drags
+>   existed; without it Escape left the patch stranded above a hole, needing a second press to put
+>   the pixels back. A lift is abandoned outright; a paste only returns to where the grab found it.
+> - **The release carries a position of its own.** `endDrag` applies the mouseup cell and commits in
+>   the same task, so the float's ref is written synchronously rather than waited on — otherwise a
+>   drop lands one cell short of where it was released. Removing that one line fails four tests.
+> - **A `pointer-events: none` outline cannot carry a cursor.** The `grab` affordance needed a real
+>   hit rect over the region, which then takes the press too.
+> - **Most of my "reproductions" of a bug were me misreading the pre-state.** Three separate times a
+>   gesture looked wrong because the previous gesture had left a selection somewhere I had not
+>   checked — a mousedown that I read as "marking" was grabbing, and vice versa. The probe that
+>   ended it reports the *grab region* and whether a patch is in the air, rather than the first
+>   `rect[stroke-dasharray]` in the document, which also matches the hover cursor.
+> - 4 pure + 10 component tests, each confirmed to fail against the code before it. Type errors 160,
+>   no new messages; lint 47 warnings, 0 errors; 20,346 tests pass.
+
 ## 7. New assets and primitives
 
 **Done** — see the icon note at the end of the Phase 5 retrospective. The set shipped as `spr-*`

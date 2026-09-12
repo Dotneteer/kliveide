@@ -129,3 +129,26 @@ export const patchRegionAt = (patch: SpritePatch, at: SpritePoint): SpriteRegion
   width: patch.width,
   height: patch.height
 });
+
+/**
+ * Where a dragged patch sits, given where it was grabbed and where the pointer is now.
+ *
+ * The offset is taken from the grab point rather than from the patch corner, so the pixel under the
+ * cursor stays under the cursor - grabbing a shape by its middle and dropping it does not snap that
+ * middle to the corner. The result is clamped like any other paste origin: a patch may hang off the
+ * edge, but never so far that none of it is left on the sprite.
+ */
+export function movePasteOrigin(
+  origin: SpritePoint,
+  grabbedAt: SpritePoint,
+  pointer: SpritePoint,
+  patch: SpritePatch
+): SpritePoint {
+  return clampPasteOrigin(
+    {
+      row: origin.row + (pointer.row - grabbedAt.row),
+      col: origin.col + (pointer.col - grabbedAt.col)
+    },
+    patch
+  );
+}

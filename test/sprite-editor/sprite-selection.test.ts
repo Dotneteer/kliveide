@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   WHOLE_SPRITE,
   clampPasteOrigin,
+  movePasteOrigin,
   clearRegion,
   extractRegion,
   isWholeSprite,
@@ -126,5 +127,35 @@ describe("clampPasteOrigin", () => {
     expect(clampPasteOrigin({ row: -99, col: -99 }, patch)).toEqual({ row: -3, col: -3 });
     expect(clampPasteOrigin({ row: 99, col: 99 }, patch)).toEqual({ row: 15, col: 15 });
     expect(clampPasteOrigin({ row: 4, col: 6 }, patch)).toEqual({ row: 4, col: 6 });
+  });
+});
+
+describe("movePasteOrigin", () => {
+  const patch = { width: 4, height: 4, pixels: new Uint8Array(16) };
+
+  it("moves the patch by the distance the pointer travelled", () => {
+    expect(movePasteOrigin({ row: 2, col: 2 }, { row: 3, col: 3 }, { row: 6, col: 5 }, patch)).toEqual(
+      { row: 5, col: 4 }
+    );
+  });
+
+  it("keeps the grabbed pixel under the pointer, wherever in the patch it was grabbed", () => {
+    // Grab the bottom-right corner of a patch at (0,0) and drop that corner on (9,9): the patch
+    // must end up at (6,6), not snapped to (9,9).
+    expect(movePasteOrigin({ row: 0, col: 0 }, { row: 3, col: 3 }, { row: 9, col: 9 }, patch)).toEqual(
+      { row: 6, col: 6 }
+    );
+  });
+
+  it("does not move at all when the pointer has not", () => {
+    const at = { row: 4, col: 7 };
+    expect(movePasteOrigin(at, { row: 5, col: 9 }, { row: 5, col: 9 }, patch)).toEqual(at);
+  });
+
+  it("clamps like any other paste origin", () => {
+    // Dragged hard off the top-left, one row and column of the patch stays on the sprite.
+    expect(
+      movePasteOrigin({ row: 0, col: 0 }, { row: 8, col: 8 }, { row: 0, col: 0 }, patch)
+    ).toEqual({ row: -3, col: -3 });
   });
 });

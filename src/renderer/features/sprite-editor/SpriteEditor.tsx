@@ -36,6 +36,7 @@ import {
   SpriteRegion,
   WHOLE_SPRITE,
   clampPasteOrigin,
+  movePasteOrigin,
   clearRegion,
   extractRegion,
   pasteRegion,
@@ -66,11 +67,21 @@ import { cellSizeFromLegacyZoom, useFittedCellSize } from "./useFittedCellSize";
  */
 const SAVE_DEBOUNCE_MS = 400;
 
-/** The grid cancels its own drag; the editor needs no callback for it. */
-const NOOP = () => {};
-
 type Props = {
   context: GenericFileContext<SprFileContents, SprFileViewState>;
+};
+
+/**
+ * Pixels sitting above the canvas, not yet part of the sprite.
+ *
+ * `lifted` is set when the patch came off the sprite itself (a dragged selection) rather than out
+ * of the clipboard: that region has to be cleared when the patch lands, in the same edit, and left
+ * untouched if the move is abandoned.
+ */
+type FloatingPatch = {
+  patch: SpritePatch;
+  at: SpritePoint;
+  lifted?: SpriteRegion;
 };
 
 export const SpriteEditor = ({ context }: Props) => {
@@ -95,7 +106,7 @@ export const SpriteEditor = ({ context }: Props) => {
    * It floats until committed, so it can be nudged into place before it touches the sprite - and so
    * Escape leaves no trace. Committing is what pushes the single undo entry.
    */
-  const [floating, setFloating] = useState<{ patch: SpritePatch; at: SpritePoint } | undefined>(
+  const [floating, setFloating] = useState<FloatingPatch | undefined>(
     undefined
   );
   const [spriteImagesSeparated, setSpriteImagesSeparated] = useState<boolean>();
@@ -412,9 +423,22 @@ export const SpriteEditor = ({ context }: Props) => {
   /* --- selection and the clipboard ------------------------------------------------------- */
 
   const selectionRef = useRef<SpriteRegion | undefined>(undefined);
-  const floatingRef = useRef<{ patch: SpritePatch; at: SpritePoint } | undefined>(undefined);
+  const floatingRef = useRef<FloatingPatch | undefined>(undefined);
   selectionRef.current = selection;
   floatingRef.current = floating;
+
+  /**
+   * Move the floating patch, and let the rest of this task see where it went.
+   *
+   * A release does two things in the SAME event: the last `moveTo` (mouseup carries a position of
+   * its own) and the commit. Waiting for a render between them would commit the position before
+   * last - the patch would land one cell short of where it was dropped. Writing the ref here is the
+   * same trick `commit` uses for the document.
+   */
+  const setFloat = useCallback((next: FloatingPatch) => {
+    floatingRef.current = next;
+    setFloating(next);
+  }, []);
 
   /** Put a floating paste down. One undo entry, for the whole paste. */
   const commitFloating = useCallback(() => {
@@ -422,7 +446,12 @@ export const SpriteEditor = ({ context }: Props) => {
     const current = latestDoc.current;
     if (!pending || !current) return false;
     setFloating(undefined);
-    commit(applyPixels(current, pasteRegion(currentSprite(current), pending.patch, pending.at)));
+    // A lifted patch leaves a hole behind, and closing it belongs to the same edit: clear then
+    // paste, committed once. Dropping a patch back where it started changes no bytes, and
+    // `applyPixels` discards that - so a click inside the selection costs no undo entry.
+    const base = currentSprite(current);
+    const source = pending.lifted ? clearRegion(base, pending.lifted, transparencyRef.current) : base;
+    commit(applyPixels(current, pasteRegion(source, pending.patch, pending.at)));
     setSelection(patchRegionAt(pending.patch, pending.at));
     return true;
   }, [commit]);
@@ -494,11 +523,74 @@ export const SpriteEditor = ({ context }: Props) => {
     const pending = floatingRef.current;
     if (!pending) return false;
     setFloating({
-      patch: pending.patch,
+      ...pending,
       at: clampPasteOrigin({ row: pending.at.row + dRow, col: pending.at.col + dCol }, pending.patch)
     });
     return true;
   }, []);
+
+  /* --- dragging the selection --------------------------------------------------------------- */
+
+  /** Where a move gesture grabbed the patch, and where the patch was at that moment. */
+  const grab = useRef<{ pointer: SpritePoint; origin: SpritePoint } | undefined>(undefined);
+
+  /**
+   * A drag started on pixels that can be carried.
+   *
+   * Either they are already floating - a paste the user has not put down yet, which just keeps
+   * flying - or they are the marked region, which is lifted here. Lifting only builds the patch;
+   * the sprite is not touched until the drop.
+   */
+  const handleMoveStart = useCallback((at: SpritePoint) => {
+    const flying = floatingRef.current;
+    if (flying) {
+      grab.current = { pointer: at, origin: flying.at };
+      return;
+    }
+    const region = selectionRef.current;
+    const current = latestDoc.current;
+    if (!region || !current) return;
+    const origin = { row: region.row, col: region.col };
+    grab.current = { pointer: at, origin };
+    setFloat({ patch: extractRegion(currentSprite(current), region), at: origin, lifted: region });
+  }, [setFloat]);
+
+  const handleMoveTo = useCallback((at: SpritePoint) => {
+    const anchor = grab.current;
+    const flying = floatingRef.current;
+    if (!anchor || !flying) return;
+    setFloat({
+      ...flying,
+      at: movePasteOrigin(anchor.origin, anchor.pointer, at, flying.patch)
+    });
+  }, [setFloat]);
+
+  const handleMoveEnd = useCallback(() => {
+    grab.current = undefined;
+    commitFloating();
+  }, [commitFloating]);
+
+  /**
+   * Escape, pressed while a drag is still in flight.
+   *
+   * A lift is abandoned outright: its patch never touched the sprite, so letting it go puts every
+   * pixel back where it was - which is what the hole was always promising. A paste that was already
+   * in the air is not this drag's to destroy; it returns to where the grab found it, and the next
+   * Escape is what cancels the paste itself. Without this the grid would cancel the drag and leave
+   * the patch stranded above a hole, needing a second Escape to put the pixels back.
+   */
+  const handleCancelDrag = useCallback(() => {
+    const anchor = grab.current;
+    const flying = floatingRef.current;
+    grab.current = undefined;
+    if (!anchor || !flying) return;
+    if (flying.lifted) {
+      floatingRef.current = undefined;
+      setFloating(undefined);
+      return;
+    }
+    setFloat({ ...flying, at: anchor.origin });
+  }, [setFloat]);
 
   /** Step through the sheet with `[` and `]`. */
   const handlePrevSprite = useCallback(
@@ -649,6 +741,10 @@ export const SpriteEditor = ({ context }: Props) => {
                   : undefined
               }
               onSelectRegion={setSelection}
+              lifted={floating?.lifted}
+              onMoveStart={handleMoveStart}
+              onMoveTo={handleMoveTo}
+              onMoveEnd={handleMoveEnd}
               onionSprite={onionSprite}
               spriteMap={spriteMap}
               palette={palette}
@@ -658,7 +754,7 @@ export const SpriteEditor = ({ context }: Props) => {
               tool={currentTool}
               hover={hover}
               onCommit={handleCommitPixels}
-              onCancelDrag={NOOP}
+              onCancelDrag={handleCancelDrag}
             />
           </div>
         </div>

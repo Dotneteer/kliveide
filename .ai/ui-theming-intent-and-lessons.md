@@ -659,7 +659,39 @@ EOF
   following the layout instead of being a pixel rectangle that quietly goes wrong after a reflow.
   It also launches its own isolated instance, so it needs no hand-started dev server on port 9222.
 
+## Affordances On A Drawing Surface
+
+**A shape with `pointer-events: none` cannot carry a cursor.** The sprite editor's selection is
+drawn as an outline in that non-interactive layer, so there was nowhere to hang a `grab` cursor and
+nothing to tell the user the marked pixels can be dragged. The fix is a separate, invisible hit
+rect over the region (`fill="none"` + `pointerEvents="all"`) carrying `cursor: grab` /
+`:active { cursor: grabbing }`. It takes the press as well, which is a bonus rather than a cost: the
+256 pixel rects underneath stay ignorant of the selection, and the gesture reads its coordinate from
+the same `getBoundingClientRect` maths the window listeners use.
+
+**The transparency crosshatch is a pattern of LINES, not an opaque fill.** A transparent pixel looks
+the way it does because the canvas ground shows between the strokes. So anything that needs to look
+transparent while sitting *over* artwork - the hole a lifted selection leaves behind - has to paint
+`var(--bgcolor-sprite-editor)` first and hatch on top. Laid straight over the pixels, the artwork
+shows through the gaps, which is exactly the "did it lift or didn't it?" ambiguity the hole exists to
+resolve. Because the pattern is `patternUnits="userSpaceOnUse"`, one rect over a region tiles
+identically to the individual cells - no need to draw the hole cell by cell.
+
+**Transient display state is not the document.** That hole is a drawing, not an edit: the map the
+canvas draws from stays the sprite as it really is, so nothing that commits mid-gesture can make the
+gap permanent. The alternative - handing the canvas a doctored copy with the region already cleared
+- reads as harmless and puts a pixel-destroying bug one stray `onCommit` away. A test pins it: with
+a sprite that has no transparent pixel anywhere, lifting a region must add zero hatched pixels to
+the pixel layer.
+
 ## Escape, And Other Keys That Back Out
+
+**Whoever cancels a gesture must also undo what the gesture put on screen.** When dragging a
+selection began lifting pixels into a floating patch, the grid's existing "Escape cancels the drag"
+path left that patch stranded above a hole - the pixels were fine, but invisible until a second
+Escape. The `onCancelDrag` callback that had been a `NOOP` since the drag existed is exactly the
+hook for this: a lift is abandoned outright, while a paste that was already in the air only returns
+to where the grab found it, because destroying it belongs to the next press of the ladder.
 
 **A back-out key needs exactly one handler per level, and the level that acts must stop the event.**
 The sprite editor's Escape unwinds four things - an in-flight drag, a floating paste, the selection,

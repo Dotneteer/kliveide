@@ -629,3 +629,17 @@
     color: var(--text-on-accent);
   }
 }
+
+/*
+ * The draggable face of a selection (or of a paste still floating above the canvas).
+ *
+ * Invisible - the dashed outline is the visible part - but hoverable, which is the whole point: the
+ * grab cursor is the only thing on the canvas that says these pixels can be carried somewhere else.
+ */
+.grabRegion {
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}

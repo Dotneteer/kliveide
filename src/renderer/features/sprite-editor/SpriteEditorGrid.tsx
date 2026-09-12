@@ -5,7 +5,7 @@ import { getCssStringForPaletteCode } from "@emu/machines/zxNext/palette";
 import { SpriteTools } from "./sprite-common";
 import { SPRITE_DIM, SpritePoint, clampToSprite } from "./sprite-raster";
 import { applyTool, toolDraws } from "./sprite-tools";
-import { SpriteRegion, regionFromDrag } from "./sprite-selection";
+import { SpriteRegion, regionContains, regionFromDrag } from "./sprite-selection";
 import { HoverStore } from "./sprite-hover";
 import { SpriteCursor } from "./SpriteCursor";
 
@@ -24,8 +24,27 @@ type Props = {
   selection?: SpriteRegion;
   /** A region floating above the canvas, waiting to be committed or cancelled. */
   floating?: { region: SpriteRegion; pixels: Uint8Array };
+  /**
+   * Where a floating patch was lifted FROM, drawn as a hole in the sprite.
+   *
+   * A hole, not an edit: `spriteMap` stays the sprite as it really is, so a draw that somehow
+   * interleaves with a lift commits real pixels rather than the gap. That invariant - the grid
+   * never holds a map that is not the document's - is worth more than the alternative of handing
+   * the grid a doctored copy, which would make losing the lifted pixels a one-line mistake.
+   */
+  lifted?: SpriteRegion;
   /** A drag with the select tool marked out a region. */
   onSelectRegion?: (region: SpriteRegion | undefined) => void;
+  /**
+   * A drag started inside the marked region, or inside a floating paste: pick those pixels up.
+   *
+   * The grid only reports the gesture. What it means - lift the region, keep carrying a paste that
+   * was already in the air - is the editor's to decide, because only the editor knows whether the
+   * pixels under the pointer have been committed yet.
+   */
+  onMoveStart?: (at: SpritePoint) => void;
+  onMoveTo?: (at: SpritePoint) => void;
+  onMoveEnd?: () => void;
   /**
    * The sprite to ghost underneath, or `undefined` for none.
    *
@@ -50,6 +69,14 @@ type Props = {
 };
 
 type DragState = {
+  /**
+   * What this gesture turned out to be.
+   *
+   * All three share the window listeners, the input clamping and the teardown, so they share one
+   * state machine. Which one a mousedown starts depends on the tool and on where it landed - and
+   * that is decided once, at `beginDrag`, rather than re-derived on every move.
+   */
+  mode: "draw" | "mark" | "move";
   /** Where the pointer went down. */
   start: SpritePoint;
   /** The map as it was before the whole operation - the "before" half of the committed edit. */
@@ -72,7 +99,11 @@ const SpriteEditorGridComponent = ({
   tool,
   selection,
   floating,
+  lifted,
   onSelectRegion,
+  onMoveStart,
+  onMoveTo,
+  onMoveEnd,
   onionSprite,
   hover,
   onCommit,
@@ -136,6 +167,13 @@ const SpriteEditorGridComponent = ({
   );
 
   /** Pointer position in sprite coordinates, from the grid's own geometry. */
+  /**
+   * The pixels a drag can pick up: a paste still in the air, or the marked region behind it.
+   *
+   * Only with a tool that does not draw - a pencil press inside a selection is still a pencil.
+   */
+  const grabbable = !toolDraws(tool) && onMoveStart ? (floating?.region ?? selection) : undefined;
+
   const pointAt = useCallback(
     (e: { clientX: number; clientY: number }): SpritePoint | undefined => {
       const rect = gridRef.current?.getBoundingClientRect();
@@ -178,7 +216,11 @@ const SpriteEditorGridComponent = ({
 
       state.last = to;
       publishHover(to);
-      if (!toolDraws(tool)) {
+      if (state.mode === "move") {
+        onMoveTo?.(to);
+        return;
+      }
+      if (state.mode === "mark") {
         onSelectRegion?.(regionFromDrag(state.start, to));
         return;
       }
@@ -189,7 +231,7 @@ const SpriteEditorGridComponent = ({
       if (result.accumulate) state.base = result.map;
       repaint();
     },
-    [dispatchTool, onSelectRegion, publishHover, repaint, tool]
+    [dispatchTool, onMoveTo, onSelectRegion, publishHover, repaint]
   );
 
   /*
@@ -229,10 +271,12 @@ const SpriteEditorGridComponent = ({
       if (at) moveTo(at);
       detach();
       drag.current = undefined;
-      // A marking drag has already published its region; there is nothing to commit to the sprite.
-      if (toolDraws(tool)) onCommit?.(activeSpriteMap.current);
+      // A marking drag has already published its region, and a move puts its pixels down through
+      // the editor's floating state - neither has anything to commit from the drawing buffer.
+      if (state.mode === "draw") onCommit?.(activeSpriteMap.current);
+      if (state.mode === "move") onMoveEnd?.();
     },
-    [detach, moveTo, onCommit, tool]
+    [detach, moveTo, onCommit, onMoveEnd]
   );
 
   liveMove.current = (e) => {
@@ -247,10 +291,22 @@ const SpriteEditorGridComponent = ({
 
   const beginDrag = useCallback(
     (at: SpritePoint, button: number) => {
-      // The select tool drags too - it marks instead of drawing, which is the whole change.
-      if (!toolDraws(tool) && !onSelectRegion) return;
+      /*
+       * Where the press lands decides what the drag does.
+       *
+       * Inside the marked region - or inside a paste still floating above the canvas - it picks the
+       * pixels up and carries them. Anywhere else with the select tool it marks out a new region.
+       * With a drawing tool it draws, wherever it started.
+       */
+      const mode: DragState["mode"] = toolDraws(tool)
+        ? "draw"
+        : grabbable && onMoveStart && regionContains(grabbable, at)
+          ? "move"
+          : "mark";
+      if (mode === "mark" && !onSelectRegion) return;
       const snapshot = new Uint8Array(activeSpriteMap.current);
       drag.current = {
+        mode,
         start: at,
         origin: snapshot,
         base: snapshot,
@@ -259,13 +315,20 @@ const SpriteEditorGridComponent = ({
       };
       window.addEventListener("mouseup", windowUp);
       window.addEventListener("mousemove", windowMove);
-      document.body.style.cursor = "crosshair";
+      document.body.style.cursor = mode === "move" ? "grabbing" : "crosshair";
+      if (mode === "move") {
+        // No preview yet: the float has not moved, and `moveTo` would report a zero delta.
+        onMoveStart(at);
+        publishHover(at);
+        return;
+      }
       // Paint immediately, so a click without a move still marks its pixel.
       moveTo(at);
     },
     // `onSelectRegion` is read by the guard above, so a stale one would let a marking drag start
-    // on a grid that has since stopped accepting them.
-    [tool, moveTo, onSelectRegion, windowMove, windowUp]
+    // on a grid that has since stopped accepting them. `selection` and `floating` decide the mode,
+    // so a stale pair would grab a region that has since moved - or miss one that has appeared.
+    [tool, moveTo, onSelectRegion, onMoveStart, publishHover, grabbable, windowMove, windowUp]
   );
 
   const cells = useMemo(
@@ -366,6 +429,31 @@ const SpriteEditorGridComponent = ({
             * Opacity only, no tint. The artwork is device colour, and a hue laid over pixel art is
             * read as part of the pixel art.
             */}
+          {/*
+            * The hole a lift leaves behind.
+            *
+            * Two rects, because the hatch is a pattern of LINES: laid straight over the pixels it
+            * would let the lifted artwork show between its strokes. A transparent pixel looks the
+            * way it does because the canvas ground is behind it, so the hole paints that ground
+            * first and hatches on top. The pattern is `userSpaceOnUse`, so one rect over the region
+            * tiles exactly as the individual cells do. The onion skin does not show through a hole,
+            * since underneath it the sprite is still opaque.
+            */}
+          {lifted && (
+            <g data-role="hole" pointerEvents="none" shapeRendering="crispEdges">
+              {[`var(--bgcolor-sprite-editor)`, `url(#${patternId})`].map((fill, i) => (
+                <rect
+                  key={i}
+                  x={lifted.col * cellSize}
+                  y={lifted.row * cellSize}
+                  width={lifted.width * cellSize}
+                  height={lifted.height * cellSize}
+                  fill={fill}
+                />
+              ))}
+            </g>
+          )}
+
           {onionSprite && (
             <g opacity={0.38} pointerEvents="none" shapeRendering="crispEdges">
               {cells.map((i) =>
@@ -445,7 +533,7 @@ const SpriteEditorGridComponent = ({
             * sprite until Enter or a click puts it down, or Escape takes it away.
             */}
           {floating && (
-            <g pointerEvents="none" shapeRendering="crispEdges">
+            <g data-role="float" pointerEvents="none" shapeRendering="crispEdges">
               {Array.from({ length: floating.region.width * floating.region.height }, (_, i) => {
                 const r = floating.region.row + Math.floor(i / floating.region.width);
                 const c = floating.region.col + (i % floating.region.width);
@@ -499,6 +587,35 @@ const SpriteEditorGridComponent = ({
                 );
               })}
             </g>
+          )}
+
+          {/*
+            * The hit area that says "these pixels can be picked up".
+            *
+            * The outline itself cannot do this job: it is `pointer-events: none`, and a shape that
+            * cannot be hovered cannot carry a cursor. This rect can, so it also takes the press -
+            * which keeps the 256 pixel `<rect>`s underneath ignorant of the selection entirely, and
+            * gets the coordinate from the same `pointAt` the window listeners use.
+            */}
+          {grabbable && (
+            <rect
+              className={styles.grabRegion}
+              x={grabbable.col * cellSize}
+              y={grabbable.row * cellSize}
+              width={grabbable.width * cellSize}
+              height={grabbable.height * cellSize}
+              fill="none"
+              pointerEvents="all"
+              onMouseDown={(e) => {
+                const p = pointAt(e);
+                if (p) beginDrag(p, e.button);
+              }}
+              onMouseUp={(e) => endDrag(pointAt(e))}
+              onMouseMove={(e) => {
+                const p = pointAt(e);
+                if (p) publishHover(p);
+              }}
+            />
           )}
 
           {/*
