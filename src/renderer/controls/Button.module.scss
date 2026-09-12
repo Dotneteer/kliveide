@@ -1,45 +1,85 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * The shared button.
+ *
+ * It had exactly one variant axis (`isDanger`), so a dialog footer drew Cancel and its commit
+ * button in the identical accent fill and nothing said which one committed. It now has three:
+ * `primary` (the default, a filled accent), `secondary` (an outline) and `danger`.
+ *
+ * Three other things changed with it, all of them rules with a home elsewhere in the codebase:
+ *
+ * - `border-radius: 2px` and `padding: 8px 12px` were literals. They are `--radius-sm` and the
+ *   spacing scale now, and the height is `--size-controlMd` rather than falling out of the padding.
+ * - `font-size: 1em` resolved to 16px off the 16px root — off the 10/11/12/13/15px scale entirely,
+ *   and forbidden by M1.
+ * - It carried both `@include focus-ring` *and* a `:focus` border swap. That is the double signal
+ *   the command prompt removed: one focus affordance, `:focus-visible`, never two.
+ */
 .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--size-controlMd);
+  min-width: 64px;
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   background-color: var(--bgcolor-button);
-  border: 2px solid transparent;
-  border-radius: 2px;
-  padding: 8px 12px;
-  min-width: 50px;
-  outline: none;
-  @include focus-ring;
   color: var(--color-button);
   font-family: var(--main-font-family);
-  font-size: 1em;
+  font-size: var(--font-size-300);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
+  outline: none;
+  transition: background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+  @include focus-ring(1px);
 
-  &:hover {
+  &:not(:disabled):hover {
     color: var(--color-button-pointed);
     background-color: var(--bgcolor-button-pointed);
   }
 
   &:disabled {
     background: var(--bgcolor-button-disabled);
+    border-color: transparent;
     color: var(--color-button-disabled);
     cursor: default;
   }
 
-  &:focus {
-    border: 2px solid var(--color-button-focused);
-    color: var(--color-button-pointed);
+  /*
+   * The secondary — an outline, not a second fill. It keeps a real `--border-default` edge rather
+   * than being a bare ghost: in the light tone a ghost button has almost no ground to separate it
+   * from its footer and reads as disabled text.
+   */
+  &.isSecondary {
+    background-color: var(--bgcolor-button-secondary);
+    border-color: var(--border-button-secondary);
+    color: var(--color-button-secondary);
+    font-weight: 500;
+
+    &:not(:disabled):hover {
+      background-color: var(--bgcolor-button-secondary-pointed);
+      color: var(--color-button-secondary);
+    }
   }
 
+  /*
+   * The destructive commit. It used to take `--console-ansi-red` / `--console-ansi-bright-red` —
+   * the terminal palette, which is deliberately non-semantic and identical in both tones, so a
+   * light-theme danger button painted itself in the dark theme's red.
+   */
   &.isDanger {
-    background-color: var(--console-ansi-red);
+    background-color: var(--bgcolor-button-danger);
+    color: var(--color-button-danger);
 
-    &:hover {
-      color: var(--color-button-pointed);
-      background-color: var(--console-ansi-bright-red);
-    }
-
-    &:focus {
-      border: 2px solid var(--console-ansi-bright-red);
-      color: var(--color-button-pointed);
+    &:not(:disabled):hover {
+      background-color: var(--bgcolor-button-danger-pointed);
+      color: var(--color-button-danger);
     }
   }
 }

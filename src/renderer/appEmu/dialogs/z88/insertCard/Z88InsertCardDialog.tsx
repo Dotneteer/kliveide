@@ -79,6 +79,7 @@ export const Z88InsertCardDialog = ({ slot, onClose, onInsert }: Props) => {
     <Modal
       isOpen={true}
       title={vm.title}
+      iconName="chip"
       width={438}
       translateY={0}
       primaryEnabled={vm.insertEnabled}

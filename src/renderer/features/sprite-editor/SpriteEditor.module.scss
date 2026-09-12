@@ -1,98 +1,645 @@
 @use "@styles/core.scss" as *;
 
-.editorPanel {
-  display: flex;
-  box-sizing: border-box;
-  flex-direction: row;
+/* ==============================================================================================
+ * Layout — "variant C" of the four the author chose between (see
+ * `.plans/SPRITE_EDITOR_MODERNIZATION_PLAN.md` §4.1; the prototype itself has been deleted).
+ *
+ * The editor is one grid. What it replaced was a stack of four full-width strips with a fixed-size
+ * canvas sitting in a flex row beside a 285px palette, which meant the canvas was capped at 513px
+ * however wide the pane was, the palette was *wider than the thing being edited* at zoom 1-2, and
+ * everything to the right of the palette was dead space. The editor got emptier as the window got
+ * bigger.
+ *
+ * `.tools` and `.stage` both span the middle two rows, so the sheet browser tucks under the canvas
+ * while the inspector runs the full height beside them.
+ * ============================================================================================ */
+.editor {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  /*
+   * Two rules, both learned the hard way here, and both about the same failure mode: **a grid item
+   * that spans an intrinsically-sized track pushes its own content size into that track.**
+   *
+   * 1. *Every child must claim a `grid-area`.* The sheet toolbar did not - it rendered a bare `Row`
+   *    - so it was auto-placed into row 1, column 1 and its ~358px of buttons sized the tool rail's
+   *    `auto` column to 358px, squeezing the canvas to under half the pane. An unplaced child does
+   *    not look broken; it looks like a track-sizing mystery somewhere else entirely.
+   * 2. *Nothing spans an `auto` track.* The inspector is tall - a 272px palette plus a preview - and
+   *    while it spanned the sheet's `auto` row it forced that row open and starved the `1fr` stage
+   *    row, collapsing the canvas to its 3px minimum in a small pane. The sheet row is now bounded
+   *    (`minmax(0, …)`), so it can contribute nothing, and it scrolls internally instead.
+   *
+   * The rail spans all three middle rows deliberately: the tools sit beside the sheet as well as
+   * the canvas, and it keeps the sheet out of the rail's column.
+   */
+  grid-template-areas:
+    "top   top   top"
+    "tools stage insp"
+    "tools strip insp";
+  /*
+   * The stage has a floor and the sheet does not.
+   *
+   * `minmax(0, 132px)` is a *definite* max, so grid hands the sheet its full 132px before the `1fr`
+   * stage row gets anything - which in a short pane left the canvas with less height than its own
+   * header and status bar and collapsed it to the 3px minimum. Giving the stage a minimum makes the
+   * sheet the thing that yields, which is the right way round: the sheet scrolls, the canvas is
+   * what the editor is for.
+   */
+  grid-template-rows: auto minmax(140px, 1fr) minmax(0, var(--sheet-height));
+  grid-template-columns: auto 1fr auto;
+  background-color: var(--bgcolor-sprite-editor);
+  color: var(--text-secondary);
   user-select: none;
-  font-size: 0.8em;
-  align-items: start;
-  font-size: 1em;
-  padding-top: 0;
-  padding-bottom: 0;
-  background-color: var(--bgcolor-editors);
+  /*
+   * The content has a genuine minimum - a toolbar, a canvas with a floor, a status bar - and below
+   * it `hidden` would simply lose the sheet. Scrolling keeps everything reachable; at any workable
+   * pane size nothing overflows and no scrollbar appears.
+   */
+  overflow: auto;
 }
 
-.headerRow {
+.sheetToolbar {
+  grid-area: top;
   display: flex;
-  flex-direction: row;
   align-items: center;
-  outline: none;
-  border-top: none;
+  gap: 1px;
+  padding: 0 var(--space-2);
+  background: var(--surface-chrome);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.editorArea {
+/** The drawing tools, against the canvas rather than a toolbar two strips away from it. */
+.toolRail {
+  grid-area: tools;
   display: flex;
-  flex-direction: row;
-  flex-shrink: 0;
-  flex-grow: 0;
-  align-items: start;
-  padding: 0.2em;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-1) 3px;
+  background: var(--surface-panel);
+  border-right: 1px solid var(--border-subtle);
+  overflow-y: auto;
+}
+
+.railSeparator {
+  width: 16px;
+  height: 1px;
+  background: var(--border-default);
+  margin: var(--space-1) 0;
+  flex: 0 0 auto;
+}
+
+.stage {
+  grid-area: stage;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.stageHeader {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: var(--row-panelHeader);
+  flex: 0 0 auto;
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.zoomLabel {
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  color: var(--text-secondary);
+  min-width: 5ch;
+  text-align: center;
+}
+
+/** Holds the rulers and the canvas, centred in whatever room is left. */
+.canvasArea {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  place-content: center;
+  padding: var(--space-2);
+  overflow: hidden;
+}
+
+.canvasFrame {
+  display: grid;
+  grid-template-areas:
+    ".      rulerTop"
+    "rulerLeft canvas";
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
 }
 
 .spriteGridWrapper {
-  display: flex;
-  flex-direction: row;
-  flex-grow: 0;
-  flex-shrink: 0;
-  overflow: hidden;
-  padding: 3px;
-  margin: 3px 5px 5px 5px;
+  grid-area: canvas;
   outline: none;
-  border-top: 1px solid transparent;
+  line-height: 0;
 
-  &:focus {
-    border-color: var(--color-text-hilite);
+  @include focus-ring(2px);
+}
+
+/* --- rulers ---------------------------------------------------------------------------------
+ * `--color-ruler-sprite-editor` has been declared in `theme.ts` and aliased in
+ * `componentAliases.ts` since the token layers were built, and referenced by nothing at all. It
+ * was not "rendered but invisible" — the rulers were never written. This is its first use.
+ * ------------------------------------------------------------------------------------------ */
+.ruler {
+  display: grid;
+  color: var(--color-ruler-sprite-editor);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-50);
+  line-height: 1;
+}
+
+.rulerTop {
+  grid-area: rulerTop;
+  height: 12px;
+  align-items: end;
+}
+
+.rulerLeft {
+  grid-area: rulerLeft;
+  width: 14px;
+  justify-items: end;
+  padding-right: 3px;
+  align-items: center;
+}
+
+.rulerCell {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.rulerLeft .rulerCell {
+  justify-items: end;
+}
+
+/* --- status bar ----------------------------------------------------------------------------- */
+.statusBar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--row-list);
+  padding: 0 var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--font-size-100);
+}
+
+.statusValue {
+  font-family: var(--monospace-font);
+  color: var(--text-primary);
+}
+
+.statusMuted {
+  font-family: var(--monospace-font);
+  color: var(--text-tertiary);
+}
+
+.statusAxis {
+  color: var(--text-tertiary);
+}
+
+.statusSpacer {
+  flex: 1 1 auto;
+}
+
+.statusSeparator {
+  width: 1px;
+  height: 12px;
+  background: var(--border-default);
+  flex: 0 0 auto;
+}
+
+/* --- colours + inspector --------------------------------------------------------------------- */
+/* The pen/fill pair heads the inspector; it is not a grid area of its own (see the note above). */
+.colorsPane {
+  border-bottom: 1px solid var(--border-subtle);
+  flex: 0 0 auto;
+}
+
+.inspector {
+  grid-area: insp;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface-panel);
+  border-left: 1px solid var(--border-subtle);
+  overflow-y: auto;
+}
+
+.inspectorSection {
+  border-bottom: 1px solid var(--border-subtle);
+
+  &:last-child {
+    border-bottom: none;
   }
 }
 
-.spriteScroller {
+.sectionHeader {
+  height: var(--row-panelHeader);
   display: flex;
-  flex-direction: row;
-  flex-shrink: 0;
-  flex-grow: 0;
-  padding-top: 2px;
-  padding-bottom: 2px;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  /*
+   * The app's panel-header band, via its own alias rather than a hand-rolled gradient.
+   *
+   * A shallow top-lit gradient, not a flat fill: the band is 26px and the content under it is
+   * denser and hover-highlights, so a flat strip reads as a *selected row* while a lit strip reads
+   * as chrome. `--bgcolor-panelHeader` already encodes that; re-deriving it here would have been a
+   * second source of truth for one visual decision.
+   */
+  background: var(--bgcolor-panelHeader);
+  box-shadow: inset 0 -1px 0 var(--color-panelHeader-rule);
 }
 
-.spriteItem {
-  width: 48px;
-  height: 48px;
+.colorPair {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
 }
 
-.spriteImageWrapper {
-  margin: 2px 0;
-  border-top: 2px solid transparent;
-  border-bottom: 2px solid transparent;
-  height: fit-content;
-  padding: 2px 0;
-  margin: 0;
+.colorSlot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.colorSlotLabel {
+  font-size: var(--font-size-50);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.colorIndex {
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  color: var(--accent-solid);
+}
+
+/* --- preview ---------------------------------------------------------------------------------
+ * The point of the 1:1 preview is that it is the size the sprite will actually be on screen; the
+ * editor previously had no way at all to see that.
+ * ------------------------------------------------------------------------------------------ */
+.previewRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  padding: var(--space-3);
+}
+
+.previewItem {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+}
+
+.previewLabel {
+  font-size: var(--font-size-50);
+  color: var(--text-tertiary);
+}
+
+.previewControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 0 0 auto;
+}
+
+/* A cycle button, not a spinner: there are four useful frame rates, not a range. */
+.fpsButton {
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-50);
+  line-height: 1.4;
+  cursor: pointer;
+  white-space: nowrap;
+
+  @include focus-ring(-2px);
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+  }
+}
+
+/* --- sheet browser ---------------------------------------------------------------------------- */
+.sheetPane {
+  grid-area: strip;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* Never let the thumbnails' intrinsic width drive the grid's column sizes. */
+  min-width: 0;
+  /*
+   * No `max-height` here, and that is the point.
+   *
+   * It carried `max-height: 42%` from the layout before this one, where the pane was a plain flex
+   * child of the editor. As a *grid item* a percentage resolves against the grid area - the 132px
+   * track - not against the editor, so 42% silently capped the sheet at 55px: less than one 63px
+   * thumbnail cell. The row was clipped and a scrollbar appeared over it, which read as broken
+   * rather than as scrollable. The track owns this height; nothing else should have an opinion.
+   */
+  background: var(--surface-panel);
+}
+
+/*
+ * The resize handle, and the sheet pane's top border in one.
+ *
+ * `SplitPanel`'s idiom: a transparent grab zone with the visible hairline inset as a pseudo-element,
+ * so the hit area is comfortably bigger than the line the user aims at. 6px is easy to hit without
+ * eating into the pane.
+ */
+.sheetResizer {
+  flex: 0 0 auto;
+  position: relative;
+  height: 6px;
+  cursor: row-resize;
+  background: transparent;
+  transition: background-color var(--duration-base) var(--ease-standard);
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border-subtle);
+    pointer-events: none;
+    transition: background-color var(--duration-base) var(--ease-standard);
+  }
+}
+
+.sheetResizerActive {
+  background: var(--bgcolor-splitter);
+
+  &::after {
+    background: var(--accent-solid);
+  }
+}
+
+/*
+ * The scroll container, sized by the pane.
+ *
+ * Scrolling goes through `ScrollViewer` like everywhere else in the app rather than a bare
+ * `overflow-y: auto`. A native bar is 15px of permanent layout width - a seventh of this pane - and
+ * it does not look like any other scrollable surface here; the app's is an overlay that auto-hides.
+ */
+.sheetScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.sheetCells {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+/*
+ * A sheet cell.
+ *
+ * Selected and hovered used to draw the *same* 2px highlight border, so while the pointer was in
+ * the strip there was no way to tell which sprite was being edited. They are now different in kind:
+ * hover raises the surface, selection is an accent ring.
+ */
+.sheetCell {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
 
   &.separated {
-    padding-left: 2px;
-    padding-right: 2px;
-    border-left: 2px solid transparent;
-    border-right: 2px solid transparent;
-    margin-left: 1px;
-    margin-right: 1px;
+    margin: 0 1px;
   }
 
-  &:hover,
-  &.selected {
-    border-color: var(--color-text-hilite);
-  }
+  @include focus-ring(0);
 }
 
-.editorInfo {
-  padding-top: 0.2em;
+.sheetCellSelected {
+  box-shadow: 0 0 0 2px var(--accent-solid);
 }
 
+/* The sprite being dragged, dimmed so the insertion marker is what the eye follows. */
+.sheetCellDragging {
+  opacity: 0.4;
+}
+
+/*
+ * Where the drop would land: a 2px bar on the side of the cell the pointer is nearest. Same marker
+ * the document tabs use for the same job - the sheet wraps into rows, so a vertical bar reads as
+ * "between these two" in a way a horizontal one would not.
+ */
+.dragBefore::before,
+.dragAfter::after {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 2px;
+  content: "";
+  background: var(--accent-solid);
+  pointer-events: none;
+}
+
+.dragBefore::before {
+  left: -5px;
+}
+
+.dragAfter::after {
+  right: -5px;
+}
+
+/*
+ * The index sits *under* the thumbnail, not over it.
+ *
+ * Overlaying it was the first design, and it needs a halo to stay legible over arbitrary pixel art
+ * - which in turn needs a colour that works against *device* pixels. Device surfaces are
+ * theme-invariant (the emulated machine is hardware), so that halo could not come from a theme
+ * token, and it would have obscured a corner of every sprite to boot. A caption costs 10px of
+ * height and owes nothing to what is in the picture.
+ */
+.sheetIndex {
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-50);
+  line-height: 1;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.sheetCellSelected .sheetIndex {
+  color: var(--accent-solid);
+  font-weight: 600;
+}
+
+/*
+ * An all-transparent sprite used to render as nothing at all - an invisible cell in a row of
+ * pictures. The checkerboard the thumbnail paints gives it a body; this marks it as deliberate.
+ */
+.sheetEmpty {
+  outline: 1px dashed var(--border-strong);
+  outline-offset: -3px;
+  border-radius: var(--radius-sm);
+}
+
+.sheetCount {
+  font-size: var(--font-size-100);
+  color: var(--text-tertiary);
+}
+
+/* --- colour swatches -------------------------------------------------------------------------- */
 .colorSample {
+  /*
+   * `flex: 0 0 auto` is load-bearing, not decoration.
+   *
+   * These sit in a nowrap flex row beside text. An empty div's automatic minimum size is zero, so
+   * it is the only item in that row that *can* shrink - and with the default `flex-shrink: 1` it
+   * absorbed the entire overflow the moment the document pane got narrow, collapsing to 0px wide
+   * while every text label kept its size. The swatch still had the right background colour; there
+   * was simply none of it left to see.
+   */
+  flex: 0 0 auto;
   width: 20px;
   height: 20px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
 }
 
-.centered {
+.colorSampleLarge {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+}
+
+.colorSampleSmall {
+  width: 14px;
+  height: 14px;
+}
+
+/* --------------------------------------------------------------------------------------------
+ * Palette header: which palette the editor is drawing with, and which bank is on screen.
+ * The two-state bank control mirrors the sidebar's Next palette panel - see
+ * `SpritePaletteHeader.tsx` for why the fill and the ring mean what they mean.
+ * ------------------------------------------------------------------------------------------ */
+.paletteHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.paletteBody {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+
+.paletteFallback {
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  /*
+   * The fallback is a *warning*, not a caption. A palette that is silently wrong still looks like a
+   * palette, which is how the sidebar's own colour bug survived review.
+   */
+  color: var(--status-warning);
+}
+
+.bankSwitch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.bankButton {
+  width: 18px;
+  height: 15px;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-50);
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+
+  @include focus-ring(-2px);
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+  }
+}
+
+/*
+ * Declared *before* `.bankShown`, so that when the two coincide - the ordinary case - the later
+ * fill wins and the ring vanishes under it rather than tracing a second edge inside it.
+ */
+.bankLive {
+  box-shadow: inset 0 0 0 1px var(--accent-solid);
+}
+
+.bankShown {
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+  box-shadow: none;
+
+  &:hover {
+    background: var(--accent-solid);
+    color: var(--text-on-accent);
+  }
+}
+
+/*
+ * The draggable face of a selection (or of a paste still floating above the canvas).
+ *
+ * Invisible - the dashed outline is the visible part - but hoverable, which is the whole point: the
+ * grab cursor is the only thing on the canvas that says these pixels can be carried somewhere else.
+ */
+.grabRegion {
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
 }

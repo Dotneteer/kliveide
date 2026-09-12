@@ -1,14 +1,24 @@
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import classnames from "classnames";
 import styles from "./ConsoleOutput.module.scss";
 import {
   IOutputBuffer,
   OutputContentLine,
+  OutputSeverity,
   OutputSpan
 } from "@renderer/appIde/ToolArea/abstractions";
-import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import {
+  CSSProperties,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState
+} from "react";
 import { ConsoleAction } from "@common/utils/output-utils";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
+import { useRowSizes } from "@renderer/theming/useRowSizes";
 
 /**
  * The app's shared rich-text / ANSI console renderer.
@@ -20,6 +30,15 @@ import { VListHandle } from "virtua";
 
 type Props = {
   buffer: IOutputBuffer;
+  /**
+   * What to show while the buffer has no lines.
+   *
+   * The component already knew it had nothing to draw — it just drew nothing, and a panel whose
+   * pane has not run yet was an unexplained empty rectangle. The node belongs to the caller because
+   * only the caller knows what would fill it: "run `compile`" is right for the Build pane and
+   * meaningless for Command Result.
+   */
+  emptyState?: ReactNode;
   /**
    * Keep the newest line in view as content arrives.
    *
@@ -38,6 +57,7 @@ type Props = {
 
 export const ConsoleOutput = ({
   buffer,
+  emptyState,
   followTail = false,
   showLineNo = false,
   initialTopPosition,
@@ -46,6 +66,19 @@ export const ConsoleOutput = ({
 }: Props) => {
   const vlApi = useRef<VListHandle>(null);
   const [lines, setLines] = useState<OutputContentLine[]>([]);
+
+  /*
+   * Overscan, in **pixels**.
+   *
+   * `VirtualizedList` forwards this to virtua's `bufferSize`, which its own documentation defines
+   * as "extra item space in pixels" — while the shared default is named `overscan` and documented
+   * as a number of *rows*. Whatever the other lists intend by it, 25 here would be a buffer of one
+   * and a half console lines, and fast-scrolling a log is exactly the case that shows blank rows.
+   * This is the pixel equivalent of roughly 25 unwrapped lines, at whatever size the panels are
+   * currently set to render.
+   */
+  const { console: consoleRowSize } = useRowSizes();
+  const consoleOverscanPx = consoleRowSize * 25;
 
   /*
    * The buffer subscription must not depend on props that change identity every render.
@@ -59,7 +92,13 @@ export const ConsoleOutput = ({
 
   const refresh = useCallback(() => {
     if (!buffer) return;
-    const contents = buffer.getContents().slice();
+    /*
+     * No defensive `.slice()`. `getContents()` now returns a stable snapshot — the same array
+     * instance until the contents actually change, a new one after — so copying it here would
+     * undo exactly the allocation the buffer stopped making. The identity change is what React
+     * needs to re-render, and the buffer provides it.
+     */
+    const contents = buffer.getContents();
     setLines(contents);
     latest.current.onContentsChanged?.();
     if (!latest.current.followTail) return;
@@ -89,10 +128,26 @@ export const ConsoleOutput = ({
   }, [buffer, refresh]);
 
   return (
-    <div className={styles.listWrapper}>
+    <div className={classnames(styles.listWrapper, { [styles.withLineNo]: showLineNo })}>
+      {lines.length === 0 && emptyState}
       {lines.length > 0 && (
         <VirtualizedList
           items={lines}
+          /*
+           * Deliberately **not** `scrollRowsHorizontally`, and deliberately no `itemSize`.
+           *
+           * `scrollRowsHorizontally` puts `min-width: max-content` on virtua's row wrapper, so the
+           * row grows to whatever its content needs — which means a long line would never reach a
+           * right edge and `word-break: break-all` would never fire. Horizontal scrolling and
+           * wrapping are mutually exclusive, and this console wraps.
+           *
+           * `itemSize` is virtua's size hint for unmeasured rows. It was worth setting while every
+           * line was exactly one pinned line box; now a wrapped line occupies several, so a flat
+           * hint would be wrong for exactly the long lines whose height matters most. virtua's own
+           * guidance is to omit it and let sizes be estimated from measurements, which is what
+           * happens here.
+           */
+          overscan={consoleOverscanPx}
           onScroll={() => {
             if (!vlApi.current) return;
             onTopPositionChanged?.(vlApi.current.getItemOffset(0));
@@ -117,7 +172,12 @@ export const ConsoleOutput = ({
             }
           }}
           renderItem={(idx) => (
-            <OutputLine lineNo={idx + 1} showLineNo={showLineNo} spans={lines[idx]?.spans} />
+            <OutputLine
+              lineNo={idx + 1}
+              showLineNo={showLineNo}
+              severity={lines[idx]?.severity}
+              spans={lines[idx]?.spans}
+            />
           )}
         />
       )}
@@ -127,11 +187,16 @@ export const ConsoleOutput = ({
 
 type OutputContentLineProps = {
   spans: OutputSpan[];
+  /**
+   * What the line means, when its writer said. Drives the line number's colour — the severity cue
+   * rides in a column that is already there, instead of spending more of a 12px row on a stripe.
+   */
+  severity?: OutputSeverity;
   lineNo: number;
   showLineNo?: boolean;
 };
 
-const spanStyle = (s: OutputSpan): CSSProperties => ({
+const buildSpanStyle = (s: OutputSpan): CSSProperties => ({
   fontWeight: s.isBold ? 600 : 400,
   fontStyle: s.isItalic ? "italic" : "normal",
   /*
@@ -145,13 +210,47 @@ const spanStyle = (s: OutputSpan): CSSProperties => ({
   backgroundColor: s.background !== undefined ? `var(--console-ansi-${s.background})` : undefined,
   color:
     s.foreground !== undefined ? `var(--console-ansi-${s.foreground})` : "var(--console-default)",
-  textDecoration:
+  /*
+   * `textDecorationLine`, not the `textDecoration` shorthand.
+   *
+   * The shorthand resets every decoration longhand it does not mention — including
+   * `text-decoration-color` — and this is an *inline* style, so it beat anything the stylesheet
+   * said. `OutputPaneBuffer.write` marks every actionable span `isUnderline`, so that reset landed
+   * on exactly the spans whose underline the stylesheet wants to style: `.actionable`'s colour rule
+   * was computing correctly and then being overwritten on the way to the screen.
+   *
+   * The line is the span's business; its colour, offset and thickness are the stylesheet's.
+   */
+  textDecorationLine:
     [s.isUnderline ? "underline" : "", s.isStrikeThru ? "line-through" : ""]
       .filter(Boolean)
       .join(" ") || undefined
 });
 
-const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
+/**
+ * Style objects keyed by the span's interned `styleId`.
+ *
+ * A console uses a couple of dozen distinct style combinations across millions of spans, so the
+ * object is built once per combination and then shared. Without this, every span of every visible
+ * row got a freshly allocated `style` prop on every render, which React can only treat as changed.
+ *
+ * Ids come from a module-level table, so they mean the same thing in all four panels and this cache
+ * can be shared between them. A span with no `styleId` — one that crossed IPC, or a test fixture —
+ * falls back to building its style directly.
+ */
+const styleCache = new Map<number, CSSProperties>();
+
+const spanStyle = (s: OutputSpan): CSSProperties => {
+  if (s.styleId === undefined) return buildSpanStyle(s);
+  let style = styleCache.get(s.styleId);
+  if (!style) {
+    style = buildSpanStyle(s);
+    styleCache.set(s.styleId, style);
+  }
+  return style;
+};
+
+const OutputLine = ({ spans, severity, lineNo, showLineNo }: OutputContentLineProps) => {
   const { ideCommandsService } = useAppServices();
 
   const activate = async (s: OutputSpan) => {
@@ -171,7 +270,16 @@ const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
 
   return (
     <div className={styles.outputLine}>
-      {showLineNo && <span className={styles.lineNo}>{lineNo}:</span>}
+      {showLineNo && (
+        <span
+          className={classnames(styles.lineNo, {
+            [styles.lineNoError]: severity === "error",
+            [styles.lineNoWarning]: severity === "warning"
+          })}
+        >
+          {lineNo}:
+        </span>
+      )}
       {(spans ?? []).map((s, idx) =>
         s.actionable ? (
           /*

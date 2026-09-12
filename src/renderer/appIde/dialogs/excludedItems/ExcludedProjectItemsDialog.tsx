@@ -84,6 +84,7 @@ export const ExcludedProjectItemsDialog = ({ onClose, onApply }: Props) => {
   return (
     <Modal
       title="Excluded Items"
+      iconName="exclude"
       isOpen={true}
       fullScreen={false}
       width={500}

@@ -1,7 +1,6 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 export const OFFS_NEXT_ROM = 0x00_0000;
 export const OFFS_DIVMMC_ROM = 0x01_0000;
@@ -14,6 +13,14 @@ export const OFFS_NEXT_RAM = 0x04_0000;
 export const OFFS_BANK_05 = 0x05_4000; // Bank 5 (normal screen) = OFFS_NEXT_RAM + (5 << 14)
 export const OFFS_BANK_07 = 0x05_c000; // Bank 7 (shadow screen) = OFFS_NEXT_RAM + (7 << 14)
 export const OFFS_ERR_PAGE = 2048 * 1024;
+
+/**
+ * The label for an 8K page that is not backed by any partition.
+ *
+ * Not a partition, so it has no index and no entry in `getPartitionLabels()`; this is the bank
+ * column's empty state. See `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 1.
+ */
+export const UNPAGED_PARTITION_LABEL = "UN";
 
 /**
  * Memory information about a 8K page
@@ -548,30 +555,54 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     return result;
   }
 
+  /**
+   * The label of whatever is paged into an 8K page.
+   *
+   * Derived from the machine's own `getPartitionLabels()` map rather than built here from offsets.
+   * This function used to spell its own names — `A0`/`A1` for the alt ROMs and `D0`..`D15` for
+   * DivMMC RAM — which the map calls `X0`/`X1` and `M0`..`MF` and which `parsePartitionLabel`
+   * therefore rejected: a name shown in the disassembly could not be typed into `bp-set`. One map
+   * is now the authority; see `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §3.
+   */
   getPartitionLabelForPage(pageIndex: number): string {
+    const partition = this.getPartitionForPage(pageIndex);
+    if (partition === undefined) return UNPAGED_PARTITION_LABEL;
+    return this.machine.getPartitionLabels()[partition] ?? UNPAGED_PARTITION_LABEL;
+  }
+
+  /**
+   * The partition index paged into an 8K page, or `undefined` when the page is not backed by one.
+   *
+   * The single place that turns a memory offset into a partition. Everything that needs a *name*
+   * goes through here and then through the label map, so an offset can never acquire a second name
+   * on the way out.
+   */
+  getPartitionForPage(pageIndex: number): number | undefined {
     const pageInfo = this.pageInfo[pageIndex & 0x07];
     if (pageInfo.bank16k < 224) {
-      return toHexa2(pageInfo.bank16k);
+      return pageInfo.bank16k;
     }
-    let offs = pageInfo.readOffset;
+    const offs = pageInfo.readOffset;
     if (offs < OFFS_DIVMMC_ROM) {
-      return `R${(offs - OFFS_NEXT_ROM) >> 14}`;
+      // --- Next ROM 0..3 occupy partitions -1..-4
+      return -1 - ((offs - OFFS_NEXT_ROM) >> 14);
     }
     if (offs >= OFFS_ALT_ROM_0 && offs < OFFS_ALT_ROM_1) {
-      return `A0`;
+      return -5; // --- Alt ROM 0, "X0"
     }
     if (offs >= OFFS_ALT_ROM_1 && offs < OFFS_DIVMMC_RAM) {
-      return `A1`;
+      return -6; // --- Alt ROM 1, "X1"
     }
     if (offs >= OFFS_DIVMMC_ROM && offs < OFFS_MULTIFACE_MEM) {
-      return `DM`;
+      return -7; // --- DivMMC ROM, "DM"
     }
     if (pageIndex) {
       if (offs >= OFFS_DIVMMC_RAM && offs < OFFS_NEXT_RAM) {
-        return `D${(offs - OFFS_DIVMMC_RAM) >> 13}`;
+        // --- DivMMC RAM pages 0..15 occupy partitions -8..-23
+        return -8 - ((offs - OFFS_DIVMMC_RAM) >> 13);
       }
     }
-    return `UN`;
+    return undefined;
   }
 
   /**

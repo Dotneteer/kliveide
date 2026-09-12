@@ -1,0 +1,79 @@
+@use "@styles/core.scss" as *;
+
+.group {
+  display: grid;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-0_5) 0;
+}
+
+/*
+ * M1: absolute, never `em`. `0.9em` measured 14.4px while the dialog body ran on the 16px root and
+ * 11.7px once the body declared its own 13px — two different sizes, neither of them on the scale,
+ * from one unchanged declaration. That is the whole reason the mandate exists.
+ */
+.option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-200);
+}
+
+/*
+ * The radio reuses the checkbox's colour tokens rather than introducing its own: the two controls
+ * sit side by side in the same dialog, and a second set of tokens would only be a way for them to
+ * drift apart.
+ */
+.radio {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  display: grid;
+  place-content: center;
+  min-width: 14px;
+  min-height: 14px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-checkbox-border-normal);
+  border-radius: 50%;
+  background-color: var(--bgcolor-checkbox);
+  outline: none;
+  cursor: pointer;
+  @include focus-ring;
+
+  &::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: 0.1s transform ease-out;
+    box-shadow: inset 1em 1em var(--color-checkbox);
+  }
+
+  &:checked::before {
+    transform: scale(1);
+  }
+
+  &:focus {
+    border-color: var(--color-checkbox-border-focused);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    border-color: gray;
+
+    &::before {
+      box-shadow: inset 1em 1em gray;
+    }
+  }
+}
+
+.label {
+  cursor: pointer;
+
+  &.disabled {
+    color: gray;
+    cursor: not-allowed;
+  }
+}

@@ -14,25 +14,38 @@
   width: 100%;
 }
 
+/*
+ * The dialog text field.
+ *
+ * It had `border: none` over `--bgcolor-input` — which is `--surface-raised`, `#ffffff` in the light
+ * tone, and so is the modal body it sits on. White on white with no edge, in every dialog in the
+ * app. It now carries a real `--border-input` edge, which is what makes it a field in both tones.
+ *
+ * The 8px block margins are gone too: `DialogRow` owns the gap between a label and its field, and
+ * the margins were fighting it. `font-size: 0.9em` was an M1 violation.
+ */
 .input {
   outline: none;
-  @include focus-ring;
-  border: none;
-  padding: 4px;
-  margin: 8px 0;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm);
+  height: var(--size-controlSm);
+  padding: 0 var(--space-1_5);
+  margin: 0;
   font-family: var(--monospace-font);
-  font-size: 0.9em;
+  font-size: var(--font-size-200);
   color: var(--color-input);
   background-color: var(--bgcolor-input);
   width: 100%;
-
-  &:active,
-  &:focus {
-    outline: 2px solid var(--color-button-focused);
-  }
+  transition: border-color var(--duration-fast) var(--ease-standard);
+  /*
+   * One focus affordance, never two. An earlier pass had this ring *and* an accent border swap on
+   * `:focus`, which drew a double blue ring around a focused field — the same double signal the
+   * command prompt removed from its own control and this change removed from `Button`.
+   */
+  @include focus-ring(1px);
 
   &.invalid {
-    outline: 2px solid var(--console-ansi-red);
+    border-color: var(--status-error);
   }
 }
 
@@ -47,39 +60,40 @@
 }
 
 .iconWrapper {
-  display:flex;
-  margin-left: 0px;
+  display: flex;
+  margin-left: var(--space-1);
   flex-shrink: 0;
   flex-grow: 0;
   align-items: center;
 }
 
+/* Sized off the control scale so it matches the field beside it; it was a hardcoded 32px. */
 .browseButton {
   align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 4px;
+  background: var(--bgcolor-input);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm);
   color: var(--color-command-icon);
   cursor: pointer;
   display: flex;
-  height: 32px;
+  flex: 0 0 auto;
+  height: var(--size-controlSm);
   justify-content: center;
-  padding: 4px;
-  width: 32px;
+  padding: 0;
+  width: var(--size-controlSm);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+  @include focus-ring(1px);
 
   &:hover {
     background: var(--bgcolor-item-hover);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--color-button-focused);
-    outline-offset: 1px;
+    color: var(--text-primary);
   }
 }
 
+/* `--status-error`, not the non-semantic ANSI table — see the note in `DialogField.module.scss`. */
 .error {
-  color: var(--console-ansi-bright-red);
-  font-size: 0.875rem;
+  color: var(--status-error);
+  font-size: var(--font-size-100);
   line-height: 1.25;
   margin-top: 0;
   width: 100%;

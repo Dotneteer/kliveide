@@ -99,6 +99,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   return (
     <Modal
       title="Create a new Klive project"
+      iconName="file-project"
       isOpen={true}
       fullScreen={false}
       width={500}

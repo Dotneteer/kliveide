@@ -8,8 +8,6 @@ export type ThemeProperties = {
   // --- Font attributes
   "--shell-windows-font-family"?: string;
   "--shell-font-family"?: string;
-  "--shell-windows-monospace-font-family"?: string;
-  "--shell-monospace-font-family"?: string;
 
   // --- Global theme attributes
   "--color-text"?: string;
@@ -19,6 +17,7 @@ export type ThemeProperties = {
   "--bgcolor-scrollbar"?: string;
   "--bgcolor-scrollbar-thumb"?: string;
   "--bgcolor-attached-shadow"?: string;
+  "--bgcolor-attached-shadow-line"?: string;
   "--bgcolor-button-disabled"?: string;
   "--color-button-disabled"?: string;
   "--bgcolor-button"?: string;
@@ -26,14 +25,23 @@ export type ThemeProperties = {
   "--bgcolor-button-pointed"?: string;
   "--color-button-pointed"?: string;
   "--color-button-focused"?: string;
+  "--bgcolor-button-secondary"?: string;
+  "--color-button-secondary"?: string;
+  "--border-button-secondary"?: string;
+  "--bgcolor-button-secondary-pointed"?: string;
+  "--bgcolor-button-danger"?: string;
+  "--bgcolor-button-danger-pointed"?: string;
+  "--color-button-danger"?: string;
   "--color-text-hilite"?: string;
   "--bgcolor-input"?: string;
   "--color-input"?: string;
+  "--border-input"?: string;
   "--bgcolor-item-hover"?: string,
 
   // --- Drowpdown
   "--bg-color-dropdown-input"?: string;
   "--color-dropdown-input"?: string;
+  "--border-color-dropdown-input"?: string;
   "--bg-color-dropdown-menu"?: string;
   "--color-dropdown-menu"?: string;
   "--bg-color-dropdown-menu-pointed"?: string;
@@ -66,8 +74,6 @@ export type ThemeProperties = {
   "--border-modal"?: string;
   "--border-modal-section"?: string;
   "--shadow-modal"?: string;
-  "--color-modal-accent"?: string;
-  "--bgimage-modal-header"?: string;
   "--radius-modal"?: string;
   "--bgcolor-modal-header"?: string;
   "--color-modal-header"?: string;
@@ -75,6 +81,10 @@ export type ThemeProperties = {
   "--color-modal-body"?: string;
   "--bgcolor-modal-footer"?: string;
   "--color-modal-footer"?: string;
+  "--bgcolor-modal-chip"?: string;
+  "--color-modal-chip"?: string;
+  "--bgcolor-modal-chip-danger"?: string;
+  "--color-modal-chip-danger"?: string;
 
   // --- Console colors
   "--console-ansi-black"?: string;
@@ -143,7 +153,16 @@ export type ThemeProperties = {
   "--color-chevron"?: string;
   "--color-chevron-selected"?: string;
   "--color-panel-header"?: string;
+  "--color-panel-header-active"?: string;
   "--color-panel-border"?: string;
+  "--bgcolor-panelHeader"?: string;
+  "--bgcolor-panelHeader-hover"?: string;
+  "--color-panelHeader-rule"?: string;
+  "--color-panelHeader-rule-open"?: string;
+  "--color-panel-separator"?: string;
+  "--color-scrollbar-handle"?: string;
+  "--color-scrollbar-handle-hover"?: string;
+  "--color-scrollbar-handle-active"?: string;
   "--color-panel-focused"?: string;
 
   // --- Emulator area
@@ -248,6 +267,8 @@ export type ThemeProperties = {
   "--color-ruler-sprite-editor"?: string;
   "--color-dash-sprite-editor"?: string;
   "--color-pos-sprite-editor"?: string;
+  "--color-grid-sprite-editor"?: string;
+  "--color-guide-sprite-editor"?: string;
 
   // --- Switch
   "--color-switch-on"?: string;

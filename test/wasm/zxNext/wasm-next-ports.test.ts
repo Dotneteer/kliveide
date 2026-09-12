@@ -4,6 +4,7 @@ import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { ULA_BORDER_COLOR_NAMES } from "@common/messaging/EmuApi";
 
 type PortMachine = TestZxNextMachine | ZxNextWasmV2Machine;
 
@@ -78,7 +79,10 @@ describe("ZX Spectrum Next WASM port core parity", () => {
     const wasmRead = wasm.doReadPort(0x00fe);
 
     expect(wasmRead).toBe(oracleRead);
-    expect(wasm.getWasmV2UlaState().bor).toBe(oracle.composedScreenDevice.borderColor);
+    // --- Parity plus the name mapping `UlaState.bor` declares (see ULA_BORDER_COLOR_NAMES).
+    expect(wasm.getWasmV2UlaState().bor).toBe(
+      ULA_BORDER_COLOR_NAMES[oracle.composedScreenDevice.borderColor & 0x07]
+    );
     expect(wasm.getWasmV2UlaState().ear).toBe(true);
     expect(wasm.getWasmV2UlaState().mic).toBe(true);
     expect(wasm.lastIoReadPort).toBe(0x00fe);

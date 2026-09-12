@@ -1,7 +1,7 @@
 {
   "name": "klive-ide",
   "productName": "Klive IDE",
-  "version": "0.58.2",
+  "version": "0.59.0",
   "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
   "author": {
     "name": "Istvan Novak",
@@ -25,8 +25,8 @@
   "scripts": {
     "predev": "install-electron",
     "dev": "electron-vite dev --config build/electron.vite.config.ts",
-    "build": "tsc && electron-vite build --config build/electron.vite.config.ts && electron-builder",
-    "build:check": "tsc",
+    "build": "npm run build:check && electron-vite build --config build/electron.vite.config.ts && electron-builder",
+    "build:check": "node scripts/check-types.cjs",
     "build:sp48-wasm": "node scripts/build-sp48-wasm.cjs",
     "check:sp48-wasm-size": "node scripts/check-sp48-wasm-size.cjs",
     "build:sp128-wasm": "node scripts/build-sp128-wasm.cjs",
@@ -60,6 +60,7 @@
     "doc:check:links": "node scripts/check-docs-links.cjs",
     "doc:check:highlighting": "node scripts/check-docs-highlighting.cjs",
     "doc:serve": "node scripts/serve-docs.cjs",
+    "doc:shots": "node scripts/doc-shots/run.cjs",
     "bootstrap:ci": "npm ci",
     "check:lockfile": "rm -rf node_modules && npm ci",
     "fix:lockfile": "rm -rf node_modules && npm install && git diff --stat package-lock.json"
@@ -97,6 +98,7 @@
     "jsdom": "^30.0.1",
     "lodash": "^4.18.1",
     "monaco-editor": "^0.55.1",
+    "playwright": "^1.63.0",
     "prettier": "^3.9.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { DebugSupport } from "@emu/machines/DebugSupport";
-import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getBreakpointStorageKey } from "@common/utils/breakpoints";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 /**
@@ -32,9 +32,9 @@ describe("restoring a whole breakpoint set atomically", () => {
     ]);
 
     expect(ds.breakpointDefs.size).toEqual(2);
-    expect(ds.breakpointDefs.has(getBreakpointKey({ address: 0x1000 }))).toBe(false);
-    expect(ds.breakpointDefs.has(getBreakpointKey({ address: 0x2000 }))).toBe(true);
-    expect(ds.breakpointDefs.has(getBreakpointKey({ address: 0x3000 }))).toBe(true);
+    expect(ds.breakpointDefs.has(getBreakpointStorageKey({ address: 0x1000 }))).toBe(false);
+    expect(ds.breakpointDefs.has(getBreakpointStorageKey({ address: 0x2000 }))).toBe(true);
+    expect(ds.breakpointDefs.has(getBreakpointStorageKey({ address: 0x3000 }))).toBe(true);
   });
 
   it("preserves the disabled state of restored breakpoints", () => {
@@ -45,8 +45,8 @@ describe("restoring a whole breakpoint set atomically", () => {
       { address: 0x3000, exec: true, disabled: true }
     ]);
 
-    const enabled = ds.breakpointDefs.get(getBreakpointKey({ address: 0x2000 }));
-    const disabled = ds.breakpointDefs.get(getBreakpointKey({ address: 0x3000 }));
+    const enabled = ds.breakpointDefs.get(getBreakpointStorageKey({ address: 0x2000 }));
+    const disabled = ds.breakpointDefs.get(getBreakpointStorageKey({ address: 0x3000 }));
 
     expect(enabled?.disabled).toBeFalsy();
     // --- A breakpoint saved as disabled must come back disabled, not silently armed.

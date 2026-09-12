@@ -82,7 +82,9 @@ async function renderDisassemblyPanel({
   const emuApi = {
     getDisassemblySections: vi.fn(() => Promise.resolve([])),
     getMemoryContents,
-    getPartitionLabels: vi.fn(() => Promise.resolve({ [-1]: "R0", 0: "B0" }))
+    getPartitionLabels: vi.fn(() => Promise.resolve({ [-1]: "R0", 0: "B0" })),
+    getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
+    getPartitionGroups: vi.fn(() => Promise.resolve({}))
   };
   const virtualApi = {
     findStartIndex: vi.fn(() => 0),
@@ -110,7 +112,11 @@ async function renderDisassemblyPanel({
   }));
   vi.doMock("@renderer/core/RendererProvider", () => ({
     useDispatch: () => dispatch,
-    useSelector: (selector: (appState: typeof state) => unknown) => selector(state)
+    useSelector: (selector: (appState: typeof state) => unknown) => selector(state),
+    // --- The panel reads the row height through `useRowSizes`, which reads the panel font size.
+    // --- Returning undefined lets `getRowSizes` fall back to its default, i.e. the 20/18px these
+    // --- characterizations were written against.
+    useGlobalSetting: () => undefined
   }));
   vi.doMock("@renderer/appIde/services/DocumentServiceProvider", () => ({
     useDocumentHubService: () => documentHubService
@@ -125,6 +131,12 @@ async function renderDisassemblyPanel({
     useEmuStateListener: (_emuApi: unknown, callback: () => Promise<void>) => {
       emuStateCallback = callback;
     }
+  }));
+  // --- The panel opens the breakpoint editor through this hook, which reaches `AppServicesProvider`
+  // --- and from there drags Monaco into the module graph — Monaco touches `document` APIs jsdom
+  // --- does not implement. The panel's own editing path is covered in `BreakpointsPanelActions`.
+  vi.doMock("@renderer/appIde/dialogs/useBreakpointDialog", () => ({
+    useBreakpointDialog: () => vi.fn().mockResolvedValue(false)
   }));
   vi.doMock("@renderer/appIde/DocumentPanels/BreakpointIndicator", () => ({
     BreakpointIndicator: ({
@@ -155,7 +167,8 @@ async function renderDisassemblyPanel({
       onScroll,
       onScrollEnd,
       revealUnmeasuredItems,
-      renderItem
+      renderItem,
+      scrollRowsHorizontally
     }: {
       apiLoaded?: (api: typeof virtualApi) => void;
       itemSize?: number;
@@ -164,6 +177,7 @@ async function renderDisassemblyPanel({
       onScrollEnd?: () => void;
       revealUnmeasuredItems?: boolean;
       renderItem: (index: number, item: unknown) => ReactNode;
+      scrollRowsHorizontally?: boolean;
     }) => {
       virtualOnScroll = onScroll;
       virtualOnScrollEnd = onScrollEnd;
@@ -174,6 +188,7 @@ async function renderDisassemblyPanel({
         <div
           data-item-size={String(itemSize)}
           data-reveal-unmeasured={String(revealUnmeasuredItems)}
+          data-scroll-horizontally={String(!!scrollRowsHorizontally)}
           data-testid="disassembly-list"
         >
           {items.slice(0, 2).map((item, index) => (
@@ -301,14 +316,24 @@ describe("DisassemblyPanel refactor characterization", () => {
     expect(getMemoryContents).toHaveBeenCalledWith(undefined);
     expect(disassemblerFactory).toHaveBeenCalled();
     expect(screen.getByTestId("disassembly-list")).toHaveAttribute("data-item-size", "18");
+    /* --- Long operands and the bank/T-state columns overflow a narrow panel; see `MemoryPanel`. */
+    expect(screen.getByTestId("disassembly-list")).toHaveAttribute(
+      "data-scroll-horizontally",
+      "true"
+    );
     expect(screen.getByTestId("disassembly-list")).toHaveAttribute(
       "data-reveal-unmeasured",
       "true"
     );
     expect(screen.getByText("LD A,1")).toBeInTheDocument();
     expect(screen.getByText("LD (4000H),A")).toBeInTheDocument();
-    expect(screen.getByTestId("breakpoint-0:$6000")).toHaveAttribute("data-current", "true");
-    expect(screen.getByTestId("breakpoint-0:$6000")).toHaveAttribute("data-has-breakpoint", "true");
+    // --- `B0:$6000`, not `0:$6000`: the row names a partition by its label now. It always showed
+    // --- the label in `data-partition`; the address beside it used to disagree, giving one row two
+    // --- names for one partition.
+    const indicator = screen.getByTestId("breakpoint-B0:$6000");
+    expect(indicator).toHaveAttribute("data-current", "true");
+    expect(indicator).toHaveAttribute("data-has-breakpoint", "true");
+    expect(indicator).toHaveAttribute("data-partition", "B0");
 
     // The row at the current PC (0x6000, matching the mocked `getMemoryContents().pc`) gets the
     // exec-point highlight; the other row does not.
@@ -330,6 +355,46 @@ describe("DisassemblyPanel refactor characterization", () => {
     await waitFor(() => {
       expect(virtualApi.scrollToIndex).toHaveBeenCalledWith(1, { align: "start" });
     });
+  });
+
+  it("says so when Go To names an address past the disassembled range", async () => {
+    /*
+     * Regression: this scrolled nowhere and said nothing.
+     *
+     * The listing covers only the selected bank with the 64K view off, and about a kilobyte around
+     * PC while Follow PC is on, so asking for an address outside it is ordinary. Discarding the
+     * request silently is indistinguishable from Go To being broken — which is exactly how it was
+     * reported.
+     */
+    const { virtualApi, dispatch } = await renderDisassemblyPanel();
+    dispatch.mockClear();
+
+    const goTo = screen.getByLabelText("Go To");
+    fireEvent.change(goTo, { target: { value: "9000" } });
+    fireEvent.keyDown(goTo, { key: "Enter" });
+
+    await waitFor(() => expect(dispatch).toHaveBeenCalled());
+    const messages = dispatch.mock.calls
+      .map((call: any) => JSON.stringify(call[0]))
+      .join(" ");
+    expect(messages).toContain("$9000");
+    expect(messages).toContain("outside the disassembled range");
+    expect(virtualApi.scrollToIndex).not.toHaveBeenCalled();
+  });
+
+  it("scrolls to the top for an address below the disassembled range", async () => {
+    // --- No special case needed: `findIndex` lands on the first instruction at or after the
+    // --- target, which is the top of the listing.
+    const { virtualApi, dispatch } = await renderDisassemblyPanel();
+    dispatch.mockClear();
+
+    const goTo = screen.getByLabelText("Go To");
+    fireEvent.change(goTo, { target: { value: "1000" } });
+    fireEvent.keyDown(goTo, { key: "Enter" });
+
+    await waitFor(() =>
+      expect(virtualApi.scrollToIndex).toHaveBeenCalledWith(0, { align: "start" })
+    );
   });
 
   it("refreshes when the emulator state listener fires", async () => {

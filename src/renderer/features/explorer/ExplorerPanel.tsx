@@ -242,7 +242,7 @@ export const ExplorerPanel = () => {
           isFolder: nodeIsFolder,
           oldPath
         },
-        { title: nodeIsFolder ? "Rename folder" : "Rename file", width: 500 }
+        { title: nodeIsFolder ? "Rename folder" : "Rename file", width: 500, iconName: "pencil" }
       );
       if (!result) return;
       await renameExplorerNode({
@@ -270,6 +270,8 @@ export const ExplorerPanel = () => {
           title: nodeIsFolder ? "Delete folder" : "Delete file",
           width: 500,
           dialogRole: "alertdialog",
+          iconName: "warning",
+          danger: true,
           closeOnOutsideClick: false
         }
       );
@@ -291,7 +293,7 @@ export const ExplorerPanel = () => {
       const result = await dialogs.open<NewItemDialogResult, Omit<ComponentProps<typeof NewItemDialog>, "controls">>(
         NewItemDialog,
         { isFolder: newItemIsFolder, path: node.data?.name, itemNames },
-        { title: `Add new ${newItemIsFolder ? "folder" : "file"}`, width: 500 }
+        { title: `Add new ${newItemIsFolder ? "folder" : "file"}`, width: 500, iconName: "plus" }
       );
       if (!result) return;
       await addExplorerItem({

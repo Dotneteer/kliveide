@@ -4,7 +4,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 
 import { incBreakpointsVersionAction } from "@state/actions";
-import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getBreakpointStorageKey } from "@common/utils/breakpoints";
 
 // --- Breakpoint flags
 // --- Execution breakpoint
@@ -176,6 +176,23 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * Does any breakpoint in this set watch memory or I/O access?
+   *
+   * The per-instruction debug loops of the WASM-backed machines call this once per entry to decide
+   * whether they have to mirror the core's bus activity after every instruction. `breakpointDefs`
+   * holds a handful of entries in practice, so this stays cheaper than the ~7 WASM boundary
+   * crossings per instruction it lets the caller skip.
+   */
+  hasAccessBreakpoints(): boolean {
+    for (const bp of this.breakpointDefs.values()) {
+      if (bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Gets I/O read breakpoint information for the specified address
    * @param address I/O address read during the current instruction
    */
@@ -226,7 +243,7 @@ export class DebugSupport implements IDebugSupport {
    */
   addBreakpoint(bp: BreakpointInfo): boolean {
     // --- Store the breakpoint definition
-    const bpKey = getBreakpointKey(bp);
+    const bpKey = getBreakpointStorageKey(bp);
     const oldBp = this.breakpointDefs.get(bpKey);
     try {
       this.breakpointDefs.set(bpKey, {
@@ -299,7 +316,7 @@ export class DebugSupport implements IDebugSupport {
    */
   removeBreakpoint(bp: BreakpointInfo): boolean {
     // --- Remove definition
-    const bpKey = getBreakpointKey(bp);
+    const bpKey = getBreakpointStorageKey(bp);
     const oldBp = this.breakpointDefs.get(bpKey);
     if (!oldBp) {
       return false;
@@ -357,7 +374,7 @@ export class DebugSupport implements IDebugSupport {
    */
   enableBreakpoint(bp: BreakpointInfo, enabled: boolean): boolean {
     // --- Adjust breakpoint definition
-    const bpKey = getBreakpointKey(bp);
+    const bpKey = getBreakpointStorageKey(bp);
     const oldBp = this.breakpointDefs.get(bpKey);
     if (!oldBp) return false;
     oldBp.disabled = !enabled;
@@ -449,7 +466,7 @@ export class DebugSupport implements IDebugSupport {
       if (lowerBound !== undefined && upperBound !== undefined) {
         // --- Remove breakpoints in the specified area
         if (bp.resource === def.resource && bp.line >= lowerBound && bp.line < upperBound) {
-          const oldKey = getBreakpointKey(bp);
+          const oldKey = getBreakpointStorageKey(bp);
           this.breakpointDefs.delete(oldKey);
           return;
         }
@@ -457,10 +474,10 @@ export class DebugSupport implements IDebugSupport {
 
       if (bp.resource === def.resource && bp.line >= def.line) {
         // --- Shift the breakpoint
-        const oldKey = getBreakpointKey(bp);
+        const oldKey = getBreakpointStorageKey(bp);
         this.breakpointDefs.delete(oldKey);
         bp.line += shift;
-        this.breakpointDefs.set(getBreakpointKey(bp), bp);
+        this.breakpointDefs.set(getBreakpointStorageKey(bp), bp);
         changed = true;
       }
     });
@@ -481,7 +498,7 @@ export class DebugSupport implements IDebugSupport {
 
     // --- Iterate through the breakpoints to find the ones to delete
     this.breakpointDefs.forEach((bp) => {
-      const bpKey = getBreakpointKey(bp);
+      const bpKey = getBreakpointStorageKey(bp);
       if (bp.resource === resource) {
         if (bp.line <= 0 || bp.line > lineCount) {
           // --- Delete as it overflows the file
@@ -517,7 +534,7 @@ export class DebugSupport implements IDebugSupport {
    * Resolves the specified resouce breakpoint to an address
    */
   resolveBreakpoint(resource: string, line: number, address: number): void {
-    const bpKey = getBreakpointKey({ resource, line });
+    const bpKey = getBreakpointStorageKey({ resource, line });
     const bp = this.breakpointDefs.get(bpKey);
     if (!bp || !bp.exec) {
       return;
@@ -542,10 +559,10 @@ export class DebugSupport implements IDebugSupport {
     values.forEach((bp) => {
       if (bp.resource === oldResource) {
         // --- Shift the breakpoint
-        const oldKey = getBreakpointKey(bp);
+        const oldKey = getBreakpointStorageKey(bp);
         this.breakpointDefs.delete(oldKey);
         bp.resource = newResource;
-        this.breakpointDefs.set(getBreakpointKey(bp), bp);
+        this.breakpointDefs.set(getBreakpointStorageKey(bp), bp);
       }
     });
   }

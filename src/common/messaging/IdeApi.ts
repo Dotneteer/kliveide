@@ -21,12 +21,43 @@ abstract class IdeApiImpl {
   }
 
   /**
+   * Displays several output spans in one round trip.
+   *
+   * Every call on this API is an awaited, correlated request with its own timeout entry, so the
+   * cost of console output was dominated by the *number* of messages rather than their size: one
+   * per span, and the style re-sent in full with each. Emitting a run of spans as one message is
+   * the difference between two round trips per emulator log line and one.
+   *
+   * @param _toDisplay Output specifications, applied in order.
+   */
+  async displayOutputBatch(_toDisplay: OutputSpecification[]): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Sends script output to the IDE.
    * @param _id Script ID.
    * @param _operation Buffer operation to perform.
    * @param _args Optional arguments for the operation.
    */
   async scriptOutput(_id: number, _operation: any, _args?: any[]): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Sends a run of script-output operations in one round trip.
+   *
+   * Script output carries *stateful* style, so a single coloured line is `pushStyle`, `resetStyle`,
+   * `color`, `write`, `write`, `writeLine`, `popStyle` — seven serial awaited round trips for one
+   * line of text. As one message it is one.
+   *
+   * @param _id Script ID.
+   * @param _operations Buffer operations, applied in order.
+   */
+  async scriptOutputBatch(
+    _id: number,
+    _operations: { operation: any; args?: any[] }[]
+  ): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

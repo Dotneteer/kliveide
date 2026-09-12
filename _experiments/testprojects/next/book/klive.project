@@ -11,7 +11,7 @@
   "savedSoundLevel": 1,
   "media": {
     "sdCard": "/Users/dotneteer/Klive/ks2.cim",
-    "tape": "/Users/dotneteer/Downloads/LTK128/LTK128.TAP",
+    "tape": "",
     "diskA": {
       "diskFile": "/Users/dotneteer/disk1.dsk",
       "writeProtected": false
@@ -32,7 +32,8 @@
         "exec": true,
         "ioMask": 65535
       }
-    ]
+    ],
+    "watchExpressions": []
   },
   "builder": {
     "roots": [

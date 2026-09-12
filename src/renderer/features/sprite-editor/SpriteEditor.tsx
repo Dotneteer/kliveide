@@ -1,31 +1,87 @@
 import styles from "./SpriteEditor.module.scss";
-import { Value } from "@renderer/controls/layout/Value";
 import { GenericFileContext } from "@renderer/appIde/DocumentPanels/helpers/GenericFilePanel";
-import { SprFileContents, SprFileViewState, SpriteTools } from "./sprite-common";
-import {
-  getCssStringForPaletteCode, getLuminanceForPaletteCode, getRgbPartsForPaletteCode
-} from "@emu/machines/zxNext/palette";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
-import { SmallIconButton } from "@renderer/controls/IconButton";
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { SprFileContents, SprFileViewState, SpriteTools, migrateTool } from "./sprite-common";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
-import { Text } from "@renderer/controls/layout/Text";
-import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
-import { Column } from "@renderer/controls/layout/Column";
-import { Panel } from "@renderer/controls/layout/Panel";
-import { Row } from "@renderer/controls/layout/Row";
+import { SmallIconButton } from "@renderer/controls/IconButton";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { DEFAULT_SPRITE_TRANSPARENCY, serializeSprFile } from "./sprite-file";
+import {
+  flipHorizontal,
+  flipVertical,
+  rotateClockwise,
+  rotateCounterClockwise
+} from "./sprite-raster";
+import {
+  SpriteDocument,
+  addSprite,
+  applyPixels,
+  canRedo,
+  canUndo,
+  createDocument,
+  currentSprite,
+  duplicateSprite,
+  moveSprite,
+  moveSpriteLeft,
+  moveSpriteRight,
+  redo,
+  removeSprite,
+  selectSprite,
+  undo
+} from "./sprite-document";
+import { createHoverStore } from "./sprite-hover";
+import { useSpriteShortcuts } from "./useSpriteShortcuts";
+import { applyTool } from "./sprite-tools";
+import {
+  SpritePatch,
+  SpriteRegion,
+  WHOLE_SPRITE,
+  clampPasteOrigin,
+  movePasteOrigin,
+  clearRegion,
+  extractRegion,
+  pasteRegion,
+  patchRegionAt
+} from "./sprite-selection";
+import { spriteClipboard } from "./sprite-clipboard";
+import { DEFAULT_SHEET_HEIGHT, clampSheetHeight } from "./sheet-metrics";
+import { SpritePoint } from "./sprite-raster";
+import { SpritePaletteHeader } from "./SpritePaletteHeader";
+import { useSpritePalette } from "./useSpritePalette";
 import { SpriteEditorGrid } from "./SpriteEditorGrid";
-import { SpriteImage } from "./SpriteImage";
-import { memo, useEffect, useRef, useState } from "react";
-import ScrollViewer from "@renderer/controls/ScrollViewer";
+import { SpriteSheetToolbar } from "./SpriteSheetToolbar";
+import { SpriteToolRail } from "./SpriteToolRail";
+import { SpriteStageHeader } from "./SpriteStageHeader";
+import { SpriteStatusBar } from "./SpriteStatusBar";
+import { SpriteSheetBrowser } from "./SpriteSheetBrowser";
+import { SpritePreview } from "./SpritePreview";
+import { SpriteRulers } from "./SpriteRulers";
+import { ColorSample } from "./ColorSample";
+import { cellSizeFromLegacyZoom, useFittedCellSize } from "./useFittedCellSize";
 
-const defaultPalette: number[] = [];
-for (let i = 0; i < 256; i++) {
-  defaultPalette.push(i);
-}
+/**
+ * How long after the last committed operation the sheet is written.
+ *
+ * The editor used to rebuild the entire file and await a non-debounced `saveFileContent` - a full
+ * IPC round trip - on *every pixel* of a pencil drag. Saves now happen once per completed
+ * operation, and a burst of small operations coalesces into one write.
+ */
+const SAVE_DEBOUNCE_MS = 400;
 
 type Props = {
   context: GenericFileContext<SprFileContents, SprFileViewState>;
+};
+
+/**
+ * Pixels sitting above the canvas, not yet part of the sprite.
+ *
+ * `lifted` is set when the patch came off the sprite itself (a dragged selection) rather than out
+ * of the clipboard: that region has to be cleared when the patch lands, in the same edit, and left
+ * untouched if the move is abandoned.
+ */
+type FloatingPatch = {
+  patch: SpritePatch;
+  at: SpritePoint;
+  lifted?: SpriteRegion;
 };
 
 export const SpriteEditor = ({ context }: Props) => {
@@ -33,604 +89,764 @@ export const SpriteEditor = ({ context }: Props) => {
   const viewStateInitialized = useRef(false);
 
   // --- Sprite editor state
-  const [zoomFactor, setZoomFactor] = useState<number>(2);
+  const [showGrid, setShowGrid] = useState(true);
+  const [showOnionSkin, setShowOnionSkin] = useState(false);
+  const [sheetHeight, setSheetHeight] = useState(DEFAULT_SHEET_HEIGHT);
+  /*
+   * Whether Paste has anything to offer - read from the module-level clipboard store, so the button
+   * lights up even when the copy happened in another open `.spr` document.
+   */
+  const clipboard = useSyncExternalStore(spriteClipboard.subscribe, spriteClipboard.get, spriteClipboard.get);
+  const canPaste = !!(clipboard.sprite || clipboard.region);
+  /** The marked pixel region, if any. */
+  const [selection, setSelection] = useState<SpriteRegion | undefined>(undefined);
+  /**
+   * A paste in flight.
+   *
+   * It floats until committed, so it can be nudged into place before it touches the sprite - and so
+   * Escape leaves no trace. Committing is what pushes the single undo entry.
+   */
+  const [floating, setFloating] = useState<FloatingPatch | undefined>(
+    undefined
+  );
   const [spriteImagesSeparated, setSpriteImagesSeparated] = useState<boolean>();
   const [showTrancparencyColor, setShowTrancparencyColor] = useState<boolean>();
   const [pencilColorIndex, setPencilColorIndex] = useState<number>();
   const [fillColorIndex, setFillColorIndex] = useState<number>();
-  const [selectedSpriteIndex, setSelectedSpriteIndex] = useState<number>();
-  const [spriteMap, setSpriteMap] = useState<Uint8Array>();
-  const [currentRow, setCurrentRow] = useState<string>();
-  const [currentColumn, setCurrentColumn] = useState<string>();
-  const [currentColorIndex, setCurrentColorIndex] = useState<number>();
+  /*
+   * The sheet, the selection and the undo history are ONE value.
+   *
+   * They used to be four pieces of state kept in step by hand - `selectedSpriteIndex`, `spriteMap`,
+   * `editStack`/`editStackIndex` and the live `context.fileInfo.sprites` array - and every bug in
+   * the undo model was a place where they came apart. `sprite-document.ts` owns the transitions.
+   */
+  const [doc, setDoc] = useState<SpriteDocument | undefined>(undefined);
   const [currentTool, setCurrentTool] = useState<SpriteTools>();
 
-  // --- Undo/Redo stack
-  const [editStack, setEditStack] = useState<EditInfo[]>([]);
-  const [editStackIndex, setEditStackIndex] = useState<number>(-1);
+  /*
+   * The pointer position is NOT editor state.
+   *
+   * It used to be three `useState` values here, written from the grid's `onMouseEnter`, so moving
+   * one pixel re-rendered the palette, both toolbars and every thumbnail - and, because
+   * `currentColorIndex` was mirrored into the persisted view state, dispatched into Redux as well.
+   * `SpriteStatusBar` subscribes to this store on its own; nothing else re-renders.
+   */
+  const hover = useRef(createHoverStore()).current;
 
-  // --- Constants used to render the editor
-  const palette = defaultPalette.slice(0);
-  const rgbParts =
-    currentColorIndex >= 0 ? getRgbPartsForPaletteCode(palette[currentColorIndex]) : undefined;
+  // --- Everything the render needs, derived from the one document
+  const sprites = doc?.sprites ?? [];
+  const selectedSpriteIndex = doc?.selected ?? 0;
+  /*
+   * No "preview" state.
+   *
+   * A drag used to publish every intermediate map up to the editor, which handed it straight back
+   * down as a prop - a full editor re-render per mouse-move for data the grid already held in a
+   * ref. The grid owns the in-progress bitmap and reports only when the operation completes.
+   */
+  const spriteMap = doc ? currentSprite(doc) : undefined;
+
+  /*
+   * The palette and the transparency index come from the machine.
+   *
+   * Both used to be invented here: an identity ramp `palette[i] = i`, and `0xe3` hardcoded in eight
+   * separate places. The hook keeps one array identity per distinct palette, which is what stops an
+   * emulator state change from re-rendering the grid, all ten thumbnails and 256 swatches.
+   */
+  const { palette, transparencyIndex, source, shownBank, liveBank, pinBank } = useSpritePalette();
 
   // --- Set the current state according to the initial view state of the context
   useEffect(() => {
     if (viewStateInitialized.current) return;
     viewStateInitialized.current = true;
-    setZoomFactor(context.viewState?.zoomFactor ?? 2);
+    /*
+     * `zoomFactor` used to be 1..3 and is now a cell size in screen pixels, so a persisted value
+     * has to be migrated by range rather than trusted. See `cellSizeFromLegacyZoom`.
+     */
+    setShowGrid(context.viewState?.showGrid ?? true);
+    setShowOnionSkin(context.viewState?.showOnionSkin ?? false);
+    setSheetHeight(context.viewState?.sheetHeight ?? DEFAULT_SHEET_HEIGHT);
     setSpriteImagesSeparated(context.viewState?.spriteImagesSeparated ?? true);
     setShowTrancparencyColor(context.viewState?.showTrancparencyColor ?? false);
     setPencilColorIndex(context.viewState?.pencilColorIndex ?? 0x0f);
-    setFillColorIndex(context.viewState?.fillColorIndex ?? 0xe3);
-    const spriteIndex = context.viewState?.selectedSpriteIndex ?? 0;
-    setSelectedSpriteIndex(spriteIndex);
-    setSpriteMap(context.fileInfo?.sprites?.[spriteIndex]);
-    setCurrentRow("-");
-    setCurrentColumn("-");
-    setCurrentColorIndex(context.viewState?.currentColorIndex ?? -1);
-    setCurrentTool(context.viewState?.currentTool ?? "pointer");
+    setFillColorIndex(context.viewState?.fillColorIndex ?? DEFAULT_SPRITE_TRANSPARENCY);
+    setDoc(
+      createDocument(context.fileInfo?.sprites, context.viewState?.selectedSpriteIndex ?? 0)
+    );
+    setCurrentTool(migrateTool(context.viewState?.currentTool));
   }, [context.viewState]);
 
   // --- Update the context view state whenever the internal state changes
   useEffect(() => {
     context.changeViewState((vs) => {
-      vs.zoomFactor = zoomFactor;
       vs.spriteImagesSeparated = spriteImagesSeparated;
+      vs.showGrid = showGrid;
+      vs.showOnionSkin = showOnionSkin;
       vs.showTrancparencyColor = showTrancparencyColor;
       vs.pencilColorIndex = pencilColorIndex;
       vs.fillColorIndex = fillColorIndex;
       vs.selectedSpriteIndex = selectedSpriteIndex;
-      vs.currentColorIndex = currentColorIndex;
       vs.currentTool = currentTool;
     });
   }, [
-    zoomFactor,
+    showGrid,
+    showOnionSkin,
     spriteImagesSeparated,
     showTrancparencyColor,
     pencilColorIndex,
     fillColorIndex,
     selectedSpriteIndex,
-    currentColorIndex,
     currentTool
   ]);
 
-  // --- Update the sprite map whenever the current map changes
-  const updateSpriteMap = async (newSpriteMap: Uint8Array, selectedIndex?: number) => {
-    if (selectedIndex !== undefined) {
-      setSelectedSpriteIndex(selectedIndex);
-    }
-    setSpriteMap(newSpriteMap);
-    if (context.fileInfo?.sprites) {
-      context.fileInfo.sprites[selectedIndex ?? selectedSpriteIndex] = newSpriteMap;
-    }
+  /*
+   * Persistence.
+   *
+   * `latestDoc` is written synchronously by `commit` rather than waiting for the next render, so a
+   * debounced write that lands after an unmount still serializes what the user last did.
+   */
+  const latestDoc = useRef<SpriteDocument | undefined>(undefined);
+  latestDoc.current = doc;
+  // Read by the swap handler, so it can stay identity-stable instead of closing over both colours.
+  const pencilRef = useRef<number>();
+  const fillRef = useRef<number>();
+  const transparencyRef = useRef<number>();
+  const toolRef = useRef<SpriteTools>();
+  pencilRef.current = pencilColorIndex;
+  fillRef.current = fillColorIndex;
+  transparencyRef.current = transparencyIndex;
+  toolRef.current = currentTool;
 
-    // --- Save the file to the project
-    const sprites = new Uint8Array(16 * 16 * context.fileInfo?.sprites?.length);
-    let offset = 0;
-    for (const sprite of context.fileInfo?.sprites) {
-      sprites.set(sprite, offset);
-      offset += 16 * 16;
-    }
-    await context.saveToFile(sprites);
+  const saveNow = useRef<() => Promise<void>>();
+  saveNow.current = async () => {
+    const current = latestDoc.current;
+    if (!current?.sprites?.length) return;
+    await context.saveToFile(serializeSprFile(current.sprites, context.fileInfo?.trailing));
   };
 
-  // --- Implement Undo operation
-  const undo = () => {
-    if (editStackIndex < 0) {
-      return;
-    }
-    const edit = editStack[editStackIndex];
-    if (edit.type === "SpriteListChange") {
-      context.fileInfo.sprites = edit.oldSpriteList.slice(0);
-      setSelectedSpriteIndex(edit.oldSpriteIndex);
-      setSpriteMap(context.fileInfo.sprites[edit.oldSpriteIndex]);
-    } else {
-      updateSpriteMap(edit.oldSpriteMap);
-    }
-    setEditStackIndex(editStackIndex - 1);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const scheduleSave = () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveTimer.current = undefined;
+      void saveNow.current?.();
+    }, SAVE_DEBOUNCE_MS);
   };
 
-  // --- Implement Redo operation
-  const redo = () => {
-    if (editStackIndex >= editStack.length - 1) {
-      return;
-    }
-    const edit = editStack[editStackIndex + 1];
-    if (edit.type === "SpriteListChange") {
-      context.fileInfo.sprites = edit.newSpriteList.slice(0);
-      setSelectedSpriteIndex(edit.newSpriteIndex);
-      setSpriteMap(context.fileInfo.sprites[edit.newSpriteIndex]);
-    } else {
-      updateSpriteMap(edit.newSpriteMap);
-    }
-    setEditStackIndex(editStackIndex + 1);
-  };
-
-  // --- Push an edit to the stack
-  const pushEdit = (edit: EditInfo) => {
-    if (editStack.length === 0) {
-      setEditStack([edit]);
-      setEditStackIndex(0);
-    } else {
-      const newStack = editStack.slice(0, editStackIndex + 1);
-      newStack.push(edit);
-      setEditStack(newStack);
-      setEditStackIndex(newStack.length - 1);
-    }
-  };
-
-  // --- Render the toolbar for sprites in the file
-  const SpriteFileToolbar = () => (
-    <Row>
-      <SmallIconButton
-        iconName="undo"
-        title={"Undo"}
-        enable={editStackIndex >= 0}
-        clicked={() => undo()}
-      />
-      <SmallIconButton
-        iconName="redo"
-        title={"Redo"}
-        enable={editStackIndex < editStack.length - 1}
-        clicked={async () => redo()}
-      />
-      <ToolbarSeparator small={true} />
-      <SmallIconButton
-        iconName="@duplicate"
-        title={"Duplicate sprite"}
-        enable={true}
-        clicked={async () => {
-          const sprites = context.fileInfo?.sprites;
-
-          const editInfo: EditInfo = {
-            type: "SpriteListChange",
-            oldSpriteIndex: selectedSpriteIndex,
-            oldSpriteList: sprites?.slice?.(0)
-          };
-
-          const sprite = sprites[selectedSpriteIndex];
-          const newSprite = new Uint8Array(sprite);
-          sprites.splice(selectedSpriteIndex, 0, newSprite);
-
-          editInfo.newSpriteIndex = selectedSpriteIndex;
-          editInfo.newSpriteList = sprites.slice(0);
-          pushEdit(editInfo);
-
-          await updateSpriteMap(newSprite);
-        }}
-      />
-      <SmallIconButton
-        iconName="@cut"
-        title={"Cut sprite"}
-        enable={context.fileInfo?.sprites?.length > 1}
-        clicked={async () => {
-          const sprites = context.fileInfo?.sprites;
-          if (sprites.length < 2) {
-            return;
-          }
-
-          const editInfo: EditInfo = {
-            type: "SpriteListChange",
-            oldSpriteIndex: selectedSpriteIndex,
-            oldSpriteList: sprites?.slice?.(0)
-          };
-
-          let newIndex = selectedSpriteIndex;
-          sprites.splice(newIndex, 1);
-          if (newIndex > sprites.length - 1) {
-            newIndex = sprites.length - 1;
-          }
-
-          editInfo.newSpriteIndex = newIndex;
-          editInfo.newSpriteList = sprites.slice(0);
-          pushEdit(editInfo);
-
-          setSpriteMap(sprites[newIndex]);
-          setSelectedSpriteIndex(newIndex);
-        }}
-      />
-      <SmallIconButton
-        iconName="@move-left"
-        title={"Move sprite left"}
-        enable={selectedSpriteIndex > 0}
-        clicked={async () => {
-          const sprites = context.fileInfo?.sprites;
-
-          const editInfo: EditInfo = {
-            type: "SpriteListChange",
-            oldSpriteIndex: selectedSpriteIndex,
-            oldSpriteList: sprites?.slice?.(0)
-          };
-
-          const sprite = sprites[selectedSpriteIndex];
-          let newIndex = selectedSpriteIndex - 1;
-          sprites[selectedSpriteIndex] = sprites[newIndex];
-          sprites[newIndex] = sprite;
-
-          editInfo.newSpriteIndex = newIndex;
-          editInfo.newSpriteList = sprites.slice(0);
-          pushEdit(editInfo);
-
-          setSelectedSpriteIndex(newIndex);
-          updateSpriteMap(sprite, newIndex);
-        }}
-      />
-      <SmallIconButton
-        iconName="@move-right"
-        title={"Move sprite right"}
-        enable={selectedSpriteIndex < context.fileInfo?.sprites?.length - 1}
-        clicked={async () => {
-          const sprites = context.fileInfo?.sprites;
-
-          const editInfo: EditInfo = {
-            type: "SpriteListChange",
-            oldSpriteIndex: selectedSpriteIndex,
-            oldSpriteList: sprites?.slice?.(0)
-          };
-
-          const sprite = sprites[selectedSpriteIndex];
-          let newIndex = selectedSpriteIndex + 1;
-          sprites[selectedSpriteIndex] = sprites[newIndex];
-          sprites[newIndex] = sprite;
-
-          editInfo.newSpriteIndex = newIndex;
-          editInfo.newSpriteList = sprites.slice(0);
-          pushEdit(editInfo);
-
-          setSelectedSpriteIndex(newIndex);
-          updateSpriteMap(sprite, newIndex);
-        }}
-      />
-      <SmallIconButton
-        iconName="@plus"
-        title={"Add new sprite"}
-        enable={true}
-        clicked={async () => {
-          const sprites = context.fileInfo?.sprites;
-
-          const editInfo: EditInfo = {
-            type: "SpriteListChange",
-            oldSpriteIndex: selectedSpriteIndex,
-            oldSpriteList: sprites?.slice?.(0)
-          };
-
-          const newSprite = new Uint8Array(256);
-          for (let i = 0; i < 256; i++) {
-            newSprite[i] = 0xe3;
-          }
-          sprites.splice(selectedSpriteIndex, 0, newSprite);
-
-          editInfo.newSpriteIndex = selectedSpriteIndex;
-          editInfo.newSpriteList = sprites.slice(0);
-          pushEdit(editInfo);
-
-          await updateSpriteMap(newSprite);
-        }}
-      />
-      <ToolbarSeparator small={true} />
-      <SmallIconButton
-        iconName="@separate-vertical"
-        title={`${spriteImagesSeparated ? "Merge" : "Separate"} sprites vertically`}
-        selected={spriteImagesSeparated}
-        enable={true}
-        clicked={async () => setSpriteImagesSeparated(!spriteImagesSeparated)}
-      />
-      <SmallIconButton
-        iconName="@transparent"
-        title={`${showTrancparencyColor ? "Hide" : "Show"} transparency color`}
-        selected={showTrancparencyColor}
-        enable={true}
-        clicked={async () => setShowTrancparencyColor(!showTrancparencyColor)}
-      />
-      {selectedSpriteIndex !== undefined && context?.fileInfo?.sprites?.length > 0 && (
-        <>
-          <ToolbarSeparator small={true} />
-          <LabelSeparator width={8} />
-          <Text text={`Sprite #${selectedSpriteIndex + 1} of ${context.fileInfo.sprites.length}`} />
-        </>
-      )}
-    </Row>
+  // --- Never lose a debounced write to a closing tab.
+  useEffect(
+    () => () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = undefined;
+        void saveNow.current?.();
+      }
+    },
+    []
   );
 
-  const SpriteEditorToolbar = () => (
-    <Row>
-      <SmallIconButton
-        iconName="@zoom-in"
-        title={"Zoom-in"}
-        enable={zoomFactor < 3}
-        clicked={() => setZoomFactor(zoomFactor + 1)}
-      />
-      <SmallIconButton
-        iconName="@zoom-out"
-        title={"Zoom-out"}
-        enable={zoomFactor > 1}
-        clicked={() => setZoomFactor(zoomFactor - 1)}
-      />
-      <ToolbarSeparator small={true} />
-      <SmallIconButton
-        iconName="@pointer"
-        title={"Pencil tool"}
-        selected={currentTool === "pointer"}
-        clicked={() => setCurrentTool("pointer")}
-      />
-      <SmallIconButton
-        iconName="@pencil"
-        title={"Pencil tool"}
-        selected={currentTool === "pencil"}
-        clicked={() => setCurrentTool("pencil")}
-      />
-      <SmallIconButton
-        iconName="@line"
-        title={"Line tool"}
-        selected={currentTool === "line"}
-        clicked={() => setCurrentTool("line")}
-      />
-      <SmallIconButton
-        iconName="@rectangle"
-        title={"Rectangle tool"}
-        selected={currentTool === "rectangle"}
-        clicked={() => setCurrentTool("rectangle")}
-      />
-      <SmallIconButton
-        iconName="@rectangle-filled"
-        title={"Filled rectangle tool"}
-        selected={currentTool === "rectangle-filled"}
-        clicked={() => setCurrentTool("rectangle-filled")}
-      />
-      <SmallIconButton
-        iconName="@circle"
-        title={"Circle tool"}
-        selected={currentTool === "circle"}
-        clicked={() => setCurrentTool("circle")}
-      />
-      <SmallIconButton
-        iconName="@circle-filled"
-        title={"Filled circle tool"}
-        selected={currentTool === "circle-filled"}
-        clicked={() => setCurrentTool("circle-filled")}
-      />
-      <SmallIconButton
-        iconName="@paint"
-        title={"Paint tool"}
-        selected={currentTool === "paint"}
-        clicked={() => setCurrentTool("paint")}
-      />
-      <ToolbarSeparator small={true} />
-      <SmallIconButton
-        iconName="@rotate"
-        title={"Rotate counter-clockwise"}
-        clicked={async () => {
-          const editInfo: EditInfo = {
-            type: "SpriteChange",
-            oldSpriteMap: spriteMap.slice(0)
-          };
-
-          const result = new Uint8Array(16 * 16);
-          for (let row = 0; row < 16; row++) {
-            for (let col = 0; col < 16; col++) {
-              result[row * 16 + col] = spriteMap[col * 16 + 15 - row];
-            }
-          }
-
-          editInfo.newSpriteMap = result;
-          pushEdit(editInfo);
-
-          await updateSpriteMap(result);
-        }}
-      />
-      <SmallIconButton
-        iconName="@rotate-clockwise"
-        title={"Rotate clockwise"}
-        clicked={async () => {
-          const editInfo: EditInfo = {
-            type: "SpriteChange",
-            oldSpriteMap: spriteMap.slice(0)
-          };
-
-          const result = new Uint8Array(16 * 16);
-          for (let row = 0; row < 16; row++) {
-            for (let col = 0; col < 16; col++) {
-              result[row * 16 + col] = spriteMap[(15 - col) * 16 + row];
-            }
-          }
-
-          editInfo.newSpriteMap = result;
-          pushEdit(editInfo);
-
-          await updateSpriteMap(result);
-        }}
-      />
-      <SmallIconButton
-        iconName="@flip-vertical"
-        title={"Flip vertically"}
-        clicked={async () => {
-          const editInfo: EditInfo = {
-            type: "SpriteChange",
-            oldSpriteMap: spriteMap.slice(0)
-          };
-
-          const result = new Uint8Array(16 * 16);
-          for (let row = 0; row < 16; row++) {
-            for (let col = 0; col < 16; col++) {
-              result[row * 16 + col] = spriteMap[row * 16 + (15 - col)];
-            }
-          }
-
-          editInfo.newSpriteMap = result;
-          pushEdit(editInfo);
-
-          await updateSpriteMap(result);
-        }}
-      />
-      <SmallIconButton
-        iconName="@flip-horizontal"
-        title={"Flip horizontally"}
-        clicked={async () => {
-          const editInfo: EditInfo = {
-            type: "SpriteChange",
-            oldSpriteMap: spriteMap.slice(0)
-          };
-
-          const result = new Uint8Array(16 * 16);
-          for (let row = 0; row < 16; row++) {
-            for (let col = 0; col < 16; col++) {
-              result[row * 16 + col] = spriteMap[(15 - row) * 16 + col];
-            }
-          }
-          editInfo.newSpriteMap = result;
-          pushEdit(editInfo);
-
-          await updateSpriteMap(result);
-        }}
-      />
-    </Row>
+  /*
+   * The single place a change becomes real.
+   *
+   * Every mutation - drawing, transforms, sheet operations, undo AND redo - goes through here, so
+   * "this operation forgot to save" cannot come back. Undo, redo and Cut each used to mutate the
+   * sprite array and return without scheduling a write, which is why deleting a sprite did not
+   * reach the disk until some unrelated later edit rewrote the file.
+   */
+  /*
+   * The single place a change becomes real.
+   *
+   * Every mutation - drawing, transforms, sheet operations, undo AND redo - goes through here, so
+   * "this operation forgot to save" cannot come back. Undo, redo and Cut each used to mutate the
+   * sprite array and return without scheduling a write.
+   *
+   * It reads `latestDoc.current` rather than closing over `doc`, which is what lets it - and every
+   * handler built on it - keep one identity for the life of the editor. Side effects stay out of
+   * the `setState` updater, where StrictMode would run them twice.
+   */
+  const commit = useCallback(
+    (next: SpriteDocument | undefined) => {
+      const current = latestDoc.current;
+      if (!next || next === current) return;
+      latestDoc.current = next;
+      // The panel above still owns `fileInfo`; keep its array pointing at the current sheet.
+      if (context.fileInfo) context.fileInfo.sprites = next.sprites;
+      setDoc(next);
+      scheduleSave();
+    },
+    [context.fileInfo]
   );
+
+  /** Change which sprite is being edited. Navigation is not an edit, and never writes the file. */
+  const navigate = useCallback((index: number) => {
+    const current = latestDoc.current;
+    if (!current) return;
+    // A region marked on one sprite means nothing on another, and a floating paste that survived
+    // the move would commit onto a sprite the user never aimed at.
+    setSelection(undefined);
+    setFloating(undefined);
+    const next = selectSprite(current, index);
+    if (next === current) return;
+    latestDoc.current = next;
+    setDoc(next);
+  }, []);
+
+  /** Run a whole-sprite transform as one undoable, saved operation. */
+  const applyTransform = useCallback(
+    (transform: (map: Uint8Array) => Uint8Array) => {
+      const current = latestDoc.current;
+      if (!current) return;
+      commit(applyPixels(current, transform(currentSprite(current))));
+    },
+    [commit]
+  );
+
+  /*
+   * Stable callbacks, all of them.
+   *
+   * Every one used to be an inline arrow rebuilt on each render. That is what defeated
+   * `NextPaletteViewer`'s own `PaletteItem` memo - all 256 swatches re-rendered per mouse-move -
+   * and it is what makes the memoized grid, toolbars and thumbnails below actually hold.
+   */
+  const handleUndo = useCallback(() => commit(undo(latestDoc.current)), [commit]);
+  const handleRedo = useCallback(() => commit(redo(latestDoc.current)), [commit]);
+  const handleDuplicate = useCallback(() => commit(duplicateSprite(latestDoc.current)), [commit]);
+  const handleMoveLeft = useCallback(() => commit(moveSpriteLeft(latestDoc.current)), [commit]);
+  const handleMoveRight = useCallback(() => commit(moveSpriteRight(latestDoc.current)), [commit]);
+  /* Dropping a thumbnail is one edit, exactly like the Move buttons - undoable and saved. */
+  const handleReorder = useCallback(
+    (from: number, to: number) => commit(moveSprite(latestDoc.current, from, to)),
+    [commit]
+  );
+  const handleAdd = useCallback(
+    () => commit(addSprite(latestDoc.current, transparencyRef.current)),
+    [commit]
+  );
+  const handleCommitPixels = useCallback(
+    // `applyPixels` ignores a change that paints nothing, so a click with a tool that draws nothing
+    // - or a drag cancelled with Escape - pushes no undo entry and triggers no write.
+    (map: Uint8Array) => commit(applyPixels(latestDoc.current, map)),
+    [commit]
+  );
+
+  const handleToggleSeparated = useCallback(() => setSpriteImagesSeparated((v) => !v), []);
+  const handleToggleGrid = useCallback(() => setShowGrid((v) => !v), []);
+  const handleToggleOnionSkin = useCallback(() => setShowOnionSkin((v) => !v), []);
+
+  /*
+   * Resizing the sheet.
+   *
+   * Clamped against the editor's own height so a drag can never take the canvas below its floor or
+   * shrink the sheet past one whole row. The view state is written on *release*, not per pixel -
+   * a drag is one decision, not two hundred.
+   */
+  const editorRef = useRef<HTMLDivElement>(null);
+  const handleResizeSheet = useCallback(
+    (height: number) =>
+      setSheetHeight(clampSheetHeight(height, editorRef.current?.clientHeight ?? 0)),
+    []
+  );
+  const handleResizeSheetEnd = useCallback(
+    (height: number) => {
+      const clamped = clampSheetHeight(height, editorRef.current?.clientHeight ?? 0);
+      setSheetHeight(clamped);
+      context.changeViewState((vs) => (vs.sheetHeight = clamped));
+    },
+    [context]
+  );
+  const handleResetSheetHeight = useCallback(() => {
+    setSheetHeight(DEFAULT_SHEET_HEIGHT);
+    context.changeViewState((vs) => (vs.sheetHeight = DEFAULT_SHEET_HEIGHT));
+  }, [context]);
+  const handleFpsChange = useCallback(
+    (fps: number) => context.changeViewState((vs) => (vs.animationFps = fps)),
+    [context]
+  );
+  const handleToggleTransparency = useCallback(() => setShowTrancparencyColor((v) => !v), []);
+  const handleRotateCcw = useCallback(
+    () => applyTransform(rotateCounterClockwise),
+    [applyTransform]
+  );
+  const handleRotateCw = useCallback(() => applyTransform(rotateClockwise), [applyTransform]);
+  const handleFlipHorizontal = useCallback(() => applyTransform(flipHorizontal), [applyTransform]);
+  const handleFlipVertical = useCallback(() => applyTransform(flipVertical), [applyTransform]);
+  const handleSelectTool = useCallback((tool: SpriteTools) => setCurrentTool(tool), []);
+  const handleSelectPencilColor = useCallback((index: number) => setPencilColorIndex(index), []);
+  const handleSelectFillColor = useCallback((index: number) => setFillColorIndex(index), []);
+  const handleSwapColors = useCallback(() => {
+    const pen = pencilRef.current;
+    setPencilColorIndex(fillRef.current);
+    setFillColorIndex(pen);
+  }, []);
+
+  /*
+   * The canvas is sized from the pane, not from a constant.
+   *
+   * This is the change the whole layout exists for. The canvas was 257/385/513 px whatever the
+   * window was, so the editor got *emptier* as the pane grew; the rulers' 14px and 12px gutters are
+   * handed to the hook so "fit" means fit including them.
+   */
+  const persistZoom = useCallback(
+    (cell: number, fit: boolean) =>
+      context.changeViewState((vs) => {
+        vs.zoomFactor = cell;
+        vs.fitToPane = fit;
+      }),
+    [context]
+  );
+  const zoom = useFittedCellSize(
+    cellSizeFromLegacyZoom(context.viewState?.zoomFactor) ?? 24,
+    context.viewState?.fitToPane ?? true,
+    persistZoom,
+    { gutterX: 14, gutterY: 12 }
+  );
+
+  /*
+   * Escape backs out one level at a time: a floating paste, then the selection, then the tool.
+   *
+   * The grid cancels an in-flight *drag* and stops the event there; everything else reaches here.
+   * The original wrote `vs.currentTool` straight into the view state and never called
+   * `setCurrentTool`, so the toolbar kept the old tool and the sync effect overwrote the value
+   * again - Escape did nothing at all.
+   */
+  const handleEscape = useCallback(() => {
+    if (floatingRef.current) {
+      setFloating(undefined);
+      return;
+    }
+    if (selectionRef.current) {
+      setSelection(undefined);
+      return;
+    }
+    setCurrentTool("select");
+  }, []);
+
+  /* --- selection and the clipboard ------------------------------------------------------- */
+
+  const selectionRef = useRef<SpriteRegion | undefined>(undefined);
+  const floatingRef = useRef<FloatingPatch | undefined>(undefined);
+  selectionRef.current = selection;
+  floatingRef.current = floating;
+
+  /**
+   * Move the floating patch, and let the rest of this task see where it went.
+   *
+   * A release does two things in the SAME event: the last `moveTo` (mouseup carries a position of
+   * its own) and the commit. Waiting for a render between them would commit the position before
+   * last - the patch would land one cell short of where it was dropped. Writing the ref here is the
+   * same trick `commit` uses for the document.
+   */
+  const setFloat = useCallback((next: FloatingPatch) => {
+    floatingRef.current = next;
+    setFloating(next);
+  }, []);
+
+  /** Put a floating paste down. One undo entry, for the whole paste. */
+  const commitFloating = useCallback(() => {
+    const pending = floatingRef.current;
+    const current = latestDoc.current;
+    if (!pending || !current) return false;
+    setFloating(undefined);
+    // A lifted patch leaves a hole behind, and closing it belongs to the same edit: clear then
+    // paste, committed once. Dropping a patch back where it started changes no bytes, and
+    // `applyPixels` discards that - so a click inside the selection costs no undo entry.
+    const base = currentSprite(current);
+    const source = pending.lifted ? clearRegion(base, pending.lifted, transparencyRef.current) : base;
+    commit(applyPixels(current, pasteRegion(source, pending.patch, pending.at)));
+    setSelection(patchRegionAt(pending.patch, pending.at));
+    return true;
+  }, [commit]);
+
+  const handleSelectAll = useCallback(() => {
+    commitFloating();
+    setSelection(WHOLE_SPRITE);
+  }, [commitFloating]);
+
+  /**
+   * Copy, cut, paste and delete, each acting on whichever thing is active.
+   *
+   * A marked pixel region wins over the sprite, so one key set covers both without a modifier for
+   * each - see `sprite-clipboard.ts`.
+   */
+  const handleCopy = useCallback(() => {
+    const current = latestDoc.current;
+    if (!current) return;
+    const region = selectionRef.current;
+    if (region) spriteClipboard.putRegion(extractRegion(currentSprite(current), region));
+    else spriteClipboard.putSprite(currentSprite(current));
+  }, []);
+
+  const handleDeleteSelection = useCallback(() => {
+    const current = latestDoc.current;
+    const region = selectionRef.current;
+    if (!current || !region) return false;
+    commit(
+      applyPixels(current, clearRegion(currentSprite(current), region, transparencyRef.current))
+    );
+    return true;
+  }, [commit]);
+
+  /** Delete acts on the marked region when there is one, and on the whole sprite otherwise. */
+  const handleDeleteOrRemove = useCallback(() => {
+    if (!handleDeleteSelection()) commit(removeSprite(latestDoc.current));
+  }, [commit, handleDeleteSelection]);
+
+  const handleCut = useCallback(() => {
+    handleCopy();
+    // With a region marked this is a region cut; otherwise it is the sheet operation, which is
+    // where "Cut sprite" finally becomes true rather than being a delete with a scissors icon.
+    if (!handleDeleteSelection()) commit(removeSprite(latestDoc.current));
+  }, [commit, handleCopy, handleDeleteSelection]);
+
+  const handlePaste = useCallback(() => {
+    const current = latestDoc.current;
+    if (!current) return;
+    const clip = spriteClipboard.get();
+    if (clip.region) {
+      commitFloating();
+      const anchor = selectionRef.current ?? { row: 0, col: 0 };
+      setFloating({
+        patch: clip.region,
+        at: clampPasteOrigin({ row: anchor.row, col: anchor.col }, clip.region)
+      });
+      return;
+    }
+    if (clip.sprite) {
+      // A whole sprite pastes as a new sprite after the selection, not over the current one -
+      // silently replacing what someone is working on is not what Paste means.
+      const next = addSprite(current, transparencyRef.current);
+      commit(applyPixels(next, clip.sprite));
+    }
+  }, [commit, commitFloating]);
+
+  /** Nudge a floating paste, or move the marked region. Returns false if there is nothing to move. */
+  const handleNudge = useCallback((dRow: number, dCol: number) => {
+    const pending = floatingRef.current;
+    if (!pending) return false;
+    setFloating({
+      ...pending,
+      at: clampPasteOrigin({ row: pending.at.row + dRow, col: pending.at.col + dCol }, pending.patch)
+    });
+    return true;
+  }, []);
+
+  /* --- dragging the selection --------------------------------------------------------------- */
+
+  /** Where a move gesture grabbed the patch, and where the patch was at that moment. */
+  const grab = useRef<{ pointer: SpritePoint; origin: SpritePoint } | undefined>(undefined);
+
+  /**
+   * A drag started on pixels that can be carried.
+   *
+   * Either they are already floating - a paste the user has not put down yet, which just keeps
+   * flying - or they are the marked region, which is lifted here. Lifting only builds the patch;
+   * the sprite is not touched until the drop.
+   */
+  const handleMoveStart = useCallback((at: SpritePoint) => {
+    const flying = floatingRef.current;
+    if (flying) {
+      grab.current = { pointer: at, origin: flying.at };
+      return;
+    }
+    const region = selectionRef.current;
+    const current = latestDoc.current;
+    if (!region || !current) return;
+    const origin = { row: region.row, col: region.col };
+    grab.current = { pointer: at, origin };
+    setFloat({ patch: extractRegion(currentSprite(current), region), at: origin, lifted: region });
+  }, [setFloat]);
+
+  const handleMoveTo = useCallback((at: SpritePoint) => {
+    const anchor = grab.current;
+    const flying = floatingRef.current;
+    if (!anchor || !flying) return;
+    setFloat({
+      ...flying,
+      at: movePasteOrigin(anchor.origin, anchor.pointer, at, flying.patch)
+    });
+  }, [setFloat]);
+
+  const handleMoveEnd = useCallback(() => {
+    grab.current = undefined;
+    commitFloating();
+  }, [commitFloating]);
+
+  /**
+   * Escape, pressed while a drag is still in flight.
+   *
+   * A lift is abandoned outright: its patch never touched the sprite, so letting it go puts every
+   * pixel back where it was - which is what the hole was always promising. A paste that was already
+   * in the air is not this drag's to destroy; it returns to where the grab found it, and the next
+   * Escape is what cancels the paste itself. Without this the grid would cancel the drag and leave
+   * the patch stranded above a hole, needing a second Escape to put the pixels back.
+   */
+  const handleCancelDrag = useCallback(() => {
+    const anchor = grab.current;
+    const flying = floatingRef.current;
+    grab.current = undefined;
+    if (!anchor || !flying) return;
+    if (flying.lifted) {
+      floatingRef.current = undefined;
+      setFloating(undefined);
+      return;
+    }
+    setFloat({ ...flying, at: anchor.origin });
+  }, [setFloat]);
+
+  /** Step through the sheet with `[` and `]`. */
+  const handlePrevSprite = useCallback(
+    () => navigate((latestDoc.current?.selected ?? 0) - 1),
+    [navigate]
+  );
+  const handleNextSprite = useCallback(
+    () => navigate((latestDoc.current?.selected ?? 0) + 1),
+    [navigate]
+  );
+
+  /*
+   * Draw at the keyboard cursor.
+   *
+   * It goes through the same `applyTool` the pointer drag does, with `from === to`, so a keypress
+   * is exactly a click at that pixel - including for the shape tools, where a click draws a
+   * one-pixel shape. A second tool table for the keyboard is the thing this avoids.
+   */
+  const handleDrawAtCursor = useCallback(
+    (at: SpritePoint) => {
+      const current = latestDoc.current;
+      if (!current) return;
+      const result = applyTool(
+        currentSprite(current),
+        toolRef.current,
+        at,
+        at,
+        pencilRef.current,
+        fillRef.current
+      );
+      if (result) commit(applyPixels(current, result.map));
+    },
+    [commit]
+  );
+
+  const handleKeyDown = useSpriteShortcuts(hover, {
+    selectTool: handleSelectTool,
+    swapColors: handleSwapColors,
+    undo: handleUndo,
+    redo: handleRedo,
+    previousSprite: handlePrevSprite,
+    nextSprite: handleNextSprite,
+    zoomIn: zoom.zoomIn,
+    zoomOut: zoom.zoomOut,
+    fit: zoom.fit,
+    drawAtCursor: handleDrawAtCursor,
+    cut: handleCut,
+    copy: handleCopy,
+    paste: handlePaste,
+    selectAll: handleSelectAll,
+    deleteSelection: handleDeleteSelection,
+    nudge: handleNudge,
+    commitFloating,
+    escape: handleEscape
+  });
 
   // --- Render the editor
-  return viewStateInitialized.current ? (
-    <>
-      <SpriteFileToolbar />
-      <div style={{ height: "70px", backgroundColor: "var(--bgcolor-editors)" }}>
-        <ScrollViewer allowVertical={false} thinScrollBar={true}>
-          <div className={styles.spriteScroller}>
-            {context.fileInfo?.sprites &&
-              context.fileInfo.sprites.map((spr, idx) => {
-                return (
-                  <SpriteImage
-                    key={idx}
-                    title={`Sprite #${idx + 1} of ${context.fileInfo.sprites.length}`}
-                    spriteMap={spr}
-                    palette={palette}
-                    transparencyIndex={0xe3}
-                    separated={spriteImagesSeparated}
-                    showTransparencyColor={showTrancparencyColor}
-                    selected={selectedSpriteIndex === idx}
-                    clicked={() => {
-                      setSelectedSpriteIndex(idx);
-                      setSpriteMap(spr);
-                    }}
-                  />
-                );
-              })}
-          </div>
-        </ScrollViewer>
-      </div>
-      <SpriteEditorToolbar />
-      <Panel xclass={styles.editorPanel}>
-        <Row xclass={styles.editorInfo}>
-          <LabelSeparator width={8} />
-          <Text text="Pencil color:" />
-          <LabelSeparator width={8} />
-          <ColorSample
-            color={palette[pencilColorIndex]}
-            isTransparency={pencilColorIndex === 0xe3}
-          />
-          <LabelSeparator width={8} />
-          <SmallIconButton
-            iconName="@swap"
-            title="Swap colors"
-            enable={true}
-            clicked={async () => {
-              setPencilColorIndex(fillColorIndex);
-              setFillColorIndex(pencilColorIndex);
-            }}
-          />
-          <LabelSeparator />
-          <Text text="Fill color:" />
-          <LabelSeparator width={8} />
-          <ColorSample color={palette[fillColorIndex]} isTransparency={fillColorIndex === 0xe3} />
-          <LabelSeparator width={8} />
-          <ToolbarSeparator small={true} />
-          <Text text="Position:" />
-          <Value text={`(${currentRow}:${currentColumn})`} width={60} />
-          <Text text="Color:" />
-          <Value
-            text={currentColorIndex >= 0 ? "$" + toHexa2(currentColorIndex) : "-"}
-            width={32}
-          />
-          {currentColorIndex >= 0 && (
-            <ColorSample
-              color={palette[currentColorIndex]}
-              isTransparency={currentColorIndex === 0xe3}
-            />
-          )}
-          <LabelSeparator width={8} />
-          {rgbParts && <Value text={`(R: ${rgbParts[0]}, G: ${rgbParts[1]}, B: ${rgbParts[2]})`} />}
-        </Row>
-        <Row>
-          <div className={styles.editorArea}>
+  if (!viewStateInitialized.current || !doc) return null;
+
+  /*
+   * The previous sprite is the onion reference, not the next one.
+   *
+   * A sheet is read forward when it is an animation, so "the frame before this one" is the thing
+   * worth seeing through the holes. Showing both would need the two to be told apart, and the only
+   * honest way to do that over pixel art is a tint - which reads as part of the artwork.
+   */
+  const onionSprite =
+    showOnionSkin && selectedSpriteIndex > 0 ? sprites[selectedSpriteIndex - 1] : undefined;
+
+  const spriteLabel = `Sprite ${selectedSpriteIndex + 1} of ${sprites.length} \u00b7 16\u00d716 \u00b7 8bpp`;
+
+  return (
+    /*
+     * The shortcuts live on the root, not on the canvas.
+     *
+     * Keys bubble, so they work wherever focus is inside the editor - the rail, the sheet, the
+     * palette - rather than only while the 16x16 grid happens to hold it. `tabIndex={-1}` makes the
+     * root focusable by click without adding a stop to the tab order.
+     */
+    <div
+      ref={editorRef}
+      className={styles.editor}
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
+      style={{ "--sheet-height": `${sheetHeight}px` } as React.CSSProperties}
+    >
+      <SpriteSheetToolbar
+        spriteCount={sprites.length}
+        selectedIndex={selectedSpriteIndex}
+        canUndo={canUndo(doc)}
+        canRedo={canRedo(doc)}
+        canPaste={canPaste}
+        hasSelection={!!selection}
+        separated={!!spriteImagesSeparated}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onDuplicate={handleDuplicate}
+        onCut={handleCut}
+        onCopy={handleCopy}
+        onPaste={handlePaste}
+        onDelete={handleDeleteOrRemove}
+        onMoveLeft={handleMoveLeft}
+        onMoveRight={handleMoveRight}
+        onAdd={handleAdd}
+        onToggleSeparated={handleToggleSeparated}
+      />
+
+      <SpriteToolRail
+        tool={currentTool}
+        onSelectTool={handleSelectTool}
+        onRotateCcw={handleRotateCcw}
+        onRotateCw={handleRotateCw}
+        onFlipHorizontal={handleFlipHorizontal}
+        onFlipVertical={handleFlipVertical}
+      />
+
+      <div className={styles.stage}>
+        <SpriteStageHeader
+          cellSize={zoom.cellSize}
+          fitToPane={zoom.fitToPane}
+          canZoomIn={zoom.canZoomIn}
+          canZoomOut={zoom.canZoomOut}
+          showGrid={showGrid}
+          showOnionSkin={showOnionSkin}
+          hasOnionSource={selectedSpriteIndex > 0}
+          showTransparency={!!showTrancparencyColor}
+          onZoomIn={zoom.zoomIn}
+          onZoomOut={zoom.zoomOut}
+          onFit={zoom.fit}
+          onToggleGrid={handleToggleGrid}
+          onToggleOnionSkin={handleToggleOnionSkin}
+          onToggleTransparency={handleToggleTransparency}
+        />
+        <div ref={zoom.containerRef} className={styles.canvasArea}>
+          <div className={styles.canvasFrame}>
+            <SpriteRulers cellSize={zoom.cellSize} orientation="top" />
+            <SpriteRulers cellSize={zoom.cellSize} orientation="left" />
             <SpriteEditorGrid
-              zoomFactor={zoomFactor}
+              cellSize={zoom.cellSize}
+              showGrid={showGrid}
+              selection={selection}
+              floating={
+                floating
+                  ? {
+                      region: patchRegionAt(floating.patch, floating.at),
+                      pixels: floating.patch.pixels
+                    }
+                  : undefined
+              }
+              onSelectRegion={setSelection}
+              lifted={floating?.lifted}
+              onMoveStart={handleMoveStart}
+              onMoveTo={handleMoveTo}
+              onMoveEnd={handleMoveEnd}
+              onionSprite={onionSprite}
               spriteMap={spriteMap}
               palette={palette}
-              transparencyIndex={0xe3}
+              transparencyIndex={transparencyIndex}
               pencilColorIndex={pencilColorIndex}
               fillColorIndex={fillColorIndex}
               tool={currentTool}
-              onPositionChange={(row, col) => {
-                setCurrentRow(row?.toString() ?? "-");
-                setCurrentColumn(col?.toString() ?? "-");
-                setCurrentColorIndex(
-                  row !== undefined && col !== undefined ? spriteMap[row * 16 + col] : -1
-                );
-              }}
-              onSpriteChange={(newSpriteMap: Uint8Array) => {
-                updateSpriteMap(newSpriteMap);
-              }}
-              onSpriteOperation={(oldSpriteMap, newSpriteMap) => {
-                pushEdit({
-                  type: "SpriteChange",
-                  oldSpriteMap,
-                  newSpriteMap
-                });
-              }}
-              onSignEscape={() => context.changeViewState((vs) => (vs.currentTool = "pointer"))}
+              hover={hover}
+              onCommit={handleCommitPixels}
+              onCancelDrag={handleCancelDrag}
             />
-            <Column>
-              <NextPaletteViewer
-                palette={defaultPalette}
-                transparencyIndex={0xe3}
-                allowSelection={true}
-                smallDisplay={true}
-                onSelection={(idx) => setPencilColorIndex(idx)}
-                onRightClick={(idx) => setFillColorIndex(idx)}
-              />
-            </Column>
           </div>
-        </Row>
-      </Panel>
-    </>
-  ) : null;
-};
+        </div>
+        <SpriteStatusBar
+          hover={hover}
+          palette={palette}
+          transparencyIndex={transparencyIndex}
+          spriteLabel={spriteLabel}
+        />
+      </div>
 
-type ColorSampleProps = {
-  color: number;
-  isTransparency?: boolean;
-};
+      <div className={styles.inspector}>
+      <div className={styles.colorsPane}>
+          <div className={styles.colorPair}>
+            <span className={styles.colorSlot}>
+              <span className={styles.colorSlotLabel}>Pen</span>
+              <ColorSample
+                color={palette[pencilColorIndex]}
+                isTransparency={pencilColorIndex === transparencyIndex}
+                xclass={styles.colorSampleLarge}
+              />
+            </span>
+            <SmallIconButton
+              iconName="spr-swap"
+              title="Swap pen and fill colors (X)"
+              enable={true}
+              clicked={handleSwapColors}
+            />
+            <span className={styles.colorSlot}>
+              <span className={styles.colorSlotLabel}>Fill</span>
+              <ColorSample
+                color={palette[fillColorIndex]}
+                isTransparency={fillColorIndex === transparencyIndex}
+                xclass={styles.colorSampleLarge}
+              />
+            </span>
+            <span className={styles.statusSpacer} />
+            <span className={styles.colorIndex}>${pencilColorIndex.toString(16).toUpperCase().padStart(2, "0")}</span>
+          </div>
+        </div>
+        <div className={styles.inspectorSection}>
+          <div className={styles.sectionHeader}>
+            <SpritePaletteHeader
+              source={source}
+              shownBank={shownBank}
+              liveBank={liveBank}
+              onPinBank={pinBank}
+            />
+          </div>
+          <div className={styles.paletteBody}>
+            <NextPaletteViewer
+              palette={palette}
+              cellSize={17}
+              transparencyIndex={transparencyIndex}
+              allowSelection={true}
+              // The viewer has always accepted this and the editor never passed it, so the palette
+              // showed no selection at all - not the pen colour restored from the view state, and
+              // not the result of the Swap button.
+              selectedIndex={pencilColorIndex}
+              onSelection={handleSelectPencilColor}
+              onRightClick={handleSelectFillColor}
+            />
+          </div>
+        </div>
+        <div className={styles.inspectorSection}>
+          <div className={styles.sectionHeader}>Preview</div>
+          <SpritePreview
+            sprites={sprites}
+            selectedIndex={selectedSpriteIndex}
+            palette={palette}
+            transparencyIndex={transparencyIndex}
+            initialFps={context.viewState?.animationFps ?? 12}
+            onFpsChange={handleFpsChange}
+          />
+        </div>
+      </div>
 
-// --- Helper component to represent a color sample
-const ColorSample = memo(({ color, isTransparency }: ColorSampleProps) => {
-  const backgroundColor = getCssStringForPaletteCode(color);
-  const midColor = getLuminanceForPaletteCode(color) < 3.5 ? "white" : "black";
-
-  return (
-    <div className={styles.colorSample} style={{ backgroundColor }}>
-      {isTransparency && (
-        <svg viewBox="0 0 16 16">
-          <circle cx={8} cy={8} r={5} fill={midColor} fillOpacity={0.5} />
-        </svg>
-      )}
+      <SpriteSheetBrowser
+        sprites={sprites}
+        selectedIndex={selectedSpriteIndex}
+        palette={palette}
+        transparencyIndex={transparencyIndex}
+        separated={!!spriteImagesSeparated}
+        showTransparencyColor={!!showTrancparencyColor}
+        onSelect={navigate}
+        onReorder={handleReorder}
+        height={sheetHeight}
+        onResize={handleResizeSheet}
+        onResizeEnd={handleResizeSheetEnd}
+        onResetHeight={handleResetSheetHeight}
+      />
     </div>
   );
-});
-
-type EditInfo = {
-  type: "SpriteListChange" | "SpriteChange";
-  oldSpriteIndex?: number;
-  oldSpriteList?: Uint8Array[];
-  oldSpriteMap?: Uint8Array;
-  newSpriteIndex?: number;
-  newSpriteList?: Uint8Array[];
-  newSpriteMap?: Uint8Array;
 };
+

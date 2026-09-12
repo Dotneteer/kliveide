@@ -10,6 +10,18 @@ import {
 import { TabButton, TabButtonSpace } from "@controls/TabButton";
 import { ConsoleOutput } from "../DocumentPanels/helpers/ConsoleOutput";
 
+/**
+ * The prompt sigil, and the prefix every executed command is echoed with.
+ *
+ * One constant because the two must match: the strip shows it live, and `executeCommand` writes it
+ * into the buffer as the echo of what you ran. They were both `$` and would otherwise drift.
+ *
+ * It is also what the Copy-to-clipboard button puts on each echoed line. `\u276f` rather than `$`
+ * is deliberate there too — these are Klive commands, not shell commands, and a `$` prefix invites
+ * pasting them somewhere they will not run.
+ */
+const PROMPT_SIGIL = "\u276f";
+
 export const CommandPanel = () => {
   const dispatch = useDispatch();
   const { ideCommandsService } = useAppServices();
@@ -35,13 +47,22 @@ export const CommandPanel = () => {
       <div className={styles.outputWrapper}>
       <ConsoleOutput buffer={buffer} followTail />
       </div>
-      <div className={styles.promptWrapper}>
-        <span className={styles.promptPrefix}>$</span>
+      {/*
+        * `executing` sits on the strip, not on the input: the rail and the placeholder are both
+        * driven from it, and the rail is drawn by the strip's own ::before.
+        */}
+      <div
+        className={classnames(styles.promptWrapper, {
+          [styles.executing]: executing
+        })}
+      >
+        <span className={styles.promptPrefix} aria-hidden="true">
+          {PROMPT_SIGIL}
+        </span>
         <input
           ref={inputRef}
-          className={classnames(styles.prompt, {
-            [styles.executing]: executing
-          })}
+          className={styles.prompt}
+          aria-label="Interactive command prompt"
           placeholder={
             executing ? "Executing command..." : "Type ? + Enter for help"
           }
@@ -91,7 +112,7 @@ export const CommandPanel = () => {
     setExecuting(true);
     dispatch(setIdeStatusMessageAction("Executing command"));
     buffer.resetStyle();
-    buffer.writeLine(`$ ${command}`);
+    buffer.writeLine(`${PROMPT_SIGIL} ${command}`);
     const result = await ideCommandsService.executeInteractiveCommand(
       command,
       buffer

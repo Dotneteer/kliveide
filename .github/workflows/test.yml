@@ -25,5 +25,10 @@ jobs:
       - name: Check ZX Spectrum 48K WASM artifact size
         run: npm run check:sp48-wasm-size
 
+      # Fails only on type errors that are not in build/type-errors-baseline.json, so the existing
+      # backlog does not block CI while it is being paid down. See scripts/check-types.cjs.
+      - name: Type-check
+        run: npm run build:check
+
       - name: Run unit and component tests
         run: npm run test:unit

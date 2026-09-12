@@ -31,6 +31,12 @@ export function watchReducer(
     case "CLEAR_WATCH":
       return [];
 
+    // --- Replaces the whole list, which is how a project's saved watches are restored. An absent
+    // --- payload means "this project has none", so it clears rather than keeping the previous
+    // --- project's watches around.
+    case "SET_WATCHES":
+      return payload?.watches ?? [];
+
     default:
       return state;
   }

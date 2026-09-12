@@ -24,7 +24,14 @@ export const componentAliases: Record<string, string> = {
   "--color-command-icon-disabled": "var(--text-disabled)",
   "--bgcolor-scrollbar": "transparent",
   "--bgcolor-scrollbar-thumb": "var(--border-strong)",
-  "--bgcolor-attached-shadow": "var(--surface-canvas)",
+  /*
+   * The overflow shadow. This used to be `var(--surface-canvas)` — a *surface*, used as a shadow.
+   * That is why the affordance never appeared: in dark, canvas (#141517) is three RGB steps from
+   * the panel it was drawn on, and in light it is pure white, i.e. a white shadow. Both tones were
+   * painting something perfectly invisible.
+   */
+  "--bgcolor-attached-shadow": "var(--shadow-scroll)",
+  "--bgcolor-attached-shadow-line": "var(--shadow-scroll-line)",
   "--bgcolor-button": "var(--accent-solid)",
   "--color-button": "var(--text-on-accent)",
   "--bgcolor-button-pointed": "var(--accent-solid-hover)",
@@ -32,14 +39,38 @@ export const componentAliases: Record<string, string> = {
   "--color-button-focused": "var(--accent-solid)",
   "--bgcolor-button-disabled": "var(--surface-active)",
   "--color-button-disabled": "var(--text-disabled)",
+  /**
+   * The secondary button — an outline, not a second filled accent.
+   *
+   * `Button` used to have one variant axis (`isDanger`), so a dialog footer drew Cancel and its
+   * commit button in the identical accent fill and nothing said which one committed.
+   */
+  "--bgcolor-button-secondary": "transparent",
+  "--color-button-secondary": "var(--text-primary)",
+  "--border-button-secondary": "var(--border-default)",
+  "--bgcolor-button-secondary-pointed": "var(--surface-hover)",
+  /**
+   * The destructive button takes the *status* hue. It used to take `--console-ansi-red`, and the
+   * ANSI table is deliberately non-semantic and identical in both tones, so a light-theme danger
+   * button painted itself in the dark theme's red.
+   */
+  "--bgcolor-button-danger": "var(--status-error)",
+  "--bgcolor-button-danger-pointed": "var(--status-error-hover)",
+  "--color-button-danger": "var(--text-on-accent)",
   "--color-text-hilite": "var(--accent-text)",
+  /**
+   * A dialog field needs an edge, not just a fill. `--surface-raised` is `#ffffff` in the light
+   * tone and so is the modal body, which left every input and dropdown in every dialog invisible.
+   */
   "--bgcolor-input": "var(--surface-raised)",
   "--color-input": "var(--text-primary)",
+  "--border-input": "var(--border-default)",
   "--bgcolor-item-hover": "var(--surface-hover)",
 
   // --- Dropdown (the source misspells this group "Drowpdown") -----------------------------------
   "--bg-color-dropdown-input": "var(--surface-raised)",
   "--color-dropdown-input": "var(--text-primary)",
+  "--border-color-dropdown-input": "var(--border-default)",
   "--bg-color-dropdown-menu": "var(--surface-overlay)",
   "--color-dropdown-menu": "var(--text-primary)",
   "--bg-color-dropdown-menu-pointed": "var(--surface-hover)",
@@ -66,19 +97,41 @@ export const componentAliases: Record<string, string> = {
   "--radius-context-menu": "var(--radius-md)",
 
   // --- Modal ------------------------------------------------------------------------------------
+  /**
+   * A dialog is a floating *tool panel*, not a lifted card.
+   *
+   * Header and footer take `--surface-chrome` and the flat `PanelHeader` idiom the Output panel and
+   * the sprite editor's toolbar already wear. They deliberately do **not** take `--surface-raised`:
+   * "raised" means lighter, which in the light tone means `#ffffff` — the same value as
+   * `--surface-overlay`, so the header, the body and the footer all painted one undifferentiated
+   * white and the band existed only as a 2%-opacity texture. Same trap as the sidebar header band.
+   *
+   * The seams are `--border-default`, not `--border-subtle`: they separate two *surfaces*, where
+   * subtle divides one surface into cells.
+   */
   "--bgcolor-modal": "var(--surface-overlay)",
   "--color-modal": "var(--text-primary)",
   "--border-modal": "1px solid var(--border-default)",
-  "--border-modal-section": "1px solid var(--border-subtle)",
+  "--border-modal-section": "1px solid var(--border-default)",
   "--shadow-modal": "var(--shadow-3)",
-  "--color-modal-accent": "var(--accent-solid)",
-  "--radius-modal": "var(--radius-lg)",
-  "--bgcolor-modal-header": "var(--surface-raised)",
-  "--color-modal-header": "var(--text-primary)",
+  "--radius-modal": "var(--radius-md)",
+  "--bgcolor-modal-header": "var(--surface-chrome)",
+  "--color-modal-header": "var(--text-secondary)",
   "--bgcolor-modal-body": "var(--surface-overlay)",
   "--color-modal-body": "var(--text-primary)",
-  "--bgcolor-modal-footer": "var(--surface-raised)",
+  "--bgcolor-modal-footer": "var(--surface-chrome)",
   "--color-modal-footer": "var(--text-primary)",
+  /**
+   * The title chip — the accent's only landing place in the dialog chrome.
+   *
+   * The 2px accent slab this replaces was the last one in the app; document tabs moved the same cue
+   * onto a chip behind their glyph. `-danger` follows `primaryDanger`, so a destructive dialog is
+   * marked in the header as well as on its commit button.
+   */
+  "--bgcolor-modal-chip": "var(--accent-subtle)",
+  "--color-modal-chip": "var(--accent-text)",
+  "--bgcolor-modal-chip-danger": "var(--status-error-subtle)",
+  "--color-modal-chip-danger": "var(--status-error)",
 
   // --- Data labels ------------------------------------------------------------------------------
   // The re-cast from three hues to a contrast hierarchy (§5.2).
@@ -130,11 +183,63 @@ export const componentAliases: Record<string, string> = {
 
   // --- Sidebar ("sitebar" in the source) --------------------------------------------------------
   "--bgcolor-sitebar": "var(--surface-panel)",
-  "--color-header": "var(--text-secondary)",
+  /*
+   * The sidebar's own title ("DEBUG", "EXPLORER"). Promoted from `--text-secondary`: it is the
+   * heading the panel headers below it sit under, and it was rendering *quieter* than they were.
+   */
+  "--color-header": "var(--text-primary)",
   "--color-chevron": "var(--text-tertiary)",
   "--color-chevron-selected": "var(--text-primary)",
   "--color-panel-header": "var(--text-secondary)",
+  /* An expanded panel's title, and any header under the pointer. */
+  "--color-panel-header-active": "var(--text-primary)",
   "--color-panel-border": "var(--border-subtle)",
+  /*
+   * The rule between sections of a register/state panel -- the `<Separator/>` after the Z80 flag
+   * strip, after WZ, after IWV, and its equivalents in the M6510, VIC, Blink and ULA panels.
+   *
+   * `--border-strong`, not the `--border-default` these rules used to borrow from
+   * `--color-toolbar-separator`. A border token is only as visible as the surface behind it, and
+   * these sit on `--surface-panel` -- the darkest surface in the dark tone -- where
+   * `--border-default` measures 1.37:1 and disappears. `--border-strong` takes it to 1.74:1 in
+   * dark and 1.76:1 in light, and is what the ramp already carries for exactly this case: an edge
+   * that has to be seen rather than merely implied.
+   *
+   * A divider is not text and not a control, so no WCAG threshold applies to it; the number that
+   * matters is that it is now visible at a glance on both tones, which 1.37:1 was not.
+   */
+  "--color-panel-separator": "var(--border-strong)",
+
+  /*
+   * The overlay scrollbar handle, in its three interaction states.
+   *
+   * These replace hardcoded `#808080c0` / `#a0a0a0c0` / `#c0c0c0c0` literals that sat in
+   * `assets/styles/overlayScrollbars-modified.css` — a single mid-grey used for *both* tones, which
+   * is why the handle read as heavy on a dark panel and washed out on a light one.
+   *
+   * The three steps are existing text roles rather than new greys, so the progression is derived in
+   * both tones and moves with the neutral ramp: at rest `--text-disabled` (2.78:1 dark / 2.48:1
+   * light against `--surface-panel`) — present, but quieter than any real content; `--text-tertiary`
+   * under the pointer (~4.7:1); `--text-secondary` while dragging (~6.3:1). A scrollbar is
+   * navigation furniture, so resting contrast is deliberately below the data it sits beside.
+   *
+   * Tone-aware by construction, which is why the `os-theme-dark*` and `os-theme-light*` classes now
+   * carry identical declarations — the *token* resolves per tone, so the two class pairs no longer
+   * need to differ. (They are kept distinct only because `ScrollViewer` still selects between them.)
+   */
+  "--color-scrollbar-handle": "var(--text-disabled)",
+  "--color-scrollbar-handle-hover": "var(--text-tertiary)",
+  "--color-scrollbar-handle-active": "var(--text-secondary)",
+  /* The band behind a panel header, and its hover state. Gradients, not flat colours — see
+   * `--surface-header*` in semantic.ts for why the band is lit rather than filled. */
+  "--bgcolor-panelHeader":
+    "linear-gradient(180deg, var(--surface-header-lit), var(--surface-header))",
+  "--bgcolor-panelHeader-hover":
+    "linear-gradient(180deg, var(--surface-header-lit-hover), var(--surface-header-hover))",
+  /* The rule at the band's foot. The open panel earns the stronger of the two, because that is the
+   * edge data is about to scroll under. */
+  "--color-panelHeader-rule": "var(--border-subtle)",
+  "--color-panelHeader-rule-open": "var(--border-default)",
   "--color-panel-focused": "var(--accent-solid)",
 
   // --- Emulator area ----------------------------------------------------------------------------
@@ -174,8 +279,30 @@ export const componentAliases: Record<string, string> = {
   "--color-doc-border": "var(--border-subtle)",
   "--color-doc-activeText": "var(--text-primary)",
   "--color-doc-inactiveText": "var(--text-tertiary)",
+  /**
+   * Still emitted so a custom theme can set it, but the document tab strip no longer draws a top
+   * accent bar: the active tab is now marked by taking the editor's own fill, by weight, and by
+   * `--bgcolor-doc-activeGlyph` behind its file icon. The tool tabs keep their own
+   * `--btopcolor-tooltab-activeTab`.
+   */
   "--btopcolor-doc-activeTab": "var(--accent-solid)",
   "--bgcolor-doc-activeTab": "var(--surface-canvas)",
+  /**
+   * The rule between the tab strip and the editor below it.
+   *
+   * `--border-default`, not `--color-doc-border` (the hairline *between* tabs): this one separates
+   * two different surfaces, the other divides one surface into cells, and the audit's whole point
+   * was that those are not the same weight of line.
+   */
+  "--color-doc-seam": "var(--border-default)",
+  /**
+   * The chip behind the active tab's file glyph — where the accent now lands.
+   *
+   * A tab already carries a coloured, type-specific icon, so the accent has to either fight that
+   * icon or frame it. Framing it puts the accent on the mark the eye goes to first and costs the
+   * strip no extra ink.
+   */
+  "--bgcolor-doc-activeGlyph": "var(--accent-subtle)",
   "--bgcolor-doc-inactiveTab": "var(--surface-chrome)",
   "--color-tabbutton-fill-inactive": "var(--text-tertiary)",
   "--color-tabbutton-fill-active": "var(--text-primary)",
@@ -188,10 +315,70 @@ export const componentAliases: Record<string, string> = {
 
   // --- Tool area --------------------------------------------------------------------------------
   "--bgcolor-toolarea": "var(--surface-panel)",
+  /**
+   * The console's line-number gutter.
+   *
+   * `ConsoleOutput.module.scss` has read `var(--console-lineNo)` since the gutter was written, and
+   * `theme.ts` declares it as a themable property — but nothing ever gave it a value, so the
+   * reference resolved to nothing and the numbers inherited whatever colour the line was painting
+   * in. It went unnoticed because the only panel that could have shown it never switched
+   * `showLineNo` on.
+   *
+   * `--text-tertiary`, not `--text-disabled`: a line number is a quiet reference mark, not a
+   * switched-off control, and `textDisabled` is deliberately below AA.
+   */
+  "--console-lineNo": "var(--text-tertiary)",
+  /**
+   * The line number of a line a writer marked as a diagnostic.
+   *
+   * The status colours rather than the ANSI palette: these answer "is this an error" and should
+   * track the rest of the app's error and warning ink, not the sixteen terminal colours a pane
+   * happens to paint its text with.
+   */
+  "--console-lineNo-error": "var(--status-error)",
+  "--console-lineNo-warning": "var(--status-warning)",
+  /**
+   * The hovered console row. A console line carries clickable file references, so the row is a
+   * target as well as text; this is what says so before the pointer reaches the link itself.
+   */
+  "--bgcolor-console-hovered": "var(--surface-hover)",
+  /** Empty-state and watermark ink — present, but never competing with real output. */
+  "--color-console-quiet": "var(--text-tertiary)",
   "--btopcolor-tooltab-activeTab": "var(--accent-solid)",
   "--color-tooltab-active": "var(--text-primary)",
   "--color-tooltab-inactive": "var(--text-tertiary)",
-  "--color-prompt": "var(--status-success)",
+  /**
+   * The text you type at the command prompt — the same ink the console prints in, so the line you
+   * are writing matches the lines above it.
+   *
+   * It was `--status-success`. Nothing about an empty prompt is a success, and spending a status
+   * colour on a field with no status to report left both the sigil and every character typed in
+   * green at weight 600. Status colours are for the output, which already uses them.
+   */
+  "--color-prompt": "var(--text-primary)",
+  /** The `\u276f` sigil at rest: present, but not competing with what you are typing. */
+  "--color-prompt-sigil": "var(--text-tertiary)",
+  /** The sigil while the prompt has focus — the accent's second appearance on the row. */
+  "--color-prompt-sigil-active": "var(--accent-solid)",
+  /**
+   * The prompt strip's own ground.
+   *
+   * The prompt used to sit directly on the tool area with nothing between it and the scrolling
+   * output, which is most of why its focus ring had to shout: the ring was the only thing marking
+   * where the output stopped and the input began. A floor does that job without enclosing anything.
+   */
+  "--bgcolor-prompt": "var(--surface-chrome)",
+  /**
+   * The 2px edge down the left of the prompt strip, and the accent it takes when focused.
+   *
+   * This replaces `@include focus-ring` on the input. A `:focus-visible` ring is for picking one
+   * control out of many; `CommandPanel` focuses its input on mount and again after every command,
+   * and bounces focus back to it from the panel, so the ring was never not showing — permanent
+   * chrome the width of the tool area. The rail says the same thing from the edge of the strip,
+   * and it is the same device the Explorer uses to mark its selected row.
+   */
+  "--border-prompt-rail": "var(--border-strong)",
+  "--border-prompt-rail-active": "var(--accent-solid)",
   "--color-tool-border": "var(--border-default)",
 
   // --- Breakpoints ------------------------------------------------------------------------------
@@ -200,6 +387,21 @@ export const componentAliases: Record<string, string> = {
   "--color-breakpoint-mixed": "var(--console-ansi-bright-magenta)",
   "--color-breakpoint-disabled": "var(--text-disabled)",
   "--color-breakpoint-current": "var(--status-warning)",
+  /*
+   * The type badge beside a breakpoint — execute, memory read/write, I/O read/write.
+   *
+   * **One colour for all five.** These icons used to be painted from the *console's* ANSI palette —
+   * bright blue for execute, bright green for the reads, bright magenta for the writes — three
+   * saturated hues in the densest part of the sidebar, which is what §5.2 removed everywhere else.
+   * The hues were carrying the read/write distinction, but the redrawn glyphs now say it themselves:
+   * arrow up is a read, arrow down is a write, and the body says memory or port. With the shape
+   * doing that work the colour has nothing left to encode, so it stops competing.
+   *
+   * The secondary accent rather than the primary: the row's *value* (the disassembled instruction)
+   * is what the eye should land on first, and the badge is the supporting mark — the same primary/
+   * secondary split this panel already uses for its instruction and its addresses.
+   */
+  "--color-breakpoint-type": "var(--accent-secondary-text)",
 
   // --- Disassembly / memory ---------------------------------------------------------------------
   "--bgcolor-disass-even-row": "var(--surface-panel)",
@@ -317,6 +519,26 @@ export const componentAliases: Record<string, string> = {
   "--color-explorer-selected": "var(--text-primary)",
   "--color-explorer-focused-selected": "var(--text-primary)",
   "--border-explorer-focused": "var(--accent-solid)",
+  /**
+   * Folder names, which carry the tree's structure, against `--color-explorer` for the files
+   * inside them. Two inks plus two weights are what make a deep tree scannable without guides
+   * doing all the work.
+   *
+   * The filename's *extension* is receded with opacity rather than a third ink, because it must
+   * recede by the same amount on all four row backgrounds — normal, hovered, selected and
+   * focused-selected — and those do not share a foreground to derive a third ink from. The first
+   * attempt used `--text-tertiary`, which is one 10% step off `--text-secondary` and did not read
+   * at all against the file name it was meant to be separated from.
+   */
+  "--color-explorer-folder": "var(--text-primary)",
+  /**
+   * The 1px indent rules. `--border-default` rather than `--border-subtle`: a guide sits *on* the
+   * panel surface with nothing else near it, so the subtler of the two disappears at 1px — in light
+   * tone especially, where `borderSubtle` (#e5e7ea) is barely a step off `panel` (#f7f8f9).
+   */
+  "--border-explorer-guide": "var(--border-default)",
+  /** The rail marking the selected row. Reads at 3px where a full-bleed wash alone does not. */
+  "--border-explorer-rail": "var(--accent-solid)",
 
   // --- Debugging --------------------------------------------------------------------------------
   "--bgcolor-debug-active-bp": "var(--accent-subtle)",
@@ -327,10 +549,23 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-editors": "var(--surface-canvas)",
 
   // --- Sprite editor ----------------------------------------------------------------------------
-  "--bgcolor-sprite-editor": "var(--surface-panel)",
+  /** The editor's own ground. Declared since the token layers were built; first used in Phase 5. */
+  "--bgcolor-sprite-editor": "var(--surface-canvas)",
+  /** Ruler ticks and numbers. Also unused until Phase 5 - the rulers had never been written. */
   "--color-ruler-sprite-editor": "var(--text-tertiary)",
+  /** The crosshatch that marks a transparent pixel. */
   "--color-dash-sprite-editor": "var(--border-subtle)",
+  /** The cursor box on the hovered pixel. */
   "--color-pos-sprite-editor": "var(--accent-solid)",
+  /**
+   * The pixel grid, and the 8px guides over it.
+   *
+   * Two steps apart on purpose: the hairline has to separate adjacent pixels without competing with
+   * the artwork, while the guide marks the axis a 16x16 sprite is composed around and has to stay
+   * readable *through* it. Neither is a text or control edge, so no WCAG threshold applies.
+   */
+  "--color-grid-sprite-editor": "var(--border-subtle)",
+  "--color-guide-sprite-editor": "var(--border-strong)",
 
   // --- Switch -----------------------------------------------------------------------------------
   "--color-switch-on": "var(--accent-solid)",

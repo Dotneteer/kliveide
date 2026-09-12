@@ -1,16 +1,18 @@
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
-import type { CpuState, UlaState } from "@common/messaging/EmuApi";
+import { ULA_BORDER_COLOR_NAMES, type CpuState, type UlaState } from "@common/messaging/EmuApi";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
-import type { NextRegDescriptor, NextRegDeviceState, RegValueState } from "./NextRegDevice";
+import type { NextRegDeviceState, RegValueState } from "./NextRegDevice";
 import type { ZxNextWasmV2LoaderOptions, ZxNextWasmV2Runtime } from "./wasm/ZxNextWasmV2Loader";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { TapeMode } from "@emu/abstractions/TapeMode";
+import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { createMainApi } from "@common/messaging/MainApi";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
+import { UNPAGED_PARTITION_LABEL } from "./MemoryDevice";
 import { ZxNextMachine } from "./ZxNextMachine";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
@@ -102,6 +104,34 @@ export type ZxNextWasmV2RomImages = {
  * This is a deterministic adapter for IDE integration while later migration
  * steps continue moving full Next subsystems into C/WASM.
  */
+/**
+ * A complete, restorable record of a `ZxNextWasmV2Machine`: the WASM core's whole linear memory plus
+ * the fields this class mirrors outside it.
+ */
+type ZxNextWasmV2Checkpoint = {
+  key: string;
+
+  /**
+   * The core's linear memory, minus the frame-trace ring that sits between these two halves.
+   *
+   * That ring is ~19.5 MiB of the 32 MiB buffer and holds nothing but diagnostics, so leaving it out
+   * takes the checkpoint from 32 MiB to roughly 13 MiB and lets a trace being recorded across a
+   * restore stay intact - the ring's header lives inside the excluded span, so it stays consistent
+   * with its own contents.
+   */
+  memoryBeforeTrace: Uint8Array;
+  memoryAfterTrace: Uint8Array;
+
+  normalFrames: number;
+  debugSteps: number;
+  lastStopReason: ZxNextWasmV2StopReason;
+  keyboardRows: Uint8Array;
+  keyboardRowsValid: boolean;
+  audioSampleRate: number;
+  sdCardInfoLoaded: boolean;
+  lastRenderedFrameTact: number;
+};
+
 export class ZxNextWasmV2Machine extends ZxNextMachine {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: ZxNextWasmV2Runtime;
@@ -109,16 +139,22 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     readonly renderingTactTable: { phase: number }[];
     readonly borderColor: number;
   };
-  public readonly tapeDevice: {
-    tapeMode: TapeMode;
-    updateTapeMode: () => void;
-    getTapeEarBit: () => boolean;
-    micBit: boolean;
-    processMicBit: (micBit: boolean) => void;
-  };
-  public readonly floatingBusDevice: {
-    readFloatingBus: () => number;
-  };
+  /*
+   * `tapeDevice` and `floatingBusDevice` are NOT redeclared here.
+   *
+   * They used to be, with a structural type naming only the members the facades below happened to
+   * implement — which is how they came to be missing `machine` and `reset()` from
+   * `IGenericDevice`: the narrowed declaration hid the gap from the base's `ITapeDevice` /
+   * `IFloatingBusDevice` contract, and TS2416 said so to an empty room.
+   *
+   * Removing the redeclarations also removes a live hazard. `target` is `esnext`, so
+   * `useDefineForClassFields` is on and a bare field declaration installs an own property during
+   * *this* class's field-init phase — after `super()` has returned. It is harmless here only
+   * because `ZxNextMachine` declares both without ever assigning them; the day the base assigns one
+   * in its constructor, the child's redeclaration would silently overwrite it with `undefined`.
+   * That is the same mechanism that left `iff1`/`iff2`/`interruptMode` unmirrored (see the note in
+   * Z80Cpu.ts), and the cheapest defence is not to redeclare an inherited field at all.
+   */
 
   private wasmV2NormalFrames = 0;
   private wasmV2DebugSteps = 0;
@@ -129,8 +165,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private readonly wasmV2AudioSamples: AudioSample[] = [];
   private readonly wasmV2KeyboardRows = new Uint8Array(8);
   private wasmV2KeyboardRowsValid = false;
-  private readonly nextRegDescriptors = this.createNextRegDescriptors();
-
+  private wasmV2Checkpoint?: ZxNextWasmV2Checkpoint;
   constructor(
     public readonly requestedModelInfo?: MachineModel,
     public readonly requestedConfig?: MachineConfigSet,
@@ -166,10 +201,40 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       },
       processMicBit(micBit: boolean) {
         wasmSelf.wasmV2Runtime?.exports.zxnextProcessTapeMicBit(micBit ? 1 : 0);
+      },
+      /*
+       * The device back-reference `IGenericDevice` requires.
+       *
+       * The cast is load-bearing and worth reading. `ITapeDevice` and `IFloatingBusDevice` both
+       * extend `IGenericDevice<IZxSpectrumMachine>` — they were written for the Spectrum family,
+       * where `new TapeDevice(this)` type-checks because the host really is one. A ZX Next is not:
+       * `IZxNextMachine extends IZ80Machine`, deliberately, so no Next machine can satisfy the
+       * parameter these interfaces fix.
+       *
+       * Nothing reads it, which is why the gap went unnoticed. Every member of these facades closes
+       * over `wasmSelf` instead, and the one place that does read `tapeDevice.machine`
+       * (`TapeSaver`, TapeDevice.ts:700) is constructed from a concrete `TapeDevice` and can never
+       * be handed one of these.
+       *
+       * The real repair is to widen the machine parameter of the device interfaces — which touches
+       * every Spectrum device and belongs in its own change. Until then this records the mismatch
+       * rather than leaving the member off and the contract unmet.
+       */
+      machine: wasmSelf as unknown as IZxSpectrumMachine,
+      reset() {
+        // --- Deliberately empty. This facade holds no state of its own — every member above reads
+        // --- or writes the WASM core — and the core has no per-device reset export, only the
+        // --- whole-machine `zxnextReset` / `zxnextHardReset` that `reset()`/`hardReset()` on this
+        // --- class already call. Forwarding to those from here would reset the entire machine
+        // --- because someone reset the tape.
       }
     };
     this.floatingBusDevice = {
-      readFloatingBus: () => this.doReadPort(0xffff)
+      readFloatingBus: () => this.doReadPort(0xffff),
+      // --- See the note on the tape facade's `machine` above.
+      machine: wasmSelf as unknown as IZxSpectrumMachine,
+      // --- Stateless, like the tape facade above: the value comes from a port read each time.
+      reset() {}
     };
     this.installWasmNextRegFacade();
     this.installWasmMemoryMappingFacade();
@@ -538,6 +603,81 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
   }
 
+  /**
+   * Captures everything needed to put this machine back exactly where it stands.
+   *
+   * The WASM core keeps its entire world - CPU, RAM, ROM, Next registers, every device - inside its
+   * linear memory, and between exported calls the C shadow stack is unwound, so a copy of that
+   * buffer is a complete and replay-deterministic record of the core. What it does not cover is the
+   * handful of fields this class mirrors on the TypeScript side, which are captured alongside it.
+   *
+   * Deliberately NOT covered: the SD card, which lives in a real image file outside the emulator
+   * (see `processWasmV2SdWriteFrameCommand`). Restoring rewinds the machine but cannot rewind that
+   * file, so any write to it drops the checkpoint rather than risking a machine whose cached view of
+   * the filesystem disagrees with what is on disk.
+   * @param key Identifies what the captured state represents
+   */
+  captureCheckpoint(key: string): void {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null) return;
+    const all = new Uint8Array(runtime.memoryBuffer);
+    const traceStart = runtime.exports.zxnextTraceGetStartOffset();
+    const traceEnd = traceStart + runtime.frameTrace.byteLength;
+    this.wasmV2Checkpoint = {
+      key,
+      memoryBeforeTrace: all.slice(0, traceStart),
+      memoryAfterTrace: all.slice(traceEnd),
+      normalFrames: this.wasmV2NormalFrames,
+      debugSteps: this.wasmV2DebugSteps,
+      lastStopReason: this.wasmV2LastStopReason,
+      keyboardRows: this.wasmV2KeyboardRows.slice(),
+      keyboardRowsValid: this.wasmV2KeyboardRowsValid,
+      audioSampleRate: this.wasmV2AudioSampleRate,
+      sdCardInfoLoaded: this.wasmV2SdCardInfoLoaded,
+      lastRenderedFrameTact: this.lastRenderedFrameTact
+    };
+  }
+
+  /**
+   * Puts the machine back into the state captured under the given key.
+   * @param key The key the state was captured under
+   * @returns True when the machine was restored; otherwise, false
+   */
+  tryRestoreCheckpoint(key: string): boolean {
+    const runtime = this.wasmV2Runtime;
+    const checkpoint = this.wasmV2Checkpoint;
+    if (runtime == null || checkpoint == null || checkpoint.key !== key) return false;
+
+    const all = new Uint8Array(runtime.memoryBuffer);
+    all.set(checkpoint.memoryBeforeTrace, 0);
+    all.set(checkpoint.memoryAfterTrace, all.length - checkpoint.memoryAfterTrace.length);
+    this.lastRenderedFrameTact = checkpoint.lastRenderedFrameTact;
+    this.wasmV2NormalFrames = checkpoint.normalFrames;
+    this.wasmV2DebugSteps = checkpoint.debugSteps;
+    this.wasmV2LastStopReason = checkpoint.lastStopReason;
+    this.wasmV2KeyboardRows.set(checkpoint.keyboardRows);
+    this.wasmV2KeyboardRowsValid = checkpoint.keyboardRowsValid;
+    this.wasmV2AudioSampleRate = checkpoint.audioSampleRate;
+    this.wasmV2SdCardInfoLoaded = checkpoint.sdCardInfoLoaded;
+
+    // --- Anything queued by the run that has just been rewound away would otherwise leak into the
+    // --- restored machine: a half-played keystroke, a pending SD command, last frame's audio.
+    this.emulatedKeyStrokes.length = 0;
+    this.keyboardDevice.reset();
+    this.setFrameCommand(null);
+    this.wasmV2AudioSamples.length = 0;
+
+    this.syncCpuFromWasmV2(runtime);
+    return true;
+  }
+
+  /**
+   * Drops the held checkpoint, because something it was captured against has changed underneath it.
+   */
+  invalidateCheckpoints(): void {
+    this.wasmV2Checkpoint = undefined;
+  }
+
   uploadWasmV2RomImages(roms: ZxNextWasmV2RomImages): void {
     this.wasmV2RomImages = {
       nextRom: roms.nextRom.slice(),
@@ -547,9 +687,20 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     };
     const runtime = this.requireWasmV2Runtime();
     this.uploadCachedWasmV2RomImages(runtime);
+    this.invalidateCheckpoints();
   }
 
+  /**
+   * Runs instructions one at a time until the frame ends or something asks the loop to stop.
+   *
+   * Everything outside `NoDebug` + `Normal` arrives here, which includes the plain non-debug
+   * `ReachExecPoint` steps of a code-injection flow - so this loop, not just the debugger, carries
+   * the whole NextZXOS boot whenever the IDE starts a compiled project. It therefore only mirrors
+   * per instruction what the stop tests below actually read: the program counter and the frame flag.
+   * The full register set is mirrored once, on the way out, by `finishWasmV2DebugLoop()`.
+   */
   private executeWasmV2DebugLoop(runtime: ZxNextWasmV2Runtime): FrameTerminationMode {
+    const wasm = runtime.exports;
     const debugSupport = this.executionContext.debugSupport;
     let instructionsExecuted = 0;
     this.executionContext.lastTerminationReason = undefined;
@@ -558,13 +709,21 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     if (this.frameCompleted) {
       this.onInitNewFrame(false);
       this.frameCompleted = false;
-      this.emulateKeystroke();
-      this.syncKeyboardToWasmV2(runtime);
     }
+
+    // --- Queued keystrokes are timed in tacts and held for whole frames, so the fast path above
+    // --- plays them once per frame. Do the same here instead of once per instruction: the queue
+    // --- cannot advance faster than the frame counter it is measured against anyway.
+    this.emulateKeystroke();
+    this.syncKeyboardToWasmV2(runtime);
+
+    // --- Mirroring the core's bus activity costs ~7 boundary crossings per instruction and is only
+    // --- ever read by the memory/IO breakpoint test, so decide once whether it is needed at all.
+    const watchesBusAccess = debugSupport?.hasAccessBreakpoints() ?? false;
 
     if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
       if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
       }
     }
     if (debugSupport) {
@@ -572,44 +731,57 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     }
 
     while (!this.frameCompleted) {
-      this.emulateKeystroke();
-      this.syncKeyboardToWasmV2(runtime);
-      runtime.exports.zxnextExecuteInstruction();
+      wasm.zxnextExecuteInstruction();
       instructionsExecuted++;
       this.wasmV2DebugSteps++;
-      this.syncCpuFromWasmV2(runtime);
-      this.importWasmV2BusAccess(runtime);
+
+      // --- Assigning through `super` on purpose: this class mirrors `pc` with a setter that pushes
+      // --- every write back into the core, and this value was just read out of that same core.
+      super.pc = wasm.zxnextGetCpuPc();
+      this.frameCompleted = wasm.zxnextGetFrameCompleted() !== 0;
+      if (watchesBusAccess) {
+        this.importWasmV2BusAccess(runtime);
+      }
       this.syncWasmV2StorageFrameCommand(runtime);
-      this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
       this.wasmV2LastStopReason = "debugStep";
 
       if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
         const point = this.executionContext.terminationPoint;
         if (point != null && this.pc === (point & 0xffff)) {
-          return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
+          return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.UntilExecutionPoint);
         }
       }
-      if (this.hasWasmV2AccessBreakpoint()) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      if (watchesBusAccess && this.hasWasmV2AccessBreakpoint()) {
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
       }
       if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
       }
       if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
         if (debugSupport) {
           debugSupport.imminentBreakpoint = undefined;
         }
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
       }
       if (this.getFrameCommand()) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.Normal);
       }
     }
 
-    return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+    return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.Normal);
   }
 
-  private finishWasmV2DebugLoop(termination: FrameTerminationMode): FrameTerminationMode {
+  /**
+   * Single exit of the debug loop: brings the TypeScript-side machine state back in step with the
+   * WASM core before anyone can observe it. The loop itself only keeps `pc` and the frame flag up to
+   * date, so every register, counter and bus mirror is refreshed here.
+   */
+  private finishWasmV2DebugLoop(
+    runtime: ZxNextWasmV2Runtime,
+    termination: FrameTerminationMode
+  ): FrameTerminationMode {
+    this.syncCpuFromWasmV2(runtime);
+    this.importWasmV2BusAccess(runtime);
     this.executionContext.lastTerminationReason = termination;
     return termination;
   }
@@ -724,11 +896,19 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   }
 
   override getCurrentPartitionLabels(): string[] {
-    return Array.from({ length: 8 }, (_, pageIndex) => this.getWasmV2PartitionLabelForPage(pageIndex));
+    // --- Names come from the machine's own partition map, so a page cannot be shown under a name
+    // --- `parsePartitionLabel` would not accept back.
+    const labels = this.getPartitionLabels();
+    return Array.from({ length: 8 }, (_, pageIndex) => {
+      const partition = this.getWasmV2PartitionForPage(pageIndex);
+      return partition === undefined
+        ? UNPAGED_PARTITION_LABEL
+        : (labels[partition] ?? UNPAGED_PARTITION_LABEL);
+    });
   }
 
   override getPartition(address: number): number | undefined {
-    return this.parseWasmV2PartitionLabel(this.getWasmV2PartitionLabelForPage((address >>> 13) & 0x07));
+    return this.getWasmV2PartitionForPage((address >>> 13) & 0x07);
   }
 
   override getRomFlags(): boolean[] {
@@ -832,6 +1012,13 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   ): Promise<void> {
     const runtime = this.requireWasmV2Runtime();
     const card = frameCommand.command === "sd-write-card1" ? 1 : 0;
+
+    // --- The SD image is a real file on disk, so it is the one piece of machine state a checkpoint
+    // --- cannot rewind. Once the machine has written to it, any checkpoint taken before that write
+    // --- describes a machine whose cached view of the filesystem no longer matches the disk, so the
+    // --- checkpoint has to go - a slow cold boot next time beats a corrupted card.
+    this.invalidateCheckpoints();
+
     try {
       const result = await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
       runtime.exports.zxnextSetSdWriteResponse(card, result?.persistenceConfirmed ? 1 : 0);
@@ -929,12 +1116,18 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   getWasmV2UlaState(): UlaState {
     const runtime = this.requireWasmV2Runtime();
     return {
-      fcl: runtime.exports.zxnextGetFrameCompleted() !== 0,
+      // --- `fcl` is the frame clock — a tact count, as `MainToEmuProcessor` fills it. It used to
+      // --- hold `zxnextGetFrameCompleted() !== 0`, so the ULA panel's "FrameClock" readout showed
+      // --- `true`/`false`.
+      fcl: runtime.exports.zxnextGetCurrentFrameTact(),
       frm: runtime.exports.zxnextGetFrames(),
       ras: 0,
       pos: runtime.exports.zxnextGetCurrentFrameTact(),
-      pix: 0,
-      bor: runtime.exports.zxnextGetBorderColor(),
+      // --- `pix` is a RenderingPhase *name*. The WASM core keeps no rendering-tact table and
+      // --- exports no phase, so there is nothing truthful to report — say so, rather than send the
+      // --- literal 0 that the panel rendered as a bare digit under "Pixel operation".
+      pix: "n/a",
+      bor: ULA_BORDER_COLOR_NAMES[runtime.exports.zxnextGetBorderColor() & 0x07],
       flo: 0xff,
       con: 0,
       lco: 0,
@@ -1088,7 +1281,21 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.nextRegDevice.getNextRegisterValue = () => (
       this.requireWasmV2Runtime().exports.zxnextGetNextRegisterValue()
     );
-    this.nextRegDevice.getDescriptors = () => this.nextRegDescriptors;
+    /*
+     * `getDescriptors` is deliberately NOT overridden.
+     *
+     * It used to be pointed at a locally generated table of 256 placeholders reading
+     * "WASM NextReg $XX", which meant the Next Registers panel showed neither the registers' real
+     * names nor the `slices` breakdown — on the *production default* backend, since
+     * `ZxNextImplementation` selects WASM unless a config says otherwise. The descriptor table is
+     * static documentation (id, description, read/write-only, slices); none of it depends on which
+     * backend executes the registers, and `NextRegDevice` — which this class inherits a fully
+     * constructed instance of — already builds it and already strips the `readFn`/`writeFn`
+     * closures on the way out, so it is safe to send over IPC.
+     *
+     * The register *values* still come from WASM: `getNextRegDeviceState` below is overridden, and
+     * that is the part that is backend-specific.
+     */
     this.nextRegDevice.getNextRegDeviceState = () => this.getWasmNextRegDeviceState();
   }
 
@@ -1118,14 +1325,27 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       portTimex: 0,
       divMmc: 0,
       divMmcIn: false,
-      pageInfo: this.getCurrentPartitionLabels().map((label, pageIndex) => ({
-        readOffset: pageIndex * 0x2000,
-        writeOffset: label.startsWith("R") || label.startsWith("A") || label === "DM" || label === "UN"
-          ? null
-          : pageIndex * 0x2000,
-        bank16k: this.parseWasmV2PartitionLabel(label) ?? 0xff,
-        bank8k: this.requireWasmV2Runtime().nextRegs[0x50 + pageIndex]
-      }))
+      /*
+       * Built from partition *indices*, not from display names.
+       *
+       * This used to format a label per page and then inspect the string — `writeOffset` came from
+       * `label.startsWith("R") || startsWith("A") || label === "DM"`, and `bank16k` from re-parsing
+       * the label. A display name was carrying data, which is why deleting the second naming
+       * scheme had to start here.
+       *
+       * The read-only set is unchanged: partitions -1..-7 are the four Next ROMs, the two alt ROMs
+       * and the DivMMC ROM. DivMMC RAM (-8..-23) and the RAM banks stay writable, as before.
+       */
+      pageInfo: Array.from({ length: 8 }, (_, pageIndex) => {
+        const partition = this.getWasmV2PartitionForPage(pageIndex);
+        const isRomPage = partition !== undefined && partition <= -1 && partition >= -7;
+        return {
+          readOffset: pageIndex * 0x2000,
+          writeOffset: partition === undefined || isRomPage ? null : pageIndex * 0x2000,
+          bank16k: partition ?? 0xff,
+          bank8k: this.requireWasmV2Runtime().nextRegs[0x50 + pageIndex]
+        };
+      })
     });
   }
 
@@ -1143,68 +1363,42 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     return (this.requireWasmV2Runtime().nextRegs[0x8e] & 0x80) >> 7;
   }
 
-  private getWasmV2PartitionLabelForPage(pageIndex: number): string {
+  /**
+   * The partition index paged into an 8K page, or `undefined` when the page is not backed by one.
+   *
+   * The WASM counterpart of `MemoryDevice.getPartitionForPage`, and the only offset-to-index
+   * function on this path. It replaces a pair — one building a label from offsets, one parsing that
+   * label back — whose vocabularies (`A0`/`A1`, `D0`..`DF`) matched each other and nothing else in
+   * the system.
+   *
+   * The `bank8 < 224` threshold is carried over verbatim from the function this replaces; see
+   * `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 3.
+   */
+  private getWasmV2PartitionForPage(pageIndex: number): number | undefined {
     const wasm = this.requireWasmV2Runtime().exports;
     const bank8 = wasm.zxnextGetMemoryPageBank8(pageIndex);
-    if (bank8 < 224) return (bank8 >> 1).toString(16).padStart(2, "0").toUpperCase();
+    if (bank8 < 224) return bank8 >> 1;
 
     const readOffset = wasm.zxnextGetMemoryPageReadOffset(pageIndex);
-    if (readOffset >= ZXNEXT_WASM_OFFS_NEXT_RAM) return "UN";
+    if (readOffset >= ZXNEXT_WASM_OFFS_NEXT_RAM) return undefined;
     if (readOffset >= ZXNEXT_WASM_OFFS_DIVMMC_RAM) {
-      return `D${((readOffset - ZXNEXT_WASM_OFFS_DIVMMC_RAM) >> 13).toString(16).toUpperCase()}`;
+      // --- DivMMC RAM pages 0..15 occupy partitions -8..-23 ("M0".."MF")
+      return -8 - ((readOffset - ZXNEXT_WASM_OFFS_DIVMMC_RAM) >> 13);
     }
     if (readOffset >= ZXNEXT_WASM_OFFS_ALT_ROM_1 && readOffset < ZXNEXT_WASM_OFFS_ALT_ROM_1 + 0x4000) {
-      return "A1";
+      return -6; // --- Alt ROM 1, "X1"
     }
     if (readOffset >= ZXNEXT_WASM_OFFS_ALT_ROM_0 && readOffset < ZXNEXT_WASM_OFFS_ALT_ROM_0 + 0x4000) {
-      return "A0";
+      return -5; // --- Alt ROM 0, "X0"
     }
     if (readOffset >= ZXNEXT_WASM_OFFS_DIVMMC_ROM && readOffset < ZXNEXT_WASM_OFFS_DIVMMC_ROM + 0x2000) {
-      return "DM";
+      return -7; // --- DivMMC ROM, "DM"
     }
-    if (readOffset < ZXNEXT_WASM_OFFS_NEXT_ROM + 0x10000) return `R${readOffset >> 14}`;
-    return "UN";
-  }
-
-  private parseWasmV2PartitionLabel(label: string): number | undefined {
-    const normalized = label.toUpperCase();
-    switch (normalized) {
-      case "UN":
-        return undefined;
-      case "R0":
-        return -1;
-      case "R1":
-        return -2;
-      case "R2":
-        return -3;
-      case "R3":
-        return -4;
-      case "A0":
-        return -5;
-      case "A1":
-        return -6;
-      case "DM":
-        return -7;
-      default:
-        if (normalized.startsWith("D")) {
-          return -8 - parseInt(normalized.substring(1), 16);
-        }
-        if (normalized.match(/^[0-9A-F]{1,2}$/)) {
-          return parseInt(normalized, 16);
-        }
-        return undefined;
+    if (readOffset < ZXNEXT_WASM_OFFS_NEXT_ROM + 0x10000) {
+      // --- Next ROM 0..3 occupy partitions -1..-4
+      return -1 - (readOffset >> 14);
     }
-  }
-
-  private createNextRegDescriptors(): NextRegDescriptor[] {
-    const descriptors: NextRegDescriptor[] = [];
-    for (let id = 0; id < 0x100; id++) {
-      descriptors.push({
-        id,
-        description: `WASM NextReg $${id.toString(16).padStart(2, "0").toUpperCase()}`
-      });
-    }
-    return descriptors;
+    return undefined;
   }
 
   private getWasmNextRegDeviceState(): NextRegDeviceState {

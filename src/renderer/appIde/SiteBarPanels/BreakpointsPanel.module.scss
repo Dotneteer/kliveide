@@ -6,9 +6,90 @@
   flex-direction: column;
   user-select: none;
   font-family: var(--monospace-font);
-  font-size: 0.8em;
+  /*
+   * M1: absolute, not `em`. This was `0.8em`, which compounds off whatever the panel is nested in
+   * rather than naming a size, and it is what the `ch` columns below are measured against — pinning
+   * it to `--font-size-200` makes 1ch exactly 6px here as in every other data panel.
+   */
+  font-size: var(--panel-font-size);
+  /*
+   * Leading is declared, never inherited from the font's metrics. This panel is not a `DataPanel`
+   * and does not include the `side-panel-content` mixin, so it had neither's `line-height` and ran
+   * on whatever the selected mono face reports — measured on a comparable row as 21.5px (Iosevka),
+   * 20px (ZX Spectrum) and 22.5px (JetBrains Mono). See `CallStackPanel.module.scss` for the full
+   * reasoning.
+   */
+  line-height: var(--panel-line-height);
 }
 
 .navigable {
   cursor: pointer;
+}
+
+/*
+ * The address label ("8000", or "code.kz80.asm:23" for a source breakpoint).
+ *
+ * `margin-inline: 0` drops `controls/layout` `Label`'s `.legacySpacing`, which together with the
+ * leading `LabelSeparator` this row used to carry started the panel's content further in than the
+ * Z80 CPU, ULA, Next and Call Stack panels stacked around it.
+ */
+span.bpLabel {
+  margin-inline: 0;
+  /*
+   * One column wide enough for both forms the key takes — `$00EA` and the partitioned
+   * `R0:$00EA` (8 characters; the panel strips the `:R`/`:IW` suffix before building it). `min-width`
+   * rather than `width` so a longer partition label, or a `[file]:line` source key, grows instead of
+   * spilling.
+   *
+   * This replaces a 6ch box *plus* a separate 6ch spacer, which together put roughly eight
+   * characters of air between the address and the instruction.
+   *
+   * 9ch, not 8: at 8 the partitioned key fills the box exactly and the instruction ends up under a
+   * character away from it, which reads as cramped next to the plain `$XXXX` rows. The extra
+   * character guarantees separation in the worst case and still roughly halves the old gap.
+   */
+  min-width: 9ch;
+  /*
+   * The breakpoint's address is the row's headline, so it takes the primary accent — not the
+   * `--data-label` grey a `Label` would otherwise give it. The disassembled instruction below it
+   * drops to the neutral value colour: it is context for the address, not the other way round.
+   *
+   * `span.` beats `.dataLabel`'s own single-class colour rule on specificity, whatever the load
+   * order.
+   */
+  color: var(--color-state-value);
+  font-weight: 600;
+}
+
+/*
+ * The value cells. `Value` carries `.legacyValueSpacing` — a `margin-inline-end` of two
+ * `--measure-gap`s — which stacks on top of the row's own gap in a row that has three or four cells.
+ * Zeroing it leaves the row gap as the only separator.
+ */
+span.bpCell {
+  margin-inline-end: 0;
+}
+
+/*
+ * The panel's own action strip.
+ *
+ * `SideBarPanelInfo` has no header-action slot and `SideBarPanel` renders only a chevron and a
+ * title, so the toolbar lives inside the panel body. Giving the framework a `headerActions` slot is
+ * the better long-term shape — several panels would use it — but that is a wider change than this
+ * one, so it is deliberately deferred.
+ */
+.toolbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--color-panel-border);
+  flex-shrink: 0;
+}
+
+.listArea {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }

@@ -1,3 +1,8 @@
+/*
+ * The trigger had `border: none` over `--surface-raised`, which is `#ffffff` in the light tone and
+ * so is the modal body behind it — the same disappearing act the text field was doing. It now
+ * carries a real edge, and its height comes off the control scale so it lines up with `TextInput`.
+ */
 .SelectTrigger {
   display: flex;
   align-items: center;
@@ -5,15 +10,24 @@
   background-color: var(--bg-color-dropdown-input);
   color: var(--color-dropdown-input);
   width: 100%;
+  height: var(--size-controlSm);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border: none;
-  padding: 2px 4px 2px 8px;
-  border-radius: 4px;
+  border: 1px solid var(--border-color-dropdown-input);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-200);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+  outline: none;
 
-  &:focus {
-    outline: 1px solid var(--border-color-dropdown-menu);
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+
+  &[data-state="open"] {
+    border-color: var(--accent-solid);
   }
 
   &.value {
@@ -22,24 +36,48 @@
 }
 
 .SelectContent {
-  background-color: var(--bg-color-dropdown-input);
-  color: var(--color-dropdown-input);
+  background-color: var(--bg-color-dropdown-menu);
+  color: var(--color-dropdown-menu);
   width: calc(var(--radix-select-trigger-width) - 2px);
-  border-radius: 4px;
-  padding: 2px 2px;
-  z-index: 100;
+  border: 1px solid var(--border-color-dropdown-menu);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-2);
+  padding: var(--space-0_5);
+  /* The menu is portalled out of the dialog, so it has to clear `--z-modal` rather than sit at the
+     old literal 100 — which is `--z-overlay`, below the modal it belongs to. */
+  z-index: calc(var(--z-modal) + 1);
 }
 
+/* M1: `0.8em` of a 16px root was 12.8px — a size that is not on the scale at all. */
 .SelectItem {
+  display: flex;
+  align-items: center;
   flex-direction: row;
-  margin: 2px 2px;
-  padding: 2px 4px;
+  margin: 1px 0;
+  padding: 2px var(--space-1);
   border: none;
-  font-size: 0.8em;
+  border-radius: var(--radius-xs);
+  font-size: var(--font-size-200);
+  outline: none;
 
-  &:focus {
-    outline: 1px solid var(--border-color-dropdown-menu);
+  &[data-highlighted] {
+    background-color: var(--bg-color-dropdown-menu-pointed);
+  }
+
+  &[data-state="checked"] {
     background-color: var(--bg-color-dropdown-menu-selected);
   }
 }
 
+
+/*
+ * The gloss beside an option's label while the list is open.
+ *
+ * Muted and secondary on purpose: the label is the option's identity — the thing that appears in a
+ * breakpoint key, a bank column and a command line — and this only explains it.
+ */
+.SelectItemDescription {
+  margin-left: var(--space-2);
+  color: var(--color-secondary-label);
+  font-size: var(--font-size-100);
+}

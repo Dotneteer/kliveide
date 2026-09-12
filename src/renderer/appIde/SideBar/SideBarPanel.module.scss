@@ -25,6 +25,14 @@
   min-height: 0;
 }
 
+/*
+ * The header band.
+ *
+ * A shallow top-lit gradient rather than a flat fill. The distinction matters at this size: the
+ * band is 26px tall and the list rows directly beneath it are 22px and also highlight on hover, so
+ * a flat filled strip reads as a *selected row*. A lit strip reads as chrome. The two stops live
+ * in semantic.ts as `--surface-header*`.
+ */
 .header {
   /* Includes the 1px transparent border, which border-box counts inside the box. */
   height: var(--row-panelHeader);
@@ -36,9 +44,36 @@
   border: 1px solid transparent;
   outline: none;
   padding: 0 var(--space-1);
+  background: var(--bgcolor-panelHeader);
+  box-shadow: inset 0 -1px 0 var(--color-panelHeader-rule);
+  cursor: pointer;
   @include focus-ring(-1px);
+
+  &:hover {
+    background: var(--bgcolor-panelHeader-hover);
+
+    .headerText {
+      color: var(--color-panel-header-active);
+    }
+  }
 }
 
+/*
+ * The open panel's header gets the stronger rule: it is the edge its data scrolls under, and the
+ * overflow shadow lands directly beneath it.
+ */
+.expanded > .header {
+  box-shadow: inset 0 -1px 0 var(--color-panelHeader-rule-open);
+
+  .headerText {
+    color: var(--color-panel-header-active);
+  }
+}
+
+/*
+ * Kept even though the headers are now filled. Two adjacent *collapsed* panels are two bands
+ * touching edge to edge, and without this they merge into one undifferentiated bar.
+ */
 .notFirst {
   border-top: 1px solid var(--color-panel-border);
 }
@@ -64,14 +99,21 @@
   }
 }
 
+/*
+ * M1: absolute, not `em`. `0.8em` of the 16px root resolved to 12.8px, which made this *larger*
+ * than the sidebar's own title above it (11px) — see the note in SideBarHeader.module.scss.
+ */
 .headerText {
   color: var(--color-panel-header);
-  font-size: 0.8em;
+  font-size: var(--font-size-100);
   font-weight: 600;
+  letter-spacing: 0.06em;
   padding-left: 4px;
-  width: 100%;
   flex-grow: 1;
+  /* See the same note in SideBarHeader: `min-width: 0` is what lets the title ellipsize once a
+     badge shares the row. `width: 100%` alone would push the badge out of the header. */
   flex-shrink: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

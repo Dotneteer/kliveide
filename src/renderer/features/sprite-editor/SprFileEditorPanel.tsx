@@ -3,24 +3,15 @@ import {
   GenericFileContext,
   GenericFilePanel
 } from "@renderer/appIde/DocumentPanels/helpers/GenericFilePanel";
-import { BinaryReader } from "@common/utils/BinaryReader";
 import { createElement } from "react";
 import { SprFileContents, SprFileViewState } from "./sprite-common";
 import { SpriteEditor } from "./SpriteEditor";
+import { parseSprFile } from "./sprite-file";
 
-const defaultPalette: number[] = [];
-for (let i = 0; i < 256; i++) {
-  defaultPalette.push(i);
-}
-
-const SprFileEditorPanel = ({
-  document,
-  contents,
-  viewState
-}: DocumentProps) => {
+const SprFileEditorPanel = ({ document, contents, viewState }: DocumentProps) => {
   const validRenderer: (
     context: GenericFileContext<SprFileContents, SprFileViewState>
-  ) => JSX.Element = context => <SpriteEditor context={context} />;
+  ) => JSX.Element = (context) => <SpriteEditor context={context} />;
   return createElement(
     GenericFilePanel<SprFileContents, SprFileViewState>,
     {
@@ -33,11 +24,7 @@ const SprFileEditorPanel = ({
   );
 };
 
-export const createSprFileEditorPanel = ({
-  document,
-  contents,
-  viewState
-}: DocumentProps) => {
+export const createSprFileEditorPanel = ({ document, contents, viewState }: DocumentProps) => {
   return (
     <SprFileEditorPanel
       document={document}
@@ -48,15 +35,16 @@ export const createSprFileEditorPanel = ({
   );
 };
 
-function loadSprFileContents (contents: Uint8Array): {
+/**
+ * Parsing lives in `sprite-file.ts`; this is only the adaptor to `GenericFilePanel`'s contract.
+ *
+ * It no longer returns an `error` for anything: a partial tail and an empty file are both
+ * recoverable, and reporting either as an error is what used to throw the whole file away.
+ */
+function loadSprFileContents(contents: Uint8Array): {
   fileInfo?: SprFileContents;
   error?: string;
 } {
-  const reader = new BinaryReader(contents);
-  const sprites: Uint8Array[] = [];
-  while (!reader.eof) {
-    const sprite = reader.readBytes(16 * 16);
-    sprites.push(new Uint8Array(sprite));
-  }
-  return { fileInfo: { sprites } };
+  const { sprites, trailing, warning } = parseSprFile(contents);
+  return { fileInfo: { sprites, trailing, warning } };
 }

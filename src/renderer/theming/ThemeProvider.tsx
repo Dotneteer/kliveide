@@ -1,4 +1,10 @@
-import { useSelector } from "@renderer/core/RendererProvider";
+import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
+import { getMonospaceFontFamily } from "@common/settings/monospace-fonts";
+import { getPanelFontSize } from "@common/settings/font-sizes";
+import {
+  SETTING_PANEL_FONT_FAMILY,
+  SETTING_PANEL_FONT_SIZE
+} from "@common/settings/setting-const";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 import React, {
   useCallback,
@@ -75,6 +81,14 @@ function ThemeProvider({ children }: Props) {
   const selectedTheme = useSelector((s) => s.theme);
   const selectedAccent = useSelector((s) => s.accent);
   const isWindows = useSelector((s) => s.isWindows);
+  // --- The font the monitoring panels (and every other `--monospace-font` consumer) render in.
+  // --- Picked from the shared registry in @common/settings/monospace-fonts, the same list the
+  // --- editor's own font menu is built from.
+  const panelFontId = useGlobalSetting(SETTING_PANEL_FONT_FAMILY);
+  // --- ...and the size that data renders at. Panel titles, tabs and the status bar are chrome and
+  // --- keep the fixed `--font-size-*` scale, the same way the editor's font size leaves the tab
+  // --- bar alone.
+  const panelFontSize = useGlobalSetting(SETTING_PANEL_FONT_SIZE);
   const accentId: AccentId = isAccentId(selectedAccent) ? selectedAccent : DEFAULT_ACCENT;
 
   const [styleProps, setStyleProps] = useState<Record<string, any>>(EMPTY_OBJECT);
@@ -88,10 +102,10 @@ function ThemeProvider({ children }: Props) {
     const activeThemeInfo = availableThemes[selectedTheme];
     const mainFont =
       activeThemeInfo.properties[isWindows ? "--shell-windows-font-family" : "--shell-font-family"];
-    const monospaceFont =
-      activeThemeInfo.properties[
-        isWindows ? "--shell-windows-monospace-font-family" : "--shell-monospace-font-family"
-      ];
+    // --- The user's View | Panel Font choice, resolved to a CSS stack. The helper falls back to
+    // --- the bundled Iosevka default on its own when the stored id is unknown or belongs to
+    // --- another platform, so this is the only source `--monospace-font` needs.
+    const monospaceFont = getMonospaceFontFamily(panelFontId, isWindows);
     const tone = activeThemeInfo.tone;
     return {
       // Order matters. The legacy theme object still supplies the values that have no semantic
@@ -103,7 +117,7 @@ function ThemeProvider({ children }: Props) {
       // L2 semantics and L3 dimensions.
       ...semanticTokens(tone, accentId),
       ...dimensionTokens(tone),
-      ...rowSizeTokens(),
+      ...rowSizeTokens(getPanelFontSize(panelFontSize)),
       "--space-base": SPACE_BASE,
 
       // L4: the ~200 names the stylesheets actually ask for, repointed onto the layers above. This
@@ -111,9 +125,10 @@ function ThemeProvider({ children }: Props) {
       ...componentAliases,
 
       "--main-font-family": mainFont,
-      "--monospace-font": monospaceFont
+      "--monospace-font": monospaceFont,
+      "--panel-font-size": `${getPanelFontSize(panelFontSize)}px`
     };
-  }, [selectedTheme, isWindows, accentId]);
+  }, [selectedTheme, isWindows, accentId, panelFontId, panelFontSize]);
 
   useEffect(() => {
     setStyleProps({ ...themeVariables, ...generateBaseSpacings(themeVariables) });

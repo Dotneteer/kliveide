@@ -1,5 +1,20 @@
 import { ExecaSyncError, execa } from "execa";
 import type { AssemblerErrorInfo, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
+import { stripAnsi } from "./ansi";
+
+/**
+ * Environment that asks the child not to colourise its output.
+ *
+ * execa gives the child no TTY, which is enough to quiet most tools on its own — but nothing
+ * *guarantees* it. Anything that force-colours, or that inherits a `FORCE_COLOR` from the
+ * environment Klive itself was launched in, still emits escape sequences. `NO_COLOR` is the
+ * cross-tool convention (no-color.org); `FORCE_COLOR=0` turns off the `supports-color` override
+ * that would otherwise beat it for Node-based tools.
+ *
+ * This is the cheap half of the fix. `stripAnsi` is the half that does not depend on the child
+ * cooperating.
+ */
+const NO_COLOUR_ENV = { NO_COLOR: "1", FORCE_COLOR: "0" } as const;
 
 // --- Anything can be thrown; this always produces something a user can read.
 function toErrorMessage(error: unknown, fallback: string): string {
@@ -58,16 +73,40 @@ export class CliRunner {
     options?: RunnerOptions
   ): Promise<CompilerResult | null> {
     try {
-      const result = await execa(command, args, options);
-      
+      const result = await execa(command, args, {
+        ...options,
+        env: { ...options?.env, ...NO_COLOUR_ENV }
+      });
+
       return {
         traceOutput: [`Executing ${result.command}`],
-        stdout: result.stdout,
-        stderr: result.stderr
+        stdout: stripAnsi(result.stdout),
+        stderr: stripAnsi(result.stderr)
       };
     } catch (error: any) {
       if ("exitCode" in error) {
-        let errorInfo = error as any;
+        /*
+         * Sanitize once, before anything reads the output.
+         *
+         * `errorLineSplitterFn` and `parseErrorMessage` run the per-compiler regex over these
+         * strings to recover a filename, line and column. A colourised filename stops matching and
+         * the diagnostic loses its navigation link, so the strip has to happen ahead of the split
+         * rather than on the way out.
+         *
+         * A copy rather than a mutation: this is execa's error object, and its own fields may be
+         * getters. The four the code below reads are re-stated explicitly so the spread cannot
+         * silently drop one that execa defines as non-enumerable — `message` is exactly that case.
+         */
+        const errorInfo = {
+          ...error,
+          exitCode: error.exitCode,
+          command: error.command,
+          failed: error.failed,
+          message: stripAnsi(error.message),
+          shortMessage: stripAnsi(error.shortMessage),
+          stdout: stripAnsi(error.stdout),
+          stderr: stripAnsi(error.stderr)
+        } as any;
         const traceOutput = [`Executing ${errorInfo.command}`];
         const hasErrorOutput = this.errorDetectorFn(errorInfo);
         if (!hasErrorOutput) {
@@ -89,8 +128,14 @@ export class CliRunner {
               stderr: errorInfo.stderr
             }
           : {
+              /*
+               * `errorInfo.message`, not `error.message`. execa embeds the child's stdout *and*
+               * stderr verbatim in the message, so this is the single widest path by which raw
+               * escape sequences reached an output buffer — `commandError` writes it straight into
+               * the build pane through `writeLines`.
+               */
               traceOutput,
-              failed: error.message,
+              failed: errorInfo.message,
               stdout: errorInfo.stdout,
               stderr: errorInfo.stderr
             };
@@ -100,7 +145,7 @@ export class CliRunner {
       // --- spawn error itself.
       return {
         traceOutput: [`Executing ${command}`],
-        failed: toErrorMessage(error, `Could not execute ${command}`)
+        failed: stripAnsi(toErrorMessage(error, `Could not execute ${command}`))
       };
     }
   }

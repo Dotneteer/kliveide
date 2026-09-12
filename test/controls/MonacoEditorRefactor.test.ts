@@ -167,7 +167,11 @@ describe("Monaco editor adapters", () => {
       tabSize: 2,
       detectIndentation: false,
       selectionHighlight: true,
-      occurrencesHighlight: false,
+      // --- "off", not `false`. Monaco's `occurrencesHighlight` is a string enum, and its option
+      // --- validator substitutes the default for anything outside it — so the boolean this test
+      // --- used to assert was being thrown away, and `enableOccurrencesHighlight: false` left
+      // --- occurrence highlighting on. The test pinned the bug in place.
+      occurrencesHighlight: "off",
       quickSuggestionsDelay: 250
     });
   });

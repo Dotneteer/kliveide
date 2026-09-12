@@ -1,5 +1,5 @@
 import { DmaMode } from "../DmaDevice";
-import { IZxNextMachine } from "../IZxNextMachine";
+import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 /**
  * Read from Z80 DMA port (0x0B) - Legacy mode

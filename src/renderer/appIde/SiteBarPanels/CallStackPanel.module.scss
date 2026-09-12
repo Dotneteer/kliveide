@@ -11,7 +11,22 @@
    * instead of naming a size. Pinning it to the same `--font-size-200` every other data panel uses
    * is also what makes the `ch` columns below exactly 6px.
    */
-  font-size: var(--font-size-200);
+  font-size: var(--panel-font-size);
+  /*
+   * Leading is declared, never inherited from the font's metrics.
+   *
+   * This panel is not a `DataPanel`, so it never picked up the `line-height` that
+   * `Data.module.scss` and the `side-panel-content` mixin both declare, and it was running on
+   * `line-height: normal` — which comes from whichever mono face is selected. Those metrics vary far
+   * more than they look: 1.250em for Iosevka, 1.312em for Fira Code, 1.320em for JetBrains Mono, and
+   * **0.885em for the ZX Spectrum face**, whose glyphs sit in an 8x8 cell with essentially no
+   * descent. The rows here are `min-height: 0`, so the row *is* its line box: under that font they
+   * would have collapsed onto each other.
+   *
+   * Pinning it also removes a ~0.5px drift against the panels that already declared it, which is
+   * what made this panel and Next Memory Mapping disagree at the same nominal row height.
+   */
+  line-height: var(--panel-line-height);
 }
 
 .item {

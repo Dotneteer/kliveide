@@ -155,7 +155,6 @@ export async function openStaticMemoryDump(
         name: title,
         type: STATIC_MEMORY_DUMP_VIEWER,
         iconName: "memory-icon",
-        iconFill: "--console-ansi-bright-magenta",
         contents
       },
       undefined,

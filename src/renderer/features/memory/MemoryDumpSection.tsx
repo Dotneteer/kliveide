@@ -8,10 +8,19 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
 import { memo, useRef, useState, useMemo, useCallback } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
+import { isWidePartitionLabel } from "@renderer/controls/data/partitionWidth";
 
 export type MemoryDumpSectionProps = {
   showPartitions?: boolean;
   partitionLabel?: string;
+  /**
+   * Characters reserved for the bank-label column, shared by every row in the dump.
+   *
+   * Uniform so the address and hex columns land at the same x on every row, whether or not that
+   * row's own bank is labelled. 0 means the dump has no bank column and the cell is omitted
+   * entirely. Derived once by `MemoryPanel` via `derivePartitionWidthCh`.
+   */
+  partitionWidthCh?: number;
   address: number;
   bytes: readonly number[];
   decimalView: boolean;
@@ -50,6 +59,7 @@ export const MemoryDumpSection = (props: MemoryDumpSectionProps) => {
 const MemoryDumpSectionViewComponent = ({
   showPartitions,
   partitionLabel,
+  partitionWidthCh = 0,
   address,
   bytes,
   decimalView,
@@ -63,13 +73,8 @@ const MemoryDumpSectionViewComponent = ({
 }: MemoryDumpSectionViewProps) => {
   const [hoveredByteIndex, setHoveredByteIndex] = useState<number | null>(null);
 
-  let useWidePartitions = false;
-  if (showPartitions && partitionLabel && decimalView) {
-    const partAsNumber = parseInt(partitionLabel, 16);
-    if (!isNaN(partAsNumber)) {
-      useWidePartitions = true;
-      partitionLabel = toDecimal3(partAsNumber);
-    }
+  if (isWidePartitionLabel(partitionLabel, decimalView, showPartitions)) {
+    partitionLabel = toDecimal3(parseInt(partitionLabel!, 16));
   }
 
   const addressText = decimalView
@@ -87,8 +92,13 @@ const MemoryDumpSectionViewComponent = ({
   return (
     <div className={classnames(styles.dumpSection)}>
       <LabelSeparator width={8} />
-      {showPartitions && partitionLabel && (
-        <PartitionPrefix label={partitionLabel} wide={useWidePartitions} />
+      {/*
+        * Rendered whenever the list has a bank column at all, not merely when *this* row has a
+        * label, and at the column's shared width rather than this row's own. Dropping the cell on
+        * an unlabelled bank shifted that row's address and hex columns left of its neighbours'.
+        */}
+      {partitionWidthCh > 0 && (
+        <PartitionPrefix label={partitionLabel ?? ""} width={partitionWidthCh} />
       )}
       <AddressLabel text={addressText} width={addressWidth} className={styles.memoryAddress} />
       <HexValues
@@ -126,6 +136,10 @@ export const MemoryDumpSectionView = memo(MemoryDumpSectionViewComponent, (prev,
   if (prev.charDump !== next.charDump) return false;
   if (prev.showPartitions !== next.showPartitions) return false;
   if (prev.partitionLabel !== next.partitionLabel) return false;
+  // --- The shared bank-column width. Without this a row keeps a stale column when the width
+  // --- changes (switching to decimal view, or to a bank set with wider labels) and the dump goes
+  // --- ragged until something else forces a re-render.
+  if (prev.partitionWidthCh !== next.partitionWidthCh) return false;
   if (prev.bytes.length !== next.bytes.length) return false;
 
   // Highlighting/styling and edit behavior

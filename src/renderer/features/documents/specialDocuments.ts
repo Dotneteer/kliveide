@@ -26,7 +26,6 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     name: "Machine Memory",
     type: MEMORY_EDITOR,
     iconName: "memory-icon",
-    iconFill: "--console-ansi-bright-cyan",
     workspaceRestorable: true
   },
   [DISASSEMBLY_PANEL_ID]: {
@@ -34,7 +33,6 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     name: "Disassembly",
     type: DISASSEMBLY_EDITOR,
     iconName: "disassembly-icon",
-    iconFill: "--console-ansi-bright-cyan",
     workspaceRestorable: true
   },
   [BASIC_PANEL_ID]: {

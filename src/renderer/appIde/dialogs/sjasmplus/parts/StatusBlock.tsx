@@ -8,7 +8,7 @@ import { PathText } from "./PathText";
 
 const BADGE_ICON = {
   passed: { iconName: "check", fill: "--color-secondary-label", testId: "sjasmplus-integrated-badge" },
-  failed: { iconName: "warning", fill: "--console-ansi-bright-red", testId: "sjasmplus-broken-badge" }
+  failed: { iconName: "warning", fill: "--status-error", testId: "sjasmplus-broken-badge" }
 } as const;
 
 const DETAIL_TEST_ID = {

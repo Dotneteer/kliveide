@@ -13,6 +13,27 @@
   align-items: center;
   /* M3: the same number the virtualizer positions rows with. */
   height: var(--row-size-disassembly);
+  /*
+   * The row owns its own width, rather than inheriting the viewport's.
+   *
+   * A row's last cell is the hard comment, which carries no width and is sized by its text, so a
+   * row can be wider than the panel. `virtua` wraps every row in an *absolutely positioned* div
+   * with an explicit width equal to the viewport, and a block-level flex row fills exactly that -
+   * so the row *box* stopped at the viewport edge while the comment went on painting past it. The
+   * zebra stripe, the hover highlight and the exec-point marker below all draw on this box, so
+   * they cut off mid-comment. Measured at a 430px viewport: a 430px row box against a comment
+   * ending at 459px.
+   *
+   * `min-width` rather than `width`, because it must only raise the floor: where the panel is
+   * wider than the content the row still fills the panel (measured: 900px viewport, 900px row),
+   * which is what keeps the stripes full-bleed.
+   *
+   * This is independent of the `scrollRowsHorizontally` opt-in the panel passes to
+   * `VirtualizedList`. That one widens the *wrapper*, so the container has something to scroll;
+   * this one widens the row, so the row's own background covers its own text. Either alone fixes
+   * the paint, but the row should not depend on an ancestor for its own width.
+   */
+  min-width: max-content;
 
   &.even {
     background: var(--bgcolor-disass-even-row);

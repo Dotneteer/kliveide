@@ -1,6 +1,5 @@
 import type { WatchInfo } from "@common/state/AppState";
 
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Label } from "@renderer/controls/layout/Label";
 import { Value } from "@renderer/controls/layout/Value";
 import { useSelector } from "@renderer/core/RendererProvider";
@@ -14,9 +13,21 @@ import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DataRow, EmptyState, formatHex } from "@renderer/controls/data";
+import regStyles from "@renderer/controls/data/Registers.module.scss";
 
-// M2: `ch`, not px. Capacity preserved from the px width at its old 12.8px size (px / 6.4).
-const LABEL_WIDTH = "19ch"; // 120px / 6.4 = 18.75
+/**
+ * The type icon's colour.
+ *
+ * A watch's *type* is not state, so it does not earn a hue: the glyph already says which type it is
+ * (`symbol-numeric`, `symbol-string`, `symbol-field`), and the row's tooltip names it. These icons
+ * used to be filled with `--console-ansi-cyan`, `--console-ansi-bright-green` and
+ * `--console-ansi-bright-red` — the *console's* ANSI palette, three saturated hues spent on
+ * decoration in a data panel, which is the pattern §5.2 removed everywhere else.
+ *
+ * What does earn a hue is the one thing that is state: a watch that could not be resolved.
+ */
+const TYPE_ICON_FILL = "--data-label";
+const UNRESOLVED_ICON_FILL = "--status-warning";
 
 type WatchEntry = {
   symbol: string;
@@ -24,6 +35,8 @@ type WatchEntry = {
   icon: string;
   fill: string;
   typeName: string;
+  /** The symbol could not be resolved, so `value` is a placeholder rather than data. */
+  unresolved: boolean;
 };
 
 export const WatchPanel = () => {
@@ -46,8 +59,9 @@ export const WatchPanel = () => {
           symbol: watch.symbol.toUpperCase(),
           value: "<unknown>",
           icon: "warning",
-          fill: "--console-ansi-bright-red",
-          typeName: briefType
+          fill: UNRESOLVED_ICON_FILL,
+          typeName: briefType,
+          unresolved: true
         };
         toDisplay.push(watchEntry);
         if (!mem) {
@@ -73,22 +87,26 @@ export const WatchPanel = () => {
           case ExpressionValueType.Bool:
             watchEntry.value = symbolInfo.value._value.toString();
             watchEntry.icon = "symbol-numeric";
-            watchEntry.fill = "--console-ansi-cyan";
+            watchEntry.fill = TYPE_ICON_FILL;
+            watchEntry.unresolved = false;
             break;
           case ExpressionValueType.Integer:
             watchEntry.value = formatIntegerWatchValue(watch, mem, symbolInfo);
             watchEntry.icon = watch.direct ? "symbol-numeric" : "symbol-field";
-            watchEntry.fill = "--console-ansi-bright-green";
+            watchEntry.fill = TYPE_ICON_FILL;
+            watchEntry.unresolved = false;
             break;
           case ExpressionValueType.String:
             watchEntry.value = `"${symbolInfo.value._value}"`;
             watchEntry.icon = "symbol-string";
-            watchEntry.fill = "--console-ansi-cyan";
+            watchEntry.fill = TYPE_ICON_FILL;
+            watchEntry.unresolved = false;
             break;
           case ExpressionValueType.Real:
             watchEntry.value = symbolInfo.value._value;
             watchEntry.icon = "symbol-numeric";
-            watchEntry.fill = "--console-ansi-cyan";
+            watchEntry.fill = TYPE_ICON_FILL;
+            watchEntry.unresolved = false;
             break;
         }
       }
@@ -118,6 +136,7 @@ export const WatchPanel = () => {
       {displayedWatches.length > 0 && (
         <VirtualizedList
           items={displayedWatches}
+          scrollRowsHorizontally
           renderItem={(idx) => {
             try {
               const watch = displayedWatches[idx];
@@ -137,7 +156,7 @@ export const WatchPanel = () => {
 type WatchItemProps = { watch: WatchEntry };
 const WatchItem = memo(({ watch }: WatchItemProps) => {
   const { ideCommandsService } = useAppServices();
-  const watchRef = useTooltipRef();
+  const rowRef = useTooltipRef<HTMLDivElement>();
 
   // --- Handle adding/removing a breakpoint
   const handleRemove = async () => {
@@ -145,25 +164,33 @@ const WatchItem = memo(({ watch }: WatchItemProps) => {
     await ideCommandsService.executeCommand(command);
   };
 
-  const tip = watch ? `(${watch.typeName}) Right-click to delete '${watch.symbol}'` : "";
+  /*
+   * The tooltip now answers anywhere along the row rather than only over the 16px icon, so it says
+   * *where* to right-click. The delete target itself is deliberately left on the icon: widening a
+   * destructive action to the whole row is a behaviour change, not a restyle.
+   */
+  const tip = watch
+    ? `${watch.symbol}\n(${watch.typeName})\nRight-click the icon to delete`
+    : "";
 
   return watch ? (
-    <DataRow hoverable>
-      <LabelSeparator />
-      <div ref={watchRef} style={{ cursor: "pointer" }} onContextMenu={handleRemove}>
+    <DataRow hoverable ref={rowRef} xclass={styles.watchRow}>
+      <div className={styles.watchIcon} onContextMenu={handleRemove}>
         <Icon iconName={watch.icon} width={16} height={16} fill={watch.fill} />
-        <TooltipFactory
-          refElement={watchRef.current}
-          placement="right"
-          offsetX={8}
-          offsetY={32}
-          showDelay={100}
-          content={tip}
-        />
       </div>
-      <LabelSeparator width={8} />
-      <Label text={watch.symbol} width={LABEL_WIDTH} />
-      <Value text={watch.value} />
+      <Label text={watch.symbol} className={styles.watchLabel} />
+      <Value
+        text={watch.value}
+        className={watch.unresolved ? styles.watchValueError : regStyles.stateValue}
+      />
+      <TooltipFactory
+        refElement={rowRef.current}
+        placement="right"
+        offsetX={8}
+        offsetY={32}
+        showDelay={100}
+        content={tip}
+      />
     </DataRow>
   ) : null;
 });

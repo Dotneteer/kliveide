@@ -1,27 +1,162 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * The panel is four device sections, not eight palette rows.
+ *
+ * The root no longer declares `font-family` at all: `DataPanel` already sets the panel's mono face
+ * and its size from the user's Font Size setting, and this panel repeating them was how it ended up
+ * one of the last places still carrying a hand-written `font-size: 0.8em` (M1) long after its
+ * siblings were converted.
+ */
 .palettePanel {
-  @include side-panel-content;
-  font-family: var(--monospace-font);
-  font-size: 0.8em;
-  padding-left: 4px;
-  padding-right: 4px;
+  padding: 0 0 var(--space-1);
 }
 
-.rows {
+/*
+ * A device block: header, ribbon, and the grid when open.
+ *
+ * The hairline is between blocks rather than under every row — four devices are four things, and
+ * a rule under each of eight rows was part of what made the old panel read as an undifferentiated
+ * list. `:last-child` drops the trailing one so the panel does not end on a rule that has nothing
+ * under it.
+ */
+.device {
   display: flex;
   flex-direction: column;
-  flex-grow: 0;
-  flex-shrink: 0;
+  padding: 0 var(--space-2) var(--space-1);
+  border-bottom: 1px solid var(--color-panel-separator);
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
-.cols {
+/*
+ * The device header.
+ *
+ * `SectionHeader`'s own horizontal padding is removed: the block already carries the panel's, and
+ * leaving both indents the header 8px further than its own content.
+ *
+ * `min-height` is the 22px list row rather than the primitive's 26px panel-header row — this is one
+ * of four stacked headings inside a panel that already has a 26px gradient band of its own, and at
+ * 26px each they read as five bands of chrome rather than as content. The row only exceeds it
+ * because of the 32px thumbnail, which the 2px block padding clears to 36px.
+ */
+.deviceHeader.deviceHeader {
+  padding: 2px 0;
+  gap: var(--space-2);
+  min-height: var(--row-list);
+}
+
+.deviceName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--data-value);
+  font-size: var(--panel-font-size);
+}
+
+/*
+ * The bank control: two segments in one rounded box.
+ *
+ * A segmented pair, not two switches. The banks are mutually exclusive — the hardware draws from
+ * exactly one — and a switch per bank (which is what this panel had) says the opposite: that each
+ * can be independently on or off.
+ */
+.bankSwitch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.bankButton {
+  width: 18px;
+  height: 15px;
   display: flex;
-  flex-direction: row;
-  flex-grow: 0;
-  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--data-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-50);
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  @include focus-ring(-2px);
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--data-value);
+  }
 }
 
-.active {
-  background-color: var(--bgcolor-button-pointed);
+/*
+ * The bank the hardware is drawing from — an inset accent ring.
+ *
+ * Declared *before* `.bankShown` on purpose. The two classes coincide in the ordinary case, and
+ * when they do the later `box-shadow` must win, so that the ring disappears under the fill instead
+ * of tracing a second edge inside it.
+ *
+ * This is the marker for the *exception*: shown follows live by default, so a live mark that is
+ * always visible tells the reader nothing four times over — once per device. It earns its place
+ * only on an unfilled segment, which is the state where the view has been pinned away from the
+ * hardware. Full-strength `--accent-solid` rather than `--accent-border`, because by the time it is
+ * visible at all it is the one thing in the panel worth noticing.
+ *
+ * It replaced a 3px corner dot. On the filled segment that dot had to be drawn in
+ * `--text-on-accent` to show up at all — `#0e0f11` in dark — so the common state rendered as a
+ * near-black speck on a blue chip and read as a rendering artefact.
+ */
+.bankLive {
+  box-shadow: inset 0 0 0 1px var(--accent-solid);
+}
+
+/** The bank on screen. A fill, because it is answering "what am I looking at". */
+.bankShown {
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+  box-shadow: none;
+
+  &:hover {
+    background: var(--accent-solid);
+    color: var(--text-on-accent);
+  }
+}
+
+/*
+ * The palette thumbnail.
+ *
+ * A 32px square, sixteen 2px rows. The outline is an *outer* shadow rather than an inset one, so it
+ * cannot eat a row of the mosaic — at 2px per entry an inset hairline would take half of the first
+ * and last rows. It exists because a palette whose first entry is black otherwise ends in the panel
+ * surface with no edge at all.
+ *
+ * Fixed size, like the grid it previews: the row must not change height when the sidebar is
+ * dragged.
+ */
+.thumb {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--border-default);
+}
+
+.thumb i {
+  display: block;
+  width: 100%;
+  height: 2px;
+}
+
+.deviceBody {
+  padding: var(--space-1) 0 var(--space-1);
 }

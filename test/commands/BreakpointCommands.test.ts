@@ -208,6 +208,34 @@ describe("ListBreakpointsCommand", () => {
       expect(calls.length).toBeGreaterThan(0);
     });
 
+    it("names a partition by its label, not its index", async () => {
+      // --- Regression: this listed `-1:$8000`, a notation `bp-set` rejects, because it built the
+      // --- key without the partition label map. See the storage/display key split.
+      context.emuApi.listBreakpoints.mockResolvedValue({
+        breakpoints: [{ address: 0x8000, exec: true, partition: -1 }]
+      });
+      context.emuApi.getPartitionLabels.mockResolvedValue({ [-1]: "R0", 0: "B0" });
+
+      await command.execute(context);
+
+      const written = (context.output.write as any).mock.calls
+        .concat((context.output.writeLine as any).mock.calls)
+        .map((call: any) => call[0])
+        .join(" ");
+      expect(written).toContain("R0:$8000");
+      expect(written).not.toContain("-1:$8000");
+    });
+
+    it("asks the emulator for the labels it needs", async () => {
+      context.emuApi.listBreakpoints.mockResolvedValue({
+        breakpoints: [{ address: 0x8000, exec: true }]
+      });
+
+      await command.execute(context);
+
+      expect(context.emuApi.getPartitionLabels).toHaveBeenCalled();
+    });
+
     it("should show disabled status for disabled breakpoints", async () => {
       // Arrange
       const mockBreakpoints: BreakpointInfo[] = [

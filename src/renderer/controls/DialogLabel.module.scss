@@ -1,4 +1,6 @@
+/* M1: absolute, never `rem` off a 16px root. This was `0.875rem` = 14px, above the scale's top. */
 .label {
-  font-size: 0.875rem;
+  font-size: var(--font-size-200);
   font-weight: 500;
+  color: var(--color-label);
 }

@@ -27,6 +27,7 @@ export const FirstStartDialog = ({ onClose, onResolve }: Props) => {
   return (
     <Modal
       title="Welcome to Klive!"
+      iconName="rocket"
       isOpen={true}
       fullScreen={false}
       width={500}

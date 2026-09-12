@@ -368,6 +368,22 @@ export class MachineController implements IMachineController {
           if (this._machineState === MachineControllerState.Running) {
             await this.pause();
           }
+
+          // --- Reaching this point means single-stepping the machine all the way there, which for a
+          // --- cold boot dwarfs everything else the flow does. When the step opts into a checkpoint
+          // --- and the machine still holds one, restore it and skip the journey entirely.
+          if (step.checkpoint && m.tryRestoreCheckpoint?.(step.checkpoint)) {
+            // --- `run()` attaches the stored media as part of starting from a stop; the restore
+            // --- took the place of that start, so do it here instead.
+            attachStoredMedia(m, this._machineInfo.mediaIds);
+            this.state = MachineControllerState.Paused;
+            await this.sendOutput(
+              `Restored the cached machine state (ROM${step.rom}/$${toHexa4(step.execPoint)})`,
+              "blue"
+            );
+            break;
+          }
+
           await this.run(
             FrameTerminationMode.UntilExecutionPoint,
             DebugStepMode.NoDebug,
@@ -375,6 +391,12 @@ export class MachineController implements IMachineController {
             step.execPoint
           );
           await this._machineTask;
+
+          // --- Only capture once the machine actually arrived: a run cut short by a cancel or a
+          // --- breakpoint would otherwise be cached as if it were the execution point.
+          if (step.checkpoint && m.pc === step.execPoint) {
+            m.captureCheckpoint?.(step.checkpoint);
+          }
           break;
 
         case "Start":
@@ -735,17 +757,21 @@ export class MachineController implements IMachineController {
   async sendOutput(text: string, foreground: OutputColor): Promise<void> {
     this._loggedEventNo++;
     const ideApi = createIdeApi(this.messenger);
-    await ideApi.displayOutput({
-      pane: PANE_ID_EMU,
-      text: `[${this._loggedEventNo}] `,
-      foreground: "magenta",
-      writeLine: false
-    });
-    await ideApi.displayOutput({
-      pane: PANE_ID_EMU,
-      text,
-      foreground,
-      writeLine: true
-    });
+    // --- One message, not two. The numbered prefix and the text are one line of output; sending
+    // --- them as separate awaited requests doubled the round trips for every logged event.
+    await ideApi.displayOutputBatch([
+      {
+        pane: PANE_ID_EMU,
+        text: `[${this._loggedEventNo}] `,
+        foreground: "magenta",
+        writeLine: false
+      },
+      {
+        pane: PANE_ID_EMU,
+        text,
+        foreground,
+        writeLine: true
+      }
+    ]);
   }
 }

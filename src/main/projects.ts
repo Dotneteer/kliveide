@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { WatchInfo } from "@common/state/AppState";
 
 import {
   closeFolderAction,
@@ -16,6 +17,7 @@ import {
   setProjectBuildFileAction,
   setExportDialogInfoAction,
   setWorkspaceSettingsAction,
+  setWatchesAction,
 } from "@state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
@@ -177,6 +179,12 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       disp(saveProjectSettingAction(projectStruct.settings));
       disp(setExportDialogInfoAction(projectStruct.exportDialog));
       disp(setWorkspaceSettingsAction(undefined, projectStruct.workspaceSettings));
+
+      // --- Restore the project's watch expressions. Unlike breakpoints this is not gated on the
+      // --- machine: a watch is a symbol in this project's own compilation, not machine state. The
+      // --- `?? []` matters — a project without saved watches must *clear* the list, otherwise the
+      // --- previously open project's watches would leak into this one.
+      disp(setWatchesAction(projectStruct.debugger?.watchExpressions ?? []));
 
       // --- Restore breakpoints, but only onto the machine this project actually installed. If a
       // --- concurrent machine change superseded ours, the live machine is somebody else's and
@@ -352,7 +360,10 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
       theme: state.theme
     },
     debugger: {
-      breakpoints
+      breakpoints,
+      // --- Unlike breakpoints, watches live in the shared store rather than in the emulator, so
+      // --- they are read straight from the state snapshot instead of over IPC.
+      watchExpressions: state.watchExpressions ?? []
     },
     builder: {
       roots: state.project?.buildRoots ?? []
@@ -476,6 +487,11 @@ interface ViewOptions {
 // --- Represents the state of the debugger
 type DebuggerState = {
   breakpoints: BreakpointInfo[];
+  /**
+   * Watch expressions. Optional so that projects written by an older build still load — they simply
+   * restore an empty list.
+   */
+  watchExpressions?: WatchInfo[];
 };
 
 // --- Represents the state of the builder

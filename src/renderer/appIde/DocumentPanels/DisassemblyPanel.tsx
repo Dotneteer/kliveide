@@ -1,6 +1,7 @@
 import styles from "./DisassemblyPanel.module.scss";
-import { rowSizes } from "@renderer/theming/tokens/rowSizes";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRowSizes } from "@renderer/theming/useRowSizes";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
@@ -18,7 +19,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
-import { VListHandle } from "virtua";
+import type { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
@@ -32,6 +33,9 @@ import {
   useDisassemblyRefresh
 } from "./useDisassemblyRefresh";
 import { DisassemblyRow } from "./DisassemblyRow";
+import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
+import { toHexa4 } from "../services/ide-commands";
+import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
 import {
   createDisassemblyOffsetOptions,
   DisassemblyBankToolbar,
@@ -39,14 +43,22 @@ import {
 } from "./DisassemblyToolbars";
 
 /* M3: see `MemoryPanel` — the height belongs to `rowSizes`, not to this file. */
-const DISASSEMBLY_ROW_ITEM_SIZE = rowSizes.disassembly;
-
 const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
+  // --- M3: the row height the virtualizer places by, matching `--row-size-disassembly` in the CSS.
+  const { disassembly: disassemblyRowItemSize } = useRowSizes();
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
+  // --- One hook for the whole listing rather than one per row. Wrapped in `useCallback` because
+  // --- `DisassemblyRow` is memoized: a fresh arrow on every render would re-render every row in
+  // --- the listing on every tick.
+  const openBreakpointDialog = useBreakpointDialog();
+  const editBreakpoint = useCallback(
+    (bp: BreakpointInfo) => void openBreakpointDialog(bp),
+    [openBreakpointDialog]
+  );
 
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -92,7 +104,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const customDisassembly = machineInfo?.toolInfo?.[CT_CUSTOM_DISASSEMBLER];
 
   // --- Internal state values for disassembly
-  const vlApi = useRef<VListHandle>(null);
+  const vlApi = useRef<VirtualizedListApi>(null);
 
   const [toScroll, setToScroll] = useState<number>(null);
   const [scrollVersion, setScrollVersion] = useState(0);
@@ -170,16 +182,36 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
 
   // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {
-    if (items.length > 0 && toScroll !== null) {
-      const idx = items.findIndex((di) => di.address >= (toScroll ?? 0));
-      if (idx >= 0) {
-        vlApi.current?.scrollToIndex(idx, {
-          align: "start"
-        });
-      }
-      setToScroll(null);
+    if (items.length === 0 || toScroll === null) return;
+
+    const idx = items.findIndex((di) => di.address >= toScroll);
+    if (idx >= 0) {
+      vlApi.current?.scrollToIndex(idx, {
+        align: "start"
+      });
+    } else {
+      /*
+       * Asked for an address past the last disassembled instruction.
+       *
+       * The listing is not the whole 64K: with the 64K view off it covers only the selected bank
+       * ($0000-$3FFF), and while Follow PC is on only about a kilobyte around PC. So a perfectly
+       * valid address is often outside it — and this used to discard the request without a word,
+       * which is indistinguishable from Go To being broken.
+       *
+       * An address *below* the range needs no special case: `findIndex` lands on the first
+       * instruction at or after it, which is the top of the listing.
+       */
+      dispatch(
+        setIdeStatusMessageAction(
+          `$${toHexa4(toScroll)} is outside the disassembled range ` +
+            `($${toHexa4(items[0].address)}-$${toHexa4(items[items.length - 1].address)}). ` +
+            `Turn on the 64K view, or turn off Follow PC, to reach it.`,
+          true
+        )
+      );
     }
-  }, [items, scrollVersion, toScroll]);
+    setToScroll(null);
+  }, [items, scrollVersion, toScroll, dispatch]);
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
@@ -214,8 +246,59 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     await refreshDisassembly();
   });
 
+  /*
+   * The width every row reserves for its hard comment, in characters.
+   *
+   * The comment is the only column with no fixed width, so before this each row sized to its own
+   * text and the list came out ragged: a row carrying "; (Invoke ROM 3 subroutine)" ran ~80px past
+   * its neighbours, and the zebra stripes ended at different x positions once the panel was narrow
+   * enough to scroll. CSS cannot equalise siblings to the widest of them here - `virtua` positions
+   * every row absolutely, so there is no shared sizing context and no table layout to fall back on.
+   *
+   * It does not need one: the panel is monospace, so a comment's width in `ch` *is* its length in
+   * characters. Taking the maximum over the whole list rather than over the visible window keeps
+   * the column from resizing as you scroll, and yields 0 - i.e. no column at all, exactly as
+   * before - for the common case of a listing with no comments in it.
+   */
+  /*
+   * The width every row reserves for its bank label. Uniform for the same reason as the comment
+   * column above, and from the same symptom: a bank with no label used to drop the cell entirely
+   * and a decimal view could mix 2ch and 3ch labels down one list.
+   */
+  const partitionWidthCh = useMemo(
+    () =>
+      derivePartitionWidthCh({
+        // --- In a full view a row's label comes from its own 8K bank, so any of the eight can be
+        // --- the widest; otherwise every row shows the one label of the current segment.
+        candidateLabels: isFullView
+          ? mem64kLabels
+          : [machineSetup.partitionLabels?.[currentSegment]],
+        decimalView,
+        enabled: bankLabel && machineSetup.showBanks
+      }),
+    [
+      bankLabel,
+      currentSegment,
+      decimalView,
+      isFullView,
+      mem64kLabels,
+      machineSetup.partitionLabels,
+      machineSetup.showBanks
+    ]
+  );
+
+  const commentWidthCh = useMemo(
+    () =>
+      items.reduce(
+        (widest, item) => (item.hardComment ? Math.max(widest, item.hardComment.length + 2) : widest),
+        0
+      ),
+    [items]
+  );
+
   return (
-    <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
+    /* --- M1: `0.8em` gave 12.8px here; see `MemoryPanel`. Follows the panel font size now. */
+    <FullPanel fontFamily="--monospace-font" fontSize="--panel-font-size">
       <DisassemblyToolbar
         autoRefresh={autoRefresh}
         bankLabel={bankLabel}
@@ -266,20 +349,23 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         disassOffset={disassOffset}
         displayBankMatrix={machineSetup.displayBankMatrix}
         isFullView={isFullView}
-        machineId={machineId}
         offsetOptions={createDisassemblyOffsetOptions(decimalView)}
         onCurrentSegmentChanged={setCurrentSegment}
         onDisassOffsetChanged={setDisassOffset}
         onFullViewChanged={setIsFullView}
         segmentOptions={machineSetup.segmentOptions}
+        partitionOptions={machineSetup.partitionOptions}
       />
       {items.length > 0 && (
         <div className={styles.disassemblyWrapper}>
           <VirtualizedList
             items={items}
             apiLoaded={(api) => (vlApi.current = api)}
-            itemSize={DISASSEMBLY_ROW_ITEM_SIZE}
+            itemSize={disassemblyRowItemSize}
             revealUnmeasuredItems
+            /* --- Long operands, labels and the bank/T-state columns overflow a narrow panel; see
+               --- `MemoryPanel` for why the wrapper needs `max-content` for the bar to appear. */
+            scrollRowsHorizontally
             onScroll={async () => {
               if (!vlApi.current) return;
 
@@ -303,15 +389,18 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                 <DisassemblyRow
                   bankLabel={bankLabel}
                   breakpoint={breakpointMap.get(item.address)}
+                  commentWidthCh={commentWidthCh}
                   currentSegment={currentSegment}
                   decimalView={decimalView}
                   index={idx}
                   isFullView={isFullView}
                   item={item}
                   mem64kLabels={mem64kLabels}
+                  onEditBreakpoint={editBreakpoint}
                   partitionLabels={machineSetup.partitionLabels}
+                  partitionWidthCh={partitionWidthCh}
                   pausedPc={pausedPc}
-                  rowHeight={DISASSEMBLY_ROW_ITEM_SIZE}
+                  rowHeight={disassemblyRowItemSize}
                   showBanks={machineSetup.showBanks}
                 />
               );

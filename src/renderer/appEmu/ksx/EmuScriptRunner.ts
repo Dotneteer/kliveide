@@ -9,6 +9,7 @@ import {
   createEvalContext
 } from "@common/ksx/EvaluationContext";
 import { executeModule, isModuleErrors, parseKsxModule } from "@common/ksx/ksx-module";
+import type { ScriptOutputOptions } from "@common/ksx/script-runner";
 import { sendScriptOutput } from "@common/ksx/script-runner";
 import { createMainApi } from "@common/messaging/MainApi";
 
@@ -27,7 +28,7 @@ export class EmuScriptRunner {
   constructor(
     private readonly store: Store<AppState>,
     private readonly messenger: MessengerBase,
-    private readonly outputFn: (text: string, options?: Record<string, any>) => Promise<void> = (
+    private readonly outputFn: (text: string, options?: ScriptOutputOptions) => Promise<void> = (
       text,
       options
     ) => sendScriptOutput(this.messenger, text, options)
@@ -45,7 +46,7 @@ export class EmuScriptRunner {
     if (!script) {
       // --- The script is already running, nothing to do
       this.outputFn?.(`Script ${scriptFile} process has not been created.`, {
-        color: "yellow"
+        foreground: "yellow"
       });
       return false;
     }
@@ -78,7 +79,7 @@ export class EmuScriptRunner {
           this.outputFn?.(
             `${error.code}: ${error.text} (${moduleName}:${error.line}:${error.column})`,
             {
-              color: "bright-red"
+              foreground: "bright-red"
             }
           );
         });
@@ -94,7 +95,7 @@ export class EmuScriptRunner {
     });
 
     this.outputFn?.(`Script started`, {
-      color: "green"
+      foreground: "green"
     });
 
     // --- Await the script execution
@@ -114,7 +115,7 @@ export class EmuScriptRunner {
         this.outputFn?.(
           `Script ${script.scriptFileName} with ID ${script.id} ${script.status} in ${time}ms.`,
           {
-            color: cancelled ? "yellow" : "green"
+            foreground: cancelled ? "yellow" : "green"
           }
         );
       } catch (error) {
@@ -125,11 +126,11 @@ export class EmuScriptRunner {
         this.outputFn?.(
           `Script ${script.scriptFileName} with ID ${script.id} failed in ${time}ms.`,
           {
-            color: "red"
+            foreground: "red"
           }
         );
         this.outputFn?.(error.toString?.() ?? "Unknown error", {
-          color: "bright-red"
+          foreground: "bright-red"
         });
       } finally {
         const scripts = this.store.getState().scripts.slice();
@@ -157,7 +158,7 @@ export class EmuScriptRunner {
     if (!script) {
       // --- The script is not running or has been completed, nothing to do
       this.outputFn?.(`Script ${script.scriptFileName} is not running.`, {
-        color: "yellow"
+        foreground: "yellow"
       });
       return false;
     }

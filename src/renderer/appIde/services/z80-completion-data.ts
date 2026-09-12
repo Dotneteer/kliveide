@@ -10,7 +10,19 @@
 // Types
 // ---------------------------------------------------------------------------
 
-export type CompletionKind = "instruction" | "register" | "pragma" | "directive" | "keyword";
+/**
+ * `"snippet"` was missing here while thirteen entries in `snippets` below already declared it —
+ * thirteen TS2322s that nobody saw, because `npm run build:check` type-checked nothing. Adding the
+ * member is only a third of the fix: see the `snippets` table and `staticItemToCompletion` in
+ * z80-providers.ts.
+ */
+export type CompletionKind =
+  | "instruction"
+  | "register"
+  | "pragma"
+  | "directive"
+  | "keyword"
+  | "snippet";
 
 export type StaticCompletionItem = {
   /** The text shown in the completion list and inserted. */
@@ -297,7 +309,11 @@ export const Z80_COMPLETION_ITEMS: readonly StaticCompletionItem[] = [
   ...registers,
   ...pragmas,
   ...keywords,
-  ...directives
+  ...directives,
+  // --- `snippets` was built and then never spread in, so every block skeleton (.macro/.endm,
+  // --- .proc, .loop, .struct, #ifdef, ...) has been unreachable since the feature landed. It was
+  // --- the only table with neither a spread here nor a dedicated export below.
+  ...snippets
 ];
 
 /** Only Z80 instruction mnemonic completion items. */
@@ -314,3 +330,6 @@ export const Z80_KEYWORD_ITEMS: readonly StaticCompletionItem[] = keywords;
 
 /** Only preprocessor directive completion items. */
 export const Z80_DIRECTIVE_ITEMS: readonly StaticCompletionItem[] = directives;
+
+/** Only block-skeleton snippet completion items. */
+export const Z80_SNIPPET_ITEMS: readonly StaticCompletionItem[] = snippets;

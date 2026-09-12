@@ -44,6 +44,10 @@ export function useConfirmPort(): ConfirmPort {
           title: request.title,
           width: 460,
           dialogRole: "alertdialog",
+          // --- A destructive question is marked in the header chip as well as on its commit
+          // --- button. `danger` already drives the button; this carries it to the chip too.
+          iconName: "warning",
+          danger: request.danger,
           closeOnOutsideClick: false
         });
         // --- A dialog dismissed with Escape or the X resolves undefined, which

@@ -12,7 +12,7 @@ import type { Tone } from "./palette";
  * - `--padding-tooltip`, a composite padding shorthand.
  *
  * All of the above are identical in both tones, which is why they live here rather than in a
- * per-theme file. Only two values still genuinely differ by tone, and they are in `toneTokens()`
+ * per-theme file. Only one value still genuinely differs by tone, and it is in `toneTokens()`
  * below.
  *
  * This is what §8.2 meant by light no longer being hand-authored: there is no longer a
@@ -23,8 +23,9 @@ export const staticTokens: Record<string, string> = {
   "--shell-font-family":
     "Inter, -apple-system, BlinkMacSystemFont, Helvetica, Neue-Light, Ubuntu, Droid Sans, sans-serif",
   "--shell-windows-font-family": "Inter, Segoe WPC, Segoe UI, sans-serif",
-  "--shell-windows-monospace-font-family": "Iosevka, Consolas, Courier New, monospace",
-  "--shell-monospace-font-family": "Iosevka, Menlo, Monaco, Courier New, monospace",
+  // --- There is deliberately no monospace stack here. `--monospace-font` is resolved in
+  // --- ThemeProvider from the user's View | Panel Font setting against the shared registry in
+  // --- @common/settings/monospace-fonts, which supplies its own bundled-Iosevka fallback.
 
   // --- Tooltip padding --------------------------------------------------------------------------
   "--padding-tooltip": "0.25em 0.5em",
@@ -42,22 +43,19 @@ export const staticTokens: Record<string, string> = {
 };
 
 /**
- * The only two values that still differ by tone and are not derivable from the neutral ramp.
+ * The one value that still differs by tone and is not derivable from the neutral ramp.
  *
  * The backdrop is an alpha wash over whatever is behind it, so it needs a different opacity per
- * tone rather than a different colour; the modal header is a hairline texture that has to be lighter
- * in dark and darker in light.
+ * tone rather than a different colour.
+ *
+ * `--bgimage-modal-header` used to live here: a 1px/3px scanline over the dialog header. It was the
+ * only texture of its kind left in the app, and it was doing real work by accident — in the light
+ * tone the header, the body and the footer all resolved to `#ffffff`, so a 2%-opacity stripe was the
+ * only thing separating them. The header now takes `--surface-chrome`, which is a different value
+ * from the body in both tones, and the texture has nothing left to hide.
  */
 export function toneTokens(tone: Tone): Record<string, string> {
   return tone === "dark"
-    ? {
-        "--bgcolor-backdrop": "#00000080",
-        "--bgimage-modal-header":
-          "repeating-linear-gradient(0deg, rgb(255 255 255 / 0.025) 0 1px, transparent 1px 3px)"
-      }
-    : {
-        "--bgcolor-backdrop": "#00000040",
-        "--bgimage-modal-header":
-          "repeating-linear-gradient(0deg, rgb(0 0 0 / 0.02) 0 1px, transparent 1px 3px)"
-      };
+    ? { "--bgcolor-backdrop": "#00000080" }
+    : { "--bgcolor-backdrop": "#00000040" };
 }

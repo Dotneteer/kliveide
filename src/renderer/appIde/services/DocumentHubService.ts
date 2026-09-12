@@ -11,13 +11,43 @@ import { getFileTypeEntry, getNodeFile } from "@renderer/appIde/project/project-
 import { documentPanelRegistry } from "@renderer/registry";
 
 /**
+ * The monotonic counter behind document activation stamps.
+ *
+ * Deliberately module-level rather than per-instance: the Open Editors panel lists the documents
+ * of *every* hub in a single most-recently-used order, so the stamps of two hubs have to be
+ * comparable with each other. A per-hub counter would look right until the view was split, and
+ * would then interleave the two halves by accident rather than by activation time.
+ */
+let activationSequence = 0;
+
+/**
  * This class provides the default implementation of the document service
  */
 class DocumentHubService implements IDocumentHubService {
   private _documentViewState = new Map<string, any>();
   private _documentApi = new Map<string, DocumentApi>();
 
+  /**
+   * The open documents, in tab order.
+   *
+   * **Replaced, never mutated in place.** `getOpenDocuments()` hands this array straight to the
+   * renderer, where React uses its identity as the "did the tab strip change?" signal — in effect
+   * dependencies, in `useMemo`, in `React.memo` comparisons. While opens were `push` and reorders
+   * were index swaps, that identity never changed, so those hooks never re-ran on anything but a
+   * multi-document close (the one path that already used `filter`).
+   *
+   * That shipped as a visible bug: `DocumentTabs` memoised the duplicate-filename set on
+   * `[openDocs]`, computed it while only one `klive.project` was open, and never recomputed when
+   * the second arrived — so two tabs with the same name both rendered as that bare name, while the
+   * overflow list beside them (which derived the same set unmemoised) correctly showed paths.
+   *
+   * Every structural change below therefore assigns a new array. It costs one shallow copy per
+   * open/close/reorder of a list that is a dozen entries long, and it makes the reference mean what
+   * every consumer already assumed it meant.
+   */
   private _openDocs: ProjectDocumentState[] = [];
+  /** Document ID -> the value of `activationSequence` when it was last activated. */
+  private _activationStamps = new Map<string, number>();
   private _activeDocIndex = -1;
   private _closingDocumentIds = new Set<string>();
   private _hubClosureRequested = false;
@@ -92,6 +122,14 @@ class DocumentHubService implements IDocumentHubService {
    */
   getActiveDocumentIndex(): number {
     return this._activeDocIndex;
+  }
+
+  /**
+   * Gets the activation stamp of the specified document (0 if it was never activated)
+   * @param id Document ID
+   */
+  getActivationStamp(id: string): number {
+    return this._activationStamps.get(id) ?? 0;
   }
 
   /**
@@ -201,6 +239,11 @@ class DocumentHubService implements IDocumentHubService {
       throw new Error(`Unknown document: ${id}`);
     }
     const document = this._openDocs[docIndex];
+
+    // --- Stamped before the "already active" bail-out below: re-activating the current document
+    // --- is still an activation, and the stamp is what "most recently used" is read from.
+    this._activationStamps.set(id, ++activationSequence);
+
     let documentWasLoaded = false;
     if (document.path && document.node && document.contents === undefined) {
       await this.projectService.getDocumentForProjectNode(document.node);
@@ -238,6 +281,14 @@ class DocumentHubService implements IDocumentHubService {
 
     // TODO: move file into new doc ID
 
+    // --- Re-index the activation stamp, so a renamed document keeps its place in the
+    // --- most-recently-used order instead of dropping to the bottom of it.
+    const oldStamp = this._activationStamps.get(oldId);
+    if (oldStamp !== undefined) {
+      this._activationStamps.delete(oldId);
+      this._activationStamps.set(newId, oldStamp);
+    }
+
     // --- Re-index the document API
     const oldApi = this._documentApi.get(oldId);
     if (oldApi) {
@@ -271,11 +322,13 @@ class DocumentHubService implements IDocumentHubService {
     if (docIndex < 0) return undefined;
 
     const activeDoc = this._openDocs[this._activeDocIndex];
-    const [detachedDoc] = this._openDocs.splice(docIndex, 1);
+    const detachedDoc = this._openDocs[docIndex];
+    this._openDocs = this._openDocs.filter((_, i) => i !== docIndex);
 
     // --- Release the view-local API and state, but keep shared document contents alone.
     this._documentApi.delete(detachedDoc.id);
     this._documentViewState.delete(detachedDoc.id);
+    this._activationStamps.delete(detachedDoc.id);
     this.projectService.closeInDocumentHub(detachedDoc.id, this);
 
     this._activeDocIndex = this._openDocs.indexOf(activeDoc);
@@ -321,6 +374,9 @@ class DocumentHubService implements IDocumentHubService {
 
         // --- Release the document view data
         this._documentViewState.delete(doc.id);
+
+        // --- Forget where the document stood in the most-recently-used order
+        this._activationStamps.delete(doc.id);
 
         // --- Notify the project service about closing the document
         this.projectService.closeInDocumentHub(doc.id, this);
@@ -373,9 +429,9 @@ class DocumentHubService implements IDocumentHubService {
   moveActiveToLeft(): void {
     const index = this._activeDocIndex;
     if (index === 0) return;
-    const tmp = this._openDocs[index - 1];
-    this._openDocs[index - 1] = this._openDocs[index];
-    this._openDocs[index] = tmp;
+    const reordered = [...this._openDocs];
+    [reordered[index - 1], reordered[index]] = [reordered[index], reordered[index - 1]];
+    this._openDocs = reordered;
     this._activeDocIndex--;
     this.signHubStateChanged();
   }
@@ -386,9 +442,9 @@ class DocumentHubService implements IDocumentHubService {
   moveActiveToRight(): void {
     const index = this._activeDocIndex;
     if (index < 0 || index >= this._openDocs.length - 1) return;
-    const tmp = this._openDocs[index + 1];
-    this._openDocs[index + 1] = this._openDocs[index];
-    this._openDocs[index] = tmp;
+    const reordered = [...this._openDocs];
+    [reordered[index + 1], reordered[index]] = [reordered[index], reordered[index + 1]];
+    this._openDocs = reordered;
     this._activeDocIndex++;
     this.signHubStateChanged();
   }
@@ -412,8 +468,10 @@ class DocumentHubService implements IDocumentHubService {
     if (insertIndex === sourceIndex) return;
 
     const activeDoc = this._openDocs[this._activeDocIndex];
-    const [document] = this._openDocs.splice(sourceIndex, 1);
-    this._openDocs.splice(insertIndex, 0, document);
+    const reordered = [...this._openDocs];
+    const [document] = reordered.splice(sourceIndex, 1);
+    reordered.splice(insertIndex, 0, document);
+    this._openDocs = reordered;
     this._activeDocIndex = this._openDocs.indexOf(activeDoc);
     this.signHubStateChanged();
   }
@@ -519,15 +577,16 @@ class DocumentHubService implements IDocumentHubService {
         const tempIndex = this._openDocs.findIndex((d) => d.isTemporary);
         if (tempIndex >= 0) {
           // --- Change the former temp document to this one
-          this._openDocs[tempIndex] = document;
+          this._activationStamps.delete(this._openDocs[tempIndex].id);
+          this._openDocs = this._openDocs.map((d, i) => (i === tempIndex ? document : d));
         } else {
           // --- Add as the last document
-          this._openDocs.push(document);
+          this._openDocs = [...this._openDocs, document];
         }
       } else {
         // --- Add as the last document
         document.isTemporary = false;
-        this._openDocs.push(document);
+        this._openDocs = [...this._openDocs, document];
       }
       wasAdded = true;
     }

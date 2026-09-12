@@ -35,6 +35,21 @@ export const MF_Z80 = "z80Cpu";
 export const MF_M6510 = "m6510Cpu";
 export const MF_ALLOW_CLOCK_MULTIPLIER = "allowClockMultiplier";
 export const MF_ALLOW_SCAN_LINES = "allowScanLines";
+/**
+ * Whether code can be injected straight into the machine's memory.
+ *
+ * Not every target can take code that way. A ZX Spectrum Next build is delivered as a `.nex` file
+ * the machine loads for itself, so "inject into the paused machine" has no meaning there — which is
+ * why the Next needed a special case in `injectCode` before this feature existed.
+ *
+ * Read with `?? true`, so a machine that does not mention it keeps the behaviour it has today; every
+ * machine in the registry states it explicitly all the same, because the interesting answer is the
+ * `false` and a reader should not have to infer the rest.
+ *
+ * This gates the *inject* operation only. Run and debug remain available on machines without it:
+ * they deliver the code by whatever route the machine does support.
+ */
+export const MF_INJECT_SUPPORT = "injectSupport";
 
 // Available custom tool keys
 export const CT_DISASSEMBLER = "disassembler";

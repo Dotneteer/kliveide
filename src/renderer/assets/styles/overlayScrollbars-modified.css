@@ -643,36 +643,51 @@
    --os-handle-bg-active: rgba(255, 255, 255, 0.66);
  }
 
-.os-theme-not-hovered {
-  --os-handle-bg: transparent;
-}
-
+/* --------------------------------------------------------------------------------------------
+ * Klive overrides. Everything above this line is vendor OverlayScrollbars CSS.
+ *
+ * There is no `.os-theme-not-hovered` class any more. It set `--os-handle-bg: transparent` and
+ * `ScrollViewer` swapped the whole theme to it on React's `onMouseLeave`, which had three faults:
+ *
+ *  1. It fought the library. OverlayScrollbars has `autoHide: "leave"` built in, and the fade it
+ *     drives -- `.os-scrollbar-auto-hide-hidden`, transitioned by the `opacity .15s, visibility
+ *     .15s` rule declared above -- was being bypassed, so the handle blinked out instead of fading.
+ *  2. It depended on React's synthetic `onMouseLeave`, which is *synthesised from `mouseout`* at the
+ *     root container and is not delivered in every path a pointer can leave an element by. The
+ *     library tracks its own pointer state and does not have those gaps.
+ *  3. `.os-theme-not-hovered` and `.os-theme-dark` are both single-class selectors, so they tie on
+ *     specificity and **stylesheet order decides**. `.os-theme-dark` was declared second, so any
+ *     moment both classes were on the element the handle painted grey regardless of hover state —
+ *     the class of race that shows up as "the scrollbar sometimes stays".
+ *
+ * Colours are tokens (see `--color-scrollbar-*` in `theming/tokens/componentAliases.ts`); the
+ * literals that used to live here were one mid-grey shared by both tones.
+ */
 .os-theme-dark,
-.os-theme-light, 
-.os-theme-dark-small,
-.os-theme-light-small {
-  --os-padding-perpendicular: 0;
-  --os-padding-axis: 0;
-  --os-track-border-radius: 0;
-  --os-size: 10px;
-  --os-handle-border-radius: 0;
-}
-
-.os-theme-dark-small,
-.os-theme-light-small {
-  --os-size: 6px;
-}
-
-.os-theme-dark,
-.os-theme-dark-small {
-  --os-handle-bg: #808080c0;
-  --os-handle-bg-hover: #a0a0a0c0;
-  --os-handle-bg-active: #c0c0c0c0;
-}
-
 .os-theme-light,
+.os-theme-dark-small,
 .os-theme-light-small {
-  --os-handle-bg: #808080c0;
-  --os-handle-bg-hover: #606060c0;
-  --os-handle-bg-active: #404040c0;
+  /* The handle is inset from the panel edge and fully rounded: `--os-size` is the *track* width,
+     and the padding is what leaves a margin either side of the handle rather than letting it run
+     flush into the panel border. The painted handle is the difference, so 12px - 2x2px = 8px.
+     Set from what reads well at this density rather than from the library's defaults: 6px was
+     tried first and the author found it too thin to grab or to notice. */
+  --os-size: 12px;
+  --os-padding-perpendicular: 2px;
+  --os-padding-axis: 2px;
+  --os-track-border-radius: 999px;
+  --os-handle-border-radius: 999px;
+  /* Widens the grab area beyond the painted handle, so a 6px bar is still easy to catch. */
+  --os-handle-interactive-area-offset: 4px;
+  --os-handle-bg: var(--color-scrollbar-handle);
+  --os-handle-bg-hover: var(--color-scrollbar-handle-hover);
+  --os-handle-bg-active: var(--color-scrollbar-handle-active);
+}
+
+/* The `thinScrollBar` variant, for the tighter surfaces (document tab strips and the like).
+   Still a step down from the panel bars above, but on the same 2px inset: 10px - 2x2px = 6px. */
+.os-theme-dark-small,
+.os-theme-light-small {
+  --os-size: 10px;
+  --os-padding-perpendicular: 2px;
 }

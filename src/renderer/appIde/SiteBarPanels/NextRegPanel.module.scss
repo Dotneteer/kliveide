@@ -6,7 +6,22 @@
   flex-direction: column;
   user-select: none;
   font-family: var(--monospace-font);
-  font-size: var(--font-size-200);
+  font-size: var(--panel-font-size);
+  /*
+   * Leading is declared, never inherited from the font's metrics.
+   *
+   * This panel is not a `DataPanel`, so it never picked up the `line-height` that
+   * `Data.module.scss` and the `side-panel-content` mixin both declare, and it was running on
+   * `line-height: normal` — which comes from whichever mono face is selected. Those metrics vary far
+   * more than they look: 1.250em for Iosevka, 1.312em for Fira Code, 1.320em for JetBrains Mono, and
+   * **0.885em for the ZX Spectrum face**, whose glyphs sit in an 8x8 cell with essentially no
+   * descent. The rows here are `min-height: 0`, so the row *is* its line box: under that font they
+   * would have collapsed onto each other.
+   *
+   * Pinning it also removes a ~0.5px drift against the panels that already declared it, which is
+   * what made this panel and Next Memory Mapping disagree at the same nominal row height.
+   */
+  line-height: var(--panel-line-height);
 
   /*
    * The panel's column geometry, declared once so the one-off header row can *derive* its offset
@@ -75,4 +90,112 @@ span.nextRegWrite {
 span.nextRegHeaderLabel {
   width: calc(var(--nextreg-label) + var(--measure-gap) + var(--nextreg-write));
   margin-inline: 0;
+}
+
+/*
+ * A register row's leading.
+ *
+ * `dense` drops `--row-size-list` (26px at a 14px panel), which is list chrome these rows have no
+ * business carrying — they are label/value pairs, not list items. On its own that leaves the bare
+ * line box (~19px), which matches the Z80 CPU panel but sits 3.5px tighter than the Call Stack
+ * panel directly above. These 2px take it to the Call Stack row exactly, which is the height the
+ * project author picked as the reference for the Next panels.
+ *
+ * It is `padding-block`, not a `min-height`: M3 keeps row *heights* in `theming/tokens/rowSizes.ts`
+ * so CSS and `VirtualizedList` cannot disagree, and adding a component-private height constant here
+ * is what that mandate exists to prevent. Padding leaves the row measuring its own content, which
+ * is what `virtua` reads — neither list passes `itemSize`, so the rows are measured, not assumed.
+ *
+ * Doubled class, deliberately. `DataRow`'s own `.dense` sets the `padding` *shorthand*
+ * (`0 var(--space-2)`), and a single-class rule here would tie with it on specificity — the
+ * winner then decided by which CSS Module the bundler happens to emit second, which is not
+ * something to ship. `.nextRegRow.nextRegRow` wins outright, in either order.
+ */
+.nextRegRow.nextRegRow {
+  padding-block: 2px;
+}
+
+/*
+ * The expander gutter.
+ *
+ * A `1.6ch` box holding a 16px icon, which overflows it symmetrically — the same trick `.flagDot`
+ * in `Registers.module.scss` uses, and for the same reason: the gutter has to sit on the `ch` grid
+ * (M2) while the icon keeps its own pixel size. It is rendered for every row, including the 67
+ * registers with no slices, so one panel does not have two label columns.
+ */
+.nextRegChevron {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1.6ch;
+}
+
+/*
+ * The decoded-field block under an expanded register.
+ *
+ * **No background fill.** The obvious choice, `--surface-raised`, means *lighter* — which reads as
+ * lifted in dark but is pure white in light, so a band filled with it would invert between the two
+ * tones (see the trap recorded in `.ai/ui-theming-intent-and-lessons.md`). A rule plus an indent
+ * says "this belongs to the row above" in both tones without taking a position on depth.
+ *
+ * The rule is `--color-panel-separator`, not `--border-subtle`: on `--surface-panel` the subtle
+ * border measures 1.37:1 and simply is not there. See that token's comment in componentAliases.ts.
+ */
+.sliceDetail {
+  display: flex;
+  flex-direction: column;
+  margin: 1px 0 3px calc(var(--space-2) + 1.6ch);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--color-panel-separator);
+}
+
+.sliceRow {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--measure-gap);
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+  }
+}
+
+/* The bit range (`7`, `5:0`), trailing-aligned so the colons line up down the column. */
+.sliceBits {
+  flex: 0 0 auto;
+  width: 3.5ch;
+  justify-content: flex-end;
+  display: flex;
+  color: var(--data-secondary);
+}
+
+/*
+ * The decoded value: a filled/outline circle for a single-bit flag, hex for a multi-bit field.
+ *
+ * Height is pinned to one line box so the circle centres on the *first* line of a description that
+ * wraps, rather than on the block's full height.
+ */
+.sliceValue {
+  flex: 0 0 auto;
+  width: 3.5ch;
+  height: var(--panel-line-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-state-value);
+  font-weight: 600;
+}
+
+/*
+ * The field's words.
+ *
+ * Wrapped, not truncated: these run to 144 characters and reading them is the entire reason to
+ * expand a register. Truncating here would reproduce the tooltip-only state this replaced.
+ */
+.sliceText {
+  flex: 1 1 auto;
+  color: var(--data-label);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

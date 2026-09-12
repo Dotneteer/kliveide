@@ -2,13 +2,15 @@
 description: "With this view, you can overview and manage the breakpoints used for debugging. You can find this view in the Debug activity tag with the BreakPoints header:"
 ---
 
+import { Callout } from 'nextra/components'
+
 # The Breakpoints View
 
 With this view, you can overview and manage the breakpoints used for debugging. You can find this view in the Debug activity tag with the **BreakPoints** header:
 
 <ClickableImage src="/images/working-with-ide/bp-view.png" width={384} />
 
-This view displays all breakpoints you created with interactive commands or in the source code. Each line represents a particular breakpoint with this information:
+This view displays every breakpoint, whether you created it here, with an interactive command, or in the source code. Each line represents a particular breakpoint with this information:
 - A checkbox shows if the current breakpoint is enabled or disabled. You can set this status by toggling the checkbox.
 - A filled circle representing the status of a breakpoint:
   - cyan: This breakpoint has been created with an interactive command.
@@ -25,7 +27,48 @@ When you hover the mouse over the first two icons, they display additional infor
 
 <ClickableImage src="/images/working-with-ide/bp-explain.png" width={384} />
 
-With the right mouse button, you can remove an existing breakpoint. If you want to deactivate a breakpoint temporarily, disable it by clearing the checkbox on its left.
+With the right mouse button on a breakpoint's indicator, you can remove that breakpoint. If you want to deactivate one temporarily, disable it by clearing the checkbox on its left.
+
+The toolbar at the top of the view adds two more actions:
+
+- **Add breakpoint** (the **+** button) opens the breakpoint dialog described below.
+- **Remove all breakpoints** erases the whole set. This is the same operation as the `bp-ea`
+  command, so it removes source-code breakpoints as well; the confirmation tells you how many of
+  those are about to go.
+
+Right-clicking a breakpoint's *row* opens a menu with **Edit breakpoint**, **Enable**/**Disable**,
+**Remove breakpoint**, and **Remove all breakpoints**. Double-clicking a row opens the editor
+directly. You can also double-click a breakpoint's indicator in the
+[Disassembly View](./disassembly) to edit it there.
+
+## The Breakpoint Dialog
+
+The **Add breakpoint** button and the **Edit breakpoint** command both open a dialog that offers
+every option the `bp-set` command accepts, without the flag syntax:
+
+- **Type** &mdash; execution, memory read, memory write, I/O read or I/O write. A breakpoint has
+  exactly one type, so choosing one here replaces the last.
+- **Break only in a specific partition** &mdash; shown only on machines that page ROMs or banks,
+  and not available for I/O breakpoints, which watch a port rather than a partition. Ticking it
+  reveals the same partition chooser the [Memory View](./memory) uses: a short list on a machine
+  with a handful of banks, and the bank matrix on a machine like the ZX Next, whose 247 partitions
+  no list could sensibly hold. The names it offers are the machine's own; see
+  [Machine-Specific Memory Partitions](./memory#machine-specific-memory-partitions).
+- **Address** (or **Port**, for the I/O types) &mdash; accepts the same literals the commands do:
+  `$8000`, `32768` or `%1000000000000000`.
+- **Port mask** &mdash; only for the I/O types. Leave it empty to match the port exactly.
+- **Enabled** &mdash; clear this to create a breakpoint that is set but not armed.
+
+The dialog refuses an address that already has a breakpoint of the same type rather than silently
+merging the two, which is what `bp-set` does on the command line.
+
+<Callout type="info">
+The dialog edits **binary** breakpoints &mdash; those bound to an address. Source-code breakpoints
+belong to the editor, which places them when you click in the left margin beside a line and moves
+them with the line as you edit. That is why the row menu offers no **Edit** command for them; you
+can still enable, disable, and remove them from this view. To script one, use
+`bp-set [myfile.asm]:12`.
+</Callout>
 
 ## Resolved Source Code Breakpoints
 

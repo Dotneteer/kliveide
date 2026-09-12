@@ -516,7 +516,12 @@ class ZccCommandManager extends CliManager {
 
   private getRootPath(): string {
     if (!this._rootPath) {
-      const settingsReader = createSettingsReader(mainStore);
+      // --- `.getState()`, not the store. `createSettingsReader` takes an `AppState` and reads
+      // --- `state.userSettings` / `state.projectSettings`; a `Store` has neither, so every lookup
+      // --- returned undefined and `getRootPath()` threw "install folder is not set" *even when it
+      // --- was set* — which made every `Z88dk.compile(...)` in a KSX script fail. Nine other
+      // --- `createSettingsReader` call sites already pass state; this was the only one that did not.
+      const settingsReader = createSettingsReader(mainStore.getState());
       this._rootPath = settingsReader.readSetting(Z88DK_INSTALL_FOLDER);
     }
     if (!this._rootPath) {

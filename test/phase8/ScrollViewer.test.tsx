@@ -20,6 +20,8 @@ import { fireEvent } from "@testing-library/react";
 
 // OverlayScrollbars may not work in jsdom — stub if needed
 const scrollViewerMockState = vi.hoisted(() => {
+  /* The last `options` object the component handed the library, for the auto-hide test below. */
+  const lastOptions: { current: any } = { current: null };
   const scrollOffsetElement = {
     clientWidth: 100,
     scrollLeft: 0,
@@ -29,14 +31,15 @@ const scrollViewerMockState = vi.hoisted(() => {
       if (top !== undefined) scrollOffsetElement.scrollTop = top;
     })
   };
-  return { scrollOffsetElement };
+  return { scrollOffsetElement, lastOptions };
 });
 
 vi.mock("overlayscrollbars-react", () => ({
   OverlayScrollbarsComponent: React.forwardRef(function MockOS(
-    { children, onScroll, className, ...props }: any,
+    { children, onScroll, className, options, ...props }: any,
     ref: any
   ) {
+    scrollViewerMockState.lastOptions.current = options;
     React.useImperativeHandle(ref, () => ({
       osInstance: () => ({
         elements: () => ({
@@ -61,6 +64,42 @@ describe("ScrollViewer — Phase 8", () => {
     scrollViewerMockState.scrollOffsetElement.scrollLeft = 0;
     scrollViewerMockState.scrollOffsetElement.scrollTop = 0;
     scrollViewerMockState.scrollOffsetElement.scrollTo.mockClear();
+  });
+
+  /*
+   * Auto-hide must stay the *library's*, not a React `pointed` state.
+   *
+   * The version this replaced set `pointed` from `onMouseEnter`/`onMouseMove`/`onMouseLeave` and
+   * swapped in an `os-theme-not-hovered` theme whose only declaration was a transparent handle.
+   * That could not fade, re-rendered the panel subtree on every mouse move, and could leave the
+   * scrollbar painted when React's synthesised `onMouseLeave` did not arrive.
+   *
+   * This asserts the *option*, not the appearance, because appearance is untestable here: the whole
+   * of `overlayscrollbars-react` is mocked out above, so nothing in jsdom exercises the real
+   * show/hide at all. Verify the behaviour itself in the running app (see
+   * `.ai/ui-theming-intent-and-lessons.md`); this test only stops the mechanism being swapped back.
+   */
+  it("delegates auto-hide to OverlayScrollbars rather than React hover state", () => {
+    const { container } = renderWithProviders(
+      <ScrollViewer>
+        <p>Content</p>
+      </ScrollViewer>
+    );
+
+    const opts = scrollViewerMockState.lastOptions.current;
+    expect(opts?.scrollbars?.autoHide).toBe("leave");
+    // Hidden until the pointer arrives, rather than held visible until the first scroll.
+    expect(opts?.scrollbars?.autoHideSuspend).toBe(false);
+    // The theme is the real one at rest; nothing swaps in a transparent-handle stand-in.
+    expect(opts?.scrollbars?.theme).toMatch(/^os-theme-(dark|light)/);
+
+    // And no mouse handlers on the wrapper: those were the re-render-per-move path.
+    const wrapper = container.querySelector("div");
+    fireEvent.mouseMove(wrapper!);
+    fireEvent.mouseLeave(wrapper!);
+    expect(scrollViewerMockState.lastOptions.current?.scrollbars?.theme).toBe(
+      opts?.scrollbars?.theme
+    );
   });
 
   it("renders children inside the scroll container", () => {

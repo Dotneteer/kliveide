@@ -106,7 +106,7 @@ const TipRow = ({ tooltip, children }: { tooltip: string; children: ReactNode })
   const ref = useTooltipRef<HTMLDivElement>();
 
   return (
-    <DataRow hoverable ref={ref}>
+    <DataRow hoverable dense xclass={styles.memMapRow} ref={ref}>
       {children}
       <TooltipFactory
         refElement={ref.current}
@@ -140,7 +140,7 @@ export const MemMappingPanel = () => {
     : "Off";
   return (
     <div className={styles.memMappingPanel}>
-      <DataRow hoverable>
+      <DataRow hoverable dense xclass={styles.memMapRow}>
         <Label text="All RAM:" className={styles.memMapLabel} />
         <Value text={allRamValue} className={regStyles.stateValue} />
       </DataRow>

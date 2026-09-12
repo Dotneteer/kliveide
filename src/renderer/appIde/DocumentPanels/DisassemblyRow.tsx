@@ -1,8 +1,9 @@
 import classnames from "classnames";
 import { AddressLabel, PartitionPrefix } from "@renderer/controls/data";
+import { isWidePartitionLabel } from "@renderer/controls/data/partitionWidth";
 import { memo } from "react";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Label } from "@renderer/controls/layout/Label";
 import { Secondary } from "@renderer/controls/layout/Secondary";
@@ -57,14 +58,10 @@ export function deriveDisassemblyRowViewModel({
   let partitionLabel = isFullView
     ? (mem64kLabels[address >> 13] ?? "")
     : (partitionLabels[currentSegment] ?? "");
-  let useWidePartitions = false;
+  const useWidePartitions = isWidePartitionLabel(partitionLabel, decimalView, showBanks);
 
-  if (showBanks && partitionLabel && decimalView) {
-    const partAsNumber = parseInt(partitionLabel, 16);
-    if (!isNaN(partAsNumber)) {
-      useWidePartitions = true;
-      partitionLabel = toDecimal3(partAsNumber);
-    }
+  if (useWidePartitions) {
+    partitionLabel = toDecimal3(parseInt(partitionLabel, 16));
   }
 
   const opCodes =
@@ -74,7 +71,11 @@ export function deriveDisassemblyRowViewModel({
   return {
     address,
     addressText: decimalView ? toDecimal5(address) : toHexa4(address),
-    breakpointAddress: breakpoint?.resource ? getBreakpointKey(breakpoint) : address,
+    // --- Only a source-bound breakpoint is named by its key here; an address-bound one shows its
+    // --- raw address. The label map matters for neither, but the display form requires it.
+    breakpointAddress: breakpoint?.resource
+      ? getBreakpointDisplayKey(breakpoint, partitionLabels)
+      : address,
     breakpointPartition:
       breakpoint?.partition !== undefined ? (partitionLabels[breakpoint.partition] ?? "?") : undefined,
     execPoint: address === pausedPc,
@@ -92,14 +93,43 @@ export function deriveDisassemblyRowViewModel({
 type DisassemblyRowProps = DisassemblyRowViewModelParams & {
   index: number;
   rowHeight: number;
+  /**
+   * Characters reserved for the hard-comment column, shared by every row in the list.
+   *
+   * Uniform across rows so their backgrounds all end at the same x; see the derivation in
+   * `DisassemblyPanel`. 0 means no row in the listing has a comment, and the cell is omitted
+   * entirely rather than rendered empty.
+   */
+  commentWidthCh: number;
+  /**
+   * Characters reserved for the bank-label column, shared by every row in the list.
+   *
+   * Uniform for the same reason as `commentWidthCh`; 0 means the listing has no bank column and
+   * the cell is omitted entirely. Derived by `derivePartitionWidthCh`.
+   */
+  partitionWidthCh: number;
+  /**
+   * Open the breakpoint editor for this row's breakpoint.
+   *
+   * Supplied by the panel so the whole listing shares one callback: the disassembly view has no row
+   * menu of its own, so the indicator's double-click is the way in.
+   */
+  onEditBreakpoint?: (breakpoint: BreakpointInfo) => void;
 };
 
 export const DisassemblyRow = memo(function DisassemblyRow({
+  commentWidthCh,
   index,
   item,
+  onEditBreakpoint,
+  partitionWidthCh,
   rowHeight,
   ...viewModelParams
 }: DisassemblyRowProps) {
+  const breakpoint = viewModelParams.breakpoint;
+  // --- Only an address-bound breakpoint is editable here. A source-bound one belongs to the
+  // --- editor's glyph margin, which places and moves it by line.
+  const editable = onEditBreakpoint && breakpoint && breakpoint.address !== undefined;
   const viewModel = deriveDisassemblyRowViewModel({
     ...viewModelParams,
     item
@@ -121,9 +151,15 @@ export const DisassemblyRow = memo(function DisassemblyRow({
         hasBreakpoint={viewModel.hasBreakpoint}
         current={viewModel.execPoint}
         disabled={viewModelParams.breakpoint?.disabled ?? false}
+        onEdit={editable ? () => onEditBreakpoint(breakpoint) : undefined}
       />
-      {viewModel.showBankLabel && viewModel.partitionLabel && (
-        <PartitionPrefix label={viewModel.partitionLabel} wide={viewModel.useWidePartitions} />
+      {/*
+        * Rendered whenever the listing has a bank column at all, not merely when *this* row has a
+        * label, and at the column's shared width rather than this row's own. See
+        * `derivePartitionWidthCh`.
+        */}
+      {partitionWidthCh > 0 && (
+        <PartitionPrefix label={viewModel.partitionLabel} width={partitionWidthCh} />
       )}
       {/*
         * M2: `ch`, not px. Capacity is preserved from the px these replace, measured at the row's
@@ -144,7 +180,17 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       <Label text={viewModel.labelText} width="10ch" className={styles.disassemblyLabel} />
       <div className={styles.tstates}>{viewModel.tstates}</div>
       <Value text={viewModel.instruction} width="25ch" className={styles.disassemblyInstruction} />
-      {item.hardComment && <Secondary text={"; " + item.hardComment} />}
+      {/*
+        * Rendered on every row once any row in the listing has a comment, and at the same width on
+        * all of them, so a row without one still ends where its neighbours do. Sizing it to its own
+        * text is what left the stripes ragged.
+        */}
+      {commentWidthCh > 0 && (
+        <Secondary
+          text={item.hardComment ? "; " + item.hardComment : ""}
+          width={`${commentWidthCh}ch`}
+        />
+      )}
     </div>
   );
 });

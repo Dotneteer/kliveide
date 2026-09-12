@@ -53,6 +53,8 @@ export const SideBarPanel = ({
   const _endMove = () => endMove();
 
   const newHeight = { height: `${suggestedSize}px` };
+  // Capitalized, because JSX reads a lowercase tag name as an HTML element.
+  const Badge = sideBar.badge;
   const useScrollViewer = sideBar.useScrollViewer ?? true;
   return (
     <div
@@ -89,6 +91,13 @@ export const SideBarPanel = ({
           rotate={expanded ? 90 : 0}
         />
         <span className={styles.headerText}>{sideBar.title}</span>
+        {/*
+          * The badge slot. No panel defines `badge` today, so this collapses to nothing and the
+          * header renders exactly as before — no reserved width, no layout shift when one is
+          * added later. `SideBarBadge` itself returns null for an empty count, so a badge that
+          * has nothing to report also costs nothing here.
+          */}
+        {Badge && <Badge panelId={sideBar.id} expanded={expanded} />}
       </div>
       {expanded && (
         <div className={styles.contentWrapper}>

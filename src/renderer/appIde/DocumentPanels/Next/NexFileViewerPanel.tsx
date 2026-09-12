@@ -195,6 +195,7 @@ const NexFileViewerPanel = ({
               >
                 <NextPaletteViewer
                   palette={context.fileInfo?.palette}
+                  cellSize={29}
                   allowSelection={true}
                 />
               </ExpandableRow>

@@ -46,6 +46,14 @@ React 19 + Next 16.
 - The deployment path is `NEXT_PUBLIC_BASE_PATH` (see `docs/.env.production`),
   never a hardcoded `/kliveide` and never keyed off `NODE_ENV`.
 
+- **Screenshots can be generated rather than hand-captured.** `scripts/doc-shots/` launches
+  Klive under Playwright's Electron driver, drives it through the IDE's own command prompt,
+  and captures element-scoped PNGs — no manual cropping, no window chrome. Output stages to
+  `.doc-shots/` for review; `DOC_SHOTS_OUT=docs/public/images` publishes. Read
+  `.ai/doc-screenshots-guide.md` before using or extending it: it carries the command
+  vocabulary, the settings-seeding that makes runs reproducible, and the fixture-project
+  guard that keeps a recipe away from a real `~/KliveProjects` folder.
+
 Verify a docs change with `npm run doc:build && npm run doc:check`, which
 diffs routes and assets against `.plans/docs-*.golden.txt`, audits every
 internal link, and asserts the Z80 syntax highlighting actually rendered. The
@@ -54,11 +62,12 @@ merely uncoloured, which no route diff can see.
 
 ## Current Useful Commands
 
-- Type-check: `npm run build:check` - **currently a no-op**: the root `tsconfig.json` is
-  solution-style (`"files": []` plus project references), so plain `tsc` resolves no input files
-  and exits 0 without checking anything. Verify with
-  `npx tsc --noEmit --listFiles | grep -c "src/renderer"` (prints 0). Until this is fixed,
-  type-check against `build/tsconfig.web.json` explicitly and do not treat `build:check` as a gate.
+- Type-check: `npm run build:check` - runs `scripts/check-types.cjs`, which type-checks both
+  referenced projects and compares the result against `build/type-errors-baseline.json`. It fails
+  on errors that are **new**, not on the backlog that accumulated while the command was a no-op
+  (plain `tsc` on a solution-style root config resolves no inputs and exits 0). Clearing an entry
+  from the baseline is a normal part of touching a file; run `npm run build:check -- --update` to
+  record it. Raising a count needs a reason in the PR.
 - Renderer hook lint baseline: `npm run lint:renderer`
 - Focused jsdom tests: `npm test -- --project jsdom <test files>`
 - Docs build: `npm run doc:build`
@@ -90,13 +99,17 @@ merely uncoloured, which no route diff can see.
   (M2), and no component-private row-height constants - use `theming/tokens/rowSizes.ts` (M3).
 - The Monaco syntax palette is mid-revision: **read `.plans/SYNTAX_PALETTE_REVISION_PLAN.md`**
   before changing `theming/tokens/syntax.ts`. It supersedes §8.1 of the modernization plan.
+- **Any style, theming or visual change must update `.ai/ui-theming-intent-and-lessons.md` in the
+  same change** — a standing instruction from the project author. Record the durable rule the change
+  taught, not what happened: fold it into the existing sections, replace anything it supersedes, and
+  keep no history. That file is how style decisions reach sessions that never saw the work.
 - **Read `.ai/ui-theming-intent-and-lessons.md` before this kind of work.** It records the settled
   product decisions, how to run and visually inspect the app (CDP, the app menu, the
   `.plans/baseline/` scripts), and the failure modes this work already hit.
 - Every accent has a **primary and a secondary hue** (`--accent-*` / `--accent-secondary-*`) — the
   secondary exists for two things in one view that must both read as accent-tied yet stay clearly
   apart (see the memory dump's hovered byte and disassembly's opcode column). The memory dump, the
-  disassembly view **and the converted register/state panels** (Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack — one shared
+  disassembly view **and the converted register/state panels** (Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints — one shared
   `--color-state-value`) are the deliberate exceptions to the otherwise-neutral data hierarchy;
   unconverted panels stay neutral. Full detail in `.ai/ui-theming-intent-and-lessons.md` and
   `.plans/UI_MODERNIZATION_PLAN.md` §10.

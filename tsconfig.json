@@ -1,77 +1,18 @@
 {
+  // A solution file: it has no inputs of its own, only references to the two real projects.
+  //
+  // `"include"` used to name `next-env.d.ts` and `pages/**`, from a Next.js scaffold this repo has
+  // never had. That was harmless in itself, but it made `tsc` look like it was configured to check
+  // something when it was not: plain `tsc` does NOT follow project references, so it resolved zero
+  // input files and exited 0. `npm run build:check` was that bare `tsc`, and the type checker went
+  // quiet for long enough that the codebase reached TypeScript 6 with ~160 unreported errors.
+  //
+  // The gate is now `scripts/check-types.cjs`, which runs each referenced project explicitly.
+  // Leave `files` empty: anything listed here is checked WITHOUT the projects' own compiler
+  // options, which is how the confusion started.
   "files": [],
   "references": [
-    {
-      "path": "./build/tsconfig.node.json"
-    },
-    {
-      "path": "./build/tsconfig.web.json"
-    }
-  ],
-  "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": false,
-    "noEmit": true,
-    "incremental": true,
-    "ignoreDeprecations": "6.0",
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "paths": {
-      "@abstractions/*": [
-        "./src/common/abstractions/*"
-      ],
-      "@common/*": [
-        "./src/common/*"
-      ],
-      "@styles/*": [
-        "./src/renderer/assets/styles/*"
-      ],
-      "@messaging/*": [
-        "./src/common/messaging/*"
-      ],
-      "@state/*": [
-        "./src/common/state/*"
-      ],
-      "@utils/*": [
-        "./src/common/utils/*"
-      ],
-      "@renderer/*": [
-        "./src/renderer/*"
-      ],
-      "@emu/*": [
-        "./src/emu/*"
-      ],
-      "@appIde/*": [
-        "./src/renderer/appIde/*"
-      ],
-      "@main/*": [
-        "./src/main/*"
-      ],
-      "@controls/*": [
-        "./src/renderer/controls/*"
-      ],
-      "@mvc/*": [
-        "./src/renderer/mvc/*"
-      ]
-    },
-    "target": "ES2017"
-  },
-  "include": [
-    "next-env.d.ts",
-    "pages/**/*.ts",
-    "pages/**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
+    { "path": "./build/tsconfig.node.json" },
+    { "path": "./build/tsconfig.web.json" }
   ]
 }

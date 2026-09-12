@@ -15,7 +15,8 @@ export const Z88ExportCardDialog = ({ slot, onClose, onExport }: Props) => {
   return (
     <Modal
       isOpen={true}
-      title={`Export the Content of Z88 Card in Slot ${slot}`}
+      title={`Export the Content of Z88 Card in Slot ${slot}
+      iconName="repo-push"`}
       width={420}
       translateY={0}
       onPrimaryClicked={async () => {

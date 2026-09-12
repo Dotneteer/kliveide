@@ -10,6 +10,12 @@
  *             exactly 0.5em wide (vs 0.6em for Menlo/Consolas/JetBrains Mono),
  *             which fits ~17% more columns in the same panel width.
  *
+ * ZX-Spectrum is the exception: it is vendored, not built by the script, and
+ * carries its own licence. It lives here rather than in core.scss because it is
+ * now a first-class choice in View | Editor Options | Font Family and in
+ * View | Panel Font, so it must load in every window whether or not some CSS
+ * module happens to pull core.scss in.
+ *
  * `font-display: block` is deliberate: the files are local, so they resolve
  * immediately, and blocking avoids a reflow when the 0.5em metrics of Iosevka
  * replace a wider fallback mono.
@@ -207,4 +213,30 @@ pre,
 .monaco-editor {
   font-variant-ligatures: none;
   font-feature-settings: 'calt' 0, 'dlig' 0;
+}
+
+/* --- ZX Spectrum (monospace, bundled) ------------------------------------
+ * The ROM character set, offered so listings, disassembly and memory dumps can
+ * be read in the machine's own typeface. Used unconditionally by the BASIC
+ * listing document (BasicPanel.module.scss) and selectable everywhere else.
+ *
+ * Traits worth knowing, all deliberate rather than defects:
+ *   - 122 glyphs: ASCII (minus the backtick) plus a few strays. Anything else
+ *     falls through to the rest of the stack, so arrows/box-drawing in the
+ *     status bar and output panes still render, just in Iosevka.
+ *   - 0.988em advance, nearly square, against Iosevka's 0.5em: panels fit
+ *     roughly half the columns. That is what the real machine looked like.
+ *   - No glyph descends below the baseline (worst ink yMin is 0), which is why
+ *     the near-zero descent in the font metrics clips nothing.
+ *
+ * The file was repaired in place: `x` shipped with a 2124 advance against the
+ * 2023 every other glyph uses, with an identical outline - a bad metric, not a
+ * wide letter. See fix_zxspectrum() in scripts/build-fonts.py.
+ */
+@font-face {
+  font-family: 'ZxSpectrum';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('../fonts/zxspectrum.woff2') format('woff2');
 }

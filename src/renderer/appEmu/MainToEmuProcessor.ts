@@ -32,14 +32,19 @@ import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
-import { CpuState, CpuStateChunk, VicState } from "@common/messaging/EmuApi";
+import {
+  CpuState,
+  CpuStateChunk,
+  ULA_BORDER_COLOR_NAMES,
+  VicState
+} from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { IMemorySection } from "@abstractions/MemorySection";
 import type { RecordingManager } from "./recording/RecordingManager";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
 
-const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
+const borderColors = ULA_BORDER_COLOR_NAMES;
 
 // Module-level ref so menu commands can reach the renderer RecordingManager.
 let _emuRecordingManager: RecordingManager | null = null;
@@ -761,6 +766,28 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Gets a human-readable name for each partition. Presentation only; the label is the identity.
+   */
+  getPartitionDescriptions() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.machine.getPartitionDescriptions();
+  }
+
+  /**
+   * Gets the caption each partition sits under in a chooser.
+   */
+  getPartitionGroups() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.machine.getPartitionGroups();
+  }
+
+  /**
    * Gets the current call stack information.
    */
   getCallStack() {
@@ -804,7 +831,8 @@ class EmuMessageProcessor {
       tilemapFirst: pd.tilemapFirst,
       tilemapSecond: pd.tilemapSecond,
       storedPaletteValue: pd.storedPaletteValue,
-      trancparencyColor: machine.composedScreenDevice.fallbackColor,
+      spriteTransparencyIndex: machine.spriteDevice.transparencyIndex,
+      tilemapTransparencyIndex: machine.tilemapDevice.transparencyIndex,
       reg43Value: pd.nextReg43Value,
       reg6bValue: machine.tilemapDevice.nextReg6bValue,
       ulaNextFormat: machine.composedScreenDevice.ulaNextFormat

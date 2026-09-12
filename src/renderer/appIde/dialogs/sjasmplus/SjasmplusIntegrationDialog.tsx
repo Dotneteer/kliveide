@@ -80,6 +80,7 @@ export const SjasmplusIntegrationDialog = ({ onClose }: Props) => {
   return (
     <Modal
       title="SJASMPLUS Integration"
+      iconName="tools"
       isOpen={true}
       fullScreen={false}
       width={640}

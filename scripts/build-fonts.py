@@ -17,6 +17,10 @@ Sources (all SIL Open Font License 1.1):
   JetBrains Mono  (v) - node_modules/@fontsource-variable/jetbrains-mono
   Fira Code       (v) - node_modules/@fontsource-variable/fira-code
 
+ZX-Spectrum is the odd one out: it is vendored (src/renderer/assets/fonts/zxspectrum.woff2,
+committed, no upstream package) and carries its own licence, so this script never rebuilds it. It
+only repairs it in place - see fix_zxspectrum() - which is idempotent and safe to re-run.
+
 The four editor fonts above are shipped as Fontsource's variable builds, which cover the whole
 weight range in a single file. Their `latin` file is copied verbatim (already small); their
 `latin-ext` file is subset to Latin Extended-A/B, because Noto's in particular is 287 KB of
@@ -123,6 +127,51 @@ def subset(src: Path, dest: Path, unicodes: str = UNICODES) -> None:
     )
 
 
+def fix_zxspectrum() -> None:
+    """Normalises the vendored ZX-Spectrum face to a genuinely fixed pitch.
+
+    The file as vendored gives `x` an advance of 2124 against the 2023 every other glyph uses,
+    while its outline is byte-for-byte the same size as `w`, `o` and `m`. That is a bad metric,
+    not a wide letter, and it matters because the font is now selectable for the editor and the
+    monitoring panels: Monaco measures one character and positions the caret assuming every other
+    matches, and the panels lay out hex dumps in `ch` columns. Either one visibly breaks on any
+    line containing an x - and `ix`, `iy`, `ex`, `0x` make that nearly every line of Z80 work.
+
+    This rewrites only advance widths, never outlines, and additionally sets the two flags that
+    advertise fixed pitch (post.isFixedPitch, PANOSE bProportion) which the file also had wrong.
+    Re-running it on an already-repaired file changes nothing.
+    """
+    from collections import Counter
+
+    dest = DEST / "zxspectrum.woff2"
+    font = TTFont(dest)
+    cmap = font.getBestCmap()
+    hmtx = font["hmtx"]
+
+    # --- The intended advance is simply the one nearly every glyph already agrees on.
+    target = Counter(hmtx[g][0] for g in cmap.values()).most_common(1)[0][0]
+    repaired = []
+    for codepoint, glyph in cmap.items():
+        advance, lsb = hmtx[glyph]
+        if advance != target:
+            hmtx[glyph] = (target, lsb)
+            repaired.append((codepoint, glyph, advance))
+
+    already_flagged = font["post"].isFixedPitch == 1 and font["OS/2"].panose.bProportion == 9
+    if not repaired and already_flagged:
+        print("  zxspectrum.woff2: already fixed pitch, nothing to repair")
+        return
+
+    font["post"].isFixedPitch = 1
+    font["OS/2"].panose.bProportion = 9  # --- 9 = Monospaced
+    font.flavor = "woff2"
+    font.save(dest)
+
+    for codepoint, glyph, advance in repaired:
+        print(f"  zxspectrum.woff2: U+{codepoint:04X} {glyph!r} advance {advance} -> {target}")
+    print(f"  zxspectrum.woff2: {dest.stat().st_size // 1024} KB, fixed pitch at {target}")
+
+
 def main() -> None:
     DEST.mkdir(parents=True, exist_ok=True)
     tmpdir = DEST / ".tmp"
@@ -152,6 +201,8 @@ def main() -> None:
             unicodes=LATIN_EXT_UNICODES,
         )
         print(f"  {ext_out.name}: {ext_out.stat().st_size // 1024} KB")
+
+    fix_zxspectrum()
 
     shutil.rmtree(tmpdir)
 

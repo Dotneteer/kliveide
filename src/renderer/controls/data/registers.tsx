@@ -264,9 +264,16 @@ export type BitValueProps = {
    * same character grid as the value column above them.
    */
   xclass?: string;
+  /**
+   * Reports the pointer entering and leaving the bit, for a caller that renders the hovered bit's
+   * description in a tooltip of its own (see `FlagRow`'s `onHoverBit`). On the cell rather than a
+   * wrapper element, because `.flagStrip` is a flex row and an extra div in it is an extra flex
+   * item.
+   */
+  onHover?: (hovered: boolean) => void;
 };
 
-export const BitValue = ({ value, tooltip, clicked, iconFill, xclass }: BitValueProps) => {
+export const BitValue = ({ value, tooltip, clicked, iconFill, xclass, onHover }: BitValueProps) => {
   const ref = useTooltipRef<HTMLDivElement>();
   const iconName = useMemo(() => flagIcon(value), [value]);
 
@@ -275,6 +282,8 @@ export const BitValue = ({ value, tooltip, clicked, iconFill, xclass }: BitValue
       ref={ref}
       className={classnames(styles.bitValue, xclass, { [styles.clickable]: !!clicked })}
       onClick={() => clicked?.()}
+      onMouseEnter={onHover ? () => onHover(true) : undefined}
+      onMouseLeave={onHover ? () => onHover(false) : undefined}
     >
       <div className={styles.flagValue}>
         <Icon iconName={iconName} width={16} height={16} fill={iconFill ?? "--data-value"} />
@@ -298,16 +307,41 @@ type FlagRowProps = {
   flagDescriptions: string[];
   /** Byte value rendered as eight individual bit indicators. */
   value: number;
+  /** See `FlagProps.iconFill`. A converted panel passes `--color-state-value`. */
+  iconFill?: string;
+  /** Extra class merged onto the strip, for a caller that needs it on a particular column grid. */
+  xclass?: string;
+  /**
+   * The bit under the pointer, or `null` when it leaves the strip.
+   *
+   * **Passing this suppresses the per-bit tooltips**, and that is the point rather than a side
+   * effect. A strip inside a row whose *row* carries a `TooltipFactory` otherwise shows two tooltip
+   * boxes for one pointer — the bit's and the row's — so a caller that wants a single tooltip has
+   * to be able to take the content over. It then renders the hovered bit itself, the way
+   * `MemoryDumpSection` renders its hovered byte. Twin of `HexByteGrid`'s `onHoverByte`.
+   */
+  onHoverBit?: (bit: number | null) => void;
 };
 
 /** An eight-bit flag strip for register and memory state displays. */
-export const FlagRow = ({ value, flagDescriptions }: FlagRowProps) => (
-  <div className={styles.flagStrip}>
+export const FlagRow = ({
+  value,
+  flagDescriptions,
+  iconFill,
+  xclass,
+  onHoverBit
+}: FlagRowProps) => (
+  <div
+    className={classnames(styles.flagStrip, xclass)}
+    onMouseLeave={onHoverBit ? () => onHoverBit(null) : undefined}
+  >
     {[7, 6, 5, 4, 3, 2, 1, 0].map((bit) => (
       <BitValue
         key={bit}
         value={value & (1 << bit)}
-        tooltip={`Bit ${bit}: ${flagDescriptions?.[bit] ?? ""}`}
+        iconFill={iconFill}
+        tooltip={onHoverBit ? undefined : `Bit ${bit}: ${flagDescriptions?.[bit] ?? ""}`}
+        onHover={onHoverBit ? (hovered) => onHoverBit(hovered ? bit : null) : undefined}
       />
     ))}
   </div>

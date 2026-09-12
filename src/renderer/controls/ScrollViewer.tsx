@@ -34,7 +34,6 @@ const ScrollViewer: React.FC<Props> = ({
   apiLoaded,
   onScrolled
 }) => {
-  const [pointed, setPointed] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const themeService = useTheme();
   const osRef = useRef<OverlayScrollbarsComponentRef>(null);
@@ -50,6 +49,55 @@ const ScrollViewer: React.FC<Props> = ({
           ? "os-theme-light-small"
           : "os-theme-light",
     [themeService.theme, thinScrollBar]
+  );
+
+  /*
+   * Auto-hide is the library's, not ours.
+   *
+   * This used to be a `pointed` React state set from `onMouseEnter`/`onMouseMove`/`onMouseDown` and
+   * cleared from `onMouseLeave`, feeding a second theme (`os-theme-not-hovered`) whose only job was
+   * `--os-handle-bg: transparent`. Three things were wrong with that, and all three are fixed by
+   * simply asking OverlayScrollbars to do what it already knows how to do:
+   *
+   *  - **It could stick.** React synthesises `onMouseLeave` from `mouseout` at the root container,
+   *    and a pointer does not always leave an element by a path that produces one. When it did not
+   *    arrive, `pointed` stayed `true` and the scrollbar stayed painted until the next enter/leave
+   *    pair. The library tracks its own pointer state instead.
+   *  - **It could not fade.** Swapping the handle's colour to `transparent` is an instant change of
+   *    a custom property. The library's auto-hide toggles a class the stylesheet transitions, so
+   *    the bar fades out over 150ms and back in on approach.
+   *  - **It re-rendered this subtree on every mouse move.** `onMouseMove` called `setPointed(true)`
+   *    unconditionally, so every pointer move over a sidebar panel re-rendered the panel's whole
+   *    content tree.
+   *
+   * `autoHideSuspend: false` keeps the bar hidden until the pointer arrives; left at its default
+   * (`true`) the library holds every scrollbar visible until the first scroll, which is the state
+   * the panels used to sit in.
+   */
+  const options = useMemo(
+    () =>
+      ({
+        scrollbars: {
+          theme: customTheme,
+          autoHide: "leave",
+          /*
+           * 100ms, not the library's 1300ms default (and not the 300ms first tried here).
+           *
+           * The delay runs *before* the 150ms fade, so it is the whole of the "why is that still
+           * there" feeling: at 300ms the bar was measurably still on screen 470ms after the pointer
+           * left, which is long enough to read as the old stuck-scrollbar bug even though it was
+           * hiding correctly. 100ms keeps the bar from flickering when the pointer clips a corner
+           * and settles the whole exit inside ~265ms. Measured in the running app, not guessed.
+           */
+          autoHideDelay: 100,
+          autoHideSuspend: false
+        },
+        overflow: {
+          x: allowHorizontal ? "scroll" : "hidden",
+          y: allowVertical ? "scroll" : "hidden"
+        }
+      }) as const,
+    [customTheme, allowHorizontal, allowVertical]
   );
 
   useEffect(() => {
@@ -135,21 +183,11 @@ const ScrollViewer: React.FC<Props> = ({
       ref={parentElement}
       className={classnames(styles.scrollViewer, className)}
       style={style}
-      onMouseDown={() => setPointed(true)}
-      onMouseMove={() => setPointed(true)}
-      onMouseEnter={() => setPointed(true)}
-      onMouseLeave={() => setPointed(false)}
     >
       <OverlayScrollbarsComponent
         ref={osRef}
         style={{ height: "100%" }}
-        options={{
-          scrollbars: { theme: pointed ? customTheme : "os-theme-not-hovered" },
-          overflow: {
-            x: allowHorizontal ? "scroll" : "hidden",
-            y: allowVertical ? "scroll" : "hidden"
-          }
-        }}
+        options={options}
         events={{
           scroll: handleScroll
         }}
@@ -157,7 +195,7 @@ const ScrollViewer: React.FC<Props> = ({
       >
         {children}
       </OverlayScrollbarsComponent>
-      <AttachedShadow parentElement={parentElement.current} visible={isScrolled} />
+      <AttachedShadow visible={isScrolled} />
     </div>
   );
 };

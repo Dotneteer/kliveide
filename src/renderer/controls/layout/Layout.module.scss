@@ -121,11 +121,31 @@
 
 
 
+/*
+ * The rule between sections of a register/state panel (Z80, M6510, VIC, Blink, ULA).
+ *
+ * It is *not* the toolbar separator, which is why it no longer reads `--color-toolbar-separator`.
+ * That token resolves `--border-default`, and a border token is only as visible as the surface
+ * behind it: on a toolbar's `--surface-chrome` it reads, but these rules sit on `--surface-panel`
+ * -- the darkest surface in the dark tone -- where it measures **1.37:1** and disappears.
+ * `--border-strong` takes the same rule to 1.74:1. The two uses now have separate tokens, so the
+ * panel rule can be raised without also heavying every toolbar in the app.
+ *
+ * The margins replace the `<hr>` UA default (`0.5em` block, `auto` inline): on the space scale
+ * rather than derived from the type size, and inset to the same `--space-2` gutter `.dataRow`
+ * uses, so the rule lines up with the row content instead of bleeding into the activity bar.
+ *
+ * `flex: 0 0 auto` for the same reason `.dataRow` carries it (see Data.module.scss): every panel
+ * here is a flex column, and a 1px box with the default `flex-shrink: 1` is the first thing the
+ * flex algorithm takes to zero if one of them ever stops sizing to its content.
+ */
 .separator {
   height: 1px;
-  background-color: var(--color-toolbar-separator);
+  flex: 0 0 auto;
+  background-color: var(--color-panel-separator);
   border: none;
   padding: 0;
+  margin: var(--space-1) var(--space-2);
 }
 
 .dumpSection {

@@ -5,6 +5,7 @@ import {
   MI_SPECTRUM_128,
   MI_Z88,
   MF_TAPE_SUPPORT,
+  MF_INJECT_SUPPORT,
   MI_SPECTRUM_3E,
   MC_SCREEN_FREQ,
   MF_ROM,
@@ -50,6 +51,7 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
+      [MF_INJECT_SUPPORT]: true,
       [MF_ULA]: true
     },
     models: [
@@ -94,6 +96,7 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
+      [MF_INJECT_SUPPORT]: true,
       [MF_ULA]: true,
       [MF_PSG]: true,
       [MF_ROM]: 2,
@@ -116,6 +119,7 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
+      [MF_INJECT_SUPPORT]: true,
       [MF_ULA]: true,
       [MF_PSG]: true,
       [MF_ROM]: 4,
@@ -161,6 +165,9 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: false,
+      // --- A Next build is delivered as a .nex file the machine loads itself; there is no
+      // --- inject-into-memory path, so the Inject button is not offered for it.
+      [MF_INJECT_SUPPORT]: false,
       [MF_ULA]: true,
       [MF_ROM]: 7,
       [MF_BANK]: 224,
@@ -200,6 +207,7 @@ export const machineRegistry: MachineInfo[] = [
     charSet: ZxSpectrumChars,
     features: {
       [MF_Z80]: true,
+      [MF_INJECT_SUPPORT]: true,
       [MF_BANK]: 256,
       [MF_BLINK]: true,
       [MF_ALLOW_SCAN_LINES]: false
@@ -367,7 +375,8 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_M6510]: true,
       [MF_VIC]: true,
-      [MF_TAPE_SUPPORT]: true
+      [MF_TAPE_SUPPORT]: true,
+      [MF_INJECT_SUPPORT]: true
     },
     models: [
       {

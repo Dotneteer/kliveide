@@ -83,9 +83,12 @@ describe("Memory partitions", () => {
     { l: "R2", p: -3 },
     { l: "R3", p: -4 },
     { l: "R4", p: undefined },
+    { l: "X0", p: -5 },
+    { l: "X1", p: -6 },
+    { l: "X2", p: undefined },
+    // --- The alternate ROMs' former names, still accepted as aliases.
     { l: "Q0", p: -5 },
     { l: "Q1", p: -6 },
-    { l: "Q2", p: undefined },
     { l: "DM", p: -7 },
     { l: "0", p: 0 },
     { l: "1", p: 1 },
