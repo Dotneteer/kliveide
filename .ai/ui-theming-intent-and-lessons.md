@@ -659,9 +659,25 @@ EOF
   following the layout instead of being a pixel rectangle that quietly goes wrong after a reflow.
   It also launches its own isolated instance, so it needs no hand-started dev server on port 9222.
 
+## Escape, And Other Keys That Back Out
+
+**A back-out key needs exactly one handler per level, and the level that acts must stop the event.**
+The sprite editor's Escape unwinds four things - an in-flight drag, a floating paste, the selection,
+the tool - and the drag lives in the canvas while the rest live in the editor above it. With both
+listening and neither stopping, one press collapsed two levels at once. The shape that works: the
+inner component handles *only* its own case and calls `stopPropagation()` when it does; everything
+else bubbles to one handler that owns the chain. Do not plumb a "did you handle it" boolean back up
+instead - that is the same coupling with extra steps, and it was the first thing tried here.
+
 ## Method Lessons
 
 These cost real time. They generalize past this codebase.
+
+- **A patch script that batches edits in memory and writes once at the end loses every edit when a
+  later assertion fails.** This produced two silent no-ops in one session: the file looked edited in
+  the transcript, the assertion error scrolled past, and the bug being "fixed" was still there in
+  the running app. Either write after each successful replacement, or check the file afterwards
+  rather than trusting the script's exit. `grep` for the new text before moving on.
 
 **Automated gates do not see appearance. Look at the pixels, then read the DOM.**
 Every gate passed while `--surface-stage` was set within 1% of `--device-bezel` and the emulator

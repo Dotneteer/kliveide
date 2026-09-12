@@ -21,10 +21,10 @@ const DRAWING: SpriteTools[] = [
 ];
 
 describe("sprite-tools", () => {
-  it("the pointer tool draws nothing", () => {
-    expect(applyTool(blank(), "pointer", { row: 1, col: 1 }, { row: 5, col: 5 }, PEN, FILL))
+  it("the select tool marks rather than draws", () => {
+    expect(applyTool(blank(), "select", { row: 1, col: 1 }, { row: 5, col: 5 }, PEN, FILL))
       .toBeUndefined();
-    expect(toolDraws("pointer")).toBe(false);
+    expect(toolDraws("select")).toBe(false);
   });
 
   /*

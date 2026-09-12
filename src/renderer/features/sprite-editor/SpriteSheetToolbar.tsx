@@ -10,10 +10,16 @@ type Props = {
   selectedIndex: number;
   canUndo: boolean;
   canRedo: boolean;
+  canPaste: boolean;
+  /** True when a pixel region is marked, which is what Cut/Copy/Delete act on instead of the sprite. */
+  hasSelection: boolean;
   separated: boolean;
   onUndo: () => void;
   onRedo: () => void;
   onDuplicate: () => void;
+  onCut: () => void;
+  onCopy: () => void;
+  onPaste: () => void;
   onDelete: () => void;
   onMoveLeft: () => void;
   onMoveRight: () => void;
@@ -37,10 +43,15 @@ export const SpriteSheetToolbar = memo(
     selectedIndex,
     canUndo,
     canRedo,
+    canPaste,
+    hasSelection,
     separated,
     onUndo,
     onRedo,
     onDuplicate,
+    onCut,
+    onCopy,
+    onPaste,
     onDelete,
     onMoveLeft,
     onMoveRight,
@@ -57,12 +68,39 @@ export const SpriteSheetToolbar = memo(
         enable={spriteCount > 0}
         clicked={onDuplicate}
       />
+      {/*
+        * Cut, Copy, Paste and Delete are four commands, not one.
+        *
+        * There used to be a single "Cut sprite" button that deleted, with a scissors icon and no
+        * paste anywhere - a name that was simply untrue. Each of these acts on the marked pixel
+        * region when there is one and on the whole sprite otherwise, which is why the labels say so.
+        */}
+      <SmallIconButton
+        iconName="spr-cut"
+        title={
+          hasSelection
+            ? "Cut region (Ctrl+X)"
+            : "Cut sprite (Ctrl+X)\nMark a region with the select tool to cut pixels instead"
+        }
+        enable={hasSelection || spriteCount > 1}
+        clicked={onCut}
+      />
+      <SmallIconButton
+        iconName="spr-copy"
+        title={hasSelection ? "Copy region (Ctrl+C)" : "Copy sprite (Ctrl+C)"}
+        enable={true}
+        clicked={onCopy}
+      />
+      <SmallIconButton
+        iconName="spr-paste"
+        title={"Paste (Ctrl+V)\nA pasted region floats until you place it"}
+        enable={canPaste}
+        clicked={onPaste}
+      />
       <SmallIconButton
         iconName="spr-delete"
-        // No clipboard yet, so this is a delete. It gets a real Cut - and a separate Delete -
-        // in plan Phase 8.
-        title={"Delete sprite"}
-        enable={spriteCount > 1}
+        title={hasSelection ? "Clear region (Delete)" : "Delete sprite"}
+        enable={hasSelection || spriteCount > 1}
         clicked={onDelete}
       />
       <SmallIconButton

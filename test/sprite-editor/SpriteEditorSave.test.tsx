@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import React from "react";
 import { SPRITE_SIZE } from "@renderer/features/sprite-editor/sprite-raster";
 import { DEFAULT_SPRITE_TRANSPARENCY } from "@renderer/features/sprite-editor/sprite-file";
+import { resetSpriteClipboard } from "@renderer/features/sprite-editor/sprite-clipboard";
 
 /*
  * What this file is for.
@@ -130,6 +131,8 @@ const flushPalette = async () => {
 
 beforeEach(() => {
   vi.useFakeTimers();
+  // Module state: a copy in one test would otherwise light up Paste in the next.
+  resetSpriteClipboard();
   paletteInfo = null;
   getPalettedDeviceInfo.mockClear();
   setDocumentViewState.mockClear();
@@ -205,7 +208,7 @@ describe("SpriteEditor - when the file is written", () => {
 
   it("does not write, or push an undo entry, for a click that drew nothing", () => {
     const { container } = renderEditor(fileOf(1));
-    // The pointer tool is the default and draws nothing.
+    // The select tool is the default and draws nothing.
     fireEvent.mouseDown(cellAt(container, 3, 3), { button: 0 });
     fireEvent.mouseUp(cellAt(container, 3, 3));
     vi.advanceTimersByTime(1000);
@@ -428,11 +431,11 @@ describe("SpriteEditor - Escape", () => {
     expect(button(container, "Undo").disabled).toBe(true);
   });
 
-  it("keeps the tool while cancelling a drag, and returns to the pointer when nothing is in flight", () => {
+  it("keeps the tool while cancelling a drag, and backs out to Select when nothing is in flight", () => {
     const { container } = renderEditor(fileOf(1));
     selectPencil(container);
     const pencil = () => button(container, "Pencil tool");
-    const pointer = () => button(container, "Pointer tool");
+    const pointer = () => button(container, "Select tool");
     expect(pencil().getAttribute("aria-pressed")).toBe("true");
 
     // Escape during a drag cancels the stroke but must not take the tool away.
@@ -587,7 +590,7 @@ describe("SpriteEditor - keyboard", () => {
       ["e", false, "Circle tool"],
       ["e", true, "Filled circle tool"],
       ["f", false, "Paint tool"],
-      ["m", false, "Pointer tool"]
+      ["m", false, "Select tool"]
     ];
     for (const [key, shift, label] of cases) {
       press(container, key, { shiftKey: shift });
@@ -687,7 +690,7 @@ describe("SpriteEditor - keyboard", () => {
 
   it("does nothing when the tool draws nothing", () => {
     const { container } = renderEditor(fileOf(1));
-    press(container, "m"); // pointer
+    press(container, "m"); // select
     press(container, "Enter");
     vi.advanceTimersByTime(1000);
     expect(saveFileContent).not.toHaveBeenCalled();
@@ -845,5 +848,175 @@ describe("SpriteEditor - animation preview", () => {
     expect(button(container, "Stop the sheet")).toBeTruthy();
     click(container, "Stop the sheet");
     expect(button(container, "Play the sheet")).toBeTruthy();
+  });
+});
+
+/* --------------------------------------------------------------------------------------------
+ * Phase 8: the select tool and a real clipboard. "Cut sprite" used to be a delete with a scissors
+ * icon and no paste anywhere in the editor.
+ * ------------------------------------------------------------------------------------------ */
+
+/** Drag the select tool across a rectangle of the canvas. */
+const dragSelect = (
+  container: HTMLElement,
+  from: [number, number],
+  to: [number, number]
+) => {
+  press(container, "m"); // select tool
+  fireEvent.mouseDown(cellAt(container, from[0], from[1]), { button: 0 });
+  fireEvent.mouseEnter(cellAt(container, to[0], to[1]));
+  fireEvent.mouseUp(cellAt(container, to[0], to[1]));
+};
+
+/** The dashed selection outline, if one is drawn. */
+const selectionOutline = (container: HTMLElement) =>
+  container.querySelector("rect[stroke-dasharray]") as SVGElement | null;
+
+describe("SpriteEditor - selection", () => {
+  it("marks a region by dragging the select tool", () => {
+    const { container } = renderEditor(fileOf(1));
+    expect(selectionOutline(container)).toBeNull();
+    dragSelect(container, [2, 3], [6, 8]);
+    expect(selectionOutline(container)).not.toBeNull();
+  });
+
+  it("marking a region is not an edit", () => {
+    // The select tool marks; it must not push an undo entry or write the file.
+    const { container } = renderEditor(fileOf(1));
+    dragSelect(container, [2, 2], [5, 5]);
+    vi.advanceTimersByTime(1000);
+    expect(saveFileContent).not.toHaveBeenCalled();
+    expect(button(container, "Undo").disabled).toBe(true);
+  });
+
+  it("selects everything with Ctrl+A and clears with Escape", () => {
+    const { container } = renderEditor(fileOf(1));
+    press(container, "a", { ctrlKey: true });
+    expect(selectionOutline(container)).not.toBeNull();
+    press(container, "Escape");
+    expect(selectionOutline(container)).toBeNull();
+  });
+
+  it("drops the selection when a different sprite is chosen", () => {
+    // A region marked on one sprite means nothing on another.
+    const { container } = renderEditor(fileOf(2));
+    dragSelect(container, [1, 1], [4, 4]);
+    expect(selectionOutline(container)).not.toBeNull();
+    fireEvent.click(sheetCells(container)[1]);
+    expect(selectionOutline(container)).toBeNull();
+  });
+});
+
+describe("SpriteEditor - region clipboard", () => {
+  it("cuts a region to the transparency index, and pastes it back somewhere else", () => {
+    const { container } = renderEditor(fileOf(1)); // every pixel is 1
+    dragSelect(container, [0, 0], [1, 1]); // a 2x2 block
+    press(container, "x", { ctrlKey: true });
+    vi.advanceTimersByTime(1000);
+
+    let written = lastWrite();
+    // The cut blanks the region and leaves everything else alone.
+    expect(written[0]).toBe(DEFAULT_SPRITE_TRANSPARENCY);
+    expect(written[17]).toBe(DEFAULT_SPRITE_TRANSPARENCY);
+    expect(written[2]).toBe(1);
+
+    // Paste floats, then Enter puts it down at the selection anchor.
+    press(container, "v", { ctrlKey: true });
+    press(container, "ArrowRight");
+    press(container, "ArrowRight");
+    press(container, "Enter");
+    vi.advanceTimersByTime(1000);
+
+    written = lastWrite();
+    expect(written[2]).toBe(1); // the pasted block landed two columns right
+    expect(written[3]).toBe(1);
+  });
+
+  it("a floating paste touches nothing until it is committed", () => {
+    const { container } = renderEditor(fileOf(1));
+    dragSelect(container, [0, 0], [1, 1]);
+    press(container, "c", { ctrlKey: true });
+    saveFileContent.mockClear();
+
+    press(container, "v", { ctrlKey: true });
+    press(container, "ArrowDown");
+    vi.advanceTimersByTime(1000);
+    // Nudging a float is not an edit.
+    expect(saveFileContent).not.toHaveBeenCalled();
+  });
+
+  it("Escape cancels a floating paste and leaves no trace", () => {
+    const { container } = renderEditor(fileOf(1));
+    dragSelect(container, [0, 0], [1, 1]);
+    press(container, "x", { ctrlKey: true });
+    vi.advanceTimersByTime(1000);
+    const afterCut = [...lastWrite()];
+    saveFileContent.mockClear();
+
+    press(container, "v", { ctrlKey: true });
+    press(container, "ArrowDown");
+    press(container, "Escape");
+    vi.advanceTimersByTime(1000);
+
+    expect(saveFileContent).not.toHaveBeenCalled();
+    // And a second Escape backs out of the selection rather than doing nothing.
+    press(container, "Escape");
+    expect(selectionOutline(container)).toBeNull();
+    expect(afterCut.length).toBe(SPRITE_SIZE);
+  });
+
+  it("Delete clears the region without touching the sheet", () => {
+    const { container } = renderEditor(fileOf(3));
+    dragSelect(container, [0, 0], [0, 0]);
+    press(container, "Delete");
+    vi.advanceTimersByTime(1000);
+
+    const written = lastWrite();
+    expect(written.length).toBe(3 * SPRITE_SIZE); // still three sprites
+    expect(written[0]).toBe(DEFAULT_SPRITE_TRANSPARENCY);
+  });
+});
+
+describe("SpriteEditor - sheet clipboard", () => {
+  it("Cut removes the sprite when nothing is marked, and Paste brings it back", () => {
+    const { container } = renderEditor(fileOf(3));
+    press(container, "x", { ctrlKey: true });
+    vi.advanceTimersByTime(1000);
+    expect(lastWrite().length).toBe(2 * SPRITE_SIZE);
+
+    press(container, "v", { ctrlKey: true });
+    vi.advanceTimersByTime(1000);
+    expect(lastWrite().length).toBe(3 * SPRITE_SIZE);
+  });
+
+  it("pastes a sprite as a NEW sprite rather than over the current one", () => {
+    // Silently replacing what someone is working on is not what Paste means.
+    const { container } = renderEditor(fileOf(2));
+    press(container, "c", { ctrlKey: true }); // copy sprite 1 (filled with 1)
+    fireEvent.click(sheetCells(container)[1]); // look at sprite 2 (filled with 2)
+    press(container, "v", { ctrlKey: true });
+    vi.advanceTimersByTime(1000);
+
+    const written = lastWrite();
+    expect(written.length).toBe(3 * SPRITE_SIZE);
+    expect(written[SPRITE_SIZE]).toBe(2); // sprite 2 is untouched
+    expect(written[2 * SPRITE_SIZE]).toBe(1); // the copy landed after it
+  });
+
+  it("enables Paste only once something has been copied", () => {
+    const { container } = renderEditor(fileOf(2));
+    expect(button(container, "Paste").disabled).toBe(true);
+    press(container, "c", { ctrlKey: true });
+    expect(button(container, "Paste").disabled).toBe(false);
+  });
+
+  it("Cut, Copy and Delete say which thing they will act on", () => {
+    const { container } = renderEditor(fileOf(2));
+    expect(button(container, "Cut sprite").getAttribute("aria-label")).toContain("Ctrl+X");
+    dragSelect(container, [1, 1], [3, 3]);
+    // With a region marked the same buttons change what they mean, and say so.
+    expect(button(container, "Cut region")).toBeTruthy();
+    expect(button(container, "Copy region")).toBeTruthy();
+    expect(button(container, "Clear region")).toBeTruthy();
   });
 });

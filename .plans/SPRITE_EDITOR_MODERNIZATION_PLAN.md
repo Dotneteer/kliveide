@@ -1,6 +1,7 @@
 # Sprite Editor Modernization Plan
 
-Status: **Phases 1-7 complete**, §7's icon set included. Only Phase 8 (selection and clipboard) remains. Layout and scope decided (§10); only §10.6 remains open, and it is
+Status: **Complete.** All eight phases and §7's icon set are in, except the system-clipboard half
+of §4.7 — see the Phase 8 retrospective. Layout and scope decided (§10); only §10.6 remains open, and it is
 not this plan's.
 Scope: `src/renderer/features/sprite-editor/*` (5 files, 1622 lines), plus two L4 token aliases, one
 existing emu API call, a handful of new icons, and the first tests this feature has ever had
@@ -652,6 +653,50 @@ itself when the document loses focus.
 commit → sheet cut/copy/paste (insert-after already landed in Phase 2) → renaming Delete back to
 Cut alongside a real Delete → `.spr` bytes
 on the system clipboard. Each step is usable on its own; stop anywhere and what shipped still works.
+
+> **Phase 8 retrospective.**
+>
+> Shipped: the `select` tool, both clipboards, the floating paste, and Cut/Copy/Paste/Delete as four
+> distinct commands. The system-clipboard half of §4.7 is **not** done - see the end.
+>
+> - **The tool is no longer called `pointer`.** It was named for doing nothing; it now marks
+>   regions, so it is `"select"`, with the persisted old value migrated on load rather than left to
+>   restore a tool that no longer exists.
+> - **Phase 8's tests found a bug I shipped in Phase 1.** `endDrag` cleared `drag.current` *before*
+>   calling `moveTo(at)`, and `moveTo` bails when there is no drag - so the cell the button came up
+>   over was silently dropped. Invisible for a pencil, because the window `mousemove` had usually
+>   already covered that cell; fatal for the select tool, where a region could never extend past
+>   where the drag began. **Apply the terminal event before tearing down the gesture state.**
+> - **Escape needed restructuring, not extending.** It now unwinds four levels - drag, floating
+>   paste, selection, tool - and the drag lives in the canvas while the rest live above it. The
+>   first attempt had both listening and neither stopping, so one press collapsed two levels. The
+>   canvas now handles only its own case and calls `stopPropagation()`; everything else bubbles to
+>   one handler that owns the chain. The `cancelledDrag` boolean that used to be plumbed back up is
+>   gone.
+> - **One key set, two clipboards.** `Ctrl+X/C/V` act on the marked pixel region when there is one
+>   and on the whole sprite otherwise, so there is no modifier to remember. The buttons relabel to
+>   match - "Cut region" / "Cut sprite" - which is also how the feature explains itself.
+> - **A floating paste touches nothing until it is committed.** Verified against the file on disk:
+>   cut blanked exactly the 3×2 region (6 bytes changed), paste wrote nothing, three arrow nudges
+>   wrote nothing, `Enter` committed as **one** undo entry, and `Ctrl+Z` returned to the post-cut
+>   state.
+> - **Pasting a sprite makes a new sprite** rather than overwriting the current one. Silently
+>   replacing what someone is working on is not what Paste means.
+> - **"Cut sprite" is finally true.** It was a delete with a scissors icon and no paste anywhere in
+>   the editor; there are now four commands where there was one, and Delete kept the trash icon it
+>   always should have had.
+> - **The clipboard is module-level**, so a sprite or a region carries between two open `.spr`
+>   documents, and Paste lights up in one document when the copy happened in another.
+> - 12 pure + 14 component tests. Type errors 160, no new messages; lint 47 warnings, 0 errors; all
+>   20,300 tests pass.
+>
+> **Not done: the system clipboard.** §4.7 specified "sheet only, and only as `.spr` bytes", so a
+> sprite could reach another application. What shipped is an in-process clipboard, which covers the
+> case that actually comes up — moving pixels between two documents in the same window — and needs
+> no answer to the question a real system format raises: what should an outside application
+> *receive*? A PNG is lossy about palette indices, and raw `.spr` bytes mean nothing to anything
+> else. Worth asking separately rather than answering by default.
+
 
 ## 7. New assets and primitives
 

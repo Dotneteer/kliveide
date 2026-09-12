@@ -4,7 +4,8 @@ import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "
 import { getCssStringForPaletteCode } from "@emu/machines/zxNext/palette";
 import { SpriteTools } from "./sprite-common";
 import { SPRITE_DIM, SpritePoint, clampToSprite } from "./sprite-raster";
-import { applyTool } from "./sprite-tools";
+import { applyTool, toolDraws } from "./sprite-tools";
+import { SpriteRegion, regionFromDrag } from "./sprite-selection";
 import { HoverStore } from "./sprite-hover";
 import { SpriteCursor } from "./SpriteCursor";
 
@@ -19,6 +20,12 @@ type Props = {
   pencilColorIndex?: number;
   fillColorIndex?: number;
   tool: SpriteTools;
+  /** The marked region, drawn as a dashed outline. */
+  selection?: SpriteRegion;
+  /** A region floating above the canvas, waiting to be committed or cancelled. */
+  floating?: { region: SpriteRegion; pixels: Uint8Array };
+  /** A drag with the select tool marked out a region. */
+  onSelectRegion?: (region: SpriteRegion | undefined) => void;
   /**
    * The sprite to ghost underneath, or `undefined` for none.
    *
@@ -38,7 +45,8 @@ type Props = {
    * Escape was pressed. `cancelledDrag` says whether it actually aborted an operation, so the
    * editor can decide what a second Escape - the one with nothing in flight - should mean.
    */
-  onEscape?: (cancelledDrag: boolean) => void;
+  /** Escape cancelled a drag. The editor's own Escape chain handles every other case. */
+  onCancelDrag?: () => void;
 };
 
 type DragState = {
@@ -62,10 +70,13 @@ const SpriteEditorGridComponent = ({
   pencilColorIndex,
   fillColorIndex,
   tool,
+  selection,
+  floating,
+  onSelectRegion,
   onionSprite,
   hover,
   onCommit,
-  onEscape
+  onCancelDrag
 }: Props) => {
   // --- The canvas is exactly as big as its content; `useFittedCellSize` decides the cell.
   const gridSize = SPRITE_DIM * cellSize;
@@ -165,16 +176,20 @@ const SpriteEditorGridComponent = ({
       const to = clampToSprite(raw);
       if (state.last && state.last.row === to.row && state.last.col === to.col) return;
 
-      const result = dispatchTool(state, to);
       state.last = to;
       publishHover(to);
+      if (!toolDraws(tool)) {
+        onSelectRegion?.(regionFromDrag(state.start, to));
+        return;
+      }
+      const result = dispatchTool(state, to);
       if (!result) return;
 
       activeSpriteMap.current = result.map;
       if (result.accumulate) state.base = result.map;
       repaint();
     },
-    [dispatchTool, publishHover, repaint]
+    [dispatchTool, onSelectRegion, publishHover, repaint, tool]
   );
 
   /*
@@ -199,13 +214,25 @@ const SpriteEditorGridComponent = ({
   const endDrag = useCallback(
     (at?: SpritePoint) => {
       const state = drag.current;
+      if (!state) {
+        detach();
+        return;
+      }
+      /*
+       * The final position is applied while the drag is still live.
+       *
+       * `drag.current` used to be cleared first, and `moveTo` bails when there is no drag - so the
+       * cell the button came up over was silently dropped. For a pencil that was invisible, because
+       * the window `mousemove` had usually already covered that cell; for the select tool it meant
+       * a region never extended past where the drag began.
+       */
+      if (at) moveTo(at);
       detach();
       drag.current = undefined;
-      if (!state) return;
-      if (at) moveTo(at);
-      onCommit?.(activeSpriteMap.current);
+      // A marking drag has already published its region; there is nothing to commit to the sprite.
+      if (toolDraws(tool)) onCommit?.(activeSpriteMap.current);
     },
-    [detach, moveTo, onCommit]
+    [detach, moveTo, onCommit, tool]
   );
 
   liveMove.current = (e) => {
@@ -220,7 +247,8 @@ const SpriteEditorGridComponent = ({
 
   const beginDrag = useCallback(
     (at: SpritePoint, button: number) => {
-      if (tool === "pointer") return;
+      // The select tool drags too - it marks instead of drawing, which is the whole change.
+      if (!toolDraws(tool) && !onSelectRegion) return;
       const snapshot = new Uint8Array(activeSpriteMap.current);
       drag.current = {
         start: at,
@@ -235,7 +263,9 @@ const SpriteEditorGridComponent = ({
       // Paint immediately, so a click without a move still marks its pixel.
       moveTo(at);
     },
-    [tool, moveTo, windowMove, windowUp]
+    // `onSelectRegion` is read by the guard above, so a stale one would let a marking drag start
+    // on a grid that has since stopped accepting them.
+    [tool, moveTo, onSelectRegion, windowMove, windowUp]
   );
 
   const cells = useMemo(
@@ -251,15 +281,18 @@ const SpriteEditorGridComponent = ({
       onKeyDown={(e) => {
         if (e.key !== "Escape") return;
         const cancelling = drag.current;
-        if (cancelling) {
-          // Put the sprite back the way it was before the drag started, and drop the operation
-          // so no edit is committed for it.
-          activeSpriteMap.current = cancelling.origin;
-          detach();
-          drag.current = undefined;
-          repaint();
-        }
-        onEscape?.(!!cancelling);
+        // No drag in flight: let it bubble, so the editor can back out of a floating paste, then a
+        // selection, then the tool. Handling it here too would collapse two of those into one press.
+        if (!cancelling) return;
+        // Put the sprite back the way it was before the drag started, and drop the operation so no
+        // edit is committed for it.
+        activeSpriteMap.current = cancelling.origin;
+        detach();
+        drag.current = undefined;
+        repaint();
+        onCancelDrag?.();
+        e.preventDefault();
+        e.stopPropagation();
       }}
     >
       <div ref={gridRef} style={{ width: gridSize, height: gridSize }}>
@@ -404,6 +437,69 @@ const SpriteEditorGridComponent = ({
             pointerEvents="none"
             shapeRendering="crispEdges"
           />
+
+          {/*
+            * A floating paste: the pixels, then the outline that says they are not committed yet.
+            *
+            * It is drawn over everything, because that is what it is - a thing hovering above the
+            * sprite until Enter or a click puts it down, or Escape takes it away.
+            */}
+          {floating && (
+            <g pointerEvents="none" shapeRendering="crispEdges">
+              {Array.from({ length: floating.region.width * floating.region.height }, (_, i) => {
+                const r = floating.region.row + Math.floor(i / floating.region.width);
+                const c = floating.region.col + (i % floating.region.width);
+                if (r < 0 || r >= SPRITE_DIM || c < 0 || c >= SPRITE_DIM) return null;
+                const code = floating.pixels[i];
+                return (
+                  <rect
+                    key={i}
+                    x={c * cellSize}
+                    y={r * cellSize}
+                    width={cellSize}
+                    height={cellSize}
+                    fill={
+                      code === transparencyIndex
+                        ? `url(#${patternId})`
+                        : getCssStringForPaletteCode(palette[code])
+                    }
+                  />
+                );
+              })}
+            </g>
+          )}
+
+          {/*
+            * The selection outline.
+            *
+            * Accent dashes, not marching ants: animation inside a drawing surface competes with the
+            * artwork it is drawn over, and this one sits on top of the thing the user is looking at.
+            * Two strokes - a dark one under a dashed accent - so the edge survives being drawn over
+            * both black and white pixels.
+            */}
+          {(selection || floating) && (
+            <g pointerEvents="none" shapeRendering="crispEdges">
+              {[
+                { stroke: "var(--color-guide-sprite-editor)", dash: undefined },
+                { stroke: currentCellStroke, dash: "4 3" }
+              ].map(({ stroke, dash }, i) => {
+                const region = floating ? floating.region : selection;
+                return (
+                  <rect
+                    key={i}
+                    x={region.col * cellSize + 0.5}
+                    y={region.row * cellSize + 0.5}
+                    width={region.width * cellSize - 1}
+                    height={region.height * cellSize - 1}
+                    fill="none"
+                    stroke={stroke}
+                    strokeWidth={1}
+                    strokeDasharray={dash}
+                  />
+                );
+              })}
+            </g>
+          )}
 
           {/*
             * Always drawn, including for the pointer tool - which was the one tool that gave no

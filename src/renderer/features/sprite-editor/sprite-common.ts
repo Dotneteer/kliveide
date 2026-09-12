@@ -39,7 +39,7 @@ export type SprFileViewState = {
 };
 
 export type SpriteTools =
-  | "pointer"
+  | "select"
   | "pencil"
   | "line"
   | "rectangle"
@@ -47,3 +47,11 @@ export type SpriteTools =
   | "circle"
   | "circle-filled"
   | "paint";
+
+/**
+ * The tool is persisted, and it used to be called `"pointer"` - a name it earned by doing nothing.
+ * Now that it selects, the value is `"select"`; an older view state is migrated here rather than
+ * being allowed to restore a tool that no longer exists.
+ */
+export const migrateTool = (tool: string | undefined): SpriteTools =>
+  tool === "pointer" || tool === undefined ? "select" : (tool as SpriteTools);

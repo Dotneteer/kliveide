@@ -1,9 +1,9 @@
 import styles from "./SpriteEditor.module.scss";
 import { GenericFileContext } from "@renderer/appIde/DocumentPanels/helpers/GenericFilePanel";
-import { SprFileContents, SprFileViewState, SpriteTools } from "./sprite-common";
+import { SprFileContents, SprFileViewState, SpriteTools, migrateTool } from "./sprite-common";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { DEFAULT_SPRITE_TRANSPARENCY, serializeSprFile } from "./sprite-file";
 import {
   flipHorizontal,
@@ -30,6 +30,17 @@ import {
 import { createHoverStore } from "./sprite-hover";
 import { useSpriteShortcuts } from "./useSpriteShortcuts";
 import { applyTool } from "./sprite-tools";
+import {
+  SpritePatch,
+  SpriteRegion,
+  WHOLE_SPRITE,
+  clampPasteOrigin,
+  clearRegion,
+  extractRegion,
+  pasteRegion,
+  patchRegionAt
+} from "./sprite-selection";
+import { spriteClipboard } from "./sprite-clipboard";
 import { SpritePoint } from "./sprite-raster";
 import { SpritePaletteHeader } from "./SpritePaletteHeader";
 import { useSpritePalette } from "./useSpritePalette";
@@ -53,6 +64,9 @@ import { cellSizeFromLegacyZoom, useFittedCellSize } from "./useFittedCellSize";
  */
 const SAVE_DEBOUNCE_MS = 400;
 
+/** The grid cancels its own drag; the editor needs no callback for it. */
+const NOOP = () => {};
+
 type Props = {
   context: GenericFileContext<SprFileContents, SprFileViewState>;
 };
@@ -64,6 +78,23 @@ export const SpriteEditor = ({ context }: Props) => {
   // --- Sprite editor state
   const [showGrid, setShowGrid] = useState(true);
   const [showOnionSkin, setShowOnionSkin] = useState(false);
+  /*
+   * Whether Paste has anything to offer - read from the module-level clipboard store, so the button
+   * lights up even when the copy happened in another open `.spr` document.
+   */
+  const clipboard = useSyncExternalStore(spriteClipboard.subscribe, spriteClipboard.get, spriteClipboard.get);
+  const canPaste = !!(clipboard.sprite || clipboard.region);
+  /** The marked pixel region, if any. */
+  const [selection, setSelection] = useState<SpriteRegion | undefined>(undefined);
+  /**
+   * A paste in flight.
+   *
+   * It floats until committed, so it can be nudged into place before it touches the sprite - and so
+   * Escape leaves no trace. Committing is what pushes the single undo entry.
+   */
+  const [floating, setFloating] = useState<{ patch: SpritePatch; at: SpritePoint } | undefined>(
+    undefined
+  );
   const [spriteImagesSeparated, setSpriteImagesSeparated] = useState<boolean>();
   const [showTrancparencyColor, setShowTrancparencyColor] = useState<boolean>();
   const [pencilColorIndex, setPencilColorIndex] = useState<number>();
@@ -126,7 +157,7 @@ export const SpriteEditor = ({ context }: Props) => {
     setDoc(
       createDocument(context.fileInfo?.sprites, context.viewState?.selectedSpriteIndex ?? 0)
     );
-    setCurrentTool(context.viewState?.currentTool ?? "pointer");
+    setCurrentTool(migrateTool(context.viewState?.currentTool));
   }, [context.viewState]);
 
   // --- Update the context view state whenever the internal state changes
@@ -234,6 +265,10 @@ export const SpriteEditor = ({ context }: Props) => {
   const navigate = useCallback((index: number) => {
     const current = latestDoc.current;
     if (!current) return;
+    // A region marked on one sprite means nothing on another, and a floating paste that survived
+    // the move would commit onto a sprite the user never aimed at.
+    setSelection(undefined);
+    setFloating(undefined);
     const next = selectSprite(current, index);
     if (next === current) return;
     latestDoc.current = next;
@@ -260,7 +295,6 @@ export const SpriteEditor = ({ context }: Props) => {
   const handleUndo = useCallback(() => commit(undo(latestDoc.current)), [commit]);
   const handleRedo = useCallback(() => commit(redo(latestDoc.current)), [commit]);
   const handleDuplicate = useCallback(() => commit(duplicateSprite(latestDoc.current)), [commit]);
-  const handleDelete = useCallback(() => commit(removeSprite(latestDoc.current)), [commit]);
   const handleMoveLeft = useCallback(() => commit(moveSpriteLeft(latestDoc.current)), [commit]);
   const handleMoveRight = useCallback(() => commit(moveSpriteRight(latestDoc.current)), [commit]);
   const handleAdd = useCallback(
@@ -299,20 +333,6 @@ export const SpriteEditor = ({ context }: Props) => {
   }, []);
 
   /*
-   * Escape backs out one level.
-   *
-   * It used to write `vs.currentTool = "pointer"` straight into the view state and never call
-   * `setCurrentTool`, so the toolbar kept the old tool, the grid kept the old `tool` prop, and the
-   * view-state sync effect overwrote the value again on the next state change.
-   *
-   * Cancelling a drag no longer changes the tool - losing your tool mid-stroke is surprising - but
-   * an Escape with nothing in flight returns to the pointer, which is what the original reached for.
-   */
-  const handleEscape = useCallback((cancelledDrag: boolean) => {
-    if (!cancelledDrag) setCurrentTool("pointer");
-  }, []);
-
-  /*
    * The canvas is sized from the pane, not from a constant.
    *
    * This is the change the whole layout exists for. The canvas was 257/385/513 px whatever the
@@ -333,6 +353,117 @@ export const SpriteEditor = ({ context }: Props) => {
     persistZoom,
     { gutterX: 14, gutterY: 12 }
   );
+
+  /*
+   * Escape backs out one level at a time: a floating paste, then the selection, then the tool.
+   *
+   * The grid cancels an in-flight *drag* and stops the event there; everything else reaches here.
+   * The original wrote `vs.currentTool` straight into the view state and never called
+   * `setCurrentTool`, so the toolbar kept the old tool and the sync effect overwrote the value
+   * again - Escape did nothing at all.
+   */
+  const handleEscape = useCallback(() => {
+    if (floatingRef.current) {
+      setFloating(undefined);
+      return;
+    }
+    if (selectionRef.current) {
+      setSelection(undefined);
+      return;
+    }
+    setCurrentTool("select");
+  }, []);
+
+  /* --- selection and the clipboard ------------------------------------------------------- */
+
+  const selectionRef = useRef<SpriteRegion | undefined>(undefined);
+  const floatingRef = useRef<{ patch: SpritePatch; at: SpritePoint } | undefined>(undefined);
+  selectionRef.current = selection;
+  floatingRef.current = floating;
+
+  /** Put a floating paste down. One undo entry, for the whole paste. */
+  const commitFloating = useCallback(() => {
+    const pending = floatingRef.current;
+    const current = latestDoc.current;
+    if (!pending || !current) return false;
+    setFloating(undefined);
+    commit(applyPixels(current, pasteRegion(currentSprite(current), pending.patch, pending.at)));
+    setSelection(patchRegionAt(pending.patch, pending.at));
+    return true;
+  }, [commit]);
+
+  const handleSelectAll = useCallback(() => {
+    commitFloating();
+    setSelection(WHOLE_SPRITE);
+  }, [commitFloating]);
+
+  /**
+   * Copy, cut, paste and delete, each acting on whichever thing is active.
+   *
+   * A marked pixel region wins over the sprite, so one key set covers both without a modifier for
+   * each - see `sprite-clipboard.ts`.
+   */
+  const handleCopy = useCallback(() => {
+    const current = latestDoc.current;
+    if (!current) return;
+    const region = selectionRef.current;
+    if (region) spriteClipboard.putRegion(extractRegion(currentSprite(current), region));
+    else spriteClipboard.putSprite(currentSprite(current));
+  }, []);
+
+  const handleDeleteSelection = useCallback(() => {
+    const current = latestDoc.current;
+    const region = selectionRef.current;
+    if (!current || !region) return false;
+    commit(
+      applyPixels(current, clearRegion(currentSprite(current), region, transparencyRef.current))
+    );
+    return true;
+  }, [commit]);
+
+  /** Delete acts on the marked region when there is one, and on the whole sprite otherwise. */
+  const handleDeleteOrRemove = useCallback(() => {
+    if (!handleDeleteSelection()) commit(removeSprite(latestDoc.current));
+  }, [commit, handleDeleteSelection]);
+
+  const handleCut = useCallback(() => {
+    handleCopy();
+    // With a region marked this is a region cut; otherwise it is the sheet operation, which is
+    // where "Cut sprite" finally becomes true rather than being a delete with a scissors icon.
+    if (!handleDeleteSelection()) commit(removeSprite(latestDoc.current));
+  }, [commit, handleCopy, handleDeleteSelection]);
+
+  const handlePaste = useCallback(() => {
+    const current = latestDoc.current;
+    if (!current) return;
+    const clip = spriteClipboard.get();
+    if (clip.region) {
+      commitFloating();
+      const anchor = selectionRef.current ?? { row: 0, col: 0 };
+      setFloating({
+        patch: clip.region,
+        at: clampPasteOrigin({ row: anchor.row, col: anchor.col }, clip.region)
+      });
+      return;
+    }
+    if (clip.sprite) {
+      // A whole sprite pastes as a new sprite after the selection, not over the current one -
+      // silently replacing what someone is working on is not what Paste means.
+      const next = addSprite(current, transparencyRef.current);
+      commit(applyPixels(next, clip.sprite));
+    }
+  }, [commit, commitFloating]);
+
+  /** Nudge a floating paste, or move the marked region. Returns false if there is nothing to move. */
+  const handleNudge = useCallback((dRow: number, dCol: number) => {
+    const pending = floatingRef.current;
+    if (!pending) return false;
+    setFloating({
+      patch: pending.patch,
+      at: clampPasteOrigin({ row: pending.at.row + dRow, col: pending.at.col + dCol }, pending.patch)
+    });
+    return true;
+  }, []);
 
   /** Step through the sheet with `[` and `]`. */
   const handlePrevSprite = useCallback(
@@ -378,7 +509,15 @@ export const SpriteEditor = ({ context }: Props) => {
     zoomIn: zoom.zoomIn,
     zoomOut: zoom.zoomOut,
     fit: zoom.fit,
-    drawAtCursor: handleDrawAtCursor
+    drawAtCursor: handleDrawAtCursor,
+    cut: handleCut,
+    copy: handleCopy,
+    paste: handlePaste,
+    selectAll: handleSelectAll,
+    deleteSelection: handleDeleteSelection,
+    nudge: handleNudge,
+    commitFloating,
+    escape: handleEscape
   });
 
   // --- Render the editor
@@ -410,11 +549,16 @@ export const SpriteEditor = ({ context }: Props) => {
         selectedIndex={selectedSpriteIndex}
         canUndo={canUndo(doc)}
         canRedo={canRedo(doc)}
+        canPaste={canPaste}
+        hasSelection={!!selection}
         separated={!!spriteImagesSeparated}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onDuplicate={handleDuplicate}
-        onDelete={handleDelete}
+        onCut={handleCut}
+        onCopy={handleCopy}
+        onPaste={handlePaste}
+        onDelete={handleDeleteOrRemove}
         onMoveLeft={handleMoveLeft}
         onMoveRight={handleMoveRight}
         onAdd={handleAdd}
@@ -454,6 +598,16 @@ export const SpriteEditor = ({ context }: Props) => {
             <SpriteEditorGrid
               cellSize={zoom.cellSize}
               showGrid={showGrid}
+              selection={selection}
+              floating={
+                floating
+                  ? {
+                      region: patchRegionAt(floating.patch, floating.at),
+                      pixels: floating.patch.pixels
+                    }
+                  : undefined
+              }
+              onSelectRegion={setSelection}
               onionSprite={onionSprite}
               spriteMap={spriteMap}
               palette={palette}
@@ -463,7 +617,7 @@ export const SpriteEditor = ({ context }: Props) => {
               tool={currentTool}
               hover={hover}
               onCommit={handleCommitPixels}
-              onEscape={handleEscape}
+              onCancelDrag={NOOP}
             />
           </div>
         </div>

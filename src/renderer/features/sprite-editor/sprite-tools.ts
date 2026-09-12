@@ -57,11 +57,11 @@ export function applyTool(
     case "circle-filled":
       return { map: drawEllipse(map, from, to, penIndex, fillIndex), accumulate: false };
     default:
-      // "pointer" draws nothing, and so does any tool added without a case here. Returning
+      // "select" marks rather than draws, and so does any tool added without a case here. Returning
       // `undefined` rather than a null map is what stops a missing case reaching the sprite list.
       return undefined;
   }
 }
 
 /** Whether a tool marks the canvas at all. */
-export const toolDraws = (tool: SpriteTools): boolean => tool !== "pointer";
+export const toolDraws = (tool: SpriteTools): boolean => tool !== "select";

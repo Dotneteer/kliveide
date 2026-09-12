@@ -22,9 +22,9 @@ type Props = {
 const DRAW_HINT = "\nRight-drag paints with the fill colour";
 
 const TOOLS: Array<{ tool: SpriteTools; icon: string; title: string }> = [
-  // "Pointer tool" was labelled "Pencil tool" - a copy-paste that also reached `aria-label`, so a
-  // screen reader was offered two indistinguishable buttons. It becomes "Select" in Phase 8.
-  { tool: "pointer", icon: "spr-pointer", title: "Pointer tool (M)" },
+  // Labelled "Pencil tool" until Phase 1 - a copy-paste that also reached `aria-label`, so a screen
+  // reader was offered two indistinguishable buttons - and named for doing nothing until Phase 8.
+  { tool: "select", icon: "spr-pointer", title: "Select tool (M)\nDrag to mark a region" },
   { tool: "pencil", icon: "spr-pencil", title: "Pencil tool (P)" + DRAW_HINT },
   { tool: "line", icon: "spr-line", title: "Line tool (L)" + DRAW_HINT },
   { tool: "rectangle", icon: "spr-rect", title: "Rectangle tool (R)" + DRAW_HINT },

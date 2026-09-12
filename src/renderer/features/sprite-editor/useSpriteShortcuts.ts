@@ -34,10 +34,22 @@ export type ShortcutActions = {
   fit: () => void;
   /** Apply the current tool at the cursor, exactly as a click there would. */
   drawAtCursor: (at: SpritePoint) => void;
+  cut: () => void;
+  copy: () => void;
+  paste: () => void;
+  selectAll: () => void;
+  /** Blank the marked region. Returns false when there is nothing marked. */
+  deleteSelection: () => boolean;
+  /** Move a floating paste. Returns false when nothing is floating, so arrows fall back to the cursor. */
+  nudge: (dRow: number, dCol: number) => boolean;
+  /** Put a floating paste down. Returns false when nothing was floating. */
+  commitFloating: () => boolean;
+  /** Back out one level: a floating paste, then the selection, then the tool. */
+  escape: () => void;
 };
 
 const TOOL_KEYS: Record<string, { plain: SpriteTools; shift?: SpriteTools }> = {
-  m: { plain: "pointer" },
+  m: { plain: "select" },
   p: { plain: "pencil" },
   l: { plain: "line" },
   r: { plain: "rectangle", shift: "rectangle-filled" },
@@ -98,19 +110,48 @@ export function useSpriteShortcuts(hover: HoverStore, actions: ShortcutActions) 
           actions.redo();
           return handled();
         }
+        if (key === "x") {
+          actions.cut();
+          return handled();
+        }
+        if (key === "c") {
+          actions.copy();
+          return handled();
+        }
+        if (key === "v") {
+          actions.paste();
+          return handled();
+        }
+        if (key === "a") {
+          actions.selectAll();
+          return handled();
+        }
         return; // any other modified key belongs to the app, not to us
       }
       if (e.altKey) return;
 
       if (ARROWS[e.key]) {
-        moveCursor(...ARROWS[e.key]);
+        // A floating paste takes the arrows while it is in flight - it is the thing the user is
+        // positioning - and the pixel cursor gets them back the moment it is committed.
+        if (!actions.nudge(...ARROWS[e.key])) moveCursor(...ARROWS[e.key]);
         return handled();
       }
 
       if (e.key === "Enter" || e.key === " ") {
+        if (actions.commitFloating()) return handled();
         const at = hover.get() ?? HOME;
         drawAtCursor({ row: at.row, col: at.col });
         return handled();
+      }
+
+      if (e.key === "Escape") {
+        actions.escape();
+        return handled();
+      }
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (actions.deleteSelection()) return handled();
+        return;
       }
 
       const tool = TOOL_KEYS[e.key.toLowerCase()];
