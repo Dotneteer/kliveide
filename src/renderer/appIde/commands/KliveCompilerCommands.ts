@@ -32,6 +32,8 @@ import {
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { MF_INJECT_SUPPORT } from "@common/machines/constants";
 import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
 import {
   compileCode,
@@ -1046,6 +1048,26 @@ export async function injectCode(
   context: IdeCommandContext,
   operationType: CodeInjectionType
 ): Promise<IdeCommandResult> {
+  /*
+   * Refused before compiling, not after: there is nothing to do with the output on a machine that
+   * cannot take injected code, so building it first only wastes the user's time.
+   *
+   * The document header hides the Inject button for these machines, but the button is not the only
+   * way in — `inject` is a command, reachable from the prompt and from a script — so the rule lives
+   * here as well as in the UI. Run and debug are unaffected: they deliver the code by whatever
+   * route the machine does support, which for the Next is the exported `.nex` file below.
+   */
+  if (operationType === "inject") {
+    const machineId = context.store.getState().emulatorState?.machineId;
+    const machine = machineRegistry.find((mi) => mi.machineId === machineId);
+    if (machine && machine.features?.[MF_INJECT_SUPPORT] === false) {
+      return commandError(
+        `${machine.displayName} does not support injecting code into its memory. ` +
+          "Use run or debug instead."
+      );
+    }
+  }
+
   const { message, result } = await compileCode(context);
   const errorNo = result?.errors?.length ?? 0;
   if (message) {
