@@ -18,6 +18,16 @@ interface ReachExecPointStep extends CodeInjectionStepBase {
   type: "ReachExecPoint";
   rom: number;
   execPoint: number;
+
+  /**
+   * Opts this step into checkpointing under the given key.
+   *
+   * Reaching an execution point means single-stepping the machine there, which for a cold boot is by
+   * far the most expensive thing an injection flow does. When this is set and the machine supports
+   * checkpoints, the first run captures the state it arrives at, and later runs restore it instead of
+   * repeating the journey. A machine without checkpoint support just runs the step normally.
+   */
+  checkpoint?: string;
 }
 
 interface InjectStep extends CodeInjectionStepBase {

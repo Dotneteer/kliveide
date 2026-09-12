@@ -104,6 +104,34 @@ export type ZxNextWasmV2RomImages = {
  * This is a deterministic adapter for IDE integration while later migration
  * steps continue moving full Next subsystems into C/WASM.
  */
+/**
+ * A complete, restorable record of a `ZxNextWasmV2Machine`: the WASM core's whole linear memory plus
+ * the fields this class mirrors outside it.
+ */
+type ZxNextWasmV2Checkpoint = {
+  key: string;
+
+  /**
+   * The core's linear memory, minus the frame-trace ring that sits between these two halves.
+   *
+   * That ring is ~19.5 MiB of the 32 MiB buffer and holds nothing but diagnostics, so leaving it out
+   * takes the checkpoint from 32 MiB to roughly 13 MiB and lets a trace being recorded across a
+   * restore stay intact - the ring's header lives inside the excluded span, so it stays consistent
+   * with its own contents.
+   */
+  memoryBeforeTrace: Uint8Array;
+  memoryAfterTrace: Uint8Array;
+
+  normalFrames: number;
+  debugSteps: number;
+  lastStopReason: ZxNextWasmV2StopReason;
+  keyboardRows: Uint8Array;
+  keyboardRowsValid: boolean;
+  audioSampleRate: number;
+  sdCardInfoLoaded: boolean;
+  lastRenderedFrameTact: number;
+};
+
 export class ZxNextWasmV2Machine extends ZxNextMachine {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: ZxNextWasmV2Runtime;
@@ -137,6 +165,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private readonly wasmV2AudioSamples: AudioSample[] = [];
   private readonly wasmV2KeyboardRows = new Uint8Array(8);
   private wasmV2KeyboardRowsValid = false;
+  private wasmV2Checkpoint?: ZxNextWasmV2Checkpoint;
   constructor(
     public readonly requestedModelInfo?: MachineModel,
     public readonly requestedConfig?: MachineConfigSet,
@@ -574,6 +603,81 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
   }
 
+  /**
+   * Captures everything needed to put this machine back exactly where it stands.
+   *
+   * The WASM core keeps its entire world - CPU, RAM, ROM, Next registers, every device - inside its
+   * linear memory, and between exported calls the C shadow stack is unwound, so a copy of that
+   * buffer is a complete and replay-deterministic record of the core. What it does not cover is the
+   * handful of fields this class mirrors on the TypeScript side, which are captured alongside it.
+   *
+   * Deliberately NOT covered: the SD card, which lives in a real image file outside the emulator
+   * (see `processWasmV2SdWriteFrameCommand`). Restoring rewinds the machine but cannot rewind that
+   * file, so any write to it drops the checkpoint rather than risking a machine whose cached view of
+   * the filesystem disagrees with what is on disk.
+   * @param key Identifies what the captured state represents
+   */
+  captureCheckpoint(key: string): void {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null) return;
+    const all = new Uint8Array(runtime.memoryBuffer);
+    const traceStart = runtime.exports.zxnextTraceGetStartOffset();
+    const traceEnd = traceStart + runtime.frameTrace.byteLength;
+    this.wasmV2Checkpoint = {
+      key,
+      memoryBeforeTrace: all.slice(0, traceStart),
+      memoryAfterTrace: all.slice(traceEnd),
+      normalFrames: this.wasmV2NormalFrames,
+      debugSteps: this.wasmV2DebugSteps,
+      lastStopReason: this.wasmV2LastStopReason,
+      keyboardRows: this.wasmV2KeyboardRows.slice(),
+      keyboardRowsValid: this.wasmV2KeyboardRowsValid,
+      audioSampleRate: this.wasmV2AudioSampleRate,
+      sdCardInfoLoaded: this.wasmV2SdCardInfoLoaded,
+      lastRenderedFrameTact: this.lastRenderedFrameTact
+    };
+  }
+
+  /**
+   * Puts the machine back into the state captured under the given key.
+   * @param key The key the state was captured under
+   * @returns True when the machine was restored; otherwise, false
+   */
+  tryRestoreCheckpoint(key: string): boolean {
+    const runtime = this.wasmV2Runtime;
+    const checkpoint = this.wasmV2Checkpoint;
+    if (runtime == null || checkpoint == null || checkpoint.key !== key) return false;
+
+    const all = new Uint8Array(runtime.memoryBuffer);
+    all.set(checkpoint.memoryBeforeTrace, 0);
+    all.set(checkpoint.memoryAfterTrace, all.length - checkpoint.memoryAfterTrace.length);
+    this.lastRenderedFrameTact = checkpoint.lastRenderedFrameTact;
+    this.wasmV2NormalFrames = checkpoint.normalFrames;
+    this.wasmV2DebugSteps = checkpoint.debugSteps;
+    this.wasmV2LastStopReason = checkpoint.lastStopReason;
+    this.wasmV2KeyboardRows.set(checkpoint.keyboardRows);
+    this.wasmV2KeyboardRowsValid = checkpoint.keyboardRowsValid;
+    this.wasmV2AudioSampleRate = checkpoint.audioSampleRate;
+    this.wasmV2SdCardInfoLoaded = checkpoint.sdCardInfoLoaded;
+
+    // --- Anything queued by the run that has just been rewound away would otherwise leak into the
+    // --- restored machine: a half-played keystroke, a pending SD command, last frame's audio.
+    this.emulatedKeyStrokes.length = 0;
+    this.keyboardDevice.reset();
+    this.setFrameCommand(null);
+    this.wasmV2AudioSamples.length = 0;
+
+    this.syncCpuFromWasmV2(runtime);
+    return true;
+  }
+
+  /**
+   * Drops the held checkpoint, because something it was captured against has changed underneath it.
+   */
+  invalidateCheckpoints(): void {
+    this.wasmV2Checkpoint = undefined;
+  }
+
   uploadWasmV2RomImages(roms: ZxNextWasmV2RomImages): void {
     this.wasmV2RomImages = {
       nextRom: roms.nextRom.slice(),
@@ -583,9 +687,20 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     };
     const runtime = this.requireWasmV2Runtime();
     this.uploadCachedWasmV2RomImages(runtime);
+    this.invalidateCheckpoints();
   }
 
+  /**
+   * Runs instructions one at a time until the frame ends or something asks the loop to stop.
+   *
+   * Everything outside `NoDebug` + `Normal` arrives here, which includes the plain non-debug
+   * `ReachExecPoint` steps of a code-injection flow - so this loop, not just the debugger, carries
+   * the whole NextZXOS boot whenever the IDE starts a compiled project. It therefore only mirrors
+   * per instruction what the stop tests below actually read: the program counter and the frame flag.
+   * The full register set is mirrored once, on the way out, by `finishWasmV2DebugLoop()`.
+   */
   private executeWasmV2DebugLoop(runtime: ZxNextWasmV2Runtime): FrameTerminationMode {
+    const wasm = runtime.exports;
     const debugSupport = this.executionContext.debugSupport;
     let instructionsExecuted = 0;
     this.executionContext.lastTerminationReason = undefined;
@@ -594,13 +709,21 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     if (this.frameCompleted) {
       this.onInitNewFrame(false);
       this.frameCompleted = false;
-      this.emulateKeystroke();
-      this.syncKeyboardToWasmV2(runtime);
     }
+
+    // --- Queued keystrokes are timed in tacts and held for whole frames, so the fast path above
+    // --- plays them once per frame. Do the same here instead of once per instruction: the queue
+    // --- cannot advance faster than the frame counter it is measured against anyway.
+    this.emulateKeystroke();
+    this.syncKeyboardToWasmV2(runtime);
+
+    // --- Mirroring the core's bus activity costs ~7 boundary crossings per instruction and is only
+    // --- ever read by the memory/IO breakpoint test, so decide once whether it is needed at all.
+    const watchesBusAccess = debugSupport?.hasAccessBreakpoints() ?? false;
 
     if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
       if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
       }
     }
     if (debugSupport) {
@@ -608,44 +731,57 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     }
 
     while (!this.frameCompleted) {
-      this.emulateKeystroke();
-      this.syncKeyboardToWasmV2(runtime);
-      runtime.exports.zxnextExecuteInstruction();
+      wasm.zxnextExecuteInstruction();
       instructionsExecuted++;
       this.wasmV2DebugSteps++;
-      this.syncCpuFromWasmV2(runtime);
-      this.importWasmV2BusAccess(runtime);
+
+      // --- Assigning through `super` on purpose: this class mirrors `pc` with a setter that pushes
+      // --- every write back into the core, and this value was just read out of that same core.
+      super.pc = wasm.zxnextGetCpuPc();
+      this.frameCompleted = wasm.zxnextGetFrameCompleted() !== 0;
+      if (watchesBusAccess) {
+        this.importWasmV2BusAccess(runtime);
+      }
       this.syncWasmV2StorageFrameCommand(runtime);
-      this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
       this.wasmV2LastStopReason = "debugStep";
 
       if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
         const point = this.executionContext.terminationPoint;
         if (point != null && this.pc === (point & 0xffff)) {
-          return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
+          return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.UntilExecutionPoint);
         }
       }
-      if (this.hasWasmV2AccessBreakpoint()) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      if (watchesBusAccess && this.hasWasmV2AccessBreakpoint()) {
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
       }
       if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
       }
       if (this.executionContext.debugStepMode === DebugStepMode.StepInto) {
         if (debugSupport) {
           debugSupport.imminentBreakpoint = undefined;
         }
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
       }
       if (this.getFrameCommand()) {
-        return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.Normal);
       }
     }
 
-    return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+    return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.Normal);
   }
 
-  private finishWasmV2DebugLoop(termination: FrameTerminationMode): FrameTerminationMode {
+  /**
+   * Single exit of the debug loop: brings the TypeScript-side machine state back in step with the
+   * WASM core before anyone can observe it. The loop itself only keeps `pc` and the frame flag up to
+   * date, so every register, counter and bus mirror is refreshed here.
+   */
+  private finishWasmV2DebugLoop(
+    runtime: ZxNextWasmV2Runtime,
+    termination: FrameTerminationMode
+  ): FrameTerminationMode {
+    this.syncCpuFromWasmV2(runtime);
+    this.importWasmV2BusAccess(runtime);
     this.executionContext.lastTerminationReason = termination;
     return termination;
   }
@@ -876,6 +1012,13 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   ): Promise<void> {
     const runtime = this.requireWasmV2Runtime();
     const card = frameCommand.command === "sd-write-card1" ? 1 : 0;
+
+    // --- The SD image is a real file on disk, so it is the one piece of machine state a checkpoint
+    // --- cannot rewind. Once the machine has written to it, any checkpoint taken before that write
+    // --- describes a machine whose cached view of the filesystem no longer matches the disk, so the
+    // --- checkpoint has to go - a slow cold boot next time beats a corrupted card.
+    this.invalidateCheckpoints();
+
     try {
       const result = await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
       runtime.exports.zxnextSetSdWriteResponse(card, result?.persistenceConfirmed ? 1 : 0);

@@ -176,6 +176,23 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * Does any breakpoint in this set watch memory or I/O access?
+   *
+   * The per-instruction debug loops of the WASM-backed machines call this once per entry to decide
+   * whether they have to mirror the core's bus activity after every instruction. `breakpointDefs`
+   * holds a handful of entries in practice, so this stays cheaper than the ~7 WASM boundary
+   * crossings per instruction it lets the caller skip.
+   */
+  hasAccessBreakpoints(): boolean {
+    for (const bp of this.breakpointDefs.values()) {
+      if (bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Gets I/O read breakpoint information for the specified address
    * @param address I/O address read during the current instruction
    */

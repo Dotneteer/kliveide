@@ -205,6 +205,26 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   injectCodeToRun(codeToInject: CodeToInject): number;
 
   /**
+   * Captures the machine's entire current state under the given key, replacing any state held
+   * before. Optional: a machine that cannot serialise itself simply does not implement it.
+   * @param key Identifies what the captured state represents
+   */
+  captureCheckpoint?(key: string): void;
+
+  /**
+   * Restores the state captured under the given key.
+   * @param key The key the state was captured under
+   * @returns True when the machine was restored; false when it holds no valid state for that key,
+   * in which case the caller has to reach that state the long way round.
+   */
+  tryRestoreCheckpoint?(key: string): boolean;
+
+  /**
+   * Drops any held checkpoint, because something it was captured against has changed underneath it.
+   */
+  invalidateCheckpoints?(): void;
+
+  /**
    * Gets the partition in which the specified address is paged in
    * @param address Address to get the partition for
    */

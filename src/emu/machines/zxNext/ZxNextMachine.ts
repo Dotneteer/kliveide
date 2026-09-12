@@ -1456,9 +1456,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         type: "KeepPc"
       },
       {
+        // --- The cold boot: from a hard reset all the way through NextZXOS coming up, and by far
+        // --- the longest step in this flow. Checkpointed so later runs start from the boot menu
+        // --- instead of booting again.
         type: "ReachExecPoint",
         rom: 0,
         execPoint: ZXNEXT_MAIN_WAITING_LOOP,
+        checkpoint: "zxnext-boot",
         message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
       },
       {
