@@ -73,7 +73,7 @@ export const componentAliases: Record<string, string> = {
   "--border-color-dropdown-input": "var(--border-default)",
   "--bg-color-dropdown-menu": "var(--surface-overlay)",
   "--color-dropdown-menu": "var(--text-primary)",
-  "--bg-color-dropdown-menu-pointed": "var(--surface-hover)",
+  "--bg-color-dropdown-menu-pointed": "var(--surface-overlay-hover)",
   "--bg-color-dropdown-menu-selected": "var(--accent-subtle)",
   "--border-color-dropdown-menu": "var(--border-default)",
 
@@ -88,7 +88,7 @@ export const componentAliases: Record<string, string> = {
   "--color-context-item": "var(--text-primary)",
   "--color-context-item-dangerous": "var(--status-error)",
   "--color-context-item-disabled": "var(--text-disabled)",
-  "--bgcolor-context-item-pointed": "var(--surface-hover)",
+  "--bgcolor-context-item-pointed": "var(--surface-overlay-hover)",
   "--color-context-item-pointed": "var(--text-primary)",
   "--bgcolor-context-item-dangerous-pointed": "var(--status-error-subtle)",
   "--color-context-separator": "var(--border-subtle)",

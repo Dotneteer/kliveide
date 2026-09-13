@@ -32,6 +32,25 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   const hostElement = useRef<HTMLDivElement>(null);
 
+  /*
+   * The box the screen is allowed to fill.
+   *
+   * This is deliberately *not* the panel root. The panel is a column that also carries the
+   * machine-specific tool strip (the Z88 slot cards), so the room left for the canvas is the panel
+   * minus that strip. Measuring the root would hand the canvas height the strip is already using
+   * and push the strip back out of view.
+   */
+  const screenArea = useRef<HTMLDivElement>(null);
+
+  /*
+   * The tool strip's own box, so the screen can be sized around it.
+   *
+   * The strip sits in the same centred stack as the screen, which keeps the two adjacent and their
+   * left edges flush. That also means its height is inside the area being measured, so the screen
+   * hook has to hold that much back — see the `reservedElement` argument below.
+   */
+  const toolArea = useRef<HTMLDivElement>(null);
+
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
@@ -65,7 +84,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     yRatio,
     displayScreenData,
     updateScreenDimensions
-  } = useEmulatorScreen(hostElement, controllerRef);
+  } = useEmulatorScreen(screenArea, controllerRef, toolArea);
 
   // --- Extracted audio hook
   const { beeperRenderer, initAudio } = useEmulatorAudio();
@@ -325,21 +344,29 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   return (
     <div className={styles.emulatorPanel} ref={hostElement} tabIndex={-1}>
-      <div
-        className={styles.display}
-        style={{
-          width: `${canvasWidth ?? 0}px`,
-          height: `${canvasHeight ?? 0}px`
-        }}
-        onClick={() => setShowOverlay(true)}
-      >
-        <EmulatorOverlay
-          overlay={overlay}
-          showOverlay={showOverlay}
-          onDismiss={() => setShowOverlay(false)}
-        />
-        <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
-        {machineTools}
+      <div className={styles.screenArea} ref={screenArea}>
+        <div className={styles.machineStack}>
+          <div
+            className={styles.display}
+            style={{
+              width: `${canvasWidth ?? 0}px`,
+              height: `${canvasHeight ?? 0}px`
+            }}
+            onClick={() => setShowOverlay(true)}
+          >
+            <EmulatorOverlay
+              overlay={overlay}
+              showOverlay={showOverlay}
+              onDismiss={() => setShowOverlay(false)}
+            />
+            <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
+          </div>
+          {machineTools && (
+            <div className={styles.toolArea} ref={toolArea}>
+              {machineTools}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
