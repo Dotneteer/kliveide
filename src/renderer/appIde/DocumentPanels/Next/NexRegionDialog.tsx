@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "@renderer/controls/Button";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
@@ -9,7 +9,11 @@ import {
   type NexAnnotationRegionType
 } from "./nexAnnotations";
 import { parseNexLabelValue } from "./NexLabelDialog";
+import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
+import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
+import { MemorySectionType } from "@abstractions/MemorySection";
 import styles from "./NexRegionDialog.module.scss";
+import { DialogFooter } from "@renderer/controls/overlay/DialogFooter";
 
 export type NexRegionDialogResult = {
   type: NexAnnotationRegionType;
@@ -58,12 +62,25 @@ export function NexRegionDialog({
     () => validateRegion(type, start, end),
     [end, start, type]
   );
-  const preview = useMemo(
-    () => start !== undefined && end !== undefined && start <= end
-      ? formatRegionPreview(type, start, end, bytes)
-      : "",
-    [bytes, end, start, type]
-  );
+  /*
+   * The preview is awaited, because previewing a `disassemble` region means really disassembling it.
+   * The guard drops a result that arrives after the range has moved on — the user types into the
+   * offset fields, so this re-runs on nearly every keystroke.
+   */
+  const [preview, setPreview] = useState("");
+  useEffect(() => {
+    if (start === undefined || end === undefined || start > end) {
+      setPreview("");
+      return undefined;
+    }
+    let cancelled = false;
+    void createRegionPreview(type, start, end, bytes).then((text) => {
+      if (!cancelled) setPreview(text);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [bytes, end, start, type]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -143,16 +160,57 @@ export function NexRegionDialog({
           {preview}
         </div>
       </DialogRow>
-      <footer className={styles.footer}>
+      <DialogFooter>
         <Button text="Save" type="submit" disabled={!!error} />
         <Button text="Cancel" clicked={controls.cancel} />
-      </footer>
+      </DialogFooter>
     </form>
   );
 }
 
 export function formatRegionOffset(value: number): string {
   return `$${toHexa4(value)}`;
+}
+
+/** How many lines any region preview shows before it trails off. */
+const PREVIEW_LINE_LIMIT = 4;
+
+/**
+ * What a region actually contains, as the listing would show it.
+ *
+ * Async because the `disassemble` case really disassembles: every other region type is a direct
+ * rendering of the bytes, but code is only knowable by decoding it, and the decoder is async. The
+ * alternative — the one this replaces — was to print a sentence *about* the region
+ * ("Z80 disassembly, $3FFC bytes"), which tells you nothing you did not already read off the row.
+ *
+ * Offsets are bank-relative, matching the Start and End columns beside it, so the disassembler runs
+ * with no address offset and its item addresses are already the right ones to print.
+ */
+export async function createRegionPreview(
+  type: NexAnnotationRegionType,
+  start: number,
+  end: number,
+  bytes: number[]
+): Promise<string> {
+  if (type !== "disassemble") {
+    return formatRegionPreview(type, start, end, bytes);
+  }
+
+  const disassembler = new Z80Disassembler(
+    [new MemorySection(start, end, MemorySectionType.Disassemble)],
+    Uint8Array.from(bytes),
+    undefined,
+    { allowExtendedSet: true }
+  );
+  const output = await disassembler.disassemble(start, end);
+  const items = output?.outputItems ?? [];
+  const lines = items
+    .slice(0, PREVIEW_LINE_LIMIT)
+    .map((item) => `${formatRegionOffset(item.address)}  ${item.instruction ?? ""}`);
+  if (items.length > PREVIEW_LINE_LIMIT) {
+    lines.push("...");
+  }
+  return lines.join("\n");
 }
 
 export function formatRegionPreview(
@@ -178,7 +236,15 @@ export function formatRegionPreview(
     case "skip":
       return `${formatRegionOffset(start)}  .skip ${formatRegionOffset(length)}`;
     default:
-      return `${formatRegionOffset(start)}  Z80 disassembly, ${formatRegionOffset(length)} bytes`;
+      /*
+       * The disassembly case is the one this function cannot answer.
+       *
+       * Disassembling is async, so it is `createRegionPreview`'s job — see there. Reaching this
+       * line means a caller wanted a synchronous preview of a `disassemble` region, and saying so
+       * is better than the sentence this used to return, which described the region rather than
+       * previewing it: "$0004  Z80 disassembly, $3FFC bytes".
+       */
+      return "";
   }
 
   function createPreviewLines(
@@ -188,11 +254,15 @@ export function formatRegionPreview(
     createLine: (offset: number, values: number[]) => string
   ) {
     const lines: string[] = [];
-    for (let offset = firstOffset; offset <= lastOffset && lines.length < 4; offset += step) {
+    for (
+      let offset = firstOffset;
+      offset <= lastOffset && lines.length < PREVIEW_LINE_LIMIT;
+      offset += step
+    ) {
       const values = bytes.slice(offset, Math.min(offset + step, lastOffset + 1));
       lines.push(createLine(offset, values));
     }
-    if (firstOffset + step * 4 <= lastOffset) {
+    if (firstOffset + step * PREVIEW_LINE_LIMIT <= lastOffset) {
       lines.push("...");
     }
     return lines.join("\n");

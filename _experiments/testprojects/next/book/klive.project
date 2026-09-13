@@ -1,11 +1,11 @@
 {
-  "kliveVersion": "0.58.2",
+  "kliveVersion": "0.59.0",
   "machineType": "zxnext",
   "modelId": "standard",
   "config": {
     "zxnextImplementation": "wasm"
   },
-  "clockMultiplier": 1,
+  "clockMultiplier": 24,
   "soundLevel": 1,
   "soundMuted": false,
   "savedSoundLevel": 1,

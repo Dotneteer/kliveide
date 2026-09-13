@@ -26,24 +26,46 @@
   font-size: 0.9em;
   outline: none;
 
-  &:focus {
-    outline: 2px solid var(--color-button-focused);
-  }
+  /* The app's single focus treatment — `:focus-visible`, so a mouse click does not light a ring. */
+  @include focus-ring;
 }
 
 .search {
   margin-bottom: 6px;
 }
 
+/*
+ * `--status-error`, not the console's ANSI red: that palette is a fixed external contract for
+ * program output, not a semantic for the app's own chrome.
+ *
+ * The 128px left margin it carried was aligning to a label column that no longer exists —
+ * `DialogRow` stacks its label above its children, so the message sat indented under nothing.
+ */
 .error {
-  margin: 2px 0 8px 128px;
-  color: var(--console-ansi-bright-red);
+  /*
+   * Tight above, nothing below: an error belongs to the field it is about, and the row beneath it
+   * brings its own separation now.
+   */
+  margin: var(--space-1) 0 0;
+  color: var(--status-error);
   font-size: 0.85em;
 }
 
+/*
+ * A fixed viewport of three rows, the same way the Labels list is sized to eight.
+ *
+ * `max-height` let the box collapse to however many labels happened to match the search — one row
+ * for one match — so the dialog resized under the pointer as you typed. Three is enough to show
+ * that a list *is* a list and that it scrolls, without this secondary control taking the height of
+ * the form it supports.
+ */
 .labelList {
   box-sizing: border-box;
-  max-height: 170px;
+  /* Text rows, no controls in them, so the small control height is the right one here. */
+  --list-row-height: var(--size-controlSm);
+  --list-visible-rows: 3;
+
+  height: calc(var(--list-row-height) * var(--list-visible-rows));
   overflow: auto;
   border: 1px solid var(--border-modal-section);
   border-radius: 4px;
@@ -52,20 +74,31 @@
 
 .labelItem {
   display: grid;
+  box-sizing: border-box;
   width: 100%;
+  height: var(--list-row-height);
   grid-template-columns: minmax(8ch, 1fr) 7ch 9ch 8ch;
   gap: 8px;
   align-items: center;
   border: none;
-  padding: 5px 8px;
+  /* Inline only: block padding would stack on the row height and cost the third row its edge. */
+  padding: 0 8px;
   background: transparent;
   color: var(--color-modal-body);
   font-family: var(--monospace-font);
+  font-size: 0.9em;
   text-align: left;
+  cursor: pointer;
+  @include focus-ring(-2px);
 
   &:hover {
     background: var(--bgcolor-disass-hover);
   }
+}
+
+/* Recedes: how often a label is used is context for the name, not the name itself. */
+.labelRefs {
+  color: var(--data-secondary);
 }
 
 .labelName {
@@ -76,22 +109,12 @@
 }
 
 .emptyList {
-  padding: 8px;
-  color: var(--color-doc-inactiveText);
-}
-
-.footer {
   display: flex;
-  flex-direction: row-reverse;
-  gap: 8px;
-  margin: 20px -20px -20px;
-  padding: 12px 20px;
-  border-top: var(--border-modal-section);
-  background: var(--bgcolor-modal-footer);
-  border-bottom-left-radius: var(--radius-modal);
-  border-bottom-right-radius: var(--radius-modal);
+  align-items: center;
+  height: var(--list-row-height);
+  padding: 0 8px;
+  color: var(--color-doc-inactiveText);
+  font-size: 0.9em;
 }
 
-.footerSpacer {
-  flex: 1 1 auto;
-}
+

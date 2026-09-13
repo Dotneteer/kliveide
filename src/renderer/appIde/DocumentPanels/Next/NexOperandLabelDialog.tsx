@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "@renderer/controls/Button";
+import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import type { DisassemblyOperandInfo } from "@renderer/appIde/disassemblers/common-types";
@@ -14,6 +15,10 @@ import {
   type NexLabelDialogLabel
 } from "./NexLabelDialog";
 import styles from "./NexOperandLabelDialog.module.scss";
+import {
+  DialogFooter,
+  DialogFooterSpacer
+} from "@renderer/controls/overlay/DialogFooter";
 
 export type NexOperandLabelDialogResult =
   | {
@@ -130,17 +135,16 @@ export function NexOperandLabelDialog({
       </DialogRow>
       {operands.length > 1 && (
         <DialogRow label="Operand" rows={true}>
-          <select
-            className={styles.input}
-            value={selectedOperandIndex}
-            onChange={(event) => setSelectedOperandIndex(Number(event.target.value))}
-          >
-            {operands.map((operand) => (
-              <option key={operand.operandIndex} value={operand.operandIndex}>
-                {`Operand ${operand.operandIndex + 1}: ${operand.defaultText}`}
-              </option>
-            ))}
-          </select>
+          {/* The app's own dropdown, as the other annotation dialogs use. */}
+          <Dropdown
+            ariaLabel="Operand"
+            options={operands.map<DropdownOption>((operand) => ({
+              value: String(operand.operandIndex),
+              label: `Operand ${operand.operandIndex + 1}: ${operand.defaultText}`
+            }))}
+            initialValue={String(selectedOperandIndex)}
+            onChanged={(value) => setSelectedOperandIndex(Number(value))}
+          />
         </DialogRow>
       )}
       {selectedOperand && (
@@ -183,18 +187,22 @@ export function NexOperandLabelDialog({
           )}
         </div>
       </DialogRow>
+      {/*
+        * "Bank", not "Local", and the bank one first — the same two names in the same order as the
+        * Labels list's scope filter, the Label editor's radios and the Labels list's own Add buttons.
+        */}
       <div className={styles.createActions}>
-        <Button text="Create Global Label" clicked={() => createLabel("global")} />
         <Button
-          text="Create Local Label"
+          text="Create Bank Label"
           disabled={!canCreateLocal}
           clicked={() => createLabel("local")}
         />
+        <Button text="Create Global Label" clicked={() => createLabel("global")} />
       </div>
-      <footer className={styles.footer}>
+      <DialogFooter>
         <Button text="Apply Reference" type="submit" disabled={!selectedCandidate} />
         <Button text="Cancel" clicked={controls.cancel} />
-        <div className={styles.footerSpacer} />
+        <DialogFooterSpacer />
         <Button
           text="Clear Reference"
           disabled={!explicitReference}
@@ -208,7 +216,7 @@ export function NexOperandLabelDialog({
             });
           }}
         />
-      </footer>
+      </DialogFooter>
     </form>
   );
 }

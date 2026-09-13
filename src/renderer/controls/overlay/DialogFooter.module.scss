@@ -1,0 +1,29 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The footer band a managed dialog body renders for itself.
+ *
+ * `DialogProvider` puts the body inside `Modal`'s `.dialogBody` and renders the shell's own footer
+ * with every button hidden, so a dialog that supplies its own buttons cannot use that footer — it
+ * has to draw the band inside the body and break back out of the body's padding.
+ *
+ * The breakout is the whole point of this file existing. Seven dialogs each carried
+ * `margin: 20px -20px -20px`, while `.dialogBody` pads with `var(--space-4)` — 16px. Every one of
+ * them therefore overhung the body by 4px on each side and spilled past the dialog's rounded
+ * corners. Expressed against the same token the body pads with, the two cannot drift again.
+ */
+.dialogFooter {
+  @include dialog-footer-band;
+
+  margin: var(--space-4) calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
+}
+
+/*
+ * Pushes what follows to the far edge.
+ *
+ * The band is `row-reverse`, so a spacer placed after the dismiss button leaves it alone at the
+ * trailing edge and moves everything declared later to the leading one.
+ */
+.spacer {
+  flex: 1 1 auto;
+}

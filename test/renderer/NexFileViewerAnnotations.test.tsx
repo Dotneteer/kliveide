@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -127,7 +127,7 @@ describe("NexFileViewerPanel annotations", () => {
 
     await renderNexViewer({ readFileContent, openDocument });
 
-    fireEvent.click(await screen.findByTestId("icon-pop-out"));
+    fireEvent.click(await screen.findByTestId("icon-square-arrow-out-up-right"));
 
     await waitFor(() =>
       expect(openDocument).toHaveBeenCalledWith(
@@ -145,6 +145,42 @@ describe("NexFileViewerPanel annotations", () => {
         false
       )
     );
+  });
+
+  /**
+   * The bank header is the viewer's table of contents.
+   *
+   * `Bank $05 (5) | PC: $C004` used to be one baked string with pipes for layout, so the bank
+   * number, its decimal echo and the machine-state mark could not be told apart or styled apart.
+   */
+  it("renders the bank heading as parts rather than a pipe-joined string", async () => {
+    await renderNexViewer({ contents: createNexWithLayer2AndBank5() });
+
+    const heading = await screen.findByText("Bank");
+    const row = heading.closest('[class*="expandableRowHeading"]') as HTMLElement;
+    expect(row).not.toBeNull();
+
+    // --- The number is its own element, so it can take the accent while the rest does not.
+    const number = within(row).getByText("$05");
+    expect(number.className).toContain("bankNumber");
+    expect(within(row).getByText("(5)").className).toContain("bankDecimal");
+    expect(row.textContent).not.toContain("|");
+
+    // --- The disclosure leads and the action sits beside the name, not out at the far edge.
+    const children = Array.from(row.children);
+    const chevronAt = children.findIndex((el) =>
+      (el.getAttribute("data-testid") ?? "").startsWith("icon-chevron")
+    );
+    const textAt = children.findIndex((el) => el.className.includes("headingText"));
+    const actionAt = children.findIndex((el) => el.className.includes("headingAction"));
+    const metaAt = children.findIndex((el) => el.className.includes("headingMeta"));
+    expect(chevronAt).toBe(0);
+    expect(textAt).toBeGreaterThan(chevronAt);
+    expect(actionAt).toBeGreaterThan(textAt);
+    expect(metaAt).toBeGreaterThan(actionAt);
+
+    // --- The right-hand detail is the bank size, and it is not a control.
+    expect(row.querySelector('[class*="headingMeta"]')?.textContent).toBe("16 KB");
   });
 
   it("shows a short error when an existing sidecar cannot be loaded", async () => {

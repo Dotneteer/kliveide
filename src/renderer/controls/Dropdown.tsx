@@ -18,6 +18,14 @@ export type DropdownOption = {
 
 type Props = {
   options: DropdownOption[];
+  /**
+   * Accessible name for the trigger.
+   *
+   * A dropdown whose meaning comes from the column it sits in — a toolbar, a dialog's tool row —
+   * has no visible label to be named by, and the trigger is a bare button, so without this it
+   * reaches a screen reader as only its current value.
+   */
+  ariaLabel?: string;
   placeholder?: string;
   initialValue?: string;
   width?: string | number;
@@ -28,6 +36,7 @@ type Props = {
 
 export default function Dropdown({
   options,
+  ariaLabel,
   placeholder,
   initialValue,
   width,
@@ -51,7 +60,7 @@ export default function Dropdown({
       }}
       onOpenChange={onOpenChange}
     >
-      <Select.Trigger className={styles.SelectTrigger} style={{ width }}>
+      <Select.Trigger className={styles.SelectTrigger} style={{ width }} aria-label={ariaLabel}>
         <Select.Value placeholder={placeholder ?? "Select..."} />
         <div style={{ width: "100%" }} />
         <Icon iconName="chevron-down" fill="--color-command-icon" width={16} height={16} />

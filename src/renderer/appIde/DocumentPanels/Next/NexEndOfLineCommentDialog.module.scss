@@ -37,14 +37,17 @@
   font-size: 0.9em;
   outline: none;
 
-  &:focus {
-    outline: 2px solid var(--color-button-focused);
-  }
+  /* The app's single focus treatment — `:focus-visible`, so a mouse click does not light a ring. */
+  @include focus-ring;
 }
 
+/* One line, fixed: an end-of-line comment is one line by definition. */
 .preview {
   box-sizing: border-box;
-  min-height: 32px;
+  --preview-lines: 1;
+
+  height: calc(var(--preview-lines) * 1.5em + 12px);
+  line-height: 1.5;
   overflow: hidden;
   border: 1px solid var(--border-modal-section);
   border-radius: 4px;
@@ -56,18 +59,4 @@
   white-space: nowrap;
 }
 
-.footer {
-  display: flex;
-  flex-direction: row-reverse;
-  gap: 8px;
-  margin: 20px -20px -20px;
-  padding: 12px 20px;
-  border-top: var(--border-modal-section);
-  background: var(--bgcolor-modal-footer);
-  border-bottom-left-radius: var(--radius-modal);
-  border-bottom-right-radius: var(--radius-modal);
-}
 
-.footerSpacer {
-  flex: 1 1 auto;
-}

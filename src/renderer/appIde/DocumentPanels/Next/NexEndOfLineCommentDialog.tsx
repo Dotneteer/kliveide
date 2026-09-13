@@ -4,6 +4,10 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import styles from "./NexEndOfLineCommentDialog.module.scss";
+import {
+  DialogFooter,
+  DialogFooterSpacer
+} from "@renderer/controls/overlay/DialogFooter";
 
 export type NexEndOfLineCommentDialogResult = {
   comment?: string;
@@ -79,16 +83,16 @@ export function NexEndOfLineCommentDialog({
           {preview}
         </div>
       </DialogRow>
-      <footer className={styles.footer}>
+      <DialogFooter>
         <Button text="Save" type="submit" />
         <Button text="Cancel" clicked={controls.cancel} />
         {hasExistingComment && (
           <>
-            <div className={styles.footerSpacer} />
+            <DialogFooterSpacer />
             <Button text="Clear" clicked={() => closeWithComment(undefined)} />
           </>
         )}
-      </footer>
+      </DialogFooter>
     </form>
   );
 }

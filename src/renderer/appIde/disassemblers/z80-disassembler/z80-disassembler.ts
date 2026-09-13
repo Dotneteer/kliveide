@@ -5,6 +5,7 @@ import {
   DisassemblyItem,
   DisassemblyOptions,
   DisassemblyOutput,
+  DisassemblyOperandInfo,
   DisassemblyOperandPragma,
   FetchResult,
   MemorySection,
@@ -595,7 +596,7 @@ export class Z80Disassembler {
     disassemblyItem: DisassemblyItem
   ): string {
     const operandIndex = this._operandIndex++;
-    const operandInfo = {
+    const operandInfo: DisassemblyOperandInfo = {
       instructionAddress: disassemblyItem.address,
       instructionOffset: this._opOffset,
       operandIndex,
@@ -611,7 +612,12 @@ export class Z80Disassembler {
       return defaultText;
     }
     const resolved = resolver(operandInfo);
-    return resolved && resolved.length > 0 ? resolved : defaultText;
+    if (!resolved || resolved.length === 0) {
+      return defaultText;
+    }
+    // --- Remember what went in, so a view can find the name again inside the finished instruction.
+    operandInfo.resolvedText = resolved;
+    return resolved;
   }
 
   /**

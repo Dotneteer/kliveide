@@ -25,9 +25,8 @@
   font-size: 0.9em;
   outline: none;
 
-  &:focus {
-    outline: 2px solid var(--color-button-focused);
-  }
+  /* The app's single focus treatment — `:focus-visible`, so a mouse click does not light a ring. */
+  @include focus-ring;
 }
 
 .rangeInputRow {
@@ -51,15 +50,27 @@
   white-space: nowrap;
 }
 
+/*
+ * `--status-error`, not the console's ANSI red — that palette is a fixed external contract for
+ * program output. The 128px left margin was aligning to a label column `DialogRow` no longer has.
+ */
 .error {
-  margin: 2px 0 8px 128px;
-  color: var(--console-ansi-bright-red);
+  /*
+   * Tight above, nothing below: an error belongs to the field it is about, and the row beneath it
+   * brings its own separation now.
+   */
+  margin: var(--space-1) 0 0;
+  color: var(--status-error);
   font-size: 0.85em;
 }
 
+/* Three rows, as the Label dialog's own secondary list: enough to show that it scrolls. */
 .regionList {
   box-sizing: border-box;
-  max-height: 145px;
+  --list-row-height: var(--size-controlSm);
+  --list-visible-rows: 3;
+
+  height: calc(var(--list-row-height) * var(--list-visible-rows));
   overflow: auto;
   border: 1px solid var(--border-modal-section);
   border-radius: 4px;
@@ -68,9 +79,12 @@
 
 .regionItem {
   display: grid;
+  box-sizing: border-box;
+  height: var(--list-row-height);
+  align-items: center;
   grid-template-columns: 7ch 7ch 14ch minmax(12ch, 1fr) 9ch;
   column-gap: 12px;
-  padding: 5px 8px;
+  padding: 0 8px;
   color: var(--color-modal-body);
   font-family: var(--monospace-font);
 
@@ -87,10 +101,19 @@
   color: var(--color-doc-inactiveText);
 }
 
+/*
+ * A fixed viewport, sized in lines.
+ *
+ * A `min-height`/`max-height` pair let the box grow and shrink with the text it previews, which
+ * moves the footer and resizes the dialog while you type into the field above it. Lines rather than
+ * pixels because that is what a preview holds — see the same pair on the lists in this folder.
+ */
 .preview {
   box-sizing: border-box;
-  min-height: 72px;
-  max-height: 130px;
+  --preview-lines: 5;
+
+  height: calc(var(--preview-lines) * 1.5em + 12px);
+  line-height: 1.5;
   overflow: auto;
   border: 1px solid var(--border-modal-section);
   border-radius: 4px;
@@ -101,14 +124,3 @@
   white-space: pre-wrap;
 }
 
-.footer {
-  display: flex;
-  flex-direction: row-reverse;
-  gap: 8px;
-  margin: 20px -20px -20px;
-  padding: 12px 20px;
-  border-top: var(--border-modal-section);
-  background: var(--bgcolor-modal-footer);
-  border-bottom-left-radius: var(--radius-modal);
-  border-bottom-right-radius: var(--radius-modal);
-}

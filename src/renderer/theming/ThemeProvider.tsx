@@ -22,6 +22,7 @@ import { DEFAULT_ACCENT, isAccentId, type AccentId } from "./tokens/palette";
 import { semanticTokens } from "./tokens/semantic";
 import { dimensionTokens, SPACE_BASE } from "./tokens/dimensions";
 import { rowSizeTokens } from "./tokens/rowSizes";
+import { syntaxTokens } from "./tokens/syntax";
 import { componentAliases } from "./tokens/componentAliases";
 import { staticTokens, toneTokens } from "./tokens/staticTokens";
 
@@ -116,6 +117,9 @@ function ThemeProvider({ children }: Props) {
 
       // L2 semantics and L3 dimensions.
       ...semanticTokens(tone, accentId),
+      // The editor's own token colours, for the views that render source-shaped text without
+      // Monaco — see `syntaxTokens`.
+      ...syntaxTokens(tone, accentId),
       ...dimensionTokens(tone),
       ...rowSizeTokens(getPanelFontSize(panelFontSize)),
       "--space-base": SPACE_BASE,

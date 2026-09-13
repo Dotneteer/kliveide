@@ -12,9 +12,8 @@
   font-size: 0.9em;
   outline: none;
 
-  &:focus {
-    outline: 2px solid var(--color-button-focused);
-  }
+  /* The app's single focus treatment — `:focus-visible`, so a mouse click does not light a ring. */
+  @include focus-ring;
 }
 
 .readOnlyValue {
@@ -31,9 +30,16 @@
   white-space: nowrap;
 }
 
+/*
+ * A fixed viewport. This is the dialog's main picker, so it is the roomiest of the lists here —
+ * eight rows, which with the group headers between them shows a useful stretch of both groups.
+ */
 .candidateList {
   box-sizing: border-box;
-  max-height: 210px;
+  --list-row-height: var(--size-controlSm);
+  --list-visible-rows: 8;
+
+  height: calc(var(--list-row-height) * var(--list-visible-rows));
   overflow: auto;
   margin-top: 6px;
   border: 1px solid var(--border-modal-section);
@@ -49,16 +55,21 @@
 
 .candidateItem {
   display: grid;
+  box-sizing: border-box;
   width: 100%;
+  height: var(--list-row-height);
   grid-template-columns: minmax(8ch, 1fr) 9ch 7ch 7ch;
   gap: 8px;
   align-items: center;
   border: none;
-  padding: 5px 8px;
+  padding: 0 8px;
   background: transparent;
   color: var(--color-modal-body);
   font-family: var(--monospace-font);
+  font-size: 0.9em;
   text-align: left;
+  cursor: pointer;
+  @include focus-ring(-2px);
 
   &:hover {
     background: var(--bgcolor-disass-hover);
@@ -82,25 +93,12 @@
   color: var(--color-doc-inactiveText);
 }
 
+/* Not a `DialogRow`, so it spaces itself off the candidate list above — at the same step. */
 .createActions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 12px;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
-.footer {
-  display: flex;
-  flex-direction: row-reverse;
-  gap: 8px;
-  margin: 20px -20px -20px;
-  padding: 12px 20px;
-  border-top: var(--border-modal-section);
-  background: var(--bgcolor-modal-footer);
-  border-bottom-left-radius: var(--radius-modal);
-  border-bottom-right-radius: var(--radius-modal);
-}
 
-.footerSpacer {
-  flex: 1 1 auto;
-}

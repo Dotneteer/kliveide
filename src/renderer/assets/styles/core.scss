@@ -14,6 +14,27 @@ $splitterHighlightColor: "blue";
   }
 }
 
+/*
+ * The band a dialog's footer sits in.
+ *
+ * Shared by `Modal`'s own footer and by `DialogFooter`, the one a managed dialog body renders for
+ * itself. The two have to be the same band — a dialog that supplies its own buttons should be
+ * indistinguishable from one that lets the shell supply them — and seven dialogs each keeping their
+ * own copy of these declarations is how they stopped being.
+ */
+@mixin dialog-footer-band {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--bgcolor-modal-footer);
+  border-top: var(--border-modal-section);
+  border-bottom-left-radius: var(--radius-modal);
+  border-bottom-right-radius: var(--radius-modal);
+}
+
 @mixin fill-parent {
   margin: 0;
   height: 100%;

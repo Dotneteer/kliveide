@@ -2,7 +2,9 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   deriveDisassemblyRowViewModel,
-  DisassemblyRow
+  DisassemblyRow,
+  isAuthoredRow,
+  splitInstructionOperands
 } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
 
 vi.mock("@renderer/appIde/DocumentPanels/BreakpointIndicator", () => ({
@@ -339,5 +341,196 @@ describe("deriveDisassemblyRowViewModel", () => {
     // --- M2: the instruction column is sized in `ch` now, not px. Asserted on the inline style
     // --- rather than through `toHaveStyle`, which resolves `ch` against jsdom's own font metrics.
     expect(getByText(".defb $00, $00, $00, $00").style.width).toBe("25ch");
+  });
+});
+
+/**
+ * An annotated listing is generated text with a thin layer of authored text over it, and the colour
+ * table has to describe that layer — see `--color-annotation-*`. These pin the rules that decide
+ * *which* run of characters is authored; the hues themselves are the token layer's business.
+ */
+describe("annotated disassembly rows", () => {
+  const base = {
+    bankLabel: false,
+    commentWidthCh: 0,
+    currentSegment: 0,
+    decimalView: false,
+    index: 0,
+    isFullView: true,
+    mem64kLabels: [] as string[],
+    partitionLabels: {},
+    partitionWidthCh: 0,
+    pausedPc: -1,
+    rowHeight: 18,
+    showBanks: false
+  };
+
+  describe("splitInstructionOperands", () => {
+    it("splits out the label a resolver substituted for a number", () => {
+      expect(
+        splitInstructionOperands("ld hl,SpriteTable", [
+          { instructionAddress: 0, instructionOffset: 0, operandIndex: 0, operandValue: 0xc000,
+            pragma: "W" as any, defaultText: "$C000", resolvedText: "SpriteTable" }
+        ])
+      ).toEqual(["ld hl,", { label: "SpriteTable" }]);
+    });
+
+    it("leaves an unresolved operand as plain text", () => {
+      expect(
+        splitInstructionOperands("ld hl,$C000", [
+          { instructionAddress: 0, instructionOffset: 0, operandIndex: 0, operandValue: 0xc000,
+            pragma: "W" as any, defaultText: "$C000" }
+        ])
+      ).toEqual(["ld hl,$C000"]);
+    });
+
+    it("consumes each candidate once, so a repeated name does not claim the same occurrence", () => {
+      const operand = (operandIndex: number) => ({
+        instructionAddress: 0, instructionOffset: 0, operandIndex, operandValue: 0xc000,
+        pragma: "W" as any, defaultText: "$C000", resolvedText: "Loop"
+      });
+      expect(splitInstructionOperands("ld hl,Loop ; Loop", [operand(0), operand(1)])).toEqual([
+        "ld hl,",
+        { label: "Loop" },
+        " ; ",
+        { label: "Loop" }
+      ]);
+    });
+
+    it("gives up rather than guessing when the name is no longer in the instruction", () => {
+      // --- A custom disassembler rewrote the text after the resolver ran.
+      expect(
+        splitInstructionOperands("rst $08", [
+          { instructionAddress: 0, instructionOffset: 0, operandIndex: 0, operandValue: 8,
+            pragma: "W" as any, defaultText: "$08", resolvedText: "CallBas" }
+        ])
+      ).toEqual(["rst $08"]);
+    });
+  });
+
+  describe("isAuthoredRow", () => {
+    it("is false for a row the disassembler produced on its own", () => {
+      expect(isAuthoredRow({ address: 0x8000 })).toBe(false);
+      expect(
+        isAuthoredRow({
+          address: 0x8000,
+          annotation: { bankOffset: 0, byteLength: 1, regionType: "disassemble" }
+        })
+      ).toBe(false);
+    });
+
+    it("is true for a comment, a name, or a region the user marked as data", () => {
+      const at = (extra: Record<string, unknown>) =>
+        isAuthoredRow({ address: 0x8000, annotation: { bankOffset: 0, byteLength: 1, ...extra } });
+      expect(at({ hasLineAnnotation: true })).toBe(true);
+      expect(at({ hasLabel: true })).toBe(true);
+      expect(at({ regionType: "bytes" })).toBe(true);
+      expect(at({ regionType: "skip" })).toBe(true);
+    });
+  });
+
+  it("paints a resolved operand label in its own cell", () => {
+    const { container, getByText } = render(
+      <DisassemblyRow
+        {...base}
+        annotated
+        item={{
+          address: 0x8000,
+          instruction: "call DrawSprite",
+          opCodes: [0xcd, 0x20, 0xc0],
+          operandCandidates: [
+            { instructionAddress: 0x8000, instructionOffset: 0, operandIndex: 0,
+              operandValue: 0xc020, pragma: "W" as any, defaultText: "$C020",
+              resolvedText: "DrawSprite" }
+          ],
+          annotation: { bankOffset: 0, byteLength: 3, regionType: "disassemble" }
+        }}
+      />
+    );
+
+    expect(getByText("DrawSprite").className).toContain("annotationOperand");
+    // --- The instruction is still one readable string, split or not.
+    expect(container.textContent).toContain("call DrawSprite");
+  });
+
+  it("paints a data region as a directive rather than as code", () => {
+    const { getByText } = render(
+      <DisassemblyRow
+        {...base}
+        annotated
+        item={{
+          address: 0x8000,
+          instruction: ".defb $01, $02",
+          annotation: { bankOffset: 0, byteLength: 2, regionType: "bytes" }
+        }}
+      />
+    );
+
+    expect(getByText(".defb $01, $02").className).toContain("annotationDirective");
+  });
+
+  it("lights the rail only on rows carrying something authored", () => {
+    const { getByTestId } = render(
+      <>
+        <DisassemblyRow
+          {...base}
+          annotated
+          index={0}
+          item={{
+            address: 0x8000,
+            instruction: "nop",
+            annotation: { bankOffset: 0, byteLength: 1, regionType: "disassemble" }
+          }}
+        />
+        <DisassemblyRow
+          {...base}
+          annotated
+          index={1}
+          item={{
+            address: 0x8001,
+            instruction: "nop",
+            hardComment: "the interesting one",
+            annotation: {
+              bankOffset: 1,
+              byteLength: 1,
+              regionType: "disassemble",
+              hasLineAnnotation: true
+            }
+          }}
+        />
+      </>
+    );
+
+    const rail = (index: number) =>
+      getByTestId(`disassembly-row-${index}`).querySelector('[class*="annotationRail"]');
+    // --- Present on both, so the columns after it do not shift between rows.
+    expect(rail(0)).not.toBeNull();
+    expect(rail(1)).not.toBeNull();
+    expect(rail(0)).not.toHaveAttribute("data-authored");
+    expect(rail(1)).toHaveAttribute("data-authored", "true");
+  });
+
+  it("leaves a machine disassembly row alone", () => {
+    const { getByTestId, getByText } = render(
+      <DisassemblyRow
+        {...base}
+        item={{
+          address: 0x8000,
+          hasLabel: true,
+          instruction: "call DrawSprite",
+          operandCandidates: [
+            { instructionAddress: 0x8000, instructionOffset: 0, operandIndex: 0,
+              operandValue: 0xc020, pragma: "W" as any, defaultText: "$C020",
+              resolvedText: "DrawSprite" }
+          ],
+          annotation: { bankOffset: 0, byteLength: 3, regionType: "bytes" }
+        }}
+      />
+    );
+
+    // --- No rail, no operand cell, no directive hue: `annotated` is opt-in and this row did not.
+    expect(getByTestId("disassembly-row-0").querySelector('[class*="annotationRail"]')).toBeNull();
+    expect(getByText("call DrawSprite").className).toContain("disassemblyInstruction");
+    expect(getByText("L8000:").className).toContain("disassemblyLabel");
   });
 });

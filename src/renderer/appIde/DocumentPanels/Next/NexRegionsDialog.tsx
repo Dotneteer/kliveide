@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import classnames from "classnames";
 import { Button } from "@renderer/controls/Button";
+import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import {
@@ -9,10 +10,15 @@ import {
   type NexAnnotationRegionType
 } from "./nexAnnotations";
 import {
-  formatRegionOffset,
-  formatRegionPreview
+  createRegionPreview,
+  formatRegionOffset
 } from "./NexRegionDialog";
+import { parseNexLabelValue } from "./NexLabelDialog";
 import styles from "./NexRegionsDialog.module.scss";
+import {
+  DialogFooter,
+  DialogFooterSpacer
+} from "@renderer/controls/overlay/DialogFooter";
 
 type NexRegionTypeFilter = "all" | NexAnnotationRegionType;
 
@@ -29,7 +35,7 @@ export type NexRegionsDialogProps = DialogComponentProps<NexRegionsDialogResult>
   regions: NexAnnotationRegion[];
 };
 
-const REGION_TYPE_OPTIONS: Array<{ value: NexRegionTypeFilter; label: string }> = [
+const REGION_TYPE_OPTIONS: DropdownOption[] = [
   { value: "all", label: "All Types" },
   { value: "disassemble", label: "Disassembly" },
   { value: "bytes", label: "Bytes" },
@@ -54,38 +60,81 @@ export function NexRegionsDialog({
   const [selectedRegionKey, setSelectedRegionKey] = useState(
     initialRegion ? getRegionKey(initialRegion) : ""
   );
-  const [searchText, setSearchText] = useState("");
+  /*
+   * An address, not free text.
+   *
+   * This was a search box matching the start offset, the end offset and the type name. The type
+   * half was already served by the filter beside it, and the offset half only ever matched a
+   * region's own boundaries — so finding the region covering $1A00 meant knowing where it started,
+   * which is the thing you opened this dialog to find out. Regions tile the bank without gaps, so
+   * "which region is this address in" is the only lookup there is, and now it is the one on offer.
+   */
+  const [findText, setFindText] = useState("");
+  const findAddress = useMemo(() => parseNexLabelValue(findText), [findText]);
+  const findIsInvalid = findText.trim().length > 0 && findAddress === undefined;
   const [typeFilter, setTypeFilter] = useState<NexRegionTypeFilter>("all");
   const filteredRegions = useMemo(
-    () => filterRegions(sortedRegions, searchText, typeFilter),
-    [searchText, sortedRegions, typeFilter]
+    () => filterRegions(sortedRegions, findAddress, typeFilter),
+    [findAddress, sortedRegions, typeFilter]
   );
+  /*
+   * Narrowing to exactly one region selects it, so the preview below shows what you looked for
+   * rather than whatever was selected before you typed.
+   */
+  const onlyMatchKey = filteredRegions.length === 1
+    ? getRegionKey(filteredRegions[0])
+    : undefined;
+  useEffect(() => {
+    if (onlyMatchKey) {
+      setSelectedRegionKey(onlyMatchKey);
+    }
+  }, [onlyMatchKey]);
   const selectedRegion = useMemo(
     () => sortedRegions.find((region) => getRegionKey(region) === selectedRegionKey),
     [selectedRegionKey, sortedRegions]
   );
+
+  // --- Awaited: a `disassemble` region is previewed by really disassembling it.
+  const [preview, setPreview] = useState("");
+  useEffect(() => {
+    if (!selectedRegion) {
+      setPreview("");
+      return undefined;
+    }
+    let cancelled = false;
+    void createRegionPreview(
+      selectedRegion.type,
+      selectedRegion.start,
+      selectedRegion.end,
+      bytes
+    ).then((text) => {
+      if (!cancelled) setPreview(text);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [bytes, selectedRegion]);
 
   return (
     <div>
       <div className={styles.toolbar}>
         <input
           autoFocus
-          className={styles.search}
-          placeholder="Search regions"
+          aria-invalid={findIsInvalid}
+          aria-label="Find the region covering an address"
+          className={classnames(styles.search, { [styles.invalid]: findIsInvalid })}
+          placeholder="Find address, e.g. $1A00"
           spellCheck={false}
-          value={searchText}
-          onChange={(event) => setSearchText(event.target.value)}
+          value={findText}
+          onChange={(event) => setFindText(event.target.value)}
         />
-        <select
-          className={styles.typeFilter}
-          aria-label="Filter region type"
-          value={typeFilter}
-          onChange={(event) => setTypeFilter(event.target.value as NexRegionTypeFilter)}
-        >
-          {REGION_TYPE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
+        {/* The app's own dropdown, as the Labels list's sort control uses. */}
+        <Dropdown
+          ariaLabel="Filter region type"
+          options={REGION_TYPE_OPTIONS}
+          initialValue={typeFilter}
+          onChanged={(value) => setTypeFilter(value as NexRegionTypeFilter)}
+        />
       </div>
       <div className={styles.table}>
         <div className={styles.tableHeader}>
@@ -102,7 +151,16 @@ export function NexRegionsDialog({
             <div
               className={classnames(styles.regionRow, { [styles.selected]: selected })}
               key={getRegionKey(region)}
+              role="button"
+              tabIndex={0}
+              aria-pressed={selected}
               onClick={() => setSelectedRegionKey(getRegionKey(region))}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelectedRegionKey(getRegionKey(region));
+                }
+              }}
             >
               <span>{formatRegionOffset(region.start)}</span>
               <span>{formatRegionOffset(region.end)}</span>
@@ -161,44 +219,28 @@ export function NexRegionsDialog({
       </div>
       <DialogRow label="Preview" rows={true}>
         <div className={styles.preview} aria-label="Region preview">
-          {selectedRegion
-            ? formatRegionPreview(selectedRegion.type, selectedRegion.start, selectedRegion.end, bytes)
-            : ""}
+          {preview}
         </div>
       </DialogRow>
-      <footer className={styles.footer}>
+      <DialogFooter>
         <Button text="Close" clicked={controls.cancel} />
-        <div className={styles.footerSpacer} />
+        <DialogFooterSpacer />
         <Button text="Add Region" clicked={() => controls.close({ action: "add" })} />
-      </footer>
+      </DialogFooter>
     </div>
   );
 }
 
 function filterRegions(
   regions: NexAnnotationRegion[],
-  searchText: string,
+  findAddress: number | undefined,
   typeFilter: NexRegionTypeFilter
 ): NexAnnotationRegion[] {
-  const normalizedSearch = searchText.trim().toLowerCase();
   return regions.filter((region) =>
     (typeFilter === "all" || region.type === typeFilter) &&
-    matchesSearch(region, normalizedSearch)
+    // --- Text that is not an address narrows nothing; the field says so instead.
+    (findAddress === undefined || (region.start <= findAddress && findAddress <= region.end))
   );
-}
-
-function matchesSearch(region: NexAnnotationRegion, searchText: string): boolean {
-  if (!searchText) {
-    return true;
-  }
-  return [
-    formatRegionOffset(region.start),
-    formatRegionOffset(region.end),
-    String(region.start),
-    String(region.end),
-    formatRegionType(region.type),
-    region.type
-  ].some((value) => value.toLowerCase().includes(searchText));
 }
 
 function findRegionAtOffset(

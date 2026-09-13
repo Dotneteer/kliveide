@@ -4,6 +4,10 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import styles from "./NexSynopsisCommentDialog.module.scss";
+import {
+  DialogFooter,
+  DialogFooterSpacer
+} from "@renderer/controls/overlay/DialogFooter";
 
 export type NexSynopsisCommentDialogResult = {
   synopsis?: string;
@@ -64,16 +68,16 @@ export function NexSynopsisCommentDialog({
           {preview}
         </div>
       </DialogRow>
-      <footer className={styles.footer}>
+      <DialogFooter>
         <Button text="Save" type="submit" />
         <Button text="Cancel" clicked={controls.cancel} />
         {hasExistingSynopsis && (
           <>
-            <div className={styles.footerSpacer} />
+            <DialogFooterSpacer />
             <Button text="Clear" clicked={() => closeWithComment(undefined)} />
           </>
         )}
-      </footer>
+      </DialogFooter>
     </form>
   );
 }

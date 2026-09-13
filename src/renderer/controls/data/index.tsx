@@ -292,6 +292,16 @@ DataRow.displayName = "DataRow";
 type CellProps = {
   text: string;
   /**
+   * Rich content for the cell, in place of `text`.
+   *
+   * A cell paints one run of text in one colour, which is all almost every one of the 187 call
+   * sites needs. The annotated `.NEX` listing is the exception: its instruction cell has to tint
+   * the operand *inside* the instruction, because a resolved label and a raw address are different
+   * kinds of thing sharing one string. `text` stays required so it can still carry the cell's
+   * plain-text meaning — `title`, and anything reading the row — while this carries what is drawn.
+   */
+  children?: ReactNode;
+  /**
    * Width in `ch`, so columns survive a font or size change (M2).
    *
    * A string is passed through as a CSS length. Prefer sizing from a stylesheet via `xclass` —
@@ -336,14 +346,14 @@ DataLabel.displayName = "DataLabel";
 
 /** The datum itself. The most legible thing in the row: `--data-value`. */
 export const DataValue = forwardRef<HTMLSpanElement, CellProps>(
-  ({ text, width, changed, title, xclass }, ref) => (
+  ({ text, children, width, changed, title, xclass }, ref) => (
     <span
       ref={ref}
       className={classnames(styles.dataValue, xclass, { [styles.changed]: changed })}
       style={cellStyle(width)}
       title={title}
     >
-      {text}
+      {children ?? text}
     </span>
   )
 );

@@ -19,7 +19,8 @@
           "end": 16383,
           "type": "disassemble"
         }
-      ]
+      ],
+      "lastView": "disassembly"
     },
     "5": {
       "offsetIndex": 1,
@@ -64,6 +65,9 @@
       "lineAnnotations": {
         "2": {
           "synopsis": "My synopsis"
+        },
+        "11": {
+          "comment": "This is a long end-of-line comment"
         }
       }
     },

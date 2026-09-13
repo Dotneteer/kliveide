@@ -311,7 +311,16 @@ export const componentAliases: Record<string, string> = {
   "--color-readonly-icon-active": "var(--status-warning)",
   "--color-readonly-icon-inactive": "var(--text-tertiary)",
   "--color-button-separator": "var(--border-default)",
-  "--bgcolor-expandable": "var(--surface-panel)",
+  /*
+   * An expandable section header — the `.NEX` and `.Z80` viewers' bank and register groups.
+   *
+   * Was `--surface-panel`, which is the surface these rows *sit on*: a header with no edge of its
+   * own, readable as a header only from its position in the stack. `--surface-header` is the token
+   * that exists for this role and is the one that knows which way to move per tone — raised in
+   * dark, where lifting means lighter, and hovered in light, where it means darker.
+   */
+  "--bgcolor-expandable": "var(--surface-header)",
+  "--bgcolor-expandable-hover": "var(--surface-header-hover)",
 
   // --- Tool area --------------------------------------------------------------------------------
   "--bgcolor-toolarea": "var(--surface-panel)",
@@ -464,6 +473,42 @@ export const componentAliases: Record<string, string> = {
    * `--color-memory-*` token here being its own view's token even where the value happens to agree.
    */
   "--bgcolor-disassembly-current": "var(--surface-hover)",
+
+  /*
+   * An *annotated* disassembly listing — the `.NEX` viewer's bank view, read against its sidecar.
+   *
+   * A separate family from `--color-disassembly-*` above, because the two views answer different
+   * questions. A machine disassembly is entirely generated, so its colour table describes structure:
+   * address, opcodes, instruction. An annotated listing is generated text with a thin layer of
+   * *authored* text laid over it — a name the user chose, a note they wrote, a decision they made
+   * about what a run of bytes is — and its colour table has to describe that layer.
+   *
+   * The values come straight from the editor's own syntax palette rather than from the accent,
+   * for two reasons:
+   *
+   * - **The listing and the source file are the same language.** A label is a label whether it came
+   *   from a `.z80.asm` file or from a `.nex.dis` sidecar, and naming it in two different colours in
+   *   two Klive windows is the drift this avoids.
+   * - **The accent is already spoken for here.** `--color-disassembly-address` and
+   *   `-label` are both `--accent-text`, so an annotation that also took the accent would read as
+   *   another address column. Hue has to carry the distinction, which is exactly the principle
+   *   `SYNTAX_HUES` was chosen under.
+   *
+   * `syntaxTokens` fixes every one of these against `NEUTRAL[tone].canvas`, which is the ground this
+   * listing sits on, so no further contrast work is needed here.
+   */
+  "--color-annotation-comment": "var(--syntax-comment)",
+  "--color-annotation-label": "var(--syntax-label)",
+  "--color-annotation-directive": "var(--syntax-directive)",
+  "--color-annotation-operand": "var(--syntax-operand)",
+  /*
+   * The leading rail on a row carrying anything authored.
+   *
+   * The label hue rather than a hue of its own: the rail marks *provenance*, and a name is the most
+   * common thing a row is annotated with, so the two reading as one family is correct. Explicitly
+   * not the accent — see above.
+   */
+  "--color-annotation-rail": "var(--syntax-label)",
 
   /*
    * The value column of the register/state sidebar panels — Z80 CPU, ULA & I/O, and any other that

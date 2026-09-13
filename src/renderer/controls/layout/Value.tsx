@@ -1,4 +1,5 @@
 import classnames from "classnames";
+import type { ReactNode } from "react";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import { cssWidth } from "./cssWidth";
 import { DataValue } from "@renderer/controls/data";
@@ -7,6 +8,11 @@ import styles from "./Layout.module.scss";
 type Props = {
   /** Value text rendered in the aligned cell. */
   text: string;
+  /**
+   * Rich content drawn in place of `text` — see `DataValue`. `text` is still what the cell *means*,
+   * so pass both: the tooltip and anything reading the row keep working.
+   */
+  children?: ReactNode;
   /** Explicit value cell width. A number is `ch` (M2); a string is a CSS length. */
   width?: string | number;
   /** Optional tooltip shown for the value cell. */
@@ -24,7 +30,7 @@ type Props = {
  *
  * Delegates the cell to `controls/data`'s `DataValue`; see `Label` for why.
  */
-export const Value = ({ text, width, tooltip, className }: Props) => {
+export const Value = ({ text, children, width, tooltip, className }: Props) => {
   const ref = useTooltipRef();
 
   return (
@@ -32,6 +38,7 @@ export const Value = ({ text, width, tooltip, className }: Props) => {
       <DataValue
         ref={ref}
         text={text}
+        children={children}
         width={cssWidth(width)}
         xclass={classnames(styles.legacyValueSpacing, className)}
       />

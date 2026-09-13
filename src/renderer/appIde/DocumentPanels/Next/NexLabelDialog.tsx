@@ -10,6 +10,10 @@ import {
   type NexAnnotationLabelScope
 } from "./nexAnnotations";
 import styles from "./NexLabelDialog.module.scss";
+import {
+  DialogFooter,
+  DialogFooterSpacer
+} from "@renderer/controls/overlay/DialogFooter";
 
 export type NexLabelDialogLabel = {
   scope: NexAnnotationLabelScope;
@@ -107,8 +111,22 @@ export function NexLabelDialog({
 
   return (
     <form onSubmit={submit}>
+      {/*
+        * The same two names, in the same order, as the Labels list's scope filter. They were
+        * "Global" / "Local to Bank 5" here against "Bank 5" / "Global" there — two namings and two
+        * orders for one pair of concepts, in two dialogs that open one on top of the other.
+        */}
       <DialogRow label="Scope" rows={true}>
         <div className={styles.scopeOptions}>
+          <label className={styles.scopeOption}>
+            <input
+              type="radio"
+              name="nex-label-scope"
+              checked={scope === "local"}
+              onChange={() => setScopeAndDefault("local")}
+            />
+            Bank {bank}
+          </label>
           <label className={styles.scopeOption}>
             <input
               type="radio"
@@ -117,15 +135,6 @@ export function NexLabelDialog({
               onChange={() => setScopeAndDefault("global")}
             />
             Global
-          </label>
-          <label className={styles.scopeOption}>
-            <input
-              type="radio"
-              name="nex-label-scope"
-              checked={scope === "local"}
-              onChange={() => setScopeAndDefault("local")}
-            />
-            Local to Bank {bank}
           </label>
         </div>
       </DialogRow>
@@ -167,7 +176,11 @@ export function NexLabelDialog({
               <span className={styles.labelName}>{label.name}</span>
               <span>{formatNexLabelValue(label.value)}</span>
               <span>{label.scope === "global" ? "Global" : `Bank ${label.bank ?? bank}`}</span>
-              <span>{label.referenced ? "referenced" : ""}</span>
+              {/*
+                * A count, as the Labels list shows for the same fact — but spelled out, because
+                * this list has no column header to say what a bare number would mean.
+                */}
+              <span className={styles.labelRefs}>{formatReferenceCount(label)}</span>
             </button>
           ))}
           {filteredLabels.length === 0 && (
@@ -175,12 +188,12 @@ export function NexLabelDialog({
           )}
         </div>
       </DialogRow>
-      <footer className={styles.footer}>
+      <DialogFooter>
         <Button text="Save" type="submit" disabled={!!error} />
         <Button text="Cancel" clicked={controls.cancel} />
         {originalLabel && (
           <>
-            <div className={styles.footerSpacer} />
+            <DialogFooterSpacer />
             <Button
               text="Delete"
               isDanger
@@ -194,9 +207,15 @@ export function NexLabelDialog({
             />
           </>
         )}
-      </footer>
+      </DialogFooter>
     </form>
   );
+}
+
+/** How many operands point at a label, in the same terms the Labels list counts them. */
+function formatReferenceCount(label: NexLabelDialogLabel): string {
+  const count = label.referenceCount ?? (label.referenced ? 1 : 0);
+  return count > 0 ? `${count} ref${count === 1 ? "" : "s"}` : "";
 }
 
 export function suggestNexLabelName(scope: NexAnnotationLabelScope, value: number): string {

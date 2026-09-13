@@ -346,6 +346,25 @@ describe("DisassemblyPanel refactor characterization", () => {
     );
   });
 
+  /**
+   * The label column stays at its default here.
+   *
+   * `DisassemblyRow` takes a `labelWidthCh` so the NEX annotation viewer — whose labels are named
+   * by the user — can widen it. A machine disassembly only ever generates `L<addr>:`, so this panel
+   * passes nothing and must keep the column it always had.
+   */
+  it("leaves the label column at the default width", async () => {
+    await renderDisassemblyPanel();
+
+    const labelCells = Array.from(
+      screen.getByTestId("disassembly-list").querySelectorAll<HTMLElement>("span")
+    ).filter((el) => el.className.includes("disassemblyLabel"));
+    expect(labelCells.length).toBeGreaterThan(0);
+    for (const cell of labelCells) {
+      expect(cell.style.width).toBe("10ch");
+    }
+  });
+
   it("scrolls to the row containing a submitted address", async () => {
     const { virtualApi } = await renderDisassemblyPanel();
 

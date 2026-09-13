@@ -427,3 +427,30 @@ export function editorColors(tone: Tone): Record<string, string> {
     "input.border": n.borderStrong
   };
 }
+
+/**
+ * The syntax palette as CSS custom properties, for views outside Monaco.
+ *
+ * The editor is not the only place Klive renders source-shaped text: the annotated `.NEX`
+ * disassembly is a listing of labels, directives, operands and the user's own comments, drawn by
+ * React rather than by a tokenizer. Before this it drew them all in `--data-secondary`, which is
+ * precisely the "comments read as disabled UI" failure `syntax-palette.test.ts` exists to prevent —
+ * the guard simply could not reach a view Monaco does not render.
+ *
+ * Emitting the same table the editor uses is what keeps the two from drifting: a listing and its
+ * source file name the same thing with the same colour, and any future edit to `SYNTAX_HUES` moves
+ * both. The values are safe to reuse unchanged because `syntaxPalette` fixes them against
+ * `editorBackground(tone)`, which *is* `NEUTRAL[tone].canvas` — the same ground the disassembly
+ * document sits on.
+ *
+ * `fontStyle` is deliberately not emitted. Only `comment` carries one, and a stylesheet that wants
+ * the italic can say so where it also says which cell gets it.
+ */
+export function syntaxTokens(tone: Tone, accentId: AccentId): Record<string, string> {
+  const palette = syntaxPalette(tone, accentId);
+  const tokens: Record<string, string> = {};
+  for (const [name, style] of Object.entries(palette)) {
+    tokens[`--syntax-${name}`] = `#${style.foreground}`;
+  }
+  return tokens;
+}

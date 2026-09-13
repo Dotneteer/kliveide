@@ -24,7 +24,7 @@ import { Text } from "@renderer/controls/layout/Text";
 import { Icon } from "@renderer/controls/Icon";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySection, type DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
-import { DisassemblyRow } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
+import { deriveLabelWidthCh, DisassemblyRow } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import {
   ContextMenu,
@@ -33,6 +33,7 @@ import {
   useContextMenuState
 } from "@renderer/controls/ContextMenu";
 import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
+import { useConfirmPort } from "@renderer/mvc/dialogs/useDialogPorts";
 import { createAnnotatedNexDisassemblyItems } from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
 import {
   saveNexAnnotationSession,
@@ -155,6 +156,8 @@ const StaticMemoryDump = ({
   const documentHubService = useDocumentHubService();
   const appServices = useAppServices();
   const dialogs = useDialogs();
+  // --- The app's own confirmation, not the browser's `window.confirm`; see `.docs/dialog-pattern.md`.
+  const confirmPort = useConfirmPort();
   // --- M3: the row heights the virtualizer places by, matching `--row-size-*` in the CSS.
   const { memory: dumpRowItemSize, disassembly: disassemblyRowItemSize } = useRowSizes();
   const [currentViewState, setCurrentViewState] = useState<MemoryDumpViewState>(
@@ -191,6 +194,16 @@ const StaticMemoryDump = ({
   const restoredInitialScroll = useRef(false);
   const restoredInitialDisassemblyScroll = useRef(false);
   const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
+  /*
+   * The width every row reserves for its label.
+   *
+   * Unlike a machine disassembly, this listing's labels are whatever the user named them in the
+   * annotation sidecar, so the default column is not wide enough for them; see `deriveLabelWidthCh`.
+   */
+  const disassemblyLabelWidthCh = useMemo(
+    () => deriveLabelWidthCh(disassemblyItems, decimalView),
+    [decimalView, disassemblyItems]
+  );
   /*
    * The width every row reserves for its hard comment, so the zebra stripes all end at the same x.
    * Same derivation as `DisassemblyPanel`; 0 means no row has a comment and the cell is omitted.
@@ -700,7 +713,7 @@ const StaticMemoryDump = ({
     ];
   }, []);
 
-  const applyLabelDialogResult = useCallback((result: NexLabelDialogResult) => {
+  const applyLabelDialogResult = useCallback(async (result: NexLabelDialogResult) => {
     const annotationBank = currentViewState.nexAnnotationBank;
     const currentAnnotations = nexAnnotationsRef.current;
     if (!currentAnnotations || annotationBank === undefined) {
@@ -715,15 +728,38 @@ const StaticMemoryDump = ({
       return;
     }
 
-    const referenceCount = result.action === "delete"
-      ? countLabelReferences(currentAnnotations, annotationBank, result.scope, result.name)
-      : 0;
-    if (referenceCount > 0) {
-      const confirmed = window.confirm(
-        `Delete ${result.name} and clear ${referenceCount} operand reference${
-          referenceCount === 1 ? "" : "s"
-        }?`
+    /*
+     * Every delete is confirmed, not only a referenced one.
+     *
+     * A label is a name the user chose and typed, and the list offers no undo — losing one to a
+     * mis-aimed click in a dense row of buttons is exactly what a confirmation is for. Where the
+     * label *is* referenced, the reference count is the part that matters, because clearing those
+     * operand references is a second, invisible consequence of saying yes.
+     */
+    if (result.action === "delete") {
+      const referenceCount = countLabelReferences(
+        currentAnnotations,
+        annotationBank,
+        result.scope,
+        result.name
       );
+      const confirmed = await confirmPort.confirm({
+        title: "Delete label",
+        lines: [
+          `Delete this ${result.scope === "global" ? "global" : "bank"} label?`
+        ],
+        code: result.name,
+        linesAfterCode: referenceCount > 0
+          ? [
+              `${referenceCount} operand reference${
+                referenceCount === 1 ? "" : "s"
+              } to it will be cleared.`
+            ]
+          : undefined,
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+        danger: true
+      });
       if (!confirmed) {
         return;
       }
@@ -787,6 +823,7 @@ const StaticMemoryDump = ({
 
     publishNexAnnotations(updatedAnnotations);
   }, [
+    confirmPort,
     currentViewState.nexAnnotationBank,
     publishNexAnnotations
   ]);
@@ -1044,7 +1081,7 @@ const StaticMemoryDump = ({
       }
     );
     if (result) {
-      applyLabelDialogResult(result);
+      await applyLabelDialogResult(result);
     }
   }, [
     applyLabelDialogResult,
@@ -1293,68 +1330,91 @@ const StaticMemoryDump = ({
     openRegionDialogForValues
   ]);
 
+  /*
+   * The list stays open while you work in it.
+   *
+   * Adding, editing and deleting used to each end the session — the list closed, its dialog opened
+   * alone, and finding your place again was your problem. They now run as callbacks *while the list
+   * is still mounted*, so the editor and the delete confirmation stack over it: the row you are
+   * changing stays visible behind the dialog asking about it, and the list is still there when it
+   * settles, refreshed.
+   *
+   * "Go To" is the one action that still closes. It scrolls the disassembly underneath, and a list
+   * left open on top would cover the row it just moved to.
+   */
   const openManageLabelsDialog = useCallback(async () => {
     const annotationBank = currentViewState.nexAnnotationBank;
-    const annotations = nexAnnotationsRef.current;
-    if (annotationBank === undefined || !annotations) {
+    if (annotationBank === undefined || !nexAnnotationsRef.current) {
       return;
     }
 
-    const labels = createLabelDialogLabels(annotations, annotationBank);
+    // --- Read through the ref every time: each action publishes new annotations, and the list the
+    // --- dialog shows next has to be derived from those rather than from the ones it opened with.
+    const deriveLabels = () => {
+      const annotations = nexAnnotationsRef.current;
+      return annotations ? createLabelDialogLabels(annotations, annotationBank) : [];
+    };
+
     const result = await dialogs.open<NexLabelsDialogResult, {
       bank: number;
       bankAddressOffset: number;
       labels: NexLabelDialogLabel[];
+      onAddLabel: (scope: NexAnnotationLabelScope) => Promise<NexLabelDialogLabel[]>;
+      onEditLabel: (label: NexLabelDialogLabel) => Promise<NexLabelDialogLabel[]>;
+      onDeleteLabel: (label: NexLabelDialogLabel) => Promise<NexLabelDialogLabel[]>;
     }>(
       NexLabelsDialog,
       {
         bank: annotationBank,
         bankAddressOffset: disassOffset,
-        labels
+        labels: deriveLabels(),
+        onAddLabel: async (scope) => {
+          const activeIndex = disassemblySelectionRef.current?.activeIndex;
+          const bankOffset = activeIndex !== undefined
+            ? disassemblyItems[activeIndex]?.annotation?.bankOffset ?? 0
+            : 0;
+          await openLabelDialogForValues(
+            scope,
+            (disassOffset + bankOffset) & 0xffff,
+            bankOffset
+          );
+          return deriveLabels();
+        },
+        onEditLabel: async (label) => {
+          await openLabelDialogForValues(
+            label.scope,
+            label.scope === "global"
+              ? label.value
+              : (disassOffset + label.value) & 0xffff,
+            label.scope === "local"
+              ? label.value
+              : label.value & NEX_BANK_LAST_OFFSET
+          );
+          return deriveLabels();
+        },
+        onDeleteLabel: async (label) => {
+          await applyLabelDialogResult({
+            action: "delete",
+            scope: label.scope,
+            name: label.name,
+            value: label.value,
+            originalLabel: label
+          });
+          return deriveLabels();
+        }
       },
       {
         title: "Labels",
         width: 780
       }
     );
-    if (!result) {
-      return;
-    }
 
-    if (result.action === "go-to") {
+    if (result?.action === "go-to") {
       const address = result.label.scope === "local"
         ? (disassOffset + result.label.value) & 0xffff
         : result.label.value;
       changeViewState((vs) => (vs.topAddress = address));
       setDisassemblyJumpAddress(address);
-    } else if (result.action === "add") {
-      const activeIndex = disassemblySelectionRef.current?.activeIndex;
-      const bankOffset = activeIndex !== undefined
-        ? disassemblyItems[activeIndex]?.annotation?.bankOffset ?? 0
-        : 0;
-      await openLabelDialogForValues(
-        result.scope,
-        (disassOffset + bankOffset) & 0xffff,
-        bankOffset
-      );
-    } else if (result.action === "edit") {
-      await openLabelDialogForValues(
-        result.label.scope,
-        result.label.scope === "global"
-          ? result.label.value
-          : (disassOffset + result.label.value) & 0xffff,
-        result.label.scope === "local"
-          ? result.label.value
-          : result.label.value & NEX_BANK_LAST_OFFSET
-      );
-    } else {
-      applyLabelDialogResult({
-        action: "delete",
-        scope: result.label.scope,
-        name: result.label.name,
-        value: result.label.value,
-        originalLabel: result.label
-      });
     }
   }, [
     applyLabelDialogResult,
@@ -1738,6 +1798,14 @@ const StaticMemoryDump = ({
               itemSize={disassemblyRowItemSize}
               overscan={25}
               revealUnmeasuredItems
+              /*
+               * A named label, a long instruction and an end-of-line comment together run well past
+               * a narrow panel. Without this, virtua's absolutely positioned row wrapper stays
+               * pinned to the viewport width, the scroll container reports
+               * `scrollWidth === clientWidth`, and there is no horizontal bar to drag — the row's
+               * own `min-width: max-content` is not enough on its own. See the prop's own comment.
+               */
+              scrollRowsHorizontally
               onScroll={(offset) => {
                 pendingDisassemblyScrollPosition.current = offset;
               }}
@@ -1768,6 +1836,7 @@ const StaticMemoryDump = ({
 
                 return (
                   <DisassemblyRow
+                    annotated={annotationEnabled}
                     bankLabel={false}
                     commentWidthCh={disassemblyCommentWidthCh}
                     currentSegment={0}
@@ -1775,6 +1844,7 @@ const StaticMemoryDump = ({
                     index={idx}
                     isFullView={true}
                     item={item}
+                    labelWidthCh={disassemblyLabelWidthCh}
                     mem64kLabels={[]}
                     onClick={(event) => {
                       selectDisassemblyRow(idx, event.shiftKey);

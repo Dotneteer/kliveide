@@ -371,15 +371,16 @@ const NexFileViewerContents = ({
         return (
           <ExpandableRow
             key={idx}
-            heading={getBankHeading(entry[0], h)}
+            heading={<BankHeading bank={entry[0]} header={h} />}
             headingAction={
               <SmallIconButton
-                iconName='pop-out'
-                fill='--color-value'
-                title='Display bank data dump'
+                iconName='square-arrow-out-up-right'
+                fill='--color-command-icon'
+                title='Open this bank as its own document'
                 clicked={openBankDump}
               />
             }
+            meta={formatBankSize(entry[1].length)}
             initialExpanded={cvs?.bankExpanded?.[idx] ?? false}
             onExpanded={exp =>
               change(vs => {
@@ -476,18 +477,44 @@ const BankFlags = ({ flags, startIndex }: BankFlagsProps) => {
   );
 };
 
-function getBankHeading (bank: number, header: NexHeader): string {
-  const marks: string[] = [];
+/**
+ * The heading of a bank section.
+ *
+ * Three different kinds of fact used to share one string — `Bank $05 (5) | PC: $C004` — with pipes
+ * standing in for layout and the whole run painted in one colour. They are a name, an echo of that
+ * name in the other base, and a piece of machine state, so they render as three things: the number
+ * takes the accent because it is what you scan for, the decimal recedes, and a mark that says where
+ * the machine actually is becomes a chip.
+ */
+function BankHeading ({ bank, header }: { bank: number; header: NexHeader }) {
+  const isPcBank = getProgramCounterBank(header) === bank;
+  const isSpBank = getStackPointerBank(header) === bank;
 
-  if (getProgramCounterBank(header) === bank) {
-    marks.push(`PC: $${toHexa4(header.programCounter)}`);
-  }
-  if (getStackPointerBank(header) === bank) {
-    marks.push(`SP: $${toHexa4(header.stackPointer)}`);
-  }
+  return (
+    <>
+      <span className={styles.bankWord}>Bank</span>
+      <span className={styles.bankNumber}>${toHexa2(bank)}</span>
+      <span className={styles.bankDecimal}>({bank.toString(10)})</span>
+      {isPcBank && (
+        <span className={styles.bankMark} title="The program counter points into this bank">
+          PC ${toHexa4(header.programCounter)}
+        </span>
+      )}
+      {isSpBank && (
+        <span
+          className={`${styles.bankMark} ${styles.bankMarkAlt}`}
+          title="The stack pointer points into this bank"
+        >
+          SP ${toHexa4(header.stackPointer)}
+        </span>
+      )}
+    </>
+  );
+}
 
-  const markSuffix = marks.length ? ` | ${marks.join(" | ")}` : "";
-  return `Bank $${toHexa2(bank)} (${bank.toString(10)})${markSuffix}`;
+/** Bank size, for the heading's right-aligned detail. */
+function formatBankSize (bytes: number): string {
+  return bytes >= 1024 ? `${Math.round(bytes / 1024)} KB` : `${bytes} B`;
 }
 
 function getProgramCounterBank (header: NexHeader): number | undefined {

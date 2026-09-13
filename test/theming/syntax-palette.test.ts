@@ -8,6 +8,7 @@ import {
   hexToHsl,
   syntaxPalette,
   syntaxRules,
+  syntaxTokens,
   type SyntaxClass
 } from "../../src/renderer/theming/tokens/syntax";
 
@@ -162,6 +163,48 @@ describe("syntax palette", () => {
             .map(({ h }) => Math.floor(h / 30))
         );
         expect(bins.size, `${tone}/${accent}: only ${bins.size} hue bins`).toBeGreaterThanOrEqual(5);
+      }
+    }
+  });
+});
+
+/**
+ * The palette leaves Monaco.
+ *
+ * The annotated `.NEX` listing draws labels, directives, operands and the user's own comments in
+ * React, so the guarantees above have to be reachable from a stylesheet as well as from a tokenizer.
+ * The point of emitting the same table — rather than picking a second set of hues for the listing —
+ * is that a listing and its source file cannot drift apart, so these assert exactly that identity.
+ */
+describe("syntax tokens", () => {
+  it("emits every syntax class as a CSS custom property", () => {
+    const tokens = syntaxTokens("dark", "sinclairBlue");
+    for (const cls of Object.keys(syntaxPalette("dark", "sinclairBlue"))) {
+      expect(tokens[`--syntax-${cls}`], cls).toBeDefined();
+    }
+  });
+
+  it("emits the same colours the editor is given, in CSS form", () => {
+    for (const tone of TONES) {
+      for (const accent of ACCENT_IDS) {
+        const palette = syntaxPalette(tone, accent);
+        const tokens = syntaxTokens(tone, accent);
+        for (const [cls, style] of Object.entries(palette)) {
+          expect(tokens[`--syntax-${cls}`], `${tone}/${accent}/${cls}`).toBe(
+            `#${style.foreground}`
+          );
+        }
+      }
+    }
+  });
+
+  it("hands the annotation family a comment that is not grey", () => {
+    // --- The same property the editor is held to. The listing is where it used to fail: an
+    // --- annotation comment rendered at --data-secondary, which is the tertiary neutral.
+    for (const tone of TONES) {
+      for (const accent of ACCENT_IDS) {
+        const { s } = hexToHsl(syntaxTokens(tone, accent)["--syntax-comment"]);
+        expect(s, `${tone}/${accent}`).toBeGreaterThan(0.15);
       }
     }
   });

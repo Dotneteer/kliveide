@@ -222,7 +222,8 @@ describe("StaticMemoryDump", () => {
         onScroll,
         onScrollEnd,
         renderItem,
-        revealUnmeasuredItems
+        revealUnmeasuredItems,
+        scrollRowsHorizontally
       }: {
         apiLoaded?: (api: typeof virtualApi) => void;
         itemSize?: number;
@@ -231,6 +232,7 @@ describe("StaticMemoryDump", () => {
         onScrollEnd?: () => void;
         renderItem: (index: number, item: any) => ReactNode;
         revealUnmeasuredItems?: boolean;
+        scrollRowsHorizontally?: boolean;
       }) => {
         virtualOnScroll = onScroll;
         virtualOnScrollEnd = onScrollEnd;
@@ -240,6 +242,7 @@ describe("StaticMemoryDump", () => {
             data-testid="static-dump-list"
             data-item-size={itemSize}
             data-reveal-unmeasured={String(revealUnmeasuredItems)}
+            data-scroll-horizontally={String(!!scrollRowsHorizontally)}
           >
             {items.slice(0, 5).map((item, index) => (
               <div key={index}>{renderItem(index, item)}</div>
@@ -379,6 +382,104 @@ describe("StaticMemoryDump", () => {
     );
   });
 
+  /**
+   * The label column is sized to the listing, not to `L1234:`.
+   *
+   * A machine disassembly only ever generates `L<addr>:`, so the row's default column fits it. The
+   * labels here are whatever the user typed into the sidecar, and the cell is `flex: 0 0 auto` with
+   * an explicit width: a name longer than the column does not widen it, it paints over the
+   * instruction beside it. Sized once across the listing so the columns after it still line up.
+   */
+  it("widens the label column to fit the longest annotation label", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [{ start: 0, end: 3, type: "bytes" }],
+              localLabels: [{ name: "SixteenCharLabel", value: 0 }]
+            }
+          }
+        })
+      )
+    );
+    const contents = new Uint8Array(0x4000);
+    contents.set([1, 2, 3, 4]);
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      vi.fn(() => Promise.resolve()),
+      contents
+    );
+
+    // --- "SixteenCharLabel:" is 17 characters; the 10ch default would clip 7 of them.
+    const label = await screen.findByText("SixteenCharLabel:");
+    expect(label.style.width).toBe("17ch");
+    // --- Shared, not per row: a row with no label reserves the same column.
+    const labelCells = Array.from(
+      screen.getByTestId("static-disassembly-list").querySelectorAll<HTMLElement>("span")
+    ).filter((el) => el.className.includes("annotationLabel"));
+    expect(labelCells.length).toBeGreaterThan(1);
+    for (const cell of labelCells) {
+      expect(cell.style.width).toBe("17ch");
+    }
+  });
+
+  /**
+   * A row wider than the panel scrolls rather than being clipped.
+   *
+   * The rows already carry `min-width: max-content`, but `virtua` wraps each one in an absolutely
+   * positioned div pinned to the viewport width, so the scroll container measures no overflow and
+   * OverlayScrollbars has nothing to show. `scrollRowsHorizontally` is what grows that wrapper.
+   */
+  it("lets a disassembly row wider than the panel scroll horizontally", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [{ start: 0, end: 3, type: "bytes" }],
+              lineAnnotations: {
+                "0": { comment: "an end-of-line comment long enough to run past a narrow panel" }
+              }
+            }
+          }
+        })
+      )
+    );
+    const contents = new Uint8Array(0x4000);
+    contents.set([1, 2, 3, 4]);
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      vi.fn(() => Promise.resolve()),
+      contents
+    );
+
+    await screen.findByText("; an end-of-line comment long enough to run past a narrow panel");
+    expect(
+      screen.getByTestId("static-disassembly-list").querySelector("[data-scroll-horizontally]")
+    ).toHaveAttribute("data-scroll-horizontally", "true");
+  });
+
   it("opens the labels manager from the toolbar and jumps to a selected label", async () => {
     const readFileContent = vi.fn(() =>
       Promise.resolve(
@@ -457,6 +558,214 @@ describe("StaticMemoryDump", () => {
         align: "start"
       })
     );
+  });
+
+  /**
+   * The Labels list is somewhere you stay.
+   *
+   * Editing used to end the session: one rename and you were back in the disassembly, having to
+   * reopen Labels and find your place again. Add, edit and delete all reopen the list, against
+   * freshly derived labels, so the change you just made is visible in it.
+   */
+  it("returns to the labels list after editing a label", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }],
+              localLabels: [{ name: "OldName", value: 0 }]
+            }
+          }
+        })
+      )
+    );
+
+    /*
+     * The list stays open and hands the edit back as a callback, so the label editor stacks over it.
+     * This mock is the user: it takes the `onEditLabel` the list was given and calls it, then reads
+     * the refreshed list that comes back.
+     */
+    let refreshedLabels: any[] | undefined;
+    const openDialog = vi.fn(async (_component: any, props: any, options?: any) => {
+      if (options?.title === "Labels") {
+        refreshedLabels = await props.onEditLabel({
+          scope: "local",
+          bank: 5,
+          name: "OldName",
+          value: 0,
+          referenceCount: 0
+        });
+        // --- Dismissed afterwards, the way a user closes the list once they are done with it.
+        return undefined;
+      }
+      return {
+        action: "save",
+        scope: "local",
+        name: "NewName",
+        value: 0,
+        originalLabel: { scope: "local", bank: 5, name: "OldName", value: 0 }
+      };
+    });
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      vi.fn(() => Promise.resolve()),
+      new Uint8Array(0x4000),
+      openDialog
+    );
+
+    await screen.findByTestId("disassembly-row-0");
+    fireEvent.click(screen.getByTestId("disassembly-row-0"));
+    fireEvent.click(screen.getByText("Annotations"));
+    fireEvent.click(screen.getByText("Manage Labels..."));
+
+    await waitFor(() => expect(refreshedLabels).toBeDefined());
+    /*
+     * The editor opened *while the list's own open was still outstanding* — that is the stacking:
+     * two dialogs live at once, the editor over the list. One "Labels" entry also says it was
+     * never closed and reopened around the edit.
+     */
+    expect(openDialog.mock.calls.map((call) => call[2]?.title)).toEqual(["Labels", "Label"]);
+    // --- And what comes back carries the edit that just landed.
+    expect(refreshedLabels).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "NewName" })])
+    );
+  });
+
+  it("leaves the labels list when a label is used to navigate", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }],
+              localLabels: [{ name: "Target", value: 2 }]
+            }
+          }
+        })
+      )
+    );
+    const openDialog = vi.fn(() =>
+      Promise.resolve({
+        action: "go-to",
+        label: { scope: "local", bank: 5, name: "Target", value: 2, referenceCount: 0 }
+      })
+    );
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      vi.fn(() => Promise.resolve()),
+      new Uint8Array(0x4000),
+      openDialog
+    );
+
+    await screen.findByTestId("disassembly-row-0");
+    fireEvent.click(screen.getByTestId("disassembly-row-0"));
+    fireEvent.click(screen.getByText("Annotations"));
+    fireEvent.click(screen.getByText("Manage Labels..."));
+
+    // --- Opened once and not reopened: it would otherwise cover the row it just scrolled to.
+    await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(openDialog).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * A label is a name the user chose and typed, and the list has no undo — so every delete is
+   * confirmed, not only the referenced ones that used to be.
+   */
+  it("confirms an unreferenced label delete before applying it", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 1,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }],
+              localLabels: [{ name: "Unused", value: 0 }]
+            }
+          }
+        })
+      )
+    );
+    const saveFileContent = vi.fn(() => Promise.resolve());
+
+    let refreshedLabels: any[] | undefined;
+    let confirmRequest: any;
+    const openDialog = vi.fn(async (_component: any, props: any, options?: any) => {
+      if (options?.title === "Labels") {
+        // --- The delete runs with the list still open, so the confirmation stacks over it.
+        refreshedLabels = await props.onDeleteLabel({
+          scope: "local",
+          bank: 5,
+          name: "Unused",
+          value: 0,
+          referenceCount: 0
+        });
+        return undefined;
+      }
+      confirmRequest = props;
+      // --- Refused, so nothing should change.
+      return false;
+    });
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      saveFileContent,
+      new Uint8Array(0x4000),
+      openDialog
+    );
+
+    await screen.findByTestId("disassembly-row-0");
+    fireEvent.click(screen.getByTestId("disassembly-row-0"));
+    fireEvent.click(screen.getByText("Annotations"));
+    fireEvent.click(screen.getByText("Manage Labels..."));
+
+    await waitFor(() => expect(confirmRequest).toBeDefined());
+    expect(confirmRequest.code).toBe("Unused");
+    expect(confirmRequest.danger).toBe(true);
+    // --- Nothing else to warn about when no operand points at it.
+    expect(confirmRequest.linesAfterCode).toBeUndefined();
+
+    // --- Refused: the label survives, and the refreshed list still offers it.
+    await waitFor(() => expect(refreshedLabels).toBeDefined());
+    // --- The confirmation stacked over the still-open list, rather than replacing it.
+    expect(openDialog.mock.calls.map((call) => call[2]?.title)).toEqual([
+      "Labels",
+      "Delete label"
+    ]);
+    expect(refreshedLabels).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "Unused" })])
+    );
+    // --- And nothing became dirty, which is the part a refused confirmation has to guarantee.
+    expect(screen.getByText("Save annotations")).toBeDisabled();
   });
 
   it("selects annotated disassembly rows with click, shift-click, and keyboard navigation", async () => {
@@ -993,19 +1302,29 @@ describe("StaticMemoryDump", () => {
       )
     );
     const saveFileContent = vi.fn(() => Promise.resolve());
-    const openDialog = vi.fn(() => Promise.resolve({
-      action: "delete",
-      scope: "global",
-      name: "GlobalSetup",
-      value: 0x9234,
-      originalLabel: {
-        scope: "global",
-        name: "GlobalSetup",
-        value: 0x9234,
-        referenced: true
-      }
-    }));
-    vi.stubGlobal("confirm", vi.fn(() => true));
+    /*
+     * Two dialogs now, not one: the label dialog returns the delete, and the delete is confirmed
+     * through the app's own `ConfirmDialog` rather than `window.confirm`. The confirmation is
+     * answered by its title, which is also what asserts it was asked at all.
+     */
+    const openDialog = vi.fn((_component: any, _props: any, options?: any) =>
+      Promise.resolve(
+        options?.title === "Delete label"
+          ? true
+          : {
+              action: "delete",
+              scope: "global",
+              name: "GlobalSetup",
+              value: 0x9234,
+              originalLabel: {
+                scope: "global",
+                name: "GlobalSetup",
+                value: 0x9234,
+                referenced: true
+              }
+            }
+      )
+    );
     const contents = new Uint8Array(0x4000);
     contents.set([0xcd, 0x34, 0x92]);
 
@@ -1023,11 +1342,15 @@ describe("StaticMemoryDump", () => {
       openDialog
     );
 
-    expect(await screen.findByText("call GlobalSetup")).toBeInTheDocument();
+    // --- `call ` and `GlobalSetup` are separate elements: an annotated listing paints a resolved
+    // --- operand label in its own colour, so the row's text is matched rather than one node's.
+    await waitFor(() =>
+      expect(screen.getByTestId("disassembly-row-0").textContent).toContain("call GlobalSetup")
+    );
     fireEvent.contextMenu(screen.getByTestId("disassembly-row-0"));
     fireEvent.click(screen.getByText("Add/Edit Global Label..."));
 
-    await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(2));
     expect(openDialog.mock.calls[0][1].labels).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -1037,9 +1360,18 @@ describe("StaticMemoryDump", () => {
         })
       ])
     );
-    expect(window.confirm).toHaveBeenCalledWith(
-      "Delete GlobalSetup and clear 2 operand references?"
-    );
+
+    // --- The confirmation names the label and the second, invisible consequence of saying yes.
+    const [confirmComponent, confirmRequest, confirmOptions] = openDialog.mock.calls[1] as any[];
+    // --- By name, not identity: the component under test is imported through `vi.doMock`'s own
+    // --- module registry, so its `ConfirmDialog` is a different instance from this file's would be.
+    expect(confirmComponent.name).toBe("ConfirmDialog");
+    expect(confirmRequest.code).toBe("GlobalSetup");
+    expect(confirmRequest.linesAfterCode).toEqual([
+      "2 operand references to it will be cleared."
+    ]);
+    expect(confirmRequest.danger).toBe(true);
+    expect(confirmOptions.dialogRole).toBe("alertdialog");
 
     fireEvent.click(screen.getByText("Save annotations"));
 
@@ -1089,7 +1421,11 @@ describe("StaticMemoryDump", () => {
       openDialog
     );
 
-    expect(await screen.findByText("call GlobalSetup")).toBeInTheDocument();
+    // --- `call ` and `GlobalSetup` are separate elements: an annotated listing paints a resolved
+    // --- operand label in its own colour, so the row's text is matched rather than one node's.
+    await waitFor(() =>
+      expect(screen.getByTestId("disassembly-row-0").textContent).toContain("call GlobalSetup")
+    );
     fireEvent.contextMenu(screen.getByTestId("disassembly-row-0"));
     fireEvent.click(screen.getByText("Assign Operand Label..."));
 

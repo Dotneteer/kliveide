@@ -1,5 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "fs";
+import { join } from "path";
 import {
   NexLabelDialog,
   formatNexLabelValue,
@@ -53,9 +55,53 @@ describe("NexLabelDialog", () => {
     expect(screen.queryByText("EntryPoint")).not.toBeInTheDocument();
     fireEvent.click(screen.getByText("LocalLoop"));
 
-    expect(screen.getByRole("radio", { name: "Local to Bank 5" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Bank 5" })).toBeChecked();
     expect(textboxes[0]).toHaveValue("LocalLoop");
     expect(textboxes[1]).toHaveValue("$0123");
+  });
+
+  /**
+   * The two label dialogs open one on top of the other, so they have to name the same two things
+   * the same way. This one said "Global" / "Local to Bank 5"; the list said "Bank 5" / "Global" —
+   * two namings *and* two orders for one pair of concepts.
+   */
+  it("names and orders the scopes the way the Labels list does", () => {
+    render(
+      <NexLabelDialog
+        bank={5}
+        initialScope="local"
+        initialGlobalValue={0xc000}
+        initialLocalValue={0}
+        labels={[]}
+        controls={createControls()}
+      />
+    );
+
+    const radios = screen.getAllByRole("radio");
+    expect(radios.map((radio) => radio.getAttribute("aria-label") ?? radio.closest("label")?.textContent?.trim()))
+      .toEqual(["Bank 5", "Global"]);
+    expect(screen.queryByText(/Local to Bank/)).not.toBeInTheDocument();
+  });
+
+  /**
+   * The existing-labels list is a fixed viewport, as the Labels list is.
+   *
+   * It had `max-height`, so a search matching one label collapsed it to a single row and the dialog
+   * resized as you typed. Asserted against the stylesheet because jsdom resolves every CSS-module
+   * rule to `auto`; same approach as `row-size-contract.test.ts`.
+   */
+  it("sizes the existing-labels list to a stated row count", () => {
+    const sheet = readFileSync(
+      join(process.cwd(), "src/renderer/appIde/DocumentPanels/Next/NexLabelDialog.module.scss"),
+      "utf8"
+    );
+    const list = sheet.slice(sheet.indexOf("\n.labelList {"), sheet.indexOf("\n.labelItem"));
+
+    expect(list).not.toContain("max-height");
+    expect(list).toContain("--list-visible-rows: 3");
+    expect(list).toMatch(
+      /height:\s*calc\(var\(--list-row-height\) \* var\(--list-visible-rows\)\)/
+    );
   });
 
   it("blocks invalid duplicate labels and saves valid input", () => {

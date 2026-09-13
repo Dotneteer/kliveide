@@ -3,7 +3,8 @@
 .item {
   display: flex;
   flex-direction: column;
-  height: 22px;
+  /* M3: the same number `useRowSizes().memory` hands the virtualizer as its `itemSize`. */
+  height: var(--row-size-memory);
   justify-content: center;
   &.even {
     background: var(--bgcolor-disass-even-row);
@@ -18,5 +19,15 @@
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
+  /*
+   * The list is a viewport, not a ruler.
+   *
+   * Its rows carry `min-width: max-content` so a long comment can be scrolled to
+   * (`scrollRowsHorizontally`), and without these two the widest row would size this box instead of
+   * overflowing it — the panel would stretch and there would still be nothing to scroll. Same pair
+   * `DisassemblyPanel`'s own wrapper carries.
+   */
+  min-width: 0;
+  overflow: hidden;
   outline: none;
 }

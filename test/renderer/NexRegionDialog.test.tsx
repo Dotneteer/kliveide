@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   NexRegionDialog,
+  createRegionPreview,
   formatRegionPreview
 } from "@renderer/appIde/DocumentPanels/Next/NexRegionDialog";
 
@@ -10,7 +11,7 @@ afterEach(() => {
 });
 
 describe("NexRegionDialog", () => {
-  it("previews bytes, words, skip, and disassembly regions", () => {
+  it("previews bytes, words, and skip regions directly from the memory", () => {
     const bytes = [0x01, 0x02, 0x78, 0x56, 0xbc, 0x9a];
 
     expect(formatRegionPreview("bytes", 0, 3, bytes)).toBe(
@@ -20,12 +21,34 @@ describe("NexRegionDialog", () => {
       "$0002  .defw $5678, $9ABC"
     );
     expect(formatRegionPreview("skip", 1, 4, bytes)).toBe("$0001  .skip $0004");
-    expect(formatRegionPreview("disassemble", 1, 4, bytes)).toBe(
-      "$0001  Z80 disassembly, $0004 bytes"
+  });
+
+  /**
+   * A disassembly region is previewed by really disassembling it.
+   *
+   * It used to render a sentence *about* the region — "$0001  Z80 disassembly, $0004 bytes" — which
+   * is the region's own length read back at you, and the one region type whose preview showed
+   * nothing of its contents. Decoding is async, which is why this case has a function of its own.
+   */
+  it("previews a disassembly region by decoding its bytes", async () => {
+    // --- `ld bc,$5678` then `ld (bc),a`: two real instructions from four bytes.
+    const bytes = [0x00, 0x01, 0x78, 0x56, 0x02, 0x00];
+
+    expect(await createRegionPreview("disassemble", 1, 4, bytes)).toBe(
+      "$0001  ld bc,$5678\n$0004  ld (bc),a"
     );
   });
 
-  it("shows defaults and saves edited region values", () => {
+  it("routes the other region types through the same entry point", async () => {
+    const bytes = [0x01, 0x02, 0x78, 0x56, 0xbc, 0x9a];
+
+    expect(await createRegionPreview("bytes", 0, 3, bytes)).toBe(
+      formatRegionPreview("bytes", 0, 3, bytes)
+    );
+    expect(await createRegionPreview("skip", 1, 4, bytes)).toBe("$0001  .skip $0004");
+  });
+
+  it("shows defaults and saves edited region values", async () => {
     const controls = createControls();
 
     render(
@@ -45,7 +68,10 @@ describe("NexRegionDialog", () => {
     expect(screen.getByRole("radio", { name: "Bytes" })).toBeChecked();
     expect(screen.getByText("$0004 (4)")).toBeInTheDocument();
     expect(screen.getByText("split")).toBeInTheDocument();
-    expect(screen.getByLabelText("Region preview")).toHaveTextContent(".defb $04, $05, $06, $07");
+    // --- The preview settles a tick later: it is awaited now, so that code regions can decode.
+    await waitFor(() =>
+      expect(screen.getByLabelText("Region preview")).toHaveTextContent(".defb $04, $05, $06, $07")
+    );
 
     const textboxes = screen.getAllByRole("textbox");
     fireEvent.change(textboxes[0], { target: { value: "$0008" } });

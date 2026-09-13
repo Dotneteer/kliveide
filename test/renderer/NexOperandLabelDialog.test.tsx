@@ -6,6 +6,47 @@ import {
   suggestUniqueLabelName
 } from "@renderer/appIde/DocumentPanels/Next/NexOperandLabelDialog";
 
+/*
+ * The type filter is the app's Radix-backed `Dropdown`, whose trigger opens a portalled listbox on
+ * pointer events jsdom does not produce; a native select keeps these tests about the dialog's own
+ * behaviour. `Icon` reads the theme through context, which nothing provides here.
+ */
+vi.mock("@renderer/theming/ThemeProvider", () => ({
+  useTheme: () => ({
+    theme: { tone: "dark" },
+    getIcon: () => ({ width: 16, height: 16, path: "" }),
+    getImage: () => ({ type: "png", data: "" }),
+    getThemeProperty: () => "currentColor"
+  })
+}));
+
+vi.mock("@renderer/controls/Dropdown", () => ({
+  default: ({
+    options,
+    ariaLabel,
+    initialValue,
+    onChanged
+  }: {
+    options: { value: string; label: string }[];
+    ariaLabel?: string;
+    initialValue?: string;
+    onChanged?: (value: string) => void;
+  }) => (
+    <select
+      aria-label={ariaLabel}
+      value={initialValue}
+      onChange={(event) => onChanged?.(event.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  )
+}));
+
+
 afterEach(() => {
   cleanup();
 });
@@ -94,7 +135,7 @@ describe("NexOperandLabelDialog", () => {
 
     expect(screen.getByRole("button", { name: "Apply Reference" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Clear Reference" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Create Local Label" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Create Bank Label" })).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "Create Global Label" }));
 

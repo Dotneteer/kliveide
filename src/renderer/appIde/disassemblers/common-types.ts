@@ -32,6 +32,16 @@ export type DisassemblyOperandInfo = {
    * The text the disassembler would render without a resolver.
    */
   defaultText: string;
+
+  /**
+   * The text a resolver put in `defaultText`'s place, when one did.
+   *
+   * Recorded so a view can tell an operand that carries a *name* from one that carries a number.
+   * The resolved label is substituted into `instruction` as plain text, which leaves no way to find
+   * it again afterwards — the annotated `.NEX` listing paints resolved operands in their own colour
+   * and needs to know which run of characters to paint.
+   */
+  resolvedText?: string;
 };
 
 export type DisassemblyOperandLabelResolver = (
