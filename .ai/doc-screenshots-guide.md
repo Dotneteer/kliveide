@@ -148,6 +148,23 @@ it.
 
 ## Coverage so far
 
-One recipe, `recipes/scripting.cjs`, reproducing `scripting/script-output-pane.png`. It is
-a worked template, not a finished set — the remaining pages were deliberately left
-ungenerated.
+Two recipes; the rest of the pages were deliberately left ungenerated.
+
+- `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
+- `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three
+  techniques worth reusing:
+  - **`window` can carry panel font settings.** `launchKlive` now takes `panelFontFamily` /
+    `panelFontSize` (defaults unchanged, so no existing shot moved). Needed because the
+    disassembly view swaps layout on a container query measured in `ch`, so the font's advance
+    width and size together decide which layout is photographed. Iosevka at 12px puts the
+    threshold near 680px; the default jetbrains-mono at 14px needs ~950px and yields a wider,
+    coarser image.
+  - **Drive to a state by *inspecting the DOM*, not by address.** The recipe single-steps
+    (`em-sti`) until the rendered listing satisfies a predicate — an execution point carrying a
+    condition clause, plus at least one fall-through mark in view — so it does not depend on where
+    the ROM happens to be when the machine pauses, and it keeps the best state it found as a
+    fallback. **`bp-set` was tried first and never fired, silently**; a step either moves PC or
+    fails loudly. Prefer stepping.
+  - **Shrink the tool panel to buy rows.** `toolPanelHeight: "110px"` with `height: 700` yields
+    about twenty disassembly rows. The first attempt at 520px cropped to nine and showed one
+    glyph repeated, which made the shot useless for a feature whose point is its vocabulary.

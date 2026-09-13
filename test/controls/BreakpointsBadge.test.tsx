@@ -8,7 +8,7 @@ import { MI_SPECTRUM_48, MI_SPECTRUM_128 } from "@common/machines/constants";
 const emuApi = vi.hoisted(() => ({ listBreakpoints: vi.fn() }));
 vi.mock("@renderer/core/EmuApi", () => ({ useEmuApi: () => emuApi }));
 
-import { BreakpointsBadge } from "@renderer/appIde/SiteBarPanels/BreakpointsBadge";
+import { BreakpointsBadge } from "@renderer/appIde/SideBarPanels/BreakpointsBadge";
 
 const bp = (over: any = {}) => ({ address: 0x8000, exec: true, ...over });
 

@@ -44,7 +44,7 @@ vi.mock("@renderer/appIde/useStateRefresh", () => ({
   }
 }));
 
-import { SysVarsPanel } from "@renderer/appIde/SiteBarPanels/SysVarsPanel";
+import { SysVarsPanel } from "@renderer/appIde/SideBarPanels/SysVarsPanel";
 
 const byteVar = (address: number, name: string, description = ""): SysVar => ({
   address,
@@ -63,7 +63,7 @@ const flagsVar = (address: number, name: string): SysVar => ({
   address,
   name,
   type: SysVarType.Flags,
-  flagDecriptions: Array.from({ length: 8 }, (_, bit) => `Bit ${bit} does something`)
+  flagDescriptions: Array.from({ length: 8 }, (_, bit) => `Bit ${bit} does something`)
 });
 
 const arrayVar = (address: number, name: string, length: number): SysVar => ({

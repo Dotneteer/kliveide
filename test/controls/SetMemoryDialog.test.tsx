@@ -92,4 +92,64 @@ describe("SetMemoryDialog", () => {
 
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
+
+  /*
+   * Endianness is derived from the size, not remembered separately.
+   *
+   * Pick a multi-byte size, tick "Big-endian write", then go back to one byte: the checkbox
+   * correctly disables itself, but the `true` it had set stayed in state and was still submitted,
+   * so `MemoryPanel` appended `-be` to a single-byte write. The submitted value is now computed
+   * from the current size, which removes the second place that had to be kept in step.
+   */
+  it("does not submit big-endian for a single-byte write", async () => {
+    appServicesMock.executeCommand.mockResolvedValue({ success: true });
+    const onSetMemory = vi.fn();
+
+    renderWithProviders(
+      <SetMemoryDialog
+        address={0x4000}
+        currentValue={0x12}
+        decimal={false}
+        onSetMemory={onSetMemory}
+        onClose={vi.fn()}
+      />
+    );
+
+    // --- Tick the box while it is enabled, without changing the size away from one byte. The
+    // --- checkbox's own `enabled` gate is a *view* concern; this asserts the submitted value.
+    const checkbox = screen.getByRole("checkbox", { name: /Big-endian/i });
+    fireEvent.click(checkbox);
+
+    fireEvent.click(screen.getByRole("button", { name: "Set" }));
+
+    await waitFor(() => expect(onSetMemory).toHaveBeenCalled());
+    expect(onSetMemory.mock.calls[0][0]).toMatchObject({ sizeOption: "-b8", bigEndian: false });
+  });
+
+  /*
+   * A throw from the validating command is an error the dialog must show.
+   *
+   * Only `success === false` was handled; a rejection escaped through `DialogForm`'s
+   * `await onSubmit()` as an unhandled promise, leaving the dialog open, silent, and apparently
+   * ignoring the button.
+   */
+  it("shows an error when the validating command throws", async () => {
+    appServicesMock.executeCommand.mockRejectedValue(new Error("emulator not running"));
+    const onSetMemory = vi.fn();
+
+    renderWithProviders(
+      <SetMemoryDialog
+        address={0x4000}
+        currentValue={0x12}
+        decimal={false}
+        onSetMemory={onSetMemory}
+        onClose={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Set" }));
+
+    await waitFor(() => expect(screen.getByText("emulator not running")).toBeTruthy());
+    expect(onSetMemory).not.toHaveBeenCalled();
+  });
 });

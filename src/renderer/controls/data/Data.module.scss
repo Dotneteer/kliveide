@@ -3,7 +3,7 @@
 /*
  * The `controls/data` primitives.
  *
- * These replace the block that was copy-pasted into 7 of the 12 SiteBarPanel stylesheets and, in a
+ * These replace the block that was copy-pasted into 7 of the 12 SideBarPanel stylesheets and, in a
  * near-identical form, into 10 of the DocumentPanels ones — `fill-parent-flex`, column,
  * `user-select: none`, the monospace family, and `font-size: 0.8em`. That `0.8em` alone appeared 25
  * times across the two folders.
@@ -67,6 +67,17 @@
   padding: var(--space-4);
   color: var(--data-secondary);
   user-select: none;
+}
+
+/*
+ * A failure, not an absence. See `EmptyStateProps.tone`.
+ *
+ * Doubled so it beats `.emptyState`'s own `color` deterministically rather than by emit order —
+ * two single-class selectors from the same file still tie, and the losing declaration here would
+ * produce no artefact to notice, only an error message in the wrong colour.
+ */
+.emptyStateError.emptyStateError {
+  color: var(--status-error);
 }
 
 /*

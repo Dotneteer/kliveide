@@ -2,24 +2,24 @@
 
 .annotationPanel {
   display: flex;
-  gap: 0.35em;
+  gap: var(--space-1);
   align-items: center;
-  min-height: 1.6em;
-  padding: 0.5em 1em;
-  border-bottom: 1px solid var(--color-toolbar-separator);
+  min-height: var(--space-6);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-default);
   color: var(--color-secondary-label);
-  background-color: var(--bgcolor-toolbar);
+  background-color: var(--surface-chrome);
 }
 
 .annotationError {
-  color: var(--bgcolor-errorLabel);
+  color: var(--status-error);
 }
 
 .annotationLink {
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--color-value);
+  color: var(--data-value);
   cursor: pointer;
   font: inherit;
   text-decoration: underline;
@@ -31,33 +31,45 @@
 
 .headerAttributes {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  column-gap: 1.2em;
-  row-gap: 0.6em;
-  padding: 0.2em 0 0.5em;
+  /* --- M2: a column of monospace values measures in `ch`. 280px at 12.8px / 6.4 = 44ch. */
+  grid-template-columns: repeat(auto-fit, minmax(44ch, 1fr));
+  column-gap: var(--space-4);
+  row-gap: var(--space-2);
+  padding: var(--space-1) 0 var(--space-2);
 }
 
 .headerAttributeGroup {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  //border-left: 1px solid var(--color-toolbar-separator);
 }
 
 .headerAttributeGroupTitle {
   color: var(--color-secondary-label);
   font-family: var(--main-font-family);
-  padding: 0.1em 0 0.25em 0.4em;
+  padding: var(--space-0_5) 0 var(--space-1) var(--space-1);
 }
 
 .headerAttributeRow {
   min-width: 0;
-  min-height: 1.7em;
+  min-height: var(--space-6);
 }
 
 .headerFlagRow {
   flex-wrap: wrap;
-  row-gap: 0.2em;
+  row-gap: var(--space-1);
+}
+
+/*
+ * A header attribute's value.
+ *
+ * `--color-state-value` is the token for "this cell is a live value a panel wants in colour" — the
+ * same one the register and state panels use, and the reason the shared `--data-*` hierarchy stays
+ * neutral. These values were `--data-value`, the plain body colour, which left a screenful of
+ * numbers reading as prose with no way to tell a label from what it labels.
+ */
+.headerValue {
+  color: var(--color-state-value);
 }
 
 /*
@@ -80,23 +92,29 @@
 .bankDecimal {
   color: var(--data-secondary);
   font-weight: 400;
-  font-size: 0.92em;
+  /* --- M1: was `0.92em`, compounding off `GenericFilePanel`'s own `0.8em` (fixed in Phase 15)
+     --- so the real size was 0.92 x 0.8 x 16 = 11.8px. One absolute step instead. */
+  font-size: var(--font-size-200);
 }
 
 /*
- * Where the machine actually is. A chip rather than more text, because it is state rather than
- * name — it is true of this bank at this moment, not of the bank.
+ * A fact about the section, carried in its heading.
+ *
+ * A chip rather than more text, because it is not part of the section's name: where the machine
+ * currently is (PC, SP), or how many of a section's 112 flags are set. Not `.bankMark` any more —
+ * the bank rows were simply the first to need one.
  */
-.bankMark {
+.headingChip {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
-  padding: 0 0.5em;
+  padding: 0 var(--space-2);
   border: 1px solid currentColor;
   border-radius: 999px;
   color: var(--accent-text);
   font-family: var(--monospace-font);
-  font-size: 0.84em;
+  /* --- M1: same compounding. See the note above. */
+  font-size: var(--font-size-100);
   font-weight: 500;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -107,6 +125,6 @@
  * both marks, and PC and SP are the same *kind* of fact, so only colour tells them apart at a
  * glance once the row is scanned rather than read.
  */
-.bankMarkAlt {
+.headingChipAlt {
   color: var(--accent-secondary-text);
 }

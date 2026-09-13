@@ -88,6 +88,7 @@
     font-family: var(--monospace-font);
     font-size: var(--font-size-100);
     background: var(--bgcolor-console-hovered);
-    padding: 1px 5px;
+    /* --- On the space scale: 1px/5px were off it, and a code chip is chrome like anything else. */
+    padding: var(--space-0_5) var(--space-1);
     border-radius: var(--radius-xs);
 }

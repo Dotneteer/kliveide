@@ -94,7 +94,9 @@
     font-family: var(--monospace-font);
     font-size: var(--panel-font-size);
     font-weight: 600;
-    line-height: 1;
+    /* --- The panel's leading, not a bare `1`: the sigil has to sit on the same baseline as the
+       --- input beside it, and a magic ratio only happens to at one font size. */
+    line-height: var(--panel-line-height);
     transition: color var(--duration-fast) var(--ease-standard);
 }
 
@@ -110,6 +112,16 @@
     font-family: var(--monospace-font);
     /* M1: the same 12px the console above it renders at, so the prompt matches its own output. */
     font-size: var(--panel-font-size);
+    /*
+     * And the leading with it.
+     *
+     * A surface that declares `font-size` and not `line-height` runs on `line-height: normal`, i.e.
+     * on the selected face's own metrics — a 12% spread across the three bundled fonts, worst on
+     * the ZX Spectrum face. The prompt strip's height therefore changed with the user's font
+     * choice. The lessons file's grep for this ("names `--panel-font-size` but neither sets
+     * `line-height` nor includes `side-panel-content`") had gone stale; it is clean again.
+     */
+    line-height: var(--panel-line-height);
     color: var(--color-prompt);
     font-weight: 400;
     caret-color: var(--border-prompt-rail-active);

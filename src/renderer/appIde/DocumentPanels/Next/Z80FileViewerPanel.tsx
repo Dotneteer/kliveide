@@ -10,8 +10,12 @@ import { decompressZ80DataBlock } from "@renderer/appIde/utils/compression/z80-f
 import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
 import { createElement } from "react";
 
-const REG_LABEL_WIDTH = 32;
-const REG_PAIR_VALUE_WIDTH = 108;
+/*
+ * M2: `ch`, not px. Capacity preserved from the px widths these had while the viewer was dark
+ * (px / 6.4 at the 12.8px size it then rendered at), so the columns keep the room they reserved.
+ */
+const REG_LABEL_WIDTH = "5ch";
+const REG_PAIR_VALUE_WIDTH = "17ch";
 
 type RegisterTextProps = {
   label: string;
@@ -610,10 +614,29 @@ export const createZ80FileViewerPanel = ({
   />
 );
 
+/** Every `.z80` starts with the same 30-byte v1 header, whatever version it turns out to be. */
+const Z80_V1_HEADER_LENGTH = 30;
+
 function loadZ80FileContents (contents: Uint8Array): {
   fileInfo?: Z80FileContents;
   error?: string;
 } {
+  /*
+   * Length first, before a single `readByte`.
+   *
+   * The reader walked straight into the header and would run off the end of anything shorter,
+   * throwing rather than reporting. That matters more now than when this was written: the route to
+   * this viewer was re-enabled in Phase 37, and PASTA/80 writes a `<stem>.z80` of its own beside
+   * its `.bin` (`Pasta80Compiler.ts`) — normally deleted, but kept when the user opts into
+   * `pasta80.keepTempFiles`. If that file is not a snapshot, this is what makes the viewer say so
+   * instead of crashing.
+   */
+  if (contents.length < Z80_V1_HEADER_LENGTH) {
+    return {
+      error: `Invalid .Z80 file: ${contents.length} bytes is shorter than the ${Z80_V1_HEADER_LENGTH}-byte header.`
+    };
+  }
+
   const reader = new BinaryReader(contents);
 
   // --- Read the Version 1 header

@@ -1,0 +1,11 @@
+@use "@styles/core.scss" as *;
+
+.valueLabel {
+  padding: var(--space-2) var(--space-0_5) var(--space-2) var(--space-2);
+  /* --- M1: was `1em`, i.e. "whatever the parent happens to be". The panel size is what it meant. */
+  font-size: var(--panel-font-size);
+  line-height: var(--panel-line-height);
+  color: var(--data-value);
+  flex-shrink: 0;
+  flex-grow: 0;
+}

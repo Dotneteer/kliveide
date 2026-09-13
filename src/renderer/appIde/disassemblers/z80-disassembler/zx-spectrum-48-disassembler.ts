@@ -114,11 +114,11 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
 
     // --- If we're in series mode, obtain the subsequent series value
     if (this._seriesCount > 0) {
-      let lenght = (calcCode >> 6) + 1;
+      let length = (calcCode >> 6) + 1;
       if ((calcCode & 0x3f) === 0) {
-        lenght++;
+        length++;
       }
-      for (let i = 0; i < lenght; i++) {
+      for (let i = 0; i < length; i++) {
         const nextByte = this._api.fetch().opcode;
         opCodes.push(nextByte);
       }

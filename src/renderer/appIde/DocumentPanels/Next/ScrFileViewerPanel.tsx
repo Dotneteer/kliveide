@@ -1,4 +1,5 @@
 import { SmallIconButton } from "@renderer/controls/IconButton";
+import { SCR_FILE_LENGTH, SPECTRUM_48_COLORS } from "@emu/machines/spectrum-colors";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { GenericFilePanel } from "../helpers/GenericFilePanel";
 import { HeaderRow } from "@renderer/controls/layout/Row";
@@ -21,13 +22,15 @@ const ScrFileViewerPanel = ({
   const documentHubService = useDocumentHubService();
 
   return createElement(
-    GenericFilePanel<ScrFileContents, ScrFileViewState>,
+    GenericFilePanel<true, ScrFileViewState>,
     {
       document,
       contents,
       viewState,
       fileLoader: loadScrFileContents,
-      validRenderer: context => {
+      // --- The context is unused: this viewer draws from `contents` directly, and the loader now
+      // --- returns only a validity flag (see `loadScrFileContents`).
+      validRenderer: () => {
         const documentSource = document.node.projectPath;
 
         return (
@@ -35,8 +38,8 @@ const ScrFileViewerPanel = ({
             <Column>
               <HeaderRow>
                 <SmallIconButton
-                  iconName='pop-out'
-                  fill='--color-value'
+                  iconName='square-arrow-out-up-right'
+                  fill='--data-value'
                   title='Display screen data dump'
                   clicked={async () => {
                     await openStaticMemoryDump(
@@ -51,7 +54,7 @@ const ScrFileViewerPanel = ({
 
               <ScreenCanvas
                 data={contents}
-                palette={spectrum48Colors}
+                palette={SPECTRUM_48_COLORS}
                 zoomFactor={2}
                 screenWidth={256}
                 screenHeight={192}
@@ -78,25 +81,22 @@ export const createScrFileViewerPanel = ({
   />
 );
 
-// --- Loads the contents of the SCR file
-function loadScrFileContents (contents: Uint8Array): {
-  fileInfo?: ScrFileContents;
-  error?: string;
-} {
-  if (contents.length !== 0x1b00) {
+/**
+ * Validates a `.SCR` file.
+ *
+ * It used to split `contents` into `pixels` and `attrs` and return them as a `ScrFileContents` —
+ * which nothing ever read. The renderer passes the raw `contents` on, and `createScrPixelData`
+ * splits them again at the point of use. The split here was doing no work; the length check was the
+ * whole function. Saying so is the fix, rather than keeping a parse whose output has no consumer.
+ */
+function loadScrFileContents (contents: Uint8Array): { fileInfo?: true; error?: string } {
+  if (contents.length !== SCR_FILE_LENGTH) {
     return {
-      error: "Invalid file size, an .SCR file should be 6912 bytes long."
+      error: `Invalid file size (${contents.length} bytes): an .SCR file is ${SCR_FILE_LENGTH} bytes long.`
     };
   }
-  const pixels = contents.slice(0, 0x1800);
-  const attrs = contents.slice(0x1800, 0x1b00);
-  return { fileInfo: { pixels, attrs } };
+  return { fileInfo: true };
 }
-
-type ScrFileContents = {
-  pixels: Uint8Array;
-  attrs: Uint8Array;
-};
 
 function createScrPixelData (
   data: Uint8Array,
@@ -133,24 +133,3 @@ function createScrPixelData (
   }
 }
 
-/**
- * This table defines the ARGB colors for the 16 available colors on the ZX Spectrum 48K model.
- */
-const spectrum48Colors: number[] = [
-  0xff000000, // Black
-  0xffaa0000, // Blue
-  0xff0000aa, // Red
-  0xffaa00aa, // Magenta
-  0xff00aa00, // Green
-  0xffaaaa00, // Cyan
-  0xff00aaaa, // Yellow
-  0xffaaaaaa, // White
-  0xff000000, // Bright Black
-  0xffff0000, // Bright Blue
-  0xff0000ff, // Bright Red
-  0xffff00ff, // Bright Magenta
-  0xff00ff00, // Bright Green
-  0xffffff00, // Bright Cyan
-  0xff00ffff, // Bright Yellow
-  0xffffffff // Bright White
-];

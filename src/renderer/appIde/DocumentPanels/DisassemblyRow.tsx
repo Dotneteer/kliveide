@@ -9,7 +9,10 @@ import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Label } from "@renderer/controls/layout/Label";
 import { Secondary } from "@renderer/controls/layout/Secondary";
 import { Value } from "@renderer/controls/layout/Value";
+import { Icon } from "@controls/Icon";
+import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { BreakpointIndicator } from "./BreakpointIndicator";
+import { formatBranchReadout, isCall, type BranchVerdict } from "./branchVerdict";
 import type { DisassemblyItem, DisassemblyOperandInfo } from "../disassemblers/common-types";
 import { toDecimal3, toDecimal5, toHexa2, toHexa4 } from "../services/ide-commands";
 import styles from "./DisassemblyPanel.module.scss";
@@ -187,6 +190,97 @@ export function deriveDisassemblyRowViewModel({
   };
 }
 
+/**
+ * The gutter glyph for a verdict, and the token that paints it.
+ *
+ * Six states. Five are directions — where control goes — and the sixth says control comes *back*:
+ *
+ * | State | Glyph | Meaning |
+ * |---|---|---|
+ * | not taken   | straight vertical   | carries on into the next row |
+ * | call / rst  | out-and-back hook   | leaves and returns; `RST n` is `CALL n` in one byte |
+ * | back        | arrow up            | jumps to an address at or below this one - a loop closing |
+ * | forward     | arrow down          | jumps ahead - a skip |
+ * | return      | arrow left          | leaves through the stack |
+ * | unknown     | dashed arrow right  | leaves, but the destination cannot be obtained |
+ *
+ * The two tests are ordered deliberately. **Not-taken is checked first**, because a conditional
+ * call that will not be taken carries on to the next instruction like any other fall-through and
+ * must not be drawn as a call. **The call test then beats direction**, because a call is a call
+ * whichever way its target lies: drawing `rst $08` as "arrow up" put it in the same visual class as
+ * a loop closing, which is what it is not.
+ *
+ * The dashes on `unknown` are the whole idea there: the arrow still says the flow leaves here, and
+ * the broken line says we cannot tell you where. A `?` was considered and rejected - it is
+ * illegible at this size. See `BranchVerdict.unobtainable`.
+ */
+export function branchGlyphFor(verdict: BranchVerdict): { iconName: string; fill: string } {
+  const taken = "--color-disassembly-branch-taken";
+  if (verdict.direction === "none") {
+    return { iconName: "branch-through", fill: "--color-disassembly-branch-fallthrough" };
+  }
+  if (isCall(verdict.kind)) {
+    return { iconName: "branch-call", fill: taken };
+  }
+  switch (verdict.direction) {
+    case "back":
+      return { iconName: "branch-back", fill: taken };
+    case "forward":
+      return { iconName: "branch-forward", fill: taken };
+    case "return":
+      return { iconName: "branch-return", fill: taken };
+    case "unknown":
+    default:
+      return { iconName: "branch-unknown", fill: taken };
+  }
+}
+
+/**
+ * The execution-point readout, in both of its renderings.
+ *
+ * Both are always in the DOM; a container query on `.disassemblyWrapper` shows one and hides the
+ * other, so the swap costs no JavaScript, no `ResizeObserver` and no re-render on resize. See
+ * `.branchReadoutLong` in the stylesheet for why the threshold is in `ch`.
+ *
+ * The tooltip carries the long form unconditionally. In a wide panel that merely repeats what is
+ * already on screen, which is harmless; in a narrow one it is the only place the full sentence
+ * exists. Bound to the readout rather than to the row — the row has no other tooltip, so there is
+ * no risk of the two-boxes-for-one-pointer problem the shared primitives warn about, and the
+ * readout is its own comfortable hit area.
+ */
+function BranchReadout({
+  verdict,
+  decimalView
+}: {
+  verdict: BranchVerdict;
+  decimalView: boolean;
+}) {
+  const ref = useTooltipRef();
+  const { long, short } = formatBranchReadout(verdict, decimalView);
+  return (
+    <span
+      ref={ref}
+      className={classnames(styles.branchReadout, { [styles.notTaken]: !verdict.taken })}
+      data-testid="branch-readout"
+    >
+      {/*
+        * Head and detail are painted differently on purpose: the outcome - the verb and the
+        * address - is what the eye should land on, and the evidence behind it is supporting text.
+        * Colouring the whole string as the outcome made a green sentence of it.
+        */}
+      <span className={styles.branchReadoutLong} data-readout="long">
+        <span className={styles.branchOutcome}>{long.head}</span>
+        {long.detail && `  ·  ${long.detail}`}
+      </span>
+      <span className={styles.branchReadoutShort} data-readout="short">
+        <span className={styles.branchOutcome}>{short.head}</span>
+        {short.detail && `  ${short.detail}`}
+      </span>
+      <TooltipFactory refElement={ref.current} placement="bottom" offsetY={4} content={long.text} />
+    </span>
+  );
+}
+
 type DisassemblyRowProps = DisassemblyRowViewModelParams & {
   index: number;
   rowHeight: number;
@@ -221,6 +315,21 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
    * leading rail.
    */
   annotated?: boolean;
+  /**
+   * Reserve the branch gutter on this row.
+   *
+   * A property of the *listing*, not of the row: when the panel is showing verdicts at all, every
+   * row reserves the cell so the columns after it line up, and a row with no verdict simply leaves
+   * it empty. False - the machine is not started, so there is nothing to predict - omits the cell
+   * entirely and the row has exactly the geometry it always had.
+   */
+  showBranchGutter?: boolean;
+  /**
+   * This row's live branch verdict, when it branches and the machine can supply one.
+   *
+   * Undefined on a non-branching row, and on every row when `showBranchGutter` is false.
+   */
+  verdict?: BranchVerdict;
   selected?: boolean;
   selectedRange?: boolean;
   /**
@@ -249,6 +358,8 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   rowHeight,
   selected,
   selectedRange,
+  showBranchGutter = false,
+  verdict,
   ...viewModelParams
 }: DisassemblyRowProps) {
   const breakpoint = viewModelParams.breakpoint;
@@ -358,6 +469,35 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             className={annotated ? styles.annotationLabel : styles.disassemblyLabel}
           />
           <div className={styles.tstates}>{viewModel.tstates}</div>
+          {/*
+            * Rendered on every row once the listing has verdicts at all, empty where the row does
+            * not branch - see `showBranchGutter`. The dimming that separates a speculative verdict
+            * from the certain one at PC lives in the stylesheet, keyed off `.execPoint`, so it is
+            * not restated per row here.
+            */}
+          {showBranchGutter && (
+            <span
+              className={styles.branchGutter}
+              data-branch={verdict?.direction}
+              /*
+               * The glyph actually chosen, not just the direction it came from.
+               *
+               * `data-branch` alone cannot say which mark is on screen now that a call is drawn by
+               * kind rather than by direction. Exposing the resolved name keeps a test, and the
+               * screenshot recipe, able to ask what the row really shows instead of re-deriving it.
+               */
+              data-branch-glyph={verdict ? branchGlyphFor(verdict).iconName : undefined}
+            >
+              {verdict && (
+                <Icon
+                  iconName={branchGlyphFor(verdict).iconName}
+                  fill={branchGlyphFor(verdict).fill}
+                  width={12}
+                  height={12}
+                />
+              )}
+            </span>
+          )}
           <Value
             text={viewModel.instruction}
             width="25ch"
@@ -375,6 +515,14 @@ export const DisassemblyRow = memo(function DisassemblyRow({
               )
             )}
           </Value>
+          {/*
+            * The execution-point readout. Only at PC, where the verdict is fact rather than a guess
+            * about flags that have not happened yet — every other row is carried by the quiet
+            * gutter glyph alone.
+            */}
+          {showBranchGutter && verdict && viewModel.execPoint && (
+            <BranchReadout verdict={verdict} decimalView={viewModelParams.decimalView} />
+          )}
           {/*
             * Rendered on every row once any row in the listing has a comment, and at the same width
             * on all of them, so a row without one still ends where its neighbours do. Sizing it to

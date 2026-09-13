@@ -29,6 +29,7 @@ import {
 } from "@renderer/appIde/dialogs/ideDialogRegistry";
 import { ExplorerProjectItem } from "./ExplorerProjectItem";
 import { ExplorerEmptyState } from "./ExplorerEmptyState";
+import { EmptyState } from "@renderer/controls/data";
 import { ExplorerContextMenu } from "./ExplorerContextMenu";
 import { clearExplorerFolderCache, useExplorerTree } from "./useExplorerTree";
 import {
@@ -239,7 +240,6 @@ export const ExplorerPanel = () => {
       const result = await dialogs.open<RenameDialogResult, Omit<ComponentProps<typeof RenameDialog>, "controls">>(
         RenameDialog,
         {
-          isFolder: nodeIsFolder,
           oldPath
         },
         { title: nodeIsFolder ? "Rename folder" : "Rename file", width: 500, iconName: "pencil" }
@@ -397,7 +397,6 @@ export const ExplorerPanel = () => {
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         onKeyDown={handleTreeKeyDown}
-        onClick={() => {}}
       >
         {contextMenu}
 
@@ -407,7 +406,19 @@ export const ExplorerPanel = () => {
           renderItem={(idx) => projectItemRenderer(idx)}
         />
       </div>
-    ) : null
+    ) : (
+      /*
+       * A project is open and nothing in it is visible.
+       *
+       * This returned `null`, so a project whose every entry is filtered out by the excluded-items
+       * settings — or one that is genuinely empty — drew a blank panel with nothing to explain it.
+       * `ExplorerEmptyState` covers only the *no folder at all* case, which is a different question
+       * with different actions, so this says its own thing rather than reusing it.
+       */
+      <div className={styles.noVisibleItems}>
+        <EmptyState message="This project has no files to show. Check Excluded Items in the project settings." />
+      </div>
+    )
   ) : (
     <ExplorerEmptyState
       dimmed={dimmed}

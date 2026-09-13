@@ -41,15 +41,15 @@ import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult"
 import { asmKz80LanguageProvider } from "./appIde/project/asmKz80LanguageProvider";
 import { asmZxbLanguageProvider } from "./appIde/project/asmZxbLanguageProvider";
 import { zxBasLanguageProvider } from "./appIde/project/zxBasLanguageProvider";
-import { BreakpointsPanel } from "./appIde/SiteBarPanels/BreakpointsPanel";
-import { BreakpointsBadge } from "./appIde/SiteBarPanels/BreakpointsBadge";
-import { WatchBadge } from "./appIde/SiteBarPanels/WatchBadge";
-import { Z80CpuPanel } from "./appIde/SiteBarPanels/Z80CpuPanel";
+import { BreakpointsPanel } from "./appIde/SideBarPanels/BreakpointsPanel";
+import { BreakpointsBadge } from "./appIde/SideBarPanels/BreakpointsBadge";
+import { WatchBadge } from "./appIde/SideBarPanels/WatchBadge";
+import { Z80CpuPanel } from "./appIde/SideBarPanels/Z80CpuPanel";
 import { ExplorerPanel } from "@renderer/features/explorer/ExplorerPanel";
 import { OpenEditorsPanel } from "@renderer/features/openEditors/OpenEditorsPanel";
 import { OpenEditorsBadge } from "@renderer/features/openEditors/OpenEditorsBadge";
-import { SysVarsPanel } from "./appIde/SiteBarPanels/SysVarsPanel";
-import { UlaPanel } from "./appIde/SiteBarPanels/UlaPanel";
+import { SysVarsPanel } from "./appIde/SideBarPanels/SysVarsPanel";
+import { UlaPanel } from "./appIde/SideBarPanels/UlaPanel";
 import {
   CommandPanel,
   CommandPanelHeader
@@ -59,8 +59,8 @@ import {
   OutputPanelHeader
 } from "./appIde/ToolArea/OutputPanel";
 import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
-import { PsgPanel } from "./appIde/SiteBarPanels/PsgPanel";
-import { NecUpd765Panel } from "./appIde/SiteBarPanels/NecUpd765Panel";
+import { PsgPanel } from "./appIde/SideBarPanels/PsgPanel";
+import { NecUpd765Panel } from "./appIde/SideBarPanels/NecUpd765Panel";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
 import {
   MC_DISK_SUPPORT,
@@ -72,7 +72,7 @@ import {
   MF_Z80,
   MI_ZXNEXT
 } from "@common/machines/constants";
-import { BlinkPanel } from "./appIde/SiteBarPanels/BlinkPanel";
+import { BlinkPanel } from "./appIde/SideBarPanels/BlinkPanel";
 import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
 import { createZ80FileViewerPanel } from "./appIde/DocumentPanels/Next/Z80FileViewerPanel";
 import { createSnaFileViewerPanel } from "./appIde/DocumentPanels/Next/SnaFileViewerPanel";
@@ -94,21 +94,22 @@ import {
   PANE_ID_EMU,
   PANE_ID_SCRIPTIMG
 } from "@common/integration/constants";
-import { ScriptingHistoryPanel } from "./appIde/SiteBarPanels/ScriptingHistoryPanel";
+import { ScriptingHistoryPanel } from "./appIde/SideBarPanels/ScriptingHistoryPanel";
+import { ScriptingHistoryBadge } from "./appIde/SideBarPanels/ScriptingHistoryBadge";
 import { getScriptingContextMenuIfo, scriptingCommandBarRenderer } from "@renderer/features/documents/ScriptingCommandBar";
 import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPanel";
 import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
 import { createMemoryPanel } from "@renderer/features/memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
-import { NextRegPanel } from "./appIde/SiteBarPanels/NextRegPanel";
-import { MemMappingPanel } from "./appIde/SiteBarPanels/MemMappingPanel";
-import { CallStackPanel } from "./appIde/SiteBarPanels/CallStackPanel";
-import { PalettePanel } from "./appIde/SiteBarPanels/PalettePanel";
+import { NextRegPanel } from "./appIde/SideBarPanels/NextRegPanel";
+import { MemMappingPanel } from "./appIde/SideBarPanels/MemMappingPanel";
+import { CallStackPanel } from "./appIde/SideBarPanels/CallStackPanel";
+import { PalettePanel } from "./appIde/SideBarPanels/PalettePanel";
 import { sjasmZ80LanguageProvider } from "./appIde/project/sjasmZ80LanguageProvider";
-import { M6510CpuPanel } from "./appIde/SiteBarPanels/M6510CpuPanel";
+import { M6510CpuPanel } from "./appIde/SideBarPanels/M6510CpuPanel";
 import { asm6510LanguageProvider } from "./appIde/project/asm6510LanguageProvider";
-import { VicPanel } from "./appIde/SiteBarPanels/VicPanel";
-import { WatchPanel } from "./appIde/SiteBarPanels/WatchPanel";
+import { VicPanel } from "./appIde/SideBarPanels/VicPanel";
+import { WatchPanel } from "./appIde/SideBarPanels/WatchPanel";
 import { turboPascalLanguageProvider } from "./appIde/project/turboPascalLanguageProvider";
 
 const ACTIVITY_FILE_ID = "file-view";
@@ -284,6 +285,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     title: "Scripting History",
     hostActivity: ACTIVITY_SCRIPTING_ID,
     renderer: ScriptingHistoryPanel,
+    badge: ScriptingHistoryBadge,
     initialSize: 500,
     // Renders a VirtualizedList, which brings its own ScrollViewer.
     useScrollViewer: false
@@ -618,15 +620,28 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isReadOnly: true,
     openPermanent: true
   },
-  // {
-  //   matchType: "ends",
-  //   pattern: ".z80",
-  //   editor: Z80_VIEWER,
-  //   icon: "chip",
-  //   isBinary: true,
-  //   isReadOnly: true,
-  //   openPermanent: true
-  // },
+  /*
+   * Re-enabled in Phase 37, after six months dark.
+   *
+   * This entry went in live in January 2024 and was commented out in March 2026 by the experimental
+   * PASTA/80 integration — a Pascal-compiler feature with no relationship to snapshot viewing, whose
+   * compiler writes a `<stem>.z80` temp file beside its `.bin` and deletes it again unless the user
+   * has opted into `pasta80.keepTempFiles`. So the collision it avoided affects only that opt-in,
+   * and it cost every user the viewer for the most widely supported ZX Spectrum snapshot format
+   * there is — 913 lines of complete, working parser that nothing could reach.
+   *
+   * If that temp file turns out not to be a snapshot, `loadZ80FileContents` now says so rather than
+   * throwing: its length guard is the other half of this change.
+   */
+  {
+    matchType: "ends",
+    pattern: ".z80",
+    editor: Z80_VIEWER,
+    icon: "chip",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
   {
     matchType: "ends",
     pattern: ".sna",

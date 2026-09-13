@@ -521,6 +521,16 @@
 }
 
 /* --- colour swatches -------------------------------------------------------------------------- */
+/*
+ * The transparency mark inside a swatch.
+ *
+ * `display: block` because an inline `<svg>` sits on the text baseline and leaves descender space
+ * under it, which offsets the mark inside a swatch that has no text in it at all.
+ */
+.transparencyMark {
+  display: block;
+}
+
 .colorSample {
   /*
    * `flex: 0 0 auto` is load-bearing, not decoration.

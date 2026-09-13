@@ -1,16 +1,21 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * The root type for every file viewer built on `GenericFilePanel` — the NEX, Z80 and SCR viewers,
+ * the PAL/NPL editor and the sprite editor.
+ *
+ * This was `font-size: 0.8em` (M1) until Phase 15. Against the 16px root that resolved to 12.8px,
+ * not the 12px the scale intends, and it was inherited by five panels at once — `NexFileViewerPanel`
+ * then compounded `0.92em` and `0.84em` off it, which is the multiplication M1 exists to prevent.
+ * It is now the user's View | Panel Options | Font Size, like every other data surface.
+ *
+ * `line-height` is declared with it, deliberately. A surface that sets `font-size` and nothing else
+ * runs on `line-height: normal`, i.e. on the selected font's own metrics — measured at a 12% spread
+ * across the three bundled faces, worst on the ZX Spectrum one. See the note in
+ * `.ai/ui-theming-intent-and-lessons.md`.
+ */
 .panelFont {
   font-family: var(--monospace-font);
-  font-size: 0.8em;
-}
-
-.invalid {
-  @include fill-parent-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 1em;
-  font-family: var(--monospace-font);
-  color: var(--console-ansi-bright-red);
+  font-size: var(--panel-font-size);
+  line-height: var(--panel-line-height);
 }

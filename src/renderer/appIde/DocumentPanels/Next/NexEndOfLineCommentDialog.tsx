@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Button } from "@renderer/controls/Button";
+import { TextInput } from "@renderer/controls/TextInput";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
@@ -70,13 +71,7 @@ export function NexEndOfLineCommentDialog({
         </DialogRow>
       )}
       <DialogRow label="User comment" rows={true}>
-        <input
-          autoFocus
-          className={styles.comment}
-          spellCheck={false}
-          value={comment}
-          onChange={(event) => setComment(event.target.value)}
-        />
+        <TextInput autoFocus value={comment} onChange={setComment} />
       </DialogRow>
       <DialogRow label="Preview" rows={true}>
         <div className={styles.preview} aria-label="End-of-line preview">
@@ -85,11 +80,11 @@ export function NexEndOfLineCommentDialog({
       </DialogRow>
       <DialogFooter>
         <Button text="Save" type="submit" />
-        <Button text="Cancel" clicked={controls.cancel} />
+        <Button variant="secondary" text="Cancel" clicked={controls.cancel} />
         {hasExistingComment && (
           <>
             <DialogFooterSpacer />
-            <Button text="Clear" clicked={() => closeWithComment(undefined)} />
+            <Button variant="secondary" text="Clear" clicked={() => closeWithComment(undefined)} />
           </>
         )}
       </DialogFooter>

@@ -37,6 +37,84 @@ The Disassembly View provides a few options to display and navigate the memory c
 
 A little icon (up or down arrow) is before the **Go To** address box. Unless the machine is paused, this icon is disabled. When the machine is in a paused state, clicking the button jumps to the disassembly at the address pointed by the PC. The direction of the arrow indicates where the PC position can be found relative to the current view.
 
+## Branch Verdicts
+
+While a machine is running or paused, the Disassembly View marks every conditional branch it can see
+with what that branch will do next, worked out from the CPU's current flags and registers. A narrow
+column between the T-states and the instruction carries the mark:
+
+<ClickableImage src="/images/working-with-ide/disass-branch-verdicts.png" width={640} />
+
+This is the end of the ROM's keyboard scan, and it happens to show every mark a 48K listing can
+produce. The execution point is a `jr c` about to close a loop backwards, and the readout beside it
+says where to, which condition decided it, and what that costs. Below: three `ret z` that will not
+be taken, a `ret` and a `ret nz` that will return, a `call` drawn as an out-and-back hook, and two
+`jr nz` jumping forwards.
+
+| Mark | Meaning |
+| --- | --- |
+| Arrow pointing up | The branch will jump **backwards**, to an address at or below its own — a loop closing. |
+| Arrow pointing down | The branch will jump **forwards**, skipping the code between. |
+| Out-and-back hook | A `CALL` or `RST` that will be taken: control leaves **and comes back**. |
+| Arrow pointing left | A `RET` or `RET cc` that will return, leaving through the stack. |
+| Dashed arrow pointing right | Control leaves, but the destination cannot be worked out. See below. |
+| Straight vertical line | The branch will **not** be taken; execution carries straight on to the next instruction. |
+
+Five of the six say which way control goes; the hook says something different, that control will
+return here afterwards. A `CALL` therefore looks the same whether its target is above or below —
+it is a call either way — while a `JP` to the same address shows a plain arrow. `RST n` is `CALL n`
+in a one-byte encoding, so it takes the hook too, and its readout says `calls $0008` rather than
+naming a direction.
+
+A taken branch is coloured; a fall-through is neutral grey. Falling through is not an error, so it is
+never marked in red — red and orange belong to breakpoints and to the execution point.
+
+### Certain and speculative marks
+
+The mark on the row at the **execution point** is drawn at full strength, because the flags it was
+worked out from are the flags the CPU will actually use.
+
+Every other mark is dimmed, and this difference matters. A branch ten instructions below PC is judged
+against *today's* flags, not the flags that will hold when execution finally reaches it — and the
+code in between will almost certainly change them. Read a dimmed mark as "this is what would happen
+if the CPU arrived here right now", not as a prediction.
+
+### The execution point readout
+
+The row at the execution point also spells the verdict out in full, after the instruction:
+
+```
+jumps back to $0EFD  ·  NC met (C=0)  ·  12 T
+```
+
+It names where execution goes next, which condition decided it, the flag value behind that decision,
+and the T-states the instruction will actually spend — a conditional branch costs a different number
+of cycles depending on which way it goes, and this is the one it will really take.
+
+In a narrow panel the readout shortens to `→ $0EFD  C=0  12T`. Hover it to see the full sentence.
+
+<Callout type="info" emoji="💡">
+Verdicts appear only when a machine is started. With no machine running there is no CPU state to
+judge against, so the view looks exactly as it always has — no extra column, no shifted layout.
+Verdicts are shown for Z80 and Z80N machines only.
+</Callout>
+
+### Destinations that cannot be worked out
+
+Three cases show a verdict but no destination, on purpose:
+
+- **`JP (C)`** on a ZX Spectrum Next jumps to an address whose low bits come from reading an I/O
+  port. That read has not happened yet, and performing it just to fill in a debugger display would
+  disturb the machine you are debugging. The readout says so rather than guessing.
+- **`RET cc` away from the execution point.** The return address sits on the stack, and the top of
+  the stack belongs to whatever is executing *now*, not to the row you are looking at. It is only
+  shown for the row at PC, where it is genuinely that instruction's return address.
+- **`RET cc` in a banked view.** With the **64K View** switch off, the view holds one bank rather
+  than the whole address space, so the stack is not part of what is on display.
+
+While the machine is free-running rather than paused, the marks follow the CPU state as it is
+sampled, a few times a second. Pause or single-step for a verdict that stands still.
+
 ## Banked Disassembly Views
 
 When your model supports memory paging, a new switch, **64K View**, is displayed in the second header row. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the **Select bank** dropdown. The Disassembly View will display only the disassembled contents of that segment, even if that segment is not paged in.

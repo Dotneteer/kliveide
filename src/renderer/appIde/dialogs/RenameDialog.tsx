@@ -8,14 +8,12 @@ import { renamedItemName } from "./dialogValidators";
 import { useState } from "react";
 
 type Props = DialogComponentProps<RenameDialogResult> & {
-  isFolder?: boolean;
   oldPath: string;
 };
 
 export type RenameDialogResult = { name: string };
 
 export const RenameDialog = ({
-  isFolder,
   oldPath,
   controls
 }: Props) => {

@@ -10,8 +10,24 @@ import {
 } from "./scanlineEffect";
 
 export function useEmulatorScreen(
-  hostElement: MutableRefObject<HTMLDivElement>,
-  controllerRef: MutableRefObject<IMachineController>
+  /*
+   * The element whose content box bounds the screen.
+   *
+   * This is the panel's screen area, not the panel root: the root also carries the
+   * machine-specific tool strip (the Z88 slot cards), and sizing the canvas against the root would
+   * claim the height that strip is already using.
+   */
+  screenArea: MutableRefObject<HTMLDivElement>,
+  controllerRef: MutableRefObject<IMachineController>,
+  /*
+   * An element inside the screen area whose height the screen may not use.
+   *
+   * The machine-specific tool strip (the Z88 slot cards) shares the screen's stack so the two stay
+   * adjacent and left-aligned, which puts it inside the box being measured. Its outer height is
+   * held back here rather than guessed at: the strip's size follows its own type and spacing, and
+   * a constant would go stale the first time either changes.
+   */
+  reservedElement?: MutableRefObject<HTMLElement | undefined | null>
 ) {
   const scanlineEffect = useGlobalSetting(SETTING_EMU_SCANLINE_EFFECT);
 
@@ -50,18 +66,19 @@ export function useEmulatorScreen(
   }, []);
 
   const calculateDimensions = useCallback((): void => {
-    if (!hostElement?.current || !screenElement?.current) return;
-    hostRectangle.current = hostElement.current.getBoundingClientRect();
+    if (!screenArea?.current || !screenElement?.current) return;
+    hostRectangle.current = screenArea.current.getBoundingClientRect();
     screenRectangle.current = screenElement.current.getBoundingClientRect();
     /*
-     * Measure the host's *content* box.
+     * Measure the screen area's *content* box.
      *
      * This used to read `offsetWidth` and subtract a bare `- 8`: a gutter that existed only in this
      * arithmetic, invisible to every stylesheet, and wrong the moment anyone changed the panel's
      * spacing. The gutter is now real padding on `.emulatorPanel`, and this reads what the CSS
-     * actually left available.
+     * actually left available — the panel's padding and the tool strip's height are both already
+     * subtracted by the time the layout hands this element its size.
      */
-    const host = hostElement.current;
+    const host = screenArea.current;
     const hostStyle = host instanceof Element ? getComputedStyle(host) : undefined;
     const pad = (value: string | undefined) => {
       const n = parseFloat(value ?? "");
@@ -72,10 +89,17 @@ export function useEmulatorScreen(
       (host.clientWidth || host.offsetWidth) -
       pad(hostStyle?.paddingLeft) -
       pad(hostStyle?.paddingRight);
+    // --- Whatever shares the stack with the screen is not space the screen can have
+    const reserved = reservedElement?.current;
+    const reservedStyle = reserved instanceof Element ? getComputedStyle(reserved) : undefined;
+    const reservedHeight = reserved
+      ? reserved.offsetHeight + pad(reservedStyle?.marginTop) + pad(reservedStyle?.marginBottom)
+      : 0;
     const clientHeight =
       (host.clientHeight || host.offsetHeight) -
       pad(hostStyle?.paddingTop) -
-      pad(hostStyle?.paddingBottom);
+      pad(hostStyle?.paddingBottom) -
+      reservedHeight;
     const width = shadowCanvasWidth.current ?? 1;
     const height = shadowCanvasHeight.current ?? 1;
     let widthRatio = Math.floor((1 * clientWidth) / width) / 1 / xRatio.current;
@@ -85,7 +109,7 @@ export function useEmulatorScreen(
     const ratio = Math.min(widthRatio, heightRatio);
     setCanvasWidth(width * ratio * xRatio.current);
     setCanvasHeight(height * ratio * yRatio.current);
-  }, [hostElement]);
+  }, [reservedElement, screenArea]);
 
   const updateScreenDimensions = useCallback((): void => {
     const ctrl = controllerRef.current;
@@ -223,10 +247,14 @@ export function useEmulatorScreen(
     }
   }, [controllerRef, getTempCanvas, renderWithScanlines, renderWithoutScanlines]);
 
-  useResizeObserver(hostElement, useCallback(() => {
+  const onAvailableSpaceChanged = useCallback(() => {
     calculateDimensions();
     displayScreenData();
-  }, [calculateDimensions, displayScreenData]));
+  }, [calculateDimensions, displayScreenData]);
+
+  useResizeObserver(screenArea, onAvailableSpaceChanged);
+  // --- The reserved strip is content-sized, so its height can move independently of the area's
+  useResizeObserver(reservedElement, onAvailableSpaceChanged);
 
   return {
     screenElement,

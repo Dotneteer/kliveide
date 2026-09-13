@@ -4,11 +4,12 @@ import type { BreakpointEnvironment } from "@renderer/appIde/utils/breakpoint-fo
 import { useCallback } from "react";
 import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useSelector } from "@renderer/core/RendererProvider";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 import { derivePartitionSetup } from "@renderer/features/memory/memoryViewModel";
 import { applyBreakpointEdit } from "@renderer/appIde/utils/breakpoint-actions";
 import { BreakpointDialog } from "./BreakpointDialog";
+import { setIdeStatusMessageAction } from "@state/actions";
 
 /**
  * Opens the breakpoint dialog and installs whatever it returns.
@@ -28,6 +29,7 @@ import { BreakpointDialog } from "./BreakpointDialog";
  */
 export function useBreakpointDialog() {
   const emuApi = useEmuApi();
+  const dispatch = useDispatch();
   const dialogs = useDialogs();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
 
@@ -39,12 +41,40 @@ export function useBreakpointDialog() {
      * @returns Whether anything was installed; false when the dialog was cancelled.
      */
     async (initial?: BreakpointInfo): Promise<boolean> => {
-      const [partitionLabels, partitionDescriptions, partitionGroups, bpState] = await Promise.all([
-        emuApi.getPartitionLabels(),
-        emuApi.getPartitionDescriptions(),
-        emuApi.getPartitionGroups(),
-        emuApi.listBreakpoints()
-      ]);
+      /*
+       * Four IPC calls with a failure path.
+       *
+       * `Promise.all` rejects as soon as any one of these does — the emulator not running, a
+       * machine mid-switch — and nothing caught it, so the rejection escaped this callback
+       * unhandled and the dialog simply never opened. No error, no dialog, nothing to click: the
+       * command appeared to have been ignored. This is defect class #6 that
+       * `DIALOG_MVC_REFACTOR_PLAN.md` records as fixed for `NewProject` and `ExcludedItems`, still
+       * live here.
+       *
+       * Reporting through the status bar rather than a second dialog: the user asked for a dialog
+       * and did not get one, and stacking an error dialog on that is more ceremony than the failure
+       * deserves.
+       */
+      let partitionLabels: Awaited<ReturnType<typeof emuApi.getPartitionLabels>>;
+      let partitionDescriptions: Awaited<ReturnType<typeof emuApi.getPartitionDescriptions>>;
+      let partitionGroups: Awaited<ReturnType<typeof emuApi.getPartitionGroups>>;
+      let bpState: Awaited<ReturnType<typeof emuApi.listBreakpoints>>;
+      try {
+        [partitionLabels, partitionDescriptions, partitionGroups, bpState] = await Promise.all([
+          emuApi.getPartitionLabels(),
+          emuApi.getPartitionDescriptions(),
+          emuApi.getPartitionGroups(),
+          emuApi.listBreakpoints()
+        ]);
+      } catch (err) {
+        dispatch(
+          setIdeStatusMessageAction(
+            `Cannot open the breakpoint dialog: ${(err as Error)?.message ?? "the emulator did not respond"}`,
+            true
+          )
+        );
+        return false;
+      }
 
       const machineSetup = derivePartitionSetup(
         machineId,
@@ -66,7 +96,10 @@ export function useBreakpointDialog() {
 
       const result = await dialogs.open(
         BreakpointDialog,
-        { initial, env, machineSetup, machineId },
+        // --- No `machineId`: `BreakpointDialog` declares no such prop, so it was reaching the
+        // --- component and being dropped. It survived only because `dialogs.open`'s generics
+        // --- infer the props from the object rather than checking it against the component.
+        { initial, env, machineSetup },
         { title: initial ? "Edit breakpoint" : "Add breakpoint", width: 420, iconName: "debug-with-bp" }
       );
       // --- A dismissed dialog resolves undefined, which is a cancellation, not an empty edit.

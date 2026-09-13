@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "@renderer/controls/Button";
+import { TextInput } from "@renderer/controls/TextInput";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
@@ -155,12 +156,11 @@ export function NexOperandLabelDialog({
         </DialogRow>
       )}
       <DialogRow label="Candidate labels" rows={true}>
-        <input
-          className={styles.input}
+        <TextInput
           placeholder="Search labels"
-          spellCheck={false}
+          ariaLabel="Search labels"
           value={searchText}
-          onChange={(event) => setSearchText(event.target.value)}
+          onChange={setSearchText}
         />
         <div className={styles.candidateList}>
           {filteredGroups.map((group) => (
@@ -194,17 +194,19 @@ export function NexOperandLabelDialog({
       <div className={styles.createActions}>
         <Button
           text="Create Bank Label"
+          variant="secondary"
           disabled={!canCreateLocal}
           clicked={() => createLabel("local")}
         />
-        <Button text="Create Global Label" clicked={() => createLabel("global")} />
+        <Button variant="secondary" text="Create Global Label" clicked={() => createLabel("global")} />
       </div>
       <DialogFooter>
         <Button text="Apply Reference" type="submit" disabled={!selectedCandidate} />
-        <Button text="Cancel" clicked={controls.cancel} />
+        <Button variant="secondary" text="Cancel" clicked={controls.cancel} />
         <DialogFooterSpacer />
         <Button
           text="Clear Reference"
+          variant="secondary"
           disabled={!explicitReference}
           clicked={() => {
             if (!selectedOperand) {

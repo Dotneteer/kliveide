@@ -1,8 +1,4 @@
 import styles from "./Layer2Screen.module.scss";
-import { SmallIconButton } from "../IconButton";
-import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
-import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
-import { HeaderRow } from "@renderer/controls/layout/Row";
 import { ScreenCanvas } from "./ScreenCanvas";
 import { memo } from "react";
 
@@ -21,27 +17,17 @@ const createLayer2PixelData = (data: Uint8Array, palette: number[], target: Uint
   }
 };
 
-const Layer2ScreenComponent = ({ documentSource, data, palette, zoomFactor = 2 }: Props) => {
-  const documentHubService = useDocumentHubService();
-
+/*
+ * The screen draws the screen, and nothing else.
+ *
+ * It used to carry a one-button `HeaderRow` of its own — a second header immediately under the
+ * section header that already names it, with the action as far from that name as the row allowed.
+ * The action now sits in the section's own `headingAction`, beside the heading, exactly as a bank's
+ * does. `documentSource` stays because the canvas is still identified by it.
+ */
+const Layer2ScreenComponent = ({ data, palette, zoomFactor = 2 }: Props) => {
   return (
     <div className={styles.panel}>
-      <HeaderRow>
-        <SmallIconButton
-          iconName="pop-out"
-          fill="--color-value"
-          title="Display loading screen data dump"
-          clicked={async () => {
-            if (!documentSource) return;
-            await openStaticMemoryDump(
-              documentHubService,
-              `layer2ScreenDump${documentSource}`,
-              `${documentSource} - Layer2`,
-              data
-            );
-          }}
-        />
-      </HeaderRow>
       <ScreenCanvas
         data={data}
         palette={palette}

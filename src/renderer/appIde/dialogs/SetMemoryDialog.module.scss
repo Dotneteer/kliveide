@@ -1,0 +1,20 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The read-only warning shown for a ROM address.
+ *
+ * This was an inline `style={{ color: "#ff6b6b", … }}` — the last raw hex colour left in any dialog
+ * in the app, and a red belonging to nothing. `--status-error` is the app's one failure colour and
+ * follows the theme in both tones.
+ */
+.romWarning {
+  padding: var(--space-2) 0;
+  color: var(--status-error);
+  font-weight: 600;
+}
+
+/* The size dropdown's row. Was an inline `display: flex` with an off-scale padding. */
+.sizeRow {
+  display: flex;
+  padding: var(--space-2) 0;
+}

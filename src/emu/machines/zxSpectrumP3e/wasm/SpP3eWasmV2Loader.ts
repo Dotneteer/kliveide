@@ -196,6 +196,7 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & {
   spp3eGetCpuWz: SpP3eWasmV2ExportFunction;
   spp3eSetCpuWz: SpP3eWasmV2ExportFunction;
   spp3eGetCpuPc: SpP3eWasmV2ExportFunction;
+  spp3eGetStepOutAddress: SpP3eWasmV2ExportFunction;
   spp3eSetCpuPc: SpP3eWasmV2ExportFunction;
   spp3eGetCpuSp: SpP3eWasmV2ExportFunction;
   spp3eSetCpuSp: SpP3eWasmV2ExportFunction;
@@ -207,6 +208,8 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & {
   spp3eSetCpuIff2: SpP3eWasmV2ExportFunction;
   spp3eGetCpuInterruptMode: SpP3eWasmV2ExportFunction;
   spp3eSetCpuInterruptMode: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuRetExecuted: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuRetnExecuted: SpP3eWasmV2ExportFunction;
   spp3eGetLastMemoryAddress: SpP3eWasmV2ExportFunction;
   spp3eGetLastMemoryValue: SpP3eWasmV2ExportFunction;
   spp3eGetLastMemoryIsWrite: SpP3eWasmV2ExportFunction;
@@ -451,6 +454,7 @@ const requiredV2Exports = [
   "spp3eGetCpuWz",
   "spp3eSetCpuWz",
   "spp3eGetCpuPc",
+  "spp3eGetStepOutAddress",
   "spp3eSetCpuPc",
   "spp3eGetCpuSp",
   "spp3eSetCpuSp",
@@ -462,6 +466,8 @@ const requiredV2Exports = [
   "spp3eSetCpuIff2",
   "spp3eGetCpuInterruptMode",
   "spp3eSetCpuInterruptMode",
+  "spp3eGetCpuRetExecuted",
+  "spp3eGetCpuRetnExecuted",
   "spp3eGetLastMemoryAddress",
   "spp3eGetLastMemoryValue",
   "spp3eGetLastMemoryIsWrite",

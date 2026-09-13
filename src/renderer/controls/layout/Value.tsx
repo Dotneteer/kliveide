@@ -1,7 +1,6 @@
 import classnames from "classnames";
 import type { ReactNode } from "react";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
-import { cssWidth } from "./cssWidth";
 import { DataValue } from "@renderer/controls/data";
 import styles from "./Layout.module.scss";
 
@@ -13,8 +12,13 @@ type Props = {
    * so pass both: the tooltip and anything reading the row keep working.
    */
   children?: ReactNode;
-  /** Explicit value cell width. A number is `ch` (M2); a string is a CSS length. */
-  width?: string | number;
+  /**
+   * Explicit value cell width, as a CSS length **with its unit** — `"7ch"` for a column, `"32px"`
+   * for chrome. The bare-number form was removed in Phase 15: it meant px here and `ch` in
+   * `controls/data`, and all three of these cells documented it as `ch`, which is how
+   * `NecUpd765Panel` acquired a 16px column from an author who read the prop.
+   */
+  width?: string;
   /** Optional tooltip shown for the value cell. */
   tooltip?: string;
   /**
@@ -39,7 +43,7 @@ export const Value = ({ text, children, width, tooltip, className }: Props) => {
         ref={ref}
         text={text}
         children={children}
-        width={cssWidth(width)}
+        width={width}
         xclass={classnames(styles.legacyValueSpacing, className)}
       />
       {tooltip && (

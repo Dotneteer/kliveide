@@ -293,7 +293,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
         return 0;
       }
 
-      // --- Block lenghts should be 19 and 6914
+      // --- Block lengths should be 19 and 6914
       var header = dataBlocks[0].data;
       if (header.length !== 19 || dataBlocks[1].data.length != 6914) {
         // --- Problem with block length

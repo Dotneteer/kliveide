@@ -403,6 +403,116 @@ describe("EmulatorPanel", () => {
   });
 });
 
+/*
+ * Regression guard for the Z88 slot strip.
+ *
+ * The machine-specific tool strip used to be rendered *inside* the `.display` box, which is sized
+ * to exactly the canvas — so it was laid out past the bottom edge and only showed because nothing
+ * clipped it. The moment `.display` gained the bezel's `overflow: hidden`, the whole ROM/RAM/card
+ * UI vanished. The strip must be a sibling of the screen box, not a child of it.
+ */
+describe("EmulatorPanel machine tool area", () => {
+  it("renders machine tools outside the screen box so a clipped display cannot hide them", async () => {
+    const controller = createController();
+    controller.machine = {
+      baseClockFrequency: 3_500_000,
+      frameTactMultiplier: 1,
+      getDefaultKeyMapping: () => ({}),
+      getKeyCodeSet: () => ({}),
+      machineId: "test-machine",
+      screenHeightInPixels: 192,
+      screenWidthInPixels: 256,
+      setMachineProperty: vi.fn(),
+      tactsInFrame: 1000,
+      uiFrameFrequency: 2
+    };
+
+    const captured = {
+      controllerChanged: undefined as (controller: unknown) => Promise<void>
+    };
+    const store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(() => ({ emulatorState: { audioSampleRate: 44_100 }, globalSettings: {} }))
+    };
+
+    vi.doMock("@renderer/core/useMachineController", () => ({
+      useMachineController: (controllerChanged: typeof captured.controllerChanged) => {
+        captured.controllerChanged = controllerChanged;
+        return controller;
+      }
+    }));
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      getGlobalSetting: () => false,
+      useGlobalSetting: () => false,
+      useSelector: (selector: (state: unknown) => unknown) => selector(store.getState()),
+      useStore: () => store
+    }));
+    vi.doMock("@renderer/core/MainApi", () => ({
+      useMainApi: () => ({ saveBinaryFile: vi.fn(), saveDiskChanges: vi.fn() })
+    }));
+    vi.doMock("@renderer/appEmu/recording/RecordingContext", () => ({
+      useRecordingManager: () => ({ current: undefined })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorScreen", () => ({
+      useEmulatorScreen: () => ({
+        canvasHeight: 192,
+        canvasWidth: 256,
+        displayScreenData: vi.fn(),
+        imageBuffer8: { current: new Uint8Array([1]) },
+        screenElement: { current: null } as MutableRefObject<HTMLCanvasElement>,
+        updateScreenDimensions: vi.fn(),
+        xRatio: { current: 1 },
+        yRatio: { current: 1 }
+      })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorAudio", () => ({
+      useEmulatorAudio: () => ({
+        beeperRenderer: { current: undefined },
+        initAudio: vi.fn(() => Promise.resolve())
+      })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorKeyboard", () => ({
+      useEmulatorKeyboard: () => ({ setKeyData: vi.fn() })
+    }));
+    vi.doMock("@renderer/features/emulator/EmulatorOverlay", () => ({
+      EmulatorOverlay: () => null
+    }));
+    vi.doMock("@renderer/appEmu/tool-registry", () => ({
+      machineEmuToolRegistry: [
+        {
+          machineId: "test-machine",
+          toolFactory: () => <div data-testid="machine-tools">Slot 0</div>
+        }
+      ]
+    }));
+
+    const { EmulatorPanel } = await import("@renderer/features/emulator/EmulatorPanel");
+
+    const { container } = render(<EmulatorPanel />);
+    await act(async () => {
+      await captured.controllerChanged(controller);
+    });
+
+    const tools = await screen.findByTestId("machine-tools");
+
+    // --- The screen box is whatever holds the canvas, whatever it happens to be called
+    const canvas = container.querySelector("canvas");
+    expect(canvas).not.toBeNull();
+    const displayBox = canvas.parentElement;
+
+    // --- The strip must not live inside the box that carries `overflow: hidden`
+    expect(displayBox.contains(tools)).toBe(false);
+
+    // --- It shares the screen's stack, which is what keeps it adjacent and left-aligned
+    expect(tools.parentElement.parentElement).toBe(displayBox.parentElement);
+
+    // --- ...and it follows the screen rather than preceding it
+    const stack = displayBox.parentElement;
+    expect(stack.firstElementChild).toBe(displayBox);
+    expect(stack.lastElementChild.contains(tools)).toBe(true);
+  });
+});
+
 function createController() {
   return {
     dispose: vi.fn(),

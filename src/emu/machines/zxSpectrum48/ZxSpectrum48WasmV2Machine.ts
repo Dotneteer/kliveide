@@ -5,6 +5,7 @@ import type { Sp48WasmV2LoaderOptions, Sp48WasmV2Runtime } from "./wasm/Sp48Wasm
 import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
+import { shouldStopAtDebugPoint } from "../DebugStepDecision";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { AUDIO_SAMPLE_RATE, FAST_LOAD, REWIND_REQUESTED, SAVED_TO_TAPE, TAPE_MODE } from "../machine-props";
@@ -540,8 +541,6 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     // --- only ever read by the memory/IO breakpoint test, so decide once whether it is needed.
     const watchesBusAccess = debugSupport?.hasAccessBreakpoints() ?? false;
 
-    // --- Likewise, `retExecuted` is only read by the step-out test.
-    const tracksRetExecuted = this.executionContext.debugStepMode === DebugStepMode.StepOut;
     if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
       if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
         return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
@@ -558,10 +557,6 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
       // --- Assigning through `super` on purpose: this class mirrors `pc` with a setter that pushes
       // --- every write back into the core, and this value was just read out of that same core.
       super.pc = wasm.sp48GetCpuPc();
-      if (tracksRetExecuted) {
-        this.retExecuted =
-          wasm.sp48GetCpuRetExecuted() !== 0 || wasm.sp48GetCpuRetnExecuted() !== 0;
-      }
       if (watchesBusAccess) {
         this.importWasmV2BusAccess(runtime);
       }
@@ -605,51 +600,42 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     return termination;
   }
 
+  /**
+   * Records where a step-out should land, reading the core's shadow stack.
+   *
+   * The inherited implementation walks a stack that `Z80Cpu` pushes on every CALL and RST — code
+   * that never runs here, because the CPU executes inside the WASM core. It therefore always
+   * produced -1, so `stepOutAddress === pc` could never be true and step-out had nothing to stop
+   * on. The core keeps the equivalent stack now; this reads the top of it.
+   *
+   * `0xffffffff` is the core's "nothing has been called" sentinel, mapped back to the -1 the rest
+   * of the debugger expects.
+   */
+  override markStepOutAddress(): void {
+    const address = this.requireWasmV2Runtime().exports.sp48GetStepOutAddress();
+    this.stepOutAddress = address === 0xffffffff ? -1 : address;
+  }
+
   private shouldStopAtWasmV2Breakpoint(instructionsExecuted: number): boolean {
     const debugSupport = this.executionContext.debugSupport;
     if (!debugSupport) return false;
 
-    const stopAt = debugSupport.shouldStopAt(this.pc, () => this.getPartition(this.pc));
-    if (
-      stopAt &&
-      (instructionsExecuted > 0 ||
-        debugSupport.lastBreakpoint === undefined ||
-        debugSupport.lastBreakpoint !== this.pc)
-    ) {
-      debugSupport.lastBreakpoint = this.pc;
-      debugSupport.imminentBreakpoint = undefined;
-      return true;
-    }
-
-    if (this.executionContext.debugStepMode === DebugStepMode.StopAtBreakpoint) {
-      return false;
-    }
-
-    if (this.executionContext.debugStepMode === DebugStepMode.StepOver) {
-      if (debugSupport.imminentBreakpoint !== undefined) {
-        if (debugSupport.imminentBreakpoint === this.pc) {
-          debugSupport.imminentBreakpoint = undefined;
-          return true;
-        }
-        return false;
-      }
-      const length = this.getCallInstructionLength();
-      if (length > 0) {
-        debugSupport.imminentBreakpoint = (this.pc + length) & 0xffff;
-        return false;
-      }
-      return instructionsExecuted > 0;
-    }
-
-    if (this.executionContext.debugStepMode === DebugStepMode.StepOut) {
-      if (this.stepOutAddress === this.pc || this.retExecuted) {
-        debugSupport.imminentBreakpoint = undefined;
-        return true;
-      }
-      return false;
-    }
-
-    return false;
+    return shouldStopAtDebugPoint({
+      debugSupport,
+      debugStepMode: this.executionContext.debugStepMode,
+      pc: this.pc,
+      instructionsExecuted,
+      getPartition: (address) => this.getPartition(address),
+      getCallInstructionLength: () => this.getCallInstructionLength(),
+      stepOutAddress: this.stepOutAddress,
+      /*
+       * `false` now that the core keeps a step-out stack: `stepOutAddress` above is the exact
+       * address this routine returns to, which is what `DebugStepMode.StepOut` means. The flag
+       * fires on the first RET at *any* depth, including one returning from a nested call, so
+       * leaving it on would stop short of the caller. Same reasoning as the interpreted path.
+       */
+      retExecuted: false
+    });
   }
 
   private hasWasmV2AccessBreakpoint(): boolean {

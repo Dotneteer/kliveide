@@ -3,6 +3,6 @@
 .sideBar {
     @include fill-parent-flex;
     flex-direction: column;
-    background: var(--bgcolor-sitebar);
+    background: var(--bgcolor-sidebar);
     user-select: none;
 }

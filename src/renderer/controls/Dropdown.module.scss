@@ -20,6 +20,16 @@
   font-size: var(--font-size-200);
   transition: border-color var(--duration-fast) var(--ease-standard);
   outline: none;
+  /*
+   * A control, not prose.
+   *
+   * Radix renders the trigger as a `<button>`, so the UA's `cursor: default` kept it off the
+   * I-beam — but every other interactive control here (`Button`, `Checkbox`, `RadioGroup`,
+   * `TabButton`, the context-menu items) points, and a dropdown that does not reads as inert.
+   * `user-select: none` goes with it so the current value cannot be dragged out as text.
+   */
+  cursor: pointer;
+  user-select: none;
 
   &:focus-visible {
     outline: 2px solid var(--focus-ring);
@@ -35,6 +45,19 @@
   }
 }
 
+/*
+ * A dropdown that cannot be opened.
+ *
+ * Radix stamps `data-disabled` on the trigger when `Select.Root` is disabled, and — unlike the
+ * `pointer-events: none` + opacity wrapper this replaces — it also takes the trigger out of the tab
+ * order. The opacity is the same 0.4 that workaround used, so nothing looks different where it was
+ * already in use; what changes is that the keyboard now agrees with the appearance.
+ */
+.SelectTrigger[data-disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .SelectContent {
   background-color: var(--bg-color-dropdown-menu);
   color: var(--color-dropdown-menu);
@@ -48,7 +71,14 @@
   z-index: calc(var(--z-modal) + 1);
 }
 
-/* M1: `0.8em` of a 16px root was 12.8px — a size that is not on the scale at all. */
+/*
+ * M1: `0.8em` of a 16px root was 12.8px — a size that is not on the scale at all.
+ *
+ * Radix renders each option as a `<div>`, which the UA leaves at `cursor: auto` — and `auto` over
+ * text means the I-beam. So every option in every dropdown in the app invited you to select its
+ * label rather than click it. These are menu items and now say so, matching `ContextMenu`'s items,
+ * which carry exactly this pair.
+ */
 .SelectItem {
   display: flex;
   align-items: center;
@@ -59,13 +89,23 @@
   border-radius: var(--radius-xs);
   font-size: var(--font-size-200);
   outline: none;
+  cursor: pointer;
+  user-select: none;
+
+  /*
+   * Order matters here, and it was the wrong way round.
+   *
+   * These two selectors have equal specificity, so the later one wins — which meant `checked` beat
+   * `highlighted`, and pointing at the option that is *already selected* produced no change at all.
+   * The one row you are most likely to hover first was the one row that never lit up. Highlighted
+   * goes last: the cursor always gets feedback, and the selected wash returns when you move off.
+   */
+  &[data-state="checked"] {
+    background-color: var(--bg-color-dropdown-menu-selected);
+  }
 
   &[data-highlighted] {
     background-color: var(--bg-color-dropdown-menu-pointed);
-  }
-
-  &[data-state="checked"] {
-    background-color: var(--bg-color-dropdown-menu-selected);
   }
 }
 

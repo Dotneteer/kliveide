@@ -45,7 +45,7 @@ export const MemoryDumpViewer = ({
     <Column xclass={styles.headerRow}>
       <HeaderRow xclass={styles.headerRow}>
         <SmallIconButton
-          iconName='pop-out'
+          iconName='square-arrow-out-up-right'
           fill='--color-value'
           title={iconTitle}
           clicked={async () => {

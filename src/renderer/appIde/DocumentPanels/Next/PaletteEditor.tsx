@@ -28,6 +28,21 @@ type Props = {
 
 const levels9 = [0, 1, 2, 3, 4, 5, 6, 7];
 
+/**
+ * Ink for text drawn *on* a palette swatch.
+ *
+ * There is no theme answer to "a label over arbitrary user colour" — the same principle §13.2
+ * settled for `--palette-rule`, and the same one behind "device surfaces are theme-invariant". What
+ * sits on the swatch belongs to the machine's colour, not to the app's tone, so this is chosen by
+ * the swatch's own luminance and is deliberately not a token.
+ *
+ * The 3.5 threshold and the two inks are the values this editor has always used; naming them is the
+ * change. They were three bare `"white"`/`"black"` literals inline, which read as an oversight
+ * rather than as the deliberate exception they are.
+ */
+const inkForSwatch = (colorCode: number): string =>
+  getLuminanceForPaletteCode(colorCode) < 3.5 ? "white" : "black";
+
 export const PaletteEditor = ({
   palette,
   initialTransparencyIndex,
@@ -60,11 +75,7 @@ export const PaletteEditor = ({
       setSelectedB(((colorCode & 0x03) << 1) | ((colorCode & 0x100) >> 8));
       setPriority(!!(colorCode & 0x8000));
       setMidColor(
-        selectedIndex !== null
-          ? getLuminanceForPaletteCode(palette[selectedIndex]) < 3.5
-            ? "white"
-            : "black"
-          : "transparent"
+        selectedIndex !== null ? inkForSwatch(palette[selectedIndex]) : "transparent"
       );
     } else {
       setSelectedColor(null);
@@ -258,8 +269,7 @@ export const PaletteEditor = ({
                 onOtherKey={handleCommonKeys}
               >
                 <div
-                  className={styles.colorScaleLabel}
-                  style={{ color: "var(--console-ansi-bright-red)" }}
+                  className={classnames(styles.colorScaleLabel, styles.colorScaleLabelRed)}
                 >
                   Red
                 </div>
@@ -283,8 +293,7 @@ export const PaletteEditor = ({
                 onOtherKey={handleCommonKeys}
               >
                 <div
-                  className={styles.colorScaleLabel}
-                  style={{ color: "var(--console-ansi-bright-green)" }}
+                  className={classnames(styles.colorScaleLabel, styles.colorScaleLabelGreen)}
                 >
                   Green
                 </div>
@@ -308,8 +317,7 @@ export const PaletteEditor = ({
                 onOtherKey={handleCommonKeys}
               >
                 <div
-                  className={styles.colorScaleLabel}
-                  style={{ color: "var(--console-ansi-bright-blue)" }}
+                  className={classnames(styles.colorScaleLabel, styles.colorScaleLabelBlue)}
                 >
                   Blue
                 </div>
@@ -429,7 +437,7 @@ const ColorItem = ({ component, level, selected, allowSelection, onSelected }: C
         : (level >> 1) | ((level & 0x01) << 8);
 
   const color = getCssStringForPaletteCode(colorValue);
-  const midColor = getLuminanceForPaletteCode(colorValue) < 3.5 ? "white" : "black";
+  const midColor = inkForSwatch(colorValue);
   return (
     <div
       className={classnames(styles.colorItem, {

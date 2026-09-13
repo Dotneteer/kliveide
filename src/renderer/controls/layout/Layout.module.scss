@@ -220,7 +220,8 @@
       flex: 0 0 auto;
       padding-left: 0.6em;
       color: var(--data-secondary);
-      font-size: 0.9em;
+      /* --- M1: one step below the body, from the scale. */
+      font-size: var(--font-size-100);
       white-space: nowrap;
     }
 

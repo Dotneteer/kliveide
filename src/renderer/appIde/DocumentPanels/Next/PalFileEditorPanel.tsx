@@ -7,6 +7,7 @@ import { BinaryReader } from "@common/utils/BinaryReader";
 import { PaletteEditor } from "./PaletteEditor";
 import { createElement } from "react";
 import { BinaryWriter } from "@common/utils/BinaryWriter";
+import { NPL_EDITOR } from "@state/common-ids";
 
 type PalFileViewState = {
   scrollPosition?: number;
@@ -25,7 +26,16 @@ const PalFileEditorPanel = ({
       <PaletteEditor
         palette={context.fileInfo?.palette}
         initialTransparencyIndex={context.fileInfo?.transparencyIndex}
-        allowTransparencySelection={document.id.endsWith(".npl")}
+        /*
+         * `.npl` files carry a transparency index; `.pal` files do not.
+         *
+         * This asked `document.id.endsWith(".npl")` — a string-sniff on the document *id*, which is
+         * a path and need not end in the extension at all. The registry already draws this
+         * distinction: `PAL_EDITOR` and `NPL_EDITOR` are two entries pointing at one factory
+         * (`registry.ts`), and the id it chose arrives here as `document.type`. Ask the field that
+         * was set on purpose.
+         */
+        allowTransparencySelection={document.type === NPL_EDITOR}
         initialIndex={viewState?.selectedIndex}
         onChange={index =>
           context.changeViewState(vs => (vs.selectedIndex = index))

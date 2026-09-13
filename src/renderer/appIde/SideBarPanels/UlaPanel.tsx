@@ -25,8 +25,16 @@ export const UlaPanel = () => {
   useEmuStateListener(emuApi, async () => setUlaState(await emuApi.getUlaState()));
 
   const keyClicked = async (lineNo: number, bitNo: number) => {
-    const keyState = !!(ulaState?.keyLines?.[lineNo] & (1 << bitNo));
-    const newUlaState = { ...ulaState, keyLines: [...ulaState?.keyLines] };
+    /*
+     * Every read here is optional-chained because the first state has not arrived yet on the first
+     * paint — and the spread below was not, so a click before then threw
+     * `TypeError: undefined is not iterable` rather than doing nothing. Bail instead: there is no
+     * key state to toggle until the emulator has told us what it is.
+     */
+    if (!ulaState?.keyLines) return;
+
+    const keyState = !!(ulaState.keyLines[lineNo] & (1 << bitNo));
+    const newUlaState = { ...ulaState, keyLines: [...ulaState.keyLines] };
     newUlaState.keyLines[lineNo] = keyState
       ? newUlaState.keyLines[lineNo] & ~(1 << bitNo)
       : newUlaState.keyLines[lineNo] | (1 << bitNo);

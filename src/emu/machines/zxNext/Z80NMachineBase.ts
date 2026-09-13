@@ -636,7 +636,17 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   }
 }
 
-const extendedInstructionLenghts: Record<number, number> = {
+/**
+ * How many bytes each ED-prefixed Z80N instruction occupies, for step-over.
+ *
+ * Step-over plants a temporary breakpoint at `PC + length`. A wrong length points it into the
+ * middle of the *next* instruction, where PC never lands — the breakpoint never fires and the
+ * machine runs on to the next real one, which looks like step-over jumping somewhere unrelated.
+ *
+ * `test/emu/z80n-step-over-lengths.test.ts` checks every entry against the disassembler, which
+ * derives lengths by consuming operand bytes rather than by hand. Exported for that test.
+ */
+export const extendedInstructionLenghts: Record<number, number> = {
   0xa4: 2,
   0xa5: 2,
   0xb4: 2,
@@ -655,7 +665,9 @@ const extendedInstructionLenghts: Record<number, number> = {
   0x24: 2,
   0x8a: 4,
   0x91: 4,
-  0x92: 4,
+  // --- `NEXTREG n,A` takes ONE operand byte where `NEXTREG n,n` takes two, so this is 3 and not 4.
+  // --- It was 4, and stepping over `$00FD` in the Next ROM ran away to the next breakpoint.
+  0x92: 3,
   0x93: 2,
   0x94: 2,
   0x95: 2,

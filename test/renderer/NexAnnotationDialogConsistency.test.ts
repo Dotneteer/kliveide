@@ -90,4 +90,74 @@ describe("NEX annotation dialogs", () => {
       .map(({ name }) => name);
     expect(offenders).toEqual([]);
   });
+
+  /*
+   * The five rules below were added in Phase 41, and each one was red across the whole family when
+   * it was written. They cover the drift the original six did not: the family was written in
+   * sequence, each dialog copying the last, so every defect here appeared seven times.
+   */
+
+  it("size their type from the scale, never in `em`", () => {
+    // --- M1. This folder held 19 of the 54 `em` font sizes that existed when the mandate finally
+    // --- got a test — better than a third of them, in code written years after the rule.
+    const offenders = dialogFiles(".module.scss")
+      .filter(({ text }) => /font-size\s*:\s*[^;{}]*?[\d.]+em\b/.test(text))
+      .map(({ name }) => name);
+    expect(offenders).toEqual([]);
+  });
+
+  it("use the app's text input and radio group rather than bare form controls", () => {
+    /*
+     * `<textarea>` is deliberately not covered.
+     *
+     * There is no shared multi-line control — `TextInput` is single-line, and pressing one into
+     * service for `NexSynopsisCommentDialog`'s comment body would be a functional regression to
+     * satisfy a lint. The one textarea in this folder still gets its border, its type size and its
+     * focus treatment from the rules above, which is what the reader actually sees. Building a
+     * shared `TextArea` is the real fix and is recorded in the batch-2 plan rather than smuggled in
+     * here.
+     */
+    const offenders = dialogFiles(".tsx")
+      .filter(({ text }) => /<input[\s>]/.test(text))
+      .map(({ name }) => name);
+    expect(offenders).toEqual([]);
+  });
+
+  it("give their fields a border", () => {
+    /*
+     * `border: none` over `--bgcolor-input` is the exact case `--border-input` was introduced for:
+     * `--bgcolor-input` is `--surface-raised`, which is `#ffffff` in the light tone, so a
+     * borderless field on a white dialog body is not a field at all — it is invisible.
+     */
+    const offenders = dialogFiles(".module.scss")
+      .filter(({ text }) => /border\s*:\s*none/.test(text))
+      .map(({ name }) => name);
+    expect(offenders).toEqual([]);
+  });
+
+  it("distinguish the committing button from the ones beside it", () => {
+    /*
+     * `Button`'s default is the filled accent. These seven are the only dialogs in the app that
+     * draw their own footer (via `DialogFooter`) instead of the shell's, so they are the only ones
+     * that lost the primary/secondary distinction `DialogForm` and `Modal` apply for free — every
+     * footer here was two or more identical filled primaries, saying nothing about which one
+     * commits. See the doc comment on `Button`'s `variant`.
+     */
+    const offenders = dialogFiles(".tsx")
+      .filter(({ text }) => text.includes("<Button") && !text.includes('variant="secondary"'))
+      .map(({ name }) => name);
+    expect(offenders).toEqual([]);
+  });
+
+  it("announce their validation errors", () => {
+    /*
+     * An error rendered into a plain `<div>` is never spoken: a screen-reader user submits, nothing
+     * is announced, and the dialog appears to have ignored them. `BreakpointDialog` and
+     * `DialogField` both get this right.
+     */
+    const offenders = dialogFiles(".tsx")
+      .filter(({ text }) => /styles\.error/.test(text) && !/role=["']alert["']/.test(text))
+      .map(({ name }) => name);
+    expect(offenders).toEqual([]);
+  });
 });

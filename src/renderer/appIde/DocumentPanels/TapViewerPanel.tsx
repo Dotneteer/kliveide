@@ -1,14 +1,15 @@
 import { Label } from "@renderer/controls/layout/Label";
+import { EmptyState } from "@renderer/controls/data";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Secondary } from "@renderer/controls/layout/Secondary";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import styles from "./TapViewerPanel.module.scss";
+import { ValueLabel } from "./helpers/ValueLabel";
 import { readTapeFile } from "@renderer/utils/tape-utils";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
-import classnames from "classnames";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { TzxBlockBase } from "@emu/machines/tape/TzxBlockBase";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { StaticMemoryView } from "./StaticMemoryView";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
 import { TzxTextDescriptionBlock } from "@emu/machines/tape/TzxTextDescriptionBlock";
@@ -29,17 +30,31 @@ const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const hubVersion = useDocumentHubServiceVersion();
   const [docState, setDocState] = useState({});
   const contents = data as Uint8Array;
-  const fileInfo = readTapeFile(contents);
+  /*
+   * Parsed once per file, not once per render.
+   *
+   * `readTapeFile(contents)` sat in the render body, so the whole tape was re-parsed on every
+   * render — including every `DataSection` expand and collapse, each of which dispatches a hub
+   * state change that renders this component again. A `.tzx` with a few hundred blocks paid for
+   * that on every click.
+   */
+  const fileInfo = useMemo(() => readTapeFile(contents), [contents]);
 
   useEffect(() => {
     setDocState(documentHubService.getDocumentViewState(document.id));
   }, [hubVersion]);
 
   if (!fileInfo.data) {
+    /*
+     * `readTapeFile` knows why it failed; this used to throw that away and show a bare red bar
+     * reading "Invalid tape file format", which tells the user nothing they could act on.
+     */
     return (
-      <div className={styles.tapViewerPanel}>
-        <div className={classnames(styles.header, styles.error)}>Invalid tape file format</div>
-      </div>
+      <EmptyState
+        tone="error"
+        motif={false}
+        message={fileInfo.error ?? "This file could not be read as a .tap or .tzx tape."}
+      />
     );
   }
   return (
@@ -167,13 +182,6 @@ const TzxSection = ({ block }: TzxSectionProps) => {
   return <div className={styles.dataSection}>{section}</div>;
 };
 
-type LabelProps = {
-  text: string;
-};
-
-const ValueLabel = ({ text }: LabelProps) => {
-  return <div className={styles.valueLabel}>{text}</div>;
-};
 
 type BlockProps = {
   data: Uint8Array;
@@ -331,11 +339,25 @@ type TzxNotImplementedBlockProps = {
   block: TzxBlockBase;
 };
 
-const TzxNotImplementedBlockUi = ({}: TzxNotImplementedBlockProps) => {
+/*
+ * A TZX block this viewer cannot draw yet.
+ *
+ * The `block` prop was declared and destructured away, so every unsupported block said the same
+ * anonymous thing and the reader could not tell *which* of the seventeen unhandled block ids they
+ * had hit. Naming the id costs one line and turns the message into something reportable.
+ */
+const TzxNotImplementedBlockUi = ({ block }: TzxNotImplementedBlockProps) => {
+  const blockId = (block as { blockId?: number })?.blockId;
   return (
     <div className={styles.dataSection}>
       <div className={styles.blockHeader}>
-        <Secondary text="(block display not implemented yet)" />
+        <Secondary
+          text={
+            blockId === undefined
+              ? "(block display not implemented yet)"
+              : `(display of block $${blockId.toString(16).toUpperCase().padStart(2, "0")} not implemented yet)`
+          }
+        />
       </div>
     </div>
   );

@@ -74,6 +74,7 @@
 /images/working-with-ide/bp-types.png
 /images/working-with-ide/bp-view.png
 /images/working-with-ide/cpu-view.png
+/images/working-with-ide/disass-branch-verdicts.png
 /images/working-with-ide/disass-view.png
 /images/working-with-ide/disassembly-breakpoint-message.png
 /images/working-with-ide/edit-memory.png

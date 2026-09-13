@@ -33,6 +33,26 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--surface-raised": n.raised,
     "--surface-overlay": n.overlay,
     "--surface-hover": n.hover,
+    /**
+     * The pointed row inside a portalled menu.
+     *
+     * `--surface-hover` is tuned to sit on `--surface-panel`, and on that ground it is a proper
+     * step: #17191c → #24272e is ΔL* +6.94. But a menu sits on `--surface-overlay`, which in dark
+     * is #22262d — already *above* hover. Pointing at a dropdown option therefore moved the row by
+     * **ΔL* +0.57**, which is no highlight at all; the Z88 card-type list was the report, the
+     * context menu had it too. Light got away with it only because `overlay` is #ffffff there, so
+     * the same token happens to land a real −7.35 below it.
+     *
+     * The dark value is chosen so the step *over overlay* matches the ramp's own panel→hover step
+     * (ΔL* +6.99 vs +6.94) — a menu row now highlights as firmly as any other row in the app. It
+     * cannot come from the neutral ramp: the next stop up, `active`/`selected` #2a2e36, is only
+     * +3.82, a little over half a normal hover. This is the same shape as `--surface-stage` and
+     * `--surface-header` above — a relationship the derived ramp cannot express, so it gets its own
+     * name rather than a token bent to cover two grounds at once.
+     *
+     * Light keeps `hover`, which is already correct against white.
+     */
+    "--surface-overlay-hover": tone === "dark" ? "#30353e" : n.hover,
     "--surface-active": n.active,
     "--surface-selected": n.selected,
     /**

@@ -12,7 +12,13 @@
   width: 100%;
   user-select: none;
   font-family: var(--main-font-family);
-  font-size: 0.9em;
+  /*
+   * M1: absolute, not `em`. This was `0.9em`, which resolves against whatever the panel host
+   * happens to set — 14.4px off the 16px root — rather than against the type scale. The explorer
+   * tree beside it is on `--font-size-200`, and these two panels share the file activity, so they
+   * are the one pair in the app where a size mismatch is visible in a single glance.
+   */
+  font-size: var(--font-size-200);
   font-weight: 500;
 
   .item {
@@ -21,9 +27,15 @@
     flex-shrink: 0;
     align-items: center;
     gap: 8px;
-    // Matches the explorer row height, so the two panels of the file activity line up.
-    height: 26px;
-    padding: 0 8px;
+    /*
+     * M3: the shared row height, not a private literal.
+     *
+     * It was a hardcoded 26px "to match the explorer row height" — true at the default font size
+     * and wrong at every other rung of View | Panel Options | Font Size, which the explorer follows
+     * and this panel did not. `--row-size-list` is what both now read.
+     */
+    height: var(--row-size-list);
+    padding: 0 var(--space-2);
     box-sizing: border-box;
     color: var(--color-explorer);
     overflow: hidden;
@@ -97,7 +109,8 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     opacity: 0.6;
-    font-size: 0.9em;
+    /* --- M1: the step below the row's own size, rather than 0.9 of it. */
+    font-size: var(--font-size-100);
   }
 
   .marker {
@@ -108,14 +121,14 @@
     flex-shrink: 0;
     margin-left: auto;
     // Reserved whether or not the dot is there, so names do not shift as a file is saved.
-    width: 12px;
+    width: var(--space-3);
   }
 }
 
 .empty {
   color: var(--color-explorer);
   opacity: 0.6;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-family: var(--main-font-family);
-  font-size: 0.9em;
+  font-size: var(--font-size-200);
 }

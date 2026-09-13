@@ -1,5 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "@renderer/controls/Button";
+import { TextInput } from "@renderer/controls/TextInput";
+import { RadioGroup } from "@renderer/controls/RadioGroup";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
@@ -93,39 +95,26 @@ export function NexRegionDialog({
   return (
     <form onSubmit={submit}>
       <DialogRow label="Type" rows={true}>
-        <div className={styles.typeOptions}>
-          {REGION_TYPES.map((regionType) => (
-            <label className={styles.typeOption} key={regionType.value}>
-              <input
-                type="radio"
-                name="nex-region-type"
-                checked={type === regionType.value}
-                onChange={() => setType(regionType.value)}
-              />
-              {regionType.label}
-            </label>
-          ))}
-        </div>
+        <RadioGroup
+          ariaLabel="Region type"
+          columns={REGION_TYPES.length}
+          value={type}
+          options={REGION_TYPES.map((regionType) => ({
+            value: regionType.value,
+            label: regionType.label
+          }))}
+          onChange={(next) => setType(next as NexAnnotationRegion["type"])}
+        />
       </DialogRow>
       <DialogRow label="Start offset" rows={true}>
-        <input
-          autoFocus
-          className={styles.input}
-          spellCheck={false}
-          value={startText}
-          onChange={(event) => setStartText(event.target.value)}
-        />
+        <TextInput autoFocus value={startText} onChange={setStartText} />
       </DialogRow>
       <DialogRow label="End offset" rows={true}>
         <div className={styles.rangeInputRow}>
-          <input
-            className={styles.input}
-            spellCheck={false}
-            value={endText}
-            onChange={(event) => setEndText(event.target.value)}
-          />
+          <TextInput value={endText} onChange={setEndText} />
           <Button
             text="Entire bank"
+            variant="secondary"
             clicked={() => {
               setStartText(formatRegionOffset(0));
               setEndText(formatRegionOffset(NEX_BANK_LAST_OFFSET));
@@ -138,7 +127,14 @@ export function NexRegionDialog({
           {length !== undefined ? `${formatRegionOffset(length)} (${length})` : ""}
         </div>
       </DialogRow>
-      {error && <div className={styles.error}>{error}</div>}
+      {/* --- `role="alert"`: a validation message rendered into a plain div is never
+          --- announced, so a screen-reader user submits and the dialog appears to have
+          --- ignored them. `BreakpointDialog` and `DialogField` both do this. */}
+      {error && (
+        <div className={styles.error} role="alert">
+          {error}
+        </div>
+      )}
       <DialogRow label="Affected regions" rows={true}>
         <div className={styles.regionList}>
           {affectedRegions.map((region) => (
@@ -162,7 +158,7 @@ export function NexRegionDialog({
       </DialogRow>
       <DialogFooter>
         <Button text="Save" type="submit" disabled={!!error} />
-        <Button text="Cancel" clicked={controls.cancel} />
+        <Button variant="secondary" text="Cancel" clicked={controls.cancel} />
       </DialogFooter>
     </form>
   );

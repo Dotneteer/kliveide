@@ -1,5 +1,4 @@
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
-import { cssWidth } from "./cssWidth";
 import { DataLabel } from "@renderer/controls/data";
 import classnames from "classnames";
 import styles from "./Layout.module.scss";
@@ -7,8 +6,13 @@ import styles from "./Layout.module.scss";
 type Props = {
   /** Label text rendered in the aligned cell. */
   text: string;
-  /** Explicit label cell width. A number is `ch` (M2); a string is a CSS length. */
-  width?: string | number;
+  /**
+   * Explicit label cell width, as a CSS length **with its unit** — `"7ch"` for a column, `"32px"`
+   * for chrome. The bare-number form was removed in Phase 15: it meant px here and `ch` in
+   * `controls/data`, and all three of these cells documented it as `ch`, which is how
+   * `NecUpd765Panel` acquired a 16px column from an author who read the prop.
+   */
+  width?: string;
   /** Centers label text within the cell when true. */
   center?: boolean;
   /** Optional tooltip shown for the label cell. */
@@ -37,7 +41,7 @@ export const Label = ({ text, width, center, tooltip, className }: Props) => {
       <DataLabel
         ref={ref}
         text={text}
-        width={cssWidth(width)}
+        width={width}
         xclass={classnames(styles.legacySpacing, { [styles.centered]: center }, className)}
       />
       {tooltip && (

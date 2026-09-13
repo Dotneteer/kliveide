@@ -1,5 +1,4 @@
 import styles from "./NewItemDialog.module.scss";
-import { Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogForm } from "@renderer/controls/DialogForm";

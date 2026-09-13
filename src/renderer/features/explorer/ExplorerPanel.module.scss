@@ -6,11 +6,16 @@
   flex-direction: column;
   user-select: none;
   font-family: var(--main-font-family);
-  // --- Full panel size, not 0.9 of it. The row is 26px and the glyphs on it are now 16px; at 0.9em
-  // --- the label rendered at 10.8px against 20px icons, which put the chrome of a row ahead of the
-  // --- filename the row exists to show. `1em` keeps the label scaling with View | Panel Options |
-  // --- Font Size, which a hard px value would have broken.
-  font-size: 1em;
+  /*
+   * Full panel size, not 0.9 of it: at `0.9em` the label rendered at 10.8px against 20px icons,
+   * putting the chrome of a row ahead of the filename the row exists to show.
+   *
+   * M1: this was written as `1em` to keep the label following View | Panel Options | Font Size,
+   * which a hard px value would indeed have broken — but `1em` only achieves that by inheriting
+   * from whatever the host happens to set, and it is the panel size that was actually meant.
+   * Naming it says so, and cannot be broken by a wrapper that sets a size of its own.
+   */
+  font-size: var(--panel-font-size);
   font-weight: 400;
   outline: none;
 
@@ -23,10 +28,16 @@
     overflow: hidden;
     outline: none;
     width: 100%;
-    // Sized to fit NODE_GLYPH_SIZE (16px) in ExplorerProjectItem.tsx with a little air; raise both
-    // together if the node icons grow again. Deliberately unchanged from the 20px era: the room
-    // freed by the smaller glyphs is spent on the label and the meta column, not on density.
-    height: 26px;
+    /*
+     * M3: the shared row height, not a private literal.
+     *
+     * It fits NODE_GLYPH_SIZE (16px) in ExplorerProjectItem.tsx with a little air, and is
+     * deliberately unchanged from the 20px-glyph era: the room freed by the smaller glyphs is spent
+     * on the label and the meta column, not on density. What changes here is only where the number
+     * comes from — `--row-size-list` is the same 26px at the default font and, unlike the literal,
+     * follows the user's font-size setting as the Open Editors panel above it does.
+     */
+    height: var(--row-size-list);
     align-items: center;
     // --- Anchors the absolutely positioned indent guides drawn by ExplorerProjectItem.
     position: relative;
@@ -141,7 +152,8 @@
   // --- that is a column of redundant digits down the panel edge, far from the names they belong
   // --- to. Against a closed folder it is the one thing the row cannot otherwise say.
   .childCount {
-    font-size: 0.8em;
+    /* --- M1: the step below the row's own size, rather than 0.8 of whatever it inherits. */
+    font-size: var(--font-size-100);
     font-variant-numeric: tabular-nums;
     opacity: 0.7;
     flex-shrink: 0;
@@ -160,15 +172,24 @@
   }
 }
 
-.actionButton {
-  fill: var(--color-explorer) !important;
+/*
+ * The header's action buttons.
+ *
+ * These carried `!important` on all three fills to beat `Icon`'s own `fill`. `!important` in a CSS
+ * Module is a specificity fight with a component nobody can see from here, and it wins over any
+ * future rule too — including a themed one. Doubling the class is the deterministic way to outrank
+ * a single-class selector from another file, which is the convention the rest of this codebase
+ * already uses (`.memMapRow.memMapRow`, `.sysVarRow.sysVarRow`).
+ */
+.actionButton.actionButton {
+  fill: var(--color-explorer);
 
   &:hover {
-    fill: var(--fill-explorer-icon) !important;
+    fill: var(--fill-explorer-icon);
   }
 
   &:active {
-    fill: var(--color-explorer-selected) !important;
+    fill: var(--color-explorer-selected);
   }
 }
 
@@ -177,11 +198,14 @@
   padding: 16px;
 }
 
-.editor {
-  outline: none;
-  border: none;
-  color: white;
-  background: transparent;
-  font-family: var(--main-font-family);
-  font-size: 1em;
+
+/*
+ * An open project with nothing visible in it.
+ *
+ * Distinct from `.noFolder`, which is the "no project at all" state and offers actions. This one is
+ * a statement, so it only needs somewhere for `EmptyState` to centre itself.
+ */
+.noVisibleItems {
+  @include fill-parent-flex;
+  flex-direction: column;
 }

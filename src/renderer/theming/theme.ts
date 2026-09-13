@@ -147,8 +147,8 @@ export type ThemeProperties = {
   "--bgcolor-errorLabel"?: string;
   "--color-statusbar-icon"?: string;
 
-  // --- Sitebar
-  "--bgcolor-sitebar"?: string;
+  // --- Sidebar
+  "--bgcolor-sidebar"?: string;
   "--color-header"?: string;
   "--color-chevron"?: string;
   "--color-chevron-selected"?: string;

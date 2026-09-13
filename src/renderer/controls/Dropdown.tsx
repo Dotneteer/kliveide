@@ -30,6 +30,21 @@ type Props = {
   initialValue?: string;
   width?: string | number;
   maxHeight?: string | number;
+  /**
+   * Whether the control can be opened. `true` by default.
+   *
+   * Added because two call sites were working around its absence, and one of them was working
+   * around it *wrongly*: `StartModeSelector` wrapped the dropdown in
+   * `style={{ pointerEvents: "none", opacity: .4 }}`, which greys the trigger and blocks the mouse
+   * but does nothing about the keyboard — the trigger stayed in the tab order and still opened.
+   * Radix's own `disabled` takes it out of the tab order and marks it for assistive technology.
+   *
+   * Named `enabled` rather than `disabled` to match `Checkbox`, `RadioGroup` and `Button`, which is
+   * the convention this codebase already reads in.
+   */
+  enabled?: boolean;
+  /** Test hook, forwarded to the trigger. */
+  testId?: string;
   onChanged?: (value: string) => void;
   onOpenChange?: (open: boolean) => void;
 };
@@ -41,6 +56,8 @@ export default function Dropdown({
   initialValue,
   width,
   maxHeight,
+  enabled = true,
+  testId,
   onChanged,
   onOpenChange,
 }: Props) {
@@ -53,6 +70,7 @@ export default function Dropdown({
 
   return (
     <Select.Root
+      disabled={!enabled}
       value={selectedValue}
       onValueChange={(v) => {
         setSelectedValue(v);
@@ -60,7 +78,12 @@ export default function Dropdown({
       }}
       onOpenChange={onOpenChange}
     >
-      <Select.Trigger className={styles.SelectTrigger} style={{ width }} aria-label={ariaLabel}>
+      <Select.Trigger
+        className={styles.SelectTrigger}
+        style={{ width }}
+        aria-label={ariaLabel}
+        data-testid={testId}
+      >
         <Select.Value placeholder={placeholder ?? "Select..."} />
         <div style={{ width: "100%" }} />
         <Icon iconName="chevron-down" fill="--color-command-icon" width={16} height={16} />

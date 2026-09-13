@@ -7,7 +7,8 @@ import { useDocumentHubService } from "@renderer/appIde/services/DocumentService
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import {
   CT_CUSTOM_DISASSEMBLER,
-  CT_DISASSEMBLER
+  CT_DISASSEMBLER,
+  MF_Z80
 } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
@@ -33,6 +34,7 @@ import {
   useDisassemblyRefresh
 } from "./useDisassemblyRefresh";
 import { DisassemblyRow } from "./DisassemblyRow";
+import { evaluateBranch, type BranchVerdict } from "./branchVerdict";
 import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
 import { toHexa4 } from "../services/ide-commands";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
@@ -127,6 +129,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   }, []);
   const {
     breakpointMap,
+    cpuSnapshot,
     items,
     mem64kLabels,
     pausedPc,
@@ -287,6 +290,51 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     ]
   );
 
+  /*
+   * Whether this listing shows branch verdicts at all.
+   *
+   * Two gates, and both are decisions rather than conveniences:
+   *
+   * - **The machine must be started** (decision 2). Stopped, there is no CPU state to predict from,
+   *   so the listing must render exactly as it always has - no gutter, no reserved width, no shifted
+   *   columns. `Running` counts as well as `Paused`: the sample is up to 750ms old, which is
+   *   accepted, and the panel already refreshes on that same cadence.
+   * - **The CPU must be a Z80 or Z80N.** The branch tables are Z80 opcode tables; a 6510 listing
+   *   would be read against the wrong instruction set entirely. The same `MF_Z80` feature flag the
+   *   sidebar uses to decide whether to show the Z80 CPU panel.
+   */
+  const showBranchGutter =
+    !!machineInfo?.features?.[MF_Z80] &&
+    !!cpuSnapshot &&
+    (machineState === MachineControllerState.Running ||
+      machineState === MachineControllerState.Paused);
+
+  /*
+   * Every visible row's verdict, computed once per refresh rather than once per row.
+   *
+   * `DisassemblyRow` is memoized, so handing each row a freshly built object on every render would
+   * re-render the whole listing on every tick and defeat the memo. Keyed by address, built here,
+   * and each row is handed the same object identity until something it depends on actually changes.
+   */
+  const branchVerdicts = useMemo(() => {
+    if (!showBranchGutter || !cpuSnapshot) return undefined;
+    const verdicts = new Map<number, BranchVerdict>();
+    for (const item of items) {
+      if (!item.branch) continue;
+      verdicts.set(
+        item.address,
+        evaluateBranch(
+          item.branch,
+          item.address,
+          item.opCodes?.length ?? 0,
+          cpuSnapshot,
+          item.address === pausedPc
+        )
+      );
+    }
+    return verdicts;
+  }, [showBranchGutter, cpuSnapshot, items, pausedPc]);
+
   const commentWidthCh = useMemo(
     () =>
       items.reduce(
@@ -402,6 +450,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   pausedPc={pausedPc}
                   rowHeight={disassemblyRowItemSize}
                   showBanks={machineSetup.showBanks}
+                  showBranchGutter={showBranchGutter}
+                  verdict={branchVerdicts?.get(item.address)}
                 />
               );
             }}

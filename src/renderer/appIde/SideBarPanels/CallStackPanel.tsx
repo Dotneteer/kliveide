@@ -1,7 +1,7 @@
 import { Label } from "@renderer/controls/layout/Label";
 import { Value } from "@renderer/controls/layout/Value";
 import { useSelector } from "@renderer/core/RendererProvider";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toHexa4 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./CallStackPanel.module.scss";
@@ -67,32 +67,32 @@ export const CallStackPanel = () => {
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
 
-  // --- This function queries the breakpoints from the emulator
-  const refreshMemoryMappingState = async () => {
-    // --- Get breakpoint information
+  /*
+   * Reads the call stack.
+   *
+   * `useCallback` because `useEmuStateListener` keys its subscription on the callback's identity,
+   * and this panel re-renders on every tick — an inline function resubscribes every time.
+   */
+  const refreshCallStack = useCallback(async () => {
     if (machineState !== MachineControllerState.None) {
       const callStack = await emuApi.getCallStack();
       setSpValue(callStack.sp);
       setFrames(callStack.frames);
       setRefreshed(true);
     }
-  };
+  }, [emuApi, machineState]);
 
-  // --- Whenever machine state changes or breakpoints change, refresh the list
+  // --- Whenever the machine state changes, refresh the list
   useEffect(() => {
-    (async function () {
-      await refreshMemoryMappingState();
-    })();
-  }, [machineState, emuViewVersion]);
+    void refreshCallStack();
+  }, [refreshCallStack, emuViewVersion]);
 
   // --- Take care of refreshing the screen
-  useEmuStateListener(emuApi, async () => {
-    await refreshMemoryMappingState();
-  });
+  useEmuStateListener(emuApi, refreshCallStack);
 
   return (
     <div className={styles.callStackPanel}>
-      {refreshed && (
+      {refreshed && frames?.length > 0 && (
         <VirtualizedList
           items={frames}
           renderItem={(idx) => (
@@ -106,6 +106,10 @@ export const CallStackPanel = () => {
         />
       )}
       {!refreshed && <EmptyState message="Call stack not available" />}
+      {/* --- An empty-but-loaded stack is a fact worth stating. Before this, a refresh that landed
+          --- with no frames rendered an empty list and said nothing, which reads as a broken panel
+          --- rather than as an empty one. */}
+      {refreshed && !frames?.length && <EmptyState message="The call stack is empty" />}
     </div>
   );
 };

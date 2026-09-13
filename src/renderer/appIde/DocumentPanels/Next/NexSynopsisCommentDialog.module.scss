@@ -16,13 +16,18 @@
   width: 100%;
   min-height: 130px;
   resize: vertical;
-  border: none;
+  /* --- A field needs a border: `--bgcolor-input` is `--surface-raised`,
+     --- which is #ffffff in the light tone, so a borderless box on a
+     --- white dialog body is not visibly a field at all. */
+  border: 1px solid var(--border-input);
   border-radius: 4px;
   padding: 6px 8px;
   background: var(--bgcolor-input);
   color: var(--color-input);
   font-family: var(--monospace-font);
-  font-size: 0.9em;
+  /* --- M1: absolute, from the scale. These compounded off the dialog body, so the rendered
+     --- size depended on where the dialog was mounted rather than on a decision. */
+  font-size: var(--font-size-200);
   outline: none;
 
   /* The app's single focus treatment — `:focus-visible`, so a mouse click does not light a ring. */

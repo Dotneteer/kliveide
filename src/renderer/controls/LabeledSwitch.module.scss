@@ -11,7 +11,9 @@
 .headerLabel {
   padding: 8px 8px 8px 8px;
   font-family: var(--main-font-family);
-  font-size: 1em;
+  /* --- M1: `1em` meant "whatever the host sets", and the host is a panel header — so the
+     --- panel font size is what it resolved to and what it meant. Named, so it cannot drift. */
+  font-size: var(--panel-font-size);
   color: var(--color-command-icon);
   flex-shrink: 0;
   flex-grow: 0;

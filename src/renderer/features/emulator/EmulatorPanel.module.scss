@@ -20,6 +20,58 @@
 }
 
 /*
+ * The room the screen and its tool strip may occupy.
+ *
+ * `useEmulatorScreen` measures *this* box rather than the panel root, and holds back the strip's
+ * height before working out the zoom ratio — so the canvas is only ever sized to what the strip
+ * has left over.
+ *
+ * `min-height: 0` matters: a flex item's default `min-height: auto` refuses to shrink below its
+ * content, which would let a tall canvas shove the strip off the bottom.
+ */
+.screenArea {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*
+ * Screen and strip as one object.
+ *
+ * They are stacked together rather than pinned to opposite ends of the panel, which is what keeps
+ * the strip directly under the screen instead of drifting to the bottom edge as the window grows.
+ * `align-items: flex-start` is the whole of the left-edge alignment: both children start at the
+ * stack's left edge, so the slot cards stay flush with the screen's bezel at every zoom ratio,
+ * whichever of the two happens to be wider.
+ */
+.machineStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+/*
+ * The machine-specific tool strip.
+ *
+ * It used to be rendered *inside* `.display`, which is sized to exactly the canvas — so it was laid
+ * out past the bottom edge and showed only because nothing clipped it. Adding the bezel's
+ * `overflow: hidden` to `.display` made it vanish. It occupies real space in the stack now instead
+ * of relying on overflow.
+ *
+ * When the four cards need more room than the screen is wide they overflow to the right. That is
+ * deliberate: the left edge is the one that has to stay put.
+ */
+.toolArea {
+  flex: 0 0 auto;
+  margin-top: var(--space-1);
+}
+
+/*
  * The screen itself: a device, not a rectangle.
  *
  * It was a bare canvas on a flat fill, with nothing to say where the machine ended and the app

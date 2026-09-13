@@ -1,11 +1,12 @@
 import { Flag } from "@renderer/controls/layout/Flag";
+import { EmptyState } from "@renderer/controls/data";
 import { Label } from "@renderer/controls/layout/Label";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Secondary } from "@renderer/controls/layout/Secondary";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import styles from "./DskViewerPanel.module.scss";
-import classnames from "classnames";
-import { useEffect, useState } from "react";
+import { ValueLabel } from "./helpers/ValueLabel";
+import { useEffect, useMemo, useState } from "react";
 import {
   useDocumentHubService,
   useDocumentHubServiceVersion
@@ -17,32 +18,59 @@ import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { toHexa2 } from "../services/ide-commands";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { readDiskData } from "@emu/machines/disk/disk-readers";
-import {
-  DiskInformation,
-  SectorInformation
-} from "@emu/machines/disk/DiskInformation";
+import { SectorInformation } from "@emu/machines/disk/DiskInformation";
 import { FloppyDiskFormat } from "@emu/abstractions/FloppyDiskFormat";
 import { DiskDensity } from "@emu/abstractions/DiskDensity";
-import { DiskSurface, createDiskSurface } from "@emu/machines/disk/DiskSurface";
+import { createDiskSurface } from "@emu/machines/disk/DiskSurface";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
   const [docState, setDocState] = useState({});
-  const [showPhysical, setShowPhysical] = useState(
-    (docState as any)?.showPhysical ?? false
-  );
+  /*
+   * `false`, plainly.
+   *
+   * This was `useState((docState as any)?.showPhysical ?? false)` — reading state declared on the
+   * line above, which is `{}` at that instant, so the initializer could only ever evaluate to
+   * `false`. The effect below is what actually restores the persisted value; the initializer was
+   * decoration that read like logic.
+   */
+  const [showPhysical, setShowPhysical] = useState(false);
 
   const contents = data as Uint8Array;
-  let fileInfo: DiskInformation | undefined;
-  let floppyInfo: DiskSurface | undefined;
-  try {
-    fileInfo = readDiskData(contents);
-    floppyInfo = createDiskSurface(fileInfo);
-  } catch (err) {
-    // --- Intentionally ignored
-  }
+  /*
+   * Parsed once per file, not once per render — and the failure is kept.
+   *
+   * `readDiskData` and `createDiskSurface` ran in the render body inside a
+   * `catch { /* Intentionally ignored *\/ }`, so the entire disk surface was re-materialised on
+   * every render and any parse error was discarded. The user then got "Invalid disk file format"
+   * with no indication of what was wrong with their file.
+   */
+  const parsed = useMemo(() => {
+    try {
+      const fileInfo = readDiskData(contents);
+      return { fileInfo, floppyInfo: createDiskSurface(fileInfo), error: undefined as string | undefined };
+    } catch (err) {
+      return { fileInfo: undefined, floppyInfo: undefined, error: (err as Error)?.message };
+    }
+  }, [contents]);
+  const { fileInfo, floppyInfo } = parsed;
+
+  /*
+   * Two facts the Generic Disk Info section used to hardcode.
+   *
+   * `useMemo` keyed on the surface, not on nothing: both walk every track, and this panel
+   * re-renders on each `DataSection` expand.
+   */
+  const totalSurfaceBytes = useMemo(
+    () => floppyInfo?.tracks.reduce((sum, track) => sum + track.trackLength, 0) ?? 0,
+    [floppyInfo]
+  );
+  const hasWeakSectors = useMemo(
+    () => !!floppyInfo?.tracks.some((track) => track.weakSectorData.length > 0),
+    [floppyInfo]
+  );
 
   useEffect(() => {
     const state = documentHubService.getDocumentViewState(document.id);
@@ -52,11 +80,11 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
 
   if (!fileInfo) {
     return (
-      <div className={styles.dskViewerPanel}>
-        <div className={classnames(styles.header, styles.error)}>
-          Invalid disk file format
-        </div>
-      </div>
+      <EmptyState
+        tone="error"
+        motif={false}
+        message={parsed.error ?? "This file could not be read as a .dsk disk image."}
+      />
     );
   }
   return (
@@ -90,7 +118,6 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
             }}
           />
         </div>
-        <div className={styles.dskViewerWrapper}></div>
         {showPhysical && (
           <>
             <DataSection
@@ -112,15 +139,24 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                     value={DiskDensity[floppyInfo.density]}
                   />
                   <ToolbarSeparator small={true} />
-                  <LabeledFlag label='Write protected' value={true} />
-                  <ToolbarSeparator small={true} />
-                  <LabeledFlag label='Has weak sectors' value={false} />
+                  {/*
+                    * "Write protected" was hardwired to `true` and is gone: nothing in
+                    * `DiskSurface` or `DiskInformation` carries it, so the row stated a fact the
+                    * app does not know. A field that is always the same value is not a field.
+                    */}
+                  <LabeledFlag
+                    label='Has weak sectors'
+                    // --- Was hardwired to `false`. The surface does know: a track with weak-sector
+                    // --- data has a non-empty span for it.
+                    value={hasWeakSectors}
+                  />
                 </div>
                 <div className={styles.header}>
                   <LabeledValue
                     label='Total:'
                     title='Total physical size in bytes'
-                    value={0}
+                    // --- Was hardwired to `0`, i.e. a label with no value behind it.
+                    value={totalSurfaceBytes}
                   />
                   <ToolbarSeparator small={true} />
                   <LabeledValue
@@ -132,7 +168,10 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                   <LabeledValue
                     label='TLen:'
                     title='Track length in bytes'
-                    value={floppyInfo.bytesPerTrack}
+                    // --- Was a second copy of `bytesPerTrack`, so `B/T` and `TLen` were two
+                    // --- differently-labelled columns showing the same number. A track's own
+                    // --- length is what `TLen` names.
+                    value={floppyInfo.tracks[0]?.trackLength ?? 0}
                   />
                 </div>
               </div>
@@ -179,48 +218,40 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                     />
                   </div>
 
-                  <div className={styles.dataSection}>
-                    <div className={styles.blockHeader}>
-                      <Secondary
-                        text={`Sector #${selectedSectorIdx} (Header + GAP2 + Sync + DM + Data + CRC + GAP3, ${
-                          ti.sectors[selectedSectorIdx - 1].sectordata.length
-                        } bytes) `}
+                  {/*
+                    * A track with no sectors used to throw here — twice, on two consecutive lines,
+                    * with no guard on either. The logical view further down has always had one
+                    * (`if (!t.sectors.length) return null`); the physical view did not, so a disk
+                    * image with an empty track took the renderer down rather than showing an empty
+                    * track. Guarded once, around the block that needs the sector.
+                    */}
+                  {ti.sectors[selectedSectorIdx - 1] ? (
+                    <div className={styles.dataSection}>
+                      <div className={styles.blockHeader}>
+                        <Secondary
+                          text={`Sector #${selectedSectorIdx} (Header + GAP2 + Sync + DM + Data + CRC + GAP3, ${
+                            ti.sectors[selectedSectorIdx - 1].sectordata.length
+                          } bytes) `}
+                        />
+                      </div>
+                      <StaticMemoryView
+                        key={stateId}
+                        initialShowAll={true}
+                        memory={ti.sectors[selectedSectorIdx - 1].sectordata.view()}
                       />
                     </div>
-                    <StaticMemoryView
-                      key={stateId}
-                      initialShowAll={true}
-                      memory={ti.sectors[
-                        selectedSectorIdx - 1
-                      ].sectordata.view()}
-                    />
-                  </div>
+                  ) : (
+                    <div className={styles.dataSection}>
+                      <div className={styles.blockHeader}>
+                        <Secondary text='This track holds no sectors.' />
+                      </div>
+                    </div>
+                  )}
                 </DataSection>
               );
             })}
           </>
         )}
-        {/* {!showPhysical && (
-          <DataSection
-            key='DIB'
-            title='Disk Information Block'
-            expanded={docState?.["DIB"] ?? true}
-            changed={exp => {
-              documentHubService.setDocumentViewState(document.id, {
-                ...docState,
-                ["DIB"]: exp
-              });
-              documentHubService.signHubStateChanged();
-            }}
-          >
-            <div className={styles.dataSection}>
-              <div className={styles.blockHeader}>
-                <Secondary text={`Creator: ${fileInfo.creator}`} />
-              </div>
-              <StaticMemoryView memory={contents.slice(0, 0x100)} />
-            </div>
-          </DataSection>
-        )} */}
         {!showPhysical &&
           fileInfo.tracks.map((t, idx) => {
             const selectedSectorIdx = docState?.[`TS${idx}`] ?? 1;
@@ -270,13 +301,6 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   );
 };
 
-type LabelProps = {
-  text: string;
-};
-
-const ValueLabel = ({ text }: LabelProps) => {
-  return <div className={styles.valueLabel}>{text}</div>;
-};
 
 type LabeledValueProps = {
   label: string;

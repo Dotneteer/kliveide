@@ -1,5 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Button } from "@renderer/controls/Button";
+import { TextInput } from "@renderer/controls/TextInput";
+import { RadioGroup } from "@renderer/controls/RadioGroup";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
@@ -117,53 +119,44 @@ export function NexLabelDialog({
         * orders for one pair of concepts, in two dialogs that open one on top of the other.
         */}
       <DialogRow label="Scope" rows={true}>
-        <div className={styles.scopeOptions}>
-          <label className={styles.scopeOption}>
-            <input
-              type="radio"
-              name="nex-label-scope"
-              checked={scope === "local"}
-              onChange={() => setScopeAndDefault("local")}
-            />
-            Bank {bank}
-          </label>
-          <label className={styles.scopeOption}>
-            <input
-              type="radio"
-              name="nex-label-scope"
-              checked={scope === "global"}
-              onChange={() => setScopeAndDefault("global")}
-            />
-            Global
-          </label>
-        </div>
+        <RadioGroup
+          ariaLabel="Label scope"
+          columns={2}
+          value={scope}
+          options={[
+            { value: "local", label: `Bank ${bank}` },
+            { value: "global", label: "Global" }
+          ]}
+          onChange={(next) => setScopeAndDefault(next as "local" | "global")}
+        />
       </DialogRow>
       <DialogRow label="Name" rows={true}>
-        <input
+        <TextInput
           autoFocus
-          className={styles.input}
           maxLength={NEX_LABEL_MAX_LENGTH}
-          spellCheck={false}
           value={name}
-          onChange={(event) => setName(event.target.value.slice(0, NEX_LABEL_MAX_LENGTH))}
+          onChange={(value) => setName(value.slice(0, NEX_LABEL_MAX_LENGTH))}
         />
       </DialogRow>
       <DialogRow label="Value" rows={true}>
-        <input
-          className={styles.input}
-          spellCheck={false}
-          value={valueText}
-          onChange={(event) => setValueText(event.target.value)}
-        />
+        {/* --- No `error` prop: this dialog validates the name and the value together and shows
+            --- one message below both. Passing it here would render the same sentence twice. */}
+        <TextInput value={valueText} onChange={setValueText} />
       </DialogRow>
-      {error && <div className={styles.error}>{error}</div>}
+      {/* --- `role="alert"`: a validation message rendered into a plain div is never
+          --- announced, so a screen-reader user submits and the dialog appears to have
+          --- ignored them. `BreakpointDialog` and `DialogField` both do this. */}
+      {error && (
+        <div className={styles.error} role="alert">
+          {error}
+        </div>
+      )}
       <DialogRow label="Existing labels" rows={true}>
-        <input
-          className={styles.search}
+        <TextInput
           placeholder="Search labels"
-          spellCheck={false}
+          ariaLabel="Search labels"
           value={searchText}
-          onChange={(event) => setSearchText(event.target.value)}
+          onChange={setSearchText}
         />
         <div className={styles.labelList}>
           {filteredLabels.map((label) => (
@@ -190,7 +183,7 @@ export function NexLabelDialog({
       </DialogRow>
       <DialogFooter>
         <Button text="Save" type="submit" disabled={!!error} />
-        <Button text="Cancel" clicked={controls.cancel} />
+        <Button variant="secondary" text="Cancel" clicked={controls.cancel} />
         {originalLabel && (
           <>
             <DialogFooterSpacer />

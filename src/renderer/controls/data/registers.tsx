@@ -3,7 +3,7 @@ import { TooltipFactory, useTooltipRef } from "../Tooltip";
 import { Icon } from "../Icon";
 import { DataLabel, DataRow, DataValue } from "./index";
 import styles from "./Registers.module.scss";
-import { useMemo, memo } from "react";
+import { useMemo, memo, useState } from "react";
 import classnames from "classnames";
 
 /**
@@ -352,25 +352,59 @@ type FlagFieldRowProps = {
   tooltip: string;
   value: number;
   flagDescriptions: string[];
+  /** Fill for the eight bit glyphs. Panels that have taken the state-value colour pass it here. */
+  iconFill?: string;
 };
 
-export const FlagFieldRow = ({ label, tooltip, value, flagDescriptions }: FlagFieldRowProps) => {
+/**
+ * A labelled eight-bit flag strip: one row, one tooltip, whose content follows the pointer.
+ *
+ * It used to bind a row `TooltipFactory` *and* let each of its eight `BitValue`s bind its own, so a
+ * pointer over a bit raised two boxes for one row — recorded as known-and-unfixed in §12.3 of the
+ * modernization plan, and left alone then because fixing it touched five panels nobody had asked
+ * about. `MemoryDumpSection` and `SysVarsPanel` had already settled the shape: the row owns the
+ * tooltip and the hovered cell reports its index, which is what `FlagRow`'s `onHoverBit` exists for
+ * (passing it also suppresses the per-bit tooltips).
+ *
+ * The row's own description stays on the first line, so hovering a bit tells you which register you
+ * are in as well as which bit — the two-box version could only ever show one of those at a time.
+ */
+export const FlagFieldRow = ({
+  label,
+  tooltip,
+  value,
+  flagDescriptions,
+  iconFill
+}: FlagFieldRowProps) => {
   const ref = useTooltipRef<HTMLDivElement>();
+  const [hoveredBit, setHoveredBit] = useState<number | null>(null);
+
+  const content =
+    hoveredBit === null
+      ? tooltip
+      : [tooltip, `Bit ${hoveredBit}: ${flagDescriptions?.[hoveredBit] ?? ""}`]
+          .filter(Boolean)
+          .join("\n");
 
   return (
     <DataRow ref={ref} dense>
       <DataLabel text={label} xclass={styles.regLabel} />
-      {tooltip && (
+      {content && (
         <TooltipFactory
           refElement={ref.current}
           placement="right"
           offsetX={0}
           offsetY={0}
           showDelay={100}
-          content={tooltip}
+          content={content}
         />
       )}
-      <FlagRow value={value} flagDescriptions={flagDescriptions} />
+      <FlagRow
+        value={value}
+        flagDescriptions={flagDescriptions}
+        iconFill={iconFill}
+        onHoverBit={setHoveredBit}
+      />
     </DataRow>
   );
 };

@@ -104,7 +104,7 @@ function BuildRootCommandBar() {
       />
       <TabButtonSeparator />
       <TabButton
-        iconName="pop-out"
+        iconName="square-arrow-out-up-right"
         title={"Show script output"}
         disabled={compiling || !scriptId}
         clicked={async () => {

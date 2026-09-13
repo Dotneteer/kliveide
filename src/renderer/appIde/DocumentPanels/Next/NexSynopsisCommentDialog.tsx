@@ -70,11 +70,11 @@ export function NexSynopsisCommentDialog({
       </DialogRow>
       <DialogFooter>
         <Button text="Save" type="submit" />
-        <Button text="Cancel" clicked={controls.cancel} />
+        <Button variant="secondary" text="Cancel" clicked={controls.cancel} />
         {hasExistingSynopsis && (
           <>
             <DialogFooterSpacer />
-            <Button text="Clear" clicked={() => closeWithComment(undefined)} />
+            <Button variant="secondary" text="Clear" clicked={() => closeWithComment(undefined)} />
           </>
         )}
       </DialogFooter>

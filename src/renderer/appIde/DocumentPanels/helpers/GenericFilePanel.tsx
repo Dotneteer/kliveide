@@ -3,6 +3,7 @@ import { useDocumentHubService } from "@renderer/appIde/services/DocumentService
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Panel } from "@renderer/controls/layout/Panel";
+import { EmptyState } from "@renderer/controls/data";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
@@ -174,9 +175,21 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
       onScrolled={storeScrollPosition}
     >
       {!valid && (
-        <div className={styles.invalid}>
-          {invalidRenderer ? invalidRenderer(context) : <>File content is not a valid: {fileError}</>}
-        </div>
+        invalidRenderer ? (
+          invalidRenderer(context)
+        ) : (
+          /*
+           * The loaders already produce whole sentences — "Invalid file size, an .SCR file should be
+           * 6912 bytes long." — so the old wrapper text read "File content is not a valid: Invalid
+           * file size, …". Show the loader's message, and only fall back where there is none (a
+           * throw with an empty `message`).
+           */
+          <EmptyState
+            tone="error"
+            motif={false}
+            message={fileError || "This file could not be read."}
+          />
+        )
       )}
       {valid && validRenderer?.(context)}
     </Panel>

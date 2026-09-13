@@ -306,6 +306,11 @@ uint32_t zxnextGetCpuIr(void) { return z80GetIr(); }
 void zxnextSetCpuIr(uint32_t value) { z80SetIr(value); }
 uint32_t zxnextGetCpuWz(void) { return z80GetWz(); }
 void zxnextSetCpuWz(uint32_t value) { z80SetWz(value); }
+/* --- The return address of the most recent CALL/RST, for step-out. See the shadow stack
+   --- in z80.c: without it this machine has no step-out target at all, because the
+   --- TypeScript CPU's push never runs when execution happens inside the core. */
+uint32_t zxnextGetStepOutAddress(void) { return z80GetStepOutAddress(); }
+
 uint32_t zxnextGetCpuPc(void) { return z80GetPc(); }
 void zxnextSetCpuPc(uint32_t value) { z80SetPc(value); }
 uint32_t zxnextGetCpuSp(void) { return z80GetSp(); }

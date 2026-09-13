@@ -769,7 +769,16 @@ export class Z80Cpu implements IZ80Cpu {
     this.retExecuted = false;
     this.retnExecuted = false;
     this.afterLdAIR = false;
+    /*
+     * Clearing the array is not enough: `stepOutStackCount` has to go with it.
+     *
+     * Emptying `stepOutStack` while leaving the count non-zero made `markStepOutAddress` index past
+     * the end and yield `undefined` rather than -1, so a step-out taken after a reset had a target
+     * that could never match. The C port in `z80.c` clears the same two counters.
+     */
     this.stepOutStack = [];
+    this.stepOutStackPointer = 0;
+    this.stepOutStackCount = 0;
     this.stepOutAddress = -1;
     this.totalContentionDelaySinceStart = 0;
     this.contentionDelaySincePause = 0;
@@ -814,7 +823,16 @@ export class Z80Cpu implements IZ80Cpu {
     this.retExecuted = false;
     this.retnExecuted = false;
     this.afterLdAIR = false;
+    /*
+     * Clearing the array is not enough: `stepOutStackCount` has to go with it.
+     *
+     * Emptying `stepOutStack` while leaving the count non-zero made `markStepOutAddress` index past
+     * the end and yield `undefined` rather than -1, so a step-out taken after a reset had a target
+     * that could never match. The C port in `z80.c` clears the same two counters.
+     */
     this.stepOutStack = [];
+    this.stepOutStackPointer = 0;
+    this.stepOutStackCount = 0;
     this.stepOutAddress = -1;
     this.totalContentionDelaySinceStart = 0;
     this.contentionDelaySincePause = 0;
@@ -1257,6 +1275,11 @@ export class Z80Cpu implements IZ80Cpu {
    * Push the current value of PC to the stack.
    */
   pushPC(): void {
+    // --- An interrupt is a call the program did not write: it stacks a return address and the
+    // --- handler ends with a RET/RETI/RETN. Recording it keeps the step-out shadow stack aligned
+    // --- with the real one, so stepping out of a handler targets the interrupted instruction.
+    // --- Mirrored in `pushPcForInterrupt` in z80.c; the two implementations must agree.
+    this.pushToStepOutStack(this.pc);
     this.sp--;
     this.tactPlusN(1);
     this.writeMemory(this.sp, this.pc >>> 8);

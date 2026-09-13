@@ -139,7 +139,10 @@ describe("NexRegionsDialog", () => {
     fireEvent.change(find, { target: { value: "$1A00" } });
     expect(screen.getByText("disassembly")).toBeInTheDocument();
     expect(screen.queryByText("bytes")).not.toBeInTheDocument();
-    expect(find).toHaveAttribute("aria-invalid", "false");
+    // --- Absent, not "false": `TextInput` marks a field invalid only when it *is*, which is the
+    // --- contract every other field in the app follows. The hand-rolled input this replaced wrote
+    // --- `aria-invalid="false"` on a valid field.
+    expect(find).not.toHaveAttribute("aria-invalid");
 
     // --- Text that is not an address narrows nothing, and the field says why.
     fireEvent.change(find, { target: { value: "nonsense" } });
