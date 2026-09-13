@@ -81,7 +81,7 @@ export const zxSpectrum128SysVars: SysVar[] = [
     name: "FLAGS3",
     type: SysVarType.Byte,
     description: "Various flags",
-    flagDecriptions: [
+    flagDescriptions: [
       "Unused",
       "Unused",
       "Set when tokens are to be expanded on printing",
@@ -99,7 +99,7 @@ export const zxSpectrum128SysVars: SysVar[] = [
     description:
       "Copy of last byte output to I/O port 1FFDh (8189).\n" +
       "This port is used to control the +3 extended RAM and ROM switching.",
-    flagDecriptions: [
+    flagDescriptions: [
       "If clear, bit 2 controls the 'vertical' ROM switch 0<->2 and 1<->3",
       "Unused",
       "'Vertical' ROM switch",

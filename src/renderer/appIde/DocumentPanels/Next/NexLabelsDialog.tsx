@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Button } from "@renderer/controls/Button";
+import { TextInput } from "@renderer/controls/TextInput";
+import { RadioGroup } from "@renderer/controls/RadioGroup";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { DialogRow } from "@renderer/controls/DialogRow";
@@ -106,44 +108,25 @@ export function NexLabelsDialog({
         address anywhere in memory and is visible from every bank.
       </p>
       <DialogRow label="Scope" rows={true}>
-        <div className={styles.scopeOptions}>
-          <label className={styles.scopeOption}>
-            <input
-              type="radio"
-              name="nex-labels-scope"
-              checked={scopeFilter === "local"}
-              onChange={() => setScopeFilter("local")}
-            />
-            Bank {bank}
-          </label>
-          <label className={styles.scopeOption}>
-            <input
-              type="radio"
-              name="nex-labels-scope"
-              checked={scopeFilter === "global"}
-              onChange={() => setScopeFilter("global")}
-            />
-            Global
-          </label>
-          <label className={styles.scopeOption}>
-            <input
-              type="radio"
-              name="nex-labels-scope"
-              checked={scopeFilter === "all"}
-              onChange={() => setScopeFilter("all")}
-            />
-            All
-          </label>
-        </div>
+        <RadioGroup
+          ariaLabel="Label scope filter"
+          columns={3}
+          value={scopeFilter}
+          options={[
+            { value: "local", label: `Bank ${bank}` },
+            { value: "global", label: "Global" },
+            { value: "all", label: "All" }
+          ]}
+          onChange={(next) => setScopeFilter(next as NexLabelsScopeFilter)}
+        />
       </DialogRow>
       <div className={styles.toolbar}>
-        <input
+        <TextInput
           autoFocus
-          className={styles.search}
           placeholder="Search labels"
-          spellCheck={false}
+          ariaLabel="Search labels"
           value={searchText}
-          onChange={(event) => setSearchText(event.target.value)}
+          onChange={setSearchText}
         />
         <Dropdown
           ariaLabel="Sort labels"
@@ -213,15 +196,17 @@ export function NexLabelsDialog({
         )}
       </div>
       <DialogFooter>
-        <Button text="Close" clicked={controls.cancel} />
+        <Button variant="secondary" text="Close" clicked={controls.cancel} />
         <DialogFooterSpacer />
         <Button
           text="Add Global Label"
+          variant="secondary"
           disabled={busy}
           clicked={() => void runAction(() => onAddLabel("global"))}
         />
         <Button
           text="Add Bank Label"
+          variant="secondary"
           disabled={busy}
           clicked={() => void runAction(() => onAddLabel("local"))}
         />

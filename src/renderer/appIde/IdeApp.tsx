@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
 import { DocumentArea } from "@renderer/features/documents/DocumentArea";
 import { useAppServices } from "./services/AppServicesProvider";
-import { SiteBar } from "./SideBar/SideBar";
+import { SideBar } from "./SideBar/SideBar";
 import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
 import { ToolArea } from "./ToolArea/ToolArea";
 import { IdeEventsHandler } from "./IdeEventsHandler";
@@ -85,7 +85,7 @@ const IdeApp = () => {
             })();
           }}
         >
-          <SiteBar />
+          <SideBar />
           <SplitPanel
             primaryLocation={toolPanelOnTop ? "top" : "bottom"}
             primaryVisible={showToolPanels}

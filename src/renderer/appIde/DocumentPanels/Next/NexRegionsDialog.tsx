@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import classnames from "classnames";
 import { Button } from "@renderer/controls/Button";
+import { TextInput } from "@renderer/controls/TextInput";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
@@ -118,15 +119,15 @@ export function NexRegionsDialog({
   return (
     <div>
       <div className={styles.toolbar}>
-        <input
+        {/* --- `error` drives both the invalid styling and `aria-invalid` inside `TextInput`, so
+            --- the hand-rolled pair of those goes with the bare input. */}
+        <TextInput
           autoFocus
-          aria-invalid={findIsInvalid}
-          aria-label="Find the region covering an address"
-          className={classnames(styles.search, { [styles.invalid]: findIsInvalid })}
+          ariaLabel="Find the region covering an address"
           placeholder="Find address, e.g. $1A00"
-          spellCheck={false}
+          error={findIsInvalid ? "No region covers that address." : undefined}
           value={findText}
-          onChange={(event) => setFindText(event.target.value)}
+          onChange={setFindText}
         />
         {/* The app's own dropdown, as the Labels list's sort control uses. */}
         <Dropdown
@@ -223,7 +224,7 @@ export function NexRegionsDialog({
         </div>
       </DialogRow>
       <DialogFooter>
-        <Button text="Close" clicked={controls.cancel} />
+        <Button variant="secondary" text="Close" clicked={controls.cancel} />
         <DialogFooterSpacer />
         <Button text="Add Region" clicked={() => controls.close({ action: "add" })} />
       </DialogFooter>

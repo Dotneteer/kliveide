@@ -14,8 +14,8 @@
   flex-direction: row;
   flex-shrink: 0;
   flex-grow: 1;
-  width: calc(100% - 8px);
-  padding: 4px;
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
   /* --- Was `0.8em`, one of the stragglers M1 missed: an em size compounds, and here it
      --- resolved against a 16px root to 12.8px rather than the 12px every sibling panel used.
      --- Now the same user-set size as the rest. */
@@ -46,10 +46,10 @@
   overflow: hidden;
   direction: rtl;
   text-overflow: ellipsis;
-  width: 40px;
-  color: var(--console-ansi-bright-magenta);
-  padding-left: 8px;
-  padding-right: 8px;
+  /* --- M2: `ch`, not px. 40px at the old 12.8px size / 6.4 = 6.25ch. */
+  width: 7ch;
+  color: var(--data-secondary);
+  padding-inline: var(--space-2);
   text-align: start;
 }
 
@@ -58,10 +58,18 @@
   overflow: hidden;
   direction: rtl;
   text-overflow: ellipsis;
-  width: 400px;
-  color: var(--color-doc-activeText);
-  padding-left: 8px;
-  padding-right: 8px;
+  /*
+   * The script name takes whatever is left.
+   *
+   * It was a flat `width: 400px` in a sidebar that is routinely narrower than that, so the column
+   * dictated the panel's width instead of fitting it. `flex: 1` with `min-width: 0` is what lets a
+   * flex child shrink below its content and ellipsize, which is what the `text-overflow` here has
+   * always wanted.
+   */
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--data-value);
+  padding-inline: var(--space-2);
   text-align: end;
 }
 
@@ -73,11 +81,10 @@
   overflow: hidden;
   direction: rtl;
   text-overflow: ellipsis;
-  color: var(--console-ansi-bright-blue);
-  padding-left: 8px;
-  padding-right: 8px;
-  text-align: start;
-  width: 60px;
+  color: var(--data-secondary);
+  padding-inline: var(--space-2);
+  /* --- M2: `ch`, not px. 60px at the old 12.8px size / 6.4 = 9.4ch. */
+  width: 10ch;
   text-align: end;
 }
 
@@ -86,7 +93,19 @@
   flex-shrink: 0;
   flex-grow: 0;
   align-items: center;
-  height: 24px;
-  gap: 8px;
-  padding: 0 8px;
+  height: var(--row-size-list);
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+}
+
+/*
+ * The scrolling region under the toolbar.
+ *
+ * `styles.panel` used to be applied to three nested divs; this is the innermost of them, named for
+ * what it actually is now that the outer two are gone.
+ */
+.listArea {
+  @include fill-parent-flex;
+  flex-direction: column;
+  min-height: 0;
 }

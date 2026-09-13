@@ -3,7 +3,7 @@ import { GenericFileContext } from "@renderer/appIde/DocumentPanels/helpers/Gene
 import { SprFileContents, SprFileViewState, SpriteTools, migrateTool } from "./sprite-common";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { DEFAULT_SPRITE_TRANSPARENCY, serializeSprFile } from "./sprite-file";
 import {
   flipHorizontal,
@@ -541,6 +541,23 @@ export const SpriteEditor = ({ context }: Props) => {
    * flying - or they are the marked region, which is lifted here. Lifting only builds the patch;
    * the sprite is not touched until the drop.
    */
+  /*
+   * The floating patch, memoised — otherwise `SpriteEditorGrid`'s `memo` never hits.
+   *
+   * The grid is `memo(SpriteEditorGridComponent)` with the default shallow compare, and this was
+   * built as a fresh object literal in the JSX. Its identity therefore changed on every render of
+   * this component, so while a paste was in the air the 256-cell grid re-rendered on every parent
+   * render — the same 'memo keyed on an identity that changes every render' as the palette
+   * swatch in §13.2.
+   */
+  const floatingForGrid = useMemo(
+    () =>
+      floating
+        ? { region: patchRegionAt(floating.patch, floating.at), pixels: floating.patch.pixels }
+        : undefined,
+    [floating]
+  );
+
   const handleMoveStart = useCallback((at: SpritePoint) => {
     const flying = floatingRef.current;
     if (flying) {
@@ -732,14 +749,7 @@ export const SpriteEditor = ({ context }: Props) => {
               cellSize={zoom.cellSize}
               showGrid={showGrid}
               selection={selection}
-              floating={
-                floating
-                  ? {
-                      region: patchRegionAt(floating.patch, floating.at),
-                      pixels: floating.patch.pixels
-                    }
-                  : undefined
-              }
+              floating={floatingForGrid}
               onSelectRegion={setSelection}
               lifted={floating?.lifted}
               onMoveStart={handleMoveStart}

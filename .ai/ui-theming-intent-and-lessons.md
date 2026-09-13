@@ -405,13 +405,211 @@ runtime. It is a documentation convention, and the only way to keep it is to fol
 added six aliases and registered none of them until a concurrent change on the same file made the
 omission visible.)
 
+**A mandate that is documented as tested and is not will be re-opened by new code at full rate.**
+For thirteen phases `AGENTS.md` and the plan both said M1, M2 and M3 "have tests that will fail
+you". Only M3 did. The result was not slow decay: the single largest block of `em` font sizes in the
+repo was written in the commit *immediately before* anyone checked, years after the
+rule (19 of the 54 that existed when the test was finally written). Everyone involved believed the
+rule was enforced, so nobody looked. **Before trusting a
+documented gate, run it and watch it fail on a deliberate violation.** This is the `AttachedShadow`
+lesson arriving from a third direction: there a feature was wired up and drawing nothing; here a
+rule was written down and enforcing nothing. Both look exactly like working.
+
+**Not every mandate can be a text rule, and pretending otherwise is worse than admitting it.**
+M1 is syntactically decidable and its test is worth having. M2 is not: two heuristics were tried and
+both were dropped — px widths in "tabular-looking" stylesheets ran ~80% false positives (swatches,
+icons, a 2px rail), and counting every bare-number `width` buried the one real violation under 19
+legitimate `<LabelSeparator width={8} />` spacers. **A rule with that hit rate trains people to add
+allowlist entries instead of fixing code.** What shipped is the one shape a regex can settle — a
+numeric *literal* on a column cell — plus a written note that the general case is a **type** problem:
+every other column width goes through a named constant whose unit depends on whether it is a string
+or a number, which only the compiler can see. The durable fix is to delete the number half of the
+prop, after which the M2 test becomes redundant and should be deleted rather than kept as decoration.
+
+**Count a baseline by the thing you will fix.** The first version counted one offending *element*,
+so `<LabeledFlag labelWidth={36} valueWidth={20} />` scored 1 — and clearing both props would have
+moved the number by one, leaving slack the next edit could spend for free. Count per prop.
+
+**A shrink must fail the build too, not just a growth.** `check-types.cjs` only logs when its counts
+drop. For a ratchet whose entire purpose is to shrink, that lets the baseline drift above reality and
+silently re-authorise a violation someone already fixed. Failing on a stale-high entry costs one
+clearly-worded message and makes the fix stick.
+
+**An absence and a failure are not the same empty state.** `EmptyState` renders
+`--data-secondary`, which is right for "nothing here yet" and wrong for "this file would not parse" —
+converting an error surface to it demotes a failure to grey. It now takes a `tone`, and `error`
+(`--status-error`) is what a viewer that could not read its file uses. Watch for the instruction
+"use the shared primitive" hiding a semantic change like this one.
+
+**A completeness check belongs in the type, not in the list.** `DialogProvider` kept a
+`Set<keyof DialogOptions>` naming every option key, used to tell two `open()` overloads apart — and
+`iconName` and `danger` were added to the type and not to the set, which silently misroutes any call
+passing them. A `Set<keyof T>` constrains what goes *in*; it cannot require completeness.
+`Record<keyof Required<T>, true>` can, and fails the build when the type grows.
+
+**When a rename must precede the work, do it as its own commit and batch nothing into it.** A
+mechanical rename is reviewable only while it is provably mechanical; one behavioural change hidden
+in a 200-line path diff is invisible. And the gate for a directory rename is `electron-vite build`,
+not `tsc` — a path-only break type-checks clean and fails at Vite's import analysis.
+
+**Prefer a fix that makes the bug unrepresentable over one that makes it absent.** Two in one pass.
+The Breakpoints panel kept its disassembly in a ref indexed in parallel with a state array, filled
+across an `await` per row: correct only while nothing re-rendered mid-refresh. Pairing the two into
+one state value removes the window rather than narrowing it. The PSG panel's `CntC`-reads-`cntB` was
+a one-character fix, but the *cause* was three hand-copied seven-row blocks; parameterising them is
+what stops the fourth copy. Ask what shape the defect lived in.
+
+**A row's accessible name comes from its content, and `aria-label` silently replaces it.** Adding
+`aria-label={fullPath}` to an Open Editors row looked like an improvement and made a screen reader
+announce `/proj/src/a.asm` where the eye reads `a.asm`. Long text belongs in the tooltip; a state
+worth announcing (here "Unsaved changes") goes on a child element, where it *appends* to the name
+instead of displacing it. The existing tests caught this, which is the argument for querying by role
+and name rather than by class.
+
+**`role="list"` is not a free upgrade for a group of buttons.** ARIA's `list` requires `listitem`
+children, so wrapping clickable rows in one means giving up the `button` role that says what they do.
+`role="group"` with a label supplies the missing context without misdescribing the rows.
+
+**`e.code` is the physical key; `e.key` is what it means.** Three handlers in this codebase switched
+on `e.code === "Enter"`, so the numeric keypad's Enter — which reports `NumpadEnter` — did nothing.
+Two of them read `e.key` a few lines further down for the arrows, in the same switch.
+
+**Stripping a type colour needs the glyph checked first, not after.** §5.2's rule is that a hue
+marking a type is not state and the glyph already says it. In the NEC UPD 765 log the glyph did
+*not*: reading data and reading the status register were the same left arrow, distinguished only by
+cyan versus white, so a straight deletion would have merged two operations into one. Redraw first,
+then remove the colour — the `BreakpointIndicator` order, which is the general one.
+
+**A CSS class with no declarations is stripped at build time.** Keeping `.psgPanel { }` as a "DOM
+hook" after `DataPanel` absorbed its only rule leaves `styles.psgPanel` `undefined` and a comment
+describing something that does not exist. Delete the stylesheet.
+
+**A duplicated constant table is a bug waiting for one of its copies to be fixed.** The ZX Spectrum
+48K palette existed twice — in `CommonScreenDevice` and in the `.SCR` viewer — each headed "ARGB
+colors", and the heading was wrong in both. Whoever corrected one would have left the other saying
+the opposite. It is now `emu/machines/spectrum-colors.ts`. **And the values were right all along:
+they are ABGR**, because they reach the screen as the bytes of a `Uint32Array` handed to
+`ImageData`, which is RGBA byte order — so the low byte is red. Check a byte order on an entry whose
+channels actually differ; a grey or a white passes under either reading, which is exactly why the
+wrong comment survived so long.
+
+**A field that is always the same value is not a field.** The DSK viewer showed "Write protected:
+true", "Has weak sectors: false" and "Total: 0", all hardcoded. Two were derivable from the disk
+surface and now are; the third had no source in the data at all and was deleted. Displaying a
+constant as though it were a reading is worse than omitting it, because it looks like information.
+
+**Two labels showing one value is invisible until you read the source.** `B/T` and `TLen` in the
+same DSK row both rendered `bytesPerTrack`. Nothing about the screen says so — the numbers merely
+match, which for two related measures looks like a fact about the disk.
+
+**Registering a renderer and routing a file to it are two halves that type-check separately.**
+`Z80_VIEWER` sat in `documentPanelRegistry` for six months while the `fileTypeRegistry` entry that
+reaches it was commented out — 913 lines of complete parser that nothing could open, switched off in
+passing by an unrelated feature. Neither half is wrong on its own, so no compiler and no test saw
+it. When a viewer "does not work", check it is reachable before reading its code.
+
+**A parser reached only through a route that was disabled has not been exercised either.** Before
+re-enabling one, add the guards its first real input will need — `loadZ80FileContents` walked into a
+30-byte header with no length check.
+
+**`<svg viewBox="…">` with no `width`/`height` is 300×150.** That is the CSS replaced-element
+default, and it applies inside a 20px swatch as readily as anywhere else; only the absence of a
+background on the overflow keeps it invisible. This is the second time the same defect has been
+found in this codebase (§13.2 was the first), in a file the earlier sweep did not reach — so it is
+worth grepping for `<svg` without dimensions rather than fixing the reported instance.
+
+**Parsing in the render body costs a re-parse per render, and the cost is invisible in the code.**
+Both the tape and disk viewers called their file readers directly in the component body, so every
+`DataSection` expand — which dispatches a hub state change and re-renders the panel — re-read the
+whole file. Neither had a comment suggesting anyone had considered it.
+
+**A `catch` that discards the message turns a diagnosable failure into a mystery.** Three viewers
+caught their parser's error and rendered a fixed string ("Invalid tape file format", "Invalid disk
+file format"). The readers already returned a sentence saying what was wrong with the file; it was
+being thrown away one line from where it would have been shown.
+
+**Colour that restates the adjacent word is decoration.** The palette editor labelled its channel
+scales "Red", "Green" and "Blue" *in* red, green and blue, borrowed from the console's ANSI palette.
+§5.2's test — does the mark carry information the text does not? — fails here as plainly as it did
+for the document icons. The swatches under each heading are what must carry channel colour.
+
+**Prefer the field that was set on purpose over the string that happens to look right.** The
+`.pal`/`.npl` editor asked `document.id.endsWith(".npl")` — a path, which need not end in the
+extension — when the registry had already made that exact distinction and recorded it in
+`document.type`.
+
+**A label that is merely next to its input gives the control no accessible name.** The shared
+`Checkbox` had them as siblings with no `htmlFor`/`id`, so every checkbox in every dialog announced
+itself as "checkbox, unchecked" with nothing to say which setting it was. It looked fine because the
+label carried its own `onClick` — the *visible* behaviour was complete, so nothing prompted a look.
+**And fixing it is where the bug is**: once `htmlFor` associates the two, the browser forwards a
+label click to the input, so the label's own handler now fires *alongside* it and toggles twice.
+Remove the handler when you add the association, and test the label click, not just the input's.
+
+**A prop the component does not declare is dropped in silence.** `dialogs.open`'s generics infer the
+props type from the object passed, not from the component, so `machineId` was handed to
+`BreakpointDialog` — which has no such prop — and vanished. A test asserted it was passed, which
+made the dead value look load-bearing. Assert what the component *does* with a value, not that the
+caller supplied it.
+
+**Adding a prop to a shared control is often cheaper than the workaround it prevents.** Seven
+dialogs hand-rolled bare `<input>`s rather than use `TextInput`, and one reason was that it had no
+`placeholder`. Two props on the shared control removed sixteen hand-rolled fields. When a team keeps
+avoiding a primitive, ask what it is missing before assuming the avoidance was carelessness.
+
+**Write the folder-wide rule first and watch every file fail it.** Phase 41's five new consistency
+rules were all red across all seven dialogs before a single fix. That is the shape to aim for: a
+rule that passes when you write it has told you nothing, and a rule asserted over the *folder*
+rather than over the files you remembered is the only kind an eighth file inherits.
+
+**Narrowing a rule honestly beats satisfying it dishonestly.** The same phase's "no bare form
+controls" rule would have forced a single-line `TextInput` on a multi-line comment field, because no
+shared `TextArea` exists. The rule now excludes `<textarea>` and says why, and the gap is recorded.
+A lint satisfied by a functional regression is worse than the lint.
+
+**When a flag is passed and unused, ask whether it should be used before deleting it.** `isFolder`
+reached both `RenameDialog` and `DeleteDialog` and neither read it. In rename it was genuinely dead
+— the consequence is identical either way. In delete it was not: a folder takes everything inside
+it, and a destructive confirmation should say which it is about.
+
+**A control disabled with `pointer-events: none` is not disabled.** It is greyed and
+mouse-proof, and still in the tab order — so a keyboard user reaches it, opens it, and changes the
+setting the UI is presenting as unavailable. `StartModeSelector` did this to a `Dropdown` for want
+of a `disabled` prop. Use the underlying control's own disabled state; it also marks the control for
+assistive technology, which no amount of opacity does.
+
+**When call sites keep avoiding a shared primitive, ask what it is missing.** Three times in one
+batch a hand-rolled control turned out to be a workaround for an absent prop: `TextInput` had no
+`placeholder` (so seven dialogs wrote bare `<input>`s), `Dropdown` no `enabled` (so one dialog kept
+a native `<select>` and another faked disabling with a style), `Checkbox` no label association. Each
+gap cost more in duplicated markup than the prop cost to add — and two of the three workarounds were
+also *wrong*, not merely verbose.
+
+**A stub that drops the prop under test makes the test vacuous.** `Toolbar.test.tsx` mocks
+`Dropdown` with a bare `<select>` that ignored `enabled`, so a new "is disabled" assertion passed
+against a control that was not disabled. When you add a prop to a shared control, update its mocks
+before trusting any assertion about it.
+
 ### The five mandates
 
 - **M1 — the type scale is absolute, never `em`.** `em` compounds. Real example found: a panel set
   `1em` inside a `0.8em` parent and got 12.8px where it plainly meant 16px.
+  Enforced since Phase 14 by `test/theming/type-scale-contract.test.ts`. **The baseline is now
+  empty**: `src/renderer` has no `em` font size left, so the test is a plain rule again rather than a
+  ratchet, and any new one fails immediately. (Monaco's vendored CSS has its own; it is third-party
+  and out of scope.)
+  **`calc(var(--some-token) * n)` is the sanctioned exception**, for a size that must stay
+  proportional to a *named* base — the register panel's flag letters, whose `ch` column widths scale
+  with that same font size, and the memory tooltip's secondary line. What M1 forbids is a ratio
+  against whatever ancestor happens to set a size; naming the base removes exactly that. Do not
+  "simplify" either to a fixed step.
 - **M2 — tabular measure is `ch`, never px.** Column widths tuned to one font silently mistune when
   the font changes. **Iosevka is exactly 0.5em**, so 1ch = 6px at `--font-size-200` (12px) — measured
   twice, in a standalone probe and in the running app, not assumed.
+  **`controls/layout`'s `width` prop is px for a number** (`cssWidth`) and a CSS length for a string,
+  while `controls/data`'s cells read a bare number as `ch`. A column therefore wants `width="7ch"`,
+  never `width={7}`. All three layout cells *documented the opposite* until Phase 14 corrected them,
+  which is how `NecUpd765Panel` acquired a 16px column from an author who read the prop's own doc.
 - **M3 — row heights are JS-readable.** `rowSizes.ts` is the single source; `VirtualizedList`
   positions rows from a number while CSS draws them, and if they disagree **no stylesheet change can
   fix it**. A ratchet test (`test/theming/row-size-contract.test.ts`) fails on any new
@@ -457,7 +655,7 @@ omission visible.)
 - **`appIde/SideBar/SideBarBadge.tsx`** — the panel-header pill, four tones (`neutral` default,
   `accent`, `warning`, `error`). **Renders `null` for an empty count** (zero, negative, `undefined`,
   `NaN`); that is why it exists rather than a `<span>` per panel, so no future badge can forget the
-  empty case. Consumers: `SiteBarPanels/BreakpointsBadge.tsx`, `SiteBarPanels/WatchBadge.tsx`.
+  empty case. Consumers: `SideBarPanels/BreakpointsBadge.tsx`, `SideBarPanels/WatchBadge.tsx`.
 - **`theming/tokens/dimensions.ts`** — also `SCROLL_SHADOW` (per-tone colours, like `SHADOW`) and
   `SCROLL_SHADOW_HEIGHT`, emitted as `--shadow-scroll`, `--shadow-scroll-line`,
   `--shadow-scroll-height` (Phase 11).

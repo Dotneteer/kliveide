@@ -309,7 +309,7 @@ TypeScript source files:
 - `src/renderer/abstractions/IZxNextMachine.ts`
 - `src/renderer/appEmu/MachineService.ts`
 - `src/renderer/appEmu/MainToEmuProcessor.ts`
-- `src/renderer/appIde/SiteBarPanels/UlaPanel.tsx`
+- `src/renderer/appIde/SideBarPanels/UlaPanel.tsx`
 - `src/renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-next-disassembler.ts`
 
 Pattern source files:

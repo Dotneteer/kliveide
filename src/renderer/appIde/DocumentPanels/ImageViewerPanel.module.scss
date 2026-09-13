@@ -24,18 +24,13 @@
   min-height: unset;
 }
 
-.message {
-  @include fill-parent-flex;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-command-icon);
-}
 
 .zoomLabel {
-  min-width: 32px;
+  /* --- M2: a text measure is `ch`. 32px at 12.8px / 6.4 = 5ch. */
+  min-width: 5ch;
   text-align: center;
-  font-size: 0.85em;
+  /* --- M1: the step below the panel size, not 0.85 of whatever it inherits. */
+  font-size: var(--font-size-100);
   color: var(--color-command-icon);
   cursor: pointer;
   user-select: none;

@@ -1,6 +1,7 @@
 import {
   useDispatch,
   useGlobalSetting,
+  useSelector,
   useStore
 } from "@renderer/core/RendererProvider";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
@@ -64,12 +65,16 @@ export const OutputPanel = () => {
   // --- Drives the watermark only; `ConsoleOutput` decides for itself when to show `emptyState`.
   const [isEmpty, setIsEmpty] = useState(true);
 
+  // --- `commandSeqNo` is in the deps because the header's Clear button empties the buffer by a
+  // --- path that never reaches `onContentsChanged`; see the note on that button.
+  const commandSeqNo = useSelector((s) => s.ideView?.toolCommandSeqNo);
+
   useEffect(() => {
     tool.current = store.getState().ideView?.tools.find((t) => t.id === "output") as ToolInfo;
     const paneBuffer = outputPaneService.getOutputPaneBuffer(activePane);
     setBuffer(paneBuffer);
     setIsEmpty((paneBuffer?.getContents()?.length ?? 0) === 0);
-  }, [activePane]);
+  }, [activePane, commandSeqNo]);
 
   const paneName = outputPaneService
     .getRegisteredOutputPanes()
@@ -124,6 +129,8 @@ export const OutputPanelHeader = () => {
         placeholder="Select..."
         options={panes}
         initialValue={activePane}
+        // --- A control's width, not a tabular column: M2 governs columns, and px is right here.
+        // --- (Whether the app wants a shared control-width scale is §4's open question.)
         width={140}
         onChanged={async (option) => {
           await mainApi.setGlobalSettingsValue(SETTING_IDE_ACTIVE_OUTPUT_PANE, option);
@@ -134,6 +141,12 @@ export const OutputPanelHeader = () => {
         iconName="clear-all"
         title="Clear"
         clicked={() => {
+          /*
+           * `clear()` empties the buffer without going through `onContentsChanged`, which is what
+           * the body's `isEmpty` is driven by — so the watermark stayed on over a pane the user had
+           * just emptied. Bumping the command sequence number re-runs the body's effect, which
+           * re-reads the buffer and settles both.
+           */
           outputPaneService.getOutputPaneBuffer(activePane)?.clear();
           dispatch(incToolCommandSeqNoAction());
         }}

@@ -137,7 +137,7 @@ export const zxSpectrum48SysVars: SysVar[] = [
     name: "FLAGS",
     type: SysVarType.Flags,
     description: "Various flags to control the BASIC system",
-    flagDecriptions: [
+    flagDescriptions: [
       "Leading space flag (set to suppress leading space)",
       "Printer flag (set when printer in use)",
       "Printer mode: K (reset) or L (set)",
@@ -153,7 +153,7 @@ export const zxSpectrum48SysVars: SysVar[] = [
     name: "TV-FLAG",
     type: SysVarType.Flags,
     description: "Flags associated with the television",
-    flagDecriptions: [
+    flagDescriptions: [
       "Set when printing to the lower screen",
       "Unused",
       "Unused",
@@ -319,7 +319,7 @@ export const zxSpectrum48SysVars: SysVar[] = [
     name: "FLAGS2",
     type: SysVarType.Flags,
     description: "More flags",
-    flagDecriptions: [
+    flagDescriptions: [
       "Reset when the screen is clear",
       "Set when the printer buffer is in use",
       "Set when in quotes during line parsing",
@@ -359,7 +359,7 @@ export const zxSpectrum48SysVars: SysVar[] = [
     name: "FLAGX",
     type: SysVarType.Flags,
     description: "Various flags",
-    flagDecriptions: [
+    flagDescriptions: [
       "Set when dealing with a complete simple string",
       "Set when dealing with a new (rather than existing) variable",
       "Unused",
@@ -489,7 +489,7 @@ export const zxSpectrum48SysVars: SysVar[] = [
     name: "P-FLAG",
     type: SysVarType.Flags,
     description: "More flags",
-    flagDecriptions: [
+    flagDescriptions: [
       "OVER bit (temporary)",
       "OVER bit (permanent)e",
       "INVERSE bit (temporary)",

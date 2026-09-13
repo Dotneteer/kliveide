@@ -9,7 +9,7 @@ import { CommandResultData } from "../../abstractions/CommandResultData";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
-import { PanelHeader } from "@renderer/controls/data";
+import { DataPanel, EmptyState, PanelHeader } from "@renderer/controls/data";
 
 type CommandResultViewState = {
   topPosition?: number;
@@ -38,8 +38,25 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
     documentHubService.setDocumentViewState(document.id, mergedState);
   };
 
+  /*
+   * A command result with no buffer.
+   *
+   * `buffer` was read with `?.` and then called without one four lines later, so a document opened
+   * with no buffer threw rather than saying anything. It cannot normally happen — the command that
+   * opens this document supplies one — but the optional chain above says the author expected it to
+   * be possible, and a thrown render is the worst way to be right about that.
+   */
+  if (!buffer) {
+    return (
+      <DataPanel xclass={styles.panel}>
+        <PanelHeader>{title && <Label text={title} />}</PanelHeader>
+        <EmptyState tone="error" motif={false} message="This command produced no output buffer." />
+      </DataPanel>
+    );
+  }
+
   return (
-    <div className={styles.panel}>
+    <DataPanel xclass={styles.panel}>
       <PanelHeader>
         <SmallIconButton
           iconName='copy'
@@ -67,7 +84,7 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
           saveViewState();
         }}
       />
-    </div>
+    </DataPanel>
   );
 };
 

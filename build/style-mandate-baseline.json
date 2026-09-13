@@ -1,0 +1,6 @@
+{
+  "$comment": "Known M1 (em font sizes) and M2 (px column widths) violations, keyed by file and mandate. The suite fails on anything NOT listed here, and on any count that has dropped — clearing entries is how a modernization phase proves it finished. Regenerate with `npm run style:baseline`. See test/theming/type-scale-contract.test.ts.",
+  "updated": "2026-09-13",
+  "total": 0,
+  "entries": {}
+}

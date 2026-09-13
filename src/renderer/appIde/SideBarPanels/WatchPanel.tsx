@@ -4,6 +4,7 @@ import { Label } from "@renderer/controls/layout/Label";
 import { Value } from "@renderer/controls/layout/Value";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useState, useEffect, useCallback, memo } from "react";
+import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { Icon } from "@renderer/controls/Icon";
 import styles from "./WatchPanel.module.scss";
@@ -44,7 +45,15 @@ export const WatchPanel = () => {
   // (no machine charset usage)
   const [displayedWatches, setDisplayedWatches] = useState<WatchEntry[]>([]);
   const [memoryContents, setMemoryContents] = useState<Uint8Array | null>(null);
-  const watchExpressions = useSelector((s) => s.watchExpressions || []);
+  /*
+   * `?? EMPTY_ARRAY`, not `|| []`.
+   *
+   * The panel genuinely needs the items — selecting a length here would be wrong, and `WatchBadge`
+   * exists precisely because the *badge* needs the count. What was wrong is the fallback: a fresh
+   * `[]` on every store update while the list is empty, so referential equality never held, the
+   * panel re-rendered on every unrelated state change, and the effect below re-ran with it.
+   */
+  const watchExpressions = useSelector((s) => s.watchExpressions ?? EMPTY_ARRAY);
   const compilationResult = useSelector((s) => s.compilation?.result);
 
   // --- Update the watch values according to the current definitions, compilation result,
@@ -121,12 +130,20 @@ export const WatchPanel = () => {
     updateWatchValues(watchExpressions, memoryContents, compilationResult);
   }, [watchExpressions, memoryContents, compilationResult, updateWatchValues]);
 
-  // --- Periodically refresh watch values
-  useEmuStateListener(emuApi, async () => {
-    // --- Obtain the current memory contents
-    const mem = (await emuApi.getMemoryContents()).memory;
-    setMemoryContents(mem);
-  });
+  /*
+   * Periodically refresh watch values.
+   *
+   * The guard is the point: this pulls the machine's entire 64K, ~1.3 times a second, for as long
+   * as the panel is open — and did so with zero watch expressions defined, which is the panel's
+   * default state. Nothing can be computed from that memory until there is something to evaluate.
+   * `SysVarsPanel` takes the same shape for the same reason.
+   */
+  const refreshMemory = useCallback(async () => {
+    if (!watchExpressions.length) return;
+    setMemoryContents((await emuApi.getMemoryContents()).memory);
+  }, [emuApi, watchExpressions.length]);
+
+  useEmuStateListener(emuApi, refreshMemory);
 
   return (
     <div className={styles.watchPanel}>
@@ -137,14 +154,12 @@ export const WatchPanel = () => {
         <VirtualizedList
           items={displayedWatches}
           scrollRowsHorizontally
-          renderItem={(idx) => {
-            try {
-              const watch = displayedWatches[idx];
-              return <WatchItem watch={watch} />;
-            } catch (e) {
-              return <div key={idx} />;
-            }
-          }}
+          /*
+           * No `try`/`catch` here. Indexing an array cannot throw, so the catch this replaced was
+           * unreachable — and had it ever caught anything it would have swallowed a real render
+           * error from `WatchItem` and drawn an empty div in its place.
+           */
+          renderItem={(idx) => <WatchItem watch={displayedWatches[idx]} />}
         />
       )}
     </div>

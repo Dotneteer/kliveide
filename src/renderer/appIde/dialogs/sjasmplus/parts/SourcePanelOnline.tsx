@@ -1,6 +1,8 @@
 import classnames from "classnames";
 
 import { Button } from "@renderer/controls/Button";
+import Dropdown from "@renderer/controls/Dropdown";
+import { Checkbox } from "@renderer/controls/Checkbox";
 
 import type { SjasmplusIntent } from "../SjasmplusIntents";
 import type { OnlineViewModel } from "../SjasmplusViewModel";
@@ -43,56 +45,58 @@ export const SourcePanelOnline = ({ online, disabled, dispatch }: Props) =>
   ) : (
     <>
       <Row label="Release">
-        <select
-          className={styles.selectBox}
-          value={online.selectedTag}
-          disabled={online.releaseSelectDisabled}
-          onChange={(event) => dispatch({ type: "releaseSelected", tagName: event.target.value })}
-          data-testid="sjasmplus-release-select"
-        >
-          {online.releases.length === 0 && <option value="">No releases</option>}
-          {online.releases.map((release) => (
-            <option key={release.value} value={release.value}>
-              {release.label}
-            </option>
-          ))}
-        </select>
-        <label className={styles.option}>
-          <input
-            type="checkbox"
-            checked={online.includePrereleases}
-            disabled={online.prereleasesDisabled}
-            onChange={(event) =>
-              dispatch({ type: "prereleasesToggled", value: event.target.checked })
-            }
-          />
-          Show prereleases
-        </label>
+        {/*
+          * The app's `Dropdown`, not a native `<select>`.
+          *
+          * This dialog is the MVC pattern's reference implementation and was the last place still
+          * using bare form controls, so a native select sat beside the app's own dropdowns looking
+          * like neither. The swap waited on `Dropdown` gaining an `enabled` prop — these two
+          * selects need to disable while a refresh is in flight, and the shared control had no way
+          * to say so.
+          */}
+        <Dropdown
+          testId="sjasmplus-release-select"
+          ariaLabel="SjasmPlus release"
+          options={
+            online.releases.length === 0
+              ? [{ value: "", label: "No releases" }]
+              : online.releases
+          }
+          initialValue={online.selectedTag}
+          enabled={!online.releaseSelectDisabled}
+          onChanged={(tagName) => dispatch({ type: "releaseSelected", tagName })}
+        />
+        {/* --- The shared `Checkbox`, which associates its label with its input; the hand-rolled
+            --- pair here did not, so it had no accessible name. */}
+        <Checkbox
+          label="Show prereleases"
+          initialValue={online.includePrereleases}
+          enabled={!online.prereleasesDisabled}
+          onChange={(value) => dispatch({ type: "prereleasesToggled", value })}
+        />
         <Button
           text="Refresh"
+          variant="secondary"
           disabled={online.refreshDisabled}
           clicked={() => dispatch({ type: "refreshReleasesRequested" })}
         />
       </Row>
       <Row label="Asset">
-        <select
-          className={styles.selectBox}
-          value={online.selectedAssetName}
-          disabled={online.assetSelectDisabled}
-          onChange={(event) => dispatch({ type: "assetSelected", name: event.target.value })}
-          data-testid="sjasmplus-asset-select"
-        >
-          {online.assets.length === 0 && <option value="">No assets</option>}
-          {online.assets.map((asset) => (
-            <option key={asset.value} value={asset.value}>
-              {asset.label}
-            </option>
-          ))}
-        </select>
+        <Dropdown
+          testId="sjasmplus-asset-select"
+          ariaLabel="SjasmPlus asset"
+          options={
+            online.assets.length === 0 ? [{ value: "", label: "No assets" }] : online.assets
+          }
+          initialValue={online.selectedAssetName}
+          enabled={!online.assetSelectDisabled}
+          onChanged={(name) => dispatch({ type: "assetSelected", name })}
+        />
       </Row>
       <Row label="Folder">
         <Button
           text="Select folder..."
+          variant="secondary"
           disabled={disabled}
           clicked={() => dispatch({ type: "selectDownloadFolderRequested" })}
         />
@@ -105,6 +109,7 @@ export const SourcePanelOnline = ({ online, disabled, dispatch }: Props) =>
         <span className={styles.pushRight}>
           <Button
             text="Download..."
+          variant="secondary"
             disabled={!online.downloadEnabled}
             clicked={() => dispatch({ type: "downloadRequested" })}
           />

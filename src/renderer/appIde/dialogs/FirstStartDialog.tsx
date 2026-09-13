@@ -38,7 +38,14 @@ export const FirstStartDialog = ({ onClose, onResolve }: Props) => {
       secondaryLabel="Visit the Klive website"
       cancelVisible={false}
       onSecondaryClicked={async () => {
-        dispatch(startScreenDisplayedAction());
+        /*
+         * No `dispatch` here.
+         *
+         * Returning `false` tells `Modal` to close, which runs `onClose` below — and that already
+         * dispatches `startScreenDisplayedAction`. Doing it here as well fired the action twice for
+         * one click. It is idempotent, so nothing broke; it is still two writes where the code
+         * reads as one, and the next person to add a non-idempotent step inherits the bug.
+         */
         await mainApi.showWebsite();
         resolveOnce("website");
         return false;

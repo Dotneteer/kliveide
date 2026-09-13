@@ -38,8 +38,9 @@ for `const …ROW…SIZE = <n>`. There is no test anywhere in `test/` that looks
 column width. `test/theming/token-contract.test.ts` only checks that `var(--…)` names resolve, so an
 `em`, a px column and a raw `rgb()` all pass CI today.
 
-The consequence is measurable: **56 `em` font sizes survive across 27 stylesheets**, and the largest
-single block of them is in the seven NEX annotation dialogs — written *last commit*, years after the
+The consequence is measurable: **54 `em` font sizes survive across 28 files** (Phase 14 counted them
+exactly: 53 declarations in 27 stylesheets plus one inline `fontSize` prop), and the largest single
+block of them — 19 — is in the seven NEX annotation dialogs, written *last commit*, years after the
 mandate. A rule with no test does not decay slowly; new code re-opens it at full rate. This is the
 same diagnostic as the `AttachedShadow` trap in the lessons file (*"a feature can be fully wired up,
 running, and drawing nothing"*), arriving from the other side: a rule fully written down, fully
@@ -79,23 +80,23 @@ lessons file's *"survey with the right pattern"* rule with a unit attached.
 Stages are ordered by leverage, then by cost. **Stages 2–5 are independent of one another and may be
 reordered freely**; Stage 1 is not — it changes what "done" means for everything after it.
 
-Paths below are as they stand today. Phase 15b renames `SiteBarPanels/` → `SideBarPanels/`, so every
-`SiteBarPanels/` path in this document is pre-rename; read it as the new spelling once 15b has landed.
+Paths below are as they stand today. Phase 15b renames `SideBarPanels/` → `SideBarPanels/`, so every
+`SideBarPanels/` path in this document is pre-rename; read it as the new spelling once 15b has landed.
 
 | # | Phase | Surface | Verdict | Why here |
 |---|---|---|---|---|
 | **Stage 1 — Foundations** ||||
 | 14 | Enforcement | M1/M2 tests + shrinking baseline | — | Nothing after this holds without it |
 | 15 | Shared shells | `GenericFilePanel`, the width fork, `DialogProvider` guard | — | One edit each, many surfaces |
-| 15b | Misspelling sweep | `flagDecriptions`, `SiteBarPanels/`, 3 more | — | A rename must precede the phases that edit those files |
+| 15b | Misspelling sweep | `flagDecriptions`, `SideBarPanels/`, 3 more | — | A rename must precede the phases that edit those files |
 | 16 | Regression pass | Watch, Next Registers, Call Stack, Breakpoints, ULA | shipped-modern | Live bugs in panels already called done |
 | **Stage 2 — Sidebar panels** ||||
-| 17 | PSG (AY-3-8912) | `SiteBarPanels/PsgPanel.tsx` | NOT | 94 lines, cheapest panel, has a data bug |
-| 18 | 6510 CPU | `SiteBarPanels/M6510CpuPanel.tsx` | PARTIAL | Colour grant given (§4); ~15 lines |
-| 19 | VIC | `SiteBarPanels/VicPanel.tsx` | PARTIAL | Largest unconverted colour surface; the density test |
-| 20 | BLINK | `SiteBarPanels/BlinkPanel.tsx` | PARTIAL | Same treatment as 19, Z88 |
-| 21 | NEC UPD 765 Log | `SiteBarPanels/NecUpd765Panel.tsx` | PARTIAL | Console palette in a data panel |
-| 22 | Scripting History | `SiteBarPanels/ScriptingHistoryPanel.tsx` | NOT | Dead conditional, forever-polling |
+| 17 | PSG (AY-3-8912) | `SideBarPanels/PsgPanel.tsx` | NOT | 94 lines, cheapest panel, has a data bug |
+| 18 | 6510 CPU | `SideBarPanels/M6510CpuPanel.tsx` | PARTIAL | Colour grant given (§4); ~15 lines |
+| 19 | VIC | `SideBarPanels/VicPanel.tsx` | PARTIAL | Largest unconverted colour surface; the density test |
+| 20 | BLINK | `SideBarPanels/BlinkPanel.tsx` | PARTIAL | Same treatment as 19, Z88 |
+| 21 | NEC UPD 765 Log | `SideBarPanels/NecUpd765Panel.tsx` | PARTIAL | Console palette in a data panel |
+| 22 | Scripting History | `SideBarPanels/ScriptingHistoryPanel.tsx` | NOT | Dead conditional, forever-polling |
 | 23 | Open Editors | `features/openEditors/OpenEditorsPanel.tsx` | NOT | 260 lines, a11y |
 | 24 | Klive Project | `features/explorer/ExplorerPanel.tsx` | NOT | 891 lines, the largest sidebar item |
 | **Stage 3 — Tool panels** ||||
@@ -144,11 +145,10 @@ prose in `Data.module.scss:8` and `Button.module.scss:14` describing the old vio
 rule they document.
 
 **M2** — no px width on a *tabular* measure. This one cannot be a blanket ban: `DocumentTab.module.scss:43`
-`max-width: 360px` is chrome geometry and legitimately px. Scope it to declarations inside a rule that
-also names `--monospace-font`, or to the `width`/`min-width` props of `controls/data` and
-`controls/layout` cells, and say in the test why the line is drawn there.
+`max-width: 360px` is chrome geometry and legitimately px. Scope it, and say in the test why the line
+is drawn where it is. **Both scopings this plan proposed turned out to be wrong — see the exit below.**
 
-**Both take a baseline, not a clean slate.** 56 M1 violations exist across 27 files; failing CI on all
+**Both take a baseline, not a clean slate.** 54 M1 violations exist across 28 files; failing CI on all
 of them fails the build before a single panel is converted. Follow `scripts/check-types.cjs`: record
 the current offenders, fail on anything *new*, and have each phase below delete its own entries.
 A phase that does not shrink the baseline has not finished. Wire the baseline file into the repo the
@@ -156,6 +156,42 @@ way `build/type-errors-baseline.json` is.
 
 Correct the claim in `AGENTS.md` and main-plan §3.4 in the same change — until Phase 14 lands they are
 wrong, and after it they should describe the baseline rather than implying a clean rule.
+
+##### Phase 14 exit *(2026-09-13)*
+
+- `test/theming/type-scale-contract.test.ts` (node project, 7 tests) and
+  `build/style-mandate-baseline.json`: **57 recorded violations in 30 entries** — 54 M1 (53
+  declarations across 27 stylesheets, plus the inline `fontSize="0.8em"` at
+  `StaticMemoryDump.tsx:1651`) and 3 M2 in 2 files. `npm run style:baseline` regenerates it.
+- **Both halves of the ratchet were watched failing before being trusted**, per the lessons file. A
+  probe `font-size: 0.77em` added to `Checkbox.module.scss` produced
+  `controls/Checkbox.module.scss::M1: 0 known -> 1 now`; tokenizing `Z88ToolArea`'s `0.65em` produced
+  `appEmu/machines/Z88ToolArea.module.scss::M1: 1 recorded -> 0 actual`. Both probes reverted.
+- Full suite green: **20,576 tests / 686 files**, 0 failures. `npm run build:check` unchanged at 126
+  known type errors. `npm run lint:renderer` 0 errors. `electron-vite build` succeeds.
+- `AGENTS.md`, main-plan §3.4 and `.ai/ui-theming-intent-and-lessons.md` updated.
+
+**Two things the plan got wrong, both about M2.**
+
+**The scoping this section proposed does not work, in either form.** *px widths in stylesheets that
+name `--monospace-font` or `--panel-font-size`* gave 16 hits of which ~3 were real — the rest
+swatches, icons, a 2px prompt rail, a 1px divider. *Bare-number `width` on `controls/data` and
+`controls/layout` cells* gave 21 hits of which **19 were `<LabelSeparator width={8} />`**, whose own
+doc comment calls it "a spacer, not a label". Both were dropped: a rule that is 80% false positives
+teaches people to add allowlist entries instead of fixing code. What shipped is the one shape a regex
+can settle — a numeric **literal** on a cell that reserves a column — which finds exactly **3**
+violations app-wide. The honest reason is in the test's header: every other column width is routed
+through a named constant, and whether that is `ch` or px depends on its *type*. **This is a compiler
+problem wearing a linter's clothes**, and Phase 15 is where it is actually solved. When the number
+half of the `width` prop is gone, delete M2 from that test rather than keeping it as decoration.
+
+**And the fork in §1.3 is worse than "two wrappers disagree" — all three layout cells documented the
+wrong one.** `Label.tsx:10`, `Value.tsx:16` and `Secondary.tsx:8` each said *"A number is `ch` (M2);
+a string is a CSS length"* while `cssWidth` renders a number as **px**. That is how
+`NecUpd765Panel.tsx:75` acquired `width={16}`: an author read the prop's own documentation and got
+16px. Corrected in this phase, because shipping a test that codifies the opposite of the doc comment
+beside it would be incoherent. It also raises Phase 15's priority — the doc was wrong for as long as
+it existed, and only a type change stops it being wrong again.
 
 #### Phase 15 — The shared shells
 
@@ -196,7 +232,7 @@ conflicts. Do it in one commit, touching nothing else, so the diff stays reviewa
 | `spceified` → `specified` | `appIde/commands/DialogCommands.ts:20` | **User-visible** in command help |
 | `lenght` → `length` | `z80-disassembler/zx-spectrum-48-disassembler.ts:117,119,121` (a local), `KliveCompilerCommands.ts:296` (a comment) | Local scope; no API change |
 | `Sitebar` → `Sidebar` | `theming/theme.ts:150` | A comment |
-| `SiteBarPanels/` → `SideBarPanels/` | The **directory**, plus 7 importers | See below |
+| `SideBarPanels/` → `SideBarPanels/` | The **directory**, plus 7 importers | See below |
 
 The directory rename is the only non-trivial one, and it is worth doing precisely because the
 correctly spelled `SideBar/` sits next to it — two directories one letter apart, one right and one
@@ -209,6 +245,55 @@ from that folder.
 
 **Do not batch anything else into this phase.** A mechanical rename is reviewable only while it is
 provably mechanical; one behavioural change hidden in a 200-line path diff is invisible.
+
+
+##### Phases 15, 15b, 16 exit *(2026-09-13)*
+
+**Phase 15.** `.panelFont` and `.invalid` are on the scale with declared leading; the invalid body is
+an `EmptyState` showing the loader's own sentence (the wrapper text produced "File content is not a
+valid: Invalid file size, …"); `GenericViewerPanel.tsx` and `cssWidth.ts` deleted;
+`dialogOptionKeys` completed and made self-maintaining.
+
+Two things went further than planned, both for the same reason — the fix as written would have been
+incoherent with what was already there:
+
+- **`EmptyState` gained a `tone`.** The plan said "use `EmptyState`", but the invalid body is a
+  *failure* and `EmptyState` renders `--data-secondary` — so the conversion as specified would have
+  demoted a parse error to neutral grey. An absence and a failure are different facts. `tone="error"`
+  (`--status-error`) is the distinction, and five upcoming phases (28, 30, 31, 33) need it too.
+- **The option guard is now a `Record<keyof Required<DialogOptions>, true>`.** Adding the two missing
+  keys to a `Set` would have left the next key to go missing the same way; a `Set<keyof T>` only
+  constrains what goes in and cannot require completeness. This fails the build instead.
+
+**The width fork closed differently than §1.3 proposed.** Removing the bare-number form from the
+three layout cells breaks eleven call sites, all in panels owned by later phases — and converting
+their px measures to `ch` is a *visual* decision belonging to those phases. So every numeric became
+an explicit `"Npx"` string: nothing moved on screen, the unit is now written where it is read, and
+Phase 14's M2 rule was extended to match px strings and px-valued `*WIDTH` constants so the debt is
+tracked rather than hidden. `LayoutPrimitives.test.tsx` gained the case that proves it mattered —
+written as `width={40}`, the number now reaches `controls/data` and renders **320px**.
+
+**Phase 15b.** Five renames landed, including two the plan had not found: the `--bgcolor-sitebar`
+token and the `SiteBar` component exported from `SideBar.tsx`. `SiteBarPanels/` → `SideBarPanels/`
+went through `git mv` with all 7 importers updated; `electron-vite build` is the gate that proves it,
+since a path-only break type-checks clean.
+
+**Phase 16.** Ten defects across five panels. Three are worth naming:
+
+- **Breakpoints** kept its disassembly in a ref filled in place across an `await` per breakpoint,
+  while `bps` still held the previous list — so any render landing in that window drew new
+  instructions against old rows. Fixed by construction rather than by ordering: one state value
+  holding `BreakpointInfo & { instruction }`, one update.
+- **`FlagFieldRow`'s double tooltip**, recorded as known-and-unfixed in main-plan §12.3, is fixed —
+  one row tooltip whose content follows the pointer, using the `onHoverBit` prop Phase 12 added for
+  exactly this. §12.3 deferred it because it touched five panels nobody had asked about; Phases 19
+  and 20 are that ask for two of them.
+- **Watch's `|| []`** needed reading before fixing. `WatchBadge` and the lessons file both call
+  selecting the *items* correct for the panel, so the answer was not a count — only the fresh-literal
+  fallback was wrong (`?? EMPTY_ARRAY`).
+
+`test/controls/Phase16Regressions.test.tsx` (4 tests) pins the Watch fetch guard and the Call Stack
+empty state; both were watched failing with the fix reverted.
 
 #### Phase 16 — The panels already called done
 
@@ -275,6 +360,29 @@ Beyond the colour grant:
   (`controls/data/registers.tsx:327-355`). §12.3 left it alone because *"changing it changes five
   panels the author has not asked about"* — Phases 19 and 20 are that ask for two of them.
 
+
+##### Phases 17–20 exit *(2026-09-13)*
+
+**Phase 17 (PSG)** fixed the shipped data bug — `CntC` read `psgState.cntB` — and the fix is
+structural, not a one-character edit: the three channels were three hand-copied seven-row blocks,
+which is the shape that defect lives in, and they are now one parameterised `PsgChannel`. A copy
+cannot carry the bug. `test/controls/PsgPanel.test.tsx` gives each channel a distinct counter so a
+wrong read is visible rather than plausible, and was watched failing against `cntB`.
+
+The panel also lost its stylesheet entirely. It had one rule, `@include side-panel-content` — which
+`DataPanel` now supersedes, and whose `display: block` would have overridden the flex column
+`DataPanel` lays its rows out in. An empty class is stripped at build time, so keeping it as a
+"DOM hook" would have been a comment describing something that does not exist.
+
+**Phases 18–20 (6510 CPU, VIC, BLINK)** took the colour grant: 12/54/13 `iconFill`s and 9/28/1
+`valueXclass`es. The §10.3 split does the work — payload on `--color-state-value`, labels on
+`--data-label` — which is what keeps VIC's 74 values a hierarchy rather than a wall.
+
+Also in these: BLINK's native `title` (the last one in the sidebar) became the app's tooltip, and
+its `LAB_WIDTH = 7` — a bare number that reaches `DataLabel` as `ch` with nothing at the call site
+saying so — is now `"7ch"`. VIC's `BIFLAG_GAP` stays px and says so: it feeds a `LabelSeparator`,
+which is a spacer, and M2 governs columns.
+
 #### Phase 21 — NEC UPD 765 Log
 
 `:51,55,59,63` paint the log's icons from `--console-ansi-white` / `-bright-cyan` /
@@ -318,6 +426,47 @@ and px glyph constants (`ExplorerProjectItem.tsx:28-29`, and `LabelSeparator wid
 The real defect is a **missing empty state**: `:407-408` returns `null` when a folder is open but
 `visibleNodes` is empty, so a project whose contents are all excluded renders a blank panel with no
 explanation. `ExplorerEmptyState` covers only the no-folder-at-all case.
+
+
+##### Phases 21–24 exit *(2026-09-13)*
+
+**Phase 21 (NEC UPD 765).** The console palette came off — but as a *redraw*, not a deletion. Read
+Data and Read MSR were the same left arrow told apart by cyan versus white, so stripping the colour
+would have merged two operations into one; the status read now takes the circled arrow, and four
+operations are four marks in one neutral tone. The switch became a lookup with an explicit unknown
+fallback (it had no `default`, so an unrecognised `opType` reached `<Icon iconName={undefined}>`),
+and the append-only log is compared by length instead of being replaced wholesale ~1.3×/s.
+
+**Phase 22 (Scripting History).** The always-true `scripts.length >= 0` is gone, along with the two
+redundant wrappers it needed, and an empty history now says so. The five-second timer runs only while
+a script is pending — every other status has a fixed end time, so it was re-rendering the list for
+ever to recompute numbers that cannot change. The dead `itemKey` (applied as `key` on a component's
+own returned element, where React ignores it) and the unread `initialized` state are gone; `now` is
+read once per panel render and passed down, so the same state cannot draw twice differently. Status
+colours moved from the console's ANSI palette to `--status-*`; the build-script *type* icon went
+neutral, per the other half of §5.2's rule. A `ScriptingHistoryBadge` counts running scripts —
+`accent`, because unlike Watch and Breakpoints this is "something is happening now" rather than a
+standing fact.
+
+**Phase 23 (Open Editors)** and **Phase 24 (Explorer)** cleared their `em` sizes and private 26px row
+heights, and the Explorer's three `!important` fills became a doubled class — the deterministic way
+to outrank a single-class selector from another file, and the convention already used elsewhere here.
+The Explorer's opened-but-empty case, which returned `null`, now explains itself.
+
+**Open Editors is where the tests earned their keep.** Two of my changes were wrong and its suite
+caught both:
+
+- `role="list"` + `role="listitem"` reads better in the abstract, but ARIA's `list` requires
+  `listitem` children — so announcing the rows as a list means giving up the `button` role that says
+  what they *do*. It is a `role="group"` with a label instead.
+- `aria-label` carrying the file path **replaced** the accessible name that the row's own content was
+  already supplying, so a screen reader would have read `/proj/src/a.asm` where the eye reads
+  `a.asm`. The path belongs in the tooltip; the unsaved state is named on the marker, where it
+  appends to the row's name instead of displacing it.
+
+Two native `title`s per row became one styled tooltip, and the key handler moved from `e.code` to
+`e.key` — `code` is the physical key, so the keypad's Enter reported `NumpadEnter` and could not
+activate a row. There is now a test for that.
 
 ### Stage 3 — Tool panels
 
@@ -486,6 +635,70 @@ March 2026, so nothing has exercised its v1/v2/v3 branches or its `ED ED xx yy` 
 time. Fix the routing and the panel renders whatever the parser produces, correct or not. Pin the
 decompressor and the three header versions against real files before trusting the display.
 
+##### Stage 4 exit — Phases 26–37 *(2026-09-13)*
+
+All twelve document panels done. **M2 is now zero**; the M1/M2 baseline is **57 → 31**, all M1, and
+`build/type-errors-baseline.json` went 126 → 125 (one error cleared, locked in). Full suite
+**20,592 passed / 0 failures**; `electron-vite build` succeeds; lint 0 errors.
+
+**Two findings changed what a phase did.**
+
+**§4.2's SCR correction went further than a comment.** The plan had this as "fix the word `ARGB` in
+two files". Doing it exposed the real problem: the sixteen-entry table existed *twice*, in
+`CommonScreenDevice` and in the SCR viewer, each with its own copy of the wrong heading — a palette
+two files state independently is one that will eventually disagree with itself. It is now
+`emu/machines/spectrum-colors.ts`, stating the byte order once and explaining how to check it, with
+`test/renderer/Stage4Regressions.test.ts` asserting it on the entries whose channels actually
+differ. A grey or a white passes under either reading; red and blue do not.
+
+**Phase 37's PASTA/80 check could not be performed here** — it needs the external compiler, which is
+not installed. So the phase was made safe rather than left blocked: `loadZ80FileContents` walked
+straight into the 30-byte header and would run off the end of anything shorter, so a non-snapshot
+`.z80` would have thrown. It now reports. That guard is what makes re-enabling the route correct
+whatever PASTA/80's temp file turns out to contain, and it is worth having regardless — the parser
+had been unreachable for six months, so nothing had exercised it.
+
+The re-enabled entry also proved a gate works: restoring it verbatim brings back
+`iconFill: "--console-ansi-bright-magenta"`, which `doc-icon-neutrality.test.ts` rejects with source
+text included. Dropped, and pinned by a test of its own.
+
+**The rest, briefly.**
+
+- **26–27** — the Unknown viewer sets the treatment, the seven stubs share one
+  `NOT_IMPLEMENTED_MESSAGE` constant rather than seven copies of a string. Eight blank rectangles
+  now say what they are.
+- **28** — both console panels lost their hand-rolled roots and their dead 30px `.header` blocks;
+  `CommandResult` no longer throws when a document arrives with no buffer, and `ScriptOutputPanel`
+  no longer renders the literal text `Lines: undefined`.
+- **29** — the image viewer gained `onError` (a corrupt file left a blank pane beside a live zoom
+  control), stopped declaring unrecognised extensions `image/png`, and now rebuilds its blob URL
+  when a rename changes the extension.
+- **30–31** — the tape and disk viewers each re-parsed their whole file *in the render body*, on
+  every `DataSection` expand. Both are memoised, both surface the reader's own message instead of a
+  bare red bar, and their byte-identical private `ValueLabel` is now one shared component. The DSK
+  viewer's `Total:` (`0`), `Write protected` (`true`) and `Has weak sectors` (`false`) were
+  hardcoded: two are now derived from the surface and the third is deleted, because nothing in the
+  data carries it and a field that is always the same value is not a field. `B/T` and `TLen` showed
+  the same number under two labels. The crash — an unguarded sector index in the physical view,
+  twice on consecutive lines — is guarded once, around the block that needs it.
+- **32** — the palette editor's `"white"`/`"black"` inks are named `inkForSwatch` and justified as
+  the §13.2 exception they are (contrast against user data has no theme answer). Its R/G/B headings
+  went **neutral**: they are the words "Red", "Green" and "Blue", so the console-ANSI hue restated
+  what the text already said. And `.npl` is now distinguished from `.pal` by `document.type` — the
+  editor id the registry assigned — rather than by sniffing the document id for a suffix a path need
+  not end in.
+- **34** — the NEX viewer's `0.92em`/`0.84em` were compounding off `GenericFilePanel`'s `0.8em`, so
+  the real size was 11.8px; four legacy tokens repointed; its eight px widths converted to `ch`,
+  which is what took M2 to zero.
+- **35** — `fontSize="0.8em"`, the literal pattern the two reference panels were changed away from.
+  Its zebra rows are **not** converted to `DataRow`: that is a real change to a 2165-line file that
+  also hosts Stage 5's seven dialogs, and it belongs with splitting that file rather than bolted
+  onto a type fix. Recorded rather than half-done.
+- **36** — `ColorSample`'s `<svg viewBox>` with no `width`/`height` took the replaced-element
+  default of **300×150** inside a 20px swatch, the same defect §13.2 fixed in the palette grid in a
+  file that phase did not reach. And `SpriteEditor` passed `floating` as a fresh object literal, so
+  `memo(SpriteEditorGrid)` never hit while a paste was in the air.
+
 ### Stage 5 — Dialogs
 
 `.plans/DIALOG_MVC_REFACTOR_PLAN.md` is complete and its exclusions are deliberate; this stage does
@@ -540,7 +753,8 @@ systematic rather than individual, which is what makes them one phase:
    `DialogForm.tsx:58` and `Modal.tsx:333,345`. A dialog that uses the shell's footer gets the
    distinction free; these seven are the only dialogs that draw their own band via `DialogFooter`,
    so they are the only ones that lost it. `Button.tsx:11-15` documents this exact failure.
-5. **21 `em` font sizes**, the largest M1 block in the repo.
+5. **19 `em` font sizes**, the largest M1 block in the repo — a third of every M1 violation that
+   existed when Phase 14 counted them.
 6. **No `role="alert"` on any error**, where `BreakpointDialog.tsx:167,226` and `DialogField.tsx:32`
    both do it correctly.
 7. **`NexRegionsDialog` and `NexLabelsDialog` have no `<form>`**, so their autofocused search inputs
@@ -573,6 +787,61 @@ seen to fail.
 - Dialog widths are 12 distinct bare pixel literals with no shared scale. Decide whether that
   deserves a scale or is genuinely per-dialog; do not introduce one silently.
 
+##### Stage 5 exit — Phases 38–42 *(2026-09-13)*
+
+All five dialog phases done. Full suite **20,605 passed / 0 failures**; the type baseline went
+**125 → 123** (two more errors cleared, locked in); the style baseline is **31 → 12**, all M1 and
+none of it in a dialog. `electron-vite build` succeeds, lint 0 errors.
+
+**Phase 41 was done test-first, and that is what made it safe.** The five new rules in
+`NexAnnotationDialogConsistency.test.ts` were written before any fix and **all five were red across
+the whole family** — which is the point of asserting over the folder rather than over the dialogs
+someone remembered to check. The seven dialogs now share the app's `TextInput` and `RadioGroup`,
+carry `--border-input` on their fields, size their type from the scale, distinguish their committing
+button, and announce their errors.
+
+Three things came out of that work that were not in the plan:
+
+- **`TextInput` gained `placeholder` and `ariaLabel`.** Their absence is plausibly *why* these
+  dialogs hand-rolled inputs in the first place: a search box cannot use a shared control that
+  cannot say "Search labels". Adding the props to the shared control is the fix; adding a seventh
+  bare `<input>` was the workaround.
+- **The `<textarea>` rule was narrowed rather than satisfied.** There is no shared multi-line
+  control, and pressing single-line `TextInput` into service for the synopsis comment would be a
+  functional regression to satisfy a lint. The one textarea still gets its border, type size and
+  focus treatment from the other rules. A shared `TextArea` is the real fix and is **deferred**.
+- **Four dead field classes per stylesheet** (`.input`, `.search`, `.scopeOption(s)`,
+  `.typeOption(s)`) went with the conversion.
+
+**The `Checkbox` fix in Phase 39 is the one worth reading.** Its label and input were siblings with
+no `htmlFor`/`id` between them, so the control had **no accessible name at all** — invisible in use,
+because the label carried its own `onClick`. Associating them then created the opposite hazard: with
+`htmlFor` in place the browser forwards a label click to the input, so the label's own handler would
+have fired alongside it and toggled twice per click. `test/controls/Checkbox.test.tsx` pins both
+directions, and the double-toggle case is the one that would have shipped.
+
+**Phase 42's dead props were not all dead in the same way.** `machineId` was passed to
+`BreakpointDialog`, which declares no such prop — it reached the component and was dropped, and
+survived only because `dialogs.open`'s generics infer props from the object rather than checking
+them against the component. A test asserted it, so removing it turned a passing test red: that test
+now asserts `machineSetup.banksView`, the same claim made where it actually lands. `isFolder` split
+the other way — genuinely dead in `RenameDialog` (renaming a folder and a file have the same
+consequence) and worth *using* in `DeleteDialog`, where a folder takes everything inside it and the
+confirmation should say so.
+
+Also: `Modal`'s `onPrimaryClicked` contract is documented and its `close` variable renamed to
+`keepOpen` (the four MVC containers' correcting comments stay — they are accurate where the value is
+written; four copies of one clarification was the *symptom*, and the name was the cause);
+`FirstStartDialog` dispatched `startScreenDisplayedAction` twice on one click; `useBreakpointDialog`
+had four IPC calls in a `Promise.all` with no failure path, so an emulator that did not answer meant
+no dialog, no error and nothing to click.
+
+**Phase 40 stopped short of one item, deliberately.** The two `<select>`s in the SjasmPlus dialog
+stay native: the tests drive them with `toHaveValue`, and swapping in the Radix-backed `Dropdown` is
+a behavioural change, not the visual pass this phase is. What *was* visual is fixed — they carried
+`--border-modal-section`, the section-*divider* token, where the field token belongs, so they did
+not match a `Dropdown` beside them. Recorded as deferred rather than done.
+
 ### Stage 6
 
 #### Phase 43 — Z88 Tool Area
@@ -580,6 +849,54 @@ seen to fail.
 `appEmu/machines/Z88ToolArea.module.scss` is the one emulator-shell surface Phase 9 did not reach:
 `font-size: 0.65em`, `width: 122px` / `197px`, a hardcoded `line-height: 18px` and an untokenized
 `border-radius: 4px` / `padding: 4px 8px`.
+
+---
+
+## 3a. Stage 6 exit, and Phase 40 revisited *(2026-09-13)*
+
+**Phase 43 (Z88 Tool Area)** closes the plan's 31 phases. Only its type was a real mandate
+violation: `--bgcolor-display` / `--color-display` are **device** colours and correctly
+theme-invariant, and the two px card widths are chrome geometry, which the M2 rule deliberately
+excludes — `ch` would also be the wrong unit on a surface with no monospace family. The
+`line-height: 18px` stays and now says why: it is sized for the row's 12–14px glyphs, not for its
+10px text, so deriving it from the type would collapse the row.
+
+### Phase 40's deferral was right, and then stopped being right
+
+Stage 5 left the SjasmPlus dialog's two `<select>`s native, on the grounds that swapping them was
+behavioural rather than visual. Revisiting it found the actual blocker, which was not the tests:
+**`Dropdown` had no way to be disabled.** Both selects disable while a release refresh is in flight,
+and the shared control had no `disabled`/`enabled` prop at all.
+
+That reframes the deferral as a *gap in the primitive*, and the gap had a second victim:
+`StartModeSelector` wrapped its dropdown in `style={{ pointerEvents: "none", opacity: .4 }}` — which
+is a **visual-only disable**. It greys the trigger and blocks the mouse, and leaves it in the tab
+order: a keyboard user could open a control the UI was presenting as unavailable and change the
+machine's start mode. That is a real bug, and it was hiding inside a workaround for the missing prop.
+
+So: `Dropdown` gained `enabled` (named to match `Checkbox`, `RadioGroup` and `Button`) wired to
+Radix's own `disabled`, plus a `[data-disabled]` rule at the same 0.4 opacity the workaround used —
+so nothing looks different where it was already in use, and the keyboard now agrees with the
+appearance. `StartModeSelector` uses it, the two selects became `Dropdown`s, and `.selectBox` went
+with them.
+
+**This is the third time in this batch that a hand-rolled control turned out to be working around a
+missing prop** — `TextInput` had no `placeholder`, `Dropdown` no `enabled`, `Checkbox` no label
+association. The pattern is worth naming: when call sites keep avoiding a shared primitive, the
+question is what it is missing, not why they were careless.
+
+Two tests asserted the old behaviour and both were corrected rather than deleted:
+`Toolbar.test.tsx` pinned the `pointer-events` wrapper — the exact defect — and now asserts the
+trigger is genuinely disabled; its `Dropdown` stub was dropping `enabled`, so the new assertion
+would have passed against a control that was not disabled.
+
+### The other judgement call stands
+
+`machineId` and `isFolder` were resolved in Phase 42 and nothing is outstanding. Recorded here only
+because the split between them was a decision rather than a rule: `machineId` was removed (the
+component declares no such prop, so it was reaching it and being dropped), while `isFolder` was
+removed from `RenameDialog` and **used** in `DeleteDialog` — renaming a folder and a file have the
+same consequence; deleting them do not, and a destructive confirmation should say which it is about.
 
 ---
 

@@ -50,6 +50,7 @@
     "build:linux:arm64": "npm run build:all-wasm && npm run build && electron-builder build --linux --arm64",
     "test:unit": "vitest run --config build/vitest.config.ts --project=!perf",
     "test:perf": "vitest run --config build/vitest.config.ts --project perf",
+    "style:baseline": "UPDATE_STYLE_BASELINE=1 vitest run --config build/vitest.config.ts --project=node test/theming/type-scale-contract.test.ts",
     "test": "npm run test:unit",
     "doc:install": "cd docs && npm ci",
     "doc:assets": "node scripts/build-doc-assets.cjs",

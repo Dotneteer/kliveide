@@ -3,13 +3,15 @@ import { Label } from "./Label";
 
 type Props = {
   /** Width reserved for the label cell. */
-  labelWidth?: number;
+  /** Label cell width as a CSS length with its unit — `"7ch"` for a column, `"32px"` for chrome (Phase 15). */
+  labelWidth?: string;
   /** Label text rendered before the flag. */
   label: string;
   /** Boolean state rendered by the flag cell. */
   value: boolean | number;
   /** Width reserved for the flag cell. */
-  valueWidth?: number;
+  /** Value cell width as a CSS length with its unit — `"7ch"` for a column, `"32px"` for chrome (Phase 15). */
+  valueWidth?: string;
   /** Centers the flag within its cell when true. */
   center?: boolean;
   /** Optional tooltip shown for the label cell. */

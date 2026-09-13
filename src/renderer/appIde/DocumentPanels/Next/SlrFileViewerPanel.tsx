@@ -1,10 +1,12 @@
-import { DataPanel, PanelHeader } from "@renderer/controls/data";
+import { DataPanel, EmptyState, PanelHeader } from "@renderer/controls/data";
+import { NOT_IMPLEMENTED_MESSAGE } from "./notImplemented";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 
 const SlrFileViewerPanel = ({}: DocumentProps) => {
   return (
     <DataPanel>
       <PanelHeader title=".SLR Viewer" />
+      <EmptyState message={NOT_IMPLEMENTED_MESSAGE} />
     </DataPanel>
   );
 };

@@ -7,7 +7,7 @@ export type SysVar = {
   length?: number;
   description?: string;
   byteDescriptions?: string[];
-  flagDecriptions?: string[];
+  flagDescriptions?: string[];
 };
 
 // --- Type of the system variable

@@ -17,7 +17,7 @@ type DialogCommandArgs = {
 
 export class DisplayDialogCommand extends IdeCommandBase<DialogCommandArgs> {
   readonly id = "display-dialog";
-  readonly description = "Displays the spceified dialog";
+  readonly description = "Displays the specified dialog";
   readonly usage = "display-dialog <dialogId>";
   readonly aliases = [];
   readonly noInteractiveUsage = true;

@@ -34,15 +34,20 @@ export const CommandPanel = () => {
 
   // --- Set the focus to the input element when the commands panel is activated, or a new
   // --- header command has been executed
+  /*
+   * `inputRef.current` is not a dependency — a ref is not reactive, so listing it does nothing but
+   * suggest to the next reader that the effect re-runs when the element changes. It does not.
+   */
   useEffect(() => {
     inputRef.current?.focus();
-  }, [inputRef.current, commandSeqNo]);
+  }, [commandSeqNo]);
 
   return (
     <div
       className={styles.commandPanel}
       tabIndex={0}
-      onFocus={() => inputRef?.current.focus()}
+      // --- The guard belongs on `.current`, which can be null; `inputRef` itself never is.
+      onFocus={() => inputRef.current?.focus()}
     >
       <div className={styles.outputWrapper}>
       <ConsoleOutput buffer={buffer} followTail />
@@ -76,21 +81,29 @@ export const CommandPanel = () => {
   // --- Process the pressed key
   async function processKey (e: React.KeyboardEvent): Promise<void> {
     const input = e.target as HTMLInputElement;
-    switch (e.code) {
-      case "Enter":
+    /*
+     * `e.key`, not `e.code`. `code` is the physical key, so the numeric keypad's Enter arrives as
+     * `NumpadEnter` and never ran a command. The two were mixed in this one handler already — the
+     * arrow cases below read `e.key` while the switch read `e.code`.
+     */
+    switch (e.key) {
+      case "Enter": {
         const command = input.value;
         input.value = "";
         if (command.trim()) {
           await executeCommand(command);
         }
+        // --- Back to the newest entry. Without this the next ArrowUp resumed from wherever the
+        // --- user last browsed to, which is never where they expect to be after running something.
+        historyIndex.current = -1;
         break;
+      }
 
       case "ArrowUp":
-      case "ArrowDown":
+      case "ArrowDown": {
         e.preventDefault();
         e.stopPropagation();
-        const historyLength =
-          ideCommandsService.getCommandHistoryLength();
+        const historyLength = ideCommandsService.getCommandHistoryLength();
         if (historyLength > 0) {
           historyIndex.current += e.key === "ArrowUp" ? 1 : -1;
           if (historyIndex.current === -1) {
@@ -104,6 +117,7 @@ export const CommandPanel = () => {
           }
         }
         break;
+      }
     }
   }
 

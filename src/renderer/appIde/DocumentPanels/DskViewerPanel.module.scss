@@ -5,7 +5,12 @@
   flex-direction: column;
   user-select: none;
   font-family: var(--monospace-font);
-  font-size: 0.8em;
+  /*
+   * M1: absolute, not `em`. This was `0.8em` — 12.8px off the 16px root rather than the 12px the
+   * scale intends — and it is the panel root, so every size below compounded off it.
+   */
+  font-size: var(--panel-font-size);
+  line-height: var(--panel-line-height);
 }
 
 .header {
@@ -18,18 +23,12 @@
 }
 
 .error {
-  background: var(--console-ansi-bright-red);
-  color: var(--console-ansi-bright-white);
+  /* --- The app's failure colour, not the console's ANSI palette (§5.2). */
+  background: var(--status-error);
+  color: var(--text-on-accent);
   font-weight: bold;
 }
 
-.valueLabel {
-  padding: 8px 2px 8px 8px;
-  font-size: 1em;
-  color: var(--color-value);
-  flex-shrink: 0;
-  flex-grow: 0;
-}
 
 .dskViewerWrapper {
   box-sizing: border-box;

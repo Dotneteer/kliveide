@@ -15,6 +15,7 @@ export const SourcePanelLocal = ({ source, dispatch }: Props) => (
     <Row label="Executable">
       <Button
         text="Select executable..."
+        variant="secondary"
         disabled={source.disabled}
         clicked={() => dispatch({ type: "selectExecutableRequested" })}
       />

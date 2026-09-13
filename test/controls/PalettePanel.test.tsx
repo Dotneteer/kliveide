@@ -17,7 +17,7 @@ const emuApi = vi.hoisted(() => {
 });
 vi.mock("@renderer/core/EmuApi", () => ({ useEmuApi: () => emuApi }));
 
-import { PalettePanel } from "@renderer/appIde/SiteBarPanels/PalettePanel";
+import { PalettePanel } from "@renderer/appIde/SideBarPanels/PalettePanel";
 
 /** The ULA power-on palette as `PaletteDevice` stores it — device layout, repeating every 16. */
 const DEF_ULA = [

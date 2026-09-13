@@ -181,8 +181,8 @@ export const componentAliases: Record<string, string> = {
   "--color-statusbar-label": "var(--text-secondary)",
   "--color-statusbar-icon": "var(--text-secondary)",
 
-  // --- Sidebar ("sitebar" in the source) --------------------------------------------------------
-  "--bgcolor-sitebar": "var(--surface-panel)",
+  // --- Sidebar --------------------------------------------------------
+  "--bgcolor-sidebar": "var(--surface-panel)",
   /*
    * The sidebar's own title ("DEBUG", "EXPLORER"). Promoted from `--text-secondary`: it is the
    * heading the panel headers below it sit under, and it was rendering *quieter* than they were.

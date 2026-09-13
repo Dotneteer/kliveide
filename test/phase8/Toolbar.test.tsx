@@ -63,10 +63,15 @@ vi.mock("@appIde/services/AppServicesProvider", () => ({
 // Radix UI Select crashes in jsdom — mock the Dropdown component
 vi.mock("@controls/Dropdown", () => ({
   __esModule: true,
-  default: ({ options, initialValue, onChanged }: any) => (
+  // --- `enabled` is honoured (and mirrored onto `data-disabled`, as Radix does) so a test can tell
+  // --- a disabled dropdown from an enabled one. The stub used to drop the prop, which would have
+  // --- let a "disabled" assertion pass against a control that was not.
+  default: ({ options, initialValue, enabled = true, onChanged }: any) => (
     <select
       data-testid="mock-dropdown"
       value={initialValue}
+      disabled={!enabled}
+      data-disabled={enabled ? undefined : ""}
       onChange={(e: any) => onChanged?.(e.target.value)}
     >
       {(options ?? []).map((o: any) => (
@@ -447,8 +452,17 @@ describe("StartModeSelector — Phase 8", () => {
     expect(screen.getByText("Run")).toBeInTheDocument();
   });
 
-  it("applies disabled styling when canPickStartOption=false", () => {
-    const { container } = renderWithProviders(
+  /*
+   * Really disabled, not merely greyed.
+   *
+   * This used to assert a wrapper carrying `style="pointer-events: none; opacity: .4"`, which is a
+   * *visual* disable: it stops the mouse and leaves the trigger in the tab order, so a keyboard
+   * user could still open the control the UI was presenting as unavailable and change the start
+   * mode. `Dropdown` now takes an `enabled` prop that reaches Radix's own `disabled`, which removes
+   * the trigger from the tab order and marks it for assistive technology.
+   */
+  it("disables the start-mode dropdown when canPickStartOption=false", () => {
+    renderWithProviders(
       <StartModeSelector
         startOptions={options}
         startMode="start"
@@ -456,9 +470,24 @@ describe("StartModeSelector — Phase 8", () => {
         onChanged={vi.fn()}
       />
     );
-    // First child is the provider wrapper, find the actual toolbar dropdown container
-    const wrapper = container.querySelector('[style*="pointer-events"]') as HTMLElement;
-    expect(wrapper).not.toBeNull();
-    expect(wrapper.style.pointerEvents).toBe("none");
+
+    const trigger = screen.getByRole("combobox");
+    expect(trigger).toBeDisabled();
+    expect(trigger).toHaveAttribute("data-disabled");
+  });
+
+  it("leaves the start-mode dropdown usable when canPickStartOption=true", () => {
+    renderWithProviders(
+      <StartModeSelector
+        startOptions={options}
+        startMode="start"
+        canPickStartOption={true}
+        onChanged={vi.fn()}
+      />
+    );
+
+    const trigger = screen.getByRole("combobox");
+    expect(trigger).not.toBeDisabled();
+    expect(trigger).not.toHaveAttribute("data-disabled");
   });
 });

@@ -1,5 +1,14 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * The Z88's slot strip, under the emulator screen.
+ *
+ * This is a **device surface**, so `--bgcolor-display` / `--color-display` are correct and stay:
+ * per the settled rule in `.ai/ui-theming-intent-and-lessons.md`, what belongs to the machine does
+ * not follow the app's tone. Only the app-owned parts — the type scale, the radius and the spacing
+ * — were out of step, which is why this was the last emulator-shell surface left unconverted.
+ */
+
 .machineTools {
   width: 100%;
   display: flex;
@@ -11,16 +20,29 @@
   flex-direction: column;
   flex-shrink: 0;
   flex-grow: 0;
+  /*
+   * M2 does not apply: these are card widths, not column measures.
+   *
+   * A slot card is a fixed-size tile in a strip of them, sized so four sit side by side under the
+   * screen — the same class of chrome geometry as a control's width, which the M2 rule in
+   * `test/theming/type-scale-contract.test.ts` deliberately excludes. `ch` would also be the wrong
+   * unit here: this surface has no monospace family, so `ch` would measure a proportional zero.
+   */
   width: 122px;
   align-items: start;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background-color: var(--bgcolor-display);
   color: var(--color-display);
-  padding: 4px 8px;
-  margin-right: 4px;
-  font-size: 0.65em;
+  padding: var(--space-1) var(--space-2);
+  margin-right: var(--space-1);
+  /*
+   * M1: absolute, from the scale. Was `0.65em` — 10.4px off the 16px root, a size that exists
+   * nowhere in the ladder and that would have moved with any wrapper that set a size of its own.
+   */
+  font-size: var(--font-size-50);
 
   &.slot0 {
+    // --- Slot 0 is the internal RAM/ROM and names both, so it needs the room the others do not.
     width: 197px;
   }
 
@@ -29,6 +51,13 @@
     flex-direction: row;
     width: 100%;
     align-items: center;
+    /*
+     * Sized for the row's icons, not for its text.
+     *
+     * The rows carry 12px and 14px glyphs beside the label, and 18px is what clears the larger of
+     * them with a little air. That makes this one of the few places where a fixed line-height is
+     * right: deriving it from the (10px) type would collapse the row around the icons.
+     */
     line-height: 18px;
   }
 
@@ -43,6 +72,6 @@
     display: flex;
     align-items: center;
     cursor: pointer;
-    margin-left: 4px;
+    margin-left: var(--space-1);
   }
 }

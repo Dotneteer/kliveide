@@ -187,7 +187,7 @@ const SysVarRow = ({ index, sample: item, expanded, toggle }: SysVarRowProps) =>
     }
     if (hover?.kind === "bit" && value !== undefined) {
       const bit = (value >> hover.index) & 1;
-      const description = sysVar.flagDecriptions?.[hover.index];
+      const description = sysVar.flagDescriptions?.[hover.index];
       return `${sysVar.name} bit ${hover.index} = ${bit}${description ? `\n${description}` : ""}`;
     }
     return `${sysVar.name}\n${whatItIs(item)}${
@@ -245,7 +245,7 @@ const SysVarRow = ({ index, sample: item, expanded, toggle }: SysVarRowProps) =>
           {type === SysVarType.Flags && (
             <FlagRow
               value={value ?? 0}
-              flagDescriptions={sysVar.flagDecriptions}
+              flagDescriptions={sysVar.flagDescriptions}
               iconFill="--color-state-value"
               xclass={changed ? dataStyles.changedWash : undefined}
               onHoverBit={(bit) => setHover(bit === null ? null : { kind: "bit", index: bit })}

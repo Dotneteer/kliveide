@@ -143,10 +143,17 @@ span.stateValueAlt {
    * This was `1.6em`, and it is what actually set the flag strip's width: a column has to hold its
    * letter, so at 1.6em the eight of them needed 12.8em however narrow the columns claimed to be.
    * That went unnoticed while every mono in the stack had a ~0.5em advance; the ZX Spectrum face
-   * (0.988em) made the strip twice as wide as the register rows it labels. 1.25em keeps the letters
-   * clearly larger than the data while letting the columns come in to 2.4ch.
+   * (0.988em) made the strip twice as wide as the register rows it labels. The 1.25 ratio keeps the
+   * letters clearly larger than the data while letting the columns come in to 2.4ch.
+   *
+   * `calc()` on the panel token rather than `1.25em`, and the ratio is why: the `ch` columns in this
+   * same element scale with *this* font size, so the relationship the paragraph above describes only
+   * holds if the letters stay proportional to the panel. A fixed step from the scale would fix the
+   * letters while the columns kept moving with the user's font-size setting. Naming the base keeps
+   * the proportion and removes the `em`'s dependence on whatever ancestor happens to set a size —
+   * which is the compounding M1 actually forbids.
    */
-  font-size: 1.25em;
+  font-size: calc(var(--panel-font-size) * 1.25);
 
   /*
    * Optically left-align the "F" with the label column ("AF", "BC", ...) below it.

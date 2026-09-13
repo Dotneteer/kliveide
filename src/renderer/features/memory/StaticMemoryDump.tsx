@@ -1648,7 +1648,10 @@ const StaticMemoryDump = ({
   }, [disassemblyItems, disassemblyJumpAddress]);
 
   return (
-    <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
+    /* --- M1: was `0.8em`, the literal pattern `MemoryPanel.tsx` and `DisassemblyPanel.tsx`
+       --- were changed away from. 12.8px off the 16px root rather than the panel size the
+       --- rows below it are drawn at. */
+    <FullPanel fontFamily="--monospace-font" fontSize="--panel-font-size">
       <PanelHeader>
         {disassemblyEnabled && (
           <>

@@ -165,8 +165,14 @@
 
 .tooltipPointed {
   color: var(--text-secondary);
-  font-size: 0.9em;
-  margin-top: 0.35em;
+  /*
+   * A tenth smaller than the tooltip's own text, pinned to it.
+   *
+   * The parent is `Tooltip`, which sets `--font-size-tooltip`; `em` happened to resolve against
+   * that but said nothing about it, and would have followed any wrapper that set a size instead.
+   */
+  font-size: calc(var(--font-size-tooltip) * 0.9);
+  margin-top: var(--space-1);
 }
 
 /*

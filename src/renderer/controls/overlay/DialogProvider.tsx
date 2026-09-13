@@ -82,17 +82,34 @@ type CustomDialogEntry<TResult = unknown> = BaseDialogEntry<TResult> & {
 
 type DialogEntry = ManagedDialogEntry | CustomDialogEntry;
 
-const dialogOptionKeys = new Set<keyof DialogOptions>([
-  "id",
-  "title",
-  "width",
-  "fullWidth",
-  "fullScreen",
-  "closeOnEscape",
-  "closeOnOutsideClick",
-  "dialogRole",
-  "translateY"
-]);
+/**
+ * Every key of `DialogOptions`, used to tell the two `open()` overloads apart.
+ *
+ * **This must list the whole type.** `isDialogOptionsShape` returns `false` as soon as it sees a key
+ * it does not know, so a missing entry makes a two-argument custom-render `open(render, opts)` look
+ * like the *managed* overload — and the render function is then treated as a component. `iconName`
+ * and `danger` were added to `DialogOptions` and not here, which left that latent from the moment
+ * `Modal` learned to draw a header chip; nothing caught it because no call site passed them yet.
+ *
+ * Declaring it as `Record<keyof Required<DialogOptions>, true>` is what makes it self-maintaining:
+ * a `Set<keyof DialogOptions>` only constrains what goes *in* and cannot require completeness, so
+ * the next key added to the type would have gone missing the same way. This one fails the build.
+ */
+const DIALOG_OPTION_KEYS: Record<keyof Required<DialogOptions>, true> = {
+  id: true,
+  title: true,
+  width: true,
+  fullWidth: true,
+  fullScreen: true,
+  closeOnEscape: true,
+  closeOnOutsideClick: true,
+  dialogRole: true,
+  translateY: true,
+  iconName: true,
+  danger: true
+};
+
+const dialogOptionKeys = new Set<string>(Object.keys(DIALOG_OPTION_KEYS));
 
 function isDialogOptionsShape(value: unknown): value is DialogOptions {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;

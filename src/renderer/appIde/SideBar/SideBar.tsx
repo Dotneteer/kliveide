@@ -20,7 +20,7 @@ type Props = {
 /**
  * This function renders the Side Bar component of the IDE
  */
-export const SiteBar = ({ order }: Props) => {
+export const SideBar = ({ order }: Props) => {
   const dispatch = useDispatch();
   const { machineService } = useAppServices();
 

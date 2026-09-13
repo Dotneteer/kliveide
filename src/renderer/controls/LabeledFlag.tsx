@@ -8,7 +8,8 @@ const FLAG_WIDTH = "3ch"; // 16px / 6.4 = 2.5
 
 type Props = {
   label: string;
-  width?: string | number;
+  /** Label cell width as a CSS length with its unit — `"7ch"` for a column, `"32px"` for chrome (Phase 15). */
+  width?: string;
   value: boolean;
   flagWidth?: string | number;
   toolTip?: string;

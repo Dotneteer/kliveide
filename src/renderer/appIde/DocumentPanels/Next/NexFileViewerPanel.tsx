@@ -32,12 +32,21 @@ import {
 } from "./nexAnnotationSidecar";
 import { NexFileAnnotations, NexAnnotationOffsetIndex } from "./nexAnnotations";
 
-const HEADER_LABEL_WIDTH = 160;
-const HEADER_VALUE_WIDTH = 132;
-const HEADER_WIDE_VALUE_WIDTH = 188;
-const HEADER_FLAG_LABEL_WIDTH = 156;
-const HEADER_FLAG_NARROW_LABEL_WIDTH = 92;
-const HEADER_FLAG_VALUE_WIDTH = 22;
+/*
+ * M2: `ch`, not px.
+ *
+ * These were bare numbers until Phase 15, which `Label`/`Value` rendered as px while documenting
+ * themselves as `ch`; that phase made the unit explicit without changing what they drew, and this
+ * one converts them. Capacity is preserved from the px each reserved at the 12.8px size this panel
+ * used to render at (px / 6.4, rounded up), so no column narrows — but they now follow the user's
+ * font size, which is the whole point.
+ */
+const HEADER_LABEL_WIDTH = "25ch"; // 160px / 6.4
+const HEADER_VALUE_WIDTH = "21ch"; // 132px / 6.4
+const HEADER_WIDE_VALUE_WIDTH = "30ch"; // 188px / 6.4
+const HEADER_FLAG_LABEL_WIDTH = "25ch"; // 156px / 6.4
+const HEADER_FLAG_NARROW_LABEL_WIDTH = "15ch"; // 92px / 6.4
+const HEADER_FLAG_VALUE_WIDTH = "4ch"; // 22px / 6.4
 const NEX_SLOT_1_BANK = 5;
 const NEX_SLOT_2_BANK = 2;
 const NEX_SLOT_1_START = 0x4000;
@@ -500,8 +509,8 @@ const BankFlags = ({ flags, startIndex }: BankFlagsProps) => {
         <LabeledFlag
           key={idx}
           label={`#${toHexa2(idx + startIndex)}:`}
-          labelWidth={36}
-          valueWidth={20}
+          labelWidth="6ch" // 36px / 6.4
+          valueWidth="4ch" // 20px / 6.4
           value={f}
           iconFill="--color-state-value"
         />
@@ -623,7 +632,7 @@ type HeaderTextProps = {
   label: string;
   value: string;
   tooltip?: string;
-  valueWidth?: number;
+  valueWidth?: string;
 };
 
 const HeaderText = ({

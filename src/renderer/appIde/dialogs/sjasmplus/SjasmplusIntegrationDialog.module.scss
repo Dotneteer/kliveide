@@ -106,15 +106,6 @@ $labelWidth: 78px;
   opacity: 0.5;
 }
 
-.selectBox {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 3px 6px;
-  border: var(--border-modal-section);
-  background: var(--bgcolor-input);
-  color: var(--color-input);
-  font-size: 0.9rem;
-}
 
 .suggestions {
   display: flex;
@@ -128,7 +119,8 @@ $labelWidth: 78px;
 button.suggestionButton {
   max-width: 100%;
   padding: 2px 8px;
-  border: var(--border-modal-section);
+  /* --- A field-like control, so the field border. See the note on `.selectBox`. */
+  border: 1px solid var(--border-input);
   border-radius: 2px;
   background: transparent;
   color: var(--color-modal-body);

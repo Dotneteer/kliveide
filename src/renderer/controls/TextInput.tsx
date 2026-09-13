@@ -13,6 +13,22 @@ type Props = {
   buttonIcon?: string;
   buttonTitle?: string;
   numberOnly?: boolean;
+  /**
+   * Hint text shown while the field is empty.
+   *
+   * Added in Phase 41: several dialogs hand-rolled a bare `<input>` rather than use this control,
+   * and a missing placeholder was one of the reasons they could not. A placeholder is *not* a
+   * label — see `ariaLabel` — but a search box that says "Search labels" while empty is worth
+   * having.
+   */
+  placeholder?: string;
+  /**
+   * Accessible name, for a field with no visible label beside it.
+   *
+   * A `placeholder` is not a substitute: it disappears the moment the user types, so a field named
+   * only by its placeholder becomes anonymous exactly when its contents need explaining.
+   */
+  ariaLabel?: string;
   onKeyDown?: KeyboardEventHandler<HTMLInputElement>;
   onChange: (newValue: string) => void;
   browse?: () => Promise<string | undefined | null>;
@@ -27,6 +43,8 @@ export const TextInput = ({
   buttonIcon,
   buttonTitle,
   numberOnly,
+  placeholder,
+  ariaLabel,
   onKeyDown,
   onChange,
   browse
@@ -51,6 +69,8 @@ export const TextInput = ({
             value={value}
             maxLength={maxLength}
             autoFocus={autoFocus}
+            placeholder={placeholder}
+            aria-label={ariaLabel}
             spellCheck={false}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? errorId : undefined}

@@ -13,12 +13,20 @@
   box-sizing: border-box;
   flex-direction: row;
   user-select: none;
-  font-size: 0.8em;
+  /*
+   * M1, and a duplicate declaration.
+   *
+   * This block set `font-size` twice — `0.8em` then `1em` four lines later — so the first was dead
+   * and the second meant "whatever the parent is". The parent is `GenericFilePanel`, whose own
+   * `0.8em` Phase 15 replaced, so the editor was riding on a chain of relative sizes. One absolute
+   * declaration, from the scale.
+   */
+  font-size: var(--panel-font-size);
+  line-height: var(--panel-line-height);
   align-items: start;
-  font-size: 1em;
   padding-top: 0;
   padding-bottom: 0;
-  background-color: var(--bgcolor-editors);
+  background-color: var(--surface-canvas);
 }
 
 .editorArea {
@@ -26,45 +34,70 @@
   flex-direction: column;
   flex-shrink: 0;
   flex-grow: 0;
-  padding: 0.2em;
+  padding: var(--space-1);
 }
 
 .dropdownWrapper {
-  font-size: 1.2em;
-  margin-bottom: 0.4em;
+  /* --- M1: one step up the scale, rather than 1.2 of an inherited size. */
+  font-size: var(--font-size-300);
+  margin-bottom: var(--space-2);
 }
 
 .colorRow {
   align-items: start;
-  margin-left: -4px;
+  margin-left: calc(-1 * var(--space-1));
 }
 
 .colorBar {
-  width: 200px;
-  height: 32px;
+  /* --- M2: `ch`, not px. 200px at the editor's old 12.8px size / 6.4 = 31ch. */
+  width: 31ch;
+  height: var(--space-8);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0.2em 0.6em;
+  margin: var(--space-1) var(--space-2);
 }
 
 .colorScale {
-  width: 56px;
+  /* --- M2: `ch`, not px. 56px at the editor's old 12.8px size / 6.4 = 8.75ch. */
+  width: 9ch;
   display: flex;
   flex-direction: column;
-  padding: 8px;
+  padding: var(--space-2);
   align-items: center;
 
   & .colorScaleLabel {
-    font-size: 1em;
+    /* --- M1: the panel's own size, not `1em` of whatever it inherits. */
+    font-size: var(--panel-font-size);
   }
 }
 
+/*
+ * The three channel headings — neutral, on purpose.
+ *
+ * They were inline `style={{ color: "var(--console-ansi-bright-red|green|blue)" }}`: the console's
+ * palette, borrowed to label R, G and B in an editor that has nothing to do with a console, and
+ * four of whose hues measure at or below 3:1 on the light tone.
+ *
+ * Colouring them at all fails §5.2's own test. These labels are the *words* "Red", "Green" and
+ * "Blue", so the hue restates what the text already says — the same argument that took the colour
+ * off the document and file-type icons. The one thing on this screen that must carry channel
+ * colour is the scale of swatches under each heading, and it does.
+ *
+ * The three classes stay rather than collapsing to `.colorScaleLabel`, because the call sites read
+ * better naming their channel and a future decision to distinguish them has somewhere to go.
+ */
+.colorScaleLabelRed,
+.colorScaleLabelGreen,
+.colorScaleLabelBlue {
+  color: var(--data-label);
+}
+
 .colorItem {
-  width: 20px;
-  height: 20px;
+  /* --- A swatch, not a column: px is right, and these are on the space scale. */
+  width: var(--space-5);
+  height: var(--space-5);
   padding: 1px;
-  //margin: 2px;
   border: 2px solid transparent;
   cursor: not-allowed;
 
@@ -83,10 +116,10 @@
 
 .checkbox {
   justify-content: center;
-  color: var(--color-label);
+  color: var(--data-label);
 }
 
 .trIndex {
-  padding-top: 0.4em;
+  padding-top: var(--space-2);
   justify-content: start;
 }

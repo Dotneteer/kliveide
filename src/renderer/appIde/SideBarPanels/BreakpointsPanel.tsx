@@ -119,11 +119,23 @@ const BreakpointRow = ({
   );
 };
 
+/** A breakpoint plus the instruction disassembled at its address. See `bps` below. */
+type BreakpointRowModel = BreakpointInfo & { instruction: string };
+
 export const BreakpointsPanel = () => {
   const emuApi = useEmuApi();
   const confirmPort = useConfirmPort();
   const openBreakpointDialog = useBreakpointDialog();
-  const [bps, setBps] = useState<BreakpointInfo[]>([]);
+  /*
+   * Each breakpoint carries its own disassembled instruction.
+   *
+   * These were two parallel structures — `bps` in state and `disassLines` in a ref — matched only by
+   * row index. The ref was filled in place across an `await` per breakpoint while `bps` still held
+   * the *previous* list, so any render landing inside that window drew the new instructions against
+   * the old rows, silently and only while the list was changing. Pairing them makes the two
+   * impossible to desynchronise: there is one state value and one update.
+   */
+  const [bps, setBps] = useState<BreakpointRowModel[]>([]);
   const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>({});
   const [lastCpuState, setLastCpuState] = useState<CpuState>();
   const [menuState, menuApi] = useContextMenuState();
@@ -133,7 +145,6 @@ export const BreakpointsPanel = () => {
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const bpsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
-  const disassLines = useRef<string[]>();
   const pcValue = useRef(-1);
 
   // --- Gets the address to display in the context of the breakpoint
@@ -167,14 +178,12 @@ export const BreakpointsPanel = () => {
       }
     }
 
-    // --- Disassemble memory data
-    disassLines.current = [];
-    for (let i = 0; i < bpState.breakpoints.length; i++) {
-      const bpInfo = bpState.breakpoints[i];
+    // --- Disassemble memory data, pairing each instruction with the breakpoint it belongs to
+    const rows: BreakpointRowModel[] = [];
+    for (const bpInfo of bpState.breakpoints) {
+      let instruction = "";
       if (bpInfo.address !== undefined) {
         const bpAddr = getBpAddress(bpInfo);
-
-        // --- Do the disassembly
         const disass = new Z80Disassembler(
           [new MemorySection(bpAddr, bpAddr, MemorySectionType.Disassemble)],
           mem,
@@ -184,14 +193,13 @@ export const BreakpointsPanel = () => {
           }
         );
         const output = await disass.disassemble(bpAddr, bpAddr);
-        disassLines.current[i] = output.outputItems?.[0]?.instruction ?? "???";
-      } else {
-        disassLines.current[i] = "";
+        instruction = output.outputItems?.[0]?.instruction ?? "???";
       }
+      rows.push({ ...bpInfo, instruction });
     }
 
-    // --- Store the breakpoint info
-    setBps(bpState.breakpoints.map((bp) => ({ ...bp })));
+    // --- One update, so the rows and their instructions land together
+    setBps(rows);
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
@@ -355,7 +363,7 @@ export const BreakpointsPanel = () => {
               }
 
               const isWatchpoint = !!(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite);
-              const instruction = disassLines.current[idx] ?? "???";
+              const instruction = bp.instruction || "???";
 
               return (
                 <BreakpointRow

@@ -62,7 +62,7 @@ vi.mock("@renderer/controls/overlay/DialogProvider", async (importOriginal) => (
   useDialogs: () => dialogs
 }));
 
-import { BreakpointsPanel } from "@renderer/appIde/SiteBarPanels/BreakpointsPanel";
+import { BreakpointsPanel } from "@renderer/appIde/SideBarPanels/BreakpointsPanel";
 
 const execAt = (address: number, over: Partial<BreakpointInfo> = {}): BreakpointInfo => ({
   address,
@@ -148,8 +148,16 @@ describe("BreakpointsPanel - toolbar", () => {
     await waitFor(() => expect(dialogs.open).toHaveBeenCalled());
     const [, props] = dialogs.open.mock.calls[0];
     expect(props.env.supportsPartitions).toBe(true);
-    expect(props.machineId).toBe(MI_SPECTRUM_128);
-    expect(props.machineSetup).toBeDefined();
+    /*
+     * Assert the *derived* setup, not a `machineId` prop.
+     *
+     * This used to check `props.machineId`, which the call site passed and `BreakpointDialog`
+     * declared no prop for — so it reached the component and was dropped, and the assertion pinned
+     * a value that could not affect anything. `banksView` is the same claim made where it lands: it
+     * is `true` here only because `derivePartitionSetup` was given the running 128K, which is what
+     * "from the running machine, not from a guess" means.
+     */
+    expect(props.machineSetup.banksView).toBe(true);
   });
 
   it("reports no partition support on a machine without banks", async () => {

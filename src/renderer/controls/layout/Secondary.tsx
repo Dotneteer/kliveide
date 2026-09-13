@@ -1,12 +1,16 @@
 import { DataSecondary } from "@renderer/controls/data";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
-import { cssWidth } from "./cssWidth";
 
 type Props = {
   /** Low-emphasis text rendered in the aligned cell. */
   text: string;
-  /** Explicit secondary text cell width. A number is `ch` (M2); a string is a CSS length. */
-  width?: string | number;
+  /**
+   * Explicit secondary text cell width, as a CSS length **with its unit** — `"7ch"` for a column, `"32px"`
+   * for chrome. The bare-number form was removed in Phase 15: it meant px here and `ch` in
+   * `controls/data`, and all three of these cells documented it as `ch`, which is how
+   * `NecUpd765Panel` acquired a 16px column from an author who read the prop.
+   */
+  width?: string;
   /**
    * Optional tooltip shown for the cell.
    *
@@ -33,7 +37,7 @@ export const Secondary = ({ text, width, tooltip, className }: Props) => {
 
   return (
     <>
-      <DataSecondary ref={ref} text={text} width={cssWidth(width)} xclass={className} />
+      <DataSecondary ref={ref} text={text} width={width} xclass={className} />
       {tooltip && (
         <TooltipFactory
           refElement={ref.current}

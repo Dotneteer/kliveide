@@ -1,33 +1,7 @@
 @use "@styles/core.scss" as *;
 
-.typeOptions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
 
-.typeOption {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--color-modal-body);
-}
 
-.input {
-  box-sizing: border-box;
-  width: 100%;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 8px;
-  background: var(--bgcolor-input);
-  color: var(--color-input);
-  font-family: var(--monospace-font);
-  font-size: 0.9em;
-  outline: none;
-
-  /* The app's single focus treatment — `:focus-visible`, so a mouse click does not light a ring. */
-  @include focus-ring;
-}
 
 .rangeInputRow {
   display: grid;
@@ -61,7 +35,7 @@
    */
   margin: var(--space-1) 0 0;
   color: var(--status-error);
-  font-size: 0.85em;
+  font-size: var(--font-size-100);
 }
 
 /* Three rows, as the Label dialog's own secondary list: enough to show that it scrolls. */

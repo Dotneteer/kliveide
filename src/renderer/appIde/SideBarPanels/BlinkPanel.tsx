@@ -7,9 +7,20 @@ import { BlinkState } from "@common/messaging/EmuApi";
 import { BitValue, FlagFieldRow } from "@renderer/controls/data/registers";
 import { DataPanel, DataRow } from "@renderer/controls/data";
 import { DataLabel, HexValue } from "@renderer/controls/data";
+import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
+import regStyles from "@renderer/controls/data/Registers.module.scss";
 
-const LAB_WIDTH = 7;   // ch, not px (M2)
+// M2: a bare number reaches `DataLabel` as `ch`, but nothing said so at the call site. Spelled.
+const LAB_WIDTH = "7ch";
 const KEY_LAB_WIDTH = "8ch"; // 46px / 6.4 = 7.2
+
+/*
+ * The Blink panel takes the same colouring as the Z80 and ULA panels (Phase 20).
+ *
+ * Same §10.3 split as its siblings: the payload takes `--color-state-value`, labels stay on
+ * `--data-label`. Before this the Z88 debug sidebar was the last one still entirely neutral.
+ */
+const VALUE_FILL = "--color-state-value";
 
 export const BlinkPanel = () => {
   const emuApi = useEmuApi();
@@ -24,18 +35,21 @@ export const BlinkPanel = () => {
         tooltip="Command Register handles LCD, Beeper, Clock ticking, UV Eprom in slot 3 and if lower 8K of S0 in slot 0 is ROM or RAM"
         value={blinkState?.COM}
         flagDescriptions={COMDescription}
+        iconFill={VALUE_FILL}
       />
       <FlagFieldRow
         label="INT"
         tooltip="Controls which interrupts are enabled"
         value={blinkState?.INT}
         flagDescriptions={INTDescription}
+        iconFill={VALUE_FILL}
       />
       <FlagFieldRow
         label="STA"
         tooltip="Provides information about which interrupt has actually occurred"
         value={blinkState?.STA}
         flagDescriptions={STADescription}
+        iconFill={VALUE_FILL}
       />
       <Separator />
       <ValueFieldRow
@@ -121,12 +135,14 @@ export const BlinkPanel = () => {
         tooltip="Timer Interrupt Status"
         value={blinkState?.TSTA}
         flagDescriptions={TSTADescription}
+        iconFill={VALUE_FILL}
       />
       <FlagFieldRow
         label="TMK"
         tooltip="Timer Interrupt Mask"
         value={blinkState?.TMK}
         flagDescriptions={TMKDescription}
+        iconFill={VALUE_FILL}
       />
       <Separator />
       <DataRow dense>
@@ -210,14 +226,14 @@ const KeyboardLine = ({ value, titles, text, tooltip }: KeyboardLineProps) => {
   return (
     <DataRow dense>
       <Label text={text} width={KEY_LAB_WIDTH} tooltip={tooltip} />
-      <BitValue value={toFlag(value, 7)} tooltip={titles?.[7]} />
-      <BitValue value={toFlag(value, 6)} tooltip={titles?.[6]} />
-      <BitValue value={toFlag(value, 5)} tooltip={titles?.[5]} />
-      <BitValue value={toFlag(value, 4)} tooltip={titles?.[4]} />
-      <BitValue value={toFlag(value, 3)} tooltip={titles?.[3]} />
-      <BitValue value={toFlag(value, 2)} tooltip={titles?.[2]} />
-      <BitValue value={toFlag(value, 1)} tooltip={titles?.[1]} />
-      <BitValue value={toFlag(value, 0)} tooltip={titles?.[0]} />
+      <BitValue value={toFlag(value, 7)} tooltip={titles?.[7]} iconFill={VALUE_FILL} />
+      <BitValue value={toFlag(value, 6)} tooltip={titles?.[6]} iconFill={VALUE_FILL} />
+      <BitValue value={toFlag(value, 5)} tooltip={titles?.[5]} iconFill={VALUE_FILL} />
+      <BitValue value={toFlag(value, 4)} tooltip={titles?.[4]} iconFill={VALUE_FILL} />
+      <BitValue value={toFlag(value, 3)} tooltip={titles?.[3]} iconFill={VALUE_FILL} />
+      <BitValue value={toFlag(value, 2)} tooltip={titles?.[2]} iconFill={VALUE_FILL} />
+      <BitValue value={toFlag(value, 1)} tooltip={titles?.[1]} iconFill={VALUE_FILL} />
+      <BitValue value={toFlag(value, 0)} tooltip={titles?.[0]} iconFill={VALUE_FILL} />
     </DataRow>
   );
 };
@@ -230,15 +246,38 @@ type ValueFieldProps = {
 };
 
 const ValueFieldRow = ({ label, tooltip, value, word }: ValueFieldProps) => {
-  // Was a local re-implementation of "labelled hex value" — one of six across the codebase.
+  /*
+   * One styled tooltip on the row, not a native `title` on the label.
+   *
+   * `title` is the browser's: unstyled, on its own clock, and positioned where the app has no say —
+   * and it fired *alongside* the row tooltips its neighbours in this panel already had. §12.0 of
+   * the modernization plan removed the same pattern from `SysVarsPanel`; this was the last panel
+   * still carrying it.
+   */
+  const ref = useTooltipRef<HTMLDivElement>();
+
   return (
-    <DataRow dense>
-      <DataLabel text={label} width={LAB_WIDTH} title={tooltip} />
-      <HexValue value={value ?? 0} digits={word ? 4 : 2} decimal />
+    <DataRow dense ref={ref}>
+      <DataLabel text={label} width={LAB_WIDTH} />
+      <HexValue
+        value={value ?? 0}
+        digits={word ? 4 : 2}
+        decimal
+        valueXclass={regStyles.stateValue}
+      />
+      {tooltip && (
+        <TooltipFactory
+          refElement={ref.current}
+          placement="right"
+          offsetX={0}
+          offsetY={0}
+          showDelay={100}
+          content={tooltip}
+        />
+      )}
     </DataRow>
   );
 };
-
 
 const COMDescription = [
   "LCDON - Set to turn LCD ON, clear to turn LCD OFF", // bit 0

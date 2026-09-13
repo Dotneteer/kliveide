@@ -4,6 +4,7 @@ import type { SjasmplusIntent } from "./SjasmplusIntents";
 import type { SjasmplusViewModel } from "./SjasmplusViewModel";
 import { ApplyBlock } from "./parts/ApplyBlock";
 import { Row } from "./parts/Row";
+import { RadioGroup } from "@renderer/controls/RadioGroup";
 import { SourcePanelLocal } from "./parts/SourcePanelLocal";
 import { SourcePanelOnline } from "./parts/SourcePanelOnline";
 import { StatusBlock } from "./parts/StatusBlock";
@@ -25,53 +26,50 @@ export const SjasmplusIntegrationView = ({ vm, dispatch }: SjasmplusIntegrationV
     <div className={styles.divider} />
 
     {/* --- Setup source and save scope: one row each */}
+    {/*
+      * `RadioGroup`, not four hand-rolled `<input type="radio">`.
+      *
+      * The shared control is built on the same native radios, so nothing about the keyboard
+      * contract changes — but the group is announced as a group, each option's label is actually
+      * associated with its input, and the styling comes from the same place as every other radio
+      * in the app. This dialog is the MVC pattern's reference implementation and was the one place
+      * still hand-rolling its fields.
+      */}
     <Row label="Source">
-      <label className={styles.option}>
-        <input
-          type="radio"
-          name="sjasmplus-setup-mode"
-          checked={vm.source.mode === "local"}
-          disabled={vm.source.disabled}
-          onChange={() => dispatch({ type: "setupModeSelected", mode: "local" })}
-        />
-        Local executable
-      </label>
-      <label className={styles.option}>
-        <input
-          type="radio"
-          name="sjasmplus-setup-mode"
-          checked={vm.source.mode === "online"}
-          disabled={vm.source.disabled}
-          onChange={() => dispatch({ type: "setupModeSelected", mode: "online" })}
-        />
-        Online release
-      </label>
+      <RadioGroup
+        ariaLabel="SjasmPlus source"
+        columns={2}
+        enabled={!vm.source.disabled}
+        value={vm.source.mode}
+        options={[
+          { value: "local", label: "Local executable" },
+          { value: "online", label: "Online release" }
+        ]}
+        onChange={(mode) =>
+          dispatch({ type: "setupModeSelected", mode: mode as "local" | "online" })
+        }
+      />
     </Row>
     <Row label="Save to">
-      <label className={styles.option}>
-        <input
-          type="radio"
-          name="sjasmplus-scope"
-          checked={vm.scopeChoice.value === "user"}
-          disabled={vm.scopeChoice.disabled}
-          onChange={() => dispatch({ type: "scopeSelected", scope: "user" })}
-        />
-        User settings
-      </label>
-      <label
-        className={classnames(styles.option, {
-          [styles.disabled]: !vm.scopeChoice.projectEnabled
-        })}
-      >
-        <input
-          type="radio"
-          name="sjasmplus-scope"
-          checked={vm.scopeChoice.value === "project"}
-          disabled={!vm.scopeChoice.projectEnabled || vm.scopeChoice.disabled}
-          onChange={() => dispatch({ type: "scopeSelected", scope: "project" })}
-        />
-        Project settings
-      </label>
+      <RadioGroup
+        ariaLabel="Save settings to"
+        columns={2}
+        enabled={!vm.scopeChoice.disabled}
+        value={vm.scopeChoice.value}
+        options={[
+          { value: "user", label: "User settings" },
+          // --- Per-option, not per-group: a project scope is unavailable with no project open,
+          // --- while "User settings" stays selectable. `RadioGroup` supports exactly this.
+          {
+            value: "project",
+            label: "Project settings",
+            disabled: !vm.scopeChoice.projectEnabled
+          }
+        ]}
+        onChange={(scope) =>
+          dispatch({ type: "scopeSelected", scope: scope as "user" | "project" })
+        }
+      />
       {vm.scopeChoice.note && (
         <span className={classnames(styles.muted, styles.message)}>{vm.scopeChoice.note}</span>
       )}

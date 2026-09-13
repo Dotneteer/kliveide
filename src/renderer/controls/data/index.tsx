@@ -9,7 +9,7 @@ import styles from "./Data.module.scss";
 /**
  * `controls/data` — the shared primitives for Klive's data-dense panels.
  *
- * Phase 6 of .plans/UI_MODERNIZATION_PLAN.md. Before this, `SiteBarPanels/` and `DocumentPanels/`
+ * Phase 6 of .plans/UI_MODERNIZATION_PLAN.md. Before this, `SideBarPanels/` and `DocumentPanels/`
  * each hand-rolled the same handful of shapes: 7 of 12 sidebar stylesheets carried a byte-identical
  * root block, six carried a byte-identical empty state, and 16 files across the two folders defined
  * their own "data row".
@@ -63,6 +63,16 @@ type EmptyStateProps = {
   message: string;
   /** The Sinclair rainbow flash. On by default; opt out where it would be noise. */
   motif?: boolean;
+  /**
+   * `neutral` (default) is an absence — nothing here yet, nothing matched, not implemented.
+   * `error` is a failure — a file that would not parse.
+   *
+   * The two are different facts and must not read alike: an absence is normal and a failure is not.
+   * Before this existed, every viewer that could fail wrote its own red div, which is how
+   * `GenericViewerPanel.module.scss` came to paint one in `--console-ansi-bright-red` — the console
+   * palette, in a document panel. `error` is `--status-error`, the app's one failure colour.
+   */
+  tone?: "neutral" | "error";
 };
 
 /**
@@ -82,8 +92,8 @@ const RAINBOW = ["#FF0000", "#FFFF00", "#00FF00", "#00FFFF"];
  * in `--data-secondary` rather than reaching for `--console-ansi-*`, which is what made the old
  * empty states green.
  */
-export const EmptyState = ({ message, motif = true }: EmptyStateProps) => (
-  <div className={styles.emptyState}>
+export const EmptyState = ({ message, motif = true, tone = "neutral" }: EmptyStateProps) => (
+  <div className={classnames(styles.emptyState, { [styles.emptyStateError]: tone === "error" })}>
     {motif && (
       <div className={styles.rainbow} aria-hidden="true">
         {RAINBOW.map((colour) => (

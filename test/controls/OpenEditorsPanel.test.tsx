@@ -102,7 +102,28 @@ describe("OpenEditorsPanel", () => {
     await renderPanel([hub], hub);
 
     // Exactly "a.asm": the row. The close button inside it is named "Close a.asm".
-    fireEvent.keyDown(screen.getByRole("button", { name: "a.asm" }), { code: "Enter" });
+    fireEvent.keyDown(screen.getByRole("button", { name: "a.asm" }), { key: "Enter" });
+
+    await waitFor(() => {
+      expect(hub.setActiveDocument).toHaveBeenCalledWith("a.asm");
+    });
+  });
+
+  /*
+   * The handler reads `e.key`, not `e.code`.
+   *
+   * `code` is the *physical* key, so the numeric keypad's Enter reports itself as `NumpadEnter` and
+   * never matched — the row simply could not be activated from the keypad. `key` reports what the
+   * key means, which is `Enter` on both.
+   */
+  it("activates a row from the numeric keypad's Enter", async () => {
+    const hub = createHub(1, [document("a.asm")], 0, {});
+    await renderPanel([hub], hub);
+
+    fireEvent.keyDown(screen.getByRole("button", { name: "a.asm" }), {
+      key: "Enter",
+      code: "NumpadEnter"
+    });
 
     await waitFor(() => {
       expect(hub.setActiveDocument).toHaveBeenCalledWith("a.asm");
@@ -139,7 +160,15 @@ describe("OpenEditorsPanel", () => {
     );
     await renderPanel([hub], hub);
 
-    expect(screen.getAllByTitle("Unsaved changes")).toHaveLength(1);
+    /*
+     * The unsaved note is on the row, not on a native `title` on the dot.
+     *
+     * The marker used to carry its own `title` — a second browser tooltip inside a row that already
+     * had one, both on the browser's clock and able to fire over each other. The row now states it
+     * once, in its accessible name and in the one styled tooltip it owns.
+     */
+    expect(screen.getByRole("button", { name: /dirty\.asm[\s\S]*Unsaved changes/ })).toBeTruthy();
+    expect(screen.queryAllByTitle("Unsaved changes")).toHaveLength(0);
   });
 
   it("offers a close button for every open document", async () => {

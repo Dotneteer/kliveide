@@ -6,12 +6,12 @@ memory of it disagree, this file wins.
 **Created:** 2026-09-06
 **Updated:** 2026-09-11 (Phase 12 — the System Variables panel → §12; Phase 11 — sidebar
 modernization, the two sidebar extension points and the first two badges → §11). Earlier: 2026-09-06 (data-panel audit → §2.4/§3.0; accents settled → §5; Phase 0 detailed, and
-the consolidation sliced across Phases 6–7 covering `DocumentPanels/`, `SiteBarPanels/` and
+the consolidation sliced across Phases 6–7 covering `DocumentPanels/`, `SideBarPanels/` and
 `ToolArea/` → §6). All open questions resolved.
 **Branch:** `dotneteer/ui-modernize`
 **Scope:** The main panels of both renderer windows — toolbar, status bars, activity bar, sidebar
 and its panels, document tabs/header, tool area, emulator area, keyboard panel — plus the design
-token layer they all rest on, **plus the content of `SiteBarPanels/` and `DocumentPanels/`**, which a
+token layer they all rest on, **plus the content of `SideBarPanels/` and `DocumentPanels/`**, which a
 review of those folders showed cannot be separated from the token work (see §2.4). Monaco's syntax
 palette is in scope because it is a second colour system that would otherwise drift; Monaco's own
 editor chrome and the dialogs are not, and inherit the new tokens for free.
@@ -112,7 +112,7 @@ Confirmed by grep on this branch:
 | Bug | Where | Effect |
 |---|---|---|
 | `background-color: var();` — invalid, empty `var()` | `controls/layout/Layout.module.scss:48`, `controls/Next/Layer2Screen.module.scss:8` | Declaration dropped |
-| `--color-separator`, `--color-bg-hover` referenced, defined in neither theme | `SiteBarPanels/WatchPanel.module.scss` | Border falls back to `currentColor`; hover does nothing |
+| `--color-separator`, `--color-bg-hover` referenced, defined in neither theme | `SideBarPanels/WatchPanel.module.scss` | Border falls back to `currentColor`; hover does nothing |
 | `--main-font` referenced 4× — real name is `--main-font-family` | `ExplorerPanel` (×2), `Modal`, `Button` modules | 4 no-op `font-family` declarations |
 | `--color-activitybar-pointed` referenced, theme defines `--bgcolor-…` | `ActivityBar/ActivityButton.module.scss:26` | Dead rule |
 | `--console-default` defined in `dark-theme.ts` only | consumed via `getThemeProperty` in `ConsoleOutput.tsx:119`, `BasicPanel.tsx:456` | Console default text unstyled in **light theme** |
@@ -130,7 +130,7 @@ Confirmed by grep on this branch:
 
 ### 2.4 The deeper problem — the data panels
 
-`SiteBarPanels/` (15 components) and `DocumentPanels/` (32 components) are where Klive actually does
+`SideBarPanels/` (15 components) and `DocumentPanels/` (32 components) are where Klive actually does
 its work, and they expose problems that a colour-token layer alone would not have fixed. These are
 architectural, and they change the shape of the token design in §3.
 
@@ -140,7 +140,7 @@ There are two parallel "layout + value" libraries, and both are in active use:
 
 | Stack | Exports | Used by |
 |---|---|---|
-| `controls/layout/` | `Panel`, `Row`, `Column`, `Label`, `Value`, `Flag`, `Separator`, `ExpandableRow` | **14 of 15** SiteBarPanels |
+| `controls/layout/` | `Panel`, `Row`, `Column`, `Label`, `Value`, `Flag`, `Separator`, `ExpandableRow` | **14 of 15** SideBarPanels |
 | `controls/valuedisplay/` | `SidePanel`, `Row`, `Col`, `CenteredRow`, `Bit8Value`, `Bit16Value`, `SimpleValue`, `FlagValue`, `BitValue`, `FlagFieldRow` | 5 panels (Z80Cpu, M6510Cpu, Ula, Vic, Blink) |
 
 Both export a component named **`Row`**. Both stylesheets define **`.label`** with `--color-label`
@@ -272,13 +272,13 @@ normalizing the name prefix — including duplicated `.error` and `.valueLabel` 
 **(l) Three orphan stylesheets, never imported by anything:**
 
 ```
-SiteBarPanels/UlaPanel.module.scss              25 lines
-SiteBarPanels/VicPanel.module.scss              26 lines   (its root class is misnamed .ulaPanel)
+SideBarPanels/UlaPanel.module.scss              25 lines
+SideBarPanels/VicPanel.module.scss              26 lines   (its root class is misnamed .ulaPanel)
 DocumentPanels/Next/Z80FileViewerPanel.module.scss  18 lines
 ```
 
 `UlaPanel` and `VicPanel` were migrated to `valuedisplay`'s `SidePanel` and the stylesheets were left
-behind. Counting these plus unused classes in live sheets, roughly **17% of `SiteBarPanels/` SCSS and
+behind. Counting these plus unused classes in live sheets, roughly **17% of `SideBarPanels/` SCSS and
 12% of `DocumentPanels/` SCSS is dead**.
 
 **(m) A live bug that silently disables ~120 flag indicators.** `controls/valuedisplay/Values.tsx:246`:
@@ -515,6 +515,13 @@ it fixes the "least important strip is the tallest" inversion. **ActivityBar 52 
 
 Every bug in the table at §2.3 rows 2–5 and 7 is caught by this test, permanently. It is written in
 Phase 0 and must be green before Phase 1 starts.
+
+> **Correction (Phase 14, 2026-09-13).** This section, and the matching line in `AGENTS.md`, claimed
+> for thirteen phases that M1, M2 and M3 each had a test. **Only M3 ever did.** `token-contract.test.ts`
+> checks that token *names* resolve; nothing in the suite looked at a `font-size` or a width until
+> `test/theming/type-scale-contract.test.ts`. By the time it was written there were **54 `em` font
+> sizes across 28 stylesheets**, the largest block of them in the seven NEX annotation dialogs added
+> in the immediately preceding commit. See `.plans/UI_MODERNIZATION_BATCH_2_PLAN.md` §1.1 and Phase 14.
 
 ---
 
@@ -1301,7 +1308,7 @@ a two-minute check. "Everything about the Watch panel changed" is not.
 
 `controls/data/` now exists (`DataPanel`, `DataChrome`, `EmptyState`, `DataRow`, `DataLabel`,
 `DataValue`, `DataSecondary`, `HexValue`), and both pilots are migrated: `SysVarsPanel` from
-`SiteBarPanels/` and `BinFileViewerPanel` from `DocumentPanels/`.
+`SideBarPanels/` and `BinFileViewerPanel` from `DocumentPanels/`.
 
 **The API survived first contact, which was not the expectation.** 6.0 was written expecting to throw
 the first attempt away. It held because the two folders turned out to want *the same four things* —
@@ -1346,7 +1353,7 @@ cheap and I should not have dropped it** — the same class of mistake nearly co
 | **6.2** | `PanelHeader` (real: title, actions, surface) | 17 hand-rolled headers, 3 competing heights | Low |
 | **6.3** | `DataRow` | 16 separate row rules with 8 different paddings | Low–medium |
 | **6.4** | `HexValue` / `FlagValue` / `BitValue` | 6 "labeled hex value" implementations | **Medium** — unifies real behaviour differences: uppercase vs lowercase hex, `$` prefix present in some panels and absent in others. Decide the convention here and apply it everywhere. |
-| **6.5** | `DataLabel` / `DataValue` + the `ch` measure scale (M2) | 13 magic width constants, 6 different label widths, 6 CSS widths in `valuedisplay` | **Highest.** Moves sizing out of React props into CSS, which changes how `Label`/`Value`/`Flag`/`Text` are called app-wide. **Sub-slice by folder:** SiteBarPanels first, then DocumentPanels. |
+| **6.5** | `DataLabel` / `DataValue` + the `ch` measure scale (M2) | 13 magic width constants, 6 different label widths, 6 CSS widths in `valuedisplay` | **Highest.** Moves sizing out of React props into CSS, which changes how `Label`/`Value`/`Flag`/`Text` are called app-wide. **Sub-slice by folder:** SideBarPanels first, then DocumentPanels. |
 | **6.6** | `DataPanel` root + `DataLabel`/`DataValue` migration + delete the old stacks | 10 near-identical roots; removes one of the two `Row` components and one of the two `.label`/`.value` implementations | Medium — but by now every consumer has already moved. **Carries three items handed over by 6.5:** (a) the `DataLabel`/`DataValue` component migration itself, which 6.5 could not do because `ch` is only 6px under a `.dataPanel` ancestor; (b) the label/value column misalignment between `valuedisplay` and `layout/Label` — equal widths are not enough, `layout/Label`'s `0.4em` side margins have to go and `DataRow`'s `gap` replace them; (c) the `fullWidth` defect that renders `CON 0LCO 0` in the ULA panel, fixed for free by that same `gap`. |
 
 Each slice ships independently and leaves the app coherent: a slice that unifies empty states while
@@ -1356,7 +1363,7 @@ self-contained.
 #### Slice 6.1 retrospective — `EmptyState` *(2026-09-07)*
 
 490 jsdom tests, 54 theming tests, build green, `tsc` unchanged at 174. Net **-57 lines** across
-`SiteBarPanels/`.
+`SideBarPanels/`.
 
 Five `.center` blocks removed — `Breakpoints`, `Watch`, `CallStack`, `NecUpd765` migrated to
 `EmptyState`, and `ScriptingHistory`'s deleted outright as the audit predicted: it was declared but
@@ -1421,7 +1428,7 @@ built on: consolidate first, then delete the consolidated thing once a primitive
 #### Slice 6.3 retrospective — `DataRow` *(2026-09-07)*
 
 490 jsdom tests, 54 theming tests, build green, `tsc` unchanged at 174. Net **-38 lines** in
-`SiteBarPanels/`.
+`SideBarPanels/`.
 
 **Five row rules replaced across 23 call sites** — `Breakpoints`, `NecUpd765`, `Watch`, `NextReg`
 and `MemMapping` (18 rows on its own). Verified at runtime: **39 `DataRow`s** rendering at 22px with
@@ -1945,7 +1952,7 @@ session could not produce without manufacturing a compile error in the user's ow
 
 Phase 6 unifies the *presentational* layer — rows, labels, values, headers. That leaves a second tier
 of **composite components**: things that own behaviour (scrolling, buffering, file loading, command
-input), not just markup. They are the reason `DocumentPanels/`, `SiteBarPanels/` and `ToolArea/` still
+input), not just markup. They are the reason `DocumentPanels/`, `SideBarPanels/` and `ToolArea/` still
 diverge after Phase 6, and they are what makes those folders *fundamentally* three implementations of
 the same ideas rather than one.
 
@@ -2141,7 +2148,7 @@ so a dark machine does not sit on a glaring field.
 8. **Scope of the data-panel work** — **the full migration**, sliced by concern rather than by panel:
    **twelve** independently shippable steps across Phases 6 and 7, ordered cheapest-and-safest first,
    with a ratchet test preventing a stall at 80%.
-9. **`ToolArea/` is in scope** alongside `DocumentPanels/` and `SiteBarPanels/` — it shares
+9. **`ToolArea/` is in scope** alongside `DocumentPanels/` and `SideBarPanels/` — it shares
    `ConsoleOutput` with both and duplicates their header and toolbar patterns. See Phase 7.
 
 **Phases 0–9 are closed.** Phase 10 below is a post-launch addition, not a re-opening of §5 or §9 —

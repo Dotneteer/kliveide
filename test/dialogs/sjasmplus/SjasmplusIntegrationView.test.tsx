@@ -5,6 +5,45 @@ import type { SjasmplusIntent } from "@renderer/appIde/dialogs/sjasmplus/Sjasmpl
 import type { SjasmplusViewModel } from "@renderer/appIde/dialogs/sjasmplus/SjasmplusViewModel";
 
 import { fireEvent, renderWithProviders, screen } from "../../react-test-utils";
+
+/*
+ * The two pickers are the app's Radix-backed `Dropdown`, whose trigger opens a portalled listbox on
+ * pointer events jsdom does not produce. A native `<select>` stand-in keeps these tests about the
+ * view's own behaviour — which is what they are for — rather than about Radix's.
+ *
+ * The same mock, for the same reason, is in `test/renderer/NexRegionsDialog.test.tsx`.
+ */
+vi.mock("@renderer/controls/Dropdown", () => ({
+  default: ({
+    options,
+    ariaLabel,
+    testId,
+    initialValue,
+    enabled = true,
+    onChanged
+  }: {
+    options: { value: string; label: string }[];
+    ariaLabel?: string;
+    testId?: string;
+    initialValue?: string;
+    enabled?: boolean;
+    onChanged?: (value: string) => void;
+  }) => (
+    <select
+      aria-label={ariaLabel}
+      data-testid={testId}
+      value={initialValue}
+      disabled={!enabled}
+      onChange={(event) => onChanged?.(event.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  )
+}));
 import { aConfiguredState, aState, aViewModel, deepMerge, type DeepPartial } from "./fakes";
 
 /**

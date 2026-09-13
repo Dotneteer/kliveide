@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { FullPanel } from "@renderer/controls/layout/Panels";
+import { EmptyState } from "@renderer/controls/data";
 import { PanelHeader } from "@renderer/controls/data";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
 import { IconButton } from "@renderer/controls/IconButton";
@@ -44,9 +45,16 @@ const MIME_TYPES: Record<string, string> = {
   tif: "image/tiff"
 };
 
-function mimeTypeForName(name: string): string {
+/*
+ * The blob's media type, or `undefined` when the extension is not one we know.
+ *
+ * It used to fall back to `image/png` for anything unrecognised, which tells the browser something
+ * untrue about the bytes. Letting the type be absent lets the browser sniff, and if it cannot, the
+ * `onError` path below now says so instead of leaving a blank pane.
+ */
+function mimeTypeForName(name: string): string | undefined {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
-  return MIME_TYPES[ext] ?? "image/png";
+  return MIME_TYPES[ext];
 }
 
 const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
@@ -61,6 +69,8 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
   const [zoomIndex, setZoomIndex] = useState(viewState.current?.zoomIndex ?? DEFAULT_ZOOM_INDEX);
   const [fitMode, setFitMode] = useState<FitMode>(viewState.current?.fitMode ?? "original");
   const [dataUrl, setDataUrl] = useState<string | null>(null);
+  // --- Set by the `<img>`'s `onError`; see the failure branch below.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [naturalWidth, setNaturalWidth] = useState(0);
   const [naturalHeight, setNaturalHeight] = useState(0);
   const panContainerRef = useRef<HTMLDivElement>(null);
@@ -109,6 +119,7 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
       setDataUrl(null);
       setNaturalWidth(0);
       setNaturalHeight(0);
+      setLoadFailed(false);
       return () => {};
     }
     const blob = new Blob([data.slice()], { type: mimeTypeForName(document?.name ?? "") });
@@ -116,11 +127,31 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
     setDataUrl(url);
     setNaturalWidth(0);
     setNaturalHeight(0);
+    setLoadFailed(false);
     return () => URL.revokeObjectURL(url);
-  }, [data]);
+    // --- `document?.name` matters: the blob's media type is derived from it, so a rename that
+    // --- changes the extension has to rebuild the URL rather than keep the old type.
+  }, [data, document?.name]);
 
   if (!data || data.length === 0 || !dataUrl) {
-    return <div className={styles.message}>No image content.</div>;
+    return <EmptyState message="No image content." />;
+  }
+
+  /*
+   * A file the browser could not decode.
+   *
+   * The `<img>` had `onLoad` and no `onError`, so a corrupt or unsupported image left
+   * `naturalWidth` at 0 for ever and the panel showed a blank pane — with a live zoom control
+   * beside it, which reads as the image being there and invisible rather than as a failure.
+   */
+  if (loadFailed) {
+    return (
+      <EmptyState
+        tone="error"
+        motif={false}
+        message={`This file could not be decoded as an image (${document?.name ?? "unknown file"}).`}
+      />
+    );
   }
 
   const zoom = ZOOM_LEVELS[zoomIndex];
@@ -220,6 +251,7 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
                 setNaturalWidth(e.currentTarget.naturalWidth);
                 setNaturalHeight(e.currentTarget.naturalHeight);
               }}
+              onError={() => setLoadFailed(true)}
             />
           </div>
         </ScrollViewer>

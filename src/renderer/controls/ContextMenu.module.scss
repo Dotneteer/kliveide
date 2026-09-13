@@ -7,7 +7,9 @@
   border: 1px solid var(--border-context-menu);
   border-radius: var(--radius-context-menu);
   box-shadow: var(--shadow-context-menu);
-  font-size: 0.8em;
+  /* --- M1: a portalled menu inherits from the 16px root, so `0.8em` was 12.8px — off the scale
+     --- by 0.8px and not a size anyone chose. */
+  font-size: var(--font-size-200);
   z-index: 1000;
 
   /*

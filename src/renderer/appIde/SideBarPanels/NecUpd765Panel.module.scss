@@ -19,3 +19,20 @@
    */
   line-height: var(--panel-line-height);
 }
+
+/*
+ * The address and data columns.
+ *
+ * The row used to space itself with four `<LabelSeparator width={8} />` spacers between cells — a
+ * spacer element per gap, in a flex row that can express the same thing as a gap on the cell. Two
+ * `ch`-based columns replace them, so the spacing follows the panel's font like everything else.
+ */
+.necAddress {
+  margin-inline-start: 1ch;
+  min-width: 5ch;
+}
+
+.necData {
+  margin-inline-start: 1ch;
+  min-width: 3ch;
+}

@@ -1,9 +1,15 @@
 {
   "kliveVersion": "0.59.0",
-  "machineType": "zxnext",
-  "modelId": "standard",
+  "machineType": "z88",
+  "modelId": "OZ50",
   "config": {
-    "zxnextImplementation": "wasm"
+    "intRAM": 31,
+    "intROM": "z88v50-r1f99aaae",
+    "slot0": {
+      "size": 512,
+      "cardType": "AMDF29F040B",
+      "file": "z88v50-r1f99aaae"
+    }
   },
   "clockMultiplier": 1,
   "soundLevel": 0.8,
@@ -78,21 +84,9 @@
                   "editor.contrib.wordHighlighter": false
                 }
               }
-            },
-            {
-              "type": "NexViewer",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex",
-              "position": {
-                "line": 0,
-                "column": 0
-              },
-              "viewState": {
-                "bankFlagsExpanded": true,
-                "scrollPosition": 0
-              }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/code/code.kz80.asm"
         }
       ]
     }

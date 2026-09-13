@@ -3,11 +3,13 @@ import { Value } from "./Value";
 
 type Props = {
   /** Width reserved for the label cell. */
-  labelWidth?: number;
+  /** Label cell width as a CSS length with its unit — `"7ch"` for a column, `"32px"` for chrome (Phase 15). */
+  labelWidth?: string;
   /** Label text rendered before the value. */
   label: string;
   /** Width reserved for the value cell. */
-  valueWidth?: number;
+  /** Value cell width as a CSS length with its unit — `"7ch"` for a column, `"32px"` for chrome (Phase 15). */
+  valueWidth?: string;
   /** Value text rendered after the label. */
   value: string;
   /** Optional tooltip shown for the label cell. */

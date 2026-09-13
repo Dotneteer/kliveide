@@ -128,7 +128,7 @@ export const zxNextSysVars: SysVar[] = [
     name: "FLAGS3",
     type: SysVarType.Flags,
     description: "Various flags.",
-    flagDecriptions: [
+    flagDescriptions: [
       "Unlikely to be useful",
       "Unlikely to be useful",
       "Set when tokens are to be expanded on printing",
@@ -478,7 +478,7 @@ export const zxNextSysVars: SysVar[] = [
     name: "FLAGS",
     type: SysVarType.Flags,
     description: "Various flags to control the BASIC system.",
-    flagDecriptions: [
+    flagDescriptions: [
       "Leading space flag (set to suppress leading space)",
       "Printer flag (set when printer in use)",
       "Printer mode: K (reset) or L (set)",
@@ -494,7 +494,7 @@ export const zxNextSysVars: SysVar[] = [
     name: "TVFLAG",
     type: SysVarType.Flags,
     description: "Flags associated with the TV.",
-    flagDecriptions: [
+    flagDescriptions: [
       "Set when printing to the lower screen",
       "Unused",
       "Unused",
@@ -665,7 +665,7 @@ export const zxNextSysVars: SysVar[] = [
     name: "FLAGS2",
     type: SysVarType.Flags,
     description: "More flags. (Bit 3 set when CAPS SHIFT or CAPS LOCK is on.)",
-    flagDecriptions: [
+    flagDescriptions: [
       "Reset when the screen is clear",
       "Set when the printer buffer is in use",
       "Set when in quotes during line parsing",
@@ -706,7 +706,7 @@ export const zxNextSysVars: SysVar[] = [
     name: "FLAGX",
     type: SysVarType.Flags,
     description: "Various flags.",
-    flagDecriptions: [
+    flagDescriptions: [
       "Set when dealing with a complete simple string",
       "Set when dealing with a new (rather than existing) variable",
       "Unused",
@@ -843,7 +843,7 @@ export const zxNextSysVars: SysVar[] = [
     name: "P FLAG",
     type: SysVarType.Flags,
     description: "More flags.",
-    flagDecriptions: [
+    flagDescriptions: [
       "OVER bit (temporary)",
       "OVER bit (permanent)",
       "INVERSE bit (temporary)",

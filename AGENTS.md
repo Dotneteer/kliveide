@@ -97,6 +97,17 @@ merely uncoloured, which no route diff can see.
   delegate to those and add only tooltip behaviour.
 - Three rules have tests that will fail you: no `em` font sizes (M1), no px column widths - use `ch`
   (M2), and no component-private row-height constants - use `theming/tokens/rowSizes.ts` (M3).
+  M1/M2 live in `test/theming/type-scale-contract.test.ts`, M3 in `row-size-contract.test.ts`.
+  **The M1/M2 baseline (`build/style-mandate-baseline.json`) is empty** - the 57 violations that
+  predated the test are all cleared - so both are plain rules again and a new one fails immediately.
+  The baseline mechanism stays for the next backlog: it fails on anything new *and* on any count
+  that has dropped without being locked in (`npm run style:baseline`), only ever to lower a count.
+  **`calc(var(--some-token) * n)` is the sanctioned form** for a size that must stay proportional to
+  a named base; `em` is not, because it takes its base from whatever ancestor happens to set one.
+  M2's rule is narrow by design - a numeric literal passed as a column width - because the general
+  case is a *type* problem, not a lint one. The test's header explains what was tried and rejected.
+  **Note `controls/layout`'s `width` prop is px for a number and a CSS length for a string**, so a
+  column wants `width="7ch"`, never `width={7}`.
 - The Monaco syntax palette is mid-revision: **read `.plans/SYNTAX_PALETTE_REVISION_PLAN.md`**
   before changing `theming/tokens/syntax.ts`. It supersedes §8.1 of the modernization plan.
 - **Any style, theming or visual change must update `.ai/ui-theming-intent-and-lessons.md` in the

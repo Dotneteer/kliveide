@@ -35,6 +35,19 @@
   }
 }
 
+/*
+ * A dropdown that cannot be opened.
+ *
+ * Radix stamps `data-disabled` on the trigger when `Select.Root` is disabled, and — unlike the
+ * `pointer-events: none` + opacity wrapper this replaces — it also takes the trigger out of the tab
+ * order. The opacity is the same 0.4 that workaround used, so nothing looks different where it was
+ * already in use; what changes is that the keyboard now agrees with the appearance.
+ */
+.SelectTrigger[data-disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .SelectContent {
   background-color: var(--bg-color-dropdown-menu);
   color: var(--color-dropdown-menu);

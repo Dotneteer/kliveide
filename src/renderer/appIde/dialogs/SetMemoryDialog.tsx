@@ -1,3 +1,4 @@
+import styles from "./SetMemoryDialog.module.scss";
 import { Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
 import { DialogRow } from "@renderer/controls/DialogRow";
@@ -14,6 +15,9 @@ const sizeOptions = [
   { value: "-b24", label: "3 bytes" },
   { value: "-b32", label: "4 bytes" }
 ];
+
+/** The `num` command's single-byte size flag. Was written as ``{`-b8`}`` at three call sites. */
+const SINGLE_BYTE = "-b8";
 
 type Props = {
   address: number;
@@ -43,8 +47,20 @@ export const SetMemoryDialog = ({
     decimal ? currentValue.toString(10) : "$" + toHexa2(currentValue)
   );
   const [submitError, setSubmitError] = useState<string>();
-  const [sizeOption, setSizeOption] = useState("-b8");
+  const [sizeOption, setSizeOption] = useState(SINGLE_BYTE);
   const [bigEndian, setBigEndian] = useState(false);
+
+  /*
+   * Endianness only exists for a multi-byte write.
+   *
+   * `bigEndian` was never reset when the size went back to one byte, so: pick "4 bytes", tick
+   * "Big-endian write", return to "1 byte" — the checkbox correctly disables itself, and the stale
+   * `true` was still submitted, appending `-be` to a single-byte command. Deriving the submitted
+   * value rather than trying to remember to clear the state is what stops that recurring: there is
+   * no second place to keep in step.
+   */
+  const isMultiByte = sizeOption !== SINGLE_BYTE;
+  const effectiveBigEndian = isMultiByte && bigEndian;
 
   const validate = async (value: string) => {
     const getNum = await ideCommandsService.executeCommand(`num ${value.replace(" ", "")}`);
@@ -52,12 +68,25 @@ export const SetMemoryDialog = ({
   };
 
   const submitMemoryValue = async (): Promise<boolean> => {
-    if (!(await validate(memValue))) {
-      setSubmitError("Enter a valid numeric value.");
+    /*
+     * The whole submit is guarded, not just its result.
+     *
+     * `validate` awaits a command and only `success === false` was handled; a *throw* propagated
+     * out through `DialogForm`'s `await onSubmit()` as an unhandled rejection, leaving the dialog
+     * open with no error and nothing in the UI to say why. Same for `onSetMemory`, which writes to
+     * the machine.
+     */
+    try {
+      if (!(await validate(memValue))) {
+        setSubmitError("Enter a valid numeric value.");
+        return false;
+      }
+      await onSetMemory?.({ value: memValue, sizeOption, bigEndian: effectiveBigEndian });
+      return true;
+    } catch (err) {
+      setSubmitError((err as Error)?.message ?? "The memory could not be written.");
       return false;
     }
-    await onSetMemory?.({ value: memValue, sizeOption, bigEndian });
-    return true;
   };
 
   return (
@@ -77,7 +106,10 @@ export const SetMemoryDialog = ({
     >
       {isRom && (
         <DialogRow rows={true}>
-          <div style={{ color: "#ff6b6b", padding: "8px 0", fontWeight: "bold" }}>
+          {/* --- Was `style={{ color: "#ff6b6b" }}` — the last raw hex colour in any dialog, and a
+              --- shade of red that belongs to nothing. `--status-error` is the app's one failure
+              --- colour and follows the theme. */}
+          <div className={styles.romWarning}>
             This memory location is read-only (ROM) and cannot be modified.
           </div>
         </DialogRow>
@@ -103,11 +135,11 @@ export const SetMemoryDialog = ({
             />
           </DialogRow>
           <DialogRow label="Content size">
-            <div style={{ display: "flex", padding: "8px 0" }}>
+            <div className={styles.sizeRow}>
               <Dropdown
                 placeholder="Select..."
                 options={sizeOptions}
-                initialValue={`-b8`}
+                initialValue={SINGLE_BYTE}
                 width={80}
                 onChanged={async (option) => {
                   setSizeOption(option);
@@ -117,7 +149,7 @@ export const SetMemoryDialog = ({
           </DialogRow>
           <DialogRow>
             <Checkbox
-              enabled={sizeOption !== "-b8"}
+              enabled={isMultiByte}
               initialValue={bigEndian}
               label="Big-endian write"
               right={true}

@@ -5,7 +5,7 @@ import { createMockStore, renderWithProviders, act } from "../react-test-utils";
 import { addWatchAction, removeWatchAction } from "@state/actions";
 import type { WatchInfo } from "@state/AppState";
 
-import { WatchBadge } from "@renderer/appIde/SiteBarPanels/WatchBadge";
+import { WatchBadge } from "@renderer/appIde/SideBarPanels/WatchBadge";
 
 const watch = (symbol: string): WatchInfo => ({ symbol, type: "b" });
 

@@ -1,4 +1,5 @@
 import type { IScreenDevice } from "../abstractions/IScreenDevice";
+import { SPECTRUM_48_COLORS } from "./spectrum-colors";
 import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
@@ -119,27 +120,8 @@ export class CommonScreenDevice implements IScreenDevice {
     contentionValues: [0, 7, 6, 5, 4, 3, 2, 1]
   };
 
-  /**
-   * This table defines the ARGB colors for the 16 available colors on the ZX Spectrum 48K model.
-   */
-  private readonly s_SpectrumColors: number[] = [
-    0xff000000, // Black
-    0xffaa0000, // Blue
-    0xff0000aa, // Red
-    0xffaa00aa, // Magenta
-    0xff00aa00, // Green
-    0xffaaaa00, // Cyan
-    0xff00aaaa, // Yellow
-    0xffaaaaaa, // White
-    0xff000000, // Bright Black
-    0xffff0000, // Bright Blue
-    0xff0000ff, // Bright Red
-    0xffff00ff, // Bright Magenta
-    0xff00ff00, // Bright Green
-    0xffffff00, // Bright Cyan
-    0xff00ffff, // Bright Yellow
-    0xffffffff // Bright White
-  ];
+  /** The machine's sixteen colours. ABGR, not ARGB — see `SPECTRUM_48_COLORS`. */
+  private readonly s_SpectrumColors: number[] = SPECTRUM_48_COLORS;
 
   // --- We use this reference for the default contention values so that in the future, we can configure it (for
   // --- example, when implementing ZX Spectrum +2/+3)

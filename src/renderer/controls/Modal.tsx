@@ -59,8 +59,21 @@ export type ModalProps = {
   footerVisible?: boolean;
   initialFocus?: "none" | "primary" | "secondary" | "cancel";
   onClose: (result?: any) => any;
+  /**
+   * Runs when the commit button is clicked.
+   *
+   * **Resolve `true` to keep the dialog open**, `false` (or nothing) to let it close. The sense is
+   * the opposite of what the name suggests, which is why it is spelled out here: the handler's
+   * return value answers "am I handling the close myself?", not "should this close?".
+   *
+   * It used to be read into a variable called `close` meaning *keep open*, and four MVC containers
+   * each carried their own comment correcting that at the call site. Four copies of one clarifying
+   * comment is the signal that the name was wrong, not the readers.
+   */
   onPrimaryClicked?: () => Promise<boolean>;
+  /** As `onPrimaryClicked`: resolve `true` to keep the dialog open. */
   onSecondaryClicked?: () => Promise<boolean>;
+  /** As `onPrimaryClicked`: resolve `true` to keep the dialog open. */
   onCancelClicked?: () => Promise<boolean>;
 };
 
@@ -120,20 +133,20 @@ export const Modal = ({
 
   // --- Define button click handlers
   const primaryClickHandler = useCallback(async () => {
-    const close = await onPrimaryClicked?.();
-    if (!close) {
+    const keepOpen = await onPrimaryClicked?.();
+    if (!keepOpen) {
       doClose();
     }
   }, [doClose, onPrimaryClicked]);
   const secondaryClickHandler = useCallback(async () => {
-    const close = await onSecondaryClicked?.();
-    if (!close) {
+    const keepOpen = await onSecondaryClicked?.();
+    if (!keepOpen) {
       doClose();
     }
   }, [doClose, onSecondaryClicked]);
   const cancelClickHandler = useCallback(async () => {
-    const close = await onCancelClicked?.();
-    if (!close) {
+    const keepOpen = await onCancelClicked?.();
+    if (!keepOpen) {
       doClose();
     }
   }, [doClose, onCancelClicked]);
@@ -191,9 +204,10 @@ export const Modal = ({
     if (!isOpen) return;
 
     const handleDocumentKeyDown = (event: globalThis.KeyboardEvent) => {
+      // --- One `isTopModal` call: the guard above already established it, and the second call
+      // --- re-derived the same answer into a variable used once.
       if (event.code !== "Escape" || !isTopModal(modalId)) return;
-      const topModal = isTopModal(modalId);
-      if (topModal && closeOnEscapeRef.current) {
+      if (closeOnEscapeRef.current) {
         event.preventDefault();
         event.stopPropagation();
         doCloseRef.current?.();

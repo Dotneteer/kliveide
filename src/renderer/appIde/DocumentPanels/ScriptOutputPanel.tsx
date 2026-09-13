@@ -19,7 +19,7 @@ import {
 } from "@common/state/actions";
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
 import { createSettingsReader } from "@common/utils/SettingsReader";
-import { PanelHeader } from "@renderer/controls/data";
+import { DataPanel, PanelHeader } from "@renderer/controls/data";
 
 type ScriptOutputPanelViewState = {
   topPosition?: number;
@@ -130,7 +130,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   }
 
   return (
-    <div className={styles.panel}>
+    <DataPanel xclass={styles.panel}>
       <PanelHeader>
         <SmallIconButton
           iconName='stop'
@@ -189,7 +189,8 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
           clicked={() => setLocked(!scrollLocked)}
         />
         <ToolbarSeparator small={true} />
-        <Text text={`Lines: ${scriptBuffer?.getContents()?.length}`} />
+        {/* --- `?? 0`: before the buffer resolves, this rendered the literal "Lines: undefined". */}
+        <Text text={`Lines: ${scriptBuffer?.getContents()?.length ?? 0}`} />
         <ToolbarSeparator small={true} />
         <Text
           variant={variant}
@@ -217,7 +218,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
          */
         onContentsChanged={() => setVersion((v) => v + 1)}
       />
-    </div>
+    </DataPanel>
   );
 };
 

@@ -77,9 +77,22 @@ describe("NexLabelDialog", () => {
       />
     );
 
+    /*
+     * Read the radios' *accessible names*, in DOM order.
+     *
+     * This used to reach for `radio.closest("label")?.textContent`, which assumed the input was
+     * nested inside its label. `RadioGroup` associates the two by `htmlFor`/`id` instead — so the
+     * name is now real (it was previously absent: the hand-rolled markup gave these radios no
+     * accessible name at all) and is read the way assistive technology reads it.
+     */
     const radios = screen.getAllByRole("radio");
-    expect(radios.map((radio) => radio.getAttribute("aria-label") ?? radio.closest("label")?.textContent?.trim()))
-      .toEqual(["Bank 5", "Global"]);
+    const nameOf = (radio: HTMLElement) =>
+      radio.ownerDocument.querySelector<HTMLLabelElement>(`label[for="${radio.id}"]`)
+        ?.textContent?.trim();
+
+    expect(radios.map(nameOf)).toEqual(["Bank 5", "Global"]);
+    expect(screen.getByRole("radio", { name: "Bank 5" })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Global" })).toBeTruthy();
     expect(screen.queryByText(/Local to Bank/)).not.toBeInTheDocument();
   });
 
