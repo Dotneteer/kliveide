@@ -1,10 +1,17 @@
 import type { AppState } from "@state/AppState";
 import type { Store } from "@state/redux-light";
-import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 
 import { incBreakpointsVersionAction } from "@state/actions";
 import { getBreakpointStorageKey } from "@common/utils/breakpoints";
+import {
+  bankRelativeAddresses,
+  bankRelativePartition,
+  breakpointMatchesScope,
+  isBankRelative,
+  withScopeOwner
+} from "@common/utils/breakpoint-scope";
 
 // --- Breakpoint flags
 // --- Execution breakpoint
@@ -105,10 +112,14 @@ export class DebugSupport implements IDebugSupport {
       return false;
     }
 
-    // --- Get the current partition and test if it has a breakpoint
+    // --- Get the current partition and test if it has a breakpoint.
+    //
+    // --- `some`, not `find`: two entries can now share a partition at one address — a user's
+    // --- `bp-set <partition>:<address>` and a bank-relative breakpoint projected onto it. Taking
+    // --- the *first* would let a disabled one mask an enabled one. The question is whether any
+    // --- enabled entry matches, which is also what the single-entry case always meant.
     const partition = partitionResolver(address);
-    const partitionEntry = bpData.partitions.find((p) => p[0] === partition);
-    return !!partitionEntry && !partitionEntry[1];
+    return bpData.partitions.some((p) => p[0] === partition && !p[1]);
   }
 
   /**
@@ -134,8 +145,7 @@ export class DebugSupport implements IDebugSupport {
           return true;
         }
         const partition = partitionResolver(read);
-        const partitionEntry = bpData.partitions.find((p) => p[0] === partition);
-        if (partitionEntry && !partitionEntry[1]) {
+        if (bpData.partitions.some((p) => p[0] === partition && !p[1])) {
           return true;
         }
       }
@@ -166,8 +176,7 @@ export class DebugSupport implements IDebugSupport {
           return true;
         }
         const partition = partitionResolver(write);
-        const partitionEntry = bpData.partitions.find((p) => p[0] === partition);
-        if (partitionEntry && !partitionEntry[1]) {
+        if (bpData.partitions.some((p) => p[0] === partition && !p[1])) {
           return true;
         }
       }
@@ -249,6 +258,15 @@ export class DebugSupport implements IDebugSupport {
       this.breakpointDefs.set(bpKey, {
         address: bp.address,
         partition: bp.partition,
+        // --- Must be carried across: this literal rebuilds the definition field by field, so an
+        // --- omitted `owner` would make every breakpoint project-owned the moment it was added,
+        // --- and a project save would adopt breakpoints belonging to a `.nex` sidecar.
+        owner: bp.owner,
+        // --- Same reason as `owner`: this literal rebuilds the definition field by field, so a
+        // --- bank-relative breakpoint would lose the very fields that make it one.
+        bank: bp.bank,
+        bankOffset: bp.bankOffset,
+        oneShot: bp.oneShot,
         resource: bp.resource,
         line: bp.line,
         exec: !(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite),
@@ -262,6 +280,16 @@ export class DebugSupport implements IDebugSupport {
       });
     } catch (err) {
       console.log("err in addBreakpoint", err.toString());
+    }
+
+    // --- A bank-relative breakpoint has no single address: it is armed at every address its bank
+    // --- could be paged to, and the partition test at fire time picks the real one.
+    if (isBankRelative(bp)) {
+      this.armBankRelative(bp, this.collectBpFlags(bp));
+      if (!this.suspendVersionIncrement) {
+        this.store?.dispatch(incBreakpointsVersionAction(), "emu");
+      }
+      return !oldBp;
     }
 
     // --- Extract used address and partition
@@ -288,11 +316,17 @@ export class DebugSupport implements IDebugSupport {
             bpData = {};
             this.breakpointData.set(address, bpData);
           }
-          if (partition) {
-            bpData.partitions ??= [];
-            if (!bpData.partitions.some((p) => p[0] === partition)) {
-              bpData.partitions.push([partition, false]);
-            }
+          // --- `!== undefined`, not truthiness: partition 0 is a real partition on every banked
+          // --- machine (bank `B0` on the 128K, bank `00` on the ZX Next), and a truthiness test
+          // --- skipped it. `collectBpFlags` has already withheld `EXEC_BP` and set `PART_BP` for
+          // --- any breakpoint carrying a partition, so leaving `partitions` empty made
+          // --- `shouldStopAt` fall through to `false` — the breakpoint could never fire. Removal
+          // --- (`removeBreakpoint`) and enabling (`enableBreakpoint`) both test `!== undefined`,
+          // --- so this was also an add/remove asymmetry.
+          if (partition !== undefined) {
+            // --- No tag: this entry belongs to the user's own breakpoint, not to a bank-relative
+            // --- one. Dedupe is on partition *and* tag, so the two can share an address.
+            this.addPartitionEntry(address, partition);
           }
           if (bp.hitCount !== undefined) {
             bpData.currentHitCount = 0;
@@ -323,6 +357,14 @@ export class DebugSupport implements IDebugSupport {
     }
     this.breakpointDefs.delete(bpKey);
 
+    // --- A bank-relative breakpoint owns entries at eight addresses, tagged with its key, so it
+    // --- takes only its own away.
+    if (isBankRelative(oldBp)) {
+      this.disarmBankRelative(oldBp, this.collectBpFlags(oldBp));
+      this.store?.dispatch(incBreakpointsVersionAction(), "emu");
+      return true;
+    }
+
     // --- Remove breakpoint flags
     const address = oldBp.address ?? oldBp.resolvedAddress;
 
@@ -349,7 +391,11 @@ export class DebugSupport implements IDebugSupport {
         // --- Handle the additional data
         const prevData = this.breakpointData.get(address);
         if (partition !== undefined) {
-          prevData.partitions = prevData.partitions.filter((p) => p[0] !== partition);
+          // --- `p[2] === undefined` keeps a bank-relative breakpoint's tagged entry for the same
+          // --- partition: removing one kind must not remove the other's.
+          prevData.partitions = prevData.partitions.filter(
+            (p) => !(p[0] === partition && p[2] === undefined)
+          );
         }
         if (!prevData.partitions || prevData.partitions.length === 0) {
           // --- No more partition breakpoint for the address
@@ -379,6 +425,22 @@ export class DebugSupport implements IDebugSupport {
     if (!oldBp) return false;
     oldBp.disabled = !enabled;
 
+    // --- A bank-relative breakpoint's disabled flag lives on its own tagged entries, at each of the
+    // --- eight addresses it armed.
+    if (isBankRelative(oldBp)) {
+      const owningKey = bpKey;
+      for (const address of bankRelativeAddresses(oldBp.bankOffset!)) {
+        const bpData = this.breakpointData.get(address);
+        for (const entry of bpData?.partitions ?? []) {
+          if (entry[2] === owningKey) {
+            entry[1] = !enabled;
+          }
+        }
+      }
+      this.store?.dispatch(incBreakpointsVersionAction(), "emu");
+      return true;
+    }
+
     const address = oldBp.address ?? oldBp.resolvedAddress;
 
     // --- Do we have a breakpoint address at all?
@@ -393,8 +455,11 @@ export class DebugSupport implements IDebugSupport {
           return false;
         }
 
-        // --- Get partition info
-        const partInfo = bpData.partitions.find((p) => p[0] === partition);
+        // --- Get partition info. `p[2] === undefined` so that toggling a user's breakpoint does
+        // --- not toggle a bank-relative one sharing the address and partition.
+        const partInfo = bpData.partitions.find(
+          (p) => p[0] === partition && p[2] === undefined
+        );
         if (!partInfo) {
           // --- Breakpoint does not exist
           return false;
@@ -568,17 +633,38 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
-   * Changes the list of existing breakpoints to the provided ones.
-   * @param breakpoints Breakpoints to set
+   * Replace the breakpoints owned by `scope`, leaving every other owner's alone.
+   *
+   * This used to replace the *whole* set, which is why opening a project destroyed any breakpoint
+   * the project did not itself hold. The scope is a required parameter rather than an optional one
+   * with an "everything" default, for the same reason `getBreakpointDisplayKey` requires its label
+   * map: an omitted argument would silently restore exactly the behaviour this exists to fix.
+   *
+   * Breakpoints in `bps` are stamped with the owner the scope implies (`withScopeOwner`), so a
+   * caller cannot install a breakpoint under one scope and have it owned by another.
+   *
+   * @param bps The breakpoints to install for this scope
+   * @param scope Which existing breakpoints this call may remove
    */
-  resetBreakpointsTo(bps: BreakpointInfo[]): void {
+  resetBreakpointsTo(bps: BreakpointInfo[], scope: BreakpointScope): void {
+    // --- Everything this call is *not* allowed to touch, captured before the rebuild.
+    const survivors = this.breakpoints.filter((bp) => !breakpointMatchesScope(bp.owner, scope));
+    const installing = (bps ?? []).map((bp) => withScopeOwner(bp, scope));
+
     this.breakpointDefs = new Map<string, BreakpointInfo>();
     this.breakpointFlags = new Uint16Array(0x1_0000);
     this.breakpointData = new Map<number, BreakpointData>();
     this.suspendVersionIncrement = true;
     try {
-      if (bps) {
-        bps.forEach((bp) => this.addBreakpoint(bp));
+      for (const bp of [...survivors, ...installing]) {
+        this.addBreakpoint(bp);
+        if (bp.disabled) {
+          // --- `addBreakpoint` gets the *flags* right (`collectBpFlags` reads `disabled`) but
+          // --- rebuilds the stored definition without carrying `disabled` across, so the breakpoint
+          // --- would behave as disabled while `listBreakpoints` reported it armed. Re-applying it
+          // --- here means every caller gets a faithful round trip instead of having to know this.
+          this.enableBreakpoint(bp, false);
+        }
       }
     } finally {
       this.suspendVersionIncrement = false;
@@ -586,17 +672,115 @@ export class DebugSupport implements IDebugSupport {
     this.store?.dispatch(incBreakpointsVersionAction(), "emu");
   }
 
+  /**
+   * Remove every one-shot breakpoint that has just fired at `address`.
+   *
+   * A one-shot exists to stop the machine once — a run-to-cursor target, or the NEX entry-point
+   * stop — and must not survive its own hit. Removal goes through `removeBreakpoint`, so it also
+   * bumps `breakpointsVersion`: without that the panel and the disassembly gutter would keep
+   * showing a breakpoint that no longer exists.
+   *
+   * `partition` is the partition currently paged in at `address`, so a one-shot scoped to a bank
+   * that is *not* paged there is left alone — it did not fire.
+   *
+   * **Not yet called from the execution loop.** The hit is recorded in `DebugStepDecision.ts`,
+   * which is being rewritten concurrently; the call lands with the features that need it (the entry
+   * stop and run-to-cursor). See `.plans/NEX_DEBUGGING_PLAN.md` §7.3 and §19.
+   *
+   * @returns The number of one-shots removed.
+   */
+  consumeOneShotsAt(address: number, partition: number | undefined): number {
+    const spent = this.breakpoints.filter((bp) => {
+      if (!bp.oneShot || bp.disabled) return false;
+      if (isBankRelative(bp)) {
+        return (
+          bankRelativePartition(bp.bank!, bp.bankOffset!) === partition &&
+          bankRelativeAddresses(bp.bankOffset!).includes(address)
+        );
+      }
+      const bpAddress = bp.address ?? bp.resolvedAddress;
+      if (bpAddress !== address) return false;
+      const bpPartition = bp.partition ?? bp.resolvedPartition;
+      return bpPartition === undefined || bpPartition === partition;
+    });
+    for (const bp of spent) {
+      this.removeBreakpoint(bp);
+    }
+    return spent.length;
+  }
+
+  /**
+   * Record that `partition` has a breakpoint at `address`, tagged with its provenance.
+   *
+   * Deduplicates on partition *and* tag, so a bank-relative breakpoint and a user's own
+   * partition-scoped one can coexist at the same address and partition, and each can be removed
+   * without disturbing the other.
+   */
+  private addPartitionEntry(address: number, partition: number, owningKey?: string): void {
+    let bpData = this.breakpointData.get(address);
+    if (!bpData) {
+      bpData = {};
+      this.breakpointData.set(address, bpData);
+    }
+    bpData.partitions ??= [];
+    if (!bpData.partitions.some((p) => p[0] === partition && p[2] === owningKey)) {
+      bpData.partitions.push([partition, false, owningKey]);
+    }
+  }
+
+  /**
+   * Arm a bank-relative breakpoint: the same flags at all eight addresses its bank could appear at,
+   * each carrying the 8K partition the bank's offset resolves to.
+   *
+   * Flags are OR-ed rather than assigned, so arming one breakpoint cannot clear another's at a
+   * shared address.
+   */
+  private armBankRelative(bp: BreakpointInfo, bpFlags: number): void {
+    const partition = bankRelativePartition(bp.bank!, bp.bankOffset!);
+    const owningKey = getBreakpointStorageKey(bp);
+    for (const address of bankRelativeAddresses(bp.bankOffset!)) {
+      this.breakpointFlags[address] |= bpFlags;
+      this.addPartitionEntry(address, partition, owningKey);
+    }
+  }
+
+  /** Drop a bank-relative breakpoint's own entries and flags from all eight of its addresses. */
+  private disarmBankRelative(bp: BreakpointInfo, bpFlags: number): void {
+    const owningKey = getBreakpointStorageKey(bp);
+    for (const address of bankRelativeAddresses(bp.bankOffset!)) {
+      const bpData = this.breakpointData.get(address);
+      if (bpData?.partitions) {
+        bpData.partitions = bpData.partitions.filter((p) => p[2] !== owningKey);
+        if (bpData.partitions.length === 0) {
+          this.breakpointFlags[address] &= ~(bpFlags | PART_BP);
+          if (!(this.breakpointFlags[address] & HIT_BP)) {
+            this.breakpointData.delete(address);
+          }
+        }
+      }
+    }
+  }
+
   // --- Get the breakpoint flags from the definition
   private collectBpFlags(bp: BreakpointInfo): number {
     // --- Collect breakpoint flags
     let bpFlags = 0x00;
-    if (bp.exec && bp.partition === undefined && bp.resolvedPartition === undefined) {
+    // --- `EXEC_BP` means "fires whatever is paged in here", so it must be withheld from any
+    // --- breakpoint that carries a partition — a bank-relative one included, whose partition is
+    // --- derived from its bank and offset rather than stated.
+    const bankRelative = isBankRelative(bp);
+    if (
+      bp.exec &&
+      !bankRelative &&
+      bp.partition === undefined &&
+      bp.resolvedPartition === undefined
+    ) {
       bpFlags |= EXEC_BP;
       if (bp.disabled) {
         bpFlags |= DIS_EXEC_BP;
       }
     }
-    if (bp.partition !== undefined) {
+    if (bp.partition !== undefined || bankRelative) {
       bpFlags |= PART_BP;
     }
     if (bp.memoryRead) {
@@ -635,5 +819,16 @@ export class DebugSupport implements IDebugSupport {
 type BreakpointData = {
   targetHitCount?: number;
   currentHitCount?: number;
-  partitions?: [number, boolean][];
+  /**
+   * The partitions with a breakpoint at this address: `[partition, disabled, owningKey?]`.
+   *
+   * Positions 0 and 1 are unchanged, which is what keeps the per-instruction test in `shouldStopAt`
+   * — `partitions.find((p) => p[0] === partition)` and `p[1]` — untouched.
+   *
+   * The third element is the storage key of the **bank-relative** breakpoint that contributed the
+   * entry, and is absent for a user's own `bp-set <partition>:<address>`. It exists because one
+   * bank-relative breakpoint arms eight addresses, and at any of them a user breakpoint may already
+   * claim the same partition; without the tag, removing one would remove the other's entry too.
+   */
+  partitions?: [number, boolean, string?][];
 };

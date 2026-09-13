@@ -340,7 +340,7 @@ It also needs the race in §2.5 addressed: either arm before the keystrokes are 
 `"Start"` must stay non-debug until the last keystroke is consumed, or detect the `.nexload` handover
 some other way. Worth prototyping before committing — see §9 Q5.
 
-### 5.3 Reuse the boot checkpoint across debug cycles — **promoted to core scope** (§9 Q1, Q7)
+### 5.3 Reuse the boot checkpoint across debug cycles — ⚠ **premise wrong; already works**
 
 > Choosing the `.nexload` route means every single launch pays for NextZXOS. Combined with the author's
 > "nice and easy" requirement, this stops being an optimisation and becomes the difference between a
@@ -348,13 +348,23 @@ some other way. Worth prototyping before committing — see §9 Q5.
 > land early and makes manually testing everything else faster.
 
 `ReachExecPoint`'s `checkpoint` already skips the cold boot by snapshotting WASM linear memory
-(`ZxNextWasmV2Machine.ts:620`, `:646`). But it deliberately excludes the SD image, so **any card
-write invalidates it** (`processWasmV2SdWriteFrameCommand:1009` calls `invalidateCheckpoints()`) —
-and copying the NEX onto the card is a card write.
+(`ZxNextWasmV2Machine.ts:620`, `:646`). It deliberately excludes the SD image, so **a write by the
+emulated machine invalidates it** (`processWasmV2SdWriteFrameCommand:1009`).
 
-If the copy happens *before* the restore, or the checkpoint is keyed to the card's content, the
-edit-debug loop stops paying for a full NextZXOS boot every time. For an iterative debugging feature
-this is probably the biggest usability win available, and it is orthogonal to everything else.
+> **⚠ Corrected in Phase 3 — this section's conclusion was wrong.** I wrote that "copying the NEX
+> onto the card is a card write" and therefore drops the checkpoint. It does not. Two different
+> things share the word:
+>
+> - `invalidateCheckpoints()` drops the *machine's* checkpoint, and only a machine-initiated sector
+>   write (or a ROM upload) calls it;
+> - `invalidateSdCardHandler()` closes a cached *main-process file handle*
+>   (`zx-next-menus.ts:298-303`), and that is what `copyToSdCard` calls. It never reaches the
+>   renderer.
+>
+> So a host-side copy leaves the checkpoint intact and **the reuse already happens**, for the shipped
+> F5 path as much as for the Phase 3 launch. `wasm-next-checkpoint-flow.test.ts` already pins the
+> distinction. There was no optimisation to make — see `NEX_DEBUGGING_PLAN.md` §8 for what remains
+> (a pre-existing stale-filesystem-cache risk, not a performance one).
 
 ### 5.4 Direct NEX loading, as an alternative mode — **OUT OF SCOPE** (§9 Q1)
 

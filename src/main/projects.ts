@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { breakpointMatchesScope } from "@common/utils/breakpoint-scope";
 import type { WatchInfo } from "@common/state/AppState";
 
 import {
@@ -201,7 +202,11 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
         // --- Install the whole set in one atomic call. The previous erase-then-add-each-one
         // --- sequence spanned many IPC round trips, during which a breakpoint the user toggled
         // --- in the IDE could be wiped or overwritten.
-        await getEmuApi().restoreBreakpoints(restoredBreakpoints);
+        //
+        // --- Scoped to `project`: this call replaces only the breakpoints the project owns. It
+        // --- used to replace *every* breakpoint the emulator held, so opening a project destroyed
+        // --- breakpoints belonging to anything else — a `.nex` sidecar, or a live debug session.
+        await getEmuApi().restoreBreakpoints(restoredBreakpoints, { kind: "project" });
       } else {
         console.warn(
           `Skipped restoring breakpoints for '${projectFolder}': the project's machine was ` +
@@ -333,7 +338,14 @@ export async function getKliveProjectStructure(options: {
   const bpResponse = includeBreakpoints
     ? await getEmuApi().listBreakpoints()
     : { breakpoints: [] };
-  return getKliveProjectStructureFromState(bpResponse.breakpoints);
+  // --- Only the breakpoints this project owns. `listBreakpoints` returns the emulator's whole set,
+  // --- which is a union of sets owned by different persisters: a `.nex` sidecar's bank breakpoints
+  // --- and a session's one-shots live in there too, and writing them here would store them twice
+  // --- and then restore them from two diverging places.
+  const projectBreakpoints = (bpResponse.breakpoints ?? []).filter((bp) =>
+    breakpointMatchesScope(bp.owner, { kind: "project" })
+  );
+  return getKliveProjectStructureFromState(projectBreakpoints);
 }
 
 function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): KliveProjectStructure {

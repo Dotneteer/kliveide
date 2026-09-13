@@ -538,10 +538,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Gets the current partition values for all 16K/8K partitions
+   * The partition paged into each of the eight 8K pages.
+   *
+   * 8K pages, matching `getPartitionForPage` — see the note there.
    */
   getPartitions(): number[] {
-    return this.pageInfo.map((b) => b.bank16k);
+    return this.pageInfo.map((b) => b.bank8k);
   }
 
   /**
@@ -579,8 +581,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    */
   getPartitionForPage(pageIndex: number): number | undefined {
     const pageInfo = this.pageInfo[pageIndex & 0x07];
-    if (pageInfo.bank16k < 224) {
-      return pageInfo.bank16k;
+    // --- The **8K page**, not the 16K bank. This used to return `bank16k`, which disagreed with
+    // --- `getMemoryPartition(index)` — the function the Memory and Disassembly views fetch bytes
+    // --- through — and with the 224-entry label map, `MF_BANK: 224` and the docs, all of which
+    // --- describe 8K pages. See `.plans/NEX_DEBUGGING_PLAN.md` §4.1.
+    if (pageInfo.bank8k < 224) {
+      return pageInfo.bank8k;
     }
     const offs = pageInfo.readOffset;
     if (offs < OFFS_DIVMMC_ROM) {

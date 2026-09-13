@@ -9,8 +9,8 @@ verified facts with `file:line`, the full idea catalogue, and the decision log. 
 restate the evidence**; where it asserts a fact, that document proves it. Read §2, §3 and §9 there
 first.
 
-**Status:** drafted, not started. Phases 0 and 1 are landable independently of the feature and fix
-real bugs.
+**Status:** **Phases 0–3 complete** (§5–§8). Phases 4–8 not started. Phase 4 is the
+`StaticMemoryDump` decomposition, which gates the UI work in Phases 5 and 6.
 
 ---
 
@@ -287,7 +287,7 @@ plan — getting it wrong loses user data silently.
 an exact match (`nexAnnotations.ts:173`); it must accept `1` and `2`, and normalize `1` by adding an
 empty `debug`. A v1 file is never rewritten as v2 until something is actually saved.
 
-### 4.6 How a bank-relative breakpoint works — with **no change to the hot path**
+### 4.6 How a bank-relative breakpoint works — reusing the partition mechanism
 
 `breakpointFlags` is a `Uint16Array(0x10000)` indexed by Z80 address, read once per instruction. A
 bank-relative breakpoint has no address — so **register it at all eight candidate addresses**:
@@ -312,9 +312,15 @@ which is what keeps the two units from leaking into the rest of the design.
     return !!partitionEntry && !partitionEntry[1];
 ```
 
-So the per-instruction cost is **unchanged** — no new flag, no new branch, no new parameter — and
+So there is no new flag, no new parameter and no change to `DebugStepDecision.ts`, and
 memory-read/write bank breakpoints (§10.2) come free, since `hasMemoryRead` / `hasMemoryWrite` use the
-same structure. Eight entries per breakpoint, against the 65,536 that I/O breakpoints already fan out
+same structure.
+
+> **Corrected during Phase 2.** This section first claimed the read path was untouched. It is not:
+> because two entries can now share a partition at one address, `find` could return a *disabled*
+> entry and mask an enabled one, so all three read paths became
+> `some((p) => p[0] === partition && !p[1])`. Same cost, one more term in the predicate — but not
+> "unchanged". See §7. Eight entries per breakpoint, against the 65,536 that I/O breakpoints already fan out
 to (`DebugSupport.ts:275-281`).
 
 Correctness rests on one fact: under Q9 the two halves of a 16K bank are *different* partitions, so a
@@ -354,9 +360,24 @@ are identical in both columns apart from zero-padding.
 
 ---
 
-## 5. Phase 0 — Two defect fixes, no feature
+## 5. Phase 0 — Two defect fixes, no feature — ✅ **COMPLETE**
 
 Independently landable, independently valuable, and Phase 5 is incorrect without them.
+
+**Outcome.** Both fixed, both with tests that were confirmed to fail against the old code. Full unit
+suite green (20,895 passed), `npm run build:check` reports no new type errors against its 123-entry
+baseline, `npm run lint:renderer` reports 0 errors and no new warnings.
+
+| Change | File |
+| --- | --- |
+| `if (partition)` → `if (partition !== undefined)` | `src/emu/machines/DebugSupport.ts:291` |
+| 5 partition-0 regression tests | `test/debug/DebugSupport.test.ts` |
+| New pure matching module | `src/renderer/appIde/DocumentPanels/breakpointRowMatch.ts` |
+| `breakpointMap` regrouped, local builder removed | `useDisassemblyRefresh.ts` |
+| Partition-aware row lookup, paging inverted once per render | `DisassemblyPanel.tsx` |
+| 18 unit tests for the matching module | `test/renderer/breakpointRowMatch.test.ts` |
+| Negative regression test + `pageLabels` harness option | `test/controls/DisassemblyPanelRefactor.test.tsx` |
+| Assertion updated to the grouped map shape | `test/controls/DisassemblyRefresh.test.tsx` |
 
 ### 5.1 A breakpoint in bank 0 never fires
 
@@ -380,17 +401,108 @@ viewing bank `$05`.
 computes its partition (`resolveDisassemblyPartition`, `:109-116`) and passes it to
 `getMemoryContents` — it simply is not used for breakpoint matching.
 
-**Test:** `test/controls/DisassemblyRefresh.test.tsx` — same address, two partitions, assert each row
-shows only its own.
+**As built.** The matching logic went into a new pure module,
+`src/renderer/appIde/DocumentPanels/breakpointRowMatch.ts` (node-testable, no React), following the
+`branchVerdict.ts` precedent in the same folder. `breakpointMap` became
+`Map<number, BreakpointInfo[]>` — the old `Map<number, BreakpointInfo>` *could not* hold two
+breakpoints at one address, which is why the last one silently won. The row then picks with
+`selectRowBreakpoint(candidates, resolveRowPartition(...))`.
 
-**Gate:** both fixes green, and the existing breakpoint suites unchanged.
+The rule is deliberately conservative, this being a bug fix rather than a redesign: a
+**partition-scoped** breakpoint shows only where its partition applies; a **partitionless** one keeps
+today's behaviour and shows at its address in any view. A scoped match beats a partitionless one at
+the same address.
+
+**Two things learned while doing it, worth keeping:**
+
+1. **`mem64kLabels` has one entry per 8K page, and machines duplicate 16K slots into it.** The 128K
+   returns `[slot0, slot0, slot1, slot1, slot2, slot2, slot3, slot3]`
+   (`ZxSpectrum128WasmV2Machine.ts:182-189`), matching `getPartition`'s own
+   `getCurrentPartitions()[(address >>> 13) & 0x07]`. So the views' `address >> 13` indexing is
+   correct, and any fixture supplying fewer than eight entries is under-specified.
+2. **`DisassemblyPanelRefactor.test.tsx` was exactly such a fixture** — `partitionLabels: ["R0", "R1"]`,
+   two entries, harmless only while nothing read past index 1. Its partition-0 breakpoint at `$6000`
+   (page 3) had no paging to be applicable to. Corrected to eight entries that agree with the
+   breakpoint, and given a `pageLabels` option so the negative case can page something else in.
+
+**Tests:** 18 unit tests on the pure module (grouping, label inversion, row-partition resolution in
+both view modes, unpaged pages, partition 0, scoped-vs-partitionless precedence), plus a panel-level
+negative regression — *"hides a partition-scoped breakpoint when its partition is not paged in"* —
+verified to fail when `selectRowBreakpoint` is stubbed back to partition-blind behaviour.
+
+**Gate:** ✅ both fixes green; full unit suite, type check and renderer lint clean.
+
+**Not done, deliberately:** this leaves the *bank view* showing partitionless breakpoints at their
+numeric address, which in a bank view is a bank-relative display address rather than a Z80 one.
+Changing that is a behaviour change beyond the reported defect, and Phase 5 will revisit it when bank
+addressing becomes first-class.
 
 ---
 
-## 6. Phase 1 — Breakpoint ownership (L1)
+## 6. Phase 1 — Breakpoint ownership (L1) — ✅ **COMPLETE**
 
-Fixes a second real bug: opening a project currently destroys any breakpoint it does not itself hold,
-because `restoreBreakpoints` is a whole-set replace (ideas §9.4a).
+Fixed a second real bug: opening a project destroyed any breakpoint it did not itself hold, because
+`restoreBreakpoints` was a whole-set replace (ideas §9.4a).
+
+**Outcome.** Full unit suite green (20,915 passed, up 20), `build:check` no new type errors,
+`lint:renderer` 0 errors and 44 warnings — the same count as before, so none new. `electron-vite
+build` clean, which is the check that matters here (see "the one design change" below).
+
+**The one design change from the plan.** §4.3 said the helpers would live in
+`src/common/utils/breakpoints.ts`. They cannot: that module imports `@renderer/...` for `toHexa4`
+and `getBreakpoints`, and the **main process** needs `breakpointMatchesScope` to filter a project
+save — which would have dragged renderer code into the main bundle. They live in a new
+dependency-free `src/common/utils/breakpoint-scope.ts` instead, re-exported from `breakpoints.ts` so
+renderer callers still have one import site. `electron-vite build` is what confirms this.
+
+**Two things the plan did not anticipate, both of which would have broken the feature silently:**
+
+1. **`addBreakpoint` rebuilds the stored definition field by field**, so it dropped `owner` — every
+   breakpoint would have become project-owned the instant it was registered, and a project save would
+   have adopted a sidecar's breakpoints. `owner: bp.owner` added to that literal, with a test that
+   fails without it (7 of the 18 ownership tests do).
+2. **`breakpoint-utils.removeBreakpoint` stripped fields too**, not just `addBreakpoint` as §6.2
+   noted. Removal looks a breakpoint up by `getBreakpointStorageKey`, which includes the partition —
+   so rebuilding it from `address`/`resource`/`line` produced a *different* key and **removing a
+   partition-scoped breakpoint silently did nothing**. Both helpers now forward the whole object,
+   with `exec` still defaulted because `collectBpFlags` computes no flags for a kindless breakpoint.
+
+**Scope semantics as built.** `resetBreakpointsTo(bps, scope)` captures the breakpoints the scope may
+*not* touch, rebuilds from `[...survivors, ...stamped]`, and re-applies `disabled` for both groups.
+That last part moved *into* `DebugSupport`: `MainToEmuProcessor.restoreBreakpoints` used to re-apply
+`disabled` itself in a follow-up loop, which every future caller would have had to know about. It is
+now a single call.
+
+`applyBreakpointEdit` uses `{ kind: "all" }` — it is a read-modify-write of the whole set it just
+read, and `"all"` keeps each breakpoint's own owner rather than stamping one, which is precisely what
+makes that round trip ownership-preserving (§6.2 flagged this as "verify"; verified, and now tested).
+
+| Change | File |
+| --- | --- |
+| `BreakpointOwner`, `BreakpointScope`, `owner?:` field | `src/common/abstractions/BreakpointInfo.ts` |
+| `breakpointMatchesScope`, `ownerForScope`, `withScopeOwner` | **new** `src/common/utils/breakpoint-scope.ts` |
+| Scoped `resetBreakpointsTo`; `owner` preserved; `disabled` re-applied | `src/emu/machines/DebugSupport.ts` |
+| Scope parameter | `EmuApi.ts`, `MainToEmuProcessor.ts`, `IDebugSupport.ts` |
+| Save filtered to project-owned; load scoped to `project` — **the wipe fix** | `src/main/projects.ts` |
+| Undo/redo scoped to `project` | `MonacoEditor.tsx` |
+| `refreshSourceCodeBreakpoints` scoped | `src/common/utils/breakpoints.ts` |
+| Session-owned dropped on machine change | `MachineService.ts` |
+| Read-modify-write scoped to `all` | `breakpoint-actions.ts` |
+| Both helpers forward the whole breakpoint | `breakpoint-utils.ts` |
+| 18 ownership tests | **new** `test/debug/BreakpointOwnership.test.ts` |
+| 2 save-filter tests | `test/main/save-klive-project.test.ts` |
+
+**Verified by reverting.** Stubbing `survivors` to `[]` (the old whole-set replace) fails 3 ownership
+tests; removing `owner: bp.owner` fails 7; removing the save filter fails the save test.
+
+**Left deliberately.** `DebugSupport`'s *constructor* still does not re-apply `disabled` when it
+seeds from a previous machine's breakpoints — the same wart `resetBreakpointsTo` now handles. The
+flags are right, so the emulator behaves correctly and only `listBreakpoints` misreports. It wants
+its own test and is outside this phase; worth folding in when Phase 2 touches the class.
+
+`eraseAllBreakpoints` is unchanged and still clears everything, session-owned included. That is the
+right answer for "Remove all breakpoints" — a user erasing all expects bank breakpoints gone too —
+and its semantics are settled elsewhere.
 
 ### 6.1 Core
 
@@ -438,7 +550,80 @@ visible to a user who has no NEX open.
 
 ---
 
-## 7. Phase 2 — Bank-relative breakpoints (L2)
+## 7. Phase 2 — Bank-relative breakpoints (L2) — ✅ **COMPLETE**
+
+**Outcome.** Full unit suite green (20,951 passed, up 34), `build:check` no new type errors,
+`lint:renderer` 0 errors and 44 warnings (unchanged), `electron-vite build` clean, and
+`doc:build` + `doc:check` pass — links, assets and the Z80 highlighting all intact.
+
+### What differed from the plan
+
+**Q9 touched four sites, not two.** §4.1 named `getPartitionForPage` and its WASM twin. Two more
+reporters answered in 16K banks and had to move with them, or the system would merely have relocated
+the inconsistency: `MemoryDevice.getPartitions()` (`b.bank16k` → `b.bank8k`) and
+`ZxNextWasmV2Machine.getCurrentPartitions()` (`zxnextGetMemoryPageBank16` →
+`...Bank8`).
+
+**Three test helpers were compensating for the bug by hand.** `wasm-next-debug-step`,
+`wasm-next-interrupts` and `wasm-next-nmi` each carried
+
+```ts
+const memoryPartition = partition < 0 ? partition : partition * 2 + (pageIndex & 0x01);
+```
+
+— taking `getPartition`'s 16K answer and doubling it to index `getMemoryPartition`'s 8K pages. After
+Q9 the conversion is wrong, and two of the three failed with *CPU-state* divergences (they were
+writing their fixture bytes to the wrong page). This is the strongest corroboration Q9 was right: the
+tests could only work by re-deriving the conversion the resolver should never have needed. All three
+now pass the partition straight through.
+
+**I had to change the hot path after all** — §4.6 claimed otherwise, and that was wrong. Two entries
+can now share a partition at one address (a user's `bp-set <partition>:<address>` and a bank-relative
+breakpoint projected onto it), so `find((p) => p[0] === partition)` could return a *disabled* entry
+and mask an enabled one. The three read paths now ask `some((p) => p[0] === partition && !p[1])` —
+"is there any enabled entry", which is also what the single-entry case always meant. Same cost, one
+extra term in the predicate.
+
+**Three more places were not tag-aware, and the tests caught it.** §4.6 only anticipated removal.
+In fact `addBreakpoint`'s dedupe (`some((p) => p[0] === partition)`) **swallowed** a user breakpoint
+whose partition a bank breakpoint had already claimed, and `removeBreakpoint`/`enableBreakpoint`
+selected entries by partition alone, so each kind clobbered the other's. All three now match on the
+tag as well, and four tests cover the co-location cases in both directions.
+
+**§7.3's one-shot logic is built; its call site is deferred to Phase 5.** `consumeOneShotsAt` lives in
+`DebugSupport` with tests, but the only place a breakpoint hit is now recorded is
+`DebugStepDecision.ts` — the concurrent session's uncommitted file (§19). Wiring a hook into it would
+create exactly the entanglement §19 says to avoid, and nothing in Phase 2 consumes it. Phase 5 adds
+the one call, alongside the entry stop and run-to-cursor that need it.
+
+### Changes
+
+| Change | File |
+| --- | --- |
+| Q9: positive partition = 8K page, four reporters | `MemoryDevice.ts`, `ZxNextWasmV2Machine.ts` |
+| `bank`, `bankOffset`, `oneShot` fields | `BreakpointInfo.ts` |
+| `isBankRelative`, `bankRelativePartition`, `bankRelativeAddresses` | `breakpoint-scope.ts` |
+| `<bank>:+$<offset>` key branch | `common/utils/breakpoints.ts` |
+| Eight-address fan-out, tagged partition entries, tag-aware add/remove/enable, `some`-based reads, `consumeOneShotsAt` | `DebugSupport.ts` |
+| `bp-set`/`bp-del`/`bp-en` grammar, Next-only and non-I/O guards | `BreakpointCommands.ts` |
+| 23 bank-relative + one-shot tests | **new** `test/debug/BankRelativeBreakpoints.test.ts` |
+| 11 grammar tests | **new** `test/commands/BankBreakpointGrammar.test.ts` |
+| 2 value-pinning cross-core tests | `wasm-next-partition-labels.test.ts` |
+| Hand-rolled conversion removed | `wasm-next-{debug-step,interrupts,nmi}.test.ts` |
+| Q9 breaking change, the five fixes, the new grammar | `CHANGELOG.md` |
+| 8K-page clarification; bank pairs | `docs/.../memory.mdx` |
+| Bank-relative section and grammar | `docs/.../breakpoints.mdx`, `commands-reference.mdx` |
+
+**The §3(b) test exists and passes**, named for what it protects: a breakpoint at bank 5 offset
+`$0100` must not fire where bank 5's *high* half is paged, and the paired assertion shows the low half
+at the same address still does, so it is not vacuous.
+
+### One layering smell, knowingly left
+
+`BreakpointCommands.ts` now imports `NEX_MAX_BANK` / `NEX_BANK_LAST_OFFSET` from
+`DocumentPanels/Next/nexAnnotations.ts` — a command reaching into a document-panel module. The
+constants belong with the NEX format helpers that §11.1 extracts; duplicating them would be worse.
+Fold this into that extraction.
 
 ### 7.1 The convention change (Q9)
 
@@ -518,7 +703,64 @@ property `PARTITION_NAMING_UNIFICATION_PLAN.md` established and this plan must n
 
 ---
 
-## 8. Phase 3 — Launch an arbitrary `.nex` (L3)
+## 8. Phase 3 — Launch an arbitrary `.nex` (L3) — ✅ **COMPLETE**
+
+**Outcome.** Full unit suite green (20,966 passed, up 15), `build:check` no new type errors,
+`lint:renderer` 0 errors / 44 warnings (unchanged), `electron-vite build` clean, `doc:build` +
+`doc:check` pass with no broken links.
+
+### ⚠ §8.2's premise was wrong — and there is nothing to fix
+
+The plan (inherited from `NEX_DEBUGGING_IDEAS.md` §5.3, my own misreading) said copying the NEX to the
+card destroys the `zxnext-boot` checkpoint, so every launch pays for a full NextZXOS boot. **It does
+not.** Two different things share the word "invalidate":
+
+- `invalidateCheckpoints()` drops the machine's checkpoint, and is called from exactly two places:
+  `processWasmV2SdWriteFrameCommand` — when the **emulated machine** writes a sector — and
+  `uploadWasmV2RomImages`.
+- `invalidateSdCardHandler()` closes a cached **main-process file handle**
+  (`zx-next-menus.ts:298-303`), and is what `copyToSdCard` calls. It never reaches the renderer.
+
+So a host-side card copy leaves the checkpoint intact, and checkpoint reuse **already works** — for
+the existing F5 build path as much as for this new launch. The existing suite already pins the
+distinction: `wasm-next-checkpoint-flow.test.ts` has *"drops the checkpoint as soon as the machine
+writes to the SD card"* beside *"keeps the checkpoint when the machine only reads"*.
+
+No code, and no measurement, because there is no change to measure. What remains is a **pre-existing**
+risk worth naming: a boot checkpoint captured before the card changed restores a NextZXOS whose cached
+filesystem view predates the new file. The shipped build-and-run path has always done copy-then-restore,
+so Phase 3 inherits that risk rather than introducing it, and the checkpoint is taken at the OS command
+prompt where `.nexload` still does a fresh directory lookup. If a stale-cache failure is ever observed,
+the fix is to invalidate the checkpoint on a host-side write too — a one-line addition to
+`copyToSdCard`'s renderer caller.
+
+### What was built
+
+One command, reached from three places, so the Explorer, the document tab and a script cannot drift:
+
+| Piece | File |
+| --- | --- |
+| `nex-run <file> [-d]`, aliased `nexrun` | **new** `src/renderer/appIde/commands/NexLaunchCommand.ts` |
+| Dependency-free path helpers (`isNexFilePath`, `hostFileName`, `nexSdCardTarget`, `NEX_SD_FOLDER`) | **new** `src/common/utils/nex-launch-paths.ts` |
+| Explorer **Run NEX file** / **Debug NEX file**, and the document-tab Run/Debug buttons | **new** `src/renderer/features/documents/NexLaunchContextMenu.tsx` |
+| `.nex` gains `contextMenuInfo` + `documentTabRenderer` | `registry.ts` |
+| Command registration | `IdeCommands.ts` |
+| 15 tests | **new** `test/commands/NexLaunchCommand.test.ts` |
+| `nex-run` reference, the direct-launch section, the feature entry | `commands-reference.mdx`, `run-debug.mdx`, `CHANGELOG.md` |
+
+The launch decouples the SD path from `compiledOutput.nexConfig.filename` by deriving it from the host
+file name instead, into the same `_klive/` folder the build path uses — one convention, and a short
+enough `.nexload` line to type reliably through the emulated keyboard.
+
+`codeToInject` is `{ model, segments: [], options: {} }`: the Next's flow has a `KeepPc` step and no
+`Inject` step, so nothing but the model is read. `projectDebug` is `false` even with `-d`, because
+there is no compilation behind an arbitrary NEX and so no source files to lock or resolve against.
+
+### Deferred, deliberately
+
+§8.1 listed a third menu item, **Debug (break at entry)**. Its mechanism is §10.3 — the session-owned
+one-shot armed before the flow — so it ships with Phase 5 rather than as a stub here. Phase 3 offers
+Run and Debug.
 
 Deliverable on its own, and the first thing a user sees. It could equally run before Phase 2 if an
 early demo is wanted — it shares nothing with the breakpoint layers.
@@ -823,8 +1065,8 @@ small enough not to block a start, and big enough not to want discovering during
    breakpoints? Recommend the session, so closing a tab does not silently disarm breakpoints.
 3. **Launch options in the sidecar** (§4.5's `debug.launch`) — only `breakAtEntry` is needed for
    Phase 5. Resist adding more until something asks for it.
-4. **Does `applyBreakpointEdit` round-trip `owner` intact?** Verify in Phase 1; it is read-modify-write
-   so it should, but "should" is not a test.
+4. ~~**Does `applyBreakpointEdit` round-trip `owner` intact?**~~ **Resolved in Phase 1:** yes, via the
+   `{ kind: "all" }` scope, which keeps each breakpoint's own owner. Now covered by a test.
 5. **A NEX with no project loaded** sets plain address breakpoints with no project to save them to —
    today's behaviour and no regression, but a case could be made for the sidecar adopting them.
    Recommend: leave alone.

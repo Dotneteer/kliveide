@@ -13,7 +13,7 @@ import { BreakpointInfo } from "@abstractions/BreakpointInfo";
  * not carry the `disabled` flag over - hence the explicit re-apply.
  */
 function restoreBreakpoints(debugSupport: DebugSupport, bps: BreakpointInfo[]): void {
-  debugSupport.resetBreakpointsTo(bps ?? []);
+  debugSupport.resetBreakpointsTo(bps ?? [], { kind: "all" });
   for (const bp of bps ?? []) {
     if (bp.disabled) {
       debugSupport.enableBreakpoint(bp, false);

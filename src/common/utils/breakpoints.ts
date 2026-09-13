@@ -4,7 +4,7 @@ import { MessengerBase } from "@common/messaging/MessengerBase";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
 import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 
@@ -52,6 +52,16 @@ function buildBreakpointKey(
       return `$${toHexa4(bp.address)}${suffix}`;
     }
     return `${partitionText(bp.partition)}:$${toHexa4(bp.address)}${suffix}`;
+  } else if (bp.bank !== undefined && bp.bankOffset !== undefined) {
+    // --- Bank-relative: an offset inside a ZX Spectrum Next 16K bank, wherever that bank is paged.
+    //
+    // --- The `+` is what separates this from the absolute `<partition>:<address>` form, and it is
+    // --- safe because no address literal can begin with one (`$`, a digit, or `%`).
+    //
+    // --- The bank is rendered as a plain 2-digit hex number rather than through the partition label
+    // --- map, because it is a **16K bank**, not a partition index — the map describes 8K pages.
+    // --- Routing it through the labels is how the two index spaces got confused before.
+    return `${toHexa2(bp.bank).toUpperCase()}:+$${toHexa4(bp.bankOffset)}${suffix}`;
   } else if (bp.resource && bp.line !== undefined) {
     return `[${bp.resource}]:${bp.line}`;
   }
@@ -79,6 +89,18 @@ export function getBreakpointDisplayKey(
 ): string {
   return buildBreakpointKey(bp, (partition) => partitionLabels?.[partition] ?? "?");
 }
+
+/*
+ * The ownership/scope helpers live in `breakpoint-scope.ts`, which imports nothing but the
+ * `BreakpointInfo` types. This module cannot host them: it reaches into `@renderer/...` for
+ * `toHexa4` and `getBreakpoints`, and the main process needs the scope helpers when it filters a
+ * project save. Re-exported here so renderer callers can keep importing from one place.
+ */
+export {
+  breakpointMatchesScope,
+  ownerForScope,
+  withScopeOwner
+} from "./breakpoint-scope";
 
 // --- Sends all resolved source code breakpoints to the emulator
 export async function refreshSourceCodeBreakpoints(
@@ -114,7 +136,9 @@ export async function refreshSourceCodeBreakpoints(
         }
       }
     }
-    await emuApi.resetBreakpointsTo(bps);
+    // --- Read-modify-write of the whole set, so owners survive; scoped for intent, and so that a
+    // --- source-breakpoint refresh cannot clear a sidecar's or a session's breakpoints.
+    await emuApi.resetBreakpointsTo(bps, { kind: "project" });
   }
 
   await emuApi.resolveBreakpoints(resolvedBp);

@@ -119,8 +119,12 @@ function writeLoadedByte(machine: InterruptMachine, address: number, value: numb
   }
   const partition = machine.getPartition(address);
   if (partition != null) {
-    const pageIndex = address >>> 13;
-    const memoryPartition = partition < 0 ? partition : partition * 2 + (pageIndex & 0x01);
+    // --- `getPartition` already answers in the same index space `getMemoryPartition` expects, so
+    // --- there is nothing to convert. This used to double a positive partition and add the page's
+    // --- low bit, compensating by hand for the two functions disagreeing: the resolver returned a
+    // --- 16K bank while `getMemoryPartition` indexed 8K pages. See `.plans/NEX_DEBUGGING_PLAN.md`
+    // --- §4.1 (Q9), which made the resolver answer in 8K pages and removed the mismatch.
+    const memoryPartition = partition;
     const bytes = machine.getMemoryPartition(memoryPartition);
     bytes[address & (partition < 0 ? 0x3fff : 0x1fff)] = value;
   } else {

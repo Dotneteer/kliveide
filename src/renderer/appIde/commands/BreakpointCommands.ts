@@ -12,11 +12,16 @@ import {
   validationError,
   commandError,
   IdeCommandBase,
-  getNumericTokenValue
+  getNumericTokenValue,
+  toHexa2
 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
+import {
+  NEX_BANK_LAST_OFFSET,
+  NEX_MAX_BANK
+} from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
 import { parseCommand, TokenType } from "@renderer/appIde/services/command-parser";
-import { MF_BANK, MF_ROM } from "@common/machines/constants";
+import { MF_BANK, MF_ROM, MI_ZXNEXT } from "@common/machines/constants";
 import { createEmuApi } from "@common/messaging/EmuApi";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
@@ -77,6 +82,8 @@ type BreakpointWithAddressArgs = {
   addrSpec?: string;
   address?: number;
   partition?: number;
+  bank?: number;
+  bankOffset?: number;
   resource?: string;
   line?: number;
   "-d"?: boolean;
@@ -154,6 +161,59 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
                 break;
               }
 
+              // --- `<bank>:+<offset>` — bank-relative: an offset inside a ZX Spectrum Next 16K
+              // --- bank, firing wherever that bank is paged. `+` cannot begin an address literal
+              // --- (`$`, a digit or `%`), so this cannot be confused with the absolute
+              // --- `<partition>:<address>` form, and no existing spelling changes meaning.
+              if (segments[1].startsWith("+")) {
+                if (machine.machineId !== MI_ZXNEXT) {
+                  messages = [
+                    validationError("Bank-relative breakpoints are supported on the ZX Spectrum Next only")
+                  ];
+                  break;
+                }
+
+                // --- The bank is a 16K bank number in plain hex, *not* a partition label: the
+                // --- label map describes 8K pages, and routing a bank through it is how the two
+                // --- index spaces got confused. See `.plans/NEX_DEBUGGING_PLAN.md` §4.1.
+                const bank = parseInt(segments[0], 16);
+                if (!Number.isInteger(bank) || bank < 0 || bank > NEX_MAX_BANK) {
+                  messages = [validationError(`Invalid bank (expected $00-$${toHexa2(NEX_MAX_BANK)})`)];
+                  break;
+                }
+
+                // --- Parsing is guarded here rather than by the outer `catch`, so that garbage in
+                // --- the offset reports as an invalid *bank offset* instead of the generic
+                // --- "Invalid numeric value" the absolute form falls back to.
+                let offsetValue: number | undefined;
+                try {
+                  const offsetTokens = parseCommand(segments[1].substring(1));
+                  if (offsetTokens.length === 1) {
+                    const offsetInfo = getNumericTokenValue(offsetTokens[0]);
+                    if (!offsetInfo.messages) {
+                      offsetValue = offsetInfo.value;
+                    }
+                  }
+                } catch {
+                  offsetValue = undefined;
+                }
+                if (offsetValue === undefined) {
+                  messages = [validationError("Invalid bank offset")];
+                  break;
+                }
+                const offsetInfo = { value: offsetValue };
+                if (offsetInfo.value < 0 || offsetInfo.value > NEX_BANK_LAST_OFFSET) {
+                  messages = [
+                    validationError(`Bank offset must be between $0000 and $${toHexa4(NEX_BANK_LAST_OFFSET)}`)
+                  ];
+                  break;
+                }
+
+                args.bank = bank;
+                args.bankOffset = offsetInfo.value;
+                break;
+              }
+
               // --- Extract partition information
               const partition = await createEmuApi(context.messenger).parsePartitionLabel(
                 segments[0]
@@ -202,6 +262,10 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
     if (args.partition !== undefined && (args["-i"] || args["-o"])) {
       return [validationError("You cannot use partition with I/O breakpoints")];
     }
+    if (args.bankOffset !== undefined && (args["-i"] || args["-o"])) {
+      // --- An I/O breakpoint watches a port, which has no bank.
+      return [validationError("You cannot use a bank offset with I/O breakpoints")];
+    }
 
     // --- Done.
     return messages;
@@ -221,6 +285,8 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
     const bpDef = {
       address: args.address,
       partition: args.partition,
+      bank: args.bank,
+      bankOffset: args.bankOffset,
       resource: args.resource,
       line: args.line,
       exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"]),
@@ -255,6 +321,8 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
     const bpDef: BreakpointInfo = {
       address: args.address,
       partition: args.partition,
+      bank: args.bank,
+      bankOffset: args.bankOffset,
       resource: args.resource,
       line: args.line,
       exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"]),
@@ -303,6 +371,8 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
     const bpDef: BreakpointInfo = {
       address: args.address,
       partition: args.partition,
+      bank: args.bank,
+      bankOffset: args.bankOffset,
       resource: args.resource,
       line: args.line,
       exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"]),

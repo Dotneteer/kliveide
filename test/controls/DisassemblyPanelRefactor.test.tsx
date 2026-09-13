@@ -24,11 +24,14 @@ const outputItems = [
 type HarnessOptions = {
   machineState?: MachineControllerState;
   viewState?: Record<string, unknown>;
+  /** Override the live paging, to page something other than the breakpoint's partition in. */
+  pageLabels?: string[];
 };
 
 async function renderDisassemblyPanel({
   machineState = MachineControllerState.Paused,
-  viewState = {}
+  viewState = {},
+  pageLabels
 }: HarnessOptions = {}) {
   vi.resetModules();
 
@@ -39,7 +42,15 @@ async function renderDisassemblyPanel({
     Promise.resolve({
       memory: new Uint8Array(0x1_0000),
       pc: 0x6000,
-      partitionLabels: ["R0", "R1"],
+      // --- The live paging, one label per 8K page, exactly as `getCurrentPartitionLabels()`
+      // --- reports it — eight entries, because the views index it with `address >> 13`. It used to
+      // --- be a two-element stub, which was harmless only while nothing read past index 1.
+      //
+      // --- It now has to agree with `memBreakpoints` below: the breakpoint at `$6000` is scoped to
+      // --- partition 0, and `$6000 >> 13` is page 3, so page 3 must hold partition 0 (`B0` in the
+      // --- `getPartitionLabels` mock) for the gutter to show it. A partition-scoped breakpoint is
+      // --- only displayed where its partition is actually paged in.
+      partitionLabels: pageLabels ?? ["R0", "R0", "B0", "B0", "B0", "B0", "B0", "B0"],
       selectedRom: 0,
       memBreakpoints: [
         {
@@ -311,6 +322,31 @@ afterEach(() => {
 });
 
 describe("DisassemblyPanel refactor characterization", () => {
+  /*
+   * The gutter used to be keyed by address alone, so a breakpoint scoped to one bank lit up the
+   * gutter while you were looking at another. This pins the negative half of the fix: the same
+   * fixture as above, with a different bank paged in at the breakpoint's address.
+   *
+   * The positive half is the test below it, which only passes because page 3 holds `B0`.
+   */
+  it("hides a partition-scoped breakpoint when its partition is not paged in", async () => {
+    // --- Arrange/Act: the breakpoint is scoped to partition 0 (`B0`) at `$6000` — page 3 — but
+    // --- page 3 now holds ROM 0, so the breakpoint does not apply to any visible row.
+    await renderDisassemblyPanel({
+      pageLabels: ["R0", "R0", "R0", "R0", "R0", "R0", "R0", "R0"]
+    });
+
+    // --- Assert: the row renders, but with no breakpoint on it
+    expect(screen.getByText("LD A,1")).toBeInTheDocument();
+    expect(screen.queryByTestId("breakpoint-B0:$6000")).toBeNull();
+    // --- With no breakpoint on the row, `DisassemblyRow` hands the indicator the raw address
+    // --- rather than a display key — hence `24576` ($6000) rather than `B0:$6000`.
+    expect(screen.getByTestId(`breakpoint-${0x6000}`)).toHaveAttribute(
+      "data-has-breakpoint",
+      "false"
+    );
+  });
+
   it("renders the initial disassembly rows and breakpoint state", async () => {
     const { disassemblerFactory, getMemoryContents } = await renderDisassemblyPanel();
 

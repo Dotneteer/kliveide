@@ -70,6 +70,33 @@ can still enable, disable, and remove them from this view. To script one, use
 `bp-set [myfile.asm]:12`.
 </Callout>
 
+## Bank-Relative Breakpoints (ZX Spectrum Next)
+
+A partition-scoped breakpoint sits at one Z80 address and fires only while a particular partition is
+paged there. That is the wrong shape for code that moves a bank around: the same routine appears at a
+different address depending on which slot its bank is in.
+
+A **bank-relative** breakpoint names the bank and an offset inside it instead, and fires wherever
+that bank is paged:
+
+```
+bp-set 05:+$0100
+```
+
+This breaks at offset `$0100` inside 16K bank 5. The bank is a 16K bank number in hexadecimal (`00`
+to `6F`) and the offset runs from `$0000` to `$3FFF` &mdash; the same units a NEX file and the
+`.bank` pragma use. `bp-del` and `bp-en` take the same form.
+
+<Callout type="info">
+A ZX Next memory *partition* is an 8K page, while a *bank* here is 16K &mdash; so a bank-relative
+breakpoint resolves to one of the two partitions making up that bank, depending on whether its offset
+falls in the bank's low or high half. That distinction is what lets the breakpoint tell `$0100` in
+bank 5 apart from `$2100` in the same bank when only one half is paged in. See
+[Machine-Specific Memory Partitions](./memory#machine-specific-memory-partitions).
+</Callout>
+
+Bank-relative breakpoints are not available for the I/O types, which watch a port rather than memory.
+
 ## Resolved Source Code Breakpoints
 
 When you open a project or modify an assembly source code file, the source code breakpoint addresses are not resolved to an actual physical address. The orange color of a source code breakpoint indicates this status:

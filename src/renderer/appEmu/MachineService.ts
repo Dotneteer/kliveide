@@ -75,7 +75,12 @@ class MachineService implements IMachineService {
     if (this._controller) {
       if (this._controller.debugSupport) {
         // --- We keep the old source code breakpoints, as we want to use them in the new machine.
-        oldBps = this._controller.debugSupport.breakpoints;
+        // --- Session-owned ones are dropped: they belong to a debug session on the machine being
+        // --- torn down (a run-to-cursor target, a NEX entry-point stop) and mean nothing on the
+        // --- next one.
+        oldBps = this._controller.debugSupport.breakpoints.filter(
+          (bp) => bp.owner?.kind !== "session"
+        );
       }
       this._oldDisposing.fire(this._controller.machine.machineId);
       await this._controller.stop();

@@ -97,10 +97,17 @@ The Z88 has no ROM partitions: its ROM is a card in slot 0 rather than a fixed p
 | Alt ROM | `X0`, `X1` | The alternate ROM pages, 16K each |
 | DivMMC ROM | `DM` | The DivMMC ROM, 8K |
 | DivMMC RAM | `M0` ... `MF` | The 16 DivMMC RAM banks, 8K each |
-| &mdash; | `00` ... `DF` | The 224 RAM banks, 8K each (`000` to `223` in decimal view) |
+| &mdash; | `00` ... `DF` | The 224 RAM pages, 8K each (`000` to `223` in decimal view) |
 
 The bank chooser heads each group once rather than repeating it on every entry, so a DivMMC RAM
 bank appears as `M3` under a **DivMMC RAM** heading. Hovering any entry names it in full.
+
+<Callout type="info">
+On the ZX Next a RAM partition is an **8K page**, which is the granularity of the machine's own MMU.
+Code and tools that think in 16K banks &mdash; the `.bank` pragma, a NEX file's banks, the
+`.nex` viewer &mdash; address them in pairs: 16K bank *B* is the two partitions `2B` and `2B+1`, its
+low half first. So 16K bank 5 is partitions `0A` and `0B`.
+</Callout>
 
 <Callout type="info">
 The alternate ROMs are named `X0` and `X1` rather than the more obvious `A0`/`A1`, and the DivMMC

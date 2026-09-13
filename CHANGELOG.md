@@ -1,5 +1,38 @@
 # Klive IDE Changelog
 
+## Unreleased
+
+### Fixes
+
+- A breakpoint in partition 0 (bank `B0` on the 128K, bank `00` on the ZX Next) could never fire.
+- Opening a project no longer discards breakpoints the project does not own.
+- Removing a partition-scoped breakpoint through the editor gutter silently did nothing.
+- The Disassembly view's breakpoint gutter no longer shows a breakpoint from one bank while you are
+  looking at another.
+- The Memory Mapping panel's all-RAM readout was always empty.
+
+### Breaking changes
+
+- **On the ZX Spectrum Next, a positive memory partition index now means an 8K page rather than a
+  16K bank.** Everything else already described these as 8K pages &mdash; the 224-entry partition
+  list, the Memory view's bank chooser and the documentation &mdash; but the breakpoint and
+  disassembly layer halved the number, so `bp-set 0A:$C000` and the Memory view's bank `0A` named
+  different memory.
+
+  Two visible consequences: the Disassembly view's bank column shows different numbers on the Next
+  (an address in 16K bank 5's low half now reads `0A`, not `05`), and a partition in `bp-set`, in a
+  saved script, or in an existing `.kliveproject` now names an 8K page. Saved Next partition
+  breakpoints are **not** migrated &mdash; a stored index is genuinely ambiguous, since a user
+  following the documented behaviour already meant the new reading. 16K bank *B* is the partition
+  pair `2B`/`2B+1`.
+
+### Features
+
+- `bp-set`, `bp-del` and `bp-en` accept a bank-relative address on the ZX Spectrum Next:
+  `bp-set 05:+$0100` breaks at offset `$0100` inside 16K bank 5, wherever that bank is paged in.
+- Any `.nex` file can be run or debugged on its own, without a project: from the Project Explorer's
+  context menu, from the buttons in a NEX file's document tab, or with the new `nex-run` command.
+
 ## 0.58.0
 
 ### Features

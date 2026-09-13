@@ -874,8 +874,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   override getCurrentPartitions(): number[] {
     const wasm = this.requireWasmV2Runtime().exports;
     return Array.from({ length: 8 }, (_, pageIndex) => {
-      const bank16 = wasm.zxnextGetMemoryPageBank16(pageIndex);
-      return bank16 < 0xff ? bank16 : 0xff;
+      const bank8 = wasm.zxnextGetMemoryPageBank8(pageIndex);
+      return bank8 < 0xff ? bank8 : 0xff;
     });
   }
 
@@ -1369,7 +1369,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private getWasmV2PartitionForPage(pageIndex: number): number | undefined {
     const wasm = this.requireWasmV2Runtime().exports;
     const bank8 = wasm.zxnextGetMemoryPageBank8(pageIndex);
-    if (bank8 < 224) return bank8 >> 1;
+    // --- The 8K page itself, not `>> 1`. See `MemoryDevice.getPartitionForPage`.
+    if (bank8 < 224) return bank8;
 
     const readOffset = wasm.zxnextGetMemoryPageReadOffset(pageIndex);
     if (readOffset >= ZXNEXT_WASM_OFFS_NEXT_RAM) return undefined;

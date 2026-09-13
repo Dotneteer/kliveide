@@ -174,6 +174,8 @@ describe("applyBreakpointEdit - editing when the key moves", () => {
       replaces: execAt(0x8000)
     });
 
-    expect(emuApi.restoreBreakpoints).toHaveBeenCalledWith([execAt(0xa000)]);
+    expect(emuApi.restoreBreakpoints).toHaveBeenCalledWith([execAt(0xa000)], {
+      kind: "all"
+    });
   });
 });

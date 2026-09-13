@@ -185,7 +185,12 @@ describe("useDisassemblyRefresh", () => {
     expect(setCustomDisassembler).toHaveBeenCalledWith(customPlugin);
     expect(disassemble).toHaveBeenCalledWith(0x0000, 0x3fff);
     expect(latest.items).toEqual([expect.objectContaining({ instruction: "NOP" })]);
-    expect(latest.breakpointMap.get(0x6002)).toEqual(expect.objectContaining({ address: 0x6000 }));
+    // --- The map groups by address rather than holding one breakpoint per address, so that two
+    // --- breakpoints at one address in different partitions can both survive to be matched against
+    // --- the row's own partition. Here the entry is reached by `resolvedAddress` ($6002).
+    expect(latest.breakpointMap.get(0x6002)).toEqual([
+      expect.objectContaining({ address: 0x6000 })
+    ]);
   });
 
   it("coalesces overlapping refresh requests into one trailing refresh", async () => {

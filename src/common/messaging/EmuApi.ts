@@ -2,7 +2,7 @@ import { PsgChipState } from "@emu/abstractions/PsgChipState";
 import { MachineCommand } from "@abstractions/MachineCommand";
 import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
 import { SysVar } from "@abstractions/SysVar";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
@@ -229,20 +229,22 @@ class EmuApiImpl {
   }
 
   /**
-   * Resets breakpoints to the provided set.
-   * @param _bps The new set of breakpoints.
+   * Replaces the breakpoints owned by `_scope`, leaving every other owner's alone.
+   * @param _bps The breakpoints to install for this scope.
+   * @param _scope Which existing breakpoints this call may remove.
    */
-  async resetBreakpointsTo(_bps: BreakpointInfo[]): Promise<void> {
+  async resetBreakpointsTo(_bps: BreakpointInfo[], _scope: BreakpointScope): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
   /**
-   * Replaces the whole breakpoint set atomically, preserving each breakpoint's disabled state.
-   * Prefer this over erasing and re-adding breakpoints one by one, which lets concurrent
+   * Replaces the breakpoints owned by `_scope` atomically, preserving each breakpoint's disabled
+   * state. Prefer this over erasing and re-adding breakpoints one by one, which lets concurrent
    * breakpoint edits be lost between the individual calls.
-   * @param _bps The breakpoints to install.
+   * @param _bps The breakpoints to install for this scope.
+   * @param _scope Which existing breakpoints this call may remove.
    */
-  async restoreBreakpoints(_bps: BreakpointInfo[]): Promise<void> {
+  async restoreBreakpoints(_bps: BreakpointInfo[], _scope: BreakpointScope): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

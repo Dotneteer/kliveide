@@ -12,6 +12,7 @@ import {
 import type { ICustomDisassembler } from "../disassemblers/z80-disassembler/custom-disassembly";
 import type { CachedRefreshState } from "./disassemblyViewState";
 import type { BranchCpuSnapshot } from "./branchVerdict";
+import { buildBreakpointMap, type BreakpointsByAddress } from "./breakpointRowMatch";
 
 type DisassemblyOutput = {
   outputItems: DisassemblyItem[];
@@ -90,7 +91,7 @@ export function createBranchCpuSnapshot(
 
 export type DisassemblyRefreshResult = {
   breakpoints: BreakpointInfo[];
-  breakpointMap: Map<number, BreakpointInfo>;
+  breakpointMap: BreakpointsByAddress;
   items: DisassemblyItem[];
   mem64kLabels: string[];
   pausedPc: number;
@@ -141,19 +142,6 @@ export function createManualMemorySections(sections: IMemorySection[]): MemorySe
   );
 }
 
-function buildBreakpointMap(breakpoints: BreakpointInfo[]): Map<number, BreakpointInfo> {
-  const map = new Map<number, BreakpointInfo>();
-  breakpoints.forEach((breakpoint) => {
-    if (breakpoint.address !== undefined) {
-      map.set(breakpoint.address, breakpoint);
-    }
-    if (breakpoint.resolvedAddress !== undefined) {
-      map.set(breakpoint.resolvedAddress, breakpoint);
-    }
-  });
-  return map;
-}
-
 export function useDisassemblyRefresh({
   cachedRefreshState,
   customDisassembly,
@@ -165,7 +153,7 @@ export function useDisassemblyRefresh({
 }: DisassemblyRefreshParams): DisassemblyRefreshResult {
   const [items, setItems] = useState<DisassemblyItem[]>([]);
   const [breakpoints, setBreakpoints] = useState<BreakpointInfo[]>([]);
-  const [breakpointMap, setBreakpointMap] = useState<Map<number, BreakpointInfo>>(() => new Map());
+  const [breakpointMap, setBreakpointMap] = useState<BreakpointsByAddress>(() => new Map());
   const [mem64kLabels, setMem64kLabels] = useState<string[]>([]);
   const [pausedPc, setPausedPc] = useState(0);
   const [cpuSnapshot, setCpuSnapshot] = useState<BranchCpuSnapshot | undefined>(undefined);

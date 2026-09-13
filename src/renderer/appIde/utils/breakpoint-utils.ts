@@ -14,22 +14,25 @@ export async function addBreakpoint(
   bp: BreakpointInfo
 ): Promise<boolean> {
   // --- Get breakpoint information
-  return await createEmuApi(messenger).setBreakpoint({
-    address: bp.address,
-    resource: bp.resource,
-    line: bp.line
-  });
+  // --- Forward the whole breakpoint. This used to rebuild it from `address`/`resource`/`line`
+  // --- alone, silently dropping `partition`, `owner` and the kind flags — so anything but a plain
+  // --- source breakpoint lost its identity on the way to the emulator.
+  return await createEmuApi(messenger).setBreakpoint(bp);
 }
 
 export async function removeBreakpoint(
   messenger: MessengerBase,
   bp: BreakpointInfo
 ): Promise<boolean> {
-  // --- Get breakpoint information
+  // --- Forward the whole breakpoint, for the same reason as `addBreakpoint` — and one more:
+  // --- removal looks the breakpoint up by `getBreakpointStorageKey`, which includes the partition.
+  // --- Rebuilding it from `address`/`resource`/`line` produced a *different* key for any
+  // --- partition-scoped breakpoint, so removing one silently did nothing.
+  // ---
+  // --- `exec` is still defaulted: it was hardcoded here, and `collectBpFlags` computes no flags at
+  // --- all for a breakpoint with no kind, which would clear nothing.
   return await createEmuApi(messenger).removeBreakpoint({
-    address: bp.address,
-    resource: bp.resource,
-    line: bp.line,
-    exec: true
+    ...bp,
+    exec: bp.exec ?? !(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite)
   });
 }

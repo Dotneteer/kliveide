@@ -623,4 +623,83 @@ describe("DebugSupport", () => {
     expect(data.partitions[1][0]).toEqual(3);
     expect(data.partitions[1][1]).toEqual(false);
   });
+  /*
+   * Partition 0 is a real partition on every banked machine — bank `B0` on the 128K, bank `00` on
+   * the ZX Next — but `addBreakpoint` gated its partition bookkeeping on truthiness, so a
+   * breakpoint in partition 0 was registered as "partitioned" (no `EXEC_BP`, `PART_BP` set) with an
+   * empty partition list, which `shouldStopAt` reads as "no match" and never fires.
+   *
+   * The tests below are paired on purpose: each asserts the behaviour for a non-zero partition
+   * first, so a regression shows up as "0 differs from 3" rather than as one opaque failure.
+   */
+  it("addBreakpoint records partition 0 like any other partition", () => {
+    // --- Arrange
+    const ds = new DebugSupport();
+    const bp: BreakpointInfo = {
+      address: 0xc000,
+      partition: 0,
+      exec: true
+    };
+
+    // --- Act
+    ds.addBreakpoint(bp);
+
+    // --- Assert
+    const flag = ds.breakpointFlags[0xc000];
+    expect(!!(flag & EXEC_BP)).toEqual(false);
+    expect(!!(flag & PART_BP)).toEqual(true);
+    const data = ds.breakpointData.get(0xc000);
+    expect(data.partitions.length).toEqual(1);
+    expect(data.partitions[0][0]).toEqual(0);
+    expect(data.partitions[0][1]).toEqual(false);
+  });
+
+  it("shouldStopAt fires for a breakpoint in a non-zero partition", () => {
+    // --- Arrange
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ address: 0xc000, partition: 3, exec: true });
+
+    // --- Act/Assert
+    expect(ds.shouldStopAt(0xc000, () => 3)).toEqual(true);
+    expect(ds.shouldStopAt(0xc000, () => 4)).toEqual(false);
+  });
+
+  it("shouldStopAt fires for a breakpoint in partition 0", () => {
+    // --- Arrange
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ address: 0xc000, partition: 0, exec: true });
+
+    // --- Act/Assert
+    expect(ds.shouldStopAt(0xc000, () => 0)).toEqual(true);
+    expect(ds.shouldStopAt(0xc000, () => 1)).toEqual(false);
+  });
+
+  it("removeBreakpoint clears a partition 0 breakpoint", () => {
+    // --- Arrange
+    const ds = new DebugSupport();
+    const bp: BreakpointInfo = { address: 0xc000, partition: 0, exec: true };
+    ds.addBreakpoint(bp);
+
+    // --- Act
+    ds.removeBreakpoint(bp);
+
+    // --- Assert
+    expect(ds.breakpointDefs.size).toEqual(0);
+    expect(!!(ds.breakpointFlags[0xc000] & PART_BP)).toEqual(false);
+    expect(ds.shouldStopAt(0xc000, () => 0)).toEqual(false);
+  });
+
+  it("enableBreakpoint disables and re-enables a partition 0 breakpoint", () => {
+    // --- Arrange
+    const ds = new DebugSupport();
+    const bp: BreakpointInfo = { address: 0xc000, partition: 0, exec: true };
+    ds.addBreakpoint(bp);
+
+    // --- Act/Assert
+    expect(ds.enableBreakpoint(bp, false)).toEqual(true);
+    expect(ds.shouldStopAt(0xc000, () => 0)).toEqual(false);
+
+    expect(ds.enableBreakpoint(bp, true)).toEqual(true);
+    expect(ds.shouldStopAt(0xc000, () => 0)).toEqual(true);
+  });
 });

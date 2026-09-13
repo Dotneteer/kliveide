@@ -30,7 +30,7 @@ import { createMainApi } from "@common/messaging/MainApi";
 import { IMachineService } from "@renderer/abstractions/IMachineService";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointInfo, type BreakpointScope } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
 import {
   CpuState,
@@ -622,12 +622,12 @@ class EmuMessageProcessor {
    * Resets breakpoints to the provided set.
    * @param bps The new set of breakpoints.
    */
-  resetBreakpointsTo(bps: BreakpointInfo[]) {
+  resetBreakpointsTo(bps: BreakpointInfo[], scope: BreakpointScope) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
-    controller.debugSupport.resetBreakpointsTo(bps);
+    controller.debugSupport.resetBreakpointsTo(bps, scope);
   }
 
   /**
@@ -640,21 +640,14 @@ class EmuMessageProcessor {
    * one synchronous handler closes that window completely.
    * @param bps The breakpoints to install
    */
-  restoreBreakpoints(bps: BreakpointInfo[]) {
+  restoreBreakpoints(bps: BreakpointInfo[], scope: BreakpointScope) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
     const debugSupport = controller.debugSupport;
-    debugSupport.resetBreakpointsTo(bps ?? []);
-
-    // --- `resetBreakpointsTo` rebuilds the definitions without carrying the `disabled` flag over,
-    // --- so re-apply it here; otherwise every restored breakpoint would come back enabled.
-    for (const bp of bps ?? []) {
-      if (bp.disabled) {
-        debugSupport.enableBreakpoint(bp, false);
-      }
-    }
+    // --- `resetBreakpointsTo` re-applies `disabled` itself now, so this is a single call.
+    debugSupport.resetBreakpointsTo(bps ?? [], scope);
   }
 
   /**

@@ -1,4 +1,4 @@
-import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
 
 /**
  * This interface represents the properties and methods that support debugging an emulated machine.
@@ -134,8 +134,9 @@ export interface IDebugSupport {
   renameBreakpoints(oldResource: string, newResource: string): void;
 
   /**
-   * Changes the list of existing breakpoints to the provided ones.
-   * @param breakpoints Breakpoints to set
+   * Replaces the breakpoints owned by `scope`, leaving every other owner's alone.
+   * @param breakpoints Breakpoints to install for this scope
+   * @param scope Which existing breakpoints this call may remove
    */
-  resetBreakpointsTo(breakpoints: BreakpointInfo[]): void;
+  resetBreakpointsTo(breakpoints: BreakpointInfo[], scope: BreakpointScope): void;
 }

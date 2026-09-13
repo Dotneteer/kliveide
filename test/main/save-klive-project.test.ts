@@ -145,6 +145,45 @@ describe("saveKliveProject", () => {
     expect(projectFileVersionDispatches()).toBe(1);
   });
 
+  /*
+   * The project file may only hold the breakpoints the project owns. `listBreakpoints` returns the
+   * emulator's whole set, which is a union of sets owned by different persisters: a `.nex.dis`
+   * sidecar's bank breakpoints and a debug session's one-shots are in there too. Writing those here
+   * would store them in two places that then diverge.
+   */
+  it("saves only project-owned breakpoints", async () => {
+    listBreakpoints.mockResolvedValue({
+      breakpoints: [
+        // --- No owner: the project's own, and the only representation of project ownership
+        { address: 0x8000, exec: true },
+        { address: 0x8001, exec: true, owner: { kind: "nex", sidecar: "/p/Game.nex.dis" } },
+        { address: 0x8002, exec: true, owner: { kind: "session" } }
+      ]
+    });
+    const { saveKliveProject } = await import("@main/projects");
+
+    await saveKliveProject();
+
+    const contents = JSON.parse(fs.readFileSync(projectFile, "utf8"));
+    expect(contents.debugger.breakpoints).toEqual([{ address: 0x8000, exec: true }]);
+  });
+
+  it("saves a breakpoint written by a build that predates ownership", async () => {
+    // --- Backward compatibility: an absent `owner` must be read as project ownership, not as
+    // --- "unknown" and dropped.
+    listBreakpoints.mockResolvedValue({
+      breakpoints: [{ address: 0x9000, partition: 3, exec: true }]
+    });
+    const { saveKliveProject } = await import("@main/projects");
+
+    await saveKliveProject();
+
+    const contents = JSON.parse(fs.readFileSync(projectFile, "utf8"));
+    expect(contents.debugger.breakpoints).toEqual([
+      { address: 0x9000, partition: 3, exec: true }
+    ]);
+  });
+
   it("rewrites the file when it was modified outside the app", async () => {
     const { saveKliveProject } = await import("@main/projects");
 

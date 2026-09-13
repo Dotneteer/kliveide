@@ -46,7 +46,11 @@ export async function applyBreakpointEdit(
     const next = (current?.breakpoints ?? [])
       .filter((bp) => getBreakpointStorageKey(bp) !== oldKey && getBreakpointStorageKey(bp) !== newKey)
       .concat(breakpoint);
-    await emuApi.restoreBreakpoints(next);
+    // --- `{ kind: "all" }`: this is a read-modify-write of the *whole* set — it was just read
+    // --- through `listBreakpoints` — so it may legitimately replace all of it. `"all"` keeps each
+    // --- breakpoint's own owner rather than stamping one, which is what makes the round trip
+    // --- ownership-preserving.
+    await emuApi.restoreBreakpoints(next, { kind: "all" });
     return;
   }
 
