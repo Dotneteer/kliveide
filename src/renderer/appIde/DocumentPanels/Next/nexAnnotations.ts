@@ -348,7 +348,7 @@ function readBanks(
 
 function readBankAnnotation(
   value: unknown,
-  bank: number,
+  _bank: number,
   path: string,
   globalLabels: NexAnnotationLabel[],
   diagnostics: NexAnnotationDiagnostic[]
@@ -716,7 +716,7 @@ function isBankOffsetKey(value: string): boolean {
 }
 
 function isIntegerInRange(value: unknown, min: number, max: number): value is number {
-  return Number.isInteger(value) && value >= min && value <= max;
+  return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max;
 }
 
 function isRecord(value: unknown): value is Record<string, any> {

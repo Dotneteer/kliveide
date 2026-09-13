@@ -103,7 +103,11 @@ describe("ZX Spectrum Next WASM v2 IDE integration", () => {
 
     machine.doWritePort(0xfe, 0x18);
     expect(machine.getWasmV2UlaState()).toMatchObject({
-      bor: 0,
+      // --- A border colour NAME. `UlaState.bor` is declared `string` and every interpreted
+      // --- machine fills it via `ULA_BORDER_COLOR_NAMES`; the WASM producer was passing the
+      // --- raw 0-7 index through, so the ULA panel showed a digit on this backend and a name
+      // --- on every other. These assertions encoded that, which is part of why it survived.
+      bor: "Black",
       ear: true,
       mic: true,
       flo: 0xff

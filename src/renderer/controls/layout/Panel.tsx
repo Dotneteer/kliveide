@@ -18,12 +18,7 @@ type Props = {
 /**
  * Provides a scrollable content panel for dense renderer views.
  */
-export const Panel = ({
-  children,
-  xclass,
-  initialScrollPosition,
-  onScrolled
-}: Props) => {
+export const Panel = ({ children, xclass, initialScrollPosition, onScrolled }: Props) => {
   const scrollApi = useRef<ScrollViewerApi>(null);
 
   useInitialize(() => {
@@ -35,8 +30,8 @@ export const Panel = ({
   return (
     <div className={classnames(styles.panel, xclass)}>
       <ScrollViewer
-        onScrolled={pos => onScrolled?.(pos)}
-        apiLoaded={api => (scrollApi.current = api)}
+        onScrolled={(pos) => onScrolled?.(pos)}
+        apiLoaded={(api) => (scrollApi.current = api)}
       >
         {children}
       </ScrollViewer>

@@ -246,7 +246,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       saveDiskChanges(1, args.diskBChanges);
     }
 
-    if (args.clockMultiplier) {
+    // --- This handler runs on every completed frame (about 50 times a second), while the clock
+    // --- multiplier changes only when the user changes it. Re-dispatching the value the store
+    // --- already holds would notify every subscriber in this window 50 times a second for nothing.
+    const currentMultiplier = store.getState()?.emulatorState?.clockMultiplier;
+    if (args.clockMultiplier && args.clockMultiplier !== currentMultiplier) {
       store.dispatch(setClockMultiplierAction(args.clockMultiplier));
     }
   }, [beeperRenderer, displayScreenData, mainApi, recordingManagerRef, saveDiskChanges, store]);

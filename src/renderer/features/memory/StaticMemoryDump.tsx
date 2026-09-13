@@ -14,9 +14,10 @@ import { VListHandle } from "virtua";
 import { createRowAddresses } from "./memoryViewModel";
 import { MemoryDumpSection } from "./MemoryDumpSection";
 import { FullPanel } from "@renderer/controls/layout/Panels";
-import { PanelHeader } from "@renderer/appIde/DocumentPanels/helpers/PanelHeader";
+import { PanelHeader } from "@renderer/controls/data";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { useRowSizes } from "@renderer/theming/useRowSizes";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { Text } from "@renderer/controls/layout/Text";
@@ -132,8 +133,6 @@ type StaticMemoryDumpOptions = {
   nexAnnotationBank?: number;
 };
 
-const STATIC_DUMP_ROW_ITEM_SIZE = 22;
-const STATIC_DISASSEMBLY_ROW_ITEM_SIZE = 18;
 const STATIC_DISASSEMBLY_FALLBACK_PAGE_ROWS = 16;
 
 const staticDumpViewModeOptions: DropdownOption[] = [
@@ -156,6 +155,8 @@ const StaticMemoryDump = ({
   const documentHubService = useDocumentHubService();
   const appServices = useAppServices();
   const dialogs = useDialogs();
+  // --- M3: the row heights the virtualizer places by, matching `--row-size-*` in the CSS.
+  const { memory: dumpRowItemSize, disassembly: disassemblyRowItemSize } = useRowSizes();
   const [currentViewState, setCurrentViewState] = useState<MemoryDumpViewState>(
     viewState ?? {}
   );
@@ -190,6 +191,19 @@ const StaticMemoryDump = ({
   const restoredInitialScroll = useRef(false);
   const restoredInitialDisassemblyScroll = useRef(false);
   const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
+  /*
+   * The width every row reserves for its hard comment, so the zebra stripes all end at the same x.
+   * Same derivation as `DisassemblyPanel`; 0 means no row has a comment and the cell is omitted.
+   */
+  const disassemblyCommentWidthCh = useMemo(
+    () =>
+      disassemblyItems.reduce(
+        (widest, item) =>
+          item.hardComment ? Math.max(widest, item.hardComment.length + 2) : widest,
+        0
+      ),
+    [disassemblyItems]
+  );
   const selectedDisassemblyRange = useMemo(() => {
     if (!disassemblySelection) {
       return undefined;
@@ -265,7 +279,7 @@ const StaticMemoryDump = ({
   }, [disassemblySelection]);
 
   useEffect(() => {
-    if (!document?.id) return;
+    if (!document?.id) return undefined;
     documentHubService.setDocumentApi(document.id, {
       beforeDocumentDisposal: async () => {
         if (!annotationDirtyRef.current) {
@@ -299,7 +313,7 @@ const StaticMemoryDump = ({
       setAnnotationLoadError(undefined);
       setAnnotationSaveError(undefined);
       setAnnotationDirtyState(false);
-      return;
+      return undefined;
     }
 
     return subscribeNexAnnotationSession(
@@ -475,7 +489,7 @@ const StaticMemoryDump = ({
     const pageRows = Math.max(
       1,
       Math.floor(
-        (disassemblyListRef.current?.clientHeight ?? 0) / STATIC_DISASSEMBLY_ROW_ITEM_SIZE
+        (disassemblyListRef.current?.clientHeight ?? 0) / disassemblyRowItemSize
       ) || STATIC_DISASSEMBLY_FALLBACK_PAGE_ROWS
     );
     switch (event.key) {
@@ -513,7 +527,7 @@ const StaticMemoryDump = ({
         );
         break;
     }
-  }, [disassemblyItems.length, moveDisassemblySelection]);
+  }, [disassemblyItems.length, disassemblyRowItemSize, moveDisassemblySelection]);
 
   const getDisassemblyContextTarget = useCallback((
     index: number
@@ -1378,7 +1392,7 @@ const StaticMemoryDump = ({
   ]);
 
   const openToolbarAnnotationContextMenu = useCallback((
-    event: MouseEvent<HTMLDivElement>
+    event: MouseEvent<HTMLElement>
   ) => {
     if (!annotationEnabled) {
       return;
@@ -1518,7 +1532,7 @@ const StaticMemoryDump = ({
   ]);
 
   useEffect(() => {
-    if (!disassemblyEnabled || viewMode !== "disassembly") return;
+    if (!disassemblyEnabled || viewMode !== "disassembly") return undefined;
     let cancelled = false;
 
     (async () => {
@@ -1639,7 +1653,7 @@ const StaticMemoryDump = ({
               <span title={annotationSaveError ?? annotationLoadError ?? "Annotation file could not be loaded."}>
                 <Icon
                   iconName="warning"
-                  fill="--console-ansi-bright-red"
+                  fill="--status-error"
                   width={16}
                   height={16}
                 />
@@ -1649,7 +1663,7 @@ const StaticMemoryDump = ({
               iconName="save"
               title="Save annotations"
               enable={annotationDirty && !!nexAnnotations}
-              fill={annotationDirty ? "--console-ansi-yellow" : undefined}
+              fill={annotationDirty ? "--status-warning" : undefined}
               clicked={saveAnnotations}
             />
             <SmallIconButton
@@ -1665,7 +1679,7 @@ const StaticMemoryDump = ({
         {contents && viewMode === "memory" ? (
           <VirtualizedList
             items={items}
-            itemSize={STATIC_DUMP_ROW_ITEM_SIZE}
+            itemSize={dumpRowItemSize}
             revealUnmeasuredItems
             onScroll={(offset) => {
               pendingScrollPosition.current = offset;
@@ -1721,7 +1735,7 @@ const StaticMemoryDump = ({
           >
             <VirtualizedList
               items={disassemblyItems}
-              itemSize={STATIC_DISASSEMBLY_ROW_ITEM_SIZE}
+              itemSize={disassemblyRowItemSize}
               overscan={25}
               revealUnmeasuredItems
               onScroll={(offset) => {
@@ -1755,6 +1769,7 @@ const StaticMemoryDump = ({
                 return (
                   <DisassemblyRow
                     bankLabel={false}
+                    commentWidthCh={disassemblyCommentWidthCh}
                     currentSegment={0}
                     decimalView={decimalView}
                     index={idx}
@@ -1767,8 +1782,9 @@ const StaticMemoryDump = ({
                     }}
                     onContextMenu={(event) => openDisassemblyContextMenu(idx, event)}
                     partitionLabels={{}}
+                    partitionWidthCh={0}
                     pausedPc={-1}
-                    rowHeight={STATIC_DISASSEMBLY_ROW_ITEM_SIZE}
+                    rowHeight={disassemblyRowItemSize}
                     selected={selected}
                     selectedRange={selectedRange}
                     showBanks={false}
@@ -2018,7 +2034,6 @@ export async function openStaticMemoryDump(
         name: title,
         type: STATIC_MEMORY_DUMP_VIEWER,
         iconName: "memory-icon",
-        iconFill: "--console-ansi-bright-magenta",
         contents
       },
       {
@@ -2041,10 +2056,7 @@ type MiniDumpProps = {
 
 export const MiniMemoryDump = ({ contents, length = 64 }: MiniDumpProps) => {
   const displayLength = Math.min(length, contents.length);
-  const items = useMemo(
-    () => createRowAddresses(displayLength, 16),
-    [displayLength]
-  );
+  const items = useMemo(() => createRowAddresses(displayLength, 16), [displayLength]);
 
   return items?.length ? (
     <>

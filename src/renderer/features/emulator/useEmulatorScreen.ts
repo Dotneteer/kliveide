@@ -53,13 +53,34 @@ export function useEmulatorScreen(
     if (!hostElement?.current || !screenElement?.current) return;
     hostRectangle.current = hostElement.current.getBoundingClientRect();
     screenRectangle.current = screenElement.current.getBoundingClientRect();
-    const clientWidth = hostElement.current.offsetWidth;
-    const clientHeight = hostElement.current.offsetHeight;
+    /*
+     * Measure the host's *content* box.
+     *
+     * This used to read `offsetWidth` and subtract a bare `- 8`: a gutter that existed only in this
+     * arithmetic, invisible to every stylesheet, and wrong the moment anyone changed the panel's
+     * spacing. The gutter is now real padding on `.emulatorPanel`, and this reads what the CSS
+     * actually left available.
+     */
+    const host = hostElement.current;
+    const hostStyle = host instanceof Element ? getComputedStyle(host) : undefined;
+    const pad = (value: string | undefined) => {
+      const n = parseFloat(value ?? "");
+      return Number.isFinite(n) ? n : 0;
+    };
+    // `clientWidth` excludes borders but includes padding, so the padding comes back off.
+    const clientWidth =
+      (host.clientWidth || host.offsetWidth) -
+      pad(hostStyle?.paddingLeft) -
+      pad(hostStyle?.paddingRight);
+    const clientHeight =
+      (host.clientHeight || host.offsetHeight) -
+      pad(hostStyle?.paddingTop) -
+      pad(hostStyle?.paddingBottom);
     const width = shadowCanvasWidth.current ?? 1;
     const height = shadowCanvasHeight.current ?? 1;
-    let widthRatio = Math.floor((1 * (clientWidth - 8)) / width) / 1 / xRatio.current;
+    let widthRatio = Math.floor((1 * clientWidth) / width) / 1 / xRatio.current;
     if (widthRatio < 1) widthRatio = 1;
-    let heightRatio = Math.floor((1 * (clientHeight - 8)) / height) / 1 / yRatio.current;
+    let heightRatio = Math.floor((1 * clientHeight) / height) / 1 / yRatio.current;
     if (heightRatio < 1) heightRatio = 1;
     const ratio = Math.min(widthRatio, heightRatio);
     setCanvasWidth(width * ratio * xRatio.current);

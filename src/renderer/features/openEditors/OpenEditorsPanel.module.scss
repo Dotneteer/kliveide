@@ -1,0 +1,121 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * Sized by its content rather than by its parent (no `fill-parent-flex` here): the panel is wrapped
+ * in the side bar's `ScrollViewer`, which can only scroll a list that is allowed to grow past the
+ * viewport. `fill-parent` would cap it at 100% and clip the rows underneath instead.
+ */
+.openEditorsPanel {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  user-select: none;
+  font-family: var(--main-font-family);
+  font-size: 0.9em;
+  font-weight: 500;
+
+  .item {
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+    // Matches the explorer row height, so the two panels of the file activity line up.
+    height: 26px;
+    padding: 0 8px;
+    box-sizing: border-box;
+    color: var(--color-explorer);
+    overflow: hidden;
+    cursor: pointer;
+    @include focus-ring;
+
+    &:hover {
+      background-color: var(--bgcolor-explorer-pointed);
+    }
+
+    // The active document of a hub the user is not in: open and visible somewhere, but not here.
+    &.active {
+      background-color: var(--bgcolor-explorer-selected);
+      color: var(--color-explorer-selected);
+    }
+
+    // The editor the user is actually in.
+    &.current {
+      background-color: var(--bgcolor-explorer-focused-selected);
+      color: var(--color-explorer-focused-selected);
+    }
+  }
+
+  /*
+   * The close slot. Its width is the one icon width the rest of the row is indented by, and it is
+   * held whether or not the button is showing — the button fades, the space does not move.
+   */
+  .closeSlot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 20px;
+    height: 20px;
+  }
+
+  /*
+   * Hidden with `opacity`, not `visibility` or a missing element: an invisible-but-present button
+   * is still in the tab order, so a keyboard user can reach the close of the row they are on — at
+   * which point `:focus-within` below shows them what they have focused.
+   */
+  .closeButton {
+    opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease-standard);
+  }
+
+  .item:hover .closeButton,
+  .item:focus-within .closeButton {
+    opacity: 1;
+  }
+
+  .name {
+    flex-shrink: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    // Preview tabs are italic in the tab strip; the same file reads the same way here.
+    &.temporary {
+      font-style: italic;
+    }
+  }
+
+  /*
+   * The folder, shown only when two open files share a name. It gives way first — a truncated
+   * folder still disambiguates, a truncated filename does not — hence the extreme shrink factor.
+   */
+  .detail {
+    flex-shrink: 1000000;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    opacity: 0.6;
+    font-size: 0.9em;
+  }
+
+  .marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-left: auto;
+    // Reserved whether or not the dot is there, so names do not shift as a file is saved.
+    width: 12px;
+  }
+}
+
+.empty {
+  color: var(--color-explorer);
+  opacity: 0.6;
+  padding: 8px 12px;
+  font-family: var(--main-font-family);
+  font-size: 0.9em;
+}

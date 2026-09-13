@@ -111,6 +111,15 @@ export interface IAnyCpu {
   contentionDelaySincePause: number;
 
   /**
+   * Resets the contention accumulated since the last pause.
+   *
+   * Machines that own their contention counters outside the JS object graph (for example, the WASM
+   * backends) cannot observe a plain assignment to `contentionDelaySincePause`, so the controller
+   * uses this method to signal the reset.
+   */
+  resetContentionDelaySincePause(): void;
+
+  /**
    * Number of clock cycles at the last machine frame cycle start
    */
   tactsAtLastStart: number;

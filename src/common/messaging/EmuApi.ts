@@ -317,6 +317,23 @@ class EmuApiImpl {
   }
 
   /**
+   * Gets a human-readable name for each partition, keyed like `getPartitionLabels()`.
+   *
+   * Presentation only: the label identifies a partition, the description spells it out. May be
+   * empty for a machine that supplies none.
+   */
+  async getPartitionDescriptions(): Promise<Record<number, string>> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets the caption each partition sits under in a chooser, keyed like `getPartitionLabels()`.
+   */
+  async getPartitionGroups(): Promise<Record<number, string>> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the current call stack information.
    */
   async getCallStack(): Promise<CallStackInfo> {
@@ -496,6 +513,25 @@ export type M6510CpuState = {
 // --- The response with the CPU state information
 export type CpuState = Z80CpuState | M6510CpuState;
 
+/**
+ * Border colour names, indexed by the 3-bit ULA border value.
+ *
+ * Beside `UlaState` because `bor` is declared a *name*, not an index, and two different producers
+ * fill this type — `MainToEmuProcessor` for the interpreted machines and `ZxNextWasmV2Machine` for
+ * the WASM core. The WASM one was putting the raw index in, so the ULA panel showed a bare digit
+ * where the other showed "Cyan". A table each is how that happened; one table is how it stops.
+ */
+export const ULA_BORDER_COLOR_NAMES = [
+  "Black",
+  "Blue",
+  "Red",
+  "Magenta",
+  "Green",
+  "Cyan",
+  "Yellow",
+  "White"
+] as const;
+
 export type UlaState = {
   fcl: number;
   frm: number;
@@ -674,7 +710,16 @@ export type PaletteDeviceInfo = {
   tilemapFirst: number[];
   tilemapSecond: number[];
   storedPaletteValue: number;
-  trancparencyColor: number;
+  /**
+   * The sprite palette index the sprite engine treats as transparent (Next Reg $4B).
+   *
+   * An *index*, unlike the ULA/Layer 2 case: Next Reg $14 is a global transparency **colour**,
+   * matched against a pixel's 8-bit value rather than naming a palette slot, so there is no single
+   * entry to mark for those two devices and none is reported here.
+   */
+  spriteTransparencyIndex: number;
+  /** The tilemap palette index treated as transparent (Next Reg $4C). */
+  tilemapTransparencyIndex: number;
   reg43Value: number;
   reg6bValue: number;
   ulaNextFormat: number;

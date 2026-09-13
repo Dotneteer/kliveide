@@ -1,56 +1,94 @@
 @use "@styles/core.scss" as *;
 
-.sysVarsPanel {
-  @include fill-parent-flex;
-  box-sizing: border-box;
+/*
+ * What is left of this panel's own styling.
+ *
+ * The root block, empty state, row, filter box and byte grid all come from `controls/data`;
+ * `.byteValue`, `.dumpRows` and `.dumpSection` went with `HexByteGrid`, which slice 6.0 identified
+ * as the missing primitive that was keeping them alive. Everything below is either a column this
+ * panel owns or an override of a shared cell, and each override says which rule it is beating.
+ */
+
+/*
+ * A virtual list item: the variable's row, and — for a collapsed array — its dump underneath.
+ *
+ * The dump cannot live inside the `DataRow`, which is a flex *row*; it is a second block belonging
+ * to the same variable. The item is also what carries the tooltip ref, so a pointer over the dump
+ * is still "inside" the variable as far as the tooltip is concerned.
+ */
+.sysVarItem {
+  display: flex;
   flex-direction: column;
-  user-select: none;
-  font-family: var(--monospace-font);
-  font-size: 0.8em;
-
-  .center {
-    @include fill-parent-flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: var(--color-secondary-label);
-  }
-
-  .sysVar {
-    display: flex;
-    flex-direction: row;
-    padding: 2px;
-
-    .sysVarValue {
-      display: flex;
-      flex-direction: row;
-      width: fit-content;
-    }
-  }
+  flex: 0 0 auto;
 }
 
-.byteValue {
+/*
+ * The disclosure column.
+ *
+ * Sized in px against the icon, not in `ch`: what has to fit here is a 16px chevron, and M2's `ch`
+ * rule is about *tabular* columns — the address and name beside it — not about a box drawn around a
+ * fixed-size glyph. The icon then centres in its own box the way `.flagDot` centres a flag dot.
+ */
+.sysVarToggle {
   display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-  color: var(--color-value);
+  flex: 0 0 auto;
+  align-items: center;
   justify-content: center;
-  width: 20px;
-
-  &:hover {
-    background: var(--bgcolor-disass-hover);
-    opacity: 0.9;
-  }
+  width: var(--icon-sm);
 }
 
-.dumpRows {
-  display: flex;
-  flex-direction: column;
+/*
+ * The address column — the row's anchor, in the secondary accent.
+ *
+ * Doubled class, deliberately. `AddressLabel`'s own `.addressLabel` sets both `color` and
+ * `margin-right`, and two single-class rules from different CSS Modules tie on specificity — the
+ * winner then decided by which sheet the bundler happens to emit second, which is not something to
+ * ship.
+ *
+ * The *secondary* accent, with the value on the primary, because a row here carries two numbers
+ * with nothing but position to tell them apart — exactly the case `--color-state-value-alt` exists
+ * for (`CallStackPanel`'s stack slot beside its return address, `MemMappingPanel`'s page offsets).
+ * Which of the two gets the primary follows those panels: the payload, not the place it lives.
+ *
+ * `margin-right: 0` drops the 1.2ch the memory dump and disassembly rows want after their gutter,
+ * so the four columns here are separated by one thing — the row's own `gap`.
+ */
+.sysVarAddress.sysVarAddress {
+  color: var(--color-state-value-alt);
+  margin-right: 0;
 }
 
-.dumpSection {
+/*
+ * The value column: a hex pair, a flag strip, or one row of a byte grid.
+ *
+ * **One row.** Whatever the variable is, what sits inside the `DataRow` is exactly one line tall —
+ * a collapsed array shows `PREVIEW_BYTES`, which is the grid's own stride, and an expanded one puts
+ * its full dump *below* the row rather than in it. That is what lets the row keep `DataRow`'s
+ * vertical centring instead of top-aligning its cells against a block, and it is worth preserving:
+ * raise `PREVIEW_BYTES` above the stride and every column in this panel needs re-aligning.
+ */
+.sysVarValue {
   display: flex;
   flex-direction: row;
-  flex-shrink: 0;
-  flex-grow: 0;
+  align-items: center;
+  min-width: 0;
+  gap: var(--measure-gap);
+}
+
+/* `(192 bytes)`. Beside the preview, not under it. */
+.sysVarCount {
+  white-space: nowrap;
+}
+
+/*
+ * An expanded array's full dump.
+ *
+ * Indented past the disclosure column only, so the dump starts under the *address* — it is the
+ * memory at that address, and the wider it is allowed to be the fewer rows a 192-byte variable
+ * costs. `var(--space-2)` matches `.dataRow`'s own gutter, which the dump sits outside of.
+ */
+.sysVarDump {
+  padding-left: calc(var(--space-2) + var(--icon-sm) + var(--measure-gap));
+  padding-right: var(--space-2);
+  padding-bottom: 2px;
 }

@@ -21,8 +21,7 @@ describe("special documents", () => {
       id: MEMORY_PANEL_ID,
       name: "Machine Memory",
       type: MEMORY_EDITOR,
-      iconName: "memory-icon",
-      iconFill: "--console-ansi-bright-cyan"
+      iconName: "memory-icon"
     });
     expect(secondMemoryView).toEqual(firstMemoryView);
     expect(secondMemoryView).not.toBe(firstMemoryView);

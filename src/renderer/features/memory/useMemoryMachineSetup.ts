@@ -1,9 +1,10 @@
-import { MF_BANK, MF_ROM } from "@common/machines/constants";
+import { MF_ROM } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import type { EmuApi } from "@common/messaging/EmuApi";
 import type { DropdownOption } from "@renderer/controls/Dropdown";
+import type { PartitionOption } from "./memoryViewModel";
 import { useEffect, useState } from "react";
-import { createSegmentOptions, getDefaultSegment } from "./memoryViewModel";
+import { derivePartitionSetup, getDefaultSegment } from "./memoryViewModel";
 
 export type MemoryMachineSetupState = {
   banksView: boolean;
@@ -13,6 +14,8 @@ export type MemoryMachineSetupState = {
   partitionLabels: Record<number, string>;
   romFlags: boolean[];
   segmentOptions: DropdownOption[];
+  /** Every partition, for the matrix-shaped chooser. */
+  partitionOptions: PartitionOption[];
   setupVersion: number;
 };
 
@@ -24,12 +27,13 @@ const initialSetupState: MemoryMachineSetupState = {
   partitionLabels: {},
   romFlags: [],
   segmentOptions: [],
+  partitionOptions: [],
   setupVersion: 0
 };
 
 export function useMemoryMachineSetup(
   machineId: string | undefined,
-  emuApi: Pick<EmuApi, "getPartitionLabels" | "getRomFlags">
+  emuApi: Pick<EmuApi, "getPartitionLabels" | "getPartitionDescriptions" | "getPartitionGroups" | "getRomFlags">
 ): MemoryMachineSetupState {
   const [setup, setSetup] = useState<MemoryMachineSetupState>(initialSetupState);
 
@@ -42,26 +46,31 @@ export function useMemoryMachineSetup(
 
     const machine = machineRegistry.find((mi) => mi.machineId === machineId);
     const romPagesValue = machine?.features?.[MF_ROM] ?? 0;
-    const ramBankValue = machine?.features?.[MF_BANK] ?? 0;
 
     void (async () => {
-      const [romFlags, labels] = await Promise.all([
+      const [romFlags, labels, descriptions, groups] = await Promise.all([
         emuApi.getRomFlags(),
-        emuApi.getPartitionLabels()
+        emuApi.getPartitionLabels(),
+        emuApi.getPartitionDescriptions(),
+        emuApi.getPartitionGroups()
       ]);
 
       if (cancelled) {
         return;
       }
 
+      // --- Shared with the breakpoint dialog, so the two offer the same chooser for a machine.
+      const partitionSetup = derivePartitionSetup(machineId, labels, descriptions, groups);
+
       setSetup((prev) => ({
-        banksView: romPagesValue > 0 || ramBankValue > 0,
+        banksView: partitionSetup.banksView,
         defaultSegment: getDefaultSegment(romPagesValue),
-        displayBankMatrix: ramBankValue > 8 || romPagesValue > 8,
+        displayBankMatrix: partitionSetup.displayBankMatrix,
         isInitializing: false,
         partitionLabels: labels,
         romFlags,
-        segmentOptions: createSegmentOptions(labels, ramBankValue),
+        segmentOptions: partitionSetup.segmentOptions,
+        partitionOptions: partitionSetup.partitionOptions,
         setupVersion: prev.setupVersion + 1
       }));
     })();

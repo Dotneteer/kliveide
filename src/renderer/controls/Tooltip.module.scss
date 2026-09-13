@@ -1,4 +1,24 @@
 .tooltip {
+  /*
+   * A tooltip is never a hit target.
+   *
+   * Without this the tooltip *destroys the hover that produced it*: `Tooltip` positions its box
+   * relative to the anchor (the register rows use `placement: right` with `offsetX: -32`, which
+   * lands it over the right-hand end of their own row), so once the pointer reached that band the
+   * box appeared under the cursor, the anchor stopped being the topmost element, its `mouseleave`
+   * fired, `setVisible(false)` unmounted the box, the anchor was topmost again, and `mouseenter`
+   * started the whole cycle over.
+   *
+   * That is a *self-sustaining* loop, not a one-off glitch, and it runs at the anchor's own
+   * `showDelay` — measured in the running app at ~107ms per cycle against the register rows'
+   * `showDelay={100}`, i.e. roughly nine flashes a second for as long as the pointer sat there. It
+   * read as "the tooltip flickers near the scrollbar" only because the scrollbar is what sits at
+   * the right-hand end of a sidebar row; the trigger is the overlap, not the scrollbar.
+   *
+   * Safe for every caller: `Tooltip` hides unconditionally on the *anchor's* `mouseleave` and has
+   * no hover-to-keep-open path, so no tooltip in the app can be interacted with in the first place.
+   */
+  pointer-events: none;
   z-index: 100;
   background-color: var(--bgcolor-tooltip);
   color: var(--color-tooltip);

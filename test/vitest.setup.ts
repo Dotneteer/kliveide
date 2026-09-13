@@ -132,3 +132,21 @@ if (typeof window === "undefined") {
     (global as any).self = global;
   }
 }
+
+/**
+ * `ResizeObserver` is a browser API jsdom does not implement.
+ *
+ * Any component that measures itself - `useResizeObserver`'s callers: the sprite editor's
+ * pane-fitted canvas, `SplitPanel`, `AttachedShadow`, the keyboard and memory panels - throws on
+ * mount without it. The stub observes nothing and fires nothing, which is the right default: a test
+ * that needs a size change should drive it explicitly rather than inherit one from a layout jsdom
+ * is not performing anyway.
+ */
+if (typeof globalThis.ResizeObserver === "undefined") {
+  class ResizeObserverStub implements ResizeObserver {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+  (globalThis as any).ResizeObserver = ResizeObserverStub;
+}

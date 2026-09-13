@@ -112,11 +112,6 @@ export interface DisassemblyOptions {
  */
 export type FetchResult = {
   /**
-   * The optional partition
-   */
-  partitionLabel?: string;
-
-  /**
    * Offset the opcode was read from
    */
   offset: number;
@@ -476,11 +471,6 @@ export class DisassemblyOutput {
  * This class represents the output of a single disassembly item
  */
 export interface DisassemblyItem {
-  /**
-   * Optional partition of an extended address
-   */
-  partition?: string;
-
   /**
    * The memory address of the disassembled instruction
    */

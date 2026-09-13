@@ -9,7 +9,6 @@ import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
-import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import {
   IdeCommandBase,
   commandError,
@@ -27,22 +26,23 @@ import { BinaryWriter } from "@utils/BinaryWriter";
 import { TzxHeader } from "@emu/machines/tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
 import {
-  endCompileAction,
-  incBreakpointsVersionAction,
   incInjectionVersionAction,
-  setProjectDebuggingAction,
-  startCompileAction
+  setProjectDebuggingAction
 } from "@common/state/actions";
-import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { outputNavigateAction, writeErrorMessageWithLinks } from "@common/utils/output-utils";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { MF_INJECT_SUPPORT } from "@common/machines/constants";
 import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
+import {
+  compileCode,
+  modelTypeToMachineType
+} from "@renderer/appIde/utils/compile-code";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
-type CodeInjectionType = "inject" | "run" | "debug";
+export type CodeInjectionType = "inject" | "run" | "debug";
 
 export class KliveBuildCommand extends IdeCommandBase {
   readonly id = "klive.build";
@@ -1022,126 +1022,52 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
   }
 }
 
-// --- Gets the model code according to machine type
-function modelTypeToMachineType(model: SpectrumModelType): string | null {
-  switch (model) {
-    case SpectrumModelType.Spectrum48:
-      return "sp48";
-    case SpectrumModelType.Spectrum128:
-      return "sp128";
-    case SpectrumModelType.SpectrumP3:
-      return "spp3e";
-    case SpectrumModelType.Next:
-      return "next";
-    default:
-      return null;
-  }
-}
-
-// --- Compile the current project's code
-async function compileCode(
-  context: IdeCommandContext
-): Promise<{ result?: KliveCompilerOutput; message?: string }> {
-  // --- Release the files locked by the debugger
-  context.service.projectService.releaseLocks();
-
-  // --- Shortcuts
-  const out = context.output;
-
-  // --- Check if we have a build root to compile
-  const state = context.store.getState();
-  if (!state.project?.isKliveProject) {
-    return { message: "No Klive project loaded." };
-  }
-  const buildRoot = state.project.buildRoots?.[0];
-  if (!buildRoot) {
-    return { message: "No build root selected in the current Klive project." };
-  }
-  const fullPath = `${state.project.folderPath}/${buildRoot}`;
-  const language = getFileTypeEntry(fullPath, context.store)?.subType;
-
-  // --- Compile the build root
-  out.color("bright-blue");
-  out.write("Start compiling ");
-  outputNavigateAction(context.output, buildRoot);
-  out.writeLine();
-  out.resetStyle();
-
-  context.store.dispatch(startCompileAction(fullPath));
-  let result: KliveCompilerOutput;
-  let failedMessage = "";
-  try {
-    result = await context.mainApi.compileFile(fullPath, language);
-  } catch (err) {
-    failedMessage = err.message;
-  } finally {
-    context.store.dispatch(endCompileAction(result));
-    await refreshSourceCodeBreakpoints(context.store, context.messenger);
-    context.store.dispatch(incBreakpointsVersionAction());
-  }
-
-  // --- Display optional trace output
-  const traceOutput = result?.traceOutput;
-  if (traceOutput?.length > 0) {
-    out.resetStyle();
-    traceOutput.forEach((msg) => out.writeLine(msg));
-  }
-
-  // --- Display optional debug messages (e.g., DISPLAY directives from SjasmPlus)
-  const debugMessages = (result as any)?.debugMessages;
-  if (debugMessages?.length > 0) {
-    out.resetStyle();
-    out.color("bright-cyan");
-    debugMessages.forEach((msg: string) => {
-      out.writeLine(msg);
-    });
-    out.resetStyle();
-  }
-
-  // --- Collect errors
-  const errorCount = result?.errors?.filter((m) => !m.isWarning).length ?? 0;
-
-  if (failedMessage) {
-    if (!result || errorCount === 0) {
-      // --- Some unexpected error with the compilation
-      return { message: failedMessage };
-    }
-  }
-
-  // --- Display the errors
-  if ((result.errors?.length ?? 0) > 0) {
-    for (let i = 0; i < result.errors.length; i++) {
-      const err = result.errors[i];
-      out.color(err.isWarning ? "yellow" : "bright-red");
-      out.bold(true);
-      out.write(`${err.errorCode}: `);
-      writeErrorMessageWithLinks(
-        context.output,
-        err.message,
-        err.isWarning ? "yellow" : "bright-red"
-      );
-      out.write(" - ");
-      out.bold(false);
-      out.color("bright-cyan");
-      outputNavigateAction(context.output, err.filename, err.line, err.startColumn);
-      out.writeLine();
-      out.resetStyle();
-    }
-  }
-
-  // --- Done.
-  return errorCount > 0
-    ? {
-        result,
-        message: `Compilation failed with ${errorCount} error${errorCount > 1 ? "s" : ""}.`
-      }
-    : { result };
-}
-
-async function injectCode(
+/**
+ * Compiles the build root and injects the result into the machine.
+ *
+ * ## Why this is exported, and why it lives here
+ *
+ * There were two of these, one per compiler command file, and unlike the two `compileCode`s they
+ * had genuinely diverged — seven user-visible differences, both copies reachable from live UI:
+ * `ExecutionControls` drives `run`/`debug`, while the document toolbar reaches `klive.inject` and
+ * friends through build.ksx. They were merged onto *this* behaviour, so `run` and `debug` now also
+ * export a NEX file for ZX Next builds, lock the compiled source list while debugging, and pass the
+ * exported path to `runCodeCommand`; they no longer raise a modal for a successful injection or for
+ * zero-length output, the command result already says both.
+ *
+ * It stays in this module rather than moving to `utils/` beside `compileCode` because the NEX step
+ * calls `ExportCodeCommand.exportCompiledCode`, which is defined below and is far too entangled to
+ * follow it. `CompilerCommand.ts` importing from here is one-directional; the reverse import does
+ * not exist.
+ *
+ * One difference was deliberately left unresolved: the paused-machine check below fires only for
+ * ZX Next, where the other copy required a paused machine before any injection. That is a safety
+ * rule, not a style choice, and it is being revisited separately.
+ */
+export async function injectCode(
   context: IdeCommandContext,
   operationType: CodeInjectionType
 ): Promise<IdeCommandResult> {
+  /*
+   * Refused before compiling, not after: there is nothing to do with the output on a machine that
+   * cannot take injected code, so building it first only wastes the user's time.
+   *
+   * The document header hides the Inject button for these machines, but the button is not the only
+   * way in — `inject` is a command, reachable from the prompt and from a script — so the rule lives
+   * here as well as in the UI. Run and debug are unaffected: they deliver the code by whatever
+   * route the machine does support, which for the Next is the exported `.nex` file below.
+   */
+  if (operationType === "inject") {
+    const machineId = context.store.getState().emulatorState?.machineId;
+    const machine = machineRegistry.find((mi) => mi.machineId === machineId);
+    if (machine && machine.features?.[MF_INJECT_SUPPORT] === false) {
+      return commandError(
+        `${machine.displayName} does not support injecting code into its memory. ` +
+          "Use run or debug instead."
+      );
+    }
+  }
+
   const { message, result } = await compileCode(context);
   const errorNo = result?.errors?.length ?? 0;
   if (message) {

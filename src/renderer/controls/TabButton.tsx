@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Icon } from "./Icon";
 import classnames from "classnames";
 import styles from "./TabButton.module.scss";
@@ -6,6 +5,8 @@ import { TooltipFactory, useTooltipRef } from "./Tooltip";
 
 type Props = {
   hide?: boolean;
+  /** Extra class on the button, so a parent can drive visibility from CSS. */
+  xclass?: string;
   fill?: string;
   rotate?: number;
   iconName: string;
@@ -17,6 +18,7 @@ type Props = {
 
 export function TabButton ({
   hide,
+  xclass,
   fill = "--color-command-icon",
   rotate = 0,
   iconName,
@@ -25,27 +27,20 @@ export function TabButton ({
   disabled,
   clicked
 }: Props) {
-  const ref = useTooltipRef();
-  const [keyDown, setKeyDown] = useState(null);
-  
-  useEffect(() => {
-    setKeyDown(false);
-  }, []);
+  const ref = useTooltipRef<HTMLButtonElement>();
+
   return (
     <>
-      <div
+      <button
         ref={ref}
-        className={classnames(styles.tabButton, {
-          [styles.keyDown]: keyDown,
-          [styles.disabled]: disabled
-        })}
-        onMouseDown={() => setKeyDown(true)}
-        onMouseLeave={() => setKeyDown(false)}
+        type="button"
+        disabled={disabled}
+        aria-label={title}
+        className={classnames(styles.tabButton, xclass)}
         onClick={(e) => {
           if (!disabled) {
             e.stopPropagation();
             clicked?.();
-            setKeyDown(false);
           }
         }}
       >
@@ -69,7 +64,7 @@ export function TabButton ({
             rotate={rotate}
           />
         )}
-      </div>
+      </button>
       {useSpace && <TabButtonSpace />}
     </>
   );

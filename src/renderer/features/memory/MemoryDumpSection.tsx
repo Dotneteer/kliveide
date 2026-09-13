@@ -1,4 +1,5 @@
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
+import { AddressLabel, PartitionPrefix } from "@renderer/controls/data";
 import { TooltipFactory } from "@controls/Tooltip";
 import classnames from "classnames";
 import { toHexa4, toHexa6Dash, toHexa2, toDecimal5, toDecimal7, toDecimal3, toBin8 } from "@renderer/appIde/services/ide-commands";
@@ -7,10 +8,19 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
 import { memo, useRef, useState, useMemo, useCallback } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
+import { isWidePartitionLabel } from "@renderer/controls/data/partitionWidth";
 
 export type MemoryDumpSectionProps = {
   showPartitions?: boolean;
   partitionLabel?: string;
+  /**
+   * Characters reserved for the bank-label column, shared by every row in the dump.
+   *
+   * Uniform so the address and hex columns land at the same x on every row, whether or not that
+   * row's own bank is labelled. 0 means the dump has no bank column and the cell is omitted
+   * entirely. Derived once by `MemoryPanel` via `derivePartitionWidthCh`.
+   */
+  partitionWidthCh?: number;
   address: number;
   bytes: readonly number[];
   decimalView: boolean;
@@ -49,6 +59,7 @@ export const MemoryDumpSection = (props: MemoryDumpSectionProps) => {
 const MemoryDumpSectionViewComponent = ({
   showPartitions,
   partitionLabel,
+  partitionWidthCh = 0,
   address,
   bytes,
   decimalView,
@@ -62,39 +73,34 @@ const MemoryDumpSectionViewComponent = ({
 }: MemoryDumpSectionViewProps) => {
   const [hoveredByteIndex, setHoveredByteIndex] = useState<number | null>(null);
 
-  let useWidePartitions = false;
-  if (showPartitions && partitionLabel && decimalView) {
-    const partAsNumber = parseInt(partitionLabel, 16);
-    if (!isNaN(partAsNumber)) {
-      useWidePartitions = true;
-      partitionLabel = toDecimal3(partAsNumber);
-    }
+  if (isWidePartitionLabel(partitionLabel, decimalView, showPartitions)) {
+    partitionLabel = toDecimal3(parseInt(partitionLabel!, 16));
   }
 
   const addressText = decimalView
     ? (addressDigits === 6 ? toDecimal7(address) : toDecimal5(address))
     : (addressDigits === 6 ? toHexa6Dash(address) : toHexa4(address));
+  /*
+   * M2: `ch`, not px. Capacity preserved from 64/48/72/40 at the row's 12.8px Iosevka
+   * (1ch = 6.4px). Each value comfortably holds its formatter's output: `toDecimal7` and
+   * `toHexa6Dash` are 7 characters, `toDecimal5` is 5, `toHexa4` is 4.
+   */
   const addressWidth = decimalView
-    ? (addressDigits === 6 ? 64 : 48)
-    : (addressDigits === 6 ? 72 : 40);
+    ? (addressDigits === 6 ? 10 : 8)
+    : (addressDigits === 6 ? 12 : 7);
 
   return (
     <div className={classnames(styles.dumpSection)}>
       <LabelSeparator width={8} />
-      {showPartitions && partitionLabel && (
-        <div className={styles.partitionPrefix}>
-          <span
-            className={styles.partitionLabel}
-            style={{ width: useWidePartitions ? "3ch" : "2ch" }}
-          >
-            {partitionLabel}
-          </span>
-          <span className={styles.partitionColon}>:</span>
-        </div>
+      {/*
+        * Rendered whenever the list has a bank column at all, not merely when *this* row has a
+        * label, and at the column's shared width rather than this row's own. Dropping the cell on
+        * an unlabelled bank shifted that row's address and hex columns left of its neighbours'.
+        */}
+      {partitionWidthCh > 0 && (
+        <PartitionPrefix label={partitionLabel ?? ""} width={partitionWidthCh} />
       )}
-      <div className={styles.addressLabel} style={{ width: addressWidth }}>
-        {addressText}
-      </div>
+      <AddressLabel text={addressText} width={addressWidth} className={styles.memoryAddress} />
       <HexValues
         address={address}
         bytes={bytes}
@@ -130,6 +136,10 @@ export const MemoryDumpSectionView = memo(MemoryDumpSectionViewComponent, (prev,
   if (prev.charDump !== next.charDump) return false;
   if (prev.showPartitions !== next.showPartitions) return false;
   if (prev.partitionLabel !== next.partitionLabel) return false;
+  // --- The shared bank-column width. Without this a row keeps a stale column when the width
+  // --- changes (switching to decimal view, or to a bank set with wider labels) and the dump goes
+  // --- ragged until something else forces a re-render.
+  if (prev.partitionWidthCh !== next.partitionWidthCh) return false;
   if (prev.bytes.length !== next.bytes.length) return false;
 
   // Highlighting/styling and edit behavior
@@ -165,9 +175,19 @@ const CharDumpComponent = ({ bytes, characterSet, hoveredByteIndex }: CharDumpPr
   return (
     <>
       <div className={styles.charValues}>
-        {bytes.map((value, i) => {
+        {/*
+         * `bytes` is typed as `readonly number[]`, but the live Machine Memory panel actually
+         * hands it a `Uint8Array` view (`memory.subarray(...)`) to avoid copying on every scroll.
+         * `Array.prototype.map` renders each byte's index and value; `Uint8Array.prototype.map`
+         * builds a *new typed array* instead, coercing every callback return value (a JSX
+         * element, here) to a number for storage - which turns each `<span>` into `NaN`, clamped
+         * to `0`. React then rendered that all-zero Uint8Array directly, showing "0" for every
+         * byte regardless of its actual value. `Array.from` normalizes both array and typed-array
+         * inputs to a plain array first, so `.map` is always the one that returns JSX.
+         */}
+        {Array.from(bytes).map((value, i) => {
           if (value === undefined) return <span key={i} className={styles.charPlaceholder}>&nbsp;</span>;
-          const valueInfo = characterSet[(value ?? 0x20) & 0xff];
+          const valueInfo = characterSet[(value ?? 0x20) & 0xff] ?? {};
           const ch = valueInfo.v ?? ".";
           const isHovered = hoveredByteIndex === i;
           return (
@@ -275,13 +295,31 @@ const HexValuesComponent = ({
     }
   }, [editClicked, decimalView, hexParts.length, hexString.length, address]);
 
-  // Tooltip content - memoized
-  const tooltipContent = useMemo(() => {
-    if (hoveredByteIndex == null || bytes[hoveredByteIndex] === undefined) {
+  /*
+   * Tooltip content - memoized.
+   *
+   * Broken into its pieces (rather than one `\n`-joined string for `TooltipFactory`'s plain-text
+   * `content` prop) so each line can carry the same colour as the column it describes - the
+   * address heading in `--color-memory-address`, the hex/decimal/binary value in
+   * `--color-memory-value`, the character/description in `--color-memory-char` - instead of every
+   * line reading as identical, uncoloured text next to a row that is now anything but.
+   *
+   * `tooltipCache[value]` (built by `buildByteTooltipCache`) is still a plain two-line string - it
+   * is also asserted on directly in tests as a string - so it is split here rather than changing
+   * its shape.
+   */
+  const tooltipLines = useMemo(() => {
+    const byteValue = hoveredByteIndex == null ? undefined : bytes[hoveredByteIndex];
+    if (hoveredByteIndex == null || byteValue === undefined) {
       return null;
     }
-    return `Value at $${toHexa4(address + hoveredByteIndex)} (${address + hoveredByteIndex}):` +
-      `\n${tooltipCache[bytes[hoveredByteIndex]]}`;
+    const byteAddress = address + hoveredByteIndex;
+    const [valueLine, charDescLine] = (tooltipCache[byteValue] ?? "").split("\n");
+    return {
+      header: `Value at $${toHexa4(byteAddress)} (${byteAddress}):`,
+      value: valueLine,
+      charDesc: charDescLine
+    };
   }, [hoveredByteIndex, address, bytes, tooltipCache]);
 
   const pointedHint = hoveredByteIndex != null ? pointedInfo?.[address + hoveredByteIndex] : undefined;
@@ -340,7 +378,7 @@ const HexValuesComponent = ({
           )}
         </div>
       )}
-      {tooltipContent && containerRef.current && (
+      {tooltipLines && containerRef.current && (
         <TooltipFactory
           refElement={containerRef.current}
           placement="bottom"
@@ -348,8 +386,15 @@ const HexValuesComponent = ({
           offsetY={0}
           showDelay={0}
           isShown={true}
-          content={tooltipContent + `${pointedHint ? `\nPointed by: ${pointedHint}` : ""}`}
-        />
+          className={styles.memoryTooltip}
+        >
+          <div className={styles.tooltipHeader}>{tooltipLines.header}</div>
+          <div className={styles.tooltipValue}>{tooltipLines.value}</div>
+          <div className={styles.tooltipCharDesc}>{tooltipLines.charDesc}</div>
+          {pointedHint && (
+            <div className={styles.tooltipPointed}>Pointed by: {pointedHint}</div>
+          )}
+        </TooltipFactory>
       )}
     </div>
   );

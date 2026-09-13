@@ -3499,14 +3499,25 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     };
   }
 
-  private registerNextReg({ id, description, readFn, writeFn }: NextRegInfo): void {
+  /**
+   * Registers one Next register's definition.
+   *
+   * `slices` is carried through deliberately. This destructured only
+   * `{ id, description, readFn, writeFn }` and rebuilt the entry from those, which silently dropped
+   * the field-by-field breakdown for all 73 registers that define one — 338 slices in total. Nothing
+   * downstream could notice: `slices` is declared on `NextRegInfo`, `getDescriptors()` explicitly
+   * maps `slices: reg.slices`, and the IPC response type in `EmuApi.ts` declares it too, so every
+   * layer type-checked against a field that was never populated.
+   */
+  private registerNextReg({ id, description, readFn, writeFn, slices }: NextRegInfo): void {
     this.regs[id] = {
       id,
       description,
       isReadOnly: readOnlyRegs.includes(id),
       isWriteOnly: writeOnlyRegs.includes(id),
       readFn,
-      writeFn
+      writeFn,
+      slices
     };
   }
 }

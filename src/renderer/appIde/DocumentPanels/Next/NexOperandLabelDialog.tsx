@@ -2,7 +2,6 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "@renderer/controls/Button";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
-import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import type { DisassemblyOperandInfo } from "@renderer/appIde/disassemblers/common-types";
 import {
   NEX_BANK_LAST_OFFSET,

@@ -16,6 +16,8 @@ function deferred<T>() {
 
 type SetupApi = {
   getPartitionLabels: ReturnType<typeof vi.fn>;
+  getPartitionDescriptions: ReturnType<typeof vi.fn>;
+  getPartitionGroups: ReturnType<typeof vi.fn>;
 };
 
 const Subject = ({ emuApi, machineId }: { emuApi: SetupApi; machineId: string }) => {
@@ -40,12 +42,14 @@ afterEach(() => {
 });
 
 describe("useDisassemblyMachineSetup", () => {
-  it("creates ordered ROM and RAM bank segment options", () => {
+  // --- Labels are the machine's own now, not `ROM n` / `BANK n` invented from the index; the
+  // --- invented forms live on as descriptions. See the partition naming unification plan §3.
+  it("labels ordered segment options with the machine's own partition names", () => {
     expect(createDisassemblySegmentOptions({ [-2]: "rom1", [-1]: "rom0", 0: "bank0" }, 8))
       .toEqual([
-        { value: "-1", label: "ROM 0" },
-        { value: "-2", label: "ROM 1" },
-        { value: "0", label: "BANK 0" }
+        { value: "-1", label: "rom0", description: undefined },
+        { value: "-2", label: "rom1", description: undefined },
+        { value: "0", label: "bank0", description: undefined }
       ]);
   });
 
@@ -70,7 +74,9 @@ describe("useDisassemblyMachineSetup", () => {
 
   it("loads banked machine setup with ROM and bank options", async () => {
     const emuApi = {
-      getPartitionLabels: vi.fn(() => Promise.resolve({ [-1]: "rom0", 0: "bank0", 3: "bank3" }))
+      getPartitionLabels: vi.fn(() => Promise.resolve({ [-1]: "rom0", 0: "bank0", 3: "bank3" })),
+      getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
+      getPartitionGroups: vi.fn(() => Promise.resolve({}))
     };
 
     render(<Subject emuApi={emuApi} machineId="sp128" />);
@@ -80,12 +86,14 @@ describe("useDisassemblyMachineSetup", () => {
     expect(screen.getByTestId("banks")).toHaveTextContent("true");
     expect(screen.getByTestId("roms")).toHaveTextContent("true");
     expect(screen.getByTestId("matrix")).toHaveTextContent("false");
-    expect(screen.getByTestId("options")).toHaveTextContent("ROM 0,BANK 0,BANK 3");
+    expect(screen.getByTestId("options")).toHaveTextContent("rom0,bank0,bank3");
   });
 
   it("uses bank matrix mode for wide bank lists", async () => {
     const emuApi = {
-      getPartitionLabels: vi.fn(() => Promise.resolve({ 0: "bank0" }))
+      getPartitionLabels: vi.fn(() => Promise.resolve({ 0: "bank0" })),
+      getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
+      getPartitionGroups: vi.fn(() => Promise.resolve({}))
     };
 
     render(<Subject emuApi={emuApi} machineId="zxnext" />);
@@ -100,6 +108,8 @@ describe("useDisassemblyMachineSetup", () => {
     const firstLabels = deferred<Record<number, string>>();
     const secondLabels = deferred<Record<number, string>>();
     const emuApi = {
+      getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
+      getPartitionGroups: vi.fn(() => Promise.resolve({})),
       getPartitionLabels: vi
         .fn()
         .mockReturnValueOnce(firstLabels.promise)

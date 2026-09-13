@@ -13,6 +13,7 @@ import {
 } from "@renderer/appIde/services/ide-commands";
 import { WatchInfo } from "@common/state/AppState";
 import { addWatchAction, removeWatchAction, clearWatchAction } from "@common/state/actions";
+import { saveProject } from "@renderer/appIde/utils/save-project";
 
 // --- Watch type definitions
 export type WatchType = "a" | "b" | "w" | "l" | "-w" | "-l" | "f" | "s";
@@ -28,6 +29,24 @@ type WatchSpecArgs = {
 type WatchSymbolArgs = {
   symbol: string;
 };
+
+/**
+ * Writes the project file after a watch has been added, removed or cleared.
+ *
+ * Watches belong to the project, so every mutation persists — the same way the excluded-items
+ * command does. Two details are deliberate:
+ *
+ * - **Not awaited.** `saveProject` sleeps a second before the IPC call, so awaiting it would stall
+ *   every `w-add`/`w-del` (and the Watch panel's right-click delete, which runs `w-del`) for that
+ *   whole second before the command reported success. Firing it off is safe for exactly the reasons
+ *   `settings-utils.ts` gives where it does the same: `saveKliveProject` serializes its saves
+ *   internally, so this one cannot be reordered against another, and it reports its own failures.
+ * - **Unconditional.** `saveKliveProject` returns immediately when no project folder is open, so
+ *   there is nothing to guard against on a bare machine.
+ */
+function persistWatches(context: IdeCommandContext): void {
+  void saveProject(context.messenger);
+}
 
 /**
  * Base class for watch commands with common validation logic
@@ -146,6 +165,8 @@ export class AddWatchCommand extends WatchWithSpecCommand {
     // Add watch to the Redux store
     context.store.dispatch(addWatchAction(watch), "ide");
 
+    persistWatches(context);
+
     let typeDesc = this.getTypeDescription(watch.type);
     if (watch.length) {
       typeDesc += ` (${watch.length} bytes)`;
@@ -219,6 +240,7 @@ export class RemoveWatchCommand extends IdeCommandBase<WatchSymbolArgs> {
   async execute(context: IdeCommandContext, args: WatchSymbolArgs): Promise<IdeCommandResult> {
     // Remove watch from the Redux store
     context.store.dispatch(removeWatchAction(args.symbol), "ide");
+    persistWatches(context);
 
     writeSuccessMessage(context.output, `Watch removed: ${args.symbol.toUpperCase()}`);
 
@@ -239,6 +261,9 @@ export class ListWatchCommand extends IdeCommandBase {
     // Retrieve watch expressions from Redux store
     const state = context.store.getState();
     const watchExpressions = state.watchExpressions || [];
+    // --- Named, not numbered: a partition printed as a raw index is not a notation any command
+    // --- accepts back. Same reason `bp-list` needed fixing.
+    const partitionLabels = await context.emuApi.getPartitionLabels();
 
     if (watchExpressions.length === 0) {
       writeMessage(context.output, "No watch expressions defined", "bright-blue");
@@ -255,10 +280,11 @@ export class ListWatchCommand extends IdeCommandBase {
         }
 
         if (w.address !== undefined) {
-          writeMessage(context.output, `, addr: $${toHexa4(w.address)}`, "yellow", false);
-          if (w.partition !== undefined) {
-            writeMessage(context.output, `:${w.partition}`, "yellow", false);
-          }
+          // --- `R0:$8000`, matching the order `bp-set` and the Breakpoints panel use. This used to
+          // --- print the partition *after* the address, and as a raw index.
+          const partition =
+            w.partition !== undefined ? `${partitionLabels?.[w.partition] ?? "?"}:` : "";
+          writeMessage(context.output, `, addr: ${partition}$${toHexa4(w.address)}`, "yellow", false);
         } else {
           writeMessage(context.output, `, unresolved`, "red", false);
         }
@@ -316,6 +342,7 @@ export class EraseAllWatchCommand extends IdeCommandBase {
 
     // Clear all watch expressions from Redux store
     context.store.dispatch(clearWatchAction(), "ide");
+    persistWatches(context);
 
     writeMessage(
       context.output,

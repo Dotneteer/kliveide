@@ -1,0 +1,18 @@
+/*
+ * A dump row owns its own width, rather than inheriting the viewport's.
+ *
+ * `virtua` wraps every row in an *absolutely positioned* div with an explicit width equal to the
+ * viewport, and a block-level flex row fills exactly that — so once the dump is wider than the
+ * panel (a high byte count, a narrow panel, or simply a wide monospace face) the row *box* stops at
+ * the viewport edge while the bytes go on painting past it. The zebra stripe and the hover
+ * highlight are drawn on this box, so they cut off mid-row.
+ *
+ * `min-width`, not `width`: it must only raise the floor, so a panel wider than its content still
+ * gets full-bleed stripes rather than shrinking to fit.
+ *
+ * The row is rendered by `MemoryPanel` (the `HStack` wrapping the one or two
+ * `MemoryDumpSectionView`s), which is why the rule lives here and not in the dump's own module.
+ */
+.memoryRow {
+  min-width: max-content;
+}

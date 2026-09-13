@@ -78,17 +78,23 @@ export const SiteBar = ({ order }: Props) => {
   const panelStartSize = useRef(0);
   const pixelRatio = useRef(0);
 
+  // --- Collect the expansion state of the panels displayed in the current view. A sizing bar can
+  // --- only work when at least two panels are expanded, as sizing moves space between two of them.
+  const expandedFlags = panels.map((p) => !!sideBarPanelsState[p.id]?.expanded);
+
   // --- Create the panels of the side bar
   const panelElements: ReactNode[] = [];
   for (let i = 0; i < panels.length; i++) {
     const panel = panels[i];
     const state = sideBarPanelsState[panel.id];
 
-    // --- Is the current panel sizable?
-    const thisExpanded = state?.expanded;
-    const nextExpanded =
-      i < panels.length - 1 ? sideBarPanelsState[panels[i + 1].id]?.expanded : false;
-    const sizeable = thisExpanded && nextExpanded;
+    // --- Is the current panel sizable? The sizing bar rendered below this panel trades space with
+    // --- the closest expanded panel underneath it. That panel is not necessarily the immediate
+    // --- neighbor, as any number of collapsed panels may sit between them. So, the bar is active
+    // --- whenever this panel is expanded and at least one more expanded panel follows it.
+    const thisExpanded = expandedFlags[i];
+    const expandedBelow = expandedFlags.slice(i + 1).some((e) => e);
+    const sizeable = thisExpanded && expandedBelow;
 
     // --- Add the current panel
     panelElements.push(
@@ -164,11 +170,12 @@ export const SiteBar = ({ order }: Props) => {
     const sizedPanelState = sideBarPanelsState[sizedPanel.id];
     if (!sizedPanelState || !sizedPanelState.expanded) return;
 
-    const nextPanel = panels[idx + 1];
+    // --- Find the closest expanded panel below the sized one; collapsed panels in between keep
+    // --- their fixed heading height, so they do not take part in the sizing operation.
+    const nextPanel = panels.slice(idx + 1).find((p) => sideBarPanelsState[p.id]?.expanded);
     if (!nextPanel) return;
 
     const nextPanelState = sideBarPanelsState[nextPanel.id];
-    if (!nextPanelState || !nextPanelState.expanded) return;
 
     // --- At this point, the sizing context is valid, calculate the new size
     const totalSizeInPixels = (sizedPanelState.size + nextPanelState.size) / pixelRatio.current;

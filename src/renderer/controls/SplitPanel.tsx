@@ -337,8 +337,16 @@ const Splitter = ({
       className={classnames(styles.splitter, {
         [styles.pointed]: (pointed || isMoving) && !uiService.dragging,
         [styles.withBorder]: showBorder,
-        [styles.verticalBorder]: showBorder && horizontal,
-        [styles.horizontalBorder]: showBorder && !horizontal
+        /*
+         * Orientation is applied whether or not a *heavy* border was asked for.
+         *
+         * These used to be gated on `showBorder`, which was fine while the splitter was invisible
+         * at rest — there was nothing to orient. Now that it always draws a hairline, a splitter
+         * with `showBorder` off would otherwise have no orientation at all and fall back to
+         * whichever direction the stylesheet guessed.
+         */
+        [styles.verticalBorder]: horizontal,
+        [styles.horizontalBorder]: !horizontal
       })}
       style={{
         [horizontal ? "width" : "height"]: `${thickness}px`,

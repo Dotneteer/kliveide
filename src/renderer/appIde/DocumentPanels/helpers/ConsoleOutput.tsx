@@ -1,95 +1,184 @@
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import classnames from "classnames";
 import styles from "./ConsoleOutput.module.scss";
 import {
   IOutputBuffer,
   OutputContentLine,
+  OutputSeverity,
   OutputSpan
 } from "@renderer/appIde/ToolArea/abstractions";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import {
+  CSSProperties,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState
+} from "react";
 import { ConsoleAction } from "@common/utils/output-utils";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
+import { useRowSizes } from "@renderer/theming/useRowSizes";
 
-const SCROLL_END = 5_000_000;
+/**
+ * The app's shared rich-text / ANSI console renderer.
+ *
+ * Four panels use it — `CommandPanel`, `OutputPanel`, `CommandResult` and `ScriptOutputPanel` —
+ * across two folders, which is why slice 7.1 gives it a real API rather than leaving each consumer
+ * to infer one.
+ */
 
 type Props = {
   buffer: IOutputBuffer;
-  scrollLocked: boolean;
-  initialTopPosition?: number;
+  /**
+   * What to show while the buffer has no lines.
+   *
+   * The component already knew it had nothing to draw — it just drew nothing, and a panel whose
+   * pane has not run yet was an unexplained empty rectangle. The node belongs to the caller because
+   * only the caller knows what would fill it: "run `compile`" is right for the Build pane and
+   * meaningless for Command Result.
+   */
+  emptyState?: ReactNode;
+  /**
+   * Keep the newest line in view as content arrives.
+   *
+   * This replaces `scrollLocked`, which meant the opposite of what it read like: `scrollLocked` was
+   * *true* when auto-scrolling was **off**. `ScriptOutputPanel` duly shipped a button whose tooltip
+   * said "Turn auto scrolling off" at the moment clicking it would turn auto scrolling **on**. A
+   * boolean that has to be mentally negated at every call site eventually gets negated wrongly.
+   */
+  followTail?: boolean;
+  /** Show a right-aligned line number gutter. */
   showLineNo?: boolean;
+  initialTopPosition?: number;
   onTopPositionChanged?: (position: number) => void;
   onContentsChanged?: () => void;
 };
 
 export const ConsoleOutput = ({
   buffer,
-  scrollLocked,
+  emptyState,
+  followTail = false,
+  showLineNo = false,
   initialTopPosition,
-  showLineNo,
   onTopPositionChanged,
   onContentsChanged
 }: Props) => {
-  // --- Component state
-  const mounted = useRef(false);
   const vlApi = useRef<VListHandle>(null);
-  const [output, setOutput] = useState<OutputContentLine[]>([]);
-  const [scrollVersion, setScrollVersion] = useState(0);
+  const [lines, setLines] = useState<OutputContentLine[]>([]);
 
-  // --- Refresh the output
-  const refreshOutput = () => {
+  /*
+   * Overscan, in **pixels**.
+   *
+   * `VirtualizedList` forwards this to virtua's `bufferSize`, which its own documentation defines
+   * as "extra item space in pixels" — while the shared default is named `overscan` and documented
+   * as a number of *rows*. Whatever the other lists intend by it, 25 here would be a buffer of one
+   * and a half console lines, and fast-scrolling a log is exactly the case that shows blank rows.
+   * This is the pixel equivalent of roughly 25 unwrapped lines, at whatever size the panels are
+   * currently set to render.
+   */
+  const { console: consoleRowSize } = useRowSizes();
+  const consoleOverscanPx = consoleRowSize * 25;
+
+  /*
+   * The buffer subscription must not depend on props that change identity every render.
+   *
+   * `onContentsChanged` is an inline arrow at its call site, so putting it in the dependency list
+   * would unsubscribe and resubscribe on every render — which is what the previous dependency-less
+   * effect did anyway, once per render, guarded by a `mounted` ref.
+   */
+  const latest = useRef({ followTail, onContentsChanged });
+  latest.current = { followTail, onContentsChanged };
+
+  const refresh = useCallback(() => {
     if (!buffer) return;
-    setOutput(buffer.getContents().slice());
-    onContentsChanged?.();
-    if (scrollLocked) return;
+    /*
+     * No defensive `.slice()`. `getContents()` now returns a stable snapshot — the same array
+     * instance until the contents actually change, a new one after — so copying it here would
+     * undo exactly the allocation the buffer stopped making. The identity change is what React
+     * needs to re-render, and the buffer provides it.
+     */
+    const contents = buffer.getContents();
+    setLines(contents);
+    latest.current.onContentsChanged?.();
+    if (!latest.current.followTail) return;
 
-    // --- Scroll to the end of the output
-    vlApi.current?.scrollToIndex(SCROLL_END);
-  };
-
-  // --- Initialize the script output
-  useEffect(() => {
-    refreshOutput();
-    setScrollVersion(scrollVersion + 1);
-  }, [buffer?.getContents()?.length]);
-
-  // --- Subscribe to output changes
-  useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-      buffer?.contentsChanged.on(refreshOutput);
+    /*
+     * Scroll to the last line by its index.
+     *
+     * This used to pass a `SCROLL_END = 5_000_000` sentinel and rely on the virtualizer clamping it,
+     * which silently stops being true the day a buffer is longer than the sentinel.
+     */
+    if (contents.length > 0) {
+      vlApi.current?.scrollToIndex(contents.length - 1);
     }
+  }, [buffer]);
+
+  const contentLength = buffer?.getContents()?.length ?? 0;
+  useEffect(() => {
+    refresh();
+  }, [refresh, contentLength]);
+
+  useEffect(() => {
+    if (!buffer) return undefined;
+    buffer.contentsChanged.on(refresh);
     return () => {
-      if (mounted.current) {
-        buffer?.contentsChanged.off(refreshOutput);
-        mounted.current = false;
-      }
+      buffer.contentsChanged.off(refresh);
     };
-  });
+  }, [buffer, refresh]);
 
   return (
-    <div className={styles.listWrapper}>
-      {output && output.length > 0 && (
+    <div className={classnames(styles.listWrapper, { [styles.withLineNo]: showLineNo })}>
+      {lines.length === 0 && emptyState}
+      {lines.length > 0 && (
         <VirtualizedList
-          items={output ?? []}
+          items={lines}
+          /*
+           * Deliberately **not** `scrollRowsHorizontally`, and deliberately no `itemSize`.
+           *
+           * `scrollRowsHorizontally` puts `min-width: max-content` on virtua's row wrapper, so the
+           * row grows to whatever its content needs — which means a long line would never reach a
+           * right edge and `word-break: break-all` would never fire. Horizontal scrolling and
+           * wrapping are mutually exclusive, and this console wraps.
+           *
+           * `itemSize` is virtua's size hint for unmeasured rows. It was worth setting while every
+           * line was exactly one pinned line box; now a wrapped line occupies several, so a flat
+           * hint would be wrong for exactly the long lines whose height matters most. virtua's own
+           * guidance is to omit it and let sizes be estimated from measurements, which is what
+           * happens here.
+           */
+          overscan={consoleOverscanPx}
           onScroll={() => {
             if (!vlApi.current) return;
             onTopPositionChanged?.(vlApi.current.getItemOffset(0));
           }}
-          apiLoaded={api => {
+          apiLoaded={(api) => {
             vlApi.current = api;
+            /*
+             * The first scroll has to happen here, not in the refresh effect.
+             *
+             * The list is only rendered once there is something to show, so on mount the effect
+             * runs while `vlApi.current` is still null and its scroll silently no-ops. The result
+             * was that `followTail` did nothing until the *next* line arrived: a panel reopened on
+             * a buffer that already had content showed the top of it, not the end.
+             *
+             * A restored scroll position wins over following the tail — that is what the saved
+             * view state is for.
+             */
             if (initialTopPosition !== undefined) {
-              vlApi.current?.scrollTo(initialTopPosition);
+              api.scrollTo(initialTopPosition);
+            } else if (latest.current.followTail && lines.length > 0) {
+              api.scrollToIndex(lines.length - 1);
             }
           }}
-          renderItem={idx => {
-            return (
-              <OutputLine
-                lineNo={idx + 1}
-                showLineNo={showLineNo}
-                spans={output?.[idx]?.spans}
-              />
-            );
-          }}
+          renderItem={(idx) => (
+            <OutputLine
+              lineNo={idx + 1}
+              showLineNo={showLineNo}
+              severity={lines[idx]?.severity}
+              spans={lines[idx]?.spans}
+            />
+          )}
         />
       )}
     </div>
@@ -98,60 +187,124 @@ export const ConsoleOutput = ({
 
 type OutputContentLineProps = {
   spans: OutputSpan[];
+  /**
+   * What the line means, when its writer said. Drives the line number's colour — the severity cue
+   * rides in a column that is already there, instead of spending more of a 12px row on a stripe.
+   */
+  severity?: OutputSeverity;
   lineNo: number;
   showLineNo?: boolean;
 };
 
-const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
-  const { ideCommandsService } = useAppServices(); 
-  const segments = (spans ?? []).map((s, idx) => {
-    const style: CSSProperties = {
-      fontWeight: s.isBold ? 600 : 400,
-      fontStyle: s.isItalic ? "italic" : "normal",
-      backgroundColor: `var(${
-        s.background !== undefined
-          ? `--console-ansi-${s.background}`
-          : "transparent"
-      })`,
-      color: `var(${
-        s.foreground !== undefined
-          ? `--console-ansi-${s.foreground}`
-          : "--console-default"
-      })`,
-      textDecoration: `${s.isUnderline ? "underline" : ""} ${
-        s.isStrikeThru ? "line-through" : ""
-      }`,
-      cursor: s.actionable ? "pointer" : undefined
-    };
-    return (
-      <span
-        key={idx}
-        style={style}
-        onClick={async () => {
-          if (s.actionable) {
-            // --- Execute the command
-            if ((s.data as ConsoleAction)?.type === "@navigate") {
-              const payload = (s.data as ConsoleAction).payload;
-              if (!payload) return;
-              await ideCommandsService.executeCommand(
-                `nav "${payload.file}" ${payload.line != undefined ? payload.line : ""} ${
-                  payload.column != undefined ? (payload.column + 1).toString() : ""
-                }`
-              );
-            } else if (typeof s.data === "function") {
-              s.data();
-            }
-          }
-        }}
-      >
-        {s.text}
-      </span>
-    );
-  });
+const buildSpanStyle = (s: OutputSpan): CSSProperties => ({
+  fontWeight: s.isBold ? 600 : 400,
+  fontStyle: s.isItalic ? "italic" : "normal",
+  /*
+   * Undefined, not `var(transparent)`.
+   *
+   * The previous form interpolated the literal word `transparent` into `var()`, which is not a
+   * custom-property name, so the declaration was invalid and dropped. It looked correct only
+   * because "no background" was the intent anyway — the same class of silent-drop bug as the empty
+   * `background-color: var()` found in `.headerRow` during Phase 3.
+   */
+  backgroundColor: s.background !== undefined ? `var(--console-ansi-${s.background})` : undefined,
+  color:
+    s.foreground !== undefined ? `var(--console-ansi-${s.foreground})` : "var(--console-default)",
+  /*
+   * `textDecorationLine`, not the `textDecoration` shorthand.
+   *
+   * The shorthand resets every decoration longhand it does not mention — including
+   * `text-decoration-color` — and this is an *inline* style, so it beat anything the stylesheet
+   * said. `OutputPaneBuffer.write` marks every actionable span `isUnderline`, so that reset landed
+   * on exactly the spans whose underline the stylesheet wants to style: `.actionable`'s colour rule
+   * was computing correctly and then being overwritten on the way to the screen.
+   *
+   * The line is the span's business; its colour, offset and thickness are the stylesheet's.
+   */
+  textDecorationLine:
+    [s.isUnderline ? "underline" : "", s.isStrikeThru ? "line-through" : ""]
+      .filter(Boolean)
+      .join(" ") || undefined
+});
+
+/**
+ * Style objects keyed by the span's interned `styleId`.
+ *
+ * A console uses a couple of dozen distinct style combinations across millions of spans, so the
+ * object is built once per combination and then shared. Without this, every span of every visible
+ * row got a freshly allocated `style` prop on every render, which React can only treat as changed.
+ *
+ * Ids come from a module-level table, so they mean the same thing in all four panels and this cache
+ * can be shared between them. A span with no `styleId` — one that crossed IPC, or a test fixture —
+ * falls back to building its style directly.
+ */
+const styleCache = new Map<number, CSSProperties>();
+
+const spanStyle = (s: OutputSpan): CSSProperties => {
+  if (s.styleId === undefined) return buildSpanStyle(s);
+  let style = styleCache.get(s.styleId);
+  if (!style) {
+    style = buildSpanStyle(s);
+    styleCache.set(s.styleId, style);
+  }
+  return style;
+};
+
+const OutputLine = ({ spans, severity, lineNo, showLineNo }: OutputContentLineProps) => {
+  const { ideCommandsService } = useAppServices();
+
+  const activate = async (s: OutputSpan) => {
+    if (!s.actionable) return;
+    if ((s.data as ConsoleAction)?.type === "@navigate") {
+      const payload = (s.data as ConsoleAction).payload;
+      if (!payload) return;
+      await ideCommandsService.executeCommand(
+        `nav "${payload.file}" ${payload.line != undefined ? payload.line : ""} ${
+          payload.column != undefined ? (payload.column + 1).toString() : ""
+        }`
+      );
+    } else if (typeof s.data === "function") {
+      s.data();
+    }
+  };
+
   return (
     <div className={styles.outputLine}>
-      {showLineNo && <span className={styles.lineNo}>{lineNo}:</span>}
-      {[...segments]}
+      {showLineNo && (
+        <span
+          className={classnames(styles.lineNo, {
+            [styles.lineNoError]: severity === "error",
+            [styles.lineNoWarning]: severity === "warning"
+          })}
+        >
+          {lineNo}:
+        </span>
+      )}
+      {(spans ?? []).map((s, idx) =>
+        s.actionable ? (
+          /*
+           * A real <button>.
+           *
+           * This was a bare <span> with an `onClick` that runs an IDE `nav` command — reachable
+           * with a mouse and by nothing else. Same treatment the toolbar and tab controls got in
+           * Phase 2: the element that behaves like a button is a button, and the focus ring comes
+           * from the app's single `focus-ring` mixin.
+           */
+          <button
+            key={idx}
+            type="button"
+            className={styles.actionable}
+            style={spanStyle(s)}
+            onClick={() => activate(s)}
+          >
+            {s.text}
+          </button>
+        ) : (
+          <span key={idx} style={spanStyle(s)}>
+            {s.text}
+          </span>
+        )
+      )}
     </div>
   );
 };

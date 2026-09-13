@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!--
+    Klive Z80 assembly source file, converted from the "file-kz80-asm" PNG pair
+    in image-defs.ts, and replacing both of them - the PNGs needed a "-light"
+    variant, this needs none.
+
+    Same construction as file-sjasmp.svg: a coloured tile carrying a white
+    letter, so the icon brings its own contrast to the four explorer row
+    backgrounds (#202020, #f1f1f1, #002952, #0057b3) instead of depending on
+    them.
+
+    The tile colour is NOT either source colour, and that is deliberate. The
+    PNGs used #00FFFF on dark and #00A0FF on light - the pair differed in the
+    glyph, not just the frame, because pure cyan is invisible on a light row
+    (1.1:1). Neither works as a tile behind white: #00FFFF scores 1.25:1 against
+    white and #00A0FF only 2.8:1. #0078C0 is the light variant's blue darkened
+    until it does: white reads 4.7:1 on it, and the tile itself holds 4.2:1 on
+    the light row and 3.5:1 on the dark one.
+
+    Like file-sjasmp.svg this icon deliberately ignores `currentColor`; it is
+    self-contained, so the `fill` the explorer passes has no effect.
+  -->
+
+  <!-- Brand tile -->
+  <rect x="2" y="2" width="20" height="20" rx="3" fill="#0078C0" stroke="none"/>
+
+  <!-- "K", stroked so it stays crisp at the 16px the explorer renders it at -->
+  <g fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 7V17"/>
+    <path d="M15.3 7 9.2 12.7"/>
+    <path d="M11.5 10.6 15.6 17"/>
+  </g>
+</svg>

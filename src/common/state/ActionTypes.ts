@@ -7,6 +7,7 @@ export interface ActionTypes {
   IDE_LOADED: null;
   IS_WINDOWS: null;
   SET_THEME: null;
+  SET_ACCENT: null;
   IDE_FOCUSED: null,
   EMU_FOCUSED: null,
   DIM_MENU: null,
@@ -92,6 +93,7 @@ export interface ActionTypes {
   ADD_WATCH: null;
   REMOVE_WATCH: null;
   CLEAR_WATCH: null;
+  SET_WATCHES: null;
 
   // --- Screen recording
   SET_SCREEN_RECORDING_AVAILABLE: null;

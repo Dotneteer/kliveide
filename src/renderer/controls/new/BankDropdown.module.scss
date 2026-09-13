@@ -1,65 +1,114 @@
+/*
+ * This is a toolbar control that also appears inside a dialog — the breakpoint dialog's partition
+ * picker. It had `border: none` over `--bg-color-dropdown-input` (`--surface-raised`), which is
+ * `#ffffff` in the light tone: visible on a toolbar's `--surface-chrome` ground, and completely
+ * invisible on a dialog body, which is also `#ffffff`. The edge is the same one `Dropdown` and
+ * `TextInput` now carry, and it matches the sprite editor's own small controls.
+ */
 .SelectTrigger {
-    display: flex;
-    align-items: center;
-    justify-content: start;
-    background-color: var(--bg-color-dropdown-input);
-    color: var(--color-dropdown-input);
-    width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    border: none;
-    padding: 2px 4px 2px 8px;
-    border-radius: 4px;
-  
-    &:focus {
-      outline: 1px solid var(--border-color-dropdown-menu);
-    }
-  
-    &.value {
-      align-self: flex-end;
-    }
-  }
-  
-  .SelectContent {
-    background-color: var(--bg-color-dropdown-input);
-    color: var(--color-dropdown-input);
-    border-radius: 4px;
-    padding: 2px 4px;
-    z-index: 100;
-  }
-  
-  .SelectItem {
-    flex-direction: row;
-    margin: 1px 2px;
-    width: 18px;
-    border: none;
-    font-size: 0.8em;
-    text-align: center;
-    cursor: pointer;
-    border: 2px solid transparent;
-  
-    &:focus {
-      outline: 2px solid var(--border-color-dropdown-menu);
-    }
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  background-color: var(--bg-color-dropdown-input);
+  color: var(--color-dropdown-input);
+  width: 100%;
+  height: var(--size-controlSm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid var(--border-color-dropdown-input);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-200);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+  outline: none;
 
-    &.selected {
-      background-color: var(--bg-color-dropdown-menu-selected);
-    }
-
-    &.decimal {
-      width: 24px;
-    }
-
-    &.wide {
-      width: 50px;
-    }
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
   }
 
-  .SelectSeparator {
-    width: 100%;
-    height: 2px;
-    background-color: var(--bgcolor-disass-hover);
-    margin: 4px 2px;
+  &[data-state="open"] {
+    border-color: var(--accent-solid);
   }
-  
+
+  &.value {
+    align-self: flex-end;
+  }
+}
+
+.SelectContent {
+  background-color: var(--bg-color-dropdown-menu);
+  color: var(--color-dropdown-menu);
+  border: 1px solid var(--border-color-dropdown-menu);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-2);
+  /* Portalled out of the dialog, so it has to clear `--z-modal` rather than sit at `--z-overlay`. */
+  z-index: calc(var(--z-modal) + 1);
+}
+
+/*
+ * The chooser's one grid.
+ *
+ * A caption column that sizes to its own content, then sixteen cell columns shared by every row —
+ * so `M3` lands above bank `03` without anyone choosing a pixel width. The previous layout was a
+ * flex row per block with a hardcoded 72px caption, which "DivMMC RAM" overflowed straight into the
+ * chips beside it.
+ *
+ * `max-content` on the cell columns keeps them uniform because every label is the same length; a
+ * decimal view widens all of them together rather than one row.
+ */
+.grid {
+  display: grid;
+  grid-template-columns: max-content repeat(16, max-content);
+  align-items: center;
+  column-gap: 6px;
+  row-gap: 4px;
+  padding: 8px 10px;
+}
+
+/*
+ * The caption naming a block — "DivMMC RAM" above `M0`..`MF`.
+ *
+ * Explicitly in column 1, which is also what makes each block start a fresh grid row.
+ */
+.caption {
+  grid-column: 1;
+  justify-self: end;
+  padding-right: 4px;
+  color: var(--color-secondary-label);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+/** Opens the bank grid in column 2, since banks carry no caption to place there. */
+.bankRowStart {
+  grid-column-start: 2;
+}
+
+.SelectItem {
+  padding: 1px 3px;
+  border: none;
+  border-radius: 3px;
+  font-size: 0.8em;
+  text-align: center;
+  justify-self: stretch;
+  cursor: pointer;
+  outline: 2px solid transparent;
+
+  &:focus {
+    outline-color: var(--border-color-dropdown-menu);
+  }
+
+  &.selected {
+    background-color: var(--bg-color-dropdown-menu-selected);
+  }
+}
+
+.SelectSeparator {
+  /* --- Spans the whole grid, caption column included. */
+  grid-column: 1 / -1;
+  height: 1px;
+  background-color: var(--bgcolor-disass-hover);
+  margin: 4px 0;
+}

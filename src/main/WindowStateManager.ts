@@ -4,6 +4,10 @@ import { screen } from "electron";
 
 const EVENT_HANDLING_DELAY = 100;
 
+// --- Minimum overlap (in pixels) between a window and a display for the window to count
+// --- as reachable. Enough that the user can still grab the title bar and drag it back.
+const MIN_VISIBLE_PIXELS = 96;
+
 interface IWindowStateManager {
   get x(): number;
   get y(): number;
@@ -106,13 +110,23 @@ export function createWindowStateManager(
     };
   }
 
-  // --- Tests if the current window is within the specified bounds
-  function windowWithinBounds(bounds: Rectangle): boolean {
+  // --- Tests if enough of the current window overlaps the specified display for the window
+  // --- to be reachable. This deliberately checks overlap rather than full containment: a
+  // --- containment test rejects any window that merely overhangs a screen edge, which is
+  // --- routine on Windows. Window bounds there include the invisible resize border, and
+  // --- fractional DPI scaling (2560px at 150% reports as 1707 DIP) leaves an edge-snapped
+  // --- window a few pixels wider than the display it sits on. Such a window is fully
+  // --- visible to the user, so resetting it to defaults loses the state they expected to
+  // --- keep. Windows that are genuinely off-screen (for example on a monitor that has
+  // --- since been disconnected) still fail this test and are reset.
+  function windowVisibleOnDisplay(bounds: Rectangle): boolean {
+    const visibleWidth =
+      Math.min(state.x + state.width, bounds.x + bounds.width) - Math.max(state.x, bounds.x);
+    const visibleHeight =
+      Math.min(state.y + state.height, bounds.y + bounds.height) - Math.max(state.y, bounds.y);
     return (
-      state.x >= bounds.x &&
-      state.y >= bounds.y &&
-      state.x + state.width <= bounds.x + bounds.width &&
-      state.y + state.height <= bounds.y + bounds.height
+      visibleWidth >= Math.min(MIN_VISIBLE_PIXELS, state.width) &&
+      visibleHeight >= Math.min(MIN_VISIBLE_PIXELS, state.height)
     );
   }
 
@@ -165,7 +179,7 @@ export function createWindowStateManager(
   // --- Ensure the window is visible
   function ensureWindowVisibleOnSomeDisplay() {
     const visible = screen.getAllDisplays().some((display) => {
-      return windowWithinBounds(display.bounds);
+      return windowVisibleOnDisplay(display.bounds);
     });
 
     if (!visible) {

@@ -6,7 +6,7 @@ import { createTestNextMachine, TestZxNextMachine } from "./TestNextMachine";
  *
  * strategy: we manipulate the machine's NMI-related fields directly
  * (rather than running a full Z80 fetch cycle) because wiring real
- * ROM into place and running instructions is covered by e2e tests.
+ * ROM into place and running instructions is out of scope here.
  * Here we focus on the state-machine transitions.
  */
 describe("NmiStateMachine", async () => {

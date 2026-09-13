@@ -2,7 +2,9 @@ import { MF_BANK, MF_ROM } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import type { EmuApi } from "@common/messaging/EmuApi";
 import type { DropdownOption } from "@renderer/controls/Dropdown";
+import type { PartitionOption } from "@renderer/features/memory/memoryViewModel";
 import { useEffect, useState } from "react";
+import { createSegmentOptions, derivePartitionOptions } from "@renderer/features/memory/memoryViewModel";
 
 export type DisassemblyMachineSetupState = {
   allowViews: boolean;
@@ -10,6 +12,8 @@ export type DisassemblyMachineSetupState = {
   isInitializing: boolean;
   partitionLabels: Record<number, string>;
   segmentOptions: DropdownOption[];
+  /** Every partition, for the matrix-shaped chooser. */
+  partitionOptions: PartitionOption[];
   showBanks: boolean;
   showRoms: boolean;
   setupVersion: number;
@@ -21,26 +25,25 @@ const initialSetupState: DisassemblyMachineSetupState = {
   isInitializing: true,
   partitionLabels: {},
   segmentOptions: [],
+  partitionOptions: [],
   showBanks: false,
   showRoms: false,
   setupVersion: 0
 };
 
+/**
+ * The disassembly view's partition options.
+ *
+ * A re-export rather than a second implementation: this was a byte-for-byte copy of
+ * `createSegmentOptions`, so the two views could drift apart in exactly the way this plan exists to
+ * stop. Kept as a named function because callers and tests refer to it.
+ */
 export function createDisassemblySegmentOptions(
   labels: Record<number, string>,
-  ramBankValue: number
+  ramBankValue: number,
+  descriptions: Record<number, string> = {}
 ): DropdownOption[] {
-  if (ramBankValue > 8) {
-    return [];
-  }
-
-  return Object.keys(labels)
-    .map((label) => parseInt(label, 10))
-    .sort((a, b) => (a < 0 && b < 0 ? b - a : a - b))
-    .map((key) => ({
-      value: key.toString(),
-      label: key < 0 ? `ROM ${-key - 1}` : `BANK ${key}`
-    }));
+  return createSegmentOptions(labels, ramBankValue, descriptions);
 }
 
 export function getDisassemblyMachineCapabilities(machineId: string | undefined): {
@@ -67,7 +70,7 @@ export function getDisassemblyMachineCapabilities(machineId: string | undefined)
 
 export function useDisassemblyMachineSetup(
   machineId: string | undefined,
-  emuApi: Pick<EmuApi, "getPartitionLabels">
+  emuApi: Pick<EmuApi, "getPartitionLabels" | "getPartitionDescriptions" | "getPartitionGroups">
 ): DisassemblyMachineSetupState {
   const [setup, setSetup] = useState<DisassemblyMachineSetupState>(initialSetupState);
 
@@ -81,7 +84,11 @@ export function useDisassemblyMachineSetup(
     const capabilities = getDisassemblyMachineCapabilities(machineId);
 
     void (async () => {
-      const labels = await emuApi.getPartitionLabels();
+      const [labels, descriptions, groups] = await Promise.all([
+        emuApi.getPartitionLabels(),
+        emuApi.getPartitionDescriptions(),
+        emuApi.getPartitionGroups()
+      ]);
 
       if (cancelled) {
         return;
@@ -92,7 +99,12 @@ export function useDisassemblyMachineSetup(
         displayBankMatrix: capabilities.displayBankMatrix,
         isInitializing: false,
         partitionLabels: labels,
-        segmentOptions: createDisassemblySegmentOptions(labels, capabilities.ramBankValue),
+        segmentOptions: createDisassemblySegmentOptions(
+          labels,
+          capabilities.ramBankValue,
+          descriptions
+        ),
+        partitionOptions: derivePartitionOptions(labels, descriptions, groups),
         showBanks: capabilities.showBanks,
         showRoms: capabilities.showRoms,
         setupVersion: prev.setupVersion + 1

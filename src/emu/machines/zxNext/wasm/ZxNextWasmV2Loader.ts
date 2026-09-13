@@ -819,14 +819,13 @@ async function getCompiledV2Module(
 }
 
 async function defaultReadV2Artifact(artifactName: string): Promise<ArrayBuffer> {
+  // Built via new URL("./dist/" + artifactName, import.meta.url), which is Vite's
+  // supported dynamic-asset-URL pattern (see the "New URL Import Meta URL" section of
+  // the Vite static-asset-handling guide). In a production build Vite content-hashes the
+  // emitted file (e.g. '...-<hash>.wasm'), so the resolved URL will NOT end with
+  // the literal artifactName - that is expected and does not mean the file is missing.
+  // A genuinely missing/broken artifact is reported by the fetch() checks below instead.
   const artifactUrl = new URL(`./dist/${artifactName}`, import.meta.url);
-  if (!artifactUrl.toString().endsWith(`/${artifactName}`)) {
-    throw new Error(
-      `ZX Spectrum Next WASM v2 artifact '${artifactName}' was not found among the packaged renderer assets ` +
-      `(resolved to '${artifactUrl.toString()}' instead). This build is missing its compiled WASM binary ` +
-      `- verify 'npm run build:zxnext-wasm' produced a non-empty file before packaging.`
-    );
-  }
 
   let response: Response;
   try {

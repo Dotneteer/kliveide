@@ -8,8 +8,6 @@ export type ThemeProperties = {
   // --- Font attributes
   "--shell-windows-font-family"?: string;
   "--shell-font-family"?: string;
-  "--shell-windows-monospace-font-family"?: string;
-  "--shell-monospace-font-family"?: string;
 
   // --- Global theme attributes
   "--color-text"?: string;
@@ -19,6 +17,7 @@ export type ThemeProperties = {
   "--bgcolor-scrollbar"?: string;
   "--bgcolor-scrollbar-thumb"?: string;
   "--bgcolor-attached-shadow"?: string;
+  "--bgcolor-attached-shadow-line"?: string;
   "--bgcolor-button-disabled"?: string;
   "--color-button-disabled"?: string;
   "--bgcolor-button"?: string;
@@ -26,14 +25,23 @@ export type ThemeProperties = {
   "--bgcolor-button-pointed"?: string;
   "--color-button-pointed"?: string;
   "--color-button-focused"?: string;
+  "--bgcolor-button-secondary"?: string;
+  "--color-button-secondary"?: string;
+  "--border-button-secondary"?: string;
+  "--bgcolor-button-secondary-pointed"?: string;
+  "--bgcolor-button-danger"?: string;
+  "--bgcolor-button-danger-pointed"?: string;
+  "--color-button-danger"?: string;
   "--color-text-hilite"?: string;
   "--bgcolor-input"?: string;
   "--color-input"?: string;
+  "--border-input"?: string;
   "--bgcolor-item-hover"?: string,
 
   // --- Drowpdown
   "--bg-color-dropdown-input"?: string;
   "--color-dropdown-input"?: string;
+  "--border-color-dropdown-input"?: string;
   "--bg-color-dropdown-menu"?: string;
   "--color-dropdown-menu"?: string;
   "--bg-color-dropdown-menu-pointed"?: string;
@@ -66,8 +74,6 @@ export type ThemeProperties = {
   "--border-modal"?: string;
   "--border-modal-section"?: string;
   "--shadow-modal"?: string;
-  "--color-modal-accent"?: string;
-  "--bgimage-modal-header"?: string;
   "--radius-modal"?: string;
   "--bgcolor-modal-header"?: string;
   "--color-modal-header"?: string;
@@ -75,6 +81,10 @@ export type ThemeProperties = {
   "--color-modal-body"?: string;
   "--bgcolor-modal-footer"?: string;
   "--color-modal-footer"?: string;
+  "--bgcolor-modal-chip"?: string;
+  "--color-modal-chip"?: string;
+  "--bgcolor-modal-chip-danger"?: string;
+  "--color-modal-chip-danger"?: string;
 
   // --- Console colors
   "--console-ansi-black"?: string;
@@ -143,7 +153,16 @@ export type ThemeProperties = {
   "--color-chevron"?: string;
   "--color-chevron-selected"?: string;
   "--color-panel-header"?: string;
+  "--color-panel-header-active"?: string;
   "--color-panel-border"?: string;
+  "--bgcolor-panelHeader"?: string;
+  "--bgcolor-panelHeader-hover"?: string;
+  "--color-panelHeader-rule"?: string;
+  "--color-panelHeader-rule-open"?: string;
+  "--color-panel-separator"?: string;
+  "--color-scrollbar-handle"?: string;
+  "--color-scrollbar-handle-hover"?: string;
+  "--color-scrollbar-handle-active"?: string;
   "--color-panel-focused"?: string;
 
   // --- Emulator area
@@ -248,6 +267,8 @@ export type ThemeProperties = {
   "--color-ruler-sprite-editor"?: string;
   "--color-dash-sprite-editor"?: string;
   "--color-pos-sprite-editor"?: string;
+  "--color-grid-sprite-editor"?: string;
+  "--color-guide-sprite-editor"?: string;
 
   // --- Switch
   "--color-switch-on"?: string;
@@ -331,9 +352,35 @@ export type ThemeManager = {
 };
 
 /**
- * Represents information about an icon in the registry.
+ * Paint attributes copied verbatim from the root element of a source SVG file.
+ *
+ * Lucide-style icons carry their appearance on the root (`fill="none"`,
+ * `stroke="currentColor"`, `stroke-width="2"`, ...), so those attributes must
+ * survive the trip from the file into the rendered element.
  */
-export type IconInfo = {
+export type IconPaintAttrs = {
+  fill?: string;
+  stroke?: string;
+  "stroke-width"?: string;
+  "stroke-linecap"?: string;
+  "stroke-linejoin"?: string;
+  "fill-rule"?: string;
+  "clip-rule"?: string;
+};
+
+/**
+ * Represents information about a single-path icon in the registry.
+ *
+ * This is the legacy (and still the most common) icon shape: one filled path
+ * painted with the theme colour. Every entry in `icon-defs.ts` uses it.
+ */
+export type PathIconInfo = {
+  /**
+   * Discriminator. Optional so that plain object literals in `icon-defs.ts`
+   * keep type-checking without a `kind` field.
+   */
+  kind?: "path";
+
   /**
    * The name (alias) of the icon.
    */
@@ -369,3 +416,57 @@ export type IconInfo = {
    */
   "clip-rule"?: string;
 };
+
+/**
+ * Represents an icon loaded from an `.svg` file in `src/renderer/assets/icons`.
+ *
+ * Unlike `PathIconInfo`, this variant keeps arbitrary inner markup, which is
+ * what multi-element and stroke-based icon sets (such as Lucide) need.
+ */
+export type MarkupIconInfo = {
+  /**
+   * Discriminator.
+   */
+  kind: "markup";
+
+  /**
+   * The name (alias) of the icon, derived from the file name.
+   */
+  name: string;
+
+  /**
+   * Sanitized inner markup of the source `<svg>` element.
+   */
+  content: string;
+
+  /**
+   * The viewBox of the source `<svg>`, for example "0 0 24 24".
+   */
+  viewBox: string;
+
+  /**
+   * Intrinsic icon width, derived from the viewBox.
+   */
+  width: number;
+
+  /**
+   * Intrinsic icon height, derived from the viewBox.
+   */
+  height: number;
+
+  /**
+   * Root paint attributes to re-apply on the rendered `<svg>`.
+   */
+  paint: IconPaintAttrs;
+
+  /**
+   * A concrete colour found on the source root (neither "none" nor
+   * "currentColor"), used as the icon's default fill.
+   */
+  fill?: string;
+};
+
+/**
+ * Represents information about an icon in the registry.
+ */
+export type IconInfo = PathIconInfo | MarkupIconInfo;

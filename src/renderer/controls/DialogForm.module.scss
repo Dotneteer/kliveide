@@ -9,15 +9,21 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
+/*
+ * The form's own footer reaches out to the dialog's edges with negative margins, so it has to match
+ * `Modal`'s `.dialogFooter` exactly — same surface, same seam, same padding, same corner radii.
+ * The magic numbers are `--space-4`, the body padding it is cancelling.
+ */
 .footer {
   display: flex;
   flex-direction: row-reverse;
-  gap: 8px;
-  margin: 20px -20px -20px;
-  padding: 12px 20px;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-4) calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
+  padding: var(--space-2) var(--space-4);
   border-top: var(--border-modal-section);
   background: var(--bgcolor-modal-footer);
   border-bottom-left-radius: var(--radius-modal);

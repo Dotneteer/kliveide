@@ -1,36 +1,66 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * Hover and active are CSS states on a real <button>. The icon inherits `currentColor`, so the
+ * colour transitions with the button instead of being recomputed in JS from a `pointed` flag.
+ */
 .activityButton {
-    @include fix-height-panel(48px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
+  @include fix-height-panel(var(--size-activitybutton));
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-activitybar);
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
 
-    &:hover {
-        background: var(--bgcolor-activitybar-pointed);
-    }
-};
+  &:hover {
+    background: var(--bgcolor-activitybar-pointed);
+    color: var(--color-activitybar-active);
+  }
+
+  @include focus-ring(-2px);
+}
 
 .iconWrapper {
-    @include fill-parent-flex;
-    justify-content: center;
-    align-items: center;
+  @include fill-parent-flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
 }
 
-.icon {
-    fill: var(--color-activitybar);
-}
-
-.iconPointed {
-    fill: var(--color-activitybar-pointed);
-}
-
+/*
+ * The active item.
+ *
+ * This used to be a solid accent fill of the whole 48px cell — the single most dated element in the
+ * IDE, and a big saturated block against everything around it. It is now the VS Code idiom: a 2px
+ * accent bar spanning the full button height on the inner edge, the icon at accent colour, and a
+ * subtle surface behind it.
+ *
+ * The bar used to float as a short, rounded stripe inset 8px from the top and bottom — closer to a
+ * floating pill than the edge-to-edge marker this is meant to read as. Full height (0/0 insets, no
+ * corner rounding, since it now touches both button edges) matches the reference.
+ */
 .active {
-    background: var(--bgcolor-activitybar-active);
+  background: var(--bgcolor-activitybar-active);
+  color: var(--color-activitybar-active);
 
-    &:hover {
-        background: var(--bgcolor-activitybar-activepointed);
-    }
+  &::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--accent-solid);
+  }
+
+  &:hover {
+    background: var(--bgcolor-activitybar-activepointed);
+  }
 }
-

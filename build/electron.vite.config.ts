@@ -13,7 +13,8 @@ const alias = {
   "@emu": resolve("src/emu"),
   "@appIde": resolve("src/renderer/appIde"),
   "@main": resolve("src/main"),
-  "@controls": resolve("src/renderer/controls")
+  "@controls": resolve("src/renderer/controls"),
+  "@mvc": resolve("src/renderer/mvc")
 };
 
 export default defineConfig({

@@ -4,7 +4,7 @@ import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
 import { Layer2Screen } from "@renderer/controls/Next/Layer2Screen";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
-import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
+import { GenericFilePanel } from "../helpers/GenericFilePanel";
 import { Row } from "@renderer/controls/layout/Row";
 import { LabeledText } from "@renderer/controls/layout/LabeledText";
 import { LabeledFlag } from "@renderer/controls/layout/LabeledFlag";
@@ -73,7 +73,7 @@ const NexFileViewerPanel = ({
   viewState
 }: DocumentProps<NexFileViewState>) => {
   return createElement(
-    GenericFileViewerPanel<NexFileContents, NexFileViewState>,
+    GenericFilePanel<NexFileContents, NexFileViewState>,
     {
       document,
       contents,
@@ -230,6 +230,7 @@ const NexFileViewerContents = ({
         >
           <NextPaletteViewer
             palette={fi?.palette}
+            cellSize={29}
             allowSelection={true}
           />
         </ExpandableRow>

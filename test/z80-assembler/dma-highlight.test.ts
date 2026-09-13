@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { asmKz80LanguageProvider } from "@renderer/appIde/project/asmKz80LangaugeProvider";
+import { asmKz80LanguageProvider } from "@renderer/appIde/project/asmKz80LanguageProvider";
 
 // Cast to any so we can inspect the language definition internals without
 // needing the full MonacoAwareCustomLanguageInfo type to be re-exported.

@@ -1,14 +1,11 @@
-import styles from "./ShrFileViewerPanel.module.scss";
-import { Label } from "@renderer/controls/layout/Label";
+import { DataPanel, PanelHeader } from "@renderer/controls/data";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 
 const ShrFileViewerPanel = ({}: DocumentProps) => {
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <Label text=".SHR Viewer" />
-      </div>
-    </div>
+    <DataPanel>
+      <PanelHeader title=".SHR Viewer" />
+    </DataPanel>
   );
 };
 

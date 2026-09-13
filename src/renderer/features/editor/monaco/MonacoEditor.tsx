@@ -1,4 +1,5 @@
 import Editor from "@monaco-editor/react";
+import { DEFAULT_ACCENT, isAccentId, type AccentId } from "@common/theming/accents";
 import * as monacoEditor from "monaco-editor";
 import AutoSizer from "../../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
@@ -23,6 +24,7 @@ import {
 } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { getIsWindows } from "@renderer/os-utils";
+import { getMonospaceFontFamily } from "@common/settings/monospace-fonts";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { createEmuApi } from "@common/messaging/EmuApi";
 import { createMainApi } from "@common/messaging/MainApi";
@@ -32,6 +34,7 @@ import {
   SETTING_EDITOR_AUTOCOMPLETE,
   SETTING_EDITOR_DETECT_INDENTATION,
   SETTING_EDITOR_FONT_SIZE,
+  SETTING_EDITOR_FONT_FAMILY,
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
   SETTING_EDITOR_INSERT_SPACES,
   SETTING_EDITOR_RENDER_WHITESPACE,
@@ -46,7 +49,7 @@ import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { languageIntelSingleton } from "@renderer/appIde/services/LanguageIntelService";
 import { notifySemanticTokensChanged, type RenameEdit } from "@renderer/appIde/services/z80-providers";
-import { initializeMonaco, isMonacoInitialized } from "./monacoBootstrap";
+import { defineLanguageThemes, initializeMonaco, isMonacoInitialized } from "./monacoBootstrap";
 import {
   setMonacoExternalEditHandler,
   setMonacoNavigationHandler,
@@ -55,6 +58,7 @@ import {
 import { applyExternalRenameEdits } from "./monacoExternalEdits";
 import { applyMonacoUserOptions } from "./monacoEditorOptions";
 import { registerMonacoDebugShortcuts } from "./monacoDebugShortcuts";
+import { getNormalizedLineNumberSelection } from "./monacoLineNumberSelection";
 
 export { initializeMonaco } from "./monacoBootstrap";
 
@@ -65,6 +69,10 @@ type Decoration = monacoEditor.editor.IModelDeltaDecoration;
 type EditorDecorationsCollection = monacoEditor.editor.IEditorDecorationsCollection;
 type MarkdownString = monacoEditor.IMarkdownString;
 
+// --- Monaco's MouseTargetType enum is visible in types, but not exported by
+// --- the renderer bundle entry at runtime.
+const MONACO_GUTTER_GLYPH_MARGIN = 2;
+const MONACO_GUTTER_LINE_NUMBERS = 3;
 
 // --- This type represents the API that we can access from outside
 export type EditorApi = DocumentApi & {
@@ -143,11 +151,20 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   // --- Recognize app theme changes and update Monaco editor theme accordingly
   const { theme } = useTheme();
+  const selectedAccent = useSelector((s) => s.accent);
+  const accentId: AccentId = isAccentId(selectedAccent) ? selectedAccent : DEFAULT_ACCENT;
+  const monacoRef = useRef<typeof monacoEditor>();
   const mainApi = useMainApi();
   const [monacoTheme, setMonacoTheme] = useState("");
 
   // --- Respond to editor font size change requests
   const editorFontSize = useGlobalSetting(SETTING_EDITOR_FONT_SIZE);
+
+  // --- Respond to editor font family change requests. The setting stores a platform-independent
+  // --- id; resolving it here keeps a value written on another platform from breaking the editor.
+  const editorFontId = useGlobalSetting(SETTING_EDITOR_FONT_FAMILY);
+  const isWindowsPlatform = useSelector((s) => s.isWindows ?? false);
+  const editorFontFamily = getMonospaceFontFamily(editorFontId, isWindowsPlatform);
 
   // --- We use these services to respond to various IDE events
   const { store, messenger } = useRendererContext();
@@ -177,6 +194,11 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   // --- True when a compile was requested while one was already in progress
   const pendingCompile = useRef(false);
+
+  // --- Line-number clicks select the right text, but Monaco leaves the active
+  // --- cursor on the next line. Keep the clicked line until mouse-up, then
+  // --- normalize only simple single-line gutter selections.
+  const lineNumberSelectionClick = useRef<number | null>(null);
 
   // --- The name of the resource this editor displays
   const resourceName = document.node?.projectPath;
@@ -262,22 +284,27 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     quickSuggestionDelay
   ]);
 
-  // --- Respond to theme changes
-  useEffect(() => {
-    // --- Set the Monaco editor theme according to the document language
+  /*
+   * Respond to theme *and accent* changes.
+   *
+   * The syntax palette follows the accent (§8.1), so a theme's contents change while its name stays
+   * the same. Re-defining is therefore not enough on its own: React would not re-apply an unchanged
+   * `theme` prop, so `setTheme` is called explicitly after the definitions are refreshed.
+   */
+  const themeNameFor = (tone: string) => {
     const languageInfo = customLanguagesRegistry.find((l) => l.id === document.language);
+    return languageInfo ? `${languageInfo.id}-${tone}` : tone === "light" ? "vs" : "vs-dark";
+  };
 
-    // --- Default theme name according to the Klive theme's tone
-    let themeName = theme.tone === "light" ? "vs" : "vs-dark";
-    if (
-      (languageInfo?.lightTheme && theme.tone === "light") ||
-      (languageInfo?.darkTheme && theme.tone === "dark")
-    ) {
-      // --- The custom language supports the current theme
-      themeName = `${languageInfo.id}-${theme.tone}`;
+  useEffect(() => {
+    const monaco = monacoRef.current;
+    const themeName = themeNameFor(theme.tone);
+    if (monaco) {
+      defineLanguageThemes(monaco, theme.tone as "light" | "dark", accentId);
+      monaco.editor.setTheme(themeName);
     }
     setMonacoTheme(themeName);
-  }, [theme, document.language]);
+  }, [theme, accentId, document.language]);
 
   // --- Respond to readonly and locked document changes
   useEffect(() => {
@@ -453,7 +480,18 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   }, [store, mainApi, allowBackgroundCompile]);
 
   // --- Initializes the editor when mounted
-  const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, _: typeof monacoEditor): void => {
+  const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, monaco: typeof monacoEditor): void => {
+    /*
+     * Held so the theme effect can re-define the language themes when the accent changes.
+     *
+     * The themes must also be defined *here*, not only in that effect: the effect runs on mount
+     * while this callback has not fired yet, so `monacoRef` is still empty and the first pass
+     * defines nothing. Without this the editor would open on Monaco's bare `vs-dark` and only pick
+     * up the Klive palette on a later theme or accent change.
+     */
+    monacoRef.current = monaco;
+    defineLanguageThemes(monaco, theme.tone as "light" | "dark", accentId);
+    monaco.editor.setTheme(themeNameFor(theme.tone));
     // --- Restore the view state to display the editor is it has been left
     mounted.current = false;
     editor.current = ed;
@@ -553,6 +591,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     const disposables: monacoEditor.IDisposable[] = [];
     disposables.push(
       ed.onMouseDown(handleEditorMouseDown),
+      ed.onMouseUp(handleEditorMouseUp),
       ed.onMouseLeave(handleEditorMouseLeave),
       ed.onMouseMove(handleEditorMouseMove),
       ed.onDidChangeCursorPosition(saveViewState),
@@ -833,6 +872,12 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         <Editor
           options={{
             fontSize: editorFontSize,
+            // --- Chosen in View | Editor Options | Font Family; defaults to the bundled
+            // --- Iosevka, whose 0.5em glyphs fit noticeably more columns than the platform
+            // --- default mono. Ligatures stay off - they are wrong in Z80 source and in
+            // --- hex/disassembly listings.
+            fontFamily: editorFontFamily,
+            fontLigatures: false,
             readOnly: document.isReadOnly || (isProjectDebugging && document.isLocked),
             glyphMargin: languageInfo?.supportsBreakpoints,
             "semanticHighlighting.enabled": true,
@@ -991,7 +1036,23 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
    * @param e
    */
   function handleEditorMouseDown(e: monacoEditor.editor.IEditorMouseEvent): void {
-    if (e.event.leftButton && e.target?.type === 2) {
+    const isPlainLineNumberClick =
+      e.event.leftButton &&
+      !e.event.altKey &&
+      !e.event.ctrlKey &&
+      !e.event.metaKey &&
+      !e.event.shiftKey &&
+      e.event.detail === 1 &&
+      e.target?.type === MONACO_GUTTER_LINE_NUMBERS;
+
+    lineNumberSelectionClick.current = isPlainLineNumberClick
+      ? e.target.position.lineNumber
+      : null;
+
+    if (
+      e.event.leftButton &&
+      e.target?.type === MONACO_GUTTER_GLYPH_MARGIN
+    ) {
       // --- Breakpoint glyph is clicked
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
@@ -1022,6 +1083,30 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
           }
         }
       })();
+    }
+  }
+
+  /**
+   * Keeps the current-line highlight on the line selected through the line-number gutter.
+   * @param e
+   */
+  function handleEditorMouseUp(_e: monacoEditor.editor.IEditorMouseEvent): void {
+    const clickedLineNumber = lineNumberSelectionClick.current;
+    lineNumberSelectionClick.current = null;
+
+    if (!clickedLineNumber || !editor.current) {
+      return;
+    }
+
+    const model = editor.current.getModel();
+    const normalizedSelection = getNormalizedLineNumberSelection(
+      editor.current.getSelection(),
+      clickedLineNumber,
+      model?.getLineCount() ?? 0
+    );
+
+    if (normalizedSelection) {
+      editor.current.setSelection(normalizedSelection, "line-number-selection");
     }
   }
 

@@ -639,11 +639,21 @@ describe("DocumentTab", () => {
     expect(onSplitDown).toHaveBeenCalledTimes(1);
   });
 
-  it("reveals the close button when an inactive tab moves under the pointer", async () => {
+  it("always renders the close button, tagged for the stylesheet to reveal", async () => {
+    // Hover used to be React state: a module-global pointer cache plus an `elementFromPoint` probe
+    // re-derived it whenever tabs reordered or renamed under a stationary pointer, because
+    // `onMouseEnter` does not re-fire in that case. That is now plain CSS `:hover`, which the
+    // browser re-evaluates on layout changes for free.
+    //
+    // jsdom does not evaluate `:hover`, so the reveal itself cannot be asserted here. What can be —
+    // and what the old mechanism kept getting wrong — is that the button is always *rendered*, so
+    // the tab does not reflow when it appears, and that it carries the class the stylesheet keys on.
     vi.doUnmock("@renderer/features/documents/DocumentTab");
     vi.doMock("@controls/TabButton", () => ({
-      TabButton: ({ hide, iconName }: { hide?: boolean; iconName: string }) => (
-        <span data-testid="tab-close-state">{hide ? "hidden" : iconName}</span>
+      TabButton: ({ xclass, iconName }: { xclass?: string; iconName: string }) => (
+        <span data-testid="tab-close-state" data-xclass={xclass}>
+          {iconName}
+        </span>
       )
     }));
     vi.doMock("@controls/Tooltip", () => ({
@@ -671,31 +681,13 @@ describe("DocumentTab", () => {
 
     const { rerender } = render(<DocumentTab key="first" name="first.asm" />);
 
-    expect(screen.getByTestId("tab-close-state")).toHaveTextContent("hidden");
+    const closeButton = screen.getByTestId("tab-close-state");
+    expect(closeButton).toHaveTextContent("close");
+    expect(closeButton.getAttribute("data-xclass")).toBeTruthy();
 
-    fireEvent.mouseMove(screen.getByText("first.asm").closest("div"), {
-      clientX: 24,
-      clientY: 10
-    });
-
-    const originalElementFromPoint = document.elementFromPoint;
-    Object.defineProperty(document, "elementFromPoint", {
-      configurable: true,
-      value: vi.fn(() => screen.getByText("second.asm").closest("div"))
-    });
-
-    try {
-      rerender(<DocumentTab key="second" name="second.asm" />);
-
-      await waitFor(() =>
-        expect(screen.getByTestId("tab-close-state")).toHaveTextContent("close")
-      );
-    } finally {
-      Object.defineProperty(document, "elementFromPoint", {
-        configurable: true,
-        value: originalElementFromPoint
-      });
-    }
+    // Surviving a reorder is the case the deleted probe existed for.
+    rerender(<DocumentTab key="second" name="second.asm" />);
+    expect(screen.getByTestId("tab-close-state")).toHaveTextContent("close");
   });
 });
 

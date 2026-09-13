@@ -1,22 +1,31 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * A separator between toolbar groups.
+ *
+ * It used to be 9 x 38px inside a 34px-content toolbar — literally taller than the strip containing
+ * it, because content-box added its 4px padding on top of a declared 30px. It is now inset: a rule
+ * spanning 60% of the toolbar height, centred, so it reads as a divider rather than a full-height
+ * bar competing with the buttons.
+ */
 .toolbarSeparator {
   display: flex;
-  width: 1px;
-  height: 30px;
-  padding: 4px 4px;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-3);
+  height: 100%;
   flex-shrink: 0;
   flex-grow: 0;
 
   &.small {
-    height: 22px;
-    padding-bottom: 2px;
+    width: var(--space-2);
   }
 }
 
 .separator {
-  @include fill-parent-flex;
-  border-left: 1px solid var(--color-toolbar-separator);
+  width: 1px;
+  height: 60%;
+  background: var(--color-toolbar-separator);
   flex-shrink: 0;
   flex-grow: 0;
 }

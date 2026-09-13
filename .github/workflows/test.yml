@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22.x
           cache: npm
@@ -24,6 +24,11 @@ jobs:
 
       - name: Check ZX Spectrum 48K WASM artifact size
         run: npm run check:sp48-wasm-size
+
+      # Fails only on type errors that are not in build/type-errors-baseline.json, so the existing
+      # backlog does not block CI while it is being paid down. See scripts/check-types.cjs.
+      - name: Type-check
+        run: npm run build:check
 
       - name: Run unit and component tests
         run: npm run test:unit

@@ -5,10 +5,17 @@ import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { UlaState } from "@common/messaging/EmuApi";
-import { BitValue, FlagValue, SimpleValue } from "@renderer/controls/valuedisplay/Values";
-import { Col, SidePanel } from "@renderer/controls/valuedisplay/Layout";
+import { BitValue, FlagValue, SimpleValue } from "@renderer/controls/data/registers";
+import { DataPanel, DataRow } from "@renderer/controls/data";
+import regStyles from "@renderer/controls/data/Registers.module.scss";
+import styles from "./UlaPanel.module.scss";
 
-const LAB_WIDTH = 48;
+/**
+ * The token every value in this panel is drawn with. Labels stay on `--data-label`; see the comment
+ * over `--color-state-value` in `theming/tokens/componentAliases.ts` for why the panel takes one
+ * hue rather than several.
+ */
+const VALUE_FILL = "--color-state-value";
 
 export const UlaPanel = () => {
   const emuApi = useEmuApi();
@@ -28,117 +35,167 @@ export const UlaPanel = () => {
   };
 
   return (
-    <SidePanel>
-      <Col>
-        <SimpleValue label="FCL" value={ulaState?.fcl} tooltip="FrameClock" />
-        <SimpleValue label="FRM" value={ulaState?.frm} tooltip="#of frames rendered" />
-      </Col>
-      <Col>
-        <SimpleValue label="RAS" value={ulaState?.ras} tooltip="Current raster line" />
-        <SimpleValue label="POS" value={ulaState?.pos} tooltip="Pixel in the current line" />
-      </Col>
-      <Col>
-        <SimpleValue label="PIX" value={ulaState?.pix} tooltip="Pixel operation" />
-        <SimpleValue label="BOR" value={ulaState?.bor} tooltip="Current border color" />
-      </Col>
-      <Col>
-        <SimpleValue label="FLO" value={ulaState?.flo} tooltip="Floating bus value" />
-      </Col>
+    <DataPanel autoHeight>
+      <DataRow dense>
+        <SimpleValue
+          label="FCL"
+          value={ulaState?.fcl}
+          tooltip="FrameClock"
+          valueXclass={regStyles.stateValue}
+        />
+        <SimpleValue
+          label="FRM"
+          value={ulaState?.frm}
+          tooltip="#of frames rendered"
+          valueXclass={regStyles.stateValue}
+        />
+      </DataRow>
+      <DataRow dense>
+        <SimpleValue
+          label="RAS"
+          value={ulaState?.ras}
+          tooltip="Current raster line"
+          valueXclass={regStyles.stateValue}
+        />
+        <SimpleValue
+          label="POS"
+          value={ulaState?.pos}
+          tooltip="Pixel in the current line"
+          valueXclass={regStyles.stateValue}
+        />
+      </DataRow>
+      <DataRow dense>
+        <SimpleValue
+          label="PIX"
+          value={ulaState?.pix}
+          tooltip="Pixel operation"
+          valueXclass={regStyles.stateValue}
+        />
+        <SimpleValue
+          label="BOR"
+          value={ulaState?.bor}
+          tooltip="Current border color"
+          valueXclass={regStyles.stateValue}
+        />
+      </DataRow>
+      <DataRow dense>
+        <SimpleValue
+          label="FLO"
+          value={ulaState?.flo}
+          tooltip="Floating bus value"
+          valueXclass={regStyles.stateValue}
+        />
+      </DataRow>
       <Separator />
-      <Col>
-        <SimpleValue label="CON" value={ulaState?.con} tooltip="Contention tacts" fullWidth />
+      <DataRow dense>
+        <SimpleValue
+          label="CON"
+          value={ulaState?.con}
+          tooltip="Contention tacts"
+          valueXclass={regStyles.stateValue}
+        />
         <SimpleValue
           label="LCO"
           value={ulaState?.lco}
           tooltip="Contention tacts since last pause"
-          fullWidth
+          valueXclass={regStyles.stateValue}
         />
-      </Col>
-      <Col>
-        <FlagValue label="EAR" value={ulaState?.ear} tooltip="EAR bit value" />
-        <FlagValue label="MIC" value={ulaState?.mic} tooltip="MIC bit value" />
-      </Col>
+      </DataRow>
+      <DataRow dense>
+        <FlagValue label="EAR" value={ulaState?.ear} tooltip="EAR bit value" iconFill={VALUE_FILL} />
+        <FlagValue label="MIC" value={ulaState?.mic} tooltip="MIC bit value" iconFill={VALUE_FILL} />
+      </DataRow>
       <Separator />
-      <Col>
-        <Label text="KL0" width={LAB_WIDTH} tooltip="Keyboard line #0" />
+      <DataRow dense>
+        <Label text="KL0" className={styles.klLabel} tooltip="Keyboard line #0" />
         <KeyboardLine
           lineNo={0}
           value={ulaState?.keyLines?.[0]}
           titles={["Caps Shift", "Z", "X", "C", "V"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
-        <Label text="KL1" width={LAB_WIDTH} tooltip="Keyboard line #1" />
+      </DataRow>
+      <DataRow dense>
+        <Label text="KL1" className={styles.klLabel} tooltip="Keyboard line #1" />
         <KeyboardLine
           lineNo={1}
           value={ulaState?.keyLines?.[1]}
           titles={["A", "S", "D", "F", "G"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
-        <Label text="KL2" width={LAB_WIDTH} tooltip="Keyboard line #2" />
+      </DataRow>
+      <DataRow dense>
+        <Label text="KL2" className={styles.klLabel} tooltip="Keyboard line #2" />
         <KeyboardLine
           lineNo={2}
           value={ulaState?.keyLines?.[2]}
           titles={["Q", "W", "E", "R", "T"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
-        <Label text="KL3" width={LAB_WIDTH} tooltip="Keyboard line #3" />
+      </DataRow>
+      <DataRow dense>
+        <Label text="KL3" className={styles.klLabel} tooltip="Keyboard line #3" />
         <KeyboardLine
           lineNo={3}
           value={ulaState?.keyLines?.[3]}
           titles={["1", "2", "3", "4", "5"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
-        <Label text="KL4" width={LAB_WIDTH} tooltip="Keyboard line #4" />
+      </DataRow>
+      <DataRow dense>
+        <Label text="KL4" className={styles.klLabel} tooltip="Keyboard line #4" />
         <KeyboardLine
           lineNo={4}
           value={ulaState?.keyLines?.[4]}
           titles={["0", "9", "8", "7", "6"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
-        <Label text="KL5" width={LAB_WIDTH} tooltip="Keyboard line #5" />
+      </DataRow>
+      <DataRow dense>
+        <Label text="KL5" className={styles.klLabel} tooltip="Keyboard line #5" />
         <KeyboardLine
           lineNo={5}
           value={ulaState?.keyLines?.[5]}
           titles={["P", "O", "I", "U", "Y"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
-        <Label text="KL6" width={LAB_WIDTH} tooltip="Keyboard line #6" />
+      </DataRow>
+      <DataRow dense>
+        <Label text="KL6" className={styles.klLabel} tooltip="Keyboard line #6" />
         <KeyboardLine
           lineNo={6}
           value={ulaState?.keyLines?.[6]}
           titles={["Enter", "L", "K", "J", "H"]}
           clicked={keyClicked}
         />
-      </Col>
-      <Col>
-        <Label text="KL7" width={LAB_WIDTH} tooltip="Keyboard line #7" />
+      </DataRow>
+      <DataRow dense>
+        <Label text="KL7" className={styles.klLabel} tooltip="Keyboard line #7" />
         <KeyboardLine
           lineNo={7}
           value={ulaState?.keyLines?.[7]}
           titles={["Space", "Symbol Shift", "M", "N", "B"]}
           clicked={keyClicked}
         />
-      </Col>
+      </DataRow>
       {machineId === "sp128" && (
         <>
           <Separator />
-          <SimpleValue label="ROMP" value={ulaState?.romP} tooltip="Current ROM page" />
-          <SimpleValue label="RAMB" value={ulaState?.ramB} tooltip="Current RAM bank" />
+          <SimpleValue
+            label="ROMP"
+            value={ulaState?.romP}
+            tooltip="Current ROM page"
+            valueXclass={regStyles.stateValue}
+          />
+          <SimpleValue
+            label="RAMB"
+            value={ulaState?.ramB}
+            tooltip="Current RAM bank"
+            valueXclass={regStyles.stateValue}
+          />
         </>
       )}
-    </SidePanel>
+    </DataPanel>
   );
 };
 
@@ -154,13 +211,18 @@ const KeyboardLine = ({ value, titles, lineNo, clicked }: FlagLineProps) => {
     val !== undefined ? !!(val & (1 << bitNo)) : undefined;
   const lineClicked = (bitNo: number) => clicked?.(lineNo, bitNo);
   return (
-    <Col>
-      <BitValue value={toFlag(value, 4)} clicked={() => lineClicked(4)} tooltip={titles?.[4]} />
-      <BitValue value={toFlag(value, 3)} clicked={() => lineClicked(3)} tooltip={titles?.[3]} />
-      <BitValue value={toFlag(value, 2)} clicked={() => lineClicked(2)} tooltip={titles?.[2]} />
-      <BitValue value={toFlag(value, 1)} clicked={() => lineClicked(1)} tooltip={titles?.[1]} />
-      <BitValue value={toFlag(value, 0)} clicked={() => lineClicked(0)} tooltip={titles?.[0]} />
-    </Col>
+    <DataRow dense>
+      {[4, 3, 2, 1, 0].map((bit) => (
+        <BitValue
+          key={bit}
+          value={toFlag(value, bit)}
+          clicked={() => lineClicked(bit)}
+          tooltip={titles?.[bit]}
+          iconFill={VALUE_FILL}
+          xclass={styles.keyBit}
+        />
+      ))}
+    </DataRow>
   );
 };
 

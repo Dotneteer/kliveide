@@ -115,6 +115,9 @@ class StartupFlowMachine {
   targetClockMultiplier = 1;
   clockMultiplier = 1;
   contentionDelaySincePause = 0;
+  resetContentionDelaySincePause = vi.fn(() => {
+    this.contentionDelaySincePause = 0;
+  });
   tactsAtLastStart = 0;
   softResetOnFirstStart = false;
 

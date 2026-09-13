@@ -1,0 +1,421 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The `controls/data` primitives.
+ *
+ * These replace the block that was copy-pasted into 7 of the 12 SiteBarPanel stylesheets and, in a
+ * near-identical form, into 10 of the DocumentPanels ones — `fill-parent-flex`, column,
+ * `user-select: none`, the monospace family, and `font-size: 0.8em`. That `0.8em` alone appeared 25
+ * times across the two folders.
+ */
+
+.dataPanel {
+  @include fill-parent-flex;
+  flex-direction: column;
+  font-family: var(--monospace-font);
+  /* --- The data body follows View | Panel Options | Font Size. `.panelTitle` below deliberately
+     --- does not: a panel's title is chrome, and stays on the fixed scale. */
+  font-size: var(--panel-font-size);
+  /*
+   * Leading is declared, never inherited from the font.
+   *
+   * `line-height: normal` takes it from the chosen face's own metrics, which range from 0.885em
+   * (ZX Spectrum) to 1.320em (JetBrains Mono). A `dense` row is `min-height: 0`, so the row *is*
+   * its line box — under the ZX face the Z80 and ULA registers collapsed onto each other.
+   */
+  line-height: var(--panel-line-height);
+  color: var(--data-value);
+
+  /*
+   * Data is selectable.
+   *
+   * `user-select: none` appeared in 30 declarations across these folders against 4 that opted back
+   * in, so hex dumps, disassembly and BASIC listings could not be copied with the mouse — panels
+   * worked around their own rule with bespoke "copy to clipboard" buttons.
+   */
+  user-select: text;
+}
+
+/*
+ * A panel whose host wraps it in a `ScrollViewer`.
+ *
+ * `.dataPanel` fills its parent and hides its overflow, which is right for the panels that manage
+ * their own scrolling — the registry marks those `useScrollViewer: false`. For the rest the host
+ * supplies the viewer, and a panel pinned to `height: 100%` never lets that viewer see any overflow:
+ * the Z80 panel measured a 325px content box inside a 247px client box with `overflow-y: hidden`,
+ * so IM, IF1, INT, CLK and TSP were on screen nowhere and could not be scrolled to. The stack this
+ * replaced sized to its content (`height: auto`), which is what a scrolled panel needs.
+ */
+.autoHeight {
+  height: auto;
+  overflow: visible;
+  flex: 0 0 auto;
+}
+
+/* Chrome inside a data panel — headers, toolbars — should not be selectable. */
+.noSelect {
+  user-select: none;
+}
+
+.emptyState {
+  @include fill-parent-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  text-align: center;
+  padding: var(--space-4);
+  color: var(--data-secondary);
+  user-select: none;
+}
+
+/*
+ * The Sinclair rainbow flash.
+ *
+ * Confined to empty states and the About panel (§9.2): decorative colour must never sit permanently
+ * beside the functional accent and the status hues, and red/green/yellow all carry meaning
+ * elsewhere in this app. An empty panel is the one surface with no data and no status to confuse.
+ *
+ * The four hues are the Spectrum's own bright red / yellow / green / cyan, taken from the emulator's
+ * palette in `emu/machines/CommonScreenDevice.ts` rather than invented. They are held well below
+ * full strength so the motif reads as a watermark, not as decoration competing for attention.
+ */
+.rainbow {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  opacity: 0.5;
+  transform: skewX(-18deg);
+}
+
+.rainbowStripe {
+  width: 4px;
+  height: 18px;
+  border-radius: 1px;
+}
+
+.dataRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  /*
+   * A row keeps its height when the panel overflows.
+   *
+   * The stack this replaced set `flex-grow: 0; flex-shrink: 0` and `DataRow` did not, so inside a
+   * column that overflows — the ULA panel, which is taller than the space the sidebar gives it —
+   * every row was compressed by the flex algorithm. Measured at **8px against a 15px line**, with
+   * the text still painting outside its own row box, which is why no clipping check caught it.
+   */
+  flex: 0 0 auto;
+  min-height: var(--row-size-list);
+  padding: 0 var(--space-2);
+  gap: var(--measure-gap);
+}
+
+/*
+ * A field row in a register/state panel. Keeps the gap -- which is the point -- and drops the list
+ * chrome. The gap is also what fixes `SimpleValue fullWidth`, where an auto-width value used to butt
+ * straight into the next label and render `CON 0LCO 0` in the ULA panel.
+ *
+ * What `dense` drops is the row *height* (`min-height`), which is what would otherwise have made the
+ * Z80 panel 47% taller. It keeps `.dataRow`'s side padding: dropping that too was collateral —
+ * horizontal padding costs no height at all, and without it these rows start hard against the
+ * sidebar's left edge, i.e. against the activity bar, while the panel's own header is indented.
+ * `dense` is used only by the sidebar register panels (Z80, M6510, ULA, VIC, Blink, SysVars), so
+ * this is the gutter for all of them.
+ */
+.dense {
+  min-height: 0;
+  padding: 0 var(--space-2);
+}
+
+/*
+ * A nested row carries no gutter of its own — the outermost row owns it.
+ *
+ * `Bit16Value`/`Bit8Value`/`SimpleValue`/`FlagValue` each render their *own* `DataRow` for their
+ * label/value pair, and a panel row puts two of those side by side, so a register row is literally
+ * a row inside a row. Without this, the side padding above lands at both levels and every register
+ * row sits 8px right of the flag strip, which has no inner row — measured in the running IDE as
+ * `.flagLetter` at x=56 against the `AF` label at x=64.
+ *
+ * Padding rather than a margin on the panel keeps a row's background full-bleed, which is what the
+ * zebra/hover treatments above want.
+ */
+.dataRow .dataRow {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Zebra striping, previously expressed three different ways: inline props, and two stylesheets. */
+.even {
+  background: var(--bgcolor-disass-even-row);
+}
+
+.hoverable:hover {
+  background: var(--bgcolor-disass-hover);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+/*
+ * Label and value.
+ *
+ * Widths are `ch`, not px (M2). The previous px widths — 44/48/41/51 in `valuedisplay`, plus 13
+ * magic constants across 8 panels — were tuned to a specific monospace advance, and the mono stack
+ * had just changed from Menlo/Consolas (0.6em) to Iosevka (0.5em), silently mistuning every one.
+ */
+.dataLabel {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--data-label);
+}
+
+.dataValue {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--data-value);
+}
+
+.dataSecondary {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--data-secondary);
+}
+
+/* Marks a value that moved since the last stop — a signal Klive did not previously express. */
+.changed {
+  color: var(--data-changed);
+}
+
+/*
+ * The same signal, as a background wash rather than a colour.
+ *
+ * Both forms exist because `--data-changed` **is** `--accent-text` — L2 derives both from the
+ * accent's `solid` — and `--color-state-value` is `--accent-text` as well. So on a panel converted
+ * to the register/state colour (§10.3), `.changed` repaints an accent value in the same accent and
+ * draws nothing at all: wired up, running, invisible, exactly like the `AttachedShadow` token that
+ * pointed at a surface. The wash is 18% of the same hue *behind* the glyphs, which reads against
+ * accent text and neutral text alike.
+ *
+ * Use `.changed` on a neutral panel and `.changedWash` on a converted one. No padding: a wash that
+ * inflated the cell would move the `ch` columns it sits in.
+ */
+.changedWash {
+  background: var(--data-changed-bg);
+  border-radius: var(--radius-xs);
+}
+
+/*
+ * A data panel's header.
+ *
+ * There were 17 hand-rolled versions of this across 13 files, at three different heights (26px,
+ * 30px, 32px), and the one shared helper that did exist was twelve lines of `HStack` with hardcoded
+ * padding, no title, no actions slot, no surface and no border.
+ */
+.panelHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 0 0 auto;
+  height: var(--strip-panelHeader);
+  padding: 0 var(--space-2);
+  gap: var(--space-1);
+  background: var(--surface-chrome);
+  border-bottom: 1px solid var(--border-subtle);
+  user-select: none;
+}
+
+.panelTitle {
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Pushes trailing actions to the right edge. */
+.panelHeaderActions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+/*
+ * The filter row (`PanelFilter`).
+ *
+ * Content, not chrome: no `--surface-chrome`, no bottom border, because a sidebar panel's header
+ * band already is chrome and a second strip under it reads as a second title. One list row tall so
+ * it costs the panel exactly one row of data.
+ */
+.panelFilter {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: var(--row-size-list);
+  padding: 0 var(--space-2);
+  gap: var(--measure-gap);
+  user-select: none;
+}
+
+.panelFilterInput {
+  flex: 1 1 auto;
+  /* Lets the box shrink below its content width in a narrow sidebar instead of pushing the
+     status and clear button out of the row — the `width: 100%` trap from the sidebar headers. */
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-1);
+  font-family: var(--monospace-font);
+  /* M1: absolute. The data below follows the user's panel size; the filter is chrome and does not. */
+  font-size: var(--font-size-200);
+  line-height: var(--panel-line-height);
+  color: var(--data-value);
+  background: var(--bgcolor-input);
+  outline: none;
+
+  &::placeholder {
+    color: var(--data-secondary);
+  }
+
+  &:focus-visible {
+    border-color: var(--accent-border);
+  }
+}
+
+/* `12 / 244`. An annotation on the input, so it takes the annotation colour. */
+.panelFilterStatus {
+  flex: 0 0 auto;
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+}
+
+.panelFilterClear {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-controlSm);
+  height: var(--size-controlSm);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-border);
+    outline-offset: -2px;
+  }
+}
+
+/*
+ * A section header *inside* panel content — a disk track, a sector, a memory bank.
+ *
+ * Distinct from `PanelHeader`, which is a panel's own chrome. Slice 6.2 found `DskViewerPanel` using
+ * the same `.header` class for both roles; giving a section header the panel-chrome surface and
+ * bottom border would drop a strip of chrome into the middle of a data listing.
+ *
+ * So this reads as a heavier data row rather than as chrome: no border, a recessed background, and
+ * the label colour rather than the header colour.
+ */
+.sectionHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: var(--row-panelHeader);
+  padding: 0 var(--space-2);
+  gap: var(--space-2);
+  background: var(--bgcolor-disass-even-row);
+  color: var(--data-label);
+  font-weight: 600;
+  user-select: none;
+}
+
+.sectionHeaderClickable {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+/*
+ * The address gutter shared by the disassembly and memory-dump rows.
+ *
+ * These four rules were byte-identical in `DisassemblyPanel.module.scss` and
+ * `MemoryDumpSection.module.scss`, and the JSX that used them was copy-pasted too. Note that only
+ * the *gutter* is shared: after the address the two rows have nothing in common — one continues
+ * with opcodes, T-states and an instruction, the other with hex and character values — so this is
+ * a pair of leading cells, not the single `DataGridRow` the plan assumed.
+ */
+.partitionPrefix {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--measure-gap);
+  margin-left: var(--measure-gap);
+  margin-right: 1.2ch;
+  color: var(--data-label);
+}
+
+.partitionLabel {
+  display: inline-flex;
+  justify-content: flex-start;
+}
+
+.partitionColon {
+  display: inline-flex;
+}
+
+.addressLabel {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  margin-right: 1.2ch;
+  color: var(--data-label);
+}
+
+/*
+ * A grid of hex bytes — a system-variable array, a small buffer.
+ *
+ * Slice 6.0 surfaced this as a genuine gap: `SysVarsPanel` still owned `.byteValue`, `.dumpRows` and
+ * `.dumpSection` after migrating everything else, which was the API being incomplete rather than the
+ * panel being special.
+ */
+.hexByteGrid {
+  display: flex;
+  flex-direction: column;
+}
+
+.hexByteRow {
+  display: flex;
+  flex-direction: row;
+  flex: 0 0 auto;
+  gap: var(--measure-gap);
+}
+
+.hexByte {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  width: var(--measure-hex2);
+  color: var(--data-value);
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+  }
+}

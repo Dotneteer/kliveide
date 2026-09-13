@@ -86,6 +86,10 @@ export class M6510VaCpu implements IM6510VaCpu {
   lastIoWritePort: number;
   lastIoWriteValue: number;
 
+  resetContentionDelaySincePause(): void {
+    this.contentionDelaySincePause = 0;
+  }
+
   /**
    * We need this flag to implement the step-over debugger function that continues the execution and stops when the
    * current subroutine returns to its caller. The debugger will observe the change of this flag and manage its

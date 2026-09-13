@@ -52,6 +52,11 @@ export const setThemeAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
+export const setAccentAction: ActionCreator = (id: string) => ({
+  type: "SET_ACCENT",
+  payload: { id }
+});
+
 export const selectActivityAction: ActionCreator = (id: string) => ({
   type: "SET_ACTIVITY",
   payload: { id }
@@ -374,4 +379,17 @@ export const removeWatchAction: ActionCreator = (symbol: string) => ({
 
 export const clearWatchAction: ActionCreator = () => ({
   type: "CLEAR_WATCH"
+});
+
+/**
+ * Replaces the whole watch list in one action — used when a project is opened.
+ *
+ * One action rather than a clear followed by an add per watch, for the same reason
+ * `restoreBreakpoints` installs its whole set atomically (see `openFolder` in `main/projects.ts`):
+ * every dispatch is forwarded across processes, so a multi-step restore leaves windows observing a
+ * half-restored list, and anything the user does in between can be wiped or duplicated.
+ */
+export const setWatchesAction: ActionCreator = (watches: any[]) => ({
+  type: "SET_WATCHES",
+  payload: { watches }
 });

@@ -5,33 +5,39 @@ import {
   EXPORT_CODE_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG,
   FIRST_STARTUP_DIALOG_IDE,
-  NEW_PROJECT_DIALOG
+  NEW_PROJECT_DIALOG,
+  SJASMPLUS_INTEGRATION_DIALOG
 } from "@messaging/dialog-ids";
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { AboutDialog, AboutDialogResult } from "./AboutDialog";
 import {
   NewProjectDialog,
   NewProjectDialogResult
-} from "./NewProjectDialog";
+} from "./newProject/NewProjectDialog";
 import {
   ExportCodeDialog,
   ExportCodeDialogResult
-} from "./ExportCodeDialog";
+} from "./exportCode/ExportCodeDialog";
 import {
   ExcludedProjectItemsDialog,
   ExcludedProjectItemsDialogResult
-} from "./ExcludedProjectItemsDialog";
+} from "./excludedItems/ExcludedProjectItemsDialog";
 import {
   FirstStartDialog,
   FirstStartDialogResult
 } from "./FirstStartDialog";
+import {
+  SjasmplusIntegrationDialog,
+  SjasmplusIntegrationDialogResult
+} from "./sjasmplus/SjasmplusIntegrationDialog";
 
 export type IdeDialogResult =
   | NewProjectDialogResult
   | ExportCodeDialogResult
   | ExcludedProjectItemsDialogResult
   | FirstStartDialogResult
-  | AboutDialogResult;
+  | AboutDialogResult
+  | SjasmplusIntegrationDialogResult;
 
 export type IdeDialogRenderer = (
   data: any,
@@ -56,5 +62,8 @@ export const ideDialogRegistry: Record<number, IdeDialogRenderer> = {
       about={data as AboutDialogData}
       onClose={(result) => controls.close(result)}
     />
+  ),
+  [SJASMPLUS_INTEGRATION_DIALOG]: (_, controls) => (
+    <SjasmplusIntegrationDialog onClose={(result) => controls.close(result)} />
   )
 };

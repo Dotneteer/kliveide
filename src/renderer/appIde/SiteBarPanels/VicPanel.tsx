@@ -6,16 +6,17 @@ import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VicState } from "@common/messaging/EmuApi";
 import { toHexa2 } from "../services/ide-commands";
-import { Col, SidePanel } from "@renderer/controls/valuedisplay/Layout";
 import {
   Bit16Value,
   BitValue,
   FlagFieldRow,
   FlagValue,
   SimpleValue
-} from "@renderer/controls/valuedisplay/Values";
+} from "@renderer/controls/data/registers";
+import { DataPanel, DataRow } from "@renderer/controls/data";
 
-const LAB_WIDTH = 41;
+// M2: `ch`, not px. Capacity preserved from the px width at its old 12.8px size (px / 6.4).
+const LAB_WIDTH = "7ch"; // 41px / 6.4 = 6.4
 const BIFLAG_GAP = 10;
 const REG16_ONLY_TOOLTIP = "{r16N}:\n{r16v}";
 
@@ -45,8 +46,8 @@ export const VicPanel = () => {
   useEmuStateListener(emuApi, async () => setVicState(await emuApi.getVicState()));
 
   return (
-    <SidePanel>
-      <Col>
+    <DataPanel autoHeight>
+      <DataRow dense>
         <Bit16Value
           label="VICB"
           reg16Label="VIC Base Address"
@@ -65,26 +66,26 @@ export const VicPanel = () => {
           value={vicState?.colMemOffset}
           tooltip={REG16_ONLY_TOOLTIP}
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <FlagValue label="ECM" value={!!vicState?.ecm} tooltip="Enhanced Color Mode" />
         <FlagValue label="BMM" value={!!vicState?.bmm} tooltip="Bitmap Mode" />
         <FlagValue label="DEN" value={!!vicState?.den} tooltip="Display Enable" />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue label="MCM" value={!!vicState?.mcm} tooltip="Multicolor Mode" />
         <FlagValue label="CSEL" value={!!vicState?.csel} tooltip="Column Select" />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <SimpleValue label="XSCR" value={toHexa2(vicState?.xScroll ?? 0)} tooltip="Y Scroll" />
         <SimpleValue label="YSCR" value={toHexa2(vicState?.yScroll ?? 0)} tooltip="Y Scroll" />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <FlagValue label="IRQ" value={!!vicState?.irqStatus} tooltip="IRQ status" />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Label text="ILP" width={LAB_WIDTH} tooltip="Light Pen Interrupt status/enabled" />
         <BitValue value={!!vicState?.ilpStatus} tooltip="Light Pen Interrupt status" />
         <Label text="/" />
@@ -94,8 +95,8 @@ export const VicPanel = () => {
         <BitValue value={!!vicState?.irstStatus} tooltip="Raster Interrupt status" />
         <Label text="/" />
         <BitValue value={!!vicState?.irstEnabled} tooltip="Raster Interrupt enabled" />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <Label
           text="IMMC"
           width={LAB_WIDTH}
@@ -115,16 +116,16 @@ export const VicPanel = () => {
         <BitValue value={!!vicState?.imbcStatus} tooltip="Sprite-Data Interrupt status" />
         <Label text="/" />
         <BitValue value={!!vicState?.imbcEnabled} tooltip="Sprite-Data Interrupt enabled" />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue
           label="EC"
           value={vicState?.borderColor ?? 0}
           tooltip={`Border Color (${colorNames[vicState?.borderColor ?? 0]})`}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <SimpleValue
           label="B0C"
           value={vicState?.bgColor0 ?? 0}
@@ -135,8 +136,8 @@ export const VicPanel = () => {
           value={vicState?.bgColor1 ?? 0}
           tooltip={`Background Color 1 (${colorNames[vicState?.bgColor1 ?? 0]})`}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <SimpleValue
           label="B2C"
           value={vicState?.bgColor2 ?? 0}
@@ -147,8 +148,8 @@ export const VicPanel = () => {
           value={vicState?.bgColor3 ?? 0}
           tooltip={`Background Color 3 (${colorNames[vicState?.bgColor3 ?? 0]})`}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <SimpleValue
           label="MM0"
           value={vicState?.spriteMcolor0 ?? 0}
@@ -159,26 +160,26 @@ export const VicPanel = () => {
           value={vicState?.spriteMcolor1 ?? 0}
           tooltip={`Sprite Multi-Color 1 (${colorNames[vicState?.spriteMcolor1 ?? 0]})`}
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <FlagFieldRow
           label="MMC"
           tooltip="Sprite-Sprite Collision Flags"
           value={vicState?.spriteSpriteCollision}
           flagDescriptions={multSpriteCollisions}
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagFieldRow
           label="MBC"
           tooltip="Sprite-Data Collision Flags"
           value={vicState?.spriteDataCollision}
           flagDescriptions={spriteDataCollisions}
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue
           label="SP0X"
           value={vicState?.spriteInfo[0].x}
@@ -194,8 +195,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[0].foregroundPriority}
           tooltip="Sprite 0 Foreground Priority"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP0E"
           value={!!vicState?.spriteInfo[0].enabled}
@@ -206,8 +207,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[0].multicolor}
           tooltip="Sprite 0 Multicolor"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP0XE"
           value={!!vicState?.spriteInfo[0].xExpansion}
@@ -218,9 +219,9 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[0].yExpansion}
           tooltip="Sprite 0 Y Expansion"
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue
           label="SP1X"
           value={vicState?.spriteInfo[1].x}
@@ -236,8 +237,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[1].foregroundPriority}
           tooltip="Sprite 1 Foreground Priority"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP1E"
           value={!!vicState?.spriteInfo[1].enabled}
@@ -248,8 +249,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[1].multicolor}
           tooltip="Sprite 1 Multicolor"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP1XE"
           value={!!vicState?.spriteInfo[1].xExpansion}
@@ -260,9 +261,9 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[1].yExpansion}
           tooltip="Sprite 1 Y Expansion"
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue
           label="SP2X"
           value={vicState?.spriteInfo[2].x}
@@ -278,8 +279,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[2].foregroundPriority}
           tooltip="Sprite 2 Foreground Priority"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP2E"
           value={!!vicState?.spriteInfo[2].enabled}
@@ -290,8 +291,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[2].multicolor}
           tooltip="Sprite 2 Multicolor"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP2XE"
           value={!!vicState?.spriteInfo[2].xExpansion}
@@ -302,9 +303,9 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[2].yExpansion}
           tooltip="Sprite 2 Y Expansion"
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue
           label="SP3X"
           value={vicState?.spriteInfo[3].x}
@@ -320,8 +321,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[3].foregroundPriority}
           tooltip="Sprite 3 Foreground Priority"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP3E"
           value={!!vicState?.spriteInfo[3].enabled}
@@ -332,8 +333,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[3].multicolor}
           tooltip="Sprite 3 Multicolor"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP3XE"
           value={!!vicState?.spriteInfo[3].xExpansion}
@@ -344,9 +345,9 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[3].yExpansion}
           tooltip="Sprite 3 Y Expansion"
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue
           label="SP4X"
           value={vicState?.spriteInfo[4].x}
@@ -362,8 +363,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[4].foregroundPriority}
           tooltip="Sprite 4 Foreground Priority"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP4E"
           value={!!vicState?.spriteInfo[4].enabled}
@@ -374,8 +375,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[4].multicolor}
           tooltip="Sprite 4 Multicolor"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP4XE"
           value={!!vicState?.spriteInfo[4].xExpansion}
@@ -386,9 +387,9 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[4].yExpansion}
           tooltip="Sprite 4 Y Expansion"
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue
           label="SP5X"
           value={vicState?.spriteInfo[5].x}
@@ -404,8 +405,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[5].foregroundPriority}
           tooltip="Sprite 5 Foreground Priority"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP5E"
           value={!!vicState?.spriteInfo[5].enabled}
@@ -416,8 +417,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[5].multicolor}
           tooltip="Sprite 5 Multicolor"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP5XE"
           value={!!vicState?.spriteInfo[5].xExpansion}
@@ -428,9 +429,9 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[5].yExpansion}
           tooltip="Sprite 5 Y Expansion"
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue
           label="SP6X"
           value={vicState?.spriteInfo[6].x}
@@ -446,8 +447,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[6].foregroundPriority}
           tooltip="Sprite 6 Foreground Priority"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP6E"
           value={!!vicState?.spriteInfo[6].enabled}
@@ -458,8 +459,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[6].multicolor}
           tooltip="Sprite 6 Multicolor"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP6XE"
           value={!!vicState?.spriteInfo[6].xExpansion}
@@ -470,9 +471,9 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[6].yExpansion}
           tooltip="Sprite 6 Y Expansion"
         />
-      </Col>
+      </DataRow>
       <Separator />
-      <Col>
+      <DataRow dense>
         <SimpleValue
           label="SP7X"
           value={vicState?.spriteInfo[7].x}
@@ -488,8 +489,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[7].foregroundPriority}
           tooltip="Sprite 7 Foreground Priority"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP7E"
           value={!!vicState?.spriteInfo[7].enabled}
@@ -500,8 +501,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[7].multicolor}
           tooltip="Sprite 7 Multicolor"
         />
-      </Col>
-      <Col>
+      </DataRow>
+      <DataRow dense>
         <FlagValue
           label="SP7XE"
           value={!!vicState?.spriteInfo[7].xExpansion}
@@ -512,8 +513,8 @@ export const VicPanel = () => {
           value={!!vicState?.spriteInfo[7].yExpansion}
           tooltip="Sprite 7 Y Expansion"
         />
-      </Col>
-    </SidePanel>
+      </DataRow>
+    </DataPanel>
   );
 };
 

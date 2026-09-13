@@ -356,6 +356,8 @@ export const PaletteEditor = ({
           </div>
           <NextPaletteViewer
             palette={palette}
+            /* 2.2ch + 16*29 = 477px, i.e. the 480px `Column` this panel used to reserve. */
+            cellSize={29}
             transparencyIndex={transparencyIndex}
             usePriority={true}
             allowSelection={true}

@@ -1,4 +1,9 @@
 .scrollViewer {
+  /*
+   * The containing block for `AttachedShadow`, which pins itself to this element's top edge.
+   * Without it the shadow would resolve against whatever ancestor happens to be positioned.
+   */
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;

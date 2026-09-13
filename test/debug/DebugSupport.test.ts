@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { DIS_EXEC_BP, DebugSupport, EXEC_BP, PART_BP } from "@emu/machines/DebugSupport";
-import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getBreakpointStorageKey } from "@common/utils/breakpoints";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 describe("DebugSupport", () => {
@@ -27,7 +27,7 @@ describe("DebugSupport", () => {
 
     // --- Assert
     expect(ds.breakpointDefs.size).toEqual(1);
-    const bpDef = ds.breakpointDefs.get(getBreakpointKey(bp));
+    const bpDef = ds.breakpointDefs.get(getBreakpointStorageKey(bp));
     expect(bpDef.address).toEqual(bp.address);
     expect(bpDef.exec).toEqual(bp.exec);
     expect(ds.breakpointFlags.length).toEqual(0x01_0000);
@@ -51,7 +51,7 @@ describe("DebugSupport", () => {
 
     // --- Assert
     expect(ds.breakpointDefs.size).toEqual(1);
-    const bpDef = ds.breakpointDefs.get(getBreakpointKey(bp));
+    const bpDef = ds.breakpointDefs.get(getBreakpointStorageKey(bp));
     expect(bpDef.resource).toEqual(bp.resource);
     expect(bpDef.line).toEqual(bp.line);
     expect(bpDef.resolvedAddress).toEqual(bp.resolvedAddress);
@@ -76,7 +76,7 @@ describe("DebugSupport", () => {
 
     // --- Assert
     expect(ds.breakpointDefs.size).toEqual(1);
-    const bpDef = ds.breakpointDefs.get(getBreakpointKey(bp));
+    const bpDef = ds.breakpointDefs.get(getBreakpointStorageKey(bp));
     expect(bpDef.address).toEqual(bp.address);
     expect(bpDef.partition).toEqual(bp.partition);
     expect(bpDef.exec).toEqual(bp.exec);
@@ -111,7 +111,7 @@ describe("DebugSupport", () => {
 
     // --- Assert
     expect(ds.breakpointDefs.size).toEqual(1);
-    const bpDef = ds.breakpointDefs.get(getBreakpointKey(bp));
+    const bpDef = ds.breakpointDefs.get(getBreakpointStorageKey(bp));
     expect(bpDef.address).toEqual(bp.address);
     expect(bpDef.partition).toEqual(bp.partition);
     expect(bpDef.exec).toEqual(bp.exec);

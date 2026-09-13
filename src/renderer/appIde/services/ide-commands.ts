@@ -9,7 +9,7 @@ import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
 import { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
-import { Token, TokenType, parseCommand } from "./command-parser";
+import { Token, TokenType } from "./command-parser";
 
 export abstract class IdeCommandBase<T = any> implements IdeCommandInfo {
   /**
@@ -247,64 +247,6 @@ export function getNumericTokenValue(token: Token): {
         return { value: parseInt(plainText.substring(1), 16) };
     }
     return null;
-  } catch {
-    return {
-      messages: [{ type: ValidationMessageType.Error, message: "Invalid numeric value" }]
-    };
-  }
-}
-
-/// <summary>
-/// Converts a token to an integer value
-/// </summary>
-/// <param name="token">Token to convert</param>
-/// <returns>Integer value if conversion successful; otherwise, null</returns>
-export function getPartitionedValue(token: Token): {
-  value?: number;
-  partition?: number;
-  partitionType?: string;
-  messages?: ValidationMessage[];
-} {
-  const plainText = token.text.replace("'", "").replace("_", "");
-  let errorText: string | undefined;
-  try {
-    switch (token.type) {
-      case TokenType.DecimalLiteral:
-        return { value: parseInt(plainText, 10) };
-      case TokenType.BinaryLiteral:
-        return { value: parseInt(plainText.substring(1), 2) };
-      case TokenType.HexadecimalLiteral:
-        return { value: parseInt(plainText.substring(1), 16) };
-      default:
-        const segments = token.text.toLowerCase().split(":");
-        if (segments.length === 2 && segments[0].length <= 2) {
-          // --- Extract partition information
-          let partition: number | undefined;
-          let partitionType = "B";
-          const partStr = segments[0].toUpperCase();
-          let partNoIdx = 0;
-          if (partStr.startsWith("R")) {
-            partitionType = "R";
-            partNoIdx = 1;
-          }
-          const partV = partStr[partNoIdx];
-          if (!partV || partV < "0" || partV > "9") break;
-          partition = partV.charCodeAt(0) - "0".charCodeAt(0);
-
-          // --- Extract address
-          const tokens = parseCommand(segments[1]);
-          if (tokens.length !== 1) break;
-          const valueInfo = getNumericTokenValue(tokens[0]);
-          if (valueInfo.messages) break;
-
-          // --- Return with the info
-          return { value: valueInfo.value, partition, partitionType };
-        }
-        break;
-    }
-    return {
-      messages: [{ type: ValidationMessageType.Error, message: errorText }]
-    };
   } catch {
     return {
       messages: [{ type: ValidationMessageType.Error, message: "Invalid numeric value" }]

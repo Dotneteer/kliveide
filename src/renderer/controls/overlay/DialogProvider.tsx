@@ -40,6 +40,10 @@ export type DialogOptions = {
   closeOnOutsideClick?: boolean;
   dialogRole?: "dialog" | "alertdialog";
   translateY?: number;
+  /** The glyph for the header's accent chip; see `ModalProps.iconName`. */
+  iconName?: string;
+  /** Tints the header chip and the commit button for a destructive question. */
+  danger?: boolean;
 };
 
 export type DialogService = {
@@ -265,6 +269,8 @@ function ManagedDialog({ dialog, onClose, onCancel, onReject }: ManagedDialogPro
       fullScreen={dialog.options.fullScreen}
       translateY={dialog.options.translateY}
       dialogRole={dialog.options.dialogRole}
+      iconName={dialog.options.iconName}
+      primaryDanger={dialog.options.danger}
       closeOnEscape={dialog.options.closeOnEscape}
       closeOnOutsideClick={dialog.options.closeOnOutsideClick}
       primaryVisible={false}

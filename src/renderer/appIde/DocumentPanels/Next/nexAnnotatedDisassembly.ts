@@ -121,7 +121,9 @@ async function createInstructionItems(
 function createAnnotationOperandLabelResolver(
   annotations: NexFileAnnotations,
   bankAnnotation: NexBankAnnotation,
-  bank: number,
+  // --- Kept for call-site symmetry with the other per-bank helpers; the resolver works purely in
+  // --- bank-relative offsets, so it never needs the bank number itself.
+  _bank: number,
   addressOffset: number
 ): DisassemblyOperandLabelResolver {
   return ({ instructionOffset, operandIndex, operandValue }) => {

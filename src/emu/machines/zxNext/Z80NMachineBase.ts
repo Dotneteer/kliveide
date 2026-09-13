@@ -499,6 +499,23 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   abstract getPartitionLabels(): Record<number, string>;
 
   /**
+   * A human-readable name for each partition. Presentation only; the label is the identity.
+   *
+   * Empty by default, so a machine opts in only when it has something to add beyond its labels.
+   */
+  getPartitionDescriptions(): Record<number, string> {
+    return {};
+  }
+
+  /**
+   * The caption each partition sits under in a chooser. Empty by default.
+   */
+  getPartitionGroups(): Record<number, string> {
+    return {};
+  }
+
+
+  /**
    * Gets the current call stack information
    */
   abstract getCallStack(frames): CallStackInfo;

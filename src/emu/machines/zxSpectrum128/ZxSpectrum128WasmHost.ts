@@ -113,6 +113,10 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
     };
   }
 
+  getPartitionDescriptions(): Record<number, string> {
+    return buildSpectrumPartitionDescriptions(2);
+  }
+
   getCurrentPartitionLabels(): string[] {
     const labels = this.getPartitionLabels();
     return this.getCurrentPartitions().map(partition => labels[partition] ?? "");
@@ -182,6 +186,24 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
   protected abstract readPsgExport(name: string, ...args: number[]): number | undefined;
   protected abstract writePsgIndex(index: number): void;
   protected abstract writePsgValue(value: number): void;
+}
+
+/**
+ * Descriptions for a Spectrum-family machine: `R0` -> "ROM 0", `B0` -> "Bank 0".
+ *
+ * Presentation only — the labels stay the identity. Shared by the 128K and the +2/+3E, which differ
+ * only in how many ROM pages they have.
+ * @param romCount Number of ROM pages the machine exposes
+ */
+export function buildSpectrumPartitionDescriptions(romCount: number): Record<number, string> {
+  const descriptions: Record<number, string> = {};
+  for (let rom = 0; rom < romCount; rom++) {
+    descriptions[-rom - 1] = `ROM ${rom}`;
+  }
+  for (let bank = 0; bank < 8; bank++) {
+    descriptions[bank] = `Bank ${bank}`;
+  }
+  return descriptions;
 }
 
 export function parseSpectrumPartitionLabel(label: string, romCount: number): number | undefined {

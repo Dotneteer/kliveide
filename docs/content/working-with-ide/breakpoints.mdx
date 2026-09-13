@@ -1,0 +1,94 @@
+---
+description: "With this view, you can overview and manage the breakpoints used for debugging. You can find this view in the Debug activity tag with the BreakPoints header:"
+---
+
+import { Callout } from 'nextra/components'
+
+# The Breakpoints View
+
+With this view, you can overview and manage the breakpoints used for debugging. You can find this view in the Debug activity tag with the **BreakPoints** header:
+
+<ClickableImage src="/images/working-with-ide/bp-view.png" width={384} />
+
+This view displays every breakpoint, whether you created it here, with an interactive command, or in the source code. Each line represents a particular breakpoint with this information:
+- A checkbox shows if the current breakpoint is enabled or disabled. You can set this status by toggling the checkbox.
+- A filled circle representing the status of a breakpoint:
+  - cyan: This breakpoint has been created with an interactive command.
+  - red: This breakpoint has been created in the source code.
+  - orange: This color indicates that a breakpoint has been created in the source code but not resolved to an actual address as the code has not been compiled (after opening the project or editing the code).
+  - gray: This breakpoint has been disabled.
+- An icon representing the breakpoint type
+- The breakpoint's address or source code location
+- Other information (such as the disassembly at the location)
+
+## Manipulating Breakpoints
+
+When you hover the mouse over the first two icons, they display additional information:
+
+<ClickableImage src="/images/working-with-ide/bp-explain.png" width={384} />
+
+With the right mouse button on a breakpoint's indicator, you can remove that breakpoint. If you want to deactivate one temporarily, disable it by clearing the checkbox on its left.
+
+The toolbar at the top of the view adds two more actions:
+
+- **Add breakpoint** (the **+** button) opens the breakpoint dialog described below.
+- **Remove all breakpoints** erases the whole set. This is the same operation as the `bp-ea`
+  command, so it removes source-code breakpoints as well; the confirmation tells you how many of
+  those are about to go.
+
+Right-clicking a breakpoint's *row* opens a menu with **Edit breakpoint**, **Enable**/**Disable**,
+**Remove breakpoint**, and **Remove all breakpoints**. Double-clicking a row opens the editor
+directly. You can also double-click a breakpoint's indicator in the
+[Disassembly View](./disassembly) to edit it there.
+
+## The Breakpoint Dialog
+
+The **Add breakpoint** button and the **Edit breakpoint** command both open a dialog that offers
+every option the `bp-set` command accepts, without the flag syntax:
+
+- **Type** &mdash; execution, memory read, memory write, I/O read or I/O write. A breakpoint has
+  exactly one type, so choosing one here replaces the last.
+- **Break only in a specific partition** &mdash; shown only on machines that page ROMs or banks,
+  and not available for I/O breakpoints, which watch a port rather than a partition. Ticking it
+  reveals the same partition chooser the [Memory View](./memory) uses: a short list on a machine
+  with a handful of banks, and the bank matrix on a machine like the ZX Next, whose 247 partitions
+  no list could sensibly hold. The names it offers are the machine's own; see
+  [Machine-Specific Memory Partitions](./memory#machine-specific-memory-partitions).
+- **Address** (or **Port**, for the I/O types) &mdash; accepts the same literals the commands do:
+  `$8000`, `32768` or `%1000000000000000`.
+- **Port mask** &mdash; only for the I/O types. Leave it empty to match the port exactly.
+- **Enabled** &mdash; clear this to create a breakpoint that is set but not armed.
+
+The dialog refuses an address that already has a breakpoint of the same type rather than silently
+merging the two, which is what `bp-set` does on the command line.
+
+<Callout type="info">
+The dialog edits **binary** breakpoints &mdash; those bound to an address. Source-code breakpoints
+belong to the editor, which places them when you click in the left margin beside a line and moves
+them with the line as you edit. That is why the row menu offers no **Edit** command for them; you
+can still enable, disable, and remove them from this view. To script one, use
+`bp-set [myfile.asm]:12`.
+</Callout>
+
+## Resolved Source Code Breakpoints
+
+When you open a project or modify an assembly source code file, the source code breakpoint addresses are not resolved to an actual physical address. The orange color of a source code breakpoint indicates this status:
+
+<ClickableImage src="/images/working-with-ide/bp-not-resolved.png" width={384} />
+
+Source code breakpoints are resolved to a CPU address after compilation, and this address is displayed with the breakpoint. The following figure shows that the last two source code breakpoints display their resolved CPU address after the compilation.
+
+<ClickableImage src="/images/working-with-ide/bp-resolved.png" width={384} />
+
+## Breakpoint Types
+
+The second icon of the breakpoint item displays its type. There are five types of breakpoints (depending on the operation triggering the machine to pause), as the following figure shows:
+
+<ClickableImage src="/images/working-with-ide/bp-types.png" width={128} />
+
+These are the available breakpoint types (from top to bottom in the figure):
+- **I/O read**. This breakpoint is triggered when a particular I/O port has been read. The displayed address is the 16-bit I/O port address.
+- **I/O write**. This breakpoint is triggered when a particular I/O port has been written. The displayed address is the 16-bit I/O port address.
+- **Execution**. This breakpoint is triggered when the PC register reaches the specified address.
+- **Memory read**. This breakpoint is triggered when a particular 16-bit memory address (including instruction fetches) has been read. 
+- **Memory write**. This breakpoint is triggered when a particular 16-bit memory address has been written. 

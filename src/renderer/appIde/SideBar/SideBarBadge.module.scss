@@ -1,0 +1,49 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The pill in a panel header.
+ *
+ * Colours come straight from the L2 semantic layer rather than through `--bgcolor-*` aliases.
+ * The alias layer in componentAliases.ts exists to repoint the ~200 names the app *already* used
+ * onto L2 without a flag day (§3 of the modernization plan); a component written after that layer
+ * landed has nothing to migrate, and adding eight aliases nothing else would ever read would make
+ * the map longer without making anything more changeable.
+ */
+.badge {
+  flex: 0 0 auto;
+  /* The UI stack, not `--monospace-font`: a badge is a label, not data. */
+  font-size: var(--font-size-50);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  padding: 2px 6px;
+  margin-right: var(--space-1);
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  white-space: nowrap;
+  /* Never let a long badge squeeze the title out of existence; it truncates first. */
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.neutral {
+  color: var(--text-secondary);
+  background: var(--surface-active);
+}
+
+.accent {
+  color: var(--accent-text);
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+}
+
+.warning {
+  color: var(--status-warning);
+  background: var(--status-warning-subtle);
+}
+
+.error {
+  color: var(--status-error);
+  background: var(--status-error-subtle);
+}

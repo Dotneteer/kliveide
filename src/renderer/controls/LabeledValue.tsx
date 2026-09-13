@@ -2,14 +2,15 @@ import styles from "./LabeledValue.module.scss";
 import { Label } from "@renderer/controls/layout/Label";
 import { Value } from "@renderer/controls/layout/Value";
 
-const LAB_WIDTH = 48;
-const VAL_WIDTH = 48;
+// M2: `ch`, not px. Capacity preserved from the px width at its old 12.8px size (px / 6.4).
+const LAB_WIDTH = "8ch";
+const VAL_WIDTH = "8ch";
 
 type Props = {
   label: string;
-  width?: number;
+  width?: string | number;
   value: number | string;
-  valueWidth?: number;
+  valueWidth?: string | number;
   toolTip?: string;
 };
 export const LabeledValue = ({

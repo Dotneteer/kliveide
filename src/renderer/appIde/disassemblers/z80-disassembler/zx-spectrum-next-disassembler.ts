@@ -49,7 +49,6 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
       const routine = (msb << 8) | lsb;
       const codeValue = this._api.decimalMode ? routine.toString(10) : `$${intToX4(routine)}`;
       this._api.addDisassemblyItem({
-        partition: fetchResult.partitionLabel,
         address: fetchResult.offset,
         opCodes: [lsb, msb],
         instruction: `.defw ${codeValue}`,
@@ -63,7 +62,6 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
       const cmd = this._api.fetch().opcode;
       const cmdValue = this._api.decimalMode ? cmd.toString(10) : `$${intToX2(cmd)}`;
       this._api.addDisassemblyItem({
-        partition: fetchResult.partitionLabel,
         address: fetchResult.offset,
         opCodes: [cmd],
         instruction: `.defb ${cmdValue}`,
@@ -74,7 +72,6 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
       const routine = (msb << 8) | lsb;
       const codeValue = this._api.decimalMode ? routine.toString(10) : `$${intToX4(routine)}`;
       this._api.addDisassemblyItem({
-        partition: fetchResult.partitionLabel,
         address: fetchResult.offset,
         opCodes: [lsb, msb],
         instruction: `.defw ${codeValue}`,

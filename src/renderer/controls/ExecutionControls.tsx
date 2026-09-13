@@ -10,13 +10,13 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { useIdeApi } from "@renderer/core/IdeApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import type { MachineCommand } from "@common/abstractions/MachineCommand";
+import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
 
 type Props = {
   ide: boolean;
   kliveProjectLoaded: boolean;
 };
 
-const SECONDARY_ICON_SIZE = 20;
 
 type StartAction = "run" | "debug";
 type ResumeAction = "continue" | "debug";

@@ -22,7 +22,11 @@ import { MC_DISK_SUPPORT } from "@common/machines/constants";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128SysVars";
 import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48SysVars";
-import { injectSpectrumCode, parseSpectrumPartitionLabel } from "../zxSpectrum128/ZxSpectrum128WasmHost";
+import {
+  buildSpectrumPartitionDescriptions,
+  injectSpectrumCode,
+  parseSpectrumPartitionLabel
+} from "../zxSpectrum128/ZxSpectrum128WasmHost";
 import { WasmFloatingBusDevice, WasmSpectrumPsgDevice } from "../zxSpectrum/WasmSpectrumSupport";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 
@@ -153,6 +157,10 @@ export abstract class ZxSpectrumP3eWasmHost extends ZxSpectrumBase {
       6: "B6",
       7: "B7"
     };
+  }
+
+  getPartitionDescriptions(): Record<number, string> {
+    return buildSpectrumPartitionDescriptions(4);
   }
 
   getCurrentPartitionLabels(): string[] {

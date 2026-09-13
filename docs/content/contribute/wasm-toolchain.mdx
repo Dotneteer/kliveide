@@ -1,0 +1,220 @@
+---
+description: "Klive's emulator cores are written in C and compiled to WebAssembly. This page explains how to install the LLVM toolchain that builds them."
+---
+
+import { Callout } from 'nextra/components';
+
+# Install the WASM Toolchain
+
+Klive's emulator cores are written in C and compiled to WebAssembly. The compiled
+`.wasm` files are **build outputs, not source** — they are listed in `.gitignore` and are
+never committed. A fresh clone therefore does not contain them, and `npm install` does
+**not** create them.
+
+This means that after cloning, you need one extra step before `npm run dev` gives you a
+working emulator:
+
+```bash
+npm run build:all-wasm
+```
+
+That step needs a C compiler that can target WebAssembly. This page explains how to
+install it.
+
+## Symptom of a Missing Toolchain
+
+If you skip the WASM build, Klive starts but the emulator window reports:
+
+```
+CompileError: WebAssembly.compile(): expected magic word 00 61 73 6d, found 3c 21 64 6f
+```
+
+`3c 21 64 6f` is ASCII for `<!do` — the beginning of `<!doctype html>`. The emulator is
+trying to compile an HTML page as WebAssembly. This happens because the `.wasm` file is
+absent, and the Vite dev server answers the request with its `index.html` fallback and a
+`200 OK` status instead of a `404`.
+
+The error looks alarming and platform-specific, but it is not: it simply means
+**you have not run `npm run build:all-wasm` on this machine**. It appears identically on
+Windows, macOS, and Linux.
+
+## What You Need
+
+Just two LLVM tools:
+
+- **`clang`** with the **`wasm32`** target
+- **`wasm-ld`** (LLVM's WebAssembly linker, shipped in LLVM's `lld` component)
+
+You do **not** need Emscripten, the WASI SDK, CMake, Python, Make, or Visual Studio Build
+Tools. The cores are compiled freestanding — no libc is involved:
+
+```
+clang --target=wasm32 -std=c11 -O3 -ffreestanding -fno-builtin -nostdlib \
+      -Wl,--no-entry -Wl,--export-memory ...
+```
+
+<Callout type="warning">
+Not every `clang` build includes the WebAssembly backend — Apple's bundled `clang` is the
+most common example. Always confirm with the verification step below rather than assuming
+that an existing `clang` will work.
+</Callout>
+
+## Install
+
+### Windows
+
+```bash
+winget install --id LLVM.LLVM --exact
+```
+
+Accept the UAC elevation prompt when it appears.
+
+**Important:** the LLVM installer does *not* add itself to `PATH` by default, and the
+unattended install skips that option entirely. If you install it non-interactively, add
+this directory to your `PATH` manually:
+
+```
+C:\Program Files\LLVM\bin
+```
+
+If you use the graphical installer instead, tick **"Add LLVM to the system PATH"** during
+setup. Open a new terminal afterwards so the updated `PATH` takes effect.
+
+### macOS
+
+Apple's `clang` from the Xcode Command Line Tools is generally built **without** the
+WebAssembly target, so install LLVM from Homebrew:
+
+```bash
+brew install llvm
+```
+
+Homebrew deliberately keeps this off your `PATH` to avoid shadowing Apple's toolchain, so
+point the build at it explicitly. On Apple Silicon:
+
+```bash
+export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+```
+
+On Intel Macs the prefix is `/usr/local/opt/llvm/bin` instead. Alternatively, leave `PATH`
+alone and use the per-machine compiler overrides described below.
+
+### Linux
+
+Debian / Ubuntu — `lld` is what provides `wasm-ld`, so install both packages:
+
+```bash
+sudo apt install clang lld
+```
+
+Fedora / RHEL:
+
+```bash
+sudo dnf install clang lld
+```
+
+Arch:
+
+```bash
+sudo pacman -S clang lld
+```
+
+## Verify the Toolchain
+
+Before building, confirm your `clang` really has the WebAssembly target. This check is the
+reliable one — a `clang` that lacks the backend fails with a confusing error otherwise:
+
+```bash
+clang --version
+clang --print-targets | grep wasm
+wasm-ld --version
+```
+
+The middle command must list `wasm32`:
+
+```
+    wasm32     - WebAssembly 32-bit
+    wasm64     - WebAssembly 64-bit
+```
+
+If it prints nothing, your `clang` was built without the WebAssembly backend — install
+LLVM as described above and make sure that installation is the one on your `PATH`.
+
+## Build the Artifacts
+
+Build all four machine cores:
+
+```bash
+npm run build:all-wasm
+```
+
+Or build a single machine while working on it:
+
+| Command | C source | Output |
+| --- | --- | --- |
+| `npm run build:sp48-wasm` | `src/emu/machines/zxSpectrum48/wasm/sp48/sp48.c` | `.../zxSpectrum48/wasm/dist/zx-spectrum48.wasm` |
+| `npm run build:sp128-wasm` | `src/emu/machines/zxSpectrum128/wasm/sp128/sp128.c` | `.../zxSpectrum128/wasm/dist/zx-spectrum128.wasm` |
+| `npm run build:spp3e-wasm` | `src/emu/machines/zxSpectrumP3e/wasm/spp3e/spp3e.c` | `.../zxSpectrumP3e/wasm/dist/zx-spectrum-p3e.wasm` |
+| `npm run build:zxnext-wasm` | `src/emu/machines/zxNext/wasm/zxnext/zxnext.c` | `.../zxNext/wasm/dist/zx-spectrum-next.wasm` |
+
+Then start Klive as usual:
+
+```bash
+npm run dev
+```
+
+**Rebuild whenever you change a `.c` source.** The build is not wired into `npm run dev`,
+so edits to the C cores are not picked up until you re-run the relevant script.
+
+## Verify the Output
+
+A valid artifact starts with the WebAssembly magic word `00 61 73 6d`:
+
+```bash
+npm run check:wasm-cpu-contract
+npm run check:sp48-wasm-size
+```
+
+The contract check reports `"ok": true` when the compiled exports match what the
+TypeScript loaders expect. The size checks — which CI also enforces — report
+`"withinLimit": true`.
+
+## Compiler Overrides
+
+Each machine's build script accepts environment variables, which is useful when your LLVM
+is not on `PATH` or when you want to experiment with optimization settings.
+
+| Machine | Compiler | Optimization |
+| --- | --- | --- |
+| ZX Spectrum 48K | `SP48_WASM_CC` | `SP48_WASM_OPTIMIZATION` |
+| ZX Spectrum 128K | `SP128_WASM_CC` | `SP128_WASM_OPTIMIZATION` |
+| ZX Spectrum +3E | `SPP3E_WASM_CC` | `SPP3E_WASM_OPTIMIZATION` |
+| ZX Spectrum Next | `ZXNEXT_WASM_CC` | `ZXNEXT_WASM_OPTIMIZATION` |
+
+`*_WASM_CC` defaults to `clang`. For example, on Windows without a `PATH` change:
+
+```bash
+SP48_WASM_CC="C:/Program Files/LLVM/bin/clang.exe" npm run build:sp48-wasm
+```
+
+`*_WASM_OPTIMIZATION` selects a profile and defaults to `speed`:
+
+| Profile | Flags | Use for |
+| --- | --- | --- |
+| `speed` | `-O3 -Wl,--strip-all` | The default; what releases ship |
+| `size` | `-Oz -Wl,--strip-all` | Investigating artifact size |
+| `lto` | `-O3 -flto` | Link-time optimization experiments |
+
+## Troubleshooting
+
+**`Error: spawnSync clang ENOENT`** — `clang` is not on your `PATH`. On Windows this most
+often means LLVM installed correctly but was never added to `PATH`, or that you are still
+in a terminal that was open before the install. Open a new terminal, or use the
+`*_WASM_CC` override.
+
+**`clang --print-targets` lists no `wasm32`** — your `clang` was built without the
+WebAssembly backend (typical of Apple's bundled `clang`). Install LLVM from Homebrew or
+your distribution and make sure that copy comes first on `PATH`.
+
+**`CompileError: ... expected magic word ...`** — the artifacts are missing or stale. Run
+`npm run build:all-wasm` and restart `npm run dev`.

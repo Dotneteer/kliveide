@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePopper } from "react-popper";
+import classnames from "classnames";
 import styles from "./Tooltip.module.scss";
 import { useOverlayRoot } from "./overlay/useOverlayRoot";
 
@@ -20,6 +21,14 @@ type Props = {
   offsetX?: number;
   offsetY?: number;
   isShown?: boolean;
+  /**
+   * Extra class merged onto the tooltip box, for a caller that wants its own tooltip to look
+   * different from the app's shared one (see the memory dump's `.memoryTooltip`). Give any such
+   * class double specificity (e.g. `.memoryTooltip.memoryTooltip`) so it reliably beats `.tooltip`
+   * regardless of which stylesheet happens to load second - two single-class rules from different
+   * modules tie on specificity, and the cascade then falls back to sheet order.
+   */
+  className?: string;
 };
 
 /**
@@ -35,7 +44,8 @@ export const Tooltip = ({
   placement = "top",
   offsetX = 8,
   offsetY = 8,
-  isShown = false
+  isShown = false,
+  className
 }: Props) => {
   const root = useOverlayRoot();
   const handle = useRef<ReturnType<typeof setTimeout>>();
@@ -113,7 +123,7 @@ export const Tooltip = ({
       {visible &&
         createPortal(
           <div
-            className={styles.tooltip}
+            className={classnames(styles.tooltip, className)}
             ref={setPopperElement}
             style={popperStyles.popper}
             {...attributes.popper}
@@ -145,7 +155,8 @@ export function TooltipFactory({
   placement = "top",
   offsetX = 8,
   offsetY = 8,
-  isShown = false
+  isShown = false,
+  className
 }: Props & { content?: string }) {
   const contentSegments = content ? content.split("\n") : [];
 
@@ -157,6 +168,7 @@ export function TooltipFactory({
       offsetX={offsetX}
       offsetY={offsetY}
       isShown={isShown}
+      className={className}
     >
       {contentSegments.map((segment, index) => (
         <div key={index}>{segment}</div>

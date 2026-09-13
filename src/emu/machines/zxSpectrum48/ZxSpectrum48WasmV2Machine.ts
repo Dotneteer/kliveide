@@ -65,6 +65,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
   private wasmV2CpuRegisterSyncs = 0;
   private wasmV2TapeUploadCount = 0;
   private wasmV2SavedTapeRevision = 0;
+  private wasmV2ContentionPauseBase = 0;
 
   constructor(
     modelInfo?: MachineModel,
@@ -123,6 +124,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     super.reset();
     if (this.wasmV2Runtime != null) {
       this.wasmV2Runtime.exports.sp48Reset();
+      this.wasmV2ContentionPauseBase = 0;
       this.invalidateWasmV2Sync();
       this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
       this.syncTargetClockMultiplierToWasmV2(this.wasmV2Runtime);
@@ -314,6 +316,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     const is16KModel = this.modelInfo?.config?.[MC_MEM_SIZE] === 16 ? 1 : 0;
     const isNtsc = this.modelInfo?.config?.[MC_SCREEN_FREQ] === "ntsc" ? 1 : 0;
     runtime.exports.sp48HardReset(is16KModel, isNtsc);
+    this.wasmV2ContentionPauseBase = 0;
     this.invalidateWasmV2Sync();
     this.wasmV2SavedTapeRevision = 0;
     this.setTactsInFrame(runtime.exports.sp48GetTactsInFrame());
@@ -503,7 +506,17 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     }
   }
 
+  /**
+   * Runs instructions one at a time until the frame ends or something asks the loop to stop.
+   *
+   * Everything outside `NoDebug` + `Normal` arrives here, which includes the plain non-debug
+   * `ReachExecPoint` steps of a code-injection flow - so this loop, not just the debugger, carries
+   * the machine's boot whenever the IDE starts a compiled project. It therefore only mirrors per
+   * instruction what the stop tests below actually read. The full register set is mirrored once, on
+   * the way out, by `finishWasmV2DebugLoop()`.
+   */
   private executeWasmV2DebugLoop(runtime: Sp48WasmV2Runtime): FrameTerminationMode {
+    const wasm = runtime.exports;
     const debugSupport = this.executionContext.debugSupport;
     let instructionsExecuted = 0;
     this.executionContext.lastTerminationReason = undefined;
@@ -511,10 +524,24 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     if (this.frameCompleted) {
       this.onInitNewFrame(false);
       this.frameCompleted = false;
-      this.emulateKeystroke();
     }
 
     this.syncCpuFromWasmV2(runtime);
+
+    // --- Frame-level concerns, done once per entry exactly as the full-frame path above does them.
+    // --- Queued keystrokes are timed in tacts and held for whole frames, so the queue cannot
+    // --- advance faster than the frame counter it is measured against anyway.
+    this.emulateKeystroke();
+    this.syncKeyboardToWasmV2(runtime);
+    this.syncAudioSampleRateToWasmV2(runtime);
+    this.syncTargetClockMultiplierToWasmV2(runtime);
+
+    // --- Mirroring the core's bus activity costs several boundary crossings per instruction and is
+    // --- only ever read by the memory/IO breakpoint test, so decide once whether it is needed.
+    const watchesBusAccess = debugSupport?.hasAccessBreakpoints() ?? false;
+
+    // --- Likewise, `retExecuted` is only read by the step-out test.
+    const tracksRetExecuted = this.executionContext.debugStepMode === DebugStepMode.StepOut;
     if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
       if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
         return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
@@ -525,16 +552,20 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     }
 
     while (!this.frameCompleted) {
-      this.emulateKeystroke();
-      this.syncKeyboardToWasmV2(runtime);
-      this.syncAudioSampleRateToWasmV2(runtime);
-      this.syncTargetClockMultiplierToWasmV2(runtime);
-      runtime.exports.sp48ExecuteInstruction();
+      wasm.sp48ExecuteInstruction();
       instructionsExecuted++;
-      this.syncCpuFromWasmV2(runtime);
-      this.importWasmV2BusAccess(runtime);
-      this.publishSavedTapeFromWasmV2(runtime);
-      this.frameCompleted = runtime.exports.sp48GetFrameCompleted() !== 0;
+
+      // --- Assigning through `super` on purpose: this class mirrors `pc` with a setter that pushes
+      // --- every write back into the core, and this value was just read out of that same core.
+      super.pc = wasm.sp48GetCpuPc();
+      if (tracksRetExecuted) {
+        this.retExecuted =
+          wasm.sp48GetCpuRetExecuted() !== 0 || wasm.sp48GetCpuRetnExecuted() !== 0;
+      }
+      if (watchesBusAccess) {
+        this.importWasmV2BusAccess(runtime);
+      }
+      this.frameCompleted = wasm.sp48GetFrameCompleted() !== 0;
 
       if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
         const point = this.executionContext.terminationPoint;
@@ -542,7 +573,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
           return this.finishWasmV2DebugLoop(FrameTerminationMode.UntilExecutionPoint);
         }
       }
-      if (this.hasWasmV2AccessBreakpoint()) {
+      if (watchesBusAccess && this.hasWasmV2AccessBreakpoint()) {
         return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
       }
       if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
@@ -560,7 +591,16 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
   }
 
+  /**
+   * Single exit of the debug loop: brings the TypeScript-side machine state back in step with the
+   * WASM core before anyone can observe it. The loop itself only keeps the handful of fields its
+   * stop tests read up to date, so the registers, counters and bus mirror are refreshed here.
+   */
   private finishWasmV2DebugLoop(termination: FrameTerminationMode): FrameTerminationMode {
+    const runtime = this.requireWasmV2Runtime();
+    this.syncCpuFromWasmV2(runtime);
+    this.importWasmV2BusAccess(runtime);
+    this.publishSavedTapeFromWasmV2(runtime);
     this.executionContext.lastTerminationReason = termination;
     return termination;
   }
@@ -651,6 +691,24 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     }
   }
 
+  /**
+   * The WASM backend owns the contention counters, so the JS-side fields are refreshed from the
+   * backend whenever machine state is synced. `contentionDelaySincePause` restarts at every run, so
+   * it is reported relative to the backend value captured at the last reset.
+   */
+  override resetContentionDelaySincePause(): void {
+    this.wasmV2ContentionPauseBase =
+      this.wasmV2Runtime?.exports.sp48GetContentionDelaySincePause() ?? 0;
+    this.contentionDelaySincePause = 0;
+  }
+
+  private syncContentionCountersFromWasmV2(runtime: Sp48WasmV2Runtime): void {
+    const wasm = runtime.exports;
+    this.totalContentionDelaySinceStart = wasm.sp48GetTotalContentionDelaySinceStart();
+    this.contentionDelaySincePause =
+      wasm.sp48GetContentionDelaySincePause() - this.wasmV2ContentionPauseBase;
+  }
+
   private syncCpuFromWasmV2(runtime: Sp48WasmV2Runtime): void {
     const wasm = runtime.exports;
     this.af = wasm.sp48GetCpuAf();
@@ -679,6 +737,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     this.interruptMode = wasm.sp48GetCpuInterruptMode();
     this.opCode = wasm.sp48GetCpuPrefix();
     this.retExecuted = wasm.sp48GetCpuRetExecuted() !== 0 || wasm.sp48GetCpuRetnExecuted() !== 0;
+    this.syncContentionCountersFromWasmV2(runtime);
     this.wasmV2CpuRegisterSyncs++;
   }
 
@@ -691,6 +750,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     this.tactsInCurrentFrame = wasm.sp48GetTactsInCurrentFrame();
     this.frameTacts = this.tacts % this.tactsInCurrentFrame;
     this.currentFrameTact = this.frameTacts;
+    this.syncContentionCountersFromWasmV2(runtime);
   }
 
   private invalidateWasmV2Sync(): void {

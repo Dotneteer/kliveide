@@ -35,6 +35,7 @@ export type AppSettings = {
   ideSettings?: IdeSettings;
   startScreenDisplayed?: boolean;
   theme?: string;
+  accent?: string;
   machineId?: string;
   modelId?: string;
   config?: Record<string, any>;

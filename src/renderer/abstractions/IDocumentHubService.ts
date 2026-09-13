@@ -37,6 +37,18 @@ export interface IDocumentHubService {
   getActiveDocumentIndex(): number;
 
   /**
+   * Gets the activation stamp of the specified document.
+   *
+   * The stamp is a value from a counter shared by every hub, taken each time the document is
+   * activated, so a larger stamp means "activated more recently" even when the two documents live
+   * in different hubs of a split view. Documents that have only ever been opened as a background
+   * tab were never activated and answer `0`.
+   *
+   * @param id Document ID
+   */
+  getActivationStamp(id: string): number;
+
+  /**
    * Opens the specified document
    * @param document Document to open
    * @param data Arbitrary data assigned to the document

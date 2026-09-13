@@ -1,11 +1,5 @@
 @use "@styles/core.scss" as *;
 
-.toolbar {
-    @include fix-height-panel(38px);
-    padding: 2px 4px;
-    background: var(--bgcolor-toolbar);
-}
-
 .toolbarDropdownContainer {
     display:flex;
     justify-content:center;

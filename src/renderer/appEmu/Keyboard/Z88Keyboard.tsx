@@ -1,5 +1,5 @@
-import { Column, Row } from "./keyboard-common";
 import { CSSProperties } from "react";
+import { Column, Row, calculateKeyboardZoom, keyboardRootStyle, keyboardRowStyle } from "./keyboard-common";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { KeyboardApi } from "./KeyboardPanel";
 import { useKeyboard } from "./useKeyboard";
@@ -33,7 +33,7 @@ type Props = {
 
 export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
   const { machineService } = useAppServices();
-  const zoom = calculateZoom(width, height);
+  const zoom = calculateKeyboardZoom(width, height, DEFAULT_WIDTH, DEFAULT_HEIGHT);
   const { api, isPressed } = useKeyboard(apiLoaded);
 
   // --- Prepare keyboard layout information
@@ -63,8 +63,8 @@ export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
   }
 
   return (
-    <Column width='auto' style={rootStyle}>
-      <Row height='auto' style={rowStyle}>
+    <Column width='auto' style={keyboardRootStyle}>
+      <Row height='auto' style={keyboardRowStyle}>
         <Key
           zoom={zoom}
           code={61}
@@ -173,7 +173,7 @@ export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
       </Row>
       <Row height='auto' style={row23Style}>
         <div style={{ margin: 0 }}>
-          <Row height='auto' style={rowStyle}>
+          <Row height='auto' style={keyboardRowStyle}>
             <Key
               zoom={zoom}
               code={53}
@@ -267,7 +267,7 @@ export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
               pressed={isPressed(39)}
             />
           </Row>
-          <Row height='auto' style={rowStyle}>
+          <Row height='auto' style={keyboardRowStyle}>
             <Key
               zoom={zoom}
               code={52}
@@ -376,7 +376,7 @@ export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
           />
         </div>
       </Row>
-      <Row height='auto' style={rowStyle}>
+      <Row height='auto' style={keyboardRowStyle}>
         <Key
           zoom={zoom}
           code={54}
@@ -473,7 +473,7 @@ export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
           pressed={isPressed(14)}
         />
       </Row>
-      <Row height='auto' style={rowStyle}>
+      <Row height='auto' style={keyboardRowStyle}>
         <Key
           zoom={zoom}
           code={60}
@@ -551,13 +551,6 @@ export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
     </Column>
   );
 
-  function calculateZoom (width: number, height: number): number {
-    if (!width || !height) return 0.05;
-    let widthRatio = (width - 24) / DEFAULT_WIDTH;
-    let heightRatio = (height - 12) / DEFAULT_HEIGHT;
-    return Math.min(widthRatio, heightRatio);
-  }
-
   function click (e: Z88ButtonClickArgs): void {
     const machine = machineService.getMachineController().machine;
     // --- Set status of the primary key
@@ -595,20 +588,7 @@ export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
   }
 };
 
-const rootStyle: CSSProperties = {
-  boxSizing: "border-box",
-  flexDirection: "column",
-  alignContent: "start",
-  justifyItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-  userSelect: "none"
-};
 
-const rowStyle: CSSProperties = {
-  padding: "0px 0px",
-  fontWeight: "bold"
-};
 
 const row23Style: CSSProperties = {
   flexDirection: "row"

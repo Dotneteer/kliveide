@@ -35,7 +35,7 @@ describe("ZX Spectrum Next WASM partition label parity", () => {
 
   it("keeps public label parsing compatible with TypeScript", async () => {
     const { oracle, wasm } = await createZxNextOracleHarness();
-    const labels = ["UN", "R0", "R3", "Q0", "Q1", "DM", "M0", "MF", "00", "DF"];
+    const labels = ["UN", "R0", "R3", "X0", "X1", "Q0", "Q1", "DM", "M0", "MF", "00", "DF"];
 
     for (const label of labels) {
       expect(wasm.parsePartitionLabel(label), label).toBe(oracle.parsePartitionLabel(label));

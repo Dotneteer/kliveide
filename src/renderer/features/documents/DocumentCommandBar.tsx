@@ -4,6 +4,8 @@ import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { MF_INJECT_SUPPORT } from "@common/machines/constants";
 import styles from "./DocumentsHeader.module.scss";
 
 type DocumentCommandBarProps = {
@@ -37,6 +39,16 @@ export function DocumentCommandBar({
 function BuildRootCommandBar() {
   const { outputPaneService, ideCommandsService } = useAppServices();
   const compiling = useSelector((s) => s.compilation?.inProgress ?? false);
+
+  /*
+   * Not every machine can take code injected into its memory — a ZX Spectrum Next build is a `.nex`
+   * file the machine loads for itself. Run and debug still work there, by that route, so only the
+   * plain Inject button goes; `?? true` keeps the button for any machine that has not declared
+   * either way.
+   */
+  const machineId = useSelector((s) => s.emulatorState?.machineId);
+  const supportsInject =
+    machineRegistry.find((mi) => mi.machineId === machineId)?.features?.[MF_INJECT_SUPPORT] ?? true;
   const [startedHere, setStartedHere] = useState(false);
   const [scriptId, setScriptId] = useState<number>();
 
@@ -65,13 +77,17 @@ function BuildRootCommandBar() {
         disabled={compiling}
         clicked={async () => await runBuildFunction("buildCode")}
       />
-      <TabButtonSpace />
-      <TabButton
-        iconName="inject"
-        title={"Inject code into\nthe virtual machine"}
-        disabled={compiling}
-        clicked={async () => await runBuildFunction("injectCode")}
-      />
+      {supportsInject && (
+        <>
+          <TabButtonSpace />
+          <TabButton
+            iconName="inject"
+            title={"Inject code into\nthe virtual machine"}
+            disabled={compiling}
+            clicked={async () => await runBuildFunction("injectCode")}
+          />
+        </>
+      )}
       <TabButtonSpace />
       <TabButton
         iconName="play"

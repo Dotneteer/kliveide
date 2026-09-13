@@ -83,6 +83,12 @@ describe("StaticMemoryDump", () => {
         projectService
       })
     }));
+    // --- The panel reads its row heights through `useRowSizes`, which reads the panel font size.
+    // --- Returning undefined lets `getRowSizes` fall back to its default, i.e. the 20/18px these
+    // --- tests were written against.
+    vi.doMock("@renderer/core/RendererProvider", () => ({
+      useGlobalSetting: () => undefined
+    }));
     vi.doMock("@renderer/controls/overlay/DialogProvider", () => ({
       useDialogs: () => ({
         open: openDialog
@@ -275,7 +281,9 @@ describe("StaticMemoryDump", () => {
   it("restores and saves the virtual list scroll offset without rerendering during scroll", async () => {
     const harness = await renderStaticMemoryDump({ scrollPosition: 128 });
 
-    expect(screen.getByTestId("static-dump-list")).toHaveAttribute("data-item-size", "22");
+    // --- M3: the memory row height comes from `useRowSizes().memory` now (20px at the default
+    // --- panel font size), the same number `MemoryPanel` places its rows with.
+    expect(screen.getByTestId("static-dump-list")).toHaveAttribute("data-item-size", "20");
     expect(screen.getByTestId("static-dump-list")).toHaveAttribute("data-reveal-unmeasured", "true");
     expect(harness.virtualApi.scrollTo).toHaveBeenCalledWith(128);
 
@@ -685,7 +693,7 @@ describe("StaticMemoryDump", () => {
     await waitFor(() => expect(screen.getByText("Save annotations")).not.toBeDisabled());
     expect(screen.getByText("Save annotations")).toHaveAttribute(
       "data-fill",
-      "--console-ansi-yellow"
+      "--status-warning"
     );
 
     fireEvent.click(screen.getByText("Save annotations"));

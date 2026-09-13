@@ -79,9 +79,13 @@ describe("useEmulatorScreen", () => {
         }
       }
     };
-    const hostElement = {
-      current: { getBoundingClientRect: () => ({}), offsetHeight: 20, offsetWidth: 20 }
-    };
+    // A real element: the hook reads computed padding to size the screen, which a plain object
+    // cannot answer. It is what the component passes in any case.
+    const hostDiv = document.createElement("div");
+    Object.defineProperty(hostDiv, "offsetWidth", { value: 20 });
+    Object.defineProperty(hostDiv, "offsetHeight", { value: 20 });
+    document.body.appendChild(hostDiv);
+    const hostElement = { current: hostDiv };
 
     const { useEmulatorScreen } = await import("@renderer/features/emulator/useEmulatorScreen");
     const { result } = renderHook(() =>

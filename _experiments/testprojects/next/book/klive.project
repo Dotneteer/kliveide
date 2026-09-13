@@ -1,13 +1,21 @@
 {
-  "kliveVersion": "0.58.0",
+  "kliveVersion": "0.58.2",
   "machineType": "zxnext",
-  "modelId": "pal",
+  "modelId": "standard",
+  "config": {
+    "zxnextImplementation": "wasm"
+  },
   "clockMultiplier": 1,
-  "soundLevel": 0.8,
+  "soundLevel": 1,
   "soundMuted": false,
-  "savedSoundLevel": 0.8,
+  "savedSoundLevel": 1,
   "media": {
-    "sdCard": "/Users/dotneteer/Klive/ks2.cim"
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim",
+    "tape": "",
+    "diskA": {
+      "diskFile": "/Users/dotneteer/disk1.dsk",
+      "writeProtected": false
+    }
   },
   "machineSpecific": {},
   "ide": {
@@ -19,51 +27,18 @@
   "debugger": {
     "breakpoints": [
       {
-        "address": 1,
-        "exec": true,
-        "ioMask": 65535
-      },
-      {
-        "resource": "code/code.kz80.asm",
-        "line": 24,
-        "exec": true,
-        "ioMask": 65535
-      },
-      {
-        "resource": "03_memory/legacy.asm",
-        "line": 136,
-        "exec": true,
-        "ioMask": 65535
-      },
-      {
-        "resource": "03_memory/legacy.asm",
-        "line": 209,
+        "resource": "next/book/main.kz80.asm",
+        "line": 9,
         "exec": true,
         "ioMask": 65535
       }
-    ]
+    ],
+    "watchExpressions": []
   },
   "builder": {
     "roots": [
       "main.kz80.asm"
     ]
-  },
-  "settings": {
-    "languages": {
-      "kz80-asm": ".asm"
-    }
-  },
-  "exportDialog": {
-    "formatId": "tzx",
-    "exportName": "",
-    "exportFolder": "",
-    "programName": "",
-    "screenFilename": "",
-    "startBlock": true,
-    "addClear": true,
-    "addPause": false,
-    "singleBlock": true,
-    "startAddress": ""
   },
   "workspaceSettings": {
     "docsWorkspace": {
@@ -79,61 +54,22 @@
           "documents": [
             {
               "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/00_intro/print.asm",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
               "position": {
-                "line": 27,
-                "column": 18
+                "line": 6,
+                "column": 7
               },
               "viewState": {
                 "cursorState": [
                   {
                     "inSelectionMode": false,
                     "selectionStart": {
-                      "lineNumber": 27,
-                      "column": 18
+                      "lineNumber": 6,
+                      "column": 7
                     },
                     "position": {
-                      "lineNumber": 27,
-                      "column": 18
-                    }
-                  }
-                ],
-                "viewState": {
-                  "scrollLeft": 0,
-                  "firstPosition": {
-                    "lineNumber": 13,
-                    "column": 1
-                  },
-                  "firstPositionDeltaTop": -12
-                },
-                "contributionsState": {
-                  "editor.contrib.folding": {
-                    "lineCount": 65,
-                    "provider": "syntax",
-                    "foldedImports": false
-                  },
-                  "editor.contrib.wordHighlighter": true
-                }
-              }
-            },
-            {
-              "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_talktohw/io.asm",
-              "position": {
-                "line": 8,
-                "column": 1
-              },
-              "viewState": {
-                "cursorState": [
-                  {
-                    "inSelectionMode": false,
-                    "selectionStart": {
-                      "lineNumber": 8,
-                      "column": 1
-                    },
-                    "position": {
-                      "lineNumber": 8,
-                      "column": 1
+                      "lineNumber": 6,
+                      "column": 7
                     }
                   }
                 ],
@@ -147,84 +83,6 @@
                 },
                 "contributionsState": {
                   "editor.contrib.folding": {
-                    "lineCount": 71,
-                    "provider": "syntax",
-                    "foldedImports": false
-                  },
-                  "editor.contrib.wordHighlighter": false
-                }
-              }
-            },
-            {
-              "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_talktohw/nr.asm",
-              "position": {
-                "line": 7,
-                "column": 1
-              },
-              "viewState": {
-                "cursorState": [
-                  {
-                    "inSelectionMode": false,
-                    "selectionStart": {
-                      "lineNumber": 7,
-                      "column": 1
-                    },
-                    "position": {
-                      "lineNumber": 7,
-                      "column": 1
-                    }
-                  }
-                ],
-                "viewState": {
-                  "scrollLeft": 0,
-                  "firstPosition": {
-                    "lineNumber": 36,
-                    "column": 1
-                  },
-                  "firstPositionDeltaTop": -10
-                },
-                "contributionsState": {
-                  "editor.contrib.folding": {
-                    "lineCount": 56,
-                    "provider": "syntax",
-                    "foldedImports": false
-                  },
-                  "editor.contrib.wordHighlighter": false
-                }
-              }
-            },
-            {
-              "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
-              "position": {
-                "line": 21,
-                "column": 22
-              },
-              "viewState": {
-                "cursorState": [
-                  {
-                    "inSelectionMode": false,
-                    "selectionStart": {
-                      "lineNumber": 21,
-                      "column": 22
-                    },
-                    "position": {
-                      "lineNumber": 21,
-                      "column": 22
-                    }
-                  }
-                ],
-                "viewState": {
-                  "scrollLeft": 0,
-                  "firstPosition": {
-                    "lineNumber": 14,
-                    "column": 1
-                  },
-                  "firstPositionDeltaTop": -12
-                },
-                "contributionsState": {
-                  "editor.contrib.folding": {
                     "lineCount": 105,
                     "provider": "syntax",
                     "foldedImports": false
@@ -232,47 +90,9 @@
                   "editor.contrib.wordHighlighter": false
                 }
               }
-            },
-            {
-              "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
-              "position": {
-                "line": 169,
-                "column": 1
-              },
-              "viewState": {
-                "cursorState": [
-                  {
-                    "inSelectionMode": false,
-                    "selectionStart": {
-                      "lineNumber": 169,
-                      "column": 1
-                    },
-                    "position": {
-                      "lineNumber": 169,
-                      "column": 1
-                    }
-                  }
-                ],
-                "viewState": {
-                  "scrollLeft": 0,
-                  "firstPosition": {
-                    "lineNumber": 255,
-                    "column": 1
-                  },
-                  "firstPositionDeltaTop": -6
-                },
-                "contributionsState": {
-                  "editor.contrib.folding": {
-                    "lineCount": 533,
-                    "foldedImports": false
-                  },
-                  "editor.contrib.wordHighlighter": false
-                }
-              }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
         }
       ]
     }

@@ -14,7 +14,7 @@ import {
   IdeCommandBase,
   getNumericTokenValue
 } from "@renderer/appIde/services/ide-commands";
-import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
 import { parseCommand, TokenType } from "@renderer/appIde/services/command-parser";
 import { MF_BANK, MF_ROM } from "@common/machines/constants";
 import { createEmuApi } from "@common/messaging/EmuApi";
@@ -48,15 +48,15 @@ export class ListBreakpointsCommand extends IdeCommandBase {
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const bps = await context.emuApi.listBreakpoints();
+    // --- Listing a breakpoint in a notation `bp-set` would not accept back is what the storage /
+    // --- display key split exists to prevent; this command is the one that used to do it.
+    const partitionLabels = await context.emuApi.getPartitionLabels();
     if (bps.breakpoints.length) {
       let ordered = bps.breakpoints;
       ordered.forEach((bp, idx) => {
-        let addrKey = getBreakpointKey(bp);
-        if (addrKey.startsWith("[")) {
-          `${addrKey} `;
-        } else {
-          `$${toHexa4(bp.address)} ${`(${bp.address})`.padEnd(8, " ")}`;
-        }
+        // --- Two template literals were evaluated and discarded here, doing nothing. They are
+        // --- gone; the key below is the whole address column.
+        const addrKey = getBreakpointDisplayKey(bp, partitionLabels);
         writeMessage(context.output, `[${idx + 1}]: `, "bright-blue", false);
         writeMessage(context.output, addrKey, "bright-magenta", false);
         writeMessage(context.output, bp.disabled ? " <disabled>" : "", "cyan");
@@ -231,7 +231,7 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
       ioMask: args["-m"]
     };
     const flag = await context.emuApi.setBreakpoint(bpDef);
-    let addrKey = getBreakpointKey(bpDef, this.partitionLabels);
+    let addrKey = getBreakpointDisplayKey(bpDef, this.partitionLabels);
     writeSuccessMessage(
       context.output,
       `Breakpoint at address ${addrKey}` +
@@ -265,7 +265,7 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
       ioMask: args["-m"]
     };
     const flag = await context.emuApi.removeBreakpoint(bpDef);
-    let addrKey = getBreakpointKey(bpDef, this.partitionLabels);
+    let addrKey = getBreakpointDisplayKey(bpDef, this.partitionLabels);
     if (flag) {
       writeSuccessMessage(context.output, `Breakpoint at address ${addrKey} removed`);
     } else {
@@ -313,7 +313,7 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
       ioMask: args["-m"]
     };
     const flag = await context.emuApi.enableBreakpoint(bpDef, !args["-d"]);
-    let addrKey = getBreakpointKey(bpDef, this.partitionLabels);
+    let addrKey = getBreakpointDisplayKey(bpDef, this.partitionLabels);
     if (flag) {
       writeSuccessMessage(
         context.output,

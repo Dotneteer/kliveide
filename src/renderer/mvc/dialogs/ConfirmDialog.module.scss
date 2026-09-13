@@ -1,0 +1,13 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  line-height: 1.5;
+}
+
+// --- Long paths must wrap instead of widening the dialog.
+.code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

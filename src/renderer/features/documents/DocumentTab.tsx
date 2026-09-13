@@ -1,6 +1,6 @@
 import { Icon } from "../../controls/Icon";
 import { TabButton } from "@controls/TabButton";
-import { type DragEvent, type MouseEvent, useLayoutEffect, useRef, useState } from "react";
+import { type DragEvent, useLayoutEffect, useRef } from "react";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 
 import styles from "./DocumentTab.module.scss";
@@ -15,8 +15,23 @@ import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
 import type { MainApi } from "@common/messaging/MainApi";
 
-// Preserves the hover affordance when tab order or labels change under a stationary pointer.
-let lastDocumentTabPointerPosition: { clientX: number; clientY: number } | undefined;
+/**
+ * Size of every icon on a document tab: the file-type glyph and the read-only
+ * and locked badges.
+ *
+ * 16, not 20. Matching `TabButton`'s close affordance was the old rule, and it
+ * sized the strip's icons off another icon rather than off the thing they label:
+ * at 20 against `--font-size-300` type, every glyph was drawn half again as
+ * large as the filename it belongs to, and a strip of open files read as a row
+ * of coloured tiles with captions. 16 puts the glyph just above the cap height
+ * of the name beside it, which is the relationship the Explorer tree now uses
+ * for exactly the same reason (see NODE_GLYPH_SIZE in ExplorerProjectItem.tsx).
+ *
+ * The close/dirty affordance stays at TabButton's 20 on purpose: it is a hit
+ * target, not a label, and it is the one mark on the tab that has to stay easy
+ * to click.
+ */
+const TAB_ICON_SIZE = 16;
 
 export enum CloseMode {
   All,
@@ -103,10 +118,9 @@ export const DocumentTab = ({
 
   const ref = useRef<HTMLDivElement>(null);
   const nameRef = useTooltipRef();
-  const readOnlyRef = useTooltipRef();
-  const lockedRef = useTooltipRef();
+  const readOnlyRef = useTooltipRef<HTMLDivElement>();
+  const lockedRef = useTooltipRef<HTMLDivElement>();
   const isWindows = !!store.getState().isWindows;
-  const [pointed, setPointed] = useState(false);
 
   // --- Whenever the tab is displayed or its position has changed, report it to the
   // --- parent (DocumentsHeader) so that the entire tab viewport could be displayed
@@ -115,26 +129,6 @@ export const DocumentTab = ({
       tabDisplayed?.(ref.current);
     }
   });
-
-  useLayoutEffect(() => {
-    const element = ref.current;
-    const pointerPosition = lastDocumentTabPointerPosition;
-    if (!element || !pointerPosition) return;
-
-    const hoveredElement = document.elementFromPoint(
-      pointerPosition.clientX,
-      pointerPosition.clientY
-    );
-    const isPointerOverTab = !!hoveredElement && element.contains(hoveredElement);
-    setPointed((current) => current === isPointerOverTab ? current : isPointerOverTab);
-  }, [awaiting, isActive, name, path, tabsCount]);
-
-  const rememberPointerPosition = (e: MouseEvent<HTMLDivElement>): void => {
-    lastDocumentTabPointerPosition = {
-      clientX: e.clientX,
-      clientY: e.clientY
-    };
-  };
 
   const dismissTooltips = () => {
     [nameRef.current, readOnlyRef.current, lockedRef.current].forEach((element) => {
@@ -177,18 +171,10 @@ export const DocumentTab = ({
       onDragLeave={tabDragLeave}
       onDragOver={tabDragOver}
       onDragStart={(event) => {
-        setPointed(false);
         dismissTooltips();
         tabDragStart?.(event);
       }}
       onDrop={tabDrop}
-      onMouseEnter={(e) => {
-        rememberPointerPosition(e);
-        setPointed(true);
-      }}
-      onMouseMove={rememberPointerPosition}
-      onMouseDown={rememberPointerPosition}
-      onMouseLeave={() => setPointed(false)}
       onClick={(e) => {
         if (e.button === 0) tabClicked?.();
       }}
@@ -198,7 +184,14 @@ export const DocumentTab = ({
       onDoubleClick={() => tabDoubleClicked?.()}
       onContextMenu={contextMenuApi.show}
     >
-      <Icon iconName={iconName} width={16} height={16} fill={iconFill} />
+      <span className={styles.tabGlyph}>
+        <Icon
+          iconName={iconName}
+          width={TAB_ICON_SIZE}
+          height={TAB_ICON_SIZE}
+          fill={iconFill}
+        />
+      </span>
       <span
         ref={nameRef}
         className={classnames(styles.titleText, {
@@ -224,7 +217,10 @@ export const DocumentTab = ({
 
       <TabButton
         iconName={hasChanges ? "circle-filled" : "close"}
-        hide={!pointed && !isActive}
+        // Visibility is CSS (`.documentTab:hover`, `.active`): the browser re-evaluates :hover when
+        // tabs reorder or rename under a stationary pointer, which is exactly the case the old
+        // elementFromPoint probe existed to paper over.
+        xclass={styles.closeButton}
         fill={"--color-tabbutton-fill-" + (isActive ? "active" : "inactive")}
         clicked={() => tabCloseClicked?.(CloseMode.This)}
       />
@@ -357,15 +353,15 @@ function renderDocumentTabContextMenu({
 }
 
 function renderReadOnlyBadge(
-  readOnlyRef: ReturnType<typeof useTooltipRef>,
+  readOnlyRef: ReturnType<typeof useTooltipRef<HTMLDivElement>>,
   isActive: boolean
 ) {
   return (
     <div className={styles.readOnlyIcon} ref={readOnlyRef}>
       <Icon
         iconName="shield"
-        width={16}
-        height={16}
+        width={TAB_ICON_SIZE}
+        height={TAB_ICON_SIZE}
         fill={"--color-readonly-icon-" + (isActive ? "active" : "inactive")}
       />
       <TooltipFactory
@@ -379,10 +375,15 @@ function renderReadOnlyBadge(
   );
 }
 
-function renderLockedBadge(lockedRef: ReturnType<typeof useTooltipRef>) {
+function renderLockedBadge(lockedRef: ReturnType<typeof useTooltipRef<HTMLDivElement>>) {
   return (
     <div className={styles.lockedIcon} ref={lockedRef}>
-      <Icon iconName="lock" width={16} height={16} fill="--console-ansi-bright-red" />
+      <Icon
+        iconName="lock"
+        width={TAB_ICON_SIZE}
+        height={TAB_ICON_SIZE}
+        fill="--console-ansi-bright-red"
+      />
       <TooltipFactory
         refElement={lockedRef.current}
         placement="right"

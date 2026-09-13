@@ -269,6 +269,15 @@ function staticItemToCompletion(item: StaticCompletionItem): CompletionResult {
     case "pragma":      kind = CIK.Keyword; break;
     case "keyword":     kind = CIK.Keyword; break;
     case "directive":   kind = CIK.Snippet; break;
+    case "snippet":     kind = CIK.Snippet; break;
+    // --- Without this, a kind the switch does not know leaves `kind` unassigned and Monaco
+    // --- receives `kind: undefined` — which is exactly how the thirteen "snippet" items would
+    // --- have shipped had they only been spread into Z80_COMPLETION_ITEMS. `strict` is off for
+    // --- this project, so the compiler will not catch the next one either; fail loudly instead.
+    default: {
+      const unhandled: never = item.kind;
+      throw new Error(`Unhandled completion kind: ${unhandled}`);
+    }
   }
   const insertText = item.insertText ?? item.label;
   const isSnippet = insertText !== item.label;

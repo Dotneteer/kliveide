@@ -9,6 +9,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+// --- The first dynamic import of useIdeStartup pulls in (and transforms) the whole IDE
+// --- renderer graph via "@renderer/registry". That costs ~12s on an idle machine and
+// --- well past the 30s default when the rest of the suite is competing for CPU.
+const IDE_STARTUP_IMPORT_TIMEOUT = 120_000;
+
 describe("app shell startup hooks", () => {
   it("runs IDE startup once and does not own MainToIde IPC registration", async () => {
     const cleanupIpc = vi.fn();
@@ -73,7 +78,7 @@ describe("app shell startup hooks", () => {
     // --- Unmounting must NOT tear down the IPC listener: it is owned by the module-level
     // --- registration and has to outlive any individual React tree.
     expect(cleanupIpc).not.toHaveBeenCalled();
-  });
+  }, IDE_STARTUP_IMPORT_TIMEOUT);
 
   it("loads the last IDE project after settings are synced", async () => {
     const openFolder = vi.fn(() => Promise.resolve());
@@ -193,7 +198,8 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.EXPORT_CODE_DIALOG,
       dialogIds.EXCLUDED_PROJECT_ITEMS_DIALOG,
       dialogIds.FIRST_STARTUP_DIALOG_IDE,
-      dialogIds.ABOUT_DIALOG
+      dialogIds.ABOUT_DIALOG,
+      dialogIds.SJASMPLUS_INTEGRATION_DIALOG
     ];
     const expectedEmuIds = [
       dialogIds.FIRST_STARTUP_DIALOG_EMU,
@@ -239,17 +245,17 @@ describe("app shell dialog registries and bridges", () => {
   });
 
   it("opens IDE dialogs through the renderer bridge", async () => {
-    vi.doMock("@renderer/appIde/dialogs/NewProjectDialog", () => ({
+    vi.doMock("@renderer/appIde/dialogs/newProject/NewProjectDialog", () => ({
       NewProjectDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>new project close</button>
       )
     }));
-    vi.doMock("@renderer/appIde/dialogs/ExportCodeDialog", () => ({
+    vi.doMock("@renderer/appIde/dialogs/exportCode/ExportCodeDialog", () => ({
       ExportCodeDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>export close</button>
       )
     }));
-    vi.doMock("@renderer/appIde/dialogs/ExcludedProjectItemsDialog", () => ({
+    vi.doMock("@renderer/appIde/dialogs/excludedItems/ExcludedProjectItemsDialog", () => ({
       ExcludedProjectItemsDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>excluded close</button>
       )
@@ -288,7 +294,7 @@ describe("app shell dialog registries and bridges", () => {
         <button onClick={onClose}>first close</button>
       )
     }));
-    vi.doMock("@renderer/appEmu/dialogs/Z88RemoveCardDialog", () => ({
+    vi.doMock("@renderer/appEmu/dialogs/z88/removeCard/Z88RemoveCardDialog", () => ({
       Z88RemoveCardDialog: ({
         slot,
         onRemove
@@ -299,7 +305,7 @@ describe("app shell dialog registries and bridges", () => {
         <button onClick={() => onRemove({ slot })}>remove {slot}</button>
       )
     }));
-    vi.doMock("@renderer/appEmu/dialogs/Z88InsertCardDialog", () => ({
+    vi.doMock("@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardDialog", () => ({
       Z88InsertCardDialog: ({ slot, onClose }: { slot: number; onClose: () => void }) => (
         <button onClick={onClose}>insert {slot}</button>
       )
@@ -309,12 +315,12 @@ describe("app shell dialog registries and bridges", () => {
         <button onClick={onClose}>export {slot}</button>
       )
     }));
-    vi.doMock("@renderer/appEmu/dialogs/Z88ChangeRamDialog", () => ({
+    vi.doMock("@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamDialog", () => ({
       Z88ChangeRamDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>change ram</button>
       )
     }));
-    vi.doMock("@renderer/appEmu/dialogs/CreateDiskDialog", () => ({
+    vi.doMock("@renderer/appEmu/dialogs/createDisk/CreateDiskDialog", () => ({
       CreateDiskDialog: ({ onClose }: { onClose: () => void }) => (
         <button onClick={onClose}>create disk</button>
       )

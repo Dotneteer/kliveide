@@ -41,6 +41,17 @@ export interface IDebugSupport {
   hasMemoryWrite(writes: ArrayLike<number>, length: number, partitionResolver: (address: number) => number | undefined): boolean;
 
   /**
+   * Does any breakpoint in this set watch memory or I/O access?
+   *
+   * Execution breakpoints are tested against the program counter, which an emulated machine always
+   * has to hand. Memory and I/O breakpoints are tested against the bus activity of the *last*
+   * instruction, which a WASM-backed machine has to mirror out of its core one accessor at a time.
+   * That mirroring is pure overhead when nothing watches for it, so the per-instruction debug loops
+   * ask this first and skip the import when it answers false.
+   */
+  hasAccessBreakpoints(): boolean;
+
+  /**
    * Gets IO read breakpoint information for the specified port
    * @param port Port read during the current instruction
    */

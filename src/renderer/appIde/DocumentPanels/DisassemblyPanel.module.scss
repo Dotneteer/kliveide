@@ -1,32 +1,5 @@
 @use "@styles/core.scss" as *;
 
-.panel {
-  @include fill-parent-flex;
-  box-sizing: border-box;
-  flex-direction: column;
-  user-select: none;
-  font-family: var(--monospace-font);
-  font-size: 0.8em;
-}
-
-.header {
-  @include fix-height-panel(32px);
-  flex-direction: row;
-  align-items: center;
-  padding-left: 4px;
-  flex-shrink: 0;
-  flex-grow: 0;
-  outline: none;
-}
-
-.headerSeparator {
-  @include fix-height-panel(4px);
-  flex-direction: row;
-  align-items: center;
-  flex-shrink: 0;
-  flex-grow: 0;
-}
-
 .disassemblyWrapper {
   @include fill-parent-flex;
   box-sizing: border-box;
@@ -38,8 +11,30 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  height: 18px;
   outline: none;
+  /* M3: the same number the virtualizer positions rows with. */
+  height: var(--row-size-disassembly);
+  /*
+   * The row owns its own width, rather than inheriting the viewport's.
+   *
+   * A row's last cell is the hard comment, which carries no width and is sized by its text, so a
+   * row can be wider than the panel. `virtua` wraps every row in an *absolutely positioned* div
+   * with an explicit width equal to the viewport, and a block-level flex row fills exactly that -
+   * so the row *box* stopped at the viewport edge while the comment went on painting past it. The
+   * zebra stripe, the hover highlight and the exec-point marker below all draw on this box, so
+   * they cut off mid-comment. Measured at a 430px viewport: a 430px row box against a comment
+   * ending at 459px.
+   *
+   * `min-width` rather than `width`, because it must only raise the floor: where the panel is
+   * wider than the content the row still fills the panel (measured: 900px viewport, 900px row),
+   * which is what keeps the stripes full-bleed.
+   *
+   * This is independent of the `scrollRowsHorizontally` opt-in the panel passes to
+   * `VirtualizedList`. That one widens the *wrapper*, so the container has something to scroll;
+   * this one widens the row, so the row's own background covers its own text. Either alone fixes
+   * the paint, but the row should not depend on an ancestor for its own width.
+   */
+  min-width: max-content;
 
   &.even {
     background: var(--bgcolor-disass-even-row);
@@ -73,6 +68,15 @@
       var(--bgcolor-disass-even-row)
     );
   }
+
+  /*
+   * The row the CPU is currently paused at. Declared last (same specificity as `.even` and
+   * `:hover` above, both one extra class/pseudo-class on `.item`) so it wins the cascade tie and
+   * this persistent, meaningful state is not overridden by the zebra stripe or a passing hover.
+   */
+  &.execPoint {
+    background: var(--bgcolor-disassembly-current);
+  }
 }
 
 .synopsisCommentLine {
@@ -85,38 +89,6 @@
   white-space: nowrap;
 }
 
-.iconPlaceholder {
-  width: 16px;
-  height: 16px;
-}
-
-.partitionPrefix {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 0.8ch;
-  margin-left: 0.8ch;
-  margin-right: 1.2ch;
-  color: var(--color-label);
-}
-
-.partitionLabel {
-  display: inline-flex;
-  justify-content: flex-start;
-}
-
-.partitionColon {
-  display: inline-flex;
-}
-
-.addressLabel {
-  display: flex;
-  flex: 0 0 auto;
-  justify-content: flex-start;
-  margin-right: 1.2ch;
-  color: var(--color-label);
-}
-
 .tstates {
   width: 36px;
   padding-right: 8px;
@@ -124,4 +96,32 @@
   text-align: end;
   color: var(--color-doc-inactiveText);
   flex: 0 0 auto;
+}
+
+/*
+ * Same colouring principles as the memory dump (`--color-memory-*` in componentAliases.ts),
+ * mapped onto disassembly's own columns - see `--color-disassembly-*` there for the full
+ * reasoning. `AddressLabel`/`Secondary`/`Value`/`Label` are shared with registers, watch and
+ * elsewhere, so these are nested under `.item` rather than bare: same specificity trick as the
+ * memory dump's `.dumpSection .memoryAddress`, so this reliably beats those components' own
+ * single-class rules regardless of which stylesheet happens to load second.
+ */
+.item .disassemblyAddress {
+  color: var(--color-disassembly-address);
+  font-weight: 600;
+}
+
+.item .disassemblyInstruction {
+  color: var(--color-disassembly-instruction);
+  font-weight: 600;
+}
+
+.item .disassemblyOpcodes {
+  color: var(--color-disassembly-opcodes);
+  font-weight: 600;
+}
+
+.item .disassemblyLabel {
+  color: var(--color-disassembly-label);
+  font-weight: 600;
 }

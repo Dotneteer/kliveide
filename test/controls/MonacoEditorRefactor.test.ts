@@ -91,6 +91,57 @@ describe("Monaco globals", () => {
 });
 
 describe("Monaco editor adapters", () => {
+  it("keeps a line-number selection active on the clicked line", async () => {
+    const { getNormalizedLineNumberSelection } = await import(
+      "@renderer/features/editor/monaco/monacoLineNumberSelection"
+    );
+
+    expect(
+      getNormalizedLineNumberSelection(
+        {
+          startLineNumber: 2,
+          startColumn: 1,
+          endLineNumber: 3,
+          endColumn: 1,
+          selectionStartLineNumber: 2,
+          selectionStartColumn: 1,
+          positionLineNumber: 3,
+          positionColumn: 1
+        },
+        2,
+        5
+      )
+    ).toEqual({
+      selectionStartLineNumber: 3,
+      selectionStartColumn: 1,
+      positionLineNumber: 2,
+      positionColumn: 1
+    });
+  });
+
+  it("leaves non-matching line-number selections unchanged", async () => {
+    const { getNormalizedLineNumberSelection } = await import(
+      "@renderer/features/editor/monaco/monacoLineNumberSelection"
+    );
+
+    expect(
+      getNormalizedLineNumberSelection(
+        {
+          startLineNumber: 2,
+          startColumn: 1,
+          endLineNumber: 4,
+          endColumn: 1,
+          selectionStartLineNumber: 2,
+          selectionStartColumn: 1,
+          positionLineNumber: 4,
+          positionColumn: 1
+        },
+        2,
+        5
+      )
+    ).toBeNull();
+  });
+
   it("applies user option changes in one editor update", async () => {
     const { applyMonacoUserOptions } = await import(
       "@renderer/features/editor/monaco/monacoEditorOptions"
@@ -116,7 +167,11 @@ describe("Monaco editor adapters", () => {
       tabSize: 2,
       detectIndentation: false,
       selectionHighlight: true,
-      occurrencesHighlight: false,
+      // --- "off", not `false`. Monaco's `occurrencesHighlight` is a string enum, and its option
+      // --- validator substitutes the default for anything outside it — so the boolean this test
+      // --- used to assert was being thrown away, and `enableOccurrencesHighlight: false` left
+      // --- occurrence highlighting on. The test pinned the bug in place.
+      occurrencesHighlight: "off",
       quickSuggestionsDelay: 250
     });
   });
@@ -239,7 +294,16 @@ describe("Monaco bootstrap", () => {
     expect(config).toHaveBeenCalledTimes(1);
     expect(loadCustomTokenColors).toHaveBeenCalledTimes(1);
     expect(register).toHaveBeenCalledWith({ id: "klive-z80" });
-    expect(defineTheme).toHaveBeenCalledWith("klive-z80-light", expect.any(Object));
+    /*
+     * Theme definition deliberately no longer happens here.
+     *
+     * Registering a language used to define its themes once, from literals in the provider. Phase 8
+     * generates the palette from the active tone *and accent*, so a theme's contents change while
+     * its name does not — it has to be re-definable, which `ensureLanguage`'s
+     * register-once-and-return-early cannot support. `defineLanguageThemes` does it instead, called
+     * from the editor on mount and whenever the tone or accent changes.
+     */
+    expect(defineTheme).not.toHaveBeenCalled();
     expect(registerZ80Providers).toHaveBeenCalledTimes(1);
     expect(registerEditorOpener).toHaveBeenCalledTimes(1);
   });

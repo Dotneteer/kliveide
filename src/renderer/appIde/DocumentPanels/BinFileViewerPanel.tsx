@@ -2,15 +2,15 @@ import { useMemo, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { MemoryDumpSection } from "@renderer/features/memory/MemoryDumpSection";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
-import { FullPanel, HStack } from "@renderer/controls/layout/Panels";
-import { PanelHeader } from "./helpers/PanelHeader";
+import { FullPanel } from "@renderer/controls/layout/Panels";
+import { DataPanel, DataRow, EmptyState } from "@renderer/controls/data";
+import { PanelHeader } from "@renderer/controls/data";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { VListHandle } from "virtua";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
 import { Text } from "@renderer/controls/layout/Text";
-import styles from "./BinFileViewerPanel.module.scss";
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
 
@@ -49,20 +49,20 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
   }, [data, bytesPerRow]);
 
   if (!data || data.length === 0) {
-    return <div className={styles.message}>No content.</div>;
+    return <EmptyState message="No content." />;
   }
 
   if (data.length > MAX_FILE_SIZE) {
     const sizeMb = (data.length / (1024 * 1024)).toFixed(2);
     return (
-      <div className={styles.message}>
-        File is too large to display ({sizeMb} MB). Maximum supported size is 4 MB.
-      </div>
+      <EmptyState
+        message={`File is too large to display (${sizeMb} MB). Maximum supported size is 4 MB.`}
+      />
     );
   }
 
   return (
-    <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
+    <DataPanel>
       <PanelHeader>
         <LabeledSwitch
           label="Decimal"
@@ -70,7 +70,6 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
           value={decimalView}
           clicked={(val) => setDecimalView(val)}
         />
-        <LabelSeparator width={8} />
         <Text text="View" />
         <LabelSeparator />
         <Dropdown
@@ -79,14 +78,12 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
           width={88}
           onChanged={(val) => setViewMode(val as DumpViewMode)}
         />
-        <LabelSeparator width={8} />
         <LabeledSwitch
           label="Chars"
           title="Show character dump"
           value={charDump}
           clicked={(val) => setCharDump(val)}
         />
-        <LabelSeparator width={8} />
         <AddressInput
           label="Go To"
           clearOnEnter={true}
@@ -105,16 +102,12 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
       <FullPanel>
         <VirtualizedList
           items={rows}
-          overscan={25}
           apiLoaded={(api) => {
             vlApi.current = api;
             lastScrolledIndex.current = -1;
           }}
           renderItem={(idx) => (
-            <HStack
-              backgroundColor={idx % 2 === 0 ? "--bgcolor-disass-even-row" : "transparent"}
-              hoverBackgroundColor="--bgcolor-disass-hover"
-            >
+            <DataRow index={idx} hoverable>
               <MemoryDumpSection
                 address={rows[idx]}
                 bytes={data.slice(rows[idx], rows[idx] + byteCount)}
@@ -133,11 +126,11 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
                   addressDigits={addressDigits}
                 />
               )}
-            </HStack>
+            </DataRow>
           )}
         />
       </FullPanel>
-    </FullPanel>
+    </DataPanel>
   );
 };
 

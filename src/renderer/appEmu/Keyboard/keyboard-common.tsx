@@ -107,3 +107,43 @@ export const Row: React.FC<RowProps> = ({
     </div>
   );
 };
+
+/**
+ * The zoom factor that fits a keyboard of `defaultWidth` x `defaultHeight` into the panel.
+ *
+ * All four keyboards carried a byte-identical copy of this, each with its own `DEFAULT_WIDTH` /
+ * `DEFAULT_HEIGHT` constants closed over — so the two inset numbers (24 horizontal, 12 vertical)
+ * were repeated four times with nothing keeping them in step.
+ */
+export function calculateKeyboardZoom(
+  width: number,
+  height: number,
+  defaultWidth: number,
+  defaultHeight: number
+): number {
+  if (!width || !height) return 0.05;
+  const widthRatio = (width - KEYBOARD_INSET_X) / defaultWidth;
+  const heightRatio = (height - KEYBOARD_INSET_Y) / defaultHeight;
+  return Math.min(widthRatio, heightRatio);
+}
+
+/** Room left around the keyboard so it never touches the panel edge. */
+const KEYBOARD_INSET_X = 24;
+const KEYBOARD_INSET_Y = 12;
+
+/** The shared layout of a keyboard root, previously declared once per keyboard. */
+export const keyboardRootStyle: CSSProperties = {
+  boxSizing: "border-box",
+  flexDirection: "column",
+  alignContent: "start",
+  justifyItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+  userSelect: "none"
+};
+
+/** The shared layout of a keyboard row. */
+export const keyboardRowStyle: CSSProperties = {
+  padding: "0px 0px",
+  fontWeight: "bold"
+};

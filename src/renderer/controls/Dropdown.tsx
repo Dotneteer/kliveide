@@ -7,6 +7,13 @@ import { useEffect, useState } from "react";
 export type DropdownOption = {
   value: string;
   label: string;
+  /**
+   * A longer gloss shown beside the label while the list is open.
+   *
+   * The trigger shows only the label, so what you pick is what you keep seeing — the option's
+   * identity — while the open list has room to explain it ("R0" / "ROM 0").
+   */
+  description?: string;
 };
 
 type Props = {
@@ -57,6 +64,9 @@ export default function Dropdown({
             {options.map((option) => (
               <Select.Item key={option.value} value={option.value} className={styles.SelectItem}>
                 <Select.ItemText>{option.label}</Select.ItemText>
+                {option.description && (
+                  <span className={styles.SelectItemDescription}>{option.description}</span>
+                )}
               </Select.Item>
             ))}
           </Select.Viewport>

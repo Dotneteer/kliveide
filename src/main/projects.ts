@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { WatchInfo } from "@common/state/AppState";
 
 import {
   closeFolderAction,
@@ -16,6 +17,7 @@ import {
   setProjectBuildFileAction,
   setExportDialogInfoAction,
   setWorkspaceSettingsAction,
+  setWatchesAction,
 } from "@state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
@@ -180,6 +182,12 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       disp(saveProjectSettingAction(projectStruct.settings));
       disp(setExportDialogInfoAction(projectStruct.exportDialog));
       disp(setWorkspaceSettingsAction(undefined, projectStruct.workspaceSettings));
+
+      // --- Restore the project's watch expressions. Unlike breakpoints this is not gated on the
+      // --- machine: a watch is a symbol in this project's own compilation, not machine state. The
+      // --- `?? []` matters — a project without saved watches must *clear* the list, otherwise the
+      // --- previously open project's watches would leak into this one.
+      disp(setWatchesAction(projectStruct.debugger?.watchExpressions ?? []));
 
       // --- Restore breakpoints, but only onto the machine this project actually installed. If a
       // --- concurrent machine change superseded ours, the live machine is somebody else's and
@@ -355,7 +363,10 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
       theme: state.theme
     },
     debugger: {
-      breakpoints
+      breakpoints,
+      // --- Unlike breakpoints, watches live in the shared store rather than in the emulator, so
+      // --- they are read straight from the state snapshot instead of over IPC.
+      watchExpressions: state.watchExpressions ?? []
     },
     builder: {
       roots: state.project?.buildRoots ?? []
@@ -377,6 +388,20 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
  */
 let saveProjectChain: Promise<void> = Promise.resolve();
 
+/**
+ * Reads the current contents of the project file, or undefined when it cannot be read (it does not
+ * exist yet, or it is inaccessible). An unreadable file must always count as "different" so that
+ * the save goes ahead.
+ * @param projectFile Full path of the project file
+ */
+function readProjectFileContents(projectFile: string): string | undefined {
+  try {
+    return fs.readFileSync(projectFile, "utf8");
+  } catch {
+    return undefined;
+  }
+}
+
 // --- Saves the current Klive project
 export function saveKliveProject(): Promise<void> {
   const runSave = async () => {
@@ -386,7 +411,19 @@ export function saveKliveProject(): Promise<void> {
     try {
       const projectFile = path.join(projectState.folderPath, PROJECT_FILE);
       const project = await getKliveProjectStructure();
-      fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
+      const projectContents = JSON.stringify(project, null, 2);
+
+      // --- Writing a project file that is byte-for-byte identical to the one already on disk is
+      // --- pure churn: it rewrites the file, wakes the project folder watcher, and - through
+      // --- `incProjectFileVersionAction` - tells both renderers about a change that never
+      // --- happened. The document layer answers that notification by persisting its (unchanged)
+      // --- workspace and requesting another save, which closes a feedback loop that keeps
+      // --- re-saving the project about once a second for as long as the project file is open as
+      // --- a document. Comparing against the file itself, rather than a cached string, keeps an
+      // --- externally modified project file correctly rewritten.
+      if (readProjectFileContents(projectFile) === projectContents) return;
+
+      fs.writeFileSync(projectFile, projectContents);
       mainStore.dispatch(incProjectFileVersionAction());
     } catch (err) {
       // --- A failed save must not break the chain for subsequent saves, but it should no longer
@@ -453,6 +490,11 @@ interface ViewOptions {
 // --- Represents the state of the debugger
 type DebuggerState = {
   breakpoints: BreakpointInfo[];
+  /**
+   * Watch expressions. Optional so that projects written by an older build still load — they simply
+   * restore an empty list.
+   */
+  watchExpressions?: WatchInfo[];
 };
 
 // --- Represents the state of the builder

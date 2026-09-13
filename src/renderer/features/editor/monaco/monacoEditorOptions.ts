@@ -26,7 +26,10 @@ export function applyMonacoUserOptions(
     tabSize: options.tabSize,
     detectIndentation: options.detectIndentation,
     selectionHighlight: options.enableSelectionHighlight,
-    occurrencesHighlight: options.enableOccurrencesHighlight,
+    // --- A string enum since Monaco 0.45, not a boolean. Monaco's option validator silently
+    // --- substitutes the default for an unrecognised value, so `true` AND `false` both resolved to
+    // --- "singleFile" and the user's setting did nothing in either direction.
+    occurrencesHighlight: options.enableOccurrencesHighlight ? "singleFile" : "off",
     quickSuggestionsDelay: options.quickSuggestionDelay
   });
 }

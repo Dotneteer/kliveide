@@ -205,6 +205,26 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   injectCodeToRun(codeToInject: CodeToInject): number;
 
   /**
+   * Captures the machine's entire current state under the given key, replacing any state held
+   * before. Optional: a machine that cannot serialise itself simply does not implement it.
+   * @param key Identifies what the captured state represents
+   */
+  captureCheckpoint?(key: string): void;
+
+  /**
+   * Restores the state captured under the given key.
+   * @param key The key the state was captured under
+   * @returns True when the machine was restored; false when it holds no valid state for that key,
+   * in which case the caller has to reach that state the long way round.
+   */
+  tryRestoreCheckpoint?(key: string): boolean;
+
+  /**
+   * Drops any held checkpoint, because something it was captured against has changed underneath it.
+   */
+  invalidateCheckpoints?(): void;
+
+  /**
    * Gets the partition in which the specified address is paged in
    * @param address Address to get the partition for
    */
@@ -221,6 +241,27 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * @param partition Partition index
    */
   getPartitionLabels(): Record<number, string>;
+
+  /**
+   * A human-readable name for each partition, keyed the same way as `getPartitionLabels()`.
+   *
+   * Presentation only. The *label* is a partition's identity — it is what a key contains, what a
+   * bank column shows, and what `parsePartitionLabel` accepts; a description is what a chooser
+   * spells out beside it ("Alt ROM 0" for `X0`). Never parsed, never put in a key.
+   *
+   * May be empty, or may cover only some partitions: a machine that supplies none simply shows
+   * labels everywhere. See `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §3.
+   */
+  getPartitionDescriptions(): Record<number, string>;
+
+  /**
+   * The caption each partition sits under in a chooser, keyed like `getPartitionLabels()`.
+   *
+   * Presentation only, and a *shared* string: every partition in a group returns the same one, so a
+   * chooser can print it once above the block instead of repeating it on every chip. A machine that
+   * supplies none simply gets no captions.
+   */
+  getPartitionGroups(): Record<number, string>;
 
   /**
    * Gets the current call stack information

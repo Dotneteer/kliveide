@@ -3,10 +3,23 @@ import type { EvaluationContext } from "./EvaluationContext";
 import type { AppState } from "@common/state/AppState";
 import type { Store } from "@common/state/redux-light";
 
+import type { OutputSpecification } from "@renderer/appIde/ToolArea/abstractions";
+
 import { setScriptsStatusAction } from "@common/state/actions";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { PANE_ID_SCRIPTIMG } from "@common/integration/constants";
 import { createIdeApi } from "@common/messaging/IdeApi";
+
+/**
+ * Styling a single line of script output may carry.
+ *
+ * These are the presentation fields of an output span — `foreground` above all — minus
+ * the ones `sendScriptOutput` fills in itself. The type is deliberately narrow: while
+ * this was `Record<string, any>`, thirteen call sites passed a `color` field that
+ * nothing downstream reads, so every script message silently rendered in the default
+ * cyan and errors were indistinguishable from successes.
+ */
+export type ScriptOutputOptions = Partial<Omit<OutputSpecification, "pane" | "text">>;
 
 /**
  * Concludes a running script and handles the UI messages related to it
@@ -24,7 +37,7 @@ export function concludeScript(
   evalContext: EvaluationContext,
   getAllScriptsFn: () => ScriptRunInfo[],
   script: ScriptRunInfo,
-  outputFn?: (text: string, options?: Record<string, any>) => Promise<void>,
+  outputFn?: (text: string, options?: ScriptOutputOptions) => Promise<void>,
   cleanupFn?: () => void
 ): void {
   (async () => {
@@ -43,7 +56,7 @@ export function concludeScript(
       outputFn?.(
         `Script ${script.scriptFileName} with ID ${script.id} ${script.status} after ${time}ms.`,
         {
-          color: cancelled ? "yellow" : "green"
+          foreground: cancelled ? "yellow" : "green"
         }
       );
     } catch (error: any) {
@@ -52,10 +65,10 @@ export function concludeScript(
       script.endTime = new Date();
       const time = script.endTime.getTime() - script.startTime.getTime();
       outputFn?.(`Script ${script.scriptFileName} with ID ${script.id} failed in ${time}ms.`, {
-        color: "red"
+        foreground: "red"
       });
       outputFn?.(error.toString?.() ?? "Unknown error", {
-        color: "bright-red"
+        foreground: "bright-red"
       });
       throw error;
     } finally {
@@ -74,7 +87,7 @@ export function concludeScript(
 export async function sendScriptOutput(
   messenger: MessengerBase,
   text: string,
-  options?: Record<string, any>
+  options?: ScriptOutputOptions
 ): Promise<void> {
   createIdeApi(messenger).displayOutput({
     pane: PANE_ID_SCRIPTIMG,

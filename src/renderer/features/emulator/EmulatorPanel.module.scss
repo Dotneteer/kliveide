@@ -1,5 +1,12 @@
 @use "@styles/core.scss" as *;
 
+/*
+ * The emulator stage.
+ *
+ * The gutter around the screen is real padding now. It used to be a bare `- 8` inside
+ * `useEmulatorScreen`'s ratio arithmetic — a margin that existed only in JavaScript, so no
+ * stylesheet could see it and changing it meant editing a sizing calculation.
+ */
 .emulatorPanel {
   @include fill-parent-flex;
   flex-direction: column;
@@ -7,11 +14,60 @@
   box-sizing: border-box;
   justify-content: center;
   align-items: center;
+  padding: var(--space-2);
   outline: none;
   user-select: none;
 }
 
+/*
+ * The screen itself: a device, not a rectangle.
+ *
+ * It was a bare canvas on a flat fill, with nothing to say where the machine ended and the app
+ * began. A bezel, a radius and an elevation make it read as hardware sitting on a surface — which
+ * is also why `--device-bezel` is theme-invariant (§8.2.1): a Spectrum's case is dark in both
+ * themes.
+ */
 .display {
-  background-color: var(--bgcolor-display);
   position: relative;
+  background-color: var(--bgcolor-display);
+  border: 1px solid var(--device-bezel);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+
+  /*
+   * Emulated pixels are square and must stay square.
+   *
+   * The canvas is scaled by an integer ratio, so smoothing only ever blurs it. This was never set,
+   * which meant the browser's default bilinear filter softened every scaled frame.
+   */
+  canvas {
+    display: block;
+    image-rendering: pixelated;
+  }
+}
+
+/*
+ * The overlay stack.
+ *
+ * The two overlays used to position themselves independently — the execution pill at `top: 8px` and
+ * the recording pill at `top: 40px`, the latter carrying a comment explaining that 40 was "~8px top
+ * + ~28px content height". That arithmetic breaks the moment either pill changes size. They are a
+ * column with a gap.
+ */
+.overlayStack {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  right: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  pointer-events: none;
+  z-index: 1;
+
+  > * {
+    pointer-events: auto;
+  }
 }

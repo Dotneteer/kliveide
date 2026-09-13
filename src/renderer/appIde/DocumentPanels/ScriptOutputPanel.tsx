@@ -19,6 +19,7 @@ import {
 } from "@common/state/actions";
 import { ConsoleOutput } from "./helpers/ConsoleOutput";
 import { createSettingsReader } from "@common/utils/SettingsReader";
+import { PanelHeader } from "@renderer/controls/data";
 
 type ScriptOutputPanelViewState = {
   topPosition?: number;
@@ -60,7 +61,11 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   const [scrollLocked, setLocked] = useState(
     viewState.current?.locked ?? false
   );
-  const [version, setVersion] = useState(1);
+  /*
+   * A bare re-render trigger: the value is never read, only bumped, so that the "Lines:" readout
+   * below re-evaluates when the buffer changes.
+   */
+  const [, setVersion] = useState(0);
 
   // --- Subscribe to script output changes
   useEffect(() => {
@@ -94,6 +99,18 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
     documentHubService.setDocumentViewState(document.id, mergedState);
   };
 
+  /*
+   * Scrolling fires continuously, and every event wrote the whole view state through to the
+   * document hub. Only the last position in a gesture matters, so coalesce them; the ref the save
+   * reads is already up to date, so a trailing call writes the right value.
+   */
+  const saveHandle = useRef<ReturnType<typeof setTimeout>>();
+  const saveViewStateSoon = () => {
+    clearTimeout(saveHandle.current);
+    saveHandle.current = setTimeout(saveViewState, 250);
+  };
+  useEffect(() => () => clearTimeout(saveHandle.current), []);
+
   let variant = "";
   let conclusion = "";
   if (scriptError) {
@@ -114,7 +131,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
 
   return (
     <div className={styles.panel}>
-      <div className={styles.header}>
+      <PanelHeader>
         <SmallIconButton
           iconName='stop'
           title='Stop this script file'
@@ -159,9 +176,16 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
             dispatch(incToolCommandSeqNoAction());
           }}
         />
+        {/*
+          * `scrollLocked` true means auto scrolling is OFF, so clicking turns it ON. The tooltip
+          * said the opposite — "Turn auto scrolling off" at the moment the click would turn it on —
+          * which is what a boolean you have to mentally negate eventually costs you. The state name
+          * and its persisted `locked` key are left alone; renaming them would need a view-state
+          * migration for no user-visible gain.
+          */}
         <SmallIconButton
           iconName={scrollLocked ? "unlock" : "lock"}
-          title={`Turn auto scrolling ${scrollLocked ? "off" : "on"}`}
+          title={`Turn auto scrolling ${scrollLocked ? "on" : "off"}`}
           clicked={() => setLocked(!scrollLocked)}
         />
         <ToolbarSeparator small={true} />
@@ -171,17 +195,27 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
           variant={variant}
           text={`${scriptRunning ? "(Running)" : `(${conclusion})`}`}
         />
-      </div>
+      </PanelHeader>
       <ConsoleOutput
         buffer={scriptBuffer}
         initialTopPosition={topPosition.current}
-        scrollLocked={scrollLocked}
+        followTail={!scrollLocked}
         showLineNo={showLineNo}
         onTopPositionChanged={(position: number) => {
           topPosition.current = position;
-          saveViewState();
+          saveViewStateSoon();
         }}
-        onContentsChanged={() => setVersion(version + 1)}
+        /*
+         * `v => v + 1`, not `version + 1`.
+         *
+         * The counter exists only to re-render the "Lines:" readout below, and it captured a stale
+         * `version` from the render that installed it. That was survivable while this fired once
+         * per *span* written — something always re-rendered soon enough to paper over it — which is
+         * the same firing rate that made a large script output crawl. Now that `contentsChanged` is
+         * coalesced to roughly one notification per frame, this is a cheap, correct counter rather
+         * than a re-render pump.
+         */
+        onContentsChanged={() => setVersion((v) => v + 1)}
       />
     </div>
   );

@@ -4,6 +4,7 @@ export const EXPORT_CODE_DIALOG = 2;
 export const EXCLUDED_PROJECT_ITEMS_DIALOG = 3;
 export const FIRST_STARTUP_DIALOG_IDE = 4;
 export const ABOUT_DIALOG = 5;
+export const SJASMPLUS_INTEGRATION_DIALOG = 6;
 
 // --- Emulator dialogs
 export const EMU_DIALOG_BASE = 1000;

@@ -1,6 +1,5 @@
 import { Sp48Key as Key } from "./Sp48Key";
-import { Column, Row, KeyboardButtonClickArgs } from "./keyboard-common";
-import { CSSProperties } from "react";
+import { Column, Row, KeyboardButtonClickArgs, calculateKeyboardZoom, keyboardRootStyle, keyboardRowStyle } from "./keyboard-common";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import { KeyboardApi } from "./KeyboardPanel";
@@ -17,20 +16,20 @@ type Props = {
 
 export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
   const { machineService } = useAppServices();
-  const zoom = calculateZoom(width, height);
+  const zoom = calculateKeyboardZoom(width, height, DEFAULT_WIDTH, DEFAULT_HEIGHT);
   const row1Shift = 80 * zoom;
   const row2Shift = 110 * zoom;
   const { api, isPressed } = useKeyboard(apiLoaded);
 
   return (
-    <Column width='auto' style={rootStyle}>
-      <Row height='auto' style={rowStyle}>
+    <Column width='auto' style={keyboardRootStyle}>
+      <Row height='auto' style={keyboardRowStyle}>
         <Key
           zoom={zoom}
           code={15}
           keyAction={handleClick}
           topNum='BLUE'
-          topNumColor='#0030ff'
+          topNumColor='--device-ink-blue'
           main='1'
           symbol={"\xa0\xa0!\xa0\xa0"}
           above='EDIT'
@@ -43,7 +42,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
           code={16}
           keyAction={handleClick}
           topNum='RED'
-          topNumColor='#ff0000'
+          topNumColor='--device-ink-red'
           main='2'
           symbol={"\xa0@\xa0"}
           above='CAPS LOCK'
@@ -56,7 +55,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
           code={17}
           keyAction={handleClick}
           topNum='MAGENTA'
-          topNumColor='#e000e0'
+          topNumColor='--device-ink-magenta'
           main='3'
           symbol={"\xa0#\xa0"}
           above='TRUE VID'
@@ -69,7 +68,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
           code={18}
           keyAction={handleClick}
           topNum='GREEN'
-          topNumColor='#00c000'
+          topNumColor='--device-ink-green'
           main='4'
           symbol={"\xa0$\xa0"}
           above='INV.VIDEO'
@@ -82,7 +81,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
           code={19}
           keyAction={handleClick}
           topNum='CYAN'
-          topNumColor='#00c0c0'
+          topNumColor='--device-ink-cyan'
           main='5'
           symbol={"\xa0%\xa0"}
           above={"\u140a"}
@@ -95,7 +94,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
           code={24}
           keyAction={handleClick}
           topNum='YELLOW'
-          topNumColor='#fff000'
+          topNumColor='--device-ink-yellow'
           main='6'
           symbol={"\xa0&\xa0"}
           above={"\u1401"}
@@ -108,7 +107,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
           code={23}
           keyAction={handleClick}
           topNum='WHITE'
-          topNumColor='#ffffff'
+          topNumColor='--device-ink-white'
           main='7'
           symbol={"\xa0\xa0'\xa0\xa0"}
           above={"\u1403"}
@@ -121,7 +120,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
           code={22}
           keyAction={handleClick}
           topNum='UNBRIGHT'
-          topNumColor='#a0a0a0'
+          topNumColor='--device-ink-grey'
           main='8'
           symbol={"\xa0\xa0(\xa0\xa0"}
           above={"\u1405"}
@@ -145,7 +144,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
           code={20}
           keyAction={handleClick}
           topNum='BLACK'
-          topNumColor='#505050'
+          topNumColor='--device-ink-greydark'
           main='0'
           symbol={"\uff3f"}
           above='DELETE'
@@ -153,7 +152,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
           pressed={isPressed(20)}
         />
       </Row>
-      <Row height='auto' style={{ ...rowStyle, marginLeft: row1Shift }}>
+      <Row height='auto' style={{ ...keyboardRowStyle, marginLeft: row1Shift }}>
         <Key
           zoom={zoom}
           code={10}
@@ -265,7 +264,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
           pressed={isPressed(25)}
         />
       </Row>
-      <Row height='auto' style={{ ...rowStyle, marginLeft: row2Shift }}>
+      <Row height='auto' style={{ ...keyboardRowStyle, marginLeft: row2Shift }}>
         <Key
           zoom={zoom}
           code={5}
@@ -373,7 +372,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
           pressed={isPressed(30)}
         />
       </Row>
-      <Row height='auto' style={rowStyle}>
+      <Row height='auto' style={keyboardRowStyle}>
         <Key
           zoom={zoom}
           code={0}
@@ -544,26 +543,6 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
       }
     }
   }
-
-  function calculateZoom (width: number, height: number): number {
-    if (!width || !height) return 0.05;
-    let widthRatio = (width - 24) / DEFAULT_WIDTH;
-    let heightRatio = (height - 12) / DEFAULT_HEIGHT;
-    return Math.min(widthRatio, heightRatio);
-  }
 };
 
-const rootStyle: CSSProperties = {
-  boxSizing: "border-box",
-  flexDirection: "column",
-  alignContent: "start",
-  justifyItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-  userSelect: "none"
-};
 
-const rowStyle: CSSProperties = {
-  padding: "0px 0px",
-  fontWeight: "bold"
-};

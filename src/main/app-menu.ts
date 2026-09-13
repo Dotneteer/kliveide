@@ -11,10 +11,18 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
-import { __DARWIN__ } from "./electron-utils";
+import { __DARWIN__, __WIN32__ } from "./electron-utils";
+import { getMonospaceFontOptions } from "@common/settings/monospace-fonts";
+import {
+  EDITOR_FONT_SIZES,
+  PANEL_FONT_SIZES,
+  type FontSizeOption
+} from "@common/settings/font-sizes";
+import { ACCENT_MENU_ITEMS, DEFAULT_ACCENT } from "@common/theming/accents";
 import { mainStore } from "./main-store";
 import {
   setThemeAction,
+  setAccentAction,
   setClockMultiplierAction,
   setSoundLevelAction,
   closeFolderAction,
@@ -23,6 +31,7 @@ import {
   setKeyMappingsAction
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
+import type { AppState } from "@state/AppState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { openFolder, openFolderByPath, saveKliveProject } from "./projects";
@@ -51,6 +60,7 @@ import {
   saveAppSettings,
   setSettingValue
 } from "./settings-utils";
+import { createIdeIntegrationsMenu } from "./ide-integrations-menu";
 import {
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
@@ -60,6 +70,9 @@ import {
   SETTING_EMU_SCANLINE_EFFECT,
   SETTING_IDE_CLOSE_EMU,
   SETTING_EDITOR_FONT_SIZE,
+  SETTING_EDITOR_FONT_FAMILY,
+  SETTING_PANEL_FONT_FAMILY,
+  SETTING_PANEL_FONT_SIZE,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
   SETTING_IDE_SHOW_SIDEBAR,
@@ -90,8 +103,6 @@ const RECENT_PROJECTS = "recent_projects";
 const CLOSE_FOLDER = "close_folder";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const THEMES = "themes";
-const LIGHT_THEME = "light_theme";
-const DARK_THEME = "dark_theme";
 const EXCLUDED_PROJECT_ITEMS = "manage_excluded_items";
 
 const SHOW_IDE_WINDOW = "show_ide_window";
@@ -119,6 +130,10 @@ const IDE_SETTINGS = "ide_settings";
 
 const EDITOR_OPTIONS = "editor_options";
 const EDITOR_FONT_SIZE = "editor_font_size";
+const EDITOR_FONT_FAMILY = "editor_font_family";
+const PANEL_OPTIONS = "panel_options";
+const PANEL_FONT_FAMILY = "panel_font_family";
+const PANEL_FONT_SIZE = "panel_font_size";
 const EDITOR_TAB_SIZE = "editor_tab_size";
 const EDITOR_QUICK_SUGGESTION_DELAY = "editor_quick_suggestion_delay";
 const EDITOR_RENDER_WHITESPACE = "editor_render_whitespace";
@@ -128,6 +143,81 @@ const HELP_ABOUT = "help_about";
 const HELP_HOME_PAGE = "help_home_page";
 const HELP_SHOW_WELCOME = "help_welcome";
 const KEY_MAPPING_FOLDER = "keyMappingFolder";
+
+/**
+ * Builds the theme menu items for a single tone: one checkbox per accent, so that a single click
+ * selects the complete tone + accent pair. The item matching the pair currently in effect is
+ * ticked.
+ * @param tone The light or dark tone this block covers
+ * @param appState Current application state, holding the active theme and accent
+ */
+function createThemeMenuItems(
+  tone: "light" | "dark",
+  appState: AppState
+): MenuItemConstructorOptions[] {
+  const toneLabel = tone === "light" ? "Light" : "Dark";
+  const currentAccent = appState.accent ?? DEFAULT_ACCENT;
+  return ACCENT_MENU_ITEMS.map(({ id, label }) => ({
+    id: `theme_${tone}_${id}`,
+    label: `${label} (${toneLabel})`,
+    type: "checkbox" as const,
+    checked: appState.theme === tone && currentAccent === id,
+    click: async () => {
+      mainStore.dispatch(setThemeAction(tone));
+      mainStore.dispatch(setAccentAction(id));
+      await saveKliveProject();
+    }
+  }));
+}
+
+/**
+ * Builds a monospace font-family submenu from the shared font registry. Both View | Editor Options
+ * | Font Family and View | Panel Font are built with this, so the two lists cannot drift apart -
+ * add a font to `@common/settings/monospace-fonts` and it appears in both.
+ *
+ * Only the fonts available on this platform are offered. A value persisted on another platform
+ * stays in the settings file but shows nothing checked here, and the consumer falls back to the
+ * bundled default until the user picks again.
+ * @param idPrefix Menu id prefix for the generated items
+ * @param settingId The setting the items read and write
+ */
+function createFontFamilyMenu(idPrefix: string, settingId: string): MenuItemConstructorOptions[] {
+  const currentFontId = getSettingValue(settingId);
+  return getMonospaceFontOptions(__WIN32__).map((f, idx) => ({
+    id: `${idPrefix}_${idx}`,
+    label: f.label,
+    type: "checkbox" as const,
+    checked: currentFontId === f.id,
+    click: async () => {
+      setSettingValue(settingId, f.id);
+    }
+  }));
+}
+
+/**
+ * Builds a font-size submenu from one of the shared ladders in `@common/settings/font-sizes`. The
+ * editor's and the panels' menus are both built with this, so the two stay structurally identical
+ * even though their ladders differ.
+ * @param idPrefix Menu id prefix for the generated items
+ * @param settingId The setting the items read and write
+ * @param sizes The ladder to offer
+ */
+function createFontSizeMenu(
+  idPrefix: string,
+  settingId: string,
+  sizes: FontSizeOption[]
+): MenuItemConstructorOptions[] {
+  const currentSize = getSettingValue(settingId);
+  return sizes.map((f, idx) => ({
+    id: `${idPrefix}_${idx}`,
+    label: f.label,
+    type: "checkbox" as const,
+    checked: currentSize === f.value,
+    click: async () => {
+      setSettingValue(settingId, f.value);
+    }
+  }));
+}
 
 /**
  * Creates and sets the main menu of the app
@@ -297,41 +387,23 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   // View menu
 
   // --- Prepare the view menu
-  // --- Font size option
-  const editorFontOptions = [
-    {
-      label: "Smallest",
-      value: 12
-    },
-    {
-      label: "Small",
-      value: 14
-    },
-    {
-      label: "Medium",
-      value: 16
-    },
-    {
-      label: "Large",
-      value: 20
-    },
-    {
-      label: "Largest",
-      value: 24
-    }
-  ];
-  const currentFontSize = getSettingValue(SETTING_EDITOR_FONT_SIZE);
-  const editorFontSizeMenu: MenuItemConstructorOptions[] = editorFontOptions.map((f, idx) => {
-    return {
-      id: `${EDITOR_FONT_SIZE}_${idx}`,
-      label: f.label,
-      type: "checkbox",
-      checked: currentFontSize === f.value,
-      click: async () => {
-        setSettingValue(SETTING_EDITOR_FONT_SIZE, f.value);
-      }
-    };
-  });
+  // --- The editor and the monitoring panels each pick from the same font registry, so both menus
+  // --- are built by the same helper from @common/settings/monospace-fonts.
+  const editorFontFamilyMenu = createFontFamilyMenu(EDITOR_FONT_FAMILY, SETTING_EDITOR_FONT_FAMILY);
+  const panelFontFamilyMenu = createFontFamilyMenu(PANEL_FONT_FAMILY, SETTING_PANEL_FONT_FAMILY);
+
+  // --- Font size options. The two ladders differ - prose-sized code against dense tabular data -
+  // --- but both live in @common/settings/font-sizes and are rendered by the same helper.
+  const editorFontSizeMenu = createFontSizeMenu(
+    EDITOR_FONT_SIZE,
+    SETTING_EDITOR_FONT_SIZE,
+    EDITOR_FONT_SIZES
+  );
+  const panelFontSizeMenu = createFontSizeMenu(
+    PANEL_FONT_SIZE,
+    SETTING_PANEL_FONT_SIZE,
+    PANEL_FONT_SIZES
+  );
 
   const tabSizeOptions = [
     {
@@ -514,28 +586,13 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       { type: "separator" },
       {
         id: THEMES,
-        label: "Themes",
+        label: "Theme",
+        // A single flat list: every accent paired with the light tone, then the same with dark.
+        // The pair currently in effect carries the tick mark.
         submenu: [
-          {
-            id: LIGHT_THEME,
-            label: "Light",
-            type: "checkbox",
-            checked: appState.theme === "light",
-            click: async () => {
-              mainStore.dispatch(setThemeAction("light"));
-              await saveKliveProject();
-            }
-          },
-          {
-            id: DARK_THEME,
-            label: "Dark",
-            type: "checkbox",
-            checked: appState.theme === "dark",
-            click: async () => {
-              mainStore.dispatch(setThemeAction("dark"));
-              await saveKliveProject();
-            }
-          }
+          ...createThemeMenuItems("light", appState),
+          { type: "separator" as const },
+          ...createThemeMenuItems("dark", appState)
         ]
       },
       { type: "separator" },
@@ -543,6 +600,11 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         id: EDITOR_OPTIONS,
         label: "Editor Options",
         submenu: [
+          {
+            id: EDITOR_FONT_FAMILY,
+            label: "Font Family",
+            submenu: editorFontFamilyMenu
+          },
           {
             id: EDITOR_FONT_SIZE,
             label: "Font Size",
@@ -572,6 +634,26 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
           },
           { type: "separator" },
           createBooleanSettingsMenu(SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE)
+        ]
+      },
+      {
+        // --- The monitoring views (memory, disassembly, CPU, ULA, ...), which get the same pair of
+        // --- knobs as the editor above: family from the same font registry, size from its own
+        // --- ladder. Their titles, tabs and the status bar are chrome and follow neither, exactly
+        // --- as the editor's own settings leave the tab bar alone.
+        id: PANEL_OPTIONS,
+        label: "Panel Options",
+        submenu: [
+          {
+            id: PANEL_FONT_FAMILY,
+            label: "Font Family",
+            submenu: panelFontFamilyMenu
+          },
+          {
+            id: PANEL_FONT_SIZE,
+            label: "Font Size",
+            submenu: panelFontSizeMenu
+          }
         ]
       },
       { type: "separator" },
@@ -1016,6 +1098,8 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       { type: "separator" },
       ...specificIdeMenus,
       { type: "separator" },
+      createIdeIntegrationsMenu((dialogId) => getIdeApi().displayDialog(dialogId)),
+      { type: "separator" },
       {
         type: "submenu",
         id: IDE_SETTINGS,
@@ -1107,21 +1191,33 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   // Preserve the submenus as a dedicated array.
   const submenus = template.map((i) => i.submenu);
 
-  // --- Set the menu
+  // --- Set the menu. `setupMenu` runs on *every* state change, and most of those changes do not
+  // --- alter the menu at all. Handing an unchanged menu to the OS is not free: on macOS every
+  // --- `Menu.setApplicationMenu` call replaces the single global NSMenu, which makes an
+  // --- auto-hidden menu bar (System Settings > "Automatically hide and show the menu bar", or
+  // --- full-screen mode) tear down and re-reveal itself - the menu bar visibly flashes while the
+  // --- pointer rests at the top of the screen. So only touch the native menu when the rendered
+  // --- menu really differs from the one already installed.
   if (__DARWIN__) {
     const windowFocused = isEmuWindowFocused() ? emuWindow : ideWindow;
     if (!windowFocused.isDestroyed()) {
       template.forEach(templateTransform(windowFocused));
-      Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+      if (menuChanged("app", template)) {
+        Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+      }
     }
   } else {
     if (emuWindow && !emuWindow.isDestroyed()) {
       template.forEach(templateTransform(emuWindow));
-      emuWindow.setMenu(Menu.buildFromTemplate(template));
+      if (menuChanged("emu", template)) {
+        emuWindow.setMenu(Menu.buildFromTemplate(template));
+      }
     }
     if (ideWindow && !ideWindow.isDestroyed()) {
       template.forEach(templateTransform(ideWindow));
-      ideWindow.setMenu(Menu.buildFromTemplate(template));
+      if (menuChanged("ide", template)) {
+        ideWindow.setMenu(Menu.buildFromTemplate(template));
+      }
     }
   }
 
@@ -1143,6 +1239,73 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         ) => (i.submenu = submenus[idx])
       : (i: { submenu: null }) => (i.submenu = null);
   }
+}
+
+/**
+ * The signature of the menu last handed to the OS, per menu target ("app" on macOS, "emu"/"ide"
+ * elsewhere). Used to suppress redundant native menu updates.
+ */
+const lastMenuSignatures = new Map<string, string>();
+
+/**
+ * Counts the menu updates suppressed since the last real rebuild, per target. Reported only when
+ * the KLIVE_MENU_DEBUG environment variable is set.
+ */
+const suppressedMenuUpdates = new Map<string, number>();
+
+/**
+ * Serializes the visible shape of a menu template: everything that can make the rendered menu look
+ * or behave differently (labels, ids, roles, types, accelerators, enabled/visible/checked flags and
+ * the nesting of submenus). Click handlers are deliberately excluded: they are freshly created
+ * closures on every build, so comparing them would never report an unchanged menu.
+ */
+function menuSignature(items: (MenuItemConstructorOptions | MenuItem)[] | Electron.Menu): string {
+  return JSON.stringify(items, (key, value) =>
+    typeof value === "function" || key === "icon" || key === "sharingItem" ? undefined : value
+  );
+}
+
+/**
+ * Tests whether the given menu template differs from the one most recently installed for the
+ * specified target, and remembers it when it does.
+ * @param target Menu target key
+ * @param template The template about to be installed
+ * @returns True if the native menu needs to be replaced
+ */
+function menuChanged(
+  target: string,
+  template: (MenuItemConstructorOptions | MenuItem)[]
+): boolean {
+  let signature: string;
+  try {
+    signature = menuSignature(template);
+  } catch {
+    // --- A template we cannot serialize (unexpected cyclic value) must never suppress an update.
+    lastMenuSignatures.delete(target);
+    return true;
+  }
+  if (lastMenuSignatures.get(target) === signature) {
+    suppressedMenuUpdates.set(target, (suppressedMenuUpdates.get(target) ?? 0) + 1);
+    return false;
+  }
+  if (process.env.KLIVE_MENU_DEBUG) {
+    console.log(
+      `[menu] rebuilding '${target}' menu (${suppressedMenuUpdates.get(target) ?? 0} redundant ` +
+        `update(s) suppressed since the previous rebuild)`
+    );
+  }
+  suppressedMenuUpdates.set(target, 0);
+  lastMenuSignatures.set(target, signature);
+  return true;
+}
+
+/**
+ * Forgets the cached menu signatures so that the next `setupMenu` call rebuilds the native menu
+ * even if its contents are unchanged (for example after the menu has been cleared).
+ */
+export function invalidateMenuCache(): void {
+  lastMenuSignatures.clear();
+  suppressedMenuUpdates.clear();
 }
 
 /**

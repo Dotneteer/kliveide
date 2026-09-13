@@ -1,14 +1,11 @@
-import styles from "./VidFileViewerPanel.module.scss";
-import { Label } from "@renderer/controls/layout/Label";
+import { DataPanel, PanelHeader } from "@renderer/controls/data";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 
 const VidFileViewerPanel = ({}: DocumentProps) => {
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <Label text=".VID Viewer" />
-      </div>
-    </div>
+    <DataPanel>
+      <PanelHeader title=".VID Viewer" />
+    </DataPanel>
   );
 };
 

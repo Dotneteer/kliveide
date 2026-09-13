@@ -14,7 +14,7 @@ describe("Sjasm - Arguments", () => {
     { opts: { lr35902: true }, exp: "--lr35902" },
     { opts: { lr35902: false }, exp: "" },
     { opts: { outprefix: "some" }, exp: "--outprefix=some" },
-    { opts: { inc: "some" }, exp: "--i=some" },
+    { opts: { inc: "some" }, exp: "--inc=some" },
     { opts: { lst: "some" }, exp: "--lst=some" },
     { opts: { lstlab: "some" }, exp: "--lstlab=some" },
     { opts: { sym: "some" }, exp: "--sym=some" },

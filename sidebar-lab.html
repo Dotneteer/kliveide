@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Klive — Sidebar modernization lab</title>
+<style>
+/* ============================================================================
+   Tokens lifted from src/renderer/theming/tokens/* so the prototypes are
+   colour-accurate against the real app (Sinclair Blue accent).
+   ========================================================================== */
+:root {
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --radius-xs: 2px; --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px; --radius-full: 999px;
+  --strip-sidebarHeader: 34px;
+  --row-panelHeader: 26px;
+  --font-size-50: 10px; --font-size-100: 11px; --font-size-200: 12px;
+  --font-size-300: 13px; --font-size-400: 15px;
+  --duration-fast: 80ms; --duration-base: 140ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --panel-font-size: 12px;
+  --panel-line-height: 16px;
+  --monospace-font: "Iosevka", Menlo, Consolas, monospace;
+  --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+/* --- dark tone (default) --- */
+[data-tone="dark"] {
+  --surface-canvas:#141517; --surface-chrome:#1b1d21; --surface-panel:#17191c;
+  --surface-raised:#202329; --surface-overlay:#22262d; --surface-hover:#24272e;
+  --surface-active:#2a2e36; --surface-selected:#2a2e36; --surface-stage:#2a2d32;
+  --border-subtle:#24272b; --border-default:#2e3238; --border-strong:#3d424a;
+  --text-primary:#e4e6ea; --text-secondary:#949aa4; --text-tertiary:#7f8690; --text-disabled:#5a606a;
+  --accent-solid:#45A5E6; --accent-secondary-solid:#939CF0;
+  --accent-subtle:#45A5E62e; --accent-border:#45A5E68c; --focus-ring:#45A5E6b3;
+  --status-error:#f06a6a; --status-warning:#e0b341; --status-success:#5fd07a;
+  --shadow-1:0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-2:0 2px 8px rgb(0 0 0 / 45%);
+  --shadow-3:0 8px 24px rgb(0 0 0 / 55%);
+  --shade-header:#202329; --shade-header-strong:#262a31; --shade-header-hover:#2f343d;
+  --shade-lip: rgb(255 255 255 / 7%);
+  --scroll-shadow: rgb(0 0 0 / 75%);
+  --scroll-shadow-line: rgb(0 0 0 / 90%);
+  --lab-page:#0e0f11;
+}
+/* --- light tone --- */
+[data-tone="light"] {
+  --surface-canvas:#ffffff; --surface-chrome:#f1f2f4; --surface-panel:#f7f8f9;
+  --surface-raised:#ffffff; --surface-overlay:#ffffff; --surface-hover:#e8eaee;
+  --surface-active:#e2e6ec; --surface-selected:#e2e6ec; --surface-stage:#c8ccd2;
+  --border-subtle:#e5e7ea; --border-default:#d5d8dd; --border-strong:#b9bec6;
+  --text-primary:#1b1d21; --text-secondary:#565c65; --text-tertiary:#6b717a; --text-disabled:#9aa0a8;
+  --accent-solid:#0A6FB8; --accent-secondary-solid:#0A18B8;
+  --accent-subtle:#0A6FB82e; --accent-border:#0A6FB88c; --focus-ring:#0A6FB8b3;
+  --status-error:#c23b3b; --status-warning:#8a6a00; --status-success:#2f7a44;
+  --shadow-1:0 1px 2px rgb(20 25 35 / 8%);
+  --shadow-2:0 2px 8px rgb(20 25 35 / 12%);
+  --shadow-3:0 8px 24px rgb(20 25 35 / 16%);
+  --shade-header:#ecEEF1; --shade-header-strong:#e3e6ea; --shade-header-hover:#dbdfe5;
+  --shade-lip: rgb(255 255 255 / 85%);
+  --scroll-shadow: rgb(20 25 35 / 20%);
+  --scroll-shadow-line: rgb(20 25 35 / 28%);
+  --lab-page:#dfe2e7;
+}
+
+/* ============================================================================
+   Lab chrome (not part of the proposal)
+   ========================================================================== */
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--lab-page); color: var(--text-secondary);
+  font-family: var(--ui-font); font-size: 13px;
+}
+.labBar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 10px 16px; background: var(--surface-chrome);
+  border-bottom: 1px solid var(--border-default); color: var(--text-primary);
+}
+.labBar h1 { font-size: 13px; margin: 0 8px 0 0; font-weight: 700; letter-spacing: .02em; }
+.labBar label { font-size: 12px; color: var(--text-secondary); }
+.labBar button {
+  font: inherit; font-size: 12px; padding: 4px 10px; cursor: pointer;
+  background: var(--surface-raised); color: var(--text-primary);
+  border: 1px solid var(--border-default); border-radius: var(--radius-sm);
+}
+.labBar button:hover { background: var(--surface-hover); }
+.labBar select { font: inherit; font-size: 12px; padding: 3px 6px;
+  background: var(--surface-raised); color: var(--text-primary);
+  border: 1px solid var(--border-default); border-radius: var(--radius-sm); }
+.hint { color: var(--text-tertiary); font-size: 12px; }
+
+/* Wraps instead of scrolling sideways: a horizontal strip is unreachable in a
+   narrow pane, and vertical scrolling always works. */
+.gallery {
+  display: flex; flex-wrap: wrap; gap: 28px 24px;
+  padding: 20px 16px 60px; align-items: flex-start;
+}
+.slot { flex: 0 0 auto; width: 300px; }
+.slotHead { margin: 0 0 8px; color: var(--text-primary); font-size: 12px; font-weight: 700; }
+.slotHead em { display:block; font-style: normal; font-weight: 400; color: var(--text-tertiary);
+  font-size: 11px; margin-top: 3px; max-width: 300px; line-height: 1.45; }
+.frame {
+  width: 300px; height: 560px; display: flex;
+  border: 1px solid var(--border-default); border-radius: var(--radius-md);
+  overflow: hidden; box-shadow: var(--shadow-2);
+}
+
+/* fake activity bar, so the sidebar is seen in its real context */
+.activityBar {
+  width: 48px; flex: 0 0 48px; background: var(--surface-chrome);
+  display: flex; flex-direction: column; align-items: center; padding-top: 6px; gap: 2px;
+  border-right: 1px solid var(--border-subtle);
+}
+.actBtn {
+  width: 44px; height: 44px; display: grid; place-items: center;
+  color: var(--text-tertiary); border-left: 2px solid transparent;
+}
+.actBtn.sel { color: var(--text-primary); border-left-color: var(--accent-solid); }
+
+/* ============================================================================
+   SHARED sidebar skeleton — every variant restyles this same markup
+   ========================================================================== */
+.sideBar {
+  flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;
+  background: var(--bgcolor-sitebar, var(--surface-panel));
+  user-select: none; overflow: hidden;
+}
+.sbHeader {
+  height: var(--strip-sidebarHeader); flex: 0 0 auto;
+  display: flex; align-items: center; gap: var(--space-2); padding-left: var(--space-2);
+}
+.sbTitle {
+  color: var(--text-secondary); font-size: var(--font-size-100); font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto;
+}
+.sbActions { display: flex; gap: 2px; padding-right: var(--space-1); color: var(--text-tertiary); }
+.sbActions .iconBtn { width: 22px; height: 22px; display: grid; place-items: center;
+  border-radius: var(--radius-sm); cursor: pointer; }
+.sbActions .iconBtn:hover { background: var(--surface-hover); color: var(--text-primary); }
+/* Optional: the activity supplies commands or it does not. Hidden by default. */
+.sbActions .sbMenu { display: none; }
+body.showMenu .sbActions .sbMenu { display: grid; }
+
+.panel { display: flex; flex-direction: column; overflow: hidden; }
+.panel.collapsed { flex: 0 0 auto; height: auto; }
+.panel.expanded  { flex: 1 1 auto; min-height: 0; }
+
+.pHeader {
+  height: var(--row-panelHeader); flex: 0 0 auto;
+  display: flex; flex-direction: row; align-items: center; gap: var(--space-1);
+  padding: 0 var(--space-1); cursor: pointer; outline: none;
+  border: 1px solid transparent;
+}
+.pHeader:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -1px; }
+.pHeader.notFirst { border-top: 1px solid var(--border-subtle); }
+
+.chev { width: 16px; height: 16px; flex: 0 0 16px; color: var(--text-tertiary);
+  transition: transform var(--duration-fast) var(--ease-standard); }
+.panel.expanded .chev { transform: rotate(90deg); }
+
+.pTitle {
+  color: var(--text-secondary); font-size: .8em; font-weight: 600; padding-left: 4px;
+  flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+.pBadge { display: none; }
+.pTools { display: none; }
+.sbSub  { display: none; }
+
+/* content + scroll host */
+.content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.scrollHost { position: relative; flex: 1 1 auto; min-height: 0; }
+.scroller {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent;
+}
+.scroller::-webkit-scrollbar { width: 8px; }
+.scroller::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+.scroller::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- THE SCROLL SHADOW (issue #3) ------------------------------------------
+   A non-interactive overlay pinned to the top of the scroll host. Its opacity
+   is driven by a --t custom property that the scroll handler sets from
+   scrollTop, so it fades in over the first 12px instead of snapping on.      */
+.scrollShade {
+  position: absolute; left: 0; right: 0; top: 0; height: var(--overflow-shade-h, 14px);
+  pointer-events: none; z-index: 2;
+  opacity: var(--t, 0);
+  transition: opacity var(--duration-base) var(--ease-out);
+  /* A hairline over a short gradient. On a near-black panel the gradient alone
+     is almost invisible, so the 1px line carries the edge and the gradient
+     carries the depth. */
+  background:
+    linear-gradient(to bottom, var(--scroll-shadow-line) 0 1px, transparent 1px),
+    linear-gradient(to bottom, var(--scroll-shadow), transparent);
+}
+.scrollShadeBottom {
+  position: absolute; left: 0; right: 0; bottom: 0; height: var(--overflow-shade-h, 14px);
+  pointer-events: none; z-index: 2;
+  opacity: var(--b, 0);
+  transition: opacity var(--duration-base) var(--ease-out);
+  background: linear-gradient(to top, var(--scroll-shadow), transparent);
+}
+
+.frame:not([data-v]) .scrollShade,
+.frame:not([data-v]) .scrollShadeBottom { display: none; }
+
+.grip { height: 4px; flex: 0 0 4px; cursor: row-resize; }
+.grip:hover { background: var(--accent-solid); }
+
+/* ---- mock panel content ---- */
+.dataPanel { font-family: var(--monospace-font); font-size: var(--panel-font-size);
+  line-height: var(--panel-line-height); padding: 4px 4px 4px 8px; }
+.regGrid { display: grid; grid-template-columns: 7ch 10ch 7ch 10ch; gap: 0 .8ch; }
+.lbl { color: var(--text-secondary); }
+.val { color: var(--text-primary); }
+.val.chg { color: var(--accent-solid); background: var(--accent-subtle); border-radius: 2px; }
+.listRow { display: flex; align-items: center; gap: .8ch; height: 22px;
+  font-family: var(--monospace-font); font-size: var(--panel-font-size); padding: 0 8px; }
+.listRow:hover { background: var(--surface-hover); }
+.listRow .addr { color: var(--accent-solid); }
+.listRow .txt { color: var(--text-primary); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--status-error); flex: 0 0 8px; }
+.dot.off { background: var(--text-disabled); }
+
+/* ============================================================================
+   VARIANT A — "Refined" : the smallest change that fixes all three complaints
+   ========================================================================== */
+[data-v^="A"] .sbHeader {
+  border-bottom: 1px solid var(--border-subtle);
+}
+/* FIX 1: the sidebar title now outranks the panel headers instead of sitting
+   below them — 13px/700 against the panels' 11px/600. */
+[data-v^="A"] .sbTitle {
+  color: var(--text-primary); font-size: var(--font-size-300); font-weight: 700;
+  letter-spacing: .04em;
+}
+/* FIX 2: headers get a hover surface, a real focus target and a calmer rule. */
+[data-v^="A"] .pTitle { font-size: var(--font-size-100); letter-spacing: .06em; }
+[data-v^="A"] .pHeader:hover { background: var(--surface-hover); }
+[data-v^="A"] .pHeader:hover .chev,
+[data-v^="A"] .pHeader:hover .pTitle { color: var(--text-primary); }
+[data-v^="A"] .panel.expanded > .pHeader .pTitle { color: var(--text-primary); }
+[data-v^="A"] .pBadge {
+  display: inline-block; font-family: var(--ui-font); font-size: var(--font-size-50);
+  font-weight: 600; color: var(--text-tertiary); background: var(--surface-active);
+  border-radius: var(--radius-full); padding: 1px 6px; margin-right: 4px;
+}
+
+/* ---- shaded panel headers -------------------------------------------------
+   A3 is the approved treatment and is left exactly as it was. The `.notFirst`
+   hairline stays: it is what keeps two adjacent collapsed headers from merging
+   into one undifferentiated bar.                                            */
+[data-v^="A"][data-v]:not([data-v="A"]) .pHeader:hover { background: var(--shade-header-hover); }
+
+[data-v="A1"] .pHeader { background: var(--shade-header); }
+
+[data-v="A2"] .pHeader { background: var(--shade-header-strong); }
+[data-v="A2"] .panel.expanded > .pHeader { box-shadow: inset 0 -1px 0 var(--border-default); }
+
+[data-v="A3"] .pHeader {
+  background: linear-gradient(180deg, var(--shade-header-strong), var(--shade-header));
+  box-shadow: inset 0 -1px 0 var(--border-subtle);
+}
+[data-v="A3"] .panel.expanded > .pHeader { box-shadow: inset 0 -1px 0 var(--border-default); }
+
+/* ============================================================================
+   VARIANT B — "Card stack" : panels float as cards on a recessed ground
+   ========================================================================== */
+[data-v="B"] .sideBar { background: var(--surface-canvas); padding: 0 var(--space-1) var(--space-1); gap: var(--space-1); }
+[data-v="B"] .sbHeader { padding-left: var(--space-2); }
+[data-v="B"] .sbTitle {
+  color: var(--text-primary); font-size: var(--font-size-300); font-weight: 700; letter-spacing: .04em;
+}
+[data-v="B"] .panel {
+  background: var(--surface-panel); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); overflow: hidden;
+}
+[data-v="B"] .panel.expanded { box-shadow: var(--shadow-1); }
+[data-v="B"] .pHeader { border-top: none !important; padding: 0 var(--space-2) 0 var(--space-1); }
+[data-v="B"] .pHeader:hover { background: var(--surface-hover); }
+[data-v="B"] .panel.expanded > .pHeader {
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+[data-v="B"] .pTitle { font-size: var(--font-size-100); letter-spacing: .06em; color: var(--text-primary); }
+[data-v="B"] .panel.collapsed .pTitle { color: var(--text-secondary); }
+[data-v="B"] .pBadge {
+  display: inline-block; font-family: var(--ui-font); font-size: var(--font-size-50);
+  font-weight: 600; color: var(--text-tertiary); background: var(--surface-active);
+  border-radius: var(--radius-full); padding: 1px 6px; margin-right: 2px;
+}
+[data-v="B"] .grip { background: transparent; }
+
+/* ============================================================================
+   VARIANT C — "Accent rail" : the open panel is marked, headers carry tools
+   ========================================================================== */
+[data-v="C"] .sbHeader {
+  background: var(--surface-chrome); border-bottom: 1px solid var(--border-default);
+  height: 38px;
+}
+[data-v="C"] .sbTitle {
+  color: var(--text-primary); font-size: var(--font-size-400); font-weight: 700;
+  letter-spacing: .01em; text-transform: none;
+}
+[data-v="C"] .sbSub {
+  display: block; font-size: var(--font-size-50); font-weight: 500; letter-spacing: .04em;
+  color: var(--text-tertiary); text-transform: uppercase; margin-top: -2px;
+}
+[data-v="C"] .pHeader {
+  border-top: none !important; position: relative;
+  padding-left: calc(var(--space-1) + 3px);
+  background: var(--surface-panel);
+}
+[data-v="C"] .pHeader::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--accent-solid); opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+[data-v="C"] .panel.expanded > .pHeader::before { opacity: 1; }
+[data-v="C"] .panel.expanded > .pHeader {
+  background: var(--surface-raised);
+  box-shadow: inset 0 -1px 0 var(--border-subtle);
+}
+[data-v="C"] .panel.collapsed + .panel.collapsed > .pHeader { box-shadow: inset 0 1px 0 var(--border-subtle); }
+[data-v="C"] .pHeader:hover { background: var(--surface-hover); }
+[data-v="C"] .pTitle { font-size: var(--font-size-100); letter-spacing: .07em; color: var(--text-primary); }
+[data-v="C"] .pBadge {
+  display: inline-block; font-family: var(--monospace-font); font-size: var(--font-size-50);
+  color: var(--accent-solid); background: var(--accent-subtle);
+  border: 1px solid var(--accent-border); border-radius: var(--radius-full);
+  padding: 0 6px; line-height: 15px;
+}
+[data-v="C"] .pTools { display: flex; gap: 1px; opacity: 0; color: var(--text-tertiary);
+  transition: opacity var(--duration-fast) var(--ease-standard); }
+[data-v="C"] .pHeader:hover .pTools { opacity: 1; }
+[data-v="C"] .pTools .iconBtn { width: 20px; height: 20px; display: grid; place-items: center;
+  border-radius: var(--radius-sm); }
+[data-v="C"] .pTools .iconBtn:hover { background: var(--surface-active); color: var(--text-primary); }
+
+/* ============================================================================
+   VARIANT D — "Quiet rules" : no chrome at all, hierarchy purely by type
+   ========================================================================== */
+[data-v="D"] .sideBar { background: var(--surface-panel); }
+[data-v="D"] .sbHeader { height: 40px; padding-left: var(--space-3); align-items: flex-end; padding-bottom: 6px; }
+[data-v="D"] .sbTitle {
+  color: var(--text-primary); font-size: var(--font-size-400); font-weight: 600;
+  letter-spacing: 0; text-transform: none;
+}
+[data-v="D"] .pHeader {
+  border-top: none !important; padding-left: var(--space-1);
+  height: 30px;
+}
+[data-v="D"] .pHeader:hover .pTitle { color: var(--text-primary); }
+[data-v="D"] .pTitle {
+  font-size: var(--font-size-100); font-weight: 700; letter-spacing: .1em;
+  color: var(--text-tertiary);
+}
+[data-v="D"] .panel.expanded > .pHeader .pTitle { color: var(--text-secondary); }
+[data-v="D"] .chev { width: 12px; height: 12px; flex: 0 0 12px; opacity: .7; }
+[data-v="D"] .pBadge {
+  display: inline-block; font-family: var(--monospace-font); font-size: var(--font-size-50);
+  color: var(--text-tertiary); margin-right: 2px;
+}
+/* the only rule in the whole sidebar: between two collapsed neighbours */
+[data-v="D"] .panel.collapsed + .panel.collapsed > .pHeader {
+  box-shadow: inset 0 1px 0 var(--border-subtle);
+}
+[data-v="D"] .content { padding-left: 2px; }
+</style>
+</head>
+<body data-tone="dark">
+
+<div class="labBar">
+  <h1>Klive — sidebar modernization lab</h1>
+  <button id="toneBtn">Toggle light / dark</button>
+  <label>Accent
+    <select id="accentSel">
+      <option value="#45A5E6|#0A6FB8">Sinclair Blue</option>
+      <option value="#C264D6|#9B2FB4">Spectrum Magenta</option>
+      <option value="#FFC933|#8A6A00">Ember</option>
+      <option value="#A78AF5|#6340C8">Ultraviolet</option>
+    </select>
+  </label>
+  <label><input type="checkbox" id="menuChk"> Sidebar &ctdot; menu</label>
+  <label><input type="checkbox" id="shadeChk" checked> Scroll shadow</label>
+  <button id="scrollBtn">Scroll panels</button>
+  <label>Overflow shadow <input type="range" id="hRange" min="0" max="16" step="1" value="14" style="vertical-align:middle;width:90px">
+    <b id="hOut" style="font:600 12px monospace;color:var(--accent-solid)">per&nbsp;frame</b></label>
+  <span class="hint">Scroll inside a panel to see the top shadow. Click a panel header to collapse/expand.</span>
+</div>
+
+<div class="gallery" id="gallery"></div>
+
+<template id="sbTpl">
+  <div class="frame">
+    <div class="activityBar">
+      <div class="actBtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h6l2 2h8v12H4z"/></svg></div>
+      <div class="actBtn sel"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg></div>
+      <div class="actBtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/></svg></div>
+      <div class="actBtn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 18V6l8 6-8 6zM14 6h2v12h-2z"/></svg></div>
+    </div>
+
+    <div class="sideBar">
+      <div class="sbHeader">
+        <span class="sbTitle">Debug<span class="sbSub">ZX Spectrum 48K</span></span>
+        <span class="sbActions">
+          <span class="iconBtn sbMenu" title="More"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.5" cy="8" r="1.3"/></svg></span>
+        </span>
+      </div>
+
+      <!-- Z80 CPU : expanded, scrollable -->
+      <div class="panel expanded" style="height: 190px">
+        <div class="pHeader" tabindex="0">
+          <svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg>
+          <span class="pTitle">Z80 CPU</span>
+          <span class="pBadge">running</span>
+          <span class="pTools">
+            <span class="iconBtn" title="Pin"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 2h4l-1 4 3 3H4l3-3z"/><path d="M8 9v5"/></svg></span>
+            <span class="iconBtn" title="Options"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="12.5" cy="8" r="1.2"/></svg></span>
+          </span>
+        </div>
+        <div class="content">
+          <div class="scrollHost">
+            <div class="scrollShade"></div>
+            <div class="scroller">
+              <div class="dataPanel">
+                <div class="regGrid">
+                  <span class="lbl">AF</span><span class="val chg">$1A4C</span><span class="lbl">AF'</span><span class="val">$0044</span>
+                  <span class="lbl">BC</span><span class="val">$0010</span><span class="lbl">BC'</span><span class="val">$0000</span>
+                  <span class="lbl">DE</span><span class="val">$5C3A</span><span class="lbl">DE'</span><span class="val">$0000</span>
+                  <span class="lbl">HL</span><span class="val chg">$4000</span><span class="lbl">HL'</span><span class="val">$2758</span>
+                  <span class="lbl">IX</span><span class="val">$03D4</span><span class="lbl">IY</span><span class="val">$5C3A</span>
+                  <span class="lbl">SP</span><span class="val">$FF4A</span><span class="lbl">PC</span><span class="val chg">$8021</span>
+                  <span class="lbl">I</span><span class="val">$3F</span><span class="lbl">R</span><span class="val">$7C</span>
+                  <span class="lbl">IM</span><span class="val">1</span><span class="lbl">IFF1</span><span class="val">1</span>
+                  <span class="lbl">TACT</span><span class="val">42 118</span><span class="lbl">FRM</span><span class="val">1 204</span>
+                  <span class="lbl">S Z 5 H</span><span class="val">0 1 0 0</span><span class="lbl">3 P N C</span><span class="val">1 0 0 1</span>
+                  <span class="lbl">INT</span><span class="val">off</span><span class="lbl">HALT</span><span class="val">no</span>
+                  <span class="lbl">ROM</span><span class="val">0</span><span class="lbl">RAM</span><span class="val">5</span>
+                  <span class="lbl">SCR</span><span class="val">$4000</span><span class="lbl">BANK</span><span class="val">2</span>
+                  <span class="lbl">BORD</span><span class="val">7</span><span class="lbl">EAR</span><span class="val">0</span>
+                  <span class="lbl">MIC</span><span class="val">0</span><span class="lbl">TAPE</span><span class="val">stop</span>
+                  <span class="lbl">CLK</span><span class="val chg">3.50MHz</span><span class="lbl">ULA</span><span class="val">$FE</span>
+                  <span class="lbl">KEMP</span><span class="val">$00</span><span class="lbl">AY</span><span class="val">off</span>
+                </div>
+              </div>
+            </div>
+            <div class="scrollShadeBottom"></div>
+          </div>
+          <div class="grip"></div>
+        </div>
+      </div>
+
+      <!-- Breakpoints : expanded, scrollable -->
+      <div class="panel expanded notFirstPanel" style="height: 150px">
+        <div class="pHeader notFirst" tabindex="0">
+          <svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg>
+          <span class="pTitle">Breakpoints</span>
+          <span class="pBadge">5</span>
+          <span class="pTools">
+            <span class="iconBtn" title="Add"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg></span>
+            <span class="iconBtn" title="Remove all"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg></span>
+          </span>
+        </div>
+        <div class="content">
+          <div class="scrollHost">
+            <div class="scrollShade"></div>
+            <div class="scroller">
+              <div class="listRow"><span class="dot"></span><span class="addr">$8021</span><span class="txt">main.asm:118</span></div>
+              <div class="listRow"><span class="dot"></span><span class="addr">$80A4</span><span class="txt">main.asm:142</span></div>
+              <div class="listRow"><span class="dot off"></span><span class="addr">$9130</span><span class="txt">sprite.asm:22</span></div>
+              <div class="listRow"><span class="dot"></span><span class="addr">$C000</span><span class="txt">loader.asm:9</span></div>
+              <div class="listRow"><span class="dot"></span><span class="addr">$0038</span><span class="txt">rom / IM1</span></div>
+              <div class="listRow"><span class="dot off"></span><span class="addr">$5B00</span><span class="txt">buffer write</span></div>
+              <div class="listRow"><span class="dot"></span><span class="addr">$7FFF</span><span class="txt">io read $FE</span></div>
+              <div class="listRow"><span class="dot off"></span><span class="addr">$A21C</span><span class="txt">music.asm:64</span></div>
+            </div>
+            <div class="scrollShadeBottom"></div>
+          </div>
+          <div class="grip"></div>
+        </div>
+      </div>
+
+      <!-- Collapsed ones -->
+      <div class="panel collapsed">
+        <div class="pHeader notFirst" tabindex="0">
+          <svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg>
+          <span class="pTitle">Call Stack</span><span class="pBadge">7</span>
+          <span class="pTools"><span class="iconBtn"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="12.5" cy="8" r="1.2"/></svg></span></span>
+        </div>
+      </div>
+      <div class="panel collapsed">
+        <div class="pHeader notFirst" tabindex="0">
+          <svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg>
+          <span class="pTitle">Watch</span><span class="pBadge">3</span>
+          <span class="pTools"><span class="iconBtn"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="12.5" cy="8" r="1.2"/></svg></span></span>
+        </div>
+      </div>
+      <div class="panel collapsed">
+        <div class="pHeader notFirst" tabindex="0">
+          <svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg>
+          <span class="pTitle">ULA &amp; I/O</span>
+          <span class="pTools"><span class="iconBtn"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="12.5" cy="8" r="1.2"/></svg></span></span>
+        </div>
+      </div>
+      <div class="panel collapsed">
+        <div class="pHeader notFirst" tabindex="0">
+          <svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg>
+          <span class="pTitle">System Variables</span>
+          <span class="pTools"><span class="iconBtn"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="12.5" cy="8" r="1.2"/></svg></span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+/* Every frame is the approved A3. Only the overflow shadow's height differs. */
+const VARIANTS = [
+  ["A3", "14px &mdash; as it was", "The height you saw. A 1px hairline over a 13px gradient.", "14px"],
+  ["A3", "8px", "Just over half. The gradient still reads as depth rather than as a line.", "8px"],
+  ["A3", "6px", "The gradient becomes a soft foot under the hairline.", "6px"],
+  ["A3", "4px", "Nearly all hairline. The gradient is a whisper of falloff.", "4px"],
+  ["A3", "1px &mdash; hairline only", "No gradient at all: a single rule that appears when there is content above.", "1px"]
+];
+
+const gallery = document.getElementById("gallery");
+const tpl = document.getElementById("sbTpl");
+
+for (const [id, label, blurb, shadeH] of VARIANTS) {
+  const slot = document.createElement("div");
+  slot.className = "slot";
+  const h = document.createElement("p");
+  h.className = "slotHead";
+  h.innerHTML = label + "<em>" + blurb + "</em>";
+  slot.appendChild(h);
+  const frame = tpl.content.cloneNode(true);
+  const root = frame.querySelector(".frame");
+  if (id !== "today") root.dataset.v = id;
+  if (shadeH) root.style.setProperty("--overflow-shade-h", shadeH);
+  slot.appendChild(frame);
+  gallery.appendChild(slot);
+}
+
+// --- collapse / expand -------------------------------------------------------
+gallery.addEventListener("click", (e) => {
+  const head = e.target.closest(".pHeader");
+  if (!head) return;
+  const panel = head.closest(".panel");
+  const open = panel.classList.toggle("expanded");
+  panel.classList.toggle("collapsed", !open);
+  if (!open) panel.style.height = "";
+  else if (!panel.style.height) panel.style.height = "180px";
+});
+
+// --- the scroll shadow: opacity ramps over the first 12px of travel ----------
+const RAMP = 6;
+function wire(scroller) {
+  const host = scroller.closest(".scrollHost");
+  const top = host.querySelector(".scrollShade");
+  const bot = host.querySelector(".scrollShadeBottom");
+  const update = () => {
+    const max = scroller.scrollHeight - scroller.clientHeight;
+    if (top) top.style.setProperty("--t", Math.min(1, scroller.scrollTop / RAMP).toFixed(3));
+    if (bot) bot.style.setProperty("--b", Math.min(1, (max - scroller.scrollTop) / RAMP).toFixed(3));
+  };
+  scroller.addEventListener("scroll", update, { passive: true });
+  new ResizeObserver(update).observe(scroller);
+  update();
+}
+document.querySelectorAll(".scroller").forEach(wire);
+
+// --- lab controls ------------------------------------------------------------
+const hRange = document.getElementById("hRange"), hOut = document.getElementById("hOut");
+hRange.oninput = () => {
+  // Inline, so it overrides each frame's own per-variant height.
+  document.querySelectorAll(".frame")
+    .forEach(f => f.style.setProperty("--overflow-shade-h", hRange.value + "px"));
+  hOut.textContent = hRange.value + "px";
+};
+document.getElementById("shadeChk").onchange = (e) => {
+  document.querySelectorAll(".scrollShade, .scrollShadeBottom")
+    .forEach(el => el.style.visibility = e.target.checked ? "" : "hidden");
+};
+document.getElementById("scrollBtn").onclick = () => {
+  document.querySelectorAll(".scroller").forEach(x => {
+    x.scrollTop = x.scrollTop > 0 ? 0 : 60;
+  });
+};
+document.getElementById("menuChk").onchange = (e) => {
+  document.body.classList.toggle("showMenu", e.target.checked);
+};
+document.getElementById("toneBtn").onclick = () => {
+  document.body.dataset.tone = document.body.dataset.tone === "dark" ? "light" : "dark";
+};
+document.getElementById("accentSel").onchange = (e) => {
+  const [dark, light] = e.target.value.split("|");
+  const css = `[data-tone="dark"]{--accent-solid:${dark};--accent-subtle:${dark}2e;--accent-border:${dark}8c;--focus-ring:${dark}b3}
+               [data-tone="light"]{--accent-solid:${light};--accent-subtle:${light}2e;--accent-border:${light}8c;--focus-ring:${light}b3}`;
+  let s = document.getElementById("accentOverride");
+  if (!s) { s = document.createElement("style"); s.id = "accentOverride"; document.head.appendChild(s); }
+  s.textContent = css;
+};
+</script>
+</body>
+</html>

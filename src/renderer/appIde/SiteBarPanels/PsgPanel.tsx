@@ -17,7 +17,7 @@ export const PsgPanel = () => {
   });
 
   return (
-    <div className={styles.ulaPanel}>
+    <div className={styles.psgPanel}>
       <LabeledValue label="IDX" value={psgState?.psgRegisterIndex} toolTip="PSG Register Index" />
       <LabeledValue label="EnvFq" value={psgState?.envFreq} toolTip="Envelope frequency" />
       <LabeledValue label="Env" value={psgState?.envStyle} toolTip="Envelope style" />
