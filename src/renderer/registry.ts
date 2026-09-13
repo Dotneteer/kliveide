@@ -603,6 +603,14 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   },
   {
     matchType: "ends",
+    pattern: ".nex.dis",
+    editor: CODE_EDITOR,
+    subType: "json",
+    icon: "note",
+    isReadOnly: true
+  },
+  {
+    matchType: "ends",
     pattern: ".nex",
     editor: NEX_VIEWER,
     icon: "chip",

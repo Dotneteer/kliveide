@@ -1,0 +1,112 @@
+@use "@styles/core.scss" as *;
+
+.annotationPanel {
+  display: flex;
+  gap: 0.35em;
+  align-items: center;
+  min-height: 1.6em;
+  padding: 0.5em 1em;
+  border-bottom: 1px solid var(--color-toolbar-separator);
+  color: var(--color-secondary-label);
+  background-color: var(--bgcolor-toolbar);
+}
+
+.annotationError {
+  color: var(--bgcolor-errorLabel);
+}
+
+.annotationLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-value);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+
+  &:hover {
+    color: var(--color-command-icon);
+  }
+}
+
+.headerAttributes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  column-gap: 1.2em;
+  row-gap: 0.6em;
+  padding: 0.2em 0 0.5em;
+}
+
+.headerAttributeGroup {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  //border-left: 1px solid var(--color-toolbar-separator);
+}
+
+.headerAttributeGroupTitle {
+  color: var(--color-secondary-label);
+  font-family: var(--main-font-family);
+  padding: 0.1em 0 0.25em 0.4em;
+}
+
+.headerAttributeRow {
+  min-width: 0;
+  min-height: 1.7em;
+}
+
+.headerFlagRow {
+  flex-wrap: wrap;
+  row-gap: 0.2em;
+}
+
+/*
+ * A bank section's heading.
+ *
+ * Four roles, previously one run of `--data-secondary` text joined by pipes. See `BankHeading`.
+ */
+.bankWord {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+/* What you actually scan a stack of these for. */
+.bankNumber {
+  color: var(--accent-text);
+  font-family: var(--monospace-font);
+}
+
+/* The same number in the other base: useful, but never the thing you are looking for. */
+.bankDecimal {
+  color: var(--data-secondary);
+  font-weight: 400;
+  font-size: 0.92em;
+}
+
+/*
+ * Where the machine actually is. A chip rather than more text, because it is state rather than
+ * name — it is true of this bank at this moment, not of the bank.
+ */
+.bankMark {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 0 0.5em;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--accent-text);
+  font-family: var(--monospace-font);
+  font-size: 0.84em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/*
+ * The stack pointer takes the secondary accent, for the reason that token exists: a row can carry
+ * both marks, and PC and SP are the same *kind* of fact, so only colour tells them apart at a
+ * glance once the row is scanned rather than read.
+ */
+.bankMarkAlt {
+  color: var(--accent-secondary-text);
+}

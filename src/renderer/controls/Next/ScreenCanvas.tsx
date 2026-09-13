@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { Row } from "@renderer/controls/layout/Row";
 
 type Props = {
@@ -16,7 +16,7 @@ type Props = {
 };
 
 // --- Represents a canvas and a drawing method to display a ZX Spectrum screen
-export const ScreenCanvas = ({
+const ScreenCanvasComponent = ({
   data,
   palette,
   screenWidth,
@@ -83,7 +83,16 @@ export const ScreenCanvas = ({
         screenEl.height
       );
     }
-  }, [data]);
+  }, [
+    calculateDataLength,
+    createPixelData,
+    canvasHeight,
+    canvasWidth,
+    data,
+    palette,
+    shadowScreenHeight,
+    shadowScreenWidth
+  ]);
 
   return (
     <Row>
@@ -97,3 +106,5 @@ export const ScreenCanvas = ({
     </Row>
   );
 };
+
+export const ScreenCanvas = memo(ScreenCanvasComponent);

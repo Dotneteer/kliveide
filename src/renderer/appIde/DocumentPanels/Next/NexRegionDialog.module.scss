@@ -1,0 +1,126 @@
+@use "@styles/core.scss" as *;
+
+.typeOptions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.typeOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-modal-body);
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-input);
+  color: var(--color-input);
+  font-family: var(--monospace-font);
+  font-size: 0.9em;
+  outline: none;
+
+  /* The app's single focus treatment — `:focus-visible`, so a mouse click does not light a ring. */
+  @include focus-ring;
+}
+
+.rangeInputRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.readOnlyValue {
+  box-sizing: border-box;
+  min-height: 26px;
+  overflow: hidden;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 5px 8px;
+  background: var(--bgcolor-modal-header);
+  color: var(--color-doc-inactiveText);
+  font-family: var(--monospace-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * `--status-error`, not the console's ANSI red — that palette is a fixed external contract for
+ * program output. The 128px left margin was aligning to a label column `DialogRow` no longer has.
+ */
+.error {
+  /*
+   * Tight above, nothing below: an error belongs to the field it is about, and the row beneath it
+   * brings its own separation now.
+   */
+  margin: var(--space-1) 0 0;
+  color: var(--status-error);
+  font-size: 0.85em;
+}
+
+/* Three rows, as the Label dialog's own secondary list: enough to show that it scrolls. */
+.regionList {
+  box-sizing: border-box;
+  --list-row-height: var(--size-controlSm);
+  --list-visible-rows: 3;
+
+  height: calc(var(--list-row-height) * var(--list-visible-rows));
+  overflow: auto;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  background: var(--bgcolor-modal-header);
+}
+
+.regionItem {
+  display: grid;
+  box-sizing: border-box;
+  height: var(--list-row-height);
+  align-items: center;
+  grid-template-columns: 7ch 7ch 14ch minmax(12ch, 1fr) 9ch;
+  column-gap: 12px;
+  padding: 0 8px;
+  color: var(--color-modal-body);
+  font-family: var(--monospace-font);
+
+  > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.emptyList {
+  padding: 8px;
+  color: var(--color-doc-inactiveText);
+}
+
+/*
+ * A fixed viewport, sized in lines.
+ *
+ * A `min-height`/`max-height` pair let the box grow and shrink with the text it previews, which
+ * moves the footer and resizes the dialog while you type into the field above it. Lines rather than
+ * pixels because that is what a preview holds — see the same pair on the lists in this folder.
+ */
+.preview {
+  box-sizing: border-box;
+  --preview-lines: 5;
+
+  height: calc(var(--preview-lines) * 1.5em + 12px);
+  line-height: 1.5;
+  overflow: auto;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-modal-header);
+  color: var(--color-doc-inactiveText);
+  font-family: var(--monospace-font);
+  white-space: pre-wrap;
+}
+

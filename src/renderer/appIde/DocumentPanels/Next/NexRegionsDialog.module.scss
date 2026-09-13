@@ -1,0 +1,150 @@
+@use "@styles/core.scss" as *;
+
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.search,
+.typeFilter {
+  box-sizing: border-box;
+  min-width: 0;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-input);
+  color: var(--color-input);
+  font-family: var(--monospace-font);
+  font-size: 0.9em;
+  outline: none;
+
+  /* The app's single focus treatment — `:focus-visible`, so a mouse click does not light a ring. */
+  @include focus-ring;
+}
+
+/*
+ * A fixed viewport of eight rows plus the sticky header — the same size, and the same arithmetic,
+ * as the Labels list. Filtering by type or search must not resize the dialog under the pointer.
+ */
+/* The address did not parse, so nothing was narrowed — say so on the field that did not narrow it. */
+.search.invalid {
+  outline: 1px solid var(--status-error);
+}
+
+.table {
+  box-sizing: border-box;
+  --list-row-height: var(--size-controlMd);
+  --list-visible-rows: 8;
+
+  height: calc(var(--list-row-height) * (var(--list-visible-rows) + 1));
+  overflow: auto;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  background: var(--bgcolor-modal-header);
+}
+
+.tableHeader,
+.regionRow {
+  display: grid;
+  box-sizing: border-box;
+  height: var(--list-row-height);
+  grid-template-columns: 7ch 7ch 13ch 13ch minmax(9ch, 1fr) 180px;
+  column-gap: 10px;
+  align-items: center;
+  /* Inline only: block padding would stack on the row height and cost the last row its edge. */
+  padding: 0 8px;
+  font-family: var(--monospace-font);
+}
+
+.tableHeader {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid var(--border-modal-section);
+  background: var(--bgcolor-modal-footer);
+  color: var(--color-doc-inactiveText);
+  font-size: 0.82em;
+}
+
+.regionRow {
+  border: none;
+  background: transparent;
+  color: var(--color-modal-body);
+  text-align: left;
+  cursor: pointer;
+  @include focus-ring(-2px);
+
+  &:nth-child(odd) {
+    background: var(--bgcolor-disass-even-row);
+  }
+
+  &:hover,
+  &.selected {
+    background: var(--bgcolor-disass-hover);
+  }
+}
+
+.type {
+  color: var(--color-value);
+}
+
+.muted,
+.emptyList {
+  color: var(--color-doc-inactiveText);
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.actionButton {
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 3px 7px;
+  background: transparent;
+  color: var(--color-modal-body);
+  font-size: 0.85em;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover:not(:disabled) {
+    background: var(--bgcolor-disass-hover);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+  }
+}
+
+.emptyList {
+  padding: 10px;
+}
+
+/*
+ * A fixed viewport, sized in lines.
+ *
+ * A `min-height`/`max-height` pair let the box grow and shrink with the text it previews, which
+ * moves the footer and resizes the dialog while you type into the field above it. Lines rather than
+ * pixels because that is what a preview holds — see the same pair on the lists in this folder.
+ */
+.preview {
+  box-sizing: border-box;
+  --preview-lines: 5;
+
+  height: calc(var(--preview-lines) * 1.5em + 12px);
+  line-height: 1.5;
+  overflow: auto;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-modal-header);
+  color: var(--color-doc-inactiveText);
+  font-family: var(--monospace-font);
+  white-space: pre-wrap;
+}
+
+

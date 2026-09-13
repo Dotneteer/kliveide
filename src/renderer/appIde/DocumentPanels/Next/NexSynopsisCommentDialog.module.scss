@@ -1,0 +1,55 @@
+@use "@styles/core.scss" as *;
+
+.location {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  color: var(--color-modal-body);
+}
+
+.locationLabel {
+  color: var(--color-label);
+}
+
+.comment {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 130px;
+  resize: vertical;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-input);
+  color: var(--color-input);
+  font-family: var(--monospace-font);
+  font-size: 0.9em;
+  outline: none;
+
+  /* The app's single focus treatment — `:focus-visible`, so a mouse click does not light a ring. */
+  @include focus-ring;
+}
+
+/*
+ * A fixed viewport, sized in lines.
+ *
+ * A `min-height`/`max-height` pair let the box grow and shrink with the text it previews, which
+ * moves the footer and resizes the dialog while you type into the field above it. Lines rather than
+ * pixels because that is what a preview holds — see the same pair on the lists in this folder.
+ */
+.preview {
+  box-sizing: border-box;
+  --preview-lines: 4;
+
+  height: calc(var(--preview-lines) * 1.5em + 12px);
+  line-height: 1.5;
+  overflow: auto;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-modal-header);
+  color: var(--color-doc-inactiveText);
+  font-family: var(--monospace-font);
+  white-space: pre-wrap;
+}
+
+

@@ -4,8 +4,9 @@
 export type DocumentApi = {
   /**
    * This method is invoked before the document is disposed. This is the last opportunity to save its state.
+   * Return false to cancel the disposal.
    */
-  beforeDocumentDisposal?: () => Promise<void>;
+  beforeDocumentDisposal?: () => Promise<void | boolean>;
 
   /**
    * Reloads the document content from the provided content

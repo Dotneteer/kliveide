@@ -104,7 +104,90 @@ describe("FileManager", () => {
     // const imgFilePath = createImageFile();
     // cfm.convertToImageFile(file, imgFilePath);
   });
+
+  it("copies a host file into a FAT32 volume and returns the byte count", async () => {
+    const testDir = fs.mkdtempSync(path.join(os.tmpdir(), "klive-file-manager-to-"));
+    const cimPath = path.join(testDir, "card.cim");
+    const hostFile = path.join(testDir, "host-file.bin");
+    const hostData = Buffer.from("hello from the host");
+    fs.writeFileSync(hostFile, hostData);
+
+    const cimFile = createFormattedCim(cimPath);
+    try {
+      const volume = new Fat32Volume(cimFile);
+      volume.init();
+      const fileManager = new FileManager(volume);
+
+      const bytesCopied = await fileManager.copyFile(hostFile, "next/host-file.bin");
+
+      const volumeFile = volume.open("next/host-file.bin", 0);
+      expect(volumeFile).not.toBeNull();
+      const volumeData = volumeFile!.readFileData(volumeFile!.fileSize);
+      volumeFile!.close();
+      expect(bytesCopied).toBe(hostData.length);
+      expect(Buffer.from(volumeData!)).toEqual(hostData);
+    } finally {
+      cimFile.close();
+    }
+  });
+
+  it("copies a FAT32 volume file to the host and returns the byte count", async () => {
+    const testDir = fs.mkdtempSync(path.join(os.tmpdir(), "klive-file-manager-from-"));
+    const cimPath = path.join(testDir, "card.cim");
+    const hostFile = path.join(testDir, "out", "volume-file.bin");
+    const volumeData = Buffer.from("hello from the volume");
+
+    const cimFile = createFormattedCim(cimPath);
+    try {
+      const volume = new Fat32Volume(cimFile);
+      volume.init();
+      volume.mkdir("logs");
+      const volumeFile = volume.createFile("logs/volume-file.bin");
+      volumeFile!.writeFileData(volumeData);
+      volumeFile!.close();
+      const fileManager = new FileManager(volume);
+
+      const bytesCopied = await fileManager.copyFileFromVolume("logs/volume-file.bin", hostFile);
+
+      expect(bytesCopied).toBe(volumeData.length);
+      expect(fs.readFileSync(hostFile)).toEqual(volumeData);
+    } finally {
+      cimFile.close();
+    }
+  });
+
+  it("fails clearly when copying a missing or directory source from the volume", async () => {
+    const testDir = fs.mkdtempSync(path.join(os.tmpdir(), "klive-file-manager-errors-"));
+    const cimPath = path.join(testDir, "card.cim");
+    const hostFile = path.join(testDir, "out.bin");
+
+    const cimFile = createFormattedCim(cimPath);
+    try {
+      const volume = new Fat32Volume(cimFile);
+      volume.init();
+      volume.mkdir("logs");
+      const fileManager = new FileManager(volume);
+
+      await expect(fileManager.copyFileFromVolume("missing.bin", hostFile)).rejects.toThrow(
+        "not found"
+      );
+      await expect(fileManager.copyFileFromVolume("logs", hostFile)).rejects.toThrow(
+        "directory"
+      );
+    } finally {
+      cimFile.close();
+    }
+  });
 });
+
+function createFormattedCim(filePath: string) {
+  const cfm = new CimFileManager();
+  const file = cfm.createFile(filePath, 2048);
+  const vol = new Fat32Volume(file);
+  vol.format("KSTEST");
+  vol.init();
+  return file;
+}
 
 function createTestFile(): string {
   const homeDir = os.homedir();

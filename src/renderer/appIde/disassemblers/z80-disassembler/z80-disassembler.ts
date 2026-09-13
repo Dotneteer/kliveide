@@ -5,6 +5,8 @@ import {
   DisassemblyItem,
   DisassemblyOptions,
   DisassemblyOutput,
+  DisassemblyOperandInfo,
+  DisassemblyOperandPragma,
   FetchResult,
   MemorySection,
 } from "../common-types";
@@ -23,6 +25,7 @@ export class Z80Disassembler {
   private _displacement: number | undefined;
   private _opCode = 0;
   private _indexMode = 0;
+  private _operandIndex = 0;
   private _decimalMode = false;
   private _overflow = false;
   private _addressOffset = 0;
@@ -222,6 +225,7 @@ export class Z80Disassembler {
     this._currentOpCodes = [];
     this._displacement = undefined;
     this._indexMode = 0; // No index
+    this._operandIndex = 0;
     let decodeInfo: string | undefined;
     const address = this._offset & 0xffff;
     let defaultTstates = 4;
@@ -501,6 +505,7 @@ export class Z80Disassembler {
         var target = this.fetchWord();
         this._output.createLabel(target, this._opOffset);
         replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${this._decimalMode ? toDecimal5(target) : intToX4(target)}`;
+        replacement = this.resolveOperandLabel("L", target, replacement, disassemblyItem);
         symbolPresent = true;
         disassemblyItem.hasLabelSymbol = true;
         symbolValue = target;
@@ -530,6 +535,7 @@ export class Z80Disassembler {
         // --- #W: 16-bit word from the code
         var word = this.fetchWord();
         replacement = this._decimalMode ? word.toString(10) : `$${intToX4(word)}`;
+        replacement = this.resolveOperandLabel("W", word, replacement, disassemblyItem);
         symbolPresent = true;
         symbolValue = word;
         break;
@@ -537,6 +543,7 @@ export class Z80Disassembler {
         // --- #W: 16-bit word from the code, big endian
         var word = (this.fetch() << 8) | this.fetch();
         replacement = this._decimalMode ? word.toString(10) : `$${intToX4(word)}`;
+        replacement = this.resolveOperandLabel("w", word, replacement, disassemblyItem);
         symbolPresent = true;
         symbolValue = word;
         break;
@@ -577,6 +584,40 @@ export class Z80Disassembler {
       instruction.substring(0, pragmaIndex) +
       (replacement ? replacement : "") +
       instruction.substring(pragmaIndex + 2);
+  }
+
+  /**
+   * Resolves a 16-bit operand to an optional display label.
+   */
+  private resolveOperandLabel(
+    pragma: DisassemblyOperandPragma,
+    operandValue: number,
+    defaultText: string,
+    disassemblyItem: DisassemblyItem
+  ): string {
+    const operandIndex = this._operandIndex++;
+    const operandInfo: DisassemblyOperandInfo = {
+      instructionAddress: disassemblyItem.address,
+      instructionOffset: this._opOffset,
+      operandIndex,
+      operandValue,
+      pragma,
+      defaultText
+    };
+    disassemblyItem.operandCandidates ??= [];
+    disassemblyItem.operandCandidates.push(operandInfo);
+
+    const resolver = this.options?.operandLabelResolver;
+    if (!resolver) {
+      return defaultText;
+    }
+    const resolved = resolver(operandInfo);
+    if (!resolved || resolved.length === 0) {
+      return defaultText;
+    }
+    // --- Remember what went in, so a view can find the name again inside the finished instruction.
+    operandInfo.resolvedText = resolved;
+    return resolved;
   }
 
   /**

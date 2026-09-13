@@ -310,8 +310,8 @@ class DocumentHubService implements IDocumentHubService {
    * Closes the specified document
    * @param id Document to close
    */
-  closeDocument(id: string): Promise<void> {
-    return this.closeDocuments(id);
+  async closeDocument(id: string): Promise<void> {
+    await this.closeDocuments(id);
   }
 
   /**
@@ -342,11 +342,11 @@ class DocumentHubService implements IDocumentHubService {
     return detachedDoc;
   }
 
-  private async closeDocuments(...ids: string[]) {
+  private async closeDocuments(...ids: string[]): Promise<boolean> {
     const documentIds = [...new Set(ids)].filter(
       (id) => !this._closingDocumentIds.has(id) && !!this.getDocument(id)
     );
-    if (documentIds.length <= 0) return;
+    if (documentIds.length <= 0) return true;
 
     documentIds.forEach((id) => this._closingDocumentIds.add(id));
     try {
@@ -354,10 +354,11 @@ class DocumentHubService implements IDocumentHubService {
         .map((id) => this._openDocs.findIndex((doc) => doc.id === id))
         .filter((i) => i >= 0);
 
-      if (indices.length <= 0) return;
+      if (indices.length <= 0) return true;
 
       const closedDocs = indices.map((i) => this._openDocs[i]);
-      await this.ensureDocumentSaved(...closedDocs.map((doc) => doc.id));
+      const canClose = await this.ensureDocumentSaved(...closedDocs.map((doc) => doc.id));
+      if (!canClose) return false;
 
       // --- This is needed when evaluating active document below.
       const activeDoc = this._openDocs[this._activeDocIndex];
@@ -392,6 +393,7 @@ class DocumentHubService implements IDocumentHubService {
       this.signHubStateChanged();
 
       this.requestHubClosureIfEmpty();
+      return true;
     } finally {
       documentIds.forEach((id) => this._closingDocumentIds.delete(id));
     }
@@ -400,11 +402,12 @@ class DocumentHubService implements IDocumentHubService {
   /**
    * Closes all open documents
    */
-  async closeAllDocuments(...exceptIds: string[]): Promise<void> {
+  async closeAllDocuments(...exceptIds: string[]): Promise<boolean> {
     // --- Close the documents
-    await this.closeDocuments(
+    const closed = await this.closeDocuments(
       ...this._openDocs.filter((d) => exceptIds?.includes(d.id) !== true).map((d) => d.id)
     );
+    if (!closed) return false;
 
     // --- Wait while all documents are closed
     let count = 0;
@@ -413,6 +416,18 @@ class DocumentHubService implements IDocumentHubService {
       if (this._openDocs.length <= 0) break;
       count++;
     }
+    return this._openDocs.every((doc) => exceptIds?.includes(doc.id) === true);
+  }
+
+  /**
+   * Checks if all open documents can be closed without actually closing them.
+   */
+  async canCloseAllDocuments(...exceptIds: string[]): Promise<boolean> {
+    return await this.ensureDocumentSaved(
+      ...this._openDocs
+        .filter((doc) => exceptIds?.includes(doc.id) !== true)
+        .map((doc) => doc.id)
+    );
   }
 
   /**
@@ -525,7 +540,7 @@ class DocumentHubService implements IDocumentHubService {
    * @param id Document ID
    * @param api API instance
    */
-  setDocumentApi(id: string, api: DocumentApi): void {
+  setDocumentApi(id: string, api: DocumentApi | undefined): void {
     const doc = this._openDocs.find((d) => d.id === id);
     if (!doc) return;
     if (api) {
@@ -545,14 +560,15 @@ class DocumentHubService implements IDocumentHubService {
   // --- Helper methods
 
   // --- This method ensures the document is saved before deactivating and disposing it
-  private async ensureDocumentSaved(...ids: string[]): Promise<void> {
+  private async ensureDocumentSaved(...ids: string[]): Promise<boolean> {
     // --- Use the API to save the document
-    await Promise.all(
+    const disposalResults = await Promise.all(
       ids
         .map((id) => this.getDocumentApi(id))
         .filter((api) => !!api?.beforeDocumentDisposal)
-        .map((api) => api?.beforeDocumentDisposal(false))
+        .map((api) => api?.beforeDocumentDisposal())
     );
+    return disposalResults.every((result) => result !== false);
   }
 
   private addDocument(

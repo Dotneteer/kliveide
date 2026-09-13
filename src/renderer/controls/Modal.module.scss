@@ -189,16 +189,7 @@
 }
 
 .dialogFooter {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: row-reverse;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  background: var(--bgcolor-modal-footer);
-  border-top: var(--border-modal-section);
-  border-bottom-left-radius: var(--radius-modal);
-  border-bottom-right-radius: var(--radius-modal);
+  @include dialog-footer-band;
 
   .fullScreen & {
     border-radius: 0;

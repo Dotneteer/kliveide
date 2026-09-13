@@ -1,7 +1,7 @@
 import styles from "./GenericViewerPanel.module.scss";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Panel } from "@renderer/controls/layout/Panel";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
@@ -63,6 +63,14 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
   validRenderer
 }: GenericFilePanelProps<TFile, TState>) {
   const [currentViewState, setCurrentViewState] = useState<TState>(viewState);
+  /*
+   * The ref, not the state, is the source of truth for what has been persisted.
+   *
+   * A scroll writes its position straight through to the hub without a re-render (see
+   * `storeScrollPosition`), so `currentViewState` lags it by design. Deriving the next view state
+   * from the state instead of the ref would silently drop that scroll position on the next change.
+   */
+  const currentViewStateRef = useRef<TState>(viewState);
   const documentHubService = useDocumentHubService();
   const appServices = useAppServices();
 
@@ -94,12 +102,32 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
   }, [currentViewState, document.id, documentHubService]);
 
   const changeViewState = useCallback((setter: (vs: TState) => void) => {
-    setCurrentViewState((prev) => {
-      const next = { ...prev };
-      setter(next);
-      return next;
-    });
+    const next = { ...currentViewStateRef.current };
+    setter(next);
+    currentViewStateRef.current = next;
+    setCurrentViewState(next);
   }, []);
+
+  /*
+   * Scrolling persists without re-rendering the panel.
+   *
+   * Routing it through `changeViewState` meant every scroll event set state, and everything the
+   * renderer draws re-rendered with it — a `.NEX` viewer re-rendered its Layer 2 loading screen on
+   * each tick of a drag. Nothing on screen depends on the stored scroll position while the user is
+   * scrolling; only the next open of the document does, and that reads it from the hub.
+   */
+  const storeScrollPosition = useCallback(
+    (pos: number) => {
+      if (currentViewStateRef.current?.scrollPosition === pos) return;
+
+      const next = { ...currentViewStateRef.current, scrollPosition: pos };
+      currentViewStateRef.current = next;
+      if (document.id) {
+        documentHubService.setDocumentViewState(document.id, next);
+      }
+    },
+    [document.id, documentHubService]
+  );
 
   const saveToFile = useCallback(
     async (data: Uint8Array) => {
@@ -143,7 +171,7 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
     <Panel
       xclass={styles.panelFont}
       initialScrollPosition={currentViewState?.scrollPosition}
-      onScrolled={(pos) => changeViewState((vs) => (vs.scrollPosition = pos))}
+      onScrolled={storeScrollPosition}
     >
       {!valid && (
         <div className={styles.invalid}>

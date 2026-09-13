@@ -11,6 +11,7 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  outline: none;
   /* M3: the same number the virtualizer positions rows with. */
   height: var(--row-size-disassembly);
   /*
@@ -43,6 +44,31 @@
     background: var(--bgcolor-disass-hover);
   }
 
+  &.selectedRangeItem {
+    background: color-mix(in srgb, var(--bgcolor-disass-hover) 65%, transparent);
+  }
+
+  &.selectedRangeItem.even {
+    background: color-mix(
+      in srgb,
+      var(--bgcolor-disass-hover) 65%,
+      var(--bgcolor-disass-even-row)
+    );
+  }
+
+  &.selectedItem {
+    background: color-mix(in srgb, var(--bgcolor-explorer-focused-selected) 34%, transparent);
+    box-shadow: inset 0 0 0 1px var(--color-toolbarbutton-selected);
+  }
+
+  &.selectedItem.even {
+    background: color-mix(
+      in srgb,
+      var(--bgcolor-explorer-focused-selected) 34%,
+      var(--bgcolor-disass-even-row)
+    );
+  }
+
   /*
    * The row the CPU is currently paused at. Declared last (same specificity as `.even` and
    * `:hover` above, both one extra class/pseudo-class on `.item`) so it wins the cascade tie and
@@ -51,6 +77,16 @@
   &.execPoint {
     background: var(--bgcolor-disassembly-current);
   }
+}
+
+.synopsisCommentLine {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  padding-left: 0.8ch;
+  color: var(--color-secondary-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tstates {
@@ -88,4 +124,57 @@
 .item .disassemblyLabel {
   color: var(--color-disassembly-label);
   font-weight: 600;
+}
+
+/*
+ * The annotated listing — the `.NEX` viewer's bank view, read against its sidecar.
+ *
+ * Opt-in from the row (`annotated`), so the machine disassembly above keeps its own table. These sit
+ * after the `.disassembly*` rules deliberately: the two families are the same specificity and a row
+ * uses one or the other, never both, so source order is the tiebreak if that ever stops being true.
+ *
+ * See `--color-annotation-*` in componentAliases.ts for why these come from the editor's syntax
+ * palette rather than from the accent.
+ */
+.item .annotationLabel {
+  color: var(--color-annotation-label);
+  font-weight: 600;
+}
+
+.item .annotationDirective {
+  color: var(--color-annotation-directive);
+  font-weight: 600;
+}
+
+.item .annotationOperand {
+  color: var(--color-annotation-operand);
+}
+
+/*
+ * Italic as well as coloured, matching the editor. The italic is doing real work here: a comment is
+ * the one thing in the row that is prose rather than notation, and the slant says so at a glance
+ * even where the row is scrolled past the colour's usefulness.
+ */
+.item .annotationComment {
+  color: var(--color-annotation-comment);
+  font-style: italic;
+}
+
+/*
+ * The provenance rail.
+ *
+ * Present on every annotated row and lit only on the authored ones, so the address column starts at
+ * the same x whether or not a row carries anything — a rail that appeared and disappeared would move
+ * every column after it.
+ */
+.item .annotationRail {
+  flex: 0 0 auto;
+  width: 2px;
+  align-self: stretch;
+  margin-right: 4px;
+  background: transparent;
+}
+
+.item .annotationRail.authored {
+  background: var(--color-annotation-rail);
 }

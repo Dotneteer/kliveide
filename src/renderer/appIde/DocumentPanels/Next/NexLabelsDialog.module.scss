@@ -1,0 +1,176 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * What the scope choice below actually means.
+ *
+ * "Bank 5 / Global / All" is only meaningful to someone who already knows the sidecar's two label
+ * scopes, and the difference decides which button at the foot of the dialog you want. Sits above
+ * the choice rather than under it, because it is what the choice is read against.
+ */
+.intro {
+  /* The scope row below brings its own top margin now; see `DialogRow`. */
+  margin: 0;
+  color: var(--color-doc-inactiveText);
+  font-size: 0.92em;
+  line-height: 1.5;
+
+  & strong {
+    color: var(--color-modal-body);
+    font-weight: 600;
+  }
+
+  & code {
+    font-family: var(--monospace-font);
+    font-size: 0.95em;
+  }
+}
+
+/*
+ * Not a `DialogRow`, so it spaces itself: the scope radios sit directly above it and the search
+ * field would otherwise touch them.
+ */
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.search {
+  box-sizing: border-box;
+  min-width: 0;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-input);
+  color: var(--color-input);
+  font-family: var(--monospace-font);
+  font-size: 0.9em;
+  outline: none;
+
+  /*
+   * The app's single focus treatment, rather than this dialog's own `:focus` rule. `:focus-visible`
+   * is the difference that matters: the old rule lit a 2px ring on every mouse click into the field.
+   */
+  @include focus-ring;
+}
+
+.scopeOptions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.scopeOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-modal-body);
+}
+
+/*
+ * A fixed viewport, not one that sizes to its contents.
+ *
+ * `--list-*` is the same pair the Label dialog's own list uses, at its own row count: the two are
+ * the same idea at two sizes, and they used to say so in names a single letter apart.
+ *
+ * `max-height` meant the box grew and shrank as the scope radios filtered the list — switching
+ * between a bank, Global and All resized the table, which moved the footer and resized the whole
+ * dialog under the pointer. Eight rows plus the sticky header is a deliberate, stated size, and
+ * it is the row height that sets it rather than a measured pixel total, so changing either number
+ * keeps the arithmetic honest.
+ *
+ * The rows therefore declare their own height and pad only inline; a block padding would be added
+ * on top of `--list-row-height` and the eighth row would fall short of the edge.
+ */
+.table {
+  box-sizing: border-box;
+  /*
+   * A row is exactly as tall as the controls it holds. `SmallIconButton` draws at its 24px box plus
+   * its own 1px padding either side, so a `--size-controlSm` row would clip the Edit and Delete
+   * glyphs by a pixel top and bottom.
+   */
+  --list-row-height: var(--size-controlMd);
+  --list-visible-rows: 8;
+
+  height: calc(var(--list-row-height) * (var(--list-visible-rows) + 1));
+  overflow: auto;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  background: var(--bgcolor-modal-header);
+}
+
+.tableHeader,
+.labelRow {
+  display: grid;
+  grid-template-columns: 8ch minmax(12ch, 1fr) 8ch 10ch 6ch 116px;
+  column-gap: 10px;
+  align-items: center;
+  box-sizing: border-box;
+  height: var(--list-row-height);
+  padding: 0 8px;
+  font-family: var(--monospace-font);
+}
+
+.tableHeader {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid var(--border-modal-section);
+  background: var(--bgcolor-modal-footer);
+  color: var(--color-doc-inactiveText);
+  font-size: 0.82em;
+}
+
+.labelRow {
+  color: var(--color-modal-body);
+
+  &:nth-child(odd) {
+    background: var(--bgcolor-disass-even-row);
+  }
+}
+
+.labelName {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-value);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted,
+.emptyList {
+  color: var(--color-doc-inactiveText);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  justify-content: flex-end;
+}
+
+/*
+ * The per-row commands. Keyboard-reachable — three of them per row — and until now they showed
+ * nothing at all when focused, which is the exact gap `focus-ring` exists to close.
+ */
+.actionButton {
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 3px 7px;
+  background: transparent;
+  color: var(--color-modal-body);
+  font-size: 0.85em;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+  }
+}
+
+.emptyList {
+  padding: 10px;
+}
+
+

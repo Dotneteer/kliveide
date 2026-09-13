@@ -19,14 +19,19 @@ export class CloseFolderCommand extends IdeCommandBase {
     if (!projectPath) {
       return commandError("No folder is open in the IDE.");
     }
-    await saveAllBeforeQuit(context.store, context.service.projectService);
-    context.store.dispatch(closeFolderAction(), context.messageSource);
-    context.emuApi.eraseAllBreakpoints();
-    await Promise.all(
+    await saveAllBeforeQuit(context.store, context.service.projectService, {
+      checkDocumentDisposal: false
+    });
+    const closed = await Promise.all(
       context.service.projectService
         .getDocumentHubServiceInstances()
         .map((hub) => hub.closeAllDocuments())
     );
+    if (closed.some((result) => result === false)) {
+      return commandError("Folder close cancelled.");
+    }
+    context.store.dispatch(closeFolderAction(), context.messageSource);
+    context.emuApi.eraseAllBreakpoints();
     writeSuccessMessage(context.output, `Folder ${projectPath} closed.`);
     return commandSuccess;
   }

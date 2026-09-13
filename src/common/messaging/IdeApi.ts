@@ -109,7 +109,7 @@ abstract class IdeApiImpl {
   /**
    * Saves all files before quitting the IDE.
    */
-  async saveAllBeforeQuit(): Promise<void> {
+  async saveAllBeforeQuit(): Promise<boolean> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

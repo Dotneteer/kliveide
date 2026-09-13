@@ -15,6 +15,12 @@ type Props = {
   documentSource: string;
   contents: Uint8Array;
   bank?: number;
+  allowDisassembly?: boolean;
+  disassOffset?: number;
+  decimalView?: boolean;
+  viewMode?: "memory" | "disassembly";
+  nexAnnotationPath?: string;
+  nexAnnotationBank?: number;
   iconTitle: string;
   idFactory: (documentSource: string, bank: number) => string;
   titleFactory: (documentSource: string, bank: number) => string;
@@ -24,6 +30,12 @@ export const MemoryDumpViewer = ({
   documentSource,
   contents,
   bank,
+  allowDisassembly = false,
+  disassOffset,
+  decimalView,
+  viewMode,
+  nexAnnotationPath,
+  nexAnnotationBank,
   iconTitle,
   idFactory,
   titleFactory
@@ -42,7 +54,15 @@ export const MemoryDumpViewer = ({
               documentHubService,
               idFactory(documentSource, bank), // `bankDump${documentSource}:${bank}`,
               titleFactory(documentSource, bank), // `${documentSource} - Bank: ${bank}`,
-              contents
+              contents,
+              {
+                disassemblyEnabled: allowDisassembly,
+                disassOffset,
+                decimalView,
+                viewMode,
+                nexAnnotationPath,
+                nexAnnotationBank
+              }
             );
           }}
         />

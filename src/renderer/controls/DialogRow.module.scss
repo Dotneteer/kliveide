@@ -5,6 +5,24 @@
   padding: 0;
 }
 
+/*
+ * The space *between* rows.
+ *
+ * The `gap` above separates a row's label from its own control. Nothing separated one row from the
+ * next, so a label sat flush against the control above it and read as that control's caption rather
+ * than as the next field's name — most visibly under a tall field, which is where it was reported
+ * ("Comment" and "Preview" in the synopsis dialog), but every dialog built from these rows has it.
+ *
+ * A top margin on all but the first, rather than a bottom margin on all:
+ *
+ * - the last row must not push the footer down, which already brings its own space, and
+ * - a sibling that is not a row — a validation message, a toolbar — must not cost the row after it
+ *   its separation, which an adjacent-sibling selector would.
+ */
+.dialogRow:not(:first-child) {
+  margin-top: var(--space-3);
+}
+
 .childWrapper {
   display: flex;
   min-width: 0;

@@ -36,7 +36,7 @@ describe("ExplorerPanel dialog migration", () => {
       useSelector: (selector: (appState: unknown) => unknown) => selector(state)
     }));
     vi.doMock("@renderer/core/MainApi", () => ({
-      useMainApi: () => ({ openFolder: vi.fn() })
+      useMainApi: () => ({ openFolder: vi.fn(), showItemInFolder: vi.fn() })
     }));
     vi.doMock("@renderer/core/EmuApi", () => ({
       useEmuApi: () => ({})

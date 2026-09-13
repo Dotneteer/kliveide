@@ -191,8 +191,9 @@ async function renderDisassemblyPanel({
           data-scroll-horizontally={String(!!scrollRowsHorizontally)}
           data-testid="disassembly-list"
         >
+          {/* --- `-slot-`, not `-row-`: `DisassemblyRow` tags itself `disassembly-row-<index>`. */}
           {items.slice(0, 2).map((item, index) => (
-            <div data-testid={`disassembly-row-${index}`} key={index}>
+            <div data-testid={`disassembly-row-slot-${index}`} key={index}>
               {renderItem(index, item)}
             </div>
           ))}
@@ -337,12 +338,31 @@ describe("DisassemblyPanel refactor characterization", () => {
 
     // The row at the current PC (0x6000, matching the mocked `getMemoryContents().pc`) gets the
     // exec-point highlight; the other row does not.
-    expect(screen.getByTestId("disassembly-row-0").firstElementChild?.className).toContain(
+    expect(screen.getByTestId("disassembly-row-slot-0").firstElementChild?.className).toContain(
       "execPoint"
     );
-    expect(screen.getByTestId("disassembly-row-1").firstElementChild?.className).not.toContain(
+    expect(screen.getByTestId("disassembly-row-slot-1").firstElementChild?.className).not.toContain(
       "execPoint"
     );
+  });
+
+  /**
+   * The label column stays at its default here.
+   *
+   * `DisassemblyRow` takes a `labelWidthCh` so the NEX annotation viewer — whose labels are named
+   * by the user — can widen it. A machine disassembly only ever generates `L<addr>:`, so this panel
+   * passes nothing and must keep the column it always had.
+   */
+  it("leaves the label column at the default width", async () => {
+    await renderDisassemblyPanel();
+
+    const labelCells = Array.from(
+      screen.getByTestId("disassembly-list").querySelectorAll<HTMLElement>("span")
+    ).filter((el) => el.className.includes("disassemblyLabel"));
+    expect(labelCells.length).toBeGreaterThan(0);
+    for (const cell of labelCells) {
+      expect(cell.style.width).toBe("10ch");
+    }
   });
 
   it("scrolls to the row containing a submitted address", async () => {

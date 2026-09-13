@@ -83,6 +83,7 @@ import { SetZ80RegisterCommand } from "./commands/SetZ80RegisterCommand";
 import { SetMemoryContentCommand } from "./commands/SetMemoryContentCommand";
 import { ResetSjasmPlusCommand } from "./commands/SjasmPlusCommands";
 import { ResetPasta80Command } from "./commands/Pasta80Commands";
+import { ZxNextStorageCopyCommand } from "./commands/ZxNextStorageCopyCommand";
 
 let commandsRegistered = false;
 
@@ -167,6 +168,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
 
   cmdSrv.registerCommand(new ResetSjasmPlusCommand());
   cmdSrv.registerCommand(new ResetPasta80Command());
+  cmdSrv.registerCommand(new ZxNextStorageCopyCommand());
 }
 
 export function resetIdeCommandRegistrationForTests(): void {

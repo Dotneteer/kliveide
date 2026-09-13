@@ -1,4 +1,5 @@
 import { memo } from "react";
+import type { MouseEvent } from "react";
 import { Icon } from "./Icon";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import classnames from "classnames";
@@ -14,7 +15,7 @@ type Props = {
   fill?: string;
   enable?: boolean;
   selected?: boolean;
-  clicked?: () => void;
+  clicked?: (event: MouseEvent<HTMLButtonElement>) => void;
   noPadding?: boolean;
 };
 
@@ -56,7 +57,7 @@ export const IconButton = memo(
           width: buttonWidth + (noPadding ? 0 : 4),
           height: buttonHeight + (noPadding ? 0 : 2)
         }}
-        onClick={() => clicked?.()}
+        onClick={(event) => clicked?.(event)}
       >
         <div className={classnames(styles.iconWrapper, { [styles.selected]: selected })}>
           <TooltipFactory
@@ -84,7 +85,7 @@ type SmallProps = {
   enable?: boolean;
   selected?: boolean;
   fill?: string;
-  clicked?: () => void;
+  clicked?: (event: MouseEvent<HTMLButtonElement>) => void;
 };
 
 export const SmallIconButton = ({

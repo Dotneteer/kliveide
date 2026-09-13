@@ -30,42 +30,6 @@ const ScrFileViewerPanel = ({
       validRenderer: context => {
         const documentSource = document.node.projectPath;
 
-        // --- Create the Layer2 screen from the data provided
-        const createPixelData = (
-          data: Uint8Array,
-          palette: number[],
-          target: Uint32Array
-        ) => {
-          const pixels = data.slice(0, 0x1800);
-          const attrs = data.slice(0x1800, 0x1b00);
-
-          let j = 0;
-          for (let y = 0; y < 192; y++) {
-            for (let x = 0; x < 256; x++) {
-              const addr = pixelAddress(x, y);
-              const pixelMask = 0x80 >> (x & 0x07);
-              const pixelOn = (pixels[addr] & pixelMask) !== 0;
-              const attr = attrs[attrAddress(x, y)];
-              const ink = attr & 0x07;
-              const paper = (attr & 0x78) >> 3;
-              target[j++] = pixelOn ? palette[ink] : palette[paper];
-            }
-          }
-
-          function pixelAddress (x: number, y: number) {
-            return (
-              ((y & 0xc0) << 5) +
-              ((y & 0x07) << 8) +
-              ((y & 0x38) << 2) +
-              (x >> 3)
-            );
-          }
-
-          function attrAddress (x: number, y: number) {
-            return (x >> 3) + 32 * (y >> 3);
-          }
-        };
-
         return (
           <Panel>
             <Column>
@@ -91,7 +55,7 @@ const ScrFileViewerPanel = ({
                 zoomFactor={2}
                 screenWidth={256}
                 screenHeight={192}
-                createPixelData={createPixelData}
+                createPixelData={createScrPixelData}
               />
             </Column>
           </Panel>
@@ -133,6 +97,41 @@ type ScrFileContents = {
   pixels: Uint8Array;
   attrs: Uint8Array;
 };
+
+function createScrPixelData (
+  data: Uint8Array,
+  palette: number[],
+  target: Uint32Array
+) {
+  const pixels = data.slice(0, 0x1800);
+  const attrs = data.slice(0x1800, 0x1b00);
+
+  let j = 0;
+  for (let y = 0; y < 192; y++) {
+    for (let x = 0; x < 256; x++) {
+      const addr = pixelAddress(x, y);
+      const pixelMask = 0x80 >> (x & 0x07);
+      const pixelOn = (pixels[addr] & pixelMask) !== 0;
+      const attr = attrs[attrAddress(x, y)];
+      const ink = attr & 0x07;
+      const paper = (attr & 0x78) >> 3;
+      target[j++] = pixelOn ? palette[ink] : palette[paper];
+    }
+  }
+
+  function pixelAddress (x: number, y: number) {
+    return (
+      ((y & 0xc0) << 5) +
+      ((y & 0x07) << 8) +
+      ((y & 0x38) << 2) +
+      (x >> 3)
+    );
+  }
+
+  function attrAddress (x: number, y: number) {
+    return (x >> 3) + 32 * (y >> 3);
+  }
+}
 
 /**
  * This table defines the ARGB colors for the 16 available colors on the ZX Spectrum 48K model.
