@@ -48,6 +48,85 @@ export type DisassemblyOperandLabelResolver = (
   operand: DisassemblyOperandInfo
 ) => string | undefined;
 
+/**
+ * The shape of a branching instruction, independent of how it is spelled.
+ *
+ * The disassembler renders from text templates (`"jr nz,^r|12/7"`), so by the time an item exists
+ * nothing structured says it branches. Every cheap way to recover that after the fact is wrong:
+ *
+ * - `tstates2 > 0` misses `JP cc,nn`, which costs 10 T-states whether or not it jumps, and
+ *   false-positives on the block-repeat ops (`LDIR`, `CPIR`, `INIR`, `OTIR`, `LDDR`, `CPDR`,
+ *   `INDR`, `OTDR`, and Z80N's `LDIRX`, `LDPIRX`, `LDDRX`), all encoded `21/16`.
+ * - `hasLabelSymbol` misses `RET cc`, `RST` and the indirect jumps, and is also set for operands
+ *   that are not branch targets at all.
+ * - Parsing `instruction` back is fragile: `noLabelPrefix`, `decimalMode` and `operandLabelResolver`
+ *   each rewrite the rendered operand.
+ *
+ * So this is decoded from the opcode itself. See `z80-branch-info.ts` for the table.
+ */
+export type DisassemblyBranchKind =
+  | "jr"
+  | "jp"
+  | "call"
+  | "ret"
+  | "djnz"
+  | "rst"
+  | "jp-indirect";
+
+/**
+ * The eight Z80 condition codes, spelled as the assembler spells them.
+ *
+ * `DJNZ` is conditional but takes none of these: it tests `B`, not a flag.
+ */
+export type DisassemblyBranchCondition = "nz" | "z" | "nc" | "c" | "po" | "pe" | "p" | "m";
+
+/**
+ * Where a branching instruction's destination comes from, when it is not a literal in the operand.
+ *
+ * - `"hl"` / `"ix"` / `"iy"` — `JP (HL)` and its indexed forms. Resolvable from a register snapshot.
+ * - `"stack"` — `RET` and `RET cc`. Resolvable only where the stack top is both readable and
+ *   meaningful, which in practice means at PC and in a flat 64K view.
+ * - `"io-port"` — Z80N `JP (C)` alone. **Not resolvable at all.** The destination is
+ *   `(PC & $C000) | (readPort(BC) << 6)` (see `Z80NCpu.ts`), and the low bits come from a live I/O
+ *   read, not from any register. Obtaining them would mean performing that read, whose side effects
+ *   — interrupt acknowledgement, FIFO advance, device state — would disturb the execution being
+ *   debugged. A read-only view must report this as unknowable rather than produce a number.
+ */
+export type DisassemblyBranchTargetSource = "hl" | "ix" | "iy" | "stack" | "io-port";
+
+/**
+ * Control-flow metadata for one branching instruction.
+ */
+export type DisassemblyBranchInfo = {
+  /** What kind of branch this is. */
+  kind: DisassemblyBranchKind;
+
+  /**
+   * The flag condition guarding the branch, absent on an unconditional one.
+   *
+   * Absent on `DJNZ` too, which is conditional on `B` rather than on a flag — `kind` carries that.
+   */
+  condition?: DisassemblyBranchCondition;
+
+  /**
+   * The destination, where the instruction itself names it.
+   *
+   * Present for `JR`, `JR cc`, `DJNZ`, `JP`, `JP cc`, `CALL`, `CALL cc` (copied from the item's
+   * `symbolValue`, which the `^r`/`^L` pragmas already resolve) and for `RST` (the vector). Absent
+   * whenever `targetSource` is set instead.
+   */
+  target?: number;
+
+  /** Where the destination comes from when `target` is absent. */
+  targetSource?: DisassemblyBranchTargetSource;
+
+  /** T-states spent when the branch is taken. Equals `tstatesNotTaken` when unconditional. */
+  tstatesTaken: number;
+
+  /** T-states spent when it is not. Equals `tstatesTaken` when unconditional. */
+  tstatesNotTaken: number;
+};
+
 export type DisassemblyAnnotationRegionType = "disassemble" | "bytes" | "words" | "skip";
 
 export type DisassemblyAnnotationMetadata = {
@@ -570,4 +649,11 @@ export interface DisassemblyItem {
    * Optional metadata used by annotated disassembly views.
    */
   annotation?: DisassemblyAnnotationMetadata;
+
+  /**
+   * Control-flow metadata, present only on a branching instruction.
+   *
+   * Optional, so every existing consumer is unaffected. See `DisassemblyBranchInfo`.
+   */
+  branch?: DisassemblyBranchInfo;
 }

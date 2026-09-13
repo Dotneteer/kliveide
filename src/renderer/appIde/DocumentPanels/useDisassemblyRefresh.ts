@@ -1,5 +1,5 @@
 import { MI_ZXNEXT } from "@common/machines/constants";
-import type { EmuApi } from "@common/messaging/EmuApi";
+import type { EmuApi, MemoryInfo } from "@common/messaging/EmuApi";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MemorySectionType, type IMemorySection } from "@abstractions/MemorySection";
 import type { MutableRefObject } from "react";
@@ -11,6 +11,7 @@ import {
 } from "../disassemblers/common-types";
 import type { ICustomDisassembler } from "../disassemblers/z80-disassembler/custom-disassembly";
 import type { CachedRefreshState } from "./disassemblyViewState";
+import type { BranchCpuSnapshot } from "./branchVerdict";
 
 type DisassemblyOutput = {
   outputItems: DisassemblyItem[];
@@ -39,6 +40,54 @@ type DisassemblyRefreshParams = {
   onFollowPcTopAddress?: (address: number) => void;
 };
 
+/**
+ * The part of a `getMemoryContents` response a branch verdict can be judged against.
+ *
+ * Narrow on purpose: the response also carries `de`, the shadow bank, `ir` and `wz`, none of which
+ * any branch depends on, and naming only what is used keeps the dependency honest.
+ */
+export type BranchSnapshotSource = Pick<
+  MemoryInfo,
+  "memory" | "pc" | "af" | "bc" | "hl" | "ix" | "iy" | "sp"
+>;
+
+/**
+ * Builds the register snapshot a branch verdict is judged against, from the response the panel
+ * already fetches on every refresh.
+ *
+ * There is no extra IPC here and no extra polling: `getMemoryContents` has always returned the
+ * register file alongside the memory image, and this hook simply stopped throwing it away.
+ *
+ * @param source The memory-and-registers response
+ * @param isFlatMemory Whether `memory` is the flat 64K image rather than a single partition.
+ * Governs whether a `readByte` is offered at all — see below.
+ */
+export function createBranchCpuSnapshot(
+  source: BranchSnapshotSource,
+  isFlatMemory: boolean
+): BranchCpuSnapshot {
+  return {
+    af: source.af,
+    bc: source.bc,
+    hl: source.hl,
+    ix: source.ix,
+    iy: source.iy,
+    sp: source.sp,
+    pc: source.pc,
+    /*
+     * Only the flat 64K view can resolve an absolute address.
+     *
+     * With a partition selected, `memory` is that bank's contents indexed from zero, so
+     * `memory[sp]` would be a byte of the bank that happens to sit at the same offset — a plausible
+     * number bearing no relation to the stack. `RET cc` then reports `unobtainable`, which is the
+     * honest answer, rather than a confident wrong address.
+     */
+    readByte: isFlatMemory
+      ? (address: number) => (address < source.memory.length ? source.memory[address] : undefined)
+      : undefined
+  };
+}
+
 export type DisassemblyRefreshResult = {
   breakpoints: BreakpointInfo[];
   breakpointMap: Map<number, BreakpointInfo>;
@@ -47,6 +96,14 @@ export type DisassemblyRefreshResult = {
   pausedPc: number;
   refreshDisassembly: () => Promise<void>;
   refreshVersion: number;
+  /**
+   * Registers as of the last refresh, for judging branch verdicts against.
+   *
+   * `undefined` until the first refresh completes. It is deliberately *not* gated on machine state
+   * here — this hook has no view of that — so a consumer must decide for itself whether a live
+   * verdict is meaningful. See `DisassemblyPanel`.
+   */
+  cpuSnapshot?: BranchCpuSnapshot;
 };
 
 export function resolveDisassemblyPartition(state: CachedRefreshState): number | undefined {
@@ -111,6 +168,7 @@ export function useDisassemblyRefresh({
   const [breakpointMap, setBreakpointMap] = useState<Map<number, BreakpointInfo>>(() => new Map());
   const [mem64kLabels, setMem64kLabels] = useState<string[]>([]);
   const [pausedPc, setPausedPc] = useState(0);
+  const [cpuSnapshot, setCpuSnapshot] = useState<BranchCpuSnapshot | undefined>(undefined);
   const [refreshVersion, setRefreshVersion] = useState(0);
   const refreshInProgress = useRef(false);
   const refreshPending = useRef(false);
@@ -185,6 +243,9 @@ export function useDisassemblyRefresh({
           setItems(outputItems);
           setMem64kLabels(getMemoryResponse.partitionLabels);
           setPausedPc(getMemoryResponse.pc);
+          // --- `partition === undefined` is the 64K view, which is the only one whose memory image
+          // --- can be indexed by an absolute address. See `createBranchCpuSnapshot`.
+          setCpuSnapshot(createBranchCpuSnapshot(getMemoryResponse, partition === undefined));
           setBreakpoints(memoryBreakpoints);
           setBreakpointMap(buildBreakpointMap(memoryBreakpoints));
           setRefreshVersion((version) => version + 1);
@@ -214,6 +275,7 @@ export function useDisassemblyRefresh({
   return {
     breakpoints,
     breakpointMap,
+    cpuSnapshot,
     items,
     mem64kLabels,
     pausedPc,

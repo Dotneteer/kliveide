@@ -155,6 +155,69 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   every register/state panel has the same single role — "this is a live value". Adding
   `--color-ula-value`, `--color-vic-value` and so on would be a near-identical family per panel.
   Split it the day a panel needs a role the others do not have.
+- **A *predicted* state takes a status hue for the positive case and a neutral for the negative —
+  never an error hue for the negative.** The disassembly view's branch gutter
+  (`--color-disassembly-branch-taken` / `-fallthrough`) says whether each conditional branch will
+  jump given the live CPU state. Taken is `--status-success`; falling through is `--text-secondary`,
+  because falling through is not a failure, it is half of what a conditional branch does. Red was
+  refused twice over: it would read as "something is wrong here", and `--status-error` /
+  `--status-warning` are already spoken for *in the same row* by `--color-breakpoint-code`,
+  `-binary` and `--color-breakpoint-current`. The general rule: before giving a new mark a status
+  hue, check what else in that row already owns one.
+- **Certainty is carried by strength, not by hue.** The same branch gutter draws the same glyph in
+  the same colour on every row, and dims it to 45% everywhere except the execution point. Away from
+  PC the verdict was computed from *today's* flags rather than the ones that will hold when the CPU
+  arrives, so it is a guess; at PC it is fact. Encoding that difference as a second colour was
+  rejected — it would have doubled a five-glyph vocabulary into ten and put a third meaning on hue
+  in a row that already uses hue for column role and for breakpoint type. Opacity is free of both.
+- **A glyph drawn at 24×24 and rendered at 12px needs its distinguishing feature enlarged, not just
+  scaled.** The first cut of the branch arrows put a small chevron head on a long shared curve; at
+  12px "jumps back" and "jumps forward" were near-identical, because the part that differed was the
+  smallest part of the mark. Lengthening the vertical travel and widening the heads fixed it.
+  **Check a small icon at its real size against its own siblings**, not enlarged and not alone — a
+  standalone 40px preview showed no problem at all.
+- **Icons need a `@controls/Icon` mock in a jsdom test.** `Icon` resolves its colour through
+  `useTheme`, so a row containing one throws without a provider. Mock it to render
+  `<svg data-icon={iconName} data-fill={fill} />` rather than `() => null`: the test can then assert
+  *which* glyph and *which token* the component asked for, which is the part worth pinning.
+
+- **A glyph set that encodes one axis will eventually meet something off that axis.** The branch
+  gutter began as five *directions* — up, down, left, dashed-right, straight — and `CALL`/`RST` were
+  filed under direction because their target has one. That put `rst $08` in the same visual class as
+  a loop closing, and had the readout calling it a jump. The fix was a sixth mark encoding a
+  different property entirely (control returns here), and the ordering rule that goes with it: the
+  **not-taken** test runs first, then the **kind** test, and only then direction. Where two glyph
+  rules can both match, write down which wins and why — and have the wording and the glyph read the
+  same predicate (`isCall`) rather than deciding separately, which is how they drifted apart.
+
+- **A CSS container query is the cheap way to make a dense row adapt, and the threshold must be in
+  `ch`.** The disassembly view's execution-point readout ships both a long prose form and a short
+  notation form and lets `@container disassembly (min-width: 113ch)` on `.disassemblyWrapper` choose
+  — no `ResizeObserver`, no measurement, no re-render on resize. Two things this pinned down, both
+  measured in the running app under `scripts/doc-shots/`:
+  - **The container must be the panel wrapper, never a row.** Rows are `min-width: max-content` and
+    routinely wider than the panel, so a row measures its own content rather than the space
+    available for it.
+  - **`container-type: inline-size` does not disturb `virtua`.** Layout containment makes the
+    element a containing block for absolute descendants, which looked like a risk; the virtualizer
+    positions rows against its own inner element, and 24 rows measured at a uniform 21px with
+    strictly increasing tops afterwards.
+  - **`ch`, not px.** The panel font is a user setting across 10–16px *and* across fonts of 0.500em
+    and 0.600em advance. A threshold derived at 12px Iosevka and expressed in `ch` still landed
+    correctly at 14px JetBrains Mono; in px it would have been ~30% wrong.
+- **A secondary line inside a data row usually wants *no* `font-size` at all.** The reflex is
+  `0.85em`, which M1 forbids because it compounds; the `--font-size-*` ladder is the documented
+  alternative, but it is fixed px and would stop the text scaling with the panel font size the user
+  chose (10–16px). Inheriting the row's own size is the only option that tracks the setting, and the
+  hierarchy against neighbouring text is better carried by colour anyway. **Run
+  `test/theming/type-scale-contract.test.ts` under the `!perf` project, not `jsdom`** — it is a
+  `.test.ts`, so a `jsdom` run silently does not include it and an `em` slips through.
+
+- **Split a composed readout into "outcome" and "evidence" and colour only the outcome.** The first
+  build wrapped the whole sentence in the accent-status colour and produced a green paragraph in a
+  row of otherwise neutral text. The verb and the value carry the hue; the supporting clause stays
+  on the muted token.
+
 - **Converting a panel to the accent silently disarms `--data-changed`.** That token and
   `--color-state-value` are *both* the accent's `solid`, so `.changed` repaints an accent value in
   the same accent: present in the DOM, absent on screen — the `AttachedShadow` failure again, from

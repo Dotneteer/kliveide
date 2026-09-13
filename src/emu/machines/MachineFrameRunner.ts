@@ -1,4 +1,5 @@
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
+import { shouldStopAtDebugPoint } from "./DebugStepDecision";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
@@ -257,6 +258,14 @@ export class MachineFrameRunner implements IMachineFrameRunner {
       const debugSupport = machine.executionContext.debugSupport;
       if (!debugSupport) return false;
 
+      /*
+       * Step-into is answered here rather than in `shouldStopAtDebugPoint`, and deliberately so.
+       *
+       * This path tests it *before* the breakpoint check; the WASM v2 machines test it *after*
+       * theirs. The difference is observable — landing on a breakpoint while stepping into records
+       * `lastBreakpoint` on one path and not the other — so folding it into the shared function
+       * would have to change one of them. Left where each already had it.
+       */
       if (machine.executionContext.debugStepMode === DebugStepMode.StepInto) {
         // --- Stop right after the first executed instruction
         const shouldStop = instructionsExecuted > 0;
@@ -266,65 +275,31 @@ export class MachineFrameRunner implements IMachineFrameRunner {
         return shouldStop;
       }
 
-      // --- Go on with StepAtBreakpoint, StepOver, and StepOut
-      // --- Stop if PC reaches a breakpoint
-      const stopAt = debugSupport.shouldStopAt(machine.pc, () => machine.getPartition(machine.pc));
-      if (
-        stopAt &&
-        (instructionsExecuted > 0 ||
-          debugSupport.lastBreakpoint === undefined ||
-          debugSupport.lastBreakpoint !== machine.pc)
-      ) {
-        // --- Stop when reached a breakpoint
-        debugSupport.lastBreakpoint = machine.pc;
-        debugSupport.imminentBreakpoint = undefined;
-        return true;
-      }
-
-      if (machine.executionContext.debugStepMode === DebugStepMode.StopAtBreakpoint) {
-        // --- No breakpoint found and we stop only at defined breakpoints.
-        return false;
-      }
-
-      // --- Step over checks
-      if (machine.executionContext.debugStepMode === DebugStepMode.StepOver) {
-        if (debugSupport.imminentBreakpoint !== undefined) {
-          // --- We also stop if an imminent breakpoint is reached, and also remove this breakpoint
-          if (debugSupport.imminentBreakpoint === machine.pc) {
-            debugSupport.imminentBreakpoint = undefined;
-            return true;
-          }
-        } else {
-          let imminentJustCreated = false;
-
-          // --- We check for a CALL-like instruction
-          var length = machine.getCallInstructionLength();
-          if (length > 0) {
-            // --- Its a CALL-like instruction, create an imminent breakpoint
-            debugSupport.imminentBreakpoint = (machine.pc + length) & 0xffff;
-            imminentJustCreated = true;
-          }
-
-          // --- We stop, we executed at least one instruction and if there's no imminent
-          // --- breakpoint or we've just created one
-          if (
-            instructionsExecuted > 0 &&
-            (debugSupport.imminentBreakpoint === undefined || imminentJustCreated)
-          ) {
-            debugSupport.imminentBreakpoint = undefined;
-            return true;
-          }
-        }
-        return false;
-      }
-
-      // --- Step out checks
-      if (machine.stepOutAddress === machine.pc) {
-        // --- We reached the step-out address
-        debugSupport.imminentBreakpoint = undefined;
-        return true;
-      }
-      return false;
+      return shouldStopAtDebugPoint({
+        debugSupport,
+        debugStepMode: machine.executionContext.debugStepMode,
+        pc: machine.pc,
+        instructionsExecuted,
+        getPartition: (address) => machine.getPartition(address),
+        getCallInstructionLength: () => machine.getCallInstructionLength(),
+        stepOutAddress: machine.stepOutAddress,
+        /*
+         * `false` on purpose, and it is the *stronger* behaviour rather than the weaker one.
+         *
+         * `retExecuted` stops on the first RET of any kind, including one returning from a call
+         * nested inside the routine being stepped out of — it overshoots inward. The interpreted
+         * CPUs maintain a real step-out stack (`Z80Cpu.pushToStepOutStack`, called from CALL/RST),
+         * so `stepOutAddress` here is the exact address *this* routine will return to, which is
+         * what `DebugStepMode.StepOut` is documented to mean: the RET "when it returns to its
+         * caller".
+         *
+         * The WASM machines use `retExecuted` because they cannot do this: their CPU runs inside
+         * the core, those TS methods never execute, the stack stays empty and `stepOutAddress` is
+         * permanently -1. There it is the only workable signal, not a refinement. Turning it on
+         * here would trade an exact mechanism for an approximation of itself.
+         */
+        retExecuted: false
+      });
     }
   }
 }

@@ -841,6 +841,11 @@ uint32_t sp48GetCpuWz(void) {
   return z80GetWz();
 }
 
+/* --- The return address of the most recent CALL/RST, for step-out. See the shadow stack
+   --- in z80.c: without it this machine has no step-out target at all, because the
+   --- TypeScript CPU's push never runs when execution happens inside the core. */
+uint32_t sp48GetStepOutAddress(void) { return z80GetStepOutAddress(); }
+
 uint32_t sp48GetCpuPc(void) {
   return z80GetPc();
 }

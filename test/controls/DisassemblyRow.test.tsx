@@ -1,14 +1,31 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  branchGlyphFor,
   deriveDisassemblyRowViewModel,
   DisassemblyRow,
   isAuthoredRow,
   splitInstructionOperands
 } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
+import type { BranchVerdict } from "@renderer/appIde/DocumentPanels/branchVerdict";
 
 vi.mock("@renderer/appIde/DocumentPanels/BreakpointIndicator", () => ({
   BreakpointIndicator: () => null
+}));
+
+// --- `Icon` resolves its colour through `useTheme`, which needs a provider this suite does not
+// --- mount. The stand-in keeps the props visible as data attributes so a test can assert which
+// --- glyph and which token the row asked for, rather than only that *an* icon appeared.
+vi.mock("@controls/Tooltip", () => ({
+  useTooltipRef: () => ({ current: null }),
+  // --- Rendered as data so a test can assert what the narrow panel would have to fall back on.
+  TooltipFactory: ({ content }: { content: string }) => <i data-tooltip={content} />
+}));
+
+vi.mock("@controls/Icon", () => ({
+  Icon: ({ iconName, fill }: { iconName: string; fill?: string }) => (
+    <svg data-icon={iconName} data-fill={fill} />
+  )
 }));
 
 afterEach(() => {
@@ -532,5 +549,211 @@ describe("annotated disassembly rows", () => {
     expect(getByTestId("disassembly-row-0").querySelector('[class*="annotationRail"]')).toBeNull();
     expect(getByText("call DrawSprite").className).toContain("disassemblyInstruction");
     expect(getByText("L8000:").className).toContain("disassemblyLabel");
+  });
+});
+
+describe("DisassemblyRow — branch verdict gutter", () => {
+  /** Renders a row with the standard boilerplate, overriding only what a test cares about. */
+  function renderRow(props: Partial<React.ComponentProps<typeof DisassemblyRow>> = {}) {
+    return render(
+      <DisassemblyRow
+        bankLabel={false}
+        commentWidthCh={0}
+        currentSegment={0}
+        decimalView={false}
+        index={0}
+        isFullView={true}
+        item={{ address: 0x6000, instruction: "jr nz,L5000", opCodes: [0x20, 0xfe] }}
+        mem64kLabels={[]}
+        partitionLabels={{}}
+        partitionWidthCh={0}
+        pausedPc={0x0000}
+        rowHeight={18}
+        showBanks={false}
+        {...props}
+      />
+    );
+  }
+
+  const takenBack: BranchVerdict = {
+    kind: "jr",
+    taken: true,
+    conditionText: "NZ",
+    reasonText: "Z=0",
+    nextAddress: 0x5000,
+    direction: "back",
+    tstates: 12
+  };
+
+  it("renders no gutter at all when the listing is not showing verdicts", () => {
+    // --- Decision 2: with the machine stopped the row must have exactly its old geometry, so the
+    // --- cell is absent rather than present-and-empty.
+    const { container } = renderRow();
+    expect(container.querySelector("[data-branch]")).toBeNull();
+    expect(container.innerHTML).not.toContain("branchGutter");
+  });
+
+  it("reserves the cell on a non-branching row so the columns still line up", () => {
+    const { container } = renderRow({ showBranchGutter: true, verdict: undefined });
+    const gutter = container.querySelector('[class*="branchGutter"]');
+    expect(gutter).not.toBeNull();
+    // --- Present, but carrying no glyph.
+    expect(gutter!.querySelector("svg")).toBeNull();
+  });
+
+  it.each([
+    ["back", "branch-back"],
+    ["forward", "branch-forward"],
+    ["return", "branch-return"],
+    ["unknown", "branch-unknown"],
+    ["none", "branch-through"]
+  ] as const)("draws the %s glyph", (direction, expectedIcon) => {
+    expect(branchGlyphFor({ ...takenBack, direction }).iconName).toBe(expectedIcon);
+  });
+
+  it.each(["call", "rst"] as const)("draws %s as a round trip, whichever way its target lies", (kind) => {
+    // --- A call is a call regardless of direction. Drawing `rst $08` with the back arrow put it in
+    // --- the same visual class as a loop closing, which is precisely what it is not.
+    expect(branchGlyphFor({ ...takenBack, kind, direction: "back" }).iconName).toBe("branch-call");
+    expect(branchGlyphFor({ ...takenBack, kind, direction: "forward" }).iconName).toBe("branch-call");
+  });
+
+  it("draws a conditional call that will not be taken as a fall-through, not a call", () => {
+    // --- Ordering matters: the not-taken test has to beat the call test, or a `call nz` that is
+    // --- about to do nothing would still be drawn as a round trip.
+    const verdict = { ...takenBack, kind: "call", taken: false, direction: "none" } as BranchVerdict;
+    expect(branchGlyphFor(verdict).iconName).toBe("branch-through");
+    expect(branchGlyphFor(verdict).fill).toBe("--color-disassembly-branch-fallthrough");
+  });
+
+  it("paints a taken branch with the taken token and a fall-through with the neutral one", () => {
+    expect(branchGlyphFor({ ...takenBack, direction: "back" }).fill).toBe(
+      "--color-disassembly-branch-taken"
+    );
+    expect(branchGlyphFor({ ...takenBack, direction: "forward" }).fill).toBe(
+      "--color-disassembly-branch-taken"
+    );
+    // --- Falling through is not a failure, so it is neutral rather than an error hue.
+    expect(branchGlyphFor({ ...takenBack, direction: "none" }).fill).toBe(
+      "--color-disassembly-branch-fallthrough"
+    );
+  });
+
+  it("puts a glyph in the gutter for a row that branches", () => {
+    const { container } = renderRow({ showBranchGutter: true, verdict: takenBack });
+    const gutter = container.querySelector('[class*="branchGutter"]');
+    const icon = gutter!.querySelector("svg");
+    expect(icon).not.toBeNull();
+    expect(icon!.getAttribute("data-icon")).toBe("branch-back");
+    expect(icon!.getAttribute("data-fill")).toBe("--color-disassembly-branch-taken");
+    expect(gutter!.getAttribute("data-branch")).toBe("back");
+  });
+
+  it("renders a fall-through in the neutral token, not an error hue", () => {
+    const { container } = renderRow({
+      showBranchGutter: true,
+      verdict: { ...takenBack, taken: false, direction: "none", tstates: 7 }
+    });
+    const icon = container.querySelector('[class*="branchGutter"] svg');
+    expect(icon!.getAttribute("data-icon")).toBe("branch-through");
+    expect(icon!.getAttribute("data-fill")).toBe("--color-disassembly-branch-fallthrough");
+  });
+
+  it("marks the execution point so the stylesheet can lift it out of the speculative dimming", () => {
+    // --- The strength difference between a guess and a fact is a CSS rule keyed off `execPoint`,
+    // --- not a per-row decision, so what the row must get right is the class.
+    const { container } = renderRow({
+      showBranchGutter: true,
+      verdict: takenBack,
+      pausedPc: 0x6000
+    });
+    expect(container.querySelector('[class*="execPoint"]')).not.toBeNull();
+  });
+
+  it("keeps the gutter off a synopsis comment row, which has no instruction columns", () => {
+    const { container } = renderRow({
+      showBranchGutter: true,
+      item: { address: 0x6000, prefixComment: "A note" }
+    });
+    expect(container.querySelector('[class*="branchGutter"]')).toBeNull();
+  });
+});
+
+describe("DisassemblyRow — execution-point readout", () => {
+  const verdict: BranchVerdict = {
+    kind: "jr",
+    taken: true,
+    conditionText: "NC",
+    reasonText: "C=0",
+    nextAddress: 0x0efd,
+    direction: "back",
+    tstates: 12
+  };
+
+  function renderRow(props: Partial<React.ComponentProps<typeof DisassemblyRow>> = {}) {
+    return render(
+      <DisassemblyRow
+        bankLabel={false}
+        commentWidthCh={0}
+        currentSegment={0}
+        decimalView={false}
+        index={0}
+        isFullView={true}
+        item={{ address: 0x0f10, instruction: "jr nc,L0EFD", opCodes: [0x30, 0xeb] }}
+        mem64kLabels={[]}
+        partitionLabels={{}}
+        partitionWidthCh={0}
+        pausedPc={0x0f10}
+        rowHeight={18}
+        showBanks={false}
+        showBranchGutter={true}
+        verdict={verdict}
+        {...props}
+      />
+    );
+  }
+
+  it("ships both renderings, since the container query picks between them in CSS", () => {
+    // --- jsdom does not evaluate container queries, so what is testable here is that both forms
+    // --- exist for the stylesheet to choose from. The swap itself is verified in the app.
+    const { container } = renderRow();
+    const long = container.querySelector('[data-readout="long"]');
+    const short = container.querySelector('[data-readout="short"]');
+    expect(long!.textContent).toBe("jumps back to $0EFD  ·  NC met (C=0)  ·  12 T");
+    expect(short!.textContent).toBe("→ $0EFD  C=0  12T");
+  });
+
+  it("gives the tooltip the long form, which is what a narrow panel is missing", () => {
+    const { container } = renderRow();
+    expect(container.querySelector("[data-tooltip]")!.getAttribute("data-tooltip")).toBe(
+      "jumps back to $0EFD  ·  NC met (C=0)  ·  12 T"
+    );
+  });
+
+  it("shows the readout only at the execution point", () => {
+    // --- Away from PC the flags are today's, not the ones that will hold on arrival; the row gets
+    // --- the quiet gutter glyph and nothing more.
+    const { container } = renderRow({ pausedPc: 0x9999 });
+    expect(container.querySelector('[data-testid="branch-readout"]')).toBeNull();
+    expect(container.querySelector('[class*="branchGutter"]')).not.toBeNull();
+  });
+
+  it("shows no readout when the listing is not showing verdicts at all", () => {
+    const { container } = renderRow({ showBranchGutter: false, verdict: undefined });
+    expect(container.querySelector('[data-testid="branch-readout"]')).toBeNull();
+  });
+
+  it("marks a fall-through so it is not painted as a taken branch", () => {
+    const { container } = renderRow({
+      verdict: { ...verdict, taken: false, direction: "none", nextAddress: 0x0f12, tstates: 7 }
+    });
+    expect(container.querySelector('[data-testid="branch-readout"]')!.className).toContain(
+      "notTaken"
+    );
+  });
+
+  it("follows the panel into decimal", () => {
+    const { container } = renderRow({ decimalView: true });
+    expect(container.querySelector('[data-readout="long"]')!.textContent).toContain("03837");
   });
 });

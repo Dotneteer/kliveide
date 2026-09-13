@@ -2336,6 +2336,11 @@ uint32_t spp3eGetCpuIr(void) { return z80GetIr(); }
 void spp3eSetCpuIr(uint32_t value) { z80SetIr(value); }
 uint32_t spp3eGetCpuWz(void) { return z80GetWz(); }
 void spp3eSetCpuWz(uint32_t value) { z80SetWz(value); }
+/* --- The return address of the most recent CALL/RST, for step-out. See the shadow stack
+   --- in z80.c: without it this machine has no step-out target at all, because the
+   --- TypeScript CPU's push never runs when execution happens inside the core. */
+uint32_t spp3eGetStepOutAddress(void) { return z80GetStepOutAddress(); }
+
 uint32_t spp3eGetCpuPc(void) { return z80GetPc(); }
 void spp3eSetCpuPc(uint32_t value) { z80SetPc(value); }
 uint32_t spp3eGetCpuSp(void) { return z80GetSp(); }
@@ -2348,6 +2353,17 @@ uint32_t spp3eGetCpuIff2(void) { return z80GetIff2(); }
 void spp3eSetCpuIff2(uint32_t value) { z80SetIff2(value); }
 uint32_t spp3eGetCpuInterruptMode(void) { return z80GetInterruptMode(); }
 void spp3eSetCpuInterruptMode(uint32_t value) { z80SetInterruptMode(value); }
+
+// --- Step-out needs to know when a RET returned to its caller. The shared Z80 core has always
+// --- tracked this; the +3E simply never exposed it, so its step-out could only stop on reaching
+// --- the recorded return address. Mirrors sp48/sp128.
+uint32_t spp3eGetCpuRetExecuted(void) {
+  return z80GetRetExecuted();
+}
+
+uint32_t spp3eGetCpuRetnExecuted(void) {
+  return z80GetRetnExecuted();
+}
 uint32_t spp3eGetLastMemoryAddress(void) { return spp3eHasMemoryEvent != 0u ? spp3eLastMemoryAddress : 0u; }
 uint32_t spp3eGetLastMemoryValue(void) { return spp3eHasMemoryEvent != 0u ? spp3eLastMemoryValue : 0u; }
 uint32_t spp3eGetLastMemoryIsWrite(void) { return spp3eHasMemoryEvent != 0u ? spp3eLastMemoryIsWrite : 0u; }

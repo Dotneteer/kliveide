@@ -961,6 +961,7 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       sp128GetCpuIy: () => 0,
       sp128SetCpuIy: () => 0,
       sp128GetCpuPc: () => 0,
+      sp128GetStepOutAddress: () => 0xffffffff,
       sp128SetCpuPc: () => 0,
       sp128GetCpuSp: () => 0,
       sp128SetCpuSp: () => 0,

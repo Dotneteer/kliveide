@@ -3,8 +3,8 @@
 Sign every conditional branch visible in the Disassembly view with whether it will jump or fall
 through, given the live CPU state. Z80 and Z80N only.
 
-**Status:** planned, not started. Decisions below are settled with the project author; the one
-remaining implementation choice is flagged in §6.2.
+**Status:** complete. All seven steps done, verified in the running app, and documented.
+All twelve decisions in §1 are settled with the project author; none are open.
 
 ---
 
@@ -26,7 +26,8 @@ study of the gutter's arrow direction against `KEY-SCAN`).
 | 9 | Claim scope | The gutter shows **where loops close** (back-edges), *not* where loops are. Loop extent was prototype C's job and is deliberately given up. |
 | 10 | PC readout placement | **R3 — adaptive, in the row.** The full sentence where the panel has room, a compact chip where it does not, switched by a CSS container query on the listing's own width. **No injected row.** Rejected: R1 inline tail (unreadable narrow), R2 chip-always (needlessly cryptic when there is room), R4 anchored right (drifts far from the instruction when wide, covers the comment when narrow), R5 status strip (robust, but detached from the row). |
 | 11 | `jp (c)` (Z80N) | **Never predicted.** Marked in the UI as a jump whose destination cannot be computed. See §2 (fact 5) and §5.3 — this is a correction to an error in the first draft. |
-| 12 | `ED 98` gate | **Stays in this plan**, confirmed after decision 11 removed the original justification for it. Kept on the weaker but sufficient reason in §4.4: this feature makes the bug more visible. Sequenced first. |
+| 13 | `CALL` / `RST` wording | **A call is not a jump.** `RST $08` reported "jumps back to $0008"; `RST n` is `CALL n` in a one-byte encoding, so both now read `calls $0008`, with no direction word. Reported by the project author after the feature shipped. See §13. |
+| 12 | `ED 98` gate | **Void — there is no bug.** The premise was false; verified against the source and by test. See §4.4. Nothing to do. |
 
 ### Non-goals
 
@@ -173,38 +174,55 @@ excluded by construction** rather than by a filter someone can later delete.
 
 ### 4.3 Wiring (`z80-disassembler.ts`)
 
-One block at the end of `decodeInstruction`, after `tstates`/`tstates2` are assigned: look the
-opcode up in the map, and if found attach `branch`, filling `target` from `symbolValue`.
+Two parts, and the split is forced rather than stylistic.
+
+**`disassembleOperation` resolves the metadata**, in the same four branches that resolve
+`decodeInfo`. It cannot be done later from `_opCode`, because the opcode byte alone does not
+identify an instruction:
+
+- after a `CB` prefix, `0xC3` is `set 0,e`, not `jp nn`;
+- after `DD`/`FD`, `disassembleIndexedOperation` consults the indexed table **and then falls back to
+  the un-prefixed one**, so `DD C3 nn nn` really is `jp nn` with a wasted prefix — the metadata has
+  to fall back the same way or it will disagree with the text (`getIndexedBranchInfo`);
+- after `ED`, a Next-only opcode on a non-Next machine is rewritten to `nop`, and a `nop` must not
+  carry a branch — so the metadata is taken from the same `isGatedNextOpCode` test that picks the
+  text, not from the opcode.
+
+**`decodeInstruction` attaches it**, after the pragmas have run, copying `symbolValue` into `target`
+where `hasLabelSymbol` is set. The table deliberately does not restate the operand — decoding it
+twice is how the metadata and the rendered text would get to disagree. `RST` is the exception the
+table does carry `target` for, since `^R` renders its vector without creating a symbol.
+
+Always a fresh object per item: table entries are shared by every item decoding to the same opcode,
+and one of them is about to receive a per-item `target`.
 
 ---
 
-### 4.4 The `ED 98` gate (decision 12)
+### 4.4 The `ED 98` gate — investigated, no bug (decision 12)
 
-`z80NextSet` (`z80-disassembler.ts`, ~lines 921–951) is the map of ED-prefixed opcodes that decode as
-`nop` when `allowExtendedSet` is false. **`0x98` is missing from it**, so `jp (c)` — a Z80N-only
-instruction — currently decodes as `jp (c)` on a plain Z80, where every other Next opcode correctly
-becomes `nop`.
+**Earlier drafts of this plan asserted that `0x98` was missing from the `z80NextSet` gate map, so
+that `jp (c)` decoded on a plain Z80 where every other Next opcode became `nop`. That assertion was
+false.** It came from an automated survey of the disassembler and was written into the plan without
+being checked against the file. It is recorded here rather than deleted so the same false report is
+not filed again.
 
-**Read the justification history here, because it changed.** The first draft argued this *had* to be
-fixed with the feature, because the branch map would otherwise make the instruction text and the
-branch metadata disagree about whether the opcode exists. That argument is void: once `jp (c)` is
-never predicted (decision 11), the map simply marks it unobtainable, and text and metadata agree
-whatever the gate does.
+What is actually true, verified three ways:
 
-The remaining, weaker and honest reason to keep it here: **this feature makes the bug more visible.**
-Today a 48K listing shows a slightly odd `jp (c)` where it should show `nop`. After this feature it
-would also grow a branch glyph in the gutter, turning a textual oddity into an apparent control-flow
-edge in a machine that has none. That is worth closing, and the fix is one map entry plus a test.
+1. **`0x98: true` is present** in `z80NextSet` at `z80-disassembler.ts:944`, in `HEAD` and in the
+   working tree.
+2. **The whole table is consistent.** Mechanical diff of `extendedInstructions` (107 entries)
+   against `z80NextSet` (29 entries), classifying an ED opcode as standard Z80 when it falls in
+   `0x40–0x7F`, `0xA0–0xA3`, `0xA8–0xAB`, `0xB0–0xB3` or `0xB8–0xBB`:
+   - 29 non-standard opcodes, **29 of them gated** — no gaps;
+   - no `z80NextSet` entry without a matching instruction;
+   - no standard Z80 opcode wrongly gated.
+3. **Runtime behaviour is correct.** `ED 98` disassembles as `nop` with `allowExtendedSet` false and
+   `jp (c)` with it true; a standard ED opcode (`ED 4D` → `reti`) is unaffected either way.
 
-It is cleanly separable — but the decision is to **keep it here**, sequenced first, so that the
-branch map is written against a correct gate rather than around a known-broken one.
-
-Work:
-
-1. Add `0x98` to `z80NextSet`.
-2. **Audit the whole table rather than fixing the one case** — diff every Next-only entry in
-   `extendedInstructions` against `z80NextSet` and close any other gaps found.
-3. Regression test: `ED 98` decodes as `nop` with `allowExtendedSet` false, `jp (c)` with it true.
+**No work. No test.** A contract test asserting the invariant in point 2 — "every non-standard ED
+opcode is gated" — would be a reasonable future guard against someone adding a Next opcode without a
+gate entry, but it guards a hazard that has not occurred and is not part of this feature. Raise it
+separately if wanted.
 
 ---
 
@@ -274,6 +292,19 @@ export function evaluateBranch(
 banked (`isFullView === false`) view, where `memory` is a single partition and SP is not
 addressable within it. This must be a guard, not an assumption.
 
+### 5.2a Two deviations from the drafted types, made while implementing
+
+- **`BranchDirection` has no `"indirect"` member.** §6.1 drafted one and then said the UI should
+  pick the back/forward glyph from the resolved address anyway — which makes it a value that exists
+  only to be translated away. `JP (HL)`/`(IX)`/`(IY)` resolve to a real address, so they are
+  `"back"` or `"forward"` like any other jump; the register is how the address was found, not a kind
+  of movement. The union is now `back | forward | return | unknown | none`, and each maps to exactly
+  one glyph.
+- **`BranchCpuSnapshot` is a narrow slice, not `Z80CpuState`.** It carries `af`, `bc`, `hl`, `ix`,
+  `iy`, `sp`, `pc` and an optional `readByte`. Deliberately: with no port accessor on it, the
+  `jp (c)` rule in §5.3 is enforced by the type rather than by a comment, and a later edit has
+  nothing to reach for. A test asserts the snapshot exposes no port-shaped key.
+
 ### 5.3 Unobtainable destinations (decision 11)
 
 There are two different reasons the panel might not show a destination, and **they must not look the
@@ -335,8 +366,12 @@ id — see AGENTS.md; do **not** hand-edit `icon-defs.ts`):
 | `branch-through.svg` | not taken — a straight vertical stroke | `--color-disassembly-branch-fallthrough` |
 | `branch-unknown.svg` | taken, `direction: "unknown"` — the same arrow leaving the line, but with an **outlined** head instead of a filled one | `--color-disassembly-branch-taken` |
 
-`direction: "indirect"` — `jp (hl)`/`(ix)`/`(iy)`, whose target *is* resolvable — reuses
-`branch-back`/`branch-forward` according to the resolved address, like any other jump.
+Indirect jumps whose target resolves (`jp (hl)`/`(ix)`/`(iy)`) carry an ordinary `back`/`forward`
+direction and so reuse those two glyphs — see §5.2a for why there is no separate `"indirect"` state.
+
+**Built at 24×24, judged at 12px.** The first cut used small chevron heads on a long shared curve,
+which made `back` and `forward` near-indistinguishable in the row while looking fine enlarged. The
+shipped glyphs lengthen the vertical travel and widen the heads.
 
 `direction: "unknown"` — `jp (c)`, and any future instruction whose destination is unobtainable — uses
 `branch-unknown`. The outlined head is deliberate and is the whole visual idea: **the arrow still
@@ -407,13 +442,56 @@ Four things about this that are easy to get wrong:
   tooltip rule in `.ai/ui-theming-intent-and-lessons.md`, carrying the long form as its text — so the
   narrow panel loses nothing but immediacy.
 
-Both forms are rendered by one function taking the `BranchVerdict`, so the two cannot drift.
+Both forms are rendered by one function taking the `BranchVerdict`, so the two cannot drift. Each is
+returned split into `head` (the outcome — verb and address) and `detail` (the evidence), because the
+row paints them differently: colouring the whole sentence as the outcome made a green paragraph of
+it, which the first build in the app showed immediately.
+
+### 6.5 Verified in the running app
+
+Driven under Playwright with `scripts/doc-shots/harness.cjs` (see `.ai/doc-screenshots-guide.md`):
+sp48 project, machine started and paused, `show-disass`, then the IDE window resized while a probe
+read computed styles out of the DOM. Measured, not eyeballed:
+
+| | 1500px window | 1180px | 1040px | 900px |
+|---|---|---|---|---|
+| wrapper inline size | 1192 | 872 | 732 | 592 |
+| long form | shown | hidden | hidden | hidden |
+| short form | hidden | shown | shown | shown |
+
+- **The container query works, at a font the threshold was not derived against.** The harness seeds
+  JetBrains Mono at 14px — 0.600em advance, not the 0.500em/12px the `113ch` sum was worked out
+  from — and the swap still lands where it should (≈949px at that font). That is the `ch` threshold
+  earning its keep; a px threshold would have been wrong here by ~30%.
+- **The virtualizer is unaffected by `container-type`.** 24 rows, all 21px, tops strictly
+  increasing. The concern that layout containment might disturb `virtua`'s absolute positioning was
+  unfounded — it positions against its own inner element, not the wrapper.
+- **The gutter reserves on every row** (24 gutters over 24 rows) with glyphs on the 7 that branch,
+  and the two opacities (1 at PC, 0.45 elsewhere) both present.
+
+**The conditional case was verified separately**, by stepping into the ROM until PC landed on one
+rather than by setting a breakpoint (the breakpoint never fired, and failed silently). At
+`$0043 jr nz,L0048` the readout rendered `jumps forward to $0048  ·  NZ met (Z=0)  ·  12 T`, with the
+head measured at `rgb(78,201,138)` = `--status-success` and the detail at `rgb(148,154,164)` =
+`--text-secondary` — the colour split confirmed against the token values rather than by eye.
+
+**One honest limit found here, not predicted.** Below about 745px of wrapper width *neither* form is
+visible without scrolling sideways: the columns ahead of the readout already total ~560px at this
+font, and the fixed 25ch instruction column pushes the readout past the edge. This is the same
+behaviour the hard-comment column has always had, and the gutter glyph — which sits *before* the
+instruction — still carries the verdict. Recorded rather than fixed: narrowing the instruction column
+to make room is a change to the existing layout, not to this feature.
 
 ### 6.3 Panel wiring (`DisassemblyPanel.tsx`, `useDisassemblyRefresh.ts`)
 
-- `useDisassemblyRefresh` keeps the register fields it currently drops: extend
-  `DisassemblyRefreshResult` with `cpuSnapshot: BranchCpuSnapshot | undefined`, built from the
-  `getMemoryContents` response it already awaits. No new call.
+- **Done.** `useDisassemblyRefresh` keeps the register fields it used to drop; `cpuSnapshot` is
+  built by `createBranchCpuSnapshot` from the `getMemoryContents` response it already awaits. No new
+  call, no new polling.
+- The `readByte` guard is keyed off `partition === undefined`, which is exactly the 64K view:
+  `MainToEmuProcessor.getMemoryContents` calls `get64KFlatMemory()` for `undefined` and
+  `getMemoryPartition(n)` otherwise, so that one test is the whole condition.
+- The hook does **not** gate on machine state — it cannot see it. `cpuSnapshot` is `undefined` only
+  before the first refresh; decision 2's gate belongs to the panel.
 - The panel computes verdicts in a `useMemo` over `(items, cpuSnapshot, pausedPc, machineState)`.
   `DisassemblyRow` is memoized, so the verdict object must be stable for unchanged rows or every
   row re-renders on every tick — build the map once per refresh, not per row.
@@ -459,8 +537,6 @@ New:
 - `test/controls/DisassemblyRow.test.tsx` (extend) — gutter absent when `showBranchGutter` is
   false; reserved-but-empty on a non-branch row when true; the five glyph states; the spotlight
   rendered only at PC.
-- `test/z80-disassembler/next-gate.test.ts` (or extend `extended-ops.test.ts`) — `ED 98` decodes as
-  `nop` without `allowExtendedSet` and as `jp (c)` with it, plus the audit's findings (§4.4).
 - `DisassemblyRow` renders **both** readout forms into the DOM for the PC row (the container query
   hides one; jsdom does not evaluate container queries, so assert presence, not visibility), and the
   short form's tooltip text equals the long form's sentence.
@@ -481,17 +557,33 @@ Then `npm run build:check` and `npm run lint:renderer`.
 
 Each step is independently reviewable and leaves the tree working.
 
-1. **Fix the `ED 98` gate** and audit `z80NextSet` (§4.4), with its regression test. Standalone,
-   shippable on its own, and it makes step 2 correct by construction.
-2. Types + `z80-branch-info.ts` + its tests. No behaviour change.
-3. Wire into `decodeInstruction`. Still no behaviour change; existing disassembler tests prove it.
-4. `branchVerdict.ts` + tests. Pure, unreferenced by UI.
-5. Carry the register snapshot through `useDisassemblyRefresh`.
-6. The gutter: icons, tokens, SCSS, row props, panel gate. **First visible change.**
-7. The adaptive PC readout: both forms, the container on `.disassemblyWrapper`, the `ch` threshold,
-   the row tooltip.
-8. `.ai/ui-theming-intent-and-lessons.md`, and user documentation under
-   `docs/content/working-with-ide/disassembly.mdx`.
+1. ~~Types + `z80-branch-info.ts` + its tests. No behaviour change.~~ **Done.**
+   `DisassemblyBranchKind` / `Condition` / `TargetSource` / `Info` and the optional
+   `DisassemblyItem.branch` in `common-types.ts`; the map in
+   `z80-disassembler/z80-branch-info.ts`; 87 tests in `test/z80-disassembler/branch-info.test.ts`.
+   Nothing reads the map yet.
+2. ~~Wire into `decodeInstruction`.~~ **Done.** `disassembleOperation` resolves the metadata in the
+   same branches that resolve `decodeInfo` (it must — see §4.3); `decodeInstruction` attaches it and
+   copies `symbolValue` into `target`. 102 tests in `branch-info.test.ts`; the full ROM region
+   re-disassembles byte-identical to a pre-change capture.
+3. ~~`branchVerdict.ts` + tests.~~ **Done.** `DocumentPanels/branchVerdict.ts`; 55 tests in
+   `test/renderer/branchVerdict.test.ts`. Pure, still unreferenced by any UI.
+4. ~~Carry the register snapshot through `useDisassemblyRefresh`.~~ **Done.**
+   `createBranchCpuSnapshot` + `cpuSnapshot` on `DisassemblyRefreshResult`; 8 tests in
+   `test/renderer/branchCpuSnapshot.test.ts`. Confirmed no new IPC: the hook now keeps registers it
+   was already fetching and discarding.
+5. ~~The gutter: icons, tokens, SCSS, row props, panel gate.~~ **Done.** Five glyphs in
+   `assets/icons/branch-*.svg`; two tokens; `.branchGutter` at `2.5ch` with the speculative dimming
+   keyed off `.execPoint`; `showBranchGutter` + `verdict` on `DisassemblyRow`; verdicts built once
+   per refresh in a `useMemo` in the panel. `.ai/ui-theming-intent-and-lessons.md` updated in the
+   same change, per the standing instruction.
+6. ~~The adaptive PC readout.~~ **Done and verified in the app.** `formatBranchReadout` produces
+   both forms from one function; `.disassemblyWrapper` is the query container; the swap happens at
+   `113ch`; the tooltip carries the long form. Measured under Playwright — see §6.5.
+7. ~~`.ai/ui-theming-intent-and-lessons.md`, and user documentation.~~ **Done.** Theming notes were
+   folded in with step 5 and step 6 as those landed; a **Branch Verdicts** section was added to
+   `docs/content/working-with-ide/disassembly.mdx`. `doc:build` and `doc:check` pass — assets match
+   the golden snapshot, no broken links, Z80 highlighting intact. No screenshot added yet; see below.
 
 ---
 
@@ -499,5 +591,79 @@ Each step is independently reviewable and leaves the tree working.
 
 - **The injected spotlight row**, and its three virtualizer guards (scroll-handler `address`, Go To
   `findIndex`, zebra parity). Superseded by decision 10; see §6.2.
-- **Deferring the `ED 98` gate.** It was listed here as out of scope in the first draft; decision 11
-  pulls it in as step 1. See §4.4.
+- **The `ED 98` gate fix**, in all three of its forms across successive drafts (out of scope → step 1
+  → confirmed step 1). There is no bug to fix; the premise was never verified. See §4.4.
+
+## 10. A note on sourcing
+
+One claim in this plan survived three revisions and a confirmed go-ahead before anyone checked it
+against the file, and it was wrong. Claims here that came from reading source directly are marked
+with file and line; treat anything not so marked as needing verification before it is acted on.
+
+---
+
+## 11. The documentation screenshot
+
+`docs/public/images/working-with-ide/disass-branch-verdicts.png`, generated by
+`scripts/doc-shots/recipes/disassembly.cjs` rather than hand-captured, so it can be regenerated when
+the view changes. `.plans/docs-assets.golden.txt` gained its entry (103); `doc:build` and
+`doc:check` pass.
+
+The recipe walks the ROM by single-stepping and keeps the **richest** frame it finds — the one with
+the most *distinct* gutter glyphs on screen, provided the execution point is a conditional branch so
+the readout carries its condition clause. Five is both the target and the ceiling: a 48K listing can
+show back, forward, call, return and fall-through, but never the unobtainable mark, which belongs to
+Z80N's `jp (c)`.
+
+It settles on the tail of `KEY-SCAN`, which contains all five: `jr c` closing a loop backwards at
+PC, three `ret z` falling through, a `ret` and a `ret nz` returning, a `call` hook, and two `jr nz`
+going forwards.
+
+Three earlier attempts are recorded in `.ai/doc-screenshots-guide.md`, each a variation on the same
+mistake — stopping too early. A 520px window cropped to nine rows with one glyph repeated; requiring
+only the condition clause gave a frame with no fall-through; and stopping at four distinct glyphs
+settled immediately on a frame with no call in it. `data-branch-glyph` on the gutter exists so the
+recipe can count what is actually on screen rather than re-deriving it.
+
+## 12. Not done
+
+- **The `.NEX` annotated listing** still shows no verdicts; out of scope from the start (§1).
+- **A contract test for `z80NextSet`** — the invariant that every non-standard ED opcode is gated.
+  The audit in §4.4 found no gaps, so this guards a hazard that has not occurred.
+
+---
+
+## 13. Fixed after review: a call is not a jump
+
+`RST $08` reported **"jumps back to $0008"**. Both halves were wrong: `RST n` is `CALL n` in a
+one-byte encoding — it pushes a return address and the CPU comes back — and "back" carries the sense
+of a loop closing, which a call to a low vector is not. `CALL nn` and `CALL cc,nn` had the identical
+defect and were fixed with it.
+
+**Why the tests did not catch it.** `BranchVerdict` carried `direction` but not `kind`, so
+`formatBranchReadout` had nothing to distinguish a call from a jump and chose its verb from the
+direction alone. Every readout test used jump-shaped fixtures, so the wrong verb was never
+exercised. `kind` is now on the verdict, `isCall()` selects the verb, and there is a test that runs
+a real `rst` through `evaluateBranch` into `formatBranchReadout` — the missing link, since a
+hand-built verdict with no `kind` silently falls back to "jumps".
+
+**The gutter glyph is unchanged, and the documentation was corrected instead.** The arrow states
+which way control goes, which is true for a call; it was the docs that over-claimed, saying an up
+arrow means "a loop closing". The table now says direction only, and points at the readout as the
+place a call and a jump are told apart.
+
+**The sixth glyph was then added, at the author's request.** `branch-call.svg` — an out-and-back
+hook — is drawn for `call` and `rst` whenever the branch is taken, so a `CALL` and a `JP` to the same
+address are no longer indistinguishable in the gutter. Five of the six marks encode *direction*;
+this one encodes something else entirely, that control returns here afterwards, which is why a call
+looks the same whichever way its target lies.
+
+Two ordering rules come with it, both tested:
+
+1. **Not-taken beats kind.** A conditional call that will not be taken carries on to the next
+   instruction like any other fall-through, and must not be drawn as a call.
+2. **Kind beats direction.** A call is a call whichever way its target lies.
+
+`isCall()` is exported from `branchVerdict.ts` so the glyph and the wording read the same predicate.
+They were separate judgements before, and that is exactly how `rst $08` came to be drawn as a loop
+closing while being described as a jump.

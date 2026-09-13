@@ -475,6 +475,31 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-disassembly-current": "var(--surface-hover)",
 
   /*
+   * The branch verdict gutter — whether a conditional branch will jump, given the live CPU state.
+   *
+   * Two roles, and the colour choice is the whole design:
+   *
+   * - **Taken takes the success hue.** Not because jumping is *good* — it is not, it is just what
+   *   the flags say — but because this column is a live readout of machine state, and the status
+   *   hues are what this app already uses for "here is a fact about the running machine". It also
+   *   has to survive next to `--color-disassembly-address` and `-opcodes`, which are the accent and
+   *   its secondary; a third accent-family hue in the same row would read as another data column
+   *   rather than as a verdict.
+   * - **Not-taken is deliberately neutral, and specifically not an error hue.** Falling through is
+   *   not a failure — it is half of what a conditional branch does. `--status-error` and
+   *   `--status-warning` are already spoken for in this very row (`--color-breakpoint-code`,
+   *   `-binary`, and `--color-breakpoint-current` for the execution point), so a red fall-through
+   *   would read as "something is wrong here" *and* collide with the breakpoint column two cells to
+   *   its left.
+   *
+   * Certainty is carried by strength, not by hue: the row at PC paints these at full opacity and
+   * every other row dims them, because away from PC the flags are today's rather than the ones that
+   * will hold when the CPU arrives. See `.branchGutter` in `DisassemblyPanel.module.scss`.
+   */
+  "--color-disassembly-branch-taken": "var(--status-success)",
+  "--color-disassembly-branch-fallthrough": "var(--text-secondary)",
+
+  /*
    * An *annotated* disassembly listing — the `.NEX` viewer's bank view, read against its sidecar.
    *
    * A separate family from `--color-disassembly-*` above, because the two views answer different

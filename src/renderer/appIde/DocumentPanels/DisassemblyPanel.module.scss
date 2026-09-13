@@ -5,6 +5,20 @@
   box-sizing: border-box;
   flex-direction: column;
   user-select: none;
+  /*
+   * The query container for the execution-point readout below.
+   *
+   * It has to be *this* element and not the row: a row is `min-width: max-content` and routinely
+   * wider than the panel, so querying a row would measure the content rather than the space
+   * available for it. This wrapper's inline size is the visible panel width, which is the question
+   * being asked.
+   *
+   * Note this makes the wrapper a containing block for absolutely positioned descendants
+   * (`container-type` implies layout containment). `virtua` positions its rows against its own
+   * inner `position: relative` element, not against this one, so the virtualizer is unaffected.
+   */
+  container-type: inline-size;
+  container-name: disassembly;
 }
 
 .item {
@@ -177,4 +191,110 @@
 
 .item .annotationRail.authored {
   background: var(--color-annotation-rail);
+}
+
+/*
+ * The branch verdict gutter.
+ *
+ * Rendered on every row whenever the listing is showing verdicts at all — lit only where the row
+ * actually branches — so the instruction column sits at the same x down the whole listing. Exactly
+ * the argument `.annotationRail` above makes: a cell that appeared and disappeared per row would
+ * shift every column after it. When the machine is not started the cell is not rendered at all, and
+ * the listing has the geometry it has always had.
+ *
+ * `ch`, not px (M2): the panel font size is a user setting spanning 10-16px, so the column has to
+ * scale with the type like every other column in the row.
+ */
+.item .branchGutter {
+  flex: 0 0 auto;
+  width: 2.5ch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /*
+   * Speculative by default.
+   *
+   * Away from the execution point the flags this verdict was computed from are the *current* ones,
+   * not the ones that will hold when the CPU arrives — so the mark is deliberately quiet. This is
+   * the "stale versus certain" distinction carried by strength rather than by hue; see
+   * `--color-disassembly-branch-taken` in componentAliases.ts.
+   */
+  opacity: 0.45;
+}
+
+/*
+ * The execution point, where the verdict is fact rather than guess.
+ *
+ * Nested under `.execPoint` so it beats the base rule above on specificity regardless of source
+ * order, matching how `.item .disassemblyAddress` is scoped.
+ */
+.item.execPoint .branchGutter {
+  opacity: 1;
+}
+
+
+/*
+ * The execution-point readout — what the row under PC will actually do.
+ *
+ * Only ever rendered on the PC row (decision 5): everywhere else the flags are today's rather than
+ * the ones that will hold when the CPU arrives, and a full sentence of speculation would drown the
+ * listing. The quiet gutter glyph above carries those rows.
+ *
+ * Sits after the instruction, in the space the comment column would otherwise use, and does not
+ * take part in the row's fixed-width column grid — so it can never push a column out of alignment.
+ */
+.item .branchReadout {
+  flex: 0 0 auto;
+  margin-left: 1.5ch;
+  display: inline-flex;
+  align-items: center;
+  white-space: pre;
+  /*
+   * No font-size of its own (M1): `em` compounds, and the `--font-size-*` ladder is fixed px, which
+   * would stop the readout scaling with the panel font the user chose. Inheriting the row's size is
+   * both correct and the only option that tracks the 10-16px setting. The hierarchy between this
+   * and the instruction beside it is carried by colour, which needs no second mechanism.
+   */
+  color: var(--color-disassembly-branch-fallthrough);
+}
+
+/* The verb and the address are the part worth reading; the rest is supporting detail. */
+.item .branchReadout .branchOutcome {
+  color: var(--color-disassembly-branch-taken);
+  font-weight: 600;
+}
+
+.item .branchReadout.notTaken .branchOutcome {
+  color: var(--color-disassembly-branch-fallthrough);
+}
+
+/*
+ * Two renderings of the same fact, one shown at a time (decision 10).
+ *
+ * The threshold is `ch`, never px. The panel font size is a user setting spanning 10-16px, and the
+ * bundled fonts differ in advance width - Iosevka and Inconsolata are 0.500em per glyph, Noto Sans
+ * Mono and JetBrains Mono 0.600em - so a px threshold would be right at exactly one combination of
+ * the two and wrong everywhere else. `ch` resolves against the container's own font and tracks both
+ * axes at once. Same reasoning as M2.
+ *
+ * 113ch is derived, not chosen: the row ahead of the readout is bp 16px + address 7ch + opcodes
+ * 16ch + label 10ch + T-states 36px + gutter 2.5ch + instruction 25ch, about 69ch, and the long form
+ * runs to about 44ch. Recheck that sum if any column width changes.
+ */
+.branchReadoutLong {
+  display: none;
+}
+
+.branchReadoutShort {
+  display: inline;
+}
+
+@container disassembly (min-width: 113ch) {
+  .branchReadoutLong {
+    display: inline;
+  }
+
+  .branchReadoutShort {
+    display: none;
+  }
 }

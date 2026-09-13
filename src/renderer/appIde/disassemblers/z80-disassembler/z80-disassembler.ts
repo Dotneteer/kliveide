@@ -2,6 +2,7 @@ import { getNextRegisters, NextRegInfo } from "@emu/machines/zxNext/NextRegDevic
 import { ICustomDisassembler } from "./custom-disassembly";
 import { toDecimal3, toDecimal5 } from "../../services/ide-commands";
 import {
+  DisassemblyBranchInfo,
   DisassemblyItem,
   DisassemblyOptions,
   DisassemblyOutput,
@@ -12,6 +13,7 @@ import {
 } from "../common-types";
 import { intToX2, intToX4, toSbyte } from "../utils";
 import { MemorySectionType } from "@abstractions/MemorySection";
+import { getZ80BranchInfo } from "./z80-branch-info";
 
 /**
  * This class implements the Z80 disassembler
@@ -227,6 +229,16 @@ export class Z80Disassembler {
     this._indexMode = 0; // No index
     this._operandIndex = 0;
     let decodeInfo: string | undefined;
+    /*
+     * Control-flow metadata for this opcode, resolved in the same branches that resolve
+     * `decodeInfo` rather than afterwards from `_opCode`.
+     *
+     * It has to be done here because `_opCode` alone does not identify an instruction: after a CB
+     * prefix, `0xc3` is `set 0,e`, not `jp nn`, and after DD/FD it may be either the indexed
+     * instruction or the un-prefixed one. Only this function knows which table was consulted, and
+     * the metadata has to follow the same table the text did or the two will disagree.
+     */
+    let branchInfo: DisassemblyBranchInfo | undefined;
     const address = this._offset & 0xffff;
     let defaultTstates = 4;
 
@@ -237,10 +249,15 @@ export class Z80Disassembler {
 
       defaultTstates += 4;
       this._opCode = this.fetch();
-      decodeInfo =
-        !(this.options?.allowExtendedSet ?? false) && z80NextSet[this._opCode]
-          ? "nop"
-          : extendedInstructions[this._opCode] ?? "nop";
+      // --- A Next-only opcode on a machine without the extended set is a `nop`, and a `nop` does
+      // --- not branch. Deriving the metadata from the same test that picks the text keeps
+      // --- `jp (c)` from putting a control-flow edge on a 48K listing.
+      const isGatedNextOpCode =
+        !(this.options?.allowExtendedSet ?? false) && z80NextSet[this._opCode];
+      decodeInfo = isGatedNextOpCode ? "nop" : extendedInstructions[this._opCode] ?? "nop";
+      if (!isGatedNextOpCode) {
+        branchInfo = getZ80BranchInfo("ed", this._opCode);
+      }
     } else if (this._opCode === 0xcb) {
       // --- Decode bit operations
 
@@ -286,26 +303,49 @@ export class Z80Disassembler {
       defaultTstates += 4;
       this._indexMode = 1; // IX
       this._opCode = this.fetch();
-      if (this._opCode === 0xcb) {
+      const isIxBitOperation = this._opCode === 0xcb;
+      if (isIxBitOperation) {
         defaultTstates += 4;
       }
       decodeInfo = this.disassembleIndexedOperation();
+      if (!isIxBitOperation) {
+        branchInfo = this.getIndexedBranchInfo("ix");
+      }
     } else if (this._opCode === 0xfd) {
       // --- Decode IY-indexed operations
 
       defaultTstates += 4;
       this._indexMode = 2; // IY
       this._opCode = this.fetch();
-      if (this._opCode === 0xcb) {
+      const isIyBitOperation = this._opCode === 0xcb;
+      if (isIyBitOperation) {
         defaultTstates += 4;
       }
       decodeInfo = this.disassembleIndexedOperation();
+      if (!isIyBitOperation) {
+        branchInfo = this.getIndexedBranchInfo("iy");
+      }
     } else {
       // --- Decode standard operations
       defaultTstates = 4;
       decodeInfo = standardInstructions[this._opCode];
+      branchInfo = getZ80BranchInfo("none", this._opCode);
     }
-    return this.decodeInstruction(address, decodeInfo, defaultTstates);
+    return this.decodeInstruction(address, decodeInfo, defaultTstates, branchInfo);
+  }
+
+  /**
+   * Branch metadata for a DD/FD-prefixed operation that is not a bit operation.
+   *
+   * Mirrors `disassembleIndexedOperation`'s own fallback exactly: the indexed table first, then the
+   * un-prefixed one. A prefixed opcode with no indexed form behaves as the un-prefixed instruction
+   * with a wasted prefix — `DD C3 nn nn` really is `jp nn` — so the metadata has to fall back the
+   * same way the text does.
+   *
+   * @param register Which index register the prefix selected
+   */
+  private getIndexedBranchInfo(register: "ix" | "iy"): DisassemblyBranchInfo | undefined {
+    return getZ80BranchInfo(register, this._opCode) ?? getZ80BranchInfo("none", this._opCode);
   }
 
   /**
@@ -424,7 +464,8 @@ export class Z80Disassembler {
   private decodeInstruction(
     address: number,
     opInfo: string | undefined,
-    defaultTstates: number
+    defaultTstates: number,
+    branchInfo?: DisassemblyBranchInfo
   ): DisassemblyItem {
     // --- By default, unknown codes are NOP operations
     const disassemblyItem: DisassemblyItem = {
@@ -458,6 +499,26 @@ export class Z80Disassembler {
         pragmaCount++;
         this.processPragma(disassemblyItem, pragmaIndex);
       } while (pragmaCount < 4);
+    }
+
+    /*
+     * Attach the control-flow metadata, taking the destination from the symbol the pragmas just
+     * resolved.
+     *
+     * `^r` and `^L` already turn the relative and absolute operands into `symbolValue`, so the
+     * branch table does not restate them — restating them would mean decoding the operand twice and
+     * getting to disagree with the rendered text. `RST` is the exception the table does carry a
+     * `target` for, because `^R` renders its vector without creating a symbol; the check below
+     * leaves that one alone.
+     *
+     * Always a fresh object: the table's entries are shared across every item that decodes to the
+     * same opcode, and one of them is about to get a per-item `target`.
+     */
+    if (branchInfo) {
+      disassemblyItem.branch =
+        disassemblyItem.hasLabelSymbol && disassemblyItem.symbolValue !== undefined
+          ? { ...branchInfo, target: disassemblyItem.symbolValue }
+          : { ...branchInfo };
     }
 
     // --- We've fully processed the instruction

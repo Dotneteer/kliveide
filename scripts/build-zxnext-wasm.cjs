@@ -91,6 +91,7 @@ const productionExports = [
   "zxnextGetCpuWz",
   "zxnextSetCpuWz",
   "zxnextGetCpuPc",
+  "zxnextGetStepOutAddress",
   "zxnextSetCpuPc",
   "zxnextGetCpuSp",
   "zxnextSetCpuSp",

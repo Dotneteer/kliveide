@@ -89,6 +89,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetCpuWz: ZxNextWasmV2ExportFunction;
   zxnextSetCpuWz: ZxNextWasmV2ExportFunction;
   zxnextGetCpuPc: ZxNextWasmV2ExportFunction;
+  zxnextGetStepOutAddress: ZxNextWasmV2ExportFunction;
   zxnextSetCpuPc: ZxNextWasmV2ExportFunction;
   zxnextGetCpuSp: ZxNextWasmV2ExportFunction;
   zxnextSetCpuSp: ZxNextWasmV2ExportFunction;
@@ -458,6 +459,7 @@ const requiredV2Exports = [
   "zxnextGetCpuWz",
   "zxnextSetCpuWz",
   "zxnextGetCpuPc",
+  "zxnextGetStepOutAddress",
   "zxnextSetCpuPc",
   "zxnextGetCpuSp",
   "zxnextSetCpuSp",

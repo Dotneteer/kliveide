@@ -105,6 +105,7 @@ const productionExports = [
   "sp48SetCpuIr",
   "sp48GetCpuWz",
   "sp48GetCpuPc",
+  "sp48GetStepOutAddress",
   "sp48SetCpuPc",
   "sp48GetCpuSp",
   "sp48SetCpuSp",

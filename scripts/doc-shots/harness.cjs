@@ -56,7 +56,17 @@ async function launchKlive({
   sideBarWidth = "260px",
   toolPanelHeight = "260px",
   theme = "dark",
-  accent
+  accent,
+  /*
+   * The monitoring panels' font, which decides how much of a dense row fits in a given width.
+   *
+   * Defaults reproduce what every recipe written before this parameter existed already got, so
+   * adding it changes no existing shot. A recipe photographing the disassembly view needs control
+   * of it: that view swaps layouts on a container query measured in `ch`, so the font's advance
+   * width and size together decide which layout the screenshot shows.
+   */
+  panelFontFamily = "jetbrains-mono",
+  panelFontSize = 14
 }) {
   if (!fs.existsSync(MAIN)) {
     throw new Error(`No build at ${MAIN} — run \`npx electron-vite build --config build/electron.vite.config.ts\` first.`);
@@ -86,7 +96,7 @@ async function launchKlive({
             toolPanelHeight
           },
           editorOptions: { fontFamily: "iosevka", fontSize: 16 },
-          panelOptions: { fontFamily: "jetbrains-mono", fontSize: 14 }
+          panelOptions: { fontFamily: panelFontFamily, fontSize: panelFontSize }
         }
       },
       null,

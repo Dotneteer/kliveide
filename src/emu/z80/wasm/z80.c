@@ -50,6 +50,9 @@ typedef union RegisterPair {
   } bytes;
 } RegisterPair;
 
+/* --- Matches MAX_STEP_OUT_STACK_SIZE in Z80Cpu.ts; the two implementations must agree. */
+#define Z80_STEP_OUT_STACK_SIZE 256
+
 typedef struct Z80State {
   RegisterPair af;
   RegisterPair bc;
@@ -78,6 +81,21 @@ typedef struct Z80State {
   uint8_t eiBacklog;
   uint8_t retExecuted;
   uint8_t retnExecuted;
+  /*
+   * Shadow stack of return addresses, so a debugger can step out of the routine it is in.
+   *
+   * Mirrors `Z80Cpu.pushToStepOutStack` byte for byte: a 256-entry circular buffer written on every
+   * CALL and RST, never popped, with `markStepOutAddress` peeking the most recent entry. Without it
+   * the WASM machines had no step-out target at all — their CPU runs here, so the TypeScript push
+   * never executed, the stack stayed empty and `stepOutAddress` was permanently -1.
+   *
+   * Deliberately the same model rather than a better one: an improved shadow stack (popping on RET,
+   * and pushing on interrupt entry so an ISR's RETN cannot unbalance it) would be a behaviour change
+   * for every machine, and belongs in its own change with its own tests.
+   */
+  uint16_t stepOutStack[Z80_STEP_OUT_STACK_SIZE];
+  uint16_t stepOutStackPointer;
+  uint16_t stepOutStackCount;
   uint8_t afterLdAIR;
   uint8_t interruptVector;
   uint16_t lastPortAddress;
@@ -617,7 +635,17 @@ static inline void retCore(void) {
   cpu.retExecuted = 1;
 }
 
+static inline void pushToStepOutStack(uint16_t returnAddress) {
+  cpu.stepOutStack[cpu.stepOutStackPointer] = returnAddress;
+  cpu.stepOutStackPointer =
+    (uint16_t)((cpu.stepOutStackPointer + 1u) % Z80_STEP_OUT_STACK_SIZE);
+  if (cpu.stepOutStackCount < Z80_STEP_OUT_STACK_SIZE) {
+    cpu.stepOutStackCount++;
+  }
+}
+
 static inline void callCore(void) {
+  pushToStepOutStack(cpu.pc);
   tactPlus1WithAddress(cpu.pc);
   cpu.sp = (uint16_t)(cpu.sp - 1);
   writeMemory(cpu.sp, hi(cpu.pc));
@@ -627,6 +655,7 @@ static inline void callCore(void) {
 }
 
 static inline void rstCore(uint16_t address) {
+  pushToStepOutStack(cpu.pc);
   tactPlus1WithAddress(IR);
   cpu.sp = (uint16_t)(cpu.sp - 1);
   writeMemory(cpu.sp, hi(cpu.pc));
@@ -645,6 +674,16 @@ static inline uint16_t readIndexedAddress(void) {
 }
 
 static inline void pushPcForInterrupt(void) {
+  /*
+   * An interrupt is a call the program did not write: it stacks a return address and the handler
+   * ends with a RET/RETI/RETN. Recording it keeps the shadow stack aligned with the real one, so
+   * stepping out of an interrupt handler targets the interrupted instruction rather than whatever
+   * the last ordinary CALL happened to be.
+   *
+   * Observed before this: an interrupt landing mid-step made step-out overshoot both the handler
+   * and the routine beneath it. Mirrored in `Z80Cpu.pushPC`.
+   */
+  pushToStepOutStack(cpu.pc);
   cpu.sp = (uint16_t)(cpu.sp - 1);
   tactPlusN(1);
   writeMemory(cpu.sp, hi(cpu.pc));
@@ -724,6 +763,8 @@ void z80Reset(void) {
   cpu.eiBacklog = 0;
   cpu.retExecuted = 0;
   cpu.retnExecuted = 0;
+  cpu.stepOutStackPointer = 0;
+  cpu.stepOutStackCount = 0;
   cpu.afterLdAIR = 0;
   cpu.interruptVector = 0xff;
   cpu.lastPortAddress = 0;
@@ -3141,6 +3182,21 @@ void z80SetEiBacklog(uint32_t value) { cpu.eiBacklog = (uint8_t)value; }
 uint32_t z80GetRetExecuted(void) { return cpu.retExecuted; }
 void z80SetRetExecuted(uint32_t value) { cpu.retExecuted = value != 0; }
 uint32_t z80GetRetnExecuted(void) { return cpu.retnExecuted; }
+
+/*
+ * The address the most recent CALL/RST will return to, or 0xFFFFFFFF when nothing has been called.
+ *
+ * The sentinel rather than 0 because 0x0000 is a perfectly good return address; the TypeScript side
+ * maps it to -1, which is what `Z80Cpu.markStepOutAddress` uses for "no step-out target".
+ */
+uint32_t z80GetStepOutAddress(void) {
+  if (cpu.stepOutStackCount == 0u) {
+    return 0xffffffffu;
+  }
+  uint16_t lastIndex =
+    (uint16_t)((cpu.stepOutStackPointer + Z80_STEP_OUT_STACK_SIZE - 1u) % Z80_STEP_OUT_STACK_SIZE);
+  return cpu.stepOutStack[lastIndex];
+}
 void z80SetRetnExecuted(uint32_t value) { cpu.retnExecuted = value != 0; }
 void z80TactPlusN(uint32_t value) { tactPlusN(value); }
 

@@ -234,6 +234,88 @@ WASM as the actual selected implementation:
 - add artifact and shared-source contract tests
 - only then change defaults or recommend using WASM for normal operation
 
+## Debugger Behaviour Is Part Of The Port, And It Was Silently Dropped
+
+Two step-over bugs, both found only when a user single-stepped the ZX Spectrum Next ROM. Neither
+had a test, and neither showed up in any parity check, because parity work compared *emulation*
+output and these are *debugger* behaviours.
+
+- **Step-out was broken on every WASM machine, and the fix belonged in the core.**
+
+  `DebugStepMode.StepOut` means the RET that returns *to this routine's caller*. The mechanism is
+  `stepOutAddress`, peeked from a shadow stack of return addresses that `Z80Cpu` pushes on every
+  CALL and RST. **None of that code runs on a WASM machine** — the CPU executes in the core — so the
+  stack stayed empty, `markStepOutAddress()` always produced -1, and `stepOutAddress === pc` could
+  never be true.
+
+  What each machine had instead was accidental: the 48K mirrored `retExecuted` out of its core and
+  so stopped on the first RET at any depth (coarse, but it terminated); the 128 and the Next never
+  mirrored it at all, and the +3E's core did not even export it — on those three, **step-out could
+  not terminate on its own**. The Next is worse than it looks: `zxnext-cpu.c` *clears*
+  `retExecuted` after each instruction, so exporting the flag would never have worked there.
+
+  Fixed properly: the shadow stack now lives in `z80.c` (`pushToStepOutStack`,
+  `z80GetStepOutAddress`), a line-for-line port of the TypeScript model, exported by all four cores
+  as `<prefix>GetStepOutAddress` and read by a `markStepOutAddress()` override on each WASM machine.
+  With an exact target available, `retExecuted` was retired everywhere — it stops at nested returns,
+  so keeping it would have undone the precision.
+
+  Three things this taught, beyond the fix:
+
+  - **Interrupts must push the shadow stack too.** An interrupt stacks a return address and its
+    handler ends in RET/RETI/RETN, so a stack that ignores it drifts. Observed: an interrupt
+    arriving mid-step made the 48K step out to `$15FE` instead of the interrupted `$15DE`. Both
+    cores now push in their shared interrupt-entry helper (`pushPcForInterrupt` / `pushPC`).
+  - **A new required WASM export breaks the loader stubs.** `validateSp48WasmV2Exports` and its
+    siblings check every name, and the loader tests build fake modules from a hand-written export
+    list. Adding an export means adding it in four places — the core `.c`, the loader's type and
+    name list, the build script's allow-list — and then in the test stubs.
+  - **`Z80Cpu.reset()` emptied `stepOutStack` without clearing `stepOutStackCount`**, so
+    `markStepOutAddress` read past the end and returned `undefined` instead of -1. Found by writing
+    the unit test for the shared model. Note the array is deliberately still reset to `[]`: 91
+    assertions across `test/z80/` read `stepOutStack.length`, so the pre-allocation the constructor
+    describes does not survive a reset, and changing that is its own job.
+
+- **The `imminentJustCreated` guard was lost in the port.** `MachineFrameRunner.shouldStop` stops a
+  step-over when one instruction has executed *and* the imminent breakpoint was only just created —
+  i.e. the step landed on a call rather than starting on one. All four WASM v2 machines
+  (48K, 128, +3E, Next) reimplemented `shouldStop` without it, so a step-over that landed on a
+  CALL/RST/HALT/block-op silently executed that instruction too. On the Next this made whole
+  `NEXTREG` instructions vanish from the stepping sequence.
+- **`Z80NMachineBase.extendedInstructionLenghts` had `ED 92` (`NEXTREG n,A`) as 4 bytes; it is 3.**
+  Step-over plants its temporary breakpoint at `PC + length`, so the breakpoint sat in the middle of
+  the *next* instruction, was never reached, and the machine ran free to the next real breakpoint.
+  To the user this looked like step-over teleporting to an unrelated address.
+
+Three things to carry forward:
+
+1. **When a WASM machine reimplements a method that already exists in the interpreted path, diff the
+   two.** All four copies of `shouldStopAtWasmV2Breakpoint` were wrong in the same way, which is
+   what four-way duplication of a subtle condition buys. **All five copies — the four WASM machines and
+   `MachineFrameRunner` itself — have since been collapsed into
+   `src/emu/machines/DebugStepDecision.ts`**, a plain function that can be unit-tested at all.
+   `test/emu/debug-step-decision.test.ts` covers every branch, and
+   `debug-step-decision-equivalence.test.ts` runs the shared function against a verbatim copy of the
+   pre-fold `MachineFrameRunner` body over ~2,900 input combinations, comparing the answer *and* the
+   state each leaves behind — because that path was the correct one and folding it in had to be
+   provably behaviour-preserving rather than merely plausible.
+
+   Diffing the copies before extracting was worth doing on its own: three WASM copies were
+   byte-identical, the +3E differed, and `MachineFrameRunner` differed again — which is how both the
+   `retExecuted` gap below and the step-into ordering difference came to light.
+
+   **Two things stayed with their callers**, because folding them in would have changed behaviour
+   rather than de-duplicating it: `StepInto` (the interpreted path answers it *before* the
+   breakpoint check, the WASM machines *after*, and that is observable in `lastBreakpoint`), and
+   `retExecuted`.
+2. **Instruction lengths must be derived, not hand-maintained.** The disassembler already knows
+   them, because it consumes operand bytes. `test/emu/z80n-step-over-lengths.test.ts` now checks
+   every entry of the table against it; that test would have caught `ED 92` the day it was written.
+3. **Drive the debugger, not just the emulation, when verifying a machine.** Both bugs are
+   reproducible in about a minute with `scripts/doc-shots/harness.cjs`: breakpoint, `em-debug`, a
+   handful of `em-sto`, and read PC off the disassembly view after each. Emulation parity says
+   nothing about whether stepping works.
+
 ## Recommended First Reading For Next Migration
 
 Before touching ZX Spectrum Next WASM work, read:

@@ -118,6 +118,7 @@ const productionExports = [
   "sp128GetCpuWz",
   "sp128SetCpuWz",
   "sp128GetCpuPc",
+  "sp128GetStepOutAddress",
   "sp128SetCpuPc",
   "sp128GetCpuSp",
   "sp128SetCpuSp",
