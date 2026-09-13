@@ -183,6 +183,87 @@ describe("NexFileViewerPanel annotations", () => {
     expect(row.querySelector('[class*="headingMeta"]')?.textContent).toBe("16 KB");
   });
 
+  /**
+   * 112 bank flags is far too many to scan, and "how many banks does this file carry" is the
+   * question you open the section to answer — so the section answers it while still collapsed.
+   *
+   * A chip, as PC and SP are on a bank heading: it is a fact *about* the section, not part of its
+   * name. Only the count is worth showing — the denominator is always 112 — so the full sense lives
+   * in the tooltip rather than in the chip.
+   */
+  it("counts the set bank flags in a chip on the section heading", async () => {
+    await renderNexViewer({ contents: createNexWithLayer2AndBank5() });
+
+    const row = (await screen.findByText(/Bank flags/)).closest(
+      '[class*="expandableRowHeading"]'
+    ) as HTMLElement;
+    expect(row).not.toBeNull();
+
+    const chip = row.querySelector('[class*="headingChip"]') as HTMLElement;
+    expect(chip).not.toBeNull();
+    // --- One bank in this fixture, and the bare number is all the chip carries.
+    expect(chip.textContent).toBe("1");
+    expect(chip.getAttribute("title")).toBe("1 of 112 bank flags set");
+    expect(row.querySelector('[class*="headingMeta"]')).toBeNull();
+  });
+
+  /**
+   * Every flag in the header takes the panel's own value colour.
+   *
+   * The loading-screen block flags — Layer2, ULA, LoRes, HiRes, HiColor, No palette — sit two to a
+   * row, so they were written out longhand instead of going through `HeaderFlag`, and they were
+   * left on the neutral `--color-value` when the wrapper was given the panel's colour. Asserted
+   * over *all* of them rather than the six by name, so a seventh cannot be added on the default.
+   */
+  it("draws every header flag in the panel's value colour", async () => {
+    await renderNexViewer({ contents: createNexWithLayer2AndBank5() });
+
+    await screen.findByText(/Bank flags/);
+    const flagIcons = Array.from(
+      document.body.querySelectorAll<HTMLElement>(
+        '[data-testid="icon-circle-filled"], [data-testid="icon-circle-outline"]'
+      )
+    );
+    expect(flagIcons.length).toBeGreaterThan(6);
+    expect(flagIcons.map((icon) => icon.getAttribute("data-fill"))).toEqual(
+      flagIcons.map(() => "--color-state-value")
+    );
+  });
+
+  /**
+   * The loading screen's action sits in the section header, beside the name it acts on.
+   *
+   * `Layer2Screen` used to carry a one-button header of its own, immediately below the section
+   * header that already named it — two headers, and the action as far from the name as it could be.
+   */
+  it("opens the Layer 2 screen from its own section header", async () => {
+    const openDocument = vi.fn(() => Promise.resolve());
+    await renderNexViewer({
+      contents: createNexWithLayer2AndBank5(),
+      openDocument,
+      viewState: { layer2LoadingScreenExpanded: true }
+    });
+
+    const heading = await screen.findByText("Layer 2 Loading Screen");
+    const row = heading.closest('[class*="expandableRowHeading"]') as HTMLElement;
+    const action = row.querySelector('[class*="headingAction"]') as HTMLElement;
+    expect(action).not.toBeNull();
+
+    // --- The same glyph a bank offers, not the old filled one.
+    expect(
+      action.querySelector('[data-testid="icon-square-arrow-out-up-right"]')
+    ).not.toBeNull();
+
+    fireEvent.click(within(action).getByRole("button"));
+    await waitFor(() =>
+      expect(openDocument).toHaveBeenCalledWith(
+        expect.objectContaining({ id: expect.stringContaining("layer2ScreenDump") }),
+        expect.anything(),
+        false
+      )
+    );
+  });
+
   it("shows a short error when an existing sidecar cannot be loaded", async () => {
     const readFileContent = vi.fn(() => Promise.resolve("{"));
 
@@ -274,8 +355,11 @@ async function renderNexViewer({
     }),
     default: ({ children }: { children: ReactNode }) => <>{children}</>
   }));
+  /* --- `fill` is carried through so a test can assert which token an icon was drawn with. */
   vi.doMock("@renderer/controls/Icon", () => ({
-    Icon: ({ iconName }: { iconName: string }) => <span data-testid={`icon-${iconName}`} />
+    Icon: ({ iconName, fill }: { iconName: string; fill?: string }) => (
+      <span data-testid={`icon-${iconName}`} data-fill={fill} />
+    )
   }));
   vi.doMock("@renderer/controls/layout/Panel", () => ({
     Panel: ({

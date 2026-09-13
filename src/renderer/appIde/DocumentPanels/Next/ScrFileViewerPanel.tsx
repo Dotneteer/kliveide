@@ -35,7 +35,7 @@ const ScrFileViewerPanel = ({
             <Column>
               <HeaderRow>
                 <SmallIconButton
-                  iconName='pop-out'
+                  iconName='square-arrow-out-up-right'
                   fill='--color-value'
                   title='Display screen data dump'
                   clicked={async () => {

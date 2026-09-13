@@ -61,6 +61,18 @@
 }
 
 /*
+ * A header attribute's value.
+ *
+ * `--color-state-value` is the token for "this cell is a live value a panel wants in colour" — the
+ * same one the register and state panels use, and the reason the shared `--data-*` hierarchy stays
+ * neutral. These values were `--data-value`, the plain body colour, which left a screenful of
+ * numbers reading as prose with no way to tell a label from what it labels.
+ */
+.headerValue {
+  color: var(--color-state-value);
+}
+
+/*
  * A bank section's heading.
  *
  * Four roles, previously one run of `--data-secondary` text joined by pipes. See `BankHeading`.
@@ -84,10 +96,13 @@
 }
 
 /*
- * Where the machine actually is. A chip rather than more text, because it is state rather than
- * name — it is true of this bank at this moment, not of the bank.
+ * A fact about the section, carried in its heading.
+ *
+ * A chip rather than more text, because it is not part of the section's name: where the machine
+ * currently is (PC, SP), or how many of a section's 112 flags are set. Not `.bankMark` any more —
+ * the bank rows were simply the first to need one.
  */
-.bankMark {
+.headingChip {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
@@ -107,6 +122,6 @@
  * both marks, and PC and SP are the same *kind* of fact, so only colour tells them apart at a
  * glance once the row is scanned rather than read.
  */
-.bankMarkAlt {
+.headingChipAlt {
   color: var(--accent-secondary-text);
 }

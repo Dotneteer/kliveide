@@ -14,6 +14,13 @@ type Props = {
   tooltip?: string;
   /** Optional tooltip shown for the value cell. */
   valueTooltip?: string;
+  /**
+   * Extra class merged onto the *value* cell, for a panel that wants its values in a colour of its
+   * own. Same opt-in shape as `Flag`'s `iconFill` and `controls/data/registers`' `valueXclass`: the
+   * shared `--data-*` hierarchy stays neutral, and a panel that wants real colour layers a token on
+   * top of the value alone.
+   */
+  valueClassName?: string;
 };
 
 /**
@@ -25,10 +32,11 @@ export const LabeledText = ({
   valueWidth,
   value,
   tooltip,
-  valueTooltip
+  valueTooltip,
+  valueClassName
 }: Props) => (
   <>
     <Label text={label} width={labelWidth} tooltip={tooltip} />
-    <Value text={value} width={valueWidth} tooltip={valueTooltip} />
+    <Value text={value} width={valueWidth} tooltip={valueTooltip} className={valueClassName} />
   </>
 );

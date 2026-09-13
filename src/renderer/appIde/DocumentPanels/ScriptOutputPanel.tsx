@@ -143,7 +143,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
           }}
         />
         <SmallIconButton
-          iconName='pop-out'
+          iconName='square-arrow-out-up-right'
           title='Open script file'
           clicked={async () => {
             if (scriptFileName) {

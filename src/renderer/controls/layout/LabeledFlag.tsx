@@ -16,6 +16,11 @@ type Props = {
   tooltip?: string;
   /** Optional tooltip shown for the flag cell. */
   valueTooltip?: string;
+  /**
+   * The theme property the indicator is filled with — see `Flag`. Defaults there to the neutral
+   * `--color-value`; a panel that wants its flags in its own colour passes `--color-state-value`.
+   */
+  iconFill?: string;
 };
 
 /**
@@ -28,10 +33,17 @@ export const LabeledFlag = ({
   valueWidth,
   center,
   tooltip,
-  valueTooltip
+  valueTooltip,
+  iconFill
 }: Props) => (
   <>
     <Label text={label} width={labelWidth} tooltip={tooltip} />
-    <Flag value={value} tooltip={valueTooltip} width={valueWidth} center={center} />
+    <Flag
+      value={value}
+      tooltip={valueTooltip}
+      width={valueWidth}
+      center={center}
+      iconFill={iconFill}
+    />
   </>
 );

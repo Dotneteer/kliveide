@@ -111,6 +111,7 @@ const NexFileViewerContents = ({
 }: NexFileViewerContentsProps) => {
   const h = fi.header;
   const cvs = viewState;
+  const setBankFlagCount = useMemo(() => h.bankFlags.filter(Boolean).length, [h.bankFlags]);
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const loadedBanks = useMemo(() => fi.bankData.map(([bank]) => bank), [fi.bankData]);
@@ -200,8 +201,23 @@ const NexFileViewerContents = ({
       >
         <HeaderAttributes header={h} />
       </ExpandableRow>
+      {/*
+        * The count rides in the heading as a chip, the way PC and SP do on a bank: it is a fact
+        * about the section rather than part of its name. Only the count carries information — the
+        * denominator is always 112 — so the chip shows that alone and the tooltip spells it out.
+        */}
       <ExpandableRow
-        heading='Bank flags'
+        heading={
+          <>
+            Bank flags
+            <span
+              className={styles.headingChip}
+              title={`${setBankFlagCount} of ${h.bankFlags.length} bank flags set`}
+            >
+              {setBankFlagCount}
+            </span>
+          </>
+        }
         initialExpanded={cvs?.bankFlagsExpanded ?? false}
         onExpanded={exp => change(vs => (vs.bankFlagsExpanded = exp))}
       >
@@ -238,6 +254,22 @@ const NexFileViewerContents = ({
       {fi.layer2LoadingScreen?.length > 0 && (
         <ExpandableRow
           heading='Layer 2 Loading Screen'
+          headingAction={
+            <SmallIconButton
+              iconName='square-arrow-out-up-right'
+              fill='--color-command-icon'
+              title='Open the loading screen as its own document'
+              clicked={async () => {
+                if (!document.node.projectPath) return;
+                await openStaticMemoryDump(
+                  documentHubService,
+                  `layer2ScreenDump${document.node.projectPath}`,
+                  `${document.node.projectPath} - Layer2`,
+                  fi.layer2LoadingScreen
+                );
+              }}
+            />
+          }
           initialExpanded={cvs?.layer2LoadingScreenExpanded ?? false}
           onExpanded={exp =>
             change(vs => (vs.layer2LoadingScreenExpanded = exp))
@@ -471,6 +503,7 @@ const BankFlags = ({ flags, startIndex }: BankFlagsProps) => {
           labelWidth={36}
           valueWidth={20}
           value={f}
+          iconFill="--color-state-value"
         />
       ))}
     </Row>
@@ -496,13 +529,13 @@ function BankHeading ({ bank, header }: { bank: number; header: NexHeader }) {
       <span className={styles.bankNumber}>${toHexa2(bank)}</span>
       <span className={styles.bankDecimal}>({bank.toString(10)})</span>
       {isPcBank && (
-        <span className={styles.bankMark} title="The program counter points into this bank">
+        <span className={styles.headingChip} title="The program counter points into this bank">
           PC ${toHexa4(header.programCounter)}
         </span>
       )}
       {isSpBank && (
         <span
-          className={`${styles.bankMark} ${styles.bankMarkAlt}`}
+          className={`${styles.headingChip} ${styles.headingChipAlt}`}
           title="The stack pointer points into this bank"
         >
           SP ${toHexa4(header.stackPointer)}
@@ -606,8 +639,27 @@ const HeaderText = ({
       value={value}
       valueWidth={valueWidth}
       tooltip={tooltip}
+      valueClassName={styles.headerValue}
     />
   </Row>
+);
+
+/**
+ * A loading-screen block flag.
+ *
+ * Two of these share a row, so unlike `HeaderFlag` it brings no row of its own — which is why the
+ * six of them were written out longhand, and why they were the ones that missed the panel's value
+ * colour when `HeaderFlag` gained it.
+ */
+const ScreenBlockFlag = ({ label, value }: { label: string; value: boolean }) => (
+  <LabeledFlag
+    label={label}
+    labelWidth={HEADER_FLAG_NARROW_LABEL_WIDTH}
+    valueWidth={HEADER_FLAG_VALUE_WIDTH}
+    value={value}
+    center={true}
+    iconFill="--color-state-value"
+  />
 );
 
 type HeaderFlagProps = {
@@ -622,6 +674,7 @@ const HeaderFlag = ({ label, value }: HeaderFlagProps) => (
       labelWidth={HEADER_FLAG_LABEL_WIDTH}
       value={value}
       valueWidth={HEADER_FLAG_VALUE_WIDTH}
+      iconFill="--color-state-value"
       center={false}
     />
   </Row>
@@ -693,52 +746,16 @@ const HeaderAttributes = ({ header: h }: HeaderAttributesProps) => (
 
     <HeaderAttributeGroup title='Loading Screen Blocks'>
       <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
-        <LabeledFlag
-          label='Layer2:'
-          labelWidth={HEADER_FLAG_NARROW_LABEL_WIDTH}
-          valueWidth={HEADER_FLAG_VALUE_WIDTH}
-          value={!!(h.screenBlockFlags & ScreenBlockFlags.Layer2)}
-          center={true}
-        />
-        <LabeledFlag
-          label='ULA:'
-          labelWidth={HEADER_FLAG_NARROW_LABEL_WIDTH}
-          valueWidth={HEADER_FLAG_VALUE_WIDTH}
-          value={!!(h.screenBlockFlags & ScreenBlockFlags.Ula)}
-          center={true}
-        />
+        <ScreenBlockFlag label='Layer2:' value={!!(h.screenBlockFlags & ScreenBlockFlags.Layer2)} />
+        <ScreenBlockFlag label='ULA:' value={!!(h.screenBlockFlags & ScreenBlockFlags.Ula)} />
       </Row>
       <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
-        <LabeledFlag
-          label='LoRes:'
-          labelWidth={HEADER_FLAG_NARROW_LABEL_WIDTH}
-          valueWidth={HEADER_FLAG_VALUE_WIDTH}
-          value={!!(h.screenBlockFlags & ScreenBlockFlags.LoRes)}
-          center={true}
-        />
-        <LabeledFlag
-          label='HiRes:'
-          labelWidth={HEADER_FLAG_NARROW_LABEL_WIDTH}
-          valueWidth={HEADER_FLAG_VALUE_WIDTH}
-          value={!!(h.screenBlockFlags & ScreenBlockFlags.HiRes)}
-          center={true}
-        />
+        <ScreenBlockFlag label='LoRes:' value={!!(h.screenBlockFlags & ScreenBlockFlags.LoRes)} />
+        <ScreenBlockFlag label='HiRes:' value={!!(h.screenBlockFlags & ScreenBlockFlags.HiRes)} />
       </Row>
       <Row xclass={`${styles.headerAttributeRow} ${styles.headerFlagRow}`}>
-        <LabeledFlag
-          label='HiColor:'
-          labelWidth={HEADER_FLAG_NARROW_LABEL_WIDTH}
-          valueWidth={HEADER_FLAG_VALUE_WIDTH}
-          value={!!(h.screenBlockFlags & ScreenBlockFlags.HiColor)}
-          center={true}
-        />
-        <LabeledFlag
-          label='No palette:'
-          labelWidth={HEADER_FLAG_NARROW_LABEL_WIDTH}
-          valueWidth={HEADER_FLAG_VALUE_WIDTH}
-          value={!!(h.screenBlockFlags & ScreenBlockFlags.NoPalette)}
-          center={true}
-        />
+        <ScreenBlockFlag label='HiColor:' value={!!(h.screenBlockFlags & ScreenBlockFlags.HiColor)} />
+        <ScreenBlockFlag label='No palette:' value={!!(h.screenBlockFlags & ScreenBlockFlags.NoPalette)} />
       </Row>
     </HeaderAttributeGroup>
   </div>
