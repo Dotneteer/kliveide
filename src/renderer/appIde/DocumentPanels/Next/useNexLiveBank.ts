@@ -1,9 +1,11 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MI_ZXNEXT } from "@common/machines/constants";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import type { Z80CpuState } from "@common/messaging/EmuApi";
+import type { BranchCpuSnapshot } from "@renderer/appIde/DocumentPanels/branchVerdict";
 import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 
 import {
@@ -132,6 +134,7 @@ export function useNexBankPcOffset(
   placements: BankPlacement[] | undefined
 ): number | undefined {
   const emuApi = useEmuApi();
+  const machineState = useSelector((s) => s.emulatorState?.machineState);
   const [offset, setOffset] = useState<number | undefined>(undefined);
 
   // --- Read through a ref: the callback below is re-created every render, and depending on the
@@ -152,5 +155,86 @@ export function useNexBankPcOffset(
     }
   });
 
+  /*
+   * Recompute as soon as the placements arrive, rather than waiting for the ticker.
+   *
+   * The listener above fires once on registration and then only when the machine's state, PC or
+   * tact count *changes* — and on a machine that is paused and idle, none of them do. Its fallback
+   * for "nothing changed" is five seconds. So on a freshly opened bank document the first run found
+   * `placements` still `undefined` (they are fetched asynchronously by `useNexBankLocation`), gave
+   * up, and the execution-point marker then took up to five seconds to appear while everything else
+   * on screen was already correct.
+   *
+   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.18.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (machineState !== MachineControllerState.Paused || !placements?.length) {
+        setOffset(undefined);
+        return;
+      }
+      try {
+        const cpu = await emuApi.getCpuStateChunk();
+        if (!cancelled) setOffset(bankOffsetOfAddress(placements, cpu?.pcValue));
+      } catch {
+        if (!cancelled) setOffset(undefined);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [emuApi, machineState, placements]);
+
   return offset;
+}
+
+/**
+ * The register snapshot the branch gutter evaluates against, for a popped-out NEX bank.
+ *
+ * No `readByte`: this document holds one 16K bank, not the flat 64K map, so an absolute `SP` cannot
+ * be resolved in it. `createBranchCpuSnapshot` withholds the reader for exactly this reason in the
+ * Disassembly panel's partition mode, and a `RET cc` then reports `unobtainable` — the honest answer
+ * rather than a byte of whichever bank happens to sit at the same offset.
+ *
+ * Refreshed on the shared ticker *and* in an effect, for the reason §15.18b records: the ticker only
+ * fires when the machine's state, PC or tacts change, and its fallback on an idle paused machine is
+ * five seconds — long enough for a freshly opened document to look broken.
+ *
+ * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
+ */
+export function useNexBranchCpuSnapshot(enabled: boolean): BranchCpuSnapshot | undefined {
+  const emuApi = useEmuApi();
+  const machineState = useSelector((s) => s.emulatorState?.machineState);
+  const [snapshot, setSnapshot] = useState<BranchCpuSnapshot | undefined>(undefined);
+
+  const read = useCallback(async () => {
+    if (!enabled) {
+      setSnapshot(undefined);
+      return;
+    }
+    try {
+      const cpu = (await emuApi.getCpuState()) as Z80CpuState;
+      setSnapshot({
+        af: cpu.af,
+        bc: cpu.bc,
+        hl: cpu.hl,
+        ix: cpu.ix,
+        iy: cpu.iy,
+        sp: cpu.sp,
+        pc: cpu.pc
+      });
+    } catch {
+      // --- No machine, or one mid-switch: no verdicts rather than verdicts from stale registers.
+      setSnapshot(undefined);
+    }
+  }, [emuApi, enabled]);
+
+  useEmuStateListener(emuApi, read);
+
+  useEffect(() => {
+    void read();
+  }, [read, machineState]);
+
+  return enabled ? snapshot : undefined;
 }

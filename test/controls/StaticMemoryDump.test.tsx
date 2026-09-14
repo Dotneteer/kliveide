@@ -353,6 +353,75 @@ describe("StaticMemoryDump", () => {
     );
   });
 
+  it("accounts for the disassembly offset when jumping to an address", async () => {
+    /*
+     * The rows are addressed by `disassOffset` while the virtual list is indexed from the start of
+     * the dump. Without subtracting it, a bank shown at $1000 asked for row $1234/16 = 291 for an
+     * address only 35 rows in. In a bank shown at $4000 the request ran past the end of the list
+     * entirely. See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.15a.
+     */
+    const harness = await renderStaticMemoryDump({ disassOffset: 0x1000 });
+
+    fireEvent.click(screen.getByTestId("go-to-address"));
+
+    await waitFor(() =>
+      expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(0x23, {
+        align: "start"
+      })
+    );
+  });
+
+  it("clamps a jump to an address outside the dump", async () => {
+    // --- $1234 is below a bank shown at $4000, so the row index would be negative.
+    const harness = await renderStaticMemoryDump({ disassOffset: 0x4000 });
+
+    fireEvent.click(screen.getByTestId("go-to-address"));
+
+    await waitFor(() =>
+      expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(0, { align: "start" })
+    );
+  });
+
+  it("scrolls an already-open document to a newly revealed address", async () => {
+    /*
+     * View state is read once, on mount, so re-pointing an open document by writing to it does
+     * nothing — which is why the listing stopped following the program counter as soon as it stayed
+     * inside a bank that was already showing. The document exposes `revealAddress` for this.
+     * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.18.
+     */
+    const harness = await renderStaticMemoryDump({ disassOffset: 0x8000 });
+
+    harness.getDocumentApi().revealAddress(0xa600);
+
+    await waitFor(() =>
+      // --- ($A600 - $8000) / 16 = row 0x260, not $A600 / 16.
+      expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(0x260, { align: "start" })
+    );
+  });
+
+  it("opens a NEX bank as a disassembly by default", async () => {
+    // --- A bank of a NEX is a slice of a program; the reason to open one is to read the code.
+    await renderStaticMemoryDump({ disassemblyEnabled: true, nexAnnotationBank: 5 });
+
+    expect((screen.getByTestId("view-mode") as HTMLSelectElement).value).toEqual("disassembly");
+  });
+
+  it("opens a plain dump as memory, and honours a remembered view for a NEX bank", async () => {
+    // --- Nothing but a NEX bank gets the disassembly default...
+    await renderStaticMemoryDump({ disassemblyEnabled: true });
+    expect((screen.getByTestId("view-mode") as HTMLSelectElement).value).toEqual("memory");
+
+    // --- ...and the default never overrides a choice the user already made.
+    await renderStaticMemoryDump({
+      disassemblyEnabled: true,
+      nexAnnotationBank: 5,
+      viewMode: "memory"
+    });
+    expect((screen.getAllByTestId("view-mode").at(-1) as HTMLSelectElement).value).toEqual(
+      "memory"
+    );
+  });
+
   it("renders annotated NEX bank disassembly when a sidecar is available", async () => {
     const readFileContent = vi.fn(() =>
       Promise.resolve(

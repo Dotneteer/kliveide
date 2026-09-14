@@ -66,6 +66,103 @@ export function locateBank16k(
 }
 
 /**
+ * The offset inside a bank that a row of its listing stands at.
+ *
+ * A bank listing is numbered `listingOffset + offset`, so this is simply the inverse — but it is
+ * named because it is the identity a **bank-relative breakpoint** uses, and deriving it from the row
+ * address is what lets a listing with no annotation sidecar still place one. Rows used to take this
+ * from `item.annotation.bankOffset` alone, so a bank with no sidecar had no offsets at all: its
+ * gutter could neither show a breakpoint nor create one at the right site.
+ *
+ * `undefined` outside the bank, which a correctly numbered listing never produces but a mismatched
+ * `listingOffset` can.
+ *
+ * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.20.
+ */
+export function listedBankOffset(
+  address: number,
+  listingOffset: number,
+  bankSize = 0x4000
+): number | undefined {
+  const offset = address - listingOffset;
+  return offset >= 0 && offset < bankSize ? offset : undefined;
+}
+
+/**
+ * Is a bank listed at the address it is actually paged at?
+ *
+ * The question the branch gutter has to ask before it resolves a destination. A popped-out bank's
+ * listing offset is a dropdown, so the bank can be numbered `$8000` while sitting at `$4000`, or
+ * while not being paged in at all. The processor flags would still be genuine, but every address the
+ * gutter derived from a row would be a place this code is not — a confident wrong answer, which is
+ * precisely what the branch feature refuses to give elsewhere (see `BranchUnobtainableReason`).
+ *
+ * Requires the ordinary contiguous, aligned placement: a bank split across non-adjacent slots has no
+ * single base for a listing to agree with.
+ *
+ * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
+ */
+export function isListedWhereItIsPaged(
+  placements: BankPlacement[] | undefined,
+  listingOffset: number
+): boolean {
+  if (!placements || !isContiguousPlacement(placements)) return false;
+  return placements[0].address === listingOffset;
+}
+
+/** The 16K bank visible at a Z80 address, and where its byte 0 sits. */
+export type BankAtAddress = {
+  /** The 16K bank number. */
+  bank: number;
+  /**
+   * The Z80 address the bank's byte 0 is seen at — what a listing of it should be based on.
+   *
+   * For the ordinary contiguous, aligned placement this is the 16K slot base. When the two halves
+   * are not adjacent and in order, a single base cannot describe the bank, so the address's own 16K
+   * slot base is used: it keeps the listing's numbering agreeing with the address that was asked
+   * about, which is the property that matters to a caller following the program counter.
+   */
+  baseAddress: number;
+};
+
+/**
+ * The inverse of `locateBank16k`: which 16K bank is visible at a Z80 address.
+ *
+ * `undefined` for an address showing ROM — a slot with no write offset — because there is no RAM
+ * bank there to name. That is what keeps a caller following the program counter quiet while the
+ * machine is in the ROM, which during a NEX launch is most of the time.
+ *
+ * Matched on `bank8k` for the same reason `locateBank16k` is: it is the MMU register's own value,
+ * and `bank16k` disagrees with its name on the WASM core.
+ */
+export function bank16kAtAddress(
+  pageInfo: MemoryPageInfo[] | undefined,
+  address: number
+): BankAtAddress | undefined {
+  if (!pageInfo) return undefined;
+
+  const pageIndex = (address >> 13) & 0x07;
+  const page = pageInfo[pageIndex];
+  if (!page || page.writeOffset === null || page.writeOffset === undefined) return undefined;
+  if (page.bank8k === undefined) return undefined;
+
+  const bank = page.bank8k >> 1;
+  const isHighHalf = (page.bank8k & 0x01) === 1;
+  const siblingIndex = isHighHalf ? pageIndex - 1 : pageIndex + 1;
+  const sibling = pageInfo[siblingIndex];
+  const contiguous =
+    siblingIndex >= 0 &&
+    siblingIndex < 8 &&
+    !!sibling &&
+    sibling.bank8k === (isHighHalf ? page.bank8k - 1 : page.bank8k + 1);
+
+  const baseAddress = contiguous
+    ? (isHighHalf ? siblingIndex : pageIndex) * 0x2000
+    : address & 0xc000;
+  return { bank, baseAddress };
+}
+
+/**
  * True when the bank sits as one contiguous 16K block, the way ordinary paging leaves it.
  *
  * Both halves, in order, in an aligned slot pair — which is the only arrangement that can be

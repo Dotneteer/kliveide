@@ -54,6 +54,24 @@ import { AudioMixerDevice } from "./AudioMixerDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
 const ZXNEXT_MAIN_WAITING_LOOP = 0x1202;
+
+/*
+ * The bounds of NextZXOS's key-wait loop in ROM 0:
+ *
+ *   $1202: HALT
+ *   $1203: LD HL,$5C3B      ; FLAGS
+ *   $1206: BIT 5,(HL)       ; a key is available?
+ *   $1208: JR Z,$11F4       ; no - keep waiting
+ *   $120A: RES 5,(HL)       ; consume it
+ *
+ * with an outer `JR $11E5` at $1200. The OS parks here whenever it wants a key - during boot, at the
+ * boot menu, at the BASIC prompt, inside the Calculator. That is precisely why reaching
+ * `ZXNEXT_MAIN_WAITING_LOOP` once proves nothing about *which* program is waiting, and why the flow
+ * below waits for the machine to settle in this range instead.
+ * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.14.
+ */
+const ZXNEXT_KEY_WAIT_LOOP_FROM = 0x11e5;
+const ZXNEXT_KEY_WAIT_LOOP_TO = 0x120b;
 const SP_KEY_WAIT = 250;
 const SP_KEY_WAIT_SHORT = 50;
 
@@ -1396,10 +1414,30 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // tactsInFrame is in 28 MHz domain; emulateKeystroke compares against this.tacts (T-states),
     // so divide by frameTactMultiplier (8) to get T-states per frame.
     const tactsPerFrame = (this.tactsInFrame / this.frameTactMultiplier) | 0;
-    const startTact = this.tacts + frameOffset * tactsPerFrame;
+
+    // --- Chain onto the end of the queue rather than anchoring every keystroke to "now".
+    //
+    // `emulateKeystroke()` plays back one queue entry at a time, at most one action per frame, so
+    // the queue drains at the machine's pace. Callers, however, enqueue on the host's wall clock:
+    // the code-injection flow queues a key and then `await delay(50)`. When the emulated machine is
+    // not advancing at real time - mid boot, or while NextZXOS grinds through SD sector reads that
+    // exit the frame loop for a host round trip - `this.tacts` barely moves while the keys keep
+    // arriving. Anchored to `this.tacts` they all landed in nearly the same few-frame window, and
+    // `emulateKeystroke()` discarded every entry whose window had passed *without ever pressing it*,
+    // silently eating a prefix of the typed string.
+    //
+    // Starting each keystroke where the previous one ends makes the queue a true sequence: it plays
+    // back at the machine's own pace no matter how fast it was filled, and nothing expires unplayed.
+    // Interactive typing is unaffected - the on-screen keyboards only enqueue when the queue is
+    // already empty, so `lastEnd` is in the past and this reduces to the old behaviour.
+    //
+    // See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.12.
+    const queue = this.emulatedKeyStrokes;
+    const lastEndTact = queue.length > 0 ? queue[queue.length - 1].endTact : this.tacts;
+    const startTact = Math.max(this.tacts, lastEndTact) + frameOffset * tactsPerFrame;
     const endTact = startTact + frames * tactsPerFrame;
     const keypress = new EmulatedKeyStroke(startTact, endTact, primary, secondary);
-    this.emulatedKeyStrokes.push(keypress);
+    queue.push(keypress);
   }
 
   /**
@@ -1502,6 +1540,18 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       {
         type: "Start"
       },
+      // --- Do not touch the menu until it is actually up and waiting.
+      //
+      // The boot sync above only proves the OS reached its key-wait loop once, which happens during
+      // startup too. Pressing the menu keys before the menu is drawn threw them away, and the
+      // `.nexload` text that followed was then typed into the menu instead - where `c` of
+      // `ScrollNutter` starts the Calculator.
+      {
+        type: "WaitIdle",
+        fromAddr: ZXNEXT_KEY_WAIT_LOOP_FROM,
+        toAddr: ZXNEXT_KEY_WAIT_LOOP_TO,
+        message: "Boot menu ready"
+      },
       {
         type: "QueueKey",
         primary: SpectrumKeyCode.N6,
@@ -1515,9 +1565,29 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         wait: 0,
         message: "Enter"
       },
+      // --- Let the machine actually consume the Enter above before asking where it is.
+      //
+      // `QueueKey` only *queues*; `emulateKeystroke()` plays the key back over the following frames.
+      // Without this the `ReachExecPoint` below ran while the machine was still sitting in the boot
+      // menu's waiting loop — which is the very address it waits for — so it matched instantly and
+      // typing started anyway. See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.13.
       {
-        type: "Wait",
-        duration: 100
+        type: "WaitKeyQueue"
+      },
+      // --- Wait for the command line to be up and idle before typing into it.
+      //
+      // Not `ReachExecPoint` on the key-wait loop: that address is where the OS waits for *any* key,
+      // so it matches while the boot menu is still up. Settling in the loop across consecutive
+      // samples is the difference between "something wants a key" and "the command line is ready" -
+      // while NextZXOS loads it, it is doing real work and cannot satisfy this.
+      {
+        type: "WaitIdle",
+        fromAddr: ZXNEXT_KEY_WAIT_LOOP_FROM,
+        toAddr: ZXNEXT_KEY_WAIT_LOOP_TO,
+        message: "Command line ready"
+      },
+      {
+        type: "Start"
       },
       ...promptQueue
     );

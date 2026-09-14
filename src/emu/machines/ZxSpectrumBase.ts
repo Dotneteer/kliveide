@@ -470,10 +470,19 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
    * The keyboard provider can play back emulated key strokes
    */
   queueKeystroke(frameOffset: number, frames: number, primary: number, secondary?: number): void {
-    const startTact = this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
-    const endTact = startTact + frames * this.tactsInFrame * this.clockMultiplier;
+    // --- Chain onto the end of the queue rather than anchoring every keystroke to "now", so that a
+    // --- caller enqueueing on the host's wall clock (the code-injection flow types with
+    // --- `await delay(...)` between keys) cannot outrun a machine that is not advancing at real
+    // --- time. Anchored to `this.tacts`, such keys shared one window and `emulateKeystroke()`
+    // --- discarded the ones whose window had passed without ever pressing them. See
+    // --- `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.12.
+    const tactsPerFrame = this.tactsInFrame * this.clockMultiplier;
+    const queue = this.emulatedKeyStrokes;
+    const lastEndTact = queue.length > 0 ? queue[queue.length - 1].endTact : this.tacts;
+    const startTact = Math.max(this.tacts, lastEndTact) + frameOffset * tactsPerFrame;
+    const endTact = startTact + frames * tactsPerFrame;
     const keypress = new EmulatedKeyStroke(startTact, endTact, primary, secondary);
-    this.emulatedKeyStrokes.push(keypress);
+    queue.push(keypress);
   }
 
   /**

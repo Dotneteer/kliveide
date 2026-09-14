@@ -214,6 +214,19 @@ const MATRIX: MatrixEntry[] = [
     reason: "wasm-suite"
   },
   {
+    category: "input/keystroke queue",
+    requiredDomain: "input",
+    typeScriptTests: ["KeystrokeQueue.test.ts", "NextKeyCodeMapping.test.ts"],
+    wasmSuites: ["wasm-next-input.test.ts", "wasm-next-keyboard-ula.test.ts"],
+    reason: "typescript-owned-host-boundary",
+    note:
+      "The emulated keystroke queue is TypeScript-owned: `queueKeystroke`/`emulateKeystroke` and " +
+      "the `emulatedKeyStrokes` list live in the machine class, and only the resulting key rows " +
+      "are pushed into the core by `syncKeyboardToWasmV2`. The WASM suites cover the row state " +
+      "that arrives; these suites cover the ASCII-to-key-code mapping and the scheduling that " +
+      "produce it."
+  },
+  {
     category: "expansion/multiface",
     requiredDomain: "expansion",
     typeScriptTests: ["ExpansionBusDevice.test.ts", "ExpansionBusNmi.test.ts", "MultifaceDevice.test.ts", "MultifaceMemory.test.ts"],

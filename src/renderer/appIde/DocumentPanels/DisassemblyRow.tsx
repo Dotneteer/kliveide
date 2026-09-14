@@ -36,6 +36,20 @@ export type DisassemblyRowViewModel = {
 
 export type DisassemblyRowViewModelParams = {
   bankLabel: boolean;
+  /**
+   * The bank and offset this row belongs to, when the listing is of a 16K bank rather than of the
+   * 64K map.
+   *
+   * Only used when the row has **no** breakpoint yet, to decide what an unarmed gutter would create.
+   * `BreakpointIndicator` builds its `bp-set` from `breakpointAddress`, and the fallback there is
+   * the row's Z80 address — which in a bank listing arms a breakpoint at wherever the bank happens
+   * to be paged, not at an offset in the bank. The bank gutter then never finds it, because it looks
+   * up by offset: the breakpoint exists, shows in the sidebar, and is invisible on the row that made
+   * it.
+   *
+   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.20.
+   */
+  bankScope?: { bank: number; bankOffset: number };
   breakpoint?: BreakpointInfo;
   currentSegment: number;
   decimalView: boolean;
@@ -146,6 +160,7 @@ export function isAuthoredRow(item: DisassemblyItem): boolean {
 
 export function deriveDisassemblyRowViewModel({
   bankLabel,
+  bankScope,
   breakpoint,
   currentSegment,
   decimalView,
@@ -190,7 +205,14 @@ export function deriveDisassemblyRowViewModel({
     breakpointAddress:
       breakpoint?.resource || breakpoint?.bankOffset !== undefined
         ? getBreakpointAddressSpec(breakpoint, partitionLabels)
-        : address,
+        : bankScope
+          ? // --- No breakpoint here yet, and this is a bank listing: name the site the gutter would
+            // --- create as an offset in the bank, not as the address the bank currently sits at.
+            getBreakpointAddressSpec(
+              { bank: bankScope.bank, bankOffset: bankScope.bankOffset } as BreakpointInfo,
+              partitionLabels
+            )
+          : address,
     breakpointPartition:
       breakpoint?.partition !== undefined ? (partitionLabels[breakpoint.partition] ?? "?") : undefined,
     execPoint: address === pausedPc,

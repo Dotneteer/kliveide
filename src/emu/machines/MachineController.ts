@@ -491,6 +491,47 @@ export class MachineController implements IMachineController {
           }
           break;
 
+        case "WaitIdle": {
+          // --- "Parked in the loop", not "passed through it once". See the step's doc comment.
+          const samplesNeeded = step.samples ?? 12;
+          const intervalMs = step.intervalMs ?? 20;
+          const deadline = Date.now() + (step.timeoutMs ?? 10000);
+          let consecutive = 0;
+          while (consecutive < samplesNeeded) {
+            if (Date.now() >= deadline) {
+              await this.sendOutput(
+                `Timed out waiting for the machine to settle in $${toHexa4(step.fromAddr)}-$${toHexa4(
+                  step.toAddr
+                )}.`,
+                "yellow"
+              );
+              break;
+            }
+            await delay(intervalMs);
+            this.assertMachineOperationIsCurrent(operationRevision);
+            const pc = this.machine?.pc ?? -1;
+            consecutive = pc >= step.fromAddr && pc <= step.toAddr ? consecutive + 1 : 0;
+          }
+          break;
+        }
+
+        case "WaitKeyQueue": {
+          // --- Paced by the machine, not the host: poll until it has played back everything queued.
+          const deadline = Date.now() + (step.timeoutMs ?? 5000);
+          while ((this.machine?.getKeyQueueLength() ?? 0) > 0) {
+            if (Date.now() >= deadline) {
+              await this.sendOutput(
+                "Timed out waiting for queued keystrokes to be played back.",
+                "yellow"
+              );
+              break;
+            }
+            await delay(20);
+            this.assertMachineOperationIsCurrent(operationRevision);
+          }
+          break;
+        }
+
         case "QueueKey":
           m.queueKeystroke(0, 5, step.primary, step.secondary, step.ternary);
           if ((step.wait ?? 100) > 0) {

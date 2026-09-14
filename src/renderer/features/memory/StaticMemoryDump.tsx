@@ -18,6 +18,7 @@ import { PanelHeader } from "@renderer/controls/data";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { useBreakpointDialog } from "@renderer/appIde/dialogs/useBreakpointDialog";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
+import { evaluateBranch, type BranchVerdict } from "@renderer/appIde/DocumentPanels/branchVerdict";
 import { useRowSizes } from "@renderer/theming/useRowSizes";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
@@ -32,11 +33,14 @@ import { createAnnotatedNexDisassemblyItems } from "@renderer/appIde/DocumentPan
 import { useNexAnnotationEditor } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/useNexAnnotationEditor";
 import {
   formatBankLocation,
+  isListedWhereItIsPaged,
+  listedBankOffset,
   pcSpotlightAddress
 } from "@renderer/appIde/DocumentPanels/Next/nextBankLocation";
 import {
   useNexBankLocation,
   useNexBankPcOffset,
+  useNexBranchCpuSnapshot,
   useNexLiveBankBytes
 } from "@renderer/appIde/DocumentPanels/Next/useNexLiveBank";
 import {
@@ -82,6 +86,13 @@ type StaticMemoryDumpOptions = {
   viewMode?: StaticDumpViewMode;
   nexAnnotationPath?: string;
   nexAnnotationBank?: number;
+
+  /**
+   * Address to bring into view when the document opens, in the listing's own numbering — that is,
+   * `disassOffset + <offset into the dump>`, the same numbering the rows and the "Go to address"
+   * box use.
+   */
+  topAddress?: number;
 };
 
 const STATIC_DISASSEMBLY_FALLBACK_PAGE_ROWS = 16;
@@ -110,8 +121,21 @@ const StaticMemoryDump = ({
     viewState ?? {}
   );
   const disassemblyEnabled = currentViewState.disassemblyEnabled ?? false;
+  /*
+   * A NEX bank opens as a disassembly; anything else opens as a hex dump.
+   *
+   * A bank of a NEX is a 16K slice of a *program* — the reason to open one is almost always to read
+   * the code in it, and for the bank the entry point runs from that is the only reason. A plain dump
+   * of some other binary has no such expectation, so the default stays "memory" there.
+   *
+   * Only the default: a remembered choice in the annotation sidecar still wins (it is applied to the
+   * view state further down), so a bank the user last read as hex opens as hex.
+   *
+   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.16.
+   */
+  const isNexBankDocument = currentViewState.nexAnnotationBank !== undefined;
   const viewMode: StaticDumpViewMode = disassemblyEnabled
-    ? (currentViewState.viewMode ?? "memory")
+    ? (currentViewState.viewMode ?? (isNexBankDocument ? "disassembly" : "memory"))
     : "memory";
   const decimalView = currentViewState.decimalView ?? false;
   const disassOffset = currentViewState.disassOffset ?? 0;
@@ -191,6 +215,26 @@ const StaticMemoryDump = ({
    */
   const pcBankOffset = useNexBankPcOffset(bankPlacements);
   const pausedPcRowAddress = pcSpotlightAddress(disassOffset, pcBankOffset);
+
+  /*
+   * The branch gutter, for a popped-out NEX bank.
+   *
+   * Gated on the listing's numbering being *real*, which the Disassembly panel never has to check:
+   * this document's offset is a dropdown, so a bank can be listed at an address it is not paged at.
+   * The flags would still be genuine, but every destination the gutter resolved would be an address
+   * this code is not at — a confident wrong answer, which is the one thing the branch feature is
+   * careful never to give (see `BranchUnobtainableReason`). So verdicts appear only while the bank
+   * is paged in as one contiguous 16K block at exactly the offset the listing is numbered by, which
+   * is what the debugger's own reveal always opens it at.
+   *
+   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
+   */
+  const branchGutterApplies =
+    isNexBankDocument &&
+    viewMode === "disassembly" &&
+    isListedWhereItIsPaged(bankPlacements, disassOffset);
+  const branchCpu = useNexBranchCpuSnapshot(branchGutterApplies);
+  const showBranchGutter = branchGutterApplies && !!branchCpu;
 
   // --- `undefined` while the file is showing, which is what makes every row's marks disappear.
   const activeDiff = liveBankShown ? bankDiff : undefined;
@@ -341,6 +385,29 @@ const StaticMemoryDump = ({
    * The width every row reserves for its hard comment, so the zebra stripes all end at the same x.
    * Same derivation as `DisassemblyPanel`; 0 means no row has a comment and the cell is omitted.
    */
+  /*
+   * Every row's verdict, built once per refresh rather than once per row: `DisassemblyRow` is
+   * memoized, and a fresh object per render would defeat that for the whole listing.
+   */
+  const branchVerdicts = useMemo(() => {
+    if (!showBranchGutter || !branchCpu) return undefined;
+    const verdicts = new Map<number, BranchVerdict>();
+    for (const item of disassemblyItems) {
+      if (!item.branch) continue;
+      verdicts.set(
+        item.address,
+        evaluateBranch(
+          item.branch,
+          item.address,
+          item.opCodes?.length ?? 0,
+          branchCpu,
+          item.address === pausedPcRowAddress
+        )
+      );
+    }
+    return verdicts;
+  }, [showBranchGutter, branchCpu, disassemblyItems, pausedPcRowAddress]);
+
   const disassemblyCommentWidthCh = useMemo(
     () =>
       disassemblyItems.reduce(
@@ -369,19 +436,43 @@ const StaticMemoryDump = ({
     documentHubService.setDocumentApi(document.id, {
       // --- Read through a ref: the editor is rebuilt on no render, but this effect runs once and
       // --- the closure would otherwise capture the first render's editor.
-      beforeDocumentDisposal: () => confirmDisposalRef.current()
+      beforeDocumentDisposal: () => confirmDisposalRef.current(),
+      // --- Re-point a document that is already open. Both lists are asked: which one is showing is
+      // --- the view mode's business, and the one that is not simply keeps the address for later.
+      revealAddress: (address: number) => {
+        setCurrentViewState((current) => ({ ...current, topAddress: address }));
+        setMemoryJumpAddress(address);
+        setDisassemblyJumpAddress(address & 0xffff);
+      }
     });
     return () => {
       documentHubService.setDocumentApi(document.id, undefined);
     };
   }, [document?.id, documentHubService]);
 
+  /*
+   * The row holding an address, in the listing's own numbering.
+   *
+   * `disassOffset` has to come off first: the rows are addressed by it (§ the `pausedPcRowAddress`
+   * note above), but the virtual list is indexed from the start of the dump. Without the
+   * subtraction, "go to address" in a bank shown at `$4000` asked for row `$5C50 / 16` = 1477 of a
+   * 1024-row list and simply hit the bottom. Clamped for the same reason: an address outside the
+   * dump should land at an end, not throw the list off.
+   */
+  const rowIndexForAddress = useCallback(
+    (address: number) => {
+      const index = Math.floor((address - disassOffset) / 16);
+      return Math.max(0, Math.min(index, Math.max(0, items.length - 1)));
+    },
+    [disassOffset, items.length]
+  );
+
   useEffect(() => {
     if (!memoryVlApi.current || memoryJumpAddress === undefined) return;
-    memoryVlApi.current.scrollToIndex(Math.floor(memoryJumpAddress / 16), {
+    memoryVlApi.current.scrollToIndex(rowIndexForAddress(memoryJumpAddress), {
       align: "start"
     });
-  }, [memoryJumpAddress]);
+  }, [memoryJumpAddress, rowIndexForAddress]);
 
   /*
    * The three display controls only change *view* state now.
@@ -678,7 +769,20 @@ const StaticMemoryDump = ({
             }}
             apiLoaded={(api) => {
               memoryVlApi.current = api;
-              if (!restoredInitialScroll.current && viewState?.scrollPosition) {
+              if (restoredInitialScroll.current) return;
+              /*
+               * An explicit `topAddress` wins over a remembered scroll position: it is only set when
+               * something opened this document *at* an address — the entry-point stop revealing the
+               * bank it broke in — and restoring the previous position instead would silently ignore
+               * the reason the document was opened.
+               */
+              const openAt = viewState?.topAddress;
+              if (openAt !== undefined) {
+                restoredInitialScroll.current = true;
+                requestAnimationFrame(() => {
+                  api.scrollToIndex(rowIndexForAddress(openAt), { align: "start" });
+                });
+              } else if (viewState?.scrollPosition) {
                 restoredInitialScroll.current = true;
                 requestAnimationFrame(() => {
                   api.scrollTo(viewState.scrollPosition);
@@ -745,10 +849,18 @@ const StaticMemoryDump = ({
               }}
               apiLoaded={(api) => {
                 disassemblyVlApi.current = api;
-                if (
-                  !restoredInitialDisassemblyScroll.current &&
-                  viewState?.disassemblyScrollPosition
-                ) {
+                if (restoredInitialDisassemblyScroll.current) return;
+                /*
+                 * As in the memory list: an explicit `topAddress` is why the document was opened, so
+                 * it beats a remembered scroll position. Seeding the jump address rather than
+                 * scrolling here on purpose — the listing is disassembled asynchronously, so the row
+                 * for an address may not exist yet, and the jump effect re-runs when it does.
+                 */
+                const openAt = viewState?.topAddress;
+                if (openAt !== undefined) {
+                  restoredInitialDisassemblyScroll.current = true;
+                  setDisassemblyJumpAddress(openAt & 0xffff);
+                } else if (viewState?.disassemblyScrollPosition) {
                   restoredInitialDisassemblyScroll.current = true;
                   requestAnimationFrame(() => {
                     api.scrollTo(viewState.disassemblyScrollPosition);
@@ -764,6 +876,9 @@ const StaticMemoryDump = ({
                   !!selectedDisassemblyRange &&
                   idx >= selectedDisassemblyRange.start &&
                   idx <= selectedDisassemblyRange.end;
+                const rowBankOffset =
+                  item.annotation?.bankOffset ??
+                  listedBankOffset(item.address, disassOffset, contents.length);
 
                 return (
                   <DisassemblyRow
@@ -776,10 +891,24 @@ const StaticMemoryDump = ({
                      * may be paged anywhere, so "a breakpoint here" means an offset in the bank,
                      * not a place in the 64K map. `undefined` leaves the gutter as it was — an
                      * unarmed circle the click arms.
+                     *
+                     * The offset falls back to the row's position in the listing when there is no
+                     * annotation to carry one. Without that, a bank with no sidecar had no offsets
+                     * at all, and its gutter could neither show a bank breakpoint nor create one —
+                     * it armed a plain address breakpoint instead, which then showed in the sidebar
+                     * and nowhere on the row that made it. See §15.20 of the CSpect plan.
                      */
+                    bankScope={
+                      currentViewState.nexAnnotationBank !== undefined && rowBankOffset !== undefined
+                        ? {
+                            bank: currentViewState.nexAnnotationBank,
+                            bankOffset: rowBankOffset
+                          }
+                        : undefined
+                    }
                     breakpoint={
-                      item.annotation?.bankOffset !== undefined
-                        ? bankBreakpoints.get(item.annotation.bankOffset)
+                      rowBankOffset !== undefined
+                        ? bankBreakpoints.get(rowBankOffset)
                         : undefined
                     }
                     commentWidthCh={disassemblyCommentWidthCh}
@@ -810,6 +939,8 @@ const StaticMemoryDump = ({
                     selected={selected}
                     selectedRange={selectedRange}
                     showBanks={false}
+                    showBranchGutter={showBranchGutter}
+                    verdict={branchVerdicts?.get(item.address)}
                   />
                 );
               }}
@@ -840,6 +971,24 @@ export async function openStaticMemoryDump(
 ): Promise<void> {
   const id = `memoryDump-${dumpId}`;
   if (documentHubService.isOpen(id)) {
+    // --- Focusing is not enough when the caller asked for an address: a document already open is
+    // --- sitting wherever it was left, so push the target into its view state too.
+    if (options.topAddress !== undefined || options.viewMode !== undefined) {
+      const current = documentHubService.getDocumentViewState(id) ?? {};
+      documentHubService.setDocumentViewState(id, {
+        ...current,
+        ...(options.topAddress !== undefined ? { topAddress: options.topAddress } : {}),
+        // --- An explicit view mode is a caller saying *how* to show this, not a preference to
+        // --- remember around: the entry-point reveal wants code, whatever the document was left as.
+        ...(options.viewMode !== undefined ? { viewMode: options.viewMode } : {})
+      });
+    }
+    // --- Writing the view state is not enough: a mounted document read it once, on mount. Ask the
+    // --- document itself to move, which is what makes the listing follow the program counter as it
+    // --- steps within a bank that is already on screen.
+    if (options.topAddress !== undefined) {
+      documentHubService.getDocumentApi(id)?.revealAddress?.(options.topAddress);
+    }
     documentHubService.setActiveDocument(id);
   } else {
     await documentHubService.openDocument(
@@ -856,7 +1005,8 @@ export async function openStaticMemoryDump(
         decimalView: options.decimalView,
         viewMode: options.viewMode,
         nexAnnotationPath: options.nexAnnotationPath,
-        nexAnnotationBank: options.nexAnnotationBank
+        nexAnnotationBank: options.nexAnnotationBank,
+        topAddress: options.topAddress
       } satisfies MemoryDumpViewState,
       false
     );

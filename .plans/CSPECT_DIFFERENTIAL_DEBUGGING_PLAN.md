@@ -583,8 +583,13 @@ that stopping after M5 still leaves Klive materially better tested.
 
 **2026-09-14** — §15 investigation; the copper vertical-origin fix in both cores (§15.9); the WASM
 core's copper tick wired into the C tact loop (§15.10); the frame-1 initialization gap in
-`Z80MachineBase.reset()` (§15.11). NextReg `$7F` being write-only in the TypeScript core (§15.10a)
-remains open.
+`Z80MachineBase.reset()` (§15.11); the lost-keystroke and OS-readiness defects in the NEX launch flow
+(§15.12), and two further defects in the same flow — capitals encoded with the wrong shift, and a
+sync point that matched instantly (§15.13), and finally the root cause — `$1202` is a generic key-wait loop, not a prompt marker
+(§15.14); the entry-point reveal (§15.15); NEX banks opening as code (§15.16); following the PC rather than the entry point (§15.17); three defects in the revealed document
+(§15.18); branch prediction in a popped-out bank (§15.19); and a bank breakpoint with no sign of itself
+(§15.20). NextReg `$7F` being write-only in the TypeScript core
+(§15.10a) remains open, as do the two items in §15.12d.
 
 ---
 
@@ -951,3 +956,440 @@ errors; `npm run diff:zxnext-machine -- --frames 1` still reports no TS↔WASM d
 **Not fixed, noted in passing:** `C64Machine.ts:143-144` defines
 `get frameJustCompleted() { return this.frameJustCompleted; }` — an unconditional infinite recursion
 if anything ever reads it. Unrelated to this change and left alone.
+
+### 15.12 Lost keystrokes when launching a NEX
+
+Reported while testing the copper work: launching `ScrollNutter.nex` from the NEX viewer typed only
+`,utter.nex` instead of `.nexload ScrollNutter.nex`. Sixteen of twenty-five characters lost, always a
+prefix, with the first surviving character corrupted.
+
+**Not caused by §15.11.** On the WASM core `emulateKeystroke()` is called from
+`ZxNextWasmV2Machine`'s own overrides — unconditionally at `:578` in the `zxnextExecuteFrame` fast
+path and at `:722` in the debug loop — not from the frame-init block that §15.11 changed. Keystroke
+cadence there is untouched by `frameCompleted = true`.
+
+#### 15.12a Root cause: two clocks with nothing between them
+
+Keystrokes **expire in emulated tacts**: `queueKeystroke` set `startTact = this.tacts` and
+`endTact = startTact + frames * tactsPerFrame`, a five-frame window anchored to the moment of
+queueing. They are **played back on the machine's clock**: `emulateKeystroke` touches only the head
+of the queue and performs at most one action per call — press, *or* release-and-shift — once per
+frame. But they are **enqueued on the host's wall clock**: `MachineController` does
+`queueKeystroke(0, 5, …)` then `await delay(step.wait)`, roughly 100 ms of real time per character.
+
+Nothing couples the two. Whenever the emulated machine is not advancing at real time — and right
+after the boot-menu `Enter`, NextZXOS is loading from the SD card, which repeatedly exits the frame
+loop for a host round trip — `this.tacts` crawls while keys keep arriving. They all land in nearly
+the same five-frame window, and this branch then throws them away:
+
+```ts
+if (keyStroke.endTact < this.tacts) {
+  this.keyboardDevice.setKeyStatus(keyStroke.primaryCode, false);
+  ...
+  this.emulatedKeyStrokes.shift();
+  return;
+}
+```
+
+**It releases and discards without ever having pressed.** Hence a lost prefix. The stray `,`
+(Symbol-Shift + N, where `N` of `ScrollNutter` belonged) is shift state leaking across the expiry
+cascade, which the one-action-per-call design makes fragile once entries pile up.
+
+#### 15.12b Fix A — chain the queue
+
+`queueKeystroke` now starts each keystroke where the previous one ends:
+
+```ts
+const lastEndTact = queue.length > 0 ? queue[queue.length - 1].endTact : this.tacts;
+const startTact = Math.max(this.tacts, lastEndTact) + frameOffset * tactsPerFrame;
+```
+
+The queue becomes a true sequence: it plays back at the machine's own pace however fast it was
+filled, and nothing can expire unplayed. Applied to both `ZxNextMachine` and `ZxSpectrumBase`, which
+had the identical flaw.
+
+Interactive typing is unaffected — the on-screen keyboards enqueue only when the queue has already
+drained (`Sp48Keyboard.tsx:486` and siblings), so `lastEnd` is in the past and the expression reduces
+to the old behaviour. `test/zxnext/KeystrokeQueue.test.ts` asserts that explicitly.
+
+**The regression test was verified to fail without the fix**, which is the only thing that makes it
+worth having: with the old anchoring, **one of eight queued keystrokes was delivered**. Seven were
+discarded unpressed.
+
+#### 15.12c Fix B — wait for the OS, not the wall clock
+
+The flow synchronises on `ReachExecPoint` at ROM0/`$1202` three times — after the cold boot, after
+the following `Start`, and after the autoexec `Space`. The only transition that lacked it was the
+boot-menu `Enter`, which had a bare `Wait 100` (wall clock) before typing began. That step now waits
+for the machine to reach the same main waiting loop, then `Start`s, before `...promptQueue`.
+
+**The evidence for `$1202` being the right point is strong but indirect**: the flow already treats it
+as "the OS is idle and ready" after the autoexec `Space`, which is reached at the command prompt. It
+has *not* been confirmed empirically that the loop is entered after the menu `Enter` on every boot
+configuration. **If it is not, the flow will wait at "Command prompt ready" instead of typing** —
+that symptom, rather than lost characters, is the signal the address needs revisiting.
+
+#### 15.12d Two things noticed in passing, not fixed
+
+- **`ternaryCode` is dropped on the ZX Next.** `MachineController` calls
+  `m.queueKeystroke(0, 5, step.primary, step.secondary, step.ternary)`, but `ZxNextMachine`'s
+  signature takes four parameters and its `emulateKeystroke` only handles primary and secondary.
+  Three-key combinations therefore cannot be injected on the Next.
+- **Why build-and-run behaved better than the viewer launch.** `captureCheckpoint` documents that the
+  SD card is deliberately outside the checkpoint, so *the machine writing to the card drops it*. A
+  host-side `copyToSdCard` — which is what `nex-run` does before launching — does not go through that
+  path, so it can leave a checkpoint whose cached view of the filesystem predates the new file. Worth
+  a look on its own; it is not what caused the lost keystrokes.
+
+**Verification:** full suite — **736 files, 21,468 tests pass**; `npm run build:check` no new type
+errors. The new suite is registered in `wasm-next-full-matrix.test.ts` as a TypeScript-owned
+boundary, since the keystroke queue lives in the machine class and only key rows reach the core.
+
+### 15.13 Why §15.12 was not enough: two more defects
+
+After §15.12 the injected command came out as `roll,nutter.nex` rather than
+`.nexload ScrollNutter.nex`. Fix A had worked — more characters survived — but two separate defects
+were still in play, one of which §15.12c had misdiagnosed.
+
+#### 15.13a Capitals were encoded with the wrong shift
+
+`asciiToNextKeyCodeMap` in `NextKeyboardDevice.ts` encoded all 26 capitals as
+`{ primaryCode: <letter>, secondaryCode: SShift }`. **SYMBOL SHIFT + letter is not a capital** — it is
+the symbol printed on the key. SYMBOL SHIFT + N is `,` and SYMBOL SHIFT + M is `.`.
+
+So the `,` in `,utter.nex` and `roll,nutter.nex` was never corruption or a timing artefact: it is
+literally what the flow asked the machine to type where `ScrollNutter`'s `N` belonged. The earlier
+reading of it as "shift state leaking across the expiry cascade" (§15.12a) was wrong.
+
+Capitals now use `CShift`. SYMBOL SHIFT remains correct for the punctuation entries, where the symbol
+*is* what is wanted — `.` really is SYMBOL SHIFT + M, and that entry was never at fault. Covered by
+`test/zxnext/NextKeyCodeMapping.test.ts`, including the specific assertion that a capital `N` and a
+`,` do not encode identically.
+
+#### 15.13b The new sync point matched instantly
+
+§15.12c added a `ReachExecPoint` on ROM0/`$1202` after the boot-menu `Enter`. It changed almost
+nothing, for a reason the flow makes obvious in hindsight: **`$1202` is where the machine already
+was.** The boot menu idles in the same waiting loop, and `QueueKey` only *queues* a key —
+`emulateKeystroke()` plays it back over the following frames. The step therefore ran while the
+machine was still sitting in the menu loop, matched on the first instruction, and typing began
+regardless.
+
+You cannot wait to *reach* an address you have not left.
+
+The fix is a new flow step, `WaitKeyQueue`, which polls `getKeyQueueLength()` until the machine has
+actually played back everything queued. It is paced by the machine rather than the host, so it works
+whatever speed the emulation is running at. Placed between the `Enter` and the `ReachExecPoint`, it
+guarantees the key has been delivered — and by the time the queue drains the OS has long since left
+the waiting loop to act on it, so the `ReachExecPoint` that follows now measures the real return to
+the command prompt.
+
+A 5 s timeout keeps a flow from hanging if the queue never drains; it reports and continues.
+
+**Verification:** full suite — **737 files, 21,473 tests pass**; `npm run build:check` no new type
+errors.
+
+**Still unconfirmed.** As in §15.12c, that `$1202` is the address NextZXOS idles at when the command
+prompt is ready has not been shown empirically — only that the flow already treats it that way after
+the autoexec `Space`. `WaitKeyQueue` removes the instant-match failure, so the `ReachExecPoint` now
+genuinely waits; if `$1202` is the wrong address the symptom will be the flow stalling at
+"Command prompt ready" rather than mistyping.
+
+### 15.14 The root cause, found by reading the ROM
+
+Three attempts at synchronising the NEX launch flow failed because all three rested on an assumption
+nobody had checked. §15.12c and §15.13b both reasoned *about* `ZXNEXT_MAIN_WAITING_LOOP` without ever
+looking at what is there. Disassembling `src/public/roms/enNextZX.rom` settles it:
+
+```
+$1200: 18 E3        JR   $11E5
+$1202: 76           HALT
+$1203: 21 3B 5C     LD   HL,$5C3B     ; FLAGS
+$1206: CB 6E        BIT  5,(HL)       ; is a key available?
+$1208: 28 EA        JR   Z,$11F4      ; no - keep waiting
+$120A: CB AE        RES  5,(HL)       ; consume it
+```
+
+**`$1202` is NextZXOS's generic wait-for-a-keypress loop.** The OS parks there whenever it wants a
+key: during boot, at the boot menu, at the BASIC prompt, inside the Calculator. So
+`ReachExecPoint ROM0/$1202` never meant "the command prompt is ready" — it meant **"something wants a
+key"**, which is equally true of the boot menu.
+
+That single fact explains every symptom in this thread:
+
+- The flow pressed *arrow down* and *Enter* as soon as the loop was touched once, which happens during
+  startup — before the boot menu is drawn. Those keys were thrown away.
+- The `.nexload …` text that followed was therefore typed **into the boot menu**, where the characters
+  navigate it. The `c` of `ScrollNutter` starts the **Calculator** — exactly what was observed.
+- The remaining `rollNutter.nex` was typed into the Calculator, and the trailing Enter produced a
+  syntax error.
+- §15.13b's `ReachExecPoint` after the Enter matched instantly for the same reason: the machine had
+  never left the loop.
+
+#### 15.14a The fix: parked, not passed through
+
+A new step, `WaitIdle`, samples the program counter and completes only after finding the machine
+inside the key-wait loop (`$11E5`–`$120B`) on N consecutive polls. While NextZXOS is loading
+something it is doing real work and cannot satisfy that; once it is genuinely sitting at a prompt it
+satisfies it immediately. That is the difference between "something wants a key" and "the program you
+were waiting for is up".
+
+It is used twice, which matters — the earlier attempts only addressed the second half:
+
+1. **Before the menu keys**, so the boot menu is actually drawn and waiting before arrow-down/Enter
+   are sent.
+2. **After the Enter**, so the command line is up before `.nexload` is typed.
+
+`WaitKeyQueue` (§15.13b) is kept between them: it proves the Enter was *delivered*, which is what lets
+the second `WaitIdle` mean anything — the OS must go busy before it can settle again.
+
+**Verification:** full suite — 737 files, 21,473 tests pass; `npm run build:check` no new type errors.
+
+#### 15.14b The lesson
+
+Three fixes were reasoned from what the flow *appeared* to assume, and each was wrong in the same
+way. The disassembly took one command and would have prevented all of them. When a plan's own
+premise is an address in somebody else's ROM, read the ROM first — the "§2 Facts, verified against
+the source" discipline this document opens with applies to the binaries too, not only to the
+TypeScript.
+
+### 15.15 Revealing where the entry-point stop landed
+
+With the launch flow working (§15.14), `nex-run -e` pauses correctly at the NEX's entry point but says
+nothing about *where* that is. Requested: the bank's dump should open, based at the address the bank
+is seen at, scrolled to the entry point.
+
+**The timing problem that shapes the design.** `nex-run -e` arms a one-shot bank breakpoint and
+returns. The stop fires seconds later — after NextZXOS boots, `.nexload` is typed, and the program
+loads — through no call the command is still waiting on. So the command cannot do the reveal itself.
+
+`nexEntryReveal.ts` records the intent (path, bank, entry address, and the offset the bank is seen
+at); `IdeEventsHandler` consumes it on the next pause. It is **consumed**, not read: the reveal must
+fire for the pause it was armed for and no other, or a later breakpoint of the user's own would have
+the entry point's bank yanked open underneath them. A launch without `-e` clears any pending reveal
+for the same reason.
+
+**What each of the three requests needed.**
+
+- *Bank 5, based at `$4000`* — `getDefaultDisassemblyOffsetForBank` already returned this
+  (`$4000` for bank 5, `$8000` for bank 2, `$C000` for the entry bank); it is passed as the dump's
+  `disassOffset`, which is what makes the listing agree with the address the breakpoint was reported
+  at.
+- *The dump pops up* — via `openStaticMemoryDump` with **the same document id the NEX viewer's
+  pop-out uses**, so this focuses that document rather than opening a second view of the same bank.
+- *Scrolled to `$5C50`* — a new `topAddress` option, honoured on mount and preferred over a
+  remembered scroll position, since it is only ever set when something opened the document *at* an
+  address.
+
+The row spotlight §6.6 of `NEX_DEBUGGING_IDEAS.md` describes already exists (`pcSpotlightAddress`), so
+once the document is open at the right offset the entry-point row highlights itself.
+
+#### 15.15a A pre-existing bug found on the way
+
+"Go to address" in a bank dump was broken for any bank shown at a non-zero offset. The jump did:
+
+```ts
+memoryVlApi.current.scrollToIndex(Math.floor(memoryJumpAddress / 16), { align: "start" });
+```
+
+but the rows are addressed by `disassOffset` while the virtual list is indexed from the start of the
+dump. In bank 5 at `$4000`, asking for `$5C50` requested row 1477 of a 1024-row list and simply hit
+the bottom. It now subtracts `disassOffset` and clamps. Nothing in the viewer's own pop-out path had
+exercised this, because the feature that needed it did not exist yet.
+
+**Verification:** full suite — 737 files, **21,478 tests pass**; `npm run build:check` no new type
+errors; `npm run lint:renderer` adds no new warning (the one on the pause effect already existed and
+merely names one more function).
+
+**Not verified end to end.** The record/consume logic and the launch command's arming are covered by
+unit tests; the document actually appearing and scrolling is reasoned from the existing pop-out path,
+not observed.
+
+### 15.16 NEX banks open as code
+
+The §15.15 reveal worked but opened the bank as a hex dump. Three related requests followed: the slot
+offsets should follow the file's mapping, the entry point's bank should open as a disassembly, and
+NEX banks generally should probably default to one.
+
+**The offsets were already right.** `docs/content/book/app-A-nex-file-format.md` gives the file order
+(5, 2, 0, 1, 3, 4, 6…111 — the order that made the earlier byte-exact layout check succeed) and the
+slot mapping: bank 5 at `$4000`, bank 2 at `$8000`, the header's entry bank at `$C000`, everything
+else not paged in at hand-over. `getDefaultDisassemblyOffsetForBank` implements exactly that and is
+used both by the viewer's pop-out (as the fallback under a remembered offset) and by the reveal.
+Nothing needed changing; it is recorded here because "check the offsets" was part of the request and
+the answer is that they already follow the document.
+
+**The view mode did need changing.** `StaticMemoryDump` defaulted every document to `"memory"`. It now
+defaults a **NEX bank document** — one carrying a `nexAnnotationBank` — to `"disassembly"`, because a
+bank of a NEX is a 16K slice of a program and the reason to open one is to read the code in it. A
+plain dump of some other binary keeps the hex default, and a remembered choice in the annotation
+sidecar still wins, so a bank last read as hex opens as hex.
+
+The entry-point reveal additionally passes `viewMode: "disassembly"` explicitly rather than relying on
+that default, since it is opening the document to show the instruction the machine stopped on — and
+an explicit mode now also applies to a document that is **already open**, which a preference must not.
+
+**`topAddress` had to reach the other list.** §15.15 taught only the memory list to open at an
+address. The disassembly list now honours it too, by seeding the jump address rather than scrolling
+directly: the listing is disassembled asynchronously, so the row for an address may not exist when
+the list mounts, and the existing jump effect re-runs when it does.
+
+**Verification:** full suite — 737 files, **21,482 tests pass**; `npm run build:check` no new type
+errors. The new cases cover the disassembly default, a plain dump keeping the memory default, a
+remembered view still winning, and the §15.15a offset bug in both directions (an address inside the
+bank, and one below it that has to clamp).
+
+### 15.17 Following the program counter, not the entry point
+
+The §15.15 reveal was wrong twice over, and the report that exposed it named both:
+
+1. **It fired too early.** The one-shot record was consumed by the *first* pause after arming — and
+   the injection flow pauses the machine itself, since `ReachExecPoint` pauses before it runs. So
+   bank 5 appeared while NextZXOS was still booting, well before the entry point was reached.
+2. **It answered only the first question.** Once stopped, stepping on into another bank left the
+   wrong document open. A jump to `$A624` — bank 2 — still showed bank 5.
+
+**The fix is to stop treating the entry point as special.** On every pause, find the bank the program
+counter is in and bring that document forward, scrolled to the PC. The entry-point stop is then simply
+the first pause whose PC is inside a bank of the file, and it needs no record of its own — so
+`nexEntryReveal.ts` is deleted rather than fixed.
+
+It also solves the premature pop-out *by construction* rather than by another guard: the launch
+flow's own pauses happen with the PC in the ROM, where there is no RAM bank to name.
+
+**The live MMU decides, not the header.** `bank16kAtAddress` is the inverse of `locateBank16k`: it
+reads the 8K page map and answers which 16K bank is visible at an address and where that bank's byte
+0 sits. Using the header's start-up mapping instead would be a statement about a moment that has
+passed — a program is free to page something else in, and after it has, the header is a lie. ROM
+slots return nothing, which is what keeps the reveal quiet during the launch.
+
+`revealNexBankAtPc` takes its machine and document operations as injected functions and returns *why*
+it did nothing — `no-nex-session`, `not-in-ram`, `not-a-bank-of-this-nex`, `bank-not-in-file`, or
+`revealed`. That is deliberate: four quite different causes hide behind "nothing happened", and the
+whole decision is then testable without a machine, an IDE, or a React tree — which matters here,
+because the UI behaviour of everything in §15.15-§15.17 is the part this plan's author cannot observe.
+
+**One efficiency point.** Every step is a pause, so the parsed file is cached, keyed by path. Without
+it each step would re-read and re-parse a file that for a bank-heavy NEX runs to megabytes.
+
+**Verification:** full suite — 738 files, **21,489 tests pass**; `npm run build:check` no new type
+errors; `npm run lint:renderer` no new warnings. The new cases cover the `$5C50`→bank 5 and
+`$A624`→bank 2 mappings, an address in a bank's high half still basing its listing on the low half,
+ROM staying silent, split (non-contiguous) placements, a bank the file never carried, and the cache
+being used across pauses but dropped when a different NEX is launched.
+
+### 15.18 Three defects in the revealed document
+
+Reported together, with three unrelated causes.
+
+#### 15.18a "Annotation file contains validation errors"
+
+The reveal passed the **NEX's own path** as `nexAnnotationPath`. That field wants the annotation
+*sidecar* — `<name>.nex.dis` — which is what the viewer's pop-out passes
+(`annotationPath = sidecarPaths?.fullPath`). So the annotation session read a 400 KB binary as its
+JSON and said the only true thing it could.
+
+Fixed by deriving `getNexAnnotationPath(session.path)`. The derivation was moved **into**
+`nexBankReveal`, so it is covered by a test, rather than left in the handler where getting it wrong
+is silent.
+
+#### 15.18b The execution-point marker took ~5 seconds
+
+`useNexBankPcOffset` computes the marker from the bank's placements, which
+`useNexBankLocation` fetches asynchronously. Both refresh through `useEmuStateListener`, which fires
+once on registration and thereafter only when the machine's state, PC or tact count **changes** — and
+on a machine that is paused and idle, none of them do. Its fallback for "nothing changed" is
+**5 seconds**.
+
+On a freshly opened bank document the single registration-time run therefore found `placements` still
+`undefined`, gave up, and nothing recomputed until that fallback. Everything else on screen — the
+listing, the scroll position — was already right, which is exactly what made it look like a rendering
+delay rather than a missed update.
+
+`useNexBankPcOffset` now also recomputes in an effect keyed on the placements and the machine state,
+so the marker appears as soon as the data it needs exists. The listener stays for ongoing updates.
+
+#### 15.18c An open document did not follow the program counter
+
+Stepping within a bank already on screen — `$A624` to `$A600` — did not scroll. `openStaticMemoryDump`
+wrote the new `topAddress` into the document's view state, but **view state is read once, when a
+document mounts**, so writing to a mounted document does nothing.
+
+`DocumentApi` gains `revealAddress(address)`; the dump registers it, and `openStaticMemoryDump` calls
+it whenever the caller asked for an address. The initial-mount path is unchanged and still handles a
+document being opened for the first time.
+
+This is why §15.15's "scroll to the entry point" worked while §15.17's "follow the PC" did not: the
+first only ever needed the mount path.
+
+**Verification:** full suite — 738 files, **21,490 tests pass**; `npm run build:check` no new type
+errors; `npm run lint:renderer` no new warnings. New cases cover the sidecar path and re-pointing an
+already-open document (asserting the row index accounts for `disassOffset`, so it cannot regress into
+§15.15a).
+
+### 15.19 Branch prediction in a popped-out NEX bank
+
+The Disassembly panel's conditional-branch gutter now also works in a popped-out bank's disassembly.
+
+Most of it was already reusable. `DisassemblyRow` — the same component both views render — already
+takes `showBranchGutter` and `verdict`, and `Z80Disassembler` already fills `DisassemblyItem.branch`,
+so the bank listing carried the branch metadata all along. What was missing was a register snapshot
+and the decision of when a verdict is meaningful.
+
+**The snapshot.** `useNexBranchCpuSnapshot` reads the registers the gutter evaluates against. It
+supplies **no `readByte`**, which is deliberate: this document holds one 16K bank, not the flat 64K
+map, so an absolute `SP` cannot be resolved in it. `createBranchCpuSnapshot` withholds the reader for
+exactly this reason in the panel's partition mode, and a `RET cc` then reports `unobtainable` rather
+than a byte of whichever bank happens to sit at the same offset. It refreshes on the shared ticker
+*and* in an effect, per §15.18b.
+
+**The gate, which is the part the Disassembly panel never needs.** That panel's addresses are always
+real. A popped-out bank's are not: its listing offset is a **dropdown**, so a bank can be numbered
+`$8000` while sitting at `$4000`, or while not paged in at all. The flags would still be genuine, but
+every destination the gutter resolved would name a place this code is not — a confident wrong answer,
+which is the one thing this feature is otherwise careful never to give.
+
+So `isListedWhereItIsPaged` gates it: verdicts appear only while the bank is paged as one contiguous
+16K block at exactly the offset the listing is numbered by. In the debugger's own flow that is always
+true, because §15.17 opens the bank at the address it is actually paged at. Choosing a different
+offset from the dropdown turns the gutter off rather than making it lie.
+
+**Verification:** full suite — 738 files, **21,495 tests pass**; `npm run build:check` no new type
+errors; `npm run lint:renderer` no new warnings. The predicate is covered without a DOM — agreeing,
+numbered elsewhere, not paged at all, split across non-adjacent slots, and half-paged — in the file
+this component's other paging questions are already delegated to.
+
+### 15.20 A bank breakpoint with no sign of itself
+
+Right-clicking a row of a popped-out bank made a breakpoint that appeared in the Breakpoints panel
+but left no mark on the row that made it. One cause, two symptoms.
+
+**Rows took their bank offset only from their annotation.** The listing is built two ways: with a
+sidecar, `createAnnotatedNexDisassemblyItems` gives every row an `annotation.bankOffset`; without
+one, the plain `Z80Disassembler` output has no annotations at all. The gutter looked up
+`item.annotation?.bankOffset` and nothing else, so **a bank with no sidecar had no offsets** — which
+is the ordinary case for a NEX launched straight from the Explorer, and exactly what the debugger's
+own reveal opens.
+
+That made the display miss existing breakpoints. It also made the creation wrong, which is the more
+serious half and the one that hid the first: `BreakpointIndicator` builds its `bp-set` from
+`DisassemblyRowViewModel.breakpointAddress`, whose fallback for a row with no breakpoint was the
+row's **Z80 address**. In a bank listing that arms a breakpoint at wherever the bank happens to be
+paged rather than at an offset inside it — a plain address breakpoint, which the Breakpoints panel
+duly showed and the bank gutter, looking up by offset, could never find.
+
+So the breakpoint was real, was in the panel, and was of the wrong kind.
+
+**The fix** gives a row its bank identity from the listing itself. `listedBankOffset` inverts the
+listing's numbering, and the dump uses `item.annotation?.bankOffset ?? listedBankOffset(...)` both to
+look up the gutter's breakpoint and to fill a new `bankScope` prop. `DisassemblyRow` uses that scope
+only when the row has no breakpoint yet, to name the site an unarmed gutter would create — so an
+empty gutter in a bank listing now creates `02:+$2624` where it used to create `$A624`.
+
+The 64K Disassembly view passes no scope and keeps the address fallback, which is right there: its
+addresses *are* the identity.
+
+**Verification:** full suite — 738 files, **21,501 tests pass**; `npm run build:check` no new type
+errors; `npm run lint:renderer` no new warnings. The new cases pin the offset inversion and — the one
+that matters — that an unarmed row in a bank listing is named by bank and offset, that a row outside
+one still falls back to its address, and that an existing breakpoint's own identity still wins.

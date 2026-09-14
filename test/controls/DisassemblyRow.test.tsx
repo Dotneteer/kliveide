@@ -800,6 +800,56 @@ describe("deriveDisassemblyRowViewModel: bank-relative breakpoints", () => {
       showBanks: false
     });
 
+  const viewModelWithBankScope = (bankScope?: { bank: number; bankOffset: number }) =>
+    deriveDisassemblyRowViewModel({
+      bankLabel: false,
+      bankScope,
+      currentSegment: 0,
+      decimalView: false,
+      isFullView: true,
+      item: nexRow,
+      mem64kLabels: [],
+      partitionLabels: {},
+      pausedPc: -1,
+      showBanks: false
+    });
+
+  it("names an unarmed row in a bank listing by bank and offset, not by its address", () => {
+    /*
+     * `BreakpointIndicator` builds its `bp-set` from this name, so the fallback decides what an
+     * empty gutter *creates*. Falling back to the row's address armed a plain address breakpoint at
+     * wherever the bank was paged: it appeared in the Breakpoints panel and was invisible on the row
+     * that made it, because a bank gutter looks up by offset.
+     * See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.20.
+     */
+    const vm = viewModelWithBankScope({ bank: 2, bankOffset: 0x2624 });
+    expect(vm.breakpointAddress).toBe("02:+$2624");
+    expect(vm.hasBreakpoint).toBe(false);
+  });
+
+  it("still names an unarmed row by its address outside a bank listing", () => {
+    // --- The 64K Disassembly view has no bank scope and must keep the address fallback.
+    expect(viewModelWithBankScope(undefined).breakpointAddress).toBe(0x4100);
+  });
+
+  it("prefers an existing breakpoint's own identity over the row's bank scope", () => {
+    // --- A breakpoint that is already there names itself; the scope only decides what would be made.
+    const vm = deriveDisassemblyRowViewModel({
+      bankLabel: false,
+      bankScope: { bank: 2, bankOffset: 0x2624 },
+      breakpoint: { bank: 5, bankOffset: 0x0100, exec: true } as any,
+      currentSegment: 0,
+      decimalView: false,
+      isFullView: true,
+      item: nexRow,
+      mem64kLabels: [],
+      partitionLabels: {},
+      pausedPc: -1,
+      showBanks: false
+    });
+    expect(vm.breakpointAddress).toBe("05:+$0100");
+  });
+
   it("names a bank-relative breakpoint by its bank and offset", () => {
     const vm = viewModelFor({ bank: 5, bankOffset: 0x0100, exec: true });
     expect(vm.breakpointAddress).toBe("05:+$0100");

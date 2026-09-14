@@ -13,4 +13,15 @@ export type DocumentApi = {
    * @param contents The new content to load
    */
   reloadContent?: (contents: string | Uint8Array) => void;
+
+  /**
+   * Brings an address into view in a document that is already open.
+   *
+   * View state is read once, when a document mounts, so re-pointing an open document by writing to
+   * it does nothing. The NEX debugger needs exactly that: as the program counter moves within a bank
+   * whose document is already showing, each pause has to scroll the listing to the new address.
+   *
+   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.18.
+   */
+  revealAddress?: (address: number) => void;
 };

@@ -5,17 +5,12 @@
   "config": {
     "zxnextImplementation": "wasm"
   },
-  "clockMultiplier": 24,
-  "soundLevel": 1,
+  "clockMultiplier": 1,
+  "soundLevel": 0.8,
   "soundMuted": false,
-  "savedSoundLevel": 1,
+  "savedSoundLevel": 0.8,
   "media": {
-    "sdCard": "/Users/dotneteer/Klive/ks2.cim",
-    "tape": "",
-    "diskA": {
-      "diskFile": "/Users/dotneteer/disk1.dsk",
-      "writeProtected": false
-    }
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim"
   },
   "machineSpecific": {},
   "ide": {
@@ -84,7 +79,6 @@
                 "contributionsState": {
                   "editor.contrib.folding": {
                     "lineCount": 105,
-                    "provider": "syntax",
                     "foldedImports": false
                   },
                   "editor.contrib.wordHighlighter": false

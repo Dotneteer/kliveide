@@ -7,6 +7,8 @@ import {
   formatBankLocation,
   isContiguousPlacement,
   locateBank16k,
+  isListedWhereItIsPaged,
+  listedBankOffset,
   pcSpotlightAddress
 } from "@renderer/appIde/DocumentPanels/Next/nextBankLocation";
 
@@ -335,5 +337,68 @@ describe("pcSpotlightAddress", () => {
   it("spotlights offset 0, rather than treating it as nowhere", () => {
     expect(pcSpotlightAddress(0xc000, 0)).toEqual(0xc000);
     expect(pcSpotlightAddress(0x0000, 0)).toEqual(0);
+  });
+});
+
+/*
+ * The branch gutter has to know whether a listing's addresses are real before it resolves any
+ * destination from them. See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.19.
+ */
+describe("isListedWhereItIsPaged", () => {
+  const at = (base: number) => [
+    { page: base / 0x2000, address: base, half: "low" as const },
+    { page: base / 0x2000 + 1, address: base + 0x2000, half: "high" as const }
+  ];
+
+  it("agrees when the bank is paged at the address it is listed at", () => {
+    expect(isListedWhereItIsPaged(at(0x4000), 0x4000)).toBe(true);
+    expect(isListedWhereItIsPaged(at(0x8000), 0x8000)).toBe(true);
+    expect(isListedWhereItIsPaged(at(0xc000), 0xc000)).toBe(true);
+  });
+
+  it("refuses when the listing is numbered somewhere the bank is not", () => {
+    // --- Genuine flags, fictional addresses: every destination would name a place this code is not.
+    expect(isListedWhereItIsPaged(at(0x4000), 0x8000)).toBe(false);
+    expect(isListedWhereItIsPaged(at(0x8000), 0x0000)).toBe(false);
+  });
+
+  it("refuses when the bank is not paged in at all", () => {
+    expect(isListedWhereItIsPaged([], 0x4000)).toBe(false);
+    expect(isListedWhereItIsPaged(undefined, 0x4000)).toBe(false);
+  });
+
+  it("refuses a bank split across non-adjacent slots", () => {
+    // --- No single base for a listing to agree with.
+    const split = [
+      { page: 2, address: 0x4000, half: "low" as const },
+      { page: 7, address: 0xe000, half: "high" as const }
+    ];
+    expect(isListedWhereItIsPaged(split, 0x4000)).toBe(false);
+  });
+
+  it("refuses a half-paged bank", () => {
+    expect(isListedWhereItIsPaged([{ page: 2, address: 0x4000, half: "low" }], 0x4000)).toBe(false);
+  });
+});
+
+/*
+ * The identity a bank-relative breakpoint uses. See §15.20 of the CSpect plan.
+ */
+describe("listedBankOffset", () => {
+  it("inverts the listing's numbering", () => {
+    expect(listedBankOffset(0x4000, 0x4000)).toBe(0x0000);
+    expect(listedBankOffset(0x5c50, 0x4000)).toBe(0x1c50);
+    expect(listedBankOffset(0xa624, 0x8000)).toBe(0x2624);
+    expect(listedBankOffset(0x7fff, 0x4000)).toBe(0x3fff);
+  });
+
+  it("works for a bank listed from zero", () => {
+    // --- A bank that is not paged in at start-up is listed at $0000.
+    expect(listedBankOffset(0x0100, 0x0000)).toBe(0x0100);
+  });
+
+  it("refuses an address outside the bank", () => {
+    expect(listedBankOffset(0x3fff, 0x4000)).toBeUndefined();
+    expect(listedBankOffset(0x8000, 0x4000)).toBeUndefined();
   });
 });
