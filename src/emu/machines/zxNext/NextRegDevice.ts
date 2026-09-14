@@ -3,9 +3,23 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 import { TBBLUE_DEF_TRANSPARENT_COLOR } from "./PaletteDevice";
 
-const CORE_VERSION_MAJOR = 3;
-const CORE_VERSION_MINOR = 2;
-const CORE_VERSION_SUB_MINOR = 0;
+/*
+ * The core version this emulator reports through NextReg $01/$0E.
+ *
+ * Exported because a NEX header can *ask* for a minimum core version, and the viewer says so when
+ * the file asks for more than this provides (`nexValidation.ts`). `NextRegPanel` already imports
+ * from this module, so the renderer reading these is the established direction.
+ */
+export const CORE_VERSION_MAJOR = 3;
+export const CORE_VERSION_MINOR = 2;
+export const CORE_VERSION_SUB_MINOR = 0;
+
+/** The same three, as the tuple `validateNexHeader` compares against. */
+export const EMULATED_CORE_VERSION: [number, number, number] = [
+  CORE_VERSION_MAJOR,
+  CORE_VERSION_MINOR,
+  CORE_VERSION_SUB_MINOR
+];
 const BOARD_ID = 0b0010;
 
 type NextRegreadFn = () => number;

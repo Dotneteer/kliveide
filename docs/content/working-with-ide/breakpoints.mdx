@@ -41,6 +41,18 @@ Right-clicking a breakpoint's *row* opens a menu with **Edit breakpoint**, **Ena
 directly. You can also double-click a breakpoint's indicator in the
 [Disassembly View](./disassembly) to edit it there.
 
+## Running To A Line
+
+Holding <kbd>Ctrl</kbd> (<kbd>Cmd</kbd> on macOS) and clicking the breakpoint margin beside a line
+runs the machine until it reaches that line, then stops. No breakpoint is left behind: the one Klive
+uses is removed as soon as it is reached, and it is never written to your project. The gesture is
+listed in the margin's tooltip along with the right-click and double-click actions.
+
+This works in the [Disassembly View](./disassembly) and in a popped-out ZX Spectrum Next bank, where
+it runs to an offset inside that bank &mdash; wherever the bank happens to be paged. The same action
+is available as the [`run-to`](/commands-reference#run-to) command, which also explains what happens
+when the machine is running rather than paused.
+
 ## The Breakpoint Dialog
 
 The **Add breakpoint** button and the **Edit breakpoint** command both open a dialog that offers
@@ -55,7 +67,9 @@ every option the `bp-set` command accepts, without the flag syntax:
   no list could sensibly hold. The names it offers are the machine's own; see
   [Machine-Specific Memory Partitions](./memory#machine-specific-memory-partitions).
 - **Address** (or **Port**, for the I/O types) &mdash; accepts the same literals the commands do:
-  `$8000`, `32768` or `%1000000000000000`.
+  `$8000`, `32768` or `%1000000000000000`. On the ZX Spectrum Next it also accepts the
+  **bank-relative** form, `05:+$0100`, described below. Typing one disables the partition row: a
+  bank-relative breakpoint already names its bank, so there is nothing left to choose.
 - **Port mask** &mdash; only for the I/O types. Leave it empty to match the port exactly.
 - **Enabled** &mdash; clear this to create a breakpoint that is set but not armed.
 
@@ -96,6 +110,74 @@ bank 5 apart from `$2100` in the same bank when only one half is paged in. See
 </Callout>
 
 Bank-relative breakpoints are not available for the I/O types, which watch a port rather than memory.
+
+### Setting One Without Typing
+
+Open a NEX file and pop one of its banks out into its own document (the button in the bank's
+heading), then switch that document to **Disassembly**. Clicking the breakpoint margin beside a line
+sets a bank-relative breakpoint at that line's offset &mdash; so it will fire wherever the bank ends
+up paged when the program runs. The bank preview inside the viewer itself is a plain byte dump and
+has no margin to click.
+
+Those breakpoints are stored in the file's `.nex.dis` sidecar rather than in the project, so they
+survive a restart even with no project open &mdash; and are kept per NEX file rather than shared
+between them.
+
+Each bank's heading in the NEX viewer shows how many breakpoints that bank carries, so you can see
+which banks are armed without expanding them; hover the count for the breakdown by type.
+
+### Following The Program Counter
+
+While the machine is **paused** and the program counter is inside the bank you have popped out, that
+bank's disassembly highlights the current instruction, and the toolbar's bank readout gains a `PC`
+marker naming the offset. It is the same highlight the [Disassembly View](./disassembly) draws.
+
+Paused only, on purpose: the bank listing does not change as the machine runs, so a mark sampled
+from a running machine would land on an arbitrary instruction while looking authoritative.
+
+### Seeing What The Program Changed
+
+A popped-out bank shows the bytes the **file** holds. Its memory view has a **Live** switch that
+shows the bank as the machine has it right now instead, with every byte that differs from the file
+marked and counted in the toolbar.
+
+That difference is often the thing you are looking for: self-modifying code, a routine that
+decompressed itself over its own packed data, or a bank a stray write has damaged. None of it can be
+told from a clean load by looking at the file.
+
+The switch works for every bank in the NEX, including banks the program has paged out &mdash; the
+bytes are read from the machine's RAM, not from the address space. It appears only in the memory
+view, and only on the ZX Spectrum Next.
+
+<Callout type="info">
+A bank-relative breakpoint only fires while its bank is actually paged in &mdash; which is the point
+of it, but it means a breakpoint can look inert simply because the program has that bank paged out
+right now. The popped-out bank's toolbar tells you: it reads **Bank at $8000** when the bank is in
+the address space, or **Bank not paged in** when it is not. Hover it for the 8K slot numbers. A
+paged-out bank keeps its breakpoints; they fire as soon as it comes back.
+</Callout>
+
+### Bank Watchpoints
+
+The **Memory read** and **Memory write** types work with a bank-relative address, which gives you
+"stop when this byte of this bank is written, wherever the bank is paged":
+
+```
+bp-set 05:+$0100 -w
+```
+
+Two ways to get one without typing:
+
+- click the breakpoint margin in a popped-out bank to create an execution breakpoint, then
+  **double-click** it and change **Type** in the dialog;
+- or use **Add breakpoint** in the [Breakpoints](#the-breakpoint-dialog) panel and type the
+  bank-relative address in the **Address** field.
+
+<Callout type="info">
+The disassembly margin draws one mark per line, so a line carrying both an execution breakpoint and a
+watchpoint shows the execution one. Both are always listed in the Breakpoints panel, and both count
+towards the bank heading's total.
+</Callout>
 
 ## Resolved Source Code Breakpoints
 

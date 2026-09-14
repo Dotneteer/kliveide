@@ -9,6 +9,7 @@ import {
   bankRelativeAddresses,
   bankRelativePartition,
   breakpointMatchesScope,
+  effectiveBankSite,
   isBankRelative,
   withScopeOwner
 } from "@common/utils/breakpoint-scope";
@@ -49,6 +50,24 @@ export class DebugSupport implements IDebugSupport {
   breakpointData = new Map<number, BreakpointData>();
 
   private suspendVersionIncrement = false;
+
+  /**
+   * While set, only session-owned breakpoints can stop the machine.
+   *
+   * This exists for a code-injection flow that ends with the machine already running. Loading a NEX
+   * means booting NextZXOS and *typing* `.nexload` into it, and a keystroke is queued with an
+   * absolute tact window: a user breakpoint that pauses the machine while strokes are still queued
+   * expires every one that has not been pressed, leaving the command line half-written and the
+   * program unloaded. Meanwhile the flow's own stop — the one-shot at the program's entry point —
+   * still has to fire, which is the distinction this draws.
+   *
+   * `MachineController` owns the lifetime, and scopes it to the window that is actually exposed:
+   * during the flow itself the machine runs in `NoDebug`, where the per-instruction callers skip
+   * the stop decision entirely and no breakpoint can fire regardless of this flag.
+   *
+   * See `.plans/NEX_DEBUGGING_PLAN.md` §10.3.
+   */
+  suppressUserBreakpoints = false;
 
   /**
    * Initializes the service using the specified store
@@ -96,6 +115,11 @@ export class DebugSupport implements IDebugSupport {
     // --- Any execution breakpoint?
     if (!(flags & (EXEC_BP | PART_BP))) {
       // --- No execution breakpoint
+      return false;
+    }
+
+    // --- During a launch flow only the flow's own stop may fire; see `suppressUserBreakpoints`.
+    if (this.suppressUserBreakpoints && !this.hasSessionStopAt(address)) {
       return false;
     }
 
@@ -272,11 +296,34 @@ export class DebugSupport implements IDebugSupport {
         exec: !(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite),
         resolvedAddress: bp.resolvedAddress,
         resolvedPartition: bp.resolvedPartition,
+        // --- Same reason as `owner` and `bank` above: this literal rebuilds the definition field
+        // --- by field, so a label-anchored breakpoint would lose the label that identifies it and
+        // --- the resolution that arms it. Resolution works by rewriting the whole set through
+        // --- `resetBreakpointsTo`, so a dropped `resolvedBank` would be dropped on every refresh.
+        label: bp.label,
+        labelFile: bp.labelFile,
+        resolvedBank: bp.resolvedBank,
+        resolvedBankOffset: bp.resolvedBankOffset,
         memoryRead: bp.memoryRead,
         memoryWrite: bp.memoryWrite,
         ioRead: bp.ioRead,
         ioWrite: bp.ioWrite,
-        ioMask: bp.ioMask ?? 0xffff
+        ioMask: bp.ioMask ?? 0xffff,
+        /*
+         * `disabled` and `hitCount`, for the same reason as `owner` and `bank` above — and these
+         * two were being dropped.
+         *
+         * It went unnoticed while the flags were assigned from the *incoming* breakpoint: the
+         * machine behaved correctly and only the stored definition was short, so `listBreakpoints`
+         * reported a breakpoint with no hit count (which is why the breakpoint dialog never showed
+         * one) and `resetBreakpointsTo` had to re-apply `disabled` through `enableBreakpoint`
+         * afterwards to make the definition match the flags.
+         *
+         * Now that `refreshFlagsAt` derives the flags *from* the definitions, an omitted `disabled`
+         * would arm a breakpoint that was added disabled. The definition has to be complete.
+         */
+        disabled: bp.disabled,
+        hitCount: bp.hitCount
       });
     } catch (err) {
       console.log("err in addBreakpoint", err.toString());
@@ -308,7 +355,8 @@ export class DebugSupport implements IDebugSupport {
           }
         }
       } else {
-        this.breakpointFlags[address] = bpFlags;
+        // --- Derived, not assigned: the flags word belongs to every breakpoint at this address.
+        this.refreshFlagsAt(address);
         if (partition !== undefined || bp.hitCount !== undefined) {
           // --- We have extra breakpoint data
           let bpData = this.breakpointData.get(address);
@@ -326,7 +374,7 @@ export class DebugSupport implements IDebugSupport {
           if (partition !== undefined) {
             // --- No tag: this entry belongs to the user's own breakpoint, not to a bank-relative
             // --- one. Dedupe is on partition *and* tag, so the two can share an address.
-            this.addPartitionEntry(address, partition);
+            this.addPartitionEntry(address, partition, undefined, !!bp.disabled);
           }
           if (bp.hitCount !== undefined) {
             bpData.currentHitCount = 0;
@@ -372,8 +420,10 @@ export class DebugSupport implements IDebugSupport {
     if (address !== undefined) {
       // --- Yes, process it
       const partition = bp.partition ?? bp.resolvedPartition;
-      const bpFlags = this.collectBpFlags(bp);
-      this.breakpointFlags[address] &= ~bpFlags | PART_BP;
+      // --- Derived from what is left, rather than by clearing this breakpoint's own bits: another
+      // --- breakpoint at the same address may still want them. The definition has already been
+      // --- deleted above, so it contributes nothing here.
+      this.refreshFlagsAt(address);
 
       if (bp.ioRead || bp.ioWrite) {
         for (let i = 0; i < 0x1_0000; i++) {
@@ -429,7 +479,7 @@ export class DebugSupport implements IDebugSupport {
     // --- eight addresses it armed.
     if (isBankRelative(oldBp)) {
       const owningKey = bpKey;
-      for (const address of bankRelativeAddresses(oldBp.bankOffset!)) {
+      for (const address of bankRelativeAddresses(effectiveBankSite(oldBp)!.bankOffset)) {
         const bpData = this.breakpointData.get(address);
         for (const entry of bpData?.partitions ?? []) {
           if (entry[2] === owningKey) {
@@ -590,27 +640,66 @@ export class DebugSupport implements IDebugSupport {
    * Resets the resolution of breakpoints
    */
   resetBreakpointResolution(): void {
+    /*
+     * The addresses have to be refreshed, not just the definitions cleared.
+     *
+     * This used to delete `resolvedAddress` and stop. The flags it had set stayed behind, so a
+     * rebuild that moved a line's code — reset, then resolve to the new address — left the machine
+     * stopping at the old address as well as the new one, with nothing in the Breakpoints panel to
+     * explain the phantom.
+     */
+    const wasResolved = new Set<number>();
     for (const bp of this.breakpointDefs.values()) {
+      if (bp.resolvedAddress !== undefined) {
+        wasResolved.add(bp.resolvedAddress);
+        // --- The partition entry goes with the resolution that created it. An untagged entry at
+        // --- the old address for the old partition would keep firing there after a rebuild moved
+        // --- the line into a different bank.
+        if (bp.resolvedPartition !== undefined) {
+          this.removeUntaggedPartitionEntry(bp.resolvedAddress, bp.resolvedPartition);
+        }
+      }
       delete bp.resolvedAddress;
+      delete bp.resolvedPartition;
+    }
+    for (const address of wasResolved) {
+      this.refreshFlagsAt(address);
     }
   }
 
   /**
    * Resolves the specified resouce breakpoint to an address
    */
-  resolveBreakpoint(resource: string, line: number, address: number): void {
+  resolveBreakpoint(
+    resource: string,
+    line: number,
+    address: number,
+    partition?: number
+  ): void {
     const bpKey = getBreakpointStorageKey({ resource, line });
     const bp = this.breakpointDefs.get(bpKey);
     if (!bp || !bp.exec) {
       return;
     }
     bp.resolvedAddress = address;
-    this.breakpointFlags[address] = EXEC_BP;
-    if (bp.disabled) {
-      this.breakpointFlags[address] |= DIS_EXEC_BP;
-    } else {
-      this.breakpointFlags[address] &= ~DIS_EXEC_BP;
+    bp.resolvedPartition = partition;
+
+    /*
+     * A resolved partition needs its *entry*, not just the field.
+     *
+     * `collectBpFlags` withholds `EXEC_BP` from anything carrying a partition and sets `PART_BP`
+     * instead, and `shouldStopAt` then looks the partition up in `breakpointData`. Setting the
+     * field without the entry leaves `PART_BP` with an empty list, which reads as "no breakpoint
+     * here" — the breakpoint would be listed, shown in the gutter, and unable to fire. This is the
+     * same trap Phase 0 documents for `addBreakpoint`'s partition path.
+     */
+    if (partition !== undefined) {
+      this.addPartitionEntry(address, partition, undefined, !!bp.disabled);
     }
+
+    // --- Derived: assigning `EXEC_BP` here erased the `PART_BP` of any bank-relative breakpoint
+    // --- already armed at this address, which is one of the eight a single bank breakpoint takes.
+    this.refreshFlagsAt(address);
   }
 
   /**
@@ -692,10 +781,11 @@ export class DebugSupport implements IDebugSupport {
   consumeOneShotsAt(address: number, partition: number | undefined): number {
     const spent = this.breakpoints.filter((bp) => {
       if (!bp.oneShot || bp.disabled) return false;
-      if (isBankRelative(bp)) {
+      const site = effectiveBankSite(bp);
+      if (site) {
         return (
-          bankRelativePartition(bp.bank!, bp.bankOffset!) === partition &&
-          bankRelativeAddresses(bp.bankOffset!).includes(address)
+          bankRelativePartition(site.bank, site.bankOffset) === partition &&
+          bankRelativeAddresses(site.bankOffset).includes(address)
         );
       }
       const bpAddress = bp.address ?? bp.resolvedAddress;
@@ -710,13 +800,126 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * The execution/access kinds a single address can carry, each with its "disabled" marker.
+   *
+   * Paired, because a kind is only disabled when *every* breakpoint providing it is: two
+   * breakpoints at one address, one disabled, must leave the address armed.
+   */
+  private static readonly FLAG_KINDS: readonly (readonly [number, number])[] = [
+    [EXEC_BP, DIS_EXEC_BP],
+    [MEM_READ_BP, DIS_MR_BP],
+    [MEM_WRITE_BP, DIS_MW_BP],
+    [IO_READ_BP, DIS_IOR_BP],
+    [IO_WRITE_BP, DIS_IOW_BP]
+  ];
+
+  /**
+   * Rebuild one address's flags from the breakpoint definitions.
+   *
+   * **The single authority on what `breakpointFlags[address]` should be**, replacing three places
+   * that each mutated it in their own way — and each got it wrong, in ways proved by the tests in
+   * `test/debug/BreakpointFlagIntegrity.test.ts`:
+   *
+   * - `addBreakpoint` **assigned** (`= bpFlags`), so adding a plain breakpoint at an address a
+   *   bank-relative one had armed erased its `PART_BP`. The address still stopped the machine while
+   *   the new breakpoint was there, and stopped stopping for good once it was removed.
+   * - `resolveBreakpoint` assigned too, so a source breakpoint resolving onto a bank breakpoint's
+   *   address silently disarmed it.
+   * - `resetBreakpointResolution` deleted `resolvedAddress` from the definitions and left the flags
+   *   behind, so a rebuild that moved a line's code left the machine stopping at **both** the old
+   *   address and the new one.
+   * - `removeBreakpoint` cleared its own bits (`&= ~bpFlags | PART_BP`), which also cleared them
+   *   for any *other* breakpoint at the same address that still wanted them.
+   *
+   * The common cause is that a flags word is shared by every breakpoint at an address while each
+   * site treated it as its own. Deriving it is the only approach where that cannot be got wrong:
+   * the definitions are the truth, `collectBpFlags` already says what one breakpoint contributes,
+   * and this ORs them.
+   *
+   * I/O breakpoints are included — they claim every address their port mask matches — so an address
+   * that is both a port and a code address comes out right. The *bulk* I/O paths stay as they are:
+   * they touch up to 65536 addresses, and recomputing each from every definition would turn setting
+   * one masked port breakpoint into a quadratic scan.
+   */
+  private refreshFlagsAt(address: number): void {
+    let extra = 0; // --- PART_BP / HIT_BP: not kinds, and not separately disable-able
+    let present = 0; // --- kinds any breakpoint here provides
+    let armed = 0; // --- kinds at least one *enabled* breakpoint here provides
+
+    for (const bp of this.breakpointDefs.values()) {
+      if (!this.claimsAddress(bp, address)) continue;
+
+      const bpFlags = this.collectBpFlags(bp);
+      extra |= bpFlags & (PART_BP | HIT_BP);
+      for (const [kind] of DebugSupport.FLAG_KINDS) {
+        if (!(bpFlags & kind)) continue;
+        present |= kind;
+        if (!bp.disabled) armed |= kind;
+      }
+    }
+
+    let flags = extra | present;
+    for (const [kind, disabledBit] of DebugSupport.FLAG_KINDS) {
+      if (present & kind && !(armed & kind)) flags |= disabledBit;
+    }
+    this.breakpointFlags[address] = flags;
+  }
+
+  /** Does this breakpoint put flags on `address`? */
+  private claimsAddress(bp: BreakpointInfo, address: number): boolean {
+    if (bp.ioRead || bp.ioWrite) {
+      // --- A port breakpoint claims every address the mask leaves matching its port.
+      return (address & (bp.ioMask ?? 0xffff)) === bp.address;
+    }
+    const site = effectiveBankSite(bp);
+    if (site) {
+      // --- All eight addresses its bank could be paged to, the same ones `armBankRelative` set.
+      return bankRelativeAddresses(site.bankOffset).includes(address);
+    }
+    return (bp.address ?? bp.resolvedAddress) === address;
+  }
+
+  /**
+   * Is a **session-owned** breakpoint armed at `address`?
+   *
+   * Derived from the definitions rather than cached: a cache would have to be invalidated at every
+   * one of the eleven places the definitions change, including `enableBreakpoint` and the resource
+   * renames, and a missed one fails in the worst possible direction — a breakpoint that silently
+   * stops mattering. The scan is affordable because it runs only while `suppressUserBreakpoints`
+   * is set (the few seconds of a launch flow) *and* only at an address whose flags already say a
+   * breakpoint is there.
+   *
+   * The address test mirrors how each shape was armed: a bank-relative breakpoint occupies all
+   * eight addresses its bank could be paged to, so any of them counts. The bank itself is not
+   * checked here — `shouldStopAt` goes on to do the partition test for real, and this predicate
+   * only decides whether it is allowed to.
+   */
+  private hasSessionStopAt(address: number): boolean {
+    for (const bp of this.breakpointDefs.values()) {
+      if (bp.owner?.kind !== "session" || bp.disabled) continue;
+      const site = effectiveBankSite(bp);
+      if (site) {
+        if (bankRelativeAddresses(site.bankOffset).includes(address)) return true;
+        continue;
+      }
+      if ((bp.address ?? bp.resolvedAddress) === address) return true;
+    }
+    return false;
+  }
+
+  /**
    * Record that `partition` has a breakpoint at `address`, tagged with its provenance.
    *
    * Deduplicates on partition *and* tag, so a bank-relative breakpoint and a user's own
    * partition-scoped one can coexist at the same address and partition, and each can be removed
    * without disturbing the other.
    */
-  private addPartitionEntry(address: number, partition: number, owningKey?: string): void {
+  private addPartitionEntry(
+    address: number,
+    partition: number,
+    owningKey?: string,
+    disabled = false
+  ): void {
     let bpData = this.breakpointData.get(address);
     if (!bpData) {
       bpData = {};
@@ -724,7 +927,31 @@ export class DebugSupport implements IDebugSupport {
     }
     bpData.partitions ??= [];
     if (!bpData.partitions.some((p) => p[0] === partition && p[2] === owningKey)) {
-      bpData.partitions.push([partition, false, owningKey]);
+      // --- `disabled` was hardcoded `false` here, so a partition-scoped or bank-relative
+      // --- breakpoint *added* disabled came out armed. Every caller happened to work around it by
+      // --- calling `enableBreakpoint` afterwards — `applyBreakpointEdit` and `resetBreakpointsTo`
+      // --- both do, and both say in a comment that they have to — so the flags and the definition
+      // --- only agreed by way of a second call that could be forgotten.
+      bpData.partitions.push([partition, disabled, owningKey]);
+    }
+  }
+
+  /**
+   * Drop the untagged partition entry for `partition` at `address`.
+   *
+   * Untagged only: a tagged entry belongs to a bank-relative breakpoint, which owns its own
+   * lifetime through `disarmBankRelative`. The two can share an address *and* a partition, so
+   * matching on the partition alone would disarm someone else's breakpoint.
+   */
+  private removeUntaggedPartitionEntry(address: number, partition: number): void {
+    const bpData = this.breakpointData.get(address);
+    if (!bpData?.partitions) return;
+
+    bpData.partitions = bpData.partitions.filter(
+      (p) => !(p[0] === partition && p[2] === undefined)
+    );
+    if (bpData.partitions.length === 0 && !(this.breakpointFlags[address] & HIT_BP)) {
+      this.breakpointData.delete(address);
     }
   }
 
@@ -736,18 +963,21 @@ export class DebugSupport implements IDebugSupport {
    * shared address.
    */
   private armBankRelative(bp: BreakpointInfo, bpFlags: number): void {
-    const partition = bankRelativePartition(bp.bank!, bp.bankOffset!);
+    // --- The *effective* site: stated by the breakpoint, or filled in by resolution for a
+    // --- label-anchored one. The arming cannot tell the difference, and must not.
+    const site = effectiveBankSite(bp)!;
+    const partition = bankRelativePartition(site.bank, site.bankOffset);
     const owningKey = getBreakpointStorageKey(bp);
-    for (const address of bankRelativeAddresses(bp.bankOffset!)) {
+    for (const address of bankRelativeAddresses(site.bankOffset)) {
       this.breakpointFlags[address] |= bpFlags;
-      this.addPartitionEntry(address, partition, owningKey);
+      this.addPartitionEntry(address, partition, owningKey, !!bp.disabled);
     }
   }
 
   /** Drop a bank-relative breakpoint's own entries and flags from all eight of its addresses. */
   private disarmBankRelative(bp: BreakpointInfo, bpFlags: number): void {
     const owningKey = getBreakpointStorageKey(bp);
-    for (const address of bankRelativeAddresses(bp.bankOffset!)) {
+    for (const address of bankRelativeAddresses(effectiveBankSite(bp)!.bankOffset)) {
       const bpData = this.breakpointData.get(address);
       if (bpData?.partitions) {
         bpData.partitions = bpData.partitions.filter((p) => p[2] !== owningKey);
@@ -780,7 +1010,17 @@ export class DebugSupport implements IDebugSupport {
         bpFlags |= DIS_EXEC_BP;
       }
     }
-    if (bp.partition !== undefined || bankRelative) {
+    /*
+     * `resolvedPartition` counts, not just `partition`.
+     *
+     * The test above already withholds `EXEC_BP` for a resolved partition, but this one did not
+     * grant `PART_BP` for it — so a breakpoint carrying only a *resolved* partition came out with
+     * no execution flag of either kind and could never fire. It went unnoticed because
+     * `resolvedPartition` was read in five places and written in none until source breakpoints
+     * started carrying their `.bank`'s partition (§13.4); `resolveBreakpoint` hardcoded `EXEC_BP`
+     * and so never consulted this.
+     */
+    if (bp.partition !== undefined || bp.resolvedPartition !== undefined || bankRelative) {
       bpFlags |= PART_BP;
     }
     if (bp.memoryRead) {

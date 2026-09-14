@@ -31,3 +31,62 @@
   overflow: hidden;
   outline: none;
 }
+
+/*
+ * Where the bank this document shows is paged in right now.
+ *
+ * A statement about the live machine, sitting in a toolbar of controls that change this document —
+ * so it is deliberately not styled like them. It reads as a piece of machine state: the
+ * register/state panels' value token, in the monospace the addresses it quotes are set in.
+ *
+ * `--color-state-value` is the role, not a colour picked for this spot: it is what the Z80 CPU, Next
+ * Registers and Memory Mapping panels paint a machine-state *value* with, and this is one of those.
+ * It resolves to the accent, which is correct here for the same reason it is there — the value is
+ * what the eye should land on, and the label beside it recedes.
+ */
+.bankLocation {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: var(--space-1);
+  color: var(--color-state-value);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+}
+
+/* --- The label half, which names what the value is about and should not compete with it. */
+.bankLocationLabel {
+  color: var(--data-label);
+  font-family: var(--main-font-family);
+}
+
+/*
+ * Nowhere in the address space.
+ *
+ * Dimmed rather than coloured as a warning: it is an ordinary state for a NEX bank between pages,
+ * not an error, and painting it as one would cry wolf every time the program pages a bank out.
+ */
+.bankLocationAbsent {
+  color: var(--data-secondary);
+}
+
+/*
+ * How much of the live bank differs from the file.
+ *
+ * The secondary accent, matching the marks it counts in the dump rows
+ * (`MemoryDumpSection.module.scss`'s `.changedByteOverlay`) — the count and the bytes it counts
+ * must read as one thing, the same reason the NEX viewer's breakpoint badge borrows the gutter
+ * dot's colour.
+ *
+ * It appears only when something has changed, so there is no "0 changed" state to style.
+ */
+.bankDiff {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: var(--accent-secondary-text);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+}

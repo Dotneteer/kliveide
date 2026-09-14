@@ -74,9 +74,14 @@ const MATRIX: MatrixEntry[] = [
   {
     category: "memory/mmu",
     requiredDomain: "memory",
-    typeScriptTests: ["MemoryDevice.test.ts"],
+    typeScriptTests: ["MemoryDevice.test.ts", "AllRamBanks.test.ts"],
     wasmSuites: ["wasm-next-memory-mmu.test.ts", "wasm-next-partition-labels.test.ts"],
-    reason: "wasm-suite"
+    reason: "wasm-suite",
+    note:
+      "`AllRamBanks.test.ts` covers `allRamBanksFor`, which both machines now call — it is a pure " +
+      "function of the reported $1FFD value, so there is nothing machine-specific left for a WASM " +
+      "suite to re-check. What is WASM-specific is `getWasmV2Port1ffdValue`'s conversion from " +
+      "NextReg $8E, which wasm-next-memory-mmu.test.ts owns."
   },
   {
     category: "NextReg/palette",

@@ -97,6 +97,91 @@ Full derivation, per-accent numbers and the WCAG accounting are in `.plans/UI_MO
   `secondary`/`onSecondary` pair through the same two checks, not just a hue offset copied from a
   neighbour.
 
+### When neither accent is the answer: borrow the hue of the thing you are counting
+
+The accent pair says "these two are the same kind of thing, told apart". A mark that is a *different
+kind of fact* from everything around it is not a third member of that pair, and giving it
+`--accent-secondary-*` would claim a relationship it does not have.
+
+The NEX viewer's bank heading is the worked case. It carries three marks: `PC $C004` and `SP $FF00`,
+which are facts the file states and correctly share the accent pair, and a breakpoint tally, which is
+a fact about what the *debugger* has armed. The tally takes `--color-breakpoint-binary` — the token
+the gutter dot the user clicked to create it is painted with — so the count and the dots it counts
+read as one thing. Reaching for a third accent would have made it look like a third machine register.
+
+The rule, generally: **when a mark refers to something the user can see elsewhere in the app, take
+that thing's token rather than a position in the local hue order.** The alternative — painting it by
+where it sits in this row — is how the same concept ends up a different colour in every view.
+
+Two details from the same change, both about a count rather than a value:
+
+- **Filled, where the marks beside it are outlined.** The chips state a value; this one is a tally,
+  and on a collapsed section it is the only sign that anything is in there at all. It has to survive
+  being skimmed rather than read.
+- **Absent at zero, never `0`.** A column of zero badges down a list is noise claiming to be
+  information. The state "none" is already carried by there being no mark.
+
+### A readout sitting in a strip of controls
+
+The popped-out bank's toolbar is a row of things that change the document — view mode, decimal,
+offset, Go To. The "where is this bank paged in" readout sits in the same strip and is not one of
+them: it states something about the live machine and nothing happens when you click it.
+
+So it is styled as machine state rather than as a control: `--color-state-value` for the value,
+`--data-label` for the word that names it, monospace for the addresses it quotes. That is the same
+label/value split the Z80 CPU, Next Registers and Memory Mapping panels use, and reusing the *role*
+token is what makes a value read as a value in a place that has never shown one.
+
+`--color-state-value` resolves to the accent, which is right for the same reason it is right there —
+the value is what the eye should land on. Do not re-derive that from the local palette: take the
+role token, and the accent follows.
+
+Its absent state (`not paged in`) is `--data-secondary`, **not** a warning colour. A NEX bank is
+paged out constantly during normal execution; painting that as a problem would cry wolf every time
+the program pages a bank. Reserve the status hues for things that are actually wrong.
+
+### Marking individual bytes in a row that is one text node
+
+The memory dump's hex row is deliberately a single text node, with absolutely-positioned overlays in
+`ch` units for the hovered byte and the last-jump byte. That is what lets the row read the hovered
+byte back out of the pointer position, and it means **a byte cannot be given its own element**.
+
+So a new per-byte mark is another overlay, not a span: lay a copy of the byte's text over it at the
+computed offset. `MemoryDumpSection`'s changed-byte mark (live NEX bank vs the file) is the third
+user of that mechanism. Two details that generalise:
+
+- **Order in the DOM is the z-order.** Put a new overlay *before* the hover overlay so hovering a
+  marked byte still shows the hover treatment on top, rather than the two fighting.
+- **Do not fill the background.** At 16 bytes to a row, a filled cell every other byte turns a
+  modified bank into a stripe pattern that is harder to read than the numbers. Colour and weight
+  carry a mark; the hover overlay is the one that may fill, because there is only ever one of it.
+
+And the pairing rule again, from the other direction: the changed-byte mark takes
+`--accent-secondary-text` because the **address column** already owns the primary accent, and a mark
+*inside* the row would be read as more of that. Its count in the toolbar takes the same token, so the
+number and the bytes it counts are one thing — the same reason the NEX viewer's breakpoint badge
+borrows the gutter dot's colour rather than picking a position in the local hue order.
+
+A changed byte is also not painted as a status: it is the normal result of a program running, and
+finding it is the whole point of the view.
+
+### Two lines of prose about the same problem: colour one, not both
+
+The NEX viewer's validation banner says two things at once — *"This NEX file has 3 problems."* and
+then the worst one, spelled out. Only the summary takes `--status-error`; the detail sentence takes
+`--data-secondary`.
+
+Two full-strength status colours side by side read as an **alarm** rather than as information, and
+the longer of the two strings is the one that would dominate. The rule generalises: when a surface
+states a problem and then explains it, the statement carries the status colour and the explanation
+recedes. The same applies to a warning icon plus text — the icon is the status mark, so the text
+beside it does not have to be one too.
+
+Mechanically, the detail is also the only arbitrarily-long item in a flex row, so it is the one that
+gets `min-width: 0; overflow: hidden; text-overflow: ellipsis`. Without `min-width: 0` a long
+sentence pushes its siblings out of the panel instead of truncating — a flex item's default
+`min-width: auto` refuses to shrink below its content.
+
 ## View-Scoped Colour: Memory Dump, Disassembly & The Register/State Panels
 
 **§5.2's neutral data-panel hierarchy (`--data-value`/`--data-label`/`--data-secondary`) still

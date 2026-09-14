@@ -10,9 +10,25 @@ import type { Store } from "@common/state/redux-light";
 import { MI_ZXNEXT } from "@common/machines/constants";
 
 /**
+ * How a `.nex` file is launched, and the `nex-run` options each mode passes.
+ *
+ * "Debug (break at entry)" is the one worth explaining: debugging a NEX you did not write starts
+ * with not knowing where its code is, and the entry point is the one address the file itself names.
+ * Plain "Debug" arms the breakpoints you already set and lets the program run; this one stops on its
+ * first instruction, with the entry bank paged in and the disassembly pointing at it.
+ */
+const LAUNCH_MODES = {
+  run: "",
+  debug: " -d",
+  entry: " -e"
+} as const;
+
+type NexLaunchMode = keyof typeof LAUNCH_MODES;
+
+/**
  * The Explorer's **Run** / **Debug** entries for a `.nex` file.
  *
- * Both go through the `nex-run` command rather than duplicating its work, which is what keeps the
+ * All three go through the `nex-run` command rather than duplicating its work, which is what keeps the
  * Explorer, the NEX viewer's toolbar and a script doing the same thing — the pattern `.ksx` already
  * follows with `getScriptingContextMenuIfo`.
  *
@@ -27,20 +43,25 @@ export function getNexLaunchContextMenuInfo(services: AppServices): ContextMenuI
   const notOnNext = (store: Store<AppState>) =>
     store.getState().emulatorState?.machineId !== MI_ZXNEXT;
 
-  const launch = async (item: string, debug: boolean) => {
-    await ideCommandsService.executeCommand(`nex-run "${item}"${debug ? " -d" : ""}`);
+  const launch = async (item: string, mode: NexLaunchMode) => {
+    await ideCommandsService.executeCommand(`nex-run "${item}"${LAUNCH_MODES[mode]}`);
   };
 
   return [
     {
       text: "Run NEX file",
       disabled: notOnNext,
-      clicked: async (item: string) => await launch(item, false)
+      clicked: async (item: string) => await launch(item, "run")
     },
     {
       text: "Debug NEX file",
       disabled: notOnNext,
-      clicked: async (item: string) => await launch(item, true)
+      clicked: async (item: string) => await launch(item, "debug")
+    },
+    {
+      text: "Debug NEX file (break at entry point)",
+      disabled: notOnNext,
+      clicked: async (item: string) => await launch(item, "entry")
     }
   ];
 }
@@ -50,8 +71,8 @@ type Props = {
 };
 
 /**
- * **Run** / **Debug** buttons in a `.nex` document's tab bar, the same two actions the Explorer's
- * context menu offers and reaching the same command.
+ * **Run** / **Debug** / **Debug from the entry point** buttons in a `.nex` document's tab bar — the
+ * same three actions the Explorer's context menu offers, reaching the same command.
  *
  * The `.ksx` command bar established this shape; the difference is that nothing here has per-file
  * state to track, so the buttons only need to know whether the current machine can run a NEX at all.
@@ -62,8 +83,8 @@ const NexLaunchCommandBar = ({ path }: Props) => {
   const canLaunch = machineId === MI_ZXNEXT;
   const notNextHint = " (requires the ZX Spectrum Next machine)";
 
-  const launch = async (debug: boolean) => {
-    await ideCommandsService.executeCommand(`nex-run "${path}"${debug ? " -d" : ""}`);
+  const launch = async (mode: NexLaunchMode) => {
+    await ideCommandsService.executeCommand(`nex-run "${path}"${LAUNCH_MODES[mode]}`);
   };
 
   return (
@@ -73,13 +94,21 @@ const NexLaunchCommandBar = ({ path }: Props) => {
         iconName="play"
         title={`Run this NEX file${canLaunch ? "" : notNextHint}`}
         disabled={!canLaunch}
-        clicked={async () => await launch(false)}
+        clicked={async () => await launch("run")}
       />
       <TabButton
         iconName="debug"
         title={`Debug this NEX file${canLaunch ? "" : notNextHint}`}
         disabled={!canLaunch}
-        clicked={async () => await launch(true)}
+        clicked={async () => await launch("debug")}
+      />
+      <TabButton
+        iconName="debug-with-bp"
+        title={`Debug this NEX file, breaking at its entry point${
+          canLaunch ? "" : notNextHint
+        }`}
+        disabled={!canLaunch}
+        clicked={async () => await launch("entry")}
       />
     </>
   );

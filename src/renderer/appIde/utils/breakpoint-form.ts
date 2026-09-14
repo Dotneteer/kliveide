@@ -1,8 +1,16 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
+import { isBankRelative } from "@common/utils/breakpoint-scope";
 import { parseCommand } from "@renderer/appIde/services/command-parser";
-import { getNumericTokenValue, toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { getNumericTokenValue, toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
+// --- The Next's bank limits, from the module that owns the NEX bank facts. `BreakpointCommands`
+// --- imports them from the same place for the same grammar, which is the point: one definition of
+// --- what a legal bank and offset are, not one per parser.
+import {
+  NEX_BANK_LAST_OFFSET,
+  NEX_MAX_BANK
+} from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
 
 /**
  * The decision logic behind the breakpoint dialog, with no React and no I/O in it.
@@ -10,11 +18,19 @@ import { getNumericTokenValue, toHexa4 } from "@renderer/appIde/services/ide-com
  * This module owns every rule the dialog enforces, so the rules can be tested in the fast `node`
  * project instead of through a mounted form. See `.plans/BREAKPOINT_MANAGEMENT_UI_PLAN.md` §5.1.
  *
- * **Binary breakpoints only.** A `BreakpointInfo` is either address-bound (`address`, optionally
- * `partition`) or source-bound (`resource` + `line`) — `getBreakpointDisplayKey` branches on exactly that.
- * The dialog authors the first kind; source-code breakpoints stay owned by the editor's glyph
- * margin, which places them by clicking a line, tracks them as lines move, and has its own
- * undo/redo. Nothing here ever reads or writes `resource`/`line`.
+ * **Binary breakpoints only.** A `BreakpointInfo` is address-bound (`address`, optionally
+ * `partition`), **bank-relative** (`bank` + `bankOffset`), or source-bound (`resource` + `line`) —
+ * `getBreakpointDisplayKey` branches on exactly that. The dialog authors the first two;
+ * source-code breakpoints stay owned by the editor's glyph margin, which places them by clicking a
+ * line, tracks them as lines move, and has its own undo/redo. Nothing here ever reads or writes
+ * `resource`/`line`.
+ *
+ * The bank-relative kind is spelled into the **address field** — `05:+$0100` — rather than given
+ * controls of its own. That is what `bp-set` accepts, so there is one spelling to learn and one
+ * parser behind it; and it means the type selector, which already offers memory read and memory
+ * write, is how a bank *watchpoint* gets made. A dedicated bank picker beside the partition picker
+ * would have put two controls on screen that mean different things by "bank" — 16K banks and 8K
+ * pages — which is the confusion §4.1 exists to have settled.
  */
 
 /** The five mutually exclusive breakpoint types, one per `-r`/`-w`/`-i`/`-o` (or none, for exec). */
@@ -55,6 +71,15 @@ export type BreakpointEnvironment = {
   /** Whether the machine declares `MF_ROM` or `MF_BANK`. */
   supportsPartitions: boolean;
   /**
+   * Whether `<bank>:+<offset>` means anything on this machine — the ZX Spectrum Next only.
+   *
+   * Explicit rather than inferred from the partition count, and enforced here rather than left to
+   * the UI: `bp-set` refuses a bank-relative breakpoint on any other machine, so a dialog that
+   * authored one would be creating a breakpoint the command layer rejects, through a code path that
+   * bypasses that rejection.
+   */
+  supportsBankRelative?: boolean;
+  /**
    * `getBreakpointDisplayKey(bp, partitionLabels)` for every breakpoint currently set — **built with the
    * same `partitionLabels` map above**, or the duplicate check silently stops matching.
    */
@@ -94,7 +119,53 @@ const NUMBER_HINT = "for example $8000, 32768, or %1000000000000000";
 
 /** True for a breakpoint this dialog can edit. Source-bound breakpoints must not reach it. */
 export function isBinaryBreakpoint(bp: BreakpointInfo | undefined): boolean {
-  return bp?.address !== undefined;
+  return bp?.address !== undefined || isBankRelative(bp ?? {});
+}
+
+/** The `<bank>:+<offset>` separator. `+` cannot begin an address literal, which is why it works. */
+const BANK_RELATIVE_MARKER = ":+";
+
+/** True when the text is *spelled* as a bank-relative site, whether or not the parts are valid. */
+export function isBankRelativeInput(text: string | undefined): boolean {
+  return (text ?? "").includes(BANK_RELATIVE_MARKER);
+}
+
+/**
+ * Parse `05:+$0100` into a bank and an offset within it.
+ *
+ * `reason` distinguishes which half is wrong, so the message can say so: "that is not a bank" and
+ * "that is not an offset in a bank" are different corrections, and a single "invalid address" would
+ * leave the user guessing which end to fix.
+ *
+ * The bank is plain hexadecimal and deliberately does **not** go through the partition label map:
+ * it is a 16K bank, and the map describes 8K pages. See `.plans/NEX_DEBUGGING_PLAN.md` §4.1.
+ */
+export function parseBankRelativeInput(text: string | undefined): {
+  ok: boolean;
+  bank?: number;
+  bankOffset?: number;
+  reason?: "notBankRelative" | "bank" | "offset";
+} {
+  const trimmed = (text ?? "").trim();
+  const marker = trimmed.indexOf(BANK_RELATIVE_MARKER);
+  if (marker < 0) return { ok: false, reason: "notBankRelative" };
+
+  const bankText = trimmed.substring(0, marker).trim();
+  const offsetText = trimmed.substring(marker + BANK_RELATIVE_MARKER.length).trim();
+
+  // --- Hexadecimal without a `$`, matching the command grammar. `parseInt` would accept `5xyz`, so
+  // --- the shape is checked before the value.
+  if (!/^[0-9a-fA-F]{1,2}$/.test(bankText)) return { ok: false, reason: "bank" };
+  const bank = parseInt(bankText, 16);
+  if (bank < 0 || bank > NEX_MAX_BANK) return { ok: false, reason: "bank" };
+
+  const offset = parseNumericInput(offsetText);
+  if (!offset.ok) return { ok: false, reason: "offset" };
+  if (offset.value < 0 || offset.value > NEX_BANK_LAST_OFFSET) {
+    return { ok: false, reason: "offset" };
+  }
+
+  return { ok: true, bank, bankOffset: offset.value };
 }
 
 /** The blank form the Add flow starts from. */
@@ -163,8 +234,28 @@ export function isKnownPartition(partition: number, env: BreakpointEnvironment):
  * `undefined`, which `getBreakpointDisplayKey` would reject. Never emits `resource`/`line`.
  */
 export function formToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
-  const address = parseNumericInput(form.address);
   const mask = isIoKind(form.kind) ? parseNumericInput(form.ioMask) : undefined;
+
+  // --- A bank-relative site instead of an address. Not for the I/O kinds, which watch a port and
+  // --- have no bank at all — `validateBreakpointForm` refuses that combination, and emitting the
+  // --- bank anyway would build a breakpoint the emulator's own guard rejects.
+  const bankSite = isIoKind(form.kind) ? undefined : parseBankRelativeInput(form.address);
+  if (bankSite?.ok) {
+    return {
+      bank: bankSite.bank,
+      bankOffset: bankSite.bankOffset,
+      exec: form.kind === "exec",
+      memoryRead: form.kind === "memRead",
+      memoryWrite: form.kind === "memWrite",
+      ioRead: false,
+      ioWrite: false,
+      // --- No partition: a bank-relative breakpoint derives its own from the bank and offset, and
+      // --- carrying a second, independent one would arm it somewhere the bank is not.
+      disabled: form.disabled
+    };
+  }
+
+  const address = parseNumericInput(form.address);
 
   return {
     address: address.ok ? address.value & ADDRESS_MAX : undefined,
@@ -200,7 +291,13 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
 
   return {
     kind,
-    address: bp.address === undefined ? "" : `$${toHexa4(bp.address)}`,
+    // --- The same spelling `getBreakpointDisplayKey` produces and `bp-set` accepts, so an edited
+    // --- breakpoint round-trips through the field without changing its key.
+    address: isBankRelative(bp)
+      ? `${toHexa2(bp.bank).toUpperCase()}:+$${toHexa4(bp.bankOffset)}`
+      : bp.address === undefined
+        ? ""
+        : `$${toHexa4(bp.address)}`,
     partition: bp.partition,
     ioMask: bp.ioMask === undefined ? "" : `$${toHexa4(bp.ioMask)}`,
     disabled: bp.disabled ?? false
@@ -223,10 +320,27 @@ export function validateBreakpointForm(
   const errors: FieldErrors = {};
   const addressLabel = isIoKind(form.kind) ? "port" : "address";
 
-  // --- Address (a port, for I/O kinds)
+  // --- Address (a port, for I/O kinds; or a bank-relative site)
   const addressText = (form.address ?? "").trim();
   if (addressText.startsWith("[")) {
     errors.address = SOURCE_SPEC_MESSAGE;
+  } else if (isBankRelativeInput(addressText)) {
+    // --- Judged as what it is *spelled* as. Falling through to the numeric parser instead would
+    // --- report "enter a valid address" for a bank-relative site with one digit wrong, which says
+    // --- nothing about the mistake.
+    if (!env.supportsBankRelative) {
+      errors.address = "Bank-relative breakpoints are supported on the ZX Spectrum Next only.";
+    } else if (isIoKind(form.kind)) {
+      errors.address = "An I/O breakpoint watches a port, which is not in a bank.";
+    } else {
+      const site = parseBankRelativeInput(addressText);
+      if (!site.ok) {
+        errors.address =
+          site.reason === "bank"
+            ? `Enter a 16K bank in hexadecimal, $00 to $${toHexa2(NEX_MAX_BANK).toUpperCase()}.`
+            : `Enter an offset within the bank, $0000 to $${toHexa4(NEX_BANK_LAST_OFFSET)}.`;
+      }
+    }
   } else {
     const parsed = parseNumericInput(addressText);
     if (!parsed.ok) {
@@ -260,6 +374,11 @@ export function validateBreakpointForm(
       errors.partition = "This machine does not support partitions.";
     } else if (isIoKind(form.kind)) {
       errors.partition = "I/O breakpoints cannot use a partition.";
+    } else if (isBankRelativeInput(addressText)) {
+      // --- A bank-relative breakpoint resolves its own partition from the bank and the offset. A
+      // --- second one chosen here would contradict it, and silently dropping it would leave the
+      // --- dialog showing a partition the breakpoint does not have.
+      errors.partition = "A bank-relative breakpoint already names its bank.";
     } else if (!isKnownPartition(form.partition, env)) {
       errors.partition = "This machine has no such partition.";
     }

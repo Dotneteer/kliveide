@@ -38,6 +38,33 @@ subscribers.
 Closing a dirty popped-out bank asks for confirmation before discarding unsaved
 annotation changes. Closing the app also runs the same disposal checks.
 
+## Two Subtrees, Two Save Policies
+
+Schema 2 added a `debug` subtree beside the annotations, holding the bank breakpoints the NEX
+carries. The two halves are saved **independently and on different policies**:
+
+- **annotations** (`source`, `globalLabels`, `banks`) stay dirty-tracked and are written when the
+  user asks, as described above;
+- **`debug`** is written the moment a breakpoint changes, because a breakpoint lost to an unpressed
+  Save button is a bug rather than a policy.
+
+Both writers read the file, replace only their own keys and write back, so neither can revert the
+other and a key a newer build adds survives an older build's save. A schema 1 file loads unchanged
+and is only rewritten as 2 when something is actually saved into it.
+
+Breakpoints in the sidecar are the *only* place these are persisted: `.kliveproject` deliberately
+excludes them, so a NEX opened with no project still keeps its breakpoints.
+
+A popped-out bank's memory view can show the bank's **live** contents instead of the file's, marking
+what differs. The disassembly view deliberately cannot: the annotation model's listing is derived
+from the file's bytes and addresses its actions by row index, and live bytes disassemble to different
+instruction lengths — so the two listings would drift apart and the annotation menu would act on the
+wrong row. Annotations describe the file.
+
+The NEX viewer's bank headings show how many breakpoints each bank carries, counted from the
+*emulator* rather than from the sidecar — what is armed now, including another NEX's breakpoints in
+the same bank, because the machine will stop at those too.
+
 ## Label Rules
 
 Global labels have 16-bit values in `$0000..$FFFF`. Local labels are scoped to a

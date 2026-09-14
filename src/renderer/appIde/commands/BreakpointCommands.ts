@@ -78,7 +78,12 @@ export class ListBreakpointsCommand extends IdeCommandBase {
   }
 }
 
-type BreakpointWithAddressArgs = {
+/**
+ * Exported for `RunToCursorCommand`, which is a one-shot breakpoint plus a resume and must accept
+ * exactly the address grammar `bp-set` does — including the bank-relative `<bank>:+<offset>` form.
+ * A second parser for the same syntax is how the two would come to disagree.
+ */
+export type BreakpointWithAddressArgs = {
   addrSpec?: string;
   address?: number;
   partition?: number;
@@ -94,7 +99,7 @@ type BreakpointWithAddressArgs = {
   "-m"?: number;
 };
 
-abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWithAddressArgs> {
+export abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWithAddressArgs> {
   argumentInfo: CommandArgumentInfo = {
     mandatory: [
       {

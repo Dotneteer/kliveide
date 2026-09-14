@@ -119,22 +119,26 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
    *       MOVE (bit 15 == 0): set dout if non-NOP, advance list pointer.
    *       WAIT (bit 15 == 1): advance list pointer when beam position matches.
    *
-   * @param vc Current vertical counter (screen line)
+   * The vertical position this device compares against is **not** the raw ULA vertical
+   * counter. `zxnext.vhd` wires the copper's `vcount_i` to `cvc`, the copper-offset
+   * vertical counter produced by `zxula_timing.vhd`, and `copper.vhd` itself has no
+   * offset input at all. This method mirrors that split: it consumes an already-rebased
+   * copper line and performs no offset arithmetic of its own. Use
+   * `NextComposedScreenDevice.vcToCopperLine()` to produce the value.
+   *
+   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.5.
+   *
+   * @param cvc Current copper vertical line (hardware `cvc`, already rebased)
    * @param hc Current horizontal counter
    */
-  executeTick(vc: number, hc: number): void {
+  executeTick(cvc: number, hc: number): void {
     if (this._startMode === CopperStartMode.FullyStopped) return;
-
-    // Step 7: apply the vertical line offset (NextReg 0x64) so that waitLine 0
-    // corresponds to the adjusted frame origin rather than raw vc=0.
-    const totalVC = this.machine.composedScreenDevice.config.totalVC;
-    const adjustedVC = (vc + this.verticalLineOffset) % totalVC;
 
     // Frame-restart (mode 0b11): at adjusted position (0, 0) reset the list and
     // skip execution for that tick — matches the FPGA elsif branch.
     if (
       this._startMode === CopperStartMode.StartFromZeroRestartOnPositionReached &&
-      adjustedVC === 0 &&
+      cvc === 0 &&
       hc === 0
     ) {
       this._copperListAddr = 0;
@@ -163,7 +167,7 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
       //   bits  8:0 = waitLine (9-bit vertical counter)
       const waitLine = this._copperListData & 0x1ff;
       const waitHC = ((this._copperListData >> 9) & 0x3f) * 8 + 12;
-      if (adjustedVC === waitLine && hc >= waitHC) {
+      if (cvc === waitLine && hc >= waitHC) {
         this._copperListAddr = (this._copperListAddr + 1) % 0x400;
       }
       // If condition not met: stall — stay on this instruction.

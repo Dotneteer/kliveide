@@ -1,4 +1,10 @@
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
+import {
+  getDefaultDisassemblyOffsetForBank,
+  getDefaultDisassemblyOffsetIndexForBank,
+  getProgramCounterBank,
+  getStackPointerBank
+} from "./nexEntryState";
 import { toHexa2, toHexa4 } from "../../services/ide-commands";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
@@ -12,11 +18,24 @@ import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
 import { createElement, useEffect, useMemo, useState } from "react";
 import styles from "./NexFileViewerPanel.module.scss";
 import { loadNexFileContents, ScreenBlockFlags } from "./nexFileLoader";
+import {
+  summarizeNexIssues,
+  validateNexHeader,
+  type NexIssue
+} from "./nexValidation";
+import { EMULATED_CORE_VERSION } from "@emu/machines/zxNext/NextRegDevice";
+import { MF_BANK } from "@common/machines/constants";
+import { useNexBankBreakpointCounts } from "./useNexBankBreakpoints";
+import {
+  formatBankBreakpointBadge,
+  type BankBreakpointSummary
+} from "./nexBankGutter";
 import type { NexFileContents, NexHeader } from "./nexFileLoader";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { useDispatch } from "@renderer/core/RendererProvider";
 import { incExploreViewVersionAction } from "@common/state/actions";
+import { Icon } from "@renderer/controls/Icon";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
@@ -30,7 +49,7 @@ import {
   getNexAnnotationSidecarPaths,
   loadNexAnnotationSidecar
 } from "./nexAnnotationSidecar";
-import { NexFileAnnotations, NexAnnotationOffsetIndex } from "./nexAnnotations";
+import { NexFileAnnotations } from "./nexAnnotations";
 
 /*
  * M2: `ch`, not px.
@@ -47,11 +66,6 @@ const HEADER_WIDE_VALUE_WIDTH = "30ch"; // 188px / 6.4
 const HEADER_FLAG_LABEL_WIDTH = "25ch"; // 156px / 6.4
 const HEADER_FLAG_NARROW_LABEL_WIDTH = "15ch"; // 92px / 6.4
 const HEADER_FLAG_VALUE_WIDTH = "4ch"; // 22px / 6.4
-const NEX_SLOT_1_BANK = 5;
-const NEX_SLOT_2_BANK = 2;
-const NEX_SLOT_1_START = 0x4000;
-const NEX_SLOT_2_START = 0x8000;
-const NEX_SLOT_3_START = 0xc000;
 
 type NexAnnotationViewerState =
   | NexAnnotationSidecarState
@@ -124,6 +138,9 @@ const NexFileViewerContents = ({
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const loadedBanks = useMemo(() => fi.bankData.map(([bank]) => bank), [fi.bankData]);
+  // --- One listing for every bank row: a NEX can carry a hundred banks, and each asking the
+  // --- emulator for itself would be a hundred IPC calls per breakpoint change.
+  const bankBreakpointCounts = useNexBankBreakpointCounts();
   const layer2Palette = useMemo(
     () => fi.palette.map(v => getAbrgForPaletteCode(v)),
     [fi.palette]
@@ -197,8 +214,35 @@ const NexFileViewerContents = ({
   const loadedAnnotations =
     annotationState.status === "loaded" ? annotationState.annotations : undefined;
 
+  /*
+   * Checked against the machine, not in a vacuum: the core version the file asks for is only a
+   * problem relative to the core the emulator provides. `MF_BANK` counts 8K pages, so the 16K bank
+   * count is half of it.
+   *
+   * The *current* machine's features, not the Next's necessarily — a NEX can be opened in the
+   * viewer with any machine selected, and then there is no bank count to compare against, which
+   * `validateNexHeader` treats as "skip that check" rather than as zero banks.
+   */
+  const machineFeatures = appServices.machineService?.getMachineInfo()?.machine?.features;
+  const validationIssues = useMemo(
+    () =>
+      validateNexHeader(h, {
+        coreVersion: EMULATED_CORE_VERSION,
+        bankCount: (machineFeatures?.[MF_BANK] ?? 0) / 2 || undefined
+      }),
+    [h, machineFeatures]
+  );
+
   return (
     <>
+      {/*
+        * What is wrong with this file, before you try to run it.
+        *
+        * Above the annotation banner because it is about the NEX itself rather than about Klive's
+        * notes on it, and because an entry bank the file does not contain is the reason a launch
+        * will fail — which is worth reading before anything else on the page.
+        */}
+      <NexValidationPanel issues={validationIssues} />
       <NexAnnotationPanel
         state={annotationState}
         onCreate={createAnnotation}
@@ -412,7 +456,13 @@ const NexFileViewerContents = ({
         return (
           <ExpandableRow
             key={idx}
-            heading={<BankHeading bank={entry[0]} header={h} />}
+            heading={
+              <BankHeading
+                bank={entry[0]}
+                header={h}
+                breakpoints={bankBreakpointCounts.get(entry[0])}
+              />
+            }
             headingAction={
               <SmallIconButton
                 iconName='square-arrow-out-up-right'
@@ -458,6 +508,30 @@ const NexFileViewerContents = ({
 type NexAnnotationPanelProps = {
   state: NexAnnotationViewerState;
   onCreate: () => void;
+};
+
+/**
+ * The validation banner.
+ *
+ * Renders nothing when the header is consistent, which is the ordinary case — a file that is fine
+ * should look no different from before this existed. It uses the annotation banner's own styles
+ * rather than new ones: both are a line of prose across the top of this document, and the problem
+ * being about the NEX rather than about its annotations does not make it a different kind of thing
+ * to look at.
+ *
+ * Every issue is listed rather than just the first: they have independent causes, and a file with
+ * two problems fixed one at a time is two more launches than necessary.
+ */
+const NexValidationPanel = ({ issues }: { issues: NexIssue[] }) => {
+  if (!issues.length) return null;
+
+  return (
+    <div className={styles.annotationPanel} title={issues.map((i) => i.message).join("\n")}>
+      <Icon iconName="warning" fill="--status-error" width={16} height={16} />
+      <span className={styles.annotationError}>{summarizeNexIssues(issues)}</span>
+      <span className={styles.validationDetail}>{issues[0].message}</span>
+    </div>
+  );
 };
 
 const NexAnnotationPanel = ({
@@ -527,16 +601,41 @@ const BankFlags = ({ flags, startIndex }: BankFlagsProps) => {
  * name in the other base, and a piece of machine state, so they render as three things: the number
  * takes the accent because it is what you scan for, the decimal recedes, and a mark that says where
  * the machine actually is becomes a chip.
+ *
+ * The breakpoint tally is a fourth kind, and the reason it is here rather than only in the gutter:
+ * a bank row is collapsed by default, so without it the only way to find out whether a bank holds
+ * breakpoints is to expand every bank in turn. See `.plans/NEX_DEBUGGING_PLAN.md` §10.1.
  */
-function BankHeading ({ bank, header }: { bank: number; header: NexHeader }) {
+function BankHeading ({
+  bank,
+  header,
+  breakpoints
+}: {
+  bank: number;
+  header: NexHeader;
+  breakpoints?: BankBreakpointSummary;
+}) {
   const isPcBank = getProgramCounterBank(header) === bank;
   const isSpBank = getStackPointerBank(header) === bank;
+  const badge = formatBankBreakpointBadge(breakpoints);
 
   return (
     <>
       <span className={styles.bankWord}>Bank</span>
       <span className={styles.bankNumber}>${toHexa2(bank)}</span>
       <span className={styles.bankDecimal}>({bank.toString(10)})</span>
+      {badge && (
+        <span
+          className={`${styles.breakpointChip}${
+            // --- Every one of them disabled: the bank still carries breakpoints, and hiding that
+            // --- would be worse, but none of them will stop the machine as things stand.
+            breakpoints!.disabled === breakpoints!.total ? ` ${styles.breakpointChipDisabled}` : ""
+          }`}
+          title={badge.title}
+        >
+          {badge.text}
+        </span>
+      )}
       {isPcBank && (
         <span className={styles.headingChip} title="The program counter points into this bank">
           PC ${toHexa4(header.programCounter)}
@@ -557,56 +656,6 @@ function BankHeading ({ bank, header }: { bank: number; header: NexHeader }) {
 /** Bank size, for the heading's right-aligned detail. */
 function formatBankSize (bytes: number): string {
   return bytes >= 1024 ? `${Math.round(bytes / 1024)} KB` : `${bytes} B`;
-}
-
-function getProgramCounterBank (header: NexHeader): number | undefined {
-  return header.programCounter === 0
-    ? undefined
-    : getMappedBankForAddress(header, header.programCounter);
-}
-
-function getStackPointerBank (header: NexHeader): number | undefined {
-  return getMappedBankForAddress(header, header.stackPointer);
-}
-
-function getMappedBankForAddress (
-  header: NexHeader,
-  address: number
-): number | undefined {
-  const normalizedAddress = address & 0xffff;
-  if (normalizedAddress < NEX_SLOT_1_START) {
-    return undefined;
-  }
-  if (normalizedAddress < NEX_SLOT_2_START) {
-    return NEX_SLOT_1_BANK;
-  }
-  if (normalizedAddress < NEX_SLOT_3_START) {
-    return NEX_SLOT_2_BANK;
-  }
-  return header.entryBank;
-}
-
-function getDefaultDisassemblyOffsetForBank (
-  bank: number,
-  header: NexHeader
-): number {
-  if (bank === header.entryBank) {
-    return NEX_SLOT_3_START;
-  }
-  if (bank === NEX_SLOT_1_BANK) {
-    return NEX_SLOT_1_START;
-  }
-  if (bank === NEX_SLOT_2_BANK) {
-    return NEX_SLOT_2_START;
-  }
-  return 0x0000;
-}
-
-function getDefaultDisassemblyOffsetIndexForBank (
-  bank: number,
-  header: NexHeader
-): NexAnnotationOffsetIndex {
-  return (getDefaultDisassemblyOffsetForBank(bank, header) / 0x4000) as NexAnnotationOffsetIndex;
 }
 
 type HeaderAttributesProps = {

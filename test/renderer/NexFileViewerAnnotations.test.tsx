@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MF_BANK, MF_ROM } from "@common/machines/constants";
 
 const HEADER_SIZE = 512;
 const BANK_SIZE = 0x4000;
@@ -48,7 +49,8 @@ describe("NexFileViewerPanel annotations", () => {
       expect.any(String)
     );
     expect(JSON.parse(saveFileContent.mock.calls[0][1])).toMatchObject({
-      schemaVersion: 1,
+      // --- Schema 2: a newly created sidecar declares the version that has the `debug` subtree.
+      schemaVersion: 2,
       source: { fileName: "ScrollNutter.nex" },
       banks: {
         "5": {
@@ -326,7 +328,17 @@ async function renderNexViewer({
   };
 
   vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
-    useAppServices: () => ({ projectService })
+    // --- `machineService` was added for the header validation banner, which compares the file's
+    // --- required core version and RAM against the current machine. The ZX Next's real feature
+    // --- counts, so the banner these tests see is the one the app would show.
+    useAppServices: () => ({
+      projectService,
+      machineService: {
+        getMachineInfo: () => ({
+          machine: { machineId: "zxnext", features: { [MF_ROM]: 7, [MF_BANK]: 224 } }
+        })
+      }
+    })
   }));
   vi.doMock("@renderer/appIde/services/DocumentServiceProvider", () => ({
     useDocumentHubService: () => ({
@@ -450,3 +462,44 @@ function createNexWithLayer2AndBank5(): Uint8Array {
   contents[HEADER_SIZE + 512 + 0xc000] = 0x55;
   return contents;
 }
+
+/*
+ * The pre-launch validation banner.
+ *
+ * The rules themselves are covered without a DOM in `test/renderer/nexValidation.test.ts`; what
+ * these two check is that the viewer actually shows them, and — the more easily broken half — that
+ * it shows nothing for a sound file. See `.plans/NEX_DEBUGGING_PLAN.md` §12.
+ */
+describe("NexFileViewerPanel: header validation", () => {
+  it("warns that the entry bank is not in the file", async () => {
+    /*
+     * `createNexWithBank5` is a minimal fixture: it declares bank 5 and leaves the entry bank, the
+     * program counter and the stack pointer all at zero. So it is an invalid NEX three times over,
+     * which makes it a good demonstration that the banner appears — NextZXOS would page whatever
+     * was in bank 0 at `$C000` and jump into it, reporting success.
+     */
+    await renderNexViewer({ contents: createNexWithBank5() });
+
+    expect(await screen.findByText(/This NEX file has 3 problems/)).toBeTruthy();
+    // --- The worst one is spelled out beside the summary; the rest are in the row's tooltip.
+    expect(screen.getByText(/entry bank \$00 is not one of the banks/)).toBeTruthy();
+  });
+
+  it("says nothing for a sound header", async () => {
+    /*
+     * The same file with all three faults corrected: the entry bank is the one it contains, and the
+     * program counter and stack pointer are in RAM rather than in the ROM that is paged at `$0000`
+     * when a program starts.
+     */
+    const contents = createNexWithBank5();
+    contents[12] = 0x00; // --- SP $FF00
+    contents[13] = 0xff;
+    contents[14] = 0x00; // --- PC $4000, inside bank 5
+    contents[15] = 0x40;
+    contents[139] = 5; // --- entry bank 5
+
+    await renderNexViewer({ contents });
+
+    expect(screen.queryByText(/This NEX file has/)).toBeNull();
+  });
+});

@@ -10,6 +10,31 @@ static uint16_t zxnextCopperListData;
 static uint8_t zxnextCopperDout;
 static uint8_t zxnextCopperVerticalLineOffset;
 
+// ---------------------------------------------------------------------------
+// Beam tracking
+//
+// The WASM core has no per-tact raster of its own: `zxnextFrameExecute` only runs CPU
+// instructions and the picture is produced whole-frame by `zxnextUlaRenderInstantScreen`.
+// A copper is a beam-position device, so it needs one. These counters mirror
+// `_copperCurrentLine` / `_copperCurrentColumn` in `ZxNextMachine.onTactIncremented`
+// exactly — same ULA tact domain (`currentFrameTact`), same per-frame reset — so the two
+// cores stay comparable.
+//
+// See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md 15.5c / 15.10.
+// ---------------------------------------------------------------------------
+
+// 311 lines at 50Hz, which is the geometry this core is fixed to
+// (ZXNEXT_RENDERING_TACTS_IN_FRAME is 456 * 311). Derived rather than restated so the two
+// cannot disagree.
+#define ZXNEXT_COPPER_TOTAL_VC (ZXNEXT_RENDERING_TACTS_IN_FRAME / ZXNEXT_SCREEN_TOTAL_HC)
+// First active display line — the hardware's `ula_min_vactive`, where `cvc` is loaded.
+#define ZXNEXT_COPPER_DISPLAY_Y_START 64u
+
+// ULA tact this core has already advanced the copper through, within the current frame.
+static uint32_t zxnextCopperFrameTact;
+static uint32_t zxnextCopperCurrentLine;
+static uint32_t zxnextCopperCurrentColumn;
+
 static void zxnextCopperReset(void) {
   zxnextCopperStartMode = 0u;
   zxnextCopperInstructionAddress = 0u;
@@ -18,6 +43,9 @@ static void zxnextCopperReset(void) {
   zxnextCopperListData = 0u;
   zxnextCopperDout = 0u;
   zxnextCopperVerticalLineOffset = 0u;
+  zxnextCopperFrameTact = 0u;
+  zxnextCopperCurrentLine = 0u;
+  zxnextCopperCurrentColumn = 0u;
   for (uint32_t i = 0u; i < 0x800u; i++) zxnextCopperMemory[i] = 0u;
 }
 
@@ -39,6 +67,9 @@ static void zxnextCopperSetNextReg(uint32_t reg, uint32_t value) {
         zxnextCopperStartMode = newMode;
         if (newMode == 1u || newMode == 3u) zxnextCopperListAddress = 0u;
         zxnextCopperDout = 0u;
+        // While stopped the beam counters are left to go stale (see zxnextCopperAdvanceTo),
+        // so they must be brought back to the present the moment the copper is started.
+        if (newMode != 0u) zxnextCopperResyncBeam();
       }
       break;
     }
@@ -67,10 +98,58 @@ static uint32_t zxnextCopperGetNextReg(uint32_t reg) {
   }
 }
 
-static void zxnextCopperExecuteTick(uint32_t vc, uint32_t hc, uint32_t totalVc) {
+// Convert a raw ULA vertical counter into the copper line (hardware `cvc`). Mirrors
+// NextComposedScreenDevice.vcToCopperLine in the TypeScript core.
+static inline uint32_t zxnextCopperVcToCopperLine(uint32_t vc) {
+  return (vc + ZXNEXT_COPPER_TOTAL_VC - ZXNEXT_COPPER_DISPLAY_Y_START +
+          zxnextCopperVerticalLineOffset) % ZXNEXT_COPPER_TOTAL_VC;
+}
+
+// Bring the beam counters to `frameTact` without executing anything. Used when the copper
+// starts, because a stopped copper does not advance them (see zxnextCopperAdvanceTo).
+static void zxnextCopperResyncBeam(void) {
+  zxnextCopperFrameTact = currentFrameTact;
+  zxnextCopperCurrentLine = currentFrameTact / ZXNEXT_SCREEN_TOTAL_HC;
+  zxnextCopperCurrentColumn = currentFrameTact % ZXNEXT_SCREEN_TOTAL_HC;
+}
+
+// Reset the beam for a new frame. Called when a frame completes, which is equivalent to
+// ZxNextMachine.onInitNewFrame resetting the counters at frame start: nothing ticks in
+// between.
+static void zxnextCopperOnFrameCompleted(void) {
+  zxnextCopperFrameTact = 0u;
+  zxnextCopperCurrentLine = 0u;
+  zxnextCopperCurrentColumn = 0u;
+}
+
+// Run the copper up to (but not including) ULA tact `frameTact`.
+//
+// A stopped copper returns immediately rather than maintaining counters, because this sits
+// on the hot path — `zxnextCpuTactPlusN` runs for every memory and port access — and the
+// overwhelmingly common case is software that never touches the copper at all. The counters
+// are resynced by zxnextCopperResyncBeam when the copper is started.
+static void zxnextCopperAdvanceTo(uint32_t frameTact) {
   if (zxnextCopperStartMode == 0u) return;
-  uint32_t adjustedVc = (vc + zxnextCopperVerticalLineOffset) % totalVc;
-  if (zxnextCopperStartMode == 3u && adjustedVc == 0u && hc == 0u) {
+  while (zxnextCopperFrameTact < frameTact) {
+    zxnextCopperExecuteTick(
+      zxnextCopperVcToCopperLine(zxnextCopperCurrentLine), zxnextCopperCurrentColumn);
+    zxnextCopperCurrentColumn++;
+    if (zxnextCopperCurrentColumn >= ZXNEXT_SCREEN_TOTAL_HC) {
+      zxnextCopperCurrentColumn = 0u;
+      zxnextCopperCurrentLine++;
+    }
+    zxnextCopperFrameTact++;
+  }
+}
+
+// The copper compares against `cvc`, the copper-offset vertical counter built in
+// `zxula_timing.vhd`, not the raw ULA vertical counter: `zxnext.vhd` wires
+// `vcount_i => cvc`, and `copper.vhd` has no offset input of its own. The caller supplies
+// the already-rebased line (see NextComposedScreenDevice.vcToCopperLine).
+// See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md 15.5.
+static void zxnextCopperExecuteTick(uint32_t cvc, uint32_t hc) {
+  if (zxnextCopperStartMode == 0u) return;
+  if (zxnextCopperStartMode == 3u && cvc == 0u && hc == 0u) {
     zxnextCopperListAddress = 0u;
     zxnextCopperDout = 0u;
     return;
@@ -88,7 +167,7 @@ static void zxnextCopperExecuteTick(uint32_t vc, uint32_t hc, uint32_t totalVc) 
   if (zxnextCopperListData & 0x8000u) {
     uint32_t waitLine = zxnextCopperListData & 0x1ffu;
     uint32_t waitHc = ((zxnextCopperListData >> 9u) & 0x3fu) * 8u + 12u;
-    if (adjustedVc == waitLine && hc >= waitHc) {
+    if (cvc == waitLine && hc >= waitHc) {
       zxnextCopperListAddress = (zxnextCopperListAddress + 1u) & 0x3ffu;
     }
     return;
@@ -105,3 +184,4 @@ static uint32_t zxnextCopperGetListAddress(void) { return zxnextCopperListAddres
 static uint32_t zxnextCopperGetListData(void) { return zxnextCopperListData; }
 static uint32_t zxnextCopperGetDout(void) { return zxnextCopperDout; }
 static uint32_t zxnextCopperGetVerticalLineOffset(void) { return zxnextCopperVerticalLineOffset; }
+static uint32_t zxnextCopperGetFrameTact(void) { return zxnextCopperFrameTact; }

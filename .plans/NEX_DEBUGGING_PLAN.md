@@ -9,8 +9,10 @@ verified facts with `file:line`, the full idea catalogue, and the decision log. 
 restate the evidence**; where it asserts a fact, that document proves it. Read §2, §3 and §9 there
 first.
 
-**Status:** **Phases 0–3 complete** (§5–§8). Phases 4–8 not started. Phase 4 is the
-`StaticMemoryDump` decomposition, which gates the UI work in Phases 5 and 6.
+**Status:** **Phases 0–4 complete** (§5–§9). **Phase 5 in progress** (§10): the bank breakpoint
+gutter (§10.1) and its sidecar persistence are done. Still to do in Phase 5: the viewer's bank badge,
+watchpoints (§10.2), and the entry-point stop and run-to-cursor (§10.3, §10.4). Phases 6–8 not
+started.
 
 ---
 
@@ -814,10 +816,128 @@ test that mounts React in order to assert a *decision*", which is what
 
 | Step | Work | Risk |
 | --- | --- | --- |
-| 4a | Move the already-pure helpers (`countLabelReferences`, `removeLabel`, `addLabelIfMissing`, `replaceAnnotationRegion`, `getRegionTypeForSpan`, `getAlternativeRegionType`, `mergeAnnotationRegions`, `removeLabelOperandReferences*`, `:1940-2091`) beside the other `nex*` files, with node tests | ~none; land it first and separately |
-| 4b | Model + ViewModel: annotation state, the dirty/save lifecycle, region and label rules | translating rules the DOM tests already assert |
-| 4c | Controller over ports: the annotation session, the dialogs, the confirm port | the async orchestration |
-| 4d | Rewrite view + container; `StaticMemoryDump` becomes NEX-agnostic and the annotation editor composes over it. **Keep every `data-testid`** | the real risk |
+| 4a | ✅ **Done.** All nine helpers moved verbatim to **new** `DocumentPanels/Next/nexAnnotationEdits.ts`, with 25 node tests in `test/renderer/nexAnnotationEdits.test.ts`. `removeLabel`'s parameter widened from the dialog type `NexLabelDialogLabel` to `NexAnnotationLabel` (it only ever read `name`/`value`), so the new module imports no dialog code. Every existing annotation suite passes unchanged. | none realised |
+| 4b | ✅ **Done.** `NexAnnotationEditorIntents.ts` (16 intents), `NexAnnotationEditorPorts.ts` (session / dialogs / listing / confirm / dirtyChanged), `NexAnnotationEditorModel.ts` (state, 10 events, pure `reduce`, shared derivations) and `NexAnnotationEditorViewModel.ts` (`selectViewModel`, the menu as data, the discard prompt) in **new** `DocumentPanels/Next/annotationEditor/`, with **65 headless tests** and deep-merged builders in `test/dialogs/nexAnnotationEditor/`. | none realised |
+| 4c | ✅ **Done.** `NexAnnotationEditorController.ts` — all 14 intents, the shared session, the seven dialogs, both confirmations and the two manage-dialog sessions — with **60 journey tests** and fakes for every port. `nexAnnotationEdits.ts` grew the pure model transforms the controller calls (`withBankSettings`, `withLineAnnotation`, `withSynopsisComment`, `withEndOfLineComment`, `withRegion`, `withClearedRowAnnotations`, `withLabelChange`, `withOperandLabel`, `listLabelsForBank`). | none realised |
+| 4d | ✅ **Done.** `NexAnnotationEditorView.tsx` (the header controls and the menu, both dumb), `useNexAnnotationEditor.ts` (the wiring-only container), and `StaticMemoryDump.tsx` rewired: **2168 → 732 lines**, with ~1000 lines of annotation orchestration gone. | realised and passed |
+
+### Progress notes
+
+**Decided with the author:** full MVC, per §9 as written, rather than the lower-risk extract-hook
+alternative I offered once the measurements were in.
+
+**Scope, measured against the reference.** `.ai/ui-mvc-guide.md`'s reference implementation — the
+SJASMPLUS dialog — was a 1098-line component that became 14 files with 139 tests. This component is
+roughly twice that in the part being migrated, so the finished migration is a comparable multiple.
+Building it in verifiable slices, in the guide's own order.
+
+**Three decisions taken in the Model, each worth knowing before the rest is built on them:**
+
+1. **Row selection moved into the editor.** It looks generic, but the listing only *has* a selection
+   because annotations need ranges: every consumer of `disassemblySelection` in the old component was
+   an annotation action. So `selection` and `contextTarget` are editor state.
+2. **`dirty` stays owned by the shared session, not the editor.** `saveSettled` deliberately does not
+   clear it. Two popped-out banks of one NEX subscribe to the same session, and an editor that kept
+   its own copy would disagree with its sibling — which is the very thing the session exists to
+   prevent.
+3. **The listing is a port, not a selector.** `createAnnotatedNexDisassemblyItems` is async, so
+   generating it is controller work whose result arrives as an event. `listingSettled` therefore has
+   to **clamp the selection**: marking a range as `skip` collapses many rows into one, so the listing
+   can shrink underneath a selection made against the old one.
+
+**Two faithfulness bugs the ViewModel work turned up in my own Model, both now fixed and tested:**
+
+- `offsetSpanOf` read the range's **boundary** rows, where the old component takes min/max over the
+  *annotated* rows within it. A synopsis comment renders as a prefix row carrying no annotation, so a
+  range starting or ending on one would have yielded no offset and silently abandoned the action.
+- `labelRequested` carried no scope. Global and local labels share one dialog, opened on a chosen
+  scope — the old `runDisassemblyContextAction` passes `"global"` / `"local"` — so the intent needs it.
+
+**The menu is data, not markup.** `selectViewModel` returns the twelve entries and four separators
+with each entry's `disabled` already decided, so the enablement rules are asserted headlessly. Two
+rules beyond "annotations must be loaded": **Manage Labels/Regions** act on the whole bank and stay
+available with nothing selected, and **Assign Operand Label** needs a row with a decoded 16-bit
+operand — so it is refused on a generated prefix row and on any instruction without one.
+
+**`canAssignOperandLabel` resolves its row in priority order** — an explicit argument, then the row a
+menu was opened on, then the selection's active row — because the same rule is asked by the menu
+(about the context target) and by the controller (about a specific row).
+
+**A third layering correction, found while starting 4d: the listing does not belong to the editor.**
+The component has a path the editor knows nothing about — a dump with **no sidecar still shows a
+plain `Z80Disassembler` listing**, which is how a popped-out loading screen works. A controller that
+owned generation returned `[]` in exactly that case, so it would have silently emptied those
+documents. Generation stays in the component; the editor publishes the annotation model outward
+(`vm.annotations`) and takes the rows back as a `listingChanged` intent. That removed a port, a
+`LatestRun`, and an invented `busy: "listing"` state — the original toolbar had no busy affordance at
+all, so that state was mine rather than the component's.
+
+**The dialog ports had to widen to the dialogs' real props.** My first cut passed thin semantic
+arguments (`{ bankOffset, initialValue }`); the dialogs actually want the row's `effectiveAddress`,
+`instruction`, `generatedHardComment`, decoded `operands`, the bank's `regions` and its `bytes`. The
+controller owns `items`, so it assembles them — which also means the region dialog now opens on the
+span's *existing* type, as the original did.
+
+**The Controller's three shaping decisions:**
+
+1. **A handler ends at `session.update`, never by emitting the new model.** An edit is a pure
+   transform published to the shared session, which broadcasts it back; the resulting snapshot is
+   what updates state. That is what keeps two popped-out banks of one NEX in agreement, and it is
+   why the fake session broadcasts rather than storing locally.
+2. **A transform returning `undefined` means "nothing changed", and nothing is published.** Publishing
+   anyway would mark the sidecar dirty for an edit that did nothing — behaviour, not an optimisation.
+3. **Per-bank display settings persist from `environmentChanged`, not from their own intents.** It
+   cannot be forgotten when a new control is added, and costs nothing on the way in: settings that
+   came *from* the sidecar compare equal, so `withBankSettings` reports no change.
+
+**Two port shapes the existing code forced, neither of them obvious:**
+
+- **`manageLabels` takes callbacks, not a result.** The Labels list *stays open while you work in
+  it* — add, edit and delete run as callbacks while it is mounted, each returning the refreshed list,
+  so the row being changed stays visible behind the dialog asking about it. Only "Go To" resolves,
+  because it scrolls the listing underneath. A port that merely resolved once could not express this.
+- **`nativeConfirm`, `bankBytes` and `navigateToAddress` exist because the controller must stay
+  DOM-free.** The first is the more interesting one — see below.
+
+**`window.confirm` is preserved, deliberately.** Two questions still use it (discarding unsaved
+annotations, and rewriting a whole 16K bank) while the label-delete flow beside them already uses the
+app's `ConfirmPort`. `.docs/dialog-pattern.md` says the app's dialog is the one to use, so this is a
+real inconsistency — **but both are asserted with their exact wording by the existing DOM suite, so
+changing them is a behaviour change a refactor must not smuggle in.** They go through a `nativeConfirm`
+port instead, which keeps the controller headless while preserving behaviour exactly. Worth its own
+change afterwards.
+
+**Two faithfulness bugs the ViewModel work turned up in my own Model, both now fixed and tested:** `.ai/ui-mvc-guide.md` carries a ⚠ saying
+`npm run build:check` "type-checks nothing" because the root config is solution-style. That was true
+before `scripts/check-types.cjs` existed; `AGENTS.md` now describes it type-checking both referenced
+projects against a baseline, and it caught a real `TS6133` during step 4a. The guide's warning should
+be removed so it stops misdirecting sessions to work around a fixed problem.
+
+### The gate, and one condition it did not meet
+
+**Passed.** `test/controls/StaticMemoryDump.test.tsx` — 27 tests, 1907 lines — is **unmodified** and
+green, as are `NexFileViewerAnnotations`, `NexAnnotationDialogConsistency` and the three annotation
+model suites (40 more). The suite covers every flow the migration touched: the stay-open labels list
+("returns to the labels list after editing a label"), the reference-clearing delete, click /
+shift-click / keyboard selection, all four comment, label, operand and region flows, the whole-bank
+confirmation and the disposal confirmation. That is the strongest evidence available that the
+migration preserved behaviour.
+
+**The "no `DocumentPanels/Next/` imports" condition was not met, and could not be.** Five remain:
+three are the editor itself — which *is* the composition — and two are NEX-format helpers the
+component still needs because of the third layering correction: it owns listing generation
+(`createAnnotatedNexDisassemblyItems`) and adopts the settings the sidecar remembers
+(`getBankAnnotation`, `getNexBankAddressOffset`). The condition was written before that correction and
+is wrong rather than unmet; what it was reaching for — the annotation *editing* UI out of the dump
+component — is done.
+
+### Still to do: step 6 of the guide's recipe
+
+`.ai/ui-mvc-guide.md` step 6 is "re-partition the old suite; every deleted DOM test must name its
+replacement." **No DOM test was deleted**, so nothing is unaccounted for — but the suite now
+over-tests rules the headless layers own (region algebra, label bookkeeping, menu enablement), which
+the guide's first non-negotiable says to avoid. Re-partitioning it is a separate, safe change now
+that the headless coverage exists.
 
 **Gate:** every existing NEX annotation test passes unchanged, including the dialog-consistency suite.
 `StaticMemoryDump` no longer imports anything from `DocumentPanels/Next/`. If 4d cannot keep the tests
@@ -827,52 +947,258 @@ green without editing them, stop and reassess rather than adjusting assertions.
 
 ## 10. Phase 5 — The gutter, watchpoints, and stopping (L4)
 
-### 10.1 The bank breakpoint gutter
+### 10.1 The bank breakpoint gutter — ✅ **wired**
 
-Every annotated disassembly row already carries `bank`, `bankOffset` and `byteLength`
-(`DisassemblyAnnotationMetadata`, `common-types.ts:132-167`), and the row renders the same
-`BreakpointIndicator` the live view uses — `StaticMemoryDump` merely passes it no breakpoint props
-(`:1841-1864`). Wire them: a gutter click on a row creates a bank-relative breakpoint from that row's
-own bank and offset, owned by `{kind:"nex", sidecar}`.
+**It came out far smaller than the plan assumed**, because Phase 2's grammar did the work.
+`BreakpointIndicator` builds its `bp-set` / `bp-del` / `bp-en` command from the *name* the row gives
+its breakpoint, so naming a bank-relative one `05:+$0100` is all it takes — the whole toggle,
+disable and remove path then runs through the commands that already exist. The change is three
+pieces:
 
-The NEX viewer's bank rows gain a breakpoint count badge, so a collapsed bank still says it carries
-breakpoints.
+| Piece | File |
+| --- | --- |
+| Name a bank-relative breakpoint by its key, not the row's address | `DisassemblyRow.tsx` (`deriveDisassemblyRowViewModel`) |
+| This bank's breakpoints, keyed by offset, refreshed on `breakpointsVersion` | **new** `useNexBankBreakpoints.ts` |
+| Pass the row's breakpoint to `DisassemblyRow` | `StaticMemoryDump.tsx` |
 
-### 10.2 Bank-scoped watchpoints
+Matched by `bank` + `bankOffset`, never by address: an address breakpoint that happens to fall inside
+the bank's current window is not a breakpoint *on the bank*.
 
-Memory-read and memory-write bank-relative breakpoints, from the same gutter's context menu.
-`hasMemoryRead` / `hasMemoryWrite` already take the partition resolver and gain the 8K one in Phase 2,
-so this is UI plus a kind flag.
+**One real fragility found and fixed:** the hook first depended on the `emuApi` object's *identity*.
+`useEmuApi` memoizes, so the app was fine — but a caller that did not memoize would spin
+effect → `setState` → render → effect. It read as a 600-second test hang. The API is read through a
+ref now, and the dependency is gone.
 
-### 10.3 The entry-point stop (Q5)
+**The harness needed two mock entries, and that is worth being precise about.** The refactor gate
+(step 4d) passed with `StaticMemoryDump.test.tsx` genuinely unmodified — verified by `git diff`. The
+gutter then introduced a *new* dependency (`useSelector`, `useEmuApi`) that the harness's
+`RendererProvider` mock did not export, so two additive entries were added. That is a mock catching
+up with a new dependency, not an assertion bent to fit a regression; how a bank-relative breakpoint is
+named is covered by five tests in `DisassemblyRow.test.tsx`.
 
-Per ideas §9.5:
+### 10.1a Sidecar persistence — ✅ **done**
 
-1. Compute the entry site from the header — the entry bank via the extracted entry-state map (§11.1),
-   offset `header.programCounter & 0x3FFF`.
-2. Arm it as a session-owned one-shot **before** the injection flow starts.
-3. Run the flow with **user breakpoints suppressed** so only session-owned ones can stop the machine.
-   This is what protects the keystroke queue: `queueKeystroke` stamps an absolute tact window at
-   queue time (`ZxNextMachine.ts:1395`) and `emulateKeystroke` silently discards any stroke whose
-   window has passed (`:1358`), so a mid-flow pause loses the rest of the typed command line. It
-   replaces today's blanket `NoDebug` during `Start` steps.
-4. Lift the suppression where debug is armed today (`MachineController.ts:526-540`).
+Schema **2** adds the `debug` subtree, and §4.5's two-policy split is implemented as designed:
 
-### 10.4 Run to cursor
+| Piece | File |
+| --- | --- |
+| `debug.breakpoints`, readable schemas 1 *and* 2, `readDebug` validation | `nexAnnotations.ts` |
+| `saveNexAnnotationSubtree` / `saveNexDebugSubtree` — read-merge-write over disjoint keys | `nexAnnotationSidecar.ts` |
+| The annotation save routed through the subtree writer | `nexAnnotationSession.ts` |
+| Pure conversion both ways, plus a "has it changed" test | **new** `nexBreakpointSync.ts` |
+| Install once per sidecar, write back on every change | `useNexBankBreakpoints.ts` |
 
-Does not exist anywhere today. In a popped-out bank it means "run until the CPU reaches this offset in
-this bank" — a session-owned one-shot bank-relative breakpoint, **not** `UntilExecutionPoint`, whose
-`terminationPartition` no machine reads (`Z80NMachineBase.ts:542`) and which forces the
-per-instruction debug loop. Add it to the live Disassembly view in the same change; it is the same
-mechanism and its absence there is conspicuous.
+**39 new tests**, 12 of them on the clobbering risk specifically: an annotation save preserves the
+`debug` on disk, a breakpoint write preserves the annotations *and* does not flush unsaved annotation
+edits, either order leaves both intact, and a key this build does not recognise survives a round
+trip. A malformed breakpoint entry is dropped with a warning rather than failing the file — a
+breakpoint nobody can place is worth less than the annotations beside it.
+
+**Two deliberate behaviour changes**, both asserted by updated tests: a newly created sidecar declares
+schema 2, and a v1 file gaining breakpoints is stamped 2 as it is written. A v1 file that is merely
+*opened* is never rewritten.
+
+### 10.1b The viewer's per-bank badge — ✅ **done**
+
+A bank row is collapsed by default, so without it the only way to learn whether a bank holds
+breakpoints was to expand every bank in turn.
+
+| Piece | File |
+| --- | --- |
+| Grouping, row selection, per-bank summary, badge text | **new** `nexBankGutter.ts` |
+| One shared `listBreakpoints` behind both hooks; `useNexBankBreakpointCounts` | `useNexBankBreakpoints.ts` |
+| The chip in `BankHeading` | `NexFileViewerPanel.tsx` (+ its SCSS) |
+
+Three decisions worth keeping:
+
+- **One listing, not one per bank.** A NEX can carry a hundred banks; a hook per row would have been
+  a hundred IPC calls per breakpoint change. `useBreakpointList` is shared by the gutter and the
+  badges, which also means the two cannot disagree about what is armed.
+- **It counts every bank-relative breakpoint in the bank, whoever owns it.** Two NEX files can both
+  hold breakpoints in bank 5 (§4.4). Only one set is *this* file's, but the machine will stop at
+  either, so a badge that hid the other would be telling the user something untrue.
+- **Absent at zero, and the hue is borrowed from the gutter dot** rather than being a third accent.
+  Recorded in `.ai/ui-theming-intent-and-lessons.md`; the badge is a fact about the debugger, not a
+  third machine register.
+
+**Gap:** there is no mount harness for `NexFileViewerPanel` — its two test files exercise the loader
+only — so "the chip renders" is unverified. Everything it decides is in the pure module (19 tests).
+
+### 10.2 Bank-scoped watchpoints — ✅ **done**
+
+The plan called this "UI plus a kind flag", and the flag part was right: `bp-set 05:+$0100 -w`
+already worked from Phase 2. Two defects stood between that and a usable feature, and the second was
+mine.
+
+#### The gutter collapsed several breakpoints at one offset into one
+
+`useNexBankBreakpoints` keyed a `Map` by offset, so an offset carrying an execution breakpoint *and*
+a write watchpoint kept whichever the emulator's list ended with — the glyph, and the command built
+from it, depended on ordering. `selectBankRowBreakpoint` now decides it: execution first (the
+gutter's own click creates those, so it is the kind the column is about), then enabled over disabled.
+
+`selectRowBreakpoint` in the **live** view had the same gap, for the same reason, and gained the same
+two tie-breakers below its existing partition rule. Partition specificity still dominates — that was
+the defect the module was written for, and it is not traded away for a kind preference.
+
+#### A watchpoint's name made it unremovable — and a Phase 5 test asserted the bug
+
+`DisassemblyRow` named a bank-relative breakpoint by its **display key**, and the display key ends in
+`:R`/`:W`/`:IR`/`:IW`. `BreakpointIndicator` builds `bp-set`/`bp-del`/`bp-en` from that string while
+the commands take the kind as an *option*, so a bank write watchpoint produced
+`bp-del 05:+$0100:W -w` — unparseable, nothing removed, a dot that could not be clicked away.
+
+A Phase 5 test asserted exactly that string, with a comment saying the kind belonged in the name "so
+a watchpoint is not confused with an exec breakpoint". It was wrong, and it is now a test for the
+opposite with the reasoning written out.
+
+The fix named a concept that was already being open-coded: **`getBreakpointAddressSpec`** — the
+`<address-spec>` half of a key, which is what a `bp-*` command accepts. `BreakpointsPanel` was
+already clearing the kind flags inline before calling `getBreakpointDisplayKey` to get the same
+string; it now calls the named function, so there is one definition instead of two and the gutter
+could stop getting it wrong. The row also now passes the kind flags themselves, which is what builds
+the option.
+
+#### Creating one: the breakpoint dialog, not a new menu
+
+The plan assumed a gutter context menu. There isn't one — right-click on the indicator *toggles* the
+breakpoint, across the whole app, and rebinding that to open a menu would have been a side effect on
+the Breakpoints panel and the live view for the sake of this feature.
+
+The dialog is the better home anyway: it is the app's canonical "make any kind of breakpoint" UI and
+its **Type** selector already offers memory read and memory write. It gained the bank-relative shape,
+spelled `05:+$0100` **into the address field** rather than given controls of its own — that is what
+`bp-set` accepts, so there is one syntax and one parser, and a dedicated bank picker beside the
+partition picker would have put two controls on screen that mean different things by "bank" (16K
+banks and 8K pages), which is the confusion §4.1 exists to have settled.
+
+So the flow is: click the pop-out gutter → an execution breakpoint on that bank offset → double-click
+it → change Type to Memory write. `StaticMemoryDump` had no `onEditBreakpoint` at all, so that wiring
+came with it, and `isBinaryBreakpoint` — the gate both the row and the Breakpoints panel use — now
+accepts a bank-relative breakpoint, which made it editable from the panel too.
+
+`BreakpointEnvironment.supportsBankRelative` is enforced in the pure module rather than only in the
+UI: `bp-set` refuses bank-relative on any machine but the Next, and a dialog that authored one would
+be creating a breakpoint the command layer rejects, through a path that bypasses that rejection.
+
+**One harness entry needed:** `StaticMemoryDump.test.tsx`'s `RendererProvider` mock gained
+`useDispatch`, which `useBreakpointDialog` reads. Additive, and the same "mock catching up with a new
+dependency" as §10.1's two — not an assertion bent to fit.
+
+### 10.3 The entry-point stop (Q5) — ✅ **done**
+
+`getEntryPointBreakpointSite(header)` in `nexEntryState.ts` (§11.1) computes the site: the entry bank
+from the start-up map, offset `header.programCounter & 0x3FFF`, and `undefined` below `$4000` — ROM
+at hand-over, so there is no bank of the file to break in. `nex-run -e` arms it as a session-owned
+one-shot **before** the flow, and runs without the stop (with a warning, not an error) when the entry
+point is in ROM.
+
+`-e` implies `-d`: stopping at the entry point without debugging is not a thing, and accepting the
+combination would have created a flag that silently does nothing. The Explorer menu and the document
+tab bar both gained a third item for it.
+
+#### ⚠ Step 3's premise was too broad, and the fix is narrower than planned
+
+The plan said to run *the whole flow* with user breakpoints suppressed, "replacing today's blanket
+`NoDebug` during `Start` steps". That would have been a behaviour change for no gain: the flow
+already starts the machine in `NoDebug`, and **the per-instruction callers skip the breakpoint
+decision entirely in that mode**, so no user breakpoint can fire during the flow whatever the flag
+says. (`run()` does attach `debugSupport` to the context even in normal mode, so the flag alone is
+not what protects it.) The `Start` step's own comment already documents the keystroke hazard as the
+reason it starts in normal mode.
+
+The window that *is* unprotected is the one the flow ends with: for the Next, debug is armed while
+the machine is still running and `.nexload` may be half-typed
+(`MachineController.ts`, the `state === Running` branch). So suppression is scoped to exactly that:
+
+- `DebugSupport.suppressUserBreakpoints` gates `shouldStopAt`, letting only session-owned
+  breakpoints through;
+- `MachineController.suppressUserBreakpointsUntilKeystrokesLand` sets it when debug is armed in
+  place and lifts it on the **first** of: the keystroke queue draining (`getKeyQueueLength() === 0`,
+  the hazard's actual lifetime), the machine leaving `Running` (it paused — very likely *at* the
+  entry stop), a newer machine operation, or a 10s backstop. Every exit lifts it, so there is no
+  path on which it outlives the flow and silently disarms the user's breakpoints.
+
+It is deliberately **not** applied to the `startDebug` branch: that branch starts a stopped or paused
+machine, nothing is in flight, and a window opened there would be closed by the first poll (state is
+not `Running` yet) rather than by the keystrokes landing.
+
+#### Session-stop lookup: derived, not cached
+
+The first cut kept a `Set<number>` of session-owned addresses maintained alongside the flags, for an
+O(1) hot-path test. It was wrong in a way tests caught: it was not updated on removal or on
+`enableBreakpoint`, and — the case that matters — when a user breakpoint and a session one share an
+address, a set keyed only by address answers "session" for both and lets the user's fire after all.
+
+`hasSessionStopAt` derives the answer from the definitions instead. The scan is affordable because it
+runs only while suppression is set (seconds) **and** only at an address whose flags already say a
+breakpoint is there. A cache would have to be invalidated at eleven places, and a missed one fails in
+the worst direction: a breakpoint that silently stops mattering.
+
+### 10.4 Run to cursor — ✅ **done**
+
+A session-owned one-shot, **not** `UntilExecutionPoint`, whose `terminationPartition` no machine
+reads (`Z80NMachineBase.ts:542`) and which forces the per-instruction debug loop.
+
+`RunToCursorCommand` (`run-to`, alias `rtc`) extends `BreakpointWithAddressCommand`, so it inherits
+`bp-set`'s address grammar whole — including `<bank>:+<offset>`, which is what makes it work on a NEX
+bank that is not paged in yet. It drops `-r`/`-w`/`-i`/`-o`/`-m` from the option list: "run until this
+is read" is a watchpoint, not a cursor, and leaving them in would have accepted flags it then ignored.
+
+Machine state decides what "run" means, and one case has to be refused:
+
+| State | Behaviour |
+|---|---|
+| Paused | arm, then resume with `debug` |
+| Stopped / none | arm, then start with `debug` |
+| Running **in debug** | arm only — `run()` returns immediately for an already-running machine, so resuming would be a no-op |
+| Running in normal mode | **refused.** Nothing checks breakpoints in `NoDebug`, and this command cannot switch a running machine into debug mode, so arming would leave the user waiting for a stop that can never come |
+
+**UI.** A `Cmd`/`Ctrl`-click on the breakpoint gutter indicator, documented in its tooltip beside the
+right-click and double-click hints. That one handler gives the gesture to both the live Disassembly
+view and every popped-out NEX bank, because both render `DisassemblyRow` → `BreakpointIndicator`, and
+it reuses `addrLabel` — the same display key the breakpoint gestures build their commands from, which
+Phase 5 already made carry `<bank>:+<offset>`. Plain click on the gutter did nothing before, so this
+adds a gesture rather than overloading one.
+
+*Follow-up:* a row context menu is the better home, and the live Disassembly view has no row menu at
+all today. The modifier-click is deliberately the cheap version; it should not be the last word.
 
 ### 10.5 Tests
 
-Node tests for the entry-site computation from a set of synthetic headers (entry bank at `$C000`,
-bank 2 at `$8000`, bank 5 at `$4000`, and a `programCounter` in ROM, which must be rejected with a
-diagnostic rather than producing a nonsense breakpoint). Component tests that a gutter click issues
-the right breakpoint and that the badge counts correctly. The suppression behaviour is verified in the
-running app.
+Done:
+
+- `test/renderer/nexEntryState.test.ts` (16) — the start-up map and the entry site from synthetic
+  headers, including bank 0 at offset 0, an entry point in ROM, and the one case the extraction made
+  visible: when the entry bank *is* bank 5 or 2, the bank is paged in twice, so bank→address is not
+  a function and `getDefaultDisassemblyOffsetForBank` has to pick (it picks the entry window).
+- `test/commands/NexLaunchCommand.test.ts` (+8) — `-e` arms a session-owned one-shot at the right
+  bank and offset, before the run; implies `-d`; runs anyway for a ROM entry point; refuses a file
+  whose header will not parse rather than starting a debug run that can never stop.
+- `test/commands/RunToCursorCommand.test.ts` (12) — the grammar, the arm-before-resume order, and
+  each of the four machine states.
+- `test/debug/BankRelativeBreakpoints.test.ts` (+9) — suppression: a session breakpoint fires, a user
+  one does not, including when they share an address; removal and disabling are followed; a scoped
+  reset does not break it.
+- `test/emu/debug-step-decision.test.ts` (+4) — a one-shot is spent at the address the machine
+  actually stopped at, and **not** on the re-trigger the `lastBreakpoint` guard refuses (consuming
+  there would delete a one-shot that never fired).
+
+Also done, for §10.1b and §10.2:
+
+- `test/renderer/nexBankGutter.test.ts` (19) — grouping, the row-selection order, the per-bank
+  summary and the badge text, including "absent at zero" and an I/O breakpoint that claims a bank.
+- `test/renderer/breakpointRowMatch.test.ts` (+7) — the live view's kind and enablement tie-breakers,
+  and that partition specificity still dominates them.
+- `test/debug/breakpoint-form.test.ts` (+41) — the dialog's bank-relative parsing, both conversions,
+  the round trip, every validation rule, and a cross-check that the dialog and `bp-set` derive the
+  same bank and offset from the same text.
+- `test/controls/DisassemblyRow.test.tsx` (+7) — the kind flags reach the indicator, and the name it
+  is given carries no kind suffix.
+
+Still to do: a component test that a gutter click issues the right breakpoint. That and the badge's
+rendering are verified in the running app — `NexFileViewerPanel` has no mount harness, and
+`StaticMemoryDump`'s does not simulate a gutter click.
 
 **Gate:** set a breakpoint in a popped-out bank, launch, and stop there — the feature's actual
 acceptance test. Plus: break at entry works on a NEX whose entry bank is bank 0 (which Phase 0 made
@@ -882,60 +1208,312 @@ possible at all).
 
 ## 11. Phase 6 — The paused machine (L4, core scope per Q7)
 
-### 11.1 Extract the entry-state map
+### 11.1 Extract the entry-state map — ✅ **done** (as a Phase 5 prerequisite)
 
 `getDefaultDisassemblyOffsetForBank`, `getMappedBankForAddress`, `getProgramCounterBank`,
 `getStackPointerBank` (`NexFileViewerPanel.tsx:562-610`) are the canonical NEX entry-state map and are
 trapped in a React panel. Move them beside `nexFileLoader.ts` as pure functions with node tests.
 
-Strictly this is a Phase 5 prerequisite (§10.3 needs it) — do it as the first commit of Phase 5 if
-Phase 6 slips.
+Done: `nexEntryState.ts` holds them plus the slot constants and the new `getEntryPointBreakpointSite`,
+with `nexEntryState.test.ts` covering them. `NexFileViewerPanel.tsx` imports them.
 
-### 11.2 Where is this bank right now?
+### 11.2 Where is this bank right now? — ✅ **done**
 
-The pop-out header names the MMU slot(s) currently holding the bank, or says **not paged in**, read
-from `getNextMemoryMapping().pageInfo`. **First** of this phase's items: it makes the paging subtlety
-of §4.6 visible to the user instead of surprising them.
+The pop-out header carries a readout: `Bank at $8000`, or `Bank not paged in`, with the 8K slot
+numbers in its tooltip. `nextBankLocation.ts` decides it; `useNexBankLocation` feeds it through
+`useEmuStateListener` — the ticker the register panels use, which reports immediately on a pause and
+throttles while the machine runs, exactly the cadence this wants.
 
-### 11.3 Live-vs-file view, and the diff
+Three things the implementation had to settle that the one-line plan did not:
 
-A Live/File toggle on the popped-out bank, reading `getMemoryPartition(bank)` when the machine is
-paused — and a diff mode highlighting bytes that differ from the NEX file. Both arrays are already in
-hand, so the diff is nearly free and it is the only feature here that shows something currently
-undiscoverable: self-modifying code, decompressed payloads, corrupted banks.
+- **The answer is a *list*, not an address.** The Next's MMU is eight independent 8K slots, so a 16K
+  bank is two pages that the hardware does not require to be adjacent, in order, or both present.
+  The formatter collapses only the ordinary contiguous case to one address and spells out everything
+  else — a bank with one half paged in is precisely when the user needs telling, and it is what
+  `bankRelativeAddresses` arms eight addresses for.
+- **Match on `bank8k`, never `bank16k`.** On the WASM Next `bank16k` is filled from the partition
+  index, which after Q9 *is* an 8K page — the field's name and its contents disagree. `bank8k` is
+  the MMU register's own value.
+- **A slot only counts when it is writable.** A ROM'd slot's MMU register still holds whatever was
+  last written to it, so matching on the register alone would announce a RAM bank at an address
+  where the ROM is. That is worse than "not paged in", because the user would go and look.
 
-### 11.4 Follow the PC
+The readout also says, in its tooltip, that a paged-out bank's breakpoints stay armed and will fire
+once it is paged in — which is the §4.6 subtlety this item exists to stop being a surprise.
 
-When paused with the PC inside a page holding this bank, highlight the row — the same spotlight the
-Disassembly view has.
+**Two harness entries needed** in `StaticMemoryDump.test.tsx`: `getCpuStateChunk` and
+`getNextMemoryMapping`. Without the first, every test in the file logged an unhandled rejection —
+passing, but with 25 errors in the output that would have hidden a real one.
 
-### 11.5 Bank provenance in the Memory Mapping panel
+### 11.3 Live-vs-file view, and the diff — ✅ **done**
 
-Each slot gains "from `Game.nex` bank `$20`" while a session is live. **This phase will hit the
-`allRamsBanks`/`allRamBanks` mismatch** (`EmuApi.ts:688` vs both producers) that makes the panel's
-allRAM readout permanently empty; fix it here.
+A **Live** switch in the popped-out bank's memory view, with the changed bytes marked in the dump
+and counted in the header. `nexLiveBank.ts` holds the logic, `useNexLiveBankBytes` the reads,
+`MemoryDumpSection` gained a `changedBytes` prop.
+
+Four things the plan did not anticipate:
+
+- **A bank does not have to be paged in.** The plan said "reading `getMemoryPartition(bank)` when
+  the machine is paused", but the emulator reads a partition straight out of the Next's RAM, and a
+  NEX's banks are all in RAM from the moment the loader put them there. So the live view answers for
+  *every* bank of the file, paused or running — which is the more useful behaviour, since a bank the
+  program has finished with and paged out is exactly the one whose leftovers you want to see.
+- **A bank is two reads.** A Next partition is 8K; `getMemoryPartition` returns `0x2000` bytes for
+  any non-negative index. So a 16K bank is partitions `2B` and `2B+1` — Q9's pairing again, and
+  `joinBankHalves` refuses a half of the wrong size rather than zero-padding, because a short bank
+  compared against the file reports every byte past the join as changed.
+- **The diff is not a separate mode.** The plan called for "a diff mode"; it is a property of the
+  live view instead. There is nothing a third mode could show that Live-with-marks does not, and a
+  mode the user has to find and switch into is worse than a highlight that is simply there.
+- **It is the memory view only, and that is a decision rather than a shortcut.** Live disassembly
+  would be the most valuable half — a bank that decompressed itself is precisely the case — but it
+  cannot be had by swapping the array. The annotation editor owns a listing derived from the *file's*
+  bytes and addresses its actions by **row index**; live bytes disassemble to different instruction
+  lengths, so the two listings would drift apart and the row menu would act on a line the user did
+  not click. Feeding the editor live bytes is not the fix either: annotations describe the file, and
+  an annotation derived from a decompressed payload would be written into the file's sidecar. The
+  switch therefore appears only in the memory view, rather than being offered somewhere it would
+  quietly mean something else.
+
+  *Follow-up, if it is wanted:* a live disassembly needs the listing and the annotation editor's
+  copy to be one thing, addressed by bank offset rather than row index, and annotation editing
+  disabled (not merely discouraged) while live bytes are showing.
+
+**Two efficiency points worth keeping.** The reads are gated on the switch, so an open bank document
+costs nothing until someone asks for live bytes — whether the switch can be *offered* is answered by
+the location readout (§11.2), which the header needs anyway. And `changedFlagsIn` returns `undefined`
+for a row with nothing changed, so an untouched bank allocates nothing and draws no overlays across
+its 2048 rows.
+
+**One trap found:** `MemoryDumpSection` has **two** hand-written memo comparators on the same path,
+and a prop missing from either means a row that keeps a stale rendering. Both now check
+`changedBytes`; without it, switching between live and file bytes would leave the previous source's
+marks on every row whose bytes happened to be identical in both.
+
+### 11.4 Follow the PC — ✅ **done**
+
+The popped-out bank's disassembly spotlights the program counter's line, using `DisassemblyRow`'s
+existing `pausedPc` prop — the same mark the live Disassembly view draws, which the pop-out had been
+passing `-1` for since it was written.
+
+- **`bankOffsetOfAddress` is the inverse of §11.2's `locateBank16k`**: not "where is the bank" but
+  "is *this* address in it", answered from the placements the header already fetches. It costs one
+  cheap CPU-state read per tick and nothing else.
+- **Paused only, and that is the design rather than a limitation.** The pop-out is a listing of one
+  bank, which does not change as the machine runs, and the state ticker samples once or twice a
+  second while running — so a spotlight fed from it would land on an essentially arbitrary
+  instruction while *looking* authoritative. A mark that is wrong but confident is worse than no
+  mark.
+- **The mark is numbered by the listing, not by the machine.** `pcSpotlightAddress` adds
+  `disassOffset`, because the offset dropdown decides whether this bank's byte 0 reads `$0000` or
+  `$C000` and the row compares its own displayed address. It is a named function rather than an
+  inline expression for one reason: `disassOffset + (pcOffset ?? 0)` reads as an equivalent
+  simplification and would spotlight the first row every time the PC was somewhere else.
+- **The header announces it.** `formatBankLocation` gained a `· PC` marker and a sentence naming the
+  offset. Without it the spotlight is only discoverable by scrolling until you find it, and "the
+  program is executing in this bank right now" is the most consequential thing that header can say.
+
+No follow-PC *scrolling*, deliberately: the toolbar is already carrying seven controls, and the Go To
+box takes the address the header now shows. Worth adding if the scrolling turns out to be missed.
+
+### 11.5 Bank provenance in the Memory Mapping panel — ✅ **done**
+
+Each page row's tooltip gains a line naming the launched NEX, when the bank in that slot is one the
+file declares. `LaunchNexCommand` records the file and its banks; `nexLoadSession.ts` holds the
+record and the wording; `MemMappingPanel` reads it on its existing refresh tick.
+
+#### The claim had to be weakened to be true
+
+The plan's wording was "from `Game.nex` bank `$20`", which reads as a statement about the slot's
+*current contents*. That cannot be known: **RAM has no provenance.** Nothing in the machine records
+that a bank was written by a NEX loader rather than by the program, by a tape, or by another NEX
+loaded afterwards — and the program is free to have overwritten it, which is exactly what §11.3
+exists to show.
+
+So the line is a fact about the **file**: *"This is one of Game.nex's banks, as launched — the
+program may have changed it since."* Same navigational value (it tells you which pop-out to open)
+without asserting something unverifiable. This follows §11.4's own rule: a mark that is wrong but
+confident is worse than no mark.
+
+I considered and rejected real invalidation — clearing the record when the machine stops, since a
+stop wipes RAM. Every mechanism for it was worse than the weaker wording: a view clearing global
+state on what it happens to observe, or a generation counter the emulator would have to maintain for
+one tooltip line. The record *is* cleared when a launch cannot read its file's header, because
+attributing the new program's banks to the previous file is the one outcome that would be actively
+misleading.
+
+#### Two structural consequences
+
+- **The header is read on every launch**, not only for `-e`. The banks it declares are the whole
+  input to this. The cost is a second read of a file `copyToSdCard` has just read and written in
+  full, so it is marginal against what the command already does — and the two reads are now one
+  method (`readNexHeader`) feeding both the provenance record and the entry stop, instead of the
+  entry stop owning the only read. A test that asserted the file was *not* read without `-e` now
+  asserts the opposite, with the reason written in it.
+- **A module singleton, not app state.** The panel already refreshes on the emulator's state ticker,
+  so re-reading the record there makes it current without a subscription; `nexAnnotationSession` and
+  `useNexBankBreakpoints` use the same pattern. Both the command and the panel are in the IDE
+  renderer.
+
+#### The `allRamsBanks` mismatch — ✅ **fixed**, and the CHANGELOG was claiming it early
+
+`CHANGELOG.md` has listed "The Memory Mapping panel's all-RAM readout was always empty" under Fixes
+since `0daba60bd`, but the code still had the mismatch: the type and the panel said `allRamsBanks`
+while both producers wrote `allRamBanks`. The entry described an intention, not a change. It is true
+now.
+
+TypeScript could not catch it because the producers build the object as a literal for a
+structurally-typed target, where an unknown extra property is only rejected on a *direct* literal
+assignment.
+
+Renaming it exposed a second half: `ZxNextWasmV2Machine` hardcoded `allRamBanks: undefined`, so the
+row would still have read `Off` on the machine people actually run. The four-configuration table
+moved out of `MemoryDevice` into a pure `allRamBanksFor(port1ffdValue)` that both machines call —
+the WASM one already normalises NextReg `$8E` into that same `$1FFD` encoding via
+`getWasmV2Port1ffdValue`, so it had the input all along.
+
+`test/wasm/zxNext/wasm-next-full-matrix.test.ts` — a guard that every `test/zxnext/` suite is
+accounted for in the WASM coverage matrix — failed on the new test file until it was declared. It
+was right to: the entry now records *why* there is no separate WASM suite (the function is pure, so
+only `$8E`'s conversion is machine-specific, and `wasm-next-memory-mmu.test.ts` owns that).
+
+#### A second defect found here: the panel's "16K bank" column held an 8K page
+
+Investigating §11.2 turned this up. `ZxNextWasmV2Machine.getMemoryMappings` filled `bank16k` from
+the partition index, which **after Q9 is an 8K page** — and `bank8k` is the same number, so on the
+machine people run the page rows printed one value twice with the second labelled "16K bank" in the
+tooltip. The interpreted `MemoryDevice` had always reported `bank8k >> 1`.
+
+`bank16kForPartition` is now the shared derivation, and the project's own documentation states it
+independently: *"The 16 KB bank number is simply `MMU6_page >> 1` (pages are paired as 2N / 2N+1 per
+bank)"* (`docs/content/book/03-memory.mdx`). Negative partitions pass through unchanged (the panel
+renders anything negative as `--`, which is better than the interpreted machine's `0xff` → `FF` for
+the same case — a residual inconsistency between the two machines, left alone rather than changed as
+a side effect of this).
+
+This is also what makes the provenance line useful: the row now shows the real 16K bank next to it.
+
 
 **Gate:** with a NEX paused, the pop-out says where its bank is, shows live bytes, and marks what
-changed.
+changed — **met**. **Phase 6 is complete**: §11.1 through §11.5 are all in.
+
+Two defects in the Memory Mapping panel fell out of this phase rather than being planned for it (the
+`allRamBanks` mismatch on both halves, and the `bank16k` column holding an 8K page). Both were found
+by reading the code §11.2 needed, which is the argument for doing the "where is this bank" work
+first: it forced a careful read of the one API that answers it.
 
 ---
 
-## 12. Phase 7 — Pre-launch validation
+## 12. Phase 7 — Pre-launch validation — ✅ **COMPLETE**
 
-Small, self-contained, and can land at any point from Phase 3 onward. Check and report in the viewer:
-`requiredCoreVersion*` against the emulated core; `fullRamRequired` and RAM size against the
-configured machine; `entryBank` present in `bankFlags`; `programCounter` inside a bank the entry state
-actually maps in; `stackPointer` sane. All of it comes from the already-parsed header, and it converts
-a class of silent, baffling failures into a sentence.
+`nexValidation.ts` is the pure function, `nexValidation.test.ts` the table-driven test, and
+`NexValidationPanel` renders the result above the annotation banner — as planned.
 
-Pure function, table-driven node test, rendered as viewer warnings in the existing annotation-banner
-slot.
+### Six rules, and which of the plan's checks survived contact
+
+| id | Severity | Fires when |
+| --- | --- | --- |
+| `entry-bank-missing` | error | the file does not contain the bank it names as its entry bank |
+| `entry-point-bank-missing` | error | the entry point runs from bank 5 or bank 2 and the file does not contain that bank |
+| `entry-point-in-rom` | error | the entry point is below `$4000`, which is ROM at hand-over |
+| `stack-in-rom` | error | the stack pointer is below `$4000`, so pushes are discarded |
+| `core-too-old` | warning | the file asks for a newer core than the emulator reports |
+| `bank-count-mismatch` | warning | `numOf16KBanks` disagrees with the bank flags beside it |
+
+Two of the plan's checks needed a decision the plan had not anticipated:
+
+- **`fullRamRequired` against the machine's RAM cannot fire.** The Next has no configurable memory
+  size: `MF_BANK` is 224 unconditionally and `MemoryDevice` allocates 2MB regardless, so the flag's
+  1792K demand is always met. The rule is implemented anyway, driven from
+  `NexValidationContext.bankCount` rather than read from the machine inside the module, and it is
+  exercised only by a synthetic context — because the side that could change is the *machine's*
+  capability, not the file's demand. This is written down rather than left for someone to discover
+  when the test looks unmotivated.
+- **"`programCounter` inside a bank the entry state actually maps in" is two rules, not one.** An
+  entry point at `$4000` or `$8000` runs from bank 5 or bank 2 rather than from the entry bank, so a
+  file can name a perfectly good entry bank and still begin executing in a bank it does not carry.
+  The two are reported separately, and the second declines to fire when the entry point *is* in the
+  entry bank — otherwise an absent entry bank would be stated twice in a banner that has one line.
+
+Plus one the plan did not list: `bank-count-mismatch`. It breaks nothing by itself (the loader reads
+banks by their flags) but it means the file disagrees with its own header, which is worth knowing
+before trusting anything else in it.
+
+### The emulated core version had no reader
+
+`CORE_VERSION_MAJOR`/`MINOR`/`SUB_MINOR` were module-private constants in `NextRegDevice.ts`, read
+only by the two NextRegs that report them. They are exported now, with `EMULATED_CORE_VERSION` as
+the tuple the validator compares against; `NextRegPanel` already imports values from that module, so
+the renderer reading them is the established direction rather than a new one.
+
+Note that the check skips a requirement of `0.0.0`, which is what most NEX files carry — treating
+"no requirement" as "requires nothing" rather than comparing it.
+
+### Findings
+
+- **The viewer's own test fixture is an invalid NEX.** `createNexWithBank5` declares bank 5 and
+  leaves the entry bank, the program counter and the stack pointer all at zero — so the new banner
+  reports three problems for it. That is the validator working, and it makes the fixture a good
+  demonstration; a second test corrects all three and asserts the banner then says nothing, which is
+  the half more easily broken.
+- **`machineService` was absent from the viewer's harness**, and reading it unguarded took the whole
+  panel down in those tests. Fixed both ways: the lookup is optional-chained (one absent service
+  should not lose the document), *and* the harness now provides the real ZX Next feature counts, so
+  the tests exercise the comparison rather than skipping it.
 
 ---
 
 ## 13. Phase 8 — Annotations as live symbols, and label-anchored breakpoints
 
 The largest and least certain group; last for that reason.
+
+> ### Status: §13.4 done, plus a prerequisite that was not in the plan
+>
+> **§13.4 is complete** — and getting to it uncovered **six** defects in `DebugSupport`'s flag
+> maintenance, five of them fixed here as a prerequisite (§13.0 below). §13.1, §13.2 and §13.3 are
+> **not started**; they are features, and the flag work turned out to be the load-bearing part of
+> the phase. §13.2 in particular should not be built on the old foundation: it adds a *second*
+> writer of resolved data, and the first one exposed how little of that path worked.
+
+### 13.0 Prerequisite: one flags word, one authority
+
+`breakpointFlags[address]` is shared by every breakpoint at that address, and four places mutated it
+as though each owned it. Each was wrong differently, and every failure was silent:
+
+| Site | What it did | Consequence |
+| --- | --- | --- |
+| `addBreakpoint` | `= bpFlags` | a plain breakpoint added at an address a bank-relative one had armed erased its `PART_BP`; removing it later killed the bank breakpoint for good |
+| `resolveBreakpoint` | `= EXEC_BP` | a source breakpoint resolving onto a bank breakpoint's address disarmed it |
+| `resetBreakpointResolution` | deleted the field, left the flags | a rebuild that moved a line's code left the machine stopping at the **old** address as well as the new one — a phantom breakpoint with nothing in the panel to explain it |
+| `removeBreakpoint` | `&= ~bpFlags \| PART_BP` | cleared bits another breakpoint at the same address still wanted |
+
+A bank-relative breakpoint occupies **eight** addresses, so a collision is eight times likelier than
+it looks. `refreshFlagsAt(address)` now derives the word from the definitions — the only approach
+where this cannot be got wrong — and the four sites call it. The "disabled" marker is decided *per
+kind*, from whether every contributor is disabled, so a disabled breakpoint cannot mask an enabled
+one sharing its address.
+
+Deriving the flags then exposed three more, because a derived answer is only as good as what it
+derives from:
+
+- **`addBreakpoint` dropped `disabled` and `hitCount`** when it rebuilt the stored definition field
+  by field. Survivable while the flags came from the *incoming* breakpoint — only `listBreakpoints`
+  was short, which is why the breakpoint dialog never showed a hit count — but fatal once the flags
+  are derived: a breakpoint added disabled would have come out armed. Both fields are carried now.
+- **`addPartitionEntry` hardcoded its entry as enabled**, so a partition-scoped or bank-relative
+  breakpoint *added* disabled was armed. Every caller covered for it by calling `enableBreakpoint`
+  afterwards — `applyBreakpointEdit` and `resetBreakpointsTo` both do, and both say in a comment
+  that they must. That is how a defect survives: the workaround sits in the two paths anyone would
+  test through.
+- **`collectBpFlags` withheld `EXEC_BP` for a `resolvedPartition` but never granted `PART_BP` for
+  one**, so a breakpoint carrying only a resolved partition got no execution flag of either kind and
+  could never fire. Invisible until §13.4 gave `resolvedPartition` its first writer — which is
+  exactly what the plan said about the consumer side being "already written and idle". It was half
+  written.
+
+`test/debug/BreakpointFlagIntegrity.test.ts` (18) pins all of it; each case failed before its fix.
+The rest of the suite — 245 breakpoint tests across ten files — passed unchanged throughout, which is
+the evidence that deriving the flags preserved semantics rather than quietly redefining them.
 
 ### 13.1 Labels as live symbols
 
@@ -945,7 +1523,58 @@ Stack panel. The hook already exists (`zx-spectrum-next-disassembler.ts`, instal
 `setCustomDisassembler`). Sidecar `bytes`/`words`/`skip` regions also stop the live disassembler
 decoding data as code.
 
-### 13.2 Label-anchored breakpoints (Q3)
+### 13.2 Label-anchored breakpoints (Q3) — ◐ **mechanism done, two entry points owed**
+
+In: the fields, the key notation, the resolution, the arming, and the sidecar-driven resolver.
+Owed: the `bp-set` grammar and a UI affordance for *creating* one, plus sidecar persistence.
+
+#### Identity is the label; the site is only ever resolved
+
+The rule the whole shape depends on. `buildBreakpointKey` gained a **first** branch — before address
+and bank — that reads only the *stated* fields, so a rebuild that moves `DrawSprite` leaves the key
+alone. Keying it by where it resolved to would change its identity every time the code moved, which
+is the one thing it exists not to do.
+
+`effectiveBankSite(bp)` is the bank-relative twin of `address ?? resolvedAddress`, and the single
+place that fallback lives: the arming, the partition test and the one-shot consumption all go
+through it and none of them can tell a stated site from a resolved one. It takes the pair
+**atomically** — for a label-anchored breakpoint `bank` is the *scope its name was looked up in*,
+not a site, so mixing a stated bank with a resolved offset would be reading two different things as
+one.
+
+Resolution follows §13.2's rule exactly: a **local** label's value is bank-relative so it resolves
+to a bank site; a **global** label's is a 16-bit address so it resolves to an address. The scope is
+taken from the breakpoint rather than searched for — `Shared` can be both a global label and a local
+one, and preferring one would make the two breakpoints the same whenever only one label existed and
+then silently different once the other was added.
+
+#### A pre-existing defect this uncovered: `resetBreakpointsTo` never replaced anything
+
+`breakpointMatchesScope` takes a `BreakpointScope` **object**. Passed the bare string `"project"` it
+fell off the end of its switch and returned `undefined` — falsy — and `resetBreakpointsTo` reads the
+predicate to decide what *survives*. So every breakpoint survived and the replace quietly became an
+append.
+
+It hid because a breakpoint's key normally implies where it is armed: re-adding the same key
+overwrote the definition, and the duplicate *arming* was invisible. Label-anchored breakpoints
+separate identity from site, which is what exposed it — as a breakpoint still firing at the address
+its label had moved away from.
+
+Three **test** call sites were passing the string; `build:check` does not type-check `test/`, so
+nothing told them. One of those was this session's own "survives a scoped reset" test, which was
+therefore passing for the wrong reason. All three now pass objects, and the switch has a `default`
+that throws: a closed union deserves an exhaustiveness guard precisely because the silent branch is
+this expensive.
+
+#### Deliberately not persisted yet
+
+`toSidecarBreakpoints` skips label-anchored breakpoints outright. A *resolved* one has an effective
+bank site, so anything keyed off `isBankRelative` would store it as a bare bank and offset — losing
+the label that is its identity and reloading as a different kind of breakpoint that no longer
+follows anything. They need their own sidecar field. Until then they are session-lived, which is
+honest; a lossy save is not.
+
+#### Original plan
 
 A third binding mode: "break at `DrawSprite` in bank `$20`", resolved through the sidecar's label
 table as a source breakpoint resolves through the compiler's list file — and surviving a rebuild that
@@ -964,13 +1593,37 @@ breakpoint. Keys are file-qualified (§4.4, §4.7).
 Paused at an address inside a bank: "add a label here in the NEX annotations" — closing the
 reverse-engineering loop.
 
-### 13.4 Source breakpoints carry the compiler's bank
+### 13.4 Source breakpoints carry the compiler's bank — ✅ **done**
 
-For a project that builds a NEX, `ListFileItem.segmentIndex` → `BinarySegment.bank`
-(`CompilerInfo.ts:603-612`, `:54-78`) is known and discarded; `refreshSourceCodeBreakpoints` takes
-only `lineInfo.address` (`common/utils/breakpoints.ts:109-114`). Carrying it makes a source breakpoint
-in one `.bank` section stop firing inside another — a real misfire today, since Next `.bank` sections
-routinely share addresses.
+The join was there to be made: `ListFileItem.segmentIndex` indexes `compilation.result.segments`,
+and `.bank N, offset` records `bank`, `bankOffset` and `startAddress` on the segment. Nothing joined
+them, so the partition was discarded and a breakpoint on a line in one `.bank` section fired inside
+another — both are assembled at the same Z80 addresses, which is the point of `.bank`.
+
+`resolvedPartitionFor` (in `@common/utils/source-breakpoint-partition.ts`) does the conversion, and
+it is **machine-dependent**, which the plan did not say:
+
+- on the **Next** a partition is an 8K page (Q9), so a 16K bank is two of them and which one a line
+  is in depends on its offset — the same conversion `bankRelativePartition` does for a bank-relative
+  breakpoint;
+- on the **128K and +3** a partition *is* the 16K bank, so it passes through.
+
+Getting that backwards is silent in the worst way: the breakpoint compares against a number that is
+never paged anywhere, and simply never fires. Unbanked code stays partitionless, because such a
+breakpoint must keep firing whatever is paged in.
+
+`ResolvedBreakpoint` gained `partition`, `resolveBreakpoint` gained the parameter, and — the part
+that is easy to miss — it also **registers the partition entry** in `breakpointData`. Setting only
+the field leaves `PART_BP` over an empty list, which reads as "no breakpoint here": listed, shown in
+the gutter, unable to fire. `resetBreakpointResolution` removes the entry again, matching on
+*untagged* entries only, since a bank-relative breakpoint can share both the address and the
+partition and owns its own entry's lifetime.
+
+**Not done: resolving to a bank-relative site.** A partition makes the breakpoint fire only in the
+right bank, which is what §13.4 asked for. Resolving to `bank` + `bankOffset` instead would also make
+it follow the bank wherever it is paged — strictly better, and the natural shape given `.bank`
+records exactly those two numbers — but it needs `resolveBreakpoint` to arm eight addresses rather
+than one. Worth doing with §13.2, which needs the same machinery.
 
 ---
 
@@ -980,7 +1633,7 @@ routinely share addresses.
 | --- | --- |
 | `node` project | everything decidable without React: ownership scoping, bank-relative firing, key round-trips, the entry-state map, header validation, the extracted annotation helpers, the two cores' 8K agreement |
 | `jsdom` project | gutter gestures, the badge, the live/file toggle, the diff rendering — and every pre-existing annotation test, unchanged |
-| Running app | the injection flow (timing-dependent by nature), the entry stop, the measured boot-time improvement |
+| Running app | the injection flow (timing-dependent by nature), the keystroke-suppression window, the gutter's run-here gesture, the measured boot-time improvement |
 
 Two tests are load-bearing enough to name as acceptance criteria:
 
@@ -1074,6 +1727,22 @@ small enough not to block a start, and big enough not to want discovering during
 ---
 
 ## 19. Concurrent work in the worktree — read before starting Phase 2
+
+> ## ✅ Resolved — the concurrent work has landed
+>
+> `DebugStepDecision.ts` and its tests are tracked and committed. Consequence 3 below ("whichever
+> lands second rebases") is settled: it landed first, and this plan's §10.3 now **modifies it** —
+> `consumeOneShotsAt` is called on the stop path, inside the `lastBreakpoint` guard. Consequence 5
+> is confirmed: the decision function passes `getPartition`'s value straight through to
+> `shouldStopAt` and interprets nothing, so Q9's change of meaning needed nothing here.
+>
+> Both of its test files carried a `debugSupport` stub built with `as unknown as IDebugSupport`, so
+> adding a method to the interface type-checked and failed at runtime. Both stubs now provide
+> `consumeOneShotsAt`. The equivalence test's header records that one-shot consumption is a
+> deliberate behaviour change *after* the fold — like `retExecuted` — and that its matrix arms no
+> one-shot, so the added call cannot make the two paths diverge there.
+
+The rest of this section is kept as the record of the situation it described.
 
 While this plan was being drafted, uncommitted changes appeared in the working tree from another
 session, and they overlap Phase 2 directly:

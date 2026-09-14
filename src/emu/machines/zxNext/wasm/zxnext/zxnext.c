@@ -467,7 +467,7 @@ uint32_t zxnextGetSpritePatternByte4(uint32_t variant, uint32_t offset) {
   return zxnextSpritesGetPatternByte4(variant, offset);
 }
 uint32_t zxnextGetLastVisibleSpriteIndex(void) { return zxnextSpritesGetLastVisibleSpriteIndex(); }
-void zxnextCopperTick(uint32_t vc, uint32_t hc, uint32_t totalVc) { zxnextCopperExecuteTick(vc, hc, totalVc); }
+void zxnextCopperTick(uint32_t cvc, uint32_t hc) { zxnextCopperExecuteTick(cvc, hc); }
 uint32_t zxnextCopperRead(uint32_t address) { return zxnextCopperReadMemory(address); }
 uint32_t zxnextGetCopperNextReg(uint32_t reg) { return zxnextCopperGetNextReg(reg); }
 uint32_t zxnextGetCopperStartMode(void) { return zxnextCopperGetStartMode(); }

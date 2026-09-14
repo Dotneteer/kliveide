@@ -6,7 +6,11 @@
 static void zxnextCopperReset(void);
 static void zxnextCopperSetNextReg(uint32_t reg, uint32_t value);
 static uint32_t zxnextCopperGetNextReg(uint32_t reg);
-static void zxnextCopperExecuteTick(uint32_t vc, uint32_t hc, uint32_t totalVc);
+static void zxnextCopperExecuteTick(uint32_t cvc, uint32_t hc);
+static void zxnextCopperResyncBeam(void);
+static void zxnextCopperOnFrameCompleted(void);
+static void zxnextCopperAdvanceTo(uint32_t frameTact);
+static uint32_t zxnextCopperGetFrameTact(void);
 static uint32_t zxnextCopperReadMemory(uint32_t address);
 static uint32_t zxnextCopperGetStartMode(void);
 static uint32_t zxnextCopperGetInstructionAddress(void);

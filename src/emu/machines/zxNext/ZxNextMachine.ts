@@ -21,7 +21,7 @@ import { PaletteDevice } from "./PaletteDevice";
 import { TilemapDevice } from "./TilemapDevice";
 import { SpriteDevice } from "./SpriteDevice";
 import { DmaDevice } from "./DmaDevice";
-import { CopperDevice } from "./CopperDevice";
+import { CopperDevice, CopperStartMode } from "./CopperDevice";
 import { CtcDevice } from "./CtcDevice";
 import { I2cDevice } from "./I2cDevice";
 import { UartDevice } from "./UartDevice";
@@ -1630,7 +1630,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   onTactIncremented(): void {
     if (this.frameCompleted) return;
     while (this.lastRenderedFrameTact < this.currentFrameTact) {
-      this.copperDevice.executeTick(this._copperCurrentLine, this._copperCurrentColumn);
+      // The copper compares against the rebased copper line (hardware `cvc`), not the raw
+      // ULA vertical counter. Guard on the start mode so a stopped copper costs nothing.
+      if (this.copperDevice.startMode !== CopperStartMode.FullyStopped) {
+        this.copperDevice.executeTick(
+          this.composedScreenDevice.vcToCopperLine(this._copperCurrentLine),
+          this._copperCurrentColumn
+        );
+      }
       this._copperCurrentColumn++;
       if (this._copperCurrentColumn >= this._totalHC) {
         this._copperCurrentColumn = 0;

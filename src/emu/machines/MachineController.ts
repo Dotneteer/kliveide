@@ -45,6 +45,18 @@ import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
+/** How often to check whether an injection flow's keystrokes have landed. */
+const KEYSTROKE_SUPPRESSION_POLL_MS = 50;
+
+/**
+ * How long breakpoint suppression may last at the outside.
+ *
+ * A backstop, not a timing assumption: the queue normally drains in a few frames and the poll ends
+ * the window then. This only matters if a machine somehow never drains it, and it bounds how long
+ * the user's breakpoints can stay ignored.
+ */
+const KEYSTROKE_SUPPRESSION_TIMEOUT_MS = 10_000;
+
 class MachineOperationCanceledError extends Error {
   constructor() {
     super("Project startup canceled.");
@@ -537,9 +549,13 @@ export class MachineController implements IMachineController {
         this.context.terminationPartition = undefined;
         this.context.terminationPoint = undefined;
         this.context.debugSupport = this.debugSupport;
+        this.suppressUserBreakpointsUntilKeystrokesLand(operationRevision);
         this.machine?.awakeCpu();
         this.store.dispatch(setDebuggingAction(true), "emu");
       } else {
+        // --- No suppression here: this branch starts a machine that is stopped or paused, so
+        // --- nothing is in flight, and a window opened before `startDebug` would be closed by the
+        // --- first poll (the machine is not Running yet) rather than by the keystrokes landing.
         await this.startDebug(operationRevision);
       }
     } else {
@@ -555,7 +571,7 @@ export class MachineController implements IMachineController {
     if (!this.debugSupport) return;
     this.debugSupport.resetBreakpointResolution();
     for (const bp of bps) {
-      this.debugSupport.resolveBreakpoint(bp.resource, bp.line, bp.address);
+      this.debugSupport.resolveBreakpoint(bp.resource, bp.line, bp.address, bp.partition);
     }
   }
 
@@ -805,6 +821,54 @@ export class MachineController implements IMachineController {
     if (operationRevision !== undefined && operationRevision !== this._operationRevision) {
       throw new MachineOperationCanceledError();
     }
+  }
+
+  /**
+   * Ignore user breakpoints until the injection flow's queued keystrokes have landed.
+   *
+   * Debug mode is armed at the *end* of the flow, and for the Next it is armed while the machine is
+   * still running with `.nexload` half-typed (see the `Start` step above, which starts in normal
+   * mode for exactly this reason). A keystroke carries an absolute tact window: a user breakpoint
+   * that pauses the machine in this window expires every stroke that has not been pressed yet, and
+   * the user is left looking at a truncated command line and a program that never loaded. The flow's
+   * own session-owned stop — the NEX entry-point breakpoint — still fires, because that is what
+   * `suppressUserBreakpoints` lets through.
+   *
+   * Fire-and-forget, and self-limiting: the suppression is lifted as soon as *any* of these is true,
+   * so there is no path on which it can outlive the flow and silently disarm the user's breakpoints.
+   *
+   * - the keystroke queue is empty — the hazard is over;
+   * - the machine is no longer running — it paused (very likely *at* the entry stop) or stopped, and
+   *   whatever the flow was waiting for will not arrive while it is not executing;
+   * - a newer machine operation started — this flow was superseded or cancelled;
+   * - the deadline passed — a machine that never drains its queue still gets its breakpoints back.
+   *
+   * See `.plans/NEX_DEBUGGING_PLAN.md` §9.5 and §10.3.
+   */
+  private suppressUserBreakpointsUntilKeystrokesLand(operationRevision?: number): void {
+    const debugSupport = this.debugSupport;
+    if (!debugSupport) return;
+
+    debugSupport.suppressUserBreakpoints = true;
+    const deadline = Date.now() + KEYSTROKE_SUPPRESSION_TIMEOUT_MS;
+
+    const lift = async () => {
+      try {
+        while (true) {
+          await delay(KEYSTROKE_SUPPRESSION_POLL_MS);
+          if (operationRevision !== undefined && operationRevision !== this._operationRevision) {
+            return;
+          }
+          if (this._machineState !== MachineControllerState.Running) return;
+          if ((this.machine?.getKeyQueueLength() ?? 0) === 0) return;
+          if (Date.now() >= deadline) return;
+        }
+      } finally {
+        // --- Unconditional: every way out of that loop ends the window.
+        debugSupport.suppressUserBreakpoints = false;
+      }
+    };
+    void lift();
   }
 
   /**

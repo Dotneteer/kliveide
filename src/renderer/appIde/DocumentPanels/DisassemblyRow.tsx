@@ -4,7 +4,7 @@ import { isWidePartitionLabel } from "@renderer/controls/data/partitionWidth";
 import { memo } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
+import { getBreakpointAddressSpec } from "@common/utils/breakpoints";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Label } from "@renderer/controls/layout/Label";
 import { Secondary } from "@renderer/controls/layout/Secondary";
@@ -12,6 +12,7 @@ import { Value } from "@renderer/controls/layout/Value";
 import { Icon } from "@controls/Icon";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { BreakpointIndicator } from "./BreakpointIndicator";
+import { isBinaryBreakpoint } from "@renderer/appIde/utils/breakpoint-form";
 import { formatBranchReadout, isCall, type BranchVerdict } from "./branchVerdict";
 import type { DisassemblyItem, DisassemblyOperandInfo } from "../disassemblers/common-types";
 import { toDecimal3, toDecimal5, toHexa2, toHexa4 } from "../services/ide-commands";
@@ -171,11 +172,25 @@ export function deriveDisassemblyRowViewModel({
   return {
     address,
     addressText: decimalView ? toDecimal5(address) : toHexa4(address),
-    // --- Only a source-bound breakpoint is named by its key here; an address-bound one shows its
-    // --- raw address. The label map matters for neither, but the display form requires it.
-    breakpointAddress: breakpoint?.resource
-      ? getBreakpointDisplayKey(breakpoint, partitionLabels)
-      : address,
+    /*
+     * A breakpoint that is not bound to a plain address is named by its *address spec*; an
+     * address-bound one shows its raw address.
+     *
+     * That covers two cases. A source-bound breakpoint reads `[file]:12`, as it always did. And a
+     * **bank-relative** one reads `05:+$0100` — which matters beyond display, because
+     * `BreakpointIndicator` builds its `bp-set` / `bp-del` / `bp-en` command from this very string.
+     * Passing the row's address instead would arm a breakpoint at a Z80 address rather than at an
+     * offset in the bank the row belongs to.
+     *
+     * The address *spec*, not the display key: the key ends in `:W` for a memory-write breakpoint,
+     * and the commands take the kind as an option rather than as part of the address, so the key
+     * produced `bp-del 05:+$0100:W -w` — which parses as nothing. The address-bound case never hit
+     * this only because it passes a number rather than a key.
+     */
+    breakpointAddress:
+      breakpoint?.resource || breakpoint?.bankOffset !== undefined
+        ? getBreakpointAddressSpec(breakpoint, partitionLabels)
+        : address,
     breakpointPartition:
       breakpoint?.partition !== undefined ? (partitionLabels[breakpoint.partition] ?? "?") : undefined,
     execPoint: address === pausedPc,
@@ -363,9 +378,11 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   ...viewModelParams
 }: DisassemblyRowProps) {
   const breakpoint = viewModelParams.breakpoint;
-  // --- Only an address-bound breakpoint is editable here. A source-bound one belongs to the
-  // --- editor's glyph margin, which places and moves it by line.
-  const editable = onEditBreakpoint && breakpoint && breakpoint.address !== undefined;
+  // --- Address-bound and bank-relative breakpoints are both editable: the dialog authors either
+  // --- shape. A source-bound one is not — it belongs to the editor's glyph margin, which places
+  // --- and moves it by line. `isBinaryBreakpoint` is the same gate the dialog's opener uses, so
+  // --- the row cannot offer an edit the dialog would refuse.
+  const editable = onEditBreakpoint && breakpoint && isBinaryBreakpoint(breakpoint);
   // --- A synopsis row stands in for a comment above the code, not for an instruction: it has no
   // --- address, so there is no view model to derive and no instruction columns to render.
   const isPrefixComment = item.prefixComment !== undefined;
@@ -428,6 +445,20 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       ) : (
         <>
           <LabelSeparator />
+          {/*
+            * The kind flags are passed, not merely displayed.
+            *
+            * `BreakpointIndicator` builds its `bp-set` / `bp-del` / `bp-en` commands from these,
+            * so a gutter showing a memory breakpoint while claiming it is an execution one issued
+            * `bp-del $8000` for a breakpoint whose key is `$8000 R` — no match, nothing removed,
+            * and a dot that could not be clicked away. Watchpoints on a NEX bank made that
+            * reachable; the live view could hit it too.
+            *
+            * `showType` stays off: the gutter is one 16px cell, and a second glyph beside it would
+            * change every row's geometry. The kind is named in the indicator's tooltip instead, and
+            * `selectRowBreakpoint` prefers an execution breakpoint when a row has both, so the
+            * common case is the one the column is about.
+            */}
           <BreakpointIndicator
             showType={false}
             partition={viewModel.breakpointPartition}
@@ -435,6 +466,11 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             hasBreakpoint={viewModel.hasBreakpoint}
             current={viewModel.execPoint}
             disabled={viewModelParams.breakpoint?.disabled ?? false}
+            memoryRead={breakpoint?.memoryRead}
+            memoryWrite={breakpoint?.memoryWrite}
+            ioRead={breakpoint?.ioRead}
+            ioWrite={breakpoint?.ioWrite}
+            ioMask={breakpoint?.ioMask}
             onEdit={editable ? () => onEditBreakpoint(breakpoint) : undefined}
           />
           {/*

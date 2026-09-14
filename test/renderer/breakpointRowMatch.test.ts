@@ -185,3 +185,61 @@ describe("selectRowBreakpoint", () => {
     expect(selectRowBreakpoint([], 3)).toEqual(undefined);
   });
 });
+
+describe("selectRowBreakpoint tie-breakers", () => {
+  /*
+   * Watchpoints made ties ordinary: "stop when this instruction runs" and "stop when this byte is
+   * written" are different questions about the same address, and a row has one gutter cell.
+   *
+   * It matters beyond the glyph. `BreakpointIndicator` builds its `bp-del` command from the
+   * breakpoint the row hands it, so picking the watchpoint where an execution breakpoint also sits
+   * issued `bp-del $8000` for a breakpoint whose key is `$8000 R` — no match, nothing removed, and
+   * a dot the user could not click away. See `.plans/NEX_DEBUGGING_PLAN.md` §10.2.
+   */
+
+  const exec: BreakpointInfo = { address: 0x8000, exec: true };
+  const read: BreakpointInfo = { address: 0x8000, memoryRead: true };
+  const write: BreakpointInfo = { address: 0x8000, memoryWrite: true };
+
+  it("prefers an execution breakpoint, whichever order the list arrives in", () => {
+    expect(selectRowBreakpoint([exec, read], undefined)).toBe(exec);
+    expect(selectRowBreakpoint([read, exec], undefined)).toBe(exec);
+  });
+
+  it("shows a watchpoint when that is all there is", () => {
+    expect(selectRowBreakpoint([write], undefined)).toBe(write);
+  });
+
+  it("treats a breakpoint with no kind flags at all as execution", () => {
+    // --- What `bp-set` with no options means, and what a breakpoint restored from an older project
+    // --- file looks like.
+    const bare: BreakpointInfo = { address: 0x8000 };
+    expect(selectRowBreakpoint([read, bare], undefined)).toBe(bare);
+  });
+
+  it("prefers an enabled breakpoint over a disabled one of the same kind", () => {
+    const off: BreakpointInfo = { address: 0x8000, exec: true, disabled: true };
+    expect(selectRowBreakpoint([off, exec], undefined)).toBe(exec);
+    expect(selectRowBreakpoint([exec, off], undefined)).toBe(exec);
+  });
+
+  it("keeps partition specificity above kind", () => {
+    // --- Specificity was the defect this module was written for; it must not be traded away for a
+    // --- kind preference. A partition-scoped watchpoint beats a partitionless exec breakpoint.
+    const scopedRead: BreakpointInfo = { address: 0x8000, partition: 3, memoryRead: true };
+    expect(selectRowBreakpoint([exec, scopedRead], 3)).toBe(scopedRead);
+  });
+
+  it("still excludes a breakpoint scoped to another partition", () => {
+    const elsewhere: BreakpointInfo = { address: 0x8000, partition: 7, exec: true };
+    expect(selectRowBreakpoint([elsewhere], 3)).toEqual(undefined);
+    // --- ...and does not let it beat a valid partitionless one.
+    expect(selectRowBreakpoint([elsewhere, read], 3)).toBe(read);
+  });
+
+  it("prefers an enabled partition match over a disabled one", () => {
+    const off: BreakpointInfo = { address: 0x8000, partition: 3, exec: true, disabled: true };
+    const on: BreakpointInfo = { address: 0x8000, partition: 3, exec: true };
+    expect(selectRowBreakpoint([off, on], 3)).toBe(on);
+  });
+});

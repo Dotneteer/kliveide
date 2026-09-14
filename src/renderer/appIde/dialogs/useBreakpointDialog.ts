@@ -10,6 +10,7 @@ import { derivePartitionSetup } from "@renderer/features/memory/memoryViewModel"
 import { applyBreakpointEdit } from "@renderer/appIde/utils/breakpoint-actions";
 import { BreakpointDialog } from "./BreakpointDialog";
 import { setIdeStatusMessageAction } from "@state/actions";
+import { MI_ZXNEXT } from "@common/machines/constants";
 
 /**
  * Opens the breakpoint dialog and installs whatever it returns.
@@ -87,6 +88,8 @@ export function useBreakpointDialog() {
         partitionLabels,
         // --- `banksView` is exactly "this machine declares MF_ROM or MF_BANK".
         supportsPartitions: machineSetup.banksView,
+        // --- Next-only, matching `bp-set`'s own guard on the grammar.
+        supportsBankRelative: machineId === MI_ZXNEXT,
         existingKeys: (bpState?.breakpoints ?? []).map((bp) =>
           getBreakpointDisplayKey(bp, partitionLabels)
         ),

@@ -687,7 +687,15 @@ export type NextRegState = {
 
 // --- The response with the Next register device state
 export type NextMemoryMapping = {
-  allRamsBanks?: number[];
+  /**
+   * The four 16K banks visible in all-RAM mode, or absent when the machine is not in it.
+   *
+   * Spelled `allRamsBanks` until now, while both producers wrote `allRamBanks` — so the Memory
+   * Mapping panel's "All RAM" row read `Off` unconditionally. A silent mismatch rather than a type
+   * error because the producers build this object as a literal for a structurally-typed target,
+   * where an unknown extra property is only rejected on a *direct* literal assignment.
+   */
+  allRamBanks?: number[];
   selectedRom: number;
   selectedBank: number;
   port7ffd: number;

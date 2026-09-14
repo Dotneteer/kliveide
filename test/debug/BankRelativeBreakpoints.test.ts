@@ -301,3 +301,104 @@ describe("DebugSupport one-shot breakpoints", () => {
     expect(ds.breakpoints.length).toEqual(2);
   });
 });
+
+describe("suppressing user breakpoints during a launch flow", () => {
+  /*
+   * Loading a NEX means booting NextZXOS and *typing* `.nexload` at its command line. A keystroke
+   * carries an absolute tact window, so a user breakpoint that pauses the machine while strokes are
+   * still queued expires every one that has not been pressed yet, and the command line is left
+   * half-written. The flow's own session-owned stop still has to fire, which is what this flag
+   * separates. See `.plans/NEX_DEBUGGING_PLAN.md` §9.5.
+   */
+
+  it("lets a session-owned breakpoint through and holds a user one back", () => {
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ address: 0x8000, exec: true });
+    ds.addBreakpoint({ address: 0x9000, exec: true, owner: { kind: "session" } });
+
+    ds.suppressUserBreakpoints = true;
+    expect(ds.shouldStopAt(0x8000, () => undefined)).toEqual(false);
+    expect(ds.shouldStopAt(0x9000, () => undefined)).toEqual(true);
+  });
+
+  it("changes nothing while it is off", () => {
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ address: 0x8000, exec: true });
+    expect(ds.shouldStopAt(0x8000, () => undefined)).toEqual(true);
+  });
+
+  it("lets a session-owned bank-relative breakpoint through wherever its bank is paged", () => {
+    // --- The entry-point stop is exactly this shape: the bank is not paged in when it is armed.
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ bank: 5, bankOffset: 0x0100, exec: true, owner: { kind: "session" } });
+    ds.suppressUserBreakpoints = true;
+
+    expect(ds.shouldStopAt(0x8100, paged({ 4: BANK5_LOW }))).toEqual(true);
+    // --- Same breakpoint, a slot where its bank is not mapped: the partition test still rejects it.
+    expect(ds.shouldStopAt(0xc100, paged({ 6: 0x20 }))).toEqual(false);
+  });
+
+  it("holds back a user bank-relative breakpoint", () => {
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ bank: 5, bankOffset: 0x0100, exec: true });
+    ds.suppressUserBreakpoints = true;
+    expect(ds.shouldStopAt(0x8100, paged({ 4: BANK5_LOW }))).toEqual(false);
+  });
+
+  it("holds back a user breakpoint that shares an address with a session one", () => {
+    // --- A `Set` of session addresses maintained alongside the flags would answer "yes" here and
+    // --- let the user's breakpoint fire after all, because both live at the same address.
+    const ds = new DebugSupport();
+    const partition = bankRelativePartition(5, 0x0100);
+    ds.addBreakpoint({ address: 0x8100, partition, exec: true });
+    ds.addBreakpoint({ bank: 5, bankOffset: 0x0100, exec: true, owner: { kind: "session" } });
+
+    ds.suppressUserBreakpoints = true;
+    // --- The session one is what stops the machine, and it does stop it.
+    expect(ds.shouldStopAt(0x8100, paged({ 4: partition }))).toEqual(true);
+
+    // --- With the session breakpoint gone, the user's own is suppressed again.
+    ds.removeBreakpoint({ bank: 5, bankOffset: 0x0100, exec: true, owner: { kind: "session" } });
+    expect(ds.shouldStopAt(0x8100, paged({ 4: partition }))).toEqual(false);
+  });
+
+  it("stops honouring a session breakpoint once it is removed", () => {
+    // --- The derived predicate has to follow removal, or a one-shot the loop just consumed would
+    // --- keep its address privileged for the rest of the window.
+    const ds = new DebugSupport();
+    const bp: BreakpointInfo = { address: 0x9000, exec: true, owner: { kind: "session" } };
+    ds.addBreakpoint(bp);
+    ds.suppressUserBreakpoints = true;
+    expect(ds.shouldStopAt(0x9000, () => undefined)).toEqual(true);
+
+    ds.removeBreakpoint(bp);
+    expect(ds.shouldStopAt(0x9000, () => undefined)).toEqual(false);
+  });
+
+  it("does not honour a disabled session breakpoint", () => {
+    const ds = new DebugSupport();
+    const bp: BreakpointInfo = { address: 0x9000, exec: true, owner: { kind: "session" } };
+    ds.addBreakpoint(bp);
+    ds.enableBreakpoint(bp, false);
+    ds.suppressUserBreakpoints = true;
+    expect(ds.shouldStopAt(0x9000, () => undefined)).toEqual(false);
+  });
+
+  it("survives a scoped reset, which re-adds every breakpoint", () => {
+    // --- `resetBreakpointsTo` rebuilds the flags from scratch; a cached set would go stale here.
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ address: 0x9000, exec: true, owner: { kind: "session" } });
+    ds.resetBreakpointsTo([{ address: 0x8000, exec: true }], { kind: "project" });
+
+    ds.suppressUserBreakpoints = true;
+    expect(ds.shouldStopAt(0x8000, () => undefined)).toEqual(false);
+    // --- The session breakpoint was not in scope, so it survived the reset and still fires.
+    expect(ds.shouldStopAt(0x9000, () => undefined)).toEqual(true);
+  });
+
+  it("costs nothing at an address with no breakpoint", () => {
+    const ds = new DebugSupport();
+    ds.suppressUserBreakpoints = true;
+    expect(ds.shouldStopAt(0x1234, () => undefined)).toEqual(false);
+  });
+});

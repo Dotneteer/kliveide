@@ -13,7 +13,11 @@ import { TapeMode } from "@emu/abstractions/TapeMode";
 import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { createMainApi } from "@common/messaging/MainApi";
 import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
-import { UNPAGED_PARTITION_LABEL } from "./MemoryDevice";
+import {
+  allRamBanksFor,
+  bank16kForPartition,
+  UNPAGED_PARTITION_LABEL
+} from "./MemoryDevice";
 import { ZxNextMachine } from "./ZxNextMachine";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
@@ -1306,7 +1310,10 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       runtime.memory[index & (runtime.memory.length - 1)] = value & 0xff;
     };
     this.memoryDevice.getMemoryMappings = () => ({
-      allRamBanks: undefined,
+      // --- Was hardcoded `undefined`, which is why the Memory Mapping panel's "All RAM" row read
+      // --- `Off` on this machine whatever the program had done. `getWasmV2Port1ffdValue` already
+      // --- normalises NextReg $8E into the `$1FFD` encoding the shared derivation expects.
+      allRamBanks: allRamBanksFor(this.getWasmV2Port1ffdValue()),
       selectedRom: this.getSelectedRomPage(),
       selectedBank: this.getSelectedRamBank(),
       port7ffd: this.getWasmV2Port7ffdValue(),
@@ -1334,7 +1341,11 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
         return {
           readOffset: pageIndex * 0x2000,
           writeOffset: partition === undefined || isRomPage ? null : pageIndex * 0x2000,
-          bank16k: partition ?? 0xff,
+          // --- A real 16K bank, not the partition. A partition is an 8K page after Q9, so passing
+          // --- it here printed the 8K number under a field the Memory Mapping panel labels
+          // --- "16K bank" — and beside `bank8k`, which is the same number, so the row showed it
+          // --- twice. The interpreted `MemoryDevice` has always reported `bank8k >> 1`.
+          bank16k: bank16kForPartition(partition),
           bank8k: this.requireWasmV2Runtime().nextRegs[0x50 + pageIndex]
         };
       })

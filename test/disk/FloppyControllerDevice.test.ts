@@ -240,8 +240,13 @@ describe("FloppyControllerDevice", () => {
     fd.turnOnMotor();
     updm.emulateFrameCompletion(11);
 
+    // 11 executed frames accelerate the motor 11 times, at 2 units per frame. This expected 20
+    // while `Z80MachineBase.reset()` left `frameCompleted` false: the frame runner then skipped
+    // frame initialization for the first frame, so the per-frame device tick that lives in
+    // `onInitNewFrame` fired only 10 times for 11 frames. See
+    // `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.11.
     expect(fdt.currentDrive.motorOn).toBe(true);
-    expect(fdt.currentDrive.motorSpeed).toBe(20);
+    expect(fdt.currentDrive.motorSpeed).toBe(22);
     expect(fdt.currentDrive.motorAccelerating).toBe(true);
 
     expect(fdt.driveB.motorOn).toBe(false);
@@ -275,7 +280,7 @@ describe("FloppyControllerDevice", () => {
     updm.emulateFrameCompletion(11);
 
     expect(fdt.currentDrive.motorOn).toBe(true);
-    expect(fdt.currentDrive.motorSpeed).toBe(20);
+    expect(fdt.currentDrive.motorSpeed).toBe(22);
     expect(fdt.currentDrive.motorAccelerating).toBe(true);
 
     expect(fdt.driveB.motorOn).toBe(false);
@@ -285,7 +290,7 @@ describe("FloppyControllerDevice", () => {
     fd.turnOffMotor();
 
     expect(fdt.currentDrive.motorOn).toBe(false);
-    expect(fdt.currentDrive.motorSpeed).toBe(20);
+    expect(fdt.currentDrive.motorSpeed).toBe(22);
     expect(fdt.currentDrive.motorAccelerating).toBe(false);
 
     expect(fdt.driveB.motorOn).toBe(false);
@@ -302,7 +307,7 @@ describe("FloppyControllerDevice", () => {
     updm.emulateFrameCompletion(11);
 
     expect(fdt.currentDrive.motorOn).toBe(true);
-    expect(fdt.currentDrive.motorSpeed).toBe(20);
+    expect(fdt.currentDrive.motorSpeed).toBe(22);
     expect(fdt.currentDrive.motorAccelerating).toBe(true);
 
     expect(fdt.driveB.motorOn).toBe(false);
@@ -313,7 +318,7 @@ describe("FloppyControllerDevice", () => {
     updm.emulateFrameCompletion(6);
 
     expect(fdt.currentDrive.motorOn).toBe(false);
-    expect(fdt.currentDrive.motorSpeed).toBe(8);
+    expect(fdt.currentDrive.motorSpeed).toBe(10);
     expect(fdt.currentDrive.motorAccelerating).toBe(false);
 
     expect(fdt.driveB.motorOn).toBe(false);
@@ -330,7 +335,7 @@ describe("FloppyControllerDevice", () => {
     updm.emulateFrameCompletion(11);
 
     expect(fdt.currentDrive.motorOn).toBe(true);
-    expect(fdt.currentDrive.motorSpeed).toBe(20);
+    expect(fdt.currentDrive.motorSpeed).toBe(22);
     expect(fdt.currentDrive.motorAccelerating).toBe(true);
 
     expect(fdt.driveB.motorOn).toBe(false);

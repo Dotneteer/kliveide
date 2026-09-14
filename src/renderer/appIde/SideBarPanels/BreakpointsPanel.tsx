@@ -9,7 +9,7 @@ import { useState, useRef, useEffect } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./BreakpointsPanel.module.scss";
-import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
+import { getBreakpointAddressSpec } from "@common/utils/breakpoints";
 import { toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { CpuState } from "@common/messaging/EmuApi";
@@ -80,7 +80,10 @@ const breakpointTooltip = (
   // --- The row's own gestures. Only a binary breakpoint is editable here; a source-bound one is
   // --- placed and moved from the editor's glyph margin.
   lines.push("Right-click the row for more actions");
-  if (bp.address !== undefined) lines.push("Double-click the row to edit");
+  // --- `isBinaryBreakpoint`, not `bp.address !== undefined`: the same predicate the row's own
+  // --- double-click and the context menu use. A bank-relative breakpoint has no address and is
+  // --- editable, so the raw test promised no edit on a row that offers one.
+  if (isBinaryBreakpoint(bp)) lines.push("Double-click the row to edit");
   return lines.join("\n");
 };
 
@@ -338,10 +341,12 @@ export const BreakpointsPanel = () => {
           renderItem={(idx) => {
             try {
               const bp = bps[idx];
-              const addrKey = getBreakpointDisplayKey(
-                { ...bp, memoryRead: false, memoryWrite: false, ioRead: false, ioWrite: false },
-                partitionLabels
-              );
+              // --- The address *spec*, not the display key: the key ends in `:R`/`:W` for a
+              // --- watchpoint, and `BreakpointIndicator` builds `bp-*` commands from this string,
+              // --- which take the kind as an option instead. This panel cleared the kind flags
+              // --- inline to get the same result; `getBreakpointAddressSpec` is that, named, so
+              // --- the disassembly gutter could stop getting it wrong.
+              const addrKey = getBreakpointAddressSpec(bp, partitionLabels);
               const addr = bp.address;
               const disabled = bp.disabled ?? false;
               let isCurrent = false;

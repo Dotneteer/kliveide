@@ -112,6 +112,16 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
   ) {
     debugSupport.lastBreakpoint = pc;
     debugSupport.imminentBreakpoint = undefined;
+
+    /*
+     * A one-shot exists to stop the machine once — a run-to-cursor target, or the NEX entry-point
+     * stop — so it is spent here rather than left for the user to clear by hand.
+     *
+     * Inside the guard, not above it: the `lastBreakpoint` test rejects the re-trigger at the
+     * address the machine is *resuming from*, and that is not a hit. Consuming there would delete a
+     * one-shot the machine never actually stopped at.
+     */
+    debugSupport.consumeOneShotsAt(pc, getPartition(pc));
     return true;
   }
 

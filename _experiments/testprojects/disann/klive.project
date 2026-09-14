@@ -97,7 +97,7 @@
                 "column": 0
               },
               "viewState": {
-                "topAddress": 310,
+                "topAddress": 0,
                 "isFullView": true,
                 "currentSegment": 0,
                 "decimalView": false,
@@ -107,9 +107,17 @@
                 "screen": false,
                 "disassOffset": 0
               }
+            },
+            {
+              "type": "NexViewer",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex",
+              "position": {
+                "line": 0,
+                "column": 0
+              }
             }
           ],
-          "activeDocumentId": "$disassembly"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
         }
       ]
     }

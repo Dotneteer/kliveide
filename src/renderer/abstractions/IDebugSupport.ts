@@ -124,14 +124,35 @@ export interface IDebugSupport {
   resetBreakpointResolution(): void;
 
   /**
-   * Resolves the specified resouce breakpoint to an address
+   * Resolves the specified resouce breakpoint to an address, and optionally to a partition.
+   *
+   * @param partition The memory partition the line's code lives in, for a line inside a `.bank`
+   * segment. Absent for unbanked code, which stays partitionless.
    */
-  resolveBreakpoint(resource: string, line: number, address: number): void;
+  resolveBreakpoint(resource: string, line: number, address: number, partition?: number): void;
 
   /**
    * Renames breakpoints when the source file is renamed
    */
   renameBreakpoints(oldResource: string, newResource: string): void;
+
+  /**
+   * While set, only session-owned breakpoints may stop the machine.
+   *
+   * Set for the window in which an injection flow's keystrokes are still in flight: a user
+   * breakpoint pausing the machine there would expire every keystroke that has not landed yet and
+   * leave the OS command line half-typed. See `.plans/NEX_DEBUGGING_PLAN.md` §9.5.
+   */
+  suppressUserBreakpoints: boolean;
+
+  /**
+   * Removes every one-shot breakpoint that has just fired at `address`, and returns how many.
+   *
+   * @param address The address the machine stopped at
+   * @param partition The partition paged in at that address, so a one-shot bound to a bank that is
+   * not currently paged there is left armed
+   */
+  consumeOneShotsAt(address: number, partition: number | undefined): number;
 
   /**
    * Replaces the breakpoints owned by `scope`, leaving every other owner's alone.

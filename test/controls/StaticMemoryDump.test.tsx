@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ReactNode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 beforeEach(() => {
   Object.defineProperty(document, "queryCommandSupported", {
@@ -87,7 +88,33 @@ describe("StaticMemoryDump", () => {
     // --- Returning undefined lets `getRowSizes` fall back to its default, i.e. the 20/18px these
     // --- tests were written against.
     vi.doMock("@renderer/core/RendererProvider", () => ({
-      useGlobalSetting: () => undefined
+      useGlobalSetting: () => undefined,
+      // --- Added for the bank breakpoint gutter, which watches `breakpointsVersion`. The dump has
+      // --- no breakpoints in these tests; how a bank-relative breakpoint is named in a row is
+      // --- covered in `test/controls/DisassemblyRow.test.tsx`.
+      useSelector: () => 0,
+      // --- Added for the breakpoint dialog the gutter's double-click opens (`useBreakpointDialog`
+      // --- reports a failure to open through the status bar). No test here opens it; that the
+      // --- dialog accepts and produces a bank-relative breakpoint is covered without a DOM in
+      // --- `test/renderer/breakpoint-form.test.ts`.
+      useDispatch: () => vi.fn()
+    }));
+    vi.doMock("@renderer/core/EmuApi", () => ({
+      useEmuApi: () => ({
+        listBreakpoints: async () => ({ breakpoints: [] }),
+        // --- Added for the header's "where is this bank" readout, which refreshes through
+        // --- `useEmuStateListener`. That ticker polls `getCpuStateChunk`, and without it every
+        // --- test in this file logged an unhandled rejection — passing, but with 25 errors in the
+        // --- output that would have hidden a real one. These tests set no machine, so a stopped
+        // --- one with no paging is the honest answer; what the readout says about a given mapping
+        // --- is covered without a DOM in `test/renderer/nextBankLocation.test.ts`.
+        getCpuStateChunk: async () => ({
+          state: MachineControllerState.Stopped,
+          pcValue: 0,
+          tacts: 0
+        }),
+        getNextMemoryMapping: async () => ({ pageInfo: [] })
+      })
     }));
     vi.doMock("@renderer/controls/overlay/DialogProvider", () => ({
       useDialogs: () => ({

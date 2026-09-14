@@ -9,7 +9,9 @@ import {
   CreateDefaultNexAnnotationsOptions,
   NexAnnotationDiagnostic,
   NexAnnotationBankView,
+  NexDebugState,
   NexFileAnnotations,
+  NEX_ANNOTATION_SCHEMA_VERSION,
   createDefaultNexAnnotations,
   getBankAnnotation,
   getNexAnnotationPath,
@@ -72,6 +74,93 @@ export function getAnnotatedDecimalViewForBank(
 
 export function formatNexAnnotations(annotations: NexFileAnnotations): string {
   return `${JSON.stringify(annotations, null, 2)}\n`;
+}
+
+/*
+ * The sidecar holds two subtrees with two different save policies, and neither writer may clobber
+ * the other.
+ *
+ * - **annotations** (`source`, `globalLabels`, `banks`) are dirty-tracked and written when the user
+ *   asks — the contract `.docs/nex-annotations.md` describes.
+ * - **`debug`** (the bank breakpoints) is written the moment it changes, because a breakpoint lost
+ *   because nobody pressed Save is a bug rather than a policy.
+ *
+ * Writing the whole in-memory model from either side would therefore be wrong in one direction or
+ * the other: a breakpoint would flush half-finished annotation edits, and an annotation save would
+ * revert a breakpoint set since it loaded. Both writers read the file, replace only their own keys,
+ * and write back — which also means a key this build does not know about survives a round trip.
+ *
+ * See `.plans/NEX_DEBUGGING_PLAN.md` §4.5.
+ */
+
+const ANNOTATION_KEYS = ["schemaVersion", "source", "globalLabels", "banks"] as const;
+
+/** The sidecar's current contents as raw JSON, or `{}` when it does not exist or cannot be parsed. */
+async function readRawSidecar(
+  projectService: Pick<IProjectService, "readFileContent">,
+  fullPath: string
+): Promise<Record<string, unknown>> {
+  try {
+    const contents = await projectService.readFileContent(fullPath, false);
+    if (typeof contents !== "string") return {};
+    const parsed = JSON.parse(contents);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    // --- Missing or unreadable: the write that follows creates it.
+    return {};
+  }
+}
+
+/**
+ * Write the annotation subtree, preserving whatever `debug` is on disk.
+ *
+ * The version is stamped from the model, which is the current one — so a v1 file becomes v2 here,
+ * on the first save, and not merely by being opened.
+ */
+export async function saveNexAnnotationSubtree(
+  projectService: Pick<IProjectService, "readFileContent" | "saveFileContent">,
+  fullPath: string,
+  annotations: NexFileAnnotations
+): Promise<void> {
+  const raw = await readRawSidecar(projectService, fullPath);
+  const merged: Record<string, unknown> = { ...raw };
+  for (const key of ANNOTATION_KEYS) {
+    if (annotations[key] === undefined) {
+      delete merged[key];
+    } else {
+      merged[key] = annotations[key];
+    }
+  }
+  await projectService.saveFileContent(fullPath, formatRawSidecar(merged));
+}
+
+/**
+ * Write the `debug` subtree, preserving the annotations on disk.
+ *
+ * An empty state removes the key rather than writing `{}`, so a file with nothing to debug reads the
+ * same as it did before breakpoints existed.
+ */
+export async function saveNexDebugSubtree(
+  projectService: Pick<IProjectService, "readFileContent" | "saveFileContent">,
+  fullPath: string,
+  debug: NexDebugState | undefined
+): Promise<void> {
+  const raw = await readRawSidecar(projectService, fullPath);
+  const merged: Record<string, unknown> = { ...raw };
+  if (!debug?.breakpoints?.length) {
+    delete merged.debug;
+  } else {
+    merged.debug = debug;
+  }
+  // --- A file that only ever held annotations still has to declare the schema that describes the
+  // --- key just added to it.
+  merged.schemaVersion = NEX_ANNOTATION_SCHEMA_VERSION;
+  await projectService.saveFileContent(fullPath, formatRawSidecar(merged));
+}
+
+/** The sidecar's on-disk formatting: the same shape `formatNexAnnotations` writes. */
+function formatRawSidecar(value: Record<string, unknown>): string {
+  return `${JSON.stringify(value, null, 2)}\n`;
 }
 
 export async function loadNexAnnotationSidecar(

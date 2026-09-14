@@ -161,7 +161,9 @@ describe("NEX annotation sidecar helpers", () => {
       savedContent[0]
     );
     expect(JSON.parse(savedContent[0])).toMatchObject({
-      schemaVersion: 1,
+      // --- A file created now declares schema 2, which added the `debug` subtree. A *v1* file keeps
+      // --- its version until something is saved into it; see `NEX_ANNOTATION_SCHEMA_VERSION`.
+      schemaVersion: 2,
       source: { fileName: "game.nex" },
       banks: {
         "5": { offsetIndex: 1 },

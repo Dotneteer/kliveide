@@ -10,6 +10,10 @@ import styles from "./MemMappingPanel.module.scss";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { NextMemoryMapping } from "@common/messaging/EmuApi";
 import { byteTooltip, DataRow } from "@renderer/controls/data";
+import {
+  describeNexBankProvenance,
+  getNexLoad
+} from "@renderer/appIde/DocumentPanels/Next/nexLoadSession";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 
 /** The token every value in this panel is drawn with; labels stay on `--data-label`. */
@@ -79,13 +83,16 @@ const bankTooltipText = (bank: number | null | undefined): string =>
  * which is which, so the tooltip is where that is spelled out — the same job the memory dump's byte
  * tooltip does for its columns.
  */
-const pageTooltip = (page: number, info: PageInfo): string =>
+const pageTooltip = (page: number, info: PageInfo, provenance?: string): string =>
   [
     `Page ${page}`,
     `8K bank: ${bankTooltipText(info.bank8k)}`,
     // A ROM page has no 16K bank; the row shows `--` and this spells it out. Hex-formatting the
     // emulator's -1 would read `$-1`, which looks like data.
     `16K bank: ${bankTooltipText(info.bank16k)}`,
+    // --- Where that bank's contents came from, when a NEX was launched in this session. A fact
+    // --- about the *file*, not a claim about the bank's current contents — see `nexLoadSession.ts`.
+    ...(provenance ? [provenance] : []),
     `Read offset: ${isMissing(info.readOffset) ? "none" : `$${toHexa6(info.readOffset)}`}`,
     // Likewise: an absent write offset is the row's `?? 0xff` placeholder, not an address.
     `Write offset: ${isMissing(info.writeOffset) ? "none" : `$${toHexa6(info.writeOffset)}`}`
@@ -124,10 +131,20 @@ export const MemMappingPanel = () => {
   const emuApi = useEmuApi();
   const [mappingState, setMappingState] = useState<NextMemoryMapping | null>(null);
 
+  /*
+   * The NEX launched in this session, re-read on every refresh.
+   *
+   * A module singleton rather than app state, so nothing re-renders on the change — this panel is
+   * already refreshing on the emulator's state ticker, and reading it here is what makes the answer
+   * current without a subscription. See `nexLoadSession.ts`.
+   */
+  const [nexLoad, setNexLoad] = useState(getNexLoad());
+
   // --- This function queries the breakpoints from the emulator
   const refreshMemoryMappingState = async () => {
     const response = await emuApi.getNextMemoryMapping();
     setMappingState(response);
+    setNexLoad(getNexLoad());
   };
 
   // --- Take care of refreshing the screen
@@ -135,8 +152,8 @@ export const MemMappingPanel = () => {
     await refreshMemoryMappingState();
   });
 
-  let allRamValue = mappingState?.allRamsBanks
-    ? `[${mappingState.allRamsBanks.map((i) => toHexa2(i)).join(", ")}]`
+  let allRamValue = mappingState?.allRamBanks
+    ? `[${mappingState.allRamBanks.map((i) => toHexa2(i)).join(", ")}]`
     : "Off";
   return (
     <div className={styles.memMappingPanel}>
@@ -173,8 +190,9 @@ export const MemMappingPanel = () => {
       {PAGES.map((page) => {
         const info = mappingState?.pageInfo?.[page];
         if (!info) return null;
+        const provenance = describeNexBankProvenance(nexLoad, info.bank16k);
         return (
-          <TipRow key={page} tooltip={pageTooltip(page, info)}>
+          <TipRow key={page} tooltip={pageTooltip(page, info, provenance)}>
             <Label text={`Page ${page}:`} className={styles.memMapLabel} />
             {/*
              * Two cells, not one string: the banks and the offsets are different kinds of number

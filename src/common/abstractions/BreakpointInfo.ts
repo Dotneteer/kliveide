@@ -120,6 +120,44 @@ export type BreakpointInfo = {
   resolvedPartition?: number;
 
   /**
+   * The label this breakpoint is anchored to, for a **label-anchored** breakpoint.
+   *
+   * The third binding mode. An address breakpoint names a place in memory and a bank-relative one
+   * names an offset in a bank; both stop meaning what the user meant the moment a rebuild moves the
+   * code. A label-anchored breakpoint names the *thing* — "break at `DrawSprite`" — and is resolved
+   * through a NEX sidecar's label table the way a source breakpoint is resolved through the
+   * compiler's list file. It is the only shape that survives code moving within its bank.
+   *
+   * Paired with `labelFile`, which says whose label it is. `bank` narrows it to a bank's **local**
+   * label; without a bank it names a **global** one, whose value is a 16-bit address.
+   *
+   * See `.plans/NEX_DEBUGGING_PLAN.md` §13.2.
+   */
+  label?: string;
+
+  /**
+   * The `.nex.dis` sidecar whose label table `label` is looked up in.
+   *
+   * Part of the breakpoint's **identity**, not of its ownership: `05:DrawSprite` means different
+   * offsets in different sidecars, so unlike a bank-relative breakpoint (§4.4) two files cannot
+   * collapse into one. Deliberately a separate field from `owner.sidecar` — the owner is restamped
+   * by `withScopeOwner` when a breakpoint changes scope, and identity must not move with it.
+   */
+  labelFile?: string;
+
+  /**
+   * The bank a label-anchored breakpoint resolved to, filled in by resolution.
+   *
+   * The bank-relative counterpart of `resolvedAddress`, and read through the same "effective value"
+   * idiom (`effectiveBankSite`). A local label's value is bank-relative, so it resolves to a place
+   * in a bank rather than to a Z80 address.
+   */
+  resolvedBank?: number;
+
+  /** The offset within `resolvedBank`, filled in by resolution. */
+  resolvedBankOffset?: number;
+
+  /**
    * Indicates an execution breakpoint
    */
   exec?: boolean;

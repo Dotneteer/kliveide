@@ -9,8 +9,21 @@ import {
 } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
 import type { BranchVerdict } from "@renderer/appIde/DocumentPanels/branchVerdict";
 
+/*
+ * Renders nothing, as it always did, but records what it was handed.
+ *
+ * Still `null` on purpose: every other test in this file asserts on the row's own DOM, and giving
+ * the indicator a body would put an element into the middle of those assertions. What the row
+ * *passes* it is a different question, and one worth asking — `BreakpointIndicator` builds its
+ * `bp-set` / `bp-del` / `bp-en` commands from these props, so a row that describes a breakpoint
+ * wrongly makes it unremovable rather than merely mislabelled.
+ */
+const indicatorProps: any[] = [];
 vi.mock("@renderer/appIde/DocumentPanels/BreakpointIndicator", () => ({
-  BreakpointIndicator: () => null
+  BreakpointIndicator: (props: any) => {
+    indicatorProps.push(props);
+    return null;
+  }
 }));
 
 // --- `Icon` resolves its colour through `useTheme`, which needs a provider this suite does not
@@ -755,5 +768,169 @@ describe("DisassemblyRow — execution-point readout", () => {
   it("follows the panel into decimal", () => {
     const { container } = renderRow({ decimalView: true });
     expect(container.querySelector('[data-readout="long"]')!.textContent).toContain("03837");
+  });
+});
+
+/*
+ * A popped-out NEX bank's gutter.
+ *
+ * A row there shows an offset inside a 16K bank, not a Z80 address, so its breakpoint cannot be
+ * named the way the machine disassembly's is. The name matters beyond display: `BreakpointIndicator`
+ * builds its `bp-set` / `bp-del` / `bp-en` command from it, so a row that named its raw address
+ * would arm a breakpoint at a Z80 address rather than at an offset in the bank it belongs to.
+ */
+describe("deriveDisassemblyRowViewModel: bank-relative breakpoints", () => {
+  const nexRow = {
+    address: 0x4100,
+    opCodes: [0x00],
+    instruction: "nop"
+  } as any;
+
+  const viewModelFor = (breakpoint?: any, partitionLabels: Record<number, string> = {}) =>
+    deriveDisassemblyRowViewModel({
+      bankLabel: false,
+      breakpoint,
+      currentSegment: 0,
+      decimalView: false,
+      isFullView: true,
+      item: nexRow,
+      mem64kLabels: [],
+      partitionLabels,
+      pausedPc: -1,
+      showBanks: false
+    });
+
+  it("names a bank-relative breakpoint by its bank and offset", () => {
+    const vm = viewModelFor({ bank: 5, bankOffset: 0x0100, exec: true });
+    expect(vm.breakpointAddress).toBe("05:+$0100");
+    expect(vm.hasBreakpoint).toBe(true);
+  });
+
+  it("leaves the kind out of the name, because the command takes it as an option", () => {
+    /*
+     * This test used to assert `05:+$0100:W`, on the reasoning that a watchpoint should not be
+     * named like an execution breakpoint. That was wrong, and wrong in a way that made the gutter
+     * unusable: the name is what `BreakpointIndicator` builds its command from, and the `bp-*`
+     * commands take the kind as `-r`/`-w`, not as part of the address — so `bp-del 05:+$0100:W -w`
+     * parsed as nothing at all and the dot could not be clicked away.
+     *
+     * The kind reaches the indicator as its own props instead, which is what builds the option.
+     * See `getBreakpointAddressSpec`, and the describe block at the end of this file.
+     */
+    expect(viewModelFor({ bank: 5, bankOffset: 0x100, memoryWrite: true }).breakpointAddress).toBe(
+      "05:+$0100"
+    );
+    expect(viewModelFor({ bank: 5, bankOffset: 0x100, memoryRead: true }).breakpointAddress).toBe(
+      "05:+$0100"
+    );
+  });
+
+  it("does not name a partition, because a 16K bank is not one", () => {
+    // --- A NEX bank is 16K; a Next partition is an 8K page. The label map describes the latter.
+    expect(viewModelFor({ bank: 5, bankOffset: 0x100, exec: true }).breakpointPartition).toBe(
+      undefined
+    );
+  });
+
+  it("leaves the other breakpoint shapes exactly as they were", () => {
+    // --- An address breakpoint shows the row's raw address...
+    expect(viewModelFor({ address: 0x4100, exec: true }).breakpointAddress).toBe(0x4100);
+    // --- ...a partition-scoped one does too, and names its partition...
+    const partitioned = viewModelFor({ address: 0x4100, partition: 10, exec: true }, { 10: "0A" });
+    expect(partitioned.breakpointAddress).toBe(0x4100);
+    expect(partitioned.breakpointPartition).toBe("0A");
+    // --- ...and a source-bound one is named by its file and line.
+    expect(viewModelFor({ resource: "code.asm", line: 12, exec: true }).breakpointAddress).toBe(
+      "[code.asm]:12"
+    );
+  });
+
+  it("reports no breakpoint for an unarmed row", () => {
+    const vm = viewModelFor(undefined);
+    expect(vm.hasBreakpoint).toBe(false);
+    expect(vm.breakpointAddress).toBe(0x4100);
+  });
+});
+
+/*
+ * What the row hands its breakpoint indicator.
+ *
+ * `BreakpointIndicator` builds `bp-set` / `bp-del` / `bp-en` from these props, so they are not
+ * decoration: a row that shows a memory breakpoint while describing it as an execution one issues
+ * `bp-del $8000` for a breakpoint whose key is `$8000 R`, which matches nothing and leaves a dot
+ * that cannot be clicked away. Watchpoints on a NEX bank made that reachable.
+ *
+ * See `.plans/NEX_DEBUGGING_PLAN.md` §10.2.
+ */
+describe("DisassemblyRow: the breakpoint kind reaches the indicator", () => {
+  function renderWithBreakpoint(breakpoint: any, over: any = {}) {
+    indicatorProps.length = 0;
+    render(
+      <DisassemblyRow
+        bankLabel={false}
+        breakpoint={breakpoint}
+        commentWidthCh={0}
+        currentSegment={0}
+        decimalView={false}
+        index={0}
+        isFullView={true}
+        item={{ address: 0x8000, instruction: "nop", opCodes: [0x00] }}
+        mem64kLabels={[]}
+        partitionLabels={{}}
+        partitionWidthCh={0}
+        pausedPc={-1}
+        rowHeight={18}
+        showBanks={false}
+        {...over}
+      />
+    );
+    return indicatorProps[indicatorProps.length - 1];
+  }
+
+  it("forwards a memory read breakpoint as one", () => {
+    const props = renderWithBreakpoint({ address: 0x8000, memoryRead: true });
+    expect(props.memoryRead).toBe(true);
+    expect(props.hasBreakpoint).toBe(true);
+  });
+
+  it("forwards a memory write breakpoint as one", () => {
+    expect(renderWithBreakpoint({ address: 0x8000, memoryWrite: true }).memoryWrite).toBe(true);
+  });
+
+  it("forwards an I/O breakpoint's port mask, which its command needs", () => {
+    const props = renderWithBreakpoint({ address: 0x00fe, ioRead: true, ioMask: 0x00ff });
+    expect(props.ioRead).toBe(true);
+    expect(props.ioMask).toBe(0x00ff);
+  });
+
+  it("claims no kind for an execution breakpoint", () => {
+    const props = renderWithBreakpoint({ address: 0x8000, exec: true });
+    expect(props.memoryRead).toBeFalsy();
+    expect(props.memoryWrite).toBeFalsy();
+    expect(props.ioRead).toBeFalsy();
+    expect(props.ioWrite).toBeFalsy();
+  });
+
+  it("names a bank-relative watchpoint by its key, kind and all", () => {
+    // --- Both halves together: the address the command targets and the option that selects the
+    // --- kind. Either one wrong makes the breakpoint unremovable from the gutter.
+    const props = renderWithBreakpoint({ bank: 5, bankOffset: 0x0100, memoryWrite: true });
+    expect(props.address).toBe("05:+$0100");
+    expect(props.memoryWrite).toBe(true);
+  });
+
+  it("offers to edit a bank-relative breakpoint", () => {
+    // --- The dialog authors that shape now, so the row must not gate the edit on `address`.
+    const onEditBreakpoint = vi.fn();
+    const props = renderWithBreakpoint(
+      { bank: 5, bankOffset: 0x0100, exec: true },
+      { onEditBreakpoint }
+    );
+    expect(props.onEdit).toBeTypeOf("function");
+  });
+
+  it("offers no edit for a row with no breakpoint", () => {
+    const props = renderWithBreakpoint(undefined, { onEditBreakpoint: vi.fn() });
+    expect(props.onEdit).toBeUndefined();
   });
 });

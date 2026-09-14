@@ -22,6 +22,10 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
  *
  * A partition-scoped match wins over a partitionless one at the same address, being the more
  * specific of the two. Any deterministic choice is an improvement on "whichever came last".
+ *
+ * `selectRowBreakpoint` later gained two more tie-breakers — kind, then enablement — for the same
+ * reason: watchpoints made ties common, and the glyph is what the gutter's remove command is built
+ * from. See the function's own comment.
  */
 
 /** Every address-bound breakpoint at an address. Several can share one address. */
@@ -120,6 +124,19 @@ export function resolveRowPartition(
 /**
  * Pick the breakpoint to show for one row.
  *
+ * Three things decide it, in order, and each exists because leaving it out produced a wrong glyph:
+ *
+ * 1. **Partition specificity.** A partition-scoped breakpoint beats a partitionless one, being the
+ *    more specific of the two, and a breakpoint scoped to a *different* partition is not a
+ *    candidate at all — that was the original defect this module was written for.
+ * 2. **Kind.** An execution breakpoint beats a memory one. The gutter's click gesture creates
+ *    execution breakpoints, so that is the kind the column reads as being about; and the glyph is
+ *    what `BreakpointIndicator` builds its `bp-del` command from, so showing a watchpoint where an
+ *    execution breakpoint also sits would build a command for the wrong one.
+ * 3. **Enabled before disabled**, so a row never looks disarmed while something there is live.
+ *
+ * Anything not chosen is still in the Breakpoints panel; this decides one glyph, not what exists.
+ *
  * @param candidates every breakpoint at this row's address, from `buildBreakpointMap`
  * @param rowPartition the partition this row belongs to, from `resolveRowPartition`
  */
@@ -129,15 +146,30 @@ export function selectRowBreakpoint(
 ): BreakpointInfo | undefined {
   if (!candidates?.length) return undefined;
 
-  let partitionless: BreakpointInfo | undefined;
+  let best: BreakpointInfo | undefined;
+  let bestRank = -1;
   for (const bp of candidates) {
     const partition = breakpointPartition(bp);
-    if (partition === undefined) {
-      partitionless ??= bp;
-    } else if (partition === rowPartition) {
-      // --- The more specific match; no need to look further.
-      return bp;
+    if (partition !== undefined && partition !== rowPartition) continue;
+
+    // --- Specificity dominates kind, which dominates enablement.
+    const rank =
+      (partition === undefined ? 0 : 4) + (isExecBreakpoint(bp) ? 2 : 0) + (bp.disabled ? 0 : 1);
+    if (rank > bestRank) {
+      best = bp;
+      bestRank = rank;
     }
   }
-  return partitionless;
+  return best;
+}
+
+/**
+ * Is this an execution breakpoint?
+ *
+ * `exec` is what `bp-set` sets when no `-r`/`-w`/`-i`/`-o` option is given, so an execution
+ * breakpoint is equally "one that is none of the others" — which is what a breakpoint restored from
+ * an older project file, carrying no flags at all, looks like.
+ */
+function isExecBreakpoint(bp: BreakpointInfo): boolean {
+  return !!bp.exec || !(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite);
 }

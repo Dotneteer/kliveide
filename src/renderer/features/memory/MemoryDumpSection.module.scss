@@ -189,3 +189,31 @@
   border: 1px solid var(--accent-border);
   box-shadow: var(--shadow-3);
 }
+
+/*
+ * A byte that differs from the file the bank was loaded from.
+ *
+ * Positioned like `.byteHoverOverlay` and `.lastJumpOverlay` — the row is one text node, so a byte
+ * is marked by laying a copy of it on top rather than by wrapping it.
+ *
+ * The **secondary** accent, not a status colour. A changed byte is not an error: it is the normal
+ * result of a program running, and the whole point of the live view is to find it. The primary
+ * accent is already the address column's, which a mark inside the row would be mistaken for; this
+ * is the other half of that pair, doing what the pair exists for — two things in one row that both
+ * need to read as accent-tied and clearly apart.
+ *
+ * No background fill: at 16 bytes a row, a filled cell every other byte turns a modified bank into
+ * a stripe pattern that is harder to read than the numbers. The colour and weight carry it, and the
+ * hover overlay (which does fill) still wins where the two coincide.
+ */
+.changedByteOverlay {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-secondary-text);
+  font-weight: 600;
+  pointer-events: none;
+}

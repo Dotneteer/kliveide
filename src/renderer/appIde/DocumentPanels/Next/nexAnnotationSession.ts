@@ -1,7 +1,7 @@
 import type { IProjectService } from "@renderer/abstractions/IProjectService";
 import {
-  formatNexAnnotations,
-  loadNexAnnotationSidecar
+  loadNexAnnotationSidecar,
+  saveNexAnnotationSubtree
 } from "./nexAnnotationSidecar";
 import type { NexFileAnnotations } from "./nexAnnotations";
 
@@ -51,7 +51,7 @@ export function updateNexAnnotationSession(
 }
 
 export async function saveNexAnnotationSession(
-  projectService: Pick<IProjectService, "saveFileContent">,
+  projectService: Pick<IProjectService, "readFileContent" | "saveFileContent">,
   annotationPath: string
 ): Promise<void> {
   const session = getOrCreateSession(annotationPath);
@@ -60,10 +60,10 @@ export async function saveNexAnnotationSession(
   }
 
   try {
-    await projectService.saveFileContent(
-      annotationPath,
-      formatNexAnnotations(session.annotations)
-    );
+    // --- Only the annotation keys: the `debug` subtree beside them is written on its own policy
+    // --- (immediately, when a breakpoint changes) and must survive this save untouched.
+    // --- See `.plans/NEX_DEBUGGING_PLAN.md` §4.5.
+    await saveNexAnnotationSubtree(projectService, annotationPath, session.annotations);
     session.saveError = undefined;
     session.dirty = false;
   } catch (err) {
