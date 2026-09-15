@@ -17,12 +17,53 @@ import {
   getNexBankAddressOffset
 } from "./nexAnnotations";
 
+/**
+ * Split a byte range so that an instruction boundary is guaranteed to fall on `anchor`.
+ *
+ * A linear disassembly is only as well-aligned as the offset it started from. Decode from byte 0 of
+ * a bank and every instruction boundary after the first stretch of data is a guess — one that
+ * self-modifying code, a jump table, or a decompressed payload can make wrong for the rest of the
+ * bank. The program counter is the one offset in the bank where the alignment is *known*: a paused
+ * Z80 sits between instructions, so whatever is at PC is the first byte of a real one.
+ *
+ * So the run is cut in two at PC and each half decoded separately. Where the listing was already
+ * aligned there, the two halves rejoin exactly as before — the first run ends at `anchor - 1` of its
+ * own accord — and the listing is unchanged. Where it was not, the rows from PC onward are now the
+ * instructions the processor will actually execute instead of a decode that slipped a byte.
+ *
+ * The seam is honest rather than tidy: when the old alignment was wrong, the instruction straddling
+ * PC is still emitted by the first run, so its bytes overlap the row beneath it. That overlap *is*
+ * the disagreement between the two decodes, and hiding it would hide the one thing worth noticing.
+ *
+ * `anchor` outside `(start, end]` leaves the range alone — including `anchor === start`, which needs
+ * no cut because the run already begins on the boundary.
+ */
+export function pcAnchoredRuns(
+  start: number,
+  end: number,
+  anchor: number | undefined
+): Array<[number, number]> {
+  if (anchor === undefined || anchor <= start || anchor > end) return [[start, end]];
+  return [
+    [start, anchor - 1],
+    [anchor, end]
+  ];
+}
+
 export type AnnotatedNexDisassemblyOptions = {
   annotations: NexFileAnnotations;
   bank: number;
   contents: Uint8Array;
   decimalView?: boolean;
   disassOffset?: number;
+  /**
+   * Where the program counter is in this bank, when the machine is paused and it is in this bank.
+   *
+   * Only `disassemble` regions are cut at it: a region the user has declared to be `bytes`, `words`
+   * or `skip` is a statement about what those bytes *are*, and the program counter passing through
+   * it does not turn it into code.
+   */
+  pcBankOffset?: number;
 };
 
 export async function createAnnotatedNexDisassemblyItems({
@@ -30,7 +71,8 @@ export async function createAnnotatedNexDisassemblyItems({
   bank,
   contents,
   decimalView = false,
-  disassOffset
+  disassOffset,
+  pcBankOffset
 }: AnnotatedNexDisassemblyOptions): Promise<DisassemblyItem[] | undefined> {
   const bankAnnotation = getBankAnnotation(annotations, bank);
   if (!bankAnnotation) {
@@ -49,18 +91,22 @@ export async function createAnnotatedNexDisassemblyItems({
 
     switch (region.type) {
       case "disassemble":
-        items.push(
-          ...(await createInstructionItems(
-            annotations,
-            bankAnnotation,
-            bank,
-            contents,
-            start,
-            end,
-            decimalView,
-            addressOffset
-          ))
-        );
+        // --- Cut at the program counter so the rows from it on are the instructions that will
+        // --- actually run, rather than a decode that slipped a byte somewhere above.
+        for (const [runStart, runEnd] of pcAnchoredRuns(start, end, pcBankOffset)) {
+          items.push(
+            ...(await createInstructionItems(
+              annotations,
+              bankAnnotation,
+              bank,
+              contents,
+              runStart,
+              runEnd,
+              decimalView,
+              addressOffset
+            ))
+          );
+        }
         break;
 
       case "bytes":
@@ -284,20 +330,18 @@ function decorateAnnotatedItems(
     const generatedHardComment = item.hardComment;
 
     if (lineAnnotation?.synopsis) {
-      for (const commentLine of lineAnnotation.synopsis.split(/\r?\n/)) {
+      const commentLines = lineAnnotation.synopsis.split(/\r?\n/);
+      commentLines.forEach((commentLine, lineIndex) => {
         decorated.push({
           address: item.address,
           isPrefixItem: true,
           prefixComment: commentLine,
-          annotation: createAnnotationMetadata(
-            bank,
-            bankOffset,
-            rowByteLength,
-            rowRegionType,
-            true
-          )
+          annotation: {
+            ...createAnnotationMetadata(bank, bankOffset, rowByteLength, rowRegionType, true),
+            synopsisEdge: synopsisEdgeAt(lineIndex, commentLines.length)
+          }
         });
-      }
+      });
     }
 
     const labels = getLabelsForOffset(annotations, bankAnnotation, bank, bankOffset, addressOffset);
@@ -322,6 +366,22 @@ function decorateAnnotatedItems(
     decorated.push(item);
   }
   return decorated;
+}
+
+/**
+ * Which edge of its synopsis block a line sits on.
+ *
+ * The view sets the block off from the code with space above the first line and below the last —
+ * see `synopsisBlockFirst` / `synopsisBlockLast` in `DisassemblyPanel.module.scss`. Interior lines
+ * get neither, so a multi-line note still reads as one paragraph.
+ */
+function synopsisEdgeAt(
+  lineIndex: number,
+  lineCount: number
+): DisassemblyAnnotationMetadata["synopsisEdge"] {
+  if (lineCount === 1) return "only";
+  if (lineIndex === 0) return "first";
+  return lineIndex === lineCount - 1 ? "last" : "middle";
 }
 
 function createAnnotationMetadata(

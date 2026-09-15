@@ -115,6 +115,7 @@ export const Modal = ({
   const closeOnEscapeRef = useRef(closeOnEscape);
   const doCloseRef = useRef<(result?: any) => void>();
   const restoreFocusElementRef = useRef<HTMLElement | null>(null);
+  const hasCapturedRestoreTargetRef = useRef(false);
 
   const doClose = useCallback((result?: any) => {
     if (getModalStackSize() <= 1) {
@@ -130,6 +131,27 @@ export const Modal = ({
 
   closeOnEscapeRef.current = closeOnEscape;
   doCloseRef.current = doClose;
+
+  /*
+   * Who to give focus back to, captured while opening — during render, not from an effect.
+   *
+   * React applies a field's `autoFocus` during the commit phase, which is *before* any effect runs.
+   * Capturing this from an effect therefore recorded whatever the dialog had just focused inside
+   * itself, and closing then "restored" focus to an element being unmounted — leaving it on
+   * `<body>`, where no panel shortcut works until the user clicks something. A dialog with no
+   * autofocusing field looked fine, which is why this survived: it only bites the dialogs that do.
+   *
+   * The render pass is the last moment before that commit, and Modal's own body runs before its
+   * children are committed, so this still sees the element the user was actually on. The sentinel
+   * resets on close so a Modal that is toggled rather than unmounted captures again next time.
+   */
+  if (isOpen && !hasCapturedRestoreTargetRef.current) {
+    hasCapturedRestoreTargetRef.current = true;
+    restoreFocusElementRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  } else if (!isOpen) {
+    hasCapturedRestoreTargetRef.current = false;
+  }
 
   // --- Define button click handlers
   const primaryClickHandler = useCallback(async () => {
@@ -162,9 +184,6 @@ export const Modal = ({
 
   useEffect(() => {
     if (!isOpen) return;
-
-    restoreFocusElementRef.current =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const unregister = registerModal({
       id: modalId,
@@ -379,7 +398,21 @@ function focusInitialElement(
   container: HTMLElement | null,
   initialFocus: ModalProps["initialFocus"]
 ): void {
-  if (!container) return;
+  /*
+   * A modal that is already gone must not focus anything.
+   *
+   * This runs from a `setTimeout`, and a timer can outlive the modal that scheduled it: closing
+   * removes the dialog's DOM in the commit phase, while React's passive cleanup — which clears the
+   * timer and gives focus back to the opener — is flushed separately. A timer landing in that gap
+   * used to focus a field that was being unmounted, which drops focus on `<body>`: measured as
+   * `focus(input)` → `focus(opener)` → `focus(input)`, the last one from here.
+   *
+   * That is how the NEX listing's annotation shortcuts went dead after the first dialog. They are
+   * bare letters, heard only while the listing is focused, so `<body>` meant nothing worked until
+   * the user clicked a row again. `isConnected` is the whole guard: if this container is no longer
+   * in the document, the modal it belongs to has closed and its focus claim has expired.
+   */
+  if (!container || !container.isConnected) return;
 
   const requestedTarget =
     initialFocus && initialFocus !== "none"
@@ -387,11 +420,38 @@ function focusInitialElement(
           `[data-modal-action="${initialFocus}"] ${FOCUSABLE_SELECTOR}`
         )
       : null;
+  if (requestedTarget) {
+    // --- An explicit request from the dialog's author outranks anything the body arranged.
+    requestedTarget.focus();
+    return;
+  }
+
+  /*
+   * A field inside the body that already took focus keeps it.
+   *
+   * React implements `autoFocus` by calling `.focus()` during commit rather than by emitting the
+   * attribute (checked against React 18: the rendered HTML carries no `autofocus`), so a field that
+   * asked for focus is *already focused* by the time this runs a tick later — and there is no
+   * attribute left to look for. Without this check the fallback below would immediately take it
+   * away again and hand it to whatever happens to come first in the DOM.
+   *
+   * That is not hypothetical: every dialog opened through `DialogProvider` passes
+   * `initialFocus="none"`, so all of them land here. The NEX label dialog marks its Name field
+   * `autoFocus`, and focus went to the Scope radio group above it instead, purely because a radio
+   * input is the first focusable thing in the form.
+   *
+   * `"none"` still does not mean *no* focus: a body that asked for nothing gets its first focusable
+   * element, which is what keeps Tab and Escape working in a dialog the user has not clicked into.
+   */
+  if (container.contains(document.activeElement) && document.activeElement !== container) {
+    return;
+  }
+
   const firstFocusable = getFocusableElements(container).find(
     (element) => !element.classList.contains(styles.closeButton)
   );
 
-  (requestedTarget ?? firstFocusable ?? container).focus();
+  (firstFocusable ?? container).focus();
 }
 
 function getFocusableElements(container: HTMLElement | null): HTMLElement[] {

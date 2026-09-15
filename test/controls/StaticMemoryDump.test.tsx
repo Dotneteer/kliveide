@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ReactNode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 beforeEach(() => {
   Object.defineProperty(document, "queryCommandSupported", {
@@ -87,7 +88,33 @@ describe("StaticMemoryDump", () => {
     // --- Returning undefined lets `getRowSizes` fall back to its default, i.e. the 20/18px these
     // --- tests were written against.
     vi.doMock("@renderer/core/RendererProvider", () => ({
-      useGlobalSetting: () => undefined
+      useGlobalSetting: () => undefined,
+      // --- Added for the bank breakpoint gutter, which watches `breakpointsVersion`. The dump has
+      // --- no breakpoints in these tests; how a bank-relative breakpoint is named in a row is
+      // --- covered in `test/controls/DisassemblyRow.test.tsx`.
+      useSelector: () => 0,
+      // --- Added for the breakpoint dialog the gutter's double-click opens (`useBreakpointDialog`
+      // --- reports a failure to open through the status bar). No test here opens it; that the
+      // --- dialog accepts and produces a bank-relative breakpoint is covered without a DOM in
+      // --- `test/renderer/breakpoint-form.test.ts`.
+      useDispatch: () => vi.fn()
+    }));
+    vi.doMock("@renderer/core/EmuApi", () => ({
+      useEmuApi: () => ({
+        listBreakpoints: async () => ({ breakpoints: [] }),
+        // --- Added for the header's "where is this bank" readout, which refreshes through
+        // --- `useEmuStateListener`. That ticker polls `getCpuStateChunk`, and without it every
+        // --- test in this file logged an unhandled rejection — passing, but with 25 errors in the
+        // --- output that would have hidden a real one. These tests set no machine, so a stopped
+        // --- one with no paging is the honest answer; what the readout says about a given mapping
+        // --- is covered without a DOM in `test/renderer/nextBankLocation.test.ts`.
+        getCpuStateChunk: async () => ({
+          state: MachineControllerState.Stopped,
+          pcValue: 0,
+          tacts: 0
+        }),
+        getNextMemoryMapping: async () => ({ pageInfo: [] })
+      })
     }));
     vi.doMock("@renderer/controls/overlay/DialogProvider", () => ({
       useDialogs: () => ({
@@ -323,6 +350,75 @@ describe("StaticMemoryDump", () => {
     expect(harness.setDocumentViewState).toHaveBeenCalledWith(
       "static-dump-doc",
       expect.objectContaining({ topAddress: 0x1234 })
+    );
+  });
+
+  it("accounts for the disassembly offset when jumping to an address", async () => {
+    /*
+     * The rows are addressed by `disassOffset` while the virtual list is indexed from the start of
+     * the dump. Without subtracting it, a bank shown at $1000 asked for row $1234/16 = 291 for an
+     * address only 35 rows in. In a bank shown at $4000 the request ran past the end of the list
+     * entirely. See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.15a.
+     */
+    const harness = await renderStaticMemoryDump({ disassOffset: 0x1000 });
+
+    fireEvent.click(screen.getByTestId("go-to-address"));
+
+    await waitFor(() =>
+      expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(0x23, {
+        align: "start"
+      })
+    );
+  });
+
+  it("clamps a jump to an address outside the dump", async () => {
+    // --- $1234 is below a bank shown at $4000, so the row index would be negative.
+    const harness = await renderStaticMemoryDump({ disassOffset: 0x4000 });
+
+    fireEvent.click(screen.getByTestId("go-to-address"));
+
+    await waitFor(() =>
+      expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(0, { align: "start" })
+    );
+  });
+
+  it("scrolls an already-open document to a newly revealed address", async () => {
+    /*
+     * View state is read once, on mount, so re-pointing an open document by writing to it does
+     * nothing — which is why the listing stopped following the program counter as soon as it stayed
+     * inside a bank that was already showing. The document exposes `revealAddress` for this.
+     * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.18.
+     */
+    const harness = await renderStaticMemoryDump({ disassOffset: 0x8000 });
+
+    harness.getDocumentApi().revealAddress(0xa600);
+
+    await waitFor(() =>
+      // --- ($A600 - $8000) / 16 = row 0x260, not $A600 / 16.
+      expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(0x260, { align: "start" })
+    );
+  });
+
+  it("opens a NEX bank as a disassembly by default", async () => {
+    // --- A bank of a NEX is a slice of a program; the reason to open one is to read the code.
+    await renderStaticMemoryDump({ disassemblyEnabled: true, nexAnnotationBank: 5 });
+
+    expect((screen.getByTestId("view-mode") as HTMLSelectElement).value).toEqual("disassembly");
+  });
+
+  it("opens a plain dump as memory, and honours a remembered view for a NEX bank", async () => {
+    // --- Nothing but a NEX bank gets the disassembly default...
+    await renderStaticMemoryDump({ disassemblyEnabled: true });
+    expect((screen.getByTestId("view-mode") as HTMLSelectElement).value).toEqual("memory");
+
+    // --- ...and the default never overrides a choice the user already made.
+    await renderStaticMemoryDump({
+      disassemblyEnabled: true,
+      nexAnnotationBank: 5,
+      viewMode: "memory"
+    });
+    expect((screen.getAllByTestId("view-mode").at(-1) as HTMLSelectElement).value).toEqual(
+      "memory"
     );
   });
 
@@ -766,6 +862,180 @@ describe("StaticMemoryDump", () => {
     );
     // --- And nothing became dirty, which is the part a refused confirmation has to guarantee.
     expect(screen.getByText("Save annotations")).toBeDisabled();
+  });
+
+  /*
+   * Keyboard shortcuts for the annotation actions.
+   *
+   * Bare letters, because every other family of keys is spoken for on at least one platform — see
+   * `NEX_ANNOTATION_SHORTCUTS`. The table itself is asserted in the view model's own suite; what is
+   * worth proving here is the wiring: the right dialog opens, on the right row, and the key is
+   * consumed rather than left to travel on.
+   */
+  describe("annotation shortcuts", () => {
+    /** An annotated bank of four-byte rows; row 0 is selected unless `select` says otherwise. */
+    async function renderAnnotatedListing({ select = true }: { select?: boolean } = {}) {
+      const readFileContent = vi.fn(() =>
+        Promise.resolve(
+          JSON.stringify({
+            schemaVersion: 1,
+            banks: {
+              "5": { offsetIndex: 2, regions: [{ start: 0, end: 11, type: "bytes" }] }
+            }
+          })
+        )
+      );
+      const contents = new Uint8Array(0x4000);
+      contents.set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+      const openDialog = vi.fn(() => Promise.resolve(undefined));
+      await renderStaticMemoryDump(
+        {
+          disassemblyEnabled: true,
+          viewMode: "disassembly",
+          disassOffset: 0x8000,
+          nexAnnotationPath: "/project/game.nex.dis",
+          nexAnnotationBank: 5
+        },
+        readFileContent,
+        vi.fn(() => Promise.resolve()),
+        contents,
+        openDialog
+      );
+      await waitFor(() =>
+        expect(screen.getByTestId("disassembly-row-0")).toHaveAttribute(
+          "data-annotation-region",
+          "bytes"
+        )
+      );
+      if (select) fireEvent.click(screen.getByTestId("disassembly-row-0"));
+      return { openDialog, list: screen.getByTestId("static-disassembly-list") };
+    }
+
+    /** `fireEvent.keyDown` returns false when the handler called `preventDefault`. */
+    const press = (list: HTMLElement, key: string, shiftKey = false) =>
+      fireEvent.keyDown(list, { key, shiftKey });
+
+    it("opens the label dialog on L, scoped global", async () => {
+      const { openDialog, list } = await renderAnnotatedListing();
+
+      expect(press(list, "l")).toBe(false);
+
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+      expect(openDialog.mock.calls[0][0].name).toBe("NexLabelDialog");
+      expect(openDialog.mock.calls[0][1]).toMatchObject({ bank: 5, initialScope: "global" });
+    });
+
+    it("opens the same dialog scoped local on Shift+L", async () => {
+      const { openDialog, list } = await renderAnnotatedListing();
+
+      // --- `key` is the capital letter whenever Shift is down, which the lookup has to tolerate.
+      expect(press(list, "L", true)).toBe(false);
+
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+      expect(openDialog.mock.calls[0][1]).toMatchObject({ initialScope: "local" });
+    });
+
+    it("opens the comment dialogs on C and Shift+C", async () => {
+      const { openDialog, list } = await renderAnnotatedListing();
+
+      expect(press(list, "c")).toBe(false);
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+      expect(openDialog.mock.calls[0][0].name).toBe("NexEndOfLineCommentDialog");
+
+      expect(press(list, "C", true)).toBe(false);
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(2));
+      expect(openDialog.mock.calls[1][0].name).toBe("NexSynopsisCommentDialog");
+    });
+
+    it("opens the labels list on M and the regions list on R", async () => {
+      const { openDialog, list } = await renderAnnotatedListing();
+
+      expect(press(list, "m")).toBe(false);
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+      expect(openDialog.mock.calls[0][0].name).toBe("NexLabelsDialog");
+
+      expect(press(list, "r")).toBe(false);
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(2));
+      expect(openDialog.mock.calls[1][0].name).toBe("NexRegionsDialog");
+    });
+
+    it("acts on the row the highlight is on, not on the last one right-clicked", async () => {
+      /*
+       * Nothing ever emits `contextTargetCleared`, so a right-click leaves the controller's
+       * `contextTarget` pointing at that row for as long as the selection lives. Were the shortcut
+       * to fall back to it, this would edit row 0 — the row the user right-clicked and then arrowed
+       * away from — instead of row 2. Four-byte rows at `disassOffset` $8000, so row 2 is $8008.
+       */
+      const { openDialog, list } = await renderAnnotatedListing();
+      fireEvent.contextMenu(screen.getByTestId("disassembly-row-0"));
+      fireEvent.keyDown(list, { key: "Escape" });
+
+      press(list, "ArrowDown");
+      press(list, "ArrowDown");
+      await waitFor(() =>
+        expect(screen.getByTestId("disassembly-row-2")).toHaveAttribute("data-selected", "true")
+      );
+
+      press(list, "L", true);
+
+      await waitFor(() => expect(openDialog).toHaveBeenCalled());
+      expect(openDialog.mock.calls[0][1]).toMatchObject({ initialLocalValue: 8 });
+    });
+
+    it("leaves an unclaimed key alone, so it can reach the emulated machine", async () => {
+      /*
+       * The emulator's keyboard is a `window` listener that runs whatever has focus, so a key this
+       * panel does not claim must travel on untouched — and a claimed one must not, or pressing `N`
+       * would open the dialog *and* type into the Spectrum.
+       */
+      const { openDialog, list } = await renderAnnotatedListing();
+
+      expect(press(list, "x")).toBe(true);
+      expect(press(list, "o", true)).toBe(true);
+      // --- N carried the labels before they moved to L; it must be fully released.
+      expect(press(list, "n")).toBe(true);
+      expect(openDialog).not.toHaveBeenCalled();
+    });
+
+    it("defers a modified key to the app", async () => {
+      // --- Ctrl/Cmd/Alt combinations belong to the app's own commands, not to this listing.
+      const { openDialog, list } = await renderAnnotatedListing();
+
+      expect(fireEvent.keyDown(list, { key: "l", ctrlKey: true })).toBe(true);
+      expect(fireEvent.keyDown(list, { key: "l", metaKey: true })).toBe(true);
+      expect(fireEvent.keyDown(list, { key: "l", altKey: true })).toBe(true);
+      expect(openDialog).not.toHaveBeenCalled();
+    });
+
+    it("ignores a shortcut whose menu item is disabled", async () => {
+      /*
+       * Availability is read off the menu entry rather than re-derived, so the two can never
+       * disagree. With the selection cleared every row action is disabled — but Manage Labels acts
+       * on the whole bank and still answers.
+       */
+      // --- Never selected, rather than deselected: the listing has no gesture that clears a
+      // --- selection once made, so an untouched listing is how this state is actually reached.
+      const { openDialog, list } = await renderAnnotatedListing({ select: false });
+      expect(screen.getByTestId("disassembly-row-0")).not.toHaveAttribute("data-selected");
+
+      expect(press(list, "l")).toBe(true);
+      expect(press(list, "c")).toBe(true);
+      expect(openDialog).not.toHaveBeenCalled();
+
+      // --- Manage Labels acts on the whole bank, so a rowless listing still reaches it.
+      expect(press(list, "m")).toBe(false);
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+
+      /*
+       * Manage Regions is refused, not accepted-then-ignored. It reads as bank-wide, but the
+       * controller seeds its dialog from the active row's offset and cannot run without one — so
+       * its menu entry is disabled here, and the shortcut follows the entry rather than its own
+       * idea of availability. `true` is the key travelling on untouched.
+       */
+      expect(press(list, "r")).toBe(true);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(openDialog).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("selects annotated disassembly rows with click, shift-click, and keyboard navigation", async () => {

@@ -145,6 +145,13 @@ Available aliases: `bp`
 The `address-spec` parameter can be 
 - a 16-bit address (using the number for the address), for example, `$120a` or `32768`;
 - an address with a partition (the partition and the address separated with a colon), for example, `r1:$32ac` (meaning $32ac, provided ROM 1 is paged in) &mdash; see [Machine-Specific Memory Partitions](/working-with-ide/memory#machine-specific-memory-partitions) for the names each machine uses;
+- a **bank-relative** address on the ZX Spectrum Next (the 16K bank, a colon, then `+` and the offset
+  within that bank), for example, `05:+$0100` &mdash; meaning offset `$0100` inside 16K bank 5,
+  wherever that bank happens to be paged in. The bank is a 16K bank number in hexadecimal, `00` to
+  `6F`, and the offset runs from `$0000` to `$3FFF`. Unlike the partition form above, this breakpoint
+  follows its bank rather than sitting at one Z80 address, which is what makes it useful for code
+  that pages banks in and out. Not available for the `-i` and `-o` (I/O) breakpoint types, which
+  watch a port rather than memory;
 - or a source code line specification, for example, `[code/code.kz80.asm]`
 
 ## `close`
@@ -409,6 +416,97 @@ ncp to "./assets/title.scr" "/assets/" -cim "/tmp/test-card.cim"
 ncp from "/logs/boot.txt" "./boot.txt" -cim "/tmp/test-card.cim"
 ```
 
+## `nex-run`
+
+This command runs a `.nex` file on the ZX Spectrum Next, optionally with debugging.
+
+```
+nex-run <nex-file> [-d] [-e]
+```
+
+Available aliases: `nexrun`
+
+Use `-d` to start in debug mode, so breakpoints are armed while the program runs.
+
+Use `-e` to stop on the program's **first instruction**. Klive reads the entry point from the NEX
+header, works out which 16K bank it falls in, and sets a temporary breakpoint there before the file
+is loaded &mdash; so the machine stops the moment NextZXOS hands control to the program, with the
+entry bank paged in. The breakpoint removes itself when it fires; it is never added to your project
+or to the file's annotations. `-e` turns on debug mode by itself, so you do not need `-d` with it.
+
+This is the option to use on a NEX you did not write: you do not need to know where its code lives,
+only that it has to start somewhere. If the entry point is below `$4000` &mdash; ROM at the moment the
+program starts, so not part of the file &mdash; Klive says so and runs the program without stopping.
+
+The command copies the file into the emulated SD card image &mdash; under `_klive/`, the same folder
+the build-and-run path uses &mdash; and then boots NextZXOS and enters `.nexload` for it, which is how
+a NEX is loaded on real hardware too. The machine is stopped first, because the card image is a file
+the running machine also reads.
+
+Unlike `run` and `debug`, this command needs **no project**: it runs any NEX file you point it at,
+whether Klive built it or not. It requires the current machine to be ZX Spectrum Next, and reports an
+error rather than switching machines for you.
+
+The same three actions are available from the Explorer's context menu on a `.nex` file, and from the
+buttons in a NEX file's document tab.
+
+```text
+nex-run "games/demo.nex"
+nex-run "games/demo.nex" -d
+nex-run "games/demo.nex" -e
+```
+
+<Callout type="info">
+Open the `.nex` file in Klive before launching it if something does not work: the viewer checks the
+file's header and reports problems that otherwise fail silently &mdash; an entry bank the file does
+not contain, an entry point or stack pointer in ROM, or a core version newer than the emulator's.
+NextZXOS reports a successful load in all of those cases and the program runs into memory it never
+loaded.
+</Callout>
+
+<Callout type="info">
+Loading goes through NextZXOS, so the program starts the way it would from the Next's own command
+line &mdash; with the OS initialised behind it. The first launch in a session pays for a full
+NextZXOS boot; later ones reuse a cached machine state and start much faster.
+</Callout>
+
+## `nex-label`
+
+This command adds a label to the launched NEX file's annotations, at the address the machine is
+stopped at.
+
+```
+nex-label <name> [<address>]
+```
+
+Available aliases: `nl`
+
+Use it when you have just worked out what a routine does: the name goes into the `.nex.dis`
+annotations from the debugger, and the Disassembly view starts using it on its next refresh instead
+of showing a bare address.
+
+The label is **local to the bank** the address is currently in, because that is the only thing the
+address means &mdash; the same routine sits somewhere else the next time its bank is paged
+elsewhere. Klive reads the current memory mapping to work out which bank that is, and refuses if the
+launched file does not contain it.
+
+The machine must be **paused**, unless you give an address: a running machine's program counter has
+moved on by the time the command reads it, so "where we are" would name an arbitrary instruction.
+
+If the NEX file's viewer is open, the label joins your other unsaved annotation edits and is kept
+when you save them. If it is closed, the label is written to the `.nex.dis` file straight away.
+
+```text
+nex-label DrawSprite
+nl ClearScreen
+nex-label VBlankWait $C120
+```
+
+<Callout type="info">
+The name follows the assembler's identifier convention and is limited to 16 characters. A bank
+cannot have two labels with the same name; Klive refuses rather than moving the existing one.
+</Callout>
+
 ## `newp`
 
 This project creates a new Klive project and optionally opens it.
@@ -499,6 +597,45 @@ run-build-function <function-name>
 Available aliases: `rbf`
 
 The `build.ksx` file contains several commands, such as `buildCode`, `injectCode`, `runCode`, `debugCode`, and `exportCode`. Some projects may have additional custom commands.
+
+## `run-to`
+
+This command runs the machine until it reaches a given address, then stops &mdash; without leaving a
+breakpoint behind.
+
+```
+run-to <address-spec>
+```
+
+Available aliases: `rtc`
+
+The `address-spec` parameter accepts exactly the same forms as [`bp-set`](#bp-set), including the ZX
+Spectrum Next's bank-relative `05:+$0100` form. That last one is what makes this work on a bank that
+is not paged in yet: the machine runs until that offset inside that 16K bank is executed, wherever
+NextZXOS ends up paging the bank.
+
+The breakpoint Klive uses is temporary in both senses &mdash; it is removed the moment it is reached,
+and it is never saved to your project or to a NEX file's annotations. So the next time you continue,
+the machine does not stop there again.
+
+What "run" means depends on what the machine is doing:
+
+| Machine state | What happens |
+|---|---|
+| Paused | resumes, and stops at the address |
+| Stopped | starts in debug mode, and stops at the address |
+| Running with debugging | keeps running, and stops at the address |
+| Running without debugging | **nothing.** Breakpoints are not checked in normal mode, so Klive reports an error instead. Pause the machine first, or start it with debugging. |
+
+You can also do this from the disassembly view without typing a command: hold <kbd>Ctrl</kbd>
+(<kbd>Cmd</kbd> on macOS) and click the breakpoint margin next to the line you want to reach. This
+works in the Disassembly panel and in a popped-out NEX bank alike.
+
+```text
+run-to $8000
+run-to r1:$32ac
+run-to 05:+$0100
+```
 
 ## `script-cancel`
 

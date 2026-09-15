@@ -5,6 +5,7 @@ import {
   DialogComponentProps,
   useDialogs
 } from "@renderer/controls/overlay/DialogProvider";
+import { NexSynopsisCommentDialog } from "@renderer/appIde/DocumentPanels/Next/NexSynopsisCommentDialog";
 
 type SampleDialogProps = DialogComponentProps<string> & {
   label: string;
@@ -212,6 +213,57 @@ describe("DialogProvider", () => {
     await waitFor(() => {
       expect(onRejected).toHaveBeenCalledWith(new Error("dialog failed"));
     });
+  });
+
+  /*
+   * A keyboard-driven panel has to get focus back, or its shortcuts die after the first dialog.
+   *
+   * The NEX listing reaches every annotation action from a bare letter, and a bare letter only
+   * arrives while the listing is focused. This is the path that reported as "pressing C stops
+   * working until I click a row again": the dialog autofocuses its textarea, and a modal that
+   * recorded its opener from an effect recorded *that* rather than the listing. Driven through the
+   * real dialog here, not a stand-in, because the autofocus is the whole point.
+   */
+  it("gives focus back to the keyboard opener after a dialog with an autofocused field", async () => {
+    function Harness() {
+      const dialogs = useDialogs();
+      return (
+        <div
+          tabIndex={0}
+          data-testid="listing"
+          onKeyDown={(event) => {
+            if (event.key !== "c") return;
+            event.preventDefault();
+            dialogs.open(
+              NexSynopsisCommentDialog,
+              { bank: 5, bankOffset: 0, effectiveAddress: 0x8000 },
+              { title: "Synopsis comment" }
+            );
+          }}
+        >
+          listing
+        </div>
+      );
+    }
+
+    renderWithProviders(<Harness />);
+    const listing = screen.getByTestId("listing");
+    listing.focus();
+
+    fireEvent.keyDown(listing, { key: "c" });
+    await waitFor(() => expect(screen.getByLabelText("Synopsis preview")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() =>
+      expect(screen.queryByLabelText("Synopsis preview")).not.toBeInTheDocument()
+    );
+
+    // --- Focus back on the listing, so the very next keystroke is heard. Landing on <body> is
+    // --- what made the shortcut appear to stop working.
+    expect(listing).toHaveFocus();
+
+    fireEvent.keyDown(listing, { key: "c" });
+    await waitFor(() => expect(screen.getByLabelText("Synopsis preview")).toBeInTheDocument());
   });
 
   it("settles pending dialogs on provider unmount", async () => {

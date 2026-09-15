@@ -4,7 +4,7 @@ import { isWidePartitionLabel } from "@renderer/controls/data/partitionWidth";
 import { memo } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
+import { getBreakpointAddressSpec } from "@common/utils/breakpoints";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Label } from "@renderer/controls/layout/Label";
 import { Secondary } from "@renderer/controls/layout/Secondary";
@@ -12,6 +12,7 @@ import { Value } from "@renderer/controls/layout/Value";
 import { Icon } from "@controls/Icon";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { BreakpointIndicator } from "./BreakpointIndicator";
+import { isBinaryBreakpoint } from "@renderer/appIde/utils/breakpoint-form";
 import { formatBranchReadout, isCall, type BranchVerdict } from "./branchVerdict";
 import type { DisassemblyItem, DisassemblyOperandInfo } from "../disassemblers/common-types";
 import { toDecimal3, toDecimal5, toHexa2, toHexa4 } from "../services/ide-commands";
@@ -35,6 +36,20 @@ export type DisassemblyRowViewModel = {
 
 export type DisassemblyRowViewModelParams = {
   bankLabel: boolean;
+  /**
+   * The bank and offset this row belongs to, when the listing is of a 16K bank rather than of the
+   * 64K map.
+   *
+   * Only used when the row has **no** breakpoint yet, to decide what an unarmed gutter would create.
+   * `BreakpointIndicator` builds its `bp-set` from `breakpointAddress`, and the fallback there is
+   * the row's Z80 address — which in a bank listing arms a breakpoint at wherever the bank happens
+   * to be paged, not at an offset in the bank. The bank gutter then never finds it, because it looks
+   * up by offset: the breakpoint exists, shows in the sidebar, and is invisible on the row that made
+   * it.
+   *
+   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.20.
+   */
+  bankScope?: { bank: number; bankOffset: number };
   breakpoint?: BreakpointInfo;
   currentSegment: number;
   decimalView: boolean;
@@ -145,6 +160,7 @@ export function isAuthoredRow(item: DisassemblyItem): boolean {
 
 export function deriveDisassemblyRowViewModel({
   bankLabel,
+  bankScope,
   breakpoint,
   currentSegment,
   decimalView,
@@ -171,11 +187,32 @@ export function deriveDisassemblyRowViewModel({
   return {
     address,
     addressText: decimalView ? toDecimal5(address) : toHexa4(address),
-    // --- Only a source-bound breakpoint is named by its key here; an address-bound one shows its
-    // --- raw address. The label map matters for neither, but the display form requires it.
-    breakpointAddress: breakpoint?.resource
-      ? getBreakpointDisplayKey(breakpoint, partitionLabels)
-      : address,
+    /*
+     * A breakpoint that is not bound to a plain address is named by its *address spec*; an
+     * address-bound one shows its raw address.
+     *
+     * That covers two cases. A source-bound breakpoint reads `[file]:12`, as it always did. And a
+     * **bank-relative** one reads `05:+$0100` — which matters beyond display, because
+     * `BreakpointIndicator` builds its `bp-set` / `bp-del` / `bp-en` command from this very string.
+     * Passing the row's address instead would arm a breakpoint at a Z80 address rather than at an
+     * offset in the bank the row belongs to.
+     *
+     * The address *spec*, not the display key: the key ends in `:W` for a memory-write breakpoint,
+     * and the commands take the kind as an option rather than as part of the address, so the key
+     * produced `bp-del 05:+$0100:W -w` — which parses as nothing. The address-bound case never hit
+     * this only because it passes a number rather than a key.
+     */
+    breakpointAddress:
+      breakpoint?.resource || breakpoint?.bankOffset !== undefined
+        ? getBreakpointAddressSpec(breakpoint, partitionLabels)
+        : bankScope
+          ? // --- No breakpoint here yet, and this is a bank listing: name the site the gutter would
+            // --- create as an offset in the bank, not as the address the bank currently sits at.
+            getBreakpointAddressSpec(
+              { bank: bankScope.bank, bankOffset: bankScope.bankOffset } as BreakpointInfo,
+              partitionLabels
+            )
+          : address,
     breakpointPartition:
       breakpoint?.partition !== undefined ? (partitionLabels[breakpoint.partition] ?? "?") : undefined,
     execPoint: address === pausedPc,
@@ -363,9 +400,11 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   ...viewModelParams
 }: DisassemblyRowProps) {
   const breakpoint = viewModelParams.breakpoint;
-  // --- Only an address-bound breakpoint is editable here. A source-bound one belongs to the
-  // --- editor's glyph margin, which places and moves it by line.
-  const editable = onEditBreakpoint && breakpoint && breakpoint.address !== undefined;
+  // --- Address-bound and bank-relative breakpoints are both editable: the dialog authors either
+  // --- shape. A source-bound one is not — it belongs to the editor's glyph margin, which places
+  // --- and moves it by line. `isBinaryBreakpoint` is the same gate the dialog's opener uses, so
+  // --- the row cannot offer an edit the dialog would refuse.
+  const editable = onEditBreakpoint && breakpoint && isBinaryBreakpoint(breakpoint);
   // --- A synopsis row stands in for a comment above the code, not for an instruction: it has no
   // --- address, so there is no view model to derive and no instruction columns to render.
   const isPrefixComment = item.prefixComment !== undefined;
@@ -385,6 +424,17 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       ? splitInstructionOperands(viewModel?.instruction ?? "", item.operandCandidates)
       : undefined;
   const showRail = annotated && isAuthoredRow(item);
+  /*
+   * A synopsis paragraph is set off from the code by space at its outer edges only.
+   *
+   * The note is stored as one comment per line and rendered as one row per line, so the *block* is
+   * a run of rows rather than a single element. `synopsisEdge` (set where those rows are built, in
+   * `nexAnnotatedDisassembly`) says which end each row is, so the space lands above the first line
+   * and below the last and never between them — a gap on every line would read as three separate
+   * notes rather than one. A one-line synopsis is `"only"` and takes both.
+   */
+  const synopsisEdge = isPrefixComment ? item.annotation?.synopsisEdge : undefined;
+  const spacedSynopsis = synopsisEdge === "first" || synopsisEdge === "last" || synopsisEdge === "only";
 
   return (
     <div
@@ -392,7 +442,9 @@ export const DisassemblyRow = memo(function DisassemblyRow({
         [styles.even]: index % 2 == 0,
         [styles.selectedRangeItem]: selectedRange,
         [styles.selectedItem]: selected,
-        [styles.execPoint]: viewModel?.execPoint
+        [styles.execPoint]: viewModel?.execPoint,
+        [styles.synopsisBlockFirst]: synopsisEdge === "first" || synopsisEdge === "only",
+        [styles.synopsisBlockLast]: synopsisEdge === "last" || synopsisEdge === "only"
       })}
       data-testid={`disassembly-row-${index}`}
       data-annotation-offset={item.annotation?.bankOffset}
@@ -400,12 +452,24 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       data-annotation-region={item.annotation?.regionType}
       data-selected={selected ? "true" : undefined}
       data-selected-range={selectedRange ? "true" : undefined}
+      data-synopsis-edge={synopsisEdge}
       onClick={onClick}
       onContextMenu={onContextMenu}
       onKeyDown={onKeyDown}
       aria-selected={selected || selectedRange || undefined}
       tabIndex={onClick || onContextMenu || onKeyDown ? 0 : undefined}
-      style={{ height: rowHeight }}
+      /*
+       * The edge rows of a synopsis block are the one kind of row the stylesheet sizes.
+       *
+       * They are taller than a listing row by the gap that sets the note off from the code, and the
+       * app sets `box-sizing: border-box` universally (`assets/styles/index.css`) — so the gap has
+       * to be *added to* the declared height, not just padded into it, or it is taken out of the
+       * text's own box and nothing moves. The arithmetic lives with the gap it depends on, in
+       * `.synopsisBlockFirst` / `.synopsisBlockLast`; an inline height here would beat those rules
+       * and is therefore withheld. `--row-size-disassembly` and this prop are the same number from
+       * the same `getRowSizes`, so the rows still line up.
+       */
+      style={spacedSynopsis ? undefined : { height: rowHeight }}
     >
       {/*
         * Rendered on every annotated row, lit only on the authored ones, so the columns after it sit
@@ -428,6 +492,20 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       ) : (
         <>
           <LabelSeparator />
+          {/*
+            * The kind flags are passed, not merely displayed.
+            *
+            * `BreakpointIndicator` builds its `bp-set` / `bp-del` / `bp-en` commands from these,
+            * so a gutter showing a memory breakpoint while claiming it is an execution one issued
+            * `bp-del $8000` for a breakpoint whose key is `$8000 R` — no match, nothing removed,
+            * and a dot that could not be clicked away. Watchpoints on a NEX bank made that
+            * reachable; the live view could hit it too.
+            *
+            * `showType` stays off: the gutter is one 16px cell, and a second glyph beside it would
+            * change every row's geometry. The kind is named in the indicator's tooltip instead, and
+            * `selectRowBreakpoint` prefers an execution breakpoint when a row has both, so the
+            * common case is the one the column is about.
+            */}
           <BreakpointIndicator
             showType={false}
             partition={viewModel.breakpointPartition}
@@ -435,6 +513,11 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             hasBreakpoint={viewModel.hasBreakpoint}
             current={viewModel.execPoint}
             disabled={viewModelParams.breakpoint?.disabled ?? false}
+            memoryRead={breakpoint?.memoryRead}
+            memoryWrite={breakpoint?.memoryWrite}
+            ioRead={breakpoint?.ioRead}
+            ioWrite={breakpoint?.ioWrite}
+            ioMask={breakpoint?.ioMask}
             onEdit={editable ? () => onEditBreakpoint(breakpoint) : undefined}
           />
           {/*
@@ -505,14 +588,28 @@ export const DisassemblyRow = memo(function DisassemblyRow({
               isDirective ? styles.annotationDirective : styles.disassemblyInstruction
             }
           >
-            {instructionParts?.map((part, partIndex) =>
-              typeof part === "string" ? (
-                part
-              ) : (
-                <span key={partIndex} className={styles.annotationOperand}>
-                  {part.label}
-                </span>
-              )
+            {/*
+              * One wrapper around every part, rather than the parts as direct children.
+              *
+              * The cell is `display: flex` (`DataValue`), so direct children would make each run
+              * its own *anonymous flex item* — a block box, which drops the white space at the end
+              * of its line. That is what rendered `jp Start` as `jpStart`: the space belongs to the
+              * `"jp "` run that precedes the tinted operand. Inside one wrapper the runs share a
+              * single inline formatting context, so the space between them is ordinary inter-word
+              * space and survives.
+              */}
+            {instructionParts && (
+              <span className={styles.instructionRun}>
+                {instructionParts.map((part, partIndex) =>
+                  typeof part === "string" ? (
+                    part
+                  ) : (
+                    <span key={partIndex} className={styles.annotationOperand}>
+                      {part.label}
+                    </span>
+                  )
+                )}
+              </span>
             )}
           </Value>
           {/*

@@ -15,6 +15,10 @@ import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
  * Step-into is excluded on purpose: it stayed with the caller, because the two paths test it at
  * different points relative to the breakpoint check. See `DebugStepDecision.ts`.
  *
+ * One-shot consumption is likewise excluded: the fold predates it, and the matrix arms no one-shot,
+ * so the added `consumeOneShotsAt` call cannot make the two paths differ here. It is a deliberate
+ * behaviour change of its own, covered by `debug-step-decision.test.ts`.
+ *
  * `retExecuted` is pinned to `false` throughout, which is what the interpreted path passed at the
  * time of the fold. It now passes the real flag — a deliberate behaviour change made afterwards, so
  * that step-out means what it is documented to mean on every machine. That change is covered by
@@ -84,6 +88,9 @@ function previousFrameRunnerLogic(machine: {
 function makeSupport(breakAt: number[], lastBreakpoint?: number, imminentBreakpoint?: number) {
   return {
     shouldStopAt: (address: number) => breakAt.includes(address),
+    // --- No one-shots in this matrix, so the call is a no-op and the two paths still leave the
+    // --- same state behind. `debug-step-decision.test.ts` covers what it does when there are some.
+    consumeOneShotsAt: () => 0,
     lastBreakpoint,
     imminentBreakpoint
   } as unknown as IDebugSupport;

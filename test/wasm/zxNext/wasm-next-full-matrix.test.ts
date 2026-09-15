@@ -74,9 +74,14 @@ const MATRIX: MatrixEntry[] = [
   {
     category: "memory/mmu",
     requiredDomain: "memory",
-    typeScriptTests: ["MemoryDevice.test.ts"],
+    typeScriptTests: ["MemoryDevice.test.ts", "AllRamBanks.test.ts"],
     wasmSuites: ["wasm-next-memory-mmu.test.ts", "wasm-next-partition-labels.test.ts"],
-    reason: "wasm-suite"
+    reason: "wasm-suite",
+    note:
+      "`AllRamBanks.test.ts` covers `allRamBanksFor`, which both machines now call — it is a pure " +
+      "function of the reported $1FFD value, so there is nothing machine-specific left for a WASM " +
+      "suite to re-check. What is WASM-specific is `getWasmV2Port1ffdValue`'s conversion from " +
+      "NextReg $8E, which wasm-next-memory-mmu.test.ts owns."
   },
   {
     category: "NextReg/palette",
@@ -207,6 +212,19 @@ const MATRIX: MatrixEntry[] = [
     typeScriptTests: ["KempstonJoystick.test.ts", "KempstonMouse.test.ts"],
     wasmSuites: ["wasm-next-input.test.ts", "wasm-next-keyboard-ula.test.ts"],
     reason: "wasm-suite"
+  },
+  {
+    category: "input/keystroke queue",
+    requiredDomain: "input",
+    typeScriptTests: ["KeystrokeQueue.test.ts", "NextKeyCodeMapping.test.ts"],
+    wasmSuites: ["wasm-next-input.test.ts", "wasm-next-keyboard-ula.test.ts"],
+    reason: "typescript-owned-host-boundary",
+    note:
+      "The emulated keystroke queue is TypeScript-owned: `queueKeystroke`/`emulateKeystroke` and " +
+      "the `emulatedKeyStrokes` list live in the machine class, and only the resulting key rows " +
+      "are pushed into the core by `syncKeyboardToWasmV2`. The WASM suites cover the row state " +
+      "that arrives; these suites cover the ASCII-to-key-code mapping and the scheduling that " +
+      "produce it."
   },
   {
     category: "expansion/multiface",

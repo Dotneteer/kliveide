@@ -23,6 +23,13 @@ export type MemoryDumpSectionProps = {
   partitionWidthCh?: number;
   address: number;
   bytes: readonly number[];
+  /**
+   * One flag per byte of `bytes`: true where this byte differs from the file's.
+   *
+   * Only the popped-out NEX bank passes it, when it is showing live memory. Every other caller
+   * leaves it unset and renders exactly as before.
+   */
+  changedBytes?: readonly boolean[];
   decimalView: boolean;
   charDump: boolean;
   pointedInfo?: Record<number, string>;
@@ -62,6 +69,7 @@ const MemoryDumpSectionViewComponent = ({
   partitionWidthCh = 0,
   address,
   bytes,
+  changedBytes,
   decimalView,
   charDump,
   pointedInfo,
@@ -104,6 +112,7 @@ const MemoryDumpSectionViewComponent = ({
       <HexValues
         address={address}
         bytes={bytes}
+        changedBytes={changedBytes}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
         lastJumpAddress={lastJumpAddress}
@@ -149,10 +158,22 @@ export const MemoryDumpSectionView = memo(MemoryDumpSectionViewComponent, (prev,
   if (prev.addressDigits !== next.addressDigits) return false;
   if (prev.characterInfo !== next.characterInfo) return false;
 
+  // --- The changed-byte mask, which decides the marks this row draws. There are two hand-written
+  // --- comparators on this path (this one and `HexValues`'s) and a prop missing from either is a
+  // --- row that keeps a stale rendering, so both check it.
+  if (!!prev.changedBytes !== !!next.changedBytes) return false;
+
   // Compare the byte values actually rendered
   for (let i = 0; i < prev.bytes.length; i++) {
     const addr = prev.address + i;
     if (prev.bytes[i] !== next.bytes[i]) return false;
+    if (
+      prev.changedBytes &&
+      next.changedBytes &&
+      !!prev.changedBytes[i] !== !!next.changedBytes[i]
+    ) {
+      return false;
+    }
 
     // Also ensure pointed info affecting tooltip/styling hasn't changed for these addresses
     const prevPoint = prev.pointedInfo?.[addr];
@@ -218,6 +239,7 @@ const CharDump = memo(CharDumpComponent, (prev, next) => {
 type HexValuesProps = {
   address: number;
   bytes: readonly number[];
+  changedBytes?: readonly boolean[];
   decimalView?: boolean;
   pointedInfo?: Record<number, string>;
   lastJumpAddress?: number;
@@ -231,6 +253,7 @@ type HexValuesProps = {
 const HexValuesComponent = ({
   address,
   bytes,
+  changedBytes,
   decimalView,
   pointedInfo,
   lastJumpAddress,
@@ -333,6 +356,31 @@ const HexValuesComponent = ({
     };
   }, [hoveredByteIndex, decimalView]);
 
+  /*
+   * Where the changed-byte marks go.
+   *
+   * The row is one text node — the whole `hexString` — so a byte cannot be wrapped in its own span
+   * without giving up the `ch` arithmetic that positions the hover and last-jump overlays and reads
+   * the hovered byte back out of the pointer position. Marking is therefore an overlay per changed
+   * byte, using exactly that arithmetic. Only rendered rows exist (the list is virtualised), so the
+   * count is bounded by what is on screen rather than by the size of the bank.
+   */
+  const changedOverlays = useMemo(() => {
+    if (!changedBytes) return undefined;
+    const width = decimalView ? 3 : 2;
+    const overlays: { index: number; left: string; width: string; text: string }[] = [];
+    for (let i = 0; i < bytes.length; i++) {
+      if (!changedBytes[i]) continue;
+      overlays.push({
+        index: i,
+        left: `${i * (width + 1)}ch`,
+        width: `${width}ch`,
+        text: hexString.substring(i * (width + 1), i * (width + 1) + width)
+      });
+    }
+    return overlays.length ? overlays : undefined;
+  }, [changedBytes, bytes.length, decimalView, hexString]);
+
   // Determine lastJump byte index - memoized
   const lastJumpByteIndex = useMemo(() => {
     for (let i = 0; i < bytes.length; i++) {
@@ -362,6 +410,19 @@ const HexValuesComponent = ({
       onContextMenu={handleContextMenu}
     >
       {hexString}
+      {/*
+        * Before the hover overlay in document order, so a hovered changed byte shows the hover
+        * treatment on top rather than fighting it.
+        */}
+      {changedOverlays?.map((overlay) => (
+        <div
+          key={overlay.index}
+          className={styles.changedByteOverlay}
+          style={{ left: overlay.left, width: overlay.width }}
+        >
+          {overlay.text}
+        </div>
+      ))}
       {overlayStyle && hoveredByteIndex !== null && (
         <div className={styles.byteHoverOverlay} style={overlayStyle}>
           {hexString.substring(
@@ -415,6 +476,20 @@ const HexValues = memo(HexValuesComponent, (prev, next) => {
   // Check if the bytes have changed
   for (let i = 0; i < prev.bytes.length; i++) {
     if (prev.bytes[i] !== next.bytes[i]) return false;
+  }
+
+  /*
+   * ...and the changed-byte mask, which is a separate array.
+   *
+   * A hand-written comparator silently drops any prop it does not mention: without this, switching
+   * the bank between live and file bytes would leave the marks from the previous source on every
+   * row whose bytes happened to be identical in both.
+   */
+  if (!!prev.changedBytes !== !!next.changedBytes) return false;
+  if (prev.changedBytes && next.changedBytes) {
+    for (let i = 0; i < prev.bytes.length; i++) {
+      if (!!prev.changedBytes[i] !== !!next.changedBytes[i]) return false;
+    }
   }
 
   // Check if pointedInfo has changed for any of the bytes

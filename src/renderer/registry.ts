@@ -97,6 +97,10 @@ import {
 import { ScriptingHistoryPanel } from "./appIde/SideBarPanels/ScriptingHistoryPanel";
 import { ScriptingHistoryBadge } from "./appIde/SideBarPanels/ScriptingHistoryBadge";
 import { getScriptingContextMenuIfo, scriptingCommandBarRenderer } from "@renderer/features/documents/ScriptingCommandBar";
+import {
+  getNexLaunchContextMenuInfo,
+  nexLaunchCommandBarRenderer
+} from "@renderer/features/documents/NexLaunchContextMenu";
 import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPanel";
 import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
 import { createMemoryPanel } from "@renderer/features/memory/MemoryPanel";
@@ -618,7 +622,9 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     icon: "chip",
     isBinary: true,
     isReadOnly: true,
-    openPermanent: true
+    openPermanent: true,
+    documentTabRenderer: nexLaunchCommandBarRenderer,
+    contextMenuInfo: getNexLaunchContextMenuInfo
   },
   /*
    * Re-enabled in Phase 37, after six months dark.

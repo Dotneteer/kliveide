@@ -1,4 +1,5 @@
 #include "zxnext-cpu.h"
+#include "zxnext-copper.h"
 #include "zxnext-trace.h"
 #include "zxnext-ula.h"
 #include "zxnext-psg.h"
@@ -42,6 +43,7 @@ static inline void zxnextCpuMarkFrameCompleted(void) {
   frames++;
   frameCompleted = 1;
   zxnextUlaOnFrameCompleted();
+  zxnextCopperOnFrameCompleted();
 }
 
 static inline void zxnextCpuTactPlusN(uint32_t value) {
@@ -54,6 +56,11 @@ static inline void zxnextCpuTactPlusN(uint32_t value) {
     zxnextCpuMarkFrameCompleted();
   }
   currentFrameTact = frameTacts28 >> 2;
+  // Advance the copper's beam to the current ULA tact. The `frameCompleted` guard mirrors
+  // `ZxNextMachine.onTactIncremented`, which returns early once the frame is done: a frame
+  // can complete part-way through an instruction, and the remaining tact groups of that
+  // instruction must not tick the copper into the next frame.
+  if (frameCompleted == 0u) zxnextCopperAdvanceTo(currentFrameTact);
   zxnextBeeperSetTacts(tacts);
   zxnextAudioMixerSetNextSample(frameTacts28);
 }

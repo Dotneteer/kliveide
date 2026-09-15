@@ -718,8 +718,12 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         // --- We have a set of breakpoints to restore, get it from the stack
         const lastSet = currentSet.pop();
 
-        // --- Restore the previous breakpoints
-        await createEmuApi(messenger).resetBreakpointsTo(lastSet);
+        // --- Restore the previous breakpoints. Scoped to `project`: these snapshots are of the
+        // --- project's own breakpoints, so an editor undo must not reach breakpoints owned by a
+        // --- `.nex` sidecar or by a live debug session. (The snapshot is still whole-set within
+        // --- that scope, i.e. it also restores other files' source breakpoints — narrowing it to
+        // --- one resource is a separate change.)
+        await createEmuApi(messenger).resetBreakpointsTo(lastSet, { kind: "project" });
 
         // --- Update the redo stack
         let currentRedo = redoStack.current.get(resourceKey);
@@ -741,8 +745,12 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         // --- We have a set of breakpoints to restore, get it from the stack
         const lastSet = currentSet.pop();
 
-        // --- Restore the previous breakpoints
-        await createEmuApi(messenger).resetBreakpointsTo(lastSet);
+        // --- Restore the previous breakpoints. Scoped to `project`: these snapshots are of the
+        // --- project's own breakpoints, so an editor undo must not reach breakpoints owned by a
+        // --- `.nex` sidecar or by a live debug session. (The snapshot is still whole-set within
+        // --- that scope, i.e. it also restores other files' source breakpoints — narrowing it to
+        // --- one resource is a separate change.)
+        await createEmuApi(messenger).resetBreakpointsTo(lastSet, { kind: "project" });
 
         // --- Update the undo stack
         let currentUndo = undoStack.current.get(resourceKey);

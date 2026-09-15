@@ -1,7 +1,7 @@
 import type { IProjectService } from "@renderer/abstractions/IProjectService";
 import {
-  formatNexAnnotations,
-  loadNexAnnotationSidecar
+  loadNexAnnotationSidecar,
+  saveNexAnnotationSubtree
 } from "./nexAnnotationSidecar";
 import type { NexFileAnnotations } from "./nexAnnotations";
 
@@ -51,7 +51,7 @@ export function updateNexAnnotationSession(
 }
 
 export async function saveNexAnnotationSession(
-  projectService: Pick<IProjectService, "saveFileContent">,
+  projectService: Pick<IProjectService, "readFileContent" | "saveFileContent">,
   annotationPath: string
 ): Promise<void> {
   const session = getOrCreateSession(annotationPath);
@@ -60,10 +60,10 @@ export async function saveNexAnnotationSession(
   }
 
   try {
-    await projectService.saveFileContent(
-      annotationPath,
-      formatNexAnnotations(session.annotations)
-    );
+    // --- Only the annotation keys: the `debug` subtree beside them is written on its own policy
+    // --- (immediately, when a breakpoint changes) and must survive this save untouched.
+    // --- See `.plans/NEX_DEBUGGING_PLAN.md` §4.5.
+    await saveNexAnnotationSubtree(projectService, annotationPath, session.annotations);
     session.saveError = undefined;
     session.dirty = false;
   } catch (err) {
@@ -71,6 +71,23 @@ export async function saveNexAnnotationSession(
     session.dirty = true;
   }
   emitSession(session);
+}
+
+/**
+ * The annotations a live session holds for this sidecar, or `undefined` when none is open.
+ *
+ * The distinction matters to anything editing annotations from *outside* a viewer (§13.3): with a
+ * session open, its copy may carry edits the user has not saved, so an edit must go through
+ * `updateNexAnnotationSession` and inherit the same dirty-and-save-when-asked policy. With no
+ * session, there is nothing in memory to conflict with and the file can be read, changed and
+ * written — which is the only way such an edit is not lost.
+ *
+ * Deliberately a *peek*, not a subscription: the caller is a command that runs once.
+ */
+export function peekNexAnnotationSession(
+  annotationPath: string
+): NexFileAnnotations | undefined {
+  return sessions.get(annotationPath)?.annotations;
 }
 
 export function clearNexAnnotationSessions(): void {

@@ -10,8 +10,10 @@ import {
   type DisassemblyOptions
 } from "../disassemblers/common-types";
 import type { ICustomDisassembler } from "../disassemblers/z80-disassembler/custom-disassembly";
+import type { DisassemblyOperandLabelResolver } from "../disassemblers/common-types";
 import type { CachedRefreshState } from "./disassemblyViewState";
 import type { BranchCpuSnapshot } from "./branchVerdict";
+import { buildBreakpointMap, type BreakpointsByAddress } from "./breakpointRowMatch";
 
 type DisassemblyOutput = {
   outputItems: DisassemblyItem[];
@@ -33,6 +35,25 @@ export type DisassemblerFactory = (
 type DisassemblyRefreshParams = {
   cachedRefreshState: MutableRefObject<CachedRefreshState>;
   customDisassembly?: (() => ICustomDisassembler) | unknown;
+
+  /**
+   * Optionally builds an operand-name resolver — the live view's route to a NEX's labels.
+   *
+   * A **factory over the current paging**, not a resolver, and that shape is forced: naming a
+   * local label needs to know which bank is at an address, the paging arrives with the memory read
+   * this hook performs, and the caller cannot have it before the hook runs. Taking a finished
+   * resolver made the panel depend on a value this hook produces — a cycle — and the only way to
+   * break it from the outside would be to name from the *previous* refresh's paging, which is
+   * wrong for exactly the case the feature is for.
+   *
+   * The caller supplies the symbols (a document-level concern this hook knows nothing about); the
+   * hook supplies the paging, fresh. Absent leaves the disassembler's own rendering as it was.
+   *
+   * @param mem64kLabels the partition label of each 8K slot, as the emulator just reported it
+   */
+  operandLabelSource?: (
+    mem64kLabels: string[]
+  ) => DisassemblyOperandLabelResolver | undefined;
   disassOffset: number;
   disassemblerFactory?: DisassemblerFactory;
   emuApi: Pick<EmuApi, "getDisassemblySections" | "getMemoryContents">;
@@ -90,7 +111,7 @@ export function createBranchCpuSnapshot(
 
 export type DisassemblyRefreshResult = {
   breakpoints: BreakpointInfo[];
-  breakpointMap: Map<number, BreakpointInfo>;
+  breakpointMap: BreakpointsByAddress;
   items: DisassemblyItem[];
   mem64kLabels: string[];
   pausedPc: number;
@@ -141,22 +162,10 @@ export function createManualMemorySections(sections: IMemorySection[]): MemorySe
   );
 }
 
-function buildBreakpointMap(breakpoints: BreakpointInfo[]): Map<number, BreakpointInfo> {
-  const map = new Map<number, BreakpointInfo>();
-  breakpoints.forEach((breakpoint) => {
-    if (breakpoint.address !== undefined) {
-      map.set(breakpoint.address, breakpoint);
-    }
-    if (breakpoint.resolvedAddress !== undefined) {
-      map.set(breakpoint.resolvedAddress, breakpoint);
-    }
-  });
-  return map;
-}
-
 export function useDisassemblyRefresh({
   cachedRefreshState,
   customDisassembly,
+  operandLabelSource,
   disassOffset,
   disassemblerFactory,
   emuApi,
@@ -165,7 +174,7 @@ export function useDisassemblyRefresh({
 }: DisassemblyRefreshParams): DisassemblyRefreshResult {
   const [items, setItems] = useState<DisassemblyItem[]>([]);
   const [breakpoints, setBreakpoints] = useState<BreakpointInfo[]>([]);
-  const [breakpointMap, setBreakpointMap] = useState<Map<number, BreakpointInfo>>(() => new Map());
+  const [breakpointMap, setBreakpointMap] = useState<BreakpointsByAddress>(() => new Map());
   const [mem64kLabels, setMem64kLabels] = useState<string[]>([]);
   const [pausedPc, setPausedPc] = useState(0);
   const [cpuSnapshot, setCpuSnapshot] = useState<BranchCpuSnapshot | undefined>(undefined);
@@ -211,6 +220,8 @@ export function useDisassemblyRefresh({
               noLabelPrefix: false,
               allowExtendedSet: machineId === MI_ZXNEXT,
               decimalMode: refreshState.decimalView,
+              // --- Built from the paging this very read reported, so a name is never one tick out.
+              operandLabelResolver: operandLabelSource?.(getMemoryResponse.partitionLabels),
               getRomPage: () => {
                 return refreshState.isFullView
                   ? getMemoryResponse.selectedRom
@@ -265,6 +276,7 @@ export function useDisassemblyRefresh({
   }, [
     cachedRefreshState,
     customDisassembly,
+    operandLabelSource,
     disassOffset,
     disassemblerFactory,
     emuApi,

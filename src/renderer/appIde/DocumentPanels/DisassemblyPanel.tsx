@@ -34,7 +34,15 @@ import {
   useDisassemblyRefresh
 } from "./useDisassemblyRefresh";
 import { DisassemblyRow } from "./DisassemblyRow";
+import { useLaunchedNexAnnotations } from "./Next/useNexLiveBank";
+import { createNexLiveOperandLabelResolver } from "./Next/nexLiveSymbols";
 import { evaluateBranch, type BranchVerdict } from "./branchVerdict";
+import {
+  buildPartitionIndexByLabel,
+  resolveMem64kPartitions,
+  resolveRowPartition,
+  selectRowBreakpoint
+} from "./breakpointRowMatch";
 import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
 import { toHexa4 } from "../services/ide-commands";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
@@ -127,6 +135,38 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const setFollowPcTopAddress = useCallback((address: number) => {
     setTopAddress(address);
   }, []);
+
+  // --- The live paging as partition *indices*. The emulator reports it as labels, and a breakpoint
+  // --- names its partition by index, so the machine's label map is inverted once here instead of
+  // --- once per visible row.
+  const partitionIndexByLabel = useMemo(
+    () => buildPartitionIndexByLabel(machineSetup.partitionLabels),
+    [machineSetup.partitionLabels]
+  );
+  /*
+   * The launched NEX's labels, for naming operands in the live listing.
+   *
+   * A factory over the paging rather than a finished resolver: `mem64kPartitions` below is derived
+   * from what `useDisassemblyRefresh` *returns*, so handing it a resolver built from that would be
+   * a cycle — and resolving from the previous refresh's paging would name from banks that have
+   * since moved. The hook calls this with the paging it just read.
+   *
+   * Memoized on the annotations and the label map, because the hook depends on its identity: a
+   * fresh function every render would re-disassemble 64K every render.
+   */
+  const launchedAnnotations = useLaunchedNexAnnotations();
+  const operandLabelSource = useMemo(
+    () =>
+      launchedAnnotations
+        ? (labels: string[]) =>
+            createNexLiveOperandLabelResolver(
+              launchedAnnotations,
+              resolveMem64kPartitions(labels, partitionIndexByLabel)
+            )
+        : undefined,
+    [launchedAnnotations, partitionIndexByLabel]
+  );
+
   const {
     breakpointMap,
     cpuSnapshot,
@@ -141,8 +181,14 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     disassemblerFactory,
     emuApi,
     machineId,
+    operandLabelSource,
     onFollowPcTopAddress: setFollowPcTopAddress
   });
+
+  const mem64kPartitions = useMemo(
+    () => resolveMem64kPartitions(mem64kLabels, partitionIndexByLabel),
+    [mem64kLabels, partitionIndexByLabel]
+  );
 
   useDisassemblyViewStatePersistence({
     autoRefresh,
@@ -436,7 +482,15 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
               return (
                 <DisassemblyRow
                   bankLabel={bankLabel}
-                  breakpoint={breakpointMap.get(item.address)}
+                  breakpoint={selectRowBreakpoint(
+                    breakpointMap.get(item.address),
+                    resolveRowPartition(
+                      item.address,
+                      isFullView,
+                      currentSegment,
+                      mem64kPartitions
+                    )
+                  )}
                   commentWidthCh={commentWidthCh}
                   currentSegment={currentSegment}
                   decimalView={decimalView}

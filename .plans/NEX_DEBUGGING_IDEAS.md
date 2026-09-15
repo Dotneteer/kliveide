@@ -340,7 +340,7 @@ It also needs the race in §2.5 addressed: either arm before the keystrokes are 
 `"Start"` must stay non-debug until the last keystroke is consumed, or detect the `.nexload` handover
 some other way. Worth prototyping before committing — see §9 Q5.
 
-### 5.3 Reuse the boot checkpoint across debug cycles — **promoted to core scope** (§9 Q1, Q7)
+### 5.3 Reuse the boot checkpoint across debug cycles — ⚠ **premise wrong; already works**
 
 > Choosing the `.nexload` route means every single launch pays for NextZXOS. Combined with the author's
 > "nice and easy" requirement, this stops being an optimisation and becomes the difference between a
@@ -348,13 +348,23 @@ some other way. Worth prototyping before committing — see §9 Q5.
 > land early and makes manually testing everything else faster.
 
 `ReachExecPoint`'s `checkpoint` already skips the cold boot by snapshotting WASM linear memory
-(`ZxNextWasmV2Machine.ts:620`, `:646`). But it deliberately excludes the SD image, so **any card
-write invalidates it** (`processWasmV2SdWriteFrameCommand:1009` calls `invalidateCheckpoints()`) —
-and copying the NEX onto the card is a card write.
+(`ZxNextWasmV2Machine.ts:620`, `:646`). It deliberately excludes the SD image, so **a write by the
+emulated machine invalidates it** (`processWasmV2SdWriteFrameCommand:1009`).
 
-If the copy happens *before* the restore, or the checkpoint is keyed to the card's content, the
-edit-debug loop stops paying for a full NextZXOS boot every time. For an iterative debugging feature
-this is probably the biggest usability win available, and it is orthogonal to everything else.
+> **⚠ Corrected in Phase 3 — this section's conclusion was wrong.** I wrote that "copying the NEX
+> onto the card is a card write" and therefore drops the checkpoint. It does not. Two different
+> things share the word:
+>
+> - `invalidateCheckpoints()` drops the *machine's* checkpoint, and only a machine-initiated sector
+>   write (or a ROM upload) calls it;
+> - `invalidateSdCardHandler()` closes a cached *main-process file handle*
+>   (`zx-next-menus.ts:298-303`), and that is what `copyToSdCard` calls. It never reaches the
+>   renderer.
+>
+> So a host-side copy leaves the checkpoint intact and **the reuse already happens**, for the shipped
+> F5 path as much as for the Phase 3 launch. `wasm-next-checkpoint-flow.test.ts` already pins the
+> distinction. There was no optimisation to make — see `NEX_DEBUGGING_PLAN.md` §8 for what remains
+> (a pre-existing stale-filesystem-cache risk, not a performance one).
 
 ### 5.4 Direct NEX loading, as an alternative mode — **OUT OF SCOPE** (§9 Q1)
 
@@ -603,7 +613,7 @@ several of these answers constrain each other.
 | Q2 | Which breakpoint representation? | **R3 — a bank-relative breakpoint kind, checked against the 8K bank.** | New fields on `BreakpointInfo`; new one-and-only-one resolver per core exposing `bank8k` (§4.3); no intermediate R1 stage, so the UI is built once. Also means §3's false-positive class never ships. |
 | Q3 | Do label-anchored breakpoints exist? | **Yes** (§7.4). | `resolvedPartition` finally gets a writer; `ResolvedBreakpoint` grows a partition field; resolution runs against the sidecar's label table. Coheres neatly with Q4: the breakpoint and the label it names live in the same file. |
 | Q4 | Where do bank breakpoints and launch options persist? | **The `.nex.dis` sidecar.** | The sidecar stops being purely *annotations* and becomes the NEX's debug companion file — schema bump, and its read-only editor registration needs revisiting. Requires **breakpoint ownership** (§9.4a), which also fixes a pre-existing bug. |
-| Q5 | How is "break at the NEX entry point" made reliable? | **Open — worked out in §9.5.** | Recommends a one-shot *system* breakpoint armed before the flow, with user breakpoints suppressed during it. |
+| Q5 | How is "break at the NEX entry point" made reliable? | **Answered in §9.5, and shipped** — with step 3 narrowed; see the correction there. | A session-owned one-shot armed before the flow. Suppression turned out to be needed only for the post-flow arming window, not the whole flow. |
 | Q6 | Extend the `bp-set` grammar? | **Yes.** | Needs a notation that cannot collide with hex bank labels or the existing `partition:address` form — proposal in §9.6. |
 | Q7 | Live-capable pop-out, or a separate live-bank document? | **The pop-out becomes live-capable**, with the stated goal *"something that makes the debugging experience nice and easy."* | Promotes the whole §6.3–§6.7 cluster from "nice to have" to **core scope**. Also means `StaticMemoryDump.tsx` must be decomposed rather than extended — **the annotation UI moves out**, per the author's follow-up. Worked out in §9.5a. |
 | Q8 | Next-only, or general? | **Next-only for now.** | No 128K or `.sna`/`.z80` work. Name the abstraction so a later generalisation is possible, but build no seams for it speculatively. |
@@ -743,6 +753,28 @@ during the typing phase breaks the launch.**
 
 This removes the arming window entirely rather than bounding it: the breakpoint is live before
 `.nexload` is even typed, and nothing else can stop the machine in the meantime.
+
+> ### ⚠ Correction after implementing it — step 3 was broader than it needed to be
+>
+> Steps 1, 2 and 4 shipped as written. Step 3 did not: suppressing user breakpoints *for the whole
+> flow*, "replacing today's blanket `NoDebug` during `Start` steps", would have changed behaviour
+> for no gain.
+>
+> The flow already starts the machine in `NoDebug`, and **the per-instruction callers skip the stop
+> decision entirely in that mode** — so no user breakpoint can fire during the typing phase whatever
+> a suppression flag says. The analysis above is right that a pause during typing would be fatal;
+> it is wrong that a new flag is what prevents it. `NoDebug` already does, which is what the comment
+> at `MachineController.ts:464-468` is saying.
+>
+> The window that genuinely is exposed is the one this section's timing analysis found and then
+> dismissed as "almost never lost": the ~100 ms after the flow returns, where debug is armed while
+> the machine is still running and strokes may still be queued. Suppression is scoped to exactly
+> that, and lifted on the first of — queue drained, machine no longer running, newer operation, or a
+> 10 s backstop. See `.plans/NEX_DEBUGGING_PLAN.md` §10.3.
+>
+> The lesson is not about NEX files: *a flag that is supposed to prevent something should be checked
+> against what already prevents it.* Two mechanisms guarding the same window, one of them redundant,
+> is how the redundant one later gets "simplified" away along with the real protection.
 
 Two properties worth noting. First, **the partition is what makes it precise** — `PC == programCounter`
 may well occur during NextZXOS's own execution, but not with the NEX's entry bank paged at that

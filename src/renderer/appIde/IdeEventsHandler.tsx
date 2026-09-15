@@ -20,6 +20,8 @@ import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { isDebuggableCompilerOutput } from "./utils/compiler-utils";
 import { restoreLastOpenDocuments } from "./restoreLastOpenDocuments";
+import { revealNexBankAtPc } from "./DocumentPanels/Next/nexBankReveal";
+import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 
 export const TOOL_PANEL_HEIGHT = "toolPanelHeight";
 
@@ -43,6 +45,7 @@ export const IdeEventsHandler = () => {
   useEffect(() => {
     (async () => {
       if (execState === MachineControllerState.Paused) {
+        await revealNexBankForPc();
         await refreshCodeLocation();
       }
     })();
@@ -118,6 +121,56 @@ export const IdeEventsHandler = () => {
 
   // --- Do not render any visual elements
   return null;
+
+  /*
+   * Follow the program counter into whichever NEX bank it is in.
+   *
+   * Every pause, not just the entry-point stop: stepping out of bank 5 into `$A624` should bring
+   * bank 2 forward, and the entry stop is then simply the first pause whose PC is inside a bank of
+   * the file. The decision lives in `revealNexBankAtPc`; this only supplies the machine and the
+   * document hub.
+   *
+   * The bank's *file* bytes are shown, in the same document the NEX viewer's pop-out opens — same
+   * id, so this focuses that document rather than opening a second one — and the pop-out can be
+   * switched to the live bank from its own toolbar.
+   *
+   * Failures are silent by design: this is a convenience on top of a stop that has already happened
+   * and been reported, and an error box because a file moved would be worse than not scrolling.
+   *
+   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.17.
+   */
+  async function revealNexBankForPc(): Promise<void> {
+    const documentHubService = projectService.getActiveDocumentHubService();
+    if (!documentHubService) return;
+
+    try {
+      await revealNexBankAtPc({
+        getPc: async () => (await emuApi.getCpuState()).pc,
+        getPageInfo: async () => (await emuApi.getNextMemoryMapping())?.pageInfo,
+        readFile: (path) => mainApi.readBinaryFile(path),
+        openBank: async ({ path, bank, contents, disassOffset, topAddress, annotationPath }) => {
+          await openStaticMemoryDump(
+            documentHubService,
+            `bankDump${path}:${bank}`,
+            `${path} - Bank: ${bank}`,
+            contents,
+            {
+              disassemblyEnabled: true,
+              disassOffset,
+              nexAnnotationPath: annotationPath,
+              nexAnnotationBank: bank,
+              topAddress,
+              // --- Explicit rather than relying on the NEX default: this document is being opened
+              // --- to show the instruction the machine stopped on.
+              viewMode: "disassembly" as const
+            }
+          );
+        }
+      });
+    } catch {
+      // --- See the note above: nothing here is worth interrupting the user for.
+    }
+  }
 
   // --- Navigates to the current execution point location
   async function refreshCodeLocation(): Promise<void> {

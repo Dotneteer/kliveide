@@ -29,20 +29,20 @@ describe("ZX Next WASM advanced video copper", () => {
     expect(exports.zxnextGetCopperInstructionAddress()).toBe(copper.instructionAddress);
 
     copper.executeTick(5, 11);
-    exports.zxnextCopperTick(5, 11, oracle.composedScreenDevice.config.totalVC);
+    exports.zxnextCopperTick(5, 11);
     expect(exports.zxnextGetCopperListAddress()).toBe((copper as any)._copperListAddr);
 
     copper.executeTick(5, 12);
-    exports.zxnextCopperTick(5, 12, oracle.composedScreenDevice.config.totalVC);
+    exports.zxnextCopperTick(5, 12);
     expect(exports.zxnextGetCopperListAddress()).toBe((copper as any)._copperListAddr);
 
     copper.executeTick(5, 13);
-    exports.zxnextCopperTick(5, 13, oracle.composedScreenDevice.config.totalVC);
+    exports.zxnextCopperTick(5, 13);
     expect(exports.zxnextGetCopperDout()).toBe((copper as any)._copperDout ? 1 : 0);
     expect(exports.zxnextGetCopperListData()).toBe((copper as any)._copperListData);
 
     copper.executeTick(5, 14);
-    exports.zxnextCopperTick(5, 14, oracle.composedScreenDevice.config.totalVC);
+    exports.zxnextCopperTick(5, 14);
     expect(exports.zxnextGetNextRegisterDirect(0x12)).toBe(0x34);
   });
 });

@@ -185,7 +185,16 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    */
   reset(): void {
     super.reset();
-    this.frameCompleted = false;
+    // --- `frameCompleted` is the frame runner's "start a new frame" signal, not a statement about
+    // --- history: `MachineFrameRunner` only runs its frame-initialization block --- and so only
+    // --- calls `onInitNewFrame()` --- when it finds this flag set. After a reset no frame is in
+    // --- progress, so the next execution must begin one; leaving it `false` made the runner treat
+    // --- the first frame as a continuation of a frame that never started, skipping every
+    // --- per-frame setup that `onInitNewFrame()` performs. On the ZX Next that meant
+    // --- `lastRenderedFrameTact` stayed `undefined`, so `while (lastRenderedFrameTact <
+    // --- currentFrameTact)` never ran and neither the screen nor the copper advanced for the whole
+    // --- of frame 1. See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.11.
+    this.frameCompleted = true;
     this._machineFrameRunner.reset();
     this._queuedEvents = [];
     this._queuedEventsHead = 0;
@@ -193,8 +202,13 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
   /**
    * Stores the last rendered machine frame tact.
+   *
+   * Defaulted rather than left undefined: it is read in a `<` comparison every tact, and `undefined
+   * < n` is silently `false` rather than an error, which is how an entire unrendered frame went
+   * unnoticed (§15.11 of the CSpect plan). A machine that somehow runs before its first
+   * `onInitNewFrame()` now renders from tact 0 instead of not at all.
    */
-  lastRenderedFrameTact: number;
+  lastRenderedFrameTact: number = 0;
 
   /**
    * Load the specified ROM

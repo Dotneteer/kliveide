@@ -20,6 +20,7 @@ import {
   breakpointToForm,
   createEmptyForm,
   formToBreakpointInfo,
+  isBankRelativeInput,
   isFormValid,
   validateBreakpointForm
 } from "@renderer/appIde/utils/breakpoint-form";
@@ -88,9 +89,12 @@ export const BreakpointDialog = ({
   const update = (over: Partial<BreakpointFormState>) => setForm((prev) => ({ ...prev, ...over }));
 
   const ioKind = isIoKind(form.kind);
+  // --- A bank-relative address names its own bank, so the partition control has nothing left to
+  // --- choose. Judged from what is *typed*, so the row responds as the user finishes the spelling.
+  const bankRelative = isBankRelativeInput(form.address);
   // --- A partition is meaningless on an I/O breakpoint, and the command layer rejects the pair
   // --- outright. Disable rather than hide, so switching type does not make a row jump away.
-  const partitionEnabled = env.supportsPartitions && !ioKind;
+  const partitionEnabled = env.supportsPartitions && !ioKind && !bankRelative;
   /*
    * What ticking the partition box selects first. The lowest index the machine actually has, which
    * is ROM 0 where there are ROMs and bank 0 otherwise — never a hardcoded 0, which is not a
@@ -161,7 +165,11 @@ export const BreakpointDialog = ({
             />
           )}
           {!partitionEnabled && (
-            <div className={styles.hint}>An I/O breakpoint watches a port, not a partition.</div>
+            <div className={styles.hint}>
+              {bankRelative && !ioKind
+                ? "A bank-relative address already names its bank."
+                : "An I/O breakpoint watches a port, not a partition."}
+            </div>
           )}
           {shows("partition") && errors.partition && (
             <div className={styles.error} role="alert">
@@ -182,7 +190,16 @@ export const BreakpointDialog = ({
           }}
         />
         <div className={styles.hint}>
-          Accepts $8000, 32768 or %1000000000000000.
+          {/*
+            * The bank-relative spelling is offered here rather than as controls of its own: it is
+            * what `bp-set` accepts, so there is one syntax to learn, and the Type selector above is
+            * then all a bank *watchpoint* needs. See `breakpoint-form.ts`.
+            */}
+          {ioKind
+            ? "Accepts $8000, 32768 or %1000000000000000."
+            : env.supportsBankRelative
+              ? "Accepts $8000, 32768 or %1000000000000000 — or 05:+$0100 for an offset inside a 16K bank, wherever that bank is paged."
+              : "Accepts $8000, 32768 or %1000000000000000."}
         </div>
       </DialogRow>
 

@@ -69,8 +69,16 @@ export class TestUpd765Machine extends ZxSpectrumBase {
   }
 
   // --- We do not neet to use these methods in this test
-  readScreenMemory(offset: number): number {
-    throw new Error("Method not implemented.");
+  //
+  // `readScreenMemory` is the exception: it has to return something. This stub overrides
+  // `onInitNewFrame` without calling `super`, so `lastRenderedFrameTact` keeps its default and
+  // `ZxSpectrumBase.onTactIncremented` drives `CommonScreenDevice.renderTact` for real, which
+  // reads screen memory. It used to throw here and never be called, because the base class left
+  // `lastRenderedFrameTact` undefined and `undefined < currentFrameTact` silently skipped every
+  // render (see `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.11). The floppy tests care
+  // about the controller, not the picture, so any stable value will do.
+  readScreenMemory(_offset: number): number {
+    return 0;
   }
 
   get64KFlatMemory(): Uint8Array {

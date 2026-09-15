@@ -342,3 +342,79 @@ describe("MemoryDumpSection", () => {
     expect(container.querySelector('[class*="charValues"]')?.textContent).toBe("ABC");
   });
 });
+
+/*
+ * Marking the bytes a live NEX bank has changed since it was loaded.
+ *
+ * The row is one text node — the whole hex string — so a byte cannot be wrapped in its own element
+ * without giving up the `ch` arithmetic that positions the hover overlay and reads the hovered byte
+ * back out of the pointer position. Marking is therefore an overlay per changed byte, laid over the
+ * text at the same computed position. See `.plans/NEX_DEBUGGING_PLAN.md` §11.3.
+ */
+describe("MemoryDumpSection: changed bytes", () => {
+  async function renderRow(changedBytes?: boolean[], decimalView = false) {
+    mockIdeCommands();
+    const { MemoryDumpSection } = await import("@renderer/features/memory/MemoryDumpSection");
+    const { container } = render(
+      <MemoryDumpSection
+        address={0x0000}
+        bytes={[0x11, 0x22, 0x33, 0x44]}
+        changedBytes={changedBytes}
+        decimalView={decimalView}
+        charDump={false}
+        lastJumpAddress={-1}
+      />
+    );
+    return container;
+  }
+
+  /** The overlays, by the text each one repeats. */
+  function overlayTexts(container: HTMLElement): string[] {
+    return Array.from(container.querySelectorAll("div[class*='changedByteOverlay']")).map(
+      (el) => el.textContent ?? ""
+    );
+  }
+
+  it("draws nothing when no mask is given, as every other caller expects", async () => {
+    const container = await renderRow(undefined);
+    expect(overlayTexts(container)).toEqual([]);
+  });
+
+  it("draws nothing when the mask says nothing changed", async () => {
+    const container = await renderRow([false, false, false, false]);
+    expect(overlayTexts(container)).toEqual([]);
+  });
+
+  it("marks each changed byte with its own value", async () => {
+    const container = await renderRow([false, true, false, true]);
+    expect(overlayTexts(container)).toEqual(["22", "44"]);
+  });
+
+  it("marks the first byte, which has no leading separator to offset it", async () => {
+    const container = await renderRow([true, false, false, false]);
+    expect(overlayTexts(container)).toEqual(["11"]);
+  });
+
+  it("positions each mark where its byte is in the row", async () => {
+    // --- Three characters per byte in hex — two digits and a space — so byte 3 starts at 9ch.
+    const container = await renderRow([false, false, false, true]);
+    const overlay = container.querySelector("div[class*='changedByteOverlay']") as HTMLElement;
+    expect(overlay.style.left).toEqual("9ch");
+    expect(overlay.style.width).toEqual("2ch");
+  });
+
+  it("widens the marks in decimal view, where a byte is three digits", async () => {
+    const container = await renderRow([false, true, false, false], true);
+    const overlay = container.querySelector("div[class*='changedByteOverlay']") as HTMLElement;
+    expect(overlay.style.left).toEqual("4ch");
+    expect(overlay.style.width).toEqual("3ch");
+    expect(overlay.textContent).toEqual("034");
+  });
+
+  it("leaves the row's own text alone", async () => {
+    // --- The marks are laid *over* the text; the hex string itself must be unchanged, or the
+    // --- pointer-position arithmetic that reads the hovered byte would stop agreeing with it.
+    const container = await renderRow([true, true, true, true]);
+    expect(container.textContent).toContain("11 22 33 44");
+  });
+});

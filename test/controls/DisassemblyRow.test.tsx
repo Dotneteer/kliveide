@@ -9,8 +9,21 @@ import {
 } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
 import type { BranchVerdict } from "@renderer/appIde/DocumentPanels/branchVerdict";
 
+/*
+ * Renders nothing, as it always did, but records what it was handed.
+ *
+ * Still `null` on purpose: every other test in this file asserts on the row's own DOM, and giving
+ * the indicator a body would put an element into the middle of those assertions. What the row
+ * *passes* it is a different question, and one worth asking — `BreakpointIndicator` builds its
+ * `bp-set` / `bp-del` / `bp-en` commands from these props, so a row that describes a breakpoint
+ * wrongly makes it unremovable rather than merely mislabelled.
+ */
+const indicatorProps: any[] = [];
 vi.mock("@renderer/appIde/DocumentPanels/BreakpointIndicator", () => ({
-  BreakpointIndicator: () => null
+  BreakpointIndicator: (props: any) => {
+    indicatorProps.push(props);
+    return null;
+  }
 }));
 
 // --- `Icon` resolves its colour through `useTheme`, which needs a provider this suite does not
@@ -468,6 +481,126 @@ describe("annotated disassembly rows", () => {
     expect(getByText("DrawSprite").className).toContain("annotationOperand");
     // --- The instruction is still one readable string, split or not.
     expect(container.textContent).toContain("call DrawSprite");
+
+    /*
+     * Every part sits inside one wrapper, not directly in the cell.
+     *
+     * The cell is `display: flex`, and direct children would make the `"call "` run an anonymous
+     * flex item of its own — a block box, which trims the white space at the end of its line, so
+     * the row rendered `jpStart` where the listing means `jp Start`. jsdom does not lay out, so the
+     * structure is what is assertable here: the mnemonic and the operand share a parent, which is
+     * what puts them in a single inline formatting context.
+     */
+    const run = getByText("DrawSprite").parentElement!;
+    expect(run.className).toContain("instructionRun");
+    expect(run.textContent).toBe("call DrawSprite");
+  });
+
+  /*
+   * The space that sets a synopsis paragraph off from the code around it.
+   *
+   * A note is one row per line, so the block's edges are the only place the gap belongs; a rule on
+   * every synopsis row would break a multi-line note into three visually separate ones. The
+   * position comes from `synopsisEdge`, set where the rows are built.
+   */
+  describe("synopsis block spacing", () => {
+    /** Renders one synopsis row at the given position in its block. */
+    function renderSynopsis(synopsisEdge?: "first" | "middle" | "last" | "only") {
+      return render(
+        <DisassemblyRow
+          {...base}
+          annotated
+          item={{
+            address: 0x8000,
+            isPrefixItem: true,
+            prefixComment: "A note",
+            annotation: {
+              bankOffset: 0,
+              byteLength: 1,
+              regionType: "disassemble",
+              hasLineAnnotation: true,
+              synopsisEdge
+            }
+          }}
+        />
+        // --- Queried off this render's own container: RTL binds its queries to `document.body`, so
+        // --- a test rendering two rows would otherwise match both.
+      ).container.querySelector('[data-testid="disassembly-row-0"]')!.className;
+    }
+
+    it("spaces above the first line and below the last", () => {
+      expect(renderSynopsis("first")).toContain("synopsisBlockFirst");
+      expect(renderSynopsis("first")).not.toContain("synopsisBlockLast");
+      expect(renderSynopsis("last")).toContain("synopsisBlockLast");
+      expect(renderSynopsis("last")).not.toContain("synopsisBlockFirst");
+    });
+
+    it("leaves an interior line flush, so a multi-line note reads as one paragraph", () => {
+      expect(renderSynopsis("middle")).not.toContain("synopsisBlock");
+    });
+
+    it("spaces both sides of a one-line note", () => {
+      const className = renderSynopsis("only");
+      expect(className).toContain("synopsisBlockFirst");
+      expect(className).toContain("synopsisBlockLast");
+    });
+
+    /*
+     * The gap only appears if the row's *box* grows.
+     *
+     * The app sets `box-sizing: border-box` universally, so padding inside a fixed height is taken
+     * out of the text's own box and the row does not move — which is what happened on the first
+     * attempt at this. The stylesheet therefore sizes these rows (row height + gap), and that only
+     * works if the row does not also carry an inline height, which would beat any class rule.
+     */
+    it("withholds the inline height so the stylesheet can make the row taller", () => {
+      const spaced = render(
+        <DisassemblyRow
+          {...base}
+          annotated
+          rowHeight={22}
+          item={{
+            address: 0x8000,
+            isPrefixItem: true,
+            prefixComment: "A note",
+            annotation: { bankOffset: 0, byteLength: 1, synopsisEdge: "only" }
+          }}
+        />
+      ).container.querySelector<HTMLElement>('[data-testid="disassembly-row-0"]')!;
+      expect(spaced.style.height).toBe("");
+
+      // --- Every other row still gets its height from the virtualizer's own number.
+      const plain = render(
+        <DisassemblyRow
+          {...base}
+          annotated
+          rowHeight={22}
+          item={{
+            address: 0x8000,
+            isPrefixItem: true,
+            prefixComment: "A note",
+            annotation: { bankOffset: 0, byteLength: 1, synopsisEdge: "middle" }
+          }}
+        />
+      ).container.querySelector<HTMLElement>('[data-testid="disassembly-row-0"]')!;
+      expect(plain.style.height).toBe("22px");
+    });
+
+    it("leaves an instruction row unspaced", () => {
+      // --- Nothing else in the listing carries `synopsisEdge`, so no code row can pick up the gap.
+      const { getByTestId } = render(
+        <DisassemblyRow
+          {...base}
+          annotated
+          item={{
+            address: 0x8000,
+            instruction: "nop",
+            annotation: { bankOffset: 0, byteLength: 1, regionType: "disassemble" }
+          }}
+        />
+      );
+      expect(getByTestId("disassembly-row-0").className).not.toContain("synopsisBlock");
+    });
   });
 
   it("paints a data region as a directive rather than as code", () => {
@@ -755,5 +888,219 @@ describe("DisassemblyRow — execution-point readout", () => {
   it("follows the panel into decimal", () => {
     const { container } = renderRow({ decimalView: true });
     expect(container.querySelector('[data-readout="long"]')!.textContent).toContain("03837");
+  });
+});
+
+/*
+ * A popped-out NEX bank's gutter.
+ *
+ * A row there shows an offset inside a 16K bank, not a Z80 address, so its breakpoint cannot be
+ * named the way the machine disassembly's is. The name matters beyond display: `BreakpointIndicator`
+ * builds its `bp-set` / `bp-del` / `bp-en` command from it, so a row that named its raw address
+ * would arm a breakpoint at a Z80 address rather than at an offset in the bank it belongs to.
+ */
+describe("deriveDisassemblyRowViewModel: bank-relative breakpoints", () => {
+  const nexRow = {
+    address: 0x4100,
+    opCodes: [0x00],
+    instruction: "nop"
+  } as any;
+
+  const viewModelFor = (breakpoint?: any, partitionLabels: Record<number, string> = {}) =>
+    deriveDisassemblyRowViewModel({
+      bankLabel: false,
+      breakpoint,
+      currentSegment: 0,
+      decimalView: false,
+      isFullView: true,
+      item: nexRow,
+      mem64kLabels: [],
+      partitionLabels,
+      pausedPc: -1,
+      showBanks: false
+    });
+
+  const viewModelWithBankScope = (bankScope?: { bank: number; bankOffset: number }) =>
+    deriveDisassemblyRowViewModel({
+      bankLabel: false,
+      bankScope,
+      currentSegment: 0,
+      decimalView: false,
+      isFullView: true,
+      item: nexRow,
+      mem64kLabels: [],
+      partitionLabels: {},
+      pausedPc: -1,
+      showBanks: false
+    });
+
+  it("names an unarmed row in a bank listing by bank and offset, not by its address", () => {
+    /*
+     * `BreakpointIndicator` builds its `bp-set` from this name, so the fallback decides what an
+     * empty gutter *creates*. Falling back to the row's address armed a plain address breakpoint at
+     * wherever the bank was paged: it appeared in the Breakpoints panel and was invisible on the row
+     * that made it, because a bank gutter looks up by offset.
+     * See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.20.
+     */
+    const vm = viewModelWithBankScope({ bank: 2, bankOffset: 0x2624 });
+    expect(vm.breakpointAddress).toBe("02:+$2624");
+    expect(vm.hasBreakpoint).toBe(false);
+  });
+
+  it("still names an unarmed row by its address outside a bank listing", () => {
+    // --- The 64K Disassembly view has no bank scope and must keep the address fallback.
+    expect(viewModelWithBankScope(undefined).breakpointAddress).toBe(0x4100);
+  });
+
+  it("prefers an existing breakpoint's own identity over the row's bank scope", () => {
+    // --- A breakpoint that is already there names itself; the scope only decides what would be made.
+    const vm = deriveDisassemblyRowViewModel({
+      bankLabel: false,
+      bankScope: { bank: 2, bankOffset: 0x2624 },
+      breakpoint: { bank: 5, bankOffset: 0x0100, exec: true } as any,
+      currentSegment: 0,
+      decimalView: false,
+      isFullView: true,
+      item: nexRow,
+      mem64kLabels: [],
+      partitionLabels: {},
+      pausedPc: -1,
+      showBanks: false
+    });
+    expect(vm.breakpointAddress).toBe("05:+$0100");
+  });
+
+  it("names a bank-relative breakpoint by its bank and offset", () => {
+    const vm = viewModelFor({ bank: 5, bankOffset: 0x0100, exec: true });
+    expect(vm.breakpointAddress).toBe("05:+$0100");
+    expect(vm.hasBreakpoint).toBe(true);
+  });
+
+  it("leaves the kind out of the name, because the command takes it as an option", () => {
+    /*
+     * This test used to assert `05:+$0100:W`, on the reasoning that a watchpoint should not be
+     * named like an execution breakpoint. That was wrong, and wrong in a way that made the gutter
+     * unusable: the name is what `BreakpointIndicator` builds its command from, and the `bp-*`
+     * commands take the kind as `-r`/`-w`, not as part of the address — so `bp-del 05:+$0100:W -w`
+     * parsed as nothing at all and the dot could not be clicked away.
+     *
+     * The kind reaches the indicator as its own props instead, which is what builds the option.
+     * See `getBreakpointAddressSpec`, and the describe block at the end of this file.
+     */
+    expect(viewModelFor({ bank: 5, bankOffset: 0x100, memoryWrite: true }).breakpointAddress).toBe(
+      "05:+$0100"
+    );
+    expect(viewModelFor({ bank: 5, bankOffset: 0x100, memoryRead: true }).breakpointAddress).toBe(
+      "05:+$0100"
+    );
+  });
+
+  it("does not name a partition, because a 16K bank is not one", () => {
+    // --- A NEX bank is 16K; a Next partition is an 8K page. The label map describes the latter.
+    expect(viewModelFor({ bank: 5, bankOffset: 0x100, exec: true }).breakpointPartition).toBe(
+      undefined
+    );
+  });
+
+  it("leaves the other breakpoint shapes exactly as they were", () => {
+    // --- An address breakpoint shows the row's raw address...
+    expect(viewModelFor({ address: 0x4100, exec: true }).breakpointAddress).toBe(0x4100);
+    // --- ...a partition-scoped one does too, and names its partition...
+    const partitioned = viewModelFor({ address: 0x4100, partition: 10, exec: true }, { 10: "0A" });
+    expect(partitioned.breakpointAddress).toBe(0x4100);
+    expect(partitioned.breakpointPartition).toBe("0A");
+    // --- ...and a source-bound one is named by its file and line.
+    expect(viewModelFor({ resource: "code.asm", line: 12, exec: true }).breakpointAddress).toBe(
+      "[code.asm]:12"
+    );
+  });
+
+  it("reports no breakpoint for an unarmed row", () => {
+    const vm = viewModelFor(undefined);
+    expect(vm.hasBreakpoint).toBe(false);
+    expect(vm.breakpointAddress).toBe(0x4100);
+  });
+});
+
+/*
+ * What the row hands its breakpoint indicator.
+ *
+ * `BreakpointIndicator` builds `bp-set` / `bp-del` / `bp-en` from these props, so they are not
+ * decoration: a row that shows a memory breakpoint while describing it as an execution one issues
+ * `bp-del $8000` for a breakpoint whose key is `$8000 R`, which matches nothing and leaves a dot
+ * that cannot be clicked away. Watchpoints on a NEX bank made that reachable.
+ *
+ * See `.plans/NEX_DEBUGGING_PLAN.md` §10.2.
+ */
+describe("DisassemblyRow: the breakpoint kind reaches the indicator", () => {
+  function renderWithBreakpoint(breakpoint: any, over: any = {}) {
+    indicatorProps.length = 0;
+    render(
+      <DisassemblyRow
+        bankLabel={false}
+        breakpoint={breakpoint}
+        commentWidthCh={0}
+        currentSegment={0}
+        decimalView={false}
+        index={0}
+        isFullView={true}
+        item={{ address: 0x8000, instruction: "nop", opCodes: [0x00] }}
+        mem64kLabels={[]}
+        partitionLabels={{}}
+        partitionWidthCh={0}
+        pausedPc={-1}
+        rowHeight={18}
+        showBanks={false}
+        {...over}
+      />
+    );
+    return indicatorProps[indicatorProps.length - 1];
+  }
+
+  it("forwards a memory read breakpoint as one", () => {
+    const props = renderWithBreakpoint({ address: 0x8000, memoryRead: true });
+    expect(props.memoryRead).toBe(true);
+    expect(props.hasBreakpoint).toBe(true);
+  });
+
+  it("forwards a memory write breakpoint as one", () => {
+    expect(renderWithBreakpoint({ address: 0x8000, memoryWrite: true }).memoryWrite).toBe(true);
+  });
+
+  it("forwards an I/O breakpoint's port mask, which its command needs", () => {
+    const props = renderWithBreakpoint({ address: 0x00fe, ioRead: true, ioMask: 0x00ff });
+    expect(props.ioRead).toBe(true);
+    expect(props.ioMask).toBe(0x00ff);
+  });
+
+  it("claims no kind for an execution breakpoint", () => {
+    const props = renderWithBreakpoint({ address: 0x8000, exec: true });
+    expect(props.memoryRead).toBeFalsy();
+    expect(props.memoryWrite).toBeFalsy();
+    expect(props.ioRead).toBeFalsy();
+    expect(props.ioWrite).toBeFalsy();
+  });
+
+  it("names a bank-relative watchpoint by its key, kind and all", () => {
+    // --- Both halves together: the address the command targets and the option that selects the
+    // --- kind. Either one wrong makes the breakpoint unremovable from the gutter.
+    const props = renderWithBreakpoint({ bank: 5, bankOffset: 0x0100, memoryWrite: true });
+    expect(props.address).toBe("05:+$0100");
+    expect(props.memoryWrite).toBe(true);
+  });
+
+  it("offers to edit a bank-relative breakpoint", () => {
+    // --- The dialog authors that shape now, so the row must not gate the edit on `address`.
+    const onEditBreakpoint = vi.fn();
+    const props = renderWithBreakpoint(
+      { bank: 5, bankOffset: 0x0100, exec: true },
+      { onEditBreakpoint }
+    );
+    expect(props.onEdit).toBeTypeOf("function");
+  });
+
+  it("offers no edit for a row with no breakpoint", () => {
+    const props = renderWithBreakpoint(undefined, { onEditBreakpoint: vi.fn() });
+    expect(props.onEdit).toBeUndefined();
   });
 });

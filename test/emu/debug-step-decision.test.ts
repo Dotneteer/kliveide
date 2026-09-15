@@ -13,6 +13,7 @@ import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 function support(breakAt: number[] = [], overrides: Partial<IDebugSupport> = {}) {
   return {
     shouldStopAt: (address: number) => breakAt.includes(address),
+    consumeOneShotsAt: vi.fn(() => 0),
     lastBreakpoint: undefined,
     imminentBreakpoint: undefined,
     ...overrides
@@ -57,6 +58,34 @@ describe("shouldStopAtDebugPoint — real breakpoints", () => {
     const debugSupport = support([0x8000], { imminentBreakpoint: 0x9000 });
     decide({ debugSupport });
     expect(debugSupport.imminentBreakpoint).toBeUndefined();
+  });
+
+  it("spends a one-shot at the address it actually stopped at", () => {
+    // --- A run-to-cursor target, or the NEX entry-point stop: it stops the machine once and must
+    // --- not be left behind for the user to clear by hand.
+    const debugSupport = support([0x8000]);
+    decide({ debugSupport, pc: 0x8000, getPartition: () => 5 });
+    expect(debugSupport.consumeOneShotsAt).toHaveBeenCalledWith(0x8000, 5);
+  });
+
+  it("does not spend one on the re-trigger it refuses", () => {
+    // --- The machine is resuming *from* this address, which is not a hit. Consuming here would
+    // --- delete a one-shot that never fired, and the stop the user asked for would never come.
+    const debugSupport = support([0x8000], { lastBreakpoint: 0x8000 });
+    expect(decide({ debugSupport, instructionsExecuted: 0 }).stop).toBe(false);
+    expect(debugSupport.consumeOneShotsAt).not.toHaveBeenCalled();
+  });
+
+  it("does not spend one when nothing stopped the machine", () => {
+    const debugSupport = support([]);
+    decide({ debugSupport, debugStepMode: DebugStepMode.StopAtBreakpoint });
+    expect(debugSupport.consumeOneShotsAt).not.toHaveBeenCalled();
+  });
+
+  it("passes the partition of the address, so a bank that is not paged in keeps its one-shot", () => {
+    const debugSupport = support([0xc000]);
+    decide({ debugSupport, pc: 0xc000, getPartition: (address) => (address === 0xc000 ? 11 : 3) });
+    expect(debugSupport.consumeOneShotsAt).toHaveBeenCalledWith(0xc000, 11);
   });
 
   it("ignores everything else in StopAtBreakpoint mode", () => {

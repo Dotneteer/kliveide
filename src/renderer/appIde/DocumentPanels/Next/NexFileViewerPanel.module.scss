@@ -50,9 +50,20 @@
   padding: var(--space-0_5) 0 var(--space-1) var(--space-1);
 }
 
+/*
+ * One label/value pair in the header attributes.
+ *
+ * **No `min-height`.** It had `var(--space-6)` — 24px — which is taller than the app's own sidebar
+ * list rows (22px) for content that is denser than they are: a short label and a short value. The
+ * panel is the same kind of surface as the register/state panels, and those drop the row height for
+ * exactly this reason; `Data.module.scss`'s `.dense` records that keeping it made the Z80 panel 47%
+ * taller. `controls/layout`'s `.row` sets no height of its own, so the content decides, which is
+ * what every other dense panel in the app does.
+ *
+ * The flag rows below add their own `row-gap` because they wrap; their height comes from the icons.
+ */
 .headerAttributeRow {
   min-width: 0;
-  min-height: var(--space-6);
 }
 
 .headerFlagRow {
@@ -127,4 +138,57 @@
  */
 .headingChipAlt {
   color: var(--accent-secondary-text);
+}
+
+/*
+ * How many breakpoints a bank carries.
+ *
+ * A third chip in the bank heading, and the one place there that takes a hue from outside the accent
+ * pair. PC and SP are facts the *file* states, and they share the accent because they are the same
+ * kind of thing; this one is a fact about what the *debugger* has armed, and it borrows
+ * `--color-breakpoint-binary` — the same token as the gutter dot the user clicked to create it — so
+ * the count and the dots it counts read as one thing rather than as two unrelated marks.
+ *
+ * Filled rather than outlined, unlike the chips beside it: a count is a tally, and on a collapsed
+ * bank it is the only sign that anything is armed in there at all. It has to survive being skimmed.
+ */
+.breakpointChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 1.25rem;
+  padding: 0 var(--space-1);
+  border-radius: 999px;
+  background-color: var(--color-breakpoint-binary);
+  color: var(--bgcolor-docspanel);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+/* --- Nothing is armed, so the tally reads as absent rather than as a zero. */
+.breakpointChipDisabled {
+  background-color: var(--color-breakpoint-disabled);
+}
+
+/*
+ * The first validation issue, spelled out beside the summary.
+ *
+ * The summary says how many problems there are and takes the error colour; this says what the worst
+ * one is, and recedes — it is a long sentence, and two full-strength reds across the top of a
+ * document read as an alarm rather than as information. The rest are in the banner's tooltip.
+ *
+ * `min-width: 0` with `overflow: hidden`: the banner is a flex row and this is the only item in it
+ * that can be arbitrarily long, so it is the one that must be allowed to shrink. Without it the
+ * sentence pushes the summary out of the panel.
+ */
+.validationDetail {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--data-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

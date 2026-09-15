@@ -15,74 +15,59 @@ import { createRowAddresses } from "./memoryViewModel";
 import { MemoryDumpSection } from "./MemoryDumpSection";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import { PanelHeader } from "@renderer/controls/data";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { useBreakpointDialog } from "@renderer/appIde/dialogs/useBreakpointDialog";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
-import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { evaluateBranch, type BranchVerdict } from "@renderer/appIde/DocumentPanels/branchVerdict";
 import { useRowSizes } from "@renderer/theming/useRowSizes";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { Text } from "@renderer/controls/layout/Text";
-import { Icon } from "@renderer/controls/Icon";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySection, type DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 import { deriveLabelWidthCh, DisassemblyRow } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
-import { SmallIconButton } from "@renderer/controls/IconButton";
 import {
-  ContextMenu,
-  ContextMenuItem,
-  ContextMenuSeparator,
   useContextMenuState
 } from "@renderer/controls/ContextMenu";
-import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
-import { useConfirmPort } from "@renderer/mvc/dialogs/useDialogPorts";
-import { createAnnotatedNexDisassemblyItems } from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
 import {
-  saveNexAnnotationSession,
-  subscribeNexAnnotationSession,
-  updateNexAnnotationSession
-} from "@renderer/appIde/DocumentPanels/Next/nexAnnotationSession";
+  createAnnotatedNexDisassemblyItems,
+  pcAnchoredRuns
+} from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
+import { useNexAnnotationEditor } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/useNexAnnotationEditor";
 import {
-  NexSynopsisCommentDialog,
-  type NexSynopsisCommentDialogResult
-} from "@renderer/appIde/DocumentPanels/Next/NexSynopsisCommentDialog";
+  formatBankLocation,
+  isListedWhereItIsPaged,
+  listedBankOffset,
+  pcSpotlightAddress
+} from "@renderer/appIde/DocumentPanels/Next/nextBankLocation";
 import {
-  NexEndOfLineCommentDialog,
-  type NexEndOfLineCommentDialogResult
-} from "@renderer/appIde/DocumentPanels/Next/NexEndOfLineCommentDialog";
+  useNexBankLocation,
+  useNexBankPcOffset,
+  useNexBranchCpuSnapshot,
+  useNexLiveBankBytes
+} from "@renderer/appIde/DocumentPanels/Next/useNexLiveBank";
 import {
-  NexLabelDialog,
-  type NexLabelDialogLabel,
-  type NexLabelDialogResult
-} from "@renderer/appIde/DocumentPanels/Next/NexLabelDialog";
+  changedFlagsIn,
+  diffBankBytes,
+  formatBankDiff
+} from "@renderer/appIde/DocumentPanels/Next/nexLiveBank";
 import {
-  NexLabelsDialog,
-  type NexLabelsDialogResult
-} from "@renderer/appIde/DocumentPanels/Next/NexLabelsDialog";
+  useNexBankBreakpoints,
+  useNexSidecarBreakpointSync
+} from "@renderer/appIde/DocumentPanels/Next/useNexBankBreakpoints";
+import type { NexAnnotationEditorEnvironment } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorModel";
 import {
-  NexOperandLabelDialog,
-  type NexOperandLabelDialogResult
-} from "@renderer/appIde/DocumentPanels/Next/NexOperandLabelDialog";
+  intentForAction,
+  NexAnnotationMenu,
+  NexAnnotationToolbar
+} from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorView";
 import {
-  NexRegionDialog,
-  type NexRegionDialogResult
-} from "@renderer/appIde/DocumentPanels/Next/NexRegionDialog";
-import {
-  NexRegionsDialog,
-  type NexRegionsDialogResult
-} from "@renderer/appIde/DocumentPanels/Next/NexRegionsDialog";
+  annotationActionForKey,
+  menuEntryFor
+} from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorViewModel";
 import {
   getBankAnnotation,
-  NEX_BANK_LAST_OFFSET,
   getNexBankAddressOffset,
-  getNexBankOffsetIndex,
-  type NexAnnotationOffsetIndex,
-  type NexAnnotationLabel,
-  type NexAnnotationLabelScope,
-  type NexAnnotationRegion,
-  type NexAnnotationRegionType,
-  type NexBankAnnotation,
-  type NexLineAnnotation,
-  type NexOperandReference,
-  type NexFileAnnotations
 } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
 
 type MemoryDumpViewState = {
@@ -101,29 +86,6 @@ type MemoryDumpViewState = {
 };
 
 type StaticDumpViewMode = "memory" | "disassembly";
-type NexContextMenuAction =
-  | "synopsis"
-  | "comment"
-  | "operand-label"
-  | "clear"
-  | "global-label"
-  | "local-label"
-  | "mark-disassembly"
-  | "mark-bytes"
-  | "mark-words"
-  | "mark-skip";
-type StaticDisassemblySelection = {
-  anchorIndex: number;
-  activeIndex: number;
-};
-type StaticDisassemblyContextTarget = {
-  rowIndex: number;
-  rangeStartIndex: number;
-  rangeEndIndex: number;
-  bankOffsetStart: number;
-  bankOffsetEnd: number;
-  canAssignOperandLabel: boolean;
-};
 
 type StaticMemoryDumpOptions = {
   disassemblyEnabled?: boolean;
@@ -132,6 +94,13 @@ type StaticMemoryDumpOptions = {
   viewMode?: StaticDumpViewMode;
   nexAnnotationPath?: string;
   nexAnnotationBank?: number;
+
+  /**
+   * Address to bring into view when the document opens, in the listing's own numbering — that is,
+   * `disassOffset + <offset into the dump>`, the same numbering the rows and the "Go to address"
+   * box use.
+   */
+  topAddress?: number;
 };
 
 const STATIC_DISASSEMBLY_FALLBACK_PAGE_ROWS = 16;
@@ -154,46 +123,295 @@ const StaticMemoryDump = ({
   viewState
 }: DocumentProps<MemoryDumpViewState>) => {
   const documentHubService = useDocumentHubService();
-  const appServices = useAppServices();
-  const dialogs = useDialogs();
-  // --- The app's own confirmation, not the browser's `window.confirm`; see `.docs/dialog-pattern.md`.
-  const confirmPort = useConfirmPort();
   // --- M3: the row heights the virtualizer places by, matching `--row-size-*` in the CSS.
   const { memory: dumpRowItemSize, disassembly: disassemblyRowItemSize } = useRowSizes();
   const [currentViewState, setCurrentViewState] = useState<MemoryDumpViewState>(
     viewState ?? {}
   );
   const disassemblyEnabled = currentViewState.disassemblyEnabled ?? false;
+  /*
+   * A NEX bank opens as a disassembly; anything else opens as a hex dump.
+   *
+   * A bank of a NEX is a 16K slice of a *program* — the reason to open one is almost always to read
+   * the code in it, and for the bank the entry point runs from that is the only reason. A plain dump
+   * of some other binary has no such expectation, so the default stays "memory" there.
+   *
+   * Only the default: a remembered choice in the annotation sidecar still wins (it is applied to the
+   * view state further down), so a bank the user last read as hex opens as hex.
+   *
+   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.16.
+   */
+  const isNexBankDocument = currentViewState.nexAnnotationBank !== undefined;
   const viewMode: StaticDumpViewMode = disassemblyEnabled
-    ? (currentViewState.viewMode ?? "memory")
+    ? (currentViewState.viewMode ?? (isNexBankDocument ? "disassembly" : "memory"))
     : "memory";
   const decimalView = currentViewState.decimalView ?? false;
   const disassOffset = currentViewState.disassOffset ?? 0;
   const [memoryJumpAddress, setMemoryJumpAddress] = useState<number>();
   const [disassemblyJumpAddress, setDisassemblyJumpAddress] = useState<number>();
-  const [nexAnnotations, setNexAnnotations] = useState<NexFileAnnotations>();
-  const [annotationLoading, setAnnotationLoading] = useState(false);
-  const [annotationLoadError, setAnnotationLoadError] = useState<string>();
-  const [annotationDirty, setAnnotationDirty] = useState(false);
-  const [annotationSaveError, setAnnotationSaveError] = useState<string>();
   const [disassemblyItems, setDisassemblyItems] = useState<DisassemblyItem[]>([]);
-  const [disassemblySelection, setDisassemblySelection] =
-    useState<StaticDisassemblySelection>();
-  const [disassemblyContextTarget, setDisassemblyContextTarget] =
-    useState<StaticDisassemblyContextTarget>();
   const [contextMenuState, contextMenuApi] = useContextMenuState();
+  // --- `DisassemblyRow` is memoized, so this is a stable callback rather than a fresh arrow that
+  // --- would re-render every row in the listing on every render of this one.
+  const openBreakpointDialog = useBreakpointDialog();
+  const editBreakpoint = useCallback(
+    (bp: BreakpointInfo) => void openBreakpointDialog(bp),
+    [openBreakpointDialog]
+  );
   const memoryVlApi = useRef<VListHandle>();
   const disassemblyVlApi = useRef<VListHandle>();
   const disassemblyListRef = useRef<HTMLDivElement>(null);
-  const disassemblySelectionRef = useRef<StaticDisassemblySelection>();
-  const nexAnnotationsRef = useRef<NexFileAnnotations>();
-  const annotationDirtyRef = useRef(false);
-  const annotationPathRef = useRef<string>();
   const pendingScrollPosition = useRef(viewState?.scrollPosition ?? 0);
   const pendingDisassemblyScrollPosition = useRef(viewState?.disassemblyScrollPosition ?? 0);
   const restoredInitialScroll = useRef(false);
   const restoredInitialDisassemblyScroll = useRef(false);
   const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
+  const bankBreakpoints = useNexBankBreakpoints(currentViewState.nexAnnotationBank);
+  /*
+   * `undefined` — not an empty list — when there is nothing to say: no bank, or a machine that is
+   * not a ZX Spectrum Next. "Not paged in" is a claim about a machine's current paging, and making
+   * it about a machine that is not running would be worse than saying nothing.
+   */
+  const bankPlacements = useNexBankLocation(currentViewState.nexAnnotationBank);
+
+  /*
+   * File bytes or the machine's — and the machine's whenever there is a machine to ask.
+   *
+   * There is no switch any more. A popped-out bank is opened to debug a program, and the bytes that
+   * matter for that are the ones the Z80 will actually execute: a bank that decompressed itself, a
+   * buffer written over its own loader, a routine patched at run time. Asking the user to turn that
+   * on made the debugger's most useful view the one you had to know to ask for, and made every
+   * listing ambiguous until you checked the switch.
+   *
+   * The file's bytes still answer a question, and the diff readout is what answers it now — it says
+   * how far the machine has drifted from the file without making the reader choose which of the two
+   * they are being shown.
+   *
+   * Reads are gated on `bankPlacements` rather than run unconditionally: it is non-undefined exactly
+   * when this is a ZX Spectrum Next with this bank in it and the machine answered, which is the same
+   * question that used to decide whether the switch could be offered. Without the gate this would be
+   * 16K of IPC per tick for every open bank document whether a machine exists or not.
+   *
+   * `liveBank` is undefined whenever the machine cannot answer, and everything below falls back to
+   * the file on its own. That is the whole of the "no machine" story: a NEX opened for reading, with
+   * nothing running, shows exactly what it always did.
+   */
+  const liveBankWanted = bankPlacements !== undefined;
+  const liveBank = useNexLiveBankBytes(currentViewState.nexAnnotationBank, liveBankWanted);
+  const bankDiff = useMemo(() => diffBankBytes(contents, liveBank), [contents, liveBank]);
+  const liveBankShown = liveBank !== undefined;
+  /*
+   * **Both** views read this now — the disassembly view used to be pinned to the file.
+   *
+   * The reason it was pinned no longer holds. The worry was that the annotation editor addresses its
+   * actions by row index while live bytes disassemble to different instruction lengths, so the
+   * listing and the editor would drift apart by a row. But the editor resolves a row *through the
+   * item it rendered* — `item.annotation?.bankOffset`, falling back to
+   * `listedBankOffset(item.address, ...)` — so it acts on the offset of the row that was clicked,
+   * whichever byte array produced the listing. The two cannot drift, because there is only one
+   * listing.
+   *
+   * What the sidecar stores is bank *offsets*, and a bank is 16K whether it was read from the file
+   * or out of RAM, so its regions go on meaning the same thing. Only the instructions decoded inside
+   * a region change — which is the point.
+   */
+  const bankBytes = liveBank ?? contents;
+  /*
+   * The program counter's spotlight, when it is in this bank.
+   *
+   * `disassOffset` is added because the rows are addressed by it — the offset dropdown decides
+   * whether this bank's byte 0 reads `$0000` or `$C000`, and `DisassemblyRow` compares its own
+   * displayed address against `pausedPc`. So the mark follows the listing's own numbering rather
+   * than the machine's, which is also what makes it land correctly when the user has chosen an
+   * offset that does not match where the bank actually is.
+   *
+   * `-1` for "nowhere", matching the prop's existing convention.
+   */
+  const pcBankOffset = useNexBankPcOffset(bankPlacements);
+  const pausedPcRowAddress = pcSpotlightAddress(disassOffset, pcBankOffset);
+
+  /*
+   * The branch gutter, for a popped-out NEX bank.
+   *
+   * Gated on the listing's numbering being *real*, which the Disassembly panel never has to check:
+   * this document's offset is a dropdown, so a bank can be listed at an address it is not paged at.
+   * The flags would still be genuine, but every destination the gutter resolved would be an address
+   * this code is not at — a confident wrong answer, which is the one thing the branch feature is
+   * careful never to give (see `BranchUnobtainableReason`). So verdicts appear only while the bank
+   * is paged in as one contiguous 16K block at exactly the offset the listing is numbered by, which
+   * is what the debugger's own reveal always opens it at.
+   *
+   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.19.
+   */
+  const branchGutterApplies =
+    isNexBankDocument &&
+    viewMode === "disassembly" &&
+    isListedWhereItIsPaged(bankPlacements, disassOffset);
+  const branchCpu = useNexBranchCpuSnapshot(branchGutterApplies);
+  const showBranchGutter = branchGutterApplies && !!branchCpu;
+
+  // --- `undefined` while the file is showing, which is what makes every row's marks disappear.
+  const activeDiff = liveBankShown ? bankDiff : undefined;
+  const diffBadge = useMemo(
+    () => (liveBankShown ? formatBankDiff(bankDiff) : undefined),
+    [liveBankShown, bankDiff]
+  );
+  const bankLocation = useMemo(
+    () =>
+      bankPlacements === undefined
+        ? undefined
+        : {
+            placements: bankPlacements,
+            ...formatBankLocation(bankPlacements, pcBankOffset)
+          },
+    [bankPlacements, pcBankOffset]
+  );
+
+  /*
+   * The NEX annotation editor.
+   *
+   * Everything about annotations — the shared session, the seven dialogs, the label and region
+   * rules, the dirty lifecycle — lives behind this one call, and runs without React. What stays
+   * here is the *document*: its view state, its scrolling, and generating the listing (which has a
+   * path the editor knows nothing about — a dump with no sidecar still disassembles).
+   *
+   * See `.plans/NEX_DEBUGGING_PLAN.md` §9 and `.ai/ui-mvc-guide.md`.
+   */
+  const markDocumentAnnotationDirty = useCallback((dirty: boolean) => {
+    const editVersion = document.editVersionCount ?? 0;
+    const savedVersion = document.savedVersionCount ?? editVersion;
+    if (dirty) {
+      document.savedVersionCount = savedVersion;
+      document.editVersionCount = editVersion === savedVersion ? editVersion + 1 : editVersion;
+    } else {
+      document.editVersionCount = editVersion;
+      document.savedVersionCount = editVersion;
+    }
+    documentHubService.signHubStateChanged();
+  }, [document, documentHubService]);
+
+  const navigateDisassemblyTo = useCallback((address: number) => {
+    setCurrentViewState((current) => ({ ...current, topAddress: address }));
+    setDisassemblyJumpAddress(address & 0xffff);
+  }, []);
+
+  const annotationEnv = useMemo<NexAnnotationEditorEnvironment>(
+    () => ({
+      annotationPath: currentViewState.nexAnnotationPath,
+      bank: currentViewState.nexAnnotationBank,
+      viewMode,
+      decimalView,
+      disassOffset
+    }),
+    [
+      currentViewState.nexAnnotationBank,
+      currentViewState.nexAnnotationPath,
+      decimalView,
+      disassOffset,
+      viewMode
+    ]
+  );
+
+  /*
+   * Take the listing's keyboard surface back once an annotation dialog is done with it.
+   *
+   * The annotation shortcuts are bare letters, which are only heard while the listing itself is
+   * focused. Returning focus to whatever opened a dialog is the modal's job and it does it — this
+   * is the panel's backstop for the case where focus ends up on nothing at all, which is how the
+   * shortcuts came to look dead after the first dialog: every later keystroke went to `<body>`
+   * until the user clicked a row again.
+   *
+   * **Only from `<body>`**, deliberately. That is the browser's way of saying nothing holds focus,
+   * so claiming it takes nothing from anyone. If the user has moved to another panel, a field, or
+   * a second dialog stacked over this one, that is a real choice and the listing leaves it alone.
+   */
+  const reclaimDisassemblyFocus = useCallback(() => {
+    // --- `window.document`, because this component's own `document` prop is the open editor, not
+    // --- the DOM. Spelling it out is the point: the bare name here means the wrong thing.
+    const active = window.document.activeElement;
+    if (active && active !== window.document.body) return;
+    disassemblyListRef.current?.focus();
+  }, []);
+
+  const {
+    vm: annotationVm,
+    dispatch: dispatchAnnotation,
+    confirmDisposal
+  } = useNexAnnotationEditor({
+    env: annotationEnv,
+    contents,
+    onNavigateToAddress: navigateDisassemblyTo,
+    onDirtyChanged: markDocumentAnnotationDirty,
+    onDialogClosed: reclaimDisassemblyFocus
+  });
+
+  // --- Read through refs by the two callbacks that outlive a render: the document API effect runs
+  // --- once, and the keyboard handler needs the selection as of *now*, not as of its own render.
+  const confirmDisposalRef = useRef(confirmDisposal);
+  confirmDisposalRef.current = confirmDisposal;
+  // --- Read through a ref for the same reason the selection is: the keyboard handler needs the
+  // --- menu's enablement as of *now*, and re-creating the handler on every menu change would
+  // --- rebuild it on every selection move.
+  const annotationVmRef = useRef(annotationVm);
+  annotationVmRef.current = annotationVm;
+  const selectedRangeRef = useRef<{ activeIndex: number }>();
+  selectedRangeRef.current = annotationVm.listing.selectedRange
+    ? { activeIndex: annotationVm.listing.selectedRange.end }
+    : undefined;
+
+  const selectedDisassemblyRange = annotationVm.listing.selectedRange;
+
+  // --- The sidecar is where these breakpoints live between sessions: read once per file, written
+  // --- back on every change.
+  useNexSidecarBreakpointSync(currentViewState.nexAnnotationPath, annotationVm.annotations);
+
+  useEffect(() => {
+    void dispatchAnnotation({ type: "opened" });
+  }, [dispatchAnnotation]);
+
+  useEffect(() => {
+    void dispatchAnnotation({ type: "environmentChanged", env: annotationEnv });
+  }, [annotationEnv, dispatchAnnotation]);
+
+  useEffect(() => {
+    void dispatchAnnotation({ type: "listingChanged", items: disassemblyItems });
+  }, [disassemblyItems, dispatchAnnotation]);
+
+  /*
+   * Adopt the display settings the sidecar remembers for this bank.
+   *
+   * The feedback runs the other way too — a control change is persisted by the editor — but it
+   * settles: the settings that come back compare equal to the ones in view state, so nothing is
+   * published and nothing re-renders.
+   */
+  useEffect(() => {
+    const bank = currentViewState.nexAnnotationBank;
+    const annotations = annotationVm.annotations;
+    if (bank === undefined || !annotations) return;
+    const bankAnnotation = getBankAnnotation(annotations, bank);
+    if (!bankAnnotation) return;
+    setCurrentViewState((current) => {
+      const next = { ...current };
+      let changed = false;
+      const nextDisassOffset = getNexBankAddressOffset(bankAnnotation.offsetIndex);
+      if (next.disassOffset !== nextDisassOffset) {
+        next.disassOffset = nextDisassOffset;
+        changed = true;
+      }
+      if (
+        bankAnnotation.decimalView !== undefined &&
+        next.decimalView !== bankAnnotation.decimalView
+      ) {
+        next.decimalView = bankAnnotation.decimalView;
+        changed = true;
+      }
+      if (bankAnnotation.lastView && next.viewMode !== bankAnnotation.lastView) {
+        next.viewMode = bankAnnotation.lastView;
+        changed = true;
+      }
+      return changed ? next : current;
+    });
+  }, [annotationVm.annotations, currentViewState.nexAnnotationBank]);
   /*
    * The width every row reserves for its label.
    *
@@ -208,6 +426,29 @@ const StaticMemoryDump = ({
    * The width every row reserves for its hard comment, so the zebra stripes all end at the same x.
    * Same derivation as `DisassemblyPanel`; 0 means no row has a comment and the cell is omitted.
    */
+  /*
+   * Every row's verdict, built once per refresh rather than once per row: `DisassemblyRow` is
+   * memoized, and a fresh object per render would defeat that for the whole listing.
+   */
+  const branchVerdicts = useMemo(() => {
+    if (!showBranchGutter || !branchCpu) return undefined;
+    const verdicts = new Map<number, BranchVerdict>();
+    for (const item of disassemblyItems) {
+      if (!item.branch) continue;
+      verdicts.set(
+        item.address,
+        evaluateBranch(
+          item.branch,
+          item.address,
+          item.opCodes?.length ?? 0,
+          branchCpu,
+          item.address === pausedPcRowAddress
+        )
+      );
+    }
+    return verdicts;
+  }, [showBranchGutter, branchCpu, disassemblyItems, pausedPcRowAddress]);
+
   const disassemblyCommentWidthCh = useMemo(
     () =>
       disassemblyItems.reduce(
@@ -217,39 +458,6 @@ const StaticMemoryDump = ({
       ),
     [disassemblyItems]
   );
-  const selectedDisassemblyRange = useMemo(() => {
-    if (!disassemblySelection) {
-      return undefined;
-    }
-    return {
-      start: Math.min(disassemblySelection.anchorIndex, disassemblySelection.activeIndex),
-      end: Math.max(disassemblySelection.anchorIndex, disassemblySelection.activeIndex)
-    };
-  }, [disassemblySelection]);
-  const annotationEnabled =
-    !!currentViewState.nexAnnotationPath &&
-    currentViewState.nexAnnotationBank !== undefined &&
-    !!nexAnnotations;
-
-  const markDocumentAnnotationDirty = useCallback((dirty: boolean) => {
-    const editVersion = document.editVersionCount ?? 0;
-    const savedVersion = document.savedVersionCount ?? editVersion;
-    if (dirty) {
-      document.savedVersionCount = savedVersion;
-      document.editVersionCount = editVersion === savedVersion ? editVersion + 1 : editVersion;
-    } else {
-      document.editVersionCount = editVersion;
-      document.savedVersionCount = editVersion;
-    }
-    documentHubService.signHubStateChanged();
-  }, [document, documentHubService]);
-
-  const setAnnotationDirtyState = useCallback((dirty: boolean) => {
-    annotationDirtyRef.current = dirty;
-    setAnnotationDirty(dirty);
-    markDocumentAnnotationDirty(dirty);
-  }, [markDocumentAnnotationDirty]);
-
   const changeViewState = useCallback((setter: (vs: MemoryDumpViewState) => void) => {
     setCurrentViewState((current) => {
       const newViewState = { ...current };
@@ -258,21 +466,6 @@ const StaticMemoryDump = ({
     });
   }, []);
 
-  const publishNexAnnotations = useCallback((annotations: NexFileAnnotations) => {
-    const annotationPath = currentViewState.nexAnnotationPath;
-    if (annotationPath) {
-      updateNexAnnotationSession(annotationPath, annotations);
-    } else {
-      nexAnnotationsRef.current = annotations;
-      setNexAnnotations(annotations);
-      setAnnotationSaveError(undefined);
-      setAnnotationDirtyState(true);
-    }
-  }, [
-    currentViewState.nexAnnotationPath,
-    setAnnotationDirtyState
-  ]);
-
   useEffect(() => {
     if (document?.id) {
       documentHubService.setDocumentViewState(document.id, currentViewState);
@@ -280,28 +473,17 @@ const StaticMemoryDump = ({
   }, [currentViewState, document?.id, documentHubService]);
 
   useEffect(() => {
-    annotationPathRef.current = currentViewState.nexAnnotationPath;
-  }, [currentViewState.nexAnnotationPath]);
-
-  useEffect(() => {
-    nexAnnotationsRef.current = nexAnnotations;
-  }, [nexAnnotations]);
-
-  useEffect(() => {
-    disassemblySelectionRef.current = disassemblySelection;
-  }, [disassemblySelection]);
-
-  useEffect(() => {
     if (!document?.id) return undefined;
     documentHubService.setDocumentApi(document.id, {
-      beforeDocumentDisposal: async () => {
-        if (!annotationDirtyRef.current) {
-          return true;
-        }
-        const annotationPath = annotationPathRef.current ?? "the annotation file";
-        return window.confirm(
-          `Discard unsaved annotation changes in ${annotationPath}?`
-        );
+      // --- Read through a ref: the editor is rebuilt on no render, but this effect runs once and
+      // --- the closure would otherwise capture the first render's editor.
+      beforeDocumentDisposal: () => confirmDisposalRef.current(),
+      // --- Re-point a document that is already open. Both lists are asked: which one is showing is
+      // --- the view mode's business, and the one that is not simply keeps the address for later.
+      revealAddress: (address: number) => {
+        setCurrentViewState((current) => ({ ...current, topAddress: address }));
+        setMemoryJumpAddress(address);
+        setDisassemblyJumpAddress(address & 0xffff);
       }
     });
     return () => {
@@ -309,192 +491,69 @@ const StaticMemoryDump = ({
     };
   }, [document?.id, documentHubService]);
 
+  /*
+   * The row holding an address, in the listing's own numbering.
+   *
+   * `disassOffset` has to come off first: the rows are addressed by it (§ the `pausedPcRowAddress`
+   * note above), but the virtual list is indexed from the start of the dump. Without the
+   * subtraction, "go to address" in a bank shown at `$4000` asked for row `$5C50 / 16` = 1477 of a
+   * 1024-row list and simply hit the bottom. Clamped for the same reason: an address outside the
+   * dump should land at an end, not throw the list off.
+   */
+  const rowIndexForAddress = useCallback(
+    (address: number) => {
+      const index = Math.floor((address - disassOffset) / 16);
+      return Math.max(0, Math.min(index, Math.max(0, items.length - 1)));
+    },
+    [disassOffset, items.length]
+  );
+
   useEffect(() => {
     if (!memoryVlApi.current || memoryJumpAddress === undefined) return;
-    memoryVlApi.current.scrollToIndex(Math.floor(memoryJumpAddress / 16), {
+    memoryVlApi.current.scrollToIndex(rowIndexForAddress(memoryJumpAddress), {
       align: "start"
     });
-  }, [memoryJumpAddress]);
+  }, [memoryJumpAddress, rowIndexForAddress]);
 
-  useEffect(() => {
-    const annotationPath = currentViewState.nexAnnotationPath;
-    const bank = currentViewState.nexAnnotationBank;
-    if (!annotationPath || bank === undefined) {
-      nexAnnotationsRef.current = undefined;
-      setNexAnnotations(undefined);
-      setAnnotationLoading(false);
-      setAnnotationLoadError(undefined);
-      setAnnotationSaveError(undefined);
-      setAnnotationDirtyState(false);
-      return undefined;
-    }
-
-    return subscribeNexAnnotationSession(
-      appServices.projectService,
-      annotationPath,
-      bank,
-      (snapshot) => {
-        nexAnnotationsRef.current = snapshot.annotations;
-        setNexAnnotations(snapshot.annotations);
-        setAnnotationLoading(snapshot.loading);
-        setAnnotationLoadError(snapshot.loadError);
-        setAnnotationSaveError(snapshot.saveError);
-        setAnnotationDirtyState(snapshot.dirty);
-        const bankAnnotation = snapshot.annotations
-          ? getBankAnnotation(snapshot.annotations, bank)
-          : undefined;
-        if (bankAnnotation) {
-          setCurrentViewState((current) => {
-            const nextViewState = { ...current };
-            let changed = false;
-            const nextDisassOffset = getNexBankAddressOffset(bankAnnotation.offsetIndex);
-            if (nextViewState.disassOffset !== nextDisassOffset) {
-              nextViewState.disassOffset = nextDisassOffset;
-              changed = true;
-            }
-            if (
-              bankAnnotation.decimalView !== undefined &&
-              nextViewState.decimalView !== bankAnnotation.decimalView
-            ) {
-              nextViewState.decimalView = bankAnnotation.decimalView;
-              changed = true;
-            }
-            if (bankAnnotation.lastView && nextViewState.viewMode !== bankAnnotation.lastView) {
-              nextViewState.viewMode = bankAnnotation.lastView;
-              changed = true;
-            }
-            return changed ? nextViewState : current;
-          });
-        }
-      }
-    );
-  }, [
-    appServices.projectService,
-    currentViewState.nexAnnotationBank,
-    currentViewState.nexAnnotationPath,
-    setAnnotationDirtyState
-  ]);
-
-  const saveAnnotations = useCallback(async () => {
-    const annotationsToSave = nexAnnotationsRef.current;
-    if (!annotationsToSave || !currentViewState.nexAnnotationPath) return;
-    await saveNexAnnotationSession(
-      appServices.projectService,
-      currentViewState.nexAnnotationPath
-    );
-  }, [
-    appServices.projectService,
-    currentViewState.nexAnnotationPath
-  ]);
-
-  const updateAnnotatedBankSettings = useCallback((
-    patch: {
-      lastView?: StaticDumpViewMode;
-      decimalView?: boolean;
-      offsetIndex?: NexAnnotationOffsetIndex;
-    }
-  ) => {
-    const annotationBank = currentViewState.nexAnnotationBank;
-    if (annotationBank === undefined) {
-      return;
-    }
-    const currentAnnotations = nexAnnotationsRef.current;
-    if (!currentAnnotations) {
-      return;
-    }
-    const bankKey = String(annotationBank);
-    const bankAnnotation = getBankAnnotation(currentAnnotations, annotationBank);
-    if (!bankAnnotation) {
-      return;
-    }
-
-    const nextBankAnnotation = { ...bankAnnotation };
-    let changed = false;
-    if (patch.lastView !== undefined && nextBankAnnotation.lastView !== patch.lastView) {
-      nextBankAnnotation.lastView = patch.lastView;
-      changed = true;
-    }
-    if (
-      patch.decimalView !== undefined &&
-      nextBankAnnotation.decimalView !== patch.decimalView
-    ) {
-      nextBankAnnotation.decimalView = patch.decimalView;
-      changed = true;
-    }
-    if (
-      patch.offsetIndex !== undefined &&
-      nextBankAnnotation.offsetIndex !== patch.offsetIndex
-    ) {
-      nextBankAnnotation.offsetIndex = patch.offsetIndex;
-      changed = true;
-    }
-    if (!changed) {
-      return;
-    }
-
-    const updatedAnnotations: NexFileAnnotations = {
-      ...currentAnnotations,
-      banks: {
-        ...currentAnnotations.banks,
-        [bankKey]: nextBankAnnotation
-      }
-    };
-    publishNexAnnotations(updatedAnnotations);
-  }, [
-    currentViewState.nexAnnotationBank,
-    publishNexAnnotations
-  ]);
-
+  /*
+   * The three display controls only change *view* state now.
+   *
+   * Remembering them in the sidecar used to happen here, by hand, once per control. The annotation
+   * editor does it from the environment instead, so it cannot be forgotten when a control is added.
+   */
   const changeViewMode = useCallback((nextView: StaticDumpViewMode) => {
     changeViewState((vs) => (vs.viewMode = nextView));
-    updateAnnotatedBankSettings({ lastView: nextView });
-  }, [changeViewState, updateAnnotatedBankSettings]);
+  }, [changeViewState]);
 
   const changeDecimalView = useCallback((nextDecimalView: boolean) => {
     changeViewState((vs) => (vs.decimalView = nextDecimalView));
-    updateAnnotatedBankSettings({ decimalView: nextDecimalView });
-  }, [changeViewState, updateAnnotatedBankSettings]);
+  }, [changeViewState]);
 
   const changeDisassemblyOffset = useCallback((nextOffset: number) => {
     changeViewState((vs) => (vs.disassOffset = nextOffset));
-    const offsetIndex = getNexBankOffsetIndex(nextOffset);
-    if (offsetIndex !== undefined) {
-      updateAnnotatedBankSettings({ offsetIndex });
-    }
-  }, [changeViewState, updateAnnotatedBankSettings]);
+  }, [changeViewState]);
 
   const selectDisassemblyRow = useCallback((index: number, extendSelection: boolean) => {
-    setDisassemblySelection((current) => {
-      const anchorIndex = extendSelection && current ? current.anchorIndex : index;
-      const nextSelection = {
-        anchorIndex,
-        activeIndex: index
-      };
-      disassemblySelectionRef.current = nextSelection;
-      return nextSelection;
-    });
-  }, []);
+    dispatchAnnotation({ type: "rowSelected", index, extend: extendSelection });
+  }, [dispatchAnnotation]);
 
-  const clearDisassemblySelection = useCallback(() => {
-    disassemblySelectionRef.current = undefined;
-    setDisassemblySelection(undefined);
-  }, []);
-
+  /*
+   * Moving the selection is the editor's decision; scrolling to it and taking focus are not.
+   *
+   * The editor clamps the index, so the row it lands on is recomputed here from the same rule
+   * rather than guessed — `vm.listing.selectedRange` is a render behind at this point.
+   */
   const moveDisassemblySelection = useCallback((
     delta: number,
     extendSelection: boolean
   ) => {
-    if (disassemblyItems.length === 0) {
-      return;
-    }
-    const fromIndex = disassemblySelectionRef.current?.activeIndex ?? 0;
+    if (disassemblyItems.length === 0) return;
+    const fromIndex = selectedRangeRef.current?.activeIndex ?? 0;
     const nextIndex = Math.max(0, Math.min(disassemblyItems.length - 1, fromIndex + delta));
-    selectDisassemblyRow(nextIndex, extendSelection);
-    disassemblyVlApi.current?.scrollToIndex(nextIndex, {
-      align: "nearest"
-    });
+    dispatchAnnotation({ type: "selectionMoved", delta, extend: extendSelection });
+    disassemblyVlApi.current?.scrollToIndex(nextIndex, { align: "nearest" });
     disassemblyListRef.current?.focus();
-  }, [disassemblyItems.length, selectDisassemblyRow]);
+  }, [disassemblyItems.length, dispatchAnnotation]);
 
   const handleDisassemblyListKeyDown = useCallback((
     event: KeyboardEvent<HTMLDivElement>
@@ -505,6 +564,37 @@ const StaticMemoryDump = ({
         (disassemblyListRef.current?.clientHeight ?? 0) / disassemblyRowItemSize
       ) || STATIC_DISASSEMBLY_FALLBACK_PAGE_ROWS
     );
+    /*
+     * An annotation shortcut, before the navigation keys.
+     *
+     * **Availability is not decided here.** The action's own menu entry already carries it — the
+     * same `disabled` the context menu draws — so a shortcut and its menu item cannot drift apart
+     * as the rules change. A disabled action simply falls through to the navigation switch, which
+     * ignores a letter anyway.
+     *
+     * **The row is named explicitly**, as the current selection's active end rather than left to
+     * the controller's `rowIndex ?? contextTarget ?? selection` fallback. Nothing ever emits
+     * `contextTargetCleared`, so a right-click leaves `contextTarget` pointing at that row for as
+     * long as the selection lives — and a shortcut pressed after arrowing away would have edited
+     * the row the user right-clicked minutes ago. Naming the row also keeps range edits intact:
+     * `actionRange` widens any index inside the selection back to the whole range.
+     *
+     * A handled key must stop propagating: the emulated machine's keyboard is a `window` listener
+     * that runs whenever a machine is *Running*, whatever has focus (`useEmulatorKeyboard`), so a
+     * bare letter that merely called `preventDefault` would open the dialog *and* type into the
+     * Spectrum.
+     */
+    if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+      const action = annotationActionForKey(event.key, event.shiftKey);
+      const entry = action ? menuEntryFor(annotationVmRef.current.menu, action) : undefined;
+      if (action && entry && !entry.disabled) {
+        event.preventDefault();
+        event.stopPropagation();
+        dispatchAnnotation(intentForAction(action, selectedRangeRef.current?.activeIndex));
+        return;
+      }
+    }
+
     switch (event.key) {
       case "ArrowDown":
         event.preventDefault();
@@ -529,1094 +619,86 @@ const StaticMemoryDump = ({
       case "Home":
         event.preventDefault();
         event.stopPropagation();
-        moveDisassemblySelection(-(disassemblySelectionRef.current?.activeIndex ?? 0), event.shiftKey);
+        moveDisassemblySelection(-(selectedRangeRef.current?.activeIndex ?? 0), event.shiftKey);
         break;
       case "End":
         event.preventDefault();
         event.stopPropagation();
         moveDisassemblySelection(
-          disassemblyItems.length - 1 - (disassemblySelectionRef.current?.activeIndex ?? 0),
+          disassemblyItems.length - 1 - (selectedRangeRef.current?.activeIndex ?? 0),
           event.shiftKey
         );
         break;
     }
-  }, [disassemblyItems.length, disassemblyRowItemSize, moveDisassemblySelection]);
-
-  const getDisassemblyContextTarget = useCallback((
-    index: number
-  ): StaticDisassemblyContextTarget | undefined => {
-    const clickedItem = disassemblyItems[index];
-    if (!clickedItem?.annotation) {
-      return undefined;
-    }
-
-    const useSelectedRange =
-      !!selectedDisassemblyRange &&
-      index >= selectedDisassemblyRange.start &&
-      index <= selectedDisassemblyRange.end;
-    const rangeStartIndex = useSelectedRange ? selectedDisassemblyRange.start : index;
-    const rangeEndIndex = useSelectedRange ? selectedDisassemblyRange.end : index;
-    const sourceRows = disassemblyItems
-      .slice(rangeStartIndex, rangeEndIndex + 1)
-      .filter((item) => !!item.annotation);
-
-    const bankOffsetStart = Math.min(
-      ...sourceRows.map((item) => item.annotation!.bankOffset)
-    );
-    const bankOffsetEnd = Math.max(
-      ...sourceRows.map(
-        (item) => item.annotation!.bankOffset + item.annotation!.byteLength - 1
-      )
-    );
-
-    return {
-      rowIndex: index,
-      rangeStartIndex,
-      rangeEndIndex,
-      bankOffsetStart,
-      bankOffsetEnd,
-      canAssignOperandLabel: !clickedItem.isPrefixItem && !!clickedItem.operandCandidates?.length
-    };
-  }, [disassemblyItems, selectedDisassemblyRange]);
-
-  const updateLineAnnotation = useCallback((
-    bankOffset: number,
-    update: (annotation: NexLineAnnotation) => NexLineAnnotation
-  ) => {
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const currentAnnotations = nexAnnotationsRef.current;
-    if (!currentAnnotations || annotationBank === undefined) {
-      return;
-    }
-    const bankAnnotation = getBankAnnotation(currentAnnotations, annotationBank);
-    if (!bankAnnotation) {
-      return;
-    }
-
-    const offsetKey = String(bankOffset);
-    const currentLineAnnotations = bankAnnotation.lineAnnotations ?? {};
-    const currentLineAnnotation = currentLineAnnotations[offsetKey] ?? {};
-    const nextLineAnnotation = update({ ...currentLineAnnotation });
-
-    const nextLineAnnotations = {
-      ...currentLineAnnotations
-    };
-    if (nextLineAnnotation.synopsis || nextLineAnnotation.comment) {
-      nextLineAnnotations[offsetKey] = nextLineAnnotation;
-    } else {
-      delete nextLineAnnotations[offsetKey];
-    }
-
-    const nextBankAnnotation = {
-      ...bankAnnotation
-    };
-    if (Object.keys(nextLineAnnotations).length > 0) {
-      nextBankAnnotation.lineAnnotations = nextLineAnnotations;
-    } else {
-      delete nextBankAnnotation.lineAnnotations;
-    }
-
-    const updatedAnnotations: NexFileAnnotations = {
-      ...currentAnnotations,
-      banks: {
-        ...currentAnnotations.banks,
-        [String(annotationBank)]: nextBankAnnotation
-      }
-    };
-    publishNexAnnotations(updatedAnnotations);
   }, [
-    currentViewState.nexAnnotationBank,
-    publishNexAnnotations
-  ]);
-
-  const setSynopsisComment = useCallback((bankOffset: number, synopsis?: string) => {
-    updateLineAnnotation(bankOffset, (currentLineAnnotation) => {
-      const nextLineAnnotation: NexLineAnnotation = {
-        ...currentLineAnnotation
-      };
-      if (synopsis) {
-        nextLineAnnotation.synopsis = synopsis;
-      } else {
-        delete nextLineAnnotation.synopsis;
-      }
-      return nextLineAnnotation;
-    });
-  }, [updateLineAnnotation]);
-
-  const setEndOfLineComment = useCallback((bankOffset: number, comment?: string) => {
-    updateLineAnnotation(bankOffset, (currentLineAnnotation) => {
-      const nextLineAnnotation: NexLineAnnotation = {
-        ...currentLineAnnotation
-      };
-      if (comment) {
-        nextLineAnnotation.comment = comment;
-      } else {
-        delete nextLineAnnotation.comment;
-      }
-      return nextLineAnnotation;
-    });
-  }, [updateLineAnnotation]);
-
-  const getGeneratedDisassemblyItemForRow = useCallback((rowIndex: number) => {
-    const item = disassemblyItems[rowIndex];
-    if (!item?.annotation) {
-      return undefined;
-    }
-    if (!item.isPrefixItem) {
-      return item;
-    }
-
-    const bankOffset = item.annotation.bankOffset;
-    return disassemblyItems
-      .slice(rowIndex + 1)
-      .find((candidate) =>
-        !candidate.isPrefixItem &&
-        candidate.annotation?.bankOffset === bankOffset
-      );
-  }, [disassemblyItems]);
-
-  const createLabelDialogLabels = useCallback((
-    annotations: NexFileAnnotations,
-    annotationBank: number
-  ): NexLabelDialogLabel[] => {
-    const bankAnnotation = getBankAnnotation(annotations, annotationBank);
-    return [
-      ...(annotations.globalLabels ?? []).map((label) => {
-        const referenceCount = countLabelReferences(
-          annotations,
-          annotationBank,
-          "global",
-          label.name
-        );
-        return {
-          ...label,
-          scope: "global" as const,
-          referenced: referenceCount > 0,
-          referenceCount
-        };
-      }),
-      ...(bankAnnotation?.localLabels ?? []).map((label) => {
-        const referenceCount = countLabelReferences(
-          annotations,
-          annotationBank,
-          "local",
-          label.name
-        );
-        return {
-          ...label,
-          scope: "local" as const,
-          bank: annotationBank,
-          referenced: referenceCount > 0,
-          referenceCount
-        };
-      })
-    ];
-  }, []);
-
-  const applyLabelDialogResult = useCallback(async (result: NexLabelDialogResult) => {
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const currentAnnotations = nexAnnotationsRef.current;
-    if (!currentAnnotations || annotationBank === undefined) {
-      return;
-    }
-    const bankAnnotation = getBankAnnotation(currentAnnotations, annotationBank);
-    if (!bankAnnotation) {
-      return;
-    }
-
-    if (result.action === "delete" && !result.originalLabel) {
-      return;
-    }
-
-    /*
-     * Every delete is confirmed, not only a referenced one.
-     *
-     * A label is a name the user chose and typed, and the list offers no undo — losing one to a
-     * mis-aimed click in a dense row of buttons is exactly what a confirmation is for. Where the
-     * label *is* referenced, the reference count is the part that matters, because clearing those
-     * operand references is a second, invisible consequence of saying yes.
-     */
-    if (result.action === "delete") {
-      const referenceCount = countLabelReferences(
-        currentAnnotations,
-        annotationBank,
-        result.scope,
-        result.name
-      );
-      const confirmed = await confirmPort.confirm({
-        title: "Delete label",
-        lines: [
-          `Delete this ${result.scope === "global" ? "global" : "bank"} label?`
-        ],
-        code: result.name,
-        linesAfterCode: referenceCount > 0
-          ? [
-              `${referenceCount} operand reference${
-                referenceCount === 1 ? "" : "s"
-              } to it will be cleared.`
-            ]
-          : undefined,
-        confirmLabel: "Delete",
-        cancelLabel: "Cancel",
-        danger: true
-      });
-      if (!confirmed) {
-        return;
-      }
-    }
-
-    let nextGlobalLabels = [...(currentAnnotations.globalLabels ?? [])];
-    let nextBankAnnotation = {
-      ...bankAnnotation,
-      localLabels: [...(bankAnnotation.localLabels ?? [])]
-    };
-
-    if (result.originalLabel) {
-      if (result.originalLabel.scope === "global") {
-        nextGlobalLabels = removeLabel(nextGlobalLabels, result.originalLabel);
-      } else {
-        nextBankAnnotation.localLabels = removeLabel(
-          nextBankAnnotation.localLabels,
-          result.originalLabel
-        );
-      }
-    }
-
-    if (result.action === "save") {
-      const nextLabel: NexAnnotationLabel = {
-        name: result.name,
-        value: result.value
-      };
-      if (result.scope === "global") {
-        nextGlobalLabels.push(nextLabel);
-      } else {
-        nextBankAnnotation.localLabels.push(nextLabel);
-      }
-    }
-
-    if (nextBankAnnotation.localLabels.length === 0) {
-      delete nextBankAnnotation.localLabels;
-    }
-
-    let nextBanks: Record<string, NexBankAnnotation> = {
-      ...currentAnnotations.banks,
-      [String(annotationBank)]: nextBankAnnotation
-    };
-    if (result.action === "delete") {
-      nextBanks = removeLabelOperandReferencesFromBanks(
-        nextBanks,
-        annotationBank,
-        result.scope,
-        result.name
-      );
-    }
-
-    const updatedAnnotations: NexFileAnnotations = {
-      ...currentAnnotations,
-      banks: nextBanks
-    };
-    if (nextGlobalLabels.length > 0 || currentAnnotations.globalLabels) {
-      updatedAnnotations.globalLabels = nextGlobalLabels;
-    } else {
-      delete updatedAnnotations.globalLabels;
-    }
-
-    publishNexAnnotations(updatedAnnotations);
-  }, [
-    confirmPort,
-    currentViewState.nexAnnotationBank,
-    publishNexAnnotations
-  ]);
-
-  const applyOperandLabelDialogResult = useCallback((
-    bankOffset: number,
-    result: NexOperandLabelDialogResult
-  ) => {
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const currentAnnotations = nexAnnotationsRef.current;
-    if (!currentAnnotations || annotationBank === undefined) {
-      return;
-    }
-    const bankAnnotation = getBankAnnotation(currentAnnotations, annotationBank);
-    if (!bankAnnotation) {
-      return;
-    }
-
-    let nextGlobalLabels = [...(currentAnnotations.globalLabels ?? [])];
-    let nextBankAnnotation: NexBankAnnotation = {
-      ...bankAnnotation,
-      localLabels: bankAnnotation.localLabels ? [...bankAnnotation.localLabels] : undefined
-    };
-    if (result.action === "create-label") {
-      const nextLabel: NexAnnotationLabel = {
-        name: result.name,
-        value: result.value
-      };
-      if (result.scope === "global") {
-        nextGlobalLabels = addLabelIfMissing(nextGlobalLabels, nextLabel);
-      } else {
-        nextBankAnnotation.localLabels = addLabelIfMissing(
-          nextBankAnnotation.localLabels ?? [],
-          nextLabel
-        );
-      }
-    }
-
-    const nextOperandReferences = {
-      ...(bankAnnotation.operandReferences ?? {})
-    };
-    const offsetKey = String(bankOffset);
-    const remainingReferences = (nextOperandReferences[offsetKey] ?? [])
-      .filter((reference) => reference.operandIndex !== result.operandIndex);
-
-    if (result.action === "apply" || result.action === "create-label") {
-      const nextReference: NexOperandReference = {
-        operandIndex: result.operandIndex,
-        scope: result.scope,
-        name: result.name
-      };
-      nextOperandReferences[offsetKey] = [...remainingReferences, nextReference]
-        .sort((left, right) => left.operandIndex - right.operandIndex);
-    } else if (remainingReferences.length > 0) {
-      nextOperandReferences[offsetKey] = remainingReferences;
-    } else {
-      delete nextOperandReferences[offsetKey];
-    }
-
-    if (Object.keys(nextOperandReferences).length > 0) {
-      nextBankAnnotation.operandReferences = nextOperandReferences;
-    } else {
-      delete nextBankAnnotation.operandReferences;
-    }
-
-    if (nextBankAnnotation.localLabels?.length === 0) {
-      delete nextBankAnnotation.localLabels;
-    }
-
-    const updatedAnnotations: NexFileAnnotations = {
-      ...currentAnnotations,
-      banks: {
-        ...currentAnnotations.banks,
-        [String(annotationBank)]: nextBankAnnotation
-      }
-    };
-    if (nextGlobalLabels.length > 0 || currentAnnotations.globalLabels) {
-      updatedAnnotations.globalLabels = nextGlobalLabels;
-    } else {
-      delete updatedAnnotations.globalLabels;
-    }
-
-    publishNexAnnotations(updatedAnnotations);
-  }, [
-    currentViewState.nexAnnotationBank,
-    publishNexAnnotations
-  ]);
-
-  const applyRegionDialogResult = useCallback((result: NexRegionDialogResult) => {
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const currentAnnotations = nexAnnotationsRef.current;
-    if (!currentAnnotations || annotationBank === undefined) {
-      return;
-    }
-    const bankAnnotation = getBankAnnotation(currentAnnotations, annotationBank);
-    if (!bankAnnotation) {
-      return;
-    }
-    if (
-      result.start === 0 &&
-      result.end === NEX_BANK_LAST_OFFSET &&
-      !window.confirm("This changes the entire 16K bank. Continue?")
-    ) {
-      return;
-    }
-
-    const nextBankAnnotation: NexBankAnnotation = {
-      ...bankAnnotation,
-      regions: replaceAnnotationRegion(
-        bankAnnotation.regions,
-        result.start,
-        result.end,
-        result.type
-      )
-    };
-    const updatedAnnotations: NexFileAnnotations = {
-      ...currentAnnotations,
-      banks: {
-        ...currentAnnotations.banks,
-        [String(annotationBank)]: nextBankAnnotation
-      }
-    };
-
-    publishNexAnnotations(updatedAnnotations);
-    clearDisassemblySelection();
-  }, [
-    clearDisassemblySelection,
-    currentViewState.nexAnnotationBank,
-    publishNexAnnotations
-  ]);
-
-  const openSynopsisCommentDialog = useCallback(async (rowIndex: number | undefined) => {
-    if (rowIndex === undefined) {
-      return;
-    }
-    const item = disassemblyItems[rowIndex];
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const annotations = nexAnnotationsRef.current;
-    if (!item?.annotation || annotationBank === undefined || !annotations) {
-      return;
-    }
-    const bankAnnotation = getBankAnnotation(annotations, annotationBank);
-    if (!bankAnnotation) {
-      return;
-    }
-
-    const bankOffset = item.annotation.bankOffset;
-    const result = await dialogs.open<NexSynopsisCommentDialogResult, {
-      bank: number;
-      bankOffset: number;
-      effectiveAddress: number;
-      initialSynopsis?: string;
-    }>(
-      NexSynopsisCommentDialog,
-      {
-        bank: annotationBank,
-        bankOffset,
-        effectiveAddress: (disassOffset + bankOffset) & 0xffff,
-        initialSynopsis: bankAnnotation.lineAnnotations?.[String(bankOffset)]?.synopsis
-      },
-      {
-        title: "Synopsis Comment",
-        width: 520
-      }
-    );
-    if (result) {
-      setSynopsisComment(bankOffset, result.synopsis);
-    }
-  }, [
-    currentViewState.nexAnnotationBank,
-    dialogs,
-    disassOffset,
-    disassemblyItems,
-    setSynopsisComment
-  ]);
-
-  const openEndOfLineCommentDialog = useCallback(async (rowIndex: number | undefined) => {
-    if (rowIndex === undefined) {
-      return;
-    }
-    const item = getGeneratedDisassemblyItemForRow(rowIndex);
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const annotations = nexAnnotationsRef.current;
-    if (!item?.annotation || annotationBank === undefined || !annotations) {
-      return;
-    }
-    const bankAnnotation = getBankAnnotation(annotations, annotationBank);
-    if (!bankAnnotation) {
-      return;
-    }
-
-    const bankOffset = item.annotation.bankOffset;
-    const result = await dialogs.open<NexEndOfLineCommentDialogResult, {
-      bank: number;
-      bankOffset: number;
-      effectiveAddress: number;
-      instruction: string;
-      generatedHardComment?: string;
-      initialComment?: string;
-    }>(
-      NexEndOfLineCommentDialog,
-      {
-        bank: annotationBank,
-        bankOffset,
-        effectiveAddress: (disassOffset + bankOffset) & 0xffff,
-        instruction: item.instruction ?? "",
-        generatedHardComment: item.annotation.generatedHardComment,
-        initialComment: bankAnnotation.lineAnnotations?.[String(bankOffset)]?.comment
-      },
-      {
-        title: "End-of-Line Comment",
-        width: 520
-      }
-    );
-    if (result) {
-      setEndOfLineComment(bankOffset, result.comment);
-    }
-  }, [
-    currentViewState.nexAnnotationBank,
-    dialogs,
-    disassOffset,
-    getGeneratedDisassemblyItemForRow,
-    setEndOfLineComment
-  ]);
-
-  const openLabelDialogForValues = useCallback(async (
-    initialScope: NexAnnotationLabelScope,
-    initialGlobalValue: number,
-    initialLocalValue: number
-  ) => {
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const annotations = nexAnnotationsRef.current;
-    if (annotationBank === undefined || !annotations) {
-      return;
-    }
-
-    const result = await dialogs.open<NexLabelDialogResult, {
-      bank: number;
-      initialScope: NexAnnotationLabelScope;
-      initialGlobalValue: number;
-      initialLocalValue: number;
-      labels: NexLabelDialogLabel[];
-    }>(
-      NexLabelDialog,
-      {
-        bank: annotationBank,
-        initialScope,
-        initialGlobalValue,
-        initialLocalValue,
-        labels: createLabelDialogLabels(annotations, annotationBank)
-      },
-      {
-        title: "Label",
-        width: 620
-      }
-    );
-    if (result) {
-      await applyLabelDialogResult(result);
-    }
-  }, [
-    applyLabelDialogResult,
-    createLabelDialogLabels,
-    currentViewState.nexAnnotationBank,
-    dialogs
-  ]);
-
-  const openLabelDialog = useCallback(async (
-    rowIndex: number | undefined,
-    initialScope: NexAnnotationLabelScope
-  ) => {
-    if (rowIndex === undefined) {
-      return;
-    }
-    const item = disassemblyItems[rowIndex];
-    if (!item?.annotation) {
-      return;
-    }
-
-    const bankOffset = item.annotation.bankOffset;
-    await openLabelDialogForValues(
-      initialScope,
-      (disassOffset + bankOffset) & 0xffff,
-      bankOffset
-    );
-  }, [
-    disassOffset,
-    disassemblyItems,
-    openLabelDialogForValues
-  ]);
-
-  const openOperandLabelDialog = useCallback(async (rowIndex: number | undefined) => {
-    if (rowIndex === undefined) {
-      return;
-    }
-    const item = getGeneratedDisassemblyItemForRow(rowIndex);
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const annotations = nexAnnotationsRef.current;
-    if (
-      !item?.annotation ||
-      !item.operandCandidates?.length ||
-      annotationBank === undefined ||
-      !annotations
-    ) {
-      return;
-    }
-    const bankAnnotation = getBankAnnotation(annotations, annotationBank);
-    if (!bankAnnotation) {
-      return;
-    }
-
-    const bankOffset = item.annotation.bankOffset;
-    const result = await dialogs.open<NexOperandLabelDialogResult, {
-      bank: number;
-      bankAddressOffset: number;
-      instruction: string;
-      operands: typeof item.operandCandidates;
-      explicitReferences?: NexOperandReference[];
-      labels: NexLabelDialogLabel[];
-    }>(
-      NexOperandLabelDialog,
-      {
-        bank: annotationBank,
-        bankAddressOffset: disassOffset,
-        instruction: item.instruction ?? "",
-        operands: item.operandCandidates,
-        explicitReferences: bankAnnotation.operandReferences?.[String(bankOffset)],
-        labels: createLabelDialogLabels(annotations, annotationBank)
-      },
-      {
-        title: "Operand Label Reference",
-        width: 640
-      }
-    );
-    if (result) {
-      applyOperandLabelDialogResult(bankOffset, result);
-    }
-  }, [
-    applyOperandLabelDialogResult,
-    createLabelDialogLabels,
-    currentViewState.nexAnnotationBank,
-    dialogs,
-    disassOffset,
-    getGeneratedDisassemblyItemForRow
-  ]);
-
-  const openRegionDialogForValues = useCallback(async (
-    initialType: NexAnnotationRegionType,
-    initialStart: number,
-    initialEnd: number
-  ) => {
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const annotations = nexAnnotationsRef.current;
-    if (annotationBank === undefined || !annotations) {
-      return;
-    }
-    const bankAnnotation = getBankAnnotation(annotations, annotationBank);
-    if (!bankAnnotation) {
-      return;
-    }
-
-    const result = await dialogs.open<NexRegionDialogResult, {
-      initialType: NexAnnotationRegionType;
-      initialStart: number;
-      initialEnd: number;
-      regions: NexAnnotationRegion[];
-      bytes: number[];
-    }>(
-      NexRegionDialog,
-      {
-        initialType,
-        initialStart,
-        initialEnd,
-        regions: bankAnnotation.regions,
-        bytes: Array.from(contents)
-      },
-      {
-        title: "Memory Region",
-        width: 620
-      }
-    );
-    if (result) {
-      applyRegionDialogResult(result);
-    }
-  }, [
-    applyRegionDialogResult,
-    contents,
-    currentViewState.nexAnnotationBank,
-    dialogs
-  ]);
-
-  const openRegionDialog = useCallback(async (
-    target: StaticDisassemblyContextTarget | undefined,
-    initialType?: NexAnnotationRegionType
-  ) => {
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const annotations = nexAnnotationsRef.current;
-    if (!target || annotationBank === undefined || !annotations) {
-      return;
-    }
-    const bankAnnotation = getBankAnnotation(annotations, annotationBank);
-    if (!bankAnnotation) {
-      return;
-    }
-    await openRegionDialogForValues(
-      initialType ?? getRegionTypeForSpan(
-        bankAnnotation.regions,
-        target.bankOffsetStart,
-        target.bankOffsetEnd
-      ),
-      target.bankOffsetStart,
-      target.bankOffsetEnd
-    );
-  }, [
-    currentViewState.nexAnnotationBank,
-    openRegionDialogForValues
-  ]);
-
-  const openManageRegionDialog = useCallback(async () => {
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const annotations = nexAnnotationsRef.current;
-    const activeIndex =
-      disassemblyContextTarget?.rowIndex ??
-      disassemblySelectionRef.current?.activeIndex;
-    const activeItem = activeIndex !== undefined ? disassemblyItems[activeIndex] : undefined;
-    const activeOffset = activeItem?.annotation?.bankOffset;
-    if (annotationBank === undefined || !annotations || activeOffset === undefined) {
-      return;
-    }
-    const bankAnnotation = getBankAnnotation(annotations, annotationBank);
-    if (!bankAnnotation) {
-      return;
-    }
-
-    const result = await dialogs.open<NexRegionsDialogResult, {
-      activeOffset?: number;
-      bytes: number[];
-      regions: NexAnnotationRegion[];
-    }>(
-      NexRegionsDialog,
-      {
-        activeOffset,
-        bytes: Array.from(contents),
-        regions: bankAnnotation.regions
-      },
-      {
-        title: "Regions",
-        width: 840
-      }
-    );
-    if (!result) {
-      return;
-    }
-
-    if (result.action === "go-to") {
-      const address = (disassOffset + result.region.start) & 0xffff;
-      changeViewState((vs) => (vs.topAddress = address));
-      setDisassemblyJumpAddress(address);
-    } else if (result.action === "edit") {
-      await openRegionDialogForValues(
-        result.region.type,
-        result.region.start,
-        result.region.end
-      );
-    } else if (result.action === "split") {
-      const splitStart = activeOffset >= result.region.start && activeOffset <= result.region.end
-        ? activeOffset
-        : result.region.start;
-      const splitEnd = Math.min(
-        result.region.end,
-        splitStart + Math.max(1, activeItem?.annotation?.byteLength ?? 1) - 1
-      );
-      await openRegionDialogForValues(
-        getAlternativeRegionType(result.region.type),
-        splitStart,
-        splitEnd
-      );
-    } else if (result.action === "add") {
-      await openRegionDialogForValues(
-        getAlternativeRegionType(
-          getRegionTypeForSpan(bankAnnotation.regions, activeOffset, activeOffset)
-        ),
-        activeOffset,
-        Math.min(
-          NEX_BANK_LAST_OFFSET,
-          activeOffset + Math.max(1, activeItem?.annotation?.byteLength ?? 1) - 1
-        )
-      );
-    } else {
-      applyRegionDialogResult({
-        type: "disassemble",
-        start: result.region.start,
-        end: result.region.end
-      });
-    }
-  }, [
-    applyRegionDialogResult,
-    changeViewState,
-    contents,
-    currentViewState.nexAnnotationBank,
-    disassemblyContextTarget?.rowIndex,
-    dialogs,
-    disassOffset,
-    disassemblyItems,
-    openRegionDialogForValues
-  ]);
-
-  /*
-   * The list stays open while you work in it.
-   *
-   * Adding, editing and deleting used to each end the session — the list closed, its dialog opened
-   * alone, and finding your place again was your problem. They now run as callbacks *while the list
-   * is still mounted*, so the editor and the delete confirmation stack over it: the row you are
-   * changing stays visible behind the dialog asking about it, and the list is still there when it
-   * settles, refreshed.
-   *
-   * "Go To" is the one action that still closes. It scrolls the disassembly underneath, and a list
-   * left open on top would cover the row it just moved to.
-   */
-  const openManageLabelsDialog = useCallback(async () => {
-    const annotationBank = currentViewState.nexAnnotationBank;
-    if (annotationBank === undefined || !nexAnnotationsRef.current) {
-      return;
-    }
-
-    // --- Read through the ref every time: each action publishes new annotations, and the list the
-    // --- dialog shows next has to be derived from those rather than from the ones it opened with.
-    const deriveLabels = () => {
-      const annotations = nexAnnotationsRef.current;
-      return annotations ? createLabelDialogLabels(annotations, annotationBank) : [];
-    };
-
-    const result = await dialogs.open<NexLabelsDialogResult, {
-      bank: number;
-      bankAddressOffset: number;
-      labels: NexLabelDialogLabel[];
-      onAddLabel: (scope: NexAnnotationLabelScope) => Promise<NexLabelDialogLabel[]>;
-      onEditLabel: (label: NexLabelDialogLabel) => Promise<NexLabelDialogLabel[]>;
-      onDeleteLabel: (label: NexLabelDialogLabel) => Promise<NexLabelDialogLabel[]>;
-    }>(
-      NexLabelsDialog,
-      {
-        bank: annotationBank,
-        bankAddressOffset: disassOffset,
-        labels: deriveLabels(),
-        onAddLabel: async (scope) => {
-          const activeIndex = disassemblySelectionRef.current?.activeIndex;
-          const bankOffset = activeIndex !== undefined
-            ? disassemblyItems[activeIndex]?.annotation?.bankOffset ?? 0
-            : 0;
-          await openLabelDialogForValues(
-            scope,
-            (disassOffset + bankOffset) & 0xffff,
-            bankOffset
-          );
-          return deriveLabels();
-        },
-        onEditLabel: async (label) => {
-          await openLabelDialogForValues(
-            label.scope,
-            label.scope === "global"
-              ? label.value
-              : (disassOffset + label.value) & 0xffff,
-            label.scope === "local"
-              ? label.value
-              : label.value & NEX_BANK_LAST_OFFSET
-          );
-          return deriveLabels();
-        },
-        onDeleteLabel: async (label) => {
-          await applyLabelDialogResult({
-            action: "delete",
-            scope: label.scope,
-            name: label.name,
-            value: label.value,
-            originalLabel: label
-          });
-          return deriveLabels();
-        }
-      },
-      {
-        title: "Labels",
-        width: 780
-      }
-    );
-
-    if (result?.action === "go-to") {
-      const address = result.label.scope === "local"
-        ? (disassOffset + result.label.value) & 0xffff
-        : result.label.value;
-      changeViewState((vs) => (vs.topAddress = address));
-      setDisassemblyJumpAddress(address);
-    }
-  }, [
-    applyLabelDialogResult,
-    changeViewState,
-    createLabelDialogLabels,
-    currentViewState.nexAnnotationBank,
-    dialogs,
-    disassOffset,
-    disassemblyItems,
-    openLabelDialogForValues
+    disassemblyItems.length,
+    disassemblyRowItemSize,
+    dispatchAnnotation,
+    moveDisassemblySelection
   ]);
 
   const openDisassemblyContextMenu = useCallback((
     index: number,
     event: MouseEvent<HTMLDivElement>
   ) => {
-    if (!annotationEnabled) {
-      return;
-    }
-    const target = getDisassemblyContextTarget(index);
-    if (!target) {
-      return;
-    }
+    if (!annotationVm.annotationsAvailable) return;
+    // --- Only a row that carries annotation metadata can be acted on.
+    if (!disassemblyItems[index]?.annotation) return;
     event.preventDefault();
-    setDisassemblyContextTarget(target);
-    if (target.rangeStartIndex === index && target.rangeEndIndex === index) {
-      selectDisassemblyRow(index, false);
-    }
+    dispatchAnnotation({ type: "contextMenuRequested", rowIndex: index });
     contextMenuApi.show(event);
-  }, [
-    annotationEnabled,
-    contextMenuApi,
-    getDisassemblyContextTarget,
-    selectDisassemblyRow
-  ]);
+  }, [annotationVm.annotationsAvailable, contextMenuApi, disassemblyItems, dispatchAnnotation]);
 
   const openToolbarAnnotationContextMenu = useCallback((
     event: MouseEvent<HTMLElement>
   ) => {
-    if (!annotationEnabled) {
-      return;
-    }
-    const activeIndex = disassemblySelectionRef.current?.activeIndex;
-    if (activeIndex === undefined) {
-      return;
-    }
-    const target = getDisassemblyContextTarget(activeIndex);
-    if (!target) {
-      return;
-    }
-
-    setDisassemblyContextTarget(target);
+    if (!annotationVm.toolbar.menuEnabled) return;
+    dispatchAnnotation({ type: "toolbarMenuRequested" });
     contextMenuApi.show(event);
-  }, [
-    annotationEnabled,
-    contextMenuApi,
-    getDisassemblyContextTarget
-  ]);
-
-  const clearRowAnnotations = useCallback((
-    target: StaticDisassemblyContextTarget | undefined
-  ) => {
-    const annotationBank = currentViewState.nexAnnotationBank;
-    const currentAnnotations = nexAnnotationsRef.current;
-    if (!target || !currentAnnotations || annotationBank === undefined) {
-      return;
-    }
-    const bankAnnotation = getBankAnnotation(currentAnnotations, annotationBank);
-    if (!bankAnnotation) return;
-
-    const nextLineAnnotations = { ...(bankAnnotation.lineAnnotations ?? {}) };
-    let changed = false;
-    for (const offsetKey of Object.keys(nextLineAnnotations)) {
-      const offset = Number(offsetKey);
-      if (
-        Number.isInteger(offset) &&
-        offset >= target.bankOffsetStart &&
-        offset <= target.bankOffsetEnd
-      ) {
-        delete nextLineAnnotations[offsetKey];
-        changed = true;
-      }
-    }
-    const resetRegionToDisassembly = bankAnnotation.regions.some((region) =>
-      region.type !== "disassemble" &&
-      region.start <= target.bankOffsetEnd &&
-      region.end >= target.bankOffsetStart
-    );
-    if (!changed) {
-      if (resetRegionToDisassembly) {
-        publishNexAnnotations({
-          ...currentAnnotations,
-          banks: {
-            ...currentAnnotations.banks,
-            [String(annotationBank)]: {
-              ...bankAnnotation,
-              regions: replaceAnnotationRegion(
-                bankAnnotation.regions,
-                target.bankOffsetStart,
-                target.bankOffsetEnd,
-                "disassemble"
-              )
-            }
-          }
-        });
-      }
-      clearDisassemblySelection();
-      return;
-    }
-
-    const nextBankAnnotation: NexBankAnnotation = {
-      ...bankAnnotation,
-      regions: resetRegionToDisassembly
-        ? replaceAnnotationRegion(
-          bankAnnotation.regions,
-          target.bankOffsetStart,
-          target.bankOffsetEnd,
-          "disassemble"
-        )
-        : bankAnnotation.regions
-    };
-    if (Object.keys(nextLineAnnotations).length > 0) {
-      nextBankAnnotation.lineAnnotations = nextLineAnnotations;
-    } else {
-      delete nextBankAnnotation.lineAnnotations;
-    }
-
-    publishNexAnnotations({
-      ...currentAnnotations,
-      banks: {
-        ...currentAnnotations.banks,
-        [String(annotationBank)]: nextBankAnnotation
-      }
-    });
-    clearDisassemblySelection();
-  }, [
-    clearDisassemblySelection,
-    currentViewState.nexAnnotationBank,
-    publishNexAnnotations
-  ]);
-
-  const runDisassemblyContextAction = useCallback(async (action: NexContextMenuAction) => {
-    const target = disassemblyContextTarget;
-    contextMenuApi.conceal();
-    if (action === "synopsis") {
-      await openSynopsisCommentDialog(target?.rowIndex);
-    } else if (action === "comment") {
-      await openEndOfLineCommentDialog(target?.rowIndex);
-    } else if (action === "global-label") {
-      await openLabelDialog(target?.rowIndex, "global");
-    } else if (action === "local-label") {
-      await openLabelDialog(target?.rowIndex, "local");
-    } else if (action === "operand-label") {
-      await openOperandLabelDialog(target?.rowIndex);
-    } else if (action === "mark-disassembly") {
-      await openRegionDialog(target, "disassemble");
-    } else if (action === "mark-bytes") {
-      await openRegionDialog(target, "bytes");
-    } else if (action === "mark-words") {
-      await openRegionDialog(target, "words");
-    } else if (action === "mark-skip") {
-      await openRegionDialog(target, "skip");
-    } else if (action === "clear") {
-      clearRowAnnotations(target);
-    }
-  }, [
-    clearRowAnnotations,
-    contextMenuApi,
-    disassemblyContextTarget,
-    openEndOfLineCommentDialog,
-    openLabelDialog,
-    openOperandLabelDialog,
-    openRegionDialog,
-    openSynopsisCommentDialog
-  ]);
+  }, [annotationVm.toolbar.menuEnabled, contextMenuApi, dispatchAnnotation]);
 
   useEffect(() => {
     if (!disassemblyEnabled || viewMode !== "disassembly") return undefined;
     let cancelled = false;
 
     (async () => {
-      const annotationItems = nexAnnotations && currentViewState.nexAnnotationBank !== undefined
+      const annotations = annotationVm.annotations;
+      const annotationItems = annotations && currentViewState.nexAnnotationBank !== undefined
         ? await createAnnotatedNexDisassemblyItems({
-            annotations: nexAnnotations,
+            annotations,
             bank: currentViewState.nexAnnotationBank,
-            contents,
+            contents: bankBytes,
             decimalView,
-            disassOffset
+            disassOffset,
+            pcBankOffset
           })
         : undefined;
       let outputItems = annotationItems;
       if (!outputItems) {
-        const memorySections = [
-          new MemorySection(0x0000, Math.max(0, contents.length - 1))
-        ];
-        const disassembler = new Z80Disassembler(memorySections, contents, undefined, {
-          allowExtendedSet: true,
-          decimalMode: decimalView
-        });
-        disassembler.setAddressOffset(disassOffset);
-        const output = await disassembler.disassemble(0x0000, contents.length - 1);
-        outputItems = output?.outputItems ?? [];
+        /*
+         * One run, or two with the cut at the program counter.
+         *
+         * A fresh disassembler per run rather than one reused across both: each is given the section
+         * it is actually decoding, which is what `createInstructionItems` does on the annotated path
+         * and avoids depending on whether a second `disassemble` on the same instance starts clean.
+         */
+        const lastOffset = Math.max(0, bankBytes.length - 1);
+        const collected: DisassemblyItem[] = [];
+        for (const [runStart, runEnd] of pcAnchoredRuns(0x0000, lastOffset, pcBankOffset)) {
+          const disassembler = new Z80Disassembler(
+            [new MemorySection(runStart, runEnd)],
+            bankBytes,
+            undefined,
+            {
+              allowExtendedSet: true,
+              decimalMode: decimalView
+            }
+          );
+          disassembler.setAddressOffset(disassOffset);
+          const output = await disassembler.disassemble(runStart, runEnd);
+          collected.push(...(output?.outputItems ?? []));
+        }
+        outputItems = collected;
       }
       if (!cancelled) {
         setDisassemblyItems(outputItems);
@@ -1627,12 +709,23 @@ const StaticMemoryDump = ({
       cancelled = true;
     };
   }, [
-    contents,
+    /*
+     * `bankBytes`, not `contents`: the listing follows the machine.
+     *
+     * Safe as a dependency only because `useNexLiveBankBytes` keeps the array identity when the
+     * bytes have not moved. Were it to hand back a fresh 16K array on every tick, this effect would
+     * re-disassemble an idle bank several times a second.
+     *
+     * `pcBankOffset` is here so that a step re-anchors the listing. It only ever has a value while
+     * the machine is paused, so this does not re-run while the program is running.
+     */
+    bankBytes,
+    pcBankOffset,
     currentViewState.nexAnnotationBank,
     decimalView,
     disassOffset,
     disassemblyEnabled,
-    nexAnnotations,
+    annotationVm.annotations,
     viewMode
   ]);
 
@@ -1688,6 +781,36 @@ const StaticMemoryDump = ({
             <LabelSeparator width={8} />
           </>
         )}
+        {liveBankShown && (
+          <>
+            {/*
+              * A readout, not a control.
+              *
+              * The switch is gone, but the thing it used to announce still has to be announced: a
+              * listing built from RAM and one built from the file look identical until they differ,
+              * and the reader has to know which of the two is in front of them. In both views now,
+              * because the disassembly is built from the machine's bytes too.
+              */}
+            <span
+              className={styles.liveBank}
+              title={
+                "This bank is shown as it is in the machine now, not as the file holds it. " +
+                "The file's bytes are shown when no machine is running."
+              }
+            >
+              Live
+            </span>
+            {diffBadge && (
+              <>
+                <LabelSeparator width={8} />
+                <span className={styles.bankDiff} title={diffBadge.title}>
+                  {diffBadge.text}
+                </span>
+              </>
+            )}
+            <LabelSeparator width={8} />
+          </>
+        )}
         {viewMode === "memory" && (
           <AddressInput
             label="Go to address:"
@@ -1709,34 +832,34 @@ const StaticMemoryDump = ({
             }}
           />
         )}
-        {currentViewState.nexAnnotationPath && (
+        {/*
+          * Where this bank actually is in the Z80 address space, right now.
+          *
+          * The one thing the pop-out could not say before, and the reason a breakpoint set here
+          * could look like it did nothing: a bank-relative breakpoint is armed at all eight
+          * addresses its bank could be paged to, and fires only at the one where it actually is —
+          * so a bank that is paged out has a live breakpoint that correctly never fires. See
+          * `nextBankLocation.ts`.
+          */}
+        {bankLocation && (
           <>
             <LabelSeparator width={8} />
-            {(annotationSaveError || annotationLoadError || (!annotationLoading && !annotationEnabled)) && (
-              <span title={annotationSaveError ?? annotationLoadError ?? "Annotation file could not be loaded."}>
-                <Icon
-                  iconName="warning"
-                  fill="--status-error"
-                  width={16}
-                  height={16}
-                />
-              </span>
-            )}
-            <SmallIconButton
-              iconName="save"
-              title="Save annotations"
-              enable={annotationDirty && !!nexAnnotations}
-              fill={annotationDirty ? "--status-warning" : undefined}
-              clicked={saveAnnotations}
-            />
-            <SmallIconButton
-              iconName="note"
-              title="Annotations"
-              enable={annotationEnabled && disassemblySelection?.activeIndex !== undefined}
-              clicked={openToolbarAnnotationContextMenu}
-            />
+            <span
+              className={classnames(styles.bankLocation, {
+                [styles.bankLocationAbsent]: bankLocation.placements.length === 0
+              })}
+              title={bankLocation.title}
+            >
+              <span className={styles.bankLocationLabel}>Bank</span>
+              {bankLocation.text}
+            </span>
           </>
         )}
+        <NexAnnotationToolbar
+          vm={annotationVm}
+          dispatch={dispatchAnnotation}
+          onMenuRequested={openToolbarAnnotationContextMenu}
+        />
       </PanelHeader>
       <FullPanel>
         {contents && viewMode === "memory" ? (
@@ -1753,7 +876,20 @@ const StaticMemoryDump = ({
             }}
             apiLoaded={(api) => {
               memoryVlApi.current = api;
-              if (!restoredInitialScroll.current && viewState?.scrollPosition) {
+              if (restoredInitialScroll.current) return;
+              /*
+               * An explicit `topAddress` wins over a remembered scroll position: it is only set when
+               * something opened this document *at* an address — the entry-point stop revealing the
+               * bank it broke in — and restoring the previous position instead would silently ignore
+               * the reason the document was opened.
+               */
+              const openAt = viewState?.topAddress;
+              if (openAt !== undefined) {
+                restoredInitialScroll.current = true;
+                requestAnimationFrame(() => {
+                  api.scrollToIndex(rowIndexForAddress(openAt), { align: "start" });
+                });
+              } else if (viewState?.scrollPosition) {
                 restoredInitialScroll.current = true;
                 requestAnimationFrame(() => {
                   api.scrollTo(viewState.scrollPosition);
@@ -1770,14 +906,16 @@ const StaticMemoryDump = ({
                   <Row>
                     <MemoryDumpSection
                       address={item}
-                      bytes={contents.subarray(item, item + 8)}
+                      bytes={bankBytes.subarray(item, item + 8)}
+                      changedBytes={changedFlagsIn(activeDiff, item, 8)}
                       decimalView={false}
                       charDump={true}
                       lastJumpAddress={-1}
                     />
                     <MemoryDumpSection
                       address={item + 8}
-                      bytes={contents.subarray(item + 8, item + 16)}
+                      bytes={bankBytes.subarray(item + 8, item + 16)}
+                      changedBytes={changedFlagsIn(activeDiff, item + 8, 8)}
                       decimalView={false}
                       charDump={true}
                       lastJumpAddress={-1}
@@ -1818,10 +956,18 @@ const StaticMemoryDump = ({
               }}
               apiLoaded={(api) => {
                 disassemblyVlApi.current = api;
-                if (
-                  !restoredInitialDisassemblyScroll.current &&
-                  viewState?.disassemblyScrollPosition
-                ) {
+                if (restoredInitialDisassemblyScroll.current) return;
+                /*
+                 * As in the memory list: an explicit `topAddress` is why the document was opened, so
+                 * it beats a remembered scroll position. Seeding the jump address rather than
+                 * scrolling here on purpose — the listing is disassembled asynchronously, so the row
+                 * for an address may not exist yet, and the jump effect re-runs when it does.
+                 */
+                const openAt = viewState?.topAddress;
+                if (openAt !== undefined) {
+                  restoredInitialDisassemblyScroll.current = true;
+                  setDisassemblyJumpAddress(openAt & 0xffff);
+                } else if (viewState?.disassemblyScrollPosition) {
                   restoredInitialDisassemblyScroll.current = true;
                   requestAnimationFrame(() => {
                     api.scrollTo(viewState.disassemblyScrollPosition);
@@ -1831,16 +977,47 @@ const StaticMemoryDump = ({
               renderItem={(idx) => {
                 const item = disassemblyItems[idx];
                 if (!item) return <div></div>;
-                const selected = disassemblySelection?.activeIndex === idx;
+                // --- The active end of the selection: the row the keyboard moves from.
+                const selected = selectedDisassemblyRange?.end === idx;
                 const selectedRange =
                   !!selectedDisassemblyRange &&
                   idx >= selectedDisassemblyRange.start &&
                   idx <= selectedDisassemblyRange.end;
+                const rowBankOffset =
+                  item.annotation?.bankOffset ??
+                  listedBankOffset(item.address, disassOffset, contents.length);
 
                 return (
                   <DisassemblyRow
-                    annotated={annotationEnabled}
+                    annotated={annotationVm.annotationsAvailable}
                     bankLabel={false}
+                    /*
+                     * The gutter, for the bank this document shows.
+                     *
+                     * Matched by the row's own bank offset rather than by a Z80 address: the bank
+                     * may be paged anywhere, so "a breakpoint here" means an offset in the bank,
+                     * not a place in the 64K map. `undefined` leaves the gutter as it was — an
+                     * unarmed circle the click arms.
+                     *
+                     * The offset falls back to the row's position in the listing when there is no
+                     * annotation to carry one. Without that, a bank with no sidecar had no offsets
+                     * at all, and its gutter could neither show a bank breakpoint nor create one —
+                     * it armed a plain address breakpoint instead, which then showed in the sidebar
+                     * and nowhere on the row that made it. See §15.20 of the CSpect plan.
+                     */
+                    bankScope={
+                      currentViewState.nexAnnotationBank !== undefined && rowBankOffset !== undefined
+                        ? {
+                            bank: currentViewState.nexAnnotationBank,
+                            bankOffset: rowBankOffset
+                          }
+                        : undefined
+                    }
+                    breakpoint={
+                      rowBankOffset !== undefined
+                        ? bankBreakpoints.get(rowBankOffset)
+                        : undefined
+                    }
                     commentWidthCh={disassemblyCommentWidthCh}
                     currentSegment={0}
                     decimalView={decimalView}
@@ -1854,13 +1031,23 @@ const StaticMemoryDump = ({
                       disassemblyListRef.current?.focus();
                     }}
                     onContextMenu={(event) => openDisassemblyContextMenu(idx, event)}
+                    /*
+                     * Double-click the gutter to edit the breakpoint there.
+                     *
+                     * This is also how a bank **watchpoint** gets made: the gutter click can only
+                     * create an execution breakpoint, and the dialog's type selector is what turns
+                     * it into a memory read or write. See `.plans/NEX_DEBUGGING_PLAN.md` §10.2.
+                     */
+                    onEditBreakpoint={editBreakpoint}
                     partitionLabels={{}}
                     partitionWidthCh={0}
-                    pausedPc={-1}
+                    pausedPc={pausedPcRowAddress}
                     rowHeight={disassemblyRowItemSize}
                     selected={selected}
                     selectedRange={selectedRange}
                     showBanks={false}
+                    showBranchGutter={showBranchGutter}
+                    verdict={branchVerdicts?.get(item.address)}
                   />
                 );
               }}
@@ -1868,67 +1055,12 @@ const StaticMemoryDump = ({
           </div>
         ) : null}
       </FullPanel>
-      <ContextMenu state={contextMenuState} onClickOutside={contextMenuApi.conceal}>
-        <ContextMenuItem
-          text="Manage Labels..."
-          clicked={() => {
-            contextMenuApi.conceal();
-            openManageLabelsDialog();
-          }}
-        />
-        <ContextMenuItem
-          text="Manage Regions..."
-          clicked={() => {
-            contextMenuApi.conceal();
-            openManageRegionDialog();
-          }}
-        />
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          text="Synopsis Comment..."
-          clicked={() => runDisassemblyContextAction("synopsis")}
-        />
-        <ContextMenuItem
-          text="End-of-Line Comment..."
-          clicked={() => runDisassemblyContextAction("comment")}
-        />
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          text="Add/Edit Global Label..."
-          clicked={() => runDisassemblyContextAction("global-label")}
-        />
-        <ContextMenuItem
-          text="Add/Edit Local Label..."
-          clicked={() => runDisassemblyContextAction("local-label")}
-        />
-        <ContextMenuItem
-          text="Assign Operand Label..."
-          disabled={!disassemblyContextTarget?.canAssignOperandLabel}
-          clicked={() => runDisassemblyContextAction("operand-label")}
-        />
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          text="Mark As Disassembly"
-          clicked={() => runDisassemblyContextAction("mark-disassembly")}
-        />
-        <ContextMenuItem
-          text="Mark As Bytes"
-          clicked={() => runDisassemblyContextAction("mark-bytes")}
-        />
-        <ContextMenuItem
-          text="Mark As Words"
-          clicked={() => runDisassemblyContextAction("mark-words")}
-        />
-        <ContextMenuItem
-          text="Mark As Skip"
-          clicked={() => runDisassemblyContextAction("mark-skip")}
-        />
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          text="Clear Row Annotations"
-          clicked={() => runDisassemblyContextAction("clear")}
-        />
-      </ContextMenu>
+      <NexAnnotationMenu
+        vm={annotationVm}
+        dispatch={dispatchAnnotation}
+        state={contextMenuState}
+        api={contextMenuApi}
+      />
     </FullPanel>
   );
 };
@@ -1936,159 +1068,6 @@ const StaticMemoryDump = ({
 export const createStaticMemoryDump = ({ document, contents, viewState }: DocumentProps) => (
   <StaticMemoryDump document={document} contents={contents} viewState={viewState} />
 );
-
-function countLabelReferences(
-  annotations: NexFileAnnotations,
-  bank: number,
-  scope: NexAnnotationLabelScope,
-  name: string
-): number {
-  const banks = scope === "global"
-    ? Object.values(annotations.banks)
-    : [getBankAnnotation(annotations, bank)].filter(
-        (bankAnnotation): bankAnnotation is NexBankAnnotation => !!bankAnnotation
-      );
-
-  return banks.reduce((count, bankAnnotation) => {
-    const references = Object.values(bankAnnotation.operandReferences ?? {}).flat();
-    return count + references.filter((reference) =>
-      reference.scope === scope && reference.name === name
-    ).length;
-  }, 0);
-}
-
-function removeLabel(
-  labels: NexAnnotationLabel[],
-  labelToRemove: NexLabelDialogLabel
-): NexAnnotationLabel[] {
-  return labels.filter((label) =>
-    label.name !== labelToRemove.name || label.value !== labelToRemove.value
-  );
-}
-
-function addLabelIfMissing(
-  labels: NexAnnotationLabel[],
-  labelToAdd: NexAnnotationLabel
-): NexAnnotationLabel[] {
-  return labels.some((label) => label.name === labelToAdd.name)
-    ? labels
-    : [...labels, labelToAdd];
-}
-
-function replaceAnnotationRegion(
-  regions: NexAnnotationRegion[],
-  start: number,
-  end: number,
-  type: NexAnnotationRegionType
-): NexAnnotationRegion[] {
-  const nextRegions: NexAnnotationRegion[] = [];
-  for (const region of regions) {
-    if (region.end < start || region.start > end) {
-      nextRegions.push({ ...region });
-      continue;
-    }
-    if (region.start < start) {
-      nextRegions.push({
-        start: region.start,
-        end: start - 1,
-        type: region.type
-      });
-    }
-    if (region.end > end) {
-      nextRegions.push({
-        start: end + 1,
-        end: region.end,
-        type: region.type
-      });
-    }
-  }
-  nextRegions.push({ start, end, type });
-  return mergeAnnotationRegions(nextRegions);
-}
-
-function getRegionTypeForSpan(
-  regions: NexAnnotationRegion[],
-  start: number,
-  end: number
-): NexAnnotationRegionType {
-  const intersectingRegions = regions.filter((region) => region.start <= end && region.end >= start);
-  const firstRegion = intersectingRegions[0];
-  return intersectingRegions.length > 0 &&
-    intersectingRegions.every((region) => region.type === firstRegion.type)
-    ? firstRegion.type
-    : "disassemble";
-}
-
-function getAlternativeRegionType(type: NexAnnotationRegionType): NexAnnotationRegionType {
-  return type === "disassemble" ? "bytes" : "disassemble";
-}
-
-function mergeAnnotationRegions(regions: NexAnnotationRegion[]): NexAnnotationRegion[] {
-  const sortedRegions = [...regions].sort((left, right) =>
-    left.start - right.start || left.end - right.end
-  );
-  const mergedRegions: NexAnnotationRegion[] = [];
-  for (const region of sortedRegions) {
-    const previousRegion = mergedRegions[mergedRegions.length - 1];
-    if (
-      previousRegion &&
-      previousRegion.type === region.type &&
-      previousRegion.end + 1 >= region.start
-    ) {
-      previousRegion.end = Math.max(previousRegion.end, region.end);
-    } else {
-      mergedRegions.push({ ...region });
-    }
-  }
-  return mergedRegions;
-}
-
-function removeLabelOperandReferencesFromBanks(
-  banks: Record<string, NexBankAnnotation>,
-  bank: number,
-  scope: NexAnnotationLabelScope,
-  name: string
-): Record<string, NexBankAnnotation> {
-  const nextBanks: Record<string, NexBankAnnotation> = {};
-  for (const [bankKey, bankAnnotation] of Object.entries(banks)) {
-    if (scope === "local" && bankKey !== String(bank)) {
-      nextBanks[bankKey] = bankAnnotation;
-      continue;
-    }
-    nextBanks[bankKey] = removeLabelOperandReferences(bankAnnotation, scope, name);
-  }
-  return nextBanks;
-}
-
-function removeLabelOperandReferences(
-  bankAnnotation: NexBankAnnotation,
-  scope: NexAnnotationLabelScope,
-  name: string
-): NexBankAnnotation {
-  if (!bankAnnotation.operandReferences) {
-    return bankAnnotation;
-  }
-
-  const nextOperandReferences: NexBankAnnotation["operandReferences"] = {};
-  for (const [offset, references] of Object.entries(bankAnnotation.operandReferences)) {
-    const remainingReferences = references.filter((reference) =>
-      reference.scope !== scope || reference.name !== name
-    );
-    if (remainingReferences.length > 0) {
-      nextOperandReferences[offset] = remainingReferences;
-    }
-  }
-
-  const nextBankAnnotation = {
-    ...bankAnnotation
-  };
-  if (Object.keys(nextOperandReferences).length > 0) {
-    nextBankAnnotation.operandReferences = nextOperandReferences;
-  } else {
-    delete nextBankAnnotation.operandReferences;
-  }
-  return nextBankAnnotation;
-}
 
 export async function openStaticMemoryDump(
   documentHubService: IDocumentHubService,
@@ -2099,6 +1078,24 @@ export async function openStaticMemoryDump(
 ): Promise<void> {
   const id = `memoryDump-${dumpId}`;
   if (documentHubService.isOpen(id)) {
+    // --- Focusing is not enough when the caller asked for an address: a document already open is
+    // --- sitting wherever it was left, so push the target into its view state too.
+    if (options.topAddress !== undefined || options.viewMode !== undefined) {
+      const current = documentHubService.getDocumentViewState(id) ?? {};
+      documentHubService.setDocumentViewState(id, {
+        ...current,
+        ...(options.topAddress !== undefined ? { topAddress: options.topAddress } : {}),
+        // --- An explicit view mode is a caller saying *how* to show this, not a preference to
+        // --- remember around: the entry-point reveal wants code, whatever the document was left as.
+        ...(options.viewMode !== undefined ? { viewMode: options.viewMode } : {})
+      });
+    }
+    // --- Writing the view state is not enough: a mounted document read it once, on mount. Ask the
+    // --- document itself to move, which is what makes the listing follow the program counter as it
+    // --- steps within a bank that is already on screen.
+    if (options.topAddress !== undefined) {
+      documentHubService.getDocumentApi(id)?.revealAddress?.(options.topAddress);
+    }
     documentHubService.setActiveDocument(id);
   } else {
     await documentHubService.openDocument(
@@ -2115,7 +1112,8 @@ export async function openStaticMemoryDump(
         decimalView: options.decimalView,
         viewMode: options.viewMode,
         nexAnnotationPath: options.nexAnnotationPath,
-        nexAnnotationBank: options.nexAnnotationBank
+        nexAnnotationBank: options.nexAnnotationBank,
+        topAddress: options.topAddress
       } satisfies MemoryDumpViewState,
       false
     );

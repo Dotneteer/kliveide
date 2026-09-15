@@ -625,87 +625,91 @@ describe("CopperDevice – Step 6: Frame-restart mode", () => {
 // Step 7 — Vertical line offset (NextReg 0x64)
 // ---------------------------------------------------------------------------
 
-describe("CopperDevice – Step 7: Vertical line offset", () => {
+describe("CopperDevice – Step 7: Vertical line offset (NextReg $64)", () => {
   let machine: TestZxNextMachine;
   let copper: CopperDevice;
   let totalVC: number;
+  let displayYStart: number;
 
   beforeEach(() => {
     machine = new TestZxNextMachine();
     copper = machine.copperDevice;
     totalVC = machine.composedScreenDevice.config.totalVC; // 311 for 50Hz
+    displayYStart = machine.composedScreenDevice.config.displayYStart; // 64 for 50Hz
   });
 
-  it("should use raw vc when offset is 0 (default)", () => {
-    // WAIT for line 10
+  // The offset is no longer applied inside the copper: the hardware copper receives `cvc`
+  // from `zxula_timing.vhd` and `copper.vhd` has no offset input. These tests therefore
+  // drive `executeTick` through the same conversion the machine loop uses, so they still
+  // cover "NextReg $64 moves the ULA line at which a WAIT fires".
+  const cvc = (rawVC: number): number => machine.composedScreenDevice.vcToCopperLine(rawVC);
+
+  /** The raw ULA line at which a WAIT for copper line `line` becomes true. */
+  const rawVCForCopperLine = (line: number): number =>
+    (line + displayYStart - copper.verticalLineOffset + 2 * totalVC) % totalVC;
+
+  it("should match at the display-rebased line when the offset is 0 (default)", () => {
     writeInstruction(copper, 0, waitInstr(0, 10));
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
 
-    copper.executeTick(10, 12); // raw vc=10 = adjusted vc=10 → advance
+    // Copper line 10 is ULA line displayYStart + 10, not ULA line 10.
+    copper.executeTick(cvc(10), 12);
+    expect(copper._copperListAddr).toBe(0);
+
+    copper.executeTick(cvc(displayYStart + 10), 12);
     expect(copper._copperListAddr).toBe(1);
   });
 
-  it("should apply offset so that WAIT matches at adjusted line", () => {
-    // With offset=10: adjusted = (rawVC + 10) % totalVC
-    // WAIT for adjusted line 5 → raw vc where match = totalVC - 10 + 5 = totalVC - 5
+  it("should apply offset so that WAIT matches at the shifted raw line", () => {
     copper.verticalLineOffset = 10;
     writeInstruction(copper, 0, waitInstr(0, 5));
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
 
-    const matchingRawVC = (5 + totalVC - 10) % totalVC; // totalVC - 5
+    const matchingRawVC = rawVCForCopperLine(5);
 
-    // One short: should not match
-    copper.executeTick(matchingRawVC - 1, 12);
+    copper.executeTick(cvc(matchingRawVC - 1), 12);
     expect(copper._copperListAddr).toBe(0);
 
-    // Exact match
-    copper.executeTick(matchingRawVC, 12);
+    copper.executeTick(cvc(matchingRawVC), 12);
     expect(copper._copperListAddr).toBe(1);
   });
 
-  it("should NOT match when offset makes adjusted vc different from wait line", () => {
+  it("should NOT match when the offset moves the copper line away from the wait line", () => {
     copper.verticalLineOffset = 5;
-    // WAIT for adjusted line 20
     writeInstruction(copper, 0, waitInstr(0, 20));
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
 
-    // raw vc=20 → adjusted = 25 → no match
-    copper.executeTick(20, 12);
+    // Raw line 20 is nowhere near copper line 20 once rebasing and offset are applied.
+    copper.executeTick(cvc(20), 12);
     expect(copper._copperListAddr).toBe(0);
 
-    // raw vc=15 → adjusted = 20 → match
-    copper.executeTick(15, 12);
+    copper.executeTick(cvc(rawVCForCopperLine(20)), 12);
     expect(copper._copperListAddr).toBe(1);
   });
 
-  it("should apply offset correctly near totalVC boundary (wrap)", () => {
-    // offset = totalVC - 1 → adjusted = (vc + totalVC - 1) % totalVC = vc - 1 (mod totalVC)
+  it("should apply the offset correctly across the totalVC wrap", () => {
     copper.verticalLineOffset = totalVC - 1;
-    // WAIT for adjusted line 0 → raw vc = 1 (since 1 + totalVC - 1 = totalVC ≡ 0)
     writeInstruction(copper, 0, waitInstr(0, 0));
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
 
-    copper.executeTick(0, 12); // adjusted = totalVC - 1 → no match
+    const matchingRawVC = rawVCForCopperLine(0);
+
+    copper.executeTick(cvc(matchingRawVC - 1), 12);
     expect(copper._copperListAddr).toBe(0);
 
-    copper.executeTick(1, 12); // adjusted = 0 → match
+    copper.executeTick(cvc(matchingRawVC), 12);
     expect(copper._copperListAddr).toBe(1);
   });
 
-  it("should apply offset to frame-restart check in mode 0b11", () => {
-    // With offset=10, frame-restart fires when adjustedVC=0, i.e. rawVC = totalVC-10 = 301
+  it("should apply the offset to the frame-restart check in mode 0b11", () => {
     copper.verticalLineOffset = 10;
     setMode(copper, CopperStartMode.StartFromZeroRestartOnPositionReached);
+
+    // The restart fires at copper line 0, hc 0 — which is a shifted raw ULA line.
+    const restartRawVC = rawVCForCopperLine(0);
+
     copper._copperListAddr = 0x3aa;
-
-    // rawVC=0, hc=0 → adjustedVC = 10 → NOT the restart position; addr unchanged by restart
-    // (normal execution runs, but we only need to confirm rawVC=restartVC resets to 0 below)
-
-    const restartRawVC = (totalVC - 10) % totalVC; // 301 for 50Hz totalVC=311
-
-    // At the restart position: adjustedVC = (301+10)%311 = 0, hc=0 → addr resets to 0
-    copper._copperListAddr = 0x3aa;
-    copper.executeTick(restartRawVC, 0);
+    copper.executeTick(cvc(restartRawVC), 0);
     expect(copper._copperListAddr).toBe(0);
   });
 });
@@ -748,10 +752,12 @@ describe("CopperDevice – Step 8: Machine integration", () => {
     const spy = vi.spyOn(copper, "executeTick");
     driveToTact(3);
 
-    // tact 0 → vc=0, hc=0; tact 1 → vc=0, hc=1; tact 2 → vc=0, hc=2
-    expect(spy).toHaveBeenCalledWith(0, 0);
-    expect(spy).toHaveBeenCalledWith(0, 1);
-    expect(spy).toHaveBeenCalledWith(0, 2);
+    // tact 0..2 are all on ULA line 0, at hc 0..2. The copper is handed the *rebased*
+    // copper line (hardware `cvc`), not the raw ULA line — see the `cvc` describe block.
+    const cvc0 = machine.composedScreenDevice.vcToCopperLine(0);
+    expect(spy).toHaveBeenCalledWith(cvc0, 0);
+    expect(spy).toHaveBeenCalledWith(cvc0, 1);
+    expect(spy).toHaveBeenCalledWith(cvc0, 2);
   });
 
   it("should pass correct vc for tacts on the second scan-line", () => {
@@ -761,13 +767,14 @@ describe("CopperDevice – Step 8: Machine integration", () => {
     const spy = vi.spyOn(copper, "executeTick");
     driveToTact(totalHC + 1);
 
-    expect(spy).toHaveBeenCalledWith(1, 0); // first tact of line 1
+    // First tact of ULA line 1, expressed as the copper line the machine rebases it to.
+    expect(spy).toHaveBeenCalledWith(machine.composedScreenDevice.vcToCopperLine(1), 0);
   });
 
   it("should deliver a MOVE to the NextReg through the machine loop", () => {
-    // Slot 0: WAIT for vc=0, hc6=0 (waitHC = 0*8+12 = 12)
+    // Slot 0: WAIT for the copper line that ULA line 0 maps to, hc6=0 (waitHC = 0*8+12 = 12)
     // Slot 1: MOVE reg=0x55 val=0xAB
-    writeInstruction(copper, 0, waitInstr(0, 0));
+    writeInstruction(copper, 0, waitInstr(0, machine.composedScreenDevice.vcToCopperLine(0)));
     writeInstruction(copper, 1, moveInstr(0x55, 0xab));
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
 
@@ -992,5 +999,72 @@ describe("CopperDevice – Step 11: State snapshot", () => {
     const state = copper.getState();
     expect(state.startMode).toBe(CopperStartMode.StartFromLastPointAndLoop);
     expect(state.instructionAddress).toBe(0x1aa); // not reset for mode 0b10
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Regression: the copper's vertical line is the hardware `cvc`, not raw `vc`
+//
+// `zxnext.vhd` wires the copper's `vcount_i` to `cvc`, the copper-offset vertical counter
+// from `zxula_timing.vhd`, which is loaded with NextReg $64 at the first active video line
+// and wraps at `c_max_vc` (== totalVC - 1). Before this was fixed, both cores compared
+// against `(vc + copperOffset) % totalVC`, omitting the `- displayYStart` rebasing — a
+// permanent 64-line error at 50Hz that stalled copper-driven demos on the wrong raster
+// lines. See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md §15.5.
+// ---------------------------------------------------------------------------
+
+describe("CopperDevice – copper vertical line (hardware `cvc`)", () => {
+  let machine: TestZxNextMachine;
+  let copper: CopperDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    copper = machine.copperDevice;
+  });
+
+  it("rebases the ULA vertical counter on the start of the active display", () => {
+    const screen = machine.composedScreenDevice;
+    const { displayYStart, totalVC } = screen.config;
+
+    // Guard the premise: the rebasing is only meaningful if it is non-zero.
+    expect(displayYStart).toBeGreaterThan(0);
+
+    // The first active display line is copper line 0.
+    expect(screen.vcToCopperLine(displayYStart)).toBe(0);
+    // ...and it advances one-for-one from there.
+    expect(screen.vcToCopperLine(displayYStart + 1)).toBe(1);
+    expect(screen.vcToCopperLine(displayYStart + 100)).toBe(100);
+    // Lines above the display wrap around to the end of the counter's range.
+    expect(screen.vcToCopperLine(0)).toBe(totalVC - displayYStart);
+  });
+
+  it("applies NextReg $64 on top of the rebasing, wrapping at totalVC", () => {
+    const screen = machine.composedScreenDevice;
+    const { displayYStart, totalVC } = screen.config;
+
+    copper.verticalLineOffset = 10;
+    expect(screen.vcToCopperLine(displayYStart)).toBe(10);
+    expect(screen.vcToCopperLine(displayYStart + 5)).toBe(15);
+
+    // The counter wraps at totalVC rather than running away.
+    copper.verticalLineOffset = 200;
+    expect(screen.vcToCopperLine(displayYStart + 200)).toBe(400 % totalVC);
+  });
+
+  it("fires a WAIT at the ULA line the rebasing maps to, not at the raw line number", () => {
+    const screen = machine.composedScreenDevice;
+    const { displayYStart } = screen.config;
+
+    // WAIT for copper line 100, hc6=0 → waitHC = 12
+    writeInstruction(copper, 0, waitInstr(0, 100));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    // The raw ULA line 100 is NOT copper line 100 — the copper must stay put.
+    copper.executeTick(screen.vcToCopperLine(100), 200);
+    expect(copper._copperListAddr).toBe(0);
+
+    // The ULA line that maps to copper line 100 is the one that releases the WAIT.
+    copper.executeTick(screen.vcToCopperLine(displayYStart + 100), 200);
+    expect(copper._copperListAddr).toBe(1);
   });
 });

@@ -47,3 +47,18 @@ In the paused state of a machine, you can use these actions:
 - **Step out**. If you are within a subroutine, this function stops when the subroutine returns to its caller. Please note that this function only works if subroutine calls are completed by some of the `RET` instructions, not stack manipulation and jump statements.
 
 While the machine is paused, you can change between the run/debug execution modes with the dropdown.
+
+## Running a NEX File Directly
+
+On the ZX Spectrum Next, **Run Project** and **Debug Project** build the project and launch the NEX
+file the build produces. A `.nex` file that Klive did not build &mdash; downloaded, produced by
+another assembler, or left over from an earlier build &mdash; can be launched on its own:
+
+- right-click it in the [Project Explorer](./project-explorer) and choose **Run NEX file** or
+  **Debug NEX file**;
+- or use the **Run** / **Debug** buttons in the file's document tab while the NEX viewer has it
+  open;
+- or run the [`nex-run`](../commands-reference#nex-run) command.
+
+This needs no project at all, so a single NEX file can be opened and debugged by itself. It does
+require the current machine to be the ZX Spectrum Next, since NextZXOS is what loads a NEX.

@@ -145,6 +145,60 @@ describe("saveKliveProject", () => {
     expect(projectFileVersionDispatches()).toBe(1);
   });
 
+  /*
+   * The project file may only hold the breakpoints the project owns. `listBreakpoints` returns the
+   * emulator's whole set, which is a union of sets owned by different persisters: a `.nex.dis`
+   * sidecar's bank breakpoints and a debug session's one-shots are in there too. Writing those here
+   * would store them in two places that then diverge.
+   */
+  it("saves only project-owned breakpoints", async () => {
+    listBreakpoints.mockResolvedValue({
+      breakpoints: [
+        // --- No owner: the project's own, and the only representation of project ownership
+        { address: 0x8000, exec: true },
+        { address: 0x8001, exec: true, owner: { kind: "nex", sidecar: "/p/Game.nex.dis" } },
+        { address: 0x8002, exec: true, owner: { kind: "session" } }
+      ]
+    });
+    const { saveKliveProject } = await import("@main/projects");
+
+    await saveKliveProject();
+
+    const contents = JSON.parse(fs.readFileSync(projectFile, "utf8"));
+    expect(contents.debugger.breakpoints).toEqual([{ address: 0x8000, exec: true }]);
+  });
+
+  it("saves a breakpoint written by a build that predates ownership", async () => {
+    // --- Backward compatibility: an absent `owner` must be read as project ownership, not as
+    // --- "unknown" and dropped.
+    listBreakpoints.mockResolvedValue({
+      breakpoints: [{ address: 0x9000, partition: 3, exec: true }]
+    });
+    const { saveKliveProject } = await import("@main/projects");
+
+    await saveKliveProject();
+
+    const contents = JSON.parse(fs.readFileSync(projectFile, "utf8"));
+    expect(contents.debugger.breakpoints).toEqual([
+      { address: 0x9000, partition: 3, exec: true }
+    ]);
+  });
+
+  it("stamps the breakpoint schema it wrote", async () => {
+    /*
+     * A forward-looking marker. The one semantic change so far — a positive ZX Next partition being
+     * an 8K page — is not migratable, so this exists for the *next* one, and so a project written by
+     * a newer Klive announces itself instead of loading breakpoints that quietly mean something
+     * else. See `.plans/NEX_DEBUGGING_PLAN.md` §18, item 0.
+     */
+    const { saveKliveProject } = await import("@main/projects");
+
+    await saveKliveProject();
+
+    const contents = JSON.parse(fs.readFileSync(projectFile, "utf8"));
+    expect(contents.debugger.schemaVersion).toEqual(1);
+  });
+
   it("rewrites the file when it was modified outside the app", async () => {
     const { saveKliveProject } = await import("@main/projects");
 

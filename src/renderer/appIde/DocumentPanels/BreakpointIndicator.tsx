@@ -6,6 +6,15 @@ import styles from "./BreakpointIndicator.module.scss";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { Checkbox } from "@renderer/controls/Checkbox";
 
+/**
+ * The modifier that means "run here", named the way the platform names it.
+ *
+ * `navigator.platform` is deprecated but is what the rest of the renderer uses, and this only
+ * decides a word in a tooltip: both modifiers are accepted regardless of what it reports.
+ */
+const runToModifierLabel =
+  typeof navigator !== "undefined" && /mac/i.test(navigator.platform ?? "") ? "Cmd" : "Ctrl";
+
 type Props = {
   address: number | string;
   partition?: string;
@@ -92,7 +101,10 @@ export const BreakpointIndicator = ({
   const tooltip =
     `${tooltipCommon})\n` +
     (hasBreakpoint ? `Right-click to remove this breakpoint` : "Right-click to set a breakpoint") +
-    (hasBreakpoint && onEdit ? "\nDouble-click to edit this breakpoint" : "");
+    (hasBreakpoint && onEdit ? "\nDouble-click to edit this breakpoint" : "") +
+    // --- The gesture is only discoverable from here, which is why it is listed rather than left to
+    // --- be found. See `runToHere`.
+    `\n${runToModifierLabel}-click to run here`;
   const tooltipCheckbox =
     `${tooltipCommon})\n` +
     (disabled ? `Check to enable this breakpoint` : "Uncheck to disable this breakpoint");
@@ -131,6 +143,23 @@ export const BreakpointIndicator = ({
       command += ` -m $${toHexa4(ioMask)}`;
     }
     await ideCommandsService.executeCommand(command);
+  };
+
+  /**
+   * Run the machine until it reaches this row, then stop — without leaving a breakpoint behind.
+   *
+   * Reuses `addrLabel`, the same display key the breakpoint gestures above build their commands
+   * from, so this works for every shape the gutter can show: a plain address, a
+   * `<partition>:<address>` pair, a source line, and a NEX bank's `<bank>:+<offset>`. The last is
+   * the one that makes this useful in a popped-out NEX bank, where the bank is not paged in yet.
+   *
+   * A modifier-click rather than a menu item because the indicator is where the other
+   * address-specific gestures already live, and one handler here gives the gesture to both the live
+   * disassembly view and every NEX bank dump. A proper row context menu is the better home
+   * eventually; see `.plans/NEX_DEBUGGING_PLAN.md` §10.4.
+   */
+  const runToHere = async () => {
+    await ideCommandsService.executeCommand(`run-to ${addrLabel}`);
   };
 
   // --- Handle enabling/disabling a breakpoint
@@ -187,6 +216,14 @@ export const BreakpointIndicator = ({
           // --- row-level menu.
           e.preventDefault();
           void handleRemove();
+        }}
+        onClick={(e) => {
+          // --- Plain click on the gutter has never done anything, so this adds a gesture rather
+          // --- than overloading one. Without the modifier it still does nothing.
+          if (!e.metaKey && !e.ctrlKey) return;
+          e.stopPropagation();
+          e.preventDefault();
+          void runToHere();
         }}
         onDoubleClick={
           hasBreakpoint && onEdit

@@ -11,12 +11,14 @@ import {
   isBinaryBreakpoint,
   isFormValid,
   isKnownPartition,
+  parseBankRelativeInput,
   parseNumericInput,
   validateBreakpointForm,
   type BreakpointEnvironment,
   type BreakpointFormState,
   type BreakpointKind
 } from "@renderer/appIde/utils/breakpoint-form";
+import { MF_BANK, MF_ROM, MI_ZXNEXT } from "@common/machines/constants";
 import { SetBreakpointCommand } from "@renderer/appIde/commands/BreakpointCommands";
 import { createMockContext } from "../commands/test-helpers/mock-context";
 
@@ -462,5 +464,245 @@ describe("applyKindChange", () => {
 
     // --- The partition does not come back: it was dropped, not hidden. That is the point.
     expect(back).toEqual({ ...start, partition: undefined });
+  });
+});
+
+/*
+ * Bank-relative breakpoints in the dialog.
+ *
+ * `05:+$0100` is spelled into the address field rather than given controls of its own, because that
+ * is what `bp-set` accepts — one syntax, one parser — and because the Type selector above it is then
+ * all a bank *watchpoint* needs. See `.plans/NEX_DEBUGGING_PLAN.md` §10.2.
+ */
+
+const nextEnv = (over: Partial<BreakpointEnvironment> = {}): BreakpointEnvironment =>
+  partitionedEnv({ supportsBankRelative: true, ...over });
+
+describe("parseBankRelativeInput", () => {
+  it("reads a bank and an offset", () => {
+    expect(parseBankRelativeInput("05:+$0100")).toMatchObject({
+      ok: true,
+      bank: 5,
+      bankOffset: 0x0100
+    });
+  });
+
+  it("takes the bank as hexadecimal without a $, as the command does", () => {
+    expect(parseBankRelativeInput("6f:+$0000")).toMatchObject({ ok: true, bank: 0x6f });
+    expect(parseBankRelativeInput("6F:+$0000")).toMatchObject({ ok: true, bank: 0x6f });
+  });
+
+  it("accepts every numeric spelling for the offset", () => {
+    expect(parseBankRelativeInput("05:+256").bankOffset).toEqual(256);
+    expect(parseBankRelativeInput("05:+%0000000100000000").bankOffset).toEqual(0x0100);
+  });
+
+  it("tolerates surrounding and internal spacing", () => {
+    expect(parseBankRelativeInput("  05 :+ $0100  ")).toMatchObject({ ok: true, bank: 5 });
+  });
+
+  it("says which half is wrong", () => {
+    // --- "That is not a bank" and "that is not an offset" are different corrections; one generic
+    // --- message would leave the user guessing which end to fix.
+    expect(parseBankRelativeInput("zz:+$0100").reason).toEqual("bank");
+    expect(parseBankRelativeInput("70:+$0100").reason).toEqual("bank");
+    expect(parseBankRelativeInput("05:+$4000").reason).toEqual("offset");
+    expect(parseBankRelativeInput("05:+nonsense").reason).toEqual("offset");
+    expect(parseBankRelativeInput("05:+").reason).toEqual("offset");
+  });
+
+  it("rejects a bank that merely starts with hex digits", () => {
+    // --- `parseInt` would read `5xyz` as 5 and silently arm the wrong breakpoint.
+    expect(parseBankRelativeInput("5xyz:+$0100").ok).toEqual(false);
+  });
+
+  it("reports plain addresses as not bank-relative at all", () => {
+    expect(parseBankRelativeInput("$8000").reason).toEqual("notBankRelative");
+    // --- The absolute partition form has no `+`, which is exactly what keeps the two apart.
+    expect(parseBankRelativeInput("01:$8000").reason).toEqual("notBankRelative");
+  });
+
+  it("accepts bank 0 at offset 0", () => {
+    expect(parseBankRelativeInput("00:+$0000")).toMatchObject({
+      ok: true,
+      bank: 0,
+      bankOffset: 0
+    });
+  });
+});
+
+describe("isBinaryBreakpoint with bank-relative breakpoints", () => {
+  it("accepts one, so the dialog can edit it", () => {
+    expect(isBinaryBreakpoint({ bank: 5, bankOffset: 0x0100, exec: true })).toEqual(true);
+  });
+
+  it("still refuses a source-bound one", () => {
+    expect(isBinaryBreakpoint({ resource: "a.asm", line: 12 })).toEqual(false);
+  });
+
+  it("accepts bank 0 at offset 0", () => {
+    expect(isBinaryBreakpoint({ bank: 0, bankOffset: 0, exec: true })).toEqual(true);
+  });
+});
+
+describe("formToBreakpointInfo for a bank-relative address", () => {
+  it("produces a bank site rather than an address", () => {
+    const bp = formToBreakpointInfo(aForm({ address: "05:+$0100" }));
+    expect(bp.bank).toEqual(5);
+    expect(bp.bankOffset).toEqual(0x0100);
+    expect(bp.address).toEqual(undefined);
+    expect(bp.exec).toEqual(true);
+  });
+
+  it("carries the type, which is how a bank watchpoint is made", () => {
+    expect(formToBreakpointInfo(aForm({ address: "05:+$0100", kind: "memWrite" }))).toMatchObject({
+      bank: 5,
+      bankOffset: 0x0100,
+      exec: false,
+      memoryWrite: true
+    });
+    expect(formToBreakpointInfo(aForm({ address: "05:+$0100", kind: "memRead" })).memoryRead).toEqual(
+      true
+    );
+  });
+
+  it("never emits a partition alongside the bank", () => {
+    // --- A bank-relative breakpoint derives its own partition; a second, independent one would arm
+    // --- it somewhere the bank is not.
+    const bp = formToBreakpointInfo(aForm({ address: "05:+$0100", partition: 1 }));
+    expect(bp.partition).toEqual(undefined);
+  });
+
+  it("falls back to an address for an I/O kind, which has no bank", () => {
+    // --- Validation refuses the combination; this makes sure the conversion does not quietly emit
+    // --- a bank that the emulator's own I/O guard would then reject.
+    const bp = formToBreakpointInfo(aForm({ address: "05:+$0100", kind: "ioRead" }));
+    expect(bp.bank).toEqual(undefined);
+  });
+
+  it("round-trips through the key the emulator stores", () => {
+    const key = breakpointKeyOf(aForm({ address: "05:+$0100" }), nextEnv());
+    expect(key).toEqual("05:+$0100");
+  });
+});
+
+describe("breakpointToForm for a bank-relative breakpoint", () => {
+  it("spells the address the way the field accepts it", () => {
+    const form = breakpointToForm({ bank: 5, bankOffset: 0x0100, exec: true });
+    expect(form.address).toEqual("05:+$0100");
+    expect(form.kind).toEqual("exec");
+  });
+
+  it("survives a round trip unchanged", () => {
+    const original: BreakpointInfo = { bank: 0x6f, bankOffset: 0x3fff, memoryWrite: true };
+    const back = formToBreakpointInfo(breakpointToForm(original));
+    expect(back).toMatchObject({ bank: 0x6f, bankOffset: 0x3fff, memoryWrite: true });
+  });
+
+  it("reads a watchpoint back as its own type", () => {
+    expect(breakpointToForm({ bank: 5, bankOffset: 0, memoryRead: true }).kind).toEqual("memRead");
+  });
+
+  it("spells bank 0 offset 0 rather than leaving the field empty", () => {
+    expect(breakpointToForm({ bank: 0, bankOffset: 0, exec: true }).address).toEqual("00:+$0000");
+  });
+});
+
+describe("validateBreakpointForm for a bank-relative address", () => {
+  it("accepts one on the ZX Spectrum Next", () => {
+    expect(validateBreakpointForm(aForm({ address: "05:+$0100" }), nextEnv())).toEqual({});
+  });
+
+  it("accepts a watchpoint on one", () => {
+    expect(
+      validateBreakpointForm(aForm({ address: "05:+$0100", kind: "memWrite" }), nextEnv())
+    ).toEqual({});
+  });
+
+  it("refuses one on any other machine, as the command does", () => {
+    // --- Otherwise the dialog would author a breakpoint the command layer rejects, through a path
+    // --- that bypasses that rejection.
+    const errors = validateBreakpointForm(aForm({ address: "05:+$0100" }), partitionedEnv());
+    expect(errors.address).toContain("ZX Spectrum Next");
+  });
+
+  it("names the bank when the bank is wrong, and the offset when the offset is", () => {
+    expect(validateBreakpointForm(aForm({ address: "70:+$0100" }), nextEnv()).address).toContain(
+      "16K bank"
+    );
+    expect(validateBreakpointForm(aForm({ address: "05:+$4000" }), nextEnv()).address).toContain(
+      "offset within the bank"
+    );
+  });
+
+  it("refuses it for an I/O kind", () => {
+    const errors = validateBreakpointForm(
+      aForm({ address: "05:+$0100", kind: "ioRead" }),
+      nextEnv()
+    );
+    expect(errors.address).toContain("port");
+  });
+
+  it("refuses a partition alongside it", () => {
+    const errors = validateBreakpointForm(
+      aForm({ address: "05:+$0100", partition: 1 }),
+      nextEnv()
+    );
+    expect(errors.partition).toContain("already names its bank");
+  });
+
+  it("still catches a duplicate", () => {
+    const errors = validateBreakpointForm(
+      aForm({ address: "05:+$0100" }),
+      nextEnv({ existingKeys: ["05:+$0100"] })
+    );
+    expect(errors.form).toContain("05:+$0100");
+  });
+
+  it("lets a breakpoint keep its own key while being edited", () => {
+    const errors = validateBreakpointForm(
+      aForm({ address: "05:+$0100" }),
+      nextEnv({ existingKeys: ["05:+$0100"], editingKey: "05:+$0100" })
+    );
+    expect(isFormValid(errors)).toEqual(true);
+  });
+
+  it("does not mistake the absolute partition form for a bank-relative one", () => {
+    // --- `01:$8000` has no `+`, so it must still be judged as an address with a partition. The old
+    // --- spelling changing meaning is the one thing this grammar must never do.
+    const errors = validateBreakpointForm(aForm({ address: "01:$8000" }), nextEnv());
+    expect(errors.address).toBeDefined();
+    expect(errors.address).not.toContain("16K bank");
+  });
+});
+
+describe("the dialog and bp-set agree on a bank-relative address", () => {
+  it("produces the same bank and offset for the same text", async () => {
+    // --- The same guarantee the numeric table above gives for plain addresses: two parsers meant to
+    // --- accept the same spelling will not keep doing so unless something checks.
+    const command = new SetBreakpointCommand();
+    const base = createMockContext();
+    // --- The command's grammar is gated on the machine: it reads the model and its ROM/bank
+    // --- feature counts before it will parse a bank-relative spec at all.
+    const context: any = {
+      ...base,
+      service: {
+        ...base.service,
+        machineService: {
+          getMachineInfo: () => ({
+            machine: { machineId: MI_ZXNEXT, features: { [MF_ROM]: 7, [MF_BANK]: 224 } }
+          })
+        },
+        projectService: { getBreakpointAddressInfo: () => undefined }
+      }
+    };
+    const args: any = { addrSpec: "05:+$0100" };
+    await command.validateCommandArgs(context, args);
+
+    const fromForm = formToBreakpointInfo(aForm({ address: "05:+$0100" }));
+    expect({ bank: args.bank, bankOffset: args.bankOffset }).toEqual({
+      bank: fromForm.bank,
+      bankOffset: fromForm.bankOffset
+    });
   });
 });

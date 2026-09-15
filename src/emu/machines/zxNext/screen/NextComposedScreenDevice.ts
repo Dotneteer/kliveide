@@ -647,6 +647,29 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private spritesPixel2Rgb333: number | null;
   private spritesPixel2Transparent: boolean;
 
+  /**
+   * Convert a raw ULA vertical counter into the copper vertical line — the hardware `cvc`.
+   *
+   * `zxula_timing.vhd` builds `cvc` as a counter that is loaded with NextReg $64 at the first
+   * active video line (`ula_min_vactive`), then increments per line and wraps at `c_max_vc`
+   * (310 at 50Hz, 263 at 60Hz — exactly `totalVC - 1`). That is equivalent to:
+   *
+   *   cvc = (vc - displayYStart + copperOffset) mod totalVC
+   *
+   * Three consumers must agree on this value, because the hardware feeds all three from the
+   * same `cvc` signal: the copper (`zxnext.vhd`: `vcount_i => cvc`), the line interrupt
+   * (`zxula_timing.vhd:577`), and NextRegs $1E/$1F (`zxnext.vhd`: `port_253b_dat <= cvc`).
+   * Keeping one formula here is what stops them drifting apart.
+   *
+   * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.5.
+   */
+  vcToCopperLine(vc: number): number {
+    return (
+      (vc - this.confDisplayYStart + this.machine.copperDevice.verticalLineOffset + this.confTotalVC) %
+      this.confTotalVC
+    );
+  }
+
   // Render the pixel pair belonging to the specified frame tact. This method is the core
   // of the rendering pipeline, called once per tact in the frame.
   renderTact(tact: number): boolean {
@@ -661,9 +684,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Formula mirrors MAME's vpos_to_cvc:
     //   CVC = (vc - displayYStart + copperOffset + totalVC) % totalVC
     // At vc=displayYStart with no offset, CVC=0 (first ULA pixel row = line 0).
-    this.activeVideoLine =
-      (vc - this.confDisplayYStart + this.machine.copperDevice.verticalLineOffset + this.confTotalVC) %
-      this.confTotalVC;
+    this.activeVideoLine = this.vcToCopperLine(vc);
 
     // --- Line interrupt pulse: true for the single tact at HC=0 of the target line
     this.lineIntActive = hc === 0 && this.activeVideoLine === this.machine.interruptDevice.lineInterrupt;

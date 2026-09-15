@@ -1,5 +1,26 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "source": {
+    "fileName": "ScrollNutter.nex"
+  },
+  "globalLabels": [
+    {
+      "name": "Start",
+      "value": 42532
+    },
+    {
+      "name": "InitPaletteRamp",
+      "value": 42518
+    },
+    {
+      "name": "InitPaletteR_1",
+      "value": 42520
+    },
+    {
+      "name": "InitPalettes",
+      "value": 42496
+    }
+  ],
   "banks": {
     "0": {
       "offsetIndex": 3,
@@ -20,54 +41,38 @@
           "type": "disassemble"
         }
       ],
-      "lastView": "disassembly"
+      "lineAnnotations": {
+        "9728": {
+          "comment": "Use Layer 2 first palette"
+        },
+        "9732": {
+          "comment": "Reset Layer 2 palette index"
+        },
+        "9739": {
+          "comment": "Use Sprites first palette"
+        },
+        "9743": {
+          "comment": "Reset Sprites palette index"
+        },
+        "9750": {
+          "synopsis": "Fills each entry of the  currently selected palette entries from index 0 to 255 with the index value."
+        }
+      }
     },
     "5": {
       "offsetIndex": 1,
       "regions": [
         {
           "start": 0,
-          "end": 10,
-          "type": "disassemble"
-        },
-        {
-          "start": 11,
-          "end": 15,
-          "type": "bytes"
-        },
-        {
-          "start": 16,
-          "end": 16,
-          "type": "disassemble"
-        },
-        {
-          "start": 17,
-          "end": 21,
-          "type": "bytes"
-        },
-        {
-          "start": 22,
-          "end": 23,
-          "type": "disassemble"
-        },
-        {
-          "start": 24,
-          "end": 26,
-          "type": "skip"
-        },
-        {
-          "start": 27,
           "end": 16383,
           "type": "disassemble"
         }
       ],
       "lastView": "disassembly",
+      "decimalView": false,
       "lineAnnotations": {
-        "2": {
-          "synopsis": "My synopsis"
-        },
-        "11": {
-          "comment": "This is a long end-of-line comment"
+        "7249": {
+          "comment": "Set the top of the stack in the current bank"
         }
       }
     },
@@ -79,8 +84,7 @@
           "end": 16383,
           "type": "disassemble"
         }
-      ],
-      "lastView": "disassembly"
+      ]
     },
     "13": {
       "offsetIndex": 0,
@@ -250,7 +254,9 @@
           "end": 16383,
           "type": "disassemble"
         }
-      ]
+      ],
+      "lastView": "disassembly",
+      "decimalView": false
     },
     "30": {
       "offsetIndex": 0,
@@ -262,14 +268,5 @@
         }
       ]
     }
-  },
-  "source": {
-    "fileName": "ScrollNutter.nex"
-  },
-  "globalLabels": [
-    {
-      "name": "L012345678901234",
-      "value": 16412
-    }
-  ]
+  }
 }

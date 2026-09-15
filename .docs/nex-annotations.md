@@ -38,6 +38,43 @@ subscribers.
 Closing a dirty popped-out bank asks for confirmation before discarding unsaved
 annotation changes. Closing the app also runs the same disposal checks.
 
+## Two Subtrees, Two Save Policies
+
+Schema 2 added a `debug` subtree beside the annotations, holding the bank breakpoints the NEX
+carries. The two halves are saved **independently and on different policies**:
+
+- **annotations** (`source`, `globalLabels`, `banks`) stay dirty-tracked and are written when the
+  user asks, as described above;
+- **`debug`** is written the moment a breakpoint changes, because a breakpoint lost to an unpressed
+  Save button is a bug rather than a policy.
+
+Both writers read the file, replace only their own keys and write back, so neither can revert the
+other and a key a newer build adds survives an older build's save. A schema 1 file loads unchanged
+and is only rewritten as 2 when something is actually saved into it.
+
+The `debug` subtree holds two kinds: `breakpoints`, an offset in a bank, and `labelBreakpoints`,
+anchored to one of the file's labels with **no offset** — the label is the anchor, and resolution
+finds where it currently points, which is what lets such a breakpoint survive code moving within its
+bank. Both are written together, because the subtree is replaced wholesale.
+
+Breakpoints in the sidecar are the *only* place these are persisted: `.kliveproject` deliberately
+excludes them, so a NEX opened with no project still keeps its breakpoints.
+
+Annotations can also be written from the debugger rather than only in the viewer: `nex-label <name>`
+adds a bank-local label at the address the machine is paused at. It follows the same two save
+policies as every other annotation edit — into the session when a viewer is open, written through
+when one is not — which is why it asks whether a session exists before deciding.
+
+A popped-out bank's memory view can show the bank's **live** contents instead of the file's, marking
+what differs. The disassembly view deliberately cannot: the annotation model's listing is derived
+from the file's bytes and addresses its actions by row index, and live bytes disassemble to different
+instruction lengths — so the two listings would drift apart and the annotation menu would act on the
+wrong row. Annotations describe the file.
+
+The NEX viewer's bank headings show how many breakpoints each bank carries, counted from the
+*emulator* rather than from the sidecar — what is armed now, including another NEX's breakpoints in
+the same bank, because the machine will stop at those too.
+
 ## Label Rules
 
 Global labels have 16-bit values in `$0000..$FFFF`. Local labels are scoped to a

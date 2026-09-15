@@ -621,7 +621,10 @@ export class Z80Cpu implements IZ80Cpu {
   afterLdAIR: boolean;
 
   /**
-   * We keep subroutine return addresses in this stack to implement the step-over debugger function
+   * Subroutine return addresses, so the debugger can step *out* of the routine it is in.
+   *
+   * Pushed on every CALL, RST and interrupt entry; popped on every RET actually taken, so the newest
+   * entry is the address the current routine returns to. `markStepOutAddress` peeks it.
    */
   stepOutStack: number[];
 
@@ -1334,6 +1337,38 @@ export class Z80Cpu implements IZ80Cpu {
     if (this.stepOutStackCount < MAX_STEP_OUT_STACK_SIZE) {
       this.stepOutStackCount++;
     }
+  }
+
+  /**
+   * Drop the newest return address, because a RET has just consumed it.
+   *
+   * Without this the stack only ever grew, and `markStepOutAddress` peeked an entry belonging to a
+   * call that had *already returned*. Two ordinary shapes of code then made step-out run away, both
+   * because the routine being stepped out of does not own the newest entry:
+   *
+   * - **A tail call.** `jp SomeRoutine` enters a routine without pushing anything, so its `ret`
+   *   returns to whoever called the *caller* — while the newest entry still names the caller's own
+   *   last `call`. Observed in ScrollNutter: `call InitPaletteRamp` then, further down, `jp
+   *   InitPaletteRamp`; stepping out of the second entry waited for an address the program never
+   *   reached again.
+   * - **An inner call that has already returned.** Step into and back out of a nested `call`, then
+   *   ask to step out of the routine containing it: the newest entry is the inner call's return
+   *   address, which is now in the past.
+   *
+   * Only reached when a RET is actually *taken* — the conditional RETs call `ret` inside their
+   * condition — so `ret nz` on a non-zero flag does not consume an entry.
+   *
+   * Underflow is ignored rather than tracked: a RET with nothing pushed is ordinary (the machine can
+   * be reset mid-routine, and ROM code returns from calls made before the debugger was watching).
+   * The count simply stays at zero, `markStepOutAddress` reports -1, and step-out has no target —
+   * the same as it has ever had before the first call.
+   */
+  popFromStepOutStack(): void {
+    if (this.stepOutStackCount === 0) return;
+
+    this.stepOutStackPointer =
+      (this.stepOutStackPointer - 1 + MAX_STEP_OUT_STACK_SIZE) % MAX_STEP_OUT_STACK_SIZE;
+    this.stepOutStackCount--;
   }
 
   /**
@@ -4448,6 +4483,9 @@ function ret(cpu: Z80Cpu) {
   cpu.sp++;
   cpu.pc = cpu.wz;
   cpu.retExecuted = true;
+  // --- The single choke point for every RET: the conditional ones call this inside their condition
+  // --- and RETN/RETI delegate to it, so the shadow stack is balanced here and nowhere else.
+  cpu.popFromStepOutStack();
 }
 
 // 0xca: JP Z,nn

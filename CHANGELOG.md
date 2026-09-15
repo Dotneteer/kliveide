@@ -1,5 +1,141 @@
 # Klive IDE Changelog
 
+## Unreleased
+
+### Fixes
+
+- A breakpoint in partition 0 (bank `B0` on the 128K, bank `00` on the ZX Next) could never fire.
+- **A source-code breakpoint fired in the wrong memory bank.** For a line inside a `.bank` section,
+  the breakpoint was placed by address alone &mdash; and `.bank` sections share addresses, so it also
+  stopped the machine in every *other* bank's code at the same address. It now carries the bank its
+  line was assembled into.
+- **A rebuild left phantom breakpoints behind.** When recompiling moved a line's code, the machine
+  kept stopping at the address the line used to be at, as well as at its new one, with nothing in the
+  Breakpoints panel to explain it.
+- Several breakpoints could disturb each other when they landed on the same address &mdash; and a
+  bank-relative breakpoint occupies eight addresses, so this was easier to hit than it sounds. Adding
+  or removing one breakpoint could silently disarm another, permanently; a disabled breakpoint could
+  mask an enabled one.
+- A breakpoint created *as* disabled was armed anyway, if it was scoped to a partition or a bank.
+- Replacing a set of breakpoints (opening a project, saving one, refreshing after a build) did not
+  remove the ones it was replacing &mdash; it added to them. Invisible in the Breakpoints panel,
+  because the replacements took the same names, but the old ones stayed armed where they were.
+- The breakpoint dialog never showed a breakpoint's hit count: the emulator was not reporting it.
+- **Step Out could run away instead of stopping**, on every Z80 machine. The debugger's shadow stack
+  of return addresses was only ever pushed to, never popped, so once a routine had returned its entry
+  stayed on top &mdash; and Step Out aimed at an address the program would not reach again, running on
+  to the next breakpoint instead. It went wrong whenever the routine you were in did not own the
+  newest entry: after a tail call (`jp SomeRoutine`, which pushes nothing, so the routine returns past
+  its caller), and after stepping into and back out of a nested call before stepping out of the
+  routine containing it. The stack is now balanced on every RET actually taken, so a conditional RET
+  that falls through still costs nothing.
+- A `.nex.dis` file whose only debug state was a label-anchored breakpoint lost it on the next save.
+- The buttons a document adds to the tab bar (Run, Debug, and the script and NEX actions) sat hard
+  against the right-hand end of the header, with no space after the last one.
+- The NEX viewer's **Header attributes** rows were taller than they needed to be, spreading the
+  header over more vertical space than its content asks for.
+- Opening a project no longer discards breakpoints the project does not own.
+- Removing a partition-scoped breakpoint through the editor gutter silently did nothing.
+- The Disassembly view's breakpoint gutter no longer shows a breakpoint from one bank while you are
+  looking at another.
+- The Memory Mapping panel's **All RAM** row always read `Off`. Two separate causes: the field was
+  read under a different name than it was written, and the ZX Spectrum Next reported nothing for it
+  at all.
+- The Memory Mapping panel's page rows showed the same number twice on the ZX Spectrum Next, one of
+  them labelled "16K bank" in the tooltip. It now shows the real 16K bank beside the 8K one.
+- A memory-read, memory-write or I/O breakpoint shown in the disassembly margin could not be removed
+  or disabled by clicking it. The margin did not know the breakpoint's type, so it asked to remove an
+  *execution* breakpoint at that address &mdash; which is a different breakpoint, and matched
+  nothing. On the ZX Spectrum Next a bank watchpoint failed a second way: the address it named
+  carried a type suffix the commands do not accept as part of an address.
+- A disassembly line carrying more than one breakpoint showed whichever the emulator happened to
+  list last, which also decided what right-clicking it would remove. It now shows the execution
+  breakpoint, preferring an enabled one.
+
+### Breaking changes
+
+- **On the ZX Spectrum Next, a positive memory partition index now means an 8K page rather than a
+  16K bank.** Everything else already described these as 8K pages &mdash; the 224-entry partition
+  list, the Memory view's bank chooser and the documentation &mdash; but the breakpoint and
+  disassembly layer halved the number, so `bp-set 0A:$C000` and the Memory view's bank `0A` named
+  different memory.
+
+  Two visible consequences: the Disassembly view's bank column shows different numbers on the Next
+  (an address in 16K bank 5's low half now reads `0A`, not `05`), and a partition in `bp-set`, in a
+  saved script, or in an existing `.kliveproject` now names an 8K page. Saved Next partition
+  breakpoints are **not** migrated &mdash; a stored index is genuinely ambiguous, since a user
+  following the documented behaviour already meant the new reading. 16K bank *B* is the partition
+  pair `2B`/`2B+1`.
+
+### Features
+
+- `bp-set`, `bp-del` and `bp-en` accept a bank-relative address on the ZX Spectrum Next:
+  `bp-set 05:+$0100` breaks at offset `$0100` inside 16K bank 5, wherever that bank is paged in.
+- Any `.nex` file can be run or debugged on its own, without a project: from the Project Explorer's
+  context menu, from the buttons in a NEX file's document tab, or with the new `nex-run` command.
+- A popped-out NEX bank has a breakpoint gutter: click it to break at that offset in that bank,
+  wherever the bank is paged in. Those breakpoints are remembered in the `.nex.dis` sidecar, so they
+  survive a restart even when no project is open.
+- **Debug a NEX file from its first instruction.** `nex-run <file> -e`, or the new *Debug NEX file
+  (break at entry point)* item in the Explorer menu and the NEX document's tab bar, stops the machine
+  the moment NextZXOS hands control to the program &mdash; with the entry bank paged in. Klive reads
+  the entry point from the NEX header, so you do not have to know where the program's code lives.
+- **Bank watchpoints on the ZX Spectrum Next.** The **Memory read** and **Memory write** breakpoint
+  types now work with a bank-relative address (`bp-set 05:+$0100 -w`), so you can break when a byte
+  of a particular 16K bank is read or written, wherever that bank is paged. The breakpoint dialog's
+  **Address** field accepts the bank-relative form too, which means you can click a popped-out NEX
+  bank's margin to set an execution breakpoint and then double-click it to change its type.
+- **The NEX viewer checks the file before you run it.** A banner reports problems decidable from the
+  header: an entry bank the file does not contain, an entry point or stack pointer in ROM, a bank the
+  entry point needs but the file lacks, a core version newer than the emulator's, and a bank count
+  that disagrees with the file's own flags. Each of these otherwise fails silently &mdash; NextZXOS
+  reports a successful load and the program runs into memory it never loaded.
+- Breakpoints anchored to a NEX label are remembered in the `.nex.dis` file, so they come back with
+  the file &mdash; still anchored to the label, not to wherever it happened to be last time.
+- **Name what you just worked out, without leaving the debugger.** Paused inside a NEX's code, the
+  new `nex-label <name>` command (alias `nl`) adds a label to that file's annotations at the offset
+  you are stopped at &mdash; and the live disassembly starts using it. It writes a bank-local label,
+  because the address is only meaningful as an offset in its bank. With the NEX's viewer open the
+  label joins your unsaved annotation edits and is kept when you save them; with the viewer closed
+  it is written straight to the `.nex.dis` file.
+- **Your NEX labels appear in the live disassembly.** With a NEX launched, the Disassembly view names
+  operands from the labels you wrote in the NEX viewer &mdash; `call DrawSprite` rather than
+  `call $C100`. A bank's own labels apply only while that bank is paged in, so the names follow the
+  program as it pages; labels you made global apply everywhere.
+- **A popped-out NEX bank shows the machine, not the file &mdash; without being asked.** Whenever a
+  machine is running, both the bank's memory *and* its disassembly are built from the bank's current
+  contents, with every byte that differs from the file marked and counted in the toolbar. This is how
+  self-modifying code, a decompressed payload, or a bank corrupted by a stray write become visible
+  &mdash; none of it can be told from a clean load otherwise. It works for every bank of the file,
+  including ones the program has paged out, and falls back to the file's bytes when no machine is
+  running. There is no switch to find: a `Live` marker in the toolbar says which of the two you are
+  looking at.
+- **A paused NEX bank's disassembly is aligned to the program counter.** Decoding a bank from its
+  first byte is a guess about where instructions start, and self-modifying code or a jump table can
+  make it wrong for everything below. While the machine is paused with the PC inside the bank, the
+  listing is cut and re-decoded at the PC &mdash; the one offset where the alignment is known rather
+  than guessed &mdash; so the rows from there on are the instructions that will actually run. A
+  listing that was already aligned is left exactly as it was.
+- **The Memory Mapping panel says which slots hold banks of the NEX you launched.** Hovering a page
+  row names the file when that bank is one the NEX declares &mdash; so you can tell at a glance which
+  bank to pop out. It names the file rather than claiming what the slot currently holds: the program
+  is free to have overwritten the bank, and popping the bank out is what answers that &mdash; its
+  view is the machine's bytes, with the differences from the file marked.
+- **A popped-out bank highlights the line the program counter is on.** While the machine is paused
+  and the PC is inside that bank, its disassembly marks the current instruction the way the
+  Disassembly view does, and the toolbar adds a `PC` marker so you can tell without hunting for it.
+- **A popped-out ZX Spectrum Next bank says where it is paged in.** Its toolbar shows `Bank at
+  $8000`, or `Bank not paged in`, updated as the machine runs — with the 8K slot numbers in the
+  tooltip, and a note that a paged-out bank's breakpoints stay armed and will fire once it comes
+  back. A bank whose two 8K halves are not paged in as one block is reported as exactly that.
+- **The NEX viewer counts the breakpoints in each bank.** A bank's heading shows how many it carries,
+  with the breakdown by type in the tooltip, so a collapsed bank still tells you it is armed.
+- **Run to a line.** The new `run-to` command (alias `rtc`) runs the machine until it reaches an
+  address and then stops, leaving no breakpoint behind. It accepts everything `bp-set` does,
+  including the Next's bank-relative `05:+$0100` form, so you can run to an offset inside a bank that
+  is not paged in yet. Hold <kbd>Ctrl</kbd> (<kbd>Cmd</kbd> on macOS) and click the breakpoint margin
+  in the Disassembly view or a popped-out NEX bank to do the same thing without typing a command.
+
 ## 0.58.0
 
 ### Features

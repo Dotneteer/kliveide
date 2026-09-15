@@ -1,4 +1,4 @@
-import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
 
 /**
  * This interface represents the properties and methods that support debugging an emulated machine.
@@ -124,9 +124,12 @@ export interface IDebugSupport {
   resetBreakpointResolution(): void;
 
   /**
-   * Resolves the specified resouce breakpoint to an address
+   * Resolves the specified resouce breakpoint to an address, and optionally to a partition.
+   *
+   * @param partition The memory partition the line's code lives in, for a line inside a `.bank`
+   * segment. Absent for unbanked code, which stays partitionless.
    */
-  resolveBreakpoint(resource: string, line: number, address: number): void;
+  resolveBreakpoint(resource: string, line: number, address: number, partition?: number): void;
 
   /**
    * Renames breakpoints when the source file is renamed
@@ -134,8 +137,27 @@ export interface IDebugSupport {
   renameBreakpoints(oldResource: string, newResource: string): void;
 
   /**
-   * Changes the list of existing breakpoints to the provided ones.
-   * @param breakpoints Breakpoints to set
+   * While set, only session-owned breakpoints may stop the machine.
+   *
+   * Set for the window in which an injection flow's keystrokes are still in flight: a user
+   * breakpoint pausing the machine there would expire every keystroke that has not landed yet and
+   * leave the OS command line half-typed. See `.plans/NEX_DEBUGGING_PLAN.md` §9.5.
    */
-  resetBreakpointsTo(breakpoints: BreakpointInfo[]): void;
+  suppressUserBreakpoints: boolean;
+
+  /**
+   * Removes every one-shot breakpoint that has just fired at `address`, and returns how many.
+   *
+   * @param address The address the machine stopped at
+   * @param partition The partition paged in at that address, so a one-shot bound to a bank that is
+   * not currently paged there is left armed
+   */
+  consumeOneShotsAt(address: number, partition: number | undefined): number;
+
+  /**
+   * Replaces the breakpoints owned by `scope`, leaving every other owner's alone.
+   * @param breakpoints Breakpoints to install for this scope
+   * @param scope Which existing breakpoints this call may remove
+   */
+  resetBreakpointsTo(breakpoints: BreakpointInfo[], scope: BreakpointScope): void;
 }

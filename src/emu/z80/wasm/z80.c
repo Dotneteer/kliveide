@@ -85,13 +85,14 @@ typedef struct Z80State {
    * Shadow stack of return addresses, so a debugger can step out of the routine it is in.
    *
    * Mirrors `Z80Cpu.pushToStepOutStack` byte for byte: a 256-entry circular buffer written on every
-   * CALL and RST, never popped, with `markStepOutAddress` peeking the most recent entry. Without it
-   * the WASM machines had no step-out target at all — their CPU runs here, so the TypeScript push
-   * never executed, the stack stayed empty and `stepOutAddress` was permanently -1.
+   * CALL, RST and interrupt entry, popped on every RET taken, with `markStepOutAddress` peeking the
+   * most recent entry. Without it the WASM machines had no step-out target at all — their CPU runs
+   * here, so the TypeScript push never executed, the stack stayed empty and `stepOutAddress` was
+   * permanently -1.
    *
-   * Deliberately the same model rather than a better one: an improved shadow stack (popping on RET,
-   * and pushing on interrupt entry so an ISR's RETN cannot unbalance it) would be a behaviour change
-   * for every machine, and belongs in its own change with its own tests.
+   * It began push-only, which made step-out run away whenever the routine being stepped out of did
+   * not own the newest entry — after a tail call, or after an inner call had already returned. See
+   * `Z80Cpu.popFromStepOutStack`.
    */
   uint16_t stepOutStack[Z80_STEP_OUT_STACK_SIZE];
   uint16_t stepOutStackPointer;
@@ -626,15 +627,6 @@ static inline void pushPair(RegisterPair pairValue) {
   writeMemory(cpu.sp, pairValue.bytes.low);
 }
 
-static inline void retCore(void) {
-  cpu.wz.bytes.low = readMemory(cpu.sp);
-  cpu.sp = (uint16_t)(cpu.sp + 1);
-  cpu.wz.bytes.high = readMemory(cpu.sp);
-  cpu.sp = (uint16_t)(cpu.sp + 1);
-  cpu.pc = WZ;
-  cpu.retExecuted = 1;
-}
-
 static inline void pushToStepOutStack(uint16_t returnAddress) {
   cpu.stepOutStack[cpu.stepOutStackPointer] = returnAddress;
   cpu.stepOutStackPointer =
@@ -642,6 +634,36 @@ static inline void pushToStepOutStack(uint16_t returnAddress) {
   if (cpu.stepOutStackCount < Z80_STEP_OUT_STACK_SIZE) {
     cpu.stepOutStackCount++;
   }
+}
+
+/*
+ * Drop the newest return address, because a RET has just consumed it.
+ *
+ * Mirrors `Z80Cpu.popFromStepOutStack`; see it for why a push-only stack made step-out run away on
+ * a tail call (`jp SomeRoutine`) and on a routine whose inner call had already returned.
+ *
+ * Underflow is ignored rather than tracked: a RET with nothing pushed is ordinary, and leaving the
+ * count at zero makes `z80GetStepOutAddress` report -1, which is what it reports before the first
+ * call anyway.
+ */
+static inline void popFromStepOutStack(void) {
+  if (cpu.stepOutStackCount == 0u) return;
+
+  cpu.stepOutStackPointer = (uint16_t)((cpu.stepOutStackPointer + Z80_STEP_OUT_STACK_SIZE - 1u) %
+                                       Z80_STEP_OUT_STACK_SIZE);
+  cpu.stepOutStackCount--;
+}
+
+static inline void retCore(void) {
+  cpu.wz.bytes.low = readMemory(cpu.sp);
+  cpu.sp = (uint16_t)(cpu.sp + 1);
+  cpu.wz.bytes.high = readMemory(cpu.sp);
+  cpu.sp = (uint16_t)(cpu.sp + 1);
+  cpu.pc = WZ;
+  cpu.retExecuted = 1;
+  /* The single choke point for every RET: the conditional ones call this inside their condition
+     and RETN/RETI delegate to it, so the shadow stack is balanced here and nowhere else. */
+  popFromStepOutStack();
 }
 
 static inline void callCore(void) {
