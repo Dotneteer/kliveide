@@ -147,10 +147,24 @@ export async function saveNexDebugSubtree(
 ): Promise<void> {
   const raw = await readRawSidecar(projectService, fullPath);
   const merged: Record<string, unknown> = { ...raw };
-  if (!debug?.breakpoints?.length) {
+
+  /*
+   * Empty means *both* halves empty.
+   *
+   * This tested `breakpoints` alone, which was right while that was the only half: a sidecar whose
+   * only debug state was a label-anchored breakpoint had its `debug` key deleted, losing it. The
+   * subtree is written wholesale, so every half it can hold has to be counted here — and each half
+   * is omitted when it is empty, so a file with only one of them does not carry an empty array for
+   * the other.
+   */
+  const written: NexDebugState = {};
+  if (debug?.breakpoints?.length) written.breakpoints = debug.breakpoints;
+  if (debug?.labelBreakpoints?.length) written.labelBreakpoints = debug.labelBreakpoints;
+
+  if (Object.keys(written).length === 0) {
     delete merged.debug;
   } else {
-    merged.debug = debug;
+    merged.debug = written;
   }
   // --- A file that only ever held annotations still has to declare the schema that describes the
   // --- key just added to it.

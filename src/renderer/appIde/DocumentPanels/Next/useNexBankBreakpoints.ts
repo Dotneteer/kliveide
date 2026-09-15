@@ -5,12 +5,19 @@ import { useSelector } from "@renderer/core/RendererProvider";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
-import type { NexFileAnnotations, NexSidecarBreakpoint } from "./nexAnnotations";
+import type {
+  NexFileAnnotations,
+  NexSidecarBreakpoint,
+  NexSidecarLabelBreakpoint
+} from "./nexAnnotations";
 import { saveNexDebugSubtree } from "./nexAnnotationSidecar";
 import {
   fromSidecarBreakpoints,
+  fromSidecarLabelBreakpoints,
   sameSidecarBreakpoints,
-  toSidecarBreakpoints
+  sameSidecarLabelBreakpoints,
+  toSidecarBreakpoints,
+  toSidecarLabelBreakpoints
 } from "./nexBreakpointSync";
 import { resolveLabelBreakpointsFor } from "./nexLabelBreakpoints";
 import {
@@ -114,11 +121,13 @@ export function useNexBankBreakpointCounts(): Map<number, BankBreakpointSummary>
 // --- racing to install the same set twice.
 const installedSidecars = new Set<string>();
 const lastWritten = new Map<string, NexSidecarBreakpoint[]>();
+const lastLabelsWritten = new Map<string, NexSidecarLabelBreakpoint[]>();
 
 /** Forget what has been installed. For tests, which must not leak state between cases. */
 export function resetNexBreakpointSyncForTests(): void {
   installedSidecars.clear();
   lastWritten.clear();
+  lastLabelsWritten.clear();
 }
 
 /**
@@ -145,13 +154,24 @@ export function useNexSidecarBreakpointSync(
     if (!sidecar || !annotations || installedSidecars.has(sidecar)) return undefined;
     installedSidecars.add(sidecar);
     const stored = annotations.debug?.breakpoints ?? [];
+    const storedLabels = annotations.debug?.labelBreakpoints ?? [];
     lastWritten.set(sidecar, stored);
-    if (stored.length === 0) return undefined;
+    lastLabelsWritten.set(sidecar, storedLabels);
+    if (stored.length === 0 && storedLabels.length === 0) return undefined;
     void emuApiRef.current
-      .restoreBreakpoints(fromSidecarBreakpoints(stored, sidecar), { kind: "nex", sidecar })
+      .restoreBreakpoints(
+        [
+          ...fromSidecarBreakpoints(stored, sidecar),
+          // --- Unresolved: they arm nowhere until the annotations they were just read from are
+          // --- resolved against, which the effect below does on the same `annotations` change.
+          ...fromSidecarLabelBreakpoints(storedLabels, sidecar)
+        ],
+        { kind: "nex", sidecar }
+      )
       .catch(() => {
         // --- No machine yet. The sidecar still holds them, and the next open will try again.
         installedSidecars.delete(sidecar);
+        lastLabelsWritten.delete(sidecar);
       });
     return undefined;
   }, [annotations, sidecar]);
@@ -206,20 +226,36 @@ export function useNexSidecarBreakpointSync(
     let cancelled = false;
     (async () => {
       let current: NexSidecarBreakpoint[];
+      let currentLabels: NexSidecarLabelBreakpoint[];
       try {
         const response = await emuApiRef.current.listBreakpoints();
-        current = toSidecarBreakpoints(response?.breakpoints ?? [], sidecar);
+        const live = response?.breakpoints ?? [];
+        current = toSidecarBreakpoints(live, sidecar);
+        currentLabels = toSidecarLabelBreakpoints(live, sidecar);
       } catch {
         return;
       }
-      if (cancelled || sameSidecarBreakpoints(current, lastWritten.get(sidecar))) return;
+      if (cancelled) return;
+      // --- Either half changing is a reason to write, and both are written together: the debug
+      // --- subtree is replaced wholesale, so writing one without the other would delete the other.
+      if (
+        sameSidecarBreakpoints(current, lastWritten.get(sidecar)) &&
+        sameSidecarLabelBreakpoints(currentLabels, lastLabelsWritten.get(sidecar))
+      ) {
+        return;
+      }
       lastWritten.set(sidecar, current);
+      lastLabelsWritten.set(sidecar, currentLabels);
       try {
-        await saveNexDebugSubtree(projectServiceRef.current, sidecar, { breakpoints: current });
+        await saveNexDebugSubtree(projectServiceRef.current, sidecar, {
+          breakpoints: current,
+          labelBreakpoints: currentLabels
+        });
       } catch {
         // --- A failed write must not be remembered as written, or the next change would compare
         // --- equal and never retry.
         lastWritten.delete(sidecar);
+        lastLabelsWritten.delete(sidecar);
       }
     })();
     return () => {

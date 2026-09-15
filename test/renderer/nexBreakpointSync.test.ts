@@ -3,9 +3,12 @@ import { describe, it, expect } from "vitest";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import {
   fromSidecarBreakpoints,
+  fromSidecarLabelBreakpoints,
   sameSidecarBreakpoints,
+  sameSidecarLabelBreakpoints,
   sidecarKindOf,
-  toSidecarBreakpoints
+  toSidecarBreakpoints,
+  toSidecarLabelBreakpoints
 } from "@renderer/appIde/DocumentPanels/Next/nexBreakpointSync";
 
 const SIDECAR = "/p/Game.nex.dis";
@@ -197,5 +200,167 @@ describe("label-anchored breakpoints are not stored as bank offsets", () => {
     expect(toSidecarBreakpoints([labelBp, owned()], SIDECAR)).toEqual([
       { bank: 5, offset: 0x100, kind: "exec" }
     ]);
+  });
+});
+
+/*
+ * Persisting label-anchored breakpoints.
+ *
+ * Their own sidecar field, because they have no offset to store — the label is the anchor, and
+ * resolution finds where it points. Storing an offset would make one a bank breakpoint that happened
+ * to be named, and it would stop meaning the same thing the moment the code moved.
+ *
+ * See `.plans/NEX_DEBUGGING_PLAN.md` §13.2.
+ */
+
+function labelBp(over: Partial<BreakpointInfo> = {}, sidecar = SIDECAR): BreakpointInfo {
+  return {
+    label: "DrawSprite",
+    labelFile: sidecar,
+    bank: 5,
+    exec: true,
+    owner: { kind: "nex", sidecar },
+    ...over
+  };
+}
+
+describe("toSidecarLabelBreakpoints", () => {
+  it("stores the label and its bank, with no offset", () => {
+    expect(toSidecarLabelBreakpoints([labelBp()], SIDECAR)).toEqual([
+      { label: "DrawSprite", bank: 5, kind: "exec" }
+    ]);
+  });
+
+  it("omits the bank for a global label, which is a state rather than a missing field", () => {
+    expect(toSidecarLabelBreakpoints([labelBp({ bank: undefined })], SIDECAR)).toEqual([
+      { label: "DrawSprite", kind: "exec" }
+    ]);
+  });
+
+  it("does not store a resolved site", () => {
+    // --- The point of the shape: a resolved offset would be stale the moment the label moved.
+    const resolved = labelBp({ resolvedBank: 5, resolvedBankOffset: 0x0100 });
+    expect(toSidecarLabelBreakpoints([resolved], SIDECAR)).toEqual([
+      { label: "DrawSprite", bank: 5, kind: "exec" }
+    ]);
+  });
+
+  it("stores the kind and the disabled flag", () => {
+    expect(
+      toSidecarLabelBreakpoints([labelBp({ exec: undefined, memoryWrite: true, disabled: true })], SIDECAR)
+    ).toEqual([{ label: "DrawSprite", bank: 5, kind: "memWrite", disabled: true }]);
+  });
+
+  it("leaves another file's label breakpoints to that file", () => {
+    // --- `labelFile` is identity, and two files' label breakpoints must not collapse (§4.4).
+    expect(toSidecarLabelBreakpoints([labelBp({}, OTHER)], SIDECAR)).toEqual([]);
+  });
+
+  it("skips every other shape", () => {
+    const bankBp: BreakpointInfo = { bank: 5, bankOffset: 0x10, exec: true };
+    expect(toSidecarLabelBreakpoints([bankBp, owned()], SIDECAR)).toEqual([]);
+  });
+
+  it("skips an I/O breakpoint, which has no bank", () => {
+    expect(
+      toSidecarLabelBreakpoints([labelBp({ exec: undefined, ioRead: true })], SIDECAR)
+    ).toEqual([]);
+  });
+
+  it("sorts by bank then name, so the file does not churn", () => {
+    const stored = toSidecarLabelBreakpoints(
+      [
+        labelBp({ label: "Zebra", bank: 5 }),
+        labelBp({ label: "Global", bank: undefined }),
+        labelBp({ label: "Apple", bank: 5 }),
+        labelBp({ label: "Other", bank: 2 })
+      ],
+      SIDECAR
+    );
+    expect(stored.map((entry) => [entry.bank, entry.label])).toEqual([
+      [undefined, "Global"],
+      [2, "Other"],
+      [5, "Apple"],
+      [5, "Zebra"]
+    ]);
+  });
+});
+
+describe("fromSidecarLabelBreakpoints", () => {
+  it("restores them unresolved", () => {
+    /*
+     * Nothing here knows where the labels point, and inventing a site would arm a breakpoint at a
+     * place the label may have moved away from. They arm nowhere until the annotations are resolved
+     * against — the same sequence a source breakpoint follows before its list file is read.
+     */
+    const [restored] = fromSidecarLabelBreakpoints(
+      [{ label: "DrawSprite", bank: 5, kind: "exec" }],
+      SIDECAR
+    );
+    expect(restored).toEqual({
+      label: "DrawSprite",
+      labelFile: SIDECAR,
+      bank: 5,
+      exec: true,
+      owner: { kind: "nex", sidecar: SIDECAR }
+    });
+    expect(restored.resolvedBank).toEqual(undefined);
+  });
+
+  it("restores a global label with no bank", () => {
+    const [restored] = fromSidecarLabelBreakpoints([{ label: "Start", kind: "exec" }], SIDECAR);
+    expect(restored.bank).toEqual(undefined);
+    expect(restored.labelFile).toEqual(SIDECAR);
+  });
+
+  it("restores each kind and the disabled flag", () => {
+    const restored = fromSidecarLabelBreakpoints(
+      [
+        { label: "A", bank: 5, kind: "memRead" },
+        { label: "B", bank: 5, kind: "memWrite", disabled: true }
+      ],
+      SIDECAR
+    );
+    expect(restored[0].memoryRead).toEqual(true);
+    expect(restored[1].memoryWrite).toEqual(true);
+    expect(restored[1].disabled).toEqual(true);
+  });
+
+  it("copes with nothing stored", () => {
+    expect(fromSidecarLabelBreakpoints(undefined, SIDECAR)).toEqual([]);
+  });
+
+  it("survives a round trip", () => {
+    const original = [
+      labelBp({ label: "Local", bank: 5 }),
+      labelBp({ label: "Global", bank: undefined, exec: undefined, memoryWrite: true }),
+      labelBp({ label: "Off", bank: 0, disabled: true })
+    ];
+    const stored = toSidecarLabelBreakpoints(original, SIDECAR);
+    expect(toSidecarLabelBreakpoints(fromSidecarLabelBreakpoints(stored, SIDECAR), SIDECAR)).toEqual(
+      stored
+    );
+  });
+});
+
+describe("sameSidecarLabelBreakpoints", () => {
+  it("is true for identical sets, however emptiness is spelled", () => {
+    const set = [{ label: "A", bank: 5, kind: "exec" as const }];
+    expect(sameSidecarLabelBreakpoints(set, [{ label: "A", bank: 5, kind: "exec" }])).toEqual(true);
+    expect(sameSidecarLabelBreakpoints(undefined, [])).toEqual(true);
+  });
+
+  it("notices any difference that would need writing", () => {
+    const set = [{ label: "A", bank: 5, kind: "exec" as const }];
+    expect(sameSidecarLabelBreakpoints(set, [])).toEqual(false);
+    expect(sameSidecarLabelBreakpoints(set, [{ label: "B", bank: 5, kind: "exec" }])).toEqual(false);
+    expect(sameSidecarLabelBreakpoints(set, [{ label: "A", bank: 6, kind: "exec" }])).toEqual(false);
+    expect(sameSidecarLabelBreakpoints(set, [{ label: "A", kind: "exec" }])).toEqual(false);
+    expect(sameSidecarLabelBreakpoints(set, [{ label: "A", bank: 5, kind: "memRead" }])).toEqual(
+      false
+    );
+    expect(
+      sameSidecarLabelBreakpoints(set, [{ label: "A", bank: 5, kind: "exec", disabled: true }])
+    ).toEqual(false);
   });
 });

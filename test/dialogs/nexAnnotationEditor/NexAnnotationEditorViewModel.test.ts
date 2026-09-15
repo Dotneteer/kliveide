@@ -6,6 +6,9 @@ import {
   canAssignOperandLabel,
   deleteLabelConfirmRequest,
   discardConfirmMessage,
+  annotationActionForKey,
+  menuEntryFor,
+  NEX_ANNOTATION_SHORTCUTS,
   regionTypeOfAction,
   selectViewModel,
   type NexAnnotationMenuAction,
@@ -147,14 +150,23 @@ describe("menu", () => {
     expect(vm.menu.every((entry) => entry.kind === "separator" || entry.disabled)).toEqual(true);
   });
 
-  it("keeps the bank-wide actions available with nothing selected", () => {
-    // --- Manage Labels and Manage Regions act on the whole bank, so they need no row.
+  it("keeps Manage Labels available with nothing selected", () => {
+    // --- It acts on the whole bank, so it needs no row.
     const vm = selectViewModel(loaded());
     expect(itemOf(vm.menu, "manage-labels").disabled).toEqual(false);
-    expect(itemOf(vm.menu, "manage-regions").disabled).toEqual(false);
     // --- The row actions have nothing to act on.
     expect(itemOf(vm.menu, "synopsis").disabled).toEqual(true);
     expect(itemOf(vm.menu, "mark-bytes").disabled).toEqual(true);
+  });
+
+  it("disables Manage Regions with nothing selected, because it cannot run without a row", () => {
+    /*
+     * It reads as bank-wide and was enabled on those terms, but the controller seeds its dialog
+     * from the active row's offset and returns early when there is none — so the entry offered
+     * something it could not do. Enablement now matches what the command will actually attempt.
+     */
+    expect(itemOf(selectViewModel(loaded()).menu, "manage-regions").disabled).toEqual(true);
+    expect(itemOf(selectViewModel(selected).menu, "manage-regions").disabled).toEqual(false);
   });
 
   it("enables the row actions once a row is selected", () => {
@@ -299,5 +311,110 @@ describe("deleteLabelConfirmRequest", () => {
     expect(
       deleteLabelConfirmRequest({ scope: "local", name: "Loop", referenceCount: 3 }).linesAfterCode
     ).toEqual(["3 operand references to it will be cleared."]);
+  });
+});
+
+/*
+ * Keyboard shortcuts for the annotation actions.
+ *
+ * Bare letters, with `Shift` for the wider variant of a pair — see `NEX_ANNOTATION_SHORTCUTS` for
+ * why every other family of keys is unavailable on at least one platform.
+ */
+describe("shortcuts", () => {
+  const selected = loaded({ selection: { anchorIndex: 2, activeIndex: 4 } });
+
+  it("maps each key to its action", () => {
+    expect(annotationActionForKey("c", false)).toEqual("comment");
+    expect(annotationActionForKey("c", true)).toEqual("synopsis");
+    expect(annotationActionForKey("l", false)).toEqual("global-label");
+    expect(annotationActionForKey("l", true)).toEqual("local-label");
+    expect(annotationActionForKey("o", false)).toEqual("operand-label");
+    expect(annotationActionForKey("m", false)).toEqual("manage-labels");
+    expect(annotationActionForKey("r", false)).toEqual("manage-regions");
+  });
+
+  it("matches a capital letter, which is what Shift actually delivers", () => {
+    // --- `KeyboardEvent.key` is "C", not "c", whenever Shift is down: matching case-sensitively
+    // --- would have made every Shift shortcut dead on arrival.
+    expect(annotationActionForKey("C", true)).toEqual("synopsis");
+    expect(annotationActionForKey("L", true)).toEqual("local-label");
+  });
+
+  it("has let go of the keys it no longer uses", () => {
+    // --- The labels moved from N to L; nothing should still answer to the old binding.
+    expect(annotationActionForKey("n", false)).toBeUndefined();
+    expect(annotationActionForKey("n", true)).toBeUndefined();
+  });
+
+  it("claims no key it has not been given", () => {
+    // --- Anything unclaimed has to fall through: the listing's own navigation keys are behind it,
+    // --- and an unhandled key still reaches the emulated machine's keyboard.
+    expect(annotationActionForKey("x", false)).toBeUndefined();
+    expect(annotationActionForKey("ArrowDown", false)).toBeUndefined();
+    // --- Shift is part of the binding, not decoration: the unshifted and shifted forms are
+    // --- different actions, and a key bound only unshifted must not answer to Shift.
+    expect(annotationActionForKey("o", true)).toBeUndefined();
+    expect(annotationActionForKey("m", true)).toBeUndefined();
+    expect(annotationActionForKey("r", true)).toBeUndefined();
+  });
+
+  it("binds the actions it binds and no others", () => {
+    /*
+     * The bound set is deliberately partial: the Mark As commands and Clear Row Annotations are
+     * menu-only. This pins the boundary, so a key quietly joining the table is a test failure
+     * rather than a surprise keystroke in a listing that also feeds the emulated machine.
+     */
+    const bound = new Set(NEX_ANNOTATION_SHORTCUTS.map((entry) => entry.action));
+    expect([...bound].sort()).toEqual([
+      "comment",
+      "global-label",
+      "local-label",
+      "manage-labels",
+      "manage-regions",
+      "operand-label",
+      "synopsis"
+    ]);
+  });
+
+  it("binds no key twice", () => {
+    const seen = NEX_ANNOTATION_SHORTCUTS.map((entry) => `${entry.key}:${entry.shift}`);
+    expect(new Set(seen).size).toEqual(seen.length);
+  });
+
+  it("names an action the menu actually has", () => {
+    // --- A typo in the table would otherwise be a key that silently does nothing.
+    const menu = selectViewModel(selected).menu;
+    for (const entry of NEX_ANNOTATION_SHORTCUTS) {
+      expect(menuEntryFor(menu, entry.action)).toBeDefined();
+    }
+  });
+
+  it("shows its key on the menu item, and only on the bound ones", () => {
+    // --- The whole cost of bare letters is discoverability: nothing about the listing suggests a
+    // --- lone `N` does anything, so the menu has to say so.
+    const menu = selectViewModel(selected).menu;
+    expect(itemOf(menu, "comment").shortcut).toEqual("C");
+    expect(itemOf(menu, "synopsis").shortcut).toEqual("Shift+C");
+    expect(itemOf(menu, "global-label").shortcut).toEqual("L");
+    expect(itemOf(menu, "local-label").shortcut).toEqual("Shift+L");
+    expect(itemOf(menu, "operand-label").shortcut).toEqual("O");
+    expect(itemOf(menu, "manage-labels").shortcut).toEqual("M");
+    expect(itemOf(menu, "manage-regions").shortcut).toEqual("R");
+    expect(itemOf(menu, "mark-bytes").shortcut).toBeUndefined();
+    expect(itemOf(menu, "clear").shortcut).toBeUndefined();
+  });
+
+  it("carries the enablement the caller gates on", () => {
+    /*
+     * The handler refuses a shortcut whose menu entry is disabled rather than re-deriving the
+     * rules, so these two must stay the same answer. Without a selection every row action is
+     * disabled; Manage Labels acts on the whole bank and stays available.
+     */
+    const menu = selectViewModel(loaded({ selection: undefined })).menu;
+    expect(menuEntryFor(menu, "comment")!.disabled).toEqual(true);
+    expect(menuEntryFor(menu, "local-label")!.disabled).toEqual(true);
+    expect(menuEntryFor(menu, "manage-labels")!.disabled).toEqual(false);
+    // --- And Manage Regions is refused, because it cannot run without a row either.
+    expect(menuEntryFor(menu, "manage-regions")!.disabled).toEqual(true);
   });
 });

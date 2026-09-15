@@ -121,6 +121,38 @@ Two details from the same change, both about a count rather than a value:
 - **Absent at zero, never `0`.** A column of zero badges down a list is noise claiming to be
   information. The state "none" is already carried by there being no mark.
 
+### A strip pads both its ends, not just the one you noticed
+
+`DocumentsHeader`'s `.commandBar` had `padding-left` and no `padding-right`, so whatever a document's
+tab renderer ended with sat hard against the end of the header. That was true of **every** bar — the
+build-root, scripting and NEX ones all end in a `TabButton` — and went unseen while the bars were
+short.
+
+Two rules from it:
+
+- **A container owns its own gutters, on every side.** Padding one end and leaving the other to the
+  content is how an asymmetry survives: each renderer would have to know it is last, and three
+  renderers each remembering to pad themselves is three chances to forget.
+- **Symmetry is worth checking whenever a strip grows.** Nothing changed about the padding when the
+  NEX bar went from two buttons to three; it just moved the last icon far enough right to be seen.
+
+The same strip's *internal* spacing is a `TabButtonSpace` between buttons, which the build-root and
+scripting bars already did. A new bar should match it, or its icons read as one undifferentiated run.
+
+### A data row in a dense panel sets no height
+
+`min-height` on a row of label/value pairs is almost always wrong. The NEX viewer's header attributes
+carried `min-height: var(--space-6)` — **24px**, taller than the app's own sidebar list rows at 22px,
+for content that is denser than theirs.
+
+`controls/layout`'s `.row` deliberately sets no height, so the content decides; `Data.module.scss`'s
+`.dense` exists to *remove* the height from register-panel rows, and records that keeping it made the
+Z80 panel 47% taller. A dense data surface is the same kind of thing wherever it appears — a sidebar
+panel, a document panel, an expandable section — and should reach for the same answer.
+
+Reserve a row height for rows that need a **hit target** (a list you click, a menu) or that must line
+up with a fixed-height neighbour. A read-only pair of short strings needs neither.
+
 ### A readout sitting in a strip of controls
 
 The popped-out bank's toolbar is a row of things that change the document — view mode, decimal,

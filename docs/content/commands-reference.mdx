@@ -470,6 +470,43 @@ line &mdash; with the OS initialised behind it. The first launch in a session pa
 NextZXOS boot; later ones reuse a cached machine state and start much faster.
 </Callout>
 
+## `nex-label`
+
+This command adds a label to the launched NEX file's annotations, at the address the machine is
+stopped at.
+
+```
+nex-label <name> [<address>]
+```
+
+Available aliases: `nl`
+
+Use it when you have just worked out what a routine does: the name goes into the `.nex.dis`
+annotations from the debugger, and the Disassembly view starts using it on its next refresh instead
+of showing a bare address.
+
+The label is **local to the bank** the address is currently in, because that is the only thing the
+address means &mdash; the same routine sits somewhere else the next time its bank is paged
+elsewhere. Klive reads the current memory mapping to work out which bank that is, and refuses if the
+launched file does not contain it.
+
+The machine must be **paused**, unless you give an address: a running machine's program counter has
+moved on by the time the command reads it, so "where we are" would name an arbitrary instruction.
+
+If the NEX file's viewer is open, the label joins your other unsaved annotation edits and is kept
+when you save them. If it is closed, the label is written to the `.nex.dis` file straight away.
+
+```text
+nex-label DrawSprite
+nl ClearScreen
+nex-label VBlankWait $C120
+```
+
+<Callout type="info">
+The name follows the assembler's identifier convention and is limited to 16 characters. A bank
+cannot have two labels with the same name; Klive refuses rather than moving the existing one.
+</Callout>
+
 ## `newp`
 
 This project creates a new Klive project and optionally opens it.

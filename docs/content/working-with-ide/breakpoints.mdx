@@ -137,17 +137,35 @@ from a running machine would land on an arbitrary instruction while looking auth
 
 ### Seeing What The Program Changed
 
-A popped-out bank shows the bytes the **file** holds. Its memory view has a **Live** switch that
-shows the bank as the machine has it right now instead, with every byte that differs from the file
-marked and counted in the toolbar.
+A popped-out bank shows the bank **as the machine has it right now**, in both its memory and its
+disassembly view, with every byte that differs from the file marked and counted in the toolbar. A
+`Live` marker in the toolbar tells you that is what you are looking at. When no machine is running
+there is nothing to read, and the bank falls back to the bytes the file holds.
 
 That difference is often the thing you are looking for: self-modifying code, a routine that
 decompressed itself over its own packed data, or a bank a stray write has damaged. None of it can be
 told from a clean load by looking at the file.
 
-The switch works for every bank in the NEX, including banks the program has paged out &mdash; the
-bytes are read from the machine's RAM, not from the address space. It appears only in the memory
-view, and only on the ZX Spectrum Next.
+It works for every bank in the NEX, including banks the program has paged out &mdash; the bytes are
+read from the machine's RAM, not from the address space. It applies only on the ZX Spectrum Next.
+
+### Disassembly Aligned To The Program Counter
+
+Disassembling a bank from its first byte is a *guess* about where instructions begin. One byte of
+data decoded as an opcode shifts every boundary below it, and self-modifying code or a jump table can
+make that guess wrong for the rest of the bank.
+
+A paused Z80 sits between instructions, so the program counter is the one offset where the alignment
+is known rather than guessed. While the machine is paused with the PC inside the bank, the listing is
+cut there and re-decoded, so the rows from the PC on are the instructions that will actually run.
+
+A listing that was already aligned at the PC is left exactly as it was, so stepping through ordinary
+code does not reshuffle it. Where the old alignment *was* wrong, you will see the instruction
+straddling the PC overlap the row beneath it &mdash; that overlap is the disagreement between the two
+decodes, and it is shown rather than hidden.
+
+Regions you have annotated as `bytes`, `words` or `skip` are never cut: those say what the bytes
+*are*, and the program counter passing through does not make them code.
 
 <Callout type="info">
 A bank-relative breakpoint only fires while its bank is actually paged in &mdash; which is the point

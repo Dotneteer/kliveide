@@ -33,6 +33,15 @@ export type UseNexAnnotationEditorArgs = {
   onNavigateToAddress: (address: number) => void;
   /** Report the unsaved state outward, so the document tab can show it. */
   onDirtyChanged: (dirty: boolean) => void;
+  /**
+   * Any annotation dialog has finished, however it ended.
+   *
+   * The listing reaches every annotation action from a bare letter, and a bare letter is only heard
+   * while the listing is focused — so the panel has to be able to take its keyboard surface back
+   * when a dialog hands it over. Restoring focus is the modal's job and it does it; this is the
+   * panel's own backstop, for the case where focus ends up nowhere in particular.
+   */
+  onDialogClosed?: () => void;
 };
 
 export type NexAnnotationEditor = {
@@ -53,7 +62,8 @@ export function useNexAnnotationEditor({
   env,
   contents,
   onNavigateToAddress,
-  onDirtyChanged
+  onDirtyChanged,
+  onDialogClosed
 }: UseNexAnnotationEditorArgs): NexAnnotationEditor {
   const { projectService } = useAppServices();
   const dialogs = useDialogs();
@@ -68,9 +78,21 @@ export function useNexAnnotationEditor({
   dirtyRef.current = onDirtyChanged;
   const contentsRef = useRef(contents);
   contentsRef.current = contents;
+  const dialogClosedRef = useRef(onDialogClosed);
+  dialogClosedRef.current = onDialogClosed;
 
   const ports = useMemo<NexAnnotationEditorPorts>(
-    () => ({
+    () => {
+      /*
+       * Every dialog reports back when it is done, whatever the answer was.
+       *
+       * Wrapped once here rather than at each of the seven call sites, so a dialog added later
+       * cannot quietly miss it. `finally` leaves the result and any rejection exactly as they were.
+       */
+      const opened = <T,>(dialog: Promise<T>): Promise<T> =>
+        dialog.finally(() => dialogClosedRef.current?.());
+
+      return {
       session: {
         subscribe: (annotationPath, bank, listener) =>
           subscribeNexAnnotationSession(projectService, annotationPath, bank, listener),
@@ -80,24 +102,24 @@ export function useNexAnnotationEditor({
       },
       dialogs: {
         synopsisComment: (args) =>
-          dialogs.open(NexSynopsisCommentDialog, args, {
+          opened(dialogs.open(NexSynopsisCommentDialog, args, {
             title: "Synopsis comment",
             width: 560
-          }),
+          })),
         endOfLineComment: (args) =>
-          dialogs.open(NexEndOfLineCommentDialog, args, {
+          opened(dialogs.open(NexEndOfLineCommentDialog, args, {
             title: "End-of-line comment",
             width: 560
-          }),
-        label: (args) => dialogs.open(NexLabelDialog, args, { title: "Label", width: 560 }),
+          })),
+        label: (args) => opened(dialogs.open(NexLabelDialog, args, { title: "Label", width: 560 })),
         manageLabels: (args) =>
-          dialogs.open(NexLabelsDialog, args, { title: "Labels", width: 780 }),
+          opened(dialogs.open(NexLabelsDialog, args, { title: "Labels", width: 780 })),
         operandLabel: (args) =>
-          dialogs.open(NexOperandLabelDialog, args, { title: "Operand label", width: 640 }),
+          opened(dialogs.open(NexOperandLabelDialog, args, { title: "Operand label", width: 640 })),
         region: (args) =>
-          dialogs.open(NexRegionDialog, args, { title: "Memory region", width: 640 }),
+          opened(dialogs.open(NexRegionDialog, args, { title: "Memory region", width: 640 })),
         manageRegions: (args) =>
-          dialogs.open(NexRegionsDialog, args, { title: "Regions", width: 840 })
+          opened(dialogs.open(NexRegionsDialog, args, { title: "Regions", width: 840 }))
       },
       confirm,
       // --- Still `window.confirm`: two questions are asserted with their exact wording by the
@@ -107,7 +129,8 @@ export function useNexAnnotationEditor({
       bankBytes: () => Array.from(contentsRef.current),
       navigateToAddress: (address) => navigateRef.current(address),
       dirtyChanged: (dirty) => dirtyRef.current(dirty)
-    }),
+      };
+    },
     [confirm, dialogs, projectService]
   );
 

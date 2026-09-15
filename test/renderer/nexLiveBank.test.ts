@@ -5,7 +5,8 @@ import {
   changedFlagsIn,
   diffBankBytes,
   formatBankDiff,
-  joinBankHalves
+  joinBankHalves,
+  sameBankBytes
 } from "@renderer/appIde/DocumentPanels/Next/nexLiveBank";
 
 /*
@@ -157,5 +158,49 @@ describe("formatBankDiff", () => {
   it("explains what a change means, since it is not an error", () => {
     const badge = formatBankDiff({ mask: new Uint8Array(0x4000), changed: 1 });
     expect(badge!.title).toContain("written to the bank since it was loaded");
+  });
+});
+
+/*
+ * The live view refetches on a ticker, so it produces a fresh array whether or not the machine wrote
+ * anything. Now that the disassembly is built from those bytes, "the bytes arrived again" and "the
+ * bytes are different" have to be distinguishable, or an idle bank re-disassembles several times a
+ * second.
+ */
+describe("sameBankBytes", () => {
+  it("treats the same array as unchanged without walking it", () => {
+    const bytes = new Uint8Array(BANK).fill(0x42);
+    expect(sameBankBytes(bytes, bytes)).toBe(true);
+  });
+
+  it("reports equal contents in different arrays as unchanged", () => {
+    // --- The case that matters: two consecutive reads of a bank nobody is writing to.
+    expect(sameBankBytes(new Uint8Array(BANK).fill(7), new Uint8Array(BANK).fill(7))).toBe(true);
+  });
+
+  it("spots a single differing byte, wherever it is", () => {
+    const a = new Uint8Array(BANK).fill(7);
+    const last = new Uint8Array(BANK).fill(7);
+    last[BANK - 1] = 8;
+    expect(sameBankBytes(a, last)).toBe(false);
+
+    const first = new Uint8Array(BANK).fill(7);
+    first[0] = 8;
+    expect(sameBankBytes(a, first)).toBe(false);
+  });
+
+  it("counts a missing read as a change, in either position", () => {
+    // --- undefined is what a machine mid-switch hands back. It is not "the same as before".
+    const bytes = new Uint8Array(BANK);
+    expect(sameBankBytes(undefined, bytes)).toBe(false);
+    expect(sameBankBytes(bytes, undefined)).toBe(false);
+  });
+
+  it("treats two missing reads as unchanged, so no machine does not churn", () => {
+    expect(sameBankBytes(undefined, undefined)).toBe(true);
+  });
+
+  it("refuses to compare different lengths", () => {
+    expect(sameBankBytes(new Uint8Array(HALF), new Uint8Array(BANK))).toBe(false);
   });
 });

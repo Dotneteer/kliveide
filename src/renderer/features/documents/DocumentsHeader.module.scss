@@ -58,9 +58,21 @@
   border-left: 1px solid var(--border-subtle);
 }
 
+/*
+ * The command strip beside the document tabs.
+ *
+ * Padded on **both** sides. It had only `padding-left`, so whatever a document's tab renderer ended
+ * with sat hard against the end of the header — every bar, not one: the build-root, scripting and
+ * NEX bars all end in a `TabButton`. The asymmetry was invisible while the bars were short and
+ * obvious once the NEX bar grew a third button.
+ *
+ * Here rather than as a trailing spacer in each renderer: a bar should not have to know it is last,
+ * and three renderers each remembering to pad themselves is three chances to forget.
+ */
 .commandBar {
   width: auto;
   display: flex;
   align-items: center;
   padding-left: var(--space-2);
+  padding-right: var(--space-2);
 }

@@ -481,6 +481,126 @@ describe("annotated disassembly rows", () => {
     expect(getByText("DrawSprite").className).toContain("annotationOperand");
     // --- The instruction is still one readable string, split or not.
     expect(container.textContent).toContain("call DrawSprite");
+
+    /*
+     * Every part sits inside one wrapper, not directly in the cell.
+     *
+     * The cell is `display: flex`, and direct children would make the `"call "` run an anonymous
+     * flex item of its own — a block box, which trims the white space at the end of its line, so
+     * the row rendered `jpStart` where the listing means `jp Start`. jsdom does not lay out, so the
+     * structure is what is assertable here: the mnemonic and the operand share a parent, which is
+     * what puts them in a single inline formatting context.
+     */
+    const run = getByText("DrawSprite").parentElement!;
+    expect(run.className).toContain("instructionRun");
+    expect(run.textContent).toBe("call DrawSprite");
+  });
+
+  /*
+   * The space that sets a synopsis paragraph off from the code around it.
+   *
+   * A note is one row per line, so the block's edges are the only place the gap belongs; a rule on
+   * every synopsis row would break a multi-line note into three visually separate ones. The
+   * position comes from `synopsisEdge`, set where the rows are built.
+   */
+  describe("synopsis block spacing", () => {
+    /** Renders one synopsis row at the given position in its block. */
+    function renderSynopsis(synopsisEdge?: "first" | "middle" | "last" | "only") {
+      return render(
+        <DisassemblyRow
+          {...base}
+          annotated
+          item={{
+            address: 0x8000,
+            isPrefixItem: true,
+            prefixComment: "A note",
+            annotation: {
+              bankOffset: 0,
+              byteLength: 1,
+              regionType: "disassemble",
+              hasLineAnnotation: true,
+              synopsisEdge
+            }
+          }}
+        />
+        // --- Queried off this render's own container: RTL binds its queries to `document.body`, so
+        // --- a test rendering two rows would otherwise match both.
+      ).container.querySelector('[data-testid="disassembly-row-0"]')!.className;
+    }
+
+    it("spaces above the first line and below the last", () => {
+      expect(renderSynopsis("first")).toContain("synopsisBlockFirst");
+      expect(renderSynopsis("first")).not.toContain("synopsisBlockLast");
+      expect(renderSynopsis("last")).toContain("synopsisBlockLast");
+      expect(renderSynopsis("last")).not.toContain("synopsisBlockFirst");
+    });
+
+    it("leaves an interior line flush, so a multi-line note reads as one paragraph", () => {
+      expect(renderSynopsis("middle")).not.toContain("synopsisBlock");
+    });
+
+    it("spaces both sides of a one-line note", () => {
+      const className = renderSynopsis("only");
+      expect(className).toContain("synopsisBlockFirst");
+      expect(className).toContain("synopsisBlockLast");
+    });
+
+    /*
+     * The gap only appears if the row's *box* grows.
+     *
+     * The app sets `box-sizing: border-box` universally, so padding inside a fixed height is taken
+     * out of the text's own box and the row does not move — which is what happened on the first
+     * attempt at this. The stylesheet therefore sizes these rows (row height + gap), and that only
+     * works if the row does not also carry an inline height, which would beat any class rule.
+     */
+    it("withholds the inline height so the stylesheet can make the row taller", () => {
+      const spaced = render(
+        <DisassemblyRow
+          {...base}
+          annotated
+          rowHeight={22}
+          item={{
+            address: 0x8000,
+            isPrefixItem: true,
+            prefixComment: "A note",
+            annotation: { bankOffset: 0, byteLength: 1, synopsisEdge: "only" }
+          }}
+        />
+      ).container.querySelector<HTMLElement>('[data-testid="disassembly-row-0"]')!;
+      expect(spaced.style.height).toBe("");
+
+      // --- Every other row still gets its height from the virtualizer's own number.
+      const plain = render(
+        <DisassemblyRow
+          {...base}
+          annotated
+          rowHeight={22}
+          item={{
+            address: 0x8000,
+            isPrefixItem: true,
+            prefixComment: "A note",
+            annotation: { bankOffset: 0, byteLength: 1, synopsisEdge: "middle" }
+          }}
+        />
+      ).container.querySelector<HTMLElement>('[data-testid="disassembly-row-0"]')!;
+      expect(plain.style.height).toBe("22px");
+    });
+
+    it("leaves an instruction row unspaced", () => {
+      // --- Nothing else in the listing carries `synopsisEdge`, so no code row can pick up the gap.
+      const { getByTestId } = render(
+        <DisassemblyRow
+          {...base}
+          annotated
+          item={{
+            address: 0x8000,
+            instruction: "nop",
+            annotation: { bankOffset: 0, byteLength: 1, regionType: "disassemble" }
+          }}
+        />
+      );
+      expect(getByTestId("disassembly-row-0").className).not.toContain("synopsisBlock");
+    });
   });
 
   it("paints a data region as a directive rather than as code", () => {

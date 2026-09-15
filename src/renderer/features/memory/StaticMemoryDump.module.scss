@@ -90,3 +90,22 @@
   font-size: var(--font-size-100);
   white-space: nowrap;
 }
+
+/*
+ * "Live": the bank is being shown as the machine holds it.
+ *
+ * It replaced a switch, and is deliberately quieter than one — this is the ordinary state whenever a
+ * machine is running, not something the user did, so it reads as a label rather than a control. It
+ * sits next to `.bankDiff` and shares its type so the pair reads as one statement: what you are
+ * looking at, and how far it has moved from the file.
+ */
+.liveBank {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: var(--accent-secondary-text);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+  opacity: 0.85;
+}

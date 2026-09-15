@@ -1265,30 +1265,89 @@ Four things the plan did not anticipate:
 - **The diff is not a separate mode.** The plan called for "a diff mode"; it is a property of the
   live view instead. There is nothing a third mode could show that Live-with-marks does not, and a
   mode the user has to find and switch into is worse than a highlight that is simply there.
-- **It is the memory view only, and that is a decision rather than a shortcut.** Live disassembly
-  would be the most valuable half — a bank that decompressed itself is precisely the case — but it
-  cannot be had by swapping the array. The annotation editor owns a listing derived from the *file's*
-  bytes and addresses its actions by **row index**; live bytes disassemble to different instruction
-  lengths, so the two listings would drift apart and the row menu would act on a line the user did
-  not click. Feeding the editor live bytes is not the fix either: annotations describe the file, and
-  an annotation derived from a decompressed payload would be written into the file's sidecar. The
-  switch therefore appears only in the memory view, rather than being offered somewhere it would
-  quietly mean something else.
+- **It was the memory view only, and that has since been undone — see §11.3a.** The reasoning at the
+  time: live disassembly would be the most valuable half — a bank that decompressed itself is
+  precisely the case — but it could not be had by swapping the array, because the annotation editor
+  owns a listing derived from the *file's* bytes and was believed to address its actions by **row
+  index**. Live bytes disassemble to different instruction lengths, so the two listings would drift
+  apart and the row menu would act on a line the user did not click.
 
-  *Follow-up, if it is wanted:* a live disassembly needs the listing and the annotation editor's
-  copy to be one thing, addressed by bank offset rather than row index, and annotation editing
-  disabled (not merely discouraged) while live bytes are showing.
-
-**Two efficiency points worth keeping.** The reads are gated on the switch, so an open bank document
-costs nothing until someone asks for live bytes — whether the switch can be *offered* is answered by
-the location readout (§11.2), which the header needs anyway. And `changedFlagsIn` returns `undefined`
-for a row with nothing changed, so an untouched bank allocates nothing and draws no overlays across
-its 2048 rows.
+**Two efficiency points worth keeping.** The reads were gated on the switch, so an open bank document
+cost nothing until someone asked for live bytes — whether the switch could be *offered* was answered
+by the location readout (§11.2), which the header needs anyway. (The switch is gone; the gate is now
+that same location readout — see §11.3a.) And `changedFlagsIn` returns `undefined` for a row with
+nothing changed, so an untouched bank allocates nothing and draws no overlays across its 2048 rows.
 
 **One trap found:** `MemoryDumpSection` has **two** hand-written memo comparators on the same path,
 and a prop missing from either means a row that keeps a stale rendering. Both now check
 `changedBytes`; without it, switching between live and file bytes would leave the previous source's
 marks on every row whose bytes happened to be identical in both.
+
+### 11.3a No switch: the bank shows the machine — ✅ **done**
+
+§11.3's switch is gone, and both views — memory *and* disassembly — are built from the machine's
+bytes whenever there is a machine to ask. The file's bytes are what a popped-out bank falls back to,
+not what it defaults to.
+
+**Why the switch had to go.** A popped-out bank is opened to debug a program, and for that the bytes
+that matter are the ones the Z80 will execute. Putting that behind a control made the debugger's most
+useful view the one you had to know to ask for, and left every listing ambiguous until you checked
+where the switch was sitting.
+
+**Why the row-index objection did not survive contact.** §11.3 withheld live bytes from the
+disassembly because the annotation editor was thought to address rows by index. It does not: a row
+resolves through the item it rendered — `item.annotation?.bankOffset`, falling back to
+`listedBankOffset(item.address, …)` — so it acts on the offset of the row that was *clicked*,
+whichever byte array produced the listing. There is only one listing, so there is nothing for it to
+drift against. And what the sidecar stores is bank offsets; a bank is 16K read from the file or out
+of RAM, so its regions go on meaning the same thing. Only the instructions decoded inside a region
+change, which is the point.
+
+**Alignment at the program counter.** A linear decode is only as well-aligned as the offset it
+started from, and self-modifying code, a jump table, or a decompressed payload can make it wrong for
+the rest of the bank. A paused Z80 sits between instructions, so PC is the one offset in the bank
+where the alignment is *known*. `pcAnchoredRuns` therefore cuts a `disassemble` run in two at PC and
+decodes each half separately, so the rows from PC on are the instructions that will actually run.
+
+Three properties worth recording:
+
+- **An already-aligned listing is untouched.** The first run ends at `anchor - 1` of its own accord
+  when PC was already a boundary, so the halves rejoin exactly as before. Without that, stepping
+  through ordinary aligned code would reshuffle the listing on every step.
+- **The seam is honest rather than tidy.** Where the old alignment *was* wrong, the instruction
+  straddling PC is still emitted by the first run, so its bytes overlap the row beneath it. That
+  overlap is the disagreement between the two decodes, and hiding it would hide the thing worth
+  noticing.
+- **Only `disassemble` regions are cut.** A region the user declared `bytes`, `words` or `skip` is a
+  statement about what those bytes *are*; the program counter passing through it does not make it
+  code.
+
+PC anchoring only applies while paused, because `useNexBankPcOffset` only answers while paused — for
+§11.4's reason, which is unchanged: a spotlight fed from a running machine's ticker lands on an
+essentially arbitrary instruction and looks authoritative. So a running machine gets live bytes in
+both views and no anchor; a paused one gets live bytes, the anchor, and the spotlight.
+
+**What replaced the switch in the header.** A quiet `Live` readout, in both views now, next to the
+existing diff badge. The state still has to be announced — a listing built from RAM and one built
+from the file look identical until they differ — but it is a label rather than a control, because it
+is the ordinary state whenever a machine is running rather than something the user did.
+
+**The efficiency gate moved rather than vanished.** Reads are gated on `bankPlacements` being
+non-undefined, which is true exactly when a ZX Spectrum Next is there with this bank in it and the
+machine answered — the same question that used to decide whether the switch could be offered.
+`useNexLiveBankBytes` additionally keeps its array identity when the bytes have not moved
+(`sameBankBytes`), which matters far more now than it did behind a switch: the disassembly is keyed
+on those bytes, and a fresh 16K array every tick would re-disassemble an idle bank several times a
+second.
+
+**Still open — annotation editing over a changed bank.** §11.3's follow-up asked for annotation
+editing to be disabled while live bytes show. That is not implemented, and "whenever live" is now far
+too broad a condition to disable it on: it would mean no annotating while debugging, which is when
+annotating is most wanted. The narrow hazard is real but smaller — a bank whose live bytes *differ*
+from the file (the diff badge is exactly this signal), where an annotation derived from a
+decompressed payload would be written into a sidecar that describes the compressed file. The
+candidate rule, if it is wanted, is to gate editing on `bankDiff.changed > 0` rather than on
+liveness. Left undecided deliberately.
 
 ### 11.4 Follow the PC — ✅ **done**
 
@@ -1515,7 +1574,64 @@ derives from:
 The rest of the suite — 245 breakpoint tests across ten files — passed unchanged throughout, which is
 the evidence that deriving the flags preserved semantics rather than quietly redefining them.
 
-### 13.1 Labels as live symbols
+### 13.1 Labels as live symbols — ◐ **operand names in the live view; panels and regions owed**
+
+In: a NEX's hand-made labels now name operands in the live **Disassembly** view. Owed: the Watch and
+Call Stack panels, and using the sidecar's `bytes`/`words`/`skip` regions to stop the live
+disassembler decoding data as code.
+
+#### The plan named the wrong hook
+
+"The hook already exists (`zx-spectrum-next-disassembler.ts`, installed via
+`setCustomDisassembler`)" — it does, but it is the hook for *taking over instruction decoding*, and
+`IDisassemblyApi` can neither name a label (`createLabel(address)` takes no name) nor learn which
+bank is paged in. Naming ordinary instructions through it would have meant re-implementing Z80
+decoding just to reach the point where a name could be attached.
+
+The hook that fits is **`DisassemblyOptions.operandLabelResolver`**, which the annotated pop-out
+listing already uses. So the live view gets the same mechanism the pop-out has, rather than a second
+one.
+
+#### The inverse of the paging map
+
+`nexLiveSymbols.ts` is pure and holds the whole decision:
+
+- `bankSiteAtAddress` inverts `resolveMem64kPartitions` — a slot's **8K page** halves to the 16K
+  bank, and the page's low bit says which half, which is the one bit that has to be recovered
+  because offsets within an 8K page and within a bank's half are the same number. Negative pages
+  (ROM, alt ROM, DivMMC) are not the NEX's banks and name nothing.
+- `findNexLabelForAddress` compares a **global** label against the address as given (its value is a
+  16-bit address, so it means the same whatever is paged) and a **local** one against the bank
+  offset — so a local name appears and disappears as the program pages, which is the behaviour worth
+  having.
+- Global wins a tie: it names one place in the address space, where a local label names a place in
+  a bank that could be anywhere.
+
+#### A cycle, and why the parameter is a factory
+
+The first wiring passed a finished resolver from the panel. That is a **cycle**: naming a local label
+needs the current paging, the paging arrives with the memory read `useDisassemblyRefresh` performs,
+and the panel derives `mem64kPartitions` from what the hook *returns*. TypeScript caught it as
+"used before its declaration", which was the shallow symptom of a real ordering problem.
+
+Breaking it from the outside would have meant naming from the *previous* refresh's paging — wrong for
+exactly the case the feature exists for. So the parameter is `operandLabelSource`, a factory over the
+paging: the caller supplies the symbols (a document-level concern the hook knows nothing about) and
+the hook supplies the paging, fresh from the read it just did.
+
+#### Two things worth recording
+
+- **The annotations source is a module singleton read during render.** `useLaunchedNexAnnotations`
+  reads §11.5's load session, whose identity changes only when a NEX is launched, and this panel
+  re-renders on the disassembly refresh tick — so a launch is picked up within a tick. A
+  subscription for a value that changes once per launch would be machinery for its own sake; the
+  Memory Mapping panel reads it the same way.
+- **`nexAnnotationSidecar` drags Monaco into any test that imports it.** It does file IO *and* path
+  helpers, and the helpers import `project-node` as a value, which reaches the editor. Nine
+  `DisassemblyPanelRefactor` tests failed with `document.queryCommandSupported is not a function`
+  the moment the panel's import graph touched it. Mocked in that harness for now; the real fix is to
+  split the IO out of that module, which has its own tests and several importers and deserves its
+  own change.
 
 A `ICustomDisassembler` for the Next resolves live addresses through the annotations of whichever bank
 is paged in, so hand-made names appear in the live Disassembly view, the Watch panel and the Call
@@ -1526,7 +1642,7 @@ decoding data as code.
 ### 13.2 Label-anchored breakpoints (Q3) — ◐ **mechanism done, two entry points owed**
 
 In: the fields, the key notation, the resolution, the arming, and the sidecar-driven resolver.
-Owed: the `bp-set` grammar and a UI affordance for *creating* one, plus sidecar persistence.
+Owed: the `bp-set` grammar and a UI affordance for *creating* one.
 
 #### Identity is the label; the site is only ever resolved
 
@@ -1566,13 +1682,28 @@ therefore passing for the wrong reason. All three now pass objects, and the swit
 that throws: a closed union deserves an exhaustiveness guard precisely because the silent branch is
 this expensive.
 
-#### Deliberately not persisted yet
+#### Persisted in their own field
 
-`toSidecarBreakpoints` skips label-anchored breakpoints outright. A *resolved* one has an effective
+`toSidecarBreakpoints` skips label-anchored breakpoints outright: a *resolved* one has an effective
 bank site, so anything keyed off `isBankRelative` would store it as a bare bank and offset — losing
-the label that is its identity and reloading as a different kind of breakpoint that no longer
-follows anything. They need their own sidecar field. Until then they are session-lived, which is
-honest; a lossy save is not.
+the label that is its identity and reloading as a breakpoint that follows nothing.
+
+They live in `debug.labelBreakpoints` instead, storing the label, the bank for a local one (absent
+means global), the kind and the disabled flag — **and no offset**, which is the point: the label is
+the anchor and resolution finds where it points. They are restored **unresolved** and arm nowhere
+until `resolveLabelBreakpointsFor` runs against the loaded annotations, the same sequence a source
+breakpoint follows before its list file is read.
+
+An additive field within `debug`, not a schema bump: bumping to 3 would make a build reading only
+`[1, 2]` reject the whole file and lose access to the annotations too — much worse than losing
+these. The cost is worth stating plainly: `readDebug` rebuilds the subtree from the keys it knows, so
+a **previously shipped** build that opens such a file and then changes a breakpoint will drop these
+entries. Nothing here can fix that, since that build already exists.
+
+**One bug found writing it.** `saveNexDebugSubtree` decided the subtree was empty from
+`breakpoints` alone, so a sidecar whose only debug state was a label breakpoint had its `debug` key
+deleted. It counts both halves now, and omits each when empty so a file with one does not carry an
+empty array for the other.
 
 #### Original plan
 
@@ -1588,10 +1719,58 @@ Resolution rule: a **local** label's value is bank-relative, so it resolves to a
 breakpoint; a **global** label's value is a 16-bit address, so it resolves to a plain address
 breakpoint. Keys are file-qualified (§4.4, §4.7).
 
-### 13.3 Promote a discovery into an annotation
+### 13.3 Promote a discovery into an annotation — ✅ **done** (as a command)
 
-Paused at an address inside a bank: "add a label here in the NEX annotations" — closing the
-reverse-engineering loop.
+`nex-label <name> [<address>]` (alias `nl`) names the address the machine is stopped at, in the
+launched NEX's annotations. `nexLabelPromotion.ts` holds the decision; the command supplies the
+address, the paging and the write policy.
+
+**Phase 8 is now complete** in the sense that all four sub-items have landed; what each still owes
+is listed under it.
+
+#### Always a local label
+
+The address is only meaningful as "offset X in bank B" — the same routine sits at a different Z80
+address the next time its bank is paged elsewhere, which is exactly what a local label expresses and
+a global one does not. Which bank is read from the live mapping at the moment of naming, through
+§13.1's `bankSiteAtAddress`, and refused if the launched file does not declare it: a label written
+into annotations for code that is not this file's would be worse than no label.
+
+#### Paused, or told where
+
+Naming "where we are" on a running machine names an arbitrary instruction, for the same reason
+§11.4's spotlight only shows while paused. So the command requires a pause *unless* an address is
+given explicitly — which also makes it useful from a script.
+
+#### The write policy is §4.5's, and the interesting half
+
+With a **viewer open**, the edit goes into the annotation session and inherits "written when you
+ask": its copy may carry edits the user has not saved, so reading the file instead would drop them,
+and writing the file *with* them would flush edits they have not finished. With **no viewer**, there
+is nothing in memory to conflict with and the file is read, changed and written through
+`saveNexAnnotationSubtree` — which also means a breakpoint set since the file was read survives.
+
+That distinction needed a `peekNexAnnotationSession`: a one-shot command wants to know whether a
+session exists, not to subscribe to one.
+
+#### Two smaller findings
+
+- **`DEFAULT_REGION` is now exported.** Promoting into a bank the sidecar does not describe has to
+  create the entry — `withLabelChange` declines for a bank it cannot find, and losing the label is
+  the worst of the three options. Creating it with the same default a new sidecar uses is better
+  than this module inventing its own idea of an empty bank.
+- **The result type is not a discriminated union**, because the project compiles with
+  `strictNullChecks: false` and TypeScript will not narrow one by a boolean literal — so
+  `if (!result.ok) return result.error` does not compile. `NumericParseResult` in
+  `breakpoint-form.ts` already documents this and uses optional members; this follows it. The
+  compiler caught the attempt, which is the system working.
+
+#### Owed: an affordance in the UI
+
+A command, not a menu item. The live Disassembly view still has no row context menu (§10.4), and
+adding one to place a single item is the wrong order — the same reasoning that made run-to-cursor a
+gutter gesture. When that menu exists, "Add a label here" belongs in it and should call this
+command.
 
 ### 13.4 Source breakpoints carry the compiler's bank — ✅ **done**
 
@@ -1702,29 +1881,37 @@ Phase 8  symbols + label breakpoints   (last; needs Phase 2's schema and Phase 5
   they are visual changes. Record the durable rule, not the narrative.
 - Screenshots via `scripts/doc-shots/`; read `.ai/doc-screenshots-guide.md` first.
 
-## 18. Open items
+## 18. Open items — all closed
 
-The one that blocked Phase 2 is **answered**: Q9, the 8K page convention (§4.1). What remains is
-small enough not to block a start, and big enough not to want discovering during implementation:
-
-0. **Does `DebuggerState` gain a `schemaVersion` now?** Recommended in §4.1 so the *next* semantic
-   change to stored breakpoints is migratable — this one cannot be. Cheap, and unrelated to the rest
-   of the plan.
-
-1. **Does the breakpoint dialog author bank-relative breakpoints?** The gutter is the natural author,
-   and `BREAKPOINT_MANAGEMENT_UI_PLAN.md` §3 deliberately left source breakpoints to the editor
-   gutter for the same reason. Recommend: **not in Phase 5**; revisit once the gutter exists.
-2. **Closing a NEX document vs ending the debug session** — which unloads the sidecar-owned
-   breakpoints? Recommend the session, so closing a tab does not silently disarm breakpoints.
-3. **Launch options in the sidecar** (§4.5's `debug.launch`) — only `breakAtEntry` is needed for
-   Phase 5. Resist adding more until something asks for it.
+0. ~~**Does `DebuggerState` gain a `schemaVersion` now?**~~ **Done.** `DEBUGGER_STATE_SCHEMA_VERSION`
+   is 1 — "breakpoints as written since a positive Next partition means an 8K page" — written into
+   every saved project. The read side warns when a project declares a *newer* schema than this build
+   understands and loads it anyway: refusing would be worse than a warning for something usually
+   harmless, but the user is told where to look if a breakpoint then behaves oddly. Bump it when the
+   *meaning* of a stored breakpoint changes, not when a field is added.
+1. ~~**Does the breakpoint dialog author bank-relative breakpoints?**~~ **Yes, done in §10.2** — and
+   the recommendation ("not in Phase 5; revisit once the gutter exists") was followed exactly: the
+   gutter came first, and the dialog gained the shape when watchpoints needed an author the gutter
+   could not be. It is spelled into the **address field** (`05:+$0100`) rather than given controls of
+   its own, because that is what `bp-set` accepts.
+2. ~~**Closing a NEX document vs ending the debug session?**~~ **The recommendation's load-bearing
+   half already holds:** nothing unloads a sidecar's breakpoints on document close, so closing a tab
+   cannot silently disarm them. `installedSidecars` is forgotten only on a failed install (so the
+   next open retries) and in tests. Unloading them at *session end* is deliberately not implemented:
+   they are persisted in the sidecar and re-installed on the next open, so leaving them armed across
+   a machine stop costs nothing and removing them would need a session-end signal that does not
+   exist. Revisit only if something observes a problem.
+3. ~~**Launch options in the sidecar** (§4.5's `debug.launch`)~~ **Not needed, and not added.**
+   `breakAtEntry` turned out to belong to the *launch*, not to the file: it is `nex-run -e` and a
+   menu item, chosen per run. Nothing asked for a persisted launch option, so the field does not
+   exist. This is the recommendation ("resist adding more until something asks") honoured by
+   subtraction.
 4. ~~**Does `applyBreakpointEdit` round-trip `owner` intact?**~~ **Resolved in Phase 1:** yes, via the
    `{ kind: "all" }` scope, which keeps each breakpoint's own owner. Now covered by a test.
-5. **A NEX with no project loaded** sets plain address breakpoints with no project to save them to —
-   today's behaviour and no regression, but a case could be made for the sidecar adopting them.
-   Recommend: leave alone.
-
----
+5. ~~**A NEX with no project loaded**~~ **Left alone, as recommended** — and it is no longer the gap
+   it looked like: bank-relative *and* label-anchored breakpoints on a NEX are persisted in its
+   `.nex.dis` sidecar (§10.1a, §13.2), which needs no project at all. Only plain address breakpoints
+   set with no project open have nowhere to go, which is unchanged behaviour for every machine.
 
 ## 19. Concurrent work in the worktree — read before starting Phase 2
 
@@ -1773,3 +1960,43 @@ dropped `imminentJustCreated` guard in all four, and a missing `retExecuted` in 
 5. One thing to *check* rather than assume: that refactor's `getPartition` resolver feeds
    `debugSupport.shouldStopAt`, so **Q9 changes what it returns**. Nothing in the decision function
    interprets the value — it only passes it through — but confirm that when the two changes meet.
+
+---
+
+## 20. What is left
+
+Every phase has landed. What remains is listed here rather than left implicit, and none of it is
+load-bearing for the feature.
+
+### Owed by sub-items that shipped
+
+| Item | Owed |
+| --- | --- |
+| §9 (Phase 4) | Step 6 of the MVC guide's recipe: re-partition the DOM suite, which now over-tests rules the headless layers own. No test was deleted, so nothing is unaccounted for. |
+| §10.5 | A component test that a gutter click issues the right breakpoint. |
+| §13.1 | The Watch and Call Stack panels; and using the sidecar's `bytes`/`words`/`skip` regions to stop the live disassembler decoding data as code. |
+| §13.2 | The `bp-set` grammar for `[Game.nex.dis]:05:DrawSprite`, and an affordance for *creating* one. The notation is built and round-trips through the key; nothing parses it yet. |
+| §13.3 | A menu item. It is a command (`nex-label`) because the live Disassembly view still has no row context menu, and adding one to place a single item is the wrong order — the same reasoning that made run-to-cursor a gutter gesture. |
+| §17 | Screenshots via `scripts/doc-shots/`, which need the running app. |
+
+### Two structural follow-ups this work exposed
+
+Neither belongs to this plan, and both are recorded here because this is where they were found:
+
+1. **`test/` is outside `build:check`.** Three test call sites passed a bare string where a
+   `BreakpointScope` object was required; nothing told them, and the silent `undefined` that produced
+   turned `resetBreakpointsTo` into an append for as long as it went unnoticed (§13.2). Type-checking
+   the test directory would have caught it at the keystroke. The cleanup behind that switch is of
+   unknown size.
+2. **`nexAnnotationSidecar` mixes file IO with path helpers**, and the helpers import `project-node`
+   as a value, which reaches the editor — so any test whose import graph touches the module loads
+   Monaco. Nine `DisassemblyPanelRefactor` tests failed that way (§13.1) and are mocked for now.
+   Splitting the IO out is the fix.
+
+### Never verified
+
+**The app has not been run.** Every headless layer is tested and the suite is green, but nothing in
+Phases 5–8 has been seen working: the gutter's click-to-break, the entry stop, run-to-cursor, the
+four readouts and banners, the live symbol names, the PC spotlight, and the `nex-label` round trip.
+The plan's own gates say as much — "**Gate:** set a breakpoint in a popped-out bank, launch, and stop
+there — the feature's actual acceptance test" is still owed.

@@ -50,9 +50,20 @@
   padding: var(--space-0_5) 0 var(--space-1) var(--space-1);
 }
 
+/*
+ * One label/value pair in the header attributes.
+ *
+ * **No `min-height`.** It had `var(--space-6)` — 24px — which is taller than the app's own sidebar
+ * list rows (22px) for content that is denser than they are: a short label and a short value. The
+ * panel is the same kind of surface as the register/state panels, and those drop the row height for
+ * exactly this reason; `Data.module.scss`'s `.dense` records that keeping it made the Z80 panel 47%
+ * taller. `controls/layout`'s `.row` sets no height of its own, so the content decides, which is
+ * what every other dense panel in the app does.
+ *
+ * The flag rows below add their own `row-gap` because they wrap; their height comes from the icons.
+ */
 .headerAttributeRow {
   min-width: 0;
-  min-height: var(--space-6);
 }
 
 .headerFlagRow {

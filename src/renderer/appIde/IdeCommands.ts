@@ -86,6 +86,7 @@ import { ResetPasta80Command } from "./commands/Pasta80Commands";
 import { ZxNextStorageCopyCommand } from "./commands/ZxNextStorageCopyCommand";
 import { LaunchNexCommand } from "./commands/NexLaunchCommand";
 import { RunToCursorCommand } from "./commands/RunToCursorCommand";
+import { NexLabelCommand } from "./commands/NexLabelCommand";
 
 let commandsRegistered = false;
 
@@ -173,6 +174,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ZxNextStorageCopyCommand());
   cmdSrv.registerCommand(new LaunchNexCommand());
   cmdSrv.registerCommand(new RunToCursorCommand());
+  cmdSrv.registerCommand(new NexLabelCommand());
 }
 
 export function resetIdeCommandRegistrationForTests(): void {

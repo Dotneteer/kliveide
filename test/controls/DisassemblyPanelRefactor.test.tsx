@@ -146,6 +146,34 @@ async function renderDisassemblyPanel({
   // --- The panel opens the breakpoint editor through this hook, which reaches `AppServicesProvider`
   // --- and from there drags Monaco into the module graph — Monaco touches `document` APIs jsdom
   // --- does not implement. The panel's own editing path is covered in `BreakpointsPanelActions`.
+  /*
+   * Added for the live-symbol resolver, which reads the launched NEX's annotation sidecar through
+   * `projectService`. The panel had no services dependency before, and the real module pulls the
+   * editor — and therefore Monaco — into a suite that has no business loading it: the failure was
+   * `document.queryCommandSupported is not a function` from Monaco's clipboard contrib.
+   *
+   * No NEX is launched in these tests, so the resolver is absent and the listing renders exactly as
+   * it did. What the resolver decides when there *is* one is covered without a DOM in
+   * `test/renderer/nexLiveSymbols.test.ts`.
+   */
+  vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
+    useAppServices: () => ({
+      projectService: { readFileContent: vi.fn(() => Promise.reject(new Error("no sidecar"))) }
+    })
+  }));
+  /*
+   * ...and the sidecar loader itself, which is the module that actually drags Monaco in: it imports
+   * `project-node` as a value for its path helpers, and that reaches the editor. The failure is
+   * `document.queryCommandSupported is not a function`, from Monaco's clipboard contrib.
+   *
+   * A mock here rather than a fix there, deliberately: the root cause is that a module doing file
+   * IO carries the editor's dependency graph, and splitting the IO out of `nexAnnotationSidecar`
+   * is a change to a module with its own tests and several importers — worth doing on its own, not
+   * at the tail of this one. Recorded in `.plans/NEX_DEBUGGING_PLAN.md` §13.1.
+   */
+  vi.doMock("@renderer/appIde/DocumentPanels/Next/nexAnnotationSidecar", () => ({
+    loadNexAnnotationSidecar: vi.fn(() => Promise.resolve({ status: "missing" }))
+  }));
   vi.doMock("@renderer/appIde/dialogs/useBreakpointDialog", () => ({
     useBreakpointDialog: () => vi.fn().mockResolvedValue(false)
   }));

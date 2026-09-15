@@ -424,6 +424,17 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       ? splitInstructionOperands(viewModel?.instruction ?? "", item.operandCandidates)
       : undefined;
   const showRail = annotated && isAuthoredRow(item);
+  /*
+   * A synopsis paragraph is set off from the code by space at its outer edges only.
+   *
+   * The note is stored as one comment per line and rendered as one row per line, so the *block* is
+   * a run of rows rather than a single element. `synopsisEdge` (set where those rows are built, in
+   * `nexAnnotatedDisassembly`) says which end each row is, so the space lands above the first line
+   * and below the last and never between them — a gap on every line would read as three separate
+   * notes rather than one. A one-line synopsis is `"only"` and takes both.
+   */
+  const synopsisEdge = isPrefixComment ? item.annotation?.synopsisEdge : undefined;
+  const spacedSynopsis = synopsisEdge === "first" || synopsisEdge === "last" || synopsisEdge === "only";
 
   return (
     <div
@@ -431,7 +442,9 @@ export const DisassemblyRow = memo(function DisassemblyRow({
         [styles.even]: index % 2 == 0,
         [styles.selectedRangeItem]: selectedRange,
         [styles.selectedItem]: selected,
-        [styles.execPoint]: viewModel?.execPoint
+        [styles.execPoint]: viewModel?.execPoint,
+        [styles.synopsisBlockFirst]: synopsisEdge === "first" || synopsisEdge === "only",
+        [styles.synopsisBlockLast]: synopsisEdge === "last" || synopsisEdge === "only"
       })}
       data-testid={`disassembly-row-${index}`}
       data-annotation-offset={item.annotation?.bankOffset}
@@ -439,12 +452,24 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       data-annotation-region={item.annotation?.regionType}
       data-selected={selected ? "true" : undefined}
       data-selected-range={selectedRange ? "true" : undefined}
+      data-synopsis-edge={synopsisEdge}
       onClick={onClick}
       onContextMenu={onContextMenu}
       onKeyDown={onKeyDown}
       aria-selected={selected || selectedRange || undefined}
       tabIndex={onClick || onContextMenu || onKeyDown ? 0 : undefined}
-      style={{ height: rowHeight }}
+      /*
+       * The edge rows of a synopsis block are the one kind of row the stylesheet sizes.
+       *
+       * They are taller than a listing row by the gap that sets the note off from the code, and the
+       * app sets `box-sizing: border-box` universally (`assets/styles/index.css`) — so the gap has
+       * to be *added to* the declared height, not just padded into it, or it is taken out of the
+       * text's own box and nothing moves. The arithmetic lives with the gap it depends on, in
+       * `.synopsisBlockFirst` / `.synopsisBlockLast`; an inline height here would beat those rules
+       * and is therefore withheld. `--row-size-disassembly` and this prop are the same number from
+       * the same `getRowSizes`, so the rows still line up.
+       */
+      style={spacedSynopsis ? undefined : { height: rowHeight }}
     >
       {/*
         * Rendered on every annotated row, lit only on the authored ones, so the columns after it sit
@@ -563,14 +588,28 @@ export const DisassemblyRow = memo(function DisassemblyRow({
               isDirective ? styles.annotationDirective : styles.disassemblyInstruction
             }
           >
-            {instructionParts?.map((part, partIndex) =>
-              typeof part === "string" ? (
-                part
-              ) : (
-                <span key={partIndex} className={styles.annotationOperand}>
-                  {part.label}
-                </span>
-              )
+            {/*
+              * One wrapper around every part, rather than the parts as direct children.
+              *
+              * The cell is `display: flex` (`DataValue`), so direct children would make each run
+              * its own *anonymous flex item* — a block box, which drops the white space at the end
+              * of its line. That is what rendered `jp Start` as `jpStart`: the space belongs to the
+              * `"jp "` run that precedes the tinted operand. Inside one wrapper the runs share a
+              * single inline formatting context, so the space between them is ordinary inter-word
+              * space and survives.
+              */}
+            {instructionParts && (
+              <span className={styles.instructionRun}>
+                {instructionParts.map((part, partIndex) =>
+                  typeof part === "string" ? (
+                    part
+                  ) : (
+                    <span key={partIndex} className={styles.annotationOperand}>
+                      {part.label}
+                    </span>
+                  )
+                )}
+              </span>
             )}
           </Value>
           {/*

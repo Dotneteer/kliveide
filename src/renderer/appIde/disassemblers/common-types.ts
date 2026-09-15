@@ -164,6 +164,16 @@ export type DisassemblyAnnotationMetadata = {
    * Original disassembler-generated comment before user annotations are appended.
    */
   generatedHardComment?: string;
+
+  /**
+   * Where a synopsis row sits within its block, when the row is one.
+   *
+   * A synopsis is one comment per line, so a three-line note is three rows. The block is what the
+   * reader sees as a single paragraph, and only its outer edges take the breathing space that sets
+   * it off from the code — a gap between every line would read as three separate notes. A one-line
+   * synopsis is `"only"`: both edges at once.
+   */
+  synopsisEdge?: "first" | "middle" | "last" | "only";
 };
 
 /**

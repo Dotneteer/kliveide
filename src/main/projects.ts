@@ -193,6 +193,23 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       // --- Restore breakpoints, but only onto the machine this project actually installed. If a
       // --- concurrent machine change superseded ours, the live machine is somebody else's and
       // --- wiping its breakpoints to install this project's would corrupt that machine's state.
+      /*
+       * A project from a newer Klive.
+       *
+       * Its breakpoints may use a notation this build reads differently — which is the whole reason
+       * the marker exists. They are still loaded, because refusing would be worse than a warning
+       * for something that is usually harmless, but the user is told where to look if a breakpoint
+       * then behaves oddly.
+       */
+      const storedSchema = projectStruct.debugger?.schemaVersion;
+      if (storedSchema !== undefined && storedSchema > DEBUGGER_STATE_SCHEMA_VERSION) {
+        console.warn(
+          `Project '${projectFolder}' stores breakpoints in schema ${storedSchema}, but this ` +
+            `version of Klive understands ${DEBUGGER_STATE_SCHEMA_VERSION}. They have been ` +
+            "loaded, but a breakpoint may not mean what it did in the newer version."
+        );
+      }
+
       if (machineApplied) {
         const restoredBreakpoints = (projectStruct.debugger?.breakpoints ?? []).filter(
           (bp) => !(bp.line && bp.line <= 0)
@@ -375,6 +392,7 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
       theme: state.theme
     },
     debugger: {
+      schemaVersion: DEBUGGER_STATE_SCHEMA_VERSION,
       breakpoints,
       // --- Unlike breakpoints, watches live in the shared store rather than in the emulator, so
       // --- they are read straight from the state snapshot instead of over IPC.
@@ -499,8 +517,31 @@ interface ViewOptions {
   keyboardHeight?: number;
 }
 
+/**
+ * The breakpoint schema this build writes and understands.
+ *
+ * **1** is "breakpoints as written since a positive ZX Spectrum Next partition index means an 8K
+ * page". Bump it when the *meaning* of a stored breakpoint changes, and add the migration next to
+ * the read — not when a field is merely added, which older and newer builds both survive because
+ * every reader already tolerates absent fields.
+ */
+const DEBUGGER_STATE_SCHEMA_VERSION = 1;
+
 // --- Represents the state of the debugger
 type DebuggerState = {
+  /**
+   * The schema the stored breakpoints were written against.
+   *
+   * Absent in every project written before this marker existed, which is not a problem to fix: the
+   * one semantic change so far — a positive ZX Spectrum Next partition index meaning an 8K page
+   * rather than a 16K bank (§4.1) — is *not* migratable, because a stored index is genuinely
+   * ambiguous and a user following the documented behaviour already meant the new reading.
+   *
+   * It exists so the **next** such change is migratable, and so a project written by a newer Klive
+   * announces itself instead of loading breakpoints that quietly mean something else. See
+   * `.plans/NEX_DEBUGGING_PLAN.md` §18, item 0.
+   */
+  schemaVersion?: number;
   breakpoints: BreakpointInfo[];
   /**
    * Watch expressions. Optional so that projects written by an older build still load — they simply

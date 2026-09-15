@@ -52,8 +52,18 @@ Both writers read the file, replace only their own keys and write back, so neith
 other and a key a newer build adds survives an older build's save. A schema 1 file loads unchanged
 and is only rewritten as 2 when something is actually saved into it.
 
+The `debug` subtree holds two kinds: `breakpoints`, an offset in a bank, and `labelBreakpoints`,
+anchored to one of the file's labels with **no offset** — the label is the anchor, and resolution
+finds where it currently points, which is what lets such a breakpoint survive code moving within its
+bank. Both are written together, because the subtree is replaced wholesale.
+
 Breakpoints in the sidecar are the *only* place these are persisted: `.kliveproject` deliberately
 excludes them, so a NEX opened with no project still keeps its breakpoints.
+
+Annotations can also be written from the debugger rather than only in the viewer: `nex-label <name>`
+adds a bank-local label at the address the machine is paused at. It follows the same two save
+policies as every other annotation edit — into the session when a viewer is open, written through
+when one is not — which is why it asks whether a session exists before deciding.
 
 A popped-out bank's memory view can show the bank's **live** contents instead of the file's, marking
 what differs. The disassembly view deliberately cannot: the annotation model's listing is derived

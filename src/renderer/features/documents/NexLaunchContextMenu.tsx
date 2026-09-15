@@ -1,4 +1,4 @@
-import { TabButton, TabButtonSeparator } from "@renderer/controls/TabButton";
+import { TabButton, TabButtonSeparator, TabButtonSpace } from "@renderer/controls/TabButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useSelector } from "@renderer/core/RendererProvider";
 
@@ -96,12 +96,16 @@ const NexLaunchCommandBar = ({ path }: Props) => {
         disabled={!canLaunch}
         clicked={async () => await launch("run")}
       />
+      {/* --- `TabButtonSpace` between buttons is the convention the build-root and scripting bars
+          --- already follow; without it these three read as one run of icons. */}
+      <TabButtonSpace />
       <TabButton
         iconName="debug"
         title={`Debug this NEX file${canLaunch ? "" : notNextHint}`}
         disabled={!canLaunch}
         clicked={async () => await launch("debug")}
       />
+      <TabButtonSpace />
       <TabButton
         iconName="debug-with-bp"
         title={`Debug this NEX file, breaking at its entry point${

@@ -46,6 +46,30 @@ export function joinBankHalves(
   return joined;
 }
 
+/**
+ * Are these two reads of a bank the same bytes?
+ *
+ * The live view refetches on every tick, so it produces a fresh `Uint8Array` whether or not the
+ * machine wrote anything. Left alone, that new array identity is a *change* to every consumer that
+ * keys off it — and since the disassembly is now rebuilt from the live bytes, a bank nobody is
+ * writing to would re-disassemble a few times a second and hand the listing a new array each time.
+ *
+ * Comparing 16K is a few microseconds and turns "the bytes arrived again" into "the bytes are
+ * different", which is the question every consumer actually has. `useNexLiveBankBytes` uses it to
+ * keep the previous array identity when nothing moved, so React bails out of the re-render.
+ */
+export function sameBankBytes(
+  a: Uint8Array | undefined,
+  b: Uint8Array | undefined
+): boolean {
+  if (a === b) return true;
+  if (!a || !b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 /** Which bytes of the bank differ from the file, and how many. */
 export type BankDiff = {
   /** One entry per byte: `1` where the live value differs from the file's. */

@@ -48,7 +48,14 @@ export type NexAnnotationToolbarViewModel = {
  */
 export type NexAnnotationMenuEntry =
   | { kind: "separator" }
-  | { kind: "item"; id: NexAnnotationMenuAction; text: string; disabled: boolean };
+  | {
+      kind: "item";
+      id: NexAnnotationMenuAction;
+      text: string;
+      disabled: boolean;
+      /** The key that reaches this action from the listing, spelled for display. */
+      shortcut?: string;
+    };
 
 export type NexAnnotationMenuAction =
   | "manage-labels"
@@ -148,8 +155,90 @@ function selectWarning(
  *
  * - **Assign Operand Label** needs a row with decoded 16-bit operands to attach to, so it is
  *   unavailable on a prefix row (a synopsis comment) and on any instruction with no operand.
- * - **Manage Labels** and **Manage Regions** act on the whole bank, so they do not need a row.
+ * - **Manage Labels** acts on the whole bank, so it does not need a row.
+ * - **Manage Regions** reads as bank-wide too, and was enabled on the same terms — but the
+ *   controller seeds its dialog from the active row's offset and gives up when there is none, so
+ *   the entry offered something it could not do and clicking it did nothing at all. It takes the
+ *   row rule instead. That was invisible while this was a menu item a user might not click twice;
+ *   it stopped being invisible once `R` reached it, because a dead keystroke explains nothing
+ *   whereas a greyed entry does.
  */
+/**
+ * The keys that reach an annotation action from the focused listing.
+ *
+ * **Bare letters, and `Shift` for the wider variant of a pair.** Every other family of keys is
+ * spoken for on at least one of the three platforms: the app menu already owns `F4`/`F5` and their
+ * `Shift`/`Ctrl` forms (and `accelerator`s fire globally, so the renderer could not take them back),
+ * macOS needs `Fn` for function keys at all, `Alt` opens the menu bar on Windows and Linux while
+ * composing characters on macOS, and `Ctrl`+letter collides with macOS's own text-editing bindings
+ * where `Cmd` is the idiom instead. A plain letter is reserved by nothing, anywhere — the same
+ * reasoning the sprite editor's shortcuts already follow.
+ *
+ * Letters, not punctuation: `;` for a comment is tempting and more mnemonic in assembly, but it
+ * moves around on non-US layouts, and `A`-`Z` do not.
+ *
+ * **This table is the whole set**, by decision rather than by accident: the Mark As commands and
+ * Clear Row Annotations are reachable from the menu only. So the letters left over are simply free,
+ * not held in reserve for anything — a later binding may take whichever it likes. Two choices here
+ * were nevertheless made with the wider menu in view and still read oddly without it: `C` is the
+ * comment rather than "code", and the two whole-bank managers pair up as `M`anage labels and
+ * `R`egions, which is why Manage Labels does not take `L` — that is the label dialog itself.
+ *
+ * **Shift is the second reading of a letter, not one fixed meaning.** `Shift+C` is the bigger of
+ * the two comments — the synopsis block above the line rather than the note beside it — while
+ * `Shift+L` is the narrower of the two labels, the one **l**ocal to the bank. Reading Shift as
+ * "wider" everywhere would have made `L` the local label, and the unshifted key should be the one
+ * reached most often.
+ */
+export const NEX_ANNOTATION_SHORTCUTS: {
+  action: NexAnnotationMenuAction;
+  /** Matched against `KeyboardEvent.key`, case-insensitively. */
+  key: string;
+  shift: boolean;
+  /** How the key is written in the menu. */
+  hint: string;
+}[] = [
+  { action: "comment", key: "c", shift: false, hint: "C" },
+  { action: "synopsis", key: "c", shift: true, hint: "Shift+C" },
+  { action: "global-label", key: "l", shift: false, hint: "L" },
+  { action: "local-label", key: "l", shift: true, hint: "Shift+L" },
+  { action: "operand-label", key: "o", shift: false, hint: "O" },
+  { action: "manage-labels", key: "m", shift: false, hint: "M" },
+  { action: "manage-regions", key: "r", shift: false, hint: "R" }
+];
+
+/**
+ * The action a keystroke stands for, or `undefined` for a key that is not ours.
+ *
+ * Pure, so the whole table is assertable without a DOM. The caller is responsible for refusing a
+ * keystroke whose menu entry is disabled — see `menuEntryFor`, which is what keeps a shortcut and
+ * its menu item from ever disagreeing about availability.
+ */
+export function annotationActionForKey(
+  key: string,
+  shift: boolean
+): NexAnnotationMenuAction | undefined {
+  const lowered = key.toLowerCase();
+  return NEX_ANNOTATION_SHORTCUTS.find(
+    (entry) => entry.key === lowered && entry.shift === shift
+  )?.action;
+}
+
+/** The menu entry for an action, so a caller can read the enablement the menu already decided. */
+export function menuEntryFor(
+  menu: NexAnnotationMenuEntry[],
+  action: NexAnnotationMenuAction
+): Extract<NexAnnotationMenuEntry, { kind: "item" }> | undefined {
+  return menu.find(
+    (entry): entry is Extract<NexAnnotationMenuEntry, { kind: "item" }> =>
+      entry.kind === "item" && entry.id === action
+  );
+}
+
+const SHORTCUT_HINTS = new Map(
+  NEX_ANNOTATION_SHORTCUTS.map((entry) => [entry.action, entry.hint])
+);
+
 function selectMenu(
   state: NexAnnotationEditorState,
   enabled: boolean
@@ -159,11 +248,17 @@ function selectMenu(
     id: NexAnnotationMenuAction,
     text: string,
     disabled = rowActionsDisabled
-  ): NexAnnotationMenuEntry => ({ kind: "item", id, text, disabled });
+  ): NexAnnotationMenuEntry => ({
+    kind: "item",
+    id,
+    text,
+    disabled,
+    shortcut: SHORTCUT_HINTS.get(id)
+  });
 
   return [
     item("manage-labels", "Manage Labels...", !enabled),
-    item("manage-regions", "Manage Regions...", !enabled),
+    item("manage-regions", "Manage Regions..."),
     { kind: "separator" },
     item("synopsis", "Synopsis Comment..."),
     item("comment", "End-of-Line Comment..."),

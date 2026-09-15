@@ -184,6 +184,21 @@ describe("saveKliveProject", () => {
     ]);
   });
 
+  it("stamps the breakpoint schema it wrote", async () => {
+    /*
+     * A forward-looking marker. The one semantic change so far — a positive ZX Next partition being
+     * an 8K page — is not migratable, so this exists for the *next* one, and so a project written by
+     * a newer Klive announces itself instead of loading breakpoints that quietly mean something
+     * else. See `.plans/NEX_DEBUGGING_PLAN.md` §18, item 0.
+     */
+    const { saveKliveProject } = await import("@main/projects");
+
+    await saveKliveProject();
+
+    const contents = JSON.parse(fs.readFileSync(projectFile, "utf8"));
+    expect(contents.debugger.schemaVersion).toEqual(1);
+  });
+
   it("rewrites the file when it was modified outside the app", async () => {
     const { saveKliveProject } = await import("@main/projects");
 

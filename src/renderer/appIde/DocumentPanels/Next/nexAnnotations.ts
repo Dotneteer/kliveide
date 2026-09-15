@@ -73,6 +73,23 @@ export type NexSidecarBreakpoint = {
 };
 
 /**
+ * A **label-anchored** breakpoint as the sidecar stores it.
+ *
+ * No offset: the label *is* the anchor, and resolution finds where it currently points. That is the
+ * whole reason this shape exists rather than reusing `NexSidecarBreakpoint` — storing an offset
+ * would make it a bank breakpoint that happened to be named, and it would stop meaning the same
+ * thing the moment the code moved.
+ *
+ * `bank` absent means a **global** label. See `.plans/NEX_DEBUGGING_PLAN.md` §13.2.
+ */
+export type NexSidecarLabelBreakpoint = {
+  label: string;
+  bank?: number;
+  kind: NexSidecarBreakpointKind;
+  disabled?: boolean;
+};
+
+/**
  * The sidecar's debug subtree.
  *
  * Saved **independently of the annotations beside it**, and on a different policy: annotation edits
@@ -82,6 +99,19 @@ export type NexSidecarBreakpoint = {
  */
 export type NexDebugState = {
   breakpoints?: NexSidecarBreakpoint[];
+  /**
+   * Breakpoints anchored to this file's labels.
+   *
+   * An additive field within `debug`, not a schema bump: bumping to 3 would make a build that reads
+   * only `[1, 2]` reject the whole file, losing access to the annotations as well — much worse than
+   * losing these.
+   *
+   * The cost is real and worth stating: `readDebug` rebuilds this subtree from the keys it knows,
+   * so a **previously shipped** build that opens such a file and then saves a breakpoint change
+   * will drop these entries. Nothing here can fix that, since that build already exists. Future
+   * additions inside `debug` have the same exposure.
+   */
+  labelBreakpoints?: NexSidecarLabelBreakpoint[];
 };
 
 export type NexFileAnnotations = {
@@ -123,7 +153,14 @@ const REGION_TYPES = new Set<NexAnnotationRegionType>([
 ]);
 const LABEL_SCOPES = new Set<NexAnnotationLabelScope>(["global", "local"]);
 const BANK_VIEWS = new Set<NexAnnotationBankView>(["memory", "disassembly"]);
-const DEFAULT_REGION: NexAnnotationRegion = {
+/**
+ * What a bank's coverage is when nothing has been said about it: the whole bank, disassembled.
+ *
+ * Exported so the one other place that has to *create* a bank entry — promoting a label into a bank
+ * the sidecar does not yet describe (§13.3) — creates the same thing a new sidecar would, rather
+ * than its own idea of an empty bank.
+ */
+export const DEFAULT_REGION: NexAnnotationRegion = {
   start: 0,
   end: NEX_BANK_LAST_OFFSET,
   type: "disassemble"
@@ -257,10 +294,14 @@ function readDebug(
     diagnostics.push(error(path, "debug must be a JSON object."));
     return undefined;
   }
-  if (value.breakpoints === undefined) return {};
+  const labelBreakpoints = readLabelBreakpoints(value.labelBreakpoints, path, diagnostics);
+  const withLabels = (state: NexDebugState): NexDebugState =>
+    labelBreakpoints.length ? { ...state, labelBreakpoints } : state;
+
+  if (value.breakpoints === undefined) return withLabels({});
   if (!Array.isArray(value.breakpoints)) {
     diagnostics.push(error(`${path}.breakpoints`, "breakpoints must be an array."));
-    return {};
+    return withLabels({});
   }
 
   const breakpoints: NexSidecarBreakpoint[] = [];
@@ -294,7 +335,57 @@ function readDebug(
     breakpoints.push(breakpoint);
   });
 
-  return breakpoints.length > 0 ? { breakpoints } : {};
+  return withLabels(breakpoints.length > 0 ? { breakpoints } : {});
+}
+
+/**
+ * The label-anchored breakpoints in a `debug` subtree.
+ *
+ * A malformed entry is dropped with a warning rather than failing the file, for the same reason the
+ * bank breakpoints beside it are: a breakpoint nobody can place is worth less than the annotations
+ * around it.
+ */
+function readLabelBreakpoints(
+  value: unknown,
+  path: string,
+  diagnostics: NexAnnotationDiagnostic[]
+): NexSidecarLabelBreakpoint[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    diagnostics.push(warning(`${path}.labelBreakpoints`, "labelBreakpoints must be an array."));
+    return [];
+  }
+
+  const entries: NexSidecarLabelBreakpoint[] = [];
+  value.forEach((entry, index) => {
+    const entryPath = `${path}.labelBreakpoints[${index}]`;
+    if (!isRecord(entry)) {
+      diagnostics.push(warning(entryPath, "Label breakpoint must be a JSON object; ignored."));
+      return;
+    }
+    const { label, bank, kind, disabled } = entry as Record<string, unknown>;
+    if (typeof label !== "string" || !isValidNexLabelName(label)) {
+      diagnostics.push(warning(entryPath, "label must be a valid label name; ignored."));
+      return;
+    }
+    // --- Absent is a *global* label, which is a meaningful state rather than a missing field.
+    if (bank !== undefined && !isBankNumber(bank)) {
+      diagnostics.push(warning(entryPath, `bank must be 0..${NEX_MAX_BANK}; ignored.`));
+      return;
+    }
+    if (kind !== "exec" && kind !== "memRead" && kind !== "memWrite") {
+      diagnostics.push(warning(entryPath, "kind must be exec, memRead or memWrite; ignored."));
+      return;
+    }
+
+    const breakpoint: NexSidecarLabelBreakpoint = { label, kind };
+    // --- Narrowed by `isBankNumber` above; the `!== undefined` guard around it is what leaves the
+    // --- type as `unknown` here rather than `number`.
+    if (isBankNumber(bank)) breakpoint.bank = bank;
+    if (disabled === true) breakpoint.disabled = true;
+    entries.push(breakpoint);
+  });
+  return entries;
 }
 
 function isBankNumber(value: unknown): value is number {

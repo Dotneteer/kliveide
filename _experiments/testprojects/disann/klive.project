@@ -20,19 +20,8 @@
     "theme": "dark"
   },
   "debugger": {
-    "breakpoints": [
-      {
-        "address": 42531,
-        "exec": true,
-        "ioMask": 65535
-      },
-      {
-        "bank": 2,
-        "bankOffset": 9763,
-        "exec": true,
-        "ioMask": 65535
-      }
-    ],
+    "schemaVersion": 1,
+    "breakpoints": [],
     "watchExpressions": []
   },
   "builder": {
@@ -58,36 +47,10 @@
               "position": {
                 "line": 0,
                 "column": 0
-              },
-              "viewState": {
-                "scrollPosition": 400.7503356933594,
-                "bankFlagsExpanded": false,
-                "bankExpanded": {
-                  "0": true
-                }
-              }
-            },
-            {
-              "type": "Disassembly",
-              "id": "$disassembly",
-              "position": {
-                "line": 0,
-                "column": 0
-              },
-              "viewState": {
-                "topAddress": 60718,
-                "isFullView": true,
-                "currentSegment": 0,
-                "decimalView": false,
-                "bankLabel": true,
-                "autoRefresh": true,
-                "ram": true,
-                "screen": false,
-                "disassOffset": 0
               }
             }
           ],
-          "activeDocumentId": "$disassembly"
+          "activeDocumentId": "memoryDump-bankDump/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex:5"
         }
       ]
     }

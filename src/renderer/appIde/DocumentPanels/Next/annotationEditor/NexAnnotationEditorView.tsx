@@ -91,6 +91,14 @@ export const NexAnnotationMenu = ({
           key={entry.id}
           text={entry.text}
           disabled={entry.disabled}
+          /*
+            * The key that also reaches this action, in the menu's own trailing slot.
+            *
+            * Discoverability is the whole cost of choosing bare letters: nothing about the listing
+            * suggests that a lone `N` does anything, so the menu has to say so. The hint comes from
+            * the same table the keyboard handler matches against, so the two cannot drift.
+            */
+          trailing={entry.shortcut}
           clicked={() => {
             api.conceal();
             dispatch(intentForAction(entry.id, rowIndex));

@@ -29,7 +29,10 @@ import { deriveLabelWidthCh, DisassemblyRow } from "@renderer/appIde/DocumentPan
 import {
   useContextMenuState
 } from "@renderer/controls/ContextMenu";
-import { createAnnotatedNexDisassemblyItems } from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
+import {
+  createAnnotatedNexDisassemblyItems,
+  pcAnchoredRuns
+} from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
 import { useNexAnnotationEditor } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/useNexAnnotationEditor";
 import {
   formatBankLocation,
@@ -54,9 +57,14 @@ import {
 } from "@renderer/appIde/DocumentPanels/Next/useNexBankBreakpoints";
 import type { NexAnnotationEditorEnvironment } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorModel";
 import {
+  intentForAction,
   NexAnnotationMenu,
   NexAnnotationToolbar
 } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorView";
+import {
+  annotationActionForKey,
+  menuEntryFor
+} from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorViewModel";
 import {
   getBankAnnotation,
   getNexBankAddressOffset,
@@ -167,41 +175,47 @@ const StaticMemoryDump = ({
   const bankPlacements = useNexBankLocation(currentViewState.nexAnnotationBank);
 
   /*
-   * File bytes or the machine's, and what differs between them.
+   * File bytes or the machine's — and the machine's whenever there is a machine to ask.
    *
-   * Deliberately **not** in the document's view state or the annotation sidecar: it is a statement
-   * about the machine currently running, not a property of the file. Restoring "Live" into a
-   * session with no machine would show a document that silently means something else than it says.
+   * There is no switch any more. A popped-out bank is opened to debug a program, and the bytes that
+   * matter for that are the ones the Z80 will actually execute: a bank that decompressed itself, a
+   * buffer written over its own loader, a routine patched at run time. Asking the user to turn that
+   * on made the debugger's most useful view the one you had to know to ask for, and made every
+   * listing ambiguous until you checked the switch.
    *
-   * `liveBank` is undefined whenever the machine cannot answer, which is what disables the switch —
-   * so the control cannot be turned on into a view that has nothing to show.
+   * The file's bytes still answer a question, and the diff readout is what answers it now — it says
+   * how far the machine has drifted from the file without making the reader choose which of the two
+   * they are being shown.
+   *
+   * Reads are gated on `bankPlacements` rather than run unconditionally: it is non-undefined exactly
+   * when this is a ZX Spectrum Next with this bank in it and the machine answered, which is the same
+   * question that used to decide whether the switch could be offered. Without the gate this would be
+   * 16K of IPC per tick for every open bank document whether a machine exists or not.
+   *
+   * `liveBank` is undefined whenever the machine cannot answer, and everything below falls back to
+   * the file on its own. That is the whole of the "no machine" story: a NEX opened for reading, with
+   * nothing running, shows exactly what it always did.
    */
-  const [showLiveBank, setShowLiveBank] = useState(false);
-  const liveBank = useNexLiveBankBytes(currentViewState.nexAnnotationBank, showLiveBank);
+  const liveBankWanted = bankPlacements !== undefined;
+  const liveBank = useNexLiveBankBytes(currentViewState.nexAnnotationBank, liveBankWanted);
   const bankDiff = useMemo(() => diffBankBytes(contents, liveBank), [contents, liveBank]);
+  const liveBankShown = liveBank !== undefined;
   /*
-   * Whether the switch can be *offered* is answered by the location readout, not by having already
-   * fetched the bytes: `bankPlacements` is non-undefined exactly when this is a ZX Spectrum Next
-   * with a bank and the machine answered. Waiting for the bytes would mean reading 16K over IPC on
-   * every tick of every open bank document just to decide whether to draw a switch.
-   */
-  const liveBankOffered = bankPlacements !== undefined;
-  const liveBankShown = showLiveBank && liveBank !== undefined;
-  /*
-   * The **memory view** reads this; the disassembly view deliberately does not.
+   * **Both** views read this now — the disassembly view used to be pinned to the file.
    *
-   * Live disassembly would be useful — a bank that decompressed itself is the case this feature
-   * exists for — but it cannot be had by swapping the array. The annotation editor owns a listing
-   * derived from the file's bytes and addresses its actions by *row index*, and live bytes
-   * disassemble to different instruction lengths, so the two listings would drift apart by a row
-   * and the row menu would act on a line the user did not click. Annotations describe the file, so
-   * the fix is not to feed the editor live bytes either.
+   * The reason it was pinned no longer holds. The worry was that the annotation editor addresses its
+   * actions by row index while live bytes disassemble to different instruction lengths, so the
+   * listing and the editor would drift apart by a row. But the editor resolves a row *through the
+   * item it rendered* — `item.annotation?.bankOffset`, falling back to
+   * `listedBankOffset(item.address, ...)` — so it acts on the offset of the row that was clicked,
+   * whichever byte array produced the listing. The two cannot drift, because there is only one
+   * listing.
    *
-   * The live switch therefore shows only in the memory view (see the header), rather than being
-   * offered in a view where it would quietly mean something else. See
-   * `.plans/NEX_DEBUGGING_PLAN.md` §11.3.
+   * What the sidecar stores is bank *offsets*, and a bank is 16K whether it was read from the file
+   * or out of RAM, so its regions go on meaning the same thing. Only the instructions decoded inside
+   * a region change — which is the point.
    */
-  const bankBytes = liveBankShown ? liveBank : contents;
+  const bankBytes = liveBank ?? contents;
   /*
    * The program counter's spotlight, when it is in this bank.
    *
@@ -298,6 +312,27 @@ const StaticMemoryDump = ({
     ]
   );
 
+  /*
+   * Take the listing's keyboard surface back once an annotation dialog is done with it.
+   *
+   * The annotation shortcuts are bare letters, which are only heard while the listing itself is
+   * focused. Returning focus to whatever opened a dialog is the modal's job and it does it — this
+   * is the panel's backstop for the case where focus ends up on nothing at all, which is how the
+   * shortcuts came to look dead after the first dialog: every later keystroke went to `<body>`
+   * until the user clicked a row again.
+   *
+   * **Only from `<body>`**, deliberately. That is the browser's way of saying nothing holds focus,
+   * so claiming it takes nothing from anyone. If the user has moved to another panel, a field, or
+   * a second dialog stacked over this one, that is a real choice and the listing leaves it alone.
+   */
+  const reclaimDisassemblyFocus = useCallback(() => {
+    // --- `window.document`, because this component's own `document` prop is the open editor, not
+    // --- the DOM. Spelling it out is the point: the bare name here means the wrong thing.
+    const active = window.document.activeElement;
+    if (active && active !== window.document.body) return;
+    disassemblyListRef.current?.focus();
+  }, []);
+
   const {
     vm: annotationVm,
     dispatch: dispatchAnnotation,
@@ -306,13 +341,19 @@ const StaticMemoryDump = ({
     env: annotationEnv,
     contents,
     onNavigateToAddress: navigateDisassemblyTo,
-    onDirtyChanged: markDocumentAnnotationDirty
+    onDirtyChanged: markDocumentAnnotationDirty,
+    onDialogClosed: reclaimDisassemblyFocus
   });
 
   // --- Read through refs by the two callbacks that outlive a render: the document API effect runs
   // --- once, and the keyboard handler needs the selection as of *now*, not as of its own render.
   const confirmDisposalRef = useRef(confirmDisposal);
   confirmDisposalRef.current = confirmDisposal;
+  // --- Read through a ref for the same reason the selection is: the keyboard handler needs the
+  // --- menu's enablement as of *now*, and re-creating the handler on every menu change would
+  // --- rebuild it on every selection move.
+  const annotationVmRef = useRef(annotationVm);
+  annotationVmRef.current = annotationVm;
   const selectedRangeRef = useRef<{ activeIndex: number }>();
   selectedRangeRef.current = annotationVm.listing.selectedRange
     ? { activeIndex: annotationVm.listing.selectedRange.end }
@@ -523,6 +564,37 @@ const StaticMemoryDump = ({
         (disassemblyListRef.current?.clientHeight ?? 0) / disassemblyRowItemSize
       ) || STATIC_DISASSEMBLY_FALLBACK_PAGE_ROWS
     );
+    /*
+     * An annotation shortcut, before the navigation keys.
+     *
+     * **Availability is not decided here.** The action's own menu entry already carries it — the
+     * same `disabled` the context menu draws — so a shortcut and its menu item cannot drift apart
+     * as the rules change. A disabled action simply falls through to the navigation switch, which
+     * ignores a letter anyway.
+     *
+     * **The row is named explicitly**, as the current selection's active end rather than left to
+     * the controller's `rowIndex ?? contextTarget ?? selection` fallback. Nothing ever emits
+     * `contextTargetCleared`, so a right-click leaves `contextTarget` pointing at that row for as
+     * long as the selection lives — and a shortcut pressed after arrowing away would have edited
+     * the row the user right-clicked minutes ago. Naming the row also keeps range edits intact:
+     * `actionRange` widens any index inside the selection back to the whole range.
+     *
+     * A handled key must stop propagating: the emulated machine's keyboard is a `window` listener
+     * that runs whenever a machine is *Running*, whatever has focus (`useEmulatorKeyboard`), so a
+     * bare letter that merely called `preventDefault` would open the dialog *and* type into the
+     * Spectrum.
+     */
+    if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+      const action = annotationActionForKey(event.key, event.shiftKey);
+      const entry = action ? menuEntryFor(annotationVmRef.current.menu, action) : undefined;
+      if (action && entry && !entry.disabled) {
+        event.preventDefault();
+        event.stopPropagation();
+        dispatchAnnotation(intentForAction(action, selectedRangeRef.current?.activeIndex));
+        return;
+      }
+    }
+
     switch (event.key) {
       case "ArrowDown":
         event.preventDefault();
@@ -558,7 +630,12 @@ const StaticMemoryDump = ({
         );
         break;
     }
-  }, [disassemblyItems.length, disassemblyRowItemSize, moveDisassemblySelection]);
+  }, [
+    disassemblyItems.length,
+    disassemblyRowItemSize,
+    dispatchAnnotation,
+    moveDisassemblySelection
+  ]);
 
   const openDisassemblyContextMenu = useCallback((
     index: number,
@@ -590,23 +667,38 @@ const StaticMemoryDump = ({
         ? await createAnnotatedNexDisassemblyItems({
             annotations,
             bank: currentViewState.nexAnnotationBank,
-            contents,
+            contents: bankBytes,
             decimalView,
-            disassOffset
+            disassOffset,
+            pcBankOffset
           })
         : undefined;
       let outputItems = annotationItems;
       if (!outputItems) {
-        const memorySections = [
-          new MemorySection(0x0000, Math.max(0, contents.length - 1))
-        ];
-        const disassembler = new Z80Disassembler(memorySections, contents, undefined, {
-          allowExtendedSet: true,
-          decimalMode: decimalView
-        });
-        disassembler.setAddressOffset(disassOffset);
-        const output = await disassembler.disassemble(0x0000, contents.length - 1);
-        outputItems = output?.outputItems ?? [];
+        /*
+         * One run, or two with the cut at the program counter.
+         *
+         * A fresh disassembler per run rather than one reused across both: each is given the section
+         * it is actually decoding, which is what `createInstructionItems` does on the annotated path
+         * and avoids depending on whether a second `disassemble` on the same instance starts clean.
+         */
+        const lastOffset = Math.max(0, bankBytes.length - 1);
+        const collected: DisassemblyItem[] = [];
+        for (const [runStart, runEnd] of pcAnchoredRuns(0x0000, lastOffset, pcBankOffset)) {
+          const disassembler = new Z80Disassembler(
+            [new MemorySection(runStart, runEnd)],
+            bankBytes,
+            undefined,
+            {
+              allowExtendedSet: true,
+              decimalMode: decimalView
+            }
+          );
+          disassembler.setAddressOffset(disassOffset);
+          const output = await disassembler.disassemble(runStart, runEnd);
+          collected.push(...(output?.outputItems ?? []));
+        }
+        outputItems = collected;
       }
       if (!cancelled) {
         setDisassemblyItems(outputItems);
@@ -617,7 +709,18 @@ const StaticMemoryDump = ({
       cancelled = true;
     };
   }, [
-    contents,
+    /*
+     * `bankBytes`, not `contents`: the listing follows the machine.
+     *
+     * Safe as a dependency only because `useNexLiveBankBytes` keeps the array identity when the
+     * bytes have not moved. Were it to hand back a fresh 16K array on every tick, this effect would
+     * re-disassemble an idle bank several times a second.
+     *
+     * `pcBankOffset` is here so that a step re-anchors the listing. It only ever has a value while
+     * the machine is paused, so this does not re-run while the program is running.
+     */
+    bankBytes,
+    pcBankOffset,
     currentViewState.nexAnnotationBank,
     decimalView,
     disassOffset,
@@ -678,21 +781,25 @@ const StaticMemoryDump = ({
             <LabelSeparator width={8} />
           </>
         )}
-        {viewMode === "memory" && liveBankOffered && (
+        {liveBankShown && (
           <>
             {/*
-              * File bytes, or the machine's.
+              * A readout, not a control.
               *
-              * Only in the memory view, and only when the machine can actually answer — a switch
-              * that can be turned on into an empty view is worse than no switch. See `bankBytes`
-              * for why the disassembly view does not offer it.
+              * The switch is gone, but the thing it used to announce still has to be announced: a
+              * listing built from RAM and one built from the file look identical until they differ,
+              * and the reader has to know which of the two is in front of them. In both views now,
+              * because the disassembly is built from the machine's bytes too.
               */}
-            <LabeledSwitch
-              value={showLiveBank}
-              label="Live"
-              title="Show this bank as it is in the machine now, instead of as the file holds it"
-              clicked={setShowLiveBank}
-            />
+            <span
+              className={styles.liveBank}
+              title={
+                "This bank is shown as it is in the machine now, not as the file holds it. " +
+                "The file's bytes are shown when no machine is running."
+              }
+            >
+              Live
+            </span>
             {diffBadge && (
               <>
                 <LabelSeparator width={8} />

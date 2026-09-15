@@ -189,3 +189,77 @@ describe("the two writers together", () => {
     expect(onDisk.debug.breakpoints).toHaveLength(2);
   });
 });
+
+describe("the debug subtree's label breakpoints", () => {
+  /*
+   * Label-anchored breakpoints live in their own `debug.labelBreakpoints` field. Additive within
+   * `debug` rather than a schema bump: bumping to 3 would make a build reading only `[1, 2]` reject
+   * the whole file and lose the annotations too. See `.plans/NEX_DEBUGGING_PLAN.md` §13.2.
+   */
+
+  it("writes both halves of the debug subtree together", () => {
+    const { projectService, saved } = projectServiceWith({ schemaVersion: 2, banks: {} });
+    return saveNexDebugSubtree(projectService, PATH, {
+      breakpoints: [{ bank: 5, offset: 0x100, kind: "exec" }],
+      labelBreakpoints: [{ label: "DrawSprite", bank: 5, kind: "exec" }]
+    }).then(() => {
+      expect(written(saved).debug).toEqual({
+        breakpoints: [{ bank: 5, offset: 0x100, kind: "exec" }],
+        labelBreakpoints: [{ label: "DrawSprite", bank: 5, kind: "exec" }]
+      });
+    });
+  });
+
+  it("keeps label breakpoints when only the bank ones change", async () => {
+    /*
+     * The subtree is replaced wholesale, so the writer has to be given both halves — which is why
+     * the sync computes both and writes them in one call. This pins the consequence of getting that
+     * wrong: passing only `breakpoints` deletes the label ones.
+     */
+    const { projectService, saved } = projectServiceWith({
+      schemaVersion: 2,
+      banks: {},
+      debug: { labelBreakpoints: [{ label: "Keep", bank: 5, kind: "exec" }] }
+    });
+    await saveNexDebugSubtree(projectService, PATH, {
+      breakpoints: [{ bank: 5, offset: 0x100, kind: "exec" }],
+      labelBreakpoints: [{ label: "Keep", bank: 5, kind: "exec" }]
+    });
+    expect(written(saved).debug.labelBreakpoints).toEqual([
+      { label: "Keep", bank: 5, kind: "exec" }
+    ]);
+  });
+
+  it("removes the debug key when both halves are empty", async () => {
+    const { projectService, saved } = projectServiceWith({
+      schemaVersion: 2,
+      banks: {},
+      debug: { labelBreakpoints: [{ label: "Gone", bank: 5, kind: "exec" }] }
+    });
+    await saveNexDebugSubtree(projectService, PATH, { breakpoints: [], labelBreakpoints: [] });
+    expect("debug" in written(saved)).toEqual(false);
+  });
+
+  it("keeps the debug key when only the label half is populated", async () => {
+    const { projectService, saved } = projectServiceWith({ schemaVersion: 2, banks: {} });
+    await saveNexDebugSubtree(projectService, PATH, {
+      breakpoints: [],
+      labelBreakpoints: [{ label: "Only", kind: "exec" }]
+    });
+    expect(written(saved).debug).toEqual({
+      labelBreakpoints: [{ label: "Only", kind: "exec" }]
+    });
+  });
+
+  it("preserves the annotations beside it", async () => {
+    const { projectService, saved } = projectServiceWith({
+      schemaVersion: 2,
+      globalLabels: [{ name: "Start", value: 0x8000 }],
+      banks: { "5": { offsetIndex: 1, regions: [] } }
+    });
+    await saveNexDebugSubtree(projectService, PATH, {
+      labelBreakpoints: [{ label: "DrawSprite", bank: 5, kind: "exec" }]
+    });
+    expect(written(saved).globalLabels).toEqual([{ name: "Start", value: 0x8000 }]);
+  });
+});

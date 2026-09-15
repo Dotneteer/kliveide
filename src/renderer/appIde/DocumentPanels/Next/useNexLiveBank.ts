@@ -7,13 +7,17 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import type { Z80CpuState } from "@common/messaging/EmuApi";
 import type { BranchCpuSnapshot } from "@renderer/appIde/DocumentPanels/branchVerdict";
 import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 import {
   bankOffsetOfAddress,
   locateBank16k,
   type BankPlacement
 } from "./nextBankLocation";
-import { bankPartitions, joinBankHalves } from "./nexLiveBank";
+import { bankPartitions, joinBankHalves, sameBankBytes } from "./nexLiveBank";
+import { getNexLoad } from "./nexLoadSession";
+import { loadNexAnnotationSidecar } from "./nexAnnotationSidecar";
+import type { NexFileAnnotations } from "./nexAnnotations";
 
 /*
  * What the machine says about the bank a popped-out NEX document is showing: where it is, and what
@@ -76,12 +80,17 @@ export function useNexBankLocation(bank: number | undefined): BankPlacement[] | 
  * case it exists for is a paused machine, and a single atomic 16K read does not exist to ask for.
  *
  * `wanted` is what stops this being 16K of IPC per tick for every open bank document whether anyone
- * is looking at it or not. The caller passes its own switch, so the reads start when the user asks
- * for live bytes and stop when they go back to the file. Whether the switch can be *offered* is a
- * separate question, answered by `useNexBankLocation` — which the header needs anyway.
+ * is looking at it or not. It used to carry the user's own "Live" switch; there is no switch any
+ * more — a popped-out bank shows the machine whenever the machine can answer — so what it now
+ * carries is that same question asked of `useNexBankLocation`: reads run when a ZX Spectrum Next is
+ * there with this bank in it, and stop when there is no machine to read.
+ *
+ * The result keeps its array identity when the bytes have not moved (`sameBankBytes`). That matters
+ * more now than it did behind a switch: the disassembly is rebuilt from these bytes, and a fresh
+ * array every tick would re-disassemble an idle bank several times a second.
  *
  * @param bank The 16K bank to read
- * @param wanted Whether the caller is actually showing live bytes
+ * @param wanted Whether the machine is in a position to answer for this bank
  */
 export function useNexLiveBankBytes(
   bank: number | undefined,
@@ -106,7 +115,10 @@ export function useNexLiveBankBytes(
       ]);
       // --- `joinBankHalves` returns undefined for a half of the wrong size, which is what a
       // --- machine mid-switch can hand back. Showing nothing beats showing a torn bank.
-      setBytes(joinBankHalves(low?.memory, high?.memory));
+      const joined = joinBankHalves(low?.memory, high?.memory);
+      // --- Keep the old array when the bytes are unchanged, so consumers keyed on identity (the
+      // --- disassembly effect, above all) see a change only when the machine actually wrote.
+      setBytes((prev) => (sameBankBytes(prev, joined) ? prev : joined));
     } catch {
       setBytes(undefined);
     }
@@ -237,4 +249,54 @@ export function useNexBranchCpuSnapshot(enabled: boolean): BranchCpuSnapshot | u
   }, [read, machineState]);
 
   return enabled ? snapshot : undefined;
+}
+
+/**
+ * The annotations of the NEX launched in this session, for the live Disassembly view.
+ *
+ * Loaded from the sidecar of whatever `nex-run` last launched (§11.5's load session), so the live
+ * view can name addresses with the labels the user wrote in the NEX viewer — `call DrawSprite`
+ * rather than `call $C100`, at the moment the name is worth most.
+ *
+ * `getNexLoad()` is a module singleton and not reactive, which is sound here for the same reason it
+ * is in the Memory Mapping panel: its identity only changes when a NEX is launched, and this panel
+ * re-renders on the disassembly refresh tick, so a launch is picked up within a tick. It is read
+ * during render rather than subscribed to because there is nothing to subscribe to — and adding a
+ * subscription for a value that changes once per launch would be machinery for its own sake.
+ *
+ * `undefined` until the sidecar is read, and if it has none: then the live view renders exactly as
+ * it did before, which is what an absent resolver guarantees.
+ *
+ * See `.plans/NEX_DEBUGGING_PLAN.md` §13.1.
+ */
+export function useLaunchedNexAnnotations(): NexFileAnnotations | undefined {
+  const { projectService } = useAppServices();
+  const [annotations, setAnnotations] = useState<NexFileAnnotations | undefined>(undefined);
+  const loaded = getNexLoad();
+
+  const projectServiceRef = useRef(projectService);
+  projectServiceRef.current = projectService;
+
+  useEffect(() => {
+    if (!loaded) {
+      setAnnotations(undefined);
+      return undefined;
+    }
+    let cancelled = false;
+    // --- The sidecar sits beside the NEX, as `.nex.dis`. The banks it declares are passed so the
+    // --- parser can report annotations for banks the file does not contain.
+    loadNexAnnotationSidecar(
+      projectServiceRef.current,
+      { fullPath: `${loaded.path}.dis` },
+      loaded.banks
+    ).then((state) => {
+      if (cancelled) return;
+      setAnnotations(state.status === "loaded" ? state.annotations : undefined);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [loaded]);
+
+  return annotations;
 }

@@ -3,7 +3,24 @@
   "source": {
     "fileName": "ScrollNutter.nex"
   },
-  "globalLabels": [],
+  "globalLabels": [
+    {
+      "name": "Start",
+      "value": 42532
+    },
+    {
+      "name": "InitPaletteRamp",
+      "value": 42518
+    },
+    {
+      "name": "InitPaletteR_1",
+      "value": 42520
+    },
+    {
+      "name": "InitPalettes",
+      "value": 42496
+    }
+  ],
   "banks": {
     "0": {
       "offsetIndex": 3,
@@ -23,7 +40,24 @@
           "end": 16383,
           "type": "disassemble"
         }
-      ]
+      ],
+      "lineAnnotations": {
+        "9728": {
+          "comment": "Use Layer 2 first palette"
+        },
+        "9732": {
+          "comment": "Reset Layer 2 palette index"
+        },
+        "9739": {
+          "comment": "Use Sprites first palette"
+        },
+        "9743": {
+          "comment": "Reset Sprites palette index"
+        },
+        "9750": {
+          "synopsis": "Fills each entry of the  currently selected palette entries from index 0 to 255 with the index value."
+        }
+      }
     },
     "5": {
       "offsetIndex": 1,
@@ -33,7 +67,14 @@
           "end": 16383,
           "type": "disassemble"
         }
-      ]
+      ],
+      "lastView": "disassembly",
+      "decimalView": false,
+      "lineAnnotations": {
+        "7249": {
+          "comment": "Set the top of the stack in the current bank"
+        }
+      }
     },
     "12": {
       "offsetIndex": 0,
@@ -213,7 +254,9 @@
           "end": 16383,
           "type": "disassemble"
         }
-      ]
+      ],
+      "lastView": "disassembly",
+      "decimalView": false
     },
     "30": {
       "offsetIndex": 0,

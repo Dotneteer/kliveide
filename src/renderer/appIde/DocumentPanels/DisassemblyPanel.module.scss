@@ -93,6 +93,49 @@
   }
 }
 
+/*
+ * Breathing space around a synopsis block.
+ *
+ * `first`/`last` rather than a rule on every synopsis row, because a note is one row *per line* and
+ * only the block's outer edges take the gap — see `synopsisEdge` in `DisassemblyRow`. A one-line
+ * note carries both classes and takes both gaps.
+ *
+ * **The gap above is twice the gap below**, which is why the two ends are separate rules rather
+ * than one shorthand. A synopsis introduces the code beneath it, so it belongs with what follows:
+ * the wider gap above separates it from the instruction it is *not* about, and the narrower one
+ * below keeps it attached to the instruction it is.
+ *
+ * **Both a taller box and the padding.** `assets/styles/index.css` sets `box-sizing: border-box`
+ * on everything, so padding alone is taken *out of* the declared height — the text gets squeezed
+ * and the row does not grow, which is exactly the bug this replaced. The height therefore carries
+ * the gap explicitly and the padding decides which end of the row it lands at, leaving the text a
+ * content box of the usual row height. `DisassemblyRow` withholds its inline height on these rows
+ * so these rules are free to do that.
+ *
+ * `padding`, not `margin`: the row paints its own zebra stripe, hover and exec-point background,
+ * and a background covers the padding box but not the margin box — a margin would cut a
+ * differently-coloured hole above the note. It also keeps the gap inside the box `virtua` measures,
+ * so the virtualizer accounts for it on its own.
+ */
+.item.synopsisBlockFirst {
+  height: calc(var(--row-size-disassembly) + var(--space-2));
+  padding-top: var(--space-2);
+}
+
+.item.synopsisBlockLast {
+  height: calc(var(--row-size-disassembly) + var(--space-1));
+  padding-bottom: var(--space-1);
+}
+
+/*
+ * A one-line note is its own first and last line, so it takes both gaps — and needs its own height
+ * rule, because the two above each declare only their own end. Listed last, and at a specificity
+ * the single-class rules cannot reach, so it wins regardless of source order.
+ */
+.item.synopsisBlockFirst.synopsisBlockLast {
+  height: calc(var(--row-size-disassembly) + var(--space-2) + var(--space-1));
+}
+
 .synopsisCommentLine {
   flex: 1 1 auto;
   min-width: 0;
@@ -162,6 +205,17 @@
 
 .item .annotationOperand {
   color: var(--color-annotation-operand);
+}
+
+/*
+ * The single flex item holding a split instruction — see the note at its call site in
+ * `DisassemblyRow`. It carries no colour of its own: the mnemonic runs inherit the cell's, and the
+ * operand spans override it. `display: inline` is the default and is stated anyway, because the
+ * whole point of this element is that its contents lay out inline rather than as separate flex
+ * items, and a later `display: flex` here would silently bring `jpStart` back.
+ */
+.item .instructionRun {
+  display: inline;
 }
 
 /*

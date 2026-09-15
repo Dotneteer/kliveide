@@ -226,6 +226,46 @@ describe("Modal — focus management and stack keyboard behavior", () => {
     });
   });
 
+  /*
+   * React implements `autoFocus` by calling `.focus()` during commit rather than by emitting the
+   * attribute, so by the time the modal's own focus pass runs the field is already focused and
+   * there is nothing in the DOM left to detect it by. The modal therefore has to *not take focus
+   * away*, which is what these two cover.
+   */
+  it("leaves focus on a body field that asked for it, rather than on the first focusable", async () => {
+    renderModal({
+      initialFocus: "none",
+      children: (
+        <>
+          <input aria-label="Scope" />
+          <input aria-label="Name" autoFocus />
+        </>
+      )
+    });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Name")).toHaveFocus();
+    });
+    // --- Held, not merely true on the first tick: the modal's pass runs a tick after mount, so an
+    // --- assertion that only sampled immediately would pass against the old behaviour too.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.getByLabelText("Name")).toHaveFocus();
+    expect(screen.getByLabelText("Scope")).not.toHaveFocus();
+  });
+
+  it("still honours an explicit request over a body field's own focus", async () => {
+    // --- `initialFocus` is the dialog author speaking; `autoFocus` is one field speaking. The
+    // --- author wins, or a dialog could never move focus off an autofocused field.
+    renderModal({
+      initialFocus: "cancel",
+      children: <input aria-label="Name" autoFocus />
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /cancel/i })).toHaveFocus();
+    });
+  });
+
   it("focuses requested action buttons", async () => {
     renderModal({ initialFocus: "cancel" });
 
@@ -256,6 +296,44 @@ describe("Modal — focus management and stack keyboard behavior", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("dialog", { name: "Focus Restore" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+
+    await waitFor(() => {
+      expect(opener).toHaveFocus();
+    });
+  });
+
+  it("restores focus to the opener even when the body autofocuses a field", async () => {
+    /*
+     * React applies `autoFocus` during commit, before any effect runs, so a modal that recorded its
+     * opener from an effect recorded the dialog's own field instead — and closing left focus on
+     * `<body>`. In the NEX listing that meant the annotation shortcuts went dead after the first
+     * comment dialog until the user clicked a row again. A body with no autofocusing field (the
+     * test above) never showed it.
+     */
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>Open modal</button>
+          {open && (
+            <Modal isOpen={true} title="Autofocus Body" onClose={() => setOpen(false)}>
+              <textarea autoFocus aria-label="Comment" />
+            </Modal>
+          )}
+        </>
+      );
+    }
+
+    renderWithProviders(<Harness />);
+    const opener = screen.getByRole("button", { name: "Open modal" });
+    opener.focus();
+    fireEvent.click(opener);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Comment")).toHaveFocus();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));

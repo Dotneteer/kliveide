@@ -1,7 +1,9 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { Modal } from "@controls/Modal";
+import { renderWithProviders } from "../react-test-utils";
 import {
   NexLabelDialog,
   formatNexLabelValue,
@@ -24,6 +26,37 @@ describe("NexLabelDialog", () => {
     expect(formatNexLabelValue(0xc000)).toBe("$C000");
     expect(suggestNexLabelName("global", 0xc000)).toBe("L_C000");
     expect(suggestNexLabelName("local", 0x0123)).toBe("L_0123");
+  });
+
+  /*
+   * Opening the dialog should leave the caret in Name, ready to type.
+   *
+   * Rendered inside the real `Modal` with the same `initialFocus="none"` that `DialogProvider`
+   * passes every managed dialog, because that pairing is where this broke: the field's `autoFocus`
+   * did its job and the modal's own focus pass then took focus away and gave it to the first
+   * focusable element in the form — the Scope radio group, which sits above Name.
+   */
+  it("opens with the caret in the Name field", async () => {
+    renderWithProviders(
+      <Modal isOpen={true} title="Label" initialFocus="none" onClose={vi.fn()}>
+        <NexLabelDialog
+          bank={5}
+          initialScope="global"
+          initialGlobalValue={0xc000}
+          initialLocalValue={0}
+          labels={[]}
+          controls={createControls()}
+        />
+      </Modal>
+    );
+
+    const name = screen.getAllByRole("textbox")[0];
+    expect(name).toHaveValue("L_C000");
+    await waitFor(() => expect(name).toHaveFocus());
+    // --- Held past the modal's own focus pass, which runs a tick after mount.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(name).toHaveFocus();
+    expect(screen.getByRole("radio", { name: "Global" })).not.toHaveFocus();
   });
 
   it("prefills an existing label at the default value", () => {

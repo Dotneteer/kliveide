@@ -73,6 +73,23 @@ export async function saveNexAnnotationSession(
   emitSession(session);
 }
 
+/**
+ * The annotations a live session holds for this sidecar, or `undefined` when none is open.
+ *
+ * The distinction matters to anything editing annotations from *outside* a viewer (§13.3): with a
+ * session open, its copy may carry edits the user has not saved, so an edit must go through
+ * `updateNexAnnotationSession` and inherit the same dirty-and-save-when-asked policy. With no
+ * session, there is nothing in memory to conflict with and the file can be read, changed and
+ * written — which is the only way such an edit is not lost.
+ *
+ * Deliberately a *peek*, not a subscription: the caller is a command that runs once.
+ */
+export function peekNexAnnotationSession(
+  annotationPath: string
+): NexFileAnnotations | undefined {
+  return sessions.get(annotationPath)?.annotations;
+}
+
 export function clearNexAnnotationSessions(): void {
   sessions.clear();
 }
