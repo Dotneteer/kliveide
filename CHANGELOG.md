@@ -21,6 +21,14 @@
   remove the ones it was replacing &mdash; it added to them. Invisible in the Breakpoints panel,
   because the replacements took the same names, but the old ones stayed armed where they were.
 - The breakpoint dialog never showed a breakpoint's hit count: the emulator was not reporting it.
+- **Step Out could run away instead of stopping**, on every Z80 machine. The debugger's shadow stack
+  of return addresses was only ever pushed to, never popped, so once a routine had returned its entry
+  stayed on top &mdash; and Step Out aimed at an address the program would not reach again, running on
+  to the next breakpoint instead. It went wrong whenever the routine you were in did not own the
+  newest entry: after a tail call (`jp SomeRoutine`, which pushes nothing, so the routine returns past
+  its caller), and after stepping into and back out of a nested call before stepping out of the
+  routine containing it. The stack is now balanced on every RET actually taken, so a conditional RET
+  that falls through still costs nothing.
 - A `.nex.dis` file whose only debug state was a label-anchored breakpoint lost it on the next save.
 - The buttons a document adds to the tab bar (Run, Debug, and the script and NEX actions) sat hard
   against the right-hand end of the header, with no space after the last one.

@@ -62,20 +62,19 @@ export type DebugStopDecisionInput = {
    * **A fallback, not a refinement, and the two callers differ on purpose.**
    *
    * `DebugStepMode.StepOut` means the RET that returns *to this routine's caller*. The exact way to
-   * detect that is `stepOutAddress`, taken from a real call stack that `Z80Cpu`/`M6510VaCpu` push
-   * on every CALL and RST. The interpreted `MachineFrameRunner` has that stack, so it passes
-   * `retExecuted: false` and relies on the exact test — because this flag fires on the first RET of
-   * *any* depth, including one returning from a call nested inside the routine, and would stop
-   * short.
+   * detect that is `stepOutAddress`, taken from a real shadow stack of return addresses: pushed on
+   * every CALL, RST and interrupt entry, popped on every RET taken. This flag is the blunt
+   * alternative — it fires on the first RET of *any* depth, including one returning from a call
+   * nested inside the routine, so a step-out relying on it stops short.
    *
-   * The WASM machines cannot use the exact test at all: their CPU runs inside the core, the TS push
-   * methods never execute, the stack stays empty and `stepOutAddress` is permanently -1. For them
-   * this flag is the only signal that can ever end a step-out. The +3E had neither until
-   * `spp3eGetCpuRetExecuted`/`RetnExecuted` were added to its core, which meant its step-out could
-   * not terminate on its own.
+   * **Every Z80 machine now passes `false` and relies on the exact test.** The WASM machines once
+   * could not: their CPU runs inside the core, the TypeScript push methods never executed, the stack
+   * stayed empty and `stepOutAddress` was permanently -1, so this flag was the only signal that could
+   * end their step-out. `z80.c` keeps the shadow stack itself now, which was the proper fix, and
+   * `zxnextGetStepOutAddress` and its siblings expose it.
    *
-   * Giving the WASM machines a real step-out stack — tracked core-side — would let them use the
-   * exact test too, and is the proper fix.
+   * The parameter is kept because the decision is shared and the signal is still meaningful — a
+   * machine whose core cannot track a shadow stack would need it again.
    */
   retExecuted: boolean;
 };

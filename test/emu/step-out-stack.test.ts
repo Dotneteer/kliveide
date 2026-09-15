@@ -108,3 +108,100 @@ describe("step-out shadow stack", () => {
     expect(cpu.stepOutAddress).toBe(-1);
   });
 });
+
+/*
+ * Balance: a RET consumes the entry its CALL pushed.
+ *
+ * The stack was push-only to begin with, so `markStepOutAddress` could peek an entry belonging to a
+ * call that had already returned. Step-out then waited for an address the program would never reach
+ * again and ran on to the next real breakpoint — reported against ScrollNutter, where a routine is
+ * reached once by `call` and again by `jp`.
+ */
+describe("step-out shadow stack, balanced against RET", () => {
+  function ramAt(cpu: TestCpu, address: number, bytes: number[]) {
+    bytes.forEach((b, i) => (cpu.memory[address + i] = b));
+  }
+
+  it("drops the entry when a routine returns", () => {
+    const cpu = cpuWith([0xcd, 0x00, 0x90]); // --- CALL $9000, returns to $8003
+    ramAt(cpu, 0x9000, [0xc9]); // --- RET
+    cpu.executeCpuCycle();
+    cpu.markStepOutAddress();
+    expect(cpu.stepOutAddress).toBe(0x8003);
+
+    cpu.executeCpuCycle(); // --- RET
+    cpu.markStepOutAddress();
+    expect(cpu.stepOutAddress).toBe(-1);
+  });
+
+  it("targets the outer routine once an inner call has returned", () => {
+    // --- Step into a nested call, back out of it, then ask to step out of the routine holding it.
+    const cpu = cpuWith([0xcd, 0x00, 0x90]); // --- $8000: CALL $9000 -> returns to $8003
+    ramAt(cpu, 0x9000, [0xcd, 0x00, 0x91]); // --- $9000: CALL $9100 -> returns to $9003
+    ramAt(cpu, 0x9100, [0xc9]); // --- $9100: RET
+    ramAt(cpu, 0x9003, [0xc9]); // --- $9003: RET
+
+    cpu.executeCpuCycle(); // --- CALL $9000
+    cpu.executeCpuCycle(); // --- CALL $9100
+    cpu.markStepOutAddress();
+    expect(cpu.stepOutAddress).toBe(0x9003);
+
+    cpu.executeCpuCycle(); // --- RET, back into the outer routine
+    expect(cpu.pc).toBe(0x9003);
+
+    // --- Was $9003 before the fix: the inner call's return address, already in the past.
+    cpu.markStepOutAddress();
+    expect(cpu.stepOutAddress).toBe(0x8003);
+  });
+
+  it("targets the caller's caller after a tail call", () => {
+    /*
+     * The ScrollNutter shape: `call InitPaletteRamp` and, further down the same routine,
+     * `jp InitPaletteRamp`. The `jp` pushes nothing, so the routine's RET returns past its caller.
+     */
+    const cpu = cpuWith([0xcd, 0x00, 0x90]); // --- $8000: CALL $9000 -> returns to $8003
+    ramAt(cpu, 0x9000, [0xcd, 0x00, 0x91]); // --- $9000: CALL $9100 -> returns to $9003
+    ramAt(cpu, 0x9003, [0xc3, 0x00, 0x91]); // --- $9003: JP $9100 (tail call, pushes nothing)
+    ramAt(cpu, 0x9100, [0xc9]); // --- $9100: RET
+
+    cpu.executeCpuCycle(); // --- CALL $9000
+    cpu.executeCpuCycle(); // --- CALL $9100, first entry
+    cpu.markStepOutAddress();
+    expect(cpu.stepOutAddress).toBe(0x9003);
+
+    cpu.executeCpuCycle(); // --- RET -> $9003
+    cpu.executeCpuCycle(); // --- JP $9100, second entry
+    expect(cpu.pc).toBe(0x9100);
+
+    // --- Was $9003 before the fix, an address the program never reaches again.
+    cpu.markStepOutAddress();
+    expect(cpu.stepOutAddress).toBe(0x8003);
+  });
+
+  it("does not consume an entry when a conditional RET is not taken", () => {
+    // --- RET NZ with Z set falls through, so the routine has not returned.
+    const cpu = cpuWith([0xcd, 0x00, 0x90]);
+    ramAt(cpu, 0x9000, [0xc0]); // --- RET NZ
+    cpu.executeCpuCycle(); // --- CALL $9000
+    cpu.f |= 0x40; // --- set Z, so NZ is false
+    cpu.executeCpuCycle(); // --- RET NZ, not taken
+    expect(cpu.pc).toBe(0x9001);
+
+    cpu.markStepOutAddress();
+    expect(cpu.stepOutAddress).toBe(0x8003);
+  });
+
+  it("survives a RET with nothing pushed", () => {
+    // --- Ordinary: the machine can be reset mid-routine, or ROM can return from a call made before
+    // --- the debugger was watching. No target is the honest answer, and nothing underflows.
+    const cpu = cpuWith([0xc9]); // --- RET
+    cpu.executeCpuCycle();
+    cpu.markStepOutAddress();
+    expect(cpu.stepOutAddress).toBe(-1);
+
+    // --- And the stack still works afterwards.
+    cpu.pushToStepOutStack(0x1234);
+    cpu.markStepOutAddress();
+    expect(cpu.stepOutAddress).toBe(0x1234);
+  });
+});
