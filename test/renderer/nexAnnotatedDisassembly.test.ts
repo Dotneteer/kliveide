@@ -416,3 +416,59 @@ describe("createAnnotatedNexDisassemblyItems with a program counter", () => {
     expect(await addressesFor(2)).toEqual(await addressesFor(undefined));
   });
 });
+
+describe("createAnnotatedNexDisassemblyItems fallback operand names", () => {
+  /** `ld hl,$5C08` followed by `call $8010`. */
+  const CONTENTS = () => {
+    const contents = new Uint8Array(0x4000);
+    contents.set([0x21, 0x08, 0x5c, 0xcd, 0x10, 0x80]);
+    return contents;
+  };
+
+  /** Stands in for the system variable resolver: data operands only, one known address. */
+  const sysVarFallback = ({ pragma, operandValue }: any) =>
+    pragma === "W" && operandValue === 0x5c08 ? "LAST_K" : undefined;
+
+  const instructionsWith = async (
+    globalLabels: Array<{ name: string; value: number }>,
+    fallback?: (operand: any) => string | undefined
+  ) => {
+    const items = await createAnnotatedNexDisassemblyItems({
+      annotations: {
+        schemaVersion: 1,
+        globalLabels,
+        banks: {
+          "5": {
+            offsetIndex: 2,
+            regions: [{ start: 0, end: 5, type: "disassemble" }],
+            localLabels: [],
+            lineAnnotations: {}
+          }
+        }
+      },
+      bank: 5,
+      contents: CONTENTS(),
+      disassOffset: 0x8000,
+      fallbackOperandLabelResolver: fallback
+    });
+    return (items ?? []).map((item) => item.instruction);
+  };
+
+  it("names an operand the annotations cannot name", async () => {
+    // --- A system variable is nowhere in the bank's own labels, so only the fallback can name it.
+    // --- The call target keeps its label: the fallback declines every branch operand.
+    expect(await instructionsWith([], sysVarFallback)).toEqual(["ld hl,LAST_K", "call L8010"]);
+  });
+
+  it("leaves the listing alone when there is no fallback", async () => {
+    expect(await instructionsWith([])).toEqual(["ld hl,$5C08", "call L8010"]);
+  });
+
+  it("lets a hand-authored label win over the fallback", async () => {
+    // --- The user's label is a statement about this program; the fallback only about the machine.
+    expect(await instructionsWith([{ name: "MyVar", value: 0x5c08 }], sysVarFallback)).toEqual([
+      "ld hl,MyVar",
+      "call L8010"
+    ]);
+  });
+});

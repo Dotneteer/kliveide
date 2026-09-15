@@ -85,6 +85,13 @@ Explicit operand label references are attached to decoded 16-bit instruction
 operands. If a referenced label is deleted, the user is asked before all
 affected operand references are cleared.
 
+An operand the annotations cannot name falls through to the machine's own system
+variable table, so `ld hl,$5C08` reads `ld hl,LAST_K` in a bank listing exactly as
+it does in the live Disassembly view. Annotations always win: a label written
+about this program is a more specific claim than a fact about the machine. Only
+data operands are named this way — `jp`/`call` targets keep their `L` labels. See
+`src/renderer/appIde/disassemblers/sys-var-operand-labels.ts`.
+
 ## Region Rules
 
 Each bank has normalized, non-overlapping coverage from `$0000` to `$3FFF`.

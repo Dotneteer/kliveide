@@ -113,7 +113,11 @@ describe("StaticMemoryDump", () => {
           pcValue: 0,
           tacts: 0
         }),
-        getNextMemoryMapping: async () => ({ pageInfo: [] })
+        getNextMemoryMapping: async () => ({ pageInfo: [] }),
+        // --- The listing names 16-bit data operands after the machine's system variables. One
+        // --- entry is enough to tell a named operand from an unnamed one; the naming rule itself
+        // --- is covered without a DOM in `test/renderer/sysVarOperandLabels.test.ts`.
+        getSysVars: async () => [{ address: 0x5c08, name: "LAST-K", type: 0 }]
       })
     }));
     vi.doMock("@renderer/controls/overlay/DialogProvider", () => ({
@@ -476,6 +480,55 @@ describe("StaticMemoryDump", () => {
       "data-annotation-region",
       "bytes"
     );
+  });
+
+  describe("system variable names", () => {
+    /** `ld hl,$5C08` — a 16-bit data operand that happens to be a system variable's address. */
+    const LD_HL_LAST_K = () => {
+      const contents = new Uint8Array(0x4000);
+      contents.set([0x21, 0x08, 0x5c]);
+      return contents;
+    };
+
+    const renderBank = (viewState: Record<string, unknown> = {}) =>
+      renderStaticMemoryDump(
+        {
+          disassemblyEnabled: true,
+          viewMode: "disassembly",
+          disassOffset: 0x8000,
+          nexAnnotationBank: 5,
+          ...viewState
+        },
+        undefined,
+        undefined,
+        LD_HL_LAST_K()
+      );
+
+    it("names a data operand by default", async () => {
+      await renderBank();
+
+      expect(await screen.findByText("ld hl,LAST_K")).toBeInTheDocument();
+      expect((screen.getByTestId("switch-Sys vars") as HTMLElement).dataset.value).toBe("true");
+    });
+
+    it("shows the address again when the switch is turned off", async () => {
+      await renderBank();
+      await screen.findByText("ld hl,LAST_K");
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("switch-Sys vars"));
+      });
+
+      expect(await screen.findByText("ld hl,$5C08")).toBeInTheDocument();
+      expect(screen.queryByText("ld hl,LAST_K")).not.toBeInTheDocument();
+    });
+
+    it("honours a remembered off state", async () => {
+      await renderBank({ sysVarNames: false });
+
+      expect(await screen.findByText("ld hl,$5C08")).toBeInTheDocument();
+      expect((screen.getByTestId("switch-Sys vars") as HTMLElement).dataset.value).toBe("false");
+    });
   });
 
   /**

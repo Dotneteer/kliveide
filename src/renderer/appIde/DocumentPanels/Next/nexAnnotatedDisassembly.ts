@@ -16,6 +16,7 @@ import {
   getBankAnnotation,
   getNexBankAddressOffset
 } from "./nexAnnotations";
+import { chainOperandLabelResolvers } from "@renderer/appIde/disassemblers/sys-var-operand-labels";
 
 /**
  * Split a byte range so that an instruction boundary is guaranteed to fall on `anchor`.
@@ -64,6 +65,15 @@ export type AnnotatedNexDisassemblyOptions = {
    * it does not turn it into code.
    */
   pcBankOffset?: number;
+  /**
+   * Names for operands the annotations themselves cannot name — in practice, the machine's system
+   * variables.
+   *
+   * Consulted only after the annotation lookup declines, so a hand-authored label always wins: the
+   * user's label is a statement about this program, a system variable name only a fact about the
+   * machine.
+   */
+  fallbackOperandLabelResolver?: DisassemblyOperandLabelResolver;
 };
 
 export async function createAnnotatedNexDisassemblyItems({
@@ -72,7 +82,8 @@ export async function createAnnotatedNexDisassemblyItems({
   contents,
   decimalView = false,
   disassOffset,
-  pcBankOffset
+  pcBankOffset,
+  fallbackOperandLabelResolver
 }: AnnotatedNexDisassemblyOptions): Promise<DisassemblyItem[] | undefined> {
   const bankAnnotation = getBankAnnotation(annotations, bank);
   if (!bankAnnotation) {
@@ -103,7 +114,8 @@ export async function createAnnotatedNexDisassemblyItems({
               runStart,
               runEnd,
               decimalView,
-              addressOffset
+              addressOffset,
+              fallbackOperandLabelResolver
             ))
           );
         }
@@ -134,7 +146,8 @@ async function createInstructionItems(
   start: number,
   end: number,
   decimalView: boolean,
-  addressOffset: number
+  addressOffset: number,
+  fallbackOperandLabelResolver?: DisassemblyOperandLabelResolver
 ): Promise<DisassemblyItem[]> {
   const disassembler = new Z80Disassembler(
     [new MemorySection(start, end, MemorySectionType.Disassemble)],
@@ -143,11 +156,9 @@ async function createInstructionItems(
     {
       allowExtendedSet: true,
       decimalMode: decimalView,
-      operandLabelResolver: createAnnotationOperandLabelResolver(
-        annotations,
-        bankAnnotation,
-        bank,
-        addressOffset
+      operandLabelResolver: chainOperandLabelResolvers(
+        createAnnotationOperandLabelResolver(annotations, bankAnnotation, bank, addressOffset),
+        fallbackOperandLabelResolver
       )
     }
   );

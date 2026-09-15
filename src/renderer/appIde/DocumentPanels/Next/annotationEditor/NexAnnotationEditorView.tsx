@@ -1,6 +1,5 @@
 import { Icon } from "@renderer/controls/Icon";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -39,7 +38,6 @@ export const NexAnnotationToolbar = ({
 
   return (
     <>
-      <LabelSeparator width={8} />
       {vm.toolbar.warning.kind === "warning" && (
         <span title={vm.toolbar.warning.title}>
           <Icon iconName="warning" fill="--status-error" width={16} height={16} />

@@ -30,12 +30,45 @@ Turn off the **Follow PC** option to disassemble the entire memory (or a selecte
 
 The Disassembly View provides a few options to display and navigate the memory contents:
 - **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses, opcodes, and instructions are displayed with decimal numbers; otherwise, they are hexadecimal.
+- **Sys vars**: Names 16-bit data addresses after the machine's system variables (on, by default). See [System Variable Names](#system-variable-names) below.
 - **Ram**: This option (on, by default) allows you to disassemble the RAM's contents.
 - **Screen**: This option (off, by default) lets you disassemble the screen memory's ($4000-$5AFF) contents.
 - **Bank**: This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging.
 - **Go To**: Type an address into this box and press Enter to jump to the particular address. If the particular address is not at a disassembled instruction's boundary, it will settle at the next instruction. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses.
 
 A little icon (up or down arrow) is before the **Go To** address box. Unless the machine is paused, this icon is disabled. When the machine is in a paused state, clicking the button jumps to the disassembly at the address pointed by the PC. The direction of the arrow indicates where the PC position can be found relative to the current view.
+
+## System Variable Names
+
+Wherever an instruction loads or stores through a literal 16-bit address, and that address is one of
+the machine's system variables, the view prints the variable's name instead of the number:
+
+```
+ld hl,LAST_K
+ld (ERR_NR),a
+ld sp,RAMTOP
+ld (CHANS),hl
+```
+
+The names come from the same table the [System Variables](./system-vars) panel lists, so each machine
+contributes its own — the ZX Spectrum 48K, 128K and +3, and the ZX Spectrum Next each have one.
+Names are spelled so an assembler would accept them: the ROM manuals print several with a space or a
+hyphen (`ATTR P`, `CH-ADD`), and every character that is not a letter, a digit or an underscore
+becomes `_` — so those read `ATTR_P` and `CH_ADD`.
+
+<Callout type="info" emoji="💡">
+Only **data** operands are named — the 16-bit loads and stores. `JP` and `CALL` targets keep their
+`L`-prefixed labels, because the system variable area is not code: an address there matching a jump
+target is a coincidence far more often than a fact worth printing. Naming applies to the Z80 and
+Z80N machines; the Commodore 64's 6510 listing shows its addresses unchanged.
+</Callout>
+
+The **Sys vars** switch turns the naming off and on. It is on by default, each view remembers its own
+setting, and turning it off shows the addresses exactly as they were before.
+
+The same naming appears in the disassembly of a popped-out `.NEX` bank, with its own **Sys vars**
+switch. There, a label you wrote yourself always wins: your label says something about *this*
+program, while a system variable name only states a fact about the machine.
 
 ## Branch Verdicts
 

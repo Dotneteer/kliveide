@@ -225,17 +225,58 @@
  * 30px, 32px), and the one shared helper that did exist was twelve lines of `HStack` with hardcoded
  * padding, no title, no actions slot, no surface and no border.
  */
+/*
+ * A panel's header wraps rather than squashes.
+ *
+ * It is a toolbar of fixed-size controls — dropdowns, switches, an address box — and a flex row
+ * shrinks its items before it overflows, so in a narrow document the controls were crushed into
+ * unreadable slivers (a 104px view chooser down to a single character) while the strip still
+ * claimed to fit. Nothing here is elastic, so shrinking was never the right answer.
+ *
+ * `min-height` rather than `height` is what lets a second line exist at all; on a header that fits
+ * one line it resolves to exactly the same `--strip-panelHeader` as before, so no panel that was
+ * not already overflowing changes by a pixel. `gap` supplies the space between wrapped lines as
+ * well as between controls, and `align-content: center` keeps a single line centred in the strip.
+ *
+ * Wrapping happens between `PanelHeaderGroup`s, which is why they exist: without them a line can
+ * break between a label and the control it names, leaving "Offset" stranded above its dropdown.
+ */
 .panelHeader {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
+  align-content: center;
   flex: 0 0 auto;
-  height: var(--strip-panelHeader);
+  min-height: var(--strip-panelHeader);
   padding: 0 var(--space-2);
   gap: var(--space-1);
   background: var(--surface-chrome);
   border-bottom: 1px solid var(--border-subtle);
   user-select: none;
+}
+
+/*
+ * One indivisible run of header controls.
+ *
+ * `flex: 0 0 auto` so the group keeps its natural width — it is the unit that moves to the next
+ * line — and the inner row never wraps, so a label and the control it names stay together.
+ */
+.panelHeaderGroup {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: var(--space-1);
+
+  /* Groups sit further apart than the controls within one, or the grouping is invisible. 12px plus
+     the header's own 4px gap is the 16px the hand-placed `<LabelSeparator width={8} />` produced
+     with that gap on either side of it — the same rhythm, now a property of the group rather than a
+     spacer each toolbar had to remember to add. */
+  & + & {
+    margin-left: var(--space-3);
+  }
 }
 
 .panelTitle {
