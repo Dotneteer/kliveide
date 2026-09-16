@@ -26,9 +26,11 @@ export class FakeSession {
 
   subscribeCalls: { path: string; bank: number }[] = [];
   unsubscribeCount = 0;
-  saveCalls: string[] = [];
-  /** Set to make the next save reject. */
-  saveError?: unknown;
+  /** One entry per write the session started — an edit publishes and writes in one step. */
+  writeCalls: string[] = [];
+  /** Set to make every write from now on fail with this reason. */
+  writeError?: string;
+  private writes: Promise<void>[] = [];
 
   constructor(initial?: Partial<NexAnnotationSessionSnapshot>) {
     this.seed({ annotations: anAnnotationModel(), dirty: false, loading: false, ...initial });
@@ -68,16 +70,37 @@ export class FakeSession {
           set.delete(listener);
         };
       },
+      /*
+       * An edit publishes and is written, the way the real session does it.
+       *
+       * Two snapshots, not one: the edit arrives immediately and `dirty`, then the write settles it
+       * a microtask later. Modelling that gap is the point — the controller must report the *write*
+       * outward, not the moment in between, or the document tab blinks on every annotation.
+       */
       update: (path, annotations) => {
-        // --- An update is a dirty edit that comes back as a snapshot, never applied locally.
         this.broadcast(path, { ...this.snapshotFor(path), annotations, dirty: true });
-      },
-      save: async (path) => {
-        this.saveCalls.push(path);
-        if (this.saveError !== undefined) throw this.saveError;
-        this.broadcast(path, { ...this.snapshotFor(path), dirty: false, saveError: undefined });
+        this.writeCalls.push(path);
+        const writeError = this.writeError;
+        this.writes.push(
+          Promise.resolve().then(() => {
+            this.broadcast(path, {
+              ...this.snapshotFor(path),
+              dirty: !!writeError,
+              saveError: writeError
+            });
+          })
+        );
       }
     };
+  }
+
+  /** Wait for every write started so far, including any started by those. */
+  async writesSettled(): Promise<void> {
+    while (this.writes.length) {
+      const pending = this.writes;
+      this.writes = [];
+      await Promise.all(pending);
+    }
   }
 }
 
@@ -122,7 +145,7 @@ export type FakePorts = {
   confirm: ReturnType<typeof vi.fn>;
   nativeConfirm: ReturnType<typeof vi.fn>;
   navigateToAddress: ReturnType<typeof vi.fn>;
-  dirtyChanged: ReturnType<typeof vi.fn>;
+  unwrittenChanged: ReturnType<typeof vi.fn>;
 };
 
 export function createFakePorts(
@@ -136,7 +159,7 @@ export function createFakePorts(
   const confirm = vi.fn().mockResolvedValue(true);
   const nativeConfirm = vi.fn().mockReturnValue(true);
   const navigateToAddress = vi.fn();
-  const dirtyChanged = vi.fn();
+  const unwrittenChanged = vi.fn();
 
   return {
     session,
@@ -144,7 +167,7 @@ export function createFakePorts(
     confirm,
     nativeConfirm,
     navigateToAddress,
-    dirtyChanged,
+    unwrittenChanged,
     ports: {
       session: session.port,
       dialogs: dialogs.port,
@@ -152,7 +175,7 @@ export function createFakePorts(
       nativeConfirm: nativeConfirm as any,
       bankBytes: () => options.bankBytes ?? [0, 1, 2, 3],
       navigateToAddress: navigateToAddress as any,
-      dirtyChanged: dirtyChanged as any
+      unwrittenChanged: unwrittenChanged as any
     }
   };
 }

@@ -17,7 +17,7 @@ disassembly offset are stored per bank in the sidecar.
 
 The popped-out bank disassembly toolbar provides:
 
-- Save annotations, enabled only while the shared annotation model is dirty;
+- a warning indicator, shown when the sidecar could not be loaded or written;
 - Annotations, enabled when a disassembly row or range is selected.
 
 The Annotations button opens the same menu as right-clicking the selected
@@ -25,32 +25,51 @@ disassembly row or range. The menu contains Manage Labels, Manage Regions,
 synopsis comments, end-of-line comments, label actions, operand label
 references, region marking, and row annotation clearing.
 
-Edits update the in-memory annotation model immediately and re-render the
-disassembly. JSON is written only when the user explicitly saves.
+Edits update the in-memory annotation model immediately, re-render the
+disassembly, and are written to the sidecar straight away. **There is no Save.**
+An annotation is a note about a program, and the reason to make one is always to
+keep it; the per-bank view settings ride the same path, so merely switching a
+bank to Memory view no longer leaves a document marked unsaved.
+
+An **end-of-line comment replaces the disassembler's own** on that row, rather
+than being appended to it. Both want the one comment column, and the generated
+note is the weaker claim of the two: `; Palette Control` says what the opcode
+does, which a reader who has annotated the row already knows. The generated text
+is kept in the row's `generatedHardComment`, so the end-of-line dialog can show
+what is being replaced while you type, and clearing the user comment brings it
+back to the listing.
 
 ## Shared Annotation Session
 
 Open bank documents for the same `.nex.dis` path share one annotation session.
 This prevents separate bank pop-outs from keeping divergent copies of the same
-sidecar. Dirty state, save errors, and successful saves are broadcast to all
-subscribers.
+sidecar, and it is also the single place that writes them. Annotations, write
+errors, and the loading state are broadcast to all subscribers.
 
-Closing a dirty popped-out bank asks for confirmation before discarding unsaved
-annotation changes. Closing the app also runs the same disposal checks.
+The session writes **one at a time, coalescing**. `saveNexAnnotationSubtree` is a
+read-modify-write of a file whose `debug` subtree belongs to another writer, so
+two overlapping writes would each read before the other wrote; an edit arriving
+mid-write only marks that another write is owed, because the next one writes the
+model as it is then. Two banks of one NEX edit the same session independently, so
+this is ordinary rather than exotic.
 
-## Two Subtrees, Two Save Policies
+A failed write leaves the session holding edits that exist nowhere else. That is
+the one case where closing still asks: the document tab marks itself unsaved, the
+toolbar warning carries the reason, the next edit retries, and closing the bank
+asks before discarding. In normal use none of that is ever seen.
+
+## Two Subtrees, One Save Policy, Two Writers
 
 Schema 2 added a `debug` subtree beside the annotations, holding the bank breakpoints the NEX
-carries. The two halves are saved **independently and on different policies**:
+carries. Both halves are now written **the moment they change** — `debug` always was, because a
+breakpoint lost to an unpressed Save button is a bug rather than a policy, and the annotations
+followed for the same reason.
 
-- **annotations** (`source`, `globalLabels`, `banks`) stay dirty-tracked and are written when the
-  user asks, as described above;
-- **`debug`** is written the moment a breakpoint changes, because a breakpoint lost to an unpressed
-  Save button is a bug rather than a policy.
-
-Both writers read the file, replace only their own keys and write back, so neither can revert the
-other and a key a newer build adds survives an older build's save. A schema 1 file loads unchanged
-and is only rewritten as 2 when something is actually saved into it.
+They remain **separate writers**, which is the part that still matters: each reads the file,
+replaces only its own keys and writes back, so a breakpoint cannot revert an annotation, an
+annotation cannot revert a breakpoint, and a key a newer build adds survives an older build's
+write. A schema 1 file loads unchanged and is only rewritten as 2 when something is actually
+written into it.
 
 The `debug` subtree holds two kinds: `breakpoints`, an offset in a bank, and `labelBreakpoints`,
 anchored to one of the file's labels with **no offset** — the label is the anchor, and resolution
@@ -65,11 +84,17 @@ adds a bank-local label at the address the machine is paused at. It follows the 
 policies as every other annotation edit — into the session when a viewer is open, written through
 when one is not — which is why it asks whether a session exists before deciding.
 
-A popped-out bank's memory view can show the bank's **live** contents instead of the file's, marking
-what differs. The disassembly view deliberately cannot: the annotation model's listing is derived
-from the file's bytes and addresses its actions by row index, and live bytes disassemble to different
-instruction lengths — so the two listings would drift apart and the annotation menu would act on the
-wrong row. Annotations describe the file.
+A popped-out bank shows the bank's **live** contents whenever a machine is running — in both the
+memory and the disassembly view — marking what differs from the file and falling back to the file's
+bytes when there is no machine to read. A `Live` marker in the toolbar says which of the two is on
+screen. The annotation menu stays correct because it resolves a row through the item it rendered
+(`item.annotation.bankOffset`, else `listedBankOffset(item.address, …)`) rather than by row index, and
+regions are bank offsets, which mean the same thing in a bank read from RAM as in one read from the
+file.
+
+While the machine is paused with the PC inside the bank, the listing is additionally cut and
+re-decoded at the PC, so the rows from there on are the instructions that will actually run rather
+than a linear guess from byte 0. Regions annotated as `bytes`, `words` or `skip` are never cut.
 
 The NEX viewer's bank headings show how many breakpoints each bank carries, counted from the
 *emulator* rather than from the sidecar — what is armed now, including another NEX's breakpoints in

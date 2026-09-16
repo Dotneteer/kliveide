@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { ReactNode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { MI_ZXNEXT } from "@common/machines/constants";
 
 beforeEach(() => {
   Object.defineProperty(document, "queryCommandSupported", {
@@ -41,12 +42,29 @@ describe("MiniMemoryDump", () => {
 });
 
 describe("StaticMemoryDump", () => {
+  /**
+   * A paused ZX Next with this bank paged in, for the tests that need one.
+   *
+   * Most tests here set no machine at all, which is why the default mocks report a stopped one with
+   * no paging. `machine` supplies what `useNexBankLocation` and `useNexBankPcOffset` actually read:
+   * the machine id (they do nothing off a Next), the controller state, the MMU's 8K slots, and the
+   * program counter.
+   */
+  type FakeMachine = {
+    machineId?: string;
+    machineState?: MachineControllerState;
+    /** The 8K bank each of the eight slots holds, or `undefined` for a slot that is not RAM. */
+    slots?: (number | undefined)[];
+    pcValue?: number;
+  };
+
   async function renderStaticMemoryDump(
     viewState: Record<string, unknown> = {},
     readFileContent = vi.fn(() => Promise.reject(new Error("File does not exist"))),
     saveFileContent = vi.fn(() => Promise.resolve()),
     contents = new Uint8Array(0x4000),
-    openDialog = vi.fn(() => Promise.resolve(undefined))
+    openDialog = vi.fn(() => Promise.resolve(undefined)),
+    machine: FakeMachine = {}
   ) {
     vi.resetModules();
 
@@ -92,7 +110,25 @@ describe("StaticMemoryDump", () => {
       // --- Added for the bank breakpoint gutter, which watches `breakpointsVersion`. The dump has
       // --- no breakpoints in these tests; how a bank-relative breakpoint is named in a row is
       // --- covered in `test/controls/DisassemblyRow.test.tsx`.
-      useSelector: () => 0,
+      /*
+       * Selector-aware, because two different slices matter now.
+       *
+       * `breakpointsVersion` (and everything else) still answers 0, which is what the gutter wants.
+       * The machine id and controller state are read by the bank-location and PC hooks, and a blunt
+       * `() => 0` told them there is no Next and nothing paused — which is the right default for
+       * most tests here and wrong for the ones about the "go to PC" button.
+       */
+      useSelector: (selector: any) => {
+        const state = {
+          emulatorState: {
+            machineId: machine.machineId,
+            machineState: machine.machineState ?? MachineControllerState.Stopped,
+            breakpointsVersion: 0
+          }
+        };
+        const value = typeof selector === "function" ? selector(state) : undefined;
+        return value ?? 0;
+      },
       // --- Added for the breakpoint dialog the gutter's double-click opens (`useBreakpointDialog`
       // --- reports a failure to open through the status bar). No test here opens it; that the
       // --- dialog accepts and produces a bank-relative breakpoint is covered without a DOM in
@@ -109,11 +145,17 @@ describe("StaticMemoryDump", () => {
         // --- one with no paging is the honest answer; what the readout says about a given mapping
         // --- is covered without a DOM in `test/renderer/nextBankLocation.test.ts`.
         getCpuStateChunk: async () => ({
-          state: MachineControllerState.Stopped,
-          pcValue: 0,
+          state: machine.machineState ?? MachineControllerState.Stopped,
+          pcValue: machine.pcValue ?? 0,
           tacts: 0
         }),
-        getNextMemoryMapping: async () => ({ pageInfo: [] }),
+        getNextMemoryMapping: async () => ({
+          // --- `locateBank16k` matches on `bank8k` and ignores a slot with no `writeOffset`, which
+          // --- is how it tells RAM from a ROM'd slot. An absent slot here is that ROM'd case.
+          pageInfo: (machine.slots ?? []).map((bank8k) =>
+            bank8k === undefined ? { bank8k: -1, writeOffset: null } : { bank8k, writeOffset: 0 }
+          )
+        }),
         // --- The listing names 16-bit data operands after the machine's system variables. One
         // --- entry is enough to tell a named operand from an unnamed one; the naming rule itself
         // --- is covered without a DOM in `test/renderer/sysVarOperandLabels.test.ts`.
@@ -480,6 +522,174 @@ describe("StaticMemoryDump", () => {
       "data-annotation-region",
       "bytes"
     );
+  });
+
+  /*
+   * "Go to PC" in a popped-out bank.
+   *
+   * A bank pop-out is one 16K slice, so unlike the live Disassembly view the program counter is
+   * usually *not* in it — which is exactly why the button is gated rather than always live.
+   */
+  describe("the go-to-PC button", () => {
+    const GO_TO_PC = "Go to the PC address in this bank";
+
+    /** Bank 5 paged in contiguously at $8000: its 8K pages 10 and 11 in slots 4 and 5. */
+    const BANK_5_AT_8000 = [0, 1, 2, 3, 10, 11, 6, 7];
+
+    /** `ld hl,$1234` at the start of the bank, so the listing has rows to land on. */
+    const CODE = () => {
+      const contents = new Uint8Array(0x4000);
+      contents.set([0x21, 0x34, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00]);
+      return contents;
+    };
+
+    const renderBank = (machine: Record<string, unknown>, viewState: Record<string, unknown> = {}) =>
+      renderStaticMemoryDump(
+        {
+          disassemblyEnabled: true,
+          viewMode: "disassembly",
+          disassOffset: 0x8000,
+          nexAnnotationBank: 5,
+          ...viewState
+        },
+        undefined,
+        undefined,
+        CODE(),
+        undefined,
+        { machineId: MI_ZXNEXT, ...machine } as any
+      );
+
+    const button = () => screen.getByText(GO_TO_PC);
+
+    it("is enabled when the machine is paused with PC inside this bank", async () => {
+      await renderBank({
+        machineState: MachineControllerState.Paused,
+        slots: BANK_5_AT_8000,
+        // --- $8004 is in slot 4, which holds this bank's low half: bank offset 4.
+        pcValue: 0x8004
+      });
+
+      await waitFor(() => expect(button()).not.toBeDisabled());
+    });
+
+    it("is disabled while the machine is running", async () => {
+      /*
+       * Not a matter of taste. A running machine's PC has moved on by the time it is read, so the
+       * row the button scrolled to would be an arbitrary instruction rather than the one about to
+       * execute — the same rule the execution-point marker and `nex-label` follow.
+       */
+      await renderBank({
+        machineState: MachineControllerState.Running,
+        slots: BANK_5_AT_8000,
+        pcValue: 0x8004
+      });
+
+      await waitFor(() => expect(screen.getByTestId("disassembly-row-0")).toBeInTheDocument());
+      expect(button()).toBeDisabled();
+    });
+
+    it("is disabled when the PC is paused outside this bank", async () => {
+      // --- Paused in slot 0, which holds a different bank; this bank has no row for it.
+      await renderBank({
+        machineState: MachineControllerState.Paused,
+        slots: BANK_5_AT_8000,
+        pcValue: 0x0100
+      });
+
+      await waitFor(() => expect(screen.getByTestId("disassembly-row-0")).toBeInTheDocument());
+      expect(button()).toBeDisabled();
+    });
+
+    it("is disabled when the bank is not paged in at all", async () => {
+      // --- The bytes are still readable — a NEX's banks all live in RAM — but the PC cannot be in
+      // --- a bank the MMU is not pointing at, so there is nowhere to go.
+      await renderBank({
+        machineState: MachineControllerState.Paused,
+        slots: [0, 1, 2, 3, 4, 5, 6, 7],
+        pcValue: 0x8004
+      });
+
+      await waitFor(() => expect(screen.getByTestId("disassembly-row-0")).toBeInTheDocument());
+      expect(button()).toBeDisabled();
+    });
+
+    it("is disabled with no machine at all", async () => {
+      await renderStaticMemoryDump({
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationBank: 5
+      });
+
+      await waitFor(() => expect(screen.getByTestId("disassembly-row-0")).toBeInTheDocument());
+      expect(button()).toBeDisabled();
+    });
+
+    it("scrolls to the row the execution point is marked on", async () => {
+      const harness = await renderBank({
+        machineState: MachineControllerState.Paused,
+        slots: BANK_5_AT_8000,
+        // --- Bank offset 3, which is the `nop` after the three-byte `ld hl,$1234`: row 1.
+        pcValue: 0x8003
+      });
+
+      await waitFor(() => expect(button()).not.toBeDisabled());
+      harness.virtualApi.scrollToIndex.mockClear();
+      fireEvent.click(button());
+
+      await waitFor(() =>
+        expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(1, { align: "start" })
+      );
+    });
+
+    it("scrolls again when pressed a second time", async () => {
+      /*
+       * The jump is applied by an effect keyed on the target address, so asking twice for the same
+       * one used to change no state and scroll nowhere — leaving the button dead after the user had
+       * scrolled away and pressed it again.
+       */
+      const harness = await renderBank({
+        machineState: MachineControllerState.Paused,
+        slots: BANK_5_AT_8000,
+        pcValue: 0x8003
+      });
+
+      await waitFor(() => expect(button()).not.toBeDisabled());
+      fireEvent.click(button());
+      await waitFor(() => expect(harness.virtualApi.scrollToIndex).toHaveBeenCalled());
+      harness.virtualApi.scrollToIndex.mockClear();
+
+      fireEvent.click(button());
+
+      await waitFor(() =>
+        expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(1, { align: "start" })
+      );
+    });
+
+    it("follows the listing's own numbering, not the machine's", async () => {
+      /*
+       * The offset dropdown decides where this bank's byte 0 is numbered, and a bank can be listed
+       * at an address it is not paged at. The button targets the row the execution-point marker is
+       * on, which is `disassOffset + bankOffset` — so with the listing based at $C000 and the bank
+       * paged at $8000, PC $8003 is still bank offset 3, still row 1.
+       */
+      const harness = await renderBank(
+        {
+          machineState: MachineControllerState.Paused,
+          slots: BANK_5_AT_8000,
+          pcValue: 0x8003
+        },
+        { disassOffset: 0xc000 }
+      );
+
+      await waitFor(() => expect(button()).not.toBeDisabled());
+      harness.virtualApi.scrollToIndex.mockClear();
+      fireEvent.click(button());
+
+      await waitFor(() =>
+        expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(1, { align: "start" })
+      );
+    });
   });
 
   describe("system variable names", () => {
@@ -913,8 +1123,8 @@ describe("StaticMemoryDump", () => {
     expect(refreshedLabels).toEqual(
       expect.arrayContaining([expect.objectContaining({ name: "Unused" })])
     );
-    // --- And nothing became dirty, which is the part a refused confirmation has to guarantee.
-    expect(screen.getByText("Save annotations")).toBeDisabled();
+    // --- And nothing was written, which is the part a refused confirmation has to guarantee.
+    expect(saveFileContent).not.toHaveBeenCalled();
   });
 
   /*
@@ -1322,14 +1532,6 @@ describe("StaticMemoryDump", () => {
       effectiveAddress: 0x8000,
       initialSynopsis: undefined
     });
-    await waitFor(() => expect(screen.getByText("Save annotations")).not.toBeDisabled());
-    expect(screen.getByText("Save annotations")).toHaveAttribute(
-      "data-fill",
-      "--status-warning"
-    );
-
-    fireEvent.click(screen.getByText("Save annotations"));
-
     await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
     const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
     expect(savedAnnotations.banks["5"].lineAnnotations["0"]).toEqual({
@@ -1396,10 +1598,6 @@ describe("StaticMemoryDump", () => {
       instruction: "call L1234",
       initialComment: "old note"
     });
-    await waitFor(() => expect(screen.getByText("Save annotations")).not.toBeDisabled());
-
-    fireEvent.click(screen.getByText("Save annotations"));
-
     await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
     const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
     expect(savedAnnotations.banks["5"].lineAnnotations["0"]).toEqual({
@@ -1450,12 +1648,9 @@ describe("StaticMemoryDump", () => {
     fireEvent.contextMenu(screen.getByTestId("disassembly-row-1"));
     fireEvent.click(screen.getByText("Clear Row Annotations"));
 
-    await waitFor(() => expect(screen.getByText("Save annotations")).not.toBeDisabled());
     await waitFor(() =>
       expect(screen.getByTestId("disassembly-row-0")).not.toHaveAttribute("data-selected")
     );
-    fireEvent.click(screen.getByText("Save annotations"));
-
     await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
     const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
     expect(savedAnnotations.banks["5"].lineAnnotations).toEqual({
@@ -1512,10 +1707,7 @@ describe("StaticMemoryDump", () => {
     fireEvent.contextMenu(screen.getByTestId("disassembly-row-1"));
     fireEvent.click(screen.getByText("Clear Row Annotations"));
 
-    await waitFor(() => expect(screen.getByText("Save annotations")).not.toBeDisabled());
     expect(screen.getByTestId("disassembly-row-1")).not.toHaveAttribute("data-selected");
-    fireEvent.click(screen.getByText("Save annotations"));
-
     await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
     const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
     expect(savedAnnotations.banks["5"].regions).toEqual([
@@ -1586,8 +1778,6 @@ describe("StaticMemoryDump", () => {
         })
       ])
     );
-
-    fireEvent.click(screen.getByText("Save annotations"));
 
     await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
     const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
@@ -1696,8 +1886,6 @@ describe("StaticMemoryDump", () => {
     expect(confirmRequest.danger).toBe(true);
     expect(confirmOptions.dialogRole).toBe("alertdialog");
 
-    fireEvent.click(screen.getByText("Save annotations"));
-
     await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
     const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
     expect(savedAnnotations.globalLabels).toEqual([]);
@@ -1766,8 +1954,6 @@ describe("StaticMemoryDump", () => {
       })
     ]);
 
-    fireEvent.click(screen.getByText("Save annotations"));
-
     await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
     const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
     expect(savedAnnotations.banks["5"].operandReferences).toEqual({
@@ -1823,8 +2009,6 @@ describe("StaticMemoryDump", () => {
       bankAddressOffset: 0x8000,
       instruction: "call L8123"
     });
-
-    fireEvent.click(screen.getByText("Save annotations"));
 
     await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
     const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
@@ -1911,8 +2095,6 @@ describe("StaticMemoryDump", () => {
       )
     );
     expect(screen.getByTestId("disassembly-row-1")).not.toHaveAttribute("data-selected");
-
-    fireEvent.click(screen.getByText("Save annotations"));
 
     await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
     const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
@@ -2081,8 +2263,6 @@ describe("StaticMemoryDump", () => {
         "This changes the entire 16K bank. Continue?"
       )
     );
-    expect(screen.getByText("Save annotations")).toBeDisabled();
-    fireEvent.click(screen.getByText("Save annotations"));
     expect(saveFileContent).not.toHaveBeenCalled();
   });
 
@@ -2157,74 +2337,101 @@ describe("StaticMemoryDump", () => {
     await waitFor(() => expect(readFileContent).toHaveBeenCalledTimes(1));
     expect(screen.queryByText("Annotations loaded")).not.toBeInTheDocument();
     expect(screen.queryByText("Annotations changed")).not.toBeInTheDocument();
-    expect(screen.getByText("Save annotations")).toBeDisabled();
+    expect(saveFileContent).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByTestId("view-mode"), {
       target: { value: "disassembly" }
     });
-
-    await waitFor(() => expect(screen.getByText("Save annotations")).not.toBeDisabled());
-    expect(screen.queryByText("Annotations changed")).not.toBeInTheDocument();
-    expect(harness.document.editVersionCount).toBe(1);
-    expect(harness.document.savedVersionCount).toBe(0);
-
     fireEvent.click(screen.getByTestId("switch-Decimal"));
     fireEvent.change(screen.getByTestId("disassembly-offset"), {
       target: { value: "49152" }
     });
 
-    fireEvent.click(screen.getByText("Save annotations"));
-
-    await waitFor(() => expect(saveFileContent).toHaveBeenCalledTimes(1));
-    const savedAnnotations = JSON.parse(saveFileContent.mock.calls[0][1]);
-    expect(saveFileContent.mock.calls[0][0]).toBe("/project/game.nex.dis");
-    expect(savedAnnotations.banks["5"]).toMatchObject({
-      offsetIndex: 3,
-      lastView: "disassembly",
-      decimalView: true
+    // --- Written without being asked. Three settings, and the last write carries all three: the
+    // --- session coalesces a burst rather than writing once per control.
+    await waitFor(() => {
+      const last = saveFileContent.mock.calls.at(-1);
+      expect(last?.[0]).toBe("/project/game.nex.dis");
+      expect(JSON.parse(last![1]).banks["5"]).toMatchObject({
+        offsetIndex: 3,
+        lastView: "disassembly",
+        decimalView: true
+      });
     });
-    await waitFor(() => expect(screen.getByText("Save annotations")).toBeDisabled());
+
+    /*
+     * And the tab was never marked unsaved.
+     *
+     * Switching a bank to Memory view used to leave the document dirty until the user pressed Save,
+     * which is the clearest case for why the save was worth removing: a view setting is not an edit
+     * anybody thinks of themselves as making.
+     */
     expect(screen.queryByText("Annotations loaded")).not.toBeInTheDocument();
     expect(harness.document.savedVersionCount).toBe(harness.document.editVersionCount);
   });
 
-  it("asks before discarding dirty annotation changes on disposal", async () => {
-    const readFileContent = vi.fn(() =>
-      Promise.resolve(
-        JSON.stringify({
-          schemaVersion: 1,
-          banks: {
-            "5": {
-              offsetIndex: 2,
-              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
-            }
-          }
-        })
-      )
-    );
-    vi.stubGlobal("confirm", vi.fn(() => false));
-
-    const harness = await renderStaticMemoryDump(
-      {
-        disassemblyEnabled: true,
-        viewMode: "memory",
-        disassOffset: 0x8000,
-        nexAnnotationPath: "/project/game.nex.dis",
-        nexAnnotationBank: 5
-      },
-      readFileContent
-    );
-
-    await waitFor(() => expect(readFileContent).toHaveBeenCalledTimes(1));
-    fireEvent.change(screen.getByTestId("view-mode"), {
-      target: { value: "disassembly" }
+  /*
+   * Closing asks only when the sidecar could not be written.
+   *
+   * With every edit written as it is made, the old "discard unsaved changes?" question fired on
+   * gestures nobody thought of as edits — switching a bank to Memory view was enough. What is left
+   * is the case where the question is true: a write that failed, leaving edits nowhere but memory.
+   */
+  describe("disposal", () => {
+    const SIDECAR = JSON.stringify({
+      schemaVersion: 1,
+      banks: {
+        "5": {
+          offsetIndex: 2,
+          regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
+        }
+      }
     });
 
-    await waitFor(() => expect(screen.getByText("Save annotations")).not.toBeDisabled());
-    expect(screen.queryByText("Annotations changed")).not.toBeInTheDocument();
-    await expect(harness.getDocumentApi().beforeDocumentDisposal()).resolves.toBe(false);
-    expect(window.confirm).toHaveBeenCalledWith(
-      "Discard unsaved annotation changes in /project/game.nex.dis?"
-    );
+    async function editedBank(saveFileContent: ReturnType<typeof vi.fn>) {
+      const readFileContent = vi.fn(() => Promise.resolve(SIDECAR));
+      const harness = await renderStaticMemoryDump(
+        {
+          disassemblyEnabled: true,
+          viewMode: "memory",
+          disassOffset: 0x8000,
+          nexAnnotationPath: "/project/game.nex.dis",
+          nexAnnotationBank: 5
+        },
+        readFileContent,
+        saveFileContent
+      );
+
+      await waitFor(() => expect(readFileContent).toHaveBeenCalledTimes(1));
+      fireEvent.change(screen.getByTestId("view-mode"), {
+        target: { value: "disassembly" }
+      });
+      await waitFor(() => expect(saveFileContent).toHaveBeenCalled());
+      return harness;
+    }
+
+    it("closes without asking once the edit is written", async () => {
+      vi.stubGlobal("confirm", vi.fn(() => false));
+      const harness = await editedBank(vi.fn(() => Promise.resolve()));
+
+      await expect(harness.getDocumentApi().beforeDocumentDisposal()).resolves.toBe(true);
+      expect(window.confirm).not.toHaveBeenCalled();
+    });
+
+    it("asks before discarding edits whose write failed", async () => {
+      vi.stubGlobal("confirm", vi.fn(() => false));
+      const harness = await editedBank(
+        vi.fn(() => Promise.reject(new Error("EACCES: read-only")))
+      );
+
+      await waitFor(() => expect(harness.document.editVersionCount).not.toBe(
+        harness.document.savedVersionCount
+      ));
+      await expect(harness.getDocumentApi().beforeDocumentDisposal()).resolves.toBe(false);
+      expect(window.confirm).toHaveBeenCalledWith(
+        "/project/game.nex.dis could not be written (EACCES: read-only).\n\n" +
+          "Closing this bank discards the annotation changes it still holds. Close anyway?"
+      );
+    });
   });
 });

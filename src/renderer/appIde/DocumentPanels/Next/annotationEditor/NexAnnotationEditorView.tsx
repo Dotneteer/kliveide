@@ -11,7 +11,6 @@ import type { NexAnnotationEditorIntent } from "./NexAnnotationEditorIntents";
 import {
   ANNOTATIONS_MENU_TITLE,
   regionTypeOfAction,
-  SAVE_ANNOTATIONS_TITLE,
   type NexAnnotationEditorViewModel,
   type NexAnnotationMenuAction
 } from "./NexAnnotationEditorViewModel";
@@ -19,19 +18,20 @@ import {
 type Dispatch = (intent: NexAnnotationEditorIntent) => void;
 
 /**
- * The annotation controls in a popped-out bank's header: a warning indicator, Save, and the
- * annotations menu button.
+ * The annotation controls in a popped-out bank's header: a warning indicator and the annotations
+ * menu button.
+ *
+ * There is no Save. Annotations are written as they are made, so the warning is the only thing the
+ * file has left to say — and it now says it only when something actually went wrong.
  *
  * Dumb by construction — it renders the view model and dispatches intents, and decides nothing. The
  * enablement rules all live in `selectViewModel`, which is why they can be asserted without a DOM.
  */
 export const NexAnnotationToolbar = ({
   vm,
-  dispatch,
   onMenuRequested
 }: {
   vm: NexAnnotationEditorViewModel;
-  dispatch: Dispatch;
   onMenuRequested: (event: React.MouseEvent) => void;
 }) => {
   if (!vm.toolbar.visible) return null;
@@ -43,13 +43,6 @@ export const NexAnnotationToolbar = ({
           <Icon iconName="warning" fill="--status-error" width={16} height={16} />
         </span>
       )}
-      <SmallIconButton
-        iconName="save"
-        title={SAVE_ANNOTATIONS_TITLE}
-        enable={vm.toolbar.saveEnabled}
-        fill={vm.toolbar.saveHighlighted ? "--status-warning" : undefined}
-        clicked={() => dispatch({ type: "saveRequested" })}
-      />
       <SmallIconButton
         iconName="note"
         title={ANNOTATIONS_MENU_TITLE}

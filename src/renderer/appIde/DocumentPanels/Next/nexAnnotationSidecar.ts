@@ -77,18 +77,16 @@ export function formatNexAnnotations(annotations: NexFileAnnotations): string {
 }
 
 /*
- * The sidecar holds two subtrees with two different save policies, and neither writer may clobber
- * the other.
+ * The sidecar holds two subtrees with two writers, and neither may clobber the other.
  *
- * - **annotations** (`source`, `globalLabels`, `banks`) are dirty-tracked and written when the user
- *   asks — the contract `.docs/nex-annotations.md` describes.
- * - **`debug`** (the bank breakpoints) is written the moment it changes, because a breakpoint lost
- *   because nobody pressed Save is a bug rather than a policy.
+ * - **annotations** (`source`, `globalLabels`, `banks`) are written by the annotation session.
+ * - **`debug`** (the bank breakpoints) is written by the breakpoint path.
  *
- * Writing the whole in-memory model from either side would therefore be wrong in one direction or
- * the other: a breakpoint would flush half-finished annotation edits, and an annotation save would
- * revert a breakpoint set since it loaded. Both writers read the file, replace only their own keys,
- * and write back — which also means a key this build does not know about survives a round trip.
+ * Both write the moment their half changes — the contract `.docs/nex-annotations.md` describes.
+ * Sharing a policy is not the same as sharing a writer: writing the whole in-memory model from
+ * either side would still revert whatever the other had written since it loaded, and the two run
+ * independently and concurrently. So each reads the file, replaces only its own keys, and writes
+ * back — which also means a key this build does not know about survives a round trip.
  *
  * See `.plans/NEX_DEBUGGING_PLAN.md` §4.5.
  */

@@ -13,7 +13,6 @@ import {
 // ─── Messages ────────────────────────────────────────────────────────────────
 
 export const ANNOTATION_LOAD_FAILED_MESSAGE = "Annotation file could not be loaded.";
-export const SAVE_ANNOTATIONS_TITLE = "Save annotations";
 export const ANNOTATIONS_MENU_TITLE = "Annotations";
 
 // ─── View model shape ────────────────────────────────────────────────────────
@@ -33,11 +32,7 @@ export type NexAnnotationToolbarViewModel = {
   /** The whole annotation block is absent for a document with no sidecar. */
   visible: boolean;
   warning: NexAnnotationWarningViewModel;
-  saveEnabled: boolean;
-  /** True while there are unsaved edits, which tints the save button. */
-  saveHighlighted: boolean;
   menuEnabled: boolean;
-  busy: boolean;
 };
 
 /**
@@ -95,8 +90,13 @@ export type NexAnnotationEditorViewModel = {
   annotations?: NexFileAnnotations;
   /** The load failure to show in place of the listing, when there is one. */
   loadError?: string;
-  /** Everything an unsaved-changes prompt needs, read by the controller on dispose. */
-  hasUnsavedChanges: boolean;
+  /**
+   * The sidecar could not be written, so this bank's edits exist only in memory.
+   *
+   * Not "unsaved changes": annotations are written as they are made, so this is a failure state, not
+   * a normal one. It is what the discard prompt on close asks about.
+   */
+  unwritten: boolean;
 };
 
 // ─── Selector ────────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ export function selectViewModel(state: NexAnnotationEditorState): NexAnnotationE
     },
     annotations: state.annotations,
     loadError: state.loadError,
-    hasUnsavedChanges: state.dirty
+    unwritten: !!state.saveError
   };
 }
 
@@ -126,11 +126,8 @@ function selectToolbar(
     // --- show its warning, which is the whole point of the indicator.
     visible: !!state.env.annotationPath,
     warning: selectWarning(state, enabled),
-    saveEnabled: state.dirty && !!state.annotations && state.busy !== "saving",
-    saveHighlighted: state.dirty,
     // --- The menu acts on the selection, so with nothing selected there is nothing to act on.
-    menuEnabled: enabled && state.selection?.activeIndex !== undefined,
-    busy: state.busy !== undefined
+    menuEnabled: enabled && state.selection?.activeIndex !== undefined
   };
 }
 
@@ -308,16 +305,23 @@ export function actionOffsetSpan(
 }
 
 /**
- * The question asked when a document with unsaved annotation edits is being closed.
+ * The question asked when closing a document whose annotations could not be written.
  *
- * A plain string, because this one is answered by the browser's `window.confirm` rather than the
- * app's own dialog — see `nativeConfirm` in the ports for why that is preserved rather than fixed
- * here. The fallback wording matches the existing behaviour exactly.
+ * Only ever asked in that case. Annotations are written as they are made, so closing normally asks
+ * nothing — but a bank whose last write failed holds edits that exist nowhere else, and closing it
+ * is the one gesture that drops them.
+ *
+ * It names the reason rather than asking about "unsaved changes", which would be a puzzle in an
+ * editor that has no Save. A plain string, because this one is answered by the browser's
+ * `window.confirm` rather than the app's own dialog — see `nativeConfirm` in the ports for why.
  */
 export function discardConfirmMessage(state: NexAnnotationEditorState): string {
-  return `Discard unsaved annotation changes in ${
-    state.env.annotationPath ?? "the annotation file"
-  }?`;
+  const path = state.env.annotationPath ?? "the annotation file";
+  const reason = state.saveError ? ` (${state.saveError})` : "";
+  return (
+    `${path} could not be written${reason}.\n\n` +
+    "Closing this bank discards the annotation changes it still holds. Close anyway?"
+  );
 }
 
 /** The question asked before a region edit rewrites the whole 16K bank. Text preserved verbatim. */

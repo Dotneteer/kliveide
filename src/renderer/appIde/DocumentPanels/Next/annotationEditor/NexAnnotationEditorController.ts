@@ -1,5 +1,4 @@
 import { UiController } from "@mvc/core/UiController";
-import { messageOf } from "@mvc/core/errors";
 
 import {
   countLabelReferences,
@@ -68,7 +67,7 @@ export class NexAnnotationEditorController extends UiController<
   NexAnnotationEditorViewModel
 > {
   private unsubscribeSession?: () => void;
-  private lastReportedDirty = false;
+  private lastReportedUnwritten = false;
 
   constructor(
     private readonly ports: NexAnnotationEditorPorts,
@@ -167,10 +166,6 @@ export class NexAnnotationEditorController extends UiController<
         return;
       }
 
-      case "saveRequested":
-        await this.save();
-        return;
-
       case "synopsisCommentRequested":
         await this.editComment(intent.rowIndex, "synopsis");
         return;
@@ -230,29 +225,21 @@ export class NexAnnotationEditorController extends UiController<
       this.emit({ type: "sessionSnapshotReceived", snapshot });
       if (this.state === before) return;
 
-      this.reportDirty();
+      this.reportUnwritten();
     });
   }
 
-  /** Tell the outside world about a change in the dirty flag, and only about a change. */
-  private reportDirty(): void {
-    if (this.state.dirty === this.lastReportedDirty) return;
-    this.lastReportedDirty = this.state.dirty;
-    this.ports.dirtyChanged(this.state.dirty);
-  }
-
-  private async save(): Promise<void> {
-    const { annotationPath } = this.state.env;
-    if (!annotationPath || !this.state.annotations) return;
-
-    this.emit({ type: "saveStarted" });
-    try {
-      await this.ports.session.save(annotationPath);
-      this.emit({ type: "saveSettled" });
-    } catch (error) {
-      // --- Nothing was written, so the edits stay dirty with the reason on show.
-      this.emit({ type: "saveSettled", error: messageOf(error) });
-    }
+  /**
+   * Tell the outside world whether the sidecar failed to be written, and only when that changes.
+   *
+   * Keyed on `saveError`, not on `dirty`: with annotations written as they are made, `dirty` is true
+   * for the duration of a write and would blink the tab's unsaved mark on every edit.
+   */
+  private reportUnwritten(): void {
+    const unwritten = !!this.state.saveError;
+    if (unwritten === this.lastReportedUnwritten) return;
+    this.lastReportedUnwritten = unwritten;
+    this.ports.unwrittenChanged(unwritten);
   }
 
   /** Publish an edited model, or do nothing when the transform reported no change. */
@@ -675,7 +662,10 @@ export class NexAnnotationEditorController extends UiController<
    * close when this returns false.
    */
   async confirmDisposal(): Promise<boolean> {
-    if (!this.state.dirty) return true;
+    // --- Edits are written as they are made, so in normal use there is nothing to ask about. The
+    // --- question survives for the one case where closing really would lose work: a write that
+    // --- failed, whose edits exist only in this session.
+    if (!this.state.saveError) return true;
     return this.ports.nativeConfirm(discardConfirmMessage(this.state));
   }
 

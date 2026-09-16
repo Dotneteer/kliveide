@@ -54,11 +54,13 @@ export type NexAnnotationSessionPort = {
     listener: (snapshot: NexAnnotationSessionSnapshot) => void
   ): () => void;
 
-  /** Publish an edited model. Every subscriber of that sidecar sees it. */
+  /**
+   * Publish an edited model. Every subscriber of that sidecar sees it, and the session writes it.
+   *
+   * Not awaited, and returns nothing: there is no Save, so an edit is finished the moment it is
+   * published. A write that fails comes back through the next snapshot's `saveError`.
+   */
   update(annotationPath: string, annotations: NexFileAnnotations): void;
-
-  /** Write the sidecar. Rejects with the reason, which becomes the editor's save error. */
-  save(annotationPath: string): Promise<void>;
 };
 
 /** The row a dialog is being opened for, resolved from an index before the port is called. */
@@ -159,10 +161,15 @@ export type NexAnnotationEditorPorts = {
    */
   navigateToAddress: (address: number) => void;
   /**
-   * Reports the editor's dirty state outward, so the document tab can show it and closing can be
-   * refused. A port because "the document" is a renderer service the editor must not know about.
+   * Reports outward that the sidecar could not be written, so the document tab can mark itself
+   * unsaved and closing can be refused. A port because "the document" is a renderer service the
+   * editor must not know about.
+   *
+   * **Not** the dirty flag. Annotations are written as they are made, so a document is unsaved only
+   * when a write actually failed; reporting the moments between an edit and its write would flicker
+   * the tab's mark on every annotation.
    */
-  dirtyChanged: (dirty: boolean) => void;
+  unwrittenChanged: (unwritten: boolean) => void;
 };
 
 /** What the view mode control offers, kept here so the view and the model agree on the set. */

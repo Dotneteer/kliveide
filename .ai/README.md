@@ -8,6 +8,13 @@ This folder stores durable notes for future AI-assisted work in this repository.
   `interactive-command-notes.md`.
 - For future full-machine WASM backend migrations, read
   `wasm-v2-machine-migration-guide.md`.
+- **Before disassembling Z80 code out of a `.nex` file, or writing anything into a
+  `.nex.dis` annotation sidecar, read `nex-reverse-engineering-guide.md`.** It carries
+  the bank/offset/address model that every offset depends on, the NEX container layout,
+  the full sidecar schema and the rules its loader enforces, a verified recipe for
+  producing raw and annotated listings, the official Next register and I/O port
+  references in `_input/next-fpga/` and how to query them, and the rules that stop a
+  hand-written sidecar destroying the breakpoints stored beside the annotations.
 - For the user's high-level TypeScript-to-WASM migration intent and lessons
   learned from 48K/128K/+3E work, read
   `wasm-migration-intent-and-lessons.md`.

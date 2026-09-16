@@ -154,6 +154,26 @@ When your model supports memory paging, a new switch, **64K View**, is displayed
 
 The **Offset** dropdown lets you select a disassembly offset from one of the 8K page boundaries. This selection may help set a disassembly base address to emulate the page's location.
 
+## Popped-Out `.NEX` Banks
+
+A bank of a `.NEX` file opened as its own document shows the same disassembly listing, with a toolbar
+of its own. Beside the **Go To** box is a button that scrolls the listing to the **program counter**,
+the same way the arrow does in the Disassembly View.
+
+It is available only when the machine is **paused** *and* the program counter is currently inside
+this bank. Both halves matter, and neither is fussiness:
+
+- A running machine's program counter has moved on by the time it is read, so the row it scrolled to
+  would be an arbitrary instruction rather than the one about to execute.
+- A pop-out shows one 16K bank. The program spends most of its time in other banks, and a bank the
+  processor is not in has no row to go to at all &mdash; so the button is off far more often here
+  than in the Disassembly View, and that is the honest answer rather than a fault.
+
+The header's **Bank** readout tells you which case you are in: it ends with `· PC` exactly when the
+program counter is in this bank. The button lands on the row carrying the execution-point marker,
+which follows the listing's own numbering &mdash; so it is right even when the **Offset** dropdown
+lists the bank at an address it is not paged at.
+
 ## Machine-Specific Memory Partitions
 
 The bank column and the bank chooser name partitions exactly as the rest of the IDE does. See

@@ -65,6 +65,8 @@ export function NexEndOfLineCommentDialog({
       <DialogRow label="Instruction" rows={true}>
         <div className={styles.readOnlyValue}>{instruction}</div>
       </DialogRow>
+      {/* --- Kept on show while you type: a user comment replaces this one in the listing, so this
+          --- row is what says which note is being given up. */}
       {generatedHardComment && (
         <DialogRow label="Generated hard comment" rows={true}>
           <div className={styles.readOnlyValue}>{generatedHardComment}</div>
@@ -104,11 +106,21 @@ export function normalizeEndOfLineComment(comment: string): string | undefined {
   return normalized.length > 0 ? normalized : undefined;
 }
 
+/**
+ * The row's comment column as it will look once this dialog is saved.
+ *
+ * A user comment **replaces** the generated one rather than being appended to it, which is what the
+ * listing does — see `decorateAnnotatedItems`. The preview exists to show the row as it will be, so
+ * it has to make the same choice; showing them joined here while the listing shows only one would
+ * make the preview a small lie about the thing it is previewing.
+ *
+ * With the user comment empty, the generated one is what the row will show — which is also how this
+ * previews the Clear button's effect.
+ */
 export function formatEndOfLinePreview(
   generatedHardComment?: string,
   comment?: string
 ): string {
-  const parts = [generatedHardComment, normalizeEndOfLineComment(comment ?? "")]
-    .filter((part): part is string => !!part);
-  return parts.length > 0 ? `; ${parts.join(" | ")}` : "";
+  const text = normalizeEndOfLineComment(comment ?? "") ?? generatedHardComment;
+  return text ? `; ${text}` : "";
 }

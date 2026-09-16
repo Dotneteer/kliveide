@@ -117,13 +117,6 @@ describe("reduce: listing", () => {
     expect(reduce(state, { type: "listingSettled", items })).toBe(state);
   });
 
-  it("does not disturb a save running beside it", () => {
-    // --- The editor owns only the save; the listing is generated outside it.
-    const saving = reduce(aState(), { type: "saveStarted" });
-    const settled = reduce(saving, { type: "listingSettled", items: aListing(2) });
-    expect(settled.busy).toEqual("saving");
-  });
-
   it("clamps a selection that the new listing is too short for", () => {
     // --- Marking a range as `skip` collapses many rows into one, so the listing can shrink under a
     // --- selection that was made against the old one.
@@ -154,26 +147,33 @@ describe("reduce: listing", () => {
   });
 });
 
-describe("reduce: saving", () => {
-  it("clears a previous save error when a new save starts", () => {
-    const state = aState({ saveError: "disk full" });
-    const next = reduce(state, { type: "saveStarted" });
-    expect(next.busy).toEqual("saving");
-    expect(next.saveError).toEqual(undefined);
-  });
+describe("reduce: writing", () => {
+  /*
+   * The editor no longer models a save at all.
+   *
+   * Annotations are written by the session as they are made, so `dirty` and `saveError` arrive
+   * through its snapshot like everything else. There is no local save lifecycle to keep in step
+   * with it — which is the disagreement the old `saveStarted`/`saveSettled` pair existed to avoid.
+   */
+  it("takes the write state from the session's snapshot", () => {
+    const failed = reduce(aState(), {
+      type: "sessionSnapshotReceived",
+      snapshot: {
+        annotations: anAnnotationModel(),
+        dirty: true,
+        loading: false,
+        saveError: "read-only"
+      }
+    });
+    expect(failed.dirty).toEqual(true);
+    expect(failed.saveError).toEqual("read-only");
 
-  it("records the reason a save failed", () => {
-    const saving = reduce(aState(), { type: "saveStarted" });
-    const settled = reduce(saving, { type: "saveSettled", error: "read-only" });
-    expect(settled.busy).toEqual(undefined);
-    expect(settled.saveError).toEqual("read-only");
-  });
-
-  it("leaves the dirty flag to the session", () => {
-    // --- The session owns `dirty` and reports it through its own snapshot; clearing it here would
-    // --- let the two disagree.
-    const saving = reduce(aState({ dirty: true }), { type: "saveStarted" });
-    expect(reduce(saving, { type: "saveSettled" }).dirty).toEqual(true);
+    const landed = reduce(failed, {
+      type: "sessionSnapshotReceived",
+      snapshot: { annotations: anAnnotationModel(), dirty: false, loading: false }
+    });
+    expect(landed.dirty).toEqual(false);
+    expect(landed.saveError).toEqual(undefined);
   });
 });
 

@@ -64,6 +64,5 @@ export type NexAnnotationEditorIntent =
   | { type: "rowAnnotationsCleared"; rowIndex?: number }
 
   // ─── Saving ────────────────────────────────────────────────────────────────
-  | { type: "saveRequested" }
   // --- Closing a dirty document: the answer decides whether the close may proceed.
   | { type: "disposeRequested" };

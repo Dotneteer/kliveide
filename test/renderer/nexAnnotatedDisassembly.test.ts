@@ -417,6 +417,70 @@ describe("createAnnotatedNexDisassemblyItems with a program counter", () => {
   });
 });
 
+describe("end-of-line comments and the disassembler's own", () => {
+  /*
+   * `nextreg $43,a` — the disassembler names Next register $43 "Palette Control" from its own
+   * table, so this is a row that carries a generated hard comment before any annotation touches it.
+   */
+  const NEXTREG_43 = () => {
+    const contents = new Uint8Array(0x4000);
+    contents.set([0xed, 0x92, 0x43]);
+    return contents;
+  };
+
+  const rowFor = async (comment?: string) => {
+    const items = await createAnnotatedNexDisassemblyItems({
+      annotations: {
+        schemaVersion: 1,
+        globalLabels: [],
+        banks: {
+          "5": {
+            offsetIndex: 2,
+            regions: [{ start: 0, end: 2, type: "disassemble" }],
+            localLabels: [],
+            lineAnnotations: comment ? { "0": { comment } } : {}
+          }
+        }
+      },
+      bank: 5,
+      contents: NEXTREG_43(),
+      disassOffset: 0x8000
+    });
+    return (items ?? []).find((item) => !item.isPrefixItem)!;
+  };
+
+  it("shows the disassembler's comment when the row has no user comment", async () => {
+    const row = await rowFor();
+
+    expect(row.instruction).toBe("nextreg $43,a");
+    expect(row.hardComment).toBe("Palette Control");
+  });
+
+  it("shows only the user's comment when the row has one", async () => {
+    /*
+     * The generated note is the weaker claim: it says what the opcode does, which a reader who has
+     * annotated this row already knows. Joining them buried the sentence worth reading behind the
+     * one that was not.
+     */
+    const row = await rowFor("set the border to black");
+
+    expect(row.hardComment).toBe("set the border to black");
+    expect(row.hardComment).not.toContain("Palette Control");
+  });
+
+  it("keeps the generated comment available for the dialog to show", async () => {
+    // --- Replaced in the listing, not discarded: this is what the end-of-line dialog displays so
+    // --- the note being given up stays visible, and what the row falls back to when it is cleared.
+    const row = await rowFor("set the border to black");
+
+    expect(row.annotation?.generatedHardComment).toBe("Palette Control");
+  });
+
+  it("falls back to the generated comment once the user's is cleared", async () => {
+    expect((await rowFor(undefined)).hardComment).toBe("Palette Control");
+  });
+});
+
 describe("createAnnotatedNexDisassemblyItems fallback operand names", () => {
   /** `ld hl,$5C08` followed by `call $8010`. */
   const CONTENTS = () => {

@@ -361,10 +361,22 @@ function decorateAnnotatedItems(
       item.formattedLabel = labels[0].name;
     }
 
+    /*
+     * A user's end-of-line comment *replaces* the disassembler's own, rather than joining it.
+     *
+     * Both want the same place — the one column at the right of the row — and the generated note is
+     * the weaker claim of the two: `; Palette Control` says what the *opcode* does, which the reader
+     * of an annotated listing already knows by the time they have written a note about what this
+     * particular instruction is doing in this particular program. Joining them produced
+     * `; Palette Control | set the border to black`, which buries the sentence worth reading behind
+     * the one that is not, on exactly the rows the reader cared enough to annotate.
+     *
+     * The generated text is not lost: it is kept in `generatedHardComment` below, and the end-of-line
+     * dialog shows it in its own row so what is being replaced stays visible while you type. Clearing
+     * the user comment brings it back to the listing.
+     */
     if (lineAnnotation?.comment) {
-      item.hardComment = item.hardComment
-        ? `${item.hardComment} | ${lineAnnotation.comment}`
-        : lineAnnotation.comment;
+      item.hardComment = lineAnnotation.comment;
     }
     item.annotation = {
       ...(item.annotation ?? createAnnotationMetadata(bank, bankOffset, rowByteLength, rowRegionType)),

@@ -71,30 +71,20 @@ describe("toolbar", () => {
     expect(selectViewModel(loaded()).toolbar.warning.kind).toEqual("none");
   });
 
-  it("lets a save failure win the tooltip over a load failure", () => {
-    // --- The save is the more recent news.
+  it("lets a write failure win the tooltip over a load failure", () => {
+    // --- The write is the more recent news.
     const vm = selectViewModel(loaded({ saveError: "read-only", loadError: "bad json" }));
     expect(vm.toolbar.warning).toEqual({ kind: "warning", title: "read-only" });
   });
 
-  it("enables and highlights save only while there are unsaved edits", () => {
-    expect(selectViewModel(loaded()).toolbar.saveEnabled).toEqual(false);
-    expect(selectViewModel(loaded()).toolbar.saveHighlighted).toEqual(false);
-
-    const dirty = selectViewModel(loaded({ dirty: true })).toolbar;
-    expect(dirty.saveEnabled).toEqual(true);
-    expect(dirty.saveHighlighted).toEqual(true);
-  });
-
-  it("does not offer save without a loaded model to write", () => {
-    expect(selectViewModel(aState({ dirty: true })).toolbar.saveEnabled).toEqual(false);
-  });
-
-  it("does not offer save while one is already running", () => {
-    const vm = selectViewModel(loaded({ dirty: true, busy: "saving" }));
-    expect(vm.toolbar.saveEnabled).toEqual(false);
-    // --- Still highlighted: there are still unsaved edits.
-    expect(vm.toolbar.saveHighlighted).toEqual(true);
+  /*
+   * An edit in flight is not a warning.
+   *
+   * `dirty` is true from the moment an edit is published until its write lands, which is most
+   * annotations for a moment. Only a failure is worth a warning triangle.
+   */
+  it("shows no warning merely because a write is in flight", () => {
+    expect(selectViewModel(loaded({ dirty: true })).toolbar.warning.kind).toEqual("none");
   });
 
   it("enables the menu only with something selected", () => {
@@ -108,11 +98,6 @@ describe("toolbar", () => {
     expect(selectViewModel(state).toolbar.menuEnabled).toEqual(false);
   });
 
-  it("reports busy for either job", () => {
-    expect(selectViewModel(loaded({ busy: "listing" })).toolbar.busy).toEqual(true);
-    expect(selectViewModel(loaded({ busy: "saving" })).toolbar.busy).toEqual(true);
-    expect(selectViewModel(loaded()).toolbar.busy).toEqual(false);
-  });
 });
 
 describe("menu", () => {
@@ -253,23 +238,37 @@ describe("actionOffsetSpan", () => {
   });
 });
 
-describe("hasUnsavedChanges and the discard prompt", () => {
-  it("mirrors the session's dirty flag", () => {
-    expect(selectViewModel(loaded()).hasUnsavedChanges).toEqual(false);
-    expect(selectViewModel(loaded({ dirty: true })).hasUnsavedChanges).toEqual(true);
+describe("unwritten and the discard prompt", () => {
+  /*
+   * Keyed on the write failing, not on the edit being in flight.
+   *
+   * `dirty` is the state of the disk catching up, which is normal; `saveError` is the state of it
+   * having refused, which is not. Only the second is anything for a document tab to show.
+   */
+  it("reports a failed write, and not an edit in flight", () => {
+    expect(selectViewModel(loaded()).unwritten).toEqual(false);
+    expect(selectViewModel(loaded({ dirty: true })).unwritten).toEqual(false);
+    expect(selectViewModel(loaded({ dirty: true, saveError: "read-only" })).unwritten).toEqual(
+      true
+    );
   });
 
-  it("names the sidecar in the discard question, wording preserved verbatim", () => {
-    // --- Answered by `window.confirm`, and the existing DOM suite asserts this exact string.
-    expect(discardConfirmMessage(loaded({ dirty: true }))).toEqual(
-      `Discard unsaved annotation changes in ${SIDECAR}?`
+  it("names the sidecar and the reason in the discard question", () => {
+    expect(discardConfirmMessage(loaded({ dirty: true, saveError: "EACCES" }))).toEqual(
+      `${SIDECAR} could not be written (EACCES).\n\n` +
+        "Closing this bank discards the annotation changes it still holds. Close anyway?"
     );
   });
 
   it("falls back to a generic name when the sidecar path is unknown", () => {
-    const state = loaded({ env: anEnvironment({ annotationPath: undefined }), dirty: true });
+    const state = loaded({
+      env: anEnvironment({ annotationPath: undefined }),
+      dirty: true,
+      saveError: "EACCES"
+    });
     expect(discardConfirmMessage(state)).toEqual(
-      "Discard unsaved annotation changes in the annotation file?"
+      "the annotation file could not be written (EACCES).\n\n" +
+        "Closing this bank discards the annotation changes it still holds. Close anyway?"
     );
   });
 });

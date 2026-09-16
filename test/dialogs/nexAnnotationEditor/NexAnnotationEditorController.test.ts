@@ -195,60 +195,89 @@ describe("selection", () => {
   });
 });
 
-describe("saving", () => {
-  it("writes the sidecar and clears the dirty flag through the session", async () => {
-    const controller = await opened();
-    await controller.dispatch({ type: "rowSelected", index: 0, extend: false });
-    fakes.dialogs.answerWith("synopsisComment", { synopsis: "entry" });
-    await controller.dispatch({ type: "synopsisCommentRequested", rowIndex: 0 });
+describe("writing", () => {
+  /** Make one ordinary edit — a synopsis comment on the first row. */
+  async function edit(controller: Awaited<ReturnType<typeof opened>>, synopsis: string, row = 0) {
+    fakes.dialogs.answerWith("synopsisComment", { synopsis });
+    await controller.dispatch({ type: "rowSelected", index: row, extend: false });
+    await controller.dispatch({ type: "synopsisCommentRequested", rowIndex: row });
     await controller.settle();
-    expect(controller.state.dirty).toEqual(true);
+  }
 
-    await controller.dispatch({ type: "saveRequested" });
-    await controller.settle();
-    expect(fakes.session.saveCalls).toEqual([SIDECAR]);
+  it("writes an edit without being asked", async () => {
+    const controller = await opened();
+    await edit(controller, "entry");
+
+    // --- The edit is published and written in one step; there is no intent that means "save".
+    expect(fakes.session.writeCalls).toEqual([SIDECAR]);
+
+    await fakes.session.writesSettled();
     expect(controller.state.dirty).toEqual(false);
+    expect(controller.state.saveError).toEqual(undefined);
   });
 
-  it("keeps the edits dirty and reports why when the write fails", async () => {
+  it("keeps the edits and reports why when the write fails", async () => {
     const controller = await opened();
-    fakes.dialogs.answerWith("synopsisComment", { synopsis: "entry" });
-    await controller.dispatch({ type: "rowSelected", index: 0, extend: false });
-    await controller.dispatch({ type: "synopsisCommentRequested", rowIndex: 0 });
-    await controller.settle();
-
-    fakes.session.saveError = new Error("read-only");
-    await controller.dispatch({ type: "saveRequested" });
-    await controller.settle();
+    fakes.session.writeError = "read-only";
+    await edit(controller, "entry");
+    await fakes.session.writesSettled();
 
     expect(controller.state.saveError).toEqual("read-only");
     expect(controller.state.dirty).toEqual(true);
   });
 
-  it("does not write without a loaded model", async () => {
-    const session = new FakeSession({ annotations: undefined });
-    const controller = await opened({}, { session });
-    await controller.dispatch({ type: "saveRequested" });
-    await controller.settle();
-    expect(fakes.session.saveCalls).toEqual([]);
+  /*
+   * The regression this policy exists to avoid.
+   *
+   * `dirty` is true for as long as a write takes, so reporting *it* outward would put an unsaved
+   * mark on the tab for a moment on every annotation — a flicker with no meaning, in an editor that
+   * has no Save to make it go away.
+   */
+  it("never marks the document unsaved for an edit that was written", async () => {
+    const controller = await opened();
+    await edit(controller, "a");
+    await fakes.session.writesSettled();
+    await edit(controller, "b", 1);
+    await fakes.session.writesSettled();
+
+    expect(fakes.unwrittenChanged).not.toHaveBeenCalled();
   });
 
-  it("reports the dirty flag outward, and only when it changes", async () => {
+  it("marks the document unsaved when a write fails, and clears it when one lands", async () => {
     const controller = await opened();
-    expect(fakes.dirtyChanged).not.toHaveBeenCalled();
 
-    fakes.dialogs.answerWith("synopsisComment", { synopsis: "a" });
+    fakes.session.writeError = "read-only";
+    await edit(controller, "a");
+    await fakes.session.writesSettled();
+    expect(fakes.unwrittenChanged).toHaveBeenCalledWith(true);
+
+    fakes.unwrittenChanged.mockClear();
+    fakes.session.writeError = undefined;
+    await edit(controller, "b", 1);
+    await fakes.session.writesSettled();
+    expect(fakes.unwrittenChanged).toHaveBeenCalledWith(false);
+  });
+
+  it("reports a change in that state only once", async () => {
+    const controller = await opened();
+    fakes.session.writeError = "read-only";
+    await edit(controller, "a");
+    await fakes.session.writesSettled();
+
+    fakes.unwrittenChanged.mockClear();
+    await edit(controller, "b", 1);
+    await fakes.session.writesSettled();
+    // --- Still failing: no news.
+    expect(fakes.unwrittenChanged).not.toHaveBeenCalled();
+  });
+
+  it("writes nothing without a loaded model", async () => {
+    const session = new FakeSession({ annotations: undefined });
+    const controller = await opened({}, { session });
     await controller.dispatch({ type: "rowSelected", index: 0, extend: false });
     await controller.dispatch({ type: "synopsisCommentRequested", rowIndex: 0 });
     await controller.settle();
-    expect(fakes.dirtyChanged).toHaveBeenCalledWith(true);
-
-    fakes.dirtyChanged.mockClear();
-    fakes.dialogs.answerWith("synopsisComment", { synopsis: "b" });
-    await controller.dispatch({ type: "synopsisCommentRequested", rowIndex: 1 });
-    await controller.settle();
-    // --- Still dirty: no news.
-    expect(fakes.dirtyChanged).not.toHaveBeenCalled();
+    expect(session.writeCalls).toEqual([]);
   });
 });
 
@@ -813,22 +842,37 @@ describe("clearing row annotations", () => {
 });
 
 describe("closing", () => {
-  it("allows the close outright when nothing is unsaved", async () => {
+  it("allows the close outright when there is nothing to lose", async () => {
     const controller = await opened();
     await expect(controller.confirmDisposal()).resolves.toEqual(true);
     expect(fakes.nativeConfirm).not.toHaveBeenCalled();
   });
 
-  it("asks before discarding unsaved edits, and refuses when told to", async () => {
+  it("allows the close after an ordinary edit, which is already on disk", async () => {
     const controller = await opened();
     fakes.dialogs.answerWith("synopsisComment", { synopsis: "x" });
     await controller.dispatch({ type: "synopsisCommentRequested", rowIndex: 0 });
     await controller.settle();
+    await fakes.session.writesSettled();
+
+    await expect(controller.confirmDisposal()).resolves.toEqual(true);
+    expect(fakes.nativeConfirm).not.toHaveBeenCalled();
+  });
+
+  it("asks only when the sidecar could not be written, and refuses when told to", async () => {
+    const controller = await opened();
+    fakes.session.writeError = "EACCES: read-only";
+    fakes.dialogs.answerWith("synopsisComment", { synopsis: "x" });
+    await controller.dispatch({ type: "synopsisCommentRequested", rowIndex: 0 });
+    await controller.settle();
+    await fakes.session.writesSettled();
 
     fakes.nativeConfirm.mockReturnValue(false);
     await expect(controller.confirmDisposal()).resolves.toEqual(false);
+    // --- The question names the reason: "unsaved changes" would be a puzzle with no Save.
     expect(fakes.nativeConfirm).toHaveBeenCalledWith(
-      `Discard unsaved annotation changes in ${SIDECAR}?`
+      `${SIDECAR} could not be written (EACCES: read-only).\n\n` +
+        "Closing this bank discards the annotation changes it still holds. Close anyway?"
     );
   });
 });
