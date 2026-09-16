@@ -107,6 +107,12 @@
   operands from the labels you wrote in the NEX viewer &mdash; `call DrawSprite` rather than
   `call $C100`. A bank's own labels apply only while that bank is paged in, so the names follow the
   program as it pages; labels you made global apply everywhere.
+- **A bank listed at `$4000` no longer disassembles the screen.** That range is the ULA screen
+  &mdash; bitmap and attributes, `$4000`&ndash;`$5AFF` &mdash; and it used to fill the listing with
+  thousands of rows of decoded pixels ahead of the code. It now collapses to a single line, and a
+  **Screen** switch in the toolbar brings the disassembly back when you want it. The switch appears
+  only for a NEX bank listed at `$4000`, and it changes the listing only: regions and annotations you
+  made inside the range are kept.
 - **Follow a label to where it is defined.** A NEX bank's disassembly context menu opens with **Go to
   Definition** whenever the line names a label &mdash; `ld hl,InitPalettes` &mdash; and it takes you
   there. A definition inside the bank on screen is a scroll, and works with no machine running. One

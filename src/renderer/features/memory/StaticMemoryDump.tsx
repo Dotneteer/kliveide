@@ -37,7 +37,10 @@ import {
 } from "@renderer/controls/ContextMenu";
 import {
   createAnnotatedNexDisassemblyItems,
-  pcAnchoredRuns
+  createScreenSkipItem,
+  pcAnchoredRuns,
+  SCREEN_AREA_RANGE,
+  screenAreaApplies
 } from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
 import { useSysVarOperandLabelResolver } from "@renderer/appIde/DocumentPanels/useSysVarOperandLabels";
 // --- The same wording as the live Disassembly view's switch: one control in two places.
@@ -95,6 +98,15 @@ type MemoryDumpViewState = {
   nexAnnotationBank?: number;
   /** Name 16-bit data operands after the machine's system variables. Defaults to on. */
   sysVarNames?: boolean;
+  /**
+   * Disassemble `$4000-$5AFF` in a NEX bank listed at `$4000`. Defaults to **off**.
+   *
+   * Off by default because that range is the ULA screen whenever a bank is listed there, and 6,912
+   * bytes of bitmap disassemble into some 3,000 rows of plausible-looking nonsense in front of the
+   * code the reader opened the bank for. Kept in the document's view state beside `sysVarNames`
+   * rather than in the sidecar: it is how this listing is shown, not a fact about the program.
+   */
+  disassembleScreen?: boolean;
 };
 
 type StaticDumpViewMode = "memory" | "disassembly";
@@ -173,7 +185,16 @@ const StaticMemoryDump = ({
   // --- On unless the reader turned it off: a named address is the more informative default, and a
   // --- listing that has never been configured should be the readable one.
   const sysVarNames = currentViewState.sysVarNames ?? true;
+  const disassembleScreen = currentViewState.disassembleScreen ?? false;
   const disassOffset = currentViewState.disassOffset ?? 0;
+  /*
+   * Whether this listing offers the screen switch at all, and whether the screen is being hidden.
+   *
+   * Only a NEX bank listed at `$4000`: that is the one listing whose first 6,912 rows *are* screen
+   * memory. Every other bank has no switch, because the same offsets there are ordinary code or data.
+   */
+  const screenSwitchOffered = screenAreaApplies({ isNexBank: isNexBankDocument, disassOffset });
+  const hideScreenArea = screenSwitchOffered && !disassembleScreen;
   const [memoryJumpAddress, setMemoryJumpAddress] = useState<number>();
   /*
    * Where to scroll the listing, and a counter beside it.
@@ -684,6 +705,10 @@ const StaticMemoryDump = ({
     changeViewState((vs) => (vs.sysVarNames = nextSysVarNames));
   }, [changeViewState]);
 
+  const changeDisassembleScreen = useCallback((next: boolean) => {
+    changeViewState((vs) => (vs.disassembleScreen = next));
+  }, [changeViewState]);
+
   const selectDisassemblyRow = useCallback((index: number, extendSelection: boolean) => {
     dispatchAnnotation({ type: "rowSelected", index, extend: extendSelection });
   }, [dispatchAnnotation]);
@@ -829,7 +854,8 @@ const StaticMemoryDump = ({
             decimalView,
             disassOffset,
             pcBankOffset,
-            fallbackOperandLabelResolver: sysVarLabelResolver
+            fallbackOperandLabelResolver: sysVarLabelResolver,
+            hideScreenArea
           })
         : undefined;
       let outputItems = annotationItems;
@@ -843,7 +869,12 @@ const StaticMemoryDump = ({
          */
         const lastOffset = Math.max(0, bankBytes.length - 1);
         const collected: DisassemblyItem[] = [];
-        for (const [runStart, runEnd] of pcAnchoredRuns(0x0000, lastOffset, pcBankOffset)) {
+        // --- A bank with no sidecar still gets the screen collapsed: the noise is the same either way.
+        const firstOffset = hideScreenArea ? SCREEN_AREA_RANGE.end + 1 : 0x0000;
+        if (hideScreenArea) {
+          collected.push(createScreenSkipItem(decimalView, disassOffset));
+        }
+        for (const [runStart, runEnd] of pcAnchoredRuns(firstOffset, lastOffset, pcBankOffset)) {
           const disassembler = new Z80Disassembler(
             [new MemorySection(runStart, runEnd)],
             bankBytes,
@@ -888,6 +919,7 @@ const StaticMemoryDump = ({
     disassOffset,
     disassemblyEnabled,
     annotationVm.annotations,
+    hideScreenArea,
     sysVarLabelResolver,
     viewMode
   ]);
@@ -941,6 +973,16 @@ const StaticMemoryDump = ({
                 clicked={changeSysVarNames}
               />
             </PanelHeaderGroup>
+            {screenSwitchOffered && (
+              <PanelHeaderGroup>
+                <LabeledSwitch
+                  value={disassembleScreen}
+                  label="Screen"
+                  title="Disassemble the screen memory at $4000-$5AFF?"
+                  clicked={changeDisassembleScreen}
+                />
+              </PanelHeaderGroup>
+            )}
             <PanelHeaderGroup>
               <Text text="Offset" />
               <LabelSeparator />

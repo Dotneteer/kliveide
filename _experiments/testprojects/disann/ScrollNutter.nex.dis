@@ -83,6 +83,42 @@
     {
       "name": "UnknownTable",
       "value": 43030
+    },
+    {
+      "name": "SetLoResPalette",
+      "value": 42972
+    },
+    {
+      "name": "ClearLayer2",
+      "value": 31434
+    },
+    {
+      "name": "HideSprites",
+      "value": 31469
+    },
+    {
+      "name": "DmaToSprites",
+      "value": 37026
+    },
+    {
+      "name": "DmaSpriteProgram",
+      "value": 37043
+    },
+    {
+      "name": "InitCopperLines",
+      "value": 37372
+    },
+    {
+      "name": "CornerSprites",
+      "value": 36362
+    },
+    {
+      "name": "CopperLines",
+      "value": 37989
+    },
+    {
+      "name": "CopperLinesReset",
+      "value": 39141
     }
   ],
   "banks": {
@@ -100,9 +136,29 @@
       "offsetIndex": 2,
       "regions": [
         {
+          "start": 0,
+          "end": 4208,
+          "type": "disassemble"
+        },
+        {
           "start": 4209,
           "end": 4224,
           "type": "bytes"
+        },
+        {
+          "start": 4225,
+          "end": 4274,
+          "type": "disassemble"
+        },
+        {
+          "start": 4275,
+          "end": 4290,
+          "type": "bytes"
+        },
+        {
+          "start": 4291,
+          "end": 10228,
+          "type": "disassemble"
         },
         {
           "start": 10229,
@@ -113,14 +169,91 @@
           "start": 10230,
           "end": 10277,
           "type": "bytes"
+        },
+        {
+          "start": 10278,
+          "end": 16383,
+          "type": "disassemble"
         }
       ],
       "lineAnnotations": {
+        "3594": {
+          "synopsis": "Place sprites 60-63 in the four corners of the 256x192 display area.\nThey use patterns $20-$23 and are made visible. Sprite coordinates\nhave (32,32) as the top-left pixel of the display area.\nDestroys A, BC, DE, L.",
+          "comment": "Start at sprite 60"
+        },
+        "3599": {
+          "comment": "Sprite 60: X=32, Y=208, pattern $20 (bottom-left)"
+        },
+        "3616": {
+          "comment": "Attribute 2: D = bit 8 of X"
+        },
+        "3621": {
+          "comment": "Attribute 3: visible + pattern, then next sprite"
+        },
+        "3627": {
+          "comment": "Sprite 61: X=272, Y=208, pattern $21 (bottom-right)"
+        },
+        "3655": {
+          "comment": "Sprite 62: X=32, Y=32, pattern $22 (top-left)"
+        },
+        "3683": {
+          "comment": "Sprite 63: X=272, Y=32, pattern $23 (top-right)"
+        },
+        "4188": {
+          "synopsis": "Copy BC bytes from HL to DE using the zxnDMA.\nPatches the source, length and destination into DmaProgram, then streams\nthe 16-byte program to port $6B. Faster than LDIR and used for the bulk\nscreen and asset copies."
+        },
+        "4209": {
+          "synopsis": "zxnDMA program, 16 bytes, written to port $6B by DmaCopy.\nBytes 2-3 are the source, 4-5 the length and 11-12 the destination; DmaCopy\nwrites those six bytes before sending it. Data, not code."
+        },
+        "4258": {
+          "synopsis": "Send BC bytes from HL to the sprite pattern port $5B using the zxnDMA.\nSimilar to DmaCopy, but port B is the fixed I/O port $5B rather than\nmemory, so there is no destination. Select the first pattern through\nport $303B before calling. DE is not used.",
+          "comment": "Patch the source (program bytes 2-3)"
+        },
+        "4261": {
+          "comment": "Patch the length (program bytes 4-5)"
+        },
+        "4265": {
+          "comment": "Send the 16-byte program to the DMA port $6B"
+        },
+        "4275": {
+          "synopsis": "zxnDMA program, 16 bytes, sent to port $6B by DmaToSprites.\n$83 disable; $7D WR0 + source (2-3) + length (4-5); $54 $02 port A =\nmemory, counting up; $68 $02 port B = I/O, fixed; $AD $5B $00 continuous\nmode, port B = $005B; $82 WR5; $CF load; $87 enable. Data, not code."
+        },
+        "4585": {
+          "synopsis": "Print D characters from HL into the tilemap at row B, column C.\nTile index is the character code less $20, so the tile set starts at space."
+        },
+        "4586": {
+          "comment": "ASCII -> tile index"
+        },
+        "4604": {
+          "synopsis": "Write scanline numbers into the WAITs of the two copper tables.\nCopperLines ($9465) is the working table and CopperLinesReset ($98E5) is\nthe clean copy that is copied back over it. Each has 96 records of 12\nbytes: WAIT (line), MOVE $40,0, then MOVE $41,colour four times, which\nreloads ULA palette entries 0-3. Record i gets line 32+i. Destroys A, B,\nDE, HL.",
+          "comment": "Line byte of the first working record"
+        },
+        "4607": {
+          "comment": "Line byte of the first reset record"
+        },
+        "4610": {
+          "comment": "96 records"
+        },
+        "4612": {
+          "comment": "First line is 32 ($20), the top of the display area"
+        },
+        "4617": {
+          "comment": "12 bytes per record"
+        },
+        "5221": {
+          "synopsis": "Working copper table: 96 x 12-byte records (WAIT line; MOVE $40,0;\nMOVE $41,colour x4). The colour bytes are changed at runtime, and the\ntable is copied into the copper list at $9EAA in three blocks of $180 bytes."
+        },
+        "6373": {
+          "synopsis": "Clean copy of CopperLines, with colours $00, $20, $40, $60.\nCopied back over CopperLines ($480 bytes) at $9229."
+        },
         "9728": {
           "comment": "Use Layer 2 first palette"
         },
         "9732": {
           "comment": "Reset Layer 2 palette index"
+        },
+        "9736": {
+          "comment": "Fill the Layer 2 palette"
         },
         "9739": {
           "comment": "Use Sprites first palette"
@@ -128,14 +261,11 @@
         "9743": {
           "comment": "Reset Sprites palette index"
         },
-        "9750": {
-          "synopsis": "Fill the currently selected palette with an identity ramp.\nWrites entries 0..255, each set to its own index. The palette must already\nbe selected via nextreg $43. Destroys A."
-        },
         "9747": {
           "comment": "TAIL CALL: InitPaletteRamp's RET returns to InitPalettes' caller"
         },
-        "9736": {
-          "comment": "Fill the Layer 2 palette"
+        "9750": {
+          "synopsis": "Fill the currently selected palette with an identity ramp.\nWrites entries 0..255, each set to its own index. The palette must already\nbe selected via nextreg $43. Destroys A."
         },
         "9764": {
           "synopsis": "Demo setup, entered from EntryPoint. Runs with interrupts off.\nInitialises palettes and layers, chooses the tune set, clears the clip\nwindows, copies the two ULA screens in, loads sprites and tiles, starts the\nmusic and installs the frame interrupt. Falls through to the main loop\nonce EI is reached."
@@ -162,13 +292,19 @@
           "synopsis": "Alternative tune set, selected when ConfigFlag is non-zero."
         },
         "9807": {
-          "synopsis": "Collapse the Layer 2, Sprite and ULA clip windows to a single pixel.\nEach register takes four successive writes \u2014 X1, X2, Y1, Y2 \u2014 and all four\nare zero here, so nothing from these layers is drawn while setup runs.\nThe write index is not reset first, but with four identical values the\nstarting position does not matter."
+          "synopsis": "Collapse the Layer 2, Sprite and ULA clip windows to a single pixel.\nEach register takes four successive writes — X1, X2, Y1, Y2 — and all four\nare zero here, so nothing from these layers is drawn while setup runs.\nThe write index is not reset first, but with four identical values the\nstarting position does not matter."
         },
         "9873": {
-          "comment": "Further hardware setup"
+          "comment": "Four-colour LoRes palette"
         },
         "9876": {
           "comment": "Black border"
+        },
+        "9880": {
+          "comment": "$E3 = transparent: empty Layer 2"
+        },
+        "9885": {
+          "comment": "Hide sprites 0-64"
         },
         "9888": {
           "comment": "A = 2*26: page 16K bank 26 into $C000-$FFFF"
@@ -181,6 +317,15 @@
         },
         "9932": {
           "comment": "$303B: select sprite 0 and pattern 0"
+        },
+        "9943": {
+          "comment": "Length is BC, still $303B from the port write: 48 patterns + 59 bytes"
+        },
+        "9946": {
+          "comment": "Scanline numbers for the copper tables"
+        },
+        "9949": {
+          "comment": "Four corner sprites"
         },
         "9952": {
           "comment": "Start both tunes"
@@ -195,22 +340,20 @@
           "comment": "Install the frame interrupt (still disabled)"
         },
         "9980": {
-          "comment": "Interrupts on \u2014 the demo is now running"
+          "comment": "Interrupts on — the demo is now running"
         },
         "9981": {
           "comment": "$03: 28 MHz"
         },
-        "4188": {
-          "synopsis": "Copy BC bytes from HL to DE using the zxnDMA.\nPatches the source, length and destination into DmaProgram, then streams\nthe 16-byte program to port $6B. Faster than LDIR and used for the bulk\nscreen and asset copies."
+        "10204": {
+          "synopsis": "Set ULA palette entries 0-3 to a four-step red ramp.\nEntries: $00, $20, $40, $60 (RRRGGGBB). The LoRes picture only uses\npixel values 0-3, so these are its whole palette. The copper list\n(CopperLines) rewrites the same four entries on each scanline later.",
+          "comment": "Edit the ULA first palette, ULANext off"
         },
-        "4209": {
-          "synopsis": "zxnDMA program, 16 bytes, written to port $6B by DmaCopy.\nBytes 2-3 are the source, 4-5 the length and 11-12 the destination; DmaCopy\nwrites those six bytes before sending it. Data, not code."
+        "10208": {
+          "comment": "Start at palette entry 0"
         },
-        "4585": {
-          "synopsis": "Print D characters from HL into the tilemap at row B, column C.\nTile index is the character code less $20, so the tile set starts at space."
-        },
-        "4586": {
-          "comment": "ASCII -> tile index"
+        "10212": {
+          "comment": "Entries 0-3 = $00, $20, $40, $60; the index advances after each write"
         },
         "10229": {
           "synopsis": "Tune-set selector read by Start. 0 = default tunes."
@@ -224,28 +367,40 @@
         "10262": {
           "synopsis": "Unidentified data table, 15 bytes then zero padding.\nNot reached as code by the entry flow; purpose not yet established."
         }
-      }
+      },
+      "lastView": "disassembly",
+      "decimalView": false
     },
     "5": {
       "offsetIndex": 1,
       "regions": [
         {
+          "start": 0,
+          "end": 14591,
+          "type": "disassemble"
+        },
+        {
           "start": 14592,
           "end": 14848,
           "type": "bytes"
+        },
+        {
+          "start": 14849,
+          "end": 16383,
+          "type": "disassemble"
         }
       ],
       "lastView": "disassembly",
       "decimalView": false,
       "lineAnnotations": {
-        "7249": {
-          "comment": "Stack top, inside bank 5 at $4000-$7FFF"
-        },
         "7248": {
           "synopsis": "NEX entry point (header PC).\nBank 5 is paged at $4000 and bank 2 at $8000 by the NEX loader, so both are\nalready reachable. Sets up the stack and hands over to Start in bank 2."
         },
+        "7249": {
+          "comment": "Stack top, inside bank 5 at $4000-$7FFF"
+        },
         "7252": {
-          "comment": "-> Start ($A624, bank 2) \u2014 never returns here"
+          "comment": "-> Start ($A624, bank 2) — never returns here"
         },
         "7255": {
           "synopsis": "Initialise the two AY music players.\nFor each of banks 27 and 28: page it in at $8000, make its AY chip active,\nthen call the player's init entry at $8003 with HL = tune address.\nRestores bank 2 at $8000 before returning. Tune addresses at $5C6B and\n$5C84 are patched by Start."
@@ -260,7 +415,7 @@
           "comment": "$01|$FC = $FD: both channels on, AY 2 active"
         },
         "7274": {
-          "comment": "Tune address \u2014 operand PATCHED at $5C6B by Start"
+          "comment": "Tune address — operand PATCHED at $5C6B by Start"
         },
         "7277": {
           "comment": "Player init entry in the paged bank"
@@ -269,7 +424,7 @@
           "comment": "$02|$FC = $FE: both channels on, AY 1 active"
         },
         "7299": {
-          "comment": "Tune address \u2014 operand PATCHED at $5C84 by Start"
+          "comment": "Tune address — operand PATCHED at $5C84 by Start"
         },
         "7305": {
           "comment": "A = 2*2: restore bank 2 at $8000 before returning"
@@ -297,6 +452,34 @@
         },
         "14592": {
           "synopsis": "IM2 vector table: 257 bytes of $78, so any data-bus value reads the word\n$7878. 257 rather than 256 so the high byte is valid at offset $FF."
+        },
+        "15050": {
+          "synopsis": "Fill the whole 256x192 Layer 2 screen with colour A, then show Layer 2.\nMaps each of the three 16K Layer 2 segments into $0000-$3FFF for writing\nthrough port $123B and fills it byte by byte. Afterwards writes are no\nlonger mapped and Layer 2 is visible. Start passes $E3, the global\ntransparent colour, so Layer 2 starts out empty.\nDestroys A, BC, DE, HL."
+        },
+        "15051": {
+          "comment": "E = 3 segments; A = $01: segment 0, write mapping on"
+        },
+        "15055": {
+          "comment": "$123B Layer 2 control: bits 7-6 = segment, bit 0 = map for writing"
+        },
+        "15068": {
+          "comment": "Stop at $4000, the end of the mapped segment"
+        },
+        "15072": {
+          "comment": "Select the next segment ($41, then $81)"
+        },
+        "15080": {
+          "comment": "$02: Layer 2 visible, write mapping off"
+        },
+        "15085": {
+          "synopsis": "Hide sprites 0-64.\nSets the sprite number to 0, then writes 0 to attribute 3 through\nnextreg $78, which moves on to the next sprite after each write.\nA value of 0 clears the visible bit. Destroys B.",
+          "comment": "Start at sprite 0"
+        },
+        "15089": {
+          "comment": "65 sprites"
+        },
+        "15091": {
+          "comment": "Attribute 3 = 0 (hidden), then next sprite"
         }
       }
     },
@@ -454,6 +637,11 @@
       "offsetIndex": 2,
       "regions": [
         {
+          "start": 0,
+          "end": 2194,
+          "type": "disassemble"
+        },
+        {
           "start": 2195,
           "end": 2297,
           "type": "bytes"
@@ -487,6 +675,11 @@
           "start": 6291,
           "end": 10130,
           "type": "bytes"
+        },
+        {
+          "start": 10131,
+          "end": 16383,
+          "type": "disassemble"
         }
       ],
       "localLabels": [
@@ -512,18 +705,6 @@
         }
       ],
       "lineAnnotations": {
-        "2195": {
-          "synopsis": "PT3 module \"Goddy\" by karbofos [dlcorp][3umph].\nThe AY 2 half of a TurboSound pair; the other chip plays its own\narrangement of the same tune from the neighbouring bank.\n3895 bytes ($0F37), $8893-$97C9. Header text is 99 bytes,\nthen TonTableId/Delay/Positions/Loop, the pointer table, the position\nlist and the pattern, sample and ornament data."
-        },
-        "2298": {
-          "synopsis": "Pointer table: PatternsPointer, then 32 sample and 16 ornament\npointers. 49 words, each an offset from the module's first byte."
-        },
-        "6090": {
-          "synopsis": "PT3 module \"xray speculation\" by Gasman (mixTS by Voxel_3umf).\nThe AY 2 half of a TurboSound pair; the other chip plays its own\narrangement of the same tune from the neighbouring bank.\n4041 bytes ($0FC9), $97CA-$A792. Header text is 99 bytes,\nthen TonTableId/Delay/Positions/Loop, the pointer table, the position\nlist and the pattern, sample and ornament data."
-        },
-        "6193": {
-          "synopsis": "Pointer table: PatternsPointer, then 32 sample and 16 ornament\npointers. 49 words, each an offset from the module's first byte."
-        },
         "0": {
           "synopsis": "VTII PT3 Player (Vortex Tracker II).\n$8000 holds LD HL with the default module address, so the three-byte\nentry points follow at $8003 (init, HL = module) and $8005 (play once\nper frame). MusicInit and MusicPlay in bank 5 call those."
         },
@@ -533,14 +714,31 @@
         "5": {
           "comment": "Play entry: call once per frame"
         },
+        "2195": {
+          "synopsis": "PT3 module \"Goddy\" by karbofos [dlcorp][3umph].\nThe AY 2 half of a TurboSound pair; the other chip plays its own\narrangement of the same tune from the neighbouring bank.\n3895 bytes ($0F37), $8893-$97C9. Header text is 99 bytes,\nthen TonTableId/Delay/Positions/Loop, the pointer table, the position\nlist and the pattern, sample and ornament data."
+        },
+        "2298": {
+          "synopsis": "Pointer table: PatternsPointer, then 32 sample and 16 ornament\npointers. 49 words, each an offset from the module's first byte."
+        },
         "6088": {
           "comment": "Module tail, shown as a word so the next module starts a row"
+        },
+        "6090": {
+          "synopsis": "PT3 module \"xray speculation\" by Gasman (mixTS by Voxel_3umf).\nThe AY 2 half of a TurboSound pair; the other chip plays its own\narrangement of the same tune from the neighbouring bank.\n4041 bytes ($0FC9), $97CA-$A792. Header text is 99 bytes,\nthen TonTableId/Delay/Positions/Loop, the pointer table, the position\nlist and the pattern, sample and ornament data."
+        },
+        "6193": {
+          "synopsis": "Pointer table: PatternsPointer, then 32 sample and 16 ornament\npointers. 49 words, each an offset from the module's first byte."
         }
       }
     },
     "28": {
       "offsetIndex": 2,
       "regions": [
+        {
+          "start": 0,
+          "end": 2194,
+          "type": "disassemble"
+        },
         {
           "start": 2195,
           "end": 2297,
@@ -553,11 +751,6 @@
         },
         {
           "start": 2396,
-          "end": 7575,
-          "type": "bytes"
-        },
-        {
-          "start": 7576,
           "end": 7678,
           "type": "bytes"
         },
@@ -570,6 +763,11 @@
           "start": 7777,
           "end": 14310,
           "type": "bytes"
+        },
+        {
+          "start": 14311,
+          "end": 16383,
+          "type": "disassemble"
         }
       ],
       "localLabels": [
@@ -595,6 +793,15 @@
         }
       ],
       "lineAnnotations": {
+        "0": {
+          "synopsis": "VTII PT3 Player (Vortex Tracker II).\n$8000 holds LD HL with the default module address, so the three-byte\nentry points follow at $8003 (init, HL = module) and $8005 (play once\nper frame). MusicInit and MusicPlay in bank 5 call those."
+        },
+        "3": {
+          "comment": "Init entry: HL = module address"
+        },
+        "5": {
+          "comment": "Play entry: call once per frame"
+        },
         "2195": {
           "synopsis": "PT3 module \"Goddy\" by karbofos [dlcorp][3umph].\nThe AY 1 half of a TurboSound pair; the other chip plays its own\narrangement of the same tune from the neighbouring bank.\n5381 bytes ($1505), $8893-$9D97. Header text is 99 bytes,\nthen TonTableId/Delay/Positions/Loop, the pointer table, the position\nlist and the pattern, sample and ornament data."
         },
@@ -606,15 +813,6 @@
         },
         "7679": {
           "synopsis": "Pointer table: PatternsPointer, then 32 sample and 16 ornament\npointers. 49 words, each an offset from the module's first byte."
-        },
-        "0": {
-          "synopsis": "VTII PT3 Player (Vortex Tracker II).\n$8000 holds LD HL with the default module address, so the three-byte\nentry points follow at $8003 (init, HL = module) and $8005 (play once\nper frame). MusicInit and MusicPlay in bank 5 call those."
-        },
-        "3": {
-          "comment": "Init entry: HL = module address"
-        },
-        "5": {
-          "comment": "Play entry: call once per frame"
         }
       }
     },

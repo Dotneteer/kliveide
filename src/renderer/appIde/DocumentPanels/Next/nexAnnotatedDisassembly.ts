@@ -9,6 +9,7 @@ import {
 import { resolveOperandLabel } from "./nexGoToDefinition";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import {
+  NexAnnotationRegion,
   NexBankAnnotation,
   NexFileAnnotations,
   NEX_BANK_LAST_OFFSET,
@@ -50,6 +51,65 @@ export function pcAnchoredRuns(
   ];
 }
 
+/**
+ * Where the ULA screen sits: `$4000-$57FF` bitmap and `$5800-$5AFF` attributes, 6,912 bytes.
+ *
+ * Bank-relative, because it only means "the screen" in a bank listed at `$4000` — see
+ * `screenAreaApplies`. Anywhere else these offsets are just the first 7K of some other bank.
+ */
+export const SCREEN_AREA_BASE = 0x4000;
+export const SCREEN_AREA_RANGE = { start: 0x0000, end: 0x1aff } as const;
+
+/**
+ * Does this listing have a screen area to hide?
+ *
+ * Keyed on the **listing offset**, not on live paging: the offset is what makes bank offset 0 read as
+ * `$4000` on screen, so it is what decides whether the rows the reader sees are screen memory. It also
+ * means the choice holds with no machine running, which a paging test could not.
+ */
+export function screenAreaApplies(args: { isNexBank: boolean; disassOffset: number }): boolean {
+  return args.isNexBank && args.disassOffset === SCREEN_AREA_BASE;
+}
+
+/**
+ * Lay one region over a bank's authored regions, cutting whatever it covers.
+ *
+ * A **display override**, never an edit: the result is used to generate a listing and is not written
+ * anywhere. That is the property that matters — a switch that rewrote the sidecar's regions would
+ * silently destroy any annotation the user had made inside the range the first time it was flipped.
+ *
+ * Regions that straddle an edge are trimmed rather than dropped, so the bytes either side of the
+ * overlay keep the type the user gave them.
+ */
+export function overlayRegion(
+  regions: NexAnnotationRegion[],
+  overlay: NexAnnotationRegion
+): NexAnnotationRegion[] {
+  const result: NexAnnotationRegion[] = [];
+  for (const region of regions) {
+    if (region.end < overlay.start || region.start > overlay.end) {
+      result.push(region);
+      continue;
+    }
+    if (region.start < overlay.start) {
+      result.push({ ...region, end: overlay.start - 1 });
+    }
+    if (region.end > overlay.end) {
+      result.push({ ...region, start: overlay.end + 1 });
+    }
+  }
+  result.push(overlay);
+  return result.sort((a, b) => a.start - b.start);
+}
+
+/** The single row a hidden screen area collapses to, shared by the annotated and plain listings. */
+export function createScreenSkipItem(decimalView: boolean, addressOffset: number): DisassemblyItem {
+  return {
+    ...createSkipItem(SCREEN_AREA_RANGE.start, SCREEN_AREA_RANGE.end, decimalView, addressOffset),
+    hardComment: "Screen memory, not disassembled"
+  };
+}
+
 export type AnnotatedNexDisassemblyOptions = {
   annotations: NexFileAnnotations;
   bank: number;
@@ -73,6 +133,14 @@ export type AnnotatedNexDisassemblyOptions = {
    * machine.
    */
   fallbackOperandLabelResolver?: DisassemblyOperandLabelResolver;
+  /**
+   * Collapse `$4000-$5AFF` into one line instead of disassembling it.
+   *
+   * The caller decides whether this bank is listed where that range *is* the screen
+   * (`screenAreaApplies`); this only applies it. Overrides the authored regions for this listing
+   * alone — the sidecar is untouched.
+   */
+  hideScreenArea?: boolean;
 };
 
 export async function createAnnotatedNexDisassemblyItems({
@@ -82,7 +150,8 @@ export async function createAnnotatedNexDisassemblyItems({
   decimalView = false,
   disassOffset,
   pcBankOffset,
-  fallbackOperandLabelResolver
+  fallbackOperandLabelResolver,
+  hideScreenArea = false
 }: AnnotatedNexDisassemblyOptions): Promise<DisassemblyItem[] | undefined> {
   const bankAnnotation = getBankAnnotation(annotations, bank);
   if (!bankAnnotation) {
@@ -92,7 +161,11 @@ export async function createAnnotatedNexDisassemblyItems({
   const addressOffset = disassOffset ?? getNexBankAddressOffset(bankAnnotation.offsetIndex);
   const items: DisassemblyItem[] = [];
 
-  for (const region of bankAnnotation.regions) {
+  const regions = hideScreenArea
+    ? overlayRegion(bankAnnotation.regions, { ...SCREEN_AREA_RANGE, type: "skip" })
+    : bankAnnotation.regions;
+
+  for (const region of regions) {
     const start = clampBankOffset(region.start, contents.length);
     const end = clampBankOffset(region.end, contents.length);
     if (start > end) {
@@ -129,7 +202,12 @@ export async function createAnnotatedNexDisassemblyItems({
         break;
 
       case "skip":
-        items.push(createSkipItem(start, end, decimalView, addressOffset));
+        // --- The screen overlay is the one skip that explains itself; an authored skip does not.
+        items.push(
+          hideScreenArea && start === SCREEN_AREA_RANGE.start && end === SCREEN_AREA_RANGE.end
+            ? createScreenSkipItem(decimalView, addressOffset)
+            : createSkipItem(start, end, decimalView, addressOffset)
+        );
         break;
     }
   }
