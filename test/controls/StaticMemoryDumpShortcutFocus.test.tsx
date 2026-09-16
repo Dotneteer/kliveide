@@ -83,7 +83,9 @@ async function renderPanel() {
         pcValue: 0,
         tacts: 0
       }),
-      getNextMemoryMapping: async () => ({ pageInfo: [] })
+      getNextMemoryMapping: async () => ({ pageInfo: [] }),
+      // --- The listing names 16-bit data operands after the machine's system variables.
+      getSysVars: async () => []
     })
   }));
   vi.doMock("@renderer/theming/ThemeProvider", () => ({

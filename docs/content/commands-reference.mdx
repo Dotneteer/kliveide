@@ -493,8 +493,8 @@ launched file does not contain it.
 The machine must be **paused**, unless you give an address: a running machine's program counter has
 moved on by the time the command reads it, so "where we are" would name an arbitrary instruction.
 
-If the NEX file's viewer is open, the label joins your other unsaved annotation edits and is kept
-when you save them. If it is closed, the label is written to the `.nex.dis` file straight away.
+The label is written to the `.nex.dis` file straight away. If the NEX file's viewer is open, the
+label joins the edits it is holding first, so neither can overwrite the other.
 
 ```text
 nex-label DrawSprite

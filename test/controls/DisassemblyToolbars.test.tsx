@@ -113,9 +113,11 @@ describe("Disassembly toolbars", () => {
         onRamChanged={vi.fn()}
         onScreenChanged={vi.fn()}
         onShowBankLabelChanged={vi.fn()}
+        onSysVarNamesChanged={vi.fn()}
         pausedPc={0x6000}
         ram={true}
         screen={false}
+        sysVarNames={true}
         topAddress={0x5000}
       />
     );
@@ -130,6 +132,73 @@ describe("Disassembly toolbars", () => {
     expect(onManualRefresh).toHaveBeenCalled();
     expect(onGoToPc).toHaveBeenCalled();
     expect(onGoToAddress).toHaveBeenCalledWith(0x6002);
+  });
+
+  it("routes the system variable naming switch", () => {
+    const onSysVarNamesChanged = vi.fn();
+
+    render(
+      <DisassemblyToolbar
+        autoRefresh={false}
+        bankLabel={true}
+        decimalView={false}
+        machineState={MachineControllerState.Paused}
+        onAutoRefreshChanged={vi.fn()}
+        onDecimalViewChanged={vi.fn()}
+        onGoToAddress={vi.fn()}
+        onGoToPc={vi.fn()}
+        onManualRefresh={vi.fn()}
+        onRamChanged={vi.fn()}
+        onScreenChanged={vi.fn()}
+        onShowBankLabelChanged={vi.fn()}
+        onSysVarNamesChanged={onSysVarNamesChanged}
+        pausedPc={0x6000}
+        ram={true}
+        screen={false}
+        sysVarNames={true}
+        topAddress={0x5000}
+      />
+    );
+
+    fireEvent.click(screen.getByText("Sys vars:on"));
+
+    expect(onSysVarNamesChanged).toHaveBeenCalledWith(false);
+  });
+
+  /*
+   * The header wraps when it runs out of width, and a group is the unit it wraps.
+   *
+   * Asserted structurally because jsdom does no layout: what a wrap test can actually check is that
+   * a label and the control it names share one group, which is what stops a break landing between
+   * them. The wrapping itself is a single `flex-wrap` on `.panelHeader`.
+   */
+  it("keeps a label and the control it names in one header group", () => {
+    render(
+      <DisassemblyBankToolbar
+        allowViews={true}
+        autoRefresh={false}
+        currentSegment={0}
+        decimalView={false}
+        disassOffset={0}
+        displayBankMatrix={false}
+        isFullView={false}
+        offsetOptions={createDisassemblyOffsetOptions(false)}
+        onCurrentSegmentChanged={vi.fn()}
+        onDisassOffsetChanged={vi.fn()}
+        onFullViewChanged={vi.fn()}
+        partitionOptions={[]}
+        segmentOptions={[{ value: "0", label: "BANK 0" }]}
+      />
+    );
+
+    const offsetGroup = screen.getByText("Offset").closest("[class*=panelHeaderGroup]");
+    expect(offsetGroup).not.toBeNull();
+    expect(offsetGroup!.querySelector("select")).not.toBeNull();
+
+    // --- And the groups are siblings of the header, not nested, so each can move on its own.
+    const header = offsetGroup!.parentElement!;
+    expect(header.className).toMatch(/panelHeader/);
+    expect(header.querySelectorAll("[class*=panelHeaderGroup]").length).toBeGreaterThan(1);
   });
 
   it("routes bank toolbar dropdown callbacks", () => {

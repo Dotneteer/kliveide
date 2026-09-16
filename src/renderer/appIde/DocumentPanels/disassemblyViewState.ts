@@ -22,6 +22,8 @@ export type BankedDisassemblyPanelViewState = {
   screen?: boolean;
   disassOffset?: number;
   bankLabel?: boolean;
+  /** Name 16-bit data operands after the machine's system variables. Defaults to on. */
+  sysVarNames?: boolean;
 };
 
 export type DisassemblyViewStateValues = {
@@ -34,6 +36,7 @@ export type DisassemblyViewStateValues = {
   screen: boolean;
   disassOffset: number;
   bankLabel: boolean;
+  sysVarNames: boolean;
 };
 
 type PersistenceParams = DisassemblyViewStateValues & {
@@ -68,7 +71,8 @@ export function buildDisassemblyPanelViewState(
     autoRefresh: values.autoRefresh,
     ram: values.ram,
     screen: values.screen,
-    disassOffset: values.disassOffset
+    disassOffset: values.disassOffset,
+    sysVarNames: values.sysVarNames
   };
 }
 
@@ -148,6 +152,7 @@ export function useDisassemblyViewStatePersistence({
     values.ram,
     values.screen,
     values.disassOffset,
-    values.bankLabel
+    values.bankLabel,
+    values.sysVarNames
   ]);
 }

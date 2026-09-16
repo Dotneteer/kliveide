@@ -15,8 +15,31 @@ describe("NexEndOfLineCommentDialog", () => {
     expect(normalizeEndOfLineComment("  entry note  ")).toBe("entry note");
     expect(normalizeEndOfLineComment("first\n second\t")).toBe("first second");
     expect(normalizeEndOfLineComment("  \n\t")).toBeUndefined();
-    expect(formatEndOfLinePreview("generated", "user note")).toBe("; generated | user note");
-    expect(formatEndOfLinePreview(undefined, "user note")).toBe("; user note");
+  });
+
+  /*
+   * The preview has to make the same choice the listing does.
+   *
+   * A user comment replaces the disassembler's own in the row (see `decorateAnnotatedItems`), so a
+   * preview that joined them would be a small lie about the thing it is previewing.
+   */
+  describe("the preview", () => {
+    it("shows the user's comment alone when there is one", () => {
+      expect(formatEndOfLinePreview("generated", "user note")).toBe("; user note");
+      expect(formatEndOfLinePreview(undefined, "user note")).toBe("; user note");
+    });
+
+    it("falls back to the generated comment when the user's is empty", () => {
+      // --- Which is also how it previews what the Clear button will leave behind.
+      expect(formatEndOfLinePreview("generated", "")).toBe("; generated");
+      expect(formatEndOfLinePreview("generated", "   ")).toBe("; generated");
+      expect(formatEndOfLinePreview("generated", undefined)).toBe("; generated");
+    });
+
+    it("is empty when there is nothing to show", () => {
+      expect(formatEndOfLinePreview(undefined, undefined)).toBe("");
+      expect(formatEndOfLinePreview(undefined, "  ")).toBe("");
+    });
   });
 
   it("shows row details, previews comments, and saves normalized text", () => {
@@ -43,8 +66,10 @@ describe("NexEndOfLineCommentDialog", () => {
     });
 
     expect(screen.getByLabelText("End-of-line preview")).toHaveTextContent(
-      "; generated note | User note continued"
+      "; User note continued"
     );
+    // --- The note being replaced stays on show in its own row while you type.
+    expect(screen.getByText("generated note")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(controls.close).toHaveBeenCalledWith({

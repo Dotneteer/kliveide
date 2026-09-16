@@ -138,6 +138,20 @@ export const PanelHeaderActions = ({ children }: { children?: ReactNode }) => (
 );
 
 /**
+ * One indivisible run of controls inside a `PanelHeader`.
+ *
+ * The header wraps when it runs out of width, and this is the unit it wraps: a group moves to the
+ * next line whole. Put anything that reads as one control in one — a label and the dropdown it
+ * names, a readout and the badge beside it — or a line can break between them and strand the label
+ * above its own control.
+ *
+ * A header of bare children still wraps; it just breaks wherever it likes.
+ */
+export const PanelHeaderGroup = ({ children }: { children?: ReactNode }) => (
+  <div className={styles.panelHeaderGroup}>{children}</div>
+);
+
+/**
  * A heading *within* panel content — a disk track, a sector, a memory bank.
  *
  * Not a `PanelHeader`: that is a panel's own chrome, with a chrome surface and a bottom border.

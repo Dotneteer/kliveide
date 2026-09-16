@@ -145,11 +145,10 @@ export class NexLabelCommand extends IdeCommandBase<NexLabelCommandArgs> {
     /*
      * A live session's copy wins, and decides how the edit is written.
      *
-     * With a viewer open, its annotations may carry edits the user has not saved — so this edit
-     * joins them and inherits the same "written when you ask" policy (§4.5). Reading the file
-     * instead would drop those edits; saving the file with them would flush edits the user has not
-     * finished. With no viewer open there is nothing in memory to conflict with, and writing
-     * through is the only way the label is not lost.
+     * With a viewer open, its annotations are the current ones and the file may be a write behind
+     * them, so this edit joins them and the session writes the result. Reading the file instead
+     * would drop whatever has not landed yet. With no viewer open there is nothing in memory to
+     * conflict with, and writing through is the only way the label is not lost.
      */
     const session = peekNexAnnotationSession(sidecarPath);
     let annotations: NexFileAnnotations | undefined = session;
@@ -178,10 +177,12 @@ export class NexLabelCommand extends IdeCommandBase<NexLabelCommandArgs> {
     const alsoNamed = promoted.replaced ? ` It is also named ${promoted.replaced}.` : "";
 
     if (session) {
-      updateNexAnnotationSession(sidecarPath, promoted.annotations);
-      return commandSuccessWith(
-        `${args.name.trim()} added at ${where}. Save the annotations to keep it.${alsoNamed}`
+      updateNexAnnotationSession(
+        sidecarPath,
+        promoted.annotations,
+        context.service.projectService
       );
+      return commandSuccessWith(`${args.name.trim()} added at ${where}.${alsoNamed}`);
     }
 
     try {

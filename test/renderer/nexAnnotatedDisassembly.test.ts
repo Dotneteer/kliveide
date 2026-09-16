@@ -416,3 +416,123 @@ describe("createAnnotatedNexDisassemblyItems with a program counter", () => {
     expect(await addressesFor(2)).toEqual(await addressesFor(undefined));
   });
 });
+
+describe("end-of-line comments and the disassembler's own", () => {
+  /*
+   * `nextreg $43,a` — the disassembler names Next register $43 "Palette Control" from its own
+   * table, so this is a row that carries a generated hard comment before any annotation touches it.
+   */
+  const NEXTREG_43 = () => {
+    const contents = new Uint8Array(0x4000);
+    contents.set([0xed, 0x92, 0x43]);
+    return contents;
+  };
+
+  const rowFor = async (comment?: string) => {
+    const items = await createAnnotatedNexDisassemblyItems({
+      annotations: {
+        schemaVersion: 1,
+        globalLabels: [],
+        banks: {
+          "5": {
+            offsetIndex: 2,
+            regions: [{ start: 0, end: 2, type: "disassemble" }],
+            localLabels: [],
+            lineAnnotations: comment ? { "0": { comment } } : {}
+          }
+        }
+      },
+      bank: 5,
+      contents: NEXTREG_43(),
+      disassOffset: 0x8000
+    });
+    return (items ?? []).find((item) => !item.isPrefixItem)!;
+  };
+
+  it("shows the disassembler's comment when the row has no user comment", async () => {
+    const row = await rowFor();
+
+    expect(row.instruction).toBe("nextreg $43,a");
+    expect(row.hardComment).toBe("Palette Control");
+  });
+
+  it("shows only the user's comment when the row has one", async () => {
+    /*
+     * The generated note is the weaker claim: it says what the opcode does, which a reader who has
+     * annotated this row already knows. Joining them buried the sentence worth reading behind the
+     * one that was not.
+     */
+    const row = await rowFor("set the border to black");
+
+    expect(row.hardComment).toBe("set the border to black");
+    expect(row.hardComment).not.toContain("Palette Control");
+  });
+
+  it("keeps the generated comment available for the dialog to show", async () => {
+    // --- Replaced in the listing, not discarded: this is what the end-of-line dialog displays so
+    // --- the note being given up stays visible, and what the row falls back to when it is cleared.
+    const row = await rowFor("set the border to black");
+
+    expect(row.annotation?.generatedHardComment).toBe("Palette Control");
+  });
+
+  it("falls back to the generated comment once the user's is cleared", async () => {
+    expect((await rowFor(undefined)).hardComment).toBe("Palette Control");
+  });
+});
+
+describe("createAnnotatedNexDisassemblyItems fallback operand names", () => {
+  /** `ld hl,$5C08` followed by `call $8010`. */
+  const CONTENTS = () => {
+    const contents = new Uint8Array(0x4000);
+    contents.set([0x21, 0x08, 0x5c, 0xcd, 0x10, 0x80]);
+    return contents;
+  };
+
+  /** Stands in for the system variable resolver: data operands only, one known address. */
+  const sysVarFallback = ({ pragma, operandValue }: any) =>
+    pragma === "W" && operandValue === 0x5c08 ? "LAST_K" : undefined;
+
+  const instructionsWith = async (
+    globalLabels: Array<{ name: string; value: number }>,
+    fallback?: (operand: any) => string | undefined
+  ) => {
+    const items = await createAnnotatedNexDisassemblyItems({
+      annotations: {
+        schemaVersion: 1,
+        globalLabels,
+        banks: {
+          "5": {
+            offsetIndex: 2,
+            regions: [{ start: 0, end: 5, type: "disassemble" }],
+            localLabels: [],
+            lineAnnotations: {}
+          }
+        }
+      },
+      bank: 5,
+      contents: CONTENTS(),
+      disassOffset: 0x8000,
+      fallbackOperandLabelResolver: fallback
+    });
+    return (items ?? []).map((item) => item.instruction);
+  };
+
+  it("names an operand the annotations cannot name", async () => {
+    // --- A system variable is nowhere in the bank's own labels, so only the fallback can name it.
+    // --- The call target keeps its label: the fallback declines every branch operand.
+    expect(await instructionsWith([], sysVarFallback)).toEqual(["ld hl,LAST_K", "call L8010"]);
+  });
+
+  it("leaves the listing alone when there is no fallback", async () => {
+    expect(await instructionsWith([])).toEqual(["ld hl,$5C08", "call L8010"]);
+  });
+
+  it("lets a hand-authored label win over the fallback", async () => {
+    // --- The user's label is a statement about this program; the fallback only about the machine.
+    expect(await instructionsWith([{ name: "MyVar", value: 0x5c08 }], sysVarFallback)).toEqual([
+      "ld hl,MyVar",
+      "call L8010"
+    ]);
+  });
+});

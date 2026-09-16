@@ -1387,6 +1387,37 @@ dialog validation messages and one status badge were all drawing themselves from
 which is deliberately non-semantic *and identical in both tones* — so a light-theme error painted
 itself in the dark theme's red. Errors are `--status-error`.
 
+## A Toolbar Of Fixed-Size Controls Wraps; It Never Shrinks
+
+`PanelHeader` was `display: flex` with a fixed `height` and no `flex-wrap`, so a narrow document
+squashed its controls instead of overflowing: the NEX bank view's 104px view chooser came out a
+character wide and its `$4000` offset dropdown showed `$`. Nothing in a panel header is elastic —
+dropdowns, switches, an address box all have a size they need — so shrinking was never the right
+answer for any of them.
+
+`.panelHeader` now sets `flex-wrap: wrap` and trades `height` for `min-height`. That pairing is what
+makes the change additive rather than a re-layout: a header that already fit one line still measures
+exactly `--strip-panelHeader`, verified over CDP at 1800px and 1200px (31px including the border, as
+before), and only a header that *was* overflowing grows — 2 lines at 900px, 4 at 700px.
+
+The second half matters as much. **The unit that wraps must be a group, not a control.** Bare flex
+children break wherever they like, which strands `Offset` at the end of one line with its dropdown at
+the start of the next. `PanelHeaderGroup` (`controls/data`) is a `flex: 0 0 auto` row with
+`flex-wrap: nowrap`: a label and the control it names go in one, and the line breaks between groups.
+Its `& + &` margin carries the 12px that, with the header's own 4px gap, reproduces the 16px rhythm
+the hand-placed `<LabelSeparator width={8} />` used to produce — so the spacers came out of the three
+toolbars that had them, and a new toolbar gets the rhythm without remembering to add one.
+
+Two smaller things from the same pass:
+
+- **A group whose contents can vanish needs the group guarded, not just the contents.**
+  `NexAnnotationToolbar` returns `null` when it has nothing to show; wrapping it unconditionally left
+  an empty flex item still claiming the gap and the group margin.
+- **Check a new switch's tooltip against the window edge.** `TooltipFactory` does not reposition, and
+  the first wording here ("Show the machine's system variable names instead of 16-bit data
+  addresses?") ran off the right of a narrow window. The neighbouring switches are all short
+  questions — "Use decimal numbers?", "Disassemble RAM?" — and matching that length is the rule.
+
 ## A Shared Control Can Be Invisible In One Of Its Two Homes
 
 `BankDropdown` is a toolbar control that also appears inside the breakpoint dialog. Its borderless

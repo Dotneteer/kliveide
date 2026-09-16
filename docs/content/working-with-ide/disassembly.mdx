@@ -30,12 +30,45 @@ Turn off the **Follow PC** option to disassemble the entire memory (or a selecte
 
 The Disassembly View provides a few options to display and navigate the memory contents:
 - **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses, opcodes, and instructions are displayed with decimal numbers; otherwise, they are hexadecimal.
+- **Sys vars**: Names 16-bit data addresses after the machine's system variables (on, by default). See [System Variable Names](#system-variable-names) below.
 - **Ram**: This option (on, by default) allows you to disassemble the RAM's contents.
 - **Screen**: This option (off, by default) lets you disassemble the screen memory's ($4000-$5AFF) contents.
 - **Bank**: This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging.
 - **Go To**: Type an address into this box and press Enter to jump to the particular address. If the particular address is not at a disassembled instruction's boundary, it will settle at the next instruction. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses.
 
 A little icon (up or down arrow) is before the **Go To** address box. Unless the machine is paused, this icon is disabled. When the machine is in a paused state, clicking the button jumps to the disassembly at the address pointed by the PC. The direction of the arrow indicates where the PC position can be found relative to the current view.
+
+## System Variable Names
+
+Wherever an instruction loads or stores through a literal 16-bit address, and that address is one of
+the machine's system variables, the view prints the variable's name instead of the number:
+
+```
+ld hl,LAST_K
+ld (ERR_NR),a
+ld sp,RAMTOP
+ld (CHANS),hl
+```
+
+The names come from the same table the [System Variables](./system-vars) panel lists, so each machine
+contributes its own — the ZX Spectrum 48K, 128K and +3, and the ZX Spectrum Next each have one.
+Names are spelled so an assembler would accept them: the ROM manuals print several with a space or a
+hyphen (`ATTR P`, `CH-ADD`), and every character that is not a letter, a digit or an underscore
+becomes `_` — so those read `ATTR_P` and `CH_ADD`.
+
+<Callout type="info" emoji="💡">
+Only **data** operands are named — the 16-bit loads and stores. `JP` and `CALL` targets keep their
+`L`-prefixed labels, because the system variable area is not code: an address there matching a jump
+target is a coincidence far more often than a fact worth printing. Naming applies to the Z80 and
+Z80N machines; the Commodore 64's 6510 listing shows its addresses unchanged.
+</Callout>
+
+The **Sys vars** switch turns the naming off and on. It is on by default, each view remembers its own
+setting, and turning it off shows the addresses exactly as they were before.
+
+The same naming appears in the disassembly of a popped-out `.NEX` bank, with its own **Sys vars**
+switch. There, a label you wrote yourself always wins: your label says something about *this*
+program, while a system variable name only states a fact about the machine.
 
 ## Branch Verdicts
 
@@ -120,6 +153,26 @@ sampled, a few times a second. Pause or single-step for a verdict that stands st
 When your model supports memory paging, a new switch, **64K View**, is displayed in the second header row. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the **Select bank** dropdown. The Disassembly View will display only the disassembled contents of that segment, even if that segment is not paged in.
 
 The **Offset** dropdown lets you select a disassembly offset from one of the 8K page boundaries. This selection may help set a disassembly base address to emulate the page's location.
+
+## Popped-Out `.NEX` Banks
+
+A bank of a `.NEX` file opened as its own document shows the same disassembly listing, with a toolbar
+of its own. Beside the **Go To** box is a button that scrolls the listing to the **program counter**,
+the same way the arrow does in the Disassembly View.
+
+It is available only when the machine is **paused** *and* the program counter is currently inside
+this bank. Both halves matter, and neither is fussiness:
+
+- A running machine's program counter has moved on by the time it is read, so the row it scrolled to
+  would be an arbitrary instruction rather than the one about to execute.
+- A pop-out shows one 16K bank. The program spends most of its time in other banks, and a bank the
+  processor is not in has no row to go to at all &mdash; so the button is off far more often here
+  than in the Disassembly View, and that is the honest answer rather than a fault.
+
+The header's **Bank** readout tells you which case you are in: it ends with `· PC` exactly when the
+program counter is in this bank. The button lands on the row carrying the execution-point marker,
+which follows the listing's own numbering &mdash; so it is right even when the **Offset** dropdown
+lists the bank at an address it is not paged at.
 
 ## Machine-Specific Memory Partitions
 

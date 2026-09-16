@@ -10,11 +10,12 @@ import type { KeyboardEvent, MouseEvent } from "react";
 import classnames from "classnames";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
+import type { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import { createRowAddresses } from "./memoryViewModel";
 import { MemoryDumpSection } from "./MemoryDumpSection";
 import { FullPanel } from "@renderer/controls/layout/Panels";
-import { PanelHeader } from "@renderer/controls/data";
+import { PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { useBreakpointDialog } from "@renderer/appIde/dialogs/useBreakpointDialog";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
@@ -22,6 +23,7 @@ import { evaluateBranch, type BranchVerdict } from "@renderer/appIde/DocumentPan
 import { useRowSizes } from "@renderer/theming/useRowSizes";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
+import { SmallIconButton } from "@renderer/controls/IconButton";
 import { Text } from "@renderer/controls/layout/Text";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySection, type DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
@@ -33,6 +35,9 @@ import {
   createAnnotatedNexDisassemblyItems,
   pcAnchoredRuns
 } from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
+import { useSysVarOperandLabelResolver } from "@renderer/appIde/DocumentPanels/useSysVarOperandLabels";
+// --- The same wording as the live Disassembly view's switch: one control in two places.
+import { SYS_VAR_NAMES_TITLE } from "@renderer/appIde/DocumentPanels/DisassemblyToolbars";
 import { useNexAnnotationEditor } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/useNexAnnotationEditor";
 import {
   formatBankLocation,
@@ -83,6 +88,8 @@ type MemoryDumpViewState = {
   topAddress?: number;
   nexAnnotationPath?: string;
   nexAnnotationBank?: number;
+  /** Name 16-bit data operands after the machine's system variables. Defaults to on. */
+  sysVarNames?: boolean;
 };
 
 type StaticDumpViewMode = "memory" | "disassembly";
@@ -104,6 +111,15 @@ type StaticMemoryDumpOptions = {
 };
 
 const STATIC_DISASSEMBLY_FALLBACK_PAGE_ROWS = 16;
+
+/**
+ * The "go to PC" button's tooltip.
+ *
+ * Says where, not just what: unlike the live Disassembly view — which always shows wherever the PC
+ * is — a popped-out bank is one 16K slice, so "nothing happens" here usually means the program
+ * counter is somewhere else entirely rather than that the button is broken.
+ */
+const GO_TO_PC_TITLE = "Go to the PC address in this bank";
 
 const staticDumpViewModeOptions: DropdownOption[] = [
   { value: "memory", label: "Memory" },
@@ -146,9 +162,26 @@ const StaticMemoryDump = ({
     ? (currentViewState.viewMode ?? (isNexBankDocument ? "disassembly" : "memory"))
     : "memory";
   const decimalView = currentViewState.decimalView ?? false;
+  // --- On unless the reader turned it off: a named address is the more informative default, and a
+  // --- listing that has never been configured should be the readable one.
+  const sysVarNames = currentViewState.sysVarNames ?? true;
   const disassOffset = currentViewState.disassOffset ?? 0;
   const [memoryJumpAddress, setMemoryJumpAddress] = useState<number>();
+  /*
+   * Where to scroll the listing, and a counter beside it.
+   *
+   * The counter is what makes "Go to PC" work a second time. The jump is applied by an effect keyed
+   * on this address, so asking for the same address twice — press the button, scroll away, press it
+   * again — set the same state, re-rendered nothing and scrolled nowhere. Bumping a version on every
+   * request makes each one a distinct event, which is what a button press is.
+   */
   const [disassemblyJumpAddress, setDisassemblyJumpAddress] = useState<number>();
+  const [disassemblyJumpVersion, setDisassemblyJumpVersion] = useState(0);
+  const [disassemblyTopAddress, setDisassemblyTopAddress] = useState<number | undefined>(undefined);
+  const jumpDisassemblyTo = useCallback((address: number) => {
+    setDisassemblyJumpAddress(address & 0xffff);
+    setDisassemblyJumpVersion((version) => version + 1);
+  }, []);
   const [disassemblyItems, setDisassemblyItems] = useState<DisassemblyItem[]>([]);
   const [contextMenuState, contextMenuApi] = useContextMenuState();
   // --- `DisassemblyRow` is memoized, so this is a stable callback rather than a fresh arrow that
@@ -159,10 +192,18 @@ const StaticMemoryDump = ({
     [openBreakpointDialog]
   );
   const memoryVlApi = useRef<VListHandle>();
-  const disassemblyVlApi = useRef<VListHandle>();
+  const disassemblyVlApi = useRef<VirtualizedListApi>();
   const disassemblyListRef = useRef<HTMLDivElement>(null);
   const pendingScrollPosition = useRef(viewState?.scrollPosition ?? 0);
   const pendingDisassemblyScrollPosition = useRef(viewState?.disassemblyScrollPosition ?? 0);
+  /*
+   * The address of the row at the top of the listing, for the "go to PC" button's arrow.
+   *
+   * Recorded on every scroll frame but committed only when scrolling stops, the way the live
+   * Disassembly panel does it: the arrow only has to be right once the view has settled, and
+   * re-rendering the whole toolbar on every frame of a flick would cost far more than it says.
+   */
+  const pendingDisassemblyTopAddress = useRef<number | undefined>(undefined);
   const restoredInitialScroll = useRef(false);
   const restoredInitialDisassemblyScroll = useRef(false);
   const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
@@ -231,6 +272,38 @@ const StaticMemoryDump = ({
   const pausedPcRowAddress = pcSpotlightAddress(disassOffset, pcBankOffset);
 
   /*
+   * "Go to PC", and the one condition it is offered under.
+   *
+   * `pcBankOffset` already *is* the question the button asks: `useNexBankPcOffset` yields a value
+   * only while the machine is paused, and only when the program counter falls inside one of this
+   * bank's current placements. A running machine's PC has moved on by the time it is read, and a
+   * bank the PC is not in has no row to jump to — so both cases come back `undefined` and the
+   * button is simply not offered. There is no second check to keep in step with the first.
+   *
+   * The target is `pausedPcRowAddress`, which is the PC in the *listing's* numbering rather than
+   * the machine's: the offset dropdown decides whether this bank's byte 0 reads $0000 or $C000, and
+   * a bank can be listed at an address it is not paged at. That is the same address the row's
+   * execution-point marker uses, so the button lands on the row that is marked.
+   */
+  const canGoToPc = pcBankOffset !== undefined;
+  const goToPcIcon =
+    disassemblyTopAddress !== undefined && pausedPcRowAddress < disassemblyTopAddress
+      ? "arrow-circle-up"
+      : "arrow-circle-down";
+
+  /*
+   * The machine's system variables, as names for 16-bit data operands.
+   *
+   * The same source the live Disassembly view uses, so a routine reads `ld (LAST_K),a` in the
+   * popped-out bank exactly as it does while running. Memoized inside the hook, which is what lets
+   * it sit in the disassembly effect's dependency list without re-decoding the bank every render.
+   */
+  const machineSysVarLabelResolver = useSysVarOperandLabelResolver();
+  // --- Withheld rather than filtered when the switch is off: an absent resolver is exactly the
+  // --- listing as it was before the feature, with no naming path to go wrong.
+  const sysVarLabelResolver = sysVarNames ? machineSysVarLabelResolver : undefined;
+
+  /*
    * The branch gutter, for a popped-out NEX bank.
    *
    * Gated on the listing's numbering being *real*, which the Disassembly panel never has to check:
@@ -277,10 +350,17 @@ const StaticMemoryDump = ({
    *
    * See `.plans/NEX_DEBUGGING_PLAN.md` §9 and `.ai/ui-mvc-guide.md`.
    */
-  const markDocumentAnnotationDirty = useCallback((dirty: boolean) => {
+  /*
+   * Mark the tab unsaved only when the sidecar could not be written.
+   *
+   * Annotations are written as they are made, so in normal use this document is never unsaved and
+   * the tab never carries the mark. What it now reports is a genuine failure — a bank holding edits
+   * that exist only in memory — which is also what the Explorer's reload guard reads.
+   */
+  const markDocumentAnnotationUnwritten = useCallback((unwritten: boolean) => {
     const editVersion = document.editVersionCount ?? 0;
     const savedVersion = document.savedVersionCount ?? editVersion;
-    if (dirty) {
+    if (unwritten) {
       document.savedVersionCount = savedVersion;
       document.editVersionCount = editVersion === savedVersion ? editVersion + 1 : editVersion;
     } else {
@@ -292,8 +372,8 @@ const StaticMemoryDump = ({
 
   const navigateDisassemblyTo = useCallback((address: number) => {
     setCurrentViewState((current) => ({ ...current, topAddress: address }));
-    setDisassemblyJumpAddress(address & 0xffff);
-  }, []);
+    jumpDisassemblyTo(address);
+  }, [jumpDisassemblyTo]);
 
   const annotationEnv = useMemo<NexAnnotationEditorEnvironment>(
     () => ({
@@ -341,7 +421,7 @@ const StaticMemoryDump = ({
     env: annotationEnv,
     contents,
     onNavigateToAddress: navigateDisassemblyTo,
-    onDirtyChanged: markDocumentAnnotationDirty,
+    onUnwrittenChanged: markDocumentAnnotationUnwritten,
     onDialogClosed: reclaimDisassemblyFocus
   });
 
@@ -483,13 +563,15 @@ const StaticMemoryDump = ({
       revealAddress: (address: number) => {
         setCurrentViewState((current) => ({ ...current, topAddress: address }));
         setMemoryJumpAddress(address);
-        setDisassemblyJumpAddress(address & 0xffff);
+        jumpDisassemblyTo(address);
       }
     });
     return () => {
       documentHubService.setDocumentApi(document.id, undefined);
     };
-  }, [document?.id, documentHubService]);
+    // --- `jumpDisassemblyTo` is stable (a `useCallback` over no changing value), so naming it here
+    // --- costs nothing and keeps this effect honest about what it closes over.
+  }, [document?.id, documentHubService, jumpDisassemblyTo]);
 
   /*
    * The row holding an address, in the listing's own numbering.
@@ -531,6 +613,10 @@ const StaticMemoryDump = ({
 
   const changeDisassemblyOffset = useCallback((nextOffset: number) => {
     changeViewState((vs) => (vs.disassOffset = nextOffset));
+  }, [changeViewState]);
+
+  const changeSysVarNames = useCallback((nextSysVarNames: boolean) => {
+    changeViewState((vs) => (vs.sysVarNames = nextSysVarNames));
   }, [changeViewState]);
 
   const selectDisassemblyRow = useCallback((index: number, extendSelection: boolean) => {
@@ -670,7 +756,8 @@ const StaticMemoryDump = ({
             contents: bankBytes,
             decimalView,
             disassOffset,
-            pcBankOffset
+            pcBankOffset,
+            fallbackOperandLabelResolver: sysVarLabelResolver
           })
         : undefined;
       let outputItems = annotationItems;
@@ -691,7 +778,10 @@ const StaticMemoryDump = ({
             undefined,
             {
               allowExtendedSet: true,
-              decimalMode: decimalView
+              decimalMode: decimalView,
+              // --- An un-annotated bank has no labels of its own, so the machine's system variables
+              // --- are the only names available here — and the only ones this path ever needs.
+              operandLabelResolver: sysVarLabelResolver
             }
           );
           disassembler.setAddressOffset(disassOffset);
@@ -726,6 +816,7 @@ const StaticMemoryDump = ({
     disassOffset,
     disassemblyEnabled,
     annotationVm.annotations,
+    sysVarLabelResolver,
     viewMode
   ]);
 
@@ -738,7 +829,7 @@ const StaticMemoryDump = ({
         align: "start"
       });
     }
-  }, [disassemblyItems, disassemblyJumpAddress]);
+  }, [disassemblyItems, disassemblyJumpAddress, disassemblyJumpVersion]);
 
   return (
     /* --- M1: was `0.8em`, the literal pattern `MemoryPanel.tsx` and `DisassemblyPanel.tsx`
@@ -747,7 +838,7 @@ const StaticMemoryDump = ({
     <FullPanel fontFamily="--monospace-font" fontSize="--panel-font-size">
       <PanelHeader>
         {disassemblyEnabled && (
-          <>
+          <PanelHeaderGroup>
             <Text text="View" />
             <LabelSeparator />
             <Dropdown
@@ -758,31 +849,40 @@ const StaticMemoryDump = ({
                 changeViewMode(value as StaticDumpViewMode)
               }
             />
-            <LabelSeparator width={8} />
-          </>
+          </PanelHeaderGroup>
         )}
         {viewMode === "disassembly" && (
           <>
-            <LabeledSwitch
-              value={decimalView}
-              label="Decimal"
-              title="Use decimal numbers?"
-              clicked={changeDecimalView}
-            />
-            <LabelSeparator width={8} />
-            <Text text="Offset" />
-            <LabelSeparator />
-            <Dropdown
-              options={createStaticDisassemblyOffsetOptions(decimalView)}
-              initialValue={disassOffset.toString(10)}
-              width={68}
-              onChanged={(value) => changeDisassemblyOffset(parseInt(value, 10))}
-            />
-            <LabelSeparator width={8} />
+            <PanelHeaderGroup>
+              <LabeledSwitch
+                value={decimalView}
+                label="Decimal"
+                title="Use decimal numbers?"
+                clicked={changeDecimalView}
+              />
+            </PanelHeaderGroup>
+            <PanelHeaderGroup>
+              <LabeledSwitch
+                value={sysVarNames}
+                label="Sys vars"
+                title={SYS_VAR_NAMES_TITLE}
+                clicked={changeSysVarNames}
+              />
+            </PanelHeaderGroup>
+            <PanelHeaderGroup>
+              <Text text="Offset" />
+              <LabelSeparator />
+              <Dropdown
+                options={createStaticDisassemblyOffsetOptions(decimalView)}
+                initialValue={disassOffset.toString(10)}
+                width={68}
+                onChanged={(value) => changeDisassemblyOffset(parseInt(value, 10))}
+              />
+            </PanelHeaderGroup>
           </>
         )}
         {liveBankShown && (
-          <>
+          <PanelHeaderGroup>
             {/*
               * A readout, not a control.
               *
@@ -801,36 +901,42 @@ const StaticMemoryDump = ({
               Live
             </span>
             {diffBadge && (
-              <>
-                <LabelSeparator width={8} />
-                <span className={styles.bankDiff} title={diffBadge.title}>
-                  {diffBadge.text}
-                </span>
-              </>
+              <span className={styles.bankDiff} title={diffBadge.title}>
+                {diffBadge.text}
+              </span>
             )}
-            <LabelSeparator width={8} />
-          </>
+          </PanelHeaderGroup>
         )}
         {viewMode === "memory" && (
-          <AddressInput
-            label="Go to address:"
-            decimalView={false}
-            onAddressSent={async (address) => {
-              changeViewState((vs) => (vs.topAddress = address));
-              setMemoryJumpAddress(address);
-            }}
-          />
+          <PanelHeaderGroup>
+            <AddressInput
+              label="Go to address:"
+              decimalView={false}
+              onAddressSent={async (address) => {
+                changeViewState((vs) => (vs.topAddress = address));
+                setMemoryJumpAddress(address);
+              }}
+            />
+          </PanelHeaderGroup>
         )}
         {viewMode === "disassembly" && (
-          <AddressInput
-            label="Go To"
-            clearOnEnter={true}
-            decimalView={decimalView}
-            onAddressSent={async (address) => {
-              changeViewState((vs) => (vs.topAddress = address));
-              setDisassemblyJumpAddress(address & 0xffff);
-            }}
-          />
+          <PanelHeaderGroup>
+            <SmallIconButton
+              iconName={goToPcIcon}
+              title={GO_TO_PC_TITLE}
+              enable={canGoToPc}
+              clicked={() => jumpDisassemblyTo(pausedPcRowAddress)}
+            />
+            <AddressInput
+              label="Go To"
+              clearOnEnter={true}
+              decimalView={decimalView}
+              onAddressSent={async (address) => {
+                changeViewState((vs) => (vs.topAddress = address));
+                jumpDisassemblyTo(address);
+              }}
+            />
+          </PanelHeaderGroup>
         )}
         {/*
           * Where this bank actually is in the Z80 address space, right now.
@@ -842,8 +948,7 @@ const StaticMemoryDump = ({
           * `nextBankLocation.ts`.
           */}
         {bankLocation && (
-          <>
-            <LabelSeparator width={8} />
+          <PanelHeaderGroup>
             <span
               className={classnames(styles.bankLocation, {
                 [styles.bankLocationAbsent]: bankLocation.placements.length === 0
@@ -853,13 +958,18 @@ const StaticMemoryDump = ({
               <span className={styles.bankLocationLabel}>Bank</span>
               {bankLocation.text}
             </span>
-          </>
+          </PanelHeaderGroup>
         )}
-        <NexAnnotationToolbar
-          vm={annotationVm}
-          dispatch={dispatchAnnotation}
-          onMenuRequested={openToolbarAnnotationContextMenu}
-        />
+        {/* --- Guarded rather than always rendered: `NexAnnotationToolbar` returns null when it has
+            --- nothing to show, and an empty group would still claim the header's gap and margin. */}
+        {annotationVm.toolbar.visible && (
+          <PanelHeaderGroup>
+            <NexAnnotationToolbar
+              vm={annotationVm}
+              onMenuRequested={openToolbarAnnotationContextMenu}
+            />
+          </PanelHeaderGroup>
+        )}
       </PanelHeader>
       <FullPanel>
         {contents && viewMode === "memory" ? (
@@ -949,10 +1059,17 @@ const StaticMemoryDump = ({
               scrollRowsHorizontally
               onScroll={(offset) => {
                 pendingDisassemblyScrollPosition.current = offset;
+                const startIndex = disassemblyVlApi.current?.findStartIndex();
+                pendingDisassemblyTopAddress.current =
+                  startIndex === undefined ? undefined : disassemblyItems[startIndex]?.address;
               }}
               onScrollEnd={() => {
                 const topPos = pendingDisassemblyScrollPosition.current;
                 changeViewState((vs) => (vs.disassemblyScrollPosition = topPos));
+                const nextTop = pendingDisassemblyTopAddress.current;
+                setDisassemblyTopAddress((current) =>
+                  nextTop === current ? current : nextTop
+                );
               }}
               apiLoaded={(api) => {
                 disassemblyVlApi.current = api;
@@ -966,7 +1083,7 @@ const StaticMemoryDump = ({
                 const openAt = viewState?.topAddress;
                 if (openAt !== undefined) {
                   restoredInitialDisassemblyScroll.current = true;
-                  setDisassemblyJumpAddress(openAt & 0xffff);
+                  jumpDisassemblyTo(openAt);
                 } else if (viewState?.disassemblyScrollPosition) {
                   restoredInitialDisassemblyScroll.current = true;
                   requestAnimationFrame(() => {

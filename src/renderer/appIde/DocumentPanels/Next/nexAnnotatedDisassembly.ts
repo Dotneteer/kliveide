@@ -16,6 +16,7 @@ import {
   getBankAnnotation,
   getNexBankAddressOffset
 } from "./nexAnnotations";
+import { chainOperandLabelResolvers } from "@renderer/appIde/disassemblers/sys-var-operand-labels";
 
 /**
  * Split a byte range so that an instruction boundary is guaranteed to fall on `anchor`.
@@ -64,6 +65,15 @@ export type AnnotatedNexDisassemblyOptions = {
    * it does not turn it into code.
    */
   pcBankOffset?: number;
+  /**
+   * Names for operands the annotations themselves cannot name — in practice, the machine's system
+   * variables.
+   *
+   * Consulted only after the annotation lookup declines, so a hand-authored label always wins: the
+   * user's label is a statement about this program, a system variable name only a fact about the
+   * machine.
+   */
+  fallbackOperandLabelResolver?: DisassemblyOperandLabelResolver;
 };
 
 export async function createAnnotatedNexDisassemblyItems({
@@ -72,7 +82,8 @@ export async function createAnnotatedNexDisassemblyItems({
   contents,
   decimalView = false,
   disassOffset,
-  pcBankOffset
+  pcBankOffset,
+  fallbackOperandLabelResolver
 }: AnnotatedNexDisassemblyOptions): Promise<DisassemblyItem[] | undefined> {
   const bankAnnotation = getBankAnnotation(annotations, bank);
   if (!bankAnnotation) {
@@ -103,7 +114,8 @@ export async function createAnnotatedNexDisassemblyItems({
               runStart,
               runEnd,
               decimalView,
-              addressOffset
+              addressOffset,
+              fallbackOperandLabelResolver
             ))
           );
         }
@@ -134,7 +146,8 @@ async function createInstructionItems(
   start: number,
   end: number,
   decimalView: boolean,
-  addressOffset: number
+  addressOffset: number,
+  fallbackOperandLabelResolver?: DisassemblyOperandLabelResolver
 ): Promise<DisassemblyItem[]> {
   const disassembler = new Z80Disassembler(
     [new MemorySection(start, end, MemorySectionType.Disassemble)],
@@ -143,11 +156,9 @@ async function createInstructionItems(
     {
       allowExtendedSet: true,
       decimalMode: decimalView,
-      operandLabelResolver: createAnnotationOperandLabelResolver(
-        annotations,
-        bankAnnotation,
-        bank,
-        addressOffset
+      operandLabelResolver: chainOperandLabelResolvers(
+        createAnnotationOperandLabelResolver(annotations, bankAnnotation, bank, addressOffset),
+        fallbackOperandLabelResolver
       )
     }
   );
@@ -350,10 +361,22 @@ function decorateAnnotatedItems(
       item.formattedLabel = labels[0].name;
     }
 
+    /*
+     * A user's end-of-line comment *replaces* the disassembler's own, rather than joining it.
+     *
+     * Both want the same place — the one column at the right of the row — and the generated note is
+     * the weaker claim of the two: `; Palette Control` says what the *opcode* does, which the reader
+     * of an annotated listing already knows by the time they have written a note about what this
+     * particular instruction is doing in this particular program. Joining them produced
+     * `; Palette Control | set the border to black`, which buries the sentence worth reading behind
+     * the one that is not, on exactly the rows the reader cared enough to annotate.
+     *
+     * The generated text is not lost: it is kept in `generatedHardComment` below, and the end-of-line
+     * dialog shows it in its own row so what is being replaced stays visible while you type. Clearing
+     * the user comment brings it back to the listing.
+     */
     if (lineAnnotation?.comment) {
-      item.hardComment = item.hardComment
-        ? `${item.hardComment} | ${lineAnnotation.comment}`
-        : lineAnnotation.comment;
+      item.hardComment = lineAnnotation.comment;
     }
     item.annotation = {
       ...(item.annotation ?? createAnnotationMetadata(bank, bankOffset, rowByteLength, rowRegionType)),

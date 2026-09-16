@@ -36,6 +36,8 @@ import {
 import { DisassemblyRow } from "./DisassemblyRow";
 import { useLaunchedNexAnnotations } from "./Next/useNexLiveBank";
 import { createNexLiveOperandLabelResolver } from "./Next/nexLiveSymbols";
+import { chainOperandLabelResolvers } from "../disassemblers/sys-var-operand-labels";
+import { useSysVarOperandLabelResolver } from "./useSysVarOperandLabels";
 import { evaluateBranch, type BranchVerdict } from "./branchVerdict";
 import {
   buildPartitionIndexByLabel,
@@ -107,6 +109,11 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const [disassOffset, setDisassOffset] = useState(
     loadedViewState?.disassOffset ?? 0
   );
+  // --- On unless the reader turned it off: a named address is the more informative default, and a
+  // --- panel that has never been configured should be the readable one.
+  const [sysVarNames, setSysVarNames] = useState(
+    loadedViewState?.sysVarNames ?? true
+  );
 
   const disassemblerFactory = machineInfo?.toolInfo?.[CT_DISASSEMBLER] as
     | DisassemblerFactory
@@ -155,16 +162,33 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
    * fresh function every render would re-disassemble 64K every render.
    */
   const launchedAnnotations = useLaunchedNexAnnotations();
+  /*
+   * The machine's system variables, as the second source of operand names.
+   *
+   * Independent of any NEX: every machine has one of these tables, so this is the source that makes
+   * `ld (LAST_K),a` appear in an ordinary ZX Spectrum session. It is asked **after** the NEX labels
+   * — see `chainOperandLabelResolvers` — because a label the user wrote about this program is a
+   * more specific claim than a fact about the machine.
+   */
+  const machineSysVarLabelResolver = useSysVarOperandLabelResolver();
+  // --- Withheld rather than filtered when the switch is off: an absent resolver is exactly the
+  // --- listing as it was before the feature, with no naming path to go wrong.
+  const sysVarLabelResolver = sysVarNames ? machineSysVarLabelResolver : undefined;
   const operandLabelSource = useMemo(
     () =>
-      launchedAnnotations
+      launchedAnnotations || sysVarLabelResolver
         ? (labels: string[]) =>
-            createNexLiveOperandLabelResolver(
-              launchedAnnotations,
-              resolveMem64kPartitions(labels, partitionIndexByLabel)
+            chainOperandLabelResolvers(
+              launchedAnnotations
+                ? createNexLiveOperandLabelResolver(
+                    launchedAnnotations,
+                    resolveMem64kPartitions(labels, partitionIndexByLabel)
+                  )
+                : undefined,
+              sysVarLabelResolver
             )
         : undefined,
-    [launchedAnnotations, partitionIndexByLabel]
+    [launchedAnnotations, partitionIndexByLabel, sysVarLabelResolver]
   );
 
   const {
@@ -205,6 +229,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     mainApi,
     ram,
     screen,
+    sysVarNames,
     topAddress
   });
 
@@ -287,7 +312,12 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     ram,
     currentSegment,
     disassOffset,
-    emuViewVersion
+    emuViewVersion,
+    // --- Operand names arrive asynchronously — the system variable table over IPC, a launched
+    // --- NEX's labels from its sidecar — so they are usually not there yet when the listing is
+    // --- first decoded. Without this, a stopped machine would keep showing `$5C08` until something
+    // --- else happened to invalidate the listing. The source is memoized, so this fires once.
+    operandLabelSource
   ]);
 
   // --- Take care of refreshing the screen
@@ -430,9 +460,11 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         onRamChanged={setRam}
         onScreenChanged={setScreen}
         onShowBankLabelChanged={setBankLabel}
+        onSysVarNamesChanged={setSysVarNames}
         pausedPc={pausedPc}
         ram={ram}
         screen={screen}
+        sysVarNames={sysVarNames}
         topAddress={topAddress}
       />
       <DisassemblyBankToolbar

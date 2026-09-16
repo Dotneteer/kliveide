@@ -14,7 +14,6 @@ import { NexOperandLabelDialog } from "../NexOperandLabelDialog";
 import { NexSynopsisCommentDialog } from "../NexSynopsisCommentDialog";
 import { NexEndOfLineCommentDialog } from "../NexEndOfLineCommentDialog";
 import {
-  saveNexAnnotationSession,
   subscribeNexAnnotationSession,
   updateNexAnnotationSession
 } from "../nexAnnotationSession";
@@ -31,8 +30,12 @@ export type UseNexAnnotationEditorArgs = {
   contents: Uint8Array;
   /** Scroll the listing to an address — "Go To" in either manage dialog. */
   onNavigateToAddress: (address: number) => void;
-  /** Report the unsaved state outward, so the document tab can show it. */
-  onDirtyChanged: (dirty: boolean) => void;
+  /**
+   * Report outward that the sidecar could not be written, so the document tab can mark itself.
+   *
+   * Not a dirty flag: annotations are written as they are made, so this fires only on failure.
+   */
+  onUnwrittenChanged: (unwritten: boolean) => void;
   /**
    * Any annotation dialog has finished, however it ended.
    *
@@ -62,7 +65,7 @@ export function useNexAnnotationEditor({
   env,
   contents,
   onNavigateToAddress,
-  onDirtyChanged,
+  onUnwrittenChanged,
   onDialogClosed
 }: UseNexAnnotationEditorArgs): NexAnnotationEditor {
   const { projectService } = useAppServices();
@@ -74,8 +77,8 @@ export function useNexAnnotationEditor({
   // --- Trap 5 in `.ai/ui-mvc-guide.md`.
   const navigateRef = useRef(onNavigateToAddress);
   navigateRef.current = onNavigateToAddress;
-  const dirtyRef = useRef(onDirtyChanged);
-  dirtyRef.current = onDirtyChanged;
+  const unwrittenRef = useRef(onUnwrittenChanged);
+  unwrittenRef.current = onUnwrittenChanged;
   const contentsRef = useRef(contents);
   contentsRef.current = contents;
   const dialogClosedRef = useRef(onDialogClosed);
@@ -97,8 +100,7 @@ export function useNexAnnotationEditor({
         subscribe: (annotationPath, bank, listener) =>
           subscribeNexAnnotationSession(projectService, annotationPath, bank, listener),
         update: (annotationPath, annotations) =>
-          updateNexAnnotationSession(annotationPath, annotations),
-        save: (annotationPath) => saveNexAnnotationSession(projectService, annotationPath)
+          updateNexAnnotationSession(annotationPath, annotations, projectService)
       },
       dialogs: {
         synopsisComment: (args) =>
@@ -128,7 +130,7 @@ export function useNexAnnotationEditor({
       nativeConfirm: (message) => window.confirm(message),
       bankBytes: () => Array.from(contentsRef.current),
       navigateToAddress: (address) => navigateRef.current(address),
-      dirtyChanged: (dirty) => dirtyRef.current(dirty)
+      unwrittenChanged: (unwritten) => unwrittenRef.current(unwritten)
       };
     },
     [confirm, dialogs, projectService]

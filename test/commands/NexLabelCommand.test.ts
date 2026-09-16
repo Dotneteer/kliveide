@@ -10,6 +10,7 @@ import {
 } from "@renderer/appIde/DocumentPanels/Next/nexLoadSession";
 import {
   clearNexAnnotationSessions,
+  flushNexAnnotationSession,
   peekNexAnnotationSession,
   updateNexAnnotationSession
 } from "@renderer/appIde/DocumentPanels/Next/nexAnnotationSession";
@@ -224,13 +225,13 @@ describe("NexLabelCommand", () => {
       expect(result.finalMessage).toContain("no annotations");
     });
 
-    it("routes through an open viewer's session instead of writing the file", async () => {
+    it("routes through an open viewer's session, which writes it", async () => {
       /*
-       * §4.5's policy. With a viewer open its annotations may carry edits the user has not saved,
-       * so this edit joins them and inherits "written when you ask". Reading the file instead would
-       * drop those edits; writing the file *with* them would flush edits the user has not finished.
+       * With a viewer open, the session's copy is the current one and the file may be a write
+       * behind it — so this edit joins it there rather than being written over the top of it. The
+       * session then writes the result, so the label is on disk either way.
        */
-      const { context, saved, readFileContent } = contextFor();
+      const { context, saved } = contextFor();
       updateNexAnnotationSession("/p/Game.nex.dis", {
         schemaVersion: 2,
         banks: {
@@ -243,15 +244,21 @@ describe("NexLabelCommand", () => {
       } as any);
 
       const result = await new NexLabelCommand().execute(context, { name: "DrawSprite" } as any);
+      await flushNexAnnotationSession("/p/Game.nex.dis");
 
       expect(result.success).toEqual(true);
-      expect(saved).toHaveLength(0);
-      // --- The file was never read either: the session's copy is the current one.
-      expect(readFileContent).not.toHaveBeenCalled();
-      expect(result.finalMessage).toContain("Save the annotations to keep it");
+      // --- The command no longer tells the user to go and save it.
+      expect(result.finalMessage).not.toContain("Save");
+      // --- Written by the session, once, carrying both the viewer's edit and this one.
+      expect(saved).toHaveLength(1);
+      const written = JSON.parse(saved[0].contents);
+      expect(written.banks["5"].localLabels).toEqual([
+        { name: "UnsavedEdit", value: 0x0020 },
+        { name: "DrawSprite", value: 0x0100 }
+      ]);
     });
 
-    it("keeps the viewer's unsaved edits when it adds to the session", async () => {
+    it("keeps the viewer's edits when it adds to the session", async () => {
       const { context } = contextFor();
       updateNexAnnotationSession("/p/Game.nex.dis", {
         schemaVersion: 2,

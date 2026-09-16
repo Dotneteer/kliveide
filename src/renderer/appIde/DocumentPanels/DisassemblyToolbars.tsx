@@ -6,7 +6,7 @@ import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { PartitionPicker } from "@renderer/controls/PartitionPicker";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Text } from "@renderer/controls/layout/Text";
-import { PanelHeader } from "@renderer/controls/data";
+import { PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import type { PartitionOption } from "@renderer/features/memory/memoryViewModel";
 import { toHexa4 } from "../services/ide-commands";
 
@@ -19,6 +19,9 @@ export function createDisassemblyOffsetOptions(decimalView: boolean): DropdownOp
   }
   return options;
 }
+
+export const SYS_VAR_NAMES_TITLE =
+  "Show system variable names in operands?";
 
 type DisassemblyToolbarProps = {
   autoRefresh: boolean;
@@ -33,9 +36,11 @@ type DisassemblyToolbarProps = {
   onRamChanged: (value: boolean) => void;
   onScreenChanged: (value: boolean) => void;
   onShowBankLabelChanged: (value: boolean) => void;
+  onSysVarNamesChanged: (value: boolean) => void;
   pausedPc: number;
   ram: boolean;
   screen: boolean;
+  sysVarNames: boolean;
   topAddress: number;
 };
 
@@ -52,59 +57,79 @@ export const DisassemblyToolbar = ({
   onRamChanged,
   onScreenChanged,
   onShowBankLabelChanged,
+  onSysVarNamesChanged,
   pausedPc,
   ram,
   screen,
+  sysVarNames,
   topAddress
 }: DisassemblyToolbarProps) => (
   <PanelHeader>
-    <LabeledSwitch
-      value={decimalView}
-      label="Decimal"
-      title="Use decimal numbers?"
-      clicked={onDecimalViewChanged}
-    />
-    <LabeledSwitch
-      value={autoRefresh}
-      label="Follow PC"
-      title="Follow the changes of PC"
-      clicked={onAutoRefreshChanged}
-    />
-    <SmallIconButton
-      iconName="refresh"
-      title={"Refresh now"}
-      clicked={onManualRefresh}
-    />
-    <LabeledSwitch value={ram} label="RAM:" title="Disassemble RAM?" clicked={onRamChanged} />
-    <LabeledSwitch
-      value={screen}
-      label="Screen:"
-      title="Disassemble screen?"
-      clicked={onScreenChanged}
-    />
-    <LabeledSwitch
-      value={bankLabel}
-      label="Bank"
-      title="Display bank label information?"
-      clicked={onShowBankLabelChanged}
-    />
-    <SmallIconButton
-      iconName={pausedPc < topAddress ? "arrow-circle-up" : "arrow-circle-down"}
-      title={"Go to the PC address"}
-      enable={
-        machineState === MachineControllerState.Paused ||
-        machineState === MachineControllerState.Stopped
-      }
-      clicked={onGoToPc}
-    />
-    <AddressInput
-      label="Go To"
-      clearOnEnter={true}
-      decimalView={false}
-      onAddressSent={async (address) => {
-        await onGoToAddress(address);
-      }}
-    />
+    <PanelHeaderGroup>
+      <LabeledSwitch
+        value={decimalView}
+        label="Decimal"
+        title="Use decimal numbers?"
+        clicked={onDecimalViewChanged}
+      />
+    </PanelHeaderGroup>
+    <PanelHeaderGroup>
+      <LabeledSwitch
+        value={sysVarNames}
+        label="Sys vars"
+        title={SYS_VAR_NAMES_TITLE}
+        clicked={onSysVarNamesChanged}
+      />
+    </PanelHeaderGroup>
+    {/* --- The refresh button acts on what "Follow PC" selects, so the two travel together. */}
+    <PanelHeaderGroup>
+      <LabeledSwitch
+        value={autoRefresh}
+        label="Follow PC"
+        title="Follow the changes of PC"
+        clicked={onAutoRefreshChanged}
+      />
+      <SmallIconButton
+        iconName="refresh"
+        title={"Refresh now"}
+        clicked={onManualRefresh}
+      />
+    </PanelHeaderGroup>
+    {/* --- Three switches over what the listing covers: one group, so they wrap as a set. */}
+    <PanelHeaderGroup>
+      <LabeledSwitch value={ram} label="RAM:" title="Disassemble RAM?" clicked={onRamChanged} />
+      <LabeledSwitch
+        value={screen}
+        label="Screen:"
+        title="Disassemble screen?"
+        clicked={onScreenChanged}
+      />
+      <LabeledSwitch
+        value={bankLabel}
+        label="Bank"
+        title="Display bank label information?"
+        clicked={onShowBankLabelChanged}
+      />
+    </PanelHeaderGroup>
+    <PanelHeaderGroup>
+      <SmallIconButton
+        iconName={pausedPc < topAddress ? "arrow-circle-up" : "arrow-circle-down"}
+        title={"Go to the PC address"}
+        enable={
+          machineState === MachineControllerState.Paused ||
+          machineState === MachineControllerState.Stopped
+        }
+        clicked={onGoToPc}
+      />
+      <AddressInput
+        label="Go To"
+        clearOnEnter={true}
+        decimalView={false}
+        onAddressSent={async (address) => {
+          await onGoToAddress(address);
+        }}
+      />
+    </PanelHeaderGroup>
   </PanelHeader>
 );
 
@@ -146,38 +171,43 @@ export const DisassemblyBankToolbar = ({
 
   return (
     <PanelHeader>
-      <LabeledSwitch
-        value={isFullView}
-        label="64K View"
-        title="Show the full 64K memory"
-        clicked={onFullViewChanged}
-      />
+      <PanelHeaderGroup>
+        <LabeledSwitch
+          value={isFullView}
+          label="64K View"
+          title="Show the full 64K memory"
+          clicked={onFullViewChanged}
+        />
+      </PanelHeaderGroup>
       {!isFullView && (
         <>
-          <LabelSeparator />
-          <Text text="Select bank" />
-          <LabelSeparator />
-          {/*
-            * The same chooser the Memory view and the breakpoint dialog use. This was a third copy
-            * of the machine-id branch, which is how the disassembly view could have ended up
-            * offering a different picker than the view beside it.
-            */}
-          <PartitionPicker
-            value={currentSegment}
-            onChange={onCurrentSegmentChanged}
-            displayBankMatrix={displayBankMatrix}
-            segmentOptions={segmentOptions}
-            partitionOptions={partitionOptions}
-            decimalView={decimalView}
-          />
-          <Text text="Offset" />
-          <LabelSeparator />
-          <Dropdown
-            options={offsetOptions}
-            initialValue={disassOffset.toString(10)}
-            width={68}
-            onChanged={(option) => onDisassOffsetChanged(parseInt(option, 10))}
-          />
+          <PanelHeaderGroup>
+            <Text text="Select bank" />
+            <LabelSeparator />
+            {/*
+              * The same chooser the Memory view and the breakpoint dialog use. This was a third copy
+              * of the machine-id branch, which is how the disassembly view could have ended up
+              * offering a different picker than the view beside it.
+              */}
+            <PartitionPicker
+              value={currentSegment}
+              onChange={onCurrentSegmentChanged}
+              displayBankMatrix={displayBankMatrix}
+              segmentOptions={segmentOptions}
+              partitionOptions={partitionOptions}
+              decimalView={decimalView}
+            />
+          </PanelHeaderGroup>
+          <PanelHeaderGroup>
+            <Text text="Offset" />
+            <LabelSeparator />
+            <Dropdown
+              options={offsetOptions}
+              initialValue={disassOffset.toString(10)}
+              width={68}
+              onChanged={(option) => onDisassOffsetChanged(parseInt(option, 10))}
+            />
+          </PanelHeaderGroup>
         </>
       )}
     </PanelHeader>
