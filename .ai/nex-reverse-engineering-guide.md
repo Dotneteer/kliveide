@@ -7,6 +7,10 @@ it except the facts in [ScrollNutter, verified](#scrollnutternex--verified-facts
 Read `../AGENTS.md` first. For the product-level description of what annotations *are*, see
 `../.docs/nex-annotations.md`; this file is the operational companion to it.
 
+**This guide is maintained by the sessions that use it.** When you learn something durable, fold it
+into the relevant section before you finish — see [Keeping this guide
+current](#keeping-this-guide-current). It is a standing brief, not a log.
+
 ---
 
 ## The one-minute model
@@ -34,6 +38,11 @@ bankOffset  = z80Address - offsetIndex * 0x4000
 `offsetIndex: 2` → base `$8000`. A `lineAnnotations` key of `9728` is decimal for `$2600`, so it
 annotates `$8000 + $2600 = $A600` — which is where the `InitPalettes` global label (`42496` = `$A600`)
 points. All three agree, and the bytes at that offset disassemble to the routine the label names.
+
+**A bank's `offsetIndex` must match where the program pages it, not where it defaults.** A new
+sidecar gives every bank `offsetIndex: 0`, so its listing is numbered from `$0000`. A bank the code
+pages in at `$8000` needs `offsetIndex: 2`, or every address in that listing — and every label you
+write from it — is out by `$8000`. Work out the slot from the paging code before annotating a bank.
 
 **Every number in the sidecar JSON is decimal.** `42496`, not `$A600`, not `0xA600`. Convert when you
 read and when you write. This is the single most common way to corrupt a sidecar.
@@ -204,21 +213,34 @@ load-bearing (it defines the address base); the other two are only UI memory.
 
 ### Rules the loader enforces
 
-Learn these and the sidecar will never be rejected:
+> **Annotations are all-or-nothing.** A *single* `error`-severity diagnostic anywhere makes
+> `parseNexAnnotations` return `annotations: undefined` — the whole file's annotations are gone, not
+> just the offending entry. One duplicate label name loses every label, region and comment in the
+> file. Verified, not inferred.
+>
+> The `debug` subtree is the opposite: its problems are **warnings**, and a bad breakpoint is skipped
+> while the rest survive. So a sidecar can load its breakpoints and still yield no annotations at all.
 
-1. **Regions must not overlap.** An overlap is a hard error and the bank's regions are returned
-   unnormalized.
-2. **Gaps are filled for you, as `disassemble`.** You only need to declare the regions that are *not*
-   ordinary code; everything between them, and any tail up to `$3FFF`, becomes `disassemble`
-   automatically. Adjacent same-type regions are then merged.
-3. **No regions at all** → the whole bank becomes one `disassemble` region (`DEFAULT_REGION`).
-4. **`words` regions must span an even number of bytes.**
-5. **Offsets must be `0..16383`**; out-of-range line-annotation keys are dropped with a warning.
-6. **`schemaVersion` must be 1 or 2**, or the entire file is rejected — annotations *and* debug state.
-7. Bank numbers run `0..111` (`NEX_MAX_BANK`).
+This makes the round-trip check in step 7 mandatory rather than advisable.
 
-Anything invalid produces `diagnostics` (`error` / `warning` with a JSON path). When writing a
-sidecar by hand, parse it back with `parseNexAnnotations` and assert `diagnostics` is empty.
+What counts as an error:
+
+1. **Regions must not overlap.** → `$.banks.<n>.regions: Regions must not overlap.`
+2. **`words` regions must span an even number of bytes.**
+3. **Label names** must match `/^[A-Za-z_][A-Za-z0-9_]*$/` and be **≤16 characters**.
+4. **Duplicate label name within one scope** — among `globalLabels`, or within one bank's
+   `localLabels`. Across scopes is *not* an error (see the Annotation standard).
+5. **Offsets out of `0..16383`**, including `lineAnnotations` / `operandReferences` keys.
+6. **`schemaVersion` other than 1 or 2** — rejects annotations *and* debug state.
+7. Bank numbers outside `0..111` (`NEX_MAX_BANK`).
+
+What happens for you, silently and correctly:
+
+- **Gaps are filled as `disassemble`.** Declare only the regions that are *not* ordinary code;
+  everything between them, and any tail to `$3FFF`, is added automatically, then adjacent same-type
+  regions are merged. Verified: declaring one `bytes` region at `$100..$1FF` yields
+  `[$0000-$00FF disassemble][$0100-$01FF bytes][$0200-$3FFF disassemble]`.
+- **No regions at all** → the whole bank becomes one `disassemble` region (`DEFAULT_REGION`).
 
 ---
 
@@ -312,7 +334,8 @@ Notes that matter:
   `setAddressOffset(base)` only changes the addresses that are *displayed*.
 - `parseNexAnnotations` takes the **raw text**, not a parsed object.
 - The annotated path emits synopsis lines as separate items with `isPrefixItem` set and no
-  `instruction`; filter them out if you only want code.
+  `instruction` — the text is in **`prefixComment`**. Print that field, or your listing shows blank
+  lines where the synopses are and you cannot tell a missing annotation from a rendering bug.
 - `.test.ts` files run under the `node` project; `.test.tsx` under `jsdom`.
 
 **Sanity check for any new bank:** disassemble a few instructions at a known label and confirm the
@@ -391,6 +414,83 @@ Worth knowing: `0x243B` selects a Next register and `0x253B` reads/writes it, so
 `ports.txt`. Most devices can also be switched off via nextreg `0x82`–`0x85`, which is worth
 remembering when a port seems inert.
 
+### Idioms worth recognising on sight
+
+These recur in Next code and cost time to re-derive.
+
+**Paging a 16K bank.** MMU slot *S* (`nextreg $50+S`) covers `$2000 * S`, and holds an **8K page**, so
+a 16K bank *N* is pages `2N` and `2N+1` — which is why the bank number arrives doubled:
+
+```
+ld a,$1B        ; bank 27
+add a,a         ; -> page 54
+nextreg $54,a   ; MMU4 = $8000-$9FFF
+inc a           ; -> page 55
+nextreg $55,a   ; MMU5 = $A000-$BFFF
+```
+
+`$54`/`$55` is `$8000`, `$56`/`$57` is `$C000`. Read `add a,a` after a bank constant as "page this
+16K bank in", and the slot pair tells you where.
+
+**Selecting an AY chip (turbosound).** Writing to `$FFFD` with bits 7:5 set is a *chip select*, not a
+register select — so `or $FC` before the `out` is the giveaway:
+
+```
+ld a,$01
+ld bc,$FFFD
+or $FC          ; $FD: bits 1:0 = 01 -> AY 2, both channels enabled
+out (c),a
+```
+
+Bits 1:0 choose the chip (`11` = AY 0, `10` = AY 1, `01` = AY 2). Requires nextreg `$08` bit 1.
+
+**A zxnDMA copy.** A short routine that patches three fields into a nearby 16-byte block and `otir`s
+it to port `$6B` is a memcpy, not a mystery:
+
+```
+ld ($9073),hl   ; source     -> block+2
+ld ($907C),de   ; destination-> block+11
+ld ($9075),bc   ; length     -> block+4
+ld hl,BLOCK
+ld b,$10
+ld c,$6B        ; zxnDMA
+otir
+```
+
+**The block is data and must be marked as such** — it disassembles into convincing nonsense
+otherwise. The `ld b,$10` gives you its exact length.
+
+**A PT3 music module.** A block beginning `"ProTracker 3."` or `"Vortex Tracker II"` is a PT3 module,
+and its length is not stored anywhere — you compute it by following its own tables. Offsets from the
+module's first byte:
+
+| Offset | Contents |
+|---|---|
+| `$00`–`$62` | 99 bytes of title/author text |
+| `$63`–`$66` | TonTableId, Delay, NumberOfPositions, LoopPosition |
+| `$67`–`$C8` | **49 words**: PatternsPointer, 32 sample pointers, 16 ornament pointers |
+| `$C9`… | position list, then pattern, sample and ornament data |
+
+Every pointer is relative to the module's first byte. The end is the furthest of: each sample
+(`ptr + 2 + len*4`, `len` at `ptr+1`), each ornament (`ptr + 2 + len`), and each pattern channel
+stream (scan to its `$00` terminator; patterns are three words each at `PatternsPointer`, and the
+pattern count is `max(positionList) / 3 + 1`).
+
+**Check the result rather than trusting it:** modules are normally laid out back to back, so a
+correct length lands exactly on the next module's first byte. A gap of zero is the confirmation; a
+gap of a few bytes usually means the last block ends in terminator zeros, which is fine.
+
+The player is recognisable too — `$8000` holding `ld hl,<module>` with entry points at `$8003`
+(init, HL = module) and `$8005` (play, once per frame) is the VTII PT3 player. Two such banks paged
+in turn, each with its own AY selected, is a TurboSound pair: the same tune arranged twice, so the
+two modules differ in length.
+
+**Clip windows take four successive writes.** `nextreg $18`/`$19`/`$1A` (Layer 2 / Sprites / ULA)
+advance an internal index on each write: X1, X2, Y1, Y2. Four writes of `0` collapse the window to a
+single pixel — that is *hiding* a layer, not resetting it. The index is reset through `nextreg $1C`,
+so code that writes four values without resetting first is relying on the index having wrapped; with
+four identical values that is safe, otherwise it is a bug worth flagging.
+
 ### Turning this into annotations
 
 When a register write is the point of a routine, put the *meaning* in the annotation, not the
@@ -414,13 +514,160 @@ ambiguous; it is the last word, but it is a slow one.
    never says what the value means (see
    [Decoding ports and Next registers](#decoding-ports-and-next-registers)). Watch for tail calls
    (`jp` into a routine) — they are common here and they change what `ret` means.
-4. **Name.** Add labels for every entry point you identified. Names are ≤16 chars.
-5. **Annotate.** `synopsis` for what a routine *does* and why; `comment` for a single surprising line.
-   Do not restate the opcode — the generated comment already does that, and yours replaces it.
-6. **Classify.** Mark data as `bytes` / `words` / `skip`. This is what stops the disassembler decoding
-   a sprite as instructions and desynchronising everything below it.
+4. **Name.** Add a label for every entry point you identified.
+5. **Annotate.** Synopsis for routines and for each change of activity; end-of-line comments wherever
+   they help.
+6. **Classify.** Mark data as `bytes` / `words` / `skip`.
 7. **Verify.** Re-run the annotated listing and read it back. Then parse the sidecar and assert no
    diagnostics.
+8. **Report.** Summarise what you added, and list anything you were unsure about.
+9. **Write back.** Fold anything durable you learned into this guide — see [Keeping this guide
+   current](#keeping-this-guide-current).
+
+Steps 4–6, 8 and 9 have a standing house style — see the next section, which is the project author's
+instruction rather than a suggestion.
+
+---
+
+## Annotation standard
+
+What to write, and where. These are standing requirements for reverse-engineering work in this repo.
+
+### 1. Every identified subroutine gets a label *and* a synopsis
+
+Put a label at the entry offset and a `synopsis` on the same offset.
+
+**The label** must be a valid identifier (`/^[A-Za-z_][A-Za-z0-9_]*$/`), **at most 16 characters**,
+and genuinely descriptive — `InitPaletteRamp`, not `Sub1`. Avoid the `LA616` shape: that is the
+disassembler's own fallback for an unnamed target, so reusing it says nothing.
+
+**Make names unique across the whole file, not just where the validator forces it.** The two failure
+modes are opposite and both bad:
+
+- *Within* one scope — among `globalLabels`, or within a single bank's `localLabels` — a duplicate is
+  an **error, and one error discards every annotation in the file**. Verified: two global labels
+  named `Draw` yields `annotations: undefined`.
+- *Across* scopes it is allowed and silent. A global `Draw` and a bank-2 local `Draw`, or a local
+  `Draw` in two different banks, all validate cleanly and then read ambiguously for a human.
+
+So the validator will either take the whole file away from you or say nothing at all. Neither is a
+substitute for picking distinct names.
+
+**Use `localLabels` for anything in a bank that shares its address window with another bank.** Two
+banks paged in turn at the same slot — a TurboSound pair, a set of level banks, an overlay — cannot
+both have a global label at the same address, because a global label is keyed by address alone. Local
+labels are bank-scoped and bank-relative, which is exactly the case they exist for. Distinguish them
+by name anyway (`Ay1Player` / `Ay2Player`), so a reader can tell which bank a listing came from.
+
+**The synopsis** is a brief description of what the routine does. Say what it accomplishes, and where
+it matters: what it expects in registers, what it returns or modifies, and any side effect a caller
+would be surprised by. Keep it to a few lines; `\n` splits it into separate rendered lines.
+
+```jsonc
+"globalLabels": [ { "name": "InitPaletteRamp", "value": 42518 } ],
+"lineAnnotations": {
+  "9750": {
+    "synopsis": "Fills the currently selected palette with an identity ramp.\nWrites entries 0..255, each set to its own index.\nEntry: palette already selected via nextreg $43. Destroys A."
+  }
+}
+```
+
+### 2. A synopsis at every change of activity
+
+Larger routines do several things in sequence. When a block starts doing something **different from
+the block above it**, put a synopsis on its first instruction saying what this stretch is for —
+"Clear the tilemap", "Wait for vblank", "Copy the sprite table".
+
+This is about genuine changes of activity, not a fixed interval. A synopsis every few lines is noise;
+a 200-instruction routine with one synopsis at the top is a wall. Let the code's own structure decide.
+
+### 3. End-of-line comments wherever they aid understanding
+
+Use `comment` on any line where a human reader would otherwise have to work something out. Be
+generous — this is the default, not the exception.
+
+Remember that `comment` **replaces** the disassembler's generated comment, so restating the register
+name is a downgrade. Write what the value *means* (see
+[Decoding ports and Next registers](#decoding-ports-and-next-registers)).
+
+Lines that almost always deserve one:
+
+- `nextreg` / `out` writes — decode the value against `nextreg.txt` / `ports.txt`
+- magic constants, addresses and bit masks — say what they are
+- loop counters and terminating conditions
+- non-obvious flag use, or a flag set far from where it is tested
+- `jp` into another routine — mark it as a tail call, since its `ret` returns past the caller
+- self-modifying writes: a store into *code+1* is patching an instruction's operand, often in another
+  bank. Name the instruction being patched, and annotate the patched instruction too — otherwise
+  neither half of the pair makes sense on its own
+
+### 4. Data sections become regions — and uncertainty gets reported
+
+When you identify a run of bytes as data rather than code, declare it as a region:
+
+| Content | Type |
+|---|---|
+| Byte tables, strings, sprite/bitmap data | `bytes` |
+| Address tables, 16-bit values (**even byte count required**) | `words` |
+| Padding, or a span not worth listing | `skip` |
+
+You only need to declare the data — gaps between regions, and any tail to `$3FFF`, are filled in as
+`disassemble` automatically.
+
+**Annotations only render on a row start, and data rows are not per-byte.** A `bytes` region lays out
+**four bytes per row counting from the region's own start**; `words` lays out two. A label or
+`lineAnnotation` on an offset that does not begin a row is **silently dropped from the listing** —
+no diagnostic, nothing to notice. So a one-byte flag sitting immediately before a table will push
+every row out of phase and make the table's own annotations vanish.
+
+Adjacent same-type regions are merged, so you cannot fix this by splitting a run into two `bytes`
+regions. Break it with a region of a **different type** instead. Two ways, depending on what the
+bytes are:
+
+*A stray byte before a table* — give it a one-byte `skip`. It renders its own line, so its own
+annotation survives, and the table behind it starts a region and therefore a row:
+
+```jsonc
+{ "start": 10229, "end": 10229, "type": "skip"  },   // $A7F5 flag, one line of its own
+{ "start": 10230, "end": 10277, "type": "bytes" }    // $A7F6 onwards, rows now aligned
+```
+
+*Two data blocks butted together*, where `skip` would hide real content — retype the **last two
+bytes** of the first block as `words`. That breaks the merge without concealing anything, and the
+second block then begins a region:
+
+```jsonc
+{ "start": 2396, "end": 6087, "type": "bytes" },   // first module's body
+{ "start": 6088, "end": 6089, "type": "words" },   // its last two bytes, as one word
+{ "start": 6090, "end": 6192, "type": "bytes" }    // second module — now a row start
+```
+
+This only works when the run is out of phase by **two**; an odd shift cannot be absorbed by a word,
+and you should report the misalignment rather than hide bytes to fix it.
+
+Check the alignment rather than assuming it: an annotated offset must satisfy
+`(offset - regionStart) % 4 === 0` for `bytes`, `% 2` for `words`, measured from the start of the
+region **after normalization**, which is not necessarily the region you wrote.
+
+**Labels are not affected.** A label resolves into operands (`ld hl,TitleText1`) from its *value*, so
+it works wherever it points. Only `lineAnnotations` need a row start.
+
+This matters more than it looks: one data byte decoded as an opcode shifts every instruction boundary
+below it, so an unmarked table silently corrupts the rest of the bank's listing.
+
+**If you are not sure whether something is data, do not guess.** Leave it as code and **list it in
+your summary** — bank, offset range, and why you suspect it. A wrong `bytes` region hides real code
+just as effectively as a missing one corrupts the listing.
+
+### What to report at the end
+
+Close every reverse-engineering session with:
+
+- labels added (name → address)
+- synopses added, and the blocks they cover
+- regions added, with type and range
+- **uncertain data areas** — bank, offset range, and what makes them ambiguous
+- anything that contradicted an existing annotation
 
 ---
 
@@ -442,12 +689,22 @@ the format is stable.
 3. **Preserve unknown keys.** A newer build may have written something this guide does not list.
    Read-modify-write; do not reconstruct from scratch.
 
-**Round-trip check** after any hand edit:
+**Round-trip check after any hand edit — not optional.** One error discards every annotation in the
+file, so the thing to assert is that `annotations` came back at all:
 
 ```ts
 const parsed = parseNexAnnotations(readFileSync(path, "utf8"), { loadedBanks });
-console.log(parsed.diagnostics);      // must be empty
+const errors = parsed.diagnostics.filter((d) => d.severity === "error");
+if (errors.length || !parsed.annotations) {
+  throw new Error("sidecar rejected:\n" + JSON.stringify(errors, null, 2));
+}
+// --- Sanity: the things you just wrote are actually in the model.
+console.log(parsed.annotations.globalLabels?.length, "labels");
+console.log(parsed.annotations.banks["2"]?.regions);
 ```
+
+Counting what came back matters because a file that parses is not proof that your edit landed where
+you meant it to — a line annotation keyed to the wrong offset is perfectly valid JSON.
 
 **From the debugger.** With the machine paused, `nex-label <name> [<address>]` adds a bank-local label
 at the current PC (or the given address) — it routes into the open session if there is one and writes
@@ -472,8 +729,59 @@ debugger, `-e` stopping at the entry point.
 | Editing the file with a viewer open | The session overwrites it without asking |
 | Treating a `jp` into a routine as a plain jump | It is a tail call — that routine's `ret` returns past its caller |
 | Taking `; Palette Control` as the explanation | It names the register only; the meaning is in `nextreg.txt` |
+| Expecting a bad entry to be skipped | One annotation **error discards every annotation in the file** |
+| Assuming warnings and errors behave alike | `debug` problems warn and skip; annotation problems reject everything |
+| Relying on the validator for label uniqueness | Within a scope it nukes the file; across scopes it says nothing |
+| Label longer than 16 characters | Rejected outright |
+| Guessing a `bytes` region to be tidy | A wrong data region hides real code — report the doubt instead |
+| Annotating any offset inside a data region | Only **row starts** render — 4-byte rows for `bytes`, 2 for `words`, counted from the region start |
+| Splitting a data run to realign rows | Adjacent same-type regions merge; break it with a different type — `skip` for a stray byte, a two-byte `words` where nothing may be hidden |
+| Annotating a bank without setting `offsetIndex` | It defaults to 0; a bank paged at `$8000` needs 2, or every address is out by `$8000` |
+| A global label in a bank that shares its slot | Two banks at the same address need `localLabels`, not globals |
+| Printing `instruction` for synopsis rows | Synopsis text lives in `prefixComment`; `instruction` is empty |
 | Decoding `out ($243B),a` as an ordinary port write | `$243B`/`$253B` are `nextreg` long-hand — look the *register* up |
 | Reading only the top table of `ports.txt` | Per-port bit detail is in the sections below it |
+
+---
+
+## Keeping this guide current
+
+Every session that learns something durable folds it back in here before finishing. Future sessions
+then start where you finished instead of rediscovering it.
+
+**Write it as if it had always been there.** This is a standing brief, not a log. No "update:", no
+dates, no session numbers, no changelog section, no "note that as of…". A reader should not be able
+to tell which sentence arrived when, and the document should still read as one argument from top to
+bottom.
+
+**Replace what it supersedes.** If what you learned contradicts something written here, rewrite that
+passage. Do not append a correction beneath it and leave both standing — two conflicting claims are
+worse than the original mistake, because now nobody knows which to trust.
+
+**Put it where it belongs:**
+
+| What you learned | Section |
+|---|---|
+| A container, header or bank-order fact | The NEX container |
+| Sidecar schema, or how the validator behaves | The annotation sidecar → Rules the loader enforces |
+| A tooling detail — an API shape, a flag, a way to run something | Producing a listing |
+| Next hardware: a register, a port, a decoding habit | Decoding ports and Next registers |
+| A rule about *what* to annotate | Annotation standard |
+| A mistake that cost you time and will cost the next session too | Pitfalls |
+| A fact true only of ScrollNutter | ScrollNutter — verified facts |
+
+**Per-program findings do not belong here.** Routine descriptions, labels and what a specific
+subroutine does go in the **sidecar**, which is what it is for. This guide holds only what transfers
+to the next NEX. A guide that accumulates ScrollNutter's routine map stops being a guide.
+
+**Only record what you verified.** Everything in this document was checked against the real file or
+the real code, which is why it can be trusted without re-deriving it. A plausible guess written in
+the same confident voice is worse than nothing. If you could not confirm it, either say so in the
+sentence or leave it out.
+
+**Keep it brief, and keep the shape.** One or two sentences usually. If a section is becoming a list
+of loosely related paragraphs, restructure it rather than appending to the end — the arc matters more
+than any single addition.
 
 ---
 

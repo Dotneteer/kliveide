@@ -14,7 +14,7 @@ import {
   locateBank16k,
   type BankPlacement
 } from "./nextBankLocation";
-import { bankPartitions, joinBankHalves, sameBankBytes } from "./nexLiveBank";
+import { bankPartitions, joinBankHalves, machineHasRun, sameBankBytes } from "./nexLiveBank";
 import { getNexLoad } from "./nexLoadSession";
 import { loadNexAnnotationSidecar } from "./nexAnnotationSidecar";
 import type { NexFileAnnotations } from "./nexAnnotations";
@@ -31,7 +31,7 @@ import type { NexFileAnnotations } from "./nexAnnotations";
 
 /**
  * Where the bank this document shows is paged in right now, or `undefined` when there is nothing to
- * say — no bank, or a machine that is not a ZX Spectrum Next.
+ * say — no bank, a machine that is not a ZX Spectrum Next, or one that has not been started.
  *
  * Refreshed through `useEmuStateListener`, the same ticker the Memory Mapping panel and the register
  * panels use: it reports immediately when the machine pauses and throttles while it runs, which is
@@ -43,9 +43,15 @@ import type { NexFileAnnotations } from "./nexAnnotations";
 export function useNexBankLocation(bank: number | undefined): BankPlacement[] | undefined {
   const emuApi = useEmuApi();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
+  const machineState = useSelector((s) => s.emulatorState?.machineState);
   const [placements, setPlacements] = useState<BankPlacement[] | undefined>(undefined);
 
-  const enabled = bank !== undefined && machineId === MI_ZXNEXT;
+  /*
+   * The whole-class gate: everything downstream of this readout is a claim about a running machine.
+   * Live bank bytes, the branch gutter's verdicts and the location line itself all key off it, so
+   * withholding it while the machine is off is what keeps a popped-out bank showing the file.
+   */
+  const enabled = bank !== undefined && machineId === MI_ZXNEXT && machineHasRun(machineState);
 
   useEmuStateListener(emuApi, async () => {
     if (!enabled) {
@@ -98,9 +104,17 @@ export function useNexLiveBankBytes(
 ): Uint8Array | undefined {
   const emuApi = useEmuApi();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
+  const machineState = useSelector((s) => s.emulatorState?.machineState);
   const [bytes, setBytes] = useState<Uint8Array | undefined>(undefined);
 
-  const enabled = wanted && bank !== undefined && machineId === MI_ZXNEXT;
+  /*
+   * `machineHasRun` again, even though the caller's `wanted` already comes from a gate that checks
+   * it. This hook's contract is "the bytes as they are in the machine *now*", and a machine that has
+   * never run has no now — zeros read back as a bankful of `nop` and look like a decoded program.
+   * A caller that gets the gate wrong should get no bytes, not plausible ones.
+   */
+  const enabled =
+    wanted && bank !== undefined && machineId === MI_ZXNEXT && machineHasRun(machineState);
 
   useEmuStateListener(emuApi, async () => {
     if (!enabled) {

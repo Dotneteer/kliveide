@@ -50,6 +50,15 @@ export type NexAnnotationEditorIntent =
   | { type: "decimalViewSelected"; value: boolean }
   | { type: "disassemblyOffsetSelected"; offset: number }
 
+  // ─── Navigation ────────────────────────────────────────────────────────────
+  /*
+   * Jump from a labelled operand to where that label is defined.
+   *
+   * The only intent here that reads rather than edits, which is why it sits apart: it changes what
+   * you are looking at, never the sidecar.
+   */
+  | { type: "goToDefinitionRequested"; rowIndex?: number }
+
   // ─── Editing ───────────────────────────────────────────────────────────────
   | { type: "synopsisCommentRequested"; rowIndex?: number }
   | { type: "endOfLineCommentRequested"; rowIndex?: number }

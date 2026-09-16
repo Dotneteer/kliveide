@@ -1,11 +1,14 @@
 import { describe, it, expect } from "vitest";
 
+import { MachineControllerState } from "@abstractions/MachineControllerState";
+
 import {
   bankPartitions,
   changedFlagsIn,
   diffBankBytes,
   formatBankDiff,
   joinBankHalves,
+  machineHasRun,
   sameBankBytes
 } from "@renderer/appIde/DocumentPanels/Next/nexLiveBank";
 
@@ -202,5 +205,34 @@ describe("sameBankBytes", () => {
 
   it("refuses to compare different lengths", () => {
     expect(sameBankBytes(new Uint8Array(HALF), new Uint8Array(BANK))).toBe(false);
+  });
+});
+
+/*
+ * A created machine answers long before it has run, so "can it answer?" is not the same question as
+ * "is there anything to read?". Getting that wrong made a popped-out bank drop the file's bytes and
+ * show 16K of zeros the moment the first tick landed — a bankful of `nop` that looks like a decoded
+ * program rather than an empty machine.
+ */
+describe("machineHasRun", () => {
+  it("says no before any machine exists", () => {
+    expect(machineHasRun(undefined)).toBe(false);
+  });
+
+  it("says no for a machine that is merely created", () => {
+    expect(machineHasRun(MachineControllerState.None)).toBe(false);
+  });
+
+  it("says no for a stopped machine", () => {
+    // --- Stopping resets it; the file is the honest thing to show afterwards.
+    expect(machineHasRun(MachineControllerState.Stopped)).toBe(false);
+  });
+
+  it("says yes once it is running, pausing, paused or stopping", () => {
+    // --- Paused is the state the whole live view exists for: stopped at a breakpoint.
+    expect(machineHasRun(MachineControllerState.Running)).toBe(true);
+    expect(machineHasRun(MachineControllerState.Pausing)).toBe(true);
+    expect(machineHasRun(MachineControllerState.Paused)).toBe(true);
+    expect(machineHasRun(MachineControllerState.Stopping)).toBe(true);
   });
 });

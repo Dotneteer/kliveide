@@ -19,6 +19,10 @@ import { PanelHeader, PanelHeaderGroup } from "@renderer/controls/data";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { useBreakpointDialog } from "@renderer/appIde/dialogs/useBreakpointDialog";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
+import { useEmuApi } from "@renderer/core/EmuApi";
+import { useMainApi } from "@renderer/core/MainApi";
+import { revealNexBankAtAddress } from "@renderer/appIde/DocumentPanels/Next/nexBankReveal";
 import { evaluateBranch, type BranchVerdict } from "@renderer/appIde/DocumentPanels/branchVerdict";
 import { useRowSizes } from "@renderer/theming/useRowSizes";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
@@ -54,7 +58,8 @@ import {
 import {
   changedFlagsIn,
   diffBankBytes,
-  formatBankDiff
+  formatBankDiff,
+  machineHasRun
 } from "@renderer/appIde/DocumentPanels/Next/nexLiveBank";
 import {
   useNexBankBreakpoints,
@@ -139,6 +144,9 @@ const StaticMemoryDump = ({
   viewState
 }: DocumentProps<MemoryDumpViewState>) => {
   const documentHubService = useDocumentHubService();
+  const emuApi = useEmuApi();
+  const mainApi = useMainApi();
+  const machineState = useSelector((st) => st.emulatorState?.machineState);
   // --- M3: the row heights the virtualizer places by, matching `--row-size-*` in the CSS.
   const { memory: dumpRowItemSize, disassembly: disassemblyRowItemSize } = useRowSizes();
   const [currentViewState, setCurrentViewState] = useState<MemoryDumpViewState>(
@@ -229,9 +237,14 @@ const StaticMemoryDump = ({
    * they are being shown.
    *
    * Reads are gated on `bankPlacements` rather than run unconditionally: it is non-undefined exactly
-   * when this is a ZX Spectrum Next with this bank in it and the machine answered, which is the same
-   * question that used to decide whether the switch could be offered. Without the gate this would be
-   * 16K of IPC per tick for every open bank document whether a machine exists or not.
+   * when this is a ZX Spectrum Next with this bank in it, **started**, and answering. Without the
+   * gate this would be 16K of IPC per tick for every open bank document whether a machine exists or
+   * not.
+   *
+   * The "started" half is not redundant. A machine that has been created but never run still answers
+   * every query — a default memory mapping, and partitions full of zeros — so a gate that only asks
+   * "can it answer?" passes, and the document silently swaps the file's bytes for 16K of `nop`. See
+   * `machineHasRun`.
    *
    * `liveBank` is undefined whenever the machine cannot answer, and everything below falls back to
    * the file on its own. That is the whole of the "no machine" story: a NEX opened for reading, with
@@ -375,19 +388,70 @@ const StaticMemoryDump = ({
     jumpDisassemblyTo(address);
   }, [jumpDisassemblyTo]);
 
+  /*
+   * Follow a definition out of this bank and into whichever one currently holds it.
+   *
+   * The same reveal the debugger uses to follow the program counter, pointed at a label's address
+   * instead — so a jump lands in the document the pop-out and the PC reveal already share, rather
+   * than opening a third view of the same bank.
+   *
+   * Silent when the address is not in a bank of this NEX (ROM, or memory the program paged in from
+   * somewhere else). That is an ordinary answer to "where is this label", not a failure worth a
+   * dialog: the menu could only have known by asking, which is what this is.
+   */
+  const revealAddressInBank = useCallback(
+    async (address: number) => {
+      try {
+        await revealNexBankAtAddress(address, {
+          getPageInfo: async () => (await emuApi.getNextMemoryMapping())?.pageInfo,
+          readFile: (path) => mainApi.readBinaryFile(path),
+          openBank: async ({ path, bank, contents: bankBytes, disassOffset: base, topAddress, annotationPath }) => {
+            await openStaticMemoryDump(
+              documentHubService,
+              `bankDump${path}:${bank}`,
+              `${path} - Bank: ${bank}`,
+              bankBytes,
+              {
+                disassemblyEnabled: true,
+                disassOffset: base,
+                nexAnnotationPath: annotationPath,
+                nexAnnotationBank: bank,
+                topAddress,
+                // --- The definition is code being read, so open on the listing rather than the dump.
+                viewMode: "disassembly" as const
+              }
+            );
+          }
+        });
+      } catch {
+        // --- See above: a jump that cannot be made is not worth interrupting the user for.
+      }
+    },
+    [documentHubService, emuApi, mainApi]
+  );
+
   const annotationEnv = useMemo<NexAnnotationEditorEnvironment>(
     () => ({
       annotationPath: currentViewState.nexAnnotationPath,
       bank: currentViewState.nexAnnotationBank,
       viewMode,
       decimalView,
-      disassOffset
+      disassOffset,
+      /*
+       * Whether a cross-bank "Go to definition" can find its destination.
+       *
+       * `machineHasRun` rather than "a machine exists": a created-but-unstarted machine answers the
+       * MMU query with a default mapping, which would offer a jump that lands somewhere the program
+       * never put anything.
+       */
+      machineRunning: machineHasRun(machineState)
     }),
     [
       currentViewState.nexAnnotationBank,
       currentViewState.nexAnnotationPath,
       decimalView,
       disassOffset,
+      machineState,
       viewMode
     ]
   );
@@ -421,6 +485,7 @@ const StaticMemoryDump = ({
     env: annotationEnv,
     contents,
     onNavigateToAddress: navigateDisassemblyTo,
+    onRevealAddressInBank: revealAddressInBank,
     onUnwrittenChanged: markDocumentAnnotationUnwritten,
     onDialogClosed: reclaimDisassemblyFocus
   });
@@ -670,8 +735,15 @@ const StaticMemoryDump = ({
      * bare letter that merely called `preventDefault` would open the dialog *and* type into the
      * Spectrum.
      */
-    if (!event.ctrlKey && !event.metaKey && !event.altKey) {
-      const action = annotationActionForKey(event.key, event.shiftKey);
+    /*
+     * `Alt` and `Meta` are never ours; `Ctrl` is, for the one shortcut that asks for it.
+     *
+     * The modifier is passed through rather than screened out here, so the table decides. Matching
+     * is exact at that end, which is what keeps `Ctrl+C` as copy while `Ctrl+F12` reaches Go to
+     * Definition.
+     */
+    if (!event.metaKey && !event.altKey) {
+      const action = annotationActionForKey(event.key, event.shiftKey, event.ctrlKey);
       const entry = action ? menuEntryFor(annotationVmRef.current.menu, action) : undefined;
       if (action && entry && !entry.disabled) {
         event.preventDefault();

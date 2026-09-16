@@ -6,10 +6,9 @@ import {
   DisassemblyOperandLabelResolver,
   MemorySection
 } from "@renderer/appIde/disassemblers/common-types";
+import { resolveOperandLabel } from "./nexGoToDefinition";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import {
-  NexAnnotationLabel,
-  NexAnnotationLabelScope,
   NexBankAnnotation,
   NexFileAnnotations,
   NEX_BANK_LAST_OFFSET,
@@ -183,77 +182,28 @@ function createAnnotationOperandLabelResolver(
   _bank: number,
   addressOffset: number
 ): DisassemblyOperandLabelResolver {
-  return ({ instructionOffset, operandIndex, operandValue }) => {
-    const bankOffset = instructionOffset & NEX_BANK_LAST_OFFSET;
-    const explicitReference = bankAnnotation.operandReferences?.[String(bankOffset)]?.find(
-      (reference) => reference.operandIndex === operandIndex
-    );
-
-    if (explicitReference) {
-      return resolveReferencedOperandLabel(
-        annotations,
-        bankAnnotation,
-        explicitReference.scope,
-        explicitReference.name,
-        operandValue,
-        addressOffset
-      );
-    }
-
-    return resolveAutomaticOperandLabel(annotations, bankAnnotation, operandValue, addressOffset);
-  };
+  /*
+   * Delegated to `resolveOperandLabel` rather than implemented here.
+   *
+   * "Go to definition" has to reach the same label this prints, and the only way to guarantee that
+   * is for both to run the same rule. Two implementations of "explicit reference first, then value
+   * match" would agree until the day one of them was edited.
+   */
+  return ({ instructionOffset, operandIndex, operandValue }) =>
+    resolveOperandLabel(
+      annotations,
+      bankAnnotation,
+      {
+        bankOffset: instructionOffset & NEX_BANK_LAST_OFFSET,
+        operandIndex,
+        operandValue
+      },
+      addressOffset
+    )?.name;
 }
 
-function resolveAutomaticOperandLabel(
-  annotations: NexFileAnnotations,
-  bankAnnotation: NexBankAnnotation,
-  operandValue: number,
-  addressOffset: number
-): string | undefined {
-  const globalLabel = annotations.globalLabels?.find((label) => label.value === operandValue);
-  if (globalLabel) {
-    return globalLabel.name;
-  }
 
-  const bankRelativeValue = operandValue - addressOffset;
-  if (bankRelativeValue < 0 || bankRelativeValue > NEX_BANK_LAST_OFFSET) {
-    return undefined;
-  }
-  return bankAnnotation.localLabels?.find((label) => label.value === bankRelativeValue)?.name;
-}
 
-function resolveReferencedOperandLabel(
-  annotations: NexFileAnnotations,
-  bankAnnotation: NexBankAnnotation,
-  scope: NexAnnotationLabelScope,
-  name: string,
-  operandValue: number,
-  addressOffset: number
-): string | undefined {
-  const label =
-    scope === "global"
-      ? annotations.globalLabels?.find((item) => item.name === name)
-      : bankAnnotation.localLabels?.find((item) => item.name === name);
-  if (!label) {
-    return undefined;
-  }
-  return labelMatchesOperand(label, scope, operandValue, addressOffset) ? label.name : undefined;
-}
-
-function labelMatchesOperand(
-  label: NexAnnotationLabel,
-  scope: NexAnnotationLabelScope,
-  operandValue: number,
-  addressOffset: number
-): boolean {
-  if (scope === "global") {
-    return label.value === operandValue;
-  }
-  const bankRelativeValue = operandValue - addressOffset;
-  return bankRelativeValue >= 0 && bankRelativeValue <= NEX_BANK_LAST_OFFSET
-    ? label.value === bankRelativeValue
-    : false;
-}
 
 function createByteItems(
   contents: Uint8Array,

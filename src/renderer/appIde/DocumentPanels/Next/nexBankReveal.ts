@@ -113,10 +113,28 @@ async function bankBytesFor(
 export async function revealNexBankAtPc(
   deps: NexBankRevealDeps
 ): Promise<NexBankRevealOutcome> {
+  return revealNexBankAtAddress(await deps.getPc(), deps);
+}
+
+/**
+ * Reveal the bank holding an arbitrary address, scrolled to it.
+ *
+ * The same decision as `revealNexBankAtPc` — which is now one line of it — for a destination the
+ * caller already knows. "Go to definition" uses it to follow a label out of the bank on screen:
+ * which bank that address is in is a question only the live MMU can answer, because the program is
+ * free to page whatever it likes there.
+ *
+ * Every "did nothing" outcome is a real possibility here rather than a defensive check: a label may
+ * name an address that is currently ROM, or one in a bank this NEX never carried.
+ */
+export async function revealNexBankAtAddress(
+  address: number,
+  deps: Omit<NexBankRevealDeps, "getPc">
+): Promise<NexBankRevealOutcome> {
   const session = getNexLoad();
   if (!session) return "no-nex-session";
 
-  const pc = await deps.getPc();
+  const pc = address;
   const located = bank16kAtAddress(await deps.getPageInfo(), pc);
   // --- ROM, or a slot the MMU says nothing usable about. During the launch flow this is the
   // --- answer every time, which is what keeps this quiet until the program itself is running.

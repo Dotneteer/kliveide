@@ -1,4 +1,27 @@
+import { MachineControllerState } from "@abstractions/MachineControllerState";
+
 import { NEX_BANK_SIZE } from "./nexAnnotations";
+
+/**
+ * Whether there is a machine whose memory means anything yet.
+ *
+ * The distinction matters because a machine that has been *created* answers questions long before it
+ * has been *started*: `getNextMemoryMapping` returns a default mapping and every partition reads back
+ * as zeros. Nothing errors, so a "can the machine answer?" test passes and the answers are all claims
+ * about a machine that has never executed an instruction — a popped-out bank would drop the file's
+ * bytes and show 16K of `nop`, which looks exactly like a successfully decoded program.
+ *
+ * `None` and `Stopped` are the two states that mean "off", matching `ExecutionControls`' own
+ * `isStopped` — including the `null` case, which is what the selector gives before any machine
+ * exists.
+ */
+export function machineHasRun(state: MachineControllerState | undefined): boolean {
+  return (
+    state != null &&
+    state !== MachineControllerState.None &&
+    state !== MachineControllerState.Stopped
+  );
+}
 
 /*
  * A NEX bank's bytes as they are in the machine *now*, against the bytes the file holds.

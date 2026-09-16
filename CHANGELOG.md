@@ -4,6 +4,11 @@
 
 ### Fixes
 
+- **Only source files came back when you reopened a project.** Every other document backed by a
+  project file &mdash; the NEX, DSK and Z80 viewers, plain text files &mdash; was saved into the
+  workspace correctly and then discarded while restoring it, because restoring matched on the code
+  editor alone. Losing such a document also lost the selected tab, since the active one fell back to
+  the first document that happened to survive.
 - A breakpoint in partition 0 (bank `B0` on the 128K, bank `00` on the ZX Next) could never fire.
 - **A source-code breakpoint fired in the wrong memory bank.** For a line inside a `.bank` section,
   the breakpoint was placed by address alone &mdash; and `.bank` sections share addresses, so it also
@@ -102,6 +107,13 @@
   operands from the labels you wrote in the NEX viewer &mdash; `call DrawSprite` rather than
   `call $C100`. A bank's own labels apply only while that bank is paged in, so the names follow the
   program as it pages; labels you made global apply everywhere.
+- **Follow a label to where it is defined.** A NEX bank's disassembly context menu opens with **Go to
+  Definition** whenever the line names a label &mdash; `ld hl,InitPalettes` &mdash; and it takes you
+  there. A definition inside the bank on screen is a scroll, and works with no machine running. One
+  outside it needs a machine, because which bank holds an address depends on how the program has
+  paged memory: with one running, that bank is brought forward and scrolled to the label; without
+  one, the command is greyed rather than guessing. `Ctrl+F12` reaches it from the listing &mdash;
+  plain `F12` is the macOS Step Into accelerator, so it was not free to take.
 - **A popped-out NEX bank shows the machine, not the file &mdash; without being asked.** Whenever a
   machine is running, both the bank's memory *and* its disassembly are built from the bank's current
   contents, with every byte that differs from the file marked and counted in the toolbar. This is how

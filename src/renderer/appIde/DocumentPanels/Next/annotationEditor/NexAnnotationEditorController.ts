@@ -39,6 +39,7 @@ import {
   actionOffsetSpan,
   deleteLabelConfirmRequest,
   discardConfirmMessage,
+  goToDefinitionTargetFor,
   selectViewModel,
   WHOLE_BANK_CONFIRM_MESSAGE,
   type NexAnnotationEditorViewModel
@@ -176,6 +177,10 @@ export class NexAnnotationEditorController extends UiController<
 
       case "labelRequested":
         await this.openLabelForRow(intent.scope, intent.rowIndex);
+        return;
+
+      case "goToDefinitionRequested":
+        await this.goToDefinition(intent.rowIndex);
         return;
 
       case "manageLabelsRequested":
@@ -454,6 +459,31 @@ export class NexAnnotationEditorController extends UiController<
           ? (this.state.env.disassOffset + result.label.value) & 0xffff
           : result.label.value;
       this.ports.navigateToAddress(address);
+    }
+  }
+
+  // ─── Navigation ────────────────────────────────────────────────────────────
+
+  /**
+   * Follow a labelled operand to where its label is defined.
+   *
+   * The target is asked of `goToDefinitionTargetFor`, the same function the menu asked to decide
+   * whether to enable the entry — so the command can never act on a different row or label than the
+   * one it offered itself for.
+   *
+   * Both outcomes are re-checked rather than assumed. A menu can be left open while the machine
+   * stops underneath it, and a keystroke or a stale click would otherwise reach a cross-bank jump
+   * that no longer has a machine to resolve it.
+   */
+  private async goToDefinition(rowIndex: number | undefined): Promise<void> {
+    const target = goToDefinitionTargetFor(this.state, rowIndex);
+
+    if (target.kind === "same-bank") {
+      this.ports.navigateToAddress(target.address & 0xffff);
+      return;
+    }
+    if (target.kind === "other-bank" && this.state.env.machineRunning) {
+      await this.ports.revealAddressInBank(target.address & 0xffff);
     }
   }
 

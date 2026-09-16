@@ -135,6 +135,18 @@ describe("StaticMemoryDump", () => {
       // --- `test/renderer/breakpoint-form.test.ts`.
       useDispatch: () => vi.fn()
     }));
+    /*
+     * "Go to definition" reads the NEX back through `mainApi` when a label is in another bank, so
+     * the panel now calls `useMainApi`. Mocked here rather than left to the real hook, which reaches
+     * for `useRendererContext` — an export this file's `RendererProvider` mock deliberately does not
+     * have. No test here follows a cross-bank jump; that decision is asserted without a DOM in
+     * `test/dialogs/nexAnnotationEditor` and `test/renderer/nexGoToDefinition.test.ts`.
+     */
+    vi.doMock("@renderer/core/MainApi", () => ({
+      useMainApi: () => ({
+        readBinaryFile: async () => new Uint8Array(0)
+      })
+    }));
     vi.doMock("@renderer/core/EmuApi", () => ({
       useEmuApi: () => ({
         listBreakpoints: async () => ({ breakpoints: [] }),
