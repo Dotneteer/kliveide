@@ -109,6 +109,8 @@ export function intentForAction(
   if (regionType) return { type: "regionTypeMarked", regionType, rowIndex };
 
   switch (action) {
+    case "goto-definition":
+      return { type: "goToDefinitionRequested", rowIndex };
     case "manage-labels":
       return { type: "manageLabelsRequested" };
     case "manage-regions":

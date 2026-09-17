@@ -48,6 +48,8 @@ import {
 import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
 import { toHexa4 } from "../services/ide-commands";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
+import { useAppServices } from "../services/AppServicesProvider";
+import type { NavigationLocator } from "@renderer/abstractions/NavigationLocation";
 import {
   createDisassemblyOffsetOptions,
   DisassemblyBankToolbar,
@@ -61,6 +63,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
+  const { navigationHistoryService } = useAppServices();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
   // --- One hook for the whole listing rather than one per row. Wrapped in `useCallback` because
@@ -197,7 +200,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     items,
     mem64kLabels,
     pausedPc,
-    refreshDisassembly
+    refreshDisassembly,
+    refreshVersion
   } = useDisassemblyRefresh({
     cachedRefreshState,
     customDisassembly,
@@ -247,6 +251,90 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   useEffect(() => {
     pendingScrollTopAddress.current = topAddress;
   }, [topAddress]);
+
+  /*
+   * Navigation history (Go Back / Go Forward).
+   *
+   * Where the listing is, for the history, is `pendingScrollTopAddress` — the top row as of the last
+   * scroll frame, which a jump also sets synchronously so the location recorded right after it is
+   * the address asked for, not the one before. See `.plans/NAVIGATION_HISTORY_PLAN.md` §4.2.
+   *
+   * Follow PC moves the listing too, but through `setFollowPcTopAddress`, never through a recorded
+   * jump: that is the view following the machine, not the user going somewhere.
+   */
+  const navSegment = useRef(currentSegment);
+  const navFullView = useRef(isFullView);
+  navSegment.current = currentSegment;
+  navFullView.current = isFullView;
+
+  const jumpTo = useCallback((address: number) => {
+    pendingScrollTopAddress.current = address;
+    setToScroll(address);
+    setScrollVersion((version) => version + 1);
+  }, []);
+
+  /*
+   * A reveal that turned Follow PC off has to wait for the listing to be disassembled again: while
+   * Follow PC is on, the listing covers only about a kilobyte around PC, so the address is usually
+   * not in it yet, and the jump would report "outside the disassembled range" and give up.
+   *
+   * Keyed on `refreshVersion`, which counts completed refreshes, rather than on `items`: a refresh
+   * that produces an equal listing is still the one this is waiting for. A Follow PC refresh already
+   * under way when the switch flipped can still land first, with its small window; an address it
+   * does not cover waits one more refresh before the jump is made regardless (and reports itself).
+   */
+  const pendingReveal = useRef<{ address: number; retried: boolean } | undefined>(undefined);
+  useEffect(() => {
+    const pending = pendingReveal.current;
+    if (!pending || cachedRefreshState.current.autoRefresh) return;
+    const covered =
+      items.length > 0 &&
+      items[0].address <= pending.address &&
+      items[items.length - 1].address >= pending.address;
+    if (!covered && !pending.retried) {
+      pending.retried = true;
+      return;
+    }
+    pendingReveal.current = undefined;
+    jumpTo(pending.address);
+    // --- `items` and `refreshVersion` are set in the same batch; both are named so the effect is
+    // --- honest about what it reads, and a refresh with an equal listing still re-runs it.
+  }, [items, refreshVersion, jumpTo]);
+
+  const revealLocator = useRef<(locator: NavigationLocator) => void>(() => {});
+  revealLocator.current = (locator: NavigationLocator) => {
+    if (locator.kind !== "address") return;
+    if (locator.fullView !== undefined && locator.fullView !== isFullView) {
+      navFullView.current = locator.fullView;
+      setIsFullView(locator.fullView);
+    }
+    if (locator.segment !== undefined && locator.segment !== null && locator.segment !== currentSegment) {
+      navSegment.current = locator.segment;
+      setCurrentSegment(locator.segment);
+    }
+    // --- Restoring a place the user left must not be overridden by the next Follow PC tick.
+    if (autoRefresh) {
+      pendingScrollTopAddress.current = locator.address;
+      pendingReveal.current = { address: locator.address, retried: false };
+      setAutoRefresh(false);
+      return;
+    }
+    jumpTo(locator.address);
+  };
+
+  useEffect(() => {
+    documentHubService.setDocumentApi(document.id, {
+      getNavigationLocator: () => ({
+        kind: "address",
+        address: pendingScrollTopAddress.current ?? 0,
+        segment: navSegment.current,
+        fullView: navFullView.current,
+        viewMode: "disassembly"
+      }),
+      revealLocator: (locator) => revealLocator.current(locator)
+    });
+    return () => documentHubService.setDocumentApi(document.id, undefined);
+  }, [document.id, documentHubService]);
 
   // --- Initial view: refresh the disassembly list and scroll to the last saved top position
   useInitializeAsync(async () => {
@@ -445,14 +533,12 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           // after the sync effect, and so always sees the current value.
         }}
         onDecimalViewChanged={setDecimalView}
-        onGoToAddress={(address) => {
-          setToScroll(address);
-          setScrollVersion((version) => version + 1);
-        }}
-        onGoToPc={() => {
-          setToScroll(pausedPc);
-          setScrollVersion((version) => version + 1);
-        }}
+        onGoToAddress={(address) =>
+          void navigationHistoryService.recordJump("disassemblyGoTo", () => jumpTo(address))
+        }
+        onGoToPc={() =>
+          void navigationHistoryService.recordJump("disassemblyGoTo", () => jumpTo(pausedPc))
+        }
         onManualRefresh={async () => {
           await refreshDisassembly();
           dispatch(setIdeStatusMessageAction("Disassembly refreshed", true));

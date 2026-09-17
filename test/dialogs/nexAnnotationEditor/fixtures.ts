@@ -24,6 +24,7 @@ export function anEnvironment(
     viewMode: "disassembly",
     decimalView: false,
     disassOffset: 0x4000,
+    machineRunning: false,
     ...over
   };
 }
@@ -63,6 +64,39 @@ export function anOperandRow(bankOffset: number): DisassemblyItem {
     instruction: "jp $4100",
     operandCandidates: [{ operandIndex: 0, value: 0x4100 }]
   } as any);
+}
+
+/**
+ * A row whose operand the listing resolved to a label, as "Go to definition" requires.
+ *
+ * `resolvedText` is the part that matters: it is the only mark left that a *name* was printed, the
+ * instruction having been flattened to a string by then.
+ */
+export function aLabelledOperandRow(bankOffset: number, operandValue: number): DisassemblyItem {
+  return aRow(bankOffset, {
+    byteLength: 3,
+    instruction: "ld hl,Target",
+    operandCandidates: [
+      {
+        instructionAddress: 0x4000 + bankOffset,
+        instructionOffset: bankOffset,
+        operandIndex: 0,
+        operandValue,
+        defaultText: "$0000",
+        resolvedText: "Target"
+      }
+    ]
+  } as any);
+}
+
+/** An annotation model carrying one label in this bank and one beyond it. */
+export function anAnnotationModelWithLabels(): NexFileAnnotations {
+  return anAnnotationModel({
+    globalLabels: [
+      { name: "Nearby", value: 0x4100 },
+      { name: "FarAway", value: 0xc100 }
+    ]
+  });
 }
 
 /** The generated prefix row a synopsis comment renders as: no annotation of its own. */

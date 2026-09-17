@@ -127,14 +127,19 @@ describe("NexFileViewerPanel annotations", () => {
       )
     );
 
-    await renderNexViewer({ readFileContent, openDocument });
+    const { recordJump } = await renderNexViewer({ readFileContent, openDocument });
 
     fireEvent.click(await screen.findByTestId("icon-square-arrow-out-up-right"));
+    // --- Popping a bank out is a jump: Go Back returns to the viewer.
+    await waitFor(() => expect(recordJump).toHaveBeenCalledWith("nexBank", expect.any(Function)));
 
     await waitFor(() =>
       expect(openDocument).toHaveBeenCalledWith(
         expect.objectContaining({
-          id: "memoryDump-bankDumpScrollNutter.nex:5"
+          // --- Keyed by the node's *full* path, not its project path ("ScrollNutter.nex"): the
+          // --- debugger's PC reveal and go-to-definition open the same bank from the host path
+          // --- `nex-run` recorded, and a different id would open the bank as a second document.
+          id: "memoryDump-bankDump/project/ScrollNutter.nex:5"
         }),
         expect.objectContaining({
           disassemblyEnabled: true,
@@ -320,6 +325,7 @@ async function renderNexViewer({
   viewState?: Record<string, unknown>;
 }) {
   const setDocumentViewState = vi.fn();
+  const recordJump = vi.fn(async (_reason: string, jump: () => unknown) => await jump());
   const projectService = {
     readFileContent,
     saveFileContent,
@@ -333,6 +339,7 @@ async function renderNexViewer({
     // --- counts, so the banner these tests see is the one the app would show.
     useAppServices: () => ({
       projectService,
+      navigationHistoryService: { recordJump },
       machineService: {
         getMachineInfo: () => ({
           machine: { machineId: "zxnext", features: { [MF_ROM]: 7, [MF_BANK]: 224 } }
@@ -437,7 +444,8 @@ async function renderNexViewer({
   );
 
   return {
-    setDocumentViewState
+    setDocumentViewState,
+    recordJump
   };
 }
 

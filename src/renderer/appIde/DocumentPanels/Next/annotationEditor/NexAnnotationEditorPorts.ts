@@ -161,6 +161,19 @@ export type NexAnnotationEditorPorts = {
    */
   navigateToAddress: (address: number) => void;
   /**
+   * Bring the bank holding an address forward, scrolled to it.
+   *
+   * Only ever called for a definition **outside** the bank on screen — a jump within it is a scroll,
+   * which `navigateToAddress` already is. Which bank that address is in depends on how the running
+   * program has paged memory, so resolving it needs the live MMU; that lookup, the file read and the
+   * document hub all live behind this port so the controller stays free of them.
+   *
+   * Resolves whether or not it found anything. A definition the machine cannot currently reach —
+   * the address is in ROM, or in a bank this NEX does not carry — is a legitimate outcome of
+   * following a label, not an error worth interrupting for.
+   */
+  revealAddressInBank: (address: number) => Promise<void>;
+  /**
    * Reports outward that the sidecar could not be written, so the document tab can mark itself
    * unsaved and closing can be refused. A port because "the document" is a renderer service the
    * editor must not know about.

@@ -117,6 +117,8 @@ describe("ConsoleOutput", () => {
     expect(executeCommand).toHaveBeenCalledTimes(1);
     // Column is reported 1-based.
     expect(executeCommand.mock.calls[0][0]).toContain('nav "main.asm" 12 4');
+    // --- A link click is a jump the navigation history records.
+    expect(executeCommand.mock.calls[0][0]).toContain("-r outputLink");
   });
 
   it("never emits an invalid var(transparent) background", () => {

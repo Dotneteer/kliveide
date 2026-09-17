@@ -17,6 +17,7 @@ import {
   SETTING_IDE_ACTIVE_OUTPUT_PANE,
   SETTING_IDE_ACTIVE_TOOL,
   SETTING_IDE_CLOSE_EMU,
+  SETTING_IDE_NAV_RECORD_TAB_SWITCH,
   SETTING_EDITOR_FONT_SIZE,
   SETTING_EDITOR_FONT_FAMILY,
   SETTING_PANEL_FONT_FAMILY,
@@ -240,6 +241,16 @@ const settingDefinitions: Setting[] = [
   {
     id: SETTING_IDE_CLOSE_EMU,
     title: "Close Emulator when IDE is closed",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    boundTo: "ide"
+  },
+  {
+    id: SETTING_IDE_NAV_RECORD_TAB_SWITCH,
+    title: "Record tab switches in the navigation history",
+    description:
+      "Switching documents with a tab, the Open Editors panel or the Explorer adds a Go Back / Go Forward location.",
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,

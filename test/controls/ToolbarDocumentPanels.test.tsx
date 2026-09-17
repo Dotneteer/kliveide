@@ -25,6 +25,11 @@ vi.mock("@renderer/controls/ExecutionControls", () => ({
   ExecutionControls: () => null
 }));
 
+// --- Back / history / Forward have their own tests (NavigationControls.test.tsx).
+vi.mock("@renderer/features/navigation/NavigationControls", () => ({
+  NavigationControls: () => null
+}));
+
 vi.mock("@renderer/controls/ViewControls", () => ({
   ViewControls: () => null
 }));

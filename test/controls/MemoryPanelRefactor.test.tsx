@@ -1,5 +1,5 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React, { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -60,6 +60,9 @@ async function renderMemoryPanel({
   const dispatch = vi.fn();
   const executeCommand = vi.fn(() => Promise.resolve({ success: true }));
   const saveProject = vi.fn(() => Promise.resolve());
+  const navigationHistoryService = {
+    recordJump: vi.fn(async (_reason: string, jump: () => unknown) => await jump())
+  };
   const setDocumentViewState = vi.fn();
   const openDialog = vi.fn(() =>
     Promise.resolve({ value: "$34", sizeOption: "-b8", bigEndian: false })
@@ -82,7 +85,8 @@ async function renderMemoryPanel({
   const documentHubService = {
     getActiveDocument: vi.fn(() => activeDocument),
     getDocumentViewState: vi.fn(() => viewState),
-    setDocumentViewState
+    setDocumentViewState,
+    setDocumentApi: vi.fn()
   };
   const memory = new Uint8Array(0x1_0000);
   for (let i = 0; i < memory.length; i++) {
@@ -129,6 +133,7 @@ async function renderMemoryPanel({
   vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
     useAppServices: () => ({
       ideCommandsService: { executeCommand },
+      navigationHistoryService,
       machineService: {
         getMachineInfo: () => ({
           machine: {
@@ -343,6 +348,7 @@ async function renderMemoryPanel({
     documentHubService,
     dumpRenderLog,
     emuStateCallback,
+    navigationHistoryService,
     executeCommand,
     getMemoryContents,
     memory,
@@ -405,6 +411,50 @@ describe("MemoryPanel refactor characterization", () => {
     await waitFor(() => {
       expect(virtualApi.scrollToIndex).toHaveBeenCalledWith(2, { align: "start" });
     });
+  });
+
+  it("records Go To in the navigation history, reporting the new address inside the jump", async () => {
+    const { documentHubService, navigationHistoryService, virtualApi } = await renderMemoryPanel();
+    const api = documentHubService.setDocumentApi.mock.calls.at(-1)?.[1];
+    expect(api.getNavigationLocator()).toEqual({
+      kind: "address",
+      address: 0,
+      // --- The machine's default segment, filled in once machine setup completes.
+      segment: 0,
+      fullView: true,
+      viewMode: "memory"
+    });
+
+    let during: unknown;
+    navigationHistoryService.recordJump.mockImplementationOnce(async (_reason, jump) => {
+      await jump();
+      // --- What the history captures as "to": the address asked for, before any re-render.
+      during = api.getNavigationLocator();
+    });
+    const goTo = screen.getByLabelText("Go To");
+    fireEvent.focus(goTo);
+    fireEvent.change(goTo, { target: { value: "25" } });
+    fireEvent.keyDown(goTo, { key: "Enter" });
+
+    await waitFor(() => expect(virtualApi.scrollToIndex).toHaveBeenCalledWith(2, { align: "start" }));
+    expect(navigationHistoryService.recordJump).toHaveBeenCalledWith("memoryGoTo", expect.any(Function));
+    expect(during).toMatchObject({ kind: "address", address: 0x25 });
+  });
+
+  it("reveals a recorded location through its document API", async () => {
+    const { documentHubService, virtualApi } = await renderMemoryPanel();
+    const api = documentHubService.setDocumentApi.mock.calls.at(-1)?.[1];
+
+    act(() => api.revealLocator({ kind: "address", address: 0x40, fullView: true }));
+
+    await waitFor(() => expect(virtualApi.scrollToIndex).toHaveBeenCalledWith(4, { align: "start" }));
+    expect(api.getNavigationLocator()).toMatchObject({ address: 0x40 });
+  });
+
+  it("unregisters its document API when it unmounts", async () => {
+    const { documentHubService, unmount } = await renderMemoryPanel();
+    unmount();
+    expect(documentHubService.setDocumentApi).toHaveBeenLastCalledWith("memory-doc", undefined);
   });
 
   it("shows bank controls and partition labels for banked machines", async () => {

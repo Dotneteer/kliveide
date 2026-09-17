@@ -145,6 +145,7 @@ export type FakePorts = {
   confirm: ReturnType<typeof vi.fn>;
   nativeConfirm: ReturnType<typeof vi.fn>;
   navigateToAddress: ReturnType<typeof vi.fn>;
+  revealAddressInBank: ReturnType<typeof vi.fn>;
   unwrittenChanged: ReturnType<typeof vi.fn>;
 };
 
@@ -159,6 +160,7 @@ export function createFakePorts(
   const confirm = vi.fn().mockResolvedValue(true);
   const nativeConfirm = vi.fn().mockReturnValue(true);
   const navigateToAddress = vi.fn();
+  const revealAddressInBank = vi.fn().mockResolvedValue(undefined);
   const unwrittenChanged = vi.fn();
 
   return {
@@ -167,6 +169,7 @@ export function createFakePorts(
     confirm,
     nativeConfirm,
     navigateToAddress,
+    revealAddressInBank,
     unwrittenChanged,
     ports: {
       session: session.port,
@@ -175,6 +178,7 @@ export function createFakePorts(
       nativeConfirm: nativeConfirm as any,
       bankBytes: () => options.bankBytes ?? [0, 1, 2, 3],
       navigateToAddress: navigateToAddress as any,
+      revealAddressInBank: revealAddressInBank as any,
       unwrittenChanged: unwrittenChanged as any
     }
   };

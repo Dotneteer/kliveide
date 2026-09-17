@@ -278,6 +278,155 @@ describe("EmulatorPanel", () => {
     );
   });
 
+  it("shows Debug mode when a running machine switches to debugging without a state change", async () => {
+    const controller = createController();
+    controller.machine = {
+      baseClockFrequency: 3_500_000,
+      frameTactMultiplier: 1,
+      frames: 1,
+      getAspectRatio: vi.fn(() => [2, 1]),
+      getDefaultKeyMapping: vi.fn(() => ({})),
+      getKeyCodeSet: vi.fn(() => ({})),
+      getPixelBuffer: vi.fn(() => new Uint32Array(4)),
+      machineId: "test-machine",
+      pc: 0x5c50,
+      renderInstantScreen: vi.fn(() => new Uint32Array(4)),
+      screenHeightInPixels: 192,
+      screenWidthInPixels: 256,
+      setMachineProperty: vi.fn(),
+      tactsInFrame: 70_000,
+      uiFrameFrequency: 2
+    };
+
+    const captured = {
+      controllerChanged: undefined as (controller: unknown) => Promise<void>,
+      stateChanged: undefined as (state: unknown) => Promise<void>
+    };
+
+    // --- A store the component re-renders from, so a dispatch can change `isDebugging` alone.
+    let state = {
+      emulatorState: {
+        audioSampleRate: 44_100,
+        emuViewVersion: 1,
+        isDebugging: false,
+        machineState: MachineControllerState.Running,
+        soundLevel: 0
+      },
+      globalSettings: {}
+    };
+    const listeners = new Set<() => void>();
+    const store = {
+      dispatch: vi.fn(),
+      getState: () => state,
+      subscribe: (listener: () => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      }
+    };
+    const setDebugging = (flag: boolean) => {
+      state = { ...state, emulatorState: { ...state.emulatorState, isDebugging: flag } };
+      listeners.forEach((listener) => listener());
+    };
+
+    vi.doMock("@renderer/core/useMachineController", () => ({
+      useMachineController: (
+        controllerChanged: typeof captured.controllerChanged,
+        stateChanged: typeof captured.stateChanged
+      ) => {
+        captured.controllerChanged = controllerChanged;
+        captured.stateChanged = stateChanged;
+        return controller;
+      }
+    }));
+    vi.doMock("@renderer/core/RendererProvider", async () => {
+      const { useSyncExternalStore } = await import("react");
+      return {
+        getGlobalSetting: () => false,
+        useGlobalSetting: () => false,
+        useSelector: (selector: (state: unknown) => unknown) =>
+          useSyncExternalStore(store.subscribe, () => selector(store.getState())),
+        useStore: () => store
+      };
+    });
+    vi.doMock("@renderer/core/MainApi", () => ({
+      useMainApi: () => ({ saveBinaryFile: vi.fn(), saveDiskChanges: vi.fn() })
+    }));
+    vi.doMock("@renderer/appEmu/recording/RecordingContext", () => ({
+      useRecordingManager: () => ({
+        current: { onMachinePaused: vi.fn(), onMachineRunning: vi.fn(() => Promise.resolve()) }
+      })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorScreen", () => ({
+      useEmulatorScreen: () => ({
+        canvasHeight: 192,
+        canvasWidth: 256,
+        displayScreenData: vi.fn(),
+        imageBuffer8: { current: new Uint8Array([1]) },
+        screenElement: { current: null } as MutableRefObject<HTMLCanvasElement>,
+        updateScreenDimensions: vi.fn(),
+        xRatio: { current: 2 },
+        yRatio: { current: 3 }
+      })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorAudio", () => ({
+      useEmulatorAudio: () => ({
+        beeperRenderer: {
+          current: { play: vi.fn(() => Promise.resolve()), suspend: vi.fn(() => Promise.resolve()) }
+        },
+        initAudio: vi.fn(() => Promise.resolve())
+      })
+    }));
+    vi.doMock("@renderer/features/emulator/useEmulatorKeyboard", () => ({
+      useEmulatorKeyboard: () => ({ setKeyData: vi.fn() })
+    }));
+    vi.doMock("@renderer/features/emulator/EmulatorOverlay", () => ({
+      EmulatorOverlay: ({ overlay, showOverlay }: { overlay?: string; showOverlay: boolean }) =>
+        showOverlay ? <div data-testid="overlay">{overlay}</div> : null
+    }));
+    vi.doMock("@renderer/appEmu/tool-registry", () => ({
+      machineEmuToolRegistry: []
+    }));
+
+    const { EmulatorPanel } = await import("@renderer/features/emulator/EmulatorPanel");
+    render(<EmulatorPanel />);
+
+    // --- The launch flow starts the machine in normal mode: the overlay is blank.
+    await act(async () => {
+      await captured.controllerChanged(controller);
+      await captured.stateChanged({
+        oldState: MachineControllerState.Stopped,
+        newState: MachineControllerState.Running
+      });
+    });
+    expect(screen.getByTestId("overlay")).toHaveTextContent("");
+
+    // --- ...then switches the running machine to debug mode in place, with no state change.
+    controller.isDebugging = true;
+    await act(async () => {
+      setDebugging(true);
+    });
+    expect(screen.getByTestId("overlay")).toHaveTextContent("Debug mode");
+
+    // --- A pause shows its own overlay, and the flag changing then must not overwrite it.
+    state = {
+      ...state,
+      emulatorState: { ...state.emulatorState, machineState: MachineControllerState.Paused }
+    };
+    await act(async () => {
+      await captured.stateChanged({
+        oldState: MachineControllerState.Running,
+        newState: MachineControllerState.Paused
+      });
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("overlay")).toHaveTextContent("Paused (PC: $5C50)")
+    );
+    await act(async () => {
+      setDebugging(false);
+    });
+    expect(screen.getByTestId("overlay")).toHaveTextContent("Paused (PC: $5C50)");
+  });
+
   it("dispatches the clock multiplier only when it actually changes", async () => {
     const controller = createController();
     controller.machine = {

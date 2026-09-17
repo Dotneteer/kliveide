@@ -31,6 +31,14 @@ export type UseNexAnnotationEditorArgs = {
   /** Scroll the listing to an address — "Go To" in either manage dialog. */
   onNavigateToAddress: (address: number) => void;
   /**
+   * Bring the bank holding an address forward — "Go to definition" leaving this bank.
+   *
+   * A prop rather than something this hook builds, for the same reason `onNavigateToAddress` is one:
+   * it moves the *document layer*, which the editor does not own. Absent when the surrounding
+   * component cannot do it, in which case a cross-bank jump simply does nothing.
+   */
+  onRevealAddressInBank?: (address: number) => Promise<void>;
+  /**
    * Report outward that the sidecar could not be written, so the document tab can mark itself.
    *
    * Not a dirty flag: annotations are written as they are made, so this fires only on failure.
@@ -65,6 +73,7 @@ export function useNexAnnotationEditor({
   env,
   contents,
   onNavigateToAddress,
+  onRevealAddressInBank,
   onUnwrittenChanged,
   onDialogClosed
 }: UseNexAnnotationEditorArgs): NexAnnotationEditor {
@@ -77,6 +86,8 @@ export function useNexAnnotationEditor({
   // --- Trap 5 in `.ai/ui-mvc-guide.md`.
   const navigateRef = useRef(onNavigateToAddress);
   navigateRef.current = onNavigateToAddress;
+  const revealRef = useRef(onRevealAddressInBank);
+  revealRef.current = onRevealAddressInBank;
   const unwrittenRef = useRef(onUnwrittenChanged);
   unwrittenRef.current = onUnwrittenChanged;
   const contentsRef = useRef(contents);
@@ -130,6 +141,9 @@ export function useNexAnnotationEditor({
       nativeConfirm: (message) => window.confirm(message),
       bankBytes: () => Array.from(contentsRef.current),
       navigateToAddress: (address) => navigateRef.current(address),
+      revealAddressInBank: async (address) => {
+        await revealRef.current?.(address);
+      },
       unwrittenChanged: (unwritten) => unwrittenRef.current(unwritten)
       };
     },

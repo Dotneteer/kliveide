@@ -8,6 +8,8 @@ import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-type
 
 import { createFakePorts, FakeSession, publishedBank, type FakePorts } from "./fakes";
 import {
+  aLabelledOperandRow,
+  anAnnotationModelWithLabels,
   aListing,
   anAnnotationModel,
   anEnvironment,
@@ -904,5 +906,57 @@ describe("lifecycle", () => {
     controller.dispose();
     await controller.dispatch({ type: "rowSelected", index: 2, extend: false });
     expect(controller.state.selection).toEqual(undefined);
+  });
+});
+
+describe("go to definition", () => {
+  /** An editor whose sidecar carries a label in this bank and one beyond it. */
+  async function withLabels(env: Partial<NexAnnotationEditorEnvironment>, operandValue: number) {
+    const session = new FakeSession({ annotations: anAnnotationModelWithLabels() });
+    return opened(env, {
+      session,
+      items: [aLabelledOperandRow(0x0010, operandValue)]
+    });
+  }
+
+  it("scrolls this document for a definition in the bank on screen", async () => {
+    const controller = await withLabels({}, 0x4100);
+    await controller.dispatch({ type: "goToDefinitionRequested", rowIndex: 0 });
+    await controller.settle();
+
+    expect(fakes.navigateToAddress).toHaveBeenCalledWith(0x4100);
+    expect(fakes.revealAddressInBank).not.toHaveBeenCalled();
+  });
+
+  it("brings the other bank forward when the machine is running", async () => {
+    const controller = await withLabels({ machineRunning: true }, 0xc100);
+    await controller.dispatch({ type: "goToDefinitionRequested", rowIndex: 0 });
+    await controller.settle();
+
+    expect(fakes.revealAddressInBank).toHaveBeenCalledWith(0xc100);
+    expect(fakes.navigateToAddress).not.toHaveBeenCalled();
+  });
+
+  it("does nothing for another bank with the machine stopped", async () => {
+    /*
+     * The menu greys this, but the check is repeated here on purpose: a context menu can be left
+     * open while the machine stops underneath it, and the stale click must not reach a jump whose
+     * destination can no longer be resolved.
+     */
+    const controller = await withLabels({ machineRunning: false }, 0xc100);
+    await controller.dispatch({ type: "goToDefinitionRequested", rowIndex: 0 });
+    await controller.settle();
+
+    expect(fakes.revealAddressInBank).not.toHaveBeenCalled();
+    expect(fakes.navigateToAddress).not.toHaveBeenCalled();
+  });
+
+  it("does nothing on a row whose operand names no label", async () => {
+    const controller = await withLabels({ machineRunning: true }, 0x4999);
+    await controller.dispatch({ type: "goToDefinitionRequested", rowIndex: 0 });
+    await controller.settle();
+
+    expect(fakes.navigateToAddress).not.toHaveBeenCalled();
+    expect(fakes.revealAddressInBank).not.toHaveBeenCalled();
   });
 });

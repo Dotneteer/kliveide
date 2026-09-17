@@ -261,7 +261,7 @@ const OutputLine = ({ spans, severity, lineNo, showLineNo }: OutputContentLinePr
       await ideCommandsService.executeCommand(
         `nav "${payload.file}" ${payload.line != undefined ? payload.line : ""} ${
           payload.column != undefined ? (payload.column + 1).toString() : ""
-        }`
+        } -r outputLink`
       );
     } else if (typeof s.data === "function") {
       s.data();

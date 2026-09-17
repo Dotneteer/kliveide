@@ -28,7 +28,7 @@ const DIRTY_MARKER_SIZE = iconSizes.xs;
  * activation.
  */
 export const OpenEditorsPanel = () => {
-  const { projectService } = useAppServices();
+  const { projectService, navigationHistoryService } = useAppServices();
   const entries = useOpenEditors();
 
   /**
@@ -38,10 +38,12 @@ export const OpenEditorsPanel = () => {
    * user is not looking at would change a pane off to the side while their focus stayed put.
    */
   const activate = async (entry: OpenEditorEntry) => {
-    if (projectService.getActiveDocumentHubService() !== entry.hub) {
-      projectService.setActiveDocumentHubService(entry.hub);
-    }
-    await entry.hub.setActiveDocument(entry.document.id);
+    await navigationHistoryService.recordJump("tabSwitch", async () => {
+      if (projectService.getActiveDocumentHubService() !== entry.hub) {
+        projectService.setActiveDocumentHubService(entry.hub);
+      }
+      await entry.hub.setActiveDocument(entry.document.id);
+    });
   };
 
   /** Promotes a preview tab to a permanent one, the way double-clicking its tab does. */

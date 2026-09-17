@@ -24,6 +24,11 @@ type Props = {
   iconTitle: string;
   idFactory: (documentSource: string, bank: number) => string;
   titleFactory: (documentSource: string, bank: number) => string;
+  /**
+   * Runs the open, for a host that wants it to be more than an open — the NEX viewer records it in
+   * the navigation history. Omitted, the dump simply opens.
+   */
+  openThrough?: (open: () => Promise<void>) => Promise<void>;
 };
 
 export const MemoryDumpViewer = ({
@@ -38,7 +43,8 @@ export const MemoryDumpViewer = ({
   nexAnnotationBank,
   iconTitle,
   idFactory,
-  titleFactory
+  titleFactory,
+  openThrough = (open) => open()
 }: Props) => {
   const documentHubService = useDocumentHubService();
   return (
@@ -50,19 +56,21 @@ export const MemoryDumpViewer = ({
           title={iconTitle}
           clicked={async () => {
             if (!documentSource) return;
-            await openStaticMemoryDump(
-              documentHubService,
-              idFactory(documentSource, bank), // `bankDump${documentSource}:${bank}`,
-              titleFactory(documentSource, bank), // `${documentSource} - Bank: ${bank}`,
-              contents,
-              {
-                disassemblyEnabled: allowDisassembly,
-                disassOffset,
-                decimalView,
-                viewMode,
-                nexAnnotationPath,
-                nexAnnotationBank
-              }
+            await openThrough(() =>
+              openStaticMemoryDump(
+                documentHubService,
+                idFactory(documentSource, bank),
+                titleFactory(documentSource, bank),
+                contents,
+                {
+                  disassemblyEnabled: allowDisassembly,
+                  disassOffset,
+                  decimalView,
+                  viewMode,
+                  nexAnnotationPath,
+                  nexAnnotationBank
+                }
+              )
             );
           }}
         />

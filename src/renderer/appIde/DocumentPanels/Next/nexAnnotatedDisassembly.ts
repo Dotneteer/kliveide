@@ -6,10 +6,10 @@ import {
   DisassemblyOperandLabelResolver,
   MemorySection
 } from "@renderer/appIde/disassemblers/common-types";
+import { resolveOperandLabel } from "./nexGoToDefinition";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import {
-  NexAnnotationLabel,
-  NexAnnotationLabelScope,
+  NexAnnotationRegion,
   NexBankAnnotation,
   NexFileAnnotations,
   NEX_BANK_LAST_OFFSET,
@@ -51,6 +51,65 @@ export function pcAnchoredRuns(
   ];
 }
 
+/**
+ * Where the ULA screen sits: `$4000-$57FF` bitmap and `$5800-$5AFF` attributes, 6,912 bytes.
+ *
+ * Bank-relative, because it only means "the screen" in a bank listed at `$4000` — see
+ * `screenAreaApplies`. Anywhere else these offsets are just the first 7K of some other bank.
+ */
+export const SCREEN_AREA_BASE = 0x4000;
+export const SCREEN_AREA_RANGE = { start: 0x0000, end: 0x1aff } as const;
+
+/**
+ * Does this listing have a screen area to hide?
+ *
+ * Keyed on the **listing offset**, not on live paging: the offset is what makes bank offset 0 read as
+ * `$4000` on screen, so it is what decides whether the rows the reader sees are screen memory. It also
+ * means the choice holds with no machine running, which a paging test could not.
+ */
+export function screenAreaApplies(args: { isNexBank: boolean; disassOffset: number }): boolean {
+  return args.isNexBank && args.disassOffset === SCREEN_AREA_BASE;
+}
+
+/**
+ * Lay one region over a bank's authored regions, cutting whatever it covers.
+ *
+ * A **display override**, never an edit: the result is used to generate a listing and is not written
+ * anywhere. That is the property that matters — a switch that rewrote the sidecar's regions would
+ * silently destroy any annotation the user had made inside the range the first time it was flipped.
+ *
+ * Regions that straddle an edge are trimmed rather than dropped, so the bytes either side of the
+ * overlay keep the type the user gave them.
+ */
+export function overlayRegion(
+  regions: NexAnnotationRegion[],
+  overlay: NexAnnotationRegion
+): NexAnnotationRegion[] {
+  const result: NexAnnotationRegion[] = [];
+  for (const region of regions) {
+    if (region.end < overlay.start || region.start > overlay.end) {
+      result.push(region);
+      continue;
+    }
+    if (region.start < overlay.start) {
+      result.push({ ...region, end: overlay.start - 1 });
+    }
+    if (region.end > overlay.end) {
+      result.push({ ...region, start: overlay.end + 1 });
+    }
+  }
+  result.push(overlay);
+  return result.sort((a, b) => a.start - b.start);
+}
+
+/** The single row a hidden screen area collapses to, shared by the annotated and plain listings. */
+export function createScreenSkipItem(decimalView: boolean, addressOffset: number): DisassemblyItem {
+  return {
+    ...createSkipItem(SCREEN_AREA_RANGE.start, SCREEN_AREA_RANGE.end, decimalView, addressOffset),
+    hardComment: "Screen memory, not disassembled"
+  };
+}
+
 export type AnnotatedNexDisassemblyOptions = {
   annotations: NexFileAnnotations;
   bank: number;
@@ -74,6 +133,14 @@ export type AnnotatedNexDisassemblyOptions = {
    * machine.
    */
   fallbackOperandLabelResolver?: DisassemblyOperandLabelResolver;
+  /**
+   * Collapse `$4000-$5AFF` into one line instead of disassembling it.
+   *
+   * The caller decides whether this bank is listed where that range *is* the screen
+   * (`screenAreaApplies`); this only applies it. Overrides the authored regions for this listing
+   * alone — the sidecar is untouched.
+   */
+  hideScreenArea?: boolean;
 };
 
 export async function createAnnotatedNexDisassemblyItems({
@@ -83,7 +150,8 @@ export async function createAnnotatedNexDisassemblyItems({
   decimalView = false,
   disassOffset,
   pcBankOffset,
-  fallbackOperandLabelResolver
+  fallbackOperandLabelResolver,
+  hideScreenArea = false
 }: AnnotatedNexDisassemblyOptions): Promise<DisassemblyItem[] | undefined> {
   const bankAnnotation = getBankAnnotation(annotations, bank);
   if (!bankAnnotation) {
@@ -93,7 +161,13 @@ export async function createAnnotatedNexDisassemblyItems({
   const addressOffset = disassOffset ?? getNexBankAddressOffset(bankAnnotation.offsetIndex);
   const items: DisassemblyItem[] = [];
 
-  for (const region of bankAnnotation.regions) {
+  const regions = hideScreenArea
+    ? overlayRegion(bankAnnotation.regions, { ...SCREEN_AREA_RANGE, type: "skip" })
+    : bankAnnotation.regions;
+
+  const labelOffsets = getLabelBankOffsets(annotations, bankAnnotation, addressOffset);
+
+  for (const region of regions) {
     const start = clampBankOffset(region.start, contents.length);
     const end = clampBankOffset(region.end, contents.length);
     if (start > end) {
@@ -122,15 +196,24 @@ export async function createAnnotatedNexDisassemblyItems({
         break;
 
       case "bytes":
-        items.push(...createByteItems(contents, start, end, decimalView, addressOffset));
+        items.push(
+          ...createByteItems(contents, start, end, decimalView, addressOffset, labelOffsets)
+        );
         break;
 
       case "words":
-        items.push(...createWordItems(contents, start, end, decimalView, addressOffset));
+        items.push(
+          ...createWordItems(contents, start, end, decimalView, addressOffset, labelOffsets)
+        );
         break;
 
       case "skip":
-        items.push(createSkipItem(start, end, decimalView, addressOffset));
+        // --- The screen overlay is the one skip that explains itself; an authored skip does not.
+        items.push(
+          hideScreenArea && start === SCREEN_AREA_RANGE.start && end === SCREEN_AREA_RANGE.end
+            ? createScreenSkipItem(decimalView, addressOffset)
+            : createSkipItem(start, end, decimalView, addressOffset)
+        );
         break;
     }
   }
@@ -183,76 +266,82 @@ function createAnnotationOperandLabelResolver(
   _bank: number,
   addressOffset: number
 ): DisassemblyOperandLabelResolver {
-  return ({ instructionOffset, operandIndex, operandValue }) => {
-    const bankOffset = instructionOffset & NEX_BANK_LAST_OFFSET;
-    const explicitReference = bankAnnotation.operandReferences?.[String(bankOffset)]?.find(
-      (reference) => reference.operandIndex === operandIndex
-    );
+  /*
+   * Delegated to `resolveOperandLabel` rather than implemented here.
+   *
+   * "Go to definition" has to reach the same label this prints, and the only way to guarantee that
+   * is for both to run the same rule. Two implementations of "explicit reference first, then value
+   * match" would agree until the day one of them was edited.
+   */
+  return ({ instructionOffset, operandIndex, operandValue }) =>
+    resolveOperandLabel(
+      annotations,
+      bankAnnotation,
+      {
+        bankOffset: instructionOffset & NEX_BANK_LAST_OFFSET,
+        operandIndex,
+        operandValue
+      },
+      addressOffset
+    )?.name;
+}
 
-    if (explicitReference) {
-      return resolveReferencedOperandLabel(
-        annotations,
-        bankAnnotation,
-        explicitReference.scope,
-        explicitReference.name,
-        operandValue,
-        addressOffset
-      );
+
+
+
+/** Most values a `.defb` / `.defw` row shows before starting a new row. */
+const DATA_ROW_BYTES = 4;
+
+/**
+ * The bank offsets that carry a label, global or local, in the bank being listed.
+ *
+ * A data row's label is looked up by the offset the row *starts* at, so a label on any other byte
+ * of a row would be silently hidden. Data rows are cut at these offsets instead — see
+ * `dataRowLength` — which is what lets a label sit on a parameter in the middle of a table.
+ */
+function getLabelBankOffsets(
+  annotations: NexFileAnnotations,
+  bankAnnotation: NexBankAnnotation,
+  addressOffset: number
+): number[] {
+  const offsets = new Set<number>();
+  for (const label of annotations.globalLabels ?? []) {
+    const bankOffset = label.value - addressOffset;
+    if (bankOffset >= 0 && bankOffset <= NEX_BANK_LAST_OFFSET) {
+      offsets.add(bankOffset);
     }
-
-    return resolveAutomaticOperandLabel(annotations, bankAnnotation, operandValue, addressOffset);
-  };
+  }
+  for (const label of bankAnnotation.localLabels ?? []) {
+    offsets.add(label.value);
+  }
+  return [...offsets].sort((a, b) => a - b);
 }
 
-function resolveAutomaticOperandLabel(
-  annotations: NexFileAnnotations,
-  bankAnnotation: NexBankAnnotation,
-  operandValue: number,
-  addressOffset: number
-): string | undefined {
-  const globalLabel = annotations.globalLabels?.find((label) => label.value === operandValue);
-  if (globalLabel) {
-    return globalLabel.name;
+/**
+ * How many bytes the data row starting at `offset` takes: up to `DATA_ROW_BYTES`, stopping short of
+ * the region end and of the next label, so the label starts a row of its own.
+ *
+ * `step` is the item size. A word row only stops at a label on a word boundary of its region; a
+ * label on the high byte of a word cannot start a row without splitting that word, so it stays
+ * inside the row as before.
+ */
+function dataRowLength(
+  offset: number,
+  regionStart: number,
+  end: number,
+  step: number,
+  labelOffsets: number[]
+): number {
+  let length = Math.min(DATA_ROW_BYTES, end - offset + 1);
+  for (const labelOffset of labelOffsets) {
+    if (labelOffset <= offset) continue;
+    if (labelOffset >= offset + length) break;
+    if ((labelOffset - regionStart) % step === 0) {
+      length = labelOffset - offset;
+      break;
+    }
   }
-
-  const bankRelativeValue = operandValue - addressOffset;
-  if (bankRelativeValue < 0 || bankRelativeValue > NEX_BANK_LAST_OFFSET) {
-    return undefined;
-  }
-  return bankAnnotation.localLabels?.find((label) => label.value === bankRelativeValue)?.name;
-}
-
-function resolveReferencedOperandLabel(
-  annotations: NexFileAnnotations,
-  bankAnnotation: NexBankAnnotation,
-  scope: NexAnnotationLabelScope,
-  name: string,
-  operandValue: number,
-  addressOffset: number
-): string | undefined {
-  const label =
-    scope === "global"
-      ? annotations.globalLabels?.find((item) => item.name === name)
-      : bankAnnotation.localLabels?.find((item) => item.name === name);
-  if (!label) {
-    return undefined;
-  }
-  return labelMatchesOperand(label, scope, operandValue, addressOffset) ? label.name : undefined;
-}
-
-function labelMatchesOperand(
-  label: NexAnnotationLabel,
-  scope: NexAnnotationLabelScope,
-  operandValue: number,
-  addressOffset: number
-): boolean {
-  if (scope === "global") {
-    return label.value === operandValue;
-  }
-  const bankRelativeValue = operandValue - addressOffset;
-  return bankRelativeValue >= 0 && bankRelativeValue <= NEX_BANK_LAST_OFFSET
-    ? label.value === bankRelativeValue
-    : false;
+  return length;
 }
 
 function createByteItems(
@@ -260,12 +349,14 @@ function createByteItems(
   start: number,
   end: number,
   decimalView: boolean,
-  addressOffset: number
+  addressOffset: number,
+  labelOffsets: number[] = []
 ): DisassemblyItem[] {
   const items: DisassemblyItem[] = [];
-  for (let offset = start; offset <= end; offset += 4) {
+  for (let offset = start, rowLength = 0; offset <= end; offset += rowLength) {
+    rowLength = dataRowLength(offset, start, end, 1, labelOffsets);
     const values: string[] = [];
-    for (let idx = 0; idx < 4 && offset + idx <= end; idx++) {
+    for (let idx = 0; idx < rowLength; idx++) {
       const value = contents[offset + idx];
       values.push(decimalView ? toDecimal3(value) : `$${toHexa2(value)}`);
     }
@@ -275,7 +366,7 @@ function createByteItems(
       annotation: createAnnotationMetadata(
         undefined,
         offset,
-        Math.min(4, end - offset + 1),
+        rowLength,
         "bytes"
       )
     });
@@ -288,12 +379,14 @@ function createWordItems(
   start: number,
   end: number,
   decimalView: boolean,
-  addressOffset: number
+  addressOffset: number,
+  labelOffsets: number[] = []
 ): DisassemblyItem[] {
   const items: DisassemblyItem[] = [];
-  for (let offset = start; offset <= end; offset += 4) {
+  for (let offset = start, rowLength = 0; offset <= end; offset += rowLength) {
+    rowLength = dataRowLength(offset, start, end, 2, labelOffsets);
     const values: string[] = [];
-    for (let idx = 0; idx < 4 && offset + idx + 1 <= end; idx += 2) {
+    for (let idx = 0; idx + 1 < rowLength; idx += 2) {
       const value = contents[offset + idx] | (contents[offset + idx + 1] << 8);
       values.push(decimalView ? value.toString(10) : `$${toHexa4(value)}`);
     }
@@ -303,7 +396,7 @@ function createWordItems(
       annotation: createAnnotationMetadata(
         undefined,
         offset,
-        Math.min(4, end - offset + 1),
+        rowLength,
         "words"
       )
     });

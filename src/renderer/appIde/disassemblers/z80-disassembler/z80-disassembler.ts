@@ -187,8 +187,8 @@ export class Z80Disassembler {
           break;
         }
         const value =
-          this.memoryContents[section.startAddress + i + j * 2] +
-          (this.memoryContents[section.startAddress + i + j * 2 + 1] << 8);
+          this.memoryContents[section.startAddress + i + j] +
+          (this.memoryContents[section.startAddress + i + j + 1] << 8);
         words.push(
           this._decimalMode ? (value & 0xffff).toString(10) : `$${intToX4(value & 0xffff)}`
         );
@@ -201,7 +201,7 @@ export class Z80Disassembler {
       });
     }
     if (length % 2 === 1) {
-      this.generateByteArray(new MemorySection(section.endAddress, section.endAddress));
+      await this.generateByteArray(new MemorySection(section.endAddress, section.endAddress));
     }
   }
 
@@ -213,9 +213,10 @@ export class Z80Disassembler {
     this._output.addItem({
       address: section.startAddress,
       instruction:
-        ".skip" + this._decimalMode
+        ".skip " +
+        (this._decimalMode
           ? (section.endAddress - section.startAddress + 1).toString(10)
-          : `$${intToX4(section.endAddress - section.startAddress + 1)}`
+          : `$${intToX4(section.endAddress - section.startAddress + 1)}`)
     });
   }
 

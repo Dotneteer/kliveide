@@ -45,8 +45,9 @@ describe("NavigateToDocumentCommand", () => {
     });
 
     it("should have correct usage string", () => {
-      expect(command.usage).toContain("nav");
-      expect(command.usage).toContain("projeFile");
+      expect(command.usage[0]).toContain("nav");
+      expect(command.usage[0]).toContain("projectFile");
+      expect(command.usage[0]).toContain("-r reason");
     });
 
     it("should have correct argumentInfo structure", () => {
@@ -430,3 +431,75 @@ function createDocumentAreaTarget(overrides: Record<string, unknown>) {
     ...overrides
   };
 }
+
+describe("NavigateToDocumentCommand navigation history (-r)", () => {
+  let command: NavigateToDocumentCommand;
+  let context: MockIdeCommandContext;
+  let setPosition: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    command = new NavigateToDocumentCommand();
+    context = createMockContext() as MockIdeCommandContext;
+    context.store.getState.mockReturnValue({ project: { folderPath: "/test/project" } });
+    context.service.projectService.getNodeForFile.mockReturnValue({ data: { fullPath: "test.asm" } });
+    const docService = context.service.projectService.getActiveDocumentHubService();
+    docService.getDocument.mockReturnValue({ id: "test.asm" });
+    docService.waitOpen.mockResolvedValue({ id: "test.asm" });
+    setPosition = vi.fn();
+    docService.getDocumentApi.mockReturnValue({ setPosition });
+  });
+
+  it("declares -r as a named option", () => {
+    expect(command.argumentInfo.namedOptions).toEqual([{ name: "-r", type: "string" }]);
+  });
+
+  it("records the jump when -r is given, moving the cursor inside the recorded jump", async () => {
+    const history = context.service.navigationHistoryService;
+    history.recordJump.mockImplementation(async (_reason: string, jump: () => Promise<void>) => {
+      expect(setPosition).not.toHaveBeenCalled();
+      await jump();
+      expect(setPosition).toHaveBeenCalledWith(12, 4);
+    });
+
+    const result = await command.execute(context, {
+      filename: "test.asm",
+      lineNo: 12,
+      columnNo: 5,
+      "-r": "definition"
+    } as any);
+
+    expect(result.success).toBe(true);
+    expect(history.recordJump).toHaveBeenCalledWith("definition", expect.any(Function));
+    expect(setPosition).toHaveBeenCalledWith(12, 4);
+  });
+
+  it("waits for the editor API only when it has a cursor to move", async () => {
+    // --- A viewer with no API (the NEX file viewer) used to hold every `nav` for the full timeout.
+    const docService = context.service.projectService.getActiveDocumentHubService();
+    await command.execute(context, { filename: "test.asm" });
+    expect(docService.waitOpen).toHaveBeenLastCalledWith("test.asm", false);
+    expect(setPosition).not.toHaveBeenCalled();
+
+    await command.execute(context, { filename: "test.asm", lineNo: 3 });
+    expect(docService.waitOpen).toHaveBeenLastCalledWith("test.asm", true);
+    expect(setPosition).toHaveBeenCalledWith(3, 0);
+  });
+
+  it("does not record the jump without -r", async () => {
+    await command.execute(context, { filename: "test.asm", lineNo: 12 });
+    expect(context.service.navigationHistoryService.recordJump).not.toHaveBeenCalled();
+    expect(setPosition).toHaveBeenCalledWith(12, 0);
+  });
+
+  it("accepts known reasons and rejects unknown ones", async () => {
+    expect(
+      await command.validateCommandArgs(context, { filename: "a.asm", "-r": "outputLink" } as any)
+    ).toEqual([]);
+    const messages = await command.validateCommandArgs(context, {
+      filename: "a.asm",
+      "-r": "whim"
+    } as any);
+    expect(messages).toHaveLength(1);
+    expect(messages[0].message).toContain("whim");
+  });
+});

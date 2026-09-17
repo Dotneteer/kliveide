@@ -1,0 +1,196 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * Go Back / history / Go Forward, and the history list they open.
+ *
+ * The list is a *menu-like* overlay, so its body and frame take the dropdown-menu aliases the other
+ * portalled menus use, and its header and footer take the flat `PanelHeader` chrome idiom dialogs
+ * use (`--surface-chrome` band, `--border-default` seams, 11px/600 uppercase title). The accent lands
+ * in one place only: the current entry.
+ */
+
+/*
+ * Back, the chevron and Forward read as one control: no toolbar gap inside the group, so the
+ * narrow chevron visibly belongs to Back rather than floating between two buttons.
+ */
+.navGroup {
+  display: inline-flex;
+  align-items: center;
+}
+
+.popover {
+  position: fixed;
+  z-index: var(--z-menu);
+  display: flex;
+  flex-direction: column;
+  width: 56ch;
+  max-width: calc(100vw - var(--space-4));
+  max-height: 60vh;
+  overflow: hidden;
+  background: var(--bg-color-dropdown-menu);
+  color: var(--color-dropdown-menu);
+  border: 1px solid var(--border-color-dropdown-menu);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-context-menu);
+  font-size: var(--font-size-200);
+}
+
+.popoverHeader {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--strip-panelHeader);
+  padding: 0 var(--space-1) 0 var(--space-3);
+  background: var(--surface-chrome);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.popoverTitle {
+  color: var(--text-secondary);
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.popoverCount {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-100);
+}
+
+.popoverSpacer {
+  flex: 1 1 auto;
+}
+
+.clearButton {
+  height: calc(var(--strip-panelHeader) - var(--space-2));
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  cursor: pointer;
+
+  @include focus-ring(-2px);
+
+  &:not(:disabled):hover {
+    background: var(--bg-color-dropdown-menu-pointed);
+    color: var(--text-primary);
+  }
+
+  &:disabled {
+    color: var(--text-disabled);
+    cursor: default;
+  }
+}
+
+.historyList {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-1);
+}
+
+.historyRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+
+  @include focus-ring(-2px);
+
+  &:hover {
+    background: var(--bg-color-dropdown-menu-pointed);
+  }
+
+  /* The one accent in the list: where Back and Forward are counted from. */
+  &.current {
+    background: var(--bg-color-dropdown-menu-selected);
+    box-shadow: inset 2px 0 0 var(--accent-solid);
+  }
+
+  /* Entries Go Forward would reach: still choosable, visibly not behind you. */
+  &.ahead .rowText,
+  &.ahead .rowIcon {
+    opacity: 0.6;
+  }
+}
+
+.rowIcon {
+  display: flex;
+  color: var(--text-tertiary);
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rowTitle,
+.rowPreview {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rowTitle {
+  color: var(--text-primary);
+}
+
+.rowPosition {
+  margin-left: var(--space-2);
+  color: var(--text-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+}
+
+.rowPreview {
+  color: var(--text-tertiary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+}
+
+.reasonChip {
+  padding: 0 var(--space-1_5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: var(--font-size-50);
+  white-space: nowrap;
+}
+
+.emptyHistory {
+  padding: var(--space-4) var(--space-3);
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.popoverFooter {
+  flex: 0 0 auto;
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  background: var(--surface-chrome);
+  border-top: 1px solid var(--border-default);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-100);
+
+  kbd {
+    font-family: var(--monospace-font);
+    color: var(--text-secondary);
+  }
+}

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   createAnnotatedNexDisassemblyItems,
-  pcAnchoredRuns
+  overlayRegion,
+  pcAnchoredRuns,
+  screenAreaApplies
 } from "@renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly";
 
 describe("createAnnotatedNexDisassemblyItems", () => {
@@ -331,6 +333,90 @@ describe("createAnnotatedNexDisassemblyItems", () => {
  * a jump table can make it wrong for the rest of the bank. A paused Z80 sits between instructions,
  * so PC is the one offset where the alignment is known rather than guessed.
  */
+describe("data rows and labels", () => {
+  const contents = new Uint8Array(0x4000);
+  contents.set([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a]);
+
+  async function rows(
+    type: "bytes" | "words",
+    labels: { global?: { name: string; value: number }[]; local?: { name: string; value: number }[] },
+    end = 7
+  ) {
+    const items = await createAnnotatedNexDisassemblyItems({
+      annotations: {
+        schemaVersion: 2,
+        globalLabels: labels.global ?? [],
+        banks: {
+          "2": {
+            offsetIndex: 2,
+            regions: [
+              { start: 0, end, type },
+              { start: end + 1, end: 0x3fff, type: "skip" }
+            ],
+            localLabels: labels.local ?? []
+          }
+        }
+      },
+      bank: 2,
+      contents,
+      disassOffset: 0x8000
+    });
+    return items!
+      .filter((item) => !item.instruction?.startsWith(".skip"))
+      .map((item) => ({
+        address: item.address,
+        label: item.formattedLabel,
+        instruction: item.instruction,
+        byteLength: item.annotation?.byteLength
+      }));
+  }
+
+  it("keeps four values to a row when no label is inside", async () => {
+    expect(await rows("bytes", {})).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defb $01, $02, $03, $04", byteLength: 4 },
+      { address: 0x8004, label: undefined, instruction: ".defb $05, $06, $07, $08", byteLength: 4 }
+    ]);
+  });
+
+  it("starts a byte row at a global label inside a row", async () => {
+    expect(await rows("bytes", { global: [{ name: "Middle", value: 0x8002 }] })).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defb $01, $02", byteLength: 2 },
+      { address: 0x8002, label: "Middle", instruction: ".defb $03, $04, $05, $06", byteLength: 4 },
+      { address: 0x8006, label: undefined, instruction: ".defb $07, $08", byteLength: 2 }
+    ]);
+  });
+
+  it("starts a byte row at a local label inside a row", async () => {
+    expect(await rows("bytes", { local: [{ name: "Third", value: 3 }] })).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defb $01, $02, $03", byteLength: 3 },
+      { address: 0x8003, label: "Third", instruction: ".defb $04, $05, $06, $07", byteLength: 4 },
+      { address: 0x8007, label: undefined, instruction: ".defb $08", byteLength: 1 }
+    ]);
+  });
+
+  it("starts a word row at a label on a word boundary", async () => {
+    expect(await rows("words", { global: [{ name: "Length", value: 0x8002 }] })).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defw $0201", byteLength: 2 },
+      { address: 0x8002, label: "Length", instruction: ".defw $0403, $0605", byteLength: 4 },
+      { address: 0x8006, label: undefined, instruction: ".defw $0807", byteLength: 2 }
+    ]);
+  });
+
+  it("does not split a word at a label on its high byte", async () => {
+    expect(await rows("words", { global: [{ name: "HighByte", value: 0x8003 }] })).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defw $0201, $0403", byteLength: 4 },
+      { address: 0x8004, label: undefined, instruction: ".defw $0605, $0807", byteLength: 4 }
+    ]);
+  });
+
+  it("ignores labels outside the bank window", async () => {
+    expect(await rows("bytes", { global: [{ name: "Elsewhere", value: 0x4002 }] })).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defb $01, $02, $03, $04", byteLength: 4 },
+      { address: 0x8004, label: undefined, instruction: ".defb $05, $06, $07, $08", byteLength: 4 }
+    ]);
+  });
+});
+
 describe("pcAnchoredRuns", () => {
   it("leaves the range alone when there is no program counter to anchor to", () => {
     // --- The machine is running, or PC is in some other bank. Nothing to align against.
@@ -534,5 +620,102 @@ describe("createAnnotatedNexDisassemblyItems fallback operand names", () => {
       "ld hl,MyVar",
       "call L8010"
     ]);
+  });
+});
+
+/*
+ * Hiding the screen area.
+ *
+ * A display override: the listing collapses $4000-$5AFF, the sidecar's regions are not touched. That
+ * is what keeps a switch from destroying annotations made inside the range the first time it flips.
+ */
+describe("screenAreaApplies", () => {
+  it("applies only to a NEX bank listed at $4000", () => {
+    expect(screenAreaApplies({ isNexBank: true, disassOffset: 0x4000 })).toBe(true);
+    expect(screenAreaApplies({ isNexBank: true, disassOffset: 0x8000 })).toBe(false);
+    expect(screenAreaApplies({ isNexBank: true, disassOffset: 0x0000 })).toBe(false);
+    // --- A plain dump listed at $4000 is not a bank, and has no switch.
+    expect(screenAreaApplies({ isNexBank: false, disassOffset: 0x4000 })).toBe(false);
+  });
+});
+
+describe("overlayRegion", () => {
+  const screen = { start: 0x0000, end: 0x1aff, type: "skip" as const };
+
+  it("replaces the one region that covers the whole bank", () => {
+    expect(overlayRegion([{ start: 0, end: 0x3fff, type: "disassemble" }], screen)).toEqual([
+      screen,
+      { start: 0x1b00, end: 0x3fff, type: "disassemble" }
+    ]);
+  });
+
+  it("trims a region that straddles the edge, keeping its type", () => {
+    expect(
+      overlayRegion(
+        [
+          { start: 0x0000, end: 0x0fff, type: "bytes" },
+          { start: 0x1000, end: 0x1fff, type: "words" },
+          { start: 0x2000, end: 0x3fff, type: "disassemble" }
+        ],
+        screen
+      )
+    ).toEqual([
+      screen,
+      { start: 0x1b00, end: 0x1fff, type: "words" },
+      { start: 0x2000, end: 0x3fff, type: "disassemble" }
+    ]);
+  });
+
+  it("does not mutate the regions it was given", () => {
+    const authored = [{ start: 0, end: 0x3fff, type: "disassemble" as const }];
+    overlayRegion(authored, screen);
+    expect(authored).toEqual([{ start: 0, end: 0x3fff, type: "disassemble" }]);
+  });
+});
+
+describe("createAnnotatedNexDisassemblyItems with the screen hidden", () => {
+  function model() {
+    return {
+      schemaVersion: 2,
+      globalLabels: [],
+      banks: {
+        "5": {
+          offsetIndex: 1 as const,
+          regions: [{ start: 0, end: 0x3fff, type: "disassemble" as const }],
+          localLabels: [],
+          lineAnnotations: {}
+        }
+      }
+    };
+  }
+
+  it("collapses $4000-$5AFF to one row and disassembles from $5B00", async () => {
+    const items = await createAnnotatedNexDisassemblyItems({
+      annotations: model(),
+      bank: 5,
+      contents: new Uint8Array(0x4000),
+      disassOffset: 0x4000,
+      hideScreenArea: true
+    });
+    const rows = (items ?? []).filter((item) => !item.isPrefixItem);
+    expect(rows[0]).toMatchObject({
+      address: 0x4000,
+      instruction: ".skip $1B00",
+      hardComment: "Screen memory, not disassembled"
+    });
+    expect(rows[1].address).toBe(0x5b00);
+    expect(rows.some((row) => row.address > 0x4000 && row.address < 0x5b00)).toBe(false);
+  });
+
+  it("disassembles the screen as before when not hidden", async () => {
+    const items = await createAnnotatedNexDisassemblyItems({
+      annotations: model(),
+      bank: 5,
+      contents: new Uint8Array(0x4000),
+      disassOffset: 0x4000
+    });
+    // --- Zeros decode as `nop`, one per byte, so the screen range alone is 6,912 rows.
+    const inScreen = (items ?? []).filter((item) => item.address >= 0x4000 && item.address <= 0x5aff);
+    expect(inScreen.length).toBe(0x1b00);
   });
 });

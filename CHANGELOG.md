@@ -4,6 +4,18 @@
 
 ### Fixes
 
+- **A popped-out NEX bank could be open twice.** Opening a bank from the NEX viewer and then
+  stopping in it while debugging (or following a label into it) gave two documents for the one
+  bank, and the debugger scrolled the one you were not looking at. The two also carried different
+  tab titles.
+- *Go to Definition* landed at the start of the line instead of on the symbol.
+- Opening a file whose viewer is not a code editor through the `nav` command (the NEX viewer, for
+  example) took about five seconds.
+- **Only source files came back when you reopened a project.** Every other document backed by a
+  project file &mdash; the NEX, DSK and Z80 viewers, plain text files &mdash; was saved into the
+  workspace correctly and then discarded while restoring it, because restoring matched on the code
+  editor alone. Losing such a document also lost the selected tab, since the active one fell back to
+  the first document that happened to survive.
 - A breakpoint in partition 0 (bank `B0` on the 128K, bank `00` on the ZX Next) could never fire.
 - **A source-code breakpoint fired in the wrong memory bank.** For a line inside a `.bank` section,
   the breakpoint was placed by address alone &mdash; and `.bank` sections share addresses, so it also
@@ -69,6 +81,15 @@
 
 ### Features
 
+- **Go Back and Go Forward.** Klive remembers the places you jump to &mdash; *Go to Definition*, an
+  output-pane link, a breakpoint, a document tab, *Go To* in the Memory and Disassembly views, a NEX
+  bank or label &mdash; and takes you back through them with `Ctrl+-` / `Ctrl+Shift+-` on
+  macOS and `Alt+Left` / `Alt+Right` elsewhere, the mouse's back and forward buttons, the new toolbar
+  buttons, or **IDE &rsaquo; Go**. The arrow between the toolbar buttons lists the whole history.
+  Debugger stops are not remembered, so after debugging, *Go Back* returns to where you were before.
+  A remembered line follows its code as you edit, and a place in a closed document &mdash; including
+  a popped-out NEX bank &mdash; opens it again. New commands: `nav-back`, `nav-forward`,
+  `nav-history` and `nav-clear`; `nav` gained `-r` to record its jump.
 - `bp-set`, `bp-del` and `bp-en` accept a bank-relative address on the ZX Spectrum Next:
   `bp-set 05:+$0100` breaks at offset `$0100` inside 16K bank 5, wherever that bank is paged in.
 - Any `.nex` file can be run or debugged on its own, without a project: from the Project Explorer's
@@ -102,6 +123,19 @@
   operands from the labels you wrote in the NEX viewer &mdash; `call DrawSprite` rather than
   `call $C100`. A bank's own labels apply only while that bank is paged in, so the names follow the
   program as it pages; labels you made global apply everywhere.
+- **A bank listed at `$4000` no longer disassembles the screen.** That range is the ULA screen
+  &mdash; bitmap and attributes, `$4000`&ndash;`$5AFF` &mdash; and it used to fill the listing with
+  thousands of rows of decoded pixels ahead of the code. It now collapses to a single line, and a
+  **Screen** switch in the toolbar brings the disassembly back when you want it. The switch appears
+  only for a NEX bank listed at `$4000`, and it changes the listing only: regions and annotations you
+  made inside the range are kept.
+- **Follow a label to where it is defined.** A NEX bank's disassembly context menu opens with **Go to
+  Definition** whenever the line names a label &mdash; `ld hl,InitPalettes` &mdash; and it takes you
+  there. A definition inside the bank on screen is a scroll, and works with no machine running. One
+  outside it needs a machine, because which bank holds an address depends on how the program has
+  paged memory: with one running, that bank is brought forward and scrolled to the label; without
+  one, the command is greyed rather than guessing. `Ctrl+F12` reaches it from the listing &mdash;
+  plain `F12` is the macOS Step Into accelerator, so it was not free to take.
 - **A popped-out NEX bank shows the machine, not the file &mdash; without being asked.** Whenever a
   machine is running, both the bank's memory *and* its disassembly are built from the bank's current
   contents, with every byte that differs from the file marked and counted in the toolbar. This is how

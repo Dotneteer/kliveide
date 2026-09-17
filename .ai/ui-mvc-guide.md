@@ -108,11 +108,16 @@ npm run lint:renderer -- --quiet
 npx electron-vite build --config build/electron.vite.config.ts
 ```
 
-⚠️ **`npm run build:check` type-checks nothing.** The root `tsconfig.json` is solution-style
-(`"files": []` plus references), so plain `tsc` resolves no inputs and exits 0. Verify with
-`npx tsc --noEmit --listFiles | grep -c "src/renderer"` → prints 0. Until it is fixed, type-check
-against `build/tsconfig.web.json` explicitly, and never report "type-checked" on the strength of
-`build:check`.
+```bash
+npm run build:check
+```
+
+**Use `build:check`, not bare `tsc`.** The root `tsconfig.json` is solution-style (`"files": []` plus
+references), so plain `npx tsc --noEmit` resolves no inputs and exits 0 —
+`npx tsc --noEmit --listFiles | grep -c "src/renderer"` still prints 0. `scripts/check-types.cjs`
+exists for exactly that reason: it runs `build/tsconfig.node.json` and `build/tsconfig.web.json`
+explicitly and compares against a baseline, so it does catch renderer errors and is what "type-checked"
+should mean here.
 
 A new path alias must be added to **six** files: `tsconfig.json`, `test/tsconfig.json`,
 `build/tsconfig.web.json`, `build/tsconfig.node.json`, `build/electron.vite.config.ts`,

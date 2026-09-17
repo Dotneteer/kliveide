@@ -15,6 +15,11 @@ This folder stores durable notes for future AI-assisted work in this repository.
   producing raw and annotated listings, the official Next register and I/O port
   references in `_input/next-fpga/` and how to query them, and the rules that stop a
   hand-written sidecar destroying the breakpoints stored beside the annotations.
+- **Every reverse-engineering session updates `nex-reverse-engineering-guide.md` before
+  it finishes** — the project author's standing instruction. Fold the durable learning
+  into the section it belongs to, replace what it supersedes, and keep no history: that
+  file is a standing brief, not a log. Findings about a *particular* program belong in
+  that program's `.nex.dis` sidecar instead.
 - For the user's high-level TypeScript-to-WASM migration intent and lessons
   learned from 48K/128K/+3E work, read
   `wasm-migration-intent-and-lessons.md`.

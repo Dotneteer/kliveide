@@ -34,6 +34,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import type { AppState } from "@state/AppState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
+import { readNavigationShortcuts } from "@common/utils/navigationShortcuts";
 import { openFolder, openFolderByPath, saveKliveProject } from "./projects";
 import {
   ABOUT_DIALOG,
@@ -69,6 +70,7 @@ import {
   SETTING_EMU_STAY_ON_TOP,
   SETTING_EMU_SCANLINE_EFFECT,
   SETTING_IDE_CLOSE_EMU,
+  SETTING_IDE_NAV_RECORD_TAB_SWITCH,
   SETTING_EDITOR_FONT_SIZE,
   SETTING_EDITOR_FONT_FAMILY,
   SETTING_PANEL_FONT_FAMILY,
@@ -127,6 +129,10 @@ const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
 const IDE_SHOW_DISASSEMBLY = "show_banked_disassembly";
 const IDE_SETTINGS = "ide_settings";
+const IDE_GO_MENU = "ide_go";
+const IDE_GO_BACK = "ide_go_back";
+const IDE_GO_FORWARD = "ide_go_forward";
+const IDE_CLEAR_NAV_HISTORY = "ide_clear_nav_history";
 
 const EDITOR_OPTIONS = "editor_options";
 const EDITOR_FONT_SIZE = "editor_font_size";
@@ -259,6 +265,8 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   const stepOverShortcut = settingsReader.readSetting("shortcuts.stepOver") ?? "F10";
   const stepOutShortcut =
     settingsReader.readSetting("shortcuts.stepOut") ?? (__DARWIN__ ? "Shift+F12" : "Shift+F11");
+  const navigationShortcuts = readNavigationShortcuts(mainStore.getState(), __DARWIN__);
+  const navHistory = appState?.ideView?.navHistory;
 
   // ==========================================================================
   // Application system menu on MacOS
@@ -1096,6 +1104,47 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         }
       },
       { type: "separator" },
+      /*
+       * Go Back / Go Forward. While the IDE window has focus its renderer handles the shortcuts
+       * itself, before Monaco can, and marks the key handled — which keeps the accelerator here from
+       * firing a second time. The accelerator is what makes the shortcut work from the emulator
+       * window. See `.plans/NAVIGATION_HISTORY_PLAN.md` §5.
+       */
+      {
+        type: "submenu",
+        id: IDE_GO_MENU,
+        label: "Go",
+        submenu: [
+          {
+            id: IDE_GO_BACK,
+            label: "Back",
+            accelerator: navigationShortcuts.back,
+            enabled: !!navHistory?.canGoBack,
+            click: async () => {
+              await getIdeApi().executeCommand("nav-back");
+            }
+          },
+          {
+            id: IDE_GO_FORWARD,
+            label: "Forward",
+            accelerator: navigationShortcuts.forward,
+            enabled: !!navHistory?.canGoForward,
+            click: async () => {
+              await getIdeApi().executeCommand("nav-forward");
+            }
+          },
+          { type: "separator" },
+          {
+            id: IDE_CLEAR_NAV_HISTORY,
+            label: "Clear Navigation History",
+            enabled: (navHistory?.count ?? 0) > 0,
+            click: async () => {
+              await getIdeApi().executeCommand("nav-clear");
+            }
+          }
+        ]
+      },
+      { type: "separator" },
       ...specificIdeMenus,
       { type: "separator" },
       createIdeIntegrationsMenu((dialogId) => getIdeApi().displayDialog(dialogId)),
@@ -1107,7 +1156,8 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         submenu: [
           createBooleanSettingsMenu(SETTING_IDE_OPEN_LAST_PROJECT),
           { type: "separator" },
-          createBooleanSettingsMenu(SETTING_IDE_CLOSE_EMU)
+          createBooleanSettingsMenu(SETTING_IDE_CLOSE_EMU),
+          createBooleanSettingsMenu(SETTING_IDE_NAV_RECORD_TAB_SWITCH)
         ]
       }
     ]

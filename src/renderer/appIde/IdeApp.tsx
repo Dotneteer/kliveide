@@ -32,6 +32,7 @@ import {
   SETTING_IDE_TOOLS_ON_TOP
 } from "@common/settings/setting-const";
 import { useEnsureIdeDocumentHub, useIdeStartup } from "./useIdeStartup";
+import { useNavigationShortcuts } from "@renderer/features/navigation/useNavigationShortcuts";
 
 const IdeApp = () => {
   // --- Used services
@@ -59,6 +60,7 @@ const IdeApp = () => {
   const [currentToolPanelHeight, setCurrentToolPanelHeight] = useState(toolPanelHeight);
 
   useEnsureIdeDocumentHub(appServices);
+  useNavigationShortcuts();
   useIdeStartup({ appPath, appServices, dispatch, ideLoaded, isWindows, messenger, store });
 
   useEffect(() => {

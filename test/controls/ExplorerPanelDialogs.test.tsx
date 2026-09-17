@@ -44,6 +44,7 @@ describe("ExplorerPanel dialog migration", () => {
     vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
       useAppServices: () => ({
         ideCommandsService: { executeCommand: vi.fn() },
+        navigationHistoryService: { recordJump: async (_reason: string, jump: () => unknown) => await jump() },
         projectService: {
           getActiveDocumentHubService: () => ({
             getDocument: vi.fn(),
@@ -160,6 +161,7 @@ describe("ExplorerPanel dialog migration", () => {
     vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
       useAppServices: () => ({
         ideCommandsService: { executeCommand },
+        navigationHistoryService: { recordJump: async (_reason: string, jump: () => unknown) => await jump() },
         projectService: {
           getActiveDocumentHubService: () => ({
             isOpen: vi.fn(() => false),
@@ -425,6 +427,7 @@ function mockExplorerPanelActivation() {
   vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
     useAppServices: () => ({
       ideCommandsService: { executeCommand },
+      navigationHistoryService: { recordJump: async (_reason: string, jump: () => unknown) => await jump() },
       projectService: {
         getActiveDocumentHubService: () => documentHubService,
         getDocumentForProjectNode: vi.fn(() => Promise.resolve(newDocument)),

@@ -92,6 +92,19 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
   const [startAction, setStartAction] = useState<StartAction>("run");
   const [resumeAction, setResumeAction] = useState<ResumeAction>("continue");
 
+  /*
+   * Follow the machine's own debug flag, not only the toolbar's clicks.
+   *
+   * The resume mode used to change only when this toolbar started the machine or stepped it. A run
+   * started anywhere else — `nex-run -e` from a NEX document, a script, the menu — left it on
+   * "Continue", so a machine paused at a breakpoint in a debug session offered to continue in normal
+   * mode until the first step switched it over. The controller publishes `isDebugging` for every
+   * start, pause and step, so it is the one source that is right however the run began.
+   */
+  useEffect(() => {
+    setResumeAction(isDebugging ? "debug" : "continue");
+  }, [isDebugging]);
+
   const [stepIntoKey, setStepIntoKey] = useState<string>(null);
   const [stepOverKey, setStepOverKey] = useState<string>(null);
   const [stepOutKey, setStepOutKey] = useState<string>(null);

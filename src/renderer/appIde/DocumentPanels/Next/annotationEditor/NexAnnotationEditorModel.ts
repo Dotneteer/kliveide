@@ -26,6 +26,15 @@ export type NexAnnotationEditorEnvironment = {
   viewMode: NexAnnotationBankView;
   decimalView: boolean;
   disassOffset: number;
+  /**
+   * Is a machine running that could say where another bank is paged?
+   *
+   * Read by "Go to definition" alone. A definition inside the bank on screen needs nothing but a
+   * scroll, but one at an address outside it can only be reached by asking the live MMU which bank
+   * sits there — so with no machine the command has no way to find its destination and offers itself
+   * as unavailable rather than guessing from the sidecar's declared paging.
+   */
+  machineRunning: boolean;
 };
 
 /**
@@ -255,7 +264,10 @@ function sameEnvironment(
     left.bank === right.bank &&
     left.viewMode === right.viewMode &&
     left.decimalView === right.decimalView &&
-    left.disassOffset === right.disassOffset
+    left.disassOffset === right.disassOffset &&
+    // --- Included so starting or stopping the machine re-enables or greys the cross-bank jump
+    // --- without waiting for some other environment change to carry it in.
+    left.machineRunning === right.machineRunning
   );
 }
 

@@ -175,8 +175,31 @@ export function createMockAppServices(): AppServices {
     outputPaneService: {} as any,
     uiService: {} as any,
     validationService: {} as any,
-    scriptService: {} as any
+    scriptService: {} as any,
+    navigationHistoryService: createMockNavigationHistoryService()
   };
+}
+
+/**
+ * Creates a mock navigation history service: `recordJump` runs the jump and records nothing.
+ */
+export function createMockNavigationHistoryService() {
+  return {
+    recordJump: vi.fn(async (_reason: string, jump: () => any) => await jump()),
+    captureCurrent: vi.fn(),
+    goBack: vi.fn().mockResolvedValue(false),
+    goForward: vi.fn().mockResolvedValue(false),
+    goTo: vi.fn().mockResolvedValue(false),
+    getEntries: vi.fn().mockReturnValue({ entries: [], index: -1 }),
+    canGoBack: vi.fn().mockReturnValue(false),
+    canGoForward: vi.fn().mockReturnValue(false),
+    peekBack: vi.fn(),
+    peekForward: vi.fn(),
+    describe: vi.fn().mockReturnValue(""),
+    preview: vi.fn(),
+    clear: vi.fn(),
+    isRestoring: false
+  } as any;
 }
 
 /**

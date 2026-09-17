@@ -16,6 +16,8 @@ import {
 } from "@renderer/appIde/DocumentPanels/Next/annotationEditor/NexAnnotationEditorViewModel";
 
 import {
+  aLabelledOperandRow,
+  anAnnotationModelWithLabels,
   aListing,
   anAnnotationModel,
   anEnvironment,
@@ -108,6 +110,8 @@ describe("menu", () => {
       .menu.filter((entry) => entry.kind === "item")
       .map((entry) => (entry as any).id);
     expect(ids).toEqual([
+      // --- Go to Definition leads: it reads rather than edits, and is the entry most reached for.
+      "goto-definition",
       "manage-labels",
       "manage-regions",
       "synopsis",
@@ -127,7 +131,8 @@ describe("menu", () => {
     const separators = selectViewModel(selected).menu.filter(
       (entry) => entry.kind === "separator"
     );
-    expect(separators.length).toEqual(4);
+    // --- Five since Go to Definition arrived: it sits alone above the four editing groups.
+    expect(separators.length).toEqual(5);
   });
 
   it("disables everything without annotations", () => {
@@ -367,6 +372,7 @@ describe("shortcuts", () => {
     expect([...bound].sort()).toEqual([
       "comment",
       "global-label",
+      "goto-definition",
       "local-label",
       "manage-labels",
       "manage-regions",
@@ -375,8 +381,32 @@ describe("shortcuts", () => {
     ]);
   });
 
+  it("reaches Go to Definition with Ctrl+F12", () => {
+    // --- Plain F12 was unavailable: it is the macOS Step Into menu accelerator, and those fire
+    // --- globally, so a renderer binding would have been dead on that platform alone.
+    expect(annotationActionForKey("F12", false, true)).toEqual("goto-definition");
+  });
+
+  it("ignores F12 without Ctrl", () => {
+    expect(annotationActionForKey("F12", false, false)).toBeUndefined();
+  });
+
+  it("refuses a bare-letter shortcut when Ctrl is held", () => {
+    /*
+     * The reason modifiers are matched exactly rather than as a minimum. `C` is the end-of-line
+     * comment, but `Ctrl+C` is copy and must stay copy — the listing is selectable text.
+     */
+    expect(annotationActionForKey("c", false, false)).toEqual("comment");
+    expect(annotationActionForKey("c", false, true)).toBeUndefined();
+    expect(annotationActionForKey("l", true, true)).toBeUndefined();
+  });
+
   it("binds no key twice", () => {
-    const seen = NEX_ANNOTATION_SHORTCUTS.map((entry) => `${entry.key}:${entry.shift}`);
+    // --- Ctrl is part of the identity of a binding now, so two entries may share a key and shift
+    // --- state as long as they disagree about it.
+    const seen = NEX_ANNOTATION_SHORTCUTS.map(
+      (entry) => `${entry.key}:${entry.shift}:${!!entry.ctrl}`
+    );
     expect(new Set(seen).size).toEqual(seen.length);
   });
 
@@ -415,5 +445,60 @@ describe("shortcuts", () => {
     expect(menuEntryFor(menu, "manage-labels")!.disabled).toEqual(false);
     // --- And Manage Regions is refused, because it cannot run without a row either.
     expect(menuEntryFor(menu, "manage-regions")!.disabled).toEqual(true);
+  });
+});
+
+/*
+ * Go to Definition.
+ *
+ * The one menu entry that reads rather than edits, and the only one whose availability depends on
+ * the machine: a definition outside the bank on screen can only be located by asking the live MMU
+ * which bank currently holds that address.
+ */
+describe("go to definition", () => {
+  function menuFor(over: {
+    row?: ReturnType<typeof aLabelledOperandRow>;
+    machineRunning?: boolean;
+  }): NexAnnotationMenuEntry[] {
+    const state = aState({
+      env: anEnvironment({ machineRunning: over.machineRunning ?? false }),
+      annotations: anAnnotationModelWithLabels(),
+      items: over.row ? [over.row] : aListing(3),
+      selection: { anchorIndex: 0, activeIndex: 0 }
+    });
+    return selectViewModel(state).menu;
+  }
+
+  it("is the first entry, and stands alone above the editing commands", () => {
+    const menu = menuFor({ row: aLabelledOperandRow(0x0010, 0x4100) });
+    expect(menu[0]).toMatchObject({ kind: "item", id: "goto-definition", text: "Go to Definition" });
+    expect(menu[1]).toEqual({ kind: "separator" });
+  });
+
+  it("is available for a definition inside this bank, with no machine at all", () => {
+    // --- $4100 is inside the bank's $4000-$7FFF window, so this is only a scroll.
+    const menu = menuFor({ row: aLabelledOperandRow(0x0010, 0x4100), machineRunning: false });
+    expect(menuEntryFor(menu, "goto-definition")!.disabled).toEqual(false);
+  });
+
+  it("is unavailable for a definition in another bank while the machine is stopped", () => {
+    // --- $C100 is outside this bank. Without a machine there is no way to know which bank holds it.
+    const menu = menuFor({ row: aLabelledOperandRow(0x0010, 0xc100), machineRunning: false });
+    expect(menuEntryFor(menu, "goto-definition")!.disabled).toEqual(true);
+  });
+
+  it("becomes available for another bank once the machine is running", () => {
+    const menu = menuFor({ row: aLabelledOperandRow(0x0010, 0xc100), machineRunning: true });
+    expect(menuEntryFor(menu, "goto-definition")!.disabled).toEqual(false);
+  });
+
+  it("is unavailable on a row whose operand names no label", () => {
+    const menu = menuFor({ row: aLabelledOperandRow(0x0010, 0x4999), machineRunning: true });
+    expect(menuEntryFor(menu, "goto-definition")!.disabled).toEqual(true);
+  });
+
+  it("is unavailable on an ordinary row with no operand", () => {
+    const menu = menuFor({ machineRunning: true });
+    expect(menuEntryFor(menu, "goto-definition")!.disabled).toEqual(true);
   });
 });

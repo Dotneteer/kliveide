@@ -5,6 +5,7 @@ import {
   DISASSEMBLY_PANEL_ID,
   MEMORY_EDITOR,
   MEMORY_PANEL_ID,
+  NEX_VIEWER,
   TEXT_EDITOR
 } from "@common/state/common-ids";
 import { restoreLastOpenDocuments } from "@renderer/appIde/restoreLastOpenDocuments";
@@ -79,7 +80,15 @@ describe("restoreLastOpenDocuments", () => {
 
     expect(documentHubService.closeAllDocuments).toHaveBeenCalledTimes(1);
     expect(projectService.getDocumentForProjectNode).not.toHaveBeenCalled();
-    expect(documentHubService.openDocumentTab).toHaveBeenCalledTimes(2);
+    /*
+     * Three, not two: `readme.txt` comes back as well.
+     *
+     * A document is restored because its file is **in the project**, not because it was saved as a
+     * `CODE_EDITOR`. Every other file-backed editor carries its own type — the NEX, DSK and Z80
+     * viewers, plain text — and matching on `CODE_EDITOR` silently dropped all of them on restart.
+     * `/outside/src/c.asm` is still skipped, because that is a path test and remains one.
+     */
+    expect(documentHubService.openDocumentTab).toHaveBeenCalledTimes(3);
     expect(documentHubService.openDocumentTab).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
@@ -92,6 +101,15 @@ describe("restoreLastOpenDocuments", () => {
     expect(documentHubService.openDocumentTab).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
+        id: "/project/readme.txt",
+        editPosition: { line: 1, column: 0 }
+      }),
+      undefined,
+      false
+    );
+    expect(documentHubService.openDocumentTab).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
         id: "/project/src/b.asm",
         editPosition: { line: 22, column: 5 }
       }),
@@ -101,7 +119,7 @@ describe("restoreLastOpenDocuments", () => {
     expect(documentHubService.setActiveDocument).toHaveBeenCalledTimes(1);
     expect(documentHubService.setActiveDocument).toHaveBeenCalledWith("/project/src/b.asm");
     expect(projectService.setActiveDocumentHubService).toHaveBeenCalledWith(documentHubService);
-    expect(documentHubService.openDocumentTab.mock.invocationCallOrder[1]).toBeLessThan(
+    expect(documentHubService.openDocumentTab.mock.invocationCallOrder[2]).toBeLessThan(
       documentHubService.setActiveDocument.mock.invocationCallOrder[0]
     );
   });
@@ -318,6 +336,76 @@ describe("restoreLastOpenDocuments", () => {
     expect(firstHub.setActiveDocument).toHaveBeenCalledWith(MEMORY_PANEL_ID);
     expect(secondHub.setActiveDocument).toHaveBeenCalledWith(DISASSEMBLY_PANEL_ID);
     expect(projectService.setActiveDocumentHubService).toHaveBeenCalledWith(secondHub);
+  });
+
+  it("restores a file-backed viewer that is not a code editor, and keeps it active", async () => {
+    /*
+     * The NEX viewer, reported as vanishing on restart. It is saved like any other project file —
+     * the workspace filter is a path test — and was then discarded on the way back in because the
+     * restore matched on `CODE_EDITOR`. Losing it also lost the active tab: the fallback is the
+     * first document that *did* restore, so the wrong tab came up selected.
+     */
+    const documentHubService = createDocumentHubMock();
+    const projectService = {
+      setActiveDocumentHubService: vi.fn(),
+      getActiveDocumentHubService: vi.fn(() => documentHubService),
+      getDocumentHubServiceInstances: vi.fn(() => [documentHubService]),
+      createDocumentHubService: vi.fn(() => documentHubService),
+      getDocumentForProjectNode: vi.fn(),
+      getDocumentShellForProjectNode: vi.fn((node: any) => ({
+        id: node.fullPath,
+        name: node.name,
+        type: node.editor,
+        node
+      })),
+      getNodeForFile: vi.fn((id: string) => {
+        if (!id.startsWith("/project/")) return undefined;
+        const name = id.split("/").pop()!;
+        return {
+          data: {
+            editor: name.endsWith(".nex") ? NEX_VIEWER : CODE_EDITOR,
+            fullPath: id,
+            isFolder: false,
+            name,
+            projectPath: name
+          }
+        };
+      })
+    };
+    const store = {
+      getState: vi.fn(() => ({
+        project: { folderPath: "/project" },
+        workspaceSettings: {
+          docsWorkspace: {
+            version: 2,
+            layout: { type: "leaf", areaId: "document-area-1" },
+            activeAreaId: "document-area-1",
+            areas: [
+              {
+                areaId: "document-area-1",
+                documents: [
+                  { type: CODE_EDITOR, id: "/project/src/a.asm", position: { line: 0, column: 0 } },
+                  { type: NEX_VIEWER, id: "/project/game.nex", position: { line: 0, column: 0 } }
+                ],
+                activeDocumentId: "/project/game.nex"
+              }
+            ]
+          }
+        }
+      }))
+    };
+
+    await restoreLastOpenDocuments(projectService as never, store as never);
+
+    expect(documentHubService.openDocumentTab).toHaveBeenCalledTimes(2);
+    expect(documentHubService.openDocumentTab).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ id: "/project/game.nex", type: NEX_VIEWER }),
+      undefined,
+      false
+    );
+    // --- The saved active tab, not the first one that happened to survive.
+    expect(documentHubService.setActiveDocument).toHaveBeenCalledWith("/project/game.nex");
   });
 });
 

@@ -39,6 +39,7 @@ import { MemoryToolbar } from "./MemoryToolbar";
 import { MemoryBankToolbar } from "./MemoryBankToolbar";
 import { getMemoryCharacterInfo, MemoryDumpSectionView } from "./MemoryDumpSection";
 import { createVisibleMemoryRenderRecorder } from "./memoryPerformance";
+import type { NavigationLocator } from "@renderer/abstractions/NavigationLocation";
 
 /*
  * M3: the row height comes from the shared module, not a private copy.
@@ -62,7 +63,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
   const dialogs = useDialogs();
-  const { ideCommandsService, machineService } = useAppServices();
+  const { ideCommandsService, machineService, navigationHistoryService } = useAppServices();
   const memoryCharacterInfo = getMemoryCharacterInfo(machineService.getMachineInfo()?.machine?.charSet);
 
   // Machine setup is intentionally separate from memory refresh. Setup answers
@@ -271,6 +272,60 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     setScrollVersion((version) => version + 1);
   }, [bytesPerRow]);
 
+  /*
+   * Navigation history (Go Back / Go Forward).
+   *
+   * The history asks where the view is at the moment of a jump — just before and just after it — so
+   * the answer is kept in refs updated synchronously, not read from state that only settles on the
+   * next render. The top row is committed only when scrolling stops, and a jump pins the exact address
+   * asked for until the user scrolls away from its row. See `.plans/NAVIGATION_HISTORY_PLAN.md` §4.2.
+   */
+  const navAddress = useRef(topIndex * bytesPerRow);
+  const navSegment = useRef(currentSegment);
+  const navFullView = useRef(isFullView);
+  const navBytesPerRow = useRef(bytesPerRow);
+  navSegment.current = currentSegment;
+  navFullView.current = isFullView;
+  navBytesPerRow.current = bytesPerRow;
+
+  const goToAddressRecorded = useCallback(
+    (address: number) =>
+      void navigationHistoryService.recordJump("memoryGoTo", () => {
+        navAddress.current = address;
+        handleGoToAddress(address);
+      }),
+    [handleGoToAddress, navigationHistoryService]
+  );
+
+  const revealLocator = useRef<(locator: NavigationLocator) => void>(() => {});
+  revealLocator.current = (locator: NavigationLocator) => {
+    if (locator.kind !== "address") return;
+    if (locator.fullView !== undefined && locator.fullView !== isFullView) {
+      navFullView.current = locator.fullView;
+      setIsFullView(locator.fullView);
+    }
+    if (locator.segment !== undefined && locator.segment !== null && locator.segment !== currentSegment) {
+      navSegment.current = locator.segment;
+      setCurrentSegment(locator.segment);
+    }
+    navAddress.current = locator.address;
+    handleGoToAddress(locator.address);
+  };
+
+  useEffect(() => {
+    documentHubService.setDocumentApi(document.id, {
+      getNavigationLocator: () => ({
+        kind: "address",
+        address: navAddress.current,
+        segment: navSegment.current,
+        fullView: navFullView.current,
+        viewMode: "memory"
+      }),
+      revealLocator: (locator) => revealLocator.current(locator)
+    });
+    return () => documentHubService.setDocumentApi(document.id, undefined);
+  }, [document.id, documentHubService]);
+
   const handleSegmentChanged = useCallback((segment: number) => {
     setCurrentSegment(segment);
     setTopIndex(0);
@@ -360,7 +415,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           onBankLabelChanged={setBankLabel}
           onCharDumpChanged={setCharDump}
           onDecimalViewChanged={setDecimalView}
-          onGoToAddress={handleGoToAddress}
+          onGoToAddress={goToAddressRecorded}
           onRefreshPauseChanged={handleRefreshPauseChanged}
           onViewModeChanged={handleViewModeChanged}
         />
@@ -402,6 +457,10 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           }}
           onScrollEnd={() => {
             const newTopIndex = pendingScrollTopIndex.current;
+            // --- Keep a jump's exact address while its row is still the top one.
+            if (Math.floor(navAddress.current / navBytesPerRow.current) !== newTopIndex) {
+              navAddress.current = newTopIndex * navBytesPerRow.current;
+            }
             setTopIndex((currentTopIndex) =>
               newTopIndex === currentTopIndex ? currentTopIndex : newTopIndex
             );

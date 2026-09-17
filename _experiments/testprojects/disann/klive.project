@@ -21,7 +21,14 @@
   },
   "debugger": {
     "schemaVersion": 1,
-    "breakpoints": [],
+    "breakpoints": [
+      {
+        "bank": 2,
+        "bankOffset": 9898,
+        "exec": true,
+        "ioMask": 65535
+      }
+    ],
     "watchExpressions": []
   },
   "builder": {
@@ -47,10 +54,13 @@
               "position": {
                 "line": 0,
                 "column": 0
+              },
+              "viewState": {
+                "scrollPosition": 541.7888793945312
               }
             }
           ],
-          "activeDocumentId": "memoryDump-bankDump/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex:2"
+          "activeDocumentId": "memoryDump-bankDump/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex:5"
         }
       ]
     }

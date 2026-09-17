@@ -3,6 +3,10 @@ import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-type
 
 import type { NexAnnotationRegionType, NexFileAnnotations } from "../nexAnnotations";
 import {
+  goToDefinitionTarget,
+  type NexGoToDefinitionTarget
+} from "../nexGoToDefinition";
+import {
   actionRange,
   isAnnotationEnabled,
   offsetSpanOf,
@@ -53,6 +57,7 @@ export type NexAnnotationMenuEntry =
     };
 
 export type NexAnnotationMenuAction =
+  | "goto-definition"
   | "manage-labels"
   | "manage-regions"
   | "synopsis"
@@ -181,6 +186,15 @@ function selectWarning(
  * comment rather than "code", and the two whole-bank managers pair up as `M`anage labels and
  * `R`egions, which is why Manage Labels does not take `L` — that is the label dialog itself.
  *
+ * **Go to Definition is the one exception, and takes `Ctrl+F12`.** It is not an annotation command —
+ * it reads rather than edits — and `F12` is what every other IDE binds Go to Definition to, which
+ * the code editor here already follows. Plain `F12` was not available to take: it is the macOS
+ * default for **Step Into** (`shortcuts.stepInto` in `app-menu.ts`), registered as a menu
+ * accelerator, and those fire globally — so a renderer binding would have been dead on macOS and
+ * alive everywhere else, which is worse than an unfamiliar chord. `Ctrl` rather than `Alt` or `Cmd`
+ * for the same reasons the letters avoid them, and it matches the `WinCtrl+F12` Monaco already uses
+ * for the same command in a code editor.
+ *
  * **Shift is the second reading of a letter, not one fixed meaning.** `Shift+C` is the bigger of
  * the two comments — the synopsis block above the line rather than the note beside it — while
  * `Shift+L` is the narrower of the two labels, the one **l**ocal to the bank. Reading Shift as
@@ -192,9 +206,16 @@ export const NEX_ANNOTATION_SHORTCUTS: {
   /** Matched against `KeyboardEvent.key`, case-insensitively. */
   key: string;
   shift: boolean;
+  /**
+   * Whether the literal `Ctrl` key is required — `event.ctrlKey`, which is `Ctrl` on every platform
+   * rather than `Cmd` on macOS. Absent means it must *not* be held, which is what keeps `Ctrl+C`
+   * as copy rather than as the comment shortcut.
+   */
+  ctrl?: boolean;
   /** How the key is written in the menu. */
   hint: string;
 }[] = [
+  { action: "goto-definition", key: "f12", shift: false, ctrl: true, hint: "Ctrl+F12" },
   { action: "comment", key: "c", shift: false, hint: "C" },
   { action: "synopsis", key: "c", shift: true, hint: "Shift+C" },
   { action: "global-label", key: "l", shift: false, hint: "L" },
@@ -213,11 +234,14 @@ export const NEX_ANNOTATION_SHORTCUTS: {
  */
 export function annotationActionForKey(
   key: string,
-  shift: boolean
+  shift: boolean,
+  ctrl = false
 ): NexAnnotationMenuAction | undefined {
   const lowered = key.toLowerCase();
   return NEX_ANNOTATION_SHORTCUTS.find(
-    (entry) => entry.key === lowered && entry.shift === shift
+    // --- Modifiers are matched *exactly*, not as a minimum: a bare-letter entry must refuse a
+    // --- keystroke that holds Ctrl, or Ctrl+C would open the comment dialog instead of copying.
+    (entry) => entry.key === lowered && entry.shift === shift && !!entry.ctrl === ctrl
   )?.action;
 }
 
@@ -254,6 +278,15 @@ function selectMenu(
   });
 
   return [
+    /*
+     * First, and on its own above the editing commands.
+     *
+     * It is the only entry that *reads* rather than edits — it moves the view and changes nothing —
+     * and it is the one a reader following a call chain reaches for most often. Grouping it with the
+     * label commands beneath would file it as an annotation action, which it is not.
+     */
+    item("goto-definition", "Go to Definition", !canGoToDefinition(state)),
+    { kind: "separator" },
     item("manage-labels", "Manage Labels...", !enabled),
     item("manage-regions", "Manage Regions..."),
     { kind: "separator" },
@@ -271,6 +304,51 @@ function selectMenu(
     { kind: "separator" },
     item("clear", "Clear Row Annotations")
   ];
+}
+
+/**
+ * Where "Go to definition" would go from the row a gesture named.
+ *
+ * Exported so the controller acts on exactly the target the menu enabled itself for, rather than
+ * working it out a second time from the same inputs.
+ */
+export function goToDefinitionTargetFor(
+  state: NexAnnotationEditorState,
+  rowIndex?: number
+): NexGoToDefinitionTarget {
+  if (!isAnnotationEnabled(state)) return { kind: "none" };
+  const index = rowIndex ?? state.contextTarget?.rowIndex ?? state.selection?.activeIndex;
+  if (index === undefined) return { kind: "none" };
+
+  return goToDefinitionTarget({
+    annotations: state.annotations,
+    bank: state.env.bank,
+    item: state.items[index],
+    addressOffset: state.env.disassOffset
+  });
+}
+
+/**
+ * Is there a definition this row can jump to?
+ *
+ * Available whenever the definition is in the bank already on screen — that is a scroll, and needs
+ * no machine. A definition outside this bank's window needs the live MMU to say which bank holds
+ * that address, so it is offered only while a machine is running; without one the destination is
+ * unknowable and a command that silently did nothing would be worse than a greyed one.
+ */
+export function canGoToDefinition(
+  state: NexAnnotationEditorState,
+  rowIndex?: number
+): boolean {
+  const target = goToDefinitionTargetFor(state, rowIndex);
+  switch (target.kind) {
+    case "same-bank":
+      return true;
+    case "other-bank":
+      return state.env.machineRunning;
+    default:
+      return false;
+  }
 }
 
 /**

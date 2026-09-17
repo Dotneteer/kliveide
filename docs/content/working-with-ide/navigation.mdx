@@ -1,0 +1,105 @@
+---
+description: "Klive remembers the places you jump to, so Go Back and Go Forward can take you through them again, across source files, the Memory and Disassembly views and popped-out NEX banks."
+---
+
+import { Callout } from 'nextra/components'
+
+# Navigating Back and Forward
+
+Klive remembers the places you jump to. **Go Back** returns to where you were before a jump, and
+**Go Forward** undoes a Go Back, in the same way as a browser or Visual Studio Code. The history
+spans the whole IDE: one list covers every source file, the [Memory View](./memory), the
+[Disassembly View](./disassembly) and the banks you pop out of a NEX file, whichever editor area
+they are in.
+
+## Going Back and Forward
+
+| Action | macOS | Windows and Linux |
+| --- | --- | --- |
+| Go Back | <kbd>Ctrl</kbd>+<kbd>-</kbd> | <kbd>Alt</kbd>+<kbd>←</kbd> |
+| Go Forward | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>-</kbd> | <kbd>Alt</kbd>+<kbd>→</kbd> |
+
+The shortcuts work anywhere in the IDE window, including while you are typing in the code editor.
+The back and forward buttons found on many mice work too.
+
+The same actions are available in three more places:
+
+- **The toolbar.** The first buttons of the IDE toolbar are **Back** and **Forward**. Hover over
+  one to see where it goes (for example, *Back to main.kz80.asm · line 42*). A button is disabled
+  when there is nowhere to go.
+- **The IDE menu.** **IDE &rsaquo; Go** has **Back**, **Forward** and **Clear Navigation History**.
+- **Interactive commands.** [`nav-back`](/commands-reference#nav-back) and
+  [`nav-forward`](/commands-reference#nav-forward), with
+  [`nav-history`](/commands-reference#nav-history) and
+  [`nav-clear`](/commands-reference#nav-clear) beside them.
+
+## The History List
+
+The small arrow between the **Back** and **Forward** buttons opens the history, newest place at the
+top. Each row shows the document, the position in it (a line, or an address), one line of context
+(the source line, for code), and what took you there: *definition*, *output link*, *breakpoint*,
+*tab*, *go to*, *label* or *bank*.
+
+The highlighted row is where you are. Rows above it are the places **Go Forward** would take you
+back to. Click any row to go straight there, or use the arrow keys and <kbd>Enter</kbd>;
+<kbd>Esc</kbd> closes the list. **Clear** empties the history.
+
+## What Klive Remembers
+
+A place is remembered when you **go** somewhere, not when you merely look around:
+
+- **In code:** *Go to Definition* (<kbd>F12</kbd>, or <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+click), opening
+  an `#include` file, clicking a file location in an output pane (a build error, for example), and
+  clicking a source breakpoint in the [Breakpoints View](./breakpoints).
+- **Between documents:** clicking a document tab, choosing a document in the Open Editors panel, and
+  opening a file from the [Project Explorer](./project-explorer).
+- **In the Memory and Disassembly views:** *Go To* an address, and *Go to PC*.
+- **With NEX files:** popping a bank (or the Layer 2 loading screen) out of the NEX viewer, the
+  *Go To* and *Go to PC* actions of a popped-out bank, and following a label — *Go to Definition*
+  on a labelled operand, even into another bank, or *Go To* in the **Labels** and **Regions** lists.
+
+Moving the cursor, scrolling and typing do not add places. Neither does **debugging**: when the
+machine pauses at a breakpoint or after a step, the IDE shows you the code it stopped at, but that is
+the debugger following the program, not you going somewhere. So after a debugging session, **Go
+Back** takes you to where you were before it. The Disassembly view's **Follow PC** is not
+remembered either, for the same reason.
+
+<Callout type="info" emoji="💡">
+Going back returns you to where you **left** a document, not where you arrived. If you jump to a
+definition, scroll down to read the code below it, and jump again, **Go Back** returns to the code you
+were reading.
+</Callout>
+
+## Going Back to a Place That Moved
+
+- **Edited code.** A remembered line follows its code while you edit the file: add ten lines above
+  it, and **Go Back** still lands on the same statement, not ten lines too high.
+- **Closed documents.** Going back to a place in a document you have closed opens the document
+  again. For the Memory and Disassembly views, this also restores the address, the bank and the
+  64K view setting. When you go back to a place in the Disassembly view, Klive turns **Follow PC**
+  off, so that the next step of the machine does not scroll the view away from it.
+- **Popped-out NEX banks.** A closed bank is reopened from its NEX file, at the same address and in
+  the same memory or disassembly listing.
+- **Places that no longer exist.** A place in a file you have deleted, or in a memory dump that cannot
+  be reopened, is dropped from the history when you reach it, and Klive carries on to the next place
+  in the same direction.
+
+The history lasts until you close the project. It is not saved with the project.
+
+## Settings
+
+**IDE &rsaquo; IDE Settings &rsaquo; Record tab switches in the navigation history** decides whether
+clicking a document tab, choosing a document in the Open Editors panel, or opening a file from the
+Project Explorer adds a place. It is on by default. Turn it off if you only want jumps in the history.
+
+To use other shortcuts, set the `shortcuts.navigateBack` and `shortcuts.navigateForward` user
+settings with the [`set`](/commands-reference#set) command. A value names the modifiers and the key
+joined by `+`, for example:
+
+```
+set -u shortcuts.navigateBack "CmdOrCtrl+["
+set -u shortcuts.navigateForward "CmdOrCtrl+]"
+```
+
+`CmdOrCtrl` means <kbd>Cmd</kbd> on macOS and <kbd>Ctrl</kbd> elsewhere. The toolbar tooltips and
+the **Go** menu show the shortcuts in effect.

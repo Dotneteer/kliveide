@@ -461,7 +461,7 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
         // --- address-only breakpoint still ran `nav "undefined" undefined`, and the cursor never
         // --- suggested it was clickable in the first place.
         if (!navigable) return;
-        const command = `nav "${breakpoint.resource}" ${breakpoint.line}`;
+        const command = `nav "${breakpoint.resource}" ${breakpoint.line} -r breakpoint`;
         await ideCommandsService.executeCommand(command);
       }}
     >

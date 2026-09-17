@@ -31,6 +31,9 @@ vi.mock("@renderer/appIde/services/ProjectService", () => ({
 vi.mock("@renderer/appIde/services/ScriptService", () => ({
   createScriptService: () => ({})
 }));
+vi.mock("@renderer/appIde/services/navigationHistoryServiceFactory", () => ({
+  createNavigationHistoryService: () => ({ setAppServices: () => {} })
+}));
 
 import RendererProvider from "@renderer/core/RendererProvider";
 import {

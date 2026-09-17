@@ -1,4 +1,3 @@
-import { CODE_EDITOR } from "@common/state/common-ids";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
@@ -139,9 +138,19 @@ function restoreDocument(
   projectService: IProjectService,
   workspaceSettings: Record<string, any> | undefined
 ): { document: ReturnType<IProjectService["getDocumentShellForProjectNode"]>; viewState?: any } | undefined {
-  if (savedDocument.type === CODE_EDITOR) {
-    if (!savedDocument.id.startsWith(`${projectPath}/`)) return undefined;
-
+  /*
+   * A document backed by a file in the project, whatever editor opens it.
+   *
+   * Keyed on the **path**, not on the saved editor type. Matching `CODE_EDITOR` alone silently
+   * dropped every other file-backed document on restart — the NEX viewer, the DSK and Z80 viewers,
+   * plain text files — because each carries its own editor id. They were saved correctly and then
+   * discarded here, which looked like the workspace forgetting only certain tabs.
+   *
+   * The saved type is deliberately not consulted: the project node carries the editor the file is
+   * associated with *now*, so a changed association reopens the file in the right panel rather than
+   * in whatever was registered when the workspace was last written.
+   */
+  if (savedDocument.id.startsWith(`${projectPath}/`)) {
     const projectNode = projectService.getNodeForFile(savedDocument.id);
     if (!projectNode) return undefined;
 
