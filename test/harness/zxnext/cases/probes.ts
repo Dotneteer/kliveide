@@ -1,5 +1,5 @@
-import { parseColor } from "./colors";
-import { pixelHex, type Frame } from "./frame";
+import { parseColor } from "../core/colors";
+import { pixelHex, type Frame } from "../core/frame";
 
 export type Range = [number, number];
 

@@ -8,7 +8,7 @@
   const { createViteHost } = require("./vite-host.cjs");
   const vite = await createViteHost();
   try {
-    const runner = await vite.ssrLoadModule("/scripts/visual-tests/run.ts");
+    const runner = await vite.ssrLoadModule("/test/harness/zxnext/cli/run.ts");
     await runner.runVisualTestsCli(process.argv.slice(2), vite);
   } catch (error) {
     console.error(error instanceof Error ? error.stack ?? error.message : error);

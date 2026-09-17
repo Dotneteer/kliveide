@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 
-import { FILE_PROVIDER } from "@emu/machines/machine-props";
+import { AUDIO_SAMPLE_RATE, FILE_PROVIDER } from "@emu/machines/machine-props";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import type { IFileProvider } from "@renderer/core/IFileProvider";
@@ -65,7 +65,17 @@ export function assertWasmArtifactFresh(): void {
   }
 }
 
-export async function createCore(core: CoreName): Promise<ZxNextMachine> {
+export type CreateCoreOptions = {
+  /**
+   * Audio sample rate for `getAudioSamples()`. Both cores read it at setup/hard reset, so it has to
+   * be set before `setup()`; without it neither core produces audio samples.
+   */
+  audioSampleRate?: number;
+  /** Hard-reset after setup, as the app's machine start does (`MachineService`). */
+  hardReset?: boolean;
+};
+
+export async function createCore(core: CoreName, options: CreateCoreOptions = {}): Promise<ZxNextMachine> {
   const machine =
     core === "ts"
       ? new ZxNextMachine()
@@ -74,8 +84,18 @@ export async function createCore(core: CoreName): Promise<ZxNextMachine> {
           readArtifact: async () => readFileSync(WASM_ARTIFACT)
         });
   machine.setMachineProperty(FILE_PROVIDER, new HarnessFileProvider());
+  if (options.audioSampleRate) machine.setMachineProperty(AUDIO_SAMPLE_RATE, options.audioSampleRate);
   await machine.setup();
+  // --- The TypeScript core hands the audio rate to its devices only in hardReset().
+  if (options.hardReset || options.audioSampleRate) machine.hardReset();
   return machine;
+}
+
+/** A NextReg's stored value without the port side effects of reading it through $243B/$253B. */
+export function readNextRegDirect(machine: ZxNextMachine, reg: number): number {
+  return machine instanceof ZxNextWasmV2Machine
+    ? machine.wasmV2Runtime!.exports.zxnextGetNextRegisterDirect(reg)
+    : machine.nextRegDevice.directGetRegValue(reg);
 }
 
 export { runDisplayedFrame } from "./frame";

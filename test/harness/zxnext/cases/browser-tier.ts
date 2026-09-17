@@ -3,9 +3,9 @@ import { join } from "node:path";
 import sharp from "sharp";
 import type { ViteDevServer } from "../server/vite-types";
 
-import { frameHash, type Frame } from "./capture";
+import { frameHash, type Frame } from "../core/capture";
 import type { LoadedCase } from "./case";
-import { diffPng } from "./images";
+import { diffPng } from "../core/images";
 import { diffFrames } from "./probes";
 import { writeReviewPrompt } from "./review";
 import { compareGolden, evaluateFrames, framesOf, judge, renderHeadlessFrame, type CaseResult, type CheckResult } from "./run-case";

@@ -3,12 +3,12 @@
  *
  * - Node side: `ssrLoadModule` loads the harness TypeScript (and the emulator/assembler sources it
  *   imports) with the app's path aliases - Tier 1 and the browser-tier server both run this way.
- * - Browser side: its middlewares serve the test page (scripts/visual-tests/browser) as ES modules,
+ * - Browser side: its middlewares serve the test page (test/harness/zxnext/browser) as ES modules,
  *   compiling the same emulator sources for Chrome.
  */
 const { resolve } = require("node:path");
 
-const root = resolve(__dirname, "..", "..");
+const root = resolve(__dirname, "..", "..", "..", "..");
 const alias = (p) => resolve(root, p);
 
 async function createViteHost() {
@@ -17,7 +17,7 @@ async function createViteHost() {
     configFile: false,
     root,
     logLevel: "warn",
-    optimizeDeps: { entries: ["scripts/visual-tests/browser/page.ts"] },
+    optimizeDeps: { entries: ["test/harness/zxnext/browser/page.ts"] },
     resolve: {
       alias: [
         { find: /^lodash$/, replacement: resolve(__dirname, "lodash-shim.ts") },

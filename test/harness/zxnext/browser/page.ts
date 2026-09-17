@@ -3,8 +3,8 @@ import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import { loadNexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFileLoader";
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 
-import { captureFrame, runDisplayedFrame, type Frame } from "../lib/frame";
-import { loadNexDirect } from "../lib/load-nex-direct";
+import { captureFrame, runDisplayedFrame, type Frame } from "../core/frame";
+import { loadNexDirect } from "../core/load-nex-direct";
 import { FrameRunner } from "./frame-runner";
 import { HttpMessenger } from "./http-messenger";
 

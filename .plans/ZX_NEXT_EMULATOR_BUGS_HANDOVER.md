@@ -22,7 +22,7 @@ refuses a stale artifact).
 npm run build:zxnext-wasm                                   # after C changes
 npm run test:visual                                         # headless tier, both cores (~50 s)
 npm run test:visual -- --tier browser                       # WASM in the installed Chrome, real .nexload
-npm test -- --project node test/visual test/wasm test/zxnext test/z80   # ~10,900 tests
+npm test -- --project node test/harness/zxnext test/zxnext-hw test/wasm test/zxnext test/z80   # ~10,900 tests
 npm run build:check                                         # must say "No new type errors"
 ```
 
@@ -44,7 +44,7 @@ At handover the last commit is `43625eae9 wip: Prepare to test Copper`. The fixe
 their tests are **uncommitted** (modified: `PaletteDevice.ts`, `ZxNextMachine.ts`,
 `NextComposedScreenDevice.ts`, `zxnext-copper.c`, `zxnext-cpu.c`, `zxnext-nextreg.c`, `zxnext-ula.c`,
 several `test/zxnext/*.test.ts`, `test/wasm/zxNext/wasm-next-full-matrix.test.ts`,
-`test/visual/harness.test.ts`, case files; new: cases `L01`, `P01`, `P02`). Everything passed at
+`test/harness/zxnext/self-tests/harness.test.ts`, case files; new: cases `L01`, `P01`, `P02`). Everything passed at
 handover: 20/20 visual cases in both tiers, 318 test files / 10,921 tests, no new type errors.
 
 ---

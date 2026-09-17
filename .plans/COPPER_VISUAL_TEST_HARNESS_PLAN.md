@@ -5,6 +5,11 @@ Created: 2026-09-17 · Revised: 2026-09-17 (Tier 2 redesigned: web server + Chro
 Status: Implemented. Tier 1: 17 cases, both cores, ~45 s. Tier 2 (browser): the same 17 cases through a
 real NextZXOS `.nexload` in the installed Chrome, ~45 s. Usage: `.ai/visual-tests-guide.md`.
 
+**Moved 2026-09-17:** the harness is now the general ZX Spectrum Next test harness in
+`test/harness/zxnext/` (see its `README.md`): `scripts/visual-tests/lib/` became `core/` (machines,
+frames, assembler, loader, beam, colours, images) and `cases/` (case runner, oracles, browser tier);
+`run`/`serve` are in `cli/`; the self-tests in `self-tests/`. Paths below that say `lib/` are historical.
+
 ## Goal
 
 Prove that the ZX Spectrum Next **Copper** works *as seen on screen*. A test is a small Z80N program
@@ -69,7 +74,7 @@ No IDE renderer: it only orchestrates, and the page does that itself. No Electro
 - The display file is **not linear**: `$4000 | third<<11 | scanline<<8 | charrow<<5 | column`.
 
 Klive buffer (720×288): paper row r = buffer row 48+r, paper x = buffer x 96+2x
-(`scripts/visual-tests/lib/beam.ts`, calibrated by C00).
+(`test/harness/zxnext/core/beam.ts`, calibrated by C00).
 
 ## Test catalogue (implemented, both tiers)
 
@@ -109,7 +114,7 @@ A known failure (XFAIL) never fails the run; the moment it starts passing it is 
    `EmulatorPanel` does** (`executeMachineFrame` then `renderInstantScreen`).
 4. `run.ts`/`run.cjs` – case discovery, outputs in `.visual-tests/<run>/`.
 5. `lib/probes.ts`, parity, `identical`, known failures, golden hashes; mutation tests in
-   `test/visual/harness.test.ts` prove every oracle fails on a planted defect.
+   `test/harness/zxnext/self-tests/harness.test.ts` prove every oracle fails on a planted defect.
 6. `lib/review.ts` / `lib/golden.ts` – `review.md` (describe → compare → decide), `verdict.json`,
    `--approve`.
 7–9. Cases above; `lib/motion.ts` (linear/sequence/constant/follows), contact sheets.
@@ -118,7 +123,7 @@ A known failure (XFAIL) never fails the run; the moment it starts passing it is 
 
 Each step ended with a check that passed before the next (results in *Result* lines).
 
-**B1. Server + page, direct load.** `scripts/visual-tests/serve.cjs` starts a Vite dev server in
+**B1. Server + page, direct load.** `test/harness/zxnext/cli/serve.cjs` starts a Vite dev server in
 middleware mode (same aliases as Tier 1) plus `/api` routes. `browser/index.html` + `browser/page.ts`
 create the WASM machine (artifact and ROMs fetched from the server), load a case's `.nex` with the
 same direct loader, run frames, paint a canvas.
@@ -183,7 +188,7 @@ Emulator behaviour that disagrees with the hardware, found by the cases above. E
   tact-to-bitmap table (VC 16, HC 96, 2 px per HC). Result: WASM frames are now byte-identical to the TS
   core in C00, C02, C03, C05, C06, C07, C09 and D04; 5548 existing ZX Next tests pass; worst case
   measured (a palette change on each of 192 lines) 1.05 ms/frame vs 0.64 ms without copper. Guarded by
-  raster regression tests in `test/visual/harness.test.ts` (mutation-tested: disabling the catch-up
+  raster regression tests in `test/harness/zxnext/self-tests/harness.test.ts` (mutation-tested: disabling the catch-up
   fails all three). Not raced: mid-frame writes to screen memory.
 - **F2 – Copper horizontal origin and tick rate. FIXED 2026-09-17 (both cores).** The copper was fed
   the raw `hc` (paper x 0 at 144) instead of `hc_ula` (paper x 0 at 12), its line advanced at raw HC 0

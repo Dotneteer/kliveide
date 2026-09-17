@@ -60,12 +60,20 @@ internal link, and asserts the Z80 syntax highlighting actually rendered. The
 last of those exists because a lost grammar leaves every page present and
 merely uncoloured, which no route diff can see.
 
-## Visual Tests
+## ZX Spectrum Next Test Harness
 
-- Pixel-level tests of the ZX Spectrum Next emulator live in `test/visual/` and `scripts/visual-tests/`:
-  `npm run test:visual` (headless, both cores) and `npm run test:visual -- --tier browser` (WASM core in
-  the installed Chrome, real NextZXOS `.nexload`). Read `.ai/visual-tests-guide.md` first; design and
-  findings are in `.plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md`.
+- **Test ZX Spectrum Next hardware behaviour with the harness in `test/harness/zxnext/`; read its
+  `README.md` first.** It runs the real machine (TypeScript and WASM cores) and drives it only through
+  ports, NextRegs, memory, registers, the displayed picture and audio - no mocks.
+  - Scripted tests (`createSession`): any component - Copper, sprites, Layer 2, tilemap, palette,
+    TurboSound, DAC, CTC, DMA, interrupts, MMU. They live in `test/zxnext-hw/<component>/`.
+  - Screen cases (`test/visual/<suite>/<case>/`): pixel tests judged by probes, core parity, goldens
+    and AI review, optionally through real NextZXOS `.nexload` in Chrome - `npm run test:visual`.
+    Read `.ai/visual-tests-guide.md` before writing one.
+- New tests for Next devices use the harness, not device objects or `test/zxnext/TestNextMachine.ts`.
+  When touching an old mock-based test in `test/zxnext/` or `test/wasm/zxNext/`, prefer migrating it
+  (README: "Replacing a mock-based unit test"). Missing a capability? Add a session method
+  (README: "Adding a method"), do not reach into `session.machine`.
 
 ## Current Useful Commands
 

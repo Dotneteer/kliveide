@@ -2,14 +2,15 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
-import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
-import { captureFrame, frameHash, framePng, summarizeRows, type Frame } from "./capture";
+import { captureFrame, frameHash, framePng, summarizeRows, type Frame } from "../core/capture";
 import { READY_REG, READY_VALUE, type CaseSpec, type KnownFailure, type LoadedCase, type OracleName } from "./case";
-import { compileNexFile } from "./compile-nex";
-import { contactSheet, diffPng } from "./images";
-import { loadNexDirect } from "./load-nex-direct";
-import { createCore, runDisplayedFrame, type CoreName } from "./machines";
+import { compileNexFile } from "../core/compile-nex";
+import { contactSheet, diffPng } from "../core/images";
+import { loadNexDirect } from "../core/load-nex-direct";
+import { createCore, readNextRegDirect, runDisplayedFrame, type CoreName } from "../core/machines";
+
+export { readNextRegDirect };
 import { evaluateMotions, motionFrames } from "./motion";
 import { diffFrames, evaluateProbe, probeName } from "./probes";
 import { writeReviewPrompt } from "./review";
@@ -60,12 +61,6 @@ export function framesOf(spec: CaseSpec, long: boolean): { png: number[]; all: S
   const readyBy = spec.readyBy ?? 10;
   const last = Math.max(readyBy, ...all);
   return { png: [...new Set(png)].sort((a, b) => a - b), all, last };
-}
-
-export function readNextRegDirect(machine: ZxNextMachine, reg: number): number {
-  return machine instanceof ZxNextWasmV2Machine
-    ? machine.wasmV2Runtime!.exports.zxnextGetNextRegisterDirect(reg)
-    : machine.nextRegDevice.directGetRegValue(reg);
 }
 
 export function judge(

@@ -3,10 +3,13 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { loadCase, type LoadedCase } from "../../scripts/visual-tests/lib/case";
-import { approveCase } from "../../scripts/visual-tests/lib/golden";
-import { runCase, type CaseResult } from "../../scripts/visual-tests/lib/run-case";
-import { next8ToHex, parseColor, rgb333ToHex } from "../../scripts/visual-tests/lib/colors";
+import { loadCase, type LoadedCase } from "../cases/case";
+import { approveCase } from "../cases/golden";
+import { runCase, type CaseResult } from "../cases/run-case";
+import { next8ToHex, parseColor, rgb333ToHex } from "../core/colors";
+
+/** The visual cases (test/visual/<suite>/<case>/). */
+const VISUAL_CASES = resolve(__dirname, "../../../visual");
 
 /*
  * Mutation tests for the harness itself: each oracle is shown to *fail* on a planted defect, so a
@@ -14,7 +17,7 @@ import { next8ToHex, parseColor, rgb333ToHex } from "../../scripts/visual-tests/
  * the TypeScript core fast.
  */
 
-const T00_DIR = resolve(__dirname, "copper/T00-static-ula");
+const T00_DIR = resolve(VISUAL_CASES, "copper/T00-static-ula");
 const outRoot = () => mkdtempSync(join(tmpdir(), "klive-visual-"));
 
 function t00(mutate?: (c: LoadedCase) => void): LoadedCase {
@@ -155,7 +158,7 @@ describe("visual harness - oracles fail on planted defects", () => {
 
 describe("visual harness - browser tier canvas oracle", () => {
   it("passes a scaled copy of the frame and fails a different picture", async () => {
-    const { compareCanvas } = await import("../../scripts/visual-tests/lib/browser-tier");
+    const { compareCanvas } = await import("../cases/browser-tier");
     const sharp = (await import("sharp")).default;
     const r = await runCase(t00((c) => (c.spec.capture = [20])), { cores: ["wasm"], outRoot: outRoot() });
     const png = readFileSync(join(r.outDir, "wasm/frame-00020.png"));
@@ -199,7 +202,7 @@ describe("WASM raster and active-video-line readback (regression)", () => {
   // --- C11: $68 bit 7 makes the whole ULA layer transparent per pixel, and clearing it restores the ULA.
   for (const id of ["C02-palette-bands", "C03-wait-hpos-staircase", "C04-border-palette", "C07-line-offset", "C09-scroll-per-line", "C10-transparency-per-line", "C11-ula-disable-per-line", "D02-colour-cycle", "D04-line-interrupt", "L01-layer2-transparency", "P01-layer-priorities", "P02-tilemap-merge"]) {
     it(`${id}: WASM passes every probe and matches the TypeScript core`, async () => {
-      const c = loadCase(resolve(__dirname, "copper", id));
+      const c = loadCase(resolve(VISUAL_CASES, "copper", id));
       // --- After the case's ready deadline: a slow setup (L01 fills Layer 2) is not on screen before it.
       c.spec.capture = [Math.max(20, (c.spec.readyBy ?? 10) + 10)];
       c.golden = undefined;

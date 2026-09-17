@@ -4,10 +4,10 @@ import type { AddressInfo } from "node:net";
 import { extname, join, normalize, resolve } from "node:path";
 import type { ViteDevServer } from "./vite-types";
 
-import { REPO_ROOT } from "../lib/machines";
+import { REPO_ROOT } from "../core/machines";
 import { disposeAllSessions, handleApi } from "./api";
 
-const PAGE_DIR = join(REPO_ROOT, "scripts/visual-tests/browser");
+const PAGE_DIR = join(REPO_ROOT, "test/harness/zxnext/browser");
 const PUBLIC_DIR = join(REPO_ROOT, "src/public");
 const WASM = join(REPO_ROOT, "src/emu/machines/zxNext/wasm/dist/zx-spectrum-next.wasm");
 

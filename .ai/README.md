@@ -31,6 +31,10 @@ This folder stores durable notes for future AI-assisted work in this repository.
   author's standing instruction. Write the durable rule, fold it into the
   existing sections, replace what it supersedes, and keep no history: that file
   is a standing brief, not a log.
+- **Before writing any test of ZX Spectrum Next hardware behaviour, read
+  `../test/harness/zxnext/README.md`.** The harness runs the real machine on both cores and scripts it
+  through ports, NextRegs, memory, registers, picture and audio; it replaces mock-based device tests,
+  and says how to add a method it lacks.
 - **Before writing or running visual (pixel) tests of the ZX Spectrum Next, read
   `visual-tests-guide.md`.** Headless (both cores) and browser (WASM core in Chrome, real `.nexload`)
   tiers, how to write a case whose expectations come from the VHDL, and the pitfalls (non-linear

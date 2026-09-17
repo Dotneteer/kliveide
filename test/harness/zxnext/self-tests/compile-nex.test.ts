@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { resolve } from "node:path";
 
-import { compileNexFile } from "../../scripts/visual-tests/lib/compile-nex";
+import { compileNexFile } from "../core/compile-nex";
 
-const T00 = resolve(__dirname, "copper/T00-static-ula/program.asm");
+/** The visual cases (test/visual/<suite>/<case>/). */
+const VISUAL_CASES = resolve(__dirname, "../../../visual");
+
+const T00 = resolve(VISUAL_CASES, "copper/T00-static-ula/program.asm");
 
 describe("visual tests - compile .asm to .nex", () => {
   it("produces a NEX whose header matches the source pragmas", async () => {

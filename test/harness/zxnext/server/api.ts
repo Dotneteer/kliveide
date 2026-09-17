@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { discoverCases } from "../lib/case";
-import { compileNexFile } from "../lib/compile-nex";
-import { REPO_ROOT } from "../lib/machines";
+import { discoverCases } from "../cases/case";
+import { compileNexFile } from "../core/compile-nex";
+import { REPO_ROOT } from "../core/machines";
 import { MAIN_METHODS, SdSession } from "./sd-session";
 
 const sessions = new Map<string, SdSession>();

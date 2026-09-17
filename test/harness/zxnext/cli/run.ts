@@ -1,13 +1,13 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { discoverCases, selectCases } from "./lib/case";
-import { approveCase } from "./lib/golden";
-import { ALL_CORES, assertWasmArtifactFresh, REPO_ROOT, type CoreName } from "./lib/machines";
-import { readVerdict } from "./lib/review";
-import { runCase, type CaseResult } from "./lib/run-case";
-import { launchBrowserTier } from "./lib/browser-tier";
-import type { ViteDevServer } from "./server/vite-types";
+import { discoverCases, selectCases } from "../cases/case";
+import { approveCase } from "../cases/golden";
+import { ALL_CORES, assertWasmArtifactFresh, REPO_ROOT, type CoreName } from "../core/machines";
+import { readVerdict } from "../cases/review";
+import { runCase, type CaseResult } from "../cases/run-case";
+import { launchBrowserTier } from "../cases/browser-tier";
+import type { ViteDevServer } from "../server/vite-types";
 
 type Options = {
   filters: string[];

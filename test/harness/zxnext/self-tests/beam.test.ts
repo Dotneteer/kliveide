@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { copperLineToBufferRow, displayFileAddress, waitHToBufferX } from "../../scripts/visual-tests/lib/beam";
+import { copperLineToBufferRow, displayFileAddress, waitHToBufferX } from "../core/beam";
 
 describe("visual harness - beam mapping", () => {
   it("maps copper lines to buffer rows (C00 calibration: cvc 96 -> row 144)", () => {

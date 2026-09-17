@@ -7,7 +7,7 @@
   const vite = await createViteHost();
   const portArg = process.argv.indexOf("--port");
   const port = portArg > 0 ? Number(process.argv[portArg + 1]) : 5177;
-  const server = await vite.ssrLoadModule("/scripts/visual-tests/server/http.ts");
+  const server = await vite.ssrLoadModule("/test/harness/zxnext/server/http.ts");
   const { url } = await server.startVisualServer(vite, { port });
   console.log(`Visual test server: ${url}`);
   console.log("Press Ctrl+C to stop.");

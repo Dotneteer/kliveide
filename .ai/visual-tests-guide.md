@@ -3,6 +3,9 @@
 Pixel-level tests of what the emulator *shows*: a Z80N program (`.savenex`) runs for known frames, the
 frames are saved as PNG and judged by probes, parity and an AI review. Built first for the Copper.
 Design, hardware facts and the findings so far: `.plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md`.
+The cases run on the ZX Spectrum Next test harness (`test/harness/zxnext/`, see its `README.md`); for
+tests that assert on registers, ports, memory or audio rather than whole pictures, use its scripted
+sessions instead.
 
 ## Commands
 
@@ -15,7 +18,7 @@ npm run test:visual -- --tier browser       # Tier 2: cases tagged "browser", in
 npm run test:visual -- --tier browser --headed
 npm run visual:serve                        # interactive: open http://127.0.0.1:5177/ in Chrome
 npm run test:visual -- --approve C02        # lock in hashes after a pass verdict (add --tier browser)
-npm test -- --project node test/visual      # the harness's own tests (mutation tests of every oracle,
+npm test -- --project node test/harness/zxnext  # the harness's own tests (mutation tests of every oracle,
                                             # and raster/$1F/WAIT-H/border/$68/$14/line-interrupt/Layer 2/compositing regressions)
 ```
 
@@ -25,8 +28,8 @@ these instead of counting pixels), contact sheets, `motion-*.json`, `result.json
 
 ## The two tiers
 
-- **Tier 1 (headless)** - `scripts/visual-tests/run.ts` under Vite SSR. Both cores in-process, a
-  **test-only direct NEX loader** (`lib/load-nex-direct.ts`), exact frame numbers from load.
+- **Tier 1 (headless)** - `test/harness/zxnext/cli/run.ts` under Vite SSR. Both cores in-process, a
+  **test-only direct NEX loader** (`core/load-nex-direct.ts`), exact frame numbers from load.
 - **Tier 2 (browser)** - `server/` plays the main process (assembler, SD card, files); `browser/page.ts`
   runs the production WASM core in Chrome. It boots NextZXOS from a **clone** of `~/Klive/ks2.cim`
   (the real image is never written; the run checks its mtime) and runs the app's own
@@ -59,7 +62,7 @@ must come first. Mid-frame *memory* writes are not raced (the region renders wit
 - A setup that takes longer than 10 frames needs `readyBy` in `case.json`.
 - Signal ready with `SignalReady()` (`$A5` → NextReg `$7F`) once the picture is set up.
 - The display file is **not linear**: pixel row y is at `$4000 | third<<11 | scanline<<8 | charrow<<5`
-  (ROM PIXEL-ADD). `lib/beam.ts` has `displayFileAddress`.
+  (ROM PIXEL-ADD). `core/beam.ts` has `displayFileAddress`.
 - Sync once per frame with `WaitCvc` on an invisible copper line (250) - no interrupts needed. For IM2,
   fill all 257 table bytes with one value (the vector at `I:$FF` straddles a pair).
 - A label alone on a line binds to the next statement, even `.org` - use `Label .equ $` for end markers.
@@ -92,8 +95,8 @@ never approved; `verdict.json` may carry per-core verdicts (`cores: { ts: "pass"
 
 ## Browser tier internals
 
-- `vite-host.cjs` is the single Vite instance: SSR for Node code, middleware for the page. Aliases
-  mirror `build/electron.vite.config.ts`; `lodash` is aliased to `lodash-shim.ts` because Vite's SSR
+- `cli/vite-host.cjs` is the single Vite instance: SSR for Node code, middleware for the page. Aliases
+  mirror `build/electron.vite.config.ts`; `lodash` is aliased to `cli/lodash-shim.ts` because Vite's SSR
   runner rejects named imports from CommonJS lodash.
 - `browser/http-messenger.ts` answers `createMainApi(messenger)` over `POST /api/session/:id/main/:method`,
   so `processFrameCommand` (SD sector I/O) and `getCodeInjectionFlow` run unchanged. Byte arrays travel

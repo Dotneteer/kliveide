@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { CoreName } from "./machines";
+import type { CoreName } from "../core/machines";
 import type { MotionSpec } from "./motion";
 import type { Probe } from "./probes";
 
