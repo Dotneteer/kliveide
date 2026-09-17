@@ -14,8 +14,9 @@ static uint8_t zxnextCopperVerticalLineOffset;
 // Beam tracking
 //
 // The WASM core has no per-tact raster of its own: `zxnextFrameExecute` only runs CPU
-// instructions and the picture is produced whole-frame by `zxnextUlaRenderInstantScreen`.
-// A copper is a beam-position device, so it needs one. These counters mirror
+// instructions, and the picture is drawn lazily by the beam-racing raster in zxnext-ula.c
+// (a copper MOVE catches the raster up to zxnextCopperFrameTact before it writes).
+// A copper is a beam-position device, so it needs its own beam counters. These counters mirror
 // `_copperCurrentLine` / `_copperCurrentColumn` in `ZxNextMachine.onTactIncremented`
 // exactly — same ULA tact domain (`currentFrameTact`), same per-frame reset — so the two
 // cores stay comparable.
@@ -157,7 +158,10 @@ static void zxnextCopperExecuteTick(uint32_t cvc, uint32_t hc) {
   if (zxnextCopperDout) {
     uint32_t reg = (zxnextCopperListData >> 8u) & 0x7fu;
     uint32_t val = zxnextCopperListData & 0xffu;
+    // --- The copper lags the CPU: the write happens at the copper's tact, not currentFrameTact.
+    zxnextNextRegWriteTactOverride = zxnextCopperFrameTact;
     zxnextNextRegSetDirect(reg, val);
+    zxnextNextRegWriteTactOverride = 0xffffffffu;
     zxnextCopperDout = 0u;
     return;
   }

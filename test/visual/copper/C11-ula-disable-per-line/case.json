@@ -1,0 +1,139 @@
+{
+  "id": "C11-ula-disable-per-line",
+  "title": "Per-line ULA disable ($68 bit 7) shows the fallback colour, border included",
+  "capture": [
+    50,
+    100,
+    200
+  ],
+  "longCapture": [
+    1000
+  ],
+  "expectIdenticalFrames": true,
+  "tiers": [
+    "headless",
+    "browser"
+  ],
+  "probes": [
+    {
+      "name": "top border (still disabled from the previous frame)",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        0,
+        47
+      ],
+      "rgb": "next8:0xE0"
+    },
+    {
+      "name": "left border, enabled rows",
+      "kind": "rect",
+      "x": [
+        0,
+        95
+      ],
+      "y": [
+        49,
+        144
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "right border, enabled rows",
+      "kind": "rect",
+      "x": [
+        608,
+        719
+      ],
+      "y": [
+        48,
+        143
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "paper, enabled rows",
+      "kind": "rect",
+      "x": [
+        96,
+        607
+      ],
+      "y": [
+        48,
+        143
+      ],
+      "rgb": "next8:0x00"
+    },
+    {
+      "name": "row 144 from paper x 0",
+      "kind": "rect",
+      "x": [
+        100,
+        719
+      ],
+      "y": [
+        144,
+        144
+      ],
+      "rgb": "next8:0xE0"
+    },
+    {
+      "name": "disabled rows",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        145,
+        287
+      ],
+      "rgb": "next8:0xE0"
+    }
+  ],
+  "knownFailures": [
+    {
+      "oracle": "probes",
+      "reason": "TS: once $68 bit 7 is set the ULA render path is skipped and never re-samples the bit, so the ULA cannot be re-enabled mid-frame or in later frames. Findings F5.",
+      "core": "ts",
+      "name": "left border, enabled rows"
+    },
+    {
+      "oracle": "probes",
+      "reason": "TS: once $68 bit 7 is set the ULA render path is skipped and never re-samples the bit, so the ULA cannot be re-enabled mid-frame or in later frames. Findings F5.",
+      "core": "ts",
+      "name": "right border, enabled rows"
+    },
+    {
+      "oracle": "probes",
+      "reason": "TS: once $68 bit 7 is set the ULA render path is skipped and never re-samples the bit, so the ULA cannot be re-enabled mid-frame or in later frames. Findings F5.",
+      "core": "ts",
+      "name": "paper, enabled rows"
+    },
+    {
+      "oracle": "probes",
+      "reason": "WASM: $68 bit 7 keeps a border-only frame instead of showing the $4A fallback colour. Findings F5.",
+      "core": "wasm",
+      "name": "top border (still disabled from the previous frame)"
+    },
+    {
+      "oracle": "probes",
+      "reason": "WASM: $68 bit 7 keeps a border-only frame instead of showing the $4A fallback colour. Findings F5.",
+      "core": "wasm",
+      "name": "row 144 from paper x 0"
+    },
+    {
+      "oracle": "probes",
+      "reason": "WASM: $68 bit 7 keeps a border-only frame instead of showing the $4A fallback colour. Findings F5.",
+      "core": "wasm",
+      "name": "disabled rows"
+    },
+    {
+      "oracle": "parity",
+      "reason": "The cores differ wherever one of this case's known failures applies to only one core."
+    }
+  ]
+}

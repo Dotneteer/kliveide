@@ -79,6 +79,9 @@ static uint32_t zxnextNextRegGetValue(void) {
 
 static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   uint32_t normalized = reg & 0xffu;
+  if (zxnextRasterIsVideoNextReg(normalized)) {
+    zxnextRasterCatchUp(zxnextNextRegWriteTactOverride != 0xffffffffu ? zxnextNextRegWriteTactOverride : currentFrameTact);
+  }
   if (zxnextInterruptsHandlesNextRegister(reg)) {
     zxnextInterruptsSetNextRegister(reg, value);
     zxnextNextRegs[reg & 0xffu] = (uint8_t)zxnextInterruptsGetNextRegister(reg);

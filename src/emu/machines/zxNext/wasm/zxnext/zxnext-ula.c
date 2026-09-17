@@ -29,6 +29,23 @@
 #define ZXNEXT_LORES_BANK_05_OFFSET 0x054000u
 #define ZXNEXT_BANK_07_OFFSET 0x05c000u
 
+/*
+ * Where the renderers draw, and which buffer rows they may touch.
+ *
+ * The whole-frame renderers below draw the picture from the *current* register and memory state.
+ * By default they draw the whole of `zxnextPixelBuffer` (what `zxnextRenderInstantScreen` does).
+ * The raster (see "Beam-racing raster" at the end of this file) points them at a scratch buffer and
+ * a narrow row window, so a mid-frame state change - a copper MOVE, a palette write, a border OUT -
+ * only affects the pixels the beam draws after it.
+ */
+static uint32_t* zxnextRenderTarget = zxnextPixelBuffer;
+static uint32_t zxnextRenderRowFirst = 0u;
+static uint32_t zxnextRenderRowLast = ZXNEXT_SCREEN_HEIGHT - 1u;
+
+static inline uint32_t zxnextRenderRowOff(uint32_t bufferRow) {
+  return bufferRow < zxnextRenderRowFirst || bufferRow > zxnextRenderRowLast;
+}
+
 static uint8_t ulaFlashCounter;
 static uint8_t ulaFlashFlag;
 static uint8_t ulaScrollX;
@@ -181,8 +198,9 @@ static inline uint32_t zxnextUlaLoResWrappedY(uint32_t y) {
 static void zxnextUlaRenderStandardScreen(void) {
   uint32_t fallbackPixel = zxnextUlaFallbackColor();
   for (uint32_t y = 0; y < ZXNEXT_STANDARD_SCREEN_HEIGHT; y++) {
+    if (zxnextRenderRowOff(ZXNEXT_STANDARD_SCREEN_Y + y)) continue;
     uint32_t outputOffset = (ZXNEXT_STANDARD_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_STANDARD_SCREEN_X;
-    uint32_t previousPixel = zxnextPixelBuffer[outputOffset - 1u];
+    uint32_t previousPixel = zxnextRenderTarget[outputOffset - 1u];
     for (uint32_t xByte = 0; xByte < 32u; xByte++) {
       uint32_t logicalX = xByte * 8u;
       uint32_t sourceY = (y + ulaScrollY) % ZXNEXT_STANDARD_SCREEN_HEIGHT;
@@ -192,12 +210,12 @@ static void zxnextUlaRenderStandardScreen(void) {
         uint32_t pixelOffset = outputPixel + bit * ZXNEXT_STANDARD_SCREEN_SCALE_X;
         if (zxnextUlaIsClipped(x, y)) {
           if (ulaHalfPixelScroll) {
-            zxnextPixelBuffer[pixelOffset] = previousPixel;
-            zxnextPixelBuffer[pixelOffset + 1u] = fallbackPixel;
+            zxnextRenderTarget[pixelOffset] = previousPixel;
+            zxnextRenderTarget[pixelOffset + 1u] = fallbackPixel;
             previousPixel = fallbackPixel;
           } else {
-            zxnextPixelBuffer[pixelOffset] = fallbackPixel;
-            zxnextPixelBuffer[pixelOffset + 1u] = fallbackPixel;
+            zxnextRenderTarget[pixelOffset] = fallbackPixel;
+            zxnextRenderTarget[pixelOffset + 1u] = fallbackPixel;
           }
           continue;
         }
@@ -208,12 +226,12 @@ static void zxnextUlaRenderStandardScreen(void) {
         uint32_t mask = 0x80u >> (sourceX & 0x07u);
         uint32_t pixel = zxnextUlaPaletteColor(zxnextUlaAttrPaletteIndex(attr, (pixels & mask) != 0u));
         if (ulaHalfPixelScroll) {
-          zxnextPixelBuffer[pixelOffset] = previousPixel;
-          zxnextPixelBuffer[pixelOffset + 1u] = pixel;
+          zxnextRenderTarget[pixelOffset] = previousPixel;
+          zxnextRenderTarget[pixelOffset + 1u] = pixel;
           previousPixel = pixel;
         } else {
-          zxnextPixelBuffer[pixelOffset] = pixel;
-          zxnextPixelBuffer[pixelOffset + 1u] = pixel;
+          zxnextRenderTarget[pixelOffset] = pixel;
+          zxnextRenderTarget[pixelOffset + 1u] = pixel;
         }
       }
     }
@@ -225,13 +243,14 @@ static void zxnextUlaRenderHiResScreen(void) {
   uint32_t inkPixel = zxnextUlaHiResInkColor();
   uint32_t paperPixel = zxnextUlaHiResPaperColor();
   for (uint32_t y = 0; y < ZXNEXT_STANDARD_SCREEN_HEIGHT; y++) {
+    if (zxnextRenderRowOff(ZXNEXT_STANDARD_SCREEN_Y + y)) continue;
     uint32_t outputOffset = (ZXNEXT_STANDARD_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_STANDARD_SCREEN_X;
     uint32_t sourceY = (y + ulaScrollY) % ZXNEXT_STANDARD_SCREEN_HEIGHT;
     for (uint32_t x = 0; x < ZXNEXT_STANDARD_SCREEN_OUTPUT_WIDTH; x++) {
       uint32_t logicalX = x >> 1u;
       uint32_t pixelOffset = outputOffset + x;
       if (zxnextUlaIsClipped(logicalX, y)) {
-        zxnextPixelBuffer[pixelOffset] = fallbackPixel;
+        zxnextRenderTarget[pixelOffset] = fallbackPixel;
         continue;
       }
       uint32_t sourceX = (x + ((uint32_t)ulaScrollX << 1u)) & 0x1ffu;
@@ -243,7 +262,7 @@ static void zxnextUlaRenderHiResScreen(void) {
       }
       uint8_t pixels = (uint8_t)zxnextMemoryReadScreenOffset(pixelAddr);
       uint32_t mask = 0x80u >> (pixelInWord & 0x07u);
-      zxnextPixelBuffer[pixelOffset] = (pixels & mask) ? inkPixel : paperPixel;
+      zxnextRenderTarget[pixelOffset] = (pixels & mask) ? inkPixel : paperPixel;
     }
   }
 }
@@ -257,13 +276,14 @@ static void zxnextUlaRenderLoResScreen(void) {
   uint32_t radastanDFile = ((portTimexValue & 0x01u) != 0u) ^ ((zxnextLayer2GetNextReg(0x6au) & 0x10u) != 0u);
 
   for (uint32_t y = 0; y < ZXNEXT_STANDARD_SCREEN_HEIGHT; y++) {
+    if (zxnextRenderRowOff(ZXNEXT_STANDARD_SCREEN_Y + y)) continue;
     uint32_t outputOffset = (ZXNEXT_STANDARD_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_STANDARD_SCREEN_X;
     uint32_t sourceY = zxnextUlaLoResWrappedY(y + scrollY);
     for (uint32_t x = 0; x < ZXNEXT_STANDARD_SCREEN_OUTPUT_WIDTH; x++) {
       uint32_t displayX = x >> 1u;
       uint32_t pixelOffset = outputOffset + x;
       if (zxnextUlaIsClipped(displayX, y)) {
-        zxnextPixelBuffer[pixelOffset] = fallbackPixel;
+        zxnextRenderTarget[pixelOffset] = fallbackPixel;
         continue;
       }
 
@@ -280,7 +300,7 @@ static void zxnextUlaRenderLoResScreen(void) {
         uint32_t nibble = (sourceX & 0x02u) ? (block & 0x0fu) : ((block >> 4u) & 0x0fu);
         paletteIndex = ((paletteOffset & 0x0fu) << 4u) | nibble;
       }
-      zxnextPixelBuffer[pixelOffset] = zxnextUlaPaletteColor(paletteIndex);
+      zxnextRenderTarget[pixelOffset] = zxnextUlaPaletteColor(paletteIndex);
     }
   }
 }
@@ -288,6 +308,7 @@ static void zxnextUlaRenderLoResScreen(void) {
 static void zxnextUlaRenderHiColorScreen(void) {
   uint32_t fallbackPixel = zxnextUlaFallbackColor();
   for (uint32_t y = 0; y < ZXNEXT_STANDARD_SCREEN_HEIGHT; y++) {
+    if (zxnextRenderRowOff(ZXNEXT_STANDARD_SCREEN_Y + y)) continue;
     uint32_t outputOffset = (ZXNEXT_STANDARD_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_STANDARD_SCREEN_X;
     uint32_t sourceY = (y + ulaScrollY) % ZXNEXT_STANDARD_SCREEN_HEIGHT;
     for (uint32_t xByte = 0; xByte < 32u; xByte++) {
@@ -297,8 +318,8 @@ static void zxnextUlaRenderHiColorScreen(void) {
         uint32_t x = logicalX + bit;
         uint32_t pixelOffset = outputPixel + bit * ZXNEXT_STANDARD_SCREEN_SCALE_X;
         if (zxnextUlaIsClipped(x, y)) {
-          zxnextPixelBuffer[pixelOffset] = fallbackPixel;
-          zxnextPixelBuffer[pixelOffset + 1u] = fallbackPixel;
+          zxnextRenderTarget[pixelOffset] = fallbackPixel;
+          zxnextRenderTarget[pixelOffset + 1u] = fallbackPixel;
           continue;
         }
         uint32_t sourceX = (x + ulaScrollX) & 0xffu;
@@ -308,8 +329,8 @@ static void zxnextUlaRenderHiColorScreen(void) {
         uint8_t attr = (uint8_t)zxnextMemoryReadScreenOffset(0x2000u | pixelAddr);
         uint32_t mask = 0x80u >> (sourceX & 0x07u);
         uint32_t pixel = zxnextUlaPaletteColor(zxnextUlaAttrPaletteIndex(attr, (pixels & mask) != 0u));
-        zxnextPixelBuffer[pixelOffset] = pixel;
-        zxnextPixelBuffer[pixelOffset + 1u] = pixel;
+        zxnextRenderTarget[pixelOffset] = pixel;
+        zxnextRenderTarget[pixelOffset + 1u] = pixel;
       }
     }
   }
@@ -349,6 +370,7 @@ static void zxnextUlaRenderLayer2_256x192Screen(void) {
   uint32_t transparentIndex = zxnextNextRegs[0x4bu];
 
   for (uint32_t y = 0; y < ZXNEXT_STANDARD_SCREEN_HEIGHT; y++) {
+    if (zxnextRenderRowOff(ZXNEXT_STANDARD_SCREEN_Y + y)) continue;
     if (y < clipY1 || y > clipY2) continue;
     uint32_t sourceY = zxnextUlaLayer2WrappedY(y + scrollY);
     uint32_t outputOffset = (ZXNEXT_STANDARD_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_STANDARD_SCREEN_X;
@@ -361,7 +383,7 @@ static void zxnextUlaRenderLayer2_256x192Screen(void) {
       uint32_t highNibble = ((pixelValue >> 4u) + paletteOffset) & 0x0fu;
       uint32_t paletteIndex = (highNibble << 4u) | (pixelValue & 0x0fu);
       if (paletteIndex == transparentIndex) continue;
-      zxnextPixelBuffer[outputOffset + x] = zxnextUlaLayer2PaletteColor(paletteIndex);
+      zxnextRenderTarget[outputOffset + x] = zxnextUlaLayer2PaletteColor(paletteIndex);
     }
   }
 }
@@ -380,6 +402,7 @@ static void zxnextUlaRenderLayer2_320x256Screen(void) {
   uint32_t transparentIndex = zxnextNextRegs[0x4bu];
 
   for (uint32_t y = 0; y < ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT; y++) {
+    if (zxnextRenderRowOff(ZXNEXT_LAYER2_WIDE_SCREEN_Y + y)) continue;
     if (y < clipY1 || y > clipY2) continue;
     uint32_t sourceY = (y + scrollY) & 0xffu;
     uint32_t outputOffset = (ZXNEXT_LAYER2_WIDE_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_LAYER2_WIDE_SCREEN_X;
@@ -392,7 +415,7 @@ static void zxnextUlaRenderLayer2_320x256Screen(void) {
       uint32_t highNibble = ((pixelValue >> 4u) + paletteOffset) & 0x0fu;
       uint32_t paletteIndex = (highNibble << 4u) | (pixelValue & 0x0fu);
       if (paletteIndex == transparentIndex) continue;
-      zxnextPixelBuffer[outputOffset + x] = zxnextUlaLayer2PaletteColor(paletteIndex);
+      zxnextRenderTarget[outputOffset + x] = zxnextUlaLayer2PaletteColor(paletteIndex);
     }
   }
 }
@@ -411,6 +434,7 @@ static void zxnextUlaRenderLayer2_640x256Screen(void) {
   uint32_t transparentIndex = zxnextNextRegs[0x4bu];
 
   for (uint32_t y = 0; y < ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT; y++) {
+    if (zxnextRenderRowOff(ZXNEXT_LAYER2_WIDE_SCREEN_Y + y)) continue;
     if (y < clipY1 || y > clipY2) continue;
     uint32_t sourceY = (y + scrollY) & 0xffu;
     uint32_t outputOffset = (ZXNEXT_LAYER2_WIDE_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_LAYER2_WIDE_SCREEN_X;
@@ -423,12 +447,12 @@ static void zxnextUlaRenderLayer2_640x256Screen(void) {
 
       uint32_t paletteIndex1 = (paletteOffset << 4u) | ((pixelByte >> 4u) & 0x0fu);
       if (paletteIndex1 != transparentIndex) {
-        zxnextPixelBuffer[outputPixel] = zxnextUlaLayer2PaletteColor(paletteIndex1);
+        zxnextRenderTarget[outputPixel] = zxnextUlaLayer2PaletteColor(paletteIndex1);
       }
 
       uint32_t paletteIndex2 = (paletteOffset << 4u) | (pixelByte & 0x0fu);
       if (paletteIndex2 != transparentIndex) {
-        zxnextPixelBuffer[outputPixel + 1u] = zxnextUlaLayer2PaletteColor(paletteIndex2);
+        zxnextRenderTarget[outputPixel + 1u] = zxnextUlaLayer2PaletteColor(paletteIndex2);
       }
     }
   }
@@ -672,6 +696,7 @@ static void zxnextUlaProcessSprites(uint32_t drawPixels, uint32_t detectCollisio
     for (uint32_t py = 0u; py < height; py++) {
       int32_t displayY = spriteY + (int32_t)py;
       if (displayY < 0 || displayY >= (int32_t)ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT) continue;
+      if (drawPixels && !detectCollisions && zxnextRenderRowOff(ZXNEXT_LAYER2_WIDE_SCREEN_Y + (uint32_t)displayY)) continue;
       /*
        * Clipping applies to what is *shown*, not to what the sprite engine writes: the FPGA fills its
        * line buffer for the whole 320-pixel line and clips on output. Collisions are detected on the
@@ -714,8 +739,8 @@ static void zxnextUlaProcessSprites(uint32_t drawPixels, uint32_t detectCollisio
         if (!drawPixels || rowClipped || displayX < (int32_t)clipX1 || displayX > (int32_t)clipX2) continue;
         uint32_t outputPixel = outputOffset + ((uint32_t)displayX << 1u);
         uint32_t color = zxnextUlaSpritePaletteColor(paletteIndex);
-        zxnextPixelBuffer[outputPixel] = color;
-        zxnextPixelBuffer[outputPixel + 1u] = color;
+        zxnextRenderTarget[outputPixel] = color;
+        zxnextRenderTarget[outputPixel + 1u] = color;
       }
     }
   }
@@ -763,8 +788,8 @@ static void zxnextUlaRenderTilemapTextPixelPair(
   if (clipped || belowUla) return;
   if (zxnextUlaTilemapTextTransparent(zxnextPaletteGetTilemapEntry(paletteIndex))) return;
   uint32_t color = zxnextUlaTilemapPaletteColor(paletteIndex);
-  zxnextPixelBuffer[outputOffset] = color;
-  zxnextPixelBuffer[outputOffset + 1u] = color;
+  zxnextRenderTarget[outputOffset] = color;
+  zxnextRenderTarget[outputOffset + 1u] = color;
 }
 
 static void zxnextUlaRenderTilemapText_40x32Screen(void) {
@@ -797,6 +822,7 @@ static void zxnextUlaRenderTilemapText_40x32Screen(void) {
   uint32_t sampledTile512Mode = tile512Mode;
 
   for (uint32_t y = 0; y < ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT; y++) {
+    if (zxnextRenderRowOff(ZXNEXT_LAYER2_WIDE_SCREEN_Y + y)) continue;
     uint32_t sourceY = (y + scrollY) & 0xffu;
     for (int32_t displayX = -8; displayX < 320; displayX++) {
       if (displayX >= 0 && ((((uint32_t)displayX) & 0x07u) == 0u)) {
@@ -883,6 +909,7 @@ static void zxnextUlaRenderTilemapText_80x32Screen(void) {
   uint32_t sampledTile512Mode = tile512Mode;
 
   for (uint32_t y = 0; y < ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT; y++) {
+    if (zxnextRenderRowOff(ZXNEXT_LAYER2_WIDE_SCREEN_Y + y)) continue;
     uint32_t sourceY = (y + scrollY) & 0xffu;
     for (int32_t displayClockX = -8; displayClockX < 320; displayClockX++) {
       if (displayClockX >= 0 && ((((uint32_t)displayClockX) & 0x03u) == 0u)) {
@@ -938,7 +965,7 @@ static void zxnextUlaRenderTilemapText_80x32Screen(void) {
       uint32_t paletteIndex1 = (((tileAttr >> 1u) << 1u) | pixelValue1) & 0xffu;
       uint32_t clipped1 = clippedY || ((uint32_t)displayClockX < clipX1) || ((uint32_t)displayClockX > clipX2);
       if (!clipped1 && !belowUla && !zxnextUlaTilemapTextTransparent(zxnextPaletteGetTilemapEntry(paletteIndex1))) {
-        zxnextPixelBuffer[outputOffset] = zxnextUlaTilemapPaletteColor(paletteIndex1);
+        zxnextRenderTarget[outputOffset] = zxnextUlaTilemapPaletteColor(paletteIndex1);
       }
 
       uint32_t pixelValue2 = current[bufferPosition++ & 0x07u];
@@ -946,7 +973,7 @@ static void zxnextUlaRenderTilemapText_80x32Screen(void) {
       uint32_t displayX2 = (uint32_t)displayClockX + 1u;
       uint32_t clipped2 = clippedY || displayX2 < clipX1 || displayX2 > clipX2;
       if (!clipped2 && !belowUla && !zxnextUlaTilemapTextTransparent(zxnextPaletteGetTilemapEntry(paletteIndex2))) {
-        zxnextPixelBuffer[outputOffset + 1u] = zxnextUlaTilemapPaletteColor(paletteIndex2);
+        zxnextRenderTarget[outputOffset + 1u] = zxnextUlaTilemapPaletteColor(paletteIndex2);
       }
     }
   }
@@ -970,6 +997,7 @@ static void zxnextUlaRenderTilemap_40x32Screen(void) {
   uint32_t clipY2 = zxnextTilemapGetClip(3);
 
   for (uint32_t y = 0; y < ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT; y++) {
+    if (zxnextRenderRowOff(ZXNEXT_LAYER2_WIDE_SCREEN_Y + y)) continue;
     if (y < clipY1 || y > clipY2) continue;
     uint32_t sourceY = (y + scrollY) & 0xffu;
     uint32_t tileY = sourceY >> 3u;
@@ -1007,7 +1035,7 @@ static void zxnextUlaRenderTilemap_40x32Screen(void) {
       if ((pixelValue & 0x0fu) == transparentIndex) continue;
 
       uint32_t paletteIndex = (((attr >> 4u) << 4u) | pixelValue) & 0xffu;
-      zxnextPixelBuffer[outputOffset + x] = zxnextUlaTilemapPaletteColor(paletteIndex);
+      zxnextRenderTarget[outputOffset + x] = zxnextUlaTilemapPaletteColor(paletteIndex);
     }
   }
 }
@@ -1030,6 +1058,7 @@ static void zxnextUlaRenderTilemap_80x32Screen(void) {
   uint32_t clipY2 = zxnextTilemapGetClip(3);
 
   for (uint32_t y = 0; y < ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT; y++) {
+    if (zxnextRenderRowOff(ZXNEXT_LAYER2_WIDE_SCREEN_Y + y)) continue;
     if (y < clipY1 || y > clipY2) continue;
     uint32_t sourceY = (y + scrollY) & 0xffu;
     uint32_t tileY = sourceY >> 3u;
@@ -1067,7 +1096,7 @@ static void zxnextUlaRenderTilemap_80x32Screen(void) {
       if ((pixelValue & 0x0fu) == transparentIndex) continue;
 
       uint32_t paletteIndex = (((attr >> 4u) << 4u) | pixelValue) & 0xffu;
-      zxnextPixelBuffer[outputOffset + x] = zxnextUlaTilemapPaletteColor(paletteIndex);
+      zxnextRenderTarget[outputOffset + x] = zxnextUlaTilemapPaletteColor(paletteIndex);
     }
   }
 }
@@ -1075,8 +1104,8 @@ static void zxnextUlaRenderTilemap_80x32Screen(void) {
 static uint32_t zxnextUlaRenderInstantScreen(void) {
   uint32_t timexMode = portTimexValue & 0x07u;
   uint32_t borderPixel = timexMode >= 0x04u ? zxnextUlaHiResPaperColor() : zxnextUlaColor(borderColor, 0u);
-  for (uint32_t i = 0; i < ZXNEXT_PIXEL_COUNT; i++) {
-    zxnextPixelBuffer[i] = borderPixel;
+  for (uint32_t i = zxnextRenderRowFirst * ZXNEXT_SCREEN_WIDTH; i < (zxnextRenderRowLast + 1u) * ZXNEXT_SCREEN_WIDTH; i++) {
+    zxnextRenderTarget[i] = borderPixel;
   }
   if (ulaDisableOutput) {
     /* Keep border-only frame; ULA output is disabled before later layers compose. */
@@ -1187,4 +1216,101 @@ static uint32_t zxnextUlaGetScanlineForTact(uint32_t tact) {
 
 static uint32_t zxnextUlaGetColumnForTact(uint32_t tact) {
   return (tact % ZXNEXT_RENDERING_TACTS_IN_FRAME) % ZXNEXT_SCREEN_TOTAL_HC;
+}
+
+// ---------------------------------------------------------------------------
+// Beam-racing raster
+//
+// The picture used to be produced only by zxnextRenderInstantScreen, once, from end-of-frame state,
+// so anything that changed mid-frame - copper MOVEs, palette writes, border colour changes, per-line
+// scroll - was invisible: the whole frame showed the last value. (The TypeScript core renders tact
+// by tact and never had this problem.)
+//
+// The raster keeps the renderers but calls them lazily: just before a write that changes what the
+// screen shows, it renders the pixels the beam has drawn since the previous such write - with the
+// state *before* the write - and at frame completion it renders the rest. A frame with no mid-frame
+// changes costs one whole-frame render, as before; each change adds only the rows it spans.
+//
+// Beam position -> buffer pixel follows the TypeScript core's tact-to-bitmap table
+// (NextComposedScreenDevice.generateBitmapOffsetTable, Plus3_50Hz): 456 HC per line, bitmap row 0 at
+// VC 16, bitmap x 0 at HC 96, two buffer pixels per HC.
+//
+// Not covered: writes to screen *memory* mid-frame (the region is rendered with the memory as it is
+// at the next catch-up or at frame end).
+// ---------------------------------------------------------------------------
+
+#define ZXNEXT_RASTER_FIRST_VC 16u
+#define ZXNEXT_RASTER_FIRST_HC 96u
+
+static uint32_t zxnextRasterScratch[ZXNEXT_PIXEL_COUNT];
+/* The frame tact a NextReg write happens at: set by the copper (which runs behind the CPU) while it
+   writes; otherwise writes happen at currentFrameTact. */
+static uint32_t zxnextNextRegWriteTactOverride = 0xffffffffu;
+/* The first buffer pixel of this frame not yet rendered. */
+static uint32_t zxnextRasterPixel;
+
+static inline uint32_t zxnextRasterTactToPixel(uint32_t frameTact) {
+  uint32_t vc = frameTact / ZXNEXT_SCREEN_TOTAL_HC;
+  uint32_t hc = frameTact % ZXNEXT_SCREEN_TOTAL_HC;
+  if (vc < ZXNEXT_RASTER_FIRST_VC) return 0u;
+  uint32_t row = vc - ZXNEXT_RASTER_FIRST_VC;
+  if (row >= ZXNEXT_SCREEN_HEIGHT) return ZXNEXT_PIXEL_COUNT;
+  uint32_t x = hc < ZXNEXT_RASTER_FIRST_HC ? 0u : (hc - ZXNEXT_RASTER_FIRST_HC) * 2u;
+  return row * ZXNEXT_SCREEN_WIDTH + x;
+}
+
+/* Renders buffer pixels [zxnextRasterPixel, endPixel) from the current state. */
+static void zxnextRasterRenderTo(uint32_t endPixel) {
+  if (endPixel > ZXNEXT_PIXEL_COUNT) endPixel = ZXNEXT_PIXEL_COUNT;
+  uint32_t start = zxnextRasterPixel;
+  if (endPixel <= start) return;
+
+  // --- Render whole rows into the scratch buffer, then copy only the span the beam covered.
+  zxnextRenderTarget = zxnextRasterScratch;
+  zxnextRenderRowFirst = start / ZXNEXT_SCREEN_WIDTH;
+  zxnextRenderRowLast = (endPixel - 1u) / ZXNEXT_SCREEN_WIDTH;
+  zxnextUlaRenderInstantScreen();
+  zxnextRenderTarget = zxnextPixelBuffer;
+  zxnextRenderRowFirst = 0u;
+  zxnextRenderRowLast = ZXNEXT_SCREEN_HEIGHT - 1u;
+
+  for (uint32_t i = start; i < endPixel; i++) zxnextPixelBuffer[i] = zxnextRasterScratch[i];
+  zxnextRasterPixel = endPixel;
+}
+
+/* Call just before a write that changes the picture, with the frame tact the write happens at. */
+static void zxnextRasterCatchUp(uint32_t frameTact) {
+  zxnextRasterRenderTo(zxnextRasterTactToPixel(frameTact));
+}
+
+/* Completes the frame's picture; called when the frame completes, before anything resets. */
+static void zxnextRasterFinishFrame(void) {
+  zxnextRasterRenderTo(ZXNEXT_PIXEL_COUNT);
+  zxnextRasterPixel = 0u;
+}
+
+static void zxnextRasterReset(void) {
+  zxnextRasterPixel = 0u;
+}
+
+/*
+ * NextRegs whose value the renderers read. Anything else (MMU, sound, interrupts, CPU speed, copper
+ * control, ...) cannot change a pixel, so writing it must not cost a render.
+ */
+static inline uint32_t zxnextRasterIsVideoNextReg(uint32_t reg) {
+  switch (reg & 0xffu) {
+    case 0x12u: case 0x13u: case 0x14u: case 0x15u: case 0x16u: case 0x17u: case 0x18u:
+    case 0x19u: case 0x1au: case 0x1bu: case 0x1cu:
+    case 0x26u: case 0x27u:
+    case 0x2fu: case 0x30u: case 0x31u: case 0x32u: case 0x33u:
+    case 0x34u: case 0x35u: case 0x36u: case 0x37u: case 0x38u: case 0x39u:
+    case 0x41u: case 0x42u: case 0x43u: case 0x44u:
+    case 0x4au: case 0x4bu: case 0x4cu:
+    case 0x68u: case 0x69u: case 0x6au: case 0x6bu: case 0x6cu: case 0x6eu: case 0x6fu:
+    case 0x70u: case 0x71u:
+    case 0x75u: case 0x76u: case 0x77u: case 0x78u: case 0x79u:
+      return 1u;
+    default:
+      return 0u;
+  }
 }

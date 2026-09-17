@@ -1,0 +1,85 @@
+{
+  "id": "T00-static-ula",
+  "title": "Pipeline sanity: red border, yellow paper, no copper",
+  "capture": [
+    50,
+    100,
+    200
+  ],
+  "longCapture": [
+    1000,
+    10000
+  ],
+  "expectIdenticalFrames": true,
+  "probes": [
+    {
+      "name": "top border",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        0,
+        47
+      ],
+      "rgb": "ula:2"
+    },
+    {
+      "name": "bottom border",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        240,
+        287
+      ],
+      "rgb": "ula:2"
+    },
+    {
+      "name": "side borders",
+      "kind": "columns",
+      "y": [
+        48,
+        239
+      ],
+      "bands": [
+        {
+          "x": [
+            0,
+            95
+          ],
+          "rgb": "ula:2"
+        },
+        {
+          "x": [
+            96,
+            607
+          ],
+          "rgb": "ula:6"
+        },
+        {
+          "x": [
+            608,
+            719
+          ],
+          "rgb": "ula:2"
+        }
+      ]
+    },
+    {
+      "name": "only two colours",
+      "kind": "colors",
+      "exactly": [
+        "ula:2",
+        "ula:6"
+      ]
+    }
+  ],
+  "tiers": [
+    "headless",
+    "browser"
+  ]
+}

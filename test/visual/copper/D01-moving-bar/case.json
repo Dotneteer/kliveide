@@ -1,0 +1,166 @@
+{
+  "id": "D01-moving-bar",
+  "title": "An 8-line copper bar moves down one line per frame",
+  "capture": [
+    30,
+    31,
+    32
+  ],
+  "motion": [
+    {
+      "name": "bar top",
+      "frames": [
+        30,
+        61
+      ],
+      "feature": {
+        "kind": "firstRow",
+        "x": 300,
+        "rgb": "next8:0xE0",
+        "y": [
+          48,
+          239
+        ]
+      },
+      "expect": {
+        "kind": "linear",
+        "start": "auto",
+        "startWithin": [
+          48,
+          231
+        ],
+        "step": 1,
+        "wrap": {
+          "min": 48,
+          "max": 231
+        }
+      }
+    },
+    {
+      "name": "bar bottom",
+      "frames": [
+        30,
+        61
+      ],
+      "feature": {
+        "kind": "lastRow",
+        "x": 300,
+        "rgb": "next8:0xE0",
+        "y": [
+          48,
+          239
+        ]
+      },
+      "expect": {
+        "kind": "linear",
+        "start": "auto",
+        "startWithin": [
+          55,
+          238
+        ],
+        "step": 1,
+        "wrap": {
+          "min": 55,
+          "max": 238
+        }
+      }
+    }
+  ],
+  "contactSheet": {
+    "frames": [
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45
+    ],
+    "columns": 4
+  },
+  "probes": [
+    {
+      "name": "border top",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        0,
+        47
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border bottom",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        240,
+        287
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border left",
+      "kind": "rect",
+      "x": [
+        0,
+        95
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border right",
+      "kind": "rect",
+      "x": [
+        608,
+        719
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    }
+  ],
+  "tiers": [
+    "headless",
+    "browser"
+  ],
+  "knownFailures": [
+    {
+      "oracle": "motion",
+      "reason": "WASM: NextReg $1E/$1F (active video line) always read 0, so the program's once-per-frame sync (WaitCvc) never returns and the list is never rewritten. Findings F6.",
+      "core": "wasm",
+      "name": "bar top"
+    },
+    {
+      "oracle": "motion",
+      "reason": "WASM: NextReg $1E/$1F (active video line) always read 0, so the program's once-per-frame sync (WaitCvc) never returns and the list is never rewritten. Findings F6.",
+      "core": "wasm",
+      "name": "bar bottom"
+    },
+    {
+      "oracle": "parity",
+      "reason": "The cores differ wherever one of this case's known failures applies to only one core."
+    }
+  ]
+}

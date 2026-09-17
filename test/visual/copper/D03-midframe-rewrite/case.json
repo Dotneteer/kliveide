@@ -1,0 +1,146 @@
+{
+  "id": "D03-midframe-rewrite",
+  "title": "A list rewrite on line 96 changes band B this frame and band A only the next frame",
+  "capture": [
+    40,
+    41
+  ],
+  "motion": [
+    {
+      "name": "band B",
+      "frames": [
+        40,
+        71
+      ],
+      "feature": {
+        "kind": "colorAt",
+        "x": 300,
+        "y": 220
+      },
+      "expect": {
+        "kind": "sequence",
+        "values": [
+          "next8:0xE0",
+          "next8:0x03"
+        ],
+        "phase": "auto"
+      }
+    },
+    {
+      "name": "band A lags band B by one frame",
+      "frames": [
+        40,
+        71
+      ],
+      "feature": {
+        "kind": "colorAt",
+        "x": 300,
+        "y": 120
+      },
+      "expect": {
+        "kind": "follows",
+        "motion": "band B",
+        "lag": 1
+      }
+    },
+    {
+      "name": "above band A stays black",
+      "frames": [
+        40,
+        71
+      ],
+      "feature": {
+        "kind": "colorAt",
+        "x": 300,
+        "y": 70
+      },
+      "expect": {
+        "kind": "constant",
+        "value": "next8:0x00"
+      }
+    }
+  ],
+  "contactSheet": {
+    "frames": [
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47
+    ],
+    "columns": 4
+  },
+  "probes": [
+    {
+      "name": "border top",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        0,
+        47
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border bottom",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        240,
+        287
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border left",
+      "kind": "rect",
+      "x": [
+        0,
+        95
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border right",
+      "kind": "rect",
+      "x": [
+        608,
+        719
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    }
+  ],
+  "knownFailures": [
+    {
+      "oracle": "motion",
+      "reason": "WASM: NextReg $1E/$1F (active video line) always read 0, so the program's once-per-frame sync (WaitCvc) never returns and the list is never rewritten. Findings F6.",
+      "core": "wasm",
+      "name": "band B"
+    },
+    {
+      "oracle": "parity",
+      "reason": "The cores differ wherever one of this case's known failures applies to only one core."
+    }
+  ],
+  "tiers": [
+    "headless",
+    "browser"
+  ]
+}

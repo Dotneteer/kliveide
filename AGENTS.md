@@ -60,6 +60,13 @@ internal link, and asserts the Z80 syntax highlighting actually rendered. The
 last of those exists because a lost grammar leaves every page present and
 merely uncoloured, which no route diff can see.
 
+## Visual Tests
+
+- Pixel-level tests of the ZX Spectrum Next emulator live in `test/visual/` and `scripts/visual-tests/`:
+  `npm run test:visual` (headless, both cores) and `npm run test:visual -- --tier browser` (WASM core in
+  the installed Chrome, real NextZXOS `.nexload`). Read `.ai/visual-tests-guide.md` first; design and
+  findings are in `.plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md`.
+
 ## Current Useful Commands
 
 - Type-check: `npm run build:check` - runs `scripts/check-types.cjs`, which type-checks both

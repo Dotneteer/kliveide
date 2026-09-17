@@ -111,6 +111,7 @@ static void clearMachineBuffers(void) {
   zxnextTilemapReset();
   zxnextSpritesReset();
   zxnextCopperReset();
+  zxnextRasterReset();
   zxnextBeeperReset();
   zxnextDacReset();
   zxnextPsgReset();
@@ -159,6 +160,7 @@ void zxnextReset(void) {
   zxnextTilemapReset();
   zxnextSpritesReset();
   zxnextCopperReset();
+  zxnextRasterReset();
   zxnextBeeperReset();
   zxnextDacReset();
   zxnextPsgReset();

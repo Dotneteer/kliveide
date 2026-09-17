@@ -1,0 +1,135 @@
+{
+  "id": "D02-colour-cycle",
+  "title": "The band below copper line 96 cycles through 8 colours, one per frame",
+  "capture": [
+    30,
+    31
+  ],
+  "motion": [
+    {
+      "name": "band colour",
+      "frames": [
+        30,
+        61
+      ],
+      "feature": {
+        "kind": "colorAt",
+        "x": 300,
+        "y": 200
+      },
+      "expect": {
+        "kind": "sequence",
+        "values": [
+          "next8:0xE0",
+          "next8:0x1C",
+          "next8:0x03",
+          "next8:0xFC",
+          "next8:0x1F",
+          "next8:0xA2",
+          "next8:0xFF",
+          "next8:0x92"
+        ],
+        "phase": "auto"
+      }
+    },
+    {
+      "name": "above the band stays black",
+      "frames": [
+        30,
+        61
+      ],
+      "feature": {
+        "kind": "colorAt",
+        "x": 300,
+        "y": 100
+      },
+      "expect": {
+        "kind": "constant",
+        "value": "next8:0x00"
+      }
+    }
+  ],
+  "contactSheet": {
+    "frames": [
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37
+    ],
+    "columns": 4
+  },
+  "probes": [
+    {
+      "name": "border top",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        0,
+        47
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border bottom",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        240,
+        287
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border left",
+      "kind": "rect",
+      "x": [
+        0,
+        95
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border right",
+      "kind": "rect",
+      "x": [
+        608,
+        719
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    }
+  ],
+  "knownFailures": [
+    {
+      "oracle": "motion",
+      "reason": "WASM: NextReg $1E/$1F (active video line) always read 0, so the program's once-per-frame sync (WaitCvc) never returns and the list is never rewritten. Findings F6.",
+      "core": "wasm",
+      "name": "band colour"
+    },
+    {
+      "oracle": "parity",
+      "reason": "The cores differ wherever one of this case's known failures applies to only one core."
+    }
+  ],
+  "tiers": [
+    "headless",
+    "browser"
+  ]
+}

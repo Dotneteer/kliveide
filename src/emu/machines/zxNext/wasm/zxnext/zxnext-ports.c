@@ -99,6 +99,16 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   lastPortIsWrite = 1;
   zxnextDacWritePort(normalized, byteValue);
 
+  // --- Ports that change the picture: render what the beam has drawn so far with the old state.
+  // --- Even ports are the ULA's $FE; only a border colour change matters (beeper writes are frequent).
+  if (((normalized & 0x0001u) == 0u && (byteValue & 0x07u) != borderColor) ||
+      (normalized & 0x00ffu) == 0x00ffu ||
+      (normalized & 0xffffu) == 0x123bu || (normalized & 0xffffu) == 0x303bu ||
+      (normalized & 0x00ffu) == 0x0057u || (normalized & 0x00ffu) == 0x005bu ||
+      (normalized & 0xc003u) == 0x4001u || (normalized & 0xf003u) == 0xd001u || (normalized & 0xf003u) == 0x1001u) {
+    zxnextRasterCatchUp(currentFrameTact);
+  }
+
   if ((normalized & 0xffffu) == 0x243bu) {
     zxnextNextRegSetIndex(byteValue);
   } else if ((normalized & 0xffffu) == 0x253bu) {

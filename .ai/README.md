@@ -31,6 +31,10 @@ This folder stores durable notes for future AI-assisted work in this repository.
   author's standing instruction. Write the durable rule, fold it into the
   existing sections, replace what it supersedes, and keep no history: that file
   is a standing brief, not a log.
+- **Before writing or running visual (pixel) tests of the ZX Spectrum Next, read
+  `visual-tests-guide.md`.** Headless (both cores) and browser (WASM core in Chrome, real `.nexload`)
+  tiers, how to write a case whose expectations come from the VHDL, and the pitfalls (non-linear
+  display file, NextZXOS-changed NextRegs, `.ent`, IM2 tables) that already cost a session.
 - **Before capturing documentation screenshots, or whenever you need the app driven
   programmatically into a known state, read `doc-screenshots-guide.md`.** It covers the
   Playwright-over-Electron harness in `scripts/doc-shots/`, driving the IDE through its own

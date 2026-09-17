@@ -1,0 +1,113 @@
+{
+  "id": "D04-line-interrupt",
+  "title": "Copper and a line interrupt write the same palette entry in one frame",
+  "capture": [
+    50,
+    100,
+    200
+  ],
+  "expectIdenticalFrames": true,
+  "probes": [
+    {
+      "name": "paper",
+      "kind": "bands",
+      "x": [
+        100,
+        607
+      ],
+      "bands": [
+        {
+          "y": [
+            48,
+            95
+          ],
+          "rgb": "next8:0x00"
+        },
+        {
+          "y": [
+            96,
+            190
+          ],
+          "rgb": "next8:0x03"
+        },
+        {
+          "y": [
+            194,
+            239
+          ],
+          "rgb": "next8:0xE0"
+        }
+      ]
+    },
+    {
+      "name": "border top",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        0,
+        47
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border bottom",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        240,
+        287
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border left",
+      "kind": "rect",
+      "x": [
+        0,
+        95
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border right",
+      "kind": "rect",
+      "x": [
+        608,
+        719
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    }
+  ],
+  "knownFailures": [
+    {
+      "oracle": "probes",
+      "reason": "Both cores: the handler runs once per frame at copper line ~248 (the ULA frame interrupt, although $22 bit 2 disables it), never at line 144; the line interrupt's red never appears. Findings F7.",
+      "core": "ts",
+      "name": "paper"
+    },
+    {
+      "oracle": "probes",
+      "reason": "Both cores: the handler runs once per frame at copper line ~248 (the ULA frame interrupt, although $22 bit 2 disables it), never at line 144; the line interrupt's red never appears. Findings F7.",
+      "core": "wasm",
+      "name": "paper"
+    }
+  ],
+  "tiers": [
+    "headless",
+    "browser"
+  ]
+}

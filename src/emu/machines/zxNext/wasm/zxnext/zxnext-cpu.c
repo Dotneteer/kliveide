@@ -40,6 +40,8 @@ static inline uint32_t zxnextCpuTactScale(void) {
 }
 
 static inline void zxnextCpuMarkFrameCompleted(void) {
+  // --- The picture of the frame that just ended, before anything resets for the next one.
+  zxnextRasterFinishFrame();
   frames++;
   frameCompleted = 1;
   zxnextUlaOnFrameCompleted();
