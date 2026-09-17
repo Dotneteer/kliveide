@@ -1,0 +1,114 @@
+{
+  "id": "P02-tilemap-merge",
+  "title": "ULA/tilemap merge: tilemap over/under the ULA, transparent ULA under a tile, stencil mode",
+  "capture": [
+    50,
+    100,
+    200
+  ],
+  "longCapture": [
+    1000
+  ],
+  "readyBy": 30,
+  "expectIdenticalFrames": true,
+  "tiers": [
+    "headless",
+    "browser"
+  ],
+  "probes": [
+    {
+      "name": "no tiles above: ULA red",
+      "kind": "rect",
+      "x": [
+        96,
+        607
+      ],
+      "y": [
+        48,
+        79
+      ],
+      "rgb": "next8:0xE0"
+    },
+    {
+      "name": "paper rows 32-63: above / below opaque ULA / below transparent ULA",
+      "kind": "columns",
+      "y": [
+        80,
+        111
+      ],
+      "bands": [
+        {
+          "x": [
+            100,
+            251
+          ],
+          "rgb": "next8:0x1C"
+        },
+        {
+          "x": [
+            260,
+            411
+          ],
+          "rgb": "next8:0xE0"
+        },
+        {
+          "x": [
+            420,
+            603
+          ],
+          "rgb": "next8:0x1C"
+        }
+      ]
+    },
+    {
+      "name": "stencil rows 64-95: red AND green = black under tiles",
+      "kind": "rect",
+      "x": [
+        100,
+        603
+      ],
+      "y": [
+        113,
+        142
+      ],
+      "rgb": "#000000"
+    },
+    {
+      "name": "no tiles below: ULA red",
+      "kind": "rect",
+      "x": [
+        96,
+        607
+      ],
+      "y": [
+        144,
+        239
+      ],
+      "rgb": "next8:0xE0"
+    },
+    {
+      "name": "stencil rows, border outside the tilemap area (x < 32, x >= 672): fallback",
+      "kind": "columns",
+      "y": [
+        113,
+        143
+      ],
+      "bands": [
+        {
+          "x": [
+            0,
+            31
+          ],
+          "rgb": "next8:0xA2"
+        },
+        {
+          "x": [
+            672,
+            719
+          ],
+          "rgb": "next8:0xA2"
+        }
+      ]
+    }
+  ]
+}

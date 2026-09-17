@@ -1,7 +1,7 @@
 ; ============================================================================
-; Shared routines for the copper visual tests. Include at the END of a program:
-; the Klive assembler currently ignores `.ent` for NEX output under `.model Next`
-; (entry is always $8000), so the program's own code must start at $8000.
+; Shared routines for the copper visual tests. The cases include them at the END and start their own
+; code at $8000. (`.ent` also sets the NEX entry point now, so a program could include them first and
+; mark its entry with `.ent`.)
 ; ============================================================================
 
 ; ----------------------------------------------------------------------------

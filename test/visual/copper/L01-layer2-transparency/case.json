@@ -1,6 +1,6 @@
 {
-  "id": "C10-transparency-per-line",
-  "title": "Per-line global transparency ($14) reveals the fallback colour",
+  "id": "L01-layer2-transparency",
+  "title": "Layer 2 transparency compares RGB with $14, not the palette index, and ignores $4B",
   "capture": [
     50,
     100,
@@ -9,6 +9,7 @@
   "longCapture": [
     1000
   ],
+  "readyBy": 40,
   "expectIdenticalFrames": true,
   "tiers": [
     "headless",
@@ -16,28 +17,43 @@
   ],
   "probes": [
     {
-      "name": "paper",
-      "kind": "bands",
+      "name": "band A: RGB = $14, transparent (ULA paper shows)",
+      "kind": "rect",
       "x": [
-        100,
+        96,
+        255
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:1"
+    },
+    {
+      "name": "band B: index $E3 but RGB green, opaque",
+      "kind": "rect",
+      "x": [
+        256,
+        415
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "next8:0x1C"
+    },
+    {
+      "name": "band C: index = $4B, still opaque",
+      "kind": "rect",
+      "x": [
+        416,
         607
       ],
-      "bands": [
-        {
-          "y": [
-            48,
-            143
-          ],
-          "rgb": "next8:0x00"
-        },
-        {
-          "y": [
-            144,
-            239
-          ],
-          "rgb": "next8:0xE0"
-        }
-      ]
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "next8:0x05"
     },
     {
       "name": "border top",

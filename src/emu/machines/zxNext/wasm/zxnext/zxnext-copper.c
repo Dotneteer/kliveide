@@ -30,6 +30,10 @@ static uint8_t zxnextCopperVerticalLineOffset;
 #define ZXNEXT_COPPER_TOTAL_VC (ZXNEXT_RENDERING_TACTS_IN_FRAME / ZXNEXT_SCREEN_TOTAL_HC)
 // First active display line — the hardware's `ula_min_vactive`, where `cvc` is loaded.
 #define ZXNEXT_COPPER_DISPLAY_Y_START 64u
+// Raw HC at which `hc_ula` wraps to 0: `c_min_hactive - 12`, twelve pixels before paper x 0 (raw 144).
+#define ZXNEXT_COPPER_HC_ULA_ORIGIN 132u
+// The copper runs on the 28 MHz clock: four ticks per horizontal position.
+#define ZXNEXT_COPPER_TICKS_PER_HC 4u
 
 // ULA tact this core has already advanced the copper through, within the current frame.
 static uint32_t zxnextCopperFrameTact;
@@ -129,11 +133,35 @@ static void zxnextCopperOnFrameCompleted(void) {
 // on the hot path — `zxnextCpuTactPlusN` runs for every memory and port access — and the
 // overwhelmingly common case is software that never touches the copper at all. The counters
 // are resynced by zxnextCopperResyncBeam when the copper is started.
+// The copper beam, hardware (`cvc`, `hc_ula`), at a raw position. Mirrors
+// NextComposedScreenDevice.copperLineAt / copperHcAt: `cvc` advances when `hc_ula` wraps.
+static inline uint32_t zxnextCopperLineAt(uint32_t vc, uint32_t hc) {
+  return zxnextCopperVcToCopperLine(hc >= ZXNEXT_COPPER_HC_ULA_ORIGIN ? vc : vc + ZXNEXT_COPPER_TOTAL_VC - 1u);
+}
+
+static inline uint32_t zxnextCopperHcAt(uint32_t hc) {
+  return (hc + ZXNEXT_SCREEN_TOTAL_HC - ZXNEXT_COPPER_HC_ULA_ORIGIN) % ZXNEXT_SCREEN_TOTAL_HC;
+}
+
+// The line interrupt pulse ($22/$23). Mirrors NextComposedScreenDevice.lineInterruptStartTact: it
+// starts at hc_ula 255 of copper line L-1 (the last line for L = 0), $64 offset included, and lasts as
+// long as the ULA interrupt pulse. Kept here because it is expressed in the copper's beam coordinates.
+static uint32_t zxnextVideoLineIntActive(uint32_t frameTact) {
+  uint32_t line = lineInterrupt & 0x1ffu;
+  uint32_t targetCvc = line == 0u ? ZXNEXT_COPPER_TOTAL_VC - 1u : line - 1u;
+  uint32_t rawVc = (targetCvc + ZXNEXT_COPPER_DISPLAY_Y_START + ZXNEXT_COPPER_TOTAL_VC - zxnextCopperVerticalLineOffset) %
+    ZXNEXT_COPPER_TOTAL_VC;
+  uint32_t start = rawVc * ZXNEXT_SCREEN_TOTAL_HC + ZXNEXT_COPPER_HC_ULA_ORIGIN + 255u;
+  uint32_t elapsed = (frameTact + ZXNEXT_RENDERING_TACTS_IN_FRAME - start) % ZXNEXT_RENDERING_TACTS_IN_FRAME;
+  return elapsed < (ZXNEXT_50HZ_INT_END_TACT - ZXNEXT_50HZ_INT_START_TACT);
+}
+
 static void zxnextCopperAdvanceTo(uint32_t frameTact) {
   if (zxnextCopperStartMode == 0u) return;
   while (zxnextCopperFrameTact < frameTact) {
-    zxnextCopperExecuteTick(
-      zxnextCopperVcToCopperLine(zxnextCopperCurrentLine), zxnextCopperCurrentColumn);
+    uint32_t cvc = zxnextCopperLineAt(zxnextCopperCurrentLine, zxnextCopperCurrentColumn);
+    uint32_t hcUla = zxnextCopperHcAt(zxnextCopperCurrentColumn);
+    for (uint32_t tick = 0u; tick < ZXNEXT_COPPER_TICKS_PER_HC; tick++) zxnextCopperExecuteTick(cvc, hcUla);
     zxnextCopperCurrentColumn++;
     if (zxnextCopperCurrentColumn >= ZXNEXT_SCREEN_TOTAL_HC) {
       zxnextCopperCurrentColumn = 0u;

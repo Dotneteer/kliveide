@@ -17,6 +17,7 @@ static inline void zxnextCpuDelayMemoryRead(uint32_t address);
 static inline void zxnextCpuDelayMemoryWrite(uint32_t address);
 static inline void zxnextCpuDelayPortAccess(uint32_t address);
 static inline uint32_t zxnextCpuShouldRaiseInt(void);
+static inline void zxnextCpuCaptureVideoInterrupts(void);
 
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() zxnextMemory
@@ -63,6 +64,7 @@ static inline void zxnextCpuTactPlusN(uint32_t value) {
   // can complete part-way through an instruction, and the remaining tact groups of that
   // instruction must not tick the copper into the next frame.
   if (frameCompleted == 0u) zxnextCopperAdvanceTo(currentFrameTact);
+  zxnextCpuCaptureVideoInterrupts();
   zxnextBeeperSetTacts(tacts);
   zxnextAudioMixerSetNextSample(frameTacts28);
 }
@@ -86,6 +88,7 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
   }
   currentFrameTact = frameTacts28 >> 2;
   if (frameCompleted == 0u) zxnextCopperAdvanceTo(currentFrameTact);
+  zxnextCpuCaptureVideoInterrupts();
   zxnextBeeperSetTacts(tacts);
   zxnextAudioMixerSetNextSample(frameTacts28);
 }
@@ -158,12 +161,36 @@ static inline void zxnextCpuDelayPortAccess(uint32_t address) {
   }
 }
 
+/*
+ * The video interrupt sources at the last rendered tact, and their status flags.
+ *
+ * Mirrors ZxNextMachine.onTactIncremented: the ULA and line pulses set their status flags on the rising
+ * edge (when the source is enabled), which is what hardware IM2 mode's daisy chain reads. Before this,
+ * nothing in the WASM core ever set them from the video timing.
+ */
+static uint8_t zxnextCpuPrevUlaPulse;
+static uint8_t zxnextCpuPrevLinePulse;
+
+static inline void zxnextCpuCaptureVideoInterrupts(void) {
+  uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
+  uint8_t ulaPulse = (uint8_t)zxnextUlaGetPulseIntActive(renderedFrameTact);
+  uint8_t linePulse = (uint8_t)zxnextVideoLineIntActive(renderedFrameTact);
+  if (ulaPulse && !zxnextCpuPrevUlaPulse && !ulaInterruptDisabled) ulaInterruptStatus = 1u;
+  if (linePulse && !zxnextCpuPrevLinePulse && lineInterruptEnabled) lineInterruptStatus = 1u;
+  zxnextCpuPrevUlaPulse = ulaPulse;
+  zxnextCpuPrevLinePulse = linePulse;
+}
+
 static inline uint32_t zxnextCpuShouldRaiseInt(void) {
   if (zxnextInterruptsGetHardwareIm2Mode()) {
     return zxnextInterruptsShouldAcceptInt();
   }
+  // --- Pulse mode: any enabled source starts the INT pulse (peripherals.vhd `o_pulse_en`). The ULA frame
+  // --- interrupt obeys its disable bit; the line interrupt used to be missing altogether.
   uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
-  return zxnextInterruptsGetSignalInt() || (frames != 0u && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
+  return zxnextInterruptsGetSignalInt() ||
+    (frames != 0u && !ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
+    (lineInterruptEnabled && zxnextVideoLineIntActive(renderedFrameTact)) ||
     zxnextDmaGetIpSignal();
 }
 

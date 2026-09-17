@@ -184,16 +184,24 @@ describe("visual harness - per-core review verdicts", () => {
   });
 });
 
-describe("WASM beam-racing raster (regression)", () => {
+describe("WASM raster and active-video-line readback (regression)", () => {
   /*
    * The WASM core used to draw each frame once from end-of-frame state, so copper effects were
    * invisible in the production core. C02 (eight palette bands) and C09 (per-line scroll) must show
    * in WASM exactly as in the TypeScript core.
    */
-  for (const id of ["C02-palette-bands", "C07-line-offset", "C09-scroll-per-line"]) {
+  // --- D02 also syncs once per frame on NextReg $1F, which the WASM core used to read as 0.
+  // --- C03 checks WAIT's horizontal position: the copper beam is hc_ula (paper x = 8H), 4 ticks per HC.
+  // --- C04: palette writes to entry 16 must recolour the border, mid-frame, in both cores.
+  // --- P01/P02: the WASM layer mixer ($15 orders, Layer 2 priority, blend modes, tilemap merge, stencil).
+  // --- L01: Layer 2 is transparent where its palette-mapped RGB equals $14; $4B does not apply.
+  // --- D04: a $22/$23 line interrupt raises INT at hc_ula 255 of line L-1 while the ULA interrupt is off.
+  // --- C11: $68 bit 7 makes the whole ULA layer transparent per pixel, and clearing it restores the ULA.
+  for (const id of ["C02-palette-bands", "C03-wait-hpos-staircase", "C04-border-palette", "C07-line-offset", "C09-scroll-per-line", "C10-transparency-per-line", "C11-ula-disable-per-line", "D02-colour-cycle", "D04-line-interrupt", "L01-layer2-transparency", "P01-layer-priorities", "P02-tilemap-merge"]) {
     it(`${id}: WASM passes every probe and matches the TypeScript core`, async () => {
       const c = loadCase(resolve(__dirname, "copper", id));
-      c.spec.capture = [20];
+      // --- After the case's ready deadline: a slow setup (L01 fills Layer 2) is not on screen before it.
+      c.spec.capture = [Math.max(20, (c.spec.readyBy ?? 10) + 10)];
       c.golden = undefined;
       const r = await runCase(c, { cores: ["ts", "wasm"], outRoot: outRoot() });
       expect(r.checks.filter((x) => x.status === "fail" || x.status === "xpass")).toEqual([]);

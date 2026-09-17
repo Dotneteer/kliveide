@@ -116,55 +116,5 @@
       ],
       "rgb": "next8:0x03"
     }
-  ],
-  "knownFailures": [
-    {
-      "oracle": "probes",
-      "reason": "TS: $41 palette writes do not refresh the border colour cache (PaletteDevice only calls updateBorderRgbCache on a $43 palette switch). Findings F3.",
-      "core": "ts",
-      "name": "top border (after the last MOVE of the previous frame)"
-    },
-    {
-      "oracle": "probes",
-      "reason": "TS: $41 palette writes do not refresh the border colour cache (PaletteDevice only calls updateBorderRgbCache on a $43 palette switch). Findings F3.",
-      "core": "ts",
-      "name": "left border"
-    },
-    {
-      "oracle": "probes",
-      "reason": "TS: $41 palette writes do not refresh the border colour cache (PaletteDevice only calls updateBorderRgbCache on a $43 palette switch). Findings F3.",
-      "core": "ts",
-      "name": "right border"
-    },
-    {
-      "oracle": "probes",
-      "reason": "TS: $41 palette writes do not refresh the border colour cache (PaletteDevice only calls updateBorderRgbCache on a $43 palette switch). Findings F3.",
-      "core": "ts",
-      "name": "bottom border"
-    },
-    {
-      "oracle": "probes",
-      "reason": "WASM: the border colour comes from a fixed Spectrum colour table (zxnextUlaColor), never from palette entries 16-23. Findings F3.",
-      "core": "wasm",
-      "name": "top border (after the last MOVE of the previous frame)"
-    },
-    {
-      "oracle": "probes",
-      "reason": "WASM: the border colour comes from a fixed Spectrum colour table (zxnextUlaColor), never from palette entries 16-23. Findings F3.",
-      "core": "wasm",
-      "name": "left border"
-    },
-    {
-      "oracle": "probes",
-      "reason": "WASM: the border colour comes from a fixed Spectrum colour table (zxnextUlaColor), never from palette entries 16-23. Findings F3.",
-      "core": "wasm",
-      "name": "right border"
-    },
-    {
-      "oracle": "probes",
-      "reason": "WASM: the border colour comes from a fixed Spectrum colour table (zxnextUlaColor), never from palette entries 16-23. Findings F3.",
-      "core": "wasm",
-      "name": "bottom border"
-    }
   ]
 }

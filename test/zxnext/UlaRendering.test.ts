@@ -176,6 +176,17 @@ describe("D3 — ULANext border palette path (indices 128+)", () => {
 // D4 — Blend modes (composeSinglePixel)
 // ---------------------------------------------------------------------------
 describe("D4 — Blend modes (priority 6-7)", () => {
+  // The RGBA a 9-bit colour becomes, taken from the non-blend (SLU) path. Expected pixels used to be built
+  // by composing the colour as a lone ULA pixel *in the blend mode*, which only worked while a lone ULA
+  // pixel showed in blend modes - it does not in zxnext.vhd (the ULA is only the `mix_rgb` operand).
+  function rgbaOf(rgb333: number): number {
+    const saved = csd().layerPriority;
+    csd().layerPriority = 0;
+    const rgba = (csd() as any).composeSinglePixel(rgb333, false, null, true, false, null, true);
+    csd().layerPriority = saved;
+    return rgba;
+  }
+
   it("blendRgb333 saturate-add (mode 0): channels clamped to 7", () => {
     // Test via composeSinglePixel with priority 6
     // ULA = R=3 G=2 B=1 = (3<<6)|(2<<3)|1 = 0xC9 = 0b011_010_001
@@ -198,9 +209,7 @@ describe("D4 — Blend modes (priority 6-7)", () => {
     // Result should be the blended colour (0x1FF) converted via zxNextBgra
     // We can compare against composeSinglePixel with a known value
     const expectedBlend = (7 << 6) | (7 << 3) | 7; // 0x1FF
-    const expectedResult = (csd() as any).composeSinglePixel(
-      expectedBlend, false, null, true, false, null, true
-    );
+    const expectedResult = rgbaOf(expectedBlend);
     expect(result).toBe(expectedResult);
   });
 
@@ -218,9 +227,7 @@ describe("D4 — Blend modes (priority 6-7)", () => {
     );
 
     const expectedBlend = (2 << 6) | (3 << 3) | 4; // 0x09C
-    const expectedResult = (csd() as any).composeSinglePixel(
-      expectedBlend, false, null, true, false, null, true
-    );
+    const expectedResult = rgbaOf(expectedBlend);
     expect(result).toBe(expectedResult);
   });
 
@@ -235,9 +242,7 @@ describe("D4 — Blend modes (priority 6-7)", () => {
 
     // 0x0aa = R2 G5 B2, 0x0bb = R2 G7 B3; saturate-add → R4 G7 B5 = 0x13D
     const blended = 0x13d;
-    const expectedResult = (csd() as any).composeSinglePixel(
-      blended, false, null, true, false, null, true
-    );
+    const expectedResult = rgbaOf(blended);
     expect(result).toBe(expectedResult);
   });
 
@@ -250,9 +255,7 @@ describe("D4 — Blend modes (priority 6-7)", () => {
     );
 
     // Sprites should win over blend result
-    const expectedResult = (csd() as any).composeSinglePixel(
-      0x038, false, null, true, false, null, true
-    );
+    const expectedResult = rgbaOf(0x038);
     expect(result).toBe(expectedResult);
   });
 
@@ -267,13 +270,11 @@ describe("D4 — Blend modes (priority 6-7)", () => {
     // After D6: L2 priority in blend mode → blend(ULA, L2), not short-circuit
     // 0x100 = R4 G0 B0, 0x038 = R0 G7 B0; saturate-add → R4 G7 B0 = 0x138
     const blended = 0x138;
-    const expectedResult = (csd() as any).composeSinglePixel(
-      blended, false, null, true, false, null, true
-    );
+    const expectedResult = rgbaOf(blended);
     expect(result).toBe(expectedResult);
   });
 
-  it("only ULA present in blend mode → ULA colour used", () => {
+  it("only ULA present in blend mode → fallback colour (zxnext.vhd: the ULA is only a blend operand)", () => {
     csd().layerPriority = 6;
     csd().ulaBlendingInSLUModes = 0b00;
 
@@ -281,10 +282,10 @@ describe("D4 — Blend modes (priority 6-7)", () => {
       0x0cc, false, null, true, false, null, true
     );
 
-    const expectedResult = (csd() as any).composeSinglePixel(
-      0x0cc, false, null, true, false, null, true
-    );
-    expect(result).toBe(expectedResult);
+    // Nothing opaque in the SLU sense: the fallback colour
+    const fallback = (csd() as any).composeSinglePixel(null, true, null, true, false, null, true);
+    expect(result).toBe(fallback);
+    expect(result).not.toBe(rgbaOf(0x0cc));
   });
 
   it("only L2 present in blend mode → L2 colour used", () => {
@@ -295,9 +296,7 @@ describe("D4 — Blend modes (priority 6-7)", () => {
       null, true, 0x0dd, false, false, null, true
     );
 
-    const expectedResult = (csd() as any).composeSinglePixel(
-      0x0dd, false, null, true, false, null, true
-    );
+    const expectedResult = rgbaOf(0x0dd);
     expect(result).toBe(expectedResult);
   });
 });

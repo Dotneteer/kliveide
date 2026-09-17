@@ -1396,3 +1396,39 @@ function readNextReg(m: IZxNextMachine, reg: number): number {
   m.nextRegDevice.setNextRegisterIndex(reg);
   return m.nextRegDevice.getNextRegisterValue();
 }
+
+describe("Border colour follows palette writes (Findings F3)", () => {
+  // Border colour n is drawn with ULA palette entry 16+n; writing that entry must recolour the border.
+  async function borderAfter(write: (m: Awaited<ReturnType<typeof createTestNextMachine>>) => void): Promise<number> {
+    const m = await createTestNextMachine();
+    m.composedScreenDevice.borderColor = 2;
+    write(m);
+    return (m.composedScreenDevice as unknown as { borderRgbCache: number }).borderRgbCache;
+  }
+
+  it("a $41 write to entry 18 changes border colour 2", async () => {
+    const rgb = await borderAfter((m) => {
+      m.nextRegDevice.directSetRegValue(0x40, 18);
+      m.nextRegDevice.directSetRegValue(0x41, 0x1c); // green
+    });
+    expect(rgb).toBe(0x1c << 1); // blue bits 00 -> low bit 0
+  });
+
+  it("a two-byte $44 write to entry 18 changes border colour 2", async () => {
+    const rgb = await borderAfter((m) => {
+      m.nextRegDevice.directSetRegValue(0x40, 18);
+      m.nextRegDevice.directSetRegValue(0x44, 0x03);
+      m.nextRegDevice.directSetRegValue(0x44, 0x01);
+    });
+    expect(rgb).toBe((0x03 << 1) | 1);
+  });
+
+  it("a write to another entry leaves the border alone", async () => {
+    const before = await borderAfter(() => {});
+    const rgb = await borderAfter((m) => {
+      m.nextRegDevice.directSetRegValue(0x40, 19);
+      m.nextRegDevice.directSetRegValue(0x41, 0x1c);
+    });
+    expect(rgb).toBe(before);
+  });
+});

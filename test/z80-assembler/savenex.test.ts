@@ -563,3 +563,110 @@ describe("Z80 Assembler - SaveNex Pragma", async () => {
     expect(result.errors[0].errorCode).toBe("Z0346");
   });
 });
+
+describe("Z80 Assembler - Next auto-mode defaults vs explicit values", () => {
+  // Regression: `.model Next` used to fill entryAddr = $8000 and border = 7 on sight, so `.ent` could
+  // never set the NEX entry point. Defaults are now applied after assembly, only for what is still unset.
+  async function compileNext(source: string) {
+    const options = new AssemblerOptions();
+    options.currentModel = 4;
+    return await new Z80Assembler().compile(source, options);
+  }
+
+  it(".ent sets the NEX entry address when .savenex entryaddr is absent", async () => {
+    const result = await compileNext(`
+      .model Next
+      .savenex file "x.nex"
+      .org $8000
+Helper:
+      ret
+Start:
+      .ent $
+      jr $
+    `);
+    expect(result.errors.length).toBe(0);
+    expect(result.entryAddress).toBe(0x8001);
+    expect(result.nexConfig.entryAddr).toBe(0x8001);
+  });
+
+  it(".ent with a forward reference sets the NEX entry address", async () => {
+    const result = await compileNext(`
+      .model Next
+      .ent Start
+      .org $8000
+      ret
+      ret
+Start:
+      jr $
+    `);
+    expect(result.errors.length).toBe(0);
+    expect(result.nexConfig.entryAddr).toBe(0x8002);
+  });
+
+  it(".savenex entryaddr wins over .ent, in either order", async () => {
+    const before = await compileNext(`
+      .model Next
+      .savenex entryaddr $9000
+      .org $8000
+      ret
+Start:
+      .ent $
+      jr $
+    `);
+    expect(before.errors.length).toBe(0);
+    expect(before.nexConfig.entryAddr).toBe(0x9000);
+
+    const after = await compileNext(`
+      .model Next
+      .org $8000
+      ret
+Start:
+      .ent $
+      jr $
+      .savenex entryaddr $9000
+    `);
+    expect(after.errors.length).toBe(0);
+    expect(after.nexConfig.entryAddr).toBe(0x9000);
+  });
+
+  it("defaults the entry address to $8000 without .ent or .savenex entryaddr", async () => {
+    const result = await compileNext(`
+      .model Next
+      .org $8000
+      ret
+    `);
+    expect(result.errors.length).toBe(0);
+    expect(result.nexConfig.entryAddr).toBe(0x8000);
+  });
+
+  it("keeps an explicit .savenex border 0 before .model Next", async () => {
+    const result = await compileNext(`
+      .savenex border 0
+      .model Next
+      .org $8000
+      ret
+    `);
+    expect(result.errors.length).toBe(0);
+    expect(result.nexConfig.borderColor).toBe(0);
+  });
+
+  it("keeps an explicit .savenex border 0 after .model Next", async () => {
+    const result = await compileNext(`
+      .model Next
+      .savenex border 0
+      .org $8000
+      ret
+    `);
+    expect(result.errors.length).toBe(0);
+    expect(result.nexConfig.borderColor).toBe(0);
+  });
+
+  it("defaults the border to 7 without .savenex border", async () => {
+    const result = await compileNext(`
+      .model Next
+      .org $8000
+      ret
+    `);
+    expect(result.nexConfig.borderColor).toBe(7);
+  });
+});

@@ -241,55 +241,5 @@
       ],
       "rgb": "ula:7"
     }
-  ],
-  "knownFailures": [
-    {
-      "oracle": "probes",
-      "reason": "TS copper compares WAIT H against the raw hc instead of hc_ula (ZxNextMachine.onTactIncremented), so WAIT fires 132 px early: edge at buffer x 16H-164 instead of 96+16H. Findings F2.",
-      "core": "ts",
-      "name": "row 144 edge at H=8"
-    },
-    {
-      "oracle": "probes",
-      "reason": "TS copper compares WAIT H against the raw hc instead of hc_ula (ZxNextMachine.onTactIncremented), so WAIT fires 132 px early: edge at buffer x 16H-164 instead of 96+16H. Findings F2.",
-      "core": "ts",
-      "name": "row 152 edge at H=16"
-    },
-    {
-      "oracle": "probes",
-      "reason": "TS copper compares WAIT H against the raw hc instead of hc_ula (ZxNextMachine.onTactIncremented), so WAIT fires 132 px early: edge at buffer x 16H-164 instead of 96+16H. Findings F2.",
-      "core": "ts",
-      "name": "row 160 edge at H=24"
-    },
-    {
-      "oracle": "probes",
-      "reason": "TS copper compares WAIT H against the raw hc instead of hc_ula (ZxNextMachine.onTactIncremented), so WAIT fires 132 px early: edge at buffer x 16H-164 instead of 96+16H. Findings F2.",
-      "core": "ts",
-      "name": "row 168 edge at H=31"
-    },
-    {
-      "oracle": "probes",
-      "reason": "The WASM copper mirrors the TS beam counters (zxnext-copper.c), so WAIT fires 132 px early in both cores: edge at buffer x 16H-164 instead of 96+16H. Findings F2.",
-      "core": "wasm",
-      "name": "row 144 edge at H=8"
-    },
-    {
-      "oracle": "probes",
-      "reason": "The WASM copper mirrors the TS beam counters (zxnext-copper.c), so WAIT fires 132 px early in both cores: edge at buffer x 16H-164 instead of 96+16H. Findings F2.",
-      "core": "wasm",
-      "name": "row 152 edge at H=16"
-    },
-    {
-      "oracle": "probes",
-      "reason": "The WASM copper mirrors the TS beam counters (zxnext-copper.c), so WAIT fires 132 px early in both cores: edge at buffer x 16H-164 instead of 96+16H. Findings F2.",
-      "core": "wasm",
-      "name": "row 160 edge at H=24"
-    },
-    {
-      "oracle": "probes",
-      "reason": "The WASM copper mirrors the TS beam counters (zxnext-copper.c), so WAIT fires 132 px early in both cores: edge at buffer x 16H-164 instead of 96+16H. Findings F2.",
-      "core": "wasm",
-      "name": "row 168 edge at H=31"
-    }
   ]
 }

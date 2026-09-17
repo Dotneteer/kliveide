@@ -3304,8 +3304,14 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     return (msb << 8) | lsb;
   }
 
-  it("50Hz: at tact 0 (blanking before display) CVC reflects vc=0 offset", async () => {
-    // vc=0, displayYStart=64, totalVC=311 → CVC = (0 - 64 + 311) % 311 = 247
+  // The first tact of copper line `line` (offset 0): `cvc` advances when `hc_ula` wraps, which is at
+  // raw HC `displayXStart - 12`, twelve pixels before paper x 0 (zxula_timing.vhd `ula_min_hactive`).
+  function lineStartTact(config: { totalHC: number; displayXStart: number }, rawLine: number): number {
+    return rawLine * config.totalHC + config.displayXStart - 12;
+  }
+
+  it("50Hz: at tact 0 the beam is still on the last copper line of the previous count", async () => {
+    // vc=0, hc=0 is before the hc_ula wrap, so the line is raw vc -1: CVC = (-1 - 64 + 311) % 311 = 246
     const m = await createTestNextMachine();
     const scrDevice = m.composedScreenDevice;
     m.nextRegDevice.setNextRegisterIndex(0x05);
@@ -3313,7 +3319,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
 
     scrDevice.renderTact(0);
 
-    expect(readCVC(m)).toBe(247);
+    expect(readCVC(m)).toBe(246);
   });
 
   it("50Hz: first tact of display line 0 yields CVC=0", async () => {
@@ -3324,8 +3330,23 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact(config.displayYStart * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart));
 
+    expect(readCVC(m)).toBe(0);
+  });
+
+  it("50Hz: CVC changes at the hc_ula wrap, not at raw HC 0", async () => {
+    const m = await createTestNextMachine();
+    const scrDevice = m.composedScreenDevice;
+    m.nextRegDevice.setNextRegisterIndex(0x05);
+    m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
+    const config = scrDevice.config;
+
+    scrDevice.renderTact(config.displayYStart * config.totalHC); // raw HC 0 of the first paper line
+    expect(readCVC(m)).toBe(310);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart) - 1); // raw HC 131
+    expect(readCVC(m)).toBe(310);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart)); // raw HC 132: hc_ula = 0
     expect(readCVC(m)).toBe(0);
   });
 
@@ -3336,7 +3357,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact((config.displayYStart + 1) * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart + 1));
 
     expect(readCVC(m)).toBe(1);
   });
@@ -3348,7 +3369,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact((config.displayYStart + 191) * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart + 191));
 
     expect(readCVC(m)).toBe(191);
   });
@@ -3360,7 +3381,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact((config.displayYStart + 100) * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart + 100));
 
     m.nextRegDevice.setNextRegisterIndex(0x1e);
     expect(m.nextRegDevice.getNextRegisterValue()).toBe(0); // MSB bit for CVC=100
@@ -3376,7 +3397,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x04); // 60Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact(config.displayYStart * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart));
 
     expect(readCVC(m)).toBe(0);
   });
@@ -3388,7 +3409,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x04); // 60Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact((config.displayYStart + 50) * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart + 50));
 
     expect(readCVC(m)).toBe(50);
   });
@@ -3403,13 +3424,13 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(10);   // verticalLineOffset = 10
     const config = scrDevice.config;
 
-    scrDevice.renderTact(config.displayYStart * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart));
 
     expect(readCVC(m)).toBe(10);
   });
 
   it("50Hz: copper offset wraps CVC correctly at frame boundary", async () => {
-    // With offset=5: vc=0 → CVC = (0 - 64 + 5 + 311) % 311 = 252
+    // With offset=5: vc=0, hc=0 is still raw line -1 → CVC = (-1 - 64 + 5 + 311) % 311 = 251
     const m = await createTestNextMachine();
     const scrDevice = m.composedScreenDevice;
     m.nextRegDevice.setNextRegisterIndex(0x05);
@@ -3419,7 +3440,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
 
     scrDevice.renderTact(0); // vc=0
 
-    expect(readCVC(m)).toBe(252);
+    expect(readCVC(m)).toBe(251);
   });
 
   it("NR $83 bit 5 = 0: isMouseEnabled() false, isPortDfKempstonAlias() true", async () => {

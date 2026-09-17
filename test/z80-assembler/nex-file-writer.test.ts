@@ -391,4 +391,55 @@ describe("NEX File Writer", () => {
     expect(nex[10] & 0x01).toBe(0x01); // Layer2 flag set
     expect(nex[9]).toBe(3); // 3 banks
   });
+
+  describe("entry point and border from assembled Next source", () => {
+    // Regression: `.ent` was ignored for NEX output under `.model Next` (the header PC was always $8000).
+    async function nexFrom(source: string): Promise<Uint8Array> {
+      const { Z80Assembler } = await import("@main/z80-compiler/z80-assembler");
+      const options = new AssemblerOptions();
+      options.currentModel = 4;
+      const output = await new Z80Assembler().compile(source, options);
+      expect(output.errors.length).toBe(0);
+      return NexFileWriter.fromAssemblerOutput(output, process.cwd());
+    }
+    const pc = (nex: Uint8Array) => nex[14] | (nex[15] << 8);
+
+    it("writes the .ent address as the program counter", async () => {
+      const nex = await nexFrom(`
+        .model Next
+        .savenex file "x.nex"
+        .org $8000
+Helper:
+        ret
+Start:
+        .ent $
+        jr $
+      `);
+      expect(pc(nex)).toBe(0x8001);
+    });
+
+    it("writes .savenex entryaddr over .ent", async () => {
+      const nex = await nexFrom(`
+        .model Next
+        .savenex entryaddr $8000
+        .org $8000
+        ret
+Start:
+        .ent $
+        jr $
+      `);
+      expect(pc(nex)).toBe(0x8000);
+    });
+
+    it("writes $8000 when neither is given, and an explicit border 0", async () => {
+      const nex = await nexFrom(`
+        .savenex border 0
+        .model Next
+        .org $8000
+        ret
+      `);
+      expect(pc(nex)).toBe(0x8000);
+      expect(nex[11]).toBe(0);
+    });
+  });
 });

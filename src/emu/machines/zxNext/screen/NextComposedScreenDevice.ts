@@ -223,6 +223,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapYMirror = false;
     this.tilemapRotate = false;
     this.tilemapUlaOver = false;
+    // --- The render caches (display Y start, 80x32 clip, fast path) derive from the fields above. They
+    // --- used to be computed only on a tilemap scroll write, so a program that enabled the tilemap
+    // --- without writing $2F-$31 rendered every row at NaN and saw no tilemap at all.
+    this.updateTilemapFastPathCaches();
     this.tilemapDefaultAttrCache = 0;
 
     // --- Initialize sampled tilemap configuration
@@ -508,6 +512,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapUlaOver = (value & 0x01) !== 0;
     // Update cached default attribute value
     this.tilemapDefaultAttrCache = value & 0xff;
+    this.updateTilemapFastPathCaches();
   }
 
   /**
@@ -563,6 +568,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.confTotalHC = this.config.totalHC;
     this.confDisplayXStart = this.config.displayXStart;
     this.confDisplayYStart = this.config.displayYStart;
+    this.updateTilemapFastPathCaches();
 
     this.renderingTacts = this.confTotalVC * this.confTotalHC;
     this.machine.setTactsInFrame(this.renderingTacts);
@@ -670,6 +676,43 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     );
   }
 
+  /**
+   * The copper's horizontal counter, hardware `hc_ula`, at raw horizontal clock `hc`.
+   *
+   * The copper, the ULA and NextRegs $1E/$1F all run on `hc_ula`, which wraps to 0 at
+   * `c_min_hactive - 12` - twelve pixels before paper x 0 (zxula_timing.vhd: `ula_min_hactive`).
+   * The raw `hc` wraps 144 pixels before paper x 0, so feeding it to the copper made every WAIT with a
+   * horizontal position fire 132 pixels early.
+   */
+  copperHcAt(hc: number): number {
+    return (hc - (this.confDisplayXStart - 12) + this.confTotalHC) % this.confTotalHC;
+  }
+
+  /**
+   * The copper line, hardware `cvc`, at raw beam position (`vc`, `hc`). `cvc` advances when `hc_ula`
+   * wraps, not when the raw `hc` does, so before raw hc `displayXStart - 12` the beam is still on the
+   * previous copper line.
+   */
+  copperLineAt(vc: number, hc: number): number {
+    return hc >= this.confDisplayXStart - 12 ? this.vcToCopperLine(vc) : this.vcToCopperLine(vc - 1);
+  }
+
+  /**
+   * The frame tact at which the line interrupt pulse for NextReg $22/$23 starts.
+   *
+   * zxula_timing.vhd: "the line interrupt occurs before the line is drawn" - it fires when
+   * `hc_ula = 255` on copper line `L - 1` (`c_max_vc` for L = 0), and `cvc` includes the $64 offset.
+   * `hc_ula` 255 is raw HC `displayXStart - 12 + 255`, on the raw line whose copper line is `L - 1`.
+   */
+  lineInterruptStartTact(): number {
+    const line = this.machine.interruptDevice.lineInterrupt;
+    const targetCvc = line === 0 ? this.confTotalVC - 1 : line - 1;
+    const rawVc =
+      (targetCvc + this.confDisplayYStart - this.machine.copperDevice.verticalLineOffset + this.confTotalVC) %
+      this.confTotalVC;
+    return rawVc * this.confTotalHC + this.confDisplayXStart - 12 + 255;
+  }
+
   // Render the pixel pair belonging to the specified frame tact. This method is the core
   // of the rendering pipeline, called once per tact in the frame.
   renderTact(tact: number): boolean {
@@ -684,10 +727,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Formula mirrors MAME's vpos_to_cvc:
     //   CVC = (vc - displayYStart + copperOffset + totalVC) % totalVC
     // At vc=displayYStart with no offset, CVC=0 (first ULA pixel row = line 0).
-    this.activeVideoLine = this.vcToCopperLine(vc);
+    // The line changes with `hc_ula`, like the copper's (zxnext.vhd: $1E/$1F read `cvc`).
+    this.activeVideoLine = this.copperLineAt(vc, hc);
 
-    // --- Line interrupt pulse: true for the single tact at HC=0 of the target line
-    this.lineIntActive = hc === 0 && this.activeVideoLine === this.machine.interruptDevice.lineInterrupt;
+    // --- Line interrupt pulse: as long as the ULA interrupt pulse, starting at the hardware position.
+    const lineElapsed = (tact - this.lineInterruptStartTact() + this.renderingTacts) % this.renderingTacts;
+    this.lineIntActive = lineElapsed < this.confIntEndTact - this.confIntStartTact;
 
     // === BLANKING CHECK ===
     // All rendering flags have identical blanking regions (cell value 0) for a given frequency mode.
@@ -714,7 +759,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // LoRes mode (128×96, replaces ULA output)
       const loresCell = activeRenderingFlagsLoRes[tact];
       this.renderLoResPixel(vc, hc, loresCell);
-    } else if (!this.ulaDisableOutputSampled) {
+    } else {
       if (this.ulaHiResModeSampled || this.ulaHiColorModeSampled) {
         // ULA Hi-Res and Hi-Color modes
         if (this.ulaHiResModeSampled) {
@@ -731,6 +776,15 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         const ulaCell = activeRenderingFlagsULA[tact];
         this.renderULAStandardPixel(vc, hc, ulaCell);
       }
+    }
+
+    // --- NextReg $68 bit 7: the ULA layer (LoRes included, border included) is transparent while the
+    // --- bit is set, re-evaluated for every pixel (zxnext.vhd: `ula_transparent <= ... or ula_en_2 = '0'`,
+    // --- `ula_en_0` latched each pixel). The ULA still runs above - it keeps sampling its registers - so
+    // --- clearing the bit shows the ULA again from the next pixel. It used to skip the ULA instead, which
+    // --- left the last ULA colour on screen and stopped the sampling that could ever clear the flag.
+    if (this.ulaDisableOutput) {
+      this.ulaPixel1Transparent = this.ulaPixel2Transparent = true;
     }
 
     // Render Layer 2 pixel(s) if enabled
@@ -782,6 +836,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Stage 2: Merge ULA+Tilemap, then compose all layers and write to bitmap
     // Apply the ULA/Tilemap merging process from Section 4.2.1
     // LoRes is already integrated into ulaOutput (not kept separate)
+
+    // --- Stencil mode outside the tilemap's area: the tilemap is enabled but has no pixel there, which is
+    // --- a transparent tilemap pixel (zxnext.vhd `tm_pixel_en_2 = '0'`), so the stencil is transparent too.
+    if (this.tilemapEnabled && this.ulaEnableStencilMode) {
+      if (this.tilemapPixel1Rgb333 === null) this.ulaPixel1Transparent = true;
+      if (this.tilemapPixel2Rgb333 === null) this.ulaPixel2Transparent = true;
+    }
 
     // Merge tilemap into ULA if both enabled
     if (this.tilemapEnabled && this.tilemapPixel1Rgb333 !== null) {
@@ -897,8 +958,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
   // Updates the cached fallback RGB333 value when fallback color changes.
   private updateFallbackRgb333Cache(): void {
+    // --- 8-bit RRRGGGBB to 9 bits: the extra blue bit is B1 OR B0 (zxnext.vhd: `fallback_rgb_2 &
+    // --- (fallback_rgb_2(1) or fallback_rgb_2(0))`). OR-ing in B1 itself turned blue 10 into 110.
     const fallbackRgb332 = this.fallbackColorField;
-    const blueLSB = (fallbackRgb332 & 0x02) | (fallbackRgb332 & 0x01);
+    const blueLSB = (fallbackRgb332 & 0x03) !== 0 ? 1 : 0;
     this.fallbackRgb333Cache = (fallbackRgb332 << 1) | blueLSB;
   }
 
@@ -1130,6 +1193,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         break;
     }
     this.tilemapClipIndex = (this.tilemapClipIndex + 1) & 0x03;
+    this.updateTilemapFastPathCaches();
   }
 
   set nextReg0x42Value(value: number) {
@@ -1248,25 +1312,19 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       const hasBlend = blendSource != null && !blendTransparent;
       const hasL2 = layer2PixelRgb333 != null && !layer2Transparent;
 
+      // zxnext.vhd, modes 110/111: L2 priority -> sum; else sprite; else, where Layer 2 is opaque, the
+      // sum. The ULA never appears on its own in a blend mode: it is only the `mix_rgb` operand, so where
+      // Layer 2 is transparent and no sprite is opaque the output stays the fallback colour.
+      // (This core merges the tilemap into the ULA before composing, so the tilemap-over/under-ULA
+      // `mix_top`/`mix_bot` terms of the `$68` blend-source modes are not modelled here.)
       if (layer2Priority && hasL2) {
-        // Priority L2 in blend mode: blend with ULA, result overrides sprites
-        if (hasBlend) {
-          selectedPixel = blendRgb333(blendSource, layer2PixelRgb333!, this.layerPriority & 1);
-        } else {
-          selectedPixel = layer2PixelRgb333;
-        }
+        selectedPixel = hasBlend ? blendRgb333(blendSource!, layer2PixelRgb333!, this.layerPriority & 1) : layer2PixelRgb333;
         selectedTransparent = false;
       } else if (spritesPixelRgb333 != null && !spritesTransparent) {
         selectedPixel = spritesPixelRgb333;
         selectedTransparent = false;
-      } else if (hasBlend && hasL2) {
-        selectedPixel = blendRgb333(blendSource, layer2PixelRgb333!, this.layerPriority & 1);
-        selectedTransparent = false;
       } else if (hasL2) {
-        selectedPixel = layer2PixelRgb333;
-        selectedTransparent = false;
-      } else if (hasBlend) {
-        selectedPixel = blendSource;
+        selectedPixel = hasBlend ? blendRgb333(blendSource!, layer2PixelRgb333!, this.layerPriority & 1) : layer2PixelRgb333;
         selectedTransparent = false;
       } else {
         selectedPixel = null;
@@ -1359,10 +1417,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let finalRGB333: number;
     // If selected output is null or transparent, use fallback color
     if (selectedPixel === null || selectedTransparent) {
-      // All layers transparent: use fallback color (NextReg 0x4A)
-      // NextReg 0x4A is 8-bit RRRGGGBB, convert to 9-bit RGB
-      const blueLSB = (this.fallbackColor & 0x02) | (this.fallbackColor & 0x01); // OR of blue bits
-      finalRGB333 = (this.fallbackColor << 1) | blueLSB;
+      // All layers transparent: the fallback colour (NextReg $4A), expanded once in its cache
+      finalRGB333 = this.fallbackRgb333Cache;
     } else {
       finalRGB333 = selectedPixel;
     }
@@ -1441,7 +1497,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private ulaShiftAttr: number;
   private ulaShiftAttr2: number;
   private ulaShiftAttrCount: number;
-  private ulaDisableOutputSampled: boolean;
   private ulaHiResModeSampled: boolean;
   private ulaHiColorModeSampled: boolean;
   private ulaHiResInkRgb333: number;
@@ -1544,7 +1599,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
       } else {
         this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
-        this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+        // --- The border is a ULA pixel: it is transparent when it matches $14 (zxnext.vhd ula_rgb_2).
+        this.ulaPixel1Transparent = this.ulaPixel2Transparent = this.ulaPixel1Rgb333 >> 1 === this.globalTransparencyColor;
       }
       if (this.ulaHalfPixelScrollSampled) {
         this.ulaPreviousPixelRgb333 = this.ulaPixel2Rgb333;
@@ -1743,7 +1799,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       }
 
       this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = borderRgb333;
-      this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+      // --- The border is a ULA pixel: it is transparent when it matches $14 (zxnext.vhd ula_rgb_2).
+      this.ulaPixel1Transparent = this.ulaPixel2Transparent = this.ulaPixel1Rgb333 >> 1 === this.globalTransparencyColor;
       return;
     }
 
@@ -1903,7 +1960,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // --- Use cached border RGB value (updated when borderColor changes)
       // --- This eliminates method call overhead for ~30% of pixels
       this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
-      this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+      // --- The border is a ULA pixel: it is transparent when it matches $14 (zxnext.vhd ula_rgb_2).
+      this.ulaPixel1Transparent = this.ulaPixel2Transparent = this.ulaPixel1Rgb333 >> 1 === this.globalTransparencyColor;
       return;
     }
 
@@ -1977,9 +2035,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // --- Scroll
     this.ulaScrollXSampled = this.ulaScrollX;
     this.ulaScrollYSampled = this.ulaScrollY;
-
-    // --- ULA Standard mode
-    this.ulaDisableOutputSampled = this.ulaDisableOutput;
 
     // --- ULA Hi-Res mode
     this.ulaHiResModeSampled = this.ulaHiResMode;
@@ -2105,7 +2160,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     if ((cell & SCR_DISPLAY_AREA) === 0) {
       // Border uses cached border RGB value (same as ULA)
       this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
-      this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+      // --- The border is a ULA pixel: it is transparent when it matches $14 (zxnext.vhd ula_rgb_2).
+      this.ulaPixel1Transparent = this.ulaPixel2Transparent = this.ulaPixel1Rgb333 >> 1 === this.globalTransparencyColor;
       return;
     }
 
@@ -2262,12 +2318,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
 
-    if (paletteIndex === this.globalTransparencyColor) {
+    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
+    // --- Transparency tests the palette-mapped RGB, not the index (zxnext.vhd `layer2_transparent <= ... layer2_rgb_2(8 downto 1) = transparent_rgb_2`).
+    if ((rgb333 & 0x1fe) >> 1 === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
       return;
     }
-    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x200) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2366,12 +2423,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
 
-    if (paletteIndex === this.globalTransparencyColor) {
+    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
+    // --- Transparency tests the palette-mapped RGB, not the index (zxnext.vhd `layer2_transparent <= ... layer2_rgb_2(8 downto 1) = transparent_rgb_2`).
+    if ((rgb333 & 0x1fe) >> 1 === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
       return;
     }
-    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x200) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2435,13 +2493,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
 
-    if (paletteIndex === this.globalTransparencyColor) {
+    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
+    // --- Transparency tests the palette-mapped RGB, not the index (zxnext.vhd `layer2_transparent <= ... layer2_rgb_2(8 downto 1) = transparent_rgb_2`).
+    if ((rgb333 & 0x1fe) >> 1 === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
       return;
     }
-
-    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x200) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2506,13 +2564,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
 
-    if (paletteIndex === this.globalTransparencyColor) {
+    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
+    // --- Transparency tests the palette-mapped RGB, not the index (zxnext.vhd `layer2_transparent <= ... layer2_rgb_2(8 downto 1) = transparent_rgb_2`).
+    if ((rgb333 & 0x1fe) >> 1 === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
       return;
     }
-
-    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x200) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2616,12 +2674,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // In 640x256 mode, palette index = (palette_offset << 4) | pixel_4bit
     const paletteIndex1 = ((this.layer2PaletteOffset & 0x0f) << 4) | pixel1_4bit;
 
-    if (paletteIndex1 === this.globalTransparencyColor) {
+    const rgb333_1 = this.paletteDevice.getLayer2Rgb333(paletteIndex1);
+    // --- Transparency tests the palette-mapped RGB, not the index (zxnext.vhd `layer2_transparent <= ... layer2_rgb_2(8 downto 1) = transparent_rgb_2`).
+    if ((rgb333_1 & 0x1fe) >> 1 === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = 0;
       this.layer2Pixel1Transparent = true;
       this.layer2Pixel1Priority = false;
     } else {
-      const rgb333_1 = this.paletteDevice.getLayer2Rgb333(paletteIndex1);
       const priority1 = (rgb333_1 & 0x200) !== 0;
 
       this.layer2Pixel1Rgb333 = rgb333_1 & 0x1ff;
@@ -2632,12 +2691,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Process pixel 2 (right pixel)
     const paletteIndex2 = ((this.layer2PaletteOffset & 0x0f) << 4) | pixel2_4bit;
 
-    if (paletteIndex2 === this.globalTransparencyColor) {
+    const rgb333_2 = this.paletteDevice.getLayer2Rgb333(paletteIndex2);
+    // --- Transparency tests the palette-mapped RGB, not the index (zxnext.vhd `layer2_transparent <= ... layer2_rgb_2(8 downto 1) = transparent_rgb_2`).
+    if ((rgb333_2 & 0x1fe) >> 1 === this.globalTransparencyColor) {
       this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel2Transparent = true;
       this.layer2Pixel2Priority = false;
     } else {
-      const rgb333_2 = this.paletteDevice.getLayer2Rgb333(paletteIndex2);
       const priority2 = (rgb333_2 & 0x200) !== 0;
 
       this.layer2Pixel2Rgb333 = rgb333_2 & 0x1ff;
@@ -2674,12 +2734,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Process pixel 1 (left pixel)
     const paletteIndex1 = ((this.layer2PaletteOffset & 0x0f) << 4) | pixel1_4bit;
 
-    if (paletteIndex1 === this.globalTransparencyColor) {
+    const rgb333_1 = this.paletteDevice.getLayer2Rgb333(paletteIndex1);
+    // --- Transparency tests the palette-mapped RGB, not the index (zxnext.vhd `layer2_transparent <= ... layer2_rgb_2(8 downto 1) = transparent_rgb_2`).
+    if ((rgb333_1 & 0x1fe) >> 1 === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = 0;
       this.layer2Pixel1Transparent = true;
       this.layer2Pixel1Priority = false;
     } else {
-      const rgb333_1 = this.paletteDevice.getLayer2Rgb333(paletteIndex1);
       const priority1 = (rgb333_1 & 0x200) !== 0;
 
       this.layer2Pixel1Rgb333 = rgb333_1 & 0x1ff;
@@ -2690,12 +2751,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Process pixel 2 (right pixel)
     const paletteIndex2 = ((this.layer2PaletteOffset & 0x0f) << 4) | pixel2_4bit;
 
-    if (paletteIndex2 === this.globalTransparencyColor) {
+    const rgb333_2 = this.paletteDevice.getLayer2Rgb333(paletteIndex2);
+    // --- Transparency tests the palette-mapped RGB, not the index (zxnext.vhd `layer2_transparent <= ... layer2_rgb_2(8 downto 1) = transparent_rgb_2`).
+    if ((rgb333_2 & 0x1fe) >> 1 === this.globalTransparencyColor) {
       this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel2Transparent = true;
       this.layer2Pixel2Priority = false;
     } else {
-      const rgb333_2 = this.paletteDevice.getLayer2Rgb333(paletteIndex2);
       const priority2 = (rgb333_2 & 0x200) !== 0;
 
       this.layer2Pixel2Rgb333 = rgb333_2 & 0x1ff;

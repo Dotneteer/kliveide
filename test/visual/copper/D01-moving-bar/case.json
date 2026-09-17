@@ -144,23 +144,5 @@
   "tiers": [
     "headless",
     "browser"
-  ],
-  "knownFailures": [
-    {
-      "oracle": "motion",
-      "reason": "WASM: NextReg $1E/$1F (active video line) always read 0, so the program's once-per-frame sync (WaitCvc) never returns and the list is never rewritten. Findings F6.",
-      "core": "wasm",
-      "name": "bar top"
-    },
-    {
-      "oracle": "motion",
-      "reason": "WASM: NextReg $1E/$1F (active video line) always read 0, so the program's once-per-frame sync (WaitCvc) never returns and the list is never rewritten. Findings F6.",
-      "core": "wasm",
-      "name": "bar bottom"
-    },
-    {
-      "oracle": "parity",
-      "reason": "The cores differ wherever one of this case's known failures applies to only one core."
-    }
   ]
 }

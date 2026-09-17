@@ -80,7 +80,8 @@ static uint32_t zxnextNextRegGetValue(void) {
 static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   uint32_t normalized = reg & 0xffu;
   if (zxnextRasterIsVideoNextReg(normalized)) {
-    zxnextRasterCatchUp(zxnextNextRegWriteTactOverride != 0xffffffffu ? zxnextNextRegWriteTactOverride : currentFrameTact);
+    uint32_t writeTact = zxnextNextRegWriteTactOverride != 0xffffffffu ? zxnextNextRegWriteTactOverride : currentFrameTact;
+    zxnextRasterCatchUp(normalized == 0x26u || normalized == 0x27u ? zxnextRasterUlaScrollTact(writeTact) : writeTact);
   }
   if (zxnextInterruptsHandlesNextRegister(reg)) {
     zxnextInterruptsSetNextRegister(reg, value);
@@ -140,6 +141,15 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
 static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
   if (zxnextInterruptsHandlesNextRegister(reg)) return zxnextInterruptsGetNextRegister(reg);
   switch (reg & 0xffu) {
+    // --- Active video line: the copper line (hardware `cvc`, $64 offset included) the beam is on.
+    // --- Computed, not stored. Mirrors NextComposedScreenDevice.activeVideoLine, which is updated
+    // --- as each tact renders, i.e. it holds the line of the last tact before currentFrameTact.
+    case 0x1eu:
+    case 0x1fu: {
+      uint32_t tact = currentFrameTact > 0u ? currentFrameTact - 1u : ZXNEXT_RENDERING_TACTS_IN_FRAME - 1u;
+      uint32_t line = zxnextCopperLineAt(tact / ZXNEXT_SCREEN_TOTAL_HC, tact % ZXNEXT_SCREEN_TOTAL_HC);
+      return (reg & 0xffu) == 0x1eu ? (line >> 8u) & 0x01u : line & 0xffu;
+    }
     case 0x06u:
       return (zxnextNextRegs[0x06u] & 0xe7u) |
         (zxnextDivMmcGetEnableNmiByDriveButton() ? 0x10u : 0x00u) |

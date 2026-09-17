@@ -16,7 +16,7 @@ npm run test:visual -- --tier browser --headed
 npm run visual:serve                        # interactive: open http://127.0.0.1:5177/ in Chrome
 npm run test:visual -- --approve C02        # lock in hashes after a pass verdict (add --tier browser)
 npm test -- --project node test/visual      # the harness's own tests (mutation tests of every oracle,
-                                            # and WASM raster regressions on C02/C07/C09)
+                                            # and raster/$1F/WAIT-H/border/$68/$14/line-interrupt/Layer 2/compositing regressions)
 ```
 
 Output goes to `.visual-tests/<timestamp>/` (gitignored; `.visual-tests/LATEST` names the newest):
@@ -49,11 +49,14 @@ must come first. Mid-frame *memory* writes are not raced (the region renders wit
 (written by `--approve`). Start from an existing case.
 
 - Include `../_include/copper-macros.z80asm` right after `.model Next` (macros before use) and
-  `../_include/copper-routines.z80asm` at the **end**: `.ent` is currently ignored for NEX output, so the
-  program's own code must start at `$8000`.
+  `../_include/copper-routines.z80asm` at the end (the existing cases keep their code at `$8000`; since
+  `.ent` now sets the NEX entry point, a program may also put routines first and mark `Start: .ent $`).
 - Call `ClearScreen` first. It resets the NextRegs NextZXOS leaves changed (`$43=$20` sends palette
   writes to the sprite palette, `$07=$33` is 28 MHz, `$15=$01` sprites on) - a program that assumes
   reset values passes Tier 1 and fails the real load.
+- Write every palette entry the picture uses: FPGA palette RAM has no reset contents (firmware fills it),
+  and the cores' power-on palettes differ in the low blue bit.
+- A setup that takes longer than 10 frames needs `readyBy` in `case.json`.
 - Signal ready with `SignalReady()` (`$A5` → NextReg `$7F`) once the picture is set up.
 - The display file is **not linear**: pixel row y is at `$4000 | third<<11 | scanline<<8 | charrow<<5`
   (ROM PIXEL-ADD). `lib/beam.ts` has `displayFileAddress`.
@@ -61,6 +64,8 @@ must come first. Mid-frame *memory* writes are not raced (the region renders wit
   fill all 257 table bytes with one value (the vector at `I:$FF` straddles a pair).
 - A label alone on a line binds to the next statement, even `.org` - use `Label .equ $` for end markers.
 - Macro parameter names must not be register names (`h`, `l`, ...).
+- Watch memory overlaps when laying out data in bank 5 (a 40x32 tilemap with attributes is 2560 bytes).
+- Sprites: pattern bytes to port `$5B` after selecting with `$303B`; attributes to `$57` (5 bytes with attr 4).
 
 `case.json` essentials: `capture` (frames), `expectIdenticalFrames` (static screen), `probes`
 (`rect`, `bands`, `columns`, `pixel`, `colors`; colours as `#RRGGBB`, `ula:N`, `next8:0xNN`,

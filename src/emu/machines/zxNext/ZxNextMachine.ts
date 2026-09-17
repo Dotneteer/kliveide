@@ -1690,7 +1690,16 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       return id.daisyUpdateIrqState();
     }
 
-    return this.composedScreenDevice.pulseIntActive || (this.dmaDevice.getIp() === 1);
+    // --- Pulse ("legacy") mode: any enabled source starts the INT pulse (peripherals.vhd `o_pulse_en`,
+    // --- zxnext.vhd `pulse_int_n`). The ULA frame interrupt obeys its disable bit ($22 bit 2 = port $FF
+    // --- bit 6 = not $C4 bit 0), and the line interrupt ($22 bit 1) raises INT too - it used to be
+    // --- captured into a status flag nothing read, so it never interrupted the CPU.
+    const screen = this.composedScreenDevice;
+    return (
+      (screen.pulseIntActive && !id.ulaInterruptDisabled) ||
+      (screen.lineIntActive && id.lineInterruptEnabled) ||
+      this.dmaDevice.getIp() === 1
+    );
   }
 
   /**
@@ -1700,13 +1709,16 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   onTactIncremented(): void {
     if (this.frameCompleted) return;
     while (this.lastRenderedFrameTact < this.currentFrameTact) {
-      // The copper compares against the rebased copper line (hardware `cvc`), not the raw
-      // ULA vertical counter. Guard on the start mode so a stopped copper costs nothing.
+      // The copper sees the ULA beam - `cvc` and `hc_ula` (zxnext.vhd wires them to copper.vhd) - not
+      // the raw counters, and it runs on the 28 MHz clock: four ticks per horizontal position.
+      // Guard on the start mode so a stopped copper costs nothing.
       if (this.copperDevice.startMode !== CopperStartMode.FullyStopped) {
-        this.copperDevice.executeTick(
-          this.composedScreenDevice.vcToCopperLine(this._copperCurrentLine),
-          this._copperCurrentColumn
-        );
+        const screen = this.composedScreenDevice;
+        const cvc = screen.copperLineAt(this._copperCurrentLine, this._copperCurrentColumn);
+        const hcUla = screen.copperHcAt(this._copperCurrentColumn);
+        for (let tick = 0; tick < 4; tick++) {
+          this.copperDevice.executeTick(cvc, hcUla);
+        }
       }
       this._copperCurrentColumn++;
       if (this._copperCurrentColumn >= this._totalHC) {

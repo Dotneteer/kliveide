@@ -5,9 +5,13 @@ the next character cell.
 
 Scroll s shows source column (x+s) mod 256, so the bar (source x 0-7) appears at paper x 256−s.
 
-**Should see** (buffer x, paper white): rows 48-95 bar at 96-111 (left edge); rows 96-143 bar at
+**Should see** (buffer x, paper white): rows 48-95 bar at 96-111 (left edge); rows 97-143 bar at
 592-607 (right edge); rows 144-191 at 576-591; rows 192-239 at 560-575 — a bar that jumps from the
-left edge to the right edge and then steps left by 16 px every 48 rows. White border.
+left edge to the right edge and then steps left by 16 px every 48 rows. **Row 96 shows the bar twice**
+(96-111 and 592-607): the WAIT fires at paper x 0, but the first 8-pixel cell of that row was latched
+with the old scroll (0) just before, so it still shows source column 0; the rest of the row uses scroll
+8. Rows 144 and 192 have the same one-cell lag, but there the old scroll shows no bar in the first cell.
+White border.
 
 **Must not see:** one straight bar over the whole height (end-of-frame scroll), or a bar in the border.
 

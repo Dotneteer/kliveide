@@ -746,45 +746,56 @@ describe("CopperDevice – Step 8: Machine integration", () => {
     machine.onTactIncremented();
   }
 
-  it("should call executeTick with correct vc/hc derived from tact", () => {
+  it("should call executeTick with the ULA beam (cvc, hc_ula), four ticks per tact", () => {
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+    const screen = machine.composedScreenDevice;
 
     const spy = vi.spyOn(copper, "executeTick");
     driveToTact(3);
 
-    // tact 0..2 are all on ULA line 0, at hc 0..2. The copper is handed the *rebased*
-    // copper line (hardware `cvc`), not the raw ULA line — see the `cvc` describe block.
-    const cvc0 = machine.composedScreenDevice.vcToCopperLine(0);
-    expect(spy).toHaveBeenCalledWith(cvc0, 0);
-    expect(spy).toHaveBeenCalledWith(cvc0, 1);
-    expect(spy).toHaveBeenCalledWith(cvc0, 2);
+    // Raw tacts 0..2 are raw line 0, raw HC 0..2. The copper sees hardware `hc_ula`, which wraps 12
+    // pixels before paper x 0 (raw HC 132), so these are hc_ula 324..326 of the *previous* copper line.
+    expect(screen.copperHcAt(0)).toBe(324);
+    expect(screen.copperHcAt(132)).toBe(0);
+    const cvc = screen.vcToCopperLine(-1);
+    expect(screen.copperLineAt(0, 0)).toBe(cvc);
+    expect(spy).toHaveBeenCalledWith(cvc, 324);
+    expect(spy).toHaveBeenCalledWith(cvc, 325);
+    expect(spy).toHaveBeenCalledWith(cvc, 326);
+    // --- 28 MHz: four copper ticks per horizontal position
+    expect(spy).toHaveBeenCalledTimes(12);
   });
 
-  it("should pass correct vc for tacts on the second scan-line", () => {
+  it("should advance the copper line at the hc_ula wrap, not at raw HC 0", () => {
     const totalHC = machine.composedScreenDevice.config.totalHC; // 456
+    const screen = machine.composedScreenDevice;
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
 
     const spy = vi.spyOn(copper, "executeTick");
-    driveToTact(totalHC + 1);
+    driveToTact(totalHC + 133);
 
-    // First tact of ULA line 1, expressed as the copper line the machine rebases it to.
-    expect(spy).toHaveBeenCalledWith(machine.composedScreenDevice.vcToCopperLine(1), 0);
+    // Raw line 1, HC 0: still copper line of raw line 0, hc_ula 324.
+    expect(spy).toHaveBeenCalledWith(screen.vcToCopperLine(0), 324);
+    // Raw line 1, HC 132: hc_ula 0 of the copper line of raw line 1.
+    expect(spy).toHaveBeenCalledWith(screen.vcToCopperLine(1), 0);
   });
 
-  it("should deliver a MOVE to the NextReg through the machine loop", () => {
-    // Slot 0: WAIT for the copper line that ULA line 0 maps to, hc6=0 (waitHC = 0*8+12 = 12)
+  it("should deliver a MOVE to the NextReg at paper x 0 for WAIT(line, 0)", () => {
+    // Slot 0: WAIT for the copper line of raw line 0, hc6=0 → fires at hc_ula >= 12 = raw HC 144
     // Slot 1: MOVE reg=0x55 val=0xAB
-    writeInstruction(copper, 0, waitInstr(0, machine.composedScreenDevice.vcToCopperLine(0)));
+    const screen = machine.composedScreenDevice;
+    writeInstruction(copper, 0, waitInstr(0, screen.vcToCopperLine(0)));
     writeInstruction(copper, 1, moveInstr(0x55, 0xab));
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
 
     const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
 
-    // tact 12: WAIT passes (hc=12 >= waitHC=12) → addr advances to 1
-    // tact 13: fetch MOVE → _copperDout=true, addr=2
-    // tact 14: output MOVE → directSetRegValue(0x55, 0xAB)
-    driveToTact(15);
+    // Up to raw HC 143 nothing happens (hc_ula 11 < 12).
+    driveToTact(144);
+    expect(spy).not.toHaveBeenCalled();
 
+    // Raw HC 144 (hc_ula 12), within its four ticks: WAIT passes, MOVE is fetched, MOVE is output.
+    driveToTact(145);
     expect(spy).toHaveBeenCalledWith(0x55, 0xab);
   });
 

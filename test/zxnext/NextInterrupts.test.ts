@@ -346,3 +346,58 @@ describe("Next IM2 – D4 (onInterruptAcknowledged clears winning source)", () =
     expect(m.interruptDevice.ulaInterruptStatus).toBe(true);
   });
 });
+
+describe("Line interrupt and ULA interrupt disable in pulse mode (Findings F7)", () => {
+  // zxula_timing.vhd: the line interrupt fires at hc_ula = 255 of copper line L-1 (c_max_vc for L = 0).
+  // peripherals.vhd: in pulse mode any enabled source starts the INT pulse.
+  async function machineAt(setup: (m: Awaited<ReturnType<typeof createTestNextMachine>>) => void) {
+    const m = await createTestNextMachine();
+    setup(m);
+    return m;
+  }
+
+  it("places the line interrupt pulse at hc_ula 255 of the previous copper line", async () => {
+    const m = await machineAt((m) => {
+      m.nextRegDevice.directSetRegValue(0x22, 0x02);
+      m.nextRegDevice.directSetRegValue(0x23, 144);
+    });
+    const screen = m.composedScreenDevice;
+    // Copper line 143 is raw line 143 + 64; hc_ula 255 is raw HC 132 + 255 = 387.
+    expect(screen.lineInterruptStartTact()).toBe((143 + 64) * 456 + 387);
+    m.nextRegDevice.directSetRegValue(0x23, 0);
+    expect(screen.lineInterruptStartTact()).toBe(((310 + 64) % 311) * 456 + 387);
+    m.nextRegDevice.directSetRegValue(0x64, 10); // copper line offset shifts it 10 raw lines up
+    expect(screen.lineInterruptStartTact()).toBe(((310 + 64 - 10) % 311) * 456 + 387);
+  });
+
+  it("raises INT for an enabled line interrupt, only within its pulse", async () => {
+    const m = await machineAt((m) => {
+      m.nextRegDevice.directSetRegValue(0x22, 0x06); // line interrupt on, ULA interrupt off
+      m.nextRegDevice.directSetRegValue(0x23, 144);
+    });
+    const screen = m.composedScreenDevice;
+    const start = screen.lineInterruptStartTact();
+    screen.renderTact(start - 1);
+    expect(m.shouldRaiseInterrupt()).toBe(false);
+    screen.renderTact(start);
+    expect(m.shouldRaiseInterrupt()).toBe(true);
+    screen.renderTact(start + 31);
+    expect(m.shouldRaiseInterrupt()).toBe(true);
+    screen.renderTact(start + 32);
+    expect(m.shouldRaiseInterrupt()).toBe(false);
+
+    m.nextRegDevice.directSetRegValue(0x22, 0x04); // line interrupt off
+    screen.renderTact(start);
+    expect(m.shouldRaiseInterrupt()).toBe(false);
+  });
+
+  it("does not raise the ULA frame interrupt while $22 bit 2 disables it", async () => {
+    const m = await machineAt(() => {});
+    const screen = m.composedScreenDevice;
+    screen.renderTact(screen.config.intStartTact);
+    expect(m.shouldRaiseInterrupt()).toBe(true);
+    m.nextRegDevice.directSetRegValue(0x22, 0x04);
+    screen.renderTact(screen.config.intStartTact);
+    expect(m.shouldRaiseInterrupt()).toBe(false);
+  });
+});

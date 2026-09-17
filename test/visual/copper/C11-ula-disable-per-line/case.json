@@ -93,47 +93,5 @@
       ],
       "rgb": "next8:0xE0"
     }
-  ],
-  "knownFailures": [
-    {
-      "oracle": "probes",
-      "reason": "TS: once $68 bit 7 is set the ULA render path is skipped and never re-samples the bit, so the ULA cannot be re-enabled mid-frame or in later frames. Findings F5.",
-      "core": "ts",
-      "name": "left border, enabled rows"
-    },
-    {
-      "oracle": "probes",
-      "reason": "TS: once $68 bit 7 is set the ULA render path is skipped and never re-samples the bit, so the ULA cannot be re-enabled mid-frame or in later frames. Findings F5.",
-      "core": "ts",
-      "name": "right border, enabled rows"
-    },
-    {
-      "oracle": "probes",
-      "reason": "TS: once $68 bit 7 is set the ULA render path is skipped and never re-samples the bit, so the ULA cannot be re-enabled mid-frame or in later frames. Findings F5.",
-      "core": "ts",
-      "name": "paper, enabled rows"
-    },
-    {
-      "oracle": "probes",
-      "reason": "WASM: $68 bit 7 keeps a border-only frame instead of showing the $4A fallback colour. Findings F5.",
-      "core": "wasm",
-      "name": "top border (still disabled from the previous frame)"
-    },
-    {
-      "oracle": "probes",
-      "reason": "WASM: $68 bit 7 keeps a border-only frame instead of showing the $4A fallback colour. Findings F5.",
-      "core": "wasm",
-      "name": "row 144 from paper x 0"
-    },
-    {
-      "oracle": "probes",
-      "reason": "WASM: $68 bit 7 keeps a border-only frame instead of showing the $4A fallback colour. Findings F5.",
-      "core": "wasm",
-      "name": "disabled rows"
-    },
-    {
-      "oracle": "parity",
-      "reason": "The cores differ wherever one of this case's known failures applies to only one core."
-    }
   ]
 }

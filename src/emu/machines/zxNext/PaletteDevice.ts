@@ -261,21 +261,18 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
       : this.tilemapFirst[index & 0xff];
   }
 
+  /**
+   * Called after every palette write ($41, $44) and palette control change ($43).
+   *
+   * The border has no palette entries of its own: border colour n is drawn with ULA entry 16+n
+   * (128+n with ULANext, 200+n with ULA+; zxula.vhd), and the screen device caches that colour. A write
+   * to one of those entries must refresh the cache, or the border keeps the old colour - which is what
+   * happened when only a $43 palette switch refreshed it. Refreshing costs one palette lookup.
+   */
   private updateUlaPalette(): void {
-    // if (this._selectedPalette === 0) {
-    //   this.machine.screenDevice.setCurrentUlaColorsFromPalette(
-    //     this.ulaFirst,
-    //     this._enableUlaNextMode,
-    //     this.ulaNextByteFormat
-    //   );
-    // } else if (this._selectedPalette === 4) {
-    //   this.machine.screenDevice.setCurrentUlaColorsFromPalette(
-    //     this.ulaSecond,
-    //     this._enableUlaNextMode,
-    //     this.ulaNextByteFormat
-    //   );
-    // }
+    this.machine.composedScreenDevice?.updateBorderRgbCache();
   }
+
 }
 
 export const zxNextRgb333Codes: number[] = [

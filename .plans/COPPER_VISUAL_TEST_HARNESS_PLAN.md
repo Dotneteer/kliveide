@@ -71,7 +71,7 @@ No IDE renderer: it only orchestrates, and the page does that itself. No Electro
 Klive buffer (720×288): paper row r = buffer row 48+r, paper x = buffer x 96+2x
 (`scripts/visual-tests/lib/beam.ts`, calibrated by C00).
 
-## Test catalogue (implemented, Tier 1)
+## Test catalogue (implemented, both tiers)
 
 | ID | What | TS | WASM (Tier 1 and browser) |
 |---|---|---|---|
@@ -79,20 +79,23 @@ Klive buffer (720×288): paper row r = buffer row 48+r, paper x = buffer x 96+2x
 | C00 | calibration: WAIT(96) edge vs ULA row 96 | pass | pass |
 | C01 | uploaded, never started | pass | pass |
 | C02 | 8 palette bands | pass | pass |
-| C03 | WAIT H staircase | XFAIL F2 | XFAIL F2 |
-| C04 | palette writes reach the border | XFAIL F3 | XFAIL F3 |
+| C03 | WAIT H staircase | pass | pass |
+| C04 | palette writes reach the border | pass | pass |
 | C05 | C02 via `$63` | pass | pass |
 | C06 | NOP / HALT | pass | pass |
 | C07 | `$64` line offset | pass | pass |
 | C08 | mode 01 runs once | pass | pass |
 | C09 | per-line `$26` scroll | pass | pass |
-| C10 | per-line `$14` transparency | pass | XFAIL F4 |
-| C11 | per-line `$68` ULA disable | XFAIL F5 | XFAIL F5 |
-| D01 | bar moving 1 line/frame | pass | XFAIL F6 |
-| D02 | colour cycle | pass | XFAIL F6 |
-| D03 | mid-frame list rewrite lags a frame | pass | XFAIL F6 |
-| D04 | copper + line interrupt | XFAIL F7 | XFAIL F7 |
-| D05 | D01 over 3000 frames (`--long`) | pass | XFAIL F6 |
+| C10 | per-line `$14` transparency | pass | pass |
+| C11 | per-line `$68` ULA disable | pass | pass |
+| D01 | bar moving 1 line/frame | pass | pass |
+| D02 | colour cycle | pass | pass |
+| D03 | mid-frame list rewrite lags a frame | pass | pass |
+| D04 | copper + line interrupt | pass | pass |
+| L01 | Layer 2 transparency: RGB vs `$14`, not index; `$4B` ignored | pass | pass |
+| P01 | `$15` orders, Layer 2 priority bit, blend modes 6/7 per band | pass | pass |
+| P02 | tilemap over/under ULA, transparent ULA, stencil | pass | pass |
+| D05 | D01 over 3000 frames (`--long`) | pass | pass |
 
 A known failure (XFAIL) never fails the run; the moment it starts passing it is XPASS and does.
 
@@ -182,19 +185,92 @@ Emulator behaviour that disagrees with the hardware, found by the cases above. E
   measured (a palette change on each of 192 lines) 1.05 ms/frame vs 0.64 ms without copper. Guarded by
   raster regression tests in `test/visual/harness.test.ts` (mutation-tested: disabling the catch-up
   fails all three). Not raced: mid-frame writes to screen memory.
-- **F2 – TS copper horizontal origin.** The copper is ticked with the raw `hc` instead of `hc_ula`:
-  WAITs fire 132 px early (edge at buffer x `16H−164` instead of `96+16H`). Also 1 copper tick per
-  pixel instead of 4.
-- **F3 – Border ignores palette writes.** TS refreshes the border cache only on a `$43` palette switch;
-  WASM uses a fixed Spectrum colour table for the border.
-- **F4 – WASM ignores `$14` for the ULA.**
-- **F5 – `$68` bit 7.** TS: once set, never re-sampled (cannot be re-enabled). WASM: border-only frame
-  instead of the fallback colour. Also TS resets `$4A` to `$00` (hardware `$E3`).
-- **F6 – WASM `$1E/$1F` always read 0.** Programs that sync on the active line hang.
-- **F7 – Line interrupt (D04).** The handler runs once per frame at copper line ~248 (the ULA frame
-  interrupt, although `$22` bit 2 was set) and never on line 144; TS reads `$22` back without bit 2.
-  Needs investigation.
-- **Assembler:** `.ent` is ignored in NEX output under `.model Next` (entry forced to `$8000`) – the
-  test programs keep their code at `$8000`; flagged as a separate task.
+- **F2 – Copper horizontal origin and tick rate. FIXED 2026-09-17 (both cores).** The copper was fed
+  the raw `hc` (paper x 0 at 144) instead of `hc_ula` (paper x 0 at 12), its line advanced at raw HC 0
+  instead of at the `hc_ula` wrap, and it ticked once per HC instead of four times (28 MHz). WAITs fired
+  132 px early. Fix: `NextComposedScreenDevice.copperHcAt/copperLineAt` (TS) and
+  `zxnextCopperHcAt/zxnextCopperLineAt` (WASM) give the ULA beam; both machines tick the copper 4× per
+  HC; `$1E/$1F` follow the same beam (the line interrupt keeps its raw-HC timing - F7). The WASM raster
+  delays a `$26/$27` catch-up to the next 8-pixel ULA cell, matching the TS scroll latch. C03 now passes
+  in both cores; C09's row-96 expectation was corrected (the first cell after a mid-line scroll write
+  keeps the old scroll, per the `px` latch in zxula.vhd). 12 unit tests that encoded the raw-HC beam were
+  rewritten to the hardware semantics, plus new boundary tests. Guarded by the C03 regression test
+  (mutation-tested). `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.5b's claim that the counters were
+  the genuine ULA `hc` is superseded by this.
+- **F3 – Border ignored palette writes. FIXED 2026-09-17 (both cores).** TS refreshed its border colour
+  cache only on a `$43` palette switch; WASM drew the border from a fixed Spectrum colour table. Fix: TS
+  `PaletteDevice.updateUlaPalette` (already called after every `$41`/`$43`/`$44` write, but empty) now
+  refreshes the cache; WASM draws border n with ULA palette entry 16+n (the raster already catches up on
+  palette writes, so mid-frame changes show). C04 passes in both cores; T00/C01/C08 goldens unchanged
+  (the default palette equals the old table). Guarded by unit tests in `test/zxnext/PaletteDevice.test.ts`
+  and the C04 regression test (both mutation-tested). WASM still has no ULANext/ULA+ border (or paper)
+  indices; TS uses 128+n / 200+n there.
+- **F4 – `$14` global transparency for the ULA. FIXED 2026-09-17.** WASM drew ULA pixels whatever their
+  colour; the TS core never let a *border* pixel match. Hardware: `ula_mix_transparent <= ...
+  ula_rgb_2(8 downto 1) = transparent_rgb_2`, and `ula_rgb_2` includes the border. Fix: WASM
+  `zxnextUlaVisibleColor` - every ULA/HiRes/HiColor/LoRes pixel and the border show the fallback colour
+  when their upper 8 bits equal `$14` (later layers still draw over them); TS's four border paths now
+  compare against `$14`. C10 passes and is byte-identical in both cores. Guarded by border tests in
+  `test/zxnext/UlaDisableFallback.test.ts` and the C10 regression test (mutation-tested). WASM still has
+  no real per-pixel compositor: layer priorities (`$15`), blend modes and stencil mode are not modelled.
+- **F5 – `$68` bit 7 (ULA disable). FIXED 2026-09-17 (both cores).** TS skipped the ULA renderer while the
+  sampled bit was set: the last ULA colour stayed on screen, and since sampling happens inside that
+  renderer the bit could never clear. WASM kept a border-only frame. Hardware
+  (`ula_transparent <= ... or ula_en_2 = '0'`, `ula_en` latched per pixel) makes the whole ULA layer -
+  LoRes and border included - transparent. Fix: TS always runs the ULA/LoRes path and marks its pixels
+  transparent while the live bit is set; WASM fills the ULA layer with the fallback colour (later layers
+  still draw over it). Also fixed in both cores: the `$4A` fallback 8→9-bit expansion OR-ed B1 into the
+  low bit (blue 10 became 110; now `B1 | B0`). C11 passes and is byte-identical in both cores. Guarded
+  by `test/zxnext/UlaDisableFallback.test.ts` and the C11 regression test (all mutation-tested). Not
+  changed: TS still resets `$4A` to `$00` (hardware `$E3`); blend modes that use the ULA colour while
+  `ula_en = 0` (`ula_mix_rgb`) are not modelled.
+- **F6 – WASM `$1E/$1F` always read 0. FIXED 2026-09-17.** The registers were stored reset values.
+  They are now computed on read in `zxnextNextRegGetDirect`: the copper line (`$64` offset included) of
+  the tact before `currentFrameTact`, mirroring `NextComposedScreenDevice.activeVideoLine`. D01–D03 now
+  pass in WASM with all frames byte-identical to the TS core, D05 over 3000 frames; guarded by the D02
+  regression test (mutation-tested).
+- **F7 – Line interrupt. FIXED 2026-09-17 (both cores).** In pulse (non-hardware-IM2) mode both cores
+  raised INT only for the ULA frame pulse: the `$22` bit 2 disable was ignored, and line interrupts never
+  reached the CPU (TS captured them into a status flag nothing read; WASM never generated them at all,
+  not even as status for hardware IM2 mode). Hardware (peripherals.vhd `o_pulse_en`, zxnext.vhd
+  `pulse_int_n`): any enabled source starts the INT pulse; zxula_timing.vhd fires the line interrupt at
+  `hc_ula = 255` of copper line `L - 1` (`c_max_vc` for 0), `$64` offset included. Fix: a line pulse as
+  long as the ULA pulse at that position (`NextComposedScreenDevice.lineInterruptStartTact`,
+  `zxnextVideoLineIntActive`); pulse-mode INT = (ULA pulse and not disabled) or (line pulse and enabled)
+  or DMA; WASM now also sets the ULA/line status flags on the rising edges, as TS does. D04 turns red from
+  exactly buffer row 192 in both cores. Guarded by `test/zxnext/NextInterrupts.test.ts` and the D04
+  regression test (mutation-tested).
+- **F8 – Layer 2 transparency. FIXED 2026-09-17 (both cores).** Hardware compares Layer 2's
+  palette-mapped *RGB* with `$14` (zxnext.vhd `layer2_transparent <= ... layer2_rgb_2(8 downto 1) =
+  transparent_rgb_2`; layer2.vhd has no transparency logic). The TS core compared the *palette index* with
+  `$14`; the WASM core compared the index with `$4B` (the sprite transparency index). Fix: all Layer 2
+  renderers (256x192, 320x256, 640x256, fast paths) look the entry up first and test its upper 8 bits
+  against `$14`. New case L01 reprograms the Layer 2 palette so index and RGB differ and sets `$4B` to a
+  used index; it passes and is byte-identical in both cores; in the regression tests, where reverting
+  either core reproduces the original symptoms. L01 writes every palette entry it uses: the FPGA palette
+  RAM has no reset contents (firmware fills it), so a test must not rely on default entries.
+- **F9 – WASM layer compositing. FIXED 2026-09-17.** The WASM renderers painted RGBA straight into the
+  picture in a fixed order (ULA, tilemap, Layer 2, sprites): `$15` layer order, the Layer 2 priority bit,
+  blend modes, stencil mode and tilemap-over/under-ULA were ignored, and below-ULA tile pixels were
+  dropped even where the ULA was transparent. Fix: each layer renders into its own 16-bit buffer
+  (9-bit RGB + opaque, Layer 2 priority, tilemap-below and border flags) and `zxnextUlaCompose` mixes
+  every pixel as zxnext.vhd stage 2 does - `ulatm`/stencil merge (with `$68` bit 7 applied there, not to
+  the blend operand), the `$68` blend-source cases, the six orders with the priority bit, modes 110/111
+  (clamp / minus 5), and the LUS/USL/ULS border exception for sprites. Fast path when only the ULA can be
+  opaque; 9-bit→RGBA through a table. Cost: ULA-only 0.77 ms/frame, all layers ~2.3-2.7 ms.
+  New cases P01 (orders, priority bit, blend 6/7 switched per band by the copper) and P02 (tilemap over/
+  under the ULA, transparent ULA, stencil) pass and are byte-identical in both cores.
+  **TS fixes found by these cases:** (1) in blend modes a lone ULA pixel showed instead of the fallback
+  (the ULA is only the `mix_rgb` operand) - `composeSinglePixel` now follows the VHDL order, and 6 unit
+  tests that derived their expected pixel from the old behaviour now derive it via the SLU path;
+  (2) `composeSinglePixel` re-expanded `$4A` with the old blue-bit bug - it uses the fixed cache;
+  (3) the tilemap render caches were only computed on a tilemap scroll write, so after reset a tilemap
+  never rendered (every row at NaN) - refreshed on reset, `$1B`, `$6C` and timing changes;
+  (4) stencil mode ignored the border outside the tilemap's 320-pixel area. Not modelled in TS: the
+  tilemap-specific `$68` blend-source cases (TS merges the tilemap into the ULA before composing) and the
+  sprite-over-border exception. Guarded by P01/P02 regression tests (mutation-tested).
+- **Assembler:** `.ent` was ignored in NEX output under `.model Next` (entry forced to `$8000`). FIXED
+  2026-09-17 - see `.plans/ZX_NEXT_EMULATOR_BUGS_HANDOVER.md` B1. The test programs still keep their
+  code at `$8000`, which remains valid.
 - **Harness lessons:** the IM2 table must hold one repeated byte (vector at `I:$FF` straddles pairs);
   a hanging label before `.org` binds to the new origin (use `Label .equ $`).

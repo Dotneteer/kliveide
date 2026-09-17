@@ -40,10 +40,41 @@
       ]
     },
     {
-      "name": "rows 96-143 scroll 8",
+      "name": "row 96: old scroll in the first cell, new after",
       "kind": "columns",
       "y": [
         96,
+        96
+      ],
+      "bands": [
+        {
+          "x": [
+            96,
+            111
+          ],
+          "rgb": "ula:0"
+        },
+        {
+          "x": [
+            112,
+            591
+          ],
+          "rgb": "ula:7"
+        },
+        {
+          "x": [
+            592,
+            607
+          ],
+          "rgb": "ula:0"
+        }
+      ]
+    },
+    {
+      "name": "rows 97-143 scroll 8",
+      "kind": "columns",
+      "y": [
+        97,
         143
       ],
       "bands": [

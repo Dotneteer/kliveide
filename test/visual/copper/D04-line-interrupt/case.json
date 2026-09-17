@@ -92,20 +92,6 @@
       "rgb": "ula:7"
     }
   ],
-  "knownFailures": [
-    {
-      "oracle": "probes",
-      "reason": "Both cores: the handler runs once per frame at copper line ~248 (the ULA frame interrupt, although $22 bit 2 disables it), never at line 144; the line interrupt's red never appears. Findings F7.",
-      "core": "ts",
-      "name": "paper"
-    },
-    {
-      "oracle": "probes",
-      "reason": "Both cores: the handler runs once per frame at copper line ~248 (the ULA frame interrupt, although $22 bit 2 disables it), never at line 144; the line interrupt's red never appears. Findings F7.",
-      "core": "wasm",
-      "name": "paper"
-    }
-  ],
   "tiers": [
     "headless",
     "browser"
