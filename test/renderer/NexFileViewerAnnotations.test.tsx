@@ -69,126 +69,270 @@ describe("NexFileViewerPanel annotations", () => {
     expect(screen.queryByText("Reload")).not.toBeInTheDocument();
   });
 
-  it("uses the loaded annotation offset for bank pop-out disassembly defaults", async () => {
-    const readFileContent = vi.fn(() =>
-      Promise.resolve(
-        JSON.stringify({
-          schemaVersion: 1,
-          banks: {
-            "5": {
-              offsetIndex: 2,
-              lastView: "disassembly",
-              decimalView: true,
-              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
-            }
-          }
-        })
-      )
-    );
-
-    await renderNexViewer({ readFileContent });
-
-    await waitFor(() => expect(screen.getByTestId("memory-viewer-bank-5")).toHaveAttribute("data-offset", "32768"));
-    expect(screen.getByTestId("memory-viewer-bank-5")).toHaveAttribute(
-      "data-view-mode",
-      "disassembly"
-    );
-    expect(screen.getByTestId("memory-viewer-bank-5")).toHaveAttribute(
-      "data-decimal-view",
-      "true"
-    );
-    expect(screen.getByTestId("memory-viewer-bank-5")).toHaveAttribute(
-      "data-annotation-path",
-      "/project/ScrollNutter.nex.dis"
-    );
-    await waitFor(() => expect(readFileContent).toHaveBeenCalledTimes(1));
-    expect(screen.queryByText("Loaded")).not.toBeInTheDocument();
-    expect(screen.queryByText("No annotation file attached.")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Click to create one!" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Open JSON")).not.toBeInTheDocument();
-    expect(screen.queryByText("Reload")).not.toBeInTheDocument();
-  });
-
-  it("opens a bank from the expandable bank header pop-out icon", async () => {
-    const openDocument = vi.fn(() => Promise.resolve());
-    const readFileContent = vi.fn(() =>
-      Promise.resolve(
-        JSON.stringify({
-          schemaVersion: 1,
-          banks: {
-            "5": {
-              offsetIndex: 2,
-              lastView: "disassembly",
-              decimalView: true,
-              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
-            }
-          }
-        })
-      )
-    );
-
-    const { recordJump } = await renderNexViewer({ readFileContent, openDocument });
-
-    fireEvent.click(await screen.findByTestId("icon-square-arrow-out-up-right"));
-    // --- Popping a bank out is a jump: Go Back returns to the viewer.
-    await waitFor(() => expect(recordJump).toHaveBeenCalledWith("nexBank", expect.any(Function)));
-
-    await waitFor(() =>
-      expect(openDocument).toHaveBeenCalledWith(
-        expect.objectContaining({
-          // --- Keyed by the node's *full* path, not its project path ("ScrollNutter.nex"): the
-          // --- debugger's PC reveal and go-to-definition open the same bank from the host path
-          // --- `nex-run` recorded, and a different id would open the bank as a second document.
-          id: "memoryDump-bankDump/project/ScrollNutter.nex:5"
-        }),
-        expect.objectContaining({
-          disassemblyEnabled: true,
-          disassOffset: 0x8000,
-          decimalView: true,
-          viewMode: "disassembly",
-          nexAnnotationPath: "/project/ScrollNutter.nex.dis",
-          nexAnnotationBank: 5
-        }),
-        false
-      )
-    );
-  });
-
-  /**
-   * The bank header is the viewer's table of contents.
-   *
-   * `Bank $05 (5) | PC: $C004` used to be one baked string with pipes for layout, so the bank
-   * number, its decimal echo and the machine-state mark could not be told apart or styled apart.
+  /*
+   * The bank browser: a list of banks and the selected bank's details, replacing one expandable panel
+   * per bank. Every bank still pops out into its own document — from its row's icon, by double-click
+   * or Enter on the row, or from the details' Pop out button (and its menu for another view).
    */
-  it("renders the bank heading as parts rather than a pipe-joined string", async () => {
-    await renderNexViewer({ contents: createNexWithLayer2AndBank5() });
-
-    const heading = await screen.findByText("Bank");
-    const row = heading.closest('[class*="expandableRowHeading"]') as HTMLElement;
-    expect(row).not.toBeNull();
-
-    // --- The number is its own element, so it can take the accent while the rest does not.
-    const number = within(row).getByText("$05");
-    expect(number.className).toContain("bankNumber");
-    expect(within(row).getByText("(5)").className).toContain("bankDecimal");
-    expect(row.textContent).not.toContain("|");
-
-    // --- The disclosure leads and the action sits beside the name, not out at the far edge.
-    const children = Array.from(row.children);
-    const chevronAt = children.findIndex((el) =>
-      (el.getAttribute("data-testid") ?? "").startsWith("icon-chevron")
+  const sidecar = (bank: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) =>
+    vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 2,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }],
+              ...bank
+            }
+          },
+          ...extra
+        })
+      )
     );
-    const textAt = children.findIndex((el) => el.className.includes("headingText"));
-    const actionAt = children.findIndex((el) => el.className.includes("headingAction"));
-    const metaAt = children.findIndex((el) => el.className.includes("headingMeta"));
-    expect(chevronAt).toBe(0);
-    expect(textAt).toBeGreaterThan(chevronAt);
-    expect(actionAt).toBeGreaterThan(textAt);
-    expect(metaAt).toBeGreaterThan(actionAt);
 
-    // --- The right-hand detail is the bank size, and it is not a control.
-    expect(row.querySelector('[class*="headingMeta"]')?.textContent).toBe("16 KB");
+  const rowPopOut = () => screen.findByRole("button", { name: "Pop out Bank $05" });
+  const details = () => screen.findByRole("complementary", { name: "Bank $05 details" });
+  const bankRow = () => screen.findByRole("option", { name: /\$05/ });
+
+  describe("bank browser", () => {
+    it("pops a bank out from its row with the annotation file's offset, decimal flag and view", async () => {
+      const openDocument = vi.fn(() => Promise.resolve());
+      const readFileContent = sidecar({ lastView: "disassembly", decimalView: true });
+      const { recordJump } = await renderNexViewer({ readFileContent, openDocument });
+
+      // --- Wait for the sidecar to reach the list: the details then know the listing address.
+      expect(within(await details()).getByText("$8000")).toBeInTheDocument();
+      fireEvent.click(await rowPopOut());
+
+      // --- Popping a bank out is a jump: Go Back returns to the viewer.
+      await waitFor(() => expect(recordJump).toHaveBeenCalledWith("nexBank", expect.any(Function)));
+      await waitFor(() =>
+        expect(openDocument).toHaveBeenCalledWith(
+          expect.objectContaining({
+            // --- Keyed by the node's *full* path, not its project path ("ScrollNutter.nex"): the
+            // --- debugger's PC reveal and go-to-definition open the same bank from the host path
+            // --- `nex-run` recorded, and a different id would open the bank as a second document.
+            id: "memoryDump-bankDump/project/ScrollNutter.nex:5"
+          }),
+          expect.objectContaining({
+            disassemblyEnabled: true,
+            disassOffset: 0x8000,
+            decimalView: true,
+            viewMode: "disassembly",
+            nexAnnotationPath: "/project/ScrollNutter.nex.dis",
+            nexAnnotationBank: 5
+          }),
+          false
+        )
+      );
+      expect(readFileContent).toHaveBeenCalledTimes(1);
+      expect(screen.queryByText("No annotation file attached.")).not.toBeInTheDocument();
+    });
+
+    it("pops out in the Sprites view when that was the view the bank last showed", async () => {
+      const openDocument = vi.fn(() => Promise.resolve());
+      await renderNexViewer({
+        readFileContent: sidecar({ lastView: "memory", sprites: { active: true } }),
+        openDocument
+      });
+
+      const panel = await details();
+      await waitFor(() => expect(within(panel).getByText("· Sprites")).toBeInTheDocument());
+      fireEvent.click(within(panel).getByRole("button", { name: "Pop out in Sprites" }));
+
+      await waitFor(() =>
+        expect(openDocument).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({ viewMode: "sprites", nexAnnotationBank: 5 }),
+          false
+        )
+      );
+    });
+
+    it("pops out in another view from the details' menu", async () => {
+      const openDocument = vi.fn(() => Promise.resolve());
+      await renderNexViewer({ readFileContent: sidecar({ lastView: "disassembly" }), openDocument });
+
+      const panel = await details();
+      await waitFor(() => expect(within(panel).getByText("· Disassembly")).toBeInTheDocument());
+      fireEvent.click(within(panel).getByRole("button", { name: "Pop out in another view" }));
+      const memory = await screen.findByRole("menuitem", { name: /Pop Out in Memory/ });
+      expect(screen.getByRole("menuitem", { name: /Pop Out in Disassembly/ })).toHaveTextContent("last used");
+      expect(screen.getByRole("menuitem", { name: /Pop Out in Sprites/ })).toBeInTheDocument();
+      fireEvent.click(memory);
+
+      await waitFor(() =>
+        expect(openDocument).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({ viewMode: "memory" }),
+          false
+        )
+      );
+    });
+
+    it("pops out by double-clicking a row, or with Enter", async () => {
+      const openDocument = vi.fn(() => Promise.resolve());
+      await renderNexViewer({ readFileContent: sidecar(), openDocument });
+      await details();
+
+      fireEvent.doubleClick(await bankRow());
+      await waitFor(() => expect(openDocument).toHaveBeenCalledTimes(1));
+      fireEvent.keyDown(screen.getByRole("listbox", { name: "Bank list" }), { key: "Enter" });
+      await waitFor(() => expect(openDocument).toHaveBeenCalledTimes(2));
+    });
+
+    it("offers no Sprites view, and pops out without annotations, when there is no annotation file", async () => {
+      const openDocument = vi.fn(() => Promise.resolve());
+      await renderNexViewer({ openDocument });
+
+      const panel = await details();
+      fireEvent.click(within(panel).getByRole("button", { name: "Pop out in another view" }));
+      await screen.findByRole("menuitem", { name: /Pop Out in Memory/ });
+      expect(screen.queryByRole("menuitem", { name: /Pop Out in Sprites/ })).toBeNull();
+      expect(within(panel).getByText(/Regions are recorded in the annotation file/)).toBeInTheDocument();
+
+      fireEvent.click(await rowPopOut());
+      await waitFor(() =>
+        expect(openDocument).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({ nexAnnotationPath: undefined, nexAnnotationBank: undefined }),
+          false
+        )
+      );
+    });
+
+    it("shows the bank's facts, content mix and labels in the details", async () => {
+      await renderNexViewer({
+        contents: createNexWithLayer2AndBank5(),
+        readFileContent: sidecar(
+          {
+            regions: [
+              { start: 0, end: 0x1fff, type: "disassemble" },
+              { start: 0x2000, end: 0x3fff, type: "bytes" }
+            ],
+            localLabels: [{ name: "Local", value: 0x10 }]
+          },
+          { globalLabels: [{ name: "Inside", value: 0x9000 }, { name: "Outside", value: 0x4000 }] }
+        )
+      });
+
+      const panel = await details();
+      await waitFor(() => expect(within(panel).getByText("Code 50%")).toBeInTheDocument());
+      expect(within(panel).getByText("Bytes 50%")).toBeInTheDocument();
+      expect(within(panel).getByText("16 KB")).toBeInTheDocument();
+      expect(within(panel).getByText("Labels (2)")).toBeInTheDocument();
+      expect(within(panel).getByText("Local")).toBeInTheDocument();
+      expect(within(panel).getByText("Inside")).toBeInTheDocument();
+      expect(within(panel).queryByText("Outside")).toBeNull();
+      // --- No memory preview any more: the old panel's dump viewer is gone.
+      expect(screen.queryByTestId("memory-viewer-bank-5")).toBeNull();
+    });
+
+    it("remembers the selected bank and the filter in view state", async () => {
+      const { setDocumentViewState } = await renderNexViewer({ readFileContent: sidecar() });
+      await details();
+
+      fireEvent.click(await bankRow());
+      fireEvent.click(screen.getByRole("button", { name: "Annotated" }));
+      expect(await screen.findByText("No bank matches this filter.")).toBeInTheDocument();
+
+      await waitFor(() =>
+        expect(setDocumentViewState).toHaveBeenLastCalledWith(
+          "/project/ScrollNutter.nex",
+          expect.objectContaining({ selectedBank: 5, bankFilter: "annotated" })
+        )
+      );
+    });
   });
+
+  describe("bank comments", () => {
+    it("shows the comment on one line in the list and in full in the details", async () => {
+      await renderNexViewer({ readFileContent: sidecar({ comment: "Music player\n\nCalled from IsrMain" }) });
+
+      const row = await bankRow();
+      await waitFor(() => expect(row).toHaveTextContent("Music player \u00b7 Called from IsrMain"));
+      const panel = await details();
+      expect(within(panel).getByText(/Music player\s+Called from IsrMain/)).toBeInTheDocument();
+      expect(within(panel).getByRole("button", { name: "Edit comment..." })).toBeInTheDocument();
+    });
+
+    it("offers to add a comment to a bank without one", async () => {
+      await renderNexViewer({ readFileContent: sidecar() });
+      const panel = await details();
+      expect(await within(panel).findByRole("button", { name: "Add comment..." })).toBeInTheDocument();
+    });
+
+    it("offers no comment editing when there is no annotation file", async () => {
+      await renderNexViewer({});
+      const panel = await details();
+      expect(within(panel).queryByRole("button", { name: /comment\.\.\./ })).toBeNull();
+      expect(within(panel).getByText(/Comments are kept in the annotation file/)).toBeInTheDocument();
+    });
+
+    it("edits the comment from the details, and writes it", async () => {
+      const saveFileContent = vi.fn(() => Promise.resolve());
+      const openDialog = vi.fn(() => Promise.resolve({ comment: "Music\nIM2 handler" }));
+      await renderNexViewer({ readFileContent: sidecar({ comment: "Music" }), saveFileContent, openDialog });
+
+      const panel = await details();
+      fireEvent.click(await within(panel).findByRole("button", { name: "Edit comment..." }));
+
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+      expect(openDialog.mock.calls[0][1]).toEqual({ bank: 5, initialComment: "Music" });
+      await waitFor(() => expect(saveFileContent).toHaveBeenCalled());
+      const saved = JSON.parse(saveFileContent.mock.calls.at(-1)[1]);
+      expect(saved.banks["5"].comment).toBe("Music\nIM2 handler");
+      await waitFor(() => expect(bankRowSync()).toHaveTextContent("Music \u00b7 IM2 handler"));
+    });
+
+    it("changes nothing when the dialog is dismissed", async () => {
+      const saveFileContent = vi.fn(() => Promise.resolve());
+      const openDialog = vi.fn(() => Promise.resolve(undefined));
+      await renderNexViewer({ readFileContent: sidecar({ comment: "Music" }), saveFileContent, openDialog });
+
+      const panel = await details();
+      fireEvent.click(await within(panel).findByRole("button", { name: "Edit comment..." }));
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+      await Promise.resolve();
+      expect(saveFileContent).not.toHaveBeenCalled();
+    });
+
+    it("follows an edit published from a popped-out bank", async () => {
+      await renderNexViewer({ readFileContent: sidecar({ comment: "Before" }) });
+      const row = await bankRow();
+      await waitFor(() => expect(row).toHaveTextContent("Before"));
+
+      const session = await import("@renderer/appIde/DocumentPanels/Next/nexAnnotationSession");
+      const current = session.peekNexAnnotationSession("/project/ScrollNutter.nex.dis");
+      expect(current).toBeDefined();
+      session.updateNexAnnotationSession("/project/ScrollNutter.nex.dis", {
+        ...current!,
+        banks: { "5": { ...current!.banks["5"], comment: "After" } }
+      });
+
+      await waitFor(() => expect(bankRowSync()).toHaveTextContent("After"));
+    });
+
+    it("clears the comment from the row's context menu", async () => {
+      const saveFileContent = vi.fn(() => Promise.resolve());
+      await renderNexViewer({ readFileContent: sidecar({ comment: "Music" }), saveFileContent });
+
+      const row = await bankRow();
+      await waitFor(() => expect(row).toHaveTextContent("Music"));
+      fireEvent.contextMenu(row);
+      fireEvent.click(await screen.findByRole("menuitem", { name: "Clear Bank Comment" }));
+
+      await waitFor(() => expect(saveFileContent).toHaveBeenCalled());
+      const saved = JSON.parse(saveFileContent.mock.calls.at(-1)[1]);
+      expect(saved.banks["5"]).not.toHaveProperty("comment");
+      await waitFor(() => expect(bankRowSync()).not.toHaveTextContent("Music"));
+    });
+  });
+
+  function bankRowSync(): HTMLElement {
+    return screen.getByRole("option", { name: /\$05/ });
+  }
 
   /**
    * 112 bank flags is far too many to scan, and "how many banks does this file carry" is the
@@ -314,7 +458,8 @@ async function renderNexViewer({
   openDocument = vi.fn(() => Promise.resolve()),
   contents = createNexWithBank5(),
   layer2ScreenRender = vi.fn(() => <div data-testid="layer2-screen" />),
-  viewState = { bankExpanded: { 0: true } }
+  viewState = { bankExpanded: { 0: true } },
+  openDialog = vi.fn(() => Promise.resolve(undefined))
 }: {
   readFileContent?: ReturnType<typeof vi.fn>;
   saveFileContent?: ReturnType<typeof vi.fn>;
@@ -323,6 +468,7 @@ async function renderNexViewer({
   contents?: Uint8Array;
   layer2ScreenRender?: ReturnType<typeof vi.fn>;
   viewState?: Record<string, unknown>;
+  openDialog?: ReturnType<typeof vi.fn>;
 }) {
   const setDocumentViewState = vi.fn();
   const recordJump = vi.fn(async (_reason: string, jump: () => unknown) => await jump());
@@ -355,6 +501,9 @@ async function renderNexViewer({
       setActiveDocument: vi.fn(),
       openDocument
     })
+  }));
+  vi.doMock("@renderer/controls/overlay/DialogProvider", () => ({
+    useDialogs: () => ({ open: openDialog })
   }));
   vi.doMock("@renderer/core/RendererProvider", () => ({
     useDispatch: () => dispatch,
@@ -445,7 +594,8 @@ async function renderNexViewer({
 
   return {
     setDocumentViewState,
-    recordJump
+    recordJump,
+    openDialog
   };
 }
 

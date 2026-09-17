@@ -22,8 +22,19 @@ import type { NexAnnotationSessionSnapshot } from "./NexAnnotationEditorPorts";
 export type NexAnnotationEditorEnvironment = {
   annotationPath?: string;
   bank?: number;
-  /** Which view the document is showing; the sidecar remembers it as the bank's `lastView`. */
+  /**
+   * The listing view the document shows, or last showed; the sidecar remembers it as `lastView`.
+   *
+   * Never `sprites`: `lastView` cannot hold it without older builds refusing the file. While the
+   * Sprites view is showing, this is the listing view it was switched from, and `spritesViewActive`
+   * says the rest.
+   */
   viewMode: NexAnnotationBankView;
+  /**
+   * The Sprites view is showing. Remembered as the bank's `sprites.active`, so a reopened bank shows
+   * it again. Absent for a document that has no Sprites view, which then never writes the flag.
+   */
+  spritesViewActive?: boolean;
   decimalView: boolean;
   disassOffset: number;
   /**
@@ -263,6 +274,7 @@ function sameEnvironment(
     left.annotationPath === right.annotationPath &&
     left.bank === right.bank &&
     left.viewMode === right.viewMode &&
+    left.spritesViewActive === right.spritesViewActive &&
     left.decimalView === right.decimalView &&
     left.disassOffset === right.disassOffset &&
     // --- Included so starting or stopping the machine re-enables or greys the cross-bank jump

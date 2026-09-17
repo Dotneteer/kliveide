@@ -1,0 +1,85 @@
+@use "@styles/core.scss" as *;
+
+.location {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  color: var(--color-modal-body);
+}
+
+.locationLabel {
+  color: var(--color-label);
+}
+
+/* --- The synopsis dialog's field, deliberately: the two dialogs stack in the same session. */
+.comment {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 130px;
+  resize: vertical;
+  border: 1px solid var(--border-input);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-input);
+  color: var(--color-input);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-200);
+  outline: none;
+
+  @include focus-ring;
+}
+
+.hint {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+}
+
+.count {
+  font-family: var(--monospace-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.countOver {
+  font-family: var(--monospace-font);
+  font-variant-numeric: tabular-nums;
+  color: var(--status-warning);
+}
+
+/*
+ * One line, cut the way the NEX viewer's heading cuts it.
+ *
+ * A fixed single-line height, so the dialog does not change size as the comment gains lines.
+ */
+.preview {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: calc(1.5em + 12px);
+  line-height: 1.5;
+  overflow: hidden;
+  border: 1px solid var(--border-modal-section);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--bgcolor-modal-header);
+  white-space: nowrap;
+}
+
+.previewBank {
+  flex: 0 0 auto;
+  color: var(--accent-text);
+  font-family: var(--monospace-font);
+  font-weight: 600;
+}
+
+.previewComment {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--data-secondary);
+}

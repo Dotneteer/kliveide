@@ -18,7 +18,8 @@ type Props = {
   allowDisassembly?: boolean;
   disassOffset?: number;
   decimalView?: boolean;
-  viewMode?: "memory" | "disassembly";
+  /** The view the popped-out dump opens in. Sprites exists only for NEX banks. */
+  viewMode?: "memory" | "disassembly" | "sprites";
   nexAnnotationPath?: string;
   nexAnnotationBank?: number;
   iconTitle: string;

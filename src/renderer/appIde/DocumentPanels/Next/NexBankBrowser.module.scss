@@ -1,0 +1,460 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The NEX viewer's bank browser: a list and the selected bank's details.
+ *
+ * A container, so the two panes stack by the *panel's* width — a NEX viewer docked in a narrow split
+ * should become one column, whatever the window is doing.
+ */
+.browser {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-2) 0;
+}
+
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-1);
+}
+
+.title {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.summary {
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+}
+
+.filters {
+  display: inline-flex;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.filter {
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  background: var(--bgcolor-input);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &[aria-pressed="true"] {
+    border-color: var(--accent-text);
+    color: var(--accent-text);
+  }
+}
+
+.none {
+  padding: var(--space-3);
+  color: var(--data-secondary);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(36ch, 46ch) minmax(0, 1fr);
+  align-items: start;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+@container (max-width: 96ch) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .list {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-default);
+  }
+}
+
+// ─── List ────────────────────────────────────────────────────────────────────
+
+.list {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--border-default);
+  background: var(--surface-panel);
+  outline: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-0_5) var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  outline: none;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--accent-text);
+  }
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.rowSelected {
+  background: var(--surface-active);
+  box-shadow: inset 2px 0 0 var(--accent-text);
+
+  &:hover {
+    background: var(--surface-active);
+  }
+}
+
+.bankNumber {
+  flex: 0 0 auto;
+  color: var(--accent-text);
+  font-family: var(--monospace-font);
+  font-weight: 600;
+}
+
+.decimal {
+  color: var(--data-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  font-weight: 400;
+}
+
+.rowComment {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--data-secondary);
+  text-overflow: ellipsis;
+}
+
+.rowBar {
+  flex: 0 0 6ch;
+}
+
+/* --- Dim until the row is pointed at or selected: every row has one, and they should not shout. */
+.rowPopOut {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: var(--space-0_5);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.45;
+  @include focus-ring;
+
+  .row:hover &,
+  .rowSelected &,
+  &:focus-visible {
+    opacity: 1;
+  }
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+// ─── Marks (the facts the old bank headings carried) ─────────────────────────
+
+.chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--accent-text);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.chipAlt {
+  color: var(--accent-secondary-text);
+}
+
+/*
+ * `BP` + a glyph and count per kind. The label is filled so the chip reads as breakpoints before the
+ * glyphs are read; the glyphs are the gutter's, so they need no legend of their own.
+ */
+.bpChip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--color-breakpoint-binary);
+  border-radius: 999px;
+  color: var(--color-breakpoint-binary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.bpLabel {
+  padding: 0 var(--space-1);
+  background: var(--color-breakpoint-binary);
+  color: var(--bgcolor-docspanel);
+}
+
+.bpCounts {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-1) 0 var(--space-1);
+}
+
+.bpCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* --- Every breakpoint in the bank is disabled: still shown, so the bank does not look bare. */
+.bpChipOff {
+  border-style: dashed;
+  border-color: var(--color-breakpoint-disabled);
+  color: var(--color-breakpoint-disabled);
+
+  .bpLabel {
+    border-right: 1px dashed var(--color-breakpoint-disabled);
+    background: transparent;
+    color: var(--color-breakpoint-disabled);
+  }
+}
+
+.bpKinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-0_5) var(--space-3);
+}
+
+.bpKind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+// ─── Content mix ─────────────────────────────────────────────────────────────
+
+.mixBar {
+  display: flex;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--surface-active);
+
+  > span {
+    display: block;
+    height: 100%;
+  }
+}
+
+.mix_disassemble {
+  background: var(--accent-text);
+}
+
+.mix_bytes {
+  background: var(--status-warning);
+}
+
+.mix_words {
+  background: var(--accent-secondary-text);
+}
+
+.mix_skip {
+  background: var(--border-strong);
+}
+
+.detailsBar {
+  width: 100%;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin-top: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--font-size-100);
+}
+
+.swatch {
+  display: inline-block;
+  width: 1ch;
+  height: 1ch;
+  margin-right: var(--space-1);
+  border-radius: 2px;
+}
+
+// ─── Details ─────────────────────────────────────────────────────────────────
+
+/*
+ * Sticky, so scrolling a long bank list keeps the selected bank's details in view. The viewer scrolls
+ * as a whole, and this pane sits beside a list that can be a hundred rows long.
+ */
+.details {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-3);
+  background: var(--surface-chrome);
+}
+
+.detailsHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.detailsTitle {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: var(--font-size-300);
+}
+
+.split {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.splitMain,
+.splitMore {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: 1px solid var(--accent-solid);
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  @include focus-ring(1px);
+
+  &:hover {
+    background: var(--accent-solid-hover);
+  }
+}
+
+.splitMain {
+  padding: var(--space-0_5) var(--space-3);
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.splitMore {
+  padding: var(--space-0_5) var(--space-1);
+  border-left-color: var(--text-on-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.splitView {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-0_5) var(--space-4);
+  margin: 0;
+
+  dt {
+    color: var(--text-secondary);
+  }
+
+  dd {
+    margin: 0;
+    font-family: var(--monospace-font);
+  }
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sectionTitle {
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.comment {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  @include focus-ring;
+}
+
+.labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-0_5) var(--space-3);
+  color: var(--data-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+}
+
+.labelName {
+  color: var(--text-primary);
+}
+
+.muted {
+  color: var(--data-secondary);
+}
+
+.hint {
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+}

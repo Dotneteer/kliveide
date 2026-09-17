@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   clearNexAnnotationSessions,
   flushNexAnnotationSession,
+  peekNexAnnotationSession,
+  seedNexAnnotationSession,
   subscribeNexAnnotationSession,
   updateNexAnnotationSession,
   type NexAnnotationSessionSnapshot
@@ -178,5 +180,40 @@ describe("nexAnnotationSession", () => {
       PATH,
       expect.stringContaining('"offsetIndex": 8')
     );
+  });
+
+  describe("seeding", () => {
+    it("serves a seeded model to subscribers without reading the file", () => {
+      const service = project();
+      const seeded = annotationsWith(2);
+      seedNexAnnotationSession(PATH, seeded);
+
+      const snapshots: NexAnnotationSessionSnapshot[] = [];
+      subscribeNexAnnotationSession(service, PATH, 5, (snapshot) => snapshots.push(snapshot));
+
+      expect(service.readFileContent).not.toHaveBeenCalled();
+      expect(snapshots.at(-1)?.annotations).toBe(seeded);
+      expect(snapshots.at(-1)?.dirty).toBe(false);
+    });
+
+    it("never replaces a model the session already holds", async () => {
+      // --- A pop-out's edit may still be on its way to disk; a viewer's fresh read is older news.
+      const service = project();
+      await subscribed(service);
+      const edited = annotationsWith(3);
+      updateNexAnnotationSession(PATH, edited, service);
+
+      seedNexAnnotationSession(PATH, annotationsWith(0));
+
+      expect(peekNexAnnotationSession(PATH)).toBe(edited);
+      await flushNexAnnotationSession(PATH);
+    });
+
+    it("does not interrupt a load already in flight", async () => {
+      const service = project();
+      const snapshots = await subscribed(service);
+      seedNexAnnotationSession(PATH, annotationsWith(0));
+      expect(snapshots.at(-1)?.annotations?.banks["5"].offsetIndex).toBe(1);
+    });
   });
 });

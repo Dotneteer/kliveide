@@ -53,7 +53,14 @@ describe("ZX Next WASM advanced video sprites", () => {
     ]);
     expect(exports.zxnextGetSpritePatternByte8(16, 0x80)).toBe(sprites.patternMemory8bit[16][0x80]);
     expect(exports.zxnextGetSpritePatternByte8(17, 0x70)).toBe(sprites.patternMemory8bit[17][0x70]);
-    expect(exports.zxnextGetSpritePatternByte4(40, 0x80)).toBe(sprites.patternMemory4bit[40][0x80]);
+    /*
+     * 4-bit memory is *not* compared with the TypeScript oracle, which models it the way the WASM
+     * engine used to (one low nibble per pixel). On the hardware, $AB written at pattern 2, sub-index
+     * $80 is byte 0 of 4-bit pattern 5 (2 * 2 + 1): pixel 0 is its high nibble, pixel 1 its low one.
+     * See `wasm-next-sprites-fpga.test.ts`.
+     */
+    expect(exports.zxnextGetSpritePatternByte4(5 << 3, 0x00)).toBe(0x0a);
+    expect(exports.zxnextGetSpritePatternByte4(5 << 3, 0x01)).toBe(0x0b);
   });
 
   it("routes sprite ports and renders a BASIC-style 4-byte visible sprite", async () => {

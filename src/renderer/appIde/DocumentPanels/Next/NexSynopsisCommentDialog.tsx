@@ -4,6 +4,7 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { DialogComponentProps } from "@renderer/controls/overlay/DialogProvider";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import styles from "./NexSynopsisCommentDialog.module.scss";
+import { normalizeMultilineComment } from "./nexAnnotations";
 import {
   DialogFooter,
   DialogFooterSpacer
@@ -82,14 +83,9 @@ export function NexSynopsisCommentDialog({
   );
 }
 
+/** The synopsis's normalization is the shared one; kept under its own name for its callers. */
 export function normalizeSynopsisComment(comment: string): string | undefined {
-  const normalized = comment
-    .replace(/\r\n?/g, "\n")
-    .split("\n")
-    .map((line) => line.replace(/[ \t]+$/g, ""))
-    .join("\n");
-
-  return normalized.trim().length > 0 ? normalized : undefined;
+  return normalizeMultilineComment(comment);
 }
 
 export function formatSynopsisPreview(comment: string): string {

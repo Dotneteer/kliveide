@@ -1,0 +1,403 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Sprites view of a popped-out NEX bank.
+ *
+ * A container, so the inspector can fold away by the *panel's* width rather than the window's: a
+ * bank docked in a narrow split should become the plain grid, not squeeze a 16-cell inspector.
+ */
+.spritesView {
+  container-type: inline-size;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  font-family: var(--main-font-family);
+  font-size: var(--font-size-200);
+}
+
+// ─── Toolbar pieces ──────────────────────────────────────────────────────────
+
+.segmented {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.segment {
+  position: relative;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: var(--bgcolor-input);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  line-height: 1.6;
+  cursor: pointer;
+  @include focus-ring;
+
+  & + & {
+    border-left: 1px solid var(--border-default);
+  }
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &[aria-pressed="true"] {
+    background: var(--accent-solid);
+    color: var(--text-on-accent);
+  }
+}
+
+/*
+ * The palette the machine is drawing with: a ring, the sprite editor's vocabulary. Invisible under
+ * the fill when the two coincide, which is the ordinary case.
+ */
+.segmentLive::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border: 1px solid var(--accent-solid);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.segmentLive[aria-pressed="true"]::after {
+  border-color: var(--text-on-accent);
+}
+
+.paletteFallback {
+  color: var(--status-warning);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+}
+
+.offsetControl {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0_5);
+}
+
+.nudge {
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--text-primary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  line-height: 1.5;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.offsetInput {
+  width: 7ch;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--color-input);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  line-height: 1.5;
+  outline: none;
+  @include focus-ring;
+}
+
+// ─── Sheet ───────────────────────────────────────────────────────────────────
+
+/*
+ * The sheet's scroll area. The scrolling itself is `ScrollViewer`'s — overlay scrollbars that fade in
+ * on approach — so this only sizes the region it fills.
+ */
+.sheetScroll {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/*
+ * The listbox, inside the scroll viewport. `min-height: 100%` so a click in the empty space below a
+ * short sheet still lands on it and gives it keyboard focus.
+ */
+.sheet {
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: var(--space-2);
+  outline: none;
+
+  &:focus-visible .cellActive {
+    outline: 2px solid var(--accent-solid);
+    outline-offset: 1px;
+  }
+}
+
+.empty {
+  padding: var(--space-4);
+  color: var(--data-secondary);
+}
+
+/*
+ * Cells wrap to the width. A cell is never narrower than its label (`11ch`: `#127 $3F80`), so 1×
+ * zoom still reads; `--sprite-px` is the scaled image, set per zoom by the component.
+ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(var(--sprite-px), 11ch), 1fr));
+  gap: var(--space-2) var(--space-1);
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-0_5);
+  padding: var(--space-1) var(--space-0_5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.cellSelected {
+  border-color: var(--accent-solid);
+  background: var(--surface-selected);
+
+  &:hover {
+    background: var(--surface-selected);
+  }
+}
+
+.cellActive {
+  box-shadow: inset 0 0 0 1px var(--accent-solid);
+}
+
+/* --- A pattern of one colour is kept in the grid but recedes: a sheet of blanks still reads. */
+.cellBlank .cellCanvas {
+  opacity: 0.35;
+}
+
+.cellImage {
+  position: relative;
+  display: block;
+}
+
+/*
+ * A faint edge on every pattern: a bank is often mostly zero bytes, and a black 16×16 square on the
+ * dark panel — dimmed as blank besides — otherwise vanishes, taking the sheet's grid with it.
+ */
+.cellCanvas {
+  display: block;
+  width: var(--sprite-px);
+  height: var(--sprite-px);
+  outline: 1px solid var(--border-default);
+  image-rendering: pixelated;
+}
+
+/* --- Already a `bytes` region: a corner fold, so the grid shows what the listing will. */
+.bytesMark {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-top: 8px solid var(--accent-secondary-text);
+  border-left: 8px solid transparent;
+}
+
+.cellLabel {
+  color: var(--data-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cellNumber {
+  color: var(--text-primary);
+}
+
+/* --- Transparent pixels show this through the canvas. */
+.checker {
+  background-color: var(--surface-active);
+  background-image:
+    linear-gradient(45deg, var(--surface-hover) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--surface-hover) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--surface-hover) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--surface-hover) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+
+// ─── Inspector ───────────────────────────────────────────────────────────────
+
+.inspector {
+  display: flex;
+  flex: 0 0 34ch;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--border-default);
+  background: var(--surface-chrome);
+}
+
+/* --- Inside the inspector's own `ScrollViewer`, so a short panel scrolls it with overlay bars. */
+.inspectorContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+@container (max-width: 72ch) {
+  .inspector {
+    display: none;
+  }
+}
+
+.inspectorTitle,
+.inspectorHeading {
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/*
+ * The enlarged pattern, with a pixel grid laid over it by CSS: one line every sixteenth of the side,
+ * drawn over the checker (when on) and the canvas alike.
+ */
+.bigFrame {
+  position: relative;
+  display: block;
+  align-self: center;
+  width: 100%;
+  max-width: 24ch;
+  aspect-ratio: 1;
+  border: 1px solid var(--border-default);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, var(--border-subtle) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--border-subtle) 1px, transparent 1px);
+    background-size: calc(100% / 16) calc(100% / 16);
+    pointer-events: none;
+  }
+}
+
+.bigCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-0_5) var(--space-3);
+  margin: 0;
+
+  dt {
+    color: var(--text-secondary);
+  }
+
+  dd {
+    margin: 0;
+    font-family: var(--monospace-font);
+    font-size: var(--font-size-100);
+    line-height: 1.6;
+  }
+}
+
+.inspectorSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-right: var(--space-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+}
+
+.swatchColour {
+  display: inline-block;
+  width: 1.5ch;
+  height: 1.5ch;
+  border-right: 1px solid var(--border-default);
+}
+
+.hint {
+  color: var(--text-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.action {
+  padding: var(--space-0_5) var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-hover);
+  }
+
+  &:disabled {
+    color: var(--text-disabled);
+    cursor: default;
+  }
+}
+
+.actionPrimary {
+  border-color: var(--accent-solid);
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+
+  &:hover:not(:disabled) {
+    background: var(--accent-solid-hover);
+  }
+
+  &:disabled {
+    border-color: var(--border-default);
+    background: var(--bgcolor-input);
+  }
+}

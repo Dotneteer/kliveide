@@ -2,10 +2,13 @@ import { describe, it, expect } from "vitest";
 
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import {
+  bankBreakpointMark,
+  describeBankBreakpoints,
   formatBankBreakpointBadge,
   groupBankBreakpointsByOffset,
   selectBankRowBreakpoint,
-  summarizeBankBreakpoints
+  summarizeBankBreakpoints,
+  type BankBreakpointSummary
 } from "@renderer/appIde/DocumentPanels/Next/nexBankGutter";
 
 /*
@@ -98,7 +101,8 @@ describe("summarizeBankBreakpoints", () => {
       exec: 1,
       memRead: 1,
       memWrite: 1,
-      disabled: 0
+      disabled: 0,
+      disabledByKind: { exec: 0, memRead: 0, memWrite: 0 }
     });
     expect(summaries.get(6)!.total).toEqual(1);
   });
@@ -132,24 +136,37 @@ describe("summarizeBankBreakpoints", () => {
   });
 });
 
+/** A summary with only the given counts set; kinds default to nothing disabled. */
+function summaryOf(over: Partial<BankBreakpointSummary>): BankBreakpointSummary {
+  return {
+    total: 1,
+    exec: 1,
+    memRead: 0,
+    memWrite: 0,
+    disabled: 0,
+    disabledByKind: { exec: 0, memRead: 0, memWrite: 0 },
+    ...over
+  };
+}
+
 describe("formatBankBreakpointBadge", () => {
   it("is absent for a bank with nothing armed", () => {
     // --- An absent badge, not a zero: a column of `0`s down the viewer is noise claiming to be
     // --- information.
     expect(formatBankBreakpointBadge(undefined)).toEqual(undefined);
-    expect(
-      formatBankBreakpointBadge({ total: 0, exec: 0, memRead: 0, memWrite: 0, disabled: 0 })
-    ).toEqual(undefined);
+    expect(formatBankBreakpointBadge(summaryOf({ total: 0, exec: 0 }))).toEqual(undefined);
   });
 
   it("shows the count, and the breakdown in the tooltip", () => {
-    const badge = formatBankBreakpointBadge({
-      total: 3,
-      exec: 1,
-      memRead: 1,
-      memWrite: 1,
-      disabled: 0
-    });
+    const badge = formatBankBreakpointBadge(
+      summaryOf({
+        total: 3,
+        exec: 1,
+        memRead: 1,
+        memWrite: 1,
+        disabled: 0
+      })
+    );
     expect(badge!.text).toEqual("3");
     expect(badge!.title).toEqual(
       "3 breakpoints in this bank — 1 execution, 1 memory read, 1 memory write"
@@ -157,35 +174,111 @@ describe("formatBankBreakpointBadge", () => {
   });
 
   it("says breakpoint, singular, for one", () => {
-    const badge = formatBankBreakpointBadge({
-      total: 1,
-      exec: 1,
-      memRead: 0,
-      memWrite: 0,
-      disabled: 0
-    });
+    const badge = formatBankBreakpointBadge(
+      summaryOf({
+        total: 1,
+        exec: 1,
+        memRead: 0,
+        memWrite: 0,
+        disabled: 0
+      })
+    );
     expect(badge!.title).toEqual("1 breakpoint in this bank — 1 execution");
   });
 
   it("mentions disabled ones", () => {
-    const badge = formatBankBreakpointBadge({
-      total: 2,
-      exec: 2,
-      memRead: 0,
-      memWrite: 0,
-      disabled: 1
-    });
+    const badge = formatBankBreakpointBadge(
+      summaryOf({
+        total: 2,
+        exec: 2,
+        memRead: 0,
+        memWrite: 0,
+        disabled: 1
+      })
+    );
     expect(badge!.title).toContain("1 disabled");
   });
 
   it("lists only the kinds that are present", () => {
-    const badge = formatBankBreakpointBadge({
-      total: 2,
-      exec: 0,
-      memRead: 0,
-      memWrite: 2,
-      disabled: 0
-    });
+    const badge = formatBankBreakpointBadge(
+      summaryOf({
+        total: 2,
+        exec: 0,
+        memRead: 0,
+        memWrite: 2,
+        disabled: 0
+      })
+    );
     expect(badge!.title).toEqual("2 breakpoints in this bank — 2 memory write");
+  });
+});
+
+describe("bankBreakpointMark", () => {
+  it("is absent for a bank with nothing set", () => {
+    expect(bankBreakpointMark(undefined)).toEqual(undefined);
+    expect(bankBreakpointMark(summaryOf({ total: 0, exec: 0 }))).toEqual(undefined);
+  });
+
+  it("counts each kind that is present, in exec/read/write order", () => {
+    const mark = bankBreakpointMark(summaryOf({ total: 3, exec: 2, memWrite: 1 }));
+    expect(mark).toMatchObject({
+      off: false,
+      counts: [
+        { kind: "exec", count: 2 },
+        { kind: "memWrite", count: 1 }
+      ]
+    });
+    expect(mark!.title).toEqual("3 breakpoints in this bank — 2 execution, 1 memory write");
+  });
+
+  it("leaves disabled breakpoints out of the chip while some are enabled", () => {
+    const mark = bankBreakpointMark(
+      summaryOf({
+        total: 3,
+        exec: 2,
+        memRead: 1,
+        disabled: 2,
+        disabledByKind: { exec: 1, memRead: 1, memWrite: 0 }
+      })
+    );
+    expect(mark).toMatchObject({ off: false, counts: [{ kind: "exec", count: 1 }] });
+  });
+
+  it("greys the chip out, still counting, when every breakpoint is disabled", () => {
+    const mark = bankBreakpointMark(
+      summaryOf({
+        total: 2,
+        exec: 2,
+        disabled: 2,
+        disabledByKind: { exec: 2, memRead: 0, memWrite: 0 }
+      })
+    );
+    expect(mark).toMatchObject({ off: true, counts: [{ kind: "exec", count: 2 }] });
+  });
+
+  it("agrees with the summary it was built from", () => {
+    const counted = summarizeBankBreakpoints([
+      bp(),
+      bp({ bankOffset: 0x0200, disabled: true }),
+      bp({ bankOffset: 0x0300, exec: undefined, memoryRead: true, disabled: true })
+    ]).get(5);
+    expect(bankBreakpointMark(counted)!.counts).toEqual([{ kind: "exec", count: 1 }]);
+    expect(describeBankBreakpoints(counted)).toEqual([
+      { kind: "exec", text: "2 execution (1 disabled)" },
+      { kind: "memRead", text: "1 memory read (disabled)" }
+    ]);
+  });
+});
+
+describe("describeBankBreakpoints", () => {
+  it("lists every kind present in words", () => {
+    expect(describeBankBreakpoints(summaryOf({ total: 2, exec: 1, memWrite: 1 }))).toEqual([
+      { kind: "exec", text: "1 execution" },
+      { kind: "memWrite", text: "1 memory write" }
+    ]);
+  });
+
+  it("is empty without a summary", () => {
+    expect(describeBankBreakpoints(undefined)).toEqual([]);
   });
 });

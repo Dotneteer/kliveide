@@ -65,6 +65,49 @@ static inline void zxnextCpuTactPlusN(uint32_t value) {
   zxnextAudioMixerSetNextSample(frameTacts28);
 }
 
+/*
+ * Charge a DMA byte's clocks. The DMA runs from the 28 MHz system clock, so its clocks go to the
+ * frame unscaled, and the CPU T-state counters advance by the equivalent (at least one), as in
+ * ZxNextMachine.tactPlusDmaTicks.
+ */
+static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
+  const uint32_t scale = zxnextCpuTactScale();
+  uint32_t cpuTacts = (ticks + scale - 1u) / scale;
+  if (cpuTacts == 0u) cpuTacts = 1u;
+  cpu.tacts += cpuTacts;
+  tacts += cpuTacts;
+  frameTacts28 += ticks;
+  while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
+    zxnextCtcOnFrameCompleted();
+    frameTacts28 -= ZXNEXT_TACTS_IN_FRAME;
+    zxnextCpuMarkFrameCompleted();
+  }
+  currentFrameTact = frameTacts28 >> 2;
+  if (frameCompleted == 0u) zxnextCopperAdvanceTo(currentFrameTact);
+  zxnextBeeperSetTacts(tacts);
+  zxnextAudioMixerSetNextSample(frameTacts28);
+}
+
+/*
+ * Run the DMA while it owns, or is about to request, the bus (ZxNextMachine.runDmaUntilCpuCanRun).
+ *
+ * Called before every instruction. The CPU grants a bus request at once, and a continuous transfer
+ * keeps the bus until its block is done, so the whole block moves before the next instruction. Byte
+ * mode and paced burst mode release the bus between bytes and let the CPU run in between.
+ */
+static void zxnextCpuRunDma(void) {
+  if (!zxnextDmaIsActive()) return;
+  for (uint32_t step = 0; step < 0x20000u; step++) {
+    zxnextDmaAcknowledgeBusIfRequested();
+    const uint32_t ticks = zxnextDmaStep();
+    if (ticks > 0u) {
+      zxnextCpuTactPlusDmaTicks(ticks);
+      if (zxnextInterruptsDmaRequestActive()) zxnextDmaSetDelay(1u);
+    }
+    if (!zxnextDmaBusRequested()) break;
+  }
+}
+
 static inline uint32_t zxnextCpuReadsBank7(uint32_t address) {
   const uint32_t pageIndex = (address >> 13) & 0x07u;
   return zxnextMemoryGetPageBank8(pageIndex) == 0x0eu;
@@ -118,7 +161,8 @@ static inline uint32_t zxnextCpuShouldRaiseInt(void) {
     return zxnextInterruptsShouldAcceptInt();
   }
   uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
-  return zxnextInterruptsGetSignalInt() || (frames != 0u && zxnextUlaGetPulseIntActive(renderedFrameTact));
+  return zxnextInterruptsGetSignalInt() || (frames != 0u && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
+    zxnextDmaGetIpSignal();
 }
 
 static uint32_t zxnextCpuSharedReadMemory(uint32_t address) {
@@ -215,6 +259,10 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   if (!wasHalted || nmiSignal || shouldAcceptInt) {
     zxnextCpuClearInstructionAccesses();
   }
+
+  // --- The DMA goes first, after the INT line is sampled, as in ZxNextMachine.beforeInstructionExecuted.
+  cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
+  zxnextCpuRunDma();
   if (nmiSignal && zxnextNmiGetStacklessEnabled()) {
     uint32_t executed = zxnextCpuProcessStacklessNmi();
     zxnextTraceRecordInstruction(pcBefore);
@@ -242,6 +290,8 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   }
   if (isRetiInstruction) {
     zxnextInterruptsReti();
+    // --- RETI in hardware IM2 mode also lifts the DMA's interrupt stall (ZxNextMachine.onRetnExecuted).
+    if (zxnextInterruptsGetHardwareIm2Mode()) zxnextDmaSetDelay(0u);
   }
   if (z80GetRetnExecuted()) {
     uint8_t stacklessProcessed = zxnextNmiGetStacklessProcessed();

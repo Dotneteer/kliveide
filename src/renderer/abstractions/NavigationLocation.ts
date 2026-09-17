@@ -20,7 +20,7 @@ export type NavigationLocator =
       /** Whether the view showed the whole 64K address space rather than one segment. */
       fullView?: boolean;
       /** Which listing a view that has both was showing. */
-      viewMode?: "memory" | "disassembly";
+      viewMode?: "memory" | "disassembly" | "sprites";
       /** Where byte 0 of a bank dump is seen (its disassembly offset), for reopening it. */
       base?: number;
     }

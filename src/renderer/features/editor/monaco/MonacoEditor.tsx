@@ -58,6 +58,7 @@ import {
 import { applyExternalRenameEdits } from "./monacoExternalEdits";
 import { applyMonacoUserOptions } from "./monacoEditorOptions";
 import { registerMonacoDebugShortcuts } from "./monacoDebugShortcuts";
+import { publishEditorCursorPosition } from "./monacoCursorPosition";
 import { getNormalizedLineNumberSelection } from "./monacoLineNumberSelection";
 
 export { initializeMonaco } from "./monacoBootstrap";
@@ -676,6 +677,11 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     if (viewState) {
       ed.restoreViewState(viewState);
     }
+
+    // --- Report where the cursor now is. Restoring the position rarely fires a cursor-change event
+    // --- (the cursor is often already there), so without this the status bar kept the line and
+    // --- column of the previously shown document.
+    publishEditorCursorPosition(ed, (action) => store.dispatch(action));
 
     // --- Set the editor's user-controlled options
     applyMonacoUserOptions(ed, {

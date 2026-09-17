@@ -88,6 +88,25 @@ import {
   getBankAnnotation,
   getNexBankAddressOffset,
 } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
+import {
+  NexBankCommentChip,
+  NexBankCommentStrip
+} from "@renderer/appIde/DocumentPanels/Next/NexBankCommentViews";
+import {
+  DEFAULT_SPRITES_LOOK,
+  NEX_RESET_PALETTE,
+  NexBankSpritesToolbar,
+  NexBankSpritesView,
+  patternForAddress,
+  type NexSpritesLook,
+  type NexSpritesPaletteInfo,
+  type NexSpritesZoom
+} from "@renderer/appIde/DocumentPanels/Next/NexBankSpritesView";
+import {
+  patternOffset as spritePatternOffset,
+  type NexSpriteFormat
+} from "@renderer/appIde/DocumentPanels/Next/nexBankSprites";
+import { useSpritePalette } from "@renderer/features/sprite-editor/useSpritePalette";
 
 type MemoryDumpViewState = {
   disassemblyEnabled?: boolean;
@@ -113,9 +132,34 @@ type MemoryDumpViewState = {
    * rather than in the sidecar: it is how this listing is shown, not a fact about the program.
    */
   disassembleScreen?: boolean;
+  /**
+   * Show a NEX bank's comment as a strip under the toolbar rather than as a toolbar chip.
+   *
+   * View state, not sidecar: pinning is how this document is shown, so toggling it is never a write.
+   * Kept when the comment is cleared, so a comment added later comes back pinned.
+   */
+  bankCommentPinned?: boolean;
+  /** Show the pinned strip's whole comment rather than its first line. */
+  bankCommentExpanded?: boolean;
+  /*
+   * How the Sprites view looks at the bank. View state, never the sidecar: which palette and zoom
+   * someone reads the patterns with says nothing about the program.
+   */
+  spritePalette?: 0 | 1;
+  spritePaletteOffset?: number;
+  spriteZoom?: NexSpritesZoom;
+  spriteShowTransparent?: boolean;
+  spriteAnchor?: number;
+  spriteActive?: number;
+  /*
+   * What the bank's sprite data *is* — format and start offset — belongs in the sidecar. These two
+   * hold it only for a bank the sidecar does not describe, so the view still works without one.
+   */
+  spriteFormat?: NexSpriteFormat;
+  spriteOffset?: number;
 };
 
-type StaticDumpViewMode = "memory" | "disassembly";
+type StaticDumpViewMode = "memory" | "disassembly" | "sprites";
 
 type StaticMemoryDumpOptions = {
   disassemblyEnabled?: boolean;
@@ -147,6 +191,12 @@ const GO_TO_PC_TITLE = "Go to the PC address in this bank";
 const staticDumpViewModeOptions: DropdownOption[] = [
   { value: "memory", label: "Memory" },
   { value: "disassembly", label: "Disassembly" }
+];
+
+/* --- Sprites is offered for NEX banks only: a pattern sheet of an arbitrary dump means nothing. */
+const nexBankViewModeOptions: DropdownOption[] = [
+  ...staticDumpViewModeOptions,
+  { value: "sprites", label: "Sprites" }
 ];
 
 function createStaticDisassemblyOffsetOptions(decimalView: boolean): DropdownOption[] {
@@ -186,9 +236,22 @@ const StaticMemoryDump = ({
    * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.16.
    */
   const isNexBankDocument = currentViewState.nexAnnotationBank !== undefined;
-  const viewMode: StaticDumpViewMode = disassemblyEnabled
+  const requestedViewMode: StaticDumpViewMode = disassemblyEnabled
     ? (currentViewState.viewMode ?? (isNexBankDocument ? "disassembly" : "memory"))
     : "memory";
+  const viewMode: StaticDumpViewMode =
+    requestedViewMode === "sprites" && !isNexBankDocument ? "memory" : requestedViewMode;
+  /*
+   * The listing view the sidecar remembers, which Sprites is not.
+   *
+   * `lastView` accepts only memory and disassembly — a shipped build treats anything else as an error
+   * and refuses the whole file — so while Sprites is showing, the editor is told the view it came
+   * from, which compares equal and writes nothing. See `.plans/NEX_BANK_SPRITES_VIEW_PLAN.md` §3.
+   */
+  const lastListingView = useRef<"memory" | "disassembly">(
+    viewMode === "sprites" ? "disassembly" : viewMode
+  );
+  if (viewMode !== "sprites") lastListingView.current = viewMode;
   const decimalView = currentViewState.decimalView ?? false;
   // --- On unless the reader turned it off: a named address is the more informative default, and a
   // --- listing that has never been configured should be the readable one.
@@ -253,6 +316,10 @@ const StaticMemoryDump = ({
   const navMemoryTop = useRef<number>(viewState?.topAddress ?? viewState?.disassOffset ?? 0);
   const navDisassemblyTop = useRef<number>(viewState?.topAddress ?? viewState?.disassOffset ?? 0);
   const navViewMode = useRef<StaticDumpViewMode>("memory");
+  // --- The address of the selected sprite pattern, for Go Back to return to.
+  const navSpritesTop = useRef<number>(viewState?.topAddress ?? viewState?.disassOffset ?? 0);
+  // --- Versioned, so going to the same address twice still selects it the second time.
+  const [spritesJumpAddress, setSpritesJumpAddress] = useState<{ address: number; version: number }>();
   const navDisassOffset = useRef(0);
   const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
   const bankBreakpoints = useNexBankBreakpoints(currentViewState.nexAnnotationBank);
@@ -474,7 +541,9 @@ const StaticMemoryDump = ({
     () => ({
       annotationPath: currentViewState.nexAnnotationPath,
       bank: currentViewState.nexAnnotationBank,
-      viewMode,
+      viewMode: viewMode === "sprites" ? lastListingView.current : viewMode,
+      // --- Only a NEX bank has a Sprites view, so only a NEX bank records whether it is showing.
+      ...(isNexBankDocument ? { spritesViewActive: viewMode === "sprites" } : {}),
       decimalView,
       disassOffset,
       /*
@@ -491,6 +560,7 @@ const StaticMemoryDump = ({
       currentViewState.nexAnnotationPath,
       decimalView,
       disassOffset,
+      isNexBankDocument,
       machineState,
       viewMode
     ]
@@ -609,8 +679,12 @@ const StaticMemoryDump = ({
         next.decimalView = bankAnnotation.decimalView;
         changed = true;
       }
-      if (bankAnnotation.lastView && next.viewMode !== bankAnnotation.lastView) {
-        next.viewMode = bankAnnotation.lastView;
+      // --- Sprites, when the sidecar says it was showing; otherwise the listing view it remembers.
+      const rememberedView: StaticDumpViewMode | undefined = bankAnnotation.sprites?.active
+        ? "sprites"
+        : bankAnnotation.lastView;
+      if (rememberedView && next.viewMode !== rememberedView) {
+        next.viewMode = rememberedView;
         changed = true;
       }
       return changed ? next : current;
@@ -673,6 +747,164 @@ const StaticMemoryDump = ({
     });
   }, []);
 
+  // ─── Sprites view ──────────────────────────────────────────────────────────
+
+  /*
+   * Format and offset come from the sidecar when the bank has an annotation, and from view state only
+   * when it does not — so a bank described by a sidecar always opens reading its sprites the same
+   * way, for anyone, in any bank document of that NEX.
+   */
+  const bankSprites = annotationVm.bankSprites;
+  const spriteFormat: NexSpriteFormat = bankSprites?.format ?? currentViewState.spriteFormat ?? "8bit";
+  const spriteOffset = bankSprites?.offset ?? currentViewState.spriteOffset ?? 0;
+  const spritesLook = useMemo<NexSpritesLook>(
+    () => ({
+      palette: currentViewState.spritePalette ?? DEFAULT_SPRITES_LOOK.palette,
+      paletteOffset: currentViewState.spritePaletteOffset ?? DEFAULT_SPRITES_LOOK.paletteOffset,
+      zoom: currentViewState.spriteZoom ?? DEFAULT_SPRITES_LOOK.zoom,
+      showTransparent: currentViewState.spriteShowTransparent ?? DEFAULT_SPRITES_LOOK.showTransparent,
+      anchor: currentViewState.spriteAnchor ?? DEFAULT_SPRITES_LOOK.anchor,
+      active: currentViewState.spriteActive ?? DEFAULT_SPRITES_LOOK.active
+    }),
+    [
+      currentViewState.spriteActive,
+      currentViewState.spriteAnchor,
+      currentViewState.spritePalette,
+      currentViewState.spritePaletteOffset,
+      currentViewState.spriteShowTransparent,
+      currentViewState.spriteZoom
+    ]
+  );
+
+  // --- Reads the machine only while the Sprites view is showing.
+  const spritePalette = useSpritePalette({
+    bank: spritesLook.palette,
+    enabled: viewMode === "sprites"
+  });
+  const spritesPaletteInfo = useMemo<NexSpritesPaletteInfo>(
+    () => ({
+      // --- No machine: the Next's own reset palette, not the editor's index ramp.
+      palette: spritePalette.source === "default" ? NEX_RESET_PALETTE : spritePalette.palette,
+      transparencyIndex: spritePalette.transparencyIndex,
+      source: spritePalette.source,
+      liveBank: spritePalette.liveBank
+    }),
+    [spritePalette.liveBank, spritePalette.palette, spritePalette.source, spritePalette.transparencyIndex]
+  );
+
+  const changeSpritesLook = useCallback(
+    (patch: Partial<NexSpritesLook>) =>
+      changeViewState((vs) => {
+        if (patch.palette !== undefined) vs.spritePalette = patch.palette;
+        if (patch.paletteOffset !== undefined) vs.spritePaletteOffset = patch.paletteOffset;
+        if (patch.zoom !== undefined) vs.spriteZoom = patch.zoom;
+        if (patch.showTransparent !== undefined) vs.spriteShowTransparent = patch.showTransparent;
+        if (patch.anchor !== undefined) vs.spriteAnchor = patch.anchor;
+        if (patch.active !== undefined) vs.spriteActive = patch.active;
+      }),
+    [changeViewState]
+  );
+
+  /*
+   * Change what the bank's sprite data is.
+   *
+   * The selection follows the *bytes*, not the pattern number: after a nudge or a format switch it
+   * lands on the pattern holding the first byte of what was selected, and a range collapses to it.
+   */
+  const changeSpriteSettings = useCallback(
+    (patch: { format?: NexSpriteFormat; offset?: number }) => {
+      const nextFormat = patch.format ?? spriteFormat;
+      const nextOffset = patch.offset ?? spriteOffset;
+      if (nextFormat === spriteFormat && nextOffset === spriteOffset) return;
+      const firstSelected = Math.min(spritesLook.anchor, spritesLook.active);
+      const firstByte = spritePatternOffset(firstSelected, spriteFormat, spriteOffset);
+      const size = nextFormat === "4bit" ? 128 : 256;
+      const index = firstByte < nextOffset ? 0 : Math.floor((firstByte - nextOffset) / size);
+      changeSpritesLook({ anchor: index, active: index });
+
+      if (bankSprites) {
+        dispatchAnnotation({ type: "spriteSettingsChanged", ...patch });
+      } else {
+        changeViewState((vs) => {
+          vs.spriteFormat = nextFormat;
+          vs.spriteOffset = nextOffset;
+        });
+      }
+    },
+    [
+      bankSprites,
+      changeSpritesLook,
+      changeViewState,
+      dispatchAnnotation,
+      spriteFormat,
+      spriteOffset,
+      spritesLook.active,
+      spritesLook.anchor
+    ]
+  );
+
+  if (viewMode === "sprites") {
+    navSpritesTop.current =
+      (disassOffset + spritePatternOffset(spritesLook.active, spriteFormat, spriteOffset)) & 0xffff;
+  }
+
+  /* --- Go To, Go Back and reveals select the pattern holding the address. */
+  useEffect(() => {
+    if (spritesJumpAddress === undefined) return;
+    const index = patternForAddress(
+      spritesJumpAddress.address,
+      disassOffset,
+      spriteFormat,
+      spriteOffset
+    );
+    if (index !== undefined) changeSpritesLook({ anchor: index, active: index });
+    // --- Deliberately not re-run when format or offset change: the selection follows those itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spritesJumpAddress]);
+
+  /*
+   * Leave the Sprites view for a listing, at a pattern's first byte.
+   *
+   * Recorded as a jump, so Go Back returns to the sprite. The target list may not be mounted yet, so
+   * its one-time scroll restore is marked done — otherwise a remembered scroll position would land
+   * after the jump and undo it.
+   */
+  const showSpriteIn = useCallback(
+    (view: "memory" | "disassembly", bankOffset: number) => {
+      const address = (disassOffset + bankOffset) & 0xffff;
+      void navigationHistoryService.recordJump(
+        view === "memory" ? "memoryGoTo" : "disassemblyGoTo",
+        () => {
+          if (view === "memory") {
+            restoredInitialScroll.current = true;
+            navMemoryTop.current = address;
+            setMemoryJumpAddress(address);
+          } else {
+            restoredInitialDisassemblyScroll.current = true;
+            navDisassemblyTop.current = address;
+            jumpDisassemblyTo(address);
+          }
+          changeViewState((vs) => {
+            vs.viewMode = view;
+            vs.topAddress = address;
+          });
+        }
+      );
+    },
+    [changeViewState, disassOffset, jumpDisassemblyTo, navigationHistoryService]
+  );
+
+  const goToSpriteAddress = useCallback(
+    (address: number) =>
+      void navigationHistoryService.recordJump("memoryGoTo", () => {
+        setSpritesJumpAddress((current) => ({
+          address,
+          version: (current?.version ?? 0) + 1
+        }));
+      }),
+    [navigationHistoryService]
+  );
+
   useEffect(() => {
     if (document?.id) {
       documentHubService.setDocumentViewState(document.id, currentViewState);
@@ -693,11 +925,16 @@ const StaticMemoryDump = ({
         setCurrentViewState((current) => ({ ...current, topAddress: address }));
         setMemoryJumpAddress(address);
         jumpDisassemblyTo(address);
+        setSpritesJumpAddress((current) => ({ address, version: (current?.version ?? 0) + 1 }));
       },
       getNavigationLocator: () => ({
         kind: "address",
         address:
-          navViewMode.current === "disassembly" ? navDisassemblyTop.current : navMemoryTop.current,
+          navViewMode.current === "disassembly"
+            ? navDisassemblyTop.current
+            : navViewMode.current === "sprites"
+              ? navSpritesTop.current
+              : navMemoryTop.current,
         viewMode: navViewMode.current,
         base: navDisassOffset.current
       }),
@@ -710,6 +947,10 @@ const StaticMemoryDump = ({
           ...current,
           topAddress: locator.address,
           ...(locator.viewMode && current.disassemblyEnabled ? { viewMode: locator.viewMode } : {})
+        }));
+        setSpritesJumpAddress((current) => ({
+          address: locator.address,
+          version: (current?.version ?? 0) + 1
         }));
         setMemoryJumpAddress(locator.address);
         jumpDisassemblyTo(locator.address);
@@ -1009,7 +1250,7 @@ const StaticMemoryDump = ({
             <Text text="View" />
             <LabelSeparator />
             <Dropdown
-              options={staticDumpViewModeOptions}
+              options={isNexBankDocument ? nexBankViewModeOptions : staticDumpViewModeOptions}
               initialValue={viewMode}
               width={104}
               onChanged={(value) =>
@@ -1057,6 +1298,19 @@ const StaticMemoryDump = ({
               />
             </PanelHeaderGroup>
           </>
+        )}
+        {viewMode === "sprites" && (
+          <NexBankSpritesToolbar
+            format={spriteFormat}
+            offset={spriteOffset}
+            look={spritesLook}
+            paletteInfo={spritesPaletteInfo}
+            decimalView={decimalView}
+            onFormatChange={(format) => changeSpriteSettings({ format })}
+            onOffsetChange={(offset) => changeSpriteSettings({ offset })}
+            onLookChange={changeSpritesLook}
+            onGoToAddress={goToSpriteAddress}
+          />
         )}
         {liveBankShown && (
           <PanelHeaderGroup>
@@ -1152,6 +1406,16 @@ const StaticMemoryDump = ({
             --- nothing to show, and an empty group would still claim the header's gap and margin. */}
         {annotationVm.toolbar.visible && (
           <PanelHeaderGroup>
+            {annotationVm.bankComment &&
+              !currentViewState.bankCommentPinned &&
+              currentViewState.nexAnnotationBank !== undefined && (
+                <NexBankCommentChip
+                  bank={currentViewState.nexAnnotationBank}
+                  comment={annotationVm.bankComment}
+                  onEdit={() => dispatchAnnotation({ type: "bankCommentRequested" })}
+                  onPin={() => changeViewState((vs) => (vs.bankCommentPinned = true))}
+                />
+              )}
             <NexAnnotationToolbar
               vm={annotationVm}
               onMenuRequested={openToolbarAnnotationContextMenu}
@@ -1159,6 +1423,22 @@ const StaticMemoryDump = ({
           </PanelHeaderGroup>
         )}
       </PanelHeader>
+      {annotationVm.bankComment && currentViewState.bankCommentPinned && (
+        <NexBankCommentStrip
+          comment={annotationVm.bankComment}
+          expanded={!!currentViewState.bankCommentExpanded}
+          onToggleExpanded={() =>
+            changeViewState((vs) => (vs.bankCommentExpanded = !vs.bankCommentExpanded))
+          }
+          onEdit={() => dispatchAnnotation({ type: "bankCommentRequested" })}
+          onUnpin={() =>
+            changeViewState((vs) => {
+              vs.bankCommentPinned = false;
+              vs.bankCommentExpanded = false;
+            })
+          }
+        />
+      )}
       <FullPanel>
         {contents && viewMode === "memory" ? (
           <VirtualizedList
@@ -1366,6 +1646,29 @@ const StaticMemoryDump = ({
               }}
             />
           </div>
+        ) : null}
+        {contents && viewMode === "sprites" && currentViewState.nexAnnotationBank !== undefined ? (
+          <NexBankSpritesView
+            bank={currentViewState.nexAnnotationBank}
+            bytes={bankBytes}
+            addressBase={disassOffset}
+            format={spriteFormat}
+            offset={spriteOffset}
+            look={spritesLook}
+            paletteInfo={spritesPaletteInfo}
+            regions={annotationVm.bankRegions}
+            canAnnotate={annotationVm.annotationsAvailable && !!bankSprites}
+            onLookChange={changeSpritesLook}
+            onMarkSpan={(start, end, regionType) =>
+              dispatchAnnotation({ type: "regionSpanMarked", start, end, regionType })
+            }
+            onShowIn={showSpriteIn}
+            onBankComment={
+              annotationVm.annotationsAvailable
+                ? () => dispatchAnnotation({ type: "bankCommentRequested" })
+                : undefined
+            }
+          />
         ) : null}
       </FullPanel>
       <NexAnnotationMenu

@@ -174,6 +174,36 @@ describe("Monaco editor adapters", () => {
     ).toBeNull();
   });
 
+  it("publishes the editor's cursor position to the status bar state", async () => {
+    // --- Regression: switching tabs remounts the editor and restores a position that usually fires
+    // --- no cursor-change event, so the status bar kept the previous document's "Ln/Col".
+    const { publishEditorCursorPosition } = await import(
+      "@renderer/features/editor/monaco/monacoCursorPosition"
+    );
+    const { setCursorPositionAction } = await import("@common/state/actions");
+    const dispatch = vi.fn();
+
+    publishEditorCursorPosition({ getPosition: () => ({ lineNumber: 40, column: 7 }) }, dispatch);
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith(setCursorPositionAction(40, 7));
+    expect(dispatch.mock.calls[0][0]).toEqual({
+      type: "SET_CURSOR_POSITION",
+      payload: { line: 40, column: 7 }
+    });
+  });
+
+  it("publishes nothing for an editor without a position", async () => {
+    const { publishEditorCursorPosition } = await import(
+      "@renderer/features/editor/monaco/monacoCursorPosition"
+    );
+    const dispatch = vi.fn();
+
+    publishEditorCursorPosition({ getPosition: () => null }, dispatch);
+
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
   it("applies user option changes in one editor update", async () => {
     const { applyMonacoUserOptions } = await import(
       "@renderer/features/editor/monaco/monacoEditorOptions"

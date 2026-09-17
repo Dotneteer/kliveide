@@ -21,5 +21,16 @@ uint32_t zxnextGetDmaPortAConfig(void);
 uint32_t zxnextGetDmaPortBConfig(void);
 uint32_t zxnextGetDmaTransferMode(void);
 uint32_t zxnextGetDmaTransferredBytes(void);
+uint32_t zxnextGetDmaAddressA(void);
+uint32_t zxnextGetDmaAddressB(void);
+uint32_t zxnextGetDmaCount(void);
+uint32_t zxnextGetDmaSeq(void);
+uint32_t zxnextGetDmaBusState(void);
+uint32_t zxnextGetDmaDelay(void);
+uint32_t zxnextGetDmaPrescaler(void);
+uint32_t zxnextGetDmaIp(void);
+uint32_t zxnextGetDmaVector(void);
+uint32_t zxnextGetDmaAutoRestart(void);
+uint32_t zxnextGetDmaRawRegister(uint32_t index);
 
 #endif

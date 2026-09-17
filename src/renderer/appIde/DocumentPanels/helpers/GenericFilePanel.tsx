@@ -80,21 +80,83 @@ export function GenericFilePanel<TFile, TState extends GenericFileViewState>({
   const [initialized, setInitialized] = useState(false);
   const [valid, setValid] = useState(true);
 
+  /*
+   * Bytes this panel had to read for itself, because none were handed to it.
+   *
+   * A document restored at startup is opened as a *shell* — a tab whose contents are read only when
+   * the document is activated — and the document area can mount this panel for it before, or
+   * without, those bytes arriving. Handing the loader `undefined` then made every binary viewer
+   * report the file as broken: the NEX viewer showed "Cannot read properties of undefined (reading
+   * 'length')", thrown by `BinaryReader`, in place of a perfectly good file. Missing bytes are "not
+   * loaded yet", not a parse error, so the panel reads the file through the project service (which
+   * serves the cached copy when there is one) and parses that.
+   */
+  const [readContents, setReadContents] = useState<{ document: unknown; contents: any }>();
+  const effectiveContents =
+    contents !== undefined
+      ? contents
+      : readContents?.document === document
+        ? readContents.contents
+        : undefined;
+
+  // --- Read through a ref: the read is keyed on the document and its bytes, not on the identity of
+  // --- the service object, which a caller is free to hand over afresh on every render.
+  const projectServiceRef = useRef(appServices.projectService);
+  projectServiceRef.current = appServices.projectService;
+
+  useEffect(() => {
+    if (contents !== undefined) return undefined;
+    let cancelled = false;
+    const node = document?.node;
+    if (!node) {
+      setFileError("This document has no contents to show.");
+      setValid(false);
+      setInitialized(true);
+      return undefined;
+    }
+    projectServiceRef.current
+      .getDocumentForProjectNode(node)
+      .then((loaded) => {
+        if (cancelled) return;
+        if (loaded?.contents === undefined) {
+          setFileError(`${node.name ?? "The file"} could not be read.`);
+          setValid(false);
+          setInitialized(true);
+          return;
+        }
+        setReadContents({ document, contents: loaded.contents });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setFileError(
+          `${node.name ?? "The file"} could not be read: ${err instanceof Error ? err.message : String(err)}`
+        );
+        setValid(false);
+        setInitialized(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contents, document]);
+
   // Reload when the document *or its bytes* change. `contents` was missing from the dependencies,
   // so a file re-read that produced new bytes under the same document showed the old parse.
   useEffect(() => {
+    // --- No bytes yet: the effect above is reading them, and the loader must never see `undefined`.
+    if (effectiveContents === undefined) return;
     try {
-      const result = fileLoader(contents);
+      const result = fileLoader(effectiveContents);
       setFileInfo(result.fileInfo);
       setValid(!result.error);
-      if (result.error) setFileError(result.error);
+      // --- Cleared on success, so an error from an earlier parse cannot outlive it.
+      setFileError(result.error);
     } catch (err) {
       setFileError(err.message);
       setValid(false);
     } finally {
       setInitialized(true);
     }
-  }, [document, contents, fileLoader]);
+  }, [document, effectiveContents, fileLoader]);
 
   useEffect(() => {
     if (document.id) {

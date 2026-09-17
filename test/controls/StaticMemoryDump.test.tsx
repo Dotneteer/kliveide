@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { ReactNode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -573,7 +573,8 @@ describe("StaticMemoryDump", () => {
     expect(screen.getByText(".defb $01, $02, $03, $04")).toBeInTheDocument();
     expect(screen.getByText("; four values")).toBeInTheDocument();
     expect(screen.queryByText("Annotations loaded")).not.toBeInTheDocument();
-    expect(screen.getByText("Annotations")).toBeDisabled();
+    // --- Enabled with nothing selected: Bank Comment needs no row.
+    expect(screen.getByText("Annotations")).not.toBeDisabled();
     expect(screen.queryByText("Manage Labels")).not.toBeInTheDocument();
     expect(screen.queryByText("Manage Regions")).not.toBeInTheDocument();
     expect(screen.queryByText("Annotate")).not.toBeInTheDocument();
@@ -1243,6 +1244,16 @@ describe("StaticMemoryDump", () => {
     /** `fireEvent.keyDown` returns false when the handler called `preventDefault`. */
     const press = (list: HTMLElement, key: string, shiftKey = false) =>
       fireEvent.keyDown(list, { key, shiftKey });
+
+    it("opens the bank comment dialog on B, with or without a selection", async () => {
+      const { openDialog, list } = await renderAnnotatedListing({ select: false });
+
+      expect(press(list, "b")).toBe(false);
+
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+      expect(openDialog.mock.calls[0][0].name).toBe("NexBankCommentDialog");
+      expect(openDialog.mock.calls[0][1]).toEqual({ bank: 5, initialComment: undefined });
+    });
 
     it("opens the label dialog on L, scoped global", async () => {
       const { openDialog, list } = await renderAnnotatedListing();
@@ -2240,7 +2251,388 @@ describe("StaticMemoryDump", () => {
     });
   });
 
-  it("does not open the toolbar annotation menu without an active disassembly row", async () => {
+  describe("sprites view", () => {
+    beforeEach(() => {
+      vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() => ({
+        createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+        putImageData: () => {}
+      })) as any);
+    });
+
+    const spriteSidecar = (bank: Record<string, unknown> = {}) =>
+      vi.fn(() =>
+        Promise.resolve(
+          JSON.stringify({
+            schemaVersion: 2,
+            banks: {
+              "5": {
+                offsetIndex: 1,
+                lastView: "disassembly",
+                regions: [{ start: 0, end: 0x3fff, type: "disassemble" }],
+                ...bank
+              }
+            }
+          })
+        )
+      );
+
+    const renderBank = (
+      readFileContent: ReturnType<typeof vi.fn>,
+      viewState: Record<string, unknown> = {},
+      saveFileContent = vi.fn(() => Promise.resolve())
+    ) =>
+      renderStaticMemoryDump(
+        {
+          disassemblyEnabled: true,
+          viewMode: "disassembly",
+          disassOffset: 0x4000,
+          nexAnnotationPath: "/project/game.nex.dis",
+          nexAnnotationBank: 5,
+          ...viewState
+        },
+        readFileContent,
+        saveFileContent
+      );
+
+    const viewModes = () =>
+      Array.from((screen.getByTestId("view-mode") as HTMLSelectElement).options).map((o) => o.value);
+
+    it("is offered for a NEX bank and not for a plain dump", async () => {
+      await renderBank(spriteSidecar());
+      expect(viewModes()).toEqual(["memory", "disassembly", "sprites"]);
+      cleanup();
+      await renderStaticMemoryDump({ disassemblyEnabled: true });
+      expect(viewModes()).toEqual(["memory", "disassembly"]);
+    });
+
+    it("falls back to memory when a plain dump's view state asks for sprites", async () => {
+      await renderStaticMemoryDump({ disassemblyEnabled: true, viewMode: "sprites" });
+      expect((screen.getByTestId("view-mode") as HTMLSelectElement).value).toBe("memory");
+      expect(screen.queryByTestId("nex-sprites-sheet")).toBeNull();
+    });
+
+    it("switches to the sheet, remembering it without touching lastView", async () => {
+      const saveFileContent = vi.fn(() => Promise.resolve());
+      const harness = await renderBank(spriteSidecar(), {}, saveFileContent);
+      await screen.findByTestId("disassembly-row-0");
+
+      fireEvent.change(screen.getByTestId("view-mode"), { target: { value: "sprites" } });
+
+      expect(await screen.findByTestId("nex-sprites-sheet")).toBeInTheDocument();
+      expect(within(screen.getByTestId("nex-sprites-sheet")).getAllByRole("option").length).toBe(64);
+      await waitFor(() =>
+        expect(harness.setDocumentViewState).toHaveBeenLastCalledWith(
+          expect.anything(),
+          expect.objectContaining({ viewMode: "sprites" })
+        )
+      );
+      // --- Remembered as `sprites.active`, so a reopened bank shows it; `lastView` keeps the listing
+      // --- an older build can open.
+      await waitFor(() => expect(saveFileContent).toHaveBeenCalled());
+      const saved = JSON.parse(saveFileContent.mock.calls.at(-1)[1]);
+      expect(saved.banks["5"].sprites).toEqual({ active: true });
+      expect(saved.banks["5"].lastView).toBe("disassembly");
+    });
+
+    it("forgets the Sprites view when switching back to a listing", async () => {
+      const saveFileContent = vi.fn(() => Promise.resolve());
+      await renderBank(spriteSidecar({ sprites: { active: true } }), { viewMode: "sprites" }, saveFileContent);
+      await screen.findByTestId("nex-sprites-sheet");
+
+      fireEvent.change(screen.getByTestId("view-mode"), { target: { value: "memory" } });
+
+      await waitFor(() => expect(saveFileContent).toHaveBeenCalled());
+      const saved = JSON.parse(saveFileContent.mock.calls.at(-1)[1]);
+      expect(saved.banks["5"]).not.toHaveProperty("sprites");
+      expect(saved.banks["5"].lastView).toBe("memory");
+      // --- The one write must not have bounced the view back to Sprites.
+      expect((screen.getByTestId("view-mode") as HTMLSelectElement).value).toBe("memory");
+    });
+
+    it("opens in Sprites when the sidecar says it was showing, whatever lastView says", async () => {
+      await renderBank(spriteSidecar({ lastView: "memory", sprites: { active: true } }), {
+        viewMode: "memory"
+      });
+      expect(await screen.findByTestId("nex-sprites-sheet")).toBeInTheDocument();
+      expect((screen.getByTestId("view-mode") as HTMLSelectElement).value).toBe("sprites");
+    });
+
+    it("stays on sprites when the sidecar changes underneath it", async () => {
+      const saveFileContent = vi.fn(() => Promise.resolve());
+      await renderBank(spriteSidecar({ sprites: { active: true } }), { viewMode: "sprites" }, saveFileContent);
+      await screen.findByTestId("nex-sprites-sheet");
+
+      // --- A region edit publishes a new model; the remembered lastView must not win.
+      fireEvent.click(screen.getAllByRole("button", { name: "Mark as Bytes" })[0]);
+      await waitFor(() => expect(saveFileContent).toHaveBeenCalled());
+      expect((screen.getByTestId("view-mode") as HTMLSelectElement).value).toBe("sprites");
+      const saved = JSON.parse(saveFileContent.mock.calls.at(-1)[1]);
+      expect(saved.banks["5"].lastView).toBe("disassembly");
+      expect(saved.banks["5"].regions).toContainEqual({ start: 0, end: 0xff, type: "bytes" });
+    });
+
+    it("reads format and offset from the sidecar, and writes changes back", async () => {
+      const saveFileContent = vi.fn(() => Promise.resolve());
+      await renderBank(
+        spriteSidecar({ sprites: { format: "4bit", offset: 3, active: true } }),
+        { viewMode: "sprites" },
+        saveFileContent
+      );
+
+      await waitFor(() => expect(within(screen.getByTestId("nex-sprites-sheet")).getAllByRole("option").length).toBe(127));
+      expect(screen.getByLabelText("Sprite start offset")).toHaveValue("$0003");
+
+      fireEvent.click(screen.getByRole("button", { name: "8-bit" }));
+      await waitFor(() => expect(saveFileContent).toHaveBeenCalled());
+      expect(JSON.parse(saveFileContent.mock.calls.at(-1)[1]).banks["5"].sprites).toEqual({
+        offset: 3,
+        active: true
+      });
+
+      fireEvent.click(screen.getByTitle("Back one byte"));
+      await waitFor(() =>
+        expect(JSON.parse(saveFileContent.mock.calls.at(-1)[1]).banks["5"].sprites).toEqual({
+          offset: 2,
+          active: true
+        })
+      );
+
+      // --- Back to 8-bit at $0000: the defaults are not stored, only the flag remains.
+      fireEvent.click(screen.getByTitle("Back one pattern"));
+      await waitFor(() =>
+        expect(JSON.parse(saveFileContent.mock.calls.at(-1)[1]).banks["5"].sprites).toEqual({
+          active: true
+        })
+      );
+    });
+
+    it("keeps the palette and zoom in view state only", async () => {
+      const saveFileContent = vi.fn(() => Promise.resolve());
+      const harness = await renderBank(
+        spriteSidecar({ sprites: { active: true } }),
+        { viewMode: "sprites" },
+        saveFileContent
+      );
+      await screen.findByTestId("nex-sprites-sheet");
+
+      fireEvent.click(screen.getByRole("button", { name: "Secondary" }));
+      fireEvent.click(screen.getByRole("button", { name: "4×" }));
+
+      await waitFor(() =>
+        expect(harness.setDocumentViewState).toHaveBeenLastCalledWith(
+          expect.anything(),
+          expect.objectContaining({ spritePalette: 1, spriteZoom: 4 })
+        )
+      );
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(saveFileContent).not.toHaveBeenCalled();
+    });
+
+    it("says it is showing the default palette with no machine", async () => {
+      await renderBank(spriteSidecar({ sprites: { active: true } }), { viewMode: "sprites" });
+      expect(await screen.findByText("Default palette")).toBeInTheDocument();
+    });
+
+    it("opens Memory at a pattern, recorded so Go Back returns to it", async () => {
+      const harness = await renderBank(spriteSidecar({ sprites: { active: true } }), {
+        viewMode: "sprites",
+        spriteAnchor: 9,
+        spriteActive: 9
+      });
+      await screen.findByTestId("nex-sprites-sheet");
+      expect(harness.getDocumentApi().getNavigationLocator()).toEqual({
+        kind: "address",
+        address: 0x4900,
+        viewMode: "sprites",
+        base: 0x4000
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: "Show in Memory" }));
+
+      await waitFor(() =>
+        expect(harness.navigationHistoryService.recordJump).toHaveBeenCalledWith(
+          "memoryGoTo",
+          expect.any(Function)
+        )
+      );
+      await waitFor(() =>
+        expect((screen.getByTestId("view-mode") as HTMLSelectElement).value).toBe("memory")
+      );
+      await waitFor(() =>
+        expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(0x90, { align: "start" })
+      );
+
+      act(() =>
+        harness.getDocumentApi().revealLocator({
+          kind: "address",
+          address: 0x4a05,
+          viewMode: "sprites"
+        })
+      );
+      await waitFor(() => expect(within(screen.getByTestId("nex-sprites-sheet")).getAllByRole("option")[10]).toHaveAttribute("aria-selected", "true"));
+    });
+
+    it("still loads an old sidecar and writes no sprites block for a bank never changed", async () => {
+      const saveFileContent = vi.fn(() => Promise.resolve());
+      await renderBank(
+        vi.fn(() =>
+          Promise.resolve(
+            JSON.stringify({
+              schemaVersion: 1,
+              banks: { "5": { offsetIndex: 1, regions: [{ start: 0, end: 0x3fff, type: "disassemble" }] } }
+            })
+          )
+        ),
+        { viewMode: "sprites" },
+        saveFileContent
+      );
+      await screen.findByTestId("nex-sprites-sheet");
+      fireEvent.click(screen.getByRole("button", { name: "Secondary" }));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(saveFileContent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("bank comment chip and strip", () => {
+    const commentSidecar = (comment?: string) =>
+      vi.fn(() =>
+        Promise.resolve(
+          JSON.stringify({
+            schemaVersion: 2,
+            banks: {
+              "5": {
+                offsetIndex: 2,
+                ...(comment ? { comment } : {}),
+                regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
+              }
+            }
+          })
+        )
+      );
+
+    const renderBank = (
+      readFileContent: ReturnType<typeof vi.fn>,
+      viewState: Record<string, unknown> = {},
+      saveFileContent = vi.fn(() => Promise.resolve()),
+      openDialog = vi.fn(() => Promise.resolve(undefined))
+    ) =>
+      renderStaticMemoryDump(
+        {
+          disassemblyEnabled: true,
+          viewMode: "disassembly",
+          disassOffset: 0x8000,
+          nexAnnotationPath: "/project/game.nex.dis",
+          nexAnnotationBank: 5,
+          ...viewState
+        },
+        readFileContent,
+        saveFileContent,
+        new Uint8Array(0x4000),
+        openDialog
+      );
+
+    it("shows no chip for a bank without a comment", async () => {
+      await renderBank(commentSidecar());
+      await screen.findByTestId("disassembly-row-0");
+      await waitFor(() => expect(screen.getByText("Annotations")).not.toBeDisabled());
+      expect(screen.queryByRole("button", { name: /Music/ })).toBeNull();
+      expect(screen.queryByRole("note", { name: "Bank comment" })).toBeNull();
+    });
+
+    it("shows the comment in a toolbar chip, and its whole text in a popover", async () => {
+      await renderBank(commentSidecar("Music player\n\nIM2 handler"));
+
+      const chip = await screen.findByRole("button", { name: /Music player/ });
+      expect(chip.textContent).toContain("Music player \u00b7 IM2 handler");
+      expect(chip).toHaveAttribute("aria-expanded", "false");
+      // --- Takes no row: nothing is drawn under the toolbar until it is pinned.
+      expect(screen.queryByRole("note", { name: "Bank comment" })).toBeNull();
+
+      fireEvent.click(chip);
+      const popover = await screen.findByRole("dialog", { name: "Bank $05 comment" });
+      expect(popover.textContent).toContain("Music player\n\nIM2 handler");
+      expect(chip).toHaveAttribute("aria-expanded", "true");
+
+      fireEvent.keyDown(document, { key: "Escape" });
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog", { name: "Bank $05 comment" })).toBeNull()
+      );
+    });
+
+    it("edits from the popover", async () => {
+      const openDialog = vi.fn(() => Promise.resolve(undefined));
+      await renderBank(commentSidecar("Music"), {}, undefined, openDialog);
+
+      fireEvent.click(await screen.findByRole("button", { name: /Music/ }));
+      fireEvent.click(await screen.findByRole("button", { name: "Edit..." }));
+
+      await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+      expect(openDialog.mock.calls[0][0].name).toBe("NexBankCommentDialog");
+      expect(screen.queryByRole("dialog", { name: "Bank $05 comment" })).toBeNull();
+    });
+
+    it("pins the comment into a strip, in view state, without writing the sidecar", async () => {
+      const saveFileContent = vi.fn(() => Promise.resolve());
+      const harness = await renderBank(commentSidecar("Music player\nIM2 handler"), {}, saveFileContent);
+
+      fireEvent.click(await screen.findByRole("button", { name: /Music player/ }));
+      fireEvent.click(await screen.findByRole("button", { name: "Pin" }));
+
+      const strip = await screen.findByRole("note", { name: "Bank comment" });
+      expect(strip.textContent).toContain("Music player \u00b7 IM2 handler");
+      // --- Pinned replaces the chip rather than adding to it.
+      expect(screen.queryByTitle("Show this bank's comment")).toBeNull();
+      await waitFor(() =>
+        expect(harness.setDocumentViewState).toHaveBeenLastCalledWith(
+          expect.anything(),
+          expect.objectContaining({ bankCommentPinned: true })
+        )
+      );
+      expect(saveFileContent).not.toHaveBeenCalled();
+    });
+
+    /** Make the strip's one-line text wider than the room it gets, as a long comment would be. */
+    const overflowStrip = () => {
+      vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(600);
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(200);
+    };
+
+    it("offers no expand button when the comment fits on its one line", async () => {
+      // --- jsdom lays nothing out, so the measured copy is never wider than the text: it fits.
+      await renderBank(commentSidecar("Music player\nIM2 handler"), {
+        bankCommentPinned: true,
+        // --- Left expanded from before: with nothing to reveal it still shows one line.
+        bankCommentExpanded: true
+      });
+
+      const strip = await screen.findByRole("note", { name: "Bank comment" });
+      expect(within(strip).queryByText("Show the whole comment")).toBeNull();
+      expect(within(strip).queryByText("Show the comment on one line")).toBeNull();
+      expect(within(strip).getByTitle("Edit the bank comment").textContent).toBe(
+        "Music player \u00b7 IM2 handler"
+      );
+      expect(within(strip).getByText("Unpin the bank comment")).toBeInTheDocument();
+    });
+
+    it("expands and unpins the strip", async () => {
+      overflowStrip();
+      await renderBank(commentSidecar("Music player\nIM2 handler"), { bankCommentPinned: true });
+
+      const strip = await screen.findByRole("note", { name: "Bank comment" });
+      fireEvent.click(within(strip).getByText("Show the whole comment"));
+      await waitFor(() =>
+        expect(within(strip).getByTitle("Edit the bank comment").textContent).toBe(
+          "Music player\nIM2 handler"
+        )
+      );
+
+      fireEvent.click(within(strip).getByText("Unpin the bank comment"));
+      await waitFor(() => expect(screen.queryByRole("note", { name: "Bank comment" })).toBeNull());
+      expect(await screen.findByTitle("Show this bank's comment")).toBeInTheDocument();
+    });
+  });
+
+  it("opens the toolbar menu without a row, offering only the whole-bank commands", async () => {
     const readFileContent = vi.fn(() =>
       Promise.resolve(
         JSON.stringify({
@@ -2271,10 +2663,58 @@ describe("StaticMemoryDump", () => {
     );
 
     await screen.findByTestId("disassembly-row-0");
-    expect(screen.getByText("Annotations")).toBeDisabled();
+    await waitFor(() => expect(screen.getByText("Annotations")).not.toBeDisabled());
     fireEvent.click(screen.getByText("Annotations"));
 
+    expect(await screen.findByText("Bank Comment...")).not.toBeDisabled();
+    expect(screen.getByText("Synopsis Comment...")).toBeDisabled();
+    expect(screen.getByText("Clear Row Annotations")).toBeDisabled();
     expect(openDialog).not.toHaveBeenCalled();
+  });
+
+  it("edits the bank comment from the toolbar menu and writes it", async () => {
+    const readFileContent = vi.fn(() =>
+      Promise.resolve(
+        JSON.stringify({
+          schemaVersion: 2,
+          banks: {
+            "5": {
+              offsetIndex: 2,
+              comment: "Old",
+              regions: [{ start: 0, end: 0x3fff, type: "disassemble" }]
+            }
+          }
+        })
+      )
+    );
+    const saveFileContent = vi.fn(() => Promise.resolve());
+    const openDialog = vi.fn(() => Promise.resolve({ comment: "Music player\nIM2 handler" }));
+
+    await renderStaticMemoryDump(
+      {
+        disassemblyEnabled: true,
+        viewMode: "disassembly",
+        disassOffset: 0x8000,
+        nexAnnotationPath: "/project/game.nex.dis",
+        nexAnnotationBank: 5
+      },
+      readFileContent,
+      saveFileContent,
+      new Uint8Array(0x4000),
+      openDialog
+    );
+
+    await screen.findByTestId("disassembly-row-0");
+    await waitFor(() => expect(screen.getByText("Annotations")).not.toBeDisabled());
+    fireEvent.click(screen.getByText("Annotations"));
+    fireEvent.click(await screen.findByText("Bank Comment..."));
+
+    await waitFor(() => expect(openDialog).toHaveBeenCalledTimes(1));
+    expect(openDialog.mock.calls[0][0].name).toBe("NexBankCommentDialog");
+    expect(openDialog.mock.calls[0][1]).toEqual({ bank: 5, initialComment: "Old" });
+    await waitFor(() => expect(saveFileContent).toHaveBeenCalled());
+    const saved = JSON.parse(saveFileContent.mock.calls.at(-1)[1]);
+    expect(saved.banks["5"].comment).toBe("Music player\nIM2 handler");
   });
 
   it("asks before applying a full-bank memory region change", async () => {

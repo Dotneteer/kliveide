@@ -148,7 +148,7 @@ export type StaticDumpNavigationDeps = {
     options: {
       disassemblyEnabled?: boolean;
       disassOffset?: number;
-      viewMode?: "memory" | "disassembly";
+      viewMode?: "memory" | "disassembly" | "sprites";
       nexAnnotationPath?: string;
       nexAnnotationBank?: number;
       topAddress?: number;

@@ -131,28 +131,70 @@ static void zxnextSpritesWritePort57(uint32_t value) {
   }
 }
 
+/*
+ * Where a pattern pixel lands on screen for one of the 8 transform variants.
+ *
+ * Both pattern memories hold every variant precomputed, indexed by the *screen* pixel (row << 4 | col
+ * within the 16x16 cell), so the renderer reads straight through. The mapping is the inverse of the
+ * FPGA's read address (`_input/next-fpga/src/video/sprites.vhd`, `spr_pattern_addr_start`/`_delta`):
+ *
+ *   no rotate:  pattern row = ymirror ? 15 - sy : sy,   pattern col = xmirror ? 15 - sx : sx
+ *   rotate:     pattern row = xmirror ? sx : 15 - sx,   pattern col = ymirror ? 15 - sy : sy
+ *
+ * i.e. the hardware rotates 90 degrees clockwise first and mirrors in screen space afterwards
+ * ("rotation inverts x mirror"). `variant` is `rotate << 2 | xmirror << 1 | ymirror`.
+ */
+static uint32_t zxnextSpritesVariantScreenOffset(uint32_t variant, uint32_t row, uint32_t col) {
+  uint32_t rotate = (variant >> 2u) & 1u;
+  uint32_t xmirror = (variant >> 1u) & 1u;
+  uint32_t ymirror = variant & 1u;
+  uint32_t sx;
+  uint32_t sy;
+  if (rotate) {
+    sx = xmirror ? row : 15u - row;
+    sy = ymirror ? 15u - col : col;
+  } else {
+    sx = xmirror ? 15u - col : col;
+    sy = ymirror ? 15u - row : row;
+  }
+  return (sy << 4u) | sx;
+}
+
+/*
+ * One byte written to pattern memory through port $5B.
+ *
+ * The hardware has a single 16K pattern memory addressed by `patternIndex << 8 | subIndex`; the 8-bit
+ * and 4-bit engines read it two ways (FPGA `spr_pat_addr`, `spr_nibble_data`):
+ *
+ * - **8-bit** pattern N is the 256 bytes at N * 256, one byte per pixel.
+ * - **4-bit** pattern P is the 128 bytes at P * 128, where P = N * 2 + N6: byte b holds two pixels,
+ *   the **high nibble** at pixel address 2b and the low nibble at 2b + 1.
+ *
+ * So the same write is an 8-bit pixel of pattern N and two 4-bit pixels of pattern
+ * `address >> 7`. Both are fanned out to the 8 precomputed transform variants.
+ */
 static void zxnextSpritesWritePort5b(uint32_t value) {
-  uint32_t srcIdx = zxnextSpritePatternSubIndex;
-  uint32_t srcY = srcIdx >> 4u;
-  uint32_t srcX = srcIdx & 0x0fu;
-  uint32_t dst[8];
   uint8_t byteValue = (uint8_t)value;
+  uint32_t subIndex = zxnextSpritePatternSubIndex;
+
   uint32_t base8 = (uint32_t)zxnextSpritePatternIndex << 3u;
-  uint32_t pattern4 = ((uint32_t)zxnextSpritePatternIndex << 1u) | ((zxnextSpritePatternSubIndex >> 7u) & 1u);
+  uint32_t row8 = subIndex >> 4u;
+  uint32_t col8 = subIndex & 0x0fu;
+
+  uint32_t pattern4 = ((uint32_t)zxnextSpritePatternIndex << 1u) | ((subIndex >> 7u) & 1u);
   uint32_t base4 = pattern4 << 3u;
+  uint32_t pixel4High = (subIndex & 0x7fu) << 1u;
+  uint32_t pixel4Low = pixel4High | 1u;
 
-  dst[0] = srcIdx;
-  dst[1] = ((15u - srcY) << 4u) | srcX;
-  dst[2] = (srcY << 4u) | (15u - srcX);
-  dst[3] = ((15u - srcY) << 4u) | (15u - srcX);
-  dst[4] = (srcX << 4u) | (15u - srcY);
-  dst[5] = (srcX << 4u) | srcY;
-  dst[6] = ((15u - srcX) << 4u) | (15u - srcY);
-  dst[7] = ((15u - srcX) << 4u) | srcY;
-
-  for (uint32_t i = 0u; i < 8u; i++) {
-    zxnextSpritePatternMemory8[base8 + i][dst[i]] = byteValue;
-    zxnextSpritePatternMemory4[base4 + i][dst[i]] = byteValue & 0x0fu;
+  for (uint32_t variant = 0u; variant < 8u; variant++) {
+    zxnextSpritePatternMemory8[base8 + variant][zxnextSpritesVariantScreenOffset(variant, row8, col8)] =
+      byteValue;
+    zxnextSpritePatternMemory4[base4 + variant][
+      zxnextSpritesVariantScreenOffset(variant, pixel4High >> 4u, pixel4High & 0x0fu)
+    ] = (uint8_t)(byteValue >> 4u);
+    zxnextSpritePatternMemory4[base4 + variant][
+      zxnextSpritesVariantScreenOffset(variant, pixel4Low >> 4u, pixel4Low & 0x0fu)
+    ] = (uint8_t)(byteValue & 0x0fu);
   }
 
   zxnextSpritePatternSubIndex = (uint8_t)(zxnextSpritePatternSubIndex + 1u);
@@ -160,6 +202,15 @@ static void zxnextSpritesWritePort5b(uint32_t value) {
     zxnextSpritePatternIndex = (uint8_t)((zxnextSpritePatternIndex + 1u) & 0x3fu);
   }
 }
+
+/*
+ * Latch the collision flag (status bit 0).
+ *
+ * Set by the renderer when a sprite writes an opaque pixel onto one another sprite already wrote on the
+ * same line — FPGA `status_reg_s(0) <= ... or (spr_line_data_o(8) and spr_line_we)`. Sticky until
+ * port $303B is read, like the hardware's.
+ */
+static void zxnextSpritesSignalCollision(void) { zxnextSpriteCollision = 1u; }
 
 static uint32_t zxnextSpritesReadPort303b(void) {
   uint32_t value = (zxnextSpriteTooMany ? 0x02u : 0u) | (zxnextSpriteCollision ? 0x01u : 0u);

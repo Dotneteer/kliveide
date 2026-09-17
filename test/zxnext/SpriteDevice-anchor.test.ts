@@ -206,10 +206,10 @@ describe("SpriteDevice - Anchor Sprite Tracking", () => {
     spriteDevice.writeIndexedSpriteAttribute(spriteIdx, 0, 0xff);  // X LSB = 0xff
     spriteDevice.writeIndexedSpriteAttribute(spriteIdx, 1, 0x50);
     spriteDevice.writeIndexedSpriteAttribute(spriteIdx, 3, 0x40);
-    spriteDevice.writeIndexedSpriteAttribute(spriteIdx, 4, 0x01);  // colorMode = 0, X MSB = 1
+    spriteDevice.writeIndexedSpriteAttribute(spriteIdx, 4, 0x00);  // colorMode = 0 (anchor)
 
-    // --- Act: Write attr2
-    spriteDevice.writeIndexedSpriteAttribute(spriteIdx, 2, 0xf0);
+    // --- Act: Write attr2 — bit 0 is X's MSB (FPGA `spr_cur_x <= attr_2(0) & attr_0`)
+    spriteDevice.writeIndexedSpriteAttribute(spriteIdx, 2, 0xf1);
 
     // --- Assert: Anchor X should be 0x1ff
     expect(spriteDevice.getAnchorX()).toBe(0x1ff);

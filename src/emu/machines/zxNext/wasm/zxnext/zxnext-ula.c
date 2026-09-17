@@ -434,7 +434,172 @@ static void zxnextUlaRenderLayer2_640x256Screen(void) {
   }
 }
 
-static void zxnextUlaRenderSpritesScreen(void) {
+/*
+ * A sprite's attributes as the FPGA's `spr_cur_attr_*` see them: relative sprites composed onto
+ * their anchor, and every field decoded once.
+ */
+typedef struct {
+  uint8_t visible;
+  uint16_t x;
+  uint16_t y;
+  uint8_t paletteOffset;
+  uint8_t xmirror;
+  uint8_t ymirror;
+  uint8_t rotate;
+  uint8_t scaleX;
+  uint8_t scaleY;
+  uint8_t is4Bit;
+  /* The 7-bit pattern number, `N5..N0 & N6` (FPGA `spr_rel_pattern`). */
+  uint8_t pattern7;
+} ZxnextResolvedSprite;
+
+static ZxnextResolvedSprite zxnextUlaResolvedSprites[128];
+
+/*
+ * Which sprite-space pixels (320 x 256) a sprite has already written this render, for collision
+ * detection. One byte per pixel, cleared at the start of each sprite pass.
+ */
+#define ZXNEXT_SPRITE_SPACE_WIDTH 320u
+#define ZXNEXT_SPRITE_SPACE_HEIGHT 256u
+static uint8_t zxnextUlaSpriteCoverage[ZXNEXT_SPRITE_SPACE_WIDTH * ZXNEXT_SPRITE_SPACE_HEIGHT];
+
+static uint32_t zxnextUlaSignExtendScale9(uint32_t value8, uint32_t scale) {
+  uint32_t value9 = (value8 & 0x80u) ? (value8 | 0x100u) : value8;
+  return (value9 << scale) & 0x1ffu;
+}
+
+/*
+ * Resolve every sprite up to `lastVisible` in index order, as the FPGA qualifies them.
+ *
+ * Follows `_input/next-fpga/src/video/sprites.vhd` ("sort out relative sprite characteristics" and
+ * the anchor latch in `S_QUALIFY`):
+ *
+ * - A sprite is **relative** when it has five attribute bytes and attr4 bits 7:6 are `01`. Every
+ *   other sprite, visible or not, becomes the anchor for the relative sprites after it.
+ * - An anchor's attr4 is `H N6 T XX YY Y8`: H selects 4-bit patterns, N6 is the 7th pattern bit (only
+ *   meaningful with H), and T is the relative type — with T set, relatives inherit the anchor's
+ *   rotation, mirroring and scale. X's ninth bit is attr2 bit 0, Y's is attr4 bit 0.
+ * - A relative's attr0/attr1 are signed offsets, rotated, mirrored and scaled by the anchor's
+ *   transform (all zero for T clear) and added to its position. It inherits H, takes N6 from its own
+ *   attr4 bit 5, adds the anchor's pattern when attr4 bit 0 is set, adds the anchor's palette offset
+ *   when attr2 bit 0 is set, and is visible only when the anchor is.
+ */
+static void zxnextUlaResolveSprites(uint32_t lastVisible) {
+  uint32_t anchorVisible = 0u;
+  uint32_t anchorRelType = 0u;
+  uint32_t anchorH = 0u;
+  uint32_t anchorX = 0u;
+  uint32_t anchorY = 0u;
+  uint32_t anchorPattern = 0u;
+  uint32_t anchorPaletteOffset = 0u;
+  uint32_t anchorRotate = 0u;
+  uint32_t anchorXmirror = 0u;
+  uint32_t anchorYmirror = 0u;
+  uint32_t anchorScaleX = 0u;
+  uint32_t anchorScaleY = 0u;
+
+  for (uint32_t sprite = 0u; sprite <= lastVisible && sprite < 128u; sprite++) {
+    uint32_t attr0 = zxnextSpritesGetAttribute(sprite, 0) & 0xffu;
+    uint32_t attr1 = zxnextSpritesGetAttribute(sprite, 1) & 0xffu;
+    uint32_t attr2 = zxnextSpritesGetAttribute(sprite, 2) & 0xffu;
+    uint32_t attr3 = zxnextSpritesGetAttribute(sprite, 3) & 0xffu;
+    uint32_t attr4 = zxnextSpritesGetAttribute(sprite, 4) & 0xffu;
+    uint32_t has5Attrs = (attr3 & 0x40u) != 0u;
+    uint32_t relative = has5Attrs && ((attr4 >> 6u) & 0x03u) == 0x01u;
+    ZxnextResolvedSprite* out = &zxnextUlaResolvedSprites[sprite];
+
+    if (!relative) {
+      uint32_t h = has5Attrs && (attr4 & 0x80u);
+      uint32_t n6 = h && (attr4 & 0x40u);
+      out->visible = (attr3 & 0x80u) != 0u;
+      out->x = (uint16_t)(((attr2 & 0x01u) << 8u) | attr0);
+      out->y = (uint16_t)(((has5Attrs ? (attr4 & 0x01u) : 0u) << 8u) | attr1);
+      out->paletteOffset = (uint8_t)(attr2 >> 4u);
+      out->xmirror = (attr2 & 0x08u) != 0u;
+      out->ymirror = (attr2 & 0x04u) != 0u;
+      out->rotate = (attr2 & 0x02u) != 0u;
+      out->scaleX = has5Attrs ? (uint8_t)((attr4 >> 3u) & 0x03u) : 0u;
+      out->scaleY = has5Attrs ? (uint8_t)((attr4 >> 1u) & 0x03u) : 0u;
+      out->is4Bit = (uint8_t)h;
+      out->pattern7 = (uint8_t)(((attr3 & 0x3fu) << 1u) | n6);
+
+      anchorVisible = out->visible;
+      anchorRelType = has5Attrs && (attr4 & 0x20u);
+      anchorH = h;
+      anchorX = out->x;
+      anchorY = out->y;
+      anchorPattern = out->pattern7;
+      anchorPaletteOffset = out->paletteOffset;
+      if (anchorRelType) {
+        anchorRotate = out->rotate;
+        anchorXmirror = out->xmirror;
+        anchorYmirror = out->ymirror;
+        anchorScaleX = out->scaleX;
+        anchorScaleY = out->scaleY;
+      } else {
+        anchorRotate = 0u;
+        anchorXmirror = 0u;
+        anchorYmirror = 0u;
+        anchorScaleX = 0u;
+        anchorScaleY = 0u;
+      }
+      continue;
+    }
+
+    // --- Relative sprite (`spr_rel_*`).
+    uint32_t x0 = anchorRotate ? attr1 : attr0;
+    uint32_t y0 = anchorRotate ? attr0 : attr1;
+    uint32_t x1 = (anchorRotate ^ anchorXmirror) ? ((~x0 + 1u) & 0xffu) : x0;
+    uint32_t y1 = anchorYmirror ? ((~y0 + 1u) & 0xffu) : y0;
+    uint32_t x3 = (anchorX + zxnextUlaSignExtendScale9(x1, anchorScaleX)) & 0x1ffu;
+    uint32_t y3 = (anchorY + zxnextUlaSignExtendScale9(y1, anchorScaleY)) & 0x1ffu;
+
+    uint32_t ownXmirror = (attr2 >> 3u) & 1u;
+    uint32_t ownYmirror = (attr2 >> 2u) & 1u;
+    uint32_t ownRotate = (attr2 >> 1u) & 1u;
+
+    out->visible = anchorVisible && (attr3 & 0x80u);
+    out->x = (uint16_t)x3;
+    out->y = (uint16_t)y3;
+    out->paletteOffset = (uint8_t)((attr2 & 0x01u)
+      ? ((anchorPaletteOffset + (attr2 >> 4u)) & 0x0fu)
+      : (attr2 >> 4u));
+    if (anchorRelType) {
+      uint32_t relXmirror = anchorRotate ? (ownYmirror ^ ownRotate) : ownXmirror;
+      uint32_t relYmirror = anchorRotate ? (ownXmirror ^ ownRotate) : ownYmirror;
+      out->xmirror = (uint8_t)(anchorXmirror ^ relXmirror);
+      out->ymirror = (uint8_t)(anchorYmirror ^ relYmirror);
+      out->rotate = (uint8_t)(anchorRotate ^ ownRotate);
+      out->scaleX = (uint8_t)anchorScaleX;
+      out->scaleY = (uint8_t)anchorScaleY;
+    } else {
+      out->xmirror = (uint8_t)ownXmirror;
+      out->ymirror = (uint8_t)ownYmirror;
+      out->rotate = (uint8_t)ownRotate;
+      out->scaleX = (uint8_t)((attr4 >> 3u) & 0x03u);
+      out->scaleY = (uint8_t)((attr4 >> 1u) & 0x03u);
+    }
+    out->is4Bit = (uint8_t)anchorH;
+    uint32_t n6 = anchorH && (attr4 & 0x20u);
+    uint32_t pattern7 = ((attr3 & 0x3fu) << 1u) | n6;
+    if (attr4 & 0x01u) pattern7 = (pattern7 + anchorPattern) & 0x7fu;
+    out->pattern7 = (uint8_t)pattern7;
+  }
+}
+
+/*
+ * One pass over the visible sprites, which either draws them or detects collisions — never both.
+ *
+ * The picture is built whole-frame, and only when the display asks for it (`zxnextRenderInstantScreen`),
+ * so drawing cannot be where the hardware's collision flag is raised: a machine running with no display
+ * would never see it, and a display refreshed twice would raise it twice for one frame. Collisions are
+ * detected once per emulated frame instead, from `zxnextUlaOnFrameCompleted`.
+ */
+static void zxnextUlaProcessSprites(uint32_t drawPixels, uint32_t detectCollisions);
+
+static void zxnextUlaRenderSpritesScreen(void) { zxnextUlaProcessSprites(1u, 0u); }
+
+static void zxnextUlaProcessSprites(uint32_t drawPixels, uint32_t detectCollisions) {
   if (!zxnextSpritesGetEnabled()) return;
   uint32_t lastVisible = zxnextSpritesGetLastVisibleSpriteIndex();
   if (lastVisible == 0xffffffffu) return;
@@ -463,81 +628,90 @@ static void zxnextUlaRenderSpritesScreen(void) {
     clipY2 = zxnextSpritesGetClip(3) + 32u;
   }
 
+  zxnextUlaResolveSprites(lastVisible);
+  if (detectCollisions) {
+    for (uint32_t i = 0u; i < ZXNEXT_SPRITE_SPACE_WIDTH * ZXNEXT_SPRITE_SPACE_HEIGHT; i++) {
+      zxnextUlaSpriteCoverage[i] = 0u;
+    }
+  }
+  uint32_t collision = 0u;
+
   int32_t start = zxnextSpritesGetSprite0OnTop() ? (int32_t)lastVisible : 0;
   int32_t end = zxnextSpritesGetSprite0OnTop() ? -1 : (int32_t)lastVisible + 1;
   int32_t step = zxnextSpritesGetSprite0OnTop() ? -1 : 1;
+  uint32_t transparencyIndex = zxnextSpritesGetTransparencyIndex();
 
   for (int32_t sprite = start; sprite != end; sprite += step) {
-    uint32_t attr0 = zxnextSpritesGetAttribute((uint32_t)sprite, 0);
-    uint32_t attr1 = zxnextSpritesGetAttribute((uint32_t)sprite, 1);
-    uint32_t attr2 = zxnextSpritesGetAttribute((uint32_t)sprite, 2);
-    uint32_t attr3 = zxnextSpritesGetAttribute((uint32_t)sprite, 3);
-    uint32_t attr4 = zxnextSpritesGetAttribute((uint32_t)sprite, 4);
+    const ZxnextResolvedSprite* resolved = &zxnextUlaResolvedSprites[sprite];
+    if (!resolved->visible) continue;
 
-    if ((attr3 & 0x80u) == 0u) continue;
-
-    uint32_t has5Attrs = (attr3 & 0x40u) != 0u;
-    uint32_t patternIndex = attr3 & 0x3fu;
-    uint32_t paletteOffset = (attr2 >> 4u) & 0x0fu;
+    uint32_t is4Bit = resolved->is4Bit;
     uint32_t transformVariant =
-      ((attr2 & 0x02u) ? 4u : 0u) |
-      ((attr2 & 0x08u) ? 2u : 0u) |
-      ((attr2 & 0x04u) ? 1u : 0u);
-    uint32_t is4Bit = has5Attrs && ((attr4 & 0x80u) != 0u);
-    uint32_t patternBit6 = has5Attrs && ((attr4 & 0x20u) != 0u);
-    uint32_t scaleX = has5Attrs ? ((attr4 & 0x18u) >> 3u) : 0u;
-    uint32_t scaleY = has5Attrs ? ((attr4 & 0x06u) >> 1u) : 0u;
-    uint32_t rotate = (attr2 & 0x02u) != 0u;
-    uint32_t baseWidth = 16u << scaleX;
-    uint32_t baseHeight = 16u << scaleY;
-    uint32_t width = rotate ? baseHeight : baseWidth;
-    uint32_t height = rotate ? baseWidth : baseHeight;
+      (resolved->rotate ? 4u : 0u) | (resolved->xmirror ? 2u : 0u) | (resolved->ymirror ? 1u : 0u);
+    /*
+     * The 7-bit pattern number (FPGA `spr_rel_pattern`) names a 4-bit pattern directly; an 8-bit
+     * pattern is its top six bits, since N6 is only ever set for a 4-bit sprite.
+     */
     uint32_t patternVariantIndex = is4Bit
-      ? ((((patternIndex << 1u) | (patternBit6 ? 1u : 0u)) << 3u) | transformVariant)
-      : ((patternIndex << 3u) | transformVariant);
-    int32_t spriteX = (int32_t)(attr0 & 0xffu);
-    int32_t spriteY = (int32_t)(attr1 & 0xffu);
-
-    if (has5Attrs) {
-      uint32_t colorMode = (attr4 >> 6u) & 0x03u;
-      if (colorMode != 0x01u) {
-        spriteX = (int32_t)((((attr4 & 0x01u) << 8u) | (attr0 & 0xffu)) & 0x1ffu);
-      }
-    }
+      ? (((uint32_t)resolved->pattern7 << 3u) | transformVariant)
+      : ((((uint32_t)resolved->pattern7 >> 1u) << 3u) | transformVariant);
+    uint32_t scaleX = resolved->scaleX;
+    uint32_t scaleY = resolved->scaleY;
+    /*
+     * Scale is applied in screen space and is not swapped by rotation: the FPGA counts the width
+     * with the XX scale and the height with YY whatever the rotate bit says.
+     */
+    uint32_t width = 16u << scaleX;
+    uint32_t height = 16u << scaleY;
+    int32_t spriteX = (int32_t)resolved->x;
+    int32_t spriteY = (int32_t)resolved->y;
     if (spriteX > 319) spriteX -= 512;
     if (spriteY > 255) spriteY -= 512;
+    uint32_t paletteOffset = resolved->paletteOffset;
 
     for (uint32_t py = 0u; py < height; py++) {
       int32_t displayY = spriteY + (int32_t)py;
-      if (displayY < (int32_t)clipY1 || displayY > (int32_t)clipY2) continue;
       if (displayY < 0 || displayY >= (int32_t)ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT) continue;
+      /*
+       * Clipping applies to what is *shown*, not to what the sprite engine writes: the FPGA fills its
+       * line buffer for the whole 320-pixel line and clips on output. Collisions are detected on the
+       * line buffer, so a pixel outside the clip window still collides.
+       */
+      uint32_t rowClipped = displayY < (int32_t)clipY1 || displayY > (int32_t)clipY2;
 
       uint32_t patternY = (py >> scaleY) & 0x0fu;
       uint32_t outputOffset = (ZXNEXT_LAYER2_WIDE_SCREEN_Y + (uint32_t)displayY) *
         ZXNEXT_SCREEN_WIDTH + ZXNEXT_LAYER2_WIDE_SCREEN_X;
+      uint32_t coverageRow = (uint32_t)displayY * ZXNEXT_SPRITE_SPACE_WIDTH;
 
       for (uint32_t px = 0u; px < width; px++) {
         int32_t displayX = spriteX + (int32_t)px;
-        if (displayX < (int32_t)clipX1 || displayX > (int32_t)clipX2) continue;
         if (displayX < 0 || displayX >= (int32_t)ZXNEXT_LAYER2_320_SCREEN_WIDTH) continue;
 
         uint32_t patternX = (px >> scaleX) & 0x0fu;
         uint32_t patternOffset = (patternY << 4u) | patternX;
-        uint32_t pixelValue = is4Bit
-          ? zxnextSpritesGetPatternByte4(patternVariantIndex, patternOffset)
-          : zxnextSpritesGetPatternByte8(patternVariantIndex, patternOffset);
-        uint32_t transparencyMask = is4Bit ? 0x0fu : 0xffu;
-        if ((pixelValue & transparencyMask) == (zxnextSpritesGetTransparencyIndex() & transparencyMask)) {
+        uint32_t paletteIndex;
+        if (is4Bit) {
+          // --- A nibble; transparent when it equals the low nibble of Reg $4B (`spr_line_we`).
+          uint32_t nibble = zxnextSpritesGetPatternByte4(patternVariantIndex, patternOffset) & 0x0fu;
+          if (nibble == (transparencyIndex & 0x0fu)) continue;
+          paletteIndex = (paletteOffset << 4u) | nibble;
+        } else {
+          // --- A whole byte; the palette offset is added to its high nibble.
+          uint32_t pixelByte = zxnextSpritesGetPatternByte8(patternVariantIndex, patternOffset) & 0xffu;
+          if (pixelByte == (transparencyIndex & 0xffu)) continue;
+          paletteIndex = ((((pixelByte >> 4u) + paletteOffset) & 0x0fu) << 4u) | (pixelByte & 0x0fu);
+        }
+
+        if (detectCollisions) {
+          // --- An opaque pixel onto one another sprite already wrote: a collision.
+          uint8_t* covered = &zxnextUlaSpriteCoverage[coverageRow + (uint32_t)displayX];
+          if (*covered) collision = 1u;
+          *covered = 1u;
           continue;
         }
 
-        uint32_t colorValue = is4Bit ? (pixelValue & 0x0fu) : (pixelValue & 0xffu);
-        uint32_t paletteIndex;
-        if (is4Bit) {
-          paletteIndex = (paletteOffset << 4u) | colorValue;
-        } else {
-          paletteIndex = ((((colorValue >> 4u) + paletteOffset) & 0x0fu) << 4u) | (colorValue & 0x0fu);
-        }
+        if (!drawPixels || rowClipped || displayX < (int32_t)clipX1 || displayX > (int32_t)clipX2) continue;
         uint32_t outputPixel = outputOffset + ((uint32_t)displayX << 1u);
         uint32_t color = zxnextUlaSpritePaletteColor(paletteIndex);
         zxnextPixelBuffer[outputPixel] = color;
@@ -545,6 +719,7 @@ static void zxnextUlaRenderSpritesScreen(void) {
       }
     }
   }
+  if (collision) zxnextSpritesSignalCollision();
 }
 
 static uint32_t zxnextUlaReadTilemapVram(uint32_t useBank7, uint32_t offset, uint32_t address) {
@@ -939,6 +1114,7 @@ static uint32_t zxnextUlaRenderInstantScreen(void) {
 }
 
 static void zxnextUlaOnFrameCompleted(void) {
+  zxnextUlaProcessSprites(0u, 1u);
   ulaFlashCounter = (uint8_t)((ulaFlashCounter + 1u) & 0x1fu);
   ulaFlashFlag = ulaFlashCounter >= 16u;
 }
