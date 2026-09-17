@@ -1,0 +1,151 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ClientWrapper"]
+5:T167c,---
+description: "Klive remembers the places you jump to, so Go Back and Go Forward can take you through them again, across source files, the Memory and Disassembly views and popped-out NEX banks."
+---
+
+import { Callout } from 'nextra/components'
+
+# Navigating Back and Forward
+
+Klive remembers the places you jump to. **Go Back** returns to where you were before a jump, and
+**Go Forward** undoes a Go Back, in the same way as a browser or Visual Studio Code. The history
+spans the whole IDE: one list covers every source file, the [Memory View](./memory), the
+[Disassembly View](./disassembly) and the banks you pop out of a NEX file, whichever editor area
+they are in.
+
+## Going Back and Forward
+
+| Action | macOS | Windows and Linux |
+| --- | --- | --- |
+| Go Back | <kbd>Ctrl</kbd>+<kbd>-</kbd> | <kbd>Alt</kbd>+<kbd>←</kbd> |
+| Go Forward | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>-</kbd> | <kbd>Alt</kbd>+<kbd>→</kbd> |
+
+The shortcuts work anywhere in the IDE window, including while you are typing in the code editor.
+The back and forward buttons found on many mice work too.
+
+The same actions are available in three more places:
+
+- **The toolbar.** The first buttons of the IDE toolbar are **Back** and **Forward**. Hover over
+  one to see where it goes (for example, *Back to main.kz80.asm · line 42*). A button is disabled
+  when there is nowhere to go.
+- **The IDE menu.** **IDE &rsaquo; Go** has **Back**, **Forward** and **Clear Navigation History**.
+- **Interactive commands.** [`nav-back`](/commands-reference#nav-back) and
+  [`nav-forward`](/commands-reference#nav-forward), with
+  [`nav-history`](/commands-reference#nav-history) and
+  [`nav-clear`](/commands-reference#nav-clear) beside them.
+
+## The History List
+
+The small arrow between the **Back** and **Forward** buttons opens the history, newest place at the
+top. Each row shows the document, the position in it (a line, or an address), one line of context
+(the source line, for code), and what took you there: *definition*, *output link*, *breakpoint*,
+*tab*, *go to*, *label* or *bank*.
+
+The highlighted row is where you are. Rows above it are the places **Go Forward** would take you
+back to. Click any row to go straight there, or use the arrow keys and <kbd>Enter</kbd>;
+<kbd>Esc</kbd> closes the list. **Clear** empties the history.
+
+## What Klive Remembers
+
+A place is remembered when you **go** somewhere, not when you merely look around:
+
+- **In code:** *Go to Definition* (<kbd>F12</kbd>, or <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+click), opening
+  an `#include` file, clicking a file location in an output pane (a build error, for example), and
+  clicking a source breakpoint in the [Breakpoints View](./breakpoints).
+- **Between documents:** clicking a document tab, choosing a document in the Open Editors panel, and
+  opening a file from the [Project Explorer](./project-explorer).
+- **In the Memory and Disassembly views:** *Go To* an address, and *Go to PC*.
+- **With NEX files:** popping a bank (or the Layer 2 loading screen) out of the NEX viewer, the
+  *Go To* and *Go to PC* actions of a popped-out bank, and following a label — *Go to Definition*
+  on a labelled operand, even into another bank, or *Go To* in the **Labels** and **Regions** lists.
+
+Moving the cursor, scrolling and typing do not add places. Neither does **debugging**: when the
+machine pauses at a breakpoint or after a step, the IDE shows you the code it stopped at, but that is
+the debugger following the program, not you going somewhere. So after a debugging session, **Go
+Back** takes you to where you were before it. The Disassembly view's **Follow PC** is not
+remembered either, for the same reason.
+
+<Callout type="info" emoji="💡">
+Going back returns you to where you **left** a document, not where you arrived. If you jump to a
+definition, scroll down to read the code below it, and jump again, **Go Back** returns to the code you
+were reading.
+</Callout>
+
+## Going Back to a Place That Moved
+
+- **Edited code.** A remembered line follows its code while you edit the file: add ten lines above
+  it, and **Go Back** still lands on the same statement, not ten lines too high.
+- **Closed documents.** Going back to a place in a document you have closed opens the document
+  again. For the Memory and Disassembly views, this also restores the address, the bank and the
+  64K view setting. When you go back to a place in the Disassembly view, Klive turns **Follow PC**
+  off, so that the next step of the machine does not scroll the view away from it.
+- **Popped-out NEX banks.** A closed bank is reopened from its NEX file, at the same address and in
+  the same memory or disassembly listing.
+- **Places that no longer exist.** A place in a file you have deleted, or in a memory dump that cannot
+  be reopened, is dropped from the history when you reach it, and Klive carries on to the next place
+  in the same direction.
+
+The history lasts until you close the project. It is not saved with the project.
+
+## Settings
+
+**IDE &rsaquo; IDE Settings &rsaquo; Record tab switches in the navigation history** decides whether
+clicking a document tab, choosing a document in the Open Editors panel, or opening a file from the
+Project Explorer adds a place. It is on by default. Turn it off if you only want jumps in the history.
+
+To use other shortcuts, set the `shortcuts.navigateBack` and `shortcuts.navigateForward` user
+settings with the [`set`](/commands-reference#set) command. A value names the modifiers and the key
+joined by `+`, for example:
+
+```
+set -u shortcuts.navigateBack "CmdOrCtrl+["
+set -u shortcuts.navigateForward "CmdOrCtrl+]"
+```
+
+`CmdOrCtrl` means <kbd>Cmd</kbd> on macOS and <kbd>Ctrl</kbd> elsewhere. The toolbar tooltips and
+the **Go** menu show the shortcuts in effect.a:X
+f:X
+f:C
+0:{"buildId":"Ct1XJ3w0z4QQXq5fAu78-","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Going Back and Forward","id":"going-back-and-forward","depth":2},{"value":"The History List","id":"the-history-list","depth":2},{"value":"What Klive Remembers","id":"what-klive-remembers","depth":2},{"value":"Going Back to a Place That Moved","id":"going-back-to-a-place-that-moved","depth":2},{"value":"Settings","id":"settings","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Klive remembers the places you jump to, so Go Back and Go Forward can take you through them again, across source files, the Memory and Disassembly views and popped-out NEX banks.","title":"Navigating Back and Forward","filePath":"content/working-with-ide/navigation.mdx","timestamp":1789613126000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],""]
+13:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"HeadingAnchor"]
+25:I[484,[],"OutletBoundary"]
+26:"$Sreact.suspense"
+28:I[484,[],"ViewportBoundary"]
+29:I[484,[],"MetadataBoundary"]
+2a:I[7121,[],""]
+2b:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Navigating Back and Forward","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive remembers the places you jump to. ",["$","strong",null,{"children":"Go Back"}]," returns to where you were before a jump, and\n",["$","strong",null,{"children":"Go Forward"}]," undoes a Go Back, in the same way as a browser or Visual Studio Code. The history\nspans the whole IDE: one list covers every source file, the ",["$","$L12",null,{"href":"./memory","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Memory View"}],", the\n",["$","$L12",null,{"href":"./disassembly","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Disassembly View"}]," and the banks you pop out of a NEX file, whichever editor area\nthey are in."]}],"\n",["$","h2",null,{"id":"going-back-and-forward","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Going Back and Forward",["$","$L13",null,{"id":"going-back-and-forward"}]]}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Action","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"macOS","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Windows and Linux","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Go Back","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"children":"Ctrl"}],"+",["$","kbd",null,{"children":"-"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"children":"Alt"}],"+",["$","kbd",null,{"children":"←"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Go Forward","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"children":"Ctrl"}],"+",["$","kbd",null,{"children":"Shift"}],"+",["$","kbd",null,{"children":"-"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","kbd",null,{"children":"Alt"}],"+",["$","kbd",null,{"children":"→"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The shortcuts work anywhere in the IDE window, including while you are typing in the code editor.\nThe back and forward buttons found on many mice work too."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The same actions are available in three more places:"}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24"]}]
+8:["$","$L25",null,{"children":["$","$26",null,{"name":"Next.MetadataOutlet","children":"$@27"}]}]
+b:["$","$1","h",{"children":[null,["$","$L28",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L29",null,{"children":["$","$26",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Navigating Back and Forward - Klive IDE"}],["$","meta","1",{"name":"description","content":"Klive remembers the places you jump to, so Go Back and Go Forward can take you through them again, across source files, the Memory and Disassembly views and popped-out NEX banks."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L2a",null,{"parallelRouterKey":"children","template":["$","$L2b",null,{}]}]]}]
+11:true
+2c:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","436","static/chunks/436-a7ba2020a68ee6a1.js","217","static/chunks/app/%5B%5B...mdxPath%5D%5D/page-fad3a6aed2b355e6.js"],"ToggleWordWrapButton"]
+14:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The toolbar."}]," The first buttons of the IDE toolbar are ",["$","strong",null,{"children":"Back"}]," and ",["$","strong",null,{"children":"Forward"}],". Hover over\none to see where it goes (for example, ",["$","em",null,{"children":"Back to main.kz80.asm · line 42"}],"). A button is disabled\nwhen there is nowhere to go."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"The IDE menu."}]," ",["$","strong",null,{"children":"IDE › Go"}]," has ",["$","strong",null,{"children":"Back"}],", ",["$","strong",null,{"children":"Forward"}]," and ",["$","strong",null,{"children":"Clear Navigation History"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Interactive commands."}]," ",["$","$L12",null,{"href":"/commands-reference#nav-back","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nav-back"}]}]," and\n",["$","$L12",null,{"href":"/commands-reference#nav-forward","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nav-forward"}]}],", with\n",["$","$L12",null,{"href":"/commands-reference#nav-history","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nav-history"}]}]," and\n",["$","$L12",null,{"href":"/commands-reference#nav-clear","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"nav-clear"}]}]," beside them."]}],"\n"]}]
+15:["$","h2",null,{"id":"the-history-list","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The History List",["$","$L13",null,{"id":"the-history-list"}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The small arrow between the ",["$","strong",null,{"children":"Back"}]," and ",["$","strong",null,{"children":"Forward"}]," buttons opens the history, newest place at the\ntop. Each row shows the document, the position in it (a line, or an address), one line of context\n(the source line, for code), and what took you there: ",["$","em",null,{"children":"definition"}],", ",["$","em",null,{"children":"output link"}],", ",["$","em",null,{"children":"breakpoint"}],",\n",["$","em",null,{"children":"tab"}],", ",["$","em",null,{"children":"go to"}],", ",["$","em",null,{"children":"label"}]," or ",["$","em",null,{"children":"bank"}],"."]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The highlighted row is where you are. Rows above it are the places ",["$","strong",null,{"children":"Go Forward"}]," would take you\nback to. Click any row to go straight there, or use the arrow keys and ",["$","kbd",null,{"children":"Enter"}],";\n",["$","kbd",null,{"children":"Esc"}]," closes the list. ",["$","strong",null,{"children":"Clear"}]," empties the history."]}]
+18:["$","h2",null,{"id":"what-klive-remembers","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What Klive Remembers",["$","$L13",null,{"id":"what-klive-remembers"}]]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A place is remembered when you ",["$","strong",null,{"children":"go"}]," somewhere, not when you merely look around:"]}]
+1a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"In code:"}]," ",["$","em",null,{"children":"Go to Definition"}]," (",["$","kbd",null,{"children":"F12"}],", or ",["$","kbd",null,{"children":"Ctrl"}],"/",["$","kbd",null,{"children":"Cmd"}],"+click), opening\nan ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"#include"}]," file, clicking a file location in an output pane (a build error, for example), and\nclicking a source breakpoint in the ",["$","$L12",null,{"href":"./breakpoints","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Breakpoints View"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Between documents:"}]," clicking a document tab, choosing a document in the Open Editors panel, and\nopening a file from the ",["$","$L12",null,{"href":"./project-explorer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Project Explorer"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"In the Memory and Disassembly views:"}]," ",["$","em",null,{"children":"Go To"}]," an address, and ",["$","em",null,{"children":"Go to PC"}],"."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"With NEX files:"}]," popping a bank (or the Layer 2 loading screen) out of the NEX viewer, the\n",["$","em",null,{"children":"Go To"}]," and ",["$","em",null,{"children":"Go to PC"}]," actions of a popped-out bank, and following a label — ",["$","em",null,{"children":"Go to Definition"}],"\non a labelled operand, even into another bank, or ",["$","em",null,{"children":"Go To"}]," in the ",["$","strong",null,{"children":"Labels"}]," and ",["$","strong",null,{"children":"Regions"}]," lists."]}],"\n"]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Moving the cursor, scrolling and typing do not add places. Neither does ",["$","strong",null,{"children":"debugging"}],": when the\nmachine pauses at a breakpoint or after a step, the IDE shows you the code it stopped at, but that is\nthe debugger following the program, not you going somewhere. So after a debugging session, ",["$","strong",null,{"children":"Go\nBack"}]," takes you to where you were before it. The Disassembly view’s ",["$","strong",null,{"children":"Follow PC"}]," is not\nremembered either, for the same reason."]}]
+1c:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"💡"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Going back returns you to where you ",["$","strong",null,{"children":"left"}]," a document, not where you arrived. If you jump to a\ndefinition, scroll down to read the code below it, and jump again, ",["$","strong",null,{"children":"Go Back"}]," returns to the code you\nwere reading."]}]}]]}]
+1d:["$","h2",null,{"id":"going-back-to-a-place-that-moved","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Going Back to a Place That Moved",["$","$L13",null,{"id":"going-back-to-a-place-that-moved"}]]}]
+1e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Edited code."}]," A remembered line follows its code while you edit the file: add ten lines above\nit, and ",["$","strong",null,{"children":"Go Back"}]," still lands on the same statement, not ten lines too high."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Closed documents."}]," Going back to a place in a document you have closed opens the document\nagain. For the Memory and Disassembly views, this also restores the address, the bank and the\n64K view setting. When you go back to a place in the Disassembly view, Klive turns ",["$","strong",null,{"children":"Follow PC"}],"\noff, so that the next step of the machine does not scroll the view away from it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Popped-out NEX banks."}]," A closed bank is reopened from its NEX file, at the same address and in\nthe same memory or disassembly listing."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Places that no longer exist."}]," A place in a file you have deleted, or in a memory dump that cannot\nbe reopened, is dropped from the history when you reach it, and Klive carries on to the next place\nin the same direction."]}],"\n"]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The history lasts until you close the project. It is not saved with the project."}]
+20:["$","h2",null,{"id":"settings","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Settings",["$","$L13",null,{"id":"settings"}]]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"IDE › IDE Settings › Record tab switches in the navigation history"}]," decides whether\nclicking a document tab, choosing a document in the Open Editors panel, or opening a file from the\nProject Explorer adds a place. It is on by default. Turn it off if you only want jumps in the history."]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["To use other shortcuts, set the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"shortcuts.navigateBack"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"shortcuts.navigateForward"}]," user\nsettings with the ",["$","$L12",null,{"href":"/commands-reference#set","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"set"}]}]," command. A value names the modifiers and the key\njoined by ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"+"}],", for example:"]}]
+23:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2c",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"set -u shortcuts.navigateBack \"CmdOrCtrl+[\""}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"set -u shortcuts.navigateForward \"CmdOrCtrl+]\""}]}]]}]]}]]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"CmdOrCtrl"}]," means ",["$","kbd",null,{"children":"Cmd"}]," on macOS and ",["$","kbd",null,{"children":"Ctrl"}]," elsewhere. The toolbar tooltips and\nthe ",["$","strong",null,{"children":"Go"}]," menu show the shortcuts in effect."]}]
+27:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"
