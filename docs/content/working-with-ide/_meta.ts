@@ -1,6 +1,7 @@
 export default {
   "project-explorer": "The Project Explorer",
   "editing-code": "Editing Code",
+  navigation: "Navigating Back and Forward",
   "run-debug": "Running & Debugging Code",
   "exporting-code": "Exporting Code",
   zxb: "ZXBASIC Integration",

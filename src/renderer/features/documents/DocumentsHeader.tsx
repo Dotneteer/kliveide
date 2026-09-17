@@ -38,7 +38,7 @@ import {
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
   const { store } = useRendererContext();
-  const { projectService } = useAppServices();
+  const { projectService, navigationHistoryService } = useAppServices();
   const documentHubService = useDocumentHubService();
   const documentAreaGridApi = useDocumentAreaGridApi();
   const documentAreaId = useDocumentAreaId();
@@ -231,7 +231,9 @@ export const DocumentsHeader = () => {
     if (!activeDocId || id === activeDocId) return;
 
     setAwaiting(true);
-    await documentHubService.setActiveDocument(id).finally(() => setAwaiting(false));
+    await navigationHistoryService
+      .recordJump("tabSwitch", () => documentHubService.setActiveDocument(id))
+      .finally(() => setAwaiting(false));
   };
 
   // --- Responds to the event when a document tab was double clicked. Double clicking

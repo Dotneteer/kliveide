@@ -68,6 +68,21 @@ export type IdeView = {
   toolCommandSeqNo: number;
   cursorLine?: number;
   cursorColumn?: number;
+  navHistory?: NavigationHistoryState;
+};
+
+/**
+ * What the UI needs to know about the navigation history (Go Back / Go Forward). The entries
+ * themselves stay in the renderer's `NavigationHistoryService`; this is the part the toolbar and the
+ * main-process menu read to enable their commands.
+ */
+export type NavigationHistoryState = {
+  canGoBack: boolean;
+  canGoForward: boolean;
+  /** Number of entries. */
+  count: number;
+  /** Index of the current entry; -1 when empty. */
+  index: number;
 };
 
 /**

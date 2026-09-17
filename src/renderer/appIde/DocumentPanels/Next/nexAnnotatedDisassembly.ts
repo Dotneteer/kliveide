@@ -165,6 +165,8 @@ export async function createAnnotatedNexDisassemblyItems({
     ? overlayRegion(bankAnnotation.regions, { ...SCREEN_AREA_RANGE, type: "skip" })
     : bankAnnotation.regions;
 
+  const labelOffsets = getLabelBankOffsets(annotations, bankAnnotation, addressOffset);
+
   for (const region of regions) {
     const start = clampBankOffset(region.start, contents.length);
     const end = clampBankOffset(region.end, contents.length);
@@ -194,11 +196,15 @@ export async function createAnnotatedNexDisassemblyItems({
         break;
 
       case "bytes":
-        items.push(...createByteItems(contents, start, end, decimalView, addressOffset));
+        items.push(
+          ...createByteItems(contents, start, end, decimalView, addressOffset, labelOffsets)
+        );
         break;
 
       case "words":
-        items.push(...createWordItems(contents, start, end, decimalView, addressOffset));
+        items.push(
+          ...createWordItems(contents, start, end, decimalView, addressOffset, labelOffsets)
+        );
         break;
 
       case "skip":
@@ -283,17 +289,74 @@ function createAnnotationOperandLabelResolver(
 
 
 
+/** Most values a `.defb` / `.defw` row shows before starting a new row. */
+const DATA_ROW_BYTES = 4;
+
+/**
+ * The bank offsets that carry a label, global or local, in the bank being listed.
+ *
+ * A data row's label is looked up by the offset the row *starts* at, so a label on any other byte
+ * of a row would be silently hidden. Data rows are cut at these offsets instead — see
+ * `dataRowLength` — which is what lets a label sit on a parameter in the middle of a table.
+ */
+function getLabelBankOffsets(
+  annotations: NexFileAnnotations,
+  bankAnnotation: NexBankAnnotation,
+  addressOffset: number
+): number[] {
+  const offsets = new Set<number>();
+  for (const label of annotations.globalLabels ?? []) {
+    const bankOffset = label.value - addressOffset;
+    if (bankOffset >= 0 && bankOffset <= NEX_BANK_LAST_OFFSET) {
+      offsets.add(bankOffset);
+    }
+  }
+  for (const label of bankAnnotation.localLabels ?? []) {
+    offsets.add(label.value);
+  }
+  return [...offsets].sort((a, b) => a - b);
+}
+
+/**
+ * How many bytes the data row starting at `offset` takes: up to `DATA_ROW_BYTES`, stopping short of
+ * the region end and of the next label, so the label starts a row of its own.
+ *
+ * `step` is the item size. A word row only stops at a label on a word boundary of its region; a
+ * label on the high byte of a word cannot start a row without splitting that word, so it stays
+ * inside the row as before.
+ */
+function dataRowLength(
+  offset: number,
+  regionStart: number,
+  end: number,
+  step: number,
+  labelOffsets: number[]
+): number {
+  let length = Math.min(DATA_ROW_BYTES, end - offset + 1);
+  for (const labelOffset of labelOffsets) {
+    if (labelOffset <= offset) continue;
+    if (labelOffset >= offset + length) break;
+    if ((labelOffset - regionStart) % step === 0) {
+      length = labelOffset - offset;
+      break;
+    }
+  }
+  return length;
+}
+
 function createByteItems(
   contents: Uint8Array,
   start: number,
   end: number,
   decimalView: boolean,
-  addressOffset: number
+  addressOffset: number,
+  labelOffsets: number[] = []
 ): DisassemblyItem[] {
   const items: DisassemblyItem[] = [];
-  for (let offset = start; offset <= end; offset += 4) {
+  for (let offset = start, rowLength = 0; offset <= end; offset += rowLength) {
+    rowLength = dataRowLength(offset, start, end, 1, labelOffsets);
     const values: string[] = [];
-    for (let idx = 0; idx < 4 && offset + idx <= end; idx++) {
+    for (let idx = 0; idx < rowLength; idx++) {
       const value = contents[offset + idx];
       values.push(decimalView ? toDecimal3(value) : `$${toHexa2(value)}`);
     }
@@ -303,7 +366,7 @@ function createByteItems(
       annotation: createAnnotationMetadata(
         undefined,
         offset,
-        Math.min(4, end - offset + 1),
+        rowLength,
         "bytes"
       )
     });
@@ -316,12 +379,14 @@ function createWordItems(
   start: number,
   end: number,
   decimalView: boolean,
-  addressOffset: number
+  addressOffset: number,
+  labelOffsets: number[] = []
 ): DisassemblyItem[] {
   const items: DisassemblyItem[] = [];
-  for (let offset = start; offset <= end; offset += 4) {
+  for (let offset = start, rowLength = 0; offset <= end; offset += rowLength) {
+    rowLength = dataRowLength(offset, start, end, 2, labelOffsets);
     const values: string[] = [];
-    for (let idx = 0; idx < 4 && offset + idx + 1 <= end; idx += 2) {
+    for (let idx = 0; idx + 1 < rowLength; idx += 2) {
       const value = contents[offset + idx] | (contents[offset + idx + 1] << 8);
       values.push(decimalView ? value.toString(10) : `$${toHexa4(value)}`);
     }
@@ -331,7 +396,7 @@ function createWordItems(
       annotation: createAnnotationMetadata(
         undefined,
         offset,
-        Math.min(4, end - offset + 1),
+        rowLength,
         "words"
       )
     });

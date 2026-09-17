@@ -19,8 +19,10 @@ import { languageIntelSingleton } from "@renderer/appIde/services/LanguageIntelS
 import { registerZ80Providers } from "@renderer/appIde/services/z80-providers";
 import {
   applyMonacoExternalEdits,
+  getMonacoNavigationPosition,
   getMonacoProjectFolder,
-  navigateMonacoToFile
+  navigateMonacoToFile,
+  type MonacoSelectionOrPosition
 } from "./monacoGlobals";
 import { editorColors, syntaxRules } from "@renderer/theming/tokens/syntax";
 import type { AccentId } from "@common/theming/accents";
@@ -32,11 +34,6 @@ type MonacoResource = {
   path?: string;
   toString(): string;
 };
-
-type MonacoSelectionOrPosition = {
-  startLineNumber?: unknown;
-  lineNumber?: unknown;
-} | null | undefined;
 
 type MonacoEnvironmentHost = typeof globalThis & {
   MonacoEnvironment?: {
@@ -75,7 +72,8 @@ export async function initializeMonaco(): Promise<void> {
       selectionOrPosition: MonacoSelectionOrPosition
     ): boolean {
       const filePath: string = resource.fsPath ?? resource.path ?? resource.toString();
-      return navigateMonacoToFile(filePath, getNavigationLine(selectionOrPosition));
+      const { line, column } = getMonacoNavigationPosition(selectionOrPosition);
+      return navigateMonacoToFile(filePath, line, column);
     }
   });
 }
@@ -161,16 +159,4 @@ export function defineLanguageThemes(
       colors: { ...generatedColors, ...(overrides?.colors ?? {}) }
     });
   }
-}
-
-function getNavigationLine(selectionOrPosition: MonacoSelectionOrPosition): number {
-  if (selectionOrPosition) {
-    if (typeof selectionOrPosition.startLineNumber === "number") {
-      return selectionOrPosition.startLineNumber;
-    }
-    if (typeof selectionOrPosition.lineNumber === "number") {
-      return selectionOrPosition.lineNumber;
-    }
-  }
-  return 1;
 }

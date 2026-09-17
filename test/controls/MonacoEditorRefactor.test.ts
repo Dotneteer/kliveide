@@ -57,6 +57,34 @@ describe("Monaco external rename edits", () => {
 });
 
 describe("Monaco globals", () => {
+  it("reads the line and column an editor opener should land on", async () => {
+    const { getMonacoNavigationPosition } = await import(
+      "@renderer/features/editor/monaco/monacoGlobals"
+    );
+
+    // --- Go to Definition hands over the symbol's range: land on its first character, not column 1.
+    expect(
+      getMonacoNavigationPosition({
+        startLineNumber: 42,
+        startColumn: 9,
+        endLineNumber: 42,
+        endColumn: 20
+      } as any)
+    ).toEqual({ line: 42, column: 9 });
+    expect(getMonacoNavigationPosition({ lineNumber: 7, column: 3 })).toEqual({
+      line: 7,
+      column: 3
+    });
+    // --- No column (or a nonsensical one) is reported as unknown, so the caller does not move the
+    // --- cursor to column 1 on Monaco's behalf.
+    expect(getMonacoNavigationPosition({ lineNumber: 7 })).toEqual({ line: 7, column: undefined });
+    expect(getMonacoNavigationPosition({ startLineNumber: 7, startColumn: 0 })).toEqual({
+      line: 7,
+      column: undefined
+    });
+    expect(getMonacoNavigationPosition(undefined)).toEqual({ line: 1 });
+  });
+
   it("uses scoped cleanup for navigation, external edit, and provider store callbacks", async () => {
     const globals = await import("@renderer/features/editor/monaco/monacoGlobals");
     globals.resetMonacoGlobalsForTests();
@@ -70,6 +98,10 @@ describe("Monaco globals", () => {
     expect(globals.navigateMonacoToFile("/p/a.asm", 12)).toBe(true);
     expect(firstNavigate).not.toHaveBeenCalled();
     expect(secondNavigate).toHaveBeenCalledWith("/p/a.asm", 12);
+
+    // --- A known column travels with the line; an unknown one is not invented.
+    expect(globals.navigateMonacoToFile("/p/a.asm", 12, 9)).toBe(true);
+    expect(secondNavigate).toHaveBeenLastCalledWith("/p/a.asm", 12, 9);
 
     cleanupSecondNavigate();
     expect(globals.navigateMonacoToFile("/p/a.asm", 12)).toBe(false);
@@ -306,5 +338,21 @@ describe("Monaco bootstrap", () => {
     expect(defineTheme).not.toHaveBeenCalled();
     expect(registerZ80Providers).toHaveBeenCalledTimes(1);
     expect(registerEditorOpener).toHaveBeenCalledTimes(1);
+
+    // --- The opener passes the definition's column on, not just its line.
+    const globals = await import("@renderer/features/editor/monaco/monacoGlobals");
+    const navigate = vi.fn();
+    const cleanup = globals.setMonacoNavigationHandler(navigate);
+    const opener = registerEditorOpener.mock.calls[0][0];
+    expect(
+      opener.openCodeEditor(null, { fsPath: "/p/lib.asm", toString: () => "" }, {
+        startLineNumber: 30,
+        startColumn: 5,
+        endLineNumber: 30,
+        endColumn: 16
+      })
+    ).toBe(true);
+    expect(navigate).toHaveBeenCalledWith("/p/lib.asm", 30, 5);
+    cleanup();
   });
 });

@@ -238,8 +238,11 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   // --- Wire the module-level cross-file navigation callback to this component's
   // --- ideCommandsService so that registerEditorOpener can open files in Klive.
   useEffect(() => {
-    return setMonacoNavigationHandler((filePath: string, line: number) => {
-      ideCommandsService.executeCommand(`nav "${filePath}" ${line}`);
+    return setMonacoNavigationHandler((filePath: string, line: number, column?: number) => {
+      // --- `nav` takes its column one higher than Monaco's and subtracts one before calling
+      // --- `setPosition` (the output-pane links rely on that), so a Monaco column goes in as +1.
+      const columnArg = column === undefined ? "" : ` ${column + 1}`;
+      ideCommandsService.executeCommand(`nav "${filePath}" ${line}${columnArg} -r definition`);
     });
   }, [ideCommandsService]);
 
@@ -646,6 +649,15 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
             store.dispatch(incEditorVersionAction());
           }
         }
+      },
+
+      // --- Where the cursor is, for the navigation history. A disposed editor has no model and
+      // --- answers null, and the text adapter then falls back to `document.editPosition`.
+      getNavigationLocator: () => {
+        const position = ed.getModel() ? ed.getPosition() : null;
+        return position
+          ? { kind: "text", line: position.lineNumber, column: position.column }
+          : undefined;
       },
 
       // --- Editor API specific

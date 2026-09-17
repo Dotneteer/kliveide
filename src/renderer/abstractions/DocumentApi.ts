@@ -1,3 +1,5 @@
+import type { NavigationLocator } from "./NavigationLocation";
+
 /**
  * The API a document should provide for the document area to handle document-related events
  */
@@ -24,4 +26,19 @@ export type DocumentApi = {
    * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.18.
    */
   revealAddress?: (address: number) => void;
+
+  /**
+   * Where the view is now, for the navigation history. Undefined when the view cannot tell (it has
+   * been disposed, for example); the document type's navigation adapter then captures the location
+   * from the document state instead.
+   *
+   * See `.plans/NAVIGATION_HISTORY_PLAN.md` §3.2.
+   */
+  getNavigationLocator?: () => NavigationLocator | undefined;
+
+  /**
+   * Moves a mounted view to a location the navigation history recorded (Go Back / Go Forward). Views
+   * read their view state once, on mount, so an open document has to be asked.
+   */
+  revealLocator?: (locator: NavigationLocator) => void;
 };

@@ -41,6 +41,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Overflow (scroll) shadow | **6px, a 1px hairline over a gradient**, app-wide via `AttachedShadow`. The author chose the height against 14/8/6/4/1px. It says "there is content above", it does not dim the first row. |
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
+| Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
 | Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints. Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
@@ -1417,6 +1418,31 @@ Two smaller things from the same pass:
   the first wording here ("Show the machine's system variable names instead of 16-bit data
   addresses?") ran off the right of a narrow window. The neighbouring switches are all short
   questions — "Use decimal numbers?", "Disassemble RAM?" — and matching that length is the rule.
+
+## A Menu-Like List With A Header
+
+The navigation history popover (`features/navigation/NavigationHistoryPopover.tsx`) is the pattern for
+a list that is chosen from like a menu but carries more than a menu row can: a title, a count, a
+command, and two-line rows.
+
+- **Body and frame take the dropdown-menu aliases** (`--bg-color-dropdown-menu`,
+  `--border-color-dropdown-menu`, `--shadow-context-menu`, `--radius-md`, `--z-menu`), the same as
+  every other portalled menu. Row hover is `--bg-color-dropdown-menu-pointed`.
+- **Header and footer take the dialog chrome idiom**: a flat `--surface-chrome` band at
+  `--strip-panelHeader`, `--border-default` seams, and an 11px/600 uppercase title. A header in the
+  overlay's own colour reads as the first row.
+- **The accent lands once**: on the row the list is counted from (the current entry), as
+  `--bg-color-dropdown-menu-selected` plus a 2px inset `--accent-solid` edge. The rows on the far side
+  (Forward's) are dimmed with opacity on their text and icon only, so they stay choosable and their
+  hover still reads.
+- **Secondary text in a row is monospace at `--font-size-100`** — a line number, a source line. It
+  tells position and preview apart from the title without adding a colour.
+- **A reason or kind chip is outlined and neutral** (`--border-default`, `--radius-full`,
+  `--font-size-50`). It labels the row; it is not a state, so it takes no hue.
+
+**Do not give a narrow toolbar toggle `IconButton`'s `selected` state.** On a 12px-wide chevron the
+selected ring comes out as a tall, thin outlined box that reads heavier than the arrows either side
+of it. Open is shown by the popover itself.
 
 ## A Shared Control Can Be Invisible In One Of Its Two Homes
 

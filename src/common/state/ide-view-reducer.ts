@@ -98,6 +98,12 @@ export function ideViewReducer (
       };
     }
 
+    case "SET_NAV_HISTORY_STATE":
+      return {
+        ...state,
+        navHistory: payload?.value
+      };
+
     case "INC_EDITOR_VERSION": {
       return {
         ...state,

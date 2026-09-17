@@ -69,6 +69,9 @@ describe("StaticMemoryDump", () => {
     vi.resetModules();
 
     const setDocumentViewState = vi.fn();
+    const navigationHistoryService = {
+      recordJump: vi.fn(async (_reason: string, jump: () => unknown) => await jump())
+    };
     let documentApi: any;
     const signHubStateChanged = vi.fn();
     const documentHubService = {
@@ -99,7 +102,8 @@ describe("StaticMemoryDump", () => {
     }));
     vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
       useAppServices: () => ({
-        projectService
+        projectService,
+        navigationHistoryService
       })
     }));
     // --- The panel reads its row heights through `useRowSizes`, which reads the panel font size.
@@ -361,6 +365,7 @@ describe("StaticMemoryDump", () => {
       signHubStateChanged,
       virtualApi,
       getDocumentApi: () => documentApi,
+      navigationHistoryService,
       getVirtualOnScroll: () => virtualOnScroll,
       getVirtualOnScrollEnd: () => virtualOnScrollEnd
     };
@@ -409,6 +414,52 @@ describe("StaticMemoryDump", () => {
       "static-dump-doc",
       expect.objectContaining({ topAddress: 0x1234 })
     );
+  });
+
+  it("records Go To in the navigation history, reporting the new address inside the jump", async () => {
+    const harness = await renderStaticMemoryDump({ disassOffset: 0x1000 });
+    let during: unknown;
+    harness.navigationHistoryService.recordJump.mockImplementationOnce(async (_reason, jump) => {
+      await (jump as () => Promise<void>)();
+      during = harness.getDocumentApi().getNavigationLocator();
+    });
+
+    fireEvent.click(screen.getByTestId("go-to-address"));
+
+    await waitFor(() =>
+      expect(harness.navigationHistoryService.recordJump).toHaveBeenCalledWith(
+        "memoryGoTo",
+        expect.any(Function)
+      )
+    );
+    expect(during).toEqual({ kind: "address", address: 0x1234, viewMode: "memory", base: 0x1000 });
+  });
+
+  it("reveals a recorded location in the listing it was recorded in", async () => {
+    const harness = await renderStaticMemoryDump({
+      disassemblyEnabled: true,
+      nexAnnotationBank: 5,
+      viewMode: "disassembly",
+      disassOffset: 0x8000
+    });
+    expect((screen.getByTestId("view-mode") as HTMLSelectElement).value).toEqual("disassembly");
+
+    act(() =>
+      harness.getDocumentApi().revealLocator({ kind: "address", address: 0x8120, viewMode: "memory" })
+    );
+
+    await waitFor(() =>
+      expect((screen.getByTestId("view-mode") as HTMLSelectElement).value).toEqual("memory")
+    );
+    await waitFor(() =>
+      expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(0x12, { align: "start" })
+    );
+    expect(harness.getDocumentApi().getNavigationLocator()).toEqual({
+      kind: "address",
+      address: 0x8120,
+      viewMode: "memory",
+      base: 0x8000
+    });
   });
 
   it("accounts for the disassembly offset when jumping to an address", async () => {
@@ -929,6 +980,9 @@ describe("StaticMemoryDump", () => {
         align: "start"
       })
     );
+    // --- Going to a label is a jump the navigation history records, at the label's address.
+    expect(harness.navigationHistoryService.recordJump).toHaveBeenCalledWith("nexLabel", expect.any(Function));
+    expect(harness.getDocumentApi().getNavigationLocator()).toMatchObject({ address: 0x8002 });
   });
 
   /**

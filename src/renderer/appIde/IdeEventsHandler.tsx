@@ -21,6 +21,7 @@ import { Store } from "@common/state/redux-light";
 import { isDebuggableCompilerOutput } from "./utils/compiler-utils";
 import { restoreLastOpenDocuments } from "./restoreLastOpenDocuments";
 import { revealNexBankAtPc } from "./DocumentPanels/Next/nexBankReveal";
+import { nexBankDumpId, nexBankDumpTitle } from "./DocumentPanels/Next/nexBankDocument";
 import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 
 export const TOOL_PANEL_HEIGHT = "toolPanelHeight";
@@ -151,8 +152,8 @@ export const IdeEventsHandler = () => {
         openBank: async ({ path, bank, contents, disassOffset, topAddress, annotationPath }) => {
           await openStaticMemoryDump(
             documentHubService,
-            `bankDump${path}:${bank}`,
-            `${path} - Bank: ${bank}`,
+            nexBankDumpId(path, bank),
+            nexBankDumpTitle(path, bank, store.getState()?.project?.folderPath),
             contents,
             {
               disassemblyEnabled: true,

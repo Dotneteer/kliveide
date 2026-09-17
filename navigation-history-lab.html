@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klive — Navigation history lab</title>
+<style>
+/* ============================================================================
+   Tokens lifted from sidebar-lab.html / src/renderer/theming/tokens/* (Sinclair Blue).
+   This is a design-option replica for .plans/NAVIGATION_HISTORY_PLAN.md §6 — it
+   chooses between options, it does not prove anything works in the app.
+   ========================================================================== */
+:root {
+  --space-0_5: 2px; --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --radius-sm: 4px; --radius-md: 6px;
+  --strip-toolbar: 42px; --strip-tabbar: 36px; --strip-statusbar: 26px;
+  --row-panelHeader: 26px; --row-data: 20px;
+  --font-size-50: 10px; --font-size-100: 11px; --font-size-200: 12px; --font-size-300: 13px;
+  --duration-fast: 80ms; --ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+  --monospace-font: "Iosevka", "JetBrains Mono", Menlo, Consolas, monospace;
+  --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+[data-tone="dark"] {
+  --surface-canvas:#141517; --surface-chrome:#1b1d21; --surface-panel:#17191c;
+  --surface-raised:#202329; --surface-overlay:#22262d; --surface-hover:#24272e;
+  --surface-active:#2a2e36; --surface-selected:#2a2e36;
+  --border-subtle:#24272b; --border-default:#2e3238; --border-strong:#3d424a;
+  --text-primary:#e4e6ea; --text-secondary:#949aa4; --text-tertiary:#7f8690; --text-disabled:#5a606a;
+  --accent-solid:#45A5E6; --accent-secondary-solid:#939CF0;
+  --accent-subtle:#45A5E62e; --accent-border:#45A5E68c; --focus-ring:#45A5E6b3;
+  --status-error:#f06a6a; --status-warning:#e0b341; --status-success:#5fd07a;
+  --pc-line:#e0b34126; --pc-mark:#e0b341;
+  --syn-keyword:#45A5E6; --syn-comment:#6fbf73; --syn-number:#d7a26a; --syn-label:#d9a5f0;
+  --shadow-3:0 8px 24px rgb(0 0 0 / 55%);
+  --lab-page:#0e0f11;
+}
+[data-tone="light"] {
+  --surface-canvas:#ffffff; --surface-chrome:#f1f2f4; --surface-panel:#f7f8f9;
+  --surface-raised:#ffffff; --surface-overlay:#ffffff; --surface-hover:#e8eaee;
+  --surface-active:#e2e6ec; --surface-selected:#e2e6ec;
+  --border-subtle:#e5e7ea; --border-default:#d5d8dd; --border-strong:#b9bec6;
+  --text-primary:#1b1d21; --text-secondary:#565c65; --text-tertiary:#6b717a; --text-disabled:#9aa0a8;
+  --accent-solid:#0A6FB8; --accent-secondary-solid:#0A18B8;
+  --accent-subtle:#0A6FB82e; --accent-border:#0A6FB88c; --focus-ring:#0A6FB8b3;
+  --status-error:#c23b3b; --status-warning:#8a6a00; --status-success:#2f7a44;
+  --pc-line:#e0b34140; --pc-mark:#a07800;
+  --syn-keyword:#0A6FB8; --syn-comment:#2f7a44; --syn-number:#9a5b1c; --syn-label:#8a3fb0;
+  --shadow-3:0 8px 24px rgb(20 25 35 / 16%);
+  --lab-page:#dfe2e7;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--lab-page); color: var(--text-secondary); font-family: var(--ui-font); font-size: 13px; }
+button { font: inherit; }
+
+/* ---- lab chrome (not part of the proposal) ---- */
+.labBar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap;
+  padding: 10px 16px; background: var(--surface-chrome); border-bottom: 1px solid var(--border-default); color: var(--text-primary); }
+.labBar h1 { font-size: 13px; margin: 0; font-weight: 700; }
+.labBar label { font-size: 12px; color: var(--text-secondary); display: inline-flex; gap: 6px; align-items: center; }
+.labBar select, .labBar .labBtn { font-size: 12px; padding: 3px 8px; background: var(--surface-raised); color: var(--text-primary);
+  border: 1px solid var(--border-default); border-radius: var(--radius-sm); cursor: pointer; }
+.seg { display: inline-flex; border: 1px solid var(--border-default); border-radius: var(--radius-sm); overflow: hidden; }
+.seg button { border: 0; padding: 3px 10px; font-size: 12px; background: var(--surface-raised); color: var(--text-secondary); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--border-default); }
+.seg button.on { background: var(--accent-subtle); color: var(--text-primary); }
+.wrap { padding: 16px; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+@media (max-width: 1100px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+.optionNote { grid-column: 1 / -1; margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.5; max-width: 110ch; }
+.optionNote b { color: var(--text-primary); }
+kbd { font-family: var(--monospace-font); font-size: 11px; padding: 0 4px; border: 1px solid var(--border-default); border-bottom-width: 2px; border-radius: 3px; background: var(--surface-raised); color: var(--text-primary); }
+
+/* ---- the mock IDE window ---- */
+.ide { height: 640px; display: flex; flex-direction: column; border: 1px solid var(--border-default); border-radius: var(--radius-md);
+  overflow: hidden; background: var(--surface-canvas); box-shadow: var(--shadow-3); min-width: 0; }
+.toolbar { height: var(--strip-toolbar); flex: 0 0 auto; display: flex; align-items: center; gap: var(--space-0_5);
+  padding: 0 var(--space-2); background: var(--surface-chrome); border-bottom: 1px solid var(--border-subtle); }
+.tbSep { width: 1px; height: 20px; background: var(--border-default); margin: 0 var(--space-1); }
+.iconBtn { height: 32px; min-width: 32px; display: inline-grid; place-items: center; border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-secondary); cursor: pointer; padding: 0; position: relative; }
+.iconBtn:hover:not(:disabled) { background: var(--surface-hover); color: var(--text-primary); }
+.iconBtn:disabled { color: var(--text-disabled); cursor: default; }
+.iconBtn svg { width: 18px; height: 18px; }
+.iconBtn.exec { color: var(--status-success); }
+.iconBtn.small { height: 26px; min-width: 24px; }
+.iconBtn.small svg { width: 16px; height: 16px; }
+/* split button: arrow + narrow chevron that opens the history list */
+.split { display: inline-flex; align-items: center; border-radius: var(--radius-sm); }
+.split .chevBtn { min-width: 14px; width: 14px; }
+.split .chevBtn svg { width: 10px; height: 10px; }
+.split:hover { background: var(--surface-hover); }
+.split .iconBtn:hover:not(:disabled) { background: var(--surface-active); }
+.tbLabel { font-size: var(--font-size-100); color: var(--text-tertiary); margin-left: 4px; white-space: nowrap; }
+
+.body { flex: 1 1 auto; min-height: 0; display: flex; }
+.activityBar { width: 44px; flex: 0 0 44px; background: var(--surface-chrome); border-right: 1px solid var(--border-subtle);
+  display: flex; flex-direction: column; align-items: center; padding-top: 4px; gap: 2px; }
+.actBtn { width: 40px; height: 40px; display: grid; place-items: center; color: var(--text-tertiary); border: 0; background: none;
+  border-left: 2px solid transparent; cursor: pointer; }
+.actBtn svg { width: 22px; height: 22px; }
+.actBtn.sel { color: var(--text-primary); border-left-color: var(--accent-solid); }
+.sideBar { width: 230px; flex: 0 0 230px; background: var(--surface-panel); border-right: 1px solid var(--border-subtle);
+  display: flex; flex-direction: column; min-height: 0; }
+.sbHeader { height: 34px; display: flex; align-items: center; padding: 0 var(--space-1) 0 var(--space-2); flex: 0 0 auto; }
+.sbTitle { flex: 1; font-size: var(--font-size-100); font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--text-secondary); }
+.sbList { overflow-y: auto; flex: 1; min-height: 0; }
+.fileRow { height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 var(--space-2) 0 var(--space-4); cursor: pointer;
+  color: var(--text-primary); font-size: var(--font-size-200); white-space: nowrap; }
+.fileRow:hover { background: var(--surface-hover); }
+.fileRow .muted { color: var(--text-tertiary); font-size: var(--font-size-100); margin-left: auto; }
+.fileRow svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--text-tertiary); }
+
+.docArea { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.docHeader { height: var(--strip-tabbar); flex: 0 0 auto; display: flex; align-items: stretch; background: var(--surface-chrome);
+  box-shadow: inset 0 -1px 0 var(--border-default); }
+.headerNav { display: none; align-items: center; gap: 0; padding: 0 var(--space-1); box-shadow: inset -1px 0 0 var(--border-subtle), inset 0 -1px 0 var(--border-default); }
+.tabs { display: flex; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
+.tab { display: flex; align-items: center; gap: 6px; padding: 0 var(--space-2) 0 var(--space-3); cursor: pointer; white-space: nowrap;
+  font-size: var(--font-size-200); color: var(--text-secondary); border-right: 1px solid var(--border-subtle); }
+.tab:hover { background: var(--surface-hover); }
+.tab.active { background: var(--surface-canvas); color: var(--text-primary); box-shadow: inset 0 2px 0 var(--accent-solid); }
+.tab svg { width: 14px; height: 14px; }
+.tab .x { width: 16px; height: 16px; display: grid; place-items: center; border-radius: 3px; color: var(--text-tertiary); visibility: hidden; }
+.tab:hover .x, .tab.active .x { visibility: visible; }
+.tab .x:hover { background: var(--surface-active); color: var(--text-primary); }
+.tab .x svg { width: 12px; height: 12px; }
+.optOut { font-size: var(--font-size-50); color: var(--text-tertiary); border: 1px solid var(--border-default); border-radius: 3px; padding: 0 3px; }
+
+.docBody { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; }
+.outPane { height: 120px; flex: 0 0 auto; border-top: 1px solid var(--border-default); background: var(--surface-panel); display: flex; flex-direction: column; }
+.paneHead { height: var(--row-panelHeader); display: flex; align-items: center; gap: 12px; padding: 0 var(--space-2); flex: 0 0 auto;
+  font-size: var(--font-size-100); text-transform: uppercase; letter-spacing: .06em; color: var(--text-secondary); font-weight: 600; }
+.paneHead span.on { color: var(--text-primary); box-shadow: inset 0 -1px 0 var(--accent-solid); }
+.paneBody { flex: 1; overflow: auto; font-family: var(--monospace-font); font-size: var(--font-size-200); padding: 2px var(--space-2); line-height: 18px; }
+.lnk { color: var(--accent-solid); cursor: pointer; text-decoration: underline; text-decoration-color: var(--accent-border); text-underline-offset: 2px; }
+.lnk:hover { text-decoration-color: var(--accent-solid); }
+.err { color: var(--status-error); } .warn { color: var(--status-warning); }
+
+.statusBar { height: var(--strip-statusbar); flex: 0 0 auto; display: flex; align-items: center; gap: 12px; padding: 0 var(--space-3);
+  background: var(--surface-chrome); border-top: 1px solid var(--border-subtle); font-size: var(--font-size-100); color: var(--text-secondary); }
+.statusBar .grow { flex: 1; }
+
+/* ---- document renderers ---- */
+.code { position: absolute; inset: 0; overflow: auto; font-family: var(--monospace-font); font-size: var(--font-size-300); line-height: 19px; padding: 4px 0; }
+.ln { display: flex; white-space: pre; cursor: text; }
+.ln .no { width: 5ch; flex: 0 0 5ch; text-align: right; padding-right: 2ch; color: var(--text-disabled); user-select: none; position: relative; }
+.ln.cursor { background: var(--surface-hover); }
+.ln.cursor .no { color: var(--text-primary); }
+.ln.pc { background: var(--pc-line); }
+.ln.pc .no::before { content: "▶"; position: absolute; left: 2px; color: var(--pc-mark); font-size: 10px; }
+.ln .txt { color: var(--text-primary); }
+.kw { color: var(--syn-keyword); } .cm { color: var(--syn-comment); font-style: italic; } .num { color: var(--syn-number); } .lbl { color: var(--syn-label); }
+.sym { color: var(--text-primary); cursor: pointer; text-decoration: underline dotted var(--text-tertiary); text-underline-offset: 3px; }
+.sym:hover { color: var(--accent-solid); text-decoration: underline solid var(--accent-solid); }
+
+.dataView { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.dvBar { height: 32px; flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 0 var(--space-2); border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--font-size-200); color: var(--text-secondary); background: var(--surface-panel); }
+.dvBar input[type=text] { width: 9ch; font-family: var(--monospace-font); font-size: 12px; background: var(--surface-canvas); color: var(--text-primary);
+  border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: 2px 6px; }
+.dvBar input:focus { outline: 2px solid var(--focus-ring); outline-offset: -1px; }
+.dvBar select { font-size: 12px; background: var(--surface-canvas); color: var(--text-primary); border: 1px solid var(--border-default); border-radius: var(--radius-sm); }
+.dvBar .chipBtn { font-size: 11px; padding: 2px 8px; border: 1px solid var(--border-default); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--text-primary); cursor: pointer; }
+.dvBar .chipBtn:hover { background: var(--surface-hover); }
+.dvRows { flex: 1; overflow: hidden; font-family: var(--monospace-font); font-size: var(--font-size-300); line-height: 20px; padding: 4px var(--space-2); }
+.dvRow { white-space: pre; display: flex; gap: 2ch; }
+.dvRow .addr { color: var(--accent-solid); width: 5ch; }
+.dvRow .bytes { color: var(--text-primary); }
+.dvRow .chars { color: var(--text-tertiary); }
+.dvRow.hit { background: var(--accent-subtle); }
+.dvRow.pc { background: var(--pc-line); }
+.dvRow .ins { color: var(--text-primary); }
+.dvRow .lab { color: var(--syn-label); width: 12ch; overflow: hidden; }
+.hintLine { font-size: 11px; color: var(--text-tertiary); padding: 4px var(--space-2); border-top: 1px solid var(--border-subtle); font-family: var(--ui-font); }
+.nexViewer { padding: 16px; font-size: 12px; color: var(--text-primary); display: grid; gap: 8px; align-content: start; }
+.nexViewer .bankRow { display: flex; align-items: center; gap: 12px; font-family: var(--monospace-font); }
+.optOutView { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--text-tertiary); font-size: 12px; padding: 24px; }
+
+/* ---- history popover (option C, shared by A and B) ---- */
+.popover { position: fixed; z-index: 100; width: 380px; max-height: 360px; display: flex; flex-direction: column; background: var(--surface-overlay);
+  border: 1px solid var(--border-default); border-radius: var(--radius-md); box-shadow: var(--shadow-3); overflow: hidden; }
+.popHead { height: 30px; flex: 0 0 auto; display: flex; align-items: center; padding: 0 var(--space-1) 0 var(--space-3); background: var(--surface-chrome);
+  border-bottom: 1px solid var(--border-default); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-primary); gap: 8px; }
+.popHead .grow { flex: 1; }
+.popHead .count { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text-tertiary); }
+.histList { overflow-y: auto; flex: 1; padding: 2px 0; }
+.hRow { display: grid; grid-template-columns: 16px 16px minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 3px var(--space-3) 3px var(--space-2);
+  cursor: pointer; font-size: var(--font-size-200); position: relative; }
+.hRow:hover { background: var(--surface-hover); }
+.hRow .mark { color: var(--accent-solid); font-size: 10px; text-align: center; }
+.hRow svg.di { width: 14px; height: 14px; color: var(--text-tertiary); }
+.hRow .main { min-width: 0; }
+.hRow .t1 { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hRow .t1 .loc { color: var(--text-secondary); margin-left: 6px; font-family: var(--monospace-font); font-size: 11px; }
+.hRow .t2 { color: var(--text-tertiary); font-family: var(--monospace-font); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hRow.current { background: var(--accent-subtle); box-shadow: inset 2px 0 0 var(--accent-solid); }
+.hRow.ahead .t1, .hRow.ahead .t2, .hRow.ahead svg.di { opacity: .55; }
+.hRow.stale .t1 { text-decoration: line-through; color: var(--text-disabled); }
+.reason { font-size: 10px; padding: 0 5px; border-radius: 8px; border: 1px solid var(--border-default); color: var(--text-secondary); white-space: nowrap; line-height: 15px; }
+.popFoot { flex: 0 0 auto; border-top: 1px solid var(--border-subtle); padding: 4px var(--space-3); font-size: 11px; color: var(--text-tertiary); display: flex; gap: 12px; }
+.divider { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-tertiary); padding: 6px var(--space-3) 2px; }
+.emptyHist { padding: 18px; color: var(--text-tertiary); font-size: 12px; text-align: center; }
+
+/* ---- model inspector (lab only) ---- */
+.inspector { background: var(--surface-panel); border: 1px solid var(--border-default); border-radius: var(--radius-md); overflow: hidden; }
+.inspector h2 { margin: 0; height: 30px; display: flex; align-items: center; padding: 0 var(--space-3); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-primary); background: var(--surface-chrome); border-bottom: 1px solid var(--border-default); }
+.inspector .body2 { padding: 8px 12px; font-size: 12px; line-height: 1.55; }
+.inspector ol { margin: 0; padding-left: 22px; font-family: var(--monospace-font); font-size: 11px; }
+.inspector li.cur { color: var(--accent-solid); font-weight: 700; }
+.log { max-height: 160px; overflow: auto; font-family: var(--monospace-font); font-size: 11px; color: var(--text-tertiary); }
+.try { margin: 0; padding-left: 18px; }
+.try li { margin-bottom: 4px; }
+</style>
+</head>
+<body data-tone="dark">
+
+<div class="labBar">
+  <h1>Navigation history lab</h1>
+  <label><input type="checkbox" id="setTabs" checked> Record tab switches (setting)</label>
+  <label><input type="checkbox" id="nexUnloaded"> Simulate .nex removed</label>
+  <label>Tone <select id="tone"><option>dark</option><option>light</option></select></label>
+  <button class="labBtn" id="resetLab">Reset</button>
+</div>
+
+<div class="wrap">
+  <p class="optionNote" id="optionNote"></p>
+
+  <div class="ide opt-A" id="ide">
+    <div class="toolbar" id="toolbar"></div>
+    <div class="body">
+      <div class="activityBar">
+        <button class="actBtn" id="actExplorer" title="Explorer"></button>
+        <button class="actBtn" id="actNav" title="Navigation"></button>
+      </div>
+      <div class="sideBar" id="sideBar"></div>
+      <div class="docArea">
+        <div class="docHeader">
+          <div class="headerNav" id="headerNav"></div>
+          <div class="tabs" id="tabs"></div>
+        </div>
+        <div class="docBody" id="docBody"></div>
+        <div class="outPane">
+          <div class="paneHead"><span class="on">Build output</span><span>Breakpoints</span></div>
+          <div class="paneBody" id="outBody"></div>
+        </div>
+      </div>
+    </div>
+    <div class="statusBar" id="statusBar"></div>
+  </div>
+
+  <div class="inspector">
+    <h2>Model inspector (lab only)</h2>
+    <div class="body2">
+      <ol id="inspList" start="0"></ol>
+      <div style="margin-top:10px;color:var(--text-primary);font-weight:600">Try this</div>
+      <ol class="try">
+        <li>In <b>main.asm</b> click <span class="lnk">PrintString</span> (Go to Definition), then <span class="lnk">PutChar</span>.</li>
+        <li>Press <kbd>Ctrl</kbd>+<kbd>-</kbd> or <kbd>Alt</kbd>+<kbd>←</kbd> twice, then Forward (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>-</kbd> / <kbd>Alt</kbd>+<kbd>→</kbd>). Mouse buttons 4/5 work too.</li>
+        <li>Step the debugger (<b>F10</b> button) a few times — pauses are not recorded. Click <span class="lnk">PutChar</span> while paused, then Back returns to the paused line, and Back again to where you were before debugging.</li>
+        <li>Open <b>Memory</b> and type <code>5B00</code> in Go to. Scrolling with the wheel is not recorded.</li>
+        <li>In <b>game.nex</b> open bank 12, click <span class="lnk">DrawTiles</span> then <span class="lnk">PlaySfx</span> (another bank).</li>
+        <li>Open <b>sprites.spr</b> — it has no navigation adapter, so Back goes to where you left.</li>
+      </ol>
+      <div style="margin-top:10px;color:var(--text-primary);font-weight:600">Event log</div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</div>
+
+<div class="popover" id="popover" hidden></div>
+
+<script>
+/* ============================================================================
+   Icons (Lucide-style, currentColor)
+   ========================================================================== */
+const I = {
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>',
+  fwd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>',
+  files: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H9a1 1 0 0 0-1 1v2"/><path d="M20 7v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l7 4Z"/></svg>',
+  code: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></svg>',
+  memory: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>',
+  disasm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M4 12h16M4 18h7"/></svg>',
+  box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg>',
+  sprite: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h2v2H9zM13 13h2v2h-2z"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>',
+  stepOver: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a8 8 0 0 1 16 0"/><path d="m20 9v5h-5"/><circle cx="12" cy="19" r="2"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+};
+
+/* ============================================================================
+   Fake project
+   ========================================================================== */
+function makeLines(n, fixed) {
+  const filler = ["        nop", "        ld a,(hl)", "        inc hl", "        djnz .loop", "        push bc", "        pop bc", "        or a", "        ret nz", ""];
+  const out = [];
+  for (let i = 1; i <= n; i++) out.push(fixed[i] ?? filler[(i * 7) % filler.length]);
+  return out;
+}
+const SYMBOLS = {
+  Start: ["main.asm", 5], MainLoop: ["main.asm", 14], Message: ["main.asm", 62],
+  ClearScreen: ["utils.asm", 10], PrintString: ["utils.asm", 28], PutChar: ["utils.asm", 51],
+  ReadKeys: ["input.asm", 6], ScanRow: ["input.asm", 30],
+};
+const DOCS = {
+  "main.asm": { type: "text", icon: "code", lines: makeLines(70, {
+    1: "; Main program — ZX Spectrum Next", 3: "        org $8000", 5: "Start:", 6: "        call ClearScreen",
+    7: "        ld hl,Message", 8: "        call PrintString", 14: "MainLoop:", 15: "        call ReadKeys",
+    16: "        cp $20", 17: "        jr nz,MainLoop", 18: "        jp Start", 47: "        call Scroll   ; <- unknown label",
+    62: "Message:", 63: '        defb "HELLO, KLIVE",0' }) },
+  "utils.asm": { type: "text", icon: "code", lines: makeLines(64, {
+    1: "; Screen utilities", 10: "ClearScreen:", 11: "        ld hl,$4000", 12: "        ld de,$4001", 13: "        ld (hl),0",
+    14: "        ldir", 15: "        ret", 28: "PrintString:", 29: "        ld a,(hl)", 30: "        or a", 31: "        ret z",
+    32: "        call PutChar", 33: "        inc hl", 34: "        jr PrintString", 51: "PutChar:", 52: "        rst $10", 53: "        ret" }) },
+  "input.asm": { type: "text", icon: "code", lines: makeLines(40, {
+    1: "; Keyboard", 6: "ReadKeys:", 7: "        ld bc,$fefe", 8: "        call ScanRow   ; warning here", 9: "        ret",
+    30: "ScanRow:", 31: "        in a,(c)", 32: "        cpl", 33: "        ret" }) },
+  "$memory": { type: "memory", title: "Memory", icon: "memory" },
+  "$disassembly": { type: "disasm", title: "Disassembly", icon: "disasm" },
+  "game.nex": { type: "nexViewer", icon: "box" },
+  "bank12": { type: "bank", title: "game.nex · bank 12", icon: "memory", bank: 12, base: 0xC000 },
+  "bank14": { type: "bank", title: "game.nex · bank 14", icon: "memory", bank: 14, base: 0xC000 },
+  "sprites.spr": { type: "none", icon: "sprite" },
+};
+const titleOf = (id) => DOCS[id].title ?? id;
+const BANK_LISTING = {
+  12: [[0xC000, "Init", "call DrawTiles"], [0xC003, "", "ld a,$07"], [0xC005, "", "call PlaySfx"], [0xC008, "", "jp GameLoop"],
+       [0xC100, "GameLoop", "call DrawTiles"], [0xC103, "", "jr GameLoop"], [0xC240, "DrawTiles", "ld hl,$D000"], [0xC243, "", "ld b,$20"],
+       [0xC245, "", "ldir"], [0xC247, "", "ret"]],
+  14: [[0xC000, "SfxTable", "defw $C040"], [0xC040, "PlaySfx", "ld (SfxPtr),a"], [0xC043, "", "out ($FD),a"], [0xC045, "", "ret"]],
+};
+const BANK_SYMBOLS = { DrawTiles: [12, 0xC240], GameLoop: [12, 0xC100], PlaySfx: [14, 0xC040] };
+
+/* ============================================================================
+   NavigationHistory — the pure model from the plan (§3.3)
+   ========================================================================== */
+class NavigationHistory {
+  constructor(limit = 50) { this.entries = []; this.index = -1; this.limit = limit; }
+  current() { return this.entries[this.index]; }
+  record(from, to) {
+    this.entries = this.entries.slice(0, this.index + 1);
+    const cur = this.current();
+    if (from) {
+      if (!cur) { this.entries.push(from); this.index = 0; }
+      else if (sameDoc(from, cur)) { if (!near(from, cur)) this.entries[this.index] = { ...from, reason: cur.reason }; }
+      else { this.entries.push(from); this.index++; }
+    }
+    if (!to) return;
+    const c = this.current();
+    if (c && near(to, c)) this.entries[this.index] = { ...to, reason: c.reason };
+    else { this.entries.push(to); this.index++; }
+    while (this.entries.length > this.limit) { this.entries.shift(); this.index--; }
+  }
+}
+function sameDoc(a, b) { return a && b && a.documentId === b.documentId; }
+function near(a, b) {
+  if (!sameDoc(a, b)) return false;
+  const la = a.locator, lb = b.locator;
+  if (la.kind !== lb.kind) return false;
+  if (la.kind === "text") return Math.abs(la.line - lb.line) <= 3;       // plan says ±10; smaller here so short files show entries
+  if (la.kind === "address") return (la.segment ?? null) === (lb.segment ?? null) && Math.abs(la.address - lb.address) < 0x40;
+  return true;
+}
+
+/* ============================================================================
+   Mock IDE state
+   ========================================================================== */
+const hex4 = (n) => "$" + n.toString(16).toUpperCase().padStart(4, "0");
+let S;
+function resetState() {
+  S = {
+    open: ["main.asm", "utils.asm"], active: "main.asm",
+    text: { "main.asm": 5, "utils.asm": 1, "input.asm": 1 },
+    mem: { address: 0x8000, segment: "RAM 5" }, dis: { address: 0x8000 },
+    bank: { 12: { address: 0xC000 }, 14: { address: 0xC000 } },
+    pc: null, debugStep: -1, restoring: false, sideTab: "explorer",
+  };
+  H = new NavigationHistory();
+  logLines = [];
+}
+let H, logLines = [];
+const DEBUG_TRAIL = [["main.asm", 6], ["utils.asm", 11], ["utils.asm", 12], ["utils.asm", 14], ["main.asm", 7], ["main.asm", 8], ["utils.asm", 29], ["utils.asm", 32], ["utils.asm", 52]];
+
+/* ---- adapters: capture / restore / describe, per document type (plan §3.2) ---- */
+const ADAPTERS = {
+  text: {
+    capture: (id) => ({ kind: "text", line: S.text[id] ?? 1, column: 9 }),
+    describe: (l) => `line ${l.locator.line}`,
+    preview: (l) => DOCS[l.documentId].lines[l.locator.line - 1]?.trim() || "",
+    restore: (l) => { S.text[l.documentId] = l.locator.line; return true; },
+  },
+  memory: {
+    capture: () => ({ kind: "address", address: S.mem.address, segment: S.mem.segment }),
+    describe: (l) => `${hex4(l.locator.address)} · ${l.locator.segment}`,
+    preview: () => "memory dump",
+    restore: (l) => { S.mem.address = l.locator.address; S.mem.segment = l.locator.segment; return true; },
+  },
+  disasm: {
+    capture: () => ({ kind: "address", address: S.dis.address }),
+    describe: (l) => hex4(l.locator.address),
+    preview: (l) => fakeIns(l.locator.address),
+    restore: (l) => { S.dis.address = l.locator.address; return true; },
+  },
+  bank: {
+    capture: (id) => ({ kind: "address", address: S.bank[DOCS[id].bank].address, viewMode: "disassembly" }),
+    describe: (l) => `${hex4(l.locator.address)} · bank ${DOCS[l.documentId].bank}`,
+    preview: (l) => { const r = BANK_LISTING[DOCS[l.documentId].bank].find((x) => x[0] === l.locator.address); return r ? (r[1] ? r[1] + ": " : "") + r[2] : ""; },
+    canReopen: () => !document.getElementById("nexUnloaded").checked,
+    restore: (l) => { if (!ADAPTERS.bank.canReopen()) return false; S.bank[DOCS[l.documentId].bank].address = l.locator.address; return true; },
+  },
+  nexViewer: {
+    capture: () => ({ kind: "document" }), describe: () => "file", preview: () => "NEX file viewer", restore: () => true,
+  },
+  // "none" (sprites.spr): no adapter — opted out
+};
+const adapterFor = (id) => ADAPTERS[DOCS[id].type];
+
+function captureCurrent(reason) {
+  const id = S.active; if (!id) return undefined;
+  const a = adapterFor(id); if (!a) return undefined;
+  return { documentId: id, title: titleOf(id), locator: a.capture(id), reason, time: Date.now() };
+}
+
+/* ---- the service (plan §3.4) ---- */
+function recordJump(reason, jump) {
+  if (S.restoring) { jump(); return; }
+  const from = captureCurrent(reason);
+  jump();
+  const to = captureCurrent(reason);
+  H.record(from, to);
+  log(`record ${reason} → ${to ? titleOf(to.documentId) + " " + adapterFor(to.documentId).describe(to) : "(opted-out document)"}`);
+  render();
+}
+function activate(id) { if (!S.open.includes(id)) S.open.push(id); S.active = id; }
+
+function wandered() {
+  // Back first returns to the current entry if the user has left it (another document, or an opted-out one).
+  const cur = H.current(); const now = captureCurrent();
+  return cur && (!now || !sameDoc(now, cur));
+}
+function goBack() {
+  const now = captureCurrent();
+  const cur = H.current();
+  if (!cur) return;
+  let target;
+  if (wandered()) target = H.index;
+  else {
+    if (now && !near(now, cur)) H.entries[H.index] = { ...now, reason: cur.reason };
+    target = H.index - 1;
+  }
+  goToIndex(target, -1);
+}
+function goForward() {
+  const now = captureCurrent(); const cur = H.current();
+  if (now && cur && sameDoc(now, cur) && !near(now, cur)) H.entries[H.index] = { ...now, reason: cur.reason };
+  goToIndex(H.index + 1, +1);
+}
+function goToIndex(i, dir = 0) {
+  while (i >= 0 && i < H.entries.length) {
+    const e = H.entries[i];
+    const a = adapterFor(e.documentId);
+    S.restoring = true;
+    const ok = a.restore(e);
+    S.restoring = false;
+    if (ok) {
+      H.index = i; activate(e.documentId);
+      log(`${dir < 0 ? "back" : dir > 0 ? "forward" : "go to"} → ${titleOf(e.documentId)} ${a.describe(e)}`);
+      render(); scrollToLocation(); return true;
+    }
+    log(`stale, removed: ${titleOf(e.documentId)} ${a.describe(e)}`);
+    H.entries.splice(i, 1);
+    if (i <= H.index) H.index--;
+    if (dir === 0) break;
+    if (dir > 0) continue; // same i now points at the next one
+    i--;
+  }
+  render(); return false;
+}
+function canBack() { return H.index > 0 || (H.index >= 0 && wandered()); }
+function canForward() { return H.index < H.entries.length - 1; }
+
+function log(s) { logLines.unshift(s); logLines = logLines.slice(0, 40); }
+
+/* ============================================================================
+   Rendering
+   ========================================================================== */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const SHORT = navigator.platform.includes("Mac") ? { b: "Ctrl+-", f: "Ctrl+Shift+-" } : { b: "Alt+Left", f: "Alt+Right" };
+const REASON_LABEL = { definition: "definition", outputLink: "build error", breakpoint: "breakpoint", memoryGoTo: "go to",
+  disassemblyGoTo: "go to", nexLabel: "label", nexBank: "bank", tabSwitch: "tab", explorer: "explorer" };
+
+function describeEntry(e) { return `${titleOf(e.documentId)} · ${adapterFor(e.documentId).describe(e)}`; }
+function backTitle() {
+  if (!canBack()) return `Go Back (${SHORT.b})`;
+  const t = wandered() ? H.current() : H.entries[H.index - 1];
+  return `Back to ${describeEntry(t)} (${SHORT.b})`;
+}
+function fwdTitle() { return canForward() ? `Forward to ${describeEntry(H.entries[H.index + 1])} (${SHORT.f})` : `Go Forward (${SHORT.f})`; }
+
+function navButtons(small) {
+  const cls = small ? "iconBtn small" : "iconBtn";
+  return `<span class="split">
+      <button class="${cls}" data-act="back" ${canBack() ? "" : "disabled"} title="${esc(backTitle())}">${I.back}</button>
+      <button class="${cls} chevBtn" data-act="history" ${H.entries.length ? "" : "disabled"} title="Show navigation history">${I.chev}</button>
+    </span>
+    <button class="${cls}" data-act="forward" ${canForward() ? "" : "disabled"} title="${esc(fwdTitle())}">${I.fwd}</button>`;
+}
+
+function render() {
+  const opt = "A";
+  $("toolbar").innerHTML =
+    (opt === "A" ? navButtons(false) + '<span class="tbSep"></span>' : "") +
+    `<button class="iconBtn exec" data-act="debug" title="Start with debugging">${I.play}</button>
+     <button class="iconBtn" data-act="step" title="Step Over (F10) — simulates a debugger pause">${I.stepOver}</button>
+     <button class="iconBtn" data-act="stop" title="Stop">${I.stop}</button>
+     <span class="tbSep"></span>
+     <button class="iconBtn" data-act="open:$memory" title="Show Memory Panel">${I.memory}</button>
+     <button class="iconBtn" data-act="open:$disassembly" title="Show Disassembly Panel">${I.disasm}</button>
+     ${S.pc ? `<span class="tbLabel">Paused at ${esc(S.pc[0])}:${S.pc[1]}</span>` : ""}`;
+  $("headerNav").innerHTML = opt === "B" ? navButtons(true) : "";
+
+  $("actExplorer").innerHTML = I.files; $("actNav").innerHTML = I.history;
+  $("actNav").style.display = "none";
+  $("actExplorer").classList.toggle("sel", S.sideTab === "explorer");
+  $("actNav").classList.toggle("sel", S.sideTab === "nav");
+  $("sideBar").innerHTML = S.sideTab === "nav" ? renderNavPanel() : renderExplorer();
+
+  $("tabs").innerHTML = S.open.map((id) => `
+    <div class="tab ${id === S.active ? "active" : ""}" data-tab="${esc(id)}" title="${esc(titleOf(id))}">
+      ${I[DOCS[id].icon]}<span>${esc(titleOf(id))}</span>${DOCS[id].type === "none" ? '<span class="optOut" title="This document type does not take part in navigation history">no nav</span>' : ""}
+      <span class="x" data-close="${esc(id)}">${I.x}</span>
+    </div>`).join("");
+
+  $("docBody").innerHTML = renderDoc();
+  $("outBody").innerHTML = `
+    <div><span class="lnk" data-outlink="main.asm:47">main.asm:47:9</span> <span class="err">error Z0305:</span> Unknown label 'Scroll'</div>
+    <div><span class="lnk" data-outlink="input.asm:8">input.asm:8:9</span> <span class="warn">warning Z0901:</span> Call target is in another module</div>
+    <div><span class="lnk" data-outlink="utils.asm:32">utils.asm:32</span> breakpoint · exec ${hex4(0x8123)}</div>`;
+
+  const cur = H.current();
+  $("statusBar").innerHTML = `<span>${S.active ? esc(titleOf(S.active)) : "—"}</span>
+    ${S.active && DOCS[S.active].type === "text" ? `<span>Ln ${S.text[S.active]}, Col 9</span>` : ""}
+    <span class="grow"></span><span title="Navigation history position">history ${H.index + 1}/${H.entries.length}</span>`;
+
+  $("inspList").innerHTML = H.entries.map((e, i) =>
+    `<li class="${i === H.index ? "cur" : ""}">${esc(describeEntry(e))} <span style="opacity:.6">[${e.reason}]</span></li>`).join("") || '<span class="hint">empty</span>';
+  $("log").innerHTML = logLines.map((l) => `<div>${esc(l)}</div>`).join("");
+  if (!$("popover").hidden) renderPopover();
+}
+
+function renderExplorer() {
+  const files = ["main.asm", "utils.asm", "input.asm", "game.nex", "sprites.spr"];
+  return `<div class="sbHeader"><span class="sbTitle">Explorer</span></div><div class="sbList">
+    ${files.map((f) => `<div class="fileRow" data-explorer="${f}">${I[DOCS[f].icon]}${f}${DOCS[f].type === "none" ? '<span class="muted">no nav</span>' : ""}</div>`).join("")}</div>`;
+}
+function renderNavPanel() {
+  return `<div class="sbHeader"><span class="sbTitle">Navigation</span>
+     <button class="iconBtn small" data-act="clear" title="Clear navigation history">${I.trash}</button></div>
+     <div class="sbList">${historyRows()}</div>`;
+}
+
+function historyRows() {
+  if (!H.entries.length) return `<div class="emptyHist">No jumps yet.<br>Go to Definition, a build error, or a debugger stop will appear here.</div>`;
+  let html = "";
+  for (let i = H.entries.length - 1; i >= 0; i--) {
+    const e = H.entries[i], a = adapterFor(e.documentId);
+    const stale = a.canReopen && !a.canReopen();
+    if (i === H.index && i < H.entries.length - 1) html += `<div class="divider">Current</div>`;
+    html += `<div class="hRow ${i === H.index ? "current" : ""} ${i > H.index ? "ahead" : ""} ${stale ? "stale" : ""}" data-goto="${i}"
+       title="${stale ? "Cannot be reopened — will be removed when visited" : "Go to this location"}">
+      <span class="mark">${i === H.index ? "●" : ""}</span>
+      <svg class="di" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${I[DOCS[e.documentId].icon].replace(/^<svg[^>]*>|<\/svg>$/g, "")}</svg>
+      <span class="main"><div class="t1">${esc(titleOf(e.documentId))}<span class="loc">${esc(a.describe(e))}</span></div>
+        <div class="t2">${esc(a.preview(e) || " ")}</div></span>
+      <span class="reason ${e.reason}">${esc(REASON_LABEL[e.reason] ?? e.reason)}</span>
+    </div>`;
+  }
+  return html;
+}
+function renderPopover() {
+  $("popover").innerHTML = `<div class="popHead">Navigation history <span class="count">${H.entries.length} of 50</span><span class="grow"></span>
+      <button class="iconBtn small" data-act="clear" title="Clear navigation history">${I.trash}</button></div>
+    <div class="histList">${historyRows()}</div>
+    <div class="popFoot"><span><kbd>${SHORT.b}</kbd> back</span><span><kbd>${SHORT.f}</kbd> forward</span></div>`;
+}
+
+function fakeByte(a) { return ((a * 2654435761) >>> 24) & 0xff; }
+function fakeIns(a) { const ops = ["ld a,(hl)", "inc hl", "call $" + ((0x8000 + (a * 37) % 0x400).toString(16).toUpperCase()), "djnz $-4", "ret", "push bc", "ld (ix+$02),a", "or a"]; return ops[(a * 13) % ops.length]; }
+
+function renderDoc() {
+  const id = S.active;
+  if (!id) return `<div class="optOutView">No open documents</div>`;
+  const d = DOCS[id];
+  if (d.type === "text") {
+    const pcLine = S.pc && S.pc[0] === id ? S.pc[1] : -1;
+    return `<div class="code" id="codeView">${d.lines.map((t, i) => {
+      const n = i + 1;
+      return `<div class="ln ${n === S.text[id] ? "cursor" : ""} ${n === pcLine ? "pc" : ""}" data-line="${n}"><span class="no">${n}</span><span class="txt">${highlight(t)}</span></div>`;
+    }).join("")}</div>`;
+  }
+  if (d.type === "memory") {
+    const rows = [];
+    for (let r = 0; r < 18; r++) {
+      const a = (S.mem.address + r * 16) & 0xffff;
+      const bytes = Array.from({ length: 16 }, (_, k) => fakeByte(a + k));
+      rows.push(`<div class="dvRow ${r === 0 ? "hit" : ""}"><span class="addr">${a.toString(16).toUpperCase().padStart(4, "0")}</span>
+        <span class="bytes">${bytes.map((b) => b.toString(16).toUpperCase().padStart(2, "0")).join(" ")}</span>
+        <span class="chars">${bytes.map((b) => (b > 32 && b < 127 ? String.fromCharCode(b) : ".")).join("")}</span></div>`);
+    }
+    return `<div class="dataView" data-wheel="mem">
+      <div class="dvBar">Go to <input type="text" id="memGo" placeholder="$0000" title="Enter a hex address and press Enter (recorded)">
+        <select id="memSeg">${["RAM 5", "RAM 2", "RAM 0", "ROM 3"].map((s) => `<option ${s === S.mem.segment ? "selected" : ""}>${s}</option>`).join("")}</select></div>
+      <div class="dvRows">${rows.join("")}</div>
+      <div class="hintLine">Go to address is recorded. Mouse-wheel scrolling and segment changes are not.</div></div>`;
+  }
+  if (d.type === "disasm") {
+    const rows = []; let a = S.dis.address;
+    for (let r = 0; r < 18; r++) { rows.push(`<div class="dvRow ${a === 0x8000 ? "pc" : ""}"><span class="addr">${a.toString(16).toUpperCase().padStart(4, "0")}</span><span class="ins">${fakeIns(a)}</span></div>`); a += 1 + (a % 3); }
+    return `<div class="dataView" data-wheel="dis">
+      <div class="dvBar">Go to <input type="text" id="disGo" placeholder="$0000"><button class="chipBtn" data-act="disPc">Go to PC</button>
+        <label style="display:inline-flex;gap:4px;align-items:center"><input type="checkbox" id="followPc"> Follow PC</label></div>
+      <div class="dvRows">${rows.join("")}</div>
+      <div class="hintLine">Go to address / Go to PC are recorded. Follow PC ticks never are — they follow the machine, not the user.</div></div>`;
+  }
+  if (d.type === "nexViewer") {
+    return `<div class="nexViewer"><div style="font-weight:600">game.nex · 2 banks · entry ${hex4(0xC000)}</div>
+      ${[12, 14].map((b) => `<div class="bankRow">bank ${b} <button class="chipBtn dvBarBtn" data-bank="${b}" style="font-size:11px;padding:2px 8px;border:1px solid var(--border-default);border-radius:4px;background:var(--surface-raised);color:var(--text-primary);cursor:pointer">Open in new tab</button></div>`).join("")}
+      <div class="hint">Popping out a bank is recorded (reason "bank").</div></div>`;
+  }
+  if (d.type === "bank") {
+    const lst = BANK_LISTING[d.bank];
+    return `<div class="dataView"><div class="dvBar">bank ${d.bank} · disassembly <span style="color:var(--text-tertiary)">labels are clickable (NEX Go to Definition)</span></div>
+      <div class="dvRows" style="overflow:auto">${lst.map(([a, l, ins]) => `<div class="dvRow ${a === S.bank[d.bank].address ? "hit" : ""}">
+        <span class="addr">${a.toString(16).toUpperCase()}</span><span class="lab">${l ? l + ":" : ""}</span>
+        <span class="ins">${ins.replace(/\b(DrawTiles|PlaySfx|GameLoop)\b/g, (m) => `<span class="sym" data-banksym="${m}">${m}</span>`)}</span></div>`).join("")}</div></div>`;
+  }
+  return `<div class="optOutView"><div>${I.sprite.replace("<svg", '<svg width="40" height="40"')}<br><br><b style="color:var(--text-primary)">sprites.spr</b><br>
+    This document type declares no navigation adapter.<br>It never becomes a history entry; Back returns to where you left.</div></div>`;
+}
+function highlight(t) {
+  const m = t.match(/^(\s*)([^;]*)(;.*)?$/);
+  let [, ws, body, cm] = m;
+  body = esc(body)
+    .replace(/^([A-Za-z_]\w*):/, '<span class="lbl">$1</span>:')
+    .replace(/\b(call|ld|jp|jr|ret|org|defb|cp|or|inc|djnz|push|pop|nop|rst|in|cpl|ldir|z|nz)\b/g, '<span class="kw">$1</span>')
+    .replace(/(\$[0-9a-fA-F]+)/g, '<span class="num">$1</span>')
+    .replace(/(^|[\s,(])([A-Z][A-Za-z]+)\b(?!<\/span>:)/g, (all, p, sym) => SYMBOLS[sym] ? `${p}<span class="sym" data-sym="${sym}" title="Go to Definition">${sym}</span>` : all);
+  return ws + body + (cm ? `<span class="cm">${esc(cm)}</span>` : "");
+}
+function scrollToLocation() {
+  requestAnimationFrame(() => {
+    const cv = $("codeView"); if (!cv) return;
+    const el = cv.querySelector(".ln.cursor") || cv.querySelector(".ln.pc");
+    if (el) cv.scrollTop = el.offsetTop - cv.clientHeight / 2 + 10;
+  });
+}
+
+/* ============================================================================
+   Interactions
+   ========================================================================== */
+function tabSwitch(id, reason) {
+  if ($("setTabs").checked) recordJump(reason, () => activate(id));
+  else { activate(id); render(); }
+  scrollToLocation();
+}
+function openBank(bank, address, reason) {
+  recordJump(reason, () => { S.bank[bank].address = address; activate("bank" + bank); });
+}
+
+document.addEventListener("click", (ev) => {
+  const t = ev.target.closest("[data-act],[data-tab],[data-close],[data-sym],[data-outlink],[data-explorer],[data-goto],[data-bank],[data-banksym],.ln,#actExplorer,#actNav");
+  if (!t) { if (!ev.target.closest("#popover")) $("popover").hidden = true; return; }
+  if (t.id === "actExplorer") { S.sideTab = "explorer"; return render(); }
+  if (t.id === "actNav") { S.sideTab = "nav"; return render(); }
+  if (t.dataset.close) {
+    ev.stopPropagation();
+    const id = t.dataset.close, i = S.open.indexOf(id);
+    S.open.splice(i, 1);
+    if (S.active === id) S.active = S.open[Math.max(0, i - 1)] ?? null;
+    log(`closed ${titleOf(id)} — its entries stay; Back reopens it`);
+    return render();
+  }
+  if (t.dataset.tab) { if (t.dataset.tab !== S.active) tabSwitch(t.dataset.tab, "tabSwitch"); return; }
+  if (t.dataset.explorer) { tabSwitch(t.dataset.explorer, "explorer"); return; }
+  if (t.dataset.sym) {
+    const [doc, line] = SYMBOLS[t.dataset.sym];
+    recordJump("definition", () => { S.text[doc] = line; activate(doc); });
+    return scrollToLocation();
+  }
+  if (t.dataset.outlink) {
+    const [doc, line] = t.dataset.outlink.split(":");
+    recordJump(t.dataset.outlink.startsWith("utils") ? "breakpoint" : "outputLink", () => { S.text[doc] = +line; activate(doc); });
+    return scrollToLocation();
+  }
+  if (t.dataset.bank) return openBank(+t.dataset.bank, 0xC000, "nexBank");
+  if (t.dataset.banksym) { const [b, a] = BANK_SYMBOLS[t.dataset.banksym]; return openBank(b, a, "nexLabel"); }
+  if (t.dataset.goto) {
+    goToIndex(+t.dataset.goto, 0);
+    if (!$("popover").hidden) $("popover").hidden = true;
+    return;
+  }
+  if (t.classList.contains("ln")) { S.text[S.active] = +t.dataset.line; return render(); } // cursor move: not recorded
+  const act = t.dataset.act;
+  if (act === "back") return goBack();
+  if (act === "forward") return goForward();
+  if (act === "clear") { H = new NavigationHistory(); log("history cleared"); return render(); }
+  if (act === "history") {
+    ev.stopPropagation();
+    const p = $("popover");
+    if (!p.hidden) { p.hidden = true; return; }
+    const r = t.getBoundingClientRect();
+    p.hidden = false; renderPopover();
+    p.style.left = Math.max(8, Math.min(r.left - 32, window.innerWidth - 390)) + "px";
+    p.style.top = r.bottom + 4 + "px";
+    return;
+  }
+  if (act === "debug" || act === "step") {
+    S.debugStep = (S.debugStep + 1) % DEBUG_TRAIL.length;
+    const [doc, line] = DEBUG_TRAIL[S.debugStep];
+    S.pc = [doc, line];
+    // Debugger pauses move the view but are never recorded (plan §3.3, decision 2).
+    S.text[doc] = line; activate(doc);
+    log(`debugger paused at ${doc}:${line} (not recorded)`);
+    render(); return scrollToLocation();
+  }
+  if (act === "stop") { S.pc = null; S.debugStep = -1; return render(); }
+  if (act === "disPc") return recordJump("disassemblyGoTo", () => { S.dis.address = 0x8000; });
+  if (act?.startsWith("open:")) return tabSwitch(act.slice(5), "command");
+});
+
+document.addEventListener("keydown", (ev) => {
+  if (ev.target.id === "memGo" || ev.target.id === "disGo") {
+    if (ev.key !== "Enter") return;
+    const v = parseInt(ev.target.value.replace(/^\$|^0x/i, ""), 16);
+    if (Number.isNaN(v)) return;
+    const addr = v & 0xffff;
+    if (ev.target.id === "memGo") recordJump("memoryGoTo", () => { S.mem.address = addr - (addr % 16); });
+    else recordJump("disassemblyGoTo", () => { S.dis.address = addr; });
+    return;
+  }
+  const minus = ev.key === "-" || ev.key === "_" || ev.code === "Minus";
+  if ((ev.ctrlKey && minus && !ev.shiftKey) || (ev.altKey && ev.key === "ArrowLeft")) { ev.preventDefault(); goBack(); }
+  else if ((ev.ctrlKey && minus && ev.shiftKey) || (ev.altKey && ev.key === "ArrowRight")) { ev.preventDefault(); goForward(); }
+  else if (ev.key === "Escape") $("popover").hidden = true;
+});
+document.addEventListener("mouseup", (ev) => {
+  if (ev.button === 3) { ev.preventDefault(); goBack(); }
+  if (ev.button === 4) { ev.preventDefault(); goForward(); }
+});
+document.addEventListener("change", (ev) => {
+  if (ev.target.id === "memSeg") { S.mem.segment = ev.target.value; S.mem.address = 0; render(); }
+  if (["setTabs", "nexUnloaded"].includes(ev.target.id)) render();
+});
+document.addEventListener("wheel", (ev) => {
+  const v = ev.target.closest("[data-wheel]"); if (!v) return;
+  ev.preventDefault();
+  const step = Math.sign(ev.deltaY) * 16 * 3;
+  if (v.dataset.wheel === "mem") S.mem.address = Math.max(0, Math.min(0xfff0, S.mem.address + step));
+  else S.dis.address = Math.max(0, Math.min(0xffff, S.dis.address + step));
+  render();
+}, { passive: false });
+
+/* ---- lab bar ---- */
+$("tone").addEventListener("change", (ev) => { document.body.dataset.tone = ev.target.value; });
+$("resetLab").addEventListener("click", () => { resetState(); $("popover").hidden = true; render(); });
+
+$("optionNote").innerHTML = "<b>Chosen design — Option A.</b> Back / history chevron / Forward at the start of the IDE toolbar. One global history; tab switches recorded; debugger pauses not recorded; session-only; VS Code shortcuts.";
+resetState(); render();
+</script>
+</body>
+</html>

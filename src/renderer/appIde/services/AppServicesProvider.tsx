@@ -8,6 +8,7 @@ import { createInteractiveCommandsService } from "./IdeCommandService";
 import { createOutputPaneService } from "./OuputPaneService";
 import { createProjectService } from "./ProjectService";
 import { createScriptService } from "./ScriptService";
+import { createNavigationHistoryService } from "./navigationHistoryServiceFactory";
 
 // =====================================================================================================================
 /**
@@ -42,6 +43,7 @@ export function AppServicesProvider ({ children }: Props) {
       messageSource
     );
     const projectService = createProjectService(store, messenger);
+    const navigationHistoryService = createNavigationHistoryService(store, projectService, messenger);
     servicesRef.current = {
       uiService: createUiService(),
       machineService: createMachineService(store, messenger, messageSource),
@@ -49,9 +51,11 @@ export function AppServicesProvider ({ children }: Props) {
       ideCommandsService,
       projectService,
       validationService: createValidationService(),
-      scriptService: createScriptService(store, messenger)
+      scriptService: createScriptService(store, messenger),
+      navigationHistoryService
     };
     ideCommandsService.setAppServices(servicesRef.current);
+    navigationHistoryService.setAppServices(servicesRef.current);
   }
 
   return (

@@ -21,7 +21,14 @@
   },
   "debugger": {
     "schemaVersion": 1,
-    "breakpoints": [],
+    "breakpoints": [
+      {
+        "bank": 2,
+        "bankOffset": 9898,
+        "exec": true,
+        "ioMask": 65535
+      }
+    ],
     "watchExpressions": []
   },
   "builder": {
@@ -47,6 +54,9 @@
               "position": {
                 "line": 0,
                 "column": 0
+              },
+              "viewState": {
+                "scrollPosition": 541.7888793945312
               }
             }
           ],

@@ -54,6 +54,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
+  const isDebugging = useSelector((s) => s.emulatorState?.isDebugging ?? false);
 
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
@@ -333,6 +334,23 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       }
     }
   }, [controller?.machine, displayScreenData, machineState, setPauseOverlay, showInstantScreen]);
+
+  /*
+   * Keep "Debug mode" in step with a running machine switching modes without stopping.
+   *
+   * The overlay is otherwise set only on a state change, which reads the controller's debug flag as
+   * the machine *enters* Running. The ZX Spectrum Next launch flow (`.nexload`, and `nex-run -e`
+   * breaking at a NEX entry point) starts the machine normally so its keystrokes are not cut short,
+   * then switches the still-running machine to debug mode in place. No state change follows, so
+   * without this the overlay stayed blank for the whole debug run until the first pause.
+   *
+   * Only while Running: a paused or stopped machine shows its own overlay, which this must not
+   * overwrite.
+   */
+  useEffect(() => {
+    if (store.getState()?.emulatorState?.machineState !== MachineControllerState.Running) return;
+    setOverlay(isDebugging ? "Debug mode" : "");
+  }, [isDebugging, store]);
 
   useEffect(() => {
     const showInstantScreenSetting = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);

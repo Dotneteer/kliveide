@@ -21,6 +21,7 @@ export const SETTING_IDE_ACTIVE_TOOL = "ideViewOptions.activeTool";
 export const SETTING_IDE_ACTIVE_OUTPUT_PANE = "ideViewOptions.activeOutputPane";
 export const SETTING_IDE_OPEN_LAST_PROJECT = "ideBehavior.openLastProject";
 export const SETTING_IDE_CLOSE_EMU = "ideBehavior.closeEmuWithIde";
+export const SETTING_IDE_NAV_RECORD_TAB_SWITCH = "ideBehavior.navRecordTabSwitches";
 export const SETTING_PANEL_FONT_FAMILY = "panelOptions.fontFamily";
 export const SETTING_PANEL_FONT_SIZE = "panelOptions.fontSize";
 export const SETTING_EDITOR_FONT_SIZE = "editorOptions.fontSize";

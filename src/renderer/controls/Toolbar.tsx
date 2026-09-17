@@ -11,6 +11,7 @@ import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids"
 import { SETTING_IDE_SYNC_BREAKPOINTS } from "@common/settings/setting-const";
 import type { RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
 import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
+import { NavigationControls } from "@renderer/features/navigation/NavigationControls";
 
 type Props = {
   ide: boolean;
@@ -43,6 +44,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
       // run of icons.
       gap="--space-0_5"
     >
+      {ide && <NavigationControls />}
       <ExecutionControls ide={ide} kliveProjectLoaded={kliveProjectLoaded} />
       {!ide && <ViewControls recordingManagerRef={recordingManagerRef} />}
       {ide && (

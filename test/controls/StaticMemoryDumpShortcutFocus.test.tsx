@@ -56,7 +56,7 @@ async function renderPanel() {
     useDocumentHubService: () => documentHubService
   }));
   vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
-    useAppServices: () => ({ projectService })
+    useAppServices: () => ({ projectService, navigationHistoryService: { recordJump: async (_reason: string, jump: () => unknown) => await jump() } })
   }));
   /*
    * `Modal` reads the store through this too, so the mock has to serve both callers — and the

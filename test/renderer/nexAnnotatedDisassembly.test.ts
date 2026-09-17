@@ -333,6 +333,90 @@ describe("createAnnotatedNexDisassemblyItems", () => {
  * a jump table can make it wrong for the rest of the bank. A paused Z80 sits between instructions,
  * so PC is the one offset where the alignment is known rather than guessed.
  */
+describe("data rows and labels", () => {
+  const contents = new Uint8Array(0x4000);
+  contents.set([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a]);
+
+  async function rows(
+    type: "bytes" | "words",
+    labels: { global?: { name: string; value: number }[]; local?: { name: string; value: number }[] },
+    end = 7
+  ) {
+    const items = await createAnnotatedNexDisassemblyItems({
+      annotations: {
+        schemaVersion: 2,
+        globalLabels: labels.global ?? [],
+        banks: {
+          "2": {
+            offsetIndex: 2,
+            regions: [
+              { start: 0, end, type },
+              { start: end + 1, end: 0x3fff, type: "skip" }
+            ],
+            localLabels: labels.local ?? []
+          }
+        }
+      },
+      bank: 2,
+      contents,
+      disassOffset: 0x8000
+    });
+    return items!
+      .filter((item) => !item.instruction?.startsWith(".skip"))
+      .map((item) => ({
+        address: item.address,
+        label: item.formattedLabel,
+        instruction: item.instruction,
+        byteLength: item.annotation?.byteLength
+      }));
+  }
+
+  it("keeps four values to a row when no label is inside", async () => {
+    expect(await rows("bytes", {})).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defb $01, $02, $03, $04", byteLength: 4 },
+      { address: 0x8004, label: undefined, instruction: ".defb $05, $06, $07, $08", byteLength: 4 }
+    ]);
+  });
+
+  it("starts a byte row at a global label inside a row", async () => {
+    expect(await rows("bytes", { global: [{ name: "Middle", value: 0x8002 }] })).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defb $01, $02", byteLength: 2 },
+      { address: 0x8002, label: "Middle", instruction: ".defb $03, $04, $05, $06", byteLength: 4 },
+      { address: 0x8006, label: undefined, instruction: ".defb $07, $08", byteLength: 2 }
+    ]);
+  });
+
+  it("starts a byte row at a local label inside a row", async () => {
+    expect(await rows("bytes", { local: [{ name: "Third", value: 3 }] })).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defb $01, $02, $03", byteLength: 3 },
+      { address: 0x8003, label: "Third", instruction: ".defb $04, $05, $06, $07", byteLength: 4 },
+      { address: 0x8007, label: undefined, instruction: ".defb $08", byteLength: 1 }
+    ]);
+  });
+
+  it("starts a word row at a label on a word boundary", async () => {
+    expect(await rows("words", { global: [{ name: "Length", value: 0x8002 }] })).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defw $0201", byteLength: 2 },
+      { address: 0x8002, label: "Length", instruction: ".defw $0403, $0605", byteLength: 4 },
+      { address: 0x8006, label: undefined, instruction: ".defw $0807", byteLength: 2 }
+    ]);
+  });
+
+  it("does not split a word at a label on its high byte", async () => {
+    expect(await rows("words", { global: [{ name: "HighByte", value: 0x8003 }] })).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defw $0201, $0403", byteLength: 4 },
+      { address: 0x8004, label: undefined, instruction: ".defw $0605, $0807", byteLength: 4 }
+    ]);
+  });
+
+  it("ignores labels outside the bank window", async () => {
+    expect(await rows("bytes", { global: [{ name: "Elsewhere", value: 0x4002 }] })).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defb $01, $02, $03, $04", byteLength: 4 },
+      { address: 0x8004, label: undefined, instruction: ".defb $05, $06, $07, $08", byteLength: 4 }
+    ]);
+  });
+});
+
 describe("pcAnchoredRuns", () => {
   it("leaves the range alone when there is no program counter to anchor to", () => {
     // --- The machine is running, or PC is in some other bank. Nothing to align against.

@@ -4,6 +4,13 @@
 
 ### Fixes
 
+- **A popped-out NEX bank could be open twice.** Opening a bank from the NEX viewer and then
+  stopping in it while debugging (or following a label into it) gave two documents for the one
+  bank, and the debugger scrolled the one you were not looking at. The two also carried different
+  tab titles.
+- *Go to Definition* landed at the start of the line instead of on the symbol.
+- Opening a file whose viewer is not a code editor through the `nav` command (the NEX viewer, for
+  example) took about five seconds.
 - **Only source files came back when you reopened a project.** Every other document backed by a
   project file &mdash; the NEX, DSK and Z80 viewers, plain text files &mdash; was saved into the
   workspace correctly and then discarded while restoring it, because restoring matched on the code
@@ -74,6 +81,15 @@
 
 ### Features
 
+- **Go Back and Go Forward.** Klive remembers the places you jump to &mdash; *Go to Definition*, an
+  output-pane link, a breakpoint, a document tab, *Go To* in the Memory and Disassembly views, a NEX
+  bank or label &mdash; and takes you back through them with `Ctrl+-` / `Ctrl+Shift+-` on
+  macOS and `Alt+Left` / `Alt+Right` elsewhere, the mouse's back and forward buttons, the new toolbar
+  buttons, or **IDE &rsaquo; Go**. The arrow between the toolbar buttons lists the whole history.
+  Debugger stops are not remembered, so after debugging, *Go Back* returns to where you were before.
+  A remembered line follows its code as you edit, and a place in a closed document &mdash; including
+  a popped-out NEX bank &mdash; opens it again. New commands: `nav-back`, `nav-forward`,
+  `nav-history` and `nav-clear`; `nav` gained `-r` to record its jump.
 - `bp-set`, `bp-del` and `bp-en` accept a bank-relative address on the ZX Spectrum Next:
   `bp-set 05:+$0100` breaks at offset `$0100` inside 16K bank 5, wherever that bank is paged in.
 - Any `.nex` file can be run or debugged on its own, without a project: from the Project Explorer's

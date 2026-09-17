@@ -61,6 +61,11 @@ vi.mock("@appIde/services/AppServicesProvider", () => ({
 }));
 
 // Radix UI Select crashes in jsdom — mock the Dropdown component
+// --- Back / history / Forward have their own tests (test/navigation/NavigationControls.test.tsx).
+vi.mock("@renderer/features/navigation/NavigationControls", () => ({
+  NavigationControls: () => null
+}));
+
 vi.mock("@controls/Dropdown", () => ({
   __esModule: true,
   // --- `enabled` is honoured (and mirrored onto `data-disabled`, as Radix does) so a test can tell

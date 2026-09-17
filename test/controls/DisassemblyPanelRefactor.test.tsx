@@ -1,5 +1,5 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React, { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -37,6 +37,9 @@ async function renderDisassemblyPanel({
 
   const dispatch = vi.fn();
   const saveProject = vi.fn(() => Promise.resolve());
+  const navigationHistoryService = {
+    recordJump: vi.fn(async (_reason: string, jump: () => unknown) => await jump())
+  };
   const setDocumentViewState = vi.fn();
   const getMemoryContents = vi.fn(() =>
     Promise.resolve({
@@ -88,7 +91,8 @@ async function renderDisassemblyPanel({
   };
   const documentHubService = {
     getDocumentViewState: vi.fn(() => viewState),
-    setDocumentViewState
+    setDocumentViewState,
+    setDocumentApi: vi.fn()
   };
   const emuApi = {
     getDisassemblySections: vi.fn(() => Promise.resolve([])),
@@ -158,7 +162,8 @@ async function renderDisassemblyPanel({
    */
   vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
     useAppServices: () => ({
-      projectService: { readFileContent: vi.fn(() => Promise.reject(new Error("no sidecar"))) }
+      projectService: { readFileContent: vi.fn(() => Promise.reject(new Error("no sidecar"))) },
+      navigationHistoryService
     })
   }));
   /*
@@ -335,6 +340,7 @@ async function renderDisassemblyPanel({
     emuApi,
     emuStateCallback,
     getMemoryContents,
+    navigationHistoryService,
     setDocumentViewState,
     saveProject,
     triggerVirtualScroll: () => virtualOnScroll?.(),
@@ -439,6 +445,52 @@ describe("DisassemblyPanel refactor characterization", () => {
     await waitFor(() => {
       expect(virtualApi.scrollToIndex).toHaveBeenCalledWith(1, { align: "start" });
     });
+  });
+
+  it("records Go To in the navigation history, reporting the new address inside the jump", async () => {
+    const { documentHubService, navigationHistoryService, virtualApi } = await renderDisassemblyPanel();
+    const api = documentHubService.setDocumentApi.mock.calls.at(-1)?.[1];
+    let during: unknown;
+    navigationHistoryService.recordJump.mockImplementationOnce(async (_reason, jump) => {
+      await jump();
+      during = api.getNavigationLocator();
+    });
+
+    const goTo = screen.getByLabelText("Go To");
+    fireEvent.change(goTo, { target: { value: "6002" } });
+    fireEvent.keyDown(goTo, { key: "Enter" });
+
+    await waitFor(() => expect(virtualApi.scrollToIndex).toHaveBeenCalledWith(1, { align: "start" }));
+    expect(navigationHistoryService.recordJump).toHaveBeenCalledWith("disassemblyGoTo", expect.any(Function));
+    expect(during).toMatchObject({ kind: "address", address: 0x6002, viewMode: "disassembly" });
+  });
+
+  it("does not record Follow PC moving the listing", async () => {
+    const { emuStateCallback, navigationHistoryService, documentHubService } = await renderDisassemblyPanel({
+      viewState: { autoRefresh: true }
+    });
+    await act(async () => {
+      await emuStateCallback?.();
+      await emuStateCallback?.();
+    });
+    expect(navigationHistoryService.recordJump).not.toHaveBeenCalled();
+    // --- ...though where the listing now is still answers the history, for the next real jump.
+    const api = documentHubService.setDocumentApi.mock.calls.at(-1)?.[1];
+    expect(api.getNavigationLocator()).toMatchObject({ kind: "address", viewMode: "disassembly" });
+  });
+
+  it("turns Follow PC off to reveal a recorded location, then scrolls once the listing is rebuilt", async () => {
+    const { documentHubService, virtualApi } = await renderDisassemblyPanel({
+      viewState: { autoRefresh: true }
+    });
+    const api = documentHubService.setDocumentApi.mock.calls.at(-1)?.[1];
+    expect(screen.getByText("Follow PC:on")).toBeInTheDocument();
+
+    act(() => api.revealLocator({ kind: "address", address: 0x6002, fullView: true }));
+
+    expect(await screen.findByText("Follow PC:off")).toBeInTheDocument();
+    await waitFor(() => expect(virtualApi.scrollToIndex).toHaveBeenCalledWith(1, { align: "start" }));
+    expect(api.getNavigationLocator()).toMatchObject({ address: 0x6002 });
   });
 
   it("says so when Go To names an address past the disassembled range", async () => {

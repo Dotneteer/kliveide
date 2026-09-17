@@ -5,6 +5,7 @@ import type { IProjectService } from "./IProjectService";
 import type { IUiService } from "@renderer/core/UiServices";
 import type { IValidationService } from "@renderer/core/ValidationService";
 import type { IScriptService } from "./IScriptService";
+import type { INavigationHistoryService } from "./INavigationHistoryService";
 
 /**
  * This type defines the services the IDE provides
@@ -17,4 +18,5 @@ export type AppServices = {
   ideCommandsService: IIdeCommandService;
   validationService: IValidationService;
   scriptService: IScriptService;
+  navigationHistoryService: INavigationHistoryService;
 };

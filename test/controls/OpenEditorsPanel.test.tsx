@@ -317,7 +317,10 @@ function mockPanelDependencies(hubs: TestHub[], activeHub?: TestHub) {
     useSelector: (selector: (appState: unknown) => unknown) => selector(state)
   }));
   vi.doMock("@renderer/appIde/services/AppServicesProvider", () => ({
-    useAppServices: () => ({ projectService })
+    useAppServices: () => ({
+      projectService,
+      navigationHistoryService: { recordJump: async (_reason: string, jump: () => unknown) => await jump() }
+    })
   }));
   // The real Icon needs a ThemeProvider; nothing here is about how a glyph is drawn.
   vi.doMock("@controls/Icon", () => ({

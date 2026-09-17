@@ -19,6 +19,12 @@ import { createElement, useEffect, useMemo, useState } from "react";
 import styles from "./NexFileViewerPanel.module.scss";
 import { loadNexFileContents, ScreenBlockFlags } from "./nexFileLoader";
 import {
+  nexBankDumpId,
+  nexBankDumpTitle,
+  nexLayer2ScreenDumpId,
+  nexLayer2ScreenDumpTitle
+} from "./nexBankDocument";
+import {
   summarizeNexIssues,
   validateNexHeader,
   type NexIssue
@@ -33,11 +39,12 @@ import {
 import type { NexFileContents, NexHeader } from "./nexFileLoader";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { useDispatch } from "@renderer/core/RendererProvider";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { incExploreViewVersionAction } from "@common/state/actions";
 import { Icon } from "@renderer/controls/Icon";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import {
   NexAnnotationSidecarPaths,
@@ -137,6 +144,11 @@ const NexFileViewerContents = ({
   const setBankFlagCount = useMemo(() => h.bankFlags.filter(Boolean).length, [h.bankFlags]);
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
+  const { navigationHistoryService } = useAppServices();
+  // --- Popping a bank out is going somewhere: Go Back returns to this viewer.
+  const openRecorded = (open: () => Promise<void>) =>
+    navigationHistoryService.recordJump("nexBank", open);
+  const projectFolder = useSelector((s) => s.project?.folderPath);
   const loadedBanks = useMemo(() => fi.bankData.map(([bank]) => bank), [fi.bankData]);
   // --- One listing for every bank row: a NEX can carry a hundred banks, and each asking the
   // --- emulator for itself would be a hundred IPC calls per breakpoint change.
@@ -313,12 +325,14 @@ const NexFileViewerContents = ({
               fill='--color-command-icon'
               title='Open the loading screen as its own document'
               clicked={async () => {
-                if (!document.node.projectPath) return;
-                await openStaticMemoryDump(
-                  documentHubService,
-                  `layer2ScreenDump${document.node.projectPath}`,
-                  `${document.node.projectPath} - Layer2`,
-                  fi.layer2LoadingScreen
+                if (!document.node.fullPath) return;
+                await openRecorded(() =>
+                  openStaticMemoryDump(
+                    documentHubService,
+                    nexLayer2ScreenDumpId(document.node.fullPath),
+                    nexLayer2ScreenDumpTitle(document.node.fullPath, projectFolder),
+                    fi.layer2LoadingScreen
+                  )
                 );
               }}
             />
@@ -437,20 +451,23 @@ const NexFileViewerContents = ({
           false
         );
         const openBankDump = async () => {
-          if (!document.node.projectPath) return;
-          await openStaticMemoryDump(
-            documentHubService,
-            `bankDump${document.node.projectPath}:${entry[0]}`,
-            `${document.node.projectPath} - Bank: ${entry[0]}`,
-            entry[1],
-            {
-              disassemblyEnabled: true,
-              disassOffset,
-              decimalView,
-              viewMode,
-              nexAnnotationPath: annotationPath,
-              nexAnnotationBank: annotationBank
-            }
+          if (!document.node.fullPath) return;
+          await openRecorded(() =>
+            openStaticMemoryDump(
+              documentHubService,
+              // --- The full path, not the project path: it is the id the debugger's reveals use.
+              nexBankDumpId(document.node.fullPath, entry[0]),
+              nexBankDumpTitle(document.node.fullPath, entry[0], projectFolder),
+              entry[1],
+              {
+                disassemblyEnabled: true,
+                disassOffset,
+                decimalView,
+                viewMode,
+                nexAnnotationPath: annotationPath,
+                nexAnnotationBank: annotationBank
+              }
+            )
           );
         };
         return (
@@ -491,11 +508,12 @@ const NexFileViewerContents = ({
               nexAnnotationPath={annotationPath}
               nexAnnotationBank={annotationBank}
               iconTitle='Display bank data dump'
-              idFactory={(documentSource: string, bank: number) =>
-                `bankDump${documentSource}:${bank}`
+              openThrough={openRecorded}
+              idFactory={(_documentSource: string, bank: number) =>
+                nexBankDumpId(document.node.fullPath, bank)
               }
-              titleFactory={(documentSource: string, bank: number) =>
-                `${documentSource} - Bank: ${bank}`
+              titleFactory={(_documentSource: string, bank: number) =>
+                nexBankDumpTitle(document.node.fullPath, bank, projectFolder)
               }
             />
           </ExpandableRow>

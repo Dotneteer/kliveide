@@ -67,6 +67,7 @@
 /working-with-ide/exporting-code/index.html
 /working-with-ide/ide-settings/index.html
 /working-with-ide/memory/index.html
+/working-with-ide/navigation/index.html
 /working-with-ide/pasta80/index.html
 /working-with-ide/project-explorer/index.html
 /working-with-ide/run-debug/index.html

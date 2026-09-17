@@ -4,10 +4,17 @@ import {
   IdeCommandBase,
   commandError,
   commandSuccess,
+  validationError,
   writeSuccessMessage
 } from "../services/ide-commands";
 import { EditorApi } from "@renderer/features/editor/monaco/MonacoEditor";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
+import { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
+import {
+  NAVIGATION_REASONS,
+  type NavigationReason
+} from "@renderer/abstractions/NavigationLocation";
+import type { ProjectNode } from "@abstractions/ProjectNode";
 import { getDocumentAreaCommandTarget } from "@renderer/features/documents/documentAreaCommandTarget";
 import { type DocumentAreaGridApi } from "@renderer/features/documents/DocumentAreaGrid";
 
@@ -15,20 +22,36 @@ type NavigateToDocumentCommandArgs = {
   filename: string;
   lineNo?: number;
   columnNo?: number;
+  "-r"?: string;
 };
 
 export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocumentCommandArgs> {
   readonly id = "nav";
   readonly description = "Navigates to the specified document";
-  readonly usage = "nav projeFile [line] [column]";
+  readonly usage = [
+    "nav projectFile [line] [column] [-r reason]",
+    `-r: record the jump in the navigation history (Go Back / Go Forward); reason is one of ${NAVIGATION_REASONS.join(", ")}`
+  ];
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "filename", type: "string" }],
     optional: [
       { name: "lineNo", type: "number" },
       { name: "columnNo", type: "number" }
-    ]
+    ],
+    namedOptions: [{ name: "-r", type: "string" }]
   };
+
+  async validateCommandArgs(
+    _context: IdeCommandContext,
+    args: NavigateToDocumentCommandArgs
+  ): Promise<ValidationMessage[]> {
+    const reason = args["-r"];
+    if (reason !== undefined && !NAVIGATION_REASONS.includes(reason as NavigationReason)) {
+      return [validationError(`Unknown navigation reason '${reason}'.`)];
+    }
+    return [];
+  }
 
   async execute(
     context: IdeCommandContext,
@@ -46,36 +69,13 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
       return commandError(`File '${args.filename}' not found in the project.`);
     }
 
-    // --- Is the document open?
-    const nodeData = projNode.data;
-    const docService = context.service.projectService.getActiveDocumentHubService();
-    const doc = docService.getDocument(projNode.data.fullPath);
-    if (doc) {
-      // --- Activate the open document
-      await docService.setActiveDocument(doc.id);
+    // --- Move there; with `-r`, as a jump the navigation history records.
+    const reason = args["-r"] as NavigationReason | undefined;
+    const navigate = () => this.navigate(context, projNode.data, args);
+    if (reason) {
+      await context.service.navigationHistoryService.recordJump(reason, navigate);
     } else {
-      const newDoc = await context.service.projectService.getDocumentForProjectNode(nodeData);
-      // TODO: Allow the currently active document to save itself before opening the new one
-
-      // --- Open it
-      await docService.openDocument(newDoc, undefined, false);
-    }
-
-    // --- The document should be open
-    const openDoc = await docService.waitOpen(projNode.data.fullPath, true);
-    if (openDoc) {
-      // --- Delay 50 ms to allow the editor to be ready
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      // --- Navigate to the specified position (if requested)
-      if (args.lineNo != undefined) {
-        const api = docService.getDocumentApi(openDoc.id);
-        if (api) {
-          const apiEndpoint = (api as EditorApi)?.setPosition;
-          if (typeof apiEndpoint === "function") {
-            apiEndpoint(args.lineNo, Math.max((args.columnNo ?? 0) - 1, 0));
-          }
-        }
-      }
+      await navigate();
     }
 
     // --- Done.
@@ -88,6 +88,49 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
       } `
     );
     return commandSuccess;
+  }
+
+  /**
+   * Activates (or opens) the document in the active document area, then moves its cursor.
+   */
+  private async navigate(
+    context: IdeCommandContext,
+    nodeData: ProjectNode,
+    args: NavigateToDocumentCommandArgs
+  ): Promise<void> {
+    // --- Is the document open?
+    const docService = context.service.projectService.getActiveDocumentHubService();
+    const doc = docService.getDocument(nodeData.fullPath);
+    if (doc) {
+      // --- Activate the open document
+      await docService.setActiveDocument(doc.id);
+    } else {
+      const newDoc = await context.service.projectService.getDocumentForProjectNode(nodeData);
+      // TODO: Allow the currently active document to save itself before opening the new one
+
+      // --- Open it
+      await docService.openDocument(newDoc, undefined, false);
+    }
+
+    // --- The document should be open
+    // --- The editor API is only needed to move the cursor. A viewer that registers none (the NEX
+    // --- file viewer, for one) would otherwise hold every `nav` to it for the full wait timeout.
+    const needsApi = args.lineNo != undefined;
+    const openDoc = await docService.waitOpen(nodeData.fullPath, needsApi);
+    if (openDoc) {
+      // --- Navigate to the specified position (if requested)
+      if (needsApi) {
+        // --- Delay 50 ms to allow the editor to be ready
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        const api = docService.getDocumentApi(openDoc.id);
+        if (api) {
+          const apiEndpoint = (api as EditorApi)?.setPosition;
+          if (typeof apiEndpoint === "function") {
+            apiEndpoint(args.lineNo, Math.max((args.columnNo ?? 0) - 1, 0));
+          }
+        }
+      }
+    }
   }
 }
 

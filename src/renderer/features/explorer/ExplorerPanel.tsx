@@ -48,7 +48,7 @@ export const ExplorerPanel = () => {
 
   const dispatch = useDispatch();
   const appServices = useAppServices();
-  const { projectService, ideCommandsService } = appServices;
+  const { projectService, ideCommandsService, navigationHistoryService } = appServices;
   const documentHubService = projectService.getActiveDocumentHubService();
 
   const [isFocused, setIsFocused] = useState(false);
@@ -199,13 +199,15 @@ export const ExplorerPanel = () => {
       return;
     }
 
-    const openDocument = documentHubService.getDocument(node.data.fullPath);
-    if (openDocument) {
-      await documentHubService.setActiveDocument(openDocument.id);
-    } else {
-      const newDocument = await projectService.getDocumentForProjectNode(node.data);
-      await documentHubService.openDocument(newDocument, undefined, true);
-    }
+    await navigationHistoryService.recordJump("explorer", async () => {
+      const openDocument = documentHubService.getDocument(node.data.fullPath);
+      if (openDocument) {
+        await documentHubService.setActiveDocument(openDocument.id);
+      } else {
+        const newDocument = await projectService.getDocumentForProjectNode(node.data);
+        await documentHubService.openDocument(newDocument, undefined, true);
+      }
+    });
     focusExplorerItem(restoreFocusIndex);
   };
 
@@ -355,10 +357,12 @@ export const ExplorerPanel = () => {
         onDoubleClick={async () => {
           if (node.data.isFolder) return;
           if (documentHubService.isOpen(node.data.fullPath)) {
-            await documentHubService.setActiveDocument(node.data.fullPath);
+            await navigationHistoryService.recordJump("explorer", () =>
+              documentHubService.setActiveDocument(node.data.fullPath)
+            );
             projectService.setPermanent(node.data.fullPath);
           } else {
-            await ideCommandsService.executeCommand(`nav "${node.data.fullPath}"`);
+            await ideCommandsService.executeCommand(`nav "${node.data.fullPath}" -r explorer`);
           }
           focusExplorerItem(idx);
         }}

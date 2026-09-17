@@ -27,6 +27,12 @@ import {
   StepOutMachineCommand
 } from "./commands/MachineCommands";
 import { NewProjectCommand } from "./commands/NewProjectCommand";
+import {
+  ClearNavigationHistoryCommand,
+  NavigateBackCommand,
+  NavigateForwardCommand,
+  NavigationHistoryCommand
+} from "./commands/NavigationCommands";
 import { NumCommand } from "./commands/NumCommand";
 import { OpenFolderCommand } from "./commands/OpenFolderCommand";
 import {
@@ -106,6 +112,10 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new StepOutMachineCommand());
 
   cmdSrv.registerCommand(new NavigateToDocumentCommand());
+  cmdSrv.registerCommand(new NavigateBackCommand());
+  cmdSrv.registerCommand(new NavigateForwardCommand());
+  cmdSrv.registerCommand(new NavigationHistoryCommand());
+  cmdSrv.registerCommand(new ClearNavigationHistoryCommand());
   cmdSrv.registerCommand(new SplitEditorRightCommand());
   cmdSrv.registerCommand(new SplitEditorDownCommand());
   cmdSrv.registerCommand(new MoveEditorToNextAreaCommand());

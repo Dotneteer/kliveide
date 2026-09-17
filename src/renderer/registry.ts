@@ -30,6 +30,11 @@ import { BUILD_FILE, PROJECT_FILE } from "@common/structs/project-const";
 import { Activity } from "./abstractions/Activity";
 import { MonacoAwareCustomLanguageInfo } from "./abstractions/CustomLanguageInfo";
 import { DocumentRendererInfo } from "./abstractions/DocumentRendererInfo";
+import { createTextNavigationAdapter } from "./appIde/navigation/textNavigationAdapter";
+import { getMonacoTextModel } from "./appIde/navigation/monacoTextModels";
+
+// --- One instance for both editor types: it holds the line-drift tracking state.
+const textNavigationAdapter = createTextNavigationAdapter({ getModel: getMonacoTextModel });
 import { FileTypeEditor } from "./abstractions/FileTypePattern";
 import { OutputPaneInfo } from "./abstractions/OutputPaneInfo";
 import { SideBarPanelInfo } from "./abstractions/SideBarPanelInfo";
@@ -87,7 +92,17 @@ import { createSprFileEditorPanel } from "@renderer/features/sprite-editor/SprFi
 import { createVidFileViewerPanel } from "./appIde/DocumentPanels/Next/VidFileViewerPanel";
 import { createBinFileViewerPanel } from "./appIde/DocumentPanels/BinFileViewerPanel";
 import { createImageViewerPanel } from "./appIde/DocumentPanels/ImageViewerPanel";
-import { createStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
+import {
+  createStaticMemoryDump,
+  openStaticMemoryDump
+} from "@renderer/features/memory/StaticMemoryDump";
+import {
+  createStaticDumpNavigationAdapter,
+  disassemblyNavigationAdapter,
+  memoryNavigationAdapter
+} from "./appIde/navigation/addressNavigationAdapters";
+import { readNexBankBytes } from "./appIde/DocumentPanels/Next/nexBankReveal";
+import { fileDocumentNavigationAdapter } from "./appIde/navigation/fileDocumentNavigationAdapter";
 import { ksxLanguageProvider } from "./appIde/project/ksxLanguageProvider";
 import {
   PANE_ID_BUILD,
@@ -336,22 +351,26 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
   },
   {
     id: CODE_EDITOR,
-    renderer: createCodeEditorPanel
+    renderer: createCodeEditorPanel,
+    navigation: textNavigationAdapter
   },
   {
     id: TEXT_EDITOR,
     renderer: createTextEditorPanel,
-    icon: "note"
+    icon: "note",
+    navigation: textNavigationAdapter
   },
   {
     id: DISASSEMBLY_EDITOR,
     renderer: createBankedDisassemblyPanel,
-    icon: "disassembly-icon"
+    icon: "disassembly-icon",
+    navigation: disassemblyNavigationAdapter
   },
   {
     id: MEMORY_EDITOR,
     renderer: createMemoryPanel,
-    icon: "memory-icon"
+    icon: "memory-icon",
+    navigation: memoryNavigationAdapter
   },
   {
     id: BASIC_EDITOR,
@@ -366,7 +385,8 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
   {
     id: STATIC_MEMORY_DUMP_VIEWER,
     renderer: createStaticMemoryDump,
-    icon: "memory-icon"
+    icon: "memory-icon",
+    navigation: createStaticDumpNavigationAdapter({ openStaticMemoryDump, readNexBankBytes })
   },
   {
     id: TAP_VIEWER,
@@ -381,7 +401,8 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
   {
     id: NEX_VIEWER,
     renderer: createNexFileViewerPanel,
-    icon: "chip"
+    icon: "chip",
+    navigation: fileDocumentNavigationAdapter
   },
   {
     id: Z80_VIEWER,

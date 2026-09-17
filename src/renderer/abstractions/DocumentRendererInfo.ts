@@ -1,3 +1,4 @@
+import type { DocumentNavigationAdapter } from "./DocumentNavigationAdapter";
 import type { PanelRenderer } from "./PanelRenderer";
 
 /**
@@ -28,4 +29,10 @@ export type DocumentRendererInfo = {
    * Open the editor in permanent mode
    */
   openPermanent?: boolean;
+
+  /**
+   * How documents of this type take part in the navigation history (Go Back / Go Forward). Omit it
+   * and the type never becomes a history entry.
+   */
+  navigation?: DocumentNavigationAdapter;
 };

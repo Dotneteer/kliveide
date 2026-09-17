@@ -20,9 +20,15 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { useBreakpointDialog } from "@renderer/appIde/dialogs/useBreakpointDialog";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useSelector } from "@renderer/core/RendererProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import type { NavigationLocator } from "@renderer/abstractions/NavigationLocation";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useMainApi } from "@renderer/core/MainApi";
 import { revealNexBankAtAddress } from "@renderer/appIde/DocumentPanels/Next/nexBankReveal";
+import {
+  nexBankDumpId,
+  nexBankDumpTitle
+} from "@renderer/appIde/DocumentPanels/Next/nexBankDocument";
 import { evaluateBranch, type BranchVerdict } from "@renderer/appIde/DocumentPanels/branchVerdict";
 import { useRowSizes } from "@renderer/theming/useRowSizes";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
@@ -156,9 +162,11 @@ const StaticMemoryDump = ({
   viewState
 }: DocumentProps<MemoryDumpViewState>) => {
   const documentHubService = useDocumentHubService();
+  const { navigationHistoryService } = useAppServices();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
   const machineState = useSelector((st) => st.emulatorState?.machineState);
+  const projectFolder = useSelector((st) => st.project?.folderPath);
   // --- M3: the row heights the virtualizer places by, matching `--row-size-*` in the CSS.
   const { memory: dumpRowItemSize, disassembly: disassemblyRowItemSize } = useRowSizes();
   const [currentViewState, setCurrentViewState] = useState<MemoryDumpViewState>(
@@ -235,6 +243,17 @@ const StaticMemoryDump = ({
   const pendingDisassemblyTopAddress = useRef<number | undefined>(undefined);
   const restoredInitialScroll = useRef(false);
   const restoredInitialDisassemblyScroll = useRef(false);
+  /*
+   * Where each listing is, for the navigation history (Go Back / Go Forward).
+   *
+   * Refs updated synchronously — by a jump when it asks for an address, and by a list when its
+   * scrolling settles — because the history asks just before and just after a jump, before any state
+   * set by it has rendered. See `.plans/NAVIGATION_HISTORY_PLAN.md` §4.3.
+   */
+  const navMemoryTop = useRef<number>(viewState?.topAddress ?? viewState?.disassOffset ?? 0);
+  const navDisassemblyTop = useRef<number>(viewState?.topAddress ?? viewState?.disassOffset ?? 0);
+  const navViewMode = useRef<StaticDumpViewMode>("memory");
+  const navDisassOffset = useRef(0);
   const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
   const bankBreakpoints = useNexBankBreakpoints(currentViewState.nexAnnotationBank);
   /*
@@ -429,8 +448,8 @@ const StaticMemoryDump = ({
           openBank: async ({ path, bank, contents: bankBytes, disassOffset: base, topAddress, annotationPath }) => {
             await openStaticMemoryDump(
               documentHubService,
-              `bankDump${path}:${bank}`,
-              `${path} - Bank: ${bank}`,
+              nexBankDumpId(path, bank),
+              nexBankDumpTitle(path, bank, projectFolder),
               bankBytes,
               {
                 disassemblyEnabled: true,
@@ -448,7 +467,7 @@ const StaticMemoryDump = ({
         // --- See above: a jump that cannot be made is not worth interrupting the user for.
       }
     },
-    [documentHubService, emuApi, mainApi]
+    [documentHubService, emuApi, mainApi, projectFolder]
   );
 
   const annotationEnv = useMemo<NexAnnotationEditorEnvironment>(
@@ -498,6 +517,25 @@ const StaticMemoryDump = ({
     disassemblyListRef.current?.focus();
   }, []);
 
+  /*
+   * The annotation editor's jumps — Go to Definition, and Go To in the Labels and Regions lists — are
+   * all the user going somewhere, so they are recorded here, where the document hosts the editor,
+   * rather than through another port on its controller.
+   */
+  const navigateToAddressRecorded = useCallback(
+    (address: number) =>
+      void navigationHistoryService.recordJump("nexLabel", () => {
+        navDisassemblyTop.current = address;
+        navigateDisassemblyTo(address);
+      }),
+    [navigateDisassemblyTo, navigationHistoryService]
+  );
+  const revealAddressInBankRecorded = useCallback(
+    (address: number) =>
+      navigationHistoryService.recordJump("nexLabel", () => revealAddressInBank(address)),
+    [navigationHistoryService, revealAddressInBank]
+  );
+
   const {
     vm: annotationVm,
     dispatch: dispatchAnnotation,
@@ -505,8 +543,8 @@ const StaticMemoryDump = ({
   } = useNexAnnotationEditor({
     env: annotationEnv,
     contents,
-    onNavigateToAddress: navigateDisassemblyTo,
-    onRevealAddressInBank: revealAddressInBank,
+    onNavigateToAddress: navigateToAddressRecorded,
+    onRevealAddressInBank: revealAddressInBankRecorded,
     onUnwrittenChanged: markDocumentAnnotationUnwritten,
     onDialogClosed: reclaimDisassemblyFocus
   });
@@ -624,6 +662,9 @@ const StaticMemoryDump = ({
       ),
     [disassemblyItems]
   );
+  navViewMode.current = viewMode;
+  navDisassOffset.current = disassOffset;
+
   const changeViewState = useCallback((setter: (vs: MemoryDumpViewState) => void) => {
     setCurrentViewState((current) => {
       const newViewState = { ...current };
@@ -647,9 +688,31 @@ const StaticMemoryDump = ({
       // --- Re-point a document that is already open. Both lists are asked: which one is showing is
       // --- the view mode's business, and the one that is not simply keeps the address for later.
       revealAddress: (address: number) => {
+        navMemoryTop.current = address;
+        navDisassemblyTop.current = address;
         setCurrentViewState((current) => ({ ...current, topAddress: address }));
         setMemoryJumpAddress(address);
         jumpDisassemblyTo(address);
+      },
+      getNavigationLocator: () => ({
+        kind: "address",
+        address:
+          navViewMode.current === "disassembly" ? navDisassemblyTop.current : navMemoryTop.current,
+        viewMode: navViewMode.current,
+        base: navDisassOffset.current
+      }),
+      // --- Like `revealAddress`, and also puts back the listing the location was recorded in.
+      revealLocator: (locator: NavigationLocator) => {
+        if (locator.kind !== "address") return;
+        navMemoryTop.current = locator.address;
+        navDisassemblyTop.current = locator.address;
+        setCurrentViewState((current) => ({
+          ...current,
+          topAddress: locator.address,
+          ...(locator.viewMode && current.disassemblyEnabled ? { viewMode: locator.viewMode } : {})
+        }));
+        setMemoryJumpAddress(locator.address);
+        jumpDisassemblyTo(locator.address);
       }
     });
     return () => {
@@ -1027,8 +1090,11 @@ const StaticMemoryDump = ({
               label="Go to address:"
               decimalView={false}
               onAddressSent={async (address) => {
-                changeViewState((vs) => (vs.topAddress = address));
-                setMemoryJumpAddress(address);
+                await navigationHistoryService.recordJump("memoryGoTo", () => {
+                  navMemoryTop.current = address;
+                  changeViewState((vs) => (vs.topAddress = address));
+                  setMemoryJumpAddress(address);
+                });
               }}
             />
           </PanelHeaderGroup>
@@ -1039,15 +1105,23 @@ const StaticMemoryDump = ({
               iconName={goToPcIcon}
               title={GO_TO_PC_TITLE}
               enable={canGoToPc}
-              clicked={() => jumpDisassemblyTo(pausedPcRowAddress)}
+              clicked={() =>
+                void navigationHistoryService.recordJump("disassemblyGoTo", () => {
+                  navDisassemblyTop.current = pausedPcRowAddress;
+                  jumpDisassemblyTo(pausedPcRowAddress);
+                })
+              }
             />
             <AddressInput
               label="Go To"
               clearOnEnter={true}
               decimalView={decimalView}
               onAddressSent={async (address) => {
-                changeViewState((vs) => (vs.topAddress = address));
-                jumpDisassemblyTo(address);
+                await navigationHistoryService.recordJump("disassemblyGoTo", () => {
+                  navDisassemblyTop.current = address;
+                  changeViewState((vs) => (vs.topAddress = address));
+                  jumpDisassemblyTo(address);
+                });
               }}
             />
           </PanelHeaderGroup>
@@ -1097,6 +1171,13 @@ const StaticMemoryDump = ({
             onScrollEnd={() => {
               const topPos = pendingScrollPosition.current;
               changeViewState((vs) => (vs.scrollPosition = topPos));
+              // --- Keep a jump's exact address while its row is still the top one.
+              const topRowAddress = disassOffset + Math.floor(topPos / dumpRowItemSize) * 16;
+              const jumpRowAddress =
+                disassOffset + Math.floor((navMemoryTop.current - disassOffset) / 16) * 16;
+              if (jumpRowAddress !== topRowAddress) {
+                navMemoryTop.current = topRowAddress;
+              }
             }}
             apiLoaded={(api) => {
               memoryVlApi.current = api;
@@ -1181,6 +1262,7 @@ const StaticMemoryDump = ({
                 const topPos = pendingDisassemblyScrollPosition.current;
                 changeViewState((vs) => (vs.disassemblyScrollPosition = topPos));
                 const nextTop = pendingDisassemblyTopAddress.current;
+                if (nextTop !== undefined) navDisassemblyTop.current = nextTop;
                 setDisassemblyTopAddress((current) =>
                   nextTop === current ? current : nextTop
                 );

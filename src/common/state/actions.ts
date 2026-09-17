@@ -263,6 +263,12 @@ export const incEditorVersionAction: ActionCreator = () => ({
   type: "INC_EDITOR_VERSION"
 });
 
+/** Publishes the navigation history's UI state (a `NavigationHistoryState`). */
+export const setNavHistoryStateAction: ActionCreator = (value) => ({
+  type: "SET_NAV_HISTORY_STATE",
+  payload: { value }
+});
+
 export const setDebuggingAction: ActionCreator = (flag) => ({
   type: "SET_DEBUGGING",
   payload: { flag }

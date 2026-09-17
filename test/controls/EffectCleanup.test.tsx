@@ -284,7 +284,8 @@ function mockDocumentsHeaderDependencies(
     },
     ideCommandsService: {
       executeCommand: vi.fn()
-    }
+    },
+    navigationHistoryService: { recordJump: async (_reason: string, jump: () => unknown) => await jump() }
   };
 
   vi.doMock("@appIde/services/AppServicesProvider", () => ({

@@ -377,12 +377,54 @@ Available aliases: `inj`
 This command navigates to the specified project file (to an optional position). If the file is not open yet, the IDE opens it.
 
 ```
-nav projeFile [line] [column]
+nav projectFile [line] [column] [-r reason]
 ```
 
-The `filename` argument is a project file name. When you specify the name, use the full name (including the file extension) relative to the project's root folder. For example, if your file is in the `code` folder and named `program.zxb`, use the `code/program.zxb` parameter.
+The `projectFile` argument is a project file name. When you specify the name, use the full name (including the file extension) relative to the project's root folder. For example, if your file is in the `code` folder and named `program.zxb`, use the `code/program.zxb` parameter.
 
 You can specify an optional `line` and `column` argument to jump to the specified location within the file.
+
+With the `-r` option, the jump is remembered in the [navigation history](/working-with-ide/navigation), so `nav-back` can return to where you were. `reason` is what the history list shows as the cause of the jump: `definition`, `outputLink`, `breakpoint`, `memoryGoTo`, `disassemblyGoTo`, `nexLabel`, `nexBank`, `tabSwitch`, `explorer` or `command`. Without `-r`, the jump is not remembered.
+
+## `nav-back`
+
+This command goes back to the previous place in the [navigation history](/working-with-ide/navigation), like the **Back** toolbar button.
+
+```
+nav-back
+```
+
+Available aliases: `nb`
+
+When there is nowhere to go back to, the command says so and does nothing else.
+
+## `nav-forward`
+
+This command goes forward to the next place in the [navigation history](/working-with-ide/navigation), like the **Forward** toolbar button.
+
+```
+nav-forward
+```
+
+Available aliases: `nf`
+
+## `nav-history`
+
+This command lists the [navigation history](/working-with-ide/navigation), newest place first. `>` marks where you are; each line shows the document, the position in it, and the reason the place was remembered.
+
+```
+nav-history
+```
+
+Available aliases: `nh`
+
+## `nav-clear`
+
+This command empties the [navigation history](/working-with-ide/navigation).
+
+```
+nav-clear
+```
 
 ## `ncp`
 

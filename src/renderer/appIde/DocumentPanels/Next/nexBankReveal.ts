@@ -90,6 +90,19 @@ export function resetNexBankRevealCacheForTests(): void {
   cachedBanks = undefined;
 }
 
+/**
+ * The bytes of one bank of a NEX file, read (and cached) through `readFile`. Undefined when the file
+ * does not parse or does not carry the bank. Also what reopens a closed bank document from the
+ * navigation history.
+ */
+export async function readNexBankBytes(
+  path: string,
+  bank: number,
+  readFile: NexBankRevealDeps["readFile"]
+): Promise<Uint8Array | undefined> {
+  return bankBytesFor(path, bank, readFile);
+}
+
 async function bankBytesFor(
   path: string,
   bank: number,
