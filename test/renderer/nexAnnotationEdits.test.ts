@@ -6,6 +6,10 @@ import type {
 } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
 import {
   addLabelIfMissing,
+  flattenBankComment,
+  resolveBankSprites,
+  withBankSprites,
+  withBankComment,
   countLabelReferences,
   getAlternativeRegionType,
   getRegionTypeForSpan,
@@ -279,5 +283,101 @@ describe("removing a label's operand references", () => {
 
     expect(result["5"].operandReferences).toEqual(undefined);
     expect(result["6"].operandReferences).toEqual(undefined);
+  });
+});
+
+describe("withBankComment", () => {
+  it("sets a comment, normalized", () => {
+    const result = withBankComment(annotations({ "5": bank() }), 5, "Music  \r\nIM2\t");
+    expect(result?.banks["5"].comment).toBe("Music\nIM2");
+  });
+
+  it("replaces an existing comment and leaves other banks alone", () => {
+    const other = bank({ comment: "Other" });
+    const model = annotations({ "5": bank({ comment: "Old" }), "6": other });
+    const result = withBankComment(model, 5, "New");
+    expect(result?.banks["5"].comment).toBe("New");
+    expect(result?.banks["6"]).toBe(other);
+  });
+
+  it("removes the key when cleared or emptied", () => {
+    const model = annotations({ "5": bank({ comment: "Old" }) });
+    expect(withBankComment(model, 5, undefined)?.banks["5"]).not.toHaveProperty("comment");
+    expect(withBankComment(model, 5, "  \n ")?.banks["5"]).not.toHaveProperty("comment");
+  });
+
+  it("reports no change for an equal comment or a clear of nothing", () => {
+    expect(withBankComment(annotations({ "5": bank({ comment: "Same" }) }), 5, "Same  ")).toBe(
+      undefined
+    );
+    expect(withBankComment(annotations({ "5": bank() }), 5, undefined)).toBe(undefined);
+  });
+
+  it("reports no change for a bank the model does not describe", () => {
+    expect(withBankComment(annotations({ "5": bank() }), 7, "Nope")).toBe(undefined);
+  });
+
+  it("does not mutate the model it was given", () => {
+    const model = annotations({ "5": bank() });
+    withBankComment(model, 5, "Note");
+    expect(model.banks["5"]).not.toHaveProperty("comment");
+  });
+});
+
+describe("flattenBankComment", () => {
+  it("joins lines with a middle dot, dropping blank lines", () => {
+    expect(flattenBankComment("Music player\n\n  Called  from IsrMain \r\nEnd")).toBe(
+      "Music player \u00b7 Called from IsrMain \u00b7 End"
+    );
+  });
+
+  it("leaves a single line as it is", () => {
+    expect(flattenBankComment("Palette ramps")).toBe("Palette ramps");
+  });
+
+  it("is empty for no comment", () => {
+    expect(flattenBankComment(undefined)).toBe("");
+    expect(flattenBankComment("\n  \n")).toBe("");
+  });
+});
+
+describe("withBankSprites", () => {
+  it("stores only what differs from 8-bit at offset 0", () => {
+    const result = withBankSprites(annotations({ "5": bank() }), 5, { offset: 3 });
+    expect(result?.banks["5"].sprites).toEqual({ offset: 3 });
+    expect(withBankSprites(result!, 5, { format: "4bit" })?.banks["5"].sprites).toEqual({
+      format: "4bit",
+      offset: 3
+    });
+  });
+
+  it("removes the block when it returns to the defaults", () => {
+    const model = annotations({ "5": bank({ sprites: { format: "4bit", offset: 3 } }) });
+    const result = withBankSprites(model, 5, { format: "8bit", offset: 0 });
+    expect(result?.banks["5"]).not.toHaveProperty("sprites");
+  });
+
+  it("reports no change for equal settings or a missing bank", () => {
+    const model = annotations({ "5": bank({ sprites: { offset: 3 } }) });
+    expect(withBankSprites(model, 5, { offset: 3, format: "8bit" })).toBe(undefined);
+    expect(withBankSprites(annotations({ "5": bank() }), 5, {})).toBe(undefined);
+    expect(withBankSprites(model, 6, { offset: 1 })).toBe(undefined);
+  });
+
+  it("clamps the offset into the bank", () => {
+    expect(withBankSprites(annotations({ "5": bank() }), 5, { offset: 0x5000 })?.banks["5"].sprites)
+      .toEqual({ offset: 0x3fff });
+  });
+
+  it("resolves an absent block to the defaults", () => {
+    expect(resolveBankSprites(undefined)).toEqual({ format: "8bit", offset: 0, active: false });
+    expect(resolveBankSprites({ format: "4bit" })).toEqual({ format: "4bit", offset: 0, active: false });
+  });
+
+  it("records the Sprites view as active, and drops the flag when it is not", () => {
+    const shown = withBankSprites(annotations({ "5": bank() }), 5, { active: true });
+    expect(shown?.banks["5"].sprites).toEqual({ active: true });
+    expect(withBankSprites(shown!, 5, { active: true })).toBe(undefined);
+    expect(withBankSprites(shown!, 5, { active: false })?.banks["5"]).not.toHaveProperty("sprites");
   });
 });

@@ -60,6 +60,8 @@ export type NexAnnotationEditorIntent =
   | { type: "goToDefinitionRequested"; rowIndex?: number }
 
   // ─── Editing ───────────────────────────────────────────────────────────────
+  // --- The comment on the whole bank: no row, because it is not about one.
+  | { type: "bankCommentRequested" }
   | { type: "synopsisCommentRequested"; rowIndex?: number }
   | { type: "endOfLineCommentRequested"; rowIndex?: number }
   // --- Global and local labels are authored through one dialog, opened on a chosen scope.
@@ -71,6 +73,21 @@ export type NexAnnotationEditorIntent =
   // --- The one-gesture region changes: "mark this row or range as bytes/words/skip/code".
   | { type: "regionTypeMarked"; regionType: NexAnnotationRegionType; rowIndex?: number }
   | { type: "rowAnnotationsCleared"; rowIndex?: number }
+  /*
+   * A region change named by bank offsets rather than by listing rows.
+   *
+   * The Sprites view has no rows: it knows which *bytes* a selection of patterns covers, and marks
+   * those. Applied directly, without the region dialog — the span is exact, and the gesture is the
+   * decision — but with the same whole-bank confirmation as every other region edit.
+   */
+  | {
+      type: "regionSpanMarked";
+      start: number;
+      end: number;
+      regionType: NexAnnotationRegionType;
+    }
+  // --- How the Sprites view reads this bank: a fact about the data, so it is written to the sidecar.
+  | { type: "spriteSettingsChanged"; format?: "8bit" | "4bit"; offset?: number }
 
   // ─── Saving ────────────────────────────────────────────────────────────────
   // --- Closing a dirty document: the answer decides whether the close may proceed.

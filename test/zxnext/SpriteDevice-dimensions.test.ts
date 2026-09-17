@@ -267,6 +267,12 @@ describe("SpriteDevice - Sprite Dimensions", () => {
     });
   });
 
+  /*
+   * Rotation does not swap the sprite's size. The FPGA counts the on-screen width with the X scale
+   * (`spr_width_count_delta` from attr4 bits 4:3) and the height with the Y scale (`spr_y_offset`
+   * from bits 2:1) whatever the rotate bit says; rotation only changes which pattern pixel each screen
+   * pixel reads. These tests used to expect the scales to swap.
+   */
   describe("Rotation Effects", () => {
     it("should swap width and height when rotate=true (no scaling)", async () => {
       const spriteDevice = machine.spriteDevice;
@@ -285,7 +291,7 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       expect(attrs.rotate).toBe(true);
     });
 
-    it("should swap dimensions: 32×16 → 16×32 when rotate=true, scaleX=1", async () => {
+    it("should keep 32×16 when rotate=true, scaleX=1", async () => {
       const spriteDevice = machine.spriteDevice;
       const io = machine.portManager;
 
@@ -297,14 +303,14 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       io.writePort(0x3557, 0x08); // scaleX=1, scaleY=0 → 32×16 before rotation
 
       const attrs = spriteDevice.attributes[0];
-      expect(attrs.width).toBe(16); // After rotation: height becomes width
-      expect(attrs.height).toBe(32); // After rotation: width becomes height
+      expect(attrs.width).toBe(32); // rotation does not swap scale
+      expect(attrs.height).toBe(16);
       expect(attrs.rotate).toBe(true);
       expect(attrs.scaleX).toBe(1);
       expect(attrs.scaleY).toBe(0);
     });
 
-    it("should swap dimensions: 16×64 → 64×16 when rotate=true, scaleY=2", async () => {
+    it("should keep 16×64 when rotate=true, scaleY=2", async () => {
       const spriteDevice = machine.spriteDevice;
       const io = machine.portManager;
 
@@ -316,12 +322,12 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       io.writePort(0x3557, 0x04); // scaleX=0, scaleY=2 → 16×64 before rotation
 
       const attrs = spriteDevice.attributes[0];
-      expect(attrs.width).toBe(64); // After rotation: height becomes width
-      expect(attrs.height).toBe(16); // After rotation: width becomes height
+      expect(attrs.width).toBe(16); // rotation does not swap scale
+      expect(attrs.height).toBe(64);
       expect(attrs.rotate).toBe(true);
     });
 
-    it("should swap dimensions: 64×128 → 128×64 when rotate=true, scaleX=2, scaleY=3", async () => {
+    it("should keep 64×128 when rotate=true, scaleX=2, scaleY=3", async () => {
       const spriteDevice = machine.spriteDevice;
       const io = machine.portManager;
 
@@ -333,11 +339,11 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       io.writePort(0x3557, 0x16); // scaleX=2, scaleY=3 → 64×128 before rotation
 
       const attrs = spriteDevice.attributes[0];
-      expect(attrs.width).toBe(128); // After rotation: height becomes width
-      expect(attrs.height).toBe(64); // After rotation: width becomes height
+      expect(attrs.width).toBe(64); // rotation does not swap scale
+      expect(attrs.height).toBe(128);
     });
 
-    it("should update dimensions when toggling rotate flag", async () => {
+    it("should keep dimensions when toggling rotate flag", async () => {
       const spriteDevice = machine.spriteDevice;
       const io = machine.portManager;
 
@@ -353,7 +359,7 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       expect(attrs.width).toBe(32);
       expect(attrs.height).toBe(64);
 
-      // --- Enable rotation: should swap to 64×32
+      // --- Enable rotation: the size stays 32×64
       // Re-select sprite 0 and rewrite all 5 bytes with rotate=true
       io.writePort(0x303b, 0x00);
       io.writePort(0x57, 0x10); // X
@@ -363,8 +369,8 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       io.writePort(0x57, 0x0c); // Attr4: scaleX=1, scaleY=2
 
       attrs = spriteDevice.attributes[0];
-      expect(attrs.width).toBe(64);
-      expect(attrs.height).toBe(32);
+      expect(attrs.width).toBe(32); // rotation does not swap scale
+      expect(attrs.height).toBe(64);
       expect(attrs.rotate).toBe(true);
     });
   });
@@ -424,7 +430,7 @@ describe("SpriteDevice - Sprite Dimensions", () => {
   });
 
   describe("Combined Transformations", () => {
-    it("should handle rotate + mirrorX: 32×16 → 16×32", async () => {
+    it("should handle rotate + mirrorX: 32×16 stays 32×16", async () => {
       const spriteDevice = machine.spriteDevice;
       const io = machine.portManager;
 
@@ -436,13 +442,13 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       io.writePort(0x3557, 0x08); // scaleX=1 → 32×16 before rotation
 
       const attrs = spriteDevice.attributes[0];
-      expect(attrs.width).toBe(16);
-      expect(attrs.height).toBe(32);
+      expect(attrs.width).toBe(32); // rotation does not swap scale
+      expect(attrs.height).toBe(16);
       expect(attrs.rotate).toBe(true);
       expect(attrs.mirrorX).toBe(true);
     });
 
-    it("should handle rotate + mirrorY: 64×32 → 32×64", async () => {
+    it("should handle rotate + mirrorY: 64×32 stays 64×32", async () => {
       const spriteDevice = machine.spriteDevice;
       const io = machine.portManager;
 
@@ -454,8 +460,8 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       io.writePort(0x3557, 0x12); // scaleX=2, scaleY=1 → 64×32 before rotation
 
       const attrs = spriteDevice.attributes[0];
-      expect(attrs.width).toBe(32);
-      expect(attrs.height).toBe(64);
+      expect(attrs.width).toBe(64); // rotation does not swap scale
+      expect(attrs.height).toBe(32);
       expect(attrs.rotate).toBe(true);
       expect(attrs.mirrorY).toBe(true);
     });
@@ -472,8 +478,8 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       io.writePort(0x3557, 0x0e); // scaleX=1, scaleY=3 → 32×128 before rotation
 
       const attrs = spriteDevice.attributes[0];
-      expect(attrs.width).toBe(128); // height becomes width
-      expect(attrs.height).toBe(32); // width becomes height
+      expect(attrs.width).toBe(32); // rotation does not swap scale
+      expect(attrs.height).toBe(128);
       expect(attrs.rotate).toBe(true);
       expect(attrs.mirrorX).toBe(true);
       expect(attrs.mirrorY).toBe(true);
@@ -500,8 +506,8 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       writeNextReg(machine, 0x39, 0x08); // Attr4: scaleX=1
 
       const attrs = spriteDevice.attributes[0];
-      expect(attrs.width).toBe(16); // 32×16 rotated → 16×32
-      expect(attrs.height).toBe(32);
+      expect(attrs.width).toBe(32); // rotation does not swap scale
+      expect(attrs.height).toBe(16);
       expect(attrs.rotate).toBe(true);
     });
 
@@ -548,7 +554,7 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       io.writePort(0x3457, 0xc0);
       io.writePort(0x3557, 0x0c); // scaleX=1, scaleY=2
 
-      // --- Sprite 2: 128×16 rotated → 16×128
+      // --- Sprite 2: 128×16, rotated (still 128×16)
       io.writePort(0x303b, 0x02);
       io.writePort(0x3157, 0x50);
       io.writePort(0x3257, 0x60);
@@ -563,8 +569,8 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       expect(spriteDevice.attributes[1].width).toBe(32);
       expect(spriteDevice.attributes[1].height).toBe(64);
 
-      expect(spriteDevice.attributes[2].width).toBe(16);
-      expect(spriteDevice.attributes[2].height).toBe(128);
+      expect(spriteDevice.attributes[2].width).toBe(128); // rotation does not swap scale
+      expect(spriteDevice.attributes[2].height).toBe(16);
     });
 
     it("should update only affected sprite dimensions", async () => {
@@ -638,7 +644,7 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       expect(attrs.height).toBe(16);
     });
 
-    it("should handle asymmetric maximum: 128×16 and 16×128", async () => {
+    it("should handle asymmetric maximum: 128×16, rotated or not", async () => {
       const spriteDevice = machine.spriteDevice;
       const io = machine.portManager;
 
@@ -650,7 +656,7 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       io.writePort(0x3457, 0xc0);
       io.writePort(0x3557, 0x18); // scaleX=3, scaleY=0
 
-      // --- 16×128 (same but rotated)
+      // --- The same, rotated: still 128×16
       io.writePort(0x303b, 0x01);
       io.writePort(0x3157, 0x30);
       io.writePort(0x3257, 0x40);
@@ -661,8 +667,8 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       expect(spriteDevice.attributes[0].width).toBe(128);
       expect(spriteDevice.attributes[0].height).toBe(16);
 
-      expect(spriteDevice.attributes[1].width).toBe(16);
-      expect(spriteDevice.attributes[1].height).toBe(128);
+      expect(spriteDevice.attributes[1].width).toBe(128); // rotation does not swap scale
+      expect(spriteDevice.attributes[1].height).toBe(16);
     });
 
     it("should recalculate dimensions when modifying existing sprite", async () => {
@@ -691,7 +697,7 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       expect(spriteDevice.attributes[0].width).toBe(64);
       expect(spriteDevice.attributes[0].height).toBe(128);
 
-      // --- Add rotation: 128×64
+      // --- Add rotation: still 64×128
       io.writePort(0x303b, 0x00);
       io.writePort(0x57, 0x10);
       io.writePort(0x57, 0x20);
@@ -699,8 +705,8 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       io.writePort(0x57, 0xc0);
       io.writePort(0x57, 0x16); // scaleX=2, scaleY=3
 
-      expect(spriteDevice.attributes[0].width).toBe(128);
-      expect(spriteDevice.attributes[0].height).toBe(64);
+      expect(spriteDevice.attributes[0].width).toBe(64); // rotation does not swap scale
+      expect(spriteDevice.attributes[0].height).toBe(128);
     });
   });
 });

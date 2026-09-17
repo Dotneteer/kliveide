@@ -695,6 +695,15 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // If the cell is 0 in this flags array, it's 0 in all other flags arrays (blanking region).
     // Since totalHC == RENDERING_FLAGS_HC_COUNT, tact directly equals the 1D array index.
     if (activeRenderingFlagsULA[tact] === 0) {
+      /*
+       * Nothing is shown here, but the sprite engine keeps working: like the FPGA, it fills the next
+       * line's buffer through the horizontal blanking interval. Only that — no layer composes and
+       * nothing reaches the bitmap for a blanking tact.
+       */
+      if (this.spriteDevice.spritesEnabled) {
+        const spritesCell = activeRenderingFlagsSprites[tact];
+        if (spritesCell !== 0) this.renderSpritesPixel(vc, hc, spritesCell);
+      }
       return false; // Skip blanking tact - no visible content in any layer
     }
 
@@ -3711,6 +3720,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   spritesRenderingDone: boolean;
   // The number of tacts remaining for sprite processing on this scanline
   spritesRemainingClk7Tacts: number;
+  /** Render cells (CLK_7 tacts, 4 CLK_28 cycles each) a line's sprite work gets: its blanking interval. */
+  spritesRenderCellsPerLine = RENDERING_FLAGS_HC_COUNT - 320;
   // Indicates that sprite overflow occurred (no time to render visible sprite)
   spritesOvertime: boolean;
   // Current sprite pattern Y index (0-15)
@@ -3780,13 +3791,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       if (this.spritesQualifying) {
         // QUALIFYING phase: Check if current sprite is visible on this scanline
 
-        // Early exit: If the scanline is entirely outside vertical clip boundaries,
-        // no sprite can be visible on this scanline
-        if (this.spritesVc < this.spritesClipYMin || this.spritesVc > this.spritesClipYMax) {
-          // Scanline is outside vertical clip bounds; skip all sprites
-          this.spritesRenderingDone = true;
-          return;
-        }
+        /*
+         * No clip-window test here. The FPGA writes every sprite into its line buffer and clips only
+         * on output (`sprites.vhd`, the `x_s_v`/`y_s_v` window applied to the buffer's contents), so
+         * sprites outside the window still collide. Clipping is applied per pixel in the display step.
+         */
 
         // Check if we've processed all sprites (128)
         if (this.spritesIndex >= 128) {
@@ -3821,12 +3830,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         
         const scanlineIntersects =
           this.spritesVc >= spriteY && 
-          this.spritesVc < spriteBottom &&
-          spriteY <= this.spritesClipYMax && 
-          spriteBottom > this.spritesClipYMin;
+          this.spritesVc < spriteBottom;
 
         if (!scanlineIntersects) {
-          // Sprite does not intersect this scanline or is outside vertical clip bounds
+          // Sprite does not intersect this scanline
           this.spritesIndex++;
           return;
         }
@@ -3838,12 +3845,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         const spriteWidth = spriteAttrs.width;
         const spriteRight = spriteX + spriteWidth;
         
-        const horizontallyVisible = 
-          spriteX <= this.spritesClipXMax && 
-          spriteRight > this.spritesClipXMin;
+        // --- Only the 320-pixel line buffer bounds count (FPGA `spr_cur_hcount_valid`), not the clip.
+        const horizontallyVisible = spriteX <= 319 && spriteRight > 0;
 
         if (!horizontallyVisible) {
-          // Sprite is outside horizontal clip bounds
+          // Sprite is entirely outside the line buffer
           this.spritesIndex++;
           return;
         }
@@ -3856,6 +3862,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           // Not enough time to render this sprite (no_time condition)
           // Set sprite overflow flag and skip remaining sprites
           this.spritesOvertime = true;
+          // --- Port $303B bit 1 (FPGA `status_reg_s(1) <= ... or sprites_overtime`), sticky until read.
+          this.spriteDevice.tooManySpritesPerLine = true;
           this.spritesRenderingDone = true;
           return;
         }
@@ -3960,7 +3968,15 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           existingValid = (existingValue & 0x100) !== 0;  // Bit 8 = valid flag
         }
 
-        // 8. Determine write enable
+        // 8. Collision detection, before zero-on-top has its say
+        //    FPGA: `status_reg_s(0) <= ... or (spr_line_data_o(8) and spr_line_we)`, where
+        //    `spr_line_we` is the write request itself; zero-on-top only gates the write that follows
+        //    (`spr_line_we_s`). So an overlap hidden by sprite 0 on top still collides.
+        if (inBounds && existingValid) {
+          this.spriteDevice.collisionDetected = true;
+        }
+
+        // 9. Determine write enable
         let writeEnable = inBounds;
         
         if (this.spriteDevice.sprite0OnTop && existingValid) {
@@ -3968,16 +3984,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           writeEnable = false;
         }
 
-        // 9. Write to line buffer
+        // 10. Write to line buffer
         if (writeEnable) {
           // Set bit 8 (valid flag) and bits 7:0 (palette index)
           this.spritesBuffer[bufferPos] = 0x100 | paletteIndex;
-          
-          // 10. Collision detection
-          //     Trigger when writing to a position that already has a valid pixel
-          if (existingValid) {
-            this.spriteDevice.collisionDetected = true;
-          }
         }
 
         // 11. Advance to next pixel
@@ -4006,7 +4016,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.spritesQualifying = true;
       this.spritesRenderingDone = false;
       this.spritesOvertime = false;
-      this.spritesRemainingClk7Tacts = 120; // Total CLK_28 tacts available (480 CLK_28 ÷ 4 = 120 CLK_7 tacts)
+      // --- Every render cell between here and the next line's display window: the blanking interval.
+      this.spritesRemainingClk7Tacts = this.spritesRenderCellsPerLine;
     }
 
     if ((cell & SCR_SPRITE_INIT_DISPLAY) !== 0) {
@@ -4023,8 +4034,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     if ((cell & SCR_SPRITE_DISPLAY) !== 0) {
-      const bufferValue = this.spritesBuffer[this.spritesBufferPosition++];
-      const isTransparent = !(bufferValue & 0x100);
+      const bufferX = this.spritesBufferPosition++;
+      const bufferValue = this.spritesBuffer[bufferX];
+      // --- The clip window applies here, per pixel, to what the line buffer holds — as on the FPGA.
+      // --- `spritesVc` is still the line this buffer was rendered for.
+      const clipped =
+        bufferX < this.spritesClipXMin ||
+        bufferX > this.spritesClipXMax ||
+        this.spritesVc < this.spritesClipYMin ||
+        this.spritesVc > this.spritesClipYMax;
+      const isTransparent = clipped || !(bufferValue & 0x100);
       
       if (isTransparent) {
         this.spritesPixel1Rgb333 = this.spritesPixel2Rgb333 = 0;
@@ -4474,8 +4493,14 @@ function generateSpritesRenderingFlags(config: TimingConfig): Uint16Array {
     if (hc >= wideDisplayXStart && hc <= wideDisplayXEnd) {
       // The current content of the sprite buffer is displayed
       flags |= SCR_SPRITE_DISPLAY;
-    } else if (hc >= swapStart && hc < wideDisplayXStart) {
-      // The sprite buffer is being rendered (new data being drawn)
+    } else {
+      /*
+       * The sprite buffer is being rendered for the next line: everywhere outside the display
+       * window — the rest of this line after it, and the next line before it — which is the whole
+       * horizontal blanking interval. This used to be only the 16 tacts before the window (64 CLK_28
+       * cycles), so two 32-pixel-wide sprites on one line already ran out of time. The line buffer is
+       * shared with display, so rendering cannot overlap the window itself.
+       */
       flags |= SCR_SPRITE_RENDER;
     }
 

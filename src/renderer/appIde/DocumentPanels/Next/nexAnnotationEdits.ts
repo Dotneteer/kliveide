@@ -6,11 +6,12 @@ import type {
   NexAnnotationRegion,
   NexAnnotationRegionType,
   NexBankAnnotation,
+  NexBankSprites,
   NexFileAnnotations,
   NexLineAnnotation
 } from "./nexAnnotations";
 
-import { getBankAnnotation } from "./nexAnnotations";
+import { getBankAnnotation, normalizeMultilineComment } from "./nexAnnotations";
 
 /*
  * The pure edits behind the NEX annotation UI: label bookkeeping, region algebra, and the operand
@@ -298,6 +299,112 @@ export function withSynopsisComment(
     }
     return next;
   });
+}
+
+/**
+ * Set or clear the comment on a whole bank.
+ *
+ * The text is normalized here as well as in the dialog, so a caller that is not the dialog — a test,
+ * a future command — cannot store a form the dialog would not have written. `undefined` when the
+ * bank is not in the model or the comment would not change, so nothing is published for a no-op.
+ */
+export function withBankComment(
+  annotations: NexFileAnnotations,
+  bank: number,
+  comment?: string
+): NexFileAnnotations | undefined {
+  const bankAnnotation = getBankAnnotation(annotations, bank);
+  if (!bankAnnotation) return undefined;
+
+  const normalized = comment === undefined ? undefined : normalizeMultilineComment(comment);
+  if (bankAnnotation.comment === normalized) return undefined;
+
+  const next: NexBankAnnotation = { ...bankAnnotation };
+  if (normalized) {
+    next.comment = normalized;
+  } else {
+    delete next.comment;
+  }
+  return withBank(annotations, bank, next);
+}
+
+/** A bank's sprite settings with every default filled in. */
+export type ResolvedNexBankSprites = {
+  format: "8bit" | "4bit";
+  offset: number;
+  /** Whether the Sprites view is the one a reopened bank shows. */
+  active: boolean;
+};
+
+export function resolveBankSprites(sprites: NexBankSprites | undefined): ResolvedNexBankSprites {
+  return {
+    format: sprites?.format ?? "8bit",
+    offset: sprites?.offset ?? 0,
+    active: sprites?.active ?? false
+  };
+}
+
+/**
+ * Change how the Sprites view reads a bank — its pattern format, where pattern #0 starts — or whether
+ * it is the view the bank reopens in.
+ *
+ * Defaults are normalized away — `8bit` and offset `0` are not stored, and a block left with nothing
+ * in it is removed — so a bank someone only ever looked at leaves no trace in the sidecar. An offset
+ * outside the bank is clamped. `undefined` when the bank is not in the model or nothing changes.
+ */
+export function withBankSprites(
+  annotations: NexFileAnnotations,
+  bank: number,
+  patch: Partial<ResolvedNexBankSprites>
+): NexFileAnnotations | undefined {
+  const bankAnnotation = getBankAnnotation(annotations, bank);
+  if (!bankAnnotation) return undefined;
+
+  const current = resolveBankSprites(bankAnnotation.sprites);
+  const format = patch.format ?? current.format;
+  const offset = Math.max(0, Math.min(0x3fff, Math.floor(patch.offset ?? current.offset)));
+  const active = patch.active ?? current.active;
+  if (format === current.format && offset === current.offset && active === current.active) {
+    return undefined;
+  }
+
+  const nextSprites: NexBankSprites = {};
+  if (format !== "8bit") nextSprites.format = format;
+  if (offset !== 0) nextSprites.offset = offset;
+  if (active) nextSprites.active = true;
+
+  const next: NexBankAnnotation = { ...bankAnnotation };
+  if (Object.keys(nextSprites).length > 0) {
+    next.sprites = nextSprites;
+  } else {
+    delete next.sprites;
+  }
+  return withBank(annotations, bank, next);
+}
+
+/** What separates the lines of a bank comment when it is flattened onto one heading line. */
+export const BANK_COMMENT_LINE_SEPARATOR = " \u00b7 ";
+
+/**
+ * A bank comment as one line, for a heading.
+ *
+ * Blank lines are dropped and each line's surrounding whitespace collapsed; the lines that remain
+ * are joined with ` · ` so the breaks stay legible. Truncation is *not* done here: the heading
+ * truncates with CSS, so "as much as fits" follows the panel's width and font size rather than a
+ * character count decided in advance.
+ */
+export function flattenBankComment(comment: string | undefined): string {
+  return splitBankCommentLines(comment).join(BANK_COMMENT_LINE_SEPARATOR);
+}
+
+/** The non-blank lines of a bank comment, each with its whitespace collapsed. */
+export function splitBankCommentLines(comment: string | undefined): string[] {
+  if (!comment) return [];
+  return comment
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter((line) => line.length > 0);
 }
 
 /** Set or clear a row's end-of-line comment. */

@@ -1,5 +1,6 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
+import type { NexSidecarBreakpointKind } from "./nexAnnotations";
 import { sidecarKindOf } from "./nexBreakpointSync";
 
 /**
@@ -74,13 +75,35 @@ function rowGlyphRank(bp: BreakpointInfo): number {
   return kindRank * 2 + (bp.disabled ? 0 : 1);
 }
 
-/** What a bank carries, for its heading badge. */
+/** The breakpoint kinds a bank can carry. I/O breakpoints watch ports, so they have no bank. */
+export type BankBreakpointKind = NexSidecarBreakpointKind;
+
+/** In the order the bank list and its details show them. */
+export const BANK_BREAKPOINT_KINDS: readonly BankBreakpointKind[] = ["exec", "memRead", "memWrite"];
+
+/** The words for a kind, as the details pane and the tooltip say them. */
+export const BANK_BREAKPOINT_KIND_NAMES: Record<BankBreakpointKind, string> = {
+  exec: "execution",
+  memRead: "memory read",
+  memWrite: "memory write"
+};
+
+/** The gutter's glyph for a kind, so the bank list and the listing draw the same shape. */
+export const BANK_BREAKPOINT_KIND_ICONS: Record<BankBreakpointKind, string> = {
+  exec: "bp-exec",
+  memRead: "bp-mem-read",
+  memWrite: "bp-mem-write"
+};
+
+/** What a bank carries, for its breakpoint mark. */
 export type BankBreakpointSummary = {
   total: number;
   exec: number;
   memRead: number;
   memWrite: number;
   disabled: number;
+  /** How many of each kind are disabled; they are included in the kind's own count too. */
+  disabledByKind: Record<BankBreakpointKind, number>;
 };
 
 /**
@@ -102,12 +125,22 @@ export function summarizeBankBreakpoints(
 
     let summary = summaries.get(bp.bank);
     if (!summary) {
-      summary = { total: 0, exec: 0, memRead: 0, memWrite: 0, disabled: 0 };
+      summary = {
+        total: 0,
+        exec: 0,
+        memRead: 0,
+        memWrite: 0,
+        disabled: 0,
+        disabledByKind: { exec: 0, memRead: 0, memWrite: 0 }
+      };
       summaries.set(bp.bank, summary);
     }
     summary.total += 1;
     summary[kind] += 1;
-    if (bp.disabled) summary.disabled += 1;
+    if (bp.disabled) {
+      summary.disabled += 1;
+      summary.disabledByKind[kind] += 1;
+    }
   }
   return summaries;
 }
@@ -139,4 +172,50 @@ export function formatBankBreakpointBadge(
       `${summary.total} breakpoint${summary.total === 1 ? "" : "s"} in this bank` +
       (parts.length ? ` — ${parts.join(", ")}` : "")
   };
+}
+
+/** One kind's part of a bank's breakpoint mark. */
+export type BankBreakpointMarkCount = { kind: BankBreakpointKind; count: number };
+
+/**
+ * The bank list's `BP` chip: which kinds to draw, with what counts, and whether it is greyed out.
+ *
+ * The row counts what will actually stop the machine, so disabled breakpoints are left out — unless
+ * every one is disabled. Then the chip still shows them, greyed, because a bank that *has*
+ * breakpoints must not look like one that has none; one click in the gutter brings them back.
+ *
+ * `undefined` for a bank with nothing set.
+ */
+export function bankBreakpointMark(
+  summary: BankBreakpointSummary | undefined
+): { off: boolean; counts: BankBreakpointMarkCount[]; title: string } | undefined {
+  const badge = formatBankBreakpointBadge(summary);
+  if (!summary || !badge) return undefined;
+  const off = summary.disabled >= summary.total;
+  const counts = BANK_BREAKPOINT_KINDS.map((kind) => ({
+    kind,
+    count: off ? summary[kind] : summary[kind] - summary.disabledByKind[kind]
+  })).filter((c) => c.count > 0);
+  return { off, counts, title: badge.title };
+}
+
+/**
+ * The details pane's breakpoint line, one entry per kind present: `2 execution (1 disabled)`.
+ *
+ * Every breakpoint is listed here, disabled ones included — this is where the row's chip, which
+ * counts only the enabled ones, is explained in words.
+ */
+export function describeBankBreakpoints(
+  summary: BankBreakpointSummary | undefined
+): { kind: BankBreakpointKind; text: string }[] {
+  if (!summary) return [];
+  return BANK_BREAKPOINT_KINDS.filter((kind) => summary[kind] > 0).map((kind) => {
+    const disabled = summary.disabledByKind[kind];
+    return {
+      kind,
+      text:
+        `${summary[kind]} ${BANK_BREAKPOINT_KIND_NAMES[kind]}` +
+        (disabled ? ` (${disabled === summary[kind] ? "disabled" : `${disabled} disabled`})` : "")
+    };
+  });
 }

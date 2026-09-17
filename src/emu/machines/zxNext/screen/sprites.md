@@ -115,6 +115,90 @@ These hardware characteristics enable the Next's sprite engine to process 128 sp
 
 ## Architecture Overview
 
+### Hardware Pattern and Attribute Model (FPGA, authoritative)
+
+Verified against `_input/next-fpga/src/video/sprites.vhd`. Both engines follow this model — the WASM
+engine (`wasm/zxnext/zxnext-sprites.c`, `zxnext-ula.c`) and the TypeScript `SpriteDevice` — and both
+run the same pixel-level scenarios in `test/zxnext/sprite-fpga-scenarios.ts`
+(`test/wasm/zxNext/wasm-next-sprites-fpga.test.ts`, `test/zxnext/SpriteDevice-fpga.test.ts`).
+
+**Status register (port `$303B`)**, cleared by reading it:
+
+- **bit 0, collision** — set when a sprite writes an opaque pixel into a line-buffer position another
+  sprite already wrote (`spr_line_data_o(8) and spr_line_we`). That write happens *before* clipping and
+  before "sprite 0 on top" decides what is shown, so overlaps outside the clip window count, and so do
+  overlaps hidden by zero-on-top. The WASM engine detects it once per emulated frame, at frame
+  completion — not when the display is drawn, which only happens when a display asks for it. The
+  TypeScript renderer detects it as it fills its line buffer, which now also takes sprites outside
+  the clip window; the clip is applied per pixel when the buffer is displayed (it used to skip only
+  sprites entirely outside the window, drawing partly clipped ones in full). Both engines run the
+  same scenarios in `test/zxnext/sprite-collision-scenarios.ts`.
+- **bit 1, too many sprites per line** — set when the sprite engine runs out of time on a line
+  (`sprites_overtime`). The TypeScript renderer sets it when a line's sprites do not fit its blanking
+  interval (an approximation of the FPGA's `spr_cur_notime` rule, not a cycle-exact copy). The
+  whole-frame WASM engine has no per-line time budget and never sets it.
+
+**TypeScript renderer per-line budget:** `NextComposedScreenDevice` fills a line's sprite buffer
+during the whole horizontal blanking interval — every tact outside the 320-pixel display window, 136
+tacts or 544 CLK_28 cycles — and gives up on that line (raising status bit 1) when the next sprite no
+longer fits. It used to render only in the 16 tacts before the window (64 cycles), which cut off a
+second 32-pixel-wide sprite on the same line. Blanking tacts run only the sprite engine; nothing is
+composed or written to the bitmap for them. The WASM engine has no per-line budget.
+
+**Pattern memory** is one 16K block written through port `$5B`, one byte per address, at
+`patternIndex << 8 | subIndex` (port `$303B` sets the index and, with bit 7, sub-index `$80`).
+The two sprite kinds read the same bytes differently (`spr_pat_addr`, `spr_nibble_data`):
+
+- **8-bit pattern N** (`0..63`) is the 256 bytes at `N * 256`, one byte per pixel, row by row.
+- **4-bit pattern P** (`0..127`, `P = N * 2 + N6`) is the **128 bytes** at `P * 128`. Byte `b`
+  holds two pixels: the **high nibble** at pixel address `2b` and the low nibble at `2b + 1`
+  (x even → high nibble).
+
+**Transforms** are applied when a screen pixel `(sx, sy)` of the 16×16 cell fetches its pattern
+pixel (`spr_pattern_addr_start`/`_delta`):
+
+```
+no rotate: pattern row = ymirror ? 15 - sy : sy     pattern col = xmirror ? 15 - sx : sx
+rotate:    pattern row = xmirror ? sx : 15 - sx     pattern col = ymirror ? 15 - sy : sy
+```
+
+That is, rotate 90° clockwise first, then mirror in screen space ("rotation inverts x mirror").
+Scale applies in screen space and is **not** swapped by rotation: the width is `16 << XX`, the
+height `16 << YY`.
+
+**Colour and transparency**:
+
+- 8-bit: transparent when the whole byte equals Reg `$4B`; palette index
+  `((high nibble + palette offset) & $F) << 4 | low nibble`.
+- 4-bit: transparent when the nibble equals the **low nibble** of Reg `$4B`; palette index
+  `palette offset << 4 | nibble`.
+
+**Attributes** (port `$57` / Next Reg `$34-$38`, `$75-$79`):
+
+| Byte | Bits |
+| --- | --- |
+| attr0 | X position, bits 7:0 |
+| attr1 | Y position, bits 7:0 |
+| attr2 | palette offset (7:4), X mirror (3), Y mirror (2), rotate (1), **X MSB (0)** — for a relative sprite bit 0 is "add the anchor's palette offset" instead |
+| attr3 | visible (7), fifth byte follows (6), pattern N5..N0 (5:0) |
+| attr4 (anchor) | H = 4-bit (7), **N6 (6)**, T = relative type (5), X scale XX (4:3), Y scale YY (2:1), **Y MSB (0)** |
+| attr4 (relative) | `01` (7:6), N6 (5), 0 (4), X scale (3:2), Y scale (1:0) … see below |
+
+A sprite is **relative** when attr3 bit 6 is set and attr4 bits 7:6 are `01`. Every other sprite,
+visible or not, becomes the anchor for the relatives that follow it in index order. For a relative
+sprite (`spr_rel_*`):
+
+- Its attr0/attr1 are signed 8-bit offsets. With the anchor's T bit set they are swapped by the
+  anchor's rotation, negated by its mirroring (X negated for `rotate xor xmirror`, Y for
+  `ymirror`) and shifted left by its scale; with T clear no anchor transform applies. The result
+  is added to the anchor's 9-bit position.
+- It is visible only when both it and its anchor are.
+- It inherits H (4-bit) from the anchor and takes N6 from its **own attr4 bit 5**. With attr4 bit 0
+  set, its 7-bit pattern number is added to the anchor's.
+- With attr2 bit 0 set its palette offset is added to the anchor's.
+- With T set it composes rotation and mirroring with the anchor's (XOR, own mirrors swapped when the
+  anchor is rotated) and uses the anchor's scale; with T clear it uses its own transform and scale.
+
 ### Emulator Implementation Components
 
 The emulator implements sprite rendering using a simplified architecture compared to the hardware, while maintaining timing accuracy and visual fidelity:
@@ -124,7 +208,7 @@ The emulator implements sprite rendering using a simplified architecture compare
    - **Attr 1**: Y position (bits 7:0)
    - **Attr 2**: Palette offset (7:4), X/Y mirror (3:2), Rotation (1), X MSB (0)
    - **Attr 3**: Visible flag (7), Relative sprite marker (6), Pattern index (5:0)
-   - **Attr 4**: 4-bit pattern flag (7), Pattern bit 6 (6), X scale (5:4), Y scale (3:2), Y MSB (0)
+   - **Attr 4**: 4-bit pattern flag (7), Pattern bit 6 / N6 (6), relative type (5), X scale (4:3), Y scale (2:1), Y MSB (0)
    - Stored as standard byte arrays (5 bytes per sprite, 640 bytes total)
 
 2. **Pattern Memory** (separate storage for 8-bit and 4-bit patterns):
@@ -132,14 +216,16 @@ The emulator implements sprite rendering using a simplified architecture compare
      - Each pattern: 16×16 pixels, 1 byte per pixel (full byte used)
      - Pattern index: 0-63 (6-bit from attr3[5:0])
    - **4-bit patterns**: 128 patterns × 8 transform variants × 256 bytes = 256KB
-     - Each pattern: 16×16 pixels, 1 byte per pixel (only lower nibble used, upper nibble ignored)
+     - Each pattern: 16×16 pixels, stored here one nibble per pixel after unpacking; in pattern
+       memory it is **128 bytes, two pixels per byte, high nibble first** (see the hardware model above)
      - Pattern index: 0-127 (7-bit from attr3[5:0] + attr4[6] as LSB)
    - **Total memory**: 384KB (acceptable for modern emulator)
-   - **Advantage**: No nibble extraction during rendering - unified 256-byte access for both modes
+   - **Advantage**: No nibble extraction during rendering - nibbles are unpacked once, at upload
    - Transform variants pre-computed for rotation/mirroring optimization
    - **Pattern upload**: When a byte is written to pattern memory (port 0x5B):
      - Write to 8-bit pattern memory (full byte)
-     - Write to 4-bit pattern memory (lower nibble only, upper nibble can be discarded)
+     - Write **both** nibbles to 4-bit pattern `address >> 7`: the high nibble to pixel `2b`, the
+       low nibble to pixel `2b + 1`, where `b = subIndex & $7F`
      - Pre-compute all 8 transformation variants for both pattern types simultaneously
      - This ensures sprites can switch between 4-bit and 8-bit modes using the same pattern data
 
@@ -443,10 +529,12 @@ Offset 3 (attr3): Visible [7]                (1 = visible, 0 = hidden)
                   Relative [6]                (1 = relative sprite)
                   Pattern [5:0]               (pattern index 0-63)
 Offset 4 (attr4): 4-bit pattern [7]          (1 = 4-bit mode)
-                  Pattern bit 6 [6]           (extends pattern to 0-127)
-                  X-scale [5:4]               (00=1x, 01=2x, 10=4x, 11=8x)
-                  Y-scale [3:2]               (00=1x, 01=2x, 10=4x, 11=8x)
+                  Pattern bit 6 [6]           (N6: extends a 4-bit pattern to 0-127)
+                  Relative type [5]           (anchor: relatives inherit its transform and scale)
+                  X-scale [4:3]               (00=1x, 01=2x, 10=4x, 11=8x)
+                  Y-scale [2:1]               (00=1x, 01=2x, 10=4x, 11=8x)
                   Y MSB [0]                   (bit 8 of Y coordinate)
+                  -- attr4[7:6] = "01" marks a relative sprite; its N6 is then attr4[5]
 ```
 
 **QUALIFY State Execution** (cycle-by-cycle at CLK_28):
@@ -545,13 +633,14 @@ Timing: 1 CLK_28 cycle minimum (if not visible)
 
 1. **Relative Sprites**:
    ```
-   If relative_flag == 1:
-       // Use anchor sprite's position and transforms
-       x_pos = anchor_x + relative_x_offset
-       y_pos = anchor_y + relative_y_offset
-       // Apply anchor's rotation/mirror to relative position
-       if anchor_rotate:
-           (x_pos, y_pos) = (y_pos, x_pos)  // Swap
+   If attr3[6] == 1 AND attr4[7:6] == "01":        // relative sprite
+       // Offsets are transformed first, then added (see the hardware model above)
+       (x0, y0) = anchor_rotate ? (attr1, attr0) : (attr0, attr1)
+       x1 = (anchor_rotate xor anchor_xmirror) ? -x0 : x0
+       y1 = anchor_ymirror ? -y0 : y0
+       x_pos = anchor_x + (sign_extend(x1) << anchor_xscale)
+       y_pos = anchor_y + (sign_extend(y1) << anchor_yscale)
+       // anchor_rotate/_mirror/_scale are all zero unless the anchor's relative type (attr4[5]) is set
    ```
 
 2. **No-Time Optimization**:
@@ -614,7 +703,7 @@ const yIndex = yOffset >> sprite.scaleY;          // Apply Y-scale: divide by 2^
 //    
 //    Separate storage for 8-bit and 4-bit patterns:
 //    - 8-bit: patternMemory8bit[64 patterns × 8 variants] each 256 bytes
-//    - 4-bit: patternMemory4bit[128 patterns × 8 variants] each 256 bytes (lower nibble only)
+//    - 4-bit: patternMemory4bit[128 patterns × 8 variants] each 256 bytes (one unpacked nibble per pixel)
 //    
 //    Pattern index encoding:
 //    - 8-bit sprites: attr3[5:0] only (0-63), attr4[6] must be 0
@@ -671,7 +760,7 @@ for (let clk28 = 0; clk28 < 4; clk28++) {
 
   // 2. Fetch pixel from pre-transformed pattern (DIRECT LOOKUP - no transform!)
   //    Pattern is always indexed as [y][x] because transformation is pre-applied
-  //    Both 8-bit and 4-bit patterns use 256-byte arrays (4-bit uses lower nibble only)
+  //    Both 8-bit and 4-bit patterns use 256-byte arrays (4-bit: one unpacked nibble per pixel)
   const patternOffset = (this.spritesPatternYIndex << 4) | xIndex;
   let pixelValue = this.spritesPatternData[patternOffset];
 
@@ -747,7 +836,7 @@ for (let clk28 = 0; clk28 < 4; clk28++) {
    - Separate arrays for 8-bit and 4-bit patterns
    - 8-bit: 64 patterns × 8 variants = 512 arrays (128KB total)
    - 4-bit: 128 patterns × 8 variants = 1024 arrays (256KB total)
-   - All patterns use 256-byte arrays (4-bit stores only lower nibble)
+   - All patterns use 256-byte arrays (4-bit patterns unpacked to one nibble per pixel)
    - Pattern variants pre-computed during writes: `SpriteDevice.writeSpritePattern()`
    - Direct lookup: `patternData[(yIndex << 4) | xIndex]`
 
@@ -756,7 +845,7 @@ for (let clk28 = 0; clk28 < 4; clk28++) {
      - Pattern index: attr3[5:0] (0-63)
      - Palette offset added to upper 4 bits
      - Transparency index default: 0xE3 (full byte comparison)
-   - **4-bit sprites**: Lower nibble only used for pixel color (0-15)
+   - **4-bit sprites**: one 4-bit nibble per pixel (0-15), unpacked from two-pixel bytes at upload
      - Pattern index: attr3[5:0] + attr4[6] as LSB (0-127)
      - Palette offset replaces upper 4 bits (selects one of 16 palettes)
      - Transparency index default: 0x3 (lower 4 bits comparison)

@@ -93,11 +93,13 @@ describe("SpriteDevice - Pattern Write Incremental Updates", () => {
     expect(spriteDevice.patternMemory8bit[baseIdx8bit + 1][(15 << 4) | 0]).toBe(0x42);
     expect(spriteDevice.patternMemory8bit[baseIdx8bit + 2][(0 << 4) | 15]).toBe(0x42);
 
-    // Check 4-bit pattern memory (lower nibble only)
+    // Check 4-bit pattern memory: byte 0 of 4-bit pattern 0 is two pixels, high nibble first
+    // (FPGA `spr_nibble_data`) — pixel [0][0] gets 0x4 and pixel [0][1] gets 0x2
     const baseIdx4bit = 0; // Pattern 0
-    expect(spriteDevice.patternMemory4bit[baseIdx4bit + 0][0]).toBe(0x02); // 0x42 & 0x0f
-    expect(spriteDevice.patternMemory4bit[baseIdx4bit + 1][(15 << 4) | 0]).toBe(0x02);
-    expect(spriteDevice.patternMemory4bit[baseIdx4bit + 2][(0 << 4) | 15]).toBe(0x02);
+    expect(spriteDevice.patternMemory4bit[baseIdx4bit + 0][0]).toBe(0x04);
+    expect(spriteDevice.patternMemory4bit[baseIdx4bit + 0][1]).toBe(0x02);
+    expect(spriteDevice.patternMemory4bit[baseIdx4bit + 1][(15 << 4) | 0]).toBe(0x04);
+    expect(spriteDevice.patternMemory4bit[baseIdx4bit + 2][(0 << 4) | 15]).toBe(0x04);
 
     // Variant 3: [0][0] → [15][15] (mirrorXY)
     expect(spriteDevice.patternMemory8bit[baseIdx8bit + 3][(15 << 4) | 15]).toBe(0x42);
@@ -105,11 +107,11 @@ describe("SpriteDevice - Pattern Write Incremental Updates", () => {
     // Variant 4: [0][0] → [0][15] (rotate)
     expect(spriteDevice.patternMemory8bit[baseIdx8bit + 4][(0 << 4) | 15]).toBe(0x42);
 
-    // Variant 5: [0][0] → [0][0] (rotate + mirrorY)
-    expect(spriteDevice.patternMemory8bit[baseIdx8bit + 5][(0 << 4) | 0]).toBe(0x42);
+    // Variant 5: [0][0] → [15][15] (rotate, then mirror Y on screen)
+    expect(spriteDevice.patternMemory8bit[baseIdx8bit + 5][(15 << 4) | 15]).toBe(0x42);
 
-    // Variant 6: [0][0] → [15][15] (rotate + mirrorX)
-    expect(spriteDevice.patternMemory8bit[baseIdx8bit + 6][(15 << 4) | 15]).toBe(0x42);
+    // Variant 6: [0][0] → [0][0] (rotate, then mirror X on screen)
+    expect(spriteDevice.patternMemory8bit[baseIdx8bit + 6][(0 << 4) | 0]).toBe(0x42);
 
     // Variant 7: [0][0] → [15][0] (rotate + mirrorXY)
     expect(spriteDevice.patternMemory8bit[baseIdx8bit + 7][(15 << 4) | 0]).toBe(0x42);
@@ -139,11 +141,11 @@ describe("SpriteDevice - Pattern Write Incremental Updates", () => {
     // Variant 4: [7][8] → [8][8] (rotate: [x][15-y] = [8][8])
     expect(spriteDevice.patternMemory8bit[baseIdx + 4][(8 << 4) | 8]).toBe(0x99);
 
-    // Variant 5: [7][8] → [8][7] (rotate + mirrorY: [x][y])
-    expect(spriteDevice.patternMemory8bit[baseIdx + 5][(8 << 4) | 7]).toBe(0x99);
+    // Variant 5: [7][8] → [7][8] (rotate, then mirror Y: [15-x][15-y])
+    expect(spriteDevice.patternMemory8bit[baseIdx + 5][(7 << 4) | 8]).toBe(0x99);
 
-    // Variant 6: [7][8] → [7][8] (rotate + mirrorX: [15-x][15-y])
-    expect(spriteDevice.patternMemory8bit[baseIdx + 6][(7 << 4) | 8]).toBe(0x99);
+    // Variant 6: [7][8] → [8][7] (rotate, then mirror X: [x][y])
+    expect(spriteDevice.patternMemory8bit[baseIdx + 6][(8 << 4) | 7]).toBe(0x99);
 
     // Variant 7: [7][8] → [7][7] (rotate + mirrorXY: [15-x][y])
     expect(spriteDevice.patternMemory8bit[baseIdx + 7][(7 << 4) | 7]).toBe(0x99);
@@ -314,32 +316,37 @@ describe("SpriteDevice - Pattern Transformation Correctness", () => {
     }
   });
 
-  it("Variant 5: Rotate + Mirror Y (transpose)", () => {
+  /*
+   * Variants 5 and 6 were swapped. The FPGA rotates 90° clockwise and then mirrors in *screen* space
+   * (`spr_x_mirr_eff <= xmirror xor rotate`), so rotate + mirror Y is the anti-transpose and rotate +
+   * mirror X the transpose — not the other way round.
+   */
+  it("Variant 5: Rotate, then Mirror Y (anti-transpose)", () => {
     writeTestPattern(0);
     const variant = spriteDevice.patternMemory8bit[5]; // Pattern 0, variant 5
 
-    // Check rotate+mirrorY: src[y][x] → dst[x][y]
+    // Check rotate+mirrorY: src[y][x] → dst[15-x][15-y]
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const srcValue = (y << 4) | x;
-        const dstY = x;
-        const dstX = y;
+        const dstY = 15 - x;
+        const dstX = 15 - y;
         const actual = variant[(dstY << 4) | dstX];
         expect(actual).toBe(srcValue);
       }
     }
   });
 
-  it("Variant 6: Rotate + Mirror X (270° rotation)", () => {
+  it("Variant 6: Rotate, then Mirror X (transpose)", () => {
     writeTestPattern(0);
     const variant = spriteDevice.patternMemory8bit[6]; // Pattern 0, variant 6
 
-    // Check rotate+mirrorX: src[y][x] → dst[15-x][15-y]
+    // Check rotate+mirrorX: src[y][x] → dst[x][y]
     for (let y = 0; y < 16; y++) {
       for (let x = 0; x < 16; x++) {
         const srcValue = (y << 4) | x;
-        const dstY = 15 - x;
-        const dstX = 15 - y;
+        const dstY = x;
+        const dstX = y;
         const actual = variant[(dstY << 4) | dstX];
         expect(actual).toBe(srcValue);
       }

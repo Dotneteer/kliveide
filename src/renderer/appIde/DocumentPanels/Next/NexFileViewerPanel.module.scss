@@ -84,31 +84,6 @@
 }
 
 /*
- * A bank section's heading.
- *
- * Four roles, previously one run of `--data-secondary` text joined by pipes. See `BankHeading`.
- */
-.bankWord {
-  color: var(--text-secondary);
-  font-weight: 400;
-}
-
-/* What you actually scan a stack of these for. */
-.bankNumber {
-  color: var(--accent-text);
-  font-family: var(--monospace-font);
-}
-
-/* The same number in the other base: useful, but never the thing you are looking for. */
-.bankDecimal {
-  color: var(--data-secondary);
-  font-weight: 400;
-  /* --- M1: was `0.92em`, compounding off `GenericFilePanel`'s own `0.8em` (fixed in Phase 15)
-     --- so the real size was 0.92 x 0.8 x 16 = 11.8px. One absolute step instead. */
-  font-size: var(--font-size-200);
-}
-
-/*
  * A fact about the section, carried in its heading.
  *
  * A chip rather than more text, because it is not part of the section's name: where the machine
@@ -129,49 +104,6 @@
   font-weight: 500;
   letter-spacing: 0.02em;
   white-space: nowrap;
-}
-
-/*
- * The stack pointer takes the secondary accent, for the reason that token exists: a row can carry
- * both marks, and PC and SP are the same *kind* of fact, so only colour tells them apart at a
- * glance once the row is scanned rather than read.
- */
-.headingChipAlt {
-  color: var(--accent-secondary-text);
-}
-
-/*
- * How many breakpoints a bank carries.
- *
- * A third chip in the bank heading, and the one place there that takes a hue from outside the accent
- * pair. PC and SP are facts the *file* states, and they share the accent because they are the same
- * kind of thing; this one is a fact about what the *debugger* has armed, and it borrows
- * `--color-breakpoint-binary` — the same token as the gutter dot the user clicked to create it — so
- * the count and the dots it counts read as one thing rather than as two unrelated marks.
- *
- * Filled rather than outlined, unlike the chips beside it: a count is a tally, and on a collapsed
- * bank it is the only sign that anything is armed in there at all. It has to survive being skimmed.
- */
-.breakpointChip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  min-width: 1.25rem;
-  padding: 0 var(--space-1);
-  border-radius: 999px;
-  background-color: var(--color-breakpoint-binary);
-  color: var(--bgcolor-docspanel);
-  font-family: var(--monospace-font);
-  font-size: var(--font-size-100);
-  font-weight: 600;
-  letter-spacing: 0;
-  white-space: nowrap;
-}
-
-/* --- Nothing is armed, so the tally reads as absent rather than as a zero. */
-.breakpointChipDisabled {
-  background-color: var(--color-breakpoint-disabled);
 }
 
 /*

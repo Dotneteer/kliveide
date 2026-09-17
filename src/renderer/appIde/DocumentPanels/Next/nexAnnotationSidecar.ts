@@ -63,6 +63,18 @@ export function getAnnotatedLastViewForBank(
   return annotations ? getBankAnnotation(annotations, bank)?.lastView : undefined;
 }
 
+/**
+ * The view a popped-out bank should open in: Sprites when the sidecar says it was showing, otherwise
+ * the listing view it remembers.
+ */
+export function getAnnotatedPopOutViewForBank(
+  annotations: NexFileAnnotations | undefined,
+  bank: number
+): NexAnnotationBankView | "sprites" | undefined {
+  const bankAnnotation = annotations ? getBankAnnotation(annotations, bank) : undefined;
+  return bankAnnotation?.sprites?.active ? "sprites" : bankAnnotation?.lastView;
+}
+
 export function getAnnotatedDecimalViewForBank(
   annotations: NexFileAnnotations | undefined,
   bank: number,

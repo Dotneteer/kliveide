@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PaletteDeviceInfo } from "@common/messaging/EmuApi";
 import { paletteCodeFromDeviceValue } from "@emu/machines/zxNext/palette";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -46,12 +46,33 @@ const liveBankOf = (info: PaletteDeviceInfo): 0 | 1 => ((info.reg43Value ?? 0) &
 const sameValues = (a: number[], b: number[]): boolean =>
   a.length === b.length && a.every((v, i) => v === b[i]);
 
-export function useSpritePalette(): SpritePalette {
+export type UseSpritePaletteOptions = {
+  /**
+   * Show this bank, whatever the machine selects and whatever was pinned.
+   *
+   * For a caller that keeps the choice itself — the NEX bank Sprites view remembers it in its
+   * document's view state — so the choice survives the view being unmounted. Absent, the hook keeps
+   * its own pin, which is how the sprite editor uses it.
+   */
+  bank?: 0 | 1;
+  /**
+   * Whether to read the machine at all. `true` by default.
+   *
+   * A popped-out bank calls this hook whether or not its Sprites view is showing — hooks cannot be
+   * conditional — and a Memory or Disassembly view has no use for an IPC round trip on every
+   * emulator state change. Disabled, it reads nothing; enabling it reads once straight away.
+   */
+  enabled?: boolean;
+};
+
+export function useSpritePalette(options: UseSpritePaletteOptions = {}): SpritePalette {
   const emuApi = useEmuApi();
   const [info, setInfo] = useState<PaletteDeviceInfo | undefined>(undefined);
   const [pinnedBank, setPinnedBank] = useState<0 | 1 | null>(null);
 
+  const enabled = options.enabled ?? true;
   const refresh = useCallback(async () => {
+    if (!enabled) return;
     try {
       setInfo(await emuApi.getPalettedDeviceInfo());
     } catch {
@@ -59,12 +80,18 @@ export function useSpritePalette(): SpritePalette {
       // is perfectly editable with the emulator stopped, it just cannot show the live palette.
       setInfo(undefined);
     }
-  }, [emuApi]);
+  }, [emuApi, enabled]);
 
-  useEmuStateListener(emuApi, refresh);
+  useEmuStateListener(emuApi, refresh, enabled);
+  // --- Becoming enabled after mount reads at once, rather than waiting for the machine to change.
+  const wasEnabled = useRef(enabled);
+  useEffect(() => {
+    if (enabled && !wasEnabled.current) void refresh();
+    wasEnabled.current = enabled;
+  }, [enabled, refresh]);
 
   const liveBank = info ? liveBankOf(info) : undefined;
-  const shownBank: 0 | 1 = pinnedBank ?? liveBank ?? 0;
+  const shownBank: 0 | 1 = options.bank ?? pinnedBank ?? liveBank ?? 0;
 
   /*
    * Identity stability is load-bearing, not a micro-optimisation.

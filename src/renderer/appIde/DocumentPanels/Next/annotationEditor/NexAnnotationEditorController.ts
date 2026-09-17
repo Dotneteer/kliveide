@@ -5,7 +5,9 @@ import {
   getAlternativeRegionType,
   getRegionTypeForSpan,
   listLabelsForBank,
+  withBankComment,
   withBankSettings,
+  withBankSprites,
   withClearedRowAnnotations,
   withEndOfLineComment,
   withLabelChange,
@@ -158,7 +160,12 @@ export class NexAnnotationEditorController extends UiController<
 
       case "toolbarMenuRequested": {
         const activeIndex = this.state.selection?.activeIndex;
-        if (activeIndex === undefined) return;
+        if (activeIndex === undefined) {
+          // --- The menu now opens with nothing selected, for Bank Comment. A target left behind by
+          // --- an earlier right-click must not make the row entries act on that old row.
+          this.emit({ type: "contextTargetCleared" });
+          return;
+        }
         const range = selectedRange(this.state);
         this.emit({
           type: "contextTargetChanged",
@@ -166,6 +173,10 @@ export class NexAnnotationEditorController extends UiController<
         });
         return;
       }
+
+      case "bankCommentRequested":
+        await this.editBankComment();
+        return;
 
       case "synopsisCommentRequested":
         await this.editComment(intent.rowIndex, "synopsis");
@@ -202,6 +213,22 @@ export class NexAnnotationEditorController extends UiController<
       case "regionTypeMarked":
         await this.markRegion(intent.regionType, intent.rowIndex);
         return;
+
+      case "regionSpanMarked":
+        this.applyRegionResult(intent.start, intent.end, intent.regionType);
+        return;
+
+      case "spriteSettingsChanged": {
+        const { annotations, env } = this.state;
+        if (!annotations || env.bank === undefined) return;
+        this.publish(
+          withBankSprites(annotations, env.bank, {
+            ...(intent.format !== undefined ? { format: intent.format } : {}),
+            ...(intent.offset !== undefined ? { offset: intent.offset } : {})
+          })
+        );
+        return;
+      }
 
       case "rowAnnotationsCleared":
         this.clearRowAnnotations(intent.rowIndex);
@@ -261,16 +288,51 @@ export class NexAnnotationEditorController extends UiController<
     const { annotations, env } = this.state;
     if (!annotations || env.bank === undefined) return;
     const offsetIndex = offsetIndexOf(this.state);
-    this.publish(
-      withBankSettings(annotations, env.bank, {
-        lastView: env.viewMode,
-        decimalView: env.decimalView,
-        ...(offsetIndex !== undefined ? { offsetIndex } : {})
-      })
-    );
+    const withSettings = withBankSettings(annotations, env.bank, {
+      lastView: env.viewMode,
+      decimalView: env.decimalView,
+      ...(offsetIndex !== undefined ? { offsetIndex } : {})
+    });
+    /*
+     * The Sprites flag goes out in the *same* publish as `lastView`.
+     *
+     * The dump adopts the view the sidecar names whenever a snapshot arrives. Published separately,
+     * switching from Sprites to a listing would first publish the new `lastView` while `active` was
+     * still set, and that snapshot would put the Sprites view straight back.
+     */
+    const base = withSettings ?? annotations;
+    const withSprites =
+      env.spritesViewActive === undefined
+        ? undefined
+        : withBankSprites(base, env.bank, { active: env.spritesViewActive });
+    this.publish(withSprites ?? withSettings);
   }
 
   // ─── Comments ──────────────────────────────────────────────────────────────
+
+  /**
+   * Edit the comment on the whole bank.
+   *
+   * Re-reads the model after the dialog, like every other edit here: a sibling bank of the same NEX
+   * may have published while it was open, and the comment must land on that newer model.
+   */
+  private async editBankComment(): Promise<void> {
+    const { annotations, env } = this.state;
+    if (!annotations || env.bank === undefined) return;
+    const bank = env.bank;
+    const bankAnnotation = getBankAnnotation(annotations, bank);
+    if (!bankAnnotation) return;
+
+    const result = await this.ports.dialogs.bankComment({
+      bank,
+      initialComment: bankAnnotation.comment
+    });
+    if (!result) return;
+    const current = this.state.annotations;
+    if (current) {
+      this.publish(withBankComment(current, bank, result.comment));
+    }
+  }
 
   private async editComment(
     rowIndex: number | undefined,

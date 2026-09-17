@@ -89,10 +89,22 @@ describe("toolbar", () => {
     expect(selectViewModel(loaded({ dirty: true })).toolbar.warning.kind).toEqual("none");
   });
 
-  it("enables the menu only with something selected", () => {
-    expect(selectViewModel(loaded()).toolbar.menuEnabled).toEqual(false);
+  it("enables the menu with annotations loaded, with or without a selection", () => {
+    /*
+     * It used to need a selection, when every entry acted on rows. Bank Comment is about the whole
+     * bank, so the button opens with nothing selected and the row entries disable themselves.
+     */
+    expect(selectViewModel(loaded()).toolbar.menuEnabled).toEqual(true);
     const selected = loaded({ selection: { anchorIndex: 2, activeIndex: 2 } });
     expect(selectViewModel(selected).toolbar.menuEnabled).toEqual(true);
+  });
+
+  it("offers only the whole-bank entries with nothing selected", () => {
+    const menu = selectViewModel(loaded()).menu;
+    expect(itemOf(menu, "bank-comment").disabled).toEqual(false);
+    expect(itemOf(menu, "manage-labels").disabled).toEqual(false);
+    expect(itemOf(menu, "synopsis").disabled).toEqual(true);
+    expect(itemOf(menu, "clear").disabled).toEqual(true);
   });
 
   it("keeps the menu disabled without annotations, however the rows look", () => {
@@ -114,6 +126,7 @@ describe("menu", () => {
       "goto-definition",
       "manage-labels",
       "manage-regions",
+      "bank-comment",
       "synopsis",
       "comment",
       "global-label",
@@ -370,6 +383,7 @@ describe("shortcuts", () => {
      */
     const bound = new Set(NEX_ANNOTATION_SHORTCUTS.map((entry) => entry.action));
     expect([...bound].sort()).toEqual([
+      "bank-comment",
       "comment",
       "global-label",
       "goto-definition",
@@ -500,5 +514,26 @@ describe("go to definition", () => {
   it("is unavailable on an ordinary row with no operand", () => {
     const menu = menuFor({ machineRunning: true });
     expect(menuEntryFor(menu, "goto-definition")!.disabled).toEqual(true);
+  });
+});
+
+describe("bank comment", () => {
+  it("is reached with a bare B, and shows it in the menu", () => {
+    expect(annotationActionForKey("b", false)).toEqual("bank-comment");
+    expect(annotationActionForKey("B", true)).toBeUndefined();
+    expect(itemOf(selectViewModel(loaded()).menu, "bank-comment").shortcut).toEqual("B");
+  });
+
+  it("is disabled without annotations", () => {
+    const vm = selectViewModel(aState({ items: aListing(4) }));
+    expect(itemOf(vm.menu, "bank-comment").disabled).toEqual(true);
+  });
+
+  it("hands the bank's comment to the view, or nothing", () => {
+    expect(selectViewModel(loaded()).bankComment).toBeUndefined();
+    const model = anAnnotationModel();
+    const bankKey = Object.keys(model.banks)[0];
+    model.banks[bankKey] = { ...model.banks[bankKey], comment: "Music\nIM2" };
+    expect(selectViewModel(loaded({ annotations: model })).bankComment).toEqual("Music\nIM2");
   });
 });

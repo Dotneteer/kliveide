@@ -62,6 +62,30 @@ export function subscribeNexAnnotationSession(
 }
 
 /**
+ * Hand the session a model that was already read, so subscribing does not read the file again.
+ *
+ * The NEX viewer reads the sidecar itself — it has to, to tell a missing file from a broken one —
+ * and then follows the session so an edit made in a popped-out bank reaches its headings. Without
+ * this, that subscription would read the same file a second time.
+ *
+ * **Only an empty session is seeded.** A session that already holds a model, or is loading one, is
+ * at least as current as a read the viewer just made — a pop-out may have published an edit whose
+ * write has not landed yet — so it is left alone. Nothing is written: the model came from the file.
+ */
+export function seedNexAnnotationSession(
+  annotationPath: string,
+  annotations: NexFileAnnotations
+): void {
+  const session = getOrCreateSession(annotationPath);
+  if (session.annotations || session.loadStarted || session.loadError) return;
+  session.annotations = annotations;
+  session.loadStarted = true;
+  session.loading = false;
+  session.dirty = false;
+  emitSession(session);
+}
+
+/**
  * Publish an edited model, and write it.
  *
  * Subscribers see the edit immediately; the file catches up. Callers do not await the write — an

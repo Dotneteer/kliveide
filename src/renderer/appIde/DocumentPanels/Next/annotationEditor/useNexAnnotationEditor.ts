@@ -14,6 +14,11 @@ import { NexOperandLabelDialog } from "../NexOperandLabelDialog";
 import { NexSynopsisCommentDialog } from "../NexSynopsisCommentDialog";
 import { NexEndOfLineCommentDialog } from "../NexEndOfLineCommentDialog";
 import {
+  BANK_COMMENT_DIALOG_TITLE,
+  BANK_COMMENT_DIALOG_WIDTH,
+  NexBankCommentDialog
+} from "../NexBankCommentDialog";
+import {
   subscribeNexAnnotationSession,
   updateNexAnnotationSession
 } from "../nexAnnotationSession";
@@ -114,6 +119,11 @@ export function useNexAnnotationEditor({
           updateNexAnnotationSession(annotationPath, annotations, projectService)
       },
       dialogs: {
+        bankComment: (args) =>
+          opened(dialogs.open(NexBankCommentDialog, args, {
+            title: BANK_COMMENT_DIALOG_TITLE,
+            width: BANK_COMMENT_DIALOG_WIDTH
+          })),
         synopsisComment: (args) =>
           opened(dialogs.open(NexSynopsisCommentDialog, args, {
             title: "Synopsis comment",

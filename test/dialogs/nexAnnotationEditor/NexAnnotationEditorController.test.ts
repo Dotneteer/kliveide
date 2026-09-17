@@ -356,6 +356,155 @@ describe("comments", () => {
   });
 });
 
+describe("bank comment", () => {
+  it("opens with the bank's comment and publishes the answer, needing no row", async () => {
+    const session = new FakeSession({
+      annotations: anAnnotationModel({
+        banks: {
+          [String(BANK)]: {
+            offsetIndex: 1,
+            regions: [{ start: 0, end: 0x3fff, type: "disassemble" }],
+            comment: "Old"
+          }
+        }
+      })
+    });
+    const controller = await opened({}, { session });
+    fakes.dialogs.answerWith("bankComment", { comment: "Music player\nIM2 handler" });
+
+    await controller.dispatch({ type: "bankCommentRequested" });
+    await controller.settle();
+
+    expect(fakes.dialogs.callsTo("bankComment")).toEqual([{ bank: BANK, initialComment: "Old" }]);
+    expect(publishedBank(fakes.session, SIDECAR, BANK)?.comment).toEqual(
+      "Music player\nIM2 handler"
+    );
+  });
+
+  it("clears the comment when the dialog answers with none", async () => {
+    const session = new FakeSession({
+      annotations: anAnnotationModel({
+        banks: { [String(BANK)]: { offsetIndex: 1, regions: [], comment: "Old" } }
+      })
+    });
+    const controller = await opened({}, { session });
+    fakes.dialogs.answerWith("bankComment", { comment: undefined });
+
+    await controller.dispatch({ type: "bankCommentRequested" });
+    await controller.settle();
+
+    expect(publishedBank(fakes.session, SIDECAR, BANK)).not.toHaveProperty("comment");
+  });
+
+  it("writes nothing when dismissed or unchanged", async () => {
+    const controller = await opened();
+    await controller.dispatch({ type: "bankCommentRequested" });
+    await controller.settle();
+    fakes.dialogs.answerWith("bankComment", { comment: undefined });
+    await controller.dispatch({ type: "bankCommentRequested" });
+    await controller.settle();
+    expect(fakes.session.writeCalls).toEqual([]);
+  });
+
+  it("does not open without a loaded model", async () => {
+    const session = new FakeSession({ annotations: undefined });
+    const controller = await opened({}, { session });
+    await controller.dispatch({ type: "bankCommentRequested" });
+    await controller.settle();
+    expect(fakes.dialogs.callsTo("bankComment")).toEqual([]);
+  });
+
+  it("opens the toolbar menu with nothing selected, and leaves no row target behind", async () => {
+    const controller = await opened();
+    await controller.dispatch({ type: "toolbarMenuRequested" });
+    await controller.settle();
+    expect(controller.state.contextTarget).toBeUndefined();
+    expect(controller.viewModel.toolbar.menuEnabled).toEqual(true);
+  });
+});
+
+describe("sprites view edits", () => {
+  it("writes the sprite format and offset to the bank", async () => {
+    const controller = await opened();
+    await controller.dispatch({ type: "spriteSettingsChanged", format: "4bit" });
+    await controller.dispatch({ type: "spriteSettingsChanged", offset: 3 });
+    await controller.settle();
+
+    expect(publishedBank(fakes.session, SIDECAR, BANK)?.sprites).toEqual({ format: "4bit", offset: 3 });
+    expect(controller.viewModel.bankSprites).toEqual({ format: "4bit", offset: 3, active: false });
+  });
+
+  it("publishes nothing for an unchanged setting", async () => {
+    const controller = await opened();
+    await controller.dispatch({ type: "spriteSettingsChanged", format: "8bit", offset: 0 });
+    await controller.settle();
+    expect(fakes.session.writeCalls).toEqual([]);
+    expect(controller.viewModel.bankSprites).toEqual({ format: "8bit", offset: 0, active: false });
+  });
+
+  it("remembers the Sprites view in the same write as lastView", async () => {
+    const controller = await opened({ spritesViewActive: false });
+    await controller.dispatch({
+      type: "environmentChanged",
+      env: anEnvironment({ viewMode: "disassembly", spritesViewActive: true })
+    });
+    await controller.settle();
+    expect(publishedBank(fakes.session, SIDECAR, BANK)?.sprites).toEqual({ active: true });
+    const writesAfterShowing = fakes.session.writeCalls.length;
+
+    // --- Back to Memory: `lastView` and `active` change together, in one publish.
+    await controller.dispatch({
+      type: "environmentChanged",
+      env: anEnvironment({ viewMode: "memory", spritesViewActive: false })
+    });
+    await controller.settle();
+    const bank = publishedBank(fakes.session, SIDECAR, BANK);
+    expect(bank?.lastView).toBe("memory");
+    expect(bank).not.toHaveProperty("sprites");
+    expect(fakes.session.writeCalls.length).toBe(writesAfterShowing + 1);
+  });
+
+  it("never writes the flag for a document without a Sprites view", async () => {
+    const controller = await opened();
+    await controller.dispatch({ type: "environmentChanged", env: anEnvironment({ viewMode: "memory" }) });
+    await controller.settle();
+    expect(publishedBank(fakes.session, SIDECAR, BANK)).not.toHaveProperty("sprites");
+  });
+
+  it("marks an exact byte span as a region, without the region dialog", async () => {
+    const controller = await opened();
+    await controller.dispatch({
+      type: "regionSpanMarked",
+      start: 0x800,
+      end: 0x8ff,
+      regionType: "bytes"
+    });
+    await controller.settle();
+
+    expect(fakes.dialogs.callsTo("region")).toEqual([]);
+    expect(publishedBank(fakes.session, SIDECAR, BANK)?.regions).toContainEqual({
+      start: 0x800,
+      end: 0x8ff,
+      type: "bytes"
+    });
+  });
+
+  it("asks before a span that rewrites the whole bank", async () => {
+    const controller = await opened();
+    fakes.nativeConfirm.mockReturnValue(false);
+    await controller.dispatch({
+      type: "regionSpanMarked",
+      start: 0,
+      end: 0x3fff,
+      regionType: "bytes"
+    });
+    await controller.settle();
+
+    expect(fakes.nativeConfirm).toHaveBeenCalledWith(WHOLE_BANK_CONFIRM_MESSAGE);
+    expect(fakes.session.writeCalls).toEqual([]);
+  });
+});
+
 describe("labels", () => {
   it("opens the dialog on the chosen scope, with both candidate values", async () => {
     const controller = await opened();

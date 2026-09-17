@@ -115,6 +115,8 @@ export function intentForAction(
       return { type: "manageLabelsRequested" };
     case "manage-regions":
       return { type: "manageRegionsRequested" };
+    case "bank-comment":
+      return { type: "bankCommentRequested" };
     case "synopsis":
       return { type: "synopsisCommentRequested", rowIndex };
     case "comment":

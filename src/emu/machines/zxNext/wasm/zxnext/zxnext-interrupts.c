@@ -194,6 +194,20 @@ static uint32_t zxnextInterruptsAcknowledge(void) {
   return lastInterruptVector;
 }
 
+/*
+ * Whether an interrupt the program routed to the DMA (nextreg $CC) is pending.
+ *
+ * FPGA peripherals.vhd o_dma_int; DmaDevice.ts reads it through InterruptDevice
+ * dmaInterruptRequestActive. Only the line and ULA sources exist in this backend's interrupt model;
+ * the CTC ($CD) and UART ($CE) sources are not modelled here yet.
+ */
+static uint32_t zxnextInterruptsDmaRequestActive(void) {
+  uint8_t enables = zxnextNextRegs[0xccu];
+  if ((enables & 0x02u) && lineInterruptStatus) return 1;
+  if ((enables & 0x01u) && ulaInterruptStatus) return 1;
+  return 0;
+}
+
 static void zxnextInterruptsReti(void) {
   for (uint32_t i = 0; i < ZXNEXT_DAISY_DEVICE_COUNT; i++) {
     if (daisyInService[i]) {

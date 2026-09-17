@@ -116,6 +116,7 @@ export function createFakeDialogs() {
   };
 
   const port: NexAnnotationEditorPorts["dialogs"] = {
+    bankComment: record("bankComment"),
     synopsisComment: record("synopsisComment"),
     endOfLineComment: record("endOfLineComment"),
     label: record("label"),

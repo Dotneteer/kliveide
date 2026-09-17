@@ -13,6 +13,13 @@ export const NEX_BANK_SIZE = 0x4000;
 export const NEX_BANK_LAST_OFFSET = NEX_BANK_SIZE - 1;
 export const NEX_MAX_BANK = 111;
 export const NEX_LABEL_MAX_LENGTH = 16;
+/**
+ * How long a bank comment may grow before validation says so.
+ *
+ * A warning, not an error: an over-long comment is still a comment and still loads. The limit is
+ * about keeping the sidecar a JSON file a person can read, not about anything that would break.
+ */
+export const NEX_BANK_COMMENT_SOFT_LIMIT = 4000;
 
 export type NexAnnotationOffsetIndex = 0 | 1 | 2 | 3;
 export type NexAnnotationRegionType = "disassemble" | "bytes" | "words" | "skip";
@@ -52,6 +59,26 @@ export type NexOperandReference = {
   name: string;
 };
 
+/**
+ * What a bank's sprite data is: its pattern format and where pattern #0 starts.
+ *
+ * Both optional; an absent block means 8-bit patterns from `$0000`. A fact about the program, so it
+ * is shared through the sidecar — unlike which palette the Sprites view shows, which is view state.
+ */
+export type NexBankSprites = {
+  format?: "8bit" | "4bit";
+  offset?: number;
+  /**
+   * The Sprites view was the view last shown for this bank, so a reopened bank shows it again.
+   *
+   * Here rather than as `lastView: "sprites"`: a shipped build reports any `lastView` other than
+   * memory or disassembly as an error and refuses the whole file, while it simply ignores a key it
+   * does not know inside this block. `lastView` keeps the last *listing* view, which is what an
+   * older build falls back to.
+   */
+  active?: boolean;
+};
+
 export type NexBankAnnotation = {
   offsetIndex: NexAnnotationOffsetIndex;
   lastView?: NexAnnotationBankView;
@@ -60,6 +87,16 @@ export type NexBankAnnotation = {
   localLabels?: NexAnnotationLabel[];
   lineAnnotations?: Record<string, NexLineAnnotation>;
   operandReferences?: Record<string, NexOperandReference[]>;
+  /**
+   * Free text about the whole bank: what lives in it, who calls it, what to watch for.
+   *
+   * LF line breaks, trailing whitespace trimmed, and never empty — an emptied comment is removed
+   * rather than stored as `""`. Additive within the bank, not a schema bump; see
+   * `.plans/NEX_BANK_COMMENTS_PLAN.md` §3 for what that costs a previously shipped build.
+   */
+  comment?: string;
+  /** How the Sprites view reads this bank. See `NexBankSprites`. */
+  sprites?: NexBankSprites;
 };
 
 /** A breakpoint as the sidecar stores it: an offset in a bank, and what kind it is. */
@@ -568,6 +605,8 @@ function readBankAnnotation(
   const localLabels = readLabels(value.localLabels, `${path}.localLabels`, NEX_BANK_LAST_OFFSET, diagnostics);
   const regions = normalizeRegions(value.regions, `${path}.regions`, diagnostics);
   const lineAnnotations = readLineAnnotations(value.lineAnnotations, `${path}.lineAnnotations`, diagnostics);
+  const comment = readBankComment(value.comment, `${path}.comment`, diagnostics);
+  const sprites = readBankSprites(value.sprites, `${path}.sprites`, diagnostics);
   const operandReferences = readOperandReferences(
     value.operandReferences,
     `${path}.operandReferences`,
@@ -599,7 +638,105 @@ function readBankAnnotation(
   if (operandReferences && Object.keys(operandReferences).length > 0) {
     annotation.operandReferences = operandReferences;
   }
+  if (comment !== undefined) {
+    annotation.comment = comment;
+  }
+  if (sprites !== undefined) {
+    annotation.sprites = sprites;
+  }
   return annotation;
+}
+
+/**
+ * A bank's sprite settings, with every problem reported as a **warning** and the bad value dropped.
+ *
+ * Never an error: an error makes this build refuse the whole sidecar, and losing every label,
+ * region and breakpoint over how a view reads the bytes would be absurd. A value this build does not
+ * understand — a format a later build adds, say — simply falls back to the default.
+ */
+function readBankSprites(
+  value: unknown,
+  path: string,
+  diagnostics: NexAnnotationDiagnostic[]
+): NexBankSprites | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!isRecord(value)) {
+    diagnostics.push(warning(path, "Bank sprites must be an object; it is ignored."));
+    return undefined;
+  }
+
+  const sprites: NexBankSprites = {};
+  if (value.format !== undefined) {
+    if (value.format === "8bit" || value.format === "4bit") {
+      sprites.format = value.format;
+    } else {
+      diagnostics.push(warning(`${path}.format`, "Sprite format must be 8bit or 4bit; it is ignored."));
+    }
+  }
+  if (value.offset !== undefined) {
+    if (isBankOffset(value.offset)) {
+      sprites.offset = value.offset;
+    } else {
+      diagnostics.push(
+        warning(`${path}.offset`, "Sprite offset must be a bank offset ($0000-$3FFF); it is ignored.")
+      );
+    }
+  }
+  if (value.active !== undefined) {
+    if (typeof value.active === "boolean") {
+      if (value.active) sprites.active = true;
+    } else {
+      diagnostics.push(warning(`${path}.active`, "Sprites active flag must be a boolean; it is ignored."));
+    }
+  }
+  return Object.keys(sprites).length > 0 ? sprites : undefined;
+}
+
+/**
+ * A bank's comment, normalized the way the dialog normalizes it.
+ *
+ * A hand-edited sidecar can carry CRLF line breaks or a comment of nothing but spaces; reading it
+ * through the same normalization as an edit means the model never holds a form the UI would not
+ * have written.
+ */
+function readBankComment(
+  value: unknown,
+  path: string,
+  diagnostics: NexAnnotationDiagnostic[]
+): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    diagnostics.push(error(path, "Bank comment must be a string."));
+    return undefined;
+  }
+  const normalized = normalizeMultilineComment(value);
+  if (normalized && normalized.length > NEX_BANK_COMMENT_SOFT_LIMIT) {
+    diagnostics.push(
+      warning(path, `Bank comment is longer than ${NEX_BANK_COMMENT_SOFT_LIMIT} characters.`)
+    );
+  }
+  return normalized;
+}
+
+/**
+ * Normalize a multi-line comment as the annotation dialogs store it.
+ *
+ * CRLF and CR become LF, trailing spaces and tabs are trimmed from every line, and a comment with
+ * no visible characters becomes `undefined`. Leading indentation and blank lines in the middle are
+ * kept: both are deliberate in a note someone laid out by hand.
+ */
+export function normalizeMultilineComment(comment: string): string | undefined {
+  const normalized = comment
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+$/g, ""))
+    .join("\n");
+
+  return normalized.trim().length > 0 ? normalized : undefined;
 }
 
 function readOffsetIndex(

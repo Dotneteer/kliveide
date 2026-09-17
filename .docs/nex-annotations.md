@@ -20,9 +20,11 @@ The popped-out bank disassembly toolbar provides:
 - a warning indicator, shown when the sidecar could not be loaded or written;
 - Annotations, enabled when a disassembly row or range is selected.
 
-The Annotations button opens the same menu as right-clicking the selected
-disassembly row or range. The menu contains Manage Labels, Manage Regions,
-synopsis comments, end-of-line comments, label actions, operand label
+The Annotations button opens the same menu as right-clicking a disassembly row
+or range. It is enabled whenever annotations are loaded, even with nothing
+selected: the whole-bank entries (Manage Labels, Bank Comment) need no row, and
+the row entries disable themselves until one is selected. The menu contains
+Manage Labels, Manage Regions, Bank Comment, synopsis comments, end-of-line comments, label actions, operand label
 references, region marking, and row annotation clearing.
 
 Edits update the in-memory annotation model immediately, re-render the
@@ -38,6 +40,92 @@ does, which a reader who has annotated the row already knows. The generated text
 is kept in the row's `generatedHardComment`, so the end-of-line dialog can show
 what is being replaced while you type, and clearing the user comment brings it
 back to the listing.
+
+## Bank Comments
+
+A bank can carry one free-text comment, stored as `banks.<n>.comment` in the
+sidecar. It may span several lines; it is normalized like a synopsis comment
+(LF line breaks, trailing whitespace trimmed) and an emptied comment removes the
+key rather than storing `""`. Validation rejects a non-string and warns, without
+refusing the file, beyond 4,000 characters.
+
+It is additive within the bank, **not a schema bump**, for the same reason as
+`debug.labelBreakpoints`. The cost is the same too: a previously shipped build
+rebuilds each bank from the keys it knows, so opening a newer sidecar in an old
+build and editing anything in that bank drops the comment.
+
+Where it shows:
+
+- **NEX viewer bank browser.** The viewer lists banks instead of expanding
+  them (`Next/NexBankBrowser.tsx`, summaries in `nexBankSummary.ts`). A row
+  shows the bank number, a `BP` chip (the gutter's execution / memory-read /
+  memory-write glyphs, each with its count of enabled breakpoints; grey and
+  dashed when all are disabled), PC/SP marks, the comment's non-blank lines
+  joined with ` · ` and truncated with an ellipsis, a content-mix bar, and a
+  pop-out icon. Double-click or Enter pops the bank out in its last view; the
+  row context menu offers Bank Comment... and Clear Bank Comment. The selected
+  bank's details pane has a split *Pop out* button (▾ picks Memory, Disassembly
+  or Sprites), size, a Breakpoints line naming each kind and how many are disabled,
+  listed-at address, last view, sprite format, the content
+  mix with percentages, the full comment with *Edit comment...* / *Add
+  comment...*, and up to 16 labels. The selection and the All / Non-empty /
+  Annotated filter are document view state, never written to the sidecar.
+- **Popped-out bank.** A toolbar chip (at most `32ch`) that opens a popover with
+  the whole text, *Edit...* and *Pin*. Pinned, the chip is replaced by a strip
+  under the toolbar, one line until expanded, with an unpin button. The
+  expand button appears only when the one-line text does not fit the strip
+  (measured, and re-checked on resize). Pinned and
+  expanded are document view state (`bankCommentPinned`,
+  `bankCommentExpanded`), never written to the sidecar.
+- **Editing** goes through the Bank Comment dialog, from any of the above, from
+  the Annotations menu, or with `B` in the focused listing. Its preview is the
+  one-line row text. `Ctrl+Enter` / `Cmd+Enter` saves; Enter is a new line.
+
+The NEX viewer **follows the shared session** once its sidecar has loaded, so a
+comment edited in a pop-out appears in the viewer heading straight away. The
+viewer seeds an empty session with the model it just read
+(`seedNexAnnotationSession`), so subscribing does not read the file twice; a
+session that already exists is kept, being at least as current.
+
+## Sprites View
+
+A popped-out **NEX bank** offers a third view, *Sprites*, beside Memory and
+Disassembly (a plain dump does not). It shows the bank as a sheet of 16×16 ZX
+Spectrum Next sprite patterns with an inspector for the selected one.
+
+- **Layout follows the hardware** (`_input/next-fpga/src/video/sprites.vhd`), not
+  Klive's emulator: an 8-bit pattern is 256 bytes, one byte per pixel; a 4-bit
+  pattern is 128 bytes, two pixels per byte, high nibble for even x. 4-bit pixels
+  take `paletteOffset << 4 | nibble`; transparency compares the whole byte (8-bit)
+  or the low nibble of Reg `$4B` (4-bit). The pure model is `nexBankSprites.ts`.
+- **Format and start offset are saved** in the sidecar as
+  `banks.<n>.sprites: { format?: "8bit" | "4bit", offset?: number }`. Defaults
+  (8-bit at `$0000`) are not stored, and a block equal to them is removed.
+  **Validation only warns** about bad values and ignores them: an error would make
+  this build refuse the whole file over a view setting. An older build drops the
+  block when it rewrites that bank, the same exposure as bank comments.
+- **Sprites as the open view is saved as `sprites.active: true`, not in
+  `lastView`.** A shipped build rejects any `lastView` other than
+  `memory`/`disassembly`, but ignores an unknown key inside `sprites`. `lastView`
+  keeps the last *listing* view (what an older build opens), and a reopened bank
+  shows Sprites when `active` is set. Both are written in **one** publish: the dump
+  adopts the view the sidecar names on every snapshot, so a separate `lastView`
+  write while `active` was still set would bounce a switch back to Sprites.
+  Palette choice, 4-bit palette offset, zoom, checker and selection stay view
+  state.
+- **Palette**: Primary/Secondary, read from the machine through
+  `useSpritePalette` only while the view is showing; the palette the sprite engine
+  uses (Reg `$43` bit 3) carries a ring. With no Next machine both show the Next's
+  reset palette (`RRRGGGBB`, low blue bit = B1 | B0), labelled *Default palette*.
+- **Mark as Bytes** (inspector or a cell's context menu) turns the selected
+  patterns (Shift extends) into one `bytes` region through the `regionSpanMarked`
+  intent — no region dialog, but the whole-bank confirmation still applies.
+  Patterns already inside a bytes region carry a corner mark, and the inspector
+  then offers *Mark as Disassembly*.
+- **Keyboard**: arrows / PageUp / PageDown / Home / End move (Shift extends),
+  Enter opens Memory at the pattern and Shift+Enter Disassembly, `B` edits the
+  bank comment. Show in Memory/Disassembly and Go To are navigation jumps, so Go
+  Back returns to the pattern.
 
 ## Shared Annotation Session
 

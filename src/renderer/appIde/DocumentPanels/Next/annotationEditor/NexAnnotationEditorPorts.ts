@@ -11,6 +11,7 @@ import type {
   NexOperandReference
 } from "../nexAnnotations";
 import type { NexSynopsisCommentDialogResult } from "../NexSynopsisCommentDialog";
+import type { NexBankCommentDialogResult } from "../NexBankCommentDialog";
 import type { NexEndOfLineCommentDialogResult } from "../NexEndOfLineCommentDialog";
 import type { NexLabelDialogLabel, NexLabelDialogResult } from "../NexLabelDialog";
 import type { NexLabelsDialogResult } from "../NexLabelsDialog";
@@ -70,6 +71,11 @@ export type NexAnnotationRowContext = {
 };
 
 export type NexAnnotationDialogsPort = {
+  bankComment(args: {
+    bank: number;
+    initialComment?: string;
+  }): Promise<NexBankCommentDialogResult | undefined>;
+
   synopsisComment(args: {
     bank: number;
     bankOffset: number;

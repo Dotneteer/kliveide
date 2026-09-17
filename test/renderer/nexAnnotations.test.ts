@@ -8,6 +8,8 @@ import {
   getOperandLabelCandidates,
   isNexAnnotationPath,
   isValidNexLabelName,
+  NEX_BANK_COMMENT_SOFT_LIMIT,
+  normalizeMultilineComment,
   parseNexAnnotations,
   validateNexAnnotations
 } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
@@ -285,5 +287,102 @@ describe("NEX annotations", () => {
       { name: "GlobalTarget", value: 0xc123, scope: "global" },
       { name: "LocalTarget", value: 0x0123, scope: "local", bank: 5 }
     ]);
+  });
+});
+
+describe("NEX bank comments", () => {
+  function parseBank(bank: Record<string, unknown>) {
+    return parseNexAnnotations(
+      JSON.stringify({ schemaVersion: 2, banks: { "5": { offsetIndex: 1, ...bank } } })
+    );
+  }
+
+  it("reads a multi-line bank comment", () => {
+    const result = parseBank({ comment: "Music player\nCalled from IsrMain" });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.annotations?.banks["5"].comment).toBe("Music player\nCalled from IsrMain");
+  });
+
+  it("normalizes line breaks and trailing whitespace the way the dialog writes them", () => {
+    const result = parseBank({ comment: "First  \r\n\r\nSecond\t" });
+    expect(result.annotations?.banks["5"].comment).toBe("First\n\nSecond");
+  });
+
+  it("drops a comment with nothing visible in it rather than storing it", () => {
+    const result = parseBank({ comment: "  \n\t" });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.annotations?.banks["5"]).not.toHaveProperty("comment");
+  });
+
+  it("rejects a comment that is not a string", () => {
+    const result = parseBank({ comment: 42 });
+    expect(result.diagnostics).toContainEqual({
+      severity: "error",
+      path: "$.banks.5.comment",
+      message: "Bank comment must be a string."
+    });
+  });
+
+  it("warns about, but still loads, an over-long comment", () => {
+    const long = "x".repeat(NEX_BANK_COMMENT_SOFT_LIMIT + 1);
+    const result = parseBank({ comment: long });
+    expect(result.annotations?.banks["5"].comment).toBe(long);
+    expect(result.diagnostics.map((d) => d.severity)).toEqual(["warning"]);
+  });
+
+  it("shares its normalization with the synopsis dialog", () => {
+    expect(normalizeMultilineComment(" First  \n\t\nSecond\t")).toBe(" First\n\nSecond");
+    expect(normalizeMultilineComment("  \n\t")).toBeUndefined();
+  });
+});
+
+describe("NEX bank sprites", () => {
+  function parseBank(bank: Record<string, unknown>) {
+    return parseNexAnnotations(
+      JSON.stringify({ schemaVersion: 2, banks: { "5": { offsetIndex: 1, ...bank } } })
+    );
+  }
+
+  it("reads a format and an offset", () => {
+    const result = parseBank({ sprites: { format: "4bit", offset: 3 } });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.annotations?.banks["5"].sprites).toEqual({ format: "4bit", offset: 3 });
+  });
+
+  it("has no block when none is written", () => {
+    expect(parseBank({}).annotations?.banks["5"]).not.toHaveProperty("sprites");
+  });
+
+  it("warns about bad values, ignores them, and still loads the file", () => {
+    const result = parseBank({ sprites: { format: "16bit", offset: 0x4000 } });
+    expect(result.annotations).toBeDefined();
+    expect(result.annotations?.banks["5"]).not.toHaveProperty("sprites");
+    expect(result.diagnostics.map((d) => [d.severity, d.path])).toEqual([
+      ["warning", "$.banks.5.sprites.format"],
+      ["warning", "$.banks.5.sprites.offset"]
+    ]);
+  });
+
+  it("keeps the good half of a half-bad block", () => {
+    const result = parseBank({ sprites: { format: "4bit", offset: -1 } });
+    expect(result.annotations?.banks["5"].sprites).toEqual({ format: "4bit" });
+  });
+
+  it("reads the active flag, and warns about a non-boolean one", () => {
+    expect(parseBank({ sprites: { active: true } }).annotations?.banks["5"].sprites).toEqual({
+      active: true
+    });
+    expect(parseBank({ sprites: { active: false } }).annotations?.banks["5"]).not.toHaveProperty(
+      "sprites"
+    );
+    const bad = parseBank({ sprites: { active: "yes" } });
+    expect(bad.annotations).toBeDefined();
+    expect(bad.diagnostics.map((d) => d.severity)).toEqual(["warning"]);
+  });
+
+  it("warns about a block that is not an object", () => {
+    const result = parseBank({ sprites: "4bit" });
+    expect(result.annotations).toBeDefined();
+    expect(result.diagnostics.map((d) => d.severity)).toEqual(["warning"]);
   });
 });

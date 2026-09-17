@@ -61,7 +61,8 @@ describe("SpriteDevice - resolveRelativeSprites (D1)", () => {
     sd.writeIndexedSpriteAttribute(idx, 1, y & 0xff);
     const a2 =
       (o.palette << 4) | (o.mirrorX ? 0x08 : 0) | (o.mirrorY ? 0x04 : 0) |
-      (o.rotate ? 0x02 : 0) | (o.attributeFlag1 ? 0x01 : 0);
+      (o.rotate ? 0x02 : 0) | (o.attributeFlag1 ? 0x01 : 0) |
+      ((x >> 8) & 0x01);               // X MSB is attr2 bit 0 (FPGA `spr_cur_x`)
     sd.writeIndexedSpriteAttribute(idx, 2, a2);
     const a3 = (o.visible ? 0x80 : 0) | 0x40 | (o.pattern & 0x3f);
     sd.writeIndexedSpriteAttribute(idx, 3, a3);
@@ -70,7 +71,7 @@ describe("SpriteDevice - resolveRelativeSprites (D1)", () => {
     if (o.attributeFlag2) a4 |= 0x20;  // bit 5 = rel_type for anchor
     a4 |= (o.scaleX & 3) << 3;
     a4 |= (o.scaleY & 3) << 1;
-    a4 |= (x >> 8) & 0x01;             // X MSB in bit 0
+    a4 |= (y >> 8) & 0x01;             // Y MSB in bit 0 (five-byte sprite)
     sd.writeIndexedSpriteAttribute(idx, 4, a4);
   }
 
@@ -164,9 +165,7 @@ describe("SpriteDevice - resolveRelativeSprites (D1)", () => {
   it("relative sprite wraps 9-bit position back to 0 correctly", () => {
     // Anchor at x=600 (> 0x1ff will wrap to 88), but anchor X is stored 9-bit
     // Use anchor at x=510, relative offsetX=10 → (510+10) & 0x1ff = 520 & 511 = 8
-    anchor(0, 510, 0); // 510 stored in 9-bit: write low=510&0xff=0xfe, X MSB=1 via attr4
-    // Actually writeIndexedSpriteAttribute(0, 0, 0xfe) sets x_low=0xfe=254
-    // attr4 bit 0 sets X MSB: attr4 = (510>>8)&1 = 1 → x = (1<<8)|0xfe = 510 ✓
+    anchor(0, 510, 0); // 510 in 9 bits: low byte 0xfe in attr0, X MSB in attr2 bit 0
     relative(1, 10, 0);
     sd.resolveRelativeSprites();
 

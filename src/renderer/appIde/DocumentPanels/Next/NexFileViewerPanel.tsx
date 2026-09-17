@@ -32,10 +32,6 @@ import {
 import { EMULATED_CORE_VERSION } from "@emu/machines/zxNext/NextRegDevice";
 import { MF_BANK } from "@common/machines/constants";
 import { useNexBankBreakpointCounts } from "./useNexBankBreakpoints";
-import {
-  formatBankBreakpointBadge,
-  type BankBreakpointSummary
-} from "./nexBankGutter";
 import type { NexFileContents, NexHeader } from "./nexFileLoader";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -52,11 +48,31 @@ import {
   createNexAnnotationSidecar,
   getAnnotatedDecimalViewForBank,
   getAnnotatedDisassemblyOffsetForBank,
-  getAnnotatedLastViewForBank,
+  getAnnotatedPopOutViewForBank,
   getNexAnnotationSidecarPaths,
   loadNexAnnotationSidecar
 } from "./nexAnnotationSidecar";
-import { NexFileAnnotations } from "./nexAnnotations";
+import { getBankAnnotation, NexFileAnnotations } from "./nexAnnotations";
+import { withBankComment } from "./nexAnnotationEdits";
+import {
+  NexBankBrowser,
+  type NexBankBrowserItem,
+  type NexBankFilter,
+  type NexBankView
+} from "./NexBankBrowser";
+import { bankContentMix, bankLabels, isAnnotatedBank, isEmptyBank } from "./nexBankSummary";
+import {
+  peekNexAnnotationSession,
+  seedNexAnnotationSession,
+  subscribeNexAnnotationSession,
+  updateNexAnnotationSession
+} from "./nexAnnotationSession";
+import {
+  BANK_COMMENT_DIALOG_TITLE,
+  BANK_COMMENT_DIALOG_WIDTH,
+  NexBankCommentDialog
+} from "./NexBankCommentDialog";
+import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 
 /*
  * M2: `ch`, not px.
@@ -93,7 +109,10 @@ type NexFileViewState = {
   loResLoadingScreenExpanded?: boolean;
   timexHiResLoadingScreenExpanded?: boolean;
   timexHiColLoadingScreenExpanded?: boolean;
-  bankExpanded?: Record<number, boolean>;
+  /** The bank the bank browser has selected. */
+  selectedBank?: number;
+  /** Which banks the bank browser lists. */
+  bankFilter?: NexBankFilter;
   scrollPosition?: number;
 };
 
@@ -114,7 +133,9 @@ const NexFileViewerPanel = ({
           <NexFileViewerContents
             document={document}
             fileInfo={context.fileInfo}
-            viewState={viewState}
+            // --- The live view state, not the one the document opened with: the bank browser's
+            // --- selection and filter change it and must see the change.
+            viewState={context.viewState}
             appServices={context.appServices}
             changeViewState={context.changeViewState}
           />
@@ -223,8 +244,137 @@ const NexFileViewerContents = ({
     }
   };
 
+  /*
+   * Follow the shared annotation session once the sidecar has loaded.
+   *
+   * The viewer used to read the sidecar once and keep that copy, which was enough while nothing it
+   * showed could change behind it. A bank comment can: it is edited here *and* in a popped-out bank,
+   * and the heading has to show the pop-out's edit without the NEX being reopened. The session is
+   * where every open bank of this file already publishes, so the viewer subscribes to it too.
+   *
+   * The model this viewer just read seeds an empty session, so subscribing does not read the file a
+   * second time; a session that already exists is left alone, being at least as current.
+   */
+  const loadedSidecarPath =
+    annotationState.status === "loaded" ? annotationState.paths?.fullPath : undefined;
+  const [sessionAnnotations, setSessionAnnotations] = useState<NexFileAnnotations>();
+  useEffect(() => {
+    if (annotationState.status !== "loaded" || !loadedSidecarPath) return undefined;
+    seedNexAnnotationSession(loadedSidecarPath, annotationState.annotations);
+    const unsubscribe = subscribeNexAnnotationSession(
+      appServices.projectService,
+      loadedSidecarPath,
+      loadedBanks[0] ?? 0,
+      (snapshot) => setSessionAnnotations(snapshot.annotations)
+    );
+    return () => {
+      unsubscribe();
+      setSessionAnnotations(undefined);
+    };
+  }, [annotationState, appServices.projectService, loadedBanks, loadedSidecarPath]);
+
   const loadedAnnotations =
-    annotationState.status === "loaded" ? annotationState.annotations : undefined;
+    annotationState.status === "loaded"
+      ? (sessionAnnotations ?? annotationState.annotations)
+      : undefined;
+
+  const dialogs = useDialogs();
+
+  /*
+   * Write a bank's comment through the session, which publishes it to every open bank and writes it.
+   *
+   * The model is re-read after the dialog closes rather than captured before it opened: the dialog
+   * is modal but not exclusive, and a popped-out bank may have published while it was up.
+   */
+  const writeBankComment = (bank: number, comment: string | undefined) => {
+    if (!loadedSidecarPath) return;
+    const current = peekNexAnnotationSession(loadedSidecarPath) ?? loadedAnnotations;
+    if (!current) return;
+    const next = withBankComment(current, bank, comment);
+    if (next) {
+      updateNexAnnotationSession(loadedSidecarPath, next, appServices.projectService);
+    }
+  };
+
+  const editBankComment = async (bank: number) => {
+    if (!loadedSidecarPath || !loadedAnnotations) return;
+    const bankAnnotation = getBankAnnotation(loadedAnnotations, bank);
+    if (!bankAnnotation) return;
+    const result = await dialogs.open(
+      NexBankCommentDialog,
+      { bank, initialComment: bankAnnotation.comment },
+      { title: BANK_COMMENT_DIALOG_TITLE, width: BANK_COMMENT_DIALOG_WIDTH }
+    );
+    if (!result) return;
+    writeBankComment(bank, result.comment);
+  };
+
+  /*
+   * One summary per bank for the bank browser.
+   *
+   * Recomputed when the annotations or breakpoints change — an edit made in a popped-out bank reaches
+   * the details straight away, through the shared session.
+   */
+  const bankItems = useMemo<NexBankBrowserItem[]>(
+    () =>
+      fi.bankData.map(([bank, bytes]) => {
+        const bankAnnotation = loadedAnnotations ? getBankAnnotation(loadedAnnotations, bank) : undefined;
+        const listedAt = getAnnotatedDisassemblyOffsetForBank(
+          loadedAnnotations,
+          bank,
+          getDefaultDisassemblyOffsetForBank(bank, h)
+        );
+        return {
+          bank,
+          size: bytes.length,
+          empty: isEmptyBank(bytes),
+          annotated: isAnnotatedBank(loadedAnnotations, bank),
+          hasAnnotation: !!bankAnnotation,
+          pc: getProgramCounterBank(h) === bank ? h.programCounter : undefined,
+          sp: getStackPointerBank(h) === bank ? h.stackPointer : undefined,
+          breakpoints: bankBreakpointCounts.get(bank),
+          comment: bankAnnotation?.comment,
+          listedAt,
+          lastView: (loadedAnnotations
+            ? getAnnotatedPopOutViewForBank(loadedAnnotations, bank)
+            : undefined) ?? "disassembly",
+          spriteFormat:
+            bankAnnotation?.sprites?.format ?? (bankAnnotation?.sprites?.active ? "8bit" : undefined),
+          mix: bankAnnotation ? bankContentMix(bankAnnotation.regions) : undefined,
+          labels: bankLabels(loadedAnnotations, bank, listedAt)
+        };
+      }),
+    [bankBreakpointCounts, fi.bankData, h, loadedAnnotations]
+  );
+
+  /** Pop a bank out into its own document, in the view asked for. Recorded, so Go Back returns here. */
+  const openBankDump = async (bank: number, view: NexBankView) => {
+    const entry = fi.bankData.find(([b]) => b === bank);
+    if (!entry || !document.node.fullPath) return;
+    const annotated = !!loadedAnnotations;
+    await openRecorded(() =>
+      openStaticMemoryDump(
+        documentHubService,
+        // --- The full path, not the project path: it is the id the debugger's reveals use.
+        nexBankDumpId(document.node.fullPath, bank),
+        nexBankDumpTitle(document.node.fullPath, bank, projectFolder),
+        entry[1],
+        {
+          disassemblyEnabled: true,
+          disassOffset: getAnnotatedDisassemblyOffsetForBank(
+            loadedAnnotations,
+            bank,
+            getDefaultDisassemblyOffsetForBank(bank, h)
+          ),
+          decimalView: getAnnotatedDecimalViewForBank(loadedAnnotations, bank, false),
+          // --- Sprites needs the annotation file; without one the pop-out offers only the listings.
+          viewMode: view === "sprites" && !annotated ? "disassembly" : view,
+          nexAnnotationPath: annotated ? sidecarPaths?.fullPath : undefined,
+          nexAnnotationBank: annotated ? bank : undefined
+        }
+      )
+    );
+  };
 
   /*
    * Checked against the machine, not in a vacuum: the core version the file asks for is only a
@@ -433,92 +583,17 @@ const NexFileViewerContents = ({
           />
         </ExpandableRow>
       )}
-      {fi.bankData.map((entry, idx) => {
-        const defaultOffset = getDefaultDisassemblyOffsetForBank(entry[0], h);
-        const annotationPath = loadedAnnotations ? sidecarPaths?.fullPath : undefined;
-        const annotationBank = loadedAnnotations ? entry[0] : undefined;
-        const disassOffset = getAnnotatedDisassemblyOffsetForBank(
-          loadedAnnotations,
-          entry[0],
-          defaultOffset
-        );
-        const viewMode = loadedAnnotations
-          ? getAnnotatedLastViewForBank(loadedAnnotations, entry[0])
-          : undefined;
-        const decimalView = getAnnotatedDecimalViewForBank(
-          loadedAnnotations,
-          entry[0],
-          false
-        );
-        const openBankDump = async () => {
-          if (!document.node.fullPath) return;
-          await openRecorded(() =>
-            openStaticMemoryDump(
-              documentHubService,
-              // --- The full path, not the project path: it is the id the debugger's reveals use.
-              nexBankDumpId(document.node.fullPath, entry[0]),
-              nexBankDumpTitle(document.node.fullPath, entry[0], projectFolder),
-              entry[1],
-              {
-                disassemblyEnabled: true,
-                disassOffset,
-                decimalView,
-                viewMode,
-                nexAnnotationPath: annotationPath,
-                nexAnnotationBank: annotationBank
-              }
-            )
-          );
-        };
-        return (
-          <ExpandableRow
-            key={idx}
-            heading={
-              <BankHeading
-                bank={entry[0]}
-                header={h}
-                breakpoints={bankBreakpointCounts.get(entry[0])}
-              />
-            }
-            headingAction={
-              <SmallIconButton
-                iconName='square-arrow-out-up-right'
-                fill='--color-command-icon'
-                title='Open this bank as its own document'
-                clicked={openBankDump}
-              />
-            }
-            meta={formatBankSize(entry[1].length)}
-            initialExpanded={cvs?.bankExpanded?.[idx] ?? false}
-            onExpanded={exp =>
-              change(vs => {
-                vs.bankExpanded ??= {};
-                vs.bankExpanded![idx] = exp;
-              })
-            }
-          >
-            <MemoryDumpViewer
-              documentSource={document.node.projectPath}
-              contents={entry[1]}
-              bank={entry[0]}
-              allowDisassembly={true}
-              disassOffset={disassOffset}
-              decimalView={decimalView}
-              viewMode={viewMode}
-              nexAnnotationPath={annotationPath}
-              nexAnnotationBank={annotationBank}
-              iconTitle='Display bank data dump'
-              openThrough={openRecorded}
-              idFactory={(_documentSource: string, bank: number) =>
-                nexBankDumpId(document.node.fullPath, bank)
-              }
-              titleFactory={(_documentSource: string, bank: number) =>
-                nexBankDumpTitle(document.node.fullPath, bank, projectFolder)
-              }
-            />
-          </ExpandableRow>
-        );
-      })}
+      <NexBankBrowser
+        items={bankItems}
+        selectedBank={cvs?.selectedBank}
+        filter={cvs?.bankFilter ?? "all"}
+        spritesAvailable={!!loadedAnnotations}
+        onSelect={(bank) => change((vs) => (vs.selectedBank = bank))}
+        onFilterChange={(filter) => change((vs) => (vs.bankFilter = filter))}
+        onPopOut={(bank, view) => void openBankDump(bank, view)}
+        onEditComment={(bank) => void editBankComment(bank)}
+        onClearComment={(bank) => writeBankComment(bank, undefined)}
+      />
     </>
   );
 };
@@ -610,71 +685,6 @@ const BankFlags = ({ flags, startIndex }: BankFlagsProps) => {
     </Row>
   );
 };
-
-/**
- * The heading of a bank section.
- *
- * Three different kinds of fact used to share one string — `Bank $05 (5) | PC: $C004` — with pipes
- * standing in for layout and the whole run painted in one colour. They are a name, an echo of that
- * name in the other base, and a piece of machine state, so they render as three things: the number
- * takes the accent because it is what you scan for, the decimal recedes, and a mark that says where
- * the machine actually is becomes a chip.
- *
- * The breakpoint tally is a fourth kind, and the reason it is here rather than only in the gutter:
- * a bank row is collapsed by default, so without it the only way to find out whether a bank holds
- * breakpoints is to expand every bank in turn. See `.plans/NEX_DEBUGGING_PLAN.md` §10.1.
- */
-function BankHeading ({
-  bank,
-  header,
-  breakpoints
-}: {
-  bank: number;
-  header: NexHeader;
-  breakpoints?: BankBreakpointSummary;
-}) {
-  const isPcBank = getProgramCounterBank(header) === bank;
-  const isSpBank = getStackPointerBank(header) === bank;
-  const badge = formatBankBreakpointBadge(breakpoints);
-
-  return (
-    <>
-      <span className={styles.bankWord}>Bank</span>
-      <span className={styles.bankNumber}>${toHexa2(bank)}</span>
-      <span className={styles.bankDecimal}>({bank.toString(10)})</span>
-      {badge && (
-        <span
-          className={`${styles.breakpointChip}${
-            // --- Every one of them disabled: the bank still carries breakpoints, and hiding that
-            // --- would be worse, but none of them will stop the machine as things stand.
-            breakpoints!.disabled === breakpoints!.total ? ` ${styles.breakpointChipDisabled}` : ""
-          }`}
-          title={badge.title}
-        >
-          {badge.text}
-        </span>
-      )}
-      {isPcBank && (
-        <span className={styles.headingChip} title="The program counter points into this bank">
-          PC ${toHexa4(header.programCounter)}
-        </span>
-      )}
-      {isSpBank && (
-        <span
-          className={`${styles.headingChip} ${styles.headingChipAlt}`}
-          title="The stack pointer points into this bank"
-        >
-          SP ${toHexa4(header.stackPointer)}
-        </span>
-      )}
-    </>
-  );
-}
-
-/** Bank size, for the heading's right-aligned detail. */
-function formatBankSize (bytes: number): string {
-  return bytes >= 1024 ? `${Math.round(bytes / 1024)} KB` : `${bytes} B`;
-}
 
 type HeaderAttributesProps = {
   header: NexHeader;

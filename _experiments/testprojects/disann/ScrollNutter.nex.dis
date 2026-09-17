@@ -311,9 +311,80 @@
           "synopsis": "Copy BC bytes from HL to DE using the zxnDMA.\nWrites HL, BC and DE into DmaSource, DmaLength and DmaDest inside\nDmaProgram, then sends the 16-byte program to port $6B. Faster than LDIR\nand used for the bulk screen and asset copies. Destroys BC, HL.",
           "comment": "HL -> DmaSource"
         },
+        "4191": {
+          "comment": "DE -> DmaDest"
+        },
+        "4195": {
+          "comment": "BC -> DmaLength"
+        },
+        "4199": {
+          "comment": "Send the whole of DmaProgram..."
+        },
+        "4202": {
+          "comment": "...16 bytes..."
+        },
+        "4204": {
+          "comment": "...to the zxnDMA port"
+        },
         "4209": {
           "synopsis": "zxnDMA program for a memory-to-memory copy, 16 bytes, sent to port $6B.\nDmaCopy fills in DmaSource, DmaLength and DmaDest before each send.\nThe program disables the DMA, sets both ports to memory counting up,\nloads the addresses and length, then enables it; the copy runs\nimmediately in continuous mode. Data, not code.",
           "comment": "$83 WR6: disable DMA; $7D WR0: A->B transfer, source and length follow"
+        },
+        "4211": {
+          "comment": "WR0 parameter: port A address"
+        },
+        "4213": {
+          "comment": "WR0 parameter: block length"
+        },
+        "4215": {
+          "comment": "$54 $01 WR1: port A memory, increment, timing; $50 $01 WR2: same for B"
+        },
+        "4219": {
+          "comment": "$AD WR4: continuous mode, port B address follows"
+        },
+        "4220": {
+          "comment": "WR4 parameter: port B address"
+        },
+        "4222": {
+          "comment": "$82 WR5: stop at end of block; $CF WR6: load; $87 WR6: enable"
+        },
+        "4225": {
+          "synopsis": "Send BC bytes from HL to the Next register data port $253B using the zxnDMA.\nThe caller selects the register first through port $243B. Writes HL and BC\ninto DmaRegSource and DmaRegLength inside DmaNextRegProg, then sends the\n16-byte program to port $6B. Used at $9E88 to load the copper list: register\n$60 (copper data), $540 bytes from $9E94. Destroys BC, HL.",
+          "comment": "HL -> DmaRegSource"
+        },
+        "4228": {
+          "comment": "BC -> DmaRegLength"
+        },
+        "4232": {
+          "comment": "Send the whole of DmaNextRegProg..."
+        },
+        "4235": {
+          "comment": "...16 bytes..."
+        },
+        "4237": {
+          "comment": "...to the zxnDMA port"
+        },
+        "4242": {
+          "synopsis": "zxnDMA program for a memory-to-I/O copy, 16 bytes, sent to port $6B.\nDmaToNextReg fills in DmaRegSource and DmaRegLength before each send.\nPort B is fixed at $253B, so every byte goes to the Next register chosen\nthrough $243B. Data, not code.",
+          "comment": "$83 WR6: disable DMA; $7D WR0: A->B transfer, source and length follow"
+        },
+        "4244": {
+          "comment": "WR0 parameter: port A address"
+        },
+        "4246": {
+          "comment": "WR0 parameter: block length"
+        },
+        "4248": {
+          "comment": "$54 $02 WR1: port A memory, increment, timing; $68 $02 WR2: port B I/O, fixed"
+        },
+        "4252": {
+          "comment": "$AD WR4: continuous mode, port B address follows"
+        },
+        "4253": {
+          "comment": "WR4 parameter: port B address $253B, Next register data"
+        },
+        "4255": {
+          "comment": "$82 WR5: stop at end of block; $CF WR6: load; $87 WR6: enable"
         },
         "4258": {
           "synopsis": "Send BC bytes from HL to the sprite pattern port $5B using the zxnDMA.\nWrites HL and BC into DmaSprSource and DmaSprLength inside\nDmaSpriteProgram, then sends the 16-byte program to port $6B. Select the\nfirst pattern through port $303B before calling. DE is not used.\nDestroys BC, HL.",
@@ -325,9 +396,33 @@
         "4265": {
           "comment": "Send the whole of DmaSpriteProgram..."
         },
+        "4268": {
+          "comment": "...16 bytes..."
+        },
+        "4270": {
+          "comment": "...to the zxnDMA port"
+        },
         "4275": {
           "synopsis": "zxnDMA program for a memory-to-I/O copy, 16 bytes, sent to port $6B.\nDmaToSprites fills in DmaSprSource and DmaSprLength before each send.\nPort B is fixed at $005B, so every byte goes to the sprite pattern\nport. Data, not code.",
           "comment": "$83 WR6: disable DMA; $7D WR0: A->B transfer, source and length follow"
+        },
+        "4277": {
+          "comment": "WR0 parameter: port A address"
+        },
+        "4279": {
+          "comment": "WR0 parameter: block length"
+        },
+        "4281": {
+          "comment": "$54 $02 WR1: port A memory, increment, timing; $68 $02 WR2: port B I/O, fixed"
+        },
+        "4285": {
+          "comment": "$AD WR4: continuous mode, port B address follows"
+        },
+        "4286": {
+          "comment": "WR4 parameter: port B address $005B, sprite patterns"
+        },
+        "4288": {
+          "comment": "$82 WR5: stop at end of block; $CF WR6: load; $87 WR6: enable"
         },
         "4585": {
           "synopsis": "Print D characters from HL into the tilemap at row B, column C.\nTile index is the character code less $20, so the tile set starts at space."
@@ -356,6 +451,9 @@
         },
         "6373": {
           "synopsis": "Clean copy of CopperLines, with colours $00, $20, $40, $60.\nCopied back over CopperLines ($480 bytes) at $9229."
+        },
+        "7816": {
+          "comment": "Load the copper list: $540 bytes from $9E94 into register $60"
         },
         "9728": {
           "comment": "Use Layer 2 first palette"
@@ -403,7 +501,7 @@
           "synopsis": "Alternative tune set, selected when ConfigFlag is non-zero."
         },
         "9807": {
-          "synopsis": "Collapse the Layer 2, Sprite and ULA clip windows to a single pixel.\nEach register takes four successive writes \u2014 X1, X2, Y1, Y2 \u2014 and all four\nare zero here, so nothing from these layers is drawn while setup runs.\nThe write index is not reset first, but with four identical values the\nstarting position does not matter."
+          "synopsis": "Collapse the Layer 2, Sprite and ULA clip windows to a single pixel.\nEach register takes four successive writes — X1, X2, Y1, Y2 — and all four\nare zero here, so nothing from these layers is drawn while setup runs.\nThe write index is not reset first, but with four identical values the\nstarting position does not matter."
         },
         "9873": {
           "comment": "Four-colour LoRes palette"
@@ -451,7 +549,7 @@
           "comment": "Install the frame interrupt (still disabled)"
         },
         "9980": {
-          "comment": "Interrupts on \u2014 the demo is now running"
+          "comment": "Interrupts on — the demo is now running"
         },
         "9981": {
           "comment": "$03: 28 MHz"
@@ -477,104 +575,6 @@
         },
         "10262": {
           "synopsis": "Unidentified data table, 15 bytes then zero padding.\nNot reached as code by the entry flow; purpose not yet established."
-        },
-        "4191": {
-          "comment": "DE -> DmaDest"
-        },
-        "4195": {
-          "comment": "BC -> DmaLength"
-        },
-        "4199": {
-          "comment": "Send the whole of DmaProgram..."
-        },
-        "4202": {
-          "comment": "...16 bytes..."
-        },
-        "4204": {
-          "comment": "...to the zxnDMA port"
-        },
-        "4211": {
-          "comment": "WR0 parameter: port A address"
-        },
-        "4215": {
-          "comment": "$54 $01 WR1: port A memory, increment, timing; $50 $01 WR2: same for B"
-        },
-        "4219": {
-          "comment": "$AD WR4: continuous mode, port B address follows"
-        },
-        "4220": {
-          "comment": "WR4 parameter: port B address"
-        },
-        "4222": {
-          "comment": "$82 WR5: stop at end of block; $CF WR6: load; $87 WR6: enable"
-        },
-        "4213": {
-          "comment": "WR0 parameter: block length"
-        },
-        "4225": {
-          "synopsis": "Send BC bytes from HL to the Next register data port $253B using the zxnDMA.\nThe caller selects the register first through port $243B. Writes HL and BC\ninto DmaRegSource and DmaRegLength inside DmaNextRegProg, then sends the\n16-byte program to port $6B. Used at $9E88 to load the copper list: register\n$60 (copper data), $540 bytes from $9E94. Destroys BC, HL.",
-          "comment": "HL -> DmaRegSource"
-        },
-        "4228": {
-          "comment": "BC -> DmaRegLength"
-        },
-        "4232": {
-          "comment": "Send the whole of DmaNextRegProg..."
-        },
-        "4235": {
-          "comment": "...16 bytes..."
-        },
-        "4237": {
-          "comment": "...to the zxnDMA port"
-        },
-        "4242": {
-          "synopsis": "zxnDMA program for a memory-to-I/O copy, 16 bytes, sent to port $6B.\nDmaToNextReg fills in DmaRegSource and DmaRegLength before each send.\nPort B is fixed at $253B, so every byte goes to the Next register chosen\nthrough $243B. Data, not code.",
-          "comment": "$83 WR6: disable DMA; $7D WR0: A->B transfer, source and length follow"
-        },
-        "4244": {
-          "comment": "WR0 parameter: port A address"
-        },
-        "4246": {
-          "comment": "WR0 parameter: block length"
-        },
-        "4248": {
-          "comment": "$54 $02 WR1: port A memory, increment, timing; $68 $02 WR2: port B I/O, fixed"
-        },
-        "4252": {
-          "comment": "$AD WR4: continuous mode, port B address follows"
-        },
-        "4253": {
-          "comment": "WR4 parameter: port B address $253B, Next register data"
-        },
-        "4255": {
-          "comment": "$82 WR5: stop at end of block; $CF WR6: load; $87 WR6: enable"
-        },
-        "7816": {
-          "comment": "Load the copper list: $540 bytes from $9E94 into register $60"
-        },
-        "4268": {
-          "comment": "...16 bytes..."
-        },
-        "4270": {
-          "comment": "...to the zxnDMA port"
-        },
-        "4277": {
-          "comment": "WR0 parameter: port A address"
-        },
-        "4279": {
-          "comment": "WR0 parameter: block length"
-        },
-        "4281": {
-          "comment": "$54 $02 WR1: port A memory, increment, timing; $68 $02 WR2: port B I/O, fixed"
-        },
-        "4285": {
-          "comment": "$AD WR4: continuous mode, port B address follows"
-        },
-        "4286": {
-          "comment": "WR4 parameter: port B address $005B, sprite patterns"
-        },
-        "4288": {
-          "comment": "$82 WR5: stop at end of block; $CF WR6: load; $87 WR6: enable"
         }
       }
     },
@@ -607,7 +607,7 @@
           "comment": "Stack top, inside bank 5 at $4000-$7FFF"
         },
         "7252": {
-          "comment": "-> Start ($A624, bank 2) \u2014 never returns here"
+          "comment": "-> Start ($A624, bank 2) — never returns here"
         },
         "7255": {
           "synopsis": "Initialise the two AY music players.\nFor each of banks 27 and 28: page it in at $8000, make its AY chip active,\nthen call the player's init entry at $8003 with HL = tune address.\nRestores bank 2 at $8000 before returning. Tune addresses at $5C6B and\n$5C84 are patched by Start."
@@ -622,7 +622,7 @@
           "comment": "$01|$FC = $FD: both channels on, AY 2 active"
         },
         "7274": {
-          "comment": "Tune address \u2014 operand PATCHED at $5C6B by Start"
+          "comment": "Tune address — operand PATCHED at $5C6B by Start"
         },
         "7277": {
           "comment": "Player init entry in the paged bank"
@@ -631,7 +631,7 @@
           "comment": "$02|$FC = $FE: both channels on, AY 1 active"
         },
         "7299": {
-          "comment": "Tune address \u2014 operand PATCHED at $5C84 by Start"
+          "comment": "Tune address — operand PATCHED at $5C84 by Start"
         },
         "7305": {
           "comment": "A = 2*2: restore bank 2 at $8000 before returning"
@@ -695,10 +695,22 @@
       "regions": [
         {
           "start": 0,
+          "end": 255,
+          "type": "bytes"
+        },
+        {
+          "start": 256,
           "end": 16383,
           "type": "disassemble"
         }
-      ]
+      ],
+      "lastView": "disassembly",
+      "decimalView": false,
+      "comment": "This bank contains the sprite patters used during the startup.",
+      "sprites": {
+        "offset": 1792,
+        "active": true
+      }
     },
     "13": {
       "offsetIndex": 0,
@@ -758,7 +770,9 @@
           "end": 16383,
           "type": "disassemble"
         }
-      ]
+      ],
+      "lastView": "memory",
+      "decimalView": false
     },
     "19": {
       "offsetIndex": 0,

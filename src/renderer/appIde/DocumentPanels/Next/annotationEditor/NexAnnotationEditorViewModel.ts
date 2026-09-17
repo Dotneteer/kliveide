@@ -1,7 +1,13 @@
 import type { ConfirmRequest } from "@mvc/dialogs/DialogPorts";
 import type { DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 
-import type { NexAnnotationRegionType, NexFileAnnotations } from "../nexAnnotations";
+import {
+  getBankAnnotation,
+  type NexAnnotationRegion,
+  type NexAnnotationRegionType,
+  type NexFileAnnotations
+} from "../nexAnnotations";
+import { resolveBankSprites, type ResolvedNexBankSprites } from "../nexAnnotationEdits";
 import {
   goToDefinitionTarget,
   type NexGoToDefinitionTarget
@@ -60,6 +66,7 @@ export type NexAnnotationMenuAction =
   | "goto-definition"
   | "manage-labels"
   | "manage-regions"
+  | "bank-comment"
   | "synopsis"
   | "comment"
   | "global-label"
@@ -93,6 +100,20 @@ export type NexAnnotationEditorViewModel = {
    * path belongs to the component around it. So the model goes out and the rows come back in.
    */
   annotations?: NexFileAnnotations;
+  /**
+   * The comment on the whole bank, when it has one.
+   *
+   * Shown as the toolbar chip and, when pinned, the strip under the toolbar. Absent rather than
+   * empty for a bank without one, so the view can test it directly.
+   */
+  bankComment?: string;
+  /**
+   * How the Sprites view reads this bank, with defaults filled in — or `undefined` when there is no
+   * bank annotation to hold it, in which case the view keeps its settings in view state.
+   */
+  bankSprites?: ResolvedNexBankSprites;
+  /** The bank's regions, for the Sprites view to mark patterns already declared as bytes. */
+  bankRegions?: NexAnnotationRegion[];
   /** The load failure to show in place of the listing, when there is one. */
   loadError?: string;
   /**
@@ -117,8 +138,24 @@ export function selectViewModel(state: NexAnnotationEditorState): NexAnnotationE
       selectedRange: selectedRange(state)
     },
     annotations: state.annotations,
+    ...selectBank(state),
     loadError: state.loadError,
     unwritten: !!state.saveError
+  };
+}
+
+function selectBank(
+  state: NexAnnotationEditorState
+): Pick<NexAnnotationEditorViewModel, "bankComment" | "bankSprites" | "bankRegions"> {
+  const bankAnnotation =
+    state.annotations && state.env.bank !== undefined
+      ? getBankAnnotation(state.annotations, state.env.bank)
+      : undefined;
+  if (!bankAnnotation) return {};
+  return {
+    bankComment: bankAnnotation.comment,
+    bankSprites: resolveBankSprites(bankAnnotation.sprites),
+    bankRegions: bankAnnotation.regions
   };
 }
 
@@ -131,8 +168,15 @@ function selectToolbar(
     // --- show its warning, which is the whole point of the indicator.
     visible: !!state.env.annotationPath,
     warning: selectWarning(state, enabled),
-    // --- The menu acts on the selection, so with nothing selected there is nothing to act on.
-    menuEnabled: enabled && state.selection?.activeIndex !== undefined
+    /*
+     * Enabled whenever there is anything to annotate, selection or not.
+     *
+     * It used to need a selection, because every entry acted on rows. Bank Comment does not: it is
+     * about the whole bank, and a toolbar button that could not reach it until a row was clicked
+     * would hide the one command that makes sense with nothing selected. The row entries are
+     * disabled individually instead, by the rules in `selectMenu`.
+     */
+    menuEnabled: enabled
   };
 }
 
@@ -222,7 +266,9 @@ export const NEX_ANNOTATION_SHORTCUTS: {
   { action: "local-label", key: "l", shift: true, hint: "Shift+L" },
   { action: "operand-label", key: "o", shift: false, hint: "O" },
   { action: "manage-labels", key: "m", shift: false, hint: "M" },
-  { action: "manage-regions", key: "r", shift: false, hint: "R" }
+  { action: "manage-regions", key: "r", shift: false, hint: "R" },
+  // --- `B`ank: the third whole-bank command, and the only one that needs no row at all.
+  { action: "bank-comment", key: "b", shift: false, hint: "B" }
 ];
 
 /**
@@ -289,6 +335,8 @@ function selectMenu(
     { kind: "separator" },
     item("manage-labels", "Manage Labels...", !enabled),
     item("manage-regions", "Manage Regions..."),
+    // --- About the whole bank, so like Manage Labels it needs annotations but no row.
+    item("bank-comment", "Bank Comment...", !enabled),
     { kind: "separator" },
     item("synopsis", "Synopsis Comment..."),
     item("comment", "End-of-Line Comment..."),
