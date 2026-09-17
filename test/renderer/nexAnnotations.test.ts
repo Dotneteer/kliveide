@@ -196,6 +196,53 @@ describe("NEX annotations", () => {
     });
   });
 
+  it("reads rowBytes on bytes regions, and keeps differently laid-out neighbours apart", () => {
+    const result = validateNexAnnotations({
+      schemaVersion: 2,
+      banks: {
+        "5": {
+          offsetIndex: 0,
+          regions: [
+            { start: 0, end: 7, type: "bytes" },
+            { start: 8, end: 15, type: "bytes", rowBytes: 2 },
+            // --- The default size, written out, reads as no field at all and merges with it.
+            { start: 16, end: 23, type: "bytes", rowBytes: 4 }
+          ]
+        }
+      }
+    });
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.annotations?.banks["5"].regions).toEqual([
+      { start: 0, end: 7, type: "bytes" },
+      { start: 8, end: 15, type: "bytes", rowBytes: 2 },
+      { start: 16, end: 23, type: "bytes" },
+      { start: 24, end: 0x3fff, type: "disassemble" }
+    ]);
+  });
+
+  it("rejects rowBytes outside 1..4 or on a region that is not bytes", () => {
+    const check = (region: Record<string, unknown>) =>
+      validateNexAnnotations({ schemaVersion: 2, banks: { "5": { offsetIndex: 0, regions: [region] } } });
+
+    for (const rowBytes of [0, 5, 1.5, "2"]) {
+      const bad = check({ start: 0, end: 7, type: "bytes", rowBytes });
+      expect(bad.annotations).toBeUndefined();
+      expect(bad.diagnostics).toContainEqual({
+        severity: "error",
+        path: "$.banks.5.regions[0].rowBytes",
+        message: "rowBytes must be in the range 1..4."
+      });
+    }
+    const onWords = check({ start: 0, end: 7, type: "words", rowBytes: 2 });
+    expect(onWords.annotations).toBeUndefined();
+    expect(onWords.diagnostics).toContainEqual({
+      severity: "error",
+      path: "$.banks.5.regions[0].rowBytes",
+      message: "rowBytes applies only to bytes regions."
+    });
+  });
+
   it("rejects overlapping regions and odd-length word regions", () => {
     const overlapping = validateNexAnnotations({
       schemaVersion: 1,

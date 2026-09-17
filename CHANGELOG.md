@@ -11,6 +11,8 @@
 - *Go to Definition* landed at the start of the line instead of on the symbol.
 - Opening a file whose viewer is not a code editor through the `nav` command (the NEX viewer, for
   example) took about five seconds.
+- In a disassembly listing, a label on the target of a `jr` or `djnz` appeared in the label column but
+  never in the jump itself, which kept the generated `L…` name.
 - **Only source files came back when you reopened a project.** Every other document backed by a
   project file &mdash; the NEX, DSK and Z80 viewers, plain text files &mdash; was saved into the
   workspace correctly and then discarded while restoring it, because restoring matched on the code
@@ -81,6 +83,9 @@
 
 ### Features
 
+- **Fixed-size data rows in NEX annotations.** A `bytes` region in a `.nex.dis` file can set
+  `rowBytes` (1&ndash;4), so a table of records lists one record per `.defb` line &mdash; each two-byte
+  copper instruction on its own line, for example &mdash; with its own comment.
 - **Go Back and Go Forward.** Klive remembers the places you jump to &mdash; *Go to Definition*, an
   output-pane link, a breakpoint, a document tab, *Go To* in the Memory and Disassembly views, a NEX
   bank or label &mdash; and takes you back through them with `Ctrl+-` / `Ctrl+Shift+-` on

@@ -340,7 +340,8 @@ describe("data rows and labels", () => {
   async function rows(
     type: "bytes" | "words",
     labels: { global?: { name: string; value: number }[]; local?: { name: string; value: number }[] },
-    end = 7
+    end = 7,
+    rowBytes?: number
   ) {
     const items = await createAnnotatedNexDisassemblyItems({
       annotations: {
@@ -350,7 +351,7 @@ describe("data rows and labels", () => {
           "2": {
             offsetIndex: 2,
             regions: [
-              { start: 0, end, type },
+              { start: 0, end, type, ...(rowBytes ? { rowBytes } : {}) },
               { start: end + 1, end: 0x3fff, type: "skip" }
             ],
             localLabels: labels.local ?? []
@@ -406,6 +407,44 @@ describe("data rows and labels", () => {
     expect(await rows("words", { global: [{ name: "HighByte", value: 0x8003 }] })).toEqual([
       { address: 0x8000, label: undefined, instruction: ".defw $0201, $0403", byteLength: 4 },
       { address: 0x8004, label: undefined, instruction: ".defw $0605, $0807", byteLength: 4 }
+    ]);
+  });
+
+  it("lays a bytes region out in rows of its rowBytes", async () => {
+    // --- A copper list: every two-byte instruction on a row of its own.
+    expect(await rows("bytes", {}, 7, 2)).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defb $01, $02", byteLength: 2 },
+      { address: 0x8002, label: undefined, instruction: ".defb $03, $04", byteLength: 2 },
+      { address: 0x8004, label: undefined, instruction: ".defb $05, $06", byteLength: 2 },
+      { address: 0x8006, label: undefined, instruction: ".defb $07, $08", byteLength: 2 }
+    ]);
+    // --- The region's end may leave a shorter last row.
+    expect((await rows("bytes", {}, 6, 3)).map((r) => r.instruction)).toEqual([
+      ".defb $01, $02, $03",
+      ".defb $04, $05, $06",
+      ".defb $07"
+    ]);
+  });
+
+  it("keeps a rowBytes record whole around a label inside it, and labels one that starts a record", async () => {
+    // --- $8003 is the second byte of the record at $8002 (the operand code patches); $8004 starts one.
+    expect(
+      await rows(
+        "bytes",
+        {
+          global: [
+            { name: "PatchedByte", value: 0x8003 },
+            { name: "Record2", value: 0x8004 }
+          ]
+        },
+        7,
+        2
+      )
+    ).toEqual([
+      { address: 0x8000, label: undefined, instruction: ".defb $01, $02", byteLength: 2 },
+      { address: 0x8002, label: undefined, instruction: ".defb $03, $04", byteLength: 2 },
+      { address: 0x8004, label: "Record2", instruction: ".defb $05, $06", byteLength: 2 },
+      { address: 0x8006, label: undefined, instruction: ".defb $07, $08", byteLength: 2 }
     ]);
   });
 

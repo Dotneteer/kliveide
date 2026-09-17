@@ -46,7 +46,32 @@ export type NexAnnotationRegion = {
   start: number;
   end: number;
   type: NexAnnotationRegionType;
+  /**
+   * For a `bytes` region: how many bytes each `.defb` row holds, 1..`NEX_MAX_ROW_BYTES`. Omitted means
+   * the default of four. Set it when the data has a record structure the rows should follow — a
+   * copper list is two-byte instructions, so `rowBytes: 2` gives each instruction its own row.
+   */
+  rowBytes?: number;
 };
+
+/** The most values a `.defb` row holds, and the row size when a region does not set `rowBytes`. */
+export const NEX_MAX_ROW_BYTES = 4;
+
+/** The row size a region lays its data out in. */
+export function getRegionRowBytes(region: Pick<NexAnnotationRegion, "rowBytes">): number {
+  return region.rowBytes ?? NEX_MAX_ROW_BYTES;
+}
+
+/**
+ * Whether two regions lay out the same way, so that touching each other they can be one region.
+ * Type alone is not enough: two `bytes` regions with different row sizes must stay apart.
+ */
+export function sameRegionLayout(
+  a: Pick<NexAnnotationRegion, "type" | "rowBytes">,
+  b: Pick<NexAnnotationRegion, "type" | "rowBytes">
+): boolean {
+  return a.type === b.type && getRegionRowBytes(a) === getRegionRowBytes(b);
+}
 
 export type NexLineAnnotation = {
   synopsis?: string;
@@ -827,10 +852,26 @@ function normalizeRegions(
       diagnostics.push(error(itemPath, "Word regions must contain an even number of bytes."));
       return;
     }
+    if (item.rowBytes !== undefined) {
+      if (item.type !== "bytes") {
+        diagnostics.push(error(`${itemPath}.rowBytes`, "rowBytes applies only to bytes regions."));
+        return;
+      }
+      if (!isIntegerInRange(item.rowBytes, 1, NEX_MAX_ROW_BYTES)) {
+        diagnostics.push(
+          error(`${itemPath}.rowBytes`, `rowBytes must be in the range 1..${NEX_MAX_ROW_BYTES}.`)
+        );
+        return;
+      }
+    }
     regions.push({
       start: item.start,
       end: item.end,
-      type: item.type as NexAnnotationRegionType
+      type: item.type as NexAnnotationRegionType,
+      // --- Only when it says something: the default row size is written as no field at all.
+      ...(item.rowBytes !== undefined && item.rowBytes !== NEX_MAX_ROW_BYTES
+        ? { rowBytes: item.rowBytes as number }
+        : {})
     });
   });
 
@@ -874,7 +915,7 @@ function mergeAdjacentRegions(regions: NexAnnotationRegion[]): NexAnnotationRegi
   const merged: NexAnnotationRegion[] = [];
   for (const region of regions) {
     const previous = merged[merged.length - 1];
-    if (previous && previous.end + 1 === region.start && previous.type === region.type) {
+    if (previous && previous.end + 1 === region.start && sameRegionLayout(previous, region)) {
       previous.end = region.end;
     } else {
       merged.push({ ...region });

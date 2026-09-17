@@ -1,6 +1,10 @@
 import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 
-export type DisassemblyOperandPragma = "L" | "W" | "w";
+/**
+ * The operand kinds a label resolver is asked about: `L` absolute jump/call targets, `r` relative
+ * jump targets (`jr`, `djnz`), `W` 16-bit data words, `w` Z80N's big-endian `push nn`.
+ */
+export type DisassemblyOperandPragma = "L" | "r" | "W" | "w";
 
 export type DisassemblyOperandInfo = {
   /**

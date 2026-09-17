@@ -50,6 +50,32 @@ describe("Z80Disassembler operandLabelResolver", () => {
     expect(item.instruction).toBe("call CallTarget");
   });
 
+  it("can replace a relative jump target, reporting the resolved address", async () => {
+    // --- jr +$10 at $8000 lands on $8002 + $10 = $8012.
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, 1));
+    const seen: unknown[] = [];
+    const disassembler = new Z80Disassembler(map.sections, new Uint8Array([0x18, 0x10]), undefined, {
+      operandLabelResolver: (operand) => {
+        seen.push(operand);
+        return operand.pragma === "r" && operand.operandValue === 0x8012 ? "LoopHead" : undefined;
+      }
+    });
+    disassembler.setAddressOffset(0x8000);
+    const output = await disassembler.disassemble();
+
+    expect(output!.outputItems[0].instruction).toBe("jr LoopHead");
+    expect(seen).toEqual([
+      expect.objectContaining({ pragma: "r", operandIndex: 0, operandValue: 0x8012, defaultText: "L8012" })
+    ]);
+  });
+
+  it("keeps the generated label for an unresolved djnz target", async () => {
+    // --- djnz -2 loops onto itself.
+    const item = await disassembleOne([0x10, 0xfe], { operandLabelResolver: () => undefined });
+    expect(item.instruction).toBe("djnz L0000");
+  });
+
   it("can replace a big-endian 16-bit word operand", async () => {
     const item = await disassembleOne([0xed, 0x8a, 0x12, 0x34], {
       allowExtendedSet: true,

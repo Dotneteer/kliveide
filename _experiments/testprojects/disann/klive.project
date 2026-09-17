@@ -24,7 +24,7 @@
     "breakpoints": [
       {
         "bank": 2,
-        "bankOffset": 9898,
+        "bankOffset": 4604,
         "exec": true,
         "ioMask": 65535
       }
@@ -65,7 +65,7 @@
               }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
+          "activeDocumentId": "memoryDump-bankDump/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex:2"
         }
       ]
     }

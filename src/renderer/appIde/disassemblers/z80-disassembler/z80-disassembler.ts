@@ -554,6 +554,9 @@ export class Z80Disassembler {
         var labelAddr = (this._addressOffset + this._opOffset + 2 + toSbyte(distance)) & 0xffff;
         this._output.createLabel(labelAddr, this._opOffset);
         replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${this._decimalMode ? toDecimal5(labelAddr) : intToX4(labelAddr)}`;
+        // --- A loop's `djnz`/`jr` target is as nameable as a `jp` target; without this a label on
+        // --- a loop head appeared in the label column but never in the jump that uses it.
+        replacement = this.resolveOperandLabel("r", labelAddr, replacement, disassemblyItem);
         symbolPresent = true;
         disassemblyItem.hasLabelSymbol = true;
         symbolValue = labelAddr;

@@ -47,6 +47,20 @@ describe("mergeAnnotationRegions", () => {
     expect(merged).toEqual([{ start: 0x00, end: 0x2f, type: "bytes" }]);
   });
 
+  it("keeps touching bytes regions with different row sizes apart", () => {
+    const regions: NexAnnotationRegion[] = [
+      { start: 0x00, end: 0x1f, type: "bytes" },
+      { start: 0x20, end: 0x2f, type: "bytes", rowBytes: 2 }
+    ];
+    expect(mergeAnnotationRegions(regions)).toEqual(regions);
+    expect(
+      mergeAnnotationRegions([
+        { start: 0x00, end: 0x1f, type: "bytes", rowBytes: 2 },
+        { start: 0x20, end: 0x2f, type: "bytes", rowBytes: 2 }
+      ])
+    ).toEqual([{ start: 0x00, end: 0x2f, type: "bytes", rowBytes: 2 }]);
+  });
+
   it("keeps neighbours of different types apart", () => {
     const regions: NexAnnotationRegion[] = [
       { start: 0x00, end: 0x1f, type: "bytes" },
@@ -86,6 +100,15 @@ describe("replaceAnnotationRegion", () => {
       { start: 0x0000, end: 0x00ff, type: "disassemble" },
       { start: 0x0100, end: 0x01ff, type: "bytes" },
       { start: 0x0200, end: 0x3fff, type: "disassemble" }
+    ]);
+  });
+
+  it("keeps the row size of the parts left either side", () => {
+    const copper: NexAnnotationRegion[] = [{ start: 0, end: 0x3fff, type: "bytes", rowBytes: 2 }];
+    expect(replaceAnnotationRegion(copper, 0x100, 0x1ff, "disassemble")).toEqual([
+      { start: 0x0000, end: 0x00ff, type: "bytes", rowBytes: 2 },
+      { start: 0x0100, end: 0x01ff, type: "disassemble" },
+      { start: 0x0200, end: 0x3fff, type: "bytes", rowBytes: 2 }
     ]);
   });
 
