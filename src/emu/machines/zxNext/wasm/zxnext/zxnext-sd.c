@@ -1,4 +1,5 @@
 #include "zxnext-sd.h"
+#include "zxnext-nextreg.h"
 
 #define ZXNEXT_SD_BYTES_PER_SECTOR 512u
 #define ZXNEXT_SD_RESPONSE_CAPACITY 540u
@@ -155,8 +156,6 @@ static void zxnextSdSetCardInfo(uint32_t card, uint32_t totalSectors) {
 
 static void zxnextSdSpiCsWrite(uint32_t value) {
   uint8_t data = (uint8_t)value;
-  uint8_t configMode = (zxnextNextRegs[0x14] & 0x80u) != 0;
-  uint8_t resetType2 = (zxnextNextRegs[0x02] & 0x04u) != 0;
   uint8_t reg;
   if ((data & 0x03u) == 0x02u) {
     reg = 0xfe;
@@ -164,7 +163,7 @@ static void zxnextSdSpiCsWrite(uint32_t value) {
     reg = 0xfd;
   } else if (data == 0xfbu || data == 0xf7u) {
     reg = data;
-  } else if (data == 0x7fu && (configMode || resetType2)) {
+  } else if (data == 0x7fu && zxnextNextRegConfigModeOrFlashReset()) {
     reg = 0x7f;
   } else {
     reg = 0xff;

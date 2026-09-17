@@ -22,7 +22,8 @@ refuses a stale artifact).
 npm run build:zxnext-wasm                                   # after C changes
 npm run test:visual                                         # headless tier, both cores (~50 s)
 npm run test:visual -- --tier browser                       # WASM in the installed Chrome, real .nexload
-npm test -- --project node test/harness/zxnext test/zxnext-hw test/wasm test/zxnext test/z80   # ~10,900 tests
+npm test -- --project node test/harness/zxnext test/zxnext-hw test/wasm test/zxnext test/z80 test/emu   # ~11,100 tests
+npx vitest run --config build/vitest.config.ts --project jsdom   # ~1,080 tests (npm test -- --project jsdom finds none)
 npm run build:check                                         # must say "No new type errors"
 ```
 
@@ -48,6 +49,28 @@ several `test/zxnext/*.test.ts`, `test/wasm/zxNext/wasm-next-full-matrix.test.ts
 handover: 20/20 visual cases in both tiers, 318 test files / 10,921 tests, no new type errors.
 
 ---
+
+## Status (2026-09-17, second session)
+
+| ID | Bug | Status | Test |
+|---|---|---|---|
+| B1 | Assembler ignored `.ent` in NEX output | FIXED | `test/z80-assembler/savenex.test.ts` |
+| B2 | WASM flash chip select used `$14` bit 7 / written `$02` | FIXED (WASM) | `test/zxnext-hw/sd/spi-flash-select.test.ts` |
+| B3 | `$4A` reset `$00`; WASM soft reset kept all NextRegs | FIXED (both) | `test/zxnext-hw/nextreg/fallback-colour-reset.test.ts`, `soft-reset.test.ts` |
+| B4 | Copper stored byte (`$60` even, `$63` odd) | FIXED (both) | `test/zxnext-hw/copper/copper-upload.test.ts` |
+| B5 | WASM reset cleared copper list RAM | FIXED (WASM) | same |
+| B6 | TS blend sources, `$68` bit 7 in blends, sprite over border | FIXED (TS) | `test/zxnext-hw/layers/blend-and-border.test.ts` |
+| B7 | WASM ULANext / ULA+ palette indexing | FIXED (WASM) | `test/zxnext-hw/ula/ulanext-ulaplus.test.ts` |
+| B8 | WASM raster ignored screen memory writes | MEMORY FIXED; sampled registers open | `test/zxnext-hw/ula/midframe-memory-write.test.ts` |
+| B9 | Copper MOVE write one tick early | VERIFIED, deferred (needs a hardware capture) | - |
+| B10 | Dead tilemap setters with a 5-bit mask | FIXED (deleted) | `test/zxnext-hw/nextreg/tilemap-base-address.test.ts` |
+| B11 | Panel re-rendered the screen every frame | FIXED (23-38% of frame time) | all visual goldens unchanged |
+| B12 | WASM ULA+ ports; TS 9th bit and palette select | FIXED (both) | `test/zxnext-hw/ula/ulaplus-ports.test.ts` |
+
+Every test was written first and seen failing for the predicted reason on the predicted core. All
+fixes were verified together: 11,072 node tests + 1,079 jsdom tests, both visual tiers with every golden
+approved and matching (see *Housekeeping*), `npm run build:check` clean. New tests use the harness in
+`test/harness/zxnext/` (`README.md`) and live in `test/zxnext-hw/`. **Nothing is committed yet.**
 
 ## Open bugs
 
@@ -75,7 +98,16 @@ code and the VHDL; the *visible* effect has not been demonstrated by a test unle
   routine before `Start: .ent $` must produce header PC = `Start`. After the fix, the visual test
   programs could put `#include "../_include/copper-routines.z80asm"` anywhere.
 
-### B2 – WASM SD card "config mode" is read from NextReg `$14` bit 7 (verified code discrepancy)
+### B2 – WASM SD card "config mode" is read from NextReg `$14` bit 7 – FIXED 2026-09-17
+
+- **Fixed:** the WASM core now keeps `nr_03_config_mode` (set by `111` in `$03`'s low bits, cleared by
+  any other non-zero value, off after every reset like the TS core) and `nr_02_reset_type` (`100` at
+  power-on, shifted on each soft reset) in `zxnext-nextreg.c`; `zxnextSdSpiCsWrite` accepts `$7F` only
+  when either allows it. **Second part found while fixing:** WASM also took the reset-type bit from the
+  last value *written* to `$02`, so after power-on it refused `$7F` that hardware accepts, and a `$02`
+  write could enable it. Test: `test/zxnext-hw/sd/spi-flash-select.test.ts` (WASM only - port `$E7` is
+  write-only and no core emulates the flash chip, so it reads the core's chip-select latch export; both
+  tests failed before the fix). The history below is kept for reference.
 
 - **Where:** `src/emu/machines/zxNext/wasm/zxnext/zxnext-sd.c:158`:
   `configMode = (zxnextNextRegs[0x14] & 0x80u) != 0`.
@@ -90,7 +122,17 @@ code and the VHDL; the *visible* effect has not been demonstrated by a test unle
   it here. **Test:** a WASM-vs-TS unit test writing `$E7 = $7F` with `$14 = $E3` and `$03` not in config
   mode; the SD/flash selection must match the TS core.
 
-### B3 – `$4A` fallback colour resets to `$00` in both cores (verified)
+### B3 – `$4A` fallback colour resets to `$00` in both cores – FIXED 2026-09-17
+
+- **Fixed:** both cores reset `$4A` to `$E3`. **Found while fixing:** the WASM *soft* reset did not reset
+  any NextReg value (`$14`, `$42`, `$4A`, the MMU `$50-$57` kept whatever was written); new
+  `zxnextNextRegSoftReset` restores the values the VHDL `reset` branches assign, mirroring TS
+  `NextRegDevice.reset/commonReset`. Tests: `test/zxnext-hw/nextreg/fallback-colour-reset.test.ts`
+  (register and a magenta screen with the ULA disabled; failed on both cores before) and
+  `soft-reset.test.ts` (22 registers against the VHDL values; failed on WASM before). Two existing
+  tests asserted the bug and were corrected: `test/zxnext/NextRegDevice.test.ts` (`$4A` = `$00`) and
+  `test/wasm/zxNext/wasm-next-screen-ula.test.ts` (clipped pixels black instead of the fallback
+  colour). No visual golden changed: the cases set `$4A` themselves.
 
 - **Where:** TS `src/emu/machines/zxNext/NextRegDevice.ts:3234` (`directSetRegValue(0x4a, 0x00)`), WASM
   `zxnext-nextreg.c:36` (`zxnextNextRegs[0x4a] = 0x00`).
@@ -101,7 +143,14 @@ code and the VHDL; the *visible* effect has not been demonstrated by a test unle
 - **Careful:** unit tests may assert `$00`; check `test/zxnext/NextRegDevice.test.ts` and the WASM
   NextReg tests. The existing visual cases set `$4A` explicitly, so they are unaffected.
 
-### B4 – Copper `$60` does not latch the stored byte (verified, both cores)
+### B4 – Copper `$60` does not latch the stored byte – FIXED 2026-09-17 (both cores)
+
+- **Fixed:** `$60` at an even address stores the byte; `$63` stores it **only** at an even address
+  (zxnext.vhd ~5411). **Second part found while fixing:** both cores also overwrote the stored byte on a
+  `$63` write at an odd address, so an odd `$63` write not preceded by an even one committed the wrong
+  MSB. Test: `test/zxnext-hw/copper/copper-upload.test.ts` - Z80 code uploads the list, the copper runs
+  it, and NextReg `$14` shows whether the instruction arrived intact (both parts failed on both cores
+  before).
 
 - **Where:** TS `CopperDevice.ts:70` (`set nextReg60Value`), WASM `zxnext-copper.c:60` (`case 0x60u`).
 - **Hardware:** zxnext.vhd ~5395–5398: a `$60` write at an **even** copper address also sets
@@ -112,7 +161,11 @@ code and the VHDL; the *visible* effect has not been demonstrated by a test unle
 - **Test:** a copper unit test (both cores) writing `$61=0; $60=hi; $63=lo` and checking copper RAM, plus
   optionally a visual variant of C05.
 
-### B5 – WASM reset clears copper list RAM (verified, low impact)
+### B5 – WASM reset clears copper list RAM – FIXED 2026-09-17
+
+- **Fixed:** `zxnextCopperReset` keeps the list RAM; the new `zxnextCopperHardReset` (power-on, from
+  `clearMachineBuffers`) clears it. Test: `copper-upload.test.ts` "a reset keeps the copper list"
+  (failed on WASM before; TS already passed).
 
 - **Where:** `zxnext-copper.c:54` (`zxnextCopperMemory[i] = 0u` in `zxnextCopperReset`).
 - **Hardware:** copper list RAM (`dpram2`) is not cleared by reset; only pointer, mode, write address,
@@ -120,7 +173,19 @@ code and the VHDL; the *visible* effect has not been demonstrated by a test unle
 - **Effect:** a soft reset in WASM loses a copper list the TS core (and hardware) keeps – a TS/WASM
   divergence visible to anything that restarts the copper after reset without re-uploading.
 
-### B6 – TypeScript blend modes: gaps against the VHDL (verified by reading; no test yet)
+### B6 – TypeScript blend modes: gaps against the VHDL – FIXED 2026-09-17
+
+- **Fixed:** the TS core no longer merges the tilemap into the ULA before composing, and no longer marks a
+  `$68`-bit-7 ULA transparent before the mixer. `NextComposedScreenDevice.composeLayers` now takes the
+  four layers separately and mixes them as zxnext.vhd stage 2 does - the same logic as the WASM
+  `zxnextUlaCompose` (stencil/`ulatm` merge, `ula_mix_*` vs `ula_*`, the six orders with the Layer 2
+  priority bit, the LUS/USL/ULS sprite-over-border exception, the `$68` blend-source cases 00/10/11/01,
+  110 saturate / 111 minus 5). `composeSinglePixel` remains as a wrapper (no tilemap) for its unit tests.
+  Test: `test/zxnext-hw/layers/blend-and-border.test.ts` - blend sources 00/10/11/01 with a tilemap,
+  `$68` bit 7 as blend operand, sprite over the border in LUS/USL/ULS (7 of 8 failed on TS before, all
+  passed on WASM). One unit test encoded the gap and was corrected:
+  `test/zxnext/UlaRendering.test.ts` "D7 fix" expected blend mode `01` to blend; the VHDL `when others`
+  case blends nothing and draws the ULA as a layer. All TS visual goldens unchanged.
 
 In `NextComposedScreenDevice.composeSinglePixel` (`~1287`) and the ULA/tilemap merge before it:
 
@@ -139,7 +204,18 @@ In `NextComposedScreenDevice.composeSinglePixel` (`~1287`) and the ULA/tilemap m
   and a sprite over the border (needs `$15` bit 1 "sprites over border") in LUS/USL/ULS. The TS core will
   fail these today; the WASM core should pass (verify – it has never been exercised).
 
-### B7 – WASM has no ULANext / ULA+ palette indexing (verified)
+### B7 – WASM has no ULANext / ULA+ palette indexing – FIXED 2026-09-17
+
+- **Fixed:** `zxnextUlaAttrPaletteIndex` (standard and HiColor screens) and the new
+  `zxnextUlaBorderPaletteIndex` follow zxula.vhd ~484-553: ULANext ink `attr & $42`, paper
+  `$80 | attr >> bits` for formats `$01`-`$7F`, fallback colour for any other format; border `$80+n`
+  (fallback for `$FF`); ULA+ (NextReg `$68` bit 3, now also read back) ink `$C0 | group<<4 | mode bit |
+  ink`, paper `$C8 | group<<4 | paper`, border `$C8+n`; no FLASH in either. The fallback colour replaces
+  the palette colour *before* the `$14` compare (zxnext.vhd ~6933/7046). Test:
+  `test/zxnext-hw/ula/ulanext-ulaplus.test.ts` (formats `$07`, `$0F`, `$FF` and ULA+; all four failed on
+  WASM before, all passed on TS). Not covered: HiRes mode, and the ULA+ ports themselves (B12). Minor
+  TS difference left: its ULANext-`$FF` *border* never tests the fallback against `$14`; visible only
+  when `$4A` equals `$14` with a layer below the ULA.
 
 - **Where:** `zxnextUlaAttrPaletteIndex` (`zxnext-ula.c:165`) and the border lookup in
   `zxnextUlaRenderInstantScreen` always use the standard paper/ink indices (paper/border 16+n).
@@ -150,7 +226,20 @@ In `NextComposedScreenDevice.composeSinglePixel` (`~1287`) and the ULA/tilemap m
 - **Effect:** any program using ULANext or ULA+ colours renders wrong colours in the production core.
 - **Test:** a visual case per mode, expectations from zxula.vhd (~500–553).
 
-### B8 – WASM raster: only some mid-frame state is raced (known limitation)
+### B8 – WASM raster: only some mid-frame state is raced – PARTLY FIXED 2026-09-17
+
+- **Fixed (memory):** a write that changes a byte of bank 5 or 7 (ULA, HiColor/HiRes, LoRes, tilemap) or
+  of the five 16K banks from the displayed Layer 2 bank now calls the raster catch-up
+  (`zxnextRasterMemoryWrite`, from `zxnextMemoryWriteMapped`), up to the *start of the beam's current
+  row*: at most one row render per scanline. The row being drawn shows the new contents from its first
+  pixel (hardware fetches per cell) - at most one line of difference. Cost measured on a program
+  rewriting attributes nonstop: 1.114 -> 1.137 ms/frame; unchanged for non-video writes. Test:
+  `test/zxnext-hw/ula/midframe-memory-write.test.ts` (attributes written at copper line 96 by polling
+  `$1F`; failed on WASM before - the whole column showed the later colour - passed on TS).
+- **Still open (sampled registers):** `$68` half-pixel scroll, port `$FF` HiRes/HiColor and LoRes enable
+  still switch at the write pixel in WASM, not at the next 8-pixel cell as in TS. Note `$68` bit 7 is
+  per pixel in the VHDL, so a `$68` write cannot simply be delayed like `$26/$27`; it needs a per-bit
+  split. The history below is kept for reference.
 
 The beam-racing raster (F1 fix) renders the frame lazily, catching up before writes that change the
 picture (`zxnextRasterIsVideoNextReg`, `zxnext-ula.c:1519`, and the port list in `zxnext-ports.c`).
@@ -168,21 +257,61 @@ picture (`zxnextRasterIsVideoNextReg`, `zxnext-ula.c:1519`, and the port list in
 - **Test:** a visual case writing attribute memory from a line interrupt (D04-style) and a mid-line
   HiColor switch.
 
-### B9 – Copper MOVE latency is one tick short (reported by a VHDL read-through; not re-verified)
+### B9 – Copper MOVE latency is one tick short – VERIFIED, NOT FIXED (2026-09-17)
+
+- **Verified against the VHDL:** a MOVE fetched on tick T sets `copper_dout_s` (visible at T+1);
+  zxnext.vhd latches `copper_req` on the rising edge of `copper_requester` (T+1), and the NextReg write
+  happens with `nr_wr_en` on T+2. Both cores write on T+1. The next fetch is at T+2 in both, so only the
+  write time differs: one 28 MHz tick = half a buffer pixel.
+- **Why not fixed:** no program can observe it through the hardware interface (the CPU cannot sample
+  that finely), and the visible position of a MOVE's effect also depends on the palette/video pipeline
+  delays, which neither core models tick for tick (the cases allow a 4-px margin for exactly that). Moving
+  one term of that chain without a real-hardware capture could make the end-to-end position worse, and
+  a sub-HC shift can change TS output at HC boundaries (goldens). Fix it together with a measured
+  reference picture from real hardware.
 
 - TS `CopperDevice.executeTick` outputs a MOVE on the tick after the fetch; hardware writes on the second
   tick after it (copper.vhd `copper_dout` → zxnext.vhd `copper_req` latch → NextReg write). With 4 ticks
   per pixel this is a quarter-pixel difference – invisible in the current cases (4-px probe margins), but it
   changes exactly where a long run of MOVEs lands. WASM mirrors TS. Low priority.
 
-### B10 – Dead code with a wrong mask: `TilemapDevice.nextReg6eValue/6fValue` (verified dead)
+### B10 – Dead code with a wrong mask: `TilemapDevice.nextReg6eValue/6fValue` – FIXED 2026-09-17
+
+- **Fixed:** the unused accessors and their four fields were deleted. The live `$6E/$6F` path is guarded
+  by `test/zxnext-hw/nextreg/tilemap-base-address.test.ts` (6-bit offset, bank 7 flag, bit 6 reads 0;
+  both cores; passed before and after).
 
 - `src/emu/machines/zxNext/TilemapDevice.ts:138–155` masks the tilemap/tile-definition address MSB to 5
   bits (`& 0x01f`); hardware keeps 6 (zxnext.vhd ~5445–5446, tilemap.vhd:57 "5:0 are offsets into 16K").
 - Nothing uses these setters – NextReg `$6E/$6F` (`NextRegDevice.ts ~1601–1631`) go to the screen
   device's correct 6-bit fields. Delete or fix so nobody wires them up later.
 
-### B11 – `EmulatorPanel` renders an instant screen after every frame (performance, not correctness)
+### B12 – WASM does not emulate the ULA+ ports `$BF3B`/`$FF3B` – FIXED 2026-09-17 (found 2026-09-17)
+
+- **Hardware:** zxnext.vhd ~4500-4563: `$BF3B` sets the mode group (bits 7-6) and, in group `00`, the
+  6-bit index; `$FF3B` in group `00` writes/reads ULA palette entry `$C0 + index` as GGGRRRBB (reordered
+  to RRRGGGBB, 9th bit `B1 or B0`), in group `01` writes the ULA+ enable (also `$68` bit 3) and reads it
+  back. The palette is chosen by the `$43` **write** select bit 6. Ports gated by NextReg `$85` bit 0.
+- **Cores:** the TS core already decoded the ports (`io-ports/UlaPlusDataPortHandler.ts`; the first report
+  said both cores lacked them - wrong, the port table was missed). WASM decoded neither. Fixed in WASM
+  (`zxnextUlaPlusWrite*/Read*` in `zxnext-ula.c`, `zxnextPaletteWriteUlaPlus/ReadUlaPlus`, port dispatch;
+  a `$FF3B` write races the beam). **Two TS deviations fixed with it:** the 9th colour bit was B0 instead
+  of `B1 or B0`, and the palette followed the *display* select (`$43` bit 1) instead of the write select.
+  Test: `test/zxnext-hw/ula/ulaplus-ports.test.ts` (enable/readback, palette write/readback in GRB order,
+  a ULA+ screen coloured through the ports with a `BB = 10` border; all failed on WASM, the border failed on
+  TS). Two unit tests in `test/zxnext/NextComposedScreenDevice.test.ts` encoded the TS deviations and were
+  corrected.
+
+### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
+
+- **Fixed:** `machineFrameCompleted` keeps a copy of the displayed pixel buffer instead of calling
+  `renderInstantScreen()`: every core draws while it executes (48K/128/+3E WASM render up to the current
+  tact, TS devices per tact, the Next WASM raster; C64/Z88 `renderInstantScreen` only returns the buffer),
+  so the render was needed only for the copy it returned. Measured on the ZX Next (T00 ULA only / P01
+  all layers): WASM 1.086 -> 0.835 and 3.280 -> 2.404 ms/frame, TS 14.2 -> 8.8 and 21.5 -> 13.4 ms/frame.
+  The harness's "run a frame like the app" paths (`runDisplayedFrame`, session, browser `FrameRunner`)
+  dropped the call too, and every approved golden (both cores) stayed byte-identical - proof the
+  render had no visible effect. The paused "instant screen" view still renders on demand.
 
 - `src/renderer/features/emulator/EmulatorPanel.tsx:234` calls `machine.renderInstantScreen()` on every
   full frame to keep a "saved pixel buffer" for the pause overlay. For the WASM core that is now a second
@@ -209,8 +338,10 @@ Details, VHDL references and tests for each are in the plan's *Findings*.
 
 ## Housekeeping (not bugs)
 
-- Golden hashes are approved only for T00, C01, C08 (both cores) and T00 (browser). All other cases now
-  pass but were never AI-reviewed after the fixes: run both tiers, have a *separate* agent review every
-  `review.md` (describe first, then compare), then `npm run test:visual -- --approve <ids>` (add
-  `--tier browser` for browser results).
+- **Golden hashes: all approved (2026-09-17).** Every case was reviewed by a separate agent in both tiers
+  (describe first, then compare) and approved for `ts`, `wasm` and `browser` (D05: `ts`, `wasm`; it is
+  not a browser case). Two reviews came back *unsure* on row 48 of C04 and C11: the pictures were right
+  (mode 11 restarts the list at `hc_ula` 0, paper x −12, copper.vhd "restart at frame start") and the
+  `expect.md` texts were imprecise; they were corrected and re-reviewed. `--approve` skips `longOnly`
+  cases unless `--long` is also given.
 - The emulator changes above are not covered by `CHANGELOG.md` yet.

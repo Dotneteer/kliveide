@@ -231,19 +231,18 @@ describe("D4 — Blend modes (priority 6-7)", () => {
     expect(result).toBe(expectedResult);
   });
 
-  it("blend mode with ulaBlendingInSLUModes=01 still blends (D7 fix)", () => {
+  it("blend mode with ulaBlendingInSLUModes=01 does not blend: the ULA is drawn as a layer", () => {
     csd().layerPriority = 6;
     csd().ulaBlendingInSLUModes = 0b01;
 
-    // After D7: blend IS applied even with ulaBlendingInSLUModes=0b01
+    // zxnext.vhd `case ula_blend_mode_2`, `when others`: mix_rgb <= 0, mix_rgb_transparent <= '1', and the
+    // ULA becomes the top layer (the tilemap is off, so tm_pixel_below = not nr_6b(0) = 1). The earlier
+    // "D7 fix" expected a ULA + Layer 2 blend here, which is not what the hardware does.
     const result = (csd() as any).composeSinglePixel(
       0x0aa, false, 0x0bb, false, false, null, true
     );
 
-    // 0x0aa = R2 G5 B2, 0x0bb = R2 G7 B3; saturate-add → R4 G7 B5 = 0x13D
-    const blended = 0x13d;
-    const expectedResult = rgbaOf(blended);
-    expect(result).toBe(expectedResult);
+    expect(result).toBe(rgbaOf(0x0aa));
   });
 
   it("sprites override blend result", () => {

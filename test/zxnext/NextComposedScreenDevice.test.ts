@@ -1462,7 +1462,9 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const pal = m.paletteDevice;
-      writeNextReg(m, 0x43, 0x02); // Enable second ULA palette
+      // --- The *write* select picks the palette (zxnext.vhd `nr_palette_index_utm <= '0' &
+      // --- nr_43_palette_write_select(2) & "11" & port_bf3b_ulap_index`): $43 bits 6-4 = 100.
+      writeNextReg(m, 0x43, 0x40);
 
       pm.writePort(0xbf3b, 0x07); // Mode 00, index 7
 
@@ -1679,8 +1681,9 @@ describe("Next - ComposedScreenDevice", function () {
         const expectedR = i;
         const expectedG = i;
         const expectedB = i & 0x03;
+        // --- 9th bit: B1 or B0 (zxnext.vhd `nr_palette_value <= nr_wr_dat & (nr_wr_dat(1) or nr_wr_dat(0))`)
         const expectedRgb333 =
-          (expectedR << 6) | (expectedG << 3) | (expectedB << 1) | (expectedB & 0x01);
+          (expectedR << 6) | (expectedG << 3) | (expectedB << 1) | (expectedB !== 0 ? 1 : 0);
         expect(rgb333).toBe(expectedRgb333);
       }
     });

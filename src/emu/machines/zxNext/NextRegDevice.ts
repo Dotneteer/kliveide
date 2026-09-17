@@ -3231,7 +3231,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     // --- First layer 2 palette
     // --- First ULA palette
     // --- Disable ULA Next mode
-    this.directSetRegValue(0x4a, 0x00); // --- Fallback color = 0x00
+    this.directSetRegValue(0x4a, 0xe3); // --- Fallback colour: zxnext.vhd reset branch `nr_4a_fallback_rgb <= X"E3"`
     this.directSetRegValue(0x4b, TBBLUE_DEF_TRANSPARENT_COLOR);
     this.directSetRegValue(0x4c, 0x0f); // --- Tilemap transparency index = 0x0f
     this.directSetRegValue(0x61, 0x00); // --- Copper address LSB

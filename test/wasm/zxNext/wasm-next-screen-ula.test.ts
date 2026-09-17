@@ -186,10 +186,12 @@ describe("ZX Spectrum Next WASM standard ULA screen", () => {
     const pixels = wasm.getPixelBuffer();
 
     expect(pixels[screenIndex(0, 0)]).toBe(zxNextBgra[0x140]);
+    // --- Clipped pixels show the fallback colour, $4A, which resets to $E3 (9-bit $1C7):
+    // --- zxnext.vhd reset branch `nr_4a_fallback_rgb <= X"E3"`.
     expect(pixels[screenIndex(2, 0)]).toBe(oraclePixels[screenIndex(2, 0)]);
-    expect(pixels[screenIndex(2, 0)]).toBe(zxNextBgra[0x000]);
+    expect(pixels[screenIndex(2, 0)]).toBe(zxNextBgra[0x1c7]);
     expect(pixels[screenIndex(0, 1)]).toBe(oraclePixels[screenIndex(0, 1)]);
-    expect(pixels[screenIndex(0, 1)]).toBe(zxNextBgra[0x000]);
+    expect(pixels[screenIndex(0, 1)]).toBe(zxNextBgra[0x1c7]);
     expect(pixels[(STANDARD_SCREEN_Y - 1) * ZXNEXT_WASM_V2_SCREEN_WIDTH + STANDARD_SCREEN_X]).toBe(zxNextBgra[0x02d]);
   });
 

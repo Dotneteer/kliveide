@@ -51,6 +51,13 @@ static void zxnextCopperReset(void) {
   zxnextCopperFrameTact = 0u;
   zxnextCopperCurrentLine = 0u;
   zxnextCopperCurrentColumn = 0u;
+  // --- Copper list RAM (dpram2) is not cleared by a reset (copper.vhd / zxnext.vhd reset branches
+  // --- clear only the pointer, mode, write address, stored byte and $64); see zxnextCopperHardReset.
+}
+
+// Power-on: the list RAM starts empty.
+static void zxnextCopperHardReset(void) {
+  zxnextCopperReset();
   for (uint32_t i = 0u; i < 0x800u; i++) zxnextCopperMemory[i] = 0u;
 }
 
@@ -58,6 +65,8 @@ static void zxnextCopperSetNextReg(uint32_t reg, uint32_t value) {
   uint8_t byteValue = (uint8_t)value;
   switch (reg & 0xffu) {
     case 0x60u:
+      // --- zxnext.vhd: a $60 write at an even address also stores the byte a $63 write commits as MSB
+      if ((zxnextCopperInstructionAddress & 0x0001u) == 0u) zxnextCopperStoredByte = byteValue;
       zxnextCopperMemory[zxnextCopperInstructionAddress] = byteValue;
       zxnextCopperInstructionAddress = (zxnextCopperInstructionAddress + 1u) & 0x7ffu;
       break;
@@ -82,8 +91,10 @@ static void zxnextCopperSetNextReg(uint32_t reg, uint32_t value) {
       if (zxnextCopperInstructionAddress & 0x0001u) {
         zxnextCopperMemory[zxnextCopperInstructionAddress & 0x7feu] = zxnextCopperStoredByte;
         zxnextCopperMemory[zxnextCopperInstructionAddress] = byteValue;
+      } else {
+        // --- zxnext.vhd: the byte is stored only at an even address
+        zxnextCopperStoredByte = byteValue;
       }
-      zxnextCopperStoredByte = byteValue;
       zxnextCopperInstructionAddress = (zxnextCopperInstructionAddress + 1u) & 0x7ffu;
       break;
     case 0x64u:

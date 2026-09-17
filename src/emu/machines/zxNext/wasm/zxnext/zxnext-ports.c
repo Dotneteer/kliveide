@@ -50,6 +50,8 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     lastPortValue = zxnextPortsGroupEnabled(1, 7) ? zxnextLayer2GetPort123B() : 0xffu;
   } else if ((normalized & 0xffffu) == 0x303bu) {
     lastPortValue = zxnextPortsGroupEnabled(1, 6) ? zxnextSpritesReadPort303b() : 0xffu;
+  } else if ((normalized & 0xffffu) == 0xff3bu) {
+    lastPortValue = zxnextPortsGroupEnabled(3, 0) ? zxnextUlaPlusReadDataPort() : 0xffu;
   } else if ((normalized & 0xf8ffu) == 0x183bu) {
     lastPortValue = zxnextCtcReadPort(normalized);
   } else if ((normalized & 0x00ffu) == 0x006bu) {
@@ -103,7 +105,7 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   // --- Even ports are the ULA's $FE; only a border colour change matters (beeper writes are frequent).
   if (((normalized & 0x0001u) == 0u && (byteValue & 0x07u) != borderColor) ||
       (normalized & 0x00ffu) == 0x00ffu ||
-      (normalized & 0xffffu) == 0x123bu || (normalized & 0xffffu) == 0x303bu ||
+      (normalized & 0xffffu) == 0x123bu || (normalized & 0xffffu) == 0x303bu || (normalized & 0xffffu) == 0xff3bu ||
       (normalized & 0x00ffu) == 0x0057u || (normalized & 0x00ffu) == 0x005bu ||
       (normalized & 0xc003u) == 0x4001u || (normalized & 0xf003u) == 0xd001u || (normalized & 0xf003u) == 0x1001u) {
     zxnextRasterCatchUp(currentFrameTact);
@@ -126,6 +128,10 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
     if (zxnextPortsGroupEnabled(1, 7)) zxnextLayer2SetPort123B(byteValue);
   } else if ((normalized & 0xffffu) == 0x303bu) {
     if (zxnextPortsGroupEnabled(1, 6)) zxnextSpritesWritePort303b(byteValue);
+  } else if ((normalized & 0xffffu) == 0xbf3bu) {
+    if (zxnextPortsGroupEnabled(3, 0)) zxnextUlaPlusWriteRegisterPort(byteValue);
+  } else if ((normalized & 0xffffu) == 0xff3bu) {
+    if (zxnextPortsGroupEnabled(3, 0)) zxnextUlaPlusWriteDataPort(byteValue);
   } else if ((normalized & 0x00ffu) == 0x0057u) {
     if (zxnextPortsGroupEnabled(1, 6)) zxnextSpritesWritePort57(byteValue);
   } else if ((normalized & 0x00ffu) == 0x005bu) {

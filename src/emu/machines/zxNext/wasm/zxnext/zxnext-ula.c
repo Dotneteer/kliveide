@@ -79,6 +79,11 @@ static uint8_t ulaDisableOutput;
 static uint8_t ulaBlendingInSluModes;
 static uint8_t ulaHalfPixelScroll;
 static uint8_t ulaEnableStencilMode;
+/* zxnext.vhd port_ff3b_ulap_en: ULA+ palette mapping, set by NextReg $68 bit 3 or port $FF3B (group 01). */
+static uint8_t ulaPlusEnabled;
+/* zxnext.vhd port_bf3b_ulap_mode / port_bf3b_ulap_index. */
+static uint8_t ulaPlusMode;
+static uint8_t ulaPlusIndex;
 static uint32_t ulaPortBit4ChangedFrom0Tacts;
 static uint32_t ulaPortBit4ChangedFrom1Tacts;
 
@@ -101,6 +106,9 @@ static void zxnextUlaReset(void) {
   ulaBlendingInSluModes = 0u;
   ulaHalfPixelScroll = 0u;
   ulaEnableStencilMode = 0u;
+  ulaPlusEnabled = 0u;
+  ulaPlusMode = 0u;
+  ulaPlusIndex = 0u;
   ulaPortBit4ChangedFrom0Tacts = 0u;
   ulaPortBit4ChangedFrom1Tacts = 0u;
   for (uint32_t i = 0; i < ZXNEXT_PIXEL_COUNT; i++) {
@@ -155,14 +163,55 @@ static inline uint32_t zxnextUlaPaletteColor(uint32_t index) {
  * `ula_mix_transparent <= ... ula_rgb_2(8 downto 1) = transparent_rgb_2`). Clipped pixels are transparent
  * too; what shows through is decided by zxnextUlaCompose.
  */
+/* Not a palette index: the ULA selects the fallback colour $4A (zxula.vhd ula_select_bgnd). */
+#define ZXNEXT_ULA_SELECT_FALLBACK 0x100u
+
+static inline uint32_t zxnextUlaFallbackRgb(void) {
+  uint32_t fb = zxnextNextRegs[0x4au];
+  return ((fb << 1u) | ((fb & 0x03u) != 0u ? 1u : 0u)) & 0x1ffu;
+}
+
 static inline uint32_t zxnextUlaPx(uint32_t index) {
-  uint32_t palette = (zxnextPaletteGetControl() & 0x02u) ? 4u : 0u;
-  uint32_t entry = zxnextPaletteGetEntry(palette, index) & 0x1ffu;
+  uint32_t entry;
+  if (index == ZXNEXT_ULA_SELECT_FALLBACK) {
+    // --- zxnext.vhd ~6933: the fallback replaces the palette colour before the $14 compare.
+    entry = zxnextUlaFallbackRgb();
+  } else {
+    uint32_t palette = (zxnextPaletteGetControl() & 0x02u) ? 4u : 0u;
+    entry = zxnextPaletteGetEntry(palette, index) & 0x1ffu;
+  }
   if ((entry >> 1u) == zxnextNextRegs[0x14u]) return 0u;
   return zxnextPx(entry);
 }
 
+/*
+ * The ULA palette index of an ink or paper pixel (zxula.vhd ~484-553, "Standard ULA, ULAnext, ULA+").
+ * ULANext (NextReg $43 bit 0), format f = NextReg $42: ink = attr and f; paper = $80 | attr >> bits(f)
+ * for f = $01, $03, ... $7F, the fallback colour for any other f. ULA+: "11" & attr(7:6) & bit 3 &
+ * ink attr(2:0) or paper attr(5:3), where bit 3 is 1 for paper and Timex screen mode bit 2 for ink.
+ * Neither has FLASH or (ULA+) BRIGHT.
+ */
 static inline uint32_t zxnextUlaAttrPaletteIndex(uint32_t attr, uint32_t ink) {
+  if (zxnextPaletteGetUlaNextEnabled()) {
+    uint32_t format = zxnextNextRegs[0x42u];
+    if (ink) return attr & format;
+    switch (format) {
+      case 0x01u: return 0x80u | (attr >> 1u);
+      case 0x03u: return 0x80u | (attr >> 2u);
+      case 0x07u: return 0x80u | (attr >> 3u);
+      case 0x0fu: return 0x80u | (attr >> 4u);
+      case 0x1fu: return 0x80u | (attr >> 5u);
+      case 0x3fu: return 0x80u | (attr >> 6u);
+      case 0x7fu: return 0x80u | (attr >> 7u);
+      default: return ZXNEXT_ULA_SELECT_FALLBACK;
+    }
+  }
+  if (ulaPlusEnabled) {
+    uint32_t group = (attr >> 6u) << 4u;
+    return ink
+      ? (0xc0u | group | ((portTimexValue & 0x04u) ? 0x08u : 0u) | (attr & 0x07u))
+      : (0xc8u | group | ((attr >> 3u) & 0x07u));
+  }
   uint32_t brightOffset = (attr & 0x40u) ? 0x08u : 0x00u;
   uint32_t inkIndex = (attr & 0x07u) + brightOffset;
   uint32_t paperIndex = ((attr >> 3u) & 0x07u) + brightOffset + 0x10u;
@@ -1292,6 +1341,14 @@ static void zxnextUlaCompose(void) {
   }
 }
 
+/* Border colour n: ULANext $80+n (fallback with format $FF), ULA+ $C8+n, standard 16+n (zxula.vhd). */
+static inline uint32_t zxnextUlaBorderPaletteIndex(void) {
+  uint32_t n = borderColor & 0x07u;
+  if (zxnextPaletteGetUlaNextEnabled()) return zxnextNextRegs[0x42u] == 0xffu ? ZXNEXT_ULA_SELECT_FALLBACK : 0x80u + n;
+  if (ulaPlusEnabled) return 0xc8u + n;
+  return 16u + n;
+}
+
 static uint32_t zxnextUlaRenderInstantScreen(void) {
   uint32_t first = zxnextRenderRowFirst * ZXNEXT_SCREEN_WIDTH;
   uint32_t end = (zxnextRenderRowLast + 1u) * ZXNEXT_SCREEN_WIDTH;
@@ -1304,7 +1361,7 @@ static uint32_t zxnextUlaRenderInstantScreen(void) {
   uint32_t timexMode = portTimexValue & 0x07u;
   uint32_t borderPx = timexMode >= 0x04u
     ? zxnextUlaPx(24u + (7u - ((portTimexValue >> 3u) & 0x07u)))
-    : zxnextUlaPx(16u + (borderColor & 0x07u));
+    : zxnextUlaPx(zxnextUlaBorderPaletteIndex());
   if (borderPx != 0u) borderPx |= ZXNEXT_PX_BORDER;
   for (uint32_t i = first; i < end; i++) zxnextLayerUla[i] = (uint16_t)borderPx;
   if (zxnextLoResGetEnabled()) {
@@ -1379,6 +1436,7 @@ static void zxnextUlaSetNextReg(uint32_t reg, uint32_t value) {
       ulaBlendingInSluModes = (byteValue >> 5u) & 0x03u;
       ulaHalfPixelScroll = (byteValue & 0x04u) != 0u;
       ulaEnableStencilMode = (byteValue & 0x01u) != 0u;
+      ulaPlusEnabled = (byteValue & 0x08u) != 0u;
       break;
     case 0x69u:
       portTimexValue = byteValue & 0x3fu;
@@ -1386,6 +1444,23 @@ static void zxnextUlaSetNextReg(uint32_t reg, uint32_t value) {
     default:
       break;
   }
+}
+
+/* Port $BF3B write: mode group (bits 7-6); in group 00 also the palette index (zxnext.vhd ~4504-4517). */
+static void zxnextUlaPlusWriteRegisterPort(uint32_t value) {
+  ulaPlusMode = (uint8_t)((value >> 6u) & 0x03u);
+  if (ulaPlusMode == 0u) ulaPlusIndex = (uint8_t)(value & 0x3fu);
+}
+
+/* Port $FF3B write: group 00 writes the ULA+ palette entry, group 01 the enable (~4521-4534). */
+static void zxnextUlaPlusWriteDataPort(uint32_t value) {
+  if (ulaPlusMode == 0u) zxnextPaletteWriteUlaPlus(ulaPlusIndex, value);
+  else if (ulaPlusMode == 1u) ulaPlusEnabled = (value & 0x01u) != 0u;
+}
+
+/* Port $FF3B read: group 00 the palette entry, otherwise the enable in bit 0 (~4538-4548). */
+static uint32_t zxnextUlaPlusReadDataPort(void) {
+  return ulaPlusMode == 0u ? zxnextPaletteReadUlaPlus(ulaPlusIndex) : (ulaPlusEnabled ? 0x01u : 0x00u);
 }
 
 static uint32_t zxnextUlaGetNextReg(uint32_t reg) {
@@ -1396,6 +1471,7 @@ static uint32_t zxnextUlaGetNextReg(uint32_t reg) {
     case 0x68u:
       return (ulaDisableOutput ? 0x80u : 0u) |
         ((uint32_t)ulaBlendingInSluModes << 5u) |
+        (ulaPlusEnabled ? 0x08u : 0u) |
         (ulaHalfPixelScroll ? 0x04u : 0u) |
         (ulaEnableStencilMode ? 0x01u : 0u);
     default: return 0u;
@@ -1440,8 +1516,10 @@ static uint32_t zxnextUlaGetColumnForTact(uint32_t tact) {
 // (NextComposedScreenDevice.generateBitmapOffsetTable, Plus3_50Hz): 456 HC per line, bitmap row 0 at
 // VC 16, bitmap x 0 at HC 96, two buffer pixels per HC.
 //
-// Not covered: writes to screen *memory* mid-frame (the region is rendered with the memory as it is
-// at the next catch-up or at frame end).
+// Screen *memory* writes (bank 5/7: ULA, LoRes, tilemap; the displayed Layer 2 bank) catch up too,
+// but only to the start of the beam's current row (zxnextRasterMemoryWrite): at most one row render
+// per scanline however many bytes a program writes. The row being drawn shows the new contents from
+// its first pixel - at most one line of difference from the hardware, which fetches per cell.
 // ---------------------------------------------------------------------------
 
 #define ZXNEXT_RASTER_FIRST_VC 16u
@@ -1506,6 +1584,25 @@ static void zxnextRasterCatchUp(uint32_t frameTact) {
 static void zxnextRasterFinishFrame(void) {
   zxnextRasterRenderTo(ZXNEXT_PIXEL_COUNT);
   zxnextRasterPixel = 0u;
+}
+
+/*
+ * Called by the memory write path with the physical offset about to change. A byte the renderers read
+ * - bank 5 or 7 (ULA/HiColor/HiRes/LoRes/tilemap; zxnext.vhd `ula_bank_do`, `tm_mem`) or the five 16K
+ * banks from the displayed Layer 2 bank - renders the rows the beam has finished with the old contents.
+ */
+static void zxnextRasterMemoryWrite(uint32_t physical, uint32_t value) {
+  if (zxnextMemoryReadPhysical(physical) == (value & 0xffu)) return;
+  uint32_t video = (physical >= ZXNEXT_LORES_BANK_05_OFFSET && physical < ZXNEXT_LORES_BANK_05_OFFSET + 0x4000u) ||
+    (physical >= ZXNEXT_BANK_07_OFFSET && physical < ZXNEXT_BANK_07_OFFSET + 0x4000u);
+  if (!video && zxnextLayer2GetEnabled()) {
+    uint32_t bank16 = zxnextLayer2GetUseShadowBank() ? zxnextLayer2GetShadowRamBank() : zxnextLayer2GetActiveRamBank();
+    uint32_t base = ZXNEXT_LAYER2_RAM_OFFSET + (bank16 << 14u);
+    video = physical >= base && physical < base + 5u * 0x4000u;
+  }
+  if (!video) return;
+  uint32_t rowStart = (zxnextRasterTactToPixel(currentFrameTact) / ZXNEXT_SCREEN_WIDTH) * ZXNEXT_SCREEN_WIDTH;
+  zxnextRasterRenderTo(rowStart);
 }
 
 static void zxnextRasterReset(void) {

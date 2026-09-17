@@ -85,7 +85,7 @@ Every method runs on both cores; methods returning `this` chain.
 | | `runTo(addrOrLabel, { maxFrames })` | Stops mid-frame *before* that instruction. |
 | | `step(n = 1)` | Executes `n` instructions. |
 | | `call(addrOrLabel, { returnTo?, maxFrames })` | Pushes a return address, jumps, runs until it returns. |
-| | `hardReset()` | |
+| | `hardReset()` `reset()` | Power-on reset / soft reset (memory kept). |
 | Memory | `peek` `peekWord` `peekBytes` `poke(addr, byte \| bytes)` `pokeWord` | Through the current MMU paging, like the CPU. |
 | I/O | `out(port, v)` `in(port)` | With every hardware side effect (reads that clear status bits clear them). |
 | NextReg | `setNextReg(r, v)` `readNextReg(r)` | Through `$243B`/`$253B`, as Z80 code would. |

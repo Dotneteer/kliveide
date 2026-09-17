@@ -1,6 +1,7 @@
 #include "zxnext-memory.h"
 #include "zxnext-divmmc.h"
 #include "zxnext-layer2.h"
+#include "zxnext-ula.h"
 
 #define ZXNEXT_OFFS_NEXT_ROM 0x000000u
 #define ZXNEXT_OFFS_ALT_ROM_0 0x018000u
@@ -257,6 +258,8 @@ static inline void zxnextMemoryWriteMapped(uint32_t address, uint32_t value) {
     if (physical != ZXNEXT_NO_WRITE_OFFSET) physical += normalized & 0x1fffu;
   }
   if (physical != ZXNEXT_NO_WRITE_OFFSET) {
+    // --- A mid-frame write to screen memory: render what the beam has finished with the old contents.
+    zxnextRasterMemoryWrite(physical % ZXNEXT_MEMORY_SIZE, value);
     zxnextMemoryWritePhysical(physical, value);
   }
   lastMemoryAddress = (uint16_t)normalized;

@@ -1,0 +1,20 @@
+{
+  "ts": {
+    "50": "333edf658aae1cc7",
+    "100": "333edf658aae1cc7",
+    "200": "333edf658aae1cc7",
+    "1000": "333edf658aae1cc7"
+  },
+  "wasm": {
+    "50": "333edf658aae1cc7",
+    "100": "333edf658aae1cc7",
+    "200": "333edf658aae1cc7",
+    "1000": "333edf658aae1cc7"
+  },
+  "browser": {
+    "50": "333edf658aae1cc7",
+    "100": "333edf658aae1cc7",
+    "200": "333edf658aae1cc7",
+    "1000": "333edf658aae1cc7"
+  }
+}

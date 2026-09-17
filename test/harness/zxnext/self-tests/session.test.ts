@@ -92,6 +92,16 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
     expect(s.frames).toBeGreaterThanOrEqual(3);
   });
 
+  it("reset is a soft reset: PC back to 0, RAM kept", async () => {
+    const s = await createSession(core);
+    await s.loadCode(` .org $8000\n ld a,1\n jr $`);
+    s.poke(0xc000, 0x5a).runFrames(1);
+    s.reset();
+    expect(s.registers().pc).toBe(0);
+    s.setNextReg(0x56, 0); // --- reset re-pages slot 6; look at page 0 again
+    expect(s.peek(0xc000)).toBe(0x5a);
+  });
+
   it("runs fail with the PC instead of hanging", async () => {
     const s = await createSession(core);
     await s.loadCode(` .org $8000\n jr $`);

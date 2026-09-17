@@ -3,7 +3,10 @@ output disabled) from WAIT(96,0). Disabling the ULA makes every ULA pixel transp
 included** — sampled per pixel (zxnext.vhd ula_en), so the fallback colour shows.
 
 **Should see:** top border rows 0-47 red (still disabled from the previous frame's tail); rows 48-143
-normal: white border, black paper; row 144 white left border then red from paper x 0 across paper and
+normal: white border, black paper - except the start of row 48: mode 11 restarts the list when
+`vcount_i = 0 and hcount_i = 0` (copper.vhd, "restart at frame start"), i.e. at `hc_ula` 0 = paper
+x −12 = buffer x 72, so row 48 stays red up to buffer x ~73 (plus the under-two-pixel MOVE delay:
+white from x 74); row 144 white left border then red from paper x 0 across paper and
 right border; rows 145-287 entirely red (border, paper, bottom border).
 
 **Must not see:** a whole-screen red picture (the ULA never re-enabled at the restart), or a border

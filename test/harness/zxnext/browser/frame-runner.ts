@@ -10,7 +10,7 @@ const msToFrames = (ms: number | undefined, fallback: number) => Math.max(0, Mat
 
 /**
  * Runs the machine the way `MachineController`'s execution loop does - frame commands answered after
- * each `executeMachineFrame`, the display refreshed on completed frames - but with no real-time pacing:
+ * each `executeMachineFrame`, the display shown on completed frames - but with no real-time pacing:
  * frames run as fast as the browser allows, and every wait is counted in emulated frames. That makes a
  * run through NextZXOS deterministic, which a wall-clock-paced flow is not.
  */
@@ -32,7 +32,6 @@ export class FrameRunner {
     if (termination === FrameTerminationMode.Normal && m.frameJustCompleted) {
       this.frames++;
       await this.onFrame(this.frames);
-      m.renderInstantScreen();
     }
     if (m.getFrameCommand()) {
       await m.processFrameCommand(this.messenger);

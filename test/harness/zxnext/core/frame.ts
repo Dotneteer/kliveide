@@ -31,15 +31,14 @@ export function captureFrame(machine: ZxNextMachine): Frame {
  * Runs one frame the way the emulator panel does, and calls `onDisplayed` with the buffer at the
  * moment the panel would paint it.
  *
- * `EmulatorPanel.machineFrameCompleted` displays the pixel buffer and *then* calls
- * `renderInstantScreen()` on every full frame. That call matters: the WASM core has no per-tact
- * raster and produces its picture only there, from end-of-frame register state. Capturing without
- * it would photograph a buffer the app never shows (an all-black one, for the WASM core).
+ * `EmulatorPanel.machineFrameCompleted` displays the pixel buffer after `executeMachineFrame()`. Both
+ * cores draw the frame while it executes (the TypeScript core tact by tact, the WASM core with its
+ * beam-racing raster). The panel used to call `renderInstantScreen()` after every frame as well - only
+ * to keep a copy of the displayed picture - which the harness mirrored; it no longer does (B11).
  */
 export function runDisplayedFrame(machine: ZxNextMachine, onDisplayed?: () => void): void {
   machine.executeMachineFrame();
   onDisplayed?.();
-  machine.renderInstantScreen();
 }
 
 export function pixelHex(frame: Frame, x: number, y: number): string {

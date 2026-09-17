@@ -110,7 +110,7 @@ static void clearMachineBuffers(void) {
   zxnextLayer2Reset();
   zxnextTilemapReset();
   zxnextSpritesReset();
-  zxnextCopperReset();
+  zxnextCopperHardReset();
   zxnextRasterReset();
   zxnextBeeperReset();
   zxnextDacReset();
@@ -172,6 +172,7 @@ void zxnextReset(void) {
   zxnextExpansionReset();
   zxnextDmaReset();
   zxnextFloppyReset();
+  zxnextNextRegSoftReset();
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryAccessed = 0;

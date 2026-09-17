@@ -80,9 +80,17 @@ export class NextTestSession {
     return new NextTestSession(core, await createCore(core, { audioSampleRate: options.audioSampleRate, hardReset: true }), options);
   }
 
+  /** Power-on reset of the whole machine. */
   hardReset(): this {
     this.machine.hardReset();
     this.frames = 0;
+    this.lastFrame = undefined;
+    return this;
+  }
+
+  /** Soft reset (the reset button / NextReg `$02` bit 0): what hardware keeps across it, stays. */
+  reset(): this {
+    this.machine.reset();
     this.lastFrame = undefined;
     return this;
   }
@@ -164,8 +172,8 @@ export class NextTestSession {
   // Running
 
   /**
-   * Runs `count` whole frames the way the emulator panel does (execute, show, then
-   * `renderInstantScreen`). After a mid-frame stop (`runTo`, `step`) the first one finishes that frame.
+   * Runs `count` whole frames the way the emulator panel does (execute, then show). After a mid-frame
+   * stop (`runTo`, `step`) the first one finishes that frame.
    */
   runFrames(count = 1): this {
     for (let n = 0; n < count; n++) this.runOneFrame(n === count - 1);
@@ -241,9 +249,8 @@ export class NextTestSession {
 
   private execute(capture: boolean): FrameTerminationMode {
     const termination = this.machine.executeMachineFrame();
-    if (this.machine.frameJustCompleted && termination === FrameTerminationMode.Normal) {
-      if (capture) this.lastFrame = captureFrame(this.machine);
-      this.machine.renderInstantScreen();
+    if (this.machine.frameJustCompleted && termination === FrameTerminationMode.Normal && capture) {
+      this.lastFrame = captureFrame(this.machine);
     }
     this.afterExecute();
     this.failOnFrameCommand();

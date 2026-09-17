@@ -68,6 +68,8 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextReg60Value(value: number) {
+    // --- zxnext.vhd: a $60 write at an even address also stores the byte a $63 write commits as MSB
+    if ((this._instructionAddress & 0x0001) === 0) this._storedByte = value & 0xff;
     this._memory[this._instructionAddress] = value & 0xff;
     this._instructionAddress = (this._instructionAddress + 1) & 0x7ff;
   }
@@ -105,8 +107,10 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
     if (this._instructionAddress & 0x0001) {
       this._memory[this._instructionAddress & 0x7fe] = this._storedByte;
       this._memory[this._instructionAddress] = value;
+    } else {
+      // --- zxnext.vhd: the byte is stored only at an even address
+      this._storedByte = value;
     }
-    this._storedByte = value;
     this._instructionAddress = (this._instructionAddress + 1) & 0x7ff;
   }
 

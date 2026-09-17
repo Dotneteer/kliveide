@@ -39,12 +39,13 @@ these instead of counting pixels), contact sheets, `motion-*.json`, `result.json
 
 ## Frames: capture exactly what the app shows
 
-`runDisplayedFrame` / `FrameRunner.step` capture right after `executeMachineFrame()` and then call
-`renderInstantScreen()`, like `EmulatorPanel`. The WASM core draws the frame *during* execution with a
-beam-racing raster (`zxnext-ula.c`: before a video NextReg or port write, render up to the beam with the
-old state; finish at frame completion), so the captured buffer is the raster picture; the
-`renderInstantScreen()` that follows overwrites it with an end-of-frame render, which is why capture
-must come first. Mid-frame *memory* writes are not raced (the region renders with later contents).
+`runDisplayedFrame` / `FrameRunner.step` capture right after `executeMachineFrame()`, like
+`EmulatorPanel`. Both cores draw the frame *during* execution: TS tact by tact, WASM with a beam-racing
+raster (`zxnext-ula.c`: before a video NextReg/port write, or a screen *memory* write, render up to the
+beam with the old state - memory writes to the start of the current row; finish at frame completion).
+The panel no longer calls `renderInstantScreen()` after each frame (it only produced a copy of the
+displayed picture for the pause overlay, at 23-38% of the frame time); `renderInstantScreen()` is an
+end-of-frame render and is used only for the paused "instant screen" view.
 
 ## Writing a case
 

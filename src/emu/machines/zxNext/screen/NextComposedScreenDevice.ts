@@ -778,14 +778,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       }
     }
 
-    // --- NextReg $68 bit 7: the ULA layer (LoRes included, border included) is transparent while the
-    // --- bit is set, re-evaluated for every pixel (zxnext.vhd: `ula_transparent <= ... or ula_en_2 = '0'`,
-    // --- `ula_en_0` latched each pixel). The ULA still runs above - it keeps sampling its registers - so
-    // --- clearing the bit shows the ULA again from the next pixel. It used to skip the ULA instead, which
-    // --- left the last ULA colour on screen and stopped the sampling that could ever clear the flag.
-    if (this.ulaDisableOutput) {
-      this.ulaPixel1Transparent = this.ulaPixel2Transparent = true;
-    }
+    // --- NextReg $68 bit 7 (ULA disabled) is applied in composeLayers: it removes the ULA as a layer but
+    // --- not as the blend operand (zxnext.vhd `ula_mix_rgb` ignores `ula_en`). The ULA still runs above -
+    // --- it keeps sampling its registers - so clearing the bit shows the ULA again from the next pixel.
 
     // Render Layer 2 pixel(s) if enabled
     if (this.layer2Enabled) {
@@ -833,110 +828,37 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       }
     }
 
-    // Stage 2: Merge ULA+Tilemap, then compose all layers and write to bitmap
-    // Apply the ULA/Tilemap merging process from Section 4.2.1
-    // LoRes is already integrated into ulaOutput (not kept separate)
-
-    // --- Stencil mode outside the tilemap's area: the tilemap is enabled but has no pixel there, which is
-    // --- a transparent tilemap pixel (zxnext.vhd `tm_pixel_en_2 = '0'`), so the stencil is transparent too.
-    if (this.tilemapEnabled && this.ulaEnableStencilMode) {
-      if (this.tilemapPixel1Rgb333 === null) this.ulaPixel1Transparent = true;
-      if (this.tilemapPixel2Rgb333 === null) this.ulaPixel2Transparent = true;
-    }
-
-    // Merge tilemap into ULA if both enabled
-    if (this.tilemapEnabled && this.tilemapPixel1Rgb333 !== null) {
-      if (this.ulaEnableStencilMode) {
-        // Stencil mode: AND of both colours; transparent if either is transparent
-        if (
-          this.ulaPixel1Rgb333 != null &&
-          !this.ulaPixel1Transparent &&
-          !this.tilemapPixel1Transparent
-        ) {
-          this.ulaPixel1Rgb333 = this.ulaPixel1Rgb333 & this.tilemapPixel1Rgb333!;
-          this.ulaPixel1Transparent = false;
-        } else {
-          this.ulaPixel1Transparent = true;
-        }
-      } else {
-        if (
-          this.ulaPixel1Rgb333 != null &&
-          !this.ulaPixel1Transparent &&
-          !this.tilemapPixel1Transparent
-        ) {
-          // Both non-transparent: check per-tile priority
-          if (!this.tilemapPixel1BelowUla) {
-            // Tilemap on top of ULA (category 2: attr bit0=0 or forceOnTop)
-            this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
-            this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
-          }
-          // else: ULA stays on top (category 1: attr bit0=1 and not forceOnTop)
-        } else if (!this.tilemapPixel1Transparent) {
-          // Only tilemap non-transparent
-          this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
-          this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
-        }
-      }
-    }
-
-    if (this.tilemapEnabled && this.tilemapPixel2Rgb333 !== null) {
-      if (this.ulaEnableStencilMode) {
-        if (
-          this.ulaPixel2Rgb333 != null &&
-          !this.ulaPixel2Transparent &&
-          !this.tilemapPixel2Transparent
-        ) {
-          this.ulaPixel2Rgb333 = this.ulaPixel2Rgb333 & this.tilemapPixel2Rgb333!;
-          this.ulaPixel2Transparent = false;
-        } else {
-          this.ulaPixel2Transparent = true;
-        }
-      } else {
-        if (
-          this.ulaPixel2Rgb333 != null &&
-          !this.ulaPixel2Transparent &&
-          !this.tilemapPixel2Transparent
-        ) {
-          // Both non-transparent: check per-tile priority
-          if (!this.tilemapPixel2BelowUla) {
-            // Tilemap on top of ULA
-            this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
-            this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
-          }
-          // else: ULA stays on top
-        } else if (!this.tilemapPixel2Transparent) {
-          this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
-          this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
-        }
-      }
-    }
-
-    // Use pre-calculated bitmap offset to write pixels
+    // Stage 2: compose ULA, tilemap, Layer 2 and sprites per pixel (zxnext.vhd video stage 2)
     const bitmapOffset = activeTactToBitmapOffset[tact];
     if (bitmapOffset >= 0) {
-      // Compose and write first pixel
-      const pixelRGBA1 = this.composeSinglePixel(
+      const tmOn = this.tilemapEnabled;
+      const border = (activeRenderingFlagsULA[tact] & SCR_DISPLAY_AREA) === 0;
+      this.pixelBufferField[bitmapOffset] = this.composeLayers(
         this.ulaPixel1Rgb333,
         this.ulaPixel1Transparent,
+        tmOn ? this.tilemapPixel1Rgb333 : null,
+        !tmOn || this.tilemapPixel1Rgb333 === null || this.tilemapPixel1Transparent,
+        tmOn ? this.tilemapPixel1BelowUla : !this.tilemapForceOnTopOfUla,
         this.layer2Pixel1Rgb333,
         this.layer2Pixel1Transparent,
         this.layer2Pixel1Priority,
         this.spritesPixel1Rgb333,
-        this.spritesPixel1Transparent
+        this.spritesPixel1Transparent,
+        border
       );
-      this.pixelBufferField[bitmapOffset] = pixelRGBA1;
-
-      // Compose and write second pixel
-      const pixelRGBA2 = this.composeSinglePixel(
+      this.pixelBufferField[bitmapOffset + 1] = this.composeLayers(
         this.ulaPixel2Rgb333,
         this.ulaPixel2Transparent,
+        tmOn ? this.tilemapPixel2Rgb333 : null,
+        !tmOn || this.tilemapPixel2Rgb333 === null || this.tilemapPixel2Transparent,
+        tmOn ? this.tilemapPixel2BelowUla : !this.tilemapForceOnTopOfUla,
         this.layer2Pixel2Rgb333,
         this.layer2Pixel2Transparent,
         this.layer2Pixel2Priority,
         this.spritesPixel2Rgb333,
-        this.spritesPixel2Transparent
+        this.spritesPixel2Transparent,
+        border
       );
-      this.pixelBufferField[bitmapOffset + 1] = pixelRGBA2;
     }
 
     // --- Visible pixel rendered
@@ -1236,55 +1158,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.pixelBufferField.fill(0x00000000);
   }
 
-  /**
-   * Compose final pixel from layer outputs (Stage 2: Layer Composition).
-   *
-   * This method implements the layer composition logic as described in Section 4 of
-   * the screen_rendering.md document. It combines up to three active layer outputs
-   * (ULA, Layer 2, Sprites) into a single final RGB pixel based on priority settings,
-   * transparency, and blend modes.
-   *
-   * **Process Flow** (based on VHDL analysis from zxnext.vhd lines 7040-7310):
-   *
-   * 1. **Pre-Composition Processing**:
-   *    - ULA/Tilemap/LoRes transparency resolution (color comparison + clipped flag)
-   *    - Stencil mode: Bitwise AND of ULA and Tilemap when both enabled
-   *    - Blend mode setup: Prepare ULA/Tilemap mix layers for priority evaluation
-   *
-   * 2. **Priority Evaluation** (NextReg 0x15 bits [4:2]):
-   *    Six standard priority modes (SLU, LSU, SUL, LUS, USL, ULS):
-   *    - Evaluate layers in configured order
-   *    - Layer 2 priority bit can override order (forces Layer 2 on top)
-   *    - Select first non-transparent layer
-   *    - Special case: ULA border doesn't cover sprites if tilemap transparent
-   *
-   * 3. **Color Mixing Modes** (NextReg 0x68 bits [7:6], modes 110 and 111):
-   *    - Mode 110: Add Layer 2 and ULA/Tilemap blend, saturate at 7
-   *    - Mode 111: Add Layer 2 and ULA/Tilemap blend, subtract 5 (darken), clamp 0-7
-   *    - Mixed result used if Layer 2 has priority bit OR is only opaque layer
-   *
-   * 4. **Fallback Color**:
-   *    - If all layers transparent: Use fallback/backdrop color (NextReg 0x4A)
-   *    - Fallback looked up in ULA palette, expanded from 8 to 9 bits
-   *
-   * **Implementation Notes**:
-   * - Clock domain: CLK_14 (14 MHz)
-   * - Type: Purely combinational logic (no state between pixels)
-   * - Latency: 0 additional cycles beyond palette lookup
-   * - Total pipeline: ~3 CLK_14 cycles from counter to final RGB
-   *
-   * **Layer 2 Priority Bit**:
-   * Layer 2 pixels carry extra priority bit (9th bit from palette):
-   * - When set: Layer 2 overrides all priority rules (appears on top)
-   * - In blend modes: Affects whether blend result is used
-   * - Cleared when Layer 2 pixel is transparent
-   *
-   * @param ulaOutput - ULA layer output (RGB + transparency + clipped flags)
-   * @param layer2Output - Layer 2 output (RGB + transparency + priority bit)
-   * @param spritesOutput - Sprites output (RGB + transparency flags)
-   * @returns Final RGBA pixel value (format: 0xAABBGGRR)
-   */
-  private composeSinglePixel(
+  /** Composes ULA, Layer 2 and sprites with no tilemap. Not used by the renderer: test/zxnext/UlaRendering. */
+  composeSinglePixel(
     ulaPixelRgb333: number | null,
     ulaTransparent: boolean,
     layer2PixelRgb333: number | null,
@@ -1293,137 +1168,145 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     spritesPixelRgb333: number | null,
     spritesTransparent: boolean
   ): number {
-    // --- Combine sprites, Layer 2, and ULA outputs
-    let selectedPixel: number | null = null;
-    let selectedTransparent: boolean = false;
+    return this.composeLayers(
+      ulaPixelRgb333, ulaTransparent, null, true, !this.tilemapForceOnTopOfUla,
+      layer2PixelRgb333, layer2Transparent, layer2Priority, spritesPixelRgb333, spritesTransparent, false
+    );
+  }
 
-    // === Layer 2 Priority Override (standard modes only) ===
-    // In non-blend modes, priority L2 renders on top regardless of priority setting
-    if (layer2PixelRgb333 != null && layer2Priority && !layer2Transparent && this.layerPriority < 6) {
-      selectedPixel = layer2PixelRgb333;
-      selectedTransparent = layer2Transparent;
-    } else if (this.layerPriority >= 6) {
-      // === Blend Modes (priority 6-7) ===
-      // Blend source (ULA/tilemap merged) with Layer 2
-      // Mode 6 (bit 0 = 0): saturate-add per RGB333 channel, clamped to [0,7]
-      // Mode 7 (bit 0 = 1): add channels then subtract 5, clamped to [0,7]
-      const blendSource = ulaPixelRgb333;
-      const blendTransparent = ulaTransparent;
-      const hasBlend = blendSource != null && !blendTransparent;
-      const hasL2 = layer2PixelRgb333 != null && !layer2Transparent;
+  /**
+   * One output pixel from the four layers, as zxnext.vhd video stage 2 mixes them (the WASM core's
+   * `zxnextUlaCompose` is the same logic):
+   * - `ula_mix_*` is the ULA as the blend operand ($68 bit 7 does not apply); `ula_*` the ULA as a layer.
+   * - `ula_final_*` is the stencil (`ula_stencil_mode and ula_en and tm_en`: AND of both colours) or the
+   *   ULA/tilemap merge (tilemap wins unless it is below an opaque ULA pixel).
+   * - Orders SLU..ULS by `$15` bits 4-2 with the Layer 2 priority bit, and the border exception in
+   *   LUS/USL/ULS: a sprite shows over an opaque ULA border pixel where the tilemap is transparent.
+   * - 110/111: Layer 2 plus `mix_rgb` chosen by `$68` bits 6-5 (`case ula_blend_mode_2`), with the
+   *   tilemap or ULA as the top/bottom layer around it; 110 saturates, 111 subtracts 5 and clamps.
+   * Returns the pixel in the RGBA format of the pixel buffer.
+   */
+  private composeLayers(
+    ulaPixelRgb333: number | null,
+    ulaMixTransparent: boolean,
+    tmPixelRgb333: number | null,
+    tmTransparent: boolean,
+    tmBelow: boolean,
+    layer2PixelRgb333: number | null,
+    layer2Transparent: boolean,
+    layer2Priority: boolean,
+    spritesPixelRgb333: number | null,
+    spritesTransparent: boolean,
+    border: boolean
+  ): number {
+    const ulaMixT = ulaMixTransparent || ulaPixelRgb333 == null;
+    const ulaMixRgb = ulaMixT ? 0 : ulaPixelRgb333! & 0x1ff;
+    const ulaEn = !this.ulaDisableOutput;
+    const ulaT = ulaMixT || !ulaEn;
+    const ulaRgb = ulaT ? 0 : ulaMixRgb;
+    const ulaBorder = !ulaT && border;
 
-      // zxnext.vhd, modes 110/111: L2 priority -> sum; else sprite; else, where Layer 2 is opaque, the
-      // sum. The ULA never appears on its own in a blend mode: it is only the `mix_rgb` operand, so where
-      // Layer 2 is transparent and no sprite is opaque the output stays the fallback colour.
-      // (This core merges the tilemap into the ULA before composing, so the tilemap-over/under-ULA
-      // `mix_top`/`mix_bot` terms of the `$68` blend-source modes are not modelled here.)
-      if (layer2Priority && hasL2) {
-        selectedPixel = hasBlend ? blendRgb333(blendSource!, layer2PixelRgb333!, this.layerPriority & 1) : layer2PixelRgb333;
-        selectedTransparent = false;
-      } else if (spritesPixelRgb333 != null && !spritesTransparent) {
-        selectedPixel = spritesPixelRgb333;
-        selectedTransparent = false;
-      } else if (hasL2) {
-        selectedPixel = hasBlend ? blendRgb333(blendSource!, layer2PixelRgb333!, this.layerPriority & 1) : layer2PixelRgb333;
-        selectedTransparent = false;
-      } else {
-        selectedPixel = null;
-        selectedTransparent = true;
-      }
+    const tmT = tmTransparent || tmPixelRgb333 == null;
+    const tmRgb = tmT ? 0 : tmPixelRgb333! & 0x1ff;
+
+    let finalT: boolean;
+    let finalRgb: number;
+    if (this.ulaEnableStencilMode && ulaEn && this.tilemapEnabled) {
+      finalT = ulaT || tmT;
+      finalRgb = finalT ? 0 : ulaRgb & tmRgb;
     } else {
-      // Select first non-transparent layer in priority order
-      switch (this.layerPriority) {
-        case 0: // SLU
-          if (spritesPixelRgb333 != null && !spritesTransparent) {
-            selectedPixel = spritesPixelRgb333;
-            selectedTransparent = spritesTransparent;
-          } else if (layer2PixelRgb333 != null && !layer2Transparent) {
-            selectedPixel = layer2PixelRgb333;
-            selectedTransparent = layer2Transparent;
-          } else {
-            selectedPixel = ulaPixelRgb333;
-            selectedTransparent = ulaTransparent;
-          }
-          break;
-
-        case 1: // LSU
-          if (layer2PixelRgb333 != null && !layer2Transparent) {
-            selectedPixel = layer2PixelRgb333;
-            selectedTransparent = layer2Transparent;
-          } else if (spritesPixelRgb333 != null && !spritesTransparent) {
-            selectedPixel = spritesPixelRgb333;
-            selectedTransparent = spritesTransparent;
-          } else {
-            selectedPixel = ulaPixelRgb333;
-            selectedTransparent = ulaTransparent;
-          }
-          break;
-
-        case 2: // SUL
-          if (spritesPixelRgb333 != null && !spritesTransparent) {
-            selectedPixel = spritesPixelRgb333;
-            selectedTransparent = spritesTransparent;
-          } else if (ulaPixelRgb333 != null && !ulaTransparent) {
-            selectedPixel = ulaPixelRgb333;
-            selectedTransparent = ulaTransparent;
-          } else {
-            selectedPixel = layer2PixelRgb333;
-            selectedTransparent = layer2Transparent;
-          }
-          break;
-
-        case 3: // LUS
-          if (layer2PixelRgb333 != null && !layer2Transparent) {
-            selectedPixel = layer2PixelRgb333;
-            selectedTransparent = layer2Transparent;
-          } else if (ulaPixelRgb333 != null && !ulaTransparent) {
-            selectedPixel = ulaPixelRgb333;
-            selectedTransparent = ulaTransparent;
-          } else {
-            selectedPixel = spritesPixelRgb333;
-            selectedTransparent = spritesTransparent;
-          }
-          break;
-
-        case 4: // USL
-          if (ulaPixelRgb333 != null && !ulaTransparent) {
-            selectedPixel = ulaPixelRgb333;
-            selectedTransparent = ulaTransparent;
-          } else if (spritesPixelRgb333 != null && !spritesTransparent) {
-            selectedPixel = spritesPixelRgb333;
-            selectedTransparent = spritesTransparent;
-          } else {
-            selectedPixel = layer2PixelRgb333;
-            selectedTransparent = layer2Transparent;
-          }
-          break;
-
-        default:
-          if (ulaPixelRgb333 != null && !ulaTransparent) {
-            selectedPixel = ulaPixelRgb333;
-            selectedTransparent = ulaTransparent;
-          } else if (layer2PixelRgb333 != null && !layer2Transparent) {
-            selectedPixel = layer2PixelRgb333;
-            selectedTransparent = layer2Transparent;
-          } else {
-            selectedPixel = spritesPixelRgb333;
-            selectedTransparent = spritesTransparent;
-          }
-          break;
-      }
+      finalT = ulaT && tmT;
+      finalRgb = !tmT && (!tmBelow || ulaT) ? tmRgb : ulaRgb;
     }
 
-    // === Fallback/Backdrop Color ===
-    let finalRGB333: number;
-    // If selected output is null or transparent, use fallback color
-    if (selectedPixel === null || selectedTransparent) {
-      // All layers transparent: the fallback colour (NextReg $4A), expanded once in its cache
-      finalRGB333 = this.fallbackRgb333Cache;
-    } else {
-      finalRGB333 = selectedPixel;
-    }
+    const sprT = spritesTransparent || spritesPixelRgb333 == null;
+    const sprRgb = sprT ? 0 : spritesPixelRgb333! & 0x1ff;
+    const l2T = layer2Transparent || layer2PixelRgb333 == null;
+    const l2Rgb = l2T ? 0 : layer2PixelRgb333! & 0x1ff;
+    const l2Prio = !l2T && layer2Priority;
 
-    return zxNextBgra[finalRGB333 & 0x1ff]; // Convert to RGBA format
+    let out = -1;
+    const ulaWins = !finalT && !(ulaBorder && tmT && !sprT);
+    switch (this.layerPriority) {
+      case 0: // SLU
+        if (l2Prio) out = l2Rgb;
+        else if (!sprT) out = sprRgb;
+        else if (!l2T) out = l2Rgb;
+        else if (!finalT) out = finalRgb;
+        break;
+      case 1: // LSU
+        if (!l2T) out = l2Rgb;
+        else if (!sprT) out = sprRgb;
+        else if (!finalT) out = finalRgb;
+        break;
+      case 2: // SUL
+        if (l2Prio) out = l2Rgb;
+        else if (!sprT) out = sprRgb;
+        else if (!finalT) out = finalRgb;
+        else if (!l2T) out = l2Rgb;
+        break;
+      case 3: // LUS
+        if (!l2T) out = l2Rgb;
+        else if (ulaWins) out = finalRgb;
+        else if (!sprT) out = sprRgb;
+        break;
+      case 4: // USL
+        if (l2Prio) out = l2Rgb;
+        else if (ulaWins) out = finalRgb;
+        else if (!sprT) out = sprRgb;
+        else if (!l2T) out = l2Rgb;
+        break;
+      case 5: // ULS
+        if (l2Prio) out = l2Rgb;
+        else if (ulaWins) out = finalRgb;
+        else if (!l2T) out = l2Rgb;
+        else if (!sprT) out = sprRgb;
+        break;
+      default: {
+        // --- 110 / 111: blend. mix_* by $68 bits 6-5.
+        let mixRgb: number, mixT: boolean, topT: boolean, topRgb: number, botT: boolean, botRgb: number;
+        switch (this.ulaBlendingInSLUModes & 0x03) {
+          case 0:
+            mixRgb = ulaMixRgb; mixT = ulaMixT;
+            topT = tmT || tmBelow; topRgb = tmRgb;
+            botT = tmT || !tmBelow; botRgb = tmRgb;
+            break;
+          case 2:
+            mixRgb = finalRgb; mixT = finalT;
+            topT = true; topRgb = tmRgb; botT = true; botRgb = tmRgb;
+            break;
+          case 3:
+            mixRgb = tmRgb; mixT = tmT;
+            topT = ulaT || !tmBelow; topRgb = ulaRgb;
+            botT = ulaT || tmBelow; botRgb = ulaRgb;
+            break;
+          default:
+            mixRgb = 0; mixT = true;
+            if (tmBelow) { topT = ulaT; topRgb = ulaRgb; botT = tmT; botRgb = tmRgb; }
+            else { topT = tmT; topRgb = tmRgb; botT = ulaT; botRgb = ulaRgb; }
+            break;
+        }
+        let r = ((l2Rgb >> 6) & 7) + ((mixRgb >> 6) & 7);
+        let g = ((l2Rgb >> 3) & 7) + ((mixRgb >> 3) & 7);
+        let b = (l2Rgb & 7) + (mixRgb & 7);
+        if (this.layerPriority === 6) {
+          r = Math.min(r, 7); g = Math.min(g, 7); b = Math.min(b, 7);
+        } else if (!mixT) {
+          r = r <= 4 ? 0 : r >= 12 ? 7 : r - 5;
+          g = g <= 4 ? 0 : g >= 12 ? 7 : g - 5;
+          b = b <= 4 ? 0 : b >= 12 ? 7 : b - 5;
+        }
+        const mixed = ((r & 7) << 6) | ((g & 7) << 3) | (b & 7);
+        if (l2Prio) out = mixed;
+        else if (!topT) out = topRgb;
+        else if (!sprT) out = sprRgb;
+        else if (!botT) out = botRgb;
+        else if (!l2T) out = mixed;
+        break;
+      }
+    }
+    // --- No opaque layer: the fallback colour (NextReg $4A), expanded once in its cache
+    return zxNextBgra[(out < 0 ? this.fallbackRgb333Cache : out) & 0x1ff];
   }
 
   // ==============================================================================================
@@ -4767,28 +4650,6 @@ let attrToInkFlashOn: Uint8Array | undefined;
 let attrToPaperFlashOn: Uint8Array | undefined;
 let ulaPlusAttrToInk: Uint8Array | undefined;
 let ulaPlusAttrToPaper: Uint8Array | undefined;
-
-/**
- * Blend two RGB333 (9-bit) colours per the ZX Next layer blend modes.
- * @param a First RGB333 colour (blend source: ULA/tilemap)
- * @param b Second RGB333 colour (Layer 2)
- * @param mixer 0 = saturate-add (clamp to 7), 1 = darken (add − 5, clamp 0-7)
- */
-function blendRgb333(a: number, b: number, mixer: number): number {
-  const rA = (a >> 6) & 7, gA = (a >> 3) & 7, bA = a & 7;
-  const rB = (b >> 6) & 7, gB = (b >> 3) & 7, bB = b & 7;
-  let r: number, g: number, bl: number;
-  if (mixer === 0) {
-    r = Math.min(7, rA + rB);
-    g = Math.min(7, gA + gB);
-    bl = Math.min(7, bA + bB);
-  } else {
-    r = Math.max(0, Math.min(7, rA + rB - 5));
-    g = Math.max(0, Math.min(7, gA + gB - 5));
-    bl = Math.max(0, Math.min(7, bA + bB - 5));
-  }
-  return (r << 6) | (g << 3) | bl;
-}
 
 function generateAttributeDecodeTables(): {
   attrToInkFlashOff: Uint8Array;

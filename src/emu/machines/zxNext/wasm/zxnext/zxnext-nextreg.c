@@ -5,7 +5,22 @@
 #include "zxnext-input.h"
 #include "zxnext-expansion.h"
 
+/*
+ * zxnext.vhd `nr_03_config_mode`: entered by writing 111 to NextReg $03's low bits, left by any other
+ * non-zero value. Klive starts after the firmware, so it is off after every reset (as in the TypeScript
+ * NextRegDevice.configMode). `nr_02_reset_type`: "100" at power-on, shifted on every soft reset
+ * (~1692: '0' & rt(2) & (rt(1) or rt(0))). Both gate the FPGA flash chip select (port $E7 = $7F).
+ */
+static uint8_t zxnextConfigMode;
+static uint8_t zxnextResetType;
+
+static uint32_t zxnextNextRegConfigModeOrFlashReset(void) {
+  return zxnextConfigMode || (zxnextResetType & 0x04u) != 0u;
+}
+
 static void zxnextNextRegHardReset(void) {
+  zxnextConfigMode = 0u;
+  zxnextResetType = 0x04u;
   for (uint32_t i = 0; i < ZXNEXT_NEXT_REG_COUNT; i++) zxnextNextRegs[i] = 0;
   cpuProgrammedSpeed = 0;
   cpuEffectiveSpeed = 0;
@@ -33,7 +48,7 @@ static void zxnextNextRegHardReset(void) {
   zxnextNextRegs[0x33] = 0x00;
   zxnextNextRegs[0x42] = 0x07;
   zxnextNextRegs[0x43] = 0x00;
-  zxnextNextRegs[0x4a] = 0x00;
+  zxnextNextRegs[0x4a] = 0xe3; /* zxnext.vhd reset: nr_4a_fallback_rgb <= X"E3" */
   zxnextNextRegs[0x4b] = 0xe3;
   zxnextNextRegs[0x4c] = 0x0f;
   zxnextNextRegs[0x61] = 0x00;
@@ -58,6 +73,38 @@ static void zxnextNextRegHardReset(void) {
   zxnextDivMmcSetNextRegBB(zxnextNextRegs[0xbb]);
   zxnextMouseSetNextReg0A(zxnextNextRegs[0x0a]);
   zxnextExpansionHardReset();
+  zxnextMemoryResetMapping();
+}
+
+/*
+ * Soft reset (reset button, NextReg $02 bit 0): the NextReg values the zxnext.vhd `reset` branches
+ * restore (~4591-4598 MMU, ~4920-5002 video/palette/copper). The devices behind them reset their own
+ * state in zxnextReset; this restores the stored values they are read and composed from. Mirrors
+ * NextRegDevice.reset/commonReset in the TypeScript core.
+ */
+static void zxnextNextRegSoftReset(void) {
+  zxnextConfigMode = 0u;
+  zxnextResetType = (uint8_t)(((zxnextResetType >> 1u) & 0x02u) | ((zxnextResetType & 0x03u) != 0u ? 0x01u : 0u));
+  zxnextNextRegs[0x12] = 0x08;
+  zxnextNextRegs[0x13] = 0x0b;
+  zxnextNextRegs[0x14] = 0xe3;
+  zxnextNextRegs[0x15] = 0x00;
+  zxnextNextRegs[0x16] = 0x00;
+  zxnextNextRegs[0x17] = 0x00;
+  zxnextNextRegs[0x1c] = 0x00;
+  zxnextNextRegs[0x22] = 0x00;
+  zxnextNextRegs[0x23] = 0x00;
+  zxnextNextRegs[0x32] = 0x00;
+  zxnextNextRegs[0x33] = 0x00;
+  zxnextNextRegs[0x42] = 0x07;
+  zxnextNextRegs[0x43] = 0x00;
+  zxnextNextRegs[0x4a] = 0xe3;
+  zxnextNextRegs[0x4b] = 0xe3;
+  zxnextNextRegs[0x4c] = 0x0f;
+  zxnextNextRegs[0x61] = 0x00;
+  zxnextNextRegs[0x62] = 0x00;
+  zxnextNextRegs[0x6b] = 0x00;
+  zxnextNextRegs[0x70] = 0x00;
   zxnextMemoryResetMapping();
 }
 
@@ -87,6 +134,11 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
     zxnextInterruptsSetNextRegister(reg, value);
     zxnextNextRegs[reg & 0xffu] = (uint8_t)zxnextInterruptsGetNextRegister(reg);
     return;
+  }
+  if (normalized == 0x03u) {
+    uint32_t machineType = value & 0x07u;
+    if (machineType == 0x07u) zxnextConfigMode = 1u;
+    else if (machineType != 0u) zxnextConfigMode = 0u;
   }
   if (normalized == 0x09u) {
     zxnextDivMmcSetNextReg09(value);

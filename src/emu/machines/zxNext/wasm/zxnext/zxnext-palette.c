@@ -127,6 +127,26 @@ static uint32_t zxnextPaletteGetNextReg(uint32_t reg) {
   }
 }
 
+/* NextReg $43 bit 0: ULANext attribute decoding. */
+static uint32_t zxnextPaletteGetUlaNextEnabled(void) { return zxnextPaletteEnableUlaNext; }
+
+/*
+ * ULA+ palette access through port $FF3B (zxnext.vhd ~4717-4720, 6903-6904): entry "11" & index of the
+ * ULA palette chosen by the $43 write select bit 6 (`nr_43_palette_write_select(2)`). The port byte is
+ * GGGRRRBB; the palette stores RRRGGGBB with the 9th bit B1 or B0, as a $41 write does.
+ */
+static void zxnextPaletteWriteUlaPlus(uint32_t index, uint32_t grb) {
+  uint32_t slot = (zxnextPaletteSelected & 0x04u) ? 4u : 0u;
+  uint32_t rgb = (((grb >> 2u) & 0x07u) << 5u) | (((grb >> 5u) & 0x07u) << 2u) | (grb & 0x03u);
+  zxnextPalettes[slot][0xc0u | (index & 0x3fu)] = (uint16_t)(((rgb << 1u) | ((rgb & 0x03u) ? 1u : 0u)) & 0x1ffu);
+}
+
+static uint32_t zxnextPaletteReadUlaPlus(uint32_t index) {
+  uint32_t slot = (zxnextPaletteSelected & 0x04u) ? 4u : 0u;
+  uint32_t entry = zxnextPalettes[slot][0xc0u | (index & 0x3fu)];
+  return (((entry >> 3u) & 0x07u) << 5u) | (((entry >> 6u) & 0x07u) << 2u) | ((entry >> 1u) & 0x03u);
+}
+
 static uint32_t zxnextPaletteGetEntry(uint32_t palette, uint32_t index) {
   return zxnextPalettes[palette & 0x07u][index & 0xffu];
 }

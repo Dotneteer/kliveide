@@ -231,7 +231,13 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
 
     if (args.fullFrame) {
-      componentStateRef.current.savedPixelBuffer = currentController.machine.renderInstantScreen();
+      // --- Keep the picture just shown for the pause overlay's "instant screen" toggle. A copy, not a
+      // --- render: every core draws its frame while it executes, so rendering the whole screen again
+      // --- here only produced this copy - at 23-38% of the frame time (ZX Next, TS and WASM cores).
+      const shown = currentController.machine.getPixelBuffer();
+      const saved = componentStateRef.current.savedPixelBuffer;
+      if (saved && saved.length === shown.length) saved.set(shown);
+      else componentStateRef.current.savedPixelBuffer = new Uint32Array(shown);
     }
 
     if (args.fullFrame) {
