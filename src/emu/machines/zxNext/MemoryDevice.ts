@@ -106,6 +106,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   // --- 128K/+3/Pentagon paging is derived from these and from the MMU registers they reload.
   private _port7ffd = 0; // port_7ffd_reg
   private _portDffd = 0; // port_dffd_reg (bits 4-0)
+  private _portDffd6 = 0; // port_dffd_reg_6 (read back only by the MF+3 port)
   private _port1ffd = 0; // port_1ffd_reg
   private _portEff7 = 0; // port_eff7_reg_2 / _3 (bits 2 and 3)
   private _altRom = 0; // nr_8c_altrom
@@ -199,6 +200,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     // --- zxnext.vhd ~3645, 3685, 3712, 3758: every reset clears the paging ports
     this._port7ffd = 0;
     this._portDffd = 0;
+    this._portDffd6 = 0;
     this._port1ffd = 0;
     this._portEff7 = 0;
 
@@ -432,7 +434,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   set portDffdValue(value: number) {
     if (!this.pagingEnabled) return;
     this._portDffd = value & 0x1f;
+    this._portDffd6 = (value >> 6) & 0x01;
     this.reloadMmuFromPorts(true, false);
+  }
+
+  /** The MF+3 read-back of `$DFFD`: '0' & dffd(6) & '0' & dffd(4-0) (zxnext.vhd ~4294). */
+  get portDffdReadback(): number {
+    return (this._portDffd6 << 6) | this._portDffd;
   }
 
   get port1ffdValue(): number {
@@ -1133,6 +1141,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     const half = pageNo & 0x01;
+    // --- ~2994-3000: in config mode the ROM slots show the 16K SRAM bank of $04 (bits 6-0), writable,
+    // --- with no Alt ROM (sram_pre_override "110": DivMMC, Layer 2 and the Multiface still go above it)
+    if (pageNo <= 1 && this.machine.nextRegDevice?.configMode) {
+      const configOffs = (this.configRomRamBank << 14) + (half << 13);
+      this.setPageInfo(pageNo, configOffs, configOffs, 0xff, 0xff);
+      return;
+    }
     const romOffs = OFFS_NEXT_ROM + ((this.selectedRomMsb | this.selectedRomLsb) << 14) + (half << 13);
     if (pageNo > 1) {
       this.setPageInfo(pageNo, romOffs, null, 0xff, 0xff);

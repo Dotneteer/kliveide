@@ -149,6 +149,45 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
     expect(n).toBeGreaterThan(4 * 800);
     expect(n).toBeLessThan(6 * 900);
   });
+
+  it("attachSdCard: a sector read's frame command is answered from the image; sync runs refuse it", async () => {
+    // --- select SD card 0, CMD17 for sector 3, poll for the $FE token, read 512 bytes to $A000
+    const program = `
+        .org $8000
+        ld a,$fe
+        out ($e7),a
+        ld hl,Cmd
+        ld bc,$06eb
+        otir
+        ld de,4000
+Tok:    in a,(c)
+        cp $fe
+        jr z,Data
+        dec de
+        ld a,d
+        or e
+        jr nz,Tok
+Data:   ld hl,$a000
+        ld b,0
+        inir
+        inir
+        nextreg $7f,$a5
+        jr $
+Cmd:    .defb $51,0,0,0,3,$01`;
+    const image = new Uint8Array(16 * 512);
+    for (let i = 0; i < 512; i++) image[3 * 512 + i] = (i * 5 + 1) & 0xff;
+
+    const s = await createSession(core);
+    await s.loadCode(program);
+    s.attachSdCard(image);
+    await s.runUntilReadyAsync();
+    expect(Array.from(s.peekBytes(0xa000, 512))).toEqual(Array.from(image.subarray(3 * 512, 4 * 512)));
+    expect(s.sdCalls.readSdCardSector).toBe(1);
+
+    const t = await createSession(core);
+    await t.loadCode(program);
+    expect(() => t.runUntilReady()).toThrow(/frame command/);
+  });
 });
 
 describe("harness session - parity", () => {

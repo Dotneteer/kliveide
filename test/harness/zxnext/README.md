@@ -91,6 +91,7 @@ Every method runs on both cores; methods returning `this` chain.
 | NextReg | `setNextReg(r, v)` `readNextReg(r)` | Through `$243B`/`$253B`, as Z80 code would. |
 | | `nextRegValue(r)` | Stored value without port side effects - for assertions and wait conditions. |
 | Keys | `await pressHotkey("F5" \| "F6" \| "F8" \| "F9" \| "F10")` | Function-key hotkeys: expansion bus on/off, CPU speed step (gated by NextReg `$06` bit 7, like the FPGA); the M1 (Multiface) and DRIVE (DivMMC) NMI buttons (gated by `$06` bits 3 / 4). |
+| SD card | `attachSdCard(image \| backing)` `await runFramesAsync(n)` `await runUntilReadyAsync()` `sdImage` `sdCalls` | Card 0 in the slot: a flat `Uint8Array` (whole 512-byte sectors) or any `SdCardBacking` (e.g. a CIM clone). The machines read and write sectors through frame commands; the async runs answer them with the machine's own `processFrameCommand`, the sync runs throw on one. `sdImage` has the writes; `sdCalls` counts the host calls. |
 | CPU | `registers()` `setRegisters({...})` `tacts` `frames` | `registers()` has 16-bit pairs (`bc`, not `b`). |
 | Screen | `screen()` `pixel(x, y)` `rowRuns(y)` `expectProbe(probe)` `saveScreenPng(path)` | The last *displayed* 720x288 frame. Probe and colour notation as in `case.json` (`ula:N`, `next8:0xNN`, `rgb333:R,G,B`, `#RRGGBB`). |
 | Audio | `startAudio()` `audio()` | Mixed left/right samples of each completed frame; needs `audioSampleRate`. |
@@ -152,7 +153,7 @@ When a test needs something the session cannot do, add it to `script/session.ts`
 
 Candidates not written yet: keyboard (`setKeyStatus`), joystick/mouse input, observing the INT line
 and interrupt acknowledge, a port/memory write log for both cores, checkpoints
-(`captureCheckpoint` exists on the WASM core only), and SD card access (the browser tier has it).
+(`captureCheckpoint` exists on the WASM core only).
 
 ## Declarative screen cases
 

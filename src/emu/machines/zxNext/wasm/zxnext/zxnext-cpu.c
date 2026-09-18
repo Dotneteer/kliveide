@@ -347,7 +347,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   uint32_t mfWasActive = 0u;
   if (z80GetRetnExecuted()) {
     mfWasActive = zxnextMultifaceIsActive();
-    zxnextMultifaceRetn();
+    if (isRetnInstruction) zxnextMultifaceRetn();
   }
   if (z80GetRetnExecuted()) {
     uint8_t stacklessProcessed = zxnextNmiGetStacklessProcessed();

@@ -21,6 +21,7 @@ export {
   type SessionOptions,
   type WritableRegisters
 } from "./script/session";
+export { MemorySdCard, SD_SECTOR_BYTES, type SdCardBacking } from "./script/sd-card";
 
 // --- Machines and low-level helpers
 export { ALL_CORES, createCore, readNextRegDirect, runDisplayedFrame, type CoreName } from "./core/machines";

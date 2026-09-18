@@ -493,9 +493,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
       case 'HOLD': {
         this._nmiHoldTicks++;
+        // --- S_NMI_END lasts one CPU clock (no I/O write is in progress at an opcode fetch): pass
+        // --- through it at once, so a cause raised by the next instruction is accepted, as on the FPGA
         if (!this.nmiHold) {
           this._nmiHoldTicks = 0;
-          this._nmiState = 'END';
+          this._nmiSourceMf = false;
+          this._nmiSourceDivMmc = false;
+          this._nmiSourceExpBus = false;
+          this._nmiState = 'IDLE';
         }
         break;
       }
@@ -1257,7 +1262,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // FPGA: cpu_retn_seen unconditionally clears both nmi_active and mf_enable
     // (D7: no guard on nmiHold — RETN always clears MF state)
-    this.multifaceDevice.handleRetn();
+    // --- (only ED 45: im2_control o_retn_seen is S_ED45_T4 - not RETI, not the RETN aliases)
+    if (this.opCode === 0x45) this.multifaceDevice.handleRetn();
 
     // --- DivMMC unmaps here, before the next opcode fetch: only on ED 45 (im2_control o_retn_seen
     // --- is S_ED45_T4 - not RETI, not the RETN aliases) and only when the Multiface was not active.

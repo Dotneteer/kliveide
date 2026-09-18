@@ -297,12 +297,15 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
           }
         }
 
+        const wasConfigMode = this.configMode;
         if (machineType === 0b111) {
           this.configMode = true;
           machine.onConfigModeEntered();
         } else if (machineType !== 0b000) {
           this.configMode = false;
         }
+        // --- config mode maps the $04 bank over the ROM slots (zxnext.vhd ~2994)
+        if (wasConfigMode !== this.configMode) machine.memoryDevice.updateMemoryConfig();
       },
       slices: [
         {
@@ -343,7 +346,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x04,
       description: "Config Mapping",
-      writeFn: (v) => (machine.memoryDevice.configRomRamBank = v & 0x7f),
+      writeFn: (v) => {
+        machine.memoryDevice.configRomRamBank = v & 0x7f;
+        if (this.configMode) machine.memoryDevice.updateMemoryConfig();
+      },
       slices: [
         {
           mask: 0x7f,

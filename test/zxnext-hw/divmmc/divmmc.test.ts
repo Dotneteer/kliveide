@@ -113,9 +113,13 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
     const t = await createSession(core);
     await t.loadCode(" .org $8000\n di\nPark: jr Park");
     const spectrum = Array.from(t.peekBytes(0x0000, 16));
+    // --- The firmware's way to load the DivMMC ROM: config mode, $04 = 4 (SRAM 0x010000)
+    const divRom = Array.from({ length: 16 }, (_, i) => (i * 29 + 7) & 0xff);
+    const type = t.readNextReg(0x03) & 0x07;
+    t.setNextReg(0x03, 0x07).setNextReg(0x04, 4).poke(0x0000, divRom).setNextReg(0x03, type);
+    expect(Array.from(t.peekBytes(0x0000, 16)), "config mode left: the Spectrum ROM").toEqual(spectrum);
     t.out(E3, CONMEM | 7);
-    const divRom = Array.from(t.peekBytes(0x0000, 16));
-    expect(divRom, "not the Spectrum ROM").not.toEqual(spectrum);
+    expect(Array.from(t.peekBytes(0x0000, 16)), "the DivMMC ROM").toEqual(divRom);
     t.poke(0x0000, divRom.map((b) => b ^ 0xff));
     expect(Array.from(t.peekBytes(0x0000, 16)), "read-only").toEqual(divRom);
     t.poke(0x2000, [0x12, 0x34]);

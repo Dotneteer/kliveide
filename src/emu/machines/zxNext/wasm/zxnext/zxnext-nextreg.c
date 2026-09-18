@@ -439,8 +439,11 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
       /* the ROM selection depends on the machine type (zxnext.vhd ~2938) */
       zxnextMemoryUpdateMapping();
     }
+    uint8_t wasConfigMode = zxnextConfigMode;
     if (machineType == 0x07u) zxnextConfigMode = 1u;
     else if (machineType != 0u) zxnextConfigMode = 0u;
+    /* config mode maps the $04 bank over the ROM slots (zxnext.vhd ~2994) */
+    if (wasConfigMode != zxnextConfigMode) zxnextMemoryUpdateMapping();
   }
   /* $0A bits 7-6 (Multiface type) change only in config mode (~5170) */
   if (normalized == 0x0au && !zxnextConfigMode) value = (value & 0x3fu) | (zxnextNextRegs[0x0au] & 0xc0u);

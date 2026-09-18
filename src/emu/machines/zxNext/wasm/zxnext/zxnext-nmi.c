@@ -97,7 +97,13 @@ static void zxnextNmiBeforeOpcodeFetch(uint32_t pc) {
       break;
     case ZXNEXT_NMI_HOLD: {
       uint32_t hold = nmiSourceMf ? zxnextMultifaceNmiHold() : nmiSourceDivMmc ? zxnextDivMmcGetNmiHold() : 0u;
-      if (!hold) nmiState = ZXNEXT_NMI_END;
+      /* S_NMI_END lasts one CPU clock (no I/O write is in progress at an opcode fetch): pass through it
+         at once, so a cause raised by the next instruction is accepted, as on the FPGA */
+      if (!hold) {
+        nmiSourceMf = 0u;
+        nmiSourceDivMmc = 0u;
+        nmiState = ZXNEXT_NMI_IDLE;
+      }
       break;
     }
     default:

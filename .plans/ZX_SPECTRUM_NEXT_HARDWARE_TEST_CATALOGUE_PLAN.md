@@ -51,7 +51,7 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `intack` | Observe the INT line and the vector placed on the bus at interrupt acknowledge. |
 | `nmi` | Press the Multiface / DivMMC NMI buttons. **Written 2026-09-18:** `pressHotkey("F9" \| "F10")`. |
 | `iolog` | Port and memory write log (both cores). |
-| `sd` | SD card image attach and block access (the browser tier already has it). |
+| `sd` | SD card image attach and block access (the browser tier already has it). **Written 2026-09-18:** `attachSdCard(image \| backing)`, `runFramesAsync`, `runUntilReadyAsync`, `sdImage`, `sdCalls`. |
 | `uart` | A peer on the UART lines (loopback or scripted ESP/Pi responder). |
 | `rtc` | I2C RTC with a settable time. |
 | `tape` | EAR input (tape signal injection). |
@@ -104,8 +104,8 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `CTC` | Z80 CTC (4 channels) | `device/ctc*.vhd` | `test/zxnext-hw/ctc/ctc.test.ts` (replaced the machine-level half of the mock `test/zxnext/CtcDevice.test.ts` and two of the three `test/wasm/zxNext/wasm-next-ctc.test.ts` tests, 2026-09-18; the per-clock `CtcChannel` tests stay) |
 | `DMA` | ZXN DMA / Z80 DMA | `device/dma.vhd` | `test/zxnext-hw/dma/dma.test.ts` (replaced the 30 MAME-model mocks `test/zxnext/DmaDevice*.test.ts`, 2026-09-18; bug B82) |
 | `DIV` | DivMMC paging and automap | `device/divmmc.vhd` | `test/zxnext-hw/divmmc/divmmc.test.ts` (2026-09-18, bug B83); the mocks `test/zxnext/DivMmcDevice-*.test.ts`, `DivMmmc.test.ts` still pass and stay (NMI/Multiface interplay) |
-| `MF` | Multiface | `device/multiface.vhd` | `test/zxnext/Multiface*.test.ts` (mock) |
-| `SPI` | SPI master, SD card, flash | `serial/spi_master.vhd` | `test/zxnext-hw/sd/spi-flash-select.test.ts` (bug B2) |
+| `MF` | Multiface | `device/multiface.vhd` | `test/zxnext-hw/multiface/multiface.test.ts` (2026-09-18, bug B84); the mocks `test/zxnext/Multiface*.test.ts` still pass and stay |
+| `SPI` | SPI master, SD card, flash | `serial/spi_master.vhd` | `test/zxnext-hw/sd/spi-flash-select.test.ts` (bug B2), `sd-card.test.ts`, `nextzxos-boot.test.ts` (2026-09-18, bug B86) |
 | `UART` | UART 0 (ESP) / UART 1 (Pi) | `serial/uart*.vhd` | `test/zxnext/UartDevice.test.ts` (mock) |
 | `I2C` | I2C bus, RTC | `zxnext.vhd` | `test/zxnext/I2cDevice.test.ts` (mock) |
 | `KEY` | Keyboard, extended keys | `input/membrane`, `input/keyboard` | – |
@@ -228,6 +228,7 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 | MEM-023 | Contention disable `$08` bit 6 | S | 3 | | On 48K/128K timing, a timing-sensitive loop reading the frame counter at 3.5 MHz differs with contention on vs off (only if the emulator models contention; otherwise document). | ❌ (B26) `memory/contention` - no memory contention in either core; the uncontended cases pass |
 | MEM-024 | `$0000` write protection of ROM | S | 1 | | `LDIR` over `$0000–$3FFF` with ROM mapped leaves ROM unchanged; same block with RAM mapped is changed. | ✅ `memory/mmu` |
 | MEM-025 | Bank 5/7 shadow screen | P | 1 | | Write distinct patterns into bank 5 and bank 7 display files; `$7FFD` bit 3 (and `$69` bit 6) switches which one is displayed. | ✅ `memory/shadow-screen` |
+| MEM-026 | Config mode `$04` mapping | S | 2 | | In config mode ($03 low bits 111) `$0000-$3FFF` with the ROM paged shows SRAM 16K bank `$04` bits 6-0, writable (zxnext.vhd ~2994-3000); MMU RAM, DivMMC and Layer 2 go above it, the Alt ROM does not. Added 2026-09-18. | ✅ `memory/config-mode` (B85 fixed: `$04` was stored but never mapped) |
 
 ### 4.6 `PORT` – Port decoding and enables
 
@@ -655,7 +656,7 @@ Ports `$183B`–`$1F3B` = channels 0–7 (0–3 implemented as timers).
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| DIV-001 | Port `$E3` conmem bit 7 | S | 1 | | DivMMC ROM at `$0000`, RAM page (bits 3–0) at `$2000`. | ✅ `divmmc/divmmc` (ROM read-only, not the Spectrum ROM; RAM page at `$2000`; `$E3` reads bits 7-6, 3-0) |
+| DIV-001 | Port `$E3` conmem bit 7 | S | 1 | | DivMMC ROM at `$0000`, RAM page (bits 3–0) at `$2000`. | ✅ `divmmc/divmmc` (ROM contents loaded through config mode, read-only; RAM page at `$2000`; `$E3` reads bits 7-6, 3-0) |
 | DIV-002 | RAM page select | S | 1 | | 16 pages distinct at `$2000`. | ✅ `divmmc/divmmc` |
 | DIV-003 | Mapram bit 6 | S | 1 | | RAM page 3 read-only at `$0000`; the bit is sticky (a write ORs it in) until a `$09` write with bit 3 or a reset (zxnext.vhd ~4155-4165: any `reset`, soft included). | ✅ `divmmc/divmmc` (B83 fixed: `$09` bit 3 only let a later `$E3` write clear it) |
 | DIV-004 | `$2000` write protect with mapram | S | 1 | | Page 3 not writable at `$2000` when mapram set and conmem clear. | ✅ `divmmc/divmmc` (with conmem and through automap) |
@@ -674,27 +675,27 @@ Ports `$183B`–`$1F3B` = channels 0–7 (0–3 implemented as timers).
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| MF-001 | MF type ports by `$0A` bits 7–6 | S | 2 | | MF+3 (`$3F`/`$BF`), MF128 (`$BF`/`$3F`), MF1 (`$9F`/`$1F`) enable/disable ports. | — |
+| MF-001 | MF type ports by `$0A` bits 7–6 | S | 2 | | MF+3 (`$3F`/`$BF`), MF128 (`$BF`/`$3F`), MF1 (`$9F`/`$1F`) enable/disable ports. | ✅ `multiface/multiface` (all four types; foreign ports do nothing) |
 | MF-002 | Page in via NMI | S | 1 | | NMI (via `$02`) pages MF ROM at `$0000`, RAM at `$2000`. | ✅ `reset/reset-register` (RST-005) |
-| MF-003 | Page out by port read | S | 1 | | Reading the disable port pages out. | — |
-| MF-004 | MF+3 port reads return `$7FFD`/`$1FFD` | S | 2 | | While paged, reading `$1F3F`/`$7F3F` return last paging values per `multiface.vhd`. | — |
-| MF-005 | MF invisibility | S | 2 | | Enable-port read when invisible returns floating/`$FF`. | — |
-| MF-006 | Port enable bit 9 | S | 3 | | Disabled ports. | — |
-| MF-007 | DivMMC and MF coexistence | S | 3 | | Priority when both paged per VHDL. | — |
+| MF-003 | Page out by port read | S | 1 | | Reading the disable port pages out. | ✅ `multiface/multiface` (disable read; RAM writable, ROM not; RETI does not page out; MF+3 disable read ends the NMI, MF128 not; B84 fixed) |
+| MF-004 | MF+3 port reads return `$7FFD`/`$1FFD` | S | 2 | | While paged, reading `$1F3F`/`$7F3F` return last paging values per `multiface.vhd`. | ✅ `multiface/multiface` (MF+3 by A15-A12, MF128 `$7FFD` bit 3, MF48 no answer; B84 fixed: `$DFFD` bit 6) |
+| MF-005 | MF invisibility | S | 2 | | Enable-port read when invisible returns floating/`$FF`. | ✅ `multiface/multiface` (invisible after reset; MF48 never; MF+3 enable-port write, MF128 disable-port write) |
+| MF-006 | Port enable bit 9 | S | 3 | | Disabled ports. | ✅ `multiface/multiface` (B84 fixed: WASM kept its state) |
+| MF-007 | DivMMC and MF coexistence | S | 3 | | Priority when both paged per VHDL. | ✅ `multiface/multiface` (MF above DivMMC; no MF NMI with conmem; no DivMMC NMI while MF paged in) |
 
 ### 4.28 `SPI` – SPI, SD card, flash
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| SPI-001 | `$E7` chip select values | S | 1 | | Low bits `10` SD0 / `01` SD1 first, then exact `$FB` Pi 0, `$F7` Pi 1, `$7F` flash (config mode or reset type bit 2); else `$FF`. Exists (`spi-flash-select.test.ts`); extend to all values. Bug B2. | ✅ WASM only (TS has no `$E7` latch) `sd/spi-flash-select` |
-| SPI-002 | `$EB` byte exchange | S | 1 | | Write/read round trip with no card returns `$FF`. | — |
-| SPI-003 | SD card init sequence | S | 1 | `sd` | CMD0/CMD8/ACMD41 responses. | — |
-| SPI-004 | Read block CMD17 | S | 1 | `sd` | Returns the image bytes of a sector. | — |
-| SPI-005 | Write block CMD24 | S | 1 | `sd` | Image sector updated. | — |
-| SPI-006 | Multi-block read/write | S | 2 | `sd` | CMD18/CMD25 with stop token. | — |
-| SPI-007 | Card 1 vs card 0 | S | 3 | `sd` | Deselect returns `$FF`. | — |
-| SPI-008 | Flash read ID | S | 3 | | Flash chip select in config mode returns flash ID per emulator model. | — |
-| SPI-009 | NextZXOS boot from SD | V | 1 | `sd` | Browser tier: boots to the NextZXOS menu; golden picture. | — |
+| SPI-001 | `$E7` chip select values | S | 1 | | Low bits `10` SD0 / `01` SD1 first, then exact `$FB` Pi 0, `$F7` Pi 1, `$7F` flash (config mode or reset type bit 2); else `$FF`. Exists (`spi-flash-select.test.ts`); extend to all values. Bug B2. | ✅ `sd/spi-flash-select` (the WASM latch), `sd/sd-card` (both cores, through which card answers) |
+| SPI-002 | `$EB` byte exchange | S | 1 | | Write/read round trip with no card returns `$FF`. | ✅ `sd/sd-card` (deselected bus; port enable bit 11 off) |
+| SPI-003 | SD card init sequence | S | 1 | `sd` | CMD0/CMD8/ACMD41 responses. | ✅ `sd/sd-card` (CMD0 $01, CMD8 R7, ACMD41, CMD58 OCR; idle $FF bytes are not commands; B86 fixed) |
+| SPI-004 | Read block CMD17 | S | 1 | `sd` | Returns the image bytes of a sector. | ✅ `sd/sd-card` (R1, token, the image's sector, CRC16) |
+| SPI-005 | Write block CMD24 | S | 1 | `sd` | Image sector updated. | ✅ `sd/sd-card` (data response $05, busy, image updated, read back) |
+| SPI-006 | Multi-block read/write | S | 2 | `sd` | CMD18/CMD25 with stop token. | ◐ `sd/sd-card` - CMD18 + CMD12 (B86 fixed: the first block lost CMD18's R1); CMD25 is not modelled by either core |
+| SPI-007 | Card 1 vs card 0 | S | 3 | `sd` | Deselect returns `$FF`. | ✅ `sd/sd-card` (empty slot 1 and a deselected card read $FF; B86 fixed) |
+| SPI-008 | Flash read ID | S | 3 | | Flash chip select in config mode returns flash ID per emulator model. | ✅ `sd/sd-card` (documented: no flash model, a JEDEC ID read gives $FF) |
+| SPI-009 | NextZXOS boot from SD | V | 1 | `sd` | Browser tier: boots to the NextZXOS menu; golden picture. | ✅ `sd/nextzxos-boot` - headless, both cores, from a clone of `~/Klive/ks2.cim` (skipped without it): menu up, cores identical outside the RTC date line; the browser tier boots it too |
 
 ### 4.29 `UART` – UART
 
@@ -719,7 +720,7 @@ Ports: `$133B` TX, `$143B` RX, `$153B` select, `$163B` frame.
 |---|---|---|---|---|---|---|
 | I2C-001 | SCL/SDA ports `$103B/$113B` | S | 2 | | Written level reads back (open-drain with pull-up when no device). | — |
 | I2C-002 | Start/stop and address ACK | S | 2 | `rtc` | Bit-banged address `$D0` gets ACK from DS1307. | — |
-| I2C-003 | RTC time read | S | 2 | `rtc` | Registers 0–6 BCD match the set time. | — |
+| I2C-003 | RTC time read | S | 2 | `rtc` | Registers 0–6 BCD match the set time. | — (seen in SPI-009: only the TS core emulates the DS1307 - its NextZXOS menu shows the date line, the WASM core's does not) |
 | I2C-004 | RTC write | S | 3 | `rtc` | Written time reads back. | — |
 | I2C-005 | Unknown address NACK | S | 3 | | | — |
 | I2C-006 | Port enable bit 10 | S | 3 | | | — |

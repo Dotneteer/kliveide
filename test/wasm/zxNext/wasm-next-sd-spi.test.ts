@@ -56,6 +56,9 @@ describe("ZX Spectrum Next WASM SD SPI parity", () => {
     const { oracle, wasm } = await createZxNextOracleHarness();
     oracle.hardReset();
     wasm.hardReset();
+    // --- an empty slot does not answer: give card 1 a size
+    oracle.sdCardDevice.setCard1Info(2048);
+    wasm.wasmV2Runtime!.exports.zxnextSetSdCardInfo(1, 2048);
 
     oracle.doWritePort(0xe7, 0x01);
     wasm.doWritePort(0xe7, 0x01);

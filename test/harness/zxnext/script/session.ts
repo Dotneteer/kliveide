@@ -15,6 +15,7 @@ import { captureFrame, pixelHex, rowRuns, type Frame, type RowRun } from "../cor
 import { loadNexDirect, readNextReg, writeNextReg } from "../core/load-nex-direct";
 import { ALL_CORES, createCore, readNextRegDirect, type CoreName } from "../core/machines";
 import { evaluateProbe, type Probe } from "../cases/probes";
+import { InMemorySdMessenger, MemorySdCard, type SdCardBacking } from "./sd-card";
 
 /*
  * The scripting layer of the ZX Spectrum Next test harness: one real machine (TypeScript or WASM
@@ -78,6 +79,7 @@ export class NextTestSession {
   private lastFrame?: Frame;
   private program?: Program;
   private recording?: AudioSample[];
+  private sd?: InMemorySdMessenger;
 
   private constructor(
     readonly core: CoreName,
@@ -117,6 +119,63 @@ export class NextTestSession {
   async pressHotkey(key: Hotkey): Promise<this> {
     await this.machine.executeCustomCommand(HOTKEY_COMMANDS[key]);
     return this;
+  }
+
+  // ==========================================================================================
+  // SD card
+
+  /**
+   * Puts an SD card in slot 0: a flat image (a whole number of 512-byte sectors) or any `SdCardBacking`. The machines read and write
+   * sectors through frame commands answered by the main process in the app; here the async run methods
+   * (`runFramesAsync`, `runUntilReadyAsync`) answer them from this image with the machine's own
+   * `processFrameCommand`. Writes land in `sdImage`. The sync run methods still fail on a frame command.
+   */
+  attachSdCard(card: Uint8Array | SdCardBacking): this {
+    this.sd = new InMemorySdMessenger(card instanceof Uint8Array ? new MemorySdCard(card) : card);
+    return this;
+  }
+
+  /** The attached flat image, with the machine's writes in it. */
+  get sdImage(): Uint8Array {
+    if (!(this.sd?.card instanceof MemorySdCard)) throw new Error("No flat SD image attached (attachSdCard with a Uint8Array)");
+    return this.sd.card.image;
+  }
+
+  /** Main-API calls the machine made to the attached card, by method (`readSdCardSector`, ...). */
+  get sdCalls(): Record<string, number> {
+    if (!this.sd) throw new Error("No SD card attached (attachSdCard)");
+    return { ...this.sd.calls };
+  }
+
+  /** `runFrames`, answering the machine's SD frame commands from the attached image. */
+  async runFramesAsync(count = 1): Promise<this> {
+    for (let n = 0; n < count; n++) {
+      const start = this.frames;
+      while (this.frames === start) await this.executeAsync(n === count - 1);
+    }
+    return this;
+  }
+
+  /** `runUntilReady`, answering the machine's SD frame commands from the attached image. */
+  async runUntilReadyAsync({ maxFrames = 50 }: RunLimit = {}): Promise<this> {
+    const limit = this.frames + maxFrames;
+    while (this.nextRegValue(READY_REG) !== READY_VALUE) {
+      if (this.frames >= limit) {
+        throw new Error(`Timed out after ${maxFrames} frames waiting for the ready marker ($A5 in NextReg $7F) (PC=${hex(this.machine.pc, 4)})`);
+      }
+      await this.executeAsync(true);
+    }
+    return this;
+  }
+
+  private async executeAsync(capture: boolean): Promise<FrameTerminationMode> {
+    const termination = this.execute(capture, true);
+    if (this.machine.getFrameCommand()) {
+      if (!this.sd) this.failOnFrameCommand();
+      await this.machine.processFrameCommand(this.sd!);
+      this.machine.setFrameCommand(null);
+    }
+    return termination;
   }
 
   // ==========================================================================================
@@ -273,13 +332,13 @@ export class NextTestSession {
     while (this.frames === start) this.execute(capture);
   }
 
-  private execute(capture: boolean): FrameTerminationMode {
+  private execute(capture: boolean, frameCommandsAnswered = false): FrameTerminationMode {
     const termination = this.machine.executeMachineFrame();
     if (this.machine.frameJustCompleted && termination === FrameTerminationMode.Normal && capture) {
       this.lastFrame = captureFrame(this.machine);
     }
     this.afterExecute();
-    this.failOnFrameCommand();
+    if (!frameCommandsAnswered) this.failOnFrameCommand();
     return termination;
   }
 
@@ -291,7 +350,9 @@ export class NextTestSession {
 
   private failOnFrameCommand(): void {
     if (this.machine.getFrameCommand()) {
-      throw new Error(`The machine issued a frame command (${JSON.stringify(this.machine.getFrameCommand())}); use the browser tier for SD card access.`);
+      throw new Error(
+        `The machine issued a frame command (${JSON.stringify(this.machine.getFrameCommand())}); attach an image (attachSdCard) and run it with runFramesAsync / runUntilReadyAsync, or use the browser tier.`
+      );
     }
   }
 

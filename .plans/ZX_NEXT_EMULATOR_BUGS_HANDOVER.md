@@ -1144,6 +1144,44 @@ DIV-003, DIV-006, DIV-008, DIV-010 - DIV-012.
 Not changed: the catalogue said mapram survives a soft reset; the VHDL clears all of `$E3` on any reset,
 which both cores already did.
 
+### B84 – Multiface: RETI paged out, `$DFFD` bit 6, port-enable reset, NMI END state – FIXED 2026-09-18
+
+MF-003, MF-004, MF-006.
+- **RETI** (and the RETN aliases) paged the Multiface out and ended its NMI in both cores; `cpu_retn_seen`
+  is `z80_retn_seen_28` = im2_control S_ED45_T4, exactly ED 45 (the same rule as B83 for DivMMC).
+- **`$DFFD` read-back** on MF+3 (`$DF3F`) is '0' & dffd(6) & '0' & dffd(4-0); both cores stored only bits
+  4-0. `MemoryDevice.portDffdReadback` / `zxnextMemoryGetPortDffdReadback` now keep bit 6.
+- **Port enable** `$83` bit 1 holds the device in reset (`reset <= reset_i or not enable_i`); WASM only
+  gated its outputs, so re-enabling brought the old paging back.
+- **NMI state machine**: S_NMI_END lasts one CPU clock, but both cores stepped the machine once per opcode
+  fetch, so END lasted a whole instruction and a cause raised by it (a `$02` write right after the MF+3
+  handler's disable-port read) was dropped. HOLD now passes through END to IDLE in one step
+  (`stepNmiStateMachine`, `zxnextNmiBeforeOpcodeFetch`); `test/zxnext/NmiStateMachine.test.ts` updated.
+
+### B85 – Config mode: NextReg `$04` was stored but never mapped – FIXED 2026-09-18
+
+MEM-026. zxnext.vhd ~2994-3000: in config mode, `$0000-$3FFF` with the ROM paged (MMU0/1 = $FF) shows
+SRAM 16K bank `nr_04_romram_bank & A13`, writable, with no Alt ROM; the Multiface, MMU RAM, DivMMC and
+Layer 2 go above it. This is how the firmware loads the ROMs, the DivMMC ROM and the Multiface ROM. Both
+cores ignored it (`MemoryDevice.configRomRamBank` was written, nothing read it). Now `setRamSlotByMmu` /
+`zxnextMemorySetRamPageByMmu` map it, and `$03` (entering or leaving config mode) and `$04` remap.
+
+### B86 – SD card model: CMD0 before the size, idle $FF bytes, empty slots, CMD18's R1 – FIXED 2026-09-18
+
+SPI-003, SPI-006, SPI-007 (the card follows the SD Physical Layer spec, SPI mode; both cores).
+- **CMD0 answered $00 ("no card") until the first sector read**: the card size is fetched from the host
+  lazily at the first frame command, and "size 0" meant "no card". The app always has a card; card 0
+  now counts as present until the host reports no sectors.
+- **A $FF written between commands started a command** and swallowed the next one; a command byte is
+  `01xxxxxx`, anything else is ignored while idle.
+- **An empty slot answered**: card 1 (never given an image by the app) returned R1 $00; an absent card
+  never drives MISO, so the bus reads $FF and writes go nowhere.
+- **CMD18 lost its R1**: the host's first sector reply replaced the queued R1, so a driver took the $FE
+  token for R1 and read every block one byte late. The first block now carries R1 and a gap byte.
+Harness: `attachSdCard` / `runFramesAsync` / `runUntilReadyAsync` (README "Session API") serve an image
+from memory - or a CIM clone - through the machines' own `processFrameCommand`. Not modelled: CMD25
+(multi-block write) in either core; the flash chip on $E7 = $7F.
+
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 
 - **Fixed:** `machineFrameCompleted` keeps a copy of the displayed pixel buffer instead of calling

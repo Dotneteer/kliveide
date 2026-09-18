@@ -24,8 +24,11 @@ static uint16_t pageBank8[8];
  */
 static uint8_t memPort7ffd;  /* port_7ffd_reg */
 static uint8_t memPortDffd;  /* port_dffd_reg, bits 4-0 */
+static uint8_t memPortDffd6; /* port_dffd_reg_6, read back only by the MF+3 port */
 static uint8_t memPort1ffd;  /* port_1ffd_reg */
 static uint8_t memPortEff7;  /* port_eff7_reg_2 / _3, bits 2 and 3 */
+/* nr_03_config_mode: defined in zxnext-nextreg.c, later in the unity build */
+static uint8_t zxnextConfigMode;
 /* ROM selection (~2938-2962 `sram_rom`, `sram_alt_128_n`), derived at every mapping update */
 static uint8_t selectedRom;
 static uint8_t memAlt128n;
@@ -117,6 +120,13 @@ static void zxnextMemorySetRamPageByMmu(uint32_t pageNo) {
   }
 
   uint32_t half = pageNo & 0x01u;
+  /* ~2994-3000: in config mode the ROM slots show the 16K SRAM bank of $04 (bits 6-0), writable, with
+     no Alt ROM (sram_pre_override "110": DivMMC, Layer 2 and the Multiface still go above it) */
+  if (pageNo <= 1u && zxnextConfigMode) {
+    uint32_t configOffset = (zxnextNextRegs[0x04u] & 0x7fu) * 0x4000u + half * 0x2000u;
+    zxnextMemorySetPageInfo(pageNo, configOffset, configOffset, 0xffu, 0xffu);
+    return;
+  }
   uint32_t romOffset = ZXNEXT_OFFS_NEXT_ROM + selectedRom * 0x4000u + half * 0x2000u;
   uint32_t altOffset = (memAlt128n ? ZXNEXT_OFFS_ALT_ROM_1 : ZXNEXT_OFFS_ALT_ROM_0) + half * 0x2000u;
   uint32_t altRom = zxnextNextRegs[0x8cu];
@@ -193,6 +203,7 @@ static void zxnextMemoryResetMapping(void) {
   /* ~3645, 3685, 3712, 3758: every reset clears the paging ports */
   memPort7ffd = 0;
   memPortDffd = 0;
+  memPortDffd6 = 0;
   memPort1ffd = 0;
   memPortEff7 = 0;
   zxnextNextRegs[0x50] = 0xff;
@@ -352,6 +363,9 @@ static void zxnextMemorySetNextRegister(uint32_t reg, uint32_t value) {
   zxnextNextRegs[normalizedReg] = byteValue;
   if (normalizedReg >= 0x50 && normalizedReg <= 0x57) {
     zxnextMemoryUpdateMapping();
+  } else if (normalizedReg == 0x04) {
+    zxnextNextRegs[0x04u] = (uint8_t)(byteValue & 0x7fu);
+    if (zxnextConfigMode) zxnextMemoryUpdateMapping();
   } else if (normalizedReg == 0x8c) {
     zxnextMemoryUpdateMapping();
   } else if (normalizedReg == 0x8e) {
@@ -391,11 +405,17 @@ static uint32_t zxnextMemoryGetPort7ffd(void) {
 static void zxnextMemorySetPortDffd(uint32_t value) {
   if (!zxnextMemoryPagingEnabled()) return;
   memPortDffd = (uint8_t)(value & 0x1fu);
+  memPortDffd6 = (uint8_t)((value >> 6) & 0x01u);
   zxnextMemoryReloadMmu(1u, 0u);
 }
 
 static uint32_t zxnextMemoryGetPortDffd(void) {
   return memPortDffd;
+}
+
+/* The MF+3 read-back of $DFFD: '0' & dffd(6) & '0' & dffd(4-0) (zxnext.vhd ~4294) */
+static uint32_t zxnextMemoryGetPortDffdReadback(void) {
+  return ((uint32_t)memPortDffd6 << 6) | memPortDffd;
 }
 
 /* A $1FFD write; ignored while locked (~3715) */

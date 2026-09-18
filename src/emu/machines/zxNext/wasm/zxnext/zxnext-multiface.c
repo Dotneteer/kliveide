@@ -13,7 +13,14 @@ static uint8_t mfNmiActive;
 static uint8_t mfEnabled;
 static uint8_t mfInvisible;
 
-static uint32_t zxnextMultifaceDeviceEnabled(void) { return zxnextPortsGroupEnabled(1, 1); }
+/* reset <= reset_i or not enable_i: while port enable bit 9 is off the device is held in reset */
+static uint32_t zxnextMultifaceDeviceEnabled(void) {
+  if (zxnextPortsGroupEnabled(1, 1)) return 1u;
+  mfNmiActive = 0u;
+  mfEnabled = 0u;
+  mfInvisible = 1u;
+  return 0u;
+}
 static uint32_t zxnextMultifaceType(void) { return (zxnextNextRegs[0x0au] >> 6u) & 0x03u; }
 static uint32_t zxnextMultifaceMode48(void) { return zxnextMultifaceType() == 3u; }
 static uint32_t zxnextMultifaceModeP3(void) { return zxnextMultifaceType() == 0u; }
@@ -60,7 +67,7 @@ static uint32_t zxnextMultifacePortData(uint32_t port) {
     switch ((port >> 12u) & 0x0fu) {
       case 0x1u: return zxnextMemoryGetPort1ffd();
       case 0x7u: return zxnextMemoryGetPort7ffd();
-      case 0xdu: return zxnextMemoryGetPortDffd();
+      case 0xdu: return zxnextMemoryGetPortDffdReadback();
       case 0xeu: return zxnextMemoryGetPortEff7(); /* bits 3-2 */
       default: return borderColor & 0x07u;
     }
