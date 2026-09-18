@@ -10,8 +10,11 @@ that change happens at paper x 0); bottom border (rows 240-287) blue.
 
 **Row 48 (copper line 0, the restart row):** mode 11 restarts the list when `vcount_i = 0 and
 hcount_i = 0` (copper.vhd, "restart at frame start"), i.e. at `hc_ula` 0 = paper x −12 = buffer x 72,
-not at paper x 0. So row 48's left border is blue up to buffer x ~73 and black from there (plus the
-same under-two-pixel MOVE/palette delay: black from x 74).
+not at paper x 0. It restarts on all four 28 MHz ticks of `hc_ula` 0; the palette MOVEs follow at one
+instruction per tick, two ticks per MOVE: `MOVE $40` is fetched on tick 0 of `hc_ula` 1, `MOVE $41` on
+tick 2, and a MOVE reaches its NextReg two ticks after its fetch (zxnext.vhd `copper_req`), so entry 16
+turns black on tick 0 of `hc_ula` 2 = buffer x 76. Row 48's left border is blue on x 0-75 and black
+from x 76.
 
 **Must not see:** a border that stays black, or any change inside the paper.
 

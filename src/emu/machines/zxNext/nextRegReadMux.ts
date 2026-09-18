@@ -33,7 +33,7 @@ const ZERO_BITS: Record<number, number> = {
   0x2d: 0x3f, // --- i2s_sample & "000000"
   0x2f: 0xfc, // --- "000000" & tm_scrollx(9:8)
   0x34: 0x80, // --- '0' & sprite_mirror_id
-  0x44: 0x7e, // --- palette_dat(10:9) & "00000" & palette_dat(0)
+  0x44: 0x3e, // --- palette_dat(10:9) & "00000" & palette_dat(0)
   0x4c: 0xf0, // --- "0000" & tm_transparent_index
   0x62: 0x38, // --- copper_mode & "000" & copper_addr(10:8)
   0x68: 0x02, // --- ... & fine_scroll_x & '0' & stencil

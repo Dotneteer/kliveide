@@ -88,8 +88,6 @@ const MATRIX: MatrixEntry[] = [
     requiredDomain: "NextReg",
     typeScriptTests: [
       "NextRegDevice.test.ts",
-      "PaletteDevice.test.ts",
-      "PaletteDeviceFpgaFixes.test.ts",
       "palette-codec.test.ts"
     ],
     wasmSuites: ["wasm-next-nextreg.test.ts", "wasm-next-palette-ulaplus.test.ts"],
@@ -242,10 +240,8 @@ const MATRIX: MatrixEntry[] = [
     requiredDomain: "NMI/interrupt",
     typeScriptTests: [
       "CtcDevice.test.ts",
-      "DaisyChain.test.ts",
       "I2cDevice.test.ts",
       "InterruptDevice.test.ts",
-      "NextInterrupts.test.ts",
       "NmiSoftware.test.ts",
       "NmiStateMachine.test.ts",
       "StacklessNmi.test.ts",

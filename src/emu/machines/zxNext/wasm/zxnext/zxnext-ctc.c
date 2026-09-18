@@ -139,10 +139,9 @@ static void zxnextCtcAdvanceToSysClock(uint32_t currentSysClock) {
     }
   }
 
+  /* im2_peripheral: every zero count latches the status; the enable decides about the interrupt */
   for (uint32_t i = 0; i < 4; i++) {
-    if (zcToCounts[i] > 0 && zxnextGetCtcIntEnabled(i)) {
-      zxnextInterruptsSetDaisyStatus(3u + i, 1);
-    }
+    if (zcToCounts[i] > 0) zxnextInterruptsRequest(ZXNEXT_INT_CTC0 + i, zxnextGetCtcIntEnabled(i), 1);
   }
 }
 
@@ -253,6 +252,17 @@ void zxnextCtcWritePort(uint32_t port, uint32_t value) {
   zxnextCtcClock(channel, 1, value, 0, 0, 0);
   zxnextCtcClock(channel, 0, value, 0, 0, 0);
   zxnextCtcLastSyncClock += 2u;
+}
+
+/* NextReg $C5 writes control_reg(7) directly (ctc_chan.vhd i_int_en_wr) */
+void zxnextCtcSetIntEnabled(uint32_t channel, uint32_t enabled) {
+  ZxNextCtcChannel *ch = zxnextCtcChannel(channel);
+  ch->controlReg = enabled ? (ch->controlReg | 0x20u) : (ch->controlReg & ~0x20u);
+}
+
+/* Brings the CTC up to the current tact - before INT is sampled, so zero counts interrupt on time */
+static void zxnextCtcSync(void) {
+  zxnextCtcAdvanceToSysClock(frameTacts28);
 }
 
 uint32_t zxnextGetCtcState(uint32_t channel) { return zxnextCtcChannel(channel)->state; }

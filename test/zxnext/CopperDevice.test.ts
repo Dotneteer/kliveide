@@ -25,12 +25,18 @@ function waitInstr(hc6: number, vc9: number): number {
   return 0x8000 | ((hc6 & 0x3f) << 9) | (vc9 & 0x1ff);
 }
 
-/** Set the copper start mode, resetting addr first then activating mode */
+/**
+ * Set the copper start mode, resetting addr first then activating mode. copper.vhd acts on a mode
+ * change at its next tick (`last_state_s`), so each change is followed by that tick, at a beam
+ * position no WAIT or restart can match.
+ */
 function setMode(copper: CopperDevice, mode: CopperStartMode): void {
   // Write stop first so mode transitions are clean
   copper.nextReg62Value = 0x00;
+  copper.executeTick(0x1ff, 0x1ff);
   // Write new mode (bits 7:6), keep address MSB = 0
   copper.nextReg62Value = (mode << 6) & 0xff;
+  copper.executeTick(0x1ff, 0x1ff);
 }
 
 // ---------------------------------------------------------------------------
@@ -81,6 +87,7 @@ describe("CopperDevice – Step 1: Execution state initialization", () => {
     copper.nextReg62Value = 0x00; // stop
     copper._copperListAddr = 0x123; // set after stop
     copper.nextReg62Value = 0b01 << 6; // mode 0b01
+    copper.executeTick(0x1ff, 0x1ff); // --- copper.vhd acts on a mode change at its next tick
     expect(copper._copperListAddr).toBe(0);
   });
 
@@ -89,6 +96,7 @@ describe("CopperDevice – Step 1: Execution state initialization", () => {
     copper.nextReg62Value = 0x00;
     copper._copperDout = true; // set again after stop transition
     copper.nextReg62Value = 0b01 << 6;
+    copper.executeTick(0x1ff, 0x1ff); // --- copper.vhd acts on a mode change at its next tick
     expect(copper._copperDout).toBe(false);
   });
 
@@ -98,6 +106,7 @@ describe("CopperDevice – Step 1: Execution state initialization", () => {
     copper.nextReg62Value = 0x00;
     copper._copperListAddr = 0x200;
     copper.nextReg62Value = 0b11 << 6;
+    copper.executeTick(0x1ff, 0x1ff); // --- copper.vhd acts on a mode change at its next tick
     expect(copper._copperListAddr).toBe(0);
   });
 
@@ -105,6 +114,7 @@ describe("CopperDevice – Step 1: Execution state initialization", () => {
     copper.nextReg62Value = 0x00;
     copper._copperDout = true;
     copper.nextReg62Value = 0b11 << 6;
+    copper.executeTick(0x1ff, 0x1ff); // --- copper.vhd acts on a mode change at its next tick
     expect(copper._copperDout).toBe(false);
   });
 
@@ -154,7 +164,7 @@ describe("CopperDevice – Step 2: MOVE instruction", () => {
     return machine.nextRegDevice.directGetRegValue(reg);
   }
 
-  it("should write a NextReg on the second tick after a single MOVE instruction", () => {
+  it("should write a NextReg on the third tick after a single MOVE instruction", () => {
     // Program: MOVE reg=0x40, val=0xAA at list index 0
     writeInstruction(copper, 0, moveInstr(0x40, 0xaa));
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
@@ -165,9 +175,13 @@ describe("CopperDevice – Step 2: MOVE instruction", () => {
     // The write has not happened yet
     expect(readNextReg(0x40)).not.toBe(0xaa);
 
-    // Tick 2: outputs the MOVE
+    // Tick 2: clears dout; zxnext.vhd latches copper_req on dout's rising edge
     copper.executeTick(0, 1);
     expect(copper._copperDout).toBe(false);
+    expect(readNextReg(0x40)).not.toBe(0xaa);
+
+    // Tick 3: the NextReg process writes (two ticks after the fetch)
+    copper.executeTick(0, 2);
     expect(readNextReg(0x40)).toBe(0xaa);
   });
 
@@ -202,23 +216,24 @@ describe("CopperDevice – Step 2: MOVE instruction", () => {
 
     const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
 
-    // MOVE 0: fetch on tick 1, output on tick 2
+    // MOVE n: fetch on tick 2n+1, written on tick 2n+3 (while MOVE n+1 is fetched)
     copper.executeTick(0, 0);
     expect(copper._copperDout).toBe(true);
     copper.executeTick(0, 1);
-    expect(spy).toHaveBeenCalledWith(0x10, 0x11);
+    expect(spy).not.toHaveBeenCalled();
     expect(copper._copperDout).toBe(false);
 
-    // MOVE 1: fetch on tick 3, output on tick 4
     copper.executeTick(0, 2);
+    expect(spy).toHaveBeenLastCalledWith(0x10, 0x11);
     expect(copper._copperDout).toBe(true);
     copper.executeTick(0, 3);
-    expect(spy).toHaveBeenCalledWith(0x20, 0x22);
 
-    // MOVE 2: fetch on tick 5, output on tick 6
     copper.executeTick(0, 4);
+    expect(spy).toHaveBeenLastCalledWith(0x20, 0x22);
     copper.executeTick(0, 5);
-    expect(spy).toHaveBeenCalledWith(0x30, 0x33);
+    copper.executeTick(0, 6);
+    expect(spy).toHaveBeenLastCalledWith(0x30, 0x33);
+    expect(spy).toHaveBeenCalledTimes(3);
 
     vi.restoreAllMocks();
   });
@@ -232,7 +247,8 @@ describe("CopperDevice – Step 2: MOVE instruction", () => {
     const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
 
     copper.executeTick(0, 0); // fetch
-    copper.executeTick(0, 1); // output to reg 0x7F
+    copper.executeTick(0, 1); // clear, latch
+    copper.executeTick(0, 2); // write reg 0x7F
     expect(spy).toHaveBeenCalledWith(0x7f, 0x55);
 
     vi.restoreAllMocks();
@@ -248,16 +264,20 @@ describe("CopperDevice – Step 2: MOVE instruction", () => {
     expect(readNextReg(0x40)).not.toBe(0xbb);
   });
 
-  it("should stop execution when mode is set back to FullyStopped mid-list", () => {
+  it("should still write a MOVE fetched before the stop, and fetch nothing after it", () => {
     writeInstruction(copper, 0, moveInstr(0x40, 0xcc));
+    writeInstruction(copper, 1, moveInstr(0x41, 0xdd));
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
 
     copper.executeTick(0, 0); // fetch → dout=true
 
-    // Switch to stopped before the output tick
+    // Switch to stopped before the output tick: copper_req still follows dout's rising edge
     copper.nextReg62Value = 0x00; // FullyStopped
-    copper.executeTick(0, 1); // should do nothing
-    expect(readNextReg(0x40)).not.toBe(0xcc);
+    copper.executeTick(0, 1); // the copper sees the stop; zxnext.vhd latches the request
+    copper.executeTick(0, 2); // the write
+    copper.executeTick(0, 3);
+    expect(readNextReg(0x40)).toBe(0xcc);
+    expect(readNextReg(0x41)).not.toBe(0xdd);
   });
 });
 
@@ -374,8 +394,10 @@ describe("CopperDevice – Step 3: WAIT instruction", () => {
     copper.executeTick(20, 13); // fetch → dout=true
     expect(copper._copperDout).toBe(true);
 
-    // Output MOVE
+    // Clear, then the write
     copper.executeTick(20, 14);
+    expect(spy).not.toHaveBeenCalledWith(0x45, 0x77);
+    copper.executeTick(20, 15);
     expect(spy).toHaveBeenCalledWith(0x45, 0x77);
 
     vi.restoreAllMocks();
@@ -425,7 +447,7 @@ describe("CopperDevice – Step 4: Stop mode", () => {
     expect(copper._copperListAddr).toBe(0);
   });
 
-  it("should halt immediately when mode changes to FullyStopped from StartFromZeroAndLoop", () => {
+  it("should let the fetched MOVE out and run nothing more when mode changes to FullyStopped", () => {
     writeInstruction(copper, 0, moveInstr(0x40, 0xcc));
     writeInstruction(copper, 1, moveInstr(0x41, 0xdd));
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
@@ -437,9 +459,11 @@ describe("CopperDevice – Step 4: Stop mode", () => {
     copper.nextReg62Value = CopperStartMode.FullyStopped << 6;
 
     const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
-    copper.executeTick(0, 1); // must do nothing
-    copper.executeTick(0, 2);
-    expect(spy).not.toHaveBeenCalled();
+    copper.executeTick(0, 1); // the copper sees the stop; the request is latched
+    copper.executeTick(0, 2); // the write of slot 0
+    for (let i = 3; i < 10; i++) copper.executeTick(0, i);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(0x40, 0xcc);
     vi.restoreAllMocks();
   });
 
@@ -458,7 +482,8 @@ describe("CopperDevice – Step 4: Stop mode", () => {
 
     const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
     copper.executeTick(0, 0); // fetch slot 0 again → dout=true
-    copper.executeTick(0, 1); // output
+    copper.executeTick(0, 1); // clear, latch
+    copper.executeTick(0, 2); // write
     expect(spy).toHaveBeenCalledWith(0x50, 0x11);
     vi.restoreAllMocks();
   });
@@ -503,12 +528,12 @@ describe("CopperDevice – Step 5: Wrap-around", () => {
 
     // Expected timeline:
     //  Tick 1   : fetch slot 0 MOVE → dout=true, addr=1
-    //  Tick 2   : output MOVE (call #1), dout=false
-    //  Ticks 3–1024: fetch NOP slots 1–1022 → addr=1023  (1022 ticks)
-    //  Tick 1025: fetch NOP slot 1023 → addr wraps to 0
+    //  Tick 2   : dout=false, request latched
+    //  Tick 3   : write (call #1); fetch NOP slot 1
+    //  Ticks 3–1025: fetch NOP slots 1–1023 → addr wraps to 0
     //  Tick 1026: fetch slot 0 MOVE again → dout=true, addr=1
-    //  Tick 1027: output MOVE (call #2)
-    for (let i = 0; i < 1027; i++) copper.executeTick(0, i);
+    //  Tick 1028: write (call #2)
+    for (let i = 0; i < 1028; i++) copper.executeTick(0, i);
 
     expect(spy).toHaveBeenCalledTimes(2);
     expect(spy).toHaveBeenNthCalledWith(1, 0x44, 0x99);
@@ -590,7 +615,8 @@ describe("CopperDevice – Step 6: Frame-restart mode", () => {
     copper.executeTick(0, 1);   // fetch slot 0 MOVE → dout=true
     expect(copper._copperDout).toBe(true);
 
-    copper.executeTick(0, 2);   // output MOVE
+    copper.executeTick(0, 2);   // clear, latch
+    copper.executeTick(0, 3);   // write
     expect(spy).toHaveBeenCalledWith(0x42, 0xff);
     vi.restoreAllMocks();
   });
@@ -604,7 +630,8 @@ describe("CopperDevice – Step 6: Frame-restart mode", () => {
     // --- Frame 1 ---
     copper.executeTick(0, 0);  // frame restart
     copper.executeTick(0, 1);  // fetch slot 0 MOVE
-    copper.executeTick(0, 2);  // output (call #1)
+    copper.executeTick(0, 2);  // clear, latch
+    copper.executeTick(0, 3);  // write (call #1)
     expect(spy).toHaveBeenCalledTimes(1);
 
     // Advance well into the list
@@ -615,7 +642,8 @@ describe("CopperDevice – Step 6: Frame-restart mode", () => {
     expect(copper._copperListAddr).toBe(0);
 
     copper.executeTick(0, 1);  // fetch slot 0 MOVE
-    copper.executeTick(0, 2);  // output (call #2)
+    copper.executeTick(0, 2);  // clear, latch
+    copper.executeTick(0, 3);  // write (call #2)
     expect(spy).toHaveBeenCalledTimes(2);
     vi.restoreAllMocks();
   });
@@ -828,7 +856,8 @@ describe("CopperDevice – Step 9: Register restrictions", () => {
 
     const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
     copper.executeTick(0, 0); // fetch
-    copper.executeTick(0, 1); // emit
+    copper.executeTick(0, 1); // clear, latch
+    copper.executeTick(0, 2); // write
     expect(spy).toHaveBeenCalledWith(0x45, 0xab);
     vi.restoreAllMocks();
   });
@@ -852,7 +881,8 @@ describe("CopperDevice – Step 9: Register restrictions", () => {
 
     const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
     copper.executeTick(0, 0); // fetch
-    copper.executeTick(0, 1); // emit
+    copper.executeTick(0, 1); // clear, latch
+    copper.executeTick(0, 2); // write
     expect(spy).toHaveBeenCalledWith(0x7f, 0xcd);
     vi.restoreAllMocks();
   });
@@ -867,6 +897,7 @@ describe("CopperDevice – Step 9: Register restrictions", () => {
     const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
     copper.executeTick(0, 0);
     copper.executeTick(0, 1);
+    copper.executeTick(0, 2);
     expect(spy).toHaveBeenCalledWith(0x7f, 0x99);
     vi.restoreAllMocks();
   });
@@ -900,7 +931,7 @@ describe("CopperDevice – Step 10: One-instruction-per-tick execution model", (
     expect(copper._copperListAddr).toBe(3);
   });
 
-  it("should require exactly two ticks per MOVE (fetch on tick N, emit on tick N+1)", () => {
+  it("should require exactly two ticks per MOVE (fetch on tick N, NextReg write on tick N+2)", () => {
     writeInstruction(copper, 0, moveInstr(0x10, 0x11));
     writeInstruction(copper, 1, moveInstr(0x20, 0x22));
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
@@ -910,14 +941,18 @@ describe("CopperDevice – Step 10: One-instruction-per-tick execution model", (
     copper.executeTick(0, 0); // fetch MOVE-0 → dout=true, no write yet
     expect(spy).not.toHaveBeenCalled();
 
-    copper.executeTick(0, 1); // emit MOVE-0 → write(0x10, 0x11)
+    copper.executeTick(0, 1); // clear dout; zxnext.vhd latches copper_req
+    expect(spy).not.toHaveBeenCalled();
+
+    copper.executeTick(0, 2); // fetch MOVE-1 while MOVE-0 is written
     expect(spy).toHaveBeenCalledWith(0x10, 0x11);
     expect(spy).toHaveBeenCalledTimes(1);
+    expect(copper._copperDout).toBe(true);
 
-    copper.executeTick(0, 2); // fetch MOVE-1 → dout=true, no second write yet
+    copper.executeTick(0, 3); // clear, latch MOVE-1
     expect(spy).toHaveBeenCalledTimes(1);
 
-    copper.executeTick(0, 3); // emit MOVE-1 → write(0x20, 0x22)
+    copper.executeTick(0, 4); // write MOVE-1
     expect(spy).toHaveBeenCalledWith(0x20, 0x22);
     expect(spy).toHaveBeenCalledTimes(2);
 

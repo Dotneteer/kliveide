@@ -28,6 +28,9 @@ describe("ZX Next WASM advanced video copper", () => {
     expect(exports.zxnextGetCopperStartMode()).toBe(copper.startMode);
     expect(exports.zxnextGetCopperInstructionAddress()).toBe(copper.instructionAddress);
 
+    // --- the first tick acts on the mode change (copper.vhd last_state_s)
+    copper.executeTick(0x1ff, 0x1ff);
+    exports.zxnextCopperTick(0x1ff, 0x1ff);
     copper.executeTick(5, 11);
     exports.zxnextCopperTick(5, 11);
     expect(exports.zxnextGetCopperListAddress()).toBe((copper as any)._copperListAddr);
@@ -41,8 +44,12 @@ describe("ZX Next WASM advanced video copper", () => {
     expect(exports.zxnextGetCopperDout()).toBe((copper as any)._copperDout ? 1 : 0);
     expect(exports.zxnextGetCopperListData()).toBe((copper as any)._copperListData);
 
+    // --- the tick after the fetch clears dout; the NextReg write lands on the one after that
     copper.executeTick(5, 14);
     exports.zxnextCopperTick(5, 14);
+    expect(exports.zxnextGetNextRegisterDirect(0x12)).not.toBe(0x34);
+    copper.executeTick(5, 15);
+    exports.zxnextCopperTick(5, 15);
     expect(exports.zxnextGetNextRegisterDirect(0x12)).toBe(0x34);
   });
 });

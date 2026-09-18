@@ -62,7 +62,7 @@ handover: 20/20 visual cases in both tiers, 318 test files / 10,921 tests, no ne
 | B6 | TS blend sources, `$68` bit 7 in blends, sprite over border | FIXED (TS) | `test/zxnext-hw/layers/blend-and-border.test.ts` |
 | B7 | WASM ULANext / ULA+ palette indexing | FIXED (WASM) | `test/zxnext-hw/ula/ulanext-ulaplus.test.ts` |
 | B8 | WASM raster ignored screen memory writes | MEMORY FIXED; sampled registers open | `test/zxnext-hw/ula/midframe-memory-write.test.ts` |
-| B9 | Copper MOVE write one tick early | VERIFIED, deferred (needs a hardware capture) | - |
+| B9 | Copper MOVE write one tick early; `$62` acted on at once | FIXED 2026-09-18 (both; C04 golden re-approved) | `test/zxnext-hw/copper/copper-control.test.ts` COP-011 |
 | B10 | Dead tilemap setters with a 5-bit mask | FIXED (deleted) | `test/zxnext-hw/nextreg/tilemap-base-address.test.ts` |
 | B11 | Panel re-rendered the screen every frame | FIXED (23-38% of frame time) | all visual goldens unchanged |
 | B12 | WASM ULA+ ports; TS 9th bit and palette select | FIXED (both) | `test/zxnext-hw/ula/ulaplus-ports.test.ts` |
@@ -262,23 +262,33 @@ picture (`zxnextRasterIsVideoNextReg`, `zxnext-ula.c:1519`, and the port list in
 - **Test:** a visual case writing attribute memory from a line interrupt (D04-style) and a mid-line
   HiColor switch.
 
-### B9 – Copper MOVE latency is one tick short – VERIFIED, NOT FIXED (2026-09-17)
+### B9 – Copper MOVE latency was one tick short; mode changes acted at once – FIXED 2026-09-18
 
-- **Verified against the VHDL:** a MOVE fetched on tick T sets `copper_dout_s` (visible at T+1);
-  zxnext.vhd latches `copper_req` on the rising edge of `copper_requester` (T+1), and the NextReg write
-  happens with `nr_wr_en` on T+2. Both cores write on T+1. The next fetch is at T+2 in both, so only the
-  write time differs: one 28 MHz tick = half a buffer pixel.
-- **Why not fixed:** no program can observe it through the hardware interface (the CPU cannot sample
-  that finely), and the visible position of a MOVE's effect also depends on the palette/video pipeline
-  delays, which neither core models tick for tick (the cases allow a 4-px margin for exactly that). Moving
-  one term of that chain without a real-hardware capture could make the end-to-end position worse, and
-  a sub-HC shift can change TS output at HC boundaries (goldens). Fix it together with a measured
-  reference picture from real hardware.
+- **Found observable** by catalogue COP-011 (`test/zxnext-hw/copper/copper-control.test.ts`): a copper
+  `MOVE $62,$00` followed by another MOVE. The VHDL writes a MOVE's NextReg two ticks after its fetch
+  (copper.vhd `copper_dout` for one tick → zxnext.vhd latches `copper_req` on its rising edge → the
+  NextReg process writes on the next tick), so the copper has already fetched the next MOVE, still in mode
+  01, when `$62` becomes 00 - and that MOVE's write goes out too (`copper_req` follows `copper_dout`,
+  whatever the mode). Both cores wrote on the tick after the fetch and stopped before the next MOVE. The
+  earlier reasoning ("no program can observe it") missed that the copper can observe itself.
+- **Fix, both cores** (`CopperDevice.executeTick`, `zxnextCopperExecuteTick`): a transcription of both
+  processes per tick - the zxnext side (write the request latched last tick, latch a new one on dout's
+  rising edge) and copper.vhd (mode changes acted on at the next tick through `last_state_s`, restart,
+  WAIT, MOVE), with the NextReg write applied after the copper has seen the old register values. `$62`
+  now only stores the mode; the machines keep ticking the copper while its pipeline still holds a write
+  (`isActive` / `zxnextCopperIsActive`). The tick-level unit tests (`test/zxnext/CopperDevice.test.ts`,
+  `test/wasm/zxNext/wasm-next-copper.test.ts`) were updated to the VHDL timeline.
+- **Visible effect:** a copper palette write lands a quarter of a pixel later; only C04's restart row
+  moved (row 48 black from buffer x 76, not 74: the write lands on tick 0 of `hc_ula` 2). Re-derived in
+  its `expect.md`, reviewed blind (pass, both cores), golden re-approved for ts, wasm and browser. Every
+  other golden stayed byte-identical. COP-005/006 (exact pixel positions) still want a real-hardware
+  capture: the video pipeline after the palette is not modelled tick for tick.
 
-- TS `CopperDevice.executeTick` outputs a MOVE on the tick after the fetch; hardware writes on the second
-  tick after it (copper.vhd `copper_dout` → zxnext.vhd `copper_req` latch → NextReg write). With 4 ticks
-  per pixel this is a quarter-pixel difference – invisible in the current cases (4-px probe margins), but it
-  changes exactly where a long run of MOVEs lands. WASM mirrors TS. Low priority.
+### B63 – TS `$61` read the last written value, not the copper write address – FIXED 2026-09-18
+
+COP-002 / COP-003. zxnext.vhd ~6030 reads `nr_copper_addr(7 downto 0)`, which `$60`/`$63` writes move on;
+the TS `$61` register had no read function, so it returned whatever was last written to it. WASM was
+right. `NextRegDevice` now reads `CopperDevice.nextReg61Value`.
 
 ### B10 – Dead code with a wrong mask: `TilemapDevice.nextReg6eValue/6fValue` – FIXED 2026-09-17
 
@@ -869,6 +879,97 @@ SPR-007 / SPR-029. sprites.vhd `mirror_sprite_q` is 8 bits: with the tie a `$34`
 updates it. TS kept 7 bits, reset the half, and only followed `$57` auto-increments. `$34` still reads
 bits 6-0. Legacy field-level tests in `SpriteDevice.test.ts` / `SpriteDevice-d4d6d7.test.ts` now expect the
 8-bit register.
+
+### B58 – The first `$44` byte wrote the palette entry – FIXED 2026-09-18
+
+PAL-003 / PAL-005 (`test/zxnext-hw/palette/palette-registers.test.ts`). zxnext.vhd ~4896: the palette RAM
+is written by a `$41` write or by the *second* `$44` byte (`nr_44_we and nr_palette_sub_idx = '1'`, the
+sub-index before it toggles); the first byte only goes to `nr_stored_palette_value` (`$28`). Both cores
+wrote `byte << 1` into the entry on the first byte and patched bit 0 on the second, so the picture changed
+between the two writes and a pair abandoned by a `$40`/`$41`/`$43` write left a half-written colour
+behind. Both now store the first byte only and write `stored << 1 | bit 0` on the second.
+
+### B59 – `$44` read and write dropped bit 6 of the second byte – FIXED 2026-09-18
+
+PAL-004. The RAM word is `priority(1:0) & "00000" & colour(8:0)` with priority = the second byte's bits 7-6
+(~4898), and the `$44` read is `palette_dat(10:9) & "00000" & palette_dat(0)` (~5994). Neither core stored
+bit 6, and both read muxes (`nextRegReadMux.ts`, `zxnext-nextreg.c`) hard-wired bits 6-1 to zero (mask
+`$7E` instead of `$3E`). nextreg.txt calls bit 6 reserved; the VHDL reads it back, and nothing displays it.
+The cores keep it as entry bit `0x400` next to the Layer 2 priority bit `0x200`.
+
+### B60 – A soft reset reloaded the default palettes – FIXED 2026-09-18
+
+PAL-013. The palette RAMs are `dpram2` instances with no reset; `reset` (~4977-4989) clears only the index,
+the sub-index, `$43` and `$28`. Both cores reinitialised all eight palettes on a soft reset. Klive's default
+palettes (a stand-in for what the firmware writes after power-on) now load on a hard reset only
+(`PaletteDevice.hardReset`, `zxnextPaletteHardReset`), pinned by "Klive's hard reset reloads its default
+palettes" in the same file.
+
+### B61 – TS: priority bits made ULA and LoRes colours miss `$14` – FIXED 2026-09-18
+
+PAL-010 / PAL-016 (`palette-display.test.ts`). ULA, LoRes, tilemap and sprite colours are RAM word bits
+8-0 (~6933, ~6997); only Layer 2 takes the priority bit. TS returned the whole entry from
+`getUlaRgb333` / `getSpriteRgb333` / `getTilemapRgb333`, so a ULA or LoRes entry written through `$44`
+with bit 7 set compared `0x200 | colour` with `$14` and never went transparent. The getters mask to 9 bits
+(`getLayer2Rgb333` keeps `0x200`). WASM masked already.
+
+### B62 – TS showed colour `$176` as `#B6BDDB` – FIXED 2026-09-18
+
+PAL-015 (all 512 colours through Layer 2). A typo in `zxNextBgra` (`0xffdbbdb6` for `0xffdbdbb6`), the
+table that paints the TS screen. The other 511 entries and `zxNextRgb333Codes` match `v<<5 | v<<2 | v>>1`.
+
+### B64 – `$20` writes did nothing – FIXED 2026-09-18
+
+INT-004 / INT-014 / INT-015 (`test/zxnext-hw/interrupts/interrupts.test.ts`). zxnext.vhd ~1902: each set bit
+of a `$20` write is an unqualified request (`im2_int_unq`) - line (7), ULA (6), CTC 3-0 - that ignores the
+enables: it latches the status and interrupts (a pending request in hardware IM2 mode, a pulse in pulse
+mode). TS had an empty write function; WASM stored the byte. Both route it through the new request path.
+
+### B65 – Hardware IM2 mode ignored the CPU's IM; no ULA fallback pulse – FIXED 2026-09-18
+
+INT-003. im2_device asserts INT only while the CPU is in IM 2 (`i_im2_mode`), and only the ULA (the
+EXCEPTION generic) pulses instead when it is not. Both cores let the chain interrupt a CPU in IM 0/1 (a
+line interrupt ran RST $38) and gave the ULA no pulse. Both also acknowledged the chain on an IM 0/1
+acceptance; now only a CPU in IM 2 moves a device to S_ACK.
+
+### B66 – Interrupt status and pending request were one bit – FIXED 2026-09-18
+
+INT-013. im2_peripheral keeps the status latch (`int_status`: every request edge, enabled or not) apart
+from the pending request (`im2_int_req`: enabled requests in hardware IM2 mode, cleared only by the RETI
+that ends the service). `$C8`-`$CA` read status OR pending; a write clears the status only, in either mode
+(nextreg.txt: "in hw im2 mode the status will continue to read as set until the interrupt pending
+condition is cleared"). Both cores used the status as the request, cleared it at the acknowledge, read
+the in-service flags in hardware IM2 mode and ignored status writes there. Now: `pending[]` next to the
+latches, the acknowledge leaves both, RETI clears pending, pulse mode resets the chain (`im2_reset_n`),
+and the DMA break-in follows im2_device `o_dma_int` (a device out of S_0), not the status. Legacy
+field-level tests of the old model (`test/zxnext/DaisyChain.test.ts`, `NextInterrupts.test.ts`) were
+retired; `InterruptDevice.test.ts` / `CtcDevice.test.ts` / `wasm-next-interrupts.test.ts` updated.
+
+### B67 – CTC interrupts: status, `$C5`, and timing – FIXED 2026-09-18
+
+INT-011. A zero count latches `$C9` whether or not the channel's interrupt is enabled (polled mode) -
+both cores latched it only when enabled. `$C5` is the channels' own control-word bit 7 (ctc_chan.vhd
+`i_int_en_wr`), four channels, bits 7-4 reading 0: TS kept a separate 8-bit copy the CTC never looked at,
+WASM did not wire `$C5` at all. And both cores advanced the CTC only on a CTC port access and at the
+frame end, so a program that did not touch the CTC ports got at most one CTC interrupt a frame; the CTC
+is now brought up to date before INT is sampled (`CtcDevice.sync`, `zxnextCtcSync`).
+
+### B68 – Line interrupt values past the frame wrapped around – FIXED 2026-09-18
+
+INT-008. zxula_timing.vhd compares `int_line_num` = line − 1 (line 0: `c_max_vc`) with `cvc`, so line
+`c_max_vc` + 1 fires like line 0 and larger values never fire. Both cores took the line modulo the frame
+(313 fired on line 0, 400 on line 87).
+
+### B69 – WASM `$C0` bits 2-1 always read 0 – FIXED 2026-09-18
+
+INT-005. The read used a `cpuInterruptMode` copy nothing updated; it now reads the Z80 core's mode.
+
+### B70 – WASM acknowledged the IM2 chain on the instruction after EI – FIXED 2026-09-18
+
+INT-016 / INT-023. The CPU wrapper acknowledged (device to in-service) whenever INT and IFF1 were set, but
+the Z80 core does not take an interrupt on the instruction after EI (`eiBacklog`), with a prefix pending, or
+behind an NMI. The device then sat in service without its handler ever running and blocked every device
+below it. The wrapper now acknowledges exactly when the core will take the interrupt.
 
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 

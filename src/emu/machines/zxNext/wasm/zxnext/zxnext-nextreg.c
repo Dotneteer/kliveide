@@ -302,7 +302,7 @@ static uint32_t zxnextNextRegReadZeroMask(uint32_t reg) {
     case 0x41u: return 0x00u;
     case 0x42u: return 0x00u;
     case 0x43u: return 0x00u;
-    case 0x44u: return 0x7eu;
+    case 0x44u: return 0x3eu;  /* palette_dat(10:9) & "00000" & palette_dat(0) */
     case 0x4au: return 0x00u;
     case 0x4bu: return 0x00u;
     case 0x4cu: return 0xf0u;

@@ -9,6 +9,18 @@ static uint16_t zxnextCopperListAddress;
 static uint16_t zxnextCopperListData;
 static uint8_t zxnextCopperDout;
 static uint8_t zxnextCopperVerticalLineOffset;
+/* copper.vhd copper_data_o / last_state_s; zxnext.vhd copper_requester_d, copper_req + its data */
+static uint16_t zxnextCopperData;
+static uint8_t zxnextCopperLastMode;
+static uint8_t zxnextCopperDoutDelayed;
+static uint8_t zxnextCopperReq;
+static uint16_t zxnextCopperReqData;
+
+/* False when a tick would change nothing: stopped, the stop seen, no NextReg write in the pipeline. */
+static inline uint32_t zxnextCopperIsActive(void) {
+  return zxnextCopperStartMode != 0u || zxnextCopperLastMode != zxnextCopperStartMode ||
+    zxnextCopperDout || zxnextCopperDoutDelayed || zxnextCopperReq;
+}
 
 // ---------------------------------------------------------------------------
 // Beam tracking
@@ -48,6 +60,11 @@ static void zxnextCopperReset(void) {
   zxnextCopperListData = 0u;
   zxnextCopperDout = 0u;
   zxnextCopperVerticalLineOffset = 0u;
+  zxnextCopperData = 0u;
+  zxnextCopperLastMode = 0u;
+  zxnextCopperDoutDelayed = 0u;
+  zxnextCopperReq = 0u;
+  zxnextCopperReqData = 0u;
   zxnextCopperFrameTact = 0u;
   zxnextCopperCurrentLine = 0u;
   zxnextCopperCurrentColumn = 0u;
@@ -74,17 +91,18 @@ static void zxnextCopperSetNextReg(uint32_t reg, uint32_t value) {
       zxnextCopperInstructionAddress = (zxnextCopperInstructionAddress & 0x700u) | byteValue;
       break;
     case 0x62u: {
-      uint8_t newMode = (byteValue >> 6u) & 0x03u;
+      /*
+       * zxnext.vhd ~5406: the register stores the mode and address bits 10-8 only. The copper acts on a
+       * mode change at its next tick (copper.vhd last_state_s, see zxnextCopperExecuteTick): rewriting
+       * the same mode restarts nothing, and a MOVE to $62 from the copper lets the MOVE after it out.
+       */
+      uint32_t wasActive = zxnextCopperIsActive();
       zxnextCopperInstructionAddress = ((uint16_t)(byteValue & 0x07u) << 8u) |
         (zxnextCopperInstructionAddress & 0x0ffu);
-      if (newMode != zxnextCopperStartMode) {
-        zxnextCopperStartMode = newMode;
-        if (newMode == 1u || newMode == 3u) zxnextCopperListAddress = 0u;
-        zxnextCopperDout = 0u;
-        // While stopped the beam counters are left to go stale (see zxnextCopperAdvanceTo),
-        // so they must be brought back to the present the moment the copper is started.
-        if (newMode != 0u) zxnextCopperResyncBeam();
-      }
+      zxnextCopperStartMode = (byteValue >> 6u) & 0x03u;
+      // While idle the beam counters are left to go stale (see zxnextCopperAdvanceTo), so they must be
+      // brought back to the present the moment the copper has work again.
+      if (!wasActive && zxnextCopperIsActive()) zxnextCopperResyncBeam();
       break;
     }
     case 0x63u:
@@ -159,6 +177,8 @@ static inline uint32_t zxnextCopperHcAt(uint32_t hc) {
 // long as the ULA interrupt pulse. Kept here because it is expressed in the copper's beam coordinates.
 static uint32_t zxnextVideoLineIntActive(uint32_t frameTact) {
   uint32_t line = lineInterrupt & 0x1ffu;
+  /* int_line_num = line - 1 is compared with cvc (0 ... c_max_vc): lines past c_max_vc + 1 never fire */
+  if (line > ZXNEXT_COPPER_TOTAL_VC) return 0;
   uint32_t targetCvc = line == 0u ? ZXNEXT_COPPER_TOTAL_VC - 1u : line - 1u;
   uint32_t rawVc = (targetCvc + ZXNEXT_COPPER_DISPLAY_Y_START + ZXNEXT_COPPER_TOTAL_VC - zxnextCopperVerticalLineOffset) %
     ZXNEXT_COPPER_TOTAL_VC;
@@ -168,7 +188,7 @@ static uint32_t zxnextVideoLineIntActive(uint32_t frameTact) {
 }
 
 static void zxnextCopperAdvanceTo(uint32_t frameTact) {
-  if (zxnextCopperStartMode == 0u) return;
+  if (!zxnextCopperIsActive()) return;
   while (zxnextCopperFrameTact < frameTact) {
     uint32_t cvc = zxnextCopperLineAt(zxnextCopperCurrentLine, zxnextCopperCurrentColumn);
     uint32_t hcUla = zxnextCopperHcAt(zxnextCopperCurrentColumn);
@@ -188,37 +208,56 @@ static void zxnextCopperAdvanceTo(uint32_t frameTact) {
 // the already-rebased line (see NextComposedScreenDevice.vcToCopperLine).
 // See .plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md 15.5.
 static void zxnextCopperExecuteTick(uint32_t cvc, uint32_t hc) {
-  if (zxnextCopperStartMode == 0u) return;
-  if (zxnextCopperStartMode == 3u && cvc == 0u && hc == 0u) {
+  /* zxnext.vhd ~4689-4714, on this edge, from the values before it: copper_req (latched on the previous
+   * edge) makes the NextReg write; a rising copper_dout latches the next request. */
+  uint32_t write = zxnextCopperReq;
+  uint32_t writeData = zxnextCopperReqData;
+  zxnextCopperReq = zxnextCopperDout && !zxnextCopperDoutDelayed;
+  if (zxnextCopperReq) zxnextCopperReqData = zxnextCopperData;
+  zxnextCopperDoutDelayed = zxnextCopperDout;
+
+  /* copper.vhd, on the same edge, with the mode before the write above */
+  uint8_t mode = zxnextCopperStartMode;
+  if (zxnextCopperLastMode != mode) {
+    zxnextCopperLastMode = mode;
+    if (mode == 1u || mode == 3u) zxnextCopperListAddress = 0u;
+    zxnextCopperDout = 0u;
+  } else if (mode == 3u && cvc == 0u && hc == 0u) {
     zxnextCopperListAddress = 0u;
     zxnextCopperDout = 0u;
-    return;
-  }
-  if (zxnextCopperDout) {
-    uint32_t reg = (zxnextCopperListData >> 8u) & 0x7fu;
-    uint32_t val = zxnextCopperListData & 0xffu;
-    // --- The copper lags the CPU: the write happens at the copper's tact, not currentFrameTact.
-    zxnextNextRegWriteTactOverride = zxnextCopperFrameTact;
-    zxnextNextRegSetDirect(reg, val);
-    zxnextNextRegWriteTactOverride = 0xffffffffu;
-    zxnextCopperDout = 0u;
-    return;
-  }
-  zxnextCopperListData =
-    ((uint16_t)zxnextCopperMemory[zxnextCopperListAddress * 2u] << 8u) |
-    zxnextCopperMemory[zxnextCopperListAddress * 2u + 1u];
-  if (zxnextCopperListData & 0x8000u) {
-    uint32_t waitLine = zxnextCopperListData & 0x1ffu;
-    uint32_t waitHc = ((zxnextCopperListData >> 9u) & 0x3fu) * 8u + 12u;
-    if (cvc == waitLine && hc >= waitHc) {
-      zxnextCopperListAddress = (zxnextCopperListAddress + 1u) & 0x3ffu;
+  } else if (mode != 0u) {
+    if (zxnextCopperDout) {
+      zxnextCopperDout = 0u; /* the tick after a MOVE only clears the output */
+    } else {
+      /* the list RAM is read on the falling edge: the word at the current address is here */
+      zxnextCopperListData =
+        ((uint16_t)zxnextCopperMemory[zxnextCopperListAddress * 2u] << 8u) |
+        zxnextCopperMemory[zxnextCopperListAddress * 2u + 1u];
+      if (zxnextCopperListData & 0x8000u) {
+        uint32_t waitLine = zxnextCopperListData & 0x1ffu;
+        uint32_t waitHc = ((zxnextCopperListData >> 9u) & 0x3fu) * 8u + 12u;
+        if (cvc == waitLine && hc >= waitHc) {
+          zxnextCopperListAddress = (zxnextCopperListAddress + 1u) & 0x3ffu;
+        }
+      } else {
+        /* MOVE; register 0 is a NOP: no output pulse */
+        zxnextCopperData = zxnextCopperListData & 0x7fffu;
+        if (zxnextCopperData & 0x7f00u) zxnextCopperDout = 1u;
+        zxnextCopperListAddress = (zxnextCopperListAddress + 1u) & 0x3ffu;
+      }
     }
-    return;
+  } else {
+    zxnextCopperDout = 0u;
   }
-  uint32_t reg = (zxnextCopperListData >> 8u) & 0x7fu;
-  zxnextCopperListAddress = (zxnextCopperListAddress + 1u) & 0x3ffu;
-  if (reg != 0u) zxnextCopperDout = 1u;
+
+  /* the NextReg process writes on this edge; the copper lags the CPU, so it writes at its own tact */
+  if (write) {
+    zxnextNextRegWriteTactOverride = zxnextCopperFrameTact;
+    zxnextNextRegSetDirect((writeData >> 8u) & 0x7fu, writeData & 0xffu);
+    zxnextNextRegWriteTactOverride = 0xffffffffu;
+  }
 }
+
 
 static uint32_t zxnextCopperReadMemory(uint32_t address) { return zxnextCopperMemory[address & 0x7ffu]; }
 static uint32_t zxnextCopperGetStartMode(void) { return zxnextCopperStartMode; }

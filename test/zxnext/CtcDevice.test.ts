@@ -654,11 +654,9 @@ describe("Next - CtcDevice", () => {
       m.nextRegDevice.setNextRegisterIndex(0xc5);
       m.nextRegDevice.setNextRegisterValue(0x0f);
 
-      expect(intDev.ctcIntEnabled[0]).toBe(true);
-      expect(intDev.ctcIntEnabled[1]).toBe(true);
-      expect(intDev.ctcIntEnabled[2]).toBe(true);
-      expect(intDev.ctcIntEnabled[3]).toBe(true);
-      expect(intDev.ctcIntEnabled[4]).toBe(false);
+      // --- $C5 writes each channel's control_reg(7); only channels 0-3 exist
+      void intDev;
+      expect(m.ctcDevice.channels.map((c) => c.intEnabled)).toEqual([true, true, true, true]);
     });
 
     it("NR $C9 reads CTC interrupt status", async () => {

@@ -135,7 +135,7 @@ static void clearMachineBuffers(void) {
   zxnextKeyboardReset();
   zxnextDivMmcReset();
   zxnextSdReset();
-  zxnextPaletteReset();
+  zxnextPaletteHardReset();
   zxnextLayer2Reset();
   zxnextTilemapReset();
   zxnextSpritesReset();

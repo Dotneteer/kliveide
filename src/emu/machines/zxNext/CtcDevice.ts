@@ -72,6 +72,11 @@ export class CtcChannel {
   get zcTo(): boolean { return this._zcTo; }
   get intEnabled(): boolean { return !!(this._controlReg & 0x20); } // D7 = bit5 of controlReg
 
+  /** NextReg $C5 writes control_reg(7) directly (ctc_chan.vhd i_int_en_wr). */
+  setIntEnabled(enabled: boolean): void {
+    this._controlReg = enabled ? this._controlReg | 0x20 : this._controlReg & ~0x20;
+  }
+
   /**
    * Whether the channel expects a time constant on the next write.
    * Mirrors FPGA combinational: control_reg(2-2) = '1' and state /= S_CONTROL_WORD
@@ -454,11 +459,10 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // Set interrupt status for channels that generated ZC/TO events
+    // --- im2_peripheral: every zero count latches the status; the enable decides about the interrupt
     const intDev = this.machine.interruptDevice;
     for (let i = 0; i < 4; i++) {
-      if (zcToCounts[i] > 0 && this.channels[i].intEnabled) {
-        intDev.ctcIntStatus[i] = true;
-      }
+      if (zcToCounts[i] > 0) intDev.ctcZeroCount(i, this.channels[i].intEnabled);
     }
   }
 
@@ -490,9 +494,7 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
     // Set interrupt status for any ZC/TO that fired
     const intDev = this.machine.interruptDevice;
     for (let i = 0; i < 4; i++) {
-      if (this.channels[i].zcTo) {
-        intDev.ctcIntStatus[i] = true;
-      }
+      if (this.channels[i].zcTo) intDev.ctcZeroCount(i, this.channels[i].intEnabled);
     }
   }
 
@@ -561,5 +563,10 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
    */
   private _syncFromMachine(): void {
     this.advanceToSysClock(this.machine.frameTacts);
+  }
+
+  /** Brings the CTC up to the current tact - before INT is sampled, so zero counts interrupt on time. */
+  sync(): void {
+    this._syncFromMachine();
   }
 }

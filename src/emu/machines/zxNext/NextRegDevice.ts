@@ -1005,7 +1005,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x20,
       description: "Generate Maskable Interrupt",
       readFn: () => machine.interruptDevice.nextReg20Value,
-      writeFn: () => {},
+      writeFn: (v) => (machine.interruptDevice.nextReg20Value = v & 0xff),
       slices: [
         {
           mask: 0x80,
@@ -1270,21 +1270,22 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
           mask: 0x70,
           shift: 4,
           description: "Select palette for reading or writing (soft reset = 000)",
+          // --- zxnext.vhd ~6898-6903: bit 6 picks the second palette, bits 5-4 the layer
           valueSet: {
             0b000: "ULA first palette",
-            0b001: "ULA second palette",
-            0b010: "Layer 2 first palette",
-            0b011: "Layer 2 second palette",
-            0b100: "Sprites first palette",
-            0b101: "Sprites second palette",
-            0b110: "Tilemap first palette",
+            0b001: "Layer 2 first palette",
+            0b010: "Sprites first palette",
+            0b011: "Tilemap first palette",
+            0b100: "ULA second palette",
+            0b101: "Layer 2 second palette",
+            0b110: "Sprites second palette",
             0b111: "Tilemap second palette"
           }
         },
         {
           mask: 0x08,
           shift: 3,
-          description: "Select palette for reading or writing (soft reset = 0)"
+          description: "Select sprites palette (0 = first palette, 1 = second palette) (soft reset = 0)"
         },
         {
           mask: 0x04,
@@ -1381,6 +1382,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x61,
       description: "Copper Address LSB",
+      // --- zxnext.vhd ~6030: the live write address, which $60/$63 writes move on
+      readFn: () => machine.copperDevice.nextReg61Value,
       writeFn: (v) => (machine.copperDevice.nextReg61Value = v & 0xff)
     });
     r({

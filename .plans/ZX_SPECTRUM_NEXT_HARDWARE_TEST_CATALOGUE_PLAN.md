@@ -93,10 +93,10 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `L2` | Layer 2 (256×192, 320×256, 640×256) | `video/layer2.vhd` | L01, P01, `test/zxnext-hw/layer2/layer2.test.ts` (D1-D5 of the mock `test/zxnext/Layer2Fixes.test.ts` moved there) |
 | `TM` | Tilemap | `video/tilemap.vhd` | P02, `test/zxnext-hw/tilemap/tilemap.test.ts` (replaced the field-level mocks `test/zxnext/TilemapDevice-compositing.test.ts` and D1 of `TilemapDevice-d1d2.test.ts`) |
 | `SPR` | Sprites | `video/sprites.vhd` | `test/zxnext-hw/sprites/sprites.test.ts`, `sprite-collision.test.ts`, `attribute-mirror.test.ts` |
-| `PAL` | Palettes and global transparency | `zxnext.vhd` | C02, C04, C05 |
-| `CMP` | Layer compositing, priorities, blend modes, fallback | `zxnext.vhd` | P01, P02, C10 (bug B6) |
-| `COP` | Copper | `device/copper.vhd` | C00–C11, D01–D05, `copper-upload.test.ts` (bugs B4, B5, B9) |
-| `INT` | Interrupts: ULA, line, IM2 hardware mode, priorities | `device/im2_*.vhd` | D04 |
+| `PAL` | Palettes and global transparency | `zxnext.vhd` | C02, C04, C05, `test/zxnext-hw/palette/palette-registers.test.ts`, `palette-display.test.ts` (replaced the mocks `test/zxnext/PaletteDevice.test.ts` and `PaletteDeviceFpgaFixes.test.ts`, 2026-09-18) |
+| `CMP` | Layer compositing, priorities, blend modes, fallback | `zxnext.vhd` | P01, P02, C10 (bug B6), `test/zxnext-hw/layers/blend-and-border.test.ts`, `compositing.test.ts` (with `_mixer-model.ts`) |
+| `COP` | Copper | `device/copper.vhd` | C00–C11, D01–D05, `copper-upload.test.ts` (bugs B4, B5), `copper-control.test.ts` (B9, B63) |
+| `INT` | Interrupts: ULA, line, IM2 hardware mode, priorities | `device/im2_*.vhd` | D04, `test/zxnext-hw/interrupts/interrupts.test.ts` (replaced the mocks `test/zxnext/DaisyChain.test.ts` and `NextInterrupts.test.ts`, 2026-09-18) |
 | `NMI` | NMI sources, stackless NMI | `zxnext.vhd` | – |
 | `AY` | AY-3-8912 / TurboSound | `audio/turbosound.vhd`, `audio/ym2149.vhd` | – |
 | `DAC` | Soundrive / Covox / Specdrum DACs | `audio/soundrive.vhd` | – |
@@ -451,88 +451,89 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| PAL-001 | `$40` index write/readback | S | 1 | | Readback of index; `$41` write increments it unless `$43` bit 7. | — |
-| PAL-002 | `$41` 8-bit colour | S | 1 | | `$41` write of RRRGGGBB sets blue bit 0 = `B1 or B0` (C02 covered visually); `$41` read returns bits 8–1. | ◐ visual `C02` |
-| PAL-003 | `$44` 9-bit two-byte write | S | 1 | | First byte stored (`$28`), second byte bit 0 = blue LSB, bit 7 = Layer 2 priority; index increments after the second byte. | — |
-| PAL-004 | `$44` read | S | 1 | | Returns priority bit and blue LSB layout of the read mux. | — |
-| PAL-005 | Sub-index reset by `$40` | S | 1 | | A `$40` write between the two `$44` bytes restarts the pair. | — |
-| PAL-006 | Sub-index reset by `$41` | S | 2 | | A `$41` write resets the `$44` sub-index. | — |
-| PAL-007 | Autoincrement disable `$43` bit 7 | S | 1 | | Repeated writes change one entry. | — |
-| PAL-008 | Write select `$43` bits 6–4 | S | 1 | | ULA1/L2 1/Spr1/TM1/ULA2/L2 2/Spr2/TM2 each written independently; reading `$41` with each selection returns its own values. | — |
-| PAL-009 | Active palette `$43` bits 3–1 | P | 1 | | Display uses active palettes independent of the write selection. | — |
-| PAL-010 | Global transparency `$14` compare | V | 1 | | 8-bit RGB compare (upper 8 bits of 9-bit colour) for ULA, LoRes, Layer 2, tilemap text mode. | — |
+| PAL-001 | `$40` index write/readback | S | 1 | | Readback of index; `$41` write increments it unless `$43` bit 7. | ✅ `palette/palette-registers` |
+| PAL-002 | `$41` 8-bit colour | S | 1 | | `$41` write of RRRGGGBB sets blue bit 0 = `B1 or B0` (C02 covered visually); `$41` read returns bits 8–1. | ✅ `palette/palette-registers` (all 256 values), visual `C02` |
+| PAL-003 | `$44` 9-bit two-byte write | S | 1 | | First byte only stored (`$28`, `$03` bit 7 = pending) - the entry is written by the second byte: stored byte & bit 0 (no B1/B0 OR), bits 7–6 the priority bits; index increments after the second byte. | ✅ `palette/palette-registers` (B58 fixed: the first byte wrote the entry) |
+| PAL-004 | `$44` read | S | 1 | | `palette_dat(10:9) & "00000" & palette_dat(0)`: bits 7 *and 6* of the second byte read back (nextreg.txt calls 6 reserved), bits 5–1 read 0, for all eight palettes. | ✅ `palette/palette-registers` (B59 fixed: bit 6 was dropped) |
+| PAL-005 | Sub-index reset by `$40` | S | 1 | | A `$40` (or `$43`) write between the two `$44` bytes restarts the pair; the abandoned first byte writes nothing. | ✅ `palette/palette-registers` (and `$43`; B58) |
+| PAL-006 | Sub-index reset by `$41` | S | 2 | | A `$41` write resets the `$44` sub-index. | ✅ `palette/palette-registers` |
+| PAL-007 | Autoincrement disable `$43` bit 7 | S | 1 | | Repeated writes change one entry. | ✅ `palette/palette-registers` |
+| PAL-008 | Write select `$43` bits 6–4 | S | 1 | | ULA1/L2 1/Spr1/TM1/ULA2/L2 2/Spr2/TM2 each written independently; reading `$41` with each selection returns its own values. | ✅ `palette/palette-registers` |
+| PAL-009 | Active palette `$43` bits 3–1 | P | 1 | | Display uses active palettes independent of the write selection. | ✅ `palette/palette-display` (all 16 combinations, four layers on one screen) |
+| PAL-010 | Global transparency `$14` compare | V | 1 | | 8-bit RGB compare (upper 8 bits of 9-bit colour) for ULA, LoRes, Layer 2, tilemap text mode. | ✅ `palette/palette-display` (ULA, LoRes, tilemap text; B61 fixed: TS priority bits broke the compare), Layer 2 in `layer2/layer2` L2-015 |
 | PAL-011 | Fallback `$4A` | V | 1 | | Visible where all layers transparent; reset value `$E3` (bug B3). | ✅ `nextreg/fallback-colour-reset` |
-| PAL-012 | Palette entry index 255 wrap | S | 2 | | Autoincrement from 255 wraps to 0. | — |
-| PAL-013 | Palette RAM not cleared by reset | S | 2 | | Values written before soft reset remain after (FPGA palette RAM). | — |
-| PAL-014 | Palette change mid-frame | V | 2 | | Line-interrupt palette change: colour bands (copper C02 covers the copper path). | ◐ visual `C02` (copper) |
-| PAL-015 | 9-bit colour output | P | 1 | | Pixel RGB of a 9-bit colour matches the Klive 3→8 bit expansion. | — |
+| PAL-012 | Palette entry index 255 wrap | S | 2 | | Autoincrement from 255 wraps to 0. | ✅ `palette/palette-registers` |
+| PAL-013 | Palette RAM not cleared by reset | S | 2 | | Values written before soft reset remain after (FPGA palette RAM); the index, `$43`, the pending flag and `$28` reset. | ✅ `palette/palette-registers` (B60 fixed: both cores reloaded the palettes) |
+| PAL-014 | Palette change mid-frame | V | 2 | | Line-interrupt palette change: colour bands (copper C02 covers the copper path). | ✅ `palette/palette-display` (CPU path), visual `C02` (copper) |
+| PAL-015 | 9-bit colour output | P | 1 | | Pixel RGB of a 9-bit colour matches the Klive 3→8 bit expansion. | ✅ `palette/palette-display` (all 512 colours; B62 fixed: TS showed `$176` as `#B6BDDB`) |
+| PAL-016 | Priority bits outside Layer 2 | P | 2 | | Bits 7–6 of the second `$44` byte on a ULA, LoRes, tilemap or sprite entry change neither its colour nor the `$14` compare (only `layer2_prgb` takes word bit 15). *(Added 2026-09-18.)* | ✅ `palette/palette-display` (with PAL-009 / PAL-010) |
 
 ### 4.17 `CMP` – Compositing
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| CMP-001 | Layer orders `$15` 000–101 | V | 1 | | Six bands with overlapping opaque S, L (Layer 2), U pixels; each band shows the top layer per SLU/LSU/SUL/LUS/USL/ULS. P01 covers part – complete it. | ◐ visual `P01` |
-| CMP-002 | Blend mode 110 | V | 1 | | ULA + Layer 2 colour add, clamped per `zxnext.vhd`; several colour pairs incl. overflow. | — |
-| CMP-003 | Blend mode 111 | V | 1 | | ULA + Layer 2 − 5 with clamping at 0 and 7 per channel. | — |
-| CMP-004 | Blend source `$68` bits 6–5 | V | 1 | | 00 ULA, 01 none, 10 ULA/tilemap mix, 11 tilemap as blend operand; tilemap placement per VHDL `ula_blend_mode_2`. Guards bug B6.1 (TS). | ✅ `layers/blend-and-border` |
-| CMP-005 | Blend with ULA disabled | V | 1 | | `$68` bit 7 during a blend band: VHDL blends `ula_mix_rgb` ignoring `ula_en`. Guards bug B6.2 (TS). | ✅ `layers/blend-and-border` |
-| CMP-006 | Sprite over ULA border in LUS/USL/ULS | V | 1 | | Sprite over opaque border with transparent tilemap shows. Guards bug B6.3 (TS). | ✅ `layers/blend-and-border` |
-| CMP-007 | Layer 2 priority bit in all orders | V | 1 | | See L2-016. | — |
-| CMP-008 | Tilemap/ULA merge | V | 1 | | Tilemap over/under ULA per attribute and `$6B` bit 0 in every `$15` order. | ◐ visual `P02` |
-| CMP-009 | Stencil with sprites and Layer 2 | V | 2 | | Stencil output participates as the "U" layer. | — |
-| CMP-010 | Transparent everywhere → fallback | V | 1 | | All layers enabled but transparent: `$4A`. | ◐ `nextreg/fallback-colour-reset` |
-| CMP-011 | LoRes as U layer | V | 2 | | LoRes takes the ULA slot in priority orders. | — |
-| CMP-012 | Border region composition | V | 2 | | Border is part of U: Layer 2 320×256 above/below border per order. | — |
-| CMP-013 | Blend-mode clamping table | P | 2 | | Parametrised pixel test over all 8×8 red channel combinations in both blend modes. | — |
-| CMP-014 | Order change mid-frame | V | 2 | | `$15` change from a line interrupt (C10 does `$14` via copper). | ◐ visual `C10` |
+| CMP-001 | Layer orders `$15` 000–101 | V | 1 | | Six bands with overlapping opaque S, L (Layer 2), U pixels; each band shows the top layer per SLU/LSU/SUL/LUS/USL/ULS. P01 covers part – complete it. | ✅ `layers/compositing` (every cell of a random 320×256 scene against a model of the zxnext.vhd mixer, all six orders × stencil / ULA / tilemap enable / on-top), visual `P01` |
+| CMP-002 | Blend mode 110 | V | 1 | | ULA + Layer 2 colour add, clamped per `zxnext.vhd`; several colour pairs incl. overflow. | ✅ `layers/compositing` (all four `$68` blend sources × stencil / ULA / tilemap settings) |
+| CMP-003 | Blend mode 111 | V | 1 | | ULA + Layer 2 per channel: sum ≤ 4 → 0, ≥ 12 → 7, else sum − 5; only when the operand is opaque - with a transparent operand the Layer 2 colour passes unchanged (`mix_rgb_transparent`). | ✅ `layers/compositing` (incl. a transparent operand: no −5) |
+| CMP-004 | Blend source `$68` bits 6–5 | V | 1 | | 00 ULA, 01 none, 10 ULA/tilemap mix, 11 tilemap as blend operand; tilemap placement per VHDL `ula_blend_mode_2`. Guards bug B6.1 (TS). | ✅ `layers/blend-and-border`, `layers/compositing` |
+| CMP-005 | Blend with ULA disabled | V | 1 | | `$68` bit 7 during a blend band: VHDL blends `ula_mix_rgb` ignoring `ula_en`. Guards bug B6.2 (TS). | ✅ `layers/blend-and-border`, `layers/compositing` |
+| CMP-006 | Sprite over ULA border in LUS/USL/ULS | V | 1 | | Sprite over opaque border with transparent tilemap shows. Guards bug B6.3 (TS). | ✅ `layers/blend-and-border`, `layers/compositing` |
+| CMP-007 | Layer 2 priority bit in all orders | V | 1 | | See L2-016. | ✅ `layers/compositing` (priority entries in every order), `layer2/layer2` L2-016 |
+| CMP-008 | Tilemap/ULA merge | V | 1 | | Tilemap over/under ULA per attribute and `$6B` bit 0 in every `$15` order. | ✅ `layers/compositing` (attribute bit 0, `$6B` bit 0, tilemap off: below = not `$6B` bit 0), visual `P02` |
+| CMP-009 | Stencil with sprites and Layer 2 | V | 2 | | Stencil output participates as the "U" layer. | ✅ `layers/compositing` |
+| CMP-010 | Transparent everywhere → fallback | V | 1 | | All layers enabled but transparent: `$4A`. | ✅ `layers/compositing`, `nextreg/fallback-colour-reset` |
+| CMP-011 | LoRes as U layer | V | 2 | | LoRes takes the ULA slot in priority orders. | ✅ `layers/compositing` |
+| CMP-012 | Border region composition | V | 2 | | Border is part of U: Layer 2 320×256 above/below border per order. | ✅ `layers/compositing` (border cells with Layer 2 320×256, sprites and tilemap over the border) |
+| CMP-013 | Blend-mode clamping table | P | 2 | | Parametrised pixel test over all 8×8 red channel combinations in both blend modes. | ✅ `layers/compositing` (explicit table: 64 red and 64 green sums per mode) |
+| CMP-014 | Order change mid-frame | V | 2 | | `$15` change from a line interrupt (C10 does `$14` via copper). | ✅ `layers/compositing` (CPU at line 96), visual `C10` (copper `$14`) |
 
 ### 4.18 `COP` – Copper (gaps beyond C00–D05)
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
 | COP-001 | `$60` then `$63` mixed upload | S | 1 | | `$61=0; $60=hi; $63=lo`: copper RAM holds hi/lo. Guards bug B4. | ✅ `copper/copper-upload` |
-| COP-002 | `$61/$62` address readback | S | 1 | | 11-bit write address readback, mode bits in `$62` bits 7–6. | — |
-| COP-003 | Address wrap at 1024 | S | 2 | | Writes beyond `$3FF` wrap to 0. | — |
+| COP-002 | `$61/$62` address readback | S | 1 | | 11-bit write address readback, mode bits in `$62` bits 7–6. | ✅ `copper/copper-control` (B63 fixed: TS `$61` read the last written value) |
+| COP-003 | Address wrap at 1024 | S | 2 | | The 11-bit byte address wraps from `$7FF` (instruction 1023) to 0. | ✅ `copper/copper-control` (B63) |
 | COP-004 | List survives soft reset | S | 1 | | Same as RST-014. Guards bug B5. | ✅ `copper/copper-upload` |
-| COP-005 | MOVE output latency | P | 3 | | A MOVE to `$41` right after a WAIT lands at the VHDL tick (2 ticks after fetch). Guards bug B9; use 1-pixel probe. | — |
-| COP-006 | Long MOVE runs drift | V | 3 | | 60 consecutive MOVEs across a line: change x positions per VHDL tick timing. Bug B9. | — |
-| COP-007 | WAIT for line beyond frame | V | 2 | | WAIT line 400 never matches; list halts for the rest of the frame. | — |
-| COP-008 | WAIT H > 55 | V | 2 | | H 56–63 compares against hc beyond paper per VHDL. | — |
-| COP-009 | Mode 11 restart each frame | V | 1 | | Program counter reset at cvc 0 each frame (C08 covers mode 01). | — |
-| COP-010 | Mode change while running | S | 2 | | `$62` 10→10 rewrite does not reset PC; 01/11 do. | — |
-| COP-011 | MOVE to `$62` from copper | V | 3 | | Copper stopping itself. | — |
-| COP-012 | Copper under 60 Hz timing | V | 2 | | C02 bands at the same paper rows under 60 Hz. | — |
-| COP-013 | Copper `$64` offset with 60 Hz | V | 3 | | C07 at 60 Hz. | — |
-| COP-014 | Copper writes to `$07` / `$50` | S | 3 | | Copper can MOVE any register `$00`–`$7F` (e.g. MMU); program observes the change. | — |
-| COP-015 | Copper and CPU writing the same register | S | 3 | | Priority/ordering of concurrent NextReg writes per VHDL `copper_req`. | — |
+| COP-005 | MOVE output latency | P | 3 | | A MOVE to `$41` right after a WAIT lands at the VHDL tick (2 ticks after fetch). Guards bug B9; use 1-pixel probe. | — (B9 is fixed - the write is two ticks after the fetch - but a *pixel* position still needs a real-hardware capture: the video pipeline delays are not modelled tick for tick; COP-011 guards the latency) |
+| COP-006 | Long MOVE runs drift | V | 3 | | 60 consecutive MOVEs across a line: change x positions per VHDL tick timing. Bug B9. | — (as COP-005) |
+| COP-007 | WAIT for line beyond frame | V | 2 | | WAIT for a line past `c_max_vc` (400, or the frame length) never matches; the list halts there for good (mode 11 restarts it). | ✅ `copper/copper-control` (all timings: `c_max_vc` matches, `c_max_vc` + 1 and 400 never) |
+| COP-008 | WAIT H past the line | V | 2 | | WAIT compares `hc_ula` ≥ H × 8 + 12; H with H × 8 + 12 > `c_max_hc` never matches (55+ on 48K/Pentagon, 56+ on 128K/+3). | ✅ `copper/copper-control` (all timings: last H = (`c_max_hc` − 12) / 8, i.e. 54 or 55) |
+| COP-009 | Mode 11 restart each frame | V | 1 | | Program counter reset at cvc 0 each frame (C08 covers mode 01). | ✅ `copper/copper-control` |
+| COP-010 | Mode change while running | S | 2 | | Only a *change* of mode to 01 or 11 resets the PC (copper.vhd `last_state_s`); rewriting 01 or 11, and changes to 00 or 10, keep it. *(Corrected 2026-09-18: the first draft said a 01/11 rewrite resets.)* | ✅ `copper/copper-control` |
+| COP-011 | MOVE to `$62` from copper | S | 3 | | `MOVE $62,$00` stops the copper after one more MOVE: the write lands two ticks after the fetch, when the next MOVE is already out (`copper_req`). Mode 10 continues from the instruction after that. | ✅ `copper/copper-control` (B9 fixed: both cores stopped before the MOVE after it) |
+| COP-012 | Copper under 60 Hz timing | V | 2 | | C02 bands at the same paper rows under 60 Hz. | ✅ `copper/copper-control` (48K / 128K / +3 / Pentagon, 50 and 60 Hz), visual `C02` |
+| COP-013 | Copper `$64` offset with 60 Hz | V | 3 | | C07 at 60 Hz. | ✅ `copper/copper-control` (`$64` = 32 under every timing), visual `C07` |
+| COP-014 | Copper writes to `$07` / `$50` | S | 3 | | Copper can MOVE any register `$00`–`$7F` (e.g. MMU); program observes the change. | ✅ `copper/copper-control` |
+| COP-015 | Copper and CPU writing NextRegs together | S | 3 | | The copper wins a clash but the CPU's request is held, not lost (~4749): 64 CPU palette writes at 28 MHz during a 1000-MOVE copper burst all land. | ✅ `copper/copper-control` |
 
 ### 4.19 `INT` – Interrupts
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| INT-001 | ULA frame interrupt IM1 | S | 1 | | EI + IM1 handler at `$0038` in RAM (MMU0 RAM) counts; 50 per 50 frames. | — |
-| INT-002 | IM2 legacy mode | S | 1 | | `$C0` bit 0 = 0: IM2 with I register uses the bus value `$FF` → vector at (I·256 + `$FF`). | — |
-| INT-003 | Hardware IM2 mode `$C0` bit 0 | S | 1 | | Vector = `$C0` bits 7–5 + source index × 2 (per `im2_control.vhd`); ULA interrupt jumps to the ULA vector. | — |
-| INT-004 | IM2 source priority | S | 1 | | Line int (0) > UART0 RX > UART1 RX > CTC0–7 > ULA > UART0 TX > UART1 TX (`im2_int_req` order). Two sources pending together: higher runs first. | — |
-| INT-005 | `$C0` readback of current IM | S | 2 | | Bits 2–1 reflect IM 0/1/2 set by the CPU. | — |
-| INT-006 | ULA interrupt disable | S | 1 | | `$22` bit 2 / port `$FF` bit 6 / `$C4` bit 0 disable the ULA interrupt; readbacks agree. | — |
-| INT-007 | Line interrupt `$22/$23` | S | 1 | | Enable bit 1, 9-bit line; interrupt fires at that line (handler reads `$1E/$1F`). | ◐ visual `D04` |
-| INT-008 | Line interrupt line 0 and 311 | S | 2 | | Edge values; line beyond frame never fires. | — |
-| INT-009 | Line interrupt timing within line | S | 2 | | Fires at the tact the VHDL defines (start of line vs paper start); check with `$1F` and tacts. | — |
-| INT-010 | `$C4` enable 0 | S | 1 | | Bit 1 mirrors `$22` bit 1 line enable; bit 7 expansion bus enable. | — |
-| INT-011 | `$C5` CTC enables | S | 1 | | Per-channel enables; CTC zero-crossing interrupts only when set. | — |
-| INT-012 | `$C6` UART enables | S | 2 | | RX/TX interrupt enables for UART 0/1. | — |
-| INT-013 | Status `$C8`–`$CA` | S | 1 | | Pending status bits set when a source fires with interrupts disabled (DI); write-1-to-clear. | — |
-| INT-014 | `$20` generate interrupt | S | 2 | | Writing `$20` bits triggers "unqualified" interrupts for line/ULA/CTC 0–3 (`im2_int_unq`). | — |
-| INT-015 | `$20` readback | S | 2 | | Returns status bits of ULA, line, CTC 0–3. | — |
-| INT-016 | RETI clears in-service | S | 1 | | In hardware IM2 mode, a lower-priority pending interrupt is delayed until RETI of the higher one (daisy chain). | — |
-| INT-017 | RETN vs RETI | S | 2 | | Only RETI (`ED 4D`) releases the daisy chain. | — |
-| INT-018 | DMA interrupt enables `$CC`–`$CE` | S | 2 | | When set, the matching interrupt sources are held off while DMA is active (per VHDL `dma_int_en`). | — |
-| INT-019 | Pulse mode interrupt length | S | 2 | | `$22` bit 7 reads the INT pulse active while inside it. | — |
-| INT-020 | IM0 behaviour | S | 3 | | IM0 with `$FF` on the bus executes RST 38. | — |
-| INT-021 | Interrupt + HALT wake timing | S | 2 | | HALT loop wakes on frame interrupt at the documented tact. | — |
-| INT-022 | Vector on the bus at acknowledge | S | 2 | `intack` | Observe the data bus vector directly for each source. | — |
-| INT-023 | EI delay | S | 2 | | Interrupt not taken on the instruction after EI. | — |
+| INT-001 | ULA frame interrupt IM1 | S | 1 | | EI + IM1 handler at `$0038` in RAM (MMU0 RAM) counts; 50 per 50 frames. | ✅ `interrupts/interrupts` |
+| INT-002 | IM2 legacy mode | S | 1 | | `$C0` bit 0 = 0: IM2 with I register uses the bus value `$FF` → vector at (I·256 + `$FF`). | ✅ `interrupts/interrupts` |
+| INT-003 | Hardware IM2 mode `$C0` bit 0 | S | 1 | | Vector = `$C0` bits 7–5 + source index × 2 (per `im2_control.vhd`); ULA interrupt jumps to the ULA vector. | ✅ `interrupts/interrupts` (B65 fixed: the chain interrupted a CPU in IM 1; the ULA fallback pulse was missing) |
+| INT-004 | IM2 source priority | S | 1 | | Line int (0) > UART0 RX > UART1 RX > CTC0–7 > ULA > UART0 TX > UART1 TX (`im2_int_req` order). Two sources pending together: higher runs first. | ✅ `interrupts/interrupts` (B64 fixed: `$20` writes did nothing) |
+| INT-005 | `$C0` readback of current IM | S | 2 | | Bits 2–1 reflect IM 0/1/2 set by the CPU. | ✅ `interrupts/interrupts` (B69 fixed: WASM read 0) |
+| INT-006 | ULA interrupt disable | S | 1 | | `$22` bit 2 / port `$FF` bit 6 / `$C4` bit 0 disable the ULA interrupt; readbacks agree. | ✅ `ula/timex-port` TMX-006 |
+| INT-007 | Line interrupt `$22/$23` | S | 1 | | Enable bit 1, 9-bit line; interrupt fires at that line (handler reads `$1E/$1F`). | ✅ `interrupts/interrupts`, visual `D04` |
+| INT-008 | Line interrupt line 0 and 311 | S | 2 | | Line N fires on `cvc` N − 1, line 0 on `c_max_vc`; so `c_max_vc` + 1 (312 on 48K) fires like 0, and only larger values never fire (`int_line_num` in zxula_timing.vhd). | ✅ `interrupts/interrupts` (B68 fixed: lines past `c_max_vc` + 1 wrapped around) |
+| INT-009 | Line interrupt timing within line | S | 2 | | Fires at the tact the VHDL defines (start of line vs paper start); check with `$1F` and tacts. | ✅ `interrupts/interrupts` (127.5 tacts = `hc_ula` 255 after the line before starts) |
+| INT-010 | `$C4` enable 0 | S | 1 | | Bit 1 mirrors `$22` bit 1 line enable; bit 7 expansion bus enable. | ✅ `interrupts/interrupts` |
+| INT-011 | `$C5` CTC enables | S | 1 | | `$C5` is each channel's control-word bit 7 (channels 0–3 only; bits 7–4 read 0); zero counts interrupt only when set, but latch `$C9` either way (polled mode). | ✅ `interrupts/interrupts` (B67 fixed: CTC status, `$C5`, zero counts interrupting on time) |
+| INT-012 | `$C6` UART enables | S | 2 | | RX/TX interrupt enables for UART 0/1. | ◐ `interrupts/interrupts` (`$C6` readback; UART interrupt sources are not wired in either core - §4.29, needs `uart`) |
+| INT-013 | Status `$C8`–`$CA` | S | 1 | | Status latches when a source fires (DI); write-1-to-clear - but in hardware IM2 mode a bit keeps reading 1 while its request is pending or in service, until the RETI (im2_peripheral `o_int_status`). | ✅ `interrupts/interrupts` (B66 fixed: status and pending request were one bit) |
+| INT-014 | `$20` generate interrupt | S | 2 | | Writing `$20` bits triggers "unqualified" interrupts for line/ULA/CTC 0–3 (`im2_int_unq`). | ✅ `interrupts/interrupts` (B64) |
+| INT-015 | `$20` readback | S | 2 | | Returns status bits of ULA, line, CTC 0–3. | ✅ `interrupts/interrupts` (B64) |
+| INT-016 | RETI clears in-service | S | 1 | | In hardware IM2 mode, a lower-priority pending interrupt is delayed until RETI of the higher one (daisy chain). | ✅ `interrupts/interrupts` (nesting both ways; B70 fixed in WASM) |
+| INT-017 | RETN vs RETI | S | 2 | | Only RETI (`ED 4D`) releases the daisy chain. | ✅ `interrupts/interrupts` |
+| INT-018 | DMA interrupt enables `$CC`–`$CE` | S | 2 | | When set, the matching interrupt sources are held off while DMA is active (per VHDL `dma_int_en`). | ◐ `interrupts/interrupts` (readbacks; the DMA break-in itself belongs to §4.25) |
+| INT-019 | Pulse mode interrupt length | S | 2 | | `$22` bit 7 reads the INT pulse active while inside it. | ✅ `video/video-timing` VT-007 |
+| INT-020 | IM0 behaviour | S | 3 | | IM0 with `$FF` on the bus executes RST 38. | ✅ `interrupts/interrupts` |
+| INT-021 | Interrupt + HALT wake timing | S | 2 | | HALT loop wakes on frame interrupt at the documented tact. | — (needs the interrupt position and the handler start in one time base; VT-006's probe measures only the former) |
+| INT-022 | Vector on the bus at acknowledge | S | 2 | `intack` | Observe the data bus vector directly for each source. | — (needs `intack`; INT-003 checks the vectors through the handler each one reaches) |
+| INT-023 | EI delay | S | 2 | | Interrupt not taken on the instruction after EI. | ✅ `interrupts/interrupts` (B70 fixed: WASM acknowledged on the instruction after EI and stuck) |
 
 ### 4.20 `NMI` – NMI sources
 

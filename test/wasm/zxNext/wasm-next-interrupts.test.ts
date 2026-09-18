@@ -37,13 +37,11 @@ describe("ZX Spectrum Next WASM interrupt parity", () => {
       writeLoadedByte(machine, 0x90a1, 0x34);
     }
 
-    oracle.interruptDevice.hwIm2Mode = true;
-    oracle.interruptDevice.im2TopBits = 0xa0;
-    oracle.interruptDevice.lineInterruptEnabled = true;
-    oracle.interruptDevice.lineInterruptStatus = true;
-    writeNextReg(wasm, 0xc0, 0xa1);
-    wasm.wasmV2Runtime!.exports.zxnextSetDaisyEnabled(0, 1);
-    wasm.wasmV2Runtime!.exports.zxnextSetDaisyStatus(0, 1);
+    // --- hardware IM2 with base $A0; a line interrupt pending through $20 (im2_int_unq)
+    for (const machine of [oracle, wasm]) {
+      writeNextReg(machine, 0xc0, 0xa1);
+      writeNextReg(machine, 0x20, 0x80);
+    }
 
     oracle.sigINT = true;
     executeOne(oracle);

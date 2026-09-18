@@ -33,6 +33,10 @@ static uint32_t zxnextPaletteCurrentSlot(void) {
   }
 }
 
+/*
+ * Soft reset: the palette registers only. zxnext.vhd ~4977-4989 clears the index, the $44 byte pending
+ * flag, $43 and the stored first byte; the palette RAMs (dpram2, no reset port) keep their contents.
+ */
 static void zxnextPaletteReset(void) {
   zxnextPaletteIndex = 0u;
   zxnextPaletteDisableAutoInc = 0u;
@@ -44,7 +48,11 @@ static void zxnextPaletteReset(void) {
   zxnextPaletteEnableUlaNext = 0u;
   zxnextPaletteSecondWrite = 0u;
   zxnextPaletteStoredValue = 0u;
+}
 
+/* Hard reset: the palette contents the firmware leaves after power-on (FPGA palette RAM has none). */
+static void zxnextPaletteHardReset(void) {
+  zxnextPaletteReset();
   for (uint32_t i = 0u; i < ZXNEXT_PALETTE_SIZE; i++) {
     uint16_t color = (uint16_t)((i << 1u) | ((i & 0x02u) ? 1u : 0u));
     zxnextPalettes[1][i] = color;
@@ -89,14 +97,19 @@ static void zxnextPaletteSetNextReg(uint32_t reg, uint32_t value) {
       zxnextPaletteSecondWrite = 0u;
       break;
     case 0x44u:
+      /*
+       * zxnext.vhd ~4896-4898, ~5374-5380: the first byte is only stored ($28); the second writes the
+       * entry - stored byte & bit 0, bits 7-6 into the word's priority bits (0x200 / 0x400; only Layer 2
+       * displays bit 7, $44 reads both back) - then moves the index on.
+       */
       if (!zxnextPaletteSecondWrite) {
         zxnextPaletteStoredValue = byteValue;
-        zxnextPalettes[slot][zxnextPaletteIndex] = (uint16_t)((byteValue << 1u) & 0x1feu);
       } else {
         zxnextPalettes[slot][zxnextPaletteIndex] =
-          (uint16_t)((zxnextPalettes[slot][zxnextPaletteIndex] & ~0x001u) |
+          (uint16_t)(((uint32_t)zxnextPaletteStoredValue << 1u) |
             (byteValue & 0x01u) |
-            ((byteValue & 0x80u) ? 0x200u : 0u));
+            ((byteValue & 0x80u) ? 0x200u : 0u) |
+            ((byteValue & 0x40u) ? 0x400u : 0u));
         if (!zxnextPaletteDisableAutoInc) zxnextPaletteIndex = (uint8_t)(zxnextPaletteIndex + 1u);
       }
       zxnextPaletteSecondWrite = !zxnextPaletteSecondWrite;
@@ -112,7 +125,7 @@ static uint32_t zxnextPaletteGetNextReg(uint32_t reg) {
     case 0x40u:
       return zxnextPaletteIndex;
     case 0x41u:
-      return entry >> 1u;
+      return (entry >> 1u) & 0xffu;
     case 0x43u:
       return (zxnextPaletteDisableAutoInc ? 0x80u : 0u) |
         ((uint32_t)zxnextPaletteSelected << 4u) |

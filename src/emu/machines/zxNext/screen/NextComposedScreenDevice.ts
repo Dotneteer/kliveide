@@ -723,6 +723,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   lineInterruptStartTact(): number {
     const line = this.machine.interruptDevice.lineInterrupt;
+    // --- int_line_num = line - 1 is compared with cvc (0 ... c_max_vc): lines past c_max_vc + 1 never fire
+    if (line > this.confTotalVC) return -1;
     const targetCvc = line === 0 ? this.confTotalVC - 1 : line - 1;
     const rawVc =
       (targetCvc + this.confDisplayYStart - this.machine.copperDevice.verticalLineOffset + this.confTotalVC) %
@@ -759,8 +761,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // --- Line interrupt pulse: as long as the ULA interrupt pulse, starting at the hardware position.
-    const lineElapsed = (tact - this.lineInterruptStartTact() + this.renderingTacts) % this.renderingTacts;
-    this.lineIntActive = lineElapsed < pulseLength;
+    const lineStart = this.lineInterruptStartTact();
+    const lineElapsed = (tact - lineStart + this.renderingTacts) % this.renderingTacts;
+    this.lineIntActive = lineStart >= 0 && lineElapsed < pulseLength;
 
     // === BLANKING CHECK ===
     // All rendering flags have identical blanking regions (cell value 0) for a given frequency mode.

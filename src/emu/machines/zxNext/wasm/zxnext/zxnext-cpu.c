@@ -177,15 +177,21 @@ static inline void zxnextCpuCaptureVideoInterrupts(void) {
   uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
   uint8_t ulaPulse = (uint8_t)zxnextUlaGetPulseIntActive(renderedFrameTact);
   uint8_t linePulse = (uint8_t)zxnextVideoLineIntActive(renderedFrameTact);
-  if (ulaPulse && !zxnextCpuPrevUlaPulse && !ulaInterruptDisabled) ulaInterruptStatus = 1u;
-  if (linePulse && !zxnextCpuPrevLinePulse && lineInterruptEnabled) lineInterruptStatus = 1u;
+  if (ulaPulse && !zxnextCpuPrevUlaPulse && !ulaInterruptDisabled) zxnextInterruptsRequest(ZXNEXT_INT_ULA, 1, 0);
+  if (linePulse && !zxnextCpuPrevLinePulse && lineInterruptEnabled) zxnextInterruptsRequest(ZXNEXT_INT_LINE, 1, 0);
   zxnextCpuPrevUlaPulse = ulaPulse;
   zxnextCpuPrevLinePulse = linePulse;
 }
 
 static inline uint32_t zxnextCpuShouldRaiseInt(void) {
+  zxnextCtcSync();
   if (zxnextInterruptsGetHardwareIm2Mode()) {
-    return zxnextInterruptsShouldAcceptInt();
+    /* The chain interrupts a CPU in IM 2 only; the ULA (EXCEPTION) and requests raised while the CPU was
+       not in IM 2 pulse instead */
+    uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
+    return zxnextInterruptsShouldAcceptInt() ||
+      (z80GetInterruptMode() != 2u && frames != 0u && !ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
+      zxnextInterruptsPulseActive();
   }
   // --- Pulse mode: any enabled source starts the INT pulse (peripherals.vhd `o_pulse_en`). The ULA frame
   // --- interrupt obeys its disable bit; the line interrupt used to be missing altogether.
@@ -193,6 +199,7 @@ static inline uint32_t zxnextCpuShouldRaiseInt(void) {
   return zxnextInterruptsGetSignalInt() ||
     (frames != 0u && !ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
     (lineInterruptEnabled && zxnextVideoLineIntActive(renderedFrameTact)) ||
+    zxnextInterruptsPulseActive() ||
     zxnextDmaGetIpSignal();
 }
 
@@ -317,8 +324,14 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   if (!nmiSignal) zxnextNmiBeforeOpcodeFetch(pcBefore);
   z80SetSigNmi(nmiSignal);
   z80SetSigInt(rawIntSignal);
-  if (shouldAcceptInt) {
-    z80SetInterruptVector(zxnextInterruptsGetHardwareIm2Mode() ? zxnextInterruptsAcknowledge() : 0xffu);
+  /* The acknowledge moves a device to S_ACK, so it must happen only when the core really takes the
+     interrupt: not on the instruction after EI (the core decrements eiBacklog first), not with a prefix
+     pending or an NMI in front of it - and only a CPU in IM 2 acknowledges the chain (im2_device
+     i_im2_mode); an IM 0/1 acceptance of the ULA pulse leaves the chain alone. */
+  uint8_t intTaken = shouldAcceptInt && !nmiSignal && z80GetPrefix() == 0u && z80GetEiBacklog() <= 1u;
+  if (intTaken) {
+    z80SetInterruptVector(zxnextInterruptsGetHardwareIm2Mode() && z80GetInterruptMode() == 2u
+      ? zxnextInterruptsAcknowledge() : 0xffu);
   }
 
   do {

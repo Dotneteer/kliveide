@@ -37,22 +37,21 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   ulaSecond: number[] = [];
   layer2First: number[] = [];
   layer2Second: number[] = [];
-  private layer2RgbFirst: number[] = [];
-  private layer2RgbSecond: number[] = [];
   spriteFirst: number[] = [];
   spriteSecond: number[] = [];
-  private spriteRgbFirst: number[] = [];
-  private spriteRgbSecond: number[] = [];
   tilemapFirst: number[] = [];
   tilemapSecond: number[] = [];
-  private tilemapRgbFirst: number[] = [];
-  private tilemapRgbSecond: number[] = [];
   storedPaletteValue: number;
 
   constructor(public readonly machine: IZxNextMachine) {
-    this.reset();
+    this.hardReset();
   }
 
+  /**
+   * Soft reset: the palette registers only. zxnext.vhd ~4977-4989 clears the index, the $44 byte
+   * pending flag, $43 and the stored first byte; the palette RAMs (dpram2, no reset port) keep their
+   * contents.
+   */
   reset(): void {
     this._paletteIndex = 0;
     this._disablePaletteWriteAutoInc = false;
@@ -64,6 +63,14 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     this._enableUlaNextMode = false;
     this._secondWrite = false;
     this.storedPaletteValue = 0;
+  }
+
+  /**
+   * Hard reset: the registers, and the palette contents the firmware leaves after power-on (the FPGA
+   * palette RAM has no reset contents of its own).
+   */
+  hardReset(): void {
+    this.reset();
     for (let i = 0; i < 256; i++) {
       let color = (i << 1) | (i & 2 ? 1 : 0);
 
@@ -71,11 +78,8 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
       // --- They set Bit 0 as the initial Bit 1.
       // --- It does not follow the logic of mixing bit 0 and bit 1 used in register 41H.
       this.layer2First[i] = this.layer2Second[i] = color;
-      this.layer2RgbFirst[i] = this.layer2RgbSecond[i] = zxNextBgra[color];
       this.spriteFirst[i] = this.spriteSecond[i] = color;
-      this.spriteRgbFirst[i] = this.spriteRgbSecond[i] = zxNextBgra[color];
       this.tilemapFirst[i] = this.tilemapSecond[i] = color;
-      this.tilemapRgbFirst[i] = this.tilemapRgbSecond[i] = zxNextBgra[color];
     }
 
     // --- The ULA palette is a bit more complex, it repeats every 16 colors
@@ -103,7 +107,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   get nextReg41Value(): number {
-    return this.getCurrentPalette()[this._paletteIndex] >> 1;
+    return (this.getCurrentPalette()[this._paletteIndex] >> 1) & 0xff;
   }
 
   set nextReg41Value(value: number) {
@@ -148,23 +152,26 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     return ((value & 0x200) !== 0 ? 0x80 : 0) | ((value & 0x400) !== 0 ? 0x40 : 0) | (value & 0x01);
   }
 
+  /**
+   * zxnext.vhd ~4896-4898, ~5374-5380: the first byte is only stored ($28); the second writes the
+   * entry - colour = stored byte & bit 0, and bits 7-6 into the word's priority bits (0x200 / 0x400
+   * here; only Layer 2 displays bit 7, $44 reads both back) - then moves the index on.
+   */
   set nextReg44Value(value: number) {
-    const palette = this.getCurrentPalette();
     if (!this._secondWrite) {
       this.storedPaletteValue = value & 0xff;
-      palette[this._paletteIndex] = (value & 0xff) << 1;
     } else {
-      // Compose the 9-bit color entry with priority bit (all palette types per FPGA)
-      palette[this._paletteIndex] =
-        (palette[this._paletteIndex] & ~0x01) |
+      this.getCurrentPalette()[this._paletteIndex] =
+        (this.storedPaletteValue << 1) |
         (value & 0x01) |
-        ((value & 0x80) !== 0 ? 0x200 : 0);
+        ((value & 0x80) !== 0 ? 0x200 : 0) |
+        ((value & 0x40) !== 0 ? 0x400 : 0);
       if (!this._disablePaletteWriteAutoInc) {
         this._paletteIndex = (this._paletteIndex + 1) & 0xff;
       }
+      this.updateUlaPalette();
     }
     this._secondWrite = !this._secondWrite;
-    this.updateUlaPalette();
   }
 
   get paletteIndex(): number {
@@ -228,37 +235,31 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     }
   }
 
+  /*
+   * The colour getters return RAM word bits 8-0 (zxnext.vhd ~6933, ~6948, ~6997): the priority bits of
+   * a $44 write are not part of a ULA, LoRes, tilemap or sprite colour, nor of the $14 compare.
+   */
+
   getUlaRgb333(index: number): number {
-    return this._secondUlaPalette
-      ? this.ulaSecond[index & 0xff]
-      : this.ulaFirst[index & 0xff];
+    return (this._secondUlaPalette ? this.ulaSecond : this.ulaFirst)[index & 0xff] & 0x1ff;
   }
 
+  /** The 9-bit colour with the Layer 2 priority bit (0x200, zxnext.vhd ~6985 `layer2_prgb_1`). */
   getLayer2Rgb333(index: number): number {
-    return this._secondLayer2Palette
-      ? this.layer2Second[index & 0xff]
-      : this.layer2First[index & 0xff];
+    return (this._secondLayer2Palette ? this.layer2Second : this.layer2First)[index & 0xff] & 0x3ff;
   }
 
   getSpriteRgb333(index: number): number {
-    return this._secondSpritePalette
-      ? this.spriteSecond[index & 0xff]
-      : this.spriteFirst[index & 0xff];
+    return (this._secondSpritePalette ? this.spriteSecond : this.spriteFirst)[index & 0xff] & 0x1ff;
   }
 
   getTilemapRgb333(index: number): number {
-    return this._secondTilemapPalette
-      ? this.tilemapSecond[index & 0xff]
-      : this.tilemapFirst[index & 0xff];
+    return (this._secondTilemapPalette ? this.tilemapSecond : this.tilemapFirst)[index & 0xff] & 0x1ff;
   }
 
-  /**
-   * Gets the full 9-bit tilemap palette entry (RGB333 + priority bit)
-   */
+  /** The 9-bit tilemap colour (kept for callers that name the entry; same as `getTilemapRgb333`). */
   getTilemapPaletteEntry(index: number): number {
-    return this._secondTilemapPalette
-      ? this.tilemapSecond[index & 0xff]
-      : this.tilemapFirst[index & 0xff];
+    return this.getTilemapRgb333(index);
   }
 
   /**
@@ -377,7 +378,7 @@ export const zxNextBgra: number[] = [
   0xffdb49b6, 0xffff49b6, 0xff006db6, 0xff246db6, 0xff496db6, 0xff6d6db6, 0xff926db6, 0xffb66db6, 0xffdb6db6,
   0xffff6db6, 0xff0092b6, 0xff2492b6, 0xff4992b6, 0xff6d92b6, 0xff9292b6, 0xffb692b6, 0xffdb92b6, 0xffff92b6,
   0xff00b6b6, 0xff24b6b6, 0xff49b6b6, 0xff6db6b6, 0xff92b6b6, 0xffb6b6b6, 0xffdbb6b6, 0xffffb6b6, 0xff00dbb6,
-  0xff24dbb6, 0xff49dbb6, 0xff6ddbb6, 0xff92dbb6, 0xffb6dbb6, 0xffdbbdb6, 0xffffdbb6, 0xff00ffb6, 0xff24ffb6,
+  0xff24dbb6, 0xff49dbb6, 0xff6ddbb6, 0xff92dbb6, 0xffb6dbb6, 0xffdbdbb6, 0xffffdbb6, 0xff00ffb6, 0xff24ffb6,
   0xff49ffb6, 0xff6dffb6, 0xff92ffb6, 0xffb6ffb6, 0xffdbffb6, 0xffffffb6, 0xff0000db, 0xff2400db, 0xff4900db,
   0xff6d00db, 0xff9200db, 0xffb600db, 0xffdb00db, 0xffff00db, 0xff0024db, 0xff2424db, 0xff4924db, 0xff6d24db,
   0xff9224db, 0xffb624db, 0xffdb24db, 0xffff24db, 0xff0049db, 0xff2449db, 0xff4949db, 0xff6d49db, 0xff9249db,

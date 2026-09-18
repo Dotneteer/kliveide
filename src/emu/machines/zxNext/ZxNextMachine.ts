@@ -21,7 +21,7 @@ import { PaletteDevice } from "./PaletteDevice";
 import { TilemapDevice } from "./TilemapDevice";
 import { SpriteDevice } from "./SpriteDevice";
 import { DmaDevice } from "./DmaDevice";
-import { CopperDevice, CopperStartMode } from "./CopperDevice";
+import { CopperDevice } from "./CopperDevice";
 import { CtcDevice } from "./CtcDevice";
 import { I2cDevice } from "./I2cDevice";
 import { UartDevice } from "./UartDevice";
@@ -379,6 +379,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   hardReset(): void {
     super.hardReset();
+    // --- Palette contents first: a soft reset keeps them, and `reset` caches the border colour
+    this.paletteDevice.hardReset();
     this.reset();
     this.nextRegDevice.hardReset();
     this.memoryDevice.hardReset();
@@ -620,7 +622,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   protected override getInterruptVector(): number {
     const id = this.interruptDevice;
-    if (!id.hwIm2Mode) return 0xff;
+    if (!id.hwIm2Mode || this.interruptMode !== 2) return 0xff;
     // --- D4: Daisy chain determines the vector in HW IM2 mode.
     // The actual acknowledge (Requesting → InService) happens in onInterruptAcknowledged().
     // Here we only peek at the winning device to return its vector.
@@ -641,7 +643,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   override onInterruptAcknowledged(): void {
     const id = this.interruptDevice;
-    if (!id.hwIm2Mode) return;
+    // --- im2_device S_REQ -> S_ACK needs a CPU in IM 2; an IM 0/1 acceptance (the ULA pulse) acks nothing
+    if (!id.hwIm2Mode || this.interruptMode !== 2) return;
     id.daisyAcknowledge();
   }
 
@@ -1757,9 +1760,17 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   shouldRaiseInterrupt(): boolean {
     const id = this.interruptDevice;
+    // --- A CTC zero count requests its interrupt at once (ctc_zc_to), not at the next CTC port access
+    this.ctcDevice.sync();
 
     if (id.hwIm2Mode) {
-      return id.daisyUpdateIrqState();
+      // --- The daisy chain interrupts a CPU in IM 2 only; the ULA (the EXCEPTION generic) and requests
+      // --- raised while the CPU was not in IM 2 pulse instead.
+      return (
+        id.daisyUpdateIrqState() ||
+        (this.interruptMode !== 2 && this.composedScreenDevice.pulseIntActive && !id.ulaInterruptDisabled) ||
+        id.pulseActive
+      );
     }
 
     // --- Pulse ("legacy") mode: any enabled source starts the INT pulse (peripherals.vhd `o_pulse_en`,
@@ -1770,6 +1781,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     return (
       (screen.pulseIntActive && !id.ulaInterruptDisabled) ||
       (screen.lineIntActive && id.lineInterruptEnabled) ||
+      id.pulseActive ||
       this.dmaDevice.getIp() === 1
     );
   }
@@ -1798,8 +1810,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     while (this.lastRenderedFrameTact < endTact) {
       // The copper sees the ULA beam - `cvc` and `hc_ula` (zxnext.vhd wires them to copper.vhd) - not
       // the raw counters, and it runs on the 28 MHz clock: four ticks per horizontal position.
-      // Guard on the start mode so a stopped copper costs nothing.
-      if (this.copperDevice.startMode !== CopperStartMode.FullyStopped) {
+      // A stopped copper with nothing left in its write pipeline costs nothing.
+      if (this.copperDevice.isActive) {
         const screen = this.composedScreenDevice;
         const cvc = screen.copperLineAt(this._copperCurrentLine, this._copperCurrentColumn);
         const hcUla = screen.copperHcAt(this._copperCurrentColumn);

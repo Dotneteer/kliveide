@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 static void zxnextPaletteReset(void);
+static void zxnextPaletteHardReset(void);
 static void zxnextPaletteSetNextReg(uint32_t reg, uint32_t value);
 static uint32_t zxnextPaletteGetNextReg(uint32_t reg);
 static uint32_t zxnextPaletteGetEntry(uint32_t palette, uint32_t index);
