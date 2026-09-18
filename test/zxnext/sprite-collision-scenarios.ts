@@ -110,13 +110,7 @@ export function defineSpriteCollisionTests(engine: SpriteCollisionEngine) {
       expect(readStatus() & 0x01).toBe(1);
     });
 
-    it("is not raised while sprites are disabled", () => {
-      uploadPatterns();
-      setReg(0x15, 0x00);
-      setSprite(0, [40, 40, 0x00, 0x81]);
-      setSprite(1, [48, 44, 0x00, 0x81]);
-      completeFrame();
-      expect(readStatus() & 0x01).toBe(0);
-    });
+    // --- "is not raised while sprites are disabled" was wrong: sprites.vhd runs whatever $15 bit 0 says (it
+    // --- only gates the pixels, zxnext.vhd ~6880). test/zxnext-hw/sprites/sprites.test.ts SPR-025 covers it.
   });
 }

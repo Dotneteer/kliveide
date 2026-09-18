@@ -126,7 +126,6 @@ const MATRIX: MatrixEntry[] = [
       "SpriteDevice-resolve.test.ts",
       "SpriteDevice-status.test.ts",
       "SpriteDevice.test.ts",
-      "TilemapDevice-compositing.test.ts",
       "TilemapDevice-d1d2.test.ts",
       "UlaDisableFallback.test.ts",
       "UlaRendering.test.ts",

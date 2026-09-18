@@ -790,6 +790,86 @@ border). The mock `test/zxnext/LoResFixes.test.ts` was replaced by `lores.test.t
 pictures against a transcription of `lores.vhd` on both cores (every LoRes / Radastan case passed on
 both first time; only LOR-009 failed, on TS).
 
+### B48 – `$123B` bit 3 switched the displayed Layer 2 bank – FIXED 2026-09-18
+
+Found by catalogue §4.13 (`test/zxnext-hw/layer2/layer2.test.ts`, L2-004). zxnext.vhd ~2924 uses the
+shadow bank `$13` for `$123B` *paging* only; the display takes `nr_12` directly (~4203). Both cores
+displayed `$13` while bit 3 was set, so a program drawing into the shadow bank through `$123B` saw it on
+screen at once - double buffering broke. TS: the three scanline bank selections use
+`layer2ActiveRamBank`; WASM: the three renderers and the raster's "is this write visible" check use
+`zxnextLayer2GetActiveRamBank()`. Paging (`MemoryDevice`, `zxnext-memory.c`) still uses the shadow bank.
+
+### B49 – Layer 2 banks past the 2 MB SRAM showed data – FIXED 2026-09-18
+
+L2-024. layer2.vhd: SRAM bank = `$12` + 16 + segment (16K units); when that reaches 128 (address bit 21)
+the pixel is disabled. With `$12` = 110 the third segment is past the SRAM: TS showed bytes past its RAM
+image, WASM wrapped the read modulo the memory size and showed black. Both now give no pixel
+(`getLayer2PixelFromSRAM_Cached` returns -1 / `zxnextUlaReadLayer2Pixel` returns `ZXNEXT_L2_NO_PIXEL`).
+
+### B50 – TS tilemap: fine X scroll and the 80-column last tile were wrong – FIXED 2026-09-18
+
+Found by catalogue §4.14 (`test/zxnext-hw/tilemap/tilemap.test.ts`, TM-002 / TM-015), which checks every
+tilemap pixel against a transcription of tilemap.vhd. The TS renderers fetched whole tiles at the
+display's 8-pixel cells, so an X scroll that is not a multiple of 8 showed the wrong tile pixels, and the
+last 80-column tile was wrong even unscrolled. The four TS renderers (40 / 80 columns, each with a "fast
+path", ~750 lines) and their fetch-flag tables are replaced by one per-pixel `renderTilemapPixel` /
+`tilemapPixelAt` that follows the VHDL (tilemap x = (x + scroll) mod 320 / 640; map entry; mirror / rotate;
+text mode; `$4C` / `$14`; clip). The hardware samples the configuration once per character; the new code
+takes the registers per pixel (mid-character register changes differ by under 8 pixels).
+
+### B51 – WASM tilemap: 80-column scroll in the wrong unit, 80-column text lost a pixel – FIXED 2026-09-18
+
+TM-011 / TM-015. In 80 columns tilemap.vhd adds the scroll to the 640-wide x, one unit per 640-res pixel;
+WASM added it to the 320-wide clock, moving two pixels per unit. The 80-column text renderer also dropped
+the last pixel of every row. The four WASM tilemap renderers are replaced by one per-pixel
+`zxnextUlaRenderTilemapScreen`, the same rules as the TS core.
+
+### B52 – 512-tile mode never put tiles below the ULA – FIXED 2026-09-18
+
+TM-010 / TM-012. tilemap.vhd: below = (attr(0) or mode_512) and not on_top - in 512-tile mode every tile is
+below the ULA unless `$6B` bit 0. Both cores did the opposite (attr bit 0 became tile bit 8 and nothing
+was below); a legacy mock test encoded that and was removed. Also, found by reading the old code (its test
+was written with the rewrite): without attributes, 512-tile mode takes tile bit 8 from `$6C` bit 0, which
+both cores ignored.
+
+### B53 – TS sprites got a quarter of the line time and dropped sprites – FIXED 2026-09-18
+
+Found by catalogue §4.15 (`test/zxnext-hw/sprites/sprites.test.ts`), which compares whole sprite
+pictures with a transcription of sprites.vhd. The TS engine built the next line only in the horizontal
+blanking (136 cells x 4 = 544 clocks at 28 MHz) and cut the line when the next sprite's width did not
+fit: busy lines lost sprites. sprites.vhd starts the next line at `whc` = 511 and has the whole line
+(~1,800 clocks); it gives up only when a drawable sprite qualifies while `whc` is in 288-319 under the
+previous sprite's `spr_cur_x_wrap` mask (`spr_cur_notime`), or when the next line reset comes first. The
+TS line is now built at once with a clock count and those two rules (`renderSpritesPixel`).
+
+### B54 – Sprite collisions stopped while `$15` bit 0 hid the sprites – FIXED 2026-09-18
+
+SPR-010 / SPR-025. sprites.vhd has no enable: zxnext.vhd ~6880 gates only its pixel into the mixer. Both
+cores skipped the engine, so collisions (and time-outs) were never flagged with sprites hidden. TS runs the
+engine always and hides the output; WASM's collision pass runs whatever `$15` says. Two legacy tests that
+encoded the old behaviour were removed ("is not raised while sprites are disabled", and a TS
+"too many sprites per line" pair that assumed the blanking-only budget).
+
+### B55 – Sprite clip window: TS ignored `$19` writes, both ignored y < 224 – FIXED 2026-09-18
+
+SPR-013. Without over-border sprites.vhd shows the `$19` window + 32 *and* only vcounter < 224. TS
+recomputed its window only on a `$15` write, so a `$19` change did nothing until then; neither core had
+the y < 224 limit (a `$19` y2 above 191 let sprites into the bottom border).
+
+### B56 – WASM never set `$303B` bit 1 ("too many sprites on a line") – FIXED 2026-09-18
+
+SPR-026. The whole-frame WASM sprite renderer had no line time at all. It now computes, per line, where
+the engine runs out of time by the same rules as TS (`zxnextUlaComputeSpriteLineCuts`), stops drawing
+sprites past the cut and sets the flag.
+
+### B57 – TS sprite tie (`$09` bit 4): `$303B` did not update `$34`; `$34` bit 7 was dropped – FIXED 2026-09-18
+
+SPR-007 / SPR-029. sprites.vhd `mirror_sprite_q` is 8 bits: with the tie a `$34` write sets the sprite
+*and* the pattern index (`q(5:0) & q(7) & "0000000"`: bit 7 picks the 128-byte half), and a `$303B` write
+updates it. TS kept 7 bits, reset the half, and only followed `$57` auto-increments. `$34` still reads
+bits 6-0. Legacy field-level tests in `SpriteDevice.test.ts` / `SpriteDevice-d4d6d7.test.ts` now expect the
+8-bit register.
+
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 
 - **Fixed:** `machineFrameCompleted` keeps a copy of the displayed pixel buffer instead of calling

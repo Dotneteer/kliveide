@@ -246,6 +246,9 @@ static void zxnextSpritesWritePort5b(uint32_t value) {
  */
 static void zxnextSpritesSignalCollision(void) { zxnextSpriteCollision = 1u; }
 
+/* Latch "a line ran out of time" (status bit 1, sprites.vhd sprites_overtime). Sticky until read. */
+static void zxnextSpritesSignalTooMany(void) { zxnextSpriteTooMany = 1u; }
+
 static uint32_t zxnextSpritesReadPort303b(void) {
   uint32_t value = (zxnextSpriteTooMany ? 0x02u : 0u) | (zxnextSpriteCollision ? 0x01u : 0u);
   zxnextSpriteTooMany = 0u;

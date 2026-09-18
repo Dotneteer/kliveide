@@ -13,6 +13,7 @@ static void zxnextSpritesWritePort57(uint32_t value);
 static void zxnextSpritesWritePort5b(uint32_t value);
 static uint32_t zxnextSpritesReadPort303b(void);
 static void zxnextSpritesSignalCollision(void);
+static void zxnextSpritesSignalTooMany(void);
 static uint32_t zxnextSpritesGetClip(uint32_t index);
 static uint32_t zxnextSpritesGetTransparencyIndex(void);
 static uint32_t zxnextSpritesGetSpriteIndex(void);

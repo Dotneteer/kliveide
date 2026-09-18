@@ -23,7 +23,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.patternIndex).toBe(0);
     expect(spr.patternSubIndex).toBe(0);
     expect(spr.spriteIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
     expect(spr.spriteSubIndex).toBe(0);
     expect(spr.lastVisibileSpriteIndex).toBe(-1);
   });
@@ -1255,13 +1255,13 @@ describe("Next - SpriteDevice", async function () {
     // --- Act
     writeNextReg(m, 0x34, 0x80);
 
-    // --- Assert
+    // --- Assert (sprites.vhd: with the tie, pattern_index <= q(5:0) & q(7) & "0000000")
     expect(spriteDevice.patternIndex).toBe(0x00);
-    expect(spriteDevice.patternSubIndex).toBe(0);
+    expect(spriteDevice.patternSubIndex).toBe(0x80);
     expect(spriteDevice.spriteIndex).toBe(0x00);
     expect(spriteDevice.spriteSubIndex).toBe(0x00);
-    expect(spriteDevice.mirrorSpriteQ).toBe(0x00);
-    expect(readNextReg(m, 0x34)).toBe(spriteDevice.mirrorSpriteQ);
+    expect(spriteDevice.mirrorSpriteQ & 0x7f).toBe(0x00);
+    expect(readNextReg(m, 0x34)).toBe(spriteDevice.mirrorSpriteQ & 0x7f);
   });
 
   it("Reg $34 with lockStep #2", async () => {
@@ -1274,13 +1274,13 @@ describe("Next - SpriteDevice", async function () {
     // --- Act
     writeNextReg(m, 0x34, 0xc4);
 
-    // --- Assert
+    // --- Assert (sprites.vhd: with the tie, pattern_index <= q(5:0) & q(7) & "0000000")
     expect(spriteDevice.patternIndex).toBe(0x04);
-    expect(spriteDevice.patternSubIndex).toBe(0);
+    expect(spriteDevice.patternSubIndex).toBe(0x80);
     expect(spriteDevice.spriteIndex).toBe(0x44);
     expect(spriteDevice.spriteSubIndex).toBe(0x00);
-    expect(spriteDevice.mirrorSpriteQ).toBe(0x44);
-    expect(readNextReg(m, 0x34)).toBe(spriteDevice.mirrorSpriteQ);
+    expect(spriteDevice.mirrorSpriteQ & 0x7f).toBe(0x44);
+    expect(readNextReg(m, 0x34)).toBe(spriteDevice.mirrorSpriteQ & 0x7f);
   });
 
   it("Reg $34 with no lockStep #1", async () => {
@@ -1294,8 +1294,8 @@ describe("Next - SpriteDevice", async function () {
     writeNextReg(m, 0x34, 0x80);
 
     // --- Assert
-    expect(spriteDevice.mirrorSpriteQ).toBe(0x00);
-    expect(readNextReg(m, 0x34)).toBe(spriteDevice.mirrorSpriteQ);
+    expect(spriteDevice.mirrorSpriteQ & 0x7f).toBe(0x00);
+    expect(readNextReg(m, 0x34)).toBe(spriteDevice.mirrorSpriteQ & 0x7f);
   });
 
   it("Reg $34 with no lockStep #2", async () => {
@@ -1309,8 +1309,8 @@ describe("Next - SpriteDevice", async function () {
     writeNextReg(m, 0x34, 0xc3);
 
     // --- Assert
-    expect(spriteDevice.mirrorSpriteQ).toBe(0x43);
-    expect(readNextReg(m, 0x34)).toBe(spriteDevice.mirrorSpriteQ);
+    expect(spriteDevice.mirrorSpriteQ & 0x7f).toBe(0x43);
+    expect(readNextReg(m, 0x34)).toBe(spriteDevice.mirrorSpriteQ & 0x7f);
   });
 
   it("Reg $34 with no lockStep #3", async () => {
@@ -1324,8 +1324,8 @@ describe("Next - SpriteDevice", async function () {
     writeNextReg(m, 0x34, 0x43);
 
     // --- Assert
-    expect(spriteDevice.mirrorSpriteQ).toBe(0x43);
-    expect(readNextReg(m, 0x34)).toBe(spriteDevice.mirrorSpriteQ);
+    expect(spriteDevice.mirrorSpriteQ & 0x7f).toBe(0x43);
+    expect(readNextReg(m, 0x34)).toBe(spriteDevice.mirrorSpriteQ & 0x7f);
   });
 
   it("Reg $35 with lockStep #1", async () => {
@@ -1357,7 +1357,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
   });
 
   it("Reg $35 with lockStep #2", async () => {
@@ -1389,7 +1389,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(4);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(4);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(4);
   });
 
   it("Reg $35 with lockStep #3", async () => {
@@ -1421,7 +1421,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(4);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(4);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(4);
   });
 
   it("Reg $35 with no lockStep #1", async () => {
@@ -1455,7 +1455,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
   });
 
   it("Reg $35 with no lockStep #2", async () => {
@@ -1489,7 +1489,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x04);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x04);
   });
 
   it("Reg $35 with no lockStep #3", async () => {
@@ -1523,7 +1523,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x04);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x04);
   });
 
   it("Reg $36 with lockStep #1", async () => {
@@ -1555,7 +1555,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
   });
 
   it("Reg $36 with lockStep #2", async () => {
@@ -1587,7 +1587,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x04);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(4);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(4);
   });
 
   it("Reg $36 with lockStep #3", async () => {
@@ -1619,7 +1619,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x04);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(4);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(4);
   });
 
   it("Reg $36 with no lockStep #1", async () => {
@@ -1653,7 +1653,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
   });
 
   it("Reg $36 with no lockStep #2", async () => {
@@ -1687,7 +1687,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x04);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x04);
   });
 
   it("Reg $36 with no lockStep #3", async () => {
@@ -1721,7 +1721,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x04);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x04);
   });
 
   it("Reg $37 with lockStep #1", async () => {
@@ -1752,7 +1752,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
   });
 
   it("Reg $37 with lockStep #1", async () => {
@@ -1783,7 +1783,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
   });
 
   it("Reg $37 with lockStep #2", async () => {
@@ -1814,7 +1814,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x04);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(4);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(4);
   });
 
   it("Reg $37 with lockStep #3", async () => {
@@ -1845,7 +1845,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x04);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(4);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(4);
   });
 
   it("Reg $37 with no lockStep #1", async () => {
@@ -1878,7 +1878,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
   });
 
   it("Reg $37 with no lockStep #2", async () => {
@@ -1911,7 +1911,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x04);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x04);
   });
 
   it("Reg $38 with lockStep #1", async () => {
@@ -1942,7 +1942,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0);
     expect(spr.spriteSubIndex).toBe(0x00);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
   });
 
   it("Reg $38 with lockStep #2", async () => {
@@ -1973,7 +1973,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x04);
     expect(spr.spriteSubIndex).toBe(0x00);
-    expect(spr.mirrorSpriteQ).toBe(4);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(4);
   });
 
   it("Reg $38 with lockStep #3", async () => {
@@ -2004,7 +2004,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x04);
     expect(spr.spriteSubIndex).toBe(0x00);
-    expect(spr.mirrorSpriteQ).toBe(4);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(4);
   });
 
   it("Reg $38 with no lockStep #1", async () => {
@@ -2037,7 +2037,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
   });
 
   it("Reg $38 with no lockStep #2", async () => {
@@ -2070,7 +2070,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x04);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x04);
   });
 
   it("Reg $39 with lockStep #1", async () => {
@@ -2101,7 +2101,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0);
     expect(spr.spriteSubIndex).toBe(0x00);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
   });
 
   it("Reg $39 with lockStep #2", async () => {
@@ -2132,7 +2132,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x04);
     expect(spr.spriteSubIndex).toBe(0x00);
-    expect(spr.mirrorSpriteQ).toBe(4);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(4);
   });
 
   it("Reg $39 with lockStep #3", async () => {
@@ -2163,7 +2163,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x04);
     expect(spr.spriteSubIndex).toBe(0x00);
-    expect(spr.mirrorSpriteQ).toBe(4);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(4);
   });
 
   it("Reg $39 with no lockStep #1", async () => {
@@ -2196,7 +2196,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0);
   });
 
   it("Reg $39 with no lockStep #2", async () => {
@@ -2229,7 +2229,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x04);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x04);
   });
 
   it("Reg $75 with lockStep", async () => {
@@ -2261,7 +2261,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(5);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(5);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(5);
   });
 
   it("Reg $75 with no lockStep", async () => {
@@ -2295,7 +2295,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x05);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x05);
   });
 
   it("Reg $76 with lockStep", async () => {
@@ -2327,7 +2327,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x05);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(5);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(5);
   });
 
   it("Reg $76 with no lockStep", async () => {
@@ -2361,7 +2361,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x05);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x05);
   });
 
   it("Reg $77 with lockStep", async () => {
@@ -2392,7 +2392,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x05);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(5);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(5);
   });
 
   it("Reg $77 with no lockStep", async () => {
@@ -2425,7 +2425,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x05);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x05);
   });
 
   it("Reg $78 with lockStep", async () => {
@@ -2456,7 +2456,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x05);
     expect(spr.spriteSubIndex).toBe(0x00);
-    expect(spr.mirrorSpriteQ).toBe(5);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(5);
   });
 
   it("Reg $78 with no lockStep", async () => {
@@ -2489,7 +2489,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x05);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x05);
   });
 
   it("Reg $79 with lockStep", async () => {
@@ -2520,7 +2520,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x05);
     expect(spr.spriteSubIndex).toBe(0x00);
-    expect(spr.mirrorSpriteQ).toBe(5);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(5);
   });
 
   it("Reg $79 with no lockStep", async () => {
@@ -2553,7 +2553,7 @@ describe("Next - SpriteDevice", async function () {
 
     expect(spr.spriteIndex).toBe(0x43);
     expect(spr.spriteSubIndex).toBe(0);
-    expect(spr.mirrorSpriteQ).toBe(0x05);
+    expect(spr.mirrorSpriteQ & 0x7f).toBe(0x05);
   });
 
 });

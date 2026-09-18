@@ -145,9 +145,11 @@ describe("Mirror port protocol (D6)", () => {
     expect(spr.mirrorSpriteQ).toBe(5);
   });
 
-  it("NR $34 with mirrorIndex=7 only stores lower 7 bits", () => {
+  it("NR $34 stores all 8 bits (bit 7 is the tie's pattern half) and reads back bits 6-0", () => {
+    // --- sprites.vhd mirror_sprite_q <= mirror_data_i (8 bits); zxnext.vhd ~5978 $34 reads '0' & q(6:0)
     writeNextReg(machine, 0x34, 0xff);
-    expect(spr.mirrorSpriteQ).toBe(0x7f);
+    expect(spr.mirrorSpriteQ).toBe(0xff);
+    expect(spr.nextReg34Value).toBe(0x7f);
   });
 
   // ── NR $35-$39: write to attribute, no auto-inc ──────────────────────────

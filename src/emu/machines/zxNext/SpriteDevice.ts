@@ -209,6 +209,11 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     this.patternSubIndex = value & 0x80;
     this.spriteIndex = value & 0x7f;
     this.spriteSubIndex = 0;
+    // --- sprites.vhd: a $303B write raises attr_num_change; with the tie ($09 bit 4) the NextReg mirror
+    // --- ($34) follows it - sprite number, and bit 7 from the pattern index
+    if (this.mirrorTie) {
+      this.mirrorSpriteQ = (value & 0x80) | (value & 0x7f);
+    }
   }
 
   /**
@@ -271,23 +276,24 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
    */
   mirrorDataW(data: number): void {
     if (this.mirrorIndex <= 4) {
-      this.writeIndexedSpriteAttribute(this.mirrorSpriteQ, this.mirrorIndex, data);
+      this.writeIndexedSpriteAttribute(this.mirrorSpriteQ & 0x7f, this.mirrorIndex, data);
     }
 
+    // --- sprites.vhd mirror_sprite_q is 8 bits: 6-0 the sprite, 7 the pattern half (N6) for the tie
     let mirrorNumChange = false;
     if (this.mirrorIndex === 7) {
-      this.mirrorSpriteQ = data & 0x7f;
+      this.mirrorSpriteQ = data & 0xff;
       mirrorNumChange = true;
     } else if (this.mirrorInc) {
-      this.mirrorSpriteQ = (this.mirrorSpriteQ + 1) & 0x7f;
+      this.mirrorSpriteQ = ((this.mirrorSpriteQ + 1) & 0x7f) | this.patternSubIndex;
       mirrorNumChange = true;
     }
 
     if (mirrorNumChange && this.mirrorTie) {
-      // Sync main-port sprite+pattern indices from new mirrorSpriteQ
-      this.spriteIndex = this.mirrorSpriteQ;
+      // --- attr_index <= q(6:0) & "000"; pattern_index <= q(5:0) & q(7) & "0000000"
+      this.spriteIndex = this.mirrorSpriteQ & 0x7f;
       this.patternIndex = this.mirrorSpriteQ & 0x3f;
-      this.patternSubIndex = 0;
+      this.patternSubIndex = this.mirrorSpriteQ & 0x80;
       this.spriteSubIndex = 0;
     }
   }

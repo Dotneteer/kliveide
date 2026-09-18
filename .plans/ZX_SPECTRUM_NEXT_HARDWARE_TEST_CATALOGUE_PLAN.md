@@ -90,9 +90,9 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `ULN` | ULANext palette mode | `video/zxula.vhd` | `test/zxnext-hw/ula/ulanext-ulaplus.test.ts` (written 2026-09-17 for bug B7, before this catalogue) |
 | `ULP` | ULA+ | `video/zxula.vhd` | `test/zxnext-hw/ula/ulanext-ulaplus.test.ts`, `ulaplus-ports.test.ts` (written 2026-09-17 for bugs B7 and B12, before this catalogue) |
 | `LOR` | LoRes / Radastan | `video/lores.vhd` | `test/zxnext-hw/ula/lores.test.ts` (replaced the mock `test/zxnext/LoResFixes.test.ts`, 2026-09-18) |
-| `L2` | Layer 2 (256×192, 320×256, 640×256) | `video/layer2.vhd` | L01 |
-| `TM` | Tilemap | `video/tilemap.vhd` | P02 |
-| `SPR` | Sprites | `video/sprites.vhd` | `test/zxnext-hw/sprites/sprite-collision.test.ts` |
+| `L2` | Layer 2 (256×192, 320×256, 640×256) | `video/layer2.vhd` | L01, P01, `test/zxnext-hw/layer2/layer2.test.ts` (D1-D5 of the mock `test/zxnext/Layer2Fixes.test.ts` moved there) |
+| `TM` | Tilemap | `video/tilemap.vhd` | P02, `test/zxnext-hw/tilemap/tilemap.test.ts` (replaced the field-level mocks `test/zxnext/TilemapDevice-compositing.test.ts` and D1 of `TilemapDevice-d1d2.test.ts`) |
+| `SPR` | Sprites | `video/sprites.vhd` | `test/zxnext-hw/sprites/sprites.test.ts`, `sprite-collision.test.ts`, `attribute-mirror.test.ts` |
 | `PAL` | Palettes and global transparency | `zxnext.vhd` | C02, C04, C05 |
 | `CMP` | Layer compositing, priorities, blend modes, fallback | `zxnext.vhd` | P01, P02, C10 (bug B6) |
 | `COP` | Copper | `device/copper.vhd` | C00–C11, D01–D05, `copper-upload.test.ts` (bugs B4, B5, B9) |
@@ -352,100 +352,100 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| L2-001 | Enable via `$123B` bit 1 | V | 1 | | Fill bank 9 (`$12` default) with a pattern; enable shows 256×192 over ULA (default `$15` SLU). | — |
-| L2-002 | Enable via `$69` bit 7 | S | 1 | | Same enable through NextReg; `$123B` read reflects it. | — |
-| L2-003 | `$12` active bank | V | 1 | | Change `$12` to another bank with a different pattern; picture follows. Readback. | — |
-| L2-004 | `$13` shadow bank | S | 2 | | `$13` affects only `$123B` bit 3 paging, not the display. | — |
-| L2-005 | 256×192 pixel addressing | P | 1 | | Poke (x,y) pixels in the 3 × 16K banks; positions (0,0), (255,191), and 16K boundaries (y=64,128) land correctly. | — |
-| L2-006 | 320×256 mode `$70` bits 5–4 = 01 | V | 1 | | Column-major layout (x·256 + y), 5 × 16K banks; full border area covered. | — |
-| L2-007 | 640×256 4-bit mode `$70` = 10 | V | 1 | | Each byte = two 4-bit pixels (high nibble left); index + palette offset. | — |
-| L2-008 | Palette offset `$70` bits 3–0 | V | 2 | | Offset added to the pixel index before palette lookup in all three modes (mod 256). | — |
-| L2-009 | Scroll X `$16` (256 mode) | V | 1 | | Wrap at 256. | — |
-| L2-010 | Scroll Y `$17` (256 mode) | V | 1 | | Wrap at 192. | — |
-| L2-011 | Scroll X MSB `$71` (320/640 modes) | V | 1 | | 9-bit scroll, wrap at 320. | — |
-| L2-012 | Scroll Y in 320/640 modes | V | 2 | | Wrap at 256. | — |
-| L2-013 | Clip `$18` in 256 mode | V | 1 | | Clip window in pixel coordinates. | — |
-| L2-014 | Clip in 320/640 modes | V | 2 | | X values doubled per `layer2.vhd` (clip x in 320-res units ×2?). Read before asserting. | — |
-| L2-015 | Transparency by RGB `$14` | V | 1 | | L01 covers; add the 9-bit compare detail: two indices mapped to colours differing only in blue LSB are both transparent (8-bit compare). | ◐ visual `L01` |
-| L2-016 | Priority bit from palette | V | 1 | | Layer 2 palette entry with `$44` second byte bit 7 set draws above sprites/ULA in any `$15` order (P01 covers one band; add every order). | ◐ visual `P01` (one band) |
-| L2-017 | Second Layer 2 palette | P | 2 | | `$43` bit 2 selects the second Layer 2 palette. | — |
-| L2-018 | Layer 2 in border area (256 mode) | V | 2 | | 256×192 stays inside paper; border shows ULA border/fallback. | — |
-| L2-019 | Enable mid-frame | V | 3 | | Enable from a line interrupt; picture below that line. | — |
-| L2-020 | Scroll change mid-frame | V | 2 | | Split-screen scroll from line interrupt (raster effect). Guards bug B8 class. | — |
-| L2-021 | Layer 2 memory write mid-frame | V | 3 | | Write pixels below the beam mid-frame; visible in the same frame. Guards bug B8. | — |
-| L2-022 | Resolution change via `$70` mid-frame | V | 3 | | Documents per-line sampling of the resolution. | — |
-| L2-023 | Paging writes while displaying | S | 1 | | `$123B` bit 0 writes land in the displayed bank while ROM remains readable. | — |
-| L2-024 | `$12` values beyond RAM | S | 3 | | `$12` above available bank count: display/paging per VHDL (masked). | — |
+| L2-001 | Enable via `$123B` bit 1 | V | 1 | | Fill bank 8 (`$12` reset value, zxnext.vhd ~4921; the first draft said 9) with a pattern; enable shows 256×192 over ULA (default `$15` SLU). | ✅ `layer2/layer2` (whole picture against a model of `layer2.vhd`) |
+| L2-002 | Enable via `$69` bit 7 | S | 1 | | Same enable through NextReg; `$123B` read reflects it. | ✅ `layer2/layer2` |
+| L2-003 | `$12` active bank | V | 1 | | Change `$12` to another bank with a different pattern; picture follows. Readback. | ✅ `layer2/layer2` |
+| L2-004 | `$13` shadow bank | S | 2 | | `$13` affects only `$123B` bit 3 paging, not the display. | ✅ `layer2/layer2` (B48 fixed: both cores displayed `$13`) |
+| L2-005 | 256×192 pixel addressing | P | 1 | | Poke (x,y) pixels in the 3 × 16K banks; positions (0,0), (255,191), and 16K boundaries (y=64,128) land correctly. | ✅ `layer2/layer2` (every pixel, via the model) |
+| L2-006 | 320×256 mode `$70` bits 5–4 = 01 | V | 1 | | Column-major layout (x·256 + y), 5 × 16K banks; full border area covered. | ✅ `layer2/layer2` (with the reset clip, rows 192-255 are clipped) |
+| L2-007 | 640×256 4-bit mode `$70` = 10 | V | 1 | | Each byte = two 4-bit pixels (high nibble left); index + palette offset. | ✅ `layer2/layer2` |
+| L2-008 | Palette offset `$70` bits 3–0 | V | 2 | | Offset added to the pixel's high nibble (mod 16) before the palette lookup, in all three modes (layer2.vhd). *(Corrected 2026-09-18: the first draft said added to the index mod 256.)* | ✅ `layer2/layer2` |
+| L2-009 | Scroll X `$16` (256 mode) | V | 1 | | Wrap at 256. | ✅ `layer2/layer2` |
+| L2-010 | Scroll Y `$17` (256 mode) | V | 1 | | Wrap at 192. | ✅ `layer2/layer2` (192-255 fold like the ULA) |
+| L2-011 | Scroll X MSB `$71` (320/640 modes) | V | 1 | | 9-bit scroll, wrap at 320. | ✅ `layer2/layer2` |
+| L2-012 | Scroll Y in 320/640 modes | V | 2 | | Wrap at 256. | ✅ `layer2/layer2` |
+| L2-013 | Clip `$18` in 256 mode | V | 1 | | Clip window in pixel coordinates. | ✅ `layer2/layer2` |
+| L2-014 | Clip in 320/640 modes | V | 2 | | x1 × 2 .. x2 × 2 + 1 in wide pixels (layer2.vhd `clip_x1_q <= x1 & 0`, `clip_x2_q <= x2 & 1`); y as written. The reset window (y2 = `$BF`) clips the wide modes' bottom 64 rows. | ✅ `layer2/layer2` |
+| L2-015 | Transparency by RGB `$14` | V | 1 | | L01 covers; add the 9-bit compare detail: two indices mapped to colours differing only in blue LSB are both transparent (8-bit compare). | ✅ `layer2/layer2`, visual `L01` |
+| L2-016 | Priority bit from palette | V | 1 | | Layer 2 palette entry with `$44` second byte bit 7 set draws above sprites/ULA in any `$15` order (P01 covers one band; add every order). | ✅ `layer2/layer2` (all six orders), visual `P01` |
+| L2-017 | Second Layer 2 palette | P | 2 | | `$43` bit 2 selects the second Layer 2 palette. | ✅ `layer2/layer2` |
+| L2-018 | Layer 2 in border area (256 mode) | V | 2 | | 256×192 stays inside paper; border shows ULA border/fallback. | ✅ `layer2/layer2` |
+| L2-019 | Enable mid-frame | V | 3 | | Enable from a line interrupt; picture below that line. | ✅ `layer2/layer2` |
+| L2-020 | Scroll change mid-frame | V | 2 | | Split-screen scroll from line interrupt (raster effect). Guards bug B8 class. | ✅ `layer2/layer2` |
+| L2-021 | Layer 2 memory write mid-frame | V | 3 | | Write pixels below the beam mid-frame; visible in the same frame. Guards bug B8. | ✅ `layer2/layer2` |
+| L2-022 | Resolution change via `$70` mid-frame | V | 3 | | Documents per-line sampling of the resolution. | ✅ `layer2/layer2` |
+| L2-023 | Paging writes while displaying | S | 1 | | `$123B` bit 0 writes land in the displayed bank while ROM remains readable. | ✅ `layer2/layer2` |
+| L2-024 | `$12` values beyond RAM | S | 3 | | `$12` is 7 bits; a Layer 2 SRAM bank `$12` + 16 + segment ≥ 128 (address bit 21, past the 2 MB) gives no pixel (layer2.vhd `layer2_addr_eff(21)`). | ✅ `layer2/layer2` (B49 fixed: both cores read past the SRAM) |
 
 ### 4.14 `TM` – Tilemap
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| TM-001 | Enable `$6B` bit 7, 40×32 | V | 1 | | 40×32 tiles of 8×8 covering 320×256; default tile definitions at `$6F` base, map at `$6E`. | — |
-| TM-002 | 80×32 mode `$6B` bit 6 | V | 1 | | 80 columns, tiles 4 pixels wide at 720 res? Assert per `tilemap.vhd` (tile 8×8 at 640-res). | — |
-| TM-003 | Attribute byte present (2-byte map) | V | 1 | | Default: map entries are tile + attribute. | — |
-| TM-004 | No attribute `$6B` bit 5 | V | 1 | | 1-byte map; attribute comes from `$6C`. | — |
-| TM-005 | Attribute palette offset | V | 1 | | Attribute bits 7–4 add ×16 to the pixel index. | — |
-| TM-006 | X mirror | V | 1 | | Attribute bit 3. Asymmetric tile shape. | — |
-| TM-007 | Y mirror | V | 1 | | Attribute bit 2. | — |
-| TM-008 | Rotate | V | 1 | | Attribute bit 1; combinations with mirrors (8 orientations in one case). | — |
-| TM-009 | ULA-over-tilemap per tile | V | 1 | | Attribute bit 0 with `$6B` bit 0 = 0: tile below ULA (P02 covers basics). | ◐ visual `P02` |
-| TM-010 | 512-tile mode `$6B` bit 1 | V | 2 | | Attribute bit 0 becomes tile index bit 8; ULA-over comes from `$6B` bit 0 globally. | — |
-| TM-011 | Text mode `$6B` bit 3 | V | 2 | | 1-bit tiles (8 bytes per tile); attribute bits 7–1 are palette offset; pixel = 0/1 + offset. | — |
-| TM-012 | Tilemap over ULA `$6B` bit 0 | V | 1 | | Bit 0 forces tilemap above ULA for all tiles. | — |
-| TM-013 | Transparency index `$4C` | V | 1 | | Nibble value equal to `$4C` (4-bit compare, before offset) is transparent. | — |
-| TM-014 | Transparency in text mode | V | 2 | | Uses `$14` RGB compare, not `$4C` (per `tilemap.vhd`; verify). | — |
-| TM-015 | Scroll X `$2F/$30` | V | 1 | | 10-bit scroll, wrap at 320 (40-col) / 640 (80-col). | — |
-| TM-016 | Scroll Y `$31` | V | 1 | | Wrap at 256. | — |
-| TM-017 | Clip `$1B` | V | 1 | | Clip window; X coordinates doubled per `tilemap.vhd`. | — |
+| TM-001 | Enable `$6B` bit 7, 40×32 | V | 1 | | 40×32 tiles of 8×8 covering 320×256; default tile definitions at `$6F` base, map at `$6E`. | ✅ `tilemap/tilemap` (whole picture against a model of `tilemap.vhd`) |
+| TM-002 | 80×32 mode `$6B` bit 6 | V | 1 | | 80 columns of 8×8 tiles at 640 across: one tile pixel per buffer pixel (tilemap.vhd `hcount_effsub` in 80-column mode). | ✅ `tilemap/tilemap` (B50 fixed: TS last column) |
+| TM-003 | Attribute byte present (2-byte map) | V | 1 | | Default: map entries are tile + attribute. | ✅ `tilemap/tilemap` |
+| TM-004 | No attribute `$6B` bit 5 | V | 1 | | 1-byte map; attribute comes from `$6C`. | ✅ `tilemap/tilemap` |
+| TM-005 | Attribute palette offset | V | 1 | | Attribute bits 7–4 are the index's high nibble (index = attr(7:4) & pixel nibble). | ✅ `tilemap/tilemap` |
+| TM-006 | X mirror | V | 1 | | Attribute bit 3. Asymmetric tile shape. | ✅ `tilemap/tilemap` (random attributes + one tile in all 8 orientations) |
+| TM-007 | Y mirror | V | 1 | | Attribute bit 2. | ✅ `tilemap/tilemap` |
+| TM-008 | Rotate | V | 1 | | Attribute bit 1; combinations with mirrors (8 orientations in one case). | ✅ `tilemap/tilemap` |
+| TM-009 | ULA-over-tilemap per tile | V | 1 | | Attribute bit 0 with `$6B` bit 0 = 0: tile below ULA (P02 covers basics). | ✅ `tilemap/tilemap`, visual `P02` |
+| TM-010 | 512-tile mode `$6B` bit 1 | V | 2 | | Attribute bit 0 (or `$6C` bit 0 without attributes) becomes tile index bit 8, and every tile is below the ULA unless `$6B` bit 0 (tilemap.vhd `(attr(0) or mode_512) and not on_top`). | ✅ `tilemap/tilemap` (B52 fixed: both cores never put 512-mode tiles below the ULA) |
+| TM-011 | Text mode `$6B` bit 3 | V | 2 | | 1-bit tiles (8 bytes per tile); attribute bits 7–1 are palette offset; pixel = 0/1 + offset. | ✅ `tilemap/tilemap` (with fine scroll in both widths) |
+| TM-012 | Tilemap over ULA `$6B` bit 0 | V | 1 | | Bit 0 forces tilemap above ULA for all tiles. | ✅ `tilemap/tilemap` |
+| TM-013 | Transparency index `$4C` | V | 1 | | Nibble value equal to `$4C` (4-bit compare, before offset) is transparent. | ✅ `tilemap/tilemap` (and `$14` does not apply to standard tiles) |
+| TM-014 | Transparency in text mode | V | 2 | | Uses the `$14` RGB compare, not `$4C` (zxnext.vhd ~7055; tilemap.vhd does not compare text pixels with `$4C`). | ✅ `tilemap/tilemap` |
+| TM-015 | Scroll X `$2F/$30` | V | 1 | | 10-bit scroll in the column mode's pixels (320 / 640 across), wrap at 320 / 640. For scroll + x ≥ 1280 in 40 columns tilemap.vhd subtracts only 1280 - not tested. | ✅ `tilemap/tilemap` (B50 fixed: TS fine scroll; B51: WASM 80-column units) |
+| TM-016 | Scroll Y `$31` | V | 1 | | Wrap at 256. | ✅ `tilemap/tilemap` |
+| TM-017 | Clip `$1B` | V | 1 | | Clip window x1 × 2 … x2 × 2 + 1, y1 … y2 in 320 × 256 coordinates, in both column modes; resets to the whole area (x2 = `$9F`). | ✅ `tilemap/tilemap` |
 | TM-018 | Base address `$6E` | V | 1 | | Map relocated to other address `$4000–$FFFF` (bits 6–0 × 256 + `$C000`? read VHDL); bit 7 selects bank 7 vs bank 5 mapping. Guards bug B10 area. | ✅ `nextreg/tilemap-base-address` |
 | TM-019 | Tile definitions `$6F` | V | 1 | | Definitions relocated; bit 7 same as `$6E`. | ✅ `nextreg/tilemap-base-address` |
-| TM-020 | Tilemap palette select `$6B` bit 4 / `$43` | P | 2 | | First vs second tilemap palette. | — |
-| TM-021 | Default attribute `$6C` readback | S | 2 | | Readback and use when bit 5 set. | — |
-| TM-022 | Tilemap in border area | V | 2 | | 320×256 extends into border; ULA border visible where tilemap transparent. | — |
-| TM-023 | Scroll change mid-frame | V | 2 | | Line-interrupt split scroll. | — |
-| TM-024 | Tile memory write mid-frame | V | 3 | | Visible in same frame below the beam. Guards bug B8. | — |
-| TM-025 | Enable mid-frame | V | 3 | | Enable from a line interrupt. | — |
+| TM-020 | Tilemap palette select `$6B` bit 4 / `$43` | P | 2 | | First vs second tilemap palette. | ✅ `tilemap/tilemap` (`$6B` bit 4 selects; `$43` picks the palette written) |
+| TM-021 | Default attribute `$6C` readback | S | 2 | | Readback and use when bit 5 set. | ✅ `tilemap/tilemap` |
+| TM-022 | Tilemap in border area | V | 2 | | 320×256 extends into border; ULA border visible where tilemap transparent. | ✅ `tilemap/tilemap` |
+| TM-023 | Scroll change mid-frame | V | 2 | | Line-interrupt split scroll. | ✅ `tilemap/tilemap` |
+| TM-024 | Tile memory write mid-frame | V | 3 | | Visible in same frame below the beam. Guards bug B8. | ✅ `tilemap/tilemap` |
+| TM-025 | Enable mid-frame | V | 3 | | Enable from a line interrupt. | ✅ `tilemap/tilemap` |
 
 ### 4.15 `SPR` – Sprites
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| SPR-001 | Pattern upload via `$5B` | P | 1 | | `$303B` selects pattern n, 256 bytes written through `$5B`; a sprite showing pattern n displays it pixel-exact. | ◐ `sprites/attribute-mirror` |
-| SPR-002 | Pattern index autoincrement | P | 1 | | Two consecutive patterns written without re-selecting; both correct. | — |
-| SPR-003 | 4-byte attributes via `$57` | P | 1 | | X, Y, palette offset/mirror/rotate/X8, visible+pattern; sprite at expected position (0,0 = 32 pixels left/up of paper origin). | — |
-| SPR-004 | 5-byte attributes | P | 1 | | Byte 4 bit 7 of attr 3 enables 5th byte: Y8, scale, 4-bit, relative flags. | — |
-| SPR-005 | Attribute index autoincrement | S | 1 | | After 4 or 5 bytes the sprite index advances; next sprite written without `$303B`. | — |
+| SPR-001 | Pattern upload via `$5B` | P | 1 | | `$303B` selects pattern n, 256 bytes written through `$5B`; a sprite showing pattern n displays it pixel-exact. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-002 | Pattern index autoincrement | P | 1 | | Two consecutive patterns written without re-selecting; both correct. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) (all 16K through one `$303B` select) |
+| SPR-003 | 4-byte attributes via `$57` | P | 1 | | X, Y, palette offset/mirror/rotate/X8, visible+pattern; sprite at expected position (0,0 = 32 pixels left/up of paper origin). | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-004 | 5-byte attributes | P | 1 | | Attr 3 bit 6 enables the 5th byte: Y8, scale, 4-bit, relative flags. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-005 | Attribute index autoincrement | S | 1 | | After 4 or 5 bytes the sprite index advances; next sprite written without `$303B`. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
 | SPR-006 | Attribute writes via `$35`–`$39` | P | 1 | | `$34` selects sprite; `$35`–`$39` write attributes 0–4 without advancing; `$75`–`$79` write and advance. | ✅ `sprites/attribute-mirror` |
-| SPR-007 | `$34` in anchor mode | S | 2 | | `$34` bit 7 (pattern-index link) behaviour per VHDL. | — |
-| SPR-008 | X9/Y9 positions | P | 1 | | Sprites at X=0, 319, 320+ (bit 0 attr 2), Y=0, 255, 256+ (5th byte bit 0). | — |
-| SPR-009 | Visibility bit | P | 1 | | Attr 3 bit 7 = 0 hides the sprite. | ◐ `sprites/attribute-mirror` |
-| SPR-010 | Sprites enable `$15` bit 0 | P | 1 | | Disabled: no sprite visible, collision flags not set. | ◐ `sprites/sprite-collision` |
-| SPR-011 | Sprites over border `$15` bit 1 | V | 1 | | Sprite at X=8 visible over border only when bit 1 set. | — |
-| SPR-012 | Border clip `$15` bit 5 | V | 2 | | With over-border on, bit 5 clips to the `$19` window extended over the border per VHDL. | — |
-| SPR-013 | Clip window `$19` | V | 1 | | Window coordinates (sprite coordinate space, X doubled?) – read `sprites.vhd`. | — |
-| SPR-014 | Palette offset | V | 1 | | Attr 2 bits 7–4 add ×16 to the pattern index. | — |
-| SPR-015 | Mirror X / mirror Y / rotate | V | 1 | | All 8 orientations of an asymmetric pattern in one case. | — |
-| SPR-016 | Scale X/Y ×2 ×4 ×8 | V | 1 | | Attr 4 bits 4–1; 16×16 becomes 32/64/128 wide/high; clipping at screen edge. | — |
-| SPR-017 | Rotate with scale | V | 2 | | Scale applies after rotation (X scale stays horizontal). | — |
-| SPR-018 | Transparency index `$4B` (8-bit) | V | 1 | | Pixel value equal to `$4B` is transparent (index compare, not RGB). | — |
-| SPR-019 | 4-bit patterns | V | 1 | | Attr 4 bit 5 = 1: pattern data nibbles, N6 bit selects 128-byte pattern offset; transparency compares low nibble of `$4B`. | — |
-| SPR-020 | Anchor + composite relative sprites | V | 1 | | Anchor followed by relative sprites (attr 4 bits 7–6 = 01): relative X/Y offsets, palette offset relative flag, visibility inheritance. | — |
-| SPR-021 | Unified relative sprites | V | 1 | | Anchor with type bit for unified: relatives inherit mirror/rotate/scale transforms around the anchor. | — |
-| SPR-022 | Relative pattern index | V | 2 | | Relative sprite with pattern-relative flag adds anchor pattern number. | — |
-| SPR-023 | Sprite priority order | V | 1 | | Overlapping sprites: higher-numbered drawn on top by default. | — |
-| SPR-024 | Zero-on-top `$15` bit 6 | V | 1 | | Bit 6 reverses: sprite 0 on top. | — |
-| SPR-025 | Collision flag | S | 1 | | Exists (`sprite-collision.test.ts`). Extend: transparent pixels do not collide, clipped pixels do not. | ◐ `sprites/sprite-collision` (overlap; transparent/clipped pixels not yet) |
-| SPR-026 | Max sprites per line flag | S | 1 | | >100 sprites on one line set `$303B` bit 1; further sprites not drawn (per VHDL limit). | — |
+| SPR-007 | `$34` in anchor mode | S | 2 | | `$34` bit 7 (pattern-index link) behaviour per VHDL. | ✅ `sprites/sprites` (with the tie; `$34` bit 7 = pattern half, B57 fixed in TS) |
+| SPR-008 | X9/Y9 positions | P | 1 | | Sprites at X=0, 319, 320+ (bit 0 attr 2), Y=0, 255, 256+ (5th byte bit 0). | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) (incl. 9-bit X/Y wrap-around) |
+| SPR-009 | Visibility bit | P | 1 | | Attr 3 bit 7 = 0 hides the sprite. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-010 | Sprites enable `$15` bit 0 | P | 1 | | Disabled: no sprite visible - but the engine still runs, so collisions still set `$303B` bit 0 (zxnext.vhd ~6880 gates only the pixel). *(Corrected 2026-09-18.)* | ✅ `sprites/sprites` (B54 fixed: the engine still runs) |
+| SPR-011 | Sprites over border `$15` bit 1 | V | 1 | | Sprite at X=8 visible over border only when bit 1 set. | ✅ `sprites/sprites` |
+| SPR-012 | Border clip `$15` bit 5 | V | 2 | | With over-border on, bit 5 clips to the `$19` window extended over the border per VHDL. | ✅ `sprites/sprites` |
+| SPR-013 | Clip window `$19` | V | 1 | | Without over-border: the `$19` window + 32 (x and y) and y < 224 - the reset window is the paper; with over-border + `$15` bit 5: x1 × 2 … x2 × 2 + 1, y1 … y2; over-border alone ignores the window. | ✅ `sprites/sprites` (B55 fixed: TS `$19` refresh, both cores y < 224) |
+| SPR-014 | Palette offset | V | 1 | | Attr 2 bits 7–4 add ×16 to the pattern index. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-015 | Mirror X / mirror Y / rotate | V | 1 | | All 8 orientations of an asymmetric pattern in one case. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-016 | Scale X/Y ×2 ×4 ×8 | V | 1 | | Attr 4 bits 4–1; 16×16 becomes 32/64/128 wide/high; clipping at screen edge. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-017 | Rotate with scale | V | 2 | | Scale applies after rotation (X scale stays horizontal). | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-018 | Transparency index `$4B` (8-bit) | V | 1 | | Pixel value equal to `$4B` is transparent (index compare, not RGB). | ✅ `sprites/sprites` (and a sprite colour equal to `$14` stays opaque) |
+| SPR-019 | 4-bit patterns | V | 1 | | Attr 4 bit 5 = 1: pattern data nibbles, N6 bit selects 128-byte pattern offset; transparency compares low nibble of `$4B`. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-020 | Anchor + composite relative sprites | V | 1 | | Anchor followed by relative sprites (attr 4 bits 7–6 = 01): relative X/Y offsets, palette offset relative flag, visibility inheritance. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-021 | Unified relative sprites | V | 1 | | Anchor with type bit for unified: relatives inherit mirror/rotate/scale transforms around the anchor. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-022 | Relative pattern index | V | 2 | | Relative sprite with pattern-relative flag adds anchor pattern number. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-023 | Sprite priority order | V | 1 | | Overlapping sprites: higher-numbered drawn on top by default. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-024 | Zero-on-top `$15` bit 6 | V | 1 | | Bit 6 reverses: sprite 0 on top. | ✅ `sprites/sprites` |
+| SPR-025 | Collision flag | S | 1 | | Exists (`sprite-collision.test.ts`). Extend: transparent pixels do not collide; clipped pixels *do* (the line buffer is written for the whole 320 pixels, the window applies on output). *(Corrected 2026-09-18: the first draft said clipped pixels do not.)* | ✅ `sprites/sprites` (B54: also with `$15` bit 0 clear) |
+| SPR-026 | Max sprites per line flag | S | 1 | | A line whose sprite work does not fit sets `$303B` bit 1 and the rest of its sprites are not drawn: one 28 MHz clock per sprite qualified plus one per pixel, the whole line available from `whc` = 511, cut by `spr_cur_notime` (a drawable sprite qualified at `whc` 288–319 under the previous sprite's wrap mask) or by the next line reset. | ✅ `sprites/sprites` (B53 TS budget, B56 WASM flag fixed) |
 | SPR-027 | Status read clears | S | 1 | | Both bits clear after reading `$303B`. | ✅ `sprites/sprite-collision` |
-| SPR-028 | Sprite palette select `$43` bit 3 | P | 2 | | First/second sprite palette. | — |
-| SPR-029 | Sprite tie `$09` bit 4 | S | 3 | | With tie set, `$34` and `$303B` pattern/attribute index linkage per VHDL. | — |
-| SPR-030 | 128 sprites | V | 2 | | All 128 sprites visible in a grid with correct patterns. | — |
-| SPR-031 | 64 patterns (8-bit) / 128 (4-bit) | V | 2 | | Full pattern memory. | — |
-| SPR-032 | Attribute change mid-frame | V | 2 | | Move sprite X from a line interrupt: sprite split at that line. | — |
-| SPR-033 | Sprite over layers per `$15` order | V | 1 | | See CMP-001; sprite visible above/below ULA and Layer 2 per order. | — |
-| SPR-034 | Negative/wrap coordinates | V | 2 | | Anchor at X=500 with relative −200 offset; wrap behaviour of 9-bit arithmetic per VHDL. | — |
-| SPR-035 | Relative sprite without anchor | V | 3 | | Relative sprite as sprite 0: behaviour per VHDL (invisible). | — |
+| SPR-028 | Sprite palette select `$43` bit 3 | P | 2 | | First/second sprite palette. | ✅ `sprites/sprites` |
+| SPR-029 | Sprite tie `$09` bit 4 | S | 3 | | With tie set, `$34` and `$303B` pattern/attribute index linkage per VHDL. | ✅ `sprites/sprites` (B57 fixed: TS `$303B` did not update `$34`) |
+| SPR-030 | 128 sprites | V | 2 | | All 128 sprites visible in a grid with correct patterns. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-031 | 64 patterns (8-bit) / 128 (4-bit) | V | 2 | | Full pattern memory. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-032 | Attribute change mid-frame | V | 2 | | Move sprite X from a line interrupt: sprite split at that line. | ✅ `sprites/sprites` |
+| SPR-033 | Sprite over layers per `$15` order | V | 1 | | See CMP-001; sprite visible above/below ULA and Layer 2 per order. | ✅ `layer2/layer2` (L2-016: all six orders with sprite, Layer 2 and ULA) |
+| SPR-034 | Negative/wrap coordinates | V | 2 | | Anchor at X=500 with relative −200 offset; wrap behaviour of 9-bit arithmetic per VHDL. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
+| SPR-035 | Relative sprite without anchor | V | 3 | | Relative sprite as sprite 0: behaviour per VHDL (invisible). | ✅ `sprites/sprites` |
 
 ### 4.16 `PAL` – Palettes and transparency
 
