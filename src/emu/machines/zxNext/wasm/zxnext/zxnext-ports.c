@@ -111,7 +111,8 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     /* ~2769: the Timex register with $08 bit 2 and the port enabled; else the ULA floating bus in 48K
        and 128K timing (~4493), $FF otherwise */
     if (zxnextPortsGroupEnabled(0, 0) && (zxnextNextRegs[0x08u] & 0x04u) != 0u) {
-      lastPortValue = portTimexValue;
+      /* bit 6 is the ULA interrupt disable, also written through $22 bit 2 and $C4 bit 0 (~3616-3619) */
+      lastPortValue = (portTimexValue & 0xbfu) | (ulaInterruptDisabled ? 0x40u : 0x00u);
     } else {
       uint32_t t = zxnextNextRegGetMachineTiming();
       lastPortValue = (t == 1u || t == 2u) ? zxnextUlaFloatingBus(currentFrameTact) : 0xffu;
@@ -204,7 +205,13 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   } else if ((normalized & 0x00ffu) == 0x00ebu) {
     if (zxnextPortsGroupEnabled(1, 3)) zxnextSdWriteMmcData(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00ffu) {
-    if (zxnextPortsGroupEnabled(0, 0)) portTimexValue = byteValue;
+    if (zxnextPortsGroupEnabled(0, 0)) {
+      portTimexValue = byteValue;
+      /* zxula.vhd ~193-210: the screen mode shows from the next 8-pixel cell */
+      zxnextUlaScheduleLatch(ZXNEXT_ULA_LATCH_TIMEX, byteValue & 0x3fu, zxnextRasterUlaScrollTact(currentFrameTact));
+      /* ~3632: bit 6 disables the ULA frame interrupt */
+      ulaInterruptDisabled = (byteValue & 0x40u) != 0u;
+    }
   } else if ((normalized & 0x0001u) == 0) {
     zxnextUlaWritePortFe(byteValue);
     zxnextBeeperSetOutput((byteValue & 0x10u) != 0u, (byteValue & 0x08u) != 0u);

@@ -76,15 +76,17 @@ static uint8_t ulaScrollX;
 static uint8_t ulaScrollY;
 
 /*
- * The border colour and ULA scroll the picture shows. The ULA takes a port $FE / NextReg $26 / $27
- * write only at its next 8-pixel latch point (zxula.vhd attr_reg, px/py), so each write is kept as a
+ * The border colour, ULA scroll and Timex screen mode (port $FF bits 5-0) the picture shows. The ULA
+ * takes a port $FE / $FF or NextReg $26 / $27 / $69 write only at its next 8-pixel latch point
+ * (zxula.vhd attr_reg, px/py/screen_mode), so each write is kept as a
  * pending latch and applied by the raster when drawing reaches that point (zxnextRasterRenderTo).
  * The registers above keep the written values for readback.
  */
 #define ZXNEXT_ULA_LATCH_BORDER 0u
 #define ZXNEXT_ULA_LATCH_SCROLL_X 1u
 #define ZXNEXT_ULA_LATCH_SCROLL_Y 2u
-#define ZXNEXT_ULA_LATCH_COUNT 3u
+#define ZXNEXT_ULA_LATCH_TIMEX 3u
+#define ZXNEXT_ULA_LATCH_COUNT 4u
 static uint8_t ulaShown[ZXNEXT_ULA_LATCH_COUNT];
 static uint8_t ulaLatchPending[ZXNEXT_ULA_LATCH_COUNT];
 static uint8_t ulaLatchValue[ZXNEXT_ULA_LATCH_COUNT];
@@ -92,11 +94,13 @@ static uint32_t ulaLatchTact[ZXNEXT_ULA_LATCH_COUNT];
 #define ulaBorderShown ulaShown[ZXNEXT_ULA_LATCH_BORDER]
 #define ulaScrollXShown ulaShown[ZXNEXT_ULA_LATCH_SCROLL_X]
 #define ulaScrollYShown ulaShown[ZXNEXT_ULA_LATCH_SCROLL_Y]
+#define ulaTimexShown ulaShown[ZXNEXT_ULA_LATCH_TIMEX]
 
 /* Defined with the raster at the end of this file. */
 static uint32_t zxnextRasterBorderTact(uint32_t frameTact);
 static uint32_t zxnextRasterUlaScrollTact(uint32_t frameTact);
 static uint32_t zxnextRasterWriteTact(void);
+static uint32_t zxnextUlaScreenMode(void);
 
 static void zxnextUlaScheduleLatch(uint32_t which, uint32_t value, uint32_t frameTact) {
   ulaLatchPending[which] = 1u;
@@ -139,6 +143,7 @@ static void zxnextUlaReset(void) {
   ulaBorderShown = 7u;
   ulaScrollXShown = 0u;
   ulaScrollYShown = 0u;
+  ulaTimexShown = 0u;
   ulaClipWindow[0] = 0u;
   ulaClipWindow[1] = 255u;
   ulaClipWindow[2] = 0u;
@@ -256,7 +261,7 @@ static inline uint32_t zxnextUlaAttrPaletteIndex(uint32_t attr, uint32_t ink) {
   if (ulaPlusEnabled) {
     uint32_t group = (attr >> 6u) << 4u;
     return ink
-      ? (0xc0u | group | ((portTimexValue & 0x04u) ? 0x08u : 0u) | (attr & 0x07u))
+      ? (0xc0u | group | ((zxnextUlaScreenMode() & 0x04u) ? 0x08u : 0u) | (attr & 0x07u))
       : (0xc8u | group | ((attr >> 3u) & 0x07u));
   }
   uint32_t brightOffset = (attr & 0x40u) ? 0x08u : 0x00u;
@@ -270,12 +275,29 @@ static inline uint32_t zxnextUlaAttrPaletteIndex(uint32_t attr, uint32_t ink) {
   return ink ? inkIndex : paperIndex;
 }
 
-static inline uint32_t zxnextUlaBitmapAddress(uint32_t y, uint32_t xByte) {
-  return 0x4000u | ((y & 0xc0u) << 5u) | ((y & 0x07u) << 8u) | ((y & 0x38u) << 2u) | xByte;
+/* zxula.vhd ~191: the screen mode is port $FF bits 2-0, forced to 0 while the 128K shadow screen
+ * (bank 7, which has no second display file) is displayed. */
+static uint32_t zxnextUlaScreenMode(void) {
+  return zxnextMemoryShadowScreen() ? 0u : (ulaTimexShown & 0x07u);
 }
 
-static inline uint32_t zxnextUlaAttributeAddress(uint32_t y, uint32_t xByte) {
-  return 0x5800u | ((y >> 3u) << 5u) | xByte;
+/* zxula.vhd ~431 border_clr_tmx: the HiRes attribute "01" & not n & n, n = port $FF bits 5-3. It is
+ * attr_reg in the paper and the border, decoded like any attribute. */
+static inline uint32_t zxnextUlaHiResAttr(void) {
+  uint32_t n = (ulaTimexShown >> 3u) & 0x07u;
+  return 0x40u | ((~n & 0x07u) << 3u) | n;
+}
+
+/* zxula.vhd ~232: the pixel byte; screen mode bit 0 selects the second display file at $6000. */
+static inline uint32_t zxnextUlaBitmapAddress(uint32_t mode, uint32_t y, uint32_t xByte) {
+  return 0x4000u | ((mode & 0x01u) << 13u) | ((y & 0xc0u) << 5u) | ((y & 0x07u) << 8u) | ((y & 0x38u) << 2u) | xByte;
+}
+
+/* zxula.vhd ~236-250: the attribute byte - with mode bit 1 (HiColor) $6000 + the pixel offset,
+ * otherwise $5800, or $7800 with mode bit 0. HiRes fetches its second pixel byte here too. */
+static inline uint32_t zxnextUlaAttributeAddress(uint32_t mode, uint32_t y, uint32_t xByte) {
+  if ((mode & 0x02u) != 0u) return 0x2000u | zxnextUlaBitmapAddress(0u, y, xByte);
+  return 0x5800u | ((mode & 0x01u) << 13u) | ((y >> 3u) << 5u) | xByte;
 }
 
 static inline uint32_t zxnextUlaIsClipped(uint32_t x, uint32_t y) {
@@ -289,17 +311,20 @@ static inline uint32_t zxnextUlaLoResWrappedY(uint32_t y) {
   return y & 0xffu;
 }
 
-/* One standard-mode ULA pixel: screen row sourceY, screen x sourceX (both already scrolled). */
-static uint32_t zxnextUlaStandardPixel(uint32_t sourceY, uint32_t sourceX) {
+/* One ULA pixel of screen modes 0-3: screen row sourceY, screen x sourceX (both already scrolled). */
+static uint32_t zxnextUlaStandardPixel(uint32_t mode, uint32_t sourceY, uint32_t sourceX) {
   uint32_t sourceXByte = sourceX >> 3u;
-  uint8_t pixels = (uint8_t)zxnextMemoryReadScreenOffset(zxnextUlaBitmapAddress(sourceY, sourceXByte));
-  uint8_t attr = (uint8_t)zxnextMemoryReadScreenOffset(zxnextUlaAttributeAddress(sourceY, sourceXByte));
+  uint8_t pixels = (uint8_t)zxnextMemoryReadScreenOffset(zxnextUlaBitmapAddress(mode, sourceY, sourceXByte));
+  uint8_t attr = (uint8_t)zxnextMemoryReadScreenOffset(zxnextUlaAttributeAddress(mode, sourceY, sourceXByte));
   uint32_t mask = 0x80u >> (sourceX & 0x07u);
   return zxnextUlaPx(zxnextUlaAttrPaletteIndex(attr, (pixels & mask) != 0u));
 }
 
+/* Screen modes 0-3 (standard, second display file, HiColor): one pipeline, the mode only picks the
+ * fetch addresses (zxula.vhd ~230-250). */
 static void zxnextUlaRenderStandardScreen(void) {
   uint32_t fallbackPixel = 0u /* clipped: transparent */;
+  uint32_t mode = zxnextUlaScreenMode();
   for (uint32_t y = 0; y < ZXNEXT_STANDARD_SCREEN_HEIGHT; y++) {
     if (zxnextRenderRowOff(ZXNEXT_STANDARD_SCREEN_Y + y)) continue;
     uint32_t outputOffset = (ZXNEXT_STANDARD_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_STANDARD_SCREEN_X;
@@ -311,20 +336,27 @@ static void zxnextUlaRenderStandardScreen(void) {
         zxnextLayerUla[pixelOffset + 1u] = fallbackPixel;
         continue;
       }
-      uint32_t pixel = zxnextUlaStandardPixel(sourceY, (x + ulaScrollXShown) & 0xffu);
+      uint32_t pixel = zxnextUlaStandardPixel(mode, sourceY, (x + ulaScrollXShown) & 0xffu);
       zxnextLayerUla[pixelOffset] = pixel;
       /* zxula.vhd ~397: the half-pixel scroll ($68 bit 2) loads the shift register one more 14 MHz
        * half pixel to the left, so the second half of paper x is the first half of screen x + 1 */
       zxnextLayerUla[pixelOffset + 1u] =
-        ulaHalfPixelScroll ? zxnextUlaStandardPixel(sourceY, (x + 1u + ulaScrollXShown) & 0xffu) : pixel;
+        ulaHalfPixelScroll ? zxnextUlaStandardPixel(mode, sourceY, (x + 1u + ulaScrollXShown) & 0xffu) : pixel;
     }
   }
 }
 
+/*
+ * Screen modes 4-7 (HiRes): each column's pixel byte then its attribute-address byte ($6000 + the pixel
+ * offset in mode 6), one buffer pixel per bit (zxula.vhd ~391-395). The scroll moves 2 * $26 half
+ * pixels, and the half-pixel scroll one more (~397).
+ */
 static void zxnextUlaRenderHiResScreen(void) {
   uint32_t fallbackPixel = 0u /* clipped: transparent */;
-  uint32_t inkPixel = zxnextUlaPx(8u + ((portTimexValue >> 3u) & 0x07u));
-  uint32_t paperPixel = zxnextUlaPx(24u + (7u - ((portTimexValue >> 3u) & 0x07u)));
+  uint32_t mode = zxnextUlaScreenMode();
+  uint32_t tmxAttr = zxnextUlaHiResAttr();
+  uint32_t inkPixel = zxnextUlaPx(zxnextUlaAttrPaletteIndex(tmxAttr, 1u));
+  uint32_t paperPixel = zxnextUlaPx(zxnextUlaAttrPaletteIndex(tmxAttr, 0u));
   for (uint32_t y = 0; y < ZXNEXT_STANDARD_SCREEN_HEIGHT; y++) {
     if (zxnextRenderRowOff(ZXNEXT_STANDARD_SCREEN_Y + y)) continue;
     uint32_t outputOffset = (ZXNEXT_STANDARD_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_STANDARD_SCREEN_X;
@@ -336,13 +368,12 @@ static void zxnextUlaRenderHiResScreen(void) {
         zxnextLayerUla[pixelOffset] = fallbackPixel;
         continue;
       }
-      uint32_t sourceX = (x + ((uint32_t)ulaScrollXShown << 1u)) & 0x1ffu;
+      uint32_t sourceX = (x + ((uint32_t)ulaScrollXShown << 1u) + (ulaHalfPixelScroll ? 1u : 0u)) & 0x1ffu;
       uint32_t sourceXByte = sourceX >> 4u;
       uint32_t pixelInWord = sourceX & 0x0fu;
-      uint32_t pixelAddr = zxnextUlaBitmapAddress(sourceY, sourceXByte);
-      if (pixelInWord >= 8u) {
-        pixelAddr |= 0x2000u;
-      }
+      uint32_t pixelAddr = pixelInWord < 8u
+        ? zxnextUlaBitmapAddress(mode, sourceY, sourceXByte)
+        : zxnextUlaAttributeAddress(mode, sourceY, sourceXByte);
       uint8_t pixels = (uint8_t)zxnextMemoryReadScreenOffset(pixelAddr);
       uint32_t mask = 0x80u >> (pixelInWord & 0x07u);
       zxnextLayerUla[pixelOffset] = (pixels & mask) ? inkPixel : paperPixel;
@@ -384,37 +415,6 @@ static void zxnextUlaRenderLoResScreen(void) {
         paletteIndex = ((paletteOffset & 0x0fu) << 4u) | nibble;
       }
       zxnextLayerUla[pixelOffset] = zxnextUlaPx(paletteIndex);
-    }
-  }
-}
-
-static void zxnextUlaRenderHiColorScreen(void) {
-  uint32_t fallbackPixel = 0u /* clipped: transparent */;
-  for (uint32_t y = 0; y < ZXNEXT_STANDARD_SCREEN_HEIGHT; y++) {
-    if (zxnextRenderRowOff(ZXNEXT_STANDARD_SCREEN_Y + y)) continue;
-    uint32_t outputOffset = (ZXNEXT_STANDARD_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_STANDARD_SCREEN_X;
-    uint32_t sourceY = (y + ulaScrollYShown) % ZXNEXT_STANDARD_SCREEN_HEIGHT;
-    for (uint32_t xByte = 0; xByte < 32u; xByte++) {
-      uint32_t logicalX = xByte * 8u;
-      uint32_t outputPixel = outputOffset + xByte * 8u * ZXNEXT_STANDARD_SCREEN_SCALE_X;
-      for (uint32_t bit = 0; bit < 8u; bit++) {
-        uint32_t x = logicalX + bit;
-        uint32_t pixelOffset = outputPixel + bit * ZXNEXT_STANDARD_SCREEN_SCALE_X;
-        if (zxnextUlaIsClipped(x, y)) {
-          zxnextLayerUla[pixelOffset] = fallbackPixel;
-          zxnextLayerUla[pixelOffset + 1u] = fallbackPixel;
-          continue;
-        }
-        uint32_t sourceX = (x + ulaScrollXShown) & 0xffu;
-        uint32_t sourceXByte = sourceX >> 3u;
-        uint32_t pixelAddr = zxnextUlaBitmapAddress(sourceY, sourceXByte);
-        uint8_t pixels = (uint8_t)zxnextMemoryReadScreenOffset(pixelAddr);
-        uint8_t attr = (uint8_t)zxnextMemoryReadScreenOffset(0x2000u | pixelAddr);
-        uint32_t mask = 0x80u >> (sourceX & 0x07u);
-        uint32_t pixel = zxnextUlaPx(zxnextUlaAttrPaletteIndex(attr, (pixels & mask) != 0u));
-        zxnextLayerUla[pixelOffset] = pixel;
-        zxnextLayerUla[pixelOffset + 1u] = pixel;
-      }
     }
   }
 }
@@ -1377,12 +1377,22 @@ static void zxnextUlaCompose(void) {
   }
 }
 
-/* Border colour n: ULANext $80+n (fallback with format $FF), ULA+ $C8+n, standard 16+n (zxula.vhd). */
+/*
+ * The border's palette index for border attribute attr (zxula.vhd ~491-553 with pixel_en = 0): ULANext
+ * $80 + attr(5:3) (the fallback for format $FF), ULA+ $C8 + group + attr(5:3), standard 16 + BRIGHT +
+ * attr(5:3). The attribute is border_clr = n & n (border colour n: $80+n, $C8+n, 16+n), or in HiRes the
+ * Timex attribute (~431).
+ */
+static inline uint32_t zxnextUlaBorderPaletteIndexOf(uint32_t attr) {
+  uint32_t paper = (attr >> 3u) & 0x07u;
+  if (zxnextPaletteGetUlaNextEnabled()) return zxnextNextRegs[0x42u] == 0xffu ? ZXNEXT_ULA_SELECT_FALLBACK : 0x80u + paper;
+  if (ulaPlusEnabled) return 0xc8u | ((attr >> 6u) << 4u) | paper;
+  return 16u + ((attr & 0x40u) ? 8u : 0u) + paper;
+}
+
 static inline uint32_t zxnextUlaBorderPaletteIndex(void) {
   uint32_t n = ulaBorderShown & 0x07u;
-  if (zxnextPaletteGetUlaNextEnabled()) return zxnextNextRegs[0x42u] == 0xffu ? ZXNEXT_ULA_SELECT_FALLBACK : 0x80u + n;
-  if (ulaPlusEnabled) return 0xc8u + n;
-  return 16u + n;
+  return zxnextUlaBorderPaletteIndexOf((n << 3u) | n);
 }
 
 static uint32_t zxnextUlaRenderInstantScreen(void) {
@@ -1394,16 +1404,14 @@ static uint32_t zxnextUlaRenderInstantScreen(void) {
 
   // --- ULA layer: the border first (border colour n is ULA entry 16+n; a ULA pixel, so $14 applies),
   // --- then the ULA/LoRes picture. Always rendered: $68 bit 7 is applied by the mixer.
-  uint32_t timexMode = portTimexValue & 0x07u;
+  uint32_t timexMode = zxnextUlaScreenMode();
   uint32_t borderPx = timexMode >= 0x04u
-    ? zxnextUlaPx(24u + (7u - ((portTimexValue >> 3u) & 0x07u)))
+    ? zxnextUlaPx(zxnextUlaBorderPaletteIndexOf(zxnextUlaHiResAttr()))
     : zxnextUlaPx(zxnextUlaBorderPaletteIndex());
   if (borderPx != 0u) borderPx |= ZXNEXT_PX_BORDER;
   for (uint32_t i = first; i < end; i++) zxnextLayerUla[i] = (uint16_t)borderPx;
   if (zxnextLoResGetEnabled()) {
     zxnextUlaRenderLoResScreen();
-  } else if (timexMode == 0x02u || timexMode == 0x03u) {
-    zxnextUlaRenderHiColorScreen();
   } else if (timexMode >= 0x04u) {
     zxnextUlaRenderHiResScreen();
   } else {
@@ -1479,6 +1487,7 @@ static void zxnextUlaSetNextReg(uint32_t reg, uint32_t value) {
     case 0x69u:
       /* ~3615: a $69 write sets port_ff_reg(5:0); bits 7-6 stay */
       portTimexValue = (uint8_t)((portTimexValue & 0xc0u) | (byteValue & 0x3fu));
+      zxnextUlaScheduleLatch(ZXNEXT_ULA_LATCH_TIMEX, byteValue & 0x3fu, zxnextRasterUlaScrollTact(zxnextRasterWriteTact()));
       break;
     default:
       break;

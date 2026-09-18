@@ -156,17 +156,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaShiftReg = 0;
 
     this.timexPortBits = 0;
+    this.timexPortBit7 = false;
     this.ulaStandardScreenAt0x4000 = true;
     this.ulaHiResMode = false;
     this.ulaHiResModeSampled = false;
     this.ulaHiResColor = 0;
     this.ulaHiColorMode = false;
-    this.ulaHiColorModeSampled = false;
+    this.ulaScreenModeSampled = 0;
     this.ulaHalfPixelScrollSampled = false;
 
     // --- Initialize LoRes state
     this.loResEnabled = false;
-    this.loResEnabledSampled = false;
     this.loResRadastanModeSampled = false;
     this.loResBlockByte = 0;
     this.loResScrollXSampled = 0;
@@ -823,27 +823,19 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // --- HC is already computed above
 
     // === ULA rendering
-    if (this.loResEnabledSampled) {
-      // LoRes mode (128×96, replaces ULA output)
-      const loresCell = activeRenderingFlagsLoRes[tact];
-      this.renderLoResPixel(vc, hc, loresCell);
+    // --- The ULA always runs, so its pipeline is current whenever LoRes is switched off
+    if (this.ulaHiResModeSampled) {
+      // --- Timex HiRes (screen mode bit 2: 512×192, 2 pixels per HC)
+      this.renderULAHiResPixel(vc, hc, activeRenderingFlagsULA[tact]);
     } else {
-      if (this.ulaHiResModeSampled || this.ulaHiColorModeSampled) {
-        // ULA Hi-Res and Hi-Color modes
-        if (this.ulaHiResModeSampled) {
-          // ULA Hi-Res mode (512×192, 2 pixels per HC)
-          const ulaCell = activeRenderingFlagsULA[tact];
-          this.renderULAHiResPixel(vc, hc, ulaCell);
-        } else {
-          // ULA Hi-Color mode (256×192)
-          const ulaCell = activeRenderingFlagsULA[tact];
-          this.renderULAHiColorPixel(vc, hc, ulaCell);
-        }
-      } else {
-        // ULA Standard mode (256×192)
-        const ulaCell = activeRenderingFlagsULA[tact];
-        this.renderULAStandardPixel(vc, hc, ulaCell);
-      }
+      // --- Standard, second display file, HiColor (screen modes 0-3: one pipeline, the mode only
+      // --- picks the fetch addresses - zxula.vhd ~230-250)
+      this.renderULAStandardPixel(vc, hc, activeRenderingFlagsULA[tact]);
+    }
+    // --- LoRes (128×96) runs beside it and replaces its pixel where valid; $15 bit 7 acts per pixel
+    // --- (zxnext.vhd ~6763, ~6879, ~6926)
+    if (this.loResEnabled) {
+      this.renderLoResPixel(vc, hc, activeRenderingFlagsLoRes[tact]);
     }
 
     // --- NextReg $68 bit 7 (ULA disabled) is applied in composeLayers: it removes the ULA as a layer but
@@ -1012,6 +1004,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
   // Timex port (0xff) ULA flags - The last 6 bit of the Timex port
   timexPortBits: number;
+  // Timex port (0xff) bit 7: stored and read back only (zxnext.vhd port_ff_reg; bit 6 is the
+  // interrupt device's ULA interrupt disable). Every reset clears the register.
+  timexPortBit7 = false;
 
   get timexPortValue(): number {
     return this.timexPortBits;
@@ -1020,8 +1015,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   set timexPortValue(value: number) {
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
-    this.ulaHiResInkRgb333 = this.paletteDevice.getUlaRgb333(8 + this.ulaHiResColor);
-    this.ulaHiResPaperRgb333 = this.paletteDevice.getUlaRgb333(24 + (7 - this.ulaHiResColor));
     const mode = value & 0x07;
     switch (mode) {
       case 0:
@@ -1454,9 +1447,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private ulaShiftAttr2: number;
   private ulaShiftAttrCount: number;
   private ulaHiResModeSampled: boolean;
-  private ulaHiColorModeSampled: boolean;
-  private ulaHiResInkRgb333: number;
-  private ulaHiResPaperRgb333: number;
+  // The Timex screen mode (port $FF bits 2-0) in effect, sampled with the scroll
+  private ulaScreenModeSampled: number;
   private ulaHalfPixelScrollSampled: boolean;
 
   // Active attribute lookup tables (references to module-level tables, switch based on flash state)
@@ -1508,7 +1500,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // --- Calculate pixel address using pre-computed Y-dependent base + X component
       const baseCol = (hc + 0x0c - this.confDisplayXStart) >> 3;
       const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
-      const pixelAddr = ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
+      // --- zxula.vhd ~232: screen mode bit 0 selects the second display file at $6000
+      const pixelAddr = ((this.ulaScreenModeSampled & 0x01) << 13) | ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
       // Read pixel byte from Bank 5 or Bank 7
       const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
       if (hc & 0x04) {
@@ -1527,7 +1520,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // --- Calculate attribute address using pre-computed Y-dependent base + X component
       const baseCol = (hc + 0x0a - this.confDisplayXStart) >> 3;
       const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
-      const attrAddr = ulaAttrLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
+      const attrAddr = this.ulaAttributeAddress(shiftCols);
 
       // --- Read attribute byte from Bank 5 or Bank 7
       const ulaAttrByte = this.machine.memoryDevice.readScreenMemory(attrAddr);
@@ -1545,15 +1538,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // === Border Area ===
     if ((cell & SCR_DISPLAY_AREA) === 0) {
-      if (this.ulaNextEnabled && this.ulaNextFormat === 0xff) {
-        this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 =
-          this.machine.composedScreenDevice.fallbackRgb333Cache;
-        this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
-      } else {
-        this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
-        // --- The border is a ULA pixel: it is transparent when it matches $14 (zxnext.vhd ula_rgb_2).
-        this.ulaPixel1Transparent = this.ulaPixel2Transparent = this.ulaPixel1Rgb333 >> 1 === this.globalTransparencyColor;
-      }
+      // --- ULANext format $FF: the border selects the fallback colour (zxula.vhd ula_select_bgnd), which
+      // --- replaces the palette colour *before* the $14 compare (zxnext.vhd ~6933, ~7046)
+      this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 =
+        this.ulaNextEnabled && this.ulaNextFormat === 0xff
+          ? this.machine.composedScreenDevice.fallbackRgb333Cache
+          : this.borderRgbCache;
+      // --- The border is a ULA pixel: it is transparent when it matches $14 (zxnext.vhd ula_rgb_2).
+      this.ulaPixel1Transparent = this.ulaPixel2Transparent = this.ulaPixel1Rgb333 >> 1 === this.globalTransparencyColor;
       return;
     }
 
@@ -1602,6 +1594,51 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
   }
 
+  /**
+   * The address of the attribute byte (zxula.vhd ~236-250): with screen mode bit 1 (HiColor) the byte at
+   * $6000 + the pixel offset (8x1 attributes), otherwise the 32x24 attributes at $5800, or at $7800 with
+   * mode bit 0. HiRes fetches its second pixel byte through the same address.
+   */
+  private ulaAttributeAddress(shiftCols: number): number {
+    const mode = this.ulaScreenModeSampled;
+    return (mode & 0x02) !== 0
+      ? 0x2000 | ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols
+      : ((mode & 0x01) << 13) | ulaAttrLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
+  }
+
+  /**
+   * The Timex HiRes attribute (zxula.vhd ~431 border_clr_tmx): "01" & not n & n, n = port $FF bits 5-3.
+   * It is attr_reg in the paper and in the border, and goes through the ULANext / ULA+ / standard decode.
+   */
+  private get ulaHiResAttr(): number {
+    const n = this.ulaHiResColor;
+    return 0x40 | ((~n & 0x07) << 3) | n;
+  }
+
+  /** A HiRes pixel: the Timex attribute decoded like any other; ULA+ forces index bit 3 (screen_mode(2)). */
+  private ulaHiResPixelRgb333(pixelBit: number): number {
+    if (!this.ulaNextEnabled && this.ulaPlusEnabled) {
+      const n = this.ulaHiResColor;
+      return this.paletteDevice.getUlaRgb333(0xd8 | (pixelBit ? n : 7 - n));
+    }
+    return this.ulaStandardPixelRgb333(pixelBit, this.ulaHiResAttr);
+  }
+
+  /**
+   * The HiRes border (zxula.vhd ~491-553 with attr_reg = the Timex attribute and pixel_en = 0): ULANext
+   * $80 + attr(5:3) (the fallback for format $FF), ULA+ $C0 + group 1 + 8 + attr(5:3), standard BRIGHT
+   * paper - all three 7 - n.
+   */
+  private ulaHiResBorderRgb333(): number {
+    const paper = 7 - this.ulaHiResColor;
+    if (this.ulaNextEnabled) {
+      return this.ulaNextFormat === 0xff
+        ? this.machine.composedScreenDevice.fallbackRgb333Cache
+        : this.paletteDevice.getUlaRgb333(0x80 + paper);
+    }
+    return this.paletteDevice.getUlaRgb333((this.ulaPlusEnabled ? 0xd8 : 24) + paper);
+  }
+
   /** The colour of a standard-mode ULA pixel (ink or paper of `attr`) in ULANext, ULA+ or standard mode. */
   private ulaStandardPixelRgb333(pixelBit: number, attr: number): number {
     if (this.ulaNextEnabled) {
@@ -1635,9 +1672,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * - 32-bit pre-shift value constructed with byte interleaving: [pbyte_hi][abyte_hi][pbyte_lo][abyte_lo]
    * - Color determined by ulaHiResColor register (0-7 for 8 ink/paper pairs from Timex port 0xFF)
    *
-   * **ULA+ Compatibility**: ULA+ does NOT work correctly in Hi-Res mode. The hardware forces
-   * palette index bit 3 to 1 (PAPER selection) when screen_mode[2]=1, making attribute-based
-   * palette selection incompatible with Hi-Res mode. This function does not implement ULA+ logic.
+   * **Colours**: the Timex attribute ("01" & not n & n) goes through the ULANext / ULA+ / standard decode
+   * (`ulaHiResPixelRgb333`, `ulaHiResBorderRgb333`); with ULA+, screen_mode(2) forces index bit 3.
    *
    * @param vc - Vertical counter position (ULA coordinate system)
    * @param hc - Horizontal counter position (ULA coordinate system)
@@ -1664,7 +1700,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           (this.ulaPixelByte2 << 16) |
           (this.ulaPixelByte3 << 8) |
           this.ulaPixelByte4) <<
-          ((this.ulaScrollXSampled & 0x07) * 2)) >>
+          ((this.ulaScrollXSampled & 0x07) * 2 + (this.ulaHalfPixelScrollSampled ? 1 : 0))) >>
           16) &
         0xffff;
     }
@@ -1674,7 +1710,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Calculate pixel address (same Y-dependent address as Standard mode)
       const baseCol = (hc + 0x0c - this.confDisplayXStart) >> 3;
       const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
-      const pixelAddr = ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
+      const pixelAddr = ((this.ulaScreenModeSampled & 0x01) << 13) | ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
 
       // Read from Bank 0 (0x4000-0x57FF range)
       const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
@@ -1698,7 +1734,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Calculate pixel address with 0x2000 offset for Bank 1
       const baseCol = (hc + 0x0a - this.confDisplayXStart) >> 3;
       const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
-      const pixelAddr = 0x2000 | ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
+      // --- mode 6: $6000 + pixel offset; modes 4, 5, 7 fetch whatever the attribute address gives
+      const pixelAddr = this.ulaAttributeAddress(shiftCols);
 
       // Read from Bank 1 (0x6000-0x77FF range via 0x2000 offset)
       const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
@@ -1718,17 +1755,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // === Border Area ===
     if ((cell & SCR_BORDER_AREA) !== 0) {
-      let borderRgb333: number;
-
-      // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
-      if (this.ulaNextEnabled && this.ulaNextFormat === 0xff) {
-        // ULANext with 0xFF mask: Border uses fallback color
-        borderRgb333 = this.machine.composedScreenDevice.fallbackRgb333Cache;
-      } else {
-        // Standard border: use paper color from HiRes mode
-        borderRgb333 = this.ulaHiResPaperRgb333;
-      }
-
+      const borderRgb333 = this.ulaHiResBorderRgb333();
       this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = borderRgb333;
       // --- The border is a ULA pixel: it is transparent when it matches $14 (zxnext.vhd ula_rgb_2).
       this.ulaPixel1Transparent = this.ulaPixel2Transparent = this.ulaPixel1Rgb333 >> 1 === this.globalTransparencyColor;
@@ -1743,39 +1770,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const pixelBit1 = (this.ulaShiftReg >> (2 * (7 - pixelWithinByte) + 1)) & 0x01;
     const pixelBit2 = (this.ulaShiftReg >> (2 * (7 - pixelWithinByte))) & 0x01;
 
-    let pixel1Rgb333: number;
-    let pixel2Rgb333: number;
-
-    // Note: ULANext in HiRes mode is not practical but supported by hardware
-    // HiRes mode doesn't use standard attributes, so ULANext produces unpredictable results
-    if (this.ulaNextEnabled) {
-      // ULANext mode: Use pre-calculated lookup tables (simplified for HiRes)
-      // Hardware-accurate but produces unpredictable colors in HiRes mode
-      const attr = this.ulaShiftAttr;
-      const formatMask = this.ulaNextFormat;
-
-      // For each pixel bit, use lookup table (INK for 1, PAPER for 0)
-      const index1 = pixelBit1
-        ? getULANextInkIndex(formatMask, attr)
-        : getULANextPaperIndex(formatMask, attr);
-      const index2 = pixelBit2
-        ? getULANextInkIndex(formatMask, attr)
-        : getULANextPaperIndex(formatMask, attr);
-
-      // Handle fallback color if needed (index 255)
-      pixel1Rgb333 =
-        index1 === 255
-          ? this.machine.composedScreenDevice.fallbackRgb333Cache
-          : this.paletteDevice.getUlaRgb333(index1);
-      pixel2Rgb333 =
-        index2 === 255
-          ? this.machine.composedScreenDevice.fallbackRgb333Cache
-          : this.paletteDevice.getUlaRgb333(index2);
-    } else {
-      // Standard HiRes mode: use predefined ink/paper colors
-      pixel1Rgb333 = pixelBit1 ? this.ulaHiResInkRgb333 : this.ulaHiResPaperRgb333;
-      pixel2Rgb333 = pixelBit2 ? this.ulaHiResInkRgb333 : this.ulaHiResPaperRgb333;
-    }
+    const pixel1Rgb333 = this.ulaHiResPixelRgb333(pixelBit1);
+    const pixel2Rgb333 = this.ulaHiResPixelRgb333(pixelBit2);
 
     // --- Clipping Test ---
     const clipped =
@@ -1790,191 +1786,20 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaPixel2Transparent = pixel2Rgb333 >> 1 === this.globalTransparencyColor || clipped;
   }
 
-  /**
-   * Render ULA Hi-Color pixel for the current tact position (Stage 1: Pixel Generation).
-   *
-   * ULA Hi-Color mode (Timex Hi-Color mode):
-   * - 256×192 color display (standard horizontal resolution)
-   * - Uses BOTH memory read cycles: pixel data from one bank, color attributes from another
-   * - Bank 0 reads (HC 0x0/0x4/0x8/0xC): pixel data from 0x4000-0x57FF (8×8 pixel blocks)
-   * - Bank 1 reads (HC 0x2/0x6/0xA/0xE): color data from 0x6000-0x77FF (32×192 attributes via 0x2000 offset)
-   * - Each pixel byte defines 8 pixels (like standard mode)
-   * - Color data: 8 bits per pixel column (not per 8×8 block like standard attributes)
-   * - Uses 8-bit shift register for pixels (standard resolution)
-   * - Color format: same as standard attributes (FLASH, BRIGHT, PAPER, INK)
-   *
-   * **ULA+ Compatibility**: ULA+ does NOT work correctly in Hi-Color mode. The hardware forces
-   * palette index bit 3 to 1 (PAPER selection) when screen_mode[2]=1, making attribute-based
-   * palette selection incompatible with Hi-Color mode. This function does not implement ULA+ logic.
-   *
-   * @param vc - Vertical counter position (ULA coordinate system)
-   * @param hc - Horizontal counter position (ULA coordinate system)
-   * @param cell - ULA Hi-Color rendering cell flags (Uint16 bit flags)
-   * @returns Pair of layer outputs (RGB333 + flags) for composition stage
-   */
-  private renderULAHiColorPixel(vc: number, hc: number, cell: number): void {
-    // === Display Area: ULA Standard Rendering ===
-    // --- Scroll & mode sampling ---
-    if ((cell & SCR_NREG_SAMPLE) !== 0) {
-      this.sampleNextRegistersForUlaMode();
-
-      // Calculate scrolled Y position with vertical scroll offset
-      // --- zxula.vhd ~196-208: (vc + scroll) mod 192, also for scroll values of 192-255
-      this.ulaScrollYSampled = (vc - this.confDisplayYStart + this.ulaScrollYSampled) % 0xc0;
-    }
-
-    // --- Shift Register Load ---
-    if ((cell & SCR_SHIFT_REG_LOAD) !== 0) {
-      // Load pixel and attribute data into shift register
-      // This prepares the next 8 pixels for output
-      this.ulaShiftReg =
-        ((((this.ulaPixelByte1 << 8) | this.ulaPixelByte2) << (this.ulaScrollXSampled & 0x07)) >>
-          8) &
-        0xff;
-      this.ulaShiftAttr = this.ulaAttrByte1; // Load attribute byte 1
-      this.ulaShiftAttr2 = this.ulaAttrByte2; // Load attribute byte 2
-      this.ulaShiftAttrCount = 8 - (this.ulaScrollXSampled & 0x07); // Reset attribute shift counter
-    }
-
-    // --- Memory Read Activities ---
-    if ((cell & SCR_BYTE1_READ) !== 0) {
-      // --- Calculate pixel address using pre-computed Y-dependent base + X component
-      const baseCol = (hc + 0x0c - this.confDisplayXStart) >> 3;
-      const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
-      const pixelAddr = ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
-      // Read pixel byte from Bank 5 or Bank 7
-      const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
-      if (hc & 0x04) {
-        this.ulaPixelByte2 = pixelByte;
-      } else {
-        this.ulaPixelByte1 = pixelByte;
-      }
-
-      // --- Update floating bus with pixel data
-      if ((cell & SCR_FLOATING_BUS_UPDATE) !== 0) {
-        this.floatingBusValue = pixelByte;
-      }
-    }
-
-    if ((cell & SCR_BYTE2_READ) !== 0) {
-      // --- Calculate attribute address using pre-computed Y-dependent base + X component
-      const baseCol = (hc + 0x0a - this.confDisplayXStart) >> 3;
-      const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
-      const attrAddr = 0x2000 | ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
-
-      // --- Read attribute byte from Bank 5 or Bank 7
-      const ulaAttrByte = this.machine.memoryDevice.readScreenMemory(attrAddr);
-      if (hc & 0x04) {
-        this.ulaAttrByte2 = ulaAttrByte;
-      } else {
-        this.ulaAttrByte1 = ulaAttrByte;
-      }
-
-      // --- Update floating bus with attribute data
-      if ((cell & SCR_FLOATING_BUS_UPDATE) !== 0) {
-        this.floatingBusValue = ulaAttrByte;
-      }
-    }
-
-    // === Border Area ===
-    if ((cell & SCR_DISPLAY_AREA) === 0) {
-      // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
-      if (this.ulaNextEnabled && this.ulaNextFormat === 0xff) {
-        this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 =
-          this.machine.composedScreenDevice.fallbackRgb333Cache;
-        this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
-        return;
-      }
-
-      // --- Use cached border RGB value (updated when borderColor changes)
-      // --- This eliminates method call overhead for ~30% of pixels
-      this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
-      // --- The border is a ULA pixel: it is transparent when it matches $14 (zxnext.vhd ula_rgb_2).
-      this.ulaPixel1Transparent = this.ulaPixel2Transparent = this.ulaPixel1Rgb333 >> 1 === this.globalTransparencyColor;
-      return;
-    }
-
-    // // --- Pixel Generation ---
-    // Generate pixel from shift register (happens every HC position)
-    // Extract current pixel bit from shift register
-    const displayHC = hc - this.confDisplayXStart;
-    const displayVC = vc - this.confDisplayYStart;
-    const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
-    const pixelBit = (this.ulaShiftReg >> (7 - pixelWithinByte)) & 0x01;
-
-    let pixelRgb333: number;
-
-    // Note: ULANext in HiColor mode is not practical but supported by hardware
-    // HiColor uses different attribute format (per-column colors), so ULANext produces unpredictable results
-    if (this.ulaNextEnabled) {
-      // ULANext mode: Use pre-calculated lookup tables
-      // Hardware-accurate but produces unpredictable colors in HiColor mode
-      const attr = this.ulaShiftAttr;
-      const formatMask = this.ulaNextFormat;
-      let paletteIndex: number;
-
-      if (pixelBit) {
-        // INK pixel: Direct lookup
-        paletteIndex = getULANextInkIndex(formatMask, attr);
-      } else {
-        // PAPER pixel: Direct lookup (may return 255 for fallback)
-        paletteIndex = getULANextPaperIndex(formatMask, attr);
-
-        if (paletteIndex === 255) {
-          // Use cached fallback color
-          pixelRgb333 = this.machine.composedScreenDevice.fallbackRgb333Cache;
-          paletteIndex = -1; // Skip palette lookup
-        }
-      }
-
-      if (paletteIndex !== -1) {
-        pixelRgb333 = this.paletteDevice.getUlaRgb333(paletteIndex);
-      }
-    } else {
-      // Standard HiColor mode: Use pre-calculated lookup tables with BRIGHT already applied
-      // Direct palette index lookup (0-15) - no bit operations needed
-      const paletteIndex = pixelBit
-        ? this.ulaActiveAttrToInk[this.ulaShiftAttr]
-        : this.ulaActiveAttrToPaper[this.ulaShiftAttr];
-      pixelRgb333 = this.paletteDevice.getUlaRgb333(paletteIndex);
-    }
-
-    this.ulaShiftAttrCount--;
-    if (this.ulaShiftAttrCount === 0) {
-      this.ulaShiftAttrCount = 8;
-      this.ulaShiftAttr = this.ulaShiftAttr2; // Load attribute byte 2
-    }
-
-    // --- Clipping Test ---
-    // Check if pixel is within ULA clip window (NextReg 0x1C, 0x1D)
-    const clipped =
-      displayHC < this.ulaClipWindowX1 ||
-      displayHC > this.ulaClipWindowX2 ||
-      displayVC < this.ulaClipWindowY1 ||
-      displayVC > this.ulaClipWindowY2;
-
-    // Return layer output for composition stage
-    this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
-    this.ulaPixel1Transparent = this.ulaPixel2Transparent =
-      pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
-  }
-
   // Samples Next registers for ULA mode
   private sampleNextRegistersForUlaMode(): void {
     // --- Scroll
     this.ulaScrollXSampled = this.ulaScrollX;
     this.ulaScrollYSampled = this.ulaScrollY;
 
-    // --- ULA Hi-Res mode
-    this.ulaHiResModeSampled = this.ulaHiResMode;
-    // --- ULA Hi-Color mode
-    this.ulaHiColorModeSampled = this.ulaHiColorMode;
+    // --- zxula.vhd ~191: the screen mode is port $FF bits 2-0, forced to 0 while the 128K shadow
+    // --- screen (bank 7, which has no second display file) is displayed
+    const mode = this.machine.memoryDevice.useShadowScreen ? 0 : this.timexPortBits & 0x07;
+    this.ulaScreenModeSampled = mode;
+    this.ulaHiResModeSampled = (mode & 0x04) !== 0;
 
     // --- Half-pixel scroll
     this.ulaHalfPixelScrollSampled = this.ulaHalfPixelScroll;
-
-    // --- Lo-Res mode
-    this.loResEnabledSampled = this.loResEnabled;
   }
 
   // ==============================================================================================
@@ -1998,7 +1823,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   loResPaletteOffset: number;
 
   // LoRes rendering state
-  private loResEnabledSampled: boolean;
   private loResRadastanModeSampled: boolean;
   private loResBlockByte: number; // Current block data byte
   private loResScrollXSampled: number; // Sampled X scroll for LoRes
@@ -2032,7 +1856,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Sample scroll registers and mode flags
       this.loResScrollXSampled = this.loResScrollX;
       this.loResScrollYSampled = this.loResScrollY;
-      this.loResEnabledSampled = this.loResEnabled;
       this.loResRadastanModeSampled = this.loResRadastanMode;
     }
 
@@ -2086,11 +1909,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // === STAGE 3: Border Area ===
+    // --- LoRes has no border pixel (lores.vhd: valid only inside the clip window): the ULA's stays
     if ((cell & SCR_DISPLAY_AREA) === 0) {
-      // Border uses cached border RGB value (same as ULA)
-      this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
-      // --- The border is a ULA pixel: it is transparent when it matches $14 (zxnext.vhd ula_rgb_2).
-      this.ulaPixel1Transparent = this.ulaPixel2Transparent = this.ulaPixel1Rgb333 >> 1 === this.globalTransparencyColor;
       return;
     }
 

@@ -8,7 +8,8 @@
  *
  * Moved to the real machine (test/zxnext-hw/ula/): the border colour mapping of D1 and D3
  * (ula-colours ULA-001, ulanext-ulaplus) - the border colour now reaches the picture at the ULA's
- * 8-pixel border latch, so a field write no longer updates the cache at once - and D6 (scroll ULA-012).
+ * 8-pixel border latch, so a field write no longer updates the cache at once - D6 (scroll ULA-012) and
+ * the HiRes ink / paper indices (timex-modes TMX-005, looked up per pixel through the attribute decode).
  */
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTestNextMachine, TestZxNextMachine } from "./TestNextMachine";
@@ -61,20 +62,6 @@ describe("D1 — Standard paper palette index offset", () => {
     expect(flashOnInk).toBe(16); // ink display during flash-on = original paper index
   });
 
-  it("hi-res ink uses bright ink (8+color), paper uses bright paper (24+color)", () => {
-    // Set timex port to select mode 6 (hi-res), hiResColor = 2
-    // bits [5:3] = color, bits [2:0] = mode
-    // mode 6 = 0b110 → value = (2 << 3) | 6 = 0x16
-
-    // Write unique colours to expected indices
-    m.paletteDevice.ulaFirst[10] = 0x0aa; // bright ink 2: index 8+2=10
-    m.paletteDevice.ulaFirst[29] = 0x0bb; // bright paper 5: index 24+(7-2)=29
-
-    csd().timexPortValue = 0x16;
-
-    expect((csd() as any).ulaHiResInkRgb333).toBe(0x0aa);
-    expect((csd() as any).ulaHiResPaperRgb333).toBe(0x0bb);
-  });
 });
 
 // ---------------------------------------------------------------------------

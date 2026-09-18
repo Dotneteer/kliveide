@@ -540,8 +540,8 @@ describe("ZX Spectrum Next WASM standard ULA screen", () => {
     oracle.hardReset();
     wasm.hardReset();
 
-    oracle.doWritePort(0x00ff, 0x03);
-    wasm.doWritePort(0x00ff, 0x03);
+    oracle.doWritePort(0x00ff, 0x02); // --- HiColor (mode 3 takes pixels from $6000 too: zxula.vhd ~232)
+    wasm.doWritePort(0x00ff, 0x02);
     expect(oracle.composedScreenDevice.ulaHiColorMode).toBe(true);
     expect(wasm.doReadPort(0x00ff)).toBe(oracle.doReadPort(0x00ff));
 
@@ -567,7 +567,7 @@ describe("ZX Spectrum Next WASM standard ULA screen", () => {
 
     exports.zxnextSetNextRegisterDirect(0x54, 0x00);
     exports.zxnextSetNextRegisterDirect(0x55, 0x01);
-    exports.zxnextSetNextRegisterDirect(0x69, 0x03);
+    exports.zxnextSetNextRegisterDirect(0x69, 0x02); // --- HiColor
 
     wasm.wasmV2Runtime!.memory[OFFS_NEXT_RAM] = 0x00;
     wasm.wasmV2Runtime!.memory[OFFS_NEXT_RAM + 0x2000] = 0x00;
@@ -586,7 +586,7 @@ describe("ZX Spectrum Next WASM standard ULA screen", () => {
     const exports = wasm.wasmV2Runtime!.exports;
     wasm.hardReset();
 
-    wasm.doWritePort(0x00ff, 0x03);
+    wasm.doWritePort(0x00ff, 0x02);
     exports.zxnextSetNextRegisterDirect(0x26, 0x01);
     exports.zxnextSetNextRegisterDirect(0x27, 0x00);
 

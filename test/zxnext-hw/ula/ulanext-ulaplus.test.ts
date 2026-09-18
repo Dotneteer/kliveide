@@ -95,8 +95,8 @@ describe.each(ALL_CORES)("ULANext / ULA+ colours - %s core", (core) => {
    * so a format-$FF paper or border is transparent when $4A equals $14, and the layer below shows.
    * Layer 2 320x256 (buffer x 32-671, rows 16-271) sits below the ULA in order USL ($15 = $10).
    */
-  (core === "ts" ? it.fails : it)(
-    "ULANext format $FF: a fallback paper and border equal to $14 are transparent (B7 residual, TS)",
+  it(
+    "ULANext format $FF: a fallback paper and border equal to $14 are transparent (B7 residual, fixed)",
     async () => {
       const s = await createSession(core);
       await s.loadCode(`

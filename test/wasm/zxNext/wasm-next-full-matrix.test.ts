@@ -114,7 +114,6 @@ const MATRIX: MatrixEntry[] = [
     typeScriptTests: [
       "CopperDevice.test.ts",
       "Layer2Fixes.test.ts",
-      "LoResFixes.test.ts",
       "NextComposedScreenDevice.test.ts",
       "SpriteDevice-anchor.test.ts",
       "SpriteDevice-clip.test.ts",

@@ -57,7 +57,6 @@ export class NextIoPortManager {
   private readonly ports: PortDescriptor[] = [];
   private readonly portMap: Map<number, PortDescriptor> = new Map();
   private readonly portCollisions: Map<number, string[]> = new Map();
-  private _portTimexValue = 0;
 
   constructor(public readonly machine: IZxNextMachine) {
     const r = (val: PortDescriptor) => this.registerPort(val);
@@ -86,8 +85,13 @@ export class NextIoPortManager {
         // --- zxnext.vhd ~2769: the Timex register with $08 bit 2 and the port enabled; otherwise the
         // --- ULA floating bus, which $FF shows in 48K and 128K timing only (~4493)
         if (pe(0, 0) && machine.nextRegDevice.enablePort0xffTimexVideoModeRead) {
-          // Bits 5-0 are shared with NextReg $69 (zxnext.vhd ~3615).
-          return (this._portTimexValue & 0xc0) | this.machine.composedScreenDevice.timexPortBits;
+          // Bits 5-0 are shared with NextReg $69 (zxnext.vhd ~3615), bit 6 (ULA interrupt disable)
+          // with $22 bit 2 and $C4 bit 0 (~3616-3619); bit 7 is only stored.
+          return (
+            (this.machine.composedScreenDevice.timexPortBit7 ? 0x80 : 0x00) |
+            (this.machine.interruptDevice.ulaInterruptDisabled ? 0x40 : 0x00) |
+            this.machine.composedScreenDevice.timexPortBits
+          );
         }
         const timing = machine.composedScreenDevice.displayTiming;
         return timing === 0b001 || timing === 0b010
@@ -97,7 +101,7 @@ export class NextIoPortManager {
       writerFns: (_, v) => {
         if (pe(0, 0)) {
           // Timex port is enabled
-          this._portTimexValue = v & 0xff;
+          this.machine.composedScreenDevice.timexPortBit7 = (v & 0x80) !== 0;
           this.machine.interruptDevice.ulaInterruptDisabled = (v & 0x40) !== 0;
           this.machine.composedScreenDevice.timexPortValue = v & 0x3f;
         }

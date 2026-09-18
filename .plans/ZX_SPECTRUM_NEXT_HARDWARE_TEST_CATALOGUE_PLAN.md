@@ -87,9 +87,9 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `VT` | Video timing, line counters, 50/60 Hz, machine timings | `video/zxula_timing.vhd` | C00 |
 | `ULA` | Standard ULA screen, border, flash, clip, scroll | `video/zxula.vhd` | T00, C04, C09, C11 |
 | `TMX` | Timex modes: shadow screen, HiColor, HiRes | `video/zxula.vhd` | – |
-| `ULN` | ULANext palette mode | `video/zxula.vhd` | – (bug B7) |
-| `ULP` | ULA+ | `video/zxula.vhd` | – (bug B7) |
-| `LOR` | LoRes / Radastan | `video/lores.vhd` | `test/zxnext/LoResFixes.test.ts` (mock) |
+| `ULN` | ULANext palette mode | `video/zxula.vhd` | `test/zxnext-hw/ula/ulanext-ulaplus.test.ts` (written 2026-09-17 for bug B7, before this catalogue) |
+| `ULP` | ULA+ | `video/zxula.vhd` | `test/zxnext-hw/ula/ulanext-ulaplus.test.ts`, `ulaplus-ports.test.ts` (written 2026-09-17 for bugs B7 and B12, before this catalogue) |
+| `LOR` | LoRes / Radastan | `video/lores.vhd` | `test/zxnext-hw/ula/lores.test.ts` (replaced the mock `test/zxnext/LoResFixes.test.ts`, 2026-09-18) |
 | `L2` | Layer 2 (256×192, 320×256, 640×256) | `video/layer2.vhd` | L01 |
 | `TM` | Tilemap | `video/tilemap.vhd` | P02 |
 | `SPR` | Sprites | `video/sprites.vhd` | `test/zxnext-hw/sprites/sprite-collision.test.ts` |
@@ -293,31 +293,33 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| TMX-001 | Port `$FF` mode 0 | V | 1 | | `$FF`=0: standard screen from `$4000`. | — |
-| TMX-002 | Alternate screen mode 1 | V | 1 | | `$FF`=1: display file taken from `$6000` (attributes still from `$5800`); distinct patterns in both. | — |
-| TMX-003 | HiColor mode 2 | V | 1 | | `$FF`=2: pixels at `$4000`, 8×1 attributes at `$6000`; every scanline of a cell can have its own colours. | — |
-| TMX-004 | HiRes mode 6 | V | 1 | | `$FF`=6: 512×192 from `$4000`/`$6000` interleaved columns; single-pixel vertical lines at 720-res x. | — |
-| TMX-005 | HiRes colour bits 5–3 | V | 1 | | Mode 6 with ink value 0–7 in bits 5–3: ink/paper pair per the Timex table (ink n, paper 7−n); border takes paper per VHDL. | — |
-| TMX-006 | Port `$FF` bit 6 interrupt disable | S | 1 | | `$FF` bit 6 disables the ULA frame interrupt; `$22` bit 2 reads it. | — |
-| TMX-007 | Port `$FF` bit 7 | S | 3 | | Bit 7 (Timex MMU dock/EXROM select) stored and read back via `$69`; no paging effect on Next. | — |
-| TMX-008 | Mode switch mid-frame | V | 2 | | Switch `$FF` 0→2 from a line interrupt; top half standard, bottom HiColor. Guards bug B8 (mid-line sample in WASM). | — |
-| TMX-009 | Mode switch mid-line | V | 3 | | Switch at a known tact; switch point aligned to the sampled 8-pixel boundary per VHDL. | — |
-| TMX-010 | HiRes with scroll | V | 2 | | `$26` in HiRes: scroll granularity is one 512-res pixel per unit? Read `zxula.vhd` and assert. | — |
-| TMX-011 | HiColor with ULANext | V | 3 | | HiColor attributes interpreted through the ULANext ink mask when `$43` bit 0 is set. | — |
-| TMX-012 | Timex modes on 48K vs 128K timing | S | 3 | | Port `$FF` write is accepted regardless of timing (check port enable 0). | — |
+| TMX-001 | Port `$FF` mode 0 | V | 1 | | `$FF`=0: standard screen from `$4000`. | ✅ `ula/timex-modes` |
+| TMX-002 | Alternate screen mode 1 | V | 1 | | `$FF`=1: display file taken from `$6000`, attributes from `$7800` (zxula.vhd ~230-250: mode bit 0 is address bit 13 of both fetches); distinct patterns in all four areas. *(Corrected 2026-09-18: the first draft said attributes stay at `$5800`.)* | ✅ `ula/timex-modes` (B41 fixed: both cores showed mode 0) |
+| TMX-003 | HiColor mode 2 | V | 1 | | `$FF`=2: pixels at `$4000`, 8×1 attributes at `$6000`; every scanline of a cell can have its own colours. | ✅ `ula/timex-modes` |
+| TMX-004 | HiRes mode 6 | V | 1 | | `$FF`=6: 512×192 from `$4000`/`$6000` interleaved columns; single-pixel vertical lines at 720-res x. | ✅ `ula/timex-modes` |
+| TMX-005 | HiRes colour bits 5–3 | V | 1 | | Mode 6 with ink value 0–7 in bits 5–3: ink/paper pair per the Timex table (ink n, paper 7−n); border takes paper per VHDL. | ✅ `ula/timex-modes` (B43 fixed: TS colours fixed at the port write) |
+| TMX-006 | Port `$FF` bit 6 interrupt disable | S | 1 | | `$FF` bit 6 disables the ULA frame interrupt; `$22` bit 2 reads it. | ✅ `ula/timex-port` (B44 fixed) |
+| TMX-007 | Port `$FF` bit 7 | S | 3 | | Bit 7 (Timex MMU dock/EXROM select) stored and read back through `in $FF` with `$08` bit 2 (`$69` returns bits 5–0 only); no paging effect on Next. *(Corrected 2026-09-18: the first draft said `$69`.)* | ✅ `ula/timex-port` (B44 fixed; also cleared by a soft reset) |
+| TMX-008 | Mode switch mid-frame | V | 2 | | Switch `$FF` 0→2 from a line interrupt; top half standard, bottom HiColor. Guards bug B8 (mid-line sample in WASM). | ✅ `ula/timex-port` |
+| TMX-009 | Mode switch mid-line | V | 3 | | Switch at a known tact; switch point aligned to the sampled 8-pixel boundary per VHDL. | ✅ `ula/timex-port` (B45 fixed: WASM switched at the beam) |
+| TMX-010 | HiRes with scroll | V | 2 | | `$26` in HiRes: scroll granularity is one 512-res pixel per unit? Read `zxula.vhd` and assert. | ✅ `ula/timex-modes` (B42 fixed: half-pixel scroll in HiRes and HiColor) |
+| TMX-011 | HiColor with ULANext | V | 3 | | HiColor attributes interpreted through the ULANext ink mask when `$43` bit 0 is set. | ✅ `ula/timex-modes` |
+| TMX-012 | Timex modes on 48K vs 128K timing | S | 3 | | Port `$FF` write is accepted regardless of timing (check port enable 0). | ✅ `ula/timex-port` |
+| TMX-013 | Undocumented modes and the shadow screen | V | 3 | | Per zxula.vhd ~191, ~230-250: mode 3 takes pixels and attributes from the same `$6000` byte; HiRes modes 4 / 5 / 7 take the second byte from `$5800` / `$7800` / `$6000`; the 128K shadow screen forces mode 0. *(Added 2026-09-18.)* | ✅ `ula/timex-modes` (B41 fixed) |
 
 ### 4.10 `ULN` – ULANext
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| ULN-001 | Enable `$43` bit 0 | S | 1 | | Readback; `$42` default `$07`. | ◐ `ula/ulanext-ulaplus` |
+| ULN-001 | Enable `$43` bit 0 | S | 1 | | Readback; `$42` default `$07`. | ✅ `ula/ulanext` (reset values after hard and soft reset) |
 | ULN-002 | Ink mask `$07` | V | 1 | | Attribute bits 2–0 ink index 0–7, bits 7–3 paper index 128+n; border 128+border. Guards bug B7. | ✅ `ula/ulanext-ulaplus` |
-| ULN-003 | Ink masks `$01,$03,$0F,$1F,$3F,$7F` | V | 1 | | Parametrised: ink = attr & mask, paper = 128 + (attr >> bits). One case with a row per mask. | ◐ `ula/ulanext-ulaplus` (`$0F` only) |
-| ULN-004 | Full-ink mode `$FF` | V | 1 | | Mask `$FF`: ink = attribute, paper and border use the fallback `$4A`. | ✅ WASM · ❌ TS border with `$4A`=`$14` (B7 residual) `ula/ulanext-ulaplus` |
-| ULN-005 | Invalid mask | V | 2 | | Non-contiguous mask (e.g. `$05`): behaviour per `zxula.vhd` (typically treated as `$FF` or paper transparent) – read before asserting. | — |
-| ULN-006 | No FLASH/BRIGHT in ULANext | V | 2 | | Attribute bits 7/6 are part of paper index; no flashing over 32 frames. | — |
-| ULN-007 | ULANext + second palette | P | 2 | | `$43` bit 1 switches palettes also for 128+ entries. | — |
-| ULN-008 | ULANext transparency | V | 2 | | Paper colour equal to `$14` is transparent. | — |
+| ULN-003 | Ink masks `$01,$03,$0F,$1F,$3F,$7F` | V | 1 | | Parametrised: ink = attr & mask, paper = 128 + (attr >> bits). One case with a row per mask. | ✅ `ula/ulanext` (all seven formats) |
+| ULN-004 | Full-ink mode `$FF` | V | 1 | | Mask `$FF`: ink = attribute, paper and border use the fallback `$4A`. | ✅ `ula/ulanext-ulaplus` (B7 residual fixed: TS border fallback vs `$14`) |
+| ULN-005 | Invalid mask | V | 2 | | Any format other than `$01 $03 $07 $0F $1F $3F $7F $FF` (zxula.vhd ~500-529): ink = attr AND format, paper the fallback `$4A`, border still `$80 + n` (only `$FF` gives the border the fallback). | ✅ `ula/ulanext` (`$05`, `$00`, `$80`, `$FE`) |
+| ULN-006 | No FLASH/BRIGHT in ULANext | V | 2 | | Attribute bits 7/6 are part of paper index; no flashing over 32 frames. | ✅ `ula/ulanext` |
+| ULN-007 | ULANext + second palette | P | 2 | | `$43` bit 1 switches palettes also for 128+ entries. | ✅ `ula/ulanext` |
+| ULN-008 | ULANext transparency | V | 2 | | Paper colour equal to `$14` is transparent. | ✅ `ula/ulanext` (ink, paper and border) |
+| ULN-009 | ULANext in Timex HiRes | V | 3 | | The Timex attribute `"01" & not n & n` goes through the ULANext decode: ink `attr AND format`, paper per format, border `$80 + 7 − n`; format `$FF`: paper and border the fallback. *(Added 2026-09-18.)* | ✅ `ula/ulanext` (B46 fixed) |
 
 ### 4.11 `ULP` – ULA+
 
@@ -327,23 +329,24 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 | ULP-002 | Mode group enable | S | 1 | | Writing group 1 (`$40`) with data bit 0 = 1 enables ULA+; `$68` bit 3 reads the enable. | ✅ `ula/ulaplus-ports` |
 | ULP-003 | Palette write updates Next palette | S | 2 | | ULA+ palette write lands in ULA palette index 192+n (verify via `$40`/`$41` read). | ✅ `ula/ulaplus-ports` |
 | ULP-004 | ULA+ attribute decode | V | 1 | | Attribute bits 7–6 select 4 CLUTs; ink = 192 + clut×16 + ink, paper = 192 + clut×16 + 8 + paper. Border = paper of CLUT 0 (200+n). Guards bug B7. | ✅ `ula/ulanext-ulaplus` |
-| ULP-005 | ULA+ disable restores standard | V | 2 | | Group 1 data 0 returns to standard colours without clearing the palette. | — |
-| ULP-006 | ULA+ with HiColor | V | 3 | | ULA+ attributes applied per scanline in Timex HiColor mode. | — |
-| ULP-007 | Port enable bit 24 | S | 3 | | Disabling the ULA+ ports makes `$FF3B` writes ineffective. | — |
+| ULP-005 | ULA+ disable restores standard | V | 2 | | Group 1 data 0 returns to standard colours without clearing the palette. | ✅ `ula/ulaplus` (entries kept; also cleared by a soft reset) |
+| ULP-006 | ULA+ with HiColor | V | 3 | | ULA+ attributes applied per scanline in Timex HiColor mode. | ✅ `ula/ulaplus` |
+| ULP-007 | Port enable bit 24 (`$85` bit 0) | S | 3 | | `$85` bit 0 = 0: `$BF3B`/`$FF3B` are not decoded (writes ignored, reads `$FF`); `$68` bit 3 still enables ULA+. | ✅ `ula/ulaplus` (`$85` bit 0; `$68` bit 3 unaffected) |
+| ULP-008 | ULA+ in Timex HiRes | V | 3 | | zxula.vhd ~431, ~533-541: the Timex attribute `"01" & not n & n` goes through the ULA+ decode with index bit 3 forced by `screen_mode(2)`: ink `$D8 + n`, paper and border `$D8 + 7 − n`. *(Added 2026-09-18.)* | ✅ `ula/ulaplus` (B46 fixed: both cores ignored ULA+ in HiRes) |
 
 ### 4.12 `LOR` – LoRes / Radastan
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| LOR-001 | LoRes enable `$15` bit 7 | V | 1 | | 128×96 block mode, 2×2 pixels, memory `$4000` (top 48 rows) + `$6000` (bottom 48 rows); ULA replaced. | — |
-| LOR-002 | LoRes palette | V | 1 | | Pixel value = ULA palette index (with `$6A` offset in bits 3–0 per VHDL). | — |
-| LOR-003 | LoRes scroll `$32/$33` | V | 1 | | Scroll X/Y with wrap at 128/96 (in 2-pixel steps). | — |
-| LOR-004 | LoRes clip | V | 2 | | ULA clip window `$1A` applies to LoRes. | — |
-| LOR-005 | LoRes transparency | V | 2 | | Colour equal to `$14` transparent. | — |
-| LOR-006 | Radastan mode `$6A` bit 5 | V | 2 | | 4-bit pixels, 128×96 from one `$4000` buffer; palette offset. | — |
-| LOR-007 | Radastan XOR `$6A` bit 4 | V | 3 | | Bit 4 changes the index composition per `lores.vhd`. | — |
-| LOR-008 | LoRes with Timex port `$FF` | V | 3 | | LoRes/Radastan interplay with Timex modes per `lores.vhd`. | — |
-| LOR-009 | LoRes enable mid-frame | V | 3 | | Enable from a line interrupt; lower half LoRes. | — |
+| LOR-001 | LoRes enable `$15` bit 7 | V | 1 | | 128×96 block mode, 2×2 pixels, memory `$4000` (top 48 rows) + `$6000` (bottom 48 rows); ULA replaced. | ✅ `ula/lores` (whole picture against a model of `lores.vhd`; bank 5 even with the shadow screen) |
+| LOR-002 | LoRes palette | V | 1 | | Pixel value = ULA palette index (with `$6A` offset in bits 3–0 per VHDL). | ✅ `ula/lores` (offset; second palette; no ULANext) |
+| LOR-003 | LoRes scroll `$32/$33` | V | 1 | | lores.vhd: x = display x + `$32` (8-bit wrap; one unit = half a LoRes pixel), y = display y + `$33` folded back once it reaches 192. *(Corrected 2026-09-18: the first draft said 2-pixel steps with wrap at 128/96.)* | ✅ `ula/lores` (12 scroll pairs) |
+| LOR-004 | LoRes clip | V | 2 | | ULA clip window `$1A` applies to LoRes. | ✅ `ula/lores` |
+| LOR-005 | LoRes transparency | V | 2 | | Colour equal to `$14` transparent. | ✅ `ula/lores` (also hidden by `$68` bit 7) |
+| LOR-006 | Radastan mode `$6A` bit 5 | V | 2 | | 4-bit pixels, 128×96 from one `$4000` buffer; palette offset. | ✅ `ula/lores` (offsets, ULA+, ULA+ with ULANext) |
+| LOR-007 | Radastan XOR `$6A` bit 4 | V | 3 | | Bit 4 XORs the Radastan display file select: dfile = port `$FF` bit 0 XOR `$6A` bit 4 (zxnext.vhd ~6742). *(Corrected 2026-09-18: the first draft said it changes the index.)* | ✅ `ula/lores` |
+| LOR-008 | LoRes with Timex port `$FF` | V | 3 | | Plain LoRes ignores the Timex screen mode (it replaces the ULA pixel); Radastan takes its display file from port `$FF` bit 0 (LOR-007). | ✅ `ula/lores` (plain LoRes ignores modes 1, 2, 6) |
+| LOR-009 | LoRes enable mid-frame | V | 3 | | Enable from a line interrupt; lower half LoRes. | ✅ `ula/lores` (B47 fixed: TS switched late) |
 
 ### 4.13 `L2` – Layer 2
 
@@ -839,5 +842,5 @@ Every catalogue row carries a **Status** cell. Test files are named relative to 
 | ❌ (Bn) | The test exists and is a known failure (`it.fails` / `knownFailures`) on the named core, for the bug `Bn` in `.plans/ZX_NEXT_EMULATOR_BUGS_HANDOVER.md`. |
 | — | Not started. |
 
-When a test lands, update its row in the same change. Open known failures right now: B7 residual
-(TS ULANext border vs `$14`, ULN-004), B26 (no memory contention, MEM-023). Open without a failing test: B33 (TS PSG registers 16-31, for §4.21).
+When a test lands, update its row in the same change. Open known failures right now: B26
+(no memory contention, MEM-023). Open without a failing test: B33 (TS PSG registers 16-31, for §4.21).

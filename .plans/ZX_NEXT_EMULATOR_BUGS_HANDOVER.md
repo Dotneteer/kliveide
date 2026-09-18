@@ -213,9 +213,12 @@ In `NextComposedScreenDevice.composeSinglePixel` (`~1287`) and the ULA/tilemap m
   ink`, paper `$C8 | group<<4 | paper`, border `$C8+n`; no FLASH in either. The fallback colour replaces
   the palette colour *before* the `$14` compare (zxnext.vhd ~6933/7046). Test:
   `test/zxnext-hw/ula/ulanext-ulaplus.test.ts` (formats `$07`, `$0F`, `$FF` and ULA+; all four failed on
-  WASM before, all passed on TS). Not covered: HiRes mode, and the ULA+ ports themselves (B12). Minor
-  TS difference left: its ULANext-`$FF` *border* never tests the fallback against `$14`; visible only
-  when `$4A` equals `$14` with a layer below the ULA.
+  WASM before, all passed on TS). Not covered: HiRes mode, and the ULA+ ports themselves (B12).
+- **Residual fixed 2026-09-18 (catalogue §4.10):** the TS ULANext-`$FF` *border* never tested the fallback
+  against `$14` (transparent was hard-wired to false); visible only when `$4A` equals `$14` with a layer
+  below the ULA. The border now compares like every other ULA pixel; the `it.fails` in
+  `ulanext-ulaplus.test.ts` is a plain test. `test/zxnext-hw/ula/ulanext.test.ts` adds every format
+  (valid and invalid), FLASH / BRIGHT, the second palette and transparency - all passed on both cores.
 
 - **Where:** `zxnextUlaAttrPaletteIndex` (`zxnext-ula.c:165`) and the border lookup in
   `zxnextUlaRenderInstantScreen` always use the standard paper/ink indices (paper/border 16+n).
@@ -236,8 +239,10 @@ In `NextComposedScreenDevice.composeSinglePixel` (`~1287`) and the ULA/tilemap m
   rewriting attributes nonstop: 1.114 -> 1.137 ms/frame; unchanged for non-video writes. Test:
   `test/zxnext-hw/ula/midframe-memory-write.test.ts` (attributes written at copper line 96 by polling
   `$1F`; failed on WASM before - the whole column showed the later colour - passed on TS).
-- **Still open (sampled registers):** `$68` half-pixel scroll, port `$FF` HiRes/HiColor and LoRes enable
-  still switch at the write pixel in WASM, not at the next 8-pixel cell as in TS. Note `$68` bit 7 is
+- **Still open (sampled registers):** the `$68` half-pixel scroll still switches at the write pixel in
+  WASM, not at the next 8-pixel cell as in TS. (Port `$FF`, `$26`/`$27` and `$FE` now latch per cell:
+  B40, B45. The LoRes enable `$15` bit 7 acts per pixel in the VHDL - `lores_en_0` every 14 MHz clock -
+  so WASM was right there and TS was not: B47.) Note `$68` bit 7 is
   per pixel in the VHDL, so a `$68` write cannot simply be delayed like `$26/$27`; it needs a per-bit
   split. The history below is kept for reference.
 
@@ -677,7 +682,7 @@ Found by catalogue §4.8 (`test/zxnext-hw/ula/scroll.test.ts`, ULA-012).
   is the next pixel, with the next pixel's attribute (`ulaStandardPixelRgb333`). WASM:
   `zxnextUlaRenderStandardScreen` draws screen x + 1 in the second half. The field-level test D6 in
   `test/zxnext/UlaRendering.test.ts` (it encoded the old "previous pixel") is replaced by ULA-012.
-- Left for §4.9: neither core applies the half-pixel scroll in the Timex HiRes / HiColor renderers.
+- The Timex HiRes / HiColor renderers ignored it too: fixed as B42.
 
 ### B39 – TS `$27` scroll values of 192-255 read outside the display file – FIXED 2026-09-18
 
@@ -711,6 +716,79 @@ Found by catalogue §4.8 (`test/zxnext-hw/ula/border-timing.test.ts`, ULA-007).
 - Not a bug, noted while measuring Pentagon: after `hardReset` from a Pentagon frame the two cores can
   start the next frame at a different phase (the B35 residual), so tact-exact tests take a fresh
   session per measurement.
+
+### B41 – Timex mode 1 showed the mode 0 picture – FIXED 2026-09-18
+
+Found by catalogue §4.9 (`test/zxnext-hw/ula/timex-modes.test.ts`, TMX-002). zxula.vhd ~230-250: screen
+mode bit 0 is address bit 13 of *both* fetches, so mode 1 takes pixels from `$6000` and attributes from
+`$7800`. The TS core kept a `ulaStandardScreenAt0x4000` flag that nothing read; the WASM core had no
+mode 1 at all - both drew `$4000`/`$5800`. (The catalogue also said "attributes still from `$5800`";
+corrected.) The fetch addresses now follow the VHDL for every mode in both cores: TS
+`ulaAttributeAddress` / the mode bit in the pixel address, WASM `zxnextUlaBitmapAddress` /
+`zxnextUlaAttributeAddress` with the mode. The TS HiColor renderer was deleted - modes 0-3 are one
+pipeline in the VHDL, and the standard renderer now serves them all - and so was the WASM one.
+- Same cause, found by reading the code (the tests TMX-013 were written with the fix): mode 3 drew
+  HiColor from `$4000` (VHDL: pixels *and* attributes from the same `$6000` byte), and HiRes modes 4,
+  5, 7 drew mode 6 (VHDL: second byte from `$5800` / `$7800` / `$6000`). Three legacy tests in
+  `test/wasm/zxNext/wasm-next-screen-ula.test.ts` used mode 3 to mean HiColor; they now use mode 2.
+- The screen mode is forced to 0 while the 128K shadow screen is displayed (zxula.vhd ~191); both cores
+  now do so explicitly (it held before only because neither drew mode 1).
+
+### B42 – The half-pixel scroll was ignored in Timex HiRes and HiColor – FIXED 2026-09-18
+
+The B38 residual. TMX-010: zxula.vhd ~397 shifts by `scroll_x(2:0) & fine` in every mode - in HiRes,
+where each bit is one 14 MHz pixel, one hires pixel. TS: HiColor now uses the standard renderer (B41),
+HiRes adds the fine bit to its shift. WASM: `zxnextUlaRenderHiResScreen` adds it to the source x.
+
+### B43 – TS HiRes colours were fixed when port `$FF` was written – FIXED 2026-09-18
+
+TMX-005. The TS core looked the HiRes ink / paper palette entries up once, in the `$FF` setter, so a
+palette write after the mode was set never showed. The VHDL looks up per pixel; since B46 the HiRes
+colours come from the attribute decode per pixel (`ulaHiResPixelRgb333`).
+
+### B44 – Port `$FF` bit 6, `$22` bit 2 and `$C4` bit 0 were not one register – FIXED 2026-09-18
+
+TMX-006 / TMX-007. zxnext.vhd ~3607-3632: they are all `port_ff_reg(6)`, the ULA interrupt disable.
+- WASM: a port `$FF` write stored bit 6 but did not disable the ULA interrupt, and `in $FF` did not
+  see `$22` / `$C4` writes. The port write now sets `ulaInterruptDisabled`, and the readback takes bit 6
+  from it.
+- TS: `in $FF` took bit 6 (and bit 7) from a copy in the port manager that `$22` / `$C4` never updated,
+  and that copy survived a reset (~3610 clears the register on every reset). Bit 6 now comes from the
+  interrupt device, bit 7 lives in the screen device next to bits 5-0 and is reset with them.
+
+### B45 – WASM Timex mode changes showed at the beam, not at the next 8-pixel cell – FIXED 2026-09-18
+
+TMX-009. zxula.vhd ~193-210 samples the screen mode with the scroll, once per 8-pixel cell. A mid-line
+`OUT ($FF)` moved the edge in 4-pixel steps in WASM (TS was right). Port `$FF` bits 5-0 are now a fourth
+pending ULA latch (`ZXNEXT_ULA_LATCH_TIMEX`, with border and scroll - see B40), applied at the next cell;
+`$69` writes schedule it too. The Radastan LoRes display file still reads the port value directly
+(zxnext.vhd samples it per pixel clock).
+
+### B46 – Timex HiRes ignored ULA+ and ULANext – FIXED 2026-09-18
+
+Found by catalogue §4.11 (`test/zxnext-hw/ula/ulaplus.test.ts`, ULP-008) and ULN-009 (`ulanext.test.ts`).
+zxula.vhd ~431: in HiRes attr_reg is the Timex attribute `"01" & not n & n` (n = port `$FF` bits 5-3),
+in the paper and the border, and it goes through the same ULANext / ULA+ / standard decode as any
+attribute; ULA+ gets index bit 3 from `screen_mode(2)`. So ULA+ HiRes is ink `$D8 + n`, paper and border
+`$D8 + 7 - n`; ULANext HiRes is ink `attr AND format`, paper per format, border `$80 + 7 - n` (fallback
+for `$FF`). Both cores always used standard BRIGHT ink `8 + n` / paper `24 + 7 - n`; TS's ULANext branch
+decoded a stale attribute byte. TS: `ulaHiResPixelRgb333` / `ulaHiResBorderRgb333`; WASM: the HiRes
+renderer and border use `zxnextUlaAttrPaletteIndex` / `zxnextUlaBorderPaletteIndexOf` with
+`zxnextUlaHiResAttr`. A field-level test of the old cached HiRes colours
+(`test/zxnext/UlaRendering.test.ts`) was removed; TMX-005 covers it on the real machine.
+
+### B47 – TS switched LoRes off late and showed a stale ULA line – FIXED 2026-09-18
+
+Found by catalogue §4.12 (`test/zxnext-hw/ula/lores.test.ts`, LOR-009). zxnext.vhd ~6763, ~6879,
+~6926: `lores.vhd` runs beside the ULA and `$15` bit 7 replaces the ULA pixel per pixel. The TS core
+picked *one* renderer per pixel from a copy of the enable re-sampled only inside the display area, and
+did not run the ULA renderer while LoRes was on. LoRes switched off at line 250 therefore stayed on until
+the first sample of the next frame's paper, and the ULA started row 0 with a stale shift register (the
+test saw row 0 wrong). Now the ULA renderer always runs and the LoRes renderer overwrites its pixel while
+`loResEnabled` is set; LoRes leaves the border pixel to the ULA (it has none - relevant for the HiRes
+border). The mock `test/zxnext/LoResFixes.test.ts` was replaced by `lores.test.ts`, which checks whole
+pictures against a transcription of `lores.vhd` on both cores (every LoRes / Radastan case passed on
+both first time; only LOR-009 failed, on TS).
 
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 
