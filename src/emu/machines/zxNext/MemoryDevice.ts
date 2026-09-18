@@ -207,13 +207,16 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.specialConfig = 0;
     this._portEff7Value = 0;
 
-    this.enableAltRom = false;
-    this.altRomVisibleOnlyForWrites = false;
-    this.lockRom1 = false;
-    this.lockRom0 = false;
-    this.reg8CLowNibble = 0;
+    // --- zxnext.vhd ~2211: a reset copies NextReg $8C bits 3-0 into bits 7-4 and keeps bits 3-0.
+    const altRomLowNibble = (this.reg8CLowNibble ?? 0) & 0x0f;
+    this.enableAltRom = (altRomLowNibble & 0x08) !== 0;
+    this.altRomVisibleOnlyForWrites = (altRomLowNibble & 0x04) !== 0;
+    this.lockRom1 = (altRomLowNibble & 0x02) !== 0;
+    this.lockRom0 = (altRomLowNibble & 0x01) !== 0;
+    this.reg8CLowNibble = altRomLowNibble;
     this.configRomRamBank = 0;
-    this.mappingMode = 0;
+    // --- NextReg $8F (mapping mode) has no reset branch (zxnext.vhd ~3767): a soft reset keeps it.
+    this.mappingMode ??= 0;
 
     // --- Default MMU register values
     this.mmuRegs[0] = 0xff;
@@ -231,6 +234,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   hardReset(): void {
+    this.mappingMode = 0;
     // --- Clear DivMMC RAM and all main RAM banks on hard reset to simulate a power-on.
     // --- This forces NextZXOS to perform a cold start on the next boot, which means:
     // ---   1. ESXDOS re-initializes its filesystem state from the SD card.

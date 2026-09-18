@@ -269,7 +269,7 @@ describe("Step 8: AudioMixer PSG AC Coupling Consistency (Phase 8)", () => {
   });
 
   it("should produce symmetric contribution when both PSG channels equal", () => {
-    // Both equal: psgPeak = val, midpoint = val/2, AC = val - val/2 = ceil(val/2)
+    // Both equal: each side keeps val - floor(val/2)
     // contribution must be the same for left and right
     mixer.setPsgOutput({ left: 4800, right: 4800 });
     const output = mixer.getMixedOutput();
@@ -284,20 +284,14 @@ describe("Step 8: AudioMixer PSG AC Coupling Consistency (Phase 8)", () => {
     expect(output.right).toBeGreaterThan(output.left);
   });
 
-  it("should keep both channels audible even when one PSG channel is zero", () => {
-    // Regression test for 'only left channel' bug:
-    // Channel A active (left=X), B+C silent (right=0).
-    // peak = psgLeftScaled; midpoint = peak/2
-    // left gets +(peak - midpoint) = +midpoint (positive)
-    // right gets +(0 - midpoint)   = -midpoint (negative, phase-inverted)
+  it("should leave a silent PSG side silent", () => {
+    // Channel A active (left = X), B and C silent (right = 0). turbosound.vhd puts channel A on the
+    // left only, and audio_mixer.vhd sums each side on its own, so the right side stays at 0.
+    // A midpoint taken from max(left, right) used to leak an inverted copy of the left side into it.
     mixer.setPsgOutput({ left: 48000, right: 0 });
     const output = mixer.getMixedOutput();
-    // Left channel: positive
     expect(output.left).toBeGreaterThan(0);
-    // Right channel: negative (phase-inverted midpoint), but still non-zero
-    expect(output.right).toBeLessThan(0);
-    // Both channels have equal magnitude (perfect phase inversion around midpoint)
-    expect(Math.abs(output.left)).toBeCloseTo(Math.abs(output.right), 10);
+    expect(output.right).toBe(0);
   });
 
   it("should produce positive output for symmetric PSG signal at max volume", () => {

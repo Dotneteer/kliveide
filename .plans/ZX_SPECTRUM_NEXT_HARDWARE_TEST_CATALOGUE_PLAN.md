@@ -581,7 +581,7 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 | DAC-008 | Specdrum `$DF` | A | 1 | | Mono A+D; enable bit 23; interaction with mouse port. |
 | DAC-009 | DAC value → amplitude linearity | A | 1 | | Writing 0, `$80`, `$FF` gives proportional sample levels. |
 | DAC-010 | 8-bit sample playback rate | A | 2 | | Z80 loop writing a ramp at a fixed rate: ramp visible in samples. |
-| DAC-011 | DAC via NextReg mirrors `$2C`–`$2E` | S | 3 | | VHDL: `$2C`–`$2E` read I2S input; writes are commented out. Assert the emulator matches (reads not the DAC value). |
+| DAC-011 | DAC via NextReg mirrors `$2C`–`$2E` | A | 3 | | soundrive.vhd ~48-95: `$2C` writes channel B (left), `$2E` channel C (right), `$2D` channels A and D (mono); reads return the I2S input, not the DAC value (zxnext.vhd read mux). Both halves are testable. |
 | DAC-012 | DAC reset value | A | 2 | | After reset all DAC channels are `$80` (silence midpoint) per `soundrive.vhd`. |
 | DAC-013 | DMA-driven DAC playback | A | 2 | | See DMA-020. |
 
@@ -682,7 +682,7 @@ Ports `$183B`–`$1F3B` = channels 0–7 (0–3 implemented as timers).
 
 | ID | Name | FE | Pri | Needs | Description |
 |---|---|---|---|---|---|
-| SPI-001 | `$E7` chip select values | S | 1 | | `$FE` SD0, `$FD` SD1, `$FB` Pi?, `$7F` flash (config mode only). Exists (`spi-flash-select.test.ts`); extend to all values. Bug B2. |
+| SPI-001 | `$E7` chip select values | S | 1 | | Low bits `10` SD0 / `01` SD1 first, then exact `$FB` Pi 0, `$F7` Pi 1, `$7F` flash (config mode or reset type bit 2); else `$FF`. Exists (`spi-flash-select.test.ts`); extend to all values. Bug B2. |
 | SPI-002 | `$EB` byte exchange | S | 1 | | Write/read round trip with no card returns `$FF`. |
 | SPI-003 | SD card init sequence | S | 1 | `sd` | CMD0/CMD8/ACMD41 responses. |
 | SPI-004 | Read block CMD17 | S | 1 | `sd` | Returns the image bytes of a sector. |
@@ -825,3 +825,29 @@ when the first test of that area lands.
   (SPI-008), and board GPIO (GPIO-*). If not, those tests document the chosen behaviour instead.
 - Audio tests need a tolerance policy (frequency ±1 %, amplitude from the mixer formula) agreed once
   and put into a shared helper (`test/zxnext-hw/_audio-helpers.ts`).
+
+## 7. Implementation status
+
+Only entries with at least one test are listed. `xfail:Bn` = the test exists and is marked as a known
+failure on the named core(s).
+
+| ID | Test | Status |
+|---|---|---|
+| NR-012 / NR-013 | `test/zxnext-hw/nextreg/soft-reset.test.ts` (per register, soft and hard; `$80`/`$8C` copy; kept registers; `$85` bit 7 = 0 keeps port enables) | pass (B13 fixed) |
+| NR-014 (reset part) | same file, "clears the clip window indices" | pass |
+| NR-012 (`$4A`) | `test/zxnext-hw/nextreg/fallback-colour-reset.test.ts` | pass (B3 fixed) |
+| TM-018 / TM-019 | `test/zxnext-hw/nextreg/tilemap-base-address.test.ts` (readback; default `$6C00`/`$4C00` after soft and hard reset) | pass (B10, B13 fixed) |
+| MEM-009 | `test/zxnext-hw/memory/port-7ffd-lock.test.ts` | pass (B13 fixed) |
+| COP-001 | `test/zxnext-hw/copper/copper-upload.test.ts` | pass (B4 fixed) |
+| RST-014 / COP-004 | `test/zxnext-hw/copper/copper-upload.test.ts` | pass (B5 fixed) |
+| CMP-004 / CMP-005 / CMP-006 | `test/zxnext-hw/layers/blend-and-border.test.ts` | pass (B6 fixed) |
+| ULN-002 / ULN-003 (`$0F`) / ULN-004 / ULP-004 | `test/zxnext-hw/ula/ulanext-ulaplus.test.ts` | pass (B7 fixed); ULN-004 with `$4A` = `$14`: xfail on TS (B7 residual, border only) |
+| ULP-001 / ULP-002 / ULP-003 | `test/zxnext-hw/ula/ulaplus-ports.test.ts` | pass (B12 fixed) |
+| ULA-008 | `test/zxnext-hw/ula/midframe-memory-write.test.ts` | pass (B8 memory part fixed) |
+| SPI-001 | `test/zxnext-hw/sd/spi-flash-select.test.ts` (WASM only: TS keeps no `$E7` latch) | pass (B2 fixed) |
+| SPR-025 / SPR-027 | `test/zxnext-hw/sprites/sprite-collision.test.ts` | pass |
+| AY-012 | `test/zxnext-hw/audio/ay-stereo-mode.test.ts` (A/B/C alone in ABC and ACB, both sides) | pass (B14, B15 fixed) |
+| DAC-001 | `test/zxnext-hw/audio/dac-enable.test.ts` (writes ignored while disabled, channels held at `$80`) | pass (B14 fixed) |
+
+Still open from the priority-1 known-bug list: none. B8's remaining part (mid-line register sampling,
+TMX-008/TMX-009) and B9 (COP-005/COP-006) are priority 2-3.

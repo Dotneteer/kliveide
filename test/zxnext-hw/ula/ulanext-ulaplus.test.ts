@@ -89,6 +89,64 @@ describe.each(ALL_CORES)("ULANext / ULA+ colours - %s core", (core) => {
     cell(s, { ink: "next8:0xE0", paper: "next8:0x4A", border: "next8:0x4A" });
   });
 
+  /*
+   * The fallback colour replaces the palette colour *before* the global transparency compare
+   * (zxnext.vhd ~6933 `ula_rgb_1 <= fallback_rgb_1 ...`, ~7046 `ula_mix_transparent` on `ula_rgb_2`),
+   * so a format-$FF paper or border is transparent when $4A equals $14, and the layer below shows.
+   * Layer 2 320x256 (buffer x 32-671, rows 16-271) sits below the ULA in order USL ($15 = $10).
+   */
+  (core === "ts" ? it.fails : it)(
+    "ULANext format $FF: a fallback paper and border equal to $14 are transparent (B7 residual, TS)",
+    async () => {
+      const s = await createSession(core);
+      await s.loadCode(`
+        .org $8000
+        nextreg $70,$10          ; Layer 2 320x256, palette offset 0
+        nextreg $12,$08          ; bank 8 = 8K pages 16-25
+        ld a,16
+        ld b,10
+Fill:   nextreg $56,a
+        push af
+        push bc
+        ld hl,$C000
+        ld (hl),$21              ; Layer 2 pixel index $21 everywhere
+        ld de,$C001
+        ld bc,$1FFF
+        ldir
+        pop bc
+        pop af
+        inc a
+        djnz Fill
+        nextreg $56,$00
+        nextreg $7F,$A5
+        jr $
+      `);
+      s.runUntilReady();
+      s.setNextReg(0x43, 0x10).setNextReg(0x40, 0x21).setNextReg(0x41, 0x1c); // --- Layer 2 palette: $21 green
+      s.setNextReg(0x43, 0x00).setNextReg(0x40, 0xc5).setNextReg(0x41, 0xe0); // --- ULA palette: ink $C5 red
+      for (let row = 0; row < 8; row++) s.poke(displayFileAddress(row, 0), 0xf0);
+      s.poke(0x5800, 0xc5);
+      s.out(0xfe, 1);
+      s.setNextReg(0x14, 0x6d).setNextReg(0x4a, 0x6d); // --- fallback == global transparency
+      s.setNextReg(0x42, 0xff).setNextReg(0x43, 0x01); // --- ULANext, format $FF
+      s.setNextReg(0x15, 0x10); // --- USL: ULA above Layer 2
+      s.setNextReg(0x69, 0x80).runFrames(2); // --- Layer 2 on
+      const at = (x: [number, number], rgb: string) => {
+        try {
+          s.expectProbe({ kind: "rect", x, y: [48, 55], rgb } as Probe);
+          return "ok";
+        } catch (e) {
+          return (e as Error).message;
+        }
+      };
+      expect({
+        ink: at([96, 103], "next8:0xE0"),
+        paper: at([104, 111], "next8:0x1C"),
+        border: at([32, 95], "next8:0x1C")
+      }).toEqual({ ink: "ok", paper: "ok", border: "ok" });
+    }
+  );
+
   it("ULA+: ink = $C0 + group*16 + ink, paper = $C8 + group*16 + paper, border = $C8 + border", async () => {
     // --- attr $9A = group 2, paper 3, ink 2: ink $E2, paper $EB; border 5 -> $CD
     const s = await screenWith(core, {

@@ -79,7 +79,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   ps2Mode: boolean;
 
   // --- Reg $08 state
-  unlockPort7ffd: boolean;
   disableRamPortContention: boolean;
   enablePort0xffTimexVideoModeRead: boolean;
   implementIssue2Keyboard: boolean;
@@ -492,7 +491,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x08,
       description: "Peripheral 3 Setting",
       readFn: () =>
-        (this.unlockPort7ffd ? 0x80 : 0x00) |
+        // --- zxnext.vhd read mux: bit 7 is `not port_7ffd_locked`
+        (machine.memoryDevice.pagingEnabled ? 0x80 : 0x00) |
         (this.disableRamPortContention ? 0x40 : 0x00) |
         (machine.soundDevice.ayStereoMode ? 0x20 : 0x00) |
         (machine.soundDevice.enableInternalSpeaker ? 0x10 : 0x00) |
@@ -501,7 +501,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         (machine.soundDevice.enableTurbosound ? 0x02 : 0x00) |
         (this.implementIssue2Keyboard ? 0x01 : 0x00),
       writeFn: (v) => {
-        this.unlockPort7ffd = (v & 0x80) !== 0;
+        // --- zxnext.vhd ~3650: writing bit 7 = 1 clears the $7FFD lock; 0 leaves it
+        if (v & 0x80) machine.memoryDevice.pagingEnabled = true;
         this.disableRamPortContention = (v & 0x40) !== 0;
         machine.soundDevice.ayStereoMode = (v & 0x20) !== 0;
         machine.soundDevice.enableInternalSpeaker = (v & 0x10) !== 0;
@@ -1391,6 +1392,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x64,
       description: "Vertical Line Count Offset",
+      readFn: () => machine.copperDevice.verticalLineOffset & 0xff,
       writeFn: (v) => (machine.copperDevice.verticalLineOffset = v & 0xff)
     });
     r({
@@ -3246,6 +3248,51 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     // --- No tilemap on top
     this.directSetRegValue(0x70, 0x00); // --- Layer 2 resolution: 256x192x8
     // --- Palette offset = 0
+
+    // --- Further zxnext.vhd reset branch values (~4907-5083, ~3871)
+    this.directSetRegValue(0x64, 0x00); // --- Copper line offset
+    this.directSetRegValue(0x68, 0x00); // --- ULA enabled, no blending, extended keys on, ULA+ off, no fine scroll/stencil
+    this.directSetRegValue(0x6a, 0x00); // --- LoRes: no Radastan, palette offset 0
+    this.directSetRegValue(0x6e, 0x2c); // --- nr_6e_tilemap_base <= "101100"
+    this.directSetRegValue(0x6f, 0x0c); // --- nr_6f_tilemap_tiles <= "001100"
+    for (const reg of [0x90, 0x91, 0x92, 0x93, 0xa0, 0xa2, 0xa8, 0xd9]) {
+      this.directSetRegValue(reg, 0x00); // --- Pi GPIO/peripheral/I2S, ESP GPIO0 enable, I/O trap write
+    }
+  }
+
+  /**
+   * NextReg bits zxnext.vhd has no reset branch for: only the FPGA configuration and the firmware set
+   * them, so a soft reset keeps them. The devices behind them reset their own fields, so
+   * ZxNextMachine.reset captures the readback before any device resets and restores it afterwards.
+   */
+  captureResetSurvivors(): Array<[reg: number, value: number]> {
+    return [0x05, 0x06, 0x08, 0x09, 0x0a, 0x8f].map((reg) => [reg, this.directGetRegValue(reg)]);
+  }
+
+  restoreResetSurvivors(survivors: Array<[reg: number, value: number]>): void {
+    for (const [reg, kept] of survivors) {
+      switch (reg) {
+        case 0x06:
+          // --- Bits 7 and 5 (hotkey enables) are reset to 1; the others survive
+          this.directSetRegValue(0x06, 0xa0 | (kept & 0x5f));
+          break;
+        case 0x08:
+          // --- Bit 7 would unlock $7FFD (already unlocked by the reset), bit 6 is reset to 0
+          this.directSetRegValue(0x08, kept & 0x3f);
+          break;
+        case 0x09:
+          // --- Bit 4 (sprite tie) is reset; bit 3 is a write-only "reset MAPRAM" strobe
+          this.directSetRegValue(0x09, kept & 0xe7);
+          break;
+        case 0x0a:
+          // --- The Multiface type is writable only in config mode, so restore it directly
+          this.machine.divMmcDevice.multifaceType = (kept >> 6) & 0x03;
+          this.directSetRegValue(0x0a, kept);
+          break;
+        default:
+          this.directSetRegValue(reg, kept);
+      }
+    }
   }
 
   // --- NR $83 bit 5 enables mouse port decoding (0xfadf/0xfbdf/0xffdf).
@@ -3281,9 +3328,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     // --- Reset all registers (soft reset)
     this.directSetRegValue(0x02, 0x00); // --- Sign the last reset was soft reset
 
-    // --- Next reg $05
-    const reg0x05BitsKept = this.directGetRegValue(0x05) & 0x05; // --- Keep bits 0 and 2
-    this.directSetRegValue(0x05, reg0x05BitsKept | 0x40); // --- Cursor mode, Sinclair 2, keep scandoubler setting
+    // --- zxnext.vhd reset branch: nr_08_contention_disable <= '0'
+    this.disableRamPortContention = false;
 
     // --- Sign soft reset
     const machine = this.machine;
@@ -3311,9 +3357,15 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     const bit0to3ExpBus = this.directGetRegValue(0x80) & 0x0f;
     this.directSetRegValue(0x80, (bit0to3ExpBus << 4) | bit0to3ExpBus);
 
-    // --- Copy alternate ROM bits 0:3 to bits 4:7
-    const bit0to3 = this.directGetRegValue(0x8c) & 0x0f;
-    this.directSetRegValue(0x8c, (bit0to3 << 4) | bit0to3);
+    // --- NextReg $8C copies bits 3-0 into 7-4 in MemoryDevice.reset (it has already run here)
+
+    // --- zxnext.vhd ~5029: the internal port enables reset only when $85 bit 7 (reset type) is 1
+    if (this.registerSoftResetMode) {
+      this.directSetRegValue(0x82, 0xff);
+      this.directSetRegValue(0x83, 0xff);
+      this.directSetRegValue(0x84, 0xff);
+      this.directSetRegValue(0x85, 0x8f);
+    }
 
     // --- Apply common reset operations
     this.commonReset();

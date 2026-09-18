@@ -247,18 +247,15 @@ export class AudioMixerDevice {
 
     // Add PSG output (unsigned 0-196605 per stereo channel).
     // Scale down from software range to mixer range (÷24 gives ≤ 8192 for mono, ≤ 4095 for Phase-6 stereo).
-    // AC coupling: subtract the peak-based midpoint from BOTH channels simultaneously.
-    // Using Math.max(left, right) as the reference ensures both channels contribute even when
-    // one side is silent (e.g. only channel A active in ABC stereo mode), fixing the
-    // "only left channel" audio bug where psgOutput.right = 0 previously produced silence on right.
+    // AC coupling is per side: each side loses half of its OWN level, so silence stays 0 and a side
+    // with no channel on it stays flat. audio_mixer.vhd (~99) sums each side on its own
+    // (`pcm_L <= ear + mic + ay_L + dac_L + i2s_L`); a midpoint taken from max(left, right) leaked an
+    // inverted copy of one side into the other and destroyed the stereo arrangement of NextReg $08
+    // bit 5 (a channel-A-only tone came out of both sides in antiphase).
     const psgLeftScaled = Math.floor(this.psgOutput.left / 24);
     const psgRightScaled = Math.floor(this.psgOutput.right / 24);
-    // Apply AC coupling unconditionally: when both channels are 0, midpoint=0 and contribution
-    // is zero regardless. This avoids a DC-offset gate and ensures consistent per-sample behaviour.
-    const psgPeak = Math.max(psgLeftScaled, psgRightScaled);
-    const midpoint = Math.floor(psgPeak / 2);
-    mixedLeft  += psgLeftScaled  - midpoint;
-    mixedRight += psgRightScaled - midpoint;
+    mixedLeft  += psgLeftScaled  - Math.floor(psgLeftScaled / 2);
+    mixedRight += psgRightScaled - Math.floor(psgRightScaled / 2);
 
     // Add DAC output (unsigned 0-510 per side, matching FPGA soundrive.vhd)
     // FPGA mixer (audio_mixer.vhd): dac_L <= "00" & dac_L_i & "00"  (×4, 0-2040)

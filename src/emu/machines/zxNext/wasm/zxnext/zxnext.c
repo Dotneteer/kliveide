@@ -127,6 +127,8 @@ static void clearMachineBuffers(void) {
 }
 
 void zxnextReset(void) {
+  /* NextReg $06 bits 4-3 live in the DivMMC module, which zxnextDivMmcReset clears */
+  uint32_t keptNr06 = zxnextNextRegGetDirect(0x06u);
   cpuAf = 0;
   cpuBc = 0;
   cpuDe = 0;
@@ -172,7 +174,7 @@ void zxnextReset(void) {
   zxnextExpansionReset();
   zxnextDmaReset();
   zxnextFloppyReset();
-  zxnextNextRegSoftReset();
+  zxnextNextRegSoftReset(keptNr06);
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryAccessed = 0;

@@ -73,6 +73,8 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
     this.intSignalActive = false;
     this.ulaInterruptDisabled = false;
     this.lineInterruptEnabled = false;
+    // --- zxnext.vhd reset branch: nr_c4_int_en_0_expbus <= '1'
+    this.expBusInterruptEnabled = true;
     this.lineInterrupt = 0x00;
     this.im2TopBits = 0x00;
     this.enableStacklessNmi = false;

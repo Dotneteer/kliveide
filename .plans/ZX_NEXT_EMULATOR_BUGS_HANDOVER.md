@@ -302,6 +302,67 @@ picture (`zxnextRasterIsVideoNextReg`, `zxnext-ula.c:1519`, and the port list in
   TS). Two unit tests in `test/zxnext/NextComposedScreenDevice.test.ts` encoded the TS deviations and were
   corrected.
 
+### B13 – NextReg reset values diverge from the VHDL reset branches – FIXED 2026-09-17
+
+- **Fixed (TS):** `NextRegDevice.commonReset` now also restores `$64`, `$68`, `$6A`, `$6E=$2C`, `$6F=$0C`,
+  `$90`-`$93`, `$A0`, `$A2`, `$A8`, `$D9`; `reset()` clears `$08` bit 6, re-enables `$82`-`$85` when
+  `$85` bit 7 = 1, and no longer rewrites `$05`. `$64` got a readback from the copper. `$07` resets in
+  `CpuSpeedDevice.reset`, `$C4` bit 7 in `InterruptDevice.reset`, the `$8C` nibble copy moved to
+  `MemoryDevice.reset` (the NextReg device resets last and read an already-cleared value), `$8F` is kept
+  by `MemoryDevice.reset` and cleared by `hardReset`. `$08` bit 7 now reads `not locked` from
+  `MemoryDevice.pagingEnabled` and a write of 1 unlocks `$7FFD` (the old `unlockPort7ffd` flag did
+  nothing). Registers with no reset branch (`$05`, `$06`, `$08`, `$09`, `$0A`, `$8F`) are captured at the
+  start of `ZxNextMachine.reset` and replayed through their write handlers at the end
+  (`captureResetSurvivors` / `restoreResetSurvivors`), because the device resets clear their fields.
+- **Fixed (WASM):** `zxnext-nextreg.c` has one `zxnextNextRegApplyResetBranch` run by both resets (adds
+  `$07`, `$0B`, `$69`, `$90`-`$93`, `$A0`, `$A2`, `$A8`, `$B8`-`$BB` into the DivMMC module, `$C6`,
+  `$CC`-`$CE`, `$D8`, `$D9`); the soft reset keeps `$06` (captured in `zxnextReset` before the DivMMC
+  reset clears its NMI-button bits), replays `$05/$06/$08/$09/$0A`, resets `$82`-`$85` per `$85` bit 7
+  and copies the `$8C` nibble. `$C4` bit 7 resets in `zxnextInterruptsReset`, `$6E/$6F` in
+  `zxnextTilemapReset`; `$08` bit 7 and `$A2` got read-mux readbacks, and a `$08` bit 7 write unlocks.
+- **Hard reset** still applies the "fast boot" firmware values (`$05=$41`, `$06=$80`, `$08=$1A`,
+  `$85=$0F`, ...). Those are a modelling choice, not VHDL reset values; nothing here verified them.
+  Note `$85` bit 7 = 0 means a soft reset does *not* re-enable disabled ports until software sets it.
+- **Tests:** `test/zxnext-hw/nextreg/soft-reset.test.ts` (296 per-register tests, both cores, no known
+  failures left), `test/zxnext-hw/nextreg/tilemap-base-address.test.ts` (a tilemap enabled without
+  `$6E/$6F` uses `$6C00`/`$4C00`; fails on the old defaults), `test/zxnext-hw/memory/port-7ffd-lock.test.ts`.
+  `test/zxnext/NextRegDevice.test.ts` encoded the old values (`$08=$1A`, `$64=$FF`, `$6E/$6F=$00`,
+  `$90`-`$92`/`$A0=$FF`, `$C4=$01`, `$D9=$FF`, the `unlockPort7ffd` field) and was corrected.
+- **Verified:** node suites (harness, zxnext-hw, wasm, zxnext, z80: 11,325 tests), `test:visual` both
+  cores and the browser tier (NextZXOS boot, WASM) 20/20 with unchanged goldens.
+
+### B14 – WASM NextReg `$08` audio bits mapped to the wrong bits – FIXED 2026-09-17
+
+- **Was:** `zxnextNextRegSetDirect` read the AY stereo mode from `$08` bit 4 (the internal-speaker bit)
+  and reset the DACs when bit 5 was clear; the DAC enable (bit 3) gated nothing at all, so
+  `zxnextDacWritePort` accepted writes with the DACs switched off.
+- **Hardware:** zxnext.vhd ~5155-5157 (bit 5 = AY stereo ABC/ACB, bit 4 = internal speaker, bit 3 = DAC
+  enable) and ~6382 (`reset_i => reset or not nr_08_dac_en`); soundrive.vhd ~70-78 holds all four
+  channels at the silent centre `$80` and ignores writes while in reset.
+- **Fixed:** bit 5 drives `zxnextPsgSetAyStereoMode`, bit 3 the new `zxnextDacSetEnabled`
+  (`zxnext-dac.c`), which resets the channels when cleared and makes `zxnextDacWritePort` /
+  `zxnextDacSetNextReg` ignore writes while disabled. Applied on every `$08` write and on a hard reset.
+- **Tests:** `test/zxnext-hw/audio/ay-stereo-mode.test.ts` (AY-012) and
+  `test/zxnext-hw/audio/dac-enable.test.ts` (DAC-001), both cores. Mutation-checked: restoring either
+  wrong bit fails them.
+
+### B15 – Both mixers leaked an inverted copy of one side into the other – FIXED 2026-09-17 (found 2026-09-17)
+
+- **Was:** `AudioMixerDevice.getMixedOutput` and `zxnext-audio-mixer.c` AC-coupled the PSG by
+  subtracting `max(left, right) / 2` from **both** sides. A channel that plays on one side only (A in
+  either mode, C in ABC, B in ACB) therefore appeared on the other side in antiphase at the same
+  amplitude, so NextReg `$08` bit 5 changed nothing observable in the mixed output and no stereo test
+  could see it. A comment called the leak a fix for an "only left channel" bug.
+- **Hardware:** audio_mixer.vhd ~99 sums each side on its own: `pcm_L <= ear + mic + ay_L + dac_L +
+  i2s_L`. Channel A is left only in both arrangements (turbosound.vhd ~184-201).
+- **Fixed:** each side now loses half of its own level (`x - floor(x / 2)`), which keeps silence at 0
+  and leaves a mono signal exactly as before, in both cores.
+- **Care:** two unit tests encoded the leak and were corrected -
+  `test/audio/AudioMixerDevice.step8.test.ts` ("stereo separation": each side keeps its own level, the
+  louder side stays twice the quieter one) and `test/audio/PsgRegisterMasking.step78.test.ts` (a silent
+  side stays silent instead of carrying a phase-inverted copy).
+- **Verified:** whole suite (22,545 tests), `test:visual` 20/20, no new type errors.
+
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 
 - **Fixed:** `machineFrameCompleted` keeps a copy of the displayed pixel buffer instead of calling

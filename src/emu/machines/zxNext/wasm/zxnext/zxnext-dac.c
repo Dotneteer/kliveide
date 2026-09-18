@@ -1,6 +1,9 @@
 #include "zxnext-dac.h"
 
 static uint8_t zxnextDacChannels[4];
+/* zxnext.vhd ~6382: the soundrive module's reset is `reset or not nr_08_dac_en`, so while NextReg $08
+   bit 3 is 0 every channel is held at the silent centre ($80) and writes are ignored. */
+static uint8_t zxnextDacEnabled;
 
 static void zxnextDacReset(void) {
   zxnextDacChannels[0] = 0x80u;
@@ -14,8 +17,14 @@ static uint32_t zxnextDacHandlesNextReg(uint32_t reg) {
   return normalized == 0x2cu || normalized == 0x2du || normalized == 0x2eu;
 }
 
+static void zxnextDacSetEnabled(uint32_t enabled) {
+  zxnextDacEnabled = enabled != 0u;
+  if (!zxnextDacEnabled) zxnextDacReset();
+}
+
 static void zxnextDacSetNextReg(uint32_t reg, uint32_t value) {
   uint8_t byteValue = (uint8_t)value;
+  if (!zxnextDacEnabled) return;
   switch (reg & 0xffu) {
     case 0x2cu:
       zxnextDacChannels[1] = byteValue;
@@ -43,6 +52,7 @@ static uint32_t zxnextDacGetNextReg(uint32_t reg) {
 
 static void zxnextDacWritePort(uint32_t port, uint32_t value) {
   uint8_t byteValue = (uint8_t)value;
+  if (!zxnextDacEnabled) return;
   switch (port & 0x00feu) {
     case 0x001eu:
     case 0x00f0u:

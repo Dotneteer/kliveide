@@ -45,3 +45,52 @@ describe("SPI chip select $7F (FPGA flash) - wasm core", () => {
     expect(e7(s)).toBe(0xff);
   });
 });
+
+/*
+ * SPI-001 - the whole port $E7 decode (zxnext.vhd ~3305-3321), checked in VHDL order: the low two bits
+ * win first (`10` -> $FE SD0, `01` -> $FD SD1), then the exact values $FB (Pi 0) and $F7 (Pi 1), then
+ * $7F (flash, config mode or reset type bit 2 only); every other value deselects all slaves ($FF).
+ */
+describe("SPI chip select decode - wasm core", () => {
+  const e7 = (s: Awaited<ReturnType<typeof createSession>>) =>
+    (s.machine as ZxNextWasmV2Machine).wasmV2Runtime!.exports.zxnextGetSdPortE7Value();
+
+  const CASES: Array<[written: number, latched: number, why: string]> = [
+    [0xfe, 0xfe, "SD0"],
+    [0xfd, 0xfd, "SD1"],
+    [0x02, 0xfe, "low bits 10: SD0 whatever the upper bits"],
+    [0x7e, 0xfe, "low bits 10"],
+    [0xfa, 0xfe, "low bits 10 beat the upper bits"],
+    [0x01, 0xfd, "low bits 01: SD1 whatever the upper bits"],
+    [0xf9, 0xfd, "low bits 01"],
+    [0xfb, 0xfb, "Raspberry Pi 0"],
+    [0xf7, 0xf7, "Raspberry Pi 1"],
+    [0xff, 0xff, "deselect all"],
+    [0x00, 0xff, "low bits 00, not an exact value"],
+    [0x03, 0xff, "low bits 11, not an exact value"],
+    [0xf3, 0xff, "low bits 11, two slave bits clear"],
+    [0xef, 0xff, "low bits 11, not an exact value"],
+    [0xbf, 0xff, "low bits 11, not an exact value"],
+    [0x7f, 0xff, "flash outside config mode, after a soft reset"]
+  ];
+
+  it("starts with every slave deselected", async () => {
+    const s = await createSession("wasm");
+    expect(e7(s)).toBe(0xff);
+  });
+
+  it.each(CASES)("$E7 <- %i latches the VHDL value", async (written, latched, why) => {
+    const s = await createSession("wasm");
+    s.reset();
+    // --- Start from a selected card so a "deselect" result is a change, not the reset value.
+    s.out(0xe7, 0xfe);
+    s.out(0xe7, written);
+    expect(e7(s), `$${written.toString(16)}: ${why}`).toBe(latched);
+  });
+
+  it("a soft reset deselects every slave", async () => {
+    const s = await createSession("wasm");
+    s.out(0xe7, 0xfd).reset();
+    expect(e7(s)).toBe(0xff);
+  });
+});

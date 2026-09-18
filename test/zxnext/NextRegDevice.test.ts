@@ -21,7 +21,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x05)).toBe(0x41);
     expect(d.directGetRegValue(0x06)).toBe(0x80); // --- Hotkey CPU speed enabled on hard reset
     expect(d.directGetRegValue(0x07)).toBe(0x00);
-    expect(d.directGetRegValue(0x08)).toBe(0x1a);
+    expect(d.directGetRegValue(0x08)).toBe(0x9a); // --- bit 7: $7FFD not locked;
     expect(d.directGetRegValue(0x09)).toBe(0x00);
     expect(d.directGetRegValue(0x0a)).toBe(0x01);
     expect(d.directGetRegValue(0x0b)).toBe(0x01);
@@ -103,14 +103,14 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x61)).toBe(0x00);
     expect(d.directGetRegValue(0x62)).toBe(0x00);
     expect(d.directGetRegValue(0x63)).toBe(0x00);
-    expect(d.directGetRegValue(0x64)).toBe(0xff);
+    expect(d.directGetRegValue(0x64)).toBe(0x00);
     expect(d.directGetRegValue(0x68)).toBe(0x00);
     expect(d.directGetRegValue(0x69)).toBe(0x00);
     expect(d.directGetRegValue(0x6a)).toBe(0x00);
     expect(d.directGetRegValue(0x6b)).toBe(0x00);
     expect(d.directGetRegValue(0x6c)).toBe(0x00);
-    expect(d.directGetRegValue(0x6e)).toBe(0x00);
-    expect(d.directGetRegValue(0x6f)).toBe(0x00);
+    expect(d.directGetRegValue(0x6e)).toBe(0x2c);
+    expect(d.directGetRegValue(0x6f)).toBe(0x0c);
     expect(d.directGetRegValue(0x70)).toBe(0x00);
     expect(d.directGetRegValue(0x71)).toBe(0x00);
     expect(d.directGetRegValue(0x75)).toBe(0x00);
@@ -133,14 +133,14 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x8c)).toBe(0x00);
     expect(d.directGetRegValue(0x8e)).toBe(0x08);
     expect(d.directGetRegValue(0x8f)).toBe(0x00);
-    expect(d.directGetRegValue(0x90)).toBe(0xff);
-    expect(d.directGetRegValue(0x91)).toBe(0xff);
-    expect(d.directGetRegValue(0x92)).toBe(0xff);
+    expect(d.directGetRegValue(0x90)).toBe(0x00);
+    expect(d.directGetRegValue(0x91)).toBe(0x00);
+    expect(d.directGetRegValue(0x92)).toBe(0x00);
     expect(d.directGetRegValue(0x98)).toBe(0xff);
     expect(d.directGetRegValue(0x99)).toBe(0xff);
     expect(d.directGetRegValue(0x9a)).toBe(0xff);
     expect(d.directGetRegValue(0x9b)).toBe(0x00);
-    expect(d.directGetRegValue(0xa0)).toBe(0xff);
+    expect(d.directGetRegValue(0xa0)).toBe(0x00);
     expect(d.directGetRegValue(0xa2)).toBe(0x02);
     expect(d.directGetRegValue(0xa8)).toBe(0x00);
     expect(d.directGetRegValue(0xa9)).toBe(0x05);
@@ -151,7 +151,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xc0)).toBe(0x00);
     expect(d.directGetRegValue(0xc2)).toBe(0x00);
     expect(d.directGetRegValue(0xc3)).toBe(0x00);
-    expect(d.directGetRegValue(0xc4)).toBe(0x01);
+    expect(d.directGetRegValue(0xc4)).toBe(0x81);
     expect(d.directGetRegValue(0xc5)).toBe(0x00);
     expect(d.directGetRegValue(0xc6)).toBe(0x00);
     expect(d.directGetRegValue(0xc7)).toBe(0x00);
@@ -164,7 +164,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xce)).toBe(0x00);
     expect(d.directGetRegValue(0xcf)).toBe(0x00);
     expect(d.directGetRegValue(0xd8)).toBe(0x00);
-    expect(d.directGetRegValue(0xd9)).toBe(0xff);
+    expect(d.directGetRegValue(0xd9)).toBe(0x00);
     expect(d.directGetRegValue(0xda)).toBe(0x00);
     expect(d.directGetRegValue(0xf0)).toBe(0xff);
     expect(d.directGetRegValue(0xf8)).toBe(0xff);
@@ -190,7 +190,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x05)).toBe(0x41);
     expect(d.directGetRegValue(0x06)).toBe(0xa0);
     expect(d.directGetRegValue(0x07)).toBe(0x00);
-    expect(d.directGetRegValue(0x08)).toBe(0x1a);
+    expect(d.directGetRegValue(0x08)).toBe(0x9a); // --- bit 7: $7FFD not locked;
     expect(d.directGetRegValue(0x09)).toBe(0x00);
     expect(d.directGetRegValue(0x0a)).toBe(0x01);
     expect(d.directGetRegValue(0x0b)).toBe(0x01);
@@ -255,14 +255,14 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x61)).toBe(0x00);
     expect(d.directGetRegValue(0x62)).toBe(0x00);
     expect(d.directGetRegValue(0x63)).toBe(0x00);
-    expect(d.directGetRegValue(0x64)).toBe(0xff);
+    expect(d.directGetRegValue(0x64)).toBe(0x00);
     expect(d.directGetRegValue(0x68)).toBe(0x00);
     expect(d.directGetRegValue(0x69)).toBe(0x00);
     expect(d.directGetRegValue(0x6a)).toBe(0x00);
     expect(d.directGetRegValue(0x6b)).toBe(0x00);
     expect(d.directGetRegValue(0x6c)).toBe(0x00);
-    expect(d.directGetRegValue(0x6e)).toBe(0x00);
-    expect(d.directGetRegValue(0x6f)).toBe(0x00);
+    expect(d.directGetRegValue(0x6e)).toBe(0x2c);
+    expect(d.directGetRegValue(0x6f)).toBe(0x0c);
     expect(d.directGetRegValue(0x70)).toBe(0x00);
     expect(d.directGetRegValue(0x71)).toBe(0x00);
     expect(d.directGetRegValue(0x75)).toBe(0x00);
@@ -285,14 +285,14 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x8c)).toBe(0x00);
     expect(d.directGetRegValue(0x8e)).toBe(0x08);
     expect(d.directGetRegValue(0x8f)).toBe(0x00);
-    expect(d.directGetRegValue(0x90)).toBe(0xff);
-    expect(d.directGetRegValue(0x91)).toBe(0xff);
-    expect(d.directGetRegValue(0x92)).toBe(0xff);
+    expect(d.directGetRegValue(0x90)).toBe(0x00);
+    expect(d.directGetRegValue(0x91)).toBe(0x00);
+    expect(d.directGetRegValue(0x92)).toBe(0x00);
     expect(d.directGetRegValue(0x98)).toBe(0xff);
     expect(d.directGetRegValue(0x99)).toBe(0xff);
     expect(d.directGetRegValue(0x9a)).toBe(0xff);
     expect(d.directGetRegValue(0x9b)).toBe(0x00);
-    expect(d.directGetRegValue(0xa0)).toBe(0xff);
+    expect(d.directGetRegValue(0xa0)).toBe(0x00);
     expect(d.directGetRegValue(0xa2)).toBe(0x02);
     expect(d.directGetRegValue(0xa8)).toBe(0x00);
     expect(d.directGetRegValue(0xa9)).toBe(0x05);
@@ -303,7 +303,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xc0)).toBe(0x00);
     expect(d.directGetRegValue(0xc2)).toBe(0x00);
     expect(d.directGetRegValue(0xc3)).toBe(0x00);
-    expect(d.directGetRegValue(0xc4)).toBe(0x01);
+    expect(d.directGetRegValue(0xc4)).toBe(0x81);
     expect(d.directGetRegValue(0xc5)).toBe(0x00);
     expect(d.directGetRegValue(0xc6)).toBe(0x00);
     expect(d.directGetRegValue(0xc7)).toBe(0x00);
@@ -316,7 +316,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xce)).toBe(0x00);
     expect(d.directGetRegValue(0xcf)).toBe(0x00);
     expect(d.directGetRegValue(0xd8)).toBe(0x00);
-    expect(d.directGetRegValue(0xd9)).toBe(0xff);
+    expect(d.directGetRegValue(0xd9)).toBe(0x00);
     expect(d.directGetRegValue(0xda)).toBe(0x00);
     expect(d.directGetRegValue(0xf0)).toBe(0xff);
     expect(d.directGetRegValue(0xf8)).toBe(0xff);
@@ -346,8 +346,8 @@ describe("Next - NextRegDevice", function () {
     d.hardReset();
     d.directSetRegValue(0x8c, 0x05);
 
-    // --- Act
-    d.reset();
+    // --- Act (the copy happens in MemoryDevice.reset, so reset the machine)
+    m.reset();
     const value = readNextReg(m, 0x8c);
 
     // --- Assert
@@ -875,7 +875,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x80);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(true);
+    expect(m.memoryDevice.pagingEnabled).toBe(true);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -895,7 +895,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x40);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(true);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -915,7 +914,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x20);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(true);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -935,7 +933,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x10);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(true);
@@ -955,7 +952,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x08);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -975,7 +971,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x04);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -995,7 +990,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x02);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -1015,7 +1009,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x01);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);

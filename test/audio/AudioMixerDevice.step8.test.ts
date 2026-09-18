@@ -108,12 +108,12 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]); // Set to all center
 
       const output = mixer.getMixedOutput();
-      // New AC-coupling: peak=max(166,333)=333, midpoint=166
-      // psgLeftAC=166-166=0, psgRightAC=333-166=167
-      // left=0, right=918/32768≈0.028; right channel gets more signal
-      expect(output.left).toBeCloseTo(0, 2);
-      expect(output.right).toBeCloseTo(0.028, 2);
+      // AC coupling is per side (audio_mixer.vhd sums each side on its own):
+      // left = 166 - 83 = 83, right = 333 - 166 = 167 - each side keeps its own level, and the
+      // louder side stays twice the quieter one.
+      expect(output.left).toBeGreaterThan(0);
       expect(output.right).toBeGreaterThan(output.left);
+      expect(output.right / output.left).toBeCloseTo(2, 1);
     });
 
     it("should combine PSG with EAR and MIC", () => {

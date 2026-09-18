@@ -287,6 +287,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   reset(): void {
+    // --- NextReg bits with no reset branch in the VHDL survive; the device resets below clear them
+    const resetSurvivors = this.nextRegDevice?.captureResetSurvivors();
     super.reset();
     this.cpuSpeedDevice.reset();
     this.memoryDevice.reset();
@@ -325,6 +327,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- This device is the last to reset, as it may override the reset of other devices
     this.nextRegDevice.reset();
+    if (resetSurvivors) this.nextRegDevice.restoreResetSurvivors(resetSurvivors);
 
     // --- Set default machine type
     this.nextRegDevice.configMode = false;

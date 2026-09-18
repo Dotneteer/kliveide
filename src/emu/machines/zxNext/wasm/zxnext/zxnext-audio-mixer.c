@@ -106,11 +106,10 @@ static int32_t zxnextAudioMixerGetMixedSide(uint32_t isRight) {
   mixed += zxnextMixerEarLevel * 12;
   mixed += zxnextMixerMicLevel * 12;
 
-  uint32_t psgLeftScaled = zxnextMixerPsgLeft / 24u;
-  uint32_t psgRightScaled = zxnextMixerPsgRight / 24u;
-  uint32_t psgPeak = psgLeftScaled > psgRightScaled ? psgLeftScaled : psgRightScaled;
-  int32_t midpoint = (int32_t)(psgPeak / 2u);
-  mixed += (int32_t)(isRight ? psgRightScaled : psgLeftScaled) - midpoint;
+  /* AC coupling is per side (audio_mixer.vhd ~99 sums each side on its own): a midpoint taken from
+     max(left, right) leaked an inverted copy of one side into the other. Mirrors AudioMixerDevice. */
+  uint32_t psgScaled = (isRight ? zxnextMixerPsgRight : zxnextMixerPsgLeft) / 24u;
+  mixed += (int32_t)psgScaled - (int32_t)(psgScaled / 2u);
 
   uint32_t dacSide = isRight ? zxnextDacGetStereoRight() : zxnextDacGetStereoLeft();
   mixed += ((int32_t)dacSide << 2) - 1024;

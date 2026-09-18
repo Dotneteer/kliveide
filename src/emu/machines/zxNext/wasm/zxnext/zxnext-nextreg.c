@@ -72,19 +72,20 @@ static void zxnextNextRegHardReset(void) {
   zxnextDivMmcSetNextRegBA(zxnextNextRegs[0xba]);
   zxnextDivMmcSetNextRegBB(zxnextNextRegs[0xbb]);
   zxnextMouseSetNextReg0A(zxnextNextRegs[0x0a]);
+  zxnextPsgSetAyStereoMode(zxnextNextRegs[0x08] & 0x20u);
+  zxnextDacSetEnabled(zxnextNextRegs[0x08] & 0x08u);
   zxnextExpansionHardReset();
-  zxnextMemoryResetMapping();
+  zxnextNextRegApplyResetBranch();
 }
 
 /*
- * Soft reset (reset button, NextReg $02 bit 0): the NextReg values the zxnext.vhd `reset` branches
- * restore (~4591-4598 MMU, ~4920-5002 video/palette/copper). The devices behind them reset their own
- * state in zxnextReset; this restores the stored values they are read and composed from. Mirrors
- * NextRegDevice.reset/commonReset in the TypeScript core.
+ * The NextReg values every reset restores: the zxnext.vhd `if reset = '1'` branches (~4591-4598 MMU,
+ * ~4907-5083 NextReg process, ~3871 $D9). Both a soft and a hard reset run it. The devices behind these
+ * registers reset their own state in zxnextReset; this restores the stored values they are read and
+ * composed from. Mirrors NextRegDevice.commonReset/reset in the TypeScript core.
  */
-static void zxnextNextRegSoftReset(void) {
-  zxnextConfigMode = 0u;
-  zxnextResetType = (uint8_t)(((zxnextResetType >> 1u) & 0x02u) | ((zxnextResetType & 0x03u) != 0u ? 0x01u : 0u));
+static void zxnextNextRegApplyResetBranch(void) {
+  zxnextNextRegs[0x0b] = 0x01; /* joystick I/O mode off, iomode_0 = 1 */
   zxnextNextRegs[0x12] = 0x08;
   zxnextNextRegs[0x13] = 0x0b;
   zxnextNextRegs[0x14] = 0xe3;
@@ -103,9 +104,70 @@ static void zxnextNextRegSoftReset(void) {
   zxnextNextRegs[0x4c] = 0x0f;
   zxnextNextRegs[0x61] = 0x00;
   zxnextNextRegs[0x62] = 0x00;
+  zxnextNextRegs[0x69] = 0x00; /* port_ff_reg and the $7FFD shadow bit reset to 0 */
   zxnextNextRegs[0x6b] = 0x00;
   zxnextNextRegs[0x70] = 0x00;
+  /* Pi GPIO output enables, Pi peripherals, Pi I2S, ESP GPIO0 enable */
+  zxnextNextRegs[0x90] = 0x00;
+  zxnextNextRegs[0x91] = 0x00;
+  zxnextNextRegs[0x92] = 0x00;
+  zxnextNextRegs[0x93] = 0x00;
+  zxnextNextRegs[0xa0] = 0x00;
+  zxnextNextRegs[0xa2] = 0x00;
+  zxnextNextRegs[0xa8] = 0x00;
+  /* UART and DMA interrupt enables, FDC I/O trap enable, I/O trap write value */
+  zxnextNextRegs[0xc6] = 0x00;
+  zxnextNextRegs[0xcc] = 0x00;
+  zxnextNextRegs[0xcd] = 0x00;
+  zxnextNextRegs[0xce] = 0x00;
+  zxnextNextRegs[0xd8] = 0x00;
+  zxnextNextRegs[0xd9] = 0x00;
+  /* DivMMC automap entry points */
+  zxnextNextRegs[0xb8] = 0x83;
+  zxnextNextRegs[0xb9] = 0x01;
+  zxnextNextRegs[0xba] = 0x00;
+  zxnextNextRegs[0xbb] = 0xcd;
+  zxnextDivMmcSetNextRegB8(zxnextNextRegs[0xb8]);
+  zxnextDivMmcSetNextRegB9(zxnextNextRegs[0xb9]);
+  zxnextDivMmcSetNextRegBA(zxnextNextRegs[0xba]);
+  zxnextDivMmcSetNextRegBB(zxnextNextRegs[0xbb]);
+  cpuProgrammedSpeed = 0; /* ~5733: nr_07_cpu_speed <= "00" */
+  cpuEffectiveSpeed = 0;
+  cpuTactScale = 8;
+  zxnextNextRegs[0x07] = 0x00;
   zxnextMemoryResetMapping();
+}
+
+/*
+ * Soft reset (reset button, NextReg $02 bit 0). `keptNr06` is the $06 readback captured before the
+ * device resets: zxnext.vhd has no reset branch for $05, $06 bits 6-0 except 5, $08 bits 5-0, $09 bits
+ * 7-5, $0A, $7F, $85 bit 7 and $8F, so they survive - and the modules behind them (DivMMC NMI buttons,
+ * PSG, mouse, joystick) get them replayed. `$80` and `$8C` copy bits 3-0 into 7-4 (~2142, ~2211).
+ */
+static void zxnextNextRegSoftReset(uint32_t keptNr06) {
+  zxnextConfigMode = 0u;
+  zxnextResetType = (uint8_t)(((zxnextResetType >> 1u) & 0x02u) | ((zxnextResetType & 0x03u) != 0u ? 0x01u : 0u));
+  zxnextNextRegApplyResetBranch();
+
+  /* $06: hotkey enables (bits 7, 5) reset to 1, the rest survive */
+  zxnextNextRegSetDirect(0x06u, 0xa0u | (keptNr06 & 0x5fu));
+  /* $08: contention disable (bit 6) resets; bit 7 is the $7FFD lock readback */
+  zxnextNextRegSetDirect(0x08u, zxnextNextRegs[0x08] & 0x3fu);
+  /* $09: sprite tie (bit 4) resets; bit 3 is a write-only MAPRAM reset strobe */
+  zxnextNextRegSetDirect(0x09u, zxnextNextRegs[0x09] & 0xe7u);
+  zxnextNextRegSetDirect(0x05u, zxnextNextRegs[0x05]);
+  zxnextNextRegSetDirect(0x0au, zxnextNextRegs[0x0a]);
+
+  /* ~5029: the internal port enables reset only with $85 bit 7 (reset type) = 1 */
+  if ((zxnextNextRegs[0x85] & 0x80u) != 0u) {
+    zxnextNextRegSetDirect(0x82u, 0xffu);
+    zxnextNextRegSetDirect(0x83u, 0xffu);
+    zxnextNextRegSetDirect(0x84u, 0xffu);
+    zxnextNextRegSetDirect(0x85u, 0x8fu);
+  }
+
+  uint32_t altRomLow = zxnextNextRegs[0x8c] & 0x0fu;
+  zxnextNextRegSetDirect(0x8cu, (altRomLow << 4u) | altRomLow);
 }
 
 static void zxnextNextRegSetIndex(uint32_t reg) {
@@ -171,8 +233,11 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
     return;
   }
   if (normalized == 0x08u) {
-    zxnextPsgSetAyStereoMode(value & 0x10u);
-    if ((value & 0x20u) == 0u) zxnextDacReset();
+    /* ~3650: writing bit 7 = 1 clears the $7FFD lock */
+    if ((value & 0x80u) != 0u) pagingEnabled = 1u;
+    /* ~5155-5157: bit 5 = AY stereo mode (0 ABC, 1 ACB), bit 4 = internal speaker, bit 3 = DAC enable */
+    zxnextPsgSetAyStereoMode(value & 0x20u);
+    zxnextDacSetEnabled(value & 0x08u);
   } else if (normalized == 0x09u) {
     zxnextPsgSetChipMonoMode(0u, value & 0x20u);
     zxnextPsgSetChipMonoMode(1u, value & 0x40u);
@@ -208,6 +273,12 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
         (zxnextDivMmcGetEnableMultifaceNmiByM1Button() ? 0x08u : 0x00u);
     case 0x07u:
       return (cpuProgrammedSpeed & 0x03u) | ((cpuEffectiveSpeed & 0x03u) << 4u);
+    /* zxnext.vhd read mux: $08 bit 7 is `not port_7ffd_locked` */
+    case 0x08u:
+      return (zxnextNextRegs[0x08u] & 0x7fu) | (pagingEnabled ? 0x80u : 0x00u);
+    /* $A2: nr_a2(7:6) & '0' & nr_a2(4:2) & '1' & nr_a2(0) */
+    case 0xa2u:
+      return (zxnextNextRegs[0xa2u] & 0xddu) | 0x02u;
     case 0xb8u: return zxnextDivMmcGetNextRegB8();
     case 0xb9u: return zxnextDivMmcGetNextRegB9();
     case 0xbau: return zxnextDivMmcGetNextRegBA();

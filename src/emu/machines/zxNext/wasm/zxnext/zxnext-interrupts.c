@@ -24,7 +24,7 @@ static void zxnextInterruptsReset(void) {
   lineInterrupt = 0;
   im2TopBits = 0;
   hwIm2Mode = 0;
-  expBusInterruptEnabled = 0;
+  expBusInterruptEnabled = 1; /* zxnext.vhd reset branch: nr_c4_int_en_0_expbus <= '1' */
   lineInterruptStatus = 0;
   ulaInterruptStatus = 0;
   lastInterruptVector = 0xff;
