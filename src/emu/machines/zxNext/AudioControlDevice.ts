@@ -139,9 +139,10 @@ export class AudioControlDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Apply PSG mode configuration
     // PSG mode: 0=YM, 1=AY, 2=ZXN-8950, 3=Hold all PSGs in reset
-    const holdInReset = (soundConfig.psgMode & 0x03) === 0x03;
-    // When hold in reset is active, PSGs don't generate sound
-    // This would be handled by the PSG chip reset when psgMode changes
+    // --- Bit 0 selects the AY / YM volume table and read masks; mode 11 holds the PSGs in reset
+    if (this.turboSoundDevice.psgMode !== (soundConfig.psgMode & 0x03)) {
+      this.turboSoundDevice.setPsgMode(soundConfig.psgMode);
+    }
 
     // --- Apply stereo mode (0=ABC, 1=ACB)
     this.turboSoundDevice.setAyStereoMode(soundConfig.ayStereoMode);
@@ -173,7 +174,10 @@ export class AudioControlDevice implements IGenericDevice<IZxNextMachine> {
    */
   reset(): void {
     this.turboSoundDevice.reset();
+    this.turboSoundDevice.setPsgMode(this.machine.soundDevice.psgMode);
     this.dacDevice.reset();
+    // --- Drop the per-sample record too: the frame after a reset can start without onNewFrame
+    this.dacDevice.onNewFrame();
     this.audioMixerDevice.reset();
   }
 

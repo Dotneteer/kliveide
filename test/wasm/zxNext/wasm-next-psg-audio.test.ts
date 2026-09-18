@@ -48,7 +48,8 @@ describe("ZX Next WASM PSG/TurboSound audio", () => {
     expect(exports.zxnextGetPsgSelectedRegister()).toBe(oracle.getSelectedRegister());
     expect(exports.zxnextGetPsgRegister(0, 1), "register 1 untouched").toBe(0);
     expect(exports.zxnextReadPsgRegisterValue()).toBe(0xff);
-    // --- Not compared with the oracle: TS PsgChip aliases registers 16-31 in YM mode (B31, open)
+    expect(oracle.readSelectedRegister()).toBe(0xff);
+    expect(oracle.getChip(0).getRegister(1)).toBe(0);
   });
 
   it("exposes deterministic noise/envelope movement and stereo samples", async () => {
@@ -70,7 +71,8 @@ describe("ZX Next WASM PSG/TurboSound audio", () => {
     exports.zxnextGeneratePsgOutput(0);
 
     expect(exports.zxnextGetPsgNoiseRng(0)).not.toBe(rngBefore);
-    expect(exports.zxnextGetPsgEnvelopeStep(0)).toBeLessThan(envBefore);
+    // --- R13 = $0F attacks: the level rises (the getter returns the 5-bit envelope level)
+    expect(exports.zxnextGetPsgEnvelopeStep(0)).toBeGreaterThan(envBefore);
     expect(exports.zxnextGetPsgStereoLeft(0)).toBeGreaterThan(0);
     expect(exports.zxnextGetPsgStereoRight(0)).toBeGreaterThan(0);
   });
@@ -133,7 +135,7 @@ describe("ZX Next WASM PSG/TurboSound audio", () => {
 
     const oracleState = oracle.getChipState(0);
     expect(exports.zxnextGetPsgNoiseRng(0)).toBe(oracleState.noiseSeed);
-    expect(exports.zxnextGetPsgEnvelopeStep(0)).toBe((oracle.getChip(0).getState() as any).envStep);
+    expect(exports.zxnextGetPsgEnvelopeStep(0)).toBe((oracle.getChip(0).getState() as any).envVol);
     expect(exports.zxnextGetPsgOutputA(0)).toBe(oracle.getChip(0).currentOutputA);
   });
 

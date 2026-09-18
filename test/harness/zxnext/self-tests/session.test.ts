@@ -104,6 +104,17 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
     expect(s.readNextReg(0x07)).toBe(0x11);
   });
 
+  it("pressHotkey: F9 / F10 press the M1 / DRIVE NMI buttons", async () => {
+    for (const [key, enable] of [["F9", 0x08], ["F10", 0x10]] as const) {
+      const s = await createSession(core);
+      await s.loadCode(` .org $8000\n jr $`);
+      s.setNextReg(0x06, enable).runFrames(1);
+      await s.pressHotkey(key);
+      s.runTo(0x0066, { maxFrames: 2 });
+      expect(s.peekWord(s.registers().sp), `${key}: return address on the stack`).toBe(0x8000);
+    }
+  });
+
   it("reset is a soft reset: PC back to 0, RAM kept", async () => {
     const s = await createSession(core);
     await s.loadCode(` .org $8000\n ld a,1\n jr $`);

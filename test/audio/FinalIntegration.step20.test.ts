@@ -157,7 +157,8 @@ describe("Step 20: Final Audio Integration Testing", () => {
       expect(Math.abs(fastEdges - baseEdges)).toBeLessThanOrEqual(1);
     });
 
-    it("should produce audible PSG samples when YM register selects include high bits", () => {
+    // --- ym2149.vhd ~188: registers 16-31 do not exist - writes to them are dropped (B33)
+    it("produces no PSG sound from writes to registers 16-31", () => {
       const writeAy = (register: number, value: number) => {
         machine.doWritePort(0xfffd, 0x10 | register);
         machine.doWritePort(0xbffd, value);
@@ -178,7 +179,7 @@ describe("Step 20: Final Audio Integration Testing", () => {
       const samples = machine.getAudioSamples();
       expect(samples.length).toBeGreaterThan(10);
       expect(samples.some((sample) => Math.abs(sample.left) > 0.001 || Math.abs(sample.right) > 0.001))
-        .toBe(true);
+        .toBe(false);
     });
 
     it("should produce audible PSG samples from CPU AY port instructions", () => {

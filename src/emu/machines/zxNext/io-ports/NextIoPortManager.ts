@@ -109,13 +109,16 @@ export class NextIoPortManager {
     });
     // --- zxnext.vhd ~2549: A15 = 0, A1-0 = 01, not $1FFD; A14 = 1 is decoded only in +3 timing
     const isP3Timing = () => machine.composedScreenDevice.displayTiming === 0b011;
+    // --- ~2664-2681: while Soundrive 2 (port enable bit 18) is on, $xxF1 / $xxF9 writes are DAC writes
+    // --- only - they do not also reach $7FFD, $DFFD, $1FFD or $3FFD (`port_fd_conflict_wr`)
+    const fdConflict = (p: number) => ((p & 0xff) === 0xf1 || (p & 0xff) === 0xf9) && pe(2, 2);
     r({
       description: "ZX Spectrum 128 memory",
       port: 0x7ffd,
       pmask: 0b1000_0000_0000_0011,
       value: 0b0000_0000_0000_0001,
       writerFns: gW(0, 1, (p, v) => {
-        if ((p & 0xf000) === 0x1000) return; // --- $1FFD
+        if ((p & 0xf000) === 0x1000 || fdConflict(p)) return; // --- $1FFD
         if (!(p & 0x4000) && isP3Timing()) return;
         machine.memoryDevice.port7ffdValue = v;
       })
@@ -137,7 +140,8 @@ export class NextIoPortManager {
       port: 0xdffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b1101_0000_0000_0001,
-      writerFns: gW(0, 2, (_, v) => {
+      writerFns: gW(0, 2, (p, v) => {
+        if (fdConflict(p)) return;
         machine.memoryDevice.portDffdValue = v;
       })
     });
@@ -146,7 +150,8 @@ export class NextIoPortManager {
       port: 0x1ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0001_0000_0000_0001,
-      writerFns: gW(0, 3, (_, v) => {
+      writerFns: gW(0, 3, (p, v) => {
+        if (fdConflict(p)) return;
         machine.memoryDevice.port1ffdValue = v;
         if (v & 0x08) {
           machine.floppyDevice.turnOnMotor();
@@ -172,7 +177,7 @@ export class NextIoPortManager {
       pmask: 0b1111_0000_0000_0011,
       value: 0b0011_0000_0000_0001,
       readerFns: (p) => (machine.trapFdcPortAccess(2) ? 0xff : fdcControlRead(p)),
-      writerFns: (p, v) => (machine.trapFdcPortAccess(3, v) ? undefined : fdcControlWrite(p, v))
+      writerFns: (p, v) => (fdConflict(p) || machine.trapFdcPortAccess(3, v) ? undefined : fdcControlWrite(p, v))
     });
     r({
       description: "Pentagon 1024K memory",
@@ -346,12 +351,12 @@ export class NextIoPortManager {
       }
     });
     r({
-      description: "DAC A+D (Profi Covox)",
+      description: "DAC A (Profi Covox)", // --- ~2617: $3F is channel A only; $5F is its D
       port: 0x3f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_1111,
       writerFns: (_, v) => {
-        if (pe(2, 3)) writeDacAandDPort(machine, v);
+        if (pe(2, 3)) writeDacAPort(machine, v);
       }
     });
     r({

@@ -110,6 +110,18 @@ export interface IZxNextMachine extends IZ80Machine {
   requestDivMmcNmiFromSoftware(): void;
 
   /**
+   * True while the NMI state machine accepts a new cause (IDLE or FETCH, zxnext.vhd
+   * `nmi_accept_cause`); the NextReg $02 NMI flags are set only then.
+   */
+  readonly nmiAcceptCause: boolean;
+
+  /**
+   * NextReg $C0 bit 3 was written as 0: a stackless NMI's pending RETN pops the stack again
+   * (zxnext.vhd `z80_stackless_retn_en`).
+   */
+  onStacklessNmiDisabled(): void;
+
+  /**
    * Called from a NextReg $02 write with bit 0 (soft) or bit 1 (hard reset). The reset happens after
    * the current instruction; a hard reset wins over a soft one.
    */

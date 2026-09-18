@@ -633,12 +633,13 @@ Found by catalogue §4.6 (`test/zxnext-hw/ports/*.test.ts`, 92 tests):
   called `zxnextPsgSetTurbosoundEnabled`, so software on the production core could never select AY#1
   or AY#2. Now set with the other `$08` audio bits.
 
-### B33 – TS PSG registers 16-31 are inverted against the VHDL – OPEN (found 2026-09-18)
+### B33 – TS PSG registers 16-31 are inverted against the VHDL – FIXED 2026-09-18
 
 - ym2149.vhd ~188, ~222: a register number with bit 4 set takes no write; it reads `$FF` in YM mode and
-  register n & 15 in AY mode. `zxSpectrum128/PsgChip.ts` (shared with the 128K machine) does the
-  opposite: YM mode aliases 16-31 to 0-15 (writes land), AY mode reads 0. The WASM core follows the
-  VHDL. Left for catalogue §4.21 (AY) because the chip is shared with another machine.
+  register n & 15 in AY mode. `zxSpectrum128/PsgChip.ts` did the opposite (YM mode aliased 16-31 to 0-15,
+  AY mode read 0) - and `TurboSoundDevice.setPsgRegisterIndex` dropped bit 4 on the way in. The note
+  that the chip is shared with the 128K machine was stale: only the Next's TurboSound used it (128K runs
+  its own C core). Fixed with B73; test AY-001 (`test/zxnext-hw/audio/ay-psg.test.ts`).
 
 ### B34 – The ULA interrupt was 2 tacts late in every timing – FIXED 2026-09-18
 
@@ -970,6 +971,102 @@ INT-016 / INT-023. The CPU wrapper acknowledged (device to in-service) whenever 
 the Z80 core does not take an interrupt on the instruction after EI (`eiBacklog`), with a prefix pending, or
 behind an NMI. The device then sat in service without its handler ever running and blocked every device
 below it. The wrapper now acknowledges exactly when the core will take the interrupt.
+
+### B71 – Stackless NMI and `$C2`/`$C3` did not follow the VHDL – FIXED 2026-09-18
+
+NMI-004 / NMI-005 (`test/zxnext-hw/nmi/nmi.test.ts`). zxnext.vhd ~2008-2041 with t80n_mcode.vhd ~828-848:
+the acknowledge's push always lands in `$C2`/`$C3` (nextreg.txt: "always stored"), and `$C0` bit 3 only
+keeps its write cycles off the memory bus. Both cores (1) stored `$C2`/`$C3` only for a stackless NMI;
+(2) kept the pending stackless RETN when the handler cleared `$C0` bit 3 (`z80_stackless_retn_en` is
+cleared with it, so that RETN pops the stack); (3) never made a Multiface NMI stackless - a workaround
+from the original NMI work (`nmi-issue.md`, #1173) for a crash diagnosed alongside other MF bugs. The
+VHDL has no source exception, and the MF ROM saves SP at `$0066` (`ld ($3FB1),sp`) and restores it to the
+NMI-time value right before its only RETN (`$0592`), so it returns correctly through `$C2`/`$C3`.
+(4) The stackless acknowledge took 4 T-states instead of the push's 11. TS now runs the push timing
+without the writes; WASM runs the normal acknowledge with MREQ suppressed (`zxnextCpuMreqSuppressed`).
+Not verified end to end: returning from the Multiface menu under NextZXOS (the harness cannot drive the
+menu - without NextZXOS it does not exit in either mode). Check F9 -> return in the app once.
+`test/zxnext/StacklessNmi.test.ts` (mock, asserted (1)) was retired.
+
+### B72 – NMI buttons and `$02` requests waited for their `$06` enable – FIXED 2026-09-18
+
+NMI-003 / NMI-006. zxnext.vhd ~2046-2047, ~2063-2066, ~6294: the M1/DRIVE buttons, `$02` bits 3/2 and the
+I/O trap are one-cycle pulses, asserted only while `$06` bit 3/4 is set and latched only while no NMI
+source is active. Both cores queued them as pending until the enable was set (a press with the button
+disabled fired later), and a request that lost the arbitration stayed queued. TS also set the `$02`
+flag during HOLD (`nmi_accept_cause` = 0); WASM already gated it. Both now gate at the request and drop
+unlatched pulses after the arbitration.
+
+### B73 – The Next PSGs followed MAME's AY-3-8910, not ym2149.vhd – FIXED 2026-09-18
+
+§4.21 (`test/zxnext-hw/audio/ay-psg.test.ts`, AY-001 - AY-019). Both cores ran a MAME-shaped PSG. Against
+ym2149.vhd / turbosound.vhd / zxnext.vhd ~6325: (1) the coarse tone registers counted all 8 bits in YM
+mode (the tone period is 12 bits in both modes); (2) the noise period took all 8 bits of R6 (5 bits);
+(3) the noise LFSR tapped bits 0 and 3 (VHDL: 0 and 2, seeded 0 with a zero detector); (4) an R13 write
+held the envelope's start level for a full step - in the VHDL the restart sets `env_ena`, so the first
+step follows at once; (5) `$06` bit 0 (AY mode: 16-entry `volTableAy`, the AY read masks) was ignored,
+chips were always YM; (6) `$06` = 11 did not hold the PSGs in reset; (7) R14/R15 read the register while
+R7 made the port an input (the pulled-up port reads `$FF`); plus B33. Rewritten as a port of the VHDL:
+TS `zxNext/NextPsgChip.ts` (TurboSound no longer uses `zxSpectrum128/PsgChip.ts`), WASM `zxnext-psg.c`.
+Legacy mock tests that asserted the MAME behaviour were updated (noise seed, R16-31 writes) or lost
+their orphan-sample bookkeeping cases.
+
+### B74 – TS: PSG and beeper sample clocks drifted a sample apart – FIXED 2026-09-18
+
+AY-018 / AY-019, SPD-007. `ZxNextMachine.getAudioSamples` mixes the beeper's samples (a clock that runs on
+across frames: 972 or 973 a frame at 48 kHz) with TurboSound's (restarted every frame: always 972) and
+filled a missing PSG sample with 0 - a one-sample drop to silence every other frame, which also doubled
+the measured pitch error. The PSG now closes its sample whenever the beeper emits one
+(`TurboSoundDevice.emitAudioSample`), and its tone clock carries across the frame wrap. WASM mixes every
+source on one per-frame clock and was not affected.
+
+### B75 – DAC ports and NextReg mirrors did not follow the decode – FIXED 2026-09-18
+
+§4.22 (`test/zxnext-hw/audio/dac.test.ts`). zxnext.vhd ~2614-2620, ~2664-2681, ~4830, ~5952-5961: (1) TS
+wrote Profi Covox `$3F` to channels A and D (it is A only; `$5F` is D); (2) TS let the `$2C`-`$2E` mirrors
+write the DACs while `$08` bit 3 held them in reset; (3) reads of `$2C`/`$2D`/`$2E` return the Pi I2S
+sample (`$80`, `$00`, `$80` with I2S off) - TS read 0, WASM the DAC channels; (4) both cores let a `$xxF1`
+/ `$xxF9` write page memory like `$7FFD`/`$DFFD`/`$1FFD` (or hit `$3FFD`) while Soundrive 2 owns those
+ports (`port_fd_conflict_wr`). Legacy mocks `DacPortEnableGating.step21` (Profi A+D) and
+`NextRegDevice.test.ts` (`$2C`/`$2E` read 0) were updated.
+
+### B76 – TS: a DAC played its end-of-frame value for the whole frame – FIXED 2026-09-18
+
+DAC-010. `ZxNextMachine.getAudioSamples` mixed the DAC device's current value into every sample of the
+frame, so Specdrum/Covox sample playback (many writes a frame) came out as one step per frame. The DAC
+now records its output whenever the beeper emits a sample (`DacDevice.recordSample`) and the mixer takes
+the recorded value (`AudioMixerDevice.setDacOutput`). The record is dropped on reset: the first frame
+after a reset starts without `onNewFrame`. WASM reads the DAC at each sample and was not affected.
+
+### B77 – The mixer did not weigh its sources as audio_mixer.vhd does – FIXED 2026-09-18
+
+BEEP-004. audio_mixer.vhd sums EAR 512, MIC 128, the AY (a full YM channel 255) and the DACs (4 per
+step). Both cores weighted EAR 12x and the AY by psg/48, so the beeper was 5.1x a full AY channel (VHDL
+2.0x, and it clipped on its own) and a full DAC channel 0.75x (VHDL 4.0x). Now the VHDL units times one
+gain, `MIXER_GAIN` = 29.44 (TS `AudioMixerDevice`, WASM `ZXNEXT_MIXER_GAIN`). **The gain is the
+project author's choice (2026-09-18): a full AY channel keeps its earlier level (7507)** - so the beeper
+is ~7 dB quieter than before, the DACs ~15 dB louder, and sums above ~1110 units (several loud sources
+at once) clamp. The legacy mixer mocks (`AudioMixerDevice.step8`, `AudioMixing.step17`,
+`BeeperFpga.step22`) now state their expectations in VHDL units.
+
+### B78 – WASM ignored `$06` bit 6 (beeper to the internal speaker only) – FIXED 2026-09-18
+
+BEEP-003. zxnext.vhd ~6450: with `$06` bit 6 and `$08` bit 4 set (`beep_spkr_excl`), EAR and MIC leave the
+mix. TS did this in `getAudioSamples`; WASM mixed the beeper regardless.
+
+### B79 – WASM dropped 0.45 of a sample every frame – FIXED 2026-09-18
+
+BEEP-008. The WASM mixer restarted its sample clock at every frame start, so a frame gave 972 samples at
+48 kHz instead of 972.45 on average (an effective 47 978 Hz). The schedule now carries across the frame
+wrap (`zxnextAudioMixerOnFrameWrap`), as the TS beeper clock does.
+- **Regression found and fixed the same day:** the IDE's per-instruction loop
+  (`ZxNextWasmV2Machine.executeWasmV2DebugLoop`, which carries the whole NextZXOS boot of a NEX launch)
+  never calls `zxnextBeginAudioMixerFrame`, so the 2048-sample buffer fills and stays full. With the
+  schedule carried back at every wrap, each T-state then re-ran the beeper/PSG refresh for a sample it
+  could not store (~300 ms a frame): a NEX launched from the NEX viewer never finished booting, while a
+  normal start (`zxnextExecuteFrame`) was fine. A full buffer now drops the sample and keeps the schedule
+  moving. Guard: `test/wasm/zxNext/wasm-next-audio-debug-loop.test.ts`. The debug loop still produces no
+  audio (as before) - it would need `BeginFrame` at its frame starts.
 
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 

@@ -19,6 +19,10 @@ static inline void zxnextCpuDelayPortAccess(uint32_t address);
 static inline uint32_t zxnextCpuShouldRaiseInt(void);
 static inline void zxnextCpuCaptureVideoInterrupts(void);
 
+/* zxnext.vhd ~1784: during a stackless NMI acknowledge (`z80_stackless_nmi`) the CPU's push cycles run
+   with MREQ held high - SP moves and the cycles take their time, but no byte reaches memory. */
+static uint8_t zxnextCpuMreqSuppressed;
+
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() zxnextMemory
 #define Z80_READ_MEMORY(address) zxnextCpuSharedReadMemory(address)
@@ -58,6 +62,7 @@ static inline void zxnextCpuTactPlusN(uint32_t value) {
   while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
     zxnextCtcOnFrameCompleted();
     frameTacts28 -= ZXNEXT_TACTS_IN_FRAME;
+    zxnextAudioMixerOnFrameWrap();
     zxnextCpuMarkFrameCompleted();
   }
   currentFrameTact = frameTacts28 >> 2;
@@ -86,6 +91,7 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
   while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
     zxnextCtcOnFrameCompleted();
     frameTacts28 -= ZXNEXT_TACTS_IN_FRAME;
+    zxnextAudioMixerOnFrameWrap();
     zxnextCpuMarkFrameCompleted();
   }
   currentFrameTact = frameTacts28 >> 2;
@@ -228,6 +234,7 @@ static uint32_t zxnextCpuSharedFetchCodeByte(uint32_t address) {
 }
 
 static void zxnextCpuSharedWriteMemory(uint32_t address, uint32_t value) {
+  if (zxnextCpuMreqSuppressed) return;
   zxnextMemoryWriteMapped(address & 0xffffu, value & 0xffu);
   zxnextCpuLatchP3FloatingBus(address, value);
   lastMemoryAddress = (uint16_t)address;
@@ -273,26 +280,6 @@ static void zxnextCpuReset(void) {
   z80SetTacts(tacts);
 }
 
-static uint32_t zxnextCpuProcessStacklessNmi(void) {
-  uint32_t previousTacts = z80GetTacts();
-  uint32_t pc = z80GetPc();
-  uint32_t sp = z80GetSp();
-  z80TactPlusN(4);
-  if (z80GetHalted()) {
-    pc = (pc + 1u) & 0xffffu;
-  }
-  z80SetIff2(z80GetIff1());
-  z80SetIff1(0);
-  z80SetSp((sp - 2u) & 0xffffu);
-  z80SetWz(0);
-  z80SetPc(0x0066u);
-  zxnextNmiSetReturnAddress(pc);
-  zxnextNmiMarkAccepted();
-  zxnextSharedCpuExecutedInstructions++;
-  zxnextCpuSyncFrameState(previousTacts, z80GetTacts());
-  return zxnextSharedCpuExecutedInstructions;
-}
-
 static uint32_t zxnextCpuExecuteInstruction(void) {
   uint16_t pcBefore = (uint16_t)z80GetPc();
   uint32_t previousTacts = z80GetTacts();
@@ -312,11 +299,10 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   // --- The DMA goes first, after the INT line is sampled, as in ZxNextMachine.beforeInstructionExecuted.
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
   zxnextCpuRunDma();
-  if (nmiSignal && zxnextNmiGetStacklessEnabled() && !zxnextNmiSourceIsMultiface()) {
-    uint32_t executed = zxnextCpuProcessStacklessNmi();
-    zxnextTraceRecordInstruction(pcBefore);
-    return executed;
-  }
+  /* zxnext.vhd ~2008-2041: the acknowledge's push always lands in $C2/$C3; with $C0 bit 3 it does not
+     reach memory. The pushed address is past a HALT, as removeFromHaltedState makes it. */
+  uint16_t nmiReturnAddress = (uint16_t)(pcBefore + (wasHalted ? 1u : 0u));
+  zxnextCpuMreqSuppressed = nmiSignal && zxnextNmiGetStacklessEnabled();
 
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
   zxnextDivMmcBeforeOpcodeFetch(pcBefore);
@@ -339,10 +325,12 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     cyclesExecuted++;
   } while (z80GetPrefix() != 0 && cyclesExecuted < 4u);
 
+  zxnextCpuMreqSuppressed = 0u;
   zxnextSharedCpuExecutedInstructions++;
   zxnextCpuSyncFrameState(previousTacts, z80GetTacts());
 
   if (nmiSignal) {
+    zxnextNmiSetReturnAddress(nmiReturnAddress);
     zxnextNmiMarkAccepted();
   }
   if (isRetiInstruction) {

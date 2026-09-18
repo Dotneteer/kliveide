@@ -132,7 +132,11 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   lastPortValue = byteValue;
   lastPortAccessed = 1;
   lastPortIsWrite = 1;
-  if ((zxnextNextRegs[0xd8u] & 0x01u) != 0u && (normalized & 0xf003u) == 0x3001u) {
+  /* ~2664-2681: while Soundrive 2 (port enable bit 18) is on, $xxF1 / $xxF9 writes are DAC writes only -
+     they do not also reach $7FFD, $DFFD, $1FFD or $3FFD (`port_fd_conflict_wr`) */
+  uint32_t fdConflict = ((normalized & 0x00ffu) == 0x00f1u || (normalized & 0x00ffu) == 0x00f9u) &&
+    zxnextPortsGroupEnabled(2, 2);
+  if (!fdConflict && (zxnextNextRegs[0xd8u] & 0x01u) != 0u && (normalized & 0xf003u) == 0x3001u) {
     zxnextNmiIoTrap(3u, byteValue, 1u);
     return;
   }
@@ -187,6 +191,8 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
       zxnextDmaSetMode(1);
       zxnextDmaWritePort(byteValue);
     }
+  } else if (fdConflict) {
+    /* a Soundrive 2 DAC write (zxnextDacWritePort above), nothing else */
   } else if ((normalized & 0x8003u) == 0x0001u && (normalized & 0xf000u) != 0x1000u &&
              ((normalized & 0x4000u) != 0u || zxnextNextRegGetMachineTiming() != 3u)) {
     /* ~2549: A15 = 0, A1-0 = 01, not $1FFD; A14 = 1 is decoded only in +3 timing */

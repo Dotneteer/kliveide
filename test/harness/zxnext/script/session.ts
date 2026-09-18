@@ -63,11 +63,13 @@ export type Program = {
 type RunLimit = { maxFrames?: number };
 
 /** The function-key hotkeys `pressHotkey` can press. */
-export type Hotkey = "F5" | "F6" | "F8";
+export type Hotkey = "F5" | "F6" | "F8" | "F9" | "F10";
 const HOTKEY_COMMANDS: Record<Hotkey, string> = {
   F5: "enableExpansionBus",
   F6: "disableExpansionBus",
-  F8: "cycleCpuSpeed"
+  F8: "cycleCpuSpeed",
+  F9: "multifaceNmi",
+  F10: "divmmcNmi"
 };
 
 export class NextTestSession {
@@ -107,6 +109,10 @@ export class NextTestSession {
    * Presses a Next function-key hotkey, as the PS/2 keyboard (and the app's machine menu) does:
    * F5 enables and F6 disables the expansion bus, F8 steps the programmed CPU speed. zxnext.vhd
    * ~6290-6293 gates all three with NextReg `$06` bit 7, so they do nothing while it is clear.
+   *
+   * F9 and F10 are the M1 (Multiface) and DRIVE (DivMMC) NMI buttons (~6294-6295, `hotkey_m1`,
+   * `hotkey_drive`): one-cycle pulses into the NMI arbiter, gated there by NextReg `$06` bits 3 / 4
+   * (~2046-2047). F10 also needs the DivMMC port enabled (`port_divmmc_io_en`, `$83` bit 0).
    */
   async pressHotkey(key: Hotkey): Promise<this> {
     await this.machine.executeCustomCommand(HOTKEY_COMMANDS[key]);

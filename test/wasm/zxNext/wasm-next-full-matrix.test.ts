@@ -244,7 +244,6 @@ const MATRIX: MatrixEntry[] = [
       "InterruptDevice.test.ts",
       "NmiSoftware.test.ts",
       "NmiStateMachine.test.ts",
-      "StacklessNmi.test.ts",
       "UartDevice.test.ts"
     ],
     wasmSuites: ["wasm-next-ctc.test.ts", "wasm-next-interrupts.test.ts", "wasm-next-nmi.test.ts", "wasm-next-uart-i2c.test.ts"],

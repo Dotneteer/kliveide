@@ -60,6 +60,8 @@ import { AudioSample } from "@emu/abstractions/IAudioDevice";
 export class DacDevice {
   // DAC channel values: 8-bit unsigned (0x00-0xFF)
   private _dacChannels: number[] = [0x80, 0x80, 0x80, 0x80];
+  // The stereo output at each sample time of the current frame (recordSample)
+  private readonly _frameSamples: AudioSample[] = [];
 
   constructor() {
     this.reset();
@@ -254,8 +256,16 @@ export class DacDevice {
    * Called at the start of each frame to clear samples
    */
   onNewFrame(): void {
-    // DAC devices don't accumulate samples like beeper
-    // State is read on-demand when mixing
+    this._frameSamples.length = 0;
+  }
+
+  /**
+   * Records the channels' output as the next sample of the frame. ZxNextMachine calls it whenever the
+   * beeper emits a sample, so a DAC written many times a frame (sample playback) is heard at the time
+   * of each write rather than with its end-of-frame value for the whole frame.
+   */
+  recordSample(): void {
+    this._frameSamples.push(this.getStereoOutput());
   }
 
   /**
@@ -278,8 +288,6 @@ export class DacDevice {
    * Get audio samples for current frame (for integration)
    */
   getAudioSamples(): AudioSample[] {
-    // Return single sample with current stereo output
-    const output = this.getStereoOutput();
-    return [{ left: output.left, right: output.right }];
+    return this._frameSamples;
   }
 }

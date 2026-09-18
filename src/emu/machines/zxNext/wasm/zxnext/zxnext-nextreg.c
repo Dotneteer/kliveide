@@ -475,7 +475,10 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
     zxnextNextRegs[0x07u] = (uint8_t)(value & 0xffu);
     return;
   }
-  if (normalized == 0x08u) {
+  if (normalized == 0x06u) {
+    /* ~6325-6335: bits 1-0 = PSG mode (bit 0 = aymode_i; 11 holds every PSG in reset) */
+    zxnextPsgSetMode(value & 0x03u);
+  } else if (normalized == 0x08u) {
     /* ~3650: writing bit 7 = 1 clears the $7FFD lock */
     if ((value & 0x80u) != 0u) zxnextMemoryUnlockPaging();
     /* ~5155-5157: bit 5 = AY stereo mode (0 ABC, 1 ACB), bit 4 = internal speaker, bit 3 = DAC enable */

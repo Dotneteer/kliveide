@@ -205,6 +205,7 @@ void zxnextReset(void) {
   zxnextDmaReset();
   zxnextFloppyReset();
   zxnextNextRegSoftReset(keptNr06);
+  zxnextPsgMode = (uint8_t)(keptNr06 & 0x03u); /* $06 is not in the reset branch */
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryAccessed = 0;
@@ -392,8 +393,8 @@ uint32_t zxnextGetNextRegisterIndex(void) { return zxnextNextRegGetIndex(); }
 void zxnextSetNextRegisterValue(uint32_t value) { zxnextNextRegSetValue(value); }
 void zxnextWriteNextRegister(uint32_t reg, uint32_t value) { zxnextNextRegSetDirect(reg & 0xffu, value & 0xffu); }
 /* The M1 (Multiface) and DRIVE (DivMMC) NMI buttons - the F9/F10 menu commands. */
-void zxnextPressMultifaceNmiButton(void) { nmiPendingMf = 1u; }
-void zxnextPressDivMmcNmiButton(void) { nmiPendingDivMmc = 1u; }
+void zxnextPressMultifaceNmiButton(void) { zxnextNmiRequestMultiface(); }
+void zxnextPressDivMmcNmiButton(void) { zxnextNmiRequestDivMmc(); }
 uint32_t zxnextTakeResetRequest(void) {
   uint32_t request = zxnextResetRequest;
   zxnextResetRequest = 0u;

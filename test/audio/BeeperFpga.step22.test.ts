@@ -1,8 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { SpectrumBeeperDevice } from "@emu/machines/BeeperDevice";
-import { AudioMixerDevice } from "@emu/machines/zxNext/AudioMixerDevice";
+import { AudioMixerDevice, MIXER_GAIN } from "@emu/machines/zxNext/AudioMixerDevice";
 import { DacDevice } from "@emu/machines/zxNext/DacDevice";
 import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
+
+/** The normalized mixer output for a sum in audio_mixer.vhd units (EAR 512, MIC 128), at `volume`. */
+const mix = (units: number, volume = 1) =>
+  Math.max(-32768, Math.min(32767, Math.floor(Math.trunc(units * MIXER_GAIN) * volume))) / 32768;
 
 /**
  * Step 22: Speaker / Beeper discrepancy fixes (S1–S4)
@@ -184,26 +188,23 @@ describe("S2: AudioMixerDevice — MIC separately wired, FPGA 4:1 amplitude rati
     expect(Math.abs(after.left)).toBeGreaterThan(Math.abs(before.left));
   });
 
-  it("EAR+MIC combined output has correct magnitude: (512+128)×12×5.5 / 32768", () => {
-    mixer.setEarLevel(1.0);  // earLevel=512 → beeperScaled=6144
-    mixer.setMicLevel(1.0);  // micLevel=128 → micScaled=1536
-    // mixedLeft = 6144 + 1536 = 7680; left = floor(7680 * 5.5) = 42240; clamped to 32767
+  it("EAR+MIC combined output has the audio_mixer.vhd magnitude: 512 + 128 units", () => {
+    mixer.setEarLevel(1.0);  // earLevel=512
+    mixer.setMicLevel(1.0);  // micLevel=128
     const out = mixer.getMixedOutput();
-    // Clamped to 32767/32768 ≈ 1.0
-    expect(out.left).toBeCloseTo(1.0, 2);
+    expect(out.left).toBeCloseTo(mix(640), 4);
   });
 
-  it("EAR only: earLevel=512 → scaled → normalized ≈ 1.0", () => {
-    mixer.setEarLevel(1.0);  // earLevel=512, beeperScaled=6144, ×5.5=33792 → clamped→1.0
+  it("EAR only: earLevel=512 units", () => {
+    mixer.setEarLevel(1.0);
     const out = mixer.getMixedOutput();
-    expect(out.left).toBeCloseTo(1.0, 2);
+    expect(out.left).toBeCloseTo(mix(512), 4);
   });
 
-  it("MIC only at DC-filtered 1.0: micLevel=128, ×12=1536, ×5.5=8448 → normalized 0.258", () => {
-    mixer.setMicLevel(1.0);  // micLevel=128, ×12=1536
-    // left = floor(1536 * 5.5) = 8448; normalized = 8448/32768 ≈ 0.258
+  it("MIC only at DC-filtered 1.0: micLevel=128 units, a quarter of EAR", () => {
+    mixer.setMicLevel(1.0);
     const out = mixer.getMixedOutput();
-    expect(out.left).toBeCloseTo(0.258, 2);
+    expect(out.left).toBeCloseTo(mix(128), 4);
   });
 
   it("MIC mono: left and right channels equal for MIC signal", () => {

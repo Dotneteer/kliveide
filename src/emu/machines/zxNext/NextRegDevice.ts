@@ -192,9 +192,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       writeFn: (v) => {
         machine.interruptDevice.busResetRequested = (v & 0x80) !== 0;
 
-        // Bit 3: generate multiface NMI
+        // Bit 3: generate multiface NMI. zxnext.vhd ~3820-3842: the flag is set only while the NMI
+        // state machine accepts a cause (IDLE / FETCH); a request during HOLD / END changes nothing.
         if (v & 0x08) {
-          machine.interruptDevice.mfNmiByNextReg = true;
+          if (machine.nmiAcceptCause) machine.interruptDevice.mfNmiByNextReg = true;
           machine.requestMfNmiFromSoftware();
         } else {
           machine.interruptDevice.mfNmiByNextReg = false;
@@ -202,7 +203,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
         // Bit 2: generate DivMMC NMI
         if (v & 0x04) {
-          machine.interruptDevice.divMccNmiBtNextReg = true;
+          if (machine.nmiAcceptCause) machine.interruptDevice.divMccNmiBtNextReg = true;
           machine.requestDivMmcNmiFromSoftware();
         } else {
           machine.interruptDevice.divMccNmiBtNextReg = false;
@@ -425,6 +426,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         machine.divMmcDevice.enableMultifaceNmiByM1Button = (v & 0x08) !== 0;
         this.ps2Mode = (v & 0x04) !== 0;
         machine.soundDevice.psgMode = v & 0x03;
+        machine.audioControlDevice.applyConfiguration();
       },
       slices: [
         {
@@ -1106,29 +1108,36 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       readFn: () => this.ps2KeymapDataLsb,
       writeFn: (v) => (this.ps2KeymapDataLsb = v & 0xff)
     });
+    // --- zxnext.vhd ~4830, soundrive.vhd: the mirrors write the DACs, which ignore writes while
+    // --- $08 bit 3 holds them in reset. ~5952-5961: reads return the Pi I2S sample (bits 9-2 from
+    // --- $2C/$2E, the latched bits 1-0 from $2D); with I2S off it is "10" & X"00" (~2314).
+    const dacs = () => machine.audioControlDevice.getDacDevice();
+    const dacsOn = () => machine.soundDevice.enable8BitDacs;
     r({
       id: 0x2c,
       description: "DAC B Mirror (left)",
-      isWriteOnly: true,
-      readFn: () => 0x00,
-      writeFn: (v) => machine.audioControlDevice.getDacDevice().setDacB(v)
+      readFn: () => 0x80,
+      writeFn: (v) => {
+        if (dacsOn()) dacs().setDacB(v);
+      }
     });
     r({
       id: 0x2d,
       description: "DAC A+D Mirror (mono)",
-      isWriteOnly: true,
       readFn: () => 0x00,
       writeFn: (v) => {
-        machine.audioControlDevice.getDacDevice().setDacA(v);
-        machine.audioControlDevice.getDacDevice().setDacD(v);
+        if (!dacsOn()) return;
+        dacs().setDacA(v);
+        dacs().setDacD(v);
       }
     });
     r({
       id: 0x2e,
       description: "DAC C Mirror (right)",
-      isWriteOnly: true,
-      readFn: () => 0x00,
-      writeFn: (v) => machine.audioControlDevice.getDacDevice().setDacC(v)
+      readFn: () => 0x80,
+      writeFn: (v) => {
+        if (dacsOn()) dacs().setDacC(v);
+      }
     });
     r({
       id: 0x2f,
@@ -2818,7 +2827,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0xc0,
       description: "Interrupt Control",
       readFn: () => this.machine.interruptDevice.nextRegC0Value,
-      writeFn: (v) => (machine.interruptDevice.nextRegC0Value = v),
+      writeFn: (v) => {
+        machine.interruptDevice.nextRegC0Value = v;
+        if (!(v & 0x08)) machine.onStacklessNmiDisabled();
+      },
       slices: [
         {
           mask: 0xe0,

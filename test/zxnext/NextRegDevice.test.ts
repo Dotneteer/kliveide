@@ -69,9 +69,9 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x29)).toBe(0xff);
     expect(d.directGetRegValue(0x2a)).toBe(0x00);
     expect(d.directGetRegValue(0x2b)).toBe(0x00);
-    expect(d.directGetRegValue(0x2c)).toBe(0x00);
+    expect(d.directGetRegValue(0x2c)).toBe(0x80); // --- the I2S sample with I2S off (zxnext.vhd ~2314, ~5952)
     expect(d.directGetRegValue(0x2d)).toBe(0x00);
-    expect(d.directGetRegValue(0x2e)).toBe(0x00);
+    expect(d.directGetRegValue(0x2e)).toBe(0x80);
     expect(d.directGetRegValue(0x2f)).toBe(0x00);
     expect(d.directGetRegValue(0x30)).toBe(0x00);
     expect(d.directGetRegValue(0x31)).toBe(0x00);
@@ -221,9 +221,9 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x29)).toBe(0xff);
     expect(d.directGetRegValue(0x2a)).toBe(0x00);
     expect(d.directGetRegValue(0x2b)).toBe(0x00);
-    expect(d.directGetRegValue(0x2c)).toBe(0x00);
+    expect(d.directGetRegValue(0x2c)).toBe(0x80); // --- the I2S sample with I2S off (zxnext.vhd ~2314, ~5952)
     expect(d.directGetRegValue(0x2d)).toBe(0x00);
-    expect(d.directGetRegValue(0x2e)).toBe(0x00);
+    expect(d.directGetRegValue(0x2e)).toBe(0x80);
     expect(d.directGetRegValue(0x2f)).toBe(0x00);
     expect(d.directGetRegValue(0x30)).toBe(0x00);
     expect(d.directGetRegValue(0x31)).toBe(0x00);

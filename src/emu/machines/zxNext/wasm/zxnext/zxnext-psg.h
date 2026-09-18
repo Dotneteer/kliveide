@@ -5,6 +5,7 @@
 
 static void zxnextPsgReset(void);
 static void zxnextPsgBeginFrame(void);
+static void zxnextPsgSetMode(uint32_t mode);
 static void zxnextPsgSetTurbosoundEnabled(uint32_t enabled);
 static void zxnextPsgSetAyStereoMode(uint32_t enabled);
 static void zxnextPsgSetChipMonoMode(uint32_t chip, uint32_t enabled);

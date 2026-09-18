@@ -239,9 +239,13 @@ describe("Step 2: TurboSoundDevice", () => {
       device.getChip(0).setPsgRegisterIndex(8);
       device.getChip(0).writePsgRegisterValue(0x0f);
 
-      device.generateChipOutputValue(0);
-      const orphans = device.getChipOrphanSamples(0);
-      expect(orphans.count).toBeGreaterThan(0);
+      // --- R7 = $FE: tone A on; period $10 toggles it every 16 ticks (it starts low)
+      let peak = 0;
+      for (let i = 0; i < 32; i++) {
+        device.generateChipOutputValue(0);
+        peak = Math.max(peak, device.getChip(0).currentOutputA);
+      }
+      expect(peak).toBeGreaterThan(0);
     });
 
     it("should generate output for all chips", () => {
@@ -258,60 +262,15 @@ describe("Step 2: TurboSoundDevice", () => {
         chip.writePsgRegisterValue(0x0f);
       }
 
-      device.generateAllOutputValues();
+      const peak = [0, 0, 0];
+      for (let i = 0; i < 64; i++) {
+        device.generateAllOutputValues();
+        for (let chipId = 0; chipId < 3; chipId++) peak[chipId] = Math.max(peak[chipId], device.getChip(chipId).currentOutputA);
+      }
 
-      // All chips should have samples
+      // All chips produced output
       for (let chipId = 0; chipId < 3; chipId++) {
-        const orphans = device.getChipOrphanSamples(chipId);
-        expect(orphans.count).toBeGreaterThan(0);
-      }
-    });
-  });
-
-  describe("Orphan Sample Management", () => {
-    it("should track orphan samples per chip", () => {
-      device.getChip(0).setPsgRegisterIndex(0);
-      device.getChip(0).writePsgRegisterValue(0x10);
-      device.getChip(0).setPsgRegisterIndex(7);
-      device.getChip(0).writePsgRegisterValue(0xfe);
-      device.getChip(0).setPsgRegisterIndex(8);
-      device.getChip(0).writePsgRegisterValue(0x0f);
-
-      // Generate output on chip 0
-      for (let i = 0; i < 10; i++) {
-        device.generateChipOutputValue(0);
-      }
-
-      const orphans0 = device.getChipOrphanSamples(0);
-      const orphans1 = device.getChipOrphanSamples(1);
-
-      expect(orphans0.count).toBe(10);
-      expect(orphans1.count).toBe(0);
-    });
-
-    it("should clear orphan samples for specific chip", () => {
-      device.getChip(0).orphanSamples = 5;
-      device.getChip(0).orphanSum = 100;
-
-      device.clearChipOrphanSamples(0);
-
-      const orphans = device.getChipOrphanSamples(0);
-      expect(orphans.count).toBe(0);
-      expect(orphans.sum).toBe(0);
-    });
-
-    it("should clear orphan samples for all chips", () => {
-      for (let i = 0; i < 3; i++) {
-        device.getChip(i).orphanSamples = (i + 1) * 5;
-        device.getChip(i).orphanSum = (i + 1) * 100;
-      }
-
-      device.clearAllOrphanSamples();
-
-      for (let i = 0; i < 3; i++) {
-        const orphans = device.getChipOrphanSamples(i);
-        expect(orphans.count).toBe(0);
-        expect(orphans.sum).toBe(0);
+        expect(peak[chipId]).toBeGreaterThan(0);
       }
     });
   });

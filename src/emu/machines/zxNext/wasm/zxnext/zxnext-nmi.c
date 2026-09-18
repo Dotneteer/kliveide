@@ -45,14 +45,21 @@ static uint32_t zxnextNmiAcceptCause(void) {
   return nmiState == ZXNEXT_NMI_IDLE || nmiState == ZXNEXT_NMI_FETCH;
 }
 
-static uint32_t zxnextNmiSourceIsMultiface(void) { return nmiSourceMf; }
-
+/*
+ * ~2046-2047, ~2063-2066: an NMI cause (a button, a $02 write, the I/O trap) is a one-cycle pulse,
+ * asserted only while its $06 enable is set and latched only while no source is active. A pulse that
+ * misses either is gone - it does not wait for the enable.
+ */
 static void zxnextNmiRequestMultiface(void) {
-  if (zxnextNmiAcceptCause()) nmiPendingMf = 1u;
+  if (zxnextNmiAcceptCause() && !nmiSourceMf && !nmiSourceDivMmc && zxnextDivMmcGetEnableMultifaceNmiByM1Button()) {
+    nmiPendingMf = 1u;
+  }
 }
 
 static void zxnextNmiRequestDivMmc(void) {
-  if (zxnextNmiAcceptCause()) nmiPendingDivMmc = 1u;
+  if (zxnextNmiAcceptCause() && !nmiSourceMf && !nmiSourceDivMmc && zxnextDivMmcGetEnableNmiByDriveButton()) {
+    nmiPendingDivMmc = 1u;
+  }
 }
 
 static void zxnextNmiUpdateSources(void) {
@@ -62,11 +69,12 @@ static void zxnextNmiUpdateSources(void) {
   uint32_t conmem = (zxnextDivMmcGetPortE3() & 0x80u) != 0u;
   if (assertMf && !conmem && !zxnextDivMmcGetNmiHold()) {
     nmiSourceMf = 1u;
-    nmiPendingMf = 0u;
   } else if (assertDivMmc && !zxnextMultifaceIsActive()) {
     nmiSourceDivMmc = 1u;
-    nmiPendingDivMmc = 0u;
   }
+  /* The causes are pulses: one that lost the arbitration is gone */
+  nmiPendingMf = 0u;
+  nmiPendingDivMmc = 0u;
 }
 
 static void zxnextNmiBeforeOpcodeFetch(uint32_t pc) {
@@ -150,6 +158,8 @@ static uint32_t zxnextNmiGetCause(void) {
 
 static void zxnextNmiSetStacklessEnabled(uint32_t enabled) {
   stacklessNmiEnabled = enabled != 0;
+  /* ~2031: clearing $C0 bit 3 cancels the pending stackless RETN */
+  if (!stacklessNmiEnabled) stacklessNmiProcessed = 0;
 }
 
 static uint32_t zxnextNmiGetStacklessEnabled(void) {
@@ -168,10 +178,11 @@ static uint32_t zxnextNmiGetStacklessProcessed(void) {
   return stacklessNmiProcessed;
 }
 
+/* ~2031-2037: `z80_stackless_retn_en` - set by a stackless acknowledge whatever the NMI source (the
+   Multiface ROM restores SP to its NMI-time value before its RETN, so it works either way). */
 static void zxnextNmiMarkAccepted(void) {
   nmiSignalActive = 0;
-  /* The Multiface predates stackless NMI: its ROM's RETN pops the return address */
-  if (stacklessNmiEnabled && !nmiSourceMf) stacklessNmiProcessed = 1;
+  if (stacklessNmiEnabled) stacklessNmiProcessed = 1;
 }
 
 static void zxnextNmiAfterRetn(void) {

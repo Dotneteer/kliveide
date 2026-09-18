@@ -1,7 +1,7 @@
 {
   "$comment": "Known type errors, keyed by file and TypeScript diagnostic code. The build fails on anything NOT listed here. Regenerate with `npm run build:check -- --update` — but only ever to LOWER a count. See scripts/check-types.cjs.",
   "updated": "2026-09-18",
-  "total": 122,
+  "total": 121,
   "entries": {
     "src/common/ksx/Token.ts::TS2304": 1,
     "src/common/state/actions.ts::TS2322": 2,
@@ -13,7 +13,6 @@
     "src/emu/machines/c64/vic/raster-cache.ts::TS6133": 1,
     "src/emu/machines/z88/Z88BeeperDevice.ts::TS2420": 1,
     "src/emu/machines/z88/Z88Machine.ts::TS2739": 1,
-    "src/emu/machines/zxNext/AudioControlDevice.ts::TS6133": 1,
     "src/emu/machines/zxNext/DacPortDevice.ts::TS6133": 1,
     "src/emu/machines/zxNext/NextRegDevice.ts::TS6133": 1,
     "src/emu/machines/zxNext/io-ports/AyRegPortHandler.ts::TS6133": 1,

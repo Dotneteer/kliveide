@@ -13,7 +13,10 @@ static uint32_t zxnextMixerPsgLeft;
 static uint32_t zxnextMixerPsgRight;
 static uint32_t zxnextMixerVolumeScaleMilli;
 static uint32_t zxnextMixerSampleCount;
-static uint64_t zxnextMixerNextSampleTactScaled;
+/* The next sample's time: frame 28 MHz clocks x sample rate. It carries across the frame wrap
+   (zxnextAudioMixerOnFrameWrap), so a frame yields rate x frame length / 28 MHz samples on average -
+   restarting it every frame dropped the fraction of a sample at each frame end (0.45 at 48 kHz). */
+static int64_t zxnextMixerNextSampleTactScaled;
 static int32_t zxnextMixerBeeperDcPrevInputEarMilli;
 static int32_t zxnextMixerBeeperDcPrevInputMicMilli;
 static double zxnextMixerBeeperDcPrevOutputEarMilli;
@@ -60,6 +63,7 @@ static void zxnextAudioMixerReset(void) {
   zxnextMixerBeeperDcPrevOutputEarMilli = 0.0;
   zxnextMixerBeeperDcPrevOutputMicMilli = 0.0;
   zxnextAudioMixerBeginFrame();
+  zxnextMixerNextSampleTactScaled = (int64_t)ZXNEXT_AUDIO_BASE_CLOCK;
   for (uint32_t i = 0u; i < ZXNEXT_AUDIO_SAMPLE_CAPACITY; i++) {
     zxnextMixerSamplesLeft[i] = 0;
     zxnextMixerSamplesRight[i] = 0;
@@ -68,7 +72,11 @@ static void zxnextAudioMixerReset(void) {
 
 static void zxnextAudioMixerBeginFrame(void) {
   zxnextMixerSampleCount = 0u;
-  zxnextMixerNextSampleTactScaled = (uint64_t)ZXNEXT_AUDIO_BASE_CLOCK;
+}
+
+/* The frame counter wrapped: the sample times are frame-relative, so move the schedule back a frame */
+static void zxnextAudioMixerOnFrameWrap(void) {
+  zxnextMixerNextSampleTactScaled -= (int64_t)ZXNEXT_TACTS_IN_FRAME * (int64_t)zxnextAudioSampleRate;
 }
 
 static void zxnextAudioMixerSetSampleRate(uint32_t rate) {
@@ -78,6 +86,7 @@ static void zxnextAudioMixerSetSampleRate(uint32_t rate) {
   zxnextMixerBeeperDcPrevOutputEarMilli = 0.0;
   zxnextMixerBeeperDcPrevOutputMicMilli = 0.0;
   zxnextAudioMixerBeginFrame();
+  zxnextMixerNextSampleTactScaled = (int64_t)ZXNEXT_AUDIO_BASE_CLOCK;
 }
 
 static uint32_t zxnextAudioMixerGetSampleRate(void) {
@@ -101,22 +110,24 @@ static void zxnextAudioMixerSetVolumeScaleMilli(uint32_t scale) {
   zxnextMixerVolumeScaleMilli = scale > 1000u ? 1000u : scale;
 }
 
+/*
+ * audio_mixer.vhd: pcm = ear + mic + ay + dac + i2s, each side on its own, in these units: EAR 512 and
+ * MIC 128 while high, a full YM channel 255 (the PSG output is that table x 257), one DAC channel 4 per
+ * step. The beeper arrives DC-filtered and the DACs are taken about their $80 centre, so silence is 0;
+ * the AY stays unipolar. ZXNEXT_MIXER_GAIN maps the sum to 16 bits: chosen (2026-09-18) so that a full
+ * AY channel keeps the level it had before the mixer followed the VHDL proportions. Mirrors
+ * AudioMixerDevice.getMixedOutput.
+ */
+#define ZXNEXT_MIXER_GAIN 29.44
 static int32_t zxnextAudioMixerGetMixedSide(uint32_t isRight) {
-  int32_t mixed = 0;
-  mixed += zxnextMixerEarLevel * 12;
-  mixed += zxnextMixerMicLevel * 12;
-
-  /* AC coupling is per side (audio_mixer.vhd ~99 sums each side on its own): a midpoint taken from
-     max(left, right) leaked an inverted copy of one side into the other. Mirrors AudioMixerDevice. */
-  uint32_t psgScaled = (isRight ? zxnextMixerPsgRight : zxnextMixerPsgLeft) / 24u;
-  mixed += (int32_t)psgScaled - (int32_t)(psgScaled / 2u);
-
+  double mixed = (double)zxnextMixerEarLevel + (double)zxnextMixerMicLevel;
+  mixed += (double)(isRight ? zxnextMixerPsgRight : zxnextMixerPsgLeft) / 257.0;
   uint32_t dacSide = isRight ? zxnextDacGetStereoRight() : zxnextDacGetStereoLeft();
-  mixed += ((int32_t)dacSide << 2) - 1024;
-
-  int32_t word = (mixed * 55) / 10;
-  word = (word * (int32_t)zxnextMixerVolumeScaleMilli) / 1000;
-  return zxnextMixerClampWord(word);
+  mixed += ((double)dacSide - 256.0) * 4.0;
+  double scaled = mixed * ZXNEXT_MIXER_GAIN * (double)zxnextMixerVolumeScaleMilli / 1000.0;
+  if (scaled > 32767.0) scaled = 32767.0;
+  if (scaled < -32768.0) scaled = -32768.0;
+  return (int32_t)scaled;
 }
 
 static int32_t zxnextAudioMixerGetMixedLeftWord(void) {
@@ -147,21 +158,34 @@ static void zxnextAudioMixerRefreshCurrentSources(double sampleEndTact, double s
     &zxnextMixerBeeperDcPrevOutputMicMilli
   );
   zxnextPsgPrepareAudioSample(sampleEndFrameTacts28);
-
+  /* ~6450 `beep_spkr_excl`: with $06 bit 6 and the internal speaker ($08 bit 4) on, the beeper goes
+     to the speaker only - EAR and MIC leave the mix */
+  if ((zxnextNextRegs[0x06u] & 0x40u) != 0u && (zxnextNextRegs[0x08u] & 0x10u) != 0u) {
+    ear = 0;
+    mic = 0;
+  }
   zxnextAudioMixerSetEarLevelMilli(ear);
   zxnextAudioMixerSetMicLevelMilli(mic);
   zxnextAudioMixerSetPsgOutput(zxnextPsgGetSampleLeft(), zxnextPsgGetSampleRight());
 }
 
 static void zxnextAudioMixerSetNextSample(uint32_t frameTacts28) {
-  uint64_t currentScaled = (uint64_t)frameTacts28 * zxnextAudioSampleRate;
+  int64_t currentScaled = (int64_t)frameTacts28 * (int64_t)zxnextAudioSampleRate;
   while (currentScaled >= zxnextMixerNextSampleTactScaled) {
+    /* A full buffer: nobody began this frame's audio. The IDE's per-instruction loop (it carries the
+       whole NextZXOS boot of a NEX launch) never calls BeginFrame. Drop the sample but keep the
+       schedule moving; otherwise the wrap would pull it back every frame and each T-state would
+       redo the source refresh for a sample it cannot store. */
+    if (zxnextMixerSampleCount >= ZXNEXT_AUDIO_SAMPLE_CAPACITY) {
+      zxnextMixerNextSampleTactScaled += (int64_t)ZXNEXT_AUDIO_BASE_CLOCK;
+      continue;
+    }
     const double tactScale = cpuTactScale == 0u ? 1.0 : (double)cpuTactScale;
     const double sampleEndFrameTacts28 = (double)zxnextMixerNextSampleTactScaled / (double)zxnextAudioSampleRate;
     const double sampleEndTact = zxnextBeeperFrameStartTact + sampleEndFrameTacts28 / tactScale;
     zxnextAudioMixerRefreshCurrentSources(sampleEndTact, sampleEndFrameTacts28);
-    if (!zxnextAudioMixerAppendCurrentSample()) return;
-    zxnextMixerNextSampleTactScaled += (uint64_t)ZXNEXT_AUDIO_BASE_CLOCK;
+    zxnextAudioMixerAppendCurrentSample();
+    zxnextMixerNextSampleTactScaled += (int64_t)ZXNEXT_AUDIO_BASE_CLOCK;
   }
 }
 

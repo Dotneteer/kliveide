@@ -49,7 +49,7 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `joy` | Joystick / MD pad input on both joystick connectors. |
 | `mouse` | Kempston mouse movement and buttons. |
 | `intack` | Observe the INT line and the vector placed on the bus at interrupt acknowledge. |
-| `nmi` | Press the Multiface / DivMMC NMI buttons. |
+| `nmi` | Press the Multiface / DivMMC NMI buttons. **Written 2026-09-18:** `pressHotkey("F9" \| "F10")`. |
 | `iolog` | Port and memory write log (both cores). |
 | `sd` | SD card image attach and block access (the browser tier already has it). |
 | `uart` | A peer on the UART lines (loopback or scripted ESP/Pi responder). |
@@ -97,10 +97,10 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `CMP` | Layer compositing, priorities, blend modes, fallback | `zxnext.vhd` | P01, P02, C10 (bug B6), `test/zxnext-hw/layers/blend-and-border.test.ts`, `compositing.test.ts` (with `_mixer-model.ts`) |
 | `COP` | Copper | `device/copper.vhd` | C00–C11, D01–D05, `copper-upload.test.ts` (bugs B4, B5), `copper-control.test.ts` (B9, B63) |
 | `INT` | Interrupts: ULA, line, IM2 hardware mode, priorities | `device/im2_*.vhd` | D04, `test/zxnext-hw/interrupts/interrupts.test.ts` (replaced the mocks `test/zxnext/DaisyChain.test.ts` and `NextInterrupts.test.ts`, 2026-09-18) |
-| `NMI` | NMI sources, stackless NMI | `zxnext.vhd` | – |
-| `AY` | AY-3-8912 / TurboSound | `audio/turbosound.vhd`, `audio/ym2149.vhd` | – |
-| `DAC` | Soundrive / Covox / Specdrum DACs | `audio/soundrive.vhd` | – |
-| `BEEP` | Beeper, MIC, EAR, audio mixer | `audio/audio_mixer.vhd` | – |
+| `NMI` | NMI sources, stackless NMI | `zxnext.vhd` | `test/zxnext-hw/nmi/nmi.test.ts` (replaced the mock `test/zxnext/StacklessNmi.test.ts`, 2026-09-18) |
+| `AY` | AY-3-8912 / TurboSound | `audio/turbosound.vhd`, `audio/ym2149.vhd` | `test/zxnext-hw/audio/ay-psg.test.ts`, `ay-stereo-mode.test.ts` (shared measurements in `audio/_audio-helpers.ts`) |
+| `DAC` | Soundrive / Covox / Specdrum DACs | `audio/soundrive.vhd` | `test/zxnext-hw/audio/dac.test.ts`, `dac-enable.test.ts` |
+| `BEEP` | Beeper, MIC, EAR, audio mixer | `audio/audio_mixer.vhd` | `test/zxnext-hw/audio/beeper-mixer.test.ts` |
 | `CTC` | Z80 CTC (4 channels) | `device/ctc*.vhd` | – |
 | `DMA` | ZXN DMA / Z80 DMA | `device/dma.vhd` | ~30 mock tests in `test/zxnext/DmaDevice-*.test.ts` |
 | `DIV` | DivMMC paging and automap | `device/divmmc.vhd` | `test/zxnext/DivMmcDevice-*.test.ts` (mock) |
@@ -541,66 +541,66 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 |---|---|---|---|---|---|---|
 | NMI-001 | Multiface NMI via `$02` | S | 1 | | See RST-005; PC = `$0066` with MF memory paged. | ✅ `reset/reset-register` (RST-005) |
 | NMI-002 | DivMMC NMI via `$02` | S | 1 | | See RST-004; DivMMC automap at `$0066`. | ✅ `reset/reset-register` (RST-004) |
-| NMI-003 | NMI button enables `$06` | S | 2 | `nmi` | Bits 3/4 gate the M1 and Drive buttons. | — |
-| NMI-004 | Stackless NMI `$C0` bit 3 | S | 1 | | NMI does not push; return address stored in `$C2/$C3`; RETN jumps to that address. | — |
-| NMI-005 | `$C2/$C3` writable | S | 2 | | Handler changes `$C2/$C3`; RETN returns to the new address. | — |
-| NMI-006 | NMI during interrupt handler | S | 3 | | Priority and nesting per VHDL. | — |
-| NMI-007 | Expansion bus NMI debounce `$81` bit 5 | S | 3 | | Readback; effect if bus modelled. | — |
+| NMI-003 | NMI button enables `$06` | S | 2 | `nmi` | Bits 3/4 gate the M1 and Drive buttons. | ✅ `nmi/nmi` (harness: `pressHotkey("F9" \| "F10")`; B72 fixed: a press or `$02` request with its enable clear fired once the enable was set) |
+| NMI-004 | Stackless NMI `$C0` bit 3 | S | 1 | | NMI does not push; return address stored in `$C2/$C3`; RETN jumps to that address. | ✅ `nmi/nmi` (B71 fixed: `$C2/$C3` not stored for a normal NMI, clearing bit 3 did not cancel the stackless RETN, the Multiface NMI was never stackless) |
+| NMI-005 | `$C2/$C3` writable | S | 2 | | Handler changes `$C2/$C3`; RETN returns to the new address. | ✅ `nmi/nmi` (also: soft reset clears them) |
+| NMI-006 | NMI during interrupt handler | S | 3 | | Priority and nesting per VHDL. | ✅ `nmi/nmi` (NMI inside an IM 1 handler, IFF2 kept in EI code, no nesting while DivMMC holds; B72 fixed: TS set the `$02` flag during HOLD) |
+| NMI-007 | Expansion bus NMI debounce `$81` bit 5 | S | 3 | | Readback; effect if bus modelled. | ◐ `nmi/nmi` (readback and reset behaviour; the bus `/NMI` input is not driveable from the harness) |
 
 ### 4.21 `AY` – AY / TurboSound
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| AY-001 | Register select/write/read | S | 1 | | `$FFFD` select, `$BFFD` write, `$FFFD` read for registers 0–15 with register masks (e.g. R1 4 bits, R8 5 bits). | — |
-| AY-002 | Tone channel A | A | 1 | | Period 0x0FE, volume 15, mixer tone A only: output frequency within tolerance of f = clock/(16·period). Count zero crossings. | — |
-| AY-003 | Tone channels B and C | A | 1 | | Same for B and C, each alone. | — |
-| AY-004 | Volume levels 0–15 | A | 1 | | Amplitude monotonic, level 0 silent; logarithmic table per `ym2149.vhd`. | — |
-| AY-005 | Noise generator | A | 2 | | Noise period 0/31, mixer noise only: non-periodic output, spectral centroid rises with lower period. | — |
-| AY-006 | Mixer register 7 | A | 1 | | Every tone/noise enable combination produces silence/tone/noise/both per channel. | — |
-| AY-007 | Envelope shapes 0–15 | A | 1 | | Each shape (R13) with volume mode bit 4: amplitude sequence (decay/attack/hold/alternate) matches the shape table. | — |
-| AY-008 | Envelope restart on R13 write | A | 2 | | Rewriting R13 with the same value restarts the envelope. | — |
-| AY-009 | TurboSound enable `$08` bit 1 | S | 1 | | With enable, `$FFFD` value `%1111 11xx` selects chip 0/1/2; without, only chip 0. | — |
-| AY-010 | Three chips independent | A | 1 | | Different tones on each chip; all present in the mix; register reads per chip. | — |
-| AY-011 | Per-chip L/R enable bits | A | 2 | | `$FFFD` chip-select write bits 6–5 mute left/right per chip. | — |
+| AY-001 | Register select/write/read | S | 1 | | `$FFFD` select, `$BFFD` write, `$FFFD` read for registers 0–15 with register masks (e.g. R1 4 bits, R8 5 bits). | ✅ `audio/ay-psg` (B33, B73 fixed: R16-31, AY-mode read masks, R14/R15 input reads; also `$BFF5`) |
+| AY-002 | Tone channel A | A | 1 | | Period 0x0FE, volume 15, mixer tone A only: output frequency within tolerance of f = clock/(16·period). Count zero crossings. | ✅ `audio/ay-psg` (B73 fixed: the coarse register counted 8 bits in YM mode) |
+| AY-003 | Tone channels B and C | A | 1 | | Same for B and C, each alone. | ✅ `audio/ay-psg` |
+| AY-004 | Volume levels 0–15 | A | 1 | | Amplitude monotonic, level 0 silent; logarithmic table per `ym2149.vhd`. | ✅ `audio/ay-psg` (YM and AY tables as DC-level ratios; B73 fixed: no AY mode) |
+| AY-005 | Noise generator | A | 2 | | Noise period 0/31, mixer noise only: non-periodic output, spectral centroid rises with lower period. | ✅ `audio/ay-psg` (irregular runs, rate vs period, 5-bit period, LFSR recurrence o[n+17] = o[n] xor o[n+2]; B73 fixed: 8-bit period, taps 0/3) |
+| AY-006 | Mixer register 7 | A | 1 | | Every tone/noise enable combination produces silence/tone/noise/both per channel. | ✅ `audio/ay-psg` |
+| AY-007 | Envelope shapes 0–15 | A | 1 | | Each shape (R13) with volume mode bit 4: amplitude sequence (decay/attack/hold/alternate) matches the shape table. | ✅ `audio/ay-psg` (all 16 shapes against a model of `p_envelope_shape`, YM and AY; B73 fixed: the start level was held a full step) |
+| AY-008 | Envelope restart on R13 write | A | 2 | | Rewriting R13 with the same value restarts the envelope. | ✅ `audio/ay-psg` |
+| AY-009 | TurboSound enable `$08` bit 1 | S | 1 | | With enable, `$FFFD` value `%1111 11xx` selects chip 0/1/2; without, only chip 0. | ✅ `audio/ay-psg` |
+| AY-010 | Three chips independent | A | 1 | | Different tones on each chip; all present in the mix; register reads per chip. | ✅ `audio/ay-psg` |
+| AY-011 | Per-chip L/R enable bits | A | 2 | | `$FFFD` chip-select write bits 6–5 mute left/right per chip. | ✅ `audio/ay-psg` |
 | AY-012 | Stereo mode ABC vs ACB `$08` bit 5 | A | 1 | | Channel A left, C/B right as per mode; B centered (ABC) etc. | ✅ `audio/ay-stereo-mode` |
-| AY-013 | Mono `$09` bits 7–5 | A | 2 | | Per-chip mono flag puts all channels on both sides. | — |
-| AY-014 | AY vs YM mode `$06` bits 1–0 | A | 2 | | PSG mode: YM volume table (32 steps) vs AY; mode 11 disables. | — |
-| AY-015 | AY port enable bit 16 | S | 2 | | Disabled: writes silent, reads `$FF`. | — |
-| AY-016 | Register read when chip disabled | S | 3 | | Read of chip 1 registers with TurboSound off per VHDL. | — |
-| AY-017 | Tone period 0 and 1 | A | 3 | | Period 0 behaves like 1 per `ym2149.vhd`. | — |
-| AY-018 | Audio sample continuity across frames | A | 2 | | Continuous sine-like tone has no discontinuity at frame boundaries. | — |
-| AY-019 | CPU speed independence | A | 2 | | Same tone frequency at 3.5 and 28 MHz. | — |
+| AY-013 | Mono `$09` bits 7–5 | A | 2 | | Per-chip mono flag puts all channels on both sides. | ✅ `audio/ay-psg` |
+| AY-014 | AY vs YM mode `$06` bits 1–0 | A | 2 | | PSG mode: YM volume table (32 steps) vs AY; mode 11 disables. | ✅ `audio/ay-psg` (AY/YM tables, mode 10 = YM, mode 11 reset hold; B73 fixed: `$06` was ignored) |
+| AY-015 | AY port enable bit 16 | S | 2 | | Disabled: writes silent, reads `$FF`. | ✅ `audio/ay-psg` (writes do not land), `ports/port-enables` (reads `$FF`) |
+| AY-016 | Register read when chip disabled | S | 3 | | Read of chip 1 registers with TurboSound off per VHDL. | ✅ `audio/ay-psg` (the selected chip stays selected and alone in the mix when TurboSound goes off) |
+| AY-017 | Tone period 0 and 1 | A | 3 | | Period 0 behaves like 1 per `ym2149.vhd`. | ✅ `audio/ay-psg` (tone and noise period 0 = 1, sample for sample) |
+| AY-018 | Audio sample continuity across frames | A | 2 | | Continuous sine-like tone has no discontinuity at frame boundaries. | ✅ `audio/ay-psg` (B74 fixed: TS dropped a PSG sample to silence at frame ends) |
+| AY-019 | CPU speed independence | A | 2 | | Same tone frequency at 3.5 and 28 MHz. | ✅ `audio/ay-psg` |
 
 ### 4.22 `DAC` – Soundrive / Covox / Specdrum
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
 | DAC-001 | DAC enable `$08` bit 3 | A | 1 | | With disable, port writes produce no output. | ✅ `audio/dac-enable` |
-| DAC-002 | Soundrive mode 1 ports `$1F,$0F,$4F,$5F` | A | 1 | | Each port drives channel A/B/C/D; A,B left and C,D right. Requires enable bit 17. | — |
-| DAC-003 | Soundrive mode 2 ports `$F1,$F3,$F9,$FB` | A | 2 | | Enable bit 18. | — |
-| DAC-004 | Profi Covox `$3F`/`$5F` | A | 2 | | Stereo A+D pair; enable bit 19. | — |
-| DAC-005 | Covox `$0F`/`$4F` | A | 2 | | Stereo B+C; enable bit 20. | — |
-| DAC-006 | Pentagon/ATM mono `$FB` | A | 2 | | Writes A and D together; enable bit 21 and not mode-2. | — |
-| DAC-007 | GS Covox mono `$B3` | A | 2 | | Enable bit 22. | — |
-| DAC-008 | Specdrum `$DF` | A | 1 | | Mono A+D; enable bit 23; interaction with mouse port. | — |
-| DAC-009 | DAC value → amplitude linearity | A | 1 | | Writing 0, `$80`, `$FF` gives proportional sample levels. | — |
-| DAC-010 | 8-bit sample playback rate | A | 2 | | Z80 loop writing a ramp at a fixed rate: ramp visible in samples. | — |
-| DAC-011 | DAC via NextReg mirrors `$2C`–`$2E` | A | 3 | | soundrive.vhd ~48-95: `$2C` writes channel B (left), `$2E` channel C (right), `$2D` channels A and D (mono); reads return the I2S input, not the DAC value (zxnext.vhd read mux). Both halves are testable. | — |
-| DAC-012 | DAC reset value | A | 2 | | After reset all DAC channels are `$80` (silence midpoint) per `soundrive.vhd`. | ◐ `audio/dac-enable` |
-| DAC-013 | DMA-driven DAC playback | A | 2 | | See DMA-020. | — |
+| DAC-002 | Soundrive mode 1 ports `$1F,$0F,$4F,$5F` | A | 1 | | Each port drives channel A/B/C/D; A,B left and C,D right. Requires enable bit 17. | ✅ `audio/dac` (channel found through the `$2C`-`$2E` mirrors; low-byte decode; enable bits 17/19/20) |
+| DAC-003 | Soundrive mode 2 ports `$F1,$F3,$F9,$FB` | A | 2 | | Enable bit 18. | ✅ `audio/dac` (B75 fixed: `$F1`/`$F9` writes also paged like `$7FFD`) |
+| DAC-004 | Profi Covox `$3F`/`$5F` | A | 2 | | Stereo A+D pair; enable bit 19. | ✅ `audio/dac` (B75 fixed: TS wrote `$3F` to A and D) |
+| DAC-005 | Covox `$0F`/`$4F` | A | 2 | | Stereo B+C; enable bit 20. | ✅ `audio/dac` |
+| DAC-006 | Pentagon/ATM mono `$FB` | A | 2 | | Writes A and D together; enable bit 21 and not mode-2. | ✅ `audio/dac` |
+| DAC-007 | GS Covox mono `$B3` | A | 2 | | Enable bit 22. | ✅ `audio/dac` |
+| DAC-008 | Specdrum `$DF` | A | 1 | | Mono A+D; enable bit 23; interaction with mouse port. | ✅ `audio/dac` (also: `$DF` reads Kempston with the mouse ports off; DAC ports read `$FF`) |
+| DAC-009 | DAC value → amplitude linearity | A | 1 | | Writing 0, `$80`, `$FF` gives proportional sample levels. | ✅ `audio/dac` |
+| DAC-010 | 8-bit sample playback rate | A | 2 | | Z80 loop writing a ramp at a fixed rate: ramp visible in samples. | ✅ `audio/dac` (B76 fixed: TS played the end-of-frame DAC value for the whole frame) |
+| DAC-011 | DAC via NextReg mirrors `$2C`–`$2E` | A | 3 | | soundrive.vhd ~48-95: `$2C` writes channel B (left), `$2E` channel C (right), `$2D` channels A and D (mono); reads return the I2S input, not the DAC value (zxnext.vhd read mux). Both halves are testable. | ✅ `audio/dac` (B75 fixed: TS mirrors wrote while disabled; reads gave 0 / the DACs instead of the I2S sample) |
+| DAC-012 | DAC reset value | A | 2 | | After reset all DAC channels are `$80` (silence midpoint) per `soundrive.vhd`. | ✅ `audio/dac-enable`, `audio/dac` (soft reset) |
+| DAC-013 | DMA-driven DAC playback | A | 2 | | See DMA-020. | — (see DMA-020) |
 
 ### 4.23 `BEEP` – Beeper, MIC, EAR, mixer
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| BEEP-001 | Beeper square wave | A | 1 | | Toggle `$FE` bit 4 at a known rate; output frequency matches. | — |
-| BEEP-002 | MIC bit 3 contribution | A | 2 | | `$FE` bit 3 alone produces a smaller amplitude per `audio_mixer.vhd`. | — |
-| BEEP-003 | Internal speaker `$08` bit 4 / `$06` bit 6 | S | 3 | | Readbacks; beeper-only-to-speaker flag effect on the mix per VHDL. | — |
-| BEEP-004 | Mixer sums sources | A | 1 | | Beeper + AY + DAC together: sample equals the mixer formula (no clipping below full scale). | — |
-| BEEP-005 | EAR input reflected in `$FE` bit 6 | S | 2 | `tape` | Injected EAR level visible. | — |
-| BEEP-006 | EAR input to audio | A | 3 | `tape` | Tape input audible per mixer. | — |
-| BEEP-007 | Silence baseline | A | 1 | | After reset with no activity, samples are a constant level (DC) on both channels. | — |
-| BEEP-008 | Sample rate option | A | 2 | | 44100 vs 48000 `audioSampleRate`: samples per frame ≈ rate/50. | — |
+| BEEP-001 | Beeper square wave | A | 1 | | Toggle `$FE` bit 4 at a known rate; output frequency matches. | ✅ `audio/beeper-mixer` |
+| BEEP-002 | MIC bit 3 contribution | A | 2 | | `$FE` bit 3 alone produces a smaller amplitude per `audio_mixer.vhd`. | ✅ `audio/beeper-mixer` |
+| BEEP-003 | Internal speaker `$08` bit 4 / `$06` bit 6 | S | 3 | | Readbacks; beeper-only-to-speaker flag effect on the mix per VHDL. | ✅ `audio/beeper-mixer` (B78 fixed: WASM ignored the exclusion) |
+| BEEP-004 | Mixer sums sources | A | 1 | | Beeper + AY + DAC together: sample equals the mixer formula (no clipping below full scale). | ✅ `audio/beeper-mixer` (weights as ratios, additivity below the clamp; B77 fixed: EAR 5.1x / DAC 0.75x an AY channel. Output gain = author's choice, see B77) |
+| BEEP-005 | EAR input reflected in `$FE` bit 6 | S | 2 | `tape` | Injected EAR level visible. | — (needs `tape`) |
+| BEEP-006 | EAR input to audio | A | 3 | `tape` | Tape input audible per mixer. | — (needs `tape`) |
+| BEEP-007 | Silence baseline | A | 1 | | After reset with no activity, samples are a constant level (DC) on both channels. | ✅ `audio/beeper-mixer` |
+| BEEP-008 | Sample rate option | A | 2 | | 44100 vs 48000 `audioSampleRate`: samples per frame ≈ rate/50. | ✅ `audio/beeper-mixer` (B79 fixed: WASM dropped 0.45 sample a frame) |
 
 ### 4.24 `CTC` – Z80 CTC
 
@@ -827,8 +827,9 @@ when the first test of that area lands.
 - Entries marked "per `x.vhd`" / "read before asserting" have not had their exact values extracted yet.
 - Whether the emulator intends to model memory contention (MEM-023), the µPD765 (FDC-004), flash
   (SPI-008), and board GPIO (GPIO-*). If not, those tests document the chosen behaviour instead.
-- Audio tests need a tolerance policy (frequency ±1 %, amplitude from the mixer formula) agreed once
-  and put into a shared helper (`test/zxnext-hw/_audio-helpers.ts`).
+- Audio tolerance policy - **settled 2026-09-18** in `test/zxnext-hw/audio/_audio-helpers.ts`: frequency
+  within 1 %, levels as ratios against a full-scale level measured in the same session (so the mixer's
+  scaling, a BEEP-area question, drops out) within 0.01 of the VHDL table ratio.
 
 ## 7. Implementation status
 
@@ -844,4 +845,4 @@ Every catalogue row carries a **Status** cell. Test files are named relative to 
 | — | Not started. |
 
 When a test lands, update its row in the same change. Open known failures right now: B26
-(no memory contention, MEM-023). Open without a failing test: B33 (TS PSG registers 16-31, for §4.21).
+(no memory contention, MEM-023).

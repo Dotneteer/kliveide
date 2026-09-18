@@ -1,40 +1,44 @@
 #include "zxnext-psg.h"
 
-static const uint32_t zxnextPsgVolumeTable[32] = {
+/*
+ * The three PSGs of TurboSound Next, following `_input/next-fpga/src/audio/ym2149.vhd` (I_SEL_L = '1')
+ * and turbosound.vhd; mirrors `NextPsgChip` / `TurboSoundDevice` of the TypeScript core.
+ *
+ * One `zxnextPsgTick` is one `ena_div` pulse: the 1.75 MHz PSG enable divided by 8, every 128 master
+ * clocks. Tone, noise and envelope counters compare with period - 1 (0 for periods 0/1); the noise LFSR
+ * steps on every other tick (poly17, feedback bit 0 xor bit 2); an R13 write reloads the envelope and
+ * steps it once at once. Levels go through `volTableYm` (5-bit) or, in AY mode ($06 bit 0),
+ * `volTableAy` (level bits 4-1), scaled by 257 to the 16-bit range the mixer expects.
+ */
+static const uint32_t zxnextPsgVolumeTableYm[32] = {
   0u, 257u, 257u, 514u, 514u, 771u, 771u, 1028u,
   1542u, 1799u, 2313u, 2570u, 3084u, 3598u, 4369u, 4883u,
   5911u, 6939u, 8224u, 9509u, 11308u, 13621u, 15934u, 18247u,
   21588u, 26214u, 30583u, 34952u, 41377u, 49344u, 57568u, 65535u
 };
 
-typedef struct ZxNextPsgTone {
-  uint16_t period;
-  uint8_t volume;
-  int32_t count;
-  uint8_t dutyCycle;
-  uint8_t output;
-} ZxNextPsgTone;
+static const uint32_t zxnextPsgVolumeTableAy[16] = {
+  0u, 771u, 1028u, 1542u, 2570u, 3855u, 5397u, 8738u,
+  10280u, 16705u, 23387u, 29298u, 37008u, 46517u, 55255u, 65535u
+};
 
-typedef struct ZxNextPsgEnvelope {
-  uint16_t period;
-  int32_t count;
-  int32_t step;
-  uint8_t volume;
-  uint8_t hold;
-  uint8_t alternate;
-  uint8_t attack;
-  uint8_t holding;
-} ZxNextPsgEnvelope;
+/* AY mode read masks (`reg(n)(7..k) and not ctrl_aymode`) */
+static const uint8_t zxnextPsgAyReadMask[16] = {
+  0xffu, 0x0fu, 0xffu, 0x0fu, 0xffu, 0x0fu, 0x1fu, 0xffu, 0x1fu, 0x1fu, 0x1fu, 0xffu, 0xffu, 0x0fu, 0xffu, 0xffu
+};
 
 typedef struct ZxNextPsgChip {
   uint8_t regs[16];
   uint8_t selectedReg;
-  ZxNextPsgTone tone[3];
-  ZxNextPsgEnvelope envelope;
-  int32_t noiseCounter;
-  uint8_t noisePrescale;
-  uint32_t noiseRng;
-  uint8_t volEnabled[3];
+  uint16_t toneCount[3];
+  uint8_t toneOp[3];
+  uint8_t noiseDiv;
+  uint8_t noiseCount;
+  uint32_t poly17;
+  uint16_t envCount;
+  uint8_t envVol;
+  uint8_t envInc;
+  uint8_t envHold;
   uint32_t currentOutput[3];
 } ZxNextPsgChip;
 
@@ -44,6 +48,8 @@ static uint8_t zxnextPsgTurbosoundEnabled;
 static uint8_t zxnextPsgAyStereoMode;
 static uint8_t zxnextPsgChipPanning[3];
 static uint8_t zxnextPsgChipMonoMode[3];
+/* NextReg $06 bits 1-0: bit 0 = `aymode_i`, 11 = every PSG held in reset (zxnext.vhd ~6325) */
+static uint8_t zxnextPsgMode;
 static double zxnextPsgNextClockFrameTact;
 static double zxnextPsgLastAccumulationFrameTact;
 static double zxnextPsgAccumulatedLeft;
@@ -56,39 +62,32 @@ static uint32_t zxnextPsgSampleRight;
 
 static void zxnextPsgRefreshCurrentStereoOutput(void);
 
-static void zxnextPsgResetTone(ZxNextPsgTone *tone) {
-  tone->period = 0u;
-  tone->volume = 0u;
-  tone->count = 0;
-  tone->dutyCycle = 0u;
-  tone->output = 0u;
-}
+static inline uint32_t zxnextPsgHeld(void) { return zxnextPsgMode == 0x03u; }
+static inline uint32_t zxnextPsgAyMode(void) { return (zxnextPsgMode & 0x01u) != 0u; }
 
-static void zxnextPsgResetEnvelope(ZxNextPsgEnvelope *envelope) {
-  envelope->period = 0u;
-  envelope->count = 0;
-  envelope->step = 0;
-  envelope->volume = 0u;
-  envelope->hold = 0u;
-  envelope->alternate = 0u;
-  envelope->attack = 0u;
-  envelope->holding = 0u;
-}
-
-static void zxnextPsgResetChip(uint32_t chip) {
+/* RESET_H: registers cleared (R7 = $FF), address 0, outputs silent */
+static void zxnextPsgResetChipRegisters(uint32_t chip) {
   ZxNextPsgChip *state = &zxnextPsgChips[chip % 3u];
   for (uint32_t i = 0u; i < 16u; i++) state->regs[i] = 0u;
   state->regs[7] = 0xffu;
   state->selectedReg = 0u;
+  for (uint32_t i = 0u; i < 3u; i++) state->currentOutput[i] = 0u;
+}
+
+static void zxnextPsgResetChip(uint32_t chip) {
+  ZxNextPsgChip *state = &zxnextPsgChips[chip % 3u];
+  zxnextPsgResetChipRegisters(chip);
   for (uint32_t i = 0u; i < 3u; i++) {
-    zxnextPsgResetTone(&state->tone[i]);
-    state->volEnabled[i] = 0u;
-    state->currentOutput[i] = 0u;
+    state->toneCount[i] = 0u;
+    state->toneOp[i] = 0u;
   }
-  zxnextPsgResetEnvelope(&state->envelope);
-  state->noiseCounter = 0;
-  state->noisePrescale = 0u;
-  state->noiseRng = 1u;
+  state->noiseDiv = 0u;
+  state->noiseCount = 0u;
+  state->poly17 = 0u;
+  state->envCount = 0u;
+  state->envVol = 0u;
+  state->envInc = 0u;
+  state->envHold = 0u;
 }
 
 static void zxnextPsgResetAudioWindow(void) {
@@ -108,6 +107,7 @@ static void zxnextPsgReset(void) {
   zxnextPsgSelectedChip = 0u;
   zxnextPsgTurbosoundEnabled = 0u;
   zxnextPsgAyStereoMode = 0u;
+  zxnextPsgMode = 0u; /* a soft reset restores it from the kept $06 (zxnextReset) */
   zxnextPsgCurrentLeft = 0u;
   zxnextPsgCurrentRight = 0u;
   zxnextPsgSampleLeft = 0u;
@@ -117,6 +117,24 @@ static void zxnextPsgReset(void) {
 
 static void zxnextPsgBeginFrame(void) {
   zxnextPsgResetAudioWindow();
+  zxnextPsgRefreshCurrentStereoOutput();
+}
+
+static void zxnextPsgUpdateOutputs(ZxNextPsgChip *chip);
+
+/* NextReg $06 bits 1-0. Entering mode 11 resets the PSGs and turbosound.vhd's selection and pans. */
+static void zxnextPsgSetMode(uint32_t mode) {
+  zxnextPsgAdvanceToFrameTact((double)frameTacts28);
+  zxnextPsgMode = (uint8_t)(mode & 0x03u);
+  if (zxnextPsgHeld()) {
+    for (uint32_t chip = 0u; chip < 3u; chip++) {
+      zxnextPsgResetChipRegisters(chip);
+      zxnextPsgChipPanning[chip] = 0x03u;
+    }
+    zxnextPsgSelectedChip = 0u;
+  } else {
+    for (uint32_t chip = 0u; chip < 3u; chip++) zxnextPsgUpdateOutputs(&zxnextPsgChips[chip]);
+  }
   zxnextPsgRefreshCurrentStereoOutput();
 }
 
@@ -138,70 +156,82 @@ static void zxnextPsgSetChipMonoMode(uint32_t chip, uint32_t enabled) {
   zxnextPsgRefreshCurrentStereoOutput();
 }
 
-static inline void zxnextPsgSetTonePeriod(ZxNextPsgChip *chip, uint32_t channel) {
-  uint32_t fine = chip->regs[channel * 2u];
-  uint32_t coarse = chip->regs[channel * 2u + 1u];
-  chip->tone[channel].period = (uint16_t)(fine | (coarse << 8u));
+/* ym2149.vhd p_envelope_shape, one `env_ena` event */
+static void zxnextPsgStepEnvelope(ZxNextPsgChip *chip) {
+  uint32_t shape = chip->regs[13];
+  uint32_t vol = chip->envVol;
+  uint32_t isZero = (vol >> 1) == 0u;
+  uint32_t isOnes = (vol >> 1) == 15u;
+  uint32_t isBot = isZero && (vol & 1u) == 0u;
+  uint32_t isBotP1 = isZero && (vol & 1u) == 1u;
+  uint32_t isTopM1 = isOnes && (vol & 1u) == 0u;
+  uint32_t isTop = isOnes && (vol & 1u) == 1u;
+  uint8_t hold = chip->envHold;
+  uint8_t inc = chip->envInc;
+  if (!chip->envHold) chip->envVol = (uint8_t)((chip->envInc ? vol + 1u : vol + 31u) & 31u);
+  if ((shape & 0x08u) == 0u) {
+    if (!inc ? isBotP1 : isTop) hold = 1u;
+  } else if ((shape & 0x01u) != 0u) {
+    if (!inc) {
+      if ((shape & 0x02u) ? isBot : isBotP1) hold = 1u;
+    } else if ((shape & 0x02u) ? isTop : isTopM1) {
+      hold = 1u;
+    }
+  } else if ((shape & 0x02u) != 0u) {
+    if (!inc) {
+      if (isBotP1) hold = 1u;
+      if (isBot) {
+        hold = 0u;
+        inc = 1u;
+      }
+    } else {
+      if (isTopM1) hold = 1u;
+      if (isTop) {
+        hold = 0u;
+        inc = 0u;
+      }
+    }
+  }
+  chip->envHold = hold;
+  chip->envInc = inc;
 }
 
-static void zxnextPsgSetEnvelopeShape(ZxNextPsgChip *chip, uint32_t shape) {
-  ZxNextPsgEnvelope *envelope = &chip->envelope;
-  envelope->attack = (shape & 0x04u) != 0u ? 0x1fu : 0u;
-  if ((shape & 0x08u) == 0u) {
-    envelope->hold = 1u;
-    envelope->alternate = envelope->attack;
-  } else {
-    envelope->hold = (uint8_t)(shape & 0x01u);
-    envelope->alternate = (uint8_t)(shape & 0x02u);
+static uint32_t zxnextPsgChannelLevel(ZxNextPsgChip *chip, uint32_t channel) {
+  uint32_t r7 = chip->regs[7];
+  uint32_t mixed = (((r7 >> channel) & 1u) | chip->toneOp[channel]) &
+    (((r7 >> (channel + 3u)) & 1u) | (chip->poly17 & 1u));
+  if (!mixed) return 0u;
+  uint32_t vol = chip->regs[8u + channel];
+  if ((vol & 0x10u) != 0u) return chip->envVol;
+  return (vol & 0x0fu) != 0u ? ((vol & 0x0fu) << 1) | 1u : 0u;
+}
+
+static void zxnextPsgUpdateOutputs(ZxNextPsgChip *chip) {
+  for (uint32_t channel = 0u; channel < 3u; channel++) {
+    uint32_t level = zxnextPsgChannelLevel(chip, channel);
+    chip->currentOutput[channel] = zxnextPsgHeld() ? 0u
+      : zxnextPsgAyMode() ? zxnextPsgVolumeTableAy[level >> 1] : zxnextPsgVolumeTableYm[level & 0x1fu];
   }
-  envelope->step = 0x1f;
-  envelope->holding = 0u;
-  envelope->volume = (uint8_t)(envelope->step ^ envelope->attack);
-  envelope->count = 0;
 }
 
 static void zxnextPsgWriteRegister(ZxNextPsgChip *chip, uint32_t reg, uint32_t value) {
   uint8_t index = (uint8_t)(reg & 0x0fu);
-  uint8_t byteValue = (uint8_t)value;
-  chip->regs[index] = byteValue;
-
-  switch (index) {
-    case 0x00u:
-    case 0x01u:
-      zxnextPsgSetTonePeriod(chip, 0u);
-      break;
-    case 0x02u:
-    case 0x03u:
-      zxnextPsgSetTonePeriod(chip, 1u);
-      break;
-    case 0x04u:
-    case 0x05u:
-      zxnextPsgSetTonePeriod(chip, 2u);
-      break;
-    case 0x08u:
-      chip->tone[0].volume = byteValue;
-      break;
-    case 0x09u:
-      chip->tone[1].volume = byteValue;
-      break;
-    case 0x0au:
-      chip->tone[2].volume = byteValue;
-      break;
-    case 0x0bu:
-    case 0x0cu:
-      chip->envelope.period = (uint16_t)(chip->regs[0x0bu] | (chip->regs[0x0cu] << 8u));
-      break;
-    case 0x0du:
-      zxnextPsgSetEnvelopeShape(chip, byteValue & 0x0fu);
-      break;
-    default:
-      break;
+  chip->regs[index] = (uint8_t)value;
+  if (index == 13u) {
+    /* env_reset: the start state, then env_ena = '1' steps it at once */
+    chip->envCount = 0u;
+    chip->envVol = (chip->regs[13] & 0x04u) != 0u ? 0u : 31u;
+    chip->envInc = (chip->regs[13] & 0x04u) != 0u ? 1u : 0u;
+    chip->envHold = 0u;
+    zxnextPsgStepEnvelope(chip);
   }
+  zxnextPsgUpdateOutputs(chip);
 }
 
 static void zxnextPsgSetRegisterIndex(uint32_t value) {
   uint8_t byteValue = (uint8_t)value;
   zxnextPsgAdvanceToFrameTact((double)frameTacts28);
+  if (zxnextPsgHeld()) return;
   if ((byteValue & 0x80u) != 0u && (byteValue & 0x1cu) == 0x1cu) {
     if (zxnextPsgTurbosoundEnabled) {
       uint8_t chipSelect = byteValue & 0x03u;
@@ -220,107 +250,66 @@ static void zxnextPsgSetRegisterIndex(uint32_t value) {
 static void zxnextPsgWriteRegisterValue(uint32_t value) {
   ZxNextPsgChip *chip = &zxnextPsgChips[zxnextPsgSelectedChip];
   /* ym2149.vhd ~188: registers 16-31 do not exist; the write is dropped */
-  if ((chip->selectedReg & 0x10u) != 0u) return;
+  if ((chip->selectedReg & 0x10u) != 0u || zxnextPsgHeld()) return;
   zxnextPsgAdvanceToFrameTact((double)frameTacts28);
   zxnextPsgWriteRegister(chip, chip->selectedReg, value);
+  zxnextPsgRefreshCurrentStereoOutput();
 }
 
 static uint32_t zxnextPsgReadRegisterValue(void) {
   ZxNextPsgChip *chip = &zxnextPsgChips[zxnextPsgSelectedChip];
-  /* ym2149.vhd ~222: registers 16-31 read $FF in YM mode ($06 bit 0 = 0), register n & 15 in AY mode */
-  if ((chip->selectedReg & 0x10u) != 0u && (zxnextNextRegs[0x06u] & 0x01u) == 0u) return 0xffu;
+  /* ym2149.vhd ~222: registers 16-31 read $FF in YM mode, register n & 15 in AY mode */
+  if ((chip->selectedReg & 0x10u) != 0u && !zxnextPsgAyMode()) return 0xffu;
   uint8_t index = chip->selectedReg & 0x0fu;
-  return chip->regs[index];
+  /* R14/R15: the pulled-up I/O port ($FF) while R7 bit 6/7 makes it an input */
+  if (index == 14u) return (chip->regs[7] & 0x40u) != 0u ? chip->regs[14] : 0xffu;
+  if (index == 15u) return (chip->regs[7] & 0x80u) != 0u ? chip->regs[15] : 0xffu;
+  return zxnextPsgAyMode() ? (uint32_t)(chip->regs[index] & zxnextPsgAyReadMask[index]) : chip->regs[index];
 }
 
-static inline uint32_t zxnextPsgNoisePeriod(ZxNextPsgChip *chip) {
-  uint32_t period = chip->regs[0x06u];
-  return period == 0u ? 1u : period;
-}
-
-static inline void zxnextPsgNoiseRngTick(ZxNextPsgChip *chip) {
-  uint32_t feedback = (chip->noiseRng & 0x01u) ^ ((chip->noiseRng >> 3u) & 0x01u);
-  chip->noiseRng = ((chip->noiseRng >> 1u) | (feedback << 16u)) & 0x1ffffu;
-}
-
-static inline uint32_t zxnextPsgToneDisabled(ZxNextPsgChip *chip, uint32_t channel) {
-  return (chip->regs[0x07u] >> channel) & 0x01u;
-}
-
-static inline uint32_t zxnextPsgNoiseDisabled(ZxNextPsgChip *chip, uint32_t channel) {
-  return (chip->regs[0x07u] >> (channel + 3u)) & 0x01u;
-}
-
-static void zxnextPsgUpdateOutputs(ZxNextPsgChip *chip) {
+/* One `ena_div` pulse */
+static void zxnextPsgTick(ZxNextPsgChip *chip) {
   for (uint32_t channel = 0u; channel < 3u; channel++) {
-    uint32_t volumeIndex;
-    uint32_t diagnosticIndex;
-    ZxNextPsgTone *tone = &chip->tone[channel];
-    if ((tone->volume & 0x10u) != 0u) {
-      volumeIndex = chip->volEnabled[channel] ? chip->envelope.volume : 0u;
-      diagnosticIndex = volumeIndex;
+    uint32_t freq = ((chip->regs[2u * channel + 1u] & 0x0fu) << 8) | chip->regs[2u * channel];
+    uint32_t comp = (freq >> 1) != 0u ? freq - 1u : 0u;
+    if (chip->toneCount[channel] >= comp) {
+      chip->toneCount[channel] = 0u;
+      chip->toneOp[channel] ^= 1u;
     } else {
-      volumeIndex = chip->volEnabled[channel] ? (tone->volume & 0x0fu) : 0u;
-      diagnosticIndex = volumeIndex != 0u ? volumeIndex * 2u + 1u : 0u;
+      chip->toneCount[channel]++;
     }
-    chip->currentOutput[channel] = zxnextPsgVolumeTable[diagnosticIndex & 0x1fu];
   }
+
+  uint8_t noiseTick = chip->noiseDiv;
+  chip->noiseDiv ^= 1u;
+  if (noiseTick) {
+    uint32_t period = chip->regs[6] & 0x1fu;
+    uint32_t comp = (period >> 1) != 0u ? period - 1u : 0u;
+    if (chip->noiseCount >= comp) {
+      uint32_t p = chip->poly17;
+      uint32_t feedback = (p & 1u) ^ ((p >> 2) & 1u) ^ (p == 0u ? 1u : 0u);
+      chip->noiseCount = 0u;
+      chip->poly17 = (p >> 1) | (feedback << 16);
+    } else {
+      chip->noiseCount++;
+    }
+  }
+
+  uint32_t envFreq = ((uint32_t)chip->regs[12] << 8) | chip->regs[11];
+  uint32_t envComp = (envFreq >> 1) != 0u ? envFreq - 1u : 0u;
+  if (chip->envCount >= envComp) {
+    chip->envCount = 0u;
+    zxnextPsgStepEnvelope(chip);
+  } else {
+    chip->envCount++;
+  }
+
+  zxnextPsgUpdateOutputs(chip);
 }
 
 static void zxnextPsgGenerateOutput(uint32_t chipId) {
-  ZxNextPsgChip *chip = &zxnextPsgChips[chipId % 3u];
-
-  for (uint32_t channel = 0u; channel < 3u; channel++) {
-    ZxNextPsgTone *tone = &chip->tone[channel];
-    uint32_t period = tone->period == 0u ? 1u : tone->period;
-    tone->count++;
-    while ((uint32_t)tone->count >= period) {
-      tone->dutyCycle = (uint8_t)((tone->dutyCycle - 1u) & 0x1fu);
-      tone->output = (uint8_t)(tone->dutyCycle & 0x01u);
-      tone->count -= (int32_t)period;
-    }
-  }
-
-  chip->noiseCounter++;
-  if ((uint32_t)chip->noiseCounter >= zxnextPsgNoisePeriod(chip)) {
-    chip->noiseCounter = 0;
-    chip->noisePrescale ^= 1u;
-    if (chip->noisePrescale == 0u) {
-      zxnextPsgNoiseRngTick(chip);
-    }
-  }
-
-  for (uint32_t channel = 0u; channel < 3u; channel++) {
-    chip->volEnabled[channel] =
-      (uint8_t)((chip->tone[channel].output | zxnextPsgToneDisabled(chip, channel)) &
-        ((chip->noiseRng & 0x01u) | zxnextPsgNoiseDisabled(chip, channel)));
-  }
-
-  if (chip->envelope.holding == 0u) {
-    uint32_t period = chip->envelope.period == 0u ? 1u : chip->envelope.period;
-    chip->envelope.count++;
-    if ((uint32_t)chip->envelope.count >= period) {
-      chip->envelope.count = 0;
-      chip->envelope.step--;
-      if (chip->envelope.step < 0) {
-        if (chip->envelope.hold) {
-          if (chip->envelope.alternate) {
-            chip->envelope.attack ^= 0x1fu;
-          }
-          chip->envelope.holding = 1u;
-          chip->envelope.step = 0;
-        } else {
-          if (chip->envelope.alternate && (chip->envelope.step & 0x20)) {
-            chip->envelope.attack ^= 0x1fu;
-          }
-          chip->envelope.step &= 0x1f;
-        }
-      }
-    }
-  }
-  chip->envelope.volume = (uint8_t)(chip->envelope.step ^ chip->envelope.attack);
-
-  zxnextPsgUpdateOutputs(chip);
+  if (zxnextPsgHeld()) return;
+  zxnextPsgTick(&zxnextPsgChips[chipId % 3u]);
 }
 
 static void zxnextPsgGenerateAllOutput(void) {
@@ -430,5 +419,5 @@ static void zxnextPsgRefreshCurrentStereoOutput(void) {
 static uint32_t zxnextPsgGetSampleLeft(void) { return zxnextPsgSampleLeft; }
 static uint32_t zxnextPsgGetSampleRight(void) { return zxnextPsgSampleRight; }
 
-static uint32_t zxnextPsgGetNoiseRng(uint32_t chip) { return zxnextPsgChips[chip % 3u].noiseRng; }
-static uint32_t zxnextPsgGetEnvelopeStep(uint32_t chip) { return (uint32_t)zxnextPsgChips[chip % 3u].envelope.step; }
+static uint32_t zxnextPsgGetNoiseRng(uint32_t chip) { return zxnextPsgChips[chip % 3u].poly17; }
+static uint32_t zxnextPsgGetEnvelopeStep(uint32_t chip) { return zxnextPsgChips[chip % 3u].envVol; }

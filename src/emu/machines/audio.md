@@ -7,8 +7,9 @@ Core audio components have dedicated unit coverage:
 - `PsgChip`
 
 Classic ZX Spectrum PSG device integration now lives in the WASM machine
-implementations. The TypeScript `PsgChip` remains covered directly and is still
-used by the ZX Spectrum Next TypeScript implementation.
+implementations. The ZX Spectrum Next's TurboSound uses `zxNext/NextPsgChip.ts`, a port of
+`ym2149.vhd` (2026-09-18, bug B73), tested on both cores by `test/zxnext-hw/audio/ay-psg.test.ts`.
+The MAME-shaped TypeScript `PsgChip` is no longer used by any machine; its unit tests remain.
 
 ## Test Gaps
 

@@ -526,30 +526,6 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       expect(typeof output.right).toBe("number");
     });
 
-    it("should work with orphan sample tracking", () => {
-      const chip = device.getChip(0);
-      
-      // Setup
-      chip.setPsgRegisterIndex(8);
-      chip.writePsgRegisterValue(5);
-      chip.setPsgRegisterIndex(7);
-      chip.writePsgRegisterValue(0x3f);
-      chip.setPsgRegisterIndex(0);
-      chip.writePsgRegisterValue(1);
-      
-      device.generateAllOutputValues();
-      device.generateAllOutputValues();
-      
-      const orphans = device.getChipOrphanSamples(0);
-      expect(orphans.count).toBeGreaterThanOrEqual(0);
-      
-      // Clear orphans
-      device.clearChipOrphanSamples(0);
-      const cleared = device.getChipOrphanSamples(0);
-      expect(cleared.sum).toBe(0);
-      expect(cleared.count).toBe(0);
-    });
-
     it("should work with all chips simultaneously", () => {
       // Configure all chips
       for (let i = 0; i < 3; i++) {

@@ -15,6 +15,7 @@ import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
 import { Z80NMachineBase } from "./Z80NMachineBase";
+import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { NextRegDevice } from "./NextRegDevice";
 import { PaletteDevice } from "./PaletteDevice";
@@ -458,6 +459,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         expBus.expansionBusNmiPending = false;
       }
     }
+    // --- The button and software causes are pulses: one that lost the arbitration is gone
+    this._pendingMfNmi = false;
+    this._pendingDivMmcNmi = false;
   }
 
   /**
@@ -512,8 +516,24 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Called from nextreg 0x02 write when bit 3 is set and nmiAcceptCause is true.
    */
   requestMfNmiFromSoftware(): void {
-    if (this.nmiAcceptCause) {
+    this.assertMfNmi();
+  }
+
+  /**
+   * zxnext.vhd ~2046, ~2063: a Multiface NMI cause (the M1 button, `$02` bit 3, the I/O trap) is a
+   * one-cycle pulse, asserted only while `$06` bit 3 enables it, and latched only while no NMI source
+   * is active. A pulse that misses either condition is gone; it does not wait for the enable.
+   */
+  private assertMfNmi(): void {
+    if (this.nmiAcceptCause && !this.nmiActivated && this.divMmcDevice.enableMultifaceNmiByM1Button) {
       this._pendingMfNmi = true;
+    }
+  }
+
+  /** The DivMMC counterpart of `assertMfNmi` (~2047, ~2065): the DRIVE button and `$02` bit 2, `$06` bit 4. */
+  private assertDivMmcNmi(): void {
+    if (this.nmiAcceptCause && !this.nmiActivated && this.divMmcDevice.enableDivMmcNmiByDriveButton) {
+      this._pendingDivMmcNmi = true;
     }
   }
 
@@ -548,9 +568,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   requestDivMmcNmiFromSoftware(): void {
-    if (this.nmiAcceptCause) {
-      this._pendingDivMmcNmi = true;
-    }
+    this.assertDivMmcNmi();
   }
 
   /**
@@ -570,8 +588,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   /**
    * Override the base Z80 NMI handler to support stackless NMI mode (nextreg 0xC0 bit 3).
-   * When `enableStacklessNmi` is true, SP is decremented by 2 but no stack writes occur;
-   * the return address is saved to `interruptDevice.nmiReturnAddress` instead.
+   *
+   * zxnext.vhd ~2008-2041, t80n_mcode.vhd ~828-848: the acknowledge always decrements SP by 2 and
+   * always stores the pushed return address in $C2/$C3 (nextreg.txt: "always stored in these
+   * registers"). With $C0 bit 3 the two write cycles are kept off the memory bus, and the first RETN
+   * after the acknowledge takes its address from $C2/$C3. Nothing in that path depends on the NMI
+   * source: the Multiface NMI is stackless too (its ROM restores SP to the NMI-time value before its
+   * RETN, so it works either way).
    */
   protected override processNmi(): void {
     // De-assert sigNMI immediately: the CPU has acknowledged the interrupt.
@@ -580,11 +603,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // a chance to run the state machine (which is the only other place that clears it).
     this.sigNMI = false;
 
-    // MF hardware predates stackless NMI — always use standard push for MF NMI
-    // so the MF ROM's RETN can pop the correct return address from the stack.
-    const useStackless = this.interruptDevice.enableStacklessNmi && !this._nmiSourceMf;
+    // --- The address the acknowledge pushes: past a HALT, as removeFromHaltedState does
+    const returnAddress = (this.pc + (this.halted ? 1 : 0)) & 0xffff;
 
-    if (useStackless) {
+    if (this.interruptDevice.enableStacklessNmi) {
       // Acknowledge NMI timing
       this.tactPlusN(4);
       this.removeFromHaltedState();
@@ -592,17 +614,32 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       // Save and clear interrupt flip-flops as normal
       this.iff2 = this.iff1;
       this.iff1 = false;
+      if (this.afterLdAIR) {
+        this.f &= ~FlagsSetMask.PV;
+        this.afterLdAIR = false;
+      }
 
-      // Decrement SP by 2 but suppress the memory writes; save return address in nextreg
+      // The push's cycles (1 + 3 + 3 T-states) run, but its writes do not reach memory
+      this.pushToStepOutStack(this.pc);
+      this.tactPlusN(7);
       this.sp = (this.sp - 2) & 0xffff;
-      this.interruptDevice.nmiReturnAddress = this.pc;
       this._stacklessNmiProcessed = true;
 
       this.refreshMemory();
       this.pc = 0x0066;
+      this.wz = 0x0066;
     } else {
       super.processNmi();
     }
+    this.interruptDevice.nmiReturnAddress = returnAddress;
+  }
+
+  /**
+   * zxnext.vhd ~2031: `z80_stackless_retn_en` is cleared while `$C0` bit 3 is 0, so clearing the bit
+   * between the acknowledge and the RETN makes that RETN pop the stack.
+   */
+  onStacklessNmiDisabled(): void {
+    this._stacklessNmiProcessed = false;
   }
 
   /**
@@ -691,11 +728,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           (this.composedScreenDevice.scanlineWeight + 1) % 4);
 
       case "multifaceNmi":
-        this._pendingMfNmi = true;
+        this.assertMfNmi();
         break;
 
       case "divmmcNmi":
-        this._pendingDivMmcNmi = true;
+        this.assertDivMmcNmi();
         break;
     }
   }
@@ -952,6 +989,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // TurboSoundDevice.setNextAudioSample per FPGA turbosound.vhd).
     const beeperSamples = this.beeperDevice.getAudioSamples();
     const turboSoundSamples = turboSound.getAudioSamples();
+    const dacSamples = this._dacDevice.getAudioSamples();
 
     // Both should have the same length, but handle mismatch gracefully
     const sampleCount = Math.max(beeperSamples.length, turboSoundSamples.length);
@@ -980,9 +1018,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       mixer.setEarLevel(beepExcl ? 0.0 : rawEarSample);
       mixer.setMicLevel(beepExcl ? 0.0 : rawMicSample);
 
-      // Get PSG sample (or 0 if out of range or disabled)
-      const psgSample = i < turboSoundSamples.length ? turboSoundSamples[i] : { left: 0, right: 0 };
+      // Get the PSG sample. Both clocks run on across frames, so the counts agree; should one frame
+      // still come up a sample short, hold the last PSG level rather than inserting silence.
+      const psgSample =
+        i < turboSoundSamples.length
+          ? turboSoundSamples[i]
+          : turboSoundSamples[turboSoundSamples.length - 1] ?? { left: 0, right: 0 };
       mixer.setPsgOutput(psgSample);
+      // The DAC level at this sample's time (the current level if the frame recorded none)
+      mixer.setDacOutput(dacSamples[i] ?? dacSamples[dacSamples.length - 1]);
 
       // Get the mixed output (includes EAR, MIC, PSG, DAC)
       const mixed = mixer.getMixedOutput();
@@ -1000,6 +1044,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       }
     }
 
+    mixer.setDacOutput(undefined);
     return mixedSamples;
   }
 
@@ -1725,7 +1770,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._copperCurrentColumn = 0;
 
     // --- Prepare audio devices for the new frame
-    this._turboSoundDevice.onNewFrame();
+    this._turboSoundDevice.onNewFrame(this.tactsInFrame);
     this._dacDevice.onNewFrame();
     this._audioMixerDevice.onNewFrame();
 
@@ -1798,9 +1843,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       return;
     }
     this.renderFrameTactsTo(this.currentFrameTact);
+    const beeperSamples = this.beeperDevice.getAudioSamples().length;
     this.beeperDevice.setNextAudioSample();
-    // --- Generate audio samples for all audio devices
-    this._turboSoundDevice.setNextAudioSample(this.frameTacts);
+    // --- Generate audio samples for all audio devices. The PSG closes its sample whenever the
+    // --- beeper emits one: one sample clock for both streams.
+    if (this.beeperDevice.getAudioSamples().length !== beeperSamples) {
+      this._turboSoundDevice.emitAudioSample(this.frameTacts);
+      this._dacDevice.recordSample();
+    }
     this._dacDevice.setNextAudioSample();
     this._audioMixerDevice.setNextAudioSample();
   }
