@@ -84,8 +84,8 @@ export class NextIoPortManager {
       value: 0b0000_0000_1111_1111,
       readerFns: () => {
         if (pe(0, 0)) {
-          // Timex port is enabled
-          return this._portTimexValue;
+          // Timex port is enabled. Bits 5-0 are shared with NextReg $69 (zxnext.vhd ~3615).
+          return (this._portTimexValue & 0xc0) | this.machine.composedScreenDevice.timexPortBits;
         }
         return 0xff;
       },
@@ -130,20 +130,24 @@ export class NextIoPortManager {
         }
       })
     });
+    // --- The +3 FDC ports, unless the $D8 I/O trap takes them (zxnext.vhd ~2557-2558, ~3815)
+    const fdcStatus = gR(0, 4, readSpectrumP3FdcStatusPort(machine));
+    const fdcControlRead = gR(0, 4, readSpectrumP3FdcControlPort(machine));
+    const fdcControlWrite = gW(0, 4, writeSpectrumP3FdcControlPort(machine));
     r({
       description: "ZX Spectrum +3 FDC status",
       port: 0x2ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0010_0000_0000_0001,
-      readerFns: gR(0, 4, readSpectrumP3FdcStatusPort(machine))
+      readerFns: (p) => (machine.trapFdcPortAccess(1) ? 0xff : fdcStatus(p))
     });
     r({
       description: "ZX Spectrum +3 FDC control",
       port: 0x3ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0011_0000_0000_0001,
-      readerFns: gR(0, 4, readSpectrumP3FdcControlPort(machine)),
-      writerFns: gW(0, 4, writeSpectrumP3FdcControlPort(machine))
+      readerFns: (p) => (machine.trapFdcPortAccess(2) ? 0xff : fdcControlRead(p)),
+      writerFns: (p, v) => (machine.trapFdcPortAccess(3, v) ? undefined : fdcControlWrite(p, v))
     });
     r({
       description: "Pentagon 1024K memory",

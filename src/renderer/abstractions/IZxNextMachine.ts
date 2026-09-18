@@ -108,6 +108,19 @@ export interface IZxNextMachine extends IZ80Machine {
   requestDivMmcNmiFromSoftware(): void;
 
   /**
+   * Called from a NextReg $02 write with bit 0 (soft) or bit 1 (hard reset). The reset happens after
+   * the current instruction; a hard reset wins over a soft one.
+   */
+  requestResetFromNextReg(hard: boolean): void;
+
+  /**
+   * The +3 FDC I/O trap (NextReg $D8 bit 0): a $2FFD read (cause 1), $3FFD read (2) or $3FFD write
+   * (3, with the written value) raises a Multiface NMI instead of reaching the FDC.
+   * @returns true when the access was trapped
+   */
+  trapFdcPortAccess(cause: number, value?: number): boolean;
+
+  /**
    * Called when config mode is entered (nextreg 0x03 = 0x07). Clears all
    * pending NMI state to prevent stale NMIs from firing during config mode.
    */

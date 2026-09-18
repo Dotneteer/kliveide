@@ -1,6 +1,6 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
+import { Plus3_50Hz, Plus3_60Hz, TimingConfig, selectTimingConfig } from "./TimingConfig";
 import { zxNextBgra } from "../PaletteDevice";
 import { OFFS_BANK_05, OFFS_BANK_07, OFFS_NEXT_RAM } from "../MemoryDevice";
 import { SpriteDevice, type SpriteAttributes } from "../SpriteDevice";
@@ -104,8 +104,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Initialize all module-level lookup tables (lazy initialization)
     initializeAllRenderingFlags();
-    initializeTactLookupTables();
-    initializeBitmapOffsetTables();
     initializeULAAddressTables();
     initializeAttributeDecodeTables();
     initializeULANextTables();
@@ -293,9 +291,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.spritesPixel2Rgb333 = null;
     this.spritesPixel2Transparent = false;
 
-    this.displayTiming = 0;
-    this.userLockOnDisplayTiming = false;
-    this.machineType = 0;
+    // --- NextReg $03 timing, user lock and machine type have no reset branch in zxnext.vhd: a soft
+    // --- reset keeps them. NextRegDevice.hardReset sets the post-firmware values.
+    this.displayTiming ??= 0b011;
+    this.userLockOnDisplayTiming ??= false;
+    this.machineType ??= 0b011;
     this.videoTimingMode = 0;
 
     // --- Initialize border color (use setter to update cache)
@@ -559,7 +559,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // --- Set up the timing mode and rendering matrices accord to the current frequency mode
     const is60Hz = this.is60HzMode;
     const oldConfig = this.config;
-    this.config = is60Hz ? Plus3_60Hz : Plus3_50Hz;
+    // --- NextReg $03 display timing picks the raster (48K / 128K / +3 / Pentagon), $05 bit 2 50/60 Hz
+    this.config = selectTimingConfig(this.displayTiming, is60Hz);
 
     // Copy config properties to flattened fields (eliminates property access overhead)
     this.confIntStartTact = this.config.intStartTact;
@@ -574,7 +575,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.machine.setTactsInFrame(this.renderingTacts);
 
     // --- Update module-level active timing mode cache
-    setActiveTimingMode(is60Hz);
+    setActiveTimingMode(this.config);
+    // --- The sprite engine renders a line's buffer through that line's blanking interval
+    this.spritesRenderCellsPerLine = this.confTotalHC - 320;
 
     // Increment flash counter (cycles 0-31 for ~1 Hz flash rate at 50Hz)
     // Flash period: ~16 frames ON, ~16 frames OFF
@@ -944,6 +947,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
   // Timex port (0xff) ULA flags - The last 6 bit of the Timex port
   timexPortBits: number;
+
+  get timexPortValue(): number {
+    return this.timexPortBits;
+  }
 
   set timexPortValue(value: number) {
     this.timexPortBits = value & 0x3f;
@@ -4057,34 +4064,50 @@ const SCR_SPRITE_INIT_DISPLAY = 0b00000010; // bit 1, the sprite display is init
 const SCR_SPRITE_RENDER = 0b00000100; // bit 2, the sprite buffer is rendered
 const SCR_SPRITE_INIT_RENDER = 0b00001000; // bit 3, the sprite buffer is initialized
 
-// Full scanline including blanking (both 50Hz and 60Hz use HC 0-455)
+// Full scanline including blanking of the +3 raster (HC 0-455); the tables use config.totalHC
 const RENDERING_FLAGS_HC_COUNT = 456; // 0 to maxHC (455)
 
-// ULA rendering flags for both timing modes
-let renderingFlagsULA50Hz: Uint8Array | undefined;
-let renderingFlagsULA60Hz: Uint8Array | undefined;
+/**
+ * Every table the renderer indexes by frame tact, for one timing configuration. Tables are indexed
+ * `vc * config.totalHC + hc`, i.e. by the frame tact itself; built on first use and cached (the
+ * 48K/128K/+3/Pentagon rasters differ in line and frame length).
+ */
+type TimingTables = {
+  ula: Uint8Array;
+  layer2_256x192: Uint8Array;
+  layer2Wide: Uint8Array;
+  sprites: Uint16Array;
+  tilemap40x32: Uint8Array;
+  tilemap80x32: Uint8Array;
+  loRes: Uint16Array;
+  tactToHC: Uint16Array;
+  tactToVC: Uint16Array;
+  tactToBitmapOffset: Int32Array;
+};
 
-// Layer2 rendering flags for both timing modes and all resolutions
-// Using Uint8Array with 0/1 values (single flag only)
-let renderingFlagsLayer2_256x192_50Hz: Uint8Array | undefined;
-let renderingFlagsLayer2_256x192_60Hz: Uint8Array | undefined;
-// Wide mode (320x256 and 640x256) use the same rendering flags
-let renderingFlagsLayer2_Wide_50Hz: Uint8Array | undefined;
-let renderingFlagsLayer2_Wide_60Hz: Uint8Array | undefined;
+const timingTablesCache = new Map<TimingConfig, TimingTables>();
 
-// Sprites rendering flags for both timing modes
-let renderingFlagsSprites50Hz: Uint16Array | undefined;
-let renderingFlagsSprites60Hz: Uint16Array | undefined;
-
-// Tilemap rendering flags for both timing modes and resolutions
-let renderingFlagsTilemap_40x32_50Hz: Uint8Array | undefined;
-let renderingFlagsTilemap_40x32_60Hz: Uint8Array | undefined;
-let renderingFlagsTilemap_80x32_50Hz: Uint8Array | undefined;
-let renderingFlagsTilemap_80x32_60Hz: Uint8Array | undefined;
-
-// LoRes rendering flags for both timing modes
-let renderingFlagsLoRes50Hz: Uint16Array | undefined;
-let renderingFlagsLoRes60Hz: Uint16Array | undefined;
+function getTimingTables(config: TimingConfig): TimingTables {
+  let tables = timingTablesCache.get(config);
+  if (!tables) {
+    const [tactToHC, tactToVC] = generateTactLookupTables(config);
+    tables = {
+      ula: generateULAStandardRenderingFlags(config),
+      layer2_256x192: generateLayer2_256x192x8RenderingFlags(config),
+      // --- Layer 2 320x256 and 640x256 share the same rendering flags
+      layer2Wide: generateLayer2_WideRenderingFlags(config),
+      sprites: generateSpritesRenderingFlags(config),
+      tilemap40x32: generateTilemap40x32RenderingFlags(config),
+      tilemap80x32: generateTilemap80x32RenderingFlags(config),
+      loRes: generateLoResRenderingFlags(config),
+      tactToHC,
+      tactToVC,
+      tactToBitmapOffset: generateBitmapOffsetTable(config)
+    };
+    timingTablesCache.set(config, tables);
+  }
+  return tables;
+}
 
 // -------------------------------------------------------------------------------------------
 // Tact to HC/VC and Bitmap Offset tables for both timing modes
@@ -4115,35 +4138,9 @@ let activeTactToBitmapOffset: Int32Array;
 // and layer configuration. They are called once during emulator initialization.
 // -------------------------------------------------------------------------------------------
 function initializeAllRenderingFlags(): void {
-  if (renderingFlagsULA50Hz) {
-    return; // Already initialized
-  }
-
-  // Generate ULA rendering flags for both timing modes
-  renderingFlagsULA50Hz = generateULAStandardRenderingFlags(Plus3_50Hz);
-  renderingFlagsULA60Hz = generateULAStandardRenderingFlags(Plus3_60Hz);
-
-  // Generate Layer2 rendering flags for all resolutions and timing modes
-  renderingFlagsLayer2_256x192_50Hz = generateLayer2_256x192x8RenderingFlags(Plus3_50Hz);
-  renderingFlagsLayer2_256x192_60Hz = generateLayer2_256x192x8RenderingFlags(Plus3_60Hz);
-
-  // Layer 2 Wide mode (320x256 and 640x256) share the same rendering flags
-  renderingFlagsLayer2_Wide_50Hz = generateLayer2_WideRenderingFlags(Plus3_50Hz);
-  renderingFlagsLayer2_Wide_60Hz = generateLayer2_WideRenderingFlags(Plus3_60Hz);
-
-  // Generate Sprites rendering flags for both timing modes
-  renderingFlagsSprites50Hz = generateSpritesRenderingFlags(Plus3_50Hz);
-  renderingFlagsSprites60Hz = generateSpritesRenderingFlags(Plus3_60Hz);
-
-  // Generate Tilemap rendering flags for both resolutions and timing modes
-  renderingFlagsTilemap_40x32_50Hz = generateTilemap40x32RenderingFlags(Plus3_50Hz);
-  renderingFlagsTilemap_40x32_60Hz = generateTilemap40x32RenderingFlags(Plus3_60Hz);
-  renderingFlagsTilemap_80x32_50Hz = generateTilemap80x32RenderingFlags(Plus3_50Hz);
-  renderingFlagsTilemap_80x32_60Hz = generateTilemap80x32RenderingFlags(Plus3_60Hz);
-
-  // Generate LoRes rendering flags for both timing modes
-  renderingFlagsLoRes50Hz = generateLoResRenderingFlags(Plus3_50Hz);
-  renderingFlagsLoRes60Hz = generateLoResRenderingFlags(Plus3_60Hz);
+  // --- The +3 rasters are the ones in use after reset; build them up front
+  getTimingTables(Plus3_50Hz);
+  getTimingTables(Plus3_60Hz);
 }
 
 // -------------------------------------------------------------------------------------------
@@ -4181,7 +4178,7 @@ function isContentionWindow(hc: number, inDisplayArea: boolean): boolean {
 
 function generateULAStandardRenderingFlags(config: TimingConfig): Uint8Array {
   const vcCount = config.totalVC;
-  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const hcCount = config.totalHC;
   const renderingFlags = new Uint8Array(vcCount * hcCount);
 
   for (let vc = 0; vc < vcCount; vc++) {
@@ -4293,7 +4290,7 @@ function generateULAStandardRenderingFlags(config: TimingConfig): Uint8Array {
 
 function generateLayer2_256x192x8RenderingFlags(config: TimingConfig): Uint8Array {
   const vcCount = config.totalVC;
-  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const hcCount = config.totalHC;
   const renderingFlags = new Uint8Array(vcCount * hcCount);
 
   for (let vc = 0; vc < vcCount; vc++) {
@@ -4327,7 +4324,7 @@ function generateLayer2_256x192x8RenderingFlags(config: TimingConfig): Uint8Arra
 
 function generateLayer2_WideRenderingFlags(config: TimingConfig): Uint8Array {
   const vcCount = config.totalVC;
-  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const hcCount = config.totalHC;
   const renderingFlags = new Uint8Array(vcCount * hcCount);
 
   for (let vc = 0; vc < vcCount; vc++) {
@@ -4399,7 +4396,7 @@ function generateLayer2_WideRenderingFlags(config: TimingConfig): Uint8Array {
 
 function generateSpritesRenderingFlags(config: TimingConfig): Uint16Array {
   const vcCount = config.totalVC;
-  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const hcCount = config.totalHC;
   const renderingFlags = new Uint16Array(vcCount * hcCount);
 
   for (let vc = 0; vc < vcCount; vc++) {
@@ -4466,7 +4463,7 @@ function generateSpritesRenderingFlags(config: TimingConfig): Uint16Array {
 
 function generateLoResRenderingFlags(config: TimingConfig): Uint16Array {
   const vcCount = config.totalVC;
-  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const hcCount = config.totalHC;
   const renderingFlags = new Uint16Array(vcCount * hcCount);
 
   for (let vc = 0; vc < vcCount; vc++) {
@@ -4528,10 +4525,6 @@ function generateLoResRenderingFlags(config: TimingConfig): Uint16Array {
 // eliminate expensive modulo/division operations. They are generated for both 50Hz and 60Hz
 // timing modes to optimize rendering performance.
 // ================================================================================================
-let tactToHC50Hz: Uint16Array | undefined;
-let tactToVC50Hz: Uint16Array | undefined;
-let tactToHC60Hz: Uint16Array | undefined;
-let tactToVC60Hz: Uint16Array | undefined;
 
 function generateTactLookupTables(config: TimingConfig): [Uint16Array, Uint16Array] {
   const totalTacts = config.totalVC * config.totalHC;
@@ -4546,19 +4539,6 @@ function generateTactLookupTables(config: TimingConfig): [Uint16Array, Uint16Arr
   return [tactToHC, tactToVC];
 }
 
-function initializeTactLookupTables(): void {
-  if (tactToHC50Hz) {
-    return; // Already initialized
-  }
-
-  const [hc50, vc50] = generateTactLookupTables(Plus3_50Hz);
-  tactToHC50Hz = hc50;
-  tactToVC50Hz = vc50;
-
-  const [hc60, vc60] = generateTactLookupTables(Plus3_60Hz);
-  tactToHC60Hz = hc60;
-  tactToVC60Hz = vc60;
-}
 
 // ================================================================================================
 // Bitmap Offset Lookup Tables
@@ -4567,8 +4547,6 @@ function initializeTactLookupTables(): void {
 // for rendering. They are generated for both 50Hz and 60Hz timing modes to optimize
 // pixel rendering performance by avoiding real-time calculations.
 // ================================================================================================
-let tactToBitmapOffset50Hz: Int32Array | undefined;
-let tactToBitmapOffset60Hz: Int32Array | undefined;
 
 function generateBitmapOffsetTable(config: TimingConfig): Int32Array {
   const totalTacts = config.totalVC * config.totalHC;
@@ -4590,14 +4568,6 @@ function generateBitmapOffsetTable(config: TimingConfig): Int32Array {
   return tactToBitmapOffset;
 }
 
-function initializeBitmapOffsetTables(): void {
-  if (tactToBitmapOffset50Hz) {
-    return; // Already initialized
-  }
-
-  tactToBitmapOffset50Hz = generateBitmapOffsetTable(Plus3_50Hz);
-  tactToBitmapOffset60Hz = generateBitmapOffsetTable(Plus3_60Hz);
-}
 
 // ================================================================================================
 // ULA Address Lookup Tables
@@ -4723,29 +4693,19 @@ function initializeAttributeDecodeTables(): void {
   ulaPlusAttrToPaper = tables.ulaPlusAttrToPaper;
 }
 
-function setActiveTimingMode(is60Hz: boolean): void {
-  activeRenderingFlagsULA = is60Hz ? renderingFlagsULA60Hz : renderingFlagsULA50Hz;
-  activeRenderingFlagsLayer2_256x192 = is60Hz
-    ? renderingFlagsLayer2_256x192_60Hz
-    : renderingFlagsLayer2_256x192_50Hz;
-  // Both 320x256 and 640x256 use the same wide mode rendering flags
-  activeRenderingFlagsLayer2_320x256 = is60Hz
-    ? renderingFlagsLayer2_Wide_60Hz
-    : renderingFlagsLayer2_Wide_50Hz;
-  activeRenderingFlagsLayer2_640x256 = is60Hz
-    ? renderingFlagsLayer2_Wide_60Hz
-    : renderingFlagsLayer2_Wide_50Hz;
-  activeRenderingFlagsSprites = is60Hz ? renderingFlagsSprites60Hz : renderingFlagsSprites50Hz;
-  activeRenderingFlagsTilemap_40x32 = is60Hz
-    ? renderingFlagsTilemap_40x32_60Hz
-    : renderingFlagsTilemap_40x32_50Hz;
-  activeRenderingFlagsTilemap_80x32 = is60Hz
-    ? renderingFlagsTilemap_80x32_60Hz
-    : renderingFlagsTilemap_80x32_50Hz;
-  activeRenderingFlagsLoRes = is60Hz ? renderingFlagsLoRes60Hz : renderingFlagsLoRes50Hz;
-  activeTactToHC = is60Hz ? tactToHC60Hz : tactToHC50Hz;
-  activeTactToVC = is60Hz ? tactToVC60Hz : tactToVC50Hz;
-  activeTactToBitmapOffset = is60Hz ? tactToBitmapOffset60Hz : tactToBitmapOffset50Hz;
+function setActiveTimingMode(config: TimingConfig): void {
+  const tables = getTimingTables(config);
+  activeRenderingFlagsULA = tables.ula;
+  activeRenderingFlagsLayer2_256x192 = tables.layer2_256x192;
+  activeRenderingFlagsLayer2_320x256 = tables.layer2Wide;
+  activeRenderingFlagsLayer2_640x256 = tables.layer2Wide;
+  activeRenderingFlagsSprites = tables.sprites;
+  activeRenderingFlagsTilemap_40x32 = tables.tilemap40x32;
+  activeRenderingFlagsTilemap_80x32 = tables.tilemap80x32;
+  activeRenderingFlagsLoRes = tables.loRes;
+  activeTactToHC = tables.tactToHC;
+  activeTactToVC = tables.tactToVC;
+  activeTactToBitmapOffset = tables.tactToBitmapOffset;
 }
 
 // ================================================================================================
@@ -4849,7 +4809,7 @@ function getULANextPaperIndex(format: number, attr: number): number {
  */
 function generateTilemap40x32RenderingFlags(config: TimingConfig): Uint8Array {
   const vcCount = config.totalVC;
-  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const hcCount = config.totalHC;
   const renderingFlags = new Uint8Array(vcCount * hcCount);
 
   for (let vc = 0; vc < vcCount; vc++) {
@@ -4953,7 +4913,7 @@ function generateTilemap40x32RenderingFlags(config: TimingConfig): Uint8Array {
  */
 function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
   const vcCount = config.totalVC;
-  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const hcCount = config.totalHC;
   const renderingFlags = new Uint8Array(vcCount * hcCount);
 
   let tmFetch = 0;

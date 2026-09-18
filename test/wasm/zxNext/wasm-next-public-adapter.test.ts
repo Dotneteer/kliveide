@@ -74,7 +74,9 @@ describe("ZX Spectrum Next WASM public adapter", () => {
     expect(machine.memoryDevice.getMemoryPartition(0x0a)[0]).toBe(0x34);
 
     machine.tbblueOut(0x12, 0x56);
-    expect(machine.nextRegDevice.getNextRegisterIndex()).toBe(0x12);
+    // --- NEXTREG writes without touching the $243B selection, which a reset left at $24
+    expect(machine.nextRegDevice.getNextRegisterIndex()).toBe(0x24);
+    machine.nextRegDevice.setNextRegisterIndex(0x12);
     expect(machine.nextRegDevice.getNextRegisterValue()).toBe(0x56);
     expect(machine.nextRegDevice.getNextRegDeviceState().regs.find(reg => reg.id === 0x12)).toMatchObject({
       value: 0x56,

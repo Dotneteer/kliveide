@@ -363,6 +363,112 @@ picture (`zxnextRasterIsVideoNextReg`, `zxnext-ula.c:1519`, and the port list in
   side stays silent instead of carrying a phase-inverted copy).
 - **Verified:** whole suite (22,545 tests), `test:visual` 20/20, no new type errors.
 
+### B16 – NextReg access diverged from the FPGA read mux and select latch – FIXED 2026-09-18
+
+Found by the catalogue §4.1 tests (`test/zxnext-hw/nextreg/register-select.test.ts`, `identity.test.ts`,
+`read-mux.test.ts`, `composite-readbacks.test.ts`), all fixed in the same change:
+
+- **`NEXTREG` changed the `$243B` selection (both cores).** zxnext.vhd ~4719-4725: the Z80N instruction
+  requests the write with its own operand; `nr_register` changes only on a `$243B` write. Fixed with
+  `NextRegDevice.writeRegister` (TS `tbblueOut`) and a direct `zxnextNextRegSetDirect` call in the WASM
+  CPU plus a new `zxnextWriteNextRegister` export (WASM machine `tbblueOut`).
+- **A reset did not select `$24` (both).** ~4575 ("protection against legacy programs"). Note the WASM
+  `zxnextPortsReset` also cleared the index after the NextReg reset.
+- **Registers the read mux does not list read back their last write (both); some listed registers
+  leaked bits the mux hard-wires.** ~6232 `when others => (others => '0')`. Both cores now pass a `$253B`
+  read through one table: `src/emu/machines/zxNext/nextRegReadMux.ts` and
+  `zxnextNextRegReadZeroMask/OneMask` in `zxnext-nextreg.c` (keep them in sync; `read-mux.test.ts`
+  checks both). Only the port read path is masked: `directGetRegValue` (the IDE panel, the harness's
+  `nextRegValue`) still shows stored values.
+- **WASM identity registers `$00`/`$01`/`$0E`/`$0F` were writable.** Now ignored.
+- **WASM `$28` read 0** (now `nr_stored_palette_value`), **`$69` read back the last `$69` write** (now
+  live: Layer 2 enable, `$7FFD` shadow bit, port `$FF` bits 5-0), and a `$69` write clobbered port `$FF`
+  bits 7-6. **TS `$69` bits 5-0 read 0** (`timexPortValue` had a setter and no getter) and port `$FF`
+  did not read back a `$69` write.
+- **WASM `$7FFD` ignored bit 3:** the 128K shadow screen (bank 7) was never displayed. Test:
+  `test/zxnext-hw/memory/shadow-screen.test.ts` (MEM-025, pixel, mutation-checked).
+- **WASM sprite attribute mirrors were off by one:** `$34` wrote attribute 0 of the port-`$303B` sprite
+  instead of selecting a sprite, `$35`-`$38` wrote attributes 1-4, `$39` was ignored. Now a separate
+  `mirror_sprite_q` as in sprites.vhd ~596-616, tied to the upload index by `$09` bit 4. **TS:** a `$34`
+  write reused the mirror index a previous `$35`-`$39` write left, so it wrote an attribute (MAME
+  behaviour; the VHDL defaults the index to `"111"` every cycle, ~4806). Test:
+  `test/zxnext-hw/sprites/attribute-mirror.test.ts` (SPR-006, pixel).
+- **Tests corrected** (they encoded the old behaviour): `test/zxnext/NextRegDevice.test.ts` (`$04`,
+  `$29`, `$2B` read 0; `$90`/`$A0` masks), `test/zxnext/SpriteDevice-d4d6d7.test.ts` (MAME `$34`),
+  `test/wasm/zxNext/` ide-scaffold, public-adapter, frame-diff-runner and the oracle helper (they used
+  `tbblueOut` as "select and write").
+- **Open question, not a bug:** Klive reports core 3.02.00 (`CORE_VERSION_*`), the VHDL in
+  `_input/next-fpga` is 3.02.01 (`g_sub_version = $01`).
+
+### B17 – WASM had no software NMI sources and no Multiface device – FIXED 2026-09-18
+
+- **Tests:** `test/zxnext-hw/reset/reset-register.test.ts` RST-004 (`$02` bit 2 DivMMC NMI), RST-005
+  (`$02` bit 3 Multiface NMI, plus: the MF ROM is at `$0000` after the `$0066` fetch, MF RAM at `$2000`,
+  RETN pages it out - mutation-checked), RST-006 (`$D8` +3 FDC I/O trap). Both cores.
+- **Fixed (WASM):** new `zxnext-multiface.c` (multiface.vhd: `nmi_active`, `mf_enable`, `invisible`,
+  the type-dependent enable/disable ports `$1F`/`$3F`/`$9F`/`$BF`, the `mf_port_dat` paging snapshot,
+  RETN), a `$0000`-`$3FFF` overlay in `zxnext-memory.c` (Multiface over DivMMC over Layer 2), and the
+  NMI state machine in `zxnext-nmi.c` (IDLE/FETCH/HOLD/END, Multiface-first arbitration gated by `$06`
+  bits 3/4, stepped at opcode fetches; the MF NMI is never stackless), mirroring `ZxNextMachine`. `$02`
+  reads the MF/DivMMC/I-O-trap flags; `$D8` traps `$2FFD`/`$3FFD` in `zxnext-ports.c` (`$DA` cause, `$D9`
+  value, `$DA` now read-only). The F9/F10 menu commands reach the core through
+  `zxnextPressMultifaceNmiButton` / `zxnextPressDivMmcNmiButton` (before, on WASM they set TypeScript
+  flags nothing read, so both buttons did nothing).
+- **Not modelled:** `$EFF7` bits 3-2 in the MF+3 port snapshot (WASM has no `$EFF7` state; reads 0).
+- **Seen, not investigated:** the TS `+3 FDC` control port throws on a `$3FFD` read when the trap is off
+  and no disk is active (`readSpectrumP3FdcControlPort`).
+
+### B18 – Only the +3 raster was implemented; `$03` display timing did not change the frame – FIXED 2026-09-18
+
+- **Tests:** `test/zxnext-hw/reset/machine-type.test.ts` RST-008: frame length per timing (48K
+  69888, 128K/+3 70908, Pentagon 71680 T-states, measured over ten frames) and paper/border in place in
+  every timing. Both cores.
+- **Fixed (TS):** `screen/TimingConfig.ts` adds `Zx48_50Hz`/`Zx48_60Hz`, `Zx128_50Hz`/`Zx128_60Hz`,
+  `Pentagon_50Hz` and `selectTimingConfig(displayTiming, is60Hz)`. The mapping from zxula_timing.vhd is
+  the one the +3 configs already used (displayXStart = `c_min_hactive` + 8, interrupt HC = `c_int_h` +
+  12). `NextComposedScreenDevice` builds one table set per config on first use (`getTimingTables`), the
+  generators index by `config.totalHC`, and `onNewFrame` picks the config from `$03` and `$05`.
+- **Fixed (WASM):** the geometry macros are runtime values (`zxnextTiming*` in `zxnext.c`), chosen by
+  `zxnextTimingSelect` at every frame end (after the finished frame's picture) and on hard reset.
+- **Framing choice:** every timing keeps the paper at buffer (96, 48). The VHDL HDMI window would show
+  the Pentagon paper 8 pixels right and 8 rows lower.
+- **Cost:** WASM 2.01 vs 1.96 ms/frame against the last commit on a busy loop (that covers B16-B19 too:
+  the NMI state machine per instruction, the Multiface overlay per memory access, variable geometry).
+
+### B20 – WASM 60 Hz keeps the 311-line frame – OPEN (found 2026-09-18)
+
+- The WASM core has always run 311-line frames at 60 Hz (only the interrupt position changes); the TS
+  core runs 264 lines (Plus3_60Hz, Zx48_60Hz). `zxnextTimingSelect` keeps that behaviour: the WASM
+  raster draws layers at fixed buffer rows, and the TS 60 Hz frame puts the paper at row 24, not 48.
+  Needs the WASM layer drawing to take a per-timing paper row. Catalogue VT-003.
+
+### B21 – `Plus3_60Hz.intStartTact` looks like a hex/decimal slip – OPEN, not verified (found 2026-09-18)
+
+- `screen/TimingConfig.ts`: `intStartTact: 0x138` with the comment "vc(0) * totalHC(456) + hc(138) =
+  138" - `0x138` is 312. The WASM core copied the value. The new 128K 60 Hz config derives from it
+  (+2), so both stay consistent until someone checks the 60 Hz interrupt position against the VHDL
+  (`c_int_v` = 0, `c_int_h` = 126 for +3) with a test (catalogue VT-006).
+
+### B19 – NextReg `$02`/`$03`/`$0A` behaviour – FIXED 2026-09-18
+
+Found by catalogue §4.2 (`test/zxnext-hw/reset/*.test.ts`):
+- **`$02` bits 0/1 did not reset (both cores).** Now a soft/hard reset after the current instruction:
+  TS `ZxNextMachine.requestResetFromNextReg` + `afterInstructionExecuted`; WASM stops the frame
+  (`zxnextResetRequest`), the wrapper takes it with `zxnextTakeResetRequest` and runs its own
+  `reset()`/`hardReset()` (so a hard reset reloads the ROM images), in the fast loop, the debug loop and
+  single steps.
+- **WASM `$02` read the stored byte;** now bit 7 (bus reset) and the last reset type (`10` after a hard
+  reset, `01` after a soft one). TS already did.
+- **TS had no `$D8` I/O trap:** `$2FFD`/`$3FFD` always went to the FDC. Now `trapFdcPortAccess` raises
+  the Multiface NMI, records `$DA`/`$D9`, and `$02` bit 4 = 0 clears the cause.
+- **WASM `$03` was a stored byte:** now timing (bit 7, lock, 000->001, 101-111->011), the user lock
+  toggle, the machine type in config mode only, and bit 7 = palette sub-index. **WASM `$0A`** bits 7-6
+  now change only in config mode.
+- **TS lost the `$03` timing, lock and type on every soft reset** (`NextComposedScreenDevice.reset`
+  zeroed them, the machine forced type 3); the VHDL has no reset branch for them. The hard reset now sets
+  the post-firmware values (+3 timing and type, unlocked), so `$03` reads `$33` after it, not `$03`.
+- Corrected tests: `test/zxnext/NextRegDevice.test.ts` (`$03 = $33`; `$04` returns the last value read).
+
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 
 - **Fixed:** `machineFrameCompleted` keeps a copy of the displayed pixel buffer instead of calling

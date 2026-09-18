@@ -201,14 +201,17 @@ describe("Mirror port protocol (D6)", () => {
     }
   });
 
-  // ── NR $34 reuses mirrorIndex set by NR $35-$39 ─────────────────────────
+  // ── NR $34 always selects the sprite ─────────────────────────────────────
+  // --- zxnext.vhd ~4806-4833 defaults nr_sprite_mirror_index to "111" on every cycle and only
+  // --- $35-$39/$75-$79 change it, so a $34 write is always a sprite-number write. (MAME kept the
+  // --- index a previous $35-$39 write left behind; this test used to encode that.)
 
-  it("NR $35 sets mirrorIndex=0; subsequent NR $34 write goes to attr0 not sprite number", () => {
-    writeNextReg(machine, 0x34, 0x07);        // mirrorSpriteQ=7 (mirrorIndex still 7 at this point)
-    writeNextReg(machine, 0x35, 0xaa);        // sets mirrorIndex=0; writes attr0 of sprite 7
-    writeNextReg(machine, 0x34, 0xbb);        // mirrorIndex=0, writes attr0 of sprite 7 again
-    expect(spr.attributes[7].x & 0xff).toBe(0xbb);
-    expect(spr.mirrorSpriteQ).toBe(7);        // mirrorSpriteQ unchanged (mirrorInc=false)
+  it("NR $34 after NR $35 selects the sprite, it does not write attr0", () => {
+    writeNextReg(machine, 0x34, 0x07);        // mirrorSpriteQ=7
+    writeNextReg(machine, 0x35, 0xaa);        // attr0 of sprite 7
+    writeNextReg(machine, 0x34, 0x0b);        // select sprite 11
+    expect(spr.attributes[7].x & 0xff).toBe(0xaa);
+    expect(spr.mirrorSpriteQ).toBe(0x0b);
   });
 
   // ── mirrorTie: mirrorSpriteQ change → sync spriteIndex+patternIndex ──────

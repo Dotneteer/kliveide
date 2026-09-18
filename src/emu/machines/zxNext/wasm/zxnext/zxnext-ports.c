@@ -23,7 +23,7 @@ static void zxnextPortsReset(void) {
   lastPortValue = 0;
   lastPortAccessed = 0;
   lastPortIsWrite = 0;
-  nextRegIndex = 0;
+  nextRegIndex = 0x24; /* zxnext.vhd ~4575: a reset selects register $24 */
   zxnextUlaReset();
 }
 
@@ -32,6 +32,22 @@ static uint32_t zxnextPortsRead(uint32_t address) {
   lastPortAddress = normalized;
   lastPortAccessed = 1;
   lastPortIsWrite = 0;
+
+  /* +3 FDC I/O trap (NextReg $D8 bit 0): $2FFD / $3FFD reads raise a Multiface NMI */
+  if ((zxnextNextRegs[0xd8u] & 0x01u) != 0u &&
+      ((normalized & 0xf003u) == 0x2001u || (normalized & 0xf003u) == 0x3001u)) {
+    zxnextNmiIoTrap((normalized & 0xf003u) == 0x2001u ? 1u : 2u, 0u, 0u);
+    return lastPortValue = 0xffu;
+  }
+  /* Multiface enable/disable ports ($1F, $3F, $9F, $BF): the MF answers or lets other devices do so */
+  {
+    uint32_t low = normalized & 0x00ffu;
+    if (low == 0x1fu || low == 0x3fu || low == 0x9fu || low == 0xbfu) {
+      uint32_t handled = 0u;
+      uint32_t mfValue = zxnextMultifaceReadPort(normalized, &handled);
+      if (handled) return lastPortValue = (uint8_t)mfValue;
+    }
+  }
 
   if ((normalized & 0xffffu) == 0x243bu) {
     lastPortValue = zxnextNextRegGetIndex();
@@ -99,6 +115,11 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   lastPortValue = byteValue;
   lastPortAccessed = 1;
   lastPortIsWrite = 1;
+  if ((zxnextNextRegs[0xd8u] & 0x01u) != 0u && (normalized & 0xf003u) == 0x3001u) {
+    zxnextNmiIoTrap(3u, byteValue, 1u);
+    return;
+  }
+  zxnextMultifaceWritePort(normalized, byteValue);
   zxnextDacWritePort(normalized, byteValue);
 
   // --- Ports that change the picture: render what the beam has drawn so far with the old state.

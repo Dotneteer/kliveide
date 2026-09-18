@@ -29,9 +29,9 @@ static uint8_t zxnextCopperVerticalLineOffset;
 // cannot disagree.
 #define ZXNEXT_COPPER_TOTAL_VC (ZXNEXT_RENDERING_TACTS_IN_FRAME / ZXNEXT_SCREEN_TOTAL_HC)
 // First active display line — the hardware's `ula_min_vactive`, where `cvc` is loaded.
-#define ZXNEXT_COPPER_DISPLAY_Y_START 64u
+#define ZXNEXT_COPPER_DISPLAY_Y_START zxnextTimingDisplayYStart
 // Raw HC at which `hc_ula` wraps to 0: `c_min_hactive - 12`, twelve pixels before paper x 0 (raw 144).
-#define ZXNEXT_COPPER_HC_ULA_ORIGIN 132u
+#define ZXNEXT_COPPER_HC_ULA_ORIGIN (zxnextTimingDisplayXStart - 12u)
 // The copper runs on the 28 MHz clock: four ticks per horizontal position.
 #define ZXNEXT_COPPER_TICKS_PER_HC 4u
 
@@ -164,7 +164,7 @@ static uint32_t zxnextVideoLineIntActive(uint32_t frameTact) {
     ZXNEXT_COPPER_TOTAL_VC;
   uint32_t start = rawVc * ZXNEXT_SCREEN_TOTAL_HC + ZXNEXT_COPPER_HC_ULA_ORIGIN + 255u;
   uint32_t elapsed = (frameTact + ZXNEXT_RENDERING_TACTS_IN_FRAME - start) % ZXNEXT_RENDERING_TACTS_IN_FRAME;
-  return elapsed < (ZXNEXT_50HZ_INT_END_TACT - ZXNEXT_50HZ_INT_START_TACT);
+  return elapsed < (zxnextTimingIntEnd - zxnextTimingIntStart);
 }
 
 static void zxnextCopperAdvanceTo(uint32_t frameTact) {

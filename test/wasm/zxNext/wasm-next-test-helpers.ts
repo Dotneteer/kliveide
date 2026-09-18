@@ -254,7 +254,9 @@ function captureMemorySnapshot(
 function captureNextRegSnapshot(
   machine: TestZxNextMachine | ZxNextWasmV2Machine
 ): ZxNextOracleNextRegSnapshot {
-  machine.tbblueOut(0x12, 0x34);
+  // --- The $243B/$253B path: NEXTREG (tbblueOut) writes without selecting (zxnext.vhd ~4719-4725)
+  machine.nextRegDevice.setNextRegisterIndex(0x12);
+  machine.nextRegDevice.setNextRegisterValue(0x34);
   const state = machine.nextRegDevice.getNextRegDeviceState();
   const sampledValues: Record<number, number | undefined> = {};
   for (const id of NEXT_REG_SAMPLE_IDS) {

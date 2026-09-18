@@ -254,7 +254,10 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextReg34Value(value: number) {
-    // NR $34 write → mirror_data_w with current mirrorIndex
+    // --- zxnext.vhd ~4807/~4833: a $34 write always uses mirror index "111" (select the sprite). It
+    // --- used the index a previous $35-$39/$75-$79 write left behind, and wrote an attribute instead.
+    this.mirrorIndex = 7;
+    this.mirrorInc = false;
     this.mirrorDataW(value & 0xff);
   }
 

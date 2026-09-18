@@ -329,9 +329,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.nextRegDevice.reset();
     if (resetSurvivors) this.nextRegDevice.restoreResetSurvivors(resetSurvivors);
 
-    // --- Set default machine type
+    // --- Leave config mode; the $03 machine type and timing survive a soft reset (no reset branch)
     this.nextRegDevice.configMode = false;
-    this.composedScreenDevice.machineType = 0x03; // ZX Spectrum Next
     this._prevUlaIntPulse = false;
     this._prevLineIntPulse = false;
   }
@@ -512,6 +511,33 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Called from nextreg 0x02 write when bit 2 is set and nmiAcceptCause is true.
    */
+  private _pendingNextRegReset: "soft" | "hard" | undefined;
+
+  /**
+   * NextReg $02 bit 0 / bit 1: the reset is applied once the current instruction completes
+   * (afterInstructionExecuted), so the CPU does not restart in the middle of `NEXTREG`.
+   */
+  requestResetFromNextReg(hard: boolean): void {
+    this._pendingNextRegReset = hard || this._pendingNextRegReset === "hard" ? "hard" : "soft";
+  }
+
+  /**
+   * zxnext.vhd ~3815: `nmi_gen_iotrap` (already qualified by $D8 bit 0) feeds the Multiface NMI like
+   * $02 bit 3 does; ~3846-3865 record the cause in $DA (only while the NMI machine accepts a cause),
+   * ~3871 the written value in $D9. $02 bit 4 reads "cause != 0".
+   */
+  trapFdcPortAccess(cause: number, value?: number): boolean {
+    const nr = this.nextRegDevice;
+    if (!nr.fdcIoTrap) return false;
+    if (value !== undefined) nr.directSetRegValue(0xd9, value & 0xff);
+    if (this.nmiAcceptCause) {
+      nr.ioTrapCause = cause & 0x03;
+      this.interruptDevice.mfNmiByIoTrap = true;
+    }
+    this.requestMfNmiFromSoftware();
+    return true;
+  }
+
   requestDivMmcNmiFromSoftware(): void {
     if (this.nmiAcceptCause) {
       this._pendingDivMmcNmi = true;
@@ -1076,8 +1102,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param value Register value;
    */
   tbblueOut(address: number, value: number): void {
-    this.nextRegDevice.setNextRegisterIndex(address);
-    this.nextRegDevice.setNextRegisterValue(value);
+    // --- NEXTREG leaves the $243B selection alone (zxnext.vhd ~4719-4725)
+    this.nextRegDevice.writeRegister(address, value);
   }
 
   /**
@@ -1680,6 +1706,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._turboSoundDevice.calculateCurrentAudioValue(this.frameTacts);
     this._dacDevice.calculateCurrentAudioValue();
     this._audioMixerDevice.calculateCurrentAudioValue();
+    const pendingReset = this._pendingNextRegReset;
+    if (pendingReset) {
+      this._pendingNextRegReset = undefined;
+      pendingReset === "hard" ? this.hardReset() : this.reset();
+    }
   }
 
   /**

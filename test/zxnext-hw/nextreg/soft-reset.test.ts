@@ -122,6 +122,8 @@ const KEPT: Row[] = [
   { reg: 0x09, what: "PSG mono", write: 0xa0, expected: 0xa0, mask: 0xe0 },
   { reg: 0x0a, what: "DivMMC automap, mouse buttons/DPI", write: 0x1a, expected: 0x1a, mask: 0x1b },
   { reg: 0x7f, what: "user register", write: 0x5a, expected: 0x5a },
+  // --- $03 timing (bit 7 + 6-4) and user lock (3); the type needs config mode, so it stays +3
+  { reg: 0x03, what: "display timing, user lock, machine type", before: [[0x03, 0xa0]], write: 0x08, expected: 0x2b, mask: 0x7f },
   { reg: 0x85, what: "internal port enable reset type", write: 0x80, expected: 0x80, mask: 0x80 },
   { reg: 0x8f, what: "memory mapping mode", write: 0x01, expected: 0x01 }
 ];

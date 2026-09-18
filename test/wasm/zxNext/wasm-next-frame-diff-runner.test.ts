@@ -296,12 +296,12 @@ describe("ZX Spectrum Next WASM frame trace recorder", () => {
     expect(readTraceRecord(oracleTrace.bytes, 2)).toMatchObject({
       pcBefore: 0x00ef,
       pcAfter: 0x00f3,
-      nextRegIndex: 0x07
+      nextRegIndex: 0x24 // --- the ROM's NEXTREG $07 leaves the reset selection ($24) alone
     });
     expect(readTraceRecord(runtime.frameTrace, 2)).toMatchObject({
       pcBefore: 0x00ef,
       pcAfter: 0x00f3,
-      nextRegIndex: 0x07
+      nextRegIndex: 0x24 // --- the ROM's NEXTREG $07 leaves the reset selection ($24) alone
     });
     expect(readTraceRecord(oracleTrace.bytes, 18)).toMatchObject({
       pcBefore: 0x011d,

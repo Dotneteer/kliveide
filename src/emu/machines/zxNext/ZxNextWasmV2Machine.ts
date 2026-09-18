@@ -581,6 +581,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.syncCpuFromWasmV2(runtime);
     this.syncWasmV2StorageFrameCommand(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
+    this.applyWasmV2ResetRequest(runtime);
     if (this.frameCompleted) {
       this.wasmV2NormalFrames++;
       this.wasmV2LastStopReason = "wasmFrameComplete";
@@ -606,6 +607,18 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.importWasmV2BusAccess(runtime);
     this.syncWasmV2StorageFrameCommand(runtime);
     this.frameCompleted = runtime.exports.zxnextGetFrameCompleted() !== 0;
+    this.applyWasmV2ResetRequest(runtime);
+  }
+
+  /**
+   * NextReg $02 bit 0 / bit 1: the core stops the frame and reports the request; the reset runs here
+   * so a hard reset also restores what this class owns (the ROM images, the audio rate).
+   */
+  private applyWasmV2ResetRequest(runtime: ZxNextWasmV2Runtime): boolean {
+    const request = runtime.exports.zxnextTakeResetRequest();
+    if (request === 2) this.hardReset();
+    else if (request === 1) this.reset();
+    return request !== 0;
   }
 
   /**
@@ -749,6 +762,10 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       }
       this.syncWasmV2StorageFrameCommand(runtime);
       this.wasmV2LastStopReason = "debugStep";
+      if (this.applyWasmV2ResetRequest(runtime)) {
+        super.pc = wasm.zxnextGetCpuPc();
+        this.frameCompleted = false;
+      }
 
       if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
         const point = this.executionContext.terminationPoint;
@@ -944,10 +961,27 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.syncWasmV2StorageFrameCommand(runtime);
   }
 
+  /**
+   * The Multiface (F9) and DivMMC (F10) NMI buttons feed the core's NMI state machine; the
+   * TypeScript-side flags the base class sets are never read by the WASM CPU.
+   */
+  override async executeCustomCommand(command: string): Promise<any> {
+    const runtime = this.wasmV2Runtime;
+    if (runtime != null && command === "multifaceNmi") {
+      runtime.exports.zxnextPressMultifaceNmiButton();
+      return;
+    }
+    if (runtime != null && command === "divmmcNmi") {
+      runtime.exports.zxnextPressDivMmcNmiButton();
+      return;
+    }
+    return super.executeCustomCommand(command);
+  }
+
   override tbblueOut(address: number, value: number): void {
     const runtime = this.requireWasmV2Runtime();
-    runtime.exports.zxnextSetNextRegisterIndex(address & 0xff);
-    runtime.exports.zxnextSetNextRegisterValue(value & 0xff);
+    // --- NEXTREG leaves the $243B selection alone (zxnext.vhd ~4719-4725)
+    runtime.exports.zxnextWriteNextRegister(address & 0xff, value & 0xff);
   }
 
   override setKeyStatus(key: number, isDown: boolean): void {

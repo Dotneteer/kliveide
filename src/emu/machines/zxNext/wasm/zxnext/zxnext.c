@@ -7,7 +7,21 @@
 #define ZXNEXT_PIXEL_COUNT (ZXNEXT_SCREEN_WIDTH * ZXNEXT_SCREEN_HEIGHT)
 #define ZXNEXT_KEYBOARD_LINE_COUNT 8
 #define ZXNEXT_NEXT_REG_COUNT 256
-#define ZXNEXT_RENDERING_TACTS_IN_FRAME (456 * 311)
+/*
+ * The raster of the current frame (zxula_timing.vhd, NextComposedScreenDevice's TimingConfig):
+ * line and frame length, the beam position of buffer pixel (0, 0), the display origin and the ULA
+ * interrupt window, in HC units. zxnextTimingSelect (zxnext-nextreg.c) sets them at every frame start
+ * from NextReg $03 display timing; the defaults are the +3 raster.
+ */
+static uint32_t zxnextTimingTotalHc = 456u;
+static uint32_t zxnextTimingTotalVc = 311u;
+static uint32_t zxnextTimingFirstVc = 16u;
+static uint32_t zxnextTimingFirstHc = 96u;
+static uint32_t zxnextTimingDisplayXStart = 144u;
+static uint32_t zxnextTimingDisplayYStart = 64u;
+static uint32_t zxnextTimingIntStart = 0x252u;
+static uint32_t zxnextTimingIntEnd = 0x272u;
+#define ZXNEXT_RENDERING_TACTS_IN_FRAME (zxnextTimingTotalHc * zxnextTimingTotalVc)
 #define ZXNEXT_TACTS_IN_FRAME (ZXNEXT_RENDERING_TACTS_IN_FRAME * 4)
 
 #define ZXNEXT_DIAGNOSTIC_IMPLEMENTATION_INCOMPLETE 1
@@ -58,6 +72,11 @@ static uint8_t lastPortIsWrite;
 static uint8_t nextRegIndex;
 static uint8_t portFeValue;
 static uint8_t portTimexValue;
+/* NextReg $02 bit 0 / bit 1 (zxnext.vhd ~6316-6317): 1 = soft, 2 = hard reset requested. The frame
+   loop stops, and the TypeScript wrapper performs the reset (a hard reset reloads the ROMs there). */
+static uint8_t zxnextResetRequest;
+/* $02 bits 1-0: 1 after a hard reset (the firmware's soft reset after a core load), else soft. */
+static uint8_t zxnextLastResetWasHard;
 static uint8_t borderColor;
 static uint8_t earBit;
 static uint8_t micBit;
@@ -92,6 +111,7 @@ static uint8_t micBit;
 #include "zxnext-floppy.c"
 #include "zxnext-nextreg.c"
 #include "zxnext-ports.c"
+#include "zxnext-multiface.c"
 #include "zxnext-cpu.c"
 #include "zxnext-trace.c"
 
@@ -153,6 +173,7 @@ void zxnextReset(void) {
   zxnextTraceReset();
   zxnextCpuReset();
   zxnextNmiReset();
+  zxnextMultifaceReset();
   zxnextInterruptsReset();
   zxnextTapeReset();
   zxnextDivMmcReset();
@@ -352,6 +373,15 @@ void zxnextTraceFinishFrame(void) { zxnextTraceFinishFrameImpl(); }
 void zxnextSetNextRegisterIndex(uint32_t reg) { zxnextNextRegSetIndex(reg); }
 uint32_t zxnextGetNextRegisterIndex(void) { return zxnextNextRegGetIndex(); }
 void zxnextSetNextRegisterValue(uint32_t value) { zxnextNextRegSetValue(value); }
+void zxnextWriteNextRegister(uint32_t reg, uint32_t value) { zxnextNextRegSetDirect(reg & 0xffu, value & 0xffu); }
+/* The M1 (Multiface) and DRIVE (DivMMC) NMI buttons - the F9/F10 menu commands. */
+void zxnextPressMultifaceNmiButton(void) { nmiPendingMf = 1u; }
+void zxnextPressDivMmcNmiButton(void) { nmiPendingDivMmc = 1u; }
+uint32_t zxnextTakeResetRequest(void) {
+  uint32_t request = zxnextResetRequest;
+  zxnextResetRequest = 0u;
+  return request;
+}
 uint32_t zxnextGetNextRegisterValue(void) { return zxnextNextRegGetValue(); }
 uint32_t zxnextGetNextRegisterDirect(uint32_t reg) { return zxnextNextRegGetDirect(reg); }
 void zxnextSetNextRegisterDirect(uint32_t reg, uint32_t value) { zxnextNextRegSetDirect(reg, value); }

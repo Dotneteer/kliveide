@@ -19,7 +19,40 @@ static uint8_t zxnextSpriteAttributes[128][5];
 static uint8_t zxnextSpritePatternMemory8[512][256];
 static uint8_t zxnextSpritePatternMemory4[1024][256];
 
+/*
+ * sprites.vhd ~596-616 `mirror_sprite_q`: the sprite the NextReg attribute mirrors write. $34 sets it,
+ * $35-$39 write attributes 0-4 of it, $75-$79 do the same and then advance it. It is separate from the
+ * port $57 upload index unless NextReg $09 bit 4 ("sprite tie") links the two.
+ */
+static uint8_t zxnextSpriteMirrorQ;
+
+static uint32_t zxnextSpritesMirrorTied(void) { return (zxnextNextRegs[0x09u] & 0x10u) != 0u; }
+
+/* mirror_num_change with the tie on: the upload and pattern indices follow the mirror (~655, ~733). */
+static void zxnextSpritesMirrorNumberChanged(void) {
+  if (!zxnextSpritesMirrorTied()) return;
+  zxnextSpriteIndex = zxnextSpriteMirrorQ & 0x7fu;
+  zxnextSpriteSubIndex = 0u;
+  zxnextSpritePatternIndex = zxnextSpriteMirrorQ & 0x3fu;
+  zxnextSpritePatternSubIndex = zxnextSpriteMirrorQ & 0x80u;
+}
+
+/* attr_num_change with the tie on: the mirror follows the upload index (~609-611). */
+static void zxnextSpritesAttrNumberChanged(void) {
+  if (!zxnextSpritesMirrorTied()) return;
+  zxnextSpriteMirrorQ = (uint8_t)((zxnextSpriteIndex & 0x7fu) | (zxnextSpritePatternSubIndex ? 0x80u : 0x00u));
+}
+
+static uint32_t zxnextSpritesGetMirrorNumber(void) { return zxnextSpriteMirrorQ & 0x7fu; }
+
+static void zxnextSpritesMirrorWrite(uint32_t attribute, uint8_t byteValue) {
+  uint8_t sprite = zxnextSpriteMirrorQ & 0x7fu;
+  zxnextSpriteAttributes[sprite][attribute] = byteValue;
+  if (attribute == 3u && (byteValue & 0x80u)) zxnextSpriteLastVisibleIndex = sprite;
+}
+
 static void zxnextSpritesReset(void) {
+  zxnextSpriteMirrorQ = 0u;
   zxnextSpriteClipWindow[0] = 0u;
   zxnextSpriteClipWindow[1] = 255u;
   zxnextSpriteClipWindow[2] = 0u;
@@ -67,25 +100,24 @@ static void zxnextSpritesSetNextReg(uint32_t reg, uint32_t value) {
       zxnextSpritesEnabled = (byteValue & 0x01u) != 0u;
       break;
     case 0x34u:
+      zxnextSpriteMirrorQ = byteValue;
+      zxnextSpritesMirrorNumberChanged();
+      break;
     case 0x35u:
     case 0x36u:
     case 0x37u:
     case 0x38u:
-      zxnextSpriteAttributes[zxnextSpriteIndex & 0x7fu][(reg - 0x34u) & 0x07u] = byteValue;
-      if (((reg - 0x34u) & 0x07u) == 3u && (byteValue & 0x80u)) {
-        zxnextSpriteLastVisibleIndex = zxnextSpriteIndex & 0x7f;
-      }
+    case 0x39u:
+      zxnextSpritesMirrorWrite((reg & 0xffu) - 0x35u, byteValue);
       break;
     case 0x75u:
     case 0x76u:
     case 0x77u:
     case 0x78u:
     case 0x79u:
-      zxnextSpriteAttributes[zxnextSpriteIndex & 0x7fu][(reg - 0x75u) & 0x07u] = byteValue;
-      if (((reg - 0x75u) & 0x07u) == 3u && (byteValue & 0x80u)) {
-        zxnextSpriteLastVisibleIndex = zxnextSpriteIndex & 0x7f;
-      }
-      zxnextSpriteIndex = (uint8_t)((zxnextSpriteIndex + 1u) & 0x7fu);
+      zxnextSpritesMirrorWrite((reg & 0xffu) - 0x75u, byteValue);
+      zxnextSpriteMirrorQ = (uint8_t)(((zxnextSpriteMirrorQ + 1u) & 0x7fu) | (zxnextSpritePatternSubIndex ? 0x80u : 0x00u));
+      zxnextSpritesMirrorNumberChanged();
       break;
     default:
       break;
@@ -114,6 +146,7 @@ static void zxnextSpritesWritePort303b(uint32_t value) {
   zxnextSpritePatternSubIndex = byteValue & 0x80u;
   zxnextSpriteIndex = byteValue & 0x7fu;
   zxnextSpriteSubIndex = 0u;
+  zxnextSpritesAttrNumberChanged();
 }
 
 static void zxnextSpritesWritePort57(uint32_t value) {
@@ -128,6 +161,7 @@ static void zxnextSpritesWritePort57(uint32_t value) {
   if (zxnextSpriteSubIndex >= 5u) {
     zxnextSpriteSubIndex = 0u;
     zxnextSpriteIndex = (uint8_t)((zxnextSpriteIndex + 1u) & 0x7fu);
+    zxnextSpritesAttrNumberChanged();
   }
 }
 

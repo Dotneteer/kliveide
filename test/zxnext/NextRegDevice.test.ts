@@ -16,8 +16,8 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x00)).toBe(0x08);
     expect(d.directGetRegValue(0x01)).toBe(0x32);
     expect(d.directGetRegValue(0x02)).toBe(0x02);
-    expect(d.directGetRegValue(0x03)).toBe(0x03);
-    expect(d.directGetRegValue(0x04)).toBe(0x03);
+    expect(d.directGetRegValue(0x03)).toBe(0x33); // --- +3 display timing and machine type (post-firmware)
+    expect(d.directGetRegValue(0x04)).toBe(0x33); // --- write-only: returns the last value read ($03)
     expect(d.directGetRegValue(0x05)).toBe(0x41);
     expect(d.directGetRegValue(0x06)).toBe(0x80); // --- Hotkey CPU speed enabled on hard reset
     expect(d.directGetRegValue(0x07)).toBe(0x00);
@@ -185,8 +185,8 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x00)).toBe(0x08);
     expect(d.directGetRegValue(0x01)).toBe(0x32);
     expect(d.directGetRegValue(0x02)).toBe(0x01);
-    expect(d.directGetRegValue(0x03)).toBe(0x03);
-    expect(d.directGetRegValue(0x04)).toBe(0x03);
+    expect(d.directGetRegValue(0x03)).toBe(0x33); // --- +3 display timing and machine type (post-firmware)
+    expect(d.directGetRegValue(0x04)).toBe(0x33); // --- write-only: returns the last value read ($03)
     expect(d.directGetRegValue(0x05)).toBe(0x41);
     expect(d.directGetRegValue(0x06)).toBe(0xa0);
     expect(d.directGetRegValue(0x07)).toBe(0x00);
@@ -518,7 +518,7 @@ describe("Next - NextRegDevice", function () {
     const value = readNextReg(m, 0x04);
 
     // --- Assert
-    expect(value).toBe(0xff);
+    expect(value).toBe(0x00); // --- not in the zxnext.vhd read mux (~5830-6233): `when others` reads $00
   });
 
   it("Reg $04 read #2", async () => {
@@ -530,7 +530,7 @@ describe("Next - NextRegDevice", function () {
     const value = readNextReg(m, 0x04);
 
     // --- Assert
-    expect(value).toBe(0x05);
+    expect(value).toBe(0x00); // --- not in the zxnext.vhd read mux (~5830-6233): `when others` reads $00
   });
 
   const joystick1Modes = [
@@ -1620,7 +1620,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x29, 0x5a);
 
     // --- Assert
-    expect(readNextReg(m, 0x29)).toBe(0x5a);
+    expect(readNextReg(m, 0x29)).toBe(0x00); // --- not in the zxnext.vhd read mux (~5830-6233): `when others` reads $00
     expect(m.nextRegDevice.ps2KeymapAddressLsb).toBe(0x5a);
   });
 
@@ -1643,7 +1643,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x2b, 0xaa);
 
     // --- Assert
-    expect(readNextReg(m, 0x2b)).toBe(0xaa);
+    expect(readNextReg(m, 0x2b)).toBe(0x00); // --- not in the zxnext.vhd read mux (~5830-6233): `when others` reads $00
     expect(m.nextRegDevice.ps2KeymapDataLsb).toBe(0xaa);
   });
 
@@ -1655,7 +1655,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x2b, 0xaa);
 
     // --- Assert
-    expect(readNextReg(m, 0x2b)).toBe(0xaa);
+    expect(readNextReg(m, 0x2b)).toBe(0x00); // --- not in the zxnext.vhd read mux (~5830-6233): `when others` reads $00
     expect(m.nextRegDevice.ps2KeymapDataLsb).toBe(0xaa);
   });
 
@@ -2918,7 +2918,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x90, 0xa5);
 
     // --- Assert
-    expect(readNextReg(m, 0x90)).toBe(0xa5);
+    expect(readNextReg(m, 0x90)).toBe(0xa4); // --- nr_90 <= nr_wr_dat(7:2) & "00"
   });
 
   it("Reg $91 write", async () => {
@@ -3006,7 +3006,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0xa0, 0xa5);
 
     // --- Assert
-    expect(readNextReg(m, 0xa0)).toBe(0xa5);
+    expect(readNextReg(m, 0xa0)).toBe(0x21); // --- read mux: "00" & en(5:3) & "00" & en(0)
   });
 
   it("Reg $a2 write #1", async () => {

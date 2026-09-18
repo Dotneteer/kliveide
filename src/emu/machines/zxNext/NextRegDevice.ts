@@ -1,4 +1,5 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
+import { applyNextRegReadMux } from "./nextRegReadMux";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 import { TBBLUE_DEF_TRANSPARENT_COLOR } from "./PaletteDevice";
@@ -207,9 +208,15 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
           machine.interruptDevice.divMccNmiBtNextReg = false;
         }
 
-        // Bit 4 clear: clear I/O trap flag
+        // Bit 4 clear: clear the I/O trap cause ($DA) and flag (zxnext.vhd ~3862)
         if (!(v & 0x10)) {
           machine.interruptDevice.mfNmiByIoTrap = false;
+          this.ioTrapCause = 0x00;
+        }
+
+        // --- Bits 1/0: hard/soft reset (zxnext.vhd ~6316-6317; hard reset has precedence)
+        if (v & 0x03) {
+          machine.requestResetFromNextReg((v & 0x02) !== 0);
         }
       },
       slices: [
@@ -3310,6 +3317,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   reset(): void {
     // --- Turn off config mode
     this.configMode = false;
+    // --- zxnext.vhd ~4575: a reset selects register $24 (protection against legacy programs)
+    this.lastRegister = 0x24;
     this.lastReadValue = 0xff;
     this.hotkeyCpuSpeedEnabled = true;
     this.hotkey50_60HzEnabled = true;
@@ -3374,6 +3383,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   hardReset(): void {
     // --- Turn off config mode
     this.configMode = false;
+    // --- zxnext.vhd ~4575: a reset selects register $24 (protection against legacy programs)
+    this.lastRegister = 0x24;
     this.lastReadValue = 0xff;
     this.ps2KeymapAddressLsb = 0x00;
     this.ps2KeymapAddressMsb = false;
@@ -3391,7 +3402,11 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     machine.interruptDevice.lastWasHardReset = true;
     machine.interruptDevice.lastWasSoftReset = false;
 
-    this.directSetRegValue(0x03, 0x03); // --- ZX +2A/+2B/+3 mode
+    // --- After the firmware: +2A/+2B/+3 machine type and display timing, user lock off
+    const scr = this.machine.composedScreenDevice;
+    scr.machineType = 0b011;
+    scr.displayTiming = 0b011;
+    scr.userLockOnDisplayTiming = false;
     this.directSetRegValue(0x04, 0x00); // --- Config: 16K SRAM bank #0 mapped to 0x0000-0x3FFF
     this.directSetRegValue(0x05, 0x41); // --- Cursor mode, enable scandoubler for VGA
     this.directSetRegValue(0x06, 0x80); // --- Enable hotkey CPU speed (bit 7)
@@ -3438,22 +3453,33 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
    * @param value
    */
   setNextRegisterValue(value: number): void {
-    const regInfo = this.regs[this.lastRegister];
+    this.writeRegister(this.lastRegister, value);
+  }
+
+  /**
+   * Writes a register without touching the `$243B` selection - what the Z80N `NEXTREG` instructions
+   * do (zxnext.vhd ~4719-4725: they request the write with their own operand, `nr_register` changes
+   * only on a `$243B` write).
+   */
+  writeRegister(reg: number, value: number): void {
+    const register = reg & 0xff;
+    const regInfo = this.regs[register];
     if (!regInfo?.writeFn) {
       return;
     }
-    this.regLastWriteValues[this.lastRegister] = value;
-    if (!writeOnlyRegs.includes(this.lastRegister)) {
-      this.regValues[this.lastRegister] = value;
+    this.regLastWriteValues[register] = value;
+    if (!writeOnlyRegs.includes(register)) {
+      this.regValues[register] = value;
     }
     regInfo.writeFn(value);
   }
 
   /**
-   * Gets the value of the next register
+   * Gets the value of the next register, as a `$253B` read returns it: through the FPGA read mux
+   * (unlisted registers read $00, hard-wired bits forced).
    */
   getNextRegisterValue(): number {
-    return this.directGetRegValue(this.lastRegister);
+    return applyNextRegReadMux(this.lastRegister, this.directGetRegValue(this.lastRegister));
   }
 
   directGetRegValue(reg: number): number {

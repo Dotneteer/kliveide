@@ -7,7 +7,7 @@
 #include "zxnext-tape.h"
 #include "zxnext-tilemap.h"
 
-#define ZXNEXT_SCREEN_TOTAL_HC 456u
+#define ZXNEXT_SCREEN_TOTAL_HC zxnextTimingTotalHc
 #define ZXNEXT_STANDARD_SCREEN_WIDTH 256u
 #define ZXNEXT_STANDARD_SCREEN_SCALE_X 2u
 #define ZXNEXT_STANDARD_SCREEN_OUTPUT_WIDTH (ZXNEXT_STANDARD_SCREEN_WIDTH * ZXNEXT_STANDARD_SCREEN_SCALE_X)
@@ -21,10 +21,6 @@
 #define ZXNEXT_LAYER2_WIDE_SCREEN_Y (ZXNEXT_STANDARD_SCREEN_Y - ((ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT - ZXNEXT_STANDARD_SCREEN_HEIGHT) / 2u))
 #define ZXNEXT_TRANSPARENT_PIXEL 0x00000000u
 #define ZXNEXT_BLANK_BORDER_PIXEL 0xffb6b6b6u
-#define ZXNEXT_50HZ_INT_START_TACT 0x252u
-#define ZXNEXT_50HZ_INT_END_TACT 0x272u
-#define ZXNEXT_60HZ_INT_START_TACT 0x138u
-#define ZXNEXT_60HZ_INT_END_TACT 0x158u
 #define ZXNEXT_LAYER2_RAM_OFFSET 0x040000u
 #define ZXNEXT_LORES_BANK_05_OFFSET 0x054000u
 #define ZXNEXT_BANK_07_OFFSET 0x05c000u
@@ -1439,7 +1435,8 @@ static void zxnextUlaSetNextReg(uint32_t reg, uint32_t value) {
       ulaPlusEnabled = (byteValue & 0x08u) != 0u;
       break;
     case 0x69u:
-      portTimexValue = byteValue & 0x3fu;
+      /* ~3615: a $69 write sets port_ff_reg(5:0); bits 7-6 stay */
+      portTimexValue = (uint8_t)((portTimexValue & 0xc0u) | (byteValue & 0x3fu));
       break;
     default:
       break;
@@ -1485,10 +1482,7 @@ static uint32_t zxnextUlaGetScrollX(void) { return ulaScrollX; }
 static uint32_t zxnextUlaGetScrollY(void) { return ulaScrollY; }
 
 static uint32_t zxnextUlaGetPulseIntActive(uint32_t frameTact) {
-  if ((zxnextNextRegs[0x05u] & 0x04u) != 0u) {
-    return frameTact >= ZXNEXT_60HZ_INT_START_TACT && frameTact < ZXNEXT_60HZ_INT_END_TACT;
-  }
-  return frameTact >= ZXNEXT_50HZ_INT_START_TACT && frameTact < ZXNEXT_50HZ_INT_END_TACT;
+  return frameTact >= zxnextTimingIntStart && frameTact < zxnextTimingIntEnd;
 }
 
 static uint32_t zxnextUlaGetScanlineForTact(uint32_t tact) {
@@ -1522,8 +1516,9 @@ static uint32_t zxnextUlaGetColumnForTact(uint32_t tact) {
 // its first pixel - at most one line of difference from the hardware, which fetches per cell.
 // ---------------------------------------------------------------------------
 
-#define ZXNEXT_RASTER_FIRST_VC 16u
-#define ZXNEXT_RASTER_FIRST_HC 96u
+/* Buffer row 0 / x 0 of the current raster: every timing keeps the paper at buffer (96, 48). */
+#define ZXNEXT_RASTER_FIRST_VC zxnextTimingFirstVc
+#define ZXNEXT_RASTER_FIRST_HC zxnextTimingFirstHc
 
 static uint32_t zxnextRasterScratch[ZXNEXT_PIXEL_COUNT];
 /* The frame tact a NextReg write happens at: set by the copper (which runs behind the CPU) while it

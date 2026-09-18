@@ -1,5 +1,6 @@
 #include "zxnext-memory.h"
 #include "zxnext-divmmc.h"
+#include "zxnext-multiface.h"
 #include "zxnext-layer2.h"
 #include "zxnext-ula.h"
 
@@ -179,8 +180,16 @@ static inline void zxnextMemoryWritePhysical(uint32_t offset, uint32_t value) {
   zxnextMemory[offset % ZXNEXT_MEMORY_SIZE] = (uint8_t)value;
 }
 
+/* $0000-$3FFF overlays: the Multiface wins over DivMMC (MemoryDevice._readSlot0Complex), both over Layer 2. */
+static inline uint32_t zxnextMemoryLowOverlayActive(void) {
+  return zxnextMultifaceIsPaged() || zxnextDivMmcIsMappingActive();
+}
+
 static inline uint32_t zxnextMemoryResolveReadOffset(uint32_t page) {
   uint32_t normalizedPage = page & 0x07u;
+  if (normalizedPage < 2u && zxnextMultifaceIsPaged()) {
+    return ZXNEXT_OFFS_MULTIFACE_MEM + (normalizedPage << 13u);
+  }
   if (normalizedPage < 2u && zxnextDivMmcIsMappingActive()) {
     return zxnextDivMmcGetReadOffset(normalizedPage);
   }
@@ -189,6 +198,10 @@ static inline uint32_t zxnextMemoryResolveReadOffset(uint32_t page) {
 
 static inline uint32_t zxnextMemoryResolveWriteOffset(uint32_t page) {
   uint32_t normalizedPage = page & 0x07u;
+  if (normalizedPage < 2u && zxnextMultifaceIsPaged()) {
+    /* page 0 is the MF ROM; only the MF RAM (page 1) is writable */
+    return normalizedPage == 0u ? ZXNEXT_NO_WRITE_OFFSET : ZXNEXT_OFFS_MULTIFACE_MEM + 0x2000u;
+  }
   if (normalizedPage < 2u && zxnextDivMmcIsMappingActive()) {
     return zxnextDivMmcGetWriteOffset(normalizedPage);
   }
@@ -222,7 +235,7 @@ static inline uint32_t zxnextMemoryResolveLayer2Offset(uint32_t address, uint32_
 static inline uint32_t zxnextMemoryReadMapped(uint32_t address) {
   uint32_t normalized = address & 0xffffu;
   uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
-  if (!((normalized >> 13u) < 2u && zxnextDivMmcIsMappingActive())) {
+  if (!((normalized >> 13u) < 2u && zxnextMemoryLowOverlayActive())) {
     physical = zxnextMemoryResolveLayer2Offset(normalized, 0u);
   }
   if (physical == ZXNEXT_NO_WRITE_OFFSET) {
@@ -238,7 +251,7 @@ static inline uint32_t zxnextMemoryReadMapped(uint32_t address) {
 static inline uint32_t zxnextMemoryPeekMapped(uint32_t address) {
   uint32_t normalized = address & 0xffffu;
   uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
-  if (!((normalized >> 13u) < 2u && zxnextDivMmcIsMappingActive())) {
+  if (!((normalized >> 13u) < 2u && zxnextMemoryLowOverlayActive())) {
     physical = zxnextMemoryResolveLayer2Offset(normalized, 0u);
   }
   if (physical == ZXNEXT_NO_WRITE_OFFSET) {
@@ -250,7 +263,7 @@ static inline uint32_t zxnextMemoryPeekMapped(uint32_t address) {
 static inline void zxnextMemoryWriteMapped(uint32_t address, uint32_t value) {
   uint32_t normalized = address & 0xffffu;
   uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
-  if (!((normalized >> 13u) < 2u && zxnextDivMmcIsMappingActive())) {
+  if (!((normalized >> 13u) < 2u && zxnextMemoryLowOverlayActive())) {
     physical = zxnextMemoryResolveLayer2Offset(normalized, 1u);
   }
   if (physical == ZXNEXT_NO_WRITE_OFFSET) {
@@ -338,6 +351,7 @@ static void zxnextMemorySetPort7ffd(uint32_t value) {
   zxnextNextRegs[0x56] = (selectedBankMsb << 4) | (selectedBankLsb << 1);
   zxnextNextRegs[0x57] = zxnextNextRegs[0x56] + 1u;
   selectedRomLsb = (byteValue >> 4) & 0x01u;
+  useShadowScreen = (byteValue & 0x08u) != 0u; /* bank 7 display (port_7ffd_shadow) */
   pagingEnabled = (byteValue & 0x20u) == 0;
   zxnextMemoryUpdateNextReg8E();
   zxnextMemoryUpdateMapping();
@@ -346,6 +360,7 @@ static void zxnextMemorySetPort7ffd(uint32_t value) {
 static uint32_t zxnextMemoryGetPort7ffd(void) {
   return
     selectedBankLsb |
+    (useShadowScreen ? 0x08u : 0x00u) |
     (selectedRomLsb << 4) |
     (pagingEnabled ? 0x00u : 0x20u);
 }

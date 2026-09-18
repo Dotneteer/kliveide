@@ -47,6 +47,8 @@ static inline void zxnextCpuMarkFrameCompleted(void) {
   frameCompleted = 1;
   zxnextUlaOnFrameCompleted();
   zxnextCopperOnFrameCompleted();
+  /* The next frame runs on the raster NextReg $03 selects now (NextComposedScreenDevice.onNewFrame) */
+  zxnextTimingSelect();
 }
 
 static inline void zxnextCpuTactPlusN(uint32_t value) {
@@ -225,9 +227,10 @@ static void zxnextCpuSharedWritePort(uint32_t address, uint32_t value) {
   zxnextPortsWrite(address & 0xffffu, value & 0xffu);
 }
 
+/* NEXTREG n,v / n,A: zxnext.vhd ~4719-4725 requests the write with the instruction's own register
+   number; `nr_register` (the $243B selection) changes only on a $243B write. */
 static void zxnextCpuSharedWriteTbBlue(uint32_t address, uint32_t value) {
-  zxnextNextRegSetIndex(address & 0xffu);
-  zxnextNextRegSetValue(value & 0xffu);
+  zxnextNextRegSetDirect(address & 0xffu, value & 0xffu);
 }
 
 static void zxnextCpuSyncFrameState(uint32_t previousTacts, uint32_t currentTacts) {
@@ -292,7 +295,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   // --- The DMA goes first, after the INT line is sampled, as in ZxNextMachine.beforeInstructionExecuted.
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
   zxnextCpuRunDma();
-  if (nmiSignal && zxnextNmiGetStacklessEnabled()) {
+  if (nmiSignal && zxnextNmiGetStacklessEnabled() && !zxnextNmiSourceIsMultiface()) {
     uint32_t executed = zxnextCpuProcessStacklessNmi();
     zxnextTraceRecordInstruction(pcBefore);
     return executed;
@@ -300,6 +303,8 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
 
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
   zxnextDivMmcBeforeOpcodeFetch(pcBefore);
+  /* An NMI acknowledge fetches no opcode; the state machine steps at real opcode fetches only. */
+  if (!nmiSignal) zxnextNmiBeforeOpcodeFetch(pcBefore);
   z80SetSigNmi(nmiSignal);
   z80SetSigInt(rawIntSignal);
   if (shouldAcceptInt) {
@@ -322,6 +327,13 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     // --- RETI in hardware IM2 mode also lifts the DMA's interrupt stall (ZxNextMachine.onRetnExecuted).
     if (zxnextInterruptsGetHardwareIm2Mode()) zxnextDmaSetDelay(0u);
   }
+  /* divmmc_retn_seen <= retn and not mf_is_active (~4091): a RETN that ends a Multiface NMI does not
+     reach DivMMC. cpu_retn_seen clears the Multiface state unconditionally. */
+  uint32_t mfWasActive = 0u;
+  if (z80GetRetnExecuted()) {
+    mfWasActive = zxnextMultifaceIsActive();
+    zxnextMultifaceRetn();
+  }
   if (z80GetRetnExecuted()) {
     uint8_t stacklessProcessed = zxnextNmiGetStacklessProcessed();
     uint32_t stacklessReturnAddress = zxnextNmiGetReturnAddress();
@@ -330,7 +342,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
       z80SetPc(stacklessReturnAddress);
     }
   }
-  zxnextDivMmcAfterOpcodeFetch(z80GetRetnExecuted(), 0);
+  zxnextDivMmcAfterOpcodeFetch(z80GetRetnExecuted(), mfWasActive);
   if (z80GetRetExecuted()) {
     z80SetRetExecuted(0);
   }
