@@ -171,8 +171,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /** Set to true when a stackless NMI was processed; cleared after RETN fixes PC. */
   private _stacklessNmiProcessed: boolean = false;
 
-  /** D6: When true, DivMMC should not process the current RETN (MF was active). */
-  _suppressDivMmcRetn: boolean = false;
 
   // ─── Hot-path audio/screen caches ────────────────────────────────────────
 
@@ -393,7 +391,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._pendingMfNmi = false;
     this._pendingDivMmcNmi = false;
     this._stacklessNmiProcessed = false;
-    this._suppressDivMmcRetn = false;
     this.sigNMI = false;
     // --- Enable NMI buttons by default (emulator convenience; hardware default is 0,
     //     but the emulator wants F9/F10 to work without explicit NR06 configuration)
@@ -1251,7 +1248,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // independently of the stackless NMI / MF / DivMMC handling.
     if (this.opCode === 0x4d && this.interruptDevice.hwIm2Mode) {
       this.interruptDevice.daisyReti();
-      this.dmaDevice.setDmaDelay(false);
     }
 
     // FPGA (zxnext.vhd line 4091): divmmc_retn_seen <= z80_retn_seen_28 and not mf_is_active
@@ -1263,9 +1259,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // (D7: no guard on nmiHold — RETN always clears MF state)
     this.multifaceDevice.handleRetn();
 
-    // D6: Suppress DivMMC RETN if multiface was active
-    if (mfWasActive) {
-      this._suppressDivMmcRetn = true;
+    // --- DivMMC unmaps here, before the next opcode fetch: only on ED 45 (im2_control o_retn_seen
+    // --- is S_ED45_T4 - not RETI, not the RETN aliases) and only when the Multiface was not active.
+    if (!mfWasActive && this.opCode === 0x45) {
+      this.divMmcDevice.handleRetnExecution();
     }
 
     if (this._stacklessNmiProcessed) {
@@ -1307,10 +1304,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Runs any DMA work that owns, or is about to request, the CPU bus.
    *
-   * The FPGA zxnDMA is clocked from the 28 MHz system clock. In continuous mode
-   * it keeps BUSREQ asserted until the block finishes, so the CPU does not run a
-   * status-polling loop in parallel with the transfer. Account these clocks in
-   * the 28 MHz frame domain directly instead of scaling them as CPU T-states.
+   * The zxnDMA is clocked by the CPU clock (zxnext.vhd `clk_i => i_CLK_CPU`). In continuous
+   * mode it keeps BUSREQ asserted until the block finishes, so the CPU does not run a
+   * status-polling loop in parallel with the transfer. The DMA reports the 28 MHz clocks it
+   * held the bus for (CPU clocks x the tact scale).
    */
   private runDmaUntilCpuCanRun(): void {
     const maxDmaSteps = 0x20000;
@@ -1324,22 +1321,40 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       const dmaTicks = this.dmaDevice.stepDma();
       if (dmaTicks > 0) {
         this.tactPlusDmaTicks(dmaTicks);
-        if (this.interruptDevice.dmaInterruptRequestActive) {
-          this.dmaDevice.setDmaDelay(true);
-        }
       }
 
       const busAfter = this.dmaDevice.getBusControl();
       if (!busAfter.busRequested) {
         break;
       }
+
+      // --- The frame ended while the DMA had the bus: let the frame runner start the next frame
+      // --- (interrupt edges, the picture) without running an instruction, then go on.
+      if (this.frameCompleted) {
+        this._cpuHeldByDma = true;
+        break;
+      }
     }
   }
 
+  /** The DMA kept the bus across a frame end: the CPU runs no instruction in this loop pass. */
+  private _cpuHeldByDma = false;
+
+  isCpuSnoozed(): boolean {
+    return this._cpuHeldByDma || super.isCpuSnoozed();
+  }
+
+  onSnooze(): void {
+    if (this._cpuHeldByDma) {
+      this._cpuHeldByDma = false;
+      return;
+    }
+    super.onSnooze();
+  }
+
   /**
-   * Advance by raw 28 MHz DMA clocks. Unlike tactPlusN(), this does not multiply
-   * by the current CPU speed because the DMA engine is already in the system-clock
-   * domain.
+   * Advance by DMA clocks given in 28 MHz ticks (the DMA's CPU clocks times the tact
+   * scale), so they are not multiplied again.
    */
   private tactPlusDmaTicks(ticks: number): void {
     this.tacts += Math.max(1, Math.ceil(ticks / this.cpuTactScale));

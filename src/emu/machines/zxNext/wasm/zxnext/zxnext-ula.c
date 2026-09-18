@@ -731,11 +731,18 @@ static void zxnextUlaRenderSpritesScreen(void) { zxnextUlaProcessSprites(1u, 0u)
  */
 static uint8_t zxnextUlaSpriteLineCut[ZXNEXT_SPRITE_SPACE_HEIGHT];
 
-static uint32_t zxnextUlaComputeSpriteLineCuts(uint32_t lastVisible) {
+/*
+ * `renderedRowsOnly`: compute only the lines the current render window draws. Each line's cut is
+ * independent of the others, and the raster re-renders a few pixels at every picture-changing write
+ * (a DMA burst to the sprite ports is one per byte), so recomputing all 256 lines x 128 sprites each
+ * time cost more than the rest of the emulation together - ScrollNutter ran at ~30 ms a frame.
+ */
+static uint32_t zxnextUlaComputeSpriteLineCuts(uint32_t lastVisible, uint32_t renderedRowsOnly) {
   static const uint32_t wrapMasks[4] = {0x1cu, 0x18u, 0x10u, 0x00u};
   uint32_t lineClocks = zxnextTimingTotalHc * 4u;
   uint32_t overtime = 0u;
   for (uint32_t v = 0u; v < ZXNEXT_SPRITE_SPACE_HEIGHT; v++) {
+    if (renderedRowsOnly && zxnextRenderRowOff(ZXNEXT_LAYER2_WIDE_SCREEN_Y + v)) continue;
     uint32_t clock = 0u;
     uint32_t lastMask = 0x1cu;
     uint32_t cut = 128u;
@@ -806,7 +813,7 @@ static void zxnextUlaProcessSprites(uint32_t drawPixels, uint32_t detectCollisio
   }
 
   zxnextUlaResolveSprites(lastVisible);
-  uint32_t overtime = zxnextUlaComputeSpriteLineCuts(lastVisible);
+  uint32_t overtime = zxnextUlaComputeSpriteLineCuts(lastVisible, drawPixels && !detectCollisions);
   if (detectCollisions && overtime) zxnextSpritesSignalTooMany();
   if (detectCollisions) {
     for (uint32_t i = 0u; i < ZXNEXT_SPRITE_SPACE_WIDTH * ZXNEXT_SPRITE_SPACE_HEIGHT; i++) {

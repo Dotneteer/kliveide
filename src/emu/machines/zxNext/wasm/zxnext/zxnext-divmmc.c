@@ -16,7 +16,6 @@ static uint8_t divMmcRequestAutomapOff;
 static uint8_t divMmcAutoMapActive;
 static uint8_t divMmcConmemActivated;
 static uint8_t divMmcNmiButtonPressed;
-static uint8_t divMmcResetMapramFlag;
 static uint8_t divMmcEnableNmiByDriveButton;
 static uint8_t divMmcEnableMultifaceNmiByM1Button;
 static uint8_t divMmcRstEnabled[8];
@@ -35,7 +34,9 @@ static void zxnextDivMmcNotifyMappingChange(void) {
   zxnextMemoryUpdateMapping();
 }
 
-static uint32_t zxnextDivMmcRom3Present(void) {
+/* sram_divmmc_automap_rom3_en: ROM 3 selected, and the ROM itself paged in at the fetch address */
+static uint32_t zxnextDivMmcRom3Present(uint32_t pc) {
+  if (zxnextNextRegs[0x50u + ((pc >> 13) & 0x07u)] != 0xffu) return 0;
   return zxnextMemoryGetSelectedRomPage() == 3u;
 }
 
@@ -109,7 +110,6 @@ static void zxnextDivMmcReset(void) {
   divMmcAutoMapActive = 0;
   divMmcConmemActivated = 0;
   divMmcNmiButtonPressed = 0;
-  divMmcResetMapramFlag = 0;
   divMmcEnableNmiByDriveButton = 0;
   divMmcEnableMultifaceNmiByM1Button = 0;
   for (uint32_t i = 0; i < 8u; i++) {
@@ -133,12 +133,8 @@ static void zxnextDivMmcSetPortE3(uint32_t value) {
   divMmcPortLastE3Value = byteValue;
   uint8_t oldMapping = (uint8_t)zxnextDivMmcIsMappingActive();
   divMmcConmem = (byteValue & 0x80u) != 0;
-  uint8_t mapramBit = (byteValue & 0x40u) != 0;
-  if (!divMmcMapram) {
-    divMmcMapram = mapramBit;
-  } else if (!mapramBit && divMmcResetMapramFlag) {
-    divMmcMapram = 0;
-  }
+  /* zxnext.vhd ~4162: mapram is sticky - a write ORs it in; only a $09 bit 3 write clears it */
+  divMmcMapram = divMmcMapram || (byteValue & 0x40u) != 0;
   divMmcBank = byteValue & 0x0fu;
   if (oldMapping || zxnextDivMmcIsMappingActive()) zxnextDivMmcNotifyMappingChange();
 }
@@ -178,7 +174,9 @@ static void zxnextDivMmcSetNextReg0A(uint32_t value) {
 }
 
 static void zxnextDivMmcSetNextReg09(uint32_t value) {
-  divMmcResetMapramFlag = ((uint8_t)value & 0x08u) != 0;
+  if (((uint8_t)value & 0x08u) == 0 || !divMmcMapram) return;
+  divMmcMapram = 0;
+  zxnextDivMmcNotifyMappingChange();
 }
 
 static void zxnextDivMmcSetNextRegB8(uint32_t value) {
@@ -253,23 +251,28 @@ static uint32_t zxnextDivMmcGetNextRegBB(void) {
 static void zxnextDivMmcBeforeOpcodeFetch(uint32_t pc) {
   zxnextDivMmcCheckManualConmem();
   if (!divMmcEnableAutomap) return;
-  uint32_t rom3Present = zxnextDivMmcRom3Present();
+  uint32_t rom3Present = zxnextDivMmcRom3Present(pc & 0xffffu);
   zxnextDivMmcCheckRstTraps(pc & 0xffffu, rom3Present);
   zxnextDivMmcCheckNmiEntry(pc & 0xffffu);
   zxnextDivMmcCheckCustomEntry(pc & 0xffffu, rom3Present);
   zxnextDivMmcCheckRangeEntry(pc & 0xffffu, rom3Present);
 }
 
-static void zxnextDivMmcAfterOpcodeFetch(uint32_t retnSeen, uint32_t suppressRetn) {
-  if (retnSeen && !suppressRetn) {
-    divMmcNmiButtonPressed = 0;
-    divMmcAutoMapActive = 0;
-    divMmcConmemActivated = 0;
-    divMmcRequestAutomapOn = 0;
-    divMmcRequestAutomapOff = 0;
-    zxnextDivMmcNotifyMappingChange();
-    return;
-  }
+/* RETN (ED 45, Multiface not active): hold, held and the button latch go (divmmc.vhd i_retn_seen) */
+static void zxnextDivMmcRetn(void) {
+  divMmcNmiButtonPressed = 0;
+  divMmcAutoMapActive = 0;
+  divMmcConmemActivated = 0;
+  divMmcRequestAutomapOn = 0;
+  divMmcRequestAutomapOff = 0;
+  zxnextDivMmcNotifyMappingChange();
+}
+
+/*
+ * After the M1 cycle of an opcode fetch (Z80_AFTER_OPCODE_FETCH): automap_held follows automap_hold,
+ * so a delayed entry point maps from the opcode's operands on and $1FF8 unmaps before them.
+ */
+static void zxnextDivMmcAfterM1(void) {
   if (divMmcRequestAutomapOn) {
     divMmcAutoMapActive = 1;
     divMmcRequestAutomapOn = 0;
@@ -280,6 +283,15 @@ static void zxnextDivMmcAfterOpcodeFetch(uint32_t retnSeen, uint32_t suppressRet
     divMmcRequestAutomapOff = 0;
     zxnextDivMmcNotifyMappingChange();
   }
+}
+
+/* The two steps together, for the zxnextDivMmcAfterFetch export */
+static void zxnextDivMmcAfterOpcodeFetch(uint32_t retnSeen, uint32_t suppressRetn) {
+  if (retnSeen && !suppressRetn) {
+    zxnextDivMmcRetn();
+    return;
+  }
+  zxnextDivMmcAfterM1();
 }
 
 static void zxnextDivMmcArmNmiButton(void) {

@@ -33,6 +33,8 @@ static uint8_t zxnextCpuMreqSuppressed;
 #define Z80_WRITE_PORT(address, value) zxnextCpuSharedWritePort(address, value)
 #define Z80_WRITE_TBBLUE(address, value) zxnextCpuSharedWriteTbBlue(address, value)
 #define Z80_TACT_PLUS_N(value) zxnextCpuTactPlusN(value)
+/* DivMMC: a delayed automap takes effect after the opcode's M1 cycle (ZxNextMachine afterOpcodeFetch) */
+#define Z80_AFTER_OPCODE_FETCH() zxnextDivMmcAfterM1()
 #define Z80_DELAY_MEMORY_READ(address) zxnextCpuDelayMemoryRead(address)
 #define Z80_DELAY_MEMORY_WRITE(address) zxnextCpuDelayMemoryWrite(address)
 #define Z80_DELAY_PORT_READ(address) zxnextCpuDelayPortAccess(address)
@@ -105,20 +107,21 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
  * Run the DMA while it owns, or is about to request, the bus (ZxNextMachine.runDmaUntilCpuCanRun).
  *
  * Called before every instruction. The CPU grants a bus request at once, and a continuous transfer
- * keeps the bus until its block is done, so the whole block moves before the next instruction. Byte
- * mode and paced burst mode release the bus between bytes and let the CPU run in between.
+ * keeps the bus until its block is done, so the whole block moves before the next instruction. Paced
+ * burst mode releases the bus between bytes and lets the CPU run in between. Returns 1 when the frame
+ * ended while the DMA still had the bus: the CPU runs no instruction in this pass, the frame loop
+ * starts the next frame and the DMA goes on before the next instruction (ZxNextMachine isCpuSnoozed).
  */
-static void zxnextCpuRunDma(void) {
-  if (!zxnextDmaIsActive()) return;
+static uint32_t zxnextCpuRunDma(void) {
+  if (!zxnextDmaIsActive()) return 0;
   for (uint32_t step = 0; step < 0x20000u; step++) {
     zxnextDmaAcknowledgeBusIfRequested();
     const uint32_t ticks = zxnextDmaStep();
-    if (ticks > 0u) {
-      zxnextCpuTactPlusDmaTicks(ticks);
-      if (zxnextInterruptsDmaRequestActive()) zxnextDmaSetDelay(1u);
-    }
+    if (ticks > 0u) zxnextCpuTactPlusDmaTicks(ticks);
     if (!zxnextDmaBusRequested()) break;
+    if (frameCompleted) return 1;
   }
+  return 0;
 }
 
 static inline uint32_t zxnextCpuReadsBank7(uint32_t address) {
@@ -289,6 +292,9 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   uint8_t wasHalted = z80GetHalted() != 0u;
   uint8_t isRetiInstruction = zxnextMemoryPeekMapped(pcBefore) == 0xedu &&
     zxnextMemoryPeekMapped((pcBefore + 1u) & 0xffffu) == 0x4du;
+  /* im2_control o_retn_seen: exactly ED 45 (not RETI, not the RETN aliases) */
+  uint8_t isRetnInstruction = zxnextMemoryPeekMapped(pcBefore) == 0xedu &&
+    zxnextMemoryPeekMapped((pcBefore + 1u) & 0xffffu) == 0x45u;
   uint32_t cyclesExecuted = 0;
 
   frameCompleted = 0;
@@ -298,7 +304,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
 
   // --- The DMA goes first, after the INT line is sampled, as in ZxNextMachine.beforeInstructionExecuted.
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
-  zxnextCpuRunDma();
+  if (zxnextCpuRunDma()) return zxnextSharedCpuExecutedInstructions;
   /* zxnext.vhd ~2008-2041: the acknowledge's push always lands in $C2/$C3; with $C0 bit 3 it does not
      reach memory. The pushed address is past a HALT, as removeFromHaltedState makes it. */
   uint16_t nmiReturnAddress = (uint16_t)(pcBefore + (wasHalted ? 1u : 0u));
@@ -335,8 +341,6 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   }
   if (isRetiInstruction) {
     zxnextInterruptsReti();
-    // --- RETI in hardware IM2 mode also lifts the DMA's interrupt stall (ZxNextMachine.onRetnExecuted).
-    if (zxnextInterruptsGetHardwareIm2Mode()) zxnextDmaSetDelay(0u);
   }
   /* divmmc_retn_seen <= retn and not mf_is_active (~4091): a RETN that ends a Multiface NMI does not
      reach DivMMC. cpu_retn_seen clears the Multiface state unconditionally. */
@@ -353,7 +357,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
       z80SetPc(stacklessReturnAddress);
     }
   }
-  zxnextDivMmcAfterOpcodeFetch(z80GetRetnExecuted(), mfWasActive);
+  if (isRetnInstruction && !mfWasActive) zxnextDivMmcRetn();
   if (z80GetRetExecuted()) {
     z80SetRetExecuted(0);
   }

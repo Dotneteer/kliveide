@@ -1068,6 +1068,82 @@ wrap (`zxnextAudioMixerOnFrameWrap`), as the TS beeper clock does.
   moving. Guard: `test/wasm/zxNext/wasm-next-audio-debug-loop.test.ts`. The debug loop still produces no
   audio (as before) - it would need `BeginFrame` at its frame starts.
 
+### B80 – WASM: sprite-port writes made frames 3x too slow (ScrollNutter at "half speed") – FIXED 2026-09-18
+
+Reported from the app: ScrollNutter.nex moved about half as fast as on the hardware. The emulation was
+right (IM2 handler and raster-synced main loop once a frame, 28 MHz, on both cores) but too slow: 29 ms
+per frame on the WASM core, over the 20 ms real time allows (the same at the pre-4.20 commit, so not a
+new regression). Profile: 69 % in `zxnextUlaProcessSprites`. The beam-racing raster re-renders what the
+beam has drawn at every picture-changing port write - each byte ScrollNutter's DMA sends to the sprite
+ports - and each such partial render recomputed the sprite line-timing table for all 256 lines x 128
+sprites (`zxnextUlaComputeSpriteLineCuts`). The table is per line, so a partial render now computes only
+the rows it draws; the once-a-frame collision pass still computes all of them. ScrollNutter: 29.4 ->
+9.6 ms a frame. Guard: `test/wasm/zxNext/wasm-next-raster-sprite-cost.test.ts` (fails at 9.6x with the old
+code). Still open: the TS core runs ScrollNutter at ~25 ms a frame (not the default core); and each
+catch-up still re-renders every layer for the touched rows, so a program writing the sprite ports tens
+of thousands of times a frame stays expensive by design.
+
+### B81 – CTC trigger inputs: the chain ignored the ring order and waiting timers never started – FIXED 2026-09-18
+
+CTC-008 / CTC-009. zxnext.vhd ~4064 wires the trigger inputs as a ring (`ctc_zc_to(2 downto 0) &
+ctc_zc_to(3)`: channel 0 is clocked by channel 3). Both cores' batch update (`CtcDevice.advanceToSysClock`,
+`zxnextCtcAdvanceToSysClock`) advanced counter-mode channels in index order, so a counter read its
+upstream's ZC/TO count before that channel had been advanced: a chain crossing the wrap (timer 2 ->
+counter 3 -> counter 0) left channel 0 at 0 for good. And the batch only advanced RUNNING channels, so a
+timer with D3 (ctc_chan.vhd S_WAIT: wait for a trigger edge) was never started by its upstream ZC/TO -
+only a D4 change on a control-word write started it. Now the trigger-driven channels (running counters,
+waiting D3 timers) are walked round the ring from a channel that runs on its own, and a waiting timer
+starts at its upstream's first ZC/TO in the window (exact when the upstream is a timer, at the window
+end when it is a counter - a window is at most one instruction).
+
+### B82 – The DMA was a MAME Z80 DMA, not the Next's dma.vhd – FIXED 2026-09-18
+
+DMA-001 - DMA-023. Both cores ported MAME's z80dma (with specnext overrides); the FPGA's DMA is its own
+design ("loosely based on the Z80C10 - there are differences"). Rewritten from `device/dma.vhd` in
+`DmaDevice.ts` and a line-by-line `zxnext-dma.c`, behind the same machine API. What was wrong:
+- **Clock.** The DMA is clocked by the CPU clock (`clk_i => i_CLK_CPU`), so a byte takes 6 CPU clocks
+  (the timing bytes: 2/3/4 per cycle, which were ignored), not 6 clocks of 28 MHz: at 3.5 MHz a
+  256-byte copy stopped the CPU for 256 T-states instead of 1536. The prescaler was 8x too fast at
+  3.5 MHz (`P x 4 x (1 << speed)` 28 MHz clocks instead of 32P at every speed). Continuous mode ignored
+  the prescaler; byte mode released the bus (the VHDL has no byte mode - it is continuous).
+- **Counter and length.** Counts up from 0 (zxnDMA) or $FFFF (Z80 DMA, set by the port of the last
+  access - at LOAD, CONTINUE and auto restart only) while counter < length: length 0 moves one byte in
+  both modes (it moved none), and the counter reads back = bytes moved (MAME left it one past). $87 no
+  longer resets the counter; $D3 resets it by mode.
+- **Status and reads.** Status is "00" & end_of_block_n & "1101" & at_least_one ($3A idle, $1A done,
+  $3B mid-transfer; it read $30/$19). The read mask resets to $7F (it was 0: every read gave the
+  status); $BF makes only the next read the status; auto restart leaves end-of-block reached.
+- **Write sequencer.** WR0 search bits are ignored (every WR0 transfers; search mode wrote nothing);
+  WR4's interrupt control byte is not consumed after a port B address, and WR4 with only D4 leaves the
+  sequencer deaf until reset; WR1's second timing byte is swallowed.
+- **Interrupt break-in** (`im2_dma_delay`) is read as a level from the interrupt controller, and a DMA
+  that holds the bus across a frame end now lets the frame loop start the next frame before it goes on
+  (`ZxNextMachine.isCpuSnoozed`, `zxnextCpuRunDma` returning 1): otherwise the new frame's interrupts were
+  not raised until the whole transfer ended, so `$CC`-`$CE` break-ins never happened in long transfers.
+The 30 MAME-model mock files `test/zxnext/DmaDevice*.test.ts` and `wasm-next-dma-parity.test.ts` were
+retired; `wasm-next-dma.test.ts` now checks the two cores' sequencers byte for byte. Still not modelled:
+the 14 MHz `dma_rw_extend` quirk, the RETI-decode extension of `im2_dma_delay` (sub-instruction effects),
+and the NMI term of `im2_dma_delay` (`nmi_activated and $CC bit 7`: the bit is stored, nothing reads it).
+
+### B83 – DivMMC: mapram clear, ROM-3 entry points, RETN, port enable, delayed unmap – FIXED 2026-09-18
+
+DIV-003, DIV-006, DIV-008, DIV-010 - DIV-012.
+- **`$09` bit 3** clears mapram at once (zxnext.vhd ~4164); both cores only let a later `$E3` write with
+  bit 6 = 0 clear it. A write ORs mapram in, as before.
+- **ROM-3-only entry points** (`$B9` bit = 0, `$04C6`/`$0562`/`$04D7`/`$056A`, `$3Dxx`) need the ROM itself
+  paged in at the fetch address (`sram_divmmc_automap_rom3_en` needs `sram_pre_override(0)`): with MMU0/1
+  mapping RAM, both cores still mapped on ROM selection alone. "Always" entry points still work there.
+- **RETN**: only `ED 45` (im2_control `o_retn_seen` = S_ED45_T4) unmaps. WASM also unmapped on RETI and
+  the RETN aliases; TS unmapped at the next opcode fetch (`afterOpcodeFetch` saw the flag), so a RETN
+  into `$0000`-`$3FFF` fetched its first opcode from DivMMC. TS now unmaps in `onRetnExecuted`.
+- **Port enable** (`$83` bit 0, divmmc.vhd `i_en`) gates the paging: TS kept conmem paged in.
+- **Delayed map/unmap timing**: automap_held follows hold once MREQ goes high after the M1 fetch, so a
+  delayed entry point's operands and the `$1FF8` instruction's operands come from the new mapping. WASM
+  applied it after the whole instruction; `z80.c` now has a `Z80_AFTER_OPCODE_FETCH()` hook (a no-op for
+  the Spectrum cores) where the Next calls `zxnextDivMmcAfterM1`, as TS does in `afterOpcodeFetch`.
+Not changed: the catalogue said mapram survives a soft reset; the VHDL clears all of `$E3` on any reset,
+which both cores already did.
+
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 
 - **Fixed:** `machineFrameCompleted` keeps a copy of the displayed pixel buffer instead of calling

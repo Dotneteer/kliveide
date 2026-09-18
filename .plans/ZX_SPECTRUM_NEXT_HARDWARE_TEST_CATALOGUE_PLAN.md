@@ -101,9 +101,9 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `AY` | AY-3-8912 / TurboSound | `audio/turbosound.vhd`, `audio/ym2149.vhd` | `test/zxnext-hw/audio/ay-psg.test.ts`, `ay-stereo-mode.test.ts` (shared measurements in `audio/_audio-helpers.ts`) |
 | `DAC` | Soundrive / Covox / Specdrum DACs | `audio/soundrive.vhd` | `test/zxnext-hw/audio/dac.test.ts`, `dac-enable.test.ts` |
 | `BEEP` | Beeper, MIC, EAR, audio mixer | `audio/audio_mixer.vhd` | `test/zxnext-hw/audio/beeper-mixer.test.ts` |
-| `CTC` | Z80 CTC (4 channels) | `device/ctc*.vhd` | – |
-| `DMA` | ZXN DMA / Z80 DMA | `device/dma.vhd` | ~30 mock tests in `test/zxnext/DmaDevice-*.test.ts` |
-| `DIV` | DivMMC paging and automap | `device/divmmc.vhd` | `test/zxnext/DivMmcDevice-*.test.ts` (mock) |
+| `CTC` | Z80 CTC (4 channels) | `device/ctc*.vhd` | `test/zxnext-hw/ctc/ctc.test.ts` (replaced the machine-level half of the mock `test/zxnext/CtcDevice.test.ts` and two of the three `test/wasm/zxNext/wasm-next-ctc.test.ts` tests, 2026-09-18; the per-clock `CtcChannel` tests stay) |
+| `DMA` | ZXN DMA / Z80 DMA | `device/dma.vhd` | `test/zxnext-hw/dma/dma.test.ts` (replaced the 30 MAME-model mocks `test/zxnext/DmaDevice*.test.ts`, 2026-09-18; bug B82) |
+| `DIV` | DivMMC paging and automap | `device/divmmc.vhd` | `test/zxnext-hw/divmmc/divmmc.test.ts` (2026-09-18, bug B83); the mocks `test/zxnext/DivMmcDevice-*.test.ts`, `DivMmmc.test.ts` still pass and stay (NMI/Multiface interplay) |
 | `MF` | Multiface | `device/multiface.vhd` | `test/zxnext/Multiface*.test.ts` (mock) |
 | `SPI` | SPI master, SD card, flash | `serial/spi_master.vhd` | `test/zxnext-hw/sd/spi-flash-select.test.ts` (bug B2) |
 | `UART` | UART 0 (ESP) / UART 1 (Pi) | `serial/uart*.vhd` | `test/zxnext/UartDevice.test.ts` (mock) |
@@ -587,7 +587,7 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 | DAC-010 | 8-bit sample playback rate | A | 2 | | Z80 loop writing a ramp at a fixed rate: ramp visible in samples. | ✅ `audio/dac` (B76 fixed: TS played the end-of-frame DAC value for the whole frame) |
 | DAC-011 | DAC via NextReg mirrors `$2C`–`$2E` | A | 3 | | soundrive.vhd ~48-95: `$2C` writes channel B (left), `$2E` channel C (right), `$2D` channels A and D (mono); reads return the I2S input, not the DAC value (zxnext.vhd read mux). Both halves are testable. | ✅ `audio/dac` (B75 fixed: TS mirrors wrote while disabled; reads gave 0 / the DACs instead of the I2S sample) |
 | DAC-012 | DAC reset value | A | 2 | | After reset all DAC channels are `$80` (silence midpoint) per `soundrive.vhd`. | ✅ `audio/dac-enable`, `audio/dac` (soft reset) |
-| DAC-013 | DMA-driven DAC playback | A | 2 | | See DMA-020. | — (see DMA-020) |
+| DAC-013 | DMA-driven DAC playback | A | 2 | | See DMA-020. | ✅ `dma/dma` (DMA-020) |
 
 ### 4.23 `BEEP` – Beeper, MIC, EAR, mixer
 
@@ -608,67 +608,67 @@ Ports `$183B`–`$1F3B` = channels 0–7 (0–3 implemented as timers).
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| CTC-001 | Control word + time constant | S | 1 | | Write control with bit 2 (TC follows) then TC; reading the channel returns the down-counter. | — |
-| CTC-002 | Timer mode prescaler 16 | S | 1 | | Counter decrements every 16 CPU clock ticks (28 MHz-derived clock per `ctc.vhd`); measure with `step`/`runFrames`. | — |
-| CTC-003 | Prescaler 256 | S | 1 | | Bit 5. | — |
-| CTC-004 | Counter reload at zero | S | 1 | | Counter reloads TC; TC 0 = 256. | — |
-| CTC-005 | Software reset bit 1 | S | 1 | | Stops counting until a new TC. | — |
-| CTC-006 | Interrupt on ZC/TO | S | 1 | | Bit 7 + `$C5` enable + hardware IM2: handler at CTC vector runs once per period. | — |
-| CTC-007 | Vector write (bit 0 = 0) | S | 2 | | CTC vector write ignored in Next hardware IM2 mode (vector from `$C0`) per VHDL. | — |
-| CTC-008 | Channel chaining | S | 2 | | ZC/TO of channel n clocks channel n+1 in counter mode (bit 6). | — |
-| CTC-009 | Timer trigger bit 3 | S | 3 | | Trigger mode waits for clock edge per `ctc_chan.vhd`. | — |
-| CTC-010 | Channels 4–7 | S | 3 | | Read/write behaviour of unimplemented channels per VHDL. | — |
-| CTC-011 | Status `$C9` bits | S | 1 | | Pending CTC interrupt status; clear by writing 1. | — |
-| CTC-012 | CTC port enable bit 27 | S | 2 | | Disabled: writes ignored. | — |
-| CTC-013 | Frame-accurate period over many frames | S | 2 | | ZC/TO count over 50 frames matches the computed rate within ±1. | — |
-| CTC-014 | CTC speed with CPU turbo | S | 2 | | Period in real time independent of `$07`. | — |
+| CTC-001 | Control word + time constant | S | 1 | | Write control with bit 2 (TC follows) then TC; reading the channel returns the down-counter. | ✅ `ctc/ctc` (hard reset reads 0; D2 = 0 stays in reset; the byte after D2 is the constant even with D0 = 1; one port per channel) |
+| CTC-002 | Timer mode prescaler 16 | S | 1 | | Counter decrements every 16 CPU clock ticks (28 MHz-derived clock per `ctc.vhd`); measure with `step`/`runFrames`. | ✅ `ctc/ctc` (exactly 100 counts in 200 T-states, 101 in 202) |
+| CTC-003 | Prescaler 256 | S | 1 | | Bit 5. | ✅ `ctc/ctc` (exactly 50 counts in 1600 T-states, 51 in 1632) |
+| CTC-004 | Counter reload at zero | S | 1 | | Counter reloads TC; TC 0 = 256. | ✅ `ctc/ctc` (reload modulo TC over 23 counts; TC 0 a modulo-256 counter over 300) |
+| CTC-005 | Software reset bit 1 | S | 1 | | Stops counting until a new TC. | ✅ `ctc/ctc` (D2 = 1: holds the old constant until a new one; D2 = 0: back to the reset state) |
+| CTC-006 | Interrupt on ZC/TO | S | 1 | | Bit 7 + `$C5` enable + hardware IM2: handler at CTC vector runs once per period. | ✅ `ctc/ctc` (each channel once a period on `$A6`-`$AC`; `$C5` reads control-word D7; a D7 = 0 word stops them; pulse mode through `$FF`) |
+| CTC-007 | Vector write (bit 0 = 0) | S | 2 | | CTC vector write ignored in Next hardware IM2 mode (vector from `$C0`) per VHDL. | ✅ `ctc/ctc` (hardware IM2 vector stays `$A6`, pulse mode `$FF`; the count is not disturbed) |
+| CTC-008 | Channel chaining | S | 2 | | ZC/TO of channel n clocks channel n+1 in counter mode (bit 6). | ✅ `ctc/ctc` (0->1->2->3, 3->0, and 2->3->0->1 across the wrap; B81 fixed: the wrap chain never counted) |
+| CTC-009 | Timer trigger bit 3 | S | 3 | | Trigger mode waits for clock edge per `ctc_chan.vhd`. | ✅ `ctc/ctc` (waits for the upstream ZC/TO, or a D4 change; B81 fixed: the upstream ZC/TO never started it) |
+| CTC-010 | Channels 4–7 | S | 3 | | Read/write behaviour of unimplemented channels per VHDL. | ✅ `ctc/ctc` (read `$00`; writes reach no channel and set no status) |
+| CTC-011 | Status `$C9` bits | S | 1 | | Pending CTC interrupt status; clear by writing 1. | ✅ `ctc/ctc` (bits per channel, write-1 clears) |
+| CTC-012 | CTC port enable bit 27 | S | 2 | | Disabled: writes ignored. | ✅ `ctc/ctc` (writes ignored; a running channel keeps running), `ports/port-enables` |
+| CTC-013 | Frame-accurate period over many frames | S | 2 | | ZC/TO count over 50 frames matches the computed rate within ±1. | ✅ `ctc/ctc` (two rates over 50 frames within 1) |
+| CTC-014 | CTC speed with CPU turbo | S | 2 | | Period in real time independent of `$07`. | ✅ `ctc/ctc` (same count over 50 frames at 3.5 and 28 MHz) |
 
 ### 4.25 `DMA` – DMA
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| DMA-001 | Port `$6B` ZXN mode vs `$0B` Z80 mode | S | 1 | | Same command sequence on each port; Z80-DMA mode differences (length +1) per `dma.vhd`. | — |
-| DMA-002 | WR0 source/dest addresses and length | S | 1 | | Program base register groups; read back via read mask. | — |
-| DMA-003 | Mem→mem transfer | S | 1 | | Copy 256 bytes; destination matches, source unchanged. | — |
-| DMA-004 | Mem→mem overlapping, decrement | S | 2 | | Decrement addresses on both sides. | — |
-| DMA-005 | Fixed address (source or dest) | S | 1 | | Fill memory from a fixed source byte. | — |
-| DMA-006 | Mem→I/O | S | 1 | | Transfer to a port (e.g. `$FE` border or DAC); last value observed. | — |
-| DMA-007 | I/O→mem | S | 2 | | Read a port repeatedly into memory. | — |
-| DMA-008 | Burst vs continuous mode | S | 1 | | WR4 mode bits; CPU resumes between bytes in burst mode. | — |
-| DMA-009 | ZXN prescaler WR2 | S | 1 | | Byte rate = 875000 / prescaler Hz; measure bytes per frame. | — |
-| DMA-010 | Enable / disable commands `$87`/`$83` | S | 1 | | Stop mid-transfer; counter keeps position; enable resumes. | — |
-| DMA-011 | Load `$CF` | S | 1 | | Loads base into current addresses/counter. | — |
-| DMA-012 | Continue `$D3` | S | 2 | | Continues without reloading addresses. | — |
-| DMA-013 | Auto restart WR5 | S | 1 | | Transfer restarts at end of block (looped playback). | — |
-| DMA-014 | Status byte | S | 1 | | Read status: end-of-block and ready bits per `dma.vhd`. | — |
-| DMA-015 | Read mask `$BB` + read sequence | S | 1 | | Reads cycle through selected registers; `$A7` initialises. | — |
-| DMA-016 | Reset `$C3` | S | 1 | | Clears state per VHDL. | — |
-| DMA-017 | CPU halted during continuous transfer | S | 1 | | `tacts`/PC progression: CPU does not advance while DMA owns the bus. | — |
-| DMA-018 | Interrupts during DMA | S | 2 | | With `$CC`–`$CE`, selected interrupts can/cannot fire while DMA is active. | — |
-| DMA-019 | Transfer to Layer 2 memory | P | 2 | | DMA fill of a paged Layer 2 bank; pixels visible. | — |
-| DMA-020 | DAC sample playback | A | 1 | | Burst mem→`$DF` at prescaler for 8 kHz: audio shows the sample ramp at the right rate. | — |
-| DMA-021 | Length 0 semantics | S | 2 | | Length 0 = 65536 (or no transfer) per VHDL, differs by port mode. | — |
-| DMA-022 | Port enable bits 5 and 25 | S | 2 | | Disable each DMA port separately. | — |
-| DMA-023 | WR3 / WR6 undocumented bytes | S | 3 | | Ignored bytes don't break the sequence. | — |
+| DMA-001 | Port `$6B` ZXN mode vs `$0B` Z80 mode | S | 1 | | Same command sequence on each port; Z80-DMA mode differences (length +1) per `dma.vhd`. | ✅ `dma/dma` (4 vs 5 bytes; the mode is the port of the last access - a `$0B` load counts from `$FFFF`; B82 fixed) |
+| DMA-002 | WR0 source/dest addresses and length | S | 1 | | Program base register groups; read back via read mask. | ✅ `dma/dma` (status, counter, port A, port B from reset; B->A; Z80 load `$FFFF`; B82 fixed: mask reset 0, status format) |
+| DMA-003 | Mem→mem transfer | S | 1 | | Copy 256 bytes; destination matches, source unchanged. | ✅ `dma/dma` (256 bytes; counter = 256, addresses past the block; B82 fixed: counter one past) |
+| DMA-004 | Mem→mem overlapping, decrement | S | 2 | | Decrement addresses on both sides. | ✅ `dma/dma` (decrement both, overlapping move up, reversed copy) |
+| DMA-005 | Fixed address (source or dest) | S | 1 | | Fill memory from a fixed source byte. | ✅ `dma/dma` (fixed source fill, fixed destination keeps the last byte) |
+| DMA-006 | Mem→I/O | S | 1 | | Transfer to a port (e.g. `$FE` border or DAC); last value observed. | ✅ `dma/dma` (to the AY data port) |
+| DMA-007 | I/O→mem | S | 2 | | Read a port repeatedly into memory. | ✅ `dma/dma` (from the AY register port) |
+| DMA-008 | Burst vs continuous mode | S | 1 | | WR4 mode bits; CPU resumes between bytes in burst mode. | ✅ `dma/dma` (burst frees the bus while the prescaler waits; continuous, byte and unprescaled burst keep it; B82 fixed: byte mode released it) |
+| DMA-009 | ZXN prescaler WR2 | S | 1 | | Byte rate = 875000 / prescaler Hz; measure bytes per frame. | ✅ `dma/dma` (4P + 2 T-states a byte at 3.5 MHz continuous, same rate in burst, 32P at 28 MHz; B82 fixed: 8x too fast at 3.5 MHz, ignored in continuous mode) |
+| DMA-010 | Enable / disable commands `$87`/`$83` | S | 1 | | Stop mid-transfer; counter keeps position; enable resumes. | ✅ `dma/dma` |
+| DMA-011 | Load `$CF` | S | 1 | | Loads base into current addresses/counter. | ✅ `dma/dma` |
+| DMA-012 | Continue `$D3` | S | 2 | | Continues without reloading addresses. | ✅ `dma/dma` (also: a Z80 continue moves length + 1) |
+| DMA-013 | Auto restart WR5 | S | 1 | | Transfer restarts at end of block (looped playback). | ✅ `dma/dma` (end of block stays reached; B82 fixed) |
+| DMA-014 | Status byte | S | 1 | | Read status: end-of-block and ready bits per `dma.vhd`. | ✅ `dma/dma` (`$3A` idle, `$3B` mid-transfer, `$1A` done, `$8B`, `$CF`; B82 fixed) |
+| DMA-015 | Read mask `$BB` + read sequence | S | 1 | | Reads cycle through selected registers; `$A7` initialises. | ✅ `dma/dma` (masks, `$A7`, empty mask, `$BF` then the mask; B82 fixed) |
+| DMA-016 | Reset `$C3` | S | 1 | | Clears state per VHDL. | ✅ `dma/dma` (stops; clears prescaler and auto restart; keeps addresses, length, read mask) |
+| DMA-017 | CPU halted during continuous transfer | S | 1 | | `tacts`/PC progression: CPU does not advance while DMA owns the bus. | ✅ `dma/dma` (6 T-states a byte at 3.5 MHz, 4 with 2-cycle timing; B82 fixed: 1 T-state) |
+| DMA-018 | Interrupts during DMA | S | 2 | | With `$CC`–`$CE`, selected interrupts can/cannot fire while DMA is active. | ✅ `dma/dma` (without `$CC` the ULA interrupt waits; with it, it breaks in; B82 fixed: no break-in across a frame end) |
+| DMA-019 | Transfer to Layer 2 memory | P | 2 | | DMA fill of a paged Layer 2 bank; pixels visible. | ✅ `dma/dma` |
+| DMA-020 | DAC sample playback | A | 1 | | Burst mem→`$DF` at prescaler for 8 kHz: audio shows the sample ramp at the right rate. | ✅ `dma/dma` (Specdrum ramp at 4P + a few T-states a step; B82 fixed: 8x too fast) |
+| DMA-021 | Length 0 semantics | S | 2 | | dma.vhd: the transfer goes on while counter < length after each byte, so length 0 moves one byte on both ports; length 1 moves one byte on `$6B`, two on `$0B`. | ✅ `dma/dma` (B82 fixed: length 0 moved nothing) |
+| DMA-022 | Port enable bits 5 and 25 | S | 2 | | Disable each DMA port separately. | ✅ `dma/dma`, `ports/port-enables` |
+| DMA-023 | WR3 / WR6 undocumented bytes | S | 3 | | Ignored bytes don't break the sequence. | ✅ `dma/dma` (WR3 mask/match, WR1 second timing byte, interrupt commands; WR0 search bits; WR4 interrupt control; WR4 D4 alone = deaf until reset; B82 fixed) |
 
 ### 4.26 `DIV` – DivMMC
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| DIV-001 | Port `$E3` conmem bit 7 | S | 1 | | DivMMC ROM at `$0000`, RAM page (bits 3–0) at `$2000`. | — |
-| DIV-002 | RAM page select | S | 1 | | 16 pages distinct at `$2000`. | — |
-| DIV-003 | Mapram bit 6 | S | 1 | | RAM page 3 read-only at `$0000`; bit sticky until power-on (hard reset). | — |
-| DIV-004 | `$2000` write protect with mapram | S | 1 | | Page 3 not writable at `$2000` when mapram set and conmem clear. | — |
-| DIV-005 | Automap enable `$0A` bit 4 | S | 1 | | Automap only when enabled. | — |
-| DIV-006 | Automap entry points (instant) | S | 1 | | Fetch at `$0000`, `$0008`, `$0038`, `$0066`, `$04C6`, `$0562` pages in DivMMC per `$B8`/`$B9`/`$BA` defaults (instant vs delayed). | — |
-| DIV-007 | Automap `$3Dxx` instant | S | 1 | | Fetch at `$3D00–$3DFF` pages instantly (ROM 3 only per VHDL). | — |
-| DIV-008 | Automap off at `$1FF8–$1FFF` | S | 1 | | Fetch there unmaps (delayed). | — |
-| DIV-009 | Entry point registers `$B8`–`$BB` | S | 2 | | Change valid/timing bits; entry points enable/disable accordingly. | — |
-| DIV-010 | RETN unmaps | S | 2 | | RETN clears automap per VHDL. | — |
-| DIV-011 | Automap ROM condition | S | 2 | | Entry points only active when the matching ROM is paged (`$BB` bits). | — |
-| DIV-012 | DivMMC port enable bit 8 | S | 2 | | Disabled: `$E3` has no effect. | — |
-| DIV-013 | Soft reset clears `$E3` except mapram | S | 1 | | | — |
-| DIV-014 | DivMMC NMI | S | 2 | | See NMI-002. | — |
+| DIV-001 | Port `$E3` conmem bit 7 | S | 1 | | DivMMC ROM at `$0000`, RAM page (bits 3–0) at `$2000`. | ✅ `divmmc/divmmc` (ROM read-only, not the Spectrum ROM; RAM page at `$2000`; `$E3` reads bits 7-6, 3-0) |
+| DIV-002 | RAM page select | S | 1 | | 16 pages distinct at `$2000`. | ✅ `divmmc/divmmc` |
+| DIV-003 | Mapram bit 6 | S | 1 | | RAM page 3 read-only at `$0000`; the bit is sticky (a write ORs it in) until a `$09` write with bit 3 or a reset (zxnext.vhd ~4155-4165: any `reset`, soft included). | ✅ `divmmc/divmmc` (B83 fixed: `$09` bit 3 only let a later `$E3` write clear it) |
+| DIV-004 | `$2000` write protect with mapram | S | 1 | | Page 3 not writable at `$2000` when mapram set and conmem clear. | ✅ `divmmc/divmmc` (with conmem and through automap) |
+| DIV-005 | Automap enable `$0A` bit 4 | S | 1 | | Automap only when enabled. | ✅ `divmmc/divmmc` (clearing bit 4 unmaps at once) |
+| DIV-006 | Automap entry points (instant) | S | 1 | | Fetch at `$0000`, `$0008`, `$0038`, `$0066`, `$04C6`, `$0562` pages in DivMMC per `$B8`/`$B9`/`$BA` defaults (instant vs delayed). | ✅ `divmmc/divmmc` (`$0000`, `$0008`, `$0038`, `$04C6`, `$0562` delayed; the ROM supplies only the opcode, DivMMC the operands; RST `$10`-`$30` off) |
+| DIV-007 | Automap `$3Dxx` instant | S | 1 | | Fetch at `$3D00–$3DFF` pages instantly (ROM 3 only per VHDL). | ✅ `divmmc/divmmc` (instant with ROM 3, none with ROM 0) |
+| DIV-008 | Automap off at `$1FF8–$1FFF` | S | 1 | | Fetch there unmaps (delayed). | ✅ `divmmc/divmmc` (the `$1FF8` opcode from DivMMC, its operands from ROM; `$BB` bit 6 off keeps it mapped; B83 fixed: WASM took the operands from DivMMC) |
+| DIV-009 | Entry point registers `$B8`–`$BB` | S | 2 | | Change valid/timing bits; entry points enable/disable accordingly. | ✅ `divmmc/divmmc` (`$B8`-`$BA` per RST: enable, instant, always/ROM 3; `$BB` bits 5-2) |
+| DIV-010 | RETN unmaps | S | 2 | | RETN clears automap per VHDL. | ✅ `divmmc/divmmc` (unmaps before the next fetch, conmem stays; RETI and ED 55 do not unmap; B83 fixed: TS unmapped one fetch late, WASM unmapped on RETI) |
+| DIV-011 | Automap ROM condition | S | 2 | | Entry points only active when the matching ROM is paged (`$BB` bits). | ✅ `divmmc/divmmc` (ROM 0; RAM paged at `$0000` stops ROM-3 entries, not 'always' ones; B83 fixed) |
+| DIV-012 | DivMMC port enable bit 8 | S | 2 | | Disabled: `$E3` has no effect. | ✅ `divmmc/divmmc` (no paging, writes ignored, state kept; B83 fixed: TS still paged in with conmem) |
+| DIV-013 | Soft reset clears `$E3` | S | 1 | | zxnext.vhd ~4157: `port_e3_reg` is cleared by `reset` - soft and hard alike, mapram included; automap goes too. | ✅ `divmmc/divmmc` |
+| DIV-014 | DivMMC NMI | S | 2 | | See NMI-002. | ✅ (NMI-002, `reset/reset-register`) |
 
 ### 4.27 `MF` – Multiface
 

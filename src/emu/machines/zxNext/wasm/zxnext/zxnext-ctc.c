@@ -117,25 +117,82 @@ static uint32_t zxnextCtcAdvanceChannelByTriggers(ZxNextCtcChannel *ch, uint32_t
   return zxnextCtcAdvanceCounterByFires(ch, triggers);
 }
 
+/*
+ * A channel that moves only on its trigger input: a running counter, or a timer waiting for its
+ * trigger (S_WAIT with D3 = 1).
+ */
+static uint32_t zxnextCtcIsTriggerDriven(ZxNextCtcChannel *ch) {
+  if (ch->state == 3u) return zxnextCtcIsCounterMode(ch);
+  return ch->state == 2u && !zxnextCtcIsCounterMode(ch) && (ch->controlReg & 0x02u) != 0;
+}
+
+/* A trigger edge ends S_WAIT: the channel leaves soft reset with the prescaler at 0 */
+static void zxnextCtcStartOnTrigger(ZxNextCtcChannel *ch) {
+  ch->state = 3u;
+  ch->prescalerCount = 0;
+  ch->count = ch->timeConstantReg;
+  ch->countZeroD = 0;
+}
+
+/* System clocks until a running timer's next ZC/TO (the counterpart of AdvanceChannelBySysClocks) */
+static uint32_t zxnextCtcFirstZcToOffset(ZxNextCtcChannel *ch) {
+  const uint32_t div = (ch->controlReg & 0x08u) != 0 ? 256u : 16u;
+  const uint32_t mask = div - 1u;
+  const uint32_t firstFire = (mask - (ch->prescalerCount & mask)) & mask;
+  uint32_t fires;
+  if (ch->count == 0) {
+    if (!ch->countZeroD) return 0;
+    fires = 256u;
+  } else {
+    fires = ch->count;
+  }
+  return firstFire + 1u + (fires - 1u) * div;
+}
+
+/*
+ * The trigger inputs form a ring (ctc_zc_to(2 downto 0) & ctc_zc_to(3)): channel n is clocked by
+ * channel n-1, channel 0 by channel 3. A channel waiting for its upstream ZC/TO - a running counter,
+ * or a timer waiting for its trigger (D3) - is processed after its upstream channel, walking the ring
+ * from a channel that runs on its own (CtcDevice.advanceToSysClock).
+ */
 static void zxnextCtcAdvanceToSysClock(uint32_t currentSysClock) {
   if (currentSysClock <= zxnextCtcLastSyncClock) return;
   const uint32_t elapsed = currentSysClock - zxnextCtcLastSyncClock;
   zxnextCtcLastSyncClock = currentSysClock;
 
   uint32_t zcToCounts[4] = { 0, 0, 0, 0 };
-  const uint32_t triggerSource[4] = { 3, 0, 1, 2 };
+  uint32_t firstZcTo[4] = { elapsed, elapsed, elapsed, elapsed };
 
   for (uint32_t i = 0; i < 4; i++) {
     ZxNextCtcChannel *ch = zxnextCtcChannel(i);
     if (ch->state == 3u && !zxnextCtcIsCounterMode(ch)) {
+      firstZcTo[i] = zxnextCtcFirstZcToOffset(ch);
       zcToCounts[i] = zxnextCtcAdvanceChannelBySysClocks(ch, elapsed);
     }
   }
 
+  uint32_t root = 4u;
   for (uint32_t i = 0; i < 4; i++) {
-    ZxNextCtcChannel *ch = zxnextCtcChannel(i);
-    if (ch->state == 3u && zxnextCtcIsCounterMode(ch)) {
-      zcToCounts[i] = zxnextCtcAdvanceChannelByTriggers(ch, zcToCounts[triggerSource[i]]);
+    if (!zxnextCtcIsTriggerDriven(zxnextCtcChannel(i))) {
+      root = i;
+      break;
+    }
+  }
+  if (root < 4u) {
+    for (uint32_t k = 1; k < 4; k++) {
+      const uint32_t i = (root + k) & 0x03u;
+      const uint32_t up = (i + 3u) & 0x03u;
+      ZxNextCtcChannel *ch = zxnextCtcChannel(i);
+      if (!zxnextCtcIsTriggerDriven(ch) || zcToCounts[up] == 0) continue;
+      if (zxnextCtcIsCounterMode(ch)) {
+        zcToCounts[i] = zxnextCtcAdvanceChannelByTriggers(ch, zcToCounts[up]);
+      } else {
+        /* A timer waiting for its trigger starts at the upstream channel's first ZC/TO */
+        const uint32_t start = firstZcTo[up] < elapsed ? firstZcTo[up] : elapsed;
+        zxnextCtcStartOnTrigger(ch);
+        firstZcTo[i] = start + zxnextCtcFirstZcToOffset(ch);
+        zcToCounts[i] = zxnextCtcAdvanceChannelBySysClocks(ch, elapsed - start);
+      }
     }
   }
 

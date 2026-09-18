@@ -62,7 +62,7 @@ export type TurboSoundFrameAudioDiagnostics = {
  * ## References
  * - See AUDIO_ARCHITECTURE.md for complete system design
  * - See PORT_MAPPINGS.md for I/O port details (0xFFFD, 0xBFFD)
- * - See PsgChip class for individual chip register details
+ * - See NextPsgChip (a port of ym2149.vhd) for individual chip register details
  */
 export class TurboSoundDevice {
   // --- The three PSG chips

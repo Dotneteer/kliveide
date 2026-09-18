@@ -587,7 +587,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         machine.soundDevice.ay1Mono = (v & 0x40) !== 0;
         machine.soundDevice.ay0Mono = (v & 0x20) !== 0;
         machine.spriteDevice.mirrorTie = (v & 0x10) !== 0;
-        machine.divMmcDevice.resetDivMmcMapramFlag = (v & 0x08) !== 0;
+        if (v & 0x08) machine.divMmcDevice.clearMapram();
         machine.soundDevice.silenceHdmiAudio = (v & 0x04) !== 0;
         machine.composedScreenDevice.scanlineWeight = v & 0x03;
         machine.audioControlDevice.applyConfiguration();

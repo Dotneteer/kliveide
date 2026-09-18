@@ -726,7 +726,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    */
   updateFastPathFlags(): void {
     const divMmc = this.machine.divMmcDevice;
-    this._divMmcActive = divMmc?.conmem || divMmc?.autoMapActive || false;
+    // --- divmmc.vhd: the port enable (`i_en`, $83 bit 0) gates the paging
+    this._divMmcActive = (divMmc?.enabled ?? false) && (divMmc.conmem || divMmc.autoMapActive);
     this._mfActive = this.machine.multifaceDevice?.mfEnabled || false;
 
     const screen = this.machine.composedScreenDevice;

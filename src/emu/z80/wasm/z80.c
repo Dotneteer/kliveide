@@ -29,6 +29,10 @@
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) ((void)(address))
 #endif
 
+#ifndef Z80_AFTER_OPCODE_FETCH
+#define Z80_AFTER_OPCODE_FETCH() ((void)0)
+#endif
+
 #ifndef Z80_ALWAYS_INLINE
 #define Z80_ALWAYS_INLINE static inline __attribute__((always_inline))
 #endif
@@ -3085,6 +3089,7 @@ void z80ExecuteCpuCycle(void) {
   if (m1Active) {
     refreshMemory();
     tactPlus1WithAddress(IR);
+    Z80_AFTER_OPCODE_FETCH();
   }
   cpu.pc = (uint16_t)(cpu.pc + 1);
 

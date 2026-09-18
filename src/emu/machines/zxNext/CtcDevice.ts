@@ -246,6 +246,40 @@ export class CtcChannel {
   }
 
   /**
+   * Whether the channel moves only on its trigger input: a running counter, or a timer waiting for
+   * its trigger (state S_WAIT with D3 = 1).
+   */
+  get isTriggerDriven(): boolean {
+    if (this._state === CtcState.RUNNING) return this.isCounterMode;
+    return this._state === CtcState.WAIT && !this.isCounterMode && !!(this._controlReg & 0x02);
+  }
+
+  /** A trigger edge ends S_WAIT: the channel leaves soft reset with the prescaler at 0. */
+  startOnTrigger(): void {
+    this._state = CtcState.RUNNING;
+    this._prescalerCount = 0;
+    this._count = this._timeConstantReg;
+    this._countZeroD = false;
+  }
+
+  /**
+   * System clocks until a running timer's next ZC/TO (the counterpart of `advanceBySysClocks`).
+   */
+  firstZcToOffset(): number {
+    const div = (this._controlReg & 0x08) ? 256 : 16;
+    const mask = div - 1;
+    const firstFire = (mask - (this._prescalerCount & mask)) & mask;
+    let fires: number;
+    if (this._count === 0) {
+      if (!this._countZeroD) return 0;
+      fires = 256;
+    } else {
+      fires = this._count;
+    }
+    return firstFire + 1 + (fires - 1) * div;
+  }
+
+  /**
    * Advance a timer-mode channel by N system clocks (mathematical batch).
    * Only valid for timer-mode, RUNNING-state channels.
    * Returns the number of ZC/TO events that occurred.
@@ -429,32 +463,47 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
    * Advance all CTC channels to the specified system clock using mathematical
    * batch computation. Handles ZC/TO chaining between channels.
    * Called from the machine on every tact increment and before port access.
+   *
+   * The trigger inputs form a ring (ctc_zc_to(2 downto 0) & ctc_zc_to(3)): channel n is clocked by
+   * channel n-1, channel 0 by channel 3. A channel whose input is a ZC/TO it must wait for - a running
+   * counter, or a timer waiting for its trigger (D3) - is processed after its upstream channel, walking
+   * the ring from a channel that runs on its own.
    */
   advanceToSysClock(currentSysClock: number): void {
     const elapsed = currentSysClock - this._lastSyncClock;
     if (elapsed <= 0) return;
     this._lastSyncClock = currentSysClock;
 
-    // --- Advance channels in chain order: 0 → 1 → 2 → 3
-    // Timer-mode channels advance by system clocks; counter-mode channels
-    // advance by the upstream ZC/TO count.
-    // Chaining: Ch0←Ch3, Ch1←Ch0, Ch2←Ch1, Ch3←Ch2
     const zcToCounts = [0, 0, 0, 0];
-    const triggerSrc = [3, 0, 1, 2]; // upstream channel index for each
+    // --- Clock offset of each channel's first ZC/TO in this window (elapsed when not known exactly)
+    const firstZcTo = [elapsed, elapsed, elapsed, elapsed];
 
-    // First pass: advance timer-mode channels by system clocks
+    // First pass: running timers advance by system clocks
     for (let i = 0; i < 4; i++) {
       const ch = this.channels[i];
       if (ch.state === 3 /* RUNNING */ && !ch.isCounterMode) {
+        firstZcTo[i] = ch.firstZcToOffset();
         zcToCounts[i] = ch.advanceBySysClocks(elapsed);
       }
     }
 
-    // Second pass: advance counter-mode channels by upstream ZC/TO counts
-    for (let i = 0; i < 4; i++) {
-      const ch = this.channels[i];
-      if (ch.state === 3 /* RUNNING */ && ch.isCounterMode) {
-        zcToCounts[i] = ch.advanceByTriggers(zcToCounts[triggerSrc[i]]);
+    // Second pass: the channels driven by their upstream ZC/TO, in ring order from an independent one
+    const root = this.channels.findIndex((ch) => !ch.isTriggerDriven);
+    if (root >= 0) {
+      for (let k = 1; k < 4; k++) {
+        const i = (root + k) & 0x03;
+        const up = (i + 3) & 0x03;
+        const ch = this.channels[i];
+        if (!ch.isTriggerDriven || zcToCounts[up] === 0) continue;
+        if (ch.isCounterMode) {
+          zcToCounts[i] = ch.advanceByTriggers(zcToCounts[up]);
+        } else {
+          // --- A timer waiting for its trigger starts at the upstream channel's first ZC/TO
+          const start = Math.min(firstZcTo[up], elapsed);
+          ch.startOnTrigger();
+          firstZcTo[i] = start + ch.firstZcToOffset();
+          zcToCounts[i] = ch.advanceBySysClocks(elapsed - start);
+        }
       }
     }
 

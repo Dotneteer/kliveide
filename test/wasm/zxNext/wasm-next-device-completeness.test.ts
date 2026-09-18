@@ -14,15 +14,8 @@ const DEVICE_COVERAGE: DeviceCoverage[] = [
   {
     device: "DMA",
     wasmSuites: ["wasm-next-dma.test.ts"],
-    typeScriptSuites: [
-      "DmaDevice.test.ts",
-      "DmaDevice-z80-transfers.test.ts",
-      "DmaDevice-z80-io-transfers.test.ts",
-      "DmaDevice-readcycle.test.ts",
-      "DmaDevice-writecycle.test.ts",
-      "DmaDevice-timing.test.ts",
-      "DmaDevice-status.test.ts"
-    ],
+    // --- the hardware-interface tests of test/zxnext-hw/dma run on both cores (they replaced the mocks)
+    typeScriptSuites: ["../zxnext-hw/dma/dma.test.ts"],
     requiredSemantics: [
       "register parsing",
       "read-mask sequencing",

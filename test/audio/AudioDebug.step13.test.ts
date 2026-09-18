@@ -11,7 +11,7 @@ describe("Step 13: Audio Debug Support", () => {
 
   // ==================== PSG Chip Debug Info ====================
 
-  describe("PsgChip Debug Info", () => {
+  describe("PSG chip (NextPsgChip) debug info", () => {
     it("should provide complete chip debug information", () => {
       const turbo = machine.audioControlDevice.getTurboSoundDevice();
       const chip = turbo.getChip(0);

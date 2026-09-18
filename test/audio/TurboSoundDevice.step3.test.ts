@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { TurboSoundDevice } from "@emu/machines/zxNext/TurboSoundDevice";
-import { PsgChip } from "@emu/machines/zxSpectrum128/PsgChip";
 
 describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
   let device: TurboSoundDevice;
