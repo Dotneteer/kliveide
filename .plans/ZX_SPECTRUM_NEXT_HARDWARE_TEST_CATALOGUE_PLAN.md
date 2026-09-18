@@ -169,35 +169,35 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| CPU-001 | `SWAPNIB` | S | 2 | | `ED 23`: A=`$1F` → `$F1`; flags unchanged. | — |
-| CPU-002 | `MIRROR A` | S | 2 | | `ED 24`: A=`$01` → `$80`, `$C3` → `$C3`. | — |
-| CPU-003 | `TEST n` | S | 2 | | `ED 27 n`: flags as `AND n`, A unchanged. | — |
-| CPU-004 | `BSLA/BSRA/BSRL/BSRF/BRLC DE,B` | S | 2 | | `ED 28`–`ED 2C` with several B shift counts (only low 4/5 bits used per VHDL). | — |
-| CPU-005 | `MUL DE` | S | 2 | | `ED 30`: D×E → DE for edge values (`$FF×$FF`). | — |
-| CPU-006 | `ADD HL/DE/BC,A` | S | 2 | | `ED 31`–`ED 33`: A zero-extended, no flag change (check t80n). | — |
-| CPU-007 | `ADD HL/DE/BC,nn` | S | 2 | | `ED 34`–`ED 36` with wrap-around at `$FFFF`. | — |
-| CPU-008 | `PUSH nn` | S | 2 | | `ED 8A hi lo` (big-endian operand): stack contains nn, SP −2. | — |
-| CPU-009 | `OUTINB` | S | 2 | | `ED 90`: outputs (HL) to port BC, HL+1, B unchanged. Verify with a port that stores (e.g. `$7F` via `$253B` after selecting). | — |
-| CPU-010 | `NEXTREG` inside paged ROM/RAM | S | 1 | | `ED 91`/`ED 92` executed from a MMU-paged bank at `$C000` behave identically. | — |
-| CPU-011 | `PIXELDN` / `PIXELAD` / `SETAE` | S | 2 | | `ED 93`–`ED 95` produce the ULA display-file address/mask formula from the Z80N spec. | — |
-| CPU-012 | `JP (C)` | S | 2 | | `ED 98`: PC = (PC & `$C000`) + (IN C) << 6. Use a port with a known read value (e.g. `$7F` readback). | — |
-| CPU-013 | `LDIX/LDDX/LDIRX/LDDRX` | S | 2 | | `ED A4`/`AC`/`B4`/`BC`: bytes equal to A are skipped, DE direction per opcode. | — |
-| CPU-014 | `LDPIRX` | S | 2 | | `ED B7`: pattern copy from (HL + E&7) with A as transparent byte. | — |
-| CPU-015 | `LDWS` | S | 3 | | `ED A5`: copy (HL)→(DE), L+1, D+1, flags as INC D. | — |
-| CPU-016 | Undefined `ED` opcodes are NOPs | S | 3 | | A range of unassigned `ED xx` codes advance PC by 2 and change nothing. | — |
-| CPU-017 | Z80N instructions under DI/EI boundaries | S | 3 | | An interrupt pending at the end of a Z80N instruction is taken after it (not in the middle of a repeating `LDIRX`). | — |
+| CPU-001 | `SWAPNIB` | S | 2 | | `ED 23`: A=`$1F` → `$F1`; flags unchanged. | ✅ `cpu/z80n-instructions` |
+| CPU-002 | `MIRROR A` | S | 2 | | `ED 24`: A=`$01` → `$80`, `$C3` → `$C3`. | ✅ `cpu/z80n-instructions` |
+| CPU-003 | `TEST n` | S | 2 | | `ED 27 n`: flags as `AND n`, A unchanged. | ✅ `cpu/z80n-instructions` |
+| CPU-004 | `BSLA/BSRA/BSRL/BSRF/BRLC DE,B` | S | 2 | | `ED 28`–`ED 2C` with several B shift counts (B bits 4–0; ≥16 shifts everything out; BSRF fills with 1s). | ✅ `cpu/z80n-instructions` |
+| CPU-005 | `MUL DE` | S | 2 | | `ED 30`: D×E → DE for edge values (`$FF×$FF`). | ✅ `cpu/z80n-instructions` |
+| CPU-006 | `ADD HL/DE/BC,A` | S | 2 | | `ED 31`–`ED 33`: A zero-extended; carry cleared, other flags kept (t80n.vhd ~762-785). | ✅ `cpu/z80n-instructions` (B22 fixed) |
+| CPU-007 | `ADD HL/DE/BC,nn` | S | 2 | | `ED 34`–`ED 36` with wrap-around at `$FFFF`. | ✅ `cpu/z80n-instructions` |
+| CPU-008 | `PUSH nn` | S | 2 | | `ED 8A hi lo` (big-endian operand): stack contains nn, SP −2. | ✅ `cpu/z80n-instructions` |
+| CPU-009 | `OUTINB` | S | 2 | | `ED 90`: outputs (HL) to port BC, HL+1, B unchanged. Verify with a port that stores (e.g. `$7F` via `$253B` after selecting). | ✅ `cpu/z80n-instructions` |
+| CPU-010 | `NEXTREG` inside paged ROM/RAM | S | 1 | | `ED 91`/`ED 92` executed from a MMU-paged bank at `$C000` behave identically. | ✅ `cpu/z80n-instructions` |
+| CPU-011 | `PIXELDN` / `PIXELAD` / `SETAE` | S | 2 | | `ED 93`–`ED 95` produce the ULA display-file address/mask formula from the Z80N spec. | ✅ `cpu/z80n-instructions` |
+| CPU-012 | `JP (C)` | S | 2 | | `ED 98`: PC = (address after the instruction & `$C000`) + (IN C) << 6. | ✅ `cpu/z80n-instructions` |
+| CPU-013 | `LDIX/LDDX/LDIRX/LDDRX` | S | 2 | | `ED A4`/`AC`/`B4`/`BC`: bytes equal to A are skipped; HL up (A4/B4) or down (AC/BC), DE always up. | ✅ `cpu/z80n-instructions` |
+| CPU-014 | `LDPIRX` | S | 2 | | `ED B7`: pattern copy from (HL + E&7) with A as transparent byte. | ✅ `cpu/z80n-instructions` |
+| CPU-015 | `LDWS` | S | 3 | | `ED A5`: copy (HL)→(DE), L+1, D+1; flags from INC D but without PreserveC, so C = carry out of D+1. | ✅ `cpu/z80n-instructions` (B22 fixed) |
+| CPU-016 | Undefined `ED` opcodes are NOPs | S | 3 | | A range of unassigned `ED xx` codes advance PC by 2 and change nothing. | ✅ `cpu/z80n-instructions` |
+| CPU-017 | Z80N instructions under DI/EI boundaries | S | 3 | | An interrupt is taken between two iterations of a repeating Z80N copy (LDIRX re-executes from PC-2 like LDIR) and the copy completes after RETI. | ✅ `cpu/z80n-instructions` |
 
 ### 4.4 `SPD` – CPU speed
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| SPD-001 | `$07` write/readback | S | 1 | | Write 0–3; bits 1–0 read the requested speed, bits 5–4 the actual `cpu_speed`. | — |
-| SPD-002 | Tacts per frame by speed | S | 1 | | A program counts loop iterations between two frame interrupts at 3.5/7/14/28 MHz; ratios are ~1:2:4:8 (the frame length in real time does not change). | — |
-| SPD-003 | Frame rate independent of speed | S | 1 | | `frames` advances 50 per 50 `runFrames` at every speed; ULA interrupt still once per frame. | — |
-| SPD-004 | Speed change mid-frame | S | 2 | | Switching speed via `NEXTREG` mid-frame takes effect for the rest of the frame (iteration count between known lines). | — |
-| SPD-005 | Expansion bus forces 3.5 MHz | S | 3 | | With `$80` bus enabled, actual speed bits read `00` regardless of `$07` (per VHDL `cpu_speed`). | — |
-| SPD-006 | `$06` hotkey enable bit | S | 3 | | Bit 7 read/write only; no speed change from writing it. | — |
-| SPD-007 | Audio sample count unchanged at 28 MHz | A | 2 | | `audio()` returns the same number of samples per frame at every speed. | — |
+| SPD-001 | `$07` write/readback | S | 1 | | Write 0–3; bits 1–0 read the requested speed, bits 5–4 the actual `cpu_speed`. | ✅ `speed/cpu-speed` (incl. soft reset) |
+| SPD-002 | Tacts per frame by speed | S | 1 | | A program counts loop iterations between two frame interrupts at 3.5/7/14/28 MHz; ratios are ~1:2:4:8 (the frame length in real time does not change). | ✅ `speed/cpu-speed` (from bank 7 exactly 2x/4x/8x; from SRAM at 28 MHz one wait state per read) |
+| SPD-003 | Frame rate independent of speed | S | 1 | | `frames` advances 50 per 50 `runFrames` at every speed; ULA interrupt still once per frame. | ✅ `speed/cpu-speed` (B23 fixed: the INT pulse is 32 CPU cycles at every speed) |
+| SPD-004 | Speed change mid-frame | S | 2 | | Switching speed via `NEXTREG` mid-frame takes effect for the rest of the frame (iteration count between known lines). | ✅ `speed/cpu-speed` |
+| SPD-005 | Expansion bus forces 3.5 MHz | S | 3 | | With `$80` bus enabled, actual speed bits read `00` regardless of `$07` (per VHDL `cpu_speed`). | ✅ `speed/cpu-speed` (B24 fixed, WASM) |
+| SPD-006 | `$06` hotkey enable bit | S | 3 | | Bit 7 read/write only; no speed change from writing it. | ✅ `speed/cpu-speed` (incl. F5/F6/F8 gating; B25 fixed, WASM) |
+| SPD-007 | Audio sample count unchanged at 28 MHz | A | 2 | | `audio()` returns the same number of samples per frame at every speed. | ✅ `speed/cpu-speed` |
 
 ### 4.5 `MEM` – Memory management
 

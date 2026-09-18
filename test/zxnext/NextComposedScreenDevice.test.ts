@@ -1270,7 +1270,9 @@ describe("Next - ComposedScreenDevice", function () {
       writeNextReg(m, 0x05, 0x00);
       const config = scrDevice.config;
       const intStart = config.intStartTact;
-      const intEnd = config.intEndTact;
+      // --- zxnext.vhd ~1968-2000: 32 CPU cycles (+3 timing) at 3.5 MHz = 64 HC ticks
+      const intEnd = intStart + 64;
+      expect(scrDevice.intPulseLength).toBe(64);
 
       // --- Act/Assert
       expect(scrDevice.is60HzMode).toBe(false);
@@ -1293,7 +1295,9 @@ describe("Next - ComposedScreenDevice", function () {
       writeNextReg(m, 0x05, 0x04);
       const config = scrDevice.config;
       const intStart = config.intStartTact;
-      const intEnd = config.intEndTact;
+      // --- zxnext.vhd ~1968-2000: 32 CPU cycles (+3 timing) at 3.5 MHz = 64 HC ticks
+      const intEnd = intStart + 64;
+      expect(scrDevice.intPulseLength).toBe(64);
 
       // --- Act/Assert
       expect(scrDevice.is60HzMode).toBe(true);

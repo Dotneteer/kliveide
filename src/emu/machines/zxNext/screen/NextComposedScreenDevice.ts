@@ -30,7 +30,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
   // Flattened config properties (eliminates property access overhead in hot path)
   private confIntStartTact: number;
-  private confIntEndTact: number;
+  private confIntPulseCycles: number;
   private confTotalVC: number;
   private confTotalHC: number;
   private confDisplayXStart: number;
@@ -564,7 +564,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Copy config properties to flattened fields (eliminates property access overhead)
     this.confIntStartTact = this.config.intStartTact;
-    this.confIntEndTact = this.config.intEndTact;
+    this.confIntPulseCycles = this.config.intPulseCycles;
     this.confTotalVC = this.config.totalVC;
     this.confTotalHC = this.config.totalHC;
     this.confDisplayXStart = this.config.displayXStart;
@@ -701,6 +701,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   /**
+   * The INT pulse length in frame tacts (7 MHz HC ticks). zxnext.vhd ~1968-2000 counts the pulse on the
+   * CPU clock - 32 cycles (48K, +3) or 36 (128K, Pentagon) - so it lasts 2 HC ticks per cycle at
+   * 3.5 MHz and halves with every speed step: at 28 MHz a 32-cycle pulse is 8 ticks. A pulse measured
+   * in ticks would stay 64 ticks long and be taken again by a short handler at 28 MHz.
+   */
+  get intPulseLength(): number {
+    return (this.confIntPulseCycles * 2) >> this.machine.cpuSpeedDevice.effectiveSpeed;
+  }
+
+  /**
    * The frame tact at which the line interrupt pulse for NextReg $22/$23 starts.
    *
    * zxula_timing.vhd: "the line interrupt occurs before the line is drawn" - it fires when
@@ -719,7 +729,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // Render the pixel pair belonging to the specified frame tact. This method is the core
   // of the rendering pipeline, called once per tact in the frame.
   renderTact(tact: number): boolean {
-    this.pulseIntActive = tact >= this.confIntStartTact && tact < this.confIntEndTact;
+    const pulseLength = this.intPulseLength;
+    this.pulseIntActive = tact >= this.confIntStartTact && tact < this.confIntStartTact + pulseLength;
 
     // --- Get pre-calculated VC and HC positions
     const vc = activeTactToVC[tact];
@@ -735,7 +746,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // --- Line interrupt pulse: as long as the ULA interrupt pulse, starting at the hardware position.
     const lineElapsed = (tact - this.lineInterruptStartTact() + this.renderingTacts) % this.renderingTacts;
-    this.lineIntActive = lineElapsed < this.confIntEndTact - this.confIntStartTact;
+    this.lineIntActive = lineElapsed < pulseLength;
 
     // === BLANKING CHECK ===
     // All rendering flags have identical blanking regions (cell value 0) for a given frequency mode.

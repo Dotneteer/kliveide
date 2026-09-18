@@ -1482,7 +1482,7 @@ static uint32_t zxnextUlaGetScrollX(void) { return ulaScrollX; }
 static uint32_t zxnextUlaGetScrollY(void) { return ulaScrollY; }
 
 static uint32_t zxnextUlaGetPulseIntActive(uint32_t frameTact) {
-  return frameTact >= zxnextTimingIntStart && frameTact < zxnextTimingIntEnd;
+  return frameTact >= zxnextTimingIntStart && frameTact < zxnextTimingIntStart + zxnextTimingIntPulseLength();
 }
 
 static uint32_t zxnextUlaGetScanlineForTact(uint32_t tact) {

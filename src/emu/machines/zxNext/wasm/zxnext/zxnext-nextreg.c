@@ -215,7 +215,8 @@ static void zxnextTimingSelect(void) {
     zxnextTimingDisplayXStart = 136u; zxnextTimingDisplayYStart = 64u;
     zxnextTimingIntStart = 128u;
   }
-  zxnextTimingIntEnd = zxnextTimingIntStart + 32u;
+  /* ~1989: pulse_count_end - 36 CPU cycles for 128K and Pentagon, 32 for 48K and +3 */
+  zxnextTimingIntPulseCycles = (t == 2u || (t & 0x04u) != 0u) ? 36u : 32u;
 }
 
 static void zxnextNextRegSetIndex(uint32_t reg) {
@@ -439,7 +440,8 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   }
   if (normalized == 0x07u) {
     cpuProgrammedSpeed = (uint8_t)(value & 0x03u);
-    cpuEffectiveSpeed = cpuProgrammedSpeed;
+    /* ~5762-5766: with the expansion bus on, cpu_speed takes expbus_speed ("00") instead */
+    zxnextExpansionRequestSpeedUpdate();
     zxnextNextRegs[0x07u] = (uint8_t)(value & 0xffu);
     return;
   }

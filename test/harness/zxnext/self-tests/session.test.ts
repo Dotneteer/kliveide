@@ -92,6 +92,18 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
     expect(s.frames).toBeGreaterThanOrEqual(3);
   });
 
+  it("pressHotkey: F8 steps the CPU speed, F5/F6 switch the expansion bus", async () => {
+    const s = await createSession(core);
+    await s.pressHotkey("F8");
+    expect(s.readNextReg(0x07)).toBe(0x11);
+    await s.pressHotkey("F5");
+    expect(s.readNextReg(0x80) & 0x80).toBe(0x80);
+    expect(s.readNextReg(0x07), "the bus forces 3.5 MHz").toBe(0x01);
+    await s.pressHotkey("F6");
+    expect(s.readNextReg(0x80) & 0x80).toBe(0x00);
+    expect(s.readNextReg(0x07)).toBe(0x11);
+  });
+
   it("reset is a soft reset: PC back to 0, RAM kept", async () => {
     const s = await createSession(core);
     await s.loadCode(` .org $8000\n ld a,1\n jr $`);

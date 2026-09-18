@@ -469,6 +469,59 @@ Found by catalogue §4.2 (`test/zxnext-hw/reset/*.test.ts`):
   the post-firmware values (+3 timing and type, unlocked), so `$03` reads `$33` after it, not `$03`.
 - Corrected tests: `test/zxnext/NextRegDevice.test.ts` (`$03 = $33`; `$04` returns the last value read).
 
+### B22 – `ADD rr,A` and `LDWS` carry flag – FIXED 2026-09-18
+
+Found by catalogue §4.3 (`test/zxnext-hw/cpu/z80n-instructions.test.ts`, 104 tests on both cores):
+- **`ADD HL/DE/BC,A` (ED 31-33) left the flags alone (both cores).** t80n.vhd ~762-785 writes
+  `F(Flag_C) <= reg_temp_t(16)`; the 16-bit sum only reaches bits 15-0 of that variable, which is
+  zeroed at T-state 3 - so carry is cleared. Other flags stay.
+- **`LDWS` (ED A5) preserved carry (both cores).** t80n_mcode.vhd ~2140: its flags come from the INC D
+  ALU operation, which - unlike `INC r` (~757, `PreserveC <= '1'`) - does not set PreserveC, and
+  t80n.vhd ~1227-1233 writes C unless PreserveC_r. So C is the carry out of D + 1 (set only for
+  D = `$FF`). Published docs describe LDWS as "flags as INC D", i.e. C preserved; the VHDL differs.
+- **Fixed:** `src/emu/z80/Z80NCpu.ts` (`addHLA/addDEA/addBCA`, `ldws`) and `src/emu/z80/wasm/z80.c`
+  (shared by all WASM cores; the Z80N opcodes run only with `z80nMode`; all four cores rebuilt).
+- **Corrected tests:** `test/z80/next-ops.test.ts` (ADD HL/DE/BC,A expected F unchanged; three LDWS
+  tests expected C preserved).
+- Everything else in §4.3 already matched the VHDL: SWAPNIB, MIRROR A, TEST n, the barrel shifts
+  (B bits 4-0), MUL, ADD rr,nn, PUSH nn, OUTINB, NEXTREG from paged RAM, PIXELDN/PIXELAD/SETAE,
+  JP (C), LDIX/LDIRX/LDDX/LDDRX, LDPIRX, the unassigned ED opcodes (incl. ED 26, the removed
+  MIRROR DE) and interrupts between LDIRX iterations.
+
+### B23 – The INT pulse was counted in 7 MHz ticks, not CPU cycles – FIXED 2026-09-18
+
+Found by catalogue §4.4 (`test/zxnext-hw/speed/cpu-speed.test.ts`, SPD-003):
+- zxnext.vhd ~1968-2000: `pulse_int_n` is held for `pulse_count_end` CPU cycles - 32 for 48K and +3,
+  36 for 128K and Pentagon - and `pulse_count` runs on `i_CLK_CPU`, so the pulse is 32 CPU T-states at
+  *every* speed. Both cores held it for 32 HC ticks (`intEndTact = intStartTact + 32`), i.e. 16 T at
+  3.5 MHz and 128 T at 28 MHz. The line interrupt shares the pulse (`lineIntActive` used the same span).
+- **Symptoms:** at 3.5 MHz the pulse could fall inside one long instruction and be lost - a loop of
+  23-T `EX (SP),IX` took 31 of 50 frame interrupts; at 28 MHz an 88-T IM 2 handler that re-enables
+  interrupts was entered again in the same pulse (88 interrupts in 50 frames).
+- **Fixed:** `TimingConfig.intEndTact` is replaced by `intPulseCycles` (32/36);
+  `NextComposedScreenDevice.intPulseLength` = `cycles * 2 >> effectiveSpeed` HC ticks. WASM:
+  `zxnextTimingIntPulseCycles` set by `zxnextTimingSelect`, `zxnextTimingIntPulseLength()` used by
+  `zxnextUlaGetPulseIntActive` and `zxnextVideoLineIntActive`.
+- **Corrected tests:** `test/zxnext/NextComposedScreenDevice.test.ts` and `NextInterrupts.test.ts`
+  expected the 32-tick pulse. All 20 visual goldens are unchanged.
+
+### B24 – WASM `$07` write ignored the expansion bus – FIXED 2026-09-18
+
+- zxnext.vhd ~5762-5766: while `$80` bit 7 is set, `cpu_speed` takes `expbus_speed` (always "00"). The
+  WASM `$07` write copied the programmed speed straight into `cpuEffectiveSpeed`, so `$07` read `$33`
+  and the CPU ran at 28 MHz with the bus on. It now calls `zxnextExpansionRequestSpeedUpdate()`. TS was
+  right. Test: SPD-005.
+
+### B25 – WASM F5/F6/F8 hotkeys did nothing – FIXED 2026-09-18
+
+- `ZxNextWasmV2Machine.executeCustomCommand` passed `cycleCpuSpeed`, `enableExpansionBus` and
+  `disableExpansionBus` to the base class, which changes the TypeScript devices the WASM core never
+  reads - so the app's CPU-speed and expansion-bus menu items had no effect on the production core.
+  Now they write `$07` / `$80` bit 7 through the WASM NextReg path, gated by `$06` bit 7 (~6290-6293).
+  Harness: new `pressHotkey("F5" | "F6" | "F8")`. Tests: SPD-006, harness self-test.
+- **Not checked:** `toggle5060Hz` (F3) and `toggleScandoubler` take the same base-class path on WASM;
+  F3 belongs with B20.
+
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 
 - **Fixed:** `machineFrameCompleted` keeps a copy of the displayed pixel buffer instead of calling

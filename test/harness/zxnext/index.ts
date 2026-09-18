@@ -15,6 +15,7 @@ export {
   READY_REG,
   READY_VALUE,
   type AudioSample,
+  type Hotkey,
   type Program,
   type Registers,
   type SessionOptions,

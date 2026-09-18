@@ -90,6 +90,7 @@ Every method runs on both cores; methods returning `this` chain.
 | I/O | `out(port, v)` `in(port)` | With every hardware side effect (reads that clear status bits clear them). |
 | NextReg | `setNextReg(r, v)` `readNextReg(r)` | Through `$243B`/`$253B`, as Z80 code would. |
 | | `nextRegValue(r)` | Stored value without port side effects - for assertions and wait conditions. |
+| Keys | `await pressHotkey("F5" \| "F6" \| "F8")` | Function-key hotkeys: expansion bus on/off, CPU speed step. Gated by NextReg `$06` bit 7, like the FPGA. |
 | CPU | `registers()` `setRegisters({...})` `tacts` `frames` | `registers()` has 16-bit pairs (`bc`, not `b`). |
 | Screen | `screen()` `pixel(x, y)` `rowRuns(y)` `expectProbe(probe)` `saveScreenPng(path)` | The last *displayed* 720x288 frame. Probe and colour notation as in `case.json` (`ula:N`, `next8:0xNN`, `rgb333:R,G,B`, `#RRGGBB`). |
 | Audio | `startAudio()` `audio()` | Mixed left/right samples of each completed frame; needs `audioSampleRate`. |

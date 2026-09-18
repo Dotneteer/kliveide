@@ -1827,9 +1827,10 @@ static void z80n2cBrlc(void) {
 }
 
 static void z80n30MulDE(void) { DE = (uint16_t)(D * E); }
-static void z80n31AddHLA(void) { HL = (uint16_t)(HL + A); }
-static void z80n32AddDEA(void) { DE = (uint16_t)(DE + A); }
-static void z80n33AddBCA(void) { BC = (uint16_t)(BC + A); }
+/* ADD HL/DE/BC,A: t80n.vhd ~762-785 clears carry (bit 16 of a zeroed variable); other flags stay. */
+static void z80n31AddHLA(void) { HL = (uint16_t)(HL + A); F = (uint8_t)(F & ~FLAG_C); }
+static void z80n32AddDEA(void) { DE = (uint16_t)(DE + A); F = (uint8_t)(F & ~FLAG_C); }
+static void z80n33AddBCA(void) { BC = (uint16_t)(BC + A); F = (uint8_t)(F & ~FLAG_C); }
 
 static void z80n34AddHLNN(void) {
   HL = (uint16_t)(HL + readU16Le());
@@ -1916,7 +1917,10 @@ static void z80nA5Ldws(void) {
   uint8_t value = readMemory(HL);
   writeMemory(DE, value);
   L = (uint8_t)(L + 1);
-  D = inc8(D);
+  /* INC D's flags, but without PreserveC (t80n_mcode.vhd ~2140): carry out of D + 1 */
+  uint8_t d = D;
+  D = inc8(d);
+  F = (uint8_t)((F & ~FLAG_C) | (d == 0xffu ? FLAG_C : 0u));
 }
 
 static void z80nAcLddx(void) { z80nLdXCore(-1); }

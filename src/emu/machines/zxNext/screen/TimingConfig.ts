@@ -19,7 +19,12 @@ export type TimingConfig = {
 
   // Interrupt timing (tact-based for simplified checking)
   intStartTact: number; // Tact when interrupt pulse starts
-  intEndTact: number; // Tact when interrupt pulse ends (exclusive)
+  /**
+   * INT pulse length in CPU cycles (zxnext.vhd ~1968-1990 `pulse_count_end`): 32 for 48K and +3, 36
+   * for 128K and Pentagon. The counter runs on the CPU clock, so in frame tacts (7 MHz HC ticks) the
+   * pulse is `2 * cycles` at 3.5 MHz and halves with every speed step.
+   */
+  intPulseCycles: number;
 };
 
 /**
@@ -38,7 +43,7 @@ export const Plus3_50Hz: TimingConfig = {
   maxVC: 0x136,         // 310
   totalVC: 0x137,       // 311
   intStartTact: 0x252,  // vc(1) * totalHC(456) + hc(138) = 594
-  intEndTact: 0x272     // intStartTact + pulse_length(32) = 626
+  intPulseCycles: 32
 };
 
 /**
@@ -57,7 +62,7 @@ export const Plus3_60Hz: TimingConfig = {
   maxVC: 0x107,         // 263
   totalVC: 0x108,       // 264
   intStartTact: 0x138,  // vc(0) * totalHC(456) + hc(138) = 138
-  intEndTact: 0x158     // intStartTact + pulse_length(32) = 170
+  intPulseCycles: 32
 };
 
 /*
@@ -76,14 +81,14 @@ export const Plus3_60Hz: TimingConfig = {
 export const Zx128_50Hz: TimingConfig = {
   ...Plus3_50Hz,
   intStartTact: Plus3_50Hz.intStartTact + 2,
-  intEndTact: Plus3_50Hz.intEndTact + 2
+  intPulseCycles: 36
 };
 
 /** ZX 128K/+2 60 Hz: Plus3_60Hz's interrupt, 2 HC later. */
 export const Zx128_60Hz: TimingConfig = {
   ...Plus3_60Hz,
   intStartTact: Plus3_60Hz.intStartTact + 2,
-  intEndTact: Plus3_60Hz.intEndTact + 2
+  intPulseCycles: 36
 };
 
 /** ZX 48K 50 Hz: 448 HC x 312 lines (224 x 312 = 69888 T-states), interrupt at VC 0, HC 116 + 12. */
@@ -100,7 +105,7 @@ export const Zx48_50Hz: TimingConfig = {
   maxVC: 311,
   totalVC: 312,
   intStartTact: 128,
-  intEndTact: 128 + 32
+  intPulseCycles: 32
 };
 
 /** ZX 48K 60 Hz: 448 HC x 264 lines. */
@@ -130,7 +135,7 @@ export const Pentagon_50Hz: TimingConfig = {
   maxVC: 319,
   totalVC: 320,
   intStartTact: 3,
-  intEndTact: 3 + 32
+  intPulseCycles: 36
 };
 
 /**

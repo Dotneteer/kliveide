@@ -62,6 +62,14 @@ export type Program = {
 
 type RunLimit = { maxFrames?: number };
 
+/** The function-key hotkeys `pressHotkey` can press. */
+export type Hotkey = "F5" | "F6" | "F8";
+const HOTKEY_COMMANDS: Record<Hotkey, string> = {
+  F5: "enableExpansionBus",
+  F6: "disableExpansionBus",
+  F8: "cycleCpuSpeed"
+};
+
 export class NextTestSession {
   /** Completed frames since the session was created (or since `hardReset`). */
   frames = 0;
@@ -92,6 +100,16 @@ export class NextTestSession {
   reset(): this {
     this.machine.reset();
     this.lastFrame = undefined;
+    return this;
+  }
+
+  /**
+   * Presses a Next function-key hotkey, as the PS/2 keyboard (and the app's machine menu) does:
+   * F5 enables and F6 disables the expansion bus, F8 steps the programmed CPU speed. zxnext.vhd
+   * ~6290-6293 gates all three with NextReg `$06` bit 7, so they do nothing while it is clear.
+   */
+  async pressHotkey(key: Hotkey): Promise<this> {
+    await this.machine.executeCustomCommand(HOTKEY_COMMANDS[key]);
     return this;
   }
 

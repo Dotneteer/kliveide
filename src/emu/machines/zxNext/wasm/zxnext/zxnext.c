@@ -20,7 +20,8 @@ static uint32_t zxnextTimingFirstHc = 96u;
 static uint32_t zxnextTimingDisplayXStart = 144u;
 static uint32_t zxnextTimingDisplayYStart = 64u;
 static uint32_t zxnextTimingIntStart = 0x252u;
-static uint32_t zxnextTimingIntEnd = 0x272u;
+/* INT pulse length in CPU cycles (zxnext.vhd ~1968-1990): 32 for 48K and +3, 36 for 128K and Pentagon */
+static uint32_t zxnextTimingIntPulseCycles = 32u;
 #define ZXNEXT_RENDERING_TACTS_IN_FRAME (zxnextTimingTotalHc * zxnextTimingTotalVc)
 #define ZXNEXT_TACTS_IN_FRAME (ZXNEXT_RENDERING_TACTS_IN_FRAME * 4)
 
@@ -61,6 +62,14 @@ static uint32_t contentionDelaySincePause;
 static uint8_t cpuProgrammedSpeed;
 static uint8_t cpuEffectiveSpeed;
 static uint32_t cpuTactScale;
+
+/*
+ * The INT pulse length in HC ticks. zxnext.vhd ~1968-2000 counts the pulse on the CPU clock, so it lasts
+ * 2 ticks per cycle at 3.5 MHz and halves with every speed step (8 ticks for 32 cycles at 28 MHz).
+ */
+static inline uint32_t zxnextTimingIntPulseLength(void) {
+  return (zxnextTimingIntPulseCycles * 2u) >> (cpuEffectiveSpeed & 0x03u);
+}
 static uint16_t lastMemoryAddress;
 static uint8_t lastMemoryValue;
 static uint8_t lastMemoryAccessed;

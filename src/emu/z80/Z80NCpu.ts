@@ -231,19 +231,24 @@ function mulDE(cpu: Z80NCpu) {
   cpu.de = cpu.d * cpu.e;
 }
 
+// 0x31-0x33: ADD HL/DE/BC,A. t80n.vhd ~762-785 writes F(Flag_C) from bit 16 of a variable the 16-bit
+// sum never reaches (it is zeroed at T-state 3): carry is cleared, the other flags stay.
 // 0x31: ADD HL,A
 function addHLA(cpu: Z80NCpu) {
   cpu.hl = cpu.hl + cpu.a;
+  cpu.f &= 0xfe;
 }
 
 // 0x32: ADD DE,A
 function addDEA(cpu: Z80NCpu) {
   cpu.de = cpu.de + cpu.a;
+  cpu.f &= 0xfe;
 }
 
 // 0x33: ADD BC,A
 function addBCA(cpu: Z80NCpu) {
   cpu.bc = cpu.bc + cpu.a;
+  cpu.f &= 0xfe;
 }
 
 // 0x34: ADD HL,NNNN
@@ -345,7 +350,11 @@ function ldws(cpu: Z80NCpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.writeMemory(cpu.de, tmp);
   cpu.l++;
-  cpu.f = incFlags[cpu.d++] | cpu.flagCValue;
+  // --- t80n_mcode.vhd ~2140: the flags are INC D's, but without PreserveC (INC r sets it, ~762):
+  // --- carry is the carry out of D + 1.
+  const d = cpu.d;
+  cpu.d++;
+  cpu.f = incFlags[d] | (d === 0xff ? 0x01 : 0x00);
 }
 
 // 0xAC: LDDX

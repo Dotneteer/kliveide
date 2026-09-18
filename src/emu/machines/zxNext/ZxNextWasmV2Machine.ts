@@ -975,6 +975,20 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       runtime.exports.zxnextPressDivMmcNmiButton();
       return;
     }
+    // --- F8 / F5 / F6 (zxnext.vhd ~6290-6293, gated by $06 bit 7): the base class would change the
+    // --- TypeScript devices, which the WASM core never reads. F8 increments nr_07_cpu_speed (~5736);
+    // --- F5/F6 set or clear only $80 bit 7 (~2145-2148).
+    if (runtime != null && (command === "cycleCpuSpeed" || command === "enableExpansionBus" || command === "disableExpansionBus")) {
+      const ex = runtime.exports;
+      if ((ex.zxnextGetNextRegisterDirect(0x06) & 0x80) === 0) return;
+      if (command === "cycleCpuSpeed") {
+        ex.zxnextWriteNextRegister(0x07, (ex.zxnextGetNextRegisterDirect(0x07) + 1) & 0x03);
+        return;
+      }
+      const bus = ex.zxnextGetNextRegisterDirect(0x80);
+      ex.zxnextWriteNextRegister(0x80, command === "enableExpansionBus" ? bus | 0x80 : bus & 0x7f);
+      return (ex.zxnextGetNextRegisterDirect(0x80) & 0x80) !== 0;
+    }
     return super.executeCustomCommand(command);
   }
 

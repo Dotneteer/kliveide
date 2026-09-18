@@ -381,9 +381,11 @@ describe("Line interrupt and ULA interrupt disable in pulse mode (Findings F7)",
     expect(m.shouldRaiseInterrupt()).toBe(false);
     screen.renderTact(start);
     expect(m.shouldRaiseInterrupt()).toBe(true);
-    screen.renderTact(start + 31);
+    // --- zxnext.vhd ~1968-2000: one INT pulse for every source, 32 CPU cycles = 64 ticks at 3.5 MHz
+    expect(screen.intPulseLength).toBe(64);
+    screen.renderTact(start + 63);
     expect(m.shouldRaiseInterrupt()).toBe(true);
-    screen.renderTact(start + 32);
+    screen.renderTact(start + 64);
     expect(m.shouldRaiseInterrupt()).toBe(false);
 
     m.nextRegDevice.directSetRegValue(0x22, 0x04); // line interrupt off
